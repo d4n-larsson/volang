@@ -105,4 +105,4 @@ vo 0.1.0, schema 1. Built through two specs:
 - **001 (core language and toolchain):** complete.
 - **002 (effects, functions as values, generics, benchmark v2):** implemented and passing every quality gate; the benchmark v2 run is still to be completed.
 
-Not yet: a garbage collector (an arena allocator with a 512 MiB cap), a standard library beyond the builtins (the `net` effect exists, but there are no network operations yet), packages, and concurrency.
+What comes next is in [`docs/roadmap.md`](docs/roadmap.md). Not yet: a garbage collector (an arena allocator with a 512 MiB cap), a standard library beyond the builtins (the `net` effect exists, but there are no network operations yet), packages, and concurrency.
