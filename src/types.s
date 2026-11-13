@@ -990,53 +990,290 @@ ty_unify:
     addi sp, sp, 64
     ret
 
-# void *rt_concrete(void *type)
-# At run time: the type with the running frame's type arguments substituted.
-# ponytail: a substitution walk per generic operation; monomorphize hot paths if generic code is slow
-    .globl rt_concrete
-rt_concrete:
-    addi sp, sp, -16
-    sd ra, 8(sp)
-    sd s0, 0(sp)
-    mv s0, a0
-    beqz s0, 9f
-    call ty_has_params
-    beqz a0, 8f
-    la t0, cur_frame
+# ---- run-time memo (spec 003 research §6, data-model.md "Run-time memo") ----
+# Generic code resolves its types at run time. The results are permanent (interned types and
+# type-argument vecs in the permanent arena), so they are memoized by the pointers they depend on:
+# a hot generic loop pays one table lookup instead of a substitution walk and an allocation.
+    .equ MEMO_HASP, 1           # type -> 1 + ty_has_params(type)
+    .equ MEMO_HASPV, 2          # vec of types -> 1 + ty_vec_has_params(vec)
+    .equ MEMO_TARGS, 3          # (bindings, caller's type arguments) -> type-argument vec
+    .equ MEMO_CONCRETE, 4       # (type, type arguments) -> concrete type
+    .equ MEMO_ESUBST, 5         # (effect set, type arguments) -> effect set
+    .equ ME_A, 0
+    .equ ME_B, 8
+    .equ ME_KINDW, 16
+    .equ ME_VALUE, 24
+    .equ MEMO_ENTRY, 32
+
+    .section .bss
+    .align 3
+memo_tab:   .space 8            # entries {a, b, kind, value}, open addressing, cap a power of two
+memo_cap:   .space 8
+memo_n:     .space 8
+    .text
+
+# long memo_slot(long kind, long a, long b)
+# The first probe index for a key (memo_cap must be non-zero).
+memo_slot:
+    li t0, 0x9E3779B97F4A7C15
+    mul t1, a1, t0
+    li t0, 0xC2B2AE3D27D4EB4F
+    mul t2, a2, t0
+    xor t1, t1, t2
+    add t1, t1, a0
+    srli t2, t1, 29
+    xor t1, t1, t2
+    la t0, memo_cap
     ld t0, 0(t0)
-    beqz t0, 8f
-    ld a2, FR_TARGS(t0)
-    beqz a2, 8f
-    mv a0, s0
-    li a1, -1
-    call ty_subst
-    j 9f
-8:
-    mv a0, s0
-9:
-    ld ra, 8(sp)
-    ld s0, 0(sp)
-    addi sp, sp, 16
+    addi t0, t0, -1
+    and a0, t1, t0
     ret
 
-# void *rt_targs(void *bindings, void *caller_frame)
-# A generic call's type arguments, with the caller's own type parameters resolved.
-    .globl rt_targs
-rt_targs:
+# long memo_get(long kind, long a, long b)
+# The stored value, or 0.
+    .globl memo_get
+memo_get:
+    la t0, memo_cap
+    ld t0, 0(t0)
+    bnez t0, 1f
+    li a0, 0
+    ret
+1:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    sd s2, 0(sp)
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+    call memo_slot
+    la t0, memo_tab
+    ld t0, 0(t0)
+    la t1, memo_cap
+    ld t1, 0(t1)
+    addi t1, t1, -1
+2:
+    slli t2, a0, 5
+    add t2, t0, t2
+    ld t3, ME_KINDW(t2)
+    beqz t3, 8f
+    bne t3, s0, 3f
+    ld t4, ME_A(t2)
+    bne t4, s1, 3f
+    ld t4, ME_B(t2)
+    bne t4, s2, 3f
+    ld a0, ME_VALUE(t2)
+    j 9f
+3:
+    addi a0, a0, 1
+    and a0, a0, t1
+    j 2b
+8:
+    li a0, 0
+9:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    ld s2, 0(sp)
+    addi sp, sp, 32
+    ret
+
+# void memo_insert(long kind, long a, long b, long value)
+# Stores into the current table, which has room (no growth).
+memo_insert:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+    mv s3, a3
+    call memo_slot
+    la t0, memo_tab
+    ld t0, 0(t0)
+    la t1, memo_cap
+    ld t1, 0(t1)
+    addi t1, t1, -1
+1:
+    slli t2, a0, 5
+    add t2, t0, t2
+    ld t3, ME_KINDW(t2)
+    beqz t3, 2f
+    addi a0, a0, 1
+    and a0, a0, t1
+    j 1b
+2:
+    sd s1, ME_A(t2)
+    sd s2, ME_B(t2)
+    sd s0, ME_KINDW(t2)
+    sd s3, ME_VALUE(t2)
+    la t0, memo_n
+    ld t1, 0(t0)
+    addi t1, t1, 1
+    sd t1, 0(t0)
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    addi sp, sp, 48
+    ret
+
+# void memo_put(long kind, long a, long b, long value)
+# Adds an entry; the table doubles (in the permanent arena) before it is half full.
+    .globl memo_put
+memo_put:
+    addi sp, sp, -64
+    sd ra, 56(sp)
+    sd s0, 48(sp)
+    sd s1, 40(sp)
+    sd s2, 32(sp)
+    sd s3, 24(sp)
+    sd s4, 16(sp)
+    sd s5, 8(sp)
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+    mv s3, a3
+    la t0, memo_n
+    ld t0, 0(t0)
+    addi t0, t0, 1
+    slli t0, t0, 1
+    la t1, memo_cap
+    ld t1, 0(t1)
+    ble t0, t1, 5f
+    la t0, memo_tab             # grow: keep the old table, rehash into a new one
+    ld s4, 0(t0)
+    mv s5, t1                   # old capacity
+    slli t1, t1, 1
+    li t2, 1024
+    bge t1, t2, 1f
+    mv t1, t2
+1:
+    la t0, memo_cap
+    sd t1, 0(t0)
+    la t0, memo_n
+    sd zero, 0(t0)
+    slli a0, t1, 5
+    call perm_alloc             # zeroed: the arena is never reused
+    la t0, memo_tab
+    sd a0, 0(t0)
+2:
+    beqz s5, 5f
+    addi s5, s5, -1
+    slli t0, s5, 5
+    add t0, s4, t0
+    ld a0, ME_KINDW(t0)
+    beqz a0, 2b
+    ld a1, ME_A(t0)
+    ld a2, ME_B(t0)
+    ld a3, ME_VALUE(t0)
+    call memo_insert
+    j 2b
+5:
+    mv a0, s0
+    mv a1, s1
+    mv a2, s2
+    mv a3, s3
+    call memo_insert
+    ld ra, 56(sp)
+    ld s0, 48(sp)
+    ld s1, 40(sp)
+    ld s2, 32(sp)
+    ld s3, 24(sp)
+    ld s4, 16(sp)
+    ld s5, 8(sp)
+    addi sp, sp, 64
+    ret
+
+# int ty_has_params_memo(void *type)
+ty_has_params_memo:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    mv s0, a0
+    mv a1, a0
+    li a0, MEMO_HASP
+    li a2, 0
+    call memo_get
+    bnez a0, 9f
+    mv a0, s0
+    call ty_has_params
+    addi a3, a0, 1
+    sd a3, 0(sp)
+    li a0, MEMO_HASP
+    mv a1, s0
+    li a2, 0
+    call memo_put
+    ld a0, 0(sp)
+9:
+    addi a0, a0, -1
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    addi sp, sp, 32
+    ret
+
+# void *rt_concrete(void *type)
+# At run time: the type with the running frame's type arguments substituted (memoized).
+    .globl rt_concrete
+rt_concrete:
+    beqz a0, 7f
+    ld t0, TY_KIND(a0)
+    li t1, TY_VOID              # int, float, bool, str, void: nothing to substitute
+    bleu t0, t1, 7f
+    li t1, TY_PARAM
+    bne t0, t1, 1f
+    la t1, cur_frame            # a bare type parameter: the frame's argument, if it has one
+    ld t1, 0(t1)
+    beqz t1, 7f
+    ld t1, FR_TARGS(t1)
+    beqz t1, 7f
+    ld t2, TY_A(a0)
+    ld t3, VEC_N(t1)
+    bgeu t2, t3, 7f
+    ld t1, VEC_DATA(t1)
+    slli t2, t2, 3
+    add t1, t1, t2
+    ld t1, 0(t1)
+    beqz t1, 7f
+    mv a0, t1
+7:
+    ret
+1:
     addi sp, sp, -32
     sd ra, 24(sp)
     sd s0, 16(sp)
     sd s1, 8(sp)
     mv s0, a0
-    mv s1, a1
-    call ty_vec_has_params
+    call ty_has_params_memo
     beqz a0, 8f
+    la t0, cur_frame
+    ld t0, 0(t0)
+    beqz t0, 8f
+    ld s1, FR_TARGS(t0)
     beqz s1, 8f
-    ld a2, FR_TARGS(s1)
-    beqz a2, 8f
+    li a0, MEMO_CONCRETE
+    mv a1, s0
+    mv a2, s1
+    call memo_get
+    bnez a0, 9f
+    call perm_begin             # interned types are never collected (spec 003)
     mv a0, s0
     li a1, -1
-    call ty_subst_vec
+    mv a2, s1
+    call ty_subst
+    sd a0, 0(sp)
+    call perm_end
+    li a0, MEMO_CONCRETE
+    mv a1, s0
+    mv a2, s1
+    ld a3, 0(sp)
+    call memo_put
+    ld a0, 0(sp)
     j 9f
 8:
     mv a0, s0
@@ -1045,4 +1282,106 @@ rt_targs:
     ld s0, 16(sp)
     ld s1, 8(sp)
     addi sp, sp, 32
+    ret
+
+# void *rt_targs(void *bindings, void *caller_frame)
+# A generic call's type arguments, with the caller's own type parameters resolved (memoized, so
+# the same call from the same instantiation always yields the same vec).
+    .globl rt_targs
+rt_targs:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    mv s0, a0
+    mv s1, a1
+    li a0, MEMO_HASPV
+    mv a1, s0
+    li a2, 0
+    call memo_get
+    bnez a0, 1f
+    mv a0, s0
+    call ty_vec_has_params
+    addi a3, a0, 1
+    sd a3, 0(sp)
+    li a0, MEMO_HASPV
+    mv a1, s0
+    li a2, 0
+    call memo_put
+    ld a0, 0(sp)
+1:
+    li t0, 1
+    beq a0, t0, 8f              # no parameters in the bindings
+    beqz s1, 8f
+    ld s2, FR_TARGS(s1)
+    beqz s2, 8f
+    li a0, MEMO_TARGS
+    mv a1, s0
+    mv a2, s2
+    call memo_get
+    bnez a0, 9f
+    call perm_begin             # type-argument vecs outlive the call (spec 003)
+    mv a0, s0
+    li a1, -1
+    mv a2, s2
+    call ty_subst_vec
+    sd a0, 0(sp)
+    call perm_end
+    li a0, MEMO_TARGS
+    mv a1, s0
+    mv a2, s2
+    ld a3, 0(sp)
+    call memo_put
+    ld a0, 0(sp)
+    j 9f
+8:
+    mv a0, s0
+9:
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    addi sp, sp, 48
+    ret
+
+# void *rt_es_subst(void *set, void *owner, void *args)
+# es_subst for a generic call's declared effects, memoized by (set, args).
+    .globl rt_es_subst
+rt_es_subst:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+    call es_evar_count
+    beqz a0, 8f
+    li a0, MEMO_ESUBST
+    mv a1, s0
+    mv a2, s2
+    call memo_get
+    bnez a0, 9f
+    mv a0, s0
+    mv a1, s1
+    mv a2, s2
+    call es_subst
+    sd a0, 0(sp)
+    li a0, MEMO_ESUBST
+    mv a1, s0
+    mv a2, s2
+    ld a3, 0(sp)
+    call memo_put
+    ld a0, 0(sp)
+    j 9f
+8:
+    mv a0, s0
+9:
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    addi sp, sp, 48
     ret

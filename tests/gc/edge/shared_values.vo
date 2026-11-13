@@ -1,0 +1,25 @@
+# One list, stored in a record and in a map: changes through one are seen through the other,
+# across many collections.
+record Holder {
+    xs: list[int];
+}
+
+fn main() uses console {
+    let shared = new list[int];
+    let h = new Holder { xs: shared };
+    let m = new map[str, list[int]];
+    set m["shared"] = shared;
+    var junk = 0;
+    for round in 0..200 {
+        push(h.xs, round);
+        for k in 0..2000 {
+            set junk = junk + len("noise" + str(k * round));
+        }
+        push(m["shared"], round * 2);
+    }
+    var total = 0;
+    for x in m["shared"] {
+        set total = total + x;
+    }
+    print(str(len(shared)) + " " + str(total) + " " + str(h.xs == m["shared"]) + " " + str(junk));
+}

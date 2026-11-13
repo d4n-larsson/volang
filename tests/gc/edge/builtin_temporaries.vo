@@ -1,0 +1,27 @@
+# Builtins over 100,000-element lists, with callbacks that allocate: their temporaries must survive.
+record Person {
+    name: str;
+    age: int;
+}
+
+fn main() uses console {
+    let nums = new list[int];
+    for i in 0..100000 {
+        push(nums, (i * 7919) % 100003);
+    }
+    let words = map(nums, fn(n: int) -> str {
+        return "w" + str(n);
+    });
+    let long = filter(words, fn(w: str) -> bool {
+        return len(w + "!") > 6;
+    });
+    let people = map(slice(nums, 0, 20000), fn(n: int) -> Person {
+        return new Person { name: "p" + str(n % 977), age: n % 90 };
+    });
+    sort_by(people, fn(p: Person) -> str {
+        return p.name + "/" + str(p.age);
+    });
+    let text = join(long, ",");
+    let back = split(text, ",");
+    print(str(len(words)) + " " + str(len(long)) + " " + str(len(back)) + " " + back[0] + " " + people[0].name + " " + people[19999].name);
+}

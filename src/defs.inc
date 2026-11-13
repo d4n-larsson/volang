@@ -38,6 +38,44 @@
 .equ OBJ_VARIANT,5
 .equ OBJ_RAW,    6
 .equ OBJ_CLOSURE,7
+.equ OBJ_BYTES,  8          # a raw buffer that holds no pointers (never scanned)
+.equ OBJ_FREE,   15         # a reclaimed heap slot
+.equ OBJ_MARK,   0x80000000 # mark bit in the kind word, set only while collecting
+
+# ---- memory regions at fixed addresses (spec 003 data-model.md) ----
+# All below 2^38, so the map also fits Sv39 RV64 hardware (user space up to 0x3f_ffff_ffff).
+.equ ADDR_HEAP,      0x1000000000       # collected heap: 64 KiB pages, up to 64 GiB + headroom
+.equ ADDR_PTAB,      0x2100000000       # heap page table: 8 bytes per page
+.equ ADDR_MARKSTACK, 0x2200000000       # mark stack, 64 MiB reserved
+.equ MARKSTACK_SIZE, 0x4000000
+.equ ADDR_VSTACK,    0x2300000000       # interpreter value stack, 32 MiB
+.equ VSTACK_SIZE,    0x2000000
+.equ ADDR_PERM,      0x2400000000       # permanent arena, contiguous 16 MiB chunks
+.equ ADDR_STACK,     0x3000000000       # native stack, 64 MiB
+.equ STACK_SIZE,     0x4000000
+.equ MAP_FIXED_NOREPLACE, 0x100000
+.equ MAP_NORESERVE,  0x4000
+# heap pages and size classes
+.equ PAGE_SHIFT,     16
+.equ PAGE_SIZE,      65536
+.equ NCLASSES,       20
+.equ MAX_SMALL,      16384
+# page table entry: kind u8 | class u8 | noscan u8 | dirty u8 | run u32 (head: pages; tail: back to head)
+.equ PT_KIND, 0
+.equ PT_CLASS, 1
+.equ PT_NOSCAN, 2
+.equ PT_DIRTY, 3
+.equ PT_RUN, 4
+.equ PG_FREE,  0
+.equ PG_SMALL, 1
+.equ PG_LARGE, 2
+.equ PG_TAIL,  3
+# collection policy
+.equ GC_MIN_TRIGGER, 0x800000           # 8 MiB
+.equ GC_DEFAULT_LIMIT, 0x20000000       # 512 MiB of live data
+.equ GC_HEADROOM, 0x4000000             # heap reservation beyond the limit (64 MiB)
+.equ GC_RESERVE, 0x100000               # 1 MiB for the out-of-memory report itself
+.equ BUDGET_UNITS, 65536                # work units between deadline checks (rt_poll)
 # str: header(8) | len (u32 + pad, read with ld) | bytes
 .equ STR_LEN,    8
 .equ STR_DATA,   16
@@ -413,3 +451,11 @@
 .equ ST_BREAK, 1
 .equ ST_CONTINUE, 2
 .equ ST_RETURN, 3
+
+# ---- --timeout inside the runtime (spec 003 US4) ----
+# Long runtime loops spend work units of rt_budget inline (written out at each site, since the
+# linter does not expand macros):
+#     la t6, rt_budget / ld t5, 0(t6) / addi t5, t5, -N (or sub) / sd t5, 0(t6) / bgtz t5, 1000f /
+#     call rt_poll / 1000:
+# When the budget runs out, rt_poll checks the clock (R0009 past the deadline). Keep live values in
+# s registers (or saved) across it.

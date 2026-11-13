@@ -1,0 +1,22 @@
+# A test that times out (possibly in the middle of a collection), then one that allocates: the
+# heap must be usable again (spec 003 US4).
+test "huge heap" {
+    var s = "a,";
+    for i in 0..22 {
+        set s = s + s;
+    }
+    var total = 0;
+    for round in 0..50 {
+        let xs = split(s, ",");
+        set total = total + len(xs);
+    }
+    expect_eq(total, 0);
+}
+
+test "after" {
+    let xs = new list[str];
+    for i in 0..50000 {
+        push(xs, "item " + str(i));
+    }
+    expect_eq(len(xs), 50000);
+}

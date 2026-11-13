@@ -2082,11 +2082,11 @@ fn main() uses console {
 
 ## R0006 out_of_memory
 
-The program ran out of memory.
+The program holds more live data than the memory limit.
 
 Fixable: no
 
-The program reached the memory limit (512 MiB). The usual cause is a loop that keeps growing a string, list or map without bound. Limit the loop, or process data in pieces instead of keeping it all.
+Memory that can no longer be reached is reclaimed automatically, so this error means the data the program still holds passed the limit (512 MiB by default, `--max-memory` to change it). The usual cause is a loop that keeps growing a string, list or map without bound. Limit the loop, keep only the data you still need, or raise the limit. With `--json` the report adds `in_use` and `limit`, in bytes.
 
 ### Example
 

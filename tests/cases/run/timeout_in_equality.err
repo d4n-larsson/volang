@@ -1,0 +1,5 @@
+timeout_in_equality.vo:15:15: runtime error[R0009]: Time limit of 2 s exceeded.
+  15 |     print(str(xs == ys));
+     |               ^^^^^^^^
+trace:
+  at main (timeout_in_equality.vo:15:15)

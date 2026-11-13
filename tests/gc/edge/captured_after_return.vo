@@ -1,0 +1,29 @@
+# Closures returned from functions keep their captures through heavy allocation.
+record Config {
+    prefix: str;
+    scale: int;
+}
+
+fn make_formatter(prefix: str, scale: int) -> fn(int) -> str {
+    let cfg = new Config { prefix: prefix + ":", scale: scale };
+    let parts = ["a", "b", "c"];
+    return fn(x: int) -> str {
+        return cfg.prefix + str(x * cfg.scale) + join(parts, "");
+    };
+}
+
+fn main() uses console {
+    let fs = new list[fn(int) -> str];
+    for i in 0..50 {
+        push(fs, make_formatter("f" + str(i), i));
+    }
+    var junk = 0;
+    for i in 0..100000 {
+        set junk = junk + len("garbage" + str(i));
+    }
+    var out = "";
+    for f in fs {
+        set out = f(3);
+    }
+    print(fs[0](1) + " " + fs[7](2) + " " + out + " " + str(junk));
+}

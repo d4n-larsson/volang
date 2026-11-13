@@ -1,0 +1,13 @@
+# Kept alive only by a global: a runtime error's message while the test runner writes its report.
+test "fails with a message" {
+    let xs = [1, 2, 3];
+    var i = 0;
+    for k in 0..200 {
+        set i = i + len(str(k));
+    }
+    expect_eq(xs[i], 0);
+}
+
+test "after" {
+    expect_eq(len("abc"), 3);
+}

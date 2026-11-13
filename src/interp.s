@@ -2,14 +2,15 @@
 # ponytail: tree-walking evaluator, ~50-100x slower than native; upgrade: bytecode VM behind the same checker
     .include "defs.inc"
 
-    .equ VSTACK_SIZE, 0x2000000     # 32 MiB value stack for frames
     .equ JMP_SIZE, 112
 
     .section .bss
     .align 3
     .globl cur_frame
 cur_frame:      .space 8
+    .globl vsp
 vsp:            .space 8
+    .globl vbase
 vbase:          .space 8
 vstack_end:     .space 8
     .globl ret_val
@@ -17,6 +18,8 @@ ret_val:        .space 8
     .globl deadline_ms
 deadline_ms:    .space 8
 steps:          .space 8
+    .globl rt_budget
+rt_budget:      .space 8            # work units left before rt_poll checks the clock
 try_target:     .space 8            # jmp buffer of the innermost user-function call
     .globl recover_point
 recover_point:  .space 8            # set by the test runner: runtime errors jump here
@@ -58,8 +61,27 @@ s_fn_key:       .string "{\"function\":"
 s_omitted:      .string ",\"trace_omitted\":"
 s_test_prefix:  .string "test "
 s_quote:        .string "\""
+s_cmd_run:      .string "run"
 
     .text
+# void gc_start(void)
+# From here on, values live in the collected heap (spec 003).
+    .globl gc_start
+gc_start:
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd zero, 0(sp)              # no stale word above the scrubbed part either
+    la t0, steps                # deadline checks at the same steps whatever ran before (their
+    sd zero, 0(t0)              # stack writes decide which stale words stay; spec 003 FR-009)
+    call stack_scrub
+    call gc_init
+    la t0, gc_on
+    li t1, 1
+    sd t1, 0(t0)
+    ld ra, 8(sp)
+    addi sp, sp, 16
+    ret
+
 # void interp_init(void)
     .globl interp_init
 interp_init:
@@ -68,8 +90,10 @@ interp_init:
     la t0, vsp
     ld t1, 0(t0)
     bnez t1, 1f
-    li a0, VSTACK_SIZE
-    call alloc
+    li a0, ADDR_VSTACK          # its own fixed region, outside the permanent arena (spec 003)
+    li a1, VSTACK_SIZE
+    li a2, 0
+    call map_fixed
     la t0, vsp
     sd a0, 0(t0)
     la t0, vbase
@@ -84,6 +108,78 @@ interp_init:
     sd t1, 0(t0)
     ld ra, 8(sp)
     addi sp, sp, 16
+    ret
+
+    .section .rodata
+m_oom_live:     .string "The program holds $1 of live data, over the $2 limit."
+s_in_use_key:   .string ",\"in_use\":"
+s_limit_key:    .string ",\"limit\":"
+    .text
+# void rt_oom_live(long in_use)
+# Live data passes the --max-memory limit (spec 003 US3): R0006 with in_use and limit. The report
+# itself allocates from the permanent arena (the collector is switched off for it).
+    .globl rt_oom_live
+rt_oom_live:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    mv s0, a0
+    la t0, gc_on
+    sd zero, 0(t0)
+    call sample_peak
+    la t0, oom_hook             # if even the arena runs out, the plain handler
+    la t1, oom_default
+    sd t1, 0(t0)
+    call sb_new
+    mv s1, a0
+    mv a1, s0
+    call size_into_up
+    call sb_new
+    mv s2, a0
+    la t0, gc_limit
+    ld a1, 0(t0)
+    call size_into
+    mv a0, s1
+    call sb_finish
+    mv s1, a0
+    mv a0, s2
+    call sb_finish
+    mv a2, a0
+    la a0, m_oom_live
+    mv a1, s1
+    li a3, 0
+    call msg
+    mv s1, a0
+    call sb_new
+    mv s2, a0
+    la a1, s_in_use_key
+    call sb_cstr
+    mv a0, s2
+    mv a1, s0
+    call int_to_dec
+    mv a0, s2
+    la a1, s_limit_key
+    call sb_cstr
+    la t0, gc_limit
+    ld a1, 0(t0)
+    mv a0, s2
+    call int_to_dec
+    mv a0, s2
+    call sb_finish
+    la t0, rt_err_extra
+    sd a0, 0(t0)
+    la a0, r0006
+    mv a1, s1
+    la t0, cur_node
+    ld a2, 0(t0)
+    call rt_raise
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    addi sp, sp, 48
     ret
 
 # void rt_oom(void)
@@ -398,6 +494,12 @@ rt_raise:
     bne t1, t2, 9f
     li a0, EXIT_TIMEOUT
 9:
+    sd a0, 0(sp)
+    li a0, 2                    # --mem-stats: the run ends here
+    la a1, s_cmd_run
+    li a2, 0
+    call gc_report
+    ld a0, 0(sp)
     call vo_exit
     ld ra, 72(sp)
     ld s0, 64(sp)
@@ -536,6 +638,37 @@ tick:
 9:
     ret
 
+# void rt_poll(void)
+# The POLL budget ran out: refills it and stops with R0009 when the deadline has passed. The
+# collector may be in the middle of a pass, so the report allocates from the permanent arena
+# (the heap is rebuilt by the next gc_start).
+    .globl rt_poll
+rt_poll:
+    la t0, rt_budget
+    li t1, BUDGET_UNITS
+    sd t1, 0(t0)
+    la t0, deadline_ms
+    ld t0, 0(t0)
+    bnez t0, 1f
+    ret
+1:
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    call sys_clock_ms
+    la t0, deadline_ms
+    ld t0, 0(t0)
+    blt a0, t0, 9f
+    la t0, cur_node
+    ld a0, 0(t0)
+    beqz a0, 9f                 # no location yet: the next tick reports it
+    la t0, gc_on
+    sd zero, 0(t0)
+    call rt_timeout
+9:
+    ld ra, 8(sp)
+    addi sp, sp, 16
+    ret
+
 # void rt_timeout(void *node)
     .globl rt_timeout
 rt_timeout:
@@ -543,6 +676,8 @@ rt_timeout:
     sd ra, 8(sp)
     sd s0, 0(sp)
     mv s0, a0
+    la t0, deadline_ms          # one report: the polls inside it must not raise again
+    sd zero, 0(t0)
     la t0, opt_timeout
     ld a0, 0(t0)
     call int_to_str
@@ -694,7 +829,7 @@ call_fn:
     ld a0, FR_EFFECTS(s3)
     beqz a0, 69f
     mv a1, s0
-    call es_subst
+    call rt_es_subst
     sd a0, FR_EFFECTS(s3)
 69:
     beqz s8, 67f                # a closure: its type arguments and captured values
@@ -902,6 +1037,8 @@ eval_binary:
     call str_concat
     j 99f
 31:
+    la t0, cur_node            # a long comparison can time out (R0009 points here)
+    sd s0, 0(t0)
     mv a0, s1
     mv a1, s2
     ld t0, N_A(s0)
@@ -909,6 +1046,8 @@ eval_binary:
     call values_equal
     j 99f
 32:
+    la t0, cur_node            # a long comparison can time out (R0009 points here)
+    sd s0, 0(t0)
     mv a0, s1
     mv a1, s2
     ld t0, N_A(s0)
@@ -1096,6 +1235,10 @@ eval_expr:
 5:
     ld a0, N_A(s0)
     call eval_expr
+.ifdef GC_STRESS_BUILD
+    li a1, OBJ_RECORD
+    call gc_check               # stress build: a live record (spec 003 FR-011)
+.endif
     ld t0, N_C(s0)
     slli t0, t0, 3
     add a0, a0, t0
@@ -1312,7 +1455,15 @@ values_equal:
     sd s4, 16(sp)
     mv s0, a0
     mv s1, a1
-    mv a0, a2                   # type parameters: the running frame's type arguments
+    mv s2, a2
+    la t6, rt_budget          # POLL 1: --timeout budget
+    ld t5, 0(t6)
+    addi t5, t5, -1
+    sd t5, 0(t6)
+    bgtz t5, 1000f
+    call rt_poll
+1000:
+    mv a0, s2                   # type parameters: the running frame's type arguments
     call rt_concrete
     mv s2, a0
     mv a0, s0                   # the values as they arrived (str_eq below takes them)
@@ -1759,6 +1910,7 @@ run_main:
     sd s1, 8(sp)
     mv s0, a0
     call interp_init
+    call gc_start
     la t0, opt_timeout
     ld t0, 0(t0)
     beqz t0, 1f
@@ -1901,11 +2053,14 @@ fn_closure:
     ld s1, N_B(t0)              # FX
     ld a0, FX_CLOSURE(s1)
     bnez a0, 9f
+    call perm_begin             # cached in the function's node: must outlive every test
     li a0, OBJ_CLOSURE
     li a1, CL_CAPS - 8
     call alloc_obj
     sd s0, CL_FN(a0)
     sd a0, FX_CLOSURE(s1)
+    call perm_end
+    ld a0, FX_CLOSURE(s1)
 9:
     ld ra, 24(sp)
     ld s0, 16(sp)
@@ -1928,6 +2083,11 @@ eval_call_value:
     ld a0, N_A(s0)
     call eval_expr
     mv s1, a0                   # the closure
+.ifdef GC_STRESS_BUILD
+    mv a0, s1
+    li a1, OBJ_CLOSURE
+    call gc_check              # stress build: a live OBJ_CLOSURE (spec 003 FR-011)
+.endif
     ld t0, N_B(s0)
     ld s2, VEC_N(t0)
     la t0, vsp

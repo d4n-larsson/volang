@@ -1,0 +1,19 @@
+# SC-001: insert 250,000 keys and remove all but the last 1,000, each value a 500-element list.
+fn main() uses console {
+    let base = new list[int];
+    for k in 0..500 {
+        push(base, k);
+    }
+    let m = new map[str, list[int]];
+    for i in 0..250000 {
+        set m["k" + str(i)] = slice(base, i % 3, 497 + i % 3);
+        if i >= 1000 {
+            remove(m, "k" + str(i - 1000));
+        }
+    }
+    var total = 0;
+    for k in keys(m) {
+        set total = total + m[k][0] + len(m[k]);
+    }
+    print(str(len(m)) + " " + str(total));
+}

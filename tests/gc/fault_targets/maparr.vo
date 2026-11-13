@@ -1,0 +1,12 @@
+# Kept alive only as map keys and values.
+fn main() uses console {
+    let m = new map[str, str];
+    for i in 0..200 {
+        set m["k" + str(i)] = "v" + str(i * 3);
+    }
+    var n = 0;
+    for i in 0..3000 {
+        set n = n + len("noise" + str(i));
+    }
+    print(m["k0"] + " " + m["k199"] + " " + str(len(keys(m))) + " " + str(n));
+}

@@ -1,0 +1,1 @@
+{"v":1,"kind":"runtime_error","code":"R0006","name":"out_of_memory","message":"The program holds 16.1 MiB of live data, over the 16 MiB limit.","file":"grow_forever.vo","start":{"line":10,"col":20},"end":{"line":10,"col":34},"in_use":16777792,"limit":16777216,"trace":[{"function":"main","file":"grow_forever.vo","start":{"line":10,"col":20}}]}

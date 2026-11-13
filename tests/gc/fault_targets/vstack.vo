@@ -1,0 +1,14 @@
+# Kept alive only by a local slot (the value stack) while much is allocated.
+fn churn() -> int {
+    var n = 0;
+    for i in 0..3000 {
+        set n = n + len("noise " + str(i));
+    }
+    return n;
+}
+
+fn main() uses console {
+    let keep = ["alpha", "beta", "gamma"];
+    let n = churn();
+    print(join(keep, ",") + " " + str(n));
+}

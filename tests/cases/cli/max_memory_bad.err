@@ -1,0 +1,1 @@
+error[T0001]: `--max-memory` needs a whole number of MiB from 1 to 65536.

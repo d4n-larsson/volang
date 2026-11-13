@@ -1,6 +1,6 @@
 # vo
 
-vo is a small, statically typed programming language designed for AI coding agents, and for the people who review what those agents write. The whole toolchain is written in RISC-V assembly (RV64): lexer, parser, type checker, formatter, test runner and interpreter, about 31,000 lines with no libc and no dependencies.
+vo is a small, statically typed programming language designed for AI coding agents, and for the people who review what those agents write. The whole toolchain is written in RISC-V assembly (RV64): lexer, parser, type checker, formatter, test runner and interpreter, about 33,000 lines with no libc and no dependencies.
 
 ```vo
 record Person {
@@ -38,6 +38,7 @@ Mainstream languages were designed for people at keyboards. Agents work differen
 - **Effects are part of every function's type.** A function says what it may touch (`uses console, file.read("data/"), env("HOME")`), with directory and name scopes. A function without `uses` is pure. The checker demands that a function declares everything it and its callees do, and reports exactly what is missing. At run time, paths are resolved (`..`, absolute paths, symbolic links) and checked against the running function's declaration.
 - **Reviewable capability changes.** `vo.effects`, next to the code, records the effects of every function. When an edit makes a function do more, such as writing files, `vo check` fails (E0504) with the call path that introduced it. `vo effects --update` rewrites the record, and its diff shows a reviewer exactly what new capabilities the change grants, without reading every line.
 - **Deterministic by default.** The same program and input produce the same bytes. The clock and randomness are effects, fixed with `--clock-ms` and `--seed` (and fixed by default in tests).
+- **Memory and time are bounded and reported.** Unreachable values are reclaimed by a deterministic collector, so collection never changes output. Running out of memory means live data over a limit you set (`--max-memory`, R0006), `--mem-stats` reports usage, and `--timeout` stops even a single long builtin call.
 - **The whole language fits in a prompt.** `vo reference` prints the complete reference, about 8,000 tokens with a runnable example in every section. That is all an agent needs to know.
 
 The language also has records, variants with exhaustive `match`, `result[T]` with `try`, lists and maps, built-in tests, multi-file programs, functions as values and closures, and user-defined generics: inferred type arguments, `T: ordered`, and effect parameters for higher-order functions.
@@ -105,4 +106,4 @@ vo 0.1.0, schema 1. Built through two specs:
 - **001 (core language and toolchain):** complete.
 - **002 (effects, functions as values, generics, benchmark v2):** implemented and passing every quality gate; the benchmark v2 run is still to be completed.
 
-What comes next is in [`docs/roadmap.md`](docs/roadmap.md). Not yet: a garbage collector (an arena allocator with a 512 MiB cap), a standard library beyond the builtins (the `net` effect exists, but there are no network operations yet), packages, and concurrency.
+What comes next is in [`docs/roadmap.md`](docs/roadmap.md). Not yet: a standard library beyond the builtins (the `net` effect exists, but there are no network operations yet), packages, and concurrency.

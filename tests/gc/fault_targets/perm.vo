@@ -1,0 +1,13 @@
+# A named function used as a value: its closure is cached in the permanent arena.
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    let f = double;
+    var n = 0;
+    for i in 0..3000 {
+        set n = n + len("noise" + str(i));
+    }
+    print(str(f(21)) + " " + str(n));
+}

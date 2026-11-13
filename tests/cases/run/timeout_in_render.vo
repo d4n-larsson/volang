@@ -1,0 +1,16 @@
+# --timeout stops rendering huge values for a failed expect_eq (spec 003 US4).
+test "huge values" {
+    var s = "alpha,beta,gamma,delta,";
+    for i in 0..15 {
+        set s = s + s;
+    }
+    let a = split(s, ",");
+    let xs = new list[list[str]];
+    let ys = new list[list[str]];
+    for i in 0..1000 {
+        push(xs, a);
+        push(ys, a);
+    }
+    push(ys, ["different"]);
+    expect_eq(xs, ys);
+}

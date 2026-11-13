@@ -1,0 +1,11 @@
+PASS small (0ms)
+PASS lists (0ms)
+PASS strings (0ms)
+FAIL maps fail (0ms)
+  test_order.vo:32:5: `expect_eq` failed: the values differ.
+    expected: 4999
+    actual:   5000
+PASS closures (0ms)
+ERROR runtime error (0ms)
+  test_order.vo:51:15: runtime error[R0003]: Index 288890 is out of bounds for length 3.
+4 passed, 1 failed, 1 errored

@@ -1,0 +1,38 @@
+# A 200,000-deep chain of variants: marking it must not recurse on the native stack.
+variant Chain {
+    end;
+    link(Cell);
+}
+
+record Cell {
+    value: int;
+    next: Chain;
+}
+
+fn main() uses console {
+    var chain = Chain.end;
+    for i in 0..200000 {
+        set chain = Chain.link(new Cell { value: i, next: chain });
+    }
+    var junk = 0;
+    for i in 0..300000 {
+        set junk = junk + len("garbage " + str(i));
+    }
+    var total = 0;
+    var n = 0;
+    var cur = chain;
+    var going = true;
+    while going {
+        match cur {
+            case end {
+                set going = false;
+            }
+            case link(c) {
+                set total = total + c.value;
+                set n = n + 1;
+                set cur = c.next;
+            }
+        }
+    }
+    print(str(n) + " " + str(total) + " " + str(junk));
+}

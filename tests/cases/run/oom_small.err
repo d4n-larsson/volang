@@ -1,5 +1,0 @@
-oom_small.vo:4:27: runtime error[R0006]: Out of memory: the 512 MiB limit is reached.
-   4 |         let s = "line " + str(i);
-     |                           ^^^^^^
-trace:
-  at main (oom_small.vo:4:27)

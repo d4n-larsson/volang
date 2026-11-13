@@ -1276,9 +1276,35 @@ es_evar_count:
     ret
 
 # void *es_subst(void *set, void *owner, void *args)
-# The set with owner's effect parameters replaced by the effect sets bound in args.
+# The set with owner's effect parameters replaced by the effect sets bound in args. Its results
+# are permanent: they are kept in frames and closures across collections and tests (spec 003).
     .globl es_subst
 es_subst:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    sd s2, 0(sp)
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+    call perm_begin
+    mv a0, s0
+    mv a1, s1
+    mv a2, s2
+    call es_subst_raw
+    mv s0, a0
+    call perm_end
+    mv a0, s0
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    ld s2, 0(sp)
+    addi sp, sp, 32
+    ret
+
+# void *es_subst_raw(void *set, void *owner, void *args)
+es_subst_raw:
     addi sp, sp, -64
     sd ra, 56(sp)
     sd s0, 48(sp)

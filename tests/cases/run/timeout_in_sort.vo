@@ -1,0 +1,10 @@
+# --timeout stops a long sort inside the builtin (spec 003 US4).
+fn main() uses console {
+    var s = "k9,k3,k7,k1,k5,k8,k2,k6,";
+    for i in 0..20 {
+        set s = s + s;
+    }
+    let xs = split(s, ",");
+    sort(xs);
+    print(xs[0]);
+}

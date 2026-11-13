@@ -1,0 +1,9 @@
+# SC-001: a 200,000-character string built by appending 10-character pieces (about 2 GB copied).
+fn main() uses console {
+    var s = "";
+    for i in 0..20000 {
+        set s = s + ("piece" + str(10000 + i % 90000));
+    }
+    let parts = split(s, "piece");
+    print(str(len(s)) + " " + str(len(parts)) + " " + parts[1] + " " + parts[20000]);
+}

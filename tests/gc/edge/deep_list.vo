@@ -1,0 +1,17 @@
+# A 500,000-element list of records survives many collections intact.
+record Item {
+    id: int;
+    name: str;
+}
+
+fn main() uses console {
+    let items = new list[Item];
+    for i in 0..500000 {
+        push(items, new Item { id: i, name: "item" + str(i % 1000) });
+    }
+    var total = 0;
+    for it in items {
+        set total = total + it.id + len(it.name);
+    }
+    print(str(len(items)) + " " + str(total) + " " + items[499999].name);
+}

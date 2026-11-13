@@ -8,7 +8,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 |---|---|---|
 | [001](../specs/001-vo-lang-core/) | Core language and toolchain: check, run, test, fmt, explain, reference; JSON diagnostics with fixes; deterministic runs; multi-file programs | **Done.** All criteria met except "vo beats Python" on benchmark v1, which tied at the ceiling |
 | [002](../specs/002-effects-functions-generics/) | Checked effects with scopes and a reviewable effects record; functions as values; user-defined generics; benchmark v2 | **Implemented, every gate passing.** The benchmark v2 run is not complete ([results](../specs/002-effects-functions-generics/results.md)) |
-| 003 | Garbage collector and memory model | Next |
+| [003](../specs/003-garbage-collector/) | Garbage collector and memory model; `--timeout` inside builtins; memoized generic resolution | **Done** ([results](../specs/003-garbage-collector/results.md)) |
 | 004 | Typed holes, property tests and contracts | Planned |
 | 005 | Query API, structural editing, trace and replay | Planned |
 | 006 | Standard library and content-pinned packages | Planned |
@@ -25,16 +25,17 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 
 ## Next specs
 
-### 003: garbage collector and memory model
+### 003: garbage collector and memory model (done)
 
-Today memory is a bump arena that is never freed, with a 512 MiB cap (R0006). Building a string with `+` in a loop runs out after tens of thousands of characters, and long-running programs cannot exist at all.
+Memory used to be a bump arena that was never freed. Now:
 
-- A collector (copying, using the object headers that already carry size and kind) with no change to the language. The run-time stack and frames are the roots.
-- Predictable behavior: deterministic collection points, so output and timing-free behavior stay byte-identical.
-- Also: run-time deadline checks inside long runtime operations (`--timeout` is checked only in vo loops today), and specializing hot generic operations (the per-call type substitution is marked `ponytail:`).
-- **Success:** the string-building trap and large workloads run in bounded memory, with no regression in the 1 s budget for 1,000-line programs.
-
-There are no language changes, so this can run alongside other work.
+- **The collector:** non-moving mark-sweep with conservative roots, over 64 KiB pages at fixed addresses. Collection points depend only on how much is allocated, so output, errors and memory reports are byte-identical from run to run. The language did not change.
+- **Out of memory (R0006)** now means live data over a limit: 512 MiB by default, set with `--max-memory`. `--mem-stats` reports usage.
+- **Also:** `--timeout` now stops long work inside builtins and the collector, and generic code no longer re-resolves its types on every call.
+- **Not done:**
+  - a moving or generational collector;
+  - precise roots;
+  - a remembered set for the permanent arena, which is still scanned at every collection.
 
 ### 004: typed holes, property tests and contracts
 

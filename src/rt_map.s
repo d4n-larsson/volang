@@ -178,7 +178,8 @@ map_index_insert:
     ret
 
 # void map_grow(void *map, void *key_type)
-# Rebuilds with twice the capacity, dropping removed entries (keeps insertion order).
+# Rebuilds with room for twice the live entries, dropping removed ones (keeps insertion order). The
+# capacity follows the live count, so a small map with heavy churn stays small (spec 003).
     .globl map_grow
 map_grow:
     addi sp, sp, -64
@@ -192,10 +193,9 @@ map_grow:
     ld s1, M_ENTRIES(s0)        # old entries
     ld s2, M_USED(s0)
     ld t0, M_COUNT(s0)
-    ld a1, M_CAP(s0)
-    slli t1, t0, 1              # new capacity: double until it holds twice the live count; it must
-    slli a1, a1, 1              # stay a power of two (probing masks with cap*2-1)
-1:
+    li a1, 8
+    slli t1, t0, 1              # new capacity: the smallest power of two (probing masks with
+1:                              # cap*2-1), at least 8, that holds twice the live count
     bge a1, t1, 2f
     slli a1, a1, 1
     j 1b
@@ -204,6 +204,13 @@ map_grow:
     call map_alloc
     li s3, 0
 3:
+    la t6, rt_budget          # POLL 1: --timeout budget
+    ld t5, 0(t6)
+    addi t5, t5, -1
+    sd t5, 0(t6)
+    bgtz t5, 1000f
+    call rt_poll
+1000:
     bge s3, s2, 9f
     li t0, ME_SIZE
     mul t0, t0, s3
@@ -257,6 +264,13 @@ map_set:
     mv s1, a1
     mv s2, a2
     mv s3, a3
+.ifdef GC_STRESS_BUILD
+    mv a0, s0
+    li a1, OBJ_MAP
+    call gc_check              # stress build: a live OBJ_MAP (spec 003 FR-011)
+.endif
+    mv a0, s0
+    mv a1, s1
     mv a2, s3
     call map_find
     bltz a0, 1f
@@ -326,6 +340,8 @@ map_remove:
     mul t1, t1, s1
     add t0, t0, t1
     sw zero, ME_LIVE(t0)
+    sd zero, ME_KEY(t0)         # let the collector reclaim them
+    sd zero, ME_VAL(t0)
     ld t2, M_COUNT(s0)
     addi t2, t2, -1
     sd t2, M_COUNT(s0)

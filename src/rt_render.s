@@ -81,7 +81,15 @@ render_value:
     sd s4, 16(sp)
     mv s0, a0
     mv s1, a1
-    mv a0, a2                   # type parameters: the running frame's type arguments
+    mv s2, a2
+    la t6, rt_budget          # POLL 1: --timeout budget
+    ld t5, 0(t6)
+    addi t5, t5, -1
+    sd t5, 0(t6)
+    bgtz t5, 1000f
+    call rt_poll
+1000:
+    mv a0, s2                   # type parameters: the running frame's type arguments
     call rt_concrete
     mv s2, a0
     mv a0, s0                   # the arguments as they arrived (the cases below use them)

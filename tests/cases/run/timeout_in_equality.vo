@@ -1,0 +1,16 @@
+# --timeout stops a long == inside the runtime (spec 003 US4).
+fn main() uses console {
+    var s = "alpha,beta,gamma,delta,";
+    for i in 0..15 {
+        set s = s + s;
+    }
+    let a = split(s, ",");
+    let b = split(s, ",");
+    let xs = new list[list[str]];
+    let ys = new list[list[str]];
+    for i in 0..1000 {
+        push(xs, a);
+        push(ys, b);
+    }
+    print(str(xs == ys));
+}

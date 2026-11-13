@@ -1,0 +1,12 @@
+# Kept alive only as list elements.
+fn main() uses console {
+    let xs = new list[str];
+    for i in 0..200 {
+        push(xs, "item" + str(i));
+    }
+    var n = 0;
+    for i in 0..3000 {
+        set n = n + len("noise" + str(i));
+    }
+    print(xs[0] + " " + xs[199] + " " + str(n));
+}

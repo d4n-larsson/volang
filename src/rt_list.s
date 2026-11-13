@@ -39,6 +39,11 @@ list_push:
     sd s2, 0(sp)
     mv s0, a0
     mv s1, a1
+.ifdef GC_STRESS_BUILD
+    mv a0, s0
+    li a1, OBJ_LIST
+    call gc_check              # stress build: a live OBJ_LIST (spec 003 FR-011)
+.endif
     ld t0, L_LEN(s0)
     ld t1, L_CAP(s0)
     blt t0, t1, 1f
@@ -257,6 +262,17 @@ list_sort:
     mv t4, s5                   # j
     mv s8, s4                   # k
 3:
+    sd t3, 8(sp)
+    sd t4, 16(sp)
+    la t6, rt_budget          # POLL 1: --timeout budget
+    ld t5, 0(t6)
+    addi t5, t5, -1
+    sd t5, 0(t6)
+    bgtz t5, 1000f
+    call rt_poll
+1000:
+    ld t3, 8(sp)
+    ld t4, 16(sp)
     bge s8, s6, 6f
     bge t3, s5, 5f              # left exhausted: take right
     bge t4, s6, 4f              # right exhausted: take left

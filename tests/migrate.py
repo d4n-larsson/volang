@@ -22,6 +22,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 CORPUS = os.path.join(ROOT, "tests", "migrate", "v1")
 MIGRATION = {"E0501", "W0504"}
+# Intended behavior changes since v1, with the spec that made them: (stdout, exit status) expected now.
+CHANGED = {
+    "run-oom_small/oom_small.vo": (b"58888890\n", 0),  # spec 003: memory is reclaimed, so it finishes
+}
 
 
 def vo(args, cwd, stdin=b""):
@@ -121,6 +125,7 @@ def verify():
             r = vo([mode, os.path.basename(entry)], os.path.dirname(entry), stdin)
             want_out = open(base + ".v1out", "rb").read()
             want_code = int(open(base + ".v1code").read())
+            want_out, want_code = CHANGED.get(rel, (want_out, want_code))
             if norm(r.stdout) != want_out or r.returncode != want_code:
                 problems.append(f"{rel}: behavior changed (exit {r.returncode}, expected {want_code})")
     for p in problems:

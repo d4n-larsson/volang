@@ -1,0 +1,5 @@
+tiny_limit.vo:5:9: runtime error[R0006]: The program holds 1.1 MiB of live data, over the 1 MiB limit.
+   5 |         push(xs, "item " + str(i));
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at main (tiny_limit.vo:5:9)

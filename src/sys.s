@@ -7,7 +7,8 @@
 oom_hook:   .dword oom_default
     .globl stack_floor
 stack_floor: .dword 0
-arena_ptr:  .dword 0
+    .globl arena_ptr
+arena_ptr:  .dword 0            # the permanent arena's bump pointer (scanned up to here as a root)
 arena_end:  .dword 0
 arena_total: .dword 0
     .globl arena_cap
@@ -24,28 +25,24 @@ out_len2:   .space 8
 oom_msg:    .string "error[T0003]: internal error: out of memory\n"
 
     .text
-# void _start(void)
+# void _start(void) sesi: allow clobbers_callee_saved
+# The process entry has no caller whose s registers it could clobber.
     .globl _start
 _start:
-    ld t0, 0(sp)                # argc
-    addi t1, sp, 8              # argv
-    li a0, 0
-    li a1, 0x4000000            # 64 MiB private stack (research §9)
-    li a2, 3                    # PROT_READ | PROT_WRITE
-    li a3, 0x22                 # MAP_PRIVATE | MAP_ANONYMOUS
-    li a4, -1
-    li a5, 0
-    li a7, SYS_mmap
-    ecall
-    li t2, -4096
-    bgeu a0, t2, 1f             # mmap failed: keep the kernel stack, no floor check
+    ld s0, 0(sp)                # argc
+    addi s1, sp, 8              # argv
+    li a0, ADDR_STACK           # 64 MiB private stack at a fixed address (spec 003 research §3)
+    li a1, STACK_SIZE
+    li a2, 0
+    call map_fixed
     la t2, stack_floor
     li t3, 0x100000
     add t3, a0, t3
     sd t3, 0(t2)
-    li t3, 0x4000000
+    li t3, STACK_SIZE
     add sp, a0, t3
-1:
+    mv t0, s0
+    mv t1, s1
     addi t2, t0, 1              # envp follows argv's NULL
     slli t2, t2, 3
     add t2, t1, t2
@@ -340,7 +337,7 @@ read_whole_file:
     ld t0, 48(sp)               # st_size (written by the kernel)
     mv s2, t0
     addi a0, s2, 1
-    call alloc
+    call alloc_bytes
     mv s3, a0
     li t0, 0
     sd t0, 128(sp)              # bytes read so far
@@ -377,10 +374,118 @@ read_whole_file:
     addi sp, sp, 176
     ret
 
+    .section .rodata
+map_fail_msg: .string "error[T0003]: cannot map memory at 0x"
+    .text
+# void *map_fixed(long addr, long size, long flags)
+# Maps zeroed read-write memory at exactly addr (flags: extra MAP_* bits), or stops with T0003.
+    .globl map_fixed
+map_fixed:
+    mv t0, a0
+    li t1, MAP_FIXED_NOREPLACE | 0x22       # | MAP_PRIVATE | MAP_ANONYMOUS
+    or a3, a2, t1
+    li a2, 3                                # PROT_READ | PROT_WRITE
+    li a4, -1
+    li a5, 0
+    li a7, SYS_mmap
+    ecall
+    bne a0, t0, 1f
+    ret
+1:
+    addi sp, sp, -48
+    sd t0, 32(sp)
+    li a0, 2
+    la a1, map_fail_msg
+    call out_cstr
+    ld t0, 32(sp)
+    li t1, 60                               # 16 hex digits, most significant first
+    la t3, hexdigits
+2:
+    srl t2, t0, t1
+    andi t2, t2, 15
+    add t2, t3, t2
+    lbu t2, 0(t2)
+    srli t4, t1, 2
+    sub t4, zero, t4
+    addi t4, t4, 15
+    add t4, sp, t4
+    sb t2, 0(t4)
+    addi t1, t1, -4
+    bgez t1, 2b
+    li t2, 10
+    sb t2, 16(sp)
+    li a0, 2
+    mv a1, sp
+    li a2, 17
+    call out_bytes
+    li a0, EXIT_INTERNAL
+    call vo_exit
+3:
+    j 3b
+    .section .rodata
+hexdigits: .string "0123456789abcdef"
+    .text
+
 # void *alloc(long size)
-# ponytail: bump arena, never frees; long allocation-heavy runs hit the 512 MiB cap (R0006); upgrade: copying GC using the size:u32 object headers
+# Plain memory: the permanent arena before a program runs and inside perm brackets, otherwise
+# a collected OBJ_RAW buffer (spec 003).
     .globl alloc
 alloc:
+    la t0, gc_on
+    ld t0, 0(t0)
+    beqz t0, perm_alloc
+    la t0, gc_perm
+    ld t0, 0(t0)
+    bnez t0, perm_alloc
+    li t0, OBJ_RAW
+    j gc_raw
+
+# void *alloc_bytes(long size)
+# Like alloc, for bytes that never hold pointers (never scanned by the collector).
+    .globl alloc_bytes
+alloc_bytes:
+    la t0, gc_on
+    ld t0, 0(t0)
+    beqz t0, perm_alloc
+    la t0, gc_perm
+    ld t0, 0(t0)
+    bnez t0, perm_alloc
+    li t0, OBJ_BYTES
+gc_raw:
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd zero, 0(sp)                  # no stale word in the frame (it is scanned as a root)
+    addi a0, a0, 8                  # room for the collector's header
+    mv a1, t0
+    call gc_alloc
+    addi a0, a0, 8
+    ld ra, 8(sp)
+    addi sp, sp, 16
+    ret
+
+# void perm_begin(void)
+# Until the matching perm_end, allocations go to the permanent arena (interned types, caches).
+    .globl perm_begin
+perm_begin:
+    la t0, gc_perm
+    ld t1, 0(t0)
+    addi t1, t1, 1
+    sd t1, 0(t0)
+    ret
+
+# void perm_end(void)
+    .globl perm_end
+perm_end:
+    la t0, gc_perm
+    ld t1, 0(t0)
+    addi t1, t1, -1
+    sd t1, 0(t0)
+    ret
+
+# void *perm_alloc(long size)
+# The permanent arena: a bump allocator over contiguous 16 MiB chunks from ADDR_PERM, never freed.
+    .globl perm_alloc
+perm_alloc:
     addi a0, a0, 7
     andi a0, a0, -8
     la t0, arena_ptr
@@ -399,35 +504,46 @@ alloc:
     sd s0, 16(sp)
     sd s1, 8(sp)
     mv s0, a0                   # size
-    li s1, 0x1000000            # 16 MiB chunk
-    bleu s0, s1, 2f
-    mv s1, s0
+    la t0, arena_ptr
+    ld t1, 0(t0)
+    bnez t1, 2f
+    li t1, ADDR_PERM            # first use: the arena starts (empty) at its fixed address
+    sd t1, 0(t0)
+    la t0, arena_end
+    sd t1, 0(t0)
 2:
+    la t0, arena_ptr            # grow the mapping right after its end, by whole 16 MiB chunks
+    ld t1, 0(t0)
+    add t1, t1, s0
+    la t0, arena_end
+    ld t2, 0(t0)
+    sub s1, t1, t2
+    li t3, 0xFFFFFF
+    add s1, s1, t3
+    li t3, -0x1000000
+    and s1, s1, t3
     la t0, arena_total
     ld t1, 0(t0)
     add t1, t1, s1
     la t2, arena_cap
     ld t2, 0(t2)
     bgtu t1, t2, 8f
-    li a0, 0
+    la t0, arena_end
+    ld a0, 0(t0)
     mv a1, s1
-    li a2, 3
-    li a3, 0x22
-    li a4, -1
-    li a5, 0
-    li a7, SYS_mmap
-    ecall
-    li t2, -4096
-    bgeu a0, t2, 8f
+    li a2, 0
+    call map_fixed
     la t0, arena_total
     ld t1, 0(t0)
     add t1, t1, s1
     sd t1, 0(t0)
-    add t1, a0, s0
-    la t0, arena_ptr
-    sd t1, 0(t0)
-    add t1, a0, s1
     la t0, arena_end
+    ld t1, 0(t0)
+    add t1, t1, s1
+    sd t1, 0(t0)
+    la t0, arena_ptr
+    ld a0, 0(t0)
+    add t1, a0, s0
     sd t1, 0(t0)
     j 9f
 8:
@@ -446,6 +562,23 @@ alloc:
 # size is the payload size; the result points at the 8-byte header.
     .globl alloc_obj
 alloc_obj:
+    la t0, gc_on
+    ld t0, 0(t0)
+    beqz t0, 1f
+    la t0, gc_perm
+    ld t0, 0(t0)
+    bnez t0, 1f
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd zero, 0(sp)              # no stale word in the frame (it is scanned as a root)
+    mv t0, a0
+    addi a0, a1, 8
+    mv a1, t0
+    call gc_alloc               # writes the header
+    ld ra, 8(sp)
+    addi sp, sp, 16
+    ret
+1:
     addi sp, sp, -32
     sd ra, 24(sp)
     sd s0, 16(sp)
@@ -453,7 +586,7 @@ alloc_obj:
     mv s0, a0
     addi s1, a1, 8
     mv a0, s1
-    call alloc
+    call perm_alloc
     sw s1, 0(a0)
     sw s0, 4(a0)
     ld ra, 24(sp)

@@ -1,0 +1,12 @@
+# --timeout stops a long substring search inside the builtin (spec 003 US4).
+fn main() uses console {
+    var hay = "aaaaaaaaaaaaaaaa";
+    for i in 0..18 {
+        set hay = hay + hay;
+    }
+    var needle = "aaaaaaaaaaaaaaaa";
+    for i in 0..7 {
+        set needle = needle + needle;
+    }
+    print(str(find(hay, needle + "b")));
+}

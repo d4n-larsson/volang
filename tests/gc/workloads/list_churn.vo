@@ -1,0 +1,19 @@
+# SC-001: build a 10-element list, fold it, and copy a 1,000-element window, then drop both.
+fn main() uses console {
+    let base = new list[int];
+    for k in 0..1000 {
+        push(base, k * 3);
+    }
+    var total = 0;
+    for i in 0..140000 {
+        let xs = new list[int];
+        for k in 0..10 {
+            push(xs, k + i % 7);
+        }
+        let window = slice(base, i % 10, 990 + i % 10);
+        set total = total + fold(xs, 0, fn(a: int, x: int) -> int {
+            return a + x;
+        }) + window[0] + len(window);
+    }
+    print(str(total));
+}

@@ -1,0 +1,5 @@
+timeout_in_find.vo:11:15: runtime error[R0009]: Time limit of 2 s exceeded.
+  11 |     print(str(find(hay, needle + "b")));
+     |               ^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at main (timeout_in_find.vo:11:15)

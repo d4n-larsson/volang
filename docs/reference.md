@@ -31,7 +31,7 @@ hello vo, count = 3
 - `_` alone is the discard name. It is allowed only as `let _ = ...;` and as a `case` binding such as `case err(_)`. It is not allowed as a `for` variable or a parameter.
 - **Integers**: `0`, `42`, `1000000`. No `_` separators, hex, octal or suffixes. Negative numbers use unary `-`: `-5`. The maximum is 9223372036854775807 (larger literals are E0105).
 - **Floats**: digits, `.`, digits: `1.0`, `0.5`, `3.14`. Both sides of `.` are required (`1.` and `.5` are invalid). No exponent (`1e3` is invalid); at most 15 significant digits.
-- **Strings**: `"..."` on one line. The only escapes are `\n`, `\t`, `\\` and `\"` (any other is E0103). There are no single-quoted strings, no character type, no raw or multi-line strings and no interpolation: build strings with `+` and `str(...)`. To build a long string piece by piece in a loop, `push` the pieces onto a `list[str]` and `join` them once: memory is never reclaimed, so repeated `+` on a growing string runs out of memory after a few tens of thousands of characters.
+- **Strings**: `"..."` on one line. The only escapes are `\n`, `\t`, `\\` and `\"` (any other is E0103). There are no single-quoted strings, no character type, no raw or multi-line strings and no interpolation: build strings with `+` and `str(...)`.
 - **Booleans**: `true`, `false`.
 - **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void`.
 - There are no trailing commas anywhere (E0113).
@@ -867,8 +867,8 @@ fn main() uses console {
 
 ```sh
 vo check     [--json] PATH...
-vo run       [--json] [--timeout SEC] [--seed N] [--clock-ms N] FILE [-- ARG...]
-vo test      [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--filter TEXT] PATH...
+vo run       [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] FILE [-- ARG...]
+vo test      [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--filter TEXT] PATH...
 vo fmt       [--json] [--check] PATH...
 vo effects   [--json] [--update] FILE
 vo explain   [--json] CODE
@@ -879,6 +879,7 @@ vo version   [--json]
 - `PATH` is a `.vo` file or a directory (every `*.vo` under it, recursively, in sorted order). Each file is checked as the entry of its own program.
 - `run` checks first and runs only if there are no errors. Arguments after `--` reach the program through `args()`.
 - `--timeout SEC` is in whole seconds, default 10; `0` disables it. For `test` it applies to each test.
+- Memory: values that can no longer be reached are reclaimed automatically. The limit applies to live data (512 MiB by default; `--max-memory MiB`, 1 to 65536); holding more is R0006. `--mem-stats` reports the peak live size, the total allocated and the number of collections after the run or each test (on stderr for `run`; a `memory` record with `--json`).
 - `fmt` rewrites files in canonical form; `fmt --check` changes nothing and lists the files that are not canonical.
 - `explain CODE` prints the catalog entry for any `E`, `W`, `R` or `T` code, with an example and its fix.
 - `reference` prints this document. `version` prints `vo <semver> schema 1`.

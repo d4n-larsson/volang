@@ -1,0 +1,52 @@
+# Six tests that allocate different amounts: each test's memory report must not depend on the
+# tests that ran before it (spec 003 FR-009). tests/gc_bounds.py runs them in both orders.
+test "small" {
+    var s = "";
+    for i in 0..100 {
+        set s = s + str(i);
+    }
+    expect_eq(len(s), 190);
+}
+
+test "lists" {
+    let xs = new list[list[int]];
+    for i in 0..3000 {
+        push(xs, [i, i + 1, i + 2]);
+    }
+    expect_eq(len(xs), 3000);
+}
+
+test "strings" {
+    var n = 0;
+    for i in 0..200000 {
+        set n = n + len("text " + str(i));
+    }
+    expect_eq(n, 2088890);
+}
+
+test "maps fail" {
+    let m = new map[str, int];
+    for i in 0..5000 {
+        set m["k" + str(i)] = i;
+    }
+    expect_eq(len(m), 4999);
+}
+
+test "closures" {
+    let fs = new list[fn(int) -> int];
+    for i in 0..2000 {
+        push(fs, fn(x: int) -> int {
+            return x + i;
+        });
+    }
+    expect_eq(fs[1999](1), 2000);
+}
+
+test "runtime error" {
+    let xs = [1, 2, 3];
+    var junk = 0;
+    for i in 0..50000 {
+        set junk = junk + len(str(i) + "x");
+    }
+    expect_eq(xs[junk], 0);
+}

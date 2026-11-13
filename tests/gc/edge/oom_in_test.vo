@@ -1,0 +1,17 @@
+# Out of memory inside a test: the next test starts with an empty heap and passes.
+test "grows" {
+    let xs = new list[str];
+    var i = 0;
+    while true {
+        push(xs, "item " + str(i));
+        set i = i + 1;
+    }
+}
+
+test "after" {
+    var s = "";
+    for i in 0..1000 {
+        set s = s + str(i % 10);
+    }
+    expect_eq(len(s), 1000);
+}

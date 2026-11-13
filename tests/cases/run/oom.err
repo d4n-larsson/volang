@@ -1,4 +1,4 @@
-oom.vo:4:17: runtime error[R0006]: Out of memory: the 512 MiB limit is reached.
+oom.vo:4:17: runtime error[R0006]: The program holds 768.2 MiB of live data, over the 512 MiB limit.
    4 |         set s = s + s;
      |                 ^^^^^
 trace:

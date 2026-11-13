@@ -1,0 +1,16 @@
+# Kept alive only as a closure capture.
+fn make() -> fn() -> str {
+    let words = ["cap" + str(1), "tured" + str(2)];
+    return fn() -> str {
+        return join(words, "-");
+    };
+}
+
+fn main() uses console {
+    let f = make();
+    var n = 0;
+    for i in 0..3000 {
+        set n = n + len("noise" + str(i));
+    }
+    print(f() + " " + str(n));
+}

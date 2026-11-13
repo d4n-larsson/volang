@@ -1,0 +1,10 @@
+timeout_then_next.vo:5:9: warning[W0201]: `i` is never used.
+   5 |     for i in 0..22 {
+     |         ^
+timeout_then_next.vo:9:9: warning[W0201]: `round` is never used.
+   9 |     for round in 0..50 {
+     |         ^^^^^
+TIMEOUT huge heap (0ms)
+  timeout_then_next.vo:10:18: runtime error[R0009]: Time limit of 2 s exceeded.
+PASS after (0ms)
+1 passed, 0 failed, 1 timed out

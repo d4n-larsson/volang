@@ -12,7 +12,7 @@ vo-lang can now change. Checking through the SESI server (`scripts/sesi check`) 
 in SESI itself, `07fdfe8`: proofs with a negation such as `\+ p(X, _)` made `/query` fail with
 "goal must be callable".
 
-**Update 2 (2026-11-13)**: 12 fixed in `4c7b24f`, 14 in `6330905`; 13 was already covered by `c722808` once the
+**Update 2 (2026-11-13)**: 12 fixed in `4c7b24f`, 14 in `6330905`, 15-17 in `512324d`; 13 was already covered by `c722808` once the
 callee has a prototype comment in the calling file (see its Resolution).
 
 ## False positives
@@ -194,5 +194,68 @@ callee has a prototype comment in the calling file (see its Resolution).
   executable: put .text before the code". `.popsection`/`.previous` make the section unknown,
   and it is then treated as code. `misaligned_function` is not done: code in `.text` is only
   misaligned by data placed in `.text`, which is rare; that is the next step if it happens.
-**Re-check 2026-11-13** (after 12 and 14): `sesi lint` over `src/*.s` with riscv64 reports only
+## Found during spec 003 (garbage collector)
+
+### 15. Macros are not expanded: `unknown_instruction` false positives: FIXED (512324d)
+- **Symptom**: a `.macro` defined in an included file (`.include "defs.inc"`) and used in a function
+  is reported as `unknown_instruction(poll)`, though GNU as assembles it. The macro's own
+  instructions are never checked either.
+- **Example**: `defs.inc` defined `.macro POLL n` (six instructions: decrement `rt_budget`,
+  `bgtz t5, 1000f`, `call rt_poll`, `1000:`); every `POLL 1` in `src/rt_str.s`, `src/rt_list.s`,
+  `src/interp.s` and others was reported. vo-lang now writes the six instructions out at each site.
+- **Suggested fix**: expand `.macro`/`.endm` (with `\arg` substitution and `.include` resolved
+  relative to the `-I` paths) before analysis, so the expansion is checked like hand-written code;
+  failing that, report `unexpanded_macro` once per use instead of a wrong-instruction problem.
+- **Resolution**: `.macro`/`.endm` are expanded where they are used (`\param`, `name=default`,
+  `\@`, `\()`; macros using macros), and the expansion is checked like hand-written code, with
+  its instructions on the line of the use. `scripts/sesi` (`lint`, `hook`, `check`) appends the
+  files a file `.include`s, found next to it or in the project directory, so their macros are
+  known; only macro definitions are read from them, and line numbers stay the file's own. A
+  `POLL 1` use in a function that has not saved `ra` is now reported (`clobbered_by_call(ra)`),
+  because the expansion contains `call rt_poll`. Not done: includes inside included files, and
+  `-I` paths other than the file's directory and the project directory. **vo-lang**: `POLL` can
+  come back as a macro.
+
+### 16. `make lint`-style wrappers see `suppressed by sesi: allow` notes as output: FIXED (512324d)
+- **Symptom**: `sesi lint FILE` prints `f: suppressed by sesi: allow: N kind` for annotated functions
+  even when there is no problem, so a wrapper that treats any output as failure fails.
+- **Example**: vo-lang's `Makefile` `lint` target; it now filters those lines with `grep -v`.
+- **Suggested fix**: print suppression notes only with a `--verbose` flag, or on stderr, or make
+  the exit status the signal (non-zero only for reported problems).
+- **Resolution**: the notes go to stderr; stdout has only problems. The exit status was already
+  the signal (0 when only suppressed problems remain). **vo-lang**: the `grep -v` in the `lint`
+  target can go (or check the exit status instead of the output).
+
+### 17. A store over a saved register's slot, then "restoring" from it, is not reported: FIXED (512324d)
+- **Symptom**: a function saves `s0` at `0(sp)`, later stores a temporary into `0(sp)` and loads
+  `s0` back from `0(sp)` before returning. The caller's `s0` is replaced by the temporary; no
+  report (`not_restored` or `pointer_overwrites_saved` would fit).
+- **Example**: an early `ty_has_params_memo` in `src/types.s` (16-byte frame: `sd ra, 8(sp)`,
+  `sd s0, 0(sp)`, then `sd a3, 0(sp)` as scratch). Found by review, fixed by a 32-byte frame.
+  Minimal repro (lints clean):
+  ```
+  # int f(int x)
+  f:
+      addi sp, sp, -16
+      sd ra, 8(sp)
+      sd s0, 0(sp)
+      mv s0, a0
+      call g
+      sd a0, 0(sp)
+      ld a0, 0(sp)
+      ld s0, 0(sp)
+      ld ra, 8(sp)
+      addi sp, sp, 16
+      ret
+  ```
+- **Suggested fix**: track the value held by each frame slot; a store to a save slot of a
+  callee-saved register before its restoring load is `save_slot_overwritten`, and a restore that
+  does not load the entry value is `not_restored`.
+- **Resolution**: the repro as given was already reported (`overwrites_saved(s0,-16)` at
+  `sd a0, 0(sp)`), but only for a store to exactly the save slot; a narrower or shifted store
+  (`sw a0, 4(sp)` over `sd s0, 0(sp)`) was missed. `overwrites_saved` now fires for any store
+  overlapping a save slot before the register is restored, so both are reported. The
+  `ty_has_params_memo` case was probably the shifted kind; if it was not, send the exact code.
+
+**Re-check 2026-11-13** (after 12 and 14, again after 15-17): `sesi lint` over `src/*.s` with riscv64 reports only
 `src/jmp.s` (24, the deliberate longjmp): it still needs the `sesi: allow` annotation from issue 5.

@@ -1,0 +1,13 @@
+# Live data that grows without bound: R0006 at the same step on every run (spec 003 US3).
+fn main() uses console {
+    var piece = "0123456789abcdef";
+    for i in 0..6 {
+        set piece = piece + piece;
+    }
+    let kept = new list[str];
+    var i = 0;
+    while true {
+        push(kept, piece + str(i));
+        set i = i + 1;
+    }
+}

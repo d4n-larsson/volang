@@ -1,0 +1,38 @@
+# SC-001: push and pop through a generic Stack[T], with lists and with strings.
+record Stack[T] {
+    items: list[T];
+}
+
+fn stack_push[T](s: Stack[T], x: T) {
+    push(s.items, x);
+}
+
+fn stack_pop[T](s: Stack[T], fallback: T) -> T {
+    match pop(s.items) {
+        case ok(v) {
+            return v;
+        }
+        case err(e) {
+            return fallback;
+        }
+    }
+}
+
+fn main() uses console {
+    let base = new list[int];
+    for k in 0..500 {
+        push(base, k);
+    }
+    let lists = new Stack[list[int]] { items: new list[list[int]] };
+    let words = new Stack[str] { items: new list[str] };
+    var total = 0;
+    for i in 0..260000 {
+        stack_push(lists, slice(base, i % 4, 496 + i % 4));
+        stack_push(words, "w" + str(i));
+        if i % 2 == 1 {
+            set total = total + stack_pop(lists, base)[0] + len(stack_pop(words, ""));
+            set total = total + stack_pop(lists, base)[1] + len(stack_pop(words, ""));
+        }
+    }
+    print(str(len(lists.items)) + " " + str(len(words.items)) + " " + str(total));
+}

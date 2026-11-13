@@ -28,6 +28,16 @@ str_concat:
     sd s2, 16(sp)
     mv s0, a0
     mv s1, a1
+.ifdef GC_STRESS_BUILD
+    mv a0, s0
+    li a1, OBJ_STR
+    call gc_check              # stress build: a live OBJ_STR (spec 003 FR-011)
+.endif
+.ifdef GC_STRESS_BUILD
+    mv a0, s1
+    li a1, OBJ_STR
+    call gc_check              # stress build: a live OBJ_STR (spec 003 FR-011)
+.endif
     ld t0, STR_LEN(s0)
     ld t1, STR_LEN(s1)
     add s2, t0, t1
@@ -140,31 +150,56 @@ rt_slice_str:
 # Byte offset of the first occurrence at or after from, or -1.
     .globl str_find_from
 str_find_from:
-    ld t0, STR_LEN(a0)
-    ld t1, STR_LEN(a1)
-    sub t0, t0, t1              # last start
-    mv t2, a2
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
+    sd s4, 0(sp)
+    mv s0, a0
+    mv s1, a1
+    ld s2, STR_LEN(s0)
+    ld s4, STR_LEN(s1)
+    sub s2, s2, s4              # last start
+    mv s3, a2
 1:
-    bgt t2, t0, 8f
+    bgt s3, s2, 8f
     li t3, 0
 2:
-    bge t3, t1, 9f
-    add t4, a0, t2
+    bge t3, s4, 9f
+    add t4, s0, s3
     add t4, t4, t3
     lbu t4, STR_DATA(t4)
-    add t5, a1, t3
+    add t5, s1, t3
     lbu t5, STR_DATA(t5)
     bne t4, t5, 3f
     addi t3, t3, 1
     j 2b
 3:
-    addi t2, t2, 1
+    addi s3, s3, 1
+    addi t3, t3, 1              # one work unit per byte compared
+    la t6, rt_budget          # POLL t3 units: --timeout budget
+    ld t5, 0(t6)
+    sub t5, t5, t3
+    sd t5, 0(t6)
+    bgtz t5, 1000f
+    call rt_poll
+1000:
     j 1b
 8:
     li a0, -1
-    ret
+    j 99f
 9:
-    mv a0, t2
+    mv a0, s3
+99:
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    ld s4, 0(sp)
+    addi sp, sp, 48
     ret
 
 # long rt_find(void *s, void *sub)
@@ -197,6 +232,13 @@ rt_split:
     mv s2, a0
     li s3, 0                    # piece start
 2:
+    la t6, rt_budget          # POLL 1: --timeout budget
+    ld t5, 0(t6)
+    addi t5, t5, -1
+    sd t5, 0(t6)
+    bgtz t5, 1000f
+    call rt_poll
+1000:
     mv a0, s0
     mv a1, s1
     mv a2, s3
@@ -247,6 +289,13 @@ rt_join:
     mv s2, a0
     li s3, 0
 1:
+    la t6, rt_budget          # POLL 1: --timeout budget
+    ld t5, 0(t6)
+    addi t5, t5, -1
+    sd t5, 0(t6)
+    bgtz t5, 1000f
+    call rt_poll
+1000:
     ld t0, L_LEN(s0)
     bge s3, t0, 9f
     beqz s3, 2f

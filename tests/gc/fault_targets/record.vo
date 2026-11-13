@@ -1,0 +1,14 @@
+# Kept alive only as record fields.
+record Person {
+    name: str;
+    tags: list[str];
+}
+
+fn main() uses console {
+    let p = new Person { name: "ada" + str(1815), tags: ["x" + str(1), "y" + str(2)] };
+    var n = 0;
+    for i in 0..3000 {
+        set n = n + len("noise" + str(i));
+    }
+    print(p.name + " " + join(p.tags, ",") + " " + str(n));
+}

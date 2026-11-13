@@ -65,4 +65,34 @@ t2=$(date +%s%N)
 check_ms=$(( (t1 - t0) / 1000000 )); run_ms=$(( (t2 - t1) / 1000000 )); total=$((check_ms + run_ms))
 echo "perf (v2: effects, closures, generics): $lines2 lines, check ${check_ms} ms, run ${run_ms} ms, total ${total} ms (budget 1000 ms)"
 [ "$total" -lt 1000 ] || { echo "FAIL SC-008: ${total} ms"; fail=1; }
+# SC-008 (v3): a hot loop through a generic helper is at most 1.5 times slower than the
+# type-specific version (median of three runs each).
+python3 "$root/tests/perf/generic_pairs.py" "$tmp"
+median_ms() {
+    for i in 1 2 3; do
+        t0=$(date +%s%N); "$vo" run --timeout 0 "$1" >/dev/null; t1=$(date +%s%N); echo $(( (t1 - t0) / 1000000 ))
+    done | sort -n | sed -n 2p
+}
+for pair in max same stack; do
+    g=$(median_ms "$tmp/${pair}_generic.vo"); s=$(median_ms "$tmp/${pair}_specific.vo")
+    echo "generic $pair: ${g} ms vs specific ${s} ms (ratio $(awk -v g="$g" -v s="$s" 'BEGIN { printf "%.2f", g / s }'), limit 1.5)"
+    [ $((g * 10)) -le $((s * 15)) ] || { echo "FAIL SC-008: generic $pair ${g} ms > 1.5 x ${s} ms"; fail=1; }
+done
+
+# SC-006 (v3): at most 20% slower than the baseline recorded before the collector
+# (tests/gc/baseline/perf.txt), comparing the median of five check + run timings.
+base="$root/tests/gc/baseline/perf.txt"
+if [ -f "$base" ]; then
+    for pair in "perf:perf.vo" "perf_(v2:perf2.vo"; do
+        name=${pair%%:*}; prog=${pair#*:}
+        want=$(awk -v n="$name" '$1 == n {print $2}' "$base")
+        [ -n "$want" ] || continue
+        got=$(for i in 1 2 3 4 5; do
+            t0=$(date +%s%N); "$vo" check "$tmp/$prog" >/dev/null; "$vo" run "$tmp/$prog" >/dev/null; t1=$(date +%s%N)
+            echo $(( (t1 - t0) / 1000000 ))
+        done | sort -n | sed -n 3p)
+        echo "$prog: median ${got} ms, baseline ${want} ms (limit +20%)"
+        [ $((got * 100)) -le $((want * 120)) ] || { echo "FAIL SC-006: $prog ${got} ms > 1.2 x ${want} ms"; fail=1; }
+    done
+fi
 exit $fail

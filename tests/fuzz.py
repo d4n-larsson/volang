@@ -56,10 +56,14 @@ def mutate(data, rng):
     return bytes(data)
 
 
+ENV = None       # the inherited environment, unless --stress
+SLOW = 1
+
+
 def run(args, path):
     try:
-        p = subprocess.run([VO] + args + [path], capture_output=True, timeout=5,
-                           stdin=subprocess.DEVNULL, cwd=WORK)
+        p = subprocess.run([VO] + args + [path], capture_output=True, timeout=5 * SLOW,
+                           stdin=subprocess.DEVNULL, cwd=WORK, env=ENV)
     except subprocess.TimeoutExpired:
         return None, b"", b""
     return p.returncode, p.stdout, p.stderr
@@ -86,7 +90,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--iterations", type=int, default=200)
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--stress", action="store_true", help="run with build-stress/vo, collecting every 16th allocation")
     a = ap.parse_args()
+    global ENV, SLOW
+    if a.stress:
+        ENV = dict(os.environ, VO_BIN=os.path.join(ROOT, "build-stress", "vo"), VO_GC_STRESS="16")
+        SLOW = 4
     rng = random.Random(a.seed)
     os.makedirs(WORK, exist_ok=True)
     files = corpus()

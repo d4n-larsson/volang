@@ -16,6 +16,8 @@
 opt_json:       .dword 0
     .globl opt_timeout
 opt_timeout:    .dword 10
+    .globl opt_mem_stats
+opt_mem_stats:  .dword 0
     .globl opt_filter
 opt_filter:     .dword 0
     .globl opt_check
@@ -57,11 +59,14 @@ f_filter:   .string "--filter"
 f_check:    .string "--check"
 f_seed:     .string "--seed"
 f_clock_ms: .string "--clock-ms"
+f_mem_stats: .string "--mem-stats"
+f_max_memory: .string "--max-memory"
+m_max_memory_val: .string "`--max-memory` needs a whole number of MiB from 1 to 65536."
 m_number_val: .string "`--seed` and `--clock-ms` need a whole number."
 f_dashdash: .string "--"
 m_unknown_cmd:  .string "Unknown command `$1`. Commands: check, run, test, fmt, effects, explain, reference, version."
 m_missing_cmd:  .string "Missing command. Commands: check, run, test, fmt, effects, explain, reference, version."
-m_unknown_opt:  .string "Unknown option `$1`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, --seed N, --clock-ms N."
+m_unknown_opt:  .string "Unknown option `$1`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, --seed N, --clock-ms N, --max-memory MiB, --mem-stats."
 m_timeout_val:  .string "`--timeout` needs a whole number of seconds."
 m_filter_val:   .string "`--filter` needs a text to match."
 m_needs_path:   .string "`$1` needs at least one path."
@@ -709,6 +714,45 @@ vo_main:
     call str_from_cstr
     call usage_error
 139:
+    mv a0, s3
+    la a1, f_mem_stats
+    call cstr_eq
+    beqz a0, 140f
+    la t0, opt_mem_stats
+    li t1, 1
+    sd t1, 0(t0)
+    j 7b
+140:
+    mv a0, s3
+    la a1, f_max_memory
+    call cstr_eq
+    beqz a0, 142f
+    bge s2, s0, 141f
+    slli t0, s2, 3
+    add t0, s1, t0
+    ld s3, 0(t0)
+    addi s2, s2, 1
+    mv a0, s3
+    call cstr_len
+    mv a1, a0
+    mv a0, s3
+    addi a2, sp, 0
+    call dec_to_int
+    bnez a0, 141f
+    ld t0, 0(sp)
+    li t1, 1
+    blt t0, t1, 141f
+    li t1, 65536
+    bgt t0, t1, 141f
+    slli t0, t0, 20             # MiB -> bytes
+    la t1, gc_limit
+    sd t0, 0(t1)
+    j 7b
+141:
+    la a0, m_max_memory_val
+    call str_from_cstr
+    call usage_error
+142:
     la a0, m_unknown_opt
     mv a1, s3
     call usage_error_arg
@@ -1134,6 +1178,12 @@ cmd_run:
     call rt_effects_start
     ld a0, 0(sp)
     call run_main
+    sd a0, 0(sp)
+    li a0, 2
+    la a1, n_run
+    li a2, 0
+    call gc_report
+    ld a0, 0(sp)
 9:
     ld ra, 24(sp)
     ld s0, 16(sp)
@@ -1186,6 +1236,7 @@ cmd_test:
     li a1, 1
     call diag_emit_all
     call interp_init
+    call gc_start
     li s0, 0
 4:
     bge s0, s1, 5f

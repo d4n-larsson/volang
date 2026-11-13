@@ -18,6 +18,7 @@ t_errored:  .space 8
 t_timed_out: .space 8
 
     .section .rodata
+s_cmd_test: .string "test"
     .align 3
 status_words:
     .dword w_pass, w_fail, w_error, w_timeout
@@ -347,6 +348,7 @@ run_file_tests:
     call str_find_from
     bltz a0, 1b
 2:
+    call gc_start               # every test starts with an empty heap (spec 003 FR-009)
     la t0, tf_node
     sd zero, 0(t0)
     la t0, rt_err_code
@@ -409,6 +411,22 @@ run_file_tests:
     mv a0, s2
     mv a1, s3
     call report_test
+    li a0, 1                    # --mem-stats: right after the test's record
+    la a1, s_cmd_test
+    ld a2, N_A(s2)
+    call gc_report
+    la t0, tf_msg               # the test's leftovers point into a heap about to be reset; they
+    sd zero, 0(t0)              # must not keep anything alive in the next test (spec 003)
+    la t0, tf_expected
+    sd zero, 0(t0)
+    la t0, tf_actual
+    sd zero, 0(t0)
+    la t0, rt_err_msg
+    sd zero, 0(t0)
+    la t0, rt_err_extra
+    sd zero, 0(t0)
+    la t0, ret_val
+    sd zero, 0(t0)
     j 1b
 9:
     ld ra, 168(sp)

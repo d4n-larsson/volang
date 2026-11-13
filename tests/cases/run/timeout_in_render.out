@@ -1,0 +1,9 @@
+timeout_in_render.vo:4:9: warning[W0201]: `i` is never used.
+   4 |     for i in 0..15 {
+     |         ^
+timeout_in_render.vo:10:9: warning[W0201]: `i` is never used.
+  10 |     for i in 0..1000 {
+     |         ^
+TIMEOUT huge values (0ms)
+  timeout_in_render.vo:15:5: runtime error[R0009]: Time limit of 2 s exceeded.
+0 passed, 0 failed, 1 timed out

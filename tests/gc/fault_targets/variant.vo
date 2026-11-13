@@ -1,0 +1,21 @@
+# Kept alive only as a variant payload.
+variant Box {
+    empty;
+    full(list[str]);
+}
+
+fn main() uses console {
+    let b = Box.full(["a" + str(1), "b" + str(2)]);
+    var n = 0;
+    for i in 0..3000 {
+        set n = n + len("noise" + str(i));
+    }
+    match b {
+        case empty {
+            print("empty");
+        }
+        case full(xs) {
+            print(join(xs, ",") + " " + str(n));
+        }
+    }
+}

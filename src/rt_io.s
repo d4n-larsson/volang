@@ -296,13 +296,27 @@ rt_args:
     addi sp, sp, 32
     ret
 
+    .section .rodata
+s_exit_run: .string "run"
+    .text
 # void rt_exit(long code, void *node)
     .globl rt_exit
 rt_exit:
     bltz a0, 1f
     li t0, 63
     bgt a0, t0, 1f
-    tail vo_exit
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd a0, 0(sp)
+    li a0, 2                    # --mem-stats: the run ends here
+    la a1, s_exit_run
+    li a2, 0
+    call gc_report
+    ld a0, 0(sp)
+    call vo_exit
+    ld ra, 8(sp)
+    addi sp, sp, 16
+    ret
 1:
     addi sp, sp, -16
     sd ra, 8(sp)

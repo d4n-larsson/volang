@@ -1,0 +1,8 @@
+# A program that needs more than 1 MiB of live data, run with --max-memory 1.
+fn main() uses console {
+    let xs = new list[str];
+    for i in 0..100000 {
+        push(xs, "item " + str(i));
+    }
+    print(str(len(xs)));
+}

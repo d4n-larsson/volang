@@ -157,7 +157,7 @@ sb_new:
     call alloc
     mv s0, a0
     li a0, 64
-    call alloc
+    call alloc_bytes
     sd a0, SB_PTR(s0)
     sd zero, SB_LEN(s0)
     li t0, 64
@@ -188,7 +188,7 @@ sb_reserve:
     mv s1, t2
 2:
     mv a0, s1
-    call alloc
+    call alloc_bytes
     sd a0, 0(sp)
     ld a1, SB_PTR(s0)
     ld a2, SB_LEN(s0)
@@ -236,7 +236,17 @@ sb_bytes:
     mv s0, a0
     mv s1, a1
     mv s2, a2
-    mv a1, a2
+    srli t0, s2, 12             # one work unit per 4 KiB copied
+    addi t0, t0, 1
+    la t6, rt_budget          # POLL t0 units: --timeout budget
+    ld t5, 0(t6)
+    sub t5, t5, t0
+    sd t5, 0(t6)
+    bgtz t5, 1000f
+    call rt_poll
+1000:
+    mv a0, s0
+    mv a1, s2
     call sb_reserve
     ld t0, SB_PTR(s0)
     ld t1, SB_LEN(s0)

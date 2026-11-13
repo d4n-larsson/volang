@@ -1,0 +1,4 @@
+ERROR fails with a message (0ms)
+  globals.vo:8:15: runtime error[R0003]: Index 490 is out of bounds for length 3.
+PASS after (0ms)
+1 passed, 0 failed, 1 errored

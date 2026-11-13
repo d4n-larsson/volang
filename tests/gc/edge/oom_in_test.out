@@ -1,0 +1,4 @@
+ERROR grows (0ms)
+  oom_in_test.vo:6:28: runtime error[R0006]: The program holds 4.1 MiB of live data, over the 4 MiB limit.
+PASS after (0ms)
+1 passed, 0 failed, 1 errored

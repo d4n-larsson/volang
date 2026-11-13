@@ -1,0 +1,5 @@
+timeout_in_collection.vo:9:18: runtime error[R0009]: Time limit of 2 s exceeded.
+   9 |         let xs = split(s, ",");
+     |                  ^^^^^^^^^^^^^
+trace:
+  at main (timeout_in_collection.vo:9:18)
