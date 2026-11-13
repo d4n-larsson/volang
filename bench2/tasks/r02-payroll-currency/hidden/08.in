@@ -1,0 +1,10 @@
+employee U1 Una hourly 1234 USD
+employee U2 Uli hourly 1234 usd
+employee U3 Uma hourly 1234 Eur
+employee U1 Una hourly 1234 YEN
+employee U1 Una hourly 1234 EUR
+employee U4 Ugo monthly 1234 EUR
+employee U5 Uwe hourly 12.5 JPY
+hours U1 41
+payslip U1
+summary

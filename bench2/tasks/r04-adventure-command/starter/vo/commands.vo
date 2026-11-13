@@ -1,0 +1,56 @@
+import world.Room;
+import player.Player;
+import player.move;
+import player.pick_up;
+
+fn describe(world: map[str, Room], room_id: str) -> list[str] {
+    let room = world[room_id];
+    let exits = keys(room.exits);
+    sort(exits);
+    var items = "none";
+    if len(room.items) > 0 {
+        set items = join(room.items, ", ");
+    }
+    return ["== " + room.title + " ==", "exits: " + join(exits, " "), "items: " + items];
+}
+
+fn do_look(player: Player, world: map[str, Room]) -> list[str] {
+    return describe(world, player.room);
+}
+
+fn do_go(player: Player, world: map[str, Room], direction: str) -> list[str] {
+    if not move(player, world, direction) {
+        return ["you can't go " + direction];
+    }
+    return describe(world, player.room);
+}
+
+fn do_take(player: Player, world: map[str, Room], item: str) -> list[str] {
+    let points = pick_up(player, world, item);
+    if points < 0 {
+        return ["no " + item + " here"];
+    }
+    if points > 0 {
+        return ["taken " + item + " (+" + str(points) + ")"];
+    }
+    return ["taken " + item];
+}
+
+fn do_inventory(player: Player) -> list[str] {
+    if len(player.inventory) == 0 {
+        return ["you carry nothing"];
+    }
+    return ["you carry: " + join(player.inventory, ", ")];
+}
+
+fn score_text(player: Player) -> str {
+    return "score " + str(player.score) + " in " + str(player.moves) + " moves";
+}
+
+fn do_score(player: Player) -> list[str] {
+    return [score_text(player)];
+}
+
+fn do_quit(player: Player) -> list[str] {
+    return ["final " + score_text(player)];
+}

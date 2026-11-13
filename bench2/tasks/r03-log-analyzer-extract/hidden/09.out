@@ -1,0 +1,16 @@
+span 3059 seconds
+DEBUG 0
+INFO 1
+WARN 0
+ERROR 2
+pay 2
+2024-09-09 09:09:01 ERROR pay: card declined
+2024-09-09 09:09:59 ERROR pay: card declined again
+2 matches
+lines 5 valid 3 invalid 2
+2024-09-09 09:09:59 ERROR pay: card declined again
+1 entries in range
+error: unknown command ---
+error: unknown command Stats
+error: bad command
+error: bad command

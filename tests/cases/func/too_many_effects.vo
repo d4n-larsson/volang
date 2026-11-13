@@ -1,0 +1,10 @@
+fn apply(f: fn(int) -> int, x: int) -> int {
+    return f(x);
+}
+
+fn main() uses console {
+    print(str(apply(fn(x: int) -> int {
+        print("called");
+        return x;
+    }, 1)));
+}

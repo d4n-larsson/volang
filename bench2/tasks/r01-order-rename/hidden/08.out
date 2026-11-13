@@ -1,0 +1,14 @@
+product W added
+order w1 placed: 31 units, total 98.07 (discount 5.16)
+order w2 placed: 30 units, total 99.90
+order w1 (active)
+  W x31 @ 3.33
+  total 98.07
+order w2 (active)
+  W x30 @ 3.33
+  total 99.90
+order w1 cancelled
+product W stock 70
+error: unknown command add-item
+product W widget price 3.33 stock 70 sold 30
+revenue 99.90 over 1 orders

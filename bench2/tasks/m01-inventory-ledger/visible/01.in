@@ -1,0 +1,6 @@
+RECEIVE bolt 10 25
+RECEIVE bolt 5 30
+SHIP bolt 12 50
+REPORT
+RECEIVE nut 100 3
+SCRAP nut 7

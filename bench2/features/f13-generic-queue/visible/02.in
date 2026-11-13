@@ -1,0 +1,3 @@
+size str
+push str a b
+pop str

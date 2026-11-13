@@ -1,0 +1,12 @@
+add 5 low
+add 1 high
+add 3 mid
+add 1 also high
+prio 1 1
+prio 2 5
+list
+prio 3 0
+prio 3 6
+prio 3 x
+prio 9 1
+list

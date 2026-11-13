@@ -1,0 +1,6 @@
+inner_declaration.vo:2:12: runtime error[R0010]: file.write("out/b/x.txt") is not allowed: `save` declares file.write("out/a/").
+   2 |     return write_file(path, "x");
+     |            ^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at save (inner_declaration.vo:2:12)
+  at main (inner_declaration.vo:6:9)

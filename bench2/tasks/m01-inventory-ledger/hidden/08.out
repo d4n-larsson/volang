@@ -1,0 +1,258 @@
+line 2: cannot take 9 of s0, only 0 in stock
+line 3: cannot take 7 of s4, only 0 in stock
+line 5: cannot take 37 of s3, only 9 in stock
+line 7: cannot take 45 of s0, only 30 in stock
+line 8: cannot take 58 of s3, only 6 in stock
+line 9: cannot take 17 of s5, only 0 in stock
+line 10: invalid
+REPORT
+s0 30 1197.60
+s3 13 128.17
+s5 6 244.56
+revenue 0.00 cogs 0.00 loss 47.46 profit -47.46 stock 1570.33
+REPORT
+s0 30 1197.60
+s3 13 128.17
+s5 6 244.56
+revenue 0.00 cogs 0.00 loss 47.46 profit -47.46 stock 1570.33
+line 15: cannot take 3 of s4, only 0 in stock
+line 16: cannot take 32 of s0, only 30 in stock
+line 18: cannot take 18 of s2, only 0 in stock
+line 20: cannot take 35 of s0, only 30 in stock
+line 21: cannot take 54 of s5, only 6 in stock
+line 22: cannot take 20 of s1, only 0 in stock
+line 25: cannot take 23 of s1, only 0 in stock
+REPORT
+s0 30 1197.60
+s2 33 193.05
+s3 22 244.81
+s4 0 0.00
+s5 6 244.56
+revenue 0.00 cogs 0.00 loss 1483.56 profit -1483.56 stock 1880.02
+REPORT
+s0 30 1197.60
+s2 82 1867.99
+s3 30 353.69
+s4 0 0.00
+s5 6 244.56
+revenue 0.00 cogs 0.00 loss 1483.56 profit -1483.56 stock 3663.84
+line 37: cannot take 52 of s1, only 11 in stock
+line 38: cannot take 39 of s1, only 11 in stock
+line 40: cannot take 48 of s0, only 30 in stock
+line 45: cannot take 51 of s3, only 25 in stock
+line 47: cannot take 29 of s5, only 13 in stock
+line 48: cannot take 60 of s5, only 13 in stock
+line 54: invalid
+line 55: cannot take 53 of s4, only 0 in stock
+REPORT
+s0 55 1228.56
+s1 72 1516.28
+s2 7 193.90
+s3 25 347.29
+s4 0 0.00
+s5 1 49.20
+revenue 7443.19 cogs 5469.71 loss 1626.09 profit 347.39 stock 3335.23
+line 62: cannot take 54 of s5, only 25 in stock
+line 63: cannot take 42 of s2, only 13 in stock
+REPORT
+s0 55 1228.56
+s1 72 1516.28
+s2 31 1466.98
+s3 25 347.29
+s4 25 1072.25
+s5 25 679.92
+revenue 7443.19 cogs 5469.71 loss 1819.99 profit 153.49 stock 6311.28
+line 70: cannot take 27 of s4, only 25 in stock
+line 73: cannot take 19 of s2, only 4 in stock
+line 80: invalid
+REPORT
+s0 56 1223.24
+s1 158 5260.08
+s2 4 191.68
+s3 38 868.98
+s4 50 1230.24
+s5 33 828.39
+revenue 11235.96 cogs 9285.26 loss 2206.00 profit -255.30 stock 9602.61
+line 87: cannot take 54 of s2, only 46 in stock
+REPORT
+s0 62 1290.68
+s1 158 5260.08
+s2 26 140.40
+s3 38 868.98
+s4 50 1230.24
+s5 31 732.53
+revenue 12390.81 cogs 9563.34 loss 2301.86 profit 525.61 stock 9522.91
+line 100: invalid
+line 105: cannot take 32 of s5, only 19 in stock
+line 112: cannot take 10 of s4, only 3 in stock
+REPORT
+s0 48 771.56
+s1 276 9870.68
+s2 33 836.60
+s3 98 2617.90
+s4 3 48.00
+s5 21 404.03
+revenue 18064.85 cogs 11871.73 loss 3018.37 profit 3174.75 stock 14548.77
+line 117: cannot take 57 of s4, only 3 in stock
+REPORT
+s0 48 771.56
+s1 276 9870.68
+s2 10 334.00
+s3 98 2617.90
+s4 6 195.75
+s5 21 404.03
+revenue 18465.28 cogs 12374.33 loss 3018.37 profit 3072.58 stock 14193.92
+line 122: cannot take 23 of s4, only 6 in stock
+line 124: cannot take 43 of s5, only 21 in stock
+line 129: cannot take 19 of s2, only 10 in stock
+line 131: cannot take 58 of s3, only 16 in stock
+line 135: cannot take 38 of s5, only 20 in stock
+REPORT
+s0 48 771.56
+s1 351 11656.19
+s2 10 334.00
+s3 16 334.58
+s4 69 2032.63
+s5 95 1846.20
+revenue 20749.05 cogs 14980.05 loss 3688.71 profit 2080.29 stock 16975.16
+line 140: invalid
+REPORT
+s0 96 836.84
+s1 373 12226.87
+s2 10 334.00
+s3 8 121.98
+s4 49 1313.36
+s5 109 2209.08
+revenue 21766.65 cogs 15699.32 loss 3901.31 profit 2166.02 stock 17042.13
+REPORT
+s0 96 836.84
+s1 342 11444.93
+s2 10 334.00
+s3 8 121.98
+s4 49 1313.36
+s5 105 2181.90
+revenue 23907.82 cogs 16481.26 loss 3928.49 profit 3498.07 stock 16233.01
+REPORT
+s0 86 605.84
+s1 342 11444.93
+s2 10 334.00
+s3 8 121.98
+s4 49 1313.36
+s5 105 2181.90
+revenue 24475.02 cogs 16712.26 loss 3928.49 profit 3834.27 stock 16002.01
+line 152: cannot take 27 of s2, only 10 in stock
+line 153: invalid
+REPORT
+s0 86 605.84
+s1 388 12239.81
+s2 26 441.84
+s3 74 1539.24
+s4 103 3671.36
+s5 155 4206.40
+revenue 24475.02 cogs 16712.26 loss 3928.49 profit 3834.27 stock 22704.49
+line 162: invalid
+REPORT
+s0 86 605.84
+s1 426 12742.84
+s2 98 1121.56
+s3 52 1232.32
+s4 103 3671.36
+s5 145 4567.15
+revenue 29917.94 cogs 18185.64 loss 4282.71 profit 7449.59 stock 23941.07
+line 184: invalid
+REPORT
+s0 73 961.98
+s1 369 10671.70
+s2 74 888.30
+s3 4 101.32
+s4 145 5051.06
+s5 166 5405.26
+revenue 41630.23 cogs 22002.32 loss 4465.11 profit 15162.80 stock 23079.62
+REPORT
+s0 73 961.98
+s1 369 10671.70
+s2 74 888.30
+s3 4 101.32
+s4 112 4003.94
+s5 155 5124.76
+revenue 42767.85 cogs 23329.94 loss 4465.11 profit 14972.80 stock 21752.00
+REPORT
+s0 69 2199.82
+s1 517 14880.22
+s2 68 1041.25
+s3 52 1379.60
+s4 138 4249.90
+s5 163 5505.17
+revenue 45588.52 cogs 23962.32 loss 4465.11 profit 17161.09 stock 29255.96
+REPORT
+s0 69 2199.82
+s1 542 15797.72
+s2 68 1041.25
+s3 80 2681.60
+s4 138 4249.90
+s5 91 3456.75
+revenue 46761.12 cogs 25322.41 loss 5153.44 profit 16285.27 stock 29427.04
+line 215: invalid
+REPORT
+s0 45 1661.94
+s1 549 14847.48
+s2 103 2151.45
+s3 44 1202.90
+s4 139 4277.22
+s5 56 1563.37
+revenue 52664.64 cogs 30838.72 loss 6666.14 profit 15159.78 stock 25704.36
+line 228: invalid
+line 231: cannot take 47 of s0, only 9 in stock
+line 238: invalid
+line 241: invalid
+line 253: invalid
+REPORT
+s0 105 1302.09
+s1 518 13511.89
+s2 32 1227.12
+s3 25 469.00
+s4 63 1198.12
+s5 83 946.50
+revenue 74968.10 cogs 41944.03 loss 8484.49 profit 24539.58 stock 18654.72
+line 263: cannot take 32 of s3, only 25 in stock
+line 275: invalid
+REPORT
+s0 70 554.97
+s1 457 10658.13
+s2 20 509.92
+s3 95 2297.05
+s4 23 841.99
+s5 83 946.50
+revenue 81696.20 cogs 47930.08 loss 8827.52 profit 24938.60 stock 15808.56
+line 281: cannot take 50 of s2, only 39 in stock
+REPORT
+s0 28 0.28
+s1 457 10658.13
+s2 86 1618.93
+s3 68 1731.95
+s4 0 0.00
+s5 47 326.12
+revenue 84700.78 cogs 49833.14 loss 9989.39 profit 24878.25 stock 14335.41
+line 300: cannot take 9 of s4, only 0 in stock
+line 319: cannot take 29 of s2, only 1 in stock
+REPORT
+s0 75 1928.50
+s1 508 12112.10
+s2 76 2066.61
+s3 286 5150.12
+s4 26 748.02
+s5 162 5570.18
+revenue 111362.34 cogs 60413.91 loss 10714.12 profit 40234.31 stock 27575.53
+line 370: invalid
+line 372: cannot take 8 of s4, only 6 in stock
+line 373: invalid
+line 391: cannot take 53 of s4, only 29 in stock
+line 396: invalid
+REPORT
+s0 178 6947.78
+s1 593 14121.20
+s2 95 2013.36
+s3 302 5740.56
+s4 78 1086.10
+s5 124 3577.12
+revenue 129447.73 cogs 70838.99 loss 11679.84 profit 46928.90 stock 33486.12

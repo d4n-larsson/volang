@@ -1,0 +1,5 @@
+timeout_stdin.vo:2:11: runtime error[R0009]: Time limit of 1 s exceeded.
+   2 |     match read_line() {
+     |           ^^^^^^^^^^^
+trace:
+  at main (timeout_stdin.vo:2:11)

@@ -1,0 +1,5 @@
+fn main() uses console {
+    let n = 1;
+    set n = 2;
+    print(str(n));
+}

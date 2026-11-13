@@ -1,0 +1,8 @@
+2024-10-10 10:00:10 INFO a: early in minute
+2024-10-10 10:00:45 INFO a: late in minute
+2024-10-10 10:01:00 INFO a: next minute
+2024-10-10 10:01:30 INFO a: mid next minute
+---
+range 2024-10-10 10:00:30 2024-10-10 10:01:15
+span
+levels

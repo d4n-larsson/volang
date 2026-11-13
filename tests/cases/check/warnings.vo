@@ -1,0 +1,5 @@
+fn main() uses console {
+    let unused = 1;
+    return;
+    print("never");
+}

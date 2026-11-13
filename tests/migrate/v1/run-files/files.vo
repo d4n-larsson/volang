@@ -1,0 +1,14 @@
+fn main() -> result[void] {
+    try write_file("out.txt", "line1\nline2\n");
+    let text = try read_file("out.txt");
+    print(str(len(split(text, "\n"))));
+    match read_file("missing.txt") {
+        case ok(t) {
+            print(t);
+        }
+        case err(e) {
+            print("missing: " + e);
+        }
+    }
+    return ok();
+}

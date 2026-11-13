@@ -1,0 +1,6 @@
+conflicts: 1
+a b: room lab, person kim, person lee
+rooms:
+hall 59
+lab 120
+free line 3: 08:00

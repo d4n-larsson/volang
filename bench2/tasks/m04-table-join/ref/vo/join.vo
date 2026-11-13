@@ -1,0 +1,92 @@
+record Joined {
+    header: list[str];
+    rows: list[list[str]];
+}
+
+fn index_of(xs: list[str], x: str) -> int {
+    for i in 0..len(xs) {
+        if xs[i] == x {
+            return i;
+        }
+    }
+    return -1;
+}
+
+fn others(n: int, skip: int) -> list[int] {
+    let out = new list[int];
+    for i in 0..n {
+        if i != skip {
+            push(out, i);
+        }
+    }
+    return out;
+}
+
+fn row(key: str, a: list[str], oa: list[int], b: list[str], ob: list[int]) -> list[str] {
+    let out = [key];
+    for i in oa {
+        if len(a) == 0 {
+            push(out, "");
+        } else {
+            push(out, a[i]);
+        }
+    }
+    for i in ob {
+        if len(b) == 0 {
+            push(out, "");
+        } else {
+            push(out, b[i]);
+        }
+    }
+    return out;
+}
+
+fn join_tables(kind: str, key: str, ha: list[str], ra: list[list[str]], hb: list[str], rb: list[list[str]]) -> Joined {
+    let ka = index_of(ha, key);
+    let kb = index_of(hb, key);
+    let oa = others(len(ha), ka);
+    let ob = others(len(hb), kb);
+    let header = [key];
+    for i in oa {
+        if index_of(hb, ha[i]) >= 0 {
+            push(header, "a." + ha[i]);
+        } else {
+            push(header, ha[i]);
+        }
+    }
+    for i in ob {
+        if index_of(ha, hb[i]) >= 0 {
+            push(header, "b." + hb[i]);
+        } else {
+            push(header, hb[i]);
+        }
+    }
+    let none = new list[str];
+    let rows = new list[list[str]];
+    let used = new list[bool];
+    for _ in 0..len(rb) {
+        push(used, false);
+    }
+    for a in ra {
+        var found = false;
+        for j in 0..len(rb) {
+            let b = rb[j];
+            if a[ka] != "" and a[ka] == b[kb] {
+                set found = true;
+                set used[j] = true;
+                push(rows, row(a[ka], a, oa, b, ob));
+            }
+        }
+        if not found and kind != "inner" {
+            push(rows, row(a[ka], a, oa, none, ob));
+        }
+    }
+    if kind == "full" {
+        for j in 0..len(rb) {
+            if not used[j] {
+                push(rows, row(rb[j][kb], none, oa, rb[j], ob));
+            }
+        }
+    }
+    return new Joined { header: header, rows: rows };
+}

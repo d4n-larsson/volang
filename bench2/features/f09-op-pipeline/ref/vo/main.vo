@@ -1,0 +1,71 @@
+fn adder(n: int) -> fn(int) -> int {
+    return fn(x: int) -> int {
+        return x + n;
+    };
+}
+
+fn multiplier(n: int) -> fn(int) -> int {
+    return fn(x: int) -> int {
+        return x * n;
+    };
+}
+
+fn neg(x: int) -> int {
+    return -x;
+}
+
+fn square(x: int) -> int {
+    return x * x;
+}
+
+fn absolute(x: int) -> int {
+    return abs(x);
+}
+
+fn parse_op(op: str) -> result[fn(int) -> int] {
+    let p = split(op, " ");
+    if p[0] == "neg" {
+        return ok(neg);
+    }
+    if p[0] == "sq" {
+        return ok(square);
+    }
+    if p[0] == "abs" {
+        return ok(absolute);
+    }
+    let n = try parse_int(p[1]);
+    if p[0] == "add" {
+        return ok(adder(n));
+    }
+    if p[0] == "sub" {
+        return ok(adder(-n));
+    }
+    if p[0] == "mul" {
+        return ok(multiplier(n));
+    }
+    return err("unknown operation " + op);
+}
+
+fn main() -> result[void] uses console, input {
+    let spec = try read_line();
+    let ops = new list[fn(int) -> int];
+    if len(spec) > 0 {
+        for op in split(spec, ",") {
+            push(ops, try parse_op(op));
+        }
+    }
+    while true {
+        match read_line() {
+            case ok(line) {
+                let x = try parse_int(line);
+                print(str(fold(ops, x, fn(acc: int, f: fn(int) -> int) -> int {
+                    return f(acc);
+                })));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

@@ -1,0 +1,71 @@
+import shop.Shop;
+import shop.Line;
+import shop.Bulk;
+import shop.unknown_product;
+import money.percent_of;
+
+# One cart line with its discounts worked out.
+record Priced {
+    sku: str;
+    qty: int;
+    price: int;
+    gross: int;
+    free_qty: int;
+    free_amount: int;
+    bulk_pct: int;
+    bulk_amount: int;
+    net: int;
+}
+
+fn set_promo(shop: Shop, sku: str, buy: int) -> str {
+    if not has(shop.catalog, sku) {
+        return unknown_product(sku);
+    }
+    set shop.promos[sku] = buy;
+    return "promo " + sku + ": buy " + str(buy) + " get 1 free";
+}
+
+fn set_bulk(shop: Shop, sku: str, min_qty: int, pct: int) -> str {
+    if not has(shop.catalog, sku) {
+        return unknown_product(sku);
+    }
+    set shop.bulks[sku] = new Bulk { min_qty: min_qty, pct: pct };
+    return "bulk " + sku + ": " + str(min_qty) + " or more " + str(pct) + "% off";
+}
+
+fn define_coupon(shop: Shop, code: str, pct: int) -> str {
+    set shop.coupons[code] = pct;
+    return "coupon " + code + ": " + str(pct) + "% off";
+}
+
+fn use_coupon(shop: Shop, code: str) -> str {
+    if not has(shop.coupons, code) {
+        return "error: unknown coupon " + code;
+    }
+    set shop.active = code;
+    return "coupon " + code + " active";
+}
+
+fn price_line(shop: Shop, line: Line) -> Priced {
+    let price = shop.catalog[line.sku].price;
+    let p = new Priced { sku: line.sku, qty: line.qty, price: price, gross: line.qty * price, free_qty: 0, free_amount: 0, bulk_pct: 0, bulk_amount: 0, net: 0 };
+    if has(shop.promos, line.sku) {
+        set p.free_qty = line.qty / (shop.promos[line.sku] + 1);
+        set p.free_amount = p.free_qty * p.price;
+    }
+    let base = p.gross - p.free_amount;
+    if has(shop.bulks, line.sku) and line.qty >= shop.bulks[line.sku].min_qty {
+        set p.bulk_pct = shop.bulks[line.sku].pct;
+        set p.bulk_amount = percent_of(base, p.bulk_pct);
+    }
+    set p.net = base - p.bulk_amount;
+    return p;
+}
+
+# The active coupon's discount on subtotal (0 without a coupon).
+fn coupon_discount(shop: Shop, subtotal: int) -> int {
+    if shop.active == "" {
+        return 0;
+    }
+    return percent_of(subtotal, shop.coupons[shop.active]);
+}

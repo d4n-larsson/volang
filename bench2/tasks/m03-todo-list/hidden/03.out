@@ -1,0 +1,19 @@
+added #1
+added #2
+added #3
+done #2
+done #3
+done #1
+#2 P1 b
+#3 P1 c
+#1 P1 a
+reopened #3
+#3 is already open
+done #3
+#3 is already done
+#2 P1 b
+#1 P1 a
+#3 P1 c
+reopened #1
+#1 P1 a
+open 1 done 2

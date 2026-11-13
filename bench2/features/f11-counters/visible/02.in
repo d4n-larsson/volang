@@ -1,0 +1,6 @@
+new c 1 2
+alias d c
+next c
+next d
+reset d
+next c

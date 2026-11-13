@@ -1,0 +1,4 @@
+evens=0 sumsq=0 allpos=yes any7=no
+evens=1 sumsq=36 allpos=yes any7=no
+evens=0 sumsq=0 allpos=yes any7=no
+evens=1 sumsq=144 allpos=yes any7=no

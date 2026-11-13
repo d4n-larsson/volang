@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0302","name":"wrong_argument_count","severity":"error","file":"call_value_arity.vo","start":{"line":5,"col":15},"end":{"line":5,"col":22},"text":"f(1, 2)","message":"`f` takes 1 argument(s), got 2.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

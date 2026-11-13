@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0306","name":"empty_list_literal","severity":"error","file":"empty_list.vo","start":{"line":2,"col":25},"end":{"line":2,"col":27},"text":"[]","message":"An empty list needs a type: write `new list[T]`.","fixes":[{"file":"empty_list.vo","start":{"line":2,"col":25},"end":{"line":2,"col":27},"replacement":"new list[int]"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

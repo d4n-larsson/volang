@@ -1,0 +1,11 @@
+member cy joined
+line 2: invalid
+error: no book nope
+error: no member zed
+line 5: invalid
+line 6: invalid
+line 7: invalid
+error: no book Y
+members:
+cy loans - owes 0.00
+books:

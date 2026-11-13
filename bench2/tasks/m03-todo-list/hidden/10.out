@@ -1,0 +1,12 @@
+added #1
+added #2
+tagged #2 +k
+tagged #1 +k
+done #2
+#1 P2 a +k
+#2 P2 b +k (done)
+#2 is now P1
+#1 P2 a +k
+reopened #2
+#2 P1 b +k
+#1 P2 a +k

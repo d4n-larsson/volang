@@ -1,0 +1,33 @@
+type r added
+booked k1: r 1 nights, total 19.99
+booked k2: r 1 nights, total 19.99
+booked k3: r 1 nights, total 19.99
+booked k4: r 1 nights, total 19.99
+booked k5: r 1 nights, total 19.99
+booked k6: r 7 nights, total 125.94
+booked k7: r 2 nights, total 39.98
+cancelled k1: refund 19.99
+cancelled k2: refund 9.99
+cancelled k3: refund 9.99
+cancelled k4: refund 0.00
+error: booking k5 already ended
+cancelled k6: refund 125.94
+cancelled k7: refund 0.00
+invoice k2 for b
+  r 1 nights x 19.99 = 19.99
+  total 19.99
+  cancelled on day 4, refund 9.99
+  net 10.00
+invoice k6 for f
+  r 7 nights x 19.99 = 139.93
+  long stay discount 13.99
+  total 125.94
+  cancelled on day 0, refund 125.94
+  net 0.00
+invoice k7 for g
+  r 2 nights x 19.99 = 39.98
+  total 39.98
+  cancelled on day 11, refund 0.00
+  net 39.98
+r: 1 bookings (6 cancelled), 2 nights, revenue 99.96
+total revenue 99.96, refunds 165.91

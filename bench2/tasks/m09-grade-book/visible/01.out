@@ -1,0 +1,13 @@
+students:
+ana 91.50 A
+bo 65.00 D
+stats:
+count 2
+mean 78.25
+median 78.25
+top 91.50 ana
+letters A:1 B:0 C:0 D:1 F:0
+assignments:
+hw1 avg 80.00 missing 0
+hw2 avg 50.00 missing 1
+exam avg 91.50 missing 0

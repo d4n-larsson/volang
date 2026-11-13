@@ -1,0 +1,58 @@
+import store.Store;
+import store.Task;
+import store.all_tasks;
+
+fn task_line(t: Task, mark_done: bool) -> str {
+    let tags = slice(t.tags, 0, len(t.tags));
+    sort(tags);
+    var s = "#" + str(t.id) + " P" + str(t.prio) + " " + t.text;
+    for g in tags {
+        set s = s + " +" + g;
+    }
+    if mark_done and t.done {
+        set s = s + " (done)";
+    }
+    return s;
+}
+
+fn listing(s: Store, which: str) -> list[str] {
+    let out = new list[str];
+    var ts = all_tasks(s);
+    if which == "" {
+        set ts = filter(ts, fn(t: Task) -> bool {
+            return not t.done;
+        });
+        sort_by(ts, fn(t: Task) -> int {
+            return t.prio;
+        });
+    } else if which == "done" {
+        set ts = filter(ts, fn(t: Task) -> bool {
+            return t.done;
+        });
+        sort_by(ts, fn(t: Task) -> int {
+            return t.done_seq;
+        });
+    } else {
+        let tag = slice(which, 1, len(which));
+        set ts = filter(ts, fn(t: Task) -> bool {
+            return any(t.tags, fn(g: str) -> bool {
+                return g == tag;
+            });
+        });
+    }
+    for t in ts {
+        push(out, task_line(t, which != "" and which != "done"));
+    }
+    if len(out) == 0 {
+        push(out, "no tasks");
+    }
+    return out;
+}
+
+fn stats(s: Store) -> str {
+    let ts = all_tasks(s);
+    let done = len(filter(ts, fn(t: Task) -> bool {
+        return t.done;
+    }));
+    return "open " + str(len(ts) - done) + " done " + str(done);
+}

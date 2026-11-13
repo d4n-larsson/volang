@@ -1,0 +1,23 @@
+summary: no employees
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: unknown employee E1
+error: bad command
+error: bad command
+error: unknown employee E9
+error: unknown employee E9
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: unknown command Payslip
+employee E1 added: salaried $0.00
+payslip E1 Ann (salaried)
+  salary $0.00
+  gross $0.00
+  tax $0.00
+  net $0.00

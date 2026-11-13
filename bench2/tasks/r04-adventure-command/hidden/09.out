@@ -1,0 +1,43 @@
+== Garden ==
+exits: north
+items: shovel, statue
+taken statue (+20)
+== Hall ==
+exits: east north south
+items: lamp
+== Library ==
+exits: south up
+items: book, key
+== Attic ==
+exits: down
+items: crown
+crown is too heavy
+dropped statue
+taken crown (+50)
+== Attic ==
+exits: down
+items: statue
+== Library ==
+exits: south up
+items: book, key
+== Hall ==
+exits: east north south
+items: lamp
+== Garden ==
+exits: north
+items: shovel
+== Garden ==
+exits: north
+items: shovel
+== Hall ==
+exits: east north south
+items: lamp
+== Library ==
+exits: south up
+items: book, key
+== Attic ==
+exits: down
+items: statue
+statue is too heavy
+score 85 in 10 moves
+final score 85 in 10 moves

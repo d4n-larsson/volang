@@ -1,0 +1,1 @@
+renamed store.vo:persist_total

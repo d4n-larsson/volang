@@ -1,0 +1,49 @@
+record Ticket {
+    prio: int;
+    id: str;
+    title: str;
+}
+
+fn pad7(n: int) -> str {
+    var s = str(n);
+    while len(s) < 7 {
+        set s = "0" + s;
+    }
+    return s;
+}
+
+fn main() -> result[void] uses console, input {
+    let used = new map[int, bool];
+    let tickets = new list[Ticket];
+    while true {
+        match read_line() {
+            case ok(line) {
+                if line == "" {
+                    continue;
+                }
+                let sp = find(line, " ");
+                let title = slice(line, sp + 1, len(line));
+                var h = 7;
+                for c in chars(title) {
+                    set h = (h * 31 + ord(c)) % 1000003;
+                }
+                while has(used, h) {
+                    set h = (h + 1) % 1000003;
+                }
+                set used[h] = true;
+                push(tickets, new Ticket { prio: try parse_int(slice(line, 0, sp)), id: "T" + pad7(h), title: title });
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    sort_by(tickets, fn(t: Ticket) -> int {
+        return -t.prio;
+    });
+    for t in tickets {
+        print(t.id + " P" + str(t.prio) + " " + t.title);
+    }
+    print("count " + str(len(tickets)));
+    return ok();
+}

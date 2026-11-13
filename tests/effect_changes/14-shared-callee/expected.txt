@@ -1,0 +1,3 @@
+added main.vo:main
+added report.vo:render
+added store.vo:save_total

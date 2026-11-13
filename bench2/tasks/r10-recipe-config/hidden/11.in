@@ -1,0 +1,6 @@
+config units=kitchen  rounding=up
+recipe pasta 2 spaghetti 200 g cream 125 ml
+recipe sauce 5 cream 100 ml tomato 3 pcs basil 4 g
+shop sauce 2 pasta 3
+shop pasta 1
+config rounding=nearest

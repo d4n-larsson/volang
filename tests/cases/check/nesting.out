@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0115","name":"nesting_too_deep","severity":"error","file":"nesting.vo","start":{"line":2,"col":5012},"end":{"line":2,"col":5013},"text":"(","message":"This code is nested too deeply.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

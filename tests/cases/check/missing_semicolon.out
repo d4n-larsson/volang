@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0112","name":"missing_semicolon","severity":"error","file":"missing_semicolon.vo","start":{"line":2,"col":14},"end":{"line":2,"col":14},"text":"","message":"Missing `;` at the end of this statement.","fixes":[{"file":"missing_semicolon.vo","start":{"line":2,"col":14},"end":{"line":2,"col":14},"replacement":";"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

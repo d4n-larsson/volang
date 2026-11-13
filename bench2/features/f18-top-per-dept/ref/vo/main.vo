@@ -1,0 +1,51 @@
+record Emp {
+    dept: str;
+    name: str;
+    salary: int;
+}
+
+fn main() -> result[void] uses console, input {
+    let k = try parse_int(try read_line());
+    let emps = new list[Emp];
+    let depts = new list[str];
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                push(emps, new Emp { dept: p[0], name: p[1], salary: try parse_int(p[2]) });
+                if not any(depts, fn(d: str) -> bool {
+                    return d == p[0];
+                }) {
+                    push(depts, p[0]);
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    sort(depts);
+    for d in depts {
+        let group = filter(emps, fn(e: Emp) -> bool {
+            return e.dept == d;
+        });
+        sort_by(group, fn(e: Emp) -> str {
+            return e.name;
+        });
+        sort_by(group, fn(e: Emp) -> int {
+            return -e.salary;
+        });
+        let total = fold(group, 0, fn(acc: int, e: Emp) -> int {
+            return acc + e.salary;
+        });
+        let top = map(slice(group, 0, min(k, len(group))), fn(e: Emp) -> str {
+            return e.name + ":" + str(e.salary);
+        });
+        var shown = "-";
+        if len(top) > 0 {
+            set shown = join(top, ",");
+        }
+        print(d + " total=" + str(total) + " top=" + shown);
+    }
+    return ok();
+}

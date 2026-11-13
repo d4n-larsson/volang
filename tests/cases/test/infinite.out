@@ -1,0 +1,3 @@
+{"v":1,"kind":"test","name":"loops forever","status":"timeout","file":"infinite.vo","start":{"line":1,"col":1},"uses":"","ms":0,"failure":{"file":"infinite.vo","start":{"line":2,"col":5},"end":{"line":3,"col":6},"message":"Time limit of 1 s exceeded.","code":"R0009"}}
+{"v":1,"kind":"test","name":"still runs","status":"pass","file":"infinite.vo","start":{"line":6,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":1,"failed":0,"errored":0,"timed_out":1}

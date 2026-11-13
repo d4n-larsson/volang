@@ -1,0 +1,58 @@
+fn main() -> result[void] uses console, input {
+    let width = try parse_int(trim(try read_line()));
+    let paras = new list[list[str]];
+    var cur = new list[str];
+    while true {
+        match read_line() {
+            case ok(line) {
+                let ws = filter(split(line, " "), fn(w: str) -> bool {
+                    return len(w) > 0;
+                });
+                if len(ws) > 0 {
+                    for w in ws {
+                        push(cur, w);
+                    }
+                } else if len(cur) > 0 {
+                    push(paras, cur);
+                    set cur = new list[str];
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    if len(cur) > 0 {
+        push(paras, cur);
+    }
+    var first = true;
+    for p in paras {
+        if not first {
+            print("");
+        }
+        set first = false;
+        var line = "";
+        for word in p {
+            var w = word;
+            if len(w) > width {
+                if len(line) > 0 {
+                    print(line);
+                }
+                while len(w) > width {
+                    print(slice(w, 0, width));
+                    set w = slice(w, width, len(w));
+                }
+                set line = w;
+            } else if len(line) == 0 {
+                set line = w;
+            } else if len(line) + 1 + len(w) <= width {
+                set line = line + " " + w;
+            } else {
+                print(line);
+                set line = w;
+            }
+        }
+        print(line);
+    }
+    return ok();
+}

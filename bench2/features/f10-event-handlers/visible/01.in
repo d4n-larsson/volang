@@ -1,0 +1,4 @@
+on click say hello
+on click echo
+emit click left button
+emit key a

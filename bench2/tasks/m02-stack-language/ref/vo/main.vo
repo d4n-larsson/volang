@@ -1,0 +1,62 @@
+import dictionary.Item;
+import dictionary.define;
+import dictionary.expand;
+import machine.clear_stack;
+import machine.run_builtin;
+import machine.show;
+import tokens.tokens;
+
+fn find_end(toks: list[str], from: int) -> int {
+    for j in from..len(toks) {
+        if toks[j] == ";" {
+            return j;
+        }
+    }
+    return -1;
+}
+
+fn run_line(line: str, stack: list[int], words: map[str, list[Item]], out: list[str]) -> result[void] {
+    let toks = tokens(line);
+    var i = 0;
+    while i < len(toks) {
+        let t = toks[i];
+        if t == ":" {
+            let end = find_end(toks, i + 2);
+            if i + 1 >= len(toks) or end < 0 {
+                return err("unfinished definition");
+            }
+            try define(words, toks[i + 1], slice(toks, i + 2, end));
+            set i = end + 1;
+            continue;
+        }
+        for it in try expand(words, t) {
+            if it.is_num {
+                push(stack, it.num);
+            } else {
+                try run_builtin(stack, it.word, out);
+            }
+        }
+        set i = i + 1;
+    }
+    return ok();
+}
+
+fn main() uses console, input {
+    let stack = new list[int];
+    let words = new map[str, list[Item]];
+    let out = new list[str];
+    for line in split(read_all(), "\n") {
+        match run_line(line, stack, words, out) {
+            case ok {
+            }
+            case err(e) {
+                push(out, "error: " + e);
+                clear_stack(stack);
+            }
+        }
+    }
+    push(out, show(stack));
+    for s in out {
+        print(s);
+    }
+}

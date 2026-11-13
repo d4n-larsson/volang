@@ -1,0 +1,31 @@
+fn isqrt(n: int) -> int {
+    var lo = 0;
+    var hi = 3037000499;
+    if n < hi {
+        set hi = n;
+    }
+    while lo < hi {
+        let mid = lo + (hi - lo + 1) / 2;
+        if mid * mid <= n {
+            set lo = mid;
+        } else {
+            set hi = mid - 1;
+        }
+    }
+    return lo;
+}
+
+fn main() -> result[void] uses console, input {
+    while true {
+        match read_line() {
+            case ok(line) {
+                let n = try parse_int(trim(line));
+                print(str(isqrt(n)));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

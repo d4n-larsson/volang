@@ -1,0 +1,5 @@
+sub 10,abs,mul 3,neg,add 1
+0
+10
+20
+-5

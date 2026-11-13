@@ -1,0 +1,28 @@
+product A pen 12
+product B pen 12.5
+product C pen 12.34
+product D pen 0.05
+product E pen 007
+product F pen 0
+product G pen 12.
+product G pen .5
+product G pen 12.345
+product G pen 1.2.3
+product G pen 1,5
+product G pen -1
+product G pen +1
+product G pen 1.x
+product G pen 0.0
+price A 3.1
+price B 0.09
+price C 100.00
+price D 5.
+price E 1..2
+add A 1
+add B 1
+add C 1
+add D 1
+add E 1
+add F 1
+add G 1
+cart

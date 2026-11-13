@@ -1,0 +1,5 @@
+t=10 line 4: account cy exists
+t=25 line 6: same account
+t=40 line 5: balance not zero
+cy -17.00
+fees 2.50 interest 0.00

@@ -1,0 +1,25 @@
+record Point {
+    x: int;
+    y: int;
+}
+
+variant Shape {
+    circle(float);
+    empty;
+}
+
+test "strings" {
+    expect_eq("abc", "abd");
+}
+
+test "lists" {
+    expect_eq([1, 2], [1, 3]);
+}
+
+test "records" {
+    expect_eq(new Point { x: 1, y: 2 }, new Point { x: 1, y: 3 });
+}
+
+test "variants" {
+    expect_eq(Shape.circle(1.0), Shape.empty);
+}

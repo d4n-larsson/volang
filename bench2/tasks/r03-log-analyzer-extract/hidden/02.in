@@ -1,0 +1,15 @@
+2024-05-01 10:00:00 ERROR zeta: one
+2024-05-01 10:00:01 ERROR alpha: one
+2024-05-01 10:00:02 ERROR mid: one
+2024-05-01 10:00:03 ERROR zeta: two
+2024-05-01 10:00:04 ERROR alpha: two
+2024-05-01 10:00:05 WARN beta: warn only
+2024-05-01 10:00:06 ERROR Alpha: capital
+2024-05-01 10:00:07 ERROR b: x
+2024-05-01 10:00:08 ERROR ab: x
+2024-05-01 10:00:09 ERROR ab: y
+2024-05-01 10:00:10 ERROR zeta: three
+---
+errors
+levels
+stats

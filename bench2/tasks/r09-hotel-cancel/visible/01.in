@@ -1,0 +1,8 @@
+type double 12000 2
+type suite 30000 1
+book b1 double ann 1 4
+book b2 suite bob 2 9
+invoice b2
+avail double 0 5
+occupancy 3
+report

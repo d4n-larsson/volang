@@ -1,0 +1,3 @@
+fn present() -> int {
+    return 1;
+}

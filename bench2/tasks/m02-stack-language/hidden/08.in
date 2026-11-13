@@ -1,0 +1,153 @@
+: inc 1 + ;
+: twice dup + ;
+: sq dup * ;
++ -4 rot .s 27 -46 * over 42 drop drop drop -46 neg
+abs sq -28 -47 -28 15 15 *
+rot . 25 7 46 44 sq -15
+.s over dup 42 rot sq -9 .s
+swap 11 40
+drop swap % dup over - neg .s 45 23 % over - *
+-24 + sq + -28 -47 -42 43 neg -30 drop abs . *
+28
+- 12 7 swap % .s * inc 37 -37 50
+drop abs twice -7 27 over 21 over -46 -29 31 40 / 6
+25 29
+37 sq * 2 15 / -48 -21 -47 dup sq /
+/ abs inc + drop - dup 16 - % neg
+37 inc 49 + +
+dup 25 + -3 42 46 inc
+41 twice -35 -35 -8 / + dup rot %
+* % twice rot dup %
+12 drop sq - .s - 19
+- over over
+-13
+35 neg sq -31 . twice rot
+-30 sq -5 swap dup inc abs * -44
+-18 abs dup 20 45 - .s drop
+35 31 neg sq dup .s 1 rot abs -
+. % swap dup * 36 twice
+dup . -50 drop over 25 sq dup 14
+-40 neg 46 abs 30 .s + -2
+* 21 inc 18 swap sq 33 38
+% -10 32 % abs - / 17 *
+- -21 drop -15 -36 50 -4 -5 8 13 twice inc dup
+-16 -38 dup 36 * -33 20 abs rot 42 drop
+neg . rot . rot 29 - 0 twice neg
+inc -2 -47 -29 43 abs -9 26
+dup * -25 - . -18 -4
+-26 -20 + -3 swap
+*
+6 * 23 neg rot abs -44 10 twice swap swap over abs dup
+sq inc sq
+37 * -11
++ 35 -28 4 - 33 twice 11
+* drop -25
+.s neg / 12 19 -37 inc over 29
+rot . * .s over * -12 -32 twice -12 drop
+twice dup
+39 20 + . -26
+over -47 rot drop 48 / swap
+-25 * drop . over dup
+-24 -9 % drop abs over dup -35 rot -48 -8
+abs rot / inc .
+twice abs twice swap inc .s % -3 .s sq swap over .s -12
+-47 -10
+-18
+neg - sq 24 / 27 rot 25 twice dup inc -12 .s
+40 neg rot 2
+drop 35 29 .s
+8 10 % -22 17 - drop
+-1 abs -16 15 50 inc rot % 11 33 -9
+swap -13 - drop
+* inc
+34
+sq -7 - - neg
+over 11 drop * -7 sq
+18
+34 19 . twice -27 -45 47 .s -27 -45 swap /
+-4 26 / -26 38 sq swap
+17 drop abs * -34 twice 23 6 swap . dup
+inc * 40
+over sq 6
+twice inc 30 .s -47 inc drop twice
+9 neg swap sq 18 -14 . -36 / over abs
+twice dup
+.s 28
+rot 21 -32 33 7 sq abs -10 abs 41 % over 25
+-38
+-4 -10
+sq neg drop abs / inc neg 13 40 -8 sq +
+swap 44 * 49 swap dup twice -23
+-4 . -20 over / 9 -16 drop + twice
+-27 rot * swap 43 -24 / -40 sq -27 28 +
+% -4 inc 9 48 sq
+11 .
+% -47 drop 3 * dup .s -7 inc
+.s over 39
+-26 -22 -35 -3 drop .s rot neg 4 / 47
+neg
+-41 . 44 twice dup % 30 44 -39 neg rot
+. drop -21
+rot -8 * / sq -8 twice neg drop over
+37 * sq -16 rot - swap * 29 - neg -20 8 dup
+-44 0
+rot
+20 4 -33 -34 .s abs -37 . inc -50 .s 5 -2
+-31 -16 swap 16 % 3 twice abs 3 23 twice neg swap 2
+inc .s dup % -23 -37 / sq drop -30
+8 15 -3 / drop 21 0 % -30 . -25 .s -18 swap
+32 abs rot 50 sq
+rot over -8 -44 -18 dup
+% -9 33 -1 dup
+twice -28 +
+- swap -47 37 . abs .
+neg -50 -48 .s .s + -13 -48 + %
+35 *
+-23 swap drop swap -20 + 35
+* .s -35 over
+38 32 -34 /
+38 -23
+-40 22 -3 49 % + -
+* neg 29 sq sq drop 27 29
+9 -32 inc 11 33 -25 -7 -33 -17 twice rot
+-36 -43 drop / -41 -36 3 swap sq . + -25 - %
+% -27 % 27 37 + over dup sq
+-21 neg / % .s -26 -15 - 29 -9
+-22 12 twice -10 + twice sq
+/ abs . + . abs 7 45 abs . .s *
+-35 % * 5 + * + -24 41 47 * twice
+5 swap - inc -24 + .s 11 rot inc 2
+over / - sq * % * .s -27 42 swap % abs 26
+* -19 -7 + .s 26 -4 48 abs rot
+abs
+17 -
+% 42 % inc -50
+rot swap abs abs .s abs + -48 swap /
+- drop -7 -7
+* .s -17 sq drop 22 47 drop twice -40 drop
+0 sq rot
+sq % .s sq sq 3 /
++ 36 -47 -46 . 39 35 sq -2 -50
+-14 -48 -9 swap 36
+-1 + -19 inc -33 1 over .s inc -32 over abs
+.s / inc .s twice 10 .s -17
+-12 23 over inc -27 * 18 -25 over
+-18 neg
+.s -35 12 dup . % dup twice abs
+/ drop twice
+neg over over
+-3
+.s .s / abs -23 over 37 27 over + rot .
+19 -49 32 0 25 .s inc over
+swap
+inc 44 -27 -35 twice -11 -16 sq 40 3 / over -
+- 42 -5
+twice dup drop 25 + * -19 -22 2 % -11 abs
+dup % 24 -31 rot swap 39 twice .
+13 sq 39 / abs 36 swap 34 rot swap abs *
+* 44 -23 -44 twice dup -2 -50 2 * % - -24
+- 50 -45 .
+neg drop / -20 / dup 14 sq inc 23 -6
+sq
+-
+29 - -41 over

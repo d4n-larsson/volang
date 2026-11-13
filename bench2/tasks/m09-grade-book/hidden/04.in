@@ -1,0 +1,18 @@
+assignment t1 1 3
+assignment t2 1 3
+assignment t3 1 3
+student p
+student q
+student r
+student s
+score p t1 2
+score p t2 2
+score p t3 2
+score q t1 1
+score q t1 3
+score q t2 3
+score q t3 3
+score r t1 0
+score s t1 3
+score s t2 2
+score s t3 1

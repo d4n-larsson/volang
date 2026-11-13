@@ -1,0 +1,8 @@
+mode staging
+feature_x=on
+host=localhost
+log_level=info
+motd=hi
+port=1
+url=http://localhost:8080/?a=1&b=2
+workers=4

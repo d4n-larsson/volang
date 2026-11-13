@@ -1,0 +1,17 @@
+take lamp
+go south
+take shovel
+go north
+go north
+go south
+go east
+take knife
+go west
+go north
+take key
+score
+inventory
+go up
+go down
+go up
+score

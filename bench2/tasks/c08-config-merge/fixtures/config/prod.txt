@@ -1,0 +1,5 @@
+# production
+host=example.org
+port =443
+workers= 32
+log_level =

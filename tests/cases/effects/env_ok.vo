@@ -1,0 +1,10 @@
+fn main() uses console, env("HOME") {
+    match env("HOME") {
+        case ok(v) {
+            print("ok");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

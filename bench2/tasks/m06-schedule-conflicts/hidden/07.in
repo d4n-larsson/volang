@@ -1,0 +1,70 @@
+meeting k0 r1 Tue 17:00-17:15 cy,al
+free Fri 240 fa,cy
+meeting k1 r3 Thu 13:00-13:15 di,bo
+meeting k2 r3 Fri 16:30-18:00 al,bo,cy
+meeting k3 r2 Wed 09:15-10:15 al,cy
+meeting k4 r3 Wed 15:00-17:00 bo
+meeting k5 r1 Fri 09:30-09:45 bo,cy,di
+meeting k6 r1 Fri 17:00-19:00 ed,al,cy
+free Thu 120 cy,ed
+meeting k7 r1 Fri 09:45-10:00 fa,ed,bo
+meeting k8 r1 Tue 12:15-13:00 bo,di,ed
+meeting k9 r1 Wed 11:15-13:15 al,bo,ed
+meeting k10 r2 Fri 16:45-18:45 ed,cy,fa
+meeting k11 r2 Mon 14:00-14:45 fa
+meeting k12 r2 Tue 10:45-11:45 fa,di,al
+free Mon 240 di,fa
+meeting k13 r3 Thu 09:00-10:30 di,cy
+meeting k14 r2 Tue 09:15-09:45 fa,cy,di
+meeting k15 r1 Wed 08:15-08:30 al,cy,ed
+meeting k16 r2 Thu 16:00-17:00 ed,cy
+meeting k17 r1 Thu 15:45-16:30 di,fa,ed
+meeting k18 r3 Tue 15:45-16:30 di,cy,ed
+free Fri 240 fa,ed
+meeting k19 r2 Fri 12:15-13:00 di,fa,bo
+meeting k20 r1 Fri 08:00-09:30 al,bo
+meeting k21 r2 Fri 17:00-17:15 fa,cy,ed
+meeting k22 r3 Mon 08:45-09:15 cy
+meeting k23 r1 Mon 14:45-16:15 al,di
+meeting k24 r3 Tue 13:45-14:30 fa
+free Fri 120 bo,al
+meeting k25 r3 Thu 09:30-11:30 al
+meeting k26 r1 Fri 15:15-17:15 fa
+meeting k27 r3 Wed 10:00-11:30 bo
+meeting k28 r2 Thu 15:00-16:00 al,bo,ed
+meeting k29 r2 Wed 15:00-16:00 cy,di,al
+meeting k30 r3 Wed 12:30-13:15 al
+free Wed 120 di,fa
+meeting k31 r1 Tue 15:00-15:45 fa
+meeting k32 r2 Mon 11:45-13:15 al,bo,cy
+meeting k33 r2 Wed 08:45-10:45 fa
+meeting k34 r3 Tue 09:00-09:30 fa,al,di
+meeting k35 r1 Mon 15:15-17:15 fa,al
+meeting k36 r3 Tue 13:30-15:00 bo
+free Tue 120 fa,bo
+meeting k37 r3 Fri 16:00-17:30 bo,fa
+meeting k38 r3 Fri 10:00-11:00 bo,cy,fa
+meeting k39 r2 Fri 08:00-09:30 bo,cy
+meeting k40 r3 Tue 15:00-15:15 ed,fa
+meeting k41 r3 Tue 11:30-13:30 fa,cy,ed
+meeting k42 r1 Mon 10:15-10:45 fa,bo,di
+free Mon 30 di,al
+meeting k43 r3 Mon 09:45-11:45 ed,al,cy
+meeting k44 r1 Fri 08:45-10:15 di
+meeting k45 r1 Tue 12:30-12:45 al,ed
+meeting k46 r1 Mon 15:00-15:15 fa
+meeting k47 r2 Tue 08:15-10:15 di,cy,ed
+meeting k48 r3 Mon 11:00-13:00 fa,bo,cy
+free Wed 120 ed,al
+meeting k49 r1 Mon 08:30-09:15 fa,al
+meeting k50 r2 Tue 13:45-15:45 di,al
+meeting k51 r1 Thu 08:15-08:30 al,di
+meeting k52 r1 Tue 12:00-12:15 ed,fa,cy
+meeting k53 r3 Thu 10:00-11:00 bo,fa,di
+meeting k54 r1 Wed 17:00-18:30 di,cy,ed
+free Mon 60 di,al
+meeting k55 r3 Tue 10:45-12:15 al
+meeting k56 r3 Fri 09:45-10:15 di,fa,ed
+meeting k57 r1 Wed 15:30-16:00 di,bo,fa
+meeting k58 r2 Fri 14:30-15:15 bo,cy
+meeting k59 r1 Mon 13:45-14:15 cy

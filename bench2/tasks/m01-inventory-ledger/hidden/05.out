@@ -1,0 +1,18 @@
+line 1: invalid
+line 2: invalid
+line 3: invalid
+line 4: invalid
+line 5: invalid
+line 6: invalid
+line 7: invalid
+line 8: invalid
+line 9: invalid
+REPORT
+p 10 0.70
+revenue 0.00 cogs 0.00 loss 0.00 profit 0.00 stock 0.70
+REPORT
+p 10 0.70
+revenue 0.00 cogs 0.00 loss 0.00 profit 0.00 stock 0.70
+REPORT
+p 10 0.70
+revenue 0.00 cogs 0.00 loss 0.00 profit 0.00 stock 0.70

@@ -1,0 +1,50 @@
+import model.RoomType;
+import model.Booking;
+import rooms.first_full_day;
+import billing.stay_discount;
+import billing.money;
+import billing.refund_for;
+
+fn held_nights(b: Booking) -> int {
+    return b.held_until - b.start;
+}
+
+fn book(types: map[str, RoomType], bookings: map[str, Booking], booking_id: str, type_name: str, guest: str, start: int, end: int) -> str {
+    if has(bookings, booking_id) {
+        return "error: booking " + booking_id + " exists";
+    }
+    if not has(types, type_name) {
+        return "error: unknown type " + type_name;
+    }
+    if start >= end {
+        return "error: bad dates";
+    }
+    let full = first_full_day(types, bookings, type_name, start, end);
+    if full >= 0 {
+        return "error: no " + type_name + " room free on day " + str(full);
+    }
+    let rate = types[type_name].rate;
+    let subtotal = (end - start) * rate;
+    let discount = stay_discount(end - start, subtotal);
+    let b = new Booking { booking_id: booking_id, type_name: type_name, guest: guest, start: start, end: end, rate: rate, subtotal: subtotal, discount: discount, total: subtotal - discount, held_until: end, cancelled: false, cancel_day: 0, refund: 0 };
+    set bookings[booking_id] = b;
+    return "booked " + booking_id + ": " + type_name + " " + str(b.end - b.start) + " nights, total " + money(b.total);
+}
+
+fn cancel(bookings: map[str, Booking], booking_id: str, day: int) -> str {
+    if not has(bookings, booking_id) {
+        return "error: unknown booking " + booking_id;
+    }
+    let b = bookings[booking_id];
+    if b.cancelled {
+        return "error: booking " + booking_id + " already cancelled";
+    }
+    if day >= b.end {
+        return "error: booking " + booking_id + " already ended";
+    }
+    set b.refund = refund_for(b, day);
+    set b.cancelled = true;
+    set b.cancel_day = day;
+    set b.held_until = max(b.start, day);
+    return "cancelled " + booking_id + ": refund " + money(b.refund);
+}

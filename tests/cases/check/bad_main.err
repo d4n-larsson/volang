@@ -1,0 +1,4 @@
+bad_main.vo:1:4: error[E0409]: `main` must be `fn main()` or `fn main() -> result[void]`.
+   1 | fn main(x: int) uses console {
+     |    ^^^^
+1 error, 0 warnings

@@ -1,0 +1,71 @@
+import shop.Shop;
+import shop.Product;
+import shop.Line;
+import shop.has_line;
+import shop.find_line;
+import shop.unknown_product;
+import money.money;
+
+fn add_product(shop: Shop, sku: str, name: str, price: int) -> str {
+    if has(shop.catalog, sku) {
+        return "error: product " + sku + " exists";
+    }
+    set shop.catalog[sku] = new Product { sku: sku, name: name, price: price, sold: 0, net: 0 };
+    return "product " + sku + " added";
+}
+
+fn set_price(shop: Shop, sku: str, price: int) -> str {
+    if not has(shop.catalog, sku) {
+        return unknown_product(sku);
+    }
+    let product = shop.catalog[sku];
+    set product.price = price;
+    return "product " + sku + " price " + money(price);
+}
+
+fn add_to_cart(shop: Shop, sku: str, qty: int) -> str {
+    if not has(shop.catalog, sku) {
+        return unknown_product(sku);
+    }
+    if not has_line(shop, sku) {
+        push(shop.cart, new Line { sku: sku, qty: 0 });
+    }
+    let line = find_line(shop, sku);
+    set line.qty = line.qty + qty;
+    return "cart " + sku + " x" + str(line.qty);
+}
+
+fn remove_from_cart(shop: Shop, sku: str, qty: int) -> str {
+    if not has_line(shop, sku) {
+        return "error: " + sku + " not in cart";
+    }
+    let line = find_line(shop, sku);
+    if qty > line.qty {
+        return "error: only " + str(line.qty) + " " + sku + " in cart";
+    }
+    set line.qty = line.qty - qty;
+    if line.qty == 0 {
+        set shop.cart = filter(shop.cart, fn(x: Line) -> bool {
+            return x.sku != sku;
+        });
+        return "cart " + sku + " removed";
+    }
+    return "cart " + sku + " x" + str(line.qty);
+}
+
+fn show_cart(shop: Shop) -> list[str] {
+    if len(shop.cart) == 0 {
+        return ["cart empty"];
+    }
+    let out = new list[str];
+    var units = 0;
+    var gross = 0;
+    for line in shop.cart {
+        let price = shop.catalog[line.sku].price;
+        push(out, line.sku + " x" + str(line.qty) + " @ " + money(price) + " = " + money(line.qty * price));
+        set units = units + line.qty;
+        set gross = gross + line.qty * price;
+    }
+    push(out, "items " + str(units) + ", gross " + money(gross));
+    return out;
+}

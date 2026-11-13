@@ -1,0 +1,5 @@
+invalid_arg.vo:3:15: runtime error[R0007]: Cannot convert nan to int.
+   3 |     print(str(int(nan)));
+     |               ^^^^^^^^
+trace:
+  at main (invalid_arg.vo:3:15)

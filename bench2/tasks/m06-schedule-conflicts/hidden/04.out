@@ -1,0 +1,9 @@
+conflicts: 2
+q1 q2: person x, person z
+q1 q3: room R
+rooms:
+R 240
+S 61
+free line 4: 08:00
+free line 5: 12:00
+free line 6: 12:00

@@ -1,0 +1,10 @@
+fn main() {
+    match read_line() {
+        case ok(line) {
+            print(str(len(line)));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

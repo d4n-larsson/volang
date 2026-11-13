@@ -1,0 +1,13 @@
+1 open
+1 open a
+1 open a 1 2
+1 deposit a
+1 month now
+1 close
+1 close a b
+1 transfer a b
+1 withdraw a -5
+-1 open a 1
+1
+   2   open   spaced   7.5   
+3 withdraw spaced 7.5

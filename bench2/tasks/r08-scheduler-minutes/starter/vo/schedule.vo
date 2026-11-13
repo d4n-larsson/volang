@@ -1,0 +1,93 @@
+import clock.duration;
+import clock.span;
+
+record Event {
+    event_id: str;
+    room: str;
+    start: str;
+    end: str;
+}
+
+record Slot {
+    start: str;
+    end: str;
+}
+
+fn overlaps(a_start: str, a_end: str, b_start: str, b_end: str) -> bool {
+    return a_start < b_end and b_start < a_end;
+}
+
+# The room's events sorted by start time.
+fn room_events(events: map[str, Event], room: str) -> list[Event] {
+    let evs = new list[Event];
+    for k in keys(events) {
+        if events[k].room == room {
+            push(evs, events[k]);
+        }
+    }
+    sort_by(evs, fn(e: Event) -> str {
+        return e.start;
+    });
+    return evs;
+}
+
+fn add_event(events: map[str, Event], event_id: str, room: str, start: str, end: str) -> str {
+    if has(events, event_id) {
+        return "error: event " + event_id + " exists";
+    }
+    if start >= end {
+        return "error: empty interval";
+    }
+    for e in room_events(events, room) {
+        if overlaps(start, end, e.start, e.end) {
+            return "error: " + event_id + " conflicts with " + e.event_id;
+        }
+    }
+    set events[event_id] = new Event { event_id: event_id, room: room, start: start, end: end };
+    return "added " + event_id + " in " + room + " " + span(start, end);
+}
+
+fn remove_event(events: map[str, Event], event_id: str) -> str {
+    if not has(events, event_id) {
+        return "error: unknown event " + event_id;
+    }
+    remove(events, event_id);
+    return "removed " + event_id;
+}
+
+fn event_at(events: map[str, Event], room: str, t: str) -> result[Event] {
+    for e in room_events(events, room) {
+        if e.start <= t and t < e.end {
+            return ok(e);
+        }
+    }
+    return err("free");
+}
+
+# Gaps inside [lo, hi) not covered by the room's events, at least min_len minutes long.
+fn free_slots(events: map[str, Event], room: str, lo: str, hi: str, min_len: int) -> list[Slot] {
+    let slots = new list[Slot];
+    var cursor = lo;
+    for e in room_events(events, room) {
+        if e.end <= cursor {
+            continue;
+        }
+        if e.start >= hi {
+            break;
+        }
+        if e.start > cursor and duration(cursor, e.start) >= min_len {
+            push(slots, new Slot { start: cursor, end: e.start });
+        }
+        set cursor = max(cursor, e.end);
+    }
+    if cursor < hi and duration(cursor, hi) >= min_len {
+        push(slots, new Slot { start: cursor, end: hi });
+    }
+    return slots;
+}
+
+fn booked_minutes(evs: list[Event]) -> int {
+    return fold(evs, 0, fn(acc: int, e: Event) -> int {
+        return acc + duration(e.start, e.end);
+    });
+}

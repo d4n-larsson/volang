@@ -1,0 +1,41 @@
+record Product {
+    sku: str;
+    name: str;
+    price: int;
+    stock: int;
+    sold: int;
+}
+
+fn add_product(catalog: map[str, Product], sku: str, name: str, price: int, stock: int) -> str {
+    if has(catalog, sku) {
+        return "error: product " + sku + " exists";
+    }
+    set catalog[sku] = new Product { sku: sku, name: name, price: price, stock: stock, sold: 0 };
+    return "product " + sku + " added";
+}
+
+fn restock_product(catalog: map[str, Product], sku: str, n: int) -> str {
+    if not has(catalog, sku) {
+        return "error: unknown product " + sku;
+    }
+    let product = catalog[sku];
+    set product.stock = product.stock + n;
+    return "product " + sku + " stock " + str(product.stock);
+}
+
+fn set_product_price(catalog: map[str, Product], sku: str, price: int, money: fn(int) -> str) -> str {
+    if not has(catalog, sku) {
+        return "error: unknown product " + sku;
+    }
+    let product = catalog[sku];
+    set product.price = price;
+    return "product " + sku + " price " + money(price);
+}
+
+fn sorted_products(catalog: map[str, Product]) -> list[Product] {
+    let skus = keys(catalog);
+    sort(skus);
+    return map(skus, fn(sku: str) -> Product {
+        return catalog[sku];
+    });
+}

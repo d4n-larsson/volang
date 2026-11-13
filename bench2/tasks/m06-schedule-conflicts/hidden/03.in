@@ -1,0 +1,7 @@
+meeting r1 X Tue 08:00-09:00 a
+meeting r2 X Tue 09:00-10:00 b
+meeting r3 X Tue 08:30-09:30 c
+meeting r4 X Tue 12:00-13:00 d
+meeting r5 X Tue 12:15-12:45 e
+meeting r6 X Wed 12:15-12:45 e
+meeting r7 Y Tue 08:00-18:00 a,b,c,d,e

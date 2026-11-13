@@ -1,0 +1,16 @@
+== Garden ==
+exits: north
+items: shovel, statue
+taken statue (+20)
+shovel is too heavy
+no crown here
+== Hall ==
+exits: east north south
+items: lamp
+taken lamp
+no lamp here
+== Hall ==
+exits: east north south
+items: none
+you carry: statue, lamp
+score 25 in 2 moves

@@ -1,0 +1,6 @@
+product A1 added
+error: product A1 exists
+product A1 stock 15
+product A1 price 1.75
+error: unknown product Z9
+error: unknown product Z9

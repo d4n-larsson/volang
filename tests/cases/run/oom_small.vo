@@ -1,0 +1,8 @@
+fn main() uses console {
+    var total = 0;
+    for i in 0..5000000 {
+        let s = "line " + str(i);
+        set total = total + len(s);
+    }
+    print(str(total));
+}

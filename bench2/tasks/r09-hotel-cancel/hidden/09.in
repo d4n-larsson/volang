@@ -1,0 +1,18 @@
+type std 8000 2
+type fam 11000 1
+book h1 std ann 0 3
+book h2 std bob 1 8
+book h3 fam cy 2 9
+rate std 9000
+book h4 std dee 3 5
+cancel h2 2
+book h5 std eve 2 4
+occupancy 2
+occupancy 3
+avail std 0 8
+cancel h3 2
+book h6 fam fay 2 3
+invoice h2
+invoice h3
+invoice h6
+report

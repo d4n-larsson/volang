@@ -1,0 +1,45 @@
+assignment m added
+assignment f added
+student ana enrolled
+student ben enrolled
+student cat enrolled
+student dan enrolled
+student eve enrolled
+student fay enrolled
+ana m 95/100
+ana f 99/100
+ben m 99/100
+ben f 96/100
+cat m 80/100
+cat f 80/100
+dan m 92/100
+dan f 90/100
+eve m 60/100
+eve f 61/100
+1. ana 97.4 A+
+2. ben 97.2 A+
+3. dan 90.8 A-
+4. cat 80.0 B-
+5. eve 60.6 D-
+-. fay no scores
+class average 85.2
+A+ 2 ana ben
+A- 1 dan
+B- 1 cat
+D- 1 eve
+eve f 100/100
+fay m 100/100
+1. fay 100.0 A+
+2. ana 97.4 A+
+3. ben 97.2 A+
+4. dan 90.8 A-
+5. eve 84.0 B
+6. cat 80.0 B-
+class average 91.6
+A+ 3 ana ben fay
+A- 1 dan
+B 1 eve
+B- 1 cat
+eve average 84.0 B
+  m 60/100 60.0
+  f 100/100 100.0

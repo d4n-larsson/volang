@@ -1,0 +1,12 @@
+config rounding=up units=kitchen
+recipe pasta added (2 ingredients)
+recipe sauce added (3 ingredients)
+shopping list (2 recipes):
+  basil 2 g
+  cream 15 tbsp 3 ml
+  spaghetti 300 g
+  tomato 2 pcs
+shopping list (1 recipes):
+  cream 4 tbsp 3 ml
+  spaghetti 100 g
+error: unknown command config

@@ -1,0 +1,13 @@
+book 978-1: 2 copies
+member ana joined
+member bo joined
+ana borrows 978-1 (due 16)
+bo borrows 978-1 (due 16)
+ana already has 978-1
+ana returns 978-1 late 4 days, fine 1.00
+ana borrows 978-1 (due 35)
+members:
+ana loans 978-1 owes 1.00
+bo loans 978-1 owes 0.00
+books:
+978-1 0/2 queue -

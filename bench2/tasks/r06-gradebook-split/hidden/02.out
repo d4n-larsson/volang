@@ -1,0 +1,44 @@
+assignment a added
+assignment b added
+student lee enrolled
+student kai enrolled
+student ann enrolled
+student bea enrolled
+student cal enrolled
+student dot enrolled
+student eli enrolled
+lee a 41/50
+lee b 34/40
+kai a 45/50
+kai b 28/40
+ann b 26/40
+bea a 10/50
+bea b 12/40
+cal a 43/50
+cal b 33/40
+dot b 26/40
+lee average 84.1 B
+  a 41/50 82.0
+  b 34/40 85.0
+kai average 76.0 C
+  a 45/50 90.0
+  b 28/40 70.0
+ann average 65.0 D
+  a missing
+  b 26/40 65.0
+bea average 27.0 F
+  a 10/50 20.0
+  b 12/40 30.0
+eli no scores
+  a missing
+  b missing
+1. lee 84.1 B
+2. cal 83.6 B
+3. kai 76.0 C
+4. ann 65.0 D
+4. dot 65.0 D
+6. bea 27.0 F
+-. eli no scores
+class average 66.8
+a count 4 min 10 max 45 mean 34.8
+b count 6 min 12 max 34 mean 26.5

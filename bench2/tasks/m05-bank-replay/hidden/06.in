@@ -1,0 +1,8 @@
+1 open m 0.5
+1 open n 00.10
+2 withdraw m 0.5
+2 withdraw n 0.1
+3 withdraw m 0.01
+4 month
+4 deposit n 3.70
+4 month

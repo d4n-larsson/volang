@@ -1,0 +1,8 @@
+report
+occupancy 3
+avail single 1 2
+invoice nobody
+type single 5000 0
+avail single 1 2
+book x single ann 1 2
+report

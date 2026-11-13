@@ -1,0 +1,73 @@
+import parse.Meeting;
+
+fn shares(a: list[str], b: list[str]) -> list[str] {
+    let out = filter(a, fn(p: str) -> bool {
+        return any(b, fn(q: str) -> bool {
+            return p == q;
+        });
+    });
+    sort(out);
+    return out;
+}
+
+fn overlaps(a: Meeting, b: Meeting) -> bool {
+    return a.day == b.day and a.start < b.end and b.start < a.end;
+}
+
+fn conflicts(ms: list[Meeting]) -> list[str] {
+    let out = new list[str];
+    for i in 0..len(ms) {
+        for j in i + 1..len(ms) {
+            let a = ms[i];
+            let b = ms[j];
+            if overlaps(a, b) {
+                let reasons = new list[str];
+                if a.room == b.room {
+                    push(reasons, "room " + a.room);
+                }
+                for p in shares(a.people, b.people) {
+                    push(reasons, "person " + p);
+                }
+                if len(reasons) > 0 {
+                    push(out, a.id + " " + b.id + ": " + join(reasons, ", "));
+                }
+            }
+        }
+    }
+    return out;
+}
+
+fn room_minutes(ms: list[Meeting]) -> list[str] {
+    let rooms = new map[str, bool];
+    for m in ms {
+        set rooms[m.room] = true;
+    }
+    let names = keys(rooms);
+    sort(names);
+    let out = new list[str];
+    for room in names {
+        var total = 0;
+        for day in ["Mon", "Tue", "Wed", "Thu", "Fri"] {
+            let spans = filter(ms, fn(m: Meeting) -> bool {
+                return m.room == room and m.day == day;
+            });
+            sort_by(spans, fn(m: Meeting) -> int {
+                return m.start;
+            });
+            var cur_s = -1;
+            var cur_e = -1;
+            for m in spans {
+                if m.start > cur_e {
+                    set total = total + cur_e - cur_s;
+                    set cur_s = m.start;
+                    set cur_e = m.end;
+                } else {
+                    set cur_e = max(cur_e, m.end);
+                }
+            }
+            set total = total + cur_e - cur_s;
+        }
+        push(out, room + " " + str(total));
+    }
+    return out;
+}

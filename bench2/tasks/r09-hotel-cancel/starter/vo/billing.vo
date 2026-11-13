@@ -1,0 +1,35 @@
+import model.Booking;
+
+fn long_stay_nights() -> int {
+    return 7;
+}
+
+fn long_stay_percent() -> int {
+    return 10;
+}
+
+fn money(cents: int) -> str {
+    var frac = str(cents % 100);
+    if len(frac) < 2 {
+        set frac = "0" + frac;
+    }
+    return str(cents / 100) + "." + frac;
+}
+
+fn stay_discount(nights: int, subtotal: int) -> int {
+    if nights >= long_stay_nights() {
+        return subtotal * long_stay_percent() / 100;
+    }
+    return 0;
+}
+
+fn invoice_lines(b: Booking) -> list[str] {
+    let nights = b.end - b.start;
+    let out = ["invoice " + b.booking_id + " for " + b.guest];
+    push(out, "  " + b.type_name + " " + str(nights) + " nights x " + money(b.rate) + " = " + money(b.subtotal));
+    if b.discount > 0 {
+        push(out, "  long stay discount " + money(b.discount));
+    }
+    push(out, "  total " + money(b.total));
+    return out;
+}

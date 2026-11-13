@@ -1,0 +1,61 @@
+conflicts: 46
+k2 k6: person al, person cy
+k2 k10: person cy
+k2 k21: person cy
+k2 k37: room r3, person bo
+k3 k33: room r2
+k4 k57: person bo
+k5 k44: room r1, person di
+k6 k10: person cy, person ed
+k6 k21: person cy, person ed
+k6 k26: room r1
+k7 k44: room r1
+k7 k56: person ed, person fa
+k8 k41: person ed
+k8 k45: room r1, person ed
+k9 k27: person bo
+k9 k30: person al
+k10 k21: room r2, person cy, person ed, person fa
+k10 k26: person fa
+k10 k37: person fa
+k12 k41: person fa
+k12 k55: person al
+k13 k25: room r3
+k13 k53: room r3, person di
+k14 k34: person di, person fa
+k14 k47: room r2, person cy, person di
+k16 k17: person ed
+k17 k28: person ed
+k20 k39: person bo
+k20 k44: room r1
+k21 k26: person fa
+k21 k37: person fa
+k23 k35: room r1, person al
+k23 k46: room r1
+k24 k36: room r3
+k25 k53: room r3
+k26 k37: person fa
+k29 k57: person di
+k31 k40: person fa
+k32 k48: person bo, person cy
+k34 k47: person di
+k38 k56: room r3, person fa
+k41 k45: person ed
+k41 k52: person cy, person ed, person fa
+k41 k55: room r3
+k43 k48: room r3, person cy
+k44 k56: person di
+rooms:
+r1 1050
+r2 1035
+r3 1185
+free line 2: none
+free line 9: 10:30
+free line 16: none
+free line 23: none
+free line 30: none
+free line 37: 10:45
+free line 44: 15:45
+free line 51: 08:00
+free line 58: none
+free line 65: 13:15

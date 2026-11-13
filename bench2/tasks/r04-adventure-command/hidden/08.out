@@ -1,0 +1,23 @@
+you don't have lamp
+what?
+what?
+taken lamp
+you don't have key
+== Library ==
+exits: south up
+items: book, key
+you don't have key
+dropped lamp
+you don't have lamp
+== Library ==
+exits: south up
+items: book, key, lamp
+taken lamp
+taken key
+dropped lamp
+dropped key
+you carry nothing
+== Library ==
+exits: south up
+items: book, lamp, key
+final score 5 in 1 moves

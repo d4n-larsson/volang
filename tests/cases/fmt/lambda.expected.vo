@@ -1,0 +1,17 @@
+fn apply(f: fn(int) -> int, x: int) -> int {
+    return f(x);
+}
+
+fn main() uses console {
+    let g = fn(x: int) -> int {
+        return x * 2;
+    };
+    print(str(apply(g, 3)));
+    make_printer()("x");
+}
+
+fn make_printer() -> fn(str) uses console {
+    return fn(s: str) {
+        print(s);
+    };
+}

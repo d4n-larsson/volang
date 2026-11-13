@@ -1,0 +1,16 @@
+import report.render;
+
+fn save_total(n: int) -> result[void] uses file.write("out/") {
+    return write_file("out/total.txt", render(n));
+}
+
+fn checksum(s: str) -> int uses file.read("data/") {
+    match read_file("data/" + s) {
+        case ok(t) {
+            return len(t);
+        }
+        case err(e) {
+            return len(e) * 0;
+        }
+    }
+}

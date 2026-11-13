@@ -1,0 +1,13 @@
+no grades
+student a enrolled
+student b enrolled
+assignment q added
+no grades
+a q 10/10
+A+ 1 a
+b q 3/10
+A+ 1 a
+F 1 b
+1. a 100.0 A+
+2. b 30.0 F
+class average 65.0

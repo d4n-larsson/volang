@@ -1,0 +1,1 @@
+error[T0001]: Unknown option `--nope`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, --seed N, --clock-ms N.

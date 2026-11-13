@@ -1,0 +1,7 @@
+add-product A pen 100 2
+order o1 A 1 Q 1
+order o1 A 3
+order o1 A 1 A 1
+show o1
+order o2 A 1
+report

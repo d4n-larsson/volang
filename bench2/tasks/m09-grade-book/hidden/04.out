@@ -1,0 +1,15 @@
+students:
+q 100.00 A
+p 66.66 D
+s 66.66 D
+r 0.00 F
+stats:
+count 4
+mean 58.33
+median 66.66
+top 100.00 q
+letters A:1 B:0 C:0 D:2 F:1
+assignments:
+t1 avg 66.67 missing 0
+t2 avg 58.33 missing 1
+t3 avg 50.00 missing 1

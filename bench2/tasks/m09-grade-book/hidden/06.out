@@ -1,0 +1,14 @@
+invalid line 12
+students:
+m 99.98 A
+o 99.90 A
+n 0.01 F
+stats:
+count 3
+mean 66.63
+median 99.90
+top 99.98 m
+letters A:2 B:0 C:0 D:0 F:1
+assignments:
+big avg 66.66 missing 0
+small avg 33.33 missing 0

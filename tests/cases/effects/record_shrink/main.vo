@@ -1,0 +1,5 @@
+import helper.area;
+
+fn main() uses console {
+    print(str(area(1, 2)));
+}

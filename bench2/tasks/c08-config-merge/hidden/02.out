@@ -1,0 +1,8 @@
+mode dev
+host=127.0.0.1
+log_level=debug
+new_key=x
+port=8080
+reload=false
+url=http://localhost:8080/?a=1&b=2
+workers=4

@@ -1,0 +1,16 @@
+employee A7 added: salaried $1200.00
+error: employee A7 exists
+error: A7 is salaried
+A7 deduction parking $25.00
+A7 salary $1250.00
+payslip A7 Dana (salaried)
+  salary $1250.00
+  gross $1250.00
+  tax $150.00
+  deduction parking $25.00
+  net $1075.00
+error: unknown employee B1
+summary: 1 employees
+  A7 Dana gross $1250.00 net $1075.00
+total gross $1250.00 tax $150.00 deductions $25.00 net $1075.00
+error: unknown command bonus

@@ -1,0 +1,4 @@
+client.retries=3
+name=demo
+server.host=localhost
+server.port=8080

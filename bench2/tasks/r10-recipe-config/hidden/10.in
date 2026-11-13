@@ -1,0 +1,4 @@
+config   
+recipe soup 4 carrot 500 g stock 1500 ml
+scale soup 3
+config units=kitchen

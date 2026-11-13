@@ -1,0 +1,16 @@
+invalid line 20
+students:
+b 100.00 A
+a 70.00 C
+c 50.00 F
+stats:
+count 3
+mean 73.33
+median 70.00
+top 100.00 b
+letters A:1 B:0 C:1 D:0 F:1
+assignments:
+x avg 50.00 missing 1
+y avg 16.67 missing 1
+z avg 16.67 missing 1
+w avg 96.67 missing 0

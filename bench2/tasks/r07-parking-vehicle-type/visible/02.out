@@ -1,0 +1,13 @@
+level 2 opened with 3 spots
+error: no truck spot
+level 1 opened with 1 spots
+BIG parked at 1-1
+error: no truck spot
+VAN parked at 2-1
+BIG owes 0.00 after 0 min
+BIG owes 6.00 after 1 min
+BIG left 1-1 after 450 min, fee 45.00
+BIG2 parked at 1-1
+car: first 30 min free, 2.50 per hour, 20.00 per day
+motorcycle: first 60 min free, 1.00 per hour, 8.00 per day
+truck: no free period, 6.00 per hour, 45.00 per day, level 1 only

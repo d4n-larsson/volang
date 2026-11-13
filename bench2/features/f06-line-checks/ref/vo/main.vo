@@ -1,0 +1,40 @@
+fn yes_no(b: bool) -> str {
+    if b {
+        return "yes";
+    }
+    return "no";
+}
+
+fn main() -> result[void] uses console, input {
+    while true {
+        match read_line() {
+            case ok(line) {
+                let xs = new list[int];
+                for t in split(line, " ") {
+                    if len(t) > 0 {
+                        push(xs, try parse_int(t));
+                    }
+                }
+                let evens = filter(xs, fn(x: int) -> bool {
+                    return x % 2 == 0;
+                });
+                let sumsq = fold(map(evens, fn(x: int) -> int {
+                    return x * x;
+                }), 0, fn(a: int, b: int) -> int {
+                    return a + b;
+                });
+                let allpos = all(xs, fn(x: int) -> bool {
+                    return x > 0;
+                });
+                let any7 = any(xs, fn(x: int) -> bool {
+                    return x % 7 == 0;
+                });
+                print("evens=" + str(len(evens)) + " sumsq=" + str(sumsq) + " allpos=" + yes_no(allpos) + " any7=" + yes_no(any7));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

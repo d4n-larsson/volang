@@ -1,0 +1,15 @@
+add 1 a
+add 1 b
+add 1 c
+done 2
+done 3
+done 1
+list done
+reopen 3
+reopen 3
+done 3
+done 3
+list done
+reopen 1
+list
+stats

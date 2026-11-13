@@ -1,0 +1,8 @@
+fn half(x: float) -> float {
+    return x / 2.0;
+}
+
+fn main() uses console {
+    let n = 3;
+    print(str(half(n)));
+}

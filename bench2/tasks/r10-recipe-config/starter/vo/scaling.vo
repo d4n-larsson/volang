@@ -1,0 +1,45 @@
+import recipes.Recipe;
+import recipes.ingredient_line;
+
+record Order {
+    name: str;
+    wanted: int;
+}
+
+# qty for `servings` people, scaled to `wanted` people, rounded up.
+fn scale_qty(qty: int, servings: int, wanted: int) -> int {
+    return (qty * wanted + servings - 1) / servings;
+}
+
+fn scale_lines(recipe: Recipe, wanted: int) -> list[str] {
+    let out = [recipe.name + " for " + str(wanted) + ":"];
+    for ing in recipe.ingredients {
+        push(out, ingredient_line(ing.item, scale_qty(ing.qty, recipe.servings, wanted), ing.unit));
+    }
+    return out;
+}
+
+# Sums the scaled quantities per item and unit.
+fn shopping_list(recipes: map[str, Recipe], orders: list[Order]) -> list[str] {
+    let totals = new map[str, int];
+    for o in orders {
+        let r = recipes[o.name];
+        for ing in r.ingredients {
+            let key = ing.item + " " + ing.unit;
+            let q = scale_qty(ing.qty, r.servings, o.wanted);
+            if has(totals, key) {
+                set totals[key] = totals[key] + q;
+            } else {
+                set totals[key] = q;
+            }
+        }
+    }
+    let out = ["shopping list (" + str(len(orders)) + " recipes):"];
+    let sorted_keys = keys(totals);
+    sort(sorted_keys);
+    for key in sorted_keys {
+        let parts = split(key, " ");
+        push(out, ingredient_line(parts[0], totals[key], parts[1]));
+    }
+    return out;
+}

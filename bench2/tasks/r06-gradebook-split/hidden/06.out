@@ -1,0 +1,27 @@
+assignment final added
+student mo enrolled
+student Al enrolled
+student bo enrolled
+student Ed enrolled
+student zoe enrolled
+student cy enrolled
+mo final 85/100
+Al final 85/100
+bo final 88/100
+Ed final 50/100
+zoe final 61/100
+B+ 1 bo
+B 2 Al mo
+D- 1 zoe
+F 1 Ed
+mo average 85.0 B
+  final 85/100 85.0
+bo average 88.0 B+
+  final 88/100 88.0
+zoe average 61.0 D-
+  final 61/100 61.0
+Ed average 50.0 F
+  final 50/100 50.0
+cy no scores
+  final missing
+error: bad command

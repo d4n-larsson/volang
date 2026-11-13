@@ -1,0 +1,9 @@
+Statement as of 2026-01-01
+== eve
+2026-01-01 +4000000000000000000 big in
+balance 4000000000000000000 (1 entries, 2 later)
+== alice
+balance 0 (0 entries, 4 later)
+== alice
+balance 0 (0 entries, 4 later)
+grand total 4000000000000000000

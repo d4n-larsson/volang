@@ -1,0 +1,12 @@
+students:
+k 83.33 B
+l 83.33 B
+stats:
+count 2
+mean 83.33
+median 83.33
+top 83.33 k,l
+letters A:0 B:2 C:0 D:0 F:0
+assignments:
+e1 avg 91.67 missing 0
+e2 avg 75.00 missing 0

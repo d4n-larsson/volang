@@ -1,0 +1,8 @@
+conflicts: 1
+late early: room Z
+rooms:
+Z 600
+free line 1: none
+free line 3: 17:45
+free line 4: none
+free line 6: none

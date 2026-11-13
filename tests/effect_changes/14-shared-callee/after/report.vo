@@ -1,0 +1,11 @@
+fn render(n: int) -> str uses clock {
+    return "total: " + str(n) + " at " + str(now_ms());
+}
+
+fn banner() -> str {
+    return "== report ==";
+}
+
+fn stamp() -> int uses clock {
+    return now_ms();
+}

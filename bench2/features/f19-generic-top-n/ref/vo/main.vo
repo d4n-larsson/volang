@@ -1,0 +1,44 @@
+fn top_n[T](xs: list[T], n: int, key: fn(T) -> int) -> list[T] {
+    let c = slice(xs, 0, len(xs));
+    sort_by(c, fn(x: T) -> int {
+        return -key(x);
+    });
+    return slice(c, 0, min(n, len(c)));
+}
+
+fn digit_sum(x: int) -> int {
+    return fold(chars(str(abs(x))), 0, fn(acc: int, d: str) -> int {
+        return acc + ord(d) - ord("0");
+    });
+}
+
+fn absolute(x: int) -> int {
+    return abs(x);
+}
+
+fn words(line: str) -> list[str] {
+    return filter(split(line, " "), fn(s: str) -> bool {
+        return len(s) > 0;
+    });
+}
+
+fn show_ints(xs: list[int]) -> str {
+    return join(map(xs, fn(x: int) -> str {
+        return str(x);
+    }), " ");
+}
+
+fn main() -> result[void] uses console, input {
+    let n = try parse_int(try read_line());
+    let ws = words(try read_line());
+    let xs = new list[int];
+    for t in words(try read_line()) {
+        push(xs, try parse_int(t));
+    }
+    print(join(top_n(ws, n, fn(w: str) -> int {
+        return len(w);
+    }), " "));
+    print(show_ints(top_n(xs, n, digit_sum)));
+    print(show_ints(top_n(xs, n, absolute)));
+    return ok();
+}

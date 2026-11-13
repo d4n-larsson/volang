@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh /home/dan/dev/priv/sesi/scripts/sesi hook",
+            "timeout": 60,
+            "statusMessage": "Checking with SESI packs"
+          }
+        ]
+      }
+    ]
+  }
+}

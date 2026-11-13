@@ -1,0 +1,13 @@
+employee W2 Zed hourly 1999
+employee W1 Yan salaried 450000
+employee M5 Lia hourly 3333
+hours W2 38
+hours W2 7
+hours M5 40
+deduct W1 1000 union
+deduct W1 250000 loan
+deduct M5 0 none
+payslip W2
+payslip W1
+payslip M5
+summary

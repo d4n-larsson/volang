@@ -1,0 +1,2 @@
+added report.vo:banner
+added store.vo:checksum

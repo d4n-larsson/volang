@@ -1,0 +1,150 @@
+import book.Book;
+import book.Student;
+import book.unknown_student;
+import book.unknown_assignment;
+
+record Graded {
+    avg: int;
+    name: str;
+}
+
+# num / den rounded half up (num >= 0, den > 0).
+fn rounded_div(num: int, den: int) -> int {
+    return (num + den / 2) / den;
+}
+
+# Formats a non-negative number of tenths: 875 -> 87.5.
+fn tenths(x: int) -> str {
+    return str(x / 10) + "." + str(x % 10);
+}
+
+# points out of max_points as tenths of a percent.
+fn percent_tenths(points: int, max_points: int) -> int {
+    return rounded_div(points * 1000, max_points);
+}
+
+# The student's weighted average in tenths of a percent, or err without scores.
+fn weighted_average(book: Book, student: Student) -> result[int] {
+    var total = 0;
+    var weight = 0;
+    for name in keys(book.assignments) {
+        let a = book.assignments[name];
+        if has(student.scores, name) {
+            set total = total + a.weight * percent_tenths(student.scores[name], a.max_points);
+            set weight = weight + a.weight;
+        }
+    }
+    if weight == 0 {
+        return err("no scores");
+    }
+    return ok(rounded_div(total, weight));
+}
+
+# The letter grade for an average in tenths of a percent.
+fn letter(avg: int) -> str {
+    if avg >= 900 {
+        return "A";
+    }
+    if avg >= 800 {
+        return "B";
+    }
+    if avg >= 700 {
+        return "C";
+    }
+    if avg >= 600 {
+        return "D";
+    }
+    return "F";
+}
+
+fn assignment_stats(book: Book, name: str) -> list[str] {
+    if not has(book.assignments, name) {
+        return [unknown_assignment(name)];
+    }
+    let points = new list[int];
+    for s in keys(book.students) {
+        let student = book.students[s];
+        if has(student.scores, name) {
+            push(points, student.scores[name]);
+        }
+    }
+    if len(points) == 0 {
+        return [name + " no scores"];
+    }
+    var low = points[0];
+    var high = points[0];
+    var total = 0;
+    for p in points {
+        set low = min(low, p);
+        set high = max(high, p);
+        set total = total + p;
+    }
+    let mean = rounded_div(10 * total, len(points));
+    return [name + " count " + str(len(points)) + " min " + str(low) + " max " + str(high) + " mean " + tenths(mean)];
+}
+
+fn card(book: Book, name: str) -> list[str] {
+    if not has(book.students, name) {
+        return [unknown_student(name)];
+    }
+    let student = book.students[name];
+    let out = new list[str];
+    match weighted_average(book, student) {
+        case ok(avg) {
+            push(out, name + " average " + tenths(avg) + " " + letter(avg));
+        }
+        case err(_) {
+            push(out, name + " no scores");
+        }
+    }
+    for a in keys(book.assignments) {
+        let max_points = book.assignments[a].max_points;
+        if has(student.scores, a) {
+            let p = student.scores[a];
+            push(out, "  " + a + " " + str(p) + "/" + str(max_points) + " " + tenths(percent_tenths(p, max_points)));
+        } else {
+            push(out, "  " + a + " missing");
+        }
+    }
+    return out;
+}
+
+fn class_report(book: Book) -> list[str] {
+    let graded = new list[Graded];
+    let ungraded = new list[str];
+    for s in keys(book.students) {
+        match weighted_average(book, book.students[s]) {
+            case ok(avg) {
+                push(graded, new Graded { avg: avg, name: s });
+            }
+            case err(_) {
+                push(ungraded, s);
+            }
+        }
+    }
+    sort_by(graded, fn(g: Graded) -> str {
+        return g.name;
+    });
+    sort_by(graded, fn(g: Graded) -> int {
+        return -g.avg;
+    });
+    let out = new list[str];
+    var total = 0;
+    for g in graded {
+        let higher = filter(graded, fn(other: Graded) -> bool {
+            return other.avg > g.avg;
+        });
+        push(out, str(1 + len(higher)) + ". " + g.name + " " + tenths(g.avg) + " " + letter(g.avg));
+        set total = total + g.avg;
+    }
+    sort(ungraded);
+    for name in ungraded {
+        push(out, "-. " + name + " no scores");
+    }
+    if len(graded) > 0 {
+        push(out, "class average " + tenths(rounded_div(total, len(graded))));
+    } else {
+        push(out, "class average none");
+    }
+    return out;
+}

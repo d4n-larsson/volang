@@ -1,0 +1,2 @@
+widened main.vo:main
+widened store.vo:save_total

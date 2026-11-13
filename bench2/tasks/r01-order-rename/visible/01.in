@@ -1,0 +1,5 @@
+add-product A1 pen 150 10
+add-product B2 book 2500 3
+order o1 A1 2 B2 1
+show o1
+report

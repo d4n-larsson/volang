@@ -1,0 +1,9 @@
+fn save() -> result[void] uses file.write {
+    write_file("a.txt", "x");
+    return ok();
+}
+
+fn main() -> result[void] uses file.write {
+    try save();
+    return ok();
+}

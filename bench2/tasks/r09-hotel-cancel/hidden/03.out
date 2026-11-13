@@ -1,0 +1,21 @@
+type room added
+booked s6: room 6 nights, total 119.94
+booked s7: room 7 nights, total 125.94
+type room rate 25.00
+booked s8: room 8 nights, total 180.00
+invoice s6 for ann
+  room 6 nights x 19.99 = 119.94
+  total 119.94
+invoice s7 for bob
+  room 7 nights x 19.99 = 139.93
+  long stay discount 13.99
+  total 125.94
+invoice s8 for cy
+  room 8 nights x 25.00 = 200.00
+  long stay discount 20.00
+  total 180.00
+avail room 0-7: 1 of 3 free
+avail room 6-7: 2 of 3 free
+avail room 7-100: 3 of 3 free
+room: 3 bookings, 21 nights, revenue 425.88
+total revenue 425.88

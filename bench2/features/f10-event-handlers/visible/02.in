@@ -1,0 +1,6 @@
+on save count
+on save upper
+emit save doc
+on save say done
+emit save notes
+emit save

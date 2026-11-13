@@ -1,0 +1,7 @@
+test "same" {
+    expect(true);
+}
+
+test "same" {
+    expect(true);
+}

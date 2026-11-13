@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0101","name":"invalid_character","severity":"error","file":"columns.vo","start":{"line":2,"col":16},"end":{"line":2,"col":17},"text":"$","message":"Unexpected character `$`.","fixes":[{"file":"columns.vo","start":{"line":2,"col":16},"end":{"line":2,"col":17},"replacement":""}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

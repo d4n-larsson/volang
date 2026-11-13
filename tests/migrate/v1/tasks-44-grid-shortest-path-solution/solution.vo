@@ -1,0 +1,52 @@
+fn main() {
+    let grid = new list[list[str]];
+    while true {
+        match read_line() {
+            case ok(line) {
+                push(grid, chars(line));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    let rows = len(grid);
+    let cols = len(grid[0]);
+    let dist = new list[int];
+    let queue = new list[int];
+    for r in 0..rows {
+        for c in 0..cols {
+            push(dist, -1);
+            if grid[r][c] == "S" {
+                push(queue, r * cols + c);
+            }
+        }
+    }
+    set dist[queue[0]] = 0;
+    let dr = [1, -1, 0, 0];
+    let dc = [0, 0, 1, -1];
+    var head = 0;
+    var answer = -1;
+    while head < len(queue) {
+        let cell = queue[head];
+        set head = head + 1;
+        let r = cell / cols;
+        let c = cell % cols;
+        if grid[r][c] == "E" {
+            set answer = dist[cell];
+            break;
+        }
+        for d in 0..4 {
+            let nr = r + dr[d];
+            let nc = c + dc[d];
+            if nr >= 0 and nr < rows and nc >= 0 and nc < cols {
+                let next = nr * cols + nc;
+                if grid[nr][nc] != "#" and dist[next] == -1 {
+                    set dist[next] = dist[cell] + 1;
+                    push(queue, next);
+                }
+            }
+        }
+    }
+    print(str(answer));
+}

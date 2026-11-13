@@ -1,0 +1,4 @@
+apple 3 120
+pear 1 250
+
+apple 2 120

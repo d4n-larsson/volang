@@ -1,0 +1,17 @@
+fn main() {
+    print(str(1 + 2 * 3));
+    print(str((1 + 2) * 3));
+    print(str(7 / 2));
+    print(str(-7 / 2));
+    print(str(7 % 3));
+    print(str(-7 % 3));
+    print(str(-(5 - 8)));
+    print(str(10 - 2 - 3));
+    print(str(1.5 + 2.25));
+    print(str(7.0 / 2.0));
+    print(str(2.5 * 4.0));
+    print(str(-1.5));
+    print(str(1 < 2));
+    print(str(2.5 >= 3.0));
+    print(str(not (1 == 2) and true));
+}

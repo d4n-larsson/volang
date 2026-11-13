@@ -1,0 +1,96 @@
+variant Tree[T] {
+    empty;
+    node(Node[T]);
+}
+
+record Node[T] {
+    left: Tree[T];
+    value: T;
+    right: Tree[T];
+}
+
+fn insert[T: ordered](t: Tree[T], v: T) -> Tree[T] {
+    match t {
+        case empty {
+            return Tree.node(new Node[T] { left: Tree.empty, value: v, right: Tree.empty });
+        }
+        case node(n) {
+            if v < n.value {
+                set n.left = insert(n.left, v);
+            } else if v > n.value {
+                set n.right = insert(n.right, v);
+            }
+            return t;
+        }
+    }
+}
+
+fn height[T](t: Tree[T]) -> int {
+    match t {
+        case empty {
+            return 0;
+        }
+        case node(n) {
+            return 1 + max(height(n.left), height(n.right));
+        }
+    }
+}
+
+fn in_order[T](t: Tree[T], out: list[T]) {
+    match t {
+        case empty {
+            return;
+        }
+        case node(n) {
+            in_order(n.left, out);
+            push(out, n.value);
+            in_order(n.right, out);
+        }
+    }
+}
+
+fn build[T: ordered](xs: list[T]) -> Tree[T] {
+    var t: Tree[T] = Tree.empty;
+    for x in xs {
+        set t = insert(t, x);
+    }
+    return t;
+}
+
+fn render[T](t: Tree[T], show: fn(T) -> str) -> str {
+    let values = new list[T];
+    in_order(t, values);
+    let parts = ["h=" + str(height(t))];
+    for v in values {
+        push(parts, show(v));
+    }
+    return join(parts, " ");
+}
+
+fn main() -> result[void] uses console, input {
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                let values = slice(p, 1, len(p));
+                if p[0] == "int" {
+                    let xs = new list[int];
+                    for t in values {
+                        push(xs, try parse_int(t));
+                    }
+                    print(render(build(xs), fn(x: int) -> str {
+                        return str(x);
+                    }));
+                } else {
+                    print(render(build(values), fn(s: str) -> str {
+                        return s;
+                    }));
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

@@ -1,0 +1,17 @@
+level 1 1
+level 2 1
+enter V 0 truck
+enter W 0 motorcycle
+exit V 90
+exit W 90
+enter V 100 motorcycle
+enter W 100 truck
+enter Z 100
+parked
+exit V 2000
+exit W 2000
+enter Z 2000 truck
+exit Z 3000
+enter Z 3000 truck
+parked
+report 4000

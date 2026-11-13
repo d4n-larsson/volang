@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0208","name":"assign_to_immutable","severity":"error","file":"assign_let.vo","start":{"line":3,"col":9},"end":{"line":3,"col":10},"text":"n","message":"`n` is declared with `let` and cannot be changed. Declare it with `var`.","fixes":[{"file":"assign_let.vo","start":{"line":2,"col":5},"end":{"line":2,"col":8},"replacement":"var"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -1,0 +1,23 @@
+product A a 0.05
+product B b 0.15
+product C c 0.25
+product D d 1.01
+bulk A 1 10
+bulk B 1 10
+bulk C 2 10
+bulk D 1 50
+add A 1
+add B 1
+add C 3
+add D 1
+checkout
+add A 5
+bulk A 1 1
+coupon ONE 1
+use ONE
+checkout
+add D 3
+coupon ONE 33
+use ONE
+checkout
+report

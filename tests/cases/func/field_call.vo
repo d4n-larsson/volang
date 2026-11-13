@@ -1,0 +1,13 @@
+record Handler {
+    name: str;
+    on_save: fn(str) uses console;
+}
+
+fn main() uses console {
+    let h = new Handler { name: "log", on_save: fn(s: str) {
+        print("saved " + s);
+    } };
+    h.on_save("report");
+    let hs = [h];
+    hs[0].on_save("again");
+}

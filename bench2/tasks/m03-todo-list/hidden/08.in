@@ -1,0 +1,300 @@
+add 5 bug
+list +q
+tag 1 home
+list +q
+add 2 go
+reopen 2
+done 1
+add 2 call go fix
+tag 1 work
+prio 3 1
+done 1
+list
+add 5 call go call
+done 5
+done 2
+list done
+add 2 the bug
+stats
+done 6
+list done
+done 4
+delete 5
+tag 5 work
+list +home
+list done
+stats
+tag 2 x1
+stats
+list +home
+prio 2 5
+add 1 call
+list done
+stats
+add 1 the fix
+add 4 fix
+tag 1 q
+prio 6 5
+list done
+stats
+reopen 1
+done 2
+add 5 the
+stats
+add 3 go
+add 3 bug the
+list done
+done 8
+list done
+done 10
+tag 2 x1
+done 12
+prio 5 4
+stats
+delete 9
+done 7
+stats
+done 7
+tag 11 work
+add 3 bug go
+list +x1
+prio 1 5
+add 1 bug go
+reopen 10
+tag 3 x1
+add 3 bug bug call
+add 1 go go the
+done 8
+tag 5 work
+done 14
+tag 2 home
+tag 6 work
+done 6
+add 2 call bug the
+list
+add 2 mom the
+list done
+done 3
+list
+done 5
+done 17
+list
+add 3 call bug call
+delete 2
+list +work
+add 4 mom call mom
+list +work
+add 4 go mom bug
+delete 8
+list done
+list done
+stats
+add 2 fix
+list +work
+list done
+list done
+delete 1
+reopen 4
+add 3 go
+add 5 fix mom
+add 2 mom call
+list
+add 2 fix
+delete 4
+add 3 fix
+reopen 19
+list done
+add 3 bug
+tag 17 q
+add 3 fix
+prio 2 1
+add 4 go
+add 5 bug the
+done 12
+done 13
+tag 12 x1
+add 3 fix the
+delete 23
+prio 26 1
+delete 2
+done 25
+tag 2 q
+add 4 bug call go
+done 2
+add 5 go mom
+add 4 call
+add 1 bug mom
+list
+add 4 fix go go
+list
+delete 25
+tag 21 home
+list
+prio 31 2
+add 4 mom
+add 1 call the fix
+done 8
+add 1 call go bug
+delete 6
+add 5 mom go the
+add 1 fix mom bug
+list done
+add 1 the
+tag 30 q
+add 5 bug mom
+done 6
+done 16
+stats
+done 11
+done 37
+prio 34 4
+add 4 the
+add 4 mom call mom
+prio 12 2
+add 2 mom
+reopen 15
+list done
+delete 19
+tag 27 x1
+list done
+done 18
+reopen 25
+add 5 the bug
+reopen 10
+done 45
+reopen 39
+add 5 mom fix call
+stats
+add 4 fix call the
+list done
+tag 44 home
+list +x1
+add 2 the the
+tag 44 home
+list done
+add 1 the call
+add 1 fix
+add 3 bug
+reopen 47
+tag 1 home
+done 28
+done 5
+add 5 call call the
+delete 8
+list done
+add 4 call
+list done
+list +home
+delete 45
+done 50
+done 29
+add 3 bug
+tag 35 home
+tag 33 x1
+add 3 go mom go
+add 2 bug
+list done
+tag 8 home
+list +work
+list +q
+delete 42
+add 4 the go
+add 2 mom mom go
+done 7
+add 4 the
+add 5 the go
+prio 23 3
+list +q
+delete 50
+add 4 the
+add 1 fix mom go
+add 2 call go go
+done 17
+tag 19 q
+list
+delete 22
+delete 26
+list done
+done 38
+add 4 call bug
+delete 40
+tag 39 q
+add 2 go fix fix
+prio 30 4
+add 4 the
+list
+add 5 call fix mom
+add 2 call
+list
+tag 7 home
+done 30
+reopen 64
+delete 44
+done 45
+tag 18 home
+list done
+tag 5 home
+prio 44 2
+list +work
+done 29
+reopen 14
+list
+done 26
+prio 51 4
+reopen 9
+delete 55
+add 4 fix call
+reopen 52
+done 59
+list done
+prio 47 3
+done 47
+tag 29 home
+list
+add 3 call
+delete 21
+add 2 call mom the
+tag 18 home
+tag 57 q
+add 1 call bug
+done 7
+add 1 call fix
+list +work
+add 4 the the
+done 15
+done 16
+tag 38 x1
+stats
+list +x1
+reopen 72
+add 3 bug bug fix
+add 4 mom
+tag 14 home
+tag 3 work
+reopen 62
+add 5 the call
+done 62
+list +home
+done 78
+tag 51 home
+list +work
+list
+add 4 bug mom go
+prio 52 2
+list
+list done
+done 71
+done 24
+done 54
+done 57
+prio 62 3
+add 2 go mom go
+tag 63 home
+add 1 fix go
+tag 13 x1
+add 1 fix call call
+list done
+prio 43 3
+add 2 fix bug
+delete 15
+reopen 84

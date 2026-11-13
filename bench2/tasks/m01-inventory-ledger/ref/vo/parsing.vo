@@ -1,0 +1,59 @@
+record Command {
+    kind: str;
+    sku: str;
+    qty: int;
+    price: int;
+}
+
+fn fields(line: str) -> list[str] {
+    return filter(split(line, " "), fn(f: str) -> bool {
+        return f != "";
+    });
+}
+
+fn is_number(f: str) -> bool {
+    if len(f) < 1 or len(f) > 6 {
+        return false;
+    }
+    return all(chars(f), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+fn number(f: str) -> int {
+    match parse_int(f) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return -1;
+        }
+    }
+}
+
+fn command(kind: str, sku: str, qty: int, price: int) -> Command {
+    return new Command { kind: kind, sku: sku, qty: qty, price: price };
+}
+
+fn parse(line: str) -> Command {
+    let f = fields(line);
+    let bad = command("INVALID", "", 0, 0);
+    if len(f) == 0 {
+        return command("BLANK", "", 0, 0);
+    }
+    if f[0] == "REPORT" and len(f) == 1 {
+        return command("REPORT", "", 0, 0);
+    }
+    if (f[0] == "RECEIVE" or f[0] == "SHIP") and len(f) == 4 {
+        if is_number(f[2]) and is_number(f[3]) and number(f[2]) > 0 {
+            return command(f[0], f[1], number(f[2]), number(f[3]));
+        }
+        return bad;
+    }
+    if f[0] == "SCRAP" and len(f) == 3 {
+        if is_number(f[2]) and number(f[2]) > 0 {
+            return command("SCRAP", f[1], number(f[2]), 0);
+        }
+    }
+    return bad;
+}

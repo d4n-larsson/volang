@@ -1,0 +1,5 @@
+config units=kitchen rounding=nearest
+recipe cake 8 flour 300 g milk 250 ml egg 3 pcs sugar 1000 g
+show cake
+scale cake 4
+scale cake 12

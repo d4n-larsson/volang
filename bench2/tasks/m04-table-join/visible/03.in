@@ -1,0 +1,11 @@
+full code
+code,label
+x,first
+y,second
+,blank
+z,"oops"x
+---
+code,qty
+y,10
+w,20
+,30

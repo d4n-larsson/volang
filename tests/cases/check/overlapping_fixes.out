@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"overlapping_fixes.vo","start":{"line":2,"col":18},"end":{"line":2,"col":19},"text":"5","message":"Expected `str`, found `int`.","expected":"str","found":"int","fixes":[{"file":"overlapping_fixes.vo","start":{"line":2,"col":18},"end":{"line":2,"col":19},"replacement":"str(5)"}],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0112","name":"missing_semicolon","severity":"error","file":"overlapping_fixes.vo","start":{"line":2,"col":19},"end":{"line":2,"col":19},"text":"","message":"Missing `;` at the end of this statement.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

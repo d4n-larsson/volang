@@ -1,0 +1,10 @@
+fn main() uses console, env("VO_UNSET_X") {
+    match env("VO_UNSET_X") {
+        case ok(v) {
+            print(v);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

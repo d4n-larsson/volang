@@ -1,0 +1,7 @@
+add-product zeta z 5 1
+add-product Alpha a 7 1
+add-product beta b 1005 1
+add-product 10 ten 0 0
+report
+price beta 1
+report

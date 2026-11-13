@@ -1,0 +1,4 @@
+fn main() uses console {
+    let xs = [1, 2];
+    print(str(xs.len()));
+}

@@ -1,0 +1,6 @@
+add-product X lamp 4000 5
+order big X 3
+order big X 1
+order huge X 9
+cancel big
+report

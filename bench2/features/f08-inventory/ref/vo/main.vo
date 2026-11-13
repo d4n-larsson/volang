@@ -1,0 +1,63 @@
+record Item {
+    name: str;
+    qty: int;
+    price: int;
+}
+
+fn yes_no(b: bool) -> str {
+    if b {
+        return "yes";
+    }
+    return "no";
+}
+
+fn value(it: Item) -> int {
+    return it.qty * it.price;
+}
+
+fn main() -> result[void] uses console, input {
+    let q = try parse_int(try read_line());
+    let items = new list[Item];
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                push(items, new Item { name: p[0], qty: try parse_int(p[1]), price: try parse_int(p[2]) });
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    let restock = map(filter(items, fn(it: Item) -> bool {
+        return it.qty < q;
+    }), fn(it: Item) -> str {
+        return it.name;
+    });
+    if len(restock) == 0 {
+        print("restock -");
+    } else {
+        print("restock " + join(restock, " "));
+    }
+    print("value " + str(fold(map(items, value), 0, fn(a: int, b: int) -> int {
+        return a + b;
+    })));
+    print("out_of_stock " + yes_no(any(items, fn(it: Item) -> bool {
+        return it.qty == 0;
+    })));
+    print("all_priced " + yes_no(all(items, fn(it: Item) -> bool {
+        return it.price > 0;
+    })));
+    if len(items) == 0 {
+        print("most_valuable -");
+    } else {
+        let best = fold(items, items[0], fn(acc: Item, it: Item) -> Item {
+            if value(it) > value(acc) {
+                return it;
+            }
+            return acc;
+        });
+        print("most_valuable " + best.name);
+    }
+    return ok();
+}

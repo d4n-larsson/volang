@@ -1,0 +1,46 @@
+level 3 opened with 2 spots
+level 1 opened with 1 spots
+level 2 opened with 1 spots
+level 1: 0/1 used
+level 2: 0/1 used
+level 3: 0/2 used
+total 0/4 used
+A parked at 1-1
+B parked at 2-1
+C parked at 3-1
+D parked at 3-2
+error: garage full
+error: garage full
+1-1 A since 0
+2-1 B since 5
+3-1 C since 10
+3-2 D since 15
+level 1: 1/1 used
+level 2: 1/1 used
+level 3: 2/2 used
+total 4/4 used
+C left 3-1 after 90 min, fee 5.00
+A left 1-1 after 100 min, fee 5.00
+G parked at 1-1
+H parked at 3-1
+error: garage full
+1-1 G since 110
+2-1 B since 5
+3-1 H since 120
+3-2 D since 15
+level 1: 1/1 used
+level 2: 1/1 used
+level 3: 2/2 used
+total 4/4 used
+level 1: exits 1 revenue 5.00 pending 0.00
+level 2: exits 0 revenue 0.00 pending 2.50
+level 3: exits 1 revenue 5.00 pending 2.50
+total exits 2 revenue 10.00 pending 5.00
+level 1: exits 1 revenue 5.00 pending 0.00
+level 2: exits 0 revenue 0.00 pending 7.50
+level 3: exits 1 revenue 5.00 pending 5.00
+total exits 2 revenue 10.00 pending 12.50
+level 1: exits 1 revenue 5.00 pending 80.00
+level 2: exits 0 revenue 0.00 pending 80.00
+level 3: exits 1 revenue 5.00 pending 160.00
+total exits 2 revenue 10.00 pending 320.00

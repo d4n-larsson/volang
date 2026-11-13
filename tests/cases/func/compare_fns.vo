@@ -1,0 +1,8 @@
+fn one() -> int {
+    return 1;
+}
+
+fn main() uses console {
+    let f = one;
+    print(str(f == one));
+}

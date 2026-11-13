@@ -1,0 +1,58 @@
+import config.Config;
+
+fn is_unit(u: str) -> bool {
+    return u == "g" or u == "ml" or u == "pcs";
+}
+
+# q/1000 with up to three decimals, trailing zeros dropped: 1250 -> 1.25, 2000 -> 2.
+fn decimal(q: int, big: str) -> str {
+    let whole = str(q / 1000);
+    let rest = q % 1000;
+    if rest == 0 {
+        return whole + " " + big;
+    }
+    var digits = str(rest);
+    while len(digits) < 3 {
+        set digits = "0" + digits;
+    }
+    while slice(digits, len(digits) - 1, len(digits)) == "0" {
+        set digits = slice(digits, 0, len(digits) - 1);
+    }
+    return whole + "." + digits + " " + big;
+}
+
+record Measure {
+    size: int;
+    name: str;
+}
+
+# Millilitres as cups, tablespoons, teaspoons and ml, largest first: 500 -> 2 cup 1 tbsp 1 tsp.
+fn kitchen_ml(q: int) -> str {
+    if q == 0 {
+        return "0 ml";
+    }
+    let measures = [new Measure { size: 240, name: "cup" }, new Measure { size: 15, name: "tbsp" }, new Measure { size: 5, name: "tsp" }, new Measure { size: 1, name: "ml" }];
+    let parts = new list[str];
+    var left = q;
+    for m in measures {
+        if left >= m.size {
+            push(parts, str(left / m.size) + " " + m.name);
+            set left = left % m.size;
+        }
+    }
+    return join(parts, " ");
+}
+
+# Quantity for output: 1000 g or more as kg; ml as l (metric) or kitchen measures.
+fn format_qty(q: int, unit: str, cfg: Config) -> str {
+    if unit == "g" and q >= 1000 {
+        return decimal(q, "kg");
+    }
+    if unit == "ml" and cfg.units == "kitchen" {
+        return kitchen_ml(q);
+    }
+    if unit == "ml" and q >= 1000 {
+        return decimal(q, "l");
+    }
+    return str(q) + " " + unit;
+}

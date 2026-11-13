@@ -1,0 +1,15 @@
+fn render(n: int) -> str uses console {
+    let parts = map([n], fn(x: int) -> str {
+        print("rendering");
+        return str(x);
+    });
+    return "total: " + join(parts, "");
+}
+
+fn banner() -> str {
+    return "== report ==";
+}
+
+fn stamp() -> int uses clock {
+    return now_ms();
+}

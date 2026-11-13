@@ -1,0 +1,30 @@
+a = 2 => 2
+b = 3 => 3
+c = 2 => 2
+a * b + c => 8
+a * b + c => 8
+a * (b + c) => 10
+a - (b + c) => -3
+a - (b - c) => 1
+a - b - c => -3
+a / (b * c) => 0
+a / b * c => 0
+a % (b % c) => 0
+a ^ b ^ c => 512
+(a ^ b) ^ c => 64
+(a * b) ^ c => 36
+a ^ (b * c) => 64
+a ^ -b ^ c => error: negative exponent
+-a ^ b => -8
+(-a) ^ b => -8
+-a ^ b => -8
+--a => 2
+-(a - b) => 1
+-(a * b) => -6
+-a * b => -6
+a * -b => -6
+a - -b => 5
+a ^ -b => error: negative exponent
+--a => 2
+a => 2
+-(-a) ^ -b => error: negative exponent

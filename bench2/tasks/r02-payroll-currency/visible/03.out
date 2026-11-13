@@ -1,0 +1,13 @@
+employee K1 added: hourly JPY 1201/h
+error: unknown currency GBP
+K1 hours 43
+K1 rate JPY 1301/h
+payslip K1 Kenji (hourly)
+  regular 40h JPY 52040
+  overtime 3h JPY 5854
+  gross JPY 57894
+  tax JPY 5789
+  net JPY 52105
+summary: 1 employees
+  K1 Kenji gross JPY 57894 net JPY 52105
+total gross JPY 57894 tax JPY 5789 deductions JPY 0 net JPY 52105

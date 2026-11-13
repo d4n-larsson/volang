@@ -1,0 +1,42 @@
+import evaluator.evaluate;
+import exprparser.parse_line;
+import lexer.tokenize;
+import printer.show;
+
+fn main() uses console, input {
+    let env = new map[str, int];
+    for line in split(read_all(), "\n") {
+        if len(join(split(line, " "), "")) == 0 {
+            continue;
+        }
+        match tokenize(line) {
+            case ok(toks) {
+                match parse_line(toks) {
+                    case ok(st) {
+                        var text = show(st.expr);
+                        if st.name != "" {
+                            set text = st.name + " = " + text;
+                        }
+                        match evaluate(st.expr, env) {
+                            case ok(v) {
+                                if st.name != "" {
+                                    set env[st.name] = v;
+                                }
+                                print(text + " => " + str(v));
+                            }
+                            case err(e) {
+                                print(text + " => error: " + e);
+                            }
+                        }
+                    }
+                    case err(_) {
+                        print("error: syntax");
+                    }
+                }
+            }
+            case err(_) {
+                print("error: syntax");
+            }
+        }
+    }
+}

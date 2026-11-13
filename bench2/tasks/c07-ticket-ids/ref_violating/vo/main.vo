@@ -1,0 +1,74 @@
+record Ticket {
+    prio: int;
+    seq: int;
+    id: str;
+    title: str;
+}
+
+fn pad7(n: int) -> str {
+    var s = str(n);
+    while len(s) < 7 {
+        set s = "0" + s;
+    }
+    return s;
+}
+
+fn before(a: Ticket, b: Ticket) -> bool {
+    if a.prio != b.prio {
+        return a.prio > b.prio;
+    }
+    return a.seq < b.seq;
+}
+
+# Quicksort with a random pivot avoids the quadratic worst case on sorted input.
+fn quicksort(xs: list[Ticket]) -> list[Ticket] uses random {
+    if len(xs) <= 1 {
+        return xs;
+    }
+    let pivot = xs[random_int(0, len(xs) - 1)];
+    let lo = filter(xs, fn(t: Ticket) -> bool {
+        return before(t, pivot);
+    });
+    let hi = filter(xs, fn(t: Ticket) -> bool {
+        return before(pivot, t);
+    });
+    let out = quicksort(lo);
+    push(out, pivot);
+    for t in quicksort(hi) {
+        push(out, t);
+    }
+    return out;
+}
+
+fn main() -> result[void] uses console, input, random {
+    let used = new map[int, bool];
+    let tickets = new list[Ticket];
+    while true {
+        match read_line() {
+            case ok(line) {
+                if line == "" {
+                    continue;
+                }
+                let sp = find(line, " ");
+                let title = slice(line, sp + 1, len(line));
+                var h = 7;
+                for c in chars(title) {
+                    set h = (h * 31 + ord(c)) % 1000003;
+                }
+                while has(used, h) {
+                    set h = (h + 1) % 1000003;
+                }
+                set used[h] = true;
+                push(tickets, new Ticket { prio: try parse_int(slice(line, 0, sp)), seq: len(tickets), id: "T" + pad7(h), title: title });
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    for t in quicksort(tickets) {
+        print(t.id + " P" + str(t.prio) + " " + t.title);
+    }
+    print("count " + str(len(tickets)));
+    return ok();
+}

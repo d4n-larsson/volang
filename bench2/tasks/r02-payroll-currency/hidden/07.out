@@ -1,0 +1,24 @@
+employee Z9 added: salaried JPY 50000
+employee B1 added: hourly 15.50 EUR/h
+employee A1 added: hourly 9.99 EUR/h
+employee C1 added: salaried JPY 7
+B1 hours 50
+A1 hours 1
+C1 deduction fee JPY 100
+summary: 4 employees
+  A1 Ada gross 9.99 EUR net 9.00 EUR
+  B1 Ben gross 852.50 EUR net 767.25 EUR
+  C1 Cy gross JPY 7 net -JPY 93
+  Z9 Zoe gross JPY 50000 net JPY 45000
+total gross 862.49 EUR tax 86.24 EUR deductions 0.00 EUR net 776.25 EUR
+total gross JPY 50007 tax JPY 5000 deductions JPY 100 net JPY 44907
+employee M1 added: hourly $1.00/h
+summary: 5 employees
+  A1 Ada gross 9.99 EUR net 9.00 EUR
+  B1 Ben gross 852.50 EUR net 767.25 EUR
+  C1 Cy gross JPY 7 net -JPY 93
+  M1 Max gross $0.00 net $0.00
+  Z9 Zoe gross JPY 50000 net JPY 45000
+total gross $0.00 tax $0.00 deductions $0.00 net $0.00
+total gross 862.49 EUR tax 86.24 EUR deductions 0.00 EUR net 776.25 EUR
+total gross JPY 50007 tax JPY 5000 deductions JPY 100 net JPY 44907

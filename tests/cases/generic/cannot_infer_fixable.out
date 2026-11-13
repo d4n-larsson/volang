@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0310","name":"cannot_infer_type_argument","severity":"error","file":"cannot_infer_fixable.vo","start":{"line":14,"col":13},"end":{"line":14,"col":26},"text":"empty_stack()","message":"Cannot infer `T` for `empty_stack`: give the variable a type.","fixes":[{"file":"cannot_infer_fixable.vo","start":{"line":14,"col":10},"end":{"line":14,"col":10},"replacement":": Stack[int]"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

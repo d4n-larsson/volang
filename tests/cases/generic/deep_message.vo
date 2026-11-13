@@ -1,0 +1,16 @@
+variant Tree[T] {
+    leaf;
+    node(T);
+}
+
+fn main() uses console {
+    let t: Tree[list[str]] = 5;
+    match t {
+        case leaf {
+            print("leaf");
+        }
+        case node(xs) {
+            print(xs[0]);
+        }
+    }
+}

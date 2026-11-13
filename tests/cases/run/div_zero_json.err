@@ -1,0 +1,1 @@
+{"v":1,"kind":"runtime_error","code":"R0002","name":"division_by_zero","message":"Division by zero.","file":"div_zero_json.vo","start":{"line":2,"col":12},"end":{"line":2,"col":25},"trace":[{"function":"average","file":"div_zero_json.vo","start":{"line":2,"col":12}},{"function":"main","file":"div_zero_json.vo","start":{"line":6,"col":15}}]}

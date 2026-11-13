@@ -1,0 +1,4 @@
+fn main() uses console {
+    let total = 3;
+    print(str(totl));
+}

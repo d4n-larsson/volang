@@ -1,0 +1,31 @@
+fn is_unit(u: str) -> bool {
+    return u == "g" or u == "ml" or u == "pcs";
+}
+
+# q/1000 with up to three decimals, trailing zeros dropped: 1250 -> 1.25, 2000 -> 2.
+fn decimal(q: int, big: str) -> str {
+    let whole = str(q / 1000);
+    let rest = q % 1000;
+    if rest == 0 {
+        return whole + " " + big;
+    }
+    var digits = str(rest);
+    while len(digits) < 3 {
+        set digits = "0" + digits;
+    }
+    while slice(digits, len(digits) - 1, len(digits)) == "0" {
+        set digits = slice(digits, 0, len(digits) - 1);
+    }
+    return whole + "." + digits + " " + big;
+}
+
+# Quantity for output: 1000 g or more as kg, 1000 ml or more as l.
+fn format_qty(q: int, unit: str) -> str {
+    if unit == "g" and q >= 1000 {
+        return decimal(q, "kg");
+    }
+    if unit == "ml" and q >= 1000 {
+        return decimal(q, "l");
+    }
+    return str(q) + " " + unit;
+}

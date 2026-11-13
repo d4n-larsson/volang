@@ -1,0 +1,4 @@
+fn main() uses console {
+    let xs: list[int] = [];
+    print(str(len(xs)));
+}

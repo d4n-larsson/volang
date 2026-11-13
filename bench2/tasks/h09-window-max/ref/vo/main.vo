@@ -1,0 +1,37 @@
+fn main() -> result[void] uses console, input {
+    let toks = new list[str];
+    for line in split(read_all(), "\n") {
+        for t in split(line, " ") {
+            if len(t) > 0 {
+                push(toks, t);
+            }
+        }
+    }
+    let n = try parse_int(toks[0]);
+    let k = try parse_int(toks[1]);
+    if k > n {
+        print("none");
+        return ok();
+    }
+    let xs = new list[int];
+    for i in 0..n {
+        push(xs, try parse_int(toks[2 + i]));
+    }
+    let dq = new list[int];
+    var head = 0;
+    let out = new list[str];
+    for i in 0..n {
+        while len(dq) > head and xs[dq[len(dq) - 1]] <= xs[i] {
+            let _ = try pop(dq);
+        }
+        push(dq, i);
+        if dq[head] <= i - k {
+            set head = head + 1;
+        }
+        if i >= k - 1 {
+            push(out, str(xs[dq[head]]));
+        }
+    }
+    print(join(out, " "));
+    return ok();
+}

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0113","name":"trailing_comma","severity":"error","file":"trailing_comma.vo","start":{"line":2,"col":24},"end":{"line":2,"col":25},"text":",","message":"A list cannot end with a comma.","fixes":[{"file":"trailing_comma.vo","start":{"line":2,"col":24},"end":{"line":2,"col":25},"replacement":""}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

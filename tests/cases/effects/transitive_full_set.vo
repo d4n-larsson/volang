@@ -1,0 +1,13 @@
+fn b() -> result[void] {
+    print("saving");
+    return write_file("out.txt", "x");
+}
+
+fn a() -> result[void] {
+    return b();
+}
+
+fn main() -> result[void] {
+    try a();
+    return ok();
+}

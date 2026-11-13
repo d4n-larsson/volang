@@ -1,0 +1,20 @@
+fn main() uses console, input {
+    match read_line() {
+        case ok(line) {
+            print("1: " + line);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    let rest = read_all();
+    print(str(len(rest)));
+    match read_line() {
+        case ok(line) {
+            print(line);
+        }
+        case err(e) {
+            print("then: " + e);
+        }
+    }
+}

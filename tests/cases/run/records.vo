@@ -1,0 +1,16 @@
+record Point {
+    x: int;
+    y: int;
+}
+
+fn shifted(p: Point, dx: int) -> Point {
+    return new Point { x: p.x + dx, y: p.y };
+}
+
+fn main() uses console {
+    let p = new Point { x: 1, y: 2 };
+    let q = shifted(p, 10);
+    print(str(q.x) + "," + str(q.y));
+    set p.x = 5;
+    print(str(p.x));
+}

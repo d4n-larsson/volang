@@ -1,0 +1,5 @@
+restock p q s
+value 400
+out_of_stock no
+all_priced yes
+most_valuable p

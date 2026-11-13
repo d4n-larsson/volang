@@ -1,0 +1,71 @@
+fn is_letter(c: str) -> bool {
+    return "a" <= c and c <= "z" or "A" <= c and c <= "Z";
+}
+
+fn count_words(text: str, stop: map[str, bool], counts: map[str, int]) {
+    var word = new list[str];
+    for c in chars(text + " ") {
+        if is_letter(c) {
+            push(word, c);
+        } else if len(word) > 0 {
+            let w = lower(join(word, ""));
+            set word = new list[str];
+            if not has(stop, w) {
+                if has(counts, w) {
+                    set counts[w] = counts[w] + 1;
+                } else {
+                    set counts[w] = 1;
+                }
+            }
+        }
+    }
+}
+
+fn main() -> result[void] uses console, input, file.read("texts/") {
+    let n = try parse_int(trim(try read_line()));
+    let stop = new map[str, bool];
+    match read_line() {
+        case ok(line) {
+            for w in split(line, " ") {
+                if w != "" {
+                    set stop[lower(w)] = true;
+                }
+            }
+        }
+        case err(_) {
+        }
+    }
+    let counts = new map[str, int];
+    while true {
+        match read_line() {
+            case ok(name) {
+                if name == "" {
+                    continue;
+                }
+                match read_file("texts/" + name) {
+                    case ok(text) {
+                        count_words(text, stop, counts);
+                    }
+                    case err(_) {
+                        print("missing " + name);
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    if len(counts) == 0 {
+        print("no words");
+    }
+    let words = keys(counts);
+    sort(words);
+    sort_by(words, fn(w: str) -> int {
+        return -counts[w];
+    });
+    for i in 0..min(n, len(words)) {
+        print(words[i] + " " + str(counts[words[i]]));
+    }
+    return ok();
+}

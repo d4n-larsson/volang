@@ -1,0 +1,17 @@
+member late joined
+book K: 1 copies
+late borrows K (due 15)
+late returns K late 1 days, fine 0.25
+late borrows K (due 30)
+late returns K late 1 days, fine 0.25
+late borrows K (due 45)
+late returns K late 155 days, fine 10.00
+late blocked: owes 10.50
+late pays 10.25, owes 0.25
+late borrows K (due 214)
+error: late owes only 0.25
+late already has K
+members:
+late loans K owes 0.25
+books:
+K 0/1 queue -

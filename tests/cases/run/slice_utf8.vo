@@ -1,0 +1,4 @@
+fn main() uses console {
+    let s = "é";
+    print(slice(s, 0, 1));
+}

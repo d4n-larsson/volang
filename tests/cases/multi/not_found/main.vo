@@ -1,0 +1,6 @@
+import nope.thing;
+import geom2.missing;
+
+fn main() uses console {
+    print("x");
+}

@@ -1,0 +1,8 @@
+Statement as of 2026-03-01
+== ghost
+no ledger
+== bob
+2025-12-31 +0 opening
+2026-01-15 +2500 refund
+balance 2500 (2 entries, 0 later)
+grand total 2500

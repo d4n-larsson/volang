@@ -1,0 +1,12 @@
+add 3 write report
+tag 1 work
+tag 1 q3
+tag 1 work
+add 3 review report
+tag 2 work
+done 2
+list +work
+list +home
+delete 1
+list +work
+done 1

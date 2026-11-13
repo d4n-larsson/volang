@@ -1,0 +1,9 @@
+== ties
+1 p1 9
+2 p2 7
+2 p3 7
+4 p4 5
+4 p5 5
+4 p6 5
+7 p7 1
+published out/ties.txt

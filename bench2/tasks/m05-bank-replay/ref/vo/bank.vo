@@ -1,0 +1,77 @@
+import parsing.Entry;
+
+record Bank {
+    balance: map[str, int];
+    limit: map[str, int];
+    closed: map[str, bool];
+    fees: int;
+    interest: int;
+}
+
+fn new_bank() -> Bank {
+    return new Bank { balance: new map[str, int], limit: new map[str, int], closed: new map[str, bool], fees: 0, interest: 0 };
+}
+
+fn exists(b: Bank, a: str) -> bool {
+    return has(b.balance, a) and not has(b.closed, a);
+}
+
+fn month(b: Bank) {
+    for a in keys(b.balance) {
+        if exists(b, a) and b.balance[a] < 0 {
+            let i = (-b.balance[a] * 15 + 999) / 1000;
+            set b.balance[a] = b.balance[a] - i;
+            set b.interest = b.interest + i;
+        }
+    }
+}
+
+fn apply(b: Bank, e: Entry) -> result[void] {
+    if e.cmd == "month" {
+        month(b);
+        return ok();
+    }
+    let a = e.names[0];
+    if e.cmd == "open" {
+        if has(b.balance, a) {
+            return err("account " + a + " exists");
+        }
+        set b.balance[a] = 0;
+        set b.limit[a] = e.money;
+        return ok();
+    }
+    for name in e.names {
+        if not exists(b, name) {
+            return err("no account " + name);
+        }
+    }
+    let bal = b.balance[a];
+    if e.cmd == "deposit" {
+        set b.balance[a] = bal + e.money;
+    } else if e.cmd == "withdraw" {
+        if bal - e.money < -b.limit[a] {
+            return err("insufficient funds");
+        }
+        set b.balance[a] = bal - e.money;
+        if b.balance[a] < 0 {
+            set b.balance[a] = b.balance[a] - 250;
+            set b.fees = b.fees + 250;
+        }
+    } else if e.cmd == "transfer" {
+        let to = e.names[1];
+        if a == to {
+            return err("same account");
+        }
+        if bal - e.money < 0 {
+            return err("insufficient funds");
+        }
+        set b.balance[a] = bal - e.money;
+        set b.balance[to] = b.balance[to] + e.money;
+    } else if e.cmd == "close" {
+        if bal != 0 {
+            return err("balance not zero");
+        }
+        set b.closed[a] = true;
+    }
+    return ok();
+}

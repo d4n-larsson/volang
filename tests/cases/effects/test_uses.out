@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0501","name":"missing_effect","severity":"error","file":"test_uses.vo","start":{"line":5,"col":1},"end":{"line":5,"col":5},"text":"test","message":"`test \"prints\"` does not declare console, which it needs.","fixes":[{"file":"test_uses.vo","start":{"line":5,"col":15},"end":{"line":5,"col":15},"replacement":"uses console "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

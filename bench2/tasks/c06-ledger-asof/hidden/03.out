@@ -1,0 +1,9 @@
+Statement as of 2030-01-01
+== dan
+balance 0 (0 entries, 0 later)
+== eve
+2026-01-01 +4000000000000000000 big in
+2026-01-02 -4000000000000000000 big out
+2026-01-03 -9 tiny
+balance -9 (3 entries, 0 later)
+grand total -9

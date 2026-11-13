@@ -1,0 +1,10 @@
+added a in hall 08:00-09:30
+added b in hall 11:00-12:15
+free hall 07:45-13:00:
+  09:30-11:00 (90 min)
+  12:15-13:00 (45 min)
+error: empty interval
+hall at 12:00: b
+removed a
+free hall 08:00-09:00:
+  08:00-09:00 (60 min)

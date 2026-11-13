@@ -1,0 +1,21 @@
+list
+show soup
+scale soup 2
+shop soup 2
+recipe soup 2 leek 100 g
+recipe soup 3 leek 100 g
+recipe pie 2 apple 3 pcs apple 2 pcs
+recipe pie 2 apple 3 pieces
+recipe pie 2 apple 3 pcs dough 0 g
+recipe pie 0 apple 3 pcs
+recipe pie 2 apple 3
+recipe pie 2
+recipe pie two apple 3 pcs
+recipe pie 2 apple x3 pcs
+scale soup 0
+scale soup
+shop soup
+shop soup 2 pie 1
+shop soup 2 soup x
+config rounding=down
+list

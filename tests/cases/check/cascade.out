@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"cascade.vo","start":{"line":2,"col":18},"end":{"line":2,"col":21},"text":"\"a\"","message":"Expected `int`, found `str`.","expected":"int","found":"str","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0201","name":"undefined_name","severity":"error","file":"cascade.vo","start":{"line":4,"col":13},"end":{"line":4,"col":28},"text":"undefined_thing","message":"`undefined_thing` is not defined.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

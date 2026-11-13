@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0507","name":"uses_on_anonymous_fn","severity":"error","file":"uses_on_lambda.vo","start":{"line":2,"col":31},"end":{"line":2,"col":43},"text":"uses console","message":"Anonymous functions do not declare effects: they get them from their body. Remove the `uses` clause.","fixes":[{"file":"uses_on_lambda.vo","start":{"line":2,"col":31},"end":{"line":2,"col":44},"replacement":""}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -1,0 +1,5 @@
+restock -
+value 260
+out_of_stock no
+all_priced yes
+most_valuable desk

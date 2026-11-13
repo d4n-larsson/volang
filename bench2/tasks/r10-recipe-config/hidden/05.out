@@ -1,0 +1,51 @@
+config rounding=nearest units=metric
+recipe t added (7 ingredients)
+t for 1:
+  a 0 g
+  b 2 g
+  c 2 g
+  d 0 pcs
+  e 1 pcs
+  f 1 ml
+  g 2 ml
+t for 2:
+  a 1 g
+  b 3 g
+  c 5 g
+  d 0 pcs
+  e 2 pcs
+  f 2 ml
+  g 4 ml
+t for 3:
+  a 2 g
+  b 4 g
+  c 8 g
+  d 1 pcs
+  e 2 pcs
+  f 4 ml
+  g 5 ml
+t for 6:
+  a 3 g
+  b 9 g
+  c 15 g
+  d 2 pcs
+  e 4 pcs
+  f 8 ml
+  g 10 ml
+recipe u added (2 ingredients)
+u for 1:
+  rice 167 g
+  water 500 ml
+u for 9:
+  rice 1.5 kg
+  water 4.498 l
+shopping list (3 recipes):
+  a 0 g
+  b 4 g
+  c 4 g
+  d 0 pcs
+  e 2 pcs
+  f 2 ml
+  g 4 ml
+  rice 500 g
+  water 1.5 l

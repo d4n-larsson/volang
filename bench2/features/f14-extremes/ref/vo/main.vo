@@ -1,0 +1,83 @@
+record Pair[T] {
+    low: T;
+    high: T;
+}
+
+variant Maybe[T] {
+    nothing;
+    just(Pair[T]);
+}
+
+fn extremes[T: ordered](xs: list[T]) -> Maybe[T] {
+    if len(xs) == 0 {
+        return Maybe.nothing;
+    }
+    var low = xs[0];
+    var high = xs[0];
+    for x in xs {
+        set low = min(low, x);
+        set high = max(high, x);
+    }
+    return Maybe.just(new Pair[T] { low: low, high: high });
+}
+
+fn sorted_copy[T: ordered](xs: list[T]) -> list[T] {
+    let c = slice(xs, 0, len(xs));
+    sort(c);
+    return c;
+}
+
+fn distinct[T: ordered](xs: list[T]) -> int {
+    let s = sorted_copy(xs);
+    var n = 0;
+    for i in 0..len(s) {
+        if i == 0 or s[i] != s[i - 1] {
+            set n = n + 1;
+        }
+    }
+    return n;
+}
+
+fn median[T: ordered](xs: list[T]) -> T {
+    let s = sorted_copy(xs);
+    return s[(len(s) - 1) / 2];
+}
+
+fn describe[T: ordered](xs: list[T], show: fn(T) -> str) -> str {
+    match extremes(xs) {
+        case nothing {
+            return "empty";
+        }
+        case just(p) {
+            return "min=" + show(p.low) + " max=" + show(p.high) + " median=" + show(median(xs)) + " distinct=" + str(distinct(xs));
+        }
+    }
+}
+
+fn main() -> result[void] uses console, input {
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                let values = slice(p, 1, len(p));
+                if p[0] == "int" {
+                    let xs = new list[int];
+                    for t in values {
+                        push(xs, try parse_int(t));
+                    }
+                    print(describe(xs, fn(x: int) -> str {
+                        return str(x);
+                    }));
+                } else {
+                    print(describe(values, fn(s: str) -> str {
+                        return s;
+                    }));
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

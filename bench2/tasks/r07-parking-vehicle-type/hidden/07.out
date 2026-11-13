@@ -1,0 +1,25 @@
+level 1 opened with 2 spots
+level 2 opened with 3 spots
+A parked at 1-1
+B parked at 1-2
+error: unknown vehicle type bus
+error: unknown vehicle type bus
+error: A already parked
+error: unknown vehicle type TRUCK
+error: no truck spot
+error: no truck spot
+E parked at 2-1
+F parked at 2-2
+1-1 A since 0
+1-2 B since 0 (motorcycle)
+2-1 E since 2 (motorcycle)
+2-2 F since 3
+error: bad command
+error: bad command
+B left 1-2 after 200 min, fee 4.00
+E left 2-1 after 198 min, fee 4.00
+1-1 A since 0
+2-2 F since 3
+level 1: exits 1 revenue 4.00 pending 10.00
+level 2: exits 1 revenue 4.00 pending 10.00
+total exits 2 revenue 8.00 pending 20.00

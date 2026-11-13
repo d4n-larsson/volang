@@ -1,0 +1,4 @@
+fn main() uses console {
+    let n = try parse_int("1");
+    print(str(n));
+}

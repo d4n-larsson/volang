@@ -1,0 +1,3 @@
+feature_x = on
+	port	=	9000	
+motd = a = b = c

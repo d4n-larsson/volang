@@ -1,0 +1,17 @@
+add a r 24:00 24:30
+add a r 12:60 13:00
+add a r 1200 1300
+add a r 12:5 13:00
+add a r 12:345 13:00
+add a r ab:cd 13:00
+add a r 12:00 13:0x
+add a r :30 13:00
+add a r 12:30:00 13:00
+add a r 23:00 23:59
+who r 23:59
+who r 23:58
+who r 99:99
+free r 23:00 24:00 1
+free r 22:00 23:59 30
+agenda r
+summary

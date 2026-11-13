@@ -1,0 +1,62 @@
+record Count {
+    n: int;
+}
+
+fn make_handler(event: str, action: str, text: str) -> fn(str) uses console {
+    let prefix = event + ": ";
+    if action == "say" {
+        return fn(payload: str) {
+            print(prefix + text);
+        };
+    }
+    if action == "echo" {
+        return fn(payload: str) {
+            print(prefix + payload);
+        };
+    }
+    if action == "upper" {
+        return fn(payload: str) {
+            print(prefix + upper(payload));
+        };
+    }
+    let c = new Count { n: 0 };
+    return fn(payload: str) {
+        set c.n = c.n + 1;
+        print(prefix + str(c.n));
+    };
+}
+
+fn rest(parts: list[str], from: int) -> str {
+    if len(parts) <= from {
+        return "";
+    }
+    return join(slice(parts, from, len(parts)), " ");
+}
+
+fn main() uses console, input {
+    let registry = new map[str, list[fn(str) uses console]];
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                let event = p[1];
+                if p[0] == "on" {
+                    if not has(registry, event) {
+                        set registry[event] = new list[fn(str) uses console];
+                    }
+                    push(registry[event], make_handler(event, p[2], rest(p, 3)));
+                } else if has(registry, event) {
+                    let payload = rest(p, 2);
+                    for h in registry[event] {
+                        h(payload);
+                    }
+                } else {
+                    print("unhandled " + event);
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+}

@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0102","name":"unterminated_string","severity":"error","file":"unterminated_string.vo","start":{"line":2,"col":11},"end":{"line":2,"col":17},"text":"\"abc);","message":"This string is not closed before the end of the line.","fixes":[{"file":"unterminated_string.vo","start":{"line":2,"col":17},"end":{"line":2,"col":17},"replacement":"\""}],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"unterminated_string.vo","start":{"line":3,"col":1},"end":{"line":3,"col":2},"text":"}","message":"Expected `)`, found `}`.","expected":")","found":"}","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

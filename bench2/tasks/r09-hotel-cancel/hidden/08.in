@@ -1,0 +1,13 @@
+type r 3000 1
+book a r ann 5 7
+cancel zz 1
+cancel a
+cancel a x
+cancel a 1 2
+cancel a -1
+cancel a 7
+cancel a 6
+cancel a 6
+book a r ann 5 7
+invoice a
+report

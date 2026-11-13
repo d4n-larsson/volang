@@ -1,0 +1,66 @@
+record Tx {
+    account: str;
+    amount: int;
+}
+
+record Balance {
+    current: int;
+    lowest: int;
+}
+
+record Account {
+    name: str;
+    balance: int;
+    lowest: int;
+}
+
+fn main() -> result[void] uses console, input {
+    let txs = new list[Tx];
+    let names = new list[str];
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                push(txs, new Tx { account: p[0], amount: try parse_int(p[1]) });
+                if not any(names, fn(n: str) -> bool {
+                    return n == p[0];
+                }) {
+                    push(names, p[0]);
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    let accounts = map(names, fn(name: str) -> Account {
+        let mine = filter(txs, fn(t: Tx) -> bool {
+            return t.account == name;
+        });
+        let b = fold(mine, new Balance { current: 0, lowest: 0 }, fn(acc: Balance, t: Tx) -> Balance {
+            let c = acc.current + t.amount;
+            return new Balance { current: c, lowest: min(acc.lowest, c) };
+        });
+        return new Account { name: name, balance: b.current, lowest: b.lowest };
+    });
+    sort_by(accounts, fn(a: Account) -> str {
+        return a.name;
+    });
+    let overdrawn = map(filter(accounts, fn(a: Account) -> bool {
+        return a.lowest < 0;
+    }), fn(a: Account) -> str {
+        return a.name;
+    });
+    sort_by(accounts, fn(a: Account) -> int {
+        return -a.balance;
+    });
+    for a in accounts {
+        print(a.name + " " + str(a.balance));
+    }
+    if len(overdrawn) == 0 {
+        print("overdrawn -");
+    } else {
+        print("overdrawn " + join(overdrawn, " "));
+    }
+    return ok();
+}

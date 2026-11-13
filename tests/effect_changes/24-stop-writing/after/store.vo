@@ -1,0 +1,10 @@
+import report.render;
+
+fn save_total(n: int) -> result[void] {
+    let _ = render(n);
+    return ok();
+}
+
+fn checksum(s: str) -> int {
+    return len(s);
+}

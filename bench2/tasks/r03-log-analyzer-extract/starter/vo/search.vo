@@ -1,0 +1,90 @@
+fn numeric(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+# Only called on strings that passed numeric.
+fn number_of(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn leap_year(y: int) -> bool {
+    return y % 4 == 0 and (y % 100 != 0 or y % 400 == 0);
+}
+
+fn check_date(word: str) -> bool {
+    if len(word) != 10 or slice(word, 4, 5) != "-" or slice(word, 7, 8) != "-" {
+        return false;
+    }
+    if not numeric(slice(word, 0, 4)) or not numeric(slice(word, 5, 7)) or not numeric(slice(word, 8, 10)) {
+        return false;
+    }
+    let y = number_of(slice(word, 0, 4));
+    let m = number_of(slice(word, 5, 7));
+    let d = number_of(slice(word, 8, 10));
+    if y < 1 or m < 1 or m > 12 or d < 1 {
+        return false;
+    }
+    var feb = 28;
+    if leap_year(y) {
+        set feb = 29;
+    }
+    let lengths = [31, feb, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    return d <= lengths[m - 1];
+}
+
+fn check_time(word: str) -> bool {
+    if len(word) != 8 or slice(word, 2, 3) != ":" or slice(word, 5, 6) != ":" {
+        return false;
+    }
+    if not numeric(slice(word, 0, 2)) or not numeric(slice(word, 3, 5)) or not numeric(slice(word, 6, 8)) {
+        return false;
+    }
+    return number_of(slice(word, 0, 2)) < 24 and number_of(slice(word, 3, 5)) < 60 and number_of(slice(word, 6, 8)) < 60;
+}
+
+# The words of a valid log line.
+fn split_entry(line: str) -> result[list[str]] {
+    let words = filter(split(line, " "), fn(w: str) -> bool {
+        return w != "";
+    });
+    if len(words) < 4 or not check_date(words[0]) or not check_time(words[1]) {
+        return err("bad stamp");
+    }
+    let level = words[2];
+    if level != "DEBUG" and level != "INFO" and level != "WARN" and level != "ERROR" {
+        return err("bad level");
+    }
+    if len(words[3]) < 2 or slice(words[3], len(words[3]) - 1, len(words[3])) != ":" {
+        return err("bad component");
+    }
+    return ok(words);
+}
+
+fn grep(lines: list[str], word: str) -> list[str] {
+    let out = new list[str];
+    for line in lines {
+        match split_entry(line) {
+            case ok(words) {
+                if find(join(slice(words, 4, len(words)), " "), word) >= 0 {
+                    push(out, join(words, " "));
+                }
+            }
+            case err(_) {
+            }
+        }
+    }
+    push(out, str(len(out)) + " matches");
+    return out;
+}

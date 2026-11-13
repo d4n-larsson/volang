@@ -1,0 +1,7 @@
+fn main() uses console {
+    match parse_int("4") {
+        case ok(v) {
+            print(str(v));
+        }
+    }
+}

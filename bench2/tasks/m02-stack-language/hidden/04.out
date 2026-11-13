@@ -1,0 +1,12 @@
+error: stack underflow
+error: unknown word --5
+error: unknown word 5-
+error: unknown word +5
+error: unknown word 1.5
+error: unknown word ;
+error: unfinished definition
+error: unfinished definition
+error: bad name ;
+error: unknown word DUP
+error: stack underflow
+<0>

@@ -1,0 +1,17 @@
+book X: 1 copies
+member p joined
+member q joined
+p borrows X (due 15)
+q waits for X (position 1)
+q already waiting for X
+p returns X late 25 days, fine 6.25
+X -> q (due 54)
+p pays 6.00, owes 0.25
+error: p owes only 0.25
+p waits for X (position 1)
+p pays 0.01, owes 0.24
+members:
+p loans - owes 0.24
+q loans X owes 0.00
+books:
+X 0/1 queue p

@@ -1,0 +1,35 @@
+product A added
+product B added
+product C added
+product D added
+product E added
+product F added
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+product G added
+product A price 3.10
+product B price 0.09
+product C price 100.00
+error: bad command
+error: bad command
+cart A x1
+cart B x1
+cart C x1
+cart D x1
+cart E x1
+cart F x1
+cart G x1
+A x1 @ 3.10 = 3.10
+B x1 @ 0.09 = 0.09
+C x1 @ 100.00 = 100.00
+D x1 @ 0.05 = 0.05
+E x1 @ 7.00 = 7.00
+F x1 @ 0.00 = 0.00
+G x1 @ 0.00 = 0.00
+items 7, gross 110.24

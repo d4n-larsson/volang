@@ -1,0 +1,9 @@
+add-product W widget 333 100
+order w1 W 31
+order w2 W 30
+show w1
+show w2
+cancel w1
+restock W 0
+add-item W widget 1 1
+report

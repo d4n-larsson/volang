@@ -1,0 +1,18 @@
+drop lamp
+drop
+drop lamp lamp
+take lamp
+drop key
+go north
+drop key
+drop lamp
+drop lamp
+look
+take lamp
+take key
+drop lamp
+drop key
+inventory
+look
+quit
+drop key

@@ -1,0 +1,68 @@
+record Lot {
+    qty: int;
+    cost: int;
+}
+
+record Ledger {
+    lots: map[str, list[Lot]];
+    revenue: int;
+    cogs: int;
+    loss: int;
+}
+
+fn new_ledger() -> Ledger {
+    return new Ledger { lots: new map[str, list[Lot]], revenue: 0, cogs: 0, loss: 0 };
+}
+
+fn stock(l: Ledger, sku: str) -> int {
+    if not has(l.lots, sku) {
+        return 0;
+    }
+    var n = 0;
+    for lot in l.lots[sku] {
+        set n = n + lot.qty;
+    }
+    return n;
+}
+
+fn value(l: Ledger, sku: str) -> int {
+    var v = 0;
+    for lot in l.lots[sku] {
+        set v = v + lot.qty * lot.cost;
+    }
+    return v;
+}
+
+fn receive(l: Ledger, sku: str, qty: int, cost: int) {
+    if not has(l.lots, sku) {
+        set l.lots[sku] = new list[Lot];
+    }
+    push(l.lots[sku], new Lot { qty: qty, cost: cost });
+}
+
+fn take(l: Ledger, sku: str, qty: int) -> int {
+    var left = qty;
+    var cost = 0;
+    var lots = l.lots[sku];
+    while left > 0 {
+        let first = lots[0];
+        let n = min(left, first.qty);
+        set cost = cost + n * first.cost;
+        set first.qty = first.qty - n;
+        set left = left - n;
+        if first.qty == 0 {
+            set lots = slice(lots, 1, len(lots));
+        }
+    }
+    set l.lots[sku] = lots;
+    return cost;
+}
+
+fn ship(l: Ledger, sku: str, qty: int, price: int) {
+    set l.cogs = l.cogs + take(l, sku, qty);
+    set l.revenue = l.revenue + qty * price;
+}
+
+fn scrap(l: Ledger, sku: str, qty: int) {
+    set l.loss = l.loss + take(l, sku, qty);
+}

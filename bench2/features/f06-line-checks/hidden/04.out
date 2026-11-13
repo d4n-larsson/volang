@@ -1,0 +1,3 @@
+evens=1 sumsq=4 allpos=no any7=no
+evens=1 sumsq=196 allpos=no any7=yes
+evens=1 sumsq=1000000000000 allpos=yes any7=yes

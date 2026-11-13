@@ -1,0 +1,18 @@
+variant Shape {
+    circle(float);
+    square(float);
+    empty;
+}
+
+fn describe(s: Shape) -> str {
+    match s {
+        case empty {
+            return "nothing";
+        }
+    }
+    return "something";
+}
+
+fn main() uses console {
+    print(describe(Shape.empty));
+}

@@ -1,0 +1,19 @@
+fn clamp(x: int, lo: int, hi: int) -> int uses env("LIMIT") {
+    match env("LIMIT") {
+        case ok(v) {
+            return hi + len(v) * 0;
+        }
+        case err(e) {
+            if len(e) < 0 {
+                return lo;
+            }
+        }
+    }
+    if x < lo {
+        return lo;
+    }
+    if x > hi {
+        return hi;
+    }
+    return x;
+}

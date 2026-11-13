@@ -1,0 +1,17 @@
+config rounding=down units=metric
+recipe soup added (3 ingredients)
+soup for 6:
+  carrot 750 g
+  stock 2.25 l
+  onion 1 pcs
+soup for 1:
+  carrot 125 g
+  stock 375 ml
+  onion 0 pcs
+recipe salad added (2 ingredients)
+shopping list (2 recipes):
+  carrot 250 g
+  oil 26 ml
+  onion 0 pcs
+  stock 750 ml
+  tomato 266 g

@@ -1,0 +1,14 @@
+Statement as of 2026-12-31
+== alice
+2026-01-05 +12000 salary
+2026-01-05 -300 coffee beans
+2026-02-01 -4500 rent february
+2026-03-01 -4500 rent march
+balance 2700 (4 entries, 0 later)
+== bob
+2025-12-31 +0 opening
+2026-01-15 +2500 refund
+balance 2500 (2 entries, 0 later)
+== zed
+no ledger
+grand total 5200

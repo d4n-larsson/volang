@@ -1,0 +1,35 @@
+level 1 30
+enter M1 7 motorcycle
+quote M1 7
+enter M2 7 motorcycle
+quote M2 67
+enter M3 7 motorcycle
+quote M3 68
+enter M4 7 motorcycle
+quote M4 127
+enter M5 7 motorcycle
+quote M5 128
+enter M6 7 motorcycle
+quote M6 486
+enter M7 7 motorcycle
+quote M7 487
+enter M8 7 motorcycle
+quote M8 488
+enter M9 7 motorcycle
+quote M9 547
+enter M10 7 motorcycle
+quote M10 1447
+enter M11 7 motorcycle
+quote M11 1448
+enter M12 7 motorcycle
+quote M12 1507
+enter M13 7 motorcycle
+quote M13 1508
+enter M14 7 motorcycle
+quote M14 2947
+enter M15 7 motorcycle
+quote M15 10006
+exit M8 487
+exit M14 2947
+report 7
+report 3000

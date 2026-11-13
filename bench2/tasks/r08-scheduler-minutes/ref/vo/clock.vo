@@ -1,0 +1,85 @@
+fn is_digits(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+# Only called on strings that passed is_digits.
+fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+# Minutes since midnight, or -1 when s is not a time.
+# Accepted: H:MM or HH:MM (hour 0-23), optionally followed by am/pm (hour 1-12).
+fn parse_time(s: str) -> int {
+    var suffix = "";
+    var t = s;
+    if len(s) >= 2 {
+        let tail = slice(s, len(s) - 2, len(s));
+        if tail == "am" or tail == "pm" {
+            set suffix = tail;
+            set t = slice(s, 0, len(s) - 2);
+        }
+    }
+    let colon = find(t, ":");
+    if colon < 1 or colon > 2 or len(t) != colon + 3 {
+        return -1;
+    }
+    let hh = slice(t, 0, colon);
+    let mm = slice(t, colon + 1, len(t));
+    if not is_digits(hh) or not is_digits(mm) {
+        return -1;
+    }
+    var h = num(hh);
+    let m = num(mm);
+    if m > 59 {
+        return -1;
+    }
+    if suffix == "" {
+        if h > 23 {
+            return -1;
+        }
+    } else {
+        if h < 1 or h > 12 {
+            return -1;
+        }
+        if h == 12 {
+            set h = 0;
+        }
+        if suffix == "pm" {
+            set h = h + 12;
+        }
+    }
+    return h * 60 + m;
+}
+
+fn two(n: int) -> str {
+    var s = str(n);
+    if len(s) < 2 {
+        set s = "0" + s;
+    }
+    return s;
+}
+
+# HH:MM for minutes since midnight.
+fn format_time(m: int) -> str {
+    return two(m / 60) + ":" + two(m % 60);
+}
+
+fn duration(start: int, end: int) -> int {
+    return end - start;
+}
+
+fn span(start: int, end: int) -> str {
+    return format_time(start) + "-" + format_time(end);
+}

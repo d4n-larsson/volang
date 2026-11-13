@@ -1,0 +1,11 @@
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+test "double works" {
+    expect_eq(double(2), 4);
+}
+
+fn main() {
+    print(str(double(21)));
+}

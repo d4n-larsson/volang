@@ -1,0 +1,2 @@
+helper.vo:greet uses console
+main.vo:main uses console

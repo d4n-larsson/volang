@@ -1,0 +1,4 @@
+add v2count 5
+add v2count -7
+get v2count
+add word 1

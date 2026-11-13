@@ -1,0 +1,5 @@
+restock -
+value 0
+out_of_stock no
+all_priced no
+most_valuable free

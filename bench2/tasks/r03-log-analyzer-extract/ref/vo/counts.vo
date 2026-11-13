@@ -1,0 +1,44 @@
+import logline.entries;
+import logline.levels_in_order;
+
+fn stats(lines: list[str]) -> list[str] {
+    let valid = len(entries(lines));
+    return ["lines " + str(len(lines)) + " valid " + str(valid) + " invalid " + str(len(lines) - valid)];
+}
+
+fn levels(lines: list[str]) -> list[str] {
+    let counts = new map[str, int];
+    for lv in levels_in_order() {
+        set counts[lv] = 0;
+    }
+    for e in entries(lines) {
+        set counts[e.level] = counts[e.level] + 1;
+    }
+    return map(levels_in_order(), fn(lv: str) -> str {
+        return lv + " " + str(counts[lv]);
+    });
+}
+
+fn errors(lines: list[str]) -> list[str] {
+    let per = new map[str, int];
+    for e in entries(lines) {
+        if e.level == "ERROR" {
+            if has(per, e.component) {
+                set per[e.component] = per[e.component] + 1;
+            } else {
+                set per[e.component] = 1;
+            }
+        }
+    }
+    if len(per) == 0 {
+        return ["no errors"];
+    }
+    let names = keys(per);
+    sort(names);
+    sort_by(names, fn(c: str) -> int {
+        return -per[c];
+    });
+    return map(names, fn(c: str) -> str {
+        return c + " " + str(per[c]);
+    });
+}

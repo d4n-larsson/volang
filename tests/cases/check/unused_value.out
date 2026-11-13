@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0405","name":"unused_value","severity":"error","file":"unused_value.vo","start":{"line":2,"col":5},"end":{"line":2,"col":15},"text":"len(\"abc\")","message":"The `int` returned by this call is ignored. Use it or write `let _ = ...`.","fixes":[{"file":"unused_value.vo","start":{"line":2,"col":5},"end":{"line":2,"col":5},"replacement":"let _ = "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

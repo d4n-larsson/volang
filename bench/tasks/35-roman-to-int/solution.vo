@@ -1,0 +1,37 @@
+fn value(c: str) -> int {
+    let symbols = ["I", "V", "X", "L", "C", "D", "M"];
+    let values = [1, 5, 10, 50, 100, 500, 1000];
+    for i in 0..len(symbols) {
+        if symbols[i] == c {
+            return values[i];
+        }
+    }
+    return 0;
+}
+
+fn roman(s: str) -> int {
+    let cs = chars(s);
+    var total = 0;
+    for i in 0..len(cs) {
+        let v = value(cs[i]);
+        if i + 1 < len(cs) and v < value(cs[i + 1]) {
+            set total = total - v;
+        } else {
+            set total = total + v;
+        }
+    }
+    return total;
+}
+
+fn main() uses console, input {
+    while true {
+        match read_line() {
+            case ok(line) {
+                print(str(roman(trim(line))));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+}

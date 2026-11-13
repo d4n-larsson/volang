@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0201","name":"undefined_name","severity":"error","file":"undefined_name.vo","start":{"line":2,"col":15},"end":{"line":2,"col":20},"text":"count","message":"`count` is not defined.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

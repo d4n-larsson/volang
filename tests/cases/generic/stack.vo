@@ -1,0 +1,43 @@
+record Stack[T] {
+    items: list[T];
+}
+
+fn push_item[T](s: Stack[T], x: T) {
+    push(s.items, x);
+}
+
+fn pop_item[T](s: Stack[T]) -> result[T] {
+    return pop(s.items);
+}
+
+fn main() uses console {
+    let ints = new Stack[int] { items: new list[int] };
+    push_item(ints, 1);
+    push_item(ints, 2);
+    let words = new Stack[str] { items: new list[str] };
+    push_item(words, "a");
+    match pop_item(ints) {
+        case ok(v) {
+            print(str(v));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    match pop_item(words) {
+        case ok(w) {
+            print(w);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    match pop_item(words) {
+        case ok(w) {
+            print(w);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

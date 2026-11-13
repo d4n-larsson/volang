@@ -1,0 +1,9 @@
+id | note             | more
+---+------------------+-----------
+1  | a "quoted" word  |
+2  | comma, inside    |   spaced
+3  | ends with quote" |
+5  |                  |
+6  | say "hi"         |
+8  | two"             |
+rows: 6, skipped: 2

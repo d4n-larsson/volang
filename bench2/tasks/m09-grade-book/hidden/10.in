@@ -1,0 +1,8 @@
+assignment e1 1 6
+assignment e2 1 6
+student k
+student l
+score k e1 5
+score l e1 6
+score l e2 4
+score k e2 5

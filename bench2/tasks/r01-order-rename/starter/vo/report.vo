@@ -1,0 +1,51 @@
+import catalog.Item;
+import catalog.sorted_items;
+import orders.Order;
+import orders.units;
+
+fn money(cents: int) -> str {
+    var frac = str(cents % 100);
+    if len(frac) < 2 {
+        set frac = "0" + frac;
+    }
+    return str(cents / 100) + "." + frac;
+}
+
+fn placed_line(order: Order) -> str {
+    var text = "order " + order.order_id + " placed: " + str(units(order)) + " units, total " + money(order.total);
+    if order.discount > 0 {
+        set text = text + " (discount " + money(order.discount) + ")";
+    }
+    return text;
+}
+
+fn show_order(order: Order) -> list[str] {
+    var status = "active";
+    if order.cancelled {
+        set status = "cancelled";
+    }
+    let out = ["order " + order.order_id + " (" + status + ")"];
+    for line in order.lines {
+        push(out, "  " + line.sku + " x" + str(line.qty) + " @ " + money(line.price));
+    }
+    push(out, "  total " + money(order.total));
+    return out;
+}
+
+fn full_report(catalog: map[str, Item], orders: map[str, Order]) -> list[str] {
+    let out = new list[str];
+    for item in sorted_items(catalog) {
+        push(out, "item " + item.sku + " " + item.name + " price " + money(item.price) + " stock " + str(item.stock) + " sold " + str(item.sold));
+    }
+    var revenue = 0;
+    var active = 0;
+    for order_id in keys(orders) {
+        let order = orders[order_id];
+        if not order.cancelled {
+            set revenue = revenue + order.total;
+            set active = active + 1;
+        }
+    }
+    push(out, "revenue " + money(revenue) + " over " + str(active) + " orders");
+    return out;
+}

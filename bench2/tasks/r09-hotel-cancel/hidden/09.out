@@ -1,0 +1,36 @@
+type std added
+type fam added
+booked h1: std 3 nights, total 240.00
+booked h2: std 7 nights, total 504.00
+booked h3: fam 7 nights, total 693.00
+type std rate 90.00
+booked h4: std 2 nights, total 180.00
+cancelled h2: refund 0.00
+booked h5: std 2 nights, total 180.00
+day 2: 3 of 3 rooms occupied
+  fam 1/1
+  std 2/2
+day 3: 3 of 3 rooms occupied
+  fam 1/1
+  std 2/2
+avail std 0-8: 0 of 2 free
+cancelled h3: refund 0.00
+booked h6: fam 1 nights, total 110.00
+invoice h2 for bob
+  std 7 nights x 80.00 = 560.00
+  long stay discount 56.00
+  total 504.00
+  cancelled on day 2, refund 0.00
+  net 504.00
+invoice h3 for cy
+  fam 7 nights x 110.00 = 770.00
+  long stay discount 77.00
+  total 693.00
+  cancelled on day 2, refund 0.00
+  net 693.00
+invoice h6 for fay
+  fam 1 nights x 110.00 = 110.00
+  total 110.00
+fam: 1 bookings (1 cancelled), 1 nights, revenue 803.00
+std: 3 bookings (1 cancelled), 8 nights, revenue 1104.00
+total revenue 1907.00, refunds 0.00

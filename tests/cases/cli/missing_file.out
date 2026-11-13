@@ -1,0 +1,2 @@
+{"v":1,"kind":"toolchain_error","code":"T0002","name":"cannot_read_input","message":"Cannot read `does/not/exist.vo`.","path":"does/not/exist.vo"}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":0}

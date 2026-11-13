@@ -1,0 +1,54 @@
+fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+# Only called on strings that passed is_number.
+fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+# Cents for a price word: digits, optionally "." and one or two digits; err if not a price.
+fn parse_amount(text: str) -> result[int] {
+    let parts = split(text, ".");
+    if len(parts) > 2 or not is_number(parts[0]) {
+        return err("not a price");
+    }
+    let whole = num(parts[0]) * 100;
+    if len(parts) == 1 {
+        return ok(whole);
+    }
+    let frac = parts[1];
+    if not is_number(frac) or len(frac) > 2 {
+        return err("not a price");
+    }
+    if len(frac) == 1 {
+        return ok(whole + num(frac) * 10);
+    }
+    return ok(whole + num(frac));
+}
+
+# Formats an amount in cents as X.YY.
+fn money(cents: int) -> str {
+    var frac = str(cents % 100);
+    if len(frac) < 2 {
+        set frac = "0" + frac;
+    }
+    return str(cents / 100) + "." + frac;
+}
+
+# pct percent of an amount in cents, rounded half up to a whole cent.
+fn percent_of(cents: int, pct: int) -> int {
+    return (cents * pct + 50) / 100;
+}

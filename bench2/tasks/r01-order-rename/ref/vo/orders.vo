@@ -1,0 +1,92 @@
+import catalog.Product;
+
+record Line {
+    sku: str;
+    qty: int;
+    price: int;
+}
+
+record Order {
+    order_id: str;
+    lines: list[Line];
+    total: int;
+    discount: int;
+    cancelled: bool;
+}
+
+fn discount_from() -> int {
+    return 10000;
+}
+
+fn discount_percent() -> int {
+    return 5;
+}
+
+fn requested_by_sku(pairs: list[Line]) -> map[str, int] {
+    let wanted = new map[str, int];
+    for p in pairs {
+        if has(wanted, p.sku) {
+            set wanted[p.sku] = wanted[p.sku] + p.qty;
+        } else {
+            set wanted[p.sku] = p.qty;
+        }
+    }
+    return wanted;
+}
+
+# `pairs` holds the requested lines (price 0); the order gets copies with the current prices.
+fn place_order(catalog: map[str, Product], orders: map[str, Order], order_id: str, pairs: list[Line]) -> result[Order] {
+    if has(orders, order_id) {
+        return err("error: order " + order_id + " exists");
+    }
+    let wanted = requested_by_sku(pairs);
+    for sku in keys(wanted) {
+        if not has(catalog, sku) {
+            return err("error: unknown product " + sku);
+        }
+        if wanted[sku] > catalog[sku].stock {
+            return err("error: not enough stock for product " + sku);
+        }
+    }
+    let lines = new list[Line];
+    var subtotal = 0;
+    for p in pairs {
+        let product = catalog[p.sku];
+        set product.stock = product.stock - p.qty;
+        set product.sold = product.sold + p.qty;
+        push(lines, new Line { sku: p.sku, qty: p.qty, price: product.price });
+        set subtotal = subtotal + p.qty * product.price;
+    }
+    var discount = 0;
+    if subtotal >= discount_from() {
+        set discount = subtotal * discount_percent() / 100;
+    }
+    let order = new Order { order_id: order_id, lines: lines, total: subtotal - discount, discount: discount, cancelled: false };
+    set orders[order_id] = order;
+    return ok(order);
+}
+
+fn cancel_order(catalog: map[str, Product], orders: map[str, Order], order_id: str) -> str {
+    if not has(orders, order_id) {
+        return "error: unknown order " + order_id;
+    }
+    let order = orders[order_id];
+    if order.cancelled {
+        return "error: order " + order_id + " already cancelled";
+    }
+    for line in order.lines {
+        let product = catalog[line.sku];
+        set product.stock = product.stock + line.qty;
+        set product.sold = product.sold - line.qty;
+    }
+    set order.cancelled = true;
+    return "order " + order_id + " cancelled";
+}
+
+fn units(order: Order) -> int {
+    var n = 0;
+    for line in order.lines {
+        set n = n + line.qty;
+    }
+    return n;
+}

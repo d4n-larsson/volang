@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"compound_assign.vo","start":{"line":3,"col":11},"end":{"line":3,"col":13},"text":"+=","message":"vo has no compound assignment: write `set x = x + ...;`.","fixes":[{"file":"compound_assign.vo","start":{"line":3,"col":11},"end":{"line":3,"col":13},"replacement":"= x +"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

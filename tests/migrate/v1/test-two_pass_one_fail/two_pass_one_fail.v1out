@@ -1,0 +1,7 @@
+PASS adds small numbers (0ms)
+PASS adds negatives (0ms)
+FAIL wrong expectation (0ms)
+  two_pass_one_fail.vo:14:5: `expect_eq` failed: the values differ.
+    expected: 5
+    actual:   4
+2 passed, 1 failed

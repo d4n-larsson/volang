@@ -1,0 +1,16 @@
+2024-05-01 00:10:00 INFO a: x
+2024-05-01 00:20:00 INFO a: x
+2024-05-01 23:10:00 INFO a: x
+2024-05-01 23:20:00 INFO a: x
+2024-05-02 00:00:00 DEBUG b: password reset for ann
+2024-05-02 23:00:00 DEBUG b: Password upper case
+2024-05-02 00:59:59 DEBUG b: passwords plural
+2024-05-02 23:59:59 DEBUG b:
+2024-05-02 12:00:00 WARN c: noon
+---
+busiest
+grep password
+grep b:
+grep 2024
+grep reset
+grep ann

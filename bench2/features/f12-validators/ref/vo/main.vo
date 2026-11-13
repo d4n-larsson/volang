@@ -1,0 +1,72 @@
+record Rule {
+    text: str;
+    check: fn(int) -> bool;
+}
+
+fn make_rule(text: str) -> result[Rule] {
+    let p = split(text, " ");
+    let kind = p[0];
+    if kind == "even" {
+        return ok(new Rule { text: text, check: fn(x: int) -> bool {
+            return x % 2 == 0;
+        } });
+    }
+    if kind == "odd" {
+        return ok(new Rule { text: text, check: fn(x: int) -> bool {
+            return x % 2 != 0;
+        } });
+    }
+    let n = try parse_int(p[1]);
+    if kind == "min" {
+        return ok(new Rule { text: text, check: fn(x: int) -> bool {
+            return x >= n;
+        } });
+    }
+    if kind == "max" {
+        return ok(new Rule { text: text, check: fn(x: int) -> bool {
+            return x <= n;
+        } });
+    }
+    if kind == "div" {
+        return ok(new Rule { text: text, check: fn(x: int) -> bool {
+            return x % n == 0;
+        } });
+    }
+    if kind == "not" {
+        return ok(new Rule { text: text, check: fn(x: int) -> bool {
+            return x != n;
+        } });
+    }
+    return err("unknown rule " + text);
+}
+
+fn main() -> result[void] uses console, input {
+    let spec = try read_line();
+    let rules = new list[Rule];
+    if len(spec) > 0 {
+        for t in split(spec, ",") {
+            push(rules, try make_rule(t));
+        }
+    }
+    while true {
+        match read_line() {
+            case ok(line) {
+                let x = try parse_int(line);
+                let failed = filter(rules, fn(r: Rule) -> bool {
+                    return not r.check(x);
+                });
+                if len(failed) == 0 {
+                    print(str(x) + " ok");
+                } else {
+                    print(str(x) + " fails " + join(map(failed, fn(r: Rule) -> str {
+                        return r.text;
+                    }), ","));
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

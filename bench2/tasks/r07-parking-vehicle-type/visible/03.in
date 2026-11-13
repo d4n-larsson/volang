@@ -1,0 +1,13 @@
+level 1 1
+level 3 1
+enter A 10 bus
+enter A 10 Car
+enter A 10
+enter A 20 truck
+enter B 20 truck
+enter C 20 motorcycle
+enter D 20 motorcycle
+exit C 5
+report 100
+exit C 1500
+report 1500

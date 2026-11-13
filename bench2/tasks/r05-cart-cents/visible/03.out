@@ -1,0 +1,13 @@
+error: bad command
+error: bad command
+error: bad command
+product A1 added
+product A1 price 3.25
+error: bad command
+error: unknown product Z9
+cart A1 x2
+A1 x2 @ 3.25 = 6.50
+items 2, gross 6.50
+cart A1 removed
+cart empty
+error: cart empty

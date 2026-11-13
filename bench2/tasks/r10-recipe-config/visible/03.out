@@ -1,0 +1,17 @@
+config rounding=nearest units=kitchen
+recipe cake added (4 ingredients)
+cake (8 servings)
+  flour 300 g
+  milk 1 cup 2 tsp
+  egg 3 pcs
+  sugar 1 kg
+cake for 4:
+  flour 150 g
+  milk 8 tbsp 1 tsp
+  egg 2 pcs
+  sugar 500 g
+cake for 12:
+  flour 450 g
+  milk 1 cup 9 tbsp
+  egg 4 pcs
+  sugar 1.5 kg

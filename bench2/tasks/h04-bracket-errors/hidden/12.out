@@ -1,0 +1,3 @@
+error at column 2: expected } but found ]
+error at column 1: unexpected }
+error at column 3: expected ) but found ]

@@ -1,0 +1,11 @@
+2024-06-15 12:00:05 INFO svc: before
+2024-06-15 12:00:10 INFO svc: at lower bound
+2024-06-15 12:00:45 WARN svc: inside
+2024-06-15 12:01:20 ERROR svc: at upper bound
+2024-06-15 12:01:21 INFO svc: after
+2024-06-15 12:01:59 INFO svc: well after
+---
+range 2024-06-15 12:00:10 2024-06-15 12:01:20
+range 2024-06-15 12:00:11 2024-06-15 12:01:19
+range 2024-06-15 12:01:21 2024-06-15 12:01:21
+span

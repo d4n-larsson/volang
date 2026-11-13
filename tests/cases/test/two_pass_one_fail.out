@@ -1,0 +1,4 @@
+{"v":1,"kind":"test","name":"adds small numbers","status":"pass","file":"two_pass_one_fail.vo","start":{"line":5,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"test","name":"adds negatives","status":"pass","file":"two_pass_one_fail.vo","start":{"line":9,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"test","name":"wrong expectation","status":"fail","file":"two_pass_one_fail.vo","start":{"line":13,"col":1},"uses":"","ms":0,"failure":{"file":"two_pass_one_fail.vo","start":{"line":14,"col":5},"end":{"line":14,"col":28},"message":"`expect_eq` failed: the values differ.","expected":"5","actual":"4"}}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":2,"failed":1,"errored":0,"timed_out":0}

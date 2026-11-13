@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0111","name":"unclosed_delimiter","severity":"error","file":"unclosed_block.vo","start":{"line":5,"col":1},"end":{"line":5,"col":1},"text":"","message":"Expected `}` before the end of the file.","fixes":[{"file":"unclosed_block.vo","start":{"line":5,"col":1},"end":{"line":5,"col":1},"replacement":"}\n"}],"related":[{"file":"unclosed_block.vo","start":{"line":1,"col":11},"end":{"line":1,"col":12},"message":"This block is never closed."}]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

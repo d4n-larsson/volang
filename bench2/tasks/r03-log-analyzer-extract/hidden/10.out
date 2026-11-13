@@ -1,0 +1,8 @@
+2024-10-10 10:00:45 INFO a: late in minute
+2024-10-10 10:01:00 INFO a: next minute
+2 entries in range
+span 80 seconds
+DEBUG 0
+INFO 4
+WARN 0
+ERROR 0

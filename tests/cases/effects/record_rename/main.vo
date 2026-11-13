@@ -1,0 +1,5 @@
+import helper.say_hello;
+
+fn main() uses console {
+    say_hello("vo");
+}

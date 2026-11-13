@@ -1,0 +1,12 @@
+taken lamp
+== Kitchen ==
+exits: down west
+items: knife, bread
+== Cellar ==
+exits: up
+items: coin, anvil
+anvil is too heavy
+you carry: lamp
+taken coin (+10)
+you carry: lamp, coin
+score 20 in 2 moves

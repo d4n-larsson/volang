@@ -1,0 +1,31 @@
+== Kitchen ==
+exits: down west
+items: knife, bread
+== Cellar ==
+exits: up
+items: coin, anvil
+taken anvil
+taken coin (+10)
+== Cellar ==
+exits: up
+items: none
+== Kitchen ==
+exits: down west
+items: knife, bread
+bread is too heavy
+dropped coin
+taken bread (+2)
+knife is too heavy
+== Kitchen ==
+exits: down west
+items: knife, coin
+dropped anvil
+taken knife
+== Cellar ==
+exits: up
+items: none
+== Cellar ==
+exits: up
+items: none
+you carry: bread, knife
+score 22 in 4 moves

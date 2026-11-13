@@ -1,0 +1,151 @@
+record Record {
+    level: str;
+    component: str;
+}
+
+fn levels_in_order() -> list[str] {
+    return ["DEBUG", "INFO", "WARN", "ERROR"];
+}
+
+fn is_digits(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+# Only called on strings that passed is_digits.
+fn digits_value(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn month_length(year: int, month: int) -> int {
+    if month == 2 {
+        if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) {
+            return 29;
+        }
+        return 28;
+    }
+    if month == 4 or month == 6 or month == 9 or month == 11 {
+        return 30;
+    }
+    return 31;
+}
+
+fn valid_date(word: str) -> bool {
+    if len(word) != 10 or slice(word, 4, 5) != "-" or slice(word, 7, 8) != "-" {
+        return false;
+    }
+    let y = slice(word, 0, 4);
+    let m = slice(word, 5, 7);
+    let d = slice(word, 8, 10);
+    if not (is_digits(y) and is_digits(m) and is_digits(d)) {
+        return false;
+    }
+    let year = digits_value(y);
+    let month = digits_value(m);
+    let day = digits_value(d);
+    return year >= 1 and month >= 1 and month <= 12 and day >= 1 and day <= month_length(year, month);
+}
+
+fn valid_time(word: str) -> bool {
+    if len(word) != 8 or slice(word, 2, 3) != ":" or slice(word, 5, 6) != ":" {
+        return false;
+    }
+    let h = slice(word, 0, 2);
+    let m = slice(word, 3, 5);
+    let s = slice(word, 6, 8);
+    if not (is_digits(h) and is_digits(m) and is_digits(s)) {
+        return false;
+    }
+    return digits_value(h) <= 23 and digits_value(m) <= 59 and digits_value(s) <= 59;
+}
+
+# The level and component of a valid log line.
+fn parse_record(line: str) -> result[Record] {
+    let words = filter(split(line, " "), fn(w: str) -> bool {
+        return w != "";
+    });
+    if len(words) < 4 {
+        return err("short");
+    }
+    if not valid_date(words[0]) or not valid_time(words[1]) {
+        return err("bad stamp");
+    }
+    let level = words[2];
+    if not any(levels_in_order(), fn(lv: str) -> bool {
+        return lv == level;
+    }) {
+        return err("bad level");
+    }
+    let comp = words[3];
+    if len(comp) < 2 or slice(comp, len(comp) - 1, len(comp)) != ":" {
+        return err("bad component");
+    }
+    return ok(new Record { level: level, component: slice(comp, 0, len(comp) - 1) });
+}
+
+fn records(lines: list[str]) -> list[Record] {
+    let out = new list[Record];
+    for line in lines {
+        match parse_record(line) {
+            case ok(rec) {
+                push(out, rec);
+            }
+            case err(_) {
+            }
+        }
+    }
+    return out;
+}
+
+fn stats(lines: list[str]) -> list[str] {
+    let valid = len(records(lines));
+    return ["lines " + str(len(lines)) + " valid " + str(valid) + " invalid " + str(len(lines) - valid)];
+}
+
+fn levels(lines: list[str]) -> list[str] {
+    let counts = new map[str, int];
+    for lv in levels_in_order() {
+        set counts[lv] = 0;
+    }
+    for rec in records(lines) {
+        set counts[rec.level] = counts[rec.level] + 1;
+    }
+    return map(levels_in_order(), fn(lv: str) -> str {
+        return lv + " " + str(counts[lv]);
+    });
+}
+
+fn errors(lines: list[str]) -> list[str] {
+    let per = new map[str, int];
+    for rec in records(lines) {
+        if rec.level == "ERROR" {
+            if has(per, rec.component) {
+                set per[rec.component] = per[rec.component] + 1;
+            } else {
+                set per[rec.component] = 1;
+            }
+        }
+    }
+    if len(per) == 0 {
+        return ["no errors"];
+    }
+    let names = keys(per);
+    sort(names);
+    sort_by(names, fn(c: str) -> int {
+        return -per[c];
+    });
+    return map(names, fn(c: str) -> str {
+        return c + " " + str(per[c]);
+    });
+}

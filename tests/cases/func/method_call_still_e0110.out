@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"method_call_still_e0110.vo","start":{"line":3,"col":15},"end":{"line":3,"col":23},"text":"xs.len()","message":"vo has no methods: write `len(xs)`.","fixes":[{"file":"method_call_still_e0110.vo","start":{"line":3,"col":15},"end":{"line":3,"col":23},"replacement":"len(xs)"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

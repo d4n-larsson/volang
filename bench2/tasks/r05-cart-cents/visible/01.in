@@ -1,0 +1,9 @@
+product A1 pen 1.5
+product B2 book 12
+product C3 mug 0.05
+add A1 3
+add B2 1
+add C3 10
+cart
+checkout
+report

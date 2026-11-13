@@ -1,0 +1,7 @@
+RECEIVE widget 3 1000
+SHIP widget 5 1500
+SHIP gadget 1 99
+ship widget 1 1500
+RECEIVE widget 0 1000
+
+SHIP   widget  3   900

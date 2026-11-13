@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0401","name":"non_exhaustive_match","severity":"error","file":"non_exhaustive_fix.vo","start":{"line":2,"col":5},"end":{"line":2,"col":25},"text":"match parse_int(\"4\")","message":"This `match` is missing cases: `err`.","fixes":[{"file":"non_exhaustive_fix.vo","start":{"line":6,"col":5},"end":{"line":6,"col":5},"replacement":"case err(_) {\n}\n"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

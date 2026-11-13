@@ -1,0 +1,7 @@
+get missing
+add h5new -3
+get h5new
+copy h5new h5new2
+add h5new2 3
+get h5new
+get h5new2

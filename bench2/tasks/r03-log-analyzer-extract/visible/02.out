@@ -1,0 +1,13 @@
+lines 8 valid 4 invalid 4
+DEBUG 1
+INFO 1
+WARN 0
+ERROR 2
+api 1
+cache 1
+2024-01-10 08:00:02 ERROR api: crash in handler
+1 matches
+2024-01-10 08:00:02 ERROR api: crash in handler
+1 matches
+error: unknown command uptime
+error: bad command

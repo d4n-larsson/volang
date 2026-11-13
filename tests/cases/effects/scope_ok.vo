@@ -1,0 +1,5 @@
+fn main() -> result[void] uses console, file.read("./"), file.write("./") {
+    try write_file("a.txt", "inside");
+    print(try read_file("./a.txt"));
+    return ok();
+}

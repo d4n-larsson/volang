@@ -1,0 +1,5 @@
+absolute_path.vo:2:9: runtime error[R0010]: file.write("/tmp/vo_scope_absolute.txt") is not allowed: `main` declares file.write("out/").
+   2 |     try write_file("/tmp/vo_scope_absolute.txt", "no");
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at main (absolute_path.vo:2:9)

@@ -1,0 +1,116 @@
+import catalog.Item;
+import catalog.add_item;
+import catalog.restock_item;
+import catalog.set_item_price;
+import orders.Line;
+import orders.Order;
+import orders.place_order;
+import orders.cancel_order;
+import report.money;
+import report.placed_line;
+import report.show_order;
+import report.full_report;
+
+fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+# Only called on strings that passed is_number.
+fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn run(words: list[str], catalog: map[str, Item], orders: map[str, Order]) -> list[str] {
+    let cmd = words[0];
+    let args = slice(words, 1, len(words));
+    if cmd == "add-item" {
+        if len(args) != 4 or not is_number(args[2]) or not is_number(args[3]) {
+            return ["error: bad command"];
+        }
+        return [add_item(catalog, args[0], args[1], num(args[2]), num(args[3]))];
+    }
+    if cmd == "restock" {
+        if len(args) != 2 or not is_number(args[1]) {
+            return ["error: bad command"];
+        }
+        return [restock_item(catalog, args[0], num(args[1]))];
+    }
+    if cmd == "price" {
+        if len(args) != 2 or not is_number(args[1]) {
+            return ["error: bad command"];
+        }
+        return [set_item_price(catalog, args[0], num(args[1]), money)];
+    }
+    if cmd == "order" {
+        if len(args) < 3 or len(args) % 2 != 1 {
+            return ["error: bad command"];
+        }
+        let pairs = new list[Line];
+        var i = 1;
+        while i < len(args) {
+            if not is_number(args[i + 1]) or num(args[i + 1]) == 0 {
+                return ["error: bad command"];
+            }
+            push(pairs, new Line { sku: args[i], qty: num(args[i + 1]), price: 0 });
+            set i = i + 2;
+        }
+        match place_order(catalog, orders, args[0], pairs) {
+            case ok(order) {
+                return [placed_line(order)];
+            }
+            case err(e) {
+                return [e];
+            }
+        }
+    }
+    if cmd == "cancel" {
+        if len(args) != 1 {
+            return ["error: bad command"];
+        }
+        return [cancel_order(catalog, orders, args[0])];
+    }
+    if cmd == "show" {
+        if len(args) != 1 {
+            return ["error: bad command"];
+        }
+        if not has(orders, args[0]) {
+            return ["error: unknown order " + args[0]];
+        }
+        return show_order(orders[args[0]]);
+    }
+    if cmd == "report" {
+        if len(args) != 0 {
+            return ["error: bad command"];
+        }
+        return full_report(catalog, orders);
+    }
+    return ["error: unknown command " + cmd];
+}
+
+fn main() uses console, input {
+    let catalog = new map[str, Item];
+    let orders = new map[str, Order];
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w: str) -> bool {
+            return w != "";
+        });
+        if len(words) == 0 {
+            continue;
+        }
+        for out in run(words, catalog, orders) {
+            print(out);
+        }
+    }
+}

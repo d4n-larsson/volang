@@ -1,0 +1,47 @@
+import ledger.new_ledger;
+import ledger.receive;
+import ledger.scrap;
+import ledger.ship;
+import ledger.stock;
+import parsing.parse;
+import report.report;
+
+fn emit(out: list[str], lines: list[str]) {
+    for s in lines {
+        push(out, s);
+    }
+}
+
+fn main() uses console, input {
+    let led = new_ledger();
+    let out = new list[str];
+    let lines = split(read_all(), "\n");
+    var count = len(lines);
+    if lines[count - 1] == "" {
+        set count = count - 1;
+    }
+    for i in 0..count {
+        let n = i + 1;
+        let c = parse(lines[i]);
+        if c.kind == "INVALID" {
+            push(out, "line " + str(n) + ": invalid");
+        } else if c.kind == "REPORT" {
+            emit(out, report(led));
+        } else if c.kind == "RECEIVE" {
+            receive(led, c.sku, c.qty, c.price);
+        } else if c.kind == "SHIP" or c.kind == "SCRAP" {
+            let have = stock(led, c.sku);
+            if have < c.qty {
+                push(out, "line " + str(n) + ": cannot take " + str(c.qty) + " of " + c.sku + ", only " + str(have) + " in stock");
+            } else if c.kind == "SHIP" {
+                ship(led, c.sku, c.qty, c.price);
+            } else {
+                scrap(led, c.sku, c.qty);
+            }
+        }
+    }
+    emit(out, report(led));
+    for s in out {
+        print(s);
+    }
+}

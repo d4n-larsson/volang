@@ -1,0 +1,33 @@
+employee W2 added: hourly $19.99/h
+employee W1 added: salaried $4500.00
+employee M5 added: hourly $33.33/h
+W2 hours 38
+W2 hours 45
+M5 hours 40
+W1 deduction union $10.00
+W1 deduction loan $2500.00
+M5 deduction none $0.00
+payslip W2 Zed (hourly)
+  regular 40h $799.60
+  overtime 5h $149.92
+  gross $949.52
+  tax $94.95
+  net $854.57
+payslip W1 Yan (salaried)
+  salary $4500.00
+  gross $4500.00
+  tax $950.00
+  deduction union $10.00
+  deduction loan $2500.00
+  net $1040.00
+payslip M5 Lia (hourly)
+  regular 40h $1333.20
+  gross $1333.20
+  tax $166.64
+  deduction none $0.00
+  net $1166.56
+summary: 3 employees
+  M5 Lia gross $1333.20 net $1166.56
+  W1 Yan gross $4500.00 net $1040.00
+  W2 Zed gross $949.52 net $854.57
+total gross $6782.72 tax $1211.59 deductions $2510.00 net $3061.13

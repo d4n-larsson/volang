@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0501","name":"missing_effect","severity":"error","file":"missing_effect.vo","start":{"line":1,"col":4},"end":{"line":1,"col":9},"text":"greet","message":"`greet` does not declare console, which it needs.","fixes":[{"file":"missing_effect.vo","start":{"line":1,"col":21},"end":{"line":1,"col":21},"replacement":"uses console "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

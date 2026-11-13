@@ -1,0 +1,9 @@
+type twin 9999 1
+book t1 twin cy 5 8
+cancel t1 1
+book t2 twin dee 20 30
+cancel t2 22
+occupancy 21
+occupancy 22
+avail twin 20 30
+report

@@ -1,0 +1,4 @@
+2026-02-01 -4500 rent february
+2026-01-05 12000 salary
+2026-03-01 -4500 rent march
+2026-01-05 -300 coffee beans

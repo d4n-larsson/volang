@@ -1,0 +1,15 @@
+fn add(a: int, b: int) -> int {
+    return a + b;
+}
+
+test "adds small numbers" {
+    expect_eq(add(1, 2), 3);
+}
+
+test "adds negatives" {
+    expect(add(-1, -2) == -3);
+}
+
+test "wrong expectation" {
+    expect_eq(add(2, 2), 5);
+}

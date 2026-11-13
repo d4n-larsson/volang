@@ -1,0 +1,7 @@
+1 open ana 100
+2 open bo 0
+3 deposit ana 50.25
+4 withdraw ana 120
+5 withdraw bo 1
+6 transfer ana bo 10
+7 month

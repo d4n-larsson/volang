@@ -1,0 +1,18 @@
+record RoomType {
+    name: str;
+    rate: int;
+    count: int;
+}
+
+# Nights start..end-1: check-in on day `start`, check-out on day `end`. Amounts in cents.
+record Booking {
+    booking_id: str;
+    type_name: str;
+    guest: str;
+    start: int;
+    end: int;
+    rate: int;
+    subtotal: int;
+    discount: int;
+    total: int;
+}

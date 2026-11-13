@@ -1,0 +1,33 @@
+assignment p1 added
+assignment p2 added
+assignment p3 added
+student u enrolled
+student v enrolled
+student w enrolled
+u p1 6/9
+u p3 2/3
+v p2 5/7
+w p1 3/9
+w p2 1/7
+w p3 0/3
+p1 count 2 min 3 max 6 mean 4.5
+p2 count 2 min 1 max 5 mean 3.0
+p3 count 2 min 0 max 2 mean 1.0
+v p2 6/7
+p2 count 2 min 1 max 6 mean 3.5
+u average 66.7 D
+  p1 6/9 66.7
+  p2 missing
+  p3 2/3 66.7
+v average 85.7 B
+  p1 missing
+  p2 6/7 85.7
+  p3 missing
+w average 11.9 F
+  p1 3/9 33.3
+  p2 1/7 14.3
+  p3 0/3 0.0
+1. v 85.7 B
+2. u 66.7 D
+3. w 11.9 F
+class average 54.8

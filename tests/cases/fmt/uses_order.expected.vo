@@ -1,0 +1,8 @@
+fn save(path: str) -> result[void] uses console, file.write("a/", "b/") {
+    print(path);
+    return write_file(path, "x");
+}
+
+test "t" uses console, clock {
+    print(str(now_ms()));
+}

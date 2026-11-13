@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0105","name":"number_out_of_range","severity":"error","file":"int_too_big.vo","start":{"line":2,"col":15},"end":{"line":2,"col":34},"text":"9223372036854775808","message":"Integer literal is larger than 9223372036854775807.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

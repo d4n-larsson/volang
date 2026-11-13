@@ -1,0 +1,11 @@
+test "parse numbers" {
+    expect_eq(len("12"), 2);
+}
+
+test "format numbers" {
+    expect(false);
+}
+
+test "parse words" {
+    expect(true);
+}

@@ -1,0 +1,8 @@
+test "loops forever" {
+    while true {
+    }
+}
+
+test "still runs" {
+    expect(true);
+}

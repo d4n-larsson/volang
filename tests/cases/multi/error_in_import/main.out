@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0308","name":"invalid_operands","severity":"error","file":"lib.vo","start":{"line":2,"col":12},"end":{"line":2,"col":19},"text":"n / \"2\"","message":"Operator `/` cannot be applied to `int` and `str`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

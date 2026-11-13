@@ -1,0 +1,18 @@
+type r added
+booked a: r 2 nights, total 60.00
+error: unknown booking zz
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: booking a already ended
+cancelled a: refund 0.00
+error: booking a already cancelled
+error: booking a exists
+invoice a for ann
+  r 2 nights x 30.00 = 60.00
+  total 60.00
+  cancelled on day 6, refund 0.00
+  net 60.00
+r: 0 bookings (1 cancelled), 1 nights, revenue 60.00
+total revenue 60.00, refunds 0.00

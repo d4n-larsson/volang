@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"deep_message.vo","start":{"line":7,"col":30},"end":{"line":7,"col":31},"text":"5","message":"Expected `Tree[list[str]]`, found `int`.","expected":"Tree[list[str]]","found":"int","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

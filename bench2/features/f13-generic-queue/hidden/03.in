@@ -1,0 +1,10 @@
+push int 1
+push int 2
+push int 3
+pop int
+push int 4
+pop int
+pop int
+pop int
+pop int
+size int

@@ -1,0 +1,17 @@
+level 1 opened with 1 spots
+level 3 opened with 1 spots
+error: unknown vehicle type bus
+error: unknown vehicle type Car
+A parked at 1-1
+error: A already parked
+error: no truck spot
+C parked at 3-1
+error: garage full
+error: time before entry
+level 1: exits 0 revenue 0.00 pending 5.00
+level 3: exits 0 revenue 0.00 pending 2.00
+total exits 0 revenue 0.00 pending 7.00
+C left 3-1 after 1480 min, fee 9.00
+level 1: exits 0 revenue 0.00 pending 22.50
+level 3: exits 1 revenue 9.00 pending 0.00
+total exits 1 revenue 9.00 pending 22.50

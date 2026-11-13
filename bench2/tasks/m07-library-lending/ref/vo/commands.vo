@@ -1,0 +1,69 @@
+record Command {
+    day: int;
+    name: str;
+    a: str;
+    b: str;
+    n: int;
+}
+
+fn digits(s: str, lo: int, hi: int) -> bool {
+    return len(s) >= lo and len(s) <= hi and all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+fn to_int(s: str) -> int {
+    match parse_int(s) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return -1;
+        }
+    }
+}
+
+fn cents(s: str) -> int {
+    let p = split(s, ".");
+    if len(p) != 2 or not digits(p[0], 1, 6) or not digits(p[1], 2, 2) {
+        return -1;
+    }
+    return to_int(p[0]) * 100 + to_int(p[1]);
+}
+
+fn parse(line: str) -> result[Command] {
+    let f = filter(split(line, " "), fn(x: str) -> bool {
+        return x != "";
+    });
+    if len(f) == 0 {
+        return ok(new Command { day: -1, name: "", a: "", b: "", n: 0 });
+    }
+    if len(f) != 4 or not digits(f[0], 1, 6) {
+        return err("invalid");
+    }
+    let c = new Command { day: to_int(f[0]), name: f[1], a: f[2], b: f[3], n: 0 };
+    if c.name == "book" and digits(c.b, 1, 2) and to_int(c.b) >= 1 {
+        set c.n = to_int(c.b);
+        return ok(c);
+    }
+    if c.name == "member" and digits(c.b, 1, 1) and c.b != "0" {
+        set c.n = to_int(c.b);
+        return ok(c);
+    }
+    if c.name == "borrow" or c.name == "return" {
+        return ok(c);
+    }
+    if c.name == "pay" and cents(c.b) > 0 {
+        set c.n = cents(c.b);
+        return ok(c);
+    }
+    return err("invalid");
+}
+
+fn money(c: int) -> str {
+    let r = c % 100;
+    if r < 10 {
+        return str(c / 100) + ".0" + str(r);
+    }
+    return str(c / 100) + "." + str(r);
+}

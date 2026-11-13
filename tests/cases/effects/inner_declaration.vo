@@ -1,0 +1,8 @@
+fn save(path: str) -> result[void] uses file.write("out/a/") {
+    return write_file(path, "x");
+}
+
+fn main() -> result[void] uses file.write("out/") {
+    try save("out/b/x.txt");
+    return ok();
+}

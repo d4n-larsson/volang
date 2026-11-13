@@ -1,0 +1,8 @@
+take lamp
+go east
+go down
+take anvil
+inventory
+take coin
+inventory
+score

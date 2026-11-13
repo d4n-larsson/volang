@@ -1,0 +1,71 @@
+record Room {
+    title: str;
+    exits: map[str, str];
+    items: list[str];
+}
+
+fn start_room() -> str {
+    return "hall";
+}
+
+fn visit_points() -> int {
+    return 5;
+}
+
+fn carry_limit() -> int {
+    return 10;
+}
+
+fn item_weight(item: str) -> int {
+    let weights = new map[str, int];
+    set weights["lamp"] = 2;
+    set weights["book"] = 3;
+    set weights["key"] = 1;
+    set weights["knife"] = 2;
+    set weights["bread"] = 1;
+    set weights["coin"] = 1;
+    set weights["anvil"] = 9;
+    set weights["shovel"] = 4;
+    set weights["statue"] = 8;
+    set weights["crown"] = 3;
+    return weights[item];
+}
+
+fn make_room(title: str, directions: list[str], targets: list[str], items: list[str]) -> Room {
+    let exits = new map[str, str];
+    for i in 0..len(directions) {
+        set exits[directions[i]] = targets[i];
+    }
+    return new Room { title: title, exits: exits, items: items };
+}
+
+fn make_world() -> map[str, Room] {
+    let world = new map[str, Room];
+    set world["hall"] = make_room("Hall", ["north", "east", "south"], ["library", "kitchen", "garden"], ["lamp"]);
+    set world["library"] = make_room("Library", ["south", "up"], ["hall", "attic"], ["book", "key"]);
+    set world["kitchen"] = make_room("Kitchen", ["west", "down"], ["hall", "cellar"], ["knife", "bread"]);
+    set world["cellar"] = make_room("Cellar", ["up"], ["kitchen"], ["coin", "anvil"]);
+    set world["garden"] = make_room("Garden", ["north"], ["hall"], ["shovel", "statue"]);
+    set world["attic"] = make_room("Attic", ["down"], ["library"], ["crown"]);
+    return world;
+}
+
+# Points for picking up an item; items not listed are worth nothing.
+fn item_value(item: str) -> int {
+    if item == "book" {
+        return 5;
+    }
+    if item == "bread" {
+        return 2;
+    }
+    if item == "coin" {
+        return 10;
+    }
+    if item == "statue" {
+        return 20;
+    }
+    if item == "crown" {
+        return 50;
+    }
+    return 0;
+}

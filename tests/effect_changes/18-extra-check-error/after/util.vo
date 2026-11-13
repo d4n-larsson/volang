@@ -1,0 +1,10 @@
+fn clamp(x: int, lo: int, hi: int) -> int {
+    if x < lo {
+        return lo;
+    }
+    if x > hi {
+        return hi;
+    }
+    print("x");
+    return x;
+}

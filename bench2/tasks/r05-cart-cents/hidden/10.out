@@ -1,0 +1,21 @@
+product BIG added
+product SM added
+cart BIG x999999
+cart SM x999999
+bulk BIG: 999999 or more 99% off
+promo SM: buy 999998 get 1 free
+coupon C: 37% off
+coupon C active
+BIG x999999 @ 999999.99 = 999998990000.01
+SM x999999 @ 0.01 = 9999.99
+items 1999998, gross 999999000000.00
+BIG x999999 @ 999999.99 = 999998990000.01
+  bulk 99% -989999000100.01
+SM x999999 @ 0.01 = 9999.99
+  free x1 -0.01
+subtotal 9999999899.98
+coupon C 37% -3699999962.99
+total 6299999936.99
+BIG tv sold 999999 net 9999989900.00
+SM gum sold 999999 net 9999.98
+sales 1 revenue 6299999936.99 discounts 993699000063.01

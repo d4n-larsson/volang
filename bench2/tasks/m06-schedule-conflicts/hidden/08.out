@@ -1,0 +1,7 @@
+conflicts: 3
+10 9: person Zed, person _x, person adam
+10 1: room B, person _x
+9 1: person _x
+rooms:
+A 60
+B 60

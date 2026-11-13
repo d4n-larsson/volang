@@ -1,0 +1,17 @@
+report 0
+parked
+occupancy
+exit A 5
+level 4 1
+enter A 100
+exit A 99
+quote A 50
+exit A 100
+exit A 100
+quote A 200
+enter A 300
+enter A 301
+enter B 302
+exit A 330
+report 0
+parked

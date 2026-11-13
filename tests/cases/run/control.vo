@@ -1,0 +1,21 @@
+fn main() uses console {
+    var total = 0;
+    for i in 0..5 {
+        if i == 2 {
+            continue;
+        } else if i == 4 {
+            break;
+        } else {
+            set total = total + i;
+        }
+    }
+    print(str(total));
+    var n = 3;
+    while n > 0 {
+        print(str(n));
+        set n = n - 1;
+    }
+    for word in ["a", "b"] {
+        print(word);
+    }
+}

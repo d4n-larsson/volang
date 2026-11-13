@@ -1,0 +1,22 @@
+level 3 2
+level 1 1
+level 2 1
+occupancy
+enter A 0
+enter B 5
+enter C 10
+enter D 15
+enter E 20
+enter F 25
+parked
+occupancy
+exit C 100
+exit A 100
+enter G 110
+enter H 120
+enter I 130
+parked
+occupancy
+report 50
+report 130
+report 5000

@@ -1,0 +1,70 @@
+record Queue[T] {
+    items: list[T];
+    head: int;
+}
+
+fn new_queue[T]() -> Queue[T] {
+    return new Queue[T] { items: new list[T], head: 0 };
+}
+
+fn enqueue[T](q: Queue[T], x: T) {
+    push(q.items, x);
+}
+
+fn dequeue[T](q: Queue[T]) -> result[T] {
+    if q.head >= len(q.items) {
+        return err("empty");
+    }
+    let x = q.items[q.head];
+    set q.head = q.head + 1;
+    return ok(x);
+}
+
+fn size[T](q: Queue[T]) -> int {
+    return len(q.items) - q.head;
+}
+
+fn main() -> result[void] uses console, input {
+    let ints: Queue[int] = new_queue();
+    let strs: Queue[str] = new_queue();
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                let cmd = p[0];
+                let kind = p[1];
+                if cmd == "push" and kind == "int" {
+                    enqueue(ints, try parse_int(p[2]));
+                } else if cmd == "push" {
+                    enqueue(strs, slice(line, len("push str "), len(line)));
+                } else if cmd == "size" and kind == "int" {
+                    print(str(size(ints)));
+                } else if cmd == "size" {
+                    print(str(size(strs)));
+                } else if kind == "int" {
+                    match dequeue(ints) {
+                        case ok(v) {
+                            print(str(v));
+                        }
+                        case err(e) {
+                            print(e);
+                        }
+                    }
+                } else {
+                    match dequeue(strs) {
+                        case ok(v) {
+                            print(v);
+                        }
+                        case err(e) {
+                            print(e);
+                        }
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

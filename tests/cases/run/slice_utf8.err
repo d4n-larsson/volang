@@ -1,0 +1,5 @@
+slice_utf8.vo:3:11: runtime error[R0007]: Slice boundary 1 splits a UTF-8 character.
+   3 |     print(slice(s, 0, 1));
+     |           ^^^^^^^^^^^^^^
+trace:
+  at main (slice_utf8.vo:3:11)

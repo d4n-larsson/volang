@@ -1,0 +1,9 @@
+fn load() -> result[str] uses file.read("../x", "", "/etc/") {
+    return read_file("a");
+}
+
+fn main() -> result[void] uses console, file.read {
+    let t = try load();
+    print(t);
+    return ok();
+}

@@ -1,0 +1,11 @@
+product A added
+error: unknown product Q
+error: not enough stock for product A
+order o1 placed: 2 units, total 2.00
+order o1 (active)
+  A x1 @ 1.00
+  A x1 @ 1.00
+  total 2.00
+error: not enough stock for product A
+product A pen price 1.00 stock 0 sold 2
+revenue 2.00 over 1 orders

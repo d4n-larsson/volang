@@ -1,0 +1,115 @@
+import tokens.limit;
+
+fn arity(w: str) -> int {
+    if w == "+" or w == "-" or w == "*" or w == "/" or w == "%" or w == "swap" or w == "over" {
+        return 2;
+    }
+    if w == "neg" or w == "abs" or w == "dup" or w == "drop" or w == "." {
+        return 1;
+    }
+    if w == "rot" {
+        return 3;
+    }
+    return 0;
+}
+
+fn is_builtin(w: str) -> bool {
+    return arity(w) > 0 or w == "clear" or w == ".s";
+}
+
+fn is_named_builtin(w: str) -> bool {
+    return w == "neg" or w == "abs" or w == "dup" or w == "drop" or w == "swap" or w == "over" or w == "rot" or w == "clear";
+}
+
+fn show(stack: list[int]) -> str {
+    let parts = ["<" + str(len(stack)) + ">"];
+    for v in stack {
+        push(parts, str(v));
+    }
+    return join(parts, " ");
+}
+
+fn checked(v: int) -> result[int] {
+    if v > limit() or v < -limit() {
+        return err("overflow");
+    }
+    return ok(v);
+}
+
+fn take(stack: list[int]) -> int {
+    match pop(stack) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn arith(w: str, a: int, b: int) -> result[int] {
+    if w == "+" {
+        return checked(a + b);
+    }
+    if w == "-" {
+        return checked(a - b);
+    }
+    if w == "*" {
+        if a != 0 and abs(b) > limit() / abs(a) {
+            return err("overflow");
+        }
+        return ok(a * b);
+    }
+    if b == 0 {
+        return err("division by zero");
+    }
+    let q = a / b;
+    if w == "/" {
+        return ok(q);
+    }
+    return ok(a - b * q);
+}
+
+fn run_builtin(stack: list[int], w: str, out: list[str]) -> result[void] {
+    if len(stack) < arity(w) {
+        return err("stack underflow");
+    }
+    let n = len(stack);
+    if w == "+" or w == "-" or w == "*" or w == "/" or w == "%" {
+        let b = take(stack);
+        let a = take(stack);
+        push(stack, try arith(w, a, b));
+    } else if w == "neg" {
+        set stack[n - 1] = -stack[n - 1];
+    } else if w == "abs" {
+        set stack[n - 1] = abs(stack[n - 1]);
+    } else if w == "dup" {
+        push(stack, stack[n - 1]);
+    } else if w == "drop" {
+        let _ = take(stack);
+    } else if w == "swap" {
+        let t = stack[n - 1];
+        set stack[n - 1] = stack[n - 2];
+        set stack[n - 2] = t;
+    } else if w == "over" {
+        push(stack, stack[n - 2]);
+    } else if w == "rot" {
+        let a = stack[n - 3];
+        set stack[n - 3] = stack[n - 2];
+        set stack[n - 2] = stack[n - 1];
+        set stack[n - 1] = a;
+    } else if w == "clear" {
+        clear_stack(stack);
+    } else if w == "." {
+        push(out, str(take(stack)));
+    } else if w == ".s" {
+        push(out, show(stack));
+    }
+    return ok();
+}
+
+fn clear_stack(stack: list[int]) {
+    while len(stack) > 0 {
+        let _ = take(stack);
+    }
+}

@@ -1,0 +1,58 @@
+record Product {
+    sku: str;
+    name: str;
+    price: int;
+    sold: int;
+    net: int;
+}
+
+record Line {
+    sku: str;
+    qty: int;
+}
+
+record Bulk {
+    min_qty: int;
+    pct: int;
+}
+
+record Shop {
+    catalog: map[str, Product];
+    cart: list[Line];
+    promos: map[str, int];
+    bulks: map[str, Bulk];
+    coupons: map[str, int];
+    active: str;
+    sales: int;
+    revenue: int;
+    discounts: int;
+}
+
+fn new_shop() -> Shop {
+    return new Shop { catalog: new map[str, Product], cart: new list[Line], promos: new map[str, int], bulks: new map[str, Bulk], coupons: new map[str, int], active: "", sales: 0, revenue: 0, discounts: 0 };
+}
+
+fn has_line(shop: Shop, sku: str) -> bool {
+    return any(shop.cart, fn(line: Line) -> bool {
+        return line.sku == sku;
+    });
+}
+
+# Only called when has_line(shop, sku).
+fn find_line(shop: Shop, sku: str) -> Line {
+    return filter(shop.cart, fn(line: Line) -> bool {
+        return line.sku == sku;
+    })[0];
+}
+
+fn unknown_product(sku: str) -> str {
+    return "error: unknown product " + sku;
+}
+
+fn sorted_products(shop: Shop) -> list[Product] {
+    let skus = keys(shop.catalog);
+    sort(skus);
+    return map(skus, fn(sku: str) -> Product {
+        return shop.catalog[sku];
+    });
+}

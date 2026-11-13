@@ -1,0 +1,17 @@
+go east
+go down
+take anvil
+take coin
+look
+go up
+take bread
+drop coin
+take bread
+take knife
+look
+drop anvil
+take knife
+go down
+look
+inventory
+score

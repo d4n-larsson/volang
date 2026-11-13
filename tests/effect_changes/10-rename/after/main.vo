@@ -1,0 +1,14 @@
+import store.persist_total;
+import report.render;
+import util.clamp;
+
+fn main() -> result[void] uses console, file.write("out/") {
+    let total = clamp(42, 0, 100);
+    print(render(total));
+    try persist_total(total);
+    return ok();
+}
+
+test "clamps" {
+    expect_eq(clamp(500, 0, 100), 100);
+}

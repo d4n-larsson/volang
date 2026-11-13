@@ -1,0 +1,38 @@
+variant Tree[T] {
+    leaf;
+    node(Node[T]);
+}
+
+record Node[T] {
+    value: T;
+    left: Tree[T];
+    right: Tree[T];
+}
+
+fn sum(t: Tree[int]) -> int {
+    match t {
+        case leaf {
+            return 0;
+        }
+        case node(n) {
+            return n.value + sum(n.left) + sum(n.right);
+        }
+    }
+}
+
+fn size[T](t: Tree[T]) -> int {
+    match t {
+        case leaf {
+            return 0;
+        }
+        case node(n) {
+            return 1 + size(n.left) + size(n.right);
+        }
+    }
+}
+
+fn main() uses console {
+    let empty: Tree[int] = Tree.leaf;
+    let t = Tree.node(new Node[int] { value: 2, left: Tree.node(new Node[int] { value: 1, left: empty, right: empty }), right: empty });
+    print(str(sum(t)) + " " + str(size(t)));
+}

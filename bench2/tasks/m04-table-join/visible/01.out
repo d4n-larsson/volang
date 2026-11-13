@@ -1,0 +1,6 @@
+id | name | city | amount
+---+------+------+-------
+1  | Ana  | Oslo | 100
+2  | Bo   | Rome | 250
+2  | Bo   | Rome | 75
+rows: 3, skipped: 0

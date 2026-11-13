@@ -1,0 +1,15 @@
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn apply_twice(f: fn(int) -> int, x: int) -> int {
+    return f(f(x));
+}
+
+fn main() uses console {
+    let xs = map([1, 2, 3], double);
+    print(str(xs[2]));
+    print(str(apply_twice(double, 5)));
+    let g = double;
+    print(str(g(21)));
+}

@@ -1,0 +1,12 @@
+level 1 2
+level 2 2
+enter CAR1 0
+enter MOTO 0 motorcycle
+enter CAR2 15 car
+parked
+quote MOTO 60
+quote MOTO 61
+quote CAR1 61
+exit MOTO 200
+exit CAR1 200
+occupancy

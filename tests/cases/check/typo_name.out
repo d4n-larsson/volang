@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0201","name":"undefined_name","severity":"error","file":"typo_name.vo","start":{"line":3,"col":15},"end":{"line":3,"col":19},"text":"totl","message":"`totl` is not defined.","fixes":[{"file":"typo_name.vo","start":{"line":3,"col":15},"end":{"line":3,"col":19},"replacement":"total"}],"related":[{"file":"typo_name.vo","start":{"line":2,"col":9},"end":{"line":2,"col":14},"message":"`total` is defined here."}]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

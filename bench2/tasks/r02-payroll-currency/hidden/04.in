@@ -1,0 +1,16 @@
+employee S1 Sam salaried 100000
+employee S2 Sue salaried 100001
+employee S3 Sid salaried 300000
+employee S4 Sol salaried 300001
+employee H1 Hal hourly 1
+employee H2 Hob hourly 3
+hours S1 10
+hours H1 0
+hours H2 41
+payslip H1
+payslip H2
+payslip S1
+payslip S2
+payslip S3
+payslip S4
+summary

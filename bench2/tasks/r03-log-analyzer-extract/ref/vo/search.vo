@@ -1,0 +1,12 @@
+import logline.entries;
+
+fn grep(lines: list[str], word: str) -> list[str] {
+    let out = new list[str];
+    for e in entries(lines) {
+        if find(e.message, word) >= 0 {
+            push(out, e.text);
+        }
+    }
+    push(out, str(len(out)) + " matches");
+    return out;
+}

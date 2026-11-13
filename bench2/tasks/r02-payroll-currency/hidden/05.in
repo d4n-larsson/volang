@@ -1,0 +1,8 @@
+employee F1 Fleur salaried 210000 EUR
+deduct F1 199999 rent
+deduct F1 7 coffee
+payslip F1
+hours F1 3
+rate F1 5
+payslip F1
+summary

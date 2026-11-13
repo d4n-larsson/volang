@@ -1,0 +1,21 @@
+drop 2
+assignment x 1 100
+assignment y 1 100
+assignment z 1 100
+assignment w 1 100
+student a
+student b
+student c
+score a x 50
+score a y 50
+score a z 50
+score a w 90
+score b x 100
+score b y 0
+score b z 0
+score b w 100
+score c w 100
+drop 3
+drop 9
+drop 10
+drop 2

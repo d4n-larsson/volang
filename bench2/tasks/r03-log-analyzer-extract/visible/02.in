@@ -1,0 +1,16 @@
+2024-01-10 08:00:01 INFO api: started
+2024-01-10 08:00:02 ERROR api: crash in handler
+2024-01-10 08:00:03 error api: lower case level
+2024-01-10 08:00:04 ERROR cache: miss storm
+2024-01-10 25:00:00 ERROR api: bad hour
+2024-01-10 08:05:00 ERROR api : spaced colon
+not a log line
+2024-01-10 08:06:00 DEBUG api:
+---
+stats
+levels
+errors
+grep crash
+grep handler
+uptime
+grep

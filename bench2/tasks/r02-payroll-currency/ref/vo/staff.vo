@@ -1,0 +1,74 @@
+import money.format_money;
+
+record Deduction {
+    label: str;
+    amount: int;
+}
+
+# kind is "hourly" (amount = cents per hour) or "salaried" (amount = salary in cents).
+record Employee {
+    emp_id: str;
+    name: str;
+    kind: str;
+    amount: int;
+    currency: str;
+    hours: int;
+    deductions: list[Deduction];
+}
+
+fn pay_text(emp: Employee) -> str {
+    if emp.kind == "hourly" {
+        return "hourly " + format_money(emp.amount, emp.currency) + "/h";
+    }
+    return "salaried " + format_money(emp.amount, emp.currency);
+}
+
+fn add_employee(staff: map[str, Employee], emp_id: str, name: str, kind: str, amount: int, currency: str) -> str {
+    if has(staff, emp_id) {
+        return "error: employee " + emp_id + " exists";
+    }
+    let emp = new Employee { emp_id: emp_id, name: name, kind: kind, amount: amount, currency: currency, hours: 0, deductions: new list[Deduction] };
+    set staff[emp_id] = emp;
+    return "employee " + emp_id + " added: " + pay_text(emp);
+}
+
+fn log_hours(staff: map[str, Employee], emp_id: str, hours: int) -> str {
+    if not has(staff, emp_id) {
+        return "error: unknown employee " + emp_id;
+    }
+    let emp = staff[emp_id];
+    if emp.kind != "hourly" {
+        return "error: " + emp_id + " is salaried";
+    }
+    set emp.hours = emp.hours + hours;
+    return emp_id + " hours " + str(emp.hours);
+}
+
+fn set_rate(staff: map[str, Employee], emp_id: str, amount: int) -> str {
+    if not has(staff, emp_id) {
+        return "error: unknown employee " + emp_id;
+    }
+    let emp = staff[emp_id];
+    set emp.amount = amount;
+    if emp.kind == "hourly" {
+        return emp_id + " rate " + format_money(amount, emp.currency) + "/h";
+    }
+    return emp_id + " salary " + format_money(amount, emp.currency);
+}
+
+fn add_deduction(staff: map[str, Employee], emp_id: str, amount: int, label: str) -> str {
+    if not has(staff, emp_id) {
+        return "error: unknown employee " + emp_id;
+    }
+    let emp = staff[emp_id];
+    push(emp.deductions, new Deduction { label: label, amount: amount });
+    return emp_id + " deduction " + label + " " + format_money(amount, emp.currency);
+}
+
+fn sorted_staff(staff: map[str, Employee]) -> list[Employee] {
+    let ids = keys(staff);
+    sort(ids);
+    return map(ids, fn(emp_id: str) -> Employee {
+        return staff[emp_id];
+    });
+}

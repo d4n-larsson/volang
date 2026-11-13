@@ -1,0 +1,11 @@
+level 2 3
+enter BIG 0 truck
+level 1 1
+enter BIG 0 truck
+enter BIG2 0 truck
+enter VAN 5
+quote BIG 0
+quote BIG 1
+exit BIG 450
+enter BIG2 460 truck
+rates

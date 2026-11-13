@@ -1,0 +1,10 @@
+push str x
+push str y
+push int -9
+size str
+size int
+pop str
+push str z
+pop str
+pop str
+pop int

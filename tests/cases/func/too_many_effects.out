@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0502","name":"function_value_effects","severity":"error","file":"too_many_effects.vo","start":{"line":6,"col":21},"end":{"line":9,"col":6},"text":"fn(x: int) -> int {\n        print(\"called\");\n        return x;\n    }","message":"This function uses console, which `fn(int) -> int` does not allow.","fixes":[{"file":"too_many_effects.vo","start":{"line":1,"col":27},"end":{"line":1,"col":27},"replacement":" uses console"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

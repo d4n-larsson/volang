@@ -1,0 +1,54 @@
+import world.Room;
+import world.start_room;
+import world.visit_points;
+import world.item_value;
+
+record Player {
+    room: str;
+    inventory: list[str];
+    score: int;
+    moves: int;
+    visited: map[str, bool];
+}
+
+fn new_player() -> Player {
+    let visited = new map[str, bool];
+    set visited[start_room()] = true;
+    return new Player { room: start_room(), inventory: new list[str], score: 0, moves: 0, visited: visited };
+}
+
+# Moves through an exit of the current room; false if there is none.
+fn move(player: Player, world: map[str, Room], direction: str) -> bool {
+    let room = world[player.room];
+    if not has(room.exits, direction) {
+        return false;
+    }
+    set player.room = room.exits[direction];
+    set player.moves = player.moves + 1;
+    if not has(player.visited, player.room) {
+        set player.visited[player.room] = true;
+        set player.score = player.score + visit_points();
+    }
+    return true;
+}
+
+fn contains(xs: list[str], x: str) -> bool {
+    return any(xs, fn(y: str) -> bool {
+        return y == x;
+    });
+}
+
+# Moves an item from the current room to the inventory; returns the points earned, or -1.
+fn pick_up(player: Player, world: map[str, Room], item: str) -> int {
+    let room = world[player.room];
+    if not contains(room.items, item) {
+        return -1;
+    }
+    set room.items = filter(room.items, fn(x: str) -> bool {
+        return x != item;
+    });
+    push(player.inventory, item);
+    let points = item_value(item);
+    set player.score = player.score + points;
+    return points;
+}

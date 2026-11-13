@@ -1,0 +1,27 @@
+assignment a 30 50
+assignment b 70 40
+enroll lee
+enroll kai
+enroll ann
+enroll bea
+enroll cal
+enroll dot
+enroll eli
+score lee a 41
+score lee b 34
+score kai a 45
+score kai b 28
+score ann b 26
+score bea a 10
+score bea b 12
+score cal a 43
+score cal b 33
+score dot b 26
+card lee
+card kai
+card ann
+card bea
+card eli
+report
+stats a
+stats b

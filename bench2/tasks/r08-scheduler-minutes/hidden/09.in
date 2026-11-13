@@ -1,0 +1,9 @@
+add x1 a 09:00 9:30am
+add x2 a 9:30 10:00am
+add x3 a 9:00am 09:10
+remove x1
+add x3 a 9:00am 09:10
+agenda a
+who a 9:10
+who a 09:09
+summary

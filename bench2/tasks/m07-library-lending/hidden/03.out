@@ -1,0 +1,26 @@
+book A: 1 copies
+member a joined
+member b joined
+member c joined
+member d joined
+a borrows A (due 15)
+b waits for A (position 1)
+c waits for A (position 2)
+d waits for A (position 3)
+b already waiting for A
+book B: 1 copies
+d borrows B (due 15)
+a returns A
+A -> b (due 24)
+book A: 3 copies
+A -> c (due 24)
+d skipped for A
+c returns A
+members:
+a loans - owes 0.00
+b loans A owes 0.00
+c loans - owes 0.00
+d loans B owes 0.00
+books:
+A 2/3 queue -
+B 0/1 queue -

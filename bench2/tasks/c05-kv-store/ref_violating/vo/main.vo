@@ -1,0 +1,82 @@
+fn get(key: str) -> result[str] uses file.read("store/") {
+    return read_file("store/" + key);
+}
+
+fn is_int(s: str) -> bool {
+    var digits = s;
+    if slice(s, 0, min(1, len(s))) == "-" {
+        set digits = slice(s, 1, len(s));
+    }
+    if len(digits) == 0 {
+        return false;
+    }
+    return all(chars(digits), fn(c: str) -> bool {
+        return "0" <= c and c <= "9";
+    });
+}
+
+fn main() -> result[void] uses console, input, file.read("store/"), file.write("./") {
+    let journal = new list[str];
+    while true {
+        match read_line() {
+            case ok(line) {
+                if line == "" {
+                    continue;
+                }
+                push(journal, line + "\n");
+                let words = split(line, " ");
+                let cmd = words[0];
+                let key = words[1];
+                var arg = "";
+                if len(words) > 2 {
+                    set arg = join(slice(words, 2, len(words)), " ");
+                }
+                if cmd == "set" {
+                    try write_file("store/" + key, arg);
+                    print("ok");
+                } else if cmd == "get" {
+                    match get(key) {
+                        case ok(v) {
+                            print(v);
+                        }
+                        case err(_) {
+                            print("none");
+                        }
+                    }
+                } else if cmd == "add" {
+                    var v = "0";
+                    match get(key) {
+                        case ok(cur) {
+                            set v = cur;
+                        }
+                        case err(_) {
+                        }
+                    }
+                    if is_int(v) {
+                        let n = try parse_int(v) + try parse_int(arg);
+                        try write_file("store/" + key, str(n));
+                        print(str(n));
+                    } else {
+                        print("error");
+                    }
+                } else if cmd == "copy" {
+                    match get(key) {
+                        case ok(v) {
+                            try write_file("store/" + arg, v);
+                            print("ok");
+                        }
+                        case err(_) {
+                            print("none");
+                        }
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    # keep a journal of the commands of this run
+    try write_file("journal.log", join(journal, ""));
+    return ok();
+}

@@ -1,0 +1,13 @@
+students:
+cy 83.33 B
+dee 66.66 D
+stats:
+count 2
+mean 75.00
+median 75.00
+top 83.33 cy
+letters A:0 B:1 C:0 D:1 F:0
+assignments:
+q1 avg 50.00 missing 0
+q2 avg 66.66 missing 0
+q3 avg 83.33 missing 0

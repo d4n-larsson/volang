@@ -1,0 +1,10 @@
+employee Z9 Zoe salaried 50000 JPY
+employee B1 Ben hourly 1550 EUR
+employee A1 Ada hourly 999 EUR
+employee C1 Cy salaried 7 JPY
+hours B1 50
+hours A1 1
+deduct C1 100 fee
+summary
+employee M1 Max hourly 100
+summary

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0304","name":"unknown_field","severity":"error","file":"typo_field.vo","start":{"line":8,"col":17},"end":{"line":8,"col":19},"text":"xx","message":"`Point` has no field `xx`.","fixes":[{"file":"typo_field.vo","start":{"line":8,"col":17},"end":{"line":8,"col":19},"replacement":"x"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

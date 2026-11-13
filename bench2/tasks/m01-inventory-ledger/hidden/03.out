@@ -1,0 +1,7 @@
+REPORT
+x 0 0.00
+revenue 9999980000.01 cogs 19999960000.02 loss 0.00 profit -9999980000.01 stock 0.00
+line 6: cannot take 1 of x, only 0 in stock
+REPORT
+x 0 0.00
+revenue 9999980000.01 cogs 19999960000.02 loss 0.00 profit -9999980000.01 stock 0.00

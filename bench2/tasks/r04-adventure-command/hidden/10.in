@@ -1,0 +1,10 @@
+go south
+take statue
+take shovel
+take crown
+go north
+take lamp
+take lamp
+look
+inventory
+score

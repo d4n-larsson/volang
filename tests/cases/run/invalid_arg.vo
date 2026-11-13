@@ -1,0 +1,4 @@
+fn main() uses console {
+    let nan = 0.0 / 0.0;
+    print(str(int(nan)));
+}

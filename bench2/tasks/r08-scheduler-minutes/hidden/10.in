@@ -1,0 +1,10 @@
+add k1 b2 9:00 10:00
+add k2 B1 10:00 11:00
+add k3 b2 1:00pm 3:30pm
+add k4 a10 8:15 8:45
+add k5 a9 11:45am 12:15pm
+add k6 B1 7:00 8:00
+summary
+agenda b2
+remove k4
+summary

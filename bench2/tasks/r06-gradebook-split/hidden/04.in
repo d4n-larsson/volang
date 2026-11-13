@@ -1,0 +1,21 @@
+assignment p1 25 9
+assignment p2 25 7
+assignment p3 50 3
+enroll u
+enroll v
+enroll w
+score u p1 6
+score u p3 2
+score v p2 5
+score w p1 3
+score w p2 1
+score w p3 0
+stats p1
+stats p2
+stats p3
+score v p2 6
+stats p2
+card u
+card v
+card w
+report

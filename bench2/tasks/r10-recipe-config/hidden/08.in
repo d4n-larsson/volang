@@ -1,0 +1,4 @@
+config rounding=sideways
+recipe soup 4 carrot 500 g stock 1500 ml onion 1 pcs
+scale soup 3
+config rounding=down

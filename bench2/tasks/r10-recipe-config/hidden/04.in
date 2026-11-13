@@ -1,0 +1,8 @@
+recipe a 2 flour 333 g milk 999 ml egg 1 pcs
+recipe b 7 flour 1000 g milk 10 ml
+scale a 3
+scale b 3
+shop a 1 b 1 a 5
+recipe c 1 zz 1 g aa 1 ml mm 1 pcs
+show c
+list

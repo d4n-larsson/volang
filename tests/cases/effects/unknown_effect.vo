@@ -1,0 +1,14 @@
+fn hello() uses consol {
+    print("hi");
+}
+
+fn load() -> result[str] uses files {
+    return ok("x");
+}
+
+fn main() -> result[void] uses console {
+    hello();
+    let t = try load();
+    print(t);
+    return ok();
+}

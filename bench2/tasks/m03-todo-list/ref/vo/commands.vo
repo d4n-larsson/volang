@@ -1,0 +1,50 @@
+record Command {
+    name: str;
+    args: list[str];
+}
+
+fn is_tag(t: str) -> bool {
+    return len(t) > 0 and all(chars(t), fn(c: str) -> bool {
+        return c >= "a" and c <= "z" or c >= "0" and c <= "9";
+    });
+}
+
+fn is_prio(p: str) -> bool {
+    return p == "1" or p == "2" or p == "3" or p == "4" or p == "5";
+}
+
+fn cmd(name: str, args: list[str]) -> Command {
+    return new Command { name: name, args: args };
+}
+
+fn parse(line: str) -> result[Command] {
+    let f = filter(split(line, " "), fn(x: str) -> bool {
+        return x != "";
+    });
+    let n = len(f);
+    if n == 0 {
+        return ok(cmd("", new list[str]));
+    }
+    let c = f[0];
+    if c == "add" and n >= 3 and is_prio(f[1]) {
+        return ok(cmd(c, [f[1], join(slice(f, 2, n), " ")]));
+    }
+    if (c == "done" or c == "reopen" or c == "delete") and n == 2 {
+        return ok(cmd(c, slice(f, 1, n)));
+    }
+    if c == "tag" and n == 3 and is_tag(f[2]) {
+        return ok(cmd(c, slice(f, 1, n)));
+    }
+    if c == "prio" and n == 3 and is_prio(f[2]) {
+        return ok(cmd(c, slice(f, 1, n)));
+    }
+    if (c == "list" or c == "stats") and n == 1 {
+        return ok(cmd(c, new list[str]));
+    }
+    if c == "list" and n == 2 {
+        if f[1] == "done" or slice(f[1], 0, 1) == "+" and is_tag(slice(f[1], 1, len(f[1]))) {
+            return ok(cmd(c, slice(f, 1, n)));
+        }
+    }
+    return err("bad command");
+}

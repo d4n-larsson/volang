@@ -1,0 +1,7 @@
+fn average(total: int, count: int) -> int {
+    return total / count;
+}
+
+fn main() {
+    print(str(average(10, 0)));
+}

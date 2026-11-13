@@ -1,0 +1,34 @@
+level 2 opened with 2 spots
+error: no truck spot
+level 1 opened with 2 spots
+C1 parked at 1-1
+T1 parked at 1-2
+error: no truck spot
+error: no truck spot
+C2 parked at 2-1
+C3 parked at 2-2
+error: garage full
+1-1 C1 since 0
+1-2 T1 since 0 (truck)
+2-1 C2 since 0
+2-2 C3 since 0
+T1 owes 0.00 after 0 min
+T1 owes 6.00 after 1 min
+T1 owes 6.00 after 60 min
+T1 owes 12.00 after 61 min
+T1 owes 45.00 after 449 min
+T1 owes 45.00 after 450 min
+T1 owes 45.00 after 1440 min
+T1 owes 51.00 after 1441 min
+T1 owes 90.00 after 1890 min
+C1 left 1-1 after 10 min, fee 0.00
+T2 parked at 1-1
+T1 left 1-2 after 1000 min, fee 45.00
+M1 parked at 1-2
+error: no truck spot
+level 1: 2/2 used
+level 2: 2/2 used
+total 4/4 used
+level 1: exits 2 revenue 45.00 pending 59.00
+level 2: exits 0 revenue 0.00 pending 45.00
+total exits 2 revenue 45.00 pending 104.00

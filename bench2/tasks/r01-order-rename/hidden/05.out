@@ -1,0 +1,11 @@
+product C added
+product D added
+order a placed: 1 units, total 99.99
+order b placed: 2 units, total 95.00 (discount 5.00)
+error: not enough stock for product D
+order d placed: 1 units, total 0.01
+product D stock 10
+error: order d exists
+product C cup price 99.99 stock 8 sold 2
+product D dish price 0.01 stock 10 sold 2
+revenue 195.00 over 3 orders

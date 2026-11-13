@@ -1,0 +1,6 @@
+copy visits v3visits
+add v3visits 1
+get visits
+get v3visits
+copy nothing v3x
+get v3x

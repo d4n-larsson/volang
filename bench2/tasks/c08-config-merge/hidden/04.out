@@ -1,0 +1,7 @@
+mode base
+empty=
+host=localhost
+log_level=info
+port=1=2
+url=http://localhost:8080/?a=1&b=2
+workers=4

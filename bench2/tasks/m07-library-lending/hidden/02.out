@@ -1,0 +1,16 @@
+book A: 1 copies
+book B: 1 copies
+member m joined
+member n joined
+m borrows A (due 15)
+n waits for A (position 1)
+n borrows B (due 15)
+m returns A
+n skipped for A
+n returns B late 1 days, fine 0.25
+members:
+m loans - owes 0.00
+n loans - owes 0.25
+books:
+A 1/1 queue -
+B 1/1 queue -

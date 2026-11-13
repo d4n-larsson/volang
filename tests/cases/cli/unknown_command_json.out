@@ -1,0 +1,1 @@
+{"v":1,"kind":"toolchain_error","code":"T0001","name":"usage_error","message":"Unknown command `frobnicate`. Commands: check, run, test, fmt, effects, explain, reference, version."}

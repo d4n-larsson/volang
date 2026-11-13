@@ -1,0 +1,20 @@
+== Kitchen ==
+exits: down west
+items: knife, bread
+taken bread (+2)
+== Cellar ==
+exits: up
+items: coin, anvil
+taken coin (+10)
+no sword here
+you can't go west
+== Kitchen ==
+exits: down west
+items: knife
+== Hall ==
+exits: east north south
+items: lamp
+you carry: bread, coin
+unknown command dance
+what?
+final score 22 in 4 moves

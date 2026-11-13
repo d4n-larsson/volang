@@ -1,0 +1,242 @@
+assignment a0 5 50
+assignment a1 3 20
+assignment a2 2 10
+assignment a3 1 7
+assignment a4 5 20
+assignment a5 5 50
+assignment a6 3 5
+assignment a7 5 100
+student s00
+student s01
+student s02
+student s03
+student s04
+student s05
+student s06
+student s07
+student s08
+student s09
+student s10
+student s11
+student s12
+student s13
+student s14
+student s15
+student s16
+student s17
+student s18
+student s19
+student s20
+student s21
+student s22
+student s23
+student s24
+student s25
+student s26
+student s27
+student s28
+student s29
+drop 2
+score s00 a0 40
+score s00 a1 13
+score s00 a3 3
+score s00 a4 7
+score s00 a5 20
+score s00 a6 4
+score s00 a7 46
+score s01 a1 9
+score s01 a2 9
+score s01 a4 20
+score s01 a5 33
+score s01 a6 1
+score s01 a7 33
+score s02 a1 12
+score s02 a2 5
+score s02 a3 5
+score s02 a4 19
+score s02 a5 16
+score s02 a6 5
+score s02 a7 58
+score s03 a0 21
+score s03 a1 20
+score s03 a2 4
+score s03 a3 6
+score s03 a5 41
+score s03 a6 1
+score s03 a7 51
+score s04 a0 18
+score s04 a1 14
+score s04 a2 5
+score s04 a3 7
+score s04 a6 4
+score s05 a0 48
+score s05 a1 11
+score s05 a2 4
+score s05 a4 20
+score s05 a5 44
+score s05 a6 2
+score s06 a0 17
+score s06 a1 15
+score s06 a2 9
+score s06 a3 3
+score s06 a4 11
+score s06 a5 35
+score s06 a6 1
+score s06 a7 40
+score s07 a0 43
+score s07 a1 17
+score s07 a2 4
+score s07 a3 3
+score s07 a4 18
+score s07 a5 39
+score s07 a7 50
+score s08 a0 26
+score s08 a1 20
+score s08 a2 3
+score s08 a4 10
+score s08 a7 34
+score s09 a0 44
+score s09 a1 12
+score s09 a2 3
+score s09 a4 8
+score s09 a5 33
+score s09 a6 1
+score s09 a7 70
+score s10 a0 20
+score s10 a1 8
+score s10 a2 9
+score s10 a3 3
+score s10 a4 10
+score s10 a5 47
+score s10 a6 1
+score s10 a7 49
+score s11 a0 21
+score s11 a1 18
+score s11 a2 3
+score s11 a3 5
+score s11 a4 14
+score s11 a5 21
+score s11 a6 4
+score s11 a7 66
+score s12 a0 17
+score s12 a1 15
+score s12 a3 6
+score s12 a4 16
+score s12 a6 5
+score s12 a7 71
+score s13 a0 30
+score s13 a1 7
+score s13 a2 10
+score s13 a3 5
+score s13 a5 17
+score s13 a6 4
+score s13 a7 96
+score s14 a1 15
+score s14 a2 3
+score s14 a3 5
+score s14 a4 7
+score s14 a5 27
+score s14 a6 1
+score s14 a7 93
+score s15 a0 46
+score s15 a1 18
+score s15 a2 4
+score s15 a3 2
+score s15 a4 13
+score s15 a5 40
+score s15 a7 46
+score s16 a1 13
+score s16 a2 6
+score s16 a4 6
+score s16 a5 21
+score s16 a6 1
+score s16 a7 99
+score s17 a0 21
+score s17 a1 10
+score s17 a2 6
+score s17 a3 4
+score s17 a5 22
+score s17 a6 4
+score s17 a7 65
+score s18 a0 36
+score s18 a1 9
+score s18 a2 7
+score s18 a3 2
+score s18 a4 11
+score s18 a5 41
+score s19 a2 8
+score s19 a3 5
+score s19 a4 13
+score s19 a5 41
+score s19 a6 1
+score s19 a7 92
+score s20 a0 45
+score s20 a1 8
+score s20 a2 3
+score s20 a3 3
+score s20 a4 6
+score s20 a5 39
+score s20 a6 2
+score s21 a0 44
+score s21 a2 9
+score s21 a3 6
+score s21 a4 7
+score s21 a5 42
+score s21 a6 3
+score s21 a7 98
+score s22 a0 45
+score s22 a1 10
+score s22 a3 3
+score s22 a4 20
+score s22 a5 21
+score s22 a6 2
+score s22 a7 98
+score s23 a0 41
+score s23 a1 12
+score s23 a2 5
+score s23 a3 4
+score s23 a4 10
+score s23 a5 40
+score s23 a6 5
+score s23 a7 55
+score s24 a0 16
+score s24 a1 20
+score s24 a2 10
+score s24 a3 7
+score s24 a4 18
+score s24 a5 34
+score s24 a6 4
+score s24 a7 62
+score s25 a0 25
+score s25 a1 11
+score s25 a2 3
+score s25 a3 4
+score s25 a4 8
+score s25 a5 22
+score s25 a6 3
+score s25 a7 50
+score s26 a1 9
+score s26 a2 9
+score s26 a3 6
+score s26 a6 4
+score s26 a7 80
+score s27 a0 41
+score s27 a2 6
+score s27 a3 3
+score s27 a5 38
+score s27 a6 2
+score s27 a7 100
+score s28 a0 49
+score s28 a1 16
+score s28 a2 6
+score s28 a4 6
+score s28 a5 28
+score s28 a6 3
+score s28 a7 49
+score s29 a0 41
+score s29 a1 12
+score s29 a2 6
+score s29 a3 7
+score s29 a4 8
+score s29 a5 28
+score s29 a6 5

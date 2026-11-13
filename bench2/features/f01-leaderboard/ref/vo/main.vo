@@ -1,0 +1,34 @@
+record Player {
+    name: str;
+    score: int;
+}
+
+fn main() -> result[void] uses console, input {
+    let players = new list[Player];
+    while true {
+        match read_line() {
+            case ok(line) {
+                let parts = split(line, " ");
+                push(players, new Player { name: parts[0], score: try parse_int(parts[1]) });
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    sort_by(players, fn(p: Player) -> str {
+        return p.name;
+    });
+    sort_by(players, fn(p: Player) -> int {
+        return -p.score;
+    });
+    var rank = 0;
+    for i in 0..len(players) {
+        let p = players[i];
+        if i == 0 or p.score != players[i - 1].score {
+            set rank = i + 1;
+        }
+        print(str(rank) + " " + p.name + " " + str(p.score));
+    }
+    return ok();
+}

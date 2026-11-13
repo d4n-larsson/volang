@@ -1,0 +1,7 @@
+employee J1 Aiko hourly 1001 JPY
+employee J2 Ren salaried 3500000 JPY
+hours J1 47
+deduct J1 5 tea
+payslip J1
+payslip J2
+summary

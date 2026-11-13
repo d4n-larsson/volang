@@ -1,0 +1,14 @@
+go north
+take book
+go south
+drop book
+look
+go north
+look
+go south
+take book
+take lamp
+drop book
+take book
+inventory
+score

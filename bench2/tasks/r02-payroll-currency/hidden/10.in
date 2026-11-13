@@ -1,0 +1,10 @@
+employee D1 Dee hourly 1000 USD
+employee D2 Del salaried 400000 USD
+employee D3 Dan hourly 1000
+hours D1 45
+hours D3 45
+deduct D2 50000 car
+payslip D1
+payslip D3
+payslip D2
+summary

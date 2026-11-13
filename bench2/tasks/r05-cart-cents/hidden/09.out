@@ -1,0 +1,30 @@
+product b2 added
+product B1 added
+product a3 added
+product 9z added
+cart b2 x1
+cart a3 x4
+cart 9z x2
+cart B1 x2
+cart a3 removed
+cart a3 x1
+b2 x1 @ 19.99 = 19.99
+9z x2 @ 1.00 = 2.00
+B1 x2 @ 4.50 = 9.00
+a3 x1 @ 0.60 = 0.60
+items 6, gross 31.59
+b2 x1 @ 19.99 = 19.99
+9z x2 @ 1.00 = 2.00
+B1 x2 @ 4.50 = 9.00
+a3 x1 @ 0.60 = 0.60
+subtotal 31.59
+total 31.59
+cart B1 x1
+B1 x1 @ 4.50 = 4.50
+subtotal 4.50
+total 4.50
+9z zip sold 2 net 2.00
+B1 box sold 3 net 13.50
+a3 apple sold 1 net 0.60
+b2 bag sold 1 net 19.99
+sales 2 revenue 36.09 discounts 0.00

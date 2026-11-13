@@ -1,0 +1,5 @@
+fn main() {
+    let m = new map[str, int];
+    set m["a"] = 1;
+    print(str(m["b"]));
+}

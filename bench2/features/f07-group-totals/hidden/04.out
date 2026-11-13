@@ -1,0 +1,5 @@
+z count=1 total=100 max=100
+y count=1 total=200 max=200
+x count=1 total=300 max=300
+w count=1 total=400 max=400
+grand 1000

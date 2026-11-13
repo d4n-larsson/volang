@@ -1,0 +1,4 @@
+fn main() -> result[void] uses file.write("out/") {
+    try write_file("/tmp/vo_scope_absolute.txt", "no");
+    return ok();
+}

@@ -1,0 +1,4 @@
+{"v":1,"kind":"capabilities","entry":"main","file":"main.vo","uses":"console"}
+{"v":1,"kind":"capabilities","entry":"test \"area\"","file":"main.vo","uses":""}
+{"v":1,"kind":"capabilities","entry":"test \"prints\"","file":"main.vo","uses":"console"}
+{"v":1,"kind":"summary","command":"effects","errors":0,"warnings":0,"truncated":0,"files":1}

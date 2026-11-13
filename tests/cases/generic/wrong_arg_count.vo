@@ -1,0 +1,8 @@
+record Stack[T] {
+    items: list[T];
+}
+
+fn main() {
+    let s = new Stack[int, str] { items: new list[int] };
+    let t: Stack = s;
+}

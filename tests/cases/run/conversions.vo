@@ -1,0 +1,37 @@
+fn main() uses console {
+    print(str(42));
+    print(str(-7));
+    print(str(3.14));
+    print(str(1.0));
+    print(str(0.1));
+    print(str(-0.5));
+    print(str(10000000000000.0));
+    print(str(true));
+    print(str(int(3.99)));
+    print(str(int(-3.99)));
+    print(str(float(7)));
+    match parse_int("123") {
+        case ok(v) {
+            print(str(v + 1));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    match parse_int("12x") {
+        case ok(v) {
+            print(str(v));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    match parse_float("2.5") {
+        case ok(v) {
+            print(str(v * 2.0));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

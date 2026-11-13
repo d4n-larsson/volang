@@ -1,0 +1,10 @@
+recipe big 1 flour 1005 g sugar 1250 g salt 999 g water 1000 ml milk 2050 ml egg 12 pcs
+show big
+scale big 2
+scale big 8
+recipe tiny 3 flour 1 g water 2 ml egg 1 pcs
+scale tiny 1
+scale tiny 2
+scale tiny 4
+shop big 1 tiny 2 tiny 1
+list

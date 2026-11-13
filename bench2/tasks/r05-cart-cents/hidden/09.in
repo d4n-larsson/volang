@@ -1,0 +1,15 @@
+product b2 bag 19.99
+product B1 box 4.5
+product a3 apple 0.6
+product 9z zip 1
+add b2 1
+add a3 4
+add 9z 2
+add B1 2
+remove a3 4
+add a3 1
+cart
+checkout
+add B1 1
+checkout
+report

@@ -1,0 +1,4 @@
+b count=2 total=10 max=5
+a count=2 total=-5 max=5
+c count=1 total=0 max=0
+grand 5

@@ -1,0 +1,15 @@
+added standup in blue 09:00-09:15
+added review in blue 10:00-11:30
+added lunch in green 12:00-13:00
+error: clash conflicts with review
+agenda blue: 2 events
+  09:00-09:15 standup (15 min)
+  10:00-11:30 review (90 min)
+blue at 10:45: review
+free blue 08:30-12:00:
+  08:30-09:00 (30 min)
+  09:15-10:00 (45 min)
+  11:30-12:00 (30 min)
+blue: 2 events, 105 min booked, first 09:00, last 11:30
+green: 1 events, 60 min booked, first 12:00, last 13:00
+total: 3 events, 165 min booked

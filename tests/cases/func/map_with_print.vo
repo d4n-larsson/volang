@@ -1,0 +1,10 @@
+fn total(xs: list[int]) -> int {
+    return len(map(xs, fn(x: int) -> int {
+        print("x");
+        return x;
+    }));
+}
+
+fn main() uses console {
+    print(str(total([1, 2])));
+}

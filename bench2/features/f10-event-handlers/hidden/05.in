@@ -1,0 +1,7 @@
+on go say one two  three
+on stop echo
+emit go now
+emit stop
+emit stop x
+on go count
+emit go

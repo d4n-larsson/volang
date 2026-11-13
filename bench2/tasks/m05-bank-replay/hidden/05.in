@@ -1,0 +1,11 @@
+3 transfer p q 1
+3 open q 0
+2 open p 5
+4 transfer p q 1
+4 transfer q p 1
+4 transfer p r 1
+4 transfer r p 1
+4 transfer r s 1
+5 close q
+6 close p
+7 close p

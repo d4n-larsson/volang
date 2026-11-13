@@ -1,0 +1,51 @@
+fn live_neighbours(g: list[list[str]], r: int, c: int) -> int {
+    var count = 0;
+    for dr in -1..2 {
+        for dc in -1..2 {
+            let a = r + dr;
+            let b = c + dc;
+            let inside = a >= 0 and a < len(g) and b >= 0 and b < len(g[0]);
+            if inside and not (dr == 0 and dc == 0) {
+                if g[a][b] == "#" {
+                    set count = count + 1;
+                }
+            }
+        }
+    }
+    return count;
+}
+
+fn step(g: list[list[str]]) -> list[list[str]] {
+    let next = new list[list[str]];
+    for r in 0..len(g) {
+        let row = new list[str];
+        for c in 0..len(g[r]) {
+            let k = live_neighbours(g, r, c);
+            if k == 3 or k == 2 and g[r][c] == "#" {
+                push(row, "#");
+            } else {
+                push(row, ".");
+            }
+        }
+        push(next, row);
+    }
+    return next;
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = split(read_all(), "\n");
+    let n = try parse_int(trim(lines[0]));
+    var grid = new list[list[str]];
+    for i in 1..len(lines) {
+        if lines[i] != "" {
+            push(grid, chars(lines[i]));
+        }
+    }
+    for _ in 0..n {
+        set grid = step(grid);
+    }
+    for row in grid {
+        print(join(row, ""));
+    }
+    return ok();
+}

@@ -1,0 +1,62 @@
+import clock.duration;
+import clock.format_time;
+import clock.span;
+import schedule.Event;
+import schedule.room_events;
+import schedule.event_at;
+import schedule.free_slots;
+import schedule.booked_minutes;
+
+fn agenda_lines(events: map[str, Event], room: str) -> list[str] {
+    let evs = room_events(events, room);
+    let out = ["agenda " + room + ": " + str(len(evs)) + " events"];
+    for e in evs {
+        push(out, "  " + span(e.start, e.end) + " " + e.event_id + " (" + str(duration(e.start, e.end)) + " min)");
+    }
+    return out;
+}
+
+fn who_line(events: map[str, Event], room: str, t: int) -> str {
+    match event_at(events, room, t) {
+        case ok(e) {
+            return room + " at " + format_time(t) + ": " + e.event_id;
+        }
+        case err(_) {
+            return room + " at " + format_time(t) + ": free";
+        }
+    }
+}
+
+fn free_lines(events: map[str, Event], room: str, lo: int, hi: int, min_len: int) -> list[str] {
+    let out = ["free " + room + " " + span(lo, hi) + ":"];
+    for s in free_slots(events, room, lo, hi, min_len) {
+        push(out, "  " + span(s.start, s.end) + " (" + str(duration(s.start, s.end)) + " min)");
+    }
+    if len(out) == 1 {
+        push(out, "  none");
+    }
+    return out;
+}
+
+fn summary_lines(events: map[str, Event]) -> list[str] {
+    let rooms = new list[str];
+    for k in keys(events) {
+        let room = events[k].room;
+        if not any(rooms, fn(r: str) -> bool {
+            return r == room;
+        }) {
+            push(rooms, room);
+        }
+    }
+    sort(rooms);
+    let out = new list[str];
+    var total = 0;
+    for room in rooms {
+        let evs = room_events(events, room);
+        let booked = booked_minutes(evs);
+        set total = total + booked;
+        push(out, room + ": " + str(len(evs)) + " events, " + str(booked) + " min booked, first " + format_time(evs[0].start) + ", last " + format_time(evs[len(evs) - 1].end));
+    }
+    push(out, "total: " + str(len(events)) + " events, " + str(total) + " min booked");
+    return out;
+}

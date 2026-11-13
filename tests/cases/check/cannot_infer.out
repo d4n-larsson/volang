@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"W0201","name":"unused_variable","severity":"warning","file":"cannot_infer.vo","start":{"line":2,"col":9},"end":{"line":2,"col":10},"text":"r","message":"`r` is never used.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0307","name":"cannot_infer_type","severity":"error","file":"cannot_infer.vo","start":{"line":2,"col":13},"end":{"line":2,"col":18},"text":"ok(1)","message":"Cannot infer the type of `ok(...)` here. Add a type annotation.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":1,"truncated":0,"files":1}

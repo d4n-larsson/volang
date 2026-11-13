@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"var_no_init.vo","start":{"line":2,"col":19},"end":{"line":2,"col":19},"text":"","message":"A variable needs a starting value, like `var n: int = 0;`.","fixes":[{"file":"var_no_init.vo","start":{"line":2,"col":19},"end":{"line":2,"col":19},"replacement":" = 0"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

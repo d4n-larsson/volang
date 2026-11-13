@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0203","name":"shadowed_name","severity":"error","file":"shadowed.vo","start":{"line":4,"col":13},"end":{"line":4,"col":14},"text":"n","message":"`n` is already defined in an outer scope.","fixes":[],"related":[{"file":"shadowed.vo","start":{"line":2,"col":9},"end":{"line":2,"col":10},"message":"`n` is defined here."}]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

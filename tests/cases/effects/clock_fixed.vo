@@ -1,0 +1,5 @@
+fn main() uses console, clock {
+    print(str(now_ms()));
+    print(str(now_ms()));
+    print(str(now_ms()));
+}

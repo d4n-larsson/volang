@@ -1,0 +1,21 @@
+employee E1 added: hourly $25.00/h
+employee E2 added: salaried 3000.00 EUR
+E1 hours 42
+E2 deduction pension 120.50 EUR
+payslip E1 Alice (hourly)
+  regular 40h $1000.00
+  overtime 2h $75.00
+  gross $1075.00
+  tax $115.00
+  net $960.00
+payslip E2 Bruno (salaried)
+  salary 3000.00 EUR
+  gross 3000.00 EUR
+  tax 500.00 EUR
+  deduction pension 120.50 EUR
+  net 2379.50 EUR
+summary: 2 employees
+  E1 Alice gross $1075.00 net $960.00
+  E2 Bruno gross 3000.00 EUR net 2379.50 EUR
+total gross $1075.00 tax $115.00 deductions $0.00 net $960.00
+total gross 3000.00 EUR tax 500.00 EUR deductions 120.50 EUR net 2379.50 EUR

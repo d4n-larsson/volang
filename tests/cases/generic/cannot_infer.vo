@@ -1,0 +1,11 @@
+record Stack[T] {
+    items: list[T];
+}
+
+fn empty_stack[T]() -> Stack[T] {
+    return new Stack[T] { items: new list[T] };
+}
+
+fn main() {
+    let s = empty_stack();
+}

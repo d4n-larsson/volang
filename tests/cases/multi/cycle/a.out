@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0206","name":"import_cycle","severity":"error","file":"b.vo","start":{"line":1,"col":1},"end":{"line":1,"col":17},"text":"import a.from_a;","message":"Import cycle: a.vo -> b.vo -> a.vo.","fixes":[],"related":[{"file":"a.vo","start":{"line":1,"col":1},"end":{"line":1,"col":17},"message":"`b.vo` is imported here."}]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

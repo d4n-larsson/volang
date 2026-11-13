@@ -1,0 +1,15 @@
+type solo 5000 1
+book a solo ann 1 10
+book b solo bob 5 6
+cancel a 5
+book b solo bob 5 6
+book c solo cy 4 5
+avail solo 1 10
+occupancy 4
+occupancy 5
+cancel b 2
+book d solo dee 5 8
+book e solo eve 8 12
+cancel e 8
+book f solo fay 8 9
+report

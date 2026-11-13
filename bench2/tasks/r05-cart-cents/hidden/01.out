@@ -1,0 +1,23 @@
+product A added
+product B added
+error: product A exists
+cart A x2
+cart B x1
+cart A x5
+error: unknown product Z
+error: Z not in cart
+error: only 1 B in cart
+cart B removed
+error: B not in cart
+cart A x1
+cart A removed
+cart B x4
+error: A not in cart
+cart B x1
+cart B x3
+cart B removed
+error: B not in cart
+cart empty
+error: cart empty
+error: A not in cart
+cart empty

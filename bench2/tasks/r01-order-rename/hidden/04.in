@@ -1,0 +1,10 @@
+add-product A pen 100 2
+add-product B ink 5000 4
+order o1 B 2
+price B 1
+show o1
+cancel o1
+cancel o1
+show o1
+order o1 B 1
+report

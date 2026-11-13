@@ -1,0 +1,7 @@
+fn main() uses console {
+    let n = 1;
+    if n > 0 {
+        let n = 2;
+        print(str(n));
+    }
+}

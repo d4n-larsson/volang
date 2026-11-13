@@ -1,0 +1,16 @@
+2024-09-09 09:09:01 ERROR pay: card declined
+2024-09-09 09:09:59 ERROR pay: card declined again
+bad
+2024-09-09 10:00:00 INFO web: ok
+2024-09-09 10:00:00 info web: lower
+---
+span
+levels
+errors
+grep declined
+stats
+range 2024-09-09 09:09:30 2024-09-09 09:10:00
+---
+Stats
+stats now
+busiest hour

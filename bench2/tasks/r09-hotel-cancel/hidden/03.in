@@ -1,0 +1,12 @@
+type room 1999 3
+book s6 room ann 0 6
+book s7 room bob 0 7
+rate room 2500
+book s8 room cy 100 108
+invoice s6
+invoice s7
+invoice s8
+avail room 0 7
+avail room 6 7
+avail room 7 100
+report

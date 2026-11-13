@@ -1,0 +1,32 @@
+# Summary order of the currencies.
+fn currencies() -> list[str] {
+    return ["USD", "EUR", "JPY"];
+}
+
+fn is_currency(code: str) -> bool {
+    return any(currencies(), fn(c: str) -> bool {
+        return c == code;
+    });
+}
+
+fn two_digits(n: int) -> str {
+    var s = str(n);
+    if len(s) < 2 {
+        set s = "0" + s;
+    }
+    return s;
+}
+
+fn format_money(amount: int, currency: str) -> str {
+    if amount < 0 {
+        return "-" + format_money(-amount, currency);
+    }
+    if currency == "JPY" {
+        return "JPY " + str(amount);
+    }
+    let text = str(amount / 100) + "." + two_digits(amount % 100);
+    if currency == "EUR" {
+        return text + " EUR";
+    }
+    return "$" + text;
+}

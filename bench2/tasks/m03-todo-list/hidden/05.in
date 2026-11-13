@@ -1,0 +1,13 @@
+add 2 t
+tag 1 zeta
+tag 1 alpha
+tag 1 a1
+tag 1 Alpha
+tag 1 al-pha
+tag 1 9
+list
+list +9
+list +
+list +Alpha
+list zeta
+list done extra

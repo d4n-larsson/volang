@@ -1,0 +1,77 @@
+record Row {
+    player: str;
+    score: int;
+}
+
+fn board(text: str) -> result[str] {
+    let best = new map[str, int];
+    for line in split(text, "\n") {
+        if line == "" {
+            continue;
+        }
+        let f = split(line, " ");
+        let score = try parse_int(f[1]);
+        if not has(best, f[0]) or best[f[0]] < score {
+            set best[f[0]] = score;
+        }
+    }
+    let rows = map(keys(best), fn(p: str) -> Row {
+        return new Row { player: p, score: best[p] };
+    });
+    sort_by(rows, fn(r: Row) -> str {
+        return r.player;
+    });
+    sort_by(rows, fn(r: Row) -> int {
+        return -r.score;
+    });
+    let out = new list[str];
+    var rank = 0;
+    for i in 0..len(rows) {
+        if i == 0 or rows[i - 1].score != rows[i].score {
+            set rank = i + 1;
+        }
+        push(out, str(rank) + " " + rows[i].player + " " + str(rows[i].score) + "\n");
+    }
+    return ok(join(out, ""));
+}
+
+fn main() -> result[void] uses console, input, file.read("in/", "out/"), file.write("out/") {
+    while true {
+        match read_line() {
+            case ok(name) {
+                if name == "" {
+                    continue;
+                }
+                print("== " + name);
+                match read_file("in/" + name + ".txt") {
+                    case ok(text) {
+                        let b = try board(text);
+                        write(b);
+                        # skip the write when the published board is already up to date
+                        var current = "";
+                        var exists = false;
+                        match read_file("out/" + name + ".txt") {
+                            case ok(t) {
+                                set current = t;
+                                set exists = true;
+                            }
+                            case err(_) {
+                            }
+                        }
+                        if not exists or current != b {
+                            try write_file("out/" + name + ".txt", b);
+                        }
+                        print("published out/" + name + ".txt");
+                    }
+                    case err(_) {
+                        print("missing");
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

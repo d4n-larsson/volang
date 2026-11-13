@@ -1,0 +1,5 @@
+zed -5
+amy -5
+
+bob -20
+zed 0

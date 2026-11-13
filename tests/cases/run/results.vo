@@ -1,0 +1,43 @@
+fn half(n: int) -> result[int] {
+    if n % 2 != 0 {
+        return err("odd: " + str(n));
+    }
+    return ok(n / 2);
+}
+
+fn quarter(n: int) -> result[int] {
+    let h = try half(n);
+    return half(h);
+}
+
+fn report(r: result[int]) uses console {
+    match r {
+        case ok(v) {
+            print("ok " + str(v));
+        }
+        case err(e) {
+            print("err " + e);
+        }
+    }
+}
+
+fn check(flag: bool) -> result[void] {
+    if flag {
+        return err("flag set");
+    }
+    return ok();
+}
+
+fn main() uses console {
+    report(quarter(8));
+    report(quarter(6));
+    report(quarter(5));
+    match check(false) {
+        case ok {
+            print("void ok");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

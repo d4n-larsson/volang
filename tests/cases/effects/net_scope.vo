@@ -1,0 +1,10 @@
+fn fetch_b() uses net("b.example") {
+}
+
+fn fetch() uses net("a.example") {
+    fetch_b();
+}
+
+fn main() uses net("a.example") {
+    fetch();
+}

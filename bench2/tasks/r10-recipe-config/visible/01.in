@@ -1,0 +1,5 @@
+recipe soup 4 carrot 500 g stock 1500 ml onion 1 pcs
+show soup
+scale soup 6
+scale soup 1
+list

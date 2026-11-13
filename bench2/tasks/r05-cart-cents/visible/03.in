@@ -1,0 +1,12 @@
+product A1 pen 12.
+product A1 pen .5
+product A1 pen 1.234
+product A1 pen 3.5
+price A1 3.25
+price A1 4.
+price Z9 1.00
+add A1 2
+cart
+remove A1 2
+cart
+checkout

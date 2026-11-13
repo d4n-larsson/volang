@@ -1,0 +1,12 @@
+type twin added
+booked t1: twin 3 nights, total 299.97
+cancelled t1: refund 149.98
+booked t2: twin 10 nights, total 899.91
+cancelled t2: refund 0.00
+day 21: 1 of 1 rooms occupied
+  twin 1/1
+day 22: 0 of 1 rooms occupied
+  twin 0/1
+avail twin 20-30: 0 of 1 free
+twin: 0 bookings (2 cancelled), 2 nights, revenue 1049.90
+total revenue 1049.90, refunds 149.98

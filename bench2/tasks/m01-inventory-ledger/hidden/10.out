@@ -1,0 +1,15 @@
+REPORT
+m 3 0.21
+revenue 0.00 cogs 0.00 loss 0.00 profit 0.00 stock 0.21
+REPORT
+m 2 0.14
+revenue 0.03 cogs 0.07 loss 0.00 profit -0.04 stock 0.14
+REPORT
+m 0 0.00
+revenue 0.03 cogs 0.21 loss 0.00 profit -0.18 stock 0.00
+REPORT
+m 0 0.00
+revenue 0.03 cogs 0.21 loss 0.00 profit -0.18 stock 0.00
+REPORT
+m 0 0.00
+revenue 0.03 cogs 0.21 loss 0.00 profit -0.18 stock 0.00

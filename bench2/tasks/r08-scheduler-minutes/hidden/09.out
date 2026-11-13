@@ -1,0 +1,12 @@
+added x1 in a 09:00-09:30
+added x2 in a 09:30-10:00
+error: x3 conflicts with x1
+removed x1
+added x3 in a 09:00-09:10
+agenda a: 2 events
+  09:00-09:10 x3 (10 min)
+  09:30-10:00 x2 (30 min)
+a at 09:10: free
+a at 09:09: x3
+a: 2 events, 40 min booked, first 09:00, last 10:00
+total: 2 events, 40 min booked

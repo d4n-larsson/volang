@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0202","name":"duplicate_definition","severity":"error","file":"duplicate_name.vo","start":{"line":5,"col":1},"end":{"line":7,"col":2},"text":"test \"same\" {\n    expect(true);\n}","message":"A test named \"same\" already exists.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"test","errors":1,"warnings":0,"truncated":0,"files":1}

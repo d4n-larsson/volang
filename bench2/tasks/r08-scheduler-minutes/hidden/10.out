@@ -1,0 +1,19 @@
+added k1 in b2 09:00-10:00
+added k2 in B1 10:00-11:00
+added k3 in b2 13:00-15:30
+added k4 in a10 08:15-08:45
+added k5 in a9 11:45-12:15
+added k6 in B1 07:00-08:00
+B1: 2 events, 120 min booked, first 07:00, last 11:00
+a10: 1 events, 30 min booked, first 08:15, last 08:45
+a9: 1 events, 30 min booked, first 11:45, last 12:15
+b2: 2 events, 210 min booked, first 09:00, last 15:30
+total: 6 events, 390 min booked
+agenda b2: 2 events
+  09:00-10:00 k1 (60 min)
+  13:00-15:30 k3 (150 min)
+removed k4
+B1: 2 events, 120 min booked, first 07:00, last 11:00
+a9: 1 events, 30 min booked, first 11:45, last 12:15
+b2: 2 events, 210 min booked, first 09:00, last 15:30
+total: 5 events, 360 min booked

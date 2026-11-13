@@ -1,0 +1,6 @@
+mode prod
+host=example.org
+log_level=
+port=443
+url=http://localhost:8080/?a=1&b=2
+workers=8

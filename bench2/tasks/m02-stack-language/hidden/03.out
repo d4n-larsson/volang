@@ -1,0 +1,11 @@
+4
+4
+0
+error: bad name dup
+error: bad name x2
+error: bad name neg
+error: bad name ab-c
+error: unknown word nope
+error: unknown word abc
+<4> 1 2 1 2
+<4> 1 2 1 2

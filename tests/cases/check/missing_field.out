@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0305","name":"missing_field","severity":"error","file":"missing_field.vo","start":{"line":7,"col":13},"end":{"line":7,"col":31},"text":"new Point { x: 1 }","message":"Missing fields in `Point`: `y`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

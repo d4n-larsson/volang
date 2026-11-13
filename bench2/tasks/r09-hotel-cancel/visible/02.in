@@ -1,0 +1,7 @@
+type double 12000 1
+book b1 double ann 10 13
+book b2 double bob 12 14
+cancel b1 3
+book b2 double bob 12 14
+invoice b1
+report

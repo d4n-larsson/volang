@@ -1,0 +1,22 @@
+import store.save_total;
+import report.render;
+import util.clamp;
+
+fn main() -> result[void] uses console, file.write("out/") {
+    let total = clamp(42, 0, 100);
+    print(render(total));
+    try save_total(total);
+    return ok();
+}
+
+test "clamps" uses file.read("fixtures/") {
+    match read_file("fixtures/a.txt") {
+        case ok(t) {
+            expect_eq(len(t) >= 0, true);
+        }
+        case err(e) {
+            expect_eq(len(e) > 0, true);
+        }
+    }
+    expect_eq(clamp(500, 0, 100), 100);
+}

@@ -1,0 +1,6 @@
+restock K 4
+add-product K kit 12000 1
+order k1 K 1 K 1
+order k1 K 1
+report
+show k1

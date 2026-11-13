@@ -1,0 +1,108 @@
+import lexer.Token;
+
+variant Expr {
+    num(str);
+    name(str);
+    neg(Expr);
+    bin(Bin);
+}
+
+record Bin {
+    op: str;
+    left: Expr;
+    right: Expr;
+}
+
+record Parser {
+    toks: list[Token];
+    pos: int;
+}
+
+record Statement {
+    name: str;
+    expr: Expr;
+}
+
+fn take_op(p: Parser, ops: str) -> str {
+    if p.pos < len(p.toks) {
+        let t = p.toks[p.pos];
+        if t.kind == "op" and find(ops, t.text) >= 0 {
+            set p.pos = p.pos + 1;
+            return t.text;
+        }
+    }
+    return "";
+}
+
+fn binary(op: str, l: Expr, r: Expr) -> Expr {
+    return Expr.bin(new Bin { op: op, left: l, right: r });
+}
+
+fn expr(p: Parser) -> result[Expr] {
+    var e = try term(p);
+    var op = take_op(p, "+-");
+    while op != "" {
+        set e = binary(op, e, try term(p));
+        set op = take_op(p, "+-");
+    }
+    return ok(e);
+}
+
+fn term(p: Parser) -> result[Expr] {
+    var e = try unary(p);
+    var op = take_op(p, "*/%");
+    while op != "" {
+        set e = binary(op, e, try unary(p));
+        set op = take_op(p, "*/%");
+    }
+    return ok(e);
+}
+
+fn unary(p: Parser) -> result[Expr] {
+    if take_op(p, "-") != "" {
+        return ok(Expr.neg(try unary(p)));
+    }
+    let a = try atom(p);
+    if take_op(p, "^") != "" {
+        return ok(binary("^", a, try unary(p)));
+    }
+    return ok(a);
+}
+
+fn atom(p: Parser) -> result[Expr] {
+    if p.pos >= len(p.toks) {
+        return err("syntax");
+    }
+    let t = p.toks[p.pos];
+    if t.kind == "num" {
+        set p.pos = p.pos + 1;
+        return ok(Expr.num(t.text));
+    }
+    if t.kind == "name" {
+        set p.pos = p.pos + 1;
+        return ok(Expr.name(t.text));
+    }
+    if take_op(p, "(") != "" {
+        let e = try expr(p);
+        if take_op(p, ")") == "" {
+            return err("syntax");
+        }
+        return ok(e);
+    }
+    return err("syntax");
+}
+
+fn parse_line(toks: list[Token]) -> result[Statement] {
+    var name = "";
+    var rest = toks;
+    if len(toks) >= 2 and toks[0].kind == "name" and toks[1].kind == "op" and toks[1].text == "=" {
+        set name = toks[0].text;
+        set rest = slice(toks, 2, len(toks));
+    }
+    let p = new Parser { toks: rest, pos: 0 };
+    let e = try expr(p);
+    if p.pos != len(rest) {
+        return err("syntax");
+    }
+    return ok(new Statement { name: name, expr: e });
+}

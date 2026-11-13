@@ -1,0 +1,18 @@
+record Point {
+    x: int,
+    y: int;
+}
+
+fn show() -> void uses console {
+    let xs = [1, 2];
+    print(str(xs.len()));
+}
+
+fn main() uses console {
+    let p = Point { x: 1, y: 2 };
+    if p.x > 3 {
+        show();
+    } elif p.x > 0 {
+        print("small");
+    }
+}

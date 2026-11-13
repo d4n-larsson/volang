@@ -1,0 +1,8 @@
+2023-12-31 23:59:58 INFO ny: almost
+2024-01-01 00:00:03 INFO ny: happy new year
+2024-03-01 12:30:45 WARN q: later
+2023-12-31 23:59:59 INFO ny: unordered input
+---
+span
+range 2023-12-31 23:59:59 2024-01-01 00:00:02
+range 2024-01-01 00:00:00 2024-12-31 23:59:59

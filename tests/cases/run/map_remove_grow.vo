@@ -1,0 +1,12 @@
+fn main() uses console {
+    let m = new map[int, int];
+    set m[1] = 1;
+    remove(m, 1);
+    for i in 2..200 {
+        set m[i] = i;
+        if i % 3 == 0 {
+            remove(m, i - 1);
+        }
+    }
+    print(str(len(m)) + " " + str(m[199]));
+}

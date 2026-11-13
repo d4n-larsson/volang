@@ -1,0 +1,25 @@
+assignment m 40 100
+assignment f 60 100
+enroll ana
+enroll ben
+enroll cat
+enroll dan
+enroll eve
+enroll fay
+score ana m 95
+score ana f 99
+score ben m 99
+score ben f 96
+score cat m 80
+score cat f 80
+score dan m 92
+score dan f 90
+score eve m 60
+score eve f 61
+report
+distribution
+score eve f 100
+score fay m 100
+report
+distribution
+card eve

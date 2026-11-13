@@ -1,0 +1,47 @@
+assignment x 1 1000
+enroll s01
+score s01 x 1000
+enroll s02
+score s02 x 970
+enroll s03
+score s03 x 969
+enroll s04
+score s04 x 930
+enroll s05
+score s05 x 929
+enroll s06
+score s06 x 900
+enroll s07
+score s07 x 899
+enroll s08
+score s08 x 870
+enroll s09
+score s09 x 869
+enroll s10
+score s10 x 830
+enroll s11
+score s11 x 829
+enroll s12
+score s12 x 800
+enroll s13
+score s13 x 799
+enroll s14
+score s14 x 770
+enroll s15
+score s15 x 700
+enroll s16
+score s16 x 699
+enroll s17
+score s17 x 670
+enroll s18
+score s18 x 630
+enroll s19
+score s19 x 629
+enroll s20
+score s20 x 600
+enroll s21
+score s21 x 599
+enroll s22
+score s22 x 0
+report
+distribution

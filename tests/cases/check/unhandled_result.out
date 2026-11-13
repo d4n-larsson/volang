@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0404","name":"unhandled_result","severity":"error","file":"unhandled_result.vo","start":{"line":2,"col":5},"end":{"line":2,"col":19},"text":"parse_int(\"1\")","message":"The `result[int]` returned here is ignored. Handle it with `try` or `match`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

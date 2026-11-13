@@ -1,0 +1,1 @@
+error[T0001]: Unknown command `frobnicate`. Commands: check, run, test, fmt, effects, explain, reference, version.

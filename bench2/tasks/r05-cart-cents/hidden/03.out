@@ -1,0 +1,19 @@
+product A added
+product b added
+promo A: buy 2 get 1 free
+promo A: buy 3 get 1 free
+error: unknown product Q
+bulk A: 10 or more 5% off
+bulk b: 1 or more 100% off
+error: unknown product Q
+coupon SAVE: 10% off
+coupon SAVE: 20% off
+coupon HALF: 50% off
+error: unknown coupon NOPE
+coupon SAVE active
+coupon HALF active
+coupon NOPE: 1% off
+coupon NOPE active
+error: unknown product Q
+error: cart empty
+cart empty

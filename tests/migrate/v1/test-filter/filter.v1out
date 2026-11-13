@@ -1,0 +1,5 @@
+PASS parse numbers (0ms)
+FAIL format numbers (0ms)
+  filter.vo:6:5: `expect` failed: the condition is false.
+PASS parse words (0ms)
+2 passed, 1 failed

@@ -1,0 +1,2 @@
+narrowed main.vo:main
+narrowed store.vo:save_total

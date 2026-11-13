@@ -1,0 +1,7 @@
+fn addOne(someValue: int) -> int {
+    return someValue + 1;
+}
+
+fn main() uses console {
+    print(str(addOne(2)));
+}

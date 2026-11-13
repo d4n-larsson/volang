@@ -1,0 +1,5 @@
+restock a b c
+value 30
+out_of_stock no
+all_priced yes
+most_valuable c

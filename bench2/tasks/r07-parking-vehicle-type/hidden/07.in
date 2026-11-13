@@ -1,0 +1,19 @@
+level 1 2
+level 2 3
+enter A 0 car
+enter B 0 motorcycle
+enter C 0 bus
+enter A 0 bus
+enter A 0 truck
+enter C 0 TRUCK
+enter C 0 truck
+enter D 1 truck
+enter E 2 motorcycle
+enter F 3
+parked
+enter G 4 car extra
+enter G
+exit B 200
+exit E 200
+parked
+report 200

@@ -1,0 +1,19 @@
+member a joined
+member b joined
+book Q: 1 copies
+book R: 1 copies
+a borrows Q (due 15)
+a borrows R (due 15)
+b waits for Q (position 1)
+b waits for R (position 1)
+a already has Q
+a returns R
+R -> b (due 16)
+a returns Q
+Q -> b (due 16)
+members:
+a loans - owes 0.00
+b loans Q,R owes 0.00
+books:
+Q 0/1 queue -
+R 0/1 queue -

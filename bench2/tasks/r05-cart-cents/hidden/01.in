@@ -1,0 +1,23 @@
+product A pen 2
+product B cup 3
+product A pen 5
+add A 2
+add B 1
+add A 3
+add Z 1
+remove Z 1
+remove B 2
+remove B 1
+remove B 1
+remove A 4
+remove A 1
+add B 4
+remove A 1
+remove B 3
+add B 2
+remove B 3
+remove B 2
+cart
+checkout
+remove A 1
+cart

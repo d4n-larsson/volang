@@ -1,0 +1,4 @@
+ERROR divides by zero (0ms)
+  runtime_error.vo:2:12: runtime error[R0002]: Division by zero.
+PASS after the error (0ms)
+1 passed, 0 failed, 1 errored

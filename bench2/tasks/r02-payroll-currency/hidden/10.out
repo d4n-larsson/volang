@@ -1,0 +1,29 @@
+employee D1 added: hourly $10.00/h
+employee D2 added: salaried $4000.00
+employee D3 added: hourly $10.00/h
+D1 hours 45
+D3 hours 45
+D2 deduction car $500.00
+payslip D1 Dee (hourly)
+  regular 40h $400.00
+  overtime 5h $75.00
+  gross $475.00
+  tax $47.50
+  net $427.50
+payslip D3 Dan (hourly)
+  regular 40h $400.00
+  overtime 5h $75.00
+  gross $475.00
+  tax $47.50
+  net $427.50
+payslip D2 Del (salaried)
+  salary $4000.00
+  gross $4000.00
+  tax $800.00
+  deduction car $500.00
+  net $2700.00
+summary: 3 employees
+  D1 Dee gross $475.00 net $427.50
+  D2 Del gross $4000.00 net $2700.00
+  D3 Dan gross $475.00 net $427.50
+total gross $4950.00 tax $895.00 deductions $500.00 net $3555.00

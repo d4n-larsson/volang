@@ -1,0 +1,57 @@
+fn add(m: map[str, int], k: str, v: int) {
+    if has(m, k) {
+        set m[k] = m[k] + v;
+    } else {
+        set m[k] = v;
+    }
+}
+
+fn main() -> result[void] uses console, input, file.read("orders/"), file.write("out/") {
+    let report = try read_line();
+    let qty = new map[str, int];
+    let cents = new map[str, int];
+    while true {
+        match read_line() {
+            case ok(name) {
+                if name == "" {
+                    continue;
+                }
+                match read_file("orders/" + name) {
+                    case ok(text) {
+                        for line in split(text, "\n") {
+                            if line != "" {
+                                let f = split(line, " ");
+                                let q = try parse_int(f[1]);
+                                let p = try parse_int(f[2]);
+                                add(qty, f[0], q);
+                                add(cents, f[0], q * p);
+                            }
+                        }
+                    }
+                    case err(_) {
+                        print("missing " + name);
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    let skus = keys(qty);
+    sort(skus);
+    let out = new list[str];
+    var tq = 0;
+    var tc = 0;
+    for s in skus {
+        push(out, s + " " + str(qty[s]) + " " + str(cents[s]) + "\n");
+        set tq = tq + qty[s];
+        set tc = tc + cents[s];
+    }
+    push(out, "TOTAL " + str(tq) + " " + str(tc) + "\n");
+    let text = join(out, "");
+    write(text);
+    try write_file("out/" + report + ".txt", text);
+    print("saved out/" + report + ".txt");
+    return ok();
+}

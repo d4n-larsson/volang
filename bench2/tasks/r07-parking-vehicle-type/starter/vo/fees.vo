@@ -1,0 +1,33 @@
+fn free_minutes() -> int {
+    return 30;
+}
+
+fn hourly() -> int {
+    return 250;
+}
+
+fn daily_cap() -> int {
+    return 2000;
+}
+
+fn money(cents: int) -> str {
+    var frac = str(cents % 100);
+    if len(frac) < 2 {
+        set frac = "0" + frac;
+    }
+    return str(cents / 100) + "." + frac;
+}
+
+# The fee in cents for a stay of `minutes`.
+fn fee(minutes: int) -> int {
+    if minutes <= free_minutes() {
+        return 0;
+    }
+    let days = minutes / 1440;
+    let hours = (minutes % 1440 + 59) / 60;
+    return days * daily_cap() + min(daily_cap(), hours * hourly());
+}
+
+fn rates() -> list[str] {
+    return ["car: first " + str(free_minutes()) + " min free, " + money(hourly()) + " per hour, " + money(daily_cap()) + " per day"];
+}

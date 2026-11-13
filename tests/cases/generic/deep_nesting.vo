@@ -1,0 +1,8 @@
+record Box[T] {
+    value: T;
+}
+
+fn main() uses console {
+    let b = new Box[Box[list[str]]] { value: new Box[list[str]] { value: ["deep"] } };
+    print(b.value.value[0]);
+}

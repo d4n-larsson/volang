@@ -1,0 +1,29 @@
+assignment hw 10 20
+assignment hw 5 5
+assignment big 0 10
+assignment big 101 10
+assignment big 10 0
+assignment big 10
+assignment big x 10
+assignment big 10 1.5
+enroll ana
+enroll ana
+enroll
+enroll a b
+score ana hw
+score ana hw x
+score ana hw -1
+score bob hw 3
+score ana nope 3
+score bob nope 3
+score ana hw 21
+score ana hw 20
+score ana hw 0
+stats hw
+stats
+stats nope
+card
+card bob
+report now
+grade ana
+

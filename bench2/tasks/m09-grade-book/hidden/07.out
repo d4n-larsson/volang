@@ -1,0 +1,46 @@
+students:
+s24 85.79 B
+s21 85.51 B
+s05 77.61 C
+s22 76.79 C
+s07 75.74 C
+s27 74.90 C
+s02 74.55 C
+s23 73.73 C
+s13 73.50 C
+s29 73.16 C
+s19 70.78 C
+s15 70.60 C
+s12 69.81 D
+s28 67.61 D
+s11 66.88 D
+s18 64.22 D
+s03 63.84 D
+s09 62.40 D
+s10 62.28 D
+s06 60.61 D
+s14 60.31 D
+s01 59.57 F
+s00 59.45 F
+s17 58.53 F
+s20 57.86 F
+s26 54.77 F
+s16 53.48 F
+s25 51.01 F
+s08 45.22 F
+s04 43.68 F
+stats:
+count 30
+mean 65.81
+median 65.55
+top 85.79 s24
+letters A:0 B:2 C:10 D:9 F:9
+assignments:
+a0 avg 53.00 missing 6
+a1 avg 59.00 missing 3
+a2 avg 53.00 missing 3
+a3 avg 50.95 missing 6
+a4 avg 47.67 missing 6
+a5 avg 55.33 missing 4
+a6 avg 48.67 missing 4
+a7 avg 55.03 missing 5

@@ -1,0 +1,11 @@
+fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
+    for x in xs {
+        f(x);
+    }
+}
+
+fn main() {
+    each([1], fn(x: int) {
+        print(str(x));
+    });
+}

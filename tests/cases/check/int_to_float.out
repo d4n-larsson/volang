@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"int_to_float.vo","start":{"line":7,"col":20},"end":{"line":7,"col":21},"text":"n","message":"Expected `float`, found `int`.","expected":"float","found":"int","fixes":[{"file":"int_to_float.vo","start":{"line":7,"col":20},"end":{"line":7,"col":21},"replacement":"float(n)"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

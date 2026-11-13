@@ -1,0 +1,2 @@
+removed main.vo:main
+removed store.vo:save_total

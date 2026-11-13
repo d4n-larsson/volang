@@ -1,0 +1,6 @@
+fn main() uses console {
+    print(str(abs(-5)) + " " + str(abs(-2.5)));
+    print(str(min(3, 7)) + " " + str(max(3, 7)) + " " + str(max(1.5, -2.0)) + " " + min("pear", "apple"));
+    print(upper("Hello, wörld") + " " + lower("ABC"));
+    print(str(ord("A")) + " " + str(ord("é")) + " " + chr(66) + chr(233));
+}

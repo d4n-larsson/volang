@@ -1,0 +1,22 @@
+fn letter_order() -> list[str] {
+    return ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"];
+}
+
+# The letter grade, with its + or - modifier, for an average in tenths of a percent.
+fn letter(avg: int) -> str {
+    let bases = ["A", "B", "C", "D"];
+    let floors = [900, 800, 700, 600];
+    for i in 0..4 {
+        if avg >= floors[i] {
+            let rest = avg - floors[i];
+            if rest >= 70 {
+                return bases[i] + "+";
+            }
+            if rest < 30 {
+                return bases[i] + "-";
+            }
+            return bases[i];
+        }
+    }
+    return "F";
+}

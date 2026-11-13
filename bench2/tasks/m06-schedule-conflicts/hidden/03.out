@@ -1,0 +1,12 @@
+conflicts: 8
+r1 r3: room X
+r1 r7: person a
+r2 r3: room X
+r2 r7: person b
+r3 r7: person c
+r4 r5: room X
+r4 r7: person d
+r5 r7: person e
+rooms:
+X 210
+Y 600

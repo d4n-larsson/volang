@@ -1,0 +1,172 @@
+import commands.Command;
+import commands.money;
+
+record Loan {
+    isbn: str;
+    due: int;
+}
+
+record Library {
+    copies: map[str, int];
+    shelf: map[str, int];
+    queue: map[str, list[str]];
+    limit: map[str, int];
+    owes: map[str, int];
+    loans: map[str, list[Loan]];
+}
+
+fn new_library() -> Library {
+    return new Library { copies: new map[str, int], shelf: new map[str, int], queue: new map[str, list[str]], limit: new map[str, int], owes: new map[str, int], loans: new map[str, list[Loan]] };
+}
+
+fn unknown(lib: Library, m: str, isbn: str, check_book: bool) -> result[void] {
+    if not has(lib.limit, m) {
+        return err("error: no member " + m);
+    }
+    if check_book and not has(lib.copies, isbn) {
+        return err("error: no book " + isbn);
+    }
+    return ok();
+}
+
+fn has_loan(lib: Library, m: str, isbn: str) -> bool {
+    return any(lib.loans[m], fn(l: Loan) -> bool {
+        return l.isbn == isbn;
+    });
+}
+
+fn refusal(lib: Library, m: str, isbn: str) -> result[void] {
+    if lib.owes[m] > 500 {
+        return err(m + " blocked: owes " + money(lib.owes[m]));
+    }
+    if has_loan(lib, m, isbn) {
+        return err(m + " already has " + isbn);
+    }
+    if len(lib.loans[m]) >= lib.limit[m] {
+        return err(m + " at limit");
+    }
+    return ok();
+}
+
+fn lend(lib: Library, m: str, isbn: str, day: int) {
+    push(lib.loans[m], new Loan { isbn: isbn, due: day + 14 });
+    set lib.shelf[isbn] = lib.shelf[isbn] - 1;
+}
+
+fn serve(lib: Library, isbn: str, day: int, out: list[str]) {
+    while lib.shelf[isbn] > 0 and len(lib.queue[isbn]) > 0 {
+        let q = lib.queue[isbn];
+        let m = q[0];
+        set lib.queue[isbn] = slice(q, 1, len(q));
+        match refusal(lib, m, isbn) {
+            case ok {
+                lend(lib, m, isbn, day);
+                push(out, isbn + " -> " + m + " (due " + str(day + 14) + ")");
+            }
+            case err(_) {
+                push(out, m + " skipped for " + isbn);
+            }
+        }
+    }
+}
+
+fn add_book(lib: Library, c: Command, out: list[str]) {
+    if not has(lib.copies, c.a) {
+        set lib.copies[c.a] = 0;
+        set lib.shelf[c.a] = 0;
+        set lib.queue[c.a] = new list[str];
+    }
+    set lib.copies[c.a] = lib.copies[c.a] + c.n;
+    set lib.shelf[c.a] = lib.shelf[c.a] + c.n;
+    push(out, "book " + c.a + ": " + str(lib.copies[c.a]) + " copies");
+    serve(lib, c.a, c.day, out);
+}
+
+fn add_member(lib: Library, c: Command, out: list[str]) {
+    if has(lib.limit, c.a) {
+        push(out, "error: member " + c.a + " exists");
+        return;
+    }
+    set lib.limit[c.a] = c.n;
+    set lib.owes[c.a] = 0;
+    set lib.loans[c.a] = new list[Loan];
+    push(out, "member " + c.a + " joined");
+}
+
+fn pay(lib: Library, c: Command) -> result[str] {
+    try unknown(lib, c.a, "", false);
+    if c.n > lib.owes[c.a] {
+        return err("error: " + c.a + " owes only " + money(lib.owes[c.a]));
+    }
+    set lib.owes[c.a] = lib.owes[c.a] - c.n;
+    return ok(c.a + " pays " + money(c.n) + ", owes " + money(lib.owes[c.a]));
+}
+
+fn borrow(lib: Library, c: Command) -> result[str] {
+    try unknown(lib, c.a, c.b, true);
+    try refusal(lib, c.a, c.b);
+    if lib.shelf[c.b] == 0 {
+        let q = lib.queue[c.b];
+        if any(q, fn(x: str) -> bool {
+            return x == c.a;
+        }) {
+            return ok(c.a + " already waiting for " + c.b);
+        }
+        push(q, c.a);
+        return ok(c.a + " waits for " + c.b + " (position " + str(len(q)) + ")");
+    }
+    lend(lib, c.a, c.b, c.day);
+    return ok(c.a + " borrows " + c.b + " (due " + str(c.day + 14) + ")");
+}
+
+fn give_back(lib: Library, c: Command) -> result[str] {
+    try unknown(lib, c.a, c.b, true);
+    if not has_loan(lib, c.a, c.b) {
+        return err("error: " + c.a + " does not have " + c.b);
+    }
+    let loans = lib.loans[c.a];
+    let loan = filter(loans, fn(l: Loan) -> bool {
+        return l.isbn == c.b;
+    })[0];
+    set lib.loans[c.a] = filter(loans, fn(l: Loan) -> bool {
+        return l.isbn != c.b;
+    });
+    set lib.shelf[c.b] = lib.shelf[c.b] + 1;
+    let late = c.day - loan.due;
+    if late > 0 {
+        let fine = min(late * 25, 1000);
+        set lib.owes[c.a] = lib.owes[c.a] + fine;
+        return ok(c.a + " returns " + c.b + " late " + str(late) + " days, fine " + money(fine));
+    }
+    return ok(c.a + " returns " + c.b);
+}
+
+fn run(lib: Library, c: Command, out: list[str]) {
+    if c.name == "book" {
+        add_book(lib, c, out);
+        return;
+    }
+    if c.name == "member" {
+        add_member(lib, c, out);
+        return;
+    }
+    var r: result[str] = err("");
+    if c.name == "pay" {
+        set r = pay(lib, c);
+    } else if c.name == "borrow" {
+        set r = borrow(lib, c);
+    } else {
+        set r = give_back(lib, c);
+    }
+    match r {
+        case ok(s) {
+            push(out, s);
+            if c.name == "return" {
+                serve(lib, c.b, c.day, out);
+            }
+        }
+        case err(e) {
+            push(out, e);
+        }
+    }
+}

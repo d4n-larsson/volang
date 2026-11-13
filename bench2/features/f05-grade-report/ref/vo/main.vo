@@ -1,0 +1,53 @@
+record Student {
+    name: str;
+    score: int;
+}
+
+fn yes_no(b: bool) -> str {
+    if b {
+        return "yes";
+    }
+    return "no";
+}
+
+fn main() -> result[void] uses console, input {
+    let students = new list[Student];
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                push(students, new Student { name: p[0], score: try parse_int(p[1]) });
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    let passed = map(filter(students, fn(s: Student) -> bool {
+        return s.score >= 50;
+    }), fn(s: Student) -> str {
+        return s.name;
+    });
+    let total = fold(students, 0, fn(acc: int, s: Student) -> int {
+        return acc + s.score;
+    });
+    print("count " + str(len(students)));
+    if len(passed) == 0 {
+        print("passed -");
+    } else {
+        print("passed " + join(passed, " "));
+    }
+    print("total " + str(total));
+    if len(students) == 0 {
+        print("average -");
+    } else {
+        print("average " + str(total / len(students)));
+    }
+    print("any_perfect " + yes_no(any(students, fn(s: Student) -> bool {
+        return s.score == 100;
+    })));
+    print("all_passed " + yes_no(all(students, fn(s: Student) -> bool {
+        return s.score >= 50;
+    })));
+    return ok();
+}

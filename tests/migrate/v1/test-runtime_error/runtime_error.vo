@@ -1,0 +1,11 @@
+fn divide(a: int, b: int) -> int {
+    return a / b;
+}
+
+test "divides by zero" {
+    expect_eq(divide(1, 0), 0);
+}
+
+test "after the error" {
+    expect_eq(divide(6, 3), 2);
+}

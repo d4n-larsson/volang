@@ -1,0 +1,15 @@
+== Kitchen ==
+exits: down west
+items: knife, bread
+== Cellar ==
+exits: up
+items: coin, anvil
+taken anvil
+taken coin (+10)
+== Kitchen ==
+exits: down west
+items: knife, bread
+bread is too heavy
+knife is too heavy
+you don't have knife
+you carry: anvil, coin

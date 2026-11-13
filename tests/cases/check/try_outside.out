@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0406","name":"try_outside_result_fn","severity":"error","file":"try_outside.vo","start":{"line":2,"col":13},"end":{"line":2,"col":31},"text":"try parse_int(\"1\")","message":"`try` can only be used in a function that returns a `result`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

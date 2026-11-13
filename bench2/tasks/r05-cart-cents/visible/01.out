@@ -1,0 +1,19 @@
+product A1 added
+product B2 added
+product C3 added
+cart A1 x3
+cart B2 x1
+cart C3 x10
+A1 x3 @ 1.50 = 4.50
+B2 x1 @ 12.00 = 12.00
+C3 x10 @ 0.05 = 0.50
+items 14, gross 17.00
+A1 x3 @ 1.50 = 4.50
+B2 x1 @ 12.00 = 12.00
+C3 x10 @ 0.05 = 0.50
+subtotal 17.00
+total 17.00
+A1 pen sold 3 net 4.50
+B2 book sold 1 net 12.00
+C3 mug sold 10 net 0.50
+sales 1 revenue 17.00 discounts 0.00

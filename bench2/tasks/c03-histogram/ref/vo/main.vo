@@ -1,0 +1,71 @@
+fn width() -> int uses env("TALLY_WIDTH") {
+    match env("TALLY_WIDTH") {
+        case ok(v) {
+            match parse_int(trim(v)) {
+                case ok(w) {
+                    if w > 0 {
+                        return w;
+                    }
+                }
+                case err(_) {
+                }
+            }
+        }
+        case err(_) {
+        }
+    }
+    return 20;
+}
+
+fn repeat(s: str, n: int) -> str {
+    let parts = new list[str];
+    for _ in 0..n {
+        push(parts, s);
+    }
+    return join(parts, "");
+}
+
+fn main() -> result[void] uses console, input, env("TALLY_WIDTH") {
+    let w = width();
+    let values = new map[str, int];
+    while true {
+        match read_line() {
+            case ok(line) {
+                if line == "" {
+                    continue;
+                }
+                let parts = split(line, " ");
+                let v = try parse_int(parts[1]);
+                if has(values, parts[0]) {
+                    set values[parts[0]] = values[parts[0]] + v;
+                } else {
+                    set values[parts[0]] = v;
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    if len(values) == 0 {
+        print("no data");
+        return ok();
+    }
+    var top = 0;
+    var pad = 0;
+    var total = 0;
+    for k in keys(values) {
+        set top = max(top, values[k]);
+        set pad = max(pad, len(k));
+        set total = total + values[k];
+    }
+    for k in keys(values) {
+        var n = 0;
+        if top > 0 {
+            set n = values[k] * w / top;
+        }
+        print(k + repeat(" ", pad - len(k)) + " |" + repeat("#", n) + " " + str(values[k]));
+    }
+    print("total " + str(total));
+    return ok();
+}

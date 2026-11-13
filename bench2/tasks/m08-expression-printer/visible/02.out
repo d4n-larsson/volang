@@ -1,0 +1,9 @@
+-7 / 2 => -3
+-7 % 2 => -1
+7 % -2 => 1
+--5 => 5
+-2 ^ 2 => -4
+(-2) ^ 2 => 4
+2 ^ -1 => error: negative exponent
+a + 1 => error: undefined a
+4 / (2 - 2) => error: division by zero

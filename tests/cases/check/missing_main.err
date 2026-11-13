@@ -1,0 +1,4 @@
+missing_main.vo:1:1: error[E0408]: `vo run` needs a `fn main()`.
+   1 | fn helper() -> int {
+     | ^
+1 error, 0 warnings

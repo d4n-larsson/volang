@@ -1,0 +1,24 @@
+type std added
+error: type std exists
+type lux added
+booked a: std 4 nights, total 320.00
+booked b: std 3 nights, total 240.00
+error: no std room free on day 4
+booked d: std 2 nights, total 160.00
+error: booking a exists
+error: unknown type villa
+error: bad dates
+error: bad dates
+error: bad command
+error: bad command
+error: bad command
+booked f: lux 1 nights, total 200.00
+error: no lux room free on day 1
+error: bad command
+error: bad command
+error: bad command
+error: unknown type villa
+error: unknown command checkout
+lux: 1 bookings, 1 nights, revenue 200.00
+std: 3 bookings, 9 nights, revenue 720.00
+total revenue 920.00

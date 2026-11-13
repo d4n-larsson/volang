@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"mixed_elements.vo","start":{"line":11,"col":18},"end":{"line":11,"col":21},"text":"\"a\"","message":"Expected `int`, found `str`.","expected":"int","found":"str","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

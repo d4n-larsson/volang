@@ -1,0 +1,28 @@
+fn count_lines(text: str) -> int {
+    if len(text) == 0 {
+        return 0;
+    }
+    let parts = split(text, "\n");
+    if slice(text, len(text) - 1, len(text)) == "\n" {
+        return len(parts) - 1;
+    }
+    return len(parts);
+}
+
+fn main() uses console, input, file.read("data/") {
+    match read_line() {
+        case ok(name) {
+            match read_file("data/" + name) {
+                case ok(t) {
+                    print(str(count_lines(t)));
+                }
+                case err(e) {
+                    print("missing");
+                }
+            }
+        }
+        case err(e) {
+            print("missing");
+        }
+    }
+}

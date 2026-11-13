@@ -1,0 +1,7 @@
+config units=kitchen rounding=down
+recipe m 1 a 1 ml b 5 ml c 15 ml d 240 ml e 1000 ml f 239 ml g 20 ml h 1200 g
+show m
+scale m 2
+recipe n 10 a 4 ml
+scale n 1
+shop m 1 n 1

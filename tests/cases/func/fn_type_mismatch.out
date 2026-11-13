@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"fn_type_mismatch.vo","start":{"line":2,"col":29},"end":{"line":4,"col":6},"text":"fn(s: str) -> int {\n        return len(s);\n    }","message":"Expected `fn(int) -> int`, found `fn(str) -> int`.","expected":"fn(int) -> int","found":"fn(str) -> int","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

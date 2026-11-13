@@ -1,0 +1,4 @@
+push str  lead
+pop str
+push int 0
+pop int

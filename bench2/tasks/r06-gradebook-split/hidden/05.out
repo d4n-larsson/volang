@@ -1,0 +1,80 @@
+assignment x added
+student s01 enrolled
+s01 x 1000/1000
+student s02 enrolled
+s02 x 970/1000
+student s03 enrolled
+s03 x 969/1000
+student s04 enrolled
+s04 x 930/1000
+student s05 enrolled
+s05 x 929/1000
+student s06 enrolled
+s06 x 900/1000
+student s07 enrolled
+s07 x 899/1000
+student s08 enrolled
+s08 x 870/1000
+student s09 enrolled
+s09 x 869/1000
+student s10 enrolled
+s10 x 830/1000
+student s11 enrolled
+s11 x 829/1000
+student s12 enrolled
+s12 x 800/1000
+student s13 enrolled
+s13 x 799/1000
+student s14 enrolled
+s14 x 770/1000
+student s15 enrolled
+s15 x 700/1000
+student s16 enrolled
+s16 x 699/1000
+student s17 enrolled
+s17 x 670/1000
+student s18 enrolled
+s18 x 630/1000
+student s19 enrolled
+s19 x 629/1000
+student s20 enrolled
+s20 x 600/1000
+student s21 enrolled
+s21 x 599/1000
+student s22 enrolled
+s22 x 0/1000
+1. s01 100.0 A+
+2. s02 97.0 A+
+3. s03 96.9 A
+4. s04 93.0 A
+5. s05 92.9 A-
+6. s06 90.0 A-
+7. s07 89.9 B+
+8. s08 87.0 B+
+9. s09 86.9 B
+10. s10 83.0 B
+11. s11 82.9 B-
+12. s12 80.0 B-
+13. s13 79.9 C+
+14. s14 77.0 C+
+15. s15 70.0 C-
+16. s16 69.9 D+
+17. s17 67.0 D+
+18. s18 63.0 D
+19. s19 62.9 D-
+20. s20 60.0 D-
+21. s21 59.9 F
+22. s22 0.0 F
+class average 76.8
+A+ 2 s01 s02
+A 2 s03 s04
+A- 2 s05 s06
+B+ 2 s07 s08
+B 2 s09 s10
+B- 2 s11 s12
+C+ 2 s13 s14
+C- 1 s15
+D+ 2 s16 s17
+D 1 s18
+D- 2 s19 s20
+F 2 s21 s22

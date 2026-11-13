@@ -1,0 +1,48 @@
+employee S1 added: salaried $1000.00
+employee S2 added: salaried $1000.01
+employee S3 added: salaried $3000.00
+employee S4 added: salaried $3000.01
+employee H1 added: hourly $0.01/h
+employee H2 added: hourly $0.03/h
+error: S1 is salaried
+H1 hours 0
+H2 hours 41
+payslip H1 Hal (hourly)
+  regular 0h $0.00
+  gross $0.00
+  tax $0.00
+  net $0.00
+payslip H2 Hob (hourly)
+  regular 40h $1.20
+  overtime 1h $0.04
+  gross $1.24
+  tax $0.12
+  net $1.12
+payslip S1 Sam (salaried)
+  salary $1000.00
+  gross $1000.00
+  tax $100.00
+  net $900.00
+payslip S2 Sue (salaried)
+  salary $1000.01
+  gross $1000.01
+  tax $100.00
+  net $900.01
+payslip S3 Sid (salaried)
+  salary $3000.00
+  gross $3000.00
+  tax $500.00
+  net $2500.00
+payslip S4 Sol (salaried)
+  salary $3000.01
+  gross $3000.01
+  tax $500.00
+  net $2500.01
+summary: 6 employees
+  H1 Hal gross $0.00 net $0.00
+  H2 Hob gross $1.24 net $1.12
+  S1 Sam gross $1000.00 net $900.00
+  S2 Sue gross $1000.01 net $900.01
+  S3 Sid gross $3000.00 net $2500.00
+  S4 Sol gross $3000.01 net $2500.01
+total gross $8001.26 tax $1200.12 deductions $0.00 net $6801.14

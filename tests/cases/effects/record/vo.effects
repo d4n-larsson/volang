@@ -1,0 +1,4 @@
+# vo effects record: update with `vo effects --update`
+main.vo:main uses console
+report.vo:save_report pure
+report.vo:write_report uses file.write("out/")

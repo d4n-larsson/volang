@@ -1,0 +1,32 @@
+config rounding=down units=kitchen
+recipe m added (8 ingredients)
+m (1 servings)
+  a 1 ml
+  b 1 tsp
+  c 1 tbsp
+  d 1 cup
+  e 4 cup 2 tbsp 2 tsp
+  f 15 tbsp 2 tsp 4 ml
+  g 1 tbsp 1 tsp
+  h 1.2 kg
+m for 2:
+  a 2 ml
+  b 2 tsp
+  c 2 tbsp
+  d 2 cup
+  e 8 cup 5 tbsp 1 tsp
+  f 1 cup 15 tbsp 2 tsp 3 ml
+  g 2 tbsp 2 tsp
+  h 2.4 kg
+recipe n added (1 ingredients)
+n for 1:
+  a 0 ml
+shopping list (2 recipes):
+  a 1 ml
+  b 1 tsp
+  c 1 tbsp
+  d 1 cup
+  e 4 cup 2 tbsp 2 tsp
+  f 15 tbsp 2 tsp 4 ml
+  g 1 tbsp 1 tsp
+  h 1.2 kg

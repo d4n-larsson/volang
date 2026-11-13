@@ -1,0 +1,37 @@
+record Meeting {
+    name: str;
+    start: int;
+    finish: int;
+}
+
+fn main() -> result[void] uses console, input {
+    let ms = new list[Meeting];
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                push(ms, new Meeting { name: p[0], start: try parse_int(p[1]), finish: try parse_int(p[2]) });
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    sort_by(ms, fn(m: Meeting) -> int {
+        return -m.start;
+    });
+    sort_by(ms, fn(m: Meeting) -> int {
+        return m.finish;
+    });
+    var taken = 0;
+    var last = 0;
+    for m in ms {
+        if taken == 0 or m.start >= last {
+            print(m.name);
+            set taken = taken + 1;
+            set last = m.finish;
+        }
+    }
+    print("total " + str(taken));
+    return ok();
+}

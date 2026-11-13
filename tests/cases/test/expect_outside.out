@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0410","name":"expect_outside_test","severity":"error","file":"expect_outside.vo","start":{"line":2,"col":5},"end":{"line":2,"col":17},"text":"expect(true)","message":"`expect` can only be used inside a `test` block.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"test","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -1,0 +1,5 @@
+new x 5 0
+next x
+next x
+reset x
+next x

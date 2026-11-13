@@ -1,0 +1,3 @@
+{"v":1,"kind":"test","name":"divides by zero","status":"error","file":"runtime_error.vo","start":{"line":5,"col":1},"uses":"","ms":0,"failure":{"file":"runtime_error.vo","start":{"line":2,"col":12},"end":{"line":2,"col":17},"message":"Division by zero.","code":"R0002"}}
+{"v":1,"kind":"test","name":"after the error","status":"pass","file":"runtime_error.vo","start":{"line":9,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":1,"failed":0,"errored":1,"timed_out":0}

@@ -1,0 +1,15 @@
+book A: 1 copies
+line 2: invalid
+member u joined
+error: member u exists
+u borrows A (due 20)
+u already has A
+error: no book B
+line 8: invalid
+error: no book B
+u returns A
+error: u does not have A
+members:
+u loans - owes 0.00
+books:
+A 1/1 queue -

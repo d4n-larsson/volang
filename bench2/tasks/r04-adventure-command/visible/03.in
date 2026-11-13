@@ -1,0 +1,9 @@
+go east
+go down
+take anvil
+take coin
+go up
+take bread
+take knife
+drop knife
+inventory

@@ -1,0 +1,9 @@
+new a 0 10
+alias b a
+alias c b
+next c
+next b
+next a
+new a 100 1
+next a
+next b

@@ -1,0 +1,15 @@
+fn main() {
+    let s = "héllo, world";
+    print(s + "!");
+    print(str(len(s)));
+    print(slice(s, 0, 6));
+    print(str(find(s, "world")));
+    print(str(find(s, "xyz")));
+    let parts = split("a,b,,c", ",");
+    print(str(len(parts)));
+    print(join(parts, "|"));
+    print("[" + trim("  pad \t") + "]");
+    let cs = chars("aé!");
+    print(str(len(cs)));
+    print(cs[1]);
+}

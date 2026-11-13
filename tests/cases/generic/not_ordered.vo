@@ -1,0 +1,15 @@
+record P {
+    x: int;
+}
+
+fn bigger[T: ordered](a: T, b: T) -> T {
+    if a > b {
+        return a;
+    }
+    return b;
+}
+
+fn main() uses console {
+    let p = bigger(new P { x: 1 }, new P { x: 2 });
+    print(str(p.x));
+}

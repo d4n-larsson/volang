@@ -1,0 +1,24 @@
+assignment h1 15 9
+assignment h2 15 9
+assignment ex 70 30
+enroll p
+enroll q
+enroll r
+enroll s
+score p h1 7
+score p h2 8
+score p ex 27
+score q h1 9
+score q ex 26
+score r h2 6
+score r ex 19
+score s h1 2
+score s h2 9
+score s ex 28
+card p
+card q
+card r
+card s
+report
+distribution
+stats ex

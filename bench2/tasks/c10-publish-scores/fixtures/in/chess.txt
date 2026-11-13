@@ -1,0 +1,5 @@
+ana 50
+bo 70
+cy 50
+ana 90
+dee 10

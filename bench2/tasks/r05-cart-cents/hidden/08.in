@@ -1,0 +1,17 @@
+product M milk 1.19
+product E egg 0.33
+promo M 1
+promo E 5
+bulk E 12 20
+coupon FREE 100
+add M 5
+add E 13
+cart
+checkout
+add E 12
+use FREE
+checkout
+add M 1
+use FREE
+checkout
+report

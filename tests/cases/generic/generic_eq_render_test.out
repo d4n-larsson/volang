@@ -1,0 +1,5 @@
+FAIL pairs render (0ms)
+  generic_eq_render.vo:17:5: `expect_eq` failed: the values differ.
+    expected: new Pair[int, str] { first: 2, second: "x" }
+    actual:   new Pair[int, str] { first: 1, second: "x" }
+0 passed, 1 failed

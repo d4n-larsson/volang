@@ -1,0 +1,66 @@
+record Entry {
+    word: str;
+    count: int;
+}
+
+fn lower_letter(c: str) -> str {
+    let lower = "abcdefghijklmnopqrstuvwxyz";
+    let upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    if find(lower, c) >= 0 {
+        return c;
+    }
+    let i = find(upper, c);
+    if i >= 0 {
+        return slice(lower, i, i + 1);
+    }
+    return "";
+}
+
+fn before(a: Entry, b: Entry) -> bool {
+    if a.count != b.count {
+        return a.count > b.count;
+    }
+    return a.word < b.word;
+}
+
+fn add(counts: map[str, int], w: str) {
+    if w == "" {
+        return;
+    }
+    if has(counts, w) {
+        set counts[w] = counts[w] + 1;
+    } else {
+        set counts[w] = 1;
+    }
+}
+
+fn main() {
+    let counts = new map[str, int];
+    var cur = "";
+    for c in chars(read_all()) {
+        let l = lower_letter(c);
+        if l == "" {
+            add(counts, cur);
+            set cur = "";
+        } else {
+            set cur = cur + l;
+        }
+    }
+    add(counts, cur);
+    let entries = new list[Entry];
+    for w in keys(counts) {
+        push(entries, new Entry { word: w, count: counts[w] });
+    }
+    for i in 1..len(entries) {
+        var j = i;
+        while j > 0 and before(entries[j], entries[j - 1]) {
+            let tmp = entries[j];
+            set entries[j] = entries[j - 1];
+            set entries[j - 1] = tmp;
+            set j = j - 1;
+        }
+    }
+    for e in entries {
+        print(e.word + " " + str(e.count));
+    }
+}

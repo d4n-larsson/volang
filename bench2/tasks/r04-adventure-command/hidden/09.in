@@ -1,0 +1,19 @@
+go south
+take statue
+go north
+go north
+go up
+take crown
+drop statue
+take crown
+look
+go down
+go south
+go south
+look
+go north
+go north
+go up
+take statue
+score
+quit

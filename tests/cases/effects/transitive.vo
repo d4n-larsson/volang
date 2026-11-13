@@ -1,0 +1,12 @@
+fn save(text: str) -> result[void] uses file.write {
+    return write_file("out.txt", text);
+}
+
+fn report() -> result[void] {
+    return save("done");
+}
+
+fn main() -> result[void] uses file.write {
+    try report();
+    return ok();
+}

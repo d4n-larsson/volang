@@ -1,0 +1,10 @@
+employee E1 Elle hourly 2005 EUR
+employee J1 Jun salaried 99 JPY
+rate E1 2105
+rate J1 105
+deduct E1 1 pen
+deduct J1 1 pen
+hours E1 1
+hours J1 1
+payslip J1
+summary

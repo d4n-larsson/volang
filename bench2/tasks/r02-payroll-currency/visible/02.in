@@ -1,0 +1,9 @@
+employee A7 Dana salaried 120000
+employee A7 Eve hourly 1000
+hours A7 10
+deduct A7 2500 parking
+rate A7 125000
+payslip A7
+payslip B1
+summary
+bonus A7 100

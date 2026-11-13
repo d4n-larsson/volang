@@ -1,0 +1,7 @@
+config rounding=down
+recipe s 3 salt 2 g oil 2 ml egg 2 pcs flour 2999 g
+scale s 1
+scale s 2
+scale s 4
+shop s 1 s 1 s 1
+show s

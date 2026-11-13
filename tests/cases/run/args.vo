@@ -1,0 +1,5 @@
+fn main() uses console {
+    let a = args();
+    print(str(len(a)));
+    print(join(a, "+"));
+}

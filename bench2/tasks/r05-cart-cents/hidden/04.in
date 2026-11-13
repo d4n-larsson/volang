@@ -1,0 +1,11 @@
+cart
+checkout
+use X
+add X 1
+product X ball 0
+product X ball 1
+add X 1
+remove X 1
+checkout
+add Y 2
+price Y 1

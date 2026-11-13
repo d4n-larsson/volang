@@ -1,0 +1,14 @@
+fn two_digits(n: int) -> str {
+    var s = str(n);
+    if len(s) < 2 {
+        set s = "0" + s;
+    }
+    return s;
+}
+
+fn format_money(cents: int) -> str {
+    if cents < 0 {
+        return "-" + format_money(-cents);
+    }
+    return "$" + str(cents / 100) + "." + two_digits(cents % 100);
+}

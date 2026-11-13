@@ -1,0 +1,12 @@
+type double added
+booked b1: double 3 nights, total 360.00
+error: no double room free on day 12
+cancelled b1: refund 360.00
+booked b2: double 2 nights, total 240.00
+invoice b1 for ann
+  double 3 nights x 120.00 = 360.00
+  total 360.00
+  cancelled on day 3, refund 360.00
+  net 0.00
+double: 1 bookings (1 cancelled), 2 nights, revenue 240.00
+total revenue 240.00, refunds 360.00

@@ -1,0 +1,2 @@
+added store.vo:persist_total
+removed store.vo:save_total

@@ -1,0 +1,9 @@
+[a]
+x = 1
+x = 2
+[b]
+url = http://h/?q=1
+  # note
+[a]
+y=  spaced value  
+empty =

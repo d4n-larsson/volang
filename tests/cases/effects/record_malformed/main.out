@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0510","name":"invalid_effects_record","severity":"error","file":"vo.effects","start":{"line":2,"col":1},"end":{"line":2,"col":26},"text":"main.vo:main uses consoel","message":"This line of vo.effects cannot be read: write `<path>:<name> uses <effects>` or `<path>:<name> pure`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

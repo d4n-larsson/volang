@@ -1,0 +1,26 @@
+variant Shape {
+    circle(float);
+    square(float);
+    empty;
+}
+
+fn area(s: Shape) -> float {
+    match s {
+        case circle(r) {
+            return 3.0 * r * r;
+        }
+        case square(w) {
+            return w * w;
+        }
+        case empty {
+            return 0.0;
+        }
+    }
+}
+
+fn main() uses console {
+    let shapes = [Shape.circle(1.0), Shape.square(2.0), Shape.empty];
+    for s in shapes {
+        print(str(area(s)));
+    }
+}

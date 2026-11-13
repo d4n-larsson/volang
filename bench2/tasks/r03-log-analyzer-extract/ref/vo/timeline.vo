@@ -1,0 +1,57 @@
+import logline.entries;
+import logline.to_seconds;
+
+fn busiest(lines: list[str]) -> list[str] {
+    let found = entries(lines);
+    if len(found) == 0 {
+        return ["no entries"];
+    }
+    let per_hour = new list[int];
+    for _ in 0..24 {
+        push(per_hour, 0);
+    }
+    for e in found {
+        set per_hour[e.hour] = per_hour[e.hour] + 1;
+    }
+    var best = 0;
+    for h in 0..24 {
+        if per_hour[h] > per_hour[best] {
+            set best = h;
+        }
+    }
+    var label = str(best);
+    if len(label) < 2 {
+        set label = "0" + label;
+    }
+    return ["busiest hour " + label + " with " + str(per_hour[best]) + " entries"];
+}
+
+fn in_range(lines: list[str], args: list[str]) -> list[str] {
+    let lo = to_seconds(args[0], args[1]);
+    let hi = to_seconds(args[2], args[3]);
+    if lo < 0 or hi < 0 {
+        return ["error: bad time"];
+    }
+    let out = new list[str];
+    for e in entries(lines) {
+        if lo <= e.seconds and e.seconds <= hi {
+            push(out, e.text);
+        }
+    }
+    push(out, str(len(out)) + " entries in range");
+    return out;
+}
+
+fn span(lines: list[str]) -> list[str] {
+    let found = entries(lines);
+    if len(found) == 0 {
+        return ["no entries"];
+    }
+    var first = found[0].seconds;
+    var last = found[0].seconds;
+    for e in found {
+        set first = min(first, e.seconds);
+        set last = max(last, e.seconds);
+    }
+    return ["span " + str(last - first) + " seconds"];
+}

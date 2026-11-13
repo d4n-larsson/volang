@@ -1,0 +1,276 @@
+book b0: 2 copies
+book b1: 1 copies
+book b2: 2 copies
+book b3: 1 copies
+member m0 joined
+member m1 joined
+member m2 joined
+member m3 joined
+member m4 joined
+member m5 joined
+m0 borrows b3 (due 20)
+m0 already has b3
+error: m0 does not have b1
+error: m4 owes only 0.00
+error: m1 does not have b2
+m0 at limit
+error: m1 does not have b0
+error: m1 does not have b2
+error: m0 does not have b0
+m5 waits for b3 (position 1)
+error: m3 does not have b2
+m1 borrows b1 (due 46)
+error: m4 does not have b3
+error: m2 does not have b0
+error: m1 does not have b2
+error: m3 owes only 0.00
+error: m2 does not have b2
+error: m4 does not have b3
+error: m2 does not have b3
+m5 borrows b2 (due 53)
+book b2: 3 copies
+error: m2 owes only 0.00
+error: m3 does not have b0
+m1 returns b1
+m3 borrows b0 (due 62)
+m4 borrows b2 (due 62)
+m4 returns b2
+book b3: 2 copies
+m5 skipped for b3
+m1 borrows b1 (due 64)
+m0 returns b3 late 30 days, fine 7.50
+m2 borrows b0 (due 69)
+m2 at limit
+error: m4 does not have b0
+error: m5 owes only 0.00
+m5 at limit
+m1 borrows b3 (due 73)
+m4 waits for b0 (position 1)
+m1 waits for b0 (position 2)
+error: m0 does not have b1
+m5 already has b2
+m3 returns b0 late 4 days, fine 1.00
+b0 -> m4 (due 80)
+error: m3 does not have b3
+m1 already waiting for b0
+error: m3 does not have b1
+m4 borrows b2 (due 88)
+error: m0 does not have b2
+error: m2 does not have b2
+m1 borrows b2 (due 88)
+m1 returns b1 late 10 days, fine 2.50
+error: m1 does not have b1
+error: m5 does not have b0
+error: m3 does not have b2
+error: m2 does not have b3
+book b0: 3 copies
+b0 -> m1 (due 96)
+m3 borrows b1 (due 96)
+m4 already has b0
+error: m2 owes only 0.00
+error: m5 owes only 0.00
+m2 returns b0 late 18 days, fine 4.50
+error: m5 does not have b0
+m1 already has b0
+m3 returns b1
+error: m3 does not have b2
+m1 returns b0
+error: m5 does not have b0
+m1 returns b3 late 26 days, fine 6.50
+error: m1 does not have b0
+m4 borrows b1 (due 114)
+m4 at limit
+m5 already has b2
+error: m4 does not have b3
+m1 blocked: owes 9.00
+m4 returns b0 late 34 days, fine 8.50
+m3 borrows b0 (due 128)
+m5 at limit
+m0 pays 1.35, owes 6.15
+error: m4 does not have b3
+m0 blocked: owes 6.15
+m4 returns b1 late 11 days, fine 2.75
+error: m4 does not have b3
+error: m5 owes only 0.00
+m0 blocked: owes 6.15
+m5 at limit
+m5 already has b2
+m1 pays 1.32, owes 7.68
+book b0: 4 copies
+m1 pays 1.90, owes 5.78
+book b2: 4 copies
+m2 borrows b0 (due 157)
+m4 blocked: owes 11.25
+error: m3 does not have b2
+error: m4 does not have b0
+book b0: 5 copies
+m0 blocked: owes 6.15
+error: m3 does not have b2
+m4 blocked: owes 11.25
+m0 blocked: owes 6.15
+error: m2 owes only 4.50
+m1 blocked: owes 5.78
+error: m3 owes only 1.00
+m2 pays 0.67, owes 3.83
+m1 pays 0.23, owes 5.55
+error: m5 owes only 0.00
+m4 blocked: owes 11.25
+m0 blocked: owes 6.15
+m5 at limit
+m3 returns b0 late 39 days, fine 9.75
+error: m4 does not have b3
+m1 blocked: owes 5.55
+m5 at limit
+book b1: 2 copies
+m5 already has b2
+m0 blocked: owes 6.15
+error: m2 does not have b1
+m1 blocked: owes 5.55
+m2 at limit
+book b2: 5 copies
+m2 at limit
+m2 at limit
+error: m4 does not have b1
+error: m0 does not have b0
+error: m1 does not have b3
+m0 blocked: owes 6.15
+error: m0 does not have b1
+m2 at limit
+m4 blocked: owes 11.25
+error: m5 does not have b3
+m4 blocked: owes 11.25
+error: m5 does not have b1
+m1 blocked: owes 5.55
+m3 blocked: owes 10.75
+error: m5 does not have b1
+m3 blocked: owes 10.75
+m0 pays 5.94, owes 0.21
+m0 borrows b2 (due 233)
+error: m1 does not have b1
+error: m3 does not have b0
+error: m2 owes only 3.83
+m1 blocked: owes 5.55
+m5 returns b2 late 171 days, fine 10.00
+error: m0 does not have b3
+error: m5 does not have b0
+error: m2 does not have b2
+error: m0 does not have b1
+book b0: 6 copies
+error: m4 does not have b3
+m1 blocked: owes 5.55
+m5 blocked: owes 10.00
+m5 blocked: owes 10.00
+error: m1 does not have b3
+m1 blocked: owes 5.55
+error: m3 does not have b2
+m3 blocked: owes 10.75
+m0 returns b2 late 11 days, fine 2.75
+error: m0 does not have b1
+m2 pays 2.08, owes 1.75
+m4 blocked: owes 11.25
+error: m2 owes only 1.75
+error: m2 does not have b1
+book b2: 6 copies
+error: m3 does not have b0
+m4 pays 5.10, owes 6.15
+m3 pays 4.96, owes 5.79
+error: m2 does not have b3
+m4 pays 1.60, owes 4.55
+m2 at limit
+m1 blocked: owes 5.55
+error: m3 does not have b0
+error: m0 does not have b1
+m3 pays 3.42, owes 2.37
+m4 borrows b1 (due 276)
+m2 already has b0
+m2 at limit
+error: m3 does not have b3
+error: m1 does not have b3
+m0 borrows b3 (due 280)
+error: m2 does not have b1
+error: m1 does not have b0
+error: m3 owes only 2.37
+book b1: 3 copies
+m3 borrows b3 (due 289)
+m4 waits for b3 (position 1)
+m0 at limit
+m5 blocked: owes 10.00
+m0 at limit
+m0 at limit
+error: m4 does not have b3
+m2 at limit
+m4 borrows b0 (due 295)
+error: m3 does not have b2
+error: m1 does not have b3
+m1 blocked: owes 5.55
+m2 returns b0 late 132 days, fine 10.00
+m5 blocked: owes 10.00
+m5 blocked: owes 10.00
+m0 at limit
+m3 borrows b1 (due 306)
+error: m5 does not have b0
+m1 returns b2 late 204 days, fine 10.00
+m1 blocked: owes 15.55
+m4 at limit
+m1 blocked: owes 15.55
+error: m0 owes only 2.96
+m4 already has b1
+m0 at limit
+m5 blocked: owes 10.00
+book b2: 7 copies
+m4 at limit
+m5 blocked: owes 10.00
+book b1: 4 copies
+m2 blocked: owes 11.75
+m0 at limit
+m2 blocked: owes 11.75
+m3 already has b1
+m3 returns b1 late 3 days, fine 0.75
+m3 borrows b0 (due 324)
+m5 blocked: owes 10.00
+m3 already has b0
+m5 blocked: owes 10.00
+m2 blocked: owes 11.75
+m5 blocked: owes 10.00
+m5 blocked: owes 10.00
+m0 returns b3 late 43 days, fine 10.00
+m4 skipped for b3
+book b2: 8 copies
+error: m1 does not have b3
+m5 blocked: owes 10.00
+error: m2 does not have b2
+m4 already has b0
+m1 blocked: owes 15.55
+m0 blocked: owes 12.96
+error: m1 does not have b3
+book b0: 7 copies
+m3 already has b3
+m3 already has b3
+m1 pays 6.37, owes 9.18
+m2 blocked: owes 11.75
+error: m1 does not have b3
+m1 blocked: owes 9.18
+m4 pays 2.08, owes 2.47
+m1 blocked: owes 9.18
+error: m0 does not have b0
+error: m1 does not have b3
+m2 blocked: owes 11.75
+m4 already has b1
+m1 blocked: owes 9.18
+m5 blocked: owes 10.00
+error: m5 does not have b2
+m2 blocked: owes 11.75
+m2 blocked: owes 11.75
+error: m1 does not have b0
+members:
+m0 loans - owes 12.96
+m1 loans - owes 9.18
+m2 loans - owes 11.75
+m3 loans b0,b3 owes 3.12
+m4 loans b0,b1,b2 owes 2.47
+m5 loans - owes 10.00
+books:
+b0 5/7 queue -
+b1 3/4 queue -
+b2 7/8 queue -
+b3 1/2 queue -

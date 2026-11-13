@@ -1,0 +1,5 @@
+2024-02-28 23:59:30 INFO cron: nightly job
+2024-03-01 00:00:15 INFO cron: nightly job done
+---
+span
+range 2024-02-29 00:00:00 2024-03-01 00:00:14

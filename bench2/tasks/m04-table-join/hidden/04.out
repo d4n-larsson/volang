@@ -1,0 +1,8 @@
+k  | v | w
+---+---+--
+k1 | a | X
+k1 | a | Y
+k1 | c | X
+k1 | c | Y
+k4 |   | Z
+rows: 5, skipped: 4

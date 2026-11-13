@@ -1,0 +1,16 @@
+added s1 in studio 06:30-07:15
+added s2 in studio 21:00-22:00
+added s3 in studio 12:00-12:30
+error: empty interval
+free studio 09:00-17:00:
+  09:00-12:00 (180 min)
+  12:30-17:00 (270 min)
+free studio 06:00-23:00:
+  07:15-12:00 (285 min)
+  12:30-21:00 (510 min)
+free studio 06:00-06:30:
+  06:00-06:30 (30 min)
+error: bad time 9:5
+error: bad time 25:00
+free studio 06:00-07:00:
+  06:00-06:30 (30 min)

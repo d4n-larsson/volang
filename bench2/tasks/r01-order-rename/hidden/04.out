@@ -1,0 +1,16 @@
+product A added
+product B added
+order o1 placed: 2 units, total 95.00 (discount 5.00)
+product B price 0.01
+order o1 (active)
+  B x2 @ 50.00
+  total 95.00
+order o1 cancelled
+error: order o1 already cancelled
+order o1 (cancelled)
+  B x2 @ 50.00
+  total 95.00
+error: order o1 exists
+product A pen price 1.00 stock 2 sold 0
+product B ink price 0.01 stock 4 sold 0
+revenue 0.00 over 0 orders

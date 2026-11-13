@@ -1,0 +1,8 @@
+set h4a -12
+add h4a 0
+add h4a 12
+get h4a
+set h4b 1-2
+add h4b 1
+set h4c --3
+add h4c 1

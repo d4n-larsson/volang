@@ -1,0 +1,19 @@
+employee E1 added: hourly 20.05 EUR/h
+employee J1 added: salaried JPY 99
+E1 rate 21.05 EUR/h
+J1 salary JPY 105
+E1 deduction pen 0.01 EUR
+J1 deduction pen JPY 1
+E1 hours 1
+error: J1 is salaried
+payslip J1 Jun (salaried)
+  salary JPY 105
+  gross JPY 105
+  tax JPY 10
+  deduction pen JPY 1
+  net JPY 94
+summary: 2 employees
+  E1 Elle gross 21.05 EUR net 18.94 EUR
+  J1 Jun gross JPY 105 net JPY 94
+total gross 21.05 EUR tax 2.10 EUR deductions 0.01 EUR net 18.94 EUR
+total gross JPY 105 tax JPY 10 deductions JPY 1 net JPY 94

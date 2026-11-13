@@ -1,0 +1,72 @@
+import lib.helper;
+
+record Point {
+    x: int;
+    y: int;
+}
+
+variant Shape {
+    circle(float);
+    empty;
+}
+
+fn area(s: Shape) -> float {
+    match s {
+        case circle(r) {
+            return 3.0 * r * r;
+        }
+        case empty {
+            return 0.0;
+        }
+    }
+}
+
+fn parse(text: str) -> result[int] {
+    let n = try parse_int(text);
+    if n < 0 {
+        return err("negative");
+    } else if n == 0 {
+        return ok(0);
+    } else {
+        return ok(n);
+    }
+}
+
+fn main() -> result[void] {
+    let xs = [1, 2, 3];
+    var total = 0;
+    for x in xs {
+        set total = total + x;
+    }
+    for i in 0..3 {
+        if i == 1 {
+            continue;
+        }
+        while false {
+            break;
+        }
+    }
+    let m = new map[str, int];
+    set m["a"] = -(1 + 2);
+    let p = new Point { x: 1, y: 2 };
+    set p.x = p.y * (2 + 3) % 4;
+    let q = new list[str];
+    push(q, "a\tb\n");
+    let _ = len(q);
+    let flag = not (total > 3 and true) or false;
+    print(str(flag) + str(area(Shape.circle(1.5))) + str(area(Shape.empty)));
+    try write_file("x.txt", "y");
+    match parse("4") {
+        case ok(_) {
+            print("ok");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    return ok();
+}
+
+test "point" {
+    expect_eq(new Point { x: 1, y: 2 }.x, 1);
+}

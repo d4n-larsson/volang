@@ -1,0 +1,13 @@
+fn main() uses console {
+    match parse_int("1") {
+        case ok(v) {
+            print(str(v));
+        }
+        case ok(w) {
+            print(str(w));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

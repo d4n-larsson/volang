@@ -1,0 +1,10 @@
+add s1 studio 6:30 7:15
+add s2 studio 9:00pm 10:00pm
+add s3 studio 12:00 12:30pm
+free studio 5:00pm 9:00 10
+free studio 9:00 5:00pm 60
+free studio 6:00 11:00pm 90
+free studio 6:00am 6:30 1
+free studio 9:5 10:00 1
+free studio 10:00 25:00 1
+free studio 6:00 7:00 15

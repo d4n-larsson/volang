@@ -1,0 +1,29 @@
+
+product A pen
+product A pen 3 4
+product
+add A
+add A 0
+add A x1
+add A 1 2
+remove A 0
+promo A 0
+promo A
+bulk A 0 5
+bulk A 2 0
+bulk A 2 101
+bulk A 2
+coupon X 0
+coupon X 101
+coupon X
+use
+use A B
+cart now
+checkout 1
+report x
+price A
+frobnicate 1
+ADD A 1
+
+   
+checkout

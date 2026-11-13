@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0402","name":"duplicate_case","severity":"error","file":"duplicate_case.vo","start":{"line":6,"col":14},"end":{"line":6,"col":16},"text":"ok","message":"Case `ok` is handled twice.","fixes":[{"file":"duplicate_case.vo","start":{"line":6,"col":9},"end":{"line":8,"col":10},"replacement":""}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

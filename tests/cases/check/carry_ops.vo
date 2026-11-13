@@ -1,0 +1,6 @@
+fn main() uses console {
+    let a = true;
+    if a && !false || a {
+        print('hi');
+    }
+}

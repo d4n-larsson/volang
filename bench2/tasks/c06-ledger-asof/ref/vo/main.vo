@@ -1,0 +1,64 @@
+record Entry {
+    date: str;
+    amount: int;
+    desc: str;
+}
+
+fn statement(name: str, asof: str) -> result[int] uses console, file.read("ledger/") {
+    print("== " + name);
+    match read_file("ledger/" + name + ".txt") {
+        case ok(text) {
+            var total = 0;
+            let shown = new list[Entry];
+            for line in split(text, "\n") {
+                if line == "" {
+                    continue;
+                }
+                set total = total + 1;
+                let f = split(line, " ");
+                if f[0] <= asof {
+                    let desc = join(slice(f, 2, len(f)), " ");
+                    push(shown, new Entry { date: f[0], amount: try parse_int(f[1]), desc: desc });
+                }
+            }
+            sort_by(shown, fn(e: Entry) -> str {
+                return e.date;
+            });
+            var balance = 0;
+            for e in shown {
+                set balance = balance + e.amount;
+                var sign = "";
+                if e.amount >= 0 {
+                    set sign = "+";
+                }
+                print(e.date + " " + sign + str(e.amount) + " " + e.desc);
+            }
+            print("balance " + str(balance) + " (" + str(len(shown)) + " entries, " + str(total - len(shown)) + " later)");
+            return ok(balance);
+        }
+        case err(_) {
+            print("no ledger");
+            return ok(0);
+        }
+    }
+}
+
+fn main() -> result[void] uses console, input, file.read("ledger/") {
+    let asof = try read_line();
+    print("Statement as of " + asof);
+    var grand = 0;
+    while true {
+        match read_line() {
+            case ok(name) {
+                if name != "" {
+                    set grand = grand + try statement(name, asof);
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    print("grand total " + str(grand));
+    return ok();
+}

@@ -1,0 +1,70 @@
+record Task {
+    id: int;
+    prio: int;
+    text: str;
+    done: bool;
+    done_seq: int;
+    tags: list[str];
+    deleted: bool;
+}
+
+record Store {
+    tasks: map[str, Task];
+    next_id: int;
+    seq: int;
+}
+
+fn new_store() -> Store {
+    return new Store { tasks: new map[str, Task], next_id: 1, seq: 0 };
+}
+
+fn add(s: Store, prio: int, text: str) -> int {
+    let t = new Task { id: s.next_id, prio: prio, text: text, done: false, done_seq: 0, tags: new list[str], deleted: false };
+    set s.tasks[str(t.id)] = t;
+    set s.next_id = s.next_id + 1;
+    return t.id;
+}
+
+fn set_done(s: Store, t: Task, done: bool) -> bool {
+    if t.done == done {
+        return false;
+    }
+    set t.done = done;
+    if done {
+        set s.seq = s.seq + 1;
+        set t.done_seq = s.seq;
+    }
+    return true;
+}
+
+fn delete(t: Task) {
+    # A flag instead of remove(): see the map bug note in the benchmark report.
+    set t.deleted = true;
+}
+
+fn exists(s: Store, id: str) -> bool {
+    return has(s.tasks, id) and not s.tasks[id].deleted;
+}
+
+fn add_tag(t: Task, tag: str) -> bool {
+    if any(t.tags, fn(g: str) -> bool {
+        return g == tag;
+    }) {
+        return false;
+    }
+    push(t.tags, tag);
+    return true;
+}
+
+fn all_tasks(s: Store) -> list[Task] {
+    let out = new list[Task];
+    for k in keys(s.tasks) {
+        if not s.tasks[k].deleted {
+            push(out, s.tasks[k]);
+        }
+    }
+    sort_by(out, fn(t: Task) -> int {
+        return t.id;
+    });
+    return out;
+}

@@ -1,0 +1,12 @@
+record Stack[T] {
+    items: list[T];
+}
+
+fn push_item[T](s: Stack[T], x: T) {
+    push(s.items, x);
+}
+
+fn main() {
+    let s = new Stack[int] { items: new list[int] };
+    push_item(s, "a");
+}

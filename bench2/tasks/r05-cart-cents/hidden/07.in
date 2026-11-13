@@ -1,0 +1,17 @@
+product P pie 3.40
+product Q quiche 7.25
+coupon TEN 10
+add P 2
+use TEN
+price P 3.60
+cart
+checkout
+add P 1
+checkout
+add Q 4
+add P 1
+remove Q 1
+use TEN
+coupon TEN 25
+checkout
+report

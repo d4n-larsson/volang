@@ -1,0 +1,58 @@
+import recipes.Recipe;
+import recipes.ingredient_line;
+import config.Config;
+
+record Order {
+    name: str;
+    wanted: int;
+}
+
+# qty for `servings` people, scaled to `wanted` people; `nearest` breaks ties to the even number.
+fn scale_qty(qty: int, servings: int, wanted: int, rounding: str) -> int {
+    let exact = qty * wanted;
+    let q = exact / servings;
+    let r = exact % servings;
+    if r == 0 or rounding == "down" {
+        return q;
+    }
+    if rounding == "up" {
+        return q + 1;
+    }
+    if 2 * r > servings or (2 * r == servings and q % 2 == 1) {
+        return q + 1;
+    }
+    return q;
+}
+
+fn scale_lines(recipe: Recipe, wanted: int, cfg: Config) -> list[str] {
+    let out = [recipe.name + " for " + str(wanted) + ":"];
+    for ing in recipe.ingredients {
+        push(out, ingredient_line(ing.item, scale_qty(ing.qty, recipe.servings, wanted, cfg.rounding), ing.unit, cfg));
+    }
+    return out;
+}
+
+# Sums the scaled quantities per item and unit.
+fn shopping_list(recipes: map[str, Recipe], orders: list[Order], cfg: Config) -> list[str] {
+    let totals = new map[str, int];
+    for o in orders {
+        let r = recipes[o.name];
+        for ing in r.ingredients {
+            let key = ing.item + " " + ing.unit;
+            let q = scale_qty(ing.qty, r.servings, o.wanted, cfg.rounding);
+            if has(totals, key) {
+                set totals[key] = totals[key] + q;
+            } else {
+                set totals[key] = q;
+            }
+        }
+    }
+    let out = ["shopping list (" + str(len(orders)) + " recipes):"];
+    let sorted_keys = keys(totals);
+    sort(sorted_keys);
+    for key in sorted_keys {
+        let parts = split(key, " ");
+        push(out, ingredient_line(parts[0], totals[key], parts[1], cfg));
+    }
+    return out;
+}

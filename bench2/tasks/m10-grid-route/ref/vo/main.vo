@@ -1,0 +1,38 @@
+import grid.parse;
+import render.draw;
+import search.leg;
+
+fn main() uses console, input {
+    match parse(read_all()) {
+        case ok(g) {
+            var total = 0;
+            let moves = new list[str];
+            let cells = new list[int];
+            for i in 0..len(g.stops) - 1 {
+                match leg(g, g.stops[i], g.stops[i + 1]) {
+                    case ok(l) {
+                        set total = total + l.cost;
+                        for m in l.moves {
+                            push(moves, m);
+                        }
+                        for c in l.cells {
+                            push(cells, c);
+                        }
+                    }
+                    case err(e) {
+                        print(e);
+                        return;
+                    }
+                }
+            }
+            print("cost " + str(total));
+            print("moves " + join(moves, ""));
+            for row in draw(g, cells) {
+                print(row);
+            }
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

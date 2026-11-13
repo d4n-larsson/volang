@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0208","name":"assign_to_immutable","severity":"error","file":"let_to_var.vo","start":{"line":4,"col":13},"end":{"line":4,"col":18},"text":"count","message":"`count` is declared with `let` and cannot be changed. Declare it with `var`.","fixes":[{"file":"let_to_var.vo","start":{"line":2,"col":5},"end":{"line":2,"col":8},"replacement":"var"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

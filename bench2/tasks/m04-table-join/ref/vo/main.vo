@@ -1,0 +1,64 @@
+import csvline.parse;
+import join.index_of;
+import join.join_tables;
+import layout.render;
+
+record Table {
+    header: list[str];
+    rows: list[list[str]];
+    skipped: int;
+}
+
+fn table(lines: list[str]) -> Table {
+    let ls = filter(lines, fn(l: str) -> bool {
+        return l != "";
+    });
+    var header = new list[str];
+    match parse(ls[0]) {
+        case ok(h) {
+            set header = h;
+        }
+        case err(_) {
+        }
+    }
+    let t = new Table { header: header, rows: new list[list[str]], skipped: 0 };
+    for l in slice(ls, 1, len(ls)) {
+        match parse(l) {
+            case ok(f) {
+                if len(f) == len(header) {
+                    push(t.rows, f);
+                } else {
+                    set t.skipped = t.skipped + 1;
+                }
+            }
+            case err(_) {
+                set t.skipped = t.skipped + 1;
+            }
+        }
+    }
+    return t;
+}
+
+fn main() uses console, input {
+    let lines = split(read_all(), "\n");
+    let first = lines[0];
+    let sp = find(first, " ");
+    let kind = slice(first, 0, sp);
+    let key = slice(first, sp + 1, len(first));
+    let sep = index_of(lines, "---");
+    let a = table(slice(lines, 1, sep));
+    let b = table(slice(lines, sep + 1, len(lines)));
+    if index_of(a.header, key) < 0 {
+        print("error: no column " + key + " in A");
+        return;
+    }
+    if index_of(b.header, key) < 0 {
+        print("error: no column " + key + " in B");
+        return;
+    }
+    let j = join_tables(kind, key, a.header, a.rows, b.header, b.rows);
+    for l in render(j.header, j.rows) {
+        print(l);
+    }
+    print("rows: " + str(len(j.rows)) + ", skipped: " + str(a.skipped + b.skipped));
+}

@@ -1,0 +1,27 @@
+config rounding=down units=metric
+recipe s added (4 ingredients)
+s for 1:
+  salt 0 g
+  oil 0 ml
+  egg 0 pcs
+  flour 999 g
+s for 2:
+  salt 1 g
+  oil 1 ml
+  egg 1 pcs
+  flour 1.999 kg
+s for 4:
+  salt 2 g
+  oil 2 ml
+  egg 2 pcs
+  flour 3.998 kg
+shopping list (3 recipes):
+  egg 0 pcs
+  flour 2.997 kg
+  oil 0 ml
+  salt 0 g
+s (3 servings)
+  salt 2 g
+  oil 2 ml
+  egg 2 pcs
+  flour 2.999 kg

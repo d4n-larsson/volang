@@ -1,0 +1,9 @@
+line 4: invalid
+REPORT
+A-1 1 2.01
+B-2 1 0.05
+revenue 0.00 cogs 0.00 loss 5.99 profit -5.99 stock 2.06
+REPORT
+A-1 1 2.01
+B-2 1 0.05
+revenue 0.00 cogs 0.00 loss 5.99 profit -5.99 stock 2.06

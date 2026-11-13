@@ -1,0 +1,9 @@
+conflicts: 3
+m1 m2: person bo
+m1 m4: room A, person ana
+m3 m4: room A
+rooms:
+A 120
+B 60
+free line 5: 08:00
+free line 6: 08:00

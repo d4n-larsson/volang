@@ -1,0 +1,6 @@
+config rounding=down units=metric
+recipe soup 4 carrot 500 g stock 1500 ml onion 1 pcs
+scale soup 6
+scale soup 1
+recipe salad 3 tomato 400 g oil 40 ml
+shop soup 2 salad 2

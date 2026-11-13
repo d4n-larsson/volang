@@ -1,0 +1,9 @@
+import geom.Point;
+import geom.area;
+import text.util.shout;
+
+fn main() {
+    let p = new Point { x: 3, y: 4 };
+    print(str(area(p)));
+    print(shout("done"));
+}

@@ -1,0 +1,7 @@
+employee E1 Alice hourly 2500
+employee E2 Bruno salaried 300000 EUR
+hours E1 42
+deduct E2 12050 pension
+payslip E1
+payslip E2
+summary

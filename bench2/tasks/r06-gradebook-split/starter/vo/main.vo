@@ -1,0 +1,92 @@
+import book.Book;
+import book.new_book;
+import book.add_assignment;
+import book.enroll;
+import book.set_score;
+import grading.assignment_stats;
+import grading.card;
+import grading.class_report;
+
+fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+# Only called on strings that passed is_number.
+fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn run(words: list[str], book: Book) -> list[str] {
+    let cmd = words[0];
+    let args = slice(words, 1, len(words));
+    let bad = ["error: bad command"];
+    if cmd == "assignment" {
+        if len(args) != 3 or not is_number(args[1]) or not is_number(args[2]) {
+            return bad;
+        }
+        let weight = num(args[1]);
+        let max_points = num(args[2]);
+        if weight < 1 or weight > 100 or max_points < 1 {
+            return bad;
+        }
+        return [add_assignment(book, args[0], weight, max_points)];
+    }
+    if cmd == "enroll" {
+        if len(args) != 1 {
+            return bad;
+        }
+        return [enroll(book, args[0])];
+    }
+    if cmd == "score" {
+        if len(args) != 3 or not is_number(args[2]) {
+            return bad;
+        }
+        return [set_score(book, args[0], args[1], num(args[2]))];
+    }
+    if cmd == "card" {
+        if len(args) != 1 {
+            return bad;
+        }
+        return card(book, args[0]);
+    }
+    if cmd == "stats" {
+        if len(args) != 1 {
+            return bad;
+        }
+        return assignment_stats(book, args[0]);
+    }
+    if cmd == "report" {
+        if len(args) != 0 {
+            return bad;
+        }
+        return class_report(book);
+    }
+    return ["error: unknown command " + cmd];
+}
+
+fn main() uses console, input {
+    let book = new_book();
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w: str) -> bool {
+            return w != "";
+        });
+        if len(words) == 0 {
+            continue;
+        }
+        for out in run(words, book) {
+            print(out);
+        }
+    }
+}

@@ -1,0 +1,8 @@
+000000005 open z 0
+5 open y 0
+00000005 deposit z 999999999.99
+5 transfer z y 999999999.99
+6 transfer y z 999999999.99
+7 transfer z y 1000000000
+1000000000 deposit z 1
+999999999 deposit z 1

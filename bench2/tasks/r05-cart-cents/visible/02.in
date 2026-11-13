@@ -1,0 +1,10 @@
+product T tea 4.95
+product S soap 2.99
+promo T 2
+bulk T 4 10
+coupon SAVE 15
+add T 7
+add S 3
+use SAVE
+checkout
+report

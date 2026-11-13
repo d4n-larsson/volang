@@ -1,0 +1,7 @@
+push int 5
+push str hi
+push int 7
+pop int
+size int
+pop str
+pop str

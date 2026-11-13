@@ -1,0 +1,35 @@
+## R0002 division_by_zero
+
+An integer was divided by zero.
+
+Fixable: no
+
+Integer `/` or `%` with a zero divisor stops the program. Float division by zero does not; it gives an infinity or NaN. Check the divisor before dividing.
+
+### Example
+
+```vo
+fn average(total: int, count: int) -> int {
+    return total / count;
+}
+
+fn main() uses console {
+    print(str(average(10, 0)));
+}
+```
+
+### Fixed
+
+```vo
+fn average(total: int, count: int) -> int {
+    if count == 0 {
+        return 0;
+    }
+    return total / count;
+}
+
+fn main() uses console {
+    print(str(average(10, 0)));
+}
+```
+

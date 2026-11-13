@@ -1,0 +1,30 @@
+import commands.money;
+import library.Library;
+import library.Loan;
+
+fn listed(xs: list[str]) -> str {
+    if len(xs) == 0 {
+        return "-";
+    }
+    return join(xs, ",");
+}
+
+fn report(lib: Library) -> list[str] {
+    let out = ["members:"];
+    let ms = keys(lib.limit);
+    sort(ms);
+    for m in ms {
+        let isbns = map(lib.loans[m], fn(l: Loan) -> str {
+            return l.isbn;
+        });
+        sort(isbns);
+        push(out, m + " loans " + listed(isbns) + " owes " + money(lib.owes[m]));
+    }
+    push(out, "books:");
+    let bs = keys(lib.copies);
+    sort(bs);
+    for b in bs {
+        push(out, b + " " + str(lib.shelf[b]) + "/" + str(lib.copies[b]) + " queue " + listed(lib.queue[b]));
+    }
+    return out;
+}

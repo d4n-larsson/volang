@@ -1,0 +1,6 @@
+total = 0
+total = total + 100
+total = total * 3 - 7
+rate = total / 7
+rate * 7 + total % 7 - total
+total ^ 2 ^ 2

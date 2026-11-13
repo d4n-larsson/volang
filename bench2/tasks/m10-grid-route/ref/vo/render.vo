@@ -1,0 +1,18 @@
+import grid.Grid;
+import grid.is_stop;
+
+fn draw(g: Grid, cells: list[int]) -> list[str] {
+    let rows = map(g.rows, fn(r: list[str]) -> list[str] {
+        return slice(r, 0, len(r));
+    });
+    for cell in cells {
+        let r = cell / g.width;
+        let c = cell % g.width;
+        if not is_stop(rows[r][c]) {
+            set rows[r][c] = "*";
+        }
+    }
+    return map(rows, fn(r: list[str]) -> str {
+        return join(r, "");
+    });
+}

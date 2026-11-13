@@ -1,0 +1,6 @@
+add-product A1 pen 150 10
+add-product A1 pencil 99 1
+restock A1 5
+price A1 175
+restock Z9 1
+price Z9 10

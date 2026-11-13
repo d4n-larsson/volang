@@ -1,0 +1,28 @@
+level 1 opened with 3 spots
+level 5 opened with 2 spots
+t parked at 1-1
+m parked at 1-2
+c parked at 1-3
+m2 parked at 5-1
+c2 parked at 5-2
+level 1: exits 0 revenue 0.00 pending 0.00
+level 5: exits 0 revenue 0.00 pending 0.00
+total exits 0 revenue 0.00 pending 0.00
+level 1: exits 0 revenue 0.00 pending 19.00
+level 5: exits 0 revenue 0.00 pending 0.00
+total exits 0 revenue 0.00 pending 19.00
+level 1: exits 0 revenue 0.00 pending 82.50
+level 5: exits 0 revenue 0.00 pending 28.00
+total exits 0 revenue 0.00 pending 110.50
+t left 1-1 after 1500 min, fee 51.00
+m left 1-2 after 1500 min, fee 9.00
+c2 left 5-2 after 1400 min, fee 20.00
+level 1: exits 2 revenue 60.00 pending 22.50
+level 5: exits 1 revenue 20.00 pending 8.00
+total exits 3 revenue 80.00 pending 30.50
+level 1: exits 2 revenue 60.00 pending 45.00
+level 5: exits 1 revenue 20.00 pending 17.00
+total exits 3 revenue 80.00 pending 62.00
+level 1: 1/3 used
+level 5: 1/2 used
+total 2/5 used

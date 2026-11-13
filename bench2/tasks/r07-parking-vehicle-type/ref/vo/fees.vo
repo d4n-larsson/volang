@@ -1,0 +1,56 @@
+record Rate {
+    free_minutes: int;
+    hourly: int;
+    daily_cap: int;
+}
+
+fn vehicle_types() -> list[str] {
+    return ["car", "motorcycle", "truck"];
+}
+
+# The rates for a vehicle type from vehicle_types().
+fn rate_for(kind: str) -> Rate {
+    if kind == "motorcycle" {
+        return new Rate { free_minutes: 60, hourly: 100, daily_cap: 800 };
+    }
+    if kind == "truck" {
+        return new Rate { free_minutes: 0, hourly: 600, daily_cap: 4500 };
+    }
+    return new Rate { free_minutes: 30, hourly: 250, daily_cap: 2000 };
+}
+
+fn money(cents: int) -> str {
+    var frac = str(cents % 100);
+    if len(frac) < 2 {
+        set frac = "0" + frac;
+    }
+    return str(cents / 100) + "." + frac;
+}
+
+# The fee in cents for a stay of `minutes` by a vehicle of type `kind`.
+fn fee(kind: str, minutes: int) -> int {
+    let rate = rate_for(kind);
+    if minutes <= rate.free_minutes {
+        return 0;
+    }
+    let days = minutes / 1440;
+    let hours = (minutes % 1440 + 59) / 60;
+    return days * rate.daily_cap + min(rate.daily_cap, hours * rate.hourly);
+}
+
+fn rates() -> list[str] {
+    let out = new list[str];
+    for kind in vehicle_types() {
+        let rate = rate_for(kind);
+        var free = "no free period";
+        if rate.free_minutes > 0 {
+            set free = "first " + str(rate.free_minutes) + " min free";
+        }
+        var line = kind + ": " + free + ", " + money(rate.hourly) + " per hour, " + money(rate.daily_cap) + " per day";
+        if kind == "truck" {
+            set line = line + ", level 1 only";
+        }
+        push(out, line);
+    }
+    return out;
+}

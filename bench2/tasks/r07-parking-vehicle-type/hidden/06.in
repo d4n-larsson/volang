@@ -1,0 +1,27 @@
+level 2 2
+enter T1 0 truck
+level 1 2
+enter C1 0
+enter T1 0 truck
+enter T2 0 truck
+enter T3 0 truck
+enter C2 0
+enter C3 0
+enter C4 0
+parked
+quote T1 0
+quote T1 1
+quote T1 60
+quote T1 61
+quote T1 449
+quote T1 450
+quote T1 1440
+quote T1 1441
+quote T1 1890
+exit C1 10
+enter T2 20 truck
+exit T1 1000
+enter M1 1000 motorcycle
+enter T3 1000 truck
+occupancy
+report 1500

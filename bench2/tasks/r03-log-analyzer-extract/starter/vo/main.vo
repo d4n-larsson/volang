@@ -1,0 +1,65 @@
+import counts.stats;
+import counts.levels;
+import counts.errors;
+import timeline.busiest;
+import timeline.in_range;
+import timeline.span;
+import search.grep;
+
+fn run(words: list[str], logs: list[str]) -> list[str] {
+    let cmd = words[0];
+    let args = slice(words, 1, len(words));
+    if cmd == "stats" and len(args) == 0 {
+        return stats(logs);
+    }
+    if cmd == "levels" and len(args) == 0 {
+        return levels(logs);
+    }
+    if cmd == "errors" and len(args) == 0 {
+        return errors(logs);
+    }
+    if cmd == "busiest" and len(args) == 0 {
+        return busiest(logs);
+    }
+    if cmd == "range" and len(args) == 4 {
+        return in_range(logs, args);
+    }
+    if cmd == "span" and len(args) == 0 {
+        return span(logs);
+    }
+    if cmd == "grep" and len(args) == 1 {
+        return grep(logs, args[0]);
+    }
+    let known = ["stats", "levels", "errors", "busiest", "range", "span", "grep"];
+    if any(known, fn(k: str) -> bool {
+        return k == cmd;
+    }) {
+        return ["error: bad command"];
+    }
+    return ["error: unknown command " + cmd];
+}
+
+fn main() uses console, input {
+    let logs = new list[str];
+    let commands = new list[str];
+    var in_commands = false;
+    for line in split(read_all(), "\n") {
+        if line == "---" and not in_commands {
+            set in_commands = true;
+        } else if trim(line) == "" {
+            continue;
+        } else if in_commands {
+            push(commands, line);
+        } else {
+            push(logs, line);
+        }
+    }
+    for line in commands {
+        let words = filter(split(line, " "), fn(w: str) -> bool {
+            return w != "";
+        });
+        for out in run(words, logs) {
+            print(out);
+        }
+    }
+}

@@ -1,0 +1,6 @@
+int_div_zero.vo:2:12: runtime error[R0002]: Division by zero.
+   2 |     return total / count;
+     |            ^^^^^^^^^^^^^
+trace:
+  at average (int_div_zero.vo:2:12)
+  at main (int_div_zero.vo:6:15)

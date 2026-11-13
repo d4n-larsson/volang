@@ -1,0 +1,9 @@
+fn main() uses console {
+    var total = 1;
+    let snapshot = total;
+    let f = fn() -> int {
+        return snapshot;
+    };
+    set total = 5;
+    print(str(f()) + " " + str(total));
+}

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0309","name":"invalid_map_key","severity":"error","file":"map_key.vo","start":{"line":2,"col":21},"end":{"line":2,"col":25},"text":"bool","message":"Map keys must be `int` or `str`, found `bool`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

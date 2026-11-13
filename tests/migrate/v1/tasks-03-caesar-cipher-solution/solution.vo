@@ -1,0 +1,28 @@
+fn shift_char(c: str, k: int) -> str {
+    let lower = "abcdefghijklmnopqrstuvwxyz";
+    let upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    let i = find(lower, c);
+    if i >= 0 {
+        let j = ((i + k) % 26 + 26) % 26;
+        return slice(lower, j, j + 1);
+    }
+    let u = find(upper, c);
+    if u >= 0 {
+        let j = ((u + k) % 26 + 26) % 26;
+        return slice(upper, j, j + 1);
+    }
+    return c;
+}
+
+fn main() -> result[void] {
+    let lines = split(read_all(), "\n");
+    let k = try parse_int(trim(lines[0]));
+    for n in 1..len(lines) - 1 {
+        var out = "";
+        for c in chars(lines[n]) {
+            set out = out + shift_char(c, k);
+        }
+        print(out);
+    }
+    return ok();
+}

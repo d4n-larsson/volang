@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"lambda_errors.vo","start":{"line":2,"col":17},"end":{"line":2,"col":18},"text":")","message":"Expected `:`, found `)`.","expected":":","found":")","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

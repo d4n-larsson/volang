@@ -1,0 +1,47 @@
+== Hall ==
+exits: east north south
+items: lamp
+== Library ==
+exits: south up
+items: book, key
+taken book (+5)
+taken key
+== Attic ==
+exits: down
+items: crown
+taken crown (+50)
+== Attic ==
+exits: down
+items: none
+== Library ==
+exits: south up
+items: none
+== Hall ==
+exits: east north south
+items: lamp
+== Kitchen ==
+exits: down west
+items: knife, bread
+taken bread (+2)
+== Cellar ==
+exits: up
+items: coin, anvil
+taken coin (+10)
+== Cellar ==
+exits: up
+items: anvil
+== Kitchen ==
+exits: down west
+items: knife
+== Hall ==
+exits: east north south
+items: lamp
+== Garden ==
+exits: north
+items: shovel, statue
+== Garden ==
+exits: north
+items: shovel, statue
+you carry: book, key, crown, bread, coin
+score 92 in 9 moves
+final score 92 in 9 moves

@@ -1,0 +1,46 @@
+fn is_digits(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+# Only called on strings that passed is_digits.
+fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+# A time is HH:MM with 00 <= HH <= 23 and 00 <= MM <= 59.
+fn is_time(s: str) -> bool {
+    if len(s) != 5 or slice(s, 2, 3) != ":" {
+        return false;
+    }
+    let hh = slice(s, 0, 2);
+    let mm = slice(s, 3, 5);
+    if not is_digits(hh) or not is_digits(mm) {
+        return false;
+    }
+    return num(hh) <= 23 and num(mm) <= 59;
+}
+
+fn to_minutes(t: str) -> int {
+    return num(slice(t, 0, 2)) * 60 + num(slice(t, 3, 5));
+}
+
+# Minutes from start to end (both HH:MM).
+fn duration(start: str, end: str) -> int {
+    return to_minutes(end) - to_minutes(start);
+}
+
+fn span(start: str, end: str) -> str {
+    return start + "-" + end;
+}

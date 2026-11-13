@@ -1,0 +1,14 @@
+record Pair[A, B] {
+    first: A;
+    second: B;
+}
+
+fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
+    return new Pair[B, A] { first: p.second, second: p.first };
+}
+
+fn main() uses console {
+    let p = new Pair[int, str] { first: 1, second: "one" };
+    let q = swap(p);
+    print(q.first + " " + str(q.second));
+}

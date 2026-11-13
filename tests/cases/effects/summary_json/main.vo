@@ -1,0 +1,13 @@
+import geom.area;
+
+fn main() uses console {
+    print(str(area(3, 4)));
+}
+
+test "area" {
+    expect_eq(area(2, 2), 4);
+}
+
+test "prints" uses console {
+    print("x");
+}

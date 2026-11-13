@@ -1,0 +1,8 @@
+test "fixed clock" uses clock {
+    expect_eq(now_ms(), 0);
+    expect_eq(now_ms(), 1);
+}
+
+test "clock restarts per test" uses clock {
+    expect_eq(now_ms(), 0);
+}

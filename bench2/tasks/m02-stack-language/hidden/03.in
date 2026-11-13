@@ -1,0 +1,14 @@
+: a 1 ;
+: a a a + ;
+: a a a * ;
+a .
+: b a ;
+: a 0 ;
+b . a .
+: dup 1 ;
+: x2 ;
+: neg 5 ;
+: ab-c 1 ;
+: abc 1 nope ;
+abc
+: q 1 2 ; : r q q ; r .s

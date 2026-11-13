@@ -1,0 +1,27 @@
+fn encode(s: str) -> str {
+    let cs = chars(s);
+    var out = "";
+    var i = 0;
+    while i < len(cs) {
+        var j = i;
+        while j < len(cs) and cs[j] == cs[i] {
+            set j = j + 1;
+        }
+        set out = out + str(j - i) + cs[i];
+        set i = j;
+    }
+    return out;
+}
+
+fn main() {
+    while true {
+        match read_line() {
+            case ok(line) {
+                print(encode(line));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+}

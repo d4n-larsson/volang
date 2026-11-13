@@ -1,0 +1,15 @@
+stack.vo:2:12: runtime error[R0005]: Stack exhausted: the recursion is too deep.
+   2 |     return down(n + 1) + 1;
+     |            ^^^^^^^^^^^
+trace:
+  at down (stack.vo:2:12)
+  at down (stack.vo:2:12)
+  at down (stack.vo:2:12)
+  at down (stack.vo:2:12)
+  at down (stack.vo:2:12)
+  at down (stack.vo:2:12)
+  at down (stack.vo:2:12)
+  at down (stack.vo:2:12)
+  at down (stack.vo:2:12)
+  at down (stack.vo:2:12)
+  ... more frames omitted

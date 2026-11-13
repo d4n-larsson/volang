@@ -1,0 +1,10 @@
+t=3 line 1: no account q
+t=4 line 4: insufficient funds
+t=4 line 5: insufficient funds
+t=4 line 6: no account r
+t=4 line 7: no account r
+t=4 line 8: no account r
+t=7 line 11: no account p
+p 0.00 closed
+q 0.00 closed
+fees 0.00 interest 0.00

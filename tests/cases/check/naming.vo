@@ -1,0 +1,4 @@
+fn main() uses console {
+    let myVar = 1;
+    print(str(myVar));
+}

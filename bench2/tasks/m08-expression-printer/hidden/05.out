@@ -1,0 +1,9 @@
+a = 1 => 1
+b = a + z => error: undefined z
+b => error: undefined b
+a = 1 / 0 => error: division by zero
+a => 1
+z = z => error: undefined z
+q = 5 => 5
+q = q * q => 25
+q => 25

@@ -1,0 +1,48 @@
+fn parse(line: str) -> result[list[str]] {
+    let cs = chars(line);
+    let n = len(cs);
+    let fields = new list[str];
+    var i = 0;
+    while true {
+        if i < n and cs[i] == "\"" {
+            set i = i + 1;
+            let buf = new list[str];
+            var closed = false;
+            while not closed {
+                if i >= n {
+                    return err("unterminated quote");
+                }
+                if cs[i] == "\"" {
+                    if i + 1 < n and cs[i + 1] == "\"" {
+                        push(buf, "\"");
+                        set i = i + 2;
+                    } else {
+                        set i = i + 1;
+                        set closed = true;
+                    }
+                } else {
+                    push(buf, cs[i]);
+                    set i = i + 1;
+                }
+            }
+            push(fields, join(buf, ""));
+            if i == n {
+                return ok(fields);
+            }
+            if cs[i] != "," {
+                return err("text after closing quote");
+            }
+            set i = i + 1;
+        } else {
+            var j = i;
+            while j < n and cs[j] != "," {
+                set j = j + 1;
+            }
+            push(fields, join(slice(cs, i, j), ""));
+            if j == n {
+                return ok(fields);
+            }
+            set i = j + 1;
+        }
+    }
+}

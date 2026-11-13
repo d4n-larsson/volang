@@ -1,0 +1,13 @@
+students:
+_ 100.00 A
+B 50.00 F
+Z 50.00 F
+a 50.00 F
+stats:
+count 4
+mean 62.50
+median 50.00
+top 100.00 _
+letters A:1 B:0 C:0 D:0 F:3
+assignments:
+only avg 62.50 missing 0

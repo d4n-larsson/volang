@@ -1,0 +1,167 @@
+record Stamp {
+    seconds: int;
+    hour: int;
+    text: str;
+}
+
+fn digits_only(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+# Only called on strings that passed digits_only.
+fn to_int(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn is_leap(year: int) -> bool {
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0);
+}
+
+fn days_in(year: int, month: int) -> int {
+    if month == 2 {
+        if is_leap(year) {
+            return 29;
+        }
+        return 28;
+    }
+    if month == 4 or month == 6 or month == 9 or month == 11 {
+        return 30;
+    }
+    return 31;
+}
+
+# Seconds since 0001-01-01 00:00:00 for a date and time word, or -1 if invalid.
+fn to_seconds(date: str, time: str) -> int {
+    if len(date) != 10 or slice(date, 4, 5) != "-" or slice(date, 7, 8) != "-" {
+        return -1;
+    }
+    if len(time) != 8 or slice(time, 2, 3) != ":" or slice(time, 5, 6) != ":" {
+        return -1;
+    }
+    let parts = [slice(date, 0, 4), slice(date, 5, 7), slice(date, 8, 10), slice(time, 0, 2), slice(time, 3, 5), slice(time, 6, 8)];
+    if not all(parts, digits_only) {
+        return -1;
+    }
+    let year = to_int(parts[0]);
+    let month = to_int(parts[1]);
+    let day = to_int(parts[2]);
+    let hour = to_int(parts[3]);
+    let minute = to_int(parts[4]);
+    let second = to_int(parts[5]);
+    if year < 1 or month < 1 or month > 12 or day < 1 or day > days_in(year, month) {
+        return -1;
+    }
+    if hour > 23 or minute > 59 or second > 59 {
+        return -1;
+    }
+    var days = 365 * (year - 1) + (year - 1) / 4 - (year - 1) / 100 + (year - 1) / 400;
+    for m in 1..month {
+        set days = days + days_in(year, m);
+    }
+    set days = days + day - 1;
+    return days * 86400 + hour * 3600 + minute * 60;
+}
+
+# The stamp of a valid log line.
+fn parse_stamp(line: str) -> result[Stamp] {
+    let words = filter(split(line, " "), fn(w: str) -> bool {
+        return w != "";
+    });
+    if len(words) < 4 {
+        return err("short");
+    }
+    let seconds = to_seconds(words[0], words[1]);
+    if seconds < 0 {
+        return err("bad stamp");
+    }
+    let level = words[2];
+    if level != "DEBUG" and level != "INFO" and level != "WARN" and level != "ERROR" {
+        return err("bad level");
+    }
+    let comp = words[3];
+    if len(comp) < 2 or slice(comp, len(comp) - 1, len(comp)) != ":" {
+        return err("bad component");
+    }
+    return ok(new Stamp { seconds: seconds, hour: to_int(slice(words[1], 0, 2)), text: join(words, " ") });
+}
+
+fn stamps(lines: list[str]) -> list[Stamp] {
+    let out = new list[Stamp];
+    for line in lines {
+        match parse_stamp(line) {
+            case ok(st) {
+                push(out, st);
+            }
+            case err(_) {
+            }
+        }
+    }
+    return out;
+}
+
+fn busiest(lines: list[str]) -> list[str] {
+    let found = stamps(lines);
+    if len(found) == 0 {
+        return ["no entries"];
+    }
+    let per_hour = new list[int];
+    for _ in 0..24 {
+        push(per_hour, 0);
+    }
+    for st in found {
+        set per_hour[st.hour] = per_hour[st.hour] + 1;
+    }
+    var best = 0;
+    for h in 0..24 {
+        if per_hour[h] > per_hour[best] {
+            set best = h;
+        }
+    }
+    var label = str(best);
+    if len(label) < 2 {
+        set label = "0" + label;
+    }
+    return ["busiest hour " + label + " with " + str(per_hour[best]) + " entries"];
+}
+
+fn in_range(lines: list[str], args: list[str]) -> list[str] {
+    let lo = to_seconds(args[0], args[1]);
+    let hi = to_seconds(args[2], args[3]);
+    if lo < 0 or hi < 0 {
+        return ["error: bad time"];
+    }
+    let out = new list[str];
+    for st in stamps(lines) {
+        if lo <= st.seconds and st.seconds <= hi {
+            push(out, st.text);
+        }
+    }
+    push(out, str(len(out)) + " entries in range");
+    return out;
+}
+
+fn span(lines: list[str]) -> list[str] {
+    let found = stamps(lines);
+    if len(found) == 0 {
+        return ["no entries"];
+    }
+    var first = found[0].seconds;
+    var last = found[0].seconds;
+    for st in found {
+        set first = min(first, st.seconds);
+        set last = max(last, st.seconds);
+    }
+    return ["span " + str(last - first) + " seconds"];
+}

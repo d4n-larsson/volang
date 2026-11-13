@@ -1,0 +1,8 @@
+fn main() uses console {
+    let a = 1;
+    let total = 2;
+    print(str(max(a, 4)));
+    print(str(totl));
+    let avg = (a + total) / 3.0;
+    print(str(avg));
+}

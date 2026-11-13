@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"chained_compare.vo","start":{"line":3,"col":21},"end":{"line":3,"col":22},"text":"<","message":"Comparisons cannot be chained; combine them with `and`.","expected":"and","found":"<","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

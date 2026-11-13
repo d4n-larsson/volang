@@ -1,0 +1,6 @@
+30 withdraw cy 20
+10 open cy 50
+20 deposit cy 5.5
+10 open cy 10
+40 close cy
+25 transfer cy cy 1

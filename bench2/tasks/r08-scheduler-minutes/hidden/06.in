@@ -1,0 +1,19 @@
+add mid r 12:00am 12:30am
+add noon r 12:00pm 12:45pm
+add one r 1:15pm 2:00pm
+add last r 11:00pm 11:59pm
+add morn r 09:05am 9:45am
+agenda r
+add x r 0:30am 1:00am
+add x r 13:00pm 2:00pm
+add x r 9:05AM 10:00
+add x r 9:5am 10:00
+add x r 9am 10:00
+add x r 9:00 am
+add x r 10:00pm 9:30pm
+add x r 2:00 3:00pm
+add y r 2:00 3:00
+who r 12:15am
+who r 12:15pm
+who r 0:15
+summary

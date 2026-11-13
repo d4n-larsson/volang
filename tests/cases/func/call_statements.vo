@@ -1,0 +1,21 @@
+fn make_printer(prefix: str) -> fn(str) uses console {
+    return fn(s: str) {
+        print(prefix + s);
+    };
+}
+
+record Box {
+    show: fn(str) uses console;
+}
+
+fn main() uses console {
+    let say = fn(s: str) {
+        print(s);
+    };
+    say("hi");
+    make_printer("> ")("there");
+    let handlers = [say];
+    handlers[0]("from a list");
+    let b = new Box { show: say };
+    b.show("from a field");
+}

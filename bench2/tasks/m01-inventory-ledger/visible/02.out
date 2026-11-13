@@ -1,0 +1,7 @@
+line 2: cannot take 5 of widget, only 3 in stock
+line 3: cannot take 1 of gadget, only 0 in stock
+line 4: invalid
+line 5: invalid
+REPORT
+widget 0 0.00
+revenue 27.00 cogs 30.00 loss 0.00 profit -3.00 stock 0.00

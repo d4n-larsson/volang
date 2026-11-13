@@ -1,0 +1,18 @@
+1 book
+1 book A
+1 book A 0
+1 book A 100
+1 book A 1 2
+1 member m 0
+1 member m 10
+1 member m x
+1 pay
+1 pay m 1.5
+1 pay m .50
+1 pay m 1234567.00
+1 pay m 0.00
+1 borrow m
+1 Borrow m A
+x book A 1
+1234567 book A 1
+-1 book A 1

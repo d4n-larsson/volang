@@ -1,0 +1,9 @@
+error: unknown product K
+product K added
+error: not enough stock for product K
+order k1 placed: 1 units, total 114.00 (discount 6.00)
+product K kit price 120.00 stock 0 sold 1
+revenue 114.00 over 1 orders
+order k1 (active)
+  K x1 @ 120.00
+  total 114.00

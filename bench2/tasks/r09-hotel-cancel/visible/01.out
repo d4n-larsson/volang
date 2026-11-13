@@ -1,0 +1,15 @@
+type double added
+type suite added
+booked b1: double 3 nights, total 360.00
+booked b2: suite 7 nights, total 1890.00
+invoice b2 for bob
+  suite 7 nights x 300.00 = 2100.00
+  long stay discount 210.00
+  total 1890.00
+avail double 0-5: 1 of 2 free
+day 3: 2 of 3 rooms occupied
+  double 1/2
+  suite 1/1
+double: 1 bookings, 3 nights, revenue 360.00
+suite: 1 bookings, 7 nights, revenue 1890.00
+total revenue 2250.00

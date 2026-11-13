@@ -1,0 +1,9 @@
+#!/bin/sh
+# Runs the vo toolchain: natively on RV64 hosts, through qemu-riscv64 elsewhere.
+# VO_BIN overrides the binary (e.g. a development build in build-dev/).
+root=$(cd "$(dirname "$0")/.." && pwd)
+bin=${VO_BIN:-$root/build/vo}
+if [ "$(uname -m)" = riscv64 ]; then
+    exec "$bin" "$@"
+fi
+exec qemu-riscv64 "$bin" "$@"

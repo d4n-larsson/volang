@@ -1,0 +1,81 @@
+record Person {
+    name: str;
+    age: int;
+    city: str;
+}
+
+fn text_field(p: Person, field: str) -> str {
+    if field == "name" {
+        return p.name;
+    }
+    return p.city;
+}
+
+fn sort_text_desc(people: list[Person], field: str) {
+    let values = map(people, fn(p: Person) -> str {
+        return text_field(p, field);
+    });
+    sort(values);
+    let rank = new map[str, int];
+    for i in 0..len(values) {
+        set rank[values[i]] = i;
+    }
+    sort_by(people, fn(p: Person) -> int {
+        return -rank[text_field(p, field)];
+    });
+}
+
+fn main() -> result[void] uses console, input {
+    let spec = match_line(read_line());
+    let people = new list[Person];
+    while true {
+        match read_line() {
+            case ok(line) {
+                let f = split(line, ",");
+                push(people, new Person { name: f[0], age: try parse_int(f[1]), city: f[2] });
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    let keys = filter(split(spec, ","), fn(s: str) -> bool {
+        return len(s) > 0;
+    });
+    var i = len(keys) - 1;
+    while i >= 0 {
+        let kd = split(keys[i], ":");
+        let field = kd[0];
+        let desc = kd[1] == "desc";
+        if field == "age" {
+            sort_by(people, fn(p: Person) -> int {
+                if desc {
+                    return -p.age;
+                }
+                return p.age;
+            });
+        } else if desc {
+            sort_text_desc(people, field);
+        } else {
+            sort_by(people, fn(p: Person) -> str {
+                return text_field(p, field);
+            });
+        }
+        set i = i - 1;
+    }
+    for p in people {
+        print(p.name + "," + str(p.age) + "," + p.city);
+    }
+    return ok();
+}
+
+fn match_line(r: result[str]) -> str {
+    match r {
+        case ok(s) {
+            return s;
+        }
+        case err(_) {
+            return "";
+        }
+    }
+}

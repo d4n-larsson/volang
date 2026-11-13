@@ -1,0 +1,18 @@
+product T added
+product S added
+promo T: buy 2 get 1 free
+bulk T: 4 or more 10% off
+coupon SAVE: 15% off
+cart T x7
+cart S x3
+coupon SAVE active
+T x7 @ 4.95 = 34.65
+  free x2 -9.90
+  bulk 10% -2.48
+S x3 @ 2.99 = 8.97
+subtotal 31.24
+coupon SAVE 15% -4.69
+total 26.55
+S soap sold 3 net 8.97
+T tea sold 7 net 22.27
+sales 1 revenue 26.55 discounts 17.07

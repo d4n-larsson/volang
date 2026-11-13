@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0403","name":"missing_return","severity":"error","file":"missing_return.vo","start":{"line":1,"col":4},"end":{"line":1,"col":8},"text":"pick","message":"`pick` can reach its end without returning a value.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

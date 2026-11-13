@@ -1,0 +1,58 @@
+record Assignment {
+    name: str;
+    weight: int;
+    max_points: int;
+}
+
+record Student {
+    name: str;
+    scores: map[str, int];
+}
+
+record Book {
+    assignments: map[str, Assignment];
+    students: map[str, Student];
+}
+
+fn new_book() -> Book {
+    return new Book { assignments: new map[str, Assignment], students: new map[str, Student] };
+}
+
+fn add_assignment(book: Book, name: str, weight: int, max_points: int) -> str {
+    if has(book.assignments, name) {
+        return "error: assignment " + name + " exists";
+    }
+    set book.assignments[name] = new Assignment { name: name, weight: weight, max_points: max_points };
+    return "assignment " + name + " added";
+}
+
+fn enroll(book: Book, name: str) -> str {
+    if has(book.students, name) {
+        return "error: student " + name + " exists";
+    }
+    set book.students[name] = new Student { name: name, scores: new map[str, int] };
+    return "student " + name + " enrolled";
+}
+
+fn unknown_student(name: str) -> str {
+    return "error: unknown student " + name;
+}
+
+fn unknown_assignment(name: str) -> str {
+    return "error: unknown assignment " + name;
+}
+
+fn set_score(book: Book, student: str, assignment: str, points: int) -> str {
+    if not has(book.students, student) {
+        return unknown_student(student);
+    }
+    if not has(book.assignments, assignment) {
+        return unknown_assignment(assignment);
+    }
+    let a = book.assignments[assignment];
+    if points > a.max_points {
+        return "error: " + str(points) + " above max " + str(a.max_points) + " for " + assignment;
+    }
+    set book.students[student].scores[assignment] = points;
+    return student + " " + assignment + " " + str(points) + "/" + str(a.max_points);
+}

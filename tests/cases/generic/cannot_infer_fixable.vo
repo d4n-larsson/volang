@@ -1,0 +1,16 @@
+record Stack[T] {
+    items: list[T];
+}
+
+fn empty_stack[T]() -> Stack[T] {
+    return new Stack[T] { items: new list[T] };
+}
+
+fn push_item[T](s: Stack[T], x: T) {
+    push(s.items, x);
+}
+
+fn main() {
+    let s = empty_stack();
+    push_item(s, 1);
+}

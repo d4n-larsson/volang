@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"W0201","name":"unused_variable","severity":"warning","file":"warnings.vo","start":{"line":2,"col":9},"end":{"line":2,"col":15},"text":"unused","message":"`unused` is never used.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"W0401","name":"unreachable_code","severity":"warning","file":"warnings.vo","start":{"line":4,"col":5},"end":{"line":4,"col":20},"text":"print(\"never\");","message":"This statement can never run.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":0,"warnings":2,"truncated":0,"files":1}

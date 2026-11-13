@@ -1,0 +1,26 @@
+== Library ==
+exits: south up
+items: book, key
+taken book (+5)
+== Hall ==
+exits: east north south
+items: lamp
+dropped book
+== Hall ==
+exits: east north south
+items: lamp, book
+== Library ==
+exits: south up
+items: key
+== Library ==
+exits: south up
+items: key
+== Hall ==
+exits: east north south
+items: lamp, book
+taken book
+taken lamp
+dropped book
+taken book
+you carry: lamp, book
+score 10 in 4 moves

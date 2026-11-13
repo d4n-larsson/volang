@@ -1,0 +1,6 @@
+meeting q1 R Mon 10:00-11:00 z,y,x
+meeting q2 S Mon 10:59-12:00 x,z,w
+meeting q3 R Mon 07:00-10:01 w
+free Mon 60 x
+free Mon 60 w
+free Mon 59 y,w

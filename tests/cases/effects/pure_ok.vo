@@ -1,0 +1,7 @@
+fn square(x: int) -> int {
+    return x * x;
+}
+
+fn main() uses console {
+    print(str(square(7)));
+}

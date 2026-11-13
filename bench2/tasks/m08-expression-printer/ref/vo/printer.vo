@@ -1,0 +1,64 @@
+import exprparser.Expr;
+
+fn op_level(op: str) -> int {
+    if op == "+" or op == "-" {
+        return 1;
+    }
+    if op == "^" {
+        return 4;
+    }
+    return 2;
+}
+
+fn level(e: Expr) -> int {
+    match e {
+        case num(_) {
+            return 5;
+        }
+        case name(_) {
+            return 5;
+        }
+        case neg(_) {
+            return 3;
+        }
+        case bin(b) {
+            return op_level(b.op);
+        }
+    }
+}
+
+fn wrap(e: Expr, needed: bool) -> str {
+    if needed {
+        return "(" + show(e) + ")";
+    }
+    return show(e);
+}
+
+fn strip_zeros(d: str) -> str {
+    var i = 0;
+    while i < len(d) - 1 and slice(d, i, i + 1) == "0" {
+        set i = i + 1;
+    }
+    return slice(d, i, len(d));
+}
+
+fn show(e: Expr) -> str {
+    match e {
+        case num(d) {
+            return strip_zeros(d);
+        }
+        case name(n) {
+            return n;
+        }
+        case neg(x) {
+            return "-" + wrap(x, level(x) < 3);
+        }
+        case bin(b) {
+            if b.op == "^" {
+                return wrap(b.left, level(b.left) <= 4) + " ^ " + wrap(b.right, level(b.right) < 3);
+            }
+            let p = op_level(b.op);
+            return wrap(b.left, level(b.left) < p) + " " + b.op + " " + wrap(b.right, level(b.right) <= p);
+        }
+    }
+}

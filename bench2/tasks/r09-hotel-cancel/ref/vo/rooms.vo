@@ -1,0 +1,59 @@
+import model.RoomType;
+import model.Booking;
+
+fn add_type(types: map[str, RoomType], name: str, rate: int, count: int) -> str {
+    if has(types, name) {
+        return "error: type " + name + " exists";
+    }
+    set types[name] = new RoomType { name: name, rate: rate, count: count };
+    return "type " + name + " added";
+}
+
+fn set_rate(types: map[str, RoomType], name: str, rate: int, money: fn(int) -> str) -> str {
+    if not has(types, name) {
+        return "error: unknown type " + name;
+    }
+    let t = types[name];
+    set t.rate = rate;
+    return "type " + name + " rate " + money(rate);
+}
+
+fn sorted_types(types: map[str, RoomType]) -> list[RoomType] {
+    let names = keys(types);
+    sort(names);
+    return map(names, fn(name: str) -> RoomType {
+        return types[name];
+    });
+}
+
+# How many rooms of the type are taken on the night of `day`.
+fn occupied(bookings: map[str, Booking], type_name: str, day: int) -> int {
+    var n = 0;
+    for k in keys(bookings) {
+        let b = bookings[k];
+        if b.type_name == type_name and b.start <= day and day < b.held_until {
+            set n = n + 1;
+        }
+    }
+    return n;
+}
+
+# The first night in [start, end) with no free room of the type, or -1.
+fn first_full_day(types: map[str, RoomType], bookings: map[str, Booking], type_name: str, start: int, end: int) -> int {
+    let count = types[type_name].count;
+    for day in start..end {
+        if occupied(bookings, type_name, day) >= count {
+            return day;
+        }
+    }
+    return -1;
+}
+
+fn min_free(types: map[str, RoomType], bookings: map[str, Booking], type_name: str, start: int, end: int) -> int {
+    let t = types[type_name];
+    var best = t.count;
+    for day in start..end {
+        set best = min(best, t.count - occupied(bookings, type_name, day));
+    }
+    return best;
+}

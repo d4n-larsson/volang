@@ -1,0 +1,28 @@
+2023-02-29 10:00:00 INFO a: not a leap year
+2024-02-29 10:00:00 INFO a: leap year
+1900-02-29 10:00:00 INFO a: century not leap
+2000-02-29 10:00:00 INFO a: 400 leap
+2024-04-31 10:00:00 INFO a: april has 30
+2024-12-31 10:00:00 INFO a: last day
+0000-01-01 00:00:00 INFO a: year zero
+2024-13-01 10:00:00 INFO a: month 13
+2024-00-10 10:00:00 INFO a: month 0
+2024-01-00 10:00:00 INFO a: day 0
+2024-1-01 10:00:00 INFO a: short month
+2024-01-01 24:00:00 INFO a: hour 24
+2024-01-01 23:60:00 INFO a: minute 60
+2024-01-01 23:59:60 INFO a: second 60
+2024-01-01 23:59:59 Info a: mixed case
+2024-01-01 23:59:59 FATAL a: unknown level
+2024-01-01 23:59:59 WARN a missing colon
+2024-01-01 23:59:59 WARN : empty component
+2024-01-01 23:59:59 WARN
+2024-01-01 3:59:59 WARN b: short hour
+2024-01-01 03:59:59 WARN b: ok
+2024-01-01T03:59:59 WARN b: joined
+2024/01/01 03:59:59 WARN b: slashes
+2024-01-01 03:5a:59 WARN b: letter
+---
+stats
+levels
+errors

@@ -1,0 +1,7 @@
+member z joined
+book Z: 1 copies
+z borrows Z (due 15)
+members:
+z loans Z owes 0.00
+books:
+Z 0/1 queue -

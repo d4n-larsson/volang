@@ -1,0 +1,9 @@
+main uses console
+test "area" pure
+test "prints" uses console
+
+geom.vo:area pure
+main.vo:main uses console
+main.vo:test "area" pure
+main.vo:test "prints" uses console
+0 errors, 0 warnings

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0401","name":"non_exhaustive_match","severity":"error","file":"non_exhaustive.vo","start":{"line":8,"col":5},"end":{"line":8,"col":12},"text":"match s","message":"This `match` is missing cases: `circle`, `square`.","fixes":[{"file":"non_exhaustive.vo","start":{"line":12,"col":5},"end":{"line":12,"col":5},"replacement":"case circle(_) {\n}\ncase square(_) {\n}\n"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

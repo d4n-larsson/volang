@@ -1,0 +1,13 @@
+type eco 4000 2
+type mid 7000 1
+type top 15000 1
+book e1 eco ann 3 5
+book e2 eco bob 3 10
+book m1 mid cy 20 27
+book t1 top dee 1 2
+cancel m1 13
+cancel e2 2
+invoice e1
+invoice e2
+invoice m1
+report

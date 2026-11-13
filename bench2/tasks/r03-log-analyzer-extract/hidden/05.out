@@ -1,0 +1,9 @@
+2024-06-15 12:00:10 INFO svc: at lower bound
+2024-06-15 12:00:45 WARN svc: inside
+2024-06-15 12:01:20 ERROR svc: at upper bound
+3 entries in range
+2024-06-15 12:00:45 WARN svc: inside
+1 entries in range
+2024-06-15 12:01:21 INFO svc: after
+1 entries in range
+span 114 seconds

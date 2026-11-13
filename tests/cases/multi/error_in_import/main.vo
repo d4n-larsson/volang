@@ -1,0 +1,5 @@
+import lib.half;
+
+fn main() uses console {
+    print(str(half(4)));
+}

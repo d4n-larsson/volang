@@ -1,0 +1,15 @@
+fn sorted[T: ordered](xs: list[T]) -> list[T] {
+    let out = slice(xs, 0, len(xs));
+    sort(out);
+    return out;
+}
+
+fn smallest[T: ordered](a: T, b: T) -> T {
+    return min(a, b);
+}
+
+fn main() uses console {
+    let words = sorted(["b", "c", "a"]);
+    print(join(words, ","));
+    print(str(sorted([3, 1, 2])[0]) + " " + str(smallest(4, 2)) + " " + smallest("x", "w"));
+}

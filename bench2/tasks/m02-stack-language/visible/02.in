@@ -1,0 +1,6 @@
+: sq dup * ;
+: cube dup sq * ;
+3 cube . 5 sq .
+-7 3 / . -7 3 % . 7 -3 % .
+: sq sq sq ;
+2 sq .

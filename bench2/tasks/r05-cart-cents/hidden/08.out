@@ -1,0 +1,35 @@
+product M added
+product E added
+promo M: buy 1 get 1 free
+promo E: buy 5 get 1 free
+bulk E: 12 or more 20% off
+coupon FREE: 100% off
+cart M x5
+cart E x13
+M x5 @ 1.19 = 5.95
+E x13 @ 0.33 = 4.29
+items 18, gross 10.24
+M x5 @ 1.19 = 5.95
+  free x2 -2.38
+E x13 @ 0.33 = 4.29
+  free x2 -0.66
+  bulk 20% -0.73
+subtotal 6.47
+total 6.47
+cart E x12
+coupon FREE active
+E x12 @ 0.33 = 3.96
+  free x2 -0.66
+  bulk 20% -0.66
+subtotal 2.64
+coupon FREE 100% -2.64
+total 0.00
+cart M x1
+coupon FREE active
+M x1 @ 1.19 = 1.19
+subtotal 1.19
+coupon FREE 100% -1.19
+total 0.00
+E egg sold 25 net 5.54
+M milk sold 6 net 4.76
+sales 3 revenue 6.47 discounts 8.92

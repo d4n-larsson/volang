@@ -1,0 +1,20 @@
+level 1 opened with 1 spots
+level 2 opened with 1 spots
+V parked at 1-1
+W parked at 2-1
+V left 1-1 after 90 min, fee 12.00
+W left 2-1 after 90 min, fee 2.00
+V parked at 1-1
+error: no truck spot
+Z parked at 2-1
+1-1 V since 100 (motorcycle)
+2-1 Z since 100
+V left 1-1 after 1900 min, fee 16.00
+error: W not parked
+error: Z already parked
+Z left 2-1 after 2900 min, fee 42.50
+Z parked at 1-1
+1-1 Z since 3000 (truck)
+level 1: exits 2 revenue 28.00 pending 45.00
+level 2: exits 2 revenue 44.50 pending 0.00
+total exits 4 revenue 72.50 pending 45.00

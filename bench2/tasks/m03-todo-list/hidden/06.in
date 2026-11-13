@@ -1,0 +1,14 @@
+add 1 x
+delete 1
+delete 1
+done 1
+add 1 y
+list
+stats
+done 2
+delete 2
+list done
+stats
+done -2
+done +2
+done 99999999999999999999999

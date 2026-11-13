@@ -1,0 +1,4 @@
+fn main() uses console {
+    let min = -9223372036854775807 - 1;
+    print(str(min / -1));
+}

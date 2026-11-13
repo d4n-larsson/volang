@@ -1,0 +1,10 @@
+car: first 30 min free, 2.50 per hour, 20.00 per day
+motorcycle: first 60 min free, 1.00 per hour, 8.00 per day
+truck: no free period, 6.00 per hour, 45.00 per day, level 1 only
+error: bad command
+level 1 opened with 1 spots
+X parked at 1-1
+X owes 2.00 after 61 min
+car: first 30 min free, 2.50 per hour, 20.00 per day
+motorcycle: first 60 min free, 1.00 per hour, 8.00 per day
+truck: no free period, 6.00 per hour, 45.00 per day, level 1 only

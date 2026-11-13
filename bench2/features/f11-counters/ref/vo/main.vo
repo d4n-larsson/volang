@@ -1,0 +1,51 @@
+record State {
+    start: int;
+    step: int;
+    current: int;
+}
+
+record Counter {
+    next: fn() -> int;
+    reset: fn();
+}
+
+fn make_counter(start: int, step: int) -> Counter {
+    let s = new State { start: start, step: step, current: start };
+    return new Counter { next: fn() -> int {
+        let v = s.current;
+        set s.current = s.current + s.step;
+        return v;
+    }, reset: fn() {
+        set s.current = s.start;
+    } };
+}
+
+fn main() -> result[void] uses console, input {
+    let counters = new map[str, Counter];
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                if p[0] == "new" {
+                    set counters[p[1]] = make_counter(try parse_int(p[2]), try parse_int(p[3]));
+                } else if p[0] == "alias" {
+                    if has(counters, p[2]) {
+                        set counters[p[1]] = counters[p[2]];
+                    } else {
+                        print("unknown " + p[2]);
+                    }
+                } else if not has(counters, p[1]) {
+                    print("unknown " + p[1]);
+                } else if p[0] == "next" {
+                    print(str(counters[p[1]].next()));
+                } else {
+                    counters[p[1]].reset();
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

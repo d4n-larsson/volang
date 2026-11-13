@@ -1,0 +1,6 @@
+fn main() uses console {
+    let f: fn(int) -> int = fn(s: str) -> int {
+        return len(s);
+    };
+    print(str(f(1)));
+}

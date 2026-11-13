@@ -1,0 +1,11 @@
+product BIG tv 999999.99
+product SM gum 0.01
+add BIG 999999
+add SM 999999
+bulk BIG 999999 99
+promo SM 999998
+coupon C 37
+use C
+cart
+checkout
+report

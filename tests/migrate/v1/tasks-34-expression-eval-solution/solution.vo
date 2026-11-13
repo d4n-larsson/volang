@@ -1,0 +1,87 @@
+record Parser {
+    toks: list[str];
+    pos: int;
+}
+
+fn is_digit(c: str) -> bool {
+    return find("0123456789", c) >= 0;
+}
+
+fn tokenize(line: str) -> list[str] {
+    let toks = new list[str];
+    var num = "";
+    for c in chars(line) {
+        if is_digit(c) {
+            set num = num + c;
+            continue;
+        }
+        if num != "" {
+            push(toks, num);
+            set num = "";
+        }
+        if find("+-*()", c) >= 0 {
+            push(toks, c);
+        }
+    }
+    if num != "" {
+        push(toks, num);
+    }
+    return toks;
+}
+
+fn peek(p: Parser) -> str {
+    if p.pos < len(p.toks) {
+        return p.toks[p.pos];
+    }
+    return "";
+}
+
+fn expr(p: Parser) -> result[int] {
+    var v = try term(p);
+    while peek(p) == "+" or peek(p) == "-" {
+        let op = peek(p);
+        set p.pos = p.pos + 1;
+        let rhs = try term(p);
+        if op == "+" {
+            set v = v + rhs;
+        } else {
+            set v = v - rhs;
+        }
+    }
+    return ok(v);
+}
+
+fn term(p: Parser) -> result[int] {
+    var v = try atom(p);
+    while peek(p) == "*" {
+        set p.pos = p.pos + 1;
+        set v = v * try atom(p);
+    }
+    return ok(v);
+}
+
+fn atom(p: Parser) -> result[int] {
+    let t = peek(p);
+    set p.pos = p.pos + 1;
+    if t == "(" {
+        let v = try expr(p);
+        set p.pos = p.pos + 1;
+        return ok(v);
+    }
+    return parse_int(t);
+}
+
+fn main() -> result[void] {
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = new Parser { toks: tokenize(line), pos: 0 };
+                print(str(try expr(p)));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

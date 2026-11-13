@@ -1,0 +1,97 @@
+fn strip(s: str) -> str {
+    let cs = chars(s);
+    var a = 0;
+    var b = len(cs);
+    while a < b and (cs[a] == " " or cs[a] == "\t") {
+        set a = a + 1;
+    }
+    while b > a and (cs[b - 1] == " " or cs[b - 1] == "\t") {
+        set b = b - 1;
+    }
+    return join(slice(cs, a, b), "");
+}
+
+fn apply(line: str, settings: map[str, str]) {
+    let i = find(line, "=");
+    if i < 0 {
+        set settings[strip(line)] = "";
+    } else {
+        set settings[strip(slice(line, 0, i))] = strip(slice(line, i + 1, len(line)));
+    }
+}
+
+fn parse(text: str, settings: map[str, str]) {
+    for line in split(text, "\n") {
+        let s = strip(line);
+        if s == "" or slice(s, 0, 1) == "#" {
+            continue;
+        }
+        apply(line, settings);
+    }
+}
+
+fn mode_from(first: str) -> str uses env("APP_MODE") {
+    match env("APP_MODE") {
+        case ok(m) {
+            if m != "" {
+                return m;
+            }
+        }
+        case err(_) {
+        }
+    }
+    return first;
+}
+
+fn config_dir() -> str uses env("APP_CONFIG_DIR") {
+    match env("APP_CONFIG_DIR") {
+        case ok(d) {
+            return d;
+        }
+        case err(_) {
+            return "config";
+        }
+    }
+}
+
+fn main() -> result[void] uses console, input, file.read("config/"), env("APP_CONFIG_DIR", "APP_MODE") {
+    let dir = config_dir();
+    var first = "";
+    match read_line() {
+        case ok(line) {
+            set first = line;
+        }
+        case err(_) {
+        }
+    }
+    let mode = mode_from(first);
+    let settings = new map[str, str];
+    parse(try read_file(dir + "/base.txt"), settings);
+    print("mode " + mode);
+    match read_file(dir + "/" + mode + ".txt") {
+        case ok(text) {
+            parse(text, settings);
+        }
+        case err(_) {
+            print("no file for mode " + mode);
+        }
+    }
+    while true {
+        match read_line() {
+            case ok(line) {
+                if line != "" {
+                    apply(line, settings);
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    let ks = keys(settings);
+    sort(ks);
+    for k in ks {
+        print(k + "=" + settings[k]);
+    }
+    return ok();
+}

@@ -1,0 +1,13 @@
+assignment hw1 20 20
+assignment exam 80 100
+enroll ana
+enroll bo
+enroll cy
+score ana hw1 17
+score ana exam 91
+score bo hw1 20
+score bo exam 72
+score cy hw1 19
+card ana
+card cy
+report

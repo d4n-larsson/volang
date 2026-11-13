@@ -1,0 +1,15 @@
+report
+card x
+stats x
+enroll zz
+enroll aa
+report
+assignment t 5 3
+card zz
+stats t
+score aa t 2
+stats t
+score zz t 1
+score zz t 0
+stats t
+report

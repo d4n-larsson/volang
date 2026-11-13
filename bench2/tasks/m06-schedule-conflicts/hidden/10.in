@@ -1,0 +1,7 @@
+   meeting   s1   room1   Mon   08:00-08:30   a,b   
+
+meeting s2 room1 Mon 08:30-09:00 a
+meeting s3 room1 Mon 08:29-08:31 c
+meeting s4 room2 Mon 08:00-08:30 b
+free Mon 30 a,b
+free Mon 30 c

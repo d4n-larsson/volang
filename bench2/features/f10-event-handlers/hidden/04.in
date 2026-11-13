@@ -1,0 +1,4 @@
+on msg upper
+on msg echo
+emit msg Hello World 42
+emit msg

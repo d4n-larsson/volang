@@ -1,0 +1,5 @@
+timeout.vo:2:5: runtime error[R0009]: Time limit of 1 s exceeded.
+   2 |     while true {
+     |     ^^^^^^^^^^^^
+trace:
+  at main (timeout.vo:2:5)

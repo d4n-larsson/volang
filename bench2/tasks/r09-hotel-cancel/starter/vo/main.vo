@@ -1,0 +1,104 @@
+import model.RoomType;
+import model.Booking;
+import rooms.add_type;
+import rooms.set_rate;
+import bookings.book;
+import billing.money;
+import billing.invoice_lines;
+import report.avail_line;
+import report.occupancy_lines;
+import report.report_lines;
+
+fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+# Only called on strings that passed is_number.
+fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn run(words: list[str], types: map[str, RoomType], bookings: map[str, Booking]) -> list[str] {
+    let cmd = words[0];
+    let args = slice(words, 1, len(words));
+    if cmd == "type" {
+        if len(args) != 3 or not is_number(args[1]) or not is_number(args[2]) {
+            return ["error: bad command"];
+        }
+        return [add_type(types, args[0], num(args[1]), num(args[2]))];
+    }
+    if cmd == "rate" {
+        if len(args) != 2 or not is_number(args[1]) {
+            return ["error: bad command"];
+        }
+        return [set_rate(types, args[0], num(args[1]), money)];
+    }
+    if cmd == "book" {
+        if len(args) != 5 or not is_number(args[3]) or not is_number(args[4]) {
+            return ["error: bad command"];
+        }
+        return [book(types, bookings, args[0], args[1], args[2], num(args[3]), num(args[4]))];
+    }
+    if cmd == "avail" {
+        if len(args) != 3 or not is_number(args[1]) or not is_number(args[2]) {
+            return ["error: bad command"];
+        }
+        if not has(types, args[0]) {
+            return ["error: unknown type " + args[0]];
+        }
+        if num(args[1]) >= num(args[2]) {
+            return ["error: bad dates"];
+        }
+        return [avail_line(types, bookings, args[0], num(args[1]), num(args[2]))];
+    }
+    if cmd == "occupancy" {
+        if len(args) != 1 or not is_number(args[0]) {
+            return ["error: bad command"];
+        }
+        return occupancy_lines(types, bookings, num(args[0]));
+    }
+    if cmd == "invoice" {
+        if len(args) != 1 {
+            return ["error: bad command"];
+        }
+        if not has(bookings, args[0]) {
+            return ["error: unknown booking " + args[0]];
+        }
+        return invoice_lines(bookings[args[0]]);
+    }
+    if cmd == "report" {
+        if len(args) != 0 {
+            return ["error: bad command"];
+        }
+        return report_lines(types, bookings);
+    }
+    return ["error: unknown command " + cmd];
+}
+
+fn main() uses console, input {
+    let types = new map[str, RoomType];
+    let bookings = new map[str, Booking];
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w: str) -> bool {
+            return w != "";
+        });
+        if len(words) == 0 {
+            continue;
+        }
+        for out in run(words, types, bookings) {
+            print(out);
+        }
+    }
+}

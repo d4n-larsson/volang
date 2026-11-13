@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0101","name":"invalid_character","severity":"error","file":"trailing_comment.vo","start":{"line":2,"col":17},"end":{"line":2,"col":21},"text":"# hi","message":"A comment must be on its own line.","fixes":[{"file":"trailing_comment.vo","start":{"line":2,"col":17},"end":{"line":2,"col":17},"replacement":"\n    "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -1,0 +1,20 @@
+record P {
+    a: int;
+    b: list[str];
+}
+
+variant V {
+    one(int);
+    none;
+}
+
+fn main() {
+    print(str([1, 2] == [1, 2]));
+    print(str([1, 2] == [2, 1]));
+    print(str(new P { a: 1, b: ["x"] } == new P { a: 1, b: ["x"] }));
+    print(str(V.one(1) == V.one(1)));
+    print(str(V.one(1) != V.none));
+    print(str("abc" == "abc"));
+    let nan = 0.0 / 0.0;
+    print(str(nan == nan));
+}

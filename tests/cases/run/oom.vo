@@ -1,0 +1,6 @@
+fn main() {
+    var s = "xxxxxxxxxxxxxxxx";
+    while true {
+        set s = s + s;
+    }
+}

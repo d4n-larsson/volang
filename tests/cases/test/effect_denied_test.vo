@@ -1,0 +1,10 @@
+test "reads fixtures" uses file.read("fixtures/") {
+    match read_file("other/x.txt") {
+        case ok(t) {
+            expect_eq(t, "never");
+        }
+        case err(e) {
+            expect_eq(e, "never");
+        }
+    }
+}

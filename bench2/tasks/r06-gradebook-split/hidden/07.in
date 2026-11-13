@@ -1,0 +1,10 @@
+distribution
+enroll a
+enroll b
+assignment q 1 10
+distribution
+score a q 10
+distribution
+score b q 3
+distribution
+report

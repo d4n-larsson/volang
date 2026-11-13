@@ -1,0 +1,50 @@
+import model.Booking;
+
+fn long_stay_nights() -> int {
+    return 7;
+}
+
+fn long_stay_percent() -> int {
+    return 10;
+}
+
+fn money(cents: int) -> str {
+    var frac = str(cents % 100);
+    if len(frac) < 2 {
+        set frac = "0" + frac;
+    }
+    return str(cents / 100) + "." + frac;
+}
+
+fn stay_discount(nights: int, subtotal: int) -> int {
+    if nights >= long_stay_nights() {
+        return subtotal * long_stay_percent() / 100;
+    }
+    return 0;
+}
+
+# Full refund 7+ days before check-in, half (rounded down) 1-6 days before, none from check-in.
+fn refund_for(b: Booking, day: int) -> int {
+    if b.start - day >= 7 {
+        return b.total;
+    }
+    if day < b.start {
+        return b.total / 2;
+    }
+    return 0;
+}
+
+fn invoice_lines(b: Booking) -> list[str] {
+    let nights = b.end - b.start;
+    let out = ["invoice " + b.booking_id + " for " + b.guest];
+    push(out, "  " + b.type_name + " " + str(nights) + " nights x " + money(b.rate) + " = " + money(b.subtotal));
+    if b.discount > 0 {
+        push(out, "  long stay discount " + money(b.discount));
+    }
+    push(out, "  total " + money(b.total));
+    if b.cancelled {
+        push(out, "  cancelled on day " + str(b.cancel_day) + ", refund " + money(b.refund));
+        push(out, "  net " + money(b.total - b.refund));
+    }
+    return out;
+}

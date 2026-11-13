@@ -1,0 +1,4 @@
+{"v":1,"kind":"diagnostic","code":"E0312","name":"wrong_type_argument_count","severity":"error","file":"wrong_arg_count.vo","start":{"line":6,"col":13},"end":{"line":6,"col":57},"text":"new Stack[int, str] { items: new list[int] }","message":"`Stack` takes 1 type argument(s), got 2.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"W0201","name":"unused_variable","severity":"warning","file":"wrong_arg_count.vo","start":{"line":7,"col":9},"end":{"line":7,"col":10},"text":"t","message":"`t` is never used.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0312","name":"wrong_type_argument_count","severity":"error","file":"wrong_arg_count.vo","start":{"line":7,"col":12},"end":{"line":7,"col":17},"text":"Stack","message":"`Stack` takes 1 type argument(s), got 0.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":1,"truncated":0,"files":1}

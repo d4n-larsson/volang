@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"W0504","name":"no_effects_record","severity":"warning","file":"main.vo","start":{"line":1,"col":1},"end":{"line":1,"col":1},"text":"","message":"This program has no effects record: create vo.effects with `vo effects --update`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":0,"warnings":1,"truncated":0,"files":1}

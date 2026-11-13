@@ -1,0 +1,12 @@
+assignment big 999 9999
+assignment small 1 1
+student m
+student n
+student o
+score m big 9998
+score m small 1
+score n big 0001
+score n small 0
+score o big 9999
+score o small 0
+score o big 10000

@@ -1,0 +1,37 @@
+taken lamp
+== Garden ==
+exits: north
+items: shovel, statue
+taken shovel
+== Hall ==
+exits: east north south
+items: none
+== Library ==
+exits: south up
+items: book, key
+== Hall ==
+exits: east north south
+items: none
+== Kitchen ==
+exits: down west
+items: knife, bread
+taken knife
+== Hall ==
+exits: east north south
+items: none
+== Library ==
+exits: south up
+items: book, key
+taken key
+score 15 in 7 moves
+you carry: lamp, shovel, knife, key
+== Attic ==
+exits: down
+items: crown
+== Library ==
+exits: south up
+items: book
+== Attic ==
+exits: down
+items: crown
+score 20 in 10 moves

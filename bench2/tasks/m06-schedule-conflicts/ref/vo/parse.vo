@@ -1,0 +1,109 @@
+record Meeting {
+    id: str;
+    room: str;
+    day: str;
+    start: int;
+    end: int;
+    people: list[str];
+}
+
+record Query {
+    line: int;
+    day: str;
+    minutes: int;
+    people: list[str];
+}
+
+record Line {
+    kind: str;
+    meeting: Meeting;
+    query: Query;
+}
+
+fn digits(s: str) -> bool {
+    return len(s) > 0 and all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+fn to_int(s: str) -> int {
+    match parse_int(s) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return -1;
+        }
+    }
+}
+
+fn is_day(d: str) -> bool {
+    return d == "Mon" or d == "Tue" or d == "Wed" or d == "Thu" or d == "Fri";
+}
+
+fn time(s: str) -> int {
+    if len(s) != 5 or slice(s, 2, 3) != ":" {
+        return -1;
+    }
+    let h = slice(s, 0, 2);
+    let m = slice(s, 3, 5);
+    if not digits(h) or not digits(m) or to_int(h) > 23 or to_int(m) > 59 {
+        return -1;
+    }
+    return to_int(h) * 60 + to_int(m);
+}
+
+fn people(s: str) -> result[list[str]] {
+    let ps = split(s, ",");
+    let seen = new map[str, bool];
+    for p in ps {
+        if p == "" or has(seen, p) {
+            return err("bad people");
+        }
+        set seen[p] = true;
+    }
+    return ok(ps);
+}
+
+fn parse(line: str, n: int) -> result[Line] {
+    let f = filter(split(line, " "), fn(x: str) -> bool {
+        return x != "";
+    });
+    let none = new list[str];
+    let m = new Meeting { id: "", room: "", day: "", start: 0, end: 0, people: none };
+    let q = new Query { line: n, day: "", minutes: 0, people: none };
+    if len(f) == 0 {
+        return ok(new Line { kind: "blank", meeting: m, query: q });
+    }
+    if f[0] == "meeting" and len(f) == 6 and is_day(f[3]) {
+        let span = split(f[4], "-");
+        if len(span) != 2 {
+            return err("invalid");
+        }
+        let s = time(span[0]);
+        let e = time(span[1]);
+        if s < 0 or e <= s {
+            return err("invalid");
+        }
+        let ps = try people(f[5]);
+        let mt = new Meeting { id: f[1], room: f[2], day: f[3], start: s, end: e, people: ps };
+        return ok(new Line { kind: "meeting", meeting: mt, query: q });
+    }
+    if f[0] == "free" and len(f) == 4 and is_day(f[1]) and digits(f[2]) and len(f[2]) <= 3 and to_int(f[2]) > 0 {
+        let ps = try people(f[3]);
+        let qq = new Query { line: n, day: f[1], minutes: to_int(f[2]), people: ps };
+        return ok(new Line { kind: "free", meeting: m, query: qq });
+    }
+    return err("invalid");
+}
+
+fn two(n: int) -> str {
+    if n < 10 {
+        return "0" + str(n);
+    }
+    return str(n);
+}
+
+fn clock(m: int) -> str {
+    return two(m / 60) + ":" + two(m % 60);
+}

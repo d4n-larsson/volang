@@ -1,0 +1,29 @@
+product P added
+product Q added
+coupon TEN: 10% off
+cart P x2
+coupon TEN active
+product P price 3.60
+P x2 @ 3.60 = 7.20
+items 2, gross 7.20
+P x2 @ 3.60 = 7.20
+subtotal 7.20
+coupon TEN 10% -0.72
+total 6.48
+cart P x1
+P x1 @ 3.60 = 3.60
+subtotal 3.60
+total 3.60
+cart Q x4
+cart P x1
+cart Q x3
+coupon TEN active
+coupon TEN: 25% off
+Q x3 @ 7.25 = 21.75
+P x1 @ 3.60 = 3.60
+subtotal 25.35
+coupon TEN 25% -6.34
+total 19.01
+P pie sold 4 net 14.40
+Q quiche sold 3 net 21.75
+sales 3 revenue 29.09 discounts 7.06

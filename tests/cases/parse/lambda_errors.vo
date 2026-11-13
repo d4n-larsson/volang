@@ -1,0 +1,5 @@
+fn main() uses console {
+    let a = fn(x) -> int {
+        return 1;
+    };
+}

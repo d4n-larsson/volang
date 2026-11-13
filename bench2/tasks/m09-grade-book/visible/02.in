@@ -1,0 +1,12 @@
+assignment q1 1 3
+assignment q2 1 3
+assignment q3 1 3
+student cy
+student dee
+score cy q1 1
+score cy q2 2
+score cy q3 3
+score dee q1 2
+score dee q2 2
+score dee q3 2
+drop 1

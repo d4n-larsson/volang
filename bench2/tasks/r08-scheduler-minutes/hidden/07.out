@@ -1,0 +1,16 @@
+added a in hall 09:00-10:30
+error: b conflicts with a
+added c in hall 10:30-13:00
+added d in hall 13:00-14:15
+added e in hall 02:00-09:00
+error: f conflicts with e
+agenda hall: 4 events
+  02:00-09:00 e (420 min)
+  09:00-10:30 a (90 min)
+  10:30-13:00 c (150 min)
+  13:00-14:15 d (75 min)
+hall at 12:59: c
+hall at 13:00: d
+hall at 13:00: d
+free hall 07:00-15:00:
+  14:15-15:00 (45 min)

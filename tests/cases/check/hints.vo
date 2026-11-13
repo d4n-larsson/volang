@@ -1,0 +1,15 @@
+fn f() -> result[int] {
+    return ok;
+}
+
+fn main() uses console {
+    let n = int("5");
+    match parse_int("4") {
+        case Ok(v) {
+            print(str(v + n));
+        }
+        case Err(e) {
+            print(e);
+        }
+    }
+}

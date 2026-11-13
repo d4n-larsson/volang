@@ -1,0 +1,18 @@
+member x joined
+book Bk: 1 copies
+x borrows Bk (due 15)
+x returns Bk late 85 days, fine 10.00
+x pays 5.00, owes 5.00
+x borrows Bk (due 114)
+x returns Bk
+member y joined
+y borrows Bk (due 114)
+x waits for Bk (position 1)
+x pays 0.01, owes 4.99
+y returns Bk late 36 days, fine 9.00
+Bk -> x (due 164)
+members:
+x loans Bk owes 4.99
+y loans - owes 9.00
+books:
+Bk 0/1 queue -

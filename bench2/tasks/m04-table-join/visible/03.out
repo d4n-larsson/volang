@@ -1,0 +1,8 @@
+code | label  | qty
+-----+--------+----
+x    | first  |
+y    | second | 10
+     | blank  |
+w    |        | 20
+     |        | 30
+rows: 5, skipped: 1

@@ -1,0 +1,93 @@
+import world.Room;
+import world.start_room;
+import world.visit_points;
+import world.item_value;
+import world.item_weight;
+import world.carry_limit;
+
+record Player {
+    room: str;
+    inventory: list[str];
+    score: int;
+    moves: int;
+    visited: map[str, bool];
+    # every item ever picked up (points are only earned the first time)
+    taken: map[str, bool];
+}
+
+fn not_here() -> int {
+    return -1;
+}
+
+fn too_heavy() -> int {
+    return -2;
+}
+
+fn new_player() -> Player {
+    let visited = new map[str, bool];
+    set visited[start_room()] = true;
+    return new Player { room: start_room(), inventory: new list[str], score: 0, moves: 0, visited: visited, taken: new map[str, bool] };
+}
+
+# Moves through an exit of the current room; false if there is none.
+fn move(player: Player, world: map[str, Room], direction: str) -> bool {
+    let room = world[player.room];
+    if not has(room.exits, direction) {
+        return false;
+    }
+    set player.room = room.exits[direction];
+    set player.moves = player.moves + 1;
+    if not has(player.visited, player.room) {
+        set player.visited[player.room] = true;
+        set player.score = player.score + visit_points();
+    }
+    return true;
+}
+
+fn contains(xs: list[str], x: str) -> bool {
+    return any(xs, fn(y: str) -> bool {
+        return y == x;
+    });
+}
+
+# Moves an item from the current room to the inventory; returns the points earned, not_here() or too_heavy().
+fn pick_up(player: Player, world: map[str, Room], item: str) -> int {
+    let room = world[player.room];
+    if not contains(room.items, item) {
+        return not_here();
+    }
+    if carried_weight(player) + item_weight(item) > carry_limit() {
+        return too_heavy();
+    }
+    set room.items = without(room.items, item);
+    push(player.inventory, item);
+    if has(player.taken, item) {
+        return 0;
+    }
+    set player.taken[item] = true;
+    let points = item_value(item);
+    set player.score = player.score + points;
+    return points;
+}
+
+fn without(xs: list[str], item: str) -> list[str] {
+    return filter(xs, fn(x: str) -> bool {
+        return x != item;
+    });
+}
+
+fn carried_weight(player: Player) -> int {
+    return fold(player.inventory, 0, fn(total: int, i: str) -> int {
+        return total + item_weight(i);
+    });
+}
+
+# Moves an item from the inventory to the current room; false if it is not carried.
+fn put_down(player: Player, world: map[str, Room], item: str) -> bool {
+    if not contains(player.inventory, item) {
+        return false;
+    }
+    set player.inventory = without(player.inventory, item);
+    push(world[player.room].items, item);
+    return true;
+}

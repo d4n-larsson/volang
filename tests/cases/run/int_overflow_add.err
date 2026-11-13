@@ -1,0 +1,5 @@
+int_overflow_add.vo:3:15: runtime error[R0001]: Integer overflow.
+   3 |     print(str(big + 1));
+     |               ^^^^^^^
+trace:
+  at main (int_overflow_add.vo:3:15)

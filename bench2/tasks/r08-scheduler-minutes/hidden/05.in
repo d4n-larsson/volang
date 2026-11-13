@@ -1,0 +1,9 @@
+add b1 room 9:30 10:15
+add b2 room 10:15 11:00
+add b3 room 8:00 9:30
+add b4 room 9:45 10:05
+add b5 room 7:05 7:55
+agenda room
+who room 9:59
+who room 7:5
+summary

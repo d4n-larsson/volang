@@ -1,0 +1,6 @@
+fn main() uses console {
+    let x: int = "a";
+    let y = x + 1;
+    let z = undefined_thing + 1;
+    print(str(y + z));
+}

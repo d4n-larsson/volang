@@ -1,0 +1,9 @@
+look
+take lamp
+go north
+take book
+drop lamp
+look
+take lamp
+inventory
+score

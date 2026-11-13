@@ -1,0 +1,21 @@
+fn main() uses console {
+    let xs = [1, 2, 3, 4, 5, 6];
+    let squares = map(xs, fn(x: int) -> int {
+        return x * x;
+    });
+    let evens = filter(xs, fn(x: int) -> bool {
+        return x % 2 == 0;
+    });
+    let sum = fold(xs, 0, fn(acc: int, x: int) -> int {
+        return acc + x;
+    });
+    let texts = map(squares, fn(x: int) -> str {
+        return str(x);
+    });
+    print(join(texts, ","));
+    print(str(len(evens)) + " evens, sum " + str(sum));
+    let words = fold(["a", "b", "c"], "", fn(acc: str, w: str) -> str {
+        return acc + w;
+    });
+    print(words);
+}

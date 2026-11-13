@@ -1,0 +1,61 @@
+import book.Book;
+import book.Student;
+import book.unknown_assignment;
+
+# num / den rounded half up (num >= 0, den > 0).
+fn rounded_div(num: int, den: int) -> int {
+    return (num + den / 2) / den;
+}
+
+# Formats a non-negative number of tenths: 875 -> 87.5.
+fn tenths(x: int) -> str {
+    return str(x / 10) + "." + str(x % 10);
+}
+
+# points out of max_points as tenths of a percent.
+fn percent_tenths(points: int, max_points: int) -> int {
+    return rounded_div(points * 1000, max_points);
+}
+
+# The student's weighted average in tenths of a percent, or err without scores.
+fn weighted_average(book: Book, student: Student) -> result[int] {
+    var total = 0;
+    var weight = 0;
+    for name in keys(book.assignments) {
+        let a = book.assignments[name];
+        if has(student.scores, name) {
+            set total = total + a.weight * percent_tenths(student.scores[name], a.max_points);
+            set weight = weight + a.weight;
+        }
+    }
+    if weight == 0 {
+        return err("no scores");
+    }
+    return ok(rounded_div(total, weight));
+}
+
+fn assignment_stats(book: Book, name: str) -> list[str] {
+    if not has(book.assignments, name) {
+        return [unknown_assignment(name)];
+    }
+    let points = new list[int];
+    for s in keys(book.students) {
+        let student = book.students[s];
+        if has(student.scores, name) {
+            push(points, student.scores[name]);
+        }
+    }
+    if len(points) == 0 {
+        return [name + " no scores"];
+    }
+    var low = points[0];
+    var high = points[0];
+    var total = 0;
+    for p in points {
+        set low = min(low, p);
+        set high = max(high, p);
+        set total = total + p;
+    }
+    let mean = rounded_div(10 * total, len(points));
+    return [name + " count " + str(len(points)) + " min " + str(low) + " max " + str(high) + " mean " + tenths(mean)];
+}

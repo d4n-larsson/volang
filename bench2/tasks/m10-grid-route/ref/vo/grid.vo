@@ -1,0 +1,67 @@
+record Grid {
+    rows: list[list[str]];
+    height: int;
+    width: int;
+    stops: list[int];
+}
+
+fn cost(ch: str) -> int {
+    if ch == ":" {
+        return 2;
+    }
+    if ch == "~" {
+        return 5;
+    }
+    return 1;
+}
+
+fn is_stop(ch: str) -> bool {
+    return ch == "S" or ch == "G" or ch >= "1" and ch <= "9";
+}
+
+fn parse(text: str) -> result[Grid] {
+    let lines = filter(split(text, "\n"), fn(l: str) -> bool {
+        return l != "";
+    });
+    if len(lines) == 0 {
+        return err("invalid grid");
+    }
+    let rows = map(lines, fn(l: str) -> list[str] {
+        return chars(l);
+    });
+    let w = len(rows[0]);
+    let where = new map[str, int];
+    for r in 0..len(rows) {
+        if len(rows[r]) != w {
+            return err("invalid grid");
+        }
+        for c in 0..w {
+            let ch = rows[r][c];
+            if is_stop(ch) {
+                if has(where, ch) {
+                    return err("invalid grid");
+                }
+                set where[ch] = r * w + c;
+            } else if ch != "#" and ch != "." and ch != ":" and ch != "~" {
+                return err("invalid grid");
+            }
+        }
+    }
+    if not has(where, "S") or not has(where, "G") {
+        return err("invalid grid");
+    }
+    let stops = [where["S"]];
+    let k = len(where) - 2;
+    for d in 1..k + 1 {
+        if not has(where, str(d)) {
+            return err("invalid grid");
+        }
+        push(stops, where[str(d)]);
+    }
+    push(stops, where["G"]);
+    return ok(new Grid { rows: rows, height: len(rows), width: w, stops: stops });
+}
+
+fn at(g: Grid, cell: int) -> str {
+    return g.rows[cell / g.width][cell % g.width];
+}

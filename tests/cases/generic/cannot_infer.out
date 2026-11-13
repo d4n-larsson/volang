@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"W0201","name":"unused_variable","severity":"warning","file":"cannot_infer.vo","start":{"line":10,"col":9},"end":{"line":10,"col":10},"text":"s","message":"`s` is never used.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0310","name":"cannot_infer_type_argument","severity":"error","file":"cannot_infer.vo","start":{"line":10,"col":13},"end":{"line":10,"col":26},"text":"empty_stack()","message":"Cannot infer `T` for `empty_stack`: give the variable a type.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":1,"truncated":0,"files":1}

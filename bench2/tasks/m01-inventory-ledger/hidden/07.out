@@ -1,0 +1,8 @@
+line 1: cannot take 1 of ghost, only 0 in stock
+line 2: cannot take 2 of ghost, only 0 in stock
+REPORT
+revenue 0.00 cogs 0.00 loss 0.00 profit 0.00 stock 0.00
+line 5: cannot take 2 of ghost, only 1 in stock
+REPORT
+ghost 1 1.00
+revenue 0.00 cogs 0.00 loss 0.00 profit 0.00 stock 1.00

@@ -1,0 +1,85 @@
+import parsing.Line;
+
+record GradeBook {
+    names: list[str];
+    weight: map[str, int];
+    maxp: map[str, int];
+    students: list[str];
+    is_student: map[str, bool];
+    scores: map[str, int];
+    drop: int;
+}
+
+fn new_book() -> GradeBook {
+    return new GradeBook { names: new list[str], weight: new map[str, int], maxp: new map[str, int], students: new list[str], is_student: new map[str, bool], scores: new map[str, int], drop: 0 };
+}
+
+fn rdiv(x: int, y: int) -> int {
+    return (2 * x + y) / (2 * y);
+}
+
+fn key(s: str, a: str) -> str {
+    return s + " " + a;
+}
+
+fn apply(g: GradeBook, l: Line) -> bool {
+    if l.kind == "assignment" {
+        if has(g.weight, l.a) {
+            return false;
+        }
+        push(g.names, l.a);
+        set g.weight[l.a] = l.x;
+        set g.maxp[l.a] = l.y;
+    } else if l.kind == "student" {
+        if has(g.is_student, l.a) {
+            return false;
+        }
+        push(g.students, l.a);
+        set g.is_student[l.a] = true;
+    } else if l.kind == "score" {
+        if not has(g.is_student, l.a) or not has(g.weight, l.b) {
+            return false;
+        }
+        if l.x > g.maxp[l.b] {
+            return false;
+        }
+        set g.scores[key(l.a, l.b)] = l.x;
+    } else {
+        set g.drop = l.x;
+    }
+    return true;
+}
+
+fn has_score(g: GradeBook, s: str, a: str) -> bool {
+    return has(g.scores, key(s, a));
+}
+
+fn bp(g: GradeBook, s: str, a: str) -> int {
+    if not has_score(g, s, a) {
+        return 0;
+    }
+    return g.scores[key(s, a)] * 10000 / g.maxp[a];
+}
+
+fn final(g: GradeBook, s: str) -> int {
+    let n = len(g.names);
+    if n == 0 {
+        return 0;
+    }
+    let k = min(g.drop, n - 1);
+    let order = new list[int];
+    for i in 0..n {
+        push(order, i);
+    }
+    sort_by(order, fn(i: int) -> int {
+        return bp(g, s, g.names[i]);
+    });
+    var total = 0;
+    var weights = 0;
+    for i in slice(order, k, n) {
+        let a = g.names[i];
+        set total = total + g.weight[a] * bp(g, s, a);
+        set weights = weights + g.weight[a];
+    }
+    return rdiv(total, weights);
+}

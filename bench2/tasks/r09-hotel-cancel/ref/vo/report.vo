@@ -1,0 +1,68 @@
+import model.RoomType;
+import model.Booking;
+import rooms.sorted_types;
+import rooms.occupied;
+import rooms.min_free;
+import bookings.held_nights;
+import billing.money;
+
+fn avail_line(types: map[str, RoomType], bookings: map[str, Booking], type_name: str, start: int, end: int) -> str {
+    let free = min_free(types, bookings, type_name, start, end);
+    return "avail " + type_name + " " + str(start) + "-" + str(end) + ": " + str(free) + " of " + str(types[type_name].count) + " free";
+}
+
+fn occupancy_lines(types: map[str, RoomType], bookings: map[str, Booking], day: int) -> list[str] {
+    var used = 0;
+    var total = 0;
+    let rows = new list[str];
+    for t in sorted_types(types) {
+        let n = occupied(bookings, t.name, day);
+        set used = used + n;
+        set total = total + t.count;
+        push(rows, "  " + t.name + " " + str(n) + "/" + str(t.count));
+    }
+    let out = ["day " + str(day) + ": " + str(used) + " of " + str(total) + " rooms occupied"];
+    for r in rows {
+        push(out, r);
+    }
+    return out;
+}
+
+fn report_lines(types: map[str, RoomType], bookings: map[str, Booking]) -> list[str] {
+    let out = new list[str];
+    var revenue = 0;
+    var refunds = 0;
+    var any_cancelled = false;
+    for t in sorted_types(types) {
+        var count = 0;
+        var cancelled = 0;
+        var held = 0;
+        var earned = 0;
+        for k in keys(bookings) {
+            let b = bookings[k];
+            if b.type_name == t.name {
+                if b.cancelled {
+                    set cancelled = cancelled + 1;
+                } else {
+                    set count = count + 1;
+                }
+                set held = held + held_nights(b);
+                set earned = earned + b.total - b.refund;
+                set refunds = refunds + b.refund;
+            }
+        }
+        set revenue = revenue + earned;
+        set any_cancelled = any_cancelled or cancelled > 0;
+        var label = str(count) + " bookings";
+        if cancelled > 0 {
+            set label = label + " (" + str(cancelled) + " cancelled)";
+        }
+        push(out, t.name + ": " + label + ", " + str(held) + " nights, revenue " + money(earned));
+    }
+    var total = "total revenue " + money(revenue);
+    if any_cancelled {
+        set total = total + ", refunds " + money(refunds);
+    }
+    push(out, total);
+    return out;
+}

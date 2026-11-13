@@ -1,0 +1,20 @@
+error: bad time 24:00
+error: bad time 12:60
+error: bad time 1200
+error: bad time 12:5
+error: bad time 12:345
+error: bad time ab:cd
+error: bad time 13:0x
+error: bad time :30
+error: bad time 12:30:00
+added a in r 23:00-23:59
+r at 23:59: free
+r at 23:58: a
+error: bad time 99:99
+error: bad time 24:00
+free r 22:00-23:59:
+  22:00-23:00 (60 min)
+agenda r: 1 events
+  23:00-23:59 a (59 min)
+r: 1 events, 59 min booked, first 23:00, last 23:59
+total: 1 events, 59 min booked

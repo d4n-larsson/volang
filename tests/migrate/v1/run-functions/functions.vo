@@ -1,0 +1,23 @@
+fn fib(n: int) -> int {
+    if n < 2 {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+fn sign(x: int) -> str {
+    if x < 0 {
+        return "negative";
+    }
+    if x == 0 {
+        return "zero";
+    }
+    return "positive";
+}
+
+fn main() {
+    print(str(fib(20)));
+    print(sign(-5));
+    print(sign(0));
+    print(sign(7));
+}

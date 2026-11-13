@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0114","name":"statement_not_call","severity":"error","file":"assign_without_set.vo","start":{"line":3,"col":5},"end":{"line":3,"col":6},"text":"x","message":"Assignments start with `set`: write `set x = ...;`.","fixes":[{"file":"assign_without_set.vo","start":{"line":3,"col":5},"end":{"line":3,"col":5},"replacement":"set "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

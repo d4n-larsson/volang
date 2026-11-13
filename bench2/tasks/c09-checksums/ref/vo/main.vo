@@ -1,0 +1,38 @@
+fn adler(text: str) -> int {
+    var a = 1;
+    var b = 0;
+    for c in chars(text) {
+        set a = (a + ord(c)) % 65521;
+        set b = (b + a) % 65521;
+    }
+    return b * 65536 + a;
+}
+
+fn main() uses console, input, file.read("data/") {
+    var found = 0;
+    var total = 0;
+    while true {
+        match read_line() {
+            case ok(name) {
+                if name == "" {
+                    continue;
+                }
+                match read_file("data/" + name) {
+                    case ok(text) {
+                        let lines = len(split(text, "\n")) - 1;
+                        print(name + " " + str(adler(text)) + " " + str(len(text)) + " " + str(lines));
+                        set found = found + 1;
+                        set total = total + len(text);
+                    }
+                    case err(_) {
+                        print(name + " missing");
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    print("total " + str(found) + " " + str(total));
+}

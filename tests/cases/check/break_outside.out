@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0407","name":"break_outside_loop","severity":"error","file":"break_outside.vo","start":{"line":2,"col":5},"end":{"line":2,"col":11},"text":"break;","message":"`break` can only be used inside a loop.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

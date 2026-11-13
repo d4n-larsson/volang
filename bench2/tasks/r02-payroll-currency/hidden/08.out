@@ -1,0 +1,17 @@
+employee U1 added: hourly $12.34/h
+error: unknown currency usd
+error: unknown currency Eur
+error: unknown currency YEN
+error: employee U1 exists
+error: bad command
+error: bad command
+U1 hours 41
+payslip U1 Una (hourly)
+  regular 40h $493.60
+  overtime 1h $18.51
+  gross $512.11
+  tax $51.21
+  net $460.90
+summary: 1 employees
+  U1 Una gross $512.11 net $460.90
+total gross $512.11 tax $51.21 deductions $0.00 net $460.90

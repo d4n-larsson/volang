@@ -1,0 +1,25 @@
+added mid in r 00:00-00:30
+added noon in r 12:00-12:45
+added one in r 13:15-14:00
+added last in r 23:00-23:59
+added morn in r 09:05-09:45
+agenda r: 5 events
+  00:00-00:30 mid (30 min)
+  09:05-09:45 morn (40 min)
+  12:00-12:45 noon (45 min)
+  13:15-14:00 one (45 min)
+  23:00-23:59 last (59 min)
+error: bad time 0:30am
+error: bad time 13:00pm
+error: bad time 9:05AM
+error: bad time 9:5am
+error: bad time 9am
+error: bad time am
+error: empty interval
+error: x conflicts with morn
+added y in r 02:00-03:00
+r at 00:15: mid
+r at 12:15: noon
+r at 00:15: mid
+r: 6 events, 279 min booked, first 00:00, last 23:59
+total: 6 events, 279 min booked

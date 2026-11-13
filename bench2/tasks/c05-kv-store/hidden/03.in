@@ -1,0 +1,8 @@
+get note
+add note 1
+copy note h3note
+get h3note
+
+set h3note replaced
+get h3note
+get note

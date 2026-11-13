@@ -1,0 +1,83 @@
+import grid.Grid;
+import grid.at;
+import grid.cost;
+
+record Leg {
+    cost: int;
+    moves: list[str];
+    cells: list[int];
+}
+
+record Move {
+    name: str;
+    cell: int;
+}
+
+fn neighbors(g: Grid, cell: int) -> list[Move] {
+    let r = cell / g.width;
+    let c = cell % g.width;
+    let out = new list[Move];
+    if r > 0 {
+        push(out, new Move { name: "U", cell: cell - g.width });
+    }
+    if c < g.width - 1 {
+        push(out, new Move { name: "R", cell: cell + 1 });
+    }
+    if r < g.height - 1 {
+        push(out, new Move { name: "D", cell: cell + g.width });
+    }
+    if c > 0 {
+        push(out, new Move { name: "L", cell: cell - 1 });
+    }
+    return filter(out, fn(m: Move) -> bool {
+        return at(g, m.cell) != "#";
+    });
+}
+
+fn dist_to(g: Grid, goal: int) -> list[int] {
+    let dist = new list[int];
+    for _ in 0..g.height * g.width {
+        push(dist, -1);
+    }
+    set dist[goal] = 0;
+    let buckets = [[goal]];
+    var d = 0;
+    while d < len(buckets) {
+        let bucket = buckets[d];
+        for cell in bucket {
+            if dist[cell] == d {
+                let step = d + cost(at(g, cell));
+                for m in neighbors(g, cell) {
+                    if dist[m.cell] < 0 or step < dist[m.cell] {
+                        set dist[m.cell] = step;
+                        while len(buckets) <= step {
+                            push(buckets, new list[int]);
+                        }
+                        push(buckets[step], m.cell);
+                    }
+                }
+            }
+        }
+        set d = d + 1;
+    }
+    return dist;
+}
+
+fn leg(g: Grid, a: int, b: int) -> result[Leg] {
+    let dist = dist_to(g, b);
+    if dist[a] < 0 {
+        return err("no route");
+    }
+    let l = new Leg { cost: dist[a], moves: new list[str], cells: [a] };
+    var cur = a;
+    while cur != b {
+        let here = dist[cur];
+        let next = filter(neighbors(g, cur), fn(m: Move) -> bool {
+            return dist[m.cell] >= 0 and cost(at(g, m.cell)) + dist[m.cell] == here;
+        })[0];
+        push(l.moves, next.name);
+        push(l.cells, next.cell);
+        set cur = next.cell;
+    }
+    return ok(l);
+}

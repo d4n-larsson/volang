@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0105","name":"number_out_of_range","severity":"error","file":"number_suffix.vo","start":{"line":2,"col":13},"end":{"line":2,"col":16},"text":"1e3","message":"Number literals have no exponent or suffix: write the number in full, like 1000.0.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

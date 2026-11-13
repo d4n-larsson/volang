@@ -1,0 +1,20 @@
+employee J1 added: hourly JPY 1001/h
+employee J2 added: salaried JPY 3500000
+J1 hours 47
+J1 deduction tea JPY 5
+payslip J1 Aiko (hourly)
+  regular 40h JPY 40040
+  overtime 7h JPY 10510
+  gross JPY 50550
+  tax JPY 5055
+  deduction tea JPY 5
+  net JPY 45490
+payslip J2 Ren (salaried)
+  salary JPY 3500000
+  gross JPY 3500000
+  tax JPY 1010000
+  net JPY 2490000
+summary: 2 employees
+  J1 Aiko gross JPY 50550 net JPY 45490
+  J2 Ren gross JPY 3500000 net JPY 2490000
+total gross JPY 3550550 tax JPY 1015055 deductions JPY 5 net JPY 2535490

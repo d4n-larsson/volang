@@ -1,0 +1,136 @@
+import recipes.Ingredient;
+import recipes.Recipe;
+import recipes.add_recipe;
+import recipes.show_lines;
+import recipes.list_lines;
+import scaling.Order;
+import scaling.scale_lines;
+import scaling.shopping_list;
+import config.Config;
+import config.default_config;
+import config.parse_config;
+import config.config_line;
+
+# Only called on strings of digits.
+fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+# A number of at least 1.
+fn is_count(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    if not all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    }) {
+        return false;
+    }
+    return num(s) > 0;
+}
+
+fn run(words: list[str], recipes: map[str, Recipe], cfg: Config) -> list[str] {
+    let cmd = words[0];
+    let args = slice(words, 1, len(words));
+    if cmd == "recipe" {
+        if len(args) < 5 or (len(args) - 2) % 3 != 0 or not is_count(args[1]) {
+            return ["error: bad command"];
+        }
+        let ingredients = new list[Ingredient];
+        var i = 2;
+        while i < len(args) {
+            if not is_count(args[i + 1]) {
+                return ["error: bad command"];
+            }
+            push(ingredients, new Ingredient { item: args[i], qty: num(args[i + 1]), unit: args[i + 2] });
+            set i = i + 3;
+        }
+        return [add_recipe(recipes, args[0], num(args[1]), ingredients)];
+    }
+    if cmd == "show" {
+        if len(args) != 1 {
+            return ["error: bad command"];
+        }
+        if not has(recipes, args[0]) {
+            return ["error: unknown recipe " + args[0]];
+        }
+        return show_lines(recipes[args[0]], cfg);
+    }
+    if cmd == "scale" {
+        if len(args) != 2 or not is_count(args[1]) {
+            return ["error: bad command"];
+        }
+        if not has(recipes, args[0]) {
+            return ["error: unknown recipe " + args[0]];
+        }
+        return scale_lines(recipes[args[0]], num(args[1]), cfg);
+    }
+    if cmd == "shop" {
+        if len(args) < 2 or len(args) % 2 != 0 {
+            return ["error: bad command"];
+        }
+        let orders = new list[Order];
+        var i = 0;
+        while i < len(args) {
+            if not is_count(args[i + 1]) {
+                return ["error: bad command"];
+            }
+            push(orders, new Order { name: args[i], wanted: num(args[i + 1]) });
+            set i = i + 2;
+        }
+        for o in orders {
+            if not has(recipes, o.name) {
+                return ["error: unknown recipe " + o.name];
+            }
+        }
+        return shopping_list(recipes, orders, cfg);
+    }
+    if cmd == "list" {
+        if len(args) != 0 {
+            return ["error: bad command"];
+        }
+        return list_lines(recipes);
+    }
+    return ["error: unknown command " + cmd];
+}
+
+fn words_of(line: str) -> list[str] {
+    return filter(split(line, " "), fn(w: str) -> bool {
+        return w != "";
+    });
+}
+
+fn main() uses console, input {
+    let recipes = new map[str, Recipe];
+    var cfg = default_config();
+    var lines = split(read_all(), "\n");
+    let first = words_of(lines[0]);
+    if len(first) > 0 and first[0] == "config" {
+        set lines = slice(lines, 1, len(lines));
+        match parse_config(slice(first, 1, len(first))) {
+            case ok(parsed) {
+                set cfg = parsed;
+                print(config_line(cfg));
+            }
+            case err(_) {
+                print("error: bad config");
+            }
+        }
+    }
+    for line in lines {
+        let words = words_of(line);
+        if len(words) == 0 {
+            continue;
+        }
+        for out in run(words, recipes, cfg) {
+            print(out);
+        }
+    }
+}

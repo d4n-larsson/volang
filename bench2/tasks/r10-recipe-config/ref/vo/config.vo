@@ -1,0 +1,35 @@
+record Config {
+    rounding: str;
+    units: str;
+}
+
+fn default_config() -> Config {
+    return new Config { rounding: "up", units: "metric" };
+}
+
+# The words after `config`: each KEY=VALUE, each key at most once.
+fn parse_config(settings: list[str]) -> result[Config] {
+    let cfg = default_config();
+    let seen = new map[str, bool];
+    for w in settings {
+        let parts = split(w, "=");
+        if len(parts) != 2 or has(seen, parts[0]) {
+            return err("bad config");
+        }
+        let key = parts[0];
+        let value = parts[1];
+        set seen[key] = true;
+        if key == "rounding" and (value == "up" or value == "down" or value == "nearest") {
+            set cfg.rounding = value;
+        } else if key == "units" and (value == "metric" or value == "kitchen") {
+            set cfg.units = value;
+        } else {
+            return err("bad config");
+        }
+    }
+    return ok(cfg);
+}
+
+fn config_line(cfg: Config) -> str {
+    return "config rounding=" + cfg.rounding + " units=" + cfg.units;
+}

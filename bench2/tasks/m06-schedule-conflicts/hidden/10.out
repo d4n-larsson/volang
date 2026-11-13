@@ -1,0 +1,9 @@
+conflicts: 3
+s1 s3: room room1
+s1 s4: person b
+s2 s3: room room1
+rooms:
+room1 60
+room2 30
+free line 6: 09:00
+free line 7: 08:31

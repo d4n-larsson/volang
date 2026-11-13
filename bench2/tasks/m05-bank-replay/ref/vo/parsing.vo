@@ -1,0 +1,101 @@
+record Entry {
+    line: int;
+    time: int;
+    cmd: str;
+    names: list[str];
+    money: int;
+}
+
+fn digits(s: str, lo: int, hi: int) -> bool {
+    return len(s) >= lo and len(s) <= hi and all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+fn to_int(s: str) -> int {
+    match parse_int(s) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn money(s: str) -> result[int] {
+    let parts = split(s, ".");
+    if len(parts) > 2 or not digits(parts[0], 1, 9) {
+        return err("bad money");
+    }
+    let dollars = to_int(parts[0]) * 100;
+    if len(parts) == 1 {
+        return ok(dollars);
+    }
+    let c = parts[1];
+    if not digits(c, 1, 2) {
+        return err("bad money");
+    }
+    if len(c) == 1 {
+        return ok(dollars + to_int(c) * 10);
+    }
+    return ok(dollars + to_int(c));
+}
+
+fn arity(cmd: str) -> int {
+    if cmd == "month" {
+        return 0;
+    }
+    if cmd == "close" {
+        return 1;
+    }
+    if cmd == "transfer" {
+        return 3;
+    }
+    if cmd == "open" or cmd == "deposit" or cmd == "withdraw" {
+        return 2;
+    }
+    return -1;
+}
+
+fn parse(line: str, n: int) -> result[Entry] {
+    let f = filter(split(line, " "), fn(x: str) -> bool {
+        return x != "";
+    });
+    let e = new Entry { line: n, time: -1, cmd: "", names: new list[str], money: 0 };
+    if len(f) == 0 {
+        return ok(e);
+    }
+    if len(f) < 2 or not digits(f[0], 1, 9) or arity(f[1]) < 0 or len(f) != 2 + arity(f[1]) {
+        return err("invalid");
+    }
+    set e.time = to_int(f[0]);
+    set e.cmd = f[1];
+    if f[1] == "month" {
+        return ok(e);
+    }
+    if f[1] == "close" {
+        push(e.names, f[2]);
+        return ok(e);
+    }
+    let last = len(f) - 1;
+    set e.names = slice(f, 2, last);
+    set e.money = try money(f[last]);
+    if e.money == 0 and f[1] != "open" {
+        return err("invalid");
+    }
+    return ok(e);
+}
+
+fn show(c: int) -> str {
+    var sign = "";
+    if c < 0 {
+        set sign = "-";
+    }
+    let a = abs(c);
+    var cents = str(a % 100);
+    if len(cents) == 1 {
+        set cents = "0" + cents;
+    }
+    return sign + str(a / 100) + "." + cents;
+}

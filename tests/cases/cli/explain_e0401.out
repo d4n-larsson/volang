@@ -1,0 +1,35 @@
+## E0401 non_exhaustive_match
+
+A `match` does not handle every case.
+
+Fixable: yes
+
+A `match` must have an arm for every case of the variant or `result` it inspects. The message lists the missing cases, and the fix inserts empty arms for them, which you then fill in. A `result` match needs both `ok` and `err`.
+
+### Example
+
+```vo
+fn main() uses console {
+    match parse_int("4") {
+        case ok(v) {
+            print(str(v));
+        }
+    }
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    match parse_int("4") {
+        case ok(v) {
+            print(str(v));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
+```
+

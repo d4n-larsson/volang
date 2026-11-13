@@ -1,0 +1,8 @@
+# base settings for every mode
+host = localhost
+port = 8080
+log_level = info
+
+workers = 4
+url = http://localhost:8080/?a=1&b=2
+    # indented comment

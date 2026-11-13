@@ -1,0 +1,4 @@
+TIMEOUT loops forever (0ms)
+  infinite.vo:2:5: runtime error[R0009]: Time limit of 10 s exceeded.
+PASS still runs (0ms)
+1 passed, 0 failed, 1 timed out

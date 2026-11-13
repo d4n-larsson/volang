@@ -1,0 +1,17 @@
+# File header comment.
+# Second line.
+import b.thing;
+# Comment before a function.
+fn main() {
+    # Inside a block.
+    let a = 1;
+        # Indented oddly.
+    print(str(a));
+    # Before the closing brace.
+}
+# Between items.
+
+record R {
+    # Field comment.
+    x: int;
+}

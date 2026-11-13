@@ -1,0 +1,26 @@
+fn is_vowel(c: str) -> bool {
+    return c == "a" or c == "e" or c == "i" or c == "o" or c == "u";
+}
+
+fn main() uses console, input {
+    let words = new list[str];
+    while true {
+        match read_line() {
+            case ok(line) {
+                push(words, line);
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    sort_by(words, fn(w: str) -> int {
+        return len(w);
+    });
+    sort_by(words, fn(w: str) -> int {
+        return -len(filter(chars(w), is_vowel));
+    });
+    for w in words {
+        print(w);
+    }
+}

@@ -1,0 +1,5 @@
+12 fails not 12
+24 ok
+-24 fails min -20
+-12 ok
+5 fails div 4,div 6

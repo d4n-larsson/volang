@@ -1,0 +1,5 @@
+SHIP ghost 1 100
+SCRAP ghost 2
+REPORT
+RECEIVE ghost 1 100
+SCRAP ghost 2

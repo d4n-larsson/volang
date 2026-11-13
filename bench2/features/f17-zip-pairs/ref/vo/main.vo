@@ -1,0 +1,46 @@
+record Pair[A, B] {
+    first: A;
+    second: B;
+}
+
+fn zip[A, B](xs: list[A], ys: list[B]) -> list[Pair[A, B]] {
+    let out = new list[Pair[A, B]];
+    for i in 0..min(len(xs), len(ys)) {
+        push(out, new Pair[A, B] { first: xs[i], second: ys[i] });
+    }
+    return out;
+}
+
+fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
+    return new Pair[B, A] { first: p.second, second: p.first };
+}
+
+fn words(line: str) -> list[str] {
+    return filter(split(line, " "), fn(s: str) -> bool {
+        return len(s) > 0;
+    });
+}
+
+fn main() -> result[void] uses console, input {
+    let names = words(try read_line());
+    let scores = new list[int];
+    for t in words(try read_line()) {
+        push(scores, try parse_int(t));
+    }
+    let pairs = zip(names, scores);
+    sort_by(pairs, fn(p: Pair[str, int]) -> int {
+        return -p.second;
+    });
+    print("pairs " + str(len(pairs)));
+    for p in pairs {
+        print(p.first + " " + str(p.second));
+    }
+    print("leftover " + str(abs(len(names) - len(scores))));
+    if len(pairs) == 0 {
+        print("best -");
+    } else {
+        let b = swap(pairs[0]);
+        print("best " + str(b.first) + " " + b.second);
+    }
+    return ok();
+}

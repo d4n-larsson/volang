@@ -1,0 +1,10 @@
+product A1 added
+product B2 added
+order o1 placed: 3 units, total 28.00
+order o1 (active)
+  A1 x2 @ 1.50
+  B2 x1 @ 25.00
+  total 28.00
+product A1 pen price 1.50 stock 8 sold 2
+product B2 book price 25.00 stock 2 sold 1
+revenue 28.00 over 1 orders

@@ -1,0 +1,62 @@
+import staff.Employee;
+
+record Pay {
+    regular_hours: int;
+    overtime_hours: int;
+    regular: int;
+    overtime: int;
+    gross: int;
+    tax: int;
+    deductions: int;
+    net: int;
+}
+
+record Bracket {
+    upper: int;
+    bp: int;
+}
+
+fn overtime_after() -> int {
+    return 40;
+}
+
+# Upper limit of each bracket in cents (-1 = no limit) and its rate in basis points.
+fn brackets() -> list[Bracket] {
+    return [new Bracket { upper: 100000, bp: 1000 }, new Bracket { upper: 300000, bp: 2000 }, new Bracket { upper: -1, bp: 3000 }];
+}
+
+fn income_tax(gross: int) -> int {
+    var total_bp = 0;
+    var lower = 0;
+    for b in brackets() {
+        if gross <= lower {
+            break;
+        }
+        var top = gross;
+        if b.upper >= 0 and gross > b.upper {
+            set top = b.upper;
+        }
+        set total_bp = total_bp + (top - lower) * b.bp;
+        set lower = b.upper;
+    }
+    return total_bp / 10000;
+}
+
+fn compute_pay(emp: Employee) -> Pay {
+    let p = new Pay { regular_hours: 0, overtime_hours: 0, regular: 0, overtime: 0, gross: 0, tax: 0, deductions: 0, net: 0 };
+    if emp.kind == "hourly" {
+        set p.regular_hours = min(emp.hours, overtime_after());
+        set p.overtime_hours = emp.hours - p.regular_hours;
+        set p.regular = p.regular_hours * emp.amount;
+        set p.overtime = p.overtime_hours * emp.amount * 3 / 2;
+    } else {
+        set p.regular = emp.amount;
+    }
+    set p.gross = p.regular + p.overtime;
+    set p.tax = income_tax(p.gross);
+    for d in emp.deductions {
+        set p.deductions = p.deductions + d.amount;
+    }
+    set p.net = p.gross - p.tax - p.deductions;
+    return p;
+}

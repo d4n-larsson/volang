@@ -1,0 +1,23 @@
+add m1 r1 08:00 09:00
+add m2 r1 09:00 10:00
+add m3 r1 08:30 08:45
+add m4 r1 07:00 08:01
+add m5 r1 07:00 08:00
+add m1 r2 10:00 11:00
+add m6 r1 10:00 10:00
+add m7 r1 11:00 10:00
+who r1 08:00
+who r1 09:00
+who r1 10:00
+who r1 06:59
+remove m2
+remove m2
+add m2 r1 09:15 09:45
+add m8 r2 09:00 09:20
+agenda r1
+agenda r2
+add m9 r1 09:30
+remove
+summary now
+cancel m1
+summary

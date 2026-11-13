@@ -1,0 +1,19 @@
+type r 1999 10
+book k1 r a 10 11
+book k2 r b 10 11
+book k3 r c 10 11
+book k4 r d 10 11
+book k5 r e 10 11
+book k6 r f 10 17
+book k7 r g 10 12
+cancel k1 3
+cancel k2 4
+cancel k3 9
+cancel k4 10
+cancel k5 11
+cancel k6 0
+cancel k7 11
+invoice k2
+invoice k6
+invoice k7
+report

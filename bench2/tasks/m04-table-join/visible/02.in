@@ -1,0 +1,9 @@
+left sku
+sku,name,price
+A1,"Bolt, small",5
+B2,"Nut ""hex""",3
+C3,Washer,1
+---
+sku,price,stock
+A1,6,100
+C3,1,

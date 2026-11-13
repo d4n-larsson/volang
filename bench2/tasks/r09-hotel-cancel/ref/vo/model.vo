@@ -1,0 +1,23 @@
+record RoomType {
+    name: str;
+    rate: int;
+    count: int;
+}
+
+# Nights start..end-1: check-in on day `start`, check-out on day `end`. Amounts in cents.
+record Booking {
+    booking_id: str;
+    type_name: str;
+    guest: str;
+    start: int;
+    end: int;
+    rate: int;
+    subtotal: int;
+    discount: int;
+    total: int;
+    # The booking holds its room for the nights start..held_until-1 (held_until drops on cancel).
+    held_until: int;
+    cancelled: bool;
+    cancel_day: int;
+    refund: int;
+}

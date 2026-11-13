@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"fn_statement.vo","start":{"line":2,"col":5},"end":{"line":2,"col":7},"text":"fn","message":"Functions are declared at the top level: write `let f = fn(...) { ... };` for a local function.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

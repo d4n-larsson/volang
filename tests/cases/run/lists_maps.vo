@@ -1,0 +1,46 @@
+fn main() uses console {
+    let xs = new list[int];
+    push(xs, 3);
+    push(xs, 1);
+    push(xs, 2);
+    print(str(len(xs)));
+    set xs[0] = 5;
+    print(str(xs[0]));
+    sort(xs);
+    print(str(xs[0]) + str(xs[1]) + str(xs[2]));
+    match pop(xs) {
+        case ok(v) {
+            print("popped " + str(v));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    let empty = new list[str];
+    match pop(empty) {
+        case ok(v) {
+            print(v);
+        }
+        case err(e) {
+            print("pop: " + e);
+        }
+    }
+    let m = new map[str, int];
+    set m["b"] = 2;
+    set m["a"] = 1;
+    set m["c"] = 3;
+    set m["b"] = 20;
+    remove(m, "c");
+    print(str(has(m, "a")) + " " + str(has(m, "c")));
+    for k in keys(m) {
+        print(k + "=" + str(m[k]));
+    }
+    let words = ["pear", "apple", "fig"];
+    sort(words);
+    print(join(words, ","));
+    let fs = [2.5, -1.0, 0.5];
+    sort(fs);
+    print(str(fs[0]) + " " + str(fs[2]));
+    print(str(len(slice(words, 1, 3))));
+    print(str(len(m)));
+}

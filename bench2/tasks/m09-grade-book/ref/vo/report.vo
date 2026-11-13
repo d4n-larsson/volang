@@ -1,0 +1,87 @@
+import gradebook.GradeBook;
+import gradebook.bp;
+import gradebook.final;
+import gradebook.has_score;
+import gradebook.rdiv;
+import parsing.pct;
+
+fn letter(f: int) -> str {
+    if f >= 9000 {
+        return "A";
+    }
+    if f >= 8000 {
+        return "B";
+    }
+    if f >= 7000 {
+        return "C";
+    }
+    if f >= 6000 {
+        return "D";
+    }
+    return "F";
+}
+
+fn report(g: GradeBook) -> list[str] {
+    let finals = new map[str, int];
+    for s in g.students {
+        set finals[s] = final(g, s);
+    }
+    let order = slice(g.students, 0, len(g.students));
+    sort(order);
+    sort_by(order, fn(s: str) -> int {
+        return -finals[s];
+    });
+    let out = ["students:"];
+    for s in order {
+        push(out, s + " " + pct(finals[s]) + " " + letter(finals[s]));
+    }
+    let c = len(order);
+    push(out, "stats:");
+    push(out, "count " + str(c));
+    if c > 0 {
+        let fs = map(order, fn(s: str) -> int {
+            return finals[s];
+        });
+        sort(fs);
+        var med = fs[c / 2];
+        if c % 2 == 0 {
+            set med = rdiv(fs[c / 2 - 1] + fs[c / 2], 2);
+        }
+        let total = fold(fs, 0, fn(acc: int, f: int) -> int {
+            return acc + f;
+        });
+        let top = fs[c - 1];
+        let best = filter(order, fn(s: str) -> bool {
+            return finals[s] == top;
+        });
+        sort(best);
+        push(out, "mean " + pct(rdiv(total, c)));
+        push(out, "median " + pct(med));
+        push(out, "top " + pct(top) + " " + join(best, ","));
+        let counts = new list[str];
+        for l in ["A", "B", "C", "D", "F"] {
+            let k = len(filter(fs, fn(f: int) -> bool {
+                return letter(f) == l;
+            }));
+            push(counts, l + ":" + str(k));
+        }
+        push(out, "letters " + join(counts, " "));
+    }
+    push(out, "assignments:");
+    for a in g.names {
+        var total = 0;
+        var missing = 0;
+        for s in g.students {
+            set total = total + bp(g, s, a);
+            if not has_score(g, s, a) {
+                set missing = missing + 1;
+            }
+        }
+        var avg = 0;
+        if c > 0 {
+            set avg = rdiv(total, c);
+        }
+        push(out, a + " avg " + pct(avg) + " missing " + str(missing));
+    }
+    return out;
+}

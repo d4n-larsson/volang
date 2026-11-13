@@ -1,0 +1,17 @@
+meeting
+meeting a b Mon 09:00-10:00
+meeting a b Mon 09:00-10:00 p q
+meeting a b Mon 09:00 p
+meeting a b Mon 09:00-10:00-11:00 p
+meeting a b Mon 24:00-24:30 p
+meeting a b Mon 09:60-10:00 p
+meeting a b mon 09:00-10:00 p
+meeting a b Mon 10:00-09:00 p
+meeting a b Mon 9:00-10:00 p
+meeting a b Mon 09:00-10:0 p
+meeting a b Mon 09.00-10:00 p
+Meeting a b Mon 09:00-10:00 p
+free
+free Mon 30
+free Mon -5 p
+free Mon 30 p extra

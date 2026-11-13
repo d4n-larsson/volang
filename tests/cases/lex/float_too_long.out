@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0105","name":"number_out_of_range","severity":"error","file":"float_too_long.vo","start":{"line":2,"col":15},"end":{"line":2,"col":32},"text":"1.234567890123456","message":"Float literal has more than 15 significant digits.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

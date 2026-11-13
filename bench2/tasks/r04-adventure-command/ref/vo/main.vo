@@ -1,0 +1,74 @@
+import world.Room;
+import world.make_world;
+import player.Player;
+import player.new_player;
+import commands.do_look;
+import commands.do_go;
+import commands.do_take;
+import commands.do_drop;
+import commands.do_inventory;
+import commands.do_score;
+import commands.do_quit;
+
+# Number of words after the verb that each command takes.
+fn arity() -> map[str, int] {
+    let a = new map[str, int];
+    set a["look"] = 0;
+    set a["go"] = 1;
+    set a["take"] = 1;
+    set a["drop"] = 1;
+    set a["inventory"] = 0;
+    set a["score"] = 0;
+    set a["quit"] = 0;
+    return a;
+}
+
+fn run(words: list[str], player: Player, world: map[str, Room]) -> list[str] {
+    let verb = words[0];
+    let args = slice(words, 1, len(words));
+    let counts = arity();
+    if not has(counts, verb) {
+        return ["unknown command " + verb];
+    }
+    if len(args) != counts[verb] {
+        return ["what?"];
+    }
+    if verb == "look" {
+        return do_look(player, world);
+    }
+    if verb == "go" {
+        return do_go(player, world, args[0]);
+    }
+    if verb == "take" {
+        return do_take(player, world, args[0]);
+    }
+    if verb == "drop" {
+        return do_drop(player, world, args[0]);
+    }
+    if verb == "inventory" {
+        return do_inventory(player);
+    }
+    if verb == "score" {
+        return do_score(player);
+    }
+    return do_quit(player);
+}
+
+fn main() uses console, input {
+    let world = make_world();
+    let player = new_player();
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w: str) -> bool {
+            return w != "";
+        });
+        if len(words) == 0 {
+            continue;
+        }
+        for out in run(words, player, world) {
+            print(out);
+        }
+        if words[0] == "quit" and len(words) == 1 {
+            break;
+        }
+    }
+}

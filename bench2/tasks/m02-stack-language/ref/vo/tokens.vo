@@ -1,0 +1,50 @@
+fn limit() -> int {
+    return 1000000000000000000;
+}
+
+fn tokens(line: str) -> list[str] {
+    return filter(split(line, " "), fn(t: str) -> bool {
+        return t != "";
+    });
+}
+
+fn is_number(tok: str) -> bool {
+    var d = tok;
+    if len(tok) > 0 and slice(tok, 0, 1) == "-" {
+        set d = slice(tok, 1, len(tok));
+    }
+    return len(d) > 0 and all(chars(d), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+fn number(tok: str) -> result[int] {
+    var neg = false;
+    var d = tok;
+    if slice(tok, 0, 1) == "-" {
+        set neg = true;
+        set d = slice(tok, 1, len(tok));
+    }
+    while len(d) > 1 and slice(d, 0, 1) == "0" {
+        set d = slice(d, 1, len(d));
+    }
+    if len(d) > 19 {
+        return err("overflow");
+    }
+    var v = 0;
+    match parse_int(d) {
+        case ok(x) {
+            set v = x;
+        }
+        case err(_) {
+            return err("overflow");
+        }
+    }
+    if v > limit() {
+        return err("overflow");
+    }
+    if neg {
+        return ok(-v);
+    }
+    return ok(v);
+}

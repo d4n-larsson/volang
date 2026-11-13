@@ -1,0 +1,9 @@
+add 6 nothing
+add 1
+remove 1
+list all
+add 4 ok
+done 01
+done abc
+prio 1 2
+list

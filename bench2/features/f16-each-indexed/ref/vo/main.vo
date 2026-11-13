@@ -1,0 +1,37 @@
+record Sum {
+    total: int;
+}
+
+fn each_indexed[T, E: effects](xs: list[T], f: fn(int, T) uses E) uses E {
+    for i in 0..len(xs) {
+        f(i + 1, xs[i]);
+    }
+}
+
+fn words(line: str) -> list[str] {
+    return filter(split(line, " "), fn(s: str) -> bool {
+        return len(s) > 0;
+    });
+}
+
+fn main() -> result[void] uses console, input {
+    let names = words(try read_line());
+    let scores = new list[int];
+    for t in words(try read_line()) {
+        push(scores, try parse_int(t));
+    }
+    print("names:");
+    each_indexed(names, fn(i: int, name: str) {
+        print(str(i) + " " + name);
+    });
+    print("scores:");
+    each_indexed(scores, fn(i: int, s: int) {
+        print(str(i) + " " + str(s));
+    });
+    let sum = new Sum { total: 0 };
+    each_indexed(scores, fn(i: int, s: int) {
+        set sum.total = sum.total + s;
+    });
+    print("total " + str(sum.total));
+    return ok();
+}

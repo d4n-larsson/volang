@@ -1,0 +1,5 @@
+fn main() uses console, random {
+    for i in 0..5 {
+        print(str(random_int(1, 100)));
+    }
+}

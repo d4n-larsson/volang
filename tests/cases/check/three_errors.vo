@@ -1,0 +1,18 @@
+fn a() -> int {
+    let n: int = "x";
+    return n;
+}
+
+fn b() uses console {
+    print(str(undefined_count));
+}
+
+fn c() uses console {
+    print("c")
+}
+
+fn main() uses console {
+    print(str(a()));
+    b();
+    c();
+}

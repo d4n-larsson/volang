@@ -1,0 +1,54 @@
+import shop.Shop;
+import shop.Line;
+import shop.sorted_products;
+import money.money;
+import pricing.price_line;
+import pricing.coupon_discount;
+
+fn checkout(shop: Shop) -> list[str] {
+    if len(shop.cart) == 0 {
+        return ["error: cart empty"];
+    }
+    let out = new list[str];
+    var gross = 0;
+    var subtotal = 0;
+    for line in shop.cart {
+        let p = price_line(shop, line);
+        push(out, p.sku + " x" + str(p.qty) + " @ " + money(p.price) + " = " + money(p.gross));
+        if p.free_amount > 0 {
+            push(out, "  free x" + str(p.free_qty) + " -" + money(p.free_amount));
+        }
+        if p.bulk_amount > 0 {
+            push(out, "  bulk " + str(p.bulk_pct) + "% -" + money(p.bulk_amount));
+        }
+        let product = shop.catalog[p.sku];
+        set product.sold = product.sold + p.qty;
+        set product.net = product.net + p.net;
+        set gross = gross + p.gross;
+        set subtotal = subtotal + p.net;
+    }
+    push(out, "subtotal " + money(subtotal));
+    let off = coupon_discount(shop, subtotal);
+    if shop.active != "" {
+        push(out, "coupon " + shop.active + " " + str(shop.coupons[shop.active]) + "% -" + money(off));
+    }
+    let total = subtotal - off;
+    push(out, "total " + money(total));
+    set shop.sales = shop.sales + 1;
+    set shop.revenue = shop.revenue + total;
+    set shop.discounts = shop.discounts + gross - total;
+    set shop.cart = new list[Line];
+    set shop.active = "";
+    return out;
+}
+
+fn report(shop: Shop) -> list[str] {
+    let out = new list[str];
+    for product in sorted_products(shop) {
+        if product.sold > 0 {
+            push(out, product.sku + " " + product.name + " sold " + str(product.sold) + " net " + money(product.net));
+        }
+    }
+    push(out, "sales " + str(shop.sales) + " revenue " + money(shop.revenue) + " discounts " + money(shop.discounts));
+    return out;
+}

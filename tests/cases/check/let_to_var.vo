@@ -1,0 +1,7 @@
+fn main() uses console {
+    let count = 0;
+    for i in 0..3 {
+        set count = count + i;
+    }
+    print(str(count));
+}

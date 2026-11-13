@@ -1,0 +1,5 @@
+env_denied.vo:2:11: runtime error[R0010]: env("PATH") is not allowed: `main` declares console, env("HOME").
+   2 |     match env("PA" + "TH") {
+     |           ^^^^^^^^^^^^^^^^
+trace:
+  at main (env_denied.vo:2:11)

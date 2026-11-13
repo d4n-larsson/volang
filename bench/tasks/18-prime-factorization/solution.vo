@@ -1,0 +1,30 @@
+fn factors(n: int) -> list[str] {
+    let out = new list[str];
+    var m = n;
+    var f = 2;
+    while f * f <= m {
+        while m % f == 0 {
+            push(out, str(f));
+            set m = m / f;
+        }
+        set f = f + 1;
+    }
+    if m > 1 {
+        push(out, str(m));
+    }
+    return out;
+}
+
+fn main() -> result[void] uses console, input {
+    while true {
+        match read_line() {
+            case ok(line) {
+                print(join(factors(try parse_int(trim(line))), " "));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

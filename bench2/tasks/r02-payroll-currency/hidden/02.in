@@ -1,0 +1,20 @@
+summary
+employee
+employee E1 Ann hourly
+employee E1 Ann weekly 100
+employee E1 Ann hourly 12x
+employee E1 Ann hourly -5
+employee E1 Ann hourly 1500 USD extra
+hours E1 5
+hours E1
+hours E1 +5
+rate E9 100
+deduct E9 100 tax
+deduct E9 100
+payslip
+payslip E1 E2
+summary now
+Payslip E1
+   
+employee E1 Ann salaried 0
+payslip E1

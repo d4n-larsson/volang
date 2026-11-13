@@ -1,0 +1,29 @@
+fn pad3(n: int) -> str {
+    var s = str(n);
+    while len(s) < 3 {
+        set s = "0" + s;
+    }
+    return s;
+}
+
+fn main() -> result[void] {
+    let keyed = new list[str];
+    while true {
+        match read_line() {
+            case ok(line) {
+                let parts = split(trim(line), " ");
+                let age = try parse_int(parts[1]);
+                push(keyed, pad3(age) + " " + parts[0]);
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    sort(keyed);
+    for k in keyed {
+        let age = try parse_int(slice(k, 0, 3));
+        print(slice(k, 4, len(k)) + " " + str(age));
+    }
+    return ok();
+}

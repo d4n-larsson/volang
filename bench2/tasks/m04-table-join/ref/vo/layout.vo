@@ -1,0 +1,45 @@
+fn repeat(c: str, n: int) -> str {
+    let parts = new list[str];
+    for _ in 0..n {
+        push(parts, c);
+    }
+    return join(parts, "");
+}
+
+fn pad(s: str, w: int) -> str {
+    return s + repeat(" ", w - len(s));
+}
+
+fn rstrip(s: str) -> str {
+    var end = len(s);
+    while end > 0 and slice(s, end - 1, end) == " " {
+        set end = end - 1;
+    }
+    return slice(s, 0, end);
+}
+
+fn line(cells: list[str], widths: list[int]) -> str {
+    let parts = new list[str];
+    for i in 0..len(cells) {
+        push(parts, pad(cells[i], widths[i]));
+    }
+    return rstrip(join(parts, " | "));
+}
+
+fn render(header: list[str], rows: list[list[str]]) -> list[str] {
+    let widths = new list[int];
+    for c in 0..len(header) {
+        var w = len(header[c]);
+        for r in rows {
+            set w = max(w, len(r[c]));
+        }
+        push(widths, w);
+    }
+    let out = [line(header, widths), join(map(widths, fn(w: int) -> str {
+        return repeat("-", w);
+    }), "-+-")];
+    for r in rows {
+        push(out, line(r, widths));
+    }
+    return out;
+}

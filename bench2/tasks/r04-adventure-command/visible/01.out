@@ -1,0 +1,15 @@
+== Hall ==
+exits: east north south
+items: lamp
+taken lamp
+== Library ==
+exits: south up
+items: book, key
+taken book (+5)
+dropped lamp
+== Library ==
+exits: south up
+items: key, lamp
+taken lamp
+you carry: book, lamp
+score 10 in 1 moves

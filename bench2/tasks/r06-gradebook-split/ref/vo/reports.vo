@@ -1,0 +1,117 @@
+import book.Book;
+import book.unknown_student;
+import stats.rounded_div;
+import stats.tenths;
+import stats.percent_tenths;
+import stats.weighted_average;
+import letters.letter_order;
+import letters.letter;
+
+record Graded {
+    avg: int;
+    name: str;
+}
+
+fn card(book: Book, name: str) -> list[str] {
+    if not has(book.students, name) {
+        return [unknown_student(name)];
+    }
+    let student = book.students[name];
+    let out = new list[str];
+    match weighted_average(book, student) {
+        case ok(avg) {
+            push(out, name + " average " + tenths(avg) + " " + letter(avg));
+        }
+        case err(_) {
+            push(out, name + " no scores");
+        }
+    }
+    for a in keys(book.assignments) {
+        let max_points = book.assignments[a].max_points;
+        if has(student.scores, a) {
+            let p = student.scores[a];
+            push(out, "  " + a + " " + str(p) + "/" + str(max_points) + " " + tenths(percent_tenths(p, max_points)));
+        } else {
+            push(out, "  " + a + " missing");
+        }
+    }
+    return out;
+}
+
+# Every student with scores and their average, in enrollment order.
+fn graded_students(book: Book) -> list[Graded] {
+    let graded = new list[Graded];
+    for s in keys(book.students) {
+        match weighted_average(book, book.students[s]) {
+            case ok(avg) {
+                push(graded, new Graded { avg: avg, name: s });
+            }
+            case err(_) {
+            }
+        }
+    }
+    return graded;
+}
+
+fn class_report(book: Book) -> list[str] {
+    let graded = new list[Graded];
+    let ungraded = new list[str];
+    for s in keys(book.students) {
+        match weighted_average(book, book.students[s]) {
+            case ok(avg) {
+                push(graded, new Graded { avg: avg, name: s });
+            }
+            case err(_) {
+                push(ungraded, s);
+            }
+        }
+    }
+    sort_by(graded, fn(g: Graded) -> str {
+        return g.name;
+    });
+    sort_by(graded, fn(g: Graded) -> int {
+        return -g.avg;
+    });
+    let out = new list[str];
+    var total = 0;
+    for g in graded {
+        let higher = filter(graded, fn(other: Graded) -> bool {
+            return other.avg > g.avg;
+        });
+        push(out, str(1 + len(higher)) + ". " + g.name + " " + tenths(g.avg) + " " + letter(g.avg));
+        set total = total + g.avg;
+    }
+    sort(ungraded);
+    for name in ungraded {
+        push(out, "-. " + name + " no scores");
+    }
+    if len(graded) > 0 {
+        push(out, "class average " + tenths(rounded_div(total, len(graded))));
+    } else {
+        push(out, "class average none");
+    }
+    return out;
+}
+
+fn distribution(book: Book) -> list[str] {
+    let by_letter = new map[str, list[str]];
+    for g in graded_students(book) {
+        let grade = letter(g.avg);
+        if not has(by_letter, grade) {
+            set by_letter[grade] = new list[str];
+        }
+        push(by_letter[grade], g.name);
+    }
+    if len(by_letter) == 0 {
+        return ["no grades"];
+    }
+    let out = new list[str];
+    for grade in letter_order() {
+        if has(by_letter, grade) {
+            let names = by_letter[grade];
+            sort(names);
+            push(out, grade + " " + str(len(names)) + " " + join(names, " "));
+        }
+    }
+    return out;
+}

@@ -1,0 +1,114 @@
+record Level {
+    number: int;
+    spots: list[str];
+    exits: int;
+    revenue: int;
+}
+
+record Vehicle {
+    plate: str;
+    kind: str;
+    level: int;
+    spot: int;
+    since: int;
+}
+
+record Garage {
+    levels: map[int, Level];
+    vehicles: map[str, Vehicle];
+}
+
+fn new_garage() -> Garage {
+    return new Garage { levels: new map[int, Level], vehicles: new map[str, Vehicle] };
+}
+
+fn level_numbers(garage: Garage) -> list[int] {
+    let numbers = keys(garage.levels);
+    sort(numbers);
+    return numbers;
+}
+
+fn spot_name(vehicle: Vehicle) -> str {
+    return str(vehicle.level) + "-" + str(vehicle.spot);
+}
+
+fn open_level(garage: Garage, number: int, spots: int) -> str {
+    if has(garage.levels, number) {
+        return "error: level " + str(number) + " exists";
+    }
+    let free = new list[str];
+    for _ in 0..spots {
+        push(free, "");
+    }
+    set garage.levels[number] = new Level { number: number, spots: free, exits: 0, revenue: 0 };
+    return "level " + str(number) + " opened with " + str(spots) + " spots";
+}
+
+fn park(garage: Garage, plate: str, time: int, kind: str) -> str {
+    if has(garage.vehicles, plate) {
+        return "error: " + plate + " already parked";
+    }
+    var numbers = level_numbers(garage);
+    if kind == "truck" {
+        set numbers = filter(numbers, fn(n: int) -> bool {
+            return n == 1;
+        });
+    }
+    for number in numbers {
+        let level = garage.levels[number];
+        for i in 0..len(level.spots) {
+            if level.spots[i] == "" {
+                set level.spots[i] = plate;
+                let vehicle = new Vehicle { plate: plate, kind: kind, level: number, spot: i + 1, since: time };
+                set garage.vehicles[plate] = vehicle;
+                return plate + " parked at " + spot_name(vehicle);
+            }
+        }
+    }
+    if kind == "truck" {
+        return "error: no truck spot";
+    }
+    return "error: garage full";
+}
+
+fn unpark(garage: Garage, vehicle: Vehicle) {
+    set garage.levels[vehicle.level].spots[vehicle.spot - 1] = "";
+    remove(garage.vehicles, vehicle.plate);
+}
+
+fn occupancy(garage: Garage) -> list[str] {
+    let out = new list[str];
+    var used_all = 0;
+    var spots_all = 0;
+    for number in level_numbers(garage) {
+        let level = garage.levels[number];
+        let used = len(filter(level.spots, fn(p: str) -> bool {
+            return p != "";
+        }));
+        push(out, "level " + str(number) + ": " + str(used) + "/" + str(len(level.spots)) + " used");
+        set used_all = used_all + used;
+        set spots_all = spots_all + len(level.spots);
+    }
+    push(out, "total " + str(used_all) + "/" + str(spots_all) + " used");
+    return out;
+}
+
+fn parked(garage: Garage) -> list[str] {
+    let out = new list[str];
+    for number in level_numbers(garage) {
+        for plate in garage.levels[number].spots {
+            if plate != "" {
+                let vehicle = garage.vehicles[plate];
+                var line = spot_name(vehicle) + " " + plate + " since " + str(vehicle.since);
+                if vehicle.kind != "car" {
+                    set line = line + " (" + vehicle.kind + ")";
+                }
+                push(out, line);
+            }
+        }
+    }
+    if len(out) == 0 {
+        return ["no vehicles"];
+    }
+    return out;
+}

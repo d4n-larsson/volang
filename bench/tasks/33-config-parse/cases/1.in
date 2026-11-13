@@ -1,0 +1,8 @@
+# settings
+name = demo
+[server]
+port = 8080
+host=localhost
+
+[client]
+retries = 3

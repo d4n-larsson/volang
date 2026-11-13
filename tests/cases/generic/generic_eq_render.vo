@@ -1,0 +1,18 @@
+record Pair[A, B] {
+    first: A;
+    second: B;
+}
+
+fn same[T](a: T, b: T) -> bool {
+    return a == b;
+}
+
+fn main() uses console {
+    let p = new Pair[int, str] { first: 1, second: "x" };
+    let q = new Pair[int, str] { first: 1, second: "x" };
+    print(str(same(p, q)) + " " + str(same("a", "b")) + " " + str(same([1, 2], [1, 2])));
+}
+
+test "pairs render" {
+    expect_eq(new Pair[int, str] { first: 1, second: "x" }, new Pair[int, str] { first: 2, second: "x" });
+}

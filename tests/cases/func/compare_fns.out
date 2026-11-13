@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0308","name":"invalid_operands","severity":"error","file":"compare_fns.vo","start":{"line":7,"col":15},"end":{"line":7,"col":23},"text":"f == one","message":"Operator `==` cannot be applied to `fn() -> int` and `fn() -> int`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

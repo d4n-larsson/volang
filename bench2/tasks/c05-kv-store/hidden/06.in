@@ -1,0 +1,5 @@
+set h6k a
+set h6k b
+set h6k c
+get h6k
+get greeting

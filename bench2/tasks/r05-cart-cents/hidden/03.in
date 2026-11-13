@@ -1,0 +1,19 @@
+product A pen 2
+product b bag 7
+promo A 2
+promo A 3
+promo Q 1
+bulk A 10 5
+bulk b 1 100
+bulk Q 1 5
+coupon SAVE 10
+coupon SAVE 20
+coupon HALF 50
+use NOPE
+use SAVE
+use HALF
+coupon NOPE 1
+use NOPE
+price Q 3
+checkout
+cart

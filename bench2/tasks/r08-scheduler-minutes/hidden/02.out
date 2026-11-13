@@ -1,0 +1,29 @@
+added m1 in r1 08:00-09:00
+added m2 in r1 09:00-10:00
+error: m3 conflicts with m1
+error: m4 conflicts with m1
+added m5 in r1 07:00-08:00
+error: event m1 exists
+error: empty interval
+error: empty interval
+r1 at 08:00: m1
+r1 at 09:00: m2
+r1 at 10:00: free
+r1 at 06:59: free
+removed m2
+error: unknown event m2
+added m2 in r1 09:15-09:45
+added m8 in r2 09:00-09:20
+agenda r1: 3 events
+  07:00-08:00 m5 (60 min)
+  08:00-09:00 m1 (60 min)
+  09:15-09:45 m2 (30 min)
+agenda r2: 1 events
+  09:00-09:20 m8 (20 min)
+error: bad command
+error: bad command
+error: bad command
+error: unknown command cancel
+r1: 3 events, 150 min booked, first 07:00, last 09:45
+r2: 1 events, 20 min booked, first 09:00, last 09:20
+total: 4 events, 170 min booked

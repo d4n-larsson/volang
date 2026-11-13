@@ -1,0 +1,10 @@
+add 2 a
+add 2 b
+tag 2 k
+tag 1 k
+done 2
+list +k
+prio 2 1
+list
+reopen 2
+list

@@ -1,0 +1,5 @@
+exit_range.vo:2:5: runtime error[R0008]: Exit status 64 is outside 0-63.
+   2 |     exit(64);
+     |     ^^^^^^^^
+trace:
+  at main (exit_range.vo:2:5)

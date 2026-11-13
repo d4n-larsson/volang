@@ -1,0 +1,121 @@
+import garage.Garage;
+import garage.new_garage;
+import garage.open_level;
+import garage.park;
+import garage.occupancy;
+import garage.parked;
+import fees.rates;
+import fees.vehicle_types;
+import billing.exit_vehicle;
+import billing.quote;
+import billing.report;
+
+fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    });
+}
+
+# Only called on strings that passed is_number.
+fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+# The TYPE word of `enter PLATE TIME [TYPE]`, "car" when it is left out.
+fn vehicle_type(args: list[str]) -> str {
+    if len(args) == 3 {
+        return args[2];
+    }
+    return "car";
+}
+
+fn run(words: list[str], garage: Garage) -> list[str] {
+    let cmd = words[0];
+    let args = slice(words, 1, len(words));
+    let bad = ["error: bad command"];
+    if cmd == "level" {
+        if len(args) != 2 or not is_number(args[0]) or not is_number(args[1]) {
+            return bad;
+        }
+        let number = num(args[0]);
+        let spots = num(args[1]);
+        if number < 1 or spots < 1 or spots > 99 {
+            return bad;
+        }
+        return [open_level(garage, number, spots)];
+    }
+    if cmd == "enter" {
+        if (len(args) != 2 and len(args) != 3) or not is_number(args[1]) {
+            return bad;
+        }
+        let kind = vehicle_type(args);
+        if not any(vehicle_types(), fn(t: str) -> bool {
+            return t == kind;
+        }) {
+            return ["error: unknown vehicle type " + kind];
+        }
+        return [park(garage, args[0], num(args[1]), kind)];
+    }
+    if cmd == "exit" {
+        if len(args) != 2 or not is_number(args[1]) {
+            return bad;
+        }
+        return [exit_vehicle(garage, args[0], num(args[1]))];
+    }
+    if cmd == "quote" {
+        if len(args) != 2 or not is_number(args[1]) {
+            return bad;
+        }
+        return [quote(garage, args[0], num(args[1]))];
+    }
+    if cmd == "occupancy" {
+        if len(args) != 0 {
+            return bad;
+        }
+        return occupancy(garage);
+    }
+    if cmd == "parked" {
+        if len(args) != 0 {
+            return bad;
+        }
+        return parked(garage);
+    }
+    if cmd == "report" {
+        if len(args) != 1 or not is_number(args[0]) {
+            return bad;
+        }
+        return report(garage, num(args[0]));
+    }
+    if cmd == "rates" {
+        if len(args) != 0 {
+            return bad;
+        }
+        return rates();
+    }
+    return ["error: unknown command " + cmd];
+}
+
+fn main() uses console, input {
+    let garage = new_garage();
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w: str) -> bool {
+            return w != "";
+        });
+        if len(words) == 0 {
+            continue;
+        }
+        for out in run(words, garage) {
+            print(out);
+        }
+    }
+}

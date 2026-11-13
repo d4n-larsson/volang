@@ -1,0 +1,4 @@
+the key | a.x | a.y | b.y | b.x | z
+--------+-----+-----+-----+-----+---
+A       | 1   | 2   | yy  | xx  | zz
+rows: 1, skipped: 0

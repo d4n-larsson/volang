@@ -1,0 +1,28 @@
+type eco added
+type mid added
+type top added
+booked e1: eco 2 nights, total 80.00
+booked e2: eco 7 nights, total 252.00
+booked m1: mid 7 nights, total 441.00
+booked t1: top 1 nights, total 150.00
+cancelled m1: refund 441.00
+cancelled e2: refund 126.00
+invoice e1 for ann
+  eco 2 nights x 40.00 = 80.00
+  total 80.00
+invoice e2 for bob
+  eco 7 nights x 40.00 = 280.00
+  long stay discount 28.00
+  total 252.00
+  cancelled on day 2, refund 126.00
+  net 126.00
+invoice m1 for cy
+  mid 7 nights x 70.00 = 490.00
+  long stay discount 49.00
+  total 441.00
+  cancelled on day 13, refund 441.00
+  net 0.00
+eco: 1 bookings (1 cancelled), 2 nights, revenue 206.00
+mid: 0 bookings (1 cancelled), 0 nights, revenue 0.00
+top: 1 bookings, 1 nights, revenue 150.00
+total revenue 356.00, refunds 567.00

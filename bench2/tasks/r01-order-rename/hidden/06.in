@@ -1,0 +1,10 @@
+add-product A pen x 3
+add-product A pen 10
+restock A
+price A -5
+order o1 A 0
+order o1 A
+add-product   A   pen   5   0
+order o1 A 1
+
+report

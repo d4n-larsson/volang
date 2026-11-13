@@ -1,0 +1,7 @@
+mode qa
+no file for mode qa
+host=localhost
+log_level=info
+port=8080
+url=http://localhost:8080/?a=1&b=2
+workers=4

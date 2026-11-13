@@ -1,0 +1,4 @@
+fn main() uses console {
+    print("bye");
+    exit(3);
+}

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"dot_without_name.vo","start":{"line":2,"col":15},"end":{"line":2,"col":16},"text":"(","message":"Expected a name, found `(`.","expected":"name","found":"(","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

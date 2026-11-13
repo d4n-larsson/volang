@@ -1,0 +1,42 @@
+record Token {
+    kind: str;
+    text: str;
+}
+
+fn is_digit(c: str) -> bool {
+    return c >= "0" and c <= "9";
+}
+
+fn is_letter(c: str) -> bool {
+    return c >= "a" and c <= "z";
+}
+
+fn tokenize(line: str) -> result[list[Token]] {
+    let cs = chars(line);
+    let toks = new list[Token];
+    var i = 0;
+    while i < len(cs) {
+        let c = cs[i];
+        if c == " " {
+            set i = i + 1;
+        } else if is_digit(c) or is_letter(c) {
+            let num = is_digit(c);
+            var j = i;
+            while j < len(cs) and (num and is_digit(cs[j]) or not num and is_letter(cs[j])) {
+                set j = j + 1;
+            }
+            var kind = "name";
+            if num {
+                set kind = "num";
+            }
+            push(toks, new Token { kind: kind, text: join(slice(cs, i, j), "") });
+            set i = j;
+        } else if find("+-*/%^()=", c) >= 0 {
+            push(toks, new Token { kind: "op", text: c });
+            set i = i + 1;
+        } else {
+            return err("syntax");
+        }
+    }
+    return ok(toks);
+}

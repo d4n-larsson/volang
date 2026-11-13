@@ -1,0 +1,18 @@
+type solo added
+booked a: solo 9 nights, total 405.00
+error: no solo room free on day 5
+cancelled a: refund 0.00
+booked b: solo 1 nights, total 50.00
+error: no solo room free on day 4
+avail solo 1-10: 0 of 1 free
+day 4: 1 of 1 rooms occupied
+  solo 1/1
+day 5: 1 of 1 rooms occupied
+  solo 1/1
+cancelled b: refund 25.00
+booked d: solo 3 nights, total 150.00
+booked e: solo 4 nights, total 200.00
+cancelled e: refund 0.00
+booked f: solo 1 nights, total 50.00
+solo: 2 bookings (3 cancelled), 8 nights, revenue 830.00
+total revenue 830.00, refunds 25.00

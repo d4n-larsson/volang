@@ -1,0 +1,4 @@
+fn main() {
+    let s = "é";
+    print(slice(s, 0, 1));
+}

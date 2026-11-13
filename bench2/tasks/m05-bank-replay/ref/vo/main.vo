@@ -1,0 +1,23 @@
+import parsing.Entry;
+import parsing.parse;
+import replay.replay;
+
+fn main() uses console, input {
+    let lines = split(read_all(), "\n");
+    let entries = new list[Entry];
+    for i in 0..len(lines) {
+        match parse(lines[i], i + 1) {
+            case ok(e) {
+                if e.time >= 0 {
+                    push(entries, e);
+                }
+            }
+            case err(_) {
+                print("line " + str(i + 1) + ": invalid");
+            }
+        }
+    }
+    for l in replay(entries) {
+        print(l);
+    }
+}

@@ -1,0 +1,5 @@
+fn main() {
+    let a = args();
+    print(str(len(a)));
+    print(join(a, "+"));
+}
