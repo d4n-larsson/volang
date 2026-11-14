@@ -19,7 +19,7 @@
     .equ B_ABS, 33
     .equ B_MIN, 34
     .equ B_MAX, 35
-    .equ B_COUNT, 49
+    .equ B_COUNT, 54           # names up to here (50, 51 are internal and unnamed)
 
     .section .rodata
     .align 3
@@ -27,10 +27,12 @@ builtin_names:
     .dword 0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16
     .dword b17, b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32
     .dword b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47, b48, b49
+    .dword 0, 0, b52, b53, b54
 builtin_sigs:
     .dword 0, g_s_v, g_s_v, g_s_v, g__r, g__s, g_s_r, g_ss_u, g__S, g_i_v, g__i, 0, g_f_i, g_i_f
     .dword g_s_n, g_s_x, 0, 0, g_ss_i, g_ss_S, g_Ss_s, g_s_s, g_s_S, 0, 0, 0, 0, 0, 0, g_b_v, 0, 0, 0
     .dword 0, 0, 0, g_s_s, g_s_s, g_s_i, g_i_s, g_s_r, g_ii_i, 0, 0, 0, 0, 0, 0, 0, g_b_v
+    .dword 0, 0, g_f_s, g_sis_r, g_s_f
 b1: .string "print"
 b2: .string "write"
 b3: .string "eprint"
@@ -80,6 +82,12 @@ b46: .string "any"
 b47: .string "all"
 b48: .string "todo"
 b49: .string "assume"
+b52: .string "__float_text"
+b53: .string "__http_exchange"
+g_sis_r: .string "sis>r"
+b54: .string "__text_float"
+g_s_f: .string "s>f"
+g_f_s: .string "f>s"
 g_s_i: .string "s>i"
 g_i_s: .string "i>s"
 # signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -185,9 +193,11 @@ builtin_id:
     slli t1, s1, 3
     add t0, t0, t1
     ld a1, 0(t0)
+    beqz a1, 2f                 # internal ids without a name
     mv a0, s0
     call str_eq_cstr
     bnez a0, 9f
+2:
     addi s1, s1, 1
     j 1b
 8:
@@ -1317,6 +1327,11 @@ check_call:
     call builtin_id
     beqz a0, 6f
     sd a0, 0(sp)
+    mv a0, s1                   # spec 007: `__` primitives only inside the standard library
+    ld a1, N_A(s0)
+    call std_only_ok
+    beqz a0, 6f
+    ld a0, 0(sp)
     mv a1, a0                   # spec 006 reference log: (0, builtin id)
     li a0, 0
     ld a2, N_A(s0)
@@ -1481,6 +1496,10 @@ suggest_name:
     slli t1, s5, 3
     add t0, t0, t1
     ld a0, 0(t0)
+    beqz a0, 5f                 # unnamed, or a std-only primitive: never suggested
+    lbu t1, 0(a0)
+    li t2, '_'
+    beq t1, t2, 5f
     call str_from_cstr
     sd a0, 0(sp)
     mv a1, a0

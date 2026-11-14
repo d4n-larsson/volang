@@ -1,0 +1,6 @@
+vo package main.vo money shared/money
+write shared/money/format.vo fn cents(n: int) -> str {\n    return "$" + str(n);\n}\n
+vo check main.vo
+vo package main.vo money shared/money
+vo run main.vo
+keep vo.packages

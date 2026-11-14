@@ -17,6 +17,38 @@ ref_md_len:     .dword ref_md_end - ref_md
     .globl errors_md_len
 errors_md_len:  .dword errors_md_end - errors_md
 
+# The standard library (spec 007 research R1): vo source embedded in the binary.
+std_json:   .incbin "std/json.vo"
+std_json_end:
+    .byte 0
+std_time:   .incbin "std/time.vo"
+std_time_end:
+    .byte 0
+std_text:   .incbin "std/text.vo"
+std_text_end:
+    .byte 0
+std_random: .incbin "std/random.vo"
+std_random_end:
+    .byte 0
+std_http:   .incbin "std/http.vo"
+std_http_end:
+    .byte 0
+    .align 3
+# {path cstr, text, length} for each module, then 0
+    .globl std_files
+std_files:
+    .dword p_json, std_json, std_json_end - std_json
+    .dword p_time, std_time, std_time_end - std_time
+    .dword p_text, std_text, std_text_end - std_text
+    .dword p_random, std_random, std_random_end - std_random
+    .dword p_http, std_http, std_http_end - std_http
+    .dword 0
+p_json:     .string "std/json.vo"
+p_time:     .string "std/time.vo"
+p_text:     .string "std/text.vo"
+p_random:   .string "std/random.vo"
+p_http:     .string "std/http.vo"
+
     .text
 # char *catalog_find(char *code)
 # Start of the "## CODE " heading line in errors.md, or 0. code is 5 characters.

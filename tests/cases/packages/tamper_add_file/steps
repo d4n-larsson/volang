@@ -1,0 +1,3 @@
+vo package main.vo money shared/money
+write shared/money/extra.vo fn extra() -> int {\n    return 1;\n}\n
+vo run main.vo

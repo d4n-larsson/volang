@@ -14,6 +14,7 @@ ld_stack:   .space 8                # import nodes on the current DFS path
 ld_hard:    .space 8                # a loaded file had a hard syntax error
 
     .section .rodata
+s_std:      .string "std"
 e0202: .string "E0202"
 e0205: .string "E0205"
 e0206: .string "E0206"
@@ -108,6 +109,143 @@ import_rel:
     addi sp, sp, 32
     ret
 
+# void *import_path(void *import, void *rel, void *importer)
+# The path an import loads (spec 007 research R2, R8): `std/MODULE.vo` for `import std.MODULE.x;`,
+# a package's directory for a listed package name, else rel under the importer's directory.
+    .globl import_path
+import_path:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    sd s2, 0(sp)
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+    ld a0, N_A(s0)
+    li a1, 0
+    call vec_get
+    la a1, s_std
+    call str_eq_cstr
+    beqz a0, 1f
+    mv a0, s1                   # std: the embedded file's own path
+    j 9f
+1:
+    mv a0, s0                   # a package (0 when the first segment is none)
+    mv a1, s2
+    call pkg_import_path
+    bnez a0, 9f
+    ld a0, FILE_DIR(s2)
+    mv a1, s1
+    call str_join2
+9:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    ld s2, 0(sp)
+    addi sp, sp, 32
+    ret
+
+# long std_lookup(void *path)
+# For a path under std/: registers the embedded file (FILE_STD) and returns its id, or -1 when
+# there is no such module; 0 for any other path (read from the disk).
+    .globl std_lookup
+std_lookup:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    mv s0, a0
+    ld t0, STR_LEN(s0)
+    li a0, 0
+    li t1, 4
+    blt t0, t1, 9f
+    lbu t1, STR_DATA(s0)        # "std/"
+    li t2, 's'
+    bne t1, t2, 9f
+    lbu t1, STR_DATA+1(s0)
+    li t2, 't'
+    bne t1, t2, 9f
+    lbu t1, STR_DATA+2(s0)
+    li t2, 'd'
+    bne t1, t2, 9f
+    lbu t1, STR_DATA+3(s0)
+    li t2, '/'
+    bne t1, t2, 9f
+    la s1, std_files
+1:
+    ld a1, 0(s1)
+    li a0, -1
+    beqz a1, 9f
+    mv a0, s0
+    call str_eq_cstr
+    bnez a0, 2f
+    addi s1, s1, 24
+    j 1b
+2:
+    mv a0, s0
+    ld a1, 8(s1)
+    ld a2, 16(s1)
+    call file_add
+    mv s1, a0
+    call file_get
+    li t0, 1
+    sd t0, FILE_STD(a0)
+    mv a0, s1
+9:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    addi sp, sp, 32
+    ret
+
+# void std_runtime_grants(void)
+# Before a program runs: clears the declared effect sets of standard-library functions, so their
+# frames take their caller's grant (as anonymous functions do) and scopes such as net("localhost")
+# keep applying inside the library (spec 007 research R6). The checker is done with them.
+    .globl std_runtime_grants
+std_runtime_grants:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    sd s2, 0(sp)
+    li s0, 0
+1:
+    la t0, file_count
+    ld t0, 0(t0)
+    bge s0, t0, 9f
+    mv a0, s0
+    call file_get
+    addi s0, s0, 1
+    ld t0, FILE_STD(a0)
+    beqz t0, 1b
+    ld t0, FILE_AST(a0)
+    beqz t0, 1b
+    ld s1, N_A(t0)              # items
+    li s2, 0
+2:
+    ld t0, VEC_N(s1)
+    bge s2, t0, 1b
+    mv a0, s1
+    mv a1, s2
+    call vec_get
+    addi s2, s2, 1
+    lhu t0, N_KIND(a0)
+    li t1, N_FN
+    bne t0, t1, 2b
+    call item_fx
+    beqz a0, 2b
+    sd zero, FX_DECLARED(a0)
+    j 2b
+9:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    ld s2, 0(sp)
+    addi sp, sp, 32
+    ret
+
 # void *str_join2(void *a, void *b)
     .globl str_join2
 str_join2:
@@ -150,6 +288,12 @@ load_file:
     bnez t0, 9f
     j 2f                        # only lexed by a missing-import scan: lex again (reported) and parse
 0:
+    mv a0, s0                   # spec 007: std/MODULE.vo comes from the binary, never the disk
+    call std_lookup
+    beqz a0, 7f
+    bltz a0, 8f
+    j 2f
+7:
     addi a0, s0, STR_DATA
     addi a1, sp, 0
     call read_whole_file
@@ -341,8 +485,11 @@ load_imports:
     call import_rel
     sd a0, 0(sp)
     mv a1, a0
-    ld a0, FILE_DIR(s1)
-    call str_join2
+    mv a0, s4
+    mv a2, s1
+    call import_path            # spec 007: std/ and package roots
+    li t0, -1
+    beq a0, t0, 1b              # a package that failed its check (E0701/E0702, reported)
     call load_file
     bgez a0, 3f
     la a0, m_no_file            # missing file: E0205

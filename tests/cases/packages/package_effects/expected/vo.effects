@@ -1,0 +1,3 @@
+# vo effects record: update with `vo effects --update`
+@money/format.vo:cents pure
+main.vo:main uses console, net

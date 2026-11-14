@@ -185,7 +185,9 @@
 .equ FILE_SCOPE,  64                # head of the file's top-level symbol chain
 .equ FILE_STATE,  72                # import loading: 0 new, 1 loading, 2 done
 .equ FILE_GEN,    80                # generation (spec 006 edits: the re-check loads files anew)
-.equ FILE_SIZE,   88
+.equ FILE_STD,    88                # spec 007: 1 for an embedded standard-library file
+.equ FILE_PKG,    96                # spec 007: the package's name (str) for a package file, else 0
+.equ FILE_SIZE,   104
 .equ MAX_FILES,   256
 
 # ---- diagnostics ----
@@ -345,6 +347,10 @@
 .equ B_ASSUME,  49
 .equ B_REQ_FAIL, 50     # internal: compiled contract checks, never named in source
 .equ B_ENS_FAIL, 51
+.equ B_FLOAT_TEXT, 52   # spec 007: __float_text, callable only from std/ (research R5)
+.equ B_HTTP_EXCHANGE, 53 # spec 007: __http_exchange (host, port, request) -> result[str], net
+.equ B_TEXT_FLOAT, 54    # spec 007: __text_float (s) -> float, up to 17 significant digits (json)
+.equ B_LAST, 54         # the last builtin id with a btab entry
 
 # operator codes (set by the checker)
 .equ OP_ADD_INT, 1
@@ -606,7 +612,8 @@
 .equ EV_RESULT, 16        # EVR_*
 .equ EV_VALUE, 24         # str, or int for now_ms
 .equ EV_BYTES, 32         # 1 when the value was written with "bytes":true
-.equ EV_SIZE, 40
+.equ EV_PORT, 40          # spec 007: http events
+.equ EV_SIZE, 48
 .equ EVK_READ_LINE, 1
 .equ EVK_READ_ALL, 2
 .equ EVK_READ_FILE, 3
@@ -614,6 +621,7 @@
 .equ EVK_ENV, 5
 .equ EVK_NOW_MS, 6
 .equ EVK_END, 7
+.equ EVK_HTTP, 8
 .equ EVR_OK, 0
 .equ EVR_ERR, 1
 .equ EVR_DENIED, 2

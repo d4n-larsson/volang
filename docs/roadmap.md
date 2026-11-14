@@ -12,7 +12,8 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [004](../specs/004-bytecode-compiler/) | Bytecode compiler: programs run from compact, typed bytecode instead of walking the syntax tree | **Done** ([results](../specs/004-bytecode-compiler/results.md)) |
 | [005](../specs/005-holes-props-contracts/) | Typed holes, property tests and contracts | **Done** ([results](../specs/005-holes-props-contracts/results.md)) |
 | [006](../specs/006-query-edit-trace/) | Query API, structural editing, trace and replay | **Done** ([results](../specs/006-query-edit-trace/results.md)) |
-| 007 | Standard library and content-pinned packages | Planned |
+| [007](../specs/007-stdlib-packages/) | Standard library and content-pinned packages | **Partly done, merged.** `vo doc`, `std.json`, `std.text`, `std.time`, `std.random` and packages work and are tested; HTTP networking, some tests, the task-program evaluation and the reference section are deferred until after 008 ([results](../specs/007-stdlib-packages/results.md)) |
+| [008](../specs/008-c-rewrite/) | The toolchain in C: native builds on Linux x86-64, ARM64 and RISC-V 64, byte-identical behavior | Planned |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -85,6 +86,26 @@ Known gaps in v2 to fix along the way:
 - Per-case environments: tasks c03 and c08 never test their environment variable being set.
 - Task c05 depends on its cases running in order.
 - The Python sandbox cannot see effects done through C extensions; seccomp or strace would close that.
+
+## Running natively (spec 008)
+
+Scheduled as spec 008: a file-by-file port to freestanding C (option 2 below, in C rather than in another assembly), decided 2026-11-14.
+
+
+The toolchain is RISC-V assembly (constitution: RV64IMAFD, lp64d), so on ordinary x86-64 machines it runs through `qemu-riscv64`. That costs speed and causes qemu-only effects, such as the page-placement slowdowns behind the pinned page offsets in `vm.s`, `rt_map.s` and `rt_list.s`. Two ways out, cheapest first:
+
+1. **Run on RISC-V hardware** (a board, a workstation or a cloud instance with a 64-bit RISC-V CPU and Linux). `build/vo` already runs there unchanged, and `bin/vo` skips qemu. Current boards are slower than a fast x86 desktop, so this removes the qemu effects rather than guaranteeing speed. A first step: run `make test` and `tests/speed.py` on such a machine and compare.
+2. **Port the toolchain to x86-64** (or ARM64). Every line of `src/` (about 49,000) would be rewritten:
+   - register use: 16 general registers instead of 31, and the code leans on the 12 callee-saved ones;
+   - the calling convention and system call numbers;
+   - the collector's register and stack scanning, `setjmp`/`longjmp` and the VM's dispatch.
+
+   What carries over unchanged:
+   - the specs, the reference, the error catalog and the data layouts;
+   - the standard library (written in vo);
+   - the whole test suite (golden and step cases, fuzzers, engine comparisons, bench2 runs, speed checks), which tests through the command line and is the oracle for a file-by-file port.
+
+   It needs a constitution amendment (the target is named there), and either an SESI pack for the new instruction set or another way to keep the per-edit calling-convention checks. Its size is that of several specs, so it is only worth doing if running natively on ordinary machines becomes a goal.
 
 ## Out of scope for now
 

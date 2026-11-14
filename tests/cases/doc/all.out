@@ -1,0 +1,78 @@
+builtins:
+print (s: str)
+    stdout, adds `\n`
+write (s: str)
+    stdout, no newline
+eprint (s: str)
+    stderr, adds `\n`
+read_line () -> result[str]
+    one line of stdin without its `\n` (or `\r\n`); `err("eof")` at end of input
+read_all () -> str
+    the rest of stdin
+read_file (path: str) -> result[str]
+write_file (path: str, s: str) -> result[void]
+    creates or replaces the file
+args () -> list[str]
+    arguments after `--` in `vo run f.vo -- a b`
+exit (code: int)
+    ends the program; code 0–63, else R0008
+now_ms () -> int
+    wall-clock milliseconds; with `--clock-ms N`: N, N+1, ...
+random_int (lo: int, hi: int) -> int
+    uniform in `lo..hi` inclusive; R0007 if `lo > hi`; fixed by `--seed N`
+env (name: str) -> result[str]
+    an environment variable; `err("not set")`
+str (x: int | float | bool) -> str
+    floats keep at most 15 significant digits; `str(1.0)` is `"1.0"`
+int (f: float) -> int
+    truncates toward zero; R0007 for NaN or out of range
+float (i: int) -> float
+parse_int (s: str) -> result[int]
+    the whole text must be the number: no spaces, no `+` (`trim` first); else `err("invalid int: ...")`
+parse_float (s: str) -> result[float]
+len (x: str | list[T] | map[K, T]) -> int
+    for `str`: bytes, not characters
+slice (s: str, a: int, b: int) -> str
+    bytes `a` to `b - 1`; R0003 out of range; R0007 if it splits a UTF-8 character
+slice (xs: list[T], a: int, b: int) -> list[T]
+    a new list; R0003 out of range
+find (s: str, sub: str) -> int
+    byte offset of the first match, or -1
+split (s: str, sep: str) -> list[str]
+    `split("a,,b", ",")` is `["a", "", "b"]`; empty `sep` is R0007
+join (xs: list[str], sep: str) -> str
+trim (s: str) -> str
+    removes ASCII whitespace at both ends
+chars (s: str) -> list[str]
+    one string per code point
+upper, lower (s: str) -> str
+    ASCII letters only
+ord (s: str) -> int
+    code point of a one-character string (R0007 otherwise)
+chr (i: int) -> str
+    the one-character string for a code point
+abs (x: int | float) -> int | float
+    same type as `x`
+min, max (a: C, b: C) -> C
+    `C` is `int`, `float` or `str`
+push (xs: list[T], v: T)
+    appends
+pop (xs: list[T]) -> result[T]
+    removes the last element; `err("empty")`
+sort (xs: list[C])
+    in place, ascending, stable
+has (m: map[K, T], k: K) -> bool
+remove (m: map[K, T], k: K)
+    no effect if the key is missing
+keys (m: map[K, T]) -> list[K]
+    in insertion order
+expect (cond: bool)
+    only inside `test` (E0410)
+expect_eq (actual: T, expected: T)
+    only inside `test` (E0410); reports both values
+modules:
+  std.json JSON values: parse, write, and read fields and elements.
+  std.time UTC calendar time, ISO 8601 text and durations in milliseconds.
+  std.text Text helpers: search, replace, repeat, pad, lines and words.
+  std.random Random floats, picks and shuffles (fixed by --seed).
+  std.http Plain HTTP GET and POST (needs net; https is not supported).

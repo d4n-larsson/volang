@@ -1,0 +1,44 @@
+{"v":1,"kind":"doc","module":"builtins","name":"print","item":"builtin","signature":"(s: str)","description":"stdout, adds `\\n`"}
+{"v":1,"kind":"doc","module":"builtins","name":"write","item":"builtin","signature":"(s: str)","description":"stdout, no newline"}
+{"v":1,"kind":"doc","module":"builtins","name":"eprint","item":"builtin","signature":"(s: str)","description":"stderr, adds `\\n`"}
+{"v":1,"kind":"doc","module":"builtins","name":"read_line","item":"builtin","signature":"() -> result[str]","description":"one line of stdin without its `\\n` (or `\\r\\n`); `err(\"eof\")` at end of input"}
+{"v":1,"kind":"doc","module":"builtins","name":"read_all","item":"builtin","signature":"() -> str","description":"the rest of stdin"}
+{"v":1,"kind":"doc","module":"builtins","name":"read_file","item":"builtin","signature":"(path: str) -> result[str]","description":""}
+{"v":1,"kind":"doc","module":"builtins","name":"write_file","item":"builtin","signature":"(path: str, s: str) -> result[void]","description":"creates or replaces the file"}
+{"v":1,"kind":"doc","module":"builtins","name":"args","item":"builtin","signature":"() -> list[str]","description":"arguments after `--` in `vo run f.vo -- a b`"}
+{"v":1,"kind":"doc","module":"builtins","name":"exit","item":"builtin","signature":"(code: int)","description":"ends the program; code 0–63, else R0008"}
+{"v":1,"kind":"doc","module":"builtins","name":"now_ms","item":"builtin","signature":"() -> int","description":"wall-clock milliseconds; with `--clock-ms N`: N, N+1, ..."}
+{"v":1,"kind":"doc","module":"builtins","name":"random_int","item":"builtin","signature":"(lo: int, hi: int) -> int","description":"uniform in `lo..hi` inclusive; R0007 if `lo > hi`; fixed by `--seed N`"}
+{"v":1,"kind":"doc","module":"builtins","name":"env","item":"builtin","signature":"(name: str) -> result[str]","description":"an environment variable; `err(\"not set\")`"}
+{"v":1,"kind":"doc","module":"builtins","name":"str","item":"builtin","signature":"(x: int | float | bool) -> str","description":"floats keep at most 15 significant digits; `str(1.0)` is `\"1.0\"`"}
+{"v":1,"kind":"doc","module":"builtins","name":"int","item":"builtin","signature":"(f: float) -> int","description":"truncates toward zero; R0007 for NaN or out of range"}
+{"v":1,"kind":"doc","module":"builtins","name":"float","item":"builtin","signature":"(i: int) -> float","description":""}
+{"v":1,"kind":"doc","module":"builtins","name":"parse_int","item":"builtin","signature":"(s: str) -> result[int]","description":"the whole text must be the number: no spaces, no `+` (`trim` first); else `err(\"invalid int: ...\")`"}
+{"v":1,"kind":"doc","module":"builtins","name":"parse_float","item":"builtin","signature":"(s: str) -> result[float]","description":""}
+{"v":1,"kind":"doc","module":"builtins","name":"len","item":"builtin","signature":"(x: str | list[T] | map[K, T]) -> int","description":"for `str`: bytes, not characters"}
+{"v":1,"kind":"doc","module":"builtins","name":"slice","item":"builtin","signature":"(s: str, a: int, b: int) -> str","description":"bytes `a` to `b - 1`; R0003 out of range; R0007 if it splits a UTF-8 character"}
+{"v":1,"kind":"doc","module":"builtins","name":"slice","item":"builtin","signature":"(xs: list[T], a: int, b: int) -> list[T]","description":"a new list; R0003 out of range"}
+{"v":1,"kind":"doc","module":"builtins","name":"find","item":"builtin","signature":"(s: str, sub: str) -> int","description":"byte offset of the first match, or -1"}
+{"v":1,"kind":"doc","module":"builtins","name":"split","item":"builtin","signature":"(s: str, sep: str) -> list[str]","description":"`split(\"a,,b\", \",\")` is `[\"a\", \"\", \"b\"]`; empty `sep` is R0007"}
+{"v":1,"kind":"doc","module":"builtins","name":"join","item":"builtin","signature":"(xs: list[str], sep: str) -> str","description":""}
+{"v":1,"kind":"doc","module":"builtins","name":"trim","item":"builtin","signature":"(s: str) -> str","description":"removes ASCII whitespace at both ends"}
+{"v":1,"kind":"doc","module":"builtins","name":"chars","item":"builtin","signature":"(s: str) -> list[str]","description":"one string per code point"}
+{"v":1,"kind":"doc","module":"builtins","name":"upper, lower","item":"builtin","signature":"(s: str) -> str","description":"ASCII letters only"}
+{"v":1,"kind":"doc","module":"builtins","name":"ord","item":"builtin","signature":"(s: str) -> int","description":"code point of a one-character string (R0007 otherwise)"}
+{"v":1,"kind":"doc","module":"builtins","name":"chr","item":"builtin","signature":"(i: int) -> str","description":"the one-character string for a code point"}
+{"v":1,"kind":"doc","module":"builtins","name":"abs","item":"builtin","signature":"(x: int | float) -> int | float","description":"same type as `x`"}
+{"v":1,"kind":"doc","module":"builtins","name":"min, max","item":"builtin","signature":"(a: C, b: C) -> C","description":"`C` is `int`, `float` or `str`"}
+{"v":1,"kind":"doc","module":"builtins","name":"push","item":"builtin","signature":"(xs: list[T], v: T)","description":"appends"}
+{"v":1,"kind":"doc","module":"builtins","name":"pop","item":"builtin","signature":"(xs: list[T]) -> result[T]","description":"removes the last element; `err(\"empty\")`"}
+{"v":1,"kind":"doc","module":"builtins","name":"sort","item":"builtin","signature":"(xs: list[C])","description":"in place, ascending, stable"}
+{"v":1,"kind":"doc","module":"builtins","name":"has","item":"builtin","signature":"(m: map[K, T], k: K) -> bool","description":""}
+{"v":1,"kind":"doc","module":"builtins","name":"remove","item":"builtin","signature":"(m: map[K, T], k: K)","description":"no effect if the key is missing"}
+{"v":1,"kind":"doc","module":"builtins","name":"keys","item":"builtin","signature":"(m: map[K, T]) -> list[K]","description":"in insertion order"}
+{"v":1,"kind":"doc","module":"builtins","name":"expect","item":"builtin","signature":"(cond: bool)","description":"only inside `test` (E0410)"}
+{"v":1,"kind":"doc","module":"builtins","name":"expect_eq","item":"builtin","signature":"(actual: T, expected: T)","description":"only inside `test` (E0410); reports both values"}
+{"v":1,"kind":"doc","module":"std.json","name":"std.json","item":"module","signature":"std.json","description":"JSON values: parse, write, and read fields and elements."}
+{"v":1,"kind":"doc","module":"std.time","name":"std.time","item":"module","signature":"std.time","description":"UTC calendar time, ISO 8601 text and durations in milliseconds."}
+{"v":1,"kind":"doc","module":"std.text","name":"std.text","item":"module","signature":"std.text","description":"Text helpers: search, replace, repeat, pad, lines and words."}
+{"v":1,"kind":"doc","module":"std.random","name":"std.random","item":"module","signature":"std.random","description":"Random floats, picks and shuffles (fixed by --seed)."}
+{"v":1,"kind":"doc","module":"std.http","name":"std.http","item":"module","signature":"std.http","description":"Plain HTTP GET and POST (needs net; https is not supported)."}
+{"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":43}

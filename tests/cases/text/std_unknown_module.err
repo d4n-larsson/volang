@@ -1,0 +1,4 @@
+std_unknown_module.vo:1:1: error[E0205]: Cannot find `std/nothing.vo` for this import.
+   1 | import std.nothing.x;
+     | ^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings

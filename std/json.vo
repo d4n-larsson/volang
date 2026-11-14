@@ -1,0 +1,789 @@
+# std.json: JSON values: parse, write, and read fields and elements.
+# Part of the vo standard library (spec 007). Import items one by one: `import std.json.NAME;`.
+# ponytail: the parser walks chars(s) with an index and nests at most 512 levels; a byte-level
+# primitive if large documents need speed.
+
+# A JSON value: object keys keep their order, integers that fit an int are integer.
+#     Json.integer(3) == Json.integer(3) is true
+variant Json {
+    null;
+    boolean(bool);
+    integer(int);
+    number(float);
+    text(str);
+    array(list[Json]);
+    object(map[str, Json]);
+}
+
+record JsonParser {
+    cs: list[str];
+    pos: int;
+    line: int;
+    column: int;
+}
+
+# Parses JSON text (RFC 8259); an error gives its line and column.
+#     parse_json("[1, true]") == ok(Json.array([Json.integer(1), Json.boolean(true)])) is true
+fn parse_json(s: str) -> result[Json] {
+    let p = new JsonParser { cs: chars(s), pos: 0, line: 1, column: 1 };
+    skip_space(p);
+    let v = try parse_value(p, 0);
+    skip_space(p);
+    if p.pos < len(p.cs) {
+        return fail_at(p, "unexpected text after the value");
+    }
+    return ok(v);
+}
+
+fn fail_at(p: JsonParser, what: str) -> result[Json] {
+    return err("line " + str(p.line) + ", column " + str(p.column) + ": " + what);
+}
+
+fn peek(p: JsonParser) -> str {
+    if p.pos >= len(p.cs) {
+        return "";
+    }
+    return p.cs[p.pos];
+}
+
+fn advance(p: JsonParser) {
+    if p.cs[p.pos] == "\n" {
+        set p.line = p.line + 1;
+        set p.column = 1;
+    } else {
+        set p.column = p.column + 1;
+    }
+    set p.pos = p.pos + 1;
+}
+
+fn skip_space(p: JsonParser) {
+    while p.pos < len(p.cs) {
+        let c = p.cs[p.pos];
+        if c == " " or c == "\n" or c == "\t" or c == chr(13) {
+            advance(p);
+        } else {
+            return;
+        }
+    }
+}
+
+fn parse_value(p: JsonParser, depth: int) -> result[Json] {
+    let c = peek(p);
+    if c == "" {
+        return fail_at(p, "expected a value, found the end of the text");
+    }
+    if (c == "{" or c == "[") and depth >= 512 {
+        return fail_at(p, "nested more than 512 levels");
+    }
+    if c == "{" {
+        return parse_object(p, depth);
+    }
+    if c == "[" {
+        return parse_array(p, depth);
+    }
+    if c == "\"" {
+        let s = try parse_string(p);
+        return ok(Json.text(s));
+    }
+    if c == "-" or (c >= "0" and c <= "9") {
+        return parse_number(p);
+    }
+    if c == "t" {
+        return parse_word(p, "true", Json.boolean(true));
+    }
+    if c == "f" {
+        return parse_word(p, "false", Json.boolean(false));
+    }
+    if c == "n" {
+        return parse_word(p, "null", Json.null);
+    }
+    return fail_at(p, "expected a value, found `" + c + "`");
+}
+
+fn parse_word(p: JsonParser, word: str, value: Json) -> result[Json] {
+    let column = p.column;
+    for c in chars(word) {
+        if peek(p) != c {
+            return err("line " + str(p.line) + ", column " + str(column) + ": expected `" + word + "`");
+        }
+        advance(p);
+    }
+    return ok(value);
+}
+
+fn parse_object(p: JsonParser, depth: int) -> result[Json] {
+    let m = new map[str, Json];
+    advance(p);
+    skip_space(p);
+    if peek(p) == "}" {
+        advance(p);
+        return ok(Json.object(m));
+    }
+    while true {
+        if peek(p) != "\"" {
+            return fail_at(p, "expected a string key");
+        }
+        let k = try parse_string(p);
+        skip_space(p);
+        if peek(p) != ":" {
+            return fail_at(p, "expected `:` after the key");
+        }
+        advance(p);
+        skip_space(p);
+        let v = try parse_value(p, depth + 1);
+        set m[k] = v;
+        skip_space(p);
+        let c = peek(p);
+        if c == "}" {
+            advance(p);
+            return ok(Json.object(m));
+        }
+        if c != "," {
+            return fail_at(p, "expected `,` or `}`");
+        }
+        advance(p);
+        skip_space(p);
+    }
+}
+
+fn parse_array(p: JsonParser, depth: int) -> result[Json] {
+    let xs = new list[Json];
+    advance(p);
+    skip_space(p);
+    if peek(p) == "]" {
+        advance(p);
+        return ok(Json.array(xs));
+    }
+    while true {
+        let v = try parse_value(p, depth + 1);
+        push(xs, v);
+        skip_space(p);
+        let c = peek(p);
+        if c == "]" {
+            advance(p);
+            return ok(Json.array(xs));
+        }
+        if c != "," {
+            return fail_at(p, "expected `,` or `]`");
+        }
+        advance(p);
+        skip_space(p);
+    }
+}
+
+fn hex_digit(c: str) -> int {
+    if c >= "0" and c <= "9" {
+        return ord(c) - ord("0");
+    }
+    if c >= "a" and c <= "f" {
+        return ord(c) - ord("a") + 10;
+    }
+    if c >= "A" and c <= "F" {
+        return ord(c) - ord("A") + 10;
+    }
+    return -1;
+}
+
+fn parse_hex4(p: JsonParser) -> result[int] {
+    var n = 0;
+    for _ in 0..4 {
+        let d = hex_digit(peek(p));
+        if d < 0 {
+            return err("line " + str(p.line) + ", column " + str(p.column) + ": expected four hex digits after \\u");
+        }
+        set n = n * 16 + d;
+        advance(p);
+    }
+    return ok(n);
+}
+
+fn string_fail(p: JsonParser, what: str) -> result[str] {
+    return err("line " + str(p.line) + ", column " + str(p.column) + ": " + what);
+}
+
+fn parse_string(p: JsonParser) -> result[str] {
+    advance(p);
+    var out = "";
+    while true {
+        let c = peek(p);
+        if c == "" {
+            return string_fail(p, "unterminated string");
+        }
+        if c == "\"" {
+            advance(p);
+            return ok(out);
+        }
+        if len(c) == 1 and c > chr(127) {
+            return string_fail(p, "invalid UTF-8");
+        }
+        if len(c) == 1 and c < " " {
+            return string_fail(p, "control character in a string: write it as an escape");
+        }
+        if c != "\\" {
+            set out = out + c;
+            advance(p);
+            continue;
+        }
+        let escape_at = "line " + str(p.line) + ", column " + str(p.column) + ": ";
+        advance(p);
+        let e = peek(p);
+        if e == "\"" or e == "\\" or e == "/" {
+            set out = out + e;
+            advance(p);
+        } else if e == "n" {
+            set out = out + "\n";
+            advance(p);
+        } else if e == "t" {
+            set out = out + "\t";
+            advance(p);
+        } else if e == "r" {
+            set out = out + chr(13);
+            advance(p);
+        } else if e == "b" {
+            set out = out + chr(8);
+            advance(p);
+        } else if e == "f" {
+            set out = out + chr(12);
+            advance(p);
+        } else if e == "u" {
+            advance(p);
+            let hi = try parse_hex4(p);
+            if hi >= 56320 and hi <= 57343 {
+                return err(escape_at + "unpaired low surrogate");
+            }
+            if hi >= 55296 and hi <= 56319 {
+                if peek(p) != "\\" {
+                    return err(escape_at + "unpaired high surrogate");
+                }
+                advance(p);
+                if peek(p) != "u" {
+                    return err(escape_at + "unpaired high surrogate");
+                }
+                advance(p);
+                let lo = try parse_hex4(p);
+                if lo < 56320 or lo > 57343 {
+                    return err(escape_at + "unpaired high surrogate");
+                }
+                set out = out + chr(65536 + (hi - 55296) * 1024 + (lo - 56320));
+            } else {
+                set out = out + chr(hi);
+            }
+        } else {
+            return string_fail(p, "invalid escape");
+        }
+    }
+}
+
+fn is_digit(c: str) -> bool {
+    return c >= "0" and c <= "9" and len(c) == 1;
+}
+
+fn parse_number(p: JsonParser) -> result[Json] {
+    let line = p.line;
+    let column = p.column;
+    var negative = false;
+    if peek(p) == "-" {
+        set negative = true;
+        advance(p);
+    }
+    var int_digits = "";
+    if peek(p) == "0" {
+        set int_digits = "0";
+        advance(p);
+        if is_digit(peek(p)) {
+            return fail_at(p, "a number cannot have leading zeros");
+        }
+    } else if is_digit(peek(p)) {
+        while is_digit(peek(p)) {
+            set int_digits = int_digits + peek(p);
+            advance(p);
+        }
+    } else {
+        return fail_at(p, "expected a digit");
+    }
+    var frac_digits = "";
+    var is_float = false;
+    if peek(p) == "." {
+        set is_float = true;
+        advance(p);
+        if not is_digit(peek(p)) {
+            return fail_at(p, "expected a digit after `.`");
+        }
+        while is_digit(peek(p)) {
+            set frac_digits = frac_digits + peek(p);
+            advance(p);
+        }
+    }
+    var exponent = 0;
+    if peek(p) == "e" or peek(p) == "E" {
+        set is_float = true;
+        advance(p);
+        var exp_negative = false;
+        if peek(p) == "+" {
+            advance(p);
+        } else if peek(p) == "-" {
+            set exp_negative = true;
+            advance(p);
+        }
+        if not is_digit(peek(p)) {
+            return fail_at(p, "expected a digit in the exponent");
+        }
+        while is_digit(peek(p)) {
+            if exponent < 100000 {
+                set exponent = exponent * 10 + ord(peek(p)) - ord("0");
+            }
+            advance(p);
+        }
+        if exp_negative {
+            set exponent = -exponent;
+        }
+    }
+    if not is_float {
+        var text = int_digits;
+        if negative {
+            set text = "-" + int_digits;
+        }
+        match parse_int(text) {
+            case ok(n) {
+                return ok(Json.integer(n));
+            }
+            case err(_) {
+            }
+        }
+    }
+    let f = decimal_float(negative, int_digits + frac_digits, len(int_digits) + exponent);
+    if f - f != 0.0 {
+        return err("line " + str(line) + ", column " + str(column) + ": number out of range");
+    }
+    return ok(Json.number(f));
+}
+
+fn decimal_float(negative: bool, digits: str, point: int) -> float {
+    # The float of 0.DIGITS times 10^point (sign separate), from at most 19 significant digits.
+    var d = digits;
+    var pt = point;
+    while len(d) > 0 and slice(d, 0, 1) == "0" {
+        set d = slice(d, 1, len(d));
+        set pt = pt - 1;
+    }
+    if d == "" {
+        if negative {
+            return -0.0;
+        }
+        return 0.0;
+    }
+    if len(d) > 19 {
+        set d = slice(d, 0, 19);
+    }
+    if pt > 400 {
+        set pt = 400;
+    }
+    if pt < -400 {
+        if negative {
+            return -0.0;
+        }
+        return 0.0;
+    }
+    var text = "";
+    if pt <= 0 {
+        set text = "0." + repeat_zeros(-pt) + d;
+    } else if pt >= len(d) {
+        set text = d + repeat_zeros(pt - len(d));
+    } else {
+        set text = slice(d, 0, pt) + "." + slice(d, pt, len(d));
+    }
+    if negative {
+        set text = "-" + text;
+    }
+    return __text_float(text);
+}
+
+fn repeat_zeros(n: int) -> str {
+    var s = "";
+    for _ in 0..n {
+        set s = s + "0";
+    }
+    return s;
+}
+
+# Writes compact JSON; a NaN or infinite number is an error.
+#     write_json(Json.array([Json.integer(1), Json.text("a")])) == ok("[1,\"a\"]") is true
+fn write_json(j: Json) -> result[str] {
+    return write_to(j, "", "");
+}
+
+# Writes JSON indented by two spaces, one member or element per line.
+#     write_json_pretty(Json.array(new list[Json])) == ok("[]") is true
+fn write_json_pretty(j: Json) -> result[str] {
+    return write_to(j, "\n", "  ");
+}
+
+fn write_to(j: Json, newline: str, indent: str) -> result[str] {
+    let parts = new list[str];
+    try write_value(j, parts, newline, indent, "");
+    return ok(join(parts, ""));
+}
+
+fn write_value(j: Json, parts: list[str], newline: str, indent: str, prefix: str) -> result[void] {
+    match j {
+        case null {
+            push(parts, "null");
+        }
+        case boolean(b) {
+            if b {
+                push(parts, "true");
+            } else {
+                push(parts, "false");
+            }
+        }
+        case integer(n) {
+            push(parts, str(n));
+        }
+        case number(f) {
+            if f - f != 0.0 {
+                return err("cannot write a NaN or infinite number as JSON");
+            }
+            push(parts, __float_text(f));
+        }
+        case text(s) {
+            push(parts, quote(s));
+        }
+        case array(xs) {
+            if len(xs) == 0 {
+                push(parts, "[]");
+                return ok();
+            }
+            push(parts, "[");
+            var first = true;
+            for x in xs {
+                if not first {
+                    push(parts, ",");
+                }
+                set first = false;
+                push(parts, newline + prefix + indent);
+                try write_value(x, parts, newline, indent, prefix + indent);
+            }
+            push(parts, newline + prefix + "]");
+        }
+        case object(m) {
+            let ks = keys(m);
+            if len(ks) == 0 {
+                push(parts, "{}");
+                return ok();
+            }
+            push(parts, "{");
+            var first = true;
+            for k in ks {
+                if not first {
+                    push(parts, ",");
+                }
+                set first = false;
+                push(parts, newline + prefix + indent + quote(k) + ":");
+                if newline != "" {
+                    push(parts, " ");
+                }
+                try write_value(m[k], parts, newline, indent, prefix + indent);
+            }
+            push(parts, newline + prefix + "}");
+        }
+    }
+    return ok();
+}
+
+fn quote(s: str) -> str {
+    let out = new list[str];
+    push(out, "\"");
+    for c in chars(s) {
+        if c == "\"" {
+            push(out, "\\\"");
+        } else if c == "\\" {
+            push(out, "\\\\");
+        } else if c == "\n" {
+            push(out, "\\n");
+        } else if c == "\t" {
+            push(out, "\\t");
+        } else if c == chr(13) {
+            push(out, "\\r");
+        } else if c == chr(8) {
+            push(out, "\\b");
+        } else if c == chr(12) {
+            push(out, "\\f");
+        } else if len(c) == 1 and c < " " {
+            push(out, "\\u00" + hex2(ord(c)));
+        } else {
+            push(out, c);
+        }
+    }
+    push(out, "\"");
+    return join(out, "");
+}
+
+fn hex2(n: int) -> str {
+    let digits = "0123456789abcdef";
+    return slice(digits, n / 16, n / 16 + 1) + slice(digits, n % 16, n % 16 + 1);
+}
+
+# The value of an object's field.
+#     field(Json.null, "a") == err("not an object") is true
+fn field(j: Json, key: str) -> result[Json] {
+    match j {
+        case object(m) {
+            if has(m, key) {
+                return ok(m[key]);
+            }
+            return err("no field `" + key + "`");
+        }
+        case null {
+            return err("not an object");
+        }
+        case boolean(_) {
+            return err("not an object");
+        }
+        case integer(_) {
+            return err("not an object");
+        }
+        case number(_) {
+            return err("not an object");
+        }
+        case text(_) {
+            return err("not an object");
+        }
+        case array(_) {
+            return err("not an object");
+        }
+    }
+}
+
+# The element of an array at index i (from 0).
+#     at(Json.array([Json.null]), 1) == err("index 1 out of range") is true
+fn at(j: Json, i: int) -> result[Json] {
+    let xs = try as_array(j);
+    if i < 0 or i >= len(xs) {
+        return err("index " + str(i) + " out of range");
+    }
+    return ok(xs[i]);
+}
+
+# The text of a JSON string.
+#     as_text(Json.text("a")) == ok("a") is true
+fn as_text(j: Json) -> result[str] {
+    match j {
+        case text(s) {
+            return ok(s);
+        }
+        case null {
+            return err("not text");
+        }
+        case boolean(_) {
+            return err("not text");
+        }
+        case integer(_) {
+            return err("not text");
+        }
+        case number(_) {
+            return err("not text");
+        }
+        case array(_) {
+            return err("not text");
+        }
+        case object(_) {
+            return err("not text");
+        }
+    }
+}
+
+# The value of a JSON integer (a number with a fraction or out of range is an error).
+#     as_int(Json.number(1.5)) == err("not an integer") is true
+fn as_int(j: Json) -> result[int] {
+    match j {
+        case integer(n) {
+            return ok(n);
+        }
+        case null {
+            return err("not an integer");
+        }
+        case boolean(_) {
+            return err("not an integer");
+        }
+        case number(_) {
+            return err("not an integer");
+        }
+        case text(_) {
+            return err("not an integer");
+        }
+        case array(_) {
+            return err("not an integer");
+        }
+        case object(_) {
+            return err("not an integer");
+        }
+    }
+}
+
+# The value of a JSON integer or number as a float.
+#     as_float(Json.integer(2)) == ok(2.0) is true
+fn as_float(j: Json) -> result[float] {
+    match j {
+        case integer(n) {
+            return ok(float(n));
+        }
+        case number(f) {
+            return ok(f);
+        }
+        case null {
+            return err("not a number");
+        }
+        case boolean(_) {
+            return err("not a number");
+        }
+        case text(_) {
+            return err("not a number");
+        }
+        case array(_) {
+            return err("not a number");
+        }
+        case object(_) {
+            return err("not a number");
+        }
+    }
+}
+
+# The value of a JSON true or false.
+#     as_bool(Json.boolean(true)) == ok(true) is true
+fn as_bool(j: Json) -> result[bool] {
+    match j {
+        case boolean(b) {
+            return ok(b);
+        }
+        case null {
+            return err("not a boolean");
+        }
+        case integer(_) {
+            return err("not a boolean");
+        }
+        case number(_) {
+            return err("not a boolean");
+        }
+        case text(_) {
+            return err("not a boolean");
+        }
+        case array(_) {
+            return err("not a boolean");
+        }
+        case object(_) {
+            return err("not a boolean");
+        }
+    }
+}
+
+# The elements of a JSON array.
+#     as_array(Json.array(new list[Json])) == ok(new list[Json]) is true
+fn as_array(j: Json) -> result[list[Json]] {
+    match j {
+        case array(xs) {
+            return ok(xs);
+        }
+        case null {
+            return err("not an array");
+        }
+        case boolean(_) {
+            return err("not an array");
+        }
+        case integer(_) {
+            return err("not an array");
+        }
+        case number(_) {
+            return err("not an array");
+        }
+        case text(_) {
+            return err("not an array");
+        }
+        case object(_) {
+            return err("not an array");
+        }
+    }
+}
+
+# The members of a JSON object, in their order.
+#     as_object(Json.null) == err("not an object") is true
+fn as_object(j: Json) -> result[map[str, Json]] {
+    match j {
+        case object(m) {
+            return ok(m);
+        }
+        case null {
+            return err("not an object");
+        }
+        case boolean(_) {
+            return err("not an object");
+        }
+        case integer(_) {
+            return err("not an object");
+        }
+        case number(_) {
+            return err("not an object");
+        }
+        case text(_) {
+            return err("not an object");
+        }
+        case array(_) {
+            return err("not an object");
+        }
+    }
+}
+
+# A field read as text; errors name the field.
+#     text_field(Json.null, "name") == err("not an object") is true
+fn text_field(j: Json, key: str) -> result[str] {
+    let v = try field(j, key);
+    match as_text(v) {
+        case ok(s) {
+            return ok(s);
+        }
+        case err(_) {
+            return err("field `" + key + "` is not text");
+        }
+    }
+}
+
+# A field read as an integer; errors name the field.
+#     int_field(Json.null, "age") == err("not an object") is true
+fn int_field(j: Json, key: str) -> result[int] {
+    let v = try field(j, key);
+    match as_int(v) {
+        case ok(n) {
+            return ok(n);
+        }
+        case err(_) {
+            return err("field `" + key + "` is not an integer");
+        }
+    }
+}
+
+# A field read as a float (integer or number); errors name the field.
+#     float_field(Json.null, "price") == err("not an object") is true
+fn float_field(j: Json, key: str) -> result[float] {
+    let v = try field(j, key);
+    match as_float(v) {
+        case ok(f) {
+            return ok(f);
+        }
+        case err(_) {
+            return err("field `" + key + "` is not a number");
+        }
+    }
+}
+
+# A field read as true or false; errors name the field.
+#     bool_field(Json.null, "on") == err("not an object") is true
+fn bool_field(j: Json, key: str) -> result[bool] {
+    let v = try field(j, key);
+    match as_bool(v) {
+        case ok(b) {
+            return ok(b);
+        }
+        case err(_) {
+            return err("field `" + key + "` is not a boolean");
+        }
+    }
+}

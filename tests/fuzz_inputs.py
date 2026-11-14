@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Spec 006: malformed query targets, diffs and recordings never crash the toolchain.
+"""Spec 006: malformed query targets, diffs and recordings never crash the toolchain; spec 007:
+malformed JSON never crashes std.json (tests/json/driver.vo).
 
-Starts from valid inputs (tests/cases/query/shop, tests/cases/query/impact/*.diff and a recording
-made here), then truncates them and flips, inserts and deletes bytes at random. Every run must end
+Starts from valid inputs (tests/cases/query/shop, tests/cases/query/impact/*.diff, a recording
+made here and the tests/json corpus), then truncates them and flips, inserts and deletes bytes at random. Every run must end
 with a documented exit status (0, 1, 64, 65, 66, 70, 74, 124) and never with 125 or a signal
 (Principle III).
 
@@ -68,9 +69,12 @@ def main():
         subprocess.run([VO, "run", "--seed", "1", "--record", "r.jsonl", "rec.vo"], cwd=work,
                        input=b"line\n", capture_output=True, timeout=60)
         recording = open(os.path.join(work, "r.jsonl"), "rb").read()
+        jdir = os.path.join(ROOT, "tests", "json")
+        docs = [open(os.path.join(jdir, k, n), "rb").read() for k in ("valid", "invalid")
+                for n in sorted(os.listdir(os.path.join(jdir, k))) if n.endswith(".json")]
         targets = [b"checkout", b"tax", b"pricing.vo:1:4", b"cart.vo:3:13", b"main.vo:10:1"]
         for i in range(iterations):
-            kind = i % 3
+            kind = i % 4
             if kind == 0:
                 t = mutate(rng, rng.choice(targets)).decode("utf-8", "replace").replace("\x00", "")
                 t = t or "x"
@@ -84,6 +88,12 @@ def main():
                 open(os.path.join(work, "d.diff"), "wb").write(d)
                 code = run(["impact", "main.vo", "--diff", "../d.diff"], sd)
                 what = "impact with diff %r" % d[:120]
+            elif kind == 3:
+                j = mutate(rng, rng.choice(docs))
+                r = subprocess.run([VO, "run", os.path.join(jdir, "driver.vo")], input=j,
+                                   capture_output=True, timeout=60)
+                code = r.returncode if b"round trip changed" not in r.stdout else 125
+                what = "json driver on %r" % j[:160]
             else:
                 r = mutate(rng, recording)
                 open(os.path.join(work, "m.jsonl"), "wb").write(r)

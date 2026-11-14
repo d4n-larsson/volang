@@ -1,0 +1,5 @@
+import pads.left.pad2;
+
+fn cents(n: int) -> str {
+    return str(n / 100) + "." + pad2(n % 100);
+}

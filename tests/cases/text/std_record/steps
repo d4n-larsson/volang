@@ -1,0 +1,3 @@
+vo check main.vo
+vo effects main.vo
+keep vo.effects

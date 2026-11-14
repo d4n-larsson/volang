@@ -1,0 +1,6 @@
+import std.text.starts_with;
+import std.text.ends_with;
+
+fn main() uses console {
+    print(str(starts_with("report.txt", "rep")) + " " + str(ends_with("a.vo", ".txt")));
+}

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0201","name":"undefined_name","severity":"error","file":"std_primitive_outside.vo","start":{"line":2,"col":11},"end":{"line":2,"col":23},"text":"__float_text","message":"`__float_text` is not defined.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

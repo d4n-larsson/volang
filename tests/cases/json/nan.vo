@@ -1,0 +1,16 @@
+import std.json.Json;
+import std.json.write_json;
+
+fn main() uses console {
+    let z = 0.0;
+    for f in [z / z, 1.0 / z, -1.0 / z, 2.5] {
+        match write_json(Json.array([Json.number(f)])) {
+            case ok(t) {
+                print("ok " + t);
+            }
+            case err(e) {
+                print("err " + e);
+            }
+        }
+    }
+}

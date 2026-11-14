@@ -1,0 +1,11 @@
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo effects main.vo
+main uses console
+
+main.vo:main uses console
+0 errors, 0 warnings
+--- stderr
+--- exit 0

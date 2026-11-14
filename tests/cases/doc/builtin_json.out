@@ -1,0 +1,2 @@
+{"v":1,"kind":"doc","module":"builtins","name":"print","item":"builtin","signature":"(s: str)","description":"stdout, adds `\\n`"}
+{"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":1}

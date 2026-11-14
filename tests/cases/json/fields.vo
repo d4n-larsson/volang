@@ -1,0 +1,38 @@
+import std.json.Json;
+import std.json.parse_json;
+import std.json.text_field;
+import std.json.int_field;
+import std.json.float_field;
+import std.json.bool_field;
+import std.json.field;
+import std.json.at;
+
+fn show[T](label: str, r: result[T], text: fn(T) -> str) uses console {
+    match r {
+        case ok(v) {
+            print(label + ": ok " + text(v));
+        }
+        case err(e) {
+            print(label + ": err " + e);
+        }
+    }
+}
+
+fn main() -> result[void] uses console {
+    let doc = try parse_json("{\"name\": \"ana\", \"age\": 3, \"score\": 9.5, \"admin\": true, \"tags\": [1]}");
+    show("name", text_field(doc, "name"), fn(s: str) -> str { return s; });
+    show("age", int_field(doc, "age"), fn(i: int) -> str { return str(i); });
+    show("age as float", float_field(doc, "age"), fn(f: float) -> str { return str(f); });
+    show("score", float_field(doc, "score"), fn(f: float) -> str { return str(f); });
+    show("admin", bool_field(doc, "admin"), fn(b: bool) -> str { return str(b); });
+    show("missing", text_field(doc, "email"), fn(s: str) -> str { return s; });
+    show("wrong kind", text_field(doc, "age"), fn(s: str) -> str { return s; });
+    show("score as int", int_field(doc, "score"), fn(i: int) -> str { return str(i); });
+    show("admin as text", text_field(doc, "admin"), fn(s: str) -> str { return s; });
+    show("not an object", text_field(Json.array(new list[Json]), "a"), fn(s: str) -> str { return s; });
+    let tags = try field(doc, "tags");
+    show("at 0", at(tags, 0), fn(j: Json) -> str { return "a value"; });
+    show("at 5", at(tags, 5), fn(j: Json) -> str { return "a value"; });
+    show("at on an object", at(doc, 0), fn(j: Json) -> str { return "a value"; });
+    return ok();
+}

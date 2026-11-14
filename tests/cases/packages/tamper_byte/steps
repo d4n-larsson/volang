@@ -1,0 +1,3 @@
+vo package main.vo money shared/money
+write shared/money/format.vo fn cents(n: int) -> str {\n    let c = n % 100;\n    if c < 10 {\n        return str(n / 100) + ".0" + str(c);\n    }\n    return str(n / 100) + "," + str(c);\n}\n
+vo run main.vo

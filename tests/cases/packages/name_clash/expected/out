@@ -1,0 +1,11 @@
+$ vo package main.vo money shared/money
+added money shared/money sha256:6514bb0e84aa66348d21ff1c32a37024df993558a975bfa61e70b1ade0687a46
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:1:1: error[E0705]: `money` is both a listed package and a directory next to this file: rename one of them.
+   1 | import money.format.cents;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65

@@ -118,6 +118,8 @@ file_add:
     ld t0, 0(t0)
     sd t0, FILE_GEN(s0)
     sd zero, FILE_TOKENS(s0)
+    sd zero, FILE_STD(s0)
+    sd zero, FILE_PKG(s0)
     sd zero, FILE_AST(s0)
     li s4, 1                    # count lines
     li t0, 0

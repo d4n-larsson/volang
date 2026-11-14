@@ -1,0 +1,3 @@
+vo package main.vo money shared/money
+rm shared/money/round.vo
+vo run main.vo

@@ -1,0 +1,13 @@
+name: ok ana
+age: ok 3
+age as float: ok 3.0
+score: ok 9.5
+admin: ok true
+missing: err no field `email`
+wrong kind: err field `age` is not text
+score as int: err field `score` is not an integer
+admin as text: err field `admin` is not text
+not an object: err not an object
+at 0: ok a value
+at 5: err index 5 out of range
+at on an object: err not an array

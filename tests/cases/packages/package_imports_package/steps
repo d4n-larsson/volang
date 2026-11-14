@@ -1,0 +1,4 @@
+vo package main.vo pads lib/pads
+vo package main.vo money shared/money
+vo run main.vo
+keep vo.packages

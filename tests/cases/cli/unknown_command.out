@@ -1,1 +1,1 @@
-error[T0001]: Unknown command `frobnicate`. Commands: check, run, test, fmt, effects, query, impact, edit, replay, explain, reference, version.
+error[T0001]: Unknown command `frobnicate`. Commands: check, run, test, fmt, effects, query, impact, edit, replay, doc, package, explain, reference, version.

@@ -2074,6 +2074,274 @@ fn main() uses console {
 }
 ```
 
+## E0701 package_changed
+
+A package's files no longer match the hash its manifest pins.
+
+Fixable: no
+
+`vo.packages` (next to the entry file or above) pins each package to a SHA-256 hash of all its `.vo` files: their paths, lengths and bytes. Any changed byte, added, removed or renamed file changes the hash. When a check uses the package and its files hash differently, nothing of it is checked or run: the message gives both hashes. Review what changed in the package, then pin it again with `vo package ENTRY NAME DIRECTORY`, which writes the new hash.
+
+### Example
+
+```vo
+import money.format.cents;
+
+fn main() uses console {
+    print(cents(1234));
+}
+```
+
+```vo
+# file: shared/money/format.vo
+fn cents(n: int) -> str {
+    return str(n / 100) + "." + str(n % 100);
+}
+```
+
+```text
+# file: vo.packages
+money shared/money sha256:0000000000000000000000000000000000000000000000000000000000000000
+```
+
+### Fixed
+
+```vo
+import money.format.cents;
+
+fn main() uses console {
+    print(cents(1234));
+}
+```
+
+```vo
+# file: shared/money/format.vo
+fn cents(n: int) -> str {
+    return str(n / 100) + "." + str(n % 100);
+}
+```
+
+```text
+# file: vo.packages
+money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+```
+
+## E0702 package_missing
+
+A listed package's directory is missing, unreadable or has no `.vo` files.
+
+Fixable: no
+
+Each line of `vo.packages` names a directory, relative to the manifest. When a check uses the package and the directory cannot be read or holds no `.vo` file, the import fails. Restore the directory, or point the line at the right place with `vo package ENTRY NAME DIRECTORY`.
+
+### Example
+
+```vo
+import money.format.cents;
+
+fn main() uses console {
+    print(cents(1234));
+}
+```
+
+```text
+# file: vo.packages
+money shared/money sha256:0000000000000000000000000000000000000000000000000000000000000000
+```
+
+### Fixed
+
+```vo
+import money.format.cents;
+
+fn main() uses console {
+    print(cents(1234));
+}
+```
+
+```vo
+# file: shared/money/format.vo
+fn cents(n: int) -> str {
+    return str(n / 100) + "." + str(n % 100);
+}
+```
+
+```text
+# file: vo.packages
+money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+```
+
+## E0703 bad_manifest
+
+A line of `vo.packages` is not `NAME DIRECTORY sha256:HEX`.
+
+Fixable: no
+
+Each line of `vo.packages` is a package name (an identifier other than `std`), its directory and `sha256:` followed by 64 lowercase hex digits; `#` starts a comment line. `vo package` writes these lines: run it rather than editing the file by hand.
+
+### Example
+
+```vo
+import money.format.cents;
+
+fn main() uses console {
+    print(cents(1234));
+}
+```
+
+```vo
+# file: shared/money/format.vo
+fn cents(n: int) -> str {
+    return str(n / 100) + "." + str(n % 100);
+}
+```
+
+```text
+# file: vo.packages
+money shared/money
+```
+
+### Fixed
+
+```vo
+import money.format.cents;
+
+fn main() uses console {
+    print(cents(1234));
+}
+```
+
+```vo
+# file: shared/money/format.vo
+fn cents(n: int) -> str {
+    return str(n / 100) + "." + str(n % 100);
+}
+```
+
+```text
+# file: vo.packages
+money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+```
+
+## E0704 duplicate_package
+
+A package name is listed twice in `vo.packages`.
+
+Fixable: no
+
+Every name in `vo.packages` must be unique, so that an import names exactly one directory. Remove one of the lines (`vo package --remove ENTRY NAME` removes an entry).
+
+### Example
+
+```vo
+import money.format.cents;
+
+fn main() uses console {
+    print(cents(1234));
+}
+```
+
+```vo
+# file: shared/money/format.vo
+fn cents(n: int) -> str {
+    return str(n / 100) + "." + str(n % 100);
+}
+```
+
+```text
+# file: vo.packages
+money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+```
+
+### Fixed
+
+```vo
+import money.format.cents;
+
+fn main() uses console {
+    print(cents(1234));
+}
+```
+
+```vo
+# file: shared/money/format.vo
+fn cents(n: int) -> str {
+    return str(n / 100) + "." + str(n % 100);
+}
+```
+
+```text
+# file: vo.packages
+money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+```
+
+## E0705 package_name_clash
+
+A package name is also a directory next to the importing file.
+
+Fixable: no
+
+`import money.format.cents;` could mean the local file `money/format.vo` or the package `money`. Rather than pick one silently, vo reports the clash. Rename the local directory, or list the package under another name.
+
+### Example
+
+```vo
+import money.format.cents;
+
+fn main() uses console {
+    print(cents(1234));
+}
+```
+
+```vo
+# file: money/format.vo
+fn cents(n: int) -> str {
+    return str(n);
+}
+```
+
+```vo
+# file: shared/money/format.vo
+fn cents(n: int) -> str {
+    return str(n / 100) + "." + str(n % 100);
+}
+```
+
+```text
+# file: vo.packages
+money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+```
+
+### Fixed
+
+```vo
+import cash.format.cents;
+
+fn main() uses console {
+    print(cents(1234));
+}
+```
+
+```vo
+# file: money/format.vo
+fn cents(n: int) -> str {
+    return str(n);
+}
+```
+
+```vo
+# file: shared/money/format.vo
+fn cents(n: int) -> str {
+    return str(n / 100) + "." + str(n % 100);
+}
+```
+
+```text
+# file: vo.packages
+cash shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+```
+
 ## R0001 integer_overflow
 
 An integer operation overflowed the 64-bit range.
@@ -2699,4 +2967,24 @@ vo run --trace out/missing-dir/t.jsonl main.vo
 
 ```sh
 vo run --trace t.jsonl main.vo
+```
+
+## T0010 doc_not_found
+
+`vo doc` names something that is not documented.
+
+Fixable: no
+
+`vo doc` takes a builtin (`print`), a module (`std.json`) or an item of a module (`std.json.parse_json`). Items without a description in their module are internal and are not listed. The message gives the closest documented name when there is one. Run `vo doc` with no name for the list of builtins and modules.
+
+### Example
+
+```sh
+vo doc std.jsn
+```
+
+### Fixed
+
+```sh
+vo doc std.json
 ```

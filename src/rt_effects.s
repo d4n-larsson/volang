@@ -245,7 +245,7 @@ rt_now_ms:
     sd t1, 0(t0)
     ret
 1:
-    tail sys_clock_ms
+    tail sys_clock_real_ms      # spec 007: wall-clock time, as documented (deadlines stay monotonic)
 
 # void *rt_env(void *name)
 # result[str]: the variable's value, or err("not set").

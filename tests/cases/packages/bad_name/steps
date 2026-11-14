@@ -1,0 +1,4 @@
+vo package main.vo std shared/money
+vo package main.vo 9lives shared/money
+vo package main.vo money nowhere
+vo package main.vo money

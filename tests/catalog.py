@@ -38,9 +38,10 @@ def part(body, title):
 
 
 def blocks(text):
-    """```vo blocks, plus ```text blocks that hold a `# file: vo.effects` record for the example."""
+    """```vo blocks, plus ```text blocks that hold a `# file: vo.effects` record or a
+    `# file: vo.packages` manifest for the example."""
     return [b for lang, b in re.findall(r"```(vo|text)\n(.*?)```", text, re.S)
-            if lang == "vo" or b.startswith("# file: vo.effects")]
+            if lang == "vo" or b.startswith(("# file: vo.effects", "# file: vo.packages"))]
 
 
 def write_program(blks, d):
@@ -83,7 +84,7 @@ def contract():
         else:
             fixable = "yes"
         out[code] = (name, fixable)
-    for spec in ("005-holes-props-contracts", "006-query-edit-trace"):
+    for spec in ("005-holes-props-contracts", "006-query-edit-trace", "007-stdlib-packages"):
         codes = os.path.join(ROOT, "specs", spec, "contracts", "codes.md")
         for code, name, fix in re.findall(r"^\| ([EWRT]\d{4}) \| `(\w+)` \| [^|]* \| ([^|]*) \|",
                                           open(codes, encoding="utf-8").read(), re.M):

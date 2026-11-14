@@ -257,12 +257,9 @@ callee has a prototype comment in the calling file (see its Resolution).
   overlapping a save slot before the register is restored, so both are reported. The
   `ty_has_params_memo` case was probably the shifted kind; if it was not, send the exact code.
 
-**Re-check 2026-11-13** (after 12 and 14, again after 15-17): `sesi lint` over `src/*.s` with riscv64 reports only
-`src/jmp.s` (24, the deliberate longjmp): it still needs the `sesi: allow` annotation from issue 5.
-
 ## Found during spec 004 (bytecode compiler)
 
-### 18. A save slot overwritten in a jump-table target is not reported: OPEN
+### 18. A save slot overwritten in a jump-table target is not reported: FIXED (sesi branch fix/volang-18-22, not yet committed)
 
 - **Kind**: false negative.
 - **Where**: `src/rt_call.s`, `eval_builtin` at commit `1fff558`. The function saves `s3` at
@@ -300,11 +297,15 @@ callee has a prototype comment in the calling file (see its Resolution).
   tab:
       .dword t_one, t_two
   ```
+- **Resolution**: jump tables were only read from `.word`/`.4byte`/`.long`; the table was a
+  `.dword` list, so the targets were not reached from the `jr`. `.dword`, `.8byte` and `.quad`
+  now count too, and the repro reports `overwrites_saved(s3,-16)` at `sd a0, 16(sp)` (slots are
+  offsets from `sp` at entry: `16(sp)` after a 32-byte frame is -16).
 - **Fixed in vo** by giving `builtin_call` its own scratch slot (spec 004, T008).
 
 ## Found during spec 005 (holes, properties, contracts)
 
-### 19. `sesi lint` hangs when its stdin is an open pipe: OPEN
+### 19. `sesi lint` hangs when its stdin is an open pipe: FIXED (sesi branch fix/volang-18-22, not yet committed)
 
 - **Kind**: tooling (not a false positive or negative).
 - **Symptom**: `make lint` run from a non-interactive shell whose stdin stays open (a background
@@ -314,11 +315,17 @@ callee has a prototype comment in the calling file (see its Resolution).
   ("Operation not permitted").
 - **Suggested fix**: `scripts/sesi` should not read stdin for `lint` (give swipl `/dev/null`, or
   read the file by path only).
+- **Resolution**: no input goes through docker's stdin any more. `scripts/sesi` writes the file
+  (and the files it includes) to a temporary file, mounts it and runs `sesi.pl lint PACK FILE`
+  with stdin from `/dev/null`. The hang could not be reproduced with an open pipe on stdin, but
+  a lint container in SESI's own session once stayed blocked for minutes after its client was
+  killed: `swipl` waiting in `read_string` for an end of input that `docker run -i` never
+  delivered. That path is gone. **vo-lang**: the `</dev/null` in `make lint` is no longer needed.
 - **Worked around in vo**: `make lint` gives each lint `/dev/null` as stdin (spec 005).
 
 ## Found during spec 006 (query, edit, trace, replay)
 
-### 20. An apostrophe inside a `.string` is read as a character literal: OPEN
+### 20. An apostrophe inside a `.string` is read as a character literal: FIXED (sesi branch fix/volang-18-22, not yet committed)
 
 - **Kind**: false positive.
 - **Symptom**: `sesi lint src/query.s` reported
@@ -330,19 +337,24 @@ callee has a prototype comment in the calling file (see its Resolution).
   GNU as assembles it as intended (the apostrophe is inside the quotes); the lint seems to start
   a character literal at `'s` and run into a later `;`-like character.
 - **Suggested fix**: skip the contents of `"..."` strings before looking for character literals.
+- **Resolution**: as suggested: strings (with `\"` escapes) and character literals (`'a'`,
+  `'\n'`, `'"'`) are skipped before looking for a broken one; `';'` and `'#'` are still
+  reported.
 - **Worked around in vo**: the two messages were reworded ("the entry file of the program").
 
-### 21. A symbol defined with `.set` is reported as never defined: OPEN
+### 21. A symbol defined with `.set` is reported as never defined: FIXED (sesi branch fix/volang-18-22, not yet committed)
 
 - **Kind**: false positive.
 - **Symptom**: `.globl vm_op_ret` followed by `.set vm_op_ret, op_ret` (an alias of a local label)
   was reported as `vm_op_ret is declared global but never defined: add a vm_op_ret: label`. GNU as
   defines the symbol with `.set` (and `.equ`), and the program linked and ran.
 - **Suggested fix**: count `.set NAME, ...` and `.equ NAME, ...` as definitions of NAME.
+- **Resolution**: as suggested: `.set`, `.equ` and `.equiv NAME, ...` define NAME.
+  **vo-lang**: the aliases can come back.
 - **Worked around in vo**: the tracing handlers load the addresses from the `vm_ops` table instead
   of exporting aliases (spec 006).
 
-### 22. Making a VM handler label `.globl` turns it into a "function" with callee-saved reports
+### 22. Making a VM handler label `.globl` turns it into a "function" with callee-saved reports: FIXED (sesi branch fix/volang-18-22, not yet committed)
 
 - **Kind**: limitation (not a false positive of the rules, but of the function boundary).
 - **Symptom**: adding `.globl op_ret` to `src/vm.s` (a handler reached by `jr` from the dispatch
@@ -352,4 +364,26 @@ callee has a prototype comment in the calling file (see its Resolution).
   handler does not have.
 - **Suggested fix**: a way to mark a global label as a jump target rather than a function (e.g.
   `# sesi: handler`).
+- **Resolution**: as suggested: `.globl op_ret  # sesi: handler` (the comment on the `.globl`
+  line) makes the label a jump target; it is then checked as part of the function before it,
+  as a local label is. **vo-lang**: handlers can be exported with that marker.
 - **Worked around in vo**: no handler is exported; see #21.
+
+**Re-check 2026-11-14** (after 18-22): `sesi lint` over `src/*.s` with riscv64 reports only
+`src/jmp.s` (24, the deliberate longjmp): it still needs the `sesi: allow` annotation from issue 5.
+
+### 23. A function whose label is not `.globl` is silently not checked when it follows another function
+
+- **Kind**: false negative.
+- **Symptom**: in `src/packages.s` (spec 007), `pkg_parse` had a prototype comment
+  (`# void pkg_parse(long file)`) and a label, but no `.globl`. Its body stored a temporary at
+  `48(sp)`, the slot where the prologue had saved `s4`, which corrupted the caller's `s4`; `vo run`
+  of any program next to a non-empty `vo.packages` then crashed. `sesi lint` reported nothing for
+  the file. Linted alone, the same code is reported (`overwrites_saved(s4,-48)`), under a `file:`
+  heading. In the full file the label follows `pkg_name_ok` (global, ending in `ret`), so the code
+  is read as unreachable code of `pkg_name_ok` and never analysed. Adding `.globl` to the eight such
+  helpers in the spec 007 files surfaced one more real bug of the same kind (`pkg_sort`).
+- **Suggested fix**: treat a label that directly follows a prototype comment as a function entry
+  whether or not it is `.globl`; or report code after a `ret` that is reachable only from a label
+  nothing in the function branches to ("unchecked code: is this a function? add .globl").
+- **Worked around in vo**: every helper with a prototype comment is now `.globl`.

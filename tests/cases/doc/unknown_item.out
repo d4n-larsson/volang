@@ -1,0 +1,1 @@
+error[T0010]: Nothing is documented as `std.text.pad_lef`; `vo doc` lists the builtins and modules. Did you mean `std.text.pad_left`?

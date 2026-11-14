@@ -1,0 +1,15 @@
+import std.json.parse_json;
+import std.text.repeat;
+
+fn main() uses console {
+    for n in [512, 513] {
+        match parse_json(repeat("[", n) + repeat("]", n)) {
+            case ok(_) {
+                print(str(n) + ": ok");
+            }
+            case err(e) {
+                print(str(n) + ": err " + e);
+            }
+        }
+    }
+}

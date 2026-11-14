@@ -1,0 +1,205 @@
+# std.http: Plain HTTP GET and POST (needs net; https is not supported).
+# Part of the vo standard library (spec 007). Import items one by one: `import std.http.NAME;`.
+# The host is checked against the caller's net scope at run time.
+# ponytail: one request per connection (Connection: close), redirects returned, not followed.
+
+# One response header, as received.
+#     new Header { name: "a", value: "b" }.name is "a"
+record Header {
+    name: str;
+    value: str;
+}
+
+# A response: the status code, the headers in their order, and the body.
+#     new Response { status: 200, headers: new list[Header], body: "" }.status is 200
+record Response {
+    status: int;
+    headers: list[Header];
+    body: str;
+}
+
+record Url {
+    host: str;
+    port: int;
+    target: str;
+}
+
+fn parse_url(url: str) -> result[Url] {
+    if len(url) >= 8 and lower(slice(url, 0, 8)) == "https://" {
+        return err("https is not supported");
+    }
+    if len(url) < 7 or lower(slice(url, 0, 7)) != "http://" {
+        return err("not an http:// URL: " + url);
+    }
+    let rest = slice(url, 7, len(url));
+    var cut = len(rest);
+    for c in [find(rest, "/"), find(rest, "?"), find(rest, "#")] {
+        if c >= 0 and c < cut {
+            set cut = c;
+        }
+    }
+    let authority = slice(rest, 0, cut);
+    var target = slice(rest, cut, len(rest));
+    let hash = find(target, "#");
+    if hash >= 0 {
+        set target = slice(target, 0, hash);
+    }
+    if target == "" or slice(target, 0, 1) != "/" {
+        set target = "/" + target;
+    }
+    var host = authority;
+    var port = 80;
+    let colon = find(authority, ":");
+    if colon >= 0 {
+        set host = slice(authority, 0, colon);
+        match parse_int(slice(authority, colon + 1, len(authority))) {
+            case ok(n) {
+                set port = n;
+            }
+            case err(_) {
+                return err("bad port in " + url);
+            }
+        }
+    }
+    if host == "" or port < 1 or port > 65535 or find(host, "@") >= 0 {
+        return err("bad host in " + url);
+    }
+    return ok(new Url { host: lower(host), port: port, target: target });
+}
+
+fn exchange(method: str, url: str, content_type: str, body: str) -> result[Response] uses net {
+    let u = try parse_url(url);
+    let nl = crlf();
+    var request = method + " " + u.target + " HTTP/1.1" + nl + "Host: " + u.host;
+    if u.port != 80 {
+        set request = request + ":" + str(u.port);
+    }
+    set request = request + nl + "Connection: close" + nl + "User-Agent: vo" + nl;
+    if method == "POST" {
+        set request = request + "Content-Type: " + content_type + nl + "Content-Length: " + str(len(body)) + nl;
+    }
+    set request = request + nl + body;
+    let raw = try __http_exchange(u.host, u.port, request);
+    return parse_response(raw);
+}
+
+fn crlf() -> str {
+    return chr(13) + "\n";
+}
+
+fn parse_response(raw: str) -> result[Response] {
+    let head_end = find(raw, crlf() + crlf());
+    if head_end < 0 {
+        return err("malformed response: no end of headers");
+    }
+    let head = split(slice(raw, 0, head_end), crlf());
+    let status_line = head[0];
+    let parts = split(status_line, " ");
+    if len(parts) < 2 or len(parts[0]) < 5 or slice(parts[0], 0, 5) != "HTTP/" {
+        return err("malformed response: bad status line");
+    }
+    var status = 0;
+    match parse_int(parts[1]) {
+        case ok(n) {
+            set status = n;
+        }
+        case err(_) {
+            return err("malformed response: bad status code");
+        }
+    }
+    let headers = new list[Header];
+    for i in 1..len(head) {
+        let line = head[i];
+        let colon = find(line, ":");
+        if colon <= 0 {
+            return err("malformed response: bad header line");
+        }
+        push(headers, new Header { name: slice(line, 0, colon), value: trim(slice(line, colon + 1, len(line))) });
+    }
+    let rest = slice(raw, head_end + 4, len(raw));
+    let r = new Response { status: status, headers: headers, body: rest };
+    match header(r, "transfer-encoding") {
+        case ok(te) {
+            if lower(te) == "chunked" {
+                let b = try dechunk(rest);
+                return ok(new Response { status: status, headers: headers, body: b });
+            }
+        }
+        case err(_) {
+        }
+    }
+    match header(r, "content-length") {
+        case ok(cl) {
+            match parse_int(trim(cl)) {
+                case ok(n) {
+                    if n < 0 or n > len(rest) {
+                        return err("malformed response: body shorter than Content-Length");
+                    }
+                    return ok(new Response { status: status, headers: headers, body: slice(rest, 0, n) });
+                }
+                case err(_) {
+                    return err("malformed response: bad Content-Length");
+                }
+            }
+        }
+        case err(_) {
+        }
+    }
+    return ok(r);
+}
+
+fn dechunk(s: str) -> result[str] {
+    let out = new list[str];
+    var i = 0;
+    while true {
+        let line_end = find(slice(s, i, len(s)), crlf());
+        if line_end < 0 {
+            return err("malformed response: bad chunk");
+        }
+        var size_text = slice(s, i, i + line_end);
+        let semi = find(size_text, ";");
+        if semi >= 0 {
+            set size_text = slice(size_text, 0, semi);
+        }
+        var size = 0;
+        for c in chars(trim(size_text)) {
+            let d = find("0123456789abcdef", lower(c));
+            if d < 0 or len(c) != 1 {
+                return err("malformed response: bad chunk size");
+            }
+            set size = size * 16 + d;
+        }
+        set i = i + line_end + 2;
+        if size == 0 {
+            return ok(join(out, ""));
+        }
+        if i + size > len(s) {
+            return err("malformed response: chunk cut short");
+        }
+        push(out, slice(s, i, i + size));
+        set i = i + size + 2;
+    }
+}
+
+# Sends GET to an http:// URL (needs net; the host must be in the caller's net scope).
+#     get("https://example.com/") == err("https is not supported") is true
+fn get(url: str) -> result[Response] uses net {
+    return exchange("GET", url, "", "");
+}
+
+# Sends POST with a body and its content type to an http:// URL (needs net).
+#     post("ftp://x/", "text/plain", "") == err("not an http:// URL: ftp://x/") is true
+fn post(url: str, content_type: str, body: str) -> result[Response] uses net {
+    return exchange("POST", url, content_type, body);
+}
+
+# The value of the first header with this name, compared without case.
+#     header(new Response { status: 200, headers: [new Header { name: "Content-Type", value: "text/plain" }], body: "" }, "content-type") == ok("text/plain") is true
+fn header(r: Response, name: str) -> result[str] {
+    for h in r.headers {
+        if lower(h.name) == lower(name) {
+            return ok(h.value);
+        }
+    }
+    return err("no header `" + name + "`");
+}

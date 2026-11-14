@@ -1,0 +1,239 @@
+# std.time: UTC calendar time, ISO 8601 text and durations in milliseconds.
+# Part of the vo standard library (spec 007). Import items one by one: `import std.time.NAME;`.
+# Times are milliseconds since 1970-01-01T00:00:00Z; calendar fields are UTC (proleptic Gregorian).
+
+# A UTC calendar time; weekday is 1 for Monday through 7 for Sunday.
+#     from_ms(0).weekday is 4
+record DateTime {
+    year: int;
+    month: int;
+    day: int;
+    hour: int;
+    minute: int;
+    second: int;
+    ms: int;
+    weekday: int;
+}
+
+fn floor_div(a: int, b: int) -> int {
+    let q = a / b;
+    if a % b != 0 and (a < 0) != (b < 0) {
+        return q - 1;
+    }
+    return q;
+}
+
+fn days_from_civil(year: int, month: int, day: int) -> int {
+    var y = year;
+    if month <= 2 {
+        set y = y - 1;
+    }
+    let era = floor_div(y, 400);
+    let yoe = y - era * 400;
+    var mp = month - 3;
+    if month <= 2 {
+        set mp = month + 9;
+    }
+    let doy = (153 * mp + 2) / 5 + day - 1;
+    let doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+    return era * 146097 + doe - 719468;
+}
+
+# The UTC calendar time of ms (any int; years outside 1-9999 are allowed here).
+#     from_ms(86400000).day is 2
+fn from_ms(ms: int) -> DateTime {
+    let day_count = floor_div(ms, 86400000);
+    let rest = ms - day_count * 86400000;
+    let z = day_count + 719468;
+    let era = floor_div(z, 146097);
+    let doe = z - era * 146097;
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    var m = mp + 3;
+    if mp >= 10 {
+        set m = mp - 9;
+    }
+    var y = yoe + era * 400;
+    if m <= 2 {
+        set y = y + 1;
+    }
+    let wd = day_count + 3 - floor_div(day_count + 3, 7) * 7 + 1;
+    return new DateTime { year: y, month: m, day: d, hour: rest / 3600000, minute: rest / 60000 % 60, second: rest / 1000 % 60, ms: rest % 1000, weekday: wd };
+}
+
+# Whether year is a leap year.
+#     is_leap(2000) is true
+fn is_leap(year: int) -> bool {
+    return (year % 4 == 0 and year % 100 != 0) or year % 400 == 0;
+}
+
+# The number of days in a month (1-12) of a year.
+#     days_in_month(2024, 2) is 29
+fn days_in_month(year: int, month: int) -> int {
+    if month == 2 {
+        if is_leap(year) {
+            return 29;
+        }
+        return 28;
+    }
+    if month == 4 or month == 6 or month == 9 or month == 11 {
+        return 30;
+    }
+    return 31;
+}
+
+# The time of a calendar time; an invalid field is an error (weekday is ignored).
+#     to_ms(from_ms(5)) == ok(5) is true
+fn to_ms(d: DateTime) -> result[int] {
+    if d.year < 1 or d.year > 9999 {
+        return err("year " + str(d.year) + " is outside 1-9999");
+    }
+    if d.month < 1 or d.month > 12 {
+        return err("month " + str(d.month) + " is outside 1-12");
+    }
+    if d.day < 1 or d.day > days_in_month(d.year, d.month) {
+        return err("day " + str(d.day) + " is not in that month");
+    }
+    if d.hour < 0 or d.hour > 23 or d.minute < 0 or d.minute > 59 or d.second < 0 or d.second > 59 {
+        return err("time of day out of range");
+    }
+    if d.ms < 0 or d.ms > 999 {
+        return err("milliseconds out of range");
+    }
+    let day_count = days_from_civil(d.year, d.month, d.day);
+    return ok(day_count * 86400000 + d.hour * 3600000 + d.minute * 60000 + d.second * 1000 + d.ms);
+}
+
+# Midnight UTC of a date.
+#     date(1970, 1, 2) == ok(86400000) is true
+fn date(year: int, month: int, day: int) -> result[int] {
+    return to_ms(new DateTime { year: year, month: month, day: day, hour: 0, minute: 0, second: 0, ms: 0, weekday: 0 });
+}
+
+fn pad(n: int, width: int) -> str {
+    var s = str(abs(n));
+    while len(s) < width {
+        set s = "0" + s;
+    }
+    if n < 0 {
+        return "-" + s;
+    }
+    return s;
+}
+
+# ISO 8601 text of a time in UTC, with milliseconds only when they are not 0.
+#     format_time(0) is "1970-01-01T00:00:00Z"
+fn format_time(ms: int) -> str {
+    let d = from_ms(ms);
+    var s = pad(d.year, 4) + "-" + pad(d.month, 2) + "-" + pad(d.day, 2) + "T" + pad(d.hour, 2) + ":" + pad(d.minute, 2) + ":" + pad(d.second, 2);
+    if d.ms != 0 {
+        set s = s + "." + pad(d.ms, 3);
+    }
+    return s + "Z";
+}
+
+fn digits_at(s: str, a: int, b: int) -> result[int] {
+    if b > len(s) {
+        return err("too short");
+    }
+    let part = slice(s, a, b);
+    for c in chars(part) {
+        if c < "0" or c > "9" {
+            return err("expected digits at position " + str(a + 1));
+        }
+    }
+    return parse_int(part);
+}
+
+fn expect_char(s: str, i: int, c: str) -> result[void] {
+    if i >= len(s) or slice(s, i, i + 1) != c {
+        return err("expected `" + c + "` at position " + str(i + 1));
+    }
+    return ok();
+}
+
+# The time of ISO 8601 text: YYYY-MM-DD, or YYYY-MM-DDTHH:MM:SS[.fff] with Z or +HH:MM / -HH:MM.
+#     parse_time("1970-01-01T00:00:01Z") == ok(1000) is true
+fn parse_time(s: str) -> result[int] {
+    let y = try digits_at(s, 0, 4);
+    try expect_char(s, 4, "-");
+    let mo = try digits_at(s, 5, 7);
+    try expect_char(s, 7, "-");
+    let dd = try digits_at(s, 8, 10);
+    if len(s) == 10 {
+        return date(y, mo, dd);
+    }
+    try expect_char(s, 10, "T");
+    let hh = try digits_at(s, 11, 13);
+    try expect_char(s, 13, ":");
+    let mi = try digits_at(s, 14, 16);
+    try expect_char(s, 16, ":");
+    let ss = try digits_at(s, 17, 19);
+    var i = 19;
+    var millis = 0;
+    if i < len(s) and slice(s, i, i + 1) == "." {
+        set i = i + 1;
+        let start = i;
+        while i < len(s) and slice(s, i, i + 1) >= "0" and slice(s, i, i + 1) <= "9" {
+            set i = i + 1;
+        }
+        if i == start {
+            return err("expected digits after `.`");
+        }
+        var frac = slice(s, start, min(i, start + 3));
+        while len(frac) < 3 {
+            set frac = frac + "0";
+        }
+        set millis = try parse_int(frac);
+    }
+    let local = try to_ms(new DateTime { year: y, month: mo, day: dd, hour: hh, minute: mi, second: ss, ms: millis, weekday: 0 });
+    if i < len(s) and slice(s, i, i + 1) == "Z" and i + 1 == len(s) {
+        return ok(local);
+    }
+    if i + 6 == len(s) and (slice(s, i, i + 1) == "+" or slice(s, i, i + 1) == "-") {
+        let oh = try digits_at(s, i + 1, i + 3);
+        try expect_char(s, i + 3, ":");
+        let om = try digits_at(s, i + 4, i + 6);
+        if oh > 23 or om > 59 {
+            return err("offset out of range");
+        }
+        let offset = oh * 3600000 + om * 60000;
+        if slice(s, i, i + 1) == "+" {
+            return ok(local - offset);
+        }
+        return ok(local + offset);
+    }
+    return err("expected `Z` or an offset like +02:00 at position " + str(i + 1));
+}
+
+# n seconds in milliseconds.
+#     seconds(2) is 2000
+fn seconds(n: int) -> int {
+    return n * 1000;
+}
+
+# n minutes in milliseconds.
+#     minutes(1) is 60000
+fn minutes(n: int) -> int {
+    return n * 60000;
+}
+
+# n hours in milliseconds.
+#     hours(1) is 3600000
+fn hours(n: int) -> int {
+    return n * 3600000;
+}
+
+# n days in milliseconds.
+#     days(1) is 86400000
+fn days(n: int) -> int {
+    return n * 86400000;
+}
+
+# The current time (needs clock; fixed by --clock-ms).
+#     now() >= 0 is true
+fn now() -> int uses clock {
+    return now_ms();
+}

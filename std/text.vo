@@ -1,0 +1,106 @@
+# std.text: Text helpers: search, replace, repeat, pad, lines and words.
+# Part of the vo standard library (spec 007). Import items one by one: `import std.text.NAME;`.
+
+# Whether s starts with prefix.
+#     starts_with("report.txt", "rep") is true
+fn starts_with(s: str, prefix: str) -> bool {
+    if len(prefix) > len(s) {
+        return false;
+    }
+    return slice(s, 0, len(prefix)) == prefix;
+}
+
+# Whether s ends with suffix.
+#     ends_with("report.txt", ".txt") is true
+fn ends_with(s: str, suffix: str) -> bool {
+    if len(suffix) > len(s) {
+        return false;
+    }
+    return slice(s, len(s) - len(suffix), len(s)) == suffix;
+}
+
+# Whether sub occurs in s.
+#     contains("report.txt", "port") is true
+fn contains(s: str, sub: str) -> bool {
+    return find(s, sub) >= 0;
+}
+
+# s with every occurrence of old replaced by replacement, left to right (an empty old is R0007).
+#     replace("a-b-c", "-", "+") is "a+b+c"
+fn replace(s: str, old: str, replacement: str) -> str {
+    let parts = split(s, old);
+    return join(parts, replacement);
+}
+
+# s repeated n times ("" when n <= 0).
+#     repeat("ab", 3) is "ababab"
+fn repeat(s: str, n: int) -> str {
+    let parts = new list[str];
+    for _ in 0..n {
+        push(parts, s);
+    }
+    return join(parts, "");
+}
+
+# s padded on the left with fill (one character) to width characters.
+#     pad_left("7", 3, "0") is "007"
+fn pad_left(s: str, width: int, fill: str) -> str {
+    let missing = width - len(chars(s));
+    return repeat(one_char(fill), max(missing, 0)) + s;
+}
+
+# s padded on the right with fill (one character) to width characters.
+#     pad_right("ab", 4, ".") is "ab.."
+fn pad_right(s: str, width: int, fill: str) -> str {
+    let missing = width - len(chars(s));
+    return s + repeat(one_char(fill), max(missing, 0));
+}
+
+fn one_char(fill: str) -> str {
+    let _ = ord(fill);
+    return fill;
+}
+
+# The lines of s: split on newlines, a trailing carriage return dropped, no final empty line.
+#     lines("a\nb\n") == ["a", "b"] is true
+fn lines(s: str) -> list[str] {
+    let out = new list[str];
+    if s == "" {
+        return out;
+    }
+    let parts = split(s, "\n");
+    var n = len(parts);
+    if parts[n - 1] == "" {
+        set n = n - 1;
+    }
+    for i in 0..n {
+        let line = parts[i];
+        if ends_with(line, chr(13)) {
+            push(out, slice(line, 0, len(line) - 1));
+        } else {
+            push(out, line);
+        }
+    }
+    return out;
+}
+
+# The words of s: runs of characters between spaces, tabs, newlines and carriage returns.
+#     words("  to be\tor ") == ["to", "be", "or"] is true
+fn words(s: str) -> list[str] {
+    let out = new list[str];
+    var current = "";
+    for c in chars(s) {
+        if c == " " or c == "\t" or c == "\n" or c == chr(13) {
+            if current != "" {
+                push(out, current);
+                set current = "";
+            }
+        } else {
+            set current = current + c;
+        }
+    }
+    if current != "" {
+        push(out, current);
+    }
+    return out;
+}

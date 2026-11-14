@@ -1,0 +1,3 @@
+fn starts_with(s: str, prefix: str) -> bool
+    Whether s starts with prefix.
+    example: starts_with("report.txt", "rep") is true

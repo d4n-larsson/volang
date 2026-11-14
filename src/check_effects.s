@@ -25,7 +25,9 @@ builtin_effects:
     .byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     .byte 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     .byte EF_ENV, EF_RANDOM
-    .space 22
+    .space 11
+    .byte EF_NET                # 53 __http_exchange
+    .space 10                   # 54 __text_float: pure
 e0501: .string "E0501"
 e0503: .string "E0503"
 e0506: .string "E0506"
@@ -360,6 +362,25 @@ fx_call:
     ld t0, 0(t0)
     beqz t0, 9f
     beqz s1, 9f
+    lwu a0, N_FILE(s1)          # spec 007: a standard-library callee counts like a builtin
+    call file_get
+    ld t0, FILE_STD(a0)
+    beqz t0, 7f
+    mv a0, s1
+    call item_fx
+    beqz a0, 9f
+    ld t1, FX_DECLARED(a0)      # its effects, needed in any scope
+    beqz t1, 9f
+    la t0, ck_fx
+    ld t0, 0(t0)
+    ld t0, FX_DIRECT(t0)
+    beqz t0, 9f
+    ld t1, ES_MASK(t1)
+    ld t2, ES_ANY(t0)
+    or t2, t2, t1
+    sd t2, ES_ANY(t0)
+    j 9f
+7:
     mv a0, s1                   # a callee with effect parameters: check_generic_call adds them
     call item_fx
     beqz a0, 9f

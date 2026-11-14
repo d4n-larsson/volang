@@ -1,0 +1,21 @@
+# Reads a JSON document on stdin; prints write_json of it and whether it survives
+# parse(write(v)) == v, or `error: ` and the parse error (tests/json_corpus.py).
+import std.json.parse_json;
+import std.json.write_json;
+
+fn main() -> result[void] uses console, input {
+    match parse_json(read_all()) {
+        case ok(j) {
+            let text = try write_json(j);
+            print(text);
+            let again = try parse_json(text);
+            if again != j {
+                print("round trip changed the value");
+            }
+        }
+        case err(e) {
+            print("error: " + e);
+        }
+    }
+    return ok();
+}

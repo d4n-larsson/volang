@@ -53,6 +53,7 @@ compile_program:
     bnez t1, 9f
     li t1, 1
     sd t1, 0(t0)
+    call std_runtime_grants      # spec 007: library functions run with their caller's grant
     li a0, 65536
     call c_code_alloc
     la t0, c_buf
@@ -74,6 +75,7 @@ compile_program:
     mv a0, s0
     call file_get
     ld t0, FILE_AST(a0)
+    beqz t0, 4f                 # not a source file (vo.packages, vo.effects)
     ld s1, N_A(t0)              # items
     li s2, 0
 2:

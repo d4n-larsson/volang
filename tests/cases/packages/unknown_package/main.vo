@@ -1,0 +1,5 @@
+import cash.format.cents;
+
+fn main() uses console {
+    print(cents(1));
+}

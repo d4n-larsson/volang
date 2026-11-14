@@ -1,0 +1,3 @@
+record DateTime { year: int; month: int; day: int; hour: int; minute: int; second: int; ms: int; weekday: int; }
+    A UTC calendar time; weekday is 1 for Monday through 7 for Sunday.
+    example: from_ms(0).weekday is 4

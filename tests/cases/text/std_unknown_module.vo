@@ -1,0 +1,4 @@
+import std.nothing.x;
+
+fn main() {
+}

@@ -36,7 +36,7 @@ builtin_call:
     ld a2, 16(sp)
     ld t0, N_D(s0)              # builtin id -> jump table
     addi t0, t0, -1
-    li t1, B_ENS_FAIL
+    li t1, B_LAST
     bgeu t0, t1, 98f
     la t1, btab
     slli t0, t0, 3
@@ -194,6 +194,15 @@ b_int:
     j 99f
 b_float:
     call rt_float_of_int
+    j 99f
+b_float_text:                   # spec 007: round-trip float text (std.json)
+    call std_float_text
+    j 99f
+b_http_exchange:                # spec 007: one HTTP exchange (std.http)
+    call io_http_exchange
+    j 99f
+b_text_float:                   # spec 007: decimal text of up to 19 digits, exactly (std.json)
+    call std_text_float
     j 99f
 b_parse_int:
     call rt_parse_int
@@ -437,7 +446,7 @@ btab:
     .dword b_sort, b_has, b_remove, b_keys, b_expect, b_expect_eq, b_ok, b_err
     .dword b_abs, b_min, b_max, b_upper, b_lower, b_ord, b_chr, b_env, b_random_int
     .dword b_sort_by, b_map, b_filter, b_fold, b_any, b_all, b_todo, b_assume, b_req_fail
-    .dword b_ens_fail
+    .dword b_ens_fail, b_float_text, b_http_exchange, b_text_float
     .text
 
 # void *map_key_type(void)

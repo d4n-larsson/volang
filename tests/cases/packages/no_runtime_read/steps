@@ -1,0 +1,5 @@
+vo package main.vo money shared/money
+vo check main.vo
+chmod 000 shared/money
+vo run main.vo
+chmod 755 shared/money

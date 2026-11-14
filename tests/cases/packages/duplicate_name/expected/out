@@ -1,0 +1,10 @@
+$ vo check main.vo
+main.vo:1:1: error[E0701]: Package money changed: the manifest pins sha256:0000000000000000000000000000000000000000000000000000000000000000, its files hash to sha256:6514bb0e84aa66348d21ff1c32a37024df993558a975bfa61e70b1ade0687a46. Review the change, then run `vo package main.vo money shared/money`.
+   1 | import money.format.cents;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+vo.packages:2:1: error[E0704]: Package money is listed twice.
+   2 | money other sha256:0000000000000000000000000000000000000000000000000000000000000000
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2 errors, 0 warnings
+--- stderr
+--- exit 65

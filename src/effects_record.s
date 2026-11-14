@@ -86,7 +86,8 @@ s_main:     .string "main"
     .text
 
 # void *rec_relpath(int file)
-# The file's path relative to the project root (absolute when it lies outside the root).
+# The file's path relative to the project root (absolute when it lies outside the root);
+# "@NAME/path.vo" for a file of a listed package (spec 007).
     .globl rec_relpath
 rec_relpath:
     addi sp, sp, -32
@@ -98,6 +99,8 @@ rec_relpath:
     call rt_resolve
     beqz a0, 9f
     mv s0, a0
+    call pkg_relpath
+    bnez a0, 9f
     la t0, rec_root
     ld s1, 0(t0)
     beqz s1, 8f
@@ -127,31 +130,61 @@ rec_relpath:
 # Sets rec_root to its directory, or to the entry's directory when there is none.
     .globl rec_find
 rec_find:
-    addi sp, sp, -48
-    sd ra, 40(sp)
-    sd s0, 32(sp)
-    sd s1, 24(sp)
-    sd s2, 16(sp)
+    la a1, s_record
+    la a2, rec_root
+    tail find_up
+
+# long find_up(int entry, char *slash_name, void **dir_out)
+# Registers the nearest file named slash_name ("/vo.effects") in entry's directory or above and
+# returns its file id, or -1. *dir_out: its directory, or the entry's directory when there is none.
+    .globl find_up
+find_up:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    mv s0, a1
+    mv s1, a2
     call file_get
     ld a0, FILE_DIR(a0)
     call rt_resolve
     bnez a0, 1f
     call rt_start_cwd
 1:
+    mv a1, s0
+    mv a2, s1
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    addi sp, sp, 32
+    tail find_up_dir
+
+# long find_up_dir(void *dir, char *slash_name, void **dir_out)
+# find_up from an absolute directory ("" is /).
+    .globl find_up_dir
+find_up_dir:
+    addi sp, sp, -64
+    sd ra, 56(sp)
+    sd s0, 48(sp)
+    sd s1, 40(sp)
+    sd s2, 32(sp)
+    sd s3, 24(sp)
+    sd s4, 16(sp)
+    mv s3, a1
+    mv s4, a2
     mv s0, a0                   # the directory being tried
-    la t0, rec_root
-    sd s0, 0(t0)
+    sd s0, 0(s4)
 2:
     call sb_new
     mv s1, a0
     mv a1, s0
     call sb_str
     mv a0, s1
-    la a1, s_record
+    mv a1, s3
     call sb_cstr
     mv a0, s1
     call sb_finish
-    mv s1, a0                   # <dir>/vo.effects
+    mv s1, a0                   # <dir>/NAME
     addi a0, s1, STR_DATA
     addi a1, sp, 0
     call read_whole_file
@@ -161,8 +194,7 @@ rec_find:
     mv a0, s1
     call file_add
     mv s2, a0
-    la t0, rec_root
-    sd s0, 0(t0)
+    sd s0, 0(s4)
     mv a0, s2
     j 9f
 4:
@@ -183,11 +215,13 @@ rec_find:
     mv s0, a0
     j 2b
 9:
-    ld ra, 40(sp)
-    ld s0, 32(sp)
-    ld s1, 24(sp)
-    ld s2, 16(sp)
-    addi sp, sp, 48
+    ld ra, 56(sp)
+    ld s0, 48(sp)
+    ld s1, 40(sp)
+    ld s2, 32(sp)
+    ld s3, 24(sp)
+    ld s4, 16(sp)
+    addi sp, sp, 64
     ret
 
 # void *rec_entry(void *path, void *name, void *set)
@@ -306,6 +340,10 @@ rec_entries:
     call vec_get
     addi s2, s2, 1
     mv s3, a0                   # file id
+    call file_get
+    ld t0, FILE_STD(a0)         # spec 007: the standard library is not in the record
+    bnez t0, 1b
+    mv a0, s3
     call rec_relpath
     mv s6, a0
     mv a0, s3

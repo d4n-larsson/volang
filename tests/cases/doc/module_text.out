@@ -1,0 +1,18 @@
+fn starts_with(s: str, prefix: str) -> bool
+    Whether s starts with prefix.
+fn ends_with(s: str, suffix: str) -> bool
+    Whether s ends with suffix.
+fn contains(s: str, sub: str) -> bool
+    Whether sub occurs in s.
+fn replace(s: str, old: str, replacement: str) -> str
+    s with every occurrence of old replaced by replacement, left to right (an empty old is R0007).
+fn repeat(s: str, n: int) -> str
+    s repeated n times ("" when n <= 0).
+fn pad_left(s: str, width: int, fill: str) -> str
+    s padded on the left with fill (one character) to width characters.
+fn pad_right(s: str, width: int, fill: str) -> str
+    s padded on the right with fill (one character) to width characters.
+fn lines(s: str) -> list[str]
+    The lines of s: split on newlines, a trailing carriage return dropped, no final empty line.
+fn words(s: str) -> list[str]
+    The words of s: runs of characters between spaces, tabs, newlines and carriage returns.

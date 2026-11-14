@@ -1,0 +1,6 @@
+vo package --json main.vo money shared/money
+vo package --json main.vo money shared/money
+write shared/money/format.vo fn cents(n: int) -> str {\n    return str(n);\n}\n
+vo check --json main.vo
+vo package --json main.vo money shared/money
+vo package --json --remove main.vo money

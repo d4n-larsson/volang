@@ -13,6 +13,8 @@
     .equ CMD_IMPACT, 10
     .equ CMD_EDIT, 11
     .equ CMD_REPLAY, 12
+    .equ CMD_DOC, 13
+    .equ CMD_PACKAGE, 14
 
     .section .data
     .align 3
@@ -22,6 +24,8 @@ opt_json:       .dword 0
 opt_timeout:    .dword 10
     .globl opt_mem_stats
 opt_mem_stats:  .dword 0
+    .globl opt_remove
+opt_remove:     .dword 0            # spec 007: vo package --remove
     .globl opt_filter
 opt_filter:     .dword 0
     .globl opt_check
@@ -61,7 +65,7 @@ path_cap:       .dword 0
     .section .rodata
 cmd_names:
     .dword n_check, n_run, n_test, n_fmt, n_explain, n_reference, n_version, n_effects
-    .dword n_query, n_impact, n_edit, n_replay, 0
+    .dword n_query, n_impact, n_edit, n_replay, n_doc, n_package, 0
 n_check:    .string "check"
 n_run:      .string "run"
 n_test:     .string "test"
@@ -74,6 +78,9 @@ n_query:    .string "query"
 n_impact:   .string "impact"
 n_edit:     .string "edit"
 n_replay:   .string "replay"
+n_doc:      .string "doc"
+n_package:  .string "package"
+f_remove:   .string "--remove"
 f_diff:     .string "--diff"
 f_dry_run:  .string "--dry-run"
 f_trace:    .string "--trace"
@@ -104,8 +111,8 @@ f_max_memory: .string "--max-memory"
 m_max_memory_val: .string "`--max-memory` needs a whole number of MiB from 1 to 65536."
 m_number_val: .string "`--seed` and `--clock-ms` need a whole number."
 f_dashdash: .string "--"
-m_unknown_cmd:  .string "Unknown command `$1`. Commands: check, run, test, fmt, effects, query, impact, edit, replay, explain, reference, version."
-m_missing_cmd:  .string "Missing command. Commands: check, run, test, fmt, effects, query, impact, edit, replay, explain, reference, version."
+m_unknown_cmd:  .string "Unknown command `$1`. Commands: check, run, test, fmt, effects, query, impact, edit, replay, doc, package, explain, reference, version."
+m_missing_cmd:  .string "Missing command. Commands: check, run, test, fmt, effects, query, impact, edit, replay, doc, package, explain, reference, version."
 m_unknown_opt:  .string "Unknown option `$1`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, --seed N, --clock-ms N, --max-memory MiB, --mem-stats, --trace FILE, --trace-limit N, --record FILE, --diff FILE, --dry-run."
 m_timeout_val:  .string "`--timeout` needs a whole number of seconds."
 m_filter_val:   .string "`--filter` needs a text to match."
@@ -760,6 +767,15 @@ vo_main:
     call str_from_cstr
     call usage_error
 139:
+    mv a0, s3                   # spec 007: --remove (vo package)
+    la a1, f_remove
+    call cstr_eq
+    beqz a0, 1391f
+    la t0, opt_remove
+    li t1, 1
+    sd t1, 0(t0)
+    j 7b
+1391:
     mv a0, s3
     la a1, f_mem_stats
     call cstr_eq
@@ -836,6 +852,10 @@ vo_main:
     beq t0, t1, 40f
     li t1, CMD_REPLAY
     beq t0, t1, 41f
+    li t1, CMD_DOC
+    beq t0, t1, 42f
+    li t1, CMD_PACKAGE
+    beq t0, t1, 43f
     li t1, CMD_VERSION
     beq t0, t1, 30f
     li t1, CMD_CHECK
@@ -894,6 +914,12 @@ vo_main:
     j 90f
 41:
     call cmd_replay
+    j 90f
+42:
+    call cmd_doc
+    j 90f
+43:
+    call cmd_package
 90:
     ld ra, 56(sp)
     ld s0, 48(sp)

@@ -1,0 +1,9 @@
+3: integer 3, written 3, as_float 3.0
+-0: integer 0, written 0, as_float 0.0
+3.0: number (as_int: not an integer), written 3.0, as_float 3.0
+1e3: number (as_int: not an integer), written 1000.0, as_float 1000.0
+0.1: number (as_int: not an integer), written 0.1, as_float 0.1
+9223372036854775807: integer 9223372036854775807, written 9223372036854775807, as_float 9223372036854780000.0
+9223372036854775808: number (as_int: not an integer), written 9223372036854776000.0, as_float 9223372036854780000.0
+0.30000000000000004: number (as_int: not an integer), written 0.30000000000000004, as_float 0.3
+-1.5e-10: number (as_int: not an integer), written -0.00000000015, as_float -0.00000000015

@@ -1,0 +1,19 @@
+$ vo package main.vo money shared/money
+added money shared/money sha256:6514bb0e84aa66348d21ff1c32a37024df993558a975bfa61e70b1ade0687a46
+--- stderr
+--- exit 0
+$ vo package --remove main.vo money
+removed money
+--- stderr
+--- exit 0
+$ vo package --remove main.vo money
+error[T0001]: No package `money` is listed in the manifest.
+--- stderr
+--- exit 64
+$ vo check main.vo
+main.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
+   1 | import money.format.cents;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65

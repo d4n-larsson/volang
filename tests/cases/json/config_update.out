@@ -1,0 +1,11 @@
+{
+  "name": "svc",
+  "port": 9090,
+  "debug": true,
+  "hosts": [
+    "a",
+    "b"
+  ],
+  "limits": {},
+  "added": null
+}

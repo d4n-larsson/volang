@@ -1,0 +1,3 @@
+# vo packages: update with `vo package ENTRY NAME DIRECTORY`
+money shared/money sha256:5c95c313fb655ebf2d6452f331ab0bb5551ae7302cfa7b0f838a832ca0c83463
+pads lib/pads sha256:7b718e1112babf1e670ce87a0fc29638d52f7d7fd2e6617433e43b0243180e54

@@ -743,3 +743,22 @@ write_checked:
     ld s2, 0(sp)
     addi sp, sp, 32
     ret
+
+# long sys_clock_real_ms(void)
+# Milliseconds since the Unix epoch (CLOCK_REALTIME): `now_ms` (spec 007, std.time.now).
+    .globl sys_clock_real_ms
+sys_clock_real_ms:
+    addi sp, sp, -16
+    li a0, 0                    # CLOCK_REALTIME
+    mv a1, sp
+    li a7, SYS_clock_gettime
+    ecall
+    ld t0, 0(sp)
+    ld t1, 8(sp)
+    li t2, 1000
+    mul a0, t0, t2
+    li t2, 1000000
+    div t1, t1, t2
+    add a0, a0, t1
+    addi sp, sp, 16
+    ret

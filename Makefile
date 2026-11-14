@@ -31,7 +31,7 @@ $(BUILD)/vo: $(OBJS) Makefile
 $(BUILD)/%.o: src/%.s src/defs.inc | $(BUILD)
 	$(AS) $(ASFLAGS) -o $@ $<
 
-$(BUILD)/data.o: docs/reference.md docs/errors.md
+$(BUILD)/data.o: docs/reference.md docs/errors.md $(wildcard std/*.vo)
 
 $(BUILD):
 	mkdir -p $(BUILD)
@@ -55,7 +55,7 @@ test: all
 	tests/run.sh
 	tests/run.sh --repeat 3 tests/cases/run tests/cases/effects tests/cases/func tests/cases/generic tests/cases/prop
 	@for s in "fuzz.py --iterations 200 --seed 1" apply_fixes.py catalog.py ref_examples.py fmt_corpus.py \
-	  migrate.py record_changes.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
+	  migrate.py record_changes.py doc_conformance.py json_corpus.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
 	  steps.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1"; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
@@ -88,7 +88,7 @@ build-oracle/vo:
 
 # The previous spec's binary (spec 006 FR-016): programs must stay within 5% of it, checked with
 # `python3 tests/speed.py --baseline build-base/vo`. Built once; `clean` keeps it.
-BASE_REV := 99b5d3f
+BASE_REV := 1ff166a
 
 baseline: build-base/vo
 

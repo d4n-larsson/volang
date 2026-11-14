@@ -1,0 +1,5 @@
+vo package main.vo money shared/money
+vo package --remove main.vo money
+vo package --remove main.vo money
+vo check main.vo
+keep vo.packages
