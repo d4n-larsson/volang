@@ -1,0 +1,8 @@
+$ vo run --trace t.jsonl main.vo
+--- stderr
+main.vo:7:15: runtime error[R0012]: Precondition `n >= 0` of `isqrt` does not hold.
+   7 |     print(str(isqrt(-1)));
+     |               ^^^^^^^^^
+trace:
+  at main (main.vo:7:15)
+--- exit 70

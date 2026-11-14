@@ -1,0 +1,2 @@
+vo edit add-field main.vo Item discount: int = count
+keep catalog.vo main.vo vo.effects

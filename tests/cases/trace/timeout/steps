@@ -1,0 +1,2 @@
+vo run --timeout 1 --trace t.jsonl main.vo
+keep t.jsonl

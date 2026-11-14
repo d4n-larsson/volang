@@ -127,7 +127,8 @@ $(diff "$pre.$s" "$work/stress.$s" | head -20)
 
 cases=$(for p in "$@"; do
     p=$(cd "$(dirname "$p")" && echo "$(pwd)/$(basename "$p")")
-    if [ -d "$p" ]; then find "$p" \( -name '*.vo' -o -name '*.cmd' \) ; else echo "$p"; fi
+    # folders with a `steps` file are step cases, run by tests/steps.py
+    if [ -d "$p" ]; then find "$p" -type d -exec test -f '{}/steps' \; -prune -o \( -name '*.vo' -o -name '*.cmd' \) -print ; else echo "$p"; fi
 done | sed -E 's/\.(vo|cmd)$//' | sort -u)
 
 for base in $cases; do

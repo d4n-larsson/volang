@@ -3,4 +3,5 @@ ensures_fail_return.vo:8:5: runtime error[R0013]: Postcondition `ret * ret <= n 
      |     ^^^^^^^^^
 trace:
   at isqrt (ensures_fail_return.vo:8:5)
+      n: int = 4, r: int = 1
   at main (ensures_fail_return.vo:13:15)

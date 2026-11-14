@@ -1,0 +1,4 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"last","file":"main.vo","start":{"line":6,"col":15},"args":[{"name":"xs","value":"[1, 2, 3]"}]}
+{"v":1,"kind":"error","code":"R0003","name":"index_out_of_bounds","message":"Index 3 is out of bounds for length 3.","file":"main.vo","start":{"line":2,"col":12}}
+{"v":1,"kind":"end","records":3,"omitted":0,"status":70}

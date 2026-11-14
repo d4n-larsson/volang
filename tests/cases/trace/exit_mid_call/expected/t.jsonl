@@ -1,0 +1,3 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"stop","file":"main.vo","start":{"line":7,"col":5},"args":[{"name":"code","value":"3"}]}
+{"v":1,"kind":"end","records":2,"omitted":0,"status":3}

@@ -1,0 +1,48 @@
+import catalog.Item;
+import catalog.Box;
+import catalog.add_item;
+import catalog.total;
+
+variant Event {
+    added(str);
+    cleared;
+}
+
+record Pair[A, B] {
+    first: A;
+    second: B;
+}
+
+fn describe(e: Event) -> str {
+    match e {
+        case added(s) {
+            return "added " + s;
+        }
+        case cleared {
+            return "cleared";
+        }
+    }
+}
+
+fn first_of[T](xs: list[T], d: T) -> T {
+    if len(xs) == 0 {
+        return d;
+    }
+    return xs[0];
+}
+
+fn main() uses console {
+    let items = new list[Item];
+    add_item(items, "a1", "pen", 3);
+    add_item(items, "b2", "ink", 4);
+    let count = len(items);
+    let b = new Box { price: 9 };
+    let p = new Pair[int, str] { first: count, second: "x" };
+    print("add_item total " + str(total(items)) + " " + str(count) + " " + str(b.price) + " " + p.second);
+    print(describe(Event.added("x")) + " " + describe(Event.cleared) + " " + str(first_of([1, 2], 0)));
+}
+
+test "totals" {
+    let items = new list[Item];
+    expect_eq(total(items), 0);
+}

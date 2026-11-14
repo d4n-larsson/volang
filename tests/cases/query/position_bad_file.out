@@ -1,0 +1,1 @@
+error[T0004]: No file `shop/nope.vo` in this program (a program is its entry file and the files it imports).

@@ -1,0 +1,4 @@
+$ vo edit rename main.vo main start
+error[T0006]: `main` cannot be renamed: `vo run` starts the program at the function named `main`.
+--- stderr
+--- exit 65

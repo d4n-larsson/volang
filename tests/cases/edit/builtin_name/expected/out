@@ -1,0 +1,4 @@
+$ vo edit rename main.vo add_item print
+error[T0006]: `print` cannot be a new name: it must be a name that is not a keyword or a builtin.
+--- stderr
+--- exit 65

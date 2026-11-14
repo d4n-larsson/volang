@@ -3,4 +3,5 @@ int_div_zero.vo:2:12: runtime error[R0002]: Division by zero.
      |            ^^^^^^^^^^^^^
 trace:
   at average (int_div_zero.vo:2:12)
+      total: int = 10, count: int = 0
   at main (int_div_zero.vo:6:15)

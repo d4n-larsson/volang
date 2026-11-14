@@ -1,0 +1,4 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"spin","file":"main.vo","start":{"line":10,"col":15},"args":[{"name":"n","value":"1"}]}
+{"v":1,"kind":"error","code":"R0009","name":"timeout","message":"Time limit of 1 s exceeded.","file":"main.vo","start":{"line":3,"col":5}}
+{"v":1,"kind":"end","records":3,"omitted":0,"status":124}

@@ -1,0 +1,16 @@
+$ vo run --timeout 1 --seed 1 --record r.jsonl main.vo
+--- stderr
+main.vo:3:5: runtime error[R0009]: Time limit of 1 s exceeded.
+   3 |     while true {
+     |     ^^^^^^^^^^^^
+trace:
+  at main (main.vo:3:5)
+--- exit 124
+$ vo replay --timeout 1 r.jsonl
+--- stderr
+main.vo:3:5: runtime error[R0009]: Time limit of 1 s exceeded.
+   3 |     while true {
+     |     ^^^^^^^^^^^^
+trace:
+  at main (main.vo:3:5)
+--- exit 124

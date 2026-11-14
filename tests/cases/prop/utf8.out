@@ -1,5 +1,9 @@
 ERROR initial is the first character (3 cases, 0ms)
   utf8.vo:5:12: runtime error[R0007]: Slice boundary 1 splits a UTF-8 character.
+    at initial (utf8.vo:5:12)
+        s: str = "é"
+    at prop "initial is the first character" (utf8.vo:10:15)
+        s: str = "é"
     counterexample: s = "é"
     shrunk in 1 step
 0 passed, 0 failed, 1 errored

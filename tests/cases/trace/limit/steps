@@ -1,0 +1,2 @@
+vo run --trace t.jsonl --trace-limit 5 main.vo
+keep t.jsonl

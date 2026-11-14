@@ -43,10 +43,15 @@ file_find:
     bge s1, t0, 8f
     mv a0, s1
     call file_get
+    ld t0, FILE_GEN(a0)         # spec 006: only files of the current generation
+    la t1, cur_gen
+    ld t1, 0(t1)
+    bne t0, t1, 2f
     ld a0, FILE_PATH(a0)
     mv a1, s0
     call str_eq
     bnez a0, 9f
+2:
     addi s1, s1, 1
     j 1b
 8:

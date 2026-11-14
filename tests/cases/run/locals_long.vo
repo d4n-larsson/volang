@@ -1,0 +1,15 @@
+fn sum_to(xs: list[int], stop: int) -> int {
+    var total = 0;
+    for x in xs {
+        set total = total + 100 / (stop - x);
+    }
+    return total;
+}
+
+fn main() uses console {
+    let xs = new list[int];
+    for i in 0..500 {
+        push(xs, i);
+    }
+    print(str(sum_to(xs, 499)));
+}

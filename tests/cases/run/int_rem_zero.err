@@ -3,3 +3,4 @@ int_rem_zero.vo:3:15: runtime error[R0002]: Division by zero.
      |               ^^^^^
 trace:
   at main (int_rem_zero.vo:3:15)
+      z: int = 0

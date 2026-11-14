@@ -2492,13 +2492,36 @@ fn main() uses console {
 }
 ```
 
+## R0014 replay_mismatch
+
+During `vo replay`, the program asked for an input that is not the next one in the recording.
+
+Fixable: no
+
+`vo replay` feeds the program exactly the inputs of the recorded run, in order: lines of stdin, files, environment variables, the clock. A program changed since the recording that asks for something else at some point (another file, another variable, more lines than were read) cannot be replayed past that point. The message names what the program asked for and what the recording holds. Replay the original program, or record the changed one again.
+
+### Example
+
+```sh
+vo run --record r.jsonl main.vo    # main.vo reads config.txt
+# main.vo now reads settings.txt first
+vo replay r.jsonl
+```
+
+### Fixed
+
+```sh
+vo run --record r.jsonl main.vo    # record the changed program
+vo replay r.jsonl
+```
+
 ## T0001 usage_error
 
 The command line is not valid.
 
 Fixable: no
 
-The command, a flag or the number of arguments is not valid (exit status 64). The message lists the valid commands or options.
+The command, a flag or the number of arguments is not valid (exit status 64). The message lists the valid commands or options. This includes an option given to a command it does not belong to (`--trace` only works with `run`, `test` and `replay`, `--record` only with `run`, `--diff` only with `impact`, `--dry-run` only with `edit`), `--trace-limit` without `--trace`, `--seed`, `--clock-ms` or program arguments with `replay` (they come from the recording), and a trace or recording path that is a source file of the program.
 
 ### Example
 
@@ -2552,4 +2575,128 @@ vo check main.vo
 ```sh
 # No fix in your program: report the bug with main.vo and the full output.
 vo version
+```
+
+## T0004 unknown_target
+
+A query or edit names something that is not in the program.
+
+Fixable: no
+
+`vo query`, `vo impact` and `vo edit` take a target: `name` (a function, record or variant), `Record.field`, `Variant.case`, or `FILE:LINE:COL` (the name at that position). Only the entry file and the files it imports are searched. The message gives the closest name when there is one. Check the spelling, or point at the name with a position.
+
+### Example
+
+```sh
+vo query refs main.vo parse_lin
+```
+
+### Fixed
+
+```sh
+vo query refs main.vo parse_line
+```
+
+## T0005 ambiguous_target
+
+A name in a query or edit matches items in several files.
+
+Fixable: no
+
+Two files of a program can each declare an item with the same name when no file imports both. A plain `name` then does not say which one is meant. The report lists every declaration; give the one you mean as `FILE:LINE:COL`.
+
+### Example
+
+```sh
+vo query refs main.vo helper
+```
+
+### Fixed
+
+```sh
+vo query refs main.vo util/a.vo:1:4
+```
+
+## T0006 edit_refused
+
+`vo edit` refused an edit, and changed no file.
+
+Fixable: no
+
+Every edit is checked before it is written: the program is checked again as it would be after the edit, and the edit is refused when that adds a check error, or makes a name mean something other than before. The new name of a rename must be an identifier that is not a keyword, a builtin or already used where it would clash; an added field must be new and its default must have its type and be visible at every record literal. When the program already has errors, the edit must leave them as they are. The report gives the reason and the diagnostics the edit would cause. Choose another name or default, or fix the program first.
+
+### Example
+
+```sh
+vo edit rename main.vo count total   # main already has a local named total
+```
+
+### Fixed
+
+```sh
+vo edit rename main.vo count item_count
+```
+
+## T0007 diff_mismatch
+
+`vo impact` was given a diff it cannot use.
+
+Fixable: no
+
+`vo impact --diff FILE` reads a unified diff (as written by `git diff` or `diff -u`) of the program's current files: every context and added line must match the file as it is now. The diff is not one of these, or it was made before the files changed again. Make the diff again from the current files.
+
+### Example
+
+```sh
+git diff > change.diff
+# pricing.vo is edited again
+vo impact main.vo --diff change.diff
+```
+
+### Fixed
+
+```sh
+git diff > change.diff
+vo impact main.vo --diff change.diff
+```
+
+## T0008 invalid_recording
+
+`vo replay` was given a file that is not a complete recording.
+
+Fixable: no
+
+A recording is the JSON-lines file written by `vo run --record FILE`: a `recording` header, the inputs, and an `end` record. A file that was cut short (for example when the run was killed), edited by hand, or is something else cannot be replayed. Record the run again.
+
+### Example
+
+```sh
+vo replay main.vo
+```
+
+### Fixed
+
+```sh
+vo run --record r.jsonl main.vo
+vo replay r.jsonl
+```
+
+## T0009 cannot_write_output
+
+A trace or recording file could not be written.
+
+Fixable: no
+
+`--trace FILE` and `--record FILE` write their file next to the program's own output. When the file cannot be created (a missing directory, no permission) or a write fails (a full disk), the run still happens, the error is reported once at the end, and the exit status is 74 unless the run already failed. Choose a path that can be written.
+
+### Example
+
+```sh
+vo run --trace out/missing-dir/t.jsonl main.vo
+```
+
+### Fixed
+
+```sh
+vo run --trace t.jsonl main.vo
 ```

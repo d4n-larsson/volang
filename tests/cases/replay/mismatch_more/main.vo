@@ -1,0 +1,14 @@
+fn main() uses console, input {
+    var n = 0;
+    while true {
+        match read_line() {
+            case ok(l) {
+                set n = n + 1;
+            }
+            case err(e) {
+                break;
+            }
+        }
+    }
+    print(str(n));
+}

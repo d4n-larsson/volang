@@ -1,0 +1,2 @@
+vo test --trace t.jsonl main.vo
+keep t.jsonl

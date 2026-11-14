@@ -1,0 +1,3 @@
+vo edit rename main.vo add_item add_product
+vo check main.vo
+keep catalog.vo main.vo vo.effects

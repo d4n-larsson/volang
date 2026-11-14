@@ -1,0 +1,3 @@
+fn main() uses console, random {
+    print(str(random_int(1, 1000000)) + " " + str(random_int(1, 1000000)));
+}

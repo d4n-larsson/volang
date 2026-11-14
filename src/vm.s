@@ -34,6 +34,7 @@ vm_ops:
     .dword op_jlt_k, op_jle_k, op_jgt_k, op_jge_k, op_jeq_k, op_jne_k
     .dword op_for_step, op_for_list_step, op_call_fast
     .dword op_len, op_push, op_has, op_call_generic
+    .dword vm_not_compiled            # OPC_TRACE_ENTER: only emitted with --trace (vm_ops_trace, trace.s)
 
 s_not_compiled: .string "error[T0003]: internal error: a function has no compiled code\n"
 

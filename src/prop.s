@@ -1594,6 +1594,8 @@ pr_try:
     bnez a0, 3f
     li a0, 1                    # every case starts from seed and clock defaults
     call rt_effects_start
+    mv a0, s0                   # spec 006: the trace's test record, for each case
+    call tr_test
     ld t0, N_D(s0)
     ld a0, FX_CODE(t0)
     mv a1, s0

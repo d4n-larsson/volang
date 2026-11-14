@@ -1,0 +1,5 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"greet","file":"main.vo","start":{"line":6,"col":5},"args":[{"name":"name","value":"\"ana\""}]}
+{"v":1,"kind":"return","depth":2,"function":"greet"}
+{"v":1,"kind":"return","depth":1,"function":"main"}
+{"v":1,"kind":"end","records":4,"omitted":0,"status":0}

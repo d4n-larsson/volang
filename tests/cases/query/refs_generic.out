@@ -1,0 +1,7 @@
+shop/model.vo:12:8 declaration: record Pair[A, B] {
+shop/main.vo:6:14 import: import model.Pair;
+shop/main.vo:19:22 use in main: let p = swap(new Pair[int, str] { first: first, second: parse_line_text });
+shop/model.vo:17:18 type in swap: fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
+shop/model.vo:17:33 type in swap: fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
+shop/model.vo:18:16 use in swap: return new Pair[B, A] { first: p.second, second: p.first };
+6 references

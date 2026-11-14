@@ -492,6 +492,9 @@ sym_new:
     sd s2, SY_DECL(a0)
     sd s3, SY_TYPE(a0)
     sd s4, SY_NODE(a0)
+    mv s0, a0
+    call q_note_decl            # spec 006 reference log
+    mv a0, s0
     ld ra, 40(sp)
     ld s0, 32(sp)
     ld s1, 24(sp)
@@ -850,6 +853,10 @@ resolve_type:
     mv s2, a0
     call is_placeholder
     bnez a0, 80f
+    mv a0, s2                   # spec 006 reference log
+    mv a1, s1
+    li a2, RR_TYPE
+    call q_note_sym
     mv a0, s2
     ld t0, SY_KIND(a0)
     li t1, SYM_RECORD
@@ -2008,6 +2015,15 @@ check_arm:
     j 5f                        # still bind the arm's name (silently), so it does not cascade
 1:
     sd s3, N_D(s0)
+    ld t0, TY_KIND(s1)          # spec 006 reference log: (variant, case); not ok/err
+    li t1, TY_VARIANT
+    bne t0, t1, 1001f
+    ld a0, TY_DECL(s1)
+    mv a1, s3
+    ld a2, N_A(s0)
+    li a3, RR_USE
+    call q_note
+1001:
     slli t0, s3, 3
     add t0, s2, t0
     ld t1, 0(t0)
@@ -2049,6 +2065,7 @@ check_arm:
     la t0, t_error
     ld a0, 0(t0)
 4:
+    sd a0, N_TYPE(s0)           # spec 006: the binding's type (values in runtime errors)
     mv a1, a0
     ld a0, N_B(s0)
     li a2, 0
@@ -2906,6 +2923,7 @@ check_items:
     mv a0, s0
     mv a1, s1
     call vec_get
+    call ck_item_set
     call resolve_item
     addi s1, s1, 1
     j 3b
@@ -2920,6 +2938,7 @@ check_items:
     mv a0, s0
     mv a1, s1
     call vec_get
+    call ck_item_set
     addi s1, s1, 1
     lhu t0, N_KIND(a0)
     li t1, N_FN
@@ -2932,6 +2951,8 @@ check_items:
     call check_fn
     j 5b
 7:
+    li a0, 0
+    call ck_item_set
     mv a0, s0
     call fx_file_end
     la t0, ck_mode

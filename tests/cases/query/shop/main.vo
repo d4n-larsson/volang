@@ -1,0 +1,31 @@
+import io.parse_line;
+import io.load;
+import io.label;
+import model.Item;
+import model.Event;
+import model.Pair;
+import model.swap;
+import report.summary;
+import report.describe;
+import report.total;
+
+fn main() uses console {
+    let parse_line_text = "parse_line";
+    let name = "local";
+    let first = parse_line(" 42 ");
+    let items = [new Item { name: "pen", price: 3 }, new Item { name: name, price: 4 }];
+    let all = load(["1", "2"]);
+    let sums = summary(["5"]);
+    let p = swap(new Pair[int, str] { first: first, second: parse_line_text });
+    print(p.first + " " + str(p.second) + " " + label(items[0]) + " " + str(len(all) + len(sums)));
+    print(describe(Event.added(items[1])) + " " + describe(Event.cleared) + " " + str(total(items)));
+}
+
+test "parse" {
+    expect_eq(parse_line("7"), 7);
+}
+
+prop "parse never fails" (s: str) {
+    let n = parse_line(s);
+    expect(n == n);
+}

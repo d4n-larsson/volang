@@ -3,13 +3,23 @@ stack.vo:2:12: runtime error[R0005]: Stack exhausted: the recursion is too deep.
      |            ^^^^^^^^^^^
 trace:
   at down (stack.vo:2:12)
+      n: int = 419428
   at down (stack.vo:2:12)
+      n: int = 419427
   at down (stack.vo:2:12)
+      n: int = 419426
   at down (stack.vo:2:12)
+      n: int = 419425
   at down (stack.vo:2:12)
+      n: int = 419424
   at down (stack.vo:2:12)
+      n: int = 419423
   at down (stack.vo:2:12)
+      n: int = 419422
   at down (stack.vo:2:12)
+      n: int = 419421
   at down (stack.vo:2:12)
+      n: int = 419420
   at down (stack.vo:2:12)
+      n: int = 419419
   ... more frames omitted

@@ -1,0 +1,10 @@
+{"v":1,"kind":"test","name":"test \"doubles\""}
+{"v":1,"kind":"call","depth":1,"function":"test \"doubles\"","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"double","file":"main.vo","start":{"line":6,"col":15},"args":[{"name":"x","value":"2"}]}
+{"v":1,"kind":"return","depth":2,"function":"double","value":"4"}
+{"v":1,"kind":"return","depth":1,"function":"test \"doubles\""}
+{"v":1,"kind":"test","name":"test \"fails\""}
+{"v":1,"kind":"call","depth":1,"function":"test \"fails\"","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"double","file":"main.vo","start":{"line":10,"col":15},"args":[{"name":"x","value":"2"}]}
+{"v":1,"kind":"return","depth":2,"function":"double","value":"4"}
+{"v":1,"kind":"end","records":9,"omitted":0}

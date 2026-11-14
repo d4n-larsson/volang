@@ -1,0 +1,7 @@
+locals_index.vo:3:12: runtime error[R0003]: Index 3 is out of bounds for length 3.
+   3 |     return xs[i];
+     |            ^^^^^
+trace:
+  at last (locals_index.vo:3:12)
+      xs: list[int] = [1, 2, 3], i: int = 3
+  at main (locals_index.vo:7:15)

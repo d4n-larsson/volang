@@ -1,0 +1,4 @@
+errs/main.vo:6:12 call in g: return f();
+errs/main.vo:10:15 call in main: print(str(f()));
+2 references
+note: the program has 1 error; answers cover the parts that check

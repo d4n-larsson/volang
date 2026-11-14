@@ -21,7 +21,7 @@ RUNTIME := vm gc sys interp jmp num text rt_call rt_effects rt_func rt_io rt_lis
 RT_OBJS := $(patsubst %,$(BUILD)/%.o,$(RUNTIME))
 OBJS := $(RT_OBJS) $(filter-out $(RT_OBJS),$(patsubst src/%.s,$(BUILD)/%.o,$(SRCS)))
 
-.PHONY: all check-tools lint test gc-check oracle baseline-004 speed speed-check prop-eval clean
+.PHONY: all check-tools lint test gc-check oracle baseline speed speed-check prop-eval refactor-eval clean
 
 all: $(BUILD)/vo
 
@@ -55,7 +55,8 @@ test: all
 	tests/run.sh
 	tests/run.sh --repeat 3 tests/cases/run tests/cases/effects tests/cases/func tests/cases/generic tests/cases/prop
 	@for s in "fuzz.py --iterations 200 --seed 1" apply_fixes.py catalog.py ref_examples.py fmt_corpus.py \
-	  migrate.py record_changes.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py; do \
+	  migrate.py record_changes.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
+	  steps.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1"; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
 	@if [ -x build-oracle/vo ]; then echo "== diff_engines.py --count 1000 --seed 4"; \
@@ -71,6 +72,7 @@ gc-check: all
 	python3 tests/fuzz.py --stress --iterations 3000 --seed 9
 	python3 tests/gc_faults.py
 	python3 tests/diff_engines.py --stress --count 1000 --seed 2
+	VO_BIN=$(abspath build-stress/vo) python3 tests/steps.py
 
 # The comparison engine (spec 004): the tree-walking interpreter from the last commit before the
 # bytecode engine, for speed figures and differential testing. Built once; `clean` keeps it.
@@ -84,17 +86,17 @@ build-oracle/vo:
 	mkdir -p build-oracle
 	cp build-oracle/src/build/vo build-oracle/vo
 
-# The spec 004 binary (spec 005 FR-024): programs without contracts must stay within 5% of it,
-# checked with `python3 tests/speed.py --baseline build-004/vo`. Built once; `clean` keeps it.
-BASE004_REV := 71375e5
+# The previous spec's binary (spec 006 FR-016): programs must stay within 5% of it, checked with
+# `python3 tests/speed.py --baseline build-base/vo`. Built once; `clean` keeps it.
+BASE_REV := 99b5d3f
 
-baseline-004: build-004/vo
+baseline: build-base/vo
 
-build-004/vo:
-	@[ -d build-004/src ] || git worktree add --detach build-004/src $(BASE004_REV)
-	$(MAKE) -C build-004/src
-	mkdir -p build-004
-	cp build-004/src/build/vo build-004/vo
+build-base/vo:
+	@[ -d build-base/src ] || git worktree add --detach build-base/src $(BASE_REV)
+	$(MAKE) -C build-base/src
+	mkdir -p build-base
+	cp build-base/src/build/vo build-base/vo
 
 # Spec 004 speed targets (timing depends on machine load, so not part of `make test`).
 speed: all oracle
@@ -102,6 +104,10 @@ speed: all oracle
 
 speed-check: oracle speed
 	python3 tests/diff_engines.py --count 10000 --seed 1
+
+# Spec 006 SC-001/SC-002: checked edits and queries on the refactor tasks' starters.
+refactor-eval: all
+	python3 tests/refactor_eval.py
 
 # Spec 005 SC-001/SC-002: property tests against mutants of the hidden-property benchmark tasks.
 prop-eval: all

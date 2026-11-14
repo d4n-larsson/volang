@@ -1,0 +1,9 @@
+fn boom(n: int) -> int {
+    return 10 / n;
+}
+
+fn main() uses console {
+    let before = 1;
+    let after = boom(0);
+    print(str(before + after));
+}

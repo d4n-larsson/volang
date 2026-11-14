@@ -8,6 +8,6 @@
 {"v":1,"kind":"memory","command":"test","test":"maps fail","peak_live":1165488,"allocated":1165488,"collections":0,"limit":536870912}
 {"v":1,"kind":"test","name":"closures","status":"pass","file":"../../gc/edge/test_order.vo","start":{"line":35,"col":1},"uses":"","ms":0}
 {"v":1,"kind":"memory","command":"test","test":"closures","peak_live":186960,"allocated":186960,"collections":0,"limit":536870912}
-{"v":1,"kind":"test","name":"runtime error","status":"error","file":"../../gc/edge/test_order.vo","start":{"line":45,"col":1},"uses":"","ms":0,"failure":{"file":"../../gc/edge/test_order.vo","start":{"line":51,"col":15},"end":{"line":51,"col":23},"message":"Index 288890 is out of bounds for length 3.","code":"R0003"}}
-{"v":1,"kind":"memory","command":"test","test":"runtime error","peak_live":3201952,"allocated":3201952,"collections":0,"limit":536870912}
+{"v":1,"kind":"test","name":"runtime error","status":"error","file":"../../gc/edge/test_order.vo","start":{"line":45,"col":1},"uses":"","ms":0,"failure":{"file":"../../gc/edge/test_order.vo","start":{"line":51,"col":15},"end":{"line":51,"col":23},"message":"Index 288890 is out of bounds for length 3.","code":"R0003","trace":[{"function":"test \"runtime error\"","file":"../../gc/edge/test_order.vo","start":{"line":51,"col":15},"locals":[{"name":"xs","type":"list[int]","value":"[1, 2, 3]"},{"name":"junk","type":"int","value":"288890"}]}]}}
+{"v":1,"kind":"memory","command":"test","test":"runtime error","peak_live":3207696,"allocated":3207696,"collections":0,"limit":536870912}
 {"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":4,"failed":1,"errored":1,"timed_out":0}

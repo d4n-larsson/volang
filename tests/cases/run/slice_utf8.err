@@ -3,3 +3,4 @@ slice_utf8.vo:3:11: runtime error[R0007]: Slice boundary 1 splits a UTF-8 charac
      |           ^^^^^^^^^^^^^^
 trace:
   at main (slice_utf8.vo:3:11)
+      s: str = "é"

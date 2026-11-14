@@ -1,0 +1,4 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"isqrt","file":"main.vo","start":{"line":7,"col":15},"args":[{"name":"n","value":"-1"}]}
+{"v":1,"kind":"error","code":"R0012","name":"precondition_failed","message":"Precondition `n >= 0` of `isqrt` does not hold.","file":"main.vo","start":{"line":7,"col":15}}
+{"v":1,"kind":"end","records":3,"omitted":0,"status":70}

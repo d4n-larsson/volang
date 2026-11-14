@@ -1,0 +1,9 @@
+$ vo edit add-field main.vo Empty n: int = 0
+main.vo:2:1 +     n: int;\n
+added field n to Empty: 1 change in 1 file
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0

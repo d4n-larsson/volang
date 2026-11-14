@@ -1,0 +1,8 @@
+fn stop(code: int) {
+    exit(code);
+}
+
+fn main() uses console {
+    print("before");
+    stop(3);
+}

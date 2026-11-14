@@ -3,5 +3,7 @@ run_reached.vo:2:5: runtime error[R0011]: Hole reached: parse the header.
      |     ^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at parse (run_reached.vo:2:5)
+      line: str = "a,b"
   at load (run_reached.vo:6:12)
+      text: str = "a,b"
   at main (run_reached.vo:11:15)

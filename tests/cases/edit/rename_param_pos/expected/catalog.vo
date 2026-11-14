@@ -1,0 +1,22 @@
+record Item {
+    sku: str;
+    name: str;
+    price: int;
+}
+
+record Box {
+    price: int;
+}
+
+fn add_item(items: list[Item], code: str, name: str, price: int) uses console {
+    push(items, new Item { sku: code, name: name, price: price });
+    print("add_item " + code);
+}
+
+fn total(items: list[Item]) -> int {
+    var sum = 0;
+    for it in items {
+        set sum = sum + it.price;
+    }
+    return sum;
+}

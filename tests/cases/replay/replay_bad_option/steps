@@ -1,0 +1,4 @@
+vo replay --seed 3 r.jsonl
+vo replay --clock-ms 3 r.jsonl
+vo replay r.jsonl -- a
+vo replay

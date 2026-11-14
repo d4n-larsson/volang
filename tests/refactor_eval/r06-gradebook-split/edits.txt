@@ -1,0 +1,8 @@
+# "the letter function is defined once and used by every command that shows a letter": it now returns a full letter grade with modifier
+rename letter letter_grade
+# "counts the students ... by letter grade": each graded student keeps its letter
+add-field Graded letter: str = ""
+# "For an average in the A, B, C or D band, let R = average - the band's lower limit"
+rename grading.vo:44:11 average
+# "numeric statistics (rounding, ...)": rounding is half up
+rename rounded_div round_half_up

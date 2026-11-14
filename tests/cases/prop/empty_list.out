@@ -1,5 +1,9 @@
 ERROR largest is in the list (2 cases, 0ms)
   empty_list.vo:2:16: runtime error[R0003]: Index 0 is out of bounds for length 0.
+    at largest (empty_list.vo:2:16)
+        xs: list[int] = []
+    at prop "largest is in the list" (empty_list.vo:10:13)
+        xs: list[int] = []
     counterexample: xs = []
     shrunk in 0 steps
 0 passed, 0 failed, 1 errored

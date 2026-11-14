@@ -1,0 +1,78 @@
+refs Product.price
+shop.vo:4:5 declaration
+cart.vo:12:65 use
+cart.vo:21:17 use
+cart.vo:63:44 use
+pricing.vo:49:40 use
+
+refs Priced.price
+pricing.vo:10:5 declaration
+pricing.vo:50:56 use
+pricing.vo:53:44 use
+checkout.vo:16:61 use
+
+refs Product.net
+shop.vo:6:5 declaration
+cart.vo:12:88 use
+checkout.vo:25:21 use
+checkout.vo:25:35 use
+checkout.vo:48:111 use
+
+refs Line
+shop.vo:9:8 declaration
+shop.vo:21:16 type
+shop.vo:32:70 type
+shop.vo:36:36 type
+shop.vo:42:39 type
+shop.vo:43:39 type
+cart.vo:3:13 import
+cart.vo:30:29 use
+cart.vo:47:49 type
+checkout.vo:2:13 import
+checkout.vo:39:30 type
+pricing.vo:2:13 import
+pricing.vo:48:33 type
+
+refs Line.sku
+shop.vo:10:5 declaration
+shop.vo:37:21 use
+shop.vo:44:21 use
+cart.vo:30:36 use
+cart.vo:48:22 use
+cart.vo:63:39 use
+cart.vo:64:24 use
+pricing.vo:49:35 use
+pricing.vo:50:36 use
+pricing.vo:51:30 use
+pricing.vo:52:55 use
+pricing.vo:56:29 use
+pricing.vo:56:66 use
+pricing.vo:57:42 use
+
+callers unknown_product
+cart.vo:18:16 call
+cart.vo:27:16 call
+pricing.vo:21:16 call
+pricing.vo:29:16 call
+
+refs checkout.vo:13:9
+checkout.vo:13:9 declaration
+checkout.vo:27:13 use
+checkout.vo:27:24 use
+checkout.vo:29:33 use
+checkout.vo:30:37 use
+checkout.vo:34:17 use
+
+refs cart.vo:16:36
+cart.vo:16:36 declaration
+cart.vo:21:25 use
+cart.vo:22:47 use
+
+refs pricing.vo:65:32
+pricing.vo:65:32 declaration
+pricing.vo:69:12 use
+
+refs checkout
+checkout.vo:7:4 declaration
+main.vo:12:17 import
+main.vo:106:16 call

@@ -854,6 +854,9 @@ main.vo:2:5: warning[W0601]: Hole: `"the average, 0 for an empty list"` needs a 
     in scope: xs: list[int]
 ERROR mean of three (0ms)
   main.vo:2:5: runtime error[R0011]: Hole reached: the average, 0 for an empty list.
+    at mean (main.vo:2:5)
+        xs: list[int] = [1, 2, 3]
+    at test "mean of three" (main.vo:6:15)
 0 passed, 0 failed, 1 errored
 ```
 
@@ -966,6 +969,66 @@ fn main() uses console {
 25
 ```
 
+## Querying and editing programs
+
+Ask the toolchain instead of searching the text: answers follow the checker, so strings, comments and other things with the same name never match. Every command takes the program's entry file first; only the files it imports are searched or changed.
+
+```text
+vo query callers ENTRY NAME              call sites, and uses as a value, of a function or builtin
+vo query refs ENTRY TARGET               the declaration and every use
+vo query type-at ENTRY FILE:LINE:COL     the type of the name or expression there, and its declaration
+vo impact ENTRY --diff FILE              functions and tests a unified diff (git diff, diff -u) affects; - is stdin
+vo edit rename [--dry-run] ENTRY TARGET NEW_NAME
+vo edit add-field [--dry-run] ENTRY RECORD FIELD: TYPE = DEFAULT
+```
+
+A TARGET is `name` (a function, record or variant), `Record.field`, `Variant.case`, or `FILE:LINE:COL` (anything at that position: also parameters, locals and type parameters). A name declared in two files is T0005; a missing one T0004. Answers list `FILE:LINE:COL ROLE in FUNCTION: line`, with ROLE `declaration`, `call`, `value`, `type`, `import` or `use`.
+
+`rename` changes every reference (and the function's line in `vo.effects`); `add-field` adds the field and `FIELD: DEFAULT` to every `new RECORD { ... }`. Before writing, the edited program is checked again: if it gains an error, or a name would mean something else, the edit is refused (T0006) and no file changes. All changed files are written, or none. `--dry-run` only lists the changes.
+
+```vo
+fn area(w: int, h: int) -> int {
+    return w * h;
+}
+
+fn main() uses console {
+    let a = area(3, 4);
+    print("area " + str(a));
+}
+```
+
+```console
+$ vo query callers main.vo area
+main.vo:6:13 call in main: let a = area(3, 4);
+1 reference
+$ vo query type-at main.vo main.vo:7:25
+main.vo:7:25 a: int (declared at main.vo:6:9)
+$ vo edit rename --dry-run main.vo area rect_area
+main.vo:1:4 area -> rect_area
+main.vo:6:13 area -> rect_area
+renamed area to rect_area: 2 changes in 1 file (dry run, nothing written)
+```
+
+## Traces and replay
+
+- `vo run --trace FILE` (and `vo test`) writes JSON lines: `call` (function, call site, depth, `args` by name) and `return` (value) for every vo function, `error` when a runtime error ends it, `test` before each test, and `end` (`records`, `omitted`, `status`). Values are shortened to 200 bytes. After `--trace-limit N` records (default 100000) the rest are only counted.
+- A runtime error lists, under each frame, its parameters and the locals declared before the failing statement: `i: int = 3` (in JSON, `locals` of each `trace` entry). Timeouts show no values: they depend on the machine's speed.
+- `vo run --record FILE` saves everything the program receives: arguments, stdin, environment variables, file reads, results of file writes, the clock and the seed. `vo replay FILE` runs the current program on exactly that, reading and writing nothing outside: the same program gives the same output and exit status (unless it timed out). A changed program is run with a note; one that asks for a different input stops with R0014. A recording holds the file contents and variables the program read.
+
+```vo
+fn last(xs: list[int]) -> int {
+    let i = len(xs);
+    return xs[i];
+}
+
+fn main() uses console {
+    print(str(last([1, 2, 3])));
+}
+```
+
+```error R0003
+```
+
 ## Command line
 
 ```sh
@@ -977,7 +1040,13 @@ vo effects   [--json] [--update] FILE
 vo explain   [--json] CODE
 vo reference [--json]
 vo version   [--json]
+vo query     [--json] callers|refs|type-at ENTRY TARGET
+vo impact    [--json] ENTRY --diff FILE
+vo edit      [--json] [--dry-run] rename|add-field ENTRY ...
+vo replay    [--json] [--trace FILE] [--timeout SEC] [--max-memory MiB] [--mem-stats] RECORDING
 ```
+
+`run` and `test` also take `--trace FILE` and `--trace-limit N`; `run` takes `--record FILE` (see Traces and replay).
 
 - `PATH` is a `.vo` file or a directory (every `*.vo` under it, recursively, in sorted order). Each file is checked as the entry of its own program.
 - `run` checks first and runs only if there are no errors. Arguments after `--` reach the program through `args()`.
@@ -1000,6 +1069,7 @@ Exit statuses:
 | 65 | check errors |
 | 66 | input file or directory cannot be read (T0002) |
 | 70 | runtime error |
+| 74 | a trace or recording cannot be written (T0009) |
 | 124 | timeout (R0009) |
 | 125 | internal error in vo (T0003) |
 
@@ -1041,13 +1111,13 @@ With `print(total);` on line 3 instead, `vo check --json main.vo` prints:
 {"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"main.vo","start":{"line":3,"col":11},"end":{"line":3,"col":16},"text":"total","message":"Expected `str`, found `int`.","expected":"str","found":"int","fixes":[{"file":"main.vo","start":{"line":3,"col":11},"end":{"line":3,"col":16},"replacement":"str(total)"}],"related":[]}
 ```
 
-**runtime_error** (from `run`, on stderr): `code`, `name`, `message`, `file`, `start`, `end`, and `trace`, a list of `{function, file, start}` with the innermost call first. Here `return total / count;` on line 2 of `average` divided by zero, called from `main` on line 6:
+**runtime_error** (from `run`, on stderr): `code`, `name`, `message`, `file`, `start`, `end`, and `trace`, a list of `{function, file, start, locals}` with the innermost call first (`locals`: `{name, type, value}` of the parameters and locals there). Here `return total / count;` on line 2 of `average(10, 0)` divided by zero, called from `main` on line 6:
 
 ```json
-{"v":1,"kind":"runtime_error","code":"R0002","name":"division_by_zero","message":"Division by zero.","file":"main.vo","start":{"line":2,"col":12},"end":{"line":2,"col":25},"trace":[{"function":"average","file":"main.vo","start":{"line":2,"col":12}},{"function":"main","file":"main.vo","start":{"line":6,"col":15}}]}
+{"v":1,"kind":"runtime_error","code":"R0002","name":"division_by_zero","message":"Division by zero.","file":"main.vo","start":{"line":2,"col":12},"end":{"line":2,"col":25},"trace":[{"function":"average","file":"main.vo","start":{"line":2,"col":12},"locals":[{"name":"total","type":"int","value":"10"},{"name":"count","type":"int","value":"0"}]},{"function":"main","file":"main.vo","start":{"line":6,"col":15},"locals":[]}]}
 ```
 
-**test** (from `test`): `name`, `status` (`"pass"`, `"fail"`, `"error"`, `"timeout"`), `file`, `start`, `ms`, the property members above, and unless the status is `pass`, `failure`: `{file, start, end, message, expected?, actual?}` (plus `code` for `error`). Values are shown in vo syntax: `"abc"`, `[1, 2]`, `new Point { x: 1, y: 2 }`, `Shape.circle(1.0)`, `ok(1)`; maps as `{k: v}`.
+**test** (from `test`): `name`, `status` (`"pass"`, `"fail"`, `"error"`, `"timeout"`), `file`, `start`, `ms`, the property members above, and unless the status is `pass`, `failure`: `{file, start, end, message, expected?, actual?}` (plus `code` and `trace` for `error`). Values are shown in vo syntax: `"abc"`, `[1, 2]`, `new Point { x: 1, y: 2 }`, `Shape.circle(1.0)`, `ok(1)`; maps as `{k: v}`.
 
 ```json
 {"v":1,"kind":"test","name":"doubles","status":"fail","file":"main.vo","start":{"line":5,"col":1},"ms":0,"failure":{"file":"main.vo","start":{"line":6,"col":5},"end":{"line":6,"col":28},"message":"`expect_eq` failed: the values differ.","expected":"8","actual":"9"}}
@@ -1055,7 +1125,7 @@ With `print(total);` on line 3 instead, `vo check --json main.vo` prints:
 
 **summary**: the last record of every `check`, `test` and `fmt`, and of `run` when it stops before the program starts: `{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}`. `test` adds `passed`, `failed`, `errored`, `timed_out`; `fmt` adds `changed`. At most 50 diagnostics are listed; `truncated` counts the rest.
 
-Other kinds: `toolchain_error` (`code`, `name`, `message`, optional `path`) for T codes, `explain` (`code`, `name`, `fixable`, `text`), `reference` (`text`), `version` (`version`, `schema`) and `fmt` (`file`, `changed`).
+Other kinds: `toolchain_error` (`code`, `name`, `message`, optional `path` and `related` declarations) for T codes, `ref`, `type_at`, `impact` and `edit` (see Querying and editing programs; `edit` is a fix with the replaced `text`), `replay` (a changed program), `explain` (`code`, `name`, `fixable`, `text`), `reference` (`text`), `version` (`version`, `schema`) and `fmt` (`file`, `changed`).
 
 ## Error codes
 

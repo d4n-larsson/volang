@@ -43,6 +43,7 @@ j_message: .string ",\"message\":"
 j_expected: .string ",\"expected\":"
 j_actual: .string ",\"actual\":"
 j_code: .string ",\"code\":\""
+j_trace_key: .string ",\"trace\":"
 j_close: .string "}\n"
 h_ms_open: .string " ("
 h_ms_close: .string "ms)\n"
@@ -211,6 +212,16 @@ report_test:
     mv a0, s3
     li a1, '"'
     call sb_byte
+    la t0, rt_err_trace_json    # spec 006: the frames and their values
+    ld t0, 0(t0)
+    beqz t0, 47f
+    mv a0, s3
+    la a1, j_trace_key
+    call sb_cstr
+    la t0, rt_err_trace_json
+    ld a1, 0(t0)
+    mv a0, s3
+    call sb_str
 47:
     mv a0, s3
     li a1, '}'
@@ -311,6 +322,11 @@ report_test:
     mv a0, s3
     li a1, 10
     call sb_byte
+    la t0, rt_err_trace_txt     # spec 006: the frames and their values
+    ld a1, 0(t0)
+    beqz a1, 89f
+    mv a0, s3
+    call sb_str
 89:
     lhu t0, N_FLAGS(s0)
     andi t0, t0, NF_PROP

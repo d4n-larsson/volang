@@ -3,3 +3,4 @@ vm_index_set_error.vo:10:9: runtime error[R0003]: Index 5 is out of bounds for l
      |         ^^^^^
 trace:
   at main (vm_index_set_error.vo:10:9)
+      xs: list[int] = [1, 1]

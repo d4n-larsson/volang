@@ -1,0 +1,3 @@
+vo~ run --record r.jsonl main.vo
+vo~ replay r.jsonl
+same

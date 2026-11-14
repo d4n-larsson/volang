@@ -1,0 +1,8 @@
+# "units ... metric is the existing format": the existing formatter is the metric one
+rename format_qty format_metric
+# "rounding ... up rounds Q x N / S up (as before)": the existing scaling is the round-up one
+rename scale_qty scale_up
+# "Quantities are never shown in l with kitchen": the kg/l decimal format is metric only
+rename decimal metric_decimal
+# "rounding is used ... each recipe's scaling inside shop": each shop order carries the rounding mode
+add-field Order rounding: str = "up"

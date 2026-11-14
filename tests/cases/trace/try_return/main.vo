@@ -1,0 +1,15 @@
+fn parse(s: str) -> result[int] {
+    let n = try parse_int(s);
+    return ok(n + 1);
+}
+
+fn main() uses console {
+    match parse("x") {
+        case ok(n) {
+            print(str(n));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

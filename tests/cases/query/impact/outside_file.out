@@ -1,0 +1,9 @@
+changed tax (shop/pricing.vo:1)
+affected subtotal via tax (shop/cart.vo:3)
+affected with_tax_values via tax (shop/cart.vo:15)
+affected checkout via subtotal (shop/cart.vo:11)
+affected main via with_tax_values (shop/main.vo:5)
+test "checkout total" via checkout (shop/main.vo:10)
+prop "subtotal grows" via checkout (shop/main.vo:18)
+ignored docs/notes.txt
+1 changed, 0 added, 0 removed, 4 affected, 2 tests

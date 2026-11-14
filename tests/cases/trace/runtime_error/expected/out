@@ -1,0 +1,10 @@
+$ vo run --trace t.jsonl main.vo
+--- stderr
+main.vo:2:12: runtime error[R0003]: Index 3 is out of bounds for length 3.
+   2 |     return xs[len(xs)];
+     |            ^^^^^^^^^^^
+trace:
+  at last (main.vo:2:12)
+      xs: list[int] = [1, 2, 3]
+  at main (main.vo:6:15)
+--- exit 70

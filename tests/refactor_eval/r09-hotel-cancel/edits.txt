@@ -1,0 +1,10 @@
+# "the booking becomes cancelled": a booking records whether it is cancelled
+add-field Booking cancelled: bool = false
+# "cancelled on day DAY": a booking records the cancellation day
+add-field Booking cancel_day: int = 0
+# "refund R": a booking records its refund
+add-field Booking refund: int = 0
+# "R is the sum of the net amounts (total - refund)": the per-type revenue sums net amounts
+rename report.vo:37:13 net
+# "N is the number of nights the type's bookings still take ... the kept nights of a cancelled one"
+rename nights kept_nights

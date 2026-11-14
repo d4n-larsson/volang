@@ -1,0 +1,8 @@
+$ vo run --seed 7 --record r.jsonl main.vo
+886717 692899
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+886717 692899
+--- stderr
+--- exit 0

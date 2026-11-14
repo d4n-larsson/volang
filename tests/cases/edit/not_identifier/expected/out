@@ -1,0 +1,8 @@
+$ vo edit rename main.vo add_item add-item
+error[T0006]: `add-item` cannot be a new name: it must be a name that is not a keyword or a builtin.
+--- stderr
+--- exit 65
+$ vo edit rename main.vo add_item 2items
+error[T0006]: `2items` cannot be a new name: it must be a name that is not a keyword or a builtin.
+--- stderr
+--- exit 65

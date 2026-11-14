@@ -1,0 +1,9 @@
+$ vo~ run --record r.jsonl main.vo
+(stdout not shown)
+--- stderr
+--- exit 0
+$ vo~ replay r.jsonl
+(stdout not shown)
+--- stderr
+--- exit 0
+same stdout: yes

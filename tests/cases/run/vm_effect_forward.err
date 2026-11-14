@@ -3,6 +3,9 @@ vm_effect_forward.vo:15:11: runtime error[R0010]: env("PATH") is not allowed: `s
      |           ^^^^^^^^^
 trace:
   at show (vm_effect_forward.vo:15:11)
+      name: str = "PATH"
   at each (vm_effect_forward.vo:6:9)
+      xs: list[str] = ["HOME", "PATH"], f: fn(str) uses console, env("HOME") = <fn(str) uses console, env("HOME")>, x: str = "PATH"
   at forward (vm_effect_forward.vo:11:5)
+      xs: list[str] = ["HOME", "PATH"], f: fn(str) uses console, env("HOME") = <fn(str) uses console, env("HOME")>
   at main (vm_effect_forward.vo:36:5)

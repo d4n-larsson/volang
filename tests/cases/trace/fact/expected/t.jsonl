@@ -1,0 +1,9 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"fact","file":"main.vo","start":{"line":9,"col":15},"args":[{"name":"n","value":"2"}]}
+{"v":1,"kind":"call","depth":3,"function":"fact","file":"main.vo","start":{"line":5,"col":16},"args":[{"name":"n","value":"1"}]}
+{"v":1,"kind":"call","depth":4,"function":"fact","file":"main.vo","start":{"line":5,"col":16},"args":[{"name":"n","value":"0"}]}
+{"v":1,"kind":"return","depth":4,"function":"fact","value":"1"}
+{"v":1,"kind":"return","depth":3,"function":"fact","value":"1"}
+{"v":1,"kind":"return","depth":2,"function":"fact","value":"2"}
+{"v":1,"kind":"return","depth":1,"function":"main"}
+{"v":1,"kind":"end","records":8,"omitted":0,"status":0}

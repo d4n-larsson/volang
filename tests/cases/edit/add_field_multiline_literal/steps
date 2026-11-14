@@ -1,0 +1,3 @@
+vo edit add-field main.vo P z: int = 0
+vo run main.vo
+keep main.vo

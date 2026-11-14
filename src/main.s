@@ -9,6 +9,10 @@
     .equ CMD_REFERENCE, 6
     .equ CMD_VERSION, 7
     .equ CMD_EFFECTS, 8
+    .equ CMD_QUERY, 9
+    .equ CMD_IMPACT, 10
+    .equ CMD_EDIT, 11
+    .equ CMD_REPLAY, 12
 
     .section .data
     .align 3
@@ -32,8 +36,22 @@ prog_argv:      .dword 0
 opt_cmd:        .dword 0
     .globl report_fd
 report_fd:      .dword 1
+    .globl pos_args
 pos_args:       .dword 0            # array of char* (positional arguments)
+    .globl pos_n
 pos_n:          .dword 0
+# spec 006 options (contracts/cli.md)
+    .globl opt_diff
+opt_diff:       .dword 0            # char*: --diff FILE (impact)
+    .globl opt_dry_run
+opt_dry_run:    .dword 0
+    .globl opt_trace
+opt_trace:      .dword 0            # char*: --trace FILE
+    .globl opt_trace_limit
+opt_trace_limit: .dword 0           # 0: not given (default 100000)
+    .globl opt_record
+opt_record:     .dword 0            # char*: --record FILE (run)
+opt_seed_given: .dword 0           # 1 when --seed or --clock-ms was given (replay refuses them)
     .globl path_list
 path_list:      .dword 0            # array of str (expanded .vo paths)
     .globl path_n
@@ -42,7 +60,8 @@ path_cap:       .dword 0
 
     .section .rodata
 cmd_names:
-    .dword n_check, n_run, n_test, n_fmt, n_explain, n_reference, n_version, n_effects, 0
+    .dword n_check, n_run, n_test, n_fmt, n_explain, n_reference, n_version, n_effects
+    .dword n_query, n_impact, n_edit, n_replay, 0
 n_check:    .string "check"
 n_run:      .string "run"
 n_test:     .string "test"
@@ -51,6 +70,27 @@ n_explain:  .string "explain"
 n_reference: .string "reference"
 n_version:  .string "version"
 n_effects:  .string "effects"
+n_query:    .string "query"
+n_impact:   .string "impact"
+n_edit:     .string "edit"
+n_replay:   .string "replay"
+f_diff:     .string "--diff"
+f_dry_run:  .string "--dry-run"
+f_trace:    .string "--trace"
+f_trace_limit: .string "--trace-limit"
+f_record:   .string "--record"
+m_opt_file: .string "`$1` needs a file name."
+m_trace_limit_val: .string "`--trace-limit` needs a whole number from 1 to 100000000."
+m_opt_only: .string "`$1` only works with `$2`."
+m_limit_no_trace: .string "`--trace-limit` needs `--trace FILE`."
+m_impact_diff: .string "`impact` needs `--diff FILE` (or `--diff -` for stdin)."
+m_replay_opt: .string "`replay` takes `--seed`, `--clock-ms` and program arguments from the recording; leave them out."
+m_same_out: .string "`--trace` and `--record` name the same file `$1`."
+m_out_is_source: .string "`$1` is a source file of the program; choose another file for the trace or recording."
+w_impact:   .string "impact"
+w_edit:     .string "edit"
+w_run:      .string "run"
+w_run_test_replay: .string "run`, `test` or `replay"
 f_update:   .string "--update"
 m_effects_one: .string "`effects` takes exactly one file."
 f_json:     .string "--json"
@@ -64,9 +104,9 @@ f_max_memory: .string "--max-memory"
 m_max_memory_val: .string "`--max-memory` needs a whole number of MiB from 1 to 65536."
 m_number_val: .string "`--seed` and `--clock-ms` need a whole number."
 f_dashdash: .string "--"
-m_unknown_cmd:  .string "Unknown command `$1`. Commands: check, run, test, fmt, effects, explain, reference, version."
-m_missing_cmd:  .string "Missing command. Commands: check, run, test, fmt, effects, explain, reference, version."
-m_unknown_opt:  .string "Unknown option `$1`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, --seed N, --clock-ms N, --max-memory MiB, --mem-stats."
+m_unknown_cmd:  .string "Unknown command `$1`. Commands: check, run, test, fmt, effects, query, impact, edit, replay, explain, reference, version."
+m_missing_cmd:  .string "Missing command. Commands: check, run, test, fmt, effects, query, impact, edit, replay, explain, reference, version."
+m_unknown_opt:  .string "Unknown option `$1`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, --seed N, --clock-ms N, --max-memory MiB, --mem-stats, --trace FILE, --trace-limit N, --record FILE, --diff FILE, --dry-run."
 m_timeout_val:  .string "`--timeout` needs a whole number of seconds."
 m_filter_val:   .string "`--filter` needs a text to match."
 m_needs_path:   .string "`$1` needs at least one path."
@@ -578,8 +618,11 @@ vo_main:
     beqz a0, 4b
     la t0, opt_cmd
     sd s2, 0(t0)
+    li t1, CMD_REPLAY
+    beq s2, t1, 51f
     li t1, CMD_RUN
     bne s2, t1, 6f
+51:
     la t0, report_fd
     li t1, 2
     sd t1, 0(t0)
@@ -691,6 +734,9 @@ vo_main:
     li t2, 2
     beqz a0, 139f
 131:
+    la t0, opt_seed_given
+    li t1, 1
+    sd t1, 0(t0)
     sd t2, 8(sp)
     bge s2, s0, 138f
     slli t0, s2, 3
@@ -753,6 +799,17 @@ vo_main:
     call str_from_cstr
     call usage_error
 142:
+    li a1, 0                    # spec 006 options
+    bge s2, s0, 143f
+    slli t0, s2, 3
+    add t0, s1, t0
+    ld a1, 0(t0)
+143:
+    mv a0, s3
+    call opt_spec006
+    add s2, s2, a0
+    addi a0, a0, 1
+    bnez a0, 7b
     la a0, m_unknown_opt
     mv a1, s3
     call usage_error_arg
@@ -768,8 +825,17 @@ vo_main:
     sd t2, 0(t1)
     j 7b
 20:
+    call opt_spec006_check
     la t0, opt_cmd
     ld t0, 0(t0)
+    li t1, CMD_QUERY
+    beq t0, t1, 38f
+    li t1, CMD_IMPACT
+    beq t0, t1, 39f
+    li t1, CMD_EDIT
+    beq t0, t1, 40f
+    li t1, CMD_REPLAY
+    beq t0, t1, 41f
     li t1, CMD_VERSION
     beq t0, t1, 30f
     li t1, CMD_CHECK
@@ -816,6 +882,18 @@ vo_main:
     j 90f
 37:
     call cmd_effects
+    j 90f
+38:
+    call cmd_query
+    j 90f
+39:
+    call cmd_impact
+    j 90f
+40:
+    call cmd_edit
+    j 90f
+41:
+    call cmd_replay
 90:
     ld ra, 56(sp)
     ld s0, 48(sp)
@@ -823,6 +901,285 @@ vo_main:
     ld s2, 32(sp)
     ld s3, 24(sp)
     addi sp, sp, 64
+    ret
+
+# long opt_spec006(char *flag, char *next)
+# The options added by spec 006. Returns -1 when flag is none of them, else how many of the
+# following arguments it used (0 or 1). A missing or bad value is T0001.
+    .globl opt_spec006
+opt_spec006:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    mv s0, a0
+    mv s1, a1
+    la a1, f_dry_run
+    call cstr_eq
+    beqz a0, 1f
+    la t0, opt_dry_run
+    li t1, 1
+    sd t1, 0(t0)
+    li a0, 0
+    j 9f
+1:
+    mv a0, s0
+    la a1, f_diff
+    call cstr_eq
+    la t2, opt_diff
+    bnez a0, 2f
+    mv a0, s0
+    la a1, f_trace
+    call cstr_eq
+    la t2, opt_trace
+    bnez a0, 2f
+    mv a0, s0
+    la a1, f_record
+    call cstr_eq
+    la t2, opt_record
+    bnez a0, 2f
+    mv a0, s0
+    la a1, f_trace_limit
+    call cstr_eq
+    bnez a0, 4f
+    li a0, -1
+    j 9f
+2:
+    beqz s1, 3f                 # FILE: any non-empty word
+    lbu t0, 0(s1)
+    beqz t0, 3f
+    sd s1, 0(t2)
+    li a0, 1
+    j 9f
+3:
+    la a0, m_opt_file
+    mv a1, s0
+    call usage_error_arg
+4:
+    beqz s1, 5f                 # --trace-limit N, 1..100000000
+    mv a0, s1
+    call cstr_len
+    mv a1, a0
+    mv a0, s1
+    addi a2, sp, 0
+    call dec_to_int
+    bnez a0, 5f
+    ld t0, 0(sp)
+    li t1, 1
+    blt t0, t1, 5f
+    li t1, 100000000
+    bgt t0, t1, 5f
+    la t1, opt_trace_limit
+    sd t0, 0(t1)
+    li a0, 1
+    j 9f
+5:
+    la a0, m_trace_limit_val
+    call str_from_cstr
+    call usage_error
+9:
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    addi sp, sp, 48
+    ret
+
+# void only_with(char *flag, char *commands)
+# T0001: "`flag` only works with `commands`."
+    .globl only_with
+only_with:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    mv s0, a1
+    call str_from_cstr
+    sd a0, 8(sp)
+    mv a0, s0
+    call str_from_cstr
+    mv a2, a0
+    ld a1, 8(sp)
+    la a0, m_opt_only
+    li a3, 0
+    call msg
+    call usage_error
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    addi sp, sp, 32
+    ret
+
+# void opt_spec006_check(void)
+# Which commands the spec 006 options belong to (contracts/cli.md "Rules"). Paths that are
+# program source files are checked after loading (out_paths_check).
+    .globl opt_spec006_check
+opt_spec006_check:
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd s0, 0(sp)
+    la t0, opt_cmd
+    ld s0, 0(t0)
+    la t0, opt_diff
+    ld t0, 0(t0)
+    li t1, CMD_IMPACT
+    beq s0, t1, 1f
+    beqz t0, 2f
+    la a0, f_diff
+    la a1, w_impact
+    call only_with
+1:
+    la t0, opt_diff
+    ld t0, 0(t0)
+    bnez t0, 2f
+    la a0, m_impact_diff
+    call str_from_cstr
+    call usage_error
+2:
+    la t0, opt_dry_run
+    ld t0, 0(t0)
+    beqz t0, 3f
+    li t1, CMD_EDIT
+    beq s0, t1, 3f
+    la a0, f_dry_run
+    la a1, w_edit
+    call only_with
+3:
+    la t0, opt_record
+    ld t0, 0(t0)
+    beqz t0, 4f
+    li t1, CMD_RUN
+    beq s0, t1, 4f
+    la a0, f_record
+    la a1, w_run
+    call only_with
+4:
+    la t0, opt_trace
+    ld t0, 0(t0)
+    beqz t0, 5f
+    li t1, CMD_RUN
+    beq s0, t1, 5f
+    li t1, CMD_TEST
+    beq s0, t1, 5f
+    li t1, CMD_REPLAY
+    beq s0, t1, 5f
+    la a0, f_trace
+    la a1, w_run_test_replay
+    call only_with
+5:
+    la t0, opt_trace_limit
+    ld t0, 0(t0)
+    beqz t0, 6f
+    la t1, opt_trace
+    ld t1, 0(t1)
+    bnez t1, 6f
+    la a0, m_limit_no_trace
+    call str_from_cstr
+    call usage_error
+6:
+    li t1, CMD_REPLAY
+    bne s0, t1, 7f
+    la t0, opt_seed_given
+    ld t0, 0(t0)
+    la t1, prog_argv
+    ld t1, 0(t1)
+    or t0, t0, t1
+    beqz t0, 7f
+    la a0, m_replay_opt
+    call str_from_cstr
+    call usage_error
+7:
+    la t0, opt_trace            # the same file for both outputs
+    ld a0, 0(t0)
+    beqz a0, 8f
+    la t0, opt_record
+    ld a1, 0(t0)
+    beqz a1, 8f
+    call cstr_eq
+    beqz a0, 8f
+    la a0, m_same_out
+    la t0, opt_trace
+    ld a1, 0(t0)
+    call usage_error_arg
+8:
+    ld ra, 8(sp)
+    ld s0, 0(sp)
+    addi sp, sp, 16
+    ret
+
+# void out_paths_check(void)
+# T0001 when --trace or --record names one of the loaded program's source files (contracts/cli.md).
+    .globl out_paths_check
+out_paths_check:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    la t0, opt_trace
+    ld s0, 0(t0)
+    beqz s0, 1f
+    mv a0, s0
+    call out_path_is_source
+1:
+    la t0, opt_record
+    ld s0, 0(t0)
+    beqz s0, 2f
+    mv a0, s0
+    call out_path_is_source
+2:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    addi sp, sp, 32
+    ret
+
+# void out_path_is_source(char *path)
+# T0001 if path equals the path of a loaded source file.
+    .globl out_path_is_source
+out_path_is_source:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    sd s2, 0(sp)
+    mv s0, a0
+    call str_from_cstr
+    mv s2, a0
+    li s1, 0
+1:
+    la t0, file_count
+    ld t0, 0(t0)
+    bge s1, t0, 3f
+    mv a0, s1
+    call file_get
+    ld a0, FILE_PATH(a0)
+    mv a1, s2
+    call str_eq
+    addi s1, s1, 1
+    beqz a0, 1b
+    la a0, m_out_is_source
+    mv a1, s0
+    call usage_error_arg
+3:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    ld s2, 0(sp)
+    addi sp, sp, 32
+    ret
+
+# void outputs_start(long is_test)
+# Spec 006: checks that --trace and --record do not name a source file, then starts them.
+    .globl outputs_start
+outputs_start:
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd s0, 0(sp)
+    mv s0, a0
+    call out_paths_check
+    mv a0, s0
+    call trace_start
+    call rcd_start
+    ld ra, 8(sp)
+    ld s0, 0(sp)
+    addi sp, sp, 16
     ret
 
 # int not_implemented(void)
@@ -1174,6 +1531,8 @@ cmd_run:
     ld a0, N_A(t0)
     call find_main
     sd a0, 0(sp)
+    li a0, 0                    # spec 006: --trace / --record
+    call outputs_start
     call compile_program        # bytecode for every function (spec 004)
     li a0, 0
     call rt_effects_start
@@ -1236,6 +1595,8 @@ cmd_test:
     ld a0, 0(t0)
     li a1, 1
     call diag_emit_all
+    li a0, 1                    # spec 006: --trace
+    call outputs_start
     call compile_program        # bytecode for every function and test (spec 004)
     call interp_init
     call gc_start

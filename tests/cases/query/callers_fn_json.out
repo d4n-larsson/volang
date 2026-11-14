@@ -1,0 +1,6 @@
+{"v":1,"kind":"ref","target":"parse_line","role":"call","file":"shop/main.vo","start":{"line":15,"col":17},"end":{"line":15,"col":27},"text":"parse_line","in":"main"}
+{"v":1,"kind":"ref","target":"parse_line","role":"call","file":"shop/main.vo","start":{"line":25,"col":15},"end":{"line":25,"col":25},"text":"parse_line","in":"test \"parse\""}
+{"v":1,"kind":"ref","target":"parse_line","role":"call","file":"shop/main.vo","start":{"line":29,"col":13},"end":{"line":29,"col":23},"text":"parse_line","in":"prop \"parse never fails\""}
+{"v":1,"kind":"ref","target":"parse_line","role":"call","file":"shop/io.vo","start":{"line":17,"col":19},"end":{"line":17,"col":29},"text":"parse_line","in":"load"}
+{"v":1,"kind":"ref","target":"parse_line","role":"value","file":"shop/report.vo","start":{"line":6,"col":23},"end":{"line":6,"col":33},"text":"parse_line","in":"summary"}
+{"v":1,"kind":"summary","command":"query","errors":0,"warnings":0,"truncated":0,"files":4,"results":5}

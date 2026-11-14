@@ -1,0 +1,3 @@
+shop/main.vo:15:9 declaration in main: let first = parse_line(" 42 ");
+shop/main.vo:19:46 use in main: let p = swap(new Pair[int, str] { first: first, second: parse_line_text });
+2 references

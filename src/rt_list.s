@@ -2,6 +2,10 @@
     .include "defs.inc"
 
     .text
+# ponytail: a fixed page offset (spec 005's), so list_sort's and list_push's loops sit where they
+# were measured under qemu-user (spec 006 found list_work 1.8x slower when they moved; see src/vm.s).
+    .balign 4096
+    .skip 0xa30
 # void *list_new(long cap)
     .globl list_new
 list_new:

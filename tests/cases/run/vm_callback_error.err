@@ -3,4 +3,6 @@ vm_callback_error.vo:7:16: runtime error[R0003]: Index 3 is out of bounds for le
      |                ^^^^^
 trace:
   at anonymous function (vm_callback_error.vo:7:16)
+      v: int = 3, ys: list[int] = [0]
   at main (vm_callback_error.vo:6:5)
+      xs: list[int] = [3, 1, 2], ys: list[int] = [0]

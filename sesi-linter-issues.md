@@ -315,3 +315,41 @@ callee has a prototype comment in the calling file (see its Resolution).
 - **Suggested fix**: `scripts/sesi` should not read stdin for `lint` (give swipl `/dev/null`, or
   read the file by path only).
 - **Worked around in vo**: `make lint` gives each lint `/dev/null` as stdin (spec 005).
+
+## Found during spec 006 (query, edit, trace, replay)
+
+### 20. An apostrophe inside a `.string` is read as a character literal: OPEN
+
+- **Kind**: false positive.
+- **Symptom**: `sesi lint src/query.s` reported
+  `a character literal cannot hold ; or # in GNU as ... write its number instead` on two lines that
+  have no character literal, only a double-quoted string containing an apostrophe:
+  ```
+  m_query_args: .string "`query $1` takes the program's entry file and one target: `vo query $1 main.vo TARGET`."
+  ```
+  GNU as assembles it as intended (the apostrophe is inside the quotes); the lint seems to start
+  a character literal at `'s` and run into a later `;`-like character.
+- **Suggested fix**: skip the contents of `"..."` strings before looking for character literals.
+- **Worked around in vo**: the two messages were reworded ("the entry file of the program").
+
+### 21. A symbol defined with `.set` is reported as never defined: OPEN
+
+- **Kind**: false positive.
+- **Symptom**: `.globl vm_op_ret` followed by `.set vm_op_ret, op_ret` (an alias of a local label)
+  was reported as `vm_op_ret is declared global but never defined: add a vm_op_ret: label`. GNU as
+  defines the symbol with `.set` (and `.equ`), and the program linked and ran.
+- **Suggested fix**: count `.set NAME, ...` and `.equ NAME, ...` as definitions of NAME.
+- **Worked around in vo**: the tracing handlers load the addresses from the `vm_ops` table instead
+  of exporting aliases (spec 006).
+
+### 22. Making a VM handler label `.globl` turns it into a "function" with callee-saved reports
+
+- **Kind**: limitation (not a false positive of the rules, but of the function boundary).
+- **Symptom**: adding `.globl op_ret` to `src/vm.s` (a handler reached by `jr` from the dispatch
+  table, which advances `s1` on purpose) produced `clobbers_callee_saved(s1)` and
+  `stack_unbalanced` reports for `op_ret` and `op_try`; as local labels the same code lints clean
+  (it is checked as part of `vm_run`). The `sesi: allow` marker needs a prototype line, which a
+  handler does not have.
+- **Suggested fix**: a way to mark a global label as a jump target rather than a function (e.g.
+  `# sesi: handler`).
+- **Worked around in vo**: no handler is exported; see #21.

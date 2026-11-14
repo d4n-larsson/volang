@@ -1,0 +1,12 @@
+fn f() -> int {
+    return 1;
+}
+
+fn g() -> str {
+    return f();
+}
+
+fn main() uses console {
+    print(str(f()));
+    print(g());
+}

@@ -25,6 +25,13 @@ MIGRATION = {"E0501", "W0504"}
 # Intended behavior changes since v1, with the spec that made them: (stdout, exit status) expected now.
 CHANGED = {
     "run-oom_small/oom_small.vo": (b"58888890\n", 0),  # spec 003: memory is reclaimed, so it finishes
+    # spec 006 FR-025: a runtime error in a test lists its frames and their values
+    "test-runtime_error/runtime_error.vo": (b"ERROR divides by zero (0ms)\n"
+                                            b"  runtime_error.vo:2:12: runtime error[R0002]: Division by zero.\n"
+                                            b"    at divide (runtime_error.vo:2:12)\n"
+                                            b"        a: int = 1, b: int = 0\n"
+                                            b"    at test \"divides by zero\" (runtime_error.vo:6:15)\n"
+                                            b"PASS after the error (0ms)\n1 passed, 0 failed, 1 errored\n", 1),
 }
 
 

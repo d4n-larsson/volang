@@ -1,0 +1,9 @@
+$ vo run --timeout 1 --trace t.jsonl main.vo
+--- stderr
+main.vo:3:5: runtime error[R0009]: Time limit of 1 s exceeded.
+   3 |     while true {
+     |     ^^^^^^^^^^^^
+trace:
+  at spin (main.vo:3:5)
+  at main (main.vo:10:15)
+--- exit 124

@@ -1,0 +1,4 @@
+$ vo run --record main.vo main.vo
+--- stderr
+error[T0001]: `main.vo` is a source file of the program; choose another file for the trace or recording.
+--- exit 64

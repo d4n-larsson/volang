@@ -1,0 +1,4 @@
+vo edit
+vo edit rename main.vo add_item
+vo edit move main.vo a b
+keep catalog.vo main.vo vo.effects

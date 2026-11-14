@@ -1,0 +1,4 @@
+$ vo edit rename main.vo add_item add_item
+error[T0006]: `add_item` already has that name.
+--- stderr
+--- exit 65

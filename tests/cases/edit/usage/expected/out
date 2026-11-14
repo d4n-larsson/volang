@@ -1,0 +1,12 @@
+$ vo edit
+error[T0001]: `edit` needs an edit: `vo edit rename ENTRY TARGET NEW_NAME` or `vo edit add-field ENTRY RECORD FIELD: TYPE = DEFAULT`.
+--- stderr
+--- exit 64
+$ vo edit rename main.vo add_item
+error[T0001]: `edit rename` takes the entry file, the target and the new name: `vo edit rename main.vo old_name new_name`.
+--- stderr
+--- exit 64
+$ vo edit move main.vo a b
+error[T0001]: Unknown edit `move`. Edits: rename, add-field.
+--- stderr
+--- exit 64

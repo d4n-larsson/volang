@@ -1,0 +1,8 @@
+locals_lambda.vo:5:16: runtime error[R0002]: Division by zero.
+   5 |         return 100 / y;
+     |                ^^^^^^^
+trace:
+  at anonymous function (locals_lambda.vo:5:16)
+      x: int = 5, base: int = 5, y: int = 0
+  at main (locals_lambda.vo:7:15)
+      base: int = 5, f: fn(int) -> int = <fn(int) -> int>

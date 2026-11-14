@@ -1,0 +1,3 @@
+vo edit add-field main.vo Event n: int = 0
+vo edit add-field main.vo Item n int
+keep catalog.vo main.vo vo.effects

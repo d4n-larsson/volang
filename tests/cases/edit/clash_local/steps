@@ -1,0 +1,2 @@
+vo edit rename main.vo main.vo:38:9 items
+keep catalog.vo main.vo vo.effects

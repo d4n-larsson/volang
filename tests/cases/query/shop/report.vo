@@ -1,0 +1,31 @@
+import io.parse_line;
+import model.Item;
+import model.Event;
+
+fn summary(lines: list[str]) -> list[int] {
+    return map(lines, parse_line);
+}
+
+fn describe(e: Event) -> str {
+    match e {
+        case added(it) {
+            return "added " + it.name;
+        }
+        case removed(name) {
+            return "removed " + name;
+        }
+        case cleared {
+            return "cleared";
+        }
+    }
+}
+
+fn total(items: list[Item]) -> int
+    requires len(items) > 0
+    ensures ret >= 0 {
+    var sum = 0;
+    for it in items {
+        set sum = sum + it.price;
+    }
+    return sum;
+}

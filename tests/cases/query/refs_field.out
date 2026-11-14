@@ -1,0 +1,6 @@
+shop/model.vo:2:5 declaration: name: str;
+shop/main.vo:16:29 use in main: let items = [new Item { name: "pen", price: 3 }, new Item { name: name, price: 4 }];
+shop/main.vo:16:65 use in main: let items = [new Item { name: "pen", price: 3 }, new Item { name: name, price: 4 }];
+shop/io.vo:23:15 use in label: return it.name + "=" + str(it.price);
+shop/report.vo:12:34 use in describe: return "added " + it.name;
+5 references

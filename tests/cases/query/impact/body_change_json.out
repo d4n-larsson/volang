@@ -1,0 +1,8 @@
+{"v":1,"kind":"impact","name":"tax","role":"changed","file":"shop/pricing.vo","start":{"line":1,"col":1}}
+{"v":1,"kind":"impact","name":"subtotal","role":"affected","file":"shop/cart.vo","start":{"line":3,"col":1},"via":"tax"}
+{"v":1,"kind":"impact","name":"with_tax_values","role":"affected","file":"shop/cart.vo","start":{"line":15,"col":1},"via":"tax"}
+{"v":1,"kind":"impact","name":"checkout","role":"affected","file":"shop/cart.vo","start":{"line":11,"col":1},"via":"subtotal"}
+{"v":1,"kind":"impact","name":"main","role":"affected","file":"shop/main.vo","start":{"line":5,"col":1},"via":"with_tax_values"}
+{"v":1,"kind":"impact","name":"test \"checkout total\"","role":"test","file":"shop/main.vo","start":{"line":10,"col":1},"via":"checkout"}
+{"v":1,"kind":"impact","name":"prop \"subtotal grows\"","role":"test","file":"shop/main.vo","start":{"line":18,"col":1},"via":"checkout"}
+{"v":1,"kind":"summary","command":"impact","errors":0,"warnings":0,"truncated":0,"files":3,"changed":1,"added":0,"removed":0,"affected":4,"tests":2}

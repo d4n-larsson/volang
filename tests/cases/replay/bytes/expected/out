@@ -1,0 +1,8 @@
+$ vo run --seed 1 --record r.jsonl main.vo < input.txt
+6
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+6
+--- stderr
+--- exit 0

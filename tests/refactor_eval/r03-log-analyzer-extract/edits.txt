@@ -1,0 +1,14 @@
+# "parses a line into an entry record": the parsed-line record becomes the entry record
+rename Record Entry
+# "one shared function ... that parses a line into an entry record"
+rename parse_record parse_entry
+# the list of parsed lines becomes the list of entries
+rename records entries
+# the entry record has a "timestamp" field
+rename Stamp.seconds timestamp
+# the entry record has a "message" field
+add-field Record message: str = ""
+# the entry record has an "hour" field
+add-field Record hour: int = 0
+# the stamp of a log line is its timestamp
+rename timeline.vo:85:9 timestamp

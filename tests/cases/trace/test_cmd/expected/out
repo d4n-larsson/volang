@@ -1,0 +1,9 @@
+$ vo test --trace t.jsonl main.vo
+PASS doubles (0ms)
+FAIL fails (0ms)
+  main.vo:10:5: `expect_eq` failed: the values differ.
+    expected: 5
+    actual:   4
+1 passed, 1 failed
+--- stderr
+--- exit 1

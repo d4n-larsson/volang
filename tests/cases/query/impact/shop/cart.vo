@@ -1,0 +1,17 @@
+import pricing.tax;
+
+fn subtotal(prices: list[int]) -> int {
+    var sum = 0;
+    for p in prices {
+        set sum = sum + p + tax(p);
+    }
+    return sum;
+}
+
+fn checkout(prices: list[int]) -> int {
+    return subtotal(prices);
+}
+
+fn with_tax_values(prices: list[int]) -> list[int] {
+    return map(prices, tax);
+}

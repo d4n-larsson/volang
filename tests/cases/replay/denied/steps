@@ -1,0 +1,4 @@
+vo run --seed 1 --record r.jsonl main.vo
+rm secret.txt
+vo replay r.jsonl
+keep r.jsonl

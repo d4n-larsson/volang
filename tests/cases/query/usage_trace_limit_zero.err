@@ -1,0 +1,1 @@
+error[T0001]: `--trace-limit` needs a whole number from 1 to 100000000.

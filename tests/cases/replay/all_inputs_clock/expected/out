@@ -1,0 +1,28 @@
+$ env LIMIT=3 vo run --clock-ms 1000 --seed 1 --record r.jsonl main.vo -- data.txt < input.txt
+args data.txt
+LIMIT ok 3
+MISSING err not set
+file ok hello
+world
+
+nope err cannot read nope.txt
+line 4
+rest 11
+clock 0
+25
+--- stderr
+--- exit 0
+$ unset LIMIT vo replay r.jsonl
+args data.txt
+LIMIT ok 3
+MISSING err not set
+file ok hello
+world
+
+nope err cannot read nope.txt
+line 4
+rest 11
+clock 0
+25
+--- stderr
+--- exit 0

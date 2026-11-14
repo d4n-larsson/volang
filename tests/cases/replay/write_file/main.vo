@@ -1,0 +1,10 @@
+fn main() uses console, file.write("./") {
+    match write_file("out.txt", "data") {
+        case ok(_) {
+            print("wrote");
+        }
+        case err(e) {
+            print("error " + e);
+        }
+    }
+}

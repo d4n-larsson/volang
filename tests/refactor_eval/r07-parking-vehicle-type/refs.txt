@@ -1,0 +1,71 @@
+refs fee
+fees.vo:22:4 declaration
+billing.vo:7:13 import
+billing.vo:25:26 call
+billing.vo:42:45 call
+billing.vo:56:33 call
+
+refs Vehicle.level
+garage.vo:10:5 declaration
+garage.vo:31:24 use
+garage.vo:55:59 use
+garage.vo:65:31 use
+billing.vo:26:47 use
+billing.vo:55:20 use
+
+refs Level.revenue
+garage.vo:5:5 declaration
+garage.vo:42:84 use
+billing.vo:28:23 use
+billing.vo:28:39 use
+billing.vo:70:102 use
+billing.vo:72:39 use
+
+refs Vehicle
+garage.vo:8:8 declaration
+garage.vo:17:24 type
+garage.vo:21:77 type
+garage.vo:30:23 type
+garage.vo:55:35 use
+garage.vo:64:36 type
+billing.vo:2:15 import
+billing.vo:10:65 type
+
+refs billing.vo:24:17
+billing.vo:24:17 declaration
+billing.vo:25:30 use
+billing.vo:30:76 use
+
+callers spot_name
+garage.vo:57:48 call
+garage.vo:92:27 call
+billing.vo:30:39 call
+
+refs money
+fees.vo:13:4 declaration
+fees.vo:32:67 call
+fees.vo:32:101 call
+billing.vo:6:13 import
+billing.vo:30:102 call
+billing.vo:42:39 call
+billing.vo:70:90 call
+billing.vo:70:127 call
+billing.vo:75:59 call
+billing.vo:75:90 call
+
+refs hourly
+fees.vo:5:4 declaration
+fees.vo:28:58 call
+fees.vo:32:73 call
+
+refs daily_cap
+fees.vo:9:4 declaration
+fees.vo:28:19 call
+fees.vo:28:37 call
+fees.vo:32:107 call
+
+refs fees.vo:22:8
+fees.vo:22:8 declaration
+fees.vo:23:8 use
+fees.vo:26:16 use
+fees.vo:27:18 use

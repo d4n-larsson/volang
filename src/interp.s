@@ -275,14 +275,29 @@ rt_raise:
     sd s1, 0(t0)
     la t0, rt_err_node
     sd s2, 0(t0)
+    la t0, tr_on                # spec 006: the trace's error record
+    ld t0, 0(t0)
+    beqz t0, 101f
+    mv a0, s0
+    mv a1, s1
+    mv a2, s2
+    call tr_error
+101:
     la t0, recover_point
     ld a0, 0(t0)
     beqz a0, 1f
     la t0, rt_err_extra
     sd zero, 0(t0)
+    mv a0, s2                   # spec 006: the frames and their values, for the test's report
+    call capture_trace
+    la t0, recover_point
+    ld a0, 0(t0)
     li a1, 2                    # inside a test: let the runner record it
     call jmp_restore
 1:
+    la t0, rt_reporting         # spec 006: no timeouts while the report renders values
+    li t1, 1
+    sd t1, 0(t0)
     call sb_new
     mv s3, a0
     la t0, opt_json
@@ -357,6 +372,11 @@ rt_raise:
     mv a0, s3
     li a1, 10
     call sb_byte
+    mv a0, s3                   # spec 006: the frame's parameters and locals
+    mv a1, s4
+    mv a2, s5
+    li a3, 0
+    call frame_values
     ld s5, FR_CALL(s4)
     ld s4, FR_PARENT(s4)
     beqz s5, 8f
@@ -444,6 +464,11 @@ rt_raise:
     lwu a1, N_FILE(s5)
     lwu a2, N_START(s5)
     call json_pos
+    mv a0, s3                   # spec 006: "locals"
+    mv a1, s4
+    mv a2, s5
+    li a3, 1
+    call frame_values
     mv a0, s3
     li a1, '}'
     call sb_byte
@@ -671,9 +696,13 @@ rt_poll:
     la t0, rt_budget
     li t1, BUDGET_UNITS
     sd t1, 0(t0)
+    la t0, rt_reporting         # spec 006: a runtime error report is being built
+    ld t0, 0(t0)
+    bnez t0, 2f
     la t0, deadline_ms
     ld t0, 0(t0)
     bnez t0, 1f
+2:
     ret
 1:
     addi sp, sp, -16
@@ -1195,6 +1224,8 @@ run_test_body:
 1:
     call vm_not_compiled        # (every test is compiled before the tests run)
 2:
+    mv a0, s0                   # spec 006: the trace's test record
+    call tr_test
     ld t0, N_D(s0)
     ld a0, FX_CODE(t0)
     mv a1, s0

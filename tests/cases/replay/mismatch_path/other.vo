@@ -1,0 +1,10 @@
+fn main() uses console, file.read("./") {
+    match read_file("b.txt") {
+        case ok(t) {
+            print("a " + t);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

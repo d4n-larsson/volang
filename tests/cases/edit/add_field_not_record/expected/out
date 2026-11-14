@@ -1,0 +1,8 @@
+$ vo edit add-field main.vo Event n: int = 0
+error[T0006]: `Event` is not a record.
+--- stderr
+--- exit 65
+$ vo edit add-field main.vo Item n int
+error[T0006]: `n int` is not a field: write `FIELD: TYPE = DEFAULT`, for example `discount: int = 0`.
+--- stderr
+--- exit 65

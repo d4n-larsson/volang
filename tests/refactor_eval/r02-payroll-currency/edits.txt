@@ -1,0 +1,8 @@
+# "Employees can now be paid in different currencies": each employee has a currency, default USD
+add-field Employee currency: str = "USD"
+# "Change format_money(cents) to format_money(amount, currency)": the parameter becomes amount
+rename money.vo:9:17 amount
+# "All of an employee's amounts (pay amount, hours pay, tax, deductions, net) are in that employee's currency": pay carries the currency
+add-field Pay currency: str = "USD"
+# "The summary prints one totals line per currency"
+rename total_line currency_total_line

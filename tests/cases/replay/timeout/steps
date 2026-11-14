@@ -1,0 +1,3 @@
+vo run --timeout 1 --seed 1 --record r.jsonl main.vo
+vo replay --timeout 1 r.jsonl
+keep r.jsonl

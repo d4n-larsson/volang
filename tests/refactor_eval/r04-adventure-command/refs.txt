@@ -1,0 +1,71 @@
+refs Room
+world.vo:1:8 declaration
+world.vo:15:90 type
+world.vo:20:16 use
+world.vo:23:29 type
+world.vo:24:30 type
+commands.vo:1:14 import
+commands.vo:6:29 type
+commands.vo:17:44 type
+commands.vo:21:42 type
+commands.vo:28:44 type
+main.vo:1:14 import
+main.vo:24:58 type
+player.vo:1:14 import
+player.vo:21:41 type
+player.vo:42:44 type
+
+refs Player.room
+player.vo:7:5 declaration
+player.vo:17:25 use
+player.vo:22:29 use
+player.vo:26:16 use
+player.vo:28:39 use
+player.vo:29:35 use
+player.vo:43:29 use
+commands.vo:18:35 use
+commands.vo:25:35 use
+
+refs Room.items
+world.vo:4:5 declaration
+world.vo:20:51 use
+commands.vo:11:17 use
+commands.vo:12:31 use
+player.vo:44:26 use
+player.vo:47:14 use
+player.vo:47:34 use
+
+refs player.vo:42:51
+player.vo:42:51 declaration
+player.vo:44:33 use
+player.vo:48:21 use
+player.vo:50:28 use
+player.vo:51:29 use
+
+refs pick_up
+player.vo:42:4 declaration
+commands.vo:4:15 import
+commands.vo:29:18 call
+
+refs item_value
+world.vo:35:4 declaration
+player.vo:4:14 import
+player.vo:51:18 call
+
+callers score_text
+commands.vo:51:13 call
+commands.vo:55:24 call
+
+refs describe
+commands.vo:6:4 declaration
+commands.vo:18:12 call
+commands.vo:25:12 call
+
+refs make_room
+world.vo:15:4 declaration
+world.vo:25:25 call
+world.vo:26:28 call
+world.vo:27:28 call
+world.vo:28:27 call
+world.vo:29:27 call
+world.vo:30:26 call

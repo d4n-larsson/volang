@@ -3,3 +3,4 @@ int_overflow_mul.vo:3:15: runtime error[R0001]: Integer overflow.
      |               ^^^^^
 trace:
   at main (int_overflow_mul.vo:3:15)
+      a: int = 3037000500

@@ -1,0 +1,7 @@
+locals_for_and_arm.vo:11:28: runtime error[R0002]: Division by zero.
+  11 |                     return 10 / (r - r);
+     |                            ^^^^^^^^^^^^
+trace:
+  at size (locals_for_and_arm.vo:11:28)
+      s: Shape = Shape.circle(4), r: int = 4, i: int = 2
+  at main (locals_for_and_arm.vo:23:15)

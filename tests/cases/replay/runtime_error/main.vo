@@ -1,0 +1,27 @@
+fn show(r: result[str]) -> str {
+    match r {
+        case ok(v) {
+            return "ok " + v;
+        }
+        case err(e) {
+            return "err " + e;
+        }
+    }
+}
+
+fn main() -> result[void] uses console, input, file.read("./"), clock, env {
+    let a = args();
+    print("args " + join(a, ","));
+    print("LIMIT " + show(env("LIMIT")));
+    print("MISSING " + show(env("MISSING")));
+    print("file " + show(read_file(a[0])));
+    print("nope " + show(read_file("nope.txt")));
+    let first = try read_line();
+    print("line " + first);
+    print("rest " + str(len(read_all())));
+    let t = now_ms();
+    print("clock " + str(t - t));
+    let n = try parse_int(trim(first));
+    print(str(100 / n));
+    return ok();
+}

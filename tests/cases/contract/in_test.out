@@ -1,4 +1,5 @@
 PASS isqrt of 9 (0ms)
 ERROR isqrt of -4 (0ms)
   in_test.vo:16:15: runtime error[R0012]: Precondition `n >= 0` of `isqrt` does not hold.
+    at test "isqrt of -4" (in_test.vo:16:15)
 1 passed, 0 failed, 1 errored

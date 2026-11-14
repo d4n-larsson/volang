@@ -1226,6 +1226,10 @@ check_call:
     mv a0, s2
     ld a1, N_A(s0)
     call rename_use
+    mv a0, s2                   # spec 006 reference log
+    ld a1, N_A(s0)
+    li a2, RR_CALL
+    call q_note_sym
     ld t0, SY_DECL(s2)          # user function
     sd t0, N_C(s0)
     mv a1, t0
@@ -1312,12 +1316,23 @@ check_call:
     mv a0, s1
     call builtin_id
     beqz a0, 6f
-    mv a1, a0
+    sd a0, 0(sp)
+    mv a1, a0                   # spec 006 reference log: (0, builtin id)
+    li a0, 0
+    ld a2, N_A(s0)
+    li a3, RR_CALL
+    call q_note
+    ld a1, 0(sp)
     mv a0, s0
     mv a2, s3
     call check_builtin
     j 9f
 6:
+    li a0, 0                    # spec 006 reference log: (0, name) for vo impact's removed functions
+    mv a1, s1
+    ld a2, N_A(s0)
+    li a3, RR_CALL
+    call q_note
     mv a0, s1                   # undefined function name
     ld a1, N_A(s0)
     call report_undefined
@@ -1542,6 +1557,15 @@ check_ident:
     mv a0, s1
     mv a1, s0
     call rename_use
+    ld t0, SY_KIND(s1)          # spec 006 reference log: a function used as a value, or a use
+    li a2, RR_USE
+    li t1, SYM_FN
+    bne t0, t1, 1001f
+    li a2, RR_VALUE
+1001:
+    mv a0, s1
+    mv a1, s0
+    call q_note_sym
     ld t0, SY_KIND(s1)
     li t1, SYM_LOCAL
     bne t0, t1, 4f
@@ -1635,7 +1659,12 @@ check_field:
     call member_index
     bltz a0, 5f
     sd a0, N_C(s0)
-    mv a1, a0
+    ld a0, TY_DECL(s1)          # spec 006 reference log: (record, field)
+    ld a1, N_C(s0)
+    mv a2, s2
+    li a3, RR_USE
+    call q_note
+    ld a1, N_C(s0)
     ld t0, TY_DECL(s1)
     ld a0, N_B(t0)
     call member_at
@@ -2258,6 +2287,10 @@ lookup_decl:
     mv a0, s3
     mv a1, s0
     call rename_use
+    mv a0, s3                   # spec 006 reference log
+    mv a1, s0
+    li a2, RR_USE
+    call q_note_sym
     ld t0, SY_KIND(s3)
     bne t0, s1, 6f
     ld a0, SY_DECL(s3)
@@ -2304,6 +2337,11 @@ check_new_record:
     sd s1, N_C(s0)
     ld s2, N_B(s0)              # inits
     beqz s1, 70f
+    mv a0, s1                   # spec 006 reference log: (record, -2) marks a literal (vo edit add-field)
+    li a1, -2
+    mv a2, s0
+    li a3, RR_USE
+    call q_note
     mv a0, s0                   # the record type (an instance when generic)
     mv a1, s1
     li a2, TY_RECORD
@@ -2331,6 +2369,12 @@ check_new_record:
     call member_index
     bltz a0, 3f
     sd a0, N_C(s4)
+    mv a1, a0                   # spec 006 reference log: (record, field)
+    mv a0, s1
+    ld a2, N_A(s4)
+    li a3, RR_USE
+    call q_note
+    ld a0, N_C(s4)
     slli t0, a0, 3
     add t0, s5, t0
     li t1, 1
@@ -2488,6 +2532,13 @@ check_vcase:
     call member_index
     mv s3, a0
     sd s3, N_E(s0)
+    bltz s3, 1001f
+    mv a0, s1                   # spec 006 reference log: (variant, case)
+    mv a1, s3
+    mv a2, s2
+    li a3, RR_USE
+    call q_note
+1001:
     bgez s3, 1f
     ld t0, N_A(s1)
     ld a2, N_A(t0)
@@ -2711,6 +2762,13 @@ check_expr:
 99:
     beqz s0, 991f
     sd a0, N_TYPE(s0)
+    la t0, q_collect            # spec 006: vo query type-at
+    ld t0, 0(t0)
+    beqz t0, 991f
+    mv s1, a0
+    mv a0, s0
+    call q_note_expr
+    mv a0, s1
 991:
     ld ra, 24(sp)
     ld s0, 16(sp)

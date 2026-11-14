@@ -1,0 +1,15 @@
+record P {
+    x: int;
+    y: int;
+    z: int;
+}
+
+fn main() uses console {
+    let p = new P {
+        x: 1,
+        y: 2,
+        z: 0
+    };
+    let q = new P { x: 3, y: 4, z: 0 };
+    print(str(p.x + q.y));
+}

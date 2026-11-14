@@ -1,0 +1,7 @@
+fn greet(name: str) uses console {
+    print("hi " + name);
+}
+
+fn main() uses console {
+    greet("ana");
+}

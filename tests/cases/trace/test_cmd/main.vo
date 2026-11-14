@@ -1,0 +1,11 @@
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+test "doubles" {
+    expect_eq(double(2), 4);
+}
+
+test "fails" {
+    expect_eq(double(2), 5);
+}

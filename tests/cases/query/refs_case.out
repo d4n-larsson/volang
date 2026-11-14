@@ -1,0 +1,4 @@
+shop/model.vo:7:5 declaration: added(Item);
+shop/main.vo:21:26 use in main: print(describe(Event.added(items[1])) + " " + describe(Event.cleared) + " " + str(total(items)));
+shop/report.vo:11:14 use in describe: case added(it) {
+3 references

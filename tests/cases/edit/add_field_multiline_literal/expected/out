@@ -1,0 +1,11 @@
+$ vo edit add-field main.vo P z: int = 0
+main.vo:4:1 +     z: int;\n
+main.vo:9:13 + ,\n        z: 0
+main.vo:11:31 + , z: 0
+added field z to P: 3 changes in 1 file
+--- stderr
+--- exit 0
+$ vo run main.vo
+5
+--- stderr
+--- exit 0

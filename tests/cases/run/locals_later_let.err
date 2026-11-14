@@ -1,0 +1,7 @@
+locals_later_let.vo:3:13: runtime error[R0002]: Division by zero.
+   3 |     let b = 10 / n;
+     |             ^^^^^^
+trace:
+  at f (locals_later_let.vo:3:13)
+      n: int = 0, a: int = 1
+  at main (locals_later_let.vo:9:15)

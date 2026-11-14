@@ -1,0 +1,4 @@
+$ vo edit rename main.vo print say
+error[T0006]: `print` is a builtin: builtins cannot be renamed.
+--- stderr
+--- exit 65

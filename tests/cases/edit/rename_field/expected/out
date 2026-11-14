@@ -1,0 +1,18 @@
+$ vo edit rename main.vo Item.price price_cents
+catalog.vo:4:5 price -> price_cents
+catalog.vo:12:50 price -> price_cents
+catalog.vo:19:28 price -> price_cents
+renamed price to price_cents: 3 changes in 1 file
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+add_item a1
+add_item b2
+add_item total 7 2 9 x
+added x cleared 1
+--- stderr
+--- exit 0

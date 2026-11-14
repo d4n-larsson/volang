@@ -1,0 +1,3 @@
+{"v":1,"kind":"ref","target":"f","role":"call","file":"errs/main.vo","start":{"line":6,"col":12},"end":{"line":6,"col":13},"text":"f","in":"g"}
+{"v":1,"kind":"ref","target":"f","role":"call","file":"errs/main.vo","start":{"line":10,"col":15},"end":{"line":10,"col":16},"text":"f","in":"main"}
+{"v":1,"kind":"summary","command":"query","errors":1,"warnings":0,"truncated":0,"files":1,"results":2}

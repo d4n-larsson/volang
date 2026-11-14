@@ -1,0 +1,10 @@
+# "The player can carry at most a total weight of 10"
+add-field Player capacity: int = 10
+# "the total weight of the inventory": the player tracks the weight carried
+add-field Player carried: int = 0
+# "New command drop ITEM": taking gets a name symmetric to the new drop_item
+rename pick_up take_item
+# "Every item has a weight": item_value (score points) is renamed to tell it apart from the weight
+rename item_value item_points
+# the item argument of the take path is an item name (drop takes one too)
+rename player.vo:42:51 item_name

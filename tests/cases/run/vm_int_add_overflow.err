@@ -3,3 +3,4 @@ vm_int_add_overflow.vo:5:15: runtime error[R0001]: Integer overflow.
      |               ^^^^^^^
 trace:
   at main (vm_int_add_overflow.vo:5:15)
+      big: int = 9223372036854775807

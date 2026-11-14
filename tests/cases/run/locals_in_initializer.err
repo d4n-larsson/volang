@@ -1,0 +1,8 @@
+locals_in_initializer.vo:2:12: runtime error[R0002]: Division by zero.
+   2 |     return 10 / n;
+     |            ^^^^^^
+trace:
+  at boom (locals_in_initializer.vo:2:12)
+      n: int = 0
+  at main (locals_in_initializer.vo:7:17)
+      before: int = 1

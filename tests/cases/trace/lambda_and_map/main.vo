@@ -1,0 +1,11 @@
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    let ys = map([1, 2], double);
+    let zs = map(ys, fn(y: int) -> str {
+        return str(y);
+    });
+    print(join(zs, ","));
+}

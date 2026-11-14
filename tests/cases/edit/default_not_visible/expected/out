@@ -1,0 +1,7 @@
+$ vo edit add-field main.vo Item discount: int = count
+catalog.vo:12:62: error[E0201]: `count` is not defined.
+  12 |     push(items, new Item { sku: sku, name: name, price: price });
+     |                                                              ^
+error[T0006]: Adding field `discount` to `Item` would not check (1 new error): nothing was written.
+--- stderr
+--- exit 65

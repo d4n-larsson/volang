@@ -1,0 +1,15 @@
+fn total(xs: list[int]) -> int {
+    var s = 0;
+    for x in xs {
+        set s = s + x;
+    }
+    return s;
+}
+
+fn main() uses console {
+    let xs = new list[int];
+    for i in 0..1000 {
+        push(xs, i);
+    }
+    print(str(total(xs)));
+}

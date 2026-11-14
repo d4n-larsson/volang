@@ -1,0 +1,12 @@
+fn tax(cents: int) -> int {
+    return cents * 25 / 100;
+}
+
+fn discount(cents: int, percent: int) -> int {
+    # a comment inside discount
+    return cents * percent / 100;
+}
+
+fn unused() -> int {
+    return 0;
+}

@@ -1,0 +1,24 @@
+import model.Item;
+
+fn parse_line(line: str) -> int {
+    match parse_int(trim(line)) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn load(lines: list[str]) -> list[int] {
+    let out = new list[int];
+    for l in lines {
+        push(out, parse_line(l));
+    }
+    return out;
+}
+
+fn label(it: Item) -> str {
+    return it.name + "=" + str(it.price);
+}

@@ -1,0 +1,34 @@
+$ env LIMIT=1 vo run --clock-ms 5 --seed 1 --record r.jsonl main.vo -- data.txt < input.txt
+args data.txt
+LIMIT ok 1
+MISSING err not set
+file ok x
+nope err cannot read nope.txt
+line 0
+rest 0
+clock 0
+--- stderr
+main.vo:25:15: runtime error[R0002]: Division by zero.
+  25 |     print(str(100 / n));
+     |               ^^^^^^^
+trace:
+  at main (main.vo:25:15)
+      a: list[str] = ["data.txt"], first: str = "0", t: int = 5, n: int = 0
+--- exit 70
+$ vo replay r.jsonl
+args data.txt
+LIMIT ok 1
+MISSING err not set
+file ok x
+nope err cannot read nope.txt
+line 0
+rest 0
+clock 0
+--- stderr
+main.vo:25:15: runtime error[R0002]: Division by zero.
+  25 |     print(str(100 / n));
+     |               ^^^^^^^
+trace:
+  at main (main.vo:25:15)
+      a: list[str] = ["data.txt"], first: str = "0", t: int = 5, n: int = 0
+--- exit 70

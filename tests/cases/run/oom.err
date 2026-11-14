@@ -3,3 +3,4 @@ oom.vo:4:17: runtime error[R0006]: The program holds 768.2 MiB of live data, ove
      |                 ^^^^^
 trace:
   at main (oom.vo:4:17)
+      s: str = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...

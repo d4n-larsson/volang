@@ -11,6 +11,15 @@ s_open:     .string " { "
 s_close:    .string " }"
 s_ok:       .string "ok("
 s_err:      .string "err("
+s_dots:     .string "..."
+
+    .section .data
+    .align 3
+# Spec 006 (research R14): when not 0, rendering stops once the builder holds more than this many
+# bytes; render_capped sets it. 0 everywhere else (expect_eq, counterexamples: full values).
+# ponytail: one fixed cap of 200 bytes per value; a per-use limit if anyone needs longer values.
+    .globl render_cap
+render_cap: .dword 0
 
     .text
 # void render_str_lit(void *sb, void *str)
@@ -30,6 +39,12 @@ render_str_lit:
     call sb_byte
 1:
     beqz s2, 9f
+    la t0, render_cap
+    ld t0, 0(t0)
+    beqz t0, 3f
+    ld t1, SB_LEN(s0)
+    bgt t1, t0, 9f
+3:
     lbu s3, 0(s1)
     addi s1, s1, 1
     addi s2, s2, -1
@@ -89,6 +104,12 @@ render_value:
     bgtz t5, 1000f
     call rt_poll
 1000:
+    la t0, render_cap
+    ld t0, 0(t0)
+    beqz t0, 1001f
+    ld t1, SB_LEN(s0)
+    bgt t1, t0, 99f
+1001:
     mv a0, s2                   # type parameters: the running frame's type arguments
     call rt_concrete
     mv s2, a0
@@ -114,6 +135,8 @@ render_value:
     beq t0, t1, 17f
     li t1, TY_RESULT
     beq t0, t1, 18f
+    li t1, TY_FUNC
+    beq t0, t1, 19f
     j 99f
 10:
     call int_to_dec
@@ -138,6 +161,12 @@ render_value:
 141:
     ld t0, L_LEN(s1)
     bge s3, t0, 142f
+    la t0, render_cap
+    ld t0, 0(t0)
+    beqz t0, 144f
+    ld t1, SB_LEN(s0)
+    bgt t1, t0, 142f
+144:
     beqz s3, 143f
     mv a0, s0
     la a1, s_comma
@@ -165,6 +194,12 @@ render_value:
 151:
     ld t0, M_USED(s1)
     bge s3, t0, 152f
+    la t0, render_cap
+    ld t0, 0(t0)
+    beqz t0, 154f
+    ld t1, SB_LEN(s0)
+    bgt t1, t0, 152f
+154:
     ld t0, M_ENTRIES(s1)
     li t1, ME_SIZE
     mul t1, t1, s3
@@ -306,6 +341,16 @@ render_value:
     mv a0, s0
     li a1, ')'
     call sb_byte
+    j 99f
+19:                             # a function value: its type, as <fn(int) -> int>
+    li a1, '<'
+    call sb_byte
+    mv a0, s0
+    mv a1, s2
+    call ty_name_into
+    mv a0, s0
+    li a1, '>'
+    call sb_byte
 99:
     ld ra, 56(sp)
     ld s0, 48(sp)
@@ -314,4 +359,51 @@ render_value:
     ld s3, 24(sp)
     ld s4, 16(sp)
     addi sp, sp, 64
+    ret
+
+# void render_capped(void *sb, long value, void *type)
+# render_value, shortened to at most 200 bytes (cut at a UTF-8 boundary) with "..." appended when
+# anything was left out (spec 006: traces and the values in runtime errors).
+    .globl render_capped
+render_capped:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    mv s0, a0
+    ld s1, SB_LEN(a0)           # where this value starts
+    la t0, render_cap
+    ld s2, 0(t0)                # the cap of an enclosing render (restored below)
+    addi t1, s1, 200
+    sd t1, 0(t0)
+    call render_value
+    la t0, render_cap
+    sd s2, 0(t0)
+    ld t0, SB_LEN(s0)
+    sub t0, t0, s1
+    li t1, 200
+    ble t0, t1, 9f
+    addi t2, s1, 200            # cut back to a character boundary at most 200 bytes in
+    ld t3, SB_PTR(s0)
+1:
+    ble t2, s1, 2f
+    add t4, t3, t2
+    lbu t4, 0(t4)
+    andi t4, t4, 0xc0
+    li t5, 0x80
+    bne t4, t5, 2f
+    addi t2, t2, -1
+    j 1b
+2:
+    sd t2, SB_LEN(s0)
+    mv a0, s0
+    la a1, s_dots
+    call sb_cstr
+9:
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    addi sp, sp, 48
     ret

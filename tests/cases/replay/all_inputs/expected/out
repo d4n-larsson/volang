@@ -1,0 +1,26 @@
+$ env LIMIT=7 vo run --record r.jsonl main.vo -- data.txt < input.txt
+args data.txt
+LIMIT ok 7
+MISSING err not set
+file ok hello
+
+nope err cannot read nope.txt
+line 5
+rest 0
+clock 0
+20
+--- stderr
+--- exit 0
+$ unset LIMIT vo replay r.jsonl
+args data.txt
+LIMIT ok 7
+MISSING err not set
+file ok hello
+
+nope err cannot read nope.txt
+line 5
+rest 0
+clock 0
+20
+--- stderr
+--- exit 0

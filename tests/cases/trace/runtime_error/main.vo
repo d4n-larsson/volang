@@ -1,0 +1,7 @@
+fn last(xs: list[int]) -> int {
+    return xs[len(xs)];
+}
+
+fn main() uses console {
+    print(str(last([1, 2, 3])));
+}

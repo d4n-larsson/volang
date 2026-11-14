@@ -1,0 +1,22 @@
+$ vo edit rename main.vo Item Product
+main.vo:1:16 Item -> Product
+main.vo:35:26 Item -> Product
+main.vo:46:26 Item -> Product
+catalog.vo:1:8 Item -> Product
+catalog.vo:11:25 Item -> Product
+catalog.vo:12:21 Item -> Product
+catalog.vo:16:22 Item -> Product
+renamed Item to Product: 7 changes in 2 files
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+add_item a1
+add_item b2
+add_item total 7 2 9 x
+added x cleared 1
+--- stderr
+--- exit 0

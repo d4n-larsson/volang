@@ -1,5 +1,7 @@
 ERROR isqrt squares back (1 case, 0ms)
   contract_violation.vo:12:13: runtime error[R0012]: Precondition `n >= 0` of `isqrt` does not hold.
+    at prop "isqrt squares back" (contract_violation.vo:12:13)
+        n: int = -1
     counterexample: n = -1
     shrunk in 0 steps
 0 passed, 0 failed, 1 errored

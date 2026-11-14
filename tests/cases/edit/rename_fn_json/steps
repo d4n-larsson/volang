@@ -1,0 +1,2 @@
+vo edit rename --json main.vo add_item add_product
+keep catalog.vo main.vo vo.effects

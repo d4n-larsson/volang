@@ -1,0 +1,8 @@
+fn pick[T](xs: list[T], i: int) -> T {
+    return xs[i];
+}
+
+fn main() uses console {
+    let names = ["a", "b"];
+    print(pick(names, 2));
+}

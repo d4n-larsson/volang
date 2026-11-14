@@ -1,0 +1,7 @@
+# vo effects record: update with `vo effects --update`
+catalog.vo:add_product uses console
+catalog.vo:total pure
+main.vo:describe pure
+main.vo:first_of pure
+main.vo:main uses console
+main.vo:test "totals" pure

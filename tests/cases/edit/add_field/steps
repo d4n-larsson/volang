@@ -1,0 +1,4 @@
+vo edit add-field main.vo Item discount: int = 0
+vo check main.vo
+vo run main.vo
+keep catalog.vo main.vo vo.effects

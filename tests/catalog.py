@@ -3,7 +3,8 @@
 
 - every section has a filled Example and Fixed
 - each Example produces its code (check, run, or run for R codes); each Fixed checks and runs clean
-- every E, W and R code (and T0001, T0002) appears in an expected output under tests/cases/
+- every E, W, R and T code (except T0003) appears in an expected output under tests/cases/
+  (including the expected/ files of step cases)
 - headings and Fixable lines match contracts/error-codes.md
 """
 import json
@@ -20,7 +21,7 @@ CONTRACTS = [os.path.join(ROOT, "specs", "001-vo-lang-core", "contracts", "error
 # Codes whose trigger cannot be shown in a short program: content is checked, execution is not.
 # E0115 needs nesting deep enough to exhaust a 64 MiB stack (golden case: check/nesting.vo).
 # E0104 needs an invalid UTF-8 byte, which a UTF-8 doc block cannot hold (golden case: lex/invalid_utf8.vo).
-NO_SHORT_EXAMPLE = {"E0115", "E0104"}
+NO_SHORT_EXAMPLE = {"E0115", "E0104", "R0014"}  # R0014 needs vo replay (a step case)
 
 
 def sections():
@@ -82,10 +83,11 @@ def contract():
         else:
             fixable = "yes"
         out[code] = (name, fixable)
-    spec005 = os.path.join(ROOT, "specs", "005-holes-props-contracts", "contracts", "codes.md")
-    for code, name, fix in re.findall(r"^\| ([EWRT]\d{4}) \| `(\w+)` \| [^|]* \| ([^|]*) \|",
-                                      open(spec005, encoding="utf-8").read(), re.M):
-        out[code] = (name, "no" if code[0] in "RT" else fix.strip())
+    for spec in ("005-holes-props-contracts", "006-query-edit-trace"):
+        codes = os.path.join(ROOT, "specs", spec, "contracts", "codes.md")
+        for code, name, fix in re.findall(r"^\| ([EWRT]\d{4}) \| `(\w+)` \| [^|]* \| ([^|]*) \|",
+                                          open(codes, encoding="utf-8").read(), re.M):
+            out[code] = (name, "no" if code[0] in "RT" else fix.strip())
     return out
 
 
@@ -93,7 +95,8 @@ def golden_codes():
     found = set()
     for d, _, names in os.walk(os.path.join(ROOT, "tests", "cases")):
         for n in names:
-            if n.endswith((".out", ".err")):
+            # step cases (tests/steps.py) keep their expected output in expected/out and files
+            if n.endswith((".out", ".err")) or (os.path.basename(d) == "expected" or "/expected/" in d):
                 found |= set(re.findall(r'"code":"([EWRT]\d{4})"', open(os.path.join(d, n), encoding="utf-8", errors="replace").read()))
                 found |= set(re.findall(r"\[([EWRT]\d{4})\]", open(os.path.join(d, n), encoding="utf-8", errors="replace").read()))
     return found

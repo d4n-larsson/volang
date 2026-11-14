@@ -67,6 +67,8 @@ vo_exit:
     addi sp, sp, -16
     sd ra, 8(sp)
     sd a0, 0(sp)
+    call exit_hooks             # spec 006: completes the trace and the recording; may change the status
+    sd a0, 0(sp)
     call out_flush
     ld a0, 0(sp)
     li a7, SYS_exit_group
@@ -607,4 +609,137 @@ oom_default:
     call vo_exit
     ld ra, 8(sp)
     addi sp, sp, 16
+    ret
+
+# ---- buffered output files (spec 006: traces and recordings) ----
+
+# void *fbuf_open(char *path)
+# Creates or truncates path for writing; a buffered writer (FB_*), or 0 when it cannot be created.
+# Its memory is permanent (it lives until vo_exit).
+    .globl fbuf_open
+fbuf_open:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    li a1, O_WRCREAT
+    call sys_open
+    mv s0, a0
+    li a0, 0
+    bltz s0, 9f
+    li a0, FB_SIZE
+    call perm_alloc
+    mv s1, a0
+    li a0, FB_CAP
+    call perm_alloc
+    sd a0, FB_BUF(s1)
+    sd s0, FB_FD(s1)
+    sd zero, FB_LEN(s1)
+    sd zero, FB_ERR(s1)
+    mv a0, s1
+9:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    addi sp, sp, 32
+    ret
+
+# void fbuf_write(void *fb, char *p, long n)
+    .globl fbuf_write
+fbuf_write:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+    ld t0, FB_LEN(s0)
+    add t0, t0, s2
+    li t1, FB_CAP
+    ble t0, t1, 1f
+    mv a0, s0
+    call fbuf_flush
+    li t1, FB_CAP
+    blt s2, t1, 1f
+    ld a0, FB_FD(s0)            # larger than the buffer: straight out
+    mv a1, s1
+    mv a2, s2
+    call write_checked
+    beqz a0, 9f
+    li t0, 1
+    sd t0, FB_ERR(s0)
+    j 9f
+1:
+    ld a0, FB_BUF(s0)
+    ld t0, FB_LEN(s0)
+    add a0, a0, t0
+    mv a1, s1
+    mv a2, s2
+    call mem_copy
+    ld t0, FB_LEN(s0)
+    add t0, t0, s2
+    sd t0, FB_LEN(s0)
+9:
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    addi sp, sp, 48
+    ret
+
+# void fbuf_flush(void *fb)
+# Writes the buffer out; a failed write sets FB_ERR (reported by the caller at exit).
+    .globl fbuf_flush
+fbuf_flush:
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd s0, 0(sp)
+    mv s0, a0
+    ld a0, FB_FD(s0)
+    ld a1, FB_BUF(s0)
+    ld a2, FB_LEN(s0)
+    sd zero, FB_LEN(s0)
+    call write_checked
+    beqz a0, 1f
+    li t0, 1
+    sd t0, FB_ERR(s0)
+1:
+    ld ra, 8(sp)
+    ld s0, 0(sp)
+    addi sp, sp, 16
+    ret
+
+# long write_checked(int fd, char *p, long n)
+# Like write_all, but returns 1 when a write failed (0 when everything was written).
+    .globl write_checked
+write_checked:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    sd s2, 0(sp)
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+1:
+    li a0, 0
+    blez s2, 2f
+    mv a0, s0
+    mv a1, s1
+    mv a2, s2
+    call sys_write
+    blez a0, 3f
+    add s1, s1, a0
+    sub s2, s2, a0
+    j 1b
+3:
+    li a0, 1
+2:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    ld s2, 0(sp)
+    addi sp, sp, 32
     ret

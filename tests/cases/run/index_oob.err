@@ -3,3 +3,4 @@ index_oob.vo:3:15: runtime error[R0003]: Index 3 is out of bounds for length 3.
      |               ^^^^^
 trace:
   at main (index_oob.vo:3:15)
+      xs: list[int] = [1, 2, 3]

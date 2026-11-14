@@ -4,5 +4,8 @@ test_reached.vo:2:5: warning[W0601]: Hole: `"parse the header"` needs a value of
     in scope: line: str
 ERROR reaches the hole (0ms)
   test_reached.vo:2:5: runtime error[R0011]: Hole reached: parse the header.
+    at parse (test_reached.vo:2:5)
+        line: str = "a"
+    at test "reaches the hole" (test_reached.vo:6:15)
 PASS still runs (0ms)
 1 passed, 0 failed, 1 errored

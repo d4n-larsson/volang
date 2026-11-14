@@ -1,0 +1,2 @@
+vo run --trace main.vo main.vo
+keep main.vo

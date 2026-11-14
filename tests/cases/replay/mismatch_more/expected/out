@@ -1,0 +1,14 @@
+$ vo run --seed 1 --record r.jsonl main.vo < input.txt
+2
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+--- stderr
+note: the program differs from the recorded one (recorded main.vo)
+main.vo:9:29: runtime error[R0014]: The program reads a line of stdin, but the recording has no more inputs: replay the program that was recorded, or record this one.
+   9 |                 let again = read_line();
+     |                             ^^^^^^^^^^^
+trace:
+  at main (main.vo:9:29)
+      n: int = 2, e: str = "eof"
+--- exit 70

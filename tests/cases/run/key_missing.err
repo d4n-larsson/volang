@@ -3,3 +3,4 @@ key_missing.vo:4:15: runtime error[R0004]: Key "b" is not in the map.
      |               ^^^^^^
 trace:
   at main (key_missing.vo:4:15)
+      m: map[str, int] = {"a": 1}

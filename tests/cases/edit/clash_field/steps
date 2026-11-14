@@ -1,0 +1,2 @@
+vo edit rename main.vo Item.price name
+keep catalog.vo main.vo vo.effects

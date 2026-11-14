@@ -1,0 +1,2 @@
+vo edit add-field main.vo Item price: int = 0
+keep catalog.vo main.vo vo.effects

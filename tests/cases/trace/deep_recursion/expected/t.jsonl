@@ -1,0 +1,5 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"down","file":"main.vo","start":{"line":9,"col":15},"args":[{"name":"n","value":"10000"}]}
+{"v":1,"kind":"call","depth":3,"function":"down","file":"main.vo","start":{"line":5,"col":12},"args":[{"name":"n","value":"9999"}]}
+{"v":1,"kind":"call","depth":4,"function":"down","file":"main.vo","start":{"line":5,"col":12},"args":[{"name":"n","value":"9998"}]}
+{"v":1,"kind":"end","records":4,"omitted":20000,"status":0}

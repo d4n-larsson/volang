@@ -1,0 +1,7 @@
+$ vo edit rename main.vo add_item addItem
+catalog.vo:11:4: error[E0207]: `addItem` should be snake_case: `add_item`.
+  11 | fn add_item(items: list[Item], sku: str, name: str, price: int) uses console {
+     |    ^^^^^^^^
+error[T0006]: Renaming `add_item` to `addItem` would not check (1 new error): nothing was written.
+--- stderr
+--- exit 65

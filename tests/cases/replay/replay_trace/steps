@@ -1,0 +1,3 @@
+vo run --seed 1 --record r.jsonl main.vo
+vo replay --trace t.jsonl r.jsonl
+keep r.jsonl t.jsonl

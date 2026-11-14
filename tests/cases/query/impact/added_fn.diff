@@ -1,0 +1,10 @@
+--- old/pricing.vo
++++ pricing.vo
+@@ -6,3 +6,7 @@
+     # a comment inside discount
+     return cents * percent / 100;
+ }
++
++fn unused() -> int {
++    return 0;
++}

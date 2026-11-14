@@ -1,0 +1,11 @@
+fn main() uses console, input {
+    match read_line() {
+        case ok(l) {
+            print("got " + l);
+            exit(len(l));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

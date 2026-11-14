@@ -1,0 +1,14 @@
+$ vo edit rename main.vo Item.price name
+catalog.vo:12:17: error[E0305]: Missing fields in `Item`: `name`.
+  12 |     push(items, new Item { sku: sku, name: name, price: price });
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+catalog.vo:12:57: error[E0301]: Expected `str`, found `int`.
+  12 |     push(items, new Item { sku: sku, name: name, price: price });
+     |                                                         ^^^^^
+  expected `str`, found `int`
+catalog.vo:19:19: error[E0308]: Operator `+` cannot be applied to `int` and `str`.
+  19 |         set sum = sum + it.price;
+     |                   ^^^^^^^^^^^^^^
+error[T0006]: Renaming `price` to `name` would not check (3 new errors): nothing was written.
+--- stderr
+--- exit 65

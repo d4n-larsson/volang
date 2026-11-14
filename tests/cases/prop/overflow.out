@@ -1,5 +1,7 @@
 ERROR addition commutes (8 cases, 0ms)
   overflow.vo:2:15: runtime error[R0001]: Integer overflow.
+    at prop "addition commutes" (overflow.vo:2:15)
+        a: int = -9223372036854775806, b: int = -3
     counterexample: a = -9223372036854775806
     counterexample: b = -3
     shrunk in 2 steps

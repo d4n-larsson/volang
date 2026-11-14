@@ -1,0 +1,8 @@
+fn twice(x: int) -> int {
+    return x + x;
+}
+
+prop "twice is even" (x: int) {
+    assume(x > -1000 and x < 1000);
+    expect(twice(x) % 2 == 0);
+}

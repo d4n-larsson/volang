@@ -1,0 +1,1 @@
+error[T0001]: `replay` takes `--seed`, `--clock-ms` and program arguments from the recording; leave them out.

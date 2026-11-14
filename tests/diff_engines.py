@@ -10,6 +10,7 @@ compares stdout, stderr and exit status. Disagreements go to build/diff-failures
 import argparse
 import concurrent.futures as cf
 import os
+import re
 import subprocess
 import sys
 
@@ -25,7 +26,10 @@ FAILS = os.path.join(ROOT, "build", "diff-failures")
 def run(binary, path, extra_env):
     env = dict(os.environ, VO_BIN=binary, **extra_env)
     r = subprocess.run([VO, "run", "--timeout", "10", path], capture_output=True, env=env, timeout=120)
-    return r.stdout, r.stderr.replace(os.path.dirname(path).encode() + b"/", b""), r.returncode
+    err = r.stderr.replace(os.path.dirname(path).encode() + b"/", b"")
+    # spec 006: runtime errors list each frame's values; the oracle (spec 003) does not
+    err = re.sub(rb"(?m)^      \S.*\n", b"", err)
+    return r.stdout, err, r.returncode
 
 
 def one(seed, new_bin, new_env):

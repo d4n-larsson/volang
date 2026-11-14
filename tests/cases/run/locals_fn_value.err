@@ -1,0 +1,9 @@
+locals_fn_value.vo:6:12: runtime error[R0002]: Division by zero.
+   6 |     return 1 / n;
+     |            ^^^^^
+trace:
+  at inv (locals_fn_value.vo:6:12)
+      n: int = 0
+  at apply (locals_fn_value.vo:2:12)
+      f: fn(int) -> int = <fn(int) -> int>, x: int = 0
+  at main (locals_fn_value.vo:10:15)

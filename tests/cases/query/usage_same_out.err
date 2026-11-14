@@ -1,0 +1,1 @@
+error[T0001]: `--trace` and `--record` name the same file `a.jsonl`.

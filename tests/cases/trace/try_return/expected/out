@@ -1,0 +1,4 @@
+$ vo run --trace t.jsonl main.vo
+invalid int: x
+--- stderr
+--- exit 0

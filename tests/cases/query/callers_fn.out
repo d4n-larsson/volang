@@ -1,0 +1,6 @@
+shop/main.vo:15:17 call in main: let first = parse_line(" 42 ");
+shop/main.vo:25:15 call in test "parse": expect_eq(parse_line("7"), 7);
+shop/main.vo:29:13 call in prop "parse never fails": let n = parse_line(s);
+shop/io.vo:17:19 call in load: push(out, parse_line(l));
+shop/report.vo:6:23 value in summary: return map(lines, parse_line);
+5 references

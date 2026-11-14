@@ -1,0 +1,5 @@
+vo replay r.jsonl
+vo replay main.vo
+vo replay nothing.jsonl
+write novalue.jsonl {"v":1,"kind":"recording","program":"main.vo","fingerprint":"0","seed":1,"clock_ms":null,"args":[]}\n{"v":1,"kind":"read_line","result":"ok","valuea":"x"}\n{"v":1,"kind":"end","status":0}\n
+vo replay novalue.jsonl

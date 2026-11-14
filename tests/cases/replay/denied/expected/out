@@ -1,0 +1,16 @@
+$ vo run --seed 1 --record r.jsonl main.vo
+--- stderr
+main.vo:2:11: runtime error[R0010]: file.read("secret.txt") is not allowed: `main` declares console, file.read("data/").
+   2 |     match read_file("secret.txt") {
+     |           ^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at main (main.vo:2:11)
+--- exit 70
+$ vo replay r.jsonl
+--- stderr
+main.vo:2:11: runtime error[R0010]: file.read("secret.txt") is not allowed: `main` declares console, file.read("data/").
+   2 |     match read_file("secret.txt") {
+     |           ^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at main (main.vo:2:11)
+--- exit 70

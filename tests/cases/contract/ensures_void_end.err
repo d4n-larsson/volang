@@ -3,4 +3,6 @@ ensures_void_end.vo:4:1: runtime error[R0013]: Postcondition `len(xs) > 1` of `g
      | ^
 trace:
   at grow (ensures_void_end.vo:4:1)
+      xs: list[int] = [0]
   at main (ensures_void_end.vo:10:5)
+      xs: list[int] = [5, 0]

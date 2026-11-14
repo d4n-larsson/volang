@@ -1,0 +1,5 @@
+vo run --seed 1 --record r.jsonl main.vo
+rm a.txt
+cp fixed.vo main.vo
+vo replay r.jsonl
+keep r.jsonl

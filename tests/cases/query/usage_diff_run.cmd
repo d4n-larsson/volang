@@ -1,0 +1,1 @@
+run --diff d.diff {}

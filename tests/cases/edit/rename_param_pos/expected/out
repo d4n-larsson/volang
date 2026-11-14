@@ -1,0 +1,18 @@
+$ vo edit rename main.vo catalog.vo:11:32 code
+catalog.vo:11:32 sku -> code
+catalog.vo:12:33 sku -> code
+catalog.vo:13:25 sku -> code
+renamed sku to code: 3 changes in 1 file
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+add_item a1
+add_item b2
+add_item total 7 2 9 x
+added x cleared 1
+--- stderr
+--- exit 0

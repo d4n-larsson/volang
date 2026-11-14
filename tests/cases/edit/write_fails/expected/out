@@ -1,0 +1,4 @@
+$ vo edit rename main.vo add_item add_product
+error[T0006]: Renaming `add_item` to `add_product`: cannot write `main.vo`; nothing was changed.
+--- stderr
+--- exit 65

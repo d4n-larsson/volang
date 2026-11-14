@@ -1,0 +1,5 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"swap","file":"main.vo","start":{"line":11,"col":13},"args":[{"name":"p","value":"new Pair[int, str] { first: 1, second: \"one\" }"}]}
+{"v":1,"kind":"return","depth":2,"function":"swap","value":"new Pair[str, int] { first: \"one\", second: 1 }"}
+{"v":1,"kind":"return","depth":1,"function":"main"}
+{"v":1,"kind":"end","records":4,"omitted":0,"status":0}

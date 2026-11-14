@@ -1,0 +1,1 @@
+error[T0007]: This is not a unified diff: write one with `git diff` or `diff -u`.

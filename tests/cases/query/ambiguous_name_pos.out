@@ -1,0 +1,3 @@
+amb/b.vo:1:4 declaration: fn helper() -> int {
+amb/b.vo:6:12 call in g: return helper();
+2 references

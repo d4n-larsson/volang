@@ -6,6 +6,8 @@
   or checks clean; consecutive blocks starting with `# file: name.vo` form one multi-file program
 - ```vo-test blocks run with `vo test` against the following ```output (human format, ms normalized)
 - ```vo-fmt blocks are formatted and compared with the following ```vo block
+- a ```console block after a ```vo example runs each `$ vo ...` line in the example's directory
+  and compares its stdout with the lines below it (spec 006: query, impact, edit)
 - every top-level ## section has at least one example
 - the document fits the token budget: words x 1.3 <= 15,000
 Commands that are not implemented yet (exit 125) are reported as pending, not as failures.
@@ -108,6 +110,14 @@ def main():
                     problems.append(f"{label}: formatted text differs from the following block")
                 if nxt and nxt[1] == "vo":
                     i += 1
+            elif nxt and nxt[1] == "console":
+                cmds = re.split(r"^\$ vo ", nxt[3], flags=re.M)[1:]
+                for c in cmds:
+                    first, _, expected = c.partition("\n")
+                    r = vo(first.split(), d)
+                    if r.stdout.decode() != expected:
+                        problems.append(f"{label}: `vo {first}` output differs.\n  expected: {expected!r}\n  got: {r.stdout.decode()!r}")
+                i += 1
             elif nxt and nxt[1] == "output":
                 r = vo(["run", entry], d)
                 if r.stdout.decode() != nxt[3]:

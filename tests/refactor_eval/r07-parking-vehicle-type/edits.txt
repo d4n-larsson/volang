@@ -1,0 +1,10 @@
+# "Each vehicle remembers its type" (car is the default)
+add-field Vehicle kind: str = "car"
+# "Rates per type": the existing FREE value is the car rate
+rename free_minutes car_free_minutes
+# "Rates per type": the existing HOURLY value is the car rate
+rename hourly car_hourly
+# "Rates per type": the existing CAP value is the car rate
+rename daily_cap car_daily_cap
+# "The fee function gets a vehicle-type parameter": its existing parameter is the stay length
+rename fees.vo:22:8 stay_minutes

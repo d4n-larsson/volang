@@ -1,0 +1,10 @@
+fn main() uses console, file.read("data/") {
+    match read_file("secret.txt") {
+        case ok(t) {
+            print(t);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

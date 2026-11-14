@@ -1,0 +1,41 @@
+{"v":1,"kind":"test","name":"prop \"twice is even\""}
+{"v":1,"kind":"call","depth":1,"function":"prop \"twice is even\"","args":[{"name":"x","value":"-1"}]}
+{"v":1,"kind":"call","depth":2,"function":"twice","file":"main.vo","start":{"line":7,"col":12},"args":[{"name":"x","value":"-1"}]}
+{"v":1,"kind":"return","depth":2,"function":"twice","value":"-2"}
+{"v":1,"kind":"return","depth":1,"function":"prop \"twice is even\""}
+{"v":1,"kind":"test","name":"prop \"twice is even\""}
+{"v":1,"kind":"call","depth":1,"function":"prop \"twice is even\"","args":[{"name":"x","value":"-1"}]}
+{"v":1,"kind":"call","depth":2,"function":"twice","file":"main.vo","start":{"line":7,"col":12},"args":[{"name":"x","value":"-1"}]}
+{"v":1,"kind":"return","depth":2,"function":"twice","value":"-2"}
+{"v":1,"kind":"return","depth":1,"function":"prop \"twice is even\""}
+{"v":1,"kind":"test","name":"prop \"twice is even\""}
+{"v":1,"kind":"call","depth":1,"function":"prop \"twice is even\"","args":[{"name":"x","value":"3"}]}
+{"v":1,"kind":"call","depth":2,"function":"twice","file":"main.vo","start":{"line":7,"col":12},"args":[{"name":"x","value":"3"}]}
+{"v":1,"kind":"return","depth":2,"function":"twice","value":"6"}
+{"v":1,"kind":"return","depth":1,"function":"prop \"twice is even\""}
+{"v":1,"kind":"test","name":"prop \"twice is even\""}
+{"v":1,"kind":"call","depth":1,"function":"prop \"twice is even\"","args":[{"name":"x","value":"-2"}]}
+{"v":1,"kind":"call","depth":2,"function":"twice","file":"main.vo","start":{"line":7,"col":12},"args":[{"name":"x","value":"-2"}]}
+{"v":1,"kind":"return","depth":2,"function":"twice","value":"-4"}
+{"v":1,"kind":"return","depth":1,"function":"prop \"twice is even\""}
+{"v":1,"kind":"test","name":"prop \"twice is even\""}
+{"v":1,"kind":"call","depth":1,"function":"prop \"twice is even\"","args":[{"name":"x","value":"-1"}]}
+{"v":1,"kind":"call","depth":2,"function":"twice","file":"main.vo","start":{"line":7,"col":12},"args":[{"name":"x","value":"-1"}]}
+{"v":1,"kind":"return","depth":2,"function":"twice","value":"-2"}
+{"v":1,"kind":"return","depth":1,"function":"prop \"twice is even\""}
+{"v":1,"kind":"test","name":"prop \"twice is even\""}
+{"v":1,"kind":"call","depth":1,"function":"prop \"twice is even\"","args":[{"name":"x","value":"2"}]}
+{"v":1,"kind":"call","depth":2,"function":"twice","file":"main.vo","start":{"line":7,"col":12},"args":[{"name":"x","value":"2"}]}
+{"v":1,"kind":"return","depth":2,"function":"twice","value":"4"}
+{"v":1,"kind":"return","depth":1,"function":"prop \"twice is even\""}
+{"v":1,"kind":"test","name":"prop \"twice is even\""}
+{"v":1,"kind":"call","depth":1,"function":"prop \"twice is even\"","args":[{"name":"x","value":"-1"}]}
+{"v":1,"kind":"call","depth":2,"function":"twice","file":"main.vo","start":{"line":7,"col":12},"args":[{"name":"x","value":"-1"}]}
+{"v":1,"kind":"return","depth":2,"function":"twice","value":"-2"}
+{"v":1,"kind":"return","depth":1,"function":"prop \"twice is even\""}
+{"v":1,"kind":"test","name":"prop \"twice is even\""}
+{"v":1,"kind":"call","depth":1,"function":"prop \"twice is even\"","args":[{"name":"x","value":"-6"}]}
+{"v":1,"kind":"call","depth":2,"function":"twice","file":"main.vo","start":{"line":7,"col":12},"args":[{"name":"x","value":"-6"}]}
+{"v":1,"kind":"return","depth":2,"function":"twice","value":"-12"}
+{"v":1,"kind":"return","depth":1,"function":"prop \"twice is even\""}
+{"v":1,"kind":"end","records":40,"omitted":487}

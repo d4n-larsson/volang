@@ -1,0 +1,7 @@
+ERROR ratio of zero (0ms)
+  locals_error_text.vo:3:12: runtime error[R0002]: Division by zero.
+    at ratio (locals_error_text.vo:3:12)
+        a: int = 5, b: int = 0, scaled: int = 500
+    at test "ratio of zero" (locals_error_text.vo:8:15)
+        parts: int = 0
+0 passed, 0 failed, 1 errored

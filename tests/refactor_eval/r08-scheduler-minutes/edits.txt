@@ -1,0 +1,10 @@
+# "store every time as an integer number of minutes since midnight ... in events": event start
+rename Event.start start_min
+# "store every time as an integer number of minutes since midnight ... in events": event end
+rename Event.end end_min
+# "... everywhere": the free slots computed by free also hold minutes
+rename Slot.start start_min
+# "Parse input times once, into minutes": the lower bound of free is in minutes
+rename schedule.vo:68:51 lo_min
+# "Parse input times once, into minutes": the time asked by who is in minutes
+rename schedule.vo:58:49 t_min

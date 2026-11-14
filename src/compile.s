@@ -13,6 +13,11 @@
 # explicit work stack; clearing temporaries at statement ends or precise frame maps.
     .include "defs.inc"
 
+    .section .data
+    .align 3
+    .globl c_ops
+c_ops:      .dword vm_ops           # the handler table compile_program copies from (spec 006: vm_ops_trace)
+
     .section .bss
     .align 3
 c_buf:      .space 8                # instruction buffer of the function being compiled
@@ -198,6 +203,16 @@ compile_fn:
     sd zero, 0(t0)
     la t0, c_cont
     sd zero, 0(t0)
+    la t0, tr_on                # spec 006: with --trace, every function starts with its call record
+    ld t0, 0(t0)
+    beqz t0, 5f
+    li a0, OPC_TRACE_ENTER
+    li a1, 0
+    li a2, 0
+    li a3, 0
+    mv a4, s0
+    call c_emit
+5:
     mv a0, s0                   # contracts (spec 005): `requires` checks first
     call c_prologue
     mv a0, s1
@@ -606,7 +621,8 @@ c_emit:
     la t2, c_buf
     ld t2, 0(t2)
     add t2, t2, t1
-    la t3, vm_ops
+    la t3, c_ops                # vm_ops, or vm_ops_trace with --trace (spec 006)
+    ld t3, 0(t3)
     slli t4, s0, 3
     add t3, t3, t4
     ld t3, 0(t3)

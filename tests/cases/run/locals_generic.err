@@ -1,0 +1,8 @@
+locals_generic.vo:2:12: runtime error[R0003]: Index 2 is out of bounds for length 2.
+   2 |     return xs[i];
+     |            ^^^^^
+trace:
+  at pick (locals_generic.vo:2:12)
+      xs: list[str] = ["a", "b"], i: int = 2
+  at main (locals_generic.vo:7:11)
+      names: list[str] = ["a", "b"]

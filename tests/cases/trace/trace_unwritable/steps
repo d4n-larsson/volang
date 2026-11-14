@@ -1,0 +1,1 @@
+vo run --trace missing/t.jsonl main.vo

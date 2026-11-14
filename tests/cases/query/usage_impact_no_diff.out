@@ -1,0 +1,1 @@
+error[T0001]: `impact` needs `--diff FILE` (or `--diff -` for stdin).

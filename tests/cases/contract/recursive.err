@@ -3,5 +3,7 @@ recursive.vo:15:16: runtime error[R0012]: Precondition `n >= 0` of `bad_fact` do
      |                ^^^^^^^^^^^^^^^
 trace:
   at bad_fact (recursive.vo:15:16)
+      n: int = 1
   at bad_fact (recursive.vo:15:16)
+      n: int = 3
   at main (recursive.vo:20:15)

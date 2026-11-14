@@ -1,0 +1,87 @@
+refs Event.start
+schedule.vo:7:5 declaration
+schedule.vo:29:18 use
+schedule.vo:42:35 use
+schedule.vo:46:72 use
+schedule.vo:60:14 use
+schedule.vo:75:14 use
+schedule.vo:78:14 use
+schedule.vo:78:52 use
+schedule.vo:79:58 use
+schedule.vo:91:33 use
+report.vo:13:33 use
+report.vo:13:90 use
+report.vo:57:108 use
+
+refs Slot.start
+schedule.vo:12:5 declaration
+schedule.vo:79:36 use
+schedule.vo:84:32 use
+report.vo:32:33 use
+report.vo:32:71 use
+
+refs span
+clock.vo:44:4 declaration
+report.vo:2:14 import
+report.vo:13:26 call
+report.vo:30:39 call
+report.vo:32:26 call
+schedule.vo:2:14 import
+schedule.vo:47:56 call
+
+refs duration
+clock.vo:40:4 declaration
+report.vo:1:14 import
+report.vo:13:79 call
+report.vo:32:60 call
+schedule.vo:1:14 import
+schedule.vo:78:33 call
+schedule.vo:83:24 call
+schedule.vo:91:22 call
+
+refs schedule.vo:70:9
+schedule.vo:70:9 declaration
+schedule.vo:72:21 use
+schedule.vo:78:22 use
+schedule.vo:78:42 use
+schedule.vo:79:43 use
+schedule.vo:81:13 use
+schedule.vo:81:26 use
+schedule.vo:83:8 use
+schedule.vo:83:33 use
+schedule.vo:84:39 use
+
+refs Event
+main.vo:4:17 import
+main.vo:22:43 type
+main.vo:79:31 type
+report.vo:3:17 import
+report.vo:9:34 type
+report.vo:18:30 type
+report.vo:29:32 type
+report.vo:40:35 type
+schedule.vo:4:8 declaration
+schedule.vo:21:33 type
+schedule.vo:21:60 type
+schedule.vo:22:24 type
+schedule.vo:28:24 type
+schedule.vo:34:31 type
+schedule.vo:46:32 use
+schedule.vo:50:34 type
+schedule.vo:58:30 type
+schedule.vo:58:67 type
+schedule.vo:68:32 type
+schedule.vo:89:29 type
+schedule.vo:90:41 type
+
+refs schedule.vo:58:49
+schedule.vo:58:49 declaration
+schedule.vo:60:23 use
+schedule.vo:60:29 use
+
+callers room_events
+schedule.vo:41:14 call
+schedule.vo:59:14 call
+schedule.vo:71:14 call
+report.vo:10:15 call
+report.vo:54:19 call

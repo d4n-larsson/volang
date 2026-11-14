@@ -3,3 +3,4 @@ vm_int_mul_overflow.vo:5:17: runtime error[R0001]: Integer overflow.
      |                 ^^^^^
 trace:
   at main (vm_int_mul_overflow.vo:5:17)
+      x: int = 4052555153018976267, i: int = 38

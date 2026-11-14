@@ -1,0 +1,4 @@
+$ vo edit rename main.vo add_itm add_product
+error[T0004]: Nothing named `add_itm` in this program. Did you mean `add_item`?
+--- stderr
+--- exit 64

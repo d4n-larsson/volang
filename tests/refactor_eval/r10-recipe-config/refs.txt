@@ -1,0 +1,58 @@
+refs ingredient_line
+recipes.vo:36:4 declaration
+recipes.vo:43:19 call
+scaling.vo:2:16 import
+scaling.vo:17:19 call
+scaling.vo:42:19 call
+
+refs Ingredient.item
+recipes.vo:5:5 declaration
+recipes.vo:27:26 use
+recipes.vo:28:46 use
+recipes.vo:30:22 use
+recipes.vo:43:39 use
+main.vo:48:48 use
+scaling.vo:17:39 use
+scaling.vo:28:27 use
+
+refs Recipe.servings
+recipes.vo:12:5 declaration
+recipes.vo:32:50 use
+recipes.vo:41:48 use
+recipes.vo:56:36 use
+scaling.vo:17:71 use
+scaling.vo:29:42 use
+
+refs Order
+scaling.vo:4:8 declaration
+scaling.vo:23:58 type
+main.vo:6:16 import
+main.vo:75:31 type
+main.vo:81:30 use
+
+refs Order.name
+scaling.vo:5:5 declaration
+scaling.vo:26:27 use
+main.vo:81:38 use
+main.vo:85:35 use
+main.vo:86:54 use
+
+refs scaling.vo:14:32
+scaling.vo:14:32 declaration
+scaling.vo:15:44 use
+scaling.vo:17:81 use
+
+refs format_qty
+units.vo:23:4 declaration
+recipes.vo:2:14 import
+recipes.vo:37:32 call
+
+refs scale_qty
+scaling.vo:10:4 declaration
+scaling.vo:17:45 call
+scaling.vo:29:21 call
+
+refs decimal
+units.vo:6:4 declaration
+units.vo:25:16 call
+units.vo:28:16 call

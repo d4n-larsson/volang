@@ -1,0 +1,9 @@
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"38a08572399f8fe7","seed":1,"clock_ms":5,"args":["data.txt"]}
+{"v":1,"kind":"env","name":"LIMIT","result":"ok","value":"1"}
+{"v":1,"kind":"env","name":"MISSING","result":"err","value":"not set"}
+{"v":1,"kind":"read_file","path":"data.txt","result":"ok","value":"x"}
+{"v":1,"kind":"read_file","path":"nope.txt","result":"err","value":"cannot read nope.txt"}
+{"v":1,"kind":"read_line","result":"ok","value":"0"}
+{"v":1,"kind":"read_all","value":""}
+{"v":1,"kind":"now_ms","value":5}
+{"v":1,"kind":"end","status":70}

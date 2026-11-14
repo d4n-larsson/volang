@@ -1,0 +1,10 @@
+fn f(n: int) -> int {
+    let a = n + 1;
+    let b = 10 / n;
+    let c = a + b;
+    return c;
+}
+
+fn main() uses console {
+    print(str(f(0)));
+}

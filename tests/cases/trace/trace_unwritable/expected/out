@@ -1,0 +1,5 @@
+$ vo run --trace missing/t.jsonl main.vo
+x
+--- stderr
+error[T0009]: Cannot write the trace or recording `missing/t.jsonl`.
+--- exit 74

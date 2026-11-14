@@ -1,0 +1,6 @@
+$ vo edit add-field --dry-run main.vo Item discount: int = 0
+catalog.vo:5:1 +     discount: int;\n
+catalog.vo:12:62 + , discount: 0
+added field discount to Item: 2 changes in 1 file (dry run, nothing written)
+--- stderr
+--- exit 0

@@ -3,4 +3,5 @@ ensures_try.vo:3:13: runtime error[R0013]: Postcondition `ret != err("invalid in
      |             ^^^^^^^^^^^^^^^^
 trace:
   at positive (ensures_try.vo:3:13)
+      s: str = "bad"
   at main (ensures_try.vo:13:15)

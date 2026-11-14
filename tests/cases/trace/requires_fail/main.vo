@@ -1,0 +1,8 @@
+fn isqrt(n: int) -> int
+    requires n >= 0 {
+    return n;
+}
+
+fn main() uses console {
+    print(str(isqrt(-1)));
+}

@@ -1,0 +1,4 @@
+$ vo edit add-field main.vo Item price: int = 0
+error[T0006]: `Item` already has a field `price`.
+--- stderr
+--- exit 65

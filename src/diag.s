@@ -7,7 +7,13 @@
 file_table:     .space MAX_FILES * FILE_SIZE
     .globl file_count
 file_count:     .space 8
+    .globl te_related
+te_related:     .space 8            # spec 006: vec of item declarations shown as `related` by toolchain_error
+    .globl cur_gen
+cur_gen:        .space 8            # spec 006: files of older generations are invisible to file_find
+    .globl diag_arr
 diag_arr:       .space 8
+    .globl diag_n
 diag_n:         .space 8
 diag_cap:       .space 8
     .globl diag_errors
@@ -77,6 +83,8 @@ s_notshown1:    .string " ("
 s_notshown2:    .string " more not shown)"
 s_te_head:      .string "{\"v\":1,\"kind\":\"toolchain_error\",\"code\":\""
 s_path_key:     .string ",\"path\":"
+s_related_key:  .string ",\"related\":["
+s_declared_at:  .string "  declared at "
 s_err_open:     .string "error["
 
     .text
@@ -106,6 +114,9 @@ file_add:
     sd s1, FILE_PATH(s0)
     sd s2, FILE_TEXT(s0)
     sd s3, FILE_LEN(s0)
+    la t0, cur_gen              # spec 006: the generation it belongs to (vo edit's re-check)
+    ld t0, 0(t0)
+    sd t0, FILE_GEN(s0)
     sd zero, FILE_TOKENS(s0)
     sd zero, FILE_AST(s0)
     li s4, 1                    # count lines
@@ -267,6 +278,89 @@ pos_col:
     ld s0, 16(sp)
     ld s1, 8(sp)
     addi sp, sp, 32
+    ret
+
+# void diag_reset(void)
+# Forgets every diagnostic (spec 006: vo edit checks the program a second time).
+    .globl diag_reset
+diag_reset:
+    la t0, diag_n
+    sd zero, 0(t0)
+    la t0, diag_errors
+    sd zero, 0(t0)
+    la t0, diag_warnings
+    sd zero, 0(t0)
+    la t0, diag_truncated
+    sd zero, 0(t0)
+    la t0, emitted_n
+    sd zero, 0(t0)
+    ret
+
+# long pos_offset(int file, long line, long col)
+# The byte offset of a 1-based line and column (columns in code points), the inverse of pos_line
+# and pos_col; -1 when the line or column is outside the file. Column = line length + 1 is the end
+# of the line.
+    .globl pos_offset
+pos_offset:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+    li a0, -1
+    blez s1, 9f
+    blez s2, 9f
+    mv a0, s0
+    call file_get
+    ld t0, FILE_NLINES(a0)
+    li a0, -1
+    bgt s1, t0, 9f
+    mv a0, s0
+    mv a1, s1
+    call line_end
+    mv s3, a0                   # end of the line
+    mv a0, s0
+    mv a1, s1
+    call line_start
+    mv t3, a0
+    mv a0, s0
+    sd t3, 0(sp)
+    call file_get
+    ld t4, FILE_TEXT(a0)
+    ld t3, 0(sp)
+    addi t5, s2, -1             # code points to skip
+1:
+    beqz t5, 3f
+    bge t3, s3, 8f
+    addi t3, t3, 1              # skip one code point: its continuation bytes too
+2:
+    bge t3, s3, 4f
+    add t6, t4, t3
+    lbu t6, 0(t6)
+    andi t6, t6, 0xc0
+    li a1, 0x80
+    bne t6, a1, 4f
+    addi t3, t3, 1
+    j 2b
+4:
+    addi t5, t5, -1
+    j 1b
+3:
+    mv a0, t3
+    j 9f
+8:
+    li a0, -1
+9:
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    addi sp, sp, 48
     ret
 
 # void *diag_add(char *code, int sev, int file, long start, long end, void *message)
@@ -1618,6 +1712,8 @@ toolchain_error:
     mv a1, s4
     call json_str_into
 1:
+    mv a0, s5                   # spec 006: related declarations (te_related)
+    call te_related_json
     mv a0, s5
     la a1, s_brace_nl
     call sb_cstr
@@ -1637,6 +1733,8 @@ toolchain_error:
     mv a0, s5
     li a1, 10
     call sb_byte
+    mv a0, s5
+    call te_related_human
 8:
     mv a0, s1
     ld a1, SB_PTR(s5)
@@ -1650,6 +1748,103 @@ toolchain_error:
     ld s4, 16(sp)
     ld s5, 8(sp)
     addi sp, sp, 64
+    ret
+
+# void te_related_json(void *sb)
+# ,"related":[{"file":..,"start":..,"end":..},...] for the nodes in te_related (a vec), if any.
+te_related_json:
+    la t0, te_related
+    ld t0, 0(t0)
+    beqz t0, 9f
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    mv s0, a0
+    la a1, s_related_key
+    call sb_cstr
+    li s1, 0
+1:
+    la t0, te_related
+    ld a0, 0(t0)
+    ld t1, VEC_N(a0)
+    bge s1, t1, 3f
+    beqz s1, 2f
+    sd a0, 0(sp)
+    mv a0, s0
+    li a1, ','
+    call sb_byte
+    ld a0, 0(sp)
+2:
+    mv a1, s1
+    call vec_get
+    sd a0, 0(sp)
+    mv a0, s0
+    la a1, s_file_key
+    call sb_cstr
+    ld t0, 0(sp)
+    ld t0, N_A(t0)              # an item: its name node
+    mv a0, s0
+    lwu a1, N_FILE(t0)
+    lwu a2, N_START(t0)
+    lwu a3, N_END(t0)
+    call json_span
+    mv a0, s0
+    li a1, '}'
+    call sb_byte
+    addi s1, s1, 1
+    j 1b
+3:
+    mv a0, s0
+    li a1, ']'
+    call sb_byte
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    addi sp, sp, 32
+9:
+    ret
+
+# void te_related_human(void *sb)
+# One line per related declaration: "  declared at FILE:LINE:COL".
+te_related_human:
+    la t0, te_related
+    ld t0, 0(t0)
+    beqz t0, 9f
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    mv s0, a0
+    li s1, 0
+1:
+    la t0, te_related
+    ld a0, 0(t0)
+    ld t1, VEC_N(a0)
+    bge s1, t1, 3f
+    mv a1, s1
+    call vec_get
+    ld t0, N_A(a0)
+    sd t0, 0(sp)
+    mv a0, s0
+    la a1, s_declared_at
+    call sb_cstr
+    ld t0, 0(sp)
+    mv a0, s0
+    lwu a1, N_FILE(t0)
+    lwu a2, N_START(t0)
+    call human_loc
+    mv a0, s0
+    li a1, 10
+    call sb_byte
+    addi s1, s1, 1
+    j 1b
+3:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    addi sp, sp, 32
+9:
     ret
 
 # long levenshtein(char *a, long na, char *b, long nb, long max)

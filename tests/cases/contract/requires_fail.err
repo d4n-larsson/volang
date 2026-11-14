@@ -3,4 +3,5 @@ requires_fail.vo:12:12: runtime error[R0012]: Precondition `n >= 0` of `isqrt` d
      |            ^^^^^^^^^^^^
 trace:
   at root_of (requires_fail.vo:12:12)
+      n: int = 1
   at main (requires_fail.vo:17:15)

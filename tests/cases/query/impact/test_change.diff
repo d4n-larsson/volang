@@ -1,0 +1,11 @@
+--- old/main.vo
++++ main.vo
+@@ -8,7 +8,7 @@
+ }
+ 
+ test "checkout total" {
+-    expect_eq(checkout([100]), 120);
++    expect_eq(checkout([100]), 125);
+ }
+ 
+ test "discount only" {

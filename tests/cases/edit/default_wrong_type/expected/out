@@ -1,0 +1,8 @@
+$ vo edit add-field main.vo Item discount: int = '"x"'
+catalog.vo:12:62: error[E0301]: Expected `int`, found `str`.
+  12 |     push(items, new Item { sku: sku, name: name, price: price });
+     |                                                              ^
+  expected `int`, found `str`
+error[T0006]: Adding field `discount` to `Item` would not check (1 new error): nothing was written.
+--- stderr
+--- exit 65

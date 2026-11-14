@@ -1,0 +1,11 @@
+fn spin(n: int) -> int {
+    var i = 0;
+    while true {
+        set i = i + 1;
+    }
+    return i;
+}
+
+fn main() uses console {
+    print(str(spin(1)));
+}

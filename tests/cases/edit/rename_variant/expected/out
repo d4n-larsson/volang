@@ -1,0 +1,19 @@
+$ vo edit rename main.vo Event Signal
+main.vo:6:9 Event -> Signal
+main.vo:16:16 Event -> Signal
+main.vo:42:20 Event -> Signal
+main.vo:42:55 Event -> Signal
+renamed Event to Signal: 4 changes in 1 file
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+add_item a1
+add_item b2
+add_item total 7 2 9 x
+added x cleared 1
+--- stderr
+--- exit 0

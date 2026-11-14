@@ -1,0 +1,2 @@
+vo edit add-field --dry-run main.vo Item discount: int = 0
+keep catalog.vo main.vo vo.effects

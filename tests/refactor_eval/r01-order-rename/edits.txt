@@ -1,0 +1,16 @@
+# "items are now products": rename the record type
+rename Item Product
+# the command add-item becomes add-product
+rename add_item add_product
+# rename the concept in function names (restock)
+rename restock_item restock_product
+# rename the concept in function names (price)
+rename set_item_price set_product_price
+# rename the concept in function names (report order)
+rename sorted_items sorted_products
+# rename the concept in variables: local item in restock_item
+rename catalog.vo:21:9 product
+# rename the concept in variables: local item in place_order
+rename orders.vo:54:13 product
+# rename the concept in variables: loop variable item in full_report
+rename report.vo:37:9 product

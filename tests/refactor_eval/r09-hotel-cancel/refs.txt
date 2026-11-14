@@ -1,0 +1,81 @@
+refs nights
+bookings.vo:7:4 declaration
+bookings.vo:30:66 call
+report.vo:6:17 import
+report.vo:42:35 call
+
+refs Booking.start
+model.vo:12:5 declaration
+billing.vo:27:28 use
+bookings.vo:8:22 use
+bookings.vo:28:87 use
+rooms.vo:34:43 use
+
+refs Booking.total
+model.vo:17:5 declaration
+billing.vo:33:36 use
+bookings.vo:28:163 use
+bookings.vo:30:107 use
+report.vo:43:41 use
+
+refs RoomType.count
+model.vo:4:5 declaration
+rooms.vo:8:62 use
+rooms.vo:43:34 use
+rooms.vo:54:18 use
+rooms.vo:56:32 use
+report.vo:11:120 use
+report.vo:21:31 use
+report.vo:22:63 use
+
+refs money
+billing.vo:11:4 declaration
+billing.vo:29:71 call
+billing.vo:29:95 call
+billing.vo:31:45 call
+billing.vo:33:28 call
+bookings.vo:5:16 import
+bookings.vo:30:99 call
+main.vo:6:16 import
+main.vo:46:56 value
+report.vo:7:16 import
+report.vo:47:98 call
+report.vo:49:34 call
+
+refs report.vo:33:9
+report.vo:33:9 declaration
+report.vo:46:13 use
+report.vo:46:23 use
+report.vo:49:40 use
+
+refs report.vo:37:13
+report.vo:37:13 declaration
+report.vo:43:21 use
+report.vo:43:30 use
+report.vo:46:33 use
+report.vo:47:104 use
+
+refs Booking
+model.vo:8:8 declaration
+billing.vo:1:14 import
+billing.vo:26:21 type
+bookings.vo:2:14 import
+bookings.vo:7:14 type
+bookings.vo:11:55 type
+bookings.vo:28:17 use
+main.vo:2:14 import
+main.vo:33:72 type
+main.vo:92:33 type
+report.vo:2:14 import
+report.vo:9:61 type
+report.vo:14:66 type
+report.vo:31:63 type
+rooms.vo:2:14 import
+rooms.vo:30:32 type
+rooms.vo:42:65 type
+rooms.vo:52:59 type
+
+callers occupied
+rooms.vo:45:12 call
+rooms.vo:56:40 call
+report.vo:19:17 call

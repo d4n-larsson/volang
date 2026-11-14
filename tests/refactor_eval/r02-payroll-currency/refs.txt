@@ -1,0 +1,82 @@
+refs format_money
+money.vo:9:4 declaration
+money.vo:11:22 call
+report.vo:1:14 import
+report.vo:10:64 call
+report.vo:12:70 call
+report.vo:15:33 call
+report.vo:17:28 call
+report.vo:18:26 call
+report.vo:20:52 call
+report.vo:22:26 call
+report.vo:27:29 call
+report.vo:27:61 call
+report.vo:27:98 call
+report.vo:27:135 call
+report.vo:42:68 call
+report.vo:42:102 call
+staff.vo:1:14 import
+staff.vo:20:28 call
+staff.vo:22:26 call
+staff.vo:53:36 call
+staff.vo:55:34 call
+staff.vo:64:51 call
+
+refs money.vo:9:17
+money.vo:9:17 declaration
+money.vo:10:8 use
+money.vo:11:36 use
+money.vo:13:22 use
+money.vo:13:54 use
+
+refs Employee.amount
+staff.vo:13:5 declaration
+staff.vo:20:45 use
+staff.vo:22:43 use
+staff.vo:29:70 use
+staff.vo:51:13 use
+pay.vo:50:47 use
+pay.vo:51:49 use
+pay.vo:53:29 use
+
+refs Employee
+main.vo:1:14 import
+main.vo:30:42 type
+main.vo:79:30 type
+pay.vo:1:14 import
+pay.vo:45:21 type
+report.vo:3:14 import
+report.vo:6:17 type
+report.vo:30:28 type
+staff.vo:9:8 declaration
+staff.vo:18:18 type
+staff.vo:25:33 type
+staff.vo:29:19 use
+staff.vo:34:30 type
+staff.vo:46:29 type
+staff.vo:58:34 type
+staff.vo:67:33 type
+staff.vo:67:52 type
+staff.vo:70:40 type
+
+refs Pay.tax
+pay.vo:9:5 declaration
+pay.vo:46:95 use
+pay.vo:56:11 use
+pay.vo:60:29 use
+report.vo:18:41 use
+report.vo:44:27 use
+
+refs report.vo:36:9
+report.vo:36:9 declaration
+report.vo:43:13 use
+report.vo:43:21 use
+report.vo:48:26 use
+
+refs total_line
+report.vo:26:4 declaration
+report.vo:48:15 call
+
+callers compute_pay
+report.vo:7:13 call
+report.vo:41:17 call

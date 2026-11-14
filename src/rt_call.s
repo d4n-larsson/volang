@@ -111,28 +111,22 @@ b_eprint:
     li a2, 1
     call rt_print
     j 98f
-b_read_line:
+b_read_line:                    # spec 006: the io_* wrappers record or replay these inputs
     mv a0, s0
-    call rt_read_line
+    call io_read_line
     j 99f
 b_read_all:
     mv a0, s0
-    call rt_read_all
+    call io_read_all
     j 99f
 b_read_file:
-    li a0, EF_FREAD
-    mv a1, s3
-    call rt_check_path
     mv a0, s3
-    call rt_read_file
+    call io_read_file
     j 99f
 b_write_file:
-    li a0, EF_FWRITE
-    mv a1, s3
-    call rt_check_path
     mv a0, s3
     ld a1, 8(sp)
-    call rt_write_file
+    call io_write_file
     j 99f
 b_args:
     call rt_args
@@ -142,10 +136,10 @@ b_exit:
     call rt_exit
     j 98f
 b_now:
-    call rt_now_ms
+    call io_now_ms
     j 99f
 b_env:
-    call rt_env
+    call io_env
     j 99f
 b_random_int:
     call rt_random_int

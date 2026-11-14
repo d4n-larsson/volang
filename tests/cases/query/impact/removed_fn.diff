@@ -1,0 +1,26 @@
+--- old/pricing.vo
++++ pricing.vo
+@@ -1,9 +1,5 @@
+ fn tax(cents: int) -> int {
+     return cents * 25 / 100;
+-}
+-
+-fn rounding(x: int) -> int {
+-    return x;
+ }
+ 
+ fn discount(cents: int, percent: int) -> int {
+--- old/cart.vo
++++ cart.vo
+@@ -1,10 +1,9 @@
+ import pricing.tax;
+-import pricing.rounding;
+ 
+ fn subtotal(prices: list[int]) -> int {
+     var sum = 0;
+     for p in prices {
+-        set sum = sum + p + rounding(tax(p));
++        set sum = sum + p + tax(p);
+     }
+     return sum;
+ }

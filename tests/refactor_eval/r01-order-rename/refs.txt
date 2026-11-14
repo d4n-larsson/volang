@@ -1,0 +1,87 @@
+refs Item
+catalog.vo:1:8 declaration
+catalog.vo:9:31 type
+catalog.vo:13:28 use
+catalog.vo:17:35 type
+catalog.vo:26:37 type
+catalog.vo:35:35 type
+catalog.vo:35:50 type
+catalog.vo:38:38 type
+main.vo:1:16 import
+main.vo:35:44 type
+main.vo:103:32 type
+orders.vo:1:16 import
+orders.vo:38:34 type
+orders.vo:69:35 type
+report.vo:1:16 import
+report.vo:35:34 type
+
+refs add_item
+catalog.vo:9:4 declaration
+main.vo:2:16 import
+main.vo:42:17 call
+
+refs restock_item
+catalog.vo:17:4 declaration
+main.vo:3:16 import
+main.vo:48:17 call
+
+refs set_item_price
+catalog.vo:26:4 declaration
+main.vo:4:16 import
+main.vo:54:17 call
+
+refs sorted_items
+catalog.vo:35:4 declaration
+report.vo:2:16 import
+report.vo:37:17 call
+
+refs money
+report.vo:6:4 declaration
+report.vo:15:97 call
+report.vo:17:43 call
+report.vo:29:68 call
+report.vo:31:28 call
+report.vo:38:70 call
+report.vo:49:28 call
+main.vo:9:15 import
+main.vo:54:64 value
+
+refs Line.sku
+orders.vo:4:5 declaration
+main.vo:66:36 use
+orders.vo:28:26 use
+orders.vo:29:26 use
+orders.vo:29:42 use
+orders.vo:31:26 use
+orders.vo:54:30 use
+orders.vo:57:32 use
+orders.vo:57:39 use
+orders.vo:78:33 use
+report.vo:29:31 use
+
+refs Order.order_id
+orders.vo:10:5 declaration
+orders.vo:64:29 use
+report.vo:15:33 use
+report.vo:27:33 use
+
+refs catalog.vo:21:9
+catalog.vo:21:9 declaration
+catalog.vo:22:9 use
+catalog.vo:22:22 use
+catalog.vo:23:44 use
+
+refs report.vo:37:9
+report.vo:37:9 declaration
+report.vo:38:29 use
+report.vo:38:46 use
+report.vo:38:76 use
+report.vo:38:106 use
+report.vo:38:135 use
+
+callers units
+report.vo:15:62 call
+
+callers place_order
+main.vo:69:15 call

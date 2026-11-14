@@ -1,0 +1,8 @@
+fn main() uses console {
+    let base = 5;
+    let f = fn(x: int) -> int {
+        let y = x - base;
+        return 100 / y;
+    };
+    print(str(f(5)));
+}

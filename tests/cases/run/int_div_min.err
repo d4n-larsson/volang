@@ -3,3 +3,4 @@ int_div_min.vo:3:15: runtime error[R0001]: Integer overflow.
      |               ^^^^^^^^
 trace:
   at main (int_div_min.vo:3:15)
+      min: int = -9223372036854775808

@@ -1,0 +1,2 @@
+vo test --trace t.jsonl --trace-limit 40 main.vo
+keep t.jsonl

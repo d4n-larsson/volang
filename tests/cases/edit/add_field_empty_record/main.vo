@@ -1,0 +1,10 @@
+record Empty {
+}
+
+fn use_it(e: Empty) -> int {
+    return 1;
+}
+
+fn main() uses console {
+    print("ok");
+}

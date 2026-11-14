@@ -1,0 +1,16 @@
+$ vo replay --seed 3 r.jsonl
+--- stderr
+error[T0001]: `replay` takes `--seed`, `--clock-ms` and program arguments from the recording; leave them out.
+--- exit 64
+$ vo replay --clock-ms 3 r.jsonl
+--- stderr
+error[T0001]: `replay` takes `--seed`, `--clock-ms` and program arguments from the recording; leave them out.
+--- exit 64
+$ vo replay r.jsonl -- a
+--- stderr
+error[T0001]: `replay` takes `--seed`, `--clock-ms` and program arguments from the recording; leave them out.
+--- exit 64
+$ vo replay
+--- stderr
+error[T0001]: `replay` takes one recording: `vo replay r.jsonl`.
+--- exit 64

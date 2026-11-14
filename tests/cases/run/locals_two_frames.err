@@ -1,0 +1,10 @@
+locals_two_frames.vo:2:12: runtime error[R0002]: Division by zero.
+   2 |     return a / b;
+     |            ^^^^^
+trace:
+  at divide (locals_two_frames.vo:2:12)
+      a: int = 7, b: int = 0
+  at average (locals_two_frames.vo:7:12)
+      total: int = 7, count: int = 0, half: int = 3
+  at main (locals_two_frames.vo:12:15)
+      scores: list[int] = [3, 4]

@@ -1,0 +1,9 @@
+fn ratio(a: int, b: int) -> int {
+    let scaled = a * 100;
+    return scaled / b;
+}
+
+test "ratio of zero" {
+    let parts = 0;
+    expect_eq(ratio(5, parts), 0);
+}

@@ -7,6 +7,7 @@
 .equ EXIT_CHECK,     65
 .equ EXIT_NOINPUT,   66
 .equ EXIT_RUNTIME,   70
+.equ EXIT_OUTPUT,    74            # T0009: a trace or recording cannot be written (spec 006)
 .equ EXIT_TIMEOUT,   124
 .equ EXIT_INTERNAL,  125
 
@@ -23,6 +24,7 @@
 .equ SYS_exit_group, 94
 .equ SYS_clock_gettime, 113
 .equ SYS_renameat2,  276                 # riscv64 has no plain renameat
+.equ SYS_unlinkat,   35
 .equ SYS_munmap,     215
 .equ SYS_mmap,       222
 .equ AT_FDCWD,       -100
@@ -171,7 +173,7 @@
 .equ T_SLASH,      72
 .equ T_PERCENT,    73
 
-# ---- source files (diag.s file table): 64 bytes each ----
+# ---- source files (diag.s file table): FILE_SIZE bytes each ----
 .equ FILE_PATH,   0                 # str object
 .equ FILE_TEXT,   8
 .equ FILE_LEN,    16
@@ -182,7 +184,8 @@
 .equ FILE_DIR,    56                # str object: directory part of the path, with trailing '/' or empty
 .equ FILE_SCOPE,  64                # head of the file's top-level symbol chain
 .equ FILE_STATE,  72                # import loading: 0 new, 1 loading, 2 done
-.equ FILE_SIZE,   80
+.equ FILE_GEN,    80                # generation (spec 006 edits: the re-check loads files anew)
+.equ FILE_SIZE,   88
 .equ MAX_FILES,   256
 
 # ---- diagnostics ----
@@ -233,7 +236,7 @@
 # node kinds (fields in comments)
 .equ N_ERROR,     1
 .equ N_FILE_NODE, 2     # A items vec
-.equ N_IMPORT,    3     # A segments vec (str), B name node (last segment), C resolved symbol
+.equ N_IMPORT,    3     # A segments vec (str), B name node (last segment), D target file id + 1
 .equ N_FN,        4     # A name, B params vec, C return type node|0, D body, E local count
 .equ N_PARAM,     5     # A name, B type node, E slot
 .equ N_RECORD,    6     # A name, B fields vec
@@ -276,7 +279,7 @@
 .equ N_TPARAM,    47    # A name node, B constraint (TPC_*)
 .equ N_USES,      48    # A vec of N_EFFECT
 .equ N_EFFECT,    49    # A effect bit (0 = unknown name), B vec of scope N_STR | 0, C effect-variable name node | 0, D name text (str)
-.equ N_LAMBDA,    50    # A params vec, B return type node|0, C N_USES|0 (only for E0507), D body, E local count
+.equ N_LAMBDA,    50    # A name node ("anonymous function"; params in N_B like N_FN), B return type node|0, C N_USES|0 (only for E0507), D body, E local count
 .equ N_FN_TYPE,   51    # type node: A param type nodes vec, B return type node|0, C N_USES|0
 .equ N_CALL_VALUE,52    # A callee expr, B args vec, C how (CV_*), D field index (CV_FIELD)
 .equ TPC_NONE,    0
@@ -546,7 +549,8 @@
 .equ OPC_PUSH, 81         # push(a, b)
 .equ OPC_HAS, 82         # a = has(b, c)
 .equ OPC_CALL_GENERIC, 83 # a = generic call (arguments in b), c = its call-site record (GS_*)
-.equ OPC_COUNT, 84
+.equ OPC_TRACE_ENTER, 84  # spec 006: first instruction of every function, only with --trace
+.equ OPC_COUNT, 85
 # generic call-site record (permanent): rt_targs and rt_es_subst results for the last caller
 .equ GS_DECL, 0           # the callee
 .equ GS_VALID, 8          # 1 once filled
@@ -572,3 +576,51 @@
 #     call rt_poll / 1000:
 # When the budget runs out, rt_poll checks the clock (R0009 past the deadline). Keep live values in
 # s registers (or saved) across it.
+
+# ---- spec 006: queries and edits (src/query.s, src/edit.s; data-model.md) ----
+# reference log entry: one resolved name, logged by the checker while q_collect is 1
+.equ RL_KEY_A, 0          # decl node (items), declaring name node (locals), record/variant decl (members), 0
+.equ RL_KEY_B, 8          # member index, builtin id, name str (unresolved), else -1
+.equ RL_NODE, 16          # the node whose span is the reference
+.equ RL_ITEM, 24          # enclosing function/test/property item, or 0
+.equ RL_ROLE, 32
+.equ RL_TYPE, 40          # declarations: the declared type (vo query type-at), else 0
+.equ RL_SIZE, 48
+.equ RR_DECL, 0
+.equ RR_CALL, 1
+.equ RR_VALUE, 2
+.equ RR_TYPE, 3
+.equ RR_IMPORT, 4
+.equ RR_USE, 5
+# edit change: replace [start, end) of file with new
+.equ CH_FILE, 0
+.equ CH_START, 8
+.equ CH_END, 16
+.equ CH_OLD, 24           # str
+.equ CH_NEW, 32           # str
+.equ CH_SIZE, 40
+
+# ---- spec 006: recordings (src/replay.s) ----
+.equ EV_KIND, 0
+.equ EV_NAME, 8           # str (path or variable) or 0
+.equ EV_RESULT, 16        # EVR_*
+.equ EV_VALUE, 24         # str, or int for now_ms
+.equ EV_BYTES, 32         # 1 when the value was written with "bytes":true
+.equ EV_SIZE, 40
+.equ EVK_READ_LINE, 1
+.equ EVK_READ_ALL, 2
+.equ EVK_READ_FILE, 3
+.equ EVK_WRITE_FILE, 4
+.equ EVK_ENV, 5
+.equ EVK_NOW_MS, 6
+.equ EVK_END, 7
+.equ EVR_OK, 0
+.equ EVR_ERR, 1
+.equ EVR_DENIED, 2
+# buffered output file (sys.s fbuf_*): traces and recordings
+.equ FB_FD, 0
+.equ FB_BUF, 8
+.equ FB_LEN, 16
+.equ FB_ERR, 24           # 1 after a failed write
+.equ FB_SIZE, 32
+.equ FB_CAP, 65536

@@ -1,0 +1,5 @@
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"d63b51c5a6b7b74e","seed":1,"clock_ms":null,"args":[]}
+{"v":1,"kind":"read_line","result":"ok","value":"a"}
+{"v":1,"kind":"read_line","result":"ok","value":"b"}
+{"v":1,"kind":"read_line","result":"err","value":"eof"}
+{"v":1,"kind":"end","status":0}

@@ -1,0 +1,14 @@
+$ vo run --seed 1 --record r.jsonl main.vo
+a x
+
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+--- stderr
+note: the program differs from the recorded one (recorded main.vo)
+main.vo:2:11: runtime error[R0014]: The program reads the file `b.txt`, but the recording has a read of `a.txt` next: replay the program that was recorded, or record this one.
+   2 |     match read_file("b.txt") {
+     |           ^^^^^^^^^^^^^^^^^^
+trace:
+  at main (main.vo:2:11)
+--- exit 70

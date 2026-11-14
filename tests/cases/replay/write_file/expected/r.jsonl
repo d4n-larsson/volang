@@ -1,0 +1,3 @@
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"47278b9b9bd6671d","seed":1,"clock_ms":null,"args":[]}
+{"v":1,"kind":"write_file","path":"out.txt","result":"ok"}
+{"v":1,"kind":"end","status":0}

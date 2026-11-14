@@ -1,0 +1,12 @@
+# "integer cents everywhere": the product price is held in cents
+rename Product.price price_cents
+# "integer cents everywhere": the priced line's unit price is in cents
+rename Priced.price price_cents
+# "integer cents everywhere": revenue is in cents
+rename Shop.revenue revenue_cents
+# "integer cents everywhere": a product's net sales are in cents
+rename Product.net net_cents
+# "A PRICE (in product and price)": the parsed price passed to set_price is in cents
+rename cart.vo:16:36 price_cents
+# "coupon discount ... rounded half up to a whole cent": the subtotal is in cents
+rename pricing.vo:65:32 subtotal_cents

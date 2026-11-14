@@ -1,0 +1,4 @@
+$ vo run --trace t.jsonl --trace-limit 4 main.vo
+0
+--- stderr
+--- exit 0

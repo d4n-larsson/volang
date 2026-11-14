@@ -1,0 +1,4 @@
+chmod 555 .
+vo edit rename main.vo add_item add_product
+chmod 755 .
+keep catalog.vo main.vo vo.effects

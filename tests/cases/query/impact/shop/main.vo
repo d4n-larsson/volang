@@ -1,0 +1,21 @@
+import cart.checkout;
+import cart.with_tax_values;
+import pricing.discount;
+
+fn main() uses console {
+    print(str(checkout([100, 200])));
+    print(str(len(with_tax_values([1]))));
+}
+
+test "checkout total" {
+    expect_eq(checkout([100]), 125);
+}
+
+test "discount only" {
+    expect_eq(discount(200, 10), 20);
+}
+
+prop "subtotal grows" (x: int) {
+    assume(x >= 0 and x < 1000);
+    expect(checkout([x, 1]) >= checkout([x]));
+}

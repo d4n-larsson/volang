@@ -1,0 +1,4 @@
+vo edit rename main.vo Event Signal
+vo check main.vo
+vo run main.vo
+keep catalog.vo main.vo vo.effects

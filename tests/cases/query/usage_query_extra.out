@@ -1,0 +1,1 @@
+error[T0001]: `query refs` takes the entry file of the program and one target: `vo query refs main.vo TARGET`.
