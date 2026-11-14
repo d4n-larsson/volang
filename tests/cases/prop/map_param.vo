@@ -1,0 +1,6 @@
+prop "keys match the length" (m: map[str, int]) {
+    expect_eq(len(keys(m)), len(m));
+    for k in keys(m) {
+        expect(has(m, k));
+    }
+}

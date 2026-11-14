@@ -1,0 +1,18 @@
+fn largest(xs: list[int]) -> int {
+    var best = xs[0];
+    for x in xs {
+        set best = max(best, x);
+    }
+    return best;
+}
+
+prop "largest is in the list" (xs: list[int]) {
+    let m = largest(xs);
+    var found = false;
+    for x in xs {
+        if x == m {
+            set found = true;
+        }
+    }
+    expect(found);
+}

@@ -1,0 +1,5 @@
+match_arm.vo:12:20: warning[W0601]: Hole: `"the square's area"` needs a value of type `float`.
+  12 |             return todo("the square's area");
+     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: side: float, s: Shape
+0 errors, 1 warning (1 hole)

@@ -1,0 +1,4 @@
+dup_name.vo:5:1: error[E0202]: A test named "same" already exists.
+   5 | prop "same" (n: int) {
+     | ^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings

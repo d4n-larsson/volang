@@ -1,0 +1,7 @@
+FAIL widening keeps the start (2 cases, 0ms)
+  record_fields.vo:11:5: `expect_eq` failed: the values differ.
+    expected: 0
+    actual:   1
+    counterexample: s = new Span { start: 0, stop: 1 }
+    shrunk in 63 steps
+0 passed, 1 failed

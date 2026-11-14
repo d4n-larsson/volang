@@ -137,6 +137,14 @@ report_test:
     mv a0, s3
     mv a1, s2
     call int_to_dec
+    lhu t0, N_FLAGS(s0)
+    andi t0, t0, NF_PROP
+    beqz t0, 42f
+    mv a0, s3
+    mv a1, s0
+    mv a2, s1
+    call prop_json
+42:
     beqz s1, 48f
     beqz s4, 48f
     mv a0, s3
@@ -225,14 +233,20 @@ report_test:
     mv a0, s3
     la a1, h_ms_open
     call sb_cstr
+    lhu t0, N_FLAGS(s0)
+    andi t0, t0, NF_PROP
+    beqz t0, 51f
+    mv a0, s3
+    call prop_cases_text
+51:
     mv a0, s3
     mv a1, s2
     call int_to_dec
     mv a0, s3
     la a1, h_ms_close
     call sb_cstr
-    beqz s1, 90f
-    beqz s4, 90f
+    beqz s1, 89f
+    beqz s4, 89f
     mv a0, s3
     la a1, h_indent
     call sb_cstr
@@ -257,7 +271,7 @@ report_test:
     call sb_byte
     la t0, tf_expected
     ld t0, 0(t0)
-    beqz t0, 90f
+    beqz t0, 89f
     mv a0, s3
     la a1, h_expected
     call sb_cstr
@@ -278,7 +292,7 @@ report_test:
     mv a0, s3
     li a1, 10
     call sb_byte
-    j 90f
+    j 89f
 55:
     mv a0, s3
     la a1, h_rt
@@ -297,6 +311,14 @@ report_test:
     mv a0, s3
     li a1, 10
     call sb_byte
+89:
+    lhu t0, N_FLAGS(s0)
+    andi t0, t0, NF_PROP
+    beqz t0, 90f
+    mv a0, s3
+    mv a1, s0
+    mv a2, s1
+    call prop_text
 90:
     li a0, 1
     ld a1, SB_PTR(s3)
@@ -367,6 +389,15 @@ run_file_tests:
     add t0, t0, a0
     sd t0, 0(t1)
 3:
+    lhu t0, N_FLAGS(s2)         # a property runs its own cases (prop.s)
+    andi t0, t0, NF_PROP
+    beqz t0, 31f
+    mv a0, s2
+    addi a1, s1, -1
+    call prop_run
+    mv s3, a0
+    j 41f
+31:
     addi a0, sp, 0
     la t0, recover_point
     sd a0, 0(t0)
@@ -379,6 +410,7 @@ run_file_tests:
     li a0, ST_PASS
 4:
     mv s3, a0                   # 0 pass, 1 expect failed, 2 runtime error
+41:
     la t0, recover_point
     sd zero, 0(t0)
     la t0, deadline_ms
@@ -426,6 +458,12 @@ run_file_tests:
     la t0, rt_err_extra
     sd zero, 0(t0)
     la t0, ret_val
+    sd zero, 0(t0)
+    la t0, pr_args
+    sd zero, 0(t0)
+    la t0, pr_best
+    sd zero, 0(t0)
+    la t0, pr_cand
     sd zero, 0(t0)
     j 1b
 9:

@@ -1,0 +1,3 @@
+fn main() uses console {
+    print(str(todo("a number")));
+}

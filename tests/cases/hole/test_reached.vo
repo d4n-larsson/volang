@@ -1,0 +1,11 @@
+fn parse(line: str) -> int {
+    todo("parse the header");
+}
+
+test "reaches the hole" {
+    expect_eq(parse("a"), 1);
+}
+
+test "still runs" {
+    expect_eq(1 + 1, 2);
+}

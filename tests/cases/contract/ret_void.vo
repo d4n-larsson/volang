@@ -1,0 +1,8 @@
+fn show(n: int) uses console
+    ensures ret == 0 {
+    print(str(n));
+}
+
+fn main() uses console {
+    show(4);
+}

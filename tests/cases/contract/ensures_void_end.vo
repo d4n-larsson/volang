@@ -1,0 +1,11 @@
+fn grow(xs: list[int])
+    ensures len(xs) > 1 {
+    push(xs, 0);
+}
+
+fn main() uses console {
+    let xs = [5];
+    grow(xs);
+    print(str(len(xs)));
+    grow(new list[int]);
+}

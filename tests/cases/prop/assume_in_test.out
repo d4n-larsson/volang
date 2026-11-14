@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0604","name":"assume_outside_prop","severity":"error","file":"assume_in_test.vo","start":{"line":2,"col":5},"end":{"line":2,"col":17},"text":"assume(true)","message":"`assume` can only be used inside a `prop` block.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

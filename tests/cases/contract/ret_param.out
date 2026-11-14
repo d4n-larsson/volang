@@ -1,0 +1,5 @@
+ret_param.vo:2:13: error[E0203]: `ret` is already defined in an outer scope.
+   2 |     ensures ret >= 0 {
+     |             ^^^^^^^^
+  note: ret_param.vo:1:10: `ret` is defined here.
+1 error, 0 warnings

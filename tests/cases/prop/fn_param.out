@@ -1,0 +1,4 @@
+fn_param.vo:1:15: error[E0602]: Cannot generate values of `fn(int) -> int` for `f`: it contains a function type.
+   1 | prop "calls" (f: fn(int) -> int) {
+     |               ^^^^^^^^^^^^^^^^^
+1 error, 0 warnings

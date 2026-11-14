@@ -1338,7 +1338,7 @@ fn main() uses console {
 
 Fixable: no
 
-`expect` and `expect_eq` report test failures, so they are only allowed inside a `test "name" { ... }` block. Move the check into a test, which `vo test` runs. In normal code, check the condition with `if` and report an error.
+`expect` and `expect_eq` report test failures, so they are only allowed inside a `test "name" { ... }` or `prop "name" (...) { ... }` block. Move the check into a test, which `vo test` runs. In normal code, check the condition with `if` and report an error.
 
 ### Example
 
@@ -1710,6 +1710,126 @@ fn main() uses console {
 main.vo:main uses console
 ```
 
+## E0601 hole_type_unknown
+
+A hole is in a place whose type is not known.
+
+Fixable: no
+
+`todo(...)` takes the type its context expects, so the context must have one. A `let` without a type, an operand of `==` and the argument of `str(...)` give none. Annotate the binding, or move the hole where a type is expected.
+
+### Example
+
+```vo
+fn main() uses console {
+    let count = todo("count the words");
+    print(str(count));
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let count = 3;
+    print(str(count));
+}
+```
+
+## E0602 ungeneratable_type
+
+A property parameter has a type whose values cannot be generated.
+
+Fixable: no
+
+`vo test` generates the arguments of a `prop`, so every parameter type must have values it can build: no function types anywhere inside, and at least one finite value (a record whose fields always lead back to itself has none). Give the parameter a data type, and build the function or the recursive value inside the body.
+
+### Example
+
+```vo
+prop "applies" (f: fn(int) -> int, x: int) {
+    expect(f(x) == f(x));
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+prop "applies" (x: int) {
+    assume(x > -1000 and x < 1000);
+    expect(double(x) == double(x));
+}
+```
+
+## E0603 impure_contract
+
+A `requires` or `ensures` condition needs an effect.
+
+Fixable: no
+
+Contracts are checked on every call and return, so they must not print, read input, touch files or call anything that does (including functions passed in with an effect parameter). Contracts never change a function's effects. Compute what the condition needs with pure code, or check the effectful part in the body.
+
+### Example
+
+```vo
+fn logged(n: int) -> bool uses console {
+    print(str(n));
+    return n >= 0;
+}
+
+fn half(n: int) -> int
+    requires logged(n) {
+    return n / 2;
+}
+
+fn main() uses console {
+    print(str(half(4)));
+}
+```
+
+### Fixed
+
+```vo
+fn half(n: int) -> int
+    requires n >= 0 {
+    return n / 2;
+}
+
+fn main() uses console {
+    print(str(half(4)));
+}
+```
+
+## E0604 assume_outside_prop
+
+`assume` is used outside a property.
+
+Fixable: no
+
+`assume(cond)` discards the current generated input of a `prop`, so it means nothing in a function or a test. In a test, check the condition with `if`; in a function, return early or an error.
+
+### Example
+
+```vo
+test "halves" {
+    assume(4 % 2 == 0);
+    expect_eq(4 / 2, 2);
+}
+```
+
+### Fixed
+
+```vo
+prop "halves" (n: int) {
+    assume(n % 2 == 0);
+    expect_eq(n / 2 * 2, n);
+}
+```
+
 ## W0201 unused_variable
 
 A local variable is never used.
@@ -1920,6 +2040,38 @@ fn main() uses console {
 # file: vo.effects
 geom.vo:area pure
 main.vo:main uses console
+```
+
+## W0601 hole
+
+A `todo(...)` hole marks code that is not written yet.
+
+Fixable: no
+
+`todo("description")` stands for a value of the type its context expects, so the rest of the program can be checked before the gap is filled. The report gives that type (`expected`) and the names in scope with their types (`scope`). A statement `todo("...");` ends its path, like `return`, and needs a value of the function's return type. While a function has a hole, W0201 and W0501 are not reported for it. Running into a hole is R0011. Replace the hole with an expression of the expected type.
+
+### Example
+
+```vo
+fn area(w: int, h: int) -> int {
+    return todo("area of w by h");
+}
+
+fn main() uses console {
+    print(str(area(2, 3)));
+}
+```
+
+### Fixed
+
+```vo
+fn area(w: int, h: int) -> int {
+    return w * h;
+}
+
+fn main() uses console {
+    print(str(area(2, 3)));
+}
 ```
 
 ## R0001 integer_overflow
@@ -2221,6 +2373,122 @@ fn main() -> result[void] uses console, file.write("out/") {
 fn main() -> result[void] uses file.write("./") {
     try write_file("x.txt", "yes");
     return ok();
+}
+```
+
+## R0011 hole_reached
+
+The program ran into a `todo(...)` hole.
+
+Fixable: no
+
+A hole checks as any type, but it has no value: running into one stops the program with its description. Write the missing code (W0601 lists every hole and what it needs).
+
+### Example
+
+```vo
+fn parse(line: str) -> int {
+    todo("parse the header");
+}
+
+fn main() uses console {
+    print(str(parse("a,b")));
+}
+```
+
+### Fixed
+
+```vo
+fn parse(line: str) -> int {
+    return len(split(line, ","));
+}
+
+fn main() uses console {
+    print(str(parse("a,b")));
+}
+```
+
+## R0012 precondition_failed
+
+A function was called with arguments its `requires` condition rejects.
+
+Fixable: no
+
+The report points at the call, and the trace starts at the caller: the caller broke the contract. Calls through function values and builtins such as `map` are checked the same way. Check the argument before the call, or fix the code that computed it.
+
+### Example
+
+```vo
+fn isqrt(n: int) -> int
+    requires n >= 0 {
+    var r = 0;
+    while (r + 1) * (r + 1) <= n {
+        set r = r + 1;
+    }
+    return r;
+}
+
+fn main() uses console {
+    print(str(isqrt(-4)));
+}
+```
+
+### Fixed
+
+```vo
+fn isqrt(n: int) -> int
+    requires n >= 0 {
+    var r = 0;
+    while (r + 1) * (r + 1) <= n {
+        set r = r + 1;
+    }
+    return r;
+}
+
+fn main() uses console {
+    print(str(isqrt(4)));
+}
+```
+
+## R0013 postcondition_failed
+
+A function returned a value its `ensures` condition rejects.
+
+Fixable: no
+
+The report points at the exit that produced the value (`return`, a `try` that passed an error on, or the closing `}` of a function without a return type), and the trace starts at the function: its body broke the contract. Fix the body, or the condition if it is wrong.
+
+### Example
+
+```vo
+fn isqrt(n: int) -> int
+    ensures ret * ret <= n and (ret + 1) * (ret + 1) > n {
+    var r = 0;
+    while (r + 1) * (r + 1) < n {
+        set r = r + 1;
+    }
+    return r;
+}
+
+fn main() uses console {
+    print(str(isqrt(4)));
+}
+```
+
+### Fixed
+
+```vo
+fn isqrt(n: int) -> int
+    ensures ret * ret <= n and (ret + 1) * (ret + 1) > n {
+    var r = 0;
+    while (r + 1) * (r + 1) <= n {
+        set r = r + 1;
+    }
+    return r;
+}
+
+fn main() uses console {
+    print(str(isqrt(4)));
 }
 ```
 

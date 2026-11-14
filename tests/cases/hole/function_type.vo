@@ -1,0 +1,7 @@
+fn apply(f: fn(int) -> int, x: int) -> int {
+    return f(x);
+}
+
+fn main() uses console {
+    print(str(apply(todo("a doubling function"), 2)));
+}

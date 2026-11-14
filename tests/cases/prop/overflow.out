@@ -1,0 +1,6 @@
+ERROR addition commutes (8 cases, 0ms)
+  overflow.vo:2:15: runtime error[R0001]: Integer overflow.
+    counterexample: a = -9223372036854775806
+    counterexample: b = -3
+    shrunk in 2 steps
+0 passed, 0 failed, 1 errored

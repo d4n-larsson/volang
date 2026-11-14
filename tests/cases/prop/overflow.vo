@@ -1,0 +1,3 @@
+prop "addition commutes" (a: int, b: int) {
+    expect_eq(a + b, b + a);
+}

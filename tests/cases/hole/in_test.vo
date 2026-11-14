@@ -1,0 +1,8 @@
+fn parse(s: str) -> int {
+    return len(s);
+}
+
+test "parses" {
+    let want: int = todo("the expected length");
+    expect_eq(parse("ab"), want);
+}

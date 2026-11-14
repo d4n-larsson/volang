@@ -1,0 +1,6 @@
+ensures_try.vo:3:13: runtime error[R0013]: Postcondition `ret != err("invalid int: bad")` of `positive` does not hold.
+   3 |     let n = try parse_int(s);
+     |             ^^^^^^^^^^^^^^^^
+trace:
+  at positive (ensures_try.vo:3:13)
+  at main (ensures_try.vo:13:15)

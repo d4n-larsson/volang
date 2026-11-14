@@ -1,0 +1,8 @@
+fn half(n: int) -> int
+    requires todo("n is even") {
+    return n / 2;
+}
+
+fn main() uses console {
+    print(str(half(4)));
+}

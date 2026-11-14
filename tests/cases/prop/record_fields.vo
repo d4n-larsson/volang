@@ -1,0 +1,12 @@
+record Span {
+    start: int;
+    stop: int;
+}
+
+fn widened(s: Span) -> Span {
+    return new Span { start: s.stop, stop: s.start };
+}
+
+prop "widening keeps the start" (s: Span) {
+    expect_eq(widened(s).start, s.start);
+}

@@ -1,0 +1,7 @@
+prop "add zero" (n: int) {
+    expect_eq(n + 0, n);
+}
+
+test "plain" {
+    expect(true);
+}

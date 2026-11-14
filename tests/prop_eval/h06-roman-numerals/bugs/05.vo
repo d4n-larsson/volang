@@ -1,0 +1,71 @@
+# replaces: main.vo
+fn to_roman(n: int) -> str {
+    let vals = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+    let syms = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"];
+    let parts = new list[str];
+    var x = n;
+    for i in 0..len(vals) {
+        while x >= vals[i] {
+            push(parts, syms[i]);
+            set x = x - vals[i];
+        }
+    }
+    return join(parts, "");
+}
+
+fn letter(c: str) -> int {
+    let syms = ["I", "V", "X", "L", "C", "D", "M"];
+    let vals = [1, 5, 10, 50, 100, 500, 1000];
+    for i in 0..len(syms) {
+        if syms[i] == c {
+            return vals[i];
+        }
+    }
+    return 0;
+}
+
+fn answer(s: str) -> result[str] {
+    let cs = chars(s);
+    if len(cs) == 0 {
+        return ok("invalid");
+    }
+    if all(cs, fn(c: str) -> bool {
+        return c >= "0" and c <= "9";
+    }) {
+        let n = try parse_int(s);
+        if n < 1 or n > 3999 {
+            return ok("out of range");
+        }
+        return ok(to_roman(n));
+    }
+    var total = 0;
+    for i in 0..len(cs) {
+        let v = letter(cs[i]);
+        if v == 0 {
+            return ok("invalid");
+        }
+        if i + 1 < len(cs) and v <= letter(cs[i + 1]) {
+            set total = total - v;
+        } else {
+            set total = total + v;
+        }
+    }
+    if total < 1 or total > 3999 or to_roman(total) != s {
+        return ok("invalid");
+    }
+    return ok(str(total));
+}
+
+fn main() -> result[void] uses console, input {
+    while true {
+        match read_line() {
+            case ok(line) {
+                print(try answer(line));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

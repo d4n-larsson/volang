@@ -1,0 +1,10 @@
+fn first[T](xs: list[T], fallback: T) -> T {
+    if len(xs) == 0 {
+        return fallback;
+    }
+    return todo("the first element");
+}
+
+fn main() uses console {
+    print(str(first([1, 2], 0)));
+}

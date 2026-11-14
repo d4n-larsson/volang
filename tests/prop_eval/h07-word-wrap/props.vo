@@ -1,0 +1,134 @@
+import main.format;
+import main.wrap;
+
+# A word of 1 to 13 lowercase letters, all derived from n.
+fn mkword(n: int) -> str {
+    var w = "";
+    for i in 0..1 + abs(n % 13) {
+        set w = w + chr(97 + abs(n / (i + 1) % 26));
+    }
+    return w;
+}
+
+fn spaces(k: int) -> str {
+    var s = "";
+    for _ in 0..k {
+        set s = s + " ";
+    }
+    return s;
+}
+
+fn width_of(w: int) -> int {
+    return 1 + abs(w % 15);
+}
+
+# A text line: blank (only spaces) when x % 4 == 0, else 1 to 3 words with irregular spacing.
+fn line_of(x: int) -> str {
+    if x % 4 == 0 {
+        return spaces(abs(x % 3));
+    }
+    var s = spaces(abs(x % 2));
+    for j in 0..1 + abs(x % 3) {
+        set s = s + mkword(x / (j + 5)) + spaces(1 + abs(x / (j + 2) % 3));
+    }
+    return s;
+}
+
+fn no_spaces(s: str) -> str {
+    return join(split(s, " "), "");
+}
+
+# Independent statement of the greedy rule.
+fn model(words: list[str], width: int) -> list[str] {
+    let out = new list[str];
+    var cur = "";
+    for w in words {
+        if len(w) > width {
+            if cur != "" {
+                push(out, cur);
+            }
+            var k = 0;
+            while len(w) - k > width {
+                push(out, slice(w, k, k + width));
+                set k = k + width;
+            }
+            set cur = slice(w, k, len(w));
+        } else if cur == "" {
+            set cur = w;
+        } else if len(cur) + 1 + len(w) <= width {
+            set cur = cur + " " + w;
+        } else {
+            push(out, cur);
+            set cur = w;
+        }
+    }
+    if cur != "" {
+        push(out, cur);
+    }
+    return out;
+}
+
+prop "wrapped lines are 1 to W characters, single-spaced, trimmed" (ns: list[int], w: int) {
+    assume(len(ns) > 0);
+    let width = width_of(w);
+    for line in wrap(map(ns, mkword), width) {
+        expect(len(line) >= 1 and len(line) <= width);
+        expect(slice(line, 0, 1) != " " and slice(line, len(line) - 1, len(line)) != " ");
+        expect(find(line, "  ") == -1);
+    }
+}
+
+prop "wrapping keeps every character of every word in order" (ns: list[int], w: int) {
+    assume(len(ns) > 0);
+    let words = map(ns, mkword);
+    expect_eq(no_spaces(join(wrap(words, width_of(w)), "")), join(words, ""));
+}
+
+prop "wrapping is greedy" (ns: list[int], w: int) {
+    assume(len(ns) > 0);
+    let words = map(ns, mkword);
+    let width = width_of(w);
+    expect_eq(wrap(words, width), model(words, width));
+}
+
+prop "paragraphs are separated by exactly one empty line" (xs: list[int], w: int) {
+    let width = width_of(w);
+    let lines = map(xs, line_of);
+    let out = format(lines, width);
+    var paras = 0;
+    var in_para = false;
+    var words = "";
+    for l in lines {
+        if trim(l) == "" {
+            set in_para = false;
+        } else {
+            if not in_para {
+                set paras = paras + 1;
+            }
+            set in_para = true;
+            set words = words + no_spaces(l);
+        }
+    }
+    let empties = filter(out, fn(l: str) -> bool {
+        return l == "";
+    });
+    if paras == 0 {
+        expect_eq(len(out), 0);
+    } else {
+        expect_eq(len(empties), paras - 1);
+        expect(out[0] != "" and out[len(out) - 1] != "");
+    }
+    for l in out {
+        expect(len(l) <= width);
+    }
+    expect_eq(no_spaces(join(out, "")), words);
+}
+
+test "edge cases from the statement" {
+    expect_eq(wrap(["abcdef", "x"], 3), ["abc", "def", "x"]);
+    expect_eq(wrap(["ab", "abcdefg", "c"], 3), ["ab", "abc", "def", "g c"]);
+    expect_eq(wrap(["abc", "d"], 3), ["abc", "d"]);
+    expect_eq(wrap(["a", "b", "c"], 1), ["a", "b", "c"]);
+    expect_eq(format(["", "  ", "a b", "", "", "c", " "], 10), ["a b", "", "c"]);
+    expect_eq(format(["", "   "], 5), new list[str]);
+}

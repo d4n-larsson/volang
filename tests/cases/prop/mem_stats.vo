@@ -1,0 +1,7 @@
+prop "lists" (xs: list[int]) {
+    expect(len(xs) >= 0);
+}
+
+prop "strs" (s: str) {
+    expect(len(s) >= 0);
+}

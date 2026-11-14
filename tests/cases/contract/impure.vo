@@ -1,0 +1,13 @@
+fn half(n: int) -> int
+    requires print_ok(n) {
+    return n / 2;
+}
+
+fn print_ok(n: int) -> bool uses console {
+    print(str(n));
+    return true;
+}
+
+fn main() uses console {
+    print(str(half(4)));
+}

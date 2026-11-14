@@ -1,0 +1,12 @@
+record Point {
+    x: int;
+    y: int;
+}
+
+fn mirrored(p: Point) -> Point {
+    return new Point { x: p.y, y: p.x };
+}
+
+prop "mirror twice" (p: Point) {
+    expect_eq(mirrored(mirrored(p)), p);
+}

@@ -1,0 +1,4 @@
+prop "the body may change its argument" (xs: list[int]) {
+    push(xs, 7);
+    expect(len(xs) < 3);
+}

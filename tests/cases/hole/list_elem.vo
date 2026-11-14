@@ -1,0 +1,4 @@
+fn main() uses console {
+    let xs: list[str] = ["a", todo("the second word")];
+    print(join(xs, ","));
+}

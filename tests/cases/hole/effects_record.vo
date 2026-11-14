@@ -1,0 +1,11 @@
+fn report(n: int) uses console {
+    todo("print the report");
+}
+
+fn main() uses console {
+    report(1);
+}
+
+test "reports" uses console {
+    report(2);
+}

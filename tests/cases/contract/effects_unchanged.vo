@@ -1,0 +1,9 @@
+fn half(n: int) -> int
+    requires n % 2 == 0
+    ensures ret * 2 == n {
+    return n / 2;
+}
+
+fn main() uses console {
+    print(str(half(4)));
+}

@@ -1,0 +1,21 @@
+fn or_zero(r: result[int]) -> int {
+    match r {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+prop "ok values survive" (r: result[int]) {
+    match r {
+        case ok(v) {
+            expect_eq(or_zero(r), v);
+        }
+        case err(_) {
+            expect_eq(or_zero(r), 0);
+        }
+    }
+}

@@ -1,0 +1,11 @@
+fn isqrt(n: int) -> int
+    requires n >= 0
+    ensures ret * ret <= n {
+    return 0;
+}
+
+fn grow(xs: list[int]) uses console
+    ensures len(xs) > 0
+    requires true {
+    push(xs, 1);
+}

@@ -1,0 +1,10 @@
+fn apply[E: effects](x: int, check: fn(int) -> bool uses E) -> int uses E
+    requires check(x) {
+    return x;
+}
+
+fn main() uses console {
+    print(str(apply(2, fn(n: int) -> bool {
+        return n > 0;
+    })));
+}

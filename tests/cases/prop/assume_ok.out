@@ -1,0 +1,2 @@
+{"v":1,"kind":"test","name":"even halves","status":"pass","file":"assume_ok.vo","start":{"line":1,"col":1},"uses":"","ms":0,"prop":true,"cases":100,"discarded":107}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":1,"failed":0,"errored":0,"timed_out":0}

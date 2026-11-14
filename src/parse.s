@@ -22,7 +22,7 @@ tok_spell:
     .dword k_fn, k_record, k_variant, k_test, k_import, k_let, k_var, k_set, k_if, k_else
     .dword k_while, k_for, k_in, k_match, k_case, k_return, k_break, k_continue, k_try, k_new
     .dword k_and, k_or, k_not, k_true, k_false, k_int, k_float, k_bool, k_str, k_list
-    .dword k_map, k_result, k_void, w_q, w_q, w_q, w_q, w_q, w_q, w_q
+    .dword k_map, k_result, k_void, k_uses, k_prop, k_requires, k_ensures, w_q, w_q, w_q
     .dword p_lparen, p_rparen, p_lbrace, p_rbrace, p_lbrack, p_rbrack, p_comma, p_semi, p_colon, p_dot
     .dword p_dotdot, p_arrow, p_assign, p_eq, p_ne, p_lt, p_le, p_gt, p_ge, p_plus
     .dword p_minus, p_star, p_slash, p_percent
@@ -79,6 +79,10 @@ k_list: .string "list"
 k_map: .string "map"
 k_result: .string "result"
 k_void: .string "void"
+k_uses: .string "uses"
+k_prop: .string "prop"
+k_requires: .string "requires"
+k_ensures: .string "ensures"
 p_lparen: .string "("
 p_rparen: .string ")"
 p_lbrace: .string "{"
@@ -2280,6 +2284,51 @@ parse_stmt:
     addi sp, sp, 48
     ret
 
+# void parse_clauses(void *fx)
+# `requires COND` and `ensures COND` after `uses` (spec 005), in any order, into the FX record's
+# FX_REQUIRES / FX_ENSURES vecs (source order within each kind; vo fmt merges them by position).
+parse_clauses:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    sd s2, 0(sp)
+    mv s0, a0
+1:
+    call p_failed
+    bnez a0, 9f
+    call p_kind
+    addi s1, s0, FX_REQUIRES    # s1: where the clause goes
+    li t0, T_REQUIRES
+    beq a0, t0, 2f
+    addi s1, s0, FX_ENSURES
+    li t0, T_ENSURES
+    bne a0, t0, 9f
+2:
+    ld t0, FX_CLAUSE_AT(s0)     # where the first clause starts (fixes to `uses` insert before it)
+    bnez t0, 21f
+    call p_start
+    sd a0, FX_CLAUSE_AT(s0)
+21:
+    call p_next
+    call parse_expr
+    mv s2, a0
+    ld a0, 0(s1)
+    bnez a0, 3f
+    call vec_new
+    sd a0, 0(s1)
+3:
+    mv a1, s2
+    call vec_push
+    j 1b
+9:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    ld s2, 0(sp)
+    addi sp, sp, 32
+    ret
+
 # void *parse_fn(void)
     .globl parse_fn
 parse_fn:
@@ -2388,12 +2437,16 @@ parse_fn_kind:
     call parse_uses
     sd a0, FX_USES(s2)
     li t0, N_LAMBDA             # anonymous functions infer their effects (E0507)
-    bne s4, t0, 42f
+    bne s4, t0, 43f
     beqz a0, 42f
     call p_uses_on_lambda
     j 42f
 41:
     call parse_uses
+    j 42f
+43:
+    mv a0, s2                   # named functions: contract clauses
+    call parse_clauses
 42:
     call parse_block
     sd a0, N_D(s0)
@@ -2820,6 +2873,8 @@ parse_item:
     beq s2, t0, 5f
     li t0, T_IMPORT
     beq s2, t0, 6f
+    li t0, T_PROP
+    beq s2, t0, 7f
     la a0, x_item
     la a1, x_item_raw
     call p_fail_c
@@ -2882,6 +2937,67 @@ parse_item:
     sd a0, N_A(s0)
     call parse_uses
     sd a0, N_C(s0)
+    call parse_block
+    sd a0, N_B(s0)
+    j 8f
+7:                              # prop "name" (param, ...) uses? block: N_TEST + NF_PROP
+    li a0, N_TEST
+    call p_node
+    mv s0, a0
+    lhu t0, N_FLAGS(s0)
+    ori t0, t0, NF_PROP
+    sh t0, N_FLAGS(s0)
+    li a0, FX_SIZE              # the parameters live in the side record
+    call alloc
+    sd a0, N_D(s0)
+    call vec_new
+    ld t0, N_D(s0)
+    sd a0, FX_PARAMS(t0)
+    call p_next
+    call p_kind
+    li t0, T_STRING
+    beq a0, t0, 71f
+    li a0, T_STRING
+    call p_expect
+    j 8f
+71:
+    call p_next
+    lwu a1, TOK_END(a0)
+    lwu a0, TOK_START(a0)
+    call decode_string
+    sd a0, N_A(s0)
+    li a0, T_LPAREN
+    call p_expect
+72:
+    call p_failed
+    bnez a0, 8f
+    call p_start
+    sd a0, 0(sp)
+    li a0, N_PARAM
+    call p_node
+    mv s2, a0
+    call p_name
+    sd a0, N_A(s2)
+    li a0, T_COLON
+    call p_expect
+    call parse_type
+    sd a0, N_B(s2)
+    mv a0, s2
+    ld a1, 0(sp)
+    call p_finish
+    mv a1, a0
+    ld t0, N_D(s0)
+    ld a0, FX_PARAMS(t0)
+    call vec_push
+    li a0, T_COMMA
+    call p_accept
+    bnez a0, 72b
+    li a0, T_RPAREN
+    call p_expect
+    call parse_uses
+    sd a0, N_C(s0)
+    ld t0, N_D(s0)
+    sd a0, FX_USES(t0)
     call parse_block
     sd a0, N_B(s0)
     j 8f

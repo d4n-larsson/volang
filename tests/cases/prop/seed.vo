@@ -1,0 +1,3 @@
+prop "small" (n: int) {
+    expect(n < 5);
+}

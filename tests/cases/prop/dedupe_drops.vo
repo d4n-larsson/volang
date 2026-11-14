@@ -1,0 +1,28 @@
+fn dedupe(xs: list[int]) -> list[int] {
+    let out = new list[int];
+    for x in xs {
+        var seen = false;
+        for y in out {
+            if y == x {
+                set seen = true;
+            }
+        }
+        if not seen and len(out) < 3 {
+            push(out, x);
+        }
+    }
+    return out;
+}
+
+prop "dedupe keeps every value" (xs: list[int]) {
+    let d = dedupe(xs);
+    for x in xs {
+        var found = false;
+        for y in d {
+            if y == x {
+                set found = true;
+            }
+        }
+        expect(found);
+    }
+}

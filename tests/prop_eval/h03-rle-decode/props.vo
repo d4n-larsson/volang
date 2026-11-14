@@ -1,0 +1,160 @@
+import main.decode;
+
+# Properties of the run-length decoder, from the task statement only.
+fn letter(x: int) -> str {
+    let alphabet = ["a", "b", " ", "-", "e", ":", "#"];
+    return alphabet[abs(x % len(alphabet))];
+}
+
+fn repeat(c: str, n: int) -> str {
+    let parts = new list[str];
+    for _ in 0..n {
+        push(parts, c);
+    }
+    return join(parts, "");
+}
+
+# A count from x: mostly small, sometimes up to three digits.
+fn count_of(x: int) -> int {
+    if abs(x % 4) == 0 {
+        return abs(x / 7 % 400) + 1;
+    }
+    return abs(x / 7 % 12) + 1;
+}
+
+# Builds the encoding and its decoding of runs drawn from xs.
+fn encode(xs: list[int]) -> list[str] {
+    var enc = "";
+    var dec = "";
+    for x in xs {
+        let n = count_of(x);
+        let c = letter(x / 5000);
+        set enc = enc + str(n) + c;
+        set dec = dec + repeat(c, n);
+    }
+    return [enc, dec];
+}
+
+fn is_digit_byte(c: str) -> bool {
+    return len(c) == 1 and c >= "0" and c <= "9";
+}
+
+# Independent model: the expected output line for s.
+fn model(s: str) -> str {
+    let cs = chars(s);
+    var col = 1;
+    var i = 0;
+    var total = 0;
+    let out = new list[str];
+    while i < len(cs) {
+        if not is_digit_byte(cs[i]) {
+            return "error at column " + str(col);
+        }
+        if cs[i] == "0" {
+            return "error at column " + str(col);
+        }
+        var n = 0;
+        while i < len(cs) and is_digit_byte(cs[i]) {
+            set n = n * 10 + (ord(cs[i]) - ord("0"));
+            set i = i + 1;
+            set col = col + 1;
+        }
+        if i == len(cs) {
+            return "error at column " + str(len(s) + 1);
+        }
+        set total = total + n;
+        if total <= 1000 {
+            push(out, repeat(cs[i], n));
+        }
+        set col = col + len(cs[i]);
+        set i = i + 1;
+    }
+    if total > 1000 {
+        return "error: too long";
+    }
+    return join(out, "");
+}
+
+fn longest_digit_run(s: str) -> int {
+    var best = 0;
+    var cur = 0;
+    for c in chars(s) {
+        if is_digit_byte(c) {
+            set cur = cur + 1;
+            set best = max(best, cur);
+        } else {
+            set cur = 0;
+        }
+    }
+    return best;
+}
+
+prop "valid encodings decode to their runs, or too long past 1000" (xs: list[int]) {
+    let e = encode(xs);
+    var total = 0;
+    for x in xs {
+        set total = total + count_of(x);
+    }
+    if total > 1000 {
+        expect_eq(decode(e[0]), "error: too long");
+    } else {
+        expect_eq(decode(e[0]), e[1]);
+    }
+}
+
+prop "random lines decode as the model says" (xs: list[int]) {
+    let symbols = ["0", "1", "2", "3", "9", "a", " ", "b", "1", "2"];
+    var s = "";
+    for x in xs {
+        set s = s + symbols[abs(x % len(symbols))];
+    }
+    assume(longest_digit_run(s) <= 9);
+    expect_eq(decode(s), model(s));
+}
+
+prop "the first bad spot after a valid prefix decides the column" (xs: list[int], kind: int, big: bool) {
+    var e = encode(xs)[0];
+    if big {
+        set e = "999999999z" + e;
+    }
+    let col = len(e) + 1;
+    let k = abs(kind % 5);
+    if k == 0 {
+        expect_eq(decode(e + "a3b"), "error at column " + str(col));
+    } else if k == 1 {
+        expect_eq(decode(e + "0x"), "error at column " + str(col));
+    } else if k == 2 {
+        expect_eq(decode(e + "07y2"), "error at column " + str(col));
+    } else if k == 3 {
+        expect_eq(decode(e + "12"), "error at column " + str(col + 2));
+    } else {
+        expect_eq(decode(e + "2ab"), "error at column " + str(col + 2));
+    }
+}
+
+prop "exactly 1000 characters decode, 1001 are too long" (xs: list[int]) {
+    assume(len(xs) > 0);
+    var left = 1000;
+    var enc = "";
+    for x in xs {
+        let n = min(left, abs(x % 600) + 1);
+        if n > 0 {
+            set enc = enc + str(n) + letter(x / 600);
+            set left = left - n;
+        }
+    }
+    if left > 0 {
+        set enc = enc + str(left) + "c";
+    }
+    expect_eq(len(decode(enc)), 1000);
+    expect_eq(decode(enc + "1d"), "error: too long");
+    expect_eq(decode("1d" + enc), "error: too long");
+}
+
+test "empty and single-run lines" {
+    expect_eq(decode(""), "");
+    expect_eq(decode("1 "), " ");
+    expect_eq(decode("3a12b1 "), "aaa" + repeat("b", 12) + " ");
+    expect_eq(decode("1000000a"), "error: too long");
+    expect_eq(decode("9"), "error at column 2");
+}

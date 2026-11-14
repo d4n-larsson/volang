@@ -1,0 +1,6 @@
+fn main() uses console {
+    let f = fn(n: int) -> int requires n > 0 {
+        return n;
+    };
+    print(str(f(1)));
+}

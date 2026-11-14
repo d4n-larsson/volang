@@ -1,0 +1,5 @@
+FAIL dedupe keeps every value (24 cases, 0ms)
+  dedupe_drops.vo:26:9: `expect` failed: the condition is false.
+    counterexample: xs = [1, 0, -1, 2]
+    shrunk in 8 steps
+0 passed, 1 failed

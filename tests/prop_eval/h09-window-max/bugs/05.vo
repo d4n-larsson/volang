@@ -1,0 +1,45 @@
+# replaces: main.vo
+fn tokens(s: str) -> list[str] {
+    let toks = new list[str];
+    for line in split(s, "\n") {
+        for t in split(line, " ") {
+            if len(t) > 0 {
+                push(toks, t);
+            }
+        }
+    }
+    return toks;
+}
+
+fn window_max(xs: list[int], k: int) -> list[int] {
+    let out = new list[int];
+    for i in k - 1..len(xs) {
+        var best = xs[i];
+        for j in i - k + 1..i {
+            set best = max(best, xs[j]);
+        }
+        push(out, best);
+    }
+    return out;
+}
+
+fn solve(input: str) -> result[str] {
+    let toks = tokens(input);
+    let n = try parse_int(toks[0]);
+    let k = try parse_int(toks[1]);
+    if k > n {
+        return ok("none");
+    }
+    let xs = new list[int];
+    for i in 0..n {
+        push(xs, try parse_int(toks[2 + i]));
+    }
+    return ok(join(map(window_max(xs, k), fn(x: int) -> str {
+        return str(x);
+    }), " "));
+}
+
+fn main() -> result[void] uses console, input {
+    print(try solve(read_all()));
+    return ok();
+}

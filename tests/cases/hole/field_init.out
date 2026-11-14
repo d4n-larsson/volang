@@ -1,0 +1,5 @@
+field_init.vo:7:34: warning[W0601]: Hole: `"the height"` needs a value of type `int`.
+   7 |     let p = new Point { x: 1, y: todo("the height") };
+     |                                  ^^^^^^^^^^^^^^^^^^
+    in scope: nothing
+0 errors, 1 warning (1 hole)

@@ -1,0 +1,9 @@
+hole_in_prop.vo:8:27: warning[W0601]: Hole: `"decode the text"` needs a value of type `list[int]`.
+   8 |     let back: list[int] = todo("decode the text");
+     |                           ^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: xs: list[int]
+ERROR decode inverts encode (1 case, 0ms)
+  hole_in_prop.vo:8:27: runtime error[R0011]: Hole reached: decode the text.
+    counterexample: xs = []
+    shrunk in 1 step
+0 passed, 0 failed, 1 errored

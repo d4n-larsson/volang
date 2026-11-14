@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0601","name":"hole_type_unknown","severity":"error","file":"unknown_let_json.vo","start":{"line":2,"col":13},"end":{"line":2,"col":22},"text":"todo(\"x\")","message":"Cannot tell what type this hole must have; annotate the binding: `let x: T = todo(...)`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -1,0 +1,2 @@
+prop   "reverse twice"(xs:list[int],n:int)uses console{
+expect(len(xs)>=0);print(str(n));}

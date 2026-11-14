@@ -1,0 +1,81 @@
+# replaces: main.vo
+record Player {
+    name: str;
+    score: int;
+}
+
+fn words(s: str) -> list[str] {
+    return filter(split(s, " "), fn(w: str) -> bool {
+        return len(w) > 0;
+    });
+}
+
+fn collect(rows: list[list[str]]) -> result[list[Player]] {
+    let index = new map[str, int];
+    let players = new list[Player];
+    for row in rows {
+        let score = try parse_int(row[1]);
+        if has(index, row[0]) {
+            let p = players[index[row[0]]];
+            set p.score = max(p.score, score);
+        } else {
+            set index[row[0]] = len(players);
+            push(players, new Player { name: row[0], score: score });
+        }
+    }
+    return ok(players);
+}
+
+fn table(input: list[Player], k: int) -> list[str] {
+    let players = slice(input, 0, len(input));
+    sort_by(players, fn(p: Player) -> int {
+        return -p.score;
+    });
+    let out = new list[str];
+    var rank = 0;
+    for i in 0..len(players) {
+        let p = players[i];
+        if i == 0 or p.score != players[i - 1].score {
+            set rank = i + 1;
+        }
+        if rank > k {
+            break;
+        }
+        push(out, str(rank) + " " + p.name + " " + str(p.score));
+    }
+    return out;
+}
+
+fn solve(lines: list[str]) -> result[list[str]] {
+    let rows = new list[list[str]];
+    for line in lines {
+        let t = words(line);
+        if len(t) > 0 {
+            push(rows, t);
+        }
+    }
+    if len(rows) == 0 {
+        return ok(new list[str]);
+    }
+    let k = try parse_int(lines[0]);
+    let players = try collect(slice(rows, 1, len(rows)));
+    return ok(table(players, k));
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = new list[str];
+    while true {
+        match read_line() {
+            case ok(line) {
+                push(lines, line);
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    for line in try solve(lines) {
+        print(line);
+    }
+    return ok();
+}

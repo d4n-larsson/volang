@@ -1,0 +1,6 @@
+prop "prints a number" (n: int) uses console {
+    if n == 0 {
+        print("zero");
+    }
+    expect(true);
+}

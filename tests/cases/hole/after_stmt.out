@@ -1,0 +1,8 @@
+after_stmt.vo:2:5: warning[W0601]: Hole: `"compute it"` needs a value of type `int`.
+   2 |     todo("compute it");
+     |     ^^^^^^^^^^^^^^^^^^
+    in scope: n: int
+after_stmt.vo:3:5: warning[W0401]: This statement can never run.
+   3 |     return n;
+     |     ^^^^^^^^^
+0 errors, 2 warnings (1 hole)

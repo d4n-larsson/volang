@@ -1,0 +1,7 @@
+test "same" {
+    expect(true);
+}
+
+prop "same" (n: int) {
+    expect(true);
+}

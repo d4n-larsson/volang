@@ -36,13 +36,63 @@ builtin_call:
     ld a2, 16(sp)
     ld t0, N_D(s0)              # builtin id -> jump table
     addi t0, t0, -1
-    li t1, 47
+    li t1, B_ENS_FAIL
     bgeu t0, t1, 98f
     la t1, btab
     slli t0, t0, 3
     add t1, t1, t0
     ld t1, 0(t1)
     jr t1
+b_todo:                         # R0011: "Hole reached: <desc>."
+    call sb_new
+    sd a0, 24(sp)
+    la a1, s_hole
+    call sb_cstr
+    ld a0, 24(sp)
+    mv a1, s3
+    call sb_str
+    ld a0, 24(sp)
+    li a1, '.'
+    call sb_byte
+    ld a0, 24(sp)
+    call sb_finish
+    mv a1, a0
+    la a0, r0011
+    mv a2, s0
+    call rt_raise
+    j 98f
+b_assume:                       # false: discard this property case (prop.s)
+    bnez s3, 98f
+    la a0, assume_code
+    li a1, 0
+    mv a2, s0
+    call rt_raise
+    j 98f
+b_req_fail:                     # R0012 at the caller's call, the trace from the caller
+    mv a0, s0
+    la a1, s_pre
+    call contract_msg
+    mv a1, a0
+    la t0, cur_frame
+    ld t1, 0(t0)
+    ld a2, FR_CALL(t1)
+    bnez a2, 1f
+    mv a2, s0                   # no caller node (main): the condition itself
+1:
+    ld t1, FR_PARENT(t1)
+    sd t1, 0(t0)
+    la a0, r0012
+    call rt_raise
+    j 98f
+b_ens_fail:                     # R0013 at the exit (s3: its node), the trace from the function
+    mv a0, s0
+    la a1, s_post
+    call contract_msg
+    mv a1, a0
+    la a0, r0013
+    mv a2, s3
+    call rt_raise
+    j 98f
 b_print:
     mv a1, a0
     li a0, 1
@@ -305,7 +355,86 @@ b_chr:
     addi sp, sp, 64
     ret
 
+# void *contract_msg(void *node, char *kind)
+# "<kind> `<condition, whitespace runs as one space>` of `<function>` does not hold." for a
+# compiled contract failure node (N_A the condition, N_C the function).
+contract_msg:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
+    mv s0, a0
+    mv s1, a1
+    call sb_new
+    mv s2, a0
+    mv a1, s1
+    call sb_cstr
+    mv a0, s2
+    li a1, '`'
+    call sb_byte
+    ld a0, N_A(s0)
+    call src_text
+    mv s1, a0
+    li s3, 0                    # 1 after a whitespace character
+    addi s1, s1, STR_DATA
+    ld t0, STR_LEN-STR_DATA(s1)
+    add t0, s1, t0
+    sd t0, 0(sp)
+1:
+    ld t0, 0(sp)
+    bgeu s1, t0, 4f
+    lbu a1, 0(s1)
+    addi s1, s1, 1
+    li t1, ' '
+    beq a1, t1, 2f
+    li t1, 10
+    beq a1, t1, 2f
+    li t1, 9
+    beq a1, t1, 2f
+    li s3, 0
+    mv a0, s2
+    call sb_byte
+    j 1b
+2:
+    bnez s3, 1b
+    li s3, 1
+    mv a0, s2
+    li a1, ' '
+    call sb_byte
+    j 1b
+4:
+    mv a0, s2
+    la a1, s_of
+    call sb_cstr
+    ld t0, N_C(s0)
+    ld t0, N_A(t0)
+    ld a1, N_A(t0)
+    mv a0, s2
+    call sb_str
+    mv a0, s2
+    la a1, s_not_hold
+    call sb_cstr
+    mv a0, s2
+    call sb_finish
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    addi sp, sp, 48
+    ret
+
     .section .rodata
+r0012:  .string "R0012"
+r0013:  .string "R0013"
+s_pre:  .string "Precondition "
+s_post: .string "Postcondition "
+s_of:   .string "` of `"
+s_not_hold: .string "` does not hold."
+r0011:  .string "R0011"
+s_hole: .string "Hole reached: "
     .align 3
 btab:
     .dword b_print, b_write, b_eprint, b_read_line, b_read_all, b_read_file, b_write_file, b_args
@@ -313,7 +442,8 @@ btab:
     .dword b_slice, b_find, b_split, b_join, b_trim, b_chars, b_push, b_pop
     .dword b_sort, b_has, b_remove, b_keys, b_expect, b_expect_eq, b_ok, b_err
     .dword b_abs, b_min, b_max, b_upper, b_lower, b_ord, b_chr, b_env, b_random_int
-    .dword b_sort_by, b_map, b_filter, b_fold, b_any, b_all
+    .dword b_sort_by, b_map, b_filter, b_fold, b_any, b_all, b_todo, b_assume, b_req_fail
+    .dword b_ens_fail
     .text
 
 # void *map_key_type(void)

@@ -1,0 +1,5 @@
+fn main() uses console {
+    let n = 4;
+    let total = n + todo("the tax");
+    print(str(total));
+}

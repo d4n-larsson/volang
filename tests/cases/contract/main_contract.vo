@@ -1,0 +1,4 @@
+fn main() uses console
+    requires true {
+    print("ran");
+}

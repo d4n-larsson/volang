@@ -1,0 +1,8 @@
+impure_effect_param.vo:1:4: warning[W0501]: `apply` declares E, which it never needs.
+   1 | fn apply[E: effects](x: int, check: fn(int) -> bool uses E) -> int uses E
+     |    ^^^^^
+  fix: remove `uses E\n    `
+impure_effect_param.vo:2:14: error[E0603]: A contract condition must be pure, but this one needs E.
+   2 |     requires check(x) {
+     |              ^^^^^^^^
+1 error, 1 warning

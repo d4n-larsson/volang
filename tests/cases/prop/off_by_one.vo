@@ -1,0 +1,12 @@
+fn count_below(n: int) -> int {
+    var c = 0;
+    for _ in 0..n {
+        set c = c + 1;
+    }
+    return c;
+}
+
+prop "counts 0 to n inclusive" (n: int) {
+    assume(n >= 0);
+    expect_eq(count_below(n), n + 1);
+}

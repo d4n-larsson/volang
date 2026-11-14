@@ -1,0 +1,4 @@
+prop "parses" (n: int) {
+    let v = try parse_int(str(n));
+    expect_eq(v, n);
+}

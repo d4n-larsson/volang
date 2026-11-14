@@ -1,0 +1,8 @@
+fn later(n: int) -> int {
+    todo("compute it");
+    return n;
+}
+
+fn main() uses console {
+    print(str(later(1)));
+}

@@ -1,0 +1,6 @@
+FAIL short words only (26 cases, 0ms)
+  globals_prop.vo:7:5: `expect` failed: the condition is false.
+    counterexample: words = ["aa", "aaaa"]
+    counterexample: n = 0
+    shrunk in 8 steps
+0 passed, 1 failed

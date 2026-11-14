@@ -1,0 +1,21 @@
+fn fact(n: int) -> int
+    requires n >= 0
+    ensures ret >= 1 {
+    if n == 0 {
+        return 1;
+    }
+    return n * fact(n - 1);
+}
+
+fn bad_fact(n: int) -> int
+    requires n >= 0 {
+    if n == 0 {
+        return 1;
+    }
+    return n * bad_fact(n - 2);
+}
+
+fn main() uses console {
+    print(str(fact(5)));
+    print(str(bad_fact(3)));
+}

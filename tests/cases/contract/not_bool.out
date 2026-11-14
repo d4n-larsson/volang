@@ -1,0 +1,4 @@
+not_bool.vo:2:14: error[E0301]: A condition must be `bool`, found `int`.
+   2 |     requires n {
+     |              ^
+1 error, 0 warnings

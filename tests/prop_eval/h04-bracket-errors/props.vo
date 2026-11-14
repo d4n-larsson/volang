@@ -1,0 +1,162 @@
+import main.check;
+
+# Properties of the bracket checker, from the task statement only (ASCII lines).
+fn close_of(o: str) -> str {
+    if o == "(" {
+        return ")";
+    }
+    if o == "[" {
+        return "]";
+    }
+    return "}";
+}
+
+fn at(c: int, msg: str) -> str {
+    return "error at column " + str(c) + ": " + msg;
+}
+
+# A balanced line drawn from xs: brackets, filler and closed strings holding stray brackets.
+fn balanced(xs: list[int]) -> str {
+    let opens = ["(", "[", "{"];
+    let junk = [")", "]x", "{(", "a b", ""];
+    let stack = new list[str];
+    let out = new list[str];
+    for x in xs {
+        let k = abs(x % 8);
+        if k <= 2 {
+            push(stack, opens[k]);
+            push(out, opens[k]);
+        } else if k <= 4 and len(stack) > 0 {
+            match pop(stack) {
+                case ok(o) {
+                    push(out, close_of(o));
+                }
+                case err(_) {
+                }
+            }
+        } else if k == 5 {
+            push(out, "\"" + junk[abs(x / 8 % len(junk))] + "\"");
+        } else if k == 6 {
+            push(out, " ");
+        } else {
+            push(out, "a");
+        }
+    }
+    while len(stack) > 0 {
+        match pop(stack) {
+            case ok(o) {
+                push(out, close_of(o));
+            }
+            case err(_) {
+            }
+        }
+    }
+    return join(out, "");
+}
+
+record Open {
+    ch: str;
+    col: int;
+}
+
+# Independent model of the whole statement.
+fn model(s: str) -> str {
+    let stack = new list[Open];
+    var quote = 0;
+    var col = 0;
+    for c in chars(s) {
+        set col = col + 1;
+        if quote > 0 {
+            if c == "\"" {
+                set quote = 0;
+            }
+        } else if c == "\"" {
+            set quote = col;
+        } else if c == "(" or c == "[" or c == "{" {
+            push(stack, new Open { ch: c, col: col });
+        } else if c == ")" or c == "]" or c == "}" {
+            if len(stack) == 0 {
+                return at(col, "unexpected " + c);
+            }
+            let top = stack[len(stack) - 1];
+            if close_of(top.ch) != c {
+                return at(col, "expected " + close_of(top.ch) + " but found " + c);
+            }
+            match pop(stack) {
+                case ok(_) {
+                }
+                case err(_) {
+                }
+            }
+        }
+    }
+    if quote > 0 {
+        return at(quote, "unclosed \"");
+    }
+    if len(stack) > 0 {
+        return at(stack[0].col, "unclosed " + stack[0].ch);
+    }
+    return "ok";
+}
+
+prop "random lines are checked as the model says" (xs: list[int]) {
+    let symbols = ["(", ")", "[", "]", "{", "}", "\"", "a", " ", "(", ")"];
+    var s = "";
+    for x in xs {
+        set s = s + symbols[abs(x % len(symbols))];
+    }
+    expect_eq(check(s), model(s));
+}
+
+prop "balanced lines are ok" (xs: list[int]) {
+    expect_eq(check(balanced(xs)), "ok");
+}
+
+prop "a closer after a balanced prefix is unexpected" (xs: list[int], ys: list[int], k: int) {
+    let closers = [")", "]", "}"];
+    let c = closers[abs(k % 3)];
+    let p = balanced(xs);
+    expect_eq(check(p + c + balanced(ys) + "("), at(len(p) + 1, "unexpected " + c));
+}
+
+prop "a wrong closer names the closer the innermost open needs" (xs: list[int], ys: list[int], zs: list[int], k: int) {
+    let opens = ["(", "[", "{"];
+    let closers = [")", "]", "}"];
+    let i = abs(k % 3);
+    let o = opens[i];
+    let wrong = closers[(i + 1 + abs(k / 3 % 2)) % 3];
+    let p = balanced(xs) + o + balanced(ys);
+    let line = "[" + p + wrong + balanced(zs) + "\"";
+    expect_eq(check(line), at(len(p) + 2, "expected " + close_of(o) + " but found " + wrong));
+}
+
+prop "the leftmost never-closed bracket is reported" (xs: list[int], ys: list[int], zs: list[int], k: int) {
+    let opens = ["(", "[", "{"];
+    let o = opens[abs(k % 3)];
+    let o2 = opens[abs(k / 3 % 3)];
+    let a = balanced(xs);
+    let line = a + o + balanced(ys) + o2 + balanced(zs);
+    expect_eq(check(line), at(len(a) + 1, "unclosed " + o));
+}
+
+prop "an unclosed string wins over open brackets" (xs: list[int], ys: list[int], k: int) {
+    let tails = ["", ")", "(]", "}}{", "a ["];
+    let a = balanced(xs);
+    let line = "(" + a + "{" + balanced(ys) + "\"" + tails[abs(k % len(tails))];
+    expect_eq(check(line), at(len(a) + len(balanced(ys)) + 3, "unclosed \""));
+}
+
+test "edge lines" {
+    expect_eq(check(""), "ok");
+    expect_eq(check("([{"), at(1, "unclosed ("));
+    expect_eq(check("\"\""), "ok");
+    expect_eq(check("\"(\"]"), at(4, "unexpected ]"));
+    let deep = new list[str];
+    for _ in 0..10000 {
+        push(deep, "(");
+    }
+    for _ in 0..10000 {
+        push(deep, ")");
+    }
+    expect_eq(check(join(deep, "")), "ok");
+}

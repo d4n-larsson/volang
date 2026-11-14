@@ -1,0 +1,7 @@
+FAIL counts 0 to n inclusive (1 case, 0ms)
+  off_by_one.vo:11:5: `expect_eq` failed: the values differ.
+    expected: 1
+    actual:   0
+    counterexample: n = 0
+    shrunk in 1 step
+0 passed, 1 failed

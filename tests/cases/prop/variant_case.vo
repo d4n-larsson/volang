@@ -1,0 +1,51 @@
+variant Expr {
+    num(int);
+    neg(Expr);
+    add(Pair);
+}
+
+record Pair {
+    left: Expr;
+    right: Expr;
+}
+
+fn count(e: Expr) -> int {
+    match e {
+        case num(_) {
+            return 1;
+        }
+        case neg(inner) {
+            return 1 + count(inner);
+        }
+        case add(p) {
+            return 1 + count(p.left);
+        }
+    }
+}
+
+fn nodes(e: Expr) -> list[str] {
+    let out = new list[str];
+    walk(e, out);
+    return out;
+}
+
+fn walk(e: Expr, out: list[str]) {
+    match e {
+        case num(n) {
+            push(out, str(n));
+        }
+        case neg(inner) {
+            push(out, "-");
+            walk(inner, out);
+        }
+        case add(p) {
+            push(out, "+");
+            walk(p.left, out);
+            walk(p.right, out);
+        }
+    }
+}
+
+prop "count is the number of nodes" (e: Expr) {
+    expect_eq(count(e), len(nodes(e)));
+}

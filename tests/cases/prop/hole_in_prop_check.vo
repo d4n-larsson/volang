@@ -1,0 +1,10 @@
+fn encode(xs: list[int]) -> str {
+    return join(map(xs, fn(x: int) -> str {
+        return str(x);
+    }), ",");
+}
+
+prop "decode inverts encode" (xs: list[int]) {
+    let back: list[int] = todo("decode the text");
+    expect_eq(back, xs);
+}

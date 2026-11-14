@@ -1,0 +1,4 @@
+test "even" {
+    assume(true);
+    expect(true);
+}

@@ -1,0 +1,4 @@
+unknown_let.vo:2:13: error[E0601]: Cannot tell what type this hole must have; annotate the binding: `let x: T = todo(...)`.
+   2 |     let x = todo("x");
+     |             ^^^^^^^^^
+1 error, 0 warnings

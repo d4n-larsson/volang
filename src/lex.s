@@ -18,7 +18,7 @@ kw_table:
     .dword k_fn, k_record, k_variant, k_test, k_import, k_let, k_var, k_set, k_if, k_else
     .dword k_while, k_for, k_in, k_match, k_case, k_return, k_break, k_continue, k_try, k_new
     .dword k_and, k_or, k_not, k_true, k_false, k_int, k_float, k_bool, k_str, k_list
-    .dword k_map, k_result, k_void, k_uses, 0
+    .dword k_map, k_result, k_void, k_uses, k_prop, k_requires, k_ensures, 0
 k_fn: .string "fn"
 k_record: .string "record"
 k_variant: .string "variant"
@@ -53,6 +53,9 @@ k_map: .string "map"
 k_result: .string "result"
 k_void: .string "void"
 k_uses: .string "uses"
+k_prop: .string "prop"
+k_requires: .string "requires"
+k_ensures: .string "ensures"
 e0101: .string "E0101"
 e0102: .string "E0102"
 e0103: .string "E0103"

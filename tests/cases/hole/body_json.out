@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"W0601","name":"hole","severity":"warning","file":"body_json.vo","start":{"line":2,"col":5},"end":{"line":2,"col":29},"text":"todo(\"parse the header\")","message":"Hole: `\"parse the header\"` needs a value of type `int`.","expected":"int","scope":[{"name":"line","type":"str"}],"fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":0,"warnings":1,"truncated":0,"files":1,"holes":1}

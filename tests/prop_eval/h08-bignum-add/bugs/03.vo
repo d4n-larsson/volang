@@ -1,0 +1,149 @@
+# replaces: main.vo
+record Num {
+    neg: bool;
+    mag: str;
+}
+
+fn strip_zeros(s: str) -> str {
+    let cs = chars(s);
+    var i = 0;
+    while i < len(cs) - 1 and cs[i] == "0" {
+        set i = i + 1;
+    }
+    return slice(s, i, len(s));
+}
+
+fn parse_num(t: str) -> result[Num] {
+    var neg = false;
+    var body = t;
+    let first = slice(t, 0, 1);
+    if first == "+" or first == "-" {
+        set neg = first == "-";
+        set body = slice(t, 1, len(t));
+    }
+    if len(body) == 0 {
+        return err("empty");
+    }
+    for c in chars(body) {
+        if c < "0" or c > "9" {
+            return err("not a digit");
+        }
+    }
+    let mag = strip_zeros(body);
+    return ok(new Num { neg: neg and mag != "0", mag: mag });
+}
+
+fn less(a: str, b: str) -> bool {
+    if len(a) != len(b) {
+        return len(a) < len(b);
+    }
+    return a < b;
+}
+
+fn reversed_join(ds: list[int]) -> str {
+    let parts = new list[str];
+    var i = len(ds) - 1;
+    while i >= 0 {
+        push(parts, str(ds[i]));
+        set i = i - 1;
+    }
+    return strip_zeros(join(parts, ""));
+}
+
+fn add_mag(a: str, b: str) -> str {
+    let x = chars(a);
+    let y = chars(b);
+    let out = new list[int];
+    var i = len(x) - 1;
+    var j = len(y) - 1;
+    var carry = 0;
+    while i >= 0 or j >= 0 or carry > 0 {
+        var d = carry;
+        if i >= 0 {
+            set d = d + ord(x[i]) - 48;
+            set i = i - 1;
+        }
+        if j >= 0 {
+            set d = d + ord(y[j]) - 48;
+            set j = j - 1;
+        }
+        push(out, d % 10);
+        set carry = d / 10;
+    }
+    return reversed_join(out);
+}
+
+fn sub_mag(a: str, b: str) -> str {
+    let x = chars(a);
+    let y = chars(b);
+    let out = new list[int];
+    var j = len(y) - 1;
+    var borrow = 0;
+    var i = len(x) - 1;
+    while i >= 0 {
+        var d = ord(x[i]) - 48 - borrow;
+        if j >= 0 {
+            set d = d - (ord(y[j]) - 48);
+            set j = j - 1;
+        }
+        if d < 0 {
+            set d = d + 10;
+            set borrow = 1;
+        } else {
+            set borrow = 0;
+        }
+        push(out, d);
+        set i = i - 1;
+    }
+    return reversed_join(out);
+}
+
+fn signed(neg: bool, mag: str) -> str {
+    if neg {
+        return "-" + mag;
+    }
+    return mag;
+}
+
+fn answer(line: str) -> str {
+    let parts = filter(split(line, " "), fn(w: str) -> bool {
+        return len(w) > 0;
+    });
+    if len(parts) != 2 {
+        return "invalid";
+    }
+    match parse_num(parts[0]) {
+        case ok(a) {
+            match parse_num(parts[1]) {
+                case ok(b) {
+                    if a.neg == b.neg {
+                        return signed(a.neg, add_mag(a.mag, b.mag));
+                    }
+                    if less(a.mag, b.mag) {
+                        return signed(b.neg, sub_mag(b.mag, a.mag));
+                    }
+                    return signed(a.neg, sub_mag(a.mag, b.mag));
+                }
+                case err(_) {
+                    return "invalid";
+                }
+            }
+        }
+        case err(_) {
+            return "invalid";
+        }
+    }
+}
+
+fn main() uses console, input {
+    while true {
+        match read_line() {
+            case ok(line) {
+                print(answer(line));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+}

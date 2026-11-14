@@ -1,0 +1,4 @@
+unknown_str_arg.vo:2:15: error[E0601]: Cannot tell what type this hole must have; annotate the binding: `let x: T = todo(...)`.
+   2 |     print(str(todo("a number")));
+     |               ^^^^^^^^^^^^^^^^
+1 error, 0 warnings

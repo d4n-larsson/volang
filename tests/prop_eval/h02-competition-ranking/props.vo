@@ -1,0 +1,122 @@
+import main.solve;
+
+# Properties of competition ranking, written from task.md. Inputs are built from generated ints:
+# names from a small pool (with a case-sensitive pair), scores from a few values up to 10^15.
+fn pick(n: int, k: int) -> int {
+    return (n % k + k) % k;
+}
+
+fn name_of(n: int) -> str {
+    return ["ann", "Ann", "bob", "c1d", "Zed9", "x"][pick(n, 6)];
+}
+
+fn score_of(n: int) -> int {
+    return [0, 90, 80, 80, -5, 1000000000000000, -1000000000000000, 7][pick(n, 8)];
+}
+
+fn spaces(n: int) -> str {
+    return ["", " ", "  ", "    "][pick(n, 4)];
+}
+
+fn run(lines: list[str]) -> list[str] {
+    match solve(lines) {
+        case ok(v) {
+            return v;
+        }
+        case err(e) {
+            return ["error: " + e];
+        }
+    }
+}
+
+fn clean(k: int, names: list[int], scores: list[int]) -> list[str] {
+    let lines = [str(k)];
+    for i in 0..min(len(names), len(scores)) {
+        push(lines, name_of(names[i]) + " " + str(score_of(scores[i])));
+    }
+    return lines;
+}
+
+# The expected output, straight from the statement: distinct players in first-appearance order with
+# their best score; rank = 1 + players with a higher score; the place in the table = players with a
+# higher score + equal-scored players that appear earlier.
+fn model(k: int, names: list[int], scores: list[int]) -> list[str] {
+    let who = new list[str];
+    let best = new list[int];
+    for i in 0..min(len(names), len(scores)) {
+        let n = name_of(names[i]);
+        let s = score_of(scores[i]);
+        var found = -1;
+        for j in 0..len(who) {
+            if who[j] == n {
+                set found = j;
+            }
+        }
+        if found < 0 {
+            push(who, n);
+            push(best, s);
+        } else if s > best[found] {
+            set best[found] = s;
+        }
+    }
+    let out = map(who, fn(w: str) -> str {
+        return "";
+    });
+    for i in 0..len(who) {
+        var higher = 0;
+        var place = 0;
+        for j in 0..len(who) {
+            if best[j] > best[i] {
+                set higher = higher + 1;
+                set place = place + 1;
+            } else if best[j] == best[i] and j < i {
+                set place = place + 1;
+            }
+        }
+        if higher + 1 <= k {
+            set out[place] = str(higher + 1) + " " + who[i] + " " + str(best[i]);
+        }
+    }
+    return filter(out, fn(line: str) -> bool {
+        return line != "";
+    });
+}
+
+prop "the table matches the statement's ranking" (kn: int, names: list[int], scores: list[int]) {
+    let k = pick(kn, 8);
+    expect_eq(run(clean(k, names, scores)), model(k, names, scores));
+}
+
+prop "extra spaces and blank lines do not change the output" (kn: int, names: list[int], scores: list[int], pads: list[int]) {
+    let k = pick(kn, 8);
+    let messy = [spaces(k) + str(k) + spaces(k + 1)];
+    for i in 0..min(len(names), len(scores)) {
+        var p = i + pick(kn, 3);
+        if len(pads) > 0 {
+            set p = pick(pads[i % len(pads)], 4) + i;
+        }
+        push(messy, spaces(p));
+        push(messy, spaces(p + 1) + name_of(names[i]) + " " + spaces(p + 2) + str(score_of(scores[i])) + spaces(p + 3));
+    }
+    push(messy, spaces(k + 2));
+    expect_eq(run(messy), run(clean(k, names, scores)));
+}
+
+prop "a larger K only adds lines at the end" (kn: int, names: list[int], scores: list[int]) {
+    let k = pick(kn, 8);
+    let short = run(clean(k, names, scores));
+    let long = run(clean(k + 1, names, scores));
+    expect(len(long) >= len(short));
+    expect_eq(slice(long, 0, len(short)), short);
+}
+
+prop "no players, K = 0 or empty input print nothing" (kn: int, names: list[int], scores: list[int], pads: list[int]) {
+    let none = new list[str];
+    expect_eq(run(clean(0, names, scores)), none);
+    expect_eq(run(clean(pick(kn, 8), none_ints(), none_ints())), none);
+    expect_eq(run(map(pads, spaces)), none);
+}
+
+fn none_ints() -> list[int] {
+    return new list[int];
+}

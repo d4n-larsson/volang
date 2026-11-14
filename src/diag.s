@@ -33,6 +33,12 @@ s_message:      .string ",\"message\":"
 s_expected:     .string ",\"expected\":"
 s_found:        .string ",\"found\":"
 s_fixes:        .string ",\"fixes\":["
+s_scope:        .string ",\"scope\":["
+s_scope_name:   .string "{\"name\":"
+s_scope_name2:  .string ",{\"name\":"
+s_scope_type:   .string ",\"type\":"
+s_in_scope:     .string "    in scope: "
+s_nothing:      .string "nothing"
 s_related:      .string "],\"related\":["
 s_close:        .string "]}\n"
 s_file_key:     .string "{\"file\":"
@@ -58,6 +64,10 @@ s_sum_warn:     .string ",\"warnings\":"
 s_sum_trunc:    .string ",\"truncated\":"
 s_sum_files:    .string ",\"files\":"
 s_brace_nl:     .string "}\n"
+s_sum_holes:    .string ",\"holes\":"
+s_paren_sp:     .string " ("
+s_hole_close:   .string " hole)"
+s_holes_close:  .string " holes)"
 s_error1:       .string " error"
 s_errors:       .string " errors"
 s_warning1:     .string ", 1 warning"
@@ -349,6 +359,13 @@ diag_set_ef:
     sd a2, D_FOUND(a0)
     ret
 
+# void diag_set_scope(void *d, void *vec)
+# W0601: the names in scope, a vec of {name str, type str} pairs, innermost first.
+    .globl diag_set_scope
+diag_set_scope:
+    sd a1, D_SCOPE(a0)
+    ret
+
 # int ranges_touch(long s1, long e1, long s2, long e2)
     .globl ranges_touch
 ranges_touch:
@@ -391,7 +408,7 @@ diag_add_fix:
     addi s5, t0, FX_NEXT
     j 1b
 2:
-    li a0, FX_SIZE
+    li a0, FIX_SIZE
     call alloc
     sd zero, FX_NEXT(a0)
     sd s1, FX_FILE(a0)
@@ -431,7 +448,7 @@ diag_add_related:
     addi s0, t0, FX_NEXT
     j 1b
 2:
-    li a0, FX_SIZE
+    li a0, FIX_SIZE
     call alloc
     sd zero, FX_NEXT(a0)
     sd s1, FX_FILE(a0)
@@ -797,6 +814,46 @@ diag_json:
     ld a1, D_FOUND(s1)
     call json_str_into
 3:
+    ld s2, D_SCOPE(s1)
+    beqz s2, 33f
+    mv a0, s0
+    la a1, s_scope
+    call sb_cstr
+    li s3, 0
+31:
+    ld t0, VEC_N(s2)
+    bge s3, t0, 32f
+    mv a0, s0
+    la a1, s_scope_name
+    beqz s3, 311f
+    la a1, s_scope_name2
+311:
+    call sb_cstr
+    mv a0, s2
+    mv a1, s3
+    call vec_get
+    ld a1, 0(a0)
+    mv a0, s0
+    call json_str_into
+    mv a0, s0
+    la a1, s_scope_type
+    call sb_cstr
+    mv a0, s2
+    mv a1, s3
+    call vec_get
+    ld a1, 8(a0)
+    mv a0, s0
+    call json_str_into
+    mv a0, s0
+    li a1, '}'
+    call sb_byte
+    addi s3, s3, 1
+    j 31b
+32:
+    mv a0, s0
+    li a1, ']'
+    call sb_byte
+33:
     mv a0, s0
     la a1, s_fixes
     call sb_cstr
@@ -1125,6 +1182,54 @@ diag_human:
     ld a2, D_START(s1)
     ld a3, D_END(s1)
     call human_snippet
+    ld s2, D_SCOPE(s1)
+    beqz s2, 15f
+    mv a0, s0
+    la a1, s_in_scope
+    call sb_cstr
+    ld t0, VEC_N(s2)
+    bnez t0, 11f
+    mv a0, s0
+    la a1, s_nothing
+    call sb_cstr
+11:
+    li s3, 0
+12:
+    ld t0, VEC_N(s2)
+    bge s3, t0, 14f
+    beqz s3, 13f
+    mv a0, s0
+    li a1, ','
+    call sb_byte
+    mv a0, s0
+    li a1, ' '
+    call sb_byte
+13:
+    mv a0, s2
+    mv a1, s3
+    call vec_get
+    ld a1, 0(a0)
+    mv a0, s0
+    call sb_str
+    mv a0, s0
+    li a1, ':'
+    call sb_byte
+    mv a0, s0
+    li a1, ' '
+    call sb_byte
+    mv a0, s2
+    mv a1, s3
+    call vec_get
+    ld a1, 8(a0)
+    mv a0, s0
+    call sb_str
+    addi s3, s3, 1
+    j 12b
+14:
+    mv a0, s0
+    li a1, 10
+    call sb_byte
+15:
     ld t0, D_EXPECTED(s1)
     beqz t0, 2f
     ld t0, D_FOUND(s1)
@@ -1276,6 +1381,39 @@ diag_emit_all:
     addi sp, sp, 48
     ret
 
+# long holes_for(char *command)
+# The number of W0601 diagnostics when command is "check" (spec 005 FR-005), else 0.
+holes_for:
+    li t0, 0
+    lbu t1, 0(a0)               # "check" is the only command starting with "ch"
+    li t2, 'c'
+    bne t1, t2, 9f
+    lbu t1, 1(a0)
+    li t2, 'h'
+    bne t1, t2, 9f
+    la t1, diag_arr
+    ld t1, 0(t1)
+    la t2, diag_n
+    ld t2, 0(t2)
+1:
+    beqz t2, 9f
+    ld t3, 0(t1)
+    ld t3, D_CODE(t3)
+    lbu t4, 0(t3)               # "W06": W0601 is the only W06xx code
+    li t5, 'W'
+    bne t4, t5, 2f
+    lbu t4, 2(t3)
+    li t5, '6'
+    bne t4, t5, 2f
+    addi t0, t0, 1
+2:
+    addi t1, t1, 8
+    addi t2, t2, -1
+    j 1b
+9:
+    mv a0, t0
+    ret
+
 # void summary_emit(int json, int fd, char *command, long files, void *extra)
 # extra: a str of additional JSON members (starting with ','), or 0.
     .globl summary_emit
@@ -1331,6 +1469,17 @@ summary_emit:
     mv a0, s5
     mv a1, s4
     call sb_str
+    mv a0, s2
+    call holes_for
+    beqz a0, 4f
+    sd a0, 0(sp)
+    mv a0, s5
+    la a1, s_sum_holes
+    call sb_cstr
+    mv a0, s5
+    ld a1, 0(sp)
+    call int_to_dec
+4:
     mv a0, s5
     la a1, s_brace_nl
     call sb_cstr
@@ -1369,6 +1518,25 @@ summary_emit:
     la a1, s_warnings
     call sb_cstr
 71:
+    mv a0, s2                   # " (N holes)"
+    call holes_for
+    beqz a0, 73f
+    sd a0, 0(sp)
+    mv a0, s5
+    la a1, s_paren_sp
+    call sb_cstr
+    mv a0, s5
+    ld a1, 0(sp)
+    call int_to_dec
+    ld t0, 0(sp)
+    la a1, s_holes_close
+    li t1, 1
+    bne t0, t1, 74f
+    la a1, s_hole_close
+74:
+    mv a0, s5
+    call sb_cstr
+73:
     la t0, diag_truncated
     ld t1, 0(t0)
     beqz t1, 72f

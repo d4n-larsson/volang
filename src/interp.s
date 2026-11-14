@@ -60,6 +60,7 @@ s_trace_key:    .string ",\"trace\":["
 s_fn_key:       .string "{\"function\":"
 s_omitted:      .string ",\"trace_omitted\":"
 s_test_prefix:  .string "test "
+s_prop_prefix:  .string "prop "
 s_quote:        .string "\""
 s_cmd_run:      .string "run"
 
@@ -230,6 +231,11 @@ frame_fn_name:
     call sb_new
     sd a0, 0(sp)
     la a1, s_test_prefix
+    lhu t0, N_FLAGS(s0)
+    andi t0, t0, NF_PROP
+    beqz t0, 2f
+    la a1, s_prop_prefix
+2:
     call sb_cstr
     ld a0, 0(sp)
     la a1, s_quote

@@ -1,6 +1,6 @@
 # vo
 
-vo is a small, statically typed programming language designed for AI coding agents, and for the people who review what those agents write. The whole toolchain is written in RISC-V assembly (RV64): lexer, parser, type checker, formatter, test runner, bytecode compiler and virtual machine, about 35,600 lines with no libc and no dependencies.
+vo is a small, statically typed programming language designed for AI coding agents, and for the people who review what those agents write. The whole toolchain is written in RISC-V assembly (RV64): lexer, parser, type checker, formatter, test runner, bytecode compiler and virtual machine, about 39,100 lines with no libc and no dependencies.
 
 ```vo
 record Person {
@@ -40,7 +40,9 @@ Mainstream languages were designed for people at keyboards. Agents work differen
 - **Deterministic by default.** The same program and input produce the same bytes. The clock and randomness are effects, fixed with `--clock-ms` and `--seed` (and fixed by default in tests).
 - **Memory and time are bounded and reported.** Unreachable values are reclaimed by a deterministic collector, so collection never changes output. Running out of memory means live data over a limit you set (`--max-memory`, R0006), `--mem-stats` reports usage, and `--timeout` stops even a single long builtin call.
 - **Compiled to bytecode.** After checking, programs are compiled to typed bytecode for a virtual machine, about 4.5× faster than the tree-walking interpreter it replaced on compute-heavy code, with byte-identical results.
-- **The whole language fits in a prompt.** `vo reference` prints the complete reference, about 8,000 tokens with a runnable example in every section. That is all an agent needs to know.
+- **Unfinished code still checks and runs.** `todo("...")` is a typed hole: the checker reports the type it needs and the names in scope, and the rest of the program checks, runs and tests until the run reaches it.
+- **Tests that look for counterexamples.** `prop "name" (xs: list[int]) { ... }` runs a property on 100 generated inputs and shrinks a failure to a minimal counterexample, deterministically. `requires`/`ensures` contracts are checked on every call and return.
+- **The whole language fits in a prompt.** `vo reference` prints the complete reference, about 9,100 tokens with a runnable example in every section. That is all an agent needs to know.
 
 The language also has records, variants with exhaustive `match`, `result[T]` with `try`, lists and maps, built-in tests, multi-file programs, functions as values and closures, and user-defined generics: inferred type arguments, `T: ordered`, and effect parameters for higher-order functions.
 

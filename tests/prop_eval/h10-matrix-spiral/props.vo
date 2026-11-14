@@ -1,0 +1,140 @@
+import main.solve;
+import main.spiral_dir;
+
+# Side length 1..6 from a generated int.
+fn side(x: int) -> int {
+    return 1 + abs(x % 6);
+}
+
+# An r x c matrix of distinct cells "i.j".
+fn grid(r: int, c: int) -> list[list[str]] {
+    let m = new list[list[str]];
+    for i in 0..r {
+        let row = new list[str];
+        for j in 0..c {
+            push(row, str(i) + "." + str(j));
+        }
+        push(m, row);
+    }
+    return m;
+}
+
+# Walk straight ahead and turn when the next cell is outside or already seen.
+fn walk(m: list[list[str]], dr: list[int], dc: list[int]) -> list[str] {
+    let r = len(m);
+    let c = len(m[0]);
+    let seen = new list[list[bool]];
+    for _ in 0..r {
+        let row = new list[bool];
+        for _ in 0..c {
+            push(row, false);
+        }
+        push(seen, row);
+    }
+    let out = new list[str];
+    var i = 0;
+    var j = 0;
+    var d = 0;
+    for _ in 0..r * c {
+        push(out, m[i][j]);
+        set seen[i][j] = true;
+        var ni = i + dr[d];
+        var nj = j + dc[d];
+        if ni < 0 or ni >= r or nj < 0 or nj >= c or seen[ni][nj] {
+            set d = (d + 1) % 4;
+            set ni = i + dr[d];
+            set nj = j + dc[d];
+        }
+        set i = ni;
+        set j = nj;
+    }
+    return out;
+}
+
+fn model(m: list[list[str]], d: str) -> list[str] {
+    if d == "cw" {
+        return walk(m, [0, 1, 0, -1], [1, 0, -1, 0]);
+    }
+    return walk(m, [1, 0, -1, 0], [0, 1, 0, -1]);
+}
+
+fn dir(b: bool) -> str {
+    if b {
+        return "cw";
+    }
+    return "ccw";
+}
+
+prop "spiral matches a turn-when-blocked walk" (a: int, b: int, cw: bool) {
+    let m = grid(side(a), side(b));
+    expect_eq(spiral_dir(m, dir(cw)), model(m, dir(cw)));
+}
+
+prop "every cell exactly once" (a: int, b: int, cw: bool) {
+    let m = grid(side(a), side(b));
+    let got = spiral_dir(m, dir(cw));
+    sort(got);
+    let cells = new list[str];
+    for row in m {
+        for x in row {
+            push(cells, x);
+        }
+    }
+    sort(cells);
+    expect_eq(got, cells);
+}
+
+prop "cw starts with the first row, ccw with the first column" (a: int, b: int) {
+    let r = side(a);
+    let c = side(b);
+    let m = grid(r, c);
+    expect_eq(slice(spiral_dir(m, "cw"), 0, c), m[0]);
+    let col = new list[str];
+    for i in 0..r {
+        push(col, m[i][0]);
+    }
+    expect_eq(slice(spiral_dir(m, "ccw"), 0, r), col);
+}
+
+prop "single row and single column" (a: int, cw: bool) {
+    let n = side(a);
+    let row = grid(1, n);
+    expect_eq(spiral_dir(row, dir(cw)), model(row, dir(cw)));
+    let col = grid(n, 1);
+    expect_eq(spiral_dir(col, dir(cw)), model(col, dir(cw)));
+}
+
+prop "whole program on padded input, empty matrices" (a: int, b: int, cw: bool, pads: list[int]) {
+    var r = side(a);
+    var c = side(b);
+    if a % 7 == 0 {
+        set r = 0;
+    }
+    if b % 7 == 0 {
+        set c = 0;
+    }
+    var p = 0;
+    if len(pads) > 0 {
+        set p = abs(pads[0] % 3);
+    }
+    let lines = [str(r) + " " + str(c) + " " + dir(cw)];
+    if r == 0 or c == 0 {
+        expect_eq(solve(lines), ok("empty"));
+        return;
+    }
+    let m = grid(r, c);
+    var k = 0;
+    for row in m {
+        var line = "";
+        for x in row {
+            var g = k;
+            if len(pads) > 0 {
+                set g = pads[k % len(pads)];
+            }
+            set line = line + slice("   ", 0, 1 + abs(g % 3)) + x;
+            set k = k + 1;
+        }
+        push(lines, line + slice("  ", 0, p));
+    }
+    expect_eq(solve(lines), ok(join(model(m, dir(cw)), " ")));
+}

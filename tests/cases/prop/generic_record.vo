@@ -1,0 +1,12 @@
+record Pair[A, B] {
+    first: A;
+    second: B;
+}
+
+fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
+    return new Pair[B, A] { first: p.second, second: p.first };
+}
+
+prop "swap twice" (p: Pair[int, str]) {
+    expect_eq(swap(swap(p)), p);
+}

@@ -1,0 +1,3 @@
+prop "parses back" (n: int) {
+    expect_eq(parse_int(str(n)), ok(n));
+}

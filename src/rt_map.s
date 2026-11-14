@@ -6,6 +6,10 @@
     .equ TOMB, 0xFFFFFFFF
 
     .text
+# ponytail: a fixed page offset (spec 004's), so map_find's loop does not straddle a 4 KiB page
+# under qemu-user (see src/vm.s and the Makefile's RUNTIME order).
+    .balign 4096
+    .skip 0x7cc
 # void *map_new(void)
     .globl map_new
 map_new:

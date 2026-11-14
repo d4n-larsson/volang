@@ -1,0 +1,19 @@
+variant Shape {
+    circle(float);
+    square(float);
+}
+
+fn area(s: Shape) -> float {
+    match s {
+        case circle(r) {
+            return 3.0 * r * r;
+        }
+        case square(side) {
+            return todo("the square's area");
+        }
+    }
+}
+
+fn main() uses console {
+    print(str(area(Shape.square(2.0))));
+}

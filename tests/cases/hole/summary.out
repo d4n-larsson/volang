@@ -1,0 +1,9 @@
+summary.vo:2:5: warning[W0601]: Hole: `"parse"` needs a value of type `int`.
+   2 |     todo("parse");
+     |     ^^^^^^^^^^^^^
+    in scope: line: str
+summary.vo:6:12: warning[W0601]: Hole: `"show n"` needs a value of type `str`.
+   6 |     return todo("show n");
+     |            ^^^^^^^^^^^^^^
+    in scope: n: int
+0 errors, 2 warnings (2 holes)

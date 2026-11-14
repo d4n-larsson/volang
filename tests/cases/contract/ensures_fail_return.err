@@ -1,0 +1,6 @@
+ensures_fail_return.vo:8:5: runtime error[R0013]: Postcondition `ret * ret <= n and (ret + 1) * (ret + 1) > n` of `isqrt` does not hold.
+   8 |     return r;
+     |     ^^^^^^^^^
+trace:
+  at isqrt (ensures_fail_return.vo:8:5)
+  at main (ensures_fail_return.vo:13:15)

@@ -50,6 +50,12 @@ e0402: .string "E0402"
 e0403: .string "E0403"
 e0404: .string "E0404"
 e0405: .string "E0405"
+e0602: .string "E0602"
+e0603: .string "E0603"
+m_impure: .string "A contract condition must be pure, but this one needs $1."
+s_ret: .string "ret"
+m_ungen_fn: .string "Cannot generate values of `$1` for `$2`: it contains a function type."
+m_ungen_inf: .string "Cannot generate values of `$1` for `$2`: it has no finite value."
 e0407: .string "E0407"
 e0408: .string "E0408"
 e0409: .string "E0409"
@@ -555,6 +561,12 @@ scope_leave:
     bnez t0, 2f
     ld t0, SY_SLOT(s1)
     bltz t0, 2f                 # parameters (slot stored negative-flagged) are not reported
+    la t0, ck_fx                # a function with a hole is unfinished: no W0201
+    ld t0, 0(t0)
+    beqz t0, 3f
+    ld t0, FX_HOLES(t0)
+    bnez t0, 2f
+3:
     la a0, w0201
     ld a1, SY_NODE(s1)
     beqz a1, 2f
@@ -1514,18 +1526,24 @@ check_stmt:
 
 80:                             # call or try statement
     ld s1, N_A(s0)
+    la t0, ck_stmt_call
+    sd s1, 0(t0)
     mv a0, s1
     li a1, 0
     call check_expr
     mv s2, a0
+    la t0, ck_stmt_call
+    sd zero, 0(t0)
     call ty_bad
     bnez a0, 99f
     lhu t0, N_KIND(s1)
     li t1, N_TRY
     beq t0, t1, 82f
-    li t1, N_CALL               # exit() never returns
+    li t1, N_CALL               # exit() and todo() never return
     bne t0, t1, 81f
     ld t0, N_D(s1)
+    li t1, B_TODO
+    beq t0, t1, 83f
     li t1, 9
     bne t0, t1, 81f
     mv a0, s0
@@ -1584,6 +1602,10 @@ check_stmt:
     lwu a2, N_START(s1)
     mv a3, a2
     call diag_add_fix
+    j 99f
+83:
+    mv a0, s0
+    call mark_terminates
 99:
     ld ra, 56(sp)
     ld s0, 48(sp)
@@ -2421,6 +2443,8 @@ check_fn:
     addi s2, s2, 1
     j 1b
 2:
+    mv a0, s0
+    call check_clauses
     ld a0, N_D(s0)
     beqz a0, 8f
     call check_block
@@ -2455,13 +2479,155 @@ check_fn:
     addi sp, sp, 48
     ret
 
+# void check_clauses(void *fn)
+# Contract clauses (spec 005 research R14, R15), after the parameters are bound: each a pure
+# `bool`. `ensures` also sees `ret` (slot FX_RETSLOT), in a scope popped before the body.
+check_clauses:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
+    mv s2, a0
+    ld t0, N_A(s2)
+    beqz t0, 9f
+    ld s0, N_B(t0)
+    beqz s0, 9f
+    ld a0, FX_REQUIRES(s0)
+    mv a1, s0
+    call check_clause_vec
+    ld s1, FX_ENSURES(s0)
+    beqz s1, 9f
+    la t0, ck_scope
+    ld s3, 0(t0)
+    ld a0, N_TYPE(s2)
+    li a1, TY_VOID
+    call ty_is
+    bnez a0, 2f
+    li a0, NODE_SIZE            # `ret`: a name at the first `ensures` condition
+    call alloc
+    mv s2, a0
+    li t0, N_NAME
+    sh t0, N_KIND(s2)
+    ld t0, VEC_DATA(s1)
+    ld t0, 0(t0)
+    lwu t1, N_FILE(t0)
+    sw t1, N_FILE(s2)
+    lwu t1, N_START(t0)
+    sw t1, N_START(s2)
+    lwu t1, N_END(t0)
+    sw t1, N_END(s2)
+    la a0, s_ret
+    call str_from_cstr
+    sd a0, N_A(s2)
+    ld t0, N_A(s0)              # (s0 is the FX record; the return type is the function's)
+    mv a0, s2
+    la t0, ck_ret
+    ld a1, 0(t0)
+    li a2, 0
+    call new_local
+    li t1, SYF_USED
+    sd t1, SY_FLAGS(a0)
+    ld t0, SY_SLOT(a0)
+    sd t0, FX_RETSLOT(s0)
+2:
+    mv a0, s1
+    mv a1, s0
+    call check_clause_vec
+    mv a0, s3
+    call scope_leave
+9:
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    addi sp, sp, 48
+    ret
+
+# void check_clause_vec(void *conds, void *fx)
+# Each condition is checked as `bool` with its effects going to a scratch record (as for an
+# anonymous function), so the function's own requirement and vo.effects do not change. Any
+# effect is E0603. A hole in a condition counts for the function (FX_HOLES).
+check_clause_vec:
+    addi sp, sp, -64
+    sd ra, 56(sp)
+    sd s0, 48(sp)
+    sd s1, 40(sp)
+    sd s2, 32(sp)
+    sd s3, 24(sp)
+    sd s4, 16(sp)
+    sd s5, 8(sp)
+    mv s0, a0
+    mv s1, a1
+    li s2, 0
+    beqz s0, 9f
+1:
+    ld t0, VEC_N(s0)
+    bge s2, t0, 9f
+    mv a0, s0
+    mv a1, s2
+    call vec_get
+    mv s3, a0
+    addi s2, s2, 1
+    li a0, FX_SIZE
+    call alloc
+    mv s4, a0
+    li a0, 0
+    call es_new
+    sd a0, FX_DIRECT(s4)
+    mv a0, s4
+    call fx_swap
+    mv s5, a0
+    mv a0, s3
+    call check_cond
+    mv a0, s5
+    call fx_swap
+    ld t0, FX_HOLES(s4)
+    beqz t0, 2f
+    sd t0, FX_HOLES(s1)
+2:
+    ld a0, FX_DIRECT(s4)
+    call es_is_empty
+    bnez a0, 1b
+    ld a0, FX_DIRECT(s4)        # name the effects (builtin needs are kept apart in ES_ANY)
+    ld t0, ES_MASK(a0)
+    ld t1, ES_ANY(a0)
+    or t0, t0, t1
+    beqz t0, 3f
+    mv a0, t0
+    call es_new
+3:
+    call fx_render
+    mv a3, a0
+    la a0, e0603
+    mv a1, s3
+    la a2, m_impure
+    call ck_err1
+    j 1b
+9:
+    ld ra, 56(sp)
+    ld s0, 48(sp)
+    ld s1, 40(sp)
+    ld s2, 32(sp)
+    ld s3, 24(sp)
+    ld s4, 16(sp)
+    ld s5, 8(sp)
+    addi sp, sp, 64
+    ret
+
 # void check_test(void *test)
+# A test, or a property (ck_in_test 2): its parameters are the first locals (E0602 when a
+# parameter's type cannot be generated).
     .globl check_test
 check_test:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    sd s1, 8(sp)
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
     mv s0, a0
     call fx_declare
     mv a0, s0
@@ -2477,20 +2643,81 @@ check_test:
     sd zero, 0(t0)
     la t0, ck_locals
     sd zero, 0(t0)
+    la t0, ck_scope
+    ld s3, 0(t0)
+    lhu t0, N_FLAGS(s0)
+    andi t0, t0, NF_PROP
+    beqz t0, 3f
+    la t0, ck_in_test
+    li t1, 2
+    sd t1, 0(t0)
+    li s2, 0
+2:
+    ld t0, N_D(s0)
+    ld t0, FX_PARAMS(t0)
+    ld t1, VEC_N(t0)
+    bge s2, t1, 3f
+    mv a0, t0
+    mv a1, s2
+    call vec_get
+    mv s1, a0
+    addi s2, s2, 1
+    ld a0, N_B(s1)
+    call resolve_type
+    sd a0, N_TYPE(s1)
+    call prop_generatable
+    beqz a0, 21f
+    la a2, m_ungen_fn
+    li t0, 1
+    beq a0, t0, 22f
+    la a2, m_ungen_inf
+22:
+    sd a2, 0(sp)
+    ld a0, N_TYPE(s1)
+    call ty_name
+    mv a1, a0
+    ld t0, N_A(s1)
+    ld a2, N_A(t0)
+    ld a0, 0(sp)
+    li a3, 0
+    call msg
+    mv a2, a0
+    la a0, e0602
+    mv a1, s1
+    call ck_err
+21:
+    ld a0, N_A(s1)
+    ld a1, N_TYPE(s1)
+    li a2, 0
+    call new_local
+    ld t0, SY_SLOT(a0)
+    sd t0, N_E(s1)
+    li t1, SYF_USED             # parameters are never reported as unused
+    sd t1, SY_FLAGS(a0)
+    j 2b
+3:
     ld a0, N_B(s0)
     beqz a0, 1f
     call check_block
 1:
     call fx_end
+    lhu t0, N_FLAGS(s0)
+    andi t0, t0, NF_PROP
+    beqz t0, 4f
+    mv a0, s3
+    call scope_leave
+4:
     la t0, ck_locals
     ld t0, 0(t0)
     sd t0, N_E(s0)
     la t0, ck_in_test
     sd zero, 0(t0)
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    ld s1, 8(sp)
-    addi sp, sp, 32
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    addi sp, sp, 48
     ret
 
 # void check_tests_unique(void *items)

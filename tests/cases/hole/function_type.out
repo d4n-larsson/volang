@@ -1,0 +1,5 @@
+function_type.vo:6:21: warning[W0601]: Hole: `"a doubling function"` needs a value of type `fn(int) -> int`.
+   6 |     print(str(apply(todo("a doubling function"), 2)));
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: nothing
+0 errors, 1 warning (1 hole)

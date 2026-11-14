@@ -31,7 +31,7 @@ def vo(args, cwd, stdin=None):
 
 
 def norm(text):
-    return re.sub(r"\((\d+)ms\)", "(0ms)", text)
+    return re.sub(r"\b\d+ms\)", "0ms)", text)
 
 
 def main():
@@ -89,7 +89,7 @@ def main():
             entry = next((p for p, has in paths if has), paths[0][0])
             label = where(pos)
             if lang == "vo-test":
-                r = vo(["test", entry], d)
+                r = vo(["test", os.path.relpath(entry, d)], d)
                 if r.returncode == 125:
                     pending.append(f"{label}: vo-test (vo test not implemented yet)")
                 elif not nxt or nxt[1] != "output":

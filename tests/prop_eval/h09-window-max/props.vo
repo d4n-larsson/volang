@@ -1,0 +1,107 @@
+import main.solve;
+import main.window_max;
+
+# Keep values inside the task's domain (|x| <= 10^18).
+fn in_domain(xs: list[int]) -> list[int] {
+    return map(xs, fn(x: int) -> int {
+        return x % 1000000000000000000;
+    });
+}
+
+# Window size from a generated int: 1 .. len(xs) + 1 (len + 1 means "no window").
+fn size(xs: list[int], k: int) -> int {
+    return 1 + abs(k % (len(xs) + 1));
+}
+
+# Rescan every window: obviously correct, quadratic.
+fn naive(xs: list[int], k: int) -> list[int] {
+    let out = new list[int];
+    var i = 0;
+    while i + k <= len(xs) {
+        var best = xs[i];
+        for j in i..i + k {
+            set best = max(best, xs[j]);
+        }
+        push(out, best);
+        set i = i + 1;
+    }
+    return out;
+}
+
+fn expected_output(xs: list[int], k: int) -> str {
+    if k > len(xs) {
+        return "none";
+    }
+    return join(map(naive(xs, k), fn(x: int) -> str {
+        return str(x);
+    }), " ");
+}
+
+prop "window maxima match a rescan of every window" (raw: list[int], kk: int) {
+    let xs = in_domain(raw);
+    let k = size(xs, kk);
+    assume(k <= len(xs));
+    expect_eq(window_max(xs, k), naive(xs, k));
+}
+
+prop "ties and small values: maxima match a rescan" (raw: list[int], kk: int) {
+    let xs = map(raw, fn(x: int) -> int {
+        return x % 3;
+    });
+    let k = size(xs, kk);
+    assume(k <= len(xs));
+    expect_eq(window_max(xs, k), naive(xs, k));
+}
+
+prop "n - k + 1 maxima, each one a value of its window and not below any" (raw: list[int], kk: int) {
+    let xs = in_domain(raw);
+    let k = size(xs, kk);
+    assume(k <= len(xs));
+    let out = window_max(xs, k);
+    expect_eq(len(out), len(xs) - k + 1);
+    for i in 0..len(out) {
+        let win = slice(xs, i, i + k);
+        expect(any(win, fn(x: int) -> bool {
+            return x == out[i];
+        }));
+        expect(all(win, fn(x: int) -> bool {
+            return x <= out[i];
+        }));
+    }
+}
+
+prop "k = 1 echoes the input, k = n gives the overall maximum" (raw: list[int]) {
+    let xs = in_domain(raw);
+    assume(len(xs) > 0);
+    expect_eq(window_max(xs, 1), xs);
+    expect_eq(window_max(xs, len(xs)), [fold(xs, xs[0], fn(a: int, x: int) -> int {
+        return max(a, x);
+    })]);
+}
+
+prop "whole program on input with ragged whitespace" (raw: list[int], kk: int, gaps: list[int]) {
+    let xs = in_domain(raw);
+    let k = size(xs, kk);
+    let seps = [" ", "  ", "\n", " \n  ", "\n\n "];
+    var text = str(len(xs)) + " " + str(k) + "\n";
+    for i in 0..len(xs) {
+        var g = i;
+        if len(gaps) > 0 {
+            set g = gaps[i % len(gaps)];
+        }
+        set text = text + seps[abs(g % 5)] + str(xs[i]);
+    }
+    set text = text + "\n";
+    expect_eq(solve(text), ok(expected_output(xs, k)));
+}
+
+prop "no window when k exceeds n, including n = 0" (raw: list[int], extra: int) {
+    let xs = in_domain(raw);
+    let k = len(xs) + 1 + abs(extra % 1000000);
+    var text = str(len(xs)) + " " + str(k) + "\n";
+    for x in xs {
+        set text = text + str(x) + " ";
+    }
+    expect_eq(solve(text), ok("none"));
+    expect_eq(window_max(xs, k), new list[int]);
+}

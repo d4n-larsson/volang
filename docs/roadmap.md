@@ -10,7 +10,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [002](../specs/002-effects-functions-generics/) | Checked effects with scopes and a reviewable effects record; functions as values; user-defined generics; benchmark v2 | **Implemented, every gate passing.** The benchmark v2 run is not complete ([results](../specs/002-effects-functions-generics/results.md)) |
 | [003](../specs/003-garbage-collector/) | Garbage collector and memory model; `--timeout` inside builtins; memoized generic resolution | **Done** ([results](../specs/003-garbage-collector/results.md)) |
 | [004](../specs/004-bytecode-compiler/) | Bytecode compiler: programs run from compact, typed bytecode instead of walking the syntax tree | **Done** ([results](../specs/004-bytecode-compiler/results.md)) |
-| 005 | Typed holes, property tests and contracts | Planned |
+| [005](../specs/005-holes-props-contracts/) | Typed holes, property tests and contracts | **Done** ([results](../specs/005-holes-props-contracts/results.md)) |
 | 006 | Query API, structural editing, trace and replay | Planned |
 | 007 | Standard library and content-pinned packages | Planned |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
@@ -18,8 +18,8 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 ## What mainstream languages get wrong for agent-written code
 
 1. **Nobody can see what changed in what the code is allowed to do.** An agent fixes a bug and also adds a network call, a file delete or an environment read. In Python, TypeScript or Go that is invisible in the diff unless someone reads every line. **Addressed by 002:** effects in every function type, scopes, run-time enforcement, and `vo.effects`, so a reviewer approves "save_report gains file.write" instead of reading the diff.
-2. **The agent's tests share the agent's misunderstanding.** Code that compiles and passes its own tests is weak evidence. **Planned in 005:** property tests with inputs generated from types and shrunk counterexamples; contracts checked in tests.
-3. **Unfinished code does not compile at all.** Agents work step by step, but big languages reject the whole program until it is complete. **Planned in 005:** typed holes.
+2. **The agent's tests share the agent's misunderstanding.** Code that compiles and passes its own tests is weak evidence. **Addressed by 005:** property tests with inputs generated from types and shrunk counterexamples, and contracts checked on every call and return.
+3. **Unfinished code does not compile at all.** Agents work step by step, but big languages reject the whole program until it is complete. **Addressed by 005:** typed holes.
 4. **Agents invent APIs that do not exist.** The model's memory drifts from the installed versions. **Partly addressed by 001** (the reference is embedded in the binary). **Planned in 007:** exact signatures for the standard library and dependencies, and packages pinned by content hash.
 5. **Agents cannot see the whole codebase.** They grep, guess, and break code they never saw. **Planned in 006:** a query API and toolchain-performed refactorings.
 6. **Debugging is mostly print statements.** **Planned in 006:** call traces as JSON, local values in runtime errors, and exact replay of deterministic runs.
@@ -49,12 +49,13 @@ vo programs used to run by walking the checked syntax tree. Now:
 - **Speed:** 4.6× faster on average on six compute-heavy programs (2.3× to 8.6×). The 10-million-iteration loop takes 0.69 s, faster than Python's 0.99 s.
 - **Not done:** native code or a JIT. Builtin-heavy programs gain least, since most builtins still go through the general builtin path.
 
-### 005: typed holes, property tests and contracts
+### 005: typed holes, property tests and contracts (done)
 
-- **Typed holes.** `todo("parse the header")` type-checks; the checker reports the expected type and the names in scope there. Running stops at the hole with a structured R-code. The agent's loop becomes "fill one gap at a time" instead of "fix everything first".
-- **Property tests.** `prop "sort keeps length" (xs: list[int]) { ... }` generates inputs from the declared types (generics from 002 make this general), with shrunk counterexamples as structured records.
-- **Contracts.** `requires` and `ensures` on functions, checked at run time in tests.
-- **Success:** on benchmark tasks with hidden properties, agents using properties catch more of their own mistakes before the hidden checks do.
+- **Typed holes.** `todo("parse the header")` checks as whatever type its place expects. W0601 reports that type and the names in scope; a statement `todo(...);` ends its path; running into a hole is R0011. Unfinished programs check, run and test.
+- **Property tests.** `prop "name" (xs: list[int]) { ... }` runs 100 generated inputs (every data type, records and recursive variants included), deterministic for a `--seed`, with `assume` and greedy type-directed shrinking. Failures report minimal counterexamples in text and JSON.
+- **Contracts.** `requires` and `ensures` (with `ret`) on functions, pure, checked on every call and return in `run` and `test` (R0012, R0013), through function values and builtins too. Functions without contracts compile to the same bytecode as before.
+- **Evaluation (stand-in):** on mutants of the ten hidden-property benchmark tasks, which all pass the visible cases, properties catch 61 of 62 (98%). The one miss is a correct but slow mutant.
+- **Not done:** the benchmark run with agents writing properties themselves (see Benchmarks); a case-count option; strict-hole mode; `old()` in `ensures`.
 
 ### 006: query, structural editing, trace and replay
 
@@ -75,7 +76,8 @@ On the v1 benchmark both languages were at the ceiling, so it could not show whe
 
 1. **Run v2 to completion** with the corrected harness: no tools, no user settings, an empty working directory. The first run was invalid because the agent could read the answers.
 2. **Re-run v1** the same way: its results were collected with the flawed harness.
-3. **Decide what comes next from the results.** If both languages are still at the ceiling, the next benchmark needs longer, unsupervised, multi-step work (where effects, review and refactoring matter), not just harder single tasks.
+3. **Agents using properties (spec 005 follow-up):** run the hidden-property tasks with agents told about `prop`, and compare the hidden-check pass rate with and without it. Spec 005 measured only the stand-in (mutants of the reference solutions).
+4. **Decide what comes next from the results.** If both languages are still at the ceiling, the next benchmark needs longer, unsupervised, multi-step work (where effects, review and refactoring matter), not just harder single tasks.
 
 Known gaps in v2 to fix along the way:
 - Per-case environments: tasks c03 and c08 never test their environment variable being set.

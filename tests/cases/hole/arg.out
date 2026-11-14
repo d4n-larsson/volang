@@ -1,0 +1,5 @@
+arg.vo:7:21: warning[W0601]: Hole: `"a name"` needs a value of type `str`.
+   7 |     print(str(width(todo("a name"), pad)));
+     |                     ^^^^^^^^^^^^^^
+    in scope: pad: int
+0 errors, 1 warning (1 hole)

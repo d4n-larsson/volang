@@ -33,7 +33,7 @@ hello vo, count = 3
 - **Floats**: digits, `.`, digits: `1.0`, `0.5`, `3.14`. Both sides of `.` are required (`1.` and `.5` are invalid). No exponent (`1e3` is invalid); at most 15 significant digits.
 - **Strings**: `"..."` on one line. The only escapes are `\n`, `\t`, `\\` and `\"` (any other is E0103). There are no single-quoted strings, no character type, no raw or multi-line strings and no interpolation: build strings with `+` and `str(...)`.
 - **Booleans**: `true`, `false`.
-- **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void`.
+- **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void uses prop requires ensures`.
 - There are no trailing commas anywhere (E0113).
 
 ```vo
@@ -105,7 +105,7 @@ A file contains `import` lines first, then items in any order: `fn`, `record`, `
 ### Functions
 
 ```text
-fn name(param: type, param: type) -> return_type uses effects { ... }
+fn name(param: type, param: type) -> return_type uses effects requires cond ensures cond { ... }
 ```
 
 `uses ...` lists what the function may touch (see Effects); without it the function is pure. Omit `-> type` when the function returns nothing (`-> void` is not allowed). Parameters are read-only (`set` on one is E0208). Every path of a function with a return type must reach `return` (E0403). A function without a return type may use `return;`. There is no overloading, no default argument and no variadic function. Recursion works. Functions are values (see Functions as values).
@@ -136,6 +136,36 @@ fn main() uses console {
 ```output
 hi ana
 10
+```
+
+### Contracts
+
+`requires COND` and `ensures COND` clauses come after `uses`, each on its own line (`vo fmt` puts them there), any number of each:
+
+- `requires` conditions see the parameters and are checked on every call, before the body. A false one is R0012 at the call, with the trace starting at the caller.
+- `ensures` conditions also see `ret`, the returned value (only in functions with a return type; a parameter named `ret` is E0203). They are checked on every exit: `return`, a `try` that passes an error on, and the end of a function without a return type. A false one is R0013 at that exit.
+- Conditions are `bool` and pure (E0603); they never change a function's effects.
+- Calls through function values and builtins such as `map` are checked too, in `vo run` and `vo test`. Functions without contracts run exactly as fast as before.
+
+```vo
+fn isqrt(n: int) -> int
+    requires n >= 0
+    ensures ret * ret <= n and (ret + 1) * (ret + 1) > n {
+    var r = 0;
+    while (r + 1) * (r + 1) <= n {
+        set r = r + 1;
+    }
+    return r;
+}
+
+fn main() uses console {
+    print(str(isqrt(10)));
+    print(str(isqrt(-1)));
+}
+```
+
+```output
+3
 ```
 
 ### Records
@@ -797,11 +827,41 @@ fn main() -> result[void] uses console, input {
 0
 ```
 
+## Holes
+
+`todo("description")` stands for code you have not written yet. It has whatever type its place expects, so the rest of the program checks, runs and tests while the gap is open.
+
+- Each hole is warning W0601, whose `expected` is the type needed and whose `scope` lists the names in scope with their types. With `--json` the `check` summary counts them: `"holes":N`.
+- The place must have a type: `let x = todo("...");` is E0601 (write `let x: int = todo("...");`).
+- `todo("...");` as a statement ends its path like `return` and needs the function's return type.
+- While a function has a hole, unused locals (W0201) and unused effects (W0501) are not reported.
+- Running into a hole stops with R0011 (in `vo test`, that test is `error`).
+
+```vo-test
+fn mean(xs: list[int]) -> int {
+    todo("the average, 0 for an empty list");
+}
+
+test "mean of three" {
+    expect_eq(mean([1, 2, 3]), 2);
+}
+```
+
+```output
+main.vo:2:5: warning[W0601]: Hole: `"the average, 0 for an empty list"` needs a value of type `int`.
+   2 |     todo("the average, 0 for an empty list");
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: xs: list[int]
+ERROR mean of three (0ms)
+  main.vo:2:5: runtime error[R0011]: Hole reached: the average, 0 for an empty list.
+0 passed, 0 failed, 1 errored
+```
+
 ## Tests
 
 A `test "name" uses ... { ... }` item (the clause is optional, see Effects) holds statements that check behavior with `expect(cond)` and `expect_eq(actual, expected)`. These two builtins work only inside tests. A test fails at its first failing check, and `expect_eq` reports both values. Test names must be unique in a file. Tests cannot use `try` (they do not return a result): `match` instead, or compare whole results with `expect_eq(parse_int("3"), ok(3))`.
 
-`vo test file.vo` runs every test in the file (a file with tests needs no `main`); `vo run` ignores tests. `--filter TEXT` runs only tests whose name contains `TEXT`. A test that hits a runtime error is reported as `error`, and the remaining tests still run. The exit status is 1 if any test did not pass.
+`vo test file.vo` runs every test and property in the file (a file with tests needs no `main`); `vo run` ignores tests. `--filter TEXT` runs only tests whose name contains `TEXT`. A test that hits a runtime error is reported as `error`, and the remaining tests still run. The exit status is 1 if any test did not pass.
 
 ```vo-test
 fn double(x: int) -> int {
@@ -831,6 +891,49 @@ FAIL doubles (1ms)
   main.vo:6:5: `expect_eq` failed: the values differ.
     expected: 8
     actual:   9
+```
+
+### Property tests
+
+`prop "name" (x: T, ...) uses ... { ... }` is a test with parameters: `vo test` runs the body on 100 generated inputs. Write what must hold for every input, not one example.
+
+- Types: `int` (mostly -100..100, often 0, ±1 and the extremes; build larger values from several), `float` (finite), `bool`, `str` (short, with separators and non-ASCII characters), lists, maps, `result`, records and variants. A parameter whose type contains a function type, or has no finite value, is E0602.
+- Inputs are fixed by `--seed N` (default 1): the same file and seed give the same report. Each case gets fresh arguments and the default seed and clock; `--timeout` covers the whole property.
+- `assume(cond)` discards an input that does not apply. It works only in a `prop` (E0604). Fewer than 100 accepted inputs in 1,000 attempts fails the property.
+- A failing input is shrunk to a smaller one that fails the same way, and reported as `counterexample` lines (JSON: `prop`, `cases`, `discarded`, `shrinks`, `counterexample`).
+
+```vo-test
+fn distance(a: int, b: int) -> int {
+    if a > b {
+        return a - b;
+    }
+    return a - b;
+}
+
+prop "distance is symmetric" (a: int, b: int) {
+    assume(a > -1000 and a < 1000 and b > -1000 and b < 1000);
+    expect_eq(distance(a, b), distance(b, a));
+}
+
+prop "sorting twice changes nothing" (xs: list[str]) {
+    let once = slice(xs, 0, len(xs));
+    sort(once);
+    let twice = slice(once, 0, len(once));
+    sort(twice);
+    expect_eq(twice, once);
+}
+```
+
+```output
+FAIL distance is symmetric (1 case, 0ms)
+  main.vo:10:5: `expect_eq` failed: the values differ.
+    expected: 1
+    actual:   -1
+    counterexample: a = -1
+    counterexample: b = 0
+    shrunk in 0 steps
+PASS sorting twice changes nothing (100 cases, 0ms)
+1 passed, 1 failed
 ```
 
 ## Programs in several files
@@ -944,7 +1047,7 @@ With `print(total);` on line 3 instead, `vo check --json main.vo` prints:
 {"v":1,"kind":"runtime_error","code":"R0002","name":"division_by_zero","message":"Division by zero.","file":"main.vo","start":{"line":2,"col":12},"end":{"line":2,"col":25},"trace":[{"function":"average","file":"main.vo","start":{"line":2,"col":12}},{"function":"main","file":"main.vo","start":{"line":6,"col":15}}]}
 ```
 
-**test** (from `test`): `name`, `status` (`"pass"`, `"fail"`, `"error"`, `"timeout"`), `file`, `start`, `ms`, and unless the status is `pass`, `failure`: `{file, start, end, message, expected?, actual?}` (plus `code` for `error`). Values are shown in vo syntax: `"abc"`, `[1, 2]`, `new Point { x: 1, y: 2 }`, `Shape.circle(1.0)`, `ok(1)`; maps as `{k: v}`.
+**test** (from `test`): `name`, `status` (`"pass"`, `"fail"`, `"error"`, `"timeout"`), `file`, `start`, `ms`, the property members above, and unless the status is `pass`, `failure`: `{file, start, end, message, expected?, actual?}` (plus `code` for `error`). Values are shown in vo syntax: `"abc"`, `[1, 2]`, `new Point { x: 1, y: 2 }`, `Shape.circle(1.0)`, `ok(1)`; maps as `{k: v}`.
 
 ```json
 {"v":1,"kind":"test","name":"doubles","status":"fail","file":"main.vo","start":{"line":5,"col":1},"ms":0,"failure":{"file":"main.vo","start":{"line":6,"col":5},"end":{"line":6,"col":28},"message":"`expect_eq` failed: the values differ.","expected":"8","actual":"9"}}

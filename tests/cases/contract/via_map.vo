@@ -1,0 +1,17 @@
+fn isqrt(n: int) -> int
+    requires n >= 0
+    ensures ret * ret <= n and (ret + 1) * (ret + 1) > n {
+    var r = 0;
+    while (r + 1) * (r + 1) <= n {
+        set r = r + 1;
+    }
+    return r;
+}
+
+fn main() uses console {
+    print(join(map([1, 4], fn(n: int) -> str {
+        return str(n);
+    }), ","));
+    let roots = map([4, -1], isqrt);
+    print(str(len(roots)));
+}

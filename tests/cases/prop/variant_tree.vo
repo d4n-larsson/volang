@@ -1,0 +1,36 @@
+variant Tree {
+    leaf;
+    node(Node);
+}
+
+record Node {
+    left: Tree;
+    value: int;
+    right: Tree;
+}
+
+fn size(t: Tree) -> int {
+    match t {
+        case leaf {
+            return 0;
+        }
+        case node(n) {
+            return size(n.left) + 1 + size(n.right);
+        }
+    }
+}
+
+fn mirror(t: Tree) -> Tree {
+    match t {
+        case leaf {
+            return Tree.leaf;
+        }
+        case node(n) {
+            return Tree.node(new Node { left: mirror(n.right), value: n.value, right: mirror(n.left) });
+        }
+    }
+}
+
+prop "mirror keeps the size" (t: Tree) {
+    expect_eq(size(mirror(t)), size(t));
+}

@@ -1,0 +1,11 @@
+fn initial(s: str) -> str {
+    if len(s) == 0 {
+        return "";
+    }
+    return slice(s, 0, 1);
+}
+
+prop "initial is the first character" (s: str) {
+    assume(len(s) > 0);
+    expect_eq(initial(s), chars(s)[0]);
+}

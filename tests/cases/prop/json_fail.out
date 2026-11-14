@@ -1,0 +1,2 @@
+{"v":1,"kind":"test","name":"dedupe has no repeats","status":"fail","file":"json_fail.vo","start":{"line":11,"col":1},"uses":"","ms":0,"prop":true,"cases":23,"shrinks":3,"counterexample":[{"name":"xs","value":"[0, -1, 0]"}],"failure":{"file":"json_fail.vo","start":{"line":16,"col":17},"end":{"line":16,"col":37},"message":"`expect` failed: the condition is false."}}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":0,"failed":1,"errored":0,"timed_out":0}

@@ -1,0 +1,7 @@
+prop "prints" (n: int) uses console {
+    print(str(n));
+}
+
+fn main() uses console {
+    print("hi");
+}

@@ -1,0 +1,5 @@
+on_lambda.vo:2:31: error[E0110]: Expected `{`, found `requires`.
+   2 |     let f = fn(n: int) -> int requires n > 0 {
+     |                               ^^^^^^^^
+  expected `{`, found `requires`
+1 error, 0 warnings

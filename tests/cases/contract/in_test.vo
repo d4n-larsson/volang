@@ -1,0 +1,17 @@
+fn isqrt(n: int) -> int
+    requires n >= 0
+    ensures ret * ret <= n and (ret + 1) * (ret + 1) > n {
+    var r = 0;
+    while (r + 1) * (r + 1) <= n {
+        set r = r + 1;
+    }
+    return r;
+}
+
+test "isqrt of 9" {
+    expect_eq(isqrt(9), 3);
+}
+
+test "isqrt of -4" {
+    expect_eq(isqrt(-4), 0);
+}

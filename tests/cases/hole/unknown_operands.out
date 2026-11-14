@@ -1,0 +1,7 @@
+unknown_operands.vo:2:8: error[E0601]: Cannot tell what type this hole must have; annotate the binding: `let x: T = todo(...)`.
+   2 |     if todo("a") == todo("b") {
+     |        ^^^^^^^^^
+unknown_operands.vo:2:21: error[E0601]: Cannot tell what type this hole must have; annotate the binding: `let x: T = todo(...)`.
+   2 |     if todo("a") == todo("b") {
+     |                     ^^^^^^^^^
+2 errors, 0 warnings

@@ -1,0 +1,5 @@
+in_test.vo:6:21: warning[W0601]: Hole: `"the expected length"` needs a value of type `int`.
+   6 |     let want: int = todo("the expected length");
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: nothing
+0 errors, 1 warning (1 hole)

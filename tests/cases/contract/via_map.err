@@ -1,0 +1,5 @@
+via_map.vo:15:17: runtime error[R0012]: Precondition `n >= 0` of `isqrt` does not hold.
+  15 |     let roots = map([4, -1], isqrt);
+     |                 ^^^^^^^^^^^^^^^^^^^
+trace:
+  at main (via_map.vo:15:17)

@@ -1,0 +1,4 @@
+assume_in_fn.vo:2:5: error[E0604]: `assume` can only be used inside a `prop` block.
+   2 |     assume(n % 2 == 0);
+     |     ^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings

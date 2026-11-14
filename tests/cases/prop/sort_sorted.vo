@@ -1,0 +1,8 @@
+prop "sort orders strings" (xs: list[str]) {
+    let ys = slice(xs, 0, len(xs));
+    sort(ys);
+    for i in 1..len(ys) {
+        expect(ys[i - 1] <= ys[i]);
+    }
+    expect_eq(len(ys), len(xs));
+}

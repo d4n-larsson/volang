@@ -1,0 +1,162 @@
+import main.answer;
+
+# Independent model: digit tables from the task statement.
+fn roman(n: int) -> str {
+    let ones = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
+    let tens = ["", "X", "XX", "XXX", "XL", "L", "LX", "LXX", "LXXX", "XC"];
+    let hundreds = ["", "C", "CC", "CCC", "CD", "D", "DC", "DCC", "DCCC", "CM"];
+    let thousands = ["", "M", "MM", "MMM"];
+    return thousands[n / 1000] + hundreds[n / 100 % 10] + tens[n / 10 % 10] + ones[n % 10];
+}
+
+fn value(c: str) -> int {
+    let letters = ["I", "V", "X", "L", "C", "D", "M"];
+    let values = [1, 5, 10, 50, 100, 500, 1000];
+    for i in 0..7 {
+        if letters[i] == c {
+            return values[i];
+        }
+    }
+    return -1;
+}
+
+# The expected output line for a non-decimal line: valid only if it is the canonical form.
+fn expected_roman(s: str) -> str {
+    let cs = chars(s);
+    var total = 0;
+    for i in 0..len(cs) {
+        let v = value(cs[i]);
+        if v < 0 {
+            return "invalid";
+        }
+        if i + 1 < len(cs) and value(cs[i + 1]) > v {
+            set total = total - v;
+        } else {
+            set total = total + v;
+        }
+        if total > 100000 {
+            return "invalid";
+        }
+    }
+    if total >= 1 and total <= 3999 and roman(total) == s {
+        return str(total);
+    }
+    return "invalid";
+}
+
+fn is_digits(s: str) -> bool {
+    if s == "" or len(s) > 18 {
+        return false;
+    }
+    for c in chars(s) {
+        if c < "0" or c > "9" {
+            return false;
+        }
+    }
+    return true;
+}
+
+# The expected output line for any line of at most 18 bytes.
+fn expected_line(s: str) -> str {
+    if is_digits(s) {
+        match parse_int(s) {
+            case ok(n) {
+                if n >= 1 and n <= 3999 {
+                    return roman(n);
+                }
+                return "out of range";
+            }
+            case err(e) {
+                return e;
+            }
+        }
+    }
+    return expected_roman(s);
+}
+
+fn small(x: int, n: int) -> int {
+    return abs(x % n);
+}
+
+prop "decimal to roman matches the table model" (a: int, z: int) {
+    let n = 1 + small(a, 3999);
+    expect_eq(answer(str(n)), ok(roman(n)));
+    let zeros = slice("000000000000000000", 0, small(z, 18 - len(str(n))));
+    expect_eq(answer(zeros + str(n)), ok(roman(n)));
+}
+
+prop "roman to decimal round-trips" (a: int) {
+    let n = 1 + small(a, 3999);
+    match answer(str(n)) {
+        case ok(r) {
+            expect_eq(answer(r), ok(str(n)));
+            expect_eq(expected_roman(r), str(n));
+        }
+        case err(e) {
+            expect_eq(e, "");
+        }
+    }
+}
+
+prop "edited numerals are judged like the model" (a: int, k: int, e: int) {
+    let good = roman(1 + small(a, 3999));
+    let cs = chars(good);
+    let pos = small(k, len(cs) + 1);
+    let pool = ["I", "V", "X", "L", "C", "D", "M", "i", "v", "x", " ", "0", "-"];
+    let c = pool[small(e, len(pool))];
+    let before = join(slice(cs, 0, pos), "");
+    let after = join(slice(cs, pos, len(cs)), "");
+    let inserted = before + c + after;
+    expect_eq(answer(inserted), ok(expected_line(inserted)));
+    if pos < len(cs) {
+        let deleted = before + join(slice(cs, pos + 1, len(cs)), "");
+        if deleted != "" {
+            expect_eq(answer(deleted), ok(expected_line(deleted)));
+        }
+        let replaced = before + c + join(slice(cs, pos + 1, len(cs)), "");
+        expect_eq(answer(replaced), ok(expected_line(replaced)));
+    }
+}
+
+prop "random letter strings are judged like the model" (a: int, b: int, c: int, d: int, n: int) {
+    let letters = ["I", "V", "X", "L", "C", "D", "M"];
+    var s = "";
+    let picks = [a, b, c, d, a / 7, b / 7, c / 7, d / 7];
+    for i in 0..1 + small(n, 8) {
+        set s = s + letters[small(picks[i], 7)];
+    }
+    expect_eq(answer(s), ok(expected_roman(s)));
+}
+
+prop "decimal range and digit-count limits" (a: int, z: int) {
+    let n = small(a, 1000000000000);
+    var expected = "out of range";
+    if n >= 1 and n <= 3999 {
+        set expected = roman(n);
+    }
+    expect_eq(answer(str(n)), ok(expected));
+    let zeros = slice("000000000000000000", 0, 18 - len(str(n)));
+    expect_eq(answer(zeros + str(n)), ok(expected));
+    expect_eq(answer(" " + str(n)), ok("invalid"));
+    expect_eq(answer("+" + str(n)), ok("invalid"));
+    expect_eq(answer("-" + str(n)), ok("invalid"));
+    let k = small(z, 4000);
+    if k != 0 {
+        expect_eq(answer(lower(roman(k))), ok("invalid"));
+        expect_eq(answer(roman(k) + " "), ok("invalid"));
+    }
+}
+
+prop "explicit edges" (x: int) {
+    expect_eq(answer("1994"), ok("MCMXCIV"));
+    expect_eq(answer("3999"), ok("MMMCMXCIX"));
+    expect_eq(answer("4000"), ok("out of range"));
+    expect_eq(answer("0"), ok("out of range"));
+    expect_eq(answer("0042"), ok("XLII"));
+    expect_eq(answer("999999999999999999"), ok("out of range"));
+    expect_eq(answer("MMMCMXCIX"), ok("3999"));
+    for bad in ["", "IIII", "VV", "IC", "XM", "MMMM", "iv", " X", "-5", "IL", "VX", "DD", "LL", "CCCC", "XXXX", "IXI", "IIV", "XCX", "CMD"] {
+        expect_eq(answer(bad), ok("invalid"));
+    }
+    expect_eq(answer(str(x)), answer(str(x)));
+}

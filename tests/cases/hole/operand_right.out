@@ -1,0 +1,5 @@
+operand_right.vo:3:21: warning[W0601]: Hole: `"the tax"` needs a value of type `int`.
+   3 |     let total = n + todo("the tax");
+     |                     ^^^^^^^^^^^^^^^
+    in scope: n: int
+0 errors, 1 warning (1 hole)

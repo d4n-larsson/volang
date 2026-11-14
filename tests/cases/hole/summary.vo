@@ -1,0 +1,11 @@
+fn parse(line: str) -> int {
+    todo("parse");
+}
+
+fn show(n: int) -> str {
+    return todo("show n");
+}
+
+fn main() uses console {
+    print(show(parse("x")));
+}

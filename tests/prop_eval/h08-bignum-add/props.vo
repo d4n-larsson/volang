@@ -1,0 +1,126 @@
+import main.answer;
+
+fn digits(ds: list[int]) -> str {
+    var s = "";
+    for d in ds {
+        set s = s + str(abs(d % 10));
+    }
+    return s;
+}
+
+fn repeat(s: str, k: int) -> str {
+    var r = "";
+    for _ in 0..k {
+        set r = r + s;
+    }
+    return r;
+}
+
+# The canonical form of a sign and a digit string.
+fn canon(neg: bool, ds: str) -> str {
+    var i = 0;
+    while i < len(ds) - 1 and slice(ds, i, i + 1) == "0" {
+        set i = i + 1;
+    }
+    let mag = slice(ds, i, len(ds));
+    if neg and mag != "0" {
+        return "-" + mag;
+    }
+    return mag;
+}
+
+fn negate(s: str) -> str {
+    if slice(s, 0, 1) == "-" {
+        return slice(s, 1, len(s));
+    }
+    if s == "0" {
+        return "-0";
+    }
+    return "-" + s;
+}
+
+# int n written with an optional `+`, k leading zeros.
+fn spelled(n: int, plus: bool, k: int) -> str {
+    let zeros = repeat("0", abs(k % 4));
+    if n < 0 {
+        return "-" + zeros + slice(str(n), 1, len(str(n)));
+    }
+    if plus {
+        return "+" + zeros + str(n);
+    }
+    return zeros + str(n);
+}
+
+prop "agrees with int arithmetic on small numbers" (a: int, b: int, pa: bool, pb: bool, za: int, zb: int, sp: int) {
+    let x = a % 1000000000000000000;
+    let y = b % 1000000000000000000;
+    let gap = repeat(" ", 1 + abs(sp % 3));
+    let lead = repeat(" ", abs(sp % 2));
+    expect_eq(answer(lead + spelled(x, pa, za) + gap + spelled(y, pb, zb) + lead), str(x + y));
+}
+
+prop "addition is commutative" (xs: list[int], ys: list[int], na: bool, nb: bool) {
+    assume(len(xs) > 0 and len(ys) > 0);
+    let a = canon(na, digits(xs));
+    let b = canon(nb, digits(ys));
+    expect_eq(answer(a + " " + b), answer(b + " " + a));
+}
+
+prop "adding then subtracting b gives a back" (xs: list[int], ys: list[int], na: bool, nb: bool) {
+    assume(len(xs) > 0 and len(ys) > 0);
+    let a = canon(na, digits(xs));
+    let b = canon(nb, digits(ys));
+    expect_eq(answer(answer(a + " " + b) + " " + negate(b)), a);
+}
+
+prop "zero and opposites" (xs: list[int], na: bool, k: int) {
+    assume(len(xs) > 0);
+    let raw = repeat("0", abs(k % 3)) + digits(xs);
+    let a = canon(na, raw);
+    var sign = "+";
+    if na {
+        set sign = "-";
+    }
+    expect_eq(answer(sign + raw + " 0"), a);
+    expect_eq(answer("-0 " + sign + raw), a);
+    expect_eq(answer(a + " " + negate(a)), "0");
+}
+
+prop "carries and borrows run the whole length" (n: int) {
+    let k = 1 + abs(n % 60);
+    let nines = repeat("9", k);
+    let power = "1" + repeat("0", k);
+    expect_eq(answer(nines + " 1"), power);
+    expect_eq(answer("1 " + nines), power);
+    expect_eq(answer(power + " -1"), nines);
+    expect_eq(answer("-" + power + " 1"), "-" + nines);
+    expect_eq(answer("-1 " + power), nines);
+    expect_eq(answer("-" + nines + " -1"), "-" + power);
+}
+
+prop "lines with other characters are invalid" (s: str, xs: list[int]) {
+    let bad = filter(chars(s), fn(c: str) -> bool {
+        return c != " " and c != "+" and c != "-" and find("0123456789", c) == -1;
+    });
+    # The task's input is ASCII.
+    assume(len(bad) > 0 and len(xs) > 0 and len(chars(s)) == len(s));
+    expect_eq(answer(s), "invalid");
+    expect_eq(answer(digits(xs) + bad[0] + " 1"), "invalid");
+    expect_eq(answer("1 " + bad[0] + digits(xs)), "invalid");
+}
+
+test "malformed lines from the statement" {
+    expect_eq(answer(""), "invalid");
+    expect_eq(answer("   "), "invalid");
+    expect_eq(answer("1"), "invalid");
+    expect_eq(answer("1 2 3"), "invalid");
+    expect_eq(answer("+ 1"), "invalid");
+    expect_eq(answer("1 -"), "invalid");
+    expect_eq(answer("--1 2"), "invalid");
+    expect_eq(answer("+-1 2"), "invalid");
+    expect_eq(answer("1- 2"), "invalid");
+    expect_eq(answer("-5 +5"), "0");
+    expect_eq(answer("000123 -23"), "100");
+    expect_eq(answer("-0 -0"), "0");
+    expect_eq(answer("  7   8  "), "15");
+}

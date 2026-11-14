@@ -1,0 +1,5 @@
+hole_in_clause.vo:2:14: warning[W0601]: Hole: `"n is even"` needs a value of type `bool`.
+   2 |     requires todo("n is even") {
+     |              ^^^^^^^^^^^^^^^^^
+    in scope: n: int
+0 errors, 1 warning (1 hole)

@@ -1,0 +1,5 @@
+via_value.vo:14:15: runtime error[R0012]: Precondition `n >= 0` of `isqrt` does not hold.
+  14 |     print(str(f(-1)));
+     |               ^^^^^
+trace:
+  at main (via_value.vo:14:15)

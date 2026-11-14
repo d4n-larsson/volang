@@ -1,0 +1,18 @@
+fn isqrt(n: int) -> int
+    requires n >= 0
+    ensures ret * ret <= n and (ret + 1) * (ret + 1) > n {
+    var r = 0;
+    while (r + 1) * (r + 1) <= n {
+        set r = r + 1;
+    }
+    return r;
+}
+
+fn root_of(n: int) -> int {
+    return isqrt(n - 5);
+}
+
+fn main() uses console {
+    print(str(isqrt(10)));
+    print(str(root_of(1)));
+}

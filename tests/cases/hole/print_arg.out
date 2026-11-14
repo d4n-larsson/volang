@@ -1,0 +1,5 @@
+print_arg.vo:3:11: warning[W0601]: Hole: `"a greeting for name"` needs a value of type `str`.
+   3 |     print(todo("a greeting for name"));
+     |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: name: str
+0 errors, 1 warning (1 hole)

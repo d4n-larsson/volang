@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"W0601","name":"hole","severity":"warning","file":"arg_json.vo","start":{"line":7,"col":21},"end":{"line":7,"col":35},"text":"todo(\"a name\")","message":"Hole: `\"a name\"` needs a value of type `str`.","expected":"str","scope":[{"name":"pad","type":"int"}],"fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":0,"warnings":1,"truncated":0,"files":1,"holes":1}

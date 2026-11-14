@@ -1,0 +1,7 @@
+fn f() -> int {
+    return todo(1);
+}
+
+fn main() uses console {
+    print(str(f()));
+}

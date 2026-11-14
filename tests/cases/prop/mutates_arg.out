@@ -1,0 +1,5 @@
+FAIL the body may change its argument (8 cases, 0ms)
+  mutates_arg.vo:3:5: `expect` failed: the condition is false.
+    counterexample: xs = [0, 0]
+    shrunk in 2 steps
+0 passed, 1 failed

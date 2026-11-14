@@ -1,0 +1,5 @@
+ERROR initial is the first character (3 cases, 0ms)
+  utf8.vo:5:12: runtime error[R0007]: Slice boundary 1 splits a UTF-8 character.
+    counterexample: s = "é"
+    shrunk in 1 step
+0 passed, 0 failed, 1 errored

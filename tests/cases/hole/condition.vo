@@ -1,0 +1,6 @@
+fn main() uses console {
+    let n = 3;
+    if todo("n is ready") {
+        print(str(n));
+    }
+}

@@ -1,0 +1,5 @@
+fn main() uses console {
+    if todo("a") == todo("b") {
+        print("same");
+    }
+}

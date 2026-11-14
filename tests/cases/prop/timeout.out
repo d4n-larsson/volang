@@ -1,0 +1,4 @@
+TIMEOUT terminates (2 cases, 0ms)
+  timeout.vo:3:5: runtime error[R0009]: Time limit of 1 s exceeded.
+    counterexample: n = -2
+0 passed, 0 failed, 1 timed out

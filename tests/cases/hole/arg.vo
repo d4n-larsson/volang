@@ -1,0 +1,8 @@
+fn width(name: str, pad: int) -> int {
+    return len(name) + pad;
+}
+
+fn main() uses console {
+    let pad = 2;
+    print(str(width(todo("a name"), pad)));
+}

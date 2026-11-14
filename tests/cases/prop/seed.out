@@ -1,0 +1,5 @@
+FAIL small (11 cases, 0ms)
+  seed.vo:2:5: `expect` failed: the condition is false.
+    counterexample: n = 5
+    shrunk in 3 steps
+0 passed, 1 failed

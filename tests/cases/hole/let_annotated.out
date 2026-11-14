@@ -1,0 +1,5 @@
+let_annotated.vo:2:18: warning[W0601]: Hole: `"count the words"` needs a value of type `int`.
+   2 |     let n: int = todo("count the words");
+     |                  ^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: nothing
+0 errors, 1 warning (1 hole)

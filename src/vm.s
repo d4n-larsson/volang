@@ -38,6 +38,12 @@ vm_ops:
 s_not_compiled: .string "error[T0003]: internal error: a function has no compiled code\n"
 
     .text
+# ponytail: under qemu-user, translation blocks end at 4 KiB page boundaries, so where the VM's code
+# falls within a page decides whether hot handlers get split (up to 20% on tests/speed). The VM
+# starts at a fixed page offset, the one spec 004 was measured at, so code added elsewhere cannot
+# move it. Upgrade: lay the hot handlers out to avoid page crossings, if qemu speed matters more.
+    .balign 4096
+    .skip 0xc7c
 # void vm_not_compiled(void)
 # Every function, lambda and test is compiled before a program runs (compile_program): one
 # without code is a toolchain bug (T0003, exit 125).

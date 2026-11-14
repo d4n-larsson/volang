@@ -1,0 +1,8 @@
+prop "abs is not negative" (n: int) {
+    assume(n > -9223372036854775807);
+    expect(abs(n) >= 0);
+}
+
+prop "fails if run" (n: int) {
+    expect(false);
+}

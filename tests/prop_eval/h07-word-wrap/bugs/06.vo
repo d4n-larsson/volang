@@ -1,0 +1,87 @@
+# replaces: main.vo
+fn words_of(line: str) -> list[str] {
+    return filter(split(line, " "), fn(w: str) -> bool {
+        return len(w) > 1;
+    });
+}
+
+fn paragraphs(lines: list[str]) -> list[list[str]] {
+    let paras = new list[list[str]];
+    var cur = new list[str];
+    for line in lines {
+        let ws = words_of(line);
+        if len(ws) > 0 {
+            for w in ws {
+                push(cur, w);
+            }
+        } else if len(cur) > 0 {
+            push(paras, cur);
+            set cur = new list[str];
+        }
+    }
+    if len(cur) > 0 {
+        push(paras, cur);
+    }
+    return paras;
+}
+
+fn wrap(words: list[str], width: int) -> list[str] {
+    let out = new list[str];
+    var line = "";
+    for word in words {
+        var w = word;
+        if len(w) > width {
+            if len(line) > 0 {
+                push(out, line);
+            }
+            while len(w) > width {
+                push(out, slice(w, 0, width));
+                set w = slice(w, width, len(w));
+            }
+            set line = w;
+        } else if len(line) == 0 {
+            set line = w;
+        } else if len(line) + 1 + len(w) <= width {
+            set line = line + " " + w;
+        } else {
+            push(out, line);
+            set line = w;
+        }
+    }
+    push(out, line);
+    return out;
+}
+
+fn format(lines: list[str], width: int) -> list[str] {
+    let out = new list[str];
+    var first = true;
+    for p in paragraphs(lines) {
+        if not first {
+            push(out, "");
+        }
+        set first = false;
+        for l in wrap(p, width) {
+            push(out, l);
+        }
+    }
+    return out;
+}
+
+fn main() -> result[void] uses console, input {
+    let width = try parse_int(trim(try read_line()));
+    let lines = new list[str];
+    while true {
+        match read_line() {
+            case ok(line) {
+                push(lines, line);
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    for l in format(lines, width) {
+        print(l);
+    }
+    return ok();
+}

@@ -1,0 +1,97 @@
+# replaces: main.vo
+fn words(s: str) -> list[str] {
+    return filter(split(s, " "), fn(w: str) -> bool {
+        return len(w) > 0;
+    });
+}
+
+fn spiral(m: list[list[str]]) -> list[str] {
+    let out = new list[str];
+    var top = 0;
+    var bottom = len(m) - 1;
+    var left = 0;
+    var right = len(m[0]) - 1;
+    while top <= bottom and left <= right {
+        for j in left..right + 1 {
+            push(out, m[top][j]);
+        }
+        for i in top + 1..bottom + 1 {
+            push(out, m[i][right]);
+        }
+        if top < bottom {
+            var j = right - 1;
+            while j >= left {
+                push(out, m[bottom][j]);
+                set j = j - 1;
+            }
+        }
+        if left < right {
+            var i = bottom - 1;
+            while i > top {
+                push(out, m[i][left]);
+                set i = i - 1;
+            }
+        }
+        set top = top + 1;
+        set bottom = bottom - 1;
+        set left = left + 1;
+        set right = right - 1;
+    }
+    return out;
+}
+
+fn transpose(m: list[list[str]]) -> list[list[str]] {
+    let t = new list[list[str]];
+    for j in 0..len(m[0]) {
+        let col = new list[str];
+        for i in 0..len(m) {
+            push(col, m[i][j]);
+        }
+        push(t, col);
+    }
+    return t;
+}
+
+fn spiral_dir(m: list[list[str]], d: str) -> list[str] {
+    if d == "ccw" {
+        let cw = spiral(m);
+        let out = [cw[0]];
+        var i = len(cw) - 1;
+        while i > 0 {
+            push(out, cw[i]);
+            set i = i - 1;
+        }
+        return out;
+    }
+    return spiral(m);
+}
+
+fn solve(lines: list[str]) -> result[str] {
+    let head = words(lines[0]);
+    let r = try parse_int(head[0]);
+    let c = try parse_int(head[1]);
+    if r == 0 or c == 0 {
+        return ok("empty");
+    }
+    let m = new list[list[str]];
+    for i in 0..r {
+        push(m, words(lines[1 + i]));
+    }
+    return ok(join(spiral_dir(m, head[2]), " "));
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = new list[str];
+    while true {
+        match read_line() {
+            case ok(line) {
+                push(lines, line);
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    print(try solve(lines));
+    return ok();
+}

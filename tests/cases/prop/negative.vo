@@ -1,0 +1,16 @@
+fn digit_sum(n: int) -> int {
+    var total = 0;
+    var m = n;
+    while m > 0 {
+        set total = total + m % 10;
+        set m = m / 10;
+    }
+    return total;
+}
+
+prop "digit sum is positive for non-zero" (n: int) {
+    assume(n > -1000000 and n < 1000000);
+    if n != 0 {
+        expect(digit_sum(n) > 0);
+    }
+}

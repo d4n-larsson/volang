@@ -1,0 +1,5 @@
+prop "floats are finite" (b: bool, x: float) {
+    expect(x == x);
+    expect(b or not b);
+    expect_eq(x + 0.0, x);
+}

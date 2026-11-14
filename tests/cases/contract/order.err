@@ -1,0 +1,5 @@
+order.vo:9:15: runtime error[R0012]: Precondition `a >= 0` of `ratio` does not hold.
+   9 |     print(str(ratio(-1, 0)));
+     |               ^^^^^^^^^^^^
+trace:
+  at main (order.vo:9:15)

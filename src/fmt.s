@@ -27,6 +27,10 @@ s_fn:       .string "fn "
 s_arrow:    .string " -> "
 s_record:   .string "record "
 s_variant:  .string "variant "
+s_prop: .string "prop "
+s_requires: .string "\n    requires "
+s_ensures: .string "\n    ensures "
+s_sp_paren: .string " ("
 s_test:     .string "test "
 s_uses_kw:  .string " uses "
 s_fn_open:  .string "fn("
@@ -1331,6 +1335,9 @@ fm_item:
     beqz t0, 125f
     ld a0, FX_USES(t0)
     call fm_uses
+    ld t0, N_A(s0)
+    ld a0, N_B(t0)
+    call fm_clauses
 125:
     li a0, ' '
     call fm_b
@@ -1360,12 +1367,50 @@ fm_item:
     call fm_c
     j 98f
 15:
+    lhu t0, N_FLAGS(s0)
+    andi t0, t0, NF_PROP
     la a0, s_test
+    beqz t0, 151f
+    la a0, s_prop
+151:
     call fm_c
     la t0, fm_sb
     ld a0, 0(t0)
     ld a1, N_A(s0)
     call render_str_lit
+    lhu t0, N_FLAGS(s0)
+    andi t0, t0, NF_PROP
+    beqz t0, 155f
+    la a0, s_sp_paren           # prop: " (a: T, b: U)"
+    call fm_c
+    li s1, 0
+152:
+    ld t0, N_D(s0)
+    ld t0, FX_PARAMS(t0)
+    ld t1, VEC_N(t0)
+    bge s1, t1, 154f
+    beqz s1, 153f
+    la a0, s_comma
+    call fm_c
+153:
+    ld t0, N_D(s0)
+    ld a0, FX_PARAMS(t0)
+    mv a1, s1
+    call vec_get
+    sd a0, 0(sp)
+    ld a0, N_A(a0)
+    call fm_name
+    la a0, s_colon
+    call fm_c
+    ld t0, 0(sp)
+    ld a0, N_B(t0)
+    call fm_type
+    addi s1, s1, 1
+    j 152b
+154:
+    li a0, ')'
+    call fm_b
+155:
     ld a0, N_C(s0)
     call fm_uses
     li a0, ' '
@@ -1380,6 +1425,71 @@ fm_item:
     ld s0, 16(sp)
     ld s1, 8(sp)
     addi sp, sp, 32
+    ret
+
+# void fm_clauses(void *fx)
+# Contract clauses in source order, each on its own line indented four spaces.
+fm_clauses:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
+    sd s4, 0(sp)
+    mv s0, a0
+    li s1, 0                    # next requires
+    li s2, 0                    # next ensures
+1:
+    li s3, 0
+    ld t0, FX_REQUIRES(s0)
+    beqz t0, 2f
+    ld t1, VEC_N(t0)
+    bge s1, t1, 2f
+    ld t1, VEC_DATA(t0)
+    slli t2, s1, 3
+    add t1, t1, t2
+    ld s3, 0(t1)
+2:
+    li s4, 0
+    ld t0, FX_ENSURES(s0)
+    beqz t0, 3f
+    ld t1, VEC_N(t0)
+    bge s2, t1, 3f
+    ld t1, VEC_DATA(t0)
+    slli t2, s2, 3
+    add t1, t1, t2
+    ld s4, 0(t1)
+3:
+    beqz s3, 5f
+    beqz s4, 4f
+    lwu t0, N_START(s3)
+    lwu t1, N_START(s4)
+    bgtu t0, t1, 5f
+4:
+    la a0, s_requires           # the requires clause comes first
+    call fm_c
+    mv a0, s3
+    addi s1, s1, 1
+    j 6f
+5:
+    beqz s4, 9f
+    la a0, s_ensures
+    call fm_c
+    mv a0, s4
+    addi s2, s2, 1
+6:
+    li a1, 0
+    call fm_expr
+    j 1b
+9:
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    ld s4, 0(sp)
+    addi sp, sp, 48
     ret
 
 # void *import_text(void *import)

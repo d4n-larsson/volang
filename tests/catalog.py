@@ -82,6 +82,10 @@ def contract():
         else:
             fixable = "yes"
         out[code] = (name, fixable)
+    spec005 = os.path.join(ROOT, "specs", "005-holes-props-contracts", "contracts", "codes.md")
+    for code, name, fix in re.findall(r"^\| ([EWRT]\d{4}) \| `(\w+)` \| [^|]* \| ([^|]*) \|",
+                                      open(spec005, encoding="utf-8").read(), re.M):
+        out[code] = (name, "no" if code[0] in "RT" else fix.strip())
     return out
 
 

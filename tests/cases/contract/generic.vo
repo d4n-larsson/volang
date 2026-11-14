@@ -1,0 +1,11 @@
+fn clamp[T: ordered](x: T, lo: T, hi: T) -> T
+    requires lo <= hi
+    ensures lo <= ret and ret <= hi {
+    return min(max(x, lo), hi);
+}
+
+fn main() uses console {
+    print(str(clamp(15, 0, 10)));
+    print(clamp("m", "a", "f"));
+    print(str(clamp(1.5, 2.0, 1.0)));
+}

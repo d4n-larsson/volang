@@ -1,0 +1,7 @@
+record Loop {
+    next: Loop;
+}
+
+prop "loops" (l: Loop) {
+    expect(true);
+}

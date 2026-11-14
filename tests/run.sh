@@ -27,7 +27,7 @@ work="$root/build/run-work"
 mkdir -p "$work"
 passed=0; failed=0
 
-normalize() { sed -E 's/"ms":[0-9]+/"ms":0/g; s/\(([0-9]+)ms\)/(0ms)/g'; }
+normalize() { sed -E 's/"ms":[0-9]+/"ms":0/g; s/([ (])[0-9]+ms\)/\10ms)/g'; }
 
 # area <case path>: the directory right below tests/cases, or the parent directory name.
 area() {

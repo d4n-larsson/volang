@@ -1,0 +1,5 @@
+generic.vo:10:15: runtime error[R0012]: Precondition `lo <= hi` of `clamp` does not hold.
+  10 |     print(str(clamp(1.5, 2.0, 1.0)));
+     |               ^^^^^^^^^^^^^^^^^^^^
+trace:
+  at main (generic.vo:10:15)

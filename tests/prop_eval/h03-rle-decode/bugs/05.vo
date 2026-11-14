@@ -1,0 +1,50 @@
+# replaces: main.vo
+fn is_digit(c: str) -> bool {
+    return c >= "0" and c <= "9";
+}
+
+fn decode(s: str) -> str {
+    let cs = chars(s);
+    let n = len(cs);
+    let parts = new list[str];
+    var i = 0;
+    var total = 0;
+    while i < n {
+        if not is_digit(cs[i]) or cs[i] == "0" {
+            return "error at column " + str(i + 1);
+        }
+        var j = i;
+        var count = 0;
+        while j < n and is_digit(cs[j]) and cs[j] != "0" {
+            set count = count * 10 + ord(cs[j]) - 48;
+            set j = j + 1;
+        }
+        if j == n {
+            return "error at column " + str(n + 1);
+        }
+        set total = total + count;
+        if total <= 1000 {
+            for _ in 0..count {
+                push(parts, cs[j]);
+            }
+        }
+        set i = j + 1;
+    }
+    if total > 1000 {
+        return "error: too long";
+    }
+    return join(parts, "");
+}
+
+fn main() uses console, input {
+    while true {
+        match read_line() {
+            case ok(line) {
+                print(decode(line));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+}

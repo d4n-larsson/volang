@@ -10,6 +10,7 @@
 
     .section .bss
     .align 3
+    .globl ck_fx
 ck_fx:      .space 8                # FX of the function or test being checked, or 0
 ck_edges:   .space 8                # vec of call edges of the current file
 all_edges:  .space 8                # vec of call edges of the whole program
@@ -39,6 +40,7 @@ m_effect:   .string "`$1` is not an effect: use console, input, file.read, file.
 s_uses:     .string "uses "
 s_space:    .string " "
 s_test_q:   .string "test \""
+s_prop_q:   .string "prop \""
 s_quote:    .string "\""
 
     .text
@@ -552,6 +554,11 @@ fx_item_name:
     call sb_new
     mv s1, a0
     la a1, s_test_q
+    lhu t0, N_FLAGS(s0)
+    andi t0, t0, NF_PROP
+    beqz t0, 3f
+    la a1, s_prop_q
+3:
     call sb_cstr
     ld a1, N_A(s0)
     beqz a1, 2f
@@ -670,6 +677,12 @@ fx_fix_clause:
 1:
     beqz t0, 9f
     lwu s4, N_START(t0)
+    mv a0, s1                   # contract clauses follow `uses`: the clause ends before them
+    call item_fx
+    ld t0, FX_CLAUSE_AT(a0)
+    beqz t0, 11f
+    mv s4, t0
+11:
     call sb_new
     mv s5, a0
     mv a0, s2
@@ -761,6 +774,8 @@ fx_report:
     call fx_related
     j 9f
 5:
+    ld t0, FX_HOLES(s1)         # an unfinished body: its effects are not known yet
+    bnez t0, 9f
     ld a0, FX_DECLARED(s1)
     ld a1, FX_REQUIRED(s1)
     call es_unused

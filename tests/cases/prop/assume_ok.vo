@@ -1,0 +1,4 @@
+prop "even halves" (n: int) {
+    assume(n % 2 == 0);
+    expect_eq(n / 2 * 2, n);
+}

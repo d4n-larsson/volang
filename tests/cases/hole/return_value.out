@@ -1,0 +1,5 @@
+return_value.vo:2:12: warning[W0601]: Hole: `"area of w by h"` needs a value of type `int`.
+   2 |     return todo("area of w by h");
+     |            ^^^^^^^^^^^^^^^^^^^^^^
+    in scope: h: int, w: int
+0 errors, 1 warning (1 hole)

@@ -1,0 +1,5 @@
+effects_stub.vo:2:5: warning[W0601]: Hole: `"print the report"` needs a value of type `void`.
+   2 |     todo("print the report");
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: n: int
+0 errors, 1 warning (1 hole)

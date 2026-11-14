@@ -1,0 +1,3 @@
+prop "nothing" () {
+    expect(true);
+}

@@ -1,0 +1,7 @@
+FAIL count is the number of nodes (1 case, 0ms)
+  variant_case.vo:50:5: `expect_eq` failed: the values differ.
+    expected: 3
+    actual:   2
+    counterexample: e = Expr.add(new Pair { left: Expr.num(0), right: Expr.num(0) })
+    shrunk in 2 steps
+0 passed, 1 failed

@@ -27,6 +27,10 @@ c_cont:     .space 8                # vec of `continue` jumps of the innermost l
 c_done:     .space 8                # compile_program ran
 c_code_ptr: .space 8                # next free byte of the code region (0: not mapped yet)
 c_lams:     .space 8                # vec of lambdas reached, compiled after their enclosing body
+c_ens:      .space 8                # spec 005: vec of jumps to the `ensures` epilogue, or 0 (none)
+c_reqj:     .space 8                # vec of `requires` jumps taken when a condition is false
+c_retslot:  .space 8                # the `ret` slot (bytes), or -1 (no return type)
+c_exitslot: .space 8                # the slot holding the exit node for R0013 (bytes)
 
     .text
 # void compile_program(void)
@@ -163,8 +167,14 @@ compile_fn:
     lhu t0, N_KIND(s0)
     li t1, N_TEST
     bne t0, t1, 1f
-    ld s1, N_B(s0)              # test: body N_B, no parameters
+    ld s1, N_B(s0)              # test: body N_B, no parameters (a property: FX_PARAMS)
     li s3, 0
+    lhu t0, N_FLAGS(s0)
+    andi t0, t0, NF_PROP
+    beqz t0, 2f
+    ld t0, N_D(s0)
+    ld t0, FX_PARAMS(t0)
+    ld s3, VEC_N(t0)
     j 2f
 1:
     ld s1, N_D(s0)              # fn / lambda: body N_D, parameters N_B
@@ -188,14 +198,12 @@ compile_fn:
     sd zero, 0(t0)
     la t0, c_cont
     sd zero, 0(t0)
+    mv a0, s0                   # contracts (spec 005): `requires` checks first
+    call c_prologue
     mv a0, s1
     call cblock
-    li a0, OPC_RET              # falling off the end returns 0
-    li a1, 0
-    li a2, -1
-    li a3, 0
-    mv a4, s0
-    call c_emit
+    mv a0, s0                   # falling off the end returns 0 (or goes to the `ensures` checks)
+    call c_fn_end
     la t0, c_fail
     ld t0, 0(t0)
     bnez t0, 9f
@@ -241,6 +249,311 @@ compile_fn:
     mv a0, s0
     call item_fx
     sd s2, FX_CODE(a0)
+9:
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    addi sp, sp, 48
+    ret
+
+# ---- contracts (spec 005 research R12, R13) ----
+
+# void *c_fx_of(void *decl)
+# The FX record of a named function, or 0 (lambdas and tests have no contracts).
+c_fx_of:
+    li t0, N_FN
+    lhu t1, N_KIND(a0)
+    bne t0, t1, 1f
+    ld t0, N_A(a0)
+    beqz t0, 1f
+    ld a0, N_B(t0)
+    ret
+1:
+    li a0, 0
+    ret
+
+# void c_prologue(void *decl)
+# One jump per `requires`, taken when it is false (to a stub after the code); the epilogue state
+# when the function has `ensures`. A function without contracts gets nothing.
+c_prologue:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    sd s2, 0(sp)
+    mv s2, a0
+    la t0, c_ens
+    sd zero, 0(t0)
+    la t0, c_reqj
+    sd zero, 0(t0)
+    call c_fx_of
+    beqz a0, 9f
+    mv s0, a0
+    ld t0, FX_REQUIRES(s0)
+    ld t1, FX_ENSURES(s0)
+    or t0, t0, t1
+    beqz t0, 9f
+    call c_new_temp
+    la t0, c_exitslot
+    sd a0, 0(t0)
+    call vec_new
+    la t0, c_reqj
+    sd a0, 0(t0)
+    ld t0, FX_REQUIRES(s0)
+    beqz t0, 3f
+    li s1, 0
+1:
+    ld t0, FX_REQUIRES(s0)
+    ld t1, VEC_N(t0)
+    bge s1, t1, 3f
+    mv a0, t0
+    mv a1, s1
+    call vec_get
+    call ccond
+    mv a1, a0
+    la t0, c_reqj
+    ld a0, 0(t0)
+    call vec_push
+    addi s1, s1, 1
+    j 1b
+3:
+    ld t0, FX_ENSURES(s0)
+    beqz t0, 9f
+    call vec_new
+    la t0, c_ens
+    sd a0, 0(t0)
+    li t1, -1
+    ld t0, N_TYPE(s2)
+    ld t0, TY_KIND(t0)
+    li t2, TY_VOID
+    beq t0, t2, 4f
+    ld t1, FX_RETSLOT(s0)
+    slli t1, t1, 3
+4:
+    la t0, c_retslot
+    sd t1, 0(t0)
+9:
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    ld s2, 0(sp)
+    addi sp, sp, 32
+    ret
+
+# void c_ens_exit(long value_slot, void *exit_node)
+# An exit of a function with `ensures`: ret = value, the exit node for R0013, then the epilogue.
+c_ens_exit:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    mv s0, a0
+    mv s1, a1
+    la t0, c_retslot
+    ld a0, 0(t0)
+    bltz a0, 1f
+    bltz s0, 1f
+    mv a1, s0
+    mv a2, s1
+    call c_mov
+1:
+    li a0, OPC_LOADK
+    la t0, c_exitslot
+    ld a1, 0(t0)
+    li a2, 0
+    mv a3, s1
+    mv a4, s1
+    call c_emit
+    li a0, OPC_JMP
+    li a1, 0
+    li a2, 0
+    mv a3, s1
+    call c_jump
+    mv a1, a0
+    la t0, c_ens
+    ld a0, 0(t0)
+    call vec_push
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    addi sp, sp, 32
+    ret
+
+# void *c_fail_node(long id, void *cond, void *decl)
+# The node of a compiled contract failure: a builtin call (id B_REQ_FAIL / B_ENS_FAIL) with the
+# condition's span, the condition in N_A and the function in N_C.
+c_fail_node:
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)
+    sd s1, 8(sp)
+    sd s2, 0(sp)
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+    li a0, NODE_SIZE
+    call alloc
+    li t0, N_CALL
+    sh t0, N_KIND(a0)
+    lwu t0, N_FILE(s1)
+    sw t0, N_FILE(a0)
+    lwu t0, N_START(s1)
+    sw t0, N_START(a0)
+    lwu t0, N_END(s1)
+    sw t0, N_END(a0)
+    sd s1, N_A(a0)
+    sd s2, N_C(a0)
+    sd s0, N_D(a0)
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    ld s2, 0(sp)
+    addi sp, sp, 32
+    ret
+
+# void c_stubs(void *conds, void *jumps, long id, void *decl)
+# For each condition: its false-jump lands on a CALL_BUILTIN id (argument: the exit-node slot).
+c_stubs:
+    addi sp, sp, -64
+    sd ra, 56(sp)
+    sd s0, 48(sp)
+    sd s1, 40(sp)
+    sd s2, 32(sp)
+    sd s3, 24(sp)
+    sd s4, 16(sp)
+    mv s0, a0
+    mv s1, a1
+    mv s2, a2
+    mv s3, a3
+    li s4, 0
+1:
+    ld t0, VEC_N(s1)
+    bge s4, t0, 9f
+    mv a0, s1
+    mv a1, s4
+    call vec_get
+    sd a0, 0(sp)
+    call c_here
+    mv a1, a0
+    ld a0, 0(sp)
+    call c_target
+    mv a0, s0
+    mv a1, s4
+    call vec_get
+    mv a1, a0
+    mv a0, s2
+    mv a2, s3
+    call c_fail_node
+    mv a4, a0
+    li a0, OPC_CALL_BUILTIN
+    la t0, c_exitslot
+    ld a1, 0(t0)
+    mv a2, a1
+    li a3, 1
+    call c_emit
+    addi s4, s4, 1
+    j 1b
+9:
+    ld ra, 56(sp)
+    ld s0, 48(sp)
+    ld s1, 40(sp)
+    ld s2, 32(sp)
+    ld s3, 24(sp)
+    ld s4, 16(sp)
+    addi sp, sp, 64
+    ret
+
+# void c_fn_end(void *decl)
+# The end of a function: RET 0 (as before), or with contracts: a void function's fall-through
+# goes to the epilogue, which checks each `ensures` and returns `ret`; the failure stubs follow.
+c_fn_end:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
+    mv s0, a0
+    call c_fx_of
+    mv s1, a0
+    la t0, c_ens
+    ld t0, 0(t0)
+    beqz t0, 5f
+    la t0, c_retslot            # a void function's closing `}` is an exit
+    ld t0, 0(t0)
+    bgez t0, 5f
+    li a0, NODE_SIZE
+    call alloc
+    mv s2, a0
+    ld t0, N_D(s0)
+    lhu t1, N_KIND(t0)
+    sh t1, N_KIND(s2)
+    lwu t1, N_FILE(t0)
+    sw t1, N_FILE(s2)
+    lwu t1, N_END(t0)
+    sw t1, N_END(s2)
+    addi t1, t1, -1
+    sw t1, N_START(s2)
+    li a0, -1
+    mv a1, s2
+    call c_ens_exit
+5:
+    li a0, OPC_RET
+    li a1, 0
+    li a2, -1
+    li a3, 0
+    mv a4, s0
+    call c_emit
+    la t0, c_ens
+    ld t0, 0(t0)
+    beqz t0, 7f
+    call c_here                 # the epilogue
+    mv a1, a0
+    la t0, c_ens
+    ld a0, 0(t0)
+    call c_patch_all
+    call vec_new
+    mv s3, a0
+    li s2, 0
+6:
+    ld t0, FX_ENSURES(s1)
+    ld t1, VEC_N(t0)
+    bge s2, t1, 61f
+    mv a0, t0
+    mv a1, s2
+    call vec_get
+    call ccond
+    mv a1, a0
+    mv a0, s3
+    call vec_push
+    addi s2, s2, 1
+    j 6b
+61:
+    li a0, OPC_RET
+    li a1, 0
+    la t0, c_retslot
+    ld a2, 0(t0)
+    li a3, 0
+    mv a4, s0
+    call c_emit
+    ld a0, FX_ENSURES(s1)
+    mv a1, s3
+    li a2, B_ENS_FAIL
+    mv a3, s0
+    call c_stubs
+7:
+    la t0, c_reqj
+    ld t0, 0(t0)
+    beqz t0, 9f
+    ld a0, FX_REQUIRES(s1)
+    beqz a0, 9f
+    la t0, c_reqj
+    ld a1, 0(t0)
+    li a2, B_REQ_FAIL
+    mv a3, s0
+    call c_stubs
 9:
     ld ra, 40(sp)
     ld s0, 32(sp)
@@ -793,6 +1106,14 @@ cstmt:
     call cexpr
     mv s1, a0
 171:
+    la t0, c_ens                # with `ensures`: to the epilogue
+    ld t0, 0(t0)
+    beqz t0, 172f
+    mv a0, s1
+    mv a1, s0
+    call c_ens_exit
+    j 99f
+172:
     li a0, OPC_RET
     li a1, 0
     mv a2, s1
@@ -1273,7 +1594,38 @@ cexpr:
     mv a0, s1
     call c_dst
     mv s1, a0
+    la t0, c_ens                # with `ensures`: an err goes to the epilogue
+    ld t0, 0(t0)
+    bnez t0, 571f
     li a0, OPC_TRY
+    mv a1, s1
+    mv a2, s2
+    li a3, 0
+    mv a4, s0
+    call c_emit
+    mv a0, s1
+    j 99f
+571:
+    li a0, OPC_JTAG_NE          # not err: take the payload below
+    li a1, 1
+    mv a2, s2
+    li a3, 0
+    mv a4, s0
+    call c_emit
+    sd a0, 0(sp)
+    mv a1, a0
+    la t0, c_fix
+    ld a0, 0(t0)
+    call vec_push
+    mv a0, s2
+    mv a1, s0
+    call c_ens_exit
+    ld a0, 0(sp)
+    call c_here
+    mv a1, a0
+    ld a0, 0(sp)
+    call c_target
+    li a0, OPC_PAYLOAD
     mv a1, s1
     mv a2, s2
     li a3, 0

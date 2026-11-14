@@ -1,0 +1,4 @@
+fn main() uses console {
+    let name = "vo";
+    print(todo("a greeting for name"));
+}

@@ -1,0 +1,4 @@
+fn main() uses console {
+    let n: int = todo("count the words");
+    print(str(n));
+}

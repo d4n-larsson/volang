@@ -1,0 +1,5 @@
+condition.vo:3:8: warning[W0601]: Hole: `"n is ready"` needs a value of type `bool`.
+   3 |     if todo("n is ready") {
+     |        ^^^^^^^^^^^^^^^^^^
+    in scope: n: int
+0 errors, 1 warning (1 hole)

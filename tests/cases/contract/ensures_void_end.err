@@ -1,0 +1,6 @@
+ensures_void_end.vo:4:1: runtime error[R0013]: Postcondition `len(xs) > 1` of `grow` does not hold.
+   4 | }
+     | ^
+trace:
+  at grow (ensures_void_end.vo:4:1)
+  at main (ensures_void_end.vo:10:5)

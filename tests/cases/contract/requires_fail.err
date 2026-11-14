@@ -1,0 +1,6 @@
+requires_fail.vo:12:12: runtime error[R0012]: Precondition `n >= 0` of `isqrt` does not hold.
+  12 |     return isqrt(n - 5);
+     |            ^^^^^^^^^^^^
+trace:
+  at root_of (requires_fail.vo:12:12)
+  at main (requires_fail.vo:17:15)

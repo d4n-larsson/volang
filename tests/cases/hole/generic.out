@@ -1,0 +1,5 @@
+generic.vo:5:12: warning[W0601]: Hole: `"the first element"` needs a value of type `T`.
+   5 |     return todo("the first element");
+     |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: fallback: T, xs: list[T]
+0 errors, 1 warning (1 hole)

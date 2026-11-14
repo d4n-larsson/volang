@@ -1,0 +1,7 @@
+fn parse(line: str) -> int {
+    todo("parse the header");
+}
+
+fn main() uses console {
+    print(str(parse("a,b")));
+}

@@ -1,0 +1,7 @@
+recursive.vo:15:16: runtime error[R0012]: Precondition `n >= 0` of `bad_fact` does not hold.
+  15 |     return n * bad_fact(n - 2);
+     |                ^^^^^^^^^^^^^^^
+trace:
+  at bad_fact (recursive.vo:15:16)
+  at bad_fact (recursive.vo:15:16)
+  at main (recursive.vo:20:15)

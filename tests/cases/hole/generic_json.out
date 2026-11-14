@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"W0601","name":"hole","severity":"warning","file":"generic_json.vo","start":{"line":5,"col":12},"end":{"line":5,"col":37},"text":"todo(\"the first element\")","message":"Hole: `\"the first element\"` needs a value of type `T`.","expected":"T","scope":[{"name":"fallback","type":"T"},{"name":"xs","type":"list[T]"}],"fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":0,"warnings":1,"truncated":0,"files":1,"holes":1}

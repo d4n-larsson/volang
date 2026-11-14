@@ -1,0 +1,6 @@
+main uses console
+prop "prints" uses console
+
+effects_record.vo:main uses console
+effects_record.vo:prop "prints" uses console
+0 errors, 0 warnings

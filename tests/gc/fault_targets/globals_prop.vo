@@ -1,0 +1,8 @@
+# The arguments of a property and its smallest failing input live in globals between runs.
+prop "short words only" (words: list[str], n: int) {
+    var total = 0;
+    for w in words {
+        set total = total + len(w);
+    }
+    expect(total < 6 or n < 0);
+}

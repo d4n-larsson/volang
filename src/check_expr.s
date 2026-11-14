@@ -19,18 +19,18 @@
     .equ B_ABS, 33
     .equ B_MIN, 34
     .equ B_MAX, 35
-    .equ B_COUNT, 47
+    .equ B_COUNT, 49
 
     .section .rodata
     .align 3
 builtin_names:
     .dword 0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15, b16
     .dword b17, b18, b19, b20, b21, b22, b23, b24, b25, b26, b27, b28, b29, b30, b31, b32
-    .dword b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47
+    .dword b33, b34, b35, b36, b37, b38, b39, b40, b41, b42, b43, b44, b45, b46, b47, b48, b49
 builtin_sigs:
     .dword 0, g_s_v, g_s_v, g_s_v, g__r, g__s, g_s_r, g_ss_u, g__S, g_i_v, g__i, 0, g_f_i, g_i_f
     .dword g_s_n, g_s_x, 0, 0, g_ss_i, g_ss_S, g_Ss_s, g_s_s, g_s_S, 0, 0, 0, 0, 0, 0, g_b_v, 0, 0, 0
-    .dword 0, 0, 0, g_s_s, g_s_s, g_s_i, g_i_s, g_s_r, g_ii_i, 0, 0, 0, 0, 0, 0
+    .dword 0, 0, 0, g_s_s, g_s_s, g_s_i, g_i_s, g_s_r, g_ii_i, 0, 0, 0, 0, 0, 0, 0, g_b_v
 b1: .string "print"
 b2: .string "write"
 b3: .string "eprint"
@@ -78,6 +78,8 @@ b44: .string "filter"
 b45: .string "fold"
 b46: .string "any"
 b47: .string "all"
+b48: .string "todo"
+b49: .string "assume"
 g_s_i: .string "s>i"
 g_i_s: .string "i>s"
 # signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -109,6 +111,12 @@ e0304: .string "E0304"
 e0305: .string "E0305"
 e0306: .string "E0306"
 e0307: .string "E0307"
+e0601: .string "E0601"
+e0604: .string "E0604"
+m_assume: .string "`$1` can only be used inside a `prop` block."
+w0601: .string "W0601"
+m_hole: .string "Hole: `$1` needs a value of type `$2`."
+m_hole_unknown: .string "Cannot tell what type this hole must have; annotate the binding: `let x: T = todo(...)`."
 e0308: .string "E0308"
 e0406: .string "E0406"
 e0410: .string "E0410"
@@ -510,6 +518,119 @@ check_sig_builtin:
     addi sp, sp, 48
     ret
 
+    .section .bss
+    .align 3
+    .globl ck_stmt_call
+ck_stmt_call: .space 8              # the call of the expression statement being checked (hole statements)
+    .text
+
+# void *check_todo(void *call, void *expected)
+# todo(desc) has the expected type (research R1-R4): W0601 with that type and the locals in scope,
+# or E0601 when there is no expected type. A statement hole needs the function's return type.
+check_todo:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
+    mv s0, a0
+    mv s1, a1
+    mv a0, s0
+    li a1, 1
+    call check_argc
+    beqz a0, 51f
+    mv a0, s0
+    li a1, 0
+    la t0, t_str
+    ld a2, 0(t0)
+    call check_arg
+    la t0, ck_fx
+    ld t0, 0(t0)
+    beqz t0, 2f
+    li t1, 1
+    sd t1, FX_HOLES(t0)
+2:
+    la t0, ck_stmt_call         # `todo(...);`: the function's return type, or void
+    ld t0, 0(t0)
+    bne t0, s0, 3f
+    la t0, ck_ret
+    ld s1, 0(t0)
+    bnez s1, 3f
+    la t0, t_void
+    ld s1, 0(t0)
+3:
+    mv a0, s1
+    call ty_bad
+    bnez a0, 50f
+    ld a0, N_B(s0)              # W0601: Hole: `<desc>` needs a value of type `T`.
+    li a1, 0
+    call vec_get
+    call src_text
+    mv s2, a0
+    mv a0, s1
+    call ty_name
+    mv s3, a0
+    la a0, m_hole
+    mv a1, s2
+    mv a2, s3
+    li a3, 0
+    call msg
+    mv a2, a0
+    la a0, w0601
+    mv a1, s0
+    call ck_warn
+    mv s2, a0
+    mv a1, s3
+    li a2, 0
+    call diag_set_ef
+    call vec_new                # the locals in scope, innermost first
+    mv s3, a0
+    mv a0, s2
+    mv a1, s3
+    call diag_set_scope
+    la t0, ck_scope
+    ld s2, 0(t0)
+4:
+    beqz s2, 9f
+    ld t0, SY_KIND(s2)
+    li t1, SYM_LOCAL
+    bne t0, t1, 5f
+    li a0, 16
+    call alloc
+    sd a0, 0(sp)
+    ld t0, SY_NAME(s2)
+    sd t0, 0(a0)
+    ld a0, SY_TYPE(s2)
+    call ty_name
+    ld a1, 0(sp)
+    sd a0, 8(a1)
+    mv a0, s3
+    call vec_push
+5:
+    ld s2, SY_NEXT(s2)
+    j 4b
+50:
+    la a0, m_hole_unknown
+    call str_from_cstr
+    mv a2, a0
+    la a0, e0601
+    mv a1, s0
+    call ck_err
+51:
+    call bad_type
+    j 99f
+9:
+    mv a0, s1
+99:
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    addi sp, sp, 48
+    ret
+
 # void *check_builtin(void *call, int id, void *expected)
     .globl check_builtin
 check_builtin:
@@ -528,6 +649,8 @@ check_builtin:
     call fx_builtin
     li t0, B_SORT_BY            # sort_by, map, filter, fold, any, all
     blt s1, t0, 0f
+    li t0, B_ALL
+    bgt s1, t0, 0f
     mv a0, s0
     mv a1, s1
     call check_hof
@@ -547,6 +670,19 @@ check_builtin:
     ld a3, N_A(t0)
     call ck_err1
 1:
+    li t0, B_ASSUME             # assume only in properties
+    bne s1, t0, 16f
+    la t0, ck_in_test
+    ld t0, 0(t0)
+    li t1, 2
+    beq t0, t1, 16f
+    ld t0, N_A(s0)
+    la a0, e0604
+    mv a1, s0
+    la a2, m_assume
+    ld a3, N_A(t0)
+    call ck_err1
+16:
     li t0, 12                   # int(...) / float(...) of a str: point to parse_int / parse_float
     beq s1, t0, 15f
     li t0, 13
@@ -607,6 +743,13 @@ check_builtin:
     ld a0, 0(t0)
     j 99f
 2:
+    li t0, B_TODO
+    bne s1, t0, 3f
+    mv a0, s0
+    mv a1, s4
+    call check_todo
+    j 99f
+3:
     li t0, B_STR
     beq s1, t0, 10f
     li t0, B_LEN

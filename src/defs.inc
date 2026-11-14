@@ -141,7 +141,10 @@
 .equ T_KRESULT,    41
 .equ T_KVOID,      42
 .equ T_USES,       43
-.equ T_KW_LAST,    43
+.equ T_PROP,       44
+.equ T_REQUIRES,   45
+.equ T_ENSURES,    46
+.equ T_KW_LAST,    46
 # punctuation
 .equ T_LPAREN,     50
 .equ T_RPAREN,     51
@@ -196,14 +199,15 @@
 .equ D_FIXES,     64                # list of fix records (in order)
 .equ D_RELATED,   72
 .equ D_SEQ,       80
-.equ D_SIZE,      88
+.equ D_SCOPE,     88                # W0601: vec of {name str, type} pairs, innermost first, or 0
+.equ D_SIZE,      96
 # fix: next | file | start | end | replacement str
 .equ FX_NEXT, 0
 .equ FX_FILE, 8
 .equ FX_START, 16
 .equ FX_END, 24
 .equ FX_TEXT, 32
-.equ FX_SIZE, 40
+.equ FIX_SIZE, 40
 .equ DIAG_CAP_SHOWN, 50
 
 # ---- growable pointer vector (compiler internals): n | cap | data ----
@@ -292,7 +296,13 @@
 .equ FX_BADCAPS,  56    # anonymous functions: identifiers that capture a `var` (E0505)
 .equ FX_CLOSURE,  64    # named functions: the closure that is the function as a value (runtime cache)
 .equ FX_CODE,     72    # the compiled function (spec 004): functions, lambdas and tests
-.equ FX_SIZE,     80
+.equ FX_PARAMS,   80    # properties: vec of N_PARAM
+.equ FX_REQUIRES, 88    # vec of `requires` conditions | 0
+.equ FX_ENSURES,  96    # vec of `ensures` conditions | 0
+.equ FX_HOLES,    104   # 1 when the body or a clause has a hole: no W0201/W0501
+.equ FX_RETSLOT,  112   # slot of `ret` (read only when FX_ENSURES and a return type)
+.equ FX_CLAUSE_AT, 120  # source offset of the first contract clause, or 0
+.equ FX_SIZE,     128
 
 # ---- effect bits and effect sets (effects.s) ----
 .equ EF_CONSOLE, 1
@@ -319,6 +329,7 @@
 .equ NF_TERMINATES, 8   # statement never falls through (set by the checker)
 .equ NF_METHOD,  16     # N_CALL_VALUE written `obj.name(args)`: a field call, or v1's E0110
 .equ NF_FNVAL,   32     # N_IDENT naming a function used as a value (N_D: the declaration)
+.equ NF_PROP,    64     # N_TEST that is a property (parameters in FX_PARAMS)
 
 # builtin ids used outside check_expr.s (all ids: check_expr.s builtin_names)
 .equ B_SORT_BY, 42
@@ -327,6 +338,10 @@
 .equ B_FOLD,    45
 .equ B_ANY,     46
 .equ B_ALL,     47
+.equ B_TODO,    48
+.equ B_ASSUME,  49
+.equ B_REQ_FAIL, 50     # internal: compiled contract checks, never named in source
+.equ B_ENS_FAIL, 51
 
 # operator codes (set by the checker)
 .equ OP_ADD_INT, 1

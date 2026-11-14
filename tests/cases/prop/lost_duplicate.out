@@ -1,0 +1,8 @@
+FAIL merge keeps every element (1 case, 0ms)
+  lost_duplicate.vo:34:5: `expect_eq` failed: the values differ.
+    expected: 2
+    actual:   1
+    counterexample: a = [0]
+    counterexample: b = [0]
+    shrunk in 0 steps
+0 passed, 1 failed

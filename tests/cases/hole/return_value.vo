@@ -1,0 +1,7 @@
+fn area(w: int, h: int) -> int {
+    return todo("area of w by h");
+}
+
+fn main() uses console {
+    print(str(area(2, 3)));
+}

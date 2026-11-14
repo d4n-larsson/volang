@@ -3,11 +3,13 @@
 
   speed.py           time tests/speed/*.vo on build-oracle/vo (the tree walker), bin/vo and python3
   speed.py --bench2  CPU time of every bench2 reference run, oracle vs new (SC-006)
+  speed.py --baseline PATH  each tests/speed program on PATH vs build/vo, alternated runs (spec 005 SC-006)
   --new PATH         time another build as "new" (default build/vo)
 
 Exit status 1 when a target is missed: geometric-mean speedup < 4.0, any program < 2.0,
 int_loop > 1350 ms; or (--bench2) total CPU > +10%, or one run slower by more than max(10%, 5 ms)
-(median of 5 alternated runs, then of 15 for a run still over the limit).
+(median of 5 alternated runs, then of 15 for a run still over the limit); or (--baseline) any
+program more than 5% slower than the baseline binary, by the same median rule.
 """
 import importlib.util
 import math
@@ -128,10 +130,35 @@ def bench2():
     return ok
 
 
+def baseline(base):
+    ok = True
+    print(f"{'program':20} {'base ms':>8} {'new ms':>8} {'ratio':>6}")
+    for n in sorted(f[:-3] for f in os.listdir(SPEED) if f.endswith(".vo")):
+        def run(binary):
+            return timed([VO, "run", n + ".vo"], env=vo_env(binary), cwd=SPEED)[0]
+        for k in (RUNS, 15):
+            pairs = [(run(base), run(NEW)) for _ in range(k)]
+            a = statistics.median(x for x, _ in pairs)
+            b = statistics.median(y for _, y in pairs)
+            if b <= a * 1.05:
+                break
+        print(f"{n:20} {a:8.0f} {b:8.0f} {b / a:6.3f}")
+        if b > a * 1.05:
+            print(f"  FAIL {n}: {b / a:.3f}x the baseline")
+            ok = False
+    return ok
+
+
 def main():
     global NEW
     if "--new" in sys.argv:
         NEW = os.path.abspath(sys.argv[sys.argv.index("--new") + 1])
+    if "--baseline" in sys.argv:
+        base = os.path.abspath(sys.argv[sys.argv.index("--baseline") + 1])
+        if not os.path.exists(base):
+            print(f"speed: {base} is missing; run `make baseline-004`")
+            return 1
+        return 0 if baseline(base) else 1
     if not os.path.exists(ORACLE):
         print("speed: build-oracle/vo is missing; run `make oracle`")
         return 1

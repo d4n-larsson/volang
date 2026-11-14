@@ -1,0 +1,5 @@
+body.vo:2:5: warning[W0601]: Hole: `"parse the header"` needs a value of type `int`.
+   2 |     todo("parse the header");
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: line: str
+0 errors, 1 warning (1 hole)

@@ -1,0 +1,4 @@
+fn main() uses console {
+    let x = todo("x");
+    print(str(x));
+}

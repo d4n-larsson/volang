@@ -1,0 +1,19 @@
+fn merged(a: map[str, int], b: map[str, int]) -> map[str, int] {
+    let out = new map[str, int];
+    for k in keys(a) {
+        set out[k] = a[k];
+    }
+    for k in keys(b) {
+        if not has(out, k) {
+            set out[k] = b[k];
+        }
+    }
+    return out;
+}
+
+prop "the second map wins" (a: map[str, int], b: map[str, int]) {
+    let m = merged(a, b);
+    for k in keys(b) {
+        expect_eq(m[k], b[k]);
+    }
+}

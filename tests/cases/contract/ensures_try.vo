@@ -1,0 +1,14 @@
+fn positive(s: str) -> result[int]
+    ensures ret != err("invalid int: bad") {
+    let n = try parse_int(s);
+    if n <= 0 {
+        return err("not positive");
+    }
+    return ok(n);
+}
+
+fn main() uses console {
+    print(str(positive("4") == ok(4)));
+    print(str(positive("-1") == err("not positive")));
+    print(str(positive("bad") == err("x")));
+}

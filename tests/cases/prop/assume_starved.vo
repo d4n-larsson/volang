@@ -1,0 +1,4 @@
+prop "huge only" (n: int) {
+    assume(n > 1000000000);
+    expect(n > 0);
+}

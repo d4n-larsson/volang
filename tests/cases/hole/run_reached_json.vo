@@ -1,0 +1,12 @@
+fn parse(line: str) -> int {
+    todo("parse the header");
+}
+
+fn load(text: str) -> int {
+    return parse(text) + 1;
+}
+
+fn main() uses console {
+    print("start");
+    print(str(load("a,b")));
+}

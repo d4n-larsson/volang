@@ -1,0 +1,7 @@
+fn unused(n: int) -> int {
+    return todo("later");
+}
+
+fn main() uses console {
+    print("fine");
+}

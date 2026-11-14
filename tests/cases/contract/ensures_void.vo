@@ -1,0 +1,17 @@
+fn add_two(xs: list[int])
+    ensures len(xs) >= 2 {
+    push(xs, 1);
+    if len(xs) > 3 {
+        return;
+    }
+    push(xs, 2);
+}
+
+fn main() uses console {
+    let xs = new list[int];
+    add_two(xs);
+    print(str(len(xs)));
+    let ys = [1, 2, 3];
+    add_two(ys);
+    print(str(len(ys)));
+}

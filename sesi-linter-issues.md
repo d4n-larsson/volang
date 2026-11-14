@@ -301,3 +301,17 @@ callee has a prototype comment in the calling file (see its Resolution).
       .dword t_one, t_two
   ```
 - **Fixed in vo** by giving `builtin_call` its own scratch slot (spec 004, T008).
+
+## Found during spec 005 (holes, properties, contracts)
+
+### 19. `sesi lint` hangs when its stdin is an open pipe: OPEN
+
+- **Kind**: tooling (not a false positive or negative).
+- **Symptom**: `make lint` run from a non-interactive shell whose stdin stays open (a background
+  job) blocked on `src/check.s` for over 27 minutes, with `swipl scripts/sesi.pl lint riscv64` at
+  4 s of CPU. The same `sesi lint src/check.s .` with stdin from `/dev/null` finishes in 5 s, and
+  the whole `make lint` that way in 70 s. The blocked `swipl` could not be killed by the user
+  ("Operation not permitted").
+- **Suggested fix**: `scripts/sesi` should not read stdin for `lint` (give swipl `/dev/null`, or
+  read the file by path only).
+- **Worked around in vo**: `make lint` gives each lint `/dev/null` as stdin (spec 005).

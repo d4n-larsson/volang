@@ -1,0 +1,4 @@
+impure.vo:2:14: error[E0603]: A contract condition must be pure, but this one needs console.
+   2 |     requires print_ok(n) {
+     |              ^^^^^^^^^^^
+1 error, 0 warnings

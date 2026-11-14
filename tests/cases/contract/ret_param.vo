@@ -1,0 +1,8 @@
+fn twice(ret: int) -> int
+    ensures ret >= 0 {
+    return ret * 2;
+}
+
+fn main() uses console {
+    print(str(twice(4)));
+}

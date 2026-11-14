@@ -1,0 +1,4 @@
+try_in_prop.vo:2:13: error[E0406]: `try` can only be used in a function that returns a `result`.
+   2 |     let v = try parse_int(str(n));
+     |             ^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
