@@ -1,16 +1,21 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0
-- Bump rationale: MINOR. The Implementation Constraints target changes from RV32IMAFD/ilp32d to
-  RV64IMAFD/lp64d. No principle was added, removed, or redefined, and no artifact written under
-  1.0.0 is invalidated (no assembly exists yet).
-- Modified sections: Implementation Constraints (ISA, ABI, SESI pack name, emulator)
+- Version change: 1.2.0 → 1.3.0
+- Bump rationale: MINOR. Implementation Constraints gain a phased rule for the instrumented
+  build while toolchain code is being ported from assembly (materially expanded guidance). No
+  principle is added, removed or redefined; nothing written under 1.2.0 is invalidated.
+- Modified principles: none
+- Modified sections: Implementation Constraints (instrumented build during a port from
+  assembly: undefined-behavior and bounds traps plus the collector stress build until a native
+  build exists, address sanitizing from then on)
 - Added sections: none
 - Removed sections: none
 - Templates reviewed (read-only, not modified): plan-template.md, spec-template.md,
-  tasks-template.md, all compatible
-- Follow-up TODOs: none. specs/001-vo-lang-core/plan.md Constitution Check re-evaluated against
-  1.1.0 (it no longer records a vacuous PASS)
+  tasks-template.md, all compatible.
+- Follow-up TODOs: none. specs/008-c-rewrite/plan.md re-evaluated against 1.3.0 (its
+  instrumented-build row is now a plain PASS and leaves Complexity Tracking).
+- Earlier amendment, 1.1.0 → 1.2.0 (same day): the toolchain moved from RISC-V assembly to
+  freestanding C on Linux x86-64, ARM64 and RISC-V 64.
 -->
 
 # vo-lang Constitution
@@ -75,7 +80,7 @@ behavior as a correct result.
 - The malformed-input fuzzer and the determinism check MUST pass before a change is complete.
 
 Rationale: all behavior is observable through the CLI, so CLI-level golden tests are the
-cheapest complete specification and also exercise the assembly beneath them.
+cheapest complete specification and also exercise the implementation beneath them.
 
 ### V. Single Source of Truth, Minimal Surface
 
@@ -89,28 +94,53 @@ cheapest complete specification and also exercise the assembly beneath them.
   the ceiling and the upgrade path.
 
 Rationale: every feature costs reference tokens, which every agent pays for on every task, and
-costs assembly, which is expensive to write and to change.
+costs toolchain code, which is expensive to write and to change.
 
 ## Implementation Constraints
 
-- The toolchain is written in RISC-V assembly: RV64IMAFD plus Zicsr, the lp64d calling
-  convention, GNU as syntax. It is shipped as a single static Linux user-space ELF with no
-  libc and no runtime dependencies beyond the Linux syscall ABI.
-- Every assembly function MUST begin with a C prototype comment followed by its global label.
-  Every function MUST pass the SESI riscv64 lint. A report may be left in place only when it is
-  shown to be a false positive, and the reason MUST be recorded in the change.
+- The toolchain is written in C (C11), freestanding: it links no C library and uses only the
+  Linux system call interface. It is shipped as a single static Linux user-space ELF per
+  platform, with no runtime dependencies beyond the Linux syscall ABI. The language reference,
+  the error catalog and the standard library are embedded in it.
+- Supported platforms: Linux on x86-64, ARM64 (AArch64) and RISC-V 64 (RV64IMAFD plus Zicsr,
+  lp64d). Every supported platform MUST build and pass the full quality gate.
+- Hand-written assembly is permitted only in (a) the per-platform layer (system calls, register
+  and stack access for the collector, non-local exits), at most 300 lines per platform, and
+  (b) toolchain files not yet ported from assembly to C. Every assembly function MUST begin with
+  a C prototype comment followed by its global label, and MUST pass the SESI lint for its
+  architecture where a SESI pack exists (riscv64 today). A report may be left in place only when
+  it is shown to be a false positive, and the reason MUST be recorded in the change.
+- C code MUST NOT rely on undefined behavior, or on implementation-defined behavior that differs
+  between supported platforms. Arithmetic whose result the language defines (overflow, division
+  by zero, the minimum integer divided by -1) MUST be computed with explicit checks, never left
+  to the compiler or the hardware.
+- Floating-point code MUST round every operation to IEEE 754 double: no contraction into fused
+  multiply-add, no extended precision, no value-changing optimizations. Results MUST be
+  bit-identical on every supported platform.
+- Every C source MUST compile with zero warnings under the project's strict warning set, with
+  warnings treated as errors. An instrumented build (memory-error and undefined-behavior
+  detection) MUST exist, and the full test suite MUST pass under it with no reports. These are
+  the per-edit checks for C code, as the SESI lint is for assembly.
+- While toolchain code is still being ported from assembly and no native build exists, the
+  instrumented build is the build that traps on undefined behavior and out-of-bounds array
+  access, run together with the collector stress build (which poisons reclaimed memory).
+  Address sanitizing (memory errors in any memory, including the collected heap) is required
+  from the first native build on.
 - Developer scripts (shell, Python) are allowed for building, testing, and benchmarking only.
   They MUST NOT become part of the shipped product.
-- Developers on non-RISC-V hosts run the toolchain through `qemu-riscv64` via `bin/vo`.
-  Performance targets are measured in that environment.
+- `bin/vo` runs the native build on a supported host. RISC-V builds (the mixed toolchain while
+  files are being ported, and the last assembly release kept as a behavioral oracle) run through
+  `qemu-riscv64` on other hosts. Performance targets are measured on the native x86-64 build once
+  it exists; until then, and for RISC-V regressions, under `qemu-riscv64`.
 
 ## Development Workflow and Quality Gates
 
 - Features follow the Spec Kit flow: specify → (clarify) → plan → tasks → implement. A plan
   MUST pass the Constitution Check before tasks are generated.
 - A change is complete only when `make test` passes (golden cases, reference examples, catalog
-  coverage), the fuzzer and determinism checks pass, and no SESI lint report is left
-  unexplained.
+  coverage), the fuzzer and determinism checks pass, and no SESI lint report on assembly is left
+  unexplained. A change to C code is complete only when it also builds with zero warnings and the
+  full suite passes under the instrumented build.
 - A change to the grammar, CLI, output schema, or error catalog MUST be reviewed against
   Principles I, II, and V. Any increase in the size of the language reference MUST be stated
   explicitly in the change.
@@ -131,4 +161,4 @@ other document, this constitution wins until it is amended.
 - **Compliance**: Every `/speckit-plan` runs the Constitution Check gate, and every change is
   reviewed against the quality gates above before it is considered complete.
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-13
+**Version**: 1.3.0 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-14
