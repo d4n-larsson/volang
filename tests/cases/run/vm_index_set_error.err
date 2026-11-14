@@ -1,0 +1,5 @@
+vm_index_set_error.vo:10:9: runtime error[R0003]: Index 5 is out of bounds for length 2.
+  10 |     set xs[5] = f();
+     |         ^^^^^
+trace:
+  at main (vm_index_set_error.vo:10:9)

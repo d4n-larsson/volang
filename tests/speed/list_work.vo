@@ -1,0 +1,20 @@
+# Lists: build, index, update, sum and sort.
+fn main() uses console {
+    var check = 0;
+    for round in 0..200 {
+        let xs = new list[int];
+        for i in 0..5000 {
+            push(xs, (i * 7919 + round) % 10007);
+        }
+        for i in 1..len(xs) {
+            set xs[i] = xs[i] + xs[i - 1] % 3;
+        }
+        sort(xs);
+        var total = 0;
+        for x in xs {
+            set total = total + x;
+        }
+        set check = (check + total + xs[len(xs) / 2]) % 1000000007;
+    }
+    print(str(check));
+}

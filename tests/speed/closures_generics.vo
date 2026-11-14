@@ -1,0 +1,34 @@
+# Closures and generics: fold and map with lambdas, a generic container.
+record Box[T] {
+    value: T;
+}
+
+fn largest[T: ordered](xs: list[T], start: T) -> T {
+    var best = start;
+    for x in xs {
+        if x > best {
+            set best = x;
+        }
+    }
+    return best;
+}
+
+fn main() uses console {
+    var check = 0;
+    for round in 0..4000 {
+        let xs = new list[int];
+        for i in 0..200 {
+            push(xs, (i * 31 + round) % 1009);
+        }
+        let k = round % 5;
+        let ys = map(xs, fn(x: int) -> int {
+            return x * 2 + k;
+        });
+        let total = fold(ys, 0, fn(acc: int, x: int) -> int {
+            return acc + x;
+        });
+        let box = new Box[int] { value: largest(ys, 0) };
+        set check = (check + total + box.value) % 1000000007;
+    }
+    print(str(check));
+}

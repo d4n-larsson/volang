@@ -1,1 +1,1 @@
-run --timeout 2 {}
+run --timeout 4 {}

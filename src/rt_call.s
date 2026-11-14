@@ -1,41 +1,35 @@
-# Builtin dispatch: evaluates a builtin call's arguments and runs it (ids: check_expr.s).
+# Builtin dispatch: runs a builtin call on its argument values (ids: check_expr.s).
+# ponytail: the bytecode engine reaches most builtins through builtin_call (cur_node, the effect
+# check, the jump table), so builtin-heavy code gains little from spec 004; len, push and has have
+# their own instructions. Upgrade: more dedicated instructions where measurements show they pay.
     .include "defs.inc"
 
     .text
-# long eval_builtin(void *call)
-    .globl eval_builtin
-eval_builtin:
+# long builtin_call(void *call, long a0, long a1, long a2)
+# Runs builtin call `call` on argument values (spec 004 research R8): sets cur_node, checks the
+# effect, then the body. Bodies see s0 = the call node, s3 = the first argument, the arguments at
+# 0/8/16(sp) and a scratch word at 24(sp).
+    .globl builtin_call
+builtin_call:
     addi sp, sp, -64
     sd ra, 56(sp)
     sd s0, 48(sp)
-    sd s1, 40(sp)
-    sd s2, 32(sp)
-    sd s3, 24(sp)
+    sd s3, 40(sp)
+    sd zero, 32(sp)             # words a body may not write: no stale pointers for the collector
+    sd zero, 24(sp)
     mv s0, a0
-    ld s1, N_B(s0)              # argument expressions
-    li s2, 0
-    sd zero, 0(sp)
-    sd zero, 8(sp)
-    sd zero, 16(sp)
-1:
-    ld t0, VEC_N(s1)
-    bge s2, t0, 2f
-    li t1, 3
-    bge s2, t1, 2f
-    mv a0, s1
-    mv a1, s2
-    call vec_get
-    call eval_expr
-    slli t0, s2, 3
-    add t0, sp, t0
-    sd a0, 0(t0)
-    addi s2, s2, 1
-    j 1b
-2:
+    sd a1, 0(sp)
+    sd a2, 8(sp)
+    sd a3, 16(sp)
     la t0, cur_node
     sd s0, 0(t0)
-    ld a0, N_D(s0)              # the effect must be declared
+    ld a0, N_D(s0)              # the effect must be declared (pure builtins: nothing to check)
+    la t0, builtin_effects
+    add t0, t0, a0
+    lbu t0, 0(t0)
+    beqz t0, 1f
     call rt_check_bit
+1:
     ld s3, 0(sp)                # first argument
     ld a0, 0(sp)
     ld a1, 8(sp)
@@ -307,9 +301,7 @@ b_chr:
 99:
     ld ra, 56(sp)
     ld s0, 48(sp)
-    ld s1, 40(sp)
-    ld s2, 32(sp)
-    ld s3, 24(sp)
+    ld s3, 40(sp)
     addi sp, sp, 64
     ret
 
@@ -325,7 +317,7 @@ btab:
     .text
 
 # void *map_key_type(void)
-# Key type of the map passed as the call's first argument (s0 of eval_builtin is not visible here,
+# Key type of the map passed as the call's first argument (s0 of builtin_call is not visible here,
 # so the caller passes nothing: this reads cur_node).
     .globl map_key_type
 map_key_type:

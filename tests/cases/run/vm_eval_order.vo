@@ -1,0 +1,35 @@
+# Spec 004: evaluation order the bytecode engine must keep (contracts/equivalence.md).
+record R {
+    a: int;
+    b: int;
+}
+
+fn t(tag: str, v: int) -> int uses console {
+    print(tag);
+    return v;
+}
+
+fn add3(a: int, b: int, c: int) -> int {
+    return a + b + c;
+}
+
+fn main() uses console {
+    print(str(t("left", 1) + t("right", 2) * t("rightmost", 3)));
+    print(str(add3(t("arg1", 1), t("arg2", 2), t("arg3", 3))));
+    let fs = [fn(x: int) -> int {
+        return x * 2;
+    }];
+    print(str(fs[t("callee", 0)](t("call arg", 5))));
+    let xs = [10, 20, 30];
+    set xs[t("index", 1)] = t("value", 99);
+    print(str(xs[1]));
+    let r = new R { b: t("init b", 2), a: t("init a", 1) };
+    set r.a = t("field value", 7);
+    print(str(r.a) + str(r.b));
+    let m = new map[str, int];
+    set m[str(t("key", 7))] = t("map value", 8);
+    print(str(m["7"]));
+    print(str(min(t("min first", 4), t("min second", 3))));
+    let ys = [t("elem 1", 1), t("elem 2", 2), t("elem 3", 3)];
+    print(str(len(ys)));
+}

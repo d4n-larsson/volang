@@ -1,0 +1,12 @@
+# Spec 004: in `set xs[i] = e`, `e` runs before the bounds check.
+fn f() -> int uses console {
+    print("f ran");
+    return 1;
+}
+
+fn main() uses console {
+    let xs = [1, 2];
+    set xs[1] = f();
+    set xs[5] = f();
+    print("unreachable");
+}

@@ -1,0 +1,21 @@
+# Spec 004: a range's bounds are evaluated once, before the first iteration.
+fn bound(tag: str, n: int) -> int uses console {
+    print("bound " + tag + " " + str(n));
+    return n;
+}
+
+fn main() uses console {
+    var n = 3;
+    for i in bound("start", 0)..bound("end", n) {
+        set n = n + 10;
+        print(str(i) + " " + str(n));
+    }
+    for i in 5..2 {
+        print("never");
+    }
+    var total = 0;
+    for i in -2..2 {
+        set total = total + i;
+    }
+    print(str(total));
+}

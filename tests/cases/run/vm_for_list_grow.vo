@@ -1,0 +1,26 @@
+# Spec 004: a `for` over a list re-reads its length on every iteration.
+fn main() uses console {
+    let xs = [1, 2, 3];
+    for x in xs {
+        if len(xs) < 8 {
+            push(xs, x * 10);
+        }
+        print(str(x));
+    }
+    var ys = [1, 2];
+    for y in ys {
+        set ys = [9, 9, 9, 9];
+        print("y " + str(y));
+    }
+    let zs = [1, 2, 3, 4];
+    for z in zs {
+        match pop(zs) {
+            case ok(last) {
+                print("z " + str(z) + " popped " + str(last));
+            }
+            case err(e) {
+                print(e);
+            }
+        }
+    }
+}

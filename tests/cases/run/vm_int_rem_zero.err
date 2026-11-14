@@ -1,0 +1,5 @@
+vm_int_rem_zero.vo:5:15: runtime error[R0002]: Division by zero.
+   5 |     print(str(7 % z));
+     |               ^^^^^
+trace:
+  at main (vm_int_rem_zero.vo:5:15)

@@ -29,7 +29,7 @@ WIDER = ["tests/gc/edge", "tests/cases/run", "tests/cases/func", "tests/cases/ge
 def failing(binary, paths):
     env = dict(os.environ, VO_STRESS_BIN=binary)
     r = subprocess.run(["sh", "tests/run.sh", "--stress", "1"] + paths, cwd=ROOT, env=env,
-                       capture_output=True, text=True, timeout=7200)
+                       capture_output=True, text=True, errors="replace", timeout=7200)  # poisoned output
     return re.findall(r"^FAIL (\S+)", r.stdout, re.M)
 
 

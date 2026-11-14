@@ -1,0 +1,5 @@
+vm_int_add_overflow.vo:5:15: runtime error[R0001]: Integer overflow.
+   5 |     print(str(big + 1));
+     |               ^^^^^^^
+trace:
+  at main (vm_int_add_overflow.vo:5:15)

@@ -1,0 +1,8 @@
+# SC-002: the roadmap's 10-million-iteration integer loop.
+fn main() uses console {
+    var total = 0;
+    for i in 0..10000000 {
+        set total = total + i % 7;
+    }
+    print(str(total));
+}

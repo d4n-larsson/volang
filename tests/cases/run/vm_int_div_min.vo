@@ -1,0 +1,8 @@
+# Spec 004: the most negative int divided by -1 (R0001).
+fn main() uses console {
+    let low = -9223372036854775807 - 1;
+    let m = -1;
+    print(str(low / 2));
+    print(str(low % m));
+    print(str(low / m));
+}

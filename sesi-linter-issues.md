@@ -259,3 +259,45 @@ callee has a prototype comment in the calling file (see its Resolution).
 
 **Re-check 2026-11-13** (after 12 and 14, again after 15-17): `sesi lint` over `src/*.s` with riscv64 reports only
 `src/jmp.s` (24, the deliberate longjmp): it still needs the `sesi: allow` annotation from issue 5.
+
+## Found during spec 004 (bytecode compiler)
+
+### 18. A save slot overwritten in a jump-table target is not reported: OPEN
+
+- **Kind**: false negative.
+- **Where**: `src/rt_call.s`, `eval_builtin` at commit `1fff558`. The function saves `s3` at
+  `24(sp)` and then dispatches with `jr t1` through the `btab` jump table. The targets `b_min` and
+  `b_max` store a scratch value with `sd a3, 24(sp)`, and the shared epilogue then "restores"
+  `s3` from that slot. The caller's `s3` comes back as 0 or 1. It was harmless only because the
+  caller, `eval_expr`, never read `s3` after the call.
+- **Expected**: `overwrites_saved(s3, 24)` at `sd a3, 24(sp)`. Issue 17's fix covers the same
+  store in straight-line code, so the miss is probably the indirect `jr` through a table: the
+  targets are not analysed as part of the function's frame.
+- **Repro**:
+  ```asm
+  # long f(long k)
+      .globl f
+  f:
+      addi sp, sp, -32
+      sd ra, 24(sp)
+      sd s3, 16(sp)
+      la t1, tab
+      slli a0, a0, 3
+      add t1, t1, a0
+      ld t1, 0(t1)
+      jr t1
+  t_one:
+      sd a0, 16(sp)
+      j 9f
+  t_two:
+      li a0, 2
+  9:
+      ld s3, 16(sp)
+      ld ra, 24(sp)
+      addi sp, sp, 32
+      ret
+      .section .rodata
+  tab:
+      .dword t_one, t_two
+  ```
+- **Fixed in vo** by giving `builtin_call` its own scratch slot (spec 004, T008).

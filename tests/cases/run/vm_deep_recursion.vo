@@ -1,0 +1,11 @@
+# Spec 004 FR-010: a simple recursive function goes at least 100,000 calls deep.
+fn down(n: int) -> int {
+    if n <= 0 {
+        return 0;
+    }
+    return down(n - 1) + 1;
+}
+
+fn main() uses console {
+    print(str(down(100000)));
+}

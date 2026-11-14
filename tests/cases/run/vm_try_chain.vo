@@ -1,0 +1,31 @@
+# Spec 004: `try` returns the `err` from the current function, through three functions.
+fn parse(s: str) -> result[int] {
+    return parse_int(s);
+}
+
+fn half(s: str) -> result[int] {
+    let n = try parse(s);
+    if n % 2 != 0 {
+        return err("odd " + str(n));
+    }
+    return ok(n / 2);
+}
+
+fn quarter(s: str) -> result[int] {
+    let h = try half(s);
+    let q = try half(str(h));
+    return ok(q);
+}
+
+fn main() uses console {
+    for s in ["8", "6", "x", "12", "16"] {
+        match quarter(s) {
+            case ok(v) {
+                print("ok " + str(v));
+            }
+            case err(e) {
+                print("err " + e);
+            }
+        }
+    }
+}

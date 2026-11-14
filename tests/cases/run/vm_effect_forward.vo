@@ -1,0 +1,37 @@
+# Spec 004: callbacks forwarded through an effect parameter are checked at run time against the
+# right frame. An anonymous function runs under its caller's effect set (here `each`, whose `E`
+# is the lambda's own effects); a named function runs under its declaration (R0010 for PATH).
+fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
+    for x in xs {
+        f(x);
+    }
+}
+
+fn forward[E: effects](xs: list[str], f: fn(str) uses E) uses E {
+    each(xs, f);
+}
+
+fn show(name: str) uses console, env("HOME") {
+    match env(name) {
+        case ok(v) {
+            print(name + " is set (named)");
+        }
+        case err(e) {
+            print(name + ": " + e);
+        }
+    }
+}
+
+fn main() uses console, env("HOME") {
+    forward(["HOME", "PA" + "TH"], fn(name: str) {
+        match env(name) {
+            case ok(v) {
+                print(name + " is set (lambda)");
+            }
+            case err(e) {
+                print(name + ": " + e);
+            }
+        }
+    });
+    forward(["HOME", "PA" + "TH"], show);
+}

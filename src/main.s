@@ -1174,6 +1174,7 @@ cmd_run:
     ld a0, N_A(t0)
     call find_main
     sd a0, 0(sp)
+    call compile_program        # bytecode for every function (spec 004)
     li a0, 0
     call rt_effects_start
     ld a0, 0(sp)
@@ -1235,6 +1236,7 @@ cmd_test:
     ld a0, 0(t0)
     li a1, 1
     call diag_emit_all
+    call compile_program        # bytecode for every function and test (spec 004)
     call interp_init
     call gc_start
     li s0, 0

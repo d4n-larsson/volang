@@ -55,6 +55,7 @@ str_new:
     sd ra, 24(sp)
     sd s0, 16(sp)
     sd s1, 8(sp)
+    sd zero, 0(sp)              # written only after the allocation: no stale pointer meanwhile
     mv s0, a0
     mv s1, a1
     li a0, OBJ_STR

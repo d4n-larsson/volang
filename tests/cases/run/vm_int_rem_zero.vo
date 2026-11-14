@@ -1,0 +1,6 @@
+# Spec 004: `%` by zero (R0002).
+fn main() uses console {
+    let z = len("");
+    print(str(7 % 3));
+    print(str(7 % z));
+}

@@ -1,0 +1,6 @@
+# Spec 004: integer overflow on `+` (R0001).
+fn main() uses console {
+    let big = 9223372036854775807;
+    print("before");
+    print(str(big + 1));
+}

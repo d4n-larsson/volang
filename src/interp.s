@@ -1,8 +1,7 @@
-# Tree-walking evaluator over the checked AST (research §1, §3, §8, §9).
-# ponytail: tree-walking evaluator, ~50-100x slower than native; upgrade: bytecode VM behind the same checker
+# Runtime support for the bytecode engine (src/vm.s): frames entered from native code, runtime
+# errors and their reports, timeouts, structural equality, closures, run_main and test bodies.
+# Programs run as bytecode since spec 004; the tree-walking evaluator is gone.
     .include "defs.inc"
-
-    .equ JMP_SIZE, 112
 
     .section .bss
     .align 3
@@ -12,15 +11,16 @@ cur_frame:      .space 8
 vsp:            .space 8
     .globl vbase
 vbase:          .space 8
+    .globl vstack_end
 vstack_end:     .space 8
     .globl ret_val
 ret_val:        .space 8
     .globl deadline_ms
 deadline_ms:    .space 8
+    .globl steps
 steps:          .space 8
     .globl rt_budget
 rt_budget:      .space 8            # work units left before rt_poll checks the clock
-try_target:     .space 8            # jmp buffer of the innermost user-function call
     .globl recover_point
 recover_point:  .space 8            # set by the test runner: runtime errors jump here
     .globl rt_err_code
@@ -536,6 +536,24 @@ rt_raise_c:
     addi sp, sp, 32
     ret
 
+# void rt_div_zero(void *node)
+# R0002 at node (the bytecode engine's division handlers).
+    .globl rt_div_zero
+rt_div_zero:
+    mv a2, a0
+    la a0, r0002
+    la a1, m_divzero
+    tail rt_raise_c
+
+# void rt_stack_full(void *node)
+# R0005 at node: a new frame does not fit the value stack.
+    .globl rt_stack_full
+rt_stack_full:
+    mv a2, a0
+    la a0, r0005
+    la a1, m_stack
+    tail rt_raise_c
+
 # void rt_overflow(void *node)
     .globl rt_overflow
 rt_overflow:
@@ -720,726 +738,58 @@ local_addr:
     ret
 
 # long call_fn(void *fn, void *call, void *args, long *vals, void *closure)
-# Calls a user function: a new frame, arguments into its first slots, the body, the return value.
-# args is a vec of argument expressions evaluated in the caller's frame (or 0 for none); or, with
-# args 0, vals holds the argument values. A closure adds its captured values and type arguments.
+# Calls a user function from native code (run_main, builtin callbacks): a frame for its compiled
+# code, the arguments from vals (args is always 0 since spec 004), a step, then the bytecode
+# engine. A closure adds its captured values and type arguments (vm_push).
     .globl call_fn
 call_fn:
-    addi sp, sp, -192
-    sd ra, 184(sp)
-    sd s0, 176(sp)
-    sd s1, 168(sp)
-    sd s2, 160(sp)
-    sd s3, 152(sp)
-    sd s4, 144(sp)
-    sd s5, 136(sp)
-    sd s6, 128(sp)
-    sd s7, 120(sp)
-    sd s8, 112(sp)
+    addi sp, sp, -64
+    sd ra, 56(sp)
+    sd s0, 48(sp)
+    sd s1, 40(sp)
+    sd s2, 32(sp)
+    sd s3, 24(sp)
+    sd s4, 16(sp)
+    sd s5, 8(sp)
     mv s0, a0                   # fn
-    mv s1, a1                   # call node
-    mv s2, a2                   # args
-    mv s7, a3                   # argument values (args = 0)
-    mv s8, a4                   # closure
+    mv s1, a1                   # call node | 0
+    mv s4, a3                   # argument values
+    mv s5, a4                   # closure | 0
+    beqz s1, 1f
     mv a0, s1
-    beqz a0, 1f
     call check_stack
 1:
-    la t0, vsp
-    ld s3, 0(t0)                # new frame
-    ld t1, N_E(s0)              # local count
-    slli t1, t1, 3
-    addi t1, t1, FR_SLOTS
-    add s4, s3, t1              # frame end
-    la t3, vstack_end
-    ld t3, 0(t3)
-    bltu s4, t3, 2f
-    la a0, r0005
-    la a1, m_stack
-    mv a2, s1
-    call rt_raise_c
+    ld t0, N_A(s0)
+    ld t0, N_B(t0)
+    ld s2, FX_CODE(t0)
+    bnez s2, 2f
+    call vm_not_compiled        # (every function is compiled before the program runs)
 2:
     la t0, vsp
-    sd s4, 0(t0)                # reserve it
-    addi t3, s3, FR_SLOTS       # zero the slots
-3:
-    bgeu t3, s4, 4f
-    sd zero, 0(t3)
-    addi t3, t3, 8
-    j 3b
-4:
-    bnez s2, 41f                # values given: copy them
-    beqz s7, 6f
-    ld t0, N_B(s0)
-    ld t0, VEC_N(t0)
-    li t1, 0
-42:
-    bge t1, t0, 6f
-    slli t2, t1, 3
-    add t3, s7, t2
-    ld t3, 0(t3)
-    add t2, s3, t2
-    sd t3, FR_SLOTS(t2)
-    addi t1, t1, 1
-    j 42b
-41:
-    li s4, 0                    # evaluate the arguments into the slots
-    beqz s2, 6f
-5:
-    ld t0, VEC_N(s2)
-    bge s4, t0, 6f
+    ld s3, 0(t0)                # the value stack goes back here afterwards
     mv a0, s2
-    mv a1, s4
-    call vec_get
-    call eval_expr
-    slli t0, s4, 3
-    add t0, s3, t0
-    sd a0, FR_SLOTS(t0)
-    addi s4, s4, 1
-    j 5b
-6:
-    la t0, cur_frame
-    ld s5, 0(t0)                # caller frame
-    sd s5, FR_PARENT(s3)
-    sd s0, FR_FN(s3)
-    sd s1, FR_CALL(s3)
-    sd zero, FR_TARGS(s3)
-    sd zero, FR_EFFECTS(s3)
-    ld t1, N_A(s0)              # the callee's declared effects
-    beqz t1, 66f
-    ld t1, N_B(t1)
-    beqz t1, 66f
-    ld t1, FX_DECLARED(t1)
-    bnez t1, 65f                # an anonymous function runs under its caller's declaration
-    beqz s5, 66f
-    ld t1, FR_EFFECTS(s5)
-65:
-    sd t1, FR_EFFECTS(s3)
-66:
-    beqz s1, 69f                # a generic call: its type arguments (the caller's resolved)
-    lhu t1, N_KIND(s1)
-    li t2, N_CALL
-    bne t1, t2, 69f
-    ld a0, N_E(s1)
-    beqz a0, 69f
-    mv a1, s5
-    call rt_targs
-    sd a0, FR_TARGS(s3)
-    mv a2, a0                   # its declared effects with the effect parameters bound
-    ld a0, FR_EFFECTS(s3)
-    beqz a0, 69f
     mv a1, s0
-    call rt_es_subst
-    sd a0, FR_EFFECTS(s3)
-69:
-    beqz s8, 67f                # a closure: its type arguments and captured values
-    ld t1, CL_TARGS(s8)
-    sd t1, FR_TARGS(s3)
-    ld t1, N_A(s0)
-    ld t1, N_B(t1)
-    ld t2, FX_CAPS(t1)
-    beqz t2, 67f
-    ld t4, CL_N(s8)
-    li t3, 0
-68:
-    bge t3, t4, 67f
-    ld t5, VEC_DATA(t2)
-    slli t6, t3, 3
-    add t5, t5, t6
-    ld t5, 0(t5)
-    ld t5, CP_INNER(t5)
-    slli t5, t5, 3
-    add t5, s3, t5
-    add t6, s8, t6
-    ld t6, CL_CAPS(t6)
-    sd t6, FR_SLOTS(t5)
-    addi t3, t3, 1
-    j 68b
-67:
-    la t0, cur_frame
-    sd s3, 0(t0)
-    la t0, try_target
-    ld s6, 0(t0)
-    addi a0, sp, 0              # jmp buffer for `try` at 0(sp)
-    sd a0, 0(t0)
-    call jmp_save
-    bnez a0, 7f
-    mv a0, s1                   # count the call as a step
-    beqz a0, 61f
+    mv a2, s1
+    mv a3, s4
+    mv a4, s5
+    call vm_push
+    mv s2, a0
+    beqz s1, 3f                 # count the call as a step
+    mv a0, s1
     call tick
-61:
-    la t0, ret_val
-    sd zero, 0(t0)
-    ld a0, N_D(s0)
-    call exec_block
-7:
-    la t0, ret_val
-    ld a0, 0(t0)
-    la t0, cur_frame
-    sd s5, 0(t0)
-    la t0, try_target
-    sd s6, 0(t0)
+3:
+    mv a0, s2
+    call vm_run
     la t0, vsp
     sd s3, 0(t0)
-    ld ra, 184(sp)
-    ld s0, 176(sp)
-    ld s1, 168(sp)
-    ld s2, 160(sp)
-    ld s3, 152(sp)
-    ld s4, 144(sp)
-    ld s5, 136(sp)
-    ld s6, 128(sp)
-    ld s7, 120(sp)
-    ld s8, 112(sp)
-    addi sp, sp, 192
-    ret
-
-# long eval_binary(void *node)
-    .globl eval_binary
-eval_binary:
-    addi sp, sp, -48
-    sd ra, 40(sp)
-    sd s0, 32(sp)
-    sd s1, 24(sp)
-    sd s2, 16(sp)
-    sd s3, 8(sp)
-    mv s0, a0
-    ld s3, N_D(s0)              # op
-    li t0, OP_LT_PARAM          # an `ordered` type parameter: the op for its actual type
-    blt s3, t0, 0f
-    ld t0, N_A(s0)
-    ld a0, N_TYPE(t0)
-    call rt_concrete
-    ld t0, TY_KIND(a0)
-    addi s3, s3, -OP_LT_PARAM
-    li t1, TY_FLOAT
-    li t2, OP_LT_FLOAT
-    beq t0, t1, 1f
-    li t1, TY_STR
-    li t2, OP_LT_STR
-    beq t0, t1, 1f
-    li t2, OP_LT_INT
-1:
-    add s3, s3, t2
-0:
-    li t0, OP_AND
-    beq s3, t0, 60f
-    li t0, OP_OR
-    beq s3, t0, 61f
-    ld a0, N_A(s0)
-    call eval_expr
-    mv s1, a0
-    ld a0, N_B(s0)
-    call eval_expr
-    mv s2, a0
-    li t0, OP_ADD_INT
-    beq s3, t0, 10f
-    li t0, OP_SUB_INT
-    beq s3, t0, 11f
-    li t0, OP_MUL_INT
-    beq s3, t0, 12f
-    li t0, OP_DIV_INT
-    beq s3, t0, 13f
-    li t0, OP_REM_INT
-    beq s3, t0, 14f
-    li t0, OP_ADD_FLOAT
-    beq s3, t0, 20f
-    li t0, OP_SUB_FLOAT
-    beq s3, t0, 21f
-    li t0, OP_MUL_FLOAT
-    beq s3, t0, 22f
-    li t0, OP_DIV_FLOAT
-    beq s3, t0, 23f
-    li t0, OP_CONCAT
-    beq s3, t0, 30f
-    li t0, OP_EQ
-    beq s3, t0, 31f
-    li t0, OP_NE
-    beq s3, t0, 32f
-    li t0, OP_LT_INT
-    beq s3, t0, 40f
-    li t0, OP_LE_INT
-    beq s3, t0, 41f
-    li t0, OP_GT_INT
-    beq s3, t0, 42f
-    li t0, OP_GE_INT
-    beq s3, t0, 43f
-    li t0, OP_LT_FLOAT
-    beq s3, t0, 44f
-    li t0, OP_LE_FLOAT
-    beq s3, t0, 45f
-    li t0, OP_GT_FLOAT
-    beq s3, t0, 46f
-    li t0, OP_GE_FLOAT
-    beq s3, t0, 47f
-    j 50f                       # string orderings
-10:                             # checked add: overflow iff (t < a) != (b < 0)
-    add a0, s1, s2
-    slt t0, a0, s1
-    slti t1, s2, 0
-    bne t0, t1, 90f
-    j 99f
-11:                             # checked sub: overflow iff (t < a) != (b > 0)
-    sub a0, s1, s2
-    slt t0, a0, s1
-    sgtz t1, s2
-    bne t0, t1, 90f
-    j 99f
-12:                             # checked mul: overflow iff high word != sign of low word
-    mul a0, s1, s2
-    mulh t0, s1, s2
-    srai t1, a0, 63
-    bne t0, t1, 90f
-    j 99f
-13:
-    beqz s2, 91f
-    li t0, -1
-    bne s2, t0, 131f
-    li t1, 1
-    slli t1, t1, 63
-    beq s1, t1, 90f             # MIN / -1
-131:
-    div a0, s1, s2
-    j 99f
-14:
-    beqz s2, 91f
-    rem a0, s1, s2
-    j 99f
-20:
-    fmv.d.x ft0, s1
-    fmv.d.x ft1, s2
-    fadd.d ft0, ft0, ft1
-    fmv.x.d a0, ft0
-    j 99f
-21:
-    fmv.d.x ft0, s1
-    fmv.d.x ft1, s2
-    fsub.d ft0, ft0, ft1
-    fmv.x.d a0, ft0
-    j 99f
-22:
-    fmv.d.x ft0, s1
-    fmv.d.x ft1, s2
-    fmul.d ft0, ft0, ft1
-    fmv.x.d a0, ft0
-    j 99f
-23:
-    fmv.d.x ft0, s1
-    fmv.d.x ft1, s2
-    fdiv.d ft0, ft0, ft1
-    fmv.x.d a0, ft0
-    j 99f
-30:
-    la t0, cur_node
-    sd s0, 0(t0)
-    mv a0, s1
-    mv a1, s2
-    call str_concat
-    j 99f
-31:
-    la t0, cur_node            # a long comparison can time out (R0009 points here)
-    sd s0, 0(t0)
-    mv a0, s1
-    mv a1, s2
-    ld t0, N_A(s0)
-    ld a2, N_TYPE(t0)
-    call values_equal
-    j 99f
-32:
-    la t0, cur_node            # a long comparison can time out (R0009 points here)
-    sd s0, 0(t0)
-    mv a0, s1
-    mv a1, s2
-    ld t0, N_A(s0)
-    ld a2, N_TYPE(t0)
-    call values_equal
-    xori a0, a0, 1
-    j 99f
-40:
-    slt a0, s1, s2
-    j 99f
-41:
-    slt a0, s2, s1
-    xori a0, a0, 1
-    j 99f
-42:
-    slt a0, s2, s1
-    j 99f
-43:
-    slt a0, s1, s2
-    xori a0, a0, 1
-    j 99f
-44:
-    fmv.d.x ft0, s1
-    fmv.d.x ft1, s2
-    flt.d a0, ft0, ft1
-    j 99f
-45:
-    fmv.d.x ft0, s1
-    fmv.d.x ft1, s2
-    fle.d a0, ft0, ft1
-    j 99f
-46:
-    fmv.d.x ft0, s1
-    fmv.d.x ft1, s2
-    flt.d a0, ft1, ft0
-    j 99f
-47:
-    fmv.d.x ft0, s1
-    fmv.d.x ft1, s2
-    fle.d a0, ft1, ft0
-    j 99f
-50:
-    mv a0, s1
-    mv a1, s2
-    call str_cmp
-    li t0, OP_LT_STR
-    beq s3, t0, 51f
-    li t0, OP_LE_STR
-    beq s3, t0, 52f
-    li t0, OP_GT_STR
-    beq s3, t0, 53f
-    slti a0, a0, 0              # >=: not <
-    xori a0, a0, 1
-    j 99f
-51:
-    slti a0, a0, 0
-    j 99f
-52:
-    slti a0, a0, 1
-    j 99f
-53:
-    sgtz a0, a0
-    j 99f
-60:                             # and
-    ld a0, N_A(s0)
-    call eval_expr
-    beqz a0, 99f
-    ld a0, N_B(s0)
-    call eval_expr
-    j 99f
-61:                             # or
-    ld a0, N_A(s0)
-    call eval_expr
-    bnez a0, 99f
-    ld a0, N_B(s0)
-    call eval_expr
-    j 99f
-90:
-    mv a0, s0
-    call rt_overflow
-91:
-    mv a2, s0
-    la a0, r0002
-    la a1, m_divzero
-    call rt_raise_c
-99:
-    ld ra, 40(sp)
-    ld s0, 32(sp)
-    ld s1, 24(sp)
-    ld s2, 16(sp)
-    ld s3, 8(sp)
-    addi sp, sp, 48
-    ret
-
-# long eval_expr(void *node)
-    .globl eval_expr
-eval_expr:
-    addi sp, sp, -48
-    sd ra, 40(sp)
-    sd s0, 32(sp)
-    sd s1, 24(sp)
-    sd s2, 16(sp)
-    sd s3, 8(sp)
-    mv s0, a0
-    lhu t0, N_KIND(s0)          # (stack depth is checked at calls; nesting is bounded by the parser)
-    li t1, N_INT
-    beq t0, t1, 1f
-    li t1, N_FLOAT
-    beq t0, t1, 1f
-    li t1, N_STR
-    beq t0, t1, 1f
-    li t1, N_BOOL
-    beq t0, t1, 1f
-    li t1, N_IDENT
-    beq t0, t1, 2f
-    li t1, N_BINARY
-    beq t0, t1, 3f
-    li t1, N_CALL
-    beq t0, t1, 4f
-    li t1, N_FIELD
-    beq t0, t1, 5f
-    li t1, N_INDEX
-    beq t0, t1, 6f
-    li t1, N_UNARY
-    beq t0, t1, 7f
-    li t1, N_TRY
-    beq t0, t1, 8f
-    li t1, N_LIST
-    beq t0, t1, 10f
-    li t1, N_NEW_RECORD
-    beq t0, t1, 11f
-    li t1, N_NEW_LIST
-    beq t0, t1, 12f
-    li t1, N_NEW_MAP
-    beq t0, t1, 13f
-    li t1, N_VCASE
-    beq t0, t1, 14f
-    li t1, N_LAMBDA
-    beq t0, t1, 170f
-    li t1, N_CALL_VALUE
-    beq t0, t1, 171f
-    li a0, 0
-    j 99f
-170:
-    mv a0, s0
-    call make_closure
-    j 99f
-171:
-    mv a0, s0
-    call eval_call_value
-    j 99f
-1:
-    ld a0, N_A(s0)
-    j 99f
-2:
-    lhu t0, N_FLAGS(s0)
-    andi t0, t0, NF_FNVAL
-    beqz t0, 21f
-    ld a0, N_D(s0)              # a named function as a value
-    call fn_closure
-    j 99f
-21:
-    ld a0, N_C(s0)
-    call local_addr
-    ld a0, 0(a0)
-    j 99f
-3:
-    mv a0, s0
-    call eval_binary
-    j 99f
-4:
-    ld t0, N_D(s0)
-    beqz t0, 41f
-    mv a0, s0
-    call eval_builtin
-    j 99f
-41:
-    ld a0, N_C(s0)
-    mv a1, s0
-    ld a2, N_B(s0)
-    li a3, 0
-    li a4, 0
-    call call_fn
-    j 99f
-5:
-    ld a0, N_A(s0)
-    call eval_expr
-.ifdef GC_STRESS_BUILD
-    li a1, OBJ_RECORD
-    call gc_check               # stress build: a live record (spec 003 FR-011)
-.endif
-    ld t0, N_C(s0)
-    slli t0, t0, 3
-    add a0, a0, t0
-    ld a0, R_FIELDS(a0)
-    j 99f
-6:
-    ld a0, N_A(s0)
-    call eval_expr
-    mv s1, a0
-    ld a0, N_B(s0)
-    call eval_expr
-    mv s2, a0
-    lhu t0, N_FLAGS(s0)
-    andi t0, t0, NF_MAP
-    bnez t0, 61f
-    ld t1, L_LEN(s1)
-    bltz s2, 62f
-    bge s2, t1, 62f
-    ld t0, L_DATA(s1)
-    slli t2, s2, 3
-    add t0, t0, t2
-    ld a0, 0(t0)
-    j 99f
-62:
-    mv a0, s0
-    mv a1, s2
-    ld a2, L_LEN(s1)
-    call rt_index_error
-61:
-    ld t0, N_A(s0)              # map lookup
-    ld t0, N_TYPE(t0)
-    ld s3, TY_A(t0)             # key type
-    mv a0, s1
-    mv a1, s2
-    mv a2, s3
-    call map_find
-    bltz a0, 63f
-    ld t0, M_ENTRIES(s1)
-    li t1, ME_SIZE
-    mul t1, t1, a0
-    add t0, t0, t1
-    ld a0, ME_VAL(t0)
-    j 99f
-63:
-    mv a0, s0
-    mv a1, s2
-    mv a2, s3
-    call rt_key_error
-7:
-    ld a0, N_A(s0)
-    call eval_expr
-    ld t0, N_D(s0)
-    li t1, OP_NOT
-    beq t0, t1, 71f
-    li t1, OP_NEG_FLOAT
-    beq t0, t1, 72f
-    li t1, 1                    # -MIN overflows
-    slli t1, t1, 63
-    bne a0, t1, 73f
-    mv a0, s0
-    call rt_overflow
-73:
-    neg a0, a0
-    j 99f
-71:
-    xori a0, a0, 1
-    j 99f
-72:
-    li t1, 1
-    slli t1, t1, 63
-    xor a0, a0, t1
-    j 99f
-8:                              # try: unwrap ok, or return the err from the current function
-    ld a0, N_A(s0)
-    call eval_expr
-    lwu t0, V_TAG(a0)
-    bnez t0, 81f
-    ld a0, V_PAY(a0)
-    j 99f
-81:
-    la t0, ret_val
-    sd a0, 0(t0)
-    la t0, try_target
-    ld a0, 0(t0)
-    li a1, 1
-    call jmp_restore
-10:
-    mv a0, s0
-    call eval_list_literal
-    j 99f
-11:
-    mv a0, s0
-    call eval_new_record
-    j 99f
-12:
-    li a0, 4
-    call list_new
-    j 99f
-13:
-    call map_new
-    j 99f
-14:
-    li a0, OBJ_VARIANT
-    li a1, VARIANT_SIZE
-    call alloc_obj
-    mv s1, a0
-    ld t0, N_E(s0)
-    sw t0, V_TAG(s1)
-    ld a0, N_C(s0)
-    beqz a0, 141f
-    call eval_expr
-    sd a0, V_PAY(s1)
-141:
-    mv a0, s1
-99:
-    ld ra, 40(sp)
-    ld s0, 32(sp)
-    ld s1, 24(sp)
-    ld s2, 16(sp)
-    ld s3, 8(sp)
-    addi sp, sp, 48
-    ret
-
-# void *eval_list_literal(void *node)
-    .globl eval_list_literal
-eval_list_literal:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    sd s1, 8(sp)
-    sd s2, 0(sp)
-    mv s0, a0
-    ld t0, N_A(s0)
-    ld a0, VEC_N(t0)
-    call list_new
-    mv s1, a0
-    li s2, 0
-1:
-    ld t0, N_A(s0)
-    ld t1, VEC_N(t0)
-    bge s2, t1, 2f
-    mv a0, t0
-    mv a1, s2
-    call vec_get
-    call eval_expr
-    mv a1, a0
-    mv a0, s1
-    call list_push
-    addi s2, s2, 1
-    j 1b
-2:
-    mv a0, s1
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    ld s1, 8(sp)
-    ld s2, 0(sp)
-    addi sp, sp, 32
-    ret
-
-# void *eval_new_record(void *node)
-    .globl eval_new_record
-eval_new_record:
-    addi sp, sp, -48
-    sd ra, 40(sp)
-    sd s0, 32(sp)
-    sd s1, 24(sp)
-    sd s2, 16(sp)
-    sd s3, 8(sp)
-    mv s0, a0
-    ld t0, N_C(s0)              # record decl
-    ld a0, N_B(t0)
-    call count_members
-    slli a1, a0, 3
-    li a0, OBJ_RECORD
-    call alloc_obj
-    mv s1, a0
-    li s2, 0
-1:
-    ld t0, N_B(s0)
-    ld t1, VEC_N(t0)
-    bge s2, t1, 2f
-    mv a0, t0
-    mv a1, s2
-    call vec_get
-    mv s3, a0
-    ld a0, N_B(s3)
-    call eval_expr
-    ld t0, N_C(s3)
-    slli t0, t0, 3
-    add t0, s1, t0
-    sd a0, R_FIELDS(t0)
-    addi s2, s2, 1
-    j 1b
-2:
-    mv a0, s1
-    ld ra, 40(sp)
-    ld s0, 32(sp)
-    ld s1, 24(sp)
-    ld s2, 16(sp)
-    ld s3, 8(sp)
-    addi sp, sp, 48
+    ld ra, 56(sp)
+    ld s0, 48(sp)
+    ld s1, 40(sp)
+    ld s2, 32(sp)
+    ld s3, 24(sp)
+    ld s4, 16(sp)
+    ld s5, 8(sp)
+    addi sp, sp, 64
     ret
 
 # int values_equal(long a, long b, void *type)
@@ -1613,293 +963,6 @@ values_equal:
     addi sp, sp, 64
     ret
 
-# int exec_block(void *block)
-# Runs statements until one does not complete normally; returns the statement status.
-    .globl exec_block
-exec_block:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    sd s1, 8(sp)
-    sd s2, 0(sp)
-    ld s0, N_A(a0)
-    li s1, 0
-1:
-    ld t0, VEC_N(s0)
-    bge s1, t0, 8f
-    mv a0, s0
-    mv a1, s1
-    call vec_get
-    addi s1, s1, 1
-    call exec_stmt
-    beqz a0, 1b
-    j 9f
-8:
-    li a0, ST_NORMAL
-9:
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    ld s1, 8(sp)
-    ld s2, 0(sp)
-    addi sp, sp, 32
-    ret
-
-# int exec_stmt(void *stmt)
-    .globl exec_stmt
-exec_stmt:
-    addi sp, sp, -64
-    sd ra, 56(sp)
-    sd s0, 48(sp)
-    sd s1, 40(sp)
-    sd s2, 32(sp)
-    sd s3, 24(sp)
-    sd s4, 16(sp)
-    mv s0, a0
-    lhu t0, N_KIND(s0)
-    li t1, N_EXPR_STMT
-    beq t0, t1, 10f
-    li t1, N_LET
-    beq t0, t1, 11f
-    li t1, N_SET
-    beq t0, t1, 12f
-    li t1, N_IF
-    beq t0, t1, 13f
-    li t1, N_WHILE
-    beq t0, t1, 14f
-    li t1, N_FOR
-    beq t0, t1, 15f
-    li t1, N_MATCH
-    beq t0, t1, 16f
-    li t1, N_RETURN
-    beq t0, t1, 17f
-    li t1, N_BREAK
-    li a0, ST_BREAK
-    beq t0, t1, 99f
-    li t1, N_CONTINUE
-    li a0, ST_CONTINUE
-    beq t0, t1, 99f
-    li a0, ST_NORMAL
-    j 99f
-10:
-    ld a0, N_A(s0)
-    call eval_expr
-    li a0, ST_NORMAL
-    j 99f
-11:                             # let / var
-    ld a0, N_C(s0)
-    call eval_expr
-    ld t0, N_E(s0)
-    bltz t0, 111f
-    mv s1, a0
-    mv a0, t0
-    call local_addr
-    sd s1, 0(a0)
-111:
-    li a0, ST_NORMAL
-    j 99f
-12:                             # set
-    ld s1, N_A(s0)              # place
-    lhu t0, N_KIND(s1)
-    li t1, N_IDENT
-    beq t0, t1, 121f
-    li t1, N_FIELD
-    beq t0, t1, 122f
-    ld a0, N_A(s1)              # index: object, key/index, value
-    call eval_expr
-    mv s2, a0
-    ld a0, N_B(s1)
-    call eval_expr
-    mv s3, a0
-    ld a0, N_B(s0)
-    call eval_expr
-    mv s4, a0
-    lhu t0, N_FLAGS(s1)
-    andi t0, t0, NF_MAP
-    bnez t0, 123f
-    ld t1, L_LEN(s2)
-    bltz s3, 124f
-    bge s3, t1, 124f
-    ld t0, L_DATA(s2)
-    slli t2, s3, 3
-    add t0, t0, t2
-    sd s4, 0(t0)
-    j 129f
-124:
-    mv a0, s1
-    mv a1, s3
-    ld a2, L_LEN(s2)
-    call rt_index_error
-123:
-    la t0, cur_node
-    sd s0, 0(t0)
-    ld t0, N_A(s1)
-    ld t0, N_TYPE(t0)
-    mv a0, s2
-    mv a1, s3
-    mv a2, s4
-    ld a3, TY_A(t0)
-    call map_set
-    j 129f
-121:
-    ld a0, N_B(s0)
-    call eval_expr
-    mv s2, a0
-    ld a0, N_C(s1)
-    call local_addr
-    sd s2, 0(a0)
-    j 129f
-122:
-    ld a0, N_A(s1)
-    call eval_expr
-    mv s2, a0
-    ld a0, N_B(s0)
-    call eval_expr
-    ld t0, N_C(s1)
-    slli t0, t0, 3
-    add t0, s2, t0
-    sd a0, R_FIELDS(t0)
-129:
-    li a0, ST_NORMAL
-    j 99f
-13:                             # if
-    ld a0, N_A(s0)
-    call eval_expr
-    beqz a0, 131f
-    ld a0, N_B(s0)
-    call exec_block
-    j 99f
-131:
-    ld a0, N_C(s0)
-    beqz a0, 132f
-    lhu t0, N_KIND(a0)
-    li t1, N_IF
-    beq t0, t1, 133f
-    call exec_block
-    j 99f
-133:
-    call exec_stmt
-    j 99f
-132:
-    li a0, ST_NORMAL
-    j 99f
-14:                             # while
-    mv a0, s0
-    call tick
-    ld a0, N_A(s0)
-    call eval_expr
-    beqz a0, 149f
-    ld a0, N_B(s0)
-    call exec_block
-    li t0, ST_BREAK
-    beq a0, t0, 149f
-    li t0, ST_RETURN
-    beq a0, t0, 99f
-    j 14b
-149:
-    li a0, ST_NORMAL
-    j 99f
-15:                             # for
-    ld a0, N_B(s0)
-    call eval_expr
-    mv s1, a0                   # range start or list
-    ld t0, N_C(s0)
-    beqz t0, 155f
-    mv a0, t0
-    call eval_expr
-    mv s2, a0                   # range end
-151:
-    bge s1, s2, 159f
-    mv a0, s0
-    call tick
-    ld a0, N_E(s0)
-    call local_addr
-    sd s1, 0(a0)
-    ld a0, N_D(s0)
-    call exec_block
-    li t0, ST_BREAK
-    beq a0, t0, 159f
-    li t0, ST_RETURN
-    beq a0, t0, 99f
-    addi s1, s1, 1
-    j 151b
-155:
-    li s2, 0                    # list index
-156:
-    ld t0, L_LEN(s1)
-    bge s2, t0, 159f
-    mv a0, s0
-    call tick
-    ld t0, L_DATA(s1)
-    slli t1, s2, 3
-    add t0, t0, t1
-    ld s3, 0(t0)
-    ld a0, N_E(s0)
-    call local_addr
-    sd s3, 0(a0)
-    ld a0, N_D(s0)
-    call exec_block
-    li t0, ST_BREAK
-    beq a0, t0, 159f
-    li t0, ST_RETURN
-    beq a0, t0, 99f
-    addi s2, s2, 1
-    j 156b
-159:
-    li a0, ST_NORMAL
-    j 99f
-16:                             # match
-    ld a0, N_A(s0)
-    call eval_expr
-    mv s1, a0
-    lwu s2, V_TAG(s1)
-    ld s3, N_B(s0)
-    li s4, 0
-161:
-    ld t0, VEC_N(s3)
-    bge s4, t0, 169f
-    mv a0, s3
-    mv a1, s4
-    call vec_get
-    addi s4, s4, 1
-    lhu t0, N_KIND(a0)
-    li t1, N_ARM
-    bne t0, t1, 161b
-    ld t0, N_D(a0)
-    bne t0, s2, 161b
-    mv s4, a0                   # the arm
-    ld t0, N_E(s4)
-    bltz t0, 162f
-    mv a0, t0
-    call local_addr
-    ld t0, V_PAY(s1)
-    sd t0, 0(a0)
-162:
-    ld a0, N_C(s4)
-    call exec_block
-    j 99f
-169:
-    li a0, ST_NORMAL
-    j 99f
-17:                             # return
-    li a0, 0
-    ld t0, N_A(s0)
-    beqz t0, 171f
-    mv a0, t0
-    call eval_expr
-171:
-    la t0, ret_val
-    sd a0, 0(t0)
-    li a0, ST_RETURN
-99:
-    ld ra, 56(sp)
-    ld s0, 48(sp)
-    ld s1, 40(sp)
-    ld s2, 32(sp)
-    ld s3, 24(sp)
-    ld s4, 16(sp)
-    addi sp, sp, 64
-    ret
-
 # int run_main(void *main_fn)
 # Runs `main`; returns the process exit status (main returning err prints "error: msg", status 1).
     .globl run_main
@@ -1965,8 +1028,6 @@ s_nl: .string "\n"
 interp_reset:
     la t0, cur_frame
     sd zero, 0(t0)
-    la t0, try_target
-    sd zero, 0(t0)
     la t0, vbase
     ld t1, 0(t0)
     la t0, vsp
@@ -1977,11 +1038,56 @@ interp_reset:
 # Calls a function value with argument values.
     .globl call_value
 call_value:
+    ld t0, CL_FN(a0)            # compiled (spec 004): straight into the bytecode engine
+    ld t0, N_A(t0)
+    ld t0, N_B(t0)
+    ld t0, FX_CODE(t0)
+    bnez t0, 1f
     mv a3, a2
     mv a4, a0
     ld a0, CL_FN(a0)
     li a2, 0
     tail call_fn
+1:
+    addi sp, sp, -48
+    sd ra, 40(sp)
+    sd s0, 32(sp)
+    sd s1, 24(sp)
+    sd s2, 16(sp)
+    sd s3, 8(sp)
+    mv s0, a0                   # closure
+    mv s1, a1                   # call node
+    mv s2, a2                   # argument values
+    beqz s1, 2f                 # (as call_fn: the native stack, then the frame, then a step)
+    mv a0, s1
+    call check_stack
+2:
+    la t0, vsp
+    ld s3, 0(t0)
+    ld a1, CL_FN(s0)
+    ld t0, N_A(a1)
+    ld t0, N_B(t0)
+    ld a0, FX_CODE(t0)
+    mv a2, s1
+    mv a3, s2
+    mv a4, s0
+    call vm_push
+    mv s2, a0
+    beqz s1, 3f
+    mv a0, s1
+    call tick
+3:
+    mv a0, s2
+    call vm_run
+    la t0, vsp
+    sd s3, 0(t0)
+    ld ra, 40(sp)
+    ld s0, 32(sp)
+    ld s1, 24(sp)
+    ld s2, 16(sp)
+    ld s3, 8(sp)
+    addi sp, sp, 48
+    ret
 
 # void *make_closure(void *lambda)
 # An anonymous function as a value: its node, and copies of the values it captures.
@@ -2068,112 +1174,31 @@ fn_closure:
     addi sp, sp, 32
     ret
 
-# long eval_call_value(void *call)
-# `callee(args)` for any callee expression: the arguments go to the value stack, then the call.
-    .globl eval_call_value
-eval_call_value:
-    addi sp, sp, -48
-    sd ra, 40(sp)
-    sd s0, 32(sp)
-    sd s1, 24(sp)
-    sd s2, 16(sp)
-    sd s3, 8(sp)
-    sd s4, 0(sp)
-    mv s0, a0
-    ld a0, N_A(s0)
-    call eval_expr
-    mv s1, a0                   # the closure
-.ifdef GC_STRESS_BUILD
-    mv a0, s1
-    li a1, OBJ_CLOSURE
-    call gc_check              # stress build: a live OBJ_CLOSURE (spec 003 FR-011)
-.endif
-    ld t0, N_B(s0)
-    ld s2, VEC_N(t0)
-    la t0, vsp
-    ld s3, 0(t0)                # argument area
-    slli t1, s2, 3
-    add t1, s3, t1
-    la t2, vstack_end
-    ld t2, 0(t2)
-    bltu t1, t2, 1f
-    la a0, r0005
-    la a1, m_stack
-    mv a2, s0
-    call rt_raise_c
-1:
-    la t0, vsp
-    slli t1, s2, 3
-    add t1, s3, t1
-    sd t1, 0(t0)
-    li s4, 0
-2:
-    bge s4, s2, 3f
-    ld a0, N_B(s0)
-    mv a1, s4
-    call vec_get
-    call eval_expr
-    slli t0, s4, 3
-    add t0, s3, t0
-    sd a0, 0(t0)
-    addi s4, s4, 1
-    j 2b
-3:
-    mv a0, s1
-    mv a1, s0
-    mv a2, s3
-    call call_value
-    la t0, vsp
-    sd s3, 0(t0)
-    ld ra, 40(sp)
-    ld s0, 32(sp)
-    ld s1, 24(sp)
-    ld s2, 16(sp)
-    ld s3, 8(sp)
-    ld s4, 0(sp)
-    addi sp, sp, 48
-    ret
-
 # void run_test_body(void *test)
-# Runs a test block in a fresh frame (its locals are counted in N_E).
+# Runs a test block's compiled code in a fresh frame (the test's declared effects are its grant).
     .globl run_test_body
 run_test_body:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    sd s1, 8(sp)
+    addi sp, sp, -16
+    sd ra, 8(sp)
+    sd s0, 0(sp)
     mv s0, a0
-    la t0, vsp
-    ld s1, 0(t0)                # frame
-    ld t1, N_E(s0)
-    slli t1, t1, 3
-    addi t1, t1, FR_SLOTS
-    add t2, s1, t1
-    sd t2, 0(t0)
-    addi t3, s1, FR_SLOTS
+    ld t0, N_D(s0)
+    beqz t0, 1f
+    ld a0, FX_CODE(t0)
+    bnez a0, 2f
 1:
-    bgeu t3, t2, 2f
-    sd zero, 0(t3)
-    addi t3, t3, 8
-    j 1b
+    call vm_not_compiled        # (every test is compiled before the tests run)
 2:
-    sd zero, FR_PARENT(s1)
-    sd s0, FR_FN(s1)
-    sd zero, FR_CALL(s1)
-    sd zero, FR_TARGS(s1)
-    sd zero, FR_EFFECTS(s1)
-    ld t1, N_D(s0)              # the test's declared effects are its grant
-    beqz t1, 21f
-    ld t1, FX_DECLARED(t1)
-    sd t1, FR_EFFECTS(s1)
-21:
-    la t0, cur_frame
-    sd s1, 0(t0)
-    ld a0, N_B(s0)
-    call exec_block
+    ld t0, N_D(s0)
+    ld a0, FX_CODE(t0)
+    mv a1, s0
+    li a2, 0
+    li a3, 0
+    li a4, 0
+    call vm_push
+    call vm_run
     call interp_reset
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    ld s1, 8(sp)
-    addi sp, sp, 32
+    ld ra, 8(sp)
+    ld s0, 0(sp)
+    addi sp, sp, 16
     ret

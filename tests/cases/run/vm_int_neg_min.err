@@ -1,0 +1,5 @@
+vm_int_neg_min.vo:5:15: runtime error[R0001]: Integer overflow.
+   5 |     print(str(-low));
+     |               ^^^^
+trace:
+  at main (vm_int_neg_min.vo:5:15)

@@ -1,0 +1,11 @@
+# Spec 004 FR-008, SC-008: --timeout stops a loop that makes no calls and allocates nothing.
+fn main() uses console {
+    var x = 0;
+    while x >= 0 {
+        set x = x + 1;
+        if x > 4000000000000 {
+            set x = 0;
+        }
+    }
+    print(str(x));
+}

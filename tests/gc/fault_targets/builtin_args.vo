@@ -1,0 +1,17 @@
+# Spec 004 R7: split's result is a staged builtin argument while make_sep allocates.
+fn make_sep(i: int) -> str {
+    return "-" + str(i) + "-";
+}
+
+fn main() uses console {
+    var total = 0;
+    for i in 0..300 {
+        let s = "a b c " + str(i);
+        let r = join(split(s, " "), make_sep(i));
+        set total = total + len(r);
+        if i % 100 == 0 {
+            print(r);
+        }
+    }
+    print(str(total));
+}

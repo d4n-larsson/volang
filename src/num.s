@@ -39,23 +39,39 @@ int_to_dec:
     ret
 
 # void *int_to_str(long v)
+# The decimal text of v: digits on the stack, then one string (spec 004: one allocation, not
+# a builder's three).
     .globl int_to_str
 int_to_str:
-    addi sp, sp, -32
-    sd ra, 24(sp)
-    sd s0, 16(sp)
-    sd s1, 8(sp)
-    mv s1, a0
-    call sb_new
-    mv s0, a0
-    mv a1, s1
-    call int_to_dec
-    mv a0, s0
-    call sb_finish
-    ld ra, 24(sp)
-    ld s0, 16(sp)
-    ld s1, 8(sp)
-    addi sp, sp, 32
+    addi sp, sp, -48            # 0..31: digits, written backwards from 32(sp)
+    sd ra, 40(sp)
+    sd zero, 0(sp)              # whole words: no stale pointers for the collector
+    sd zero, 8(sp)
+    sd zero, 16(sp)
+    sd zero, 24(sp)
+    mv t0, a0
+    addi a0, sp, 32
+    li t1, 10
+    mv t2, t0
+    bgez t2, 1f
+    neg t2, t2                  # INT64_MIN stays 2^63 when read as unsigned
+1:
+    remu t3, t2, t1
+    divu t2, t2, t1
+    addi t3, t3, '0'
+    addi a0, a0, -1
+    sb t3, 0(a0)
+    bnez t2, 1b
+    bgez t0, 2f
+    li t3, '-'
+    addi a0, a0, -1
+    sb t3, 0(a0)
+2:
+    addi a1, sp, 32
+    sub a1, a1, a0
+    call str_new
+    ld ra, 40(sp)
+    addi sp, sp, 48
     ret
 
 # int dec_to_int(char *p, long n, long *out)

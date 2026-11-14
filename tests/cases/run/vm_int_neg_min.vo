@@ -1,0 +1,6 @@
+# Spec 004: negating the most negative int (R0001).
+fn main() uses console {
+    let low = -9223372036854775807 - 1;
+    print(str(-(low + 1)));
+    print(str(-low));
+}

@@ -1,0 +1,15 @@
+# Spec 004 R7: a sort_by callback's frame holds values while it allocates.
+fn main() uses console {
+    let xs = new list[int];
+    for i in 0..60 {
+        push(xs, (i * 37) % 61);
+    }
+    sort_by(xs, fn(v: int) -> str {
+        let parts = [str(v % 10), "-", str(v)];
+        let key = join(parts, "") + parts[1];
+        return key;
+    });
+    print(join(map(xs, fn(v: int) -> str {
+        return str(v);
+    }), " "));
+}

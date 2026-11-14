@@ -1,0 +1,18 @@
+# Spec 004: `and` and `or` evaluate their right side only when needed.
+fn noisy(b: bool, tag: str) -> bool uses console {
+    print(tag);
+    return b;
+}
+
+fn main() uses console {
+    if noisy(false, "and left") and noisy(true, "and right (skipped)") {
+        print("no");
+    }
+    print(str(noisy(true, "or left") or noisy(false, "or right (skipped)")));
+    print(str(noisy(true, "a") and noisy(false, "b") or noisy(true, "c")));
+    print(str(noisy(false, "d") or noisy(true, "e") and noisy(false, "f")));
+    var n = 0;
+    while n < 3 and noisy(true, "loop test " + str(n)) {
+        set n = n + 1;
+    }
+}

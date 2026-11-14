@@ -1,6 +1,6 @@
 # vo
 
-vo is a small, statically typed programming language designed for AI coding agents, and for the people who review what those agents write. The whole toolchain is written in RISC-V assembly (RV64): lexer, parser, type checker, formatter, test runner and interpreter, about 33,000 lines with no libc and no dependencies.
+vo is a small, statically typed programming language designed for AI coding agents, and for the people who review what those agents write. The whole toolchain is written in RISC-V assembly (RV64): lexer, parser, type checker, formatter, test runner, bytecode compiler and virtual machine, about 35,600 lines with no libc and no dependencies.
 
 ```vo
 record Person {
@@ -39,6 +39,7 @@ Mainstream languages were designed for people at keyboards. Agents work differen
 - **Reviewable capability changes.** `vo.effects`, next to the code, records the effects of every function. When an edit makes a function do more, such as writing files, `vo check` fails (E0504) with the call path that introduced it. `vo effects --update` rewrites the record, and its diff shows a reviewer exactly what new capabilities the change grants, without reading every line.
 - **Deterministic by default.** The same program and input produce the same bytes. The clock and randomness are effects, fixed with `--clock-ms` and `--seed` (and fixed by default in tests).
 - **Memory and time are bounded and reported.** Unreachable values are reclaimed by a deterministic collector, so collection never changes output. Running out of memory means live data over a limit you set (`--max-memory`, R0006), `--mem-stats` reports usage, and `--timeout` stops even a single long builtin call.
+- **Compiled to bytecode.** After checking, programs are compiled to typed bytecode for a virtual machine, about 4.5× faster than the tree-walking interpreter it replaced on compute-heavy code, with byte-identical results.
 - **The whole language fits in a prompt.** `vo reference` prints the complete reference, about 8,000 tokens with a runnable example in every section. That is all an agent needs to know.
 
 The language also has records, variants with exhaustive `match`, `result[T]` with `try`, lists and maps, built-in tests, multi-file programs, functions as values and closures, and user-defined generics: inferred type arguments, `T: ordered`, and effect parameters for higher-order functions.
@@ -71,7 +72,7 @@ Every command takes `--json`. Exit statuses are stable: 0 success, 1 failed test
 
 | Path | Contents |
 |---|---|
-| `src/` | The toolchain in RISC-V assembly: `lex.s`, `parse.s`, `check*.s` (types, effects, functions as values, generics), `interp.s` and `rt_*.s` (the interpreter and runtime), `fmt.s`, `main.s` (CLI) |
+| `src/` | The toolchain in RISC-V assembly: `lex.s`, `parse.s`, `check*.s` (types, effects, functions as values, generics), `compile.s` and `vm.s` (the bytecode compiler and VM), `interp.s` and `rt_*.s` (the runtime), `fmt.s`, `main.s` (CLI) |
 | `docs/reference.md` | The language reference (embedded in the binary; `vo reference`) |
 | `docs/errors.md` | The error catalog: every code with an example and its fix (`vo explain`) |
 | `tests/cases/` | Golden test cases: source plus expected stdout, stderr and exit status |

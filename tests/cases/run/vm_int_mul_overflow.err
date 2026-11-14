@@ -1,0 +1,5 @@
+vm_int_mul_overflow.vo:5:17: runtime error[R0001]: Integer overflow.
+   5 |         set x = x * 3;
+     |                 ^^^^^
+trace:
+  at main (vm_int_mul_overflow.vo:5:17)

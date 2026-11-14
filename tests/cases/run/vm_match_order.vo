@@ -1,0 +1,38 @@
+# Spec 004: `match` arms in any order, with and without bindings.
+variant Shape {
+    dot;
+    circle(int);
+    square(int);
+}
+
+fn area(s: Shape) -> int {
+    match s {
+        case square(side) {
+            return side * side;
+        }
+        case dot {
+            return 0;
+        }
+        case circle(r) {
+            return 3 * r * r;
+        }
+    }
+}
+
+fn main() uses console {
+    let shapes = [Shape.circle(2), Shape.dot, Shape.square(3), Shape.circle(1)];
+    for s in shapes {
+        print(str(area(s)));
+        match s {
+            case circle(_) {
+                print("round");
+            }
+            case dot {
+                print("tiny");
+            }
+            case square(n) {
+                print("square " + str(n));
+            }
+        }
+    }
+}

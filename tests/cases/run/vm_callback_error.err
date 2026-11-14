@@ -1,0 +1,6 @@
+vm_callback_error.vo:7:16: runtime error[R0003]: Index 3 is out of bounds for length 1.
+   7 |         return ys[v];
+     |                ^^^^^
+trace:
+  at anonymous function (vm_callback_error.vo:7:16)
+  at main (vm_callback_error.vo:6:5)

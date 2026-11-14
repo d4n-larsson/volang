@@ -1,0 +1,24 @@
+# Maps: count words of generated text.
+fn main() uses console {
+    let words = ["alpha", "beta", "gamma", "delta", "epsilon", "zeta", "eta", "theta"];
+    let counts = new map[str, int];
+    var seed = 1;
+    for i in 0..600000 {
+        set seed = (seed * 1103515245 + 12345) % 2147483648;
+        let w = words[seed % 8] + str(seed % 50);
+        if has(counts, w) {
+            set counts[w] = counts[w] + 1;
+        } else {
+            set counts[w] = 1;
+        }
+    }
+    var best = "";
+    var best_n = 0;
+    for k in keys(counts) {
+        if counts[k] > best_n {
+            set best = k;
+            set best_n = counts[k];
+        }
+    }
+    print(str(len(counts)) + " " + best + " " + str(best_n));
+}

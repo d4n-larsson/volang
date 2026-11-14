@@ -1,1 +1,1 @@
-{"v":1,"kind":"memory","command":"run","peak_live":8395328,"allocated":76813408,"collections":9,"limit":536870912}
+{"v":1,"kind":"memory","command":"run","peak_live":8395168,"allocated":25613024,"collections":3,"limit":536870912}

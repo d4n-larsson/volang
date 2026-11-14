@@ -9,7 +9,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [001](../specs/001-vo-lang-core/) | Core language and toolchain: check, run, test, fmt, explain, reference; JSON diagnostics with fixes; deterministic runs; multi-file programs | **Done.** All criteria met except "vo beats Python" on benchmark v1, which tied at the ceiling |
 | [002](../specs/002-effects-functions-generics/) | Checked effects with scopes and a reviewable effects record; functions as values; user-defined generics; benchmark v2 | **Implemented, every gate passing.** The benchmark v2 run is not complete ([results](../specs/002-effects-functions-generics/results.md)) |
 | [003](../specs/003-garbage-collector/) | Garbage collector and memory model; `--timeout` inside builtins; memoized generic resolution | **Done** ([results](../specs/003-garbage-collector/results.md)) |
-| 004 | Bytecode compiler: programs run from compact, typed bytecode instead of walking the syntax tree | Planned |
+| [004](../specs/004-bytecode-compiler/) | Bytecode compiler: programs run from compact, typed bytecode instead of walking the syntax tree | **Done** ([results](../specs/004-bytecode-compiler/results.md)) |
 | 005 | Typed holes, property tests and contracts | Planned |
 | 006 | Query API, structural editing, trace and replay | Planned |
 | 007 | Standard library and content-pinned packages | Planned |
@@ -38,22 +38,16 @@ Memory used to be a bump arena that was never freed. Now:
   - precise roots;
   - a remembered set for the permanent arena, which is still scanned at every collection.
 
-### 004: bytecode compiler
+### 004: bytecode compiler (done)
 
-vo programs run by walking the checked syntax tree, which is the slowest kind of interpreter. On 2026-11-13, a 10-million-iteration integer loop took 5.4 s in vo, 1.0 s in Python 3 and 16 ms in C (`gcc -O2`). vo ran under qemu-riscv64; Python and C ran natively.
+vo programs used to run by walking the checked syntax tree. Now:
 
-- **Compile once, after checking.** The checked tree becomes compact bytecode, and a dispatch loop in assembly runs it. The checker already knows every type, so instructions can be typed (an `int` add needs no tag check), and locals live in numbered slots.
-- **Nothing visible changes:**
-  - output and exit codes stay byte-identical;
-  - runtime errors keep their codes and source locations;
-  - effects are still checked at run time;
-  - `--timeout` still stops loops and builtins;
-  - the collector still finds every live value.
-- **Success:**
-  - at least 4× faster than the tree-walking interpreter on loop-heavy programs, with the ratio to Python reported;
-  - the corpus, the stress pass and all 703 bench2 reference runs unchanged;
-  - checking and running a 1,000-line program still under 1 s.
-- **Not in scope:** compiling to RV64 machine code or a JIT. That is the next step, if bytecode is still too slow for agent-sized programs.
+- **Compiled once, after checking:** every function, lambda and test becomes typed bytecode, with 32-byte instructions over numbered frame slots, and a direct-threaded dispatch loop in assembly runs it. Calls stay inside the loop; frames live on the value stack.
+- **Nothing visible changed:** output, exit codes, runtime errors and their spans, effect checks and `--timeout` are the same. The old interpreter is gone. Two intended differences:
+  - memory figures moved;
+  - recursion goes about 418,000 calls deep, up from between 100,000 and 200,000.
+- **Speed:** 4.6× faster on average on six compute-heavy programs (2.3× to 8.6×). The 10-million-iteration loop takes 0.69 s, faster than Python's 0.99 s.
+- **Not done:** native code or a JIT. Builtin-heavy programs gain least, since most builtins still go through the general builtin path.
 
 ### 005: typed holes, property tests and contracts
 
@@ -91,5 +85,5 @@ Known gaps in v2 to fix along the way:
 ## Out of scope for now
 
 - Concurrency.
-- Compiling to machine code: after 004, vo runs bytecode, and native code waits until that becomes the bottleneck for agent-sized programs.
+- Compiling to machine code: vo runs bytecode (004), and native code waits until that becomes the bottleneck for agent-sized programs.
 - User-defined interfaces or traits: generics with `ordered` and effect parameters cover the cases seen so far.

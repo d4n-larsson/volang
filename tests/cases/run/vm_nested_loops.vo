@@ -1,0 +1,47 @@
+# Spec 004: `break` and `continue` inside `match` inside nested loops.
+variant Op {
+    skip;
+    stop;
+    show(int);
+}
+
+fn op_of(i: int) -> Op {
+    if i % 4 == 1 {
+        return Op.skip;
+    }
+    if i == 7 {
+        return Op.stop;
+    }
+    return Op.show(i);
+}
+
+fn main() uses console {
+    for outer in 0..3 {
+        for i in 0..10 {
+            match op_of(i + outer) {
+                case skip {
+                    continue;
+                }
+                case stop {
+                    break;
+                }
+                case show(v) {
+                    write(str(v) + " ");
+                }
+            }
+        }
+        print("| outer " + str(outer));
+    }
+    var k = 0;
+    while k < 10 {
+        set k = k + 1;
+        if k % 2 == 0 {
+            continue;
+        }
+        if k > 7 {
+            break;
+        }
+        write(str(k));
+    }
+    print("");
+}

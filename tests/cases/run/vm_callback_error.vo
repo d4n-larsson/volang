@@ -1,0 +1,10 @@
+# Spec 004: a runtime error inside a callback reports the callback's span.
+fn main() uses console {
+    let xs = [3, 1, 2];
+    let ys = [0];
+    print("before");
+    sort_by(xs, fn(v: int) -> int {
+        return ys[v];
+    });
+    print("after");
+}

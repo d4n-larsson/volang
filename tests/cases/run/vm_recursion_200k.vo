@@ -1,0 +1,12 @@
+# Spec 004 FR-005, FR-010: the intended change. The tree walker stopped with R0005 here; the
+# bytecode engine keeps frames on the value stack and goes deeper.
+fn down(n: int) -> int {
+    if n <= 0 {
+        return 0;
+    }
+    return down(n - 1) + 1;
+}
+
+fn main() uses console {
+    print(str(down(200000)));
+}

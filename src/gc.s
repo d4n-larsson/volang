@@ -1611,3 +1611,4 @@ gc_report:
     ld s6, 16(sp)
     addi sp, sp, 80
     ret
+

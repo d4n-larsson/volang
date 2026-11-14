@@ -1,0 +1,8 @@
+vm_effect_forward.vo:15:11: runtime error[R0010]: env("PATH") is not allowed: `show` declares console, env("HOME").
+  15 |     match env(name) {
+     |           ^^^^^^^^^
+trace:
+  at show (vm_effect_forward.vo:15:11)
+  at each (vm_effect_forward.vo:6:9)
+  at forward (vm_effect_forward.vo:11:5)
+  at main (vm_effect_forward.vo:36:5)

@@ -16,7 +16,7 @@ endif
 SRCS := $(wildcard src/*.s)
 OBJS := $(patsubst src/%.s,$(BUILD)/%.o,$(SRCS))
 
-.PHONY: all check-tools lint test gc-check clean
+.PHONY: all check-tools lint test gc-check oracle speed speed-check clean
 
 all: $(BUILD)/vo
 
@@ -53,6 +53,9 @@ test: all
 	  migrate.py record_changes.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
+	@if [ -x build-oracle/vo ]; then echo "== diff_engines.py --count 1000 --seed 4"; \
+	  python3 tests/diff_engines.py --count 1000 --seed 4 || exit 1; \
+	  else echo "== skip diff_engines.py (no build-oracle/vo: run make oracle)"; fi
 
 # The slow memory-safety suite (spec 003 US6): the stress build over the whole corpus, the benchmark
 # reference solutions and the fuzzer, then the fault-injection matrix.
@@ -62,6 +65,26 @@ gc-check: all
 	python3 tests/gc/baseline.py --stress
 	python3 tests/fuzz.py --stress --iterations 3000 --seed 9
 	python3 tests/gc_faults.py
+	python3 tests/diff_engines.py --stress --count 1000 --seed 2
+
+# The comparison engine (spec 004): the tree-walking interpreter from the last commit before the
+# bytecode engine, for speed figures and differential testing. Built once; `clean` keeps it.
+ORACLE_REV := 1fff558
+
+oracle: build-oracle/vo
+
+build-oracle/vo:
+	@[ -d build-oracle/src ] || git worktree add --detach build-oracle/src $(ORACLE_REV)
+	$(MAKE) -C build-oracle/src
+	mkdir -p build-oracle
+	cp build-oracle/src/build/vo build-oracle/vo
+
+# Spec 004 speed targets (timing depends on machine load, so not part of `make test`).
+speed: all oracle
+	python3 tests/speed.py
+
+speed-check: oracle speed
+	python3 tests/diff_engines.py --count 10000 --seed 1
 
 clean:
 	rm -rf build build-stress build-fault-*

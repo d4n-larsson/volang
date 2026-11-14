@@ -1,0 +1,20 @@
+# Spec 004 R7: g(i)'s list lives only in a temporary slot while the list literal allocates.
+fn g(n: int) -> list[str] {
+    return [str(n) + "a", str(n) + "b"];
+}
+
+fn f(xs: list[str], ys: list[int]) -> str {
+    return join(xs, "+") + "/" + str(len(ys));
+}
+
+fn main() uses console {
+    var total = 0;
+    for i in 0..300 {
+        let r = f(g(i), [1, 2, i]);
+        set total = total + len(r);
+        if i % 100 == 0 {
+            print(r);
+        }
+    }
+    print(str(total));
+}

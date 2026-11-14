@@ -223,7 +223,7 @@ elem_less:
 # Stable bottom-up merge sort into a scratch array.
     .globl list_sort
 list_sort:
-    addi sp, sp, -112           # 0: list, 8: i, 16: j, 32..111: saved registers
+    addi sp, sp, -112           # 0: list, 16..111: saved registers
     sd ra, 104(sp)
     sd s0, 96(sp)
     sd s1, 88(sp)
@@ -234,6 +234,8 @@ list_sort:
     sd s6, 48(sp)
     sd s7, 40(sp)
     sd s8, 32(sp)
+    sd s9, 24(sp)
+    sd s10, 16(sp)
     mv s7, a1                   # element kind
     ld s0, L_LEN(a0)            # n
     ld s1, L_DATA(a0)           # src
@@ -258,12 +260,10 @@ list_sort:
     ble s6, s0, 22f
     mv s6, s0
 22:
-    mv t3, s4                   # i
-    mv t4, s5                   # j
+    mv s9, s4                   # i
+    mv s10, s5                  # j
     mv s8, s4                   # k
 3:
-    sd t3, 8(sp)
-    sd t4, 16(sp)
     la t6, rt_budget          # POLL 1: --timeout budget
     ld t5, 0(t6)
     addi t5, t5, -1
@@ -271,42 +271,41 @@ list_sort:
     bgtz t5, 1000f
     call rt_poll
 1000:
-    ld t3, 8(sp)
-    ld t4, 16(sp)
     bge s8, s6, 6f
-    bge t3, s5, 5f              # left exhausted: take right
-    bge t4, s6, 4f              # right exhausted: take left
-    sd t3, 8(sp)
-    sd t4, 16(sp)
-    slli t0, t4, 3              # take right only when right < left (keeps the sort stable)
+    bge s9, s5, 5f              # left exhausted: take right
+    bge s10, s6, 4f             # right exhausted: take left
+    slli t0, s10, 3             # take right only when right < left (keeps the sort stable)
     add t0, s1, t0
     ld a0, 0(t0)
-    slli t1, t3, 3
+    slli t1, s9, 3
     add t1, s1, t1
     ld a1, 0(t1)
+    li t2, TY_INT               # ints: compared here (spec 004: elem_less's int case, inline)
+    bne s7, t2, 31f
+    blt a0, a1, 5f
+    j 4f
+31:
     mv a2, s7
     call elem_less
-    ld t3, 8(sp)
-    ld t4, 16(sp)
     bnez a0, 5f
 4:
-    slli t0, t3, 3
+    slli t0, s9, 3
     add t0, s1, t0
     ld t0, 0(t0)
     slli t1, s8, 3
     add t1, s2, t1
     sd t0, 0(t1)
-    addi t3, t3, 1
+    addi s9, s9, 1
     addi s8, s8, 1
     j 3b
 5:
-    slli t0, t4, 3
+    slli t0, s10, 3
     add t0, s1, t0
     ld t0, 0(t0)
     slli t1, s8, 3
     add t1, s2, t1
     sd t0, 0(t1)
-    addi t4, t4, 1
+    addi s10, s10, 1
     addi s8, s8, 1
     j 3b
 6:
@@ -334,5 +333,7 @@ list_sort:
     ld s6, 48(sp)
     ld s7, 40(sp)
     ld s8, 32(sp)
+    ld s9, 24(sp)
+    ld s10, 16(sp)
     addi sp, sp, 112
     ret

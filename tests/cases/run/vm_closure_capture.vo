@@ -1,0 +1,28 @@
+# Spec 004: lambdas made in a loop capture that iteration's values, and outlive their creator.
+fn make_adder(n: int) -> fn(int) -> int {
+    return fn(x: int) -> int {
+        return x + n;
+    };
+}
+
+fn main() uses console {
+    let fs = new list[fn(int) -> int];
+    for i in 0..4 {
+        let k = i * 10;
+        push(fs, fn(x: int) -> int {
+            return x + k + i;
+        });
+    }
+    for f in fs {
+        print(str(f(1)));
+    }
+    let add5 = make_adder(5);
+    print(str(add5(1)) + " " + str(make_adder(2)(3)));
+    let outer = 7;
+    let g = fn(x: int) -> fn(int) -> int {
+        return fn(y: int) -> int {
+            return x + y + outer;
+        };
+    };
+    print(str(g(1)(2)));
+}

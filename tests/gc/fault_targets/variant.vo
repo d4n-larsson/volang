@@ -1,11 +1,16 @@
-# Kept alive only as a variant payload.
+# Kept alive only as a variant payload (built in a function whose frame is gone, so no slot of a
+# live frame still points at the list).
 variant Box {
     empty;
     full(list[str]);
 }
 
+fn make() -> Box {
+    return Box.full(["a" + str(1), "b" + str(2)]);
+}
+
 fn main() uses console {
-    let b = Box.full(["a" + str(1), "b" + str(2)]);
+    let b = make();
     var n = 0;
     for i in 0..3000 {
         set n = n + len("noise" + str(i));

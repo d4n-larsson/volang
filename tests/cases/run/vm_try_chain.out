@@ -1,0 +1,5 @@
+ok 2
+err odd 3
+err invalid int: x
+ok 3
+ok 4

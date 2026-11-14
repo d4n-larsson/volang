@@ -1,7 +1,7 @@
-# --timeout stops a long sort inside the builtin (spec 003 US4).
+# --timeout stops a long sort inside the builtin (spec 003 US4). 4 s: split takes about 2 s, sort 6 s.
 fn main() uses console {
     var s = "k9,k3,k7,k1,k5,k8,k2,k6,";
-    for i in 0..20 {
+    for i in 0..19 {
         set s = s + s;
     }
     let xs = split(s, ",");

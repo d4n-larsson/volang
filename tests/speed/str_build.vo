@@ -1,0 +1,20 @@
+# Strings: build lines, split, find, join.
+fn main() uses console {
+    var check = 0;
+    for round in 0..12000 {
+        let parts = new list[str];
+        for i in 0..60 {
+            push(parts, "item" + str(i * round % 97));
+        }
+        let line = join(parts, ",");
+        let back = split(line, ",");
+        var hits = 0;
+        for p in back {
+            if find(p, "7") >= 0 {
+                set hits = hits + 1;
+            }
+        }
+        set check = check + hits + len(line);
+    }
+    print(str(check));
+}

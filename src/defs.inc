@@ -51,6 +51,8 @@
 .equ ADDR_VSTACK,    0x2300000000       # interpreter value stack, 32 MiB
 .equ VSTACK_SIZE,    0x2000000
 .equ ADDR_PERM,      0x2400000000       # permanent arena, contiguous 16 MiB chunks
+.equ ADDR_CODE,      0x2800000000       # compiled code (spec 004): never scanned by the collector
+.equ CODE_SIZE,      0x10000000         # 256 MiB of address space, committed only when touched
 .equ ADDR_STACK,     0x3000000000       # native stack, 64 MiB
 .equ STACK_SIZE,     0x4000000
 .equ MAP_FIXED_NOREPLACE, 0x100000
@@ -289,7 +291,8 @@
 .equ FX_CAPS,     48    # anonymous functions: vec of captures {symbol, outer slot, inner slot}
 .equ FX_BADCAPS,  56    # anonymous functions: identifiers that capture a `var` (E0505)
 .equ FX_CLOSURE,  64    # named functions: the closure that is the function as a value (runtime cache)
-.equ FX_SIZE,     72
+.equ FX_CODE,     72    # the compiled function (spec 004): functions, lambdas and tests
+.equ FX_SIZE,     80
 
 # ---- effect bits and effect sets (effects.s) ----
 .equ EF_CONSOLE, 1
@@ -444,7 +447,102 @@
 .equ FR_CALL, 16
 .equ FR_TARGS, 24       # type-argument vec of a generic call | 0
 .equ FR_EFFECTS, 32     # effect set the running code is held to
-.equ FR_SLOTS, 40
+.equ FR_CODE, 40        # compiled function (spec 004)
+.equ FR_RPC, 48         # return pc in the caller's code; 0 = return to the native caller of vm_run
+.equ FR_RDST, 56        # caller's slot for the result, or -1
+.equ FR_SLOTS, 64
+
+# ---- bytecode (spec 004, data-model.md): 32-byte instructions, direct-threaded ----
+.equ I_HANDLER, 0       # handler address
+.equ I_A, 8             # i32: usually the destination slot
+.equ I_B, 12            # i32: a source slot or the first argument slot
+.equ I_C, 16            # i64: a slot, a constant, a jump target, a compiled function, ...
+.equ I_NODE, 24         # the source node (spans for errors, static types, cur_node)
+.equ I_SIZE, 32
+# compiled function: header, then the instructions
+.equ CF_CODE, 0         # address of the first instruction
+.equ CF_N, 8            # instruction count
+.equ CF_SLOTS, 16       # frame size in slots: locals + temporaries
+.equ CF_NPARAMS, 24
+.equ CF_DECL, 32        # N_FN, N_LAMBDA or N_TEST node
+.equ CF_HDR, 40
+# opcodes: indexes into vm_ops (src/vm.s). Slot operands are byte offsets (slot * 8) from FR_SLOTS.
+# OPC_ADD_INT .. OPC_GE_STR are OP_ADD_INT .. OP_GE_STR + 1, in the same order.
+.equ OPC_MOV, 0          # a = b
+.equ OPC_LOADK, 1        # a = c (constant)
+.equ OPC_ADD_INT, 2      # a = b op c, for every binary OP_ code 1..24
+.equ OPC_GE_STR, 25
+.equ OPC_NOT, 26         # a = not b
+.equ OPC_NEG_INT, 27     # a = -b (R0001 for MIN)
+.equ OPC_NEG_FLOAT, 28
+.equ OPC_JMP, 29         # pc = c
+.equ OPC_JT, 30          # if b: pc = c
+.equ OPC_JF, 31          # if not b: pc = c
+.equ OPC_FOR_RANGE, 32   # counter b, end b+8: if counter >= end: pc = c; else step, a = counter
+.equ OPC_FOR_LIST, 33    # list b, index b+8: if index >= len: pc = c; else step, a = element
+.equ OPC_INC, 34         # a = a + 1 (loop counters: no overflow possible)
+.equ OPC_TICK, 35        # count a step (while loops)
+.equ OPC_CALL, 36        # a = call c (declaration) with arguments in b, b+8, ...
+.equ OPC_CALL_BUILTIN, 37 # a = builtin node(b, b+8, b+16), c = argument count
+.equ OPC_RET, 38         # return b (b < 0: 0)
+.equ OPC_CMP_PARAM, 39   # a = b <op> c on an `ordered` type parameter (op from the node)
+.equ OPC_NEW_LIST, 40     # a = list_new(c)
+.equ OPC_LIST_PUSH, 41    # push(a, b): list literals, after the list exists (as the tree walker)
+.equ OPC_NEW_MAP, 42      # a = map_new()
+.equ OPC_NEW_RECORD, 43   # a = a record of c fields (initialisers follow, in source order)
+.equ OPC_SET_FIELD, 44    # a.(c) = b: c is the field's byte offset in the object
+.equ OPC_GET_FIELD, 45    # a = b.(c)
+.equ OPC_INDEX_LIST, 46   # a = b[c] (R0003 at the node)
+.equ OPC_INDEX_MAP, 47    # a = b[c] (R0004 at the node)
+.equ OPC_SET_INDEX_LIST, 48 # a[b] = c (R0003 at the node: the place)
+.equ OPC_SET_INDEX_MAP, 49  # a[b] = c (cur_node: the node, the `set` statement)
+.equ OPC_NEW_VARIANT, 50  # a = a variant with tag c
+.equ OPC_SET_PAYLOAD, 51  # a's payload = b
+.equ OPC_JTAG_NE, 52      # if b's tag != a: pc = c
+.equ OPC_PAYLOAD, 53      # a = b's payload
+.equ OPC_TRY, 54          # b ok: a = its payload; err: return b
+.equ OPC_CLOSURE, 55      # a = make_closure(node: the lambda)
+.equ OPC_FNVAL, 56        # a = fn_closure(c: the declaration)
+.equ OPC_CALL_VALUE, 57   # a = (closure in c)(arguments in b, b+8, ...)
+.equ OPC_ADD_INT_K, 58   # a = b op c, c a 32-bit constant (US1: constant operands)
+.equ OPC_SUB_INT_K, 59
+.equ OPC_MUL_INT_K, 60
+.equ OPC_DIV_INT_K, 61    # c not 0 or -1
+.equ OPC_REM_INT_K, 62    # c not 0
+.equ OPC_EQ_INT, 63       # a = b == c for int and bool (no call)
+.equ OPC_NE_INT, 64
+# fused compare-and-branch: if a <cond> b: pc = c (a, b slots); _K: b is a 32-bit constant
+.equ OPC_JLT, 65
+.equ OPC_JLE, 66
+.equ OPC_JGT, 67
+.equ OPC_JGE, 68
+.equ OPC_JEQ, 69
+.equ OPC_JNE, 70
+.equ OPC_JLT_K, 71
+.equ OPC_JLE_K, 72
+.equ OPC_JGT_K, 73
+.equ OPC_JGE_K, 74
+.equ OPC_JEQ_K, 75
+.equ OPC_JNE_K, 76
+.equ OPC_FOR_STEP, 77     # range back-edge: b += 1; if b < b+8: step, a = b, pc = c
+.equ OPC_FOR_LIST_STEP, 78 # list back-edge: (b+8) += 1; if < len: step, a = element, pc = c
+.equ OPC_CALL_FAST, 79    # CALL of a non-generic named function, frame set up inline
+.equ OPC_LEN, 80         # a = len(b): STR_LEN, L_LEN and M_COUNT are all at offset 8
+.equ OPC_PUSH, 81         # push(a, b)
+.equ OPC_HAS, 82         # a = has(b, c)
+.equ OPC_CALL_GENERIC, 83 # a = generic call (arguments in b), c = its call-site record (GS_*)
+.equ OPC_COUNT, 84
+# generic call-site record (permanent): rt_targs and rt_es_subst results for the last caller
+.equ GS_DECL, 0           # the callee
+.equ GS_VALID, 8          # 1 once filled
+.equ GS_CTARGS, 16        # key: the caller's FR_TARGS
+.equ GS_EFF0, 24          # key: the effect set before substitution
+.equ GS_TARGS, 32         # rt_targs(N_E(call), caller)
+.equ GS_EFF, 40           # rt_es_subst(eff0, callee, targs), or 0
+.equ GS_SIZE, 48
+.equ BI_LEN, 16           # builtin ids (check_expr.s builtin_names)
+.equ BI_PUSH, 23
+.equ BI_HAS, 26
 
 # statement results
 .equ ST_NORMAL, 0
