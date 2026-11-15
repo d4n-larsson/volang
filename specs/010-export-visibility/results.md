@@ -67,7 +67,7 @@
 | `make diff-asm COUNT=10000` | 0 disagreements |
 | `make stdlib-eval` | 11 of 11 tasks |
 | `make refactor-eval` | passed (53 of 53 edits correct with `vo edit`) |
-| `make prop-eval` | 61 of 62 mutants caught (98%); fails only on `h09-window-max/05.vo`, "not a valid mutant", which fails the same way on the commit before this spec (see Deviations) |
+| `make prop-eval` | 61 of 62 mutants caught (98%); failed only on `h09-window-max/05.vo`, "not a valid mutant", which failed the same way on the commit before this spec; after the fix below, 62 of 62 (100%), passing |
 | reference | ~10,576 tokens (+59) |
 
 ## Deviations
@@ -88,11 +88,13 @@
 
 - **`make prop-eval` was already failing**: `h09-window-max/05.vo` (a correct but slow O(n·k) window
   maximum) passes every hidden case, so it is not a valid mutant; the same run on the commit before this
-  spec fails identically. Not caused by spec 010; not fixed here.
+  spec fails identically. Not caused by spec 010. **Fixed after the spec**: the mutant now starts each
+  window's maximum at 0 instead of its first value (a real bug: every visible window has a positive
+  maximum, the all-negative hidden case 06 does not); it passes the visible cases, fails a hidden one, and
+  the properties catch it.
 
 ## Follow-ups
 
-- Replace or drop the `h09-window-max/05.vo` mutant so `make prop-eval` passes again.
 
 - The E0204 fix could add `export` too when the found item is private (one round instead of two); it needs
   a fix with edits in two files, which the diagnostic format (one edit per fix) does not have.
