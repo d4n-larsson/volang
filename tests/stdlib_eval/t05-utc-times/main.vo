@@ -1,0 +1,51 @@
+import std.time.format_time;
+import std.time.parse_time;
+
+fn parse_line(t: str) -> result[int] {
+    let cs = chars(t);
+    if len(cs) < 20 {
+        return err("too short");
+    }
+    if cs[10] != "T" {
+        return err("no time part");
+    }
+    return parse_time(t);
+}
+
+fn main() uses console, input {
+    var count = 0;
+    var earliest = 0;
+    var latest = 0;
+    while true {
+        match read_line() {
+            case ok(line) {
+                let t = trim(line);
+                if t == "" {
+                    continue;
+                }
+                match parse_line(t) {
+                    case ok(ms) {
+                        print(format_time(ms));
+                        if count == 0 {
+                            set earliest = ms;
+                            set latest = ms;
+                        } else {
+                            set earliest = min(earliest, ms);
+                            set latest = max(latest, ms);
+                        }
+                        set count = count + 1;
+                    }
+                    case err(_) {
+                        print("bad: " + t);
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    if count > 0 {
+        print("span: " + str((latest - earliest) / 60000) + " minutes");
+    }
+}

@@ -1,0 +1,64 @@
+import std.text.repeat;
+
+record Entry {
+    name: str;
+    score: int;
+}
+
+fn pad_right_to(s: str, w: int) -> str {
+    var out = s;
+    var n = len(chars(s));
+    while n < w {
+        set out = out + " ";
+        set n = n + 1;
+    }
+    return out;
+}
+
+fn pad_left_to(s: str, w: int) -> str {
+    var out = s;
+    var n = len(chars(s));
+    while n < w {
+        set out = " " + out;
+        set n = n + 1;
+    }
+    return out;
+}
+
+fn main() -> result[void] uses console, input {
+    let entries = new list[Entry];
+    while true {
+        match read_line() {
+            case ok(line) {
+                if trim(line) != "" {
+                    let tab = find(line, "\t");
+                    if tab < 0 {
+                        return err("missing tab: " + line);
+                    }
+                    let name = slice(line, 0, tab);
+                    let score = try parse_int(trim(slice(line, tab + 1, len(line))));
+                    push(entries, new Entry { name: name, score: score });
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    sort_by(entries, fn(e: Entry) -> str {
+        return e.name;
+    });
+    sort_by(entries, fn(e: Entry) -> int {
+        return -e.score;
+    });
+    var w = 4;
+    for e in entries {
+        set w = max(w, len(chars(e.name)));
+    }
+    print(pad_right_to("Name", w) + " | Score");
+    print(repeat("-", w + 1) + "+" + repeat("-", 6));
+    for e in entries {
+        print(pad_right_to(e.name, w) + " | " + pad_left_to(str(e.score), 5));
+    }
+    return ok();
+}

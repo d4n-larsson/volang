@@ -1,0 +1,11 @@
+{"task": "t01-json-pretty", "model": null, "rounds": 1, "passed": true, "seconds": 876.9}
+{"task": "t02-config-update", "model": null, "rounds": 1, "passed": true, "seconds": 16.3}
+{"task": "t03-orders-json", "model": null, "rounds": 1, "passed": true, "seconds": 16.3}
+{"task": "t04-date-math", "model": null, "rounds": 1, "passed": true, "seconds": 883.0}
+{"task": "t05-utc-times", "model": null, "rounds": 1, "passed": true, "seconds": 9.7}
+{"task": "t06-score-table", "model": null, "rounds": 1, "passed": true, "seconds": 820.5}
+{"task": "t07-word-count", "model": null, "rounds": 1, "passed": true, "seconds": 256.2}
+{"task": "t08-raffle", "model": null, "rounds": 1, "passed": true, "seconds": 855.2}
+{"task": "t09-http-client", "model": null, "rounds": 1, "passed": true, "seconds": 14.1}
+{"task": "t10-money-package", "model": null, "rounds": 1, "passed": true, "seconds": 25.3}
+{"task": "t11-clock", "model": null, "rounds": 1, "passed": true, "seconds": 12.2}

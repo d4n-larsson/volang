@@ -1,0 +1,76 @@
+import std.text.pad_left;
+import std.time.date;
+import std.time.days;
+import std.time.days_in_month;
+import std.time.from_ms;
+
+fn weekday_name(w: int) -> str {
+    let names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    return names[w - 1];
+}
+
+fn parse_digits(s: str, width: int) -> result[int] {
+    if len(s) != width {
+        return err("bad width");
+    }
+    var value = 0;
+    for c in chars(s) {
+        let d = find("0123456789", c);
+        if d < 0 {
+            return err("not a digit");
+        }
+        set value = value * 10 + d;
+    }
+    return ok(value);
+}
+
+fn parse_date(s: str) -> result[int] {
+    let parts = split(s, "-");
+    if len(parts) != 3 {
+        return err("bad date");
+    }
+    let y = try parse_digits(parts[0], 4);
+    let m = try parse_digits(parts[1], 2);
+    let d = try parse_digits(parts[2], 2);
+    if m < 1 or m > 12 or d < 1 {
+        return err("bad date");
+    }
+    if d > days_in_month(y, m) {
+        return err("bad date");
+    }
+    return date(y, m, d);
+}
+
+fn two(n: int) -> str {
+    return pad_left(str(n), 2, "0");
+}
+
+fn compute(a: list[str]) -> result[list[str]] {
+    if len(a) != 2 {
+        return err("usage");
+    }
+    let start = try parse_date(a[0]);
+    let n = try parse_int(a[1]);
+    if n > 100000000 or n < -100000000 {
+        return err("out of range");
+    }
+    let t = from_ms(start + days(n));
+    let shown = pad_left(str(t.year), 4, "0") + "-" + two(t.month) + "-" + two(t.day);
+    let line1 = a[0] + " + " + a[1] + " days = " + shown + " (" + weekday_name(t.weekday) + ")";
+    let line2 = "days in that month: " + str(days_in_month(t.year, t.month));
+    return ok([line1, line2]);
+}
+
+fn main() uses console {
+    match compute(args()) {
+        case ok(lines) {
+            for line in lines {
+                print(line);
+            }
+        }
+        case err(_) {
+            print("invalid input");
+            exit(1);
+        }
+    }
+}

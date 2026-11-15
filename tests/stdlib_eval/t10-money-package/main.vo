@@ -1,0 +1,28 @@
+import money.format.cents;
+
+fn main() uses console, input {
+    var total = 0;
+    while true {
+        match read_line() {
+            case ok(line) {
+                let t = trim(line);
+                if t == "" {
+                    continue;
+                }
+                match parse_int(t) {
+                    case ok(n) {
+                        set total = total + n;
+                        print(cents(n));
+                    }
+                    case err(_) {
+                        print("skipped: " + line);
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    print("total: " + cents(total));
+}

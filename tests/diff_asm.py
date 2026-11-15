@@ -33,7 +33,7 @@ FAILS = os.path.join(ROOT, "build", "diff-failures")
 
 def run(binary, path):
     env = dict(os.environ, VO_BIN=binary)
-    r = subprocess.run([VO, "run", "--timeout", "10", path], capture_output=True, env=env, timeout=120)
+    r = subprocess.run([VO, "run", "--timeout", "10", path], capture_output=True, env=env, timeout=120, cwd=WORK)
     return r.stdout, r.stderr.replace(os.path.dirname(path).encode() + b"/", b""), r.returncode
 
 
@@ -48,9 +48,11 @@ def one(seed, new_bin, mode):
     return ("diff" if a != b else "ok"), seed, src, a, b
 
 
-def run_cmd(binary, args):
+def run_cmd(binary, args, cwd):
+    """In the mutant's own directory: a mutated program that writes a file (run/files.vo writes
+    out.txt) must not write into the repository."""
     env = dict(os.environ, VO_BIN=binary)
-    r = subprocess.run([VO] + args, capture_output=True, env=env, timeout=120)
+    r = subprocess.run([VO] + args, capture_output=True, env=env, timeout=120, cwd=cwd)
     return r.stdout, r.stderr, r.returncode
 
 
@@ -64,7 +66,7 @@ def mutant(i, seed, new_bin, files):
     open(path, "wb").write(src)
     results = []
     for args in (["check", "--json", path], ["run", "--seed", "1", "--clock-ms", "0", "--timeout", "5", path]):
-        a, b = run_cmd(ASM, args), run_cmd(new_bin, args)
+        a, b = run_cmd(ASM, args, d), run_cmd(new_bin, args, d)
         if b"error[R0009]" in a[1] or b"error[R0009]" in b[1]:
             continue
         results.append((args[0], a, b))
@@ -107,7 +109,9 @@ def main():
                     print(f"{kind.upper()} seed {seed}: see {d}")
     mdiff = 0
     if args.mutants:
-        files = fuzz.corpus()
+        # Spec 007: networking is a stub in build-asm/vo (no host check, always err), so sources that
+        # use std.http are left out: their difference is the feature, not a porting error.
+        files = [f for f in fuzz.corpus() if b"std.http" not in open(f, "rb").read()]
         with cf.ThreadPoolExecutor(os.cpu_count() or 4) as ex:
             futs = [ex.submit(mutant, i, args.seed, new_bin, files) for i in range(args.mutants)]
             for f in cf.as_completed(futs):

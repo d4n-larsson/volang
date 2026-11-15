@@ -4,15 +4,15 @@
 
 | SC | Status |
 |---|---|
-| SC-001 | open |
-| SC-002 | open |
-| SC-003 | open |
-| SC-004 | open |
-| SC-005 | open |
-| SC-006 | open |
-| SC-007 | open |
-| SC-008 | open |
-| SC-009 | open |
+| SC-001 | met: 11 task programs written by an isolated agent from their statements and `vo doc` output only, all on the first round, pass all 32 of their tests (`make stdlib-eval`; see Evaluation) |
+| SC-002 | met: every one of the 84 items `vo doc` lists (38 builtins, 46 library items) checks clean when called as documented; all 308 calls with a wrong-typed or missing argument are rejected; all 46 examples print their values |
+| SC-003 | met: 132 valid and 116 invalid JSON documents (round trips unchanged, errors with line and column); mutated documents never crash or hang (`fuzz_inputs.py`) |
+| SC-004 | met: 22 package tamper variants (changed, added, removed, renamed files) are reported as E0701 before anything runs (`tests/packages_check.py`), plus the 6 tamper step cases |
+| SC-005 | met: 10,000 times across years 1-9999, around 1970, leap days and month boundaries agree with Python's `datetime` (`tests/time_check.py`) |
+| SC-006 | met: 17 HTTP step cases (plain, chunked, to-close, 404/500, redirect, repeated headers, POST, refused, unknown host, slow with `--timeout`, too large, malformed, scope denied, `https://` and bad URLs) get the expected result; a recorded run replays byte-identically with the server stopped; on x86-64, ARM64 and RISC-V |
+| SC-007 | met: the RISC-V build runs every speed program at 0.80-1.00 of the spec 006 binary's time under qemu (geometric mean 0.904); the corpus and the 703 bench2 runs are byte-identical |
+| SC-008 | met: the reference grows by about 415 tokens to about 10,415 (budget 15,000); all 34 examples pass |
+| SC-009 | met: `make test`, the fuzzers, the determinism check (`--repeat 3`) and the collector stress suite pass on x86-64 with the new cases (455 golden, 109 step); the ARM64 and RISC-V suites and the ASan build pass too (Final gate) |
 
 ## Speed baseline
 
@@ -101,6 +101,44 @@ A section "Standard library and packages" (the five modules, the effect rule, `v
 `package` in the command list, E07xx in the code ranges: the reference grows from about 10,000 to
 about 10,415 tokens (words x 1.3) since spec 006 (SC-008: at most 2,000 more, under 15,000).
 
+### Evaluation (US6: T033-T035, T048)
+
+- 11 task statements in `tests/stdlib_eval/tNN-*/task.md`, written before any solution, with visible
+  tests (flags, args, stdin, expected stdout and exit status; expected output from the maintainer's
+  `reference.vo`, checked by hand) and fixtures (a config file; a package `money` pinned by the harness).
+  They cover JSON (round trip, a config update, a report), time (date arithmetic, UTC conversion, the
+  clock), text (a padded table, word frequencies), random (a seeded shuffle and pick), HTTP against the
+  test server, and a package.
+- Solved by `claude -p` (the CLI's default model) with no tools, an empty working directory and no user
+  settings (bench2's protocol), given the statement, the visible tests, `vo reference` and `vo doc`
+  output (the module list, every standard item in full with its example, the task's package module),
+  nothing from `std/` or `tests/`; up to 3 rounds with `vo check` and test failures fed back
+  (`tests/stdlib_eval.py --solve`, log `tests/stdlib_eval/solve.jsonl`).
+- **SC-001**: all 11 solved on the first round; `make stdlib-eval` (`tests/stdlib_eval.py`) passes
+  11 of 11 tasks, 32 tests. No solution hard-codes an expected output; each imports the library items
+  its task needs (the package task imports `money.format.cents`).
+
+| Task | Round | Tests |
+|---|---|---|
+| t01-json-pretty | 1 | 3/3 |
+| t02-config-update | 1 | 5/5 |
+| t03-orders-json | 1 | 3/3 |
+| t04-date-math | 1 | 6/6 |
+| t05-utc-times | 1 | 3/3 |
+| t06-score-table | 1 | 2/2 |
+| t07-word-count | 1 | 2/2 |
+| t08-raffle | 1 | 3/3 |
+| t09-http-client | 1 | 1/1 |
+| t10-money-package | 1 | 2/2 |
+| t11-clock | 1 | 2/2 |
+
+- Notes: five of the eleven agent calls took 820-883 s (the others 10-256 s), close to bench2's 900 s
+  limit per call; a reply checked by hand before the run had no hook or tool text, but its prose claimed
+  it had "run the tests locally", which it could not do without tools.
+- **SC-002** (`tests/doc_conformance.py`): 38 builtin rows and 46 library items; 308 checked calls (each
+  documented call checks clean, each wrong-typed or missing argument is rejected); 46 examples print their
+  values.
+
 ## Deviations
 
 - T010: `vo doc` checks each standard file on its own (`check_program` on the embedded file) rather than a synthetic program importing every item: the same declarations, one module at a time, no generated source.
@@ -108,15 +146,35 @@ about 10,415 tokens (words x 1.3) since spec 006 (SC-008: at most 2,000 more, un
 - A third primitive, `__text_float(s) -> float` (decimal text of up to 19 significant digits to the nearest double), joins `__float_text` and `__http_exchange`: `parse_float` stops at 15 digits like literals, and JSON needs 17.
 - `repeat` returns "" for n <= 0 and `from_ms` is total, since library code cannot raise R0007 with its own message.
 
-## Deferred (merged incomplete, 2026-11-14)
+## Deferred (merged incomplete, 2026-11-14), now done
 
-The spec was merged before it was finished so that spec 008 (the toolchain in C) could start from it; this commit is spec 008's `ASM_REV`, the behavioral oracle. The remaining work is done after the port, in C (the networking in particular is cheaper to write there).
+The spec was merged before it was finished so that spec 008 (the toolchain in C) could start from it; that
+commit is spec 008's `ASM_REV`, the behavioral oracle. Everything deferred (packages in `vo doc`, the
+tamper and SHA-256 checks, the US4 cases and time check, HTTP, the evaluation, the reference section, the
+fuzzing and the gate) was done after the port, in C: see "After spec 008" above and "Final gate" below.
 
-- **Packages (US3):** `tests/packages_check.py` with at least 20 tamper variants (SC-004) and the SHA-256 vectors against `hashlib` (T018, T019; the step cases exist and the hash was checked against Python by hand); packages in `vo doc` (T023).
-- **Time, text, random (US4):** the modules are written and covered by `vo doc` examples (`tests/doc_conformance.py`); the golden cases and `tests/time_check.py` (T024, T027) are not.
-- **HTTP (US5):** `__http_exchange` is registered (checker, effect `net`, runtime table) but returns `err("network access is not available")`; sockets, DNS, recording and replay, the test server and the step cases (T028–T032) are not done. `std.http` parses URLs and refuses `https://` correctly.
-- **Evaluation (US6):** T033–T035.
-- **Polish:** the reference section (T036), the remaining fuzzing (T038), README (T040).
-- **Gate not run:** `make gc-check` (the collector stress suite) and the speed check against spec 006 were skipped at merge time; `make test` and `make lint` passed. Spec 008's T003 measures `build-asm/vo`'s speed; run `make gc-check` on `ASM_REV` before trusting it as the oracle for memory behavior.
+## Final gate (T039, T052)
+
+| Step | Result |
+|---|---|
+| `make gate` (x86-64, native) | passed: lint; 455/455 golden cases, repeat, every checker and fuzzer (packages_check, time_check, fuzz_inputs with manifests and HTTP replies), 109 + 35 step cases, bench2 703/703, 1,000 programs vs the oracle; ubtrap 455/455; 2,000 programs and 2,000 mutants vs `build-asm/vo`, 0 disagreements; gc-check (stress 455/455, step cases under stress, bench2 703/703, 3,000 fuzz iterations, every fault kind caught); speed 0.896 |
+| `make ARCH=aarch64 test`, `make ARCH=riscv64 test` (qemu) | passed (HTTP step cases included) |
+| `make instrumented` (ASan + UBSan) | 455/455, 0 reports |
+| `make speed-check` | spec 004 targets; 10,000 programs vs the oracle, 0 disagreements; SC-003 of spec 008 6.92 times; SC-004 0.887 |
+| SC-007: `speed.py --baseline build-base/vo --new build-riscv64/vo` | closures_generics 0.800, fib 0.917, int_loop 0.840, list_work 0.953, map_count 0.998, str_build 0.929 (geometric mean 0.904) |
+| `make stdlib-eval` | 11 of 11 tasks |
+
+The first run of the gate found one mutant disagreement with `build-asm/vo`: a mutated `http/unknown_host`
+source whose host became `no-such-ho)st.invalid` stops with R0010 in the C build (the host is outside the
+`net` scope) but returned "network access is not available" in the assembly release, whose
+`__http_exchange` was a stub without the host check. That difference is this spec's feature, so
+`tests/diff_asm.py` leaves sources that use `std.http` out of its mutation corpus; the rerun passed.
 
 ## Follow-ups
+
+- The agent benchmark run with and without `vo doc` (the spec's deferred agent run; SC-001 used fixed task
+  programs instead).
+- HTTPS (TLS), downloading packages (a registry or fetch command), IPv6 and resolver options.
+- `ponytail:` markers left by this spec: `std/json.vo` (parsing over `chars(s)` with an index, at most 512
+  levels); `src/net.c` (IPv4 and the first nameserver only, one request per connection; the 16 MiB response
+  cap); `std/http.vo` (one request per connection, redirects returned, not followed).

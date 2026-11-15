@@ -1,0 +1,54 @@
+import std.text.words;
+
+record Entry {
+    word: str;
+    count: int;
+}
+
+fn is_strip(c: str) -> bool {
+    return find(".,;:!?\"()", c) >= 0;
+}
+
+fn strip(w: str) -> str {
+    let cs = chars(w);
+    var a = 0;
+    var b = len(cs);
+    while a < b and is_strip(cs[a]) {
+        set a = a + 1;
+    }
+    while b > a and is_strip(cs[b - 1]) {
+        set b = b - 1;
+    }
+    return join(slice(cs, a, b), "");
+}
+
+fn main() uses console, input {
+    let text = read_all();
+    let counts = new map[str, int];
+    for w in words(text) {
+        let s = strip(lower(w));
+        if len(s) == 0 {
+            continue;
+        }
+        if has(counts, s) {
+            set counts[s] = counts[s] + 1;
+        } else {
+            set counts[s] = 1;
+        }
+    }
+    let entries = new list[Entry];
+    for k in keys(counts) {
+        push(entries, new Entry { word: k, count: counts[k] });
+    }
+    sort_by(entries, fn(e: Entry) -> str {
+        return e.word;
+    });
+    sort_by(entries, fn(e: Entry) -> int {
+        return -e.count;
+    });
+    let n = min(5, len(entries));
+    for i in 0..n {
+        print(entries[i].word + ": " + str(entries[i].count));
+    }
+    print("distinct: " + str(len(entries)));
+}

@@ -1,0 +1,67 @@
+import std.json.Json;
+import std.json.as_object;
+import std.json.parse_json;
+import std.json.write_json_pretty;
+
+fn fail(msg: str) uses console {
+    print("error: " + msg);
+    exit(1);
+}
+
+fn main() uses console, file.read("./") {
+    let a = args();
+    if len(a) < 2 {
+        fail("usage: main.vo PATH PORT");
+        return;
+    }
+    let path = a[0];
+    var text = "";
+    match read_file(path) {
+        case ok(t) {
+            set text = t;
+        }
+        case err(_) {
+            fail("cannot read " + path);
+            return;
+        }
+    }
+    var obj = new map[str, Json];
+    match parse_json(text) {
+        case ok(j) {
+            match as_object(j) {
+                case ok(o) {
+                    set obj = o;
+                }
+                case err(_) {
+                    fail("not a JSON object");
+                    return;
+                }
+            }
+        }
+        case err(_) {
+            fail("not a JSON object");
+            return;
+        }
+    }
+    var port = 0;
+    match parse_int(a[1]) {
+        case ok(p) {
+            set port = p;
+        }
+        case err(_) {
+            fail("bad port");
+            return;
+        }
+    }
+    set obj["port"] = Json.integer(port);
+    set obj["updated"] = Json.boolean(true);
+    match write_json_pretty(Json.object(obj)) {
+        case ok(out) {
+            print(out);
+        }
+        case err(e) {
+            fail(e);
+            return;
+        }
+    }
+}
