@@ -326,7 +326,8 @@
 #define EF_CLOCK (32)
 #define EF_RANDOM (64)
 #define EF_ENV (128)
-#define EF_ALL (255)
+#define EF_SERVE (256) /* spec 011 */
+#define EF_ALL (511)
 #define ES_MASK (0) /* u64 bits */
 #define ES_SCOPES (8) /* vec of scope pairs (ESC_*) sorted by (bit, bytes) | 0 */
 #define ES_EVARS (16) /* vec of effect-variable N_TPARAM nodes | 0 */
@@ -361,7 +362,7 @@
 #define B_FLOAT_TEXT (52) /* spec 007: __float_text, callable only from std/ (research R5) */
 #define B_HTTP_EXCHANGE (53) /* spec 007: __http_exchange (host, port, request) -> result[str], net */
 #define B_TEXT_FLOAT (54) /* spec 007: __text_float (s) -> float, up to 17 significant digits (json) */
-#define B_LAST (55) /* the last builtin id with a btab entry */
+#define B_LAST (59) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -634,6 +635,9 @@
 #define EVK_NOW_MS (6)
 #define EVK_END (7)
 #define EVK_HTTP (8)
+#define EVK_SERVE_LISTEN (9)   /* spec 011 */
+#define EVK_SERVE_REQUEST (10)
+#define EVK_SERVE_RESPONSE (11)
 #define EVR_OK (0)
 #define EVR_ERR (1)
 #define EVR_DENIED (2)
@@ -1164,7 +1168,7 @@ extern const char errors_md[];
 extern const long errors_md_len;
 extern const StdFile std_files[];
 
-extern const unsigned char builtin_effects[64]; /* check_effects.c: effect bit per builtin id */
+extern const unsigned short builtin_effects[64]; /* check_effects.c: effect bit per builtin id */
 
 /* ---- the C side's own memory helpers (src/vo_c.c): GCC may emit calls to these ---- */
 void *memcpy(void *dst, const void *src, size_t n);
@@ -1429,6 +1433,19 @@ extern void doc_print_item(Str *module, Node *item, Str *desc, Str *example, lon
 extern long doc_std_file(Str *path);
 extern long doc_module(char *module_word, Str *item_name);
 extern long doc_file(long file, Str *module, Str *item_name);
+extern long serve_address_port(Str *s, long *all);
+/* src/serve.c (spec 011) */
+extern long serve_guard;
+extern Variant *rt_serve_listen(Str *address);
+extern Variant *rt_serve_next(long listener);
+extern void rt_serve_reply(Str *text);
+extern Variant *rt_serve_call(void *fn, long request, Node *call);
+extern long tr_depth_get(void);
+extern void tr_depth_set(long depth);
+extern Variant *io_serve_listen(Str *address);
+extern Variant *io_serve_next(long listener);
+extern void io_serve_reply(Str *text);
+extern void serve_deadline(long on);
 extern void export_needed(char *code, Node *at, Node *decl, Str *message);
 extern long doc_package(Str *name);
 extern long doc_package_list(void);

@@ -1,0 +1,6 @@
+fn main() uses console {
+    print("x");
+}
+
+fn bad() uses serve("80x"), serve("0"), serve("0.0.0.0:70000") {
+}

@@ -1,0 +1,41 @@
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.request_header;
+import std.http.serve;
+
+fn text(status: int, body: str) -> Response {
+    return new Response { status: status, headers: [new Header { name: "Content-Type", value: "text/plain" }], body: body };
+}
+
+fn handle(r: Request) -> Response {
+    if r.path == "/hello" {
+        return text(200, "hello, changed\n");
+    }
+    if r.path == "/echo" {
+        var h = "";
+        for x in r.headers {
+            set h = h + x.name + "=" + x.value + ";";
+        }
+        var ct = "none";
+        match request_header(r, "content-type") {
+            case ok(v) {
+                set ct = v;
+            }
+            case err(_) {
+            }
+        }
+        return text(200, r.method + " " + r.path + " query=" + r.query + " type=" + ct + " headers=" + h + " body=[" + r.body + "]\n");
+    }
+    if r.path == "/created" {
+        return new Response { status: 201, headers: [new Header { name: "Location", value: "/items/1" }, new Header { name: "Content-Length", value: "999" }], body: "" };
+    }
+    return text(410, "gone\n");
+}
+
+fn main() -> result[void] uses console, serve("{vport}") {
+    print("serving");
+    try serve("{vport}", handle);
+    print("stopped");
+    return ok();
+}

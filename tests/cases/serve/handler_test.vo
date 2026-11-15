@@ -1,0 +1,31 @@
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+
+fn handle(r: Request) -> Response {
+    if r.method == "GET" and r.path == "/hello" {
+        return new Response { status: 200, headers: new list[Header], body: "hello " + r.query };
+    }
+    return new Response { status: 404, headers: new list[Header], body: "" };
+}
+
+fn get(path: str, query: str) -> Request {
+    return new Request { method: "GET", path: path, query: query, headers: new list[Header], body: "" };
+}
+
+test "hello answers 200 with the query" {
+    expect_eq(handle(get("/hello", "x=1")), new Response { status: 200, headers: new list[Header], body: "hello x=1" });
+}
+
+test "other paths are 404" {
+    expect_eq(handle(get("/nope", "")).status, 404);
+}
+
+test "a wrong expectation fails with the usual report" {
+    expect_eq(handle(get("/hello", "")).status, 404);
+}
+
+prop "every path but /hello is 404" (path: str) {
+    assume(path != "/hello");
+    expect_eq(handle(get(path, "")).status, 404);
+}

@@ -22,7 +22,8 @@
 #define B_ABS 33
 #define B_MIN 34
 #define B_MAX 35
-#define B_COUNT 55 /* names up to here (50, 51 are internal and unnamed) */
+#define B_SERVE_CALL 59 /* spec 011 */
+#define B_COUNT 59 /* names up to here (50, 51 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -33,6 +34,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "max",      "upper",       "lower",     "ord",     "chr",          "env",          "random_int",
     "sort_by",  "map",         "filter",    "fold",    "any",          "all",          "todo",
     "assume",   0,             0,           "__float_text", "__http_exchange", "__text_float", "get_or",
+    "__serve_listen", "__serve_next", "__serve_reply", "__serve_call",
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -43,6 +45,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [14] = "s>n",  [15] = "s>x",  [18] = "ss>i", [19] = "ss>S", [20] = "Ss>s",  [21] = "s>s",
     [22] = "s>S",  [29] = "b>v",  [36] = "s>s",  [37] = "s>s",  [38] = "s>i",   [39] = "i>s",
     [40] = "s>r",  [41] = "ii>i", [49] = "b>v",  [52] = "f>s",  [53] = "sis>r", [54] = "s>f",
+    [56] = "s>n",  [57] = "i>r",  [58] = "s>v",
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."
@@ -228,6 +231,14 @@ Type *check_builtin(Node *call, long id, Type *expected)
         return id == B_INT ? t_int : t_float;
     }
     if (builtin_sigs[id]) return check_sig_builtin(call, (char *)builtin_sigs[id]);
+    if (id == B_SERVE_CALL) { /* spec 011: __serve_call(f, x): result of f(x); f's effects become the caller's */
+        if (!check_argc(call, 2)) return t_error;
+        Type *ft = check_arg(call, 0, 0);
+        if (ty_bad(ft) || ft->kind != TY_FUNC || ft->a.v->n != 1) return t_error;
+        check_arg(call, 1, vec_get(ft->a.v, 0));
+        fx_value_call(ft->decl.p);
+        return ty_result(ft->b.t);
+    }
     switch (id) {
     case B_TODO: return check_todo(call, expected);
     case B_STR: /* str(int|float|bool) */

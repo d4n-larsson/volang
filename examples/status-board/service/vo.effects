@@ -1,0 +1,6 @@
+# vo effects record: update with `vo effects --update`
+main.vo:answer uses file.read("site/")
+main.vo:get pure
+main.vo:main uses console, file.read("site/"), serve("8000")
+main.vo:test "anything else is 404, other methods 405" uses file.read("site/")
+main.vo:test "the two pages are JSON from site/" uses file.read("site/")

@@ -1,0 +1,26 @@
+$ request GET /loop
+HTTP/1.1 500 Internal Server Error
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request GET /ok
+HTTP/1.1 200 OK
+Content-Length: 5
+Connection: close
+
+fine
+
+--- end
+$ signal TERM
+stopped
+--- stderr
+service.vo:9:9: runtime error[R0009]: Time limit of 1 s exceeded.
+   9 |         while n >= 0 {
+     |         ^^^^^^^^^^^^^^
+trace:
+  at handle (service.vo:9:9)
+  at serve (std/http.vo:240:23)
+  at main (service.vo:17:9)
+--- exit 0

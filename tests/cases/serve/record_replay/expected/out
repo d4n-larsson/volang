@@ -1,0 +1,53 @@
+$ request GET /hello
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: 6
+Connection: close
+
+hello
+
+--- end
+$ request GET /nope
+HTTP/1.1 404 Not Found
+Content-Type: text/plain
+Content-Length: 17
+Connection: close
+
+not found: /nope
+
+--- end
+$ request POST /echo?a=1 body
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: 84
+Connection: close
+
+POST /echo query=a=1 type=none headers=Host=localhost;Content-Length=4; body=[body]
+
+--- end
+$ signal TERM
+serving
+stopped
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+serving
+stopped
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+serving
+stopped
+--- stderr
+note: the program differs from the recorded one (recorded service.vo)
+note: the response to `GET /hello` changed: recorded 200 (6 bytes), now 200 (15 bytes)
+note: the response to `GET /nope` changed: recorded 404 (17 bytes), now 410 (5 bytes)
+--- exit 0
+$ vo replay --json r.jsonl
+serving
+stopped
+--- stderr
+{"v":1,"kind":"replay","program":"service.vo","changed":true}
+{"v":1,"kind":"response_changed","request":"GET /hello","recorded_status":200,"status":200,"recorded_body":"hello\n","body":"hello, changed\n"}
+{"v":1,"kind":"response_changed","request":"GET /nope","recorded_status":404,"status":410,"recorded_body":"not found: /nope\n","body":"gone\n"}
+--- exit 0

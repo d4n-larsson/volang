@@ -1137,3 +1137,14 @@ void capture_trace(void *node)
     rt_reporting = 0;
     GC_UNROOT(2);
 }
+
+/* spec 011: the trace depth, saved and put back around a guarded handler call (src/serve.c). */
+long tr_depth_get(void)
+{
+    return tr_depth;
+}
+
+void tr_depth_set(long depth)
+{
+    tr_depth = depth;
+}

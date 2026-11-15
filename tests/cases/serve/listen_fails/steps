@@ -1,0 +1,4 @@
+start vo run service.vo
+vo run service.vo
+request GET /hello
+signal INT

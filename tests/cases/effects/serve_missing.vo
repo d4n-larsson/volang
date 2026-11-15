@@ -1,0 +1,13 @@
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve;
+
+fn handle(r: Request) -> Response {
+    return new Response { status: 200, headers: new list[Header], body: r.path };
+}
+
+fn main() -> result[void] uses console {
+    try serve("8000", handle);
+    return ok();
+}

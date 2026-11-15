@@ -1,7 +1,8 @@
-# std.http: Plain HTTP GET and POST (needs net; https is not supported).
-# Part of the vo standard library (spec 007). Import items one by one: `import std.http.NAME;`.
-# The host is checked against the caller's net scope at run time.
-# ponytail: one request per connection (Connection: close), redirects returned, not followed.
+# std.http: Plain HTTP: GET and POST (needs net), and serving requests (needs serve); no https.
+# Part of the vo standard library (spec 007, serving spec 011). Import items one by one: `import std.http.NAME;`.
+# The host is checked against the caller's net scope at run time, the address against its serve scope.
+# ponytail: one request per connection (Connection: close), redirects returned, not followed; a
+# server answers one request at a time.
 
 # One response header, as received.
 #     new Header { name: "a", value: "b" }.name is "a"
@@ -202,4 +203,119 @@ export fn header(r: Response, name: str) -> result[str] {
         }
     }
     return err("no header `" + name + "`");
+}
+
+# A request a server received: method, path, query (after `?`), headers in their order, and body.
+#     new Request { method: "GET", path: "/", query: "", headers: new list[Header], body: "" }.path is "/"
+export record Request {
+    method: str;
+    path: str;
+    query: str;
+    headers: list[Header];
+    body: str;
+}
+
+# The value of the first request header with this name, compared without case.
+#     request_header(new Request { method: "GET", path: "/", query: "", headers: [new Header { name: "Host", value: "x" }], body: "" }, "host") == ok("x") is true
+export fn request_header(r: Request, name: str) -> result[str] {
+    for h in r.headers {
+        if lower(h.name) == lower(name) {
+            return ok(h.value);
+        }
+    }
+    return err("no header `" + name + "`");
+}
+
+# Answers HTTP requests on address ("8000": this machine, "0.0.0.0:8000": the network) with handle's responses until stopped.
+#     serve("0", fn(r: Request) -> Response { return new Response { status: 200, headers: new list[Header], body: "" }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
+export fn serve[E: effects](address: str, handle: fn(Request) -> Response uses E) -> result[void] uses serve, E {
+    let listener = try __serve_listen(address);
+    while true {
+        let raw = try __serve_next(listener);
+        if raw == "" {
+            return ok();
+        }
+        match parse_request(raw) {
+            case ok(req) {
+                match __serve_call(handle, req) {
+                    case ok(resp) {
+                        __serve_reply(response_text(req.method, resp));
+                    }
+                    case err(_) {
+                        __serve_reply(response_text(req.method, new Response { status: 500, headers: new list[Header], body: "" }));
+                    }
+                }
+            }
+            case err(_) {
+                __serve_reply(response_text("GET", new Response { status: 400, headers: new list[Header], body: "" }));
+            }
+        }
+    }
+}
+
+fn parse_request(raw: str) -> result[Request] {
+    let head_end = find(raw, crlf() + crlf());
+    if head_end < 0 {
+        return err("no end of headers");
+    }
+    let head = split(slice(raw, 0, head_end), crlf());
+    let parts = split(head[0], " ");
+    if len(parts) != 3 or parts[0] == "" or parts[1] == "" or len(parts[2]) < 5 or slice(parts[2], 0, 5) != "HTTP/" {
+        return err("bad request line");
+    }
+    var path = parts[1];
+    var query = "";
+    let q = find(path, "?");
+    if q >= 0 {
+        set query = slice(path, q + 1, len(path));
+        set path = slice(path, 0, q);
+    }
+    let headers = new list[Header];
+    for i in 1..len(head) {
+        let line = head[i];
+        let colon = find(line, ":");
+        if colon <= 0 {
+            return err("bad header line");
+        }
+        push(headers, new Header { name: slice(line, 0, colon), value: trim(slice(line, colon + 1, len(line))) });
+    }
+    var body = slice(raw, head_end + 4, len(raw));
+    let r = new Request { method: parts[0], path: path, query: query, headers: headers, body: body };
+    match request_header(r, "transfer-encoding") {
+        case ok(te) {
+            if find(lower(te), "chunked") >= 0 {
+                set body = try dechunk(body);
+            }
+        }
+        case err(_) {
+        }
+    }
+    return ok(new Request { method: parts[0], path: path, query: query, headers: headers, body: body });
+}
+
+fn reason(status: int) -> str {
+    let codes = [200, 201, 202, 204, 301, 302, 303, 304, 307, 308, 400, 401, 403, 404, 405, 408, 409, 410, 413, 415, 422, 429, 431, 500, 501, 502, 503, 504];
+    let names = ["OK", "Created", "Accepted", "No Content", "Moved Permanently", "Found", "See Other", "Not Modified", "Temporary Redirect", "Permanent Redirect", "Bad Request", "Unauthorized", "Forbidden", "Not Found", "Method Not Allowed", "Request Timeout", "Conflict", "Gone", "Content Too Large", "Unsupported Media Type", "Unprocessable Content", "Too Many Requests", "Request Header Fields Too Large", "Internal Server Error", "Not Implemented", "Bad Gateway", "Service Unavailable", "Gateway Timeout"];
+    for i in 0..len(codes) {
+        if codes[i] == status {
+            return names[i];
+        }
+    }
+    return "";
+}
+
+fn response_text(method: str, r: Response) -> str {
+    let nl = crlf();
+    var out = "HTTP/1.1 " + str(r.status) + " " + reason(r.status) + nl;
+    for h in r.headers {
+        let name = lower(h.name);
+        if name != "content-length" and name != "connection" and name != "transfer-encoding" {
+            set out = out + h.name + ": " + h.value + nl;
+        }
+    }
+    set out = out + "Content-Length: " + str(len(r.body)) + nl + "Connection: close" + nl + nl;
+    if method != "HEAD" {
+        set out = out + r.body;
+    }
+    return out;
 }

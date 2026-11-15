@@ -1,0 +1,9 @@
+start vo run --record r.jsonl service.vo
+request GET /hello
+request GET /nope
+request POST /echo?a=1 body
+signal TERM
+vo replay r.jsonl
+cp changed.vo service.vo
+vo replay r.jsonl
+vo replay --json r.jsonl

@@ -1,0 +1,6 @@
+start vo run --timeout 1 service.vo
+wait 2500
+request GET /ok
+wait 1500
+request GET /ok
+signal INT

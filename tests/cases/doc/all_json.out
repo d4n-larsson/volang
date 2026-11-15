@@ -41,5 +41,5 @@
 {"v":1,"kind":"doc","module":"std.time","name":"std.time","item":"module","signature":"std.time","description":"UTC calendar time, ISO 8601 text and durations in milliseconds."}
 {"v":1,"kind":"doc","module":"std.text","name":"std.text","item":"module","signature":"std.text","description":"Text helpers: search, replace, repeat, pad, lines and words."}
 {"v":1,"kind":"doc","module":"std.random","name":"std.random","item":"module","signature":"std.random","description":"Random floats, picks and shuffles (fixed by --seed)."}
-{"v":1,"kind":"doc","module":"std.http","name":"std.http","item":"module","signature":"std.http","description":"Plain HTTP GET and POST (needs net; https is not supported)."}
+{"v":1,"kind":"doc","module":"std.http","name":"std.http","item":"module","signature":"std.http","description":"Plain HTTP: GET and POST (needs net), and serving requests (needs serve); no https."}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":44}

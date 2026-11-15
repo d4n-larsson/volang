@@ -1,0 +1,72 @@
+$ request-raw garbage\r\n\r\n
+HTTP/1.1 400 Bad Request
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw GET\r\n\r\n
+HTTP/1.1 400 Bad Request
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw GET /hello HTTP/1.1\r\nX-Big: {bytes:70000}\r\n\r\n
+HTTP/1.1 431 Request Header Fields Too Large
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw POST /echo HTTP/1.1\r\nContent-Length: 17000000\r\n\r\n
+HTTP/1.1 413 Content Too Large
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw POST /echo HTTP/1.1\r\nContent-Length: abc\r\n\r\n
+HTTP/1.1 400 Bad Request
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw POST /echo HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: 82
+Connection: close
+
+POST /echo query= type=none headers=Transfer-Encoding=chunked; body=[hello world]
+
+--- end
+$ request-raw POST /echo HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n
+HTTP/1.1 400 Bad Request
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw POST /echo HTTP/1.1\r\nContent-Length: 10\r\n\r\nshort
+HTTP/1.1 400 Bad Request
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request GET /hello
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: 6
+Connection: close
+
+hello
+
+--- end
+$ signal TERM
+serving
+stopped
+--- stderr
+--- exit 0

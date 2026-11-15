@@ -25,7 +25,7 @@ static Vec *rp_args; /* strs */
 static long rp_saw_end;
 
 static const char *const ev_names[] = {0, "read_line", "read_all", "read_file", "write_file", "env", "now_ms", "end",
-                                       "http"};
+                                       "http", "listen", "request", "response"};
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static const char hexd[] = "0123456789abcdef";
 
@@ -38,7 +38,10 @@ static const char *const d_table[] = {0,
                                       "reads the variable `$1`",
                                       "reads the clock",
                                       "the end",
-                                      "makes an HTTP request $1"};
+                                      "makes an HTTP request $1",
+                                      "serves on `$1`",
+                                      "waits for an HTTP request to answer",
+                                      "sends an HTTP response"};
 static const char *const n_table[] = {0,
                                       "a line of stdin",
                                       "the rest of stdin",
@@ -47,7 +50,10 @@ static const char *const n_table[] = {0,
                                       "the variable `$1`",
                                       "a clock reading",
                                       "the end",
-                                      "an HTTP request $1"};
+                                      "an HTTP request $1",
+                                      "a server on `$1`",
+                                      "a received HTTP request",
+                                      "a sent HTTP response"};
 
 #define J_HEAD "{\"v\":1,\"kind\":\""
 #define J_CLOSE "}\n"
@@ -125,7 +131,10 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
     rw(J_HEAD);
     rw((char *)ev_names[kind]);
     if (name) {
-        rw(kind == EVK_ENV ? "\",\"name\":" : kind == EVK_HTTP ? "\",\"host\":" : "\",\"path\":");
+        rw(kind == EVK_ENV                ? "\",\"name\":"
+           : kind == EVK_HTTP           ? "\",\"host\":"
+           : kind == EVK_SERVE_LISTEN   ? "\",\"address\":"
+                                        : "\",\"path\":");
         rw_str(name->data, name->len, 0);
         if (kind == EVK_HTTP) { /* spec 007: the port (int_value); spec 009: the request line */
             rw(",\"port\":");
@@ -143,7 +152,7 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
         rw((char *)ev_results[result]);
         rw("\"");
     }
-    if (kind == EVK_NOW_MS) {
+    if (kind == EVK_NOW_MS || (kind == EVK_SERVE_LISTEN && result == EVR_OK)) { /* spec 011: the listener */
         rw(",\"value\":");
         rw_dec(int_value);
     } else if (value) {
@@ -476,11 +485,11 @@ static Str *rf_request;   /* spec 009 */
 
 static const char *const rk_keys[] = {"kind",   "program", "fingerprint", "seed", "clock_ms", "args",    "path",
                                       "name",   "result",  "value",       "status", "host",     "port",    "request",
-                                      0};
+                                      "address", 0};
 
 /* Where each string-valued key is stored (rk_keys order; 0: not a string). */
 static Str **const rf_slots[] = {&rf_kind, &rf_program, &rf_fprint, 0, 0, 0, &rf_name, &rf_name, &rf_result,
-                                 &rf_value, 0, &rf_name, 0, &rf_request};
+                                 &rf_value, 0, &rf_name, 0, &rf_request, &rf_name};
 
 /* T0008 invalid_recording, exit 64. */
 void rp_bad(void)
@@ -642,7 +651,7 @@ long rp_kind_of(Str *str)
 {
     if (!str) return -1;
     if (str_eq_cstr(str, "recording")) return 0;
-    for (long k = 1; k <= EVK_HTTP; k++)
+    for (long k = 1; k <= EVK_SERVE_RESPONSE; k++)
         if (str_eq_cstr(str, (char *)ev_names[k])) return k;
     return -1;
 }
@@ -708,6 +717,15 @@ void rp_check_event(Event *e)
 {
     if (e->kind == EVK_NOW_MS) { /* now_ms: an integer */
         if (!rf_isint) rp_bad();
+        return;
+    }
+    if (e->kind == EVK_SERVE_LISTEN) { /* spec 011: address; ok with the listener, or err with the reason */
+        if (!e->name || e->result < 0 || e->result == EVR_DENIED || (e->result == EVR_OK) != (rf_isint != 0)) rp_bad();
+        if (e->result == EVR_ERR && !e->value.p) rp_bad();
+        return;
+    }
+    if (e->kind == EVK_SERVE_REQUEST || e->kind == EVK_SERVE_RESPONSE) { /* the bytes ("" for a stop) */
+        if (rf_isint || !e->value.p) rp_bad();
         return;
     }
     if (rf_isint) rp_bad(); /* everything else: no integer value */
@@ -783,4 +801,114 @@ void rp_note_changed(void)
         sb_str(out, msg("note: the program differs from the recorded one (recorded $1)\n", rp_program, 0, 0));
     }
     out_bytes(2, out->ptr, out->len);
+}
+
+/* ---- spec 011: serving ---- */
+
+static Str *sv_request; /* the request being answered: its line for replay notes */
+
+/* result[int]: listens on address, which must be in the running grant (R0010 otherwise). In replay,
+ * the recorded result, and no socket. */
+Variant *io_serve_listen(Str *address)
+{
+    Variant *r;
+    GC_ROOT(&address);
+    rt_check_name(EF_SERVE, address);
+    if (rcd_mode == 2) {
+        Event *e = rp_take(EVK_SERVE_LISTEN, address);
+        r = e->result == EVR_OK ? make_result(0, e->value.i) : make_result(1, e->value.i);
+        if (e->result == EVR_OK) serve_deadline(0);
+    } else {
+        r = rt_serve_listen(address);
+        if (rcd_mode) {
+            long ok = r->tag == 0;
+            rcd_event(EVK_SERVE_LISTEN, address, ok ? EVR_OK : EVR_ERR, ok ? 0 : r->pay.s, ok ? r->pay.i : 0);
+        }
+    }
+    GC_UNROOT(1);
+    return r;
+}
+
+/* result[str]: the next request, or ok("") when the server stops. In replay, the recorded requests;
+ * the end of the recording stops the server. */
+Variant *io_serve_next(long listener)
+{
+    Variant *r;
+    if (rcd_mode == 2) {
+        if (rp_next >= rp_events->n) {
+            r = make_result(0, (long)str_from_cstr(""));
+        } else {
+            r = make_result(0, (long)rp_take(EVK_SERVE_REQUEST, 0)->value.s);
+        }
+        if (!r->pay.s->len) serve_deadline(1);
+    } else {
+        r = rt_serve_next(listener);
+        if (rcd_mode && r->tag == 0) rcd_event(EVK_SERVE_REQUEST, 0, -1, r->pay.s, 0);
+    }
+    sv_request = r->tag == 0 ? r->pay.s : 0;
+    return r;
+}
+
+/* The status code of a response text (0 when it has none) and where its body starts. */
+static long sv_status(Str *text, long *body)
+{
+    long status = 0, i = 0;
+    while (i < text->len && text->data[i] != ' ') i++;
+    for (i++; i < text->len && text->data[i] >= '0' && text->data[i] <= '9'; i++) status = status * 10 + (text->data[i] - '0');
+    *body = text->len;
+    for (long j = 3; j < text->len; j++)
+        if (mem_eq(text->data + j - 3, "\r\n\r\n", 4)) {
+            *body = j + 1;
+            break;
+        }
+    return status;
+}
+
+/* In replay: a note on stderr when the response differs from the recorded one (never fatal). */
+static void sv_note_changed(Str *recorded, Str *now)
+{
+    if (str_eq(recorded, now)) return;
+    long rb, nb;
+    long rs = sv_status(recorded, &rb), ns = sv_status(now, &nb);
+    Str *line = sv_request ? request_line(sv_request) : str_from_cstr("");
+    SB *out = sb_new();
+    if (opt_json) {
+        sb_cstr(out, "{\"v\":1,\"kind\":\"response_changed\",\"request\":");
+        json_str_into(out, line);
+        sb_cstr(out, ",\"recorded_status\":");
+        int_to_dec(out, rs);
+        sb_cstr(out, ",\"status\":");
+        int_to_dec(out, ns);
+        sb_cstr(out, ",\"recorded_body\":");
+        json_str_into(out, str_new(recorded->data + rb, recorded->len - rb));
+        sb_cstr(out, ",\"body\":");
+        json_str_into(out, str_new(now->data + nb, now->len - nb));
+        sb_cstr(out, "}\n");
+    } else {
+        sb_cstr(out, "note: the response to `");
+        sb_str(out, line);
+        sb_cstr(out, "` changed: recorded ");
+        int_to_dec(out, rs);
+        sb_cstr(out, " (");
+        int_to_dec(out, recorded->len - rb);
+        sb_cstr(out, " bytes), now ");
+        int_to_dec(out, ns);
+        sb_cstr(out, " (");
+        int_to_dec(out, now->len - nb);
+        sb_cstr(out, " bytes)\n");
+    }
+    out_bytes(2, out->ptr, out->len);
+}
+
+/* Sends the response; in replay, compares it with the recorded one instead. */
+void io_serve_reply(Str *text)
+{
+    GC_ROOT(&text);
+    if (rcd_mode == 2) {
+        sv_note_changed(rp_take(EVK_SERVE_RESPONSE, 0)->value.s, text);
+    } else {
+        rt_serve_reply(text);
+        if (rcd_mode) rcd_event(EVK_SERVE_RESPONSE, 0, -1, text, 0);
+    }
+    GC_UNROOT(1);
 }

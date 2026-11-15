@@ -1,0 +1,8 @@
+start vo run service.vo
+request GET /hello
+request GET /nope
+request POST /echo?a=1&b=two "a body with spaces"
+request-raw POST /echo HTTP/1.1\r\nContent-Type: application/json\r\nX-Trace: 7\r\nContent-Length: 9\r\n\r\n{"x": 1}\n
+request HEAD /hello
+request GET /created
+signal TERM

@@ -175,7 +175,20 @@ void rt_raise(char *code, Str *message, Node *node)
     rt_err_msg = (long)message;
     rt_err_node = (long)node;
     if (tr_on) tr_error(code, message, node); /* spec 006: the trace's error record */
-    if (recover_point) {                      /* inside a test: let the runner record it */
+    if (recover_point && serve_guard) { /* spec 011: a handler failed: report it, the server answers 500 */
+        rt_reporting = 1;
+        SB *sb = sb_new();
+        GC_ROOT(&sb);
+        if (opt_json)
+            report_json(sb, code, message, node);
+        else
+            report_human(sb, code, message, node);
+        out_bytes(2, sb->ptr, sb->len);
+        GC_UNROOT(1);
+        rt_reporting = 0;
+        jmp_restore((void *)recover_point, 2);
+    }
+    if (recover_point) { /* inside a test: let the runner record it */
         rt_err_extra = 0;
         capture_trace(node); /* spec 006: the frames and their values, for the test's report */
         jmp_restore((void *)recover_point, 2);

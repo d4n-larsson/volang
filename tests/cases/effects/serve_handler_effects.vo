@@ -1,0 +1,20 @@
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve;
+
+fn page(r: Request) -> Response uses file.read("site/") {
+    match read_file("site/" + r.path) {
+        case ok(body) {
+            return new Response { status: 200, headers: new list[Header], body: body };
+        }
+        case err(_) {
+            return new Response { status: 404, headers: new list[Header], body: "" };
+        }
+    }
+}
+
+fn main() -> result[void] uses serve("8000") {
+    try serve("8000", page);
+    return ok();
+}

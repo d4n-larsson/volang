@@ -22,6 +22,14 @@
 #define SYS_sendto 44
 #define SYS_recvfrom 45
 
+/* spec 011: serving */
+#define SYS_rt_sigprocmask 14
+#define SYS_bind 49
+#define SYS_listen 50
+#define SYS_setsockopt 54
+#define SYS_accept4 288
+#define SYS_signalfd4 289
+
 #define O_DIRECTORY 0x10000
 
 #endif

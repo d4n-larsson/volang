@@ -21,10 +21,11 @@ typedef struct Edge {
 CHECK_SIZE(Edge, 24);
 
 /* Effect bit per builtin id (check_expr.c builtin_names); 0 = pure. */
-const unsigned char builtin_effects[64] = {
+const unsigned short builtin_effects[64] = {
     [1] = EF_CONSOLE, [2] = EF_CONSOLE, [3] = EF_CONSOLE, [4] = EF_INPUT, [5] = EF_INPUT,
     [6] = EF_FREAD,   [7] = EF_FWRITE,  [10] = EF_CLOCK,  [40] = EF_ENV,  [41] = EF_RANDOM,
     [53] = EF_NET, /* __http_exchange */
+    [56] = EF_SERVE, [57] = EF_SERVE, [58] = EF_SERVE, /* spec 011: __serve_listen, __serve_next, __serve_reply */
 };
 
 #define M_MISSING "`$1` does not declare $2, which it needs."
@@ -85,9 +86,12 @@ EffSet *fx_build_set(Node *uses, Fx *fx)
             Node *sc = vec_get(scopes, j);
             if (es_add_scope(set, bit, sc->a.s)) continue;
             if (fx) fx->bad = 1;
-            ck_err1("E0506", sc,
-                    "\"$1\" is not a valid scope: write a relative directory without `..`, or a non-empty name.",
-                    sc->a.s);
+            if (bit == EF_SERVE)
+                ck_err1("E0506", sc, "\"$1\" is not a valid serve address: write \"PORT\" or \"0.0.0.0:PORT\".", sc->a.s);
+            else
+                ck_err1("E0506", sc,
+                        "\"$1\" is not a valid scope: write a relative directory without `..`, or a non-empty name.",
+                        sc->a.s);
         }
     }
     return set;
@@ -98,7 +102,7 @@ void fx_unknown_effect(Node *eff)
 {
     Str *name = eff->d.s;
     Diag *d = ck_err1(
-        "E0509", eff, "`$1` is not an effect: use console, input, file.read, file.write, net, clock, random or env.",
+        "E0509", eff, "`$1` is not an effect: use console, input, file.read, file.write, net, clock, random, env or serve.",
         name);
     char *best = 0;
     unsigned long dist = 3;

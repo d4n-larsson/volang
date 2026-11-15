@@ -260,11 +260,12 @@ test "loads fixtures" uses file.read("fixtures/") { ... }
 | clock | `now_ms` |
 | random | `random_int` |
 | env | `env` |
+| serve | `std.http.serve` (answering HTTP requests) |
 
 - No `uses` clause means pure: the function cannot do any of these, so it always returns the same result for the same arguments.
 - A function must declare everything it does and everything its callees declare (E0501, with a fix that adds exactly the missing effects). An effect nothing needs is W0501, with a fix that removes it.
-- Scopes narrow an effect: directories for `file.read`/`file.write` (relative to the directory the program starts in, e.g. `"out/"`; `"./"` is that directory itself), variable names for `env`, hosts for `net`. A scope covers the directories under it. A caller's scopes must cover its callees' (E0503); an empty or absolute scope, or one with `..`, is E0506.
-- Canonical order (`vo fmt`): console, input, file.read, file.write, net, clock, random, env; scopes sorted.
+- Scopes narrow an effect: directories for `file.read`/`file.write` (relative to the directory the program starts in, e.g. `"out/"`; `"./"` is that directory itself), variable names for `env`, hosts for `net`, addresses for `serve` (`"8000"`: this machine only; `"0.0.0.0:8000"`: the network). A scope covers the directories under it. A caller's scopes must cover its callees' (E0503); an empty or absolute scope, or one with `..`, is E0506.
+- Canonical order (`vo fmt`): console, input, file.read, file.write, net, clock, random, env, serve; scopes sorted.
 - `main`'s clause is the grant of `vo run`, a test's clause the grant of that test. Paths and names are also checked at run time against the running function's declaration, after resolving `..`, absolute paths and symbolic links: anything outside is R0010 (exit 70).
 - `--seed N` fixes `random_int`; `--clock-ms N` makes `now_ms` return N, N+1, ... `vo test` uses seed 1 and clock 0 for every test.
 
@@ -980,9 +981,10 @@ fn main() uses console {
 | std.time | UTC calendar times, ISO 8601 text, durations, `now` (clock) |
 | std.text | `replace`, `contains`, `pad_left`, `lines`, `words`, ... |
 | std.random | `unit`, `pick`, `shuffle` (random) |
-| std.http | plain HTTP `get` and `post` (net; no HTTPS) |
+| std.http | plain HTTP: `get` and `post` (net), `serve` (serve); no HTTPS |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
+- `std.http.serve(address, handle)` answers HTTP requests one at a time with `handle(request) -> Response` until Ctrl-C or SIGTERM, then returns `ok()`. The caller declares `serve` with that address and the handler's effects. A handler that stops with a runtime error answers 500 (the report goes to stderr) and the server goes on; `--timeout` limits each handler call, not the server.
 - Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
 
 ```vo
@@ -1052,7 +1054,7 @@ renamed area to rect_area: 2 changes in 1 file (dry run, nothing written)
 
 - `vo run --trace FILE` (and `vo test`) writes JSON lines: `call` (function, call site, depth, `args` by name) and `return` (value) for every vo function, `error` when a runtime error ends it, `test` before each test, and `end` (`records`, `omitted`, `status`). Values are shortened to 200 bytes. After `--trace-limit N` records (default 100000) the rest are only counted.
 - A runtime error lists, under each frame, its parameters and the locals declared before the failing statement: `i: int = 3` (in JSON, `locals` of each `trace` entry). Timeouts show no values: they depend on the machine's speed.
-- `vo run --record FILE` saves everything the program receives: arguments, stdin, environment variables, file reads, results of file writes, the clock and the seed. `vo replay FILE` runs the current program on exactly that, reading and writing nothing outside: the same program gives the same output and exit status (unless it timed out). A changed program is run with a note; one that asks for a different input (another file, variable or HTTP request: host, port, method or path) stops with R0014. A recording holds the file contents and variables the program read.
+- `vo run --record FILE` saves everything the program receives: arguments, stdin, environment variables, file reads, results of file writes, HTTP responses and requests, the clock and the seed. `vo replay FILE` runs the current program on exactly that, reading and writing nothing outside: the same program gives the same output and exit status (unless it timed out). A changed program is run with a note; one that asks for a different input (another file, variable or HTTP request: host, port, method or path) stops with R0014. A server gets the recorded requests again, opens no port, and each response that changed is a note. A recording holds the file contents and variables the program read.
 
 ```vo
 fn last(xs: list[int]) -> int {

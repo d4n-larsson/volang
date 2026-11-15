@@ -77,4 +77,4 @@ modules:
   std.time UTC calendar time, ISO 8601 text and durations in milliseconds.
   std.text Text helpers: search, replace, repeat, pad, lines and words.
   std.random Random floats, picks and shuffles (fixed by --seed).
-  std.http Plain HTTP GET and POST (needs net; https is not supported).
+  std.http Plain HTTP: GET and POST (needs net), and serving requests (needs serve); no https.

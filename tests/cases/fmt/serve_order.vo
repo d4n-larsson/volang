@@ -1,0 +1,3 @@
+fn main() uses serve("8000"),   console, serve("0.0.0.0:9000") {
+    print("x");
+}

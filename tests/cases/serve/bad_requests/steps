@@ -1,0 +1,11 @@
+start vo run service.vo
+request-raw garbage\r\n\r\n
+request-raw GET\r\n\r\n
+request-raw GET /hello HTTP/1.1\r\nX-Big: {bytes:70000}\r\n\r\n
+request-raw POST /echo HTTP/1.1\r\nContent-Length: 17000000\r\n\r\n
+request-raw POST /echo HTTP/1.1\r\nContent-Length: abc\r\n\r\n
+request-raw POST /echo HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n6\r\n world\r\n0\r\n\r\n
+request-raw POST /echo HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\nzz\r\n
+request-raw POST /echo HTTP/1.1\r\nContent-Length: 10\r\n\r\nshort
+request GET /hello
+signal TERM

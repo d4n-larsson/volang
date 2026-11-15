@@ -1,0 +1,4 @@
+# vo effects record: update with `vo effects --update`
+service.vo:handle pure
+service.vo:main uses console, serve("0.0.0.0:{vport}")
+service.vo:text pure

@@ -7,4 +7,4 @@ every example, and replays its recordings (`recordings/*.jsonl`).
 | Example | Shows |
 |---|---|
 | [expenses](expenses/) | an expense report from JSON: scoped file effects, `vo.effects`, `std.json`/`std.time`/`std.text`, tests, a property and a contract |
-| [status-board](status-board/) | a monitoring client over plain HTTP: `std.http`, the `net` effect scoped to a host, exit statuses for scripts, and record/replay of a run without the network |
+| [status-board](status-board/) | a monitoring client and its service over plain HTTP: `std.http` `get` and `serve`, the `net` and `serve` effects scoped to a host and an address, exit statuses for scripts, and record/replay of both without the network |

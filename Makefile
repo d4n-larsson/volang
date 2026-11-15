@@ -127,9 +127,10 @@ test: all
 	  steps.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1"; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
-	@echo "== examples"; for d in examples/*/; do (cd $$d && ../../bin/vo check main.vo >/dev/null && \
-	  ../../bin/vo test main.vo >/dev/null && for r in recordings/*.jsonl; do [ -f "$$r" ] || continue; \
-	  ../../bin/vo replay "$$r" >/dev/null; [ $$? -lt 64 ] || exit 1; done) || { echo "example $$d fails"; exit 1; }; done
+	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \
+	  (cd $$d && $(CURDIR)/bin/vo check main.vo >/dev/null && \
+	  $(CURDIR)/bin/vo test main.vo >/dev/null && for r in recordings/*.jsonl; do [ -f "$$r" ] || continue; \
+	  $(CURDIR)/bin/vo replay "$$r" >/dev/null; [ $$? -lt 64 ] || exit 1; done) || { echo "example $$d fails"; exit 1; }; done
 	@if [ -x build-oracle/vo ]; then echo "== diff_engines.py --count 1000 --seed 4"; \
 	  python3 tests/diff_engines.py --count 1000 --seed 4 || exit 1; \
 	  else echo "== skip diff_engines.py (no build-oracle/vo: run make oracle)"; fi

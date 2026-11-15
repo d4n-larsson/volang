@@ -14,6 +14,9 @@
 | `env` | `name`, `result` `"ok"` with `value`, or `"err"` |
 | `now_ms` | `value` (int) |
 | `http` | spec 007: `host`, `port` (int), `request` (spec 009: the request line without the protocol, `"GET /status"`), `result` `"ok"` with `value` (the raw response), or `"err"` with `value` (the error text). The host is checked against the grant (R0010) before the event, in replay too; replay matches host, port and request (R0014 otherwise; events without `request`, from spec 007 recordings, match by host and port) and does not use the network |
+| `listen` | spec 011: `address`, `result` `"ok"` with `value` (int, the listener) or `"err"` with `value` (the reason). The address is checked against the grant (R0010) first; replay opens no socket |
+| `request` | spec 011: `value`, the raw bytes of a request the server received (`""`: the server was stopped). Replay feeds them to the program in order; the end of the recording stops the server |
+| `response` | spec 011: `value`, the raw bytes of the response sent. Replay compares the new response with it: a difference is a note on stderr (`--json`: a `response_changed` record), never an error |
 | `end` | `status` (the exit status of the run) |
 
 ```json

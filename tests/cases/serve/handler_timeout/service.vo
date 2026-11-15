@@ -1,0 +1,20 @@
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve;
+
+fn handle(r: Request) -> Response {
+    if r.path == "/loop" {
+        var n = 0;
+        while n >= 0 {
+            set n = n + 1;
+        }
+    }
+    return new Response { status: 200, headers: new list[Header], body: "fine\n" };
+}
+
+fn main() -> result[void] uses console, serve("{vport}") {
+    try serve("{vport}", handle);
+    print("stopped");
+    return ok();
+}

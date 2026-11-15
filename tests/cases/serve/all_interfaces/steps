@@ -1,0 +1,5 @@
+vo effects --update service.vo
+keep vo.effects
+start vo run service.vo
+request GET /hello
+signal TERM

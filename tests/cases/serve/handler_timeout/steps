@@ -1,0 +1,4 @@
+start vo run --timeout 1 service.vo
+request GET /loop
+request GET /ok
+signal TERM

@@ -1,0 +1,20 @@
+$ request GET /ok
+HTTP/1.1 200 OK
+Content-Length: 5
+Connection: close
+
+fine
+
+--- end
+$ request GET /ok
+HTTP/1.1 200 OK
+Content-Length: 5
+Connection: close
+
+fine
+
+--- end
+$ signal INT
+stopped
+--- stderr
+--- exit 0

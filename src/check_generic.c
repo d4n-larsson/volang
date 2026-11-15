@@ -135,7 +135,14 @@ Type *check_generic_call(Node *call, Node *decl, Type *expected)
         if (arg->type->kind == TY_FUNC) expect_type(arg, want, arg->type);
     }
     EffSet *declared = decl->a.n->b.fx->declared; /* the declaration with its effect parameters bound */
-    if (declared) fx_value_call(es_subst(declared, decl, targs));
+    if (declared && file_get((int)decl->file)->std) { /* spec 011: as for non-generic library calls (fx_call), */
+        EffSet *params = es_new(0);                   /* its own effects are needed in any scope, and its */
+        params->evars = declared->evars;              /* effect parameters as bound at this call */
+        fx_value_call(es_subst(params, decl, targs));
+        if (ck_fx && ck_fx->direct) ck_fx->direct->any |= declared->mask;
+    } else if (declared) {
+        fx_value_call(es_subst(declared, decl, targs));
+    }
     return ty_subst(decl->type, decl, targs);
 }
 

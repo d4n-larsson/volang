@@ -1,0 +1,19 @@
+$ vo effects --update service.vo
++ service.vo:main: console, serve("0.0.0.0:{vport}")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ request GET /hello
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: 6
+Connection: close
+
+hello
+
+--- end
+$ signal TERM
+serving
+stopped
+--- stderr
+--- exit 0

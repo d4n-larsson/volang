@@ -11,7 +11,7 @@
 #include "vo.h"
 
 static const char *const es_names[] = {"console", "input", "file.read", "file.write",
-                                       "net",     "clock", "random",    "env",        0};
+                                       "net",     "clock", "random",    "env",        "serve", 0};
 
 EffSet *es_new(long mask)
 {
@@ -91,12 +91,29 @@ void es_put_pair(EffSet *set, long bit, Str *str)
     GC_UNROOT(4);
 }
 
+/* The port of a serve address, "PORT" (loopback) or "0.0.0.0:PORT" (all interfaces), 1-65535; 0 when
+ * the text is neither. *all is set to 1 for the second form (when all is given). */
+long serve_address_port(Str *s, long *all)
+{
+    long i = 0;
+    if (s->len > 8 && mem_eq(s->data, "0.0.0.0:", 8)) i = 8;
+    if (all) *all = i != 0;
+    if (i == s->len || s->len - i > 5 || s->data[i] == '0') return 0;
+    long port = 0;
+    for (; i < s->len; i++) {
+        if (s->data[i] < '0' || s->data[i] > '9') return 0;
+        port = port * 10 + (s->data[i] - '0');
+    }
+    return port <= 65535 ? port : 0;
+}
+
 /* Normalizes the scope (directories for file effects) and adds it. 0 when the scope is invalid:
  * empty, absolute, or with a ".." component (E0506). */
 int es_add_scope(EffSet *set, long bit, Str *str)
 {
     long n = str->len;
     if (n == 0) return 0;
+    if (bit == EF_SERVE && !serve_address_port(str, 0)) return 0; /* spec 011: "PORT" or "0.0.0.0:PORT" */
     GC_ROOT(&set);
     GC_ROOT(&str);
     if (bit & (EF_FREAD | EF_FWRITE)) { /* env, net: kept verbatim */

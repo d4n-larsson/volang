@@ -1,0 +1,14 @@
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve;
+
+fn handle(r: Request) -> Response {
+    return new Response { status: 200, headers: new list[Header], body: r.path };
+}
+
+fn main() -> result[void] uses console, serve("1") {
+    let a = args();
+    try serve(a[0], handle);
+    return ok();
+}

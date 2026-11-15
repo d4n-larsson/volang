@@ -94,7 +94,7 @@ class Values:
             if m.group(1) == "result":
                 return "ok()" if m.group(2) == "void" else f"ok({self.value(m.group(2), tv)})"
             return f"new {m.group(1)}[{self.inst(m.group(2), tv)}]"
-        m = re.fullmatch(r"fn\((.*?)\)(?: -> (.*))?", t)
+        m = re.fullmatch(r"fn\((.*?)\)(?: -> (.*?))?(?: uses .*)?", t)  # a pure sample fits `uses E`
         if m:
             ps = ", ".join(f"p{i}: {self.inst(a, tv)}" for i, a in enumerate(split_top(m.group(1))))
             if m.group(2):
@@ -219,7 +219,8 @@ def main():
             if r["item"] == "fn":
                 tvars = {t.split(":")[0].strip(): "*" for t in r["tparams"]}
                 params = [(p["name"], p["type"]) for p in r["params"]]
-                probe(label, [label], r["effects"], params, r["returns"], tvars, name=r["name"])
+                probe(label, [label], [e for e in r["effects"] if not re.fullmatch(r"[A-Z]", e)], params,
+                      r["returns"], tvars, name=r["name"])
             ex = r.get("example")
             if not ex or " is " not in ex:
                 failures.append(f"{label}: no example `EXPR is VALUE`")
@@ -230,8 +231,9 @@ def main():
                 show, want = expr, json.loads(value)
             else:
                 show, want = f"str({expr})", value
-            eff = sorted(set(["console"] + r.get("effects", [])),
-                         key=["console", "input", "file.read", "file.write", "net", "clock", "random", "env"].index)
+            eff = sorted(set(["console"] + [e for e in r.get("effects", []) if not re.fullmatch(r"[A-Z]", e)]),
+                         key=["console", "input", "file.read", "file.write", "net", "clock", "random", "env",
+                              "serve"].index)  # effect parameters (E) are not effects to declare
             src = "".join(f"import {i};\n" for i in every) + \
                 f"\nfn main() uses {', '.join(eff)} {{\n    print({show});\n}}\n"
             code, out, err = run(src)

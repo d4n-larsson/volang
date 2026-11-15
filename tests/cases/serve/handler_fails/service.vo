@@ -1,0 +1,28 @@
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve;
+
+fn handle(r: Request) -> Response {
+    if r.path == "/div" {
+        let n = len(r.query) - len(r.query);
+        return new Response { status: 200, headers: new list[Header], body: str(10 / n) };
+    }
+    if r.path == "/callback" {
+        let xs = map([3, 2, 0], fn(x: int) -> int {
+            return 6 / x;
+        });
+        return new Response { status: 200, headers: new list[Header], body: str(len(xs)) };
+    }
+    if r.path == "/index" {
+        let xs = [1, 2];
+        return new Response { status: 200, headers: new list[Header], body: str(xs[len(r.path)]) };
+    }
+    return new Response { status: 200, headers: new list[Header], body: "fine\n" };
+}
+
+fn main() -> result[void] uses console, serve("{vport}") {
+    try serve("{vport}", handle);
+    print("stopped");
+    return ok();
+}

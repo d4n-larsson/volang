@@ -1,0 +1,19 @@
+$ vo run service.vo
+serving
+--- stderr
+error: `{vport}` is already in use
+--- exit 1
+$ request GET /hello
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: 6
+Connection: close
+
+hello
+
+--- end
+$ signal INT
+serving
+stopped
+--- stderr
+--- exit 0

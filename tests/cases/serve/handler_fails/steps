@@ -1,0 +1,6 @@
+start vo run service.vo
+request GET /div
+request GET /callback
+request GET /index
+request GET /ok
+signal TERM

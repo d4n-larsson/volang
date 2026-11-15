@@ -4,13 +4,15 @@ A monitoring client for a service on `localhost`: it fetches `/status.json` and 
 plain HTTP, prints which services are up, the slowest one and the open incidents, and exits with status
 2 when a service is down, so a script or cron job can act on it.
 
-The "service" is two static files in `site/`, served by Python's built-in HTTP server:
+The service is a vo program too, in `service/`: it answers `/status.json` and `/incidents.json` from
+the files in `service/site/` with `std.http.serve` (see [The service](#the-service)).
 
 ```sh
 cd examples/status-board
-python3 -m http.server 8000 --bind 127.0.0.1 --directory site &   # the service
+(cd service && ../../../bin/vo run main.vo) &   # the service, on port 8000 of this machine
 ../../bin/vo run main.vo                    # the board (the port defaults to 8000; pass another after --)
 ../../bin/vo test main.vo                   # tests of the parsing and the rendering, no network needed
+kill %1                                     # stop the service (it exits with status 0)
 ```
 
 ```text
@@ -67,6 +69,22 @@ makes more requests than were recorded, replay stops with R0014 instead of guess
 |---|---|
 | `main.vo` | `fetch`, `main` and the tests |
 | `board.vo` | the `Service` and `Incident` records, parsing and rendering (pure) |
-| `site/` | the service's two JSON documents |
+| `service/` | the service: `main.vo` (handler, tests), `site/` (the two JSON documents), its `vo.effects` and a recording |
 | `recordings/demo.jsonl` | a recorded run, replayed by `make test` |
 | `vo.effects` | the effects record, updated with `vo effects --update main.vo` |
+
+## The service
+
+`service/main.vo` serves the two files with `std.http.serve`: a handler function takes each `Request`
+and returns a `Response`; `serve("8000", answer)` runs it until Ctrl-C or SIGTERM.
+
+- **Its grant is visible**: `main` declares `serve("8000")` (port 8000 of this machine only; the network
+  would need `serve("0.0.0.0:8000")`) and `file.read("site/")`, which the handler needs. `vo.effects`
+  records both.
+- **The handler is tested without a network**: its tests build `Request` values and check the answers
+  (`../../../bin/vo test main.vo` in `service/`).
+- **A failing handler does not stop the service**: that request gets `500`, the runtime error report goes
+  to stderr, and the next request is answered.
+- **Record and replay work for servers too**: `service/recordings/demo.jsonl` holds the two requests the
+  board made, the files read and the responses sent. `../../../bin/vo replay recordings/demo.jsonl` in
+  `service/` answers them again without opening a port, and notes every response that differs.

@@ -1,0 +1,58 @@
+$ request GET /hello
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: 6
+Connection: close
+
+hello
+
+--- end
+$ request GET /nope
+HTTP/1.1 404 Not Found
+Content-Type: text/plain
+Content-Length: 17
+Connection: close
+
+not found: /nope
+
+--- end
+$ request POST /echo?a=1&b=two "a body with spaces"
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: 105
+Connection: close
+
+POST /echo query=a=1&b=two type=none headers=Host=localhost;Content-Length=18; body=[a body with spaces]
+
+--- end
+$ request-raw POST /echo HTTP/1.1\r\nContent-Type: application/json\r\nX-Trace: 7\r\nContent-Length: 9\r\n\r\n{"x": 1}\n
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: 123
+Connection: close
+
+POST /echo query= type=application/json headers=Content-Type=application/json;X-Trace=7;Content-Length=9; body=[{"x": 1}
+]
+
+--- end
+$ request HEAD /hello
+HTTP/1.1 200 OK
+Content-Type: text/plain
+Content-Length: 6
+Connection: close
+
+
+--- end
+$ request GET /created
+HTTP/1.1 201 Created
+Location: /items/1
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ signal TERM
+serving
+stopped
+--- stderr
+--- exit 0

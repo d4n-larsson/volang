@@ -13,6 +13,12 @@ each line of `steps` runs there, in order:
   server http                   starts tests/http_server.py on a free port (spec 007): later lines may
                                 use {port}, and the port number reads `{port}` in outputs and kept files
   stop-server                   stops it ({port} keeps its number: a refused connection)
+  start vo ARGS...              starts bin/vo in the background (spec 011) with {vport} a free port, and
+                                waits until it accepts connections (or exits); {vport} reads `{vport}`
+  request METHOD PATH [BODY]    sends one HTTP/1.1 request to {vport}; the raw response goes to `out`
+  request-raw TEXT              sends TEXT as is (\\r and \\n escapes; {bytes:N} is N bytes `a`)
+  wait MS                       lets MS milliseconds pass
+  signal TERM|INT               signals the started vo and waits; its stdout, stderr and exit status go to `out`
   vo~ ARGS...                   like vo, but its stdout is left out of `out` (it may differ between
                                 runs, e.g. with a clock seed); `same` then checks the last two were equal
 
@@ -28,19 +34,60 @@ import os
 import re
 import shlex
 import shutil
+import signal
+import socket
 import subprocess
 import sys
 import tempfile
+import time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")  # runs $VO_BIN (default build/vo) natively or under qemu
 
 
-def mask(b, port=None):
+def mask(b, port=None, vport=None):
     if port:
         b = b.replace(str(port).encode(), b"{port}")
+    if vport:
+        b = b.replace(str(vport).encode(), b"{vport}")
     b = re.sub(rb'"ms":\d+', b'"ms":0', b)
     return re.sub(rb"([ (])\d+ms\)", rb"\g<1>0ms)", b)
+
+
+def free_port():
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def wait_listening(port, proc):
+    """Until something accepts on 127.0.0.1:port, or the process exits (up to 30 s)."""
+    end = time.time() + 30
+    while time.time() < end and proc.poll() is None:
+        try:
+            socket.create_connection(("127.0.0.1", port), timeout=1).close()
+            return
+        except OSError:
+            time.sleep(0.05)
+
+
+def http_exchange(port, data):
+    """Sends data, reads until the server closes; b"(refused)" when nothing listens."""
+    try:
+        with socket.create_connection(("127.0.0.1", port), timeout=30) as s:
+            s.sendall(data)
+            s.shutdown(socket.SHUT_WR)
+            chunks = []
+            while True:
+                b = s.recv(65536)
+                if not b:
+                    break
+                chunks.append(b)
+            return b"".join(chunks)
+    except ConnectionRefusedError:
+        return b"(refused)"
+    except OSError as e:
+        return b"(" + type(e).__name__.encode() + b")"
 
 
 def cases(paths):
@@ -64,14 +111,54 @@ def run_case(case):
                 continue
             src = os.path.join(case, n)
             (shutil.copytree if os.path.isdir(src) else shutil.copy)(src, os.path.join(work, n))
+        vport = free_port()  # spec 011: the port a started vo server may use; {vport} in case files too
+        for d, _, fs in os.walk(work):
+            for f in fs:
+                if f.endswith((".vo", ".jsonl", ".effects")):
+                    fp = os.path.join(d, f)
+                    data = open(fp, "rb").read()
+                    if b"{vport}" in data:
+                        open(fp, "wb").write(data.replace(b"{vport}", str(vport).encode()))
         out = b""
         keep = []
         hidden = []
         port = None  # the HTTP test server's port, once started
+        started = None  # (process, stdout file, stderr file) of `start vo`
         for line in open(os.path.join(case, "steps"), encoding="utf-8").read().splitlines():
             if not line.strip() or line.startswith("#"):
                 continue
-            words = shlex.split(line.replace("{port}", str(port)) if port else line)
+            line_sub = line.replace("{vport}", str(vport))
+            words = shlex.split(line_sub.replace("{port}", str(port)) if port else line_sub)
+            if words[0] == "start":
+                o, e = tempfile.TemporaryFile(), tempfile.TemporaryFile()
+                proc = subprocess.Popen([VO] + words[2:], cwd=work, stdin=subprocess.DEVNULL, stdout=o, stderr=e)
+                started = (proc, o, e)
+                servers.append(proc)
+                wait_listening(vport, proc)
+                continue
+            if words[0] in ("request", "request-raw"):
+                if words[0] == "request":
+                    body = words[3].encode() if len(words) > 3 else b""
+                    data = (f"{words[1]} {words[2]} HTTP/1.1\r\nHost: localhost\r\n"
+                            + (f"Content-Length: {len(body)}\r\n" if body else "") + "\r\n").encode() + body
+                else:
+                    text = line_sub.split(None, 1)[1]
+                    text = re.sub(r"\{bytes:(\d+)\}", lambda m: "a" * int(m.group(1)), text)
+                    data = text.replace("\\r", "\r").replace("\\n", "\n").encode()
+                out += b"$ " + line.encode() + b"\n" + mask(http_exchange(vport, data), port, vport) + b"\n--- end\n"
+                continue
+            if words[0] == "wait":  # spec 011: let time pass (a server idle past --timeout)
+                time.sleep(int(words[1]) / 1000)
+                continue
+            if words[0] == "signal":
+                proc, o, e = started
+                proc.send_signal(signal.SIGTERM if words[1] == "TERM" else signal.SIGINT)
+                code = proc.wait(timeout=60)
+                o.seek(0)
+                e.seek(0)
+                out += b"$ " + line.encode() + b"\n" + mask(o.read(), port, vport) + b"--- stderr\n" \
+                    + mask(e.read(), port, vport) + b"--- exit " + str(code).encode() + b"\n"
+                continue
             if words[0] == "server":
                 server = subprocess.Popen([sys.executable, os.path.join(ROOT, "tests", "http_server.py"), "0"],
                                           stdout=subprocess.PIPE)
@@ -127,12 +214,12 @@ def run_case(case):
             r = subprocess.run([VO] + words[1:], cwd=work, input=stdin, capture_output=True, env=env, timeout=120)
             if hide:
                 hidden.append(r.stdout)
-            out += b"$ " + line.encode() + b"\n" + (b"(stdout not shown)\n" if hide else mask(r.stdout, port)) \
-                + b"--- stderr\n" + mask(r.stderr, port) + b"--- exit " + str(r.returncode).encode() + b"\n"
+            out += b"$ " + line.encode() + b"\n" + (b"(stdout not shown)\n" if hide else mask(r.stdout, port, vport)) \
+                + b"--- stderr\n" + mask(r.stderr, port, vport) + b"--- exit " + str(r.returncode).encode() + b"\n"
         got = {"out": out.replace(work.encode() + b"/", b"")}
         for rel in keep:
             p = os.path.join(work, rel)
-            got[rel] = mask(open(p, "rb").read(), port) if os.path.isfile(p) else None
+            got[rel] = mask(open(p, "rb").read(), port, vport) if os.path.isfile(p) else None
         return got
     finally:
         for sv in servers:
