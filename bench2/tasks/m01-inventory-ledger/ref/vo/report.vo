@@ -15,7 +15,7 @@ fn money(c: int) -> str {
     return sign + str(a / 100) + "." + cents;
 }
 
-fn report(l: Ledger) -> list[str] {
+export fn report(l: Ledger) -> list[str] {
     let out = ["REPORT"];
     let skus = keys(l.lots);
     sort(skus);

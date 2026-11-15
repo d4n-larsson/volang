@@ -1,10 +1,10 @@
-shop/model.vo:1:8 declaration: record Item {
+shop/model.vo:1:15 declaration: export record Item {
 shop/main.vo:4:14 import: import model.Item;
 shop/main.vo:16:22 use in main: let items = [new Item { name: "pen", price: 3 }, new Item { name: name, price: 4 }];
 shop/main.vo:16:58 use in main: let items = [new Item { name: "pen", price: 3 }, new Item { name: name, price: 4 }];
 shop/io.vo:1:14 import: import model.Item;
-shop/io.vo:22:14 type in label: fn label(it: Item) -> str {
+shop/io.vo:22:21 type in label: export fn label(it: Item) -> str {
 shop/model.vo:7:11 type: added(Item);
 shop/report.vo:2:14 import: import model.Item;
-shop/report.vo:23:22 type in total: fn total(items: list[Item]) -> int
+shop/report.vo:23:29 type in total: export fn total(items: list[Item]) -> int
 9 references

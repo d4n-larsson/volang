@@ -25,7 +25,7 @@ fn paragraphs(lines: list[str]) -> list[list[str]] {
     return paras;
 }
 
-fn wrap(words: list[str], width: int) -> list[str] {
+export fn wrap(words: list[str], width: int) -> list[str] {
     let out = new list[str];
     var line = "";
     for word in words {
@@ -49,7 +49,7 @@ fn wrap(words: list[str], width: int) -> list[str] {
     return out;
 }
 
-fn format(lines: list[str], width: int) -> list[str] {
+export fn format(lines: list[str], width: int) -> list[str] {
     let out = new list[str];
     var first = true;
     for p in paragraphs(lines) {

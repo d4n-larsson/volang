@@ -3,7 +3,7 @@ import bank.new_bank;
 import parsing.Entry;
 import parsing.show;
 
-fn replay(entries: list[Entry]) -> list[str] {
+export fn replay(entries: list[Entry]) -> list[str] {
     let b = new_bank();
     let out = new list[str];
     let order = slice(entries, 0, len(entries));

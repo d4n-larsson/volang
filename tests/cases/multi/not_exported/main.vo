@@ -1,0 +1,7 @@
+import report.money;
+import report.total;
+
+fn main() uses console {
+    print(total(250));
+    print(money(5));
+}

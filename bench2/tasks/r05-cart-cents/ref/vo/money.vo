@@ -1,4 +1,4 @@
-fn is_number(s: str) -> bool {
+export fn is_number(s: str) -> bool {
     if len(s) == 0 {
         return false;
     }
@@ -8,7 +8,7 @@ fn is_number(s: str) -> bool {
 }
 
 # Only called on strings that passed is_number.
-fn num(s: str) -> int {
+export fn num(s: str) -> int {
     match parse_int(s) {
         case ok(n) {
             return n;
@@ -20,7 +20,7 @@ fn num(s: str) -> int {
 }
 
 # Cents for a price word: digits, optionally "." and one or two digits; err if not a price.
-fn parse_amount(text: str) -> result[int] {
+export fn parse_amount(text: str) -> result[int] {
     let parts = split(text, ".");
     if len(parts) > 2 or not is_number(parts[0]) {
         return err("not a price");
@@ -40,7 +40,7 @@ fn parse_amount(text: str) -> result[int] {
 }
 
 # Formats an amount in cents as X.YY.
-fn money(cents: int) -> str {
+export fn money(cents: int) -> str {
     var frac = str(cents % 100);
     if len(frac) < 2 {
         set frac = "0" + frac;
@@ -49,6 +49,6 @@ fn money(cents: int) -> str {
 }
 
 # pct percent of an amount in cents, rounded half up to a whole cent.
-fn percent_of(cents: int, pct: int) -> int {
+export fn percent_of(cents: int, pct: int) -> int {
     return (cents * pct + 50) / 100;
 }

@@ -18,7 +18,7 @@ fn find_parked(garage: Garage, plate: str, time: int) -> result[Vehicle] {
     return ok(vehicle);
 }
 
-fn exit_vehicle(garage: Garage, plate: str, time: int) -> str {
+export fn exit_vehicle(garage: Garage, plate: str, time: int) -> str {
     match find_parked(garage, plate, time) {
         case ok(vehicle) {
             let minutes = time - vehicle.since;
@@ -35,7 +35,7 @@ fn exit_vehicle(garage: Garage, plate: str, time: int) -> str {
     }
 }
 
-fn quote(garage: Garage, plate: str, time: int) -> str {
+export fn quote(garage: Garage, plate: str, time: int) -> str {
     match find_parked(garage, plate, time) {
         case ok(vehicle) {
             let minutes = time - vehicle.since;
@@ -59,7 +59,7 @@ fn pending(garage: Garage, number: int, time: int) -> int {
     return total;
 }
 
-fn report(garage: Garage, time: int) -> list[str] {
+export fn report(garage: Garage, time: int) -> list[str] {
     let out = new list[str];
     var exits = 0;
     var revenue = 0;

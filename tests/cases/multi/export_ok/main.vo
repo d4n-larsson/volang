@@ -1,0 +1,25 @@
+import report.Level;
+import report.Total;
+import report.level;
+import report.total;
+
+fn main() uses console {
+    let t = total("food", 250);
+    match level(t) {
+        case low {
+            print("low");
+        }
+        case high(c) {
+            print(t.name + " high " + str(c));
+        }
+    }
+    let u = new Total { name: "rent", cents: 50 };
+    match level(u) {
+        case low {
+            print(u.name + " low");
+        }
+        case high(_) {
+            print("high");
+        }
+    }
+}

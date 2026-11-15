@@ -3,12 +3,12 @@ index 1234567..89abcde 100644
 --- a/pricing.vo
 +++ b/pricing.vo
 @@ -1,5 +1,5 @@
- fn tax(cents: int) -> int {
+ export fn tax(cents: int) -> int {
 -    return cents * 20 / 100;
 +    return cents * 25 / 100;
  }
  
- fn discount(cents: int, percent: int) -> int {
+ export fn discount(cents: int, percent: int) -> int {
 diff --git a/cart.vo b/cart.vo
 index 1234567..89abcde 100644
 --- a/cart.vo
@@ -16,9 +16,9 @@ index 1234567..89abcde 100644
 @@ -9,7 +9,7 @@
  }
  
- fn checkout(prices: list[int]) -> int {
+ export fn checkout(prices: list[int]) -> int {
 -    return subtotal(prices) + 0;
 +    return subtotal(prices);
  }
  
- fn with_tax_values(prices: list[int]) -> list[int] {
+ export fn with_tax_values(prices: list[int]) -> list[int] {

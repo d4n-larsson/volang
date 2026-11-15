@@ -2,19 +2,19 @@ import units.is_unit;
 import units.format_qty;
 import config.Config;
 
-record Ingredient {
+export record Ingredient {
     item: str;
     qty: int;
     unit: str;
 }
 
-record Recipe {
+export record Recipe {
     name: str;
     servings: int;
     ingredients: list[Ingredient];
 }
 
-fn add_recipe(recipes: map[str, Recipe], name: str, servings: int, ingredients: list[Ingredient]) -> str {
+export fn add_recipe(recipes: map[str, Recipe], name: str, servings: int, ingredients: list[Ingredient]) -> str {
     for ing in ingredients {
         if not is_unit(ing.unit) {
             return "error: bad unit " + ing.unit;
@@ -34,11 +34,11 @@ fn add_recipe(recipes: map[str, Recipe], name: str, servings: int, ingredients: 
     return "recipe " + name + " added (" + str(len(ingredients)) + " ingredients)";
 }
 
-fn ingredient_line(item: str, qty: int, unit: str, cfg: Config) -> str {
+export fn ingredient_line(item: str, qty: int, unit: str, cfg: Config) -> str {
     return "  " + item + " " + format_qty(qty, unit, cfg);
 }
 
-fn show_lines(recipe: Recipe, cfg: Config) -> list[str] {
+export fn show_lines(recipe: Recipe, cfg: Config) -> list[str] {
     let out = [recipe.name + " (" + str(recipe.servings) + " servings)"];
     for ing in recipe.ingredients {
         push(out, ingredient_line(ing.item, ing.qty, ing.unit, cfg));
@@ -46,7 +46,7 @@ fn show_lines(recipe: Recipe, cfg: Config) -> list[str] {
     return out;
 }
 
-fn list_lines(recipes: map[str, Recipe]) -> list[str] {
+export fn list_lines(recipes: map[str, Recipe]) -> list[str] {
     if len(recipes) == 0 {
         return ["no recipes"];
     }

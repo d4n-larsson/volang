@@ -239,9 +239,11 @@ void doc_print_item(Str *module, Node *item, Str *desc, Str *example, long full)
     } else {
         sb_bytes(sb, sig->ptr, sig->len);
         sb_byte(sb, '\n');
-        sb_cstr(sb, "    ");
-        sb_str(sb, desc);
-        sb_byte(sb, '\n');
+        if (desc->len) { /* none for an exported package item without a doc comment */
+            sb_cstr(sb, "    ");
+            sb_str(sb, desc);
+            sb_byte(sb, '\n');
+        }
         if (full && example) {
             sb_cstr(sb, "    example: ");
             sb_str(sb, example);
@@ -277,7 +279,7 @@ long doc_module(char *module_word, Str *item_name)
     return doc_file(file, sb_finish(mb), item_name);
 }
 
-/* The checked file's documented items as members of module (all of them, or the one named
+/* The checked file's exported items as members of module (all of them, or the one named
  * item_name): printed, or collected into doc_collect; returns how many were printed. */
 long doc_file(long file, Str *module, Str *item_name)
 {
@@ -287,9 +289,10 @@ long doc_file(long file, Str *module, Str *item_name)
         Node *it = vec_get(items, i);
         if (it->kind != N_FN && it->kind != N_RECORD && it->kind != N_VARIANT) continue;
         if (item_name && !str_eq(it->a.n->a.s, item_name)) continue; /* only the named item */
+        if (!(it->flags & NF_EXPORT)) continue; /* spec 010: private to its file */
         Str *found[2];
         doc_comments(file, items, i, found);
-        if (!found[0]) continue; /* internal: not documented */
+        if (!found[0]) found[0] = str_from_cstr(""); /* exported without a doc comment (packages) */
         if (doc_collect) { /* collecting: std.MODULE.ITEM */
             Str *dotted = str_concat(module, str_from_cstr("."));
             vec_push(doc_collect, str_concat(dotted, it->a.n->a.s));

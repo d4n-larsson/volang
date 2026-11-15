@@ -1,5 +1,5 @@
-$ vo edit rename main.vo catalog.vo:11:32 code
-catalog.vo:11:32 sku -> code
+$ vo edit rename main.vo catalog.vo:11:39 code
+catalog.vo:11:39 sku -> code
 catalog.vo:12:33 sku -> code
 catalog.vo:13:25 sku -> code
 renamed sku to code: 3 changes in 1 file

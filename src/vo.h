@@ -153,7 +153,8 @@
 #define T_PROP (44)
 #define T_REQUIRES (45)
 #define T_ENSURES (46)
-#define T_KW_LAST (46)
+#define T_EXPORT (47) /* spec 010 */
+#define T_KW_LAST (47)
 /* punctuation */
 #define T_LPAREN (50)
 #define T_RPAREN (51)
@@ -343,6 +344,7 @@
 #define NF_FNVAL (32) /* N_IDENT naming a function used as a value (N_D: the declaration) */
 #define NF_PROP (64) /* N_TEST that is a property (parameters in FX_PARAMS) */
 #define NF_EMPTY_ARM (128) /* spec 009: N_ARM written `case NAME()` */
+#define NF_EXPORT (512) /* spec 010: item declared with `export` */
 #define NF_PAREN (256) /* expression written in parentheses (vo fmt keeps them around `and` in `or`) */
 
 /* builtin ids used outside check_expr.c (all ids: check_expr.c builtin_names) */
@@ -1427,6 +1429,7 @@ extern void doc_print_item(Str *module, Node *item, Str *desc, Str *example, lon
 extern long doc_std_file(Str *path);
 extern long doc_module(char *module_word, Str *item_name);
 extern long doc_file(long file, Str *module, Str *item_name);
+extern void export_needed(char *code, Node *at, Node *decl, Str *message);
 extern long doc_package(Str *name);
 extern long doc_package_list(void);
 extern void doc_package_names(void);

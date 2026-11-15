@@ -108,12 +108,12 @@ fn records(lines: list[str]) -> list[Record] {
     return out;
 }
 
-fn stats(lines: list[str]) -> list[str] {
+export fn stats(lines: list[str]) -> list[str] {
     let valid = len(records(lines));
     return ["lines " + str(len(lines)) + " valid " + str(valid) + " invalid " + str(len(lines) - valid)];
 }
 
-fn levels(lines: list[str]) -> list[str] {
+export fn levels(lines: list[str]) -> list[str] {
     let counts = new map[str, int];
     for lv in levels_in_order() {
         set counts[lv] = 0;
@@ -126,7 +126,7 @@ fn levels(lines: list[str]) -> list[str] {
     });
 }
 
-fn errors(lines: list[str]) -> list[str] {
+export fn errors(lines: list[str]) -> list[str] {
     let per = new map[str, int];
     for rec in records(lines) {
         if rec.level == "ERROR" {

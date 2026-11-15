@@ -1,12 +1,12 @@
 import money.format_money;
 
-record Deduction {
+export record Deduction {
     label: str;
     amount: int;
 }
 
 # kind is "hourly" (amount = cents per hour) or "salaried" (amount = salary in cents).
-record Employee {
+export record Employee {
     emp_id: str;
     name: str;
     kind: str;
@@ -22,7 +22,7 @@ fn pay_text(emp: Employee) -> str {
     return "salaried " + format_money(emp.amount);
 }
 
-fn add_employee(staff: map[str, Employee], emp_id: str, name: str, kind: str, amount: int) -> str {
+export fn add_employee(staff: map[str, Employee], emp_id: str, name: str, kind: str, amount: int) -> str {
     if has(staff, emp_id) {
         return "error: employee " + emp_id + " exists";
     }
@@ -31,7 +31,7 @@ fn add_employee(staff: map[str, Employee], emp_id: str, name: str, kind: str, am
     return "employee " + emp_id + " added: " + pay_text(emp);
 }
 
-fn log_hours(staff: map[str, Employee], emp_id: str, hours: int) -> str {
+export fn log_hours(staff: map[str, Employee], emp_id: str, hours: int) -> str {
     if not has(staff, emp_id) {
         return "error: unknown employee " + emp_id;
     }
@@ -43,7 +43,7 @@ fn log_hours(staff: map[str, Employee], emp_id: str, hours: int) -> str {
     return emp_id + " hours " + str(emp.hours);
 }
 
-fn set_rate(staff: map[str, Employee], emp_id: str, amount: int) -> str {
+export fn set_rate(staff: map[str, Employee], emp_id: str, amount: int) -> str {
     if not has(staff, emp_id) {
         return "error: unknown employee " + emp_id;
     }
@@ -55,7 +55,7 @@ fn set_rate(staff: map[str, Employee], emp_id: str, amount: int) -> str {
     return emp_id + " salary " + format_money(amount);
 }
 
-fn add_deduction(staff: map[str, Employee], emp_id: str, amount: int, label: str) -> str {
+export fn add_deduction(staff: map[str, Employee], emp_id: str, amount: int, label: str) -> str {
     if not has(staff, emp_id) {
         return "error: unknown employee " + emp_id;
     }
@@ -64,7 +64,7 @@ fn add_deduction(staff: map[str, Employee], emp_id: str, amount: int, label: str
     return emp_id + " deduction " + label + " " + format_money(amount);
 }
 
-fn sorted_staff(staff: map[str, Employee]) -> list[Employee] {
+export fn sorted_staff(staff: map[str, Employee]) -> list[Employee] {
     let ids = keys(staff);
     sort(ids);
     return map(ids, fn(emp_id: str) -> Employee {

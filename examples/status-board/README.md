@@ -44,10 +44,9 @@ kill %1                                                   # stop the service
 `recordings/demo.jsonl` is such a recording, committed: `../../bin/vo replay recordings/demo.jsonl`
 works on any machine. Replay is how you debug a run you cannot repeat (the service has moved on, or
 the bug only showed against production data): change the program, replay the recording, and see the
-fix on the very input that broke it. Each request is matched to the recording by host and port: if the
-changed program contacts another host or port, or makes more requests than were recorded, replay stops
-with R0014 instead of guessing. (The path is not compared: a request for another path on the same
-server gets the recorded response.)
+fix on the very input that broke it. Each request is matched to the recording by host, port, method and
+path: if the changed program asks for something else (`GET /v2/status` instead of `GET /status`), or
+makes more requests than were recorded, replay stops with R0014 instead of guessing.
 
 ## What it shows
 

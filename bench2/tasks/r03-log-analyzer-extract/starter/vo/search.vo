@@ -72,7 +72,7 @@ fn split_entry(line: str) -> result[list[str]] {
     return ok(words);
 }
 
-fn grep(lines: list[str], word: str) -> list[str] {
+export fn grep(lines: list[str], word: str) -> list[str] {
     let out = new list[str];
     for line in lines {
         match split_entry(line) {

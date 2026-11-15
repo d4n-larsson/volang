@@ -542,6 +542,7 @@ static void fm_item(Node *item)
         fm_b(';');
         break;
     case N_FN: {
+        if (item->flags & NF_EXPORT) fm_c("export ");
         fm_c("fn ");
         fm_name(item->a.n);
         Fx *fx = item->a.n ? item->a.n->b.fx : 0;
@@ -569,6 +570,7 @@ static void fm_item(Node *item)
     }
     case N_RECORD:
     case N_VARIANT:
+        if (item->flags & NF_EXPORT) fm_c("export ");
         fm_c(item->kind == N_RECORD ? "record " : "variant ");
         fm_name(item->a.n);
         fm_tparams(item->c.v); /* [T, ...] */

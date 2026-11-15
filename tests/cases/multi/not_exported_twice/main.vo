@@ -1,0 +1,6 @@
+import stats.spread;
+import util.clamp;
+
+fn main() uses console {
+    print(str(spread(3, 1) + clamp(-4)));
+}

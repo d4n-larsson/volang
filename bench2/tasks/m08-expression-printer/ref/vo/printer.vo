@@ -34,7 +34,7 @@ fn wrap(e: Expr, needed: bool) -> str {
     return show(e);
 }
 
-fn strip_zeros(d: str) -> str {
+export fn strip_zeros(d: str) -> str {
     var i = 0;
     while i < len(d) - 1 and slice(d, i, i + 1) == "0" {
         set i = i + 1;
@@ -42,7 +42,7 @@ fn strip_zeros(d: str) -> str {
     return slice(d, i, len(d));
 }
 
-fn show(e: Expr) -> str {
+export fn show(e: Expr) -> str {
     match e {
         case num(d) {
             return strip_zeros(d);

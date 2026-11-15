@@ -28,11 +28,11 @@ fn main() uses console {
 }
 """
 FORMAT = """# Formats amounts of money.
-fn cents(n: int) -> str {
+export fn cents(n: int) -> str {
     return str(n / 100) + "." + str(n % 100);
 }
 """
-ROUND = """fn half_up(n: int) -> int {
+ROUND = """export fn half_up(n: int) -> int {
     return n;
 }
 """

@@ -3,14 +3,14 @@
 
 # A float in [0, 1) from 53 random bits.
 #     unit() < 1.0 is true
-fn unit() -> float uses random {
+export fn unit() -> float uses random {
     let bits = random_int(0, 9007199254740991);
     return float(bits) / float(9007199254740992);
 }
 
 # A random element of xs; an empty list is an error.
 #     pick([7]) == ok(7) is true
-fn pick[T](xs: list[T]) -> result[T] uses random {
+export fn pick[T](xs: list[T]) -> result[T] uses random {
     if len(xs) == 0 {
         return err("empty list");
     }
@@ -19,7 +19,7 @@ fn pick[T](xs: list[T]) -> result[T] uses random {
 
 # A shuffled copy of xs (Fisher-Yates); xs is unchanged.
 #     len(shuffle([1, 2, 3])) is 3
-fn shuffle[T](xs: list[T]) -> list[T] uses random {
+export fn shuffle[T](xs: list[T]) -> list[T] uses random {
     let out = slice(xs, 0, len(xs));
     var i = len(out) - 1;
     while i > 0 {

@@ -1,19 +1,19 @@
-record Item {
+export record Item {
     name: str;
     price: int;
 }
 
-variant Event {
+export variant Event {
     added(Item);
     removed(str);
     cleared;
 }
 
-record Pair[A, B] {
+export record Pair[A, B] {
     first: A;
     second: B;
 }
 
-fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
+export fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
     return new Pair[B, A] { first: p.second, second: p.first };
 }

@@ -1,6 +1,6 @@
 import report.render;
 
-fn save_total(n: int) -> result[void] {
+export fn save_total(n: int) -> result[void] {
     let _ = render(n);
     return ok();
 }

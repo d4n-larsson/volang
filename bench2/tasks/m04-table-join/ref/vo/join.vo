@@ -1,9 +1,9 @@
-record Joined {
+export record Joined {
     header: list[str];
     rows: list[list[str]];
 }
 
-fn index_of(xs: list[str], x: str) -> int {
+export fn index_of(xs: list[str], x: str) -> int {
     for i in 0..len(xs) {
         if xs[i] == x {
             return i;
@@ -41,7 +41,7 @@ fn row(key: str, a: list[str], oa: list[int], b: list[str], ob: list[int]) -> li
     return out;
 }
 
-fn join_tables(kind: str, key: str, ha: list[str], ra: list[list[str]], hb: list[str], rb: list[list[str]]) -> Joined {
+export fn join_tables(kind: str, key: str, ha: list[str], ra: list[list[str]], hb: list[str], rb: list[list[str]]) -> Joined {
     let ka = index_of(ha, key);
     let kb = index_of(hb, key);
     let oa = others(len(ha), ka);

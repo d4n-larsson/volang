@@ -1,4 +1,4 @@
-fn clamp(x: int, lo: int, hi: int) -> int uses env("LIMIT") {
+export fn clamp(x: int, lo: int, hi: int) -> int uses env("LIMIT") {
     match env("LIMIT") {
         case ok(v) {
             return hi + len(v) * 0;

@@ -1,4 +1,4 @@
-fn render(n: int) -> str uses console {
+export fn render(n: int) -> str uses console {
     print("rendering");
     return "total: " + str(n);
 }

@@ -1,4 +1,4 @@
-record Entry {
+export record Entry {
     level: str;
     component: str;
     message: str;
@@ -7,7 +7,7 @@ record Entry {
     text: str;
 }
 
-fn levels_in_order() -> list[str] {
+export fn levels_in_order() -> list[str] {
     return ["DEBUG", "INFO", "WARN", "ERROR"];
 }
 
@@ -50,7 +50,7 @@ fn days_in(year: int, month: int) -> int {
 }
 
 # Seconds since 0001-01-01 00:00:00 for a date and time word, or -1 if invalid.
-fn to_seconds(date: str, time: str) -> int {
+export fn to_seconds(date: str, time: str) -> int {
     if len(date) != 10 or slice(date, 4, 5) != "-" or slice(date, 7, 8) != "-" {
         return -1;
     }
@@ -106,7 +106,7 @@ fn parse_entry(line: str) -> result[Entry] {
     return ok(new Entry { level: level, component: slice(comp, 0, len(comp) - 1), message: join(slice(words, 4, len(words)), " "), hour: to_int(slice(words[1], 0, 2)), seconds: seconds, text: join(words, " ") });
 }
 
-fn entries(lines: list[str]) -> list[Entry] {
+export fn entries(lines: list[str]) -> list[Entry] {
     let out = new list[Entry];
     for line in lines {
         match parse_entry(line) {

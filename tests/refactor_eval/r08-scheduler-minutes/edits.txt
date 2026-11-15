@@ -5,6 +5,6 @@ rename Event.end end_min
 # "... everywhere": the free slots computed by free also hold minutes
 rename Slot.start start_min
 # "Parse input times once, into minutes": the lower bound of free is in minutes
-rename schedule.vo:68:51 lo_min
+rename schedule.vo:68:58 lo_min
 # "Parse input times once, into minutes": the time asked by who is in minutes
-rename schedule.vo:58:49 t_min
+rename schedule.vo:58:56 t_min

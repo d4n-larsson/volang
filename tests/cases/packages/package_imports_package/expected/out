@@ -1,9 +1,9 @@
 $ vo package main.vo pads lib/pads
-added pads lib/pads sha256:7b718e1112babf1e670ce87a0fc29638d52f7d7fd2e6617433e43b0243180e54
+added pads lib/pads sha256:b0d8ff4cb3bf85166e6a4004393060cfb69c6c71089b16ec3d968b84b8378521
 --- stderr
 --- exit 0
 $ vo package main.vo money shared/money
-added money shared/money sha256:5c95c313fb655ebf2d6452f331ab0bb5551ae7302cfa7b0f838a832ca0c83463
+added money shared/money sha256:f2403ede039907bd13577b0d96e81b34f97d655bae876798c87552d68e039d2b
 --- stderr
 --- exit 0
 $ vo run main.vo

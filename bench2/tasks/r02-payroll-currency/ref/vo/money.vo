@@ -1,9 +1,9 @@
 # Summary order of the currencies.
-fn currencies() -> list[str] {
+export fn currencies() -> list[str] {
     return ["USD", "EUR", "JPY"];
 }
 
-fn is_currency(code: str) -> bool {
+export fn is_currency(code: str) -> bool {
     return any(currencies(), fn(c: str) -> bool {
         return c == code;
     });
@@ -17,7 +17,7 @@ fn two_digits(n: int) -> str {
     return s;
 }
 
-fn format_money(amount: int, currency: str) -> str {
+export fn format_money(amount: int, currency: str) -> str {
     if amount < 0 {
         return "-" + format_money(-amount, currency);
     }

@@ -1,0 +1,22 @@
+record Url {
+    host: str;
+    port: int;
+}
+
+variant Method {
+    get;
+    post(str);
+}
+
+export record Request {
+    url: Url;
+    method: Method;
+}
+
+export fn parse(s: str) -> result[Url] {
+    return ok(new Url { host: s, port: 80 });
+}
+
+export fn send(r: list[Request], m: map[str, Method]) -> int {
+    return len(r) + len(m);
+}

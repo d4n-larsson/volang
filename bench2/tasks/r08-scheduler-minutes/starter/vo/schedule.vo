@@ -1,14 +1,14 @@
 import clock.duration;
 import clock.span;
 
-record Event {
+export record Event {
     event_id: str;
     room: str;
     start: str;
     end: str;
 }
 
-record Slot {
+export record Slot {
     start: str;
     end: str;
 }
@@ -18,7 +18,7 @@ fn overlaps(a_start: str, a_end: str, b_start: str, b_end: str) -> bool {
 }
 
 # The room's events sorted by start time.
-fn room_events(events: map[str, Event], room: str) -> list[Event] {
+export fn room_events(events: map[str, Event], room: str) -> list[Event] {
     let evs = new list[Event];
     for k in keys(events) {
         if events[k].room == room {
@@ -31,7 +31,7 @@ fn room_events(events: map[str, Event], room: str) -> list[Event] {
     return evs;
 }
 
-fn add_event(events: map[str, Event], event_id: str, room: str, start: str, end: str) -> str {
+export fn add_event(events: map[str, Event], event_id: str, room: str, start: str, end: str) -> str {
     if has(events, event_id) {
         return "error: event " + event_id + " exists";
     }
@@ -47,7 +47,7 @@ fn add_event(events: map[str, Event], event_id: str, room: str, start: str, end:
     return "added " + event_id + " in " + room + " " + span(start, end);
 }
 
-fn remove_event(events: map[str, Event], event_id: str) -> str {
+export fn remove_event(events: map[str, Event], event_id: str) -> str {
     if not has(events, event_id) {
         return "error: unknown event " + event_id;
     }
@@ -55,7 +55,7 @@ fn remove_event(events: map[str, Event], event_id: str) -> str {
     return "removed " + event_id;
 }
 
-fn event_at(events: map[str, Event], room: str, t: str) -> result[Event] {
+export fn event_at(events: map[str, Event], room: str, t: str) -> result[Event] {
     for e in room_events(events, room) {
         if e.start <= t and t < e.end {
             return ok(e);
@@ -65,7 +65,7 @@ fn event_at(events: map[str, Event], room: str, t: str) -> result[Event] {
 }
 
 # Gaps inside [lo, hi) not covered by the room's events, at least min_len minutes long.
-fn free_slots(events: map[str, Event], room: str, lo: str, hi: str, min_len: int) -> list[Slot] {
+export fn free_slots(events: map[str, Event], room: str, lo: str, hi: str, min_len: int) -> list[Slot] {
     let slots = new list[Slot];
     var cursor = lo;
     for e in room_events(events, room) {
@@ -86,7 +86,7 @@ fn free_slots(events: map[str, Event], room: str, lo: str, hi: str, min_len: int
     return slots;
 }
 
-fn booked_minutes(evs: list[Event]) -> int {
+export fn booked_minutes(evs: list[Event]) -> int {
     return fold(evs, 0, fn(acc: int, e: Event) -> int {
         return acc + duration(e.start, e.end);
     });

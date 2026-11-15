@@ -1,12 +1,12 @@
 import commands.Command;
 import commands.money;
 
-record Loan {
+export record Loan {
     isbn: str;
     due: int;
 }
 
-record Library {
+export record Library {
     copies: map[str, int];
     shelf: map[str, int];
     queue: map[str, list[str]];
@@ -15,7 +15,7 @@ record Library {
     loans: map[str, list[Loan]];
 }
 
-fn new_library() -> Library {
+export fn new_library() -> Library {
     return new Library { copies: new map[str, int], shelf: new map[str, int], queue: new map[str, list[str]], limit: new map[str, int], owes: new map[str, int], loans: new map[str, list[Loan]] };
 }
 
@@ -141,7 +141,7 @@ fn give_back(lib: Library, c: Command) -> result[str] {
     return ok(c.a + " returns " + c.b);
 }
 
-fn run(lib: Library, c: Command, out: list[str]) {
+export fn run(lib: Library, c: Command, out: list[str]) {
     if c.name == "book" {
         add_book(lib, c, out);
         return;

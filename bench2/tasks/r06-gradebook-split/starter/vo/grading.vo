@@ -57,7 +57,7 @@ fn letter(avg: int) -> str {
     return "F";
 }
 
-fn assignment_stats(book: Book, name: str) -> list[str] {
+export fn assignment_stats(book: Book, name: str) -> list[str] {
     if not has(book.assignments, name) {
         return [unknown_assignment(name)];
     }
@@ -83,7 +83,7 @@ fn assignment_stats(book: Book, name: str) -> list[str] {
     return [name + " count " + str(len(points)) + " min " + str(low) + " max " + str(high) + " mean " + tenths(mean)];
 }
 
-fn card(book: Book, name: str) -> list[str] {
+export fn card(book: Book, name: str) -> list[str] {
     if not has(book.students, name) {
         return [unknown_student(name)];
     }
@@ -109,7 +109,7 @@ fn card(book: Book, name: str) -> list[str] {
     return out;
 }
 
-fn class_report(book: Book) -> list[str] {
+export fn class_report(book: Book) -> list[str] {
     let graded = new list[Graded];
     let ungraded = new list[str];
     for s in keys(book.students) {

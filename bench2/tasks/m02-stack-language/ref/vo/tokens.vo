@@ -1,14 +1,14 @@
-fn limit() -> int {
+export fn limit() -> int {
     return 1000000000000000000;
 }
 
-fn tokens(line: str) -> list[str] {
+export fn tokens(line: str) -> list[str] {
     return filter(split(line, " "), fn(t: str) -> bool {
         return t != "";
     });
 }
 
-fn is_number(tok: str) -> bool {
+export fn is_number(tok: str) -> bool {
     var d = tok;
     if len(tok) > 0 and slice(tok, 0, 1) == "-" {
         set d = slice(tok, 1, len(tok));
@@ -18,7 +18,7 @@ fn is_number(tok: str) -> bool {
     });
 }
 
-fn number(tok: str) -> result[int] {
+export fn number(tok: str) -> result[int] {
     var neg = false;
     var d = tok;
     if slice(tok, 0, 1) == "-" {

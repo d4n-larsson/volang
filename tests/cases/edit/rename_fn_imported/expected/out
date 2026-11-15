@@ -2,7 +2,7 @@ $ vo edit rename main.vo add_item add_product
 main.vo:3:16 add_item -> add_product
 main.vo:36:5 add_item -> add_product
 main.vo:37:5 add_item -> add_product
-catalog.vo:11:4 add_item -> add_product
+catalog.vo:11:11 add_item -> add_product
 vo.effects:2:12 add_item -> add_product
 renamed add_item to add_product: 5 changes in 3 files
 --- stderr

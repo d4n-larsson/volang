@@ -1,12 +1,12 @@
 import catalog.Product;
 
-record Line {
+export record Line {
     sku: str;
     qty: int;
     price: int;
 }
 
-record Order {
+export record Order {
     order_id: str;
     lines: list[Line];
     total: int;
@@ -35,7 +35,7 @@ fn requested_by_sku(pairs: list[Line]) -> map[str, int] {
 }
 
 # `pairs` holds the requested lines (price 0); the order gets copies with the current prices.
-fn place_order(catalog: map[str, Product], orders: map[str, Order], order_id: str, pairs: list[Line]) -> result[Order] {
+export fn place_order(catalog: map[str, Product], orders: map[str, Order], order_id: str, pairs: list[Line]) -> result[Order] {
     if has(orders, order_id) {
         return err("error: order " + order_id + " exists");
     }
@@ -66,7 +66,7 @@ fn place_order(catalog: map[str, Product], orders: map[str, Order], order_id: st
     return ok(order);
 }
 
-fn cancel_order(catalog: map[str, Product], orders: map[str, Order], order_id: str) -> str {
+export fn cancel_order(catalog: map[str, Product], orders: map[str, Order], order_id: str) -> str {
     if not has(orders, order_id) {
         return "error: unknown order " + order_id;
     }
@@ -83,7 +83,7 @@ fn cancel_order(catalog: map[str, Product], orders: map[str, Order], order_id: s
     return "order " + order_id + " cancelled";
 }
 
-fn units(order: Order) -> int {
+export fn units(order: Order) -> int {
     var n = 0;
     for line in order.lines {
         set n = n + line.qty;

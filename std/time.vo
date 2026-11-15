@@ -4,7 +4,7 @@
 
 # A UTC calendar time; weekday is 1 for Monday through 7 for Sunday.
 #     from_ms(0).weekday is 4
-record DateTime {
+export record DateTime {
     year: int;
     month: int;
     day: int;
@@ -41,7 +41,7 @@ fn days_from_civil(year: int, month: int, day: int) -> int {
 
 # The UTC calendar time of ms (any int; years outside 1-9999 are allowed here).
 #     from_ms(86400000).day is 2
-fn from_ms(ms: int) -> DateTime {
+export fn from_ms(ms: int) -> DateTime {
     let day_count = floor_div(ms, 86400000);
     let rest = ms - day_count * 86400000;
     let z = day_count + 719468;
@@ -65,13 +65,13 @@ fn from_ms(ms: int) -> DateTime {
 
 # Whether year is a leap year.
 #     is_leap(2000) is true
-fn is_leap(year: int) -> bool {
+export fn is_leap(year: int) -> bool {
     return (year % 4 == 0 and year % 100 != 0) or year % 400 == 0;
 }
 
 # The number of days in a month (1-12) of a year.
 #     days_in_month(2024, 2) is 29
-fn days_in_month(year: int, month: int) -> int {
+export fn days_in_month(year: int, month: int) -> int {
     if month == 2 {
         if is_leap(year) {
             return 29;
@@ -86,7 +86,7 @@ fn days_in_month(year: int, month: int) -> int {
 
 # The time of a calendar time; an invalid field is an error (weekday is ignored).
 #     to_ms(from_ms(5)) == ok(5) is true
-fn to_ms(d: DateTime) -> result[int] {
+export fn to_ms(d: DateTime) -> result[int] {
     if d.year < 1 or d.year > 9999 {
         return err("year " + str(d.year) + " is outside 1-9999");
     }
@@ -108,7 +108,7 @@ fn to_ms(d: DateTime) -> result[int] {
 
 # Midnight UTC of a date.
 #     date(1970, 1, 2) == ok(86400000) is true
-fn date(year: int, month: int, day: int) -> result[int] {
+export fn date(year: int, month: int, day: int) -> result[int] {
     return to_ms(new DateTime { year: year, month: month, day: day, hour: 0, minute: 0, second: 0, ms: 0, weekday: 0 });
 }
 
@@ -125,7 +125,7 @@ fn pad(n: int, width: int) -> str {
 
 # ISO 8601 text of a time in UTC, with milliseconds only when they are not 0.
 #     format_time(0) is "1970-01-01T00:00:00Z"
-fn format_time(ms: int) -> str {
+export fn format_time(ms: int) -> str {
     let d = from_ms(ms);
     var s = pad(d.year, 4) + "-" + pad(d.month, 2) + "-" + pad(d.day, 2) + "T" + pad(d.hour, 2) + ":" + pad(d.minute, 2) + ":" + pad(d.second, 2);
     if d.ms != 0 {
@@ -156,7 +156,7 @@ fn expect_char(s: str, i: int, c: str) -> result[void] {
 
 # The time of ISO 8601 text: YYYY-MM-DD, or YYYY-MM-DDTHH:MM:SS[.fff] with Z or +HH:MM / -HH:MM.
 #     parse_time("1970-01-01T00:00:01Z") == ok(1000) is true
-fn parse_time(s: str) -> result[int] {
+export fn parse_time(s: str) -> result[int] {
     let y = try digits_at(s, 0, 4);
     try expect_char(s, 4, "-");
     let mo = try digits_at(s, 5, 7);
@@ -210,30 +210,30 @@ fn parse_time(s: str) -> result[int] {
 
 # n seconds in milliseconds.
 #     seconds(2) is 2000
-fn seconds(n: int) -> int {
+export fn seconds(n: int) -> int {
     return n * 1000;
 }
 
 # n minutes in milliseconds.
 #     minutes(1) is 60000
-fn minutes(n: int) -> int {
+export fn minutes(n: int) -> int {
     return n * 60000;
 }
 
 # n hours in milliseconds.
 #     hours(1) is 3600000
-fn hours(n: int) -> int {
+export fn hours(n: int) -> int {
     return n * 3600000;
 }
 
 # n days in milliseconds.
 #     days(1) is 86400000
-fn days(n: int) -> int {
+export fn days(n: int) -> int {
     return n * 86400000;
 }
 
 # The current time (needs clock; fixed by --clock-ms).
 #     now() >= 0 is true
-fn now() -> int uses clock {
+export fn now() -> int uses clock {
     return now_ms();
 }

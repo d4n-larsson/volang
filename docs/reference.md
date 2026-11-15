@@ -33,7 +33,7 @@ hello vo, count = 3
 - **Floats**: digits, `.`, digits: `1.0`, `0.5`, `3.14`. Both sides of `.` are required (`1.` and `.5` are invalid). No exponent (`1e3` is invalid); at most 15 significant digits.
 - **Strings**: `"..."` on one line. The only escapes are `\n`, `\t`, `\\` and `\"` (any other is E0103). There are no single-quoted strings, no character type, no raw or multi-line strings and no interpolation: build strings with `+` and `str(...)`.
 - **Booleans**: `true`, `false`.
-- **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void uses prop requires ensures`.
+- **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void uses prop requires ensures export`.
 - There are no trailing commas anywhere (E0113).
 
 ```vo
@@ -100,7 +100,7 @@ fn main() uses console {
 
 ## Declarations
 
-A file contains `import` lines first, then items in any order: `fn`, `record`, `variant` and `test`. An item can use items declared later in the file. There are no global variables or constants, no methods, no classes and no nested functions.
+A file contains `import` lines first, then items in any order: `fn`, `record`, `variant` (each optionally after `export`) and `test`. An item can use items declared later in the file. There are no global variables or constants, no methods, no classes and no nested functions.
 
 ### Functions
 
@@ -942,16 +942,16 @@ PASS sorting twice changes nothing (100 cases, 0ms)
 
 ## Programs in several files
 
-`import a.b.name;` loads the file `a/b.vo`, relative to the directory of the importing file, and makes its top-level item `name` (a function, record or variant) visible. Every top-level item can be imported; write one `import` per name. Imports come before all items. Paths cannot contain `..`, and import cycles are E0206. Using a name defined in a sibling file without importing it is E0204, whose fix adds the `import`. Run the program through the file that contains `main`: `vo run main.vo`.
+`import a.b.name;` loads the file `a/b.vo`, relative to the directory of the importing file, and makes its top-level item `name` (a function, record or variant) visible. Only items declared with `export` (`export fn`, `export record`, `export variant`) can be imported; the others are private to their file, and importing one is E0209, whose fix adds `export`. An exported function, record or variant cannot use a private type of its file (E0210). Write one `import` per name. Imports come before all items. Paths cannot contain `..`, and import cycles are E0206. Using a name defined in a sibling file without importing it is E0204, whose fix adds the `import`. Run the program through the file that contains `main`: `vo run main.vo`.
 
 ```vo
 # file: geometry.vo
-record Point {
+export record Point {
     x: int;
     y: int;
 }
 
-fn dist2(p: Point) -> int {
+export fn dist2(p: Point) -> int {
     return p.x * p.x + p.y * p.y;
 }
 ```

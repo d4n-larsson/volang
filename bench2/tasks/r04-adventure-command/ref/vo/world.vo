@@ -1,22 +1,22 @@
-record Room {
+export record Room {
     title: str;
     exits: map[str, str];
     items: list[str];
 }
 
-fn start_room() -> str {
+export fn start_room() -> str {
     return "hall";
 }
 
-fn visit_points() -> int {
+export fn visit_points() -> int {
     return 5;
 }
 
-fn carry_limit() -> int {
+export fn carry_limit() -> int {
     return 10;
 }
 
-fn item_weight(item: str) -> int {
+export fn item_weight(item: str) -> int {
     let weights = new map[str, int];
     set weights["lamp"] = 2;
     set weights["book"] = 3;
@@ -39,7 +39,7 @@ fn make_room(title: str, directions: list[str], targets: list[str], items: list[
     return new Room { title: title, exits: exits, items: items };
 }
 
-fn make_world() -> map[str, Room] {
+export fn make_world() -> map[str, Room] {
     let world = new map[str, Room];
     set world["hall"] = make_room("Hall", ["north", "east", "south"], ["library", "kitchen", "garden"], ["lamp"]);
     set world["library"] = make_room("Library", ["south", "up"], ["hall", "attic"], ["book", "key"]);
@@ -51,7 +51,7 @@ fn make_world() -> map[str, Room] {
 }
 
 # Points for picking up an item; items not listed are worth nothing.
-fn item_value(item: str) -> int {
+export fn item_value(item: str) -> int {
     if item == "book" {
         return 5;
     }

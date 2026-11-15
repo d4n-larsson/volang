@@ -3,7 +3,7 @@ import catalog.sorted_products;
 import orders.Order;
 import orders.units;
 
-fn money(cents: int) -> str {
+export fn money(cents: int) -> str {
     var frac = str(cents % 100);
     if len(frac) < 2 {
         set frac = "0" + frac;
@@ -11,7 +11,7 @@ fn money(cents: int) -> str {
     return str(cents / 100) + "." + frac;
 }
 
-fn placed_line(order: Order) -> str {
+export fn placed_line(order: Order) -> str {
     var text = "order " + order.order_id + " placed: " + str(units(order)) + " units, total " + money(order.total);
     if order.discount > 0 {
         set text = text + " (discount " + money(order.discount) + ")";
@@ -19,7 +19,7 @@ fn placed_line(order: Order) -> str {
     return text;
 }
 
-fn show_order(order: Order) -> list[str] {
+export fn show_order(order: Order) -> list[str] {
     var status = "active";
     if order.cancelled {
         set status = "cancelled";
@@ -32,7 +32,7 @@ fn show_order(order: Order) -> list[str] {
     return out;
 }
 
-fn full_report(catalog: map[str, Product], orders: map[str, Order]) -> list[str] {
+export fn full_report(catalog: map[str, Product], orders: map[str, Order]) -> list[str] {
     let out = new list[str];
     for product in sorted_products(catalog) {
         push(out, "product " + product.sku + " " + product.name + " price " + money(product.price) + " stock " + str(product.stock) + " sold " + str(product.sold));

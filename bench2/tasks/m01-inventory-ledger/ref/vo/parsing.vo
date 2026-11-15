@@ -1,4 +1,4 @@
-record Command {
+export record Command {
     kind: str;
     sku: str;
     qty: int;
@@ -35,7 +35,7 @@ fn command(kind: str, sku: str, qty: int, price: int) -> Command {
     return new Command { kind: kind, sku: sku, qty: qty, price: price };
 }
 
-fn parse(line: str) -> Command {
+export fn parse(line: str) -> Command {
     let f = fields(line);
     let bad = command("INVALID", "", 0, 0);
     if len(f) == 0 {

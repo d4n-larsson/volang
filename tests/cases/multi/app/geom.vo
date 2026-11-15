@@ -1,8 +1,8 @@
-record Point {
+export record Point {
     x: int;
     y: int;
 }
 
-fn area(p: Point) -> int {
+export fn area(p: Point) -> int {
     return p.x * p.y;
 }

@@ -1,5 +1,5 @@
 refs nights
-bookings.vo:7:4 declaration
+bookings.vo:7:11 declaration
 bookings.vo:30:66 call
 report.vo:6:17 import
 report.vo:42:35 call
@@ -29,7 +29,7 @@ report.vo:21:31 use
 report.vo:22:63 use
 
 refs money
-billing.vo:11:4 declaration
+billing.vo:11:11 declaration
 billing.vo:29:71 call
 billing.vo:29:95 call
 billing.vo:31:45 call
@@ -56,24 +56,24 @@ report.vo:46:33 use
 report.vo:47:104 use
 
 refs Booking
-model.vo:8:8 declaration
+model.vo:8:15 declaration
 billing.vo:1:14 import
-billing.vo:26:21 type
+billing.vo:26:28 type
 bookings.vo:2:14 import
-bookings.vo:7:14 type
-bookings.vo:11:55 type
+bookings.vo:7:21 type
+bookings.vo:11:62 type
 bookings.vo:28:17 use
 main.vo:2:14 import
 main.vo:33:72 type
 main.vo:92:33 type
 report.vo:2:14 import
-report.vo:9:61 type
-report.vo:14:66 type
-report.vo:31:63 type
+report.vo:9:68 type
+report.vo:14:73 type
+report.vo:31:70 type
 rooms.vo:2:14 import
-rooms.vo:30:32 type
-rooms.vo:42:65 type
-rooms.vo:52:59 type
+rooms.vo:30:39 type
+rooms.vo:42:72 type
+rooms.vo:52:66 type
 
 callers occupied
 rooms.vo:45:12 call

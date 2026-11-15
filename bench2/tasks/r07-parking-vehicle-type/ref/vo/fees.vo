@@ -4,7 +4,7 @@ record Rate {
     daily_cap: int;
 }
 
-fn vehicle_types() -> list[str] {
+export fn vehicle_types() -> list[str] {
     return ["car", "motorcycle", "truck"];
 }
 
@@ -19,7 +19,7 @@ fn rate_for(kind: str) -> Rate {
     return new Rate { free_minutes: 30, hourly: 250, daily_cap: 2000 };
 }
 
-fn money(cents: int) -> str {
+export fn money(cents: int) -> str {
     var frac = str(cents % 100);
     if len(frac) < 2 {
         set frac = "0" + frac;
@@ -28,7 +28,7 @@ fn money(cents: int) -> str {
 }
 
 # The fee in cents for a stay of `minutes` by a vehicle of type `kind`.
-fn fee(kind: str, minutes: int) -> int {
+export fn fee(kind: str, minutes: int) -> int {
     let rate = rate_for(kind);
     if minutes <= rate.free_minutes {
         return 0;
@@ -38,7 +38,7 @@ fn fee(kind: str, minutes: int) -> int {
     return days * rate.daily_cap + min(rate.daily_cap, hours * rate.hourly);
 }
 
-fn rates() -> list[str] {
+export fn rates() -> list[str] {
     let out = new list[str];
     for kind in vehicle_types() {
         let rate = rate_for(kind);

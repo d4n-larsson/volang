@@ -1,24 +1,24 @@
-record Assignment {
+export record Assignment {
     name: str;
     weight: int;
     max_points: int;
 }
 
-record Student {
+export record Student {
     name: str;
     scores: map[str, int];
 }
 
-record Book {
+export record Book {
     assignments: map[str, Assignment];
     students: map[str, Student];
 }
 
-fn new_book() -> Book {
+export fn new_book() -> Book {
     return new Book { assignments: new map[str, Assignment], students: new map[str, Student] };
 }
 
-fn add_assignment(book: Book, name: str, weight: int, max_points: int) -> str {
+export fn add_assignment(book: Book, name: str, weight: int, max_points: int) -> str {
     if has(book.assignments, name) {
         return "error: assignment " + name + " exists";
     }
@@ -26,7 +26,7 @@ fn add_assignment(book: Book, name: str, weight: int, max_points: int) -> str {
     return "assignment " + name + " added";
 }
 
-fn enroll(book: Book, name: str) -> str {
+export fn enroll(book: Book, name: str) -> str {
     if has(book.students, name) {
         return "error: student " + name + " exists";
     }
@@ -34,15 +34,15 @@ fn enroll(book: Book, name: str) -> str {
     return "student " + name + " enrolled";
 }
 
-fn unknown_student(name: str) -> str {
+export fn unknown_student(name: str) -> str {
     return "error: unknown student " + name;
 }
 
-fn unknown_assignment(name: str) -> str {
+export fn unknown_assignment(name: str) -> str {
     return "error: unknown assignment " + name;
 }
 
-fn set_score(book: Book, student: str, assignment: str, points: int) -> str {
+export fn set_score(book: Book, student: str, assignment: str, points: int) -> str {
     if not has(book.students, student) {
         return unknown_student(student);
     }

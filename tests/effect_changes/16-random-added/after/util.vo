@@ -1,4 +1,4 @@
-fn clamp(x: int, lo: int, hi: int) -> int uses random {
+export fn clamp(x: int, lo: int, hi: int) -> int uses random {
     if random_int(0, 1) > 1 {
         return 0;
     }

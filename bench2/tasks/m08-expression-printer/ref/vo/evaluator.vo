@@ -81,7 +81,7 @@ fn power(a: int, b: int) -> result[int] {
     return ok(r);
 }
 
-fn evaluate(e: Expr, env: map[str, int]) -> result[int] {
+export fn evaluate(e: Expr, env: map[str, int]) -> result[int] {
     match e {
         case num(d) {
             return literal(d);

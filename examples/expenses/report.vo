@@ -9,20 +9,20 @@ import std.text.align_right;
 import std.text.repeat;
 import std.time.parse_time;
 
-record Expense {
+export record Expense {
     date: str;
     category: str;
     cents: int;
     note: str;
 }
 
-record Total {
+export record Total {
     name: str;
     cents: int;
 }
 
 # The expenses in a parsed JSON array of objects with date, category, cents and note.
-fn expenses_from(doc: Json) -> result[list[Expense]] {
+export fn expenses_from(doc: Json) -> result[list[Expense]] {
     let out = new list[Expense];
     for item in try as_array(doc) {
         let date = try text_field(item, "date");
@@ -43,7 +43,7 @@ fn expenses_from(doc: Json) -> result[list[Expense]] {
 }
 
 # Cents as units and two decimals: 129050 is "1290.50".
-fn money(cents: int) -> str
+export fn money(cents: int) -> str
     requires cents >= 0 {
     let c = cents % 100;
     if c < 10 {
@@ -53,7 +53,7 @@ fn money(cents: int) -> str
 }
 
 # The sum of the amounts for each key, in the order the keys first appear.
-fn totals(xs: list[Expense], key: fn(Expense) -> str) -> list[Total] {
+export fn totals(xs: list[Expense], key: fn(Expense) -> str) -> list[Total] {
     let sums = new map[str, int];
     for e in xs {
         let k = key(e);
@@ -66,7 +66,7 @@ fn totals(xs: list[Expense], key: fn(Expense) -> str) -> list[Total] {
     return out;
 }
 
-fn sum(xs: list[Total]) -> int {
+export fn sum(xs: list[Total]) -> int {
     var s = 0;
     for t in xs {
         set s = s + t.cents;
@@ -91,7 +91,7 @@ fn table(title: str, rows: list[Total]) -> str {
 }
 
 # The whole report: by category (largest first) and by month (in date order).
-fn render(xs: list[Expense]) -> str {
+export fn render(xs: list[Expense]) -> str {
     let by_category = totals(xs, fn(e: Expense) -> str {
         return e.category;
     });

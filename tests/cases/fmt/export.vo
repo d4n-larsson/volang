@@ -1,0 +1,14 @@
+export   fn   double(x: int) -> int {
+    return x * 2;
+}
+
+export
+record Point {
+    x: int;
+}
+
+export variant Shape { dot; line(int); }
+
+fn helper() -> int {
+    return 1;
+}

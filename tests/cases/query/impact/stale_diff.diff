@@ -1,9 +1,9 @@
 --- old/pricing.vo
 +++ pricing.vo
 @@ -1,5 +1,5 @@
- fn tax(cents: int) -> int {
+ export fn tax(cents: int) -> int {
 -    return cents * 20 / 100;
 +    return cents * 30 / 100;
  }
  
- fn discount(cents: int, percent: int) -> int {
+ export fn discount(cents: int, percent: int) -> int {

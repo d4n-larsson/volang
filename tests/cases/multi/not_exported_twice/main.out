@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0209","name":"not_exported","severity":"error","file":"stats.vo","start":{"line":1,"col":13},"end":{"line":1,"col":18},"text":"clamp","message":"`clamp` is not exported by `util.vo`.","fixes":[{"file":"util.vo","start":{"line":1,"col":1},"end":{"line":1,"col":1},"replacement":"export "}],"related":[{"file":"main.vo","start":{"line":2,"col":13},"end":{"line":2,"col":18},"message":"Also needed here."}]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

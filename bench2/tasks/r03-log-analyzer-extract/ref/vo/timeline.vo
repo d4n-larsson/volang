@@ -1,7 +1,7 @@
 import logline.entries;
 import logline.to_seconds;
 
-fn busiest(lines: list[str]) -> list[str] {
+export fn busiest(lines: list[str]) -> list[str] {
     let found = entries(lines);
     if len(found) == 0 {
         return ["no entries"];
@@ -26,7 +26,7 @@ fn busiest(lines: list[str]) -> list[str] {
     return ["busiest hour " + label + " with " + str(per_hour[best]) + " entries"];
 }
 
-fn in_range(lines: list[str], args: list[str]) -> list[str] {
+export fn in_range(lines: list[str], args: list[str]) -> list[str] {
     let lo = to_seconds(args[0], args[1]);
     let hi = to_seconds(args[2], args[3]);
     if lo < 0 or hi < 0 {
@@ -42,7 +42,7 @@ fn in_range(lines: list[str], args: list[str]) -> list[str] {
     return out;
 }
 
-fn span(lines: list[str]) -> list[str] {
+export fn span(lines: list[str]) -> list[str] {
     let found = entries(lines);
     if len(found) == 0 {
         return ["no entries"];

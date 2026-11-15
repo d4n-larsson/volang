@@ -19,11 +19,11 @@ checkout.vo:25:35 use
 checkout.vo:48:111 use
 
 refs Line
-shop.vo:9:8 declaration
+shop.vo:9:15 declaration
 shop.vo:21:16 type
 shop.vo:32:70 type
 shop.vo:36:36 type
-shop.vo:42:39 type
+shop.vo:42:46 type
 shop.vo:43:39 type
 cart.vo:3:13 import
 cart.vo:30:29 use
@@ -31,7 +31,7 @@ cart.vo:47:49 type
 checkout.vo:2:13 import
 checkout.vo:39:30 type
 pricing.vo:2:13 import
-pricing.vo:48:33 type
+pricing.vo:48:40 type
 
 refs Line.sku
 shop.vo:10:5 declaration
@@ -63,16 +63,16 @@ checkout.vo:29:33 use
 checkout.vo:30:37 use
 checkout.vo:34:17 use
 
-refs cart.vo:16:36
-cart.vo:16:36 declaration
+refs cart.vo:16:43
+cart.vo:16:43 declaration
 cart.vo:21:25 use
 cart.vo:22:47 use
 
-refs pricing.vo:65:32
-pricing.vo:65:32 declaration
+refs pricing.vo:65:39
+pricing.vo:65:39 declaration
 pricing.vo:69:12 use
 
 refs checkout
-checkout.vo:7:4 declaration
+checkout.vo:7:11 declaration
 main.vo:12:17 import
 main.vo:106:16 call

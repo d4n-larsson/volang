@@ -9,20 +9,20 @@ import std.json.text_field;
 import std.text.align_left;
 import std.text.align_right;
 
-record Service {
+export record Service {
     name: str;
     up: bool;
     latency_ms: int;
 }
 
-record Incident {
+export record Incident {
     service: str;
     title: str;
     open: bool;
 }
 
 # The services in /status.json: {"checked": ..., "services": [{"name", "up", "latency_ms"}, ...]}.
-fn services_from(doc: Json) -> result[list[Service]] {
+export fn services_from(doc: Json) -> result[list[Service]] {
     let out = new list[Service];
     for s in try as_array(try field(doc, "services")) {
         push(out, new Service { name: try text_field(s, "name"), up: try bool_field(s, "up"), latency_ms: try int_field(s, "latency_ms") });
@@ -31,7 +31,7 @@ fn services_from(doc: Json) -> result[list[Service]] {
 }
 
 # The incidents in /incidents.json: [{"service", "title", "open"}, ...].
-fn incidents_from(doc: Json) -> result[list[Incident]] {
+export fn incidents_from(doc: Json) -> result[list[Incident]] {
     let out = new list[Incident];
     for i in try as_array(doc) {
         push(out, new Incident { service: try text_field(i, "service"), title: try text_field(i, "title"), open: try bool_field(i, "open") });
@@ -39,7 +39,7 @@ fn incidents_from(doc: Json) -> result[list[Incident]] {
     return ok(out);
 }
 
-fn down_count(services: list[Service]) -> int {
+export fn down_count(services: list[Service]) -> int {
     var n = 0;
     for s in services {
         if not s.up {
@@ -51,7 +51,7 @@ fn down_count(services: list[Service]) -> int {
 
 # One line per service (down ones first, then by name), the slowest service that is up, and the
 # open incidents.
-fn render(services: list[Service], incidents: list[Incident]) -> str {
+export fn render(services: list[Service], incidents: list[Incident]) -> str {
     let rows = new list[Service];
     for s in services {
         push(rows, s);

@@ -1,0 +1,3 @@
+vo package main.vo money shared/money
+vo check main.vo
+vo doc money.format

@@ -3,13 +3,13 @@ import machine.is_named_builtin;
 import tokens.is_number;
 import tokens.number;
 
-record Item {
+export record Item {
     is_num: bool;
     num: int;
     word: str;
 }
 
-fn expand(words: map[str, list[Item]], tok: str) -> result[list[Item]] {
+export fn expand(words: map[str, list[Item]], tok: str) -> result[list[Item]] {
     if is_number(tok) {
         let v = try number(tok);
         return ok([new Item { is_num: true, num: v, word: "" }]);
@@ -32,7 +32,7 @@ fn valid_name(name: str) -> bool {
     });
 }
 
-fn define(words: map[str, list[Item]], name: str, body: list[str]) -> result[void] {
+export fn define(words: map[str, list[Item]], name: str, body: list[str]) -> result[void] {
     if not valid_name(name) {
         return err("bad name " + name);
     }

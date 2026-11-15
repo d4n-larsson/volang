@@ -1,6 +1,6 @@
 vo package main.vo money shared/money
 vo effects --update main.vo
 keep vo.effects
-write shared/money/format.vo fn cents(n: int) -> str uses net {\n    return str(n);\n}\n
+write shared/money/format.vo export fn cents(n: int) -> str uses net {\n    return str(n);\n}\n
 vo package main.vo money shared/money
 vo check main.vo

@@ -9,7 +9,7 @@ fn listed(xs: list[str]) -> str {
     return join(xs, ",");
 }
 
-fn report(lib: Library) -> list[str] {
+export fn report(lib: Library) -> list[str] {
     let out = ["members:"];
     let ms = keys(lib.limit);
     sort(ms);

@@ -596,9 +596,14 @@ void df_push_key(Vec **vec_global, long file, long line)
     vec_push(*vec_global, (void *)key);
 }
 
-/* A removed line `fn NAME(` names a function the diff may have removed (canonical layout). */
+/* A removed line `fn NAME(` or `export fn NAME(` names a function the diff may have removed (canonical
+ * layout). */
 void df_removed_scan(long file, char *p, long n)
 {
+    if (n >= 7 && mem_eq(p, "export ", 7)) { /* spec 010 */
+        p += 7;
+        n -= 7;
+    }
     if (file < 0 || n < 4 || p[0] != 'f' || p[1] != 'n' || p[2] != ' ') return;
     char *name = p + 3, *end = p + n, *q = name; /* the name: up to `(` or `[` */
     while (q < end && *q != '(' && *q != '[') q++;

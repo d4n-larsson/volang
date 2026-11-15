@@ -17,6 +17,7 @@ program more than 5% slower than the baseline binary, by the same median rule; w
 import importlib.util
 import math
 import os
+import re
 import shutil
 import statistics
 import subprocess
@@ -103,6 +104,13 @@ def bench2():
             if os.path.isdir(fx):
                 shutil.copytree(fx, tmp, dirs_exist_ok=True)
             shutil.copytree(os.path.join(tdir, "ref", "vo"), tmp, dirs_exist_ok=True)
+            if binary == ORACLE:  # spec 010: the assembly oracle predates `export`
+                for dp, _, fs in os.walk(tmp):
+                    for f in fs:
+                        if f.endswith(".vo"):
+                            p = os.path.join(dp, f)
+                            src = open(p, encoding="utf-8").read()
+                            open(p, "w", encoding="utf-8").write(re.sub(r"(?m)^export ", "", src))
             return timed([VO, "run", "--timeout", "120", "main.vo"], env=vo_env(binary), cwd=tmp, stdin=data)[1]
 
     tot = {"oracle": 0.0, "new": 0.0}

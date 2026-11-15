@@ -11,7 +11,7 @@ fn tokens(s: str) -> list[str] {
     return toks;
 }
 
-fn window_max(xs: list[int], k: int) -> list[int] {
+export fn window_max(xs: list[int], k: int) -> list[int] {
     let dq = new list[int];
     var head = 0;
     let out = new list[int];
@@ -35,7 +35,7 @@ fn window_max(xs: list[int], k: int) -> list[int] {
     return out;
 }
 
-fn solve(input: str) -> result[str] {
+export fn solve(input: str) -> result[str] {
     let toks = tokens(input);
     let n = try parse_int(toks[0]);
     let k = try parse_int(toks[1]);

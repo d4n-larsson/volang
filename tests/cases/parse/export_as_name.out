@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"export_as_name.vo","start":{"line":2,"col":9},"end":{"line":2,"col":15},"text":"export","message":"Expected a name, found `export`.","expected":"name","found":"export","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

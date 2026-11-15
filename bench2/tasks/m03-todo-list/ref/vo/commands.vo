@@ -1,4 +1,4 @@
-record Command {
+export record Command {
     name: str;
     args: list[str];
 }
@@ -17,7 +17,7 @@ fn cmd(name: str, args: list[str]) -> Command {
     return new Command { name: name, args: args };
 }
 
-fn parse(line: str) -> result[Command] {
+export fn parse(line: str) -> result[Command] {
     let f = filter(split(line, " "), fn(x: str) -> bool {
         return x != "";
     });

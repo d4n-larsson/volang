@@ -6,12 +6,12 @@ import rooms.min_free;
 import bookings.nights;
 import billing.money;
 
-fn avail_line(types: map[str, RoomType], bookings: map[str, Booking], type_name: str, start: int, end: int) -> str {
+export fn avail_line(types: map[str, RoomType], bookings: map[str, Booking], type_name: str, start: int, end: int) -> str {
     let free = min_free(types, bookings, type_name, start, end);
     return "avail " + type_name + " " + str(start) + "-" + str(end) + ": " + str(free) + " of " + str(types[type_name].count) + " free";
 }
 
-fn occupancy_lines(types: map[str, RoomType], bookings: map[str, Booking], day: int) -> list[str] {
+export fn occupancy_lines(types: map[str, RoomType], bookings: map[str, Booking], day: int) -> list[str] {
     var used = 0;
     var total = 0;
     let rows = new list[str];
@@ -28,7 +28,7 @@ fn occupancy_lines(types: map[str, RoomType], bookings: map[str, Booking], day: 
     return out;
 }
 
-fn report_lines(types: map[str, RoomType], bookings: map[str, Booking]) -> list[str] {
+export fn report_lines(types: map[str, RoomType], bookings: map[str, Booking]) -> list[str] {
     let out = new list[str];
     var revenue = 0;
     for t in sorted_types(types) {

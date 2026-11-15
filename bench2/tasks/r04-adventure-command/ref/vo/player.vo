@@ -5,7 +5,7 @@ import world.item_value;
 import world.item_weight;
 import world.carry_limit;
 
-record Player {
+export record Player {
     room: str;
     inventory: list[str];
     score: int;
@@ -15,22 +15,22 @@ record Player {
     taken: map[str, bool];
 }
 
-fn not_here() -> int {
+export fn not_here() -> int {
     return -1;
 }
 
-fn too_heavy() -> int {
+export fn too_heavy() -> int {
     return -2;
 }
 
-fn new_player() -> Player {
+export fn new_player() -> Player {
     let visited = new map[str, bool];
     set visited[start_room()] = true;
     return new Player { room: start_room(), inventory: new list[str], score: 0, moves: 0, visited: visited, taken: new map[str, bool] };
 }
 
 # Moves through an exit of the current room; false if there is none.
-fn move(player: Player, world: map[str, Room], direction: str) -> bool {
+export fn move(player: Player, world: map[str, Room], direction: str) -> bool {
     let room = world[player.room];
     if not has(room.exits, direction) {
         return false;
@@ -51,7 +51,7 @@ fn contains(xs: list[str], x: str) -> bool {
 }
 
 # Moves an item from the current room to the inventory; returns the points earned, not_here() or too_heavy().
-fn pick_up(player: Player, world: map[str, Room], item: str) -> int {
+export fn pick_up(player: Player, world: map[str, Room], item: str) -> int {
     let room = world[player.room];
     if not contains(room.items, item) {
         return not_here();
@@ -83,7 +83,7 @@ fn carried_weight(player: Player) -> int {
 }
 
 # Moves an item from the inventory to the current room; false if it is not carried.
-fn put_down(player: Player, world: map[str, Room], item: str) -> bool {
+export fn put_down(player: Player, world: map[str, Room], item: str) -> bool {
     if not contains(player.inventory, item) {
         return false;
     }

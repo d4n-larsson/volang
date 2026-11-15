@@ -12,7 +12,7 @@ record Graded {
     name: str;
 }
 
-fn card(book: Book, name: str) -> list[str] {
+export fn card(book: Book, name: str) -> list[str] {
     if not has(book.students, name) {
         return [unknown_student(name)];
     }
@@ -53,7 +53,7 @@ fn graded_students(book: Book) -> list[Graded] {
     return graded;
 }
 
-fn class_report(book: Book) -> list[str] {
+export fn class_report(book: Book) -> list[str] {
     let graded = new list[Graded];
     let ungraded = new list[str];
     for s in keys(book.students) {
@@ -93,7 +93,7 @@ fn class_report(book: Book) -> list[str] {
     return out;
 }
 
-fn distribution(book: Book) -> list[str] {
+export fn distribution(book: Book) -> list[str] {
     let by_letter = new map[str, list[str]];
     for g in graded_students(book) {
         let grade = letter(g.avg);

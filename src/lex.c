@@ -18,7 +18,7 @@ static const char *const kw_table[] = {
     "else",   "while",  "for",     "in",    "match",  "case",  "return", "break",   "continue",
     "try",    "new",    "and",     "or",    "not",    "true",  "false", "int",      "float",
     "bool",   "str",    "list",    "map",   "result", "void",  "uses",  "prop",     "requires",
-    "ensures", 0,
+    "ensures", "export", 0,
 };
 
 static void lx_push(int kind, long start, long end)

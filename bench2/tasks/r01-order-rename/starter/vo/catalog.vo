@@ -1,4 +1,4 @@
-record Item {
+export record Item {
     sku: str;
     name: str;
     price: int;
@@ -6,7 +6,7 @@ record Item {
     sold: int;
 }
 
-fn add_item(catalog: map[str, Item], sku: str, name: str, price: int, stock: int) -> str {
+export fn add_item(catalog: map[str, Item], sku: str, name: str, price: int, stock: int) -> str {
     if has(catalog, sku) {
         return "error: item " + sku + " exists";
     }
@@ -14,7 +14,7 @@ fn add_item(catalog: map[str, Item], sku: str, name: str, price: int, stock: int
     return "item " + sku + " added";
 }
 
-fn restock_item(catalog: map[str, Item], sku: str, n: int) -> str {
+export fn restock_item(catalog: map[str, Item], sku: str, n: int) -> str {
     if not has(catalog, sku) {
         return "error: unknown item " + sku;
     }
@@ -23,7 +23,7 @@ fn restock_item(catalog: map[str, Item], sku: str, n: int) -> str {
     return "item " + sku + " stock " + str(item.stock);
 }
 
-fn set_item_price(catalog: map[str, Item], sku: str, price: int, money: fn(int) -> str) -> str {
+export fn set_item_price(catalog: map[str, Item], sku: str, price: int, money: fn(int) -> str) -> str {
     if not has(catalog, sku) {
         return "error: unknown item " + sku;
     }
@@ -32,7 +32,7 @@ fn set_item_price(catalog: map[str, Item], sku: str, price: int, money: fn(int) 
     return "item " + sku + " price " + money(price);
 }
 
-fn sorted_items(catalog: map[str, Item]) -> list[Item] {
+export fn sorted_items(catalog: map[str, Item]) -> list[Item] {
     let skus = keys(catalog);
     sort(skus);
     return map(skus, fn(sku: str) -> Item {

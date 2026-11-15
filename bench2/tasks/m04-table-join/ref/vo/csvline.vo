@@ -1,4 +1,4 @@
-fn parse(line: str) -> result[list[str]] {
+export fn parse(line: str) -> result[list[str]] {
     let cs = chars(line);
     let n = len(cs);
     let fields = new list[str];

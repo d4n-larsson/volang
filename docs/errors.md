@@ -414,7 +414,7 @@ fn main() uses console {
 
 ```vo
 # file: helpers.vo
-fn greet(name: str) -> str {
+export fn greet(name: str) -> str {
     return "hello " + name;
 }
 ```
@@ -458,7 +458,7 @@ fn main() uses console {
 
 ```vo
 # file: helpers.vo
-fn greet(name: str) -> str {
+export fn greet(name: str) -> str {
     return "hello " + name;
 }
 ```
@@ -495,11 +495,11 @@ fn main() uses console {
 # file: a.vo
 import b.two;
 
-fn one() -> str {
+export fn one() -> str {
     return "one " + two();
 }
 
-fn base() -> str {
+export fn base() -> str {
     return "base";
 }
 ```
@@ -508,7 +508,7 @@ fn base() -> str {
 # file: b.vo
 import a.base;
 
-fn two() -> str {
+export fn two() -> str {
     return "two " + base();
 }
 ```
@@ -528,14 +528,14 @@ fn main() uses console {
 # file: a.vo
 import b.two;
 
-fn one() -> str {
+export fn one() -> str {
     return "one " + two();
 }
 ```
 
 ```vo
 # file: b.vo
-fn two() -> str {
+export fn two() -> str {
     return "two " + base();
 }
 
@@ -599,6 +599,104 @@ fn main() uses console {
         set count = count + i;
     }
     print(str(count));
+}
+```
+
+## E0209 not_exported
+
+An imported item is private to its file.
+
+Fixable: yes
+
+Only items declared with `export` (`export fn`, `export record`, `export variant`) can be imported; any other item can be used only inside its own file. The fix adds `export` to the declaration in the other file. A standard-library or package item without `export` is internal to that module: it has no fix, so use an item `vo doc` lists instead. When several imports need the same item, one diagnostic carries the fix and notes the other imports.
+
+### Example
+
+```vo
+# file: helpers.vo
+fn greet(name: str) -> str {
+    return "hello " + name;
+}
+```
+
+```vo
+# file: main.vo
+import helpers.greet;
+
+fn main() uses console {
+    print(greet("vo"));
+}
+```
+
+### Fixed
+
+```vo
+# file: helpers.vo
+export fn greet(name: str) -> str {
+    return "hello " + name;
+}
+```
+
+```vo
+# file: main.vo
+import helpers.greet;
+
+fn main() uses console {
+    print(greet("vo"));
+}
+```
+
+## E0210 private_type_exported
+
+An exported item uses a type that is private to its file.
+
+Fixable: yes
+
+The parameters and result of an exported function, the fields of an exported record and the cases of an exported variant can only use types other files can import too: a private record or variant of the same file is not allowed there. The fix adds `export` to that type's declaration.
+
+### Example
+
+```vo
+# file: shapes.vo
+record Size {
+    w: int;
+    h: int;
+}
+
+export fn area(s: Size) -> int {
+    return s.w * s.h;
+}
+```
+
+```vo
+# file: main.vo
+import shapes.area;
+
+fn main() uses console {
+    print("ready");
+}
+```
+
+### Fixed
+
+```vo
+# file: shapes.vo
+export record Size {
+    w: int;
+    h: int;
+}
+
+export fn area(s: Size) -> int {
+    return s.w * s.h;
+}
+```
+
+```vo
+# file: main.vo
+import shapes.area;
+
+fn main() uses console {
+    print("ready");
 }
 ```
 
@@ -2094,7 +2192,7 @@ The record lets reviewers see capability changes as a short diff. Create it with
 
 ```vo
 # file: geom.vo
-fn area(w: int, h: int) -> int {
+export fn area(w: int, h: int) -> int {
     return w * h;
 }
 ```
@@ -2112,7 +2210,7 @@ fn main() uses console {
 
 ```vo
 # file: geom.vo
-fn area(w: int, h: int) -> int {
+export fn area(w: int, h: int) -> int {
     return w * h;
 }
 ```
@@ -2184,7 +2282,7 @@ fn main() uses console {
 
 ```vo
 # file: shared/money/format.vo
-fn cents(n: int) -> str {
+export fn cents(n: int) -> str {
     return str(n / 100) + "." + str(n % 100);
 }
 ```
@@ -2206,14 +2304,14 @@ fn main() uses console {
 
 ```vo
 # file: shared/money/format.vo
-fn cents(n: int) -> str {
+export fn cents(n: int) -> str {
     return str(n / 100) + "." + str(n % 100);
 }
 ```
 
 ```text
 # file: vo.packages
-money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+money shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f52bc74c951
 ```
 
 ## E0702 package_missing
@@ -2251,14 +2349,14 @@ fn main() uses console {
 
 ```vo
 # file: shared/money/format.vo
-fn cents(n: int) -> str {
+export fn cents(n: int) -> str {
     return str(n / 100) + "." + str(n % 100);
 }
 ```
 
 ```text
 # file: vo.packages
-money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+money shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f52bc74c951
 ```
 
 ## E0703 bad_manifest
@@ -2281,7 +2379,7 @@ fn main() uses console {
 
 ```vo
 # file: shared/money/format.vo
-fn cents(n: int) -> str {
+export fn cents(n: int) -> str {
     return str(n / 100) + "." + str(n % 100);
 }
 ```
@@ -2303,14 +2401,14 @@ fn main() uses console {
 
 ```vo
 # file: shared/money/format.vo
-fn cents(n: int) -> str {
+export fn cents(n: int) -> str {
     return str(n / 100) + "." + str(n % 100);
 }
 ```
 
 ```text
 # file: vo.packages
-money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+money shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f52bc74c951
 ```
 
 ## E0704 duplicate_package
@@ -2333,15 +2431,15 @@ fn main() uses console {
 
 ```vo
 # file: shared/money/format.vo
-fn cents(n: int) -> str {
+export fn cents(n: int) -> str {
     return str(n / 100) + "." + str(n % 100);
 }
 ```
 
 ```text
 # file: vo.packages
-money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
-money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+money shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f52bc74c951
+money shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f52bc74c951
 ```
 
 ### Fixed
@@ -2356,14 +2454,14 @@ fn main() uses console {
 
 ```vo
 # file: shared/money/format.vo
-fn cents(n: int) -> str {
+export fn cents(n: int) -> str {
     return str(n / 100) + "." + str(n % 100);
 }
 ```
 
 ```text
 # file: vo.packages
-money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+money shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f52bc74c951
 ```
 
 ## E0705 package_name_clash
@@ -2393,14 +2491,14 @@ fn cents(n: int) -> str {
 
 ```vo
 # file: shared/money/format.vo
-fn cents(n: int) -> str {
+export fn cents(n: int) -> str {
     return str(n / 100) + "." + str(n % 100);
 }
 ```
 
 ```text
 # file: vo.packages
-money shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+money shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f52bc74c951
 ```
 
 ### Fixed
@@ -2422,14 +2520,14 @@ fn cents(n: int) -> str {
 
 ```vo
 # file: shared/money/format.vo
-fn cents(n: int) -> str {
+export fn cents(n: int) -> str {
     return str(n / 100) + "." + str(n % 100);
 }
 ```
 
 ```text
 # file: vo.packages
-cash shared/money sha256:5ae41f94992cd7f4b1b160123ffb1bc269e304c8d53c0c08e66dc589f2af8e81
+cash shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f52bc74c951
 ```
 
 ## R0001 integer_overflow

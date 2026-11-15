@@ -1,4 +1,4 @@
-record Entry {
+export record Entry {
     line: int;
     time: int;
     cmd: str;
@@ -58,7 +58,7 @@ fn arity(cmd: str) -> int {
     return -1;
 }
 
-fn parse(line: str, n: int) -> result[Entry] {
+export fn parse(line: str, n: int) -> result[Entry] {
     let f = filter(split(line, " "), fn(x: str) -> bool {
         return x != "";
     });
@@ -87,7 +87,7 @@ fn parse(line: str, n: int) -> result[Entry] {
     return ok(e);
 }
 
-fn show(c: int) -> str {
+export fn show(c: int) -> str {
     var sign = "";
     if c < 0 {
         set sign = "-";

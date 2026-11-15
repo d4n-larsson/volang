@@ -3,7 +3,7 @@ import pay.compute_pay;
 import staff.Employee;
 import staff.sorted_staff;
 
-fn payslip(emp: Employee) -> list[str] {
+export fn payslip(emp: Employee) -> list[str] {
     let p = compute_pay(emp);
     let out = ["payslip " + emp.emp_id + " " + emp.name + " (" + emp.kind + ")"];
     if emp.kind == "hourly" {
@@ -27,7 +27,7 @@ fn total_line(gross: int, tax: int, deductions: int, net: int) -> str {
     return "total gross " + format_money(gross) + " tax " + format_money(tax) + " deductions " + format_money(deductions) + " net " + format_money(net);
 }
 
-fn summary(staff: map[str, Employee]) -> list[str] {
+export fn summary(staff: map[str, Employee]) -> list[str] {
     let emps = sorted_staff(staff);
     if len(emps) == 0 {
         return ["summary: no employees"];

@@ -1,4 +1,4 @@
-fn is_digits(s: str) -> bool {
+export fn is_digits(s: str) -> bool {
     if len(s) == 0 {
         return false;
     }
@@ -8,7 +8,7 @@ fn is_digits(s: str) -> bool {
 }
 
 # Only called on strings that passed is_digits.
-fn num(s: str) -> int {
+export fn num(s: str) -> int {
     match parse_int(s) {
         case ok(n) {
             return n;
@@ -21,7 +21,7 @@ fn num(s: str) -> int {
 
 # Minutes since midnight, or -1 when s is not a time.
 # Accepted: H:MM or HH:MM (hour 0-23), optionally followed by am/pm (hour 1-12).
-fn parse_time(s: str) -> int {
+export fn parse_time(s: str) -> int {
     var suffix = "";
     var t = s;
     if len(s) >= 2 {
@@ -72,14 +72,14 @@ fn two(n: int) -> str {
 }
 
 # HH:MM for minutes since midnight.
-fn format_time(m: int) -> str {
+export fn format_time(m: int) -> str {
     return two(m / 60) + ":" + two(m % 60);
 }
 
-fn duration(start: int, end: int) -> int {
+export fn duration(start: int, end: int) -> int {
     return end - start;
 }
 
-fn span(start: int, end: int) -> str {
+export fn span(start: int, end: int) -> str {
     return format_time(start) + "-" + format_time(end);
 }

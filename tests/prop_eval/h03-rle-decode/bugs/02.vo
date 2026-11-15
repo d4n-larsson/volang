@@ -3,7 +3,7 @@ fn is_digit(c: str) -> bool {
     return c >= "0" and c <= "9";
 }
 
-fn decode(s: str) -> str {
+export fn decode(s: str) -> str {
     let cs = chars(s);
     let n = len(cs);
     let parts = new list[str];

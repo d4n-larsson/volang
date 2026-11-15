@@ -1,6 +1,6 @@
 import model.Item;
 
-fn parse_line(line: str) -> int {
+export fn parse_line(line: str) -> int {
     match parse_int(trim(line)) {
         case ok(n) {
             return n;
@@ -11,7 +11,7 @@ fn parse_line(line: str) -> int {
     }
 }
 
-fn load(lines: list[str]) -> list[int] {
+export fn load(lines: list[str]) -> list[int] {
     let out = new list[int];
     for l in lines {
         push(out, parse_line(l));
@@ -19,6 +19,6 @@ fn load(lines: list[str]) -> list[int] {
     return out;
 }
 
-fn label(it: Item) -> str {
+export fn label(it: Item) -> str {
     return it.name + "=" + str(it.price);
 }

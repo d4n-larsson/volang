@@ -13,15 +13,15 @@ fn arity(w: str) -> int {
     return 0;
 }
 
-fn is_builtin(w: str) -> bool {
+export fn is_builtin(w: str) -> bool {
     return arity(w) > 0 or w == "clear" or w == ".s";
 }
 
-fn is_named_builtin(w: str) -> bool {
+export fn is_named_builtin(w: str) -> bool {
     return w == "neg" or w == "abs" or w == "dup" or w == "drop" or w == "swap" or w == "over" or w == "rot" or w == "clear";
 }
 
-fn show(stack: list[int]) -> str {
+export fn show(stack: list[int]) -> str {
     let parts = ["<" + str(len(stack)) + ">"];
     for v in stack {
         push(parts, str(v));
@@ -70,7 +70,7 @@ fn arith(w: str, a: int, b: int) -> result[int] {
     return ok(a - b * q);
 }
 
-fn run_builtin(stack: list[int], w: str, out: list[str]) -> result[void] {
+export fn run_builtin(stack: list[int], w: str, out: list[str]) -> result[void] {
     if len(stack) < arity(w) {
         return err("stack underflow");
     }
@@ -108,7 +108,7 @@ fn run_builtin(stack: list[int], w: str, out: list[str]) -> result[void] {
     return ok();
 }
 
-fn clear_stack(stack: list[int]) {
+export fn clear_stack(stack: list[int]) {
     while len(stack) > 0 {
         let _ = take(stack);
     }

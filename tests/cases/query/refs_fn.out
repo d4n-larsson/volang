@@ -1,4 +1,4 @@
-shop/io.vo:3:4 declaration: fn parse_line(line: str) -> int {
+shop/io.vo:3:11 declaration: export fn parse_line(line: str) -> int {
 shop/main.vo:1:11 import: import io.parse_line;
 shop/main.vo:15:17 call in main: let first = parse_line(" 42 ");
 shop/main.vo:25:15 call in test "parse": expect_eq(parse_line("7"), 7);

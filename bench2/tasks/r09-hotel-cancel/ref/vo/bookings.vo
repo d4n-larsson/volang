@@ -5,11 +5,11 @@ import billing.stay_discount;
 import billing.money;
 import billing.refund_for;
 
-fn held_nights(b: Booking) -> int {
+export fn held_nights(b: Booking) -> int {
     return b.held_until - b.start;
 }
 
-fn book(types: map[str, RoomType], bookings: map[str, Booking], booking_id: str, type_name: str, guest: str, start: int, end: int) -> str {
+export fn book(types: map[str, RoomType], bookings: map[str, Booking], booking_id: str, type_name: str, guest: str, start: int, end: int) -> str {
     if has(bookings, booking_id) {
         return "error: booking " + booking_id + " exists";
     }
@@ -31,7 +31,7 @@ fn book(types: map[str, RoomType], bookings: map[str, Booking], booking_id: str,
     return "booked " + booking_id + ": " + type_name + " " + str(b.end - b.start) + " nights, total " + money(b.total);
 }
 
-fn cancel(bookings: map[str, Booking], booking_id: str, day: int) -> str {
+export fn cancel(bookings: map[str, Booking], booking_id: str, day: int) -> str {
     if not has(bookings, booking_id) {
         return "error: unknown booking " + booking_id;
     }

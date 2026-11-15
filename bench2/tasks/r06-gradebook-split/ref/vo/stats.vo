@@ -3,22 +3,22 @@ import book.Student;
 import book.unknown_assignment;
 
 # num / den rounded half up (num >= 0, den > 0).
-fn rounded_div(num: int, den: int) -> int {
+export fn rounded_div(num: int, den: int) -> int {
     return (num + den / 2) / den;
 }
 
 # Formats a non-negative number of tenths: 875 -> 87.5.
-fn tenths(x: int) -> str {
+export fn tenths(x: int) -> str {
     return str(x / 10) + "." + str(x % 10);
 }
 
 # points out of max_points as tenths of a percent.
-fn percent_tenths(points: int, max_points: int) -> int {
+export fn percent_tenths(points: int, max_points: int) -> int {
     return rounded_div(points * 1000, max_points);
 }
 
 # The student's weighted average in tenths of a percent, or err without scores.
-fn weighted_average(book: Book, student: Student) -> result[int] {
+export fn weighted_average(book: Book, student: Student) -> result[int] {
     var total = 0;
     var weight = 0;
     for name in keys(book.assignments) {
@@ -34,7 +34,7 @@ fn weighted_average(book: Book, student: Student) -> result[int] {
     return ok(rounded_div(total, weight));
 }
 
-fn assignment_stats(book: Book, name: str) -> list[str] {
+export fn assignment_stats(book: Book, name: str) -> list[str] {
     if not has(book.assignments, name) {
         return [unknown_assignment(name)];
     }

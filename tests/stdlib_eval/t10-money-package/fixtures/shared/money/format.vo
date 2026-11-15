@@ -2,7 +2,7 @@
 
 # Formats an amount in cents as units, a point and two decimals, with a minus sign when negative.
 #     cents(-1234) is "-12.34"
-fn cents(n: int) -> str {
+export fn cents(n: int) -> str {
     if n < 0 {
         return "-" + cents(0 - n);
     }

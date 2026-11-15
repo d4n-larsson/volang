@@ -1,8 +1,8 @@
-fn tax(cents: int) -> int {
+export fn tax(cents: int) -> int {
     return cents * 25 / 100;
 }
 
-fn discount(cents: int, percent: int) -> int {
+export fn discount(cents: int, percent: int) -> int {
     # a comment inside discount
     return cents * percent / 100;
 }

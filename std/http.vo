@@ -5,14 +5,14 @@
 
 # One response header, as received.
 #     new Header { name: "a", value: "b" }.name is "a"
-record Header {
+export record Header {
     name: str;
     value: str;
 }
 
 # A response: the status code, the headers in their order, and the body.
 #     new Response { status: 200, headers: new list[Header], body: "" }.status is 200
-record Response {
+export record Response {
     status: int;
     headers: list[Header];
     body: str;
@@ -183,19 +183,19 @@ fn dechunk(s: str) -> result[str] {
 
 # Sends GET to an http:// URL (needs net; the host must be in the caller's net scope).
 #     get("https://example.com/") == err("https is not supported") is true
-fn get(url: str) -> result[Response] uses net {
+export fn get(url: str) -> result[Response] uses net {
     return exchange("GET", url, "", "");
 }
 
 # Sends POST with a body and its content type to an http:// URL (needs net).
 #     post("ftp://x/", "text/plain", "") == err("not an http:// URL: ftp://x/") is true
-fn post(url: str, content_type: str, body: str) -> result[Response] uses net {
+export fn post(url: str, content_type: str, body: str) -> result[Response] uses net {
     return exchange("POST", url, content_type, body);
 }
 
 # The value of the first header with this name, compared without case.
 #     header(new Response { status: 200, headers: [new Header { name: "Content-Type", value: "text/plain" }], body: "" }, "content-type") == ok("text/plain") is true
-fn header(r: Response, name: str) -> result[str] {
+export fn header(r: Response, name: str) -> result[str] {
     for h in r.headers {
         if lower(h.name) == lower(name) {
             return ok(h.value);

@@ -1,5 +1,5 @@
-shop/model.vo:17:9 declaration in swap: fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
-shop/model.vo:17:23 type in swap: fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
-shop/model.vo:17:41 type in swap: fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
+shop/model.vo:17:16 declaration in swap: export fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
+shop/model.vo:17:30 type in swap: export fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
+shop/model.vo:17:48 type in swap: export fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
 shop/model.vo:18:24 type in swap: return new Pair[B, A] { first: p.second, second: p.first };
 4 references

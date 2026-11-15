@@ -6,7 +6,7 @@ fn two_digits(n: int) -> str {
     return s;
 }
 
-fn format_money(cents: int) -> str {
+export fn format_money(cents: int) -> str {
     if cents < 0 {
         return "-" + format_money(-cents);
     }

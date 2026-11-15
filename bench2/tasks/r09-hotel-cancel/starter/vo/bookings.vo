@@ -4,11 +4,11 @@ import rooms.first_full_day;
 import billing.stay_discount;
 import billing.money;
 
-fn nights(b: Booking) -> int {
+export fn nights(b: Booking) -> int {
     return b.end - b.start;
 }
 
-fn book(types: map[str, RoomType], bookings: map[str, Booking], booking_id: str, type_name: str, guest: str, start: int, end: int) -> str {
+export fn book(types: map[str, RoomType], bookings: map[str, Booking], booking_id: str, type_name: str, guest: str, start: int, end: int) -> str {
     if has(bookings, booking_id) {
         return "error: booking " + booking_id + " exists";
     }

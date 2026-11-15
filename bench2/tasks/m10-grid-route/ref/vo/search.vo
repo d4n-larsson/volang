@@ -2,7 +2,7 @@ import grid.Grid;
 import grid.at;
 import grid.cost;
 
-record Leg {
+export record Leg {
     cost: int;
     moves: list[str];
     cells: list[int];
@@ -63,7 +63,7 @@ fn dist_to(g: Grid, goal: int) -> list[int] {
     return dist;
 }
 
-fn leg(g: Grid, a: int, b: int) -> result[Leg] {
+export fn leg(g: Grid, a: int, b: int) -> result[Leg] {
     let dist = dist_to(g, b);
     if dist[a] < 0 {
         return err("no route");

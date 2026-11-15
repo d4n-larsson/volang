@@ -2,6 +2,6 @@ fn helper() -> int {
     return 2;
 }
 
-fn g() -> int {
+export fn g() -> int {
     return helper();
 }

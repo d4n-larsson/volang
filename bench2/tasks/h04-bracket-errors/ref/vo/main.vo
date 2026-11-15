@@ -8,7 +8,7 @@ fn closer(open: str) -> str {
     return "}";
 }
 
-fn check(s: str) -> str {
+export fn check(s: str) -> str {
     let cs = chars(s);
     let stack = new list[int];
     var quote = 0;

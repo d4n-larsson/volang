@@ -1,6 +1,6 @@
 import b.from_b;
 
-fn from_a() -> int {
+export fn from_a() -> int {
     return 1;
 }
 

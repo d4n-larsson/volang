@@ -2,7 +2,7 @@
 +++ pricing.vo
 @@ -4,7 +4,7 @@
  
- fn discount(cents: int, percent: int) -> int {
+ export fn discount(cents: int, percent: int) -> int {
      # a comment inside discount
 -    return percent * cents / 100;
 +    return cents * percent / 100;

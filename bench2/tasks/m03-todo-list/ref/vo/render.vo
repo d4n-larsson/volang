@@ -15,7 +15,7 @@ fn task_line(t: Task, mark_done: bool) -> str {
     return s;
 }
 
-fn listing(s: Store, which: str) -> list[str] {
+export fn listing(s: Store, which: str) -> list[str] {
     let out = new list[str];
     var ts = all_tasks(s);
     if which == "" {
@@ -49,7 +49,7 @@ fn listing(s: Store, which: str) -> list[str] {
     return out;
 }
 
-fn stats(s: Store) -> str {
+export fn stats(s: Store) -> str {
     let ts = all_tasks(s);
     let done = len(filter(ts, fn(t: Task) -> bool {
         return t.done;

@@ -5,7 +5,7 @@
 
 # A JSON value: object keys keep their order, integers that fit an int are integer.
 #     Json.integer(3) == Json.integer(3) is true
-variant Json {
+export variant Json {
     null;
     boolean(bool);
     integer(int);
@@ -24,7 +24,7 @@ record JsonParser {
 
 # Parses JSON text (RFC 8259); an error gives its line and column.
 #     parse_json("[1, true]") == ok(Json.array([Json.integer(1), Json.boolean(true)])) is true
-fn parse_json(s: str) -> result[Json] {
+export fn parse_json(s: str) -> result[Json] {
     let p = new JsonParser { cs: chars(s), pos: 0, line: 1, column: 1 };
     skip_space(p);
     let v = try parse_value(p, 0);
@@ -408,13 +408,13 @@ fn repeat_zeros(n: int) -> str {
 
 # Writes compact JSON; a NaN or infinite number is an error.
 #     write_json(Json.array([Json.integer(1), Json.text("a")])) == ok("[1,\"a\"]") is true
-fn write_json(j: Json) -> result[str] {
+export fn write_json(j: Json) -> result[str] {
     return write_to(j, "", "");
 }
 
 # Writes JSON indented by two spaces, one member or element per line.
 #     write_json_pretty(Json.array(new list[Json])) == ok("[]") is true
-fn write_json_pretty(j: Json) -> result[str] {
+export fn write_json_pretty(j: Json) -> result[str] {
     return write_to(j, "\n", "  ");
 }
 
@@ -525,7 +525,7 @@ fn hex2(n: int) -> str {
 
 # The value of an object's field.
 #     field(Json.null, "a") == err("not an object") is true
-fn field(j: Json, key: str) -> result[Json] {
+export fn field(j: Json, key: str) -> result[Json] {
     match j {
         case object(m) {
             if has(m, key) {
@@ -556,7 +556,7 @@ fn field(j: Json, key: str) -> result[Json] {
 
 # The element of an array at index i (from 0).
 #     at(Json.array([Json.null]), 1) == err("index 1 out of range") is true
-fn at(j: Json, i: int) -> result[Json] {
+export fn at(j: Json, i: int) -> result[Json] {
     let xs = try as_array(j);
     if i < 0 or i >= len(xs) {
         return err("index " + str(i) + " out of range");
@@ -566,7 +566,7 @@ fn at(j: Json, i: int) -> result[Json] {
 
 # The text of a JSON string.
 #     as_text(Json.text("a")) == ok("a") is true
-fn as_text(j: Json) -> result[str] {
+export fn as_text(j: Json) -> result[str] {
     match j {
         case text(s) {
             return ok(s);
@@ -594,7 +594,7 @@ fn as_text(j: Json) -> result[str] {
 
 # The value of a JSON integer (a number with a fraction or out of range is an error).
 #     as_int(Json.number(1.5)) == err("not an integer") is true
-fn as_int(j: Json) -> result[int] {
+export fn as_int(j: Json) -> result[int] {
     match j {
         case integer(n) {
             return ok(n);
@@ -622,7 +622,7 @@ fn as_int(j: Json) -> result[int] {
 
 # The value of a JSON integer or number as a float.
 #     as_float(Json.integer(2)) == ok(2.0) is true
-fn as_float(j: Json) -> result[float] {
+export fn as_float(j: Json) -> result[float] {
     match j {
         case integer(n) {
             return ok(float(n));
@@ -650,7 +650,7 @@ fn as_float(j: Json) -> result[float] {
 
 # The value of a JSON true or false.
 #     as_bool(Json.boolean(true)) == ok(true) is true
-fn as_bool(j: Json) -> result[bool] {
+export fn as_bool(j: Json) -> result[bool] {
     match j {
         case boolean(b) {
             return ok(b);
@@ -678,7 +678,7 @@ fn as_bool(j: Json) -> result[bool] {
 
 # The elements of a JSON array.
 #     as_array(Json.array(new list[Json])) == ok(new list[Json]) is true
-fn as_array(j: Json) -> result[list[Json]] {
+export fn as_array(j: Json) -> result[list[Json]] {
     match j {
         case array(xs) {
             return ok(xs);
@@ -706,7 +706,7 @@ fn as_array(j: Json) -> result[list[Json]] {
 
 # The members of a JSON object, in their order.
 #     as_object(Json.null) == err("not an object") is true
-fn as_object(j: Json) -> result[map[str, Json]] {
+export fn as_object(j: Json) -> result[map[str, Json]] {
     match j {
         case object(m) {
             return ok(m);
@@ -734,7 +734,7 @@ fn as_object(j: Json) -> result[map[str, Json]] {
 
 # A field read as text; errors name the field.
 #     text_field(Json.null, "name") == err("not an object") is true
-fn text_field(j: Json, key: str) -> result[str] {
+export fn text_field(j: Json, key: str) -> result[str] {
     let v = try field(j, key);
     match as_text(v) {
         case ok(s) {
@@ -748,7 +748,7 @@ fn text_field(j: Json, key: str) -> result[str] {
 
 # A field read as an integer; errors name the field.
 #     int_field(Json.null, "age") == err("not an object") is true
-fn int_field(j: Json, key: str) -> result[int] {
+export fn int_field(j: Json, key: str) -> result[int] {
     let v = try field(j, key);
     match as_int(v) {
         case ok(n) {
@@ -762,7 +762,7 @@ fn int_field(j: Json, key: str) -> result[int] {
 
 # A field read as a float (integer or number); errors name the field.
 #     float_field(Json.null, "price") == err("not an object") is true
-fn float_field(j: Json, key: str) -> result[float] {
+export fn float_field(j: Json, key: str) -> result[float] {
     let v = try field(j, key);
     match as_float(v) {
         case ok(f) {
@@ -776,7 +776,7 @@ fn float_field(j: Json, key: str) -> result[float] {
 
 # A field read as true or false; errors name the field.
 #     bool_field(Json.null, "on") == err("not an object") is true
-fn bool_field(j: Json, key: str) -> result[bool] {
+export fn bool_field(j: Json, key: str) -> result[bool] {
     let v = try field(j, key);
     match as_bool(v) {
         case ok(b) {

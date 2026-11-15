@@ -1,6 +1,6 @@
 import report.render;
 
-fn persist_total(n: int) -> result[void] uses file.write("out/") {
+export fn persist_total(n: int) -> result[void] uses file.write("out/") {
     return write_file("out/total.txt", render(n));
 }
 

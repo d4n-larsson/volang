@@ -1,4 +1,4 @@
-fn render(n: int) -> str {
+export fn render(n: int) -> str {
     return "total: " + str(n);
 }
 
@@ -6,6 +6,6 @@ fn banner() -> str {
     return "== report ==";
 }
 
-fn stamp() -> int uses clock {
+export fn stamp() -> int uses clock {
     return now_ms();
 }

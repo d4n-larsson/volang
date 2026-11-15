@@ -1,4 +1,4 @@
-record Meeting {
+export record Meeting {
     id: str;
     room: str;
     day: str;
@@ -7,14 +7,14 @@ record Meeting {
     people: list[str];
 }
 
-record Query {
+export record Query {
     line: int;
     day: str;
     minutes: int;
     people: list[str];
 }
 
-record Line {
+export record Line {
     kind: str;
     meeting: Meeting;
     query: Query;
@@ -65,7 +65,7 @@ fn people(s: str) -> result[list[str]] {
     return ok(ps);
 }
 
-fn parse(line: str, n: int) -> result[Line] {
+export fn parse(line: str, n: int) -> result[Line] {
     let f = filter(split(line, " "), fn(x: str) -> bool {
         return x != "";
     });
@@ -104,6 +104,6 @@ fn two(n: int) -> str {
     return str(n);
 }
 
-fn clock(m: int) -> str {
+export fn clock(m: int) -> str {
     return two(m / 60) + ":" + two(m % 60);
 }

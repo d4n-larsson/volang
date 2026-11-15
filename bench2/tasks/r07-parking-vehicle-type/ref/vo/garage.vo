@@ -1,11 +1,11 @@
-record Level {
+export record Level {
     number: int;
     spots: list[str];
     exits: int;
     revenue: int;
 }
 
-record Vehicle {
+export record Vehicle {
     plate: str;
     kind: str;
     level: int;
@@ -13,26 +13,26 @@ record Vehicle {
     since: int;
 }
 
-record Garage {
+export record Garage {
     levels: map[int, Level];
     vehicles: map[str, Vehicle];
 }
 
-fn new_garage() -> Garage {
+export fn new_garage() -> Garage {
     return new Garage { levels: new map[int, Level], vehicles: new map[str, Vehicle] };
 }
 
-fn level_numbers(garage: Garage) -> list[int] {
+export fn level_numbers(garage: Garage) -> list[int] {
     let numbers = keys(garage.levels);
     sort(numbers);
     return numbers;
 }
 
-fn spot_name(vehicle: Vehicle) -> str {
+export fn spot_name(vehicle: Vehicle) -> str {
     return str(vehicle.level) + "-" + str(vehicle.spot);
 }
 
-fn open_level(garage: Garage, number: int, spots: int) -> str {
+export fn open_level(garage: Garage, number: int, spots: int) -> str {
     if has(garage.levels, number) {
         return "error: level " + str(number) + " exists";
     }
@@ -44,7 +44,7 @@ fn open_level(garage: Garage, number: int, spots: int) -> str {
     return "level " + str(number) + " opened with " + str(spots) + " spots";
 }
 
-fn park(garage: Garage, plate: str, time: int, kind: str) -> str {
+export fn park(garage: Garage, plate: str, time: int, kind: str) -> str {
     if has(garage.vehicles, plate) {
         return "error: " + plate + " already parked";
     }
@@ -71,12 +71,12 @@ fn park(garage: Garage, plate: str, time: int, kind: str) -> str {
     return "error: garage full";
 }
 
-fn unpark(garage: Garage, vehicle: Vehicle) {
+export fn unpark(garage: Garage, vehicle: Vehicle) {
     set garage.levels[vehicle.level].spots[vehicle.spot - 1] = "";
     remove(garage.vehicles, vehicle.plate);
 }
 
-fn occupancy(garage: Garage) -> list[str] {
+export fn occupancy(garage: Garage) -> list[str] {
     let out = new list[str];
     var used_all = 0;
     var spots_all = 0;
@@ -93,7 +93,7 @@ fn occupancy(garage: Garage) -> list[str] {
     return out;
 }
 
-fn parked(garage: Garage) -> list[str] {
+export fn parked(garage: Garage) -> list[str] {
     let out = new list[str];
     for number in level_numbers(garage) {
         for plate in garage.levels[number].spots {

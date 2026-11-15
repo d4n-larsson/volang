@@ -52,14 +52,14 @@ fn transpose(m: list[list[str]]) -> list[list[str]] {
     return t;
 }
 
-fn spiral_dir(m: list[list[str]], d: str) -> list[str] {
+export fn spiral_dir(m: list[list[str]], d: str) -> list[str] {
     if d == "ccw" {
         return spiral(transpose(m));
     }
     return spiral(m);
 }
 
-fn solve(lines: list[str]) -> result[str] {
+export fn solve(lines: list[str]) -> result[str] {
     let head = words(lines[0]);
     let r = try parse_int(head[0]);
     let c = try parse_int(head[1]);

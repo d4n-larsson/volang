@@ -947,6 +947,56 @@ void check_main(int file, Node *fn)
 }
 
 /* Declarations, signatures, then bodies of one parsed file. */
+/* E0210 for each record or variant of this file without `export` that the resolved type node of an
+ * exported item names (spec 010 research R3); item is that item's name, for the message. */
+static void export_type(Node *tn, Node *item)
+{
+    if (!tn || tn->kind != N_TYPE_NODE) return;
+    switch (tn->a.i) {
+    case TY_LIST:
+    case TY_RESULT: export_type(tn->b.n, item); break;
+    case TY_MAP:
+        export_type(tn->b.n, item);
+        export_type(tn->c.n, item);
+        break;
+    case TY_FUNC:
+        for (long i = 0; i < tn->b.v->n; i++) export_type(vec_get(tn->b.v, i), item);
+        export_type(tn->c.n, item);
+        break;
+    case TY_NAMED: {
+        Type *t = tn->type;
+        if (t && (t->kind == TY_RECORD || t->kind == TY_VARIANT)) {
+            Node *decl = t->decl.n;
+            if (decl && decl->file == tn->file && !(decl->flags & NF_EXPORT))
+                export_needed("E0210", tn->b.n, decl,
+                              msg("`export $1` uses `$2`, which is not exported.", item->a.n->a.s, tn->b.n->a.s, 0));
+        }
+        if (tn->c.v)
+            for (long i = 0; i < tn->c.v->n; i++) export_type(vec_get(tn->c.v, i), item);
+        break;
+    }
+    default: break;
+    }
+}
+
+/* E0210 over every exported item's parameter, result, field and case types. */
+static void check_export_types(Vec *items)
+{
+    for (long i = 0; i < items->n; i++) {
+        Node *it = vec_get(items, i);
+        if (!(it->flags & NF_EXPORT) || !it->a.n) continue;
+        if (it->kind == N_FN) {
+            for (long j = 0; j < it->b.v->n; j++) export_type(((Node *)vec_get(it->b.v, j))->b.n, it);
+            export_type(it->c.n, it);
+        } else { /* fields or cases; comments are skipped */
+            for (long j = 0; j < it->b.v->n; j++) {
+                Node *m = vec_get(it->b.v, j);
+                if (m->kind == N_FIELD_DECL || m->kind == N_CASE_DECL) export_type(m->b.n, it);
+            }
+        }
+    }
+}
+
 void check_items(int file, int mode)
 {
     ck_mode = mode;
@@ -957,6 +1007,7 @@ void check_items(int file, int mode)
     for (long i = 0; i < items->n; i++) define_item(vec_get(items, i));
     f->scope = ck_scope;
     for (long i = 0; i < items->n; i++) resolve_item(ck_item_set(vec_get(items, i)));
+    check_export_types(items);
     check_tests_unique(items);
     fx_file_begin();
     for (long i = 0; i < items->n; i++) {

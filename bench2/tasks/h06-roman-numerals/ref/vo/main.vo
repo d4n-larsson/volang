@@ -23,7 +23,7 @@ fn letter(c: str) -> int {
     return 0;
 }
 
-fn answer(s: str) -> result[str] {
+export fn answer(s: str) -> result[str] {
     let cs = chars(s);
     if len(cs) == 0 {
         return ok("invalid");

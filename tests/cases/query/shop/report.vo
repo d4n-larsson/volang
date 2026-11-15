@@ -2,11 +2,11 @@ import io.parse_line;
 import model.Item;
 import model.Event;
 
-fn summary(lines: list[str]) -> list[int] {
+export fn summary(lines: list[str]) -> list[int] {
     return map(lines, parse_line);
 }
 
-fn describe(e: Event) -> str {
+export fn describe(e: Event) -> str {
     match e {
         case added(it) {
             return "added " + it.name;
@@ -20,7 +20,7 @@ fn describe(e: Event) -> str {
     }
 }
 
-fn total(items: list[Item]) -> int
+export fn total(items: list[Item]) -> int
     requires len(items) > 0
     ensures ret >= 0 {
     var sum = 0;

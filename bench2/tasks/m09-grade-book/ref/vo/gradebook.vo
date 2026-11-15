@@ -1,6 +1,6 @@
 import parsing.Line;
 
-record GradeBook {
+export record GradeBook {
     names: list[str];
     weight: map[str, int];
     maxp: map[str, int];
@@ -10,11 +10,11 @@ record GradeBook {
     drop: int;
 }
 
-fn new_book() -> GradeBook {
+export fn new_book() -> GradeBook {
     return new GradeBook { names: new list[str], weight: new map[str, int], maxp: new map[str, int], students: new list[str], is_student: new map[str, bool], scores: new map[str, int], drop: 0 };
 }
 
-fn rdiv(x: int, y: int) -> int {
+export fn rdiv(x: int, y: int) -> int {
     return (2 * x + y) / (2 * y);
 }
 
@@ -22,7 +22,7 @@ fn key(s: str, a: str) -> str {
     return s + " " + a;
 }
 
-fn apply(g: GradeBook, l: Line) -> bool {
+export fn apply(g: GradeBook, l: Line) -> bool {
     if l.kind == "assignment" {
         if has(g.weight, l.a) {
             return false;
@@ -50,18 +50,18 @@ fn apply(g: GradeBook, l: Line) -> bool {
     return true;
 }
 
-fn has_score(g: GradeBook, s: str, a: str) -> bool {
+export fn has_score(g: GradeBook, s: str, a: str) -> bool {
     return has(g.scores, key(s, a));
 }
 
-fn bp(g: GradeBook, s: str, a: str) -> int {
+export fn bp(g: GradeBook, s: str, a: str) -> int {
     if not has_score(g, s, a) {
         return 0;
     }
     return g.scores[key(s, a)] * 10000 / g.maxp[a];
 }
 
-fn final(g: GradeBook, s: str) -> int {
+export fn final(g: GradeBook, s: str) -> int {
     let n = len(g.names);
     if n == 0 {
         return 0;

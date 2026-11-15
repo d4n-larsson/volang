@@ -15,7 +15,7 @@ fn month_len(y: int, m: int) -> int {
     return 31;
 }
 
-fn answer(s: str) -> result[str] {
+export fn answer(s: str) -> result[str] {
     if len(s) != 10 {
         return ok("invalid");
     }

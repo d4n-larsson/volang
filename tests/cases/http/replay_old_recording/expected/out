@@ -6,4 +6,5 @@ body (14):
 hello from vo
 
 --- stderr
+note: the program differs from the recorded one (recorded main.vo)
 --- exit 0

@@ -1,19 +1,19 @@
-record Item {
+export record Item {
     sku: str;
     name: str;
     price: int;
 }
 
-record Box {
+export record Box {
     price: int;
 }
 
-fn add_product(items: list[Item], sku: str, name: str, price: int) uses console {
+export fn add_product(items: list[Item], sku: str, name: str, price: int) uses console {
     push(items, new Item { sku: sku, name: name, price: price });
     print("add_item " + sku);
 }
 
-fn total(items: list[Item]) -> int {
+export fn total(items: list[Item]) -> int {
     var sum = 0;
     for it in items {
         set sum = sum + it.price;

@@ -10,7 +10,7 @@ fn daily_cap() -> int {
     return 2000;
 }
 
-fn money(cents: int) -> str {
+export fn money(cents: int) -> str {
     var frac = str(cents % 100);
     if len(frac) < 2 {
         set frac = "0" + frac;
@@ -19,7 +19,7 @@ fn money(cents: int) -> str {
 }
 
 # The fee in cents for a stay of `minutes`.
-fn fee(minutes: int) -> int {
+export fn fee(minutes: int) -> int {
     if minutes <= free_minutes() {
         return 0;
     }
@@ -28,6 +28,6 @@ fn fee(minutes: int) -> int {
     return days * daily_cap() + min(daily_cap(), hours * hourly());
 }
 
-fn rates() -> list[str] {
+export fn rates() -> list[str] {
     return ["car: first " + str(free_minutes()) + " min free, " + money(hourly()) + " per hour, " + money(daily_cap()) + " per day"];
 }

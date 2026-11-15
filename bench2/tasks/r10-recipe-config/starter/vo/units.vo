@@ -1,4 +1,4 @@
-fn is_unit(u: str) -> bool {
+export fn is_unit(u: str) -> bool {
     return u == "g" or u == "ml" or u == "pcs";
 }
 
@@ -20,7 +20,7 @@ fn decimal(q: int, big: str) -> str {
 }
 
 # Quantity for output: 1000 g or more as kg, 1000 ml or more as l.
-fn format_qty(q: int, unit: str) -> str {
+export fn format_qty(q: int, unit: str) -> str {
     if unit == "g" and q >= 1000 {
         return decimal(q, "kg");
     }

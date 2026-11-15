@@ -1,5 +1,5 @@
 $ vo package main.vo money shared/money
-added money shared/money sha256:45f9f4ba9a4cc512243f791c76cb26553e634683c64348b6371d69d254d3c934
+added money shared/money sha256:78e9038e13b6e094911f5175457e127c22b32fb412c997999191108f4cb7129c
 --- stderr
 --- exit 0
 $ vo run main.vo

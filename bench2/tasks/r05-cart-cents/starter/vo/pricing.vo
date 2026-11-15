@@ -4,7 +4,7 @@ import shop.Bulk;
 import shop.unknown_product;
 
 # One cart line with its discounts worked out.
-record Priced {
+export record Priced {
     sku: str;
     qty: int;
     price: int;
@@ -16,7 +16,7 @@ record Priced {
     net: int;
 }
 
-fn set_promo(shop: Shop, sku: str, buy: int) -> str {
+export fn set_promo(shop: Shop, sku: str, buy: int) -> str {
     if not has(shop.catalog, sku) {
         return unknown_product(sku);
     }
@@ -24,7 +24,7 @@ fn set_promo(shop: Shop, sku: str, buy: int) -> str {
     return "promo " + sku + ": buy " + str(buy) + " get 1 free";
 }
 
-fn set_bulk(shop: Shop, sku: str, min_qty: int, pct: int) -> str {
+export fn set_bulk(shop: Shop, sku: str, min_qty: int, pct: int) -> str {
     if not has(shop.catalog, sku) {
         return unknown_product(sku);
     }
@@ -32,12 +32,12 @@ fn set_bulk(shop: Shop, sku: str, min_qty: int, pct: int) -> str {
     return "bulk " + sku + ": " + str(min_qty) + " or more " + str(pct) + "% off";
 }
 
-fn define_coupon(shop: Shop, code: str, pct: int) -> str {
+export fn define_coupon(shop: Shop, code: str, pct: int) -> str {
     set shop.coupons[code] = pct;
     return "coupon " + code + ": " + str(pct) + "% off";
 }
 
-fn use_coupon(shop: Shop, code: str) -> str {
+export fn use_coupon(shop: Shop, code: str) -> str {
     if not has(shop.coupons, code) {
         return "error: unknown coupon " + code;
     }
@@ -45,7 +45,7 @@ fn use_coupon(shop: Shop, code: str) -> str {
     return "coupon " + code + " active";
 }
 
-fn price_line(shop: Shop, line: Line) -> Priced {
+export fn price_line(shop: Shop, line: Line) -> Priced {
     let price = shop.catalog[line.sku].price;
     let p = new Priced { sku: line.sku, qty: line.qty, price: price, gross: line.qty * price, free_qty: 0, free_amount: 0, bulk_pct: 0, bulk_amount: 0, net: 0 };
     if has(shop.promos, line.sku) {
@@ -62,7 +62,7 @@ fn price_line(shop: Shop, line: Line) -> Priced {
 }
 
 # The active coupon's discount on subtotal (0 without a coupon).
-fn coupon_discount(shop: Shop, subtotal: int) -> int {
+export fn coupon_discount(shop: Shop, subtotal: int) -> int {
     if shop.active == "" {
         return 0;
     }

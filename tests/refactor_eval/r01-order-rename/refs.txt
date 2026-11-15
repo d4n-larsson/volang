@@ -1,43 +1,43 @@
 refs Item
-catalog.vo:1:8 declaration
-catalog.vo:9:31 type
+catalog.vo:1:15 declaration
+catalog.vo:9:38 type
 catalog.vo:13:28 use
-catalog.vo:17:35 type
-catalog.vo:26:37 type
-catalog.vo:35:35 type
-catalog.vo:35:50 type
+catalog.vo:17:42 type
+catalog.vo:26:44 type
+catalog.vo:35:42 type
+catalog.vo:35:57 type
 catalog.vo:38:38 type
 main.vo:1:16 import
 main.vo:35:44 type
 main.vo:103:32 type
 orders.vo:1:16 import
-orders.vo:38:34 type
-orders.vo:69:35 type
+orders.vo:38:41 type
+orders.vo:69:42 type
 report.vo:1:16 import
-report.vo:35:34 type
+report.vo:35:41 type
 
 refs add_item
-catalog.vo:9:4 declaration
+catalog.vo:9:11 declaration
 main.vo:2:16 import
 main.vo:42:17 call
 
 refs restock_item
-catalog.vo:17:4 declaration
+catalog.vo:17:11 declaration
 main.vo:3:16 import
 main.vo:48:17 call
 
 refs set_item_price
-catalog.vo:26:4 declaration
+catalog.vo:26:11 declaration
 main.vo:4:16 import
 main.vo:54:17 call
 
 refs sorted_items
-catalog.vo:35:4 declaration
+catalog.vo:35:11 declaration
 report.vo:2:16 import
 report.vo:37:17 call
 
 refs money
-report.vo:6:4 declaration
+report.vo:6:11 declaration
 report.vo:15:97 call
 report.vo:17:43 call
 report.vo:29:68 call

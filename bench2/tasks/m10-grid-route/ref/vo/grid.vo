@@ -1,11 +1,11 @@
-record Grid {
+export record Grid {
     rows: list[list[str]];
     height: int;
     width: int;
     stops: list[int];
 }
 
-fn cost(ch: str) -> int {
+export fn cost(ch: str) -> int {
     if ch == ":" {
         return 2;
     }
@@ -15,11 +15,11 @@ fn cost(ch: str) -> int {
     return 1;
 }
 
-fn is_stop(ch: str) -> bool {
+export fn is_stop(ch: str) -> bool {
     return ch == "S" or ch == "G" or ch >= "1" and ch <= "9";
 }
 
-fn parse(text: str) -> result[Grid] {
+export fn parse(text: str) -> result[Grid] {
     let lines = filter(split(text, "\n"), fn(l: str) -> bool {
         return l != "";
     });
@@ -62,6 +62,6 @@ fn parse(text: str) -> result[Grid] {
     return ok(new Grid { rows: rows, height: len(rows), width: w, stops: stops });
 }
 
-fn at(g: Grid, cell: int) -> str {
+export fn at(g: Grid, cell: int) -> str {
     return g.rows[cell / g.width][cell % g.width];
 }

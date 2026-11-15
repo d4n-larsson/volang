@@ -1,13 +1,13 @@
 import lexer.Token;
 
-variant Expr {
+export variant Expr {
     num(str);
     name(str);
     neg(Expr);
     bin(Bin);
 }
 
-record Bin {
+export record Bin {
     op: str;
     left: Expr;
     right: Expr;
@@ -18,7 +18,7 @@ record Parser {
     pos: int;
 }
 
-record Statement {
+export record Statement {
     name: str;
     expr: Expr;
 }
@@ -92,7 +92,7 @@ fn atom(p: Parser) -> result[Expr] {
     return err("syntax");
 }
 
-fn parse_line(toks: list[Token]) -> result[Statement] {
+export fn parse_line(toks: list[Token]) -> result[Statement] {
     var name = "";
     var rest = toks;
     if len(toks) >= 2 and toks[0].kind == "name" and toks[1].kind == "op" and toks[1].text == "=" {

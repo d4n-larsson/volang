@@ -7,4 +7,4 @@ rename pick_up take_item
 # "Every item has a weight": item_value (score points) is renamed to tell it apart from the weight
 rename item_value item_points
 # the item argument of the take path is an item name (drop takes one too)
-rename player.vo:42:51 item_name
+rename player.vo:42:58 item_name

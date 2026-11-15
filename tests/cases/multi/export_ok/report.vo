@@ -1,0 +1,33 @@
+# Totals per category, for main.vo.
+export record Total {
+    name: str;
+    cents: int;
+}
+
+export variant Level {
+    low;
+    high(int);
+}
+
+export fn total(name: str, cents: int) -> Total {
+    return new Total { name: name, cents: cents + rounding() };
+}
+
+export fn level(t: Total) -> Level {
+    if t.cents > limit() {
+        return Level.high(t.cents);
+    }
+    return Level.low;
+}
+
+fn rounding() -> int {
+    return 0;
+}
+
+fn limit() -> int {
+    return 100;
+}
+
+test "the limit is private but testable here" {
+    expect(limit() == 100);
+}

@@ -11,7 +11,7 @@ main.vo:42:35: error[E0301]: Expected `int`, `float` or `bool`, found `void`.
 main.vo:46:1: error[E0501]: `test "totals"` does not declare console, which it needs.
   46 | test "totals" {
      | ^^^^
-  note: catalog.vo:11:65: `total` declares console here.
+  note: catalog.vo:11:72: `total` declares console here.
 main.vo:48:15: error[E0302]: `total` takes 4 argument(s), got 1.
   48 |     expect_eq(total(items), 0);
      |               ^^^^^^^^^^^^
@@ -19,10 +19,10 @@ main.vo:48:29: error[E0301]: Expected `void`, found `int`.
   48 |     expect_eq(total(items), 0);
      |                             ^
   expected `void`, found `int`
-catalog.vo:16:4: error[E0202]: `total` is already defined.
-  16 | fn total(items: list[Item]) -> int {
-     |    ^^^^^
-  note: catalog.vo:11:4: `total` is first defined here.
+catalog.vo:16:11: error[E0202]: `total` is already defined.
+  16 | export fn total(items: list[Item]) -> int {
+     |           ^^^^^
+  note: catalog.vo:11:11: `total` is first defined here.
 error[T0006]: Renaming `add_item` to `total` would not check (7 new errors): nothing was written.
 --- stderr
 --- exit 65

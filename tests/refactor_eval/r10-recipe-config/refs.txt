@@ -1,5 +1,5 @@
 refs ingredient_line
-recipes.vo:36:4 declaration
+recipes.vo:36:11 declaration
 recipes.vo:43:19 call
 scaling.vo:2:16 import
 scaling.vo:17:19 call
@@ -24,8 +24,8 @@ scaling.vo:17:71 use
 scaling.vo:29:42 use
 
 refs Order
-scaling.vo:4:8 declaration
-scaling.vo:23:58 type
+scaling.vo:4:15 declaration
+scaling.vo:23:65 type
 main.vo:6:16 import
 main.vo:75:31 type
 main.vo:81:30 use
@@ -37,13 +37,13 @@ main.vo:81:38 use
 main.vo:85:35 use
 main.vo:86:54 use
 
-refs scaling.vo:14:32
-scaling.vo:14:32 declaration
+refs scaling.vo:14:39
+scaling.vo:14:39 declaration
 scaling.vo:15:44 use
 scaling.vo:17:81 use
 
 refs format_qty
-units.vo:23:4 declaration
+units.vo:23:11 declaration
 recipes.vo:2:14 import
 recipes.vo:37:32 call
 

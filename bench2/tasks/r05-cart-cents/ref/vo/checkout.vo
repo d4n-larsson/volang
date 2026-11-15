@@ -5,7 +5,7 @@ import money.money;
 import pricing.price_line;
 import pricing.coupon_discount;
 
-fn checkout(shop: Shop) -> list[str] {
+export fn checkout(shop: Shop) -> list[str] {
     if len(shop.cart) == 0 {
         return ["error: cart empty"];
     }
@@ -42,7 +42,7 @@ fn checkout(shop: Shop) -> list[str] {
     return out;
 }
 
-fn report(shop: Shop) -> list[str] {
+export fn report(shop: Shop) -> list[str] {
     let out = new list[str];
     for product in sorted_products(shop) {
         if product.sold > 0 {

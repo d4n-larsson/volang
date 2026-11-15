@@ -5,7 +5,7 @@ import shop.has_line;
 import shop.find_line;
 import shop.unknown_product;
 
-fn add_product(shop: Shop, sku: str, name: str, price: int) -> str {
+export fn add_product(shop: Shop, sku: str, name: str, price: int) -> str {
     if has(shop.catalog, sku) {
         return "error: product " + sku + " exists";
     }
@@ -13,7 +13,7 @@ fn add_product(shop: Shop, sku: str, name: str, price: int) -> str {
     return "product " + sku + " added";
 }
 
-fn set_price(shop: Shop, sku: str, price: int) -> str {
+export fn set_price(shop: Shop, sku: str, price: int) -> str {
     if not has(shop.catalog, sku) {
         return unknown_product(sku);
     }
@@ -22,7 +22,7 @@ fn set_price(shop: Shop, sku: str, price: int) -> str {
     return "product " + sku + " price " + str(price);
 }
 
-fn add_to_cart(shop: Shop, sku: str, qty: int) -> str {
+export fn add_to_cart(shop: Shop, sku: str, qty: int) -> str {
     if not has(shop.catalog, sku) {
         return unknown_product(sku);
     }
@@ -34,7 +34,7 @@ fn add_to_cart(shop: Shop, sku: str, qty: int) -> str {
     return "cart " + sku + " x" + str(line.qty);
 }
 
-fn remove_from_cart(shop: Shop, sku: str, qty: int) -> str {
+export fn remove_from_cart(shop: Shop, sku: str, qty: int) -> str {
     if not has_line(shop, sku) {
         return "error: " + sku + " not in cart";
     }
@@ -52,7 +52,7 @@ fn remove_from_cart(shop: Shop, sku: str, qty: int) -> str {
     return "cart " + sku + " x" + str(line.qty);
 }
 
-fn show_cart(shop: Shop) -> list[str] {
+export fn show_cart(shop: Shop) -> list[str] {
     if len(shop.cart) == 0 {
         return ["cart empty"];
     }

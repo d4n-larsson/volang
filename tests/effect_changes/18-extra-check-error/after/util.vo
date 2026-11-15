@@ -1,4 +1,4 @@
-fn clamp(x: int, lo: int, hi: int) -> int {
+export fn clamp(x: int, lo: int, hi: int) -> int {
     if x < lo {
         return lo;
     }

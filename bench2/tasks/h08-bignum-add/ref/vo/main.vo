@@ -104,7 +104,7 @@ fn signed(neg: bool, mag: str) -> str {
     return mag;
 }
 
-fn answer(line: str) -> str {
+export fn answer(line: str) -> str {
     let parts = filter(split(line, " "), fn(w: str) -> bool {
         return len(w) > 0;
     });

@@ -1,0 +1,12 @@
+import http.parse;
+
+fn main() uses console {
+    match parse("a") {
+        case ok(u) {
+            print(u.host);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

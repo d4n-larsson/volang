@@ -166,6 +166,14 @@ def main():
     TYPE_PATHS.update({r["name"]: f"{m}.{r['name']}" for m, rs in items.items() for r in rs
                        if r["item"] != "fn"})
     failures, calls = [], 0
+    # spec 010: in std/, the exported items are exactly the documented ones
+    for path in sorted(os.listdir(os.path.join(ROOT, "std"))):
+        lines = open(os.path.join(ROOT, "std", path), encoding="utf-8").read().split("\n")
+        for i, line in enumerate(lines):
+            m = re.match(r"(export )?(fn|record|variant) (\w+)", line)
+            if m and bool(m.group(1)) != (i > 0 and lines[i - 1].startswith("#")):
+                failures.append(f"std/{path}:{i + 1}: `{m.group(3)}` is "
+                                + ("exported without a doc comment" if m.group(1) else "documented but not exported"))
 
     def probe(label, imports, effects, params, ret, tvars, test_only=False, name=None, rows=()):
         nonlocal calls

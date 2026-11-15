@@ -1,19 +1,19 @@
 refs Room
-world.vo:1:8 declaration
+world.vo:1:15 declaration
 world.vo:15:90 type
 world.vo:20:16 use
-world.vo:23:29 type
+world.vo:23:36 type
 world.vo:24:30 type
 commands.vo:1:14 import
 commands.vo:6:29 type
-commands.vo:17:44 type
-commands.vo:21:42 type
-commands.vo:28:44 type
+commands.vo:17:51 type
+commands.vo:21:49 type
+commands.vo:28:51 type
 main.vo:1:14 import
 main.vo:24:58 type
 player.vo:1:14 import
-player.vo:21:41 type
-player.vo:42:44 type
+player.vo:21:48 type
+player.vo:42:51 type
 
 refs Player.room
 player.vo:7:5 declaration
@@ -35,20 +35,20 @@ player.vo:44:26 use
 player.vo:47:14 use
 player.vo:47:34 use
 
-refs player.vo:42:51
-player.vo:42:51 declaration
+refs player.vo:42:58
+player.vo:42:58 declaration
 player.vo:44:33 use
 player.vo:48:21 use
 player.vo:50:28 use
 player.vo:51:29 use
 
 refs pick_up
-player.vo:42:4 declaration
+player.vo:42:11 declaration
 commands.vo:4:15 import
 commands.vo:29:18 call
 
 refs item_value
-world.vo:35:4 declaration
+world.vo:35:11 declaration
 player.vo:4:14 import
 player.vo:51:18 call
 

@@ -1,7 +1,7 @@
 import grid.Grid;
 import grid.is_stop;
 
-fn draw(g: Grid, cells: list[int]) -> list[str] {
+export fn draw(g: Grid, cells: list[int]) -> list[str] {
     let rows = map(g.rows, fn(r: list[str]) -> list[str] {
         return slice(r, 0, len(r));
     });

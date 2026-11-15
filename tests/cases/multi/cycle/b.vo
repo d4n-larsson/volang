@@ -1,5 +1,5 @@
 import a.from_a;
 
-fn from_b() -> int {
+export fn from_b() -> int {
     return from_a() + 1;
 }

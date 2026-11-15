@@ -2,6 +2,6 @@ fn write_report(text: str) -> result[void] uses file.write("out/") {
     return write_file("out/report.txt", text);
 }
 
-fn save_report(n: int) -> result[void] uses file.write("out/") {
+export fn save_report(n: int) -> result[void] uses file.write("out/") {
     return write_report("total " + str(n));
 }

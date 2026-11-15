@@ -50,7 +50,7 @@ HTTP_CLIENT = ('import std.http.get;\n\nfn main() uses console, net("127.0.0.1")
                '            print(str(r.status) + " " + str(len(r.headers)) + " " + r.body);\n        }\n'
                '        case err(e) {\n            print(e);\n        }\n    }\n}\n')
 MANIFEST_MAIN = 'import money.format.cents;\n\nfn main() uses console {\n    print(cents(5));\n}\n'
-MANIFEST_PKG = '# money.format: Formats money.\n\n# Cents as text.\n#     cents(5) is "5"\nfn cents(n: int) -> str {\n    return str(n);\n}\n'
+MANIFEST_PKG = '# money.format: Formats money.\n\n# Cents as text.\n#     cents(5) is "5"\nexport fn cents(n: int) -> str {\n    return str(n);\n}\n'
 
 
 class OneReplyServer:

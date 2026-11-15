@@ -8,10 +8,10 @@ fn subtotal(prices: list[int]) -> int {
     return sum;
 }
 
-fn checkout(prices: list[int]) -> int {
+export fn checkout(prices: list[int]) -> int {
     return subtotal(prices);
 }
 
-fn with_tax_values(prices: list[int]) -> list[int] {
+export fn with_tax_values(prices: list[int]) -> list[int] {
     return map(prices, tax);
 }

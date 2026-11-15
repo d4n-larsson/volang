@@ -46,7 +46,7 @@ fn table(input: list[Player], k: int) -> list[str] {
     return out;
 }
 
-fn solve(lines: list[str]) -> result[list[str]] {
+export fn solve(lines: list[str]) -> result[list[str]] {
     let rows = new list[list[str]];
     for line in lines {
         let t = words(line);

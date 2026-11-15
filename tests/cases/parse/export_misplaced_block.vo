@@ -1,0 +1,3 @@
+fn main() {
+    export let x = 1;
+}

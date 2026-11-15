@@ -21,7 +21,7 @@ fn letter(f: int) -> str {
     return "F";
 }
 
-fn report(g: GradeBook) -> list[str] {
+export fn report(g: GradeBook) -> list[str] {
     let finals = new map[str, int];
     for s in g.students {
         set finals[s] = final(g, s);

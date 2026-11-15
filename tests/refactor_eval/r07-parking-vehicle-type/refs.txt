@@ -1,5 +1,5 @@
 refs fee
-fees.vo:22:4 declaration
+fees.vo:22:11 declaration
 billing.vo:7:13 import
 billing.vo:25:26 call
 billing.vo:42:45 call
@@ -22,12 +22,12 @@ billing.vo:70:102 use
 billing.vo:72:39 use
 
 refs Vehicle
-garage.vo:8:8 declaration
+garage.vo:8:15 declaration
 garage.vo:17:24 type
 garage.vo:21:77 type
-garage.vo:30:23 type
+garage.vo:30:30 type
 garage.vo:55:35 use
-garage.vo:64:36 type
+garage.vo:64:43 type
 billing.vo:2:15 import
 billing.vo:10:65 type
 
@@ -42,7 +42,7 @@ garage.vo:92:27 call
 billing.vo:30:39 call
 
 refs money
-fees.vo:13:4 declaration
+fees.vo:13:11 declaration
 fees.vo:32:67 call
 fees.vo:32:101 call
 billing.vo:6:13 import
@@ -64,8 +64,8 @@ fees.vo:28:19 call
 fees.vo:28:37 call
 fees.vo:32:107 call
 
-refs fees.vo:22:8
-fees.vo:22:8 declaration
+refs fees.vo:22:15
+fees.vo:22:15 declaration
 fees.vo:23:8 use
 fees.vo:26:16 use
 fees.vo:27:18 use

@@ -1,4 +1,4 @@
-record Token {
+export record Token {
     kind: str;
     text: str;
 }
@@ -11,7 +11,7 @@ fn is_letter(c: str) -> bool {
     return c >= "a" and c <= "z";
 }
 
-fn tokenize(line: str) -> result[list[Token]] {
+export fn tokenize(line: str) -> result[list[Token]] {
     let cs = chars(line);
     let toks = new list[Token];
     var i = 0;

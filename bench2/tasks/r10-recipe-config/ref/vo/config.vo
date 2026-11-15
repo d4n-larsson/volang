@@ -1,14 +1,14 @@
-record Config {
+export record Config {
     rounding: str;
     units: str;
 }
 
-fn default_config() -> Config {
+export fn default_config() -> Config {
     return new Config { rounding: "up", units: "metric" };
 }
 
 # The words after `config`: each KEY=VALUE, each key at most once.
-fn parse_config(settings: list[str]) -> result[Config] {
+export fn parse_config(settings: list[str]) -> result[Config] {
     let cfg = default_config();
     let seen = new map[str, bool];
     for w in settings {
@@ -30,6 +30,6 @@ fn parse_config(settings: list[str]) -> result[Config] {
     return ok(cfg);
 }
 
-fn config_line(cfg: Config) -> str {
+export fn config_line(cfg: Config) -> str {
     return "config rounding=" + cfg.rounding + " units=" + cfg.units;
 }

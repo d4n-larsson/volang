@@ -1,0 +1,17 @@
+$ vo package main.vo money shared/money
+added money shared/money sha256:9434851d63c8fca59b064b63a2e4da0c7ec6cd0612c9fb40801894a04cf74ad0
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:2:21: error[E0209]: `pad2` is internal to package `money`.
+   2 | import money.format.pad2;
+     |                     ^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo doc money.format
+fn cents(n: int) -> str
+    Cents as `units.cents`.
+fn whole(n: int) -> str
+--- stderr
+--- exit 0

@@ -65,7 +65,7 @@ fn render(spans: list[Span]) -> list[str] {
     return out;
 }
 
-fn solve(lines: list[str]) -> result[list[str]] {
+export fn solve(lines: list[str]) -> result[list[str]] {
     let spans = try parse(lines);
     return ok(render(merge(spans)));
 }

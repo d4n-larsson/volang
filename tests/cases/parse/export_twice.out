@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"export_twice.vo","start":{"line":1,"col":8},"end":{"line":1,"col":14},"text":"export","message":"Expected `fn`, `record` or `variant` after `export`, found `export`.","expected":"item","found":"export","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

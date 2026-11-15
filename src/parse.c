@@ -20,7 +20,7 @@ static const char *const tok_spell[] = {
     "fn", "record", "variant", "test", "import", "let", "var", "set", "if", "else",
     "while", "for", "in", "match", "case", "return", "break", "continue", "try", "new",
     "and", "or", "not", "true", "false", "int", "float", "bool", "str", "list",
-    "map", "result", "void", "uses", "prop", "requires", "ensures", "?", "?", "?",
+    "map", "result", "void", "uses", "prop", "requires", "ensures", "export", "?", "?",
     "(", ")", "{", "}", "[", "]", ",", ";", ":", ".",
     "..", "->", "=", "==", "!=", "<", "<=", ">", ">=", "+",
     "-", "*", "/", "%",
@@ -1208,6 +1208,18 @@ static Node *parse_item(void)
         fx->uses = n->c.n;
         n->b.n = parse_block();
         break;
+    }
+    case T_EXPORT: { /* spec 010: export fn|record|variant */
+        p_next();
+        int k2 = p_kind();
+        if (k2 != T_FN && k2 != T_RECORD && k2 != T_VARIANT) {
+            p_fail_c("`fn`, `record` or `variant` after `export`", "item");
+            return p_node(N_ERROR);
+        }
+        n = parse_item();
+        n->flags |= NF_EXPORT;
+        n->start = (uint32_t)start; /* the item's span starts at `export` */
+        return n;
     }
     case T_IMPORT: /* import a.b.name; */
         n = p_node(N_IMPORT);

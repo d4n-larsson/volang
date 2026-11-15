@@ -21,7 +21,7 @@ report.vo:32:33 use
 report.vo:32:71 use
 
 refs span
-clock.vo:44:4 declaration
+clock.vo:44:11 declaration
 report.vo:2:14 import
 report.vo:13:26 call
 report.vo:30:39 call
@@ -30,7 +30,7 @@ schedule.vo:2:14 import
 schedule.vo:47:56 call
 
 refs duration
-clock.vo:40:4 declaration
+clock.vo:40:11 declaration
 report.vo:1:14 import
 report.vo:13:79 call
 report.vo:32:60 call
@@ -56,26 +56,26 @@ main.vo:4:17 import
 main.vo:22:43 type
 main.vo:79:31 type
 report.vo:3:17 import
-report.vo:9:34 type
-report.vo:18:30 type
-report.vo:29:32 type
-report.vo:40:35 type
-schedule.vo:4:8 declaration
-schedule.vo:21:33 type
-schedule.vo:21:60 type
+report.vo:9:41 type
+report.vo:18:37 type
+report.vo:29:39 type
+report.vo:40:42 type
+schedule.vo:4:15 declaration
+schedule.vo:21:40 type
+schedule.vo:21:67 type
 schedule.vo:22:24 type
 schedule.vo:28:24 type
-schedule.vo:34:31 type
+schedule.vo:34:38 type
 schedule.vo:46:32 use
-schedule.vo:50:34 type
-schedule.vo:58:30 type
-schedule.vo:58:67 type
-schedule.vo:68:32 type
-schedule.vo:89:29 type
+schedule.vo:50:41 type
+schedule.vo:58:37 type
+schedule.vo:58:74 type
+schedule.vo:68:39 type
+schedule.vo:89:36 type
 schedule.vo:90:41 type
 
-refs schedule.vo:58:49
-schedule.vo:58:49 declaration
+refs schedule.vo:58:56
+schedule.vo:58:56 declaration
 schedule.vo:60:23 use
 schedule.vo:60:29 use
 

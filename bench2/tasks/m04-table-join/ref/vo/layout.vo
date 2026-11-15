@@ -26,7 +26,7 @@ fn line(cells: list[str], widths: list[int]) -> str {
     return rstrip(join(parts, " | "));
 }
 
-fn render(header: list[str], rows: list[list[str]]) -> list[str] {
+export fn render(header: list[str], rows: list[list[str]]) -> list[str] {
     let widths = new list[int];
     for c in 0..len(header) {
         var w = len(header[c]);

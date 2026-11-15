@@ -1,5 +1,5 @@
 refs format_money
-money.vo:9:4 declaration
+money.vo:9:11 declaration
 money.vo:11:22 call
 report.vo:1:14 import
 report.vo:10:64 call
@@ -22,8 +22,8 @@ staff.vo:53:36 call
 staff.vo:55:34 call
 staff.vo:64:51 call
 
-refs money.vo:9:17
-money.vo:9:17 declaration
+refs money.vo:9:24
+money.vo:9:24 declaration
 money.vo:10:8 use
 money.vo:11:36 use
 money.vo:13:22 use
@@ -44,19 +44,19 @@ main.vo:1:14 import
 main.vo:30:42 type
 main.vo:79:30 type
 pay.vo:1:14 import
-pay.vo:45:21 type
+pay.vo:45:28 type
 report.vo:3:14 import
-report.vo:6:17 type
-report.vo:30:28 type
-staff.vo:9:8 declaration
+report.vo:6:24 type
+report.vo:30:35 type
+staff.vo:9:15 declaration
 staff.vo:18:18 type
-staff.vo:25:33 type
+staff.vo:25:40 type
 staff.vo:29:19 use
-staff.vo:34:30 type
-staff.vo:46:29 type
-staff.vo:58:34 type
-staff.vo:67:33 type
-staff.vo:67:52 type
+staff.vo:34:37 type
+staff.vo:46:36 type
+staff.vo:58:41 type
+staff.vo:67:40 type
+staff.vo:67:59 type
 staff.vo:70:40 type
 
 refs Pay.tax

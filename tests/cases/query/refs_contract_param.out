@@ -1,4 +1,4 @@
-shop/report.vo:23:10 declaration in total: fn total(items: list[Item]) -> int
+shop/report.vo:23:17 declaration in total: export fn total(items: list[Item]) -> int
 shop/report.vo:24:18 use in total: requires len(items) > 0
 shop/report.vo:27:15 use in total: for it in items {
 3 references

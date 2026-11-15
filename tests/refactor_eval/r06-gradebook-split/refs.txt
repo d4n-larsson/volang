@@ -36,17 +36,17 @@ grading.vo:33:83 use
 grading.vo:101:46 use
 
 refs Book
-book.vo:12:8 declaration
-book.vo:17:18 type
+book.vo:12:15 declaration
+book.vo:17:25 type
 book.vo:18:16 use
-book.vo:21:25 type
-book.vo:29:17 type
-book.vo:45:20 type
+book.vo:21:32 type
+book.vo:29:24 type
+book.vo:45:27 type
 grading.vo:1:13 import
 grading.vo:27:27 type
-grading.vo:60:27 type
-grading.vo:86:15 type
-grading.vo:112:23 type
+grading.vo:60:34 type
+grading.vo:86:22 type
+grading.vo:112:30 type
 main.vo:1:13 import
 main.vo:31:32 type
 

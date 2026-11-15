@@ -1,11 +1,11 @@
-record RoomType {
+export record RoomType {
     name: str;
     rate: int;
     count: int;
 }
 
 # Nights start..end-1: check-in on day `start`, check-out on day `end`. Amounts in cents.
-record Booking {
+export record Booking {
     booking_id: str;
     type_name: str;
     guest: str;

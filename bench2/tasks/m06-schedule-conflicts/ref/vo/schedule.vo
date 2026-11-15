@@ -1,6 +1,6 @@
 import parse.Meeting;
 
-fn shares(a: list[str], b: list[str]) -> list[str] {
+export fn shares(a: list[str], b: list[str]) -> list[str] {
     let out = filter(a, fn(p: str) -> bool {
         return any(b, fn(q: str) -> bool {
             return p == q;
@@ -14,7 +14,7 @@ fn overlaps(a: Meeting, b: Meeting) -> bool {
     return a.day == b.day and a.start < b.end and b.start < a.end;
 }
 
-fn conflicts(ms: list[Meeting]) -> list[str] {
+export fn conflicts(ms: list[Meeting]) -> list[str] {
     let out = new list[str];
     for i in 0..len(ms) {
         for j in i + 1..len(ms) {
@@ -37,7 +37,7 @@ fn conflicts(ms: list[Meeting]) -> list[str] {
     return out;
 }
 
-fn room_minutes(ms: list[Meeting]) -> list[str] {
+export fn room_minutes(ms: list[Meeting]) -> list[str] {
     let rooms = new map[str, bool];
     for m in ms {
         set rooms[m.room] = true;

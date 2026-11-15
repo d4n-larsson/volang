@@ -7,4 +7,4 @@ rename hourly car_hourly
 # "Rates per type": the existing CAP value is the car rate
 rename daily_cap car_daily_cap
 # "The fee function gets a vehicle-type parameter": its existing parameter is the stay length
-rename fees.vo:22:8 stay_minutes
+rename fees.vo:22:15 stay_minutes

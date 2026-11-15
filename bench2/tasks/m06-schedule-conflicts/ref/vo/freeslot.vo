@@ -2,7 +2,7 @@ import parse.Meeting;
 import parse.Query;
 import schedule.shares;
 
-fn earliest(ms: list[Meeting], q: Query) -> int {
+export fn earliest(ms: list[Meeting], q: Query) -> int {
     let busy = filter(ms, fn(m: Meeting) -> bool {
         return m.day == q.day and len(shares(m.people, q.people)) > 0;
     });

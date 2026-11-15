@@ -1,0 +1,7 @@
+export fn total(cents: int) -> str {
+    return money(cents);
+}
+
+fn money(cents: int) -> str {
+    return str(cents / 100) + "." + str(cents % 100);
+}

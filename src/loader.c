@@ -9,6 +9,8 @@
 #define NO_PACKAGE ((void *)-1) /* pkg_import_path: a package that failed its check */
 
 static Vec *ld_order; /* files in dependency order (dependencies first) */
+static Vec *ex_decls; /* spec 010: declarations already reported as needing `export` ... */
+static Vec *ex_diags; /* ... and the diagnostic that carries the fix for each */
 static Vec *ld_stack; /* import nodes on the current DFS path */
 long ld_hard;         /* a loaded file had a hard syntax error */
 
@@ -172,6 +174,50 @@ void load_imports(int file)
     vec_push(ld_order, (void *)(long)file);
 }
 
+/* The package name when the file lies in a listed package ("@NAME/a/b.vo"), else 0. */
+static Str *package_of(FileRec *f)
+{
+    Str *rel = f->std ? 0 : pkg_relpath(f->path);
+    if (!rel) return 0;
+    long n = 1;
+    while (n < rel->len && rel->data[n] != '/') n++;
+    return str_new(rel->data + 1, n - 1);
+}
+
+/* E0209/E0210 at `at` for a declaration that needs `export` (spec 010 research R2-R4): the first report
+ * for decl carries the fix (none for a library or package file, which a program cannot change); later
+ * reports become related notes on it, so applying every first fix never inserts `export` twice. */
+void export_needed(char *code, Node *at, Node *decl, Str *message)
+{
+    for (long i = 0; i < ex_decls->n; i++)
+        if (vec_get(ex_decls, i) == decl) {
+            diag_add_related(vec_get(ex_diags, i), (int)at->file, at->start, at->end, str_from_cstr("Also needed here."));
+            return;
+        }
+    Diag *d = ck_err(code, at, message);
+    FileRec *f = file_get((int)decl->file);
+    if (!f->std && !package_of(f)) diag_add_fix(d, (int)decl->file, decl->start, decl->start, str_from_cstr("export "));
+    vec_push(ex_decls, decl);
+    vec_push(ex_diags, d);
+}
+
+/* E0209 for an import of an item declared without `export`; the import still binds (no cascade). */
+static void check_exported(Node *nn, Node *decl, long target)
+{
+    if (decl->flags & NF_EXPORT) return;
+    FileRec *f = file_get((int)target);
+    Str *m;
+    if (f->std) { /* "std/json.vo" -> std.json */
+        Str *mod = str_new(f->path->data + 4, f->path->len - 7);
+        m = msg("`$1` is internal to `std.$2`.", nn->a.s, mod, 0);
+    } else if (package_of(f)) {
+        m = msg("`$1` is internal to package `$2`.", nn->a.s, package_of(f), 0);
+    } else {
+        m = msg("`$1` is not exported by `$2`.", nn->a.s, f->path, 0);
+    }
+    export_needed("E0209", nn, decl, m);
+}
+
 /* Adds each imported item (a top-level fn, record or variant of the target file) to the scope. */
 void bind_imports(int file)
 {
@@ -193,6 +239,7 @@ void bind_imports(int file)
             bind_placeholder(nn);
             continue;
         }
+        check_exported(nn, s->decl, target);
         if (scope_find(nn->a.s)) { /* duplicate with something already visible? */
             ck_err1("E0202", nn, "`$1` is already defined.", nn->a.s);
             continue;
@@ -222,6 +269,8 @@ void check_program(int file, int mode)
     }
     ld_order = vec_new();
     ld_stack = vec_new();
+    ex_decls = vec_new();
+    ex_diags = vec_new();
     load_imports(file);
     if (ld_hard) return;
     for (long i = 0; i < ld_order->n; i++) {

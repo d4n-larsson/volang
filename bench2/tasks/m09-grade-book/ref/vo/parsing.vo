@@ -1,4 +1,4 @@
-record Line {
+export record Line {
     kind: str;
     a: str;
     b: str;
@@ -23,7 +23,7 @@ fn to_int(s: str) -> int {
     }
 }
 
-fn parse(line: str) -> result[Line] {
+export fn parse(line: str) -> result[Line] {
     let f = filter(split(line, " "), fn(x: str) -> bool {
         return x != "";
     });
@@ -48,7 +48,7 @@ fn parse(line: str) -> result[Line] {
     return err("invalid");
 }
 
-fn pct(bp: int) -> str {
+export fn pct(bp: int) -> str {
     let r = bp % 100;
     if r < 10 {
         return str(bp / 100) + ".0" + str(r);

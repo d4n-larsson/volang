@@ -1,5 +1,5 @@
 $ vo package main.vo money shared/money
-added money shared/money sha256:6514bb0e84aa66348d21ff1c32a37024df993558a975bfa61e70b1ade0687a46
+added money shared/money sha256:c254bf990e07bee2be247382b90dd9579f7782282060d7db081802ab349d730a
 --- stderr
 --- exit 0
 $ vo effects --update main.vo
@@ -12,17 +12,17 @@ main.vo:3:4: warning[W0501]: `main` declares net, which it never needs.
 --- stderr
 --- exit 0
 $ vo package main.vo money shared/money
-updated money: sha256:6514bb0e84aa66348d21ff1c32a37024df993558a975bfa61e70b1ade0687a46 -> sha256:b4fda3d7ea73c3b3e4059ab289f581727a1e98b69c447e91e73fe4ba866b9f4f
+updated money: sha256:c254bf990e07bee2be247382b90dd9579f7782282060d7db081802ab349d730a -> sha256:49852645680ac1a1ae6e66e3d109a16d928600bc1bf7ed48b19e72d0aed58089
 --- stderr
 --- exit 0
 $ vo check main.vo
-shared/money/format.vo:1:4: warning[W0501]: `cents` declares net, which it never needs.
-   1 | fn cents(n: int) -> str uses net {
-     |    ^^^^^
+shared/money/format.vo:1:11: warning[W0501]: `cents` declares net, which it never needs.
+   1 | export fn cents(n: int) -> str uses net {
+     |           ^^^^^
   fix: remove `uses net `
-shared/money/format.vo:1:4: error[E0504]: `cents` gains net; approve with `vo effects --update`.
-   1 | fn cents(n: int) -> str uses net {
-     |    ^^^^^
+shared/money/format.vo:1:11: error[E0504]: `cents` gains net; approve with `vo effects --update`.
+   1 | export fn cents(n: int) -> str uses net {
+     |           ^^^^^
 1 error, 1 warning
 --- stderr
 --- exit 65
