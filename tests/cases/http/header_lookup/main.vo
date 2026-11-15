@@ -1,0 +1,25 @@
+# header() finds the first header with a name, ignoring case; a missing one is err.
+import std.http.get;
+import std.http.header;
+
+fn show(r: result[str]) uses console {
+    match r {
+        case ok(v) {
+            print("[" + v + "]");
+        }
+        case err(e) {
+            print("err " + e);
+        }
+    }
+}
+
+fn main() -> result[void] uses console, net("localhost") {
+    let resp = try get("http://localhost:" + args()[0] + "/headers");
+    show(header(resp, "x-multi"));
+    show(header(resp, "X-MULTI"));
+    show(header(resp, "content-type"));
+    show(header(resp, "x-spaces"));
+    show(header(resp, "x-missing"));
+    print(str(len(resp.headers)) + " headers");
+    return ok();
+}

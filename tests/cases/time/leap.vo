@@ -1,0 +1,17 @@
+# Leap years, month lengths and durations.
+import std.time.days;
+import std.time.days_in_month;
+import std.time.hours;
+import std.time.is_leap;
+import std.time.minutes;
+import std.time.seconds;
+
+fn main() uses console {
+    for y in [1900, 2000, 2023, 2024, 2100, 2400] {
+        print(str(y) + " leap " + str(is_leap(y)) + ", February " + str(days_in_month(y, 2)));
+    }
+    for m in 1..13 {
+        print("2026-" + str(m) + ": " + str(days_in_month(2026, m)));
+    }
+    print(str(seconds(90)) + " " + str(minutes(2)) + " " + str(hours(3)) + " " + str(days(1)) + " " + str(days(-1)));
+}

@@ -42,6 +42,7 @@ Mainstream languages were designed for people at keyboards. Agents work differen
 - **Compiled to bytecode.** After checking, programs are compiled to typed bytecode for a virtual machine, about 4.5× faster than the tree-walking interpreter it replaced on compute-heavy code, with byte-identical results.
 - **Unfinished code still checks and runs.** `todo("...")` is a typed hole: the checker reports the type it needs and the names in scope, and the rest of the program checks, runs and tests until the run reaches it.
 - **Tests that look for counterexamples.** `prop "name" (xs: list[int]) { ... }` runs a property on 100 generated inputs and shrinks a failure to a minimal counterexample, deterministically. `requires`/`ensures` contracts are checked on every call and return.
+- **Exact library signatures on demand.** `vo doc std.json.parse_json` prints the installed signature, effects and an example, from the same declarations the checker uses, so an agent never has to remember an API. Packages are pinned by content hash in `vo.packages`: a changed byte stops the check, and a package that starts using the network shows up in `vo.effects`.
 - **Ask the toolchain, not grep.** `vo query callers|refs|type-at` answers from the checker (strings, comments and look-alike names never match), `vo impact --diff` lists the functions and tests a diff affects, and `vo edit rename` / `add-field` change every reference across files, check the result first, and write all files or none.
 - **Debugging without print statements.** `vo run --trace` writes every call and return as JSON lines, runtime errors show each frame's parameters and locals, and `vo run --record` saves everything a run read so `vo replay` can run the fixed program on exactly that input.
 - **The whole language fits in a prompt.** `vo reference` prints the complete reference, about 10,000 tokens with a runnable example in every section. That is all an agent needs to know.
@@ -70,6 +71,8 @@ bin/vo fmt main.vo                 # rewrite in canonical form (--check to only 
 bin/vo effects --update main.vo    # write vo.effects; prints the capability changes
 bin/vo explain E0501               # catalog entry for an error code
 bin/vo reference                   # the complete language reference
+bin/vo doc std.json                # exact signatures of a library module (or of one item)
+bin/vo package main.vo money ../shared/money   # pin a package directory by its content hash
 ```
 
 Every command takes `--json`. Exit statuses are stable: 0 success, 1 failed tests, 64 usage error, 65 check errors, 70 runtime error.
@@ -114,8 +117,6 @@ Known false positives and negatives of the assembly linter (SESI, for `src/platf
 
 ## Status
 
-vo 0.1.0, schema 1. Built through two specs:
-- **001 (core language and toolchain):** complete.
-- **002 (effects, functions as values, generics, benchmark v2):** implemented and passing every quality gate; the benchmark v2 run is still to be completed.
+vo 0.1.0, schema 1, built through specs 001-008 ([`docs/roadmap.md`](docs/roadmap.md) has the status of each): the core language and toolchain, checked effects, generics, a garbage collector, a bytecode VM, typed holes, property tests and contracts, query and structural editing, trace and replay, a standard library (`std.json`, `std.time`, `std.text`, `std.random`, plain-HTTP `std.http`) with exact signatures from `vo doc`, content-pinned packages, and native builds from C. The benchmark v2 agent run is still to be completed.
 
-What comes next is in [`docs/roadmap.md`](docs/roadmap.md). Not yet: a standard library beyond the builtins (the `net` effect exists, but there are no network operations yet), packages, and concurrency.
+Not yet: HTTPS, downloading packages, and concurrency.

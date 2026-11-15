@@ -23,7 +23,8 @@ static long rp_clock = -1;
 static Vec *rp_args; /* strs */
 static long rp_saw_end;
 
-static const char *const ev_names[] = {0, "read_line", "read_all", "read_file", "write_file", "env", "now_ms", "end"};
+static const char *const ev_names[] = {0, "read_line", "read_all", "read_file", "write_file", "env", "now_ms", "end",
+                                       "http"};
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static const char hexd[] = "0123456789abcdef";
 
@@ -35,7 +36,8 @@ static const char *const d_table[] = {0,
                                       "writes the file `$1`",
                                       "reads the variable `$1`",
                                       "reads the clock",
-                                      "the end"};
+                                      "the end",
+                                      "makes an HTTP request to `$1`"};
 static const char *const n_table[] = {0,
                                       "a line of stdin",
                                       "the rest of stdin",
@@ -43,7 +45,8 @@ static const char *const n_table[] = {0,
                                       "a write of `$1`",
                                       "the variable `$1`",
                                       "a clock reading",
-                                      "the end"};
+                                      "the end",
+                                      "an HTTP request to `$1`"};
 
 #define J_HEAD "{\"v\":1,\"kind\":\""
 #define J_CLOSE "}\n"
@@ -121,8 +124,12 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
     rw(J_HEAD);
     rw((char *)ev_names[kind]);
     if (name) {
-        rw(kind == EVK_ENV ? "\",\"name\":" : "\",\"path\":");
+        rw(kind == EVK_ENV ? "\",\"name\":" : kind == EVK_HTTP ? "\",\"host\":" : "\",\"path\":");
         rw_str(name->data, name->len, 0);
+        if (kind == EVK_HTTP) { /* spec 007: the port (int_value) */
+            rw(",\"port\":");
+            rw_dec(int_value);
+        }
     } else {
         rw("\"");
     }
@@ -327,6 +334,38 @@ void *io_env(Str *name)
     return r;
 }
 
+/* "host:port", for R0014's messages. */
+static Str *host_port(Str *host, long port)
+{
+    SB *sb = sb_new();
+    sb_str(sb, host);
+    sb_byte(sb, ':');
+    int_to_dec(sb, port);
+    return sb_finish(sb);
+}
+
+/* Spec 007 (research R11): the host check (R0010) in every mode, then the exchange; replay returns
+ * the recorded response without the network, and refuses another host or port (R0014). */
+Variant *io_http_exchange(Str *host, long port, Str *request)
+{
+    Variant *r;
+    GC_ROOT(&host);
+    GC_ROOT(&request);
+    rt_check_name(EF_NET, host);
+    if (rcd_mode == 2) {
+        Str *asked = host_port(host, port);
+        if (rp_next >= rp_events->n) rp_mismatch(EVK_HTTP, asked, 0);
+        Event *e = vec_get(rp_events, rp_next++);
+        if (e->kind != EVK_HTTP || !str_eq(e->name, host) || e->port != port) rp_mismatch(EVK_HTTP, asked, e);
+        r = rp_result(e);
+    } else {
+        r = rt_http_exchange(host, port, request);
+        if (rcd_mode) rcd_event(EVK_HTTP, host, (long)(uint32_t)r->tag, r->pay.s, port);
+    }
+    GC_UNROOT(2);
+    return r;
+}
+
 long io_now_ms(void)
 {
     if (!rcd_mode) return rt_now_ms();
@@ -366,7 +405,8 @@ void rp_mismatch(long kind, Str *name, Event *event)
     Str *m;
     GC_ROOT(&asked);
     if (event) {
-        Str *has = rp_describe((char *)n_table[event->kind], event->name);
+        Str *has = rp_describe((char *)n_table[event->kind],
+                               event->kind == EVK_HTTP ? host_port(event->name, event->port) : event->name);
         m = msg("The program $1, but the recording has $2 next: replay the program that was recorded, or record this "
                 "one.",
                 asked, has, 0);
@@ -399,13 +439,14 @@ static Str *rf_value;
 static long rf_ivalue;
 static long rf_isint;
 static long rf_status;
+static long rf_port = -1; /* spec 007: http events */
 
-static const char *const rk_keys[] = {"kind", "program", "fingerprint", "seed", "clock_ms", "args",
-                                      "path", "name",    "result",      "value", "status",  0};
+static const char *const rk_keys[] = {"kind",  "program", "fingerprint", "seed", "clock_ms", "args", "path",
+                                      "name",  "result",  "value",       "status", "host",   "port", 0};
 
 /* Where each string-valued key is stored (rk_keys order; 0: not a string). */
 static Str **const rf_slots[] = {&rf_kind, &rf_program, &rf_fprint, 0, 0, 0, &rf_name, &rf_name, &rf_result,
-                                 &rf_value, 0};
+                                 &rf_value, 0, &rf_name, 0};
 
 /* T0008 invalid_recording, exit 64. */
 void rp_bad(void)
@@ -499,6 +540,7 @@ void rp_line(char *p, char *end)
     rf_result = 0;
     rf_value = 0;
     rf_isint = 0;
+    rf_port = -1;
     p = rp_ws(p, end);
     if (p >= end || *p != '{') rp_bad();
     p++;
@@ -547,6 +589,8 @@ void rp_line(char *p, char *end)
                 rf_isint = 1;
             } else if (field == 10) {
                 rf_status = v;
+            } else if (field == 12) {
+                rf_port = v;
             }
         }
         p = rp_ws(p, end); /* , or } */
@@ -563,7 +607,7 @@ long rp_kind_of(Str *str)
 {
     if (!str) return -1;
     if (str_eq_cstr(str, "recording")) return 0;
-    for (long k = 1; k <= EVK_END; k++)
+    for (long k = 1; k <= EVK_HTTP; k++)
         if (str_eq_cstr(str, (char *)ev_names[k])) return k;
     return -1;
 }
@@ -611,6 +655,7 @@ void rp_read(char *text, long len)
                 e->result = rp_result_of(rf_result);
                 e->value.s = rf_value;
                 if (rf_isint) e->value.i = rf_ivalue;
+                e->port = rf_port;
                 rp_check_event(e); /* the fields its kind needs (T0008 otherwise) */
                 vec_push(rp_events, e);
             }
@@ -630,6 +675,10 @@ void rp_check_event(Event *e)
         return;
     }
     if (rf_isint) rp_bad(); /* everything else: no integer value */
+    if (e->kind == EVK_HTTP) { /* host, port, ok/err and the response or the error text */
+        if (!e->name || e->port < 0 || e->result < 0 || e->result == EVR_DENIED || !e->value.p) rp_bad();
+        return;
+    }
     if (e->kind == EVK_READ_ALL) {
         if (!e->value.p) rp_bad();
         return;

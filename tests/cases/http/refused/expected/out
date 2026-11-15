@@ -1,0 +1,4 @@
+$ vo run main.vo -- {port} /plain
+err connection refused by localhost:{port}
+--- stderr
+--- exit 0

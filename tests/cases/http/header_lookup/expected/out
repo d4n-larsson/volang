@@ -1,0 +1,9 @@
+$ vo run main.vo -- {port}
+[first]
+[first]
+[text/plain]
+[padded]
+err no header `x-missing`
+5 headers
+--- stderr
+--- exit 0

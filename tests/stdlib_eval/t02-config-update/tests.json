@@ -1,0 +1,56 @@
+{
+ "server": false,
+ "package": false,
+ "tests": [
+  {
+   "flags": [],
+   "args": [
+    "config.json",
+    "8080"
+   ],
+   "stdin": "",
+   "expected": "{\n  \"name\": \"shop\",\n  \"port\": 8080,\n  \"debug\": false,\n  \"hosts\": [\n    \"a\",\n    \"b\"\n  ],\n  \"updated\": true\n}\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [
+    "noport.json",
+    "9"
+   ],
+   "stdin": "",
+   "expected": "{\n  \"name\": \"x\",\n  \"port\": 9,\n  \"updated\": true\n}\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [
+    "missing.json",
+    "1"
+   ],
+   "stdin": "",
+   "expected": "error: cannot read missing.json\n",
+   "code": 1
+  },
+  {
+   "flags": [],
+   "args": [
+    "list.json",
+    "1"
+   ],
+   "stdin": "",
+   "expected": "error: not a JSON object\n",
+   "code": 1
+  },
+  {
+   "flags": [],
+   "args": [
+    "config.json",
+    "eighty"
+   ],
+   "stdin": "",
+   "expected": "error: bad port\n",
+   "code": 1
+  }
+ ]
+}

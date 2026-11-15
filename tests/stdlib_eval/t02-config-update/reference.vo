@@ -1,0 +1,60 @@
+import std.json.Json;
+import std.json.parse_json;
+import std.json.write_json_pretty;
+
+fn fail(m: str) uses console {
+    print("error: " + m);
+    exit(1);
+}
+
+fn main() -> result[void] uses console, file.read("./") {
+    let a = args();
+    let text = read_file(a[0]);
+    match text {
+        case ok(t) {
+            match parse_int(a[1]) {
+                case ok(port) {
+                    match parse_json(t) {
+                        case ok(j) {
+                            match j {
+                                case object(m) {
+                                    set m["port"] = Json.integer(port);
+                                    set m["updated"] = Json.boolean(true);
+                                    print(try write_json_pretty(Json.object(m)));
+                                }
+                                case null {
+                                    fail("not a JSON object");
+                                }
+                                case boolean(_) {
+                                    fail("not a JSON object");
+                                }
+                                case integer(_) {
+                                    fail("not a JSON object");
+                                }
+                                case number(_) {
+                                    fail("not a JSON object");
+                                }
+                                case text(_) {
+                                    fail("not a JSON object");
+                                }
+                                case array(_) {
+                                    fail("not a JSON object");
+                                }
+                            }
+                        }
+                        case err(_) {
+                            fail("not a JSON object");
+                        }
+                    }
+                }
+                case err(_) {
+                    fail("bad port");
+                }
+            }
+        }
+        case err(_) {
+            fail("cannot read " + a[0]);
+        }
+    }
+    return ok();
+}

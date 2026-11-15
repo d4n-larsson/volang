@@ -1,0 +1,9 @@
+now_missing_effect.vo:4:4: error[E0501]: `stamp` does not declare clock, which it needs.
+   4 | fn stamp() -> int {
+     |    ^^^^^
+  fix: insert `uses clock `
+now_missing_effect.vo:8:4: error[E0501]: `main` does not declare clock, which it needs.
+   8 | fn main() uses console {
+     |    ^^^^
+  fix: replace with `uses console, clock `
+2 errors, 0 warnings

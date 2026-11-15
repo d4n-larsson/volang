@@ -1,0 +1,13 @@
+# A host that does not resolve is err (the message depends on the resolver, so only err is shown).
+import std.http.get;
+
+fn main() uses console, net("no-such-host.invalid") {
+    match get("http://no-such-host.invalid/") {
+        case ok(_) {
+            print("ok?");
+        }
+        case err(_) {
+            print("err");
+        }
+    }
+}

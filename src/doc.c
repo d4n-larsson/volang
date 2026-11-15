@@ -274,7 +274,13 @@ long doc_module(char *module_word, Str *item_name)
     SB *mb = sb_new();
     sb_cstr(mb, "std.");
     sb_cstr(mb, module_word);
-    Str *module = sb_finish(mb); /* std.MODULE */
+    return doc_file(file, sb_finish(mb), item_name);
+}
+
+/* The checked file's documented items as members of module (all of them, or the one named
+ * item_name): printed, or collected into doc_collect; returns how many were printed. */
+long doc_file(long file, Str *module, Str *item_name)
+{
     Vec *items = file_get((int)file)->ast->a.v;
     long printed = 0;
     for (long i = 0; i < items->n; i++) {
@@ -293,6 +299,91 @@ long doc_module(char *module_word, Str *item_name)
         printed++;
     }
     return printed;
+}
+
+/* ---- packages (spec 007 T044): modules of the nearest vo.packages from the working directory ---- */
+
+/* Loads and checks a package module's file; a module with check errors stops `vo doc` (exit 65). */
+static long doc_package_file(Str *path)
+{
+    long file = load_source(path);
+    check_program((int)file, 0);
+    if (diag_errors) vo_exit(finish_check(1));
+    return file;
+}
+
+/* NAME as a package module or item (`money.format`, `money.format.cents`): prints it and returns
+ * how many items were printed; -1 when NAME names no module of a listed package. */
+long doc_package(Str *name)
+{
+    long dot = 0;
+    while (dot < name->len && name->data[dot] != '.') dot++;
+    if (dot == 0 || dot >= name->len) return -1;
+    void *entry = pkg_for_doc(str_new(name->data, dot));
+    if (!entry) return -1;
+    Str *module = name, *item = 0;
+    Str *path = pkg_doc_path(entry, str_new(name->data + dot + 1, name->len - dot - 1));
+    if (!path) { /* MODULE.ITEM: split at the last dot */
+        long last = name->len - 1;
+        while (last > dot && name->data[last] != '.') last--;
+        if (last == dot) return -1;
+        module = str_new(name->data, last);
+        item = str_new(name->data + last + 1, name->len - last - 1);
+        path = pkg_doc_path(entry, str_new(name->data + dot + 1, last - dot - 1));
+        if (!path) return -1;
+    }
+    return doc_file(doc_package_file(path), module, item);
+}
+
+/* The module's description: its first line, `# NAME.module: text` (or `# text`). */
+static Str *doc_package_description(long file, Str *module)
+{
+    FileRec *f = file_get((int)file);
+    char *text = f->text, *eol = text;
+    while (eol - text < f->len && *eol != '\n') eol++;
+    if (eol - text < 2 || text[0] != '#' || text[1] != ' ') return str_new(0, 0);
+    char *from = text + 2;
+    if (eol - from > module->len + 1 && mem_eq(from, module->data, module->len) && from[module->len] == ':')
+        from += module->len + 1;
+    while (from < eol && *from == ' ') from++;
+    return str_new(from, eol - from);
+}
+
+/* Lists every module of every listed package after the standard ones; returns how many. */
+long doc_package_list(void)
+{
+    pkg_load(rt_start_cwd());
+    long n = 0;
+    for (long i = 0; pkg_entries && i < pkg_entries->n; i++) {
+        void *entry = pkg_for_doc(pkg_entry_name(vec_get(pkg_entries, i)));
+        Vec *mods = pkg_doc_modules(entry);
+        for (long k = 0; k < mods->n; k++) {
+            Str *module = vec_get(mods, k);
+            Str *rel = str_new(module->data + pkg_entry_name(entry)->len + 1,
+                               module->len - pkg_entry_name(entry)->len - 1);
+            long file = load_source(pkg_doc_path(entry, rel));
+            doc_print_module(module, 0, doc_package_description(file, module));
+            n++;
+        }
+    }
+    return n;
+}
+
+/* Collects every package module and documented item name into doc_collect (for T0010). */
+void doc_package_names(void)
+{
+    pkg_load(rt_start_cwd());
+    for (long i = 0; pkg_entries && i < pkg_entries->n; i++) {
+        void *entry = pkg_for_doc(pkg_entry_name(vec_get(pkg_entries, i)));
+        Vec *mods = pkg_doc_modules(entry);
+        for (long k = 0; k < mods->n; k++) {
+            Str *module = vec_get(mods, k);
+            vec_push(doc_collect, module);
+            Str *rel = str_new(module->data + pkg_entry_name(entry)->len + 1,
+                               module->len - pkg_entry_name(entry)->len - 1);
+            doc_file(doc_package_file(pkg_doc_path(entry, rel)), module, 0);
+        }
+    }
 }
 
 /* ---- builtins (the reference's table) ---- */
@@ -491,6 +582,7 @@ void doc_not_found(Str *name)
         Str *prefix = str_from_cstr("std.");
         vec_push(names, str_concat(prefix, str_from_cstr(*m)));
     }
+    doc_package_names();
     Str *best = 0; /* the closest: distance below 3, first wins */
     long dist = 3;
     for (long i = 0; i < names->n; i++) {
@@ -524,7 +616,8 @@ int cmd_doc(void)
         long n = doc_builtins(0);
         if (!opt_json) out_cstr(1, "modules:\n");
         doc_module_list();
-        doc_summary(n + 5);
+        long p = doc_package_list(); /* then the nearest manifest's package modules */
+        doc_summary(n + 5 + p);
         return 0;
     }
     if (pos_n != 1)
@@ -546,6 +639,12 @@ int cmd_doc(void)
                 doc_summary(n);
                 return 0;
             }
+        }
+    } else if (cstr_index_doc(name, '.') >= 0) { /* a package module or item */
+        long n = doc_package(written);
+        if (n > 0) {
+            doc_summary(n);
+            return 0;
         }
     } else if (doc_builtins(str_from_cstr(name)) > 0) { /* a builtin */
         doc_summary(1);

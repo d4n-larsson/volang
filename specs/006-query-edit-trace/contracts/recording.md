@@ -13,6 +13,7 @@
 | `write_file` | `path`, `result` `"ok"`, `"err"` with `value`, or `"denied"` (the content is not recorded) |
 | `env` | `name`, `result` `"ok"` with `value`, or `"err"` |
 | `now_ms` | `value` (int) |
+| `http` | spec 007: `host`, `port` (int), `result` `"ok"` with `value` (the raw response), or `"err"` with `value` (the error text). The host is checked against the grant (R0010) before the event, in replay too; replay matches host and port (R0014 otherwise) and does not use the network |
 | `end` | `status` (the exit status of the run) |
 
 ```json

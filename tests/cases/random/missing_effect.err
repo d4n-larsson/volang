@@ -1,0 +1,9 @@
+missing_effect.vo:4:4: error[E0501]: `first` does not declare random, which it needs.
+   4 | fn first(xs: list[int]) -> int {
+     |    ^^^^^
+  fix: insert `uses random `
+missing_effect.vo:15:4: error[E0501]: `main` does not declare random, which it needs.
+  15 | fn main() uses console {
+     |    ^^^^
+  fix: replace with `uses console, random `
+2 errors, 0 warnings

@@ -1,0 +1,2 @@
+server http
+vo run main.vo -- {port} /chunked

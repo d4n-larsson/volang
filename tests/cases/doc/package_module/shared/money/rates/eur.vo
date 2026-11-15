@@ -1,0 +1,7 @@
+# money.rates.eur: Fixed conversion rates to euros.
+
+# Converts an amount in US cents to euro cents at a fixed rate.
+#     to_eur(100) is 92
+fn to_eur(usd_cents: int) -> int {
+    return usd_cents * 92 / 100;
+}

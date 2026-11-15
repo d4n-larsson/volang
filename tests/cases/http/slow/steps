@@ -1,0 +1,2 @@
+server http
+vo run --timeout 1 main.vo -- {port} /slow

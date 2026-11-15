@@ -1,0 +1,9 @@
+vo package main.vo money shared/money
+vo doc money.format
+vo doc money.format.cents
+vo doc --json money.format
+vo doc money.rates.eur.to_eur
+vo doc money.formt
+vo doc std.text.pad_left
+write shared/money/extra.vo fn extra() -> int {\n    return 1;\n}\n
+vo doc money.format

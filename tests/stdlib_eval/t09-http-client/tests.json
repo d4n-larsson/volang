@@ -1,0 +1,15 @@
+{
+ "server": true,
+ "package": false,
+ "tests": [
+  {
+   "flags": [],
+   "args": [
+    "{port}"
+   ],
+   "stdin": "",
+   "expected": "name: vo\ntags: 2\nstatus: 404\n",
+   "code": 0
+  }
+ ]
+}

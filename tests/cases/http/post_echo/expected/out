@@ -1,0 +1,10 @@
+$ vo run main.vo -- {port}
+status 200
+header Content-Type: text/plain
+header Content-Length: 53
+body (53):
+content-type: text/plain; charset=utf-8
+héllo
+wörld
+--- stderr
+--- exit 0

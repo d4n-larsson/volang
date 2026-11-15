@@ -1,0 +1,26 @@
+import std.http.get;
+import std.json.as_array;
+import std.json.field;
+import std.json.parse_json;
+import std.json.text_field;
+
+fn run(port: str) -> result[void] uses console, net("localhost") {
+    let r = try get("http://localhost:" + port + "/json");
+    let doc = try parse_json(r.body);
+    print("name: " + try text_field(doc, "name"));
+    print("tags: " + str(len(try as_array(try field(doc, "tags")))));
+    let s = try get("http://localhost:" + port + "/status/404");
+    print("status: " + str(s.status));
+    return ok();
+}
+
+fn main() uses console, net("localhost") {
+    match run(args()[0]) {
+        case ok(_) {
+        }
+        case err(e) {
+            print("error: " + e);
+            exit(1);
+        }
+    }
+}

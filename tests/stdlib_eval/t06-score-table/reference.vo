@@ -1,0 +1,43 @@
+import std.text.pad_left;
+import std.text.pad_right;
+import std.text.repeat;
+
+record Row {
+    name: str;
+    score: int;
+}
+
+fn main() -> result[void] uses console, input {
+    let rows = new list[Row];
+    var w = 4;
+    for line in split(read_all(), "\n") {
+        if line == "" {
+            continue;
+        }
+        let p = split(line, "\t");
+        push(rows, new Row { name: p[0], score: try parse_int(p[1]) });
+        if len(chars(p[0])) > w {
+            set w = len(chars(p[0]));
+        }
+    }
+    sort_by(rows, fn(r: Row) -> int {
+        return 0 - r.score;
+    });
+    print(pad_right("Name", w, " ") + " | Score");
+    print(repeat("-", w + 1) + "+" + repeat("-", 6));
+    var i = 0;
+    while i < len(rows) {
+        var j = i;
+        let group = new list[str];
+        while j < len(rows) and rows[j].score == rows[i].score {
+            push(group, rows[j].name);
+            set j = j + 1;
+        }
+        sort(group);
+        for n in group {
+            print(pad_right(n, w, " ") + " | " + pad_left(str(rows[i].score), 5, " "));
+        }
+        set i = j;
+    }
+    return ok();
+}

@@ -12,7 +12,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [004](../specs/004-bytecode-compiler/) | Bytecode compiler: programs run from compact, typed bytecode instead of walking the syntax tree | **Done** ([results](../specs/004-bytecode-compiler/results.md)) |
 | [005](../specs/005-holes-props-contracts/) | Typed holes, property tests and contracts | **Done** ([results](../specs/005-holes-props-contracts/results.md)) |
 | [006](../specs/006-query-edit-trace/) | Query API, structural editing, trace and replay | **Done** ([results](../specs/006-query-edit-trace/results.md)) |
-| [007](../specs/007-stdlib-packages/) | Standard library and content-pinned packages | **Partly done, merged.** `vo doc`, `std.json`, `std.text`, `std.time`, `std.random` and packages work and are tested; HTTP networking, some tests, the task-program evaluation and the reference section are deferred until after 008 ([results](../specs/007-stdlib-packages/results.md)) |
+| [007](../specs/007-stdlib-packages/) | Standard library and content-pinned packages | **Done** ([results](../specs/007-stdlib-packages/results.md)). Follow-ups: the agent run with and without `vo doc`, HTTPS, downloading packages |
 | [008](../specs/008-c-rewrite/) | The toolchain in C: native builds on Linux x86-64, ARM64 and RISC-V 64, byte-identical behavior | **Done** ([results](../specs/008-c-rewrite/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
@@ -21,7 +21,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 1. **Nobody can see what changed in what the code is allowed to do.** An agent fixes a bug and also adds a network call, a file delete or an environment read. In Python, TypeScript or Go that is invisible in the diff unless someone reads every line. **Addressed by 002:** effects in every function type, scopes, run-time enforcement, and `vo.effects`, so a reviewer approves "save_report gains file.write" instead of reading the diff.
 2. **The agent's tests share the agent's misunderstanding.** Code that compiles and passes its own tests is weak evidence. **Addressed by 005:** property tests with inputs generated from types and shrunk counterexamples, and contracts checked on every call and return.
 3. **Unfinished code does not compile at all.** Agents work step by step, but big languages reject the whole program until it is complete. **Addressed by 005:** typed holes.
-4. **Agents invent APIs that do not exist.** The model's memory drifts from the installed versions. **Partly addressed by 001** (the reference is embedded in the binary). **Planned in 007:** exact signatures for the standard library and dependencies, and packages pinned by content hash.
+4. **Agents invent APIs that do not exist.** The model's memory drifts from the installed versions. **Partly addressed by 001** (the reference is embedded in the binary). **Addressed by 007:** `vo doc` prints exact signatures for the standard library and packages, and packages are pinned by content hash.
 5. **Agents cannot see the whole codebase.** They grep, guess, and break code they never saw. **Addressed by 006:** `vo query`, `vo impact` and checked `vo edit` refactorings.
 6. **Debugging is mostly print statements.** **Addressed by 006:** call traces as JSON, local values in runtime errors, and replay of recorded runs.
 
@@ -66,11 +66,12 @@ vo programs used to run by walking the checked syntax tree. Now:
 - **Evaluation (stand-in):** on the refactor tasks' starters, 53 of 53 scripted `vo edit`s keep every visible and hidden output, while the same renames by text replacement break 12 of 41; 95 of 95 hand-written reference lists match `vo query` exactly.
 - **Not done:** the agent benchmark run on the refactor category (see Benchmarks); other edits (extract function, move an item); impact through types; a per-function trace filter.
 
-### 007: standard library and packages
+### 007: standard library and packages (done)
 
-- JSON, time, random, text, and HTTP behind the `net` effect (002 already defines and checks it; no operation uses it yet).
-- `vo doc --json`: exact signatures for the installed version.
-- Packages pinned by content hash and resolved at check time, never at run time; a package's effects appear in `vo.effects`, so a new dependency that wants the network is visible in review.
+- `std.json`, `std.time`, `std.text`, `std.random` and plain-HTTP `std.http` behind the `net` effect, written in vo and built into `vo`; HTTP exchanges are recorded and replayed.
+- `vo doc [--json]`: exact signatures, effects and examples for the installed version, from the checker's own declarations; package modules too.
+- Packages pinned by content hash in `vo.packages` and resolved at check time, never at run time; a package's effects appear in `vo.effects`, so a new dependency that wants the network is visible in review.
+- Follow-ups: the agent run with and without `vo doc`, HTTPS, downloading packages.
 
 ## Benchmarks (ongoing)
 

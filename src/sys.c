@@ -106,16 +106,23 @@ long sys_clock_real_ms(void)
     return ts[0] * 1000 + ts[1] / 1000000;
 }
 
-/* 1 when fd 0 is readable (or closed), 0 on timeout. ms < 0 waits forever. */
-long sys_wait_stdin(long ms)
+/* 1 when fd has one of events (POLLIN 1, POLLOUT 4), an error or a hang-up; 0 on timeout. ms < 0
+ * waits forever. Errors count as ready: the next read or write reports them. */
+long sys_wait_fd(long fd, long events, long ms)
 {
     struct {
         int fd;
         short events, revents;
-    } pfd = {0, 1, 0}; /* POLLIN */
+    } pfd = {(int)fd, (short)events, 0};
     long ts[2] = {ms / 1000, ms % 1000 * 1000000};
     long r = vo_syscall5(SYS_ppoll, (long)&pfd, 1, ms < 0 ? 0 : (long)ts, 0, 8);
-    return r != 0; /* errors count as readable */
+    return r != 0;
+}
+
+/* 1 when fd 0 is readable (or closed), 0 on timeout. ms < 0 waits forever. */
+long sys_wait_stdin(long ms)
+{
+    return sys_wait_fd(0, 1, ms);
 }
 
 /* 1 when a write failed, 0 when everything was written. */

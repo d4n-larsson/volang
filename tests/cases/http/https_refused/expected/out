@@ -1,0 +1,11 @@
+$ vo run main.vo
+err https is not supported
+err https is not supported
+err not an http:// URL: ftp://localhost/
+err bad host in http://
+err bad host in http://x:99999/
+err bad port in http://x:abc/
+err bad host in http://user@x/
+err not an http:// URL: localhost/plain
+--- stderr
+--- exit 0

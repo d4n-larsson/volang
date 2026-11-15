@@ -1,0 +1,3 @@
+server http
+vo run main.vo -- {port} /malformed
+vo run main.vo -- {port} /short

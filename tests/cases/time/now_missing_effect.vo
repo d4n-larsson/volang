@@ -1,0 +1,10 @@
+# Calling std.time.now needs the clock effect, like the now_ms builtin.
+import std.time.now;
+
+fn stamp() -> int {
+    return now();
+}
+
+fn main() uses console {
+    print(str(stamp()));
+}

@@ -1,0 +1,3 @@
+server http
+stop-server
+vo run main.vo -- {port} /plain

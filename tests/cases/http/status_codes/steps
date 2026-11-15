@@ -1,0 +1,4 @@
+server http
+vo run main.vo -- {port} /status/404
+vo run main.vo -- {port} /status/500
+vo run main.vo -- {port} /nowhere

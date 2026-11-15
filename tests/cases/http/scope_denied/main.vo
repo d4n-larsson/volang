@@ -1,0 +1,23 @@
+# The library call runs with main's grant: localhost is outside net("example.invalid") (R0010).
+import std.http.Response;
+import std.http.get;
+
+fn show(r: result[Response]) uses console {
+    match r {
+        case ok(resp) {
+            print("status " + str(resp.status));
+            for h in resp.headers {
+                print("header " + h.name + ": " + h.value);
+            }
+            print("body (" + str(len(resp.body)) + "):");
+            print(resp.body);
+        }
+        case err(e) {
+            print("err " + e);
+        }
+    }
+}
+
+fn main() uses console, net("example.invalid") {
+    show(get("http://localhost:" + args()[0] + "/plain"));
+}

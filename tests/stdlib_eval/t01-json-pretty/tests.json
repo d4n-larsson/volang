@@ -1,0 +1,27 @@
+{
+ "server": false,
+ "package": false,
+ "tests": [
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "{\"name\": \"vo\", \"tags\": [\"a\", \"b\"], \"n\": 3, \"ok\": true, \"none\": null}\n",
+   "expected": "{\"name\":\"vo\",\"tags\":[\"a\",\"b\"],\"n\":3,\"ok\":true,\"none\":null}\n{\n  \"name\": \"vo\",\n  \"tags\": [\n    \"a\",\n    \"b\"\n  ],\n  \"n\": 3,\n  \"ok\": true,\n  \"none\": null\n}\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "[1, 2.5, -3, \"\\u00e9\", {}]",
+   "expected": "[1,2.5,-3,\"é\",{}]\n[\n  1,\n  2.5,\n  -3,\n  \"é\",\n  {}\n]\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "{\"a\": [1, 2,]}\n",
+   "expected": "invalid: line 1, column 13: expected a value, found `]`\n",
+   "code": 1
+  }
+ ]
+}

@@ -1,0 +1,6 @@
+# The fill of pad_left must be one character: R0007 otherwise.
+import std.text.pad_left;
+
+fn main() uses console {
+    print(pad_left("7", 3, "ab"));
+}

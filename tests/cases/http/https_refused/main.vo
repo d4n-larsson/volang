@@ -1,0 +1,30 @@
+# https:// is refused before anything is sent; so are URLs that do not parse.
+import std.http.Response;
+import std.http.get;
+
+fn show(r: result[Response]) uses console {
+    match r {
+        case ok(resp) {
+            print("status " + str(resp.status));
+            for h in resp.headers {
+                print("header " + h.name + ": " + h.value);
+            }
+            print("body (" + str(len(resp.body)) + "):");
+            print(resp.body);
+        }
+        case err(e) {
+            print("err " + e);
+        }
+    }
+}
+
+fn main() uses console, net("localhost", "x") {
+    show(get("https://localhost/"));
+    show(get("HTTPS://localhost/"));
+    show(get("ftp://localhost/"));
+    show(get("http://"));
+    show(get("http://x:99999/"));
+    show(get("http://x:abc/"));
+    show(get("http://user@x/"));
+    show(get("localhost/plain"));
+}

@@ -1,0 +1,27 @@
+{
+ "server": false,
+ "package": false,
+ "tests": [
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "2026-11-14T09:30:00+02:00\n2026-11-14T07:00:00Z\nnot a time\n2026-11-14T12:15:30.250-05:00\n",
+   "expected": "2026-11-14T07:30:00Z\n2026-11-14T07:00:00Z\nbad: not a time\n2026-11-14T17:15:30.250Z\nspan: 615 minutes\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "1999-12-31T23:59:59Z\n",
+   "expected": "1999-12-31T23:59:59Z\nspan: 0 minutes\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "\n2026-13-01T00:00:00Z\n",
+   "expected": "bad: 2026-13-01T00:00:00Z\n",
+   "code": 0
+  }
+ ]
+}

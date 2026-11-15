@@ -1,0 +1,8 @@
+$ vo run main.vo -- {port} /malformed
+err malformed response: bad status line
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /short
+err malformed response: body shorter than Content-Length
+--- stderr
+--- exit 0

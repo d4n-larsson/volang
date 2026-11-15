@@ -1,0 +1,32 @@
+import std.time.format_time;
+import std.time.minutes;
+import std.time.parse_time;
+
+fn main() uses console, input {
+    var lo = 0;
+    var hi = 0;
+    var any = false;
+    for line in split(read_all(), "\n") {
+        if line == "" {
+            continue;
+        }
+        match parse_time(line) {
+            case ok(t) {
+                print(format_time(t));
+                if not any or t < lo {
+                    set lo = t;
+                }
+                if not any or t > hi {
+                    set hi = t;
+                }
+                set any = true;
+            }
+            case err(_) {
+                print("bad: " + line);
+            }
+        }
+    }
+    if any {
+        print("span: " + str((hi - lo) / minutes(1)) + " minutes");
+    }
+}

@@ -1,0 +1,17 @@
+# A function that calls std.random.pick must declare random (E0501, with the fix).
+import std.random.pick;
+
+fn first(xs: list[int]) -> int {
+    match pick(xs) {
+        case ok(x) {
+            return x;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn main() uses console {
+    print(str(first([1, 2, 3])));
+}

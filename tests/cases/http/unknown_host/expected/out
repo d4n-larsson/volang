@@ -1,0 +1,4 @@
+$ vo run --timeout 10 main.vo
+err
+--- stderr
+--- exit 0

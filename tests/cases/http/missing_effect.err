@@ -1,0 +1,9 @@
+missing_effect.vo:4:4: error[E0501]: `fetch` does not declare net, which it needs.
+   4 | fn fetch(url: str) -> bool {
+     |    ^^^^^
+  fix: insert `uses net `
+missing_effect.vo:15:4: error[E0501]: `main` does not declare net, which it needs.
+  15 | fn main() uses console {
+     |    ^^^^
+  fix: replace with `uses console, net `
+2 errors, 0 warnings

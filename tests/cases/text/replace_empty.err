@@ -1,0 +1,7 @@
+std/text.vo:31:17: runtime error[R0007]: `split` needs a non-empty separator.
+  31 |     let parts = split(s, old);
+     |                 ^^^^^^^^^^^^^
+trace:
+  at replace (std/text.vo:31:17)
+      s: str = "abc", old: str = "", replacement: str = "x"
+  at main (replace_empty.vo:5:11)

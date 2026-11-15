@@ -298,6 +298,67 @@ Str *pkg_relpath(Str *path)
     return 0;
 }
 
+/* ---- vo doc (spec 007 T044, research R7) ---- */
+
+/* The entry listed as name in the nearest manifest from the working directory, with its hash
+ * checked (E0701/E0702 at its manifest line; exit 65 when it fails); 0 when name is not listed. */
+void *pkg_for_doc(Str *name)
+{
+    pkg_load(rt_start_cwd());
+    Pkg *e = pkg_find(name);
+    if (!e) return 0;
+    Node at = {0}; /* the manifest line, for the report */
+    at.file = (uint32_t)pkg_manifest;
+    at.start = (uint32_t)e->start;
+    at.end = (uint32_t)e->end;
+    if (!pkg_verify(e, &at)) vo_exit(finish_check(1));
+    return e;
+}
+
+/* The entry's name. */
+Str *pkg_entry_name(void *entry)
+{
+    return ((Pkg *)entry)->name;
+}
+
+/* DIRECTORY/a/b.vo for the module path "a.b" under entry, or 0 when there is no such file. */
+Str *pkg_doc_path(void *entry, Str *rel)
+{
+    SB *sb = sb_new();
+    sb_str(sb, ((Pkg *)entry)->dir);
+    sb_byte(sb, '/');
+    for (long i = 0; i < rel->len; i++) sb_byte(sb, rel->data[i] == '.' ? '/' : rel->data[i]);
+    sb_cstr(sb, ".vo");
+    Str *path = sb_finish(sb);
+    long fd = sys_open(path->data, O_RDONLY);
+    if (fd < 0) return 0;
+    sys_close((int)fd);
+    return path;
+}
+
+/* The entry's module names ("money.format", "money.rates.eur"), in byte order of their paths. */
+Vec *pkg_doc_modules(void *entry)
+{
+    Pkg *e = entry;
+    Vec *out = vec_new();
+    long fd = sys_open(e->dir->data, O_DIRECTORY);
+    if (fd < 0) return out;
+    long from = path_n; /* the files, appended to path_list and taken back after */
+    walk_dir(e->dir, (int)fd);
+    sys_close((int)fd);
+    sort_paths(from);
+    for (long i = from; i < path_n; i++) {
+        Str *p = ((Str **)path_list)[i]; /* DIR/a/b.vo */
+        SB *sb = sb_new();
+        sb_str(sb, e->name);
+        sb_byte(sb, '.');
+        for (long k = e->dir->len + 1; k < p->len - 3; k++) sb_byte(sb, p->data[k] == '/' ? '.' : p->data[k]);
+        vec_push(out, sb_finish(sb));
+    }
+    path_n = from;
+    return out;
+}
+
 /* ---- vo package ---- */
 
 /* to relative to the directory from (both absolute, "" is /): "shared/money", "../shared/money". */

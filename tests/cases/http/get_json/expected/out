@@ -1,0 +1,5 @@
+$ vo run main.vo -- {port}
+vo 7
+typed
+--- stderr
+--- exit 0

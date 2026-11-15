@@ -1,0 +1,24 @@
+$ vo run main.vo -- {port} /status/404
+status 404
+header Content-Length: 11
+body (11):
+status 404
+
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /status/500
+status 500
+header Content-Length: 11
+body (11):
+status 500
+
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /nowhere
+status 404
+header Content-Length: 10
+body (10):
+not found
+
+--- stderr
+--- exit 0

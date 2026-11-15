@@ -1,0 +1,17 @@
+# Calling std.http.get needs net, like a builtin (E0501 with the fix).
+import std.http.get;
+
+fn fetch(url: str) -> bool {
+    match get(url) {
+        case ok(_) {
+            return true;
+        }
+        case err(_) {
+            return false;
+        }
+    }
+}
+
+fn main() uses console {
+    print(str(fetch("http://localhost/")));
+}

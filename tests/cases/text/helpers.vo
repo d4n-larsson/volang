@@ -1,0 +1,45 @@
+# std.text on empty strings, multi-byte text and overlapping matches.
+import std.text.contains;
+import std.text.ends_with;
+import std.text.lines;
+import std.text.pad_left;
+import std.text.pad_right;
+import std.text.repeat;
+import std.text.replace;
+import std.text.starts_with;
+import std.text.words;
+
+fn show(xs: list[str]) -> str {
+    var out = "[";
+    for x in xs {
+        if out != "[" {
+            set out = out + ", ";
+        }
+        set out = out + "\"" + x + "\"";
+    }
+    return out + "]";
+}
+
+fn main() uses console {
+    print(str(starts_with("", "")) + " " + str(starts_with("abc", "")) + " " + str(starts_with("", "a")) + " " + str(starts_with("héllo", "hé")));
+    print(str(ends_with("", "")) + " " + str(ends_with("abc", "bc")) + " " + str(ends_with("bc", "abc")) + " " + str(ends_with("naïve", "ïve")));
+    print(str(contains("", "")) + " " + str(contains("abc", "")) + " " + str(contains("", "a")) + " " + str(contains("日本語", "本")));
+    print(replace("aaa", "aa", "b"));
+    print(replace("aaaa", "aa", "b"));
+    print(replace("", "a", "b"));
+    print(replace("a.b.c", ".", "::"));
+    print(replace("日本語の日本", "日本", "nihon"));
+    print("[" + repeat("ab", 3) + "] [" + repeat("ab", 0) + "] [" + repeat("ab", -2) + "] [" + repeat("", 5) + "]");
+    print(pad_left("7", 3, "0") + " " + pad_left("1234", 3, "0") + " " + pad_left("", 2, "x"));
+    print(pad_left("é", 4, "·") + "|" + pad_right("日本", 4, "-") + "|" + pad_right("abc", 2, " ") + "|");
+    print(show(lines("")));
+    print(show(lines("one")));
+    print(show(lines("one\ntwo\n")));
+    let cr = chr(13);
+    print(show(lines("one" + cr + "\ntwo" + cr + "\n" + cr + "\nfour")));
+    print(show(lines("\n\n")));
+    print(show(words("")));
+    print(show(words("   ")));
+    print(show(words("  the quick\tbrown\n\nfox  ")));
+    print(show(words("héllo wörld")));
+}

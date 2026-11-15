@@ -1,0 +1,9 @@
+$ vo run main.vo -- {port}
+status 200
+header Content-Type: text/plain
+header Content-Length: 14
+body (14):
+hello from vo
+
+--- stderr
+--- exit 0

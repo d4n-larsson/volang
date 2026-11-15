@@ -1,0 +1,9 @@
+std/text.vo:60:13: runtime error[R0007]: `ord` needs exactly one character, got "ab".
+  60 |     let _ = ord(fill);
+     |             ^^^^^^^^^
+trace:
+  at one_char (std/text.vo:60:13)
+      fill: str = "ab"
+  at pad_left (std/text.vo:49:19)
+      s: str = "7", width: int = 3, fill: str = "ab", missing: int = 2
+  at main (pad_bad_fill.vo:5:11)

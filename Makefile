@@ -57,7 +57,7 @@ endif
 OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/embedded.o \
 	$(if $(INSTRUMENTED),$(BUILD)/hosted.o)
 
-.PHONY: all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval clean
+.PHONY: all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval clean
 
 all: $(BUILD)/vo
 
@@ -123,7 +123,7 @@ test: all
 	tests/run.sh
 	tests/run.sh --repeat 3 tests/cases/run tests/cases/effects tests/cases/func tests/cases/generic tests/cases/prop
 	@for s in "fuzz.py --iterations 200 --seed 1" apply_fixes.py catalog.py ref_examples.py fmt_corpus.py \
-	  migrate.py record_changes.py doc_conformance.py json_corpus.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
+	  migrate.py record_changes.py doc_conformance.py json_corpus.py packages_check.py time_check.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
 	  steps.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1"; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
@@ -223,6 +223,11 @@ speed-check: oracle speed asm
 	@if [ "$(HOST)" != riscv64 ]; then python3 tests/speed.py --native; fi
 	$(MAKE) -s ARCH=riscv64
 	python3 tests/speed.py --baseline build-asm/vo --new $(RV_BUILD)/vo --max-geomean 1.10
+
+# Spec 007 US6 (SC-001): the task programs' saved solutions on their tests (written by an isolated
+# agent from the statements and `vo doc` output: `python3 tests/stdlib_eval.py --solve`).
+stdlib-eval: all
+	python3 tests/stdlib_eval.py
 
 # Spec 006 SC-001/SC-002: checked edits and queries on the refactor tasks' starters.
 refactor-eval: all

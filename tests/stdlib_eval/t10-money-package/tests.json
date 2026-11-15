@@ -1,0 +1,20 @@
+{
+ "server": false,
+ "package": true,
+ "tests": [
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "1234\n5\n\n-250\nabc\n100000\n",
+   "expected": "12.34\n0.05\n-2.50\nskipped: abc\n1000.00\ntotal: 1009.89\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "",
+   "expected": "total: 0.00\n",
+   "code": 0
+  }
+ ]
+}

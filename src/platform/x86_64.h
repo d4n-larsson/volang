@@ -17,6 +17,11 @@
 #define SYS_renameat2 316
 #define SYS_statx 332
 
+#define SYS_socket 41
+#define SYS_connect 42
+#define SYS_sendto 44
+#define SYS_recvfrom 45
+
 #define O_DIRECTORY 0x10000
 
 #endif

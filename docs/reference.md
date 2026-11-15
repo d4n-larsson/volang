@@ -256,7 +256,7 @@ test "loads fixtures" uses file.read("fixtures/") { ... }
 | console | `print`, `write`, `eprint` (stdout and stderr) |
 | input | `read_line`, `read_all` |
 | file.read, file.write | `read_file`, `write_file` |
-| net | network (no builtin yet) |
+| net | `std.http` (`get`, `post`) |
 | clock | `now_ms` |
 | random | `random_int` |
 | env | `env` |
@@ -969,6 +969,44 @@ fn main() uses console {
 25
 ```
 
+## Standard library and packages
+
+`import std.MODULE.NAME;` imports one item of the standard library, which is written in vo and built into `vo`. The reference does not list its items: `vo doc` prints every module and builtin, `vo doc std.json` one module, and `vo doc std.json.parse_json` one item with its exact signature, effects and an example (`--json` gives records).
+
+| Module | Contents |
+|---|---|
+| std.json | `Json` values: `parse_json`, `write_json`, `write_json_pretty`, field readers |
+| std.time | UTC calendar times, ISO 8601 text, durations, `now` (clock) |
+| std.text | `replace`, `contains`, `pad_left`, `lines`, `words`, ... |
+| std.random | `unit`, `pick`, `shuffle` (random) |
+| std.http | plain HTTP `get` and `post` (net; no HTTPS) |
+
+- A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
+- Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
+
+```vo
+import std.json.int_field;
+import std.json.parse_json;
+import std.text.pad_left;
+
+fn main() -> result[void] uses console {
+    let doc = try parse_json("{\"count\": 7}");
+    print(pad_left(str(try int_field(doc, "count")), 3, "0"));
+    return ok();
+}
+```
+
+```output
+007
+```
+
+```console
+$ vo doc std.text.pad_left
+fn pad_left(s: str, width: int, fill: str) -> str
+    s padded on the left with fill (one character) to width characters.
+    example: pad_left("7", 3, "0") is "007"
+```
+
 ## Querying and editing programs
 
 Ask the toolchain instead of searching the text: answers follow the checker, so strings, comments and other things with the same name never match. Every command takes the program's entry file first; only the files it imports are searched or changed.
@@ -1044,6 +1082,8 @@ vo query     [--json] callers|refs|type-at ENTRY TARGET
 vo impact    [--json] ENTRY --diff FILE
 vo edit      [--json] [--dry-run] rename|add-field ENTRY ...
 vo replay    [--json] [--trace FILE] [--timeout SEC] [--max-memory MiB] [--mem-stats] RECORDING
+vo doc       [--json] [NAME]
+vo package   [--json] ENTRY NAME DIRECTORY | --remove ENTRY NAME
 ```
 
 `run` and `test` also take `--trace FILE` and `--trace-limit N`; `run` takes `--record FILE` (see Traces and replay).
@@ -1129,7 +1169,7 @@ Other kinds: `toolchain_error` (`code`, `name`, `message`, optional `path` and `
 
 ## Error codes
 
-Every diagnostic, runtime error and toolchain error has a stable code, and `vo explain CODE` prints what it means, an example and the fix. The ranges are: E01xx syntax (E0101 to E0115), E02xx names and imports, E03xx types, E04xx control flow, `match` and results, Wxxxx warnings (they never fail a command), R00xx runtime errors (exit status 70; R0009 timeout is 124) and T00xx toolchain errors. When a diagnostic has no fix, read `vo explain` before changing code.
+Every diagnostic, runtime error and toolchain error has a stable code, and `vo explain CODE` prints what it means, an example and the fix. The ranges are: E01xx syntax (E0101 to E0115), E02xx names and imports, E03xx types, E04xx control flow, `match` and results, Wxxxx warnings (they never fail a command), E07xx packages, R00xx runtime errors (exit status 70; R0009 timeout is 124) and T00xx toolchain errors. When a diagnostic has no fix, read `vo explain` before changing code.
 
 ```vo
 fn main() uses console {

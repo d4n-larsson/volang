@@ -1,0 +1,20 @@
+{
+ "server": false,
+ "package": false,
+ "tests": [
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "ana\t12\nbjörn\t7\nzoë\t12\nlongername\t100\n",
+   "expected": "Name       | Score\n-----------+------\nlongername |   100\nana        |    12\nzoë        |    12\nbjörn      |     7\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "al\t3\n",
+   "expected": "Name | Score\n-----+------\nal   |     3\n",
+   "code": 0
+  }
+ ]
+}

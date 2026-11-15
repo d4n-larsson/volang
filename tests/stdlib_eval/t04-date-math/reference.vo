@@ -1,0 +1,31 @@
+import std.time.date;
+import std.time.days;
+import std.time.days_in_month;
+import std.time.format_time;
+import std.time.from_ms;
+import std.time.parse_time;
+
+fn main() uses console {
+    let a = args();
+    match parse_time(a[0]) {
+        case ok(ms) {
+            match parse_int(a[1]) {
+                case ok(n) {
+                    let t = ms + days(n);
+                    let d = from_ms(t);
+                    let names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+                    print(a[0] + " + " + a[1] + " days = " + slice(format_time(t), 0, 10) + " (" + names[d.weekday - 1] + ")");
+                    print("days in that month: " + str(days_in_month(d.year, d.month)));
+                }
+                case err(_) {
+                    print("invalid input");
+                    exit(1);
+                }
+            }
+        }
+        case err(_) {
+            print("invalid input");
+            exit(1);
+        }
+    }
+}

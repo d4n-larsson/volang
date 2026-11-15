@@ -1,0 +1,66 @@
+{
+ "server": false,
+ "package": false,
+ "tests": [
+  {
+   "flags": [],
+   "args": [
+    "2024-02-28",
+    "1"
+   ],
+   "stdin": "",
+   "expected": "2024-02-28 + 1 days = 2024-02-29 (Thursday)\ndays in that month: 29\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [
+    "2023-12-31",
+    "60"
+   ],
+   "stdin": "",
+   "expected": "2023-12-31 + 60 days = 2024-02-29 (Thursday)\ndays in that month: 29\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [
+    "2000-03-01",
+    "-1"
+   ],
+   "stdin": "",
+   "expected": "2000-03-01 + -1 days = 2000-02-29 (Tuesday)\ndays in that month: 29\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [
+    "1970-01-01",
+    "-366"
+   ],
+   "stdin": "",
+   "expected": "1970-01-01 + -366 days = 1968-12-31 (Tuesday)\ndays in that month: 31\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [
+    "2023-02-29",
+    "1"
+   ],
+   "stdin": "",
+   "expected": "invalid input\n",
+   "code": 1
+  },
+  {
+   "flags": [],
+   "args": [
+    "2024-01-01",
+    "x"
+   ],
+   "stdin": "",
+   "expected": "invalid input\n",
+   "code": 1
+  }
+ ]
+}

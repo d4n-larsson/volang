@@ -1,0 +1,23 @@
+# POST sends the body (multi-byte text included) with its content type.
+import std.http.Response;
+import std.http.post;
+
+fn show(r: result[Response]) uses console {
+    match r {
+        case ok(resp) {
+            print("status " + str(resp.status));
+            for h in resp.headers {
+                print("header " + h.name + ": " + h.value);
+            }
+            print("body (" + str(len(resp.body)) + "):");
+            print(resp.body);
+        }
+        case err(e) {
+            print("err " + e);
+        }
+    }
+}
+
+fn main() uses console, net("localhost") {
+    show(post("http://localhost:" + args()[0] + "/echo", "text/plain; charset=utf-8", "héllo\nwörld"));
+}

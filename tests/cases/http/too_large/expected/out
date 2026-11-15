@@ -1,0 +1,4 @@
+$ vo run main.vo -- {port} /large
+err the response from localhost:{port} is larger than 16 MiB
+--- stderr
+--- exit 0

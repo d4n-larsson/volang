@@ -1,0 +1,46 @@
+import std.json.Json;
+import std.json.write_json;
+
+fn main() -> result[void] uses console, input {
+    let items = new list[Json];
+    var total = 0;
+    var n = 0;
+    for line in split(read_all(), "\n") {
+        set n = n + 1;
+        if line == "" {
+            continue;
+        }
+        let parts = split(line, ",");
+        if len(parts) != 3 {
+            print("bad line " + str(n));
+            exit(1);
+        }
+        match parse_int(parts[1]) {
+            case ok(q) {
+                match parse_int(parts[2]) {
+                    case ok(c) {
+                        let item = new map[str, Json];
+                        set item["name"] = Json.text(parts[0]);
+                        set item["quantity"] = Json.integer(q);
+                        set item["total_cents"] = Json.integer(q * c);
+                        push(items, Json.object(item));
+                        set total = total + q * c;
+                    }
+                    case err(_) {
+                        print("bad line " + str(n));
+                        exit(1);
+                    }
+                }
+            }
+            case err(_) {
+                print("bad line " + str(n));
+                exit(1);
+            }
+        }
+    }
+    let out = new map[str, Json];
+    set out["items"] = Json.array(items);
+    set out["total_cents"] = Json.integer(total);
+    print(try write_json(Json.object(out)));
+    return ok();
+}

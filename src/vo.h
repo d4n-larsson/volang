@@ -1421,6 +1421,10 @@ extern void doc_json_shape(SB *sb, Node *item);
 extern void doc_print_item(Str *module, Node *item, Str *desc, Str *example, long full);
 extern long doc_std_file(Str *path);
 extern long doc_module(char *module_word, Str *item_name);
+extern long doc_file(long file, Str *module, Str *item_name);
+extern long doc_package(Str *name);
+extern long doc_package_list(void);
+extern void doc_package_names(void);
 extern char *doc_builtin_rows(void);
 extern char *doc_next_line(char *p);
 extern long doc_starts(char *p, char *prefix);
@@ -1668,6 +1672,7 @@ extern void fmt_report(Str *path, int changed);
 extern void write_file_safely(Str *path, Str *text);
 
 /* src/net.c */
+extern Variant *rt_http_exchange(Str *host, long port, Str *request);
 extern Variant *io_http_exchange(Str *host, long port, Str *request);
 
 /* src/num.c */
@@ -1696,6 +1701,10 @@ extern Str *pkg_hash_text(char *hash);
 extern long pkg_verify(void *entry, Node *node);
 extern void *pkg_import_path(Node *import, FileRec *importer);
 extern Str *pkg_relpath(Str *path);
+extern void *pkg_for_doc(Str *name);
+extern Str *pkg_entry_name(void *entry);
+extern Str *pkg_doc_path(void *entry, Str *rel);
+extern Vec *pkg_doc_modules(void *entry);
 extern Str *pkg_rel_dir(Str *from, Str *to);
 extern void pkg_sort(void);
 extern void pkg_write(void);
@@ -1963,6 +1972,7 @@ extern long sys_getcwd(char *buf, long size);
 extern long sys_clock_ns(void);
 extern long sys_clock_ms(void);
 extern long sys_clock_real_ms(void);
+extern long sys_wait_fd(long fd, long events, long ms);
 extern long sys_wait_stdin(long ms);
 extern long write_checked(int fd, char *p, long n);
 extern void write_all(int fd, char *p, long n);

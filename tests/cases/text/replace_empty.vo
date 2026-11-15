@@ -1,0 +1,6 @@
+# replace with an empty old string is R0007 (contracts/library.md).
+import std.text.replace;
+
+fn main() uses console {
+    print(replace("abc", "", "x"));
+}

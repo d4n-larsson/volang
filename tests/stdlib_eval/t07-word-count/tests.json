@@ -1,0 +1,20 @@
+{
+ "server": false,
+ "package": false,
+ "tests": [
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "The cat and the hat. \"The end!\" And then: the (cat) sat.\nA cat? a CAT.\n",
+   "expected": "cat: 4\nthe: 4\na: 2\nand: 2\nend: 1\ndistinct: 8\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "  \n",
+   "expected": "distinct: 0\n",
+   "code": 0
+  }
+ ]
+}

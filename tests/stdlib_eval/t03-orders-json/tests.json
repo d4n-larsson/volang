@@ -1,0 +1,27 @@
+{
+ "server": false,
+ "package": false,
+ "tests": [
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "apple,3,40\npear,1,125\n\nplum,10,7\n",
+   "expected": "{\"items\":[{\"name\":\"apple\",\"quantity\":3,\"total_cents\":120},{\"name\":\"pear\",\"quantity\":1,\"total_cents\":125},{\"name\":\"plum\",\"quantity\":10,\"total_cents\":70}],\"total_cents\":315}\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "",
+   "expected": "{\"items\":[],\"total_cents\":0}\n",
+   "code": 0
+  },
+  {
+   "flags": [],
+   "args": [],
+   "stdin": "apple,3,40\npear,x,1\n",
+   "expected": "bad line 2\n",
+   "code": 1
+  }
+ ]
+}

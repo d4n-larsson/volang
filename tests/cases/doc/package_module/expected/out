@@ -1,0 +1,46 @@
+$ vo package main.vo money shared/money
+added money shared/money sha256:76f6c83ffb2b59edc16ff5bba830cc5b7b3e92880aac76ab94f24cccbf5a3a5b
+--- stderr
+--- exit 0
+$ vo doc money.format
+fn cents(n: int) -> str
+    Formats an amount in cents as units and two decimals.
+record Amount { cents: int; currency: str; }
+    An amount with its currency code.
+--- stderr
+--- exit 0
+$ vo doc money.format.cents
+fn cents(n: int) -> str
+    Formats an amount in cents as units and two decimals.
+    example: cents(1234) is "12.34"
+--- stderr
+--- exit 0
+$ vo doc --json money.format
+{"v":1,"kind":"doc","module":"money.format","name":"cents","item":"fn","signature":"fn cents(n: int) -> str","tparams":[],"params":[{"name":"n","type":"int"}],"returns":"str","effects":[],"description":"Formats an amount in cents as units and two decimals.","example":"cents(1234) is \"12.34\""}
+{"v":1,"kind":"doc","module":"money.format","name":"Amount","item":"record","signature":"record Amount { cents: int; currency: str; }","tparams":[],"fields":[{"name":"cents","type":"int"},{"name":"currency","type":"str"}],"description":"An amount with its currency code."}
+{"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":2}
+--- stderr
+--- exit 0
+$ vo doc money.rates.eur.to_eur
+fn to_eur(usd_cents: int) -> int
+    Converts an amount in US cents to euro cents at a fixed rate.
+    example: to_eur(100) is 92
+--- stderr
+--- exit 0
+$ vo doc money.formt
+error[T0010]: Nothing is documented as `money.formt`; `vo doc` lists the builtins and modules. Did you mean `money.format`?
+--- stderr
+--- exit 64
+$ vo doc std.text.pad_left
+fn pad_left(s: str, width: int, fill: str) -> str
+    s padded on the left with fill (one character) to width characters.
+    example: pad_left("7", 3, "0") is "007"
+--- stderr
+--- exit 0
+$ vo doc money.format
+vo.packages:2:1: error[E0701]: Package money changed: the manifest pins sha256:76f6c83ffb2b59edc16ff5bba830cc5b7b3e92880aac76ab94f24cccbf5a3a5b, its files hash to sha256:4d625456aa5273d99eeb420a6897e567b1cfe6bc77db7fc20033bc792e755c61. Review the change, then run `vo package vo.packages money shared/money`.
+   2 | money shared/money sha256:76f6c83ffb2b59edc16ff5bba830cc5b7b3e92880aac76ab94f24cccbf5a3a5b
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65

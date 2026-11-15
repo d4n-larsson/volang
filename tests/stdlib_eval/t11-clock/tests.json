@@ -1,0 +1,26 @@
+{
+ "server": false,
+ "package": false,
+ "tests": [
+  {
+   "flags": [
+    "--clock-ms",
+    "1763112600123"
+   ],
+   "args": [],
+   "stdin": "",
+   "expected": "2025-11-14T09:30:00.123Z\n2025-12-14\n",
+   "code": 0
+  },
+  {
+   "flags": [
+    "--clock-ms",
+    "951782400000"
+   ],
+   "args": [],
+   "stdin": "",
+   "expected": "2000-02-29T00:00:00Z\n2000-03-30\n",
+   "code": 0
+  }
+ ]
+}

@@ -1,0 +1,8 @@
+$ vo run main.vo -- {port} /close
+status 200
+header Content-Type: text/plain
+body (28):
+until the connection closes
+
+--- stderr
+--- exit 0

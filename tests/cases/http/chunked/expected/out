@@ -1,0 +1,9 @@
+$ vo run main.vo -- {port} /chunked
+status 200
+header Content-Type: text/plain
+header Transfer-Encoding: chunked
+body (22):
+hello, chunked world!
+
+--- stderr
+--- exit 0

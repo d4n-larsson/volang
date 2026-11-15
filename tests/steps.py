@@ -10,6 +10,9 @@ each line of `steps` runs there, in order:
   unset NAME ... vo ARGS...     the same, without those variables
   rm PATH | cp A B | write PATH TEXT (TEXT with \\n escapes) | chmod MODE PATH
   keep PATH...                  files the case produces or changes, compared with expected/PATH
+  server http                   starts tests/http_server.py on a free port (spec 007): later lines may
+                                use {port}, and the port number reads `{port}` in outputs and kept files
+  stop-server                   stops it ({port} keeps its number: a refused connection)
   vo~ ARGS...                   like vo, but its stdout is left out of `out` (it may differ between
                                 runs, e.g. with a clock seed); `same` then checks the last two were equal
 
@@ -33,7 +36,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")  # runs $VO_BIN (default build/vo) natively or under qemu
 
 
-def mask(b):
+def mask(b, port=None):
+    if port:
+        b = b.replace(str(port).encode(), b"{port}")
     b = re.sub(rb'"ms":\d+', b'"ms":0', b)
     return re.sub(rb"([ (])\d+ms\)", rb"\g<1>0ms)", b)
 
@@ -52,6 +57,7 @@ def cases(paths):
 def run_case(case):
     """Runs one case; returns {relative path: bytes} of the expected files it produced, plus 'out'."""
     work = tempfile.mkdtemp()
+    servers = []
     try:
         for n in os.listdir(case):
             if n in ("expected", "steps"):
@@ -61,10 +67,22 @@ def run_case(case):
         out = b""
         keep = []
         hidden = []
+        port = None  # the HTTP test server's port, once started
         for line in open(os.path.join(case, "steps"), encoding="utf-8").read().splitlines():
             if not line.strip() or line.startswith("#"):
                 continue
-            words = shlex.split(line)
+            words = shlex.split(line.replace("{port}", str(port)) if port else line)
+            if words[0] == "server":
+                server = subprocess.Popen([sys.executable, os.path.join(ROOT, "tests", "http_server.py"), "0"],
+                                          stdout=subprocess.PIPE)
+                servers.append(server)
+                port = int(server.stdout.readline().split()[1])
+                continue
+            if words[0] == "stop-server":
+                for sv in servers:
+                    sv.kill()
+                    sv.wait()
+                continue
             if words[0] == "keep":
                 keep += words[1:]
                 continue
@@ -109,14 +127,17 @@ def run_case(case):
             r = subprocess.run([VO] + words[1:], cwd=work, input=stdin, capture_output=True, env=env, timeout=120)
             if hide:
                 hidden.append(r.stdout)
-            out += b"$ " + line.encode() + b"\n" + (b"(stdout not shown)\n" if hide else mask(r.stdout)) \
-                + b"--- stderr\n" + mask(r.stderr) + b"--- exit " + str(r.returncode).encode() + b"\n"
+            out += b"$ " + line.encode() + b"\n" + (b"(stdout not shown)\n" if hide else mask(r.stdout, port)) \
+                + b"--- stderr\n" + mask(r.stderr, port) + b"--- exit " + str(r.returncode).encode() + b"\n"
         got = {"out": out.replace(work.encode() + b"/", b"")}
         for rel in keep:
             p = os.path.join(work, rel)
-            got[rel] = mask(open(p, "rb").read()) if os.path.isfile(p) else None
+            got[rel] = mask(open(p, "rb").read(), port) if os.path.isfile(p) else None
         return got
     finally:
+        for sv in servers:
+            sv.kill()
+            sv.wait()
         shutil.rmtree(work, ignore_errors=True)
 
 

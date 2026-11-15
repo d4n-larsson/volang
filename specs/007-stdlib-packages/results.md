@@ -38,6 +38,69 @@ No `.vo` file under `tests/`, `bench/`, `bench2/` or `docs/` imports a `std.` pa
 - `tests/fuzz_inputs.py` feeds mutated corpus documents to the driver: no crash, no changed round trip.
 - Numbers are converted exactly (src/stdprim.s: big-integer `exact_to_double` and `exact_digits`, ties to even). The 15-digit `text_to_float` was 1 ulp off for 16- and 17-digit input (`-383036.35179613123`, `1.7976931348623157e308`), which broke round trips; the language's own literals and `parse_float` keep the 15-digit path.
 
+## After spec 008 (the remaining work, in C)
+
+The spec was merged incomplete before the C port (spec 008); a convergence pass (tasks.md, Phase 10,
+T041-T053) listed what was left, written for the C toolchain. Everything below was done in C on
+x86-64 and checked on ARM64 and RISC-V too.
+
+### Packages (US3: T018, T019, T023, T044, T045, T050)
+
+- `vo doc` documents package modules (`src/doc.c`, `src/packages.c`): `vo doc money.format`,
+  `vo doc money.format.cents`, nested modules (`money.rates.eur.to_eur`), the module list with the
+  package modules after the standard ones, suggestions for misspelled names, and E0701 (exit 65)
+  when the package changed. Step case `doc/package_module`.
+- `tests/packages_check.py` (SC-004): 22 tamper variants (changed, appended, removed and swapped bytes
+  at the start, middle and end of files and nested files; added, emptied, removed, renamed and moved
+  `.vo` files; a renamed directory; a `.vo` file renamed to another extension) each stop `vo run`
+  with E0701 before the program runs; a changed or added non-`.vo` file changes nothing.
+- SHA-256 (T019): `vo package` hashes of single-file packages of every content length 0-130 bytes (every
+  padding case of the 64-byte block) and of 1,000,000 x "a" equal Python's `hashlib` over the same
+  framing: 132 of 132.
+
+### Time, text and random (US4: T024, T027, T046, T049)
+
+- Golden cases `time/` (5), `text/` (3 new) and `random/` (3); expected output recorded with
+  `build-asm/vo` (`std/` is unchanged since it) and checked by hand against a calendar and the contract;
+  they pass on every build, three runs byte-identical. `from_ms` has no R0007 case: the contract makes
+  it total.
+- `tests/time_check.py` (SC-005): 10,000 seeded times (uniform over years 1-9999, within a century of
+  1970, around leap days, and at month boundaries +-1 ms) through `from_ms`, `format_time`,
+  `parse_time` and `to_ms`: 0 differences from Python's `datetime`.
+
+### HTTP (US5: T028-T032, T041-T043)
+
+- `src/net.c`: `rt_http_exchange` resolves an IPv4 literal, then `/etc/hosts`, then one UDP DNS A query
+  to the first `nameserver` of `/etc/resolv.conf` (3 tries of 2 s); connects without blocking, sends
+  with `MSG_NOSIGNAL` (no `SIGPIPE`: the toolchain installs no handlers) and reads until the server
+  closes, every wait bounded by the `--timeout` deadline (R0009 at the call) and the response by
+  16 MiB. Socket call numbers are in the three platform headers; `sys_wait_fd` generalizes the stdin
+  wait.
+- `src/replay.c`: `io_http_exchange` checks the host against the grant (R0010) in every mode, records
+  `{"kind":"http","host","port","result","value"}` and replays it without the network (R0014 for
+  another host or port); spec 006's `contracts/recording.md` lists the kind.
+- `tests/http_server.py` (raw replies: plain, JSON, chunked, to-close, 404/500, redirect, repeated
+  headers, slow, 17 MiB, malformed, short body, echo) and `server`/`stop-server` steps in
+  `tests/steps.py` (`{port}` substituted and masked). 17 step cases in `tests/cases/http/` and the
+  golden `http/missing_effect`; they failed on the stub, pass natively, under ARM64 and RISC-V (qemu
+  translates the socket calls), under the UB-trap build and under ASan, three runs identical.
+  `unknown_host` prints only `err`: whether the reply is NXDOMAIN or no answer depends on the resolver.
+- `std/http.vo` needed no change: its `Content-Length` is in bytes (`len`), checked by a POST of
+  multi-byte text to a server that reads exactly that many bytes.
+
+### Fuzzing (T038, T051)
+
+`tests/fuzz_inputs.py` also mutates a pinned `vo.packages` (then `vo check`, `vo doc money.format`,
+`vo doc`) and the bytes of HTTP replies (served by a one-reply server to a `std.http` client): 600 runs,
+0 problems.
+
+### Reference (T036, T047)
+
+A section "Standard library and packages" (the five modules, the effect rule, `vo.packages`,
+`vo package`, an executed example and a `vo doc` console block), `net` in the effects table, `doc` and
+`package` in the command list, E07xx in the code ranges: the reference grows from about 10,000 to
+about 10,415 tokens (words x 1.3) since spec 006 (SC-008: at most 2,000 more, under 15,000).
+
 ## Deviations
 
 - T010: `vo doc` checks each standard file on its own (`check_program` on the embedded file) rather than a synthetic program importing every item: the same declarations, one module at a time, no generated source.
