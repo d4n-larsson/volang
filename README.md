@@ -1,3 +1,5 @@
+<img src="docs/vo.svg" alt="vo logo" width="96" height="96">
+
 # vo
 
 vo is a small, statically typed programming language designed for AI coding agents, and for the people who review what those agents write. The whole toolchain is freestanding C: lexer, parser, type checker, formatter, test runner, bytecode compiler, virtual machine and garbage collector, about 20,000 lines with no libc and no dependencies, plus under 200 lines of assembly per platform. It builds natively on Linux x86-64, ARM64 and RISC-V 64, with byte-identical behavior on all three.
