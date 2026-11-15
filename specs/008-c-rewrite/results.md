@@ -231,11 +231,10 @@ ARM64 builds. The parser keeps its 5,000-level counter, so E0115 is unchanged.
 - **Memory parity check**: the collection workload run without a limit runs out of memory at round 60 on
   both `build/vo` (native) and `build-asm/vo`, with byte-identical reports.
 - **US1's independent test** (fresh checkout of `ae1973e`, `make && make test`, native): builds in 6.4 s;
-  everything passes except `cli/mem_stats_test`, whose figures depend on the length of the checkout's
-  absolute path (the toolchain keeps the working directory on the heap during a test). That is not a
-  native difference: `build-asm/vo` gives the same figures at that path (1,167,024 bytes for "maps fail"),
-  and at the repository's own path both match the recorded output. Making the figures path-independent
-  would change memory accounting against the assembly release; left open for the maintainer.
+  everything passes except `cli/mem_stats_test`, whose figures depended on the length of the checkout's
+  absolute path, on `build-asm/vo` too (1,167,024 bytes for "maps fail" at that path). The case passed its
+  program by absolute path; it now uses a relative one (see "Deviations (final list)"), and the suite passes
+  from any checkout path.
 - **SC-003**: `tests/speed.py --baseline build-asm/vo` with native `build/vo`: closures_generics 375 → 38 ms,
   fib 181 → 38, int_loop 407 → 36, list_work 286 → 67, map_count 469 → 60, str_build 621 → 70.
 
@@ -368,9 +367,11 @@ nothing:
   run; the NATSTACK fault kind became ROOTS; two golden cases were added (T060).
 - **Gates**: `make gate-step` after every step of stages 1-5 and the full `make gate` at stage boundaries and
   every engine step, instead of the full gate after every step (see "Deviations" above).
-- **Open for the maintainer**: `cli/mem_stats_test`'s figures depend on the length of the checkout's
-  absolute path, on every build including `build-asm/vo` (the working directory is on the heap during a test),
-  so it fails in a checkout at a path of another length. Making the figures path-independent would change
-  memory accounting against the assembly release.
+- **Path-independent memory cases**: `cli/mem_stats_test` and `prop/mem_stats` passed the program by its
+  absolute path, and the failure and trace text built during a test holds that path, so their figures
+  depended on where the repository was checked out (on every build, `build-asm/vo` included). They now pass
+  a path relative to `build/tmp`, where `tests/run.sh` runs commands; expected output re-recorded with
+  `build-asm/vo`, and all four C builds pass. The whole golden suite passes from a checkout at a 150-character
+  path. The toolchain is unchanged.
 - **Not committed per step**: the 37 migration steps were gated on snapshots of the working tree, not on
   commits (US3's independent test, step 37).

@@ -1,1 +1,1 @@
-test --mem-stats --json {dir}/../../gc/edge/test_order.vo
+test --mem-stats --json ../../tests/gc/edge/test_order.vo
