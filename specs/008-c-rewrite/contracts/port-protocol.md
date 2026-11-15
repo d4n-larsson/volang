@@ -16,3 +16,7 @@ The procedure every migration step follows (research R1, R2, R10, R13, R14).
 5. **Record** the step in `results.md` (data-model.md "Migration step").
 
 A step never changes a golden file, the reference, the catalog or a contract.
+
+Since T050 no assembly file is left to port: layouts and declarations are written in `src/vo.h`
+(`defs.inc`, `build/defs.h`, `build/protos.h` and their generators are gone), and a new global without a
+declaration there fails the build (`-Wmissing-prototypes`).

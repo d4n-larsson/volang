@@ -8,11 +8,11 @@
 | SC-002 | met: 10,000 generated programs in each of three modes (mixed, float, intedge) give 0 disagreements with `build-asm/vo` on x86-64, ARM64 and RISC-V (90,000 runs); bench2 703/703 unchanged on all three |
 | SC-003 | met on the development machine: native 7.3 times faster than `build-asm/vo` under qemu (`tests/speed.py --native`: geometric-mean ratio 0.137, limit 0.333), every program faster (worst 0.224) |
 | SC-004 | met: `build-riscv64/vo` under qemu runs the speed benchmark in 0.882 of `build-asm/vo`'s time (geometric mean, limit 1.10; every program faster) |
-| SC-005 | open |
+| SC-005 | met: `make test` under `build-instrumented/vo` (ASan + UBSan, heap poisoning in `gc.c`) passes with 0 reports; `make lint` builds every C file for x86-64, ARM64 and RISC-V with the strict warning set, 0 warnings |
 | SC-006 | met: a fresh checkout builds with `make` in 6.4 s (serial) on the development machine |
 | SC-007 | met: the 17 replay cases recorded on each of build/vo, build-aarch64/vo and build-riscv64/vo replay identically on the other two (`tests/cross_replay.py`, 6 ordered pairs) |
 | SC-008 | met: hand-written assembly per platform is `src/platform/riscv64.S` 172 lines, `x86_64.S` 83, `aarch64.S` 91 (from about 53,000); no other `.s`/`.S` file is in the tree |
-| SC-009 | open |
+| SC-009 | met: `git diff --stat bc610cb -- docs/reference.md docs/errors.md` is empty (the reference never told users to use qemu); `README.md` and `docs/roadmap.md` describe the native builds |
 
 ## The oracle
 
@@ -286,3 +286,50 @@ ARM64 builds. The parser keeps its 5,000-level counter, so E0115 is unchanged.
   map_count 466 → 420, str_build 612 → 546; geometric-mean ratio 0.882. It has held between 0.880 and 0.885
   in every gate since step 34, so no tuning was needed: the `&&label` dispatch stays (R6's `switch`
   fallback was not tried), `-O2` stays.
+
+## Memory-error and undefined-behavior detection (US5, T063-T065)
+
+- **`make instrumented`** builds `build-instrumented/vo`: the same sources as a hosted x86-64 program with
+  `-fsanitize=address,undefined -fno-sanitize-recover=all`, linked with the C library for the sanitizer
+  runtimes only. `src/platform/hosted.c` provides `main` (it raises the stack limit to 1 GiB and re-executes,
+  so the R7 depths fit instrumented frames) and wraps `jmp_restore` with `__asan_handle_no_return`; the
+  system calls stay raw (`x86_64.S`, without `_start`). Every fixed region moves up by `ADDR_BASE`
+  (0x1000_0000_0000), above ASan's shadow. The toolchain's own `memcpy`/`memmove`/`memset`/`memcmp` give way
+  to the C library's, which ASan checks; no other global name collides with the C library's.
+- **Heap poisoning (T064)**: `gc.c` is compiled without ASan's checks (the collector reads free slots by
+  design) and keeps the shadow memory current under `VO_ASAN`: an object is addressable up to its exact
+  size, the rest of its slot is poisoned, and every freed slot, freed page run, new small page and reset heap
+  is poisoned. Every other file is checked against overflows and use-after-free on the heap.
+- **Found and fixed**: ASan reported a read past a property test's argument list in `vm_push`. For a test
+  node `N_B` is the body, not the parameter vector, so the count of values copied into the frame came from
+  the body node's first word; the extra slots received stale heap words (locals, assigned before use, so no
+  output changed). The count now comes from `FX_PARAMS`. `build-asm/vo` has the same bug (`vm.s`, `ld t0,
+  N_B(s1)`); the fix changes no golden output and no memory figure.
+- **Result**: `VO_BIN=build-instrumented/vo make test` passes (443/443, repeat 195/195, every checker and
+  fuzzer, 91 step cases, 1,000 programs against the oracle) with 0 ASan or UBSan reports, in 9 minutes.
+- **Canary** (US5 scenario 2, a scratch copy): `list_push` made to write one word past a grown list's data;
+  a program that pushes ten values gets `ERROR: AddressSanitizer: use-after-poison ... WRITE of size 8 ... #0
+  list_push src/rt_list.c:36`.
+- **`make lint` (T065)**: SESI over `src/platform/riscv64.S`; the strict-warning C build (`-fsyntax-only`) of
+  every file for x86-64, ARM64 and RISC-V, which fails on a planted unused variable on each; no `.s`/`.S`
+  file outside `src/platform/`; each platform file at most 300 lines. The SESI PostToolUse hook runs on every
+  `src/platform/*.S`; on the x86-64 and ARM64 files it reports RISC-V false positives
+  (sesi-linter-issues.md #24).
+
+## Polish (T066, T067, T069)
+
+- **Documentation (T066)**: `README.md` describes the C toolchain, the native build with `make`, cross builds
+  and `bin/vo`'s qemu path, the repository layout (`src/`, `src/platform/`) and the development targets
+  (`make lint`, `gate`, `instrumented`, `speed-check`). `docs/roadmap.md` marks 008 done and summarizes it;
+  the next specs start from C. The language reference and the error catalog are unchanged since the
+  assembly release (SC-009).
+- **Contracts and quickstart (T067)**: `platform-layer.md` (`sys_start`, `vo_data_begin`, the jump buffer),
+  `build.md` (host builds, `make ARCH=<arch> test`, `make instrumented`, `make lint`, `speed-check`) and
+  `port-protocol.md` (headers after T050) follow the implementation. `quickstart.md`'s commands were
+  corrected: `make ARCH=<arch> test` now runs the suite on that build (a non-host `ARCH` exports `VO_BIN`),
+  the SC-004 command carries `--max-geomean 1.10`, and the size check is part of `make lint`. Every command
+  runs in the final gate (below).
+- **Assembly-only leftovers (T069)**: the native-stack fault target became `fault_targets/roots` in step 35;
+  `gc_spill_registers`, `stack_scrub`, the `RUNTIME` link order and the qemu page pins are gone; no project
+  skill or memory note describes writing toolchain assembly (the `sesi-riscv64` skill stays for
+  `src/platform/riscv64.S`).

@@ -1,6 +1,6 @@
 # vo
 
-vo is a small, statically typed programming language designed for AI coding agents, and for the people who review what those agents write. The whole toolchain is written in RISC-V assembly (RV64): lexer, parser, type checker, formatter, test runner, bytecode compiler and virtual machine, about 49,300 lines with no libc and no dependencies.
+vo is a small, statically typed programming language designed for AI coding agents, and for the people who review what those agents write. The whole toolchain is freestanding C: lexer, parser, type checker, formatter, test runner, bytecode compiler, virtual machine and garbage collector, about 20,000 lines with no libc and no dependencies, plus under 200 lines of assembly per platform. It builds natively on Linux x86-64, ARM64 and RISC-V 64, with byte-identical behavior on all three.
 
 ```vo
 record Person {
@@ -50,15 +50,17 @@ The language also has records, variants with exhaustive `match`, `result[T]` wit
 
 ## Getting started
 
-Requirements: GNU binutils for RISC-V and, on non-RISC-V machines, QEMU user mode.
+Requirements: GCC and GNU make on Linux (x86-64, ARM64 or RISC-V 64). A clean build takes a few seconds.
 
 ```sh
-sudo apt install binutils-riscv64-linux-gnu qemu-user   # make check-tools verifies them
-make                                                     # builds build/vo
+make                 # builds build/vo for this machine: one static binary
 bin/vo version
 ```
 
-`bin/vo` runs `build/vo` natively on RISC-V and through `qemu-riscv64` elsewhere.
+`make ARCH=riscv64` or `make ARCH=aarch64` cross-builds `build-<arch>/vo` (with `gcc-riscv64-linux-gnu` or
+`gcc-aarch64-linux-gnu`); `bin/vo` runs a binary for another architecture through `qemu-user`
+(`VO_BIN=build-riscv64/vo bin/vo ...`). The cross checks also need those tools: `make check-tools` lists
+what is missing.
 
 ```sh
 bin/vo check --json main.vo        # diagnostics with fixes (JSON lines)
@@ -76,7 +78,8 @@ Every command takes `--json`. Exit statuses are stable: 0 success, 1 failed test
 
 | Path | Contents |
 |---|---|
-| `src/` | The toolchain in RISC-V assembly: `lex.s`, `parse.s`, `check*.s` (types, effects, functions as values, generics), `compile.s` and `vm.s` (the bytecode compiler and VM), `interp.s` and `rt_*.s` (the runtime), `fmt.s`, `main.s` (CLI) |
+| `src/` | The toolchain in C: `lex.c`, `parse.c`, `check*.c` (types, effects, functions as values, generics), `compile.c` and `vm.c` (the bytecode compiler and VM), `gc.c` (the collector), `interp.c` and `rt_*.c` (the runtime), `fmt.c`, `main.c` (CLI); `vo.h` holds every layout and declaration |
+| `src/platform/` | Per architecture: process entry, system calls and `setjmp`/`longjmp` in assembly (`x86_64.S`, `aarch64.S`, `riscv64.S`) and the system call numbers; `hosted.c` for the sanitizer build |
 | `docs/reference.md` | The language reference (embedded in the binary; `vo reference`) |
 | `docs/errors.md` | The error catalog: every code with an example and its fix (`vo explain`) |
 | `tests/cases/` | Golden test cases: source plus expected stdout, stderr and exit status |
@@ -89,8 +92,12 @@ Every command takes `--json`. Exit statuses are stable: 0 success, 1 failed test
 ```sh
 make test     # the quality gate: golden cases, determinism, fuzzing, fixes, catalog, reference,
               # formatter corpus, migration, effects-record change sets, scope fuzzing
-make lint     # every assembly function is checked by the SESI riscv64 pack
-sh tests/perf.sh
+make lint     # strict-warning C for all three architectures, SESI over riscv64.S, platform file sizes
+make gate     # lint, test, the UB-trap and collector stress suites, 2,000 programs against the
+              # last assembly release, and the speed check
+make instrumented   # the suite under ASan and UBSan (x86-64)
+make speed-check    # native speed against the assembly release under qemu (SC-003, SC-004)
+sh tests/perf.sh    # check + run of a 1,000-line program in under 1 s; large inputs
 ```
 
 Conventions are in `.specify/memory/constitution.md`:
@@ -99,7 +106,7 @@ Conventions are in `.specify/memory/constitution.md`:
 - Every reference example is executed by the test suite.
 - The reference stays under 15,000 tokens.
 
-Known false positives and negatives of the assembly linter are tracked in `sesi-linter-issues.md`.
+Known false positives and negatives of the assembly linter (SESI, for `src/platform/riscv64.S`) are tracked in `sesi-linter-issues.md`.
 
 ## Benchmarks
 

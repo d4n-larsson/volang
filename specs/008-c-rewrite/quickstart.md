@@ -13,7 +13,8 @@ make asm                 # build-asm/vo: the last assembly release, the oracle
 ## During the port (stages 1-7)
 
 ```sh
-make gate                # after every migration step: suite, stress, UB traps, 2,000-program diff, bench2, speed (informational)
+make gate-step           # after every migration step: lint, suite, UB traps, 2,000-program diff
+make gate                # at stage boundaries and every engine step: adds the stress suite and the speed check
 ```
 
 Expected: every gate passes; `results.md` gains one line per step; the assembly line count falls.
@@ -23,11 +24,14 @@ Expected: every gate passes; `results.md` gains one line per step; the assembly 
 ```sh
 make                     # native build/vo on x86-64; `file build/vo` says statically linked
 make test                # every golden and step case, natively
-make diff-asm COUNT=10000            # 0 disagreements (SC-002)
-make ARCH=aarch64 test && make ARCH=riscv64 test   # the same suite on the other two, under qemu
+make diff-asm COUNT=10000            # 0 disagreements (SC-002); for each platform and mode:
+python3 tests/diff_asm.py --count 10000 --platform aarch64 --mode float   # modes mixed, float, intedge
+make ARCH=aarch64 && make ARCH=aarch64 test         # the same suite on the other two, under qemu
+make ARCH=riscv64 && make ARCH=riscv64 test         # (a non-host ARCH sets VO_BIN to build-<arch>/vo)
 make instrumented        # ASan + UBSan: 0 reports (SC-005)
-make speed-check         # >= 3x faster than build-asm/vo under qemu, no program slower (SC-003)
-python3 tests/speed.py --baseline build-asm/vo --new build-riscv64/vo   # <= 10% slower (SC-004)
+make speed-check         # SC-003 (tests/speed.py --native: >= 3x faster than build-asm/vo under qemu,
+                         # no program slower) and SC-004
+python3 tests/speed.py --baseline build-asm/vo --new build-riscv64/vo --max-geomean 1.10   # SC-004
 python3 tests/gc/baseline.py         # 703 bench2 reference runs byte-identical
 ```
 
@@ -41,5 +45,5 @@ python3 tests/cross_replay.py --record build-aarch64/vo --replay build/vo   # re
 ## Size (SC-008)
 
 ```sh
-wc -l src/platform/*.S   # each <= 300; no other .s/.S file in src/
+make lint                # includes: each src/platform/*.S at most 300 lines, no other .s/.S file
 ```

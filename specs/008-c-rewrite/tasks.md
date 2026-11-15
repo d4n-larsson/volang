@@ -261,14 +261,14 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
 - `make instrumented` runs the full suite with 0 reports.
 - Introducing an out-of-bounds write in a scratch copy is reported with its function and line.
 
-- [ ] T063 [US5] `make instrumented` in `Makefile` (R9): `build-instrumented/vo` is a hosted x86-64 build of the same sources.
+- [X] T063 [US5] `make instrumented` in `Makefile` (R9): `build-instrumented/vo` is a hosted x86-64 build of the same sources.
   - `-fsanitize=address,undefined`, linked with the system libc for the sanitizer runtimes only.
   - A `main()` in `src/platform/hosted.c` calls `vo_main`.
   - The platform layer stays the same, with the system calls still raw.
   - `ADDR_*` regions move by a build constant above ASan's shadow (`0x1000_0000_0000`).
   - The suite runs under it via `VO_BIN`.
-- [ ] T064 [US5] ASan poisoning hooks in `src/gc.c`, under `#ifdef VO_ASAN`: poison free slots, page tails and swept objects with `__asan_poison_memory_region`, and unpoison on allocation. Then run the full suite under `build-instrumented/vo` and fix every report. Check the detector with a canary (US5 scenario 2): in a scratch copy, make one runtime function write one word past a list's data, run a case that reaches it, and require an ASan report naming that function and line. Record SC-005 and the canary result in `results.md`.
-- [ ] T065 [US5] `make lint` in `Makefile`:
+- [X] T064 [US5] ASan poisoning hooks in `src/gc.c`, under `#ifdef VO_ASAN`: poison free slots, page tails and swept objects with `__asan_poison_memory_region`, and unpoison on allocation. Then run the full suite under `build-instrumented/vo` and fix every report. Check the detector with a canary (US5 scenario 2): in a scratch copy, make one runtime function write one word past a list's data, run a case that reaches it, and require an ASan report naming that function and line. Record SC-005 and the canary result in `results.md`.
+- [X] T065 [US5] `make lint` in `Makefile`:
   - the strict-warning C build for all three architectures, with zero warnings;
   - SESI over `src/platform/riscv64.S`;
   - a check that no `.s`/`.S` file exists outside `src/platform/` and that each platform file is at most 300 lines (FR-005, SC-008).
@@ -279,13 +279,13 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T066 [P] Update the documentation (FR-016):
+- [X] T066 [P] Update the documentation (FR-016):
   - `README.md`: build and run natively; tools; cross builds.
   - `docs/roadmap.md`: "Running natively" is done, and the next specs start from C.
   - Any text that tells users to use qemu, including the language reference's run instructions, if any. The rest of the reference and the error catalog stays unchanged (SC-009), shown by `git diff --stat docs/` and recorded.
-- [ ] T067 [P] Update `specs/008-c-rewrite/contracts/*.md` and `quickstart.md` where the implementation settled details (flags, script options), and check that every quickstart command runs.
+- [X] T067 [P] Update `specs/008-c-rewrite/contracts/*.md` and `quickstart.md` where the implementation settled details (flags, script options), and check that every quickstart command runs.
 - [ ] T068 Run the final full gate on each platform: `make gate` natively, the suites under the ARM64 and RISC-V builds, `make instrumented`, `make diff-asm COUNT=10000` on all three, `tests/cross_replay.py`, the speed checks. Fill the SC-001–SC-009 table in `results.md` with the measured values, and list every deviation (R4 memory figures, if any).
-- [ ] T069 Remove what only the assembly needed: `tests/gc/fault_targets` entries for native-stack scanning, the `RUNTIME` comment in `Makefile`, and `.claude` skill references to writing RV64 assembly for toolchain code (the `sesi-riscv64` skill stays for the platform layer). Update the project memory notes if they name assembly-only workflows.
+- [X] T069 Remove what only the assembly needed: `tests/gc/fault_targets` entries for native-stack scanning, the `RUNTIME` comment in `Makefile`, and `.claude` skill references to writing RV64 assembly for toolchain code (the `sesi-riscv64` skill stays for the platform layer). Update the project memory notes if they name assembly-only workflows.
 
 ---
 

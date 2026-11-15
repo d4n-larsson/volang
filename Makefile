@@ -49,6 +49,10 @@ endif
 C_SRCS   := $(wildcard src/*.c)
 PLATFORM := src/platform/$(ARCH).S
 HEADERS  := src/vo.h src/platform/$(ARCH).h Makefile
+# `make ARCH=<arch> test` (and the other suites) run that build, through qemu (bin/vo).
+ifneq ($(SUFFIX),)
+export VO_BIN ?= $(abspath build$(SUFFIX)/vo)
+endif
 # platform.o first: its vo_data_begin starts .data (the globals the collector scans).
 OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/embedded.o \
 	$(if $(INSTRUMENTED),$(BUILD)/hosted.o)
