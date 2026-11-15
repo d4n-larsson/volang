@@ -33,6 +33,13 @@ CFLAGS += -DGC_FAULT_$(FAULT)=1 -DGC_STRESS_BUILD=1
 else ifdef STRESS
 BUILD := build-stress$(SUFFIX)
 CFLAGS += -DGC_STRESS_BUILD=1
+else ifdef INSTRUMENTED
+# Spec 008 research R9 (T063): a hosted x86-64 build under ASan and UBSan; the C library is linked for
+# the sanitizer runtimes only (src/platform/hosted.c), and the fixed regions move up (ADDR_BASE).
+BUILD := build-instrumented
+CFLAGS := $(filter-out -nostdlib,$(CFLAGS)) -DVO_HOSTED -DVO_ASAN -fsanitize=address,undefined \
+	-fno-sanitize-recover=all -fno-omit-frame-pointer --param asan-globals=0
+PLAT_FLAGS := -DVO_HOSTED
 else ifdef UBTRAP
 # Spec 008 research R9: the C objects trap on undefined behavior and out-of-bounds array access.
 BUILD := build-ubtrap$(SUFFIX)
@@ -43,19 +50,29 @@ C_SRCS   := $(wildcard src/*.c)
 PLATFORM := src/platform/$(ARCH).S
 HEADERS  := src/vo.h src/platform/$(ARCH).h Makefile
 # platform.o first: its vo_data_begin starts .data (the globals the collector scans).
-OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/embedded.o
+OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/embedded.o \
+	$(if $(INSTRUMENTED),$(BUILD)/hosted.o)
 
-.PHONY: all check-tools lint test gc-check oracle baseline asm ubtrap diff-asm gate-step gate speed speed-check prop-eval refactor-eval clean
+.PHONY: all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval clean
 
 all: $(BUILD)/vo
 
 # FR-003: a static binary, no interpreter or shared libraries.
+ifdef INSTRUMENTED
+$(BUILD)/vo: $(OBJS)
+	$(CC) -no-pie -fsanitize=address,undefined -o $@ $(OBJS)
+$(BUILD)/hosted.o: src/platform/hosted.c $(HEADERS) | $(BUILD)
+	$(CC) $(CFLAGS) $(CWARN) -I src -c -o $@ $<
+# The collector reads free slots by design; it keeps ASan's shadow up to date instead (gc.c, VO_ASAN).
+$(BUILD)/gc.o: CFLAGS += -fno-sanitize=address
+else
 $(BUILD)/vo: $(OBJS)
 	$(LD) -static --no-relax -e _start -o $@ $(OBJS) $(LIBGCC)
 	@readelf -d $@ | grep -q "no dynamic section" || { echo "$@ has a dynamic section"; exit 1; }
+endif
 
 $(BUILD)/platform.o: $(PLATFORM) Makefile | $(BUILD)
-	$(CC) $(ARCH_CFLAGS) -g -c -o $@ $<
+	$(CC) $(ARCH_CFLAGS) $(PLAT_FLAGS) -g -c -o $@ $<
 
 $(BUILD)/%.o: src/%.c $(HEADERS) | $(BUILD)
 	$(CC) $(CFLAGS) $(CWARN) -I src -c -o $@ $<
@@ -80,12 +97,22 @@ check-tools:
 	  if [ $$missing = 1 ]; then echo "install: sudo apt install gcc binutils-riscv64-linux-gnu gcc-riscv64-linux-gnu gcc-aarch64-linux-gnu qemu-user python3"; exit 1; fi; \
 	  echo "check-tools: all present"
 
-# Every assembly file must lint clean; deliberate breaks marked `sesi: allow` on their prototype line
-# (jmp_restore, _start: sesi-linter-issues.md #5) are listed as suppressed and do not count.
+# Spec 008 T065 (FR-005, FR-012, SC-008): the strict-warning C build for every architecture; SESI over
+# the RISC-V platform file (the only pack; deliberate breaks marked `sesi: allow` on their prototype
+# line, sesi-linter-issues.md #5, are listed as suppressed and do not count); no assembly outside
+# src/platform/, and at most 300 lines per platform file.
 lint:
-	@fail=0; for f in src/platform/riscv64.S; do out=$$($(SESI) lint $$f . </dev/null 2>&1 | grep -v 'suppressed by sesi: allow'); \
-	  if [ -n "$$out" ]; then echo "$$out"; fail=1; fi; done; \
-	  echo "lint: clean"; exit $$fail
+	@fail=0; out=$$($(SESI) lint src/platform/riscv64.S . </dev/null 2>&1 | grep -v 'suppressed by sesi: allow'); \
+	  if [ -n "$$out" ]; then echo "$$out"; fail=1; fi; \
+	  for a in x86_64 aarch64 riscv64; do $(MAKE) -s --no-print-directory ARCH=$$a lint-c || fail=1; done; \
+	  stray=$$(git ls-files -co --exclude-standard -- '*.s' '*.S' | grep -v '^src/platform/'); \
+	  if [ -n "$$stray" ]; then echo "lint: assembly outside src/platform/: $$stray"; fail=1; fi; \
+	  for f in src/platform/*.S; do n=$$(wc -l < $$f); \
+	    if [ $$n -gt 300 ]; then echo "lint: $$f has $$n lines (at most 300)"; fail=1; fi; done; \
+	  if [ $$fail = 0 ]; then echo "lint: clean (C for x86_64, aarch64 and riscv64; SESI; platform files)"; fi; \
+	  exit $$fail
+lint-c:
+	@for f in $(C_SRCS); do $(CC) $(CFLAGS) $(CWARN) -I src -fsyntax-only $$f || exit 1; done
 
 # The constitution's quality gate: every check that exists so far.
 test: all
@@ -152,6 +179,11 @@ ubtrap:
 	$(MAKE) UBTRAP=1
 	VO_BIN=$(abspath build-ubtrap/vo) tests/run.sh
 
+# Spec 008 research R9 (T063, SC-005): the suite under ASan and UBSan (x86-64 hosts).
+instrumented:
+	$(MAKE) INSTRUMENTED=1
+	VO_BIN=$(abspath build-instrumented/vo) tests/run.sh
+
 # Spec 008 research R12: generated programs against the last assembly release.
 COUNT ?= 2000
 diff-asm: all asm
@@ -180,8 +212,13 @@ gate: gate-step
 speed: all oracle
 	python3 tests/speed.py
 
-speed-check: oracle speed
+# Spec 008 SC-003 (native hosts: build/vo natively at least 3 times faster than build-asm/vo under qemu,
+# no program slower) and SC-004 (the RISC-V build at most 10% slower than build-asm/vo, both under qemu).
+speed-check: oracle speed asm
 	python3 tests/diff_engines.py --count 10000 --seed 1
+	@if [ "$(HOST)" != riscv64 ]; then python3 tests/speed.py --native; fi
+	$(MAKE) -s ARCH=riscv64
+	python3 tests/speed.py --baseline build-asm/vo --new $(RV_BUILD)/vo --max-geomean 1.10
 
 # Spec 006 SC-001/SC-002: checked edits and queries on the refactor tasks' starters.
 refactor-eval: all
@@ -192,4 +229,4 @@ prop-eval: all
 	python3 tests/prop_eval.py
 
 clean:
-	rm -rf build build-stress build-ubtrap build-fault-* build-riscv64 build-*-riscv64 build-aarch64 build-*-aarch64
+	rm -rf build build-stress build-ubtrap build-instrumented build-fault-* build-riscv64 build-*-riscv64 build-aarch64 build-*-aarch64

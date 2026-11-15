@@ -1,6 +1,8 @@
 /* The memory primitives GCC may call even in freestanding code (spec 008 research R3). The toolchain
- * links no C library, so the C side provides them. */
+ * links no C library, so the C side provides them (except in the instrumented build). */
 #include "vo.h"
+
+#ifndef VO_HOSTED /* the instrumented build uses the C library's (which ASan checks) */
 
 void *memcpy(void *dst, const void *src, size_t n)
 {
@@ -36,3 +38,4 @@ int memcmp(const void *a, const void *b, size_t n)
         if (*x != *y) return *x < *y ? -1 : 1;
     return 0;
 }
+#endif

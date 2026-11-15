@@ -1,6 +1,12 @@
 # The x86-64 platform layer (spec 008 research R5, contracts/platform-layer.md): process entry,
 # system calls and non-local exits. Everything else is C (src/sys.c). AT&T syntax, System V ABI.
 
+#ifdef VO_HOSTED
+# The instrumented build (src/platform/hosted.c): the C library provides the entry, and jmp_restore
+# tells ASan about the frames it skips before calling this one.
+#define jmp_restore jmp_restore_raw
+#endif
+
 # Linked first (Makefile), so this label is the start of .data: the collector scans the globals
 # from here to _end (research R4).
     .data
@@ -8,6 +14,7 @@
 vo_data_begin:
 
     .text
+#ifndef VO_HOSTED
 # void _start(void)
 # sys_start maps the native stack and returns its top; vo_main's status goes to vo_exit.
     .globl _start
@@ -24,6 +31,7 @@ _start:
     call vo_exit
 1:
     jmp 1b
+#endif
 
 # long vo_syscall0(long n) ... long vo_syscall6(long n, long a, long b, long c, long d, long e, long f)
 # One body: the kernel ignores the registers a call does not use, and 8(%rsp) is always readable.

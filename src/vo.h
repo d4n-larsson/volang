@@ -43,20 +43,26 @@
 
 /* ---- memory regions at fixed addresses (spec 003 data-model.md) ---- */
 /* All below 2^38, so the map also fits Sv39 RV64 hardware (user space up to 0x3f_ffff_ffff). */
-#define ADDR_HEAP (0x1000000000UL) /* collected heap: 64 KiB pages, up to 64 GiB + headroom */
-#define ADDR_PTAB (0x2100000000UL) /* heap page table: 8 bytes per page */
-#define ADDR_MARKSTACK (0x2200000000UL) /* mark stack, 64 MiB reserved */
+/* The instrumented build (VO_HOSTED, research R9) moves every region above ASan's shadow memory. */
+#ifdef VO_HOSTED
+#define ADDR_BASE 0x100000000000UL
+#else
+#define ADDR_BASE 0UL
+#endif
+#define ADDR_HEAP (ADDR_BASE + 0x1000000000UL) /* collected heap: 64 KiB pages, up to 64 GiB + headroom */
+#define ADDR_PTAB (ADDR_BASE + 0x2100000000UL) /* heap page table: 8 bytes per page */
+#define ADDR_MARKSTACK (ADDR_BASE + 0x2200000000UL) /* mark stack, 64 MiB reserved */
 #define MARKSTACK_SIZE (0x4000000)
-#define ADDR_ROOTS (0x2280000000UL) /* spec 008: root stack of C code (research R4), ROOTS_CAP words */
+#define ADDR_ROOTS (ADDR_BASE + 0x2280000000UL) /* spec 008: root stack of C code (research R4), ROOTS_CAP words */
 #define ROOTS_CAP (0x100000) /* 1 Mi entries (8 MiB) */
 #define ROOTS_HWM_LIMIT (0x20000) /* stress builds: the suite must stay below 1/8 of ROOTS_CAP */
 #define JB_SIZE (216) /* jmp_save buffer: ra, sp, s0-s11, gc_roots_n, fs0-fs11 */
-#define ADDR_VSTACK (0x2300000000UL) /* interpreter value stack, 32 MiB */
+#define ADDR_VSTACK (ADDR_BASE + 0x2300000000UL) /* interpreter value stack, 32 MiB */
 #define VSTACK_SIZE (0x2000000)
-#define ADDR_PERM (0x2400000000UL) /* permanent arena, contiguous 16 MiB chunks */
-#define ADDR_CODE (0x2800000000UL) /* compiled code (spec 004): never scanned by the collector */
+#define ADDR_PERM (ADDR_BASE + 0x2400000000UL) /* permanent arena, contiguous 16 MiB chunks */
+#define ADDR_CODE (ADDR_BASE + 0x2800000000UL) /* compiled code (spec 004): never scanned by the collector */
 #define CODE_SIZE (0x10000000) /* 256 MiB of address space, committed only when touched */
-#define ADDR_STACK (0x3000000000UL) /* native stack, 128 MiB (spec 008 R7: the value stack binds first) */
+#define ADDR_STACK (ADDR_BASE + 0x3000000000UL) /* native stack, 128 MiB (spec 008 R7: the value stack binds first) */
 #define STACK_SIZE (0x8000000)
 #define MAP_FIXED_NOREPLACE (0x100000)
 #define MAP_NORESERVE (0x4000)

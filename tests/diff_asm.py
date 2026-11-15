@@ -5,7 +5,7 @@
               [--mode mixed|float|intedge]
 
 Runs N generated programs (tests/gen_programs.py, seeds S..S+N-1) on build-asm/vo (under qemu) and
-on the build under test (default build/vo; --platform picks build-<arch>/vo), and compares stdout,
+on the build under test (default build/vo; --platform picks build-<arch>/vo, or build/vo for the host), and compares stdout,
 stderr and exit status byte for byte. bin/vo runs each binary natively or under qemu by its
 architecture. Disagreements go to build/diff-failures/asm-<seed>/; exit status 1 if there is any.
 
@@ -87,8 +87,8 @@ def main():
     if not os.path.exists(ASM):
         print("diff_asm: build-asm/vo is missing; run `make asm`")
         return 1
-    new_bin = args.new or (os.path.join(ROOT, f"build-{args.platform}", "vo") if args.platform
-                           else os.path.join(ROOT, "build", "vo"))
+    host = args.platform in (None, os.uname().machine)  # the host build is build/vo
+    new_bin = args.new or os.path.join(ROOT, "build" if host else f"build-{args.platform}", "vo")
     os.makedirs(WORK, exist_ok=True)
     counts = {"ok": 0, "diff": 0, "timeout": 0}
     with cf.ThreadPoolExecutor(os.cpu_count() or 4) as ex:

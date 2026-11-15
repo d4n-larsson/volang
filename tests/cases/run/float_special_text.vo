@@ -1,0 +1,27 @@
+# str of NaN, infinities, signed zero, subnormals and the extremes (spec 008 T060, R13): the same text on
+# every platform, whatever sign or payload the hardware gives a NaN.
+fn main() uses console {
+    let z = 0.0;
+    let nan = z / z;
+    print(str(nan));
+    print(str(-nan));
+    print(str(nan * -1.0));
+    print(str(1.0 / z));
+    print(str(-1.0 / z));
+    print(str(-z));
+    print(str(z * -1.0));
+    var big = 1.0;
+    for _ in 0..308 {
+        set big = big * 10.0;
+    }
+    print(str(big * 1.7976931348623));
+    print(str(big * 10.0));
+    var t = 1.0;
+    for _ in 0..1074 {
+        set t = t / 2.0;
+    }
+    print(str(t));
+    print(str(t / 2.0));
+    print(str(-t / 2.0));
+    print(str(int(big / big)));
+}

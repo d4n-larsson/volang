@@ -81,8 +81,8 @@ void *vm_push(void *cf_, void *decl_, void *call_, long *vals, void *closure_)
     }
     vsp = (long)end;
     for (long *p = (long *)f->slots; p < end; p++) *p = 0;
-    if (vals) {
-        long n = decl->b.v->n;
+    if (vals) { /* a property's values: its FX_PARAMS (a test's N_B is its body, not a vec) */
+        long n = decl->kind == N_TEST ? decl->d.fx->params->n : decl->b.v->n;
         for (long i = 0; i < n; i++) f->slots[i].i = vals[i];
     }
     Frame *caller = (Frame *)cur_frame;

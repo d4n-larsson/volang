@@ -18,6 +18,28 @@
  * programs); a remembered set of perm objects written at run time would avoid it. */
 #include "vo.h"
 
+/* The instrumented build (VO_ASAN, spec 008 T064): this file is compiled without ASan's checks, since
+ * the collector reads free slots and headers, and keeps ASan's shadow up to date instead: an object is
+ * addressable up to its exact size, the rest of its slot and every free slot or page are poisoned. Every
+ * other file is then checked against out-of-bounds and use-after-free accesses to the heap. */
+#ifdef VO_ASAN
+void __asan_poison_memory_region(void const volatile *addr, size_t size);
+void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
+#define ASAN_POISON(p, n) __asan_poison_memory_region((p), (size_t)(n))
+#define ASAN_UNPOISON(p, n) __asan_unpoison_memory_region((p), (size_t)(n))
+#else
+#define ASAN_POISON(p, n) ((void)0)
+#define ASAN_UNPOISON(p, n) ((void)0)
+#endif
+
+/* A new object at p of size bytes (header included) in a block of bytes: the tail is poisoned. */
+static inline void asan_alloc(void *p, unsigned long size, unsigned long bytes)
+{
+    ASAN_UNPOISON(p, size);
+    ASAN_POISON((char *)p + size, bytes - size);
+    (void)p, (void)size, (void)bytes;
+}
+
 typedef struct PageEntry {
     uint8_t kind; /* PG_* */
     uint8_t cls;
@@ -118,6 +140,7 @@ void gc_reset(void)
     poison_range((unsigned long *)ADDR_HEAP, (unsigned long *)PAGE_START(heap_top)); /* stale pointers read poison */
 #endif
     for (unsigned long i = 0; i < heap_top; i++) *(unsigned long *)&PTAB[i] = 0;
+    ASAN_POISON((void *)ADDR_HEAP, PAGE_START(heap_top) - ADDR_HEAP);
     heap_top = 0;
     for (int i = 0; i < NCLASSES * 2; i++) fl_heads[i] = 0;
     page_hint = 0;
@@ -224,6 +247,7 @@ static unsigned long *new_small_page(int cls, int noscan)
         head = (unsigned long *)p;
     } while (p != start);
     fl_heads[cls * 2 + noscan] = head;
+    ASAN_POISON(start, PAGE_SIZE);
     return head;
 }
 
@@ -307,6 +331,7 @@ void *gc_alloc_slow(long size, int kind)
     }
     gc_since += (long)bytes;
     p[0] = (unsigned long)kind << 32 | (unsigned long)size;
+    asan_alloc(p, (unsigned long)size, bytes);
     return p;
 }
 
@@ -328,6 +353,7 @@ void *gc_alloc(long size, int kind)
     *head = (unsigned long *)p[1]; /* pop */
     for (unsigned long *q = p + 1, *end = (unsigned long *)((char *)p + ss); q < end; q++) *q = 0;
     p[0] = (unsigned long)kind << 32 | (unsigned long)size;
+    asan_alloc(p, (unsigned long)size, ss);
     return p;
 #endif
 }
@@ -464,6 +490,7 @@ static void sweep(void)
                 poison_range((unsigned long *)(p + 8), (unsigned long *)(p + ss));
 #endif
                 *(unsigned long *)p = FREE_HDR;
+                ASAN_POISON(p, ss);
             }
             if (!alive) { /* nothing alive: the page is free again */
                 e->kind = PG_FREE;
@@ -493,6 +520,7 @@ static void sweep(void)
             poison_range((unsigned long *)start, (unsigned long *)(start + (run << PAGE_SHIFT)));
 #endif
             for (unsigned long i = 0; i < run; i++) *(unsigned long *)&e[i] = 0; /* free the whole run */
+            ASAN_POISON(start, run << PAGE_SHIFT);
             lowest_free = pg;
         } else if (e->kind == PG_FREE) {
             lowest_free = pg;

@@ -1,0 +1,6 @@
+int_rem_min.vo:13:15: runtime error[R0002]: Division by zero.
+  13 |     print(str(min % 0));
+     |               ^^^^^^^
+trace:
+  at main (int_rem_min.vo:13:15)
+      min: int = -9223372036854775808

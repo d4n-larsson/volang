@@ -229,14 +229,14 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
 - `make diff-asm COUNT=10000` on each platform: 0 disagreements.
 - `tests/cross_replay.py` between every pair: identical output.
 
-- [ ] T056 [P] [US2] `src/platform/aarch64.S` and `src/platform/aarch64.h`: `_start`, `vo_syscall0`–`vo_syscall6` (`svc #0`, `x8`), `jmp_save`/`jmp_restore` (`x19`–`x30`, `sp`, `d8`–`d15`), at most 300 lines. The system-call numbers come from the generic table shared with RISC-V. `make ARCH=aarch64` builds `build-aarch64/vo` with `aarch64-linux-gnu-gcc`.
-- [ ] T057 [US2] Run the suite on `build-aarch64/vo` and `build-riscv64/vo` (`VO_BIN=... make test`, `tests/steps.py`, `tests/gc/baseline.py`) through `bin/vo`'s qemu path. Fix every disagreement, and record SC-001 for both platforms in `results.md`.
-- [ ] T058 [P] [US2] `tests/cross_replay.py` (SC-007):
+- [X] T056 [P] [US2] `src/platform/aarch64.S` and `src/platform/aarch64.h`: `_start`, `vo_syscall0`–`vo_syscall6` (`svc #0`, `x8`), `jmp_save`/`jmp_restore` (`x19`–`x30`, `sp`, `d8`–`d15`), at most 300 lines. The system-call numbers come from the generic table shared with RISC-V. `make ARCH=aarch64` builds `build-aarch64/vo` with `aarch64-linux-gnu-gcc`.
+- [X] T057 [US2] Run the suite on `build-aarch64/vo` and `build-riscv64/vo` (`VO_BIN=... make test`, `tests/steps.py`, `tests/gc/baseline.py`) through `bin/vo`'s qemu path. Fix every disagreement, and record SC-001 for both platforms in `results.md`.
+- [X] T058 [P] [US2] `tests/cross_replay.py` (SC-007):
   - for every replay step case in `tests/cases/replay`, record with `--record BUILD_A` and replay the recording with `--replay BUILD_B`;
   - compare the replay's output with the case's expected output;
   - the default runs all ordered pairs of `build/vo`, `build-aarch64/vo` and `build-riscv64/vo`.
-- [ ] T059 [US2] Run `make diff-asm COUNT=10000` with `--platform x86_64`, `aarch64` and `riscv64`. Expected: 0 disagreements on each. Also add `--mode float` (arithmetic chains over floats: `*`, `/`, `+`, `-` mixed, values near overflow, underflow, `0.0 / 0.0`, `str` of every result) and `--mode intedge` (division and remainder with the minimum integer, -1 and 0 as operands; overflow at both ends) to `tests/gen_programs.py`, and run 10,000 programs of each mode with `--platform` x86_64, aarch64 and riscv64. Expected: 0 disagreements. Record SC-002 in `results.md`.
-- [ ] T060 [US2] Write golden cases only where the cross-platform check found a gap the suite did not cover, for example a NaN-producing expression printed with `str`, or a minimum-integer division. These are new tests of old behavior; their expected output comes from `build-asm/vo`, not from the C build. Record each in `results.md`.
+- [X] T059 [US2] Run `make diff-asm COUNT=10000` with `--platform x86_64`, `aarch64` and `riscv64`. Expected: 0 disagreements on each. Also add `--mode float` (arithmetic chains over floats: `*`, `/`, `+`, `-` mixed, values near overflow, underflow, `0.0 / 0.0`, `str` of every result) and `--mode intedge` (division and remainder with the minimum integer, -1 and 0 as operands; overflow at both ends) to `tests/gen_programs.py`, and run 10,000 programs of each mode with `--platform` x86_64, aarch64 and riscv64. Expected: 0 disagreements. Record SC-002 in `results.md`.
+- [X] T060 [US2] Write golden cases only where the cross-platform check found a gap the suite did not cover, for example a NaN-producing expression printed with `str`, or a minimum-integer division. These are new tests of old behavior; their expected output comes from `build-asm/vo`, not from the C build. Record each in `results.md`.
 
 **Checkpoint:** three platforms, one behavior.
 
@@ -248,8 +248,8 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
 
 **Independent test:** `make speed-check` natively, and `tests/speed.py --baseline build-asm/vo --new build-riscv64/vo`.
 
-- [ ] T061 [US4] `tests/speed.py`: a `--native` mode that times `tests/speed/*.vo` on `build/vo` natively against `build-asm/vo` under qemu on the same machine. It fails if the geometric-mean speedup is below 3.0 or any program is slower (SC-003). `make speed-check` uses it on native hosts.
-- [ ] T062 [US4] Measure SC-003 and SC-004 and record them. If SC-004 fails, profile the RV64 VM under qemu. Try the R6 `switch` dispatch (keeping it if it meets SC-004, which removes the GNU extension), check `-O2` against `-O3`, and inline the hot runtime calls, until it passes. Record each attempt in `results.md`.
+- [X] T061 [US4] `tests/speed.py`: a `--native` mode that times `tests/speed/*.vo` on `build/vo` natively against `build-asm/vo` under qemu on the same machine. It fails if the geometric-mean speedup is below 3.0 or any program is slower (SC-003). `make speed-check` uses it on native hosts.
+- [X] T062 [US4] Measure SC-003 and SC-004 and record them. If SC-004 fails, profile the RV64 VM under qemu. Try the R6 `switch` dispatch (keeping it if it meets SC-004, which removes the GNU extension), check `-O2` against `-O3`, and inline the hot runtime calls, until it passes. Record each attempt in `results.md`.
 
 ---
 

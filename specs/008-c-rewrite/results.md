@@ -4,14 +4,14 @@
 
 | SC | Status |
 |---|---|
-| SC-001 | x86-64: met (441 golden cases, 91 step cases, the reference examples and the catalog; see "Native x86-64"); ARM64 and RISC-V: T057 |
-| SC-002 | open |
-| SC-003 | met on the development machine: native 7.4 times faster than `build-asm/vo` under qemu (geometric mean ratio 0.136), every program faster |
-| SC-004 | open |
+| SC-001 | met on x86-64 (native), ARM64 and RISC-V (qemu): 441 golden cases, 91 step cases, the reference examples and the catalog (see "Native x86-64" and "ARM64 and RISC-V") |
+| SC-002 | met: 10,000 generated programs in each of three modes (mixed, float, intedge) give 0 disagreements with `build-asm/vo` on x86-64, ARM64 and RISC-V (90,000 runs); bench2 703/703 unchanged on all three |
+| SC-003 | met on the development machine: native 7.3 times faster than `build-asm/vo` under qemu (`tests/speed.py --native`: geometric-mean ratio 0.137, limit 0.333), every program faster (worst 0.224) |
+| SC-004 | met: `build-riscv64/vo` under qemu runs the speed benchmark in 0.882 of `build-asm/vo`'s time (geometric mean, limit 1.10; every program faster) |
 | SC-005 | open |
 | SC-006 | met: a fresh checkout builds with `make` in 6.4 s (serial) on the development machine |
-| SC-007 | open |
-| SC-008 | open |
+| SC-007 | met: the 17 replay cases recorded on each of build/vo, build-aarch64/vo and build-riscv64/vo replay identically on the other two (`tests/cross_replay.py`, 6 ordered pairs) |
+| SC-008 | met: hand-written assembly per platform is `src/platform/riscv64.S` 172 lines, `x86_64.S` 83, `aarch64.S` 91 (from about 53,000); no other `.s`/`.S` file is in the tree |
 | SC-009 | open |
 
 ## The oracle
@@ -238,3 +238,51 @@ ARM64 builds. The parser keeps its 5,000-level counter, so E0115 is unchanged.
   would change memory accounting against the assembly release; left open for the maintainer.
 - **SC-003**: `tests/speed.py --baseline build-asm/vo` with native `build/vo`: closures_generics 375 → 38 ms,
   fib 181 → 38, int_loop 407 → 36, list_work 286 → 67, map_count 469 → 60, str_build 621 → 70.
+
+## ARM64 and RISC-V (US2, T056-T058)
+
+- **ARM64 platform layer**: `src/platform/aarch64.S` (91 lines) and `aarch64.h` (the generic call table,
+  shared with RISC-V); `make ARCH=aarch64` builds `build-aarch64/vo` with `-mbranch-protection=none`.
+- **A real portability bug**: `O_DIRECTORY` was taken as the same on every architecture, but on ARM64 it is
+  0x4000 and 0x10000 is `O_DIRECT`. Opening any file "as a directory" then succeeded, so `check` and `test`
+  read every input as an empty directory (206 of 441 cases failed). `O_DIRECTORY` now comes from the
+  platform header; the other flags (`O_RDONLY`, `O_WRONLY|O_CREAT|O_TRUNC`, `AT_FDCWD`, the `MAP_*` bits)
+  are the same on all three.
+- **SC-001 on the qemu builds** (`VO_BIN=build-<arch>/vo make test`): ARM64 and RISC-V both pass everything
+  (441/441, repeat 193/193, every checker and fuzzer, 91 step cases, `gc/baseline.py`, 1,000 programs against
+  the oracle); 5m44s and 5m25s. `tests/steps.py` now always launches `bin/vo`, so foreign builds run through
+  qemu without relying on binfmt_misc.
+- **`timeout_in_sort` again**: under qemu the 32 KiB comparisons let the deadline come 1.1 s late (spec
+  003's bound is 1 s); now 4 KiB prefixes and 524,288 elements: every build stops within 0.26 s.
+- **SC-007** (`tests/cross_replay.py`): `steps.py` runs `vo replay` steps on `VO_REPLAY_BIN`; all 17 replay
+  cases pass for each of the 6 ordered pairs of the three builds. A replay build that cannot replay
+  (`/bin/true`) fails 16 of them, so the swap is real.
+
+## Cross-platform differential runs (US2, T059-T060)
+
+- `tests/gen_programs.py --mode float` (chains of `* / + -` over values near overflow and underflow, with
+  subnormals, `0.0 / 0.0` and infinities now and then; `str` of every result) and `--mode intedge` (`/` and
+  `%` with the minimum integer, -1 and 0, overflow at both ends). `tests/diff_asm.py --mode` runs them;
+  `--platform` maps the host to `build/vo`.
+- `diff_asm.py --count 10000 --seed 1`, each mode on each platform: mixed, float and intedge on x86-64
+  (native), ARM64 and RISC-V (qemu): 0 disagreements and 0 timeouts in all nine runs.
+- bench2: `tests/gc/baseline.py` (in `make test`) reports 703/703 reference runs unchanged on each platform.
+- **New golden cases (T060)**: the generated runs found no disagreement, but two behaviors they exercise had
+  no golden case. Expected output from `build-asm/vo`; all three builds pass.
+  - `run/float_special_text`: `str` of NaN (also negated), both infinities, `-0.0`, the largest double, the
+    smallest subnormal and underflow to `0.0` and `-0.0`.
+  - `run/int_rem_min`: `MIN % -1` is 0 and the other remainders and quotients at the minimum integer, then
+    `MIN % 0` (R0002).
+
+## Speed (US4, T061-T062)
+
+- `tests/speed.py --native` times `tests/speed/*.vo` on `build/vo` (native) against `build-asm/vo` (qemu)
+  on the same machine and fails below a 3.0 geometric-mean speedup or when any program is slower.
+  `make speed-check` runs it on non-RISC-V hosts, then SC-004 (`build-riscv64/vo` against `build-asm/vo`,
+  both under qemu, geometric mean at most 1.10).
+- SC-003: closures_generics 374 → 40 ms, fib 182 → 39, int_loop 404 → 36, list_work 295 → 66, map_count
+  465 → 59, str_build 621 → 72; geometric-mean ratio 0.137 (7.3 times faster).
+- SC-004: closures_generics 386 → 322 ms, fib 180 → 163, int_loop 398 → 332, list_work 308 → 287,
+  map_count 466 → 420, str_build 612 → 546; geometric-mean ratio 0.882. It has held between 0.880 and 0.885
+  in every gate since step 34, so no tuning was needed: the `&&label` dispatch stays (R6's `switch`
+  fallback was not tried), `-O2` stays.

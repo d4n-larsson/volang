@@ -4,13 +4,15 @@
   speed.py           time tests/speed/*.vo on build-oracle/vo (the tree walker), bin/vo and python3
   speed.py --bench2  CPU time of every bench2 reference run, oracle vs new (SC-006)
   speed.py --baseline PATH  each tests/speed program on PATH vs build/vo, alternated runs (spec 005 SC-006)
+  speed.py --native  build/vo natively vs build-asm/vo under qemu on the same machine (spec 008 SC-003)
   --new PATH         time another build as "new" (default build/vo)
 
 Exit status 1 when a target is missed: geometric-mean speedup < 4.0, any program < 2.0,
 int_loop > 1350 ms; or (--bench2) total CPU > +10%, or one run slower by more than max(10%, 5 ms)
 (median of 5 alternated runs, then of 15 for a run still over the limit); or (--baseline) any
 program more than 5% slower than the baseline binary, by the same median rule; with --max-geomean R
-(spec 008 SC-004), only the geometric mean of the per-program ratios must stay at or below R.
+(spec 008 SC-004), only the geometric mean of the per-program ratios must stay at or below R; or
+(--native) a geometric-mean speedup below 3.0, or any program slower than on build-asm/vo.
 """
 import importlib.util
 import math
@@ -25,6 +27,7 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SPEED = os.path.join(ROOT, "tests", "speed")
 ORACLE = os.path.join(ROOT, "build-oracle", "vo")
+ASM = os.path.join(ROOT, "build-asm", "vo")
 NEW = os.path.join(ROOT, "build", "vo")
 VO = os.path.join(ROOT, "bin", "vo")
 RUNS = 5
@@ -131,7 +134,7 @@ def bench2():
     return ok
 
 
-def baseline(base, max_geo=None):
+def baseline(base, max_geo=None, max_one=None):
     ok = True
     ratios = []
     print(f"{'program':20} {'base ms':>8} {'new ms':>8} {'ratio':>6}")
@@ -146,12 +149,15 @@ def baseline(base, max_geo=None):
                 break
         print(f"{n:20} {a:8.0f} {b:8.0f} {b / a:6.3f}")
         ratios.append(b / a)
+        if max_one is not None and b / a > max_one:
+            print(f"  FAIL {n}: {b / a:.3f}x the baseline")
+            ok = False
         if max_geo is None and b > a * 1.05:
             print(f"  FAIL {n}: {b / a:.3f}x the baseline")
             ok = False
     if max_geo is not None:
         geo = math.exp(sum(math.log(r) for r in ratios) / len(ratios))
-        print(f"geometric-mean ratio {geo:.3f} (limit {max_geo})")
+        print(f"geometric-mean ratio {geo:.3f} (limit {max_geo:.3f}), speedup {1 / geo:.2f}x")
         if geo > max_geo:
             print("  FAIL geometric-mean ratio over the limit")
             ok = False
@@ -162,6 +168,11 @@ def main():
     global NEW
     if "--new" in sys.argv:
         NEW = os.path.abspath(sys.argv[sys.argv.index("--new") + 1])
+    if "--native" in sys.argv:
+        if not os.path.exists(ASM):
+            print("speed: build-asm/vo is missing; run `make asm`")
+            return 1
+        return 0 if baseline(ASM, 1 / 3.0, max_one=1.0) else 1
     if "--baseline" in sys.argv:
         base = os.path.abspath(sys.argv[sys.argv.index("--baseline") + 1])
         if not os.path.exists(base):
