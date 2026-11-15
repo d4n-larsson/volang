@@ -1,0 +1,14 @@
+[
+  {"date": "2026-01-03", "category": "groceries", "cents": 4520, "note": "weekly shop"},
+  {"date": "2026-01-05", "category": "transport", "cents": 3200, "note": "monthly pass"},
+  {"date": "2026-01-11", "category": "groceries", "cents": 3875, "note": "weekly shop"},
+  {"date": "2026-01-19", "category": "eating out", "cents": 2450, "note": "lunch with ana"},
+  {"date": "2026-01-28", "category": "home", "cents": 12900, "note": "desk lamp, shelves"},
+  {"date": "2026-02-02", "category": "groceries", "cents": 4105, "note": "weekly shop"},
+  {"date": "2026-02-05", "category": "transport", "cents": 3200, "note": "monthly pass"},
+  {"date": "2026-02-14", "category": "eating out", "cents": 6800, "note": "dinner"},
+  {"date": "2026-02-21", "category": "groceries", "cents": 3990, "note": "weekly shop"},
+  {"date": "2026-03-01", "category": "books", "cents": 2399, "note": "a book about compilers"},
+  {"date": "2026-03-05", "category": "transport", "cents": 3200, "note": "monthly pass"},
+  {"date": "2026-03-07", "category": "groceries", "cents": 4650, "note": "weekly shop"}
+]
