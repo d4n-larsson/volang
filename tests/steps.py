@@ -5,7 +5,7 @@ A step case is a folder under tests/cases/ that contains a file named `steps` (t
 such folders). Everything in the folder except `expected/` is copied to a temporary directory, and
 each line of `steps` runs there, in order:
 
-  vo ARGS... [< FILE]          run $VO_BIN (default bin/vo) with stdin from FILE (default: empty)
+  vo ARGS... [< FILE]          run bin/vo ($VO_BIN, natively or under qemu) with stdin from FILE (default: empty)
   env NAME=VALUE ... vo ARGS... the same, with extra environment variables
   unset NAME ... vo ARGS...     the same, without those variables
   rm PATH | cp A B | write PATH TEXT (TEXT with \\n escapes) | chmod MODE PATH
@@ -16,7 +16,8 @@ each line of `steps` runs there, in order:
 No shell is involved; arguments are split on spaces ("quoted words" may hold spaces).
 Afterwards every file in expected/ except `out` must exist with identical bytes, and expected/out
 must equal, for each `vo` step: `$ LINE`, its stdout, `--- stderr`, its stderr, `--- exit N`.
-Timings (`12ms)`, `"ms":12`) are masked as in run.sh.
+Timings (`12ms)`, `"ms":12`) are masked as in run.sh. With VO_REPLAY_BIN set, `vo replay` steps run
+that build instead (tests/cross_replay.py).
 
   steps.py [--accept] [--repeat N] [PATH...]
 """
@@ -29,7 +30,7 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-VO = os.environ.get("VO_BIN") or os.path.join(ROOT, "bin", "vo")
+VO = os.path.join(ROOT, "bin", "vo")  # runs $VO_BIN (default build/vo) natively or under qemu
 
 
 def mask(b):
@@ -99,6 +100,8 @@ def run_case(case):
             if hide:
                 words[0] = "vo"
             assert words[0] == "vo", f"{case}: unknown step {line!r}"
+            if words[1:2] == ["replay"] and os.environ.get("VO_REPLAY_BIN"):
+                env["VO_BIN"] = os.environ["VO_REPLAY_BIN"]  # tests/cross_replay.py: another build replays
             stdin = b""
             if len(words) >= 2 and words[-2] == "<":
                 stdin = open(os.path.join(work, words[-1]), "rb").read()

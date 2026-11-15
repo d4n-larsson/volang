@@ -1,14 +1,14 @@
-# --timeout stops a long sort inside the builtin (spec 003 US4). 65,536 references to eight strings
-# that share a 32 KiB prefix: setup is instant on every platform, and the sort's comparisons take
-# about 12 s natively (spec 008), so the 4 s limit always falls inside the sort.
+# --timeout stops a long sort inside the builtin (spec 003 US4). 524,288 references to eight strings
+# that share a 4 KiB prefix: setup is instant on every platform, the sort takes about 15 s natively
+# (spec 008), and short comparisons keep the deadline checks frequent under qemu.
 fn main() uses console {
     var p = "k";
-    for _ in 0..15 {
+    for _ in 0..12 {
         set p = p + p;
     }
     let words = [p + "9", p + "3", p + "7", p + "1", p + "5", p + "8", p + "2", p + "6"];
     let xs = new list[str];
-    for i in 0..65536 {
+    for i in 0..524288 {
         push(xs, words[i % 8]);
     }
     sort(xs);

@@ -23,11 +23,11 @@
 #define EXIT_TIMEOUT (124)
 #define EXIT_INTERNAL (125)
 
-/* ---- Linux flags (the same on every architecture; call numbers: src/platform/<arch>.h) ---- */
+/* ---- Linux flags shared by x86-64, ARM64 and RISC-V (call numbers and O_DIRECTORY, which differs
+   on ARM64: src/platform/<arch>.h) ---- */
 #define AT_FDCWD (-100)
 #define O_RDONLY (0)
 #define O_WRCREAT (0x241) /* O_WRONLY | O_CREAT | O_TRUNC */
-#define O_DIRECTORY (0x10000)
 
 /* ---- heap objects: header size:u32 | kind:u32 ---- */
 #define OBJ_STR (1)
@@ -637,6 +637,8 @@
 #include "platform/x86_64.h"
 #elif defined(__riscv)
 #include "platform/riscv64.h"
+#elif defined(__aarch64__)
+#include "platform/aarch64.h"
 #else
 #error "no platform layer for this architecture (src/platform/)"
 #endif

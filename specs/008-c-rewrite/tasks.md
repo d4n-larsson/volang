@@ -204,7 +204,7 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
 
 **Independent test:** on x86-64 Linux, run `git clean -xdf && make && make test` with no qemu involved for `build/vo`. Everything passes.
 
-- [ ] T051 [US1] `src/platform/x86_64.S` and `src/platform/x86_64.h` (contracts/platform-layer.md):
+- [X] T051 [US1] `src/platform/x86_64.S` and `src/platform/x86_64.h` (contracts/platform-layer.md):
   - `_start` maps `ADDR_STACK` and switches `rsp`;
   - `vo_syscall0`–`vo_syscall6` (`syscall`, with `r10` for the fourth argument);
   - `jmp_save`/`jmp_restore` (`rbx`, `rbp`, `r12`–`r15`, `rsp`, the return address);
@@ -212,10 +212,10 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
   - at most 300 lines.
   
   System-call numbers come from the x86-64 table, restricted to the calls listed in research R5.
-- [ ] T052 [US1] `Makefile`: `ARCH` defaults to the host (`uname -m`). `CC`, flags and platform file are chosen per architecture: native `gcc` on x86-64, without the RV64 flags. `build/vo` is the host build. `make ARCH=riscv64` keeps the current cross build as `build-riscv64/vo`. Check that `readelf -d build/vo` shows no dynamic section (FR-003).
-- [ ] T053 [US1] `bin/vo`: reads the ELF machine field of `${VO_BIN:-build/vo}` and runs it directly when it matches the host, otherwise through `qemu-riscv64` or `qemu-aarch64` (contracts/build.md). Check that `make test`, `tests/steps.py` and every tool that launches `bin/vo` work for both kinds.
-- [ ] T054 [US1] Run the full suite natively (`make test`, `make gc-check` natively, `tests/gc/baseline.py`), and fix every disagreement. Expect the x86-64-only trap cases (division, R13) and the NaN sign (R13). Record the results in `results.md` (SC-001 for x86-64).
-- [ ] T055 [US1] Time a clean native build: `git clean -xdf && time make` must be under 1 minute (SC-006). Record it. If it is over, add parallel build support (`make -j`) and record that.
+- [X] T052 [US1] `Makefile`: `ARCH` defaults to the host (`uname -m`). `CC`, flags and platform file are chosen per architecture: native `gcc` on x86-64, without the RV64 flags. `build/vo` is the host build. `make ARCH=riscv64` keeps the current cross build as `build-riscv64/vo`. Check that `readelf -d build/vo` shows no dynamic section (FR-003).
+- [X] T053 [US1] `bin/vo`: reads the ELF machine field of `${VO_BIN:-build/vo}` and runs it directly when it matches the host, otherwise through `qemu-riscv64` or `qemu-aarch64` (contracts/build.md). Check that `make test`, `tests/steps.py` and every tool that launches `bin/vo` work for both kinds.
+- [X] T054 [US1] Run the full suite natively (`make test`, `make gc-check` natively, `tests/gc/baseline.py`), and fix every disagreement. Expect the x86-64-only trap cases (division, R13) and the NaN sign (R13). Record the results in `results.md` (SC-001 for x86-64).
+- [X] T055 [US1] Time a clean native build: `git clean -xdf && time make` must be under 1 minute (SC-006). Record it. If it is over, add parallel build support (`make -j`) and record that.
 
 **Checkpoint:** `vo` is native on x86-64 (the MVP of this spec).
 

@@ -2,6 +2,7 @@
 """Differential test of the C port against the last assembly release (spec 008 research R12, FR-007).
 
   diff_asm.py --count N --seed S [--new PATH] [--platform x86_64|aarch64|riscv64] [--mutants M]
+              [--mode mixed|float|intedge]
 
 Runs N generated programs (tests/gen_programs.py, seeds S..S+N-1) on build-asm/vo (under qemu) and
 on the build under test (default build/vo; --platform picks build-<arch>/vo), and compares stdout,
@@ -36,8 +37,8 @@ def run(binary, path):
     return r.stdout, r.stderr.replace(os.path.dirname(path).encode() + b"/", b""), r.returncode
 
 
-def one(seed, new_bin):
-    src = gen_programs.generate(seed)
+def one(seed, new_bin, mode):
+    src = gen_programs.generate(seed, mode)
     path = os.path.join(WORK, f"p{seed}.vo")
     open(path, "w").write(src)
     a, b = run(ASM, path), run(new_bin, path)
@@ -81,6 +82,7 @@ def main():
     ap.add_argument("--new", default=None)
     ap.add_argument("--platform", choices=["x86_64", "aarch64", "riscv64"], default=None)
     ap.add_argument("--mutants", type=int, default=0)
+    ap.add_argument("--mode", choices=["mixed", "float", "intedge"], default="mixed")
     args = ap.parse_args()
     if not os.path.exists(ASM):
         print("diff_asm: build-asm/vo is missing; run `make asm`")
@@ -90,12 +92,12 @@ def main():
     os.makedirs(WORK, exist_ok=True)
     counts = {"ok": 0, "diff": 0, "timeout": 0}
     with cf.ThreadPoolExecutor(os.cpu_count() or 4) as ex:
-        futs = [ex.submit(one, s, new_bin) for s in range(args.seed, args.seed + args.count)]
+        futs = [ex.submit(one, s, new_bin, args.mode) for s in range(args.seed, args.seed + args.count)]
         for f in cf.as_completed(futs):
             kind, seed, src, a, b = f.result()
             counts[kind] += 1
             if kind != "ok":
-                d = os.path.join(FAILS, f"asm-{seed}-{kind}")
+                d = os.path.join(FAILS, f"asm-{args.mode}-{seed}-{kind}")
                 os.makedirs(d, exist_ok=True)
                 open(os.path.join(d, "p.vo"), "w").write(src)
                 for tag, (out, err, code) in (("asm", a), ("new", b)):
@@ -120,7 +122,7 @@ def main():
                         open(os.path.join(d, tag + ".err"), "wb").write(err + f"\nexit {code}\n".encode())
                     if mdiff <= 5:
                         print(f"DIFF mutant {i}: see {d}")
-    print(f"diff_asm: {args.count} programs, {counts['diff']} disagreements, {counts['timeout']} timed out"
+    print(f"diff_asm: {args.count} programs ({args.mode}), {counts['diff']} disagreements, {counts['timeout']} timed out"
           + (f"; {args.mutants} mutated sources, {mdiff} disagreements" if args.mutants else "")
           + f" ({os.path.relpath(new_bin, ROOT)} vs build-asm/vo)")
     return 1 if counts["diff"] or counts["timeout"] or mdiff else 0

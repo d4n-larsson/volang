@@ -17,4 +17,6 @@
 #define SYS_renameat2 316
 #define SYS_statx 332
 
+#define O_DIRECTORY 0x10000
+
 #endif

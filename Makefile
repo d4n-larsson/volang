@@ -7,8 +7,10 @@ ifeq ($(ARCH),riscv64)
 ARCH_CFLAGS := -march=rv64imafd -mabi=lp64d -mcmodel=medany -mno-relax -msmall-data-limit=0
 else ifeq ($(ARCH),x86_64)
 ARCH_CFLAGS := -fcf-protection=none
+else ifeq ($(ARCH),aarch64)
+ARCH_CFLAGS := -mbranch-protection=none
 else
-$(error unsupported ARCH=$(ARCH): riscv64 or x86_64)
+$(error unsupported ARCH=$(ARCH): riscv64, x86_64 or aarch64)
 endif
 CROSS   := $(if $(filter $(ARCH),$(HOST)),,$(ARCH)-linux-gnu-)
 SUFFIX  := $(if $(filter $(ARCH),$(HOST)),,-$(ARCH))
@@ -190,4 +192,4 @@ prop-eval: all
 	python3 tests/prop_eval.py
 
 clean:
-	rm -rf build build-stress build-ubtrap build-fault-* build-riscv64 build-*-riscv64
+	rm -rf build build-stress build-ubtrap build-fault-* build-riscv64 build-*-riscv64 build-aarch64 build-*-aarch64

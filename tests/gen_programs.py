@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Seeded generator of type-correct vo programs (spec 004, research R13, FR-015).
 
-  gen_programs.py --seed S     print one program
+  gen_programs.py --seed S [--mode mixed|float|intedge]     print one program
 
 generate(seed) -> str is used by tests/diff_engines.py. Programs print as they go, so any difference
 in execution shows up in stdout. About one in ten stops on a runtime error on purpose (division by a
@@ -527,10 +527,65 @@ class Gen:
         return PRELUDE + "\nfn get_or(m: map[str, int], k: str) -> int {\n    if has(m, k) {\n        return m[k];\n    }\n    return -1;\n}\n\n" + "\n".join(self.lines) + "\n"
 
 
-def generate(seed):
-    return Gen(seed).program()
+FLOAT_PRELUDE = """fn up(k: int) -> float {
+    var r = 1.0;
+    for _ in 0..k {
+        set r = r * 10.0;
+    }
+    return r;
+}
+
+fn down(k: int) -> float {
+    var r = 1.0;
+    for _ in 0..k {
+        set r = r / 10.0;
+    }
+    return r;
+}
+
+"""
+
+
+def gen_float(seed):
+    """Spec 008 T059 --mode float: chains of * / + - over floats near overflow and underflow, with
+    0.0 / 0.0, infinities and subnormals; str of every result."""
+    r = random.Random(seed)
+    lines = ["fn main() uses console {", "    let z = 0.0;",
+             f"    let big = up({r.randrange(150, 300)});", "    let huge = up(308);",
+             f"    let tiny = down({r.randrange(150, 300)});", f"    let sub = down({r.randrange(308, 324)});"]
+    pool = ["big", "huge", "tiny", "sub", "1.5", "(-2.25)", "0.1", "3.0", "1000000.0", "(1.0 / 3.0)"]
+    special = ["z", "(z / z)", "(1.0 / z)", "(-1.0 / z)"]  # zero, NaN and infinities, now and then
+
+    def operand():
+        return r.choice(special) if r.random() < 0.08 else r.choice(pool)
+    for i in range(r.randrange(15, 40)):
+        e = f"{operand()} {r.choice('*/+-')} {operand()}"
+        if r.random() < 0.4:
+            e = f"({e}) {r.choice('*/+-')} {operand()}"
+        lines += [f"    let f{i} = {e};", f"    print(str(f{i}));"]
+        pool.append(f"f{i}")
+    return FLOAT_PRELUDE + "\n".join(lines) + "\n}\n"
+
+
+def gen_intedge(seed):
+    """Spec 008 T059 --mode intedge: / and % with the minimum integer, -1 and 0 as operands, and
+    overflow at both ends (each program stops at its first runtime error)."""
+    r = random.Random(seed)
+    lines = ["fn main() uses console {", "    let mn = -9223372036854775807 - 1;", "    let mx = 9223372036854775807;"]
+    pool = ["mn", "mx", "(-1)", "0", "1", "2", "(-2)", "(mx - 1)", "(mn + 1)", str(r.randrange(-1000, 1000)),
+            str(r.randrange(-2**62, 2**62))]
+    for i in range(r.randrange(2, 9)):
+        op = r.choice(["/", "%", "/", "%", "+", "-", "*"])
+        lines += [f"    let i{i} = {r.choice(pool)} {op} {r.choice(pool)};", f"    print(str(i{i}));"]
+        pool.append(f"i{i}")
+    return "\n".join(lines) + "\n}\n"
+
+
+def generate(seed, mode="mixed"):
+    return {"mixed": lambda s: Gen(s).program(), "float": gen_float, "intedge": gen_intedge}[mode](seed)
 
 
 if __name__ == "__main__":
     seed = int(sys.argv[sys.argv.index("--seed") + 1]) if "--seed" in sys.argv else 1
-    sys.stdout.write(generate(seed))
+    mode = sys.argv[sys.argv.index("--mode") + 1] if "--mode" in sys.argv else "mixed"
+    sys.stdout.write(generate(seed, mode))

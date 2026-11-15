@@ -4,12 +4,12 @@
 
 | SC | Status |
 |---|---|
-| SC-001 | open |
+| SC-001 | x86-64: met (441 golden cases, 91 step cases, the reference examples and the catalog; see "Native x86-64"); ARM64 and RISC-V: T057 |
 | SC-002 | open |
-| SC-003 | open |
+| SC-003 | met on the development machine: native 7.4 times faster than `build-asm/vo` under qemu (geometric mean ratio 0.136), every program faster |
 | SC-004 | open |
 | SC-005 | open |
-| SC-006 | open |
+| SC-006 | met: a fresh checkout builds with `make` in 6.4 s (serial) on the development machine |
 | SC-007 | open |
 | SC-008 | open |
 | SC-009 | open |
@@ -202,3 +202,39 @@ ARM64 builds. The parser keeps its 5,000-level counter, so E0115 is unchanged.
   recorded step's commit" is not possible; each gate instead ran on a snapshot of the tree at that step
   (`gate-pNN`), and the final tree (step 37) passed the full gate and 10,000 generated programs. The
   toolchain is C plus `src/platform/riscv64.S` (166 lines) and `src/platform/riscv64.h`.
+
+## Native x86-64 (US1, T051-T055)
+
+- **Platform layer**: `src/platform/x86_64.S` (83 lines) and `x86_64.h` (the x86-64 call numbers of R5).
+  The seven `vo_syscallN` share one body (the kernel ignores unused argument registers). Both platform
+  files now define `vo_data_begin`, the start of `.data`, linked first: only RISC-V's linker script has
+  `__DATA_BEGIN__`, which the collector used as the start of the globals.
+- **Build**: `ARCH` defaults to `uname -m`; `build/vo` is the host build, a static ELF (`readelf -d` is
+  checked on every link). `make ARCH=riscv64` builds `build-riscv64/vo`. `make gate`'s speed check now
+  times `build-riscv64/vo` against `build-asm/vo`, both under qemu (SC-004 compares like with like).
+- **`bin/vo`** reads the ELF machine field and runs the binary directly or through `qemu-riscv64` /
+  `qemu-aarch64`.
+- **Suite, natively**: `make test` passes (441/441, the repeat runs, every checker and fuzzer, 91 step
+  cases, 1,000 programs against the oracle), `make ubtrap` 441/441, `make gc-check` passes (stress
+  441/441, bench2 703/703, 3,000 fuzz iterations, every fault kind caught, 1,000 programs under stress).
+  `make test` takes 3m43s and `gc-check` 6m27s natively. No x86-64-specific disagreement appeared: the
+  division traps and NaN signs of R13 are handled explicitly in C.
+- **Timing cases reworked**: the four `run/timeout_in_*` cases whose work ran shorter than their limit
+  natively (sort, equality, render, collection) now spend under 0.1 s in setup even under qemu and 3 to 10
+  times their limit in the builtin natively: sort orders 524,288 references to strings with a 4 KiB common
+  prefix (a 32 KiB prefix first: under qemu the deadline, checked every 65,536 comparisons, then came 1.1 s
+  late, past spec 003's 1 s bound); equality
+  compares 20,000 list pairs; render prints 26 million floats under `--max-memory 2048`; collection runs
+  200 rounds under `--max-memory 2048`. Expected output recorded with `build-asm/vo`; all three builds
+  pass. `tests/gc/timeout_check.py` now runs each case with its own `.cmd` options (the time limit forced
+  to 2 s).
+- **Memory parity check**: the collection workload run without a limit runs out of memory at round 60 on
+  both `build/vo` (native) and `build-asm/vo`, with byte-identical reports.
+- **US1's independent test** (fresh checkout of `ae1973e`, `make && make test`, native): builds in 6.4 s;
+  everything passes except `cli/mem_stats_test`, whose figures depend on the length of the checkout's
+  absolute path (the toolchain keeps the working directory on the heap during a test). That is not a
+  native difference: `build-asm/vo` gives the same figures at that path (1,167,024 bytes for "maps fail"),
+  and at the repository's own path both match the recorded output. Making the figures path-independent
+  would change memory accounting against the assembly release; left open for the maintainer.
+- **SC-003**: `tests/speed.py --baseline build-asm/vo` with native `build/vo`: closures_generics 375 → 38 ms,
+  fib 181 → 38, int_loop 407 → 36, list_work 286 → 67, map_count 469 → 60, str_build 621 → 70.

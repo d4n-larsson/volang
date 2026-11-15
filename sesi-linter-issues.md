@@ -397,7 +397,8 @@ callee has a prototype comment in the calling file (see its Resolution).
   run the riscv64 pack on it, the only enabled pack whose extensions include `.S`: 44 reports, every
   `mov`, `lea`, `jmp` and `syscall` as `unknown_instruction` and `falls_off_end` on `_start`'s final
   `jmp 1b` and on `jmp_restore`'s `jmp *0(%rdi)`. Nothing in the file is RISC-V. The same will happen
-  for `src/platform/aarch64.S` (T056).
+  for `src/platform/aarch64.S` (T056). Confirmed there: 48 reports, and the RISC-V reading also takes
+  ARM64's `#` immediates for comments (`mov x29, #0` is shown as `mov x29,`).
 - **Suggested fix**: let a pack decline a file that is not its architecture: for example a path or
   content guard in `pack.pl` (the riscv packs would accept `*riscv*` paths, or a first instruction
   they know), or a `# sesi: pack none` / `# sesi: arch x86_64` file header that the hook honours.
