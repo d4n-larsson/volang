@@ -4,7 +4,7 @@
 
 | SC | Status |
 |---|---|
-| SC-001 | met on x86-64 (native), ARM64 and RISC-V (qemu): 441 golden cases, 91 step cases, the reference examples and the catalog (see "Native x86-64" and "ARM64 and RISC-V") |
+| SC-001 | met on x86-64 (native), ARM64 and RISC-V (qemu): 443 golden cases, 91 step cases, the reference examples and the catalog (see "Native x86-64" and "ARM64 and RISC-V") |
 | SC-002 | met: 10,000 generated programs in each of three modes (mixed, float, intedge) give 0 disagreements with `build-asm/vo` on x86-64, ARM64 and RISC-V (90,000 runs); bench2 703/703 unchanged on all three |
 | SC-003 | met on the development machine: native 7.3 times faster than `build-asm/vo` under qemu (`tests/speed.py --native`: geometric-mean ratio 0.137, limit 0.333), every program faster (worst 0.224) |
 | SC-004 | met: `build-riscv64/vo` under qemu runs the speed benchmark in 0.882 of `build-asm/vo`'s time (geometric mean, limit 1.10; every program faster) |
@@ -333,3 +333,44 @@ ARM64 builds. The parser keeps its 5,000-level counter, so E0115 is unchanged.
   `gc_spill_registers`, `stack_scrub`, the `RUNTIME` link order and the qemu page pins are gone; no project
   skill or memory note describes writing toolchain assembly (the `sesi-riscv64` skill stays for
   `src/platform/riscv64.S`).
+
+## Final gate (T068)
+
+Run on the development machine (x86-64 Linux, 12 cores), one step at a time, at commit `cffb467` plus
+nothing:
+
+| Step | Result | Time |
+|---|---|---|
+| `make check-tools` | all present | 0 s |
+| builds (native, ARM64, RISC-V, instrumented) | all built, static ELF checked | 33 s |
+| `make gate` (native) | passed: lint; 443/443, repeat 195/195, every checker and fuzzer, 91 + 35 step cases, 1,000 programs vs the oracle; ubtrap 443/443; 2,000 programs and 2,000 mutants vs `build-asm/vo`, 0 disagreements; gc-check (stress 443/443, bench2 703/703, every fault kind caught, 1,000 programs under stress); speed 0.893 | 704 s |
+| `make ARCH=aarch64 test` (qemu) | passed (443/443, 195/195, every checker, 91 + 35 step cases, bench2 703/703, 1,000 programs vs the oracle) | 351 s |
+| `make ARCH=riscv64 test` (qemu) | passed (the same) | 328 s |
+| `make instrumented` | 443/443, 0 ASan or UBSan reports | 79 s |
+| `diff_asm.py --count 10000` on x86-64, ARM64, RISC-V | 0 disagreements, 0 timeouts on each | 60, 110, 103 s |
+| `tests/cross_replay.py` | 6 ordered pairs, all identical | 16 s |
+| `make speed-check` | spec 004 targets (31.7 times the tree walker); 10,000 programs vs the oracle, 0 disagreements; SC-003 7.32 times (ratio 0.137); SC-004 0.892 | 152 s |
+
+## Deviations (final list)
+
+- **Memory figures (R4)**: none changed. Every exact-byte case and all 703 bench2 runs match `build-asm/vo` on
+  all three platforms, and an out-of-memory point (round 60 of an unbounded workload) matches byte for byte.
+- **Behavior fixes beyond a strict port**, each shown not to change any golden output or memory figure:
+  - the jump buffer saves the floating-point callee-saved registers too (RISC-V `fs0`-`fs11`, ARM64
+    `d8`-`d15`);
+  - `vm_push` takes a property's argument count from its parameters (`FX_PARAMS`), not from its body node,
+    which read past the argument list (found by ASan; `build-asm/vo` has the same bug).
+- **Platform details**: `O_DIRECTORY` comes from the platform header (0x4000 on ARM64); `statx` replaces
+  `fstat` (R5); `vo_data_begin` replaces RISC-V's `__DATA_BEGIN__`; the native stack is 128 MiB (R7).
+- **Test changes**: the four `run/timeout_in_*` cases whose work finished inside the limit natively were
+  rebuilt so the limit falls inside the builtin on every platform (expected output from `build-asm/vo`);
+  `tests/gc/timeout_check.py` runs each case with its own options; six `run/reentry_*` cases skip the stress
+  run; the NATSTACK fault kind became ROOTS; two golden cases were added (T060).
+- **Gates**: `make gate-step` after every step of stages 1-5 and the full `make gate` at stage boundaries and
+  every engine step, instead of the full gate after every step (see "Deviations" above).
+- **Open for the maintainer**: `cli/mem_stats_test`'s figures depend on the length of the checkout's
+  absolute path, on every build including `build-asm/vo` (the working directory is on the heap during a test),
+  so it fails in a checkout at a path of another length. Making the figures path-independent would change
+  memory accounting against the assembly release.
+- **Not committed per step**: the 37 migration steps were gated on snapshots of the working tree, not on
+  commits (US3's independent test, step 37).

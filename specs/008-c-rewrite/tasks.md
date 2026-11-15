@@ -284,7 +284,7 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
   - `docs/roadmap.md`: "Running natively" is done, and the next specs start from C.
   - Any text that tells users to use qemu, including the language reference's run instructions, if any. The rest of the reference and the error catalog stays unchanged (SC-009), shown by `git diff --stat docs/` and recorded.
 - [X] T067 [P] Update `specs/008-c-rewrite/contracts/*.md` and `quickstart.md` where the implementation settled details (flags, script options), and check that every quickstart command runs.
-- [ ] T068 Run the final full gate on each platform: `make gate` natively, the suites under the ARM64 and RISC-V builds, `make instrumented`, `make diff-asm COUNT=10000` on all three, `tests/cross_replay.py`, the speed checks. Fill the SC-001–SC-009 table in `results.md` with the measured values, and list every deviation (R4 memory figures, if any).
+- [X] T068 Run the final full gate on each platform: `make gate` natively, the suites under the ARM64 and RISC-V builds, `make instrumented`, `make diff-asm COUNT=10000` on all three, `tests/cross_replay.py`, the speed checks. Fill the SC-001–SC-009 table in `results.md` with the measured values, and list every deviation (R4 memory figures, if any).
 - [X] T069 Remove what only the assembly needed: `tests/gc/fault_targets` entries for native-stack scanning, the `RUNTIME` comment in `Makefile`, and `.claude` skill references to writing RV64 assembly for toolchain code (the `sesi-riscv64` skill stays for the platform layer). Update the project memory notes if they name assembly-only workflows.
 
 ---
