@@ -1,0 +1,14 @@
+# app: a file header, kept apart from the first item.
+# Second header line.
+
+
+# Doc for helper.
+fn helper() -> int {
+    return 1;
+}
+# Section: the rest.
+
+# Doc for main.
+fn main() {
+    print(helper());
+}

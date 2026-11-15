@@ -12,6 +12,7 @@ fn main() {
 }
 
 # Between items.
+
 record R {
     # Field comment.
     x: int;

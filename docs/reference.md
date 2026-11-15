@@ -1114,7 +1114,7 @@ Exit statuses:
 | 124 | timeout (R0009) |
 | 125 | internal error in vo (T0003) |
 
-Canonical formatting, as produced by `vo fmt`: 4-space indent, `{` on the same line, one statement per line, no blank lines inside blocks, one blank line between items, single spaces around binary operators and after `,` and `:`, and parentheses only where needed.
+Canonical formatting, as produced by `vo fmt`: 4-space indent, `{` on the same line, one statement per line, no blank lines inside blocks, one blank line between items (none after a comment unless the source has one: a comment right above an item is its documentation), single spaces around binary operators and after `,` and `:`, and parentheses only where needed.
 
 ```vo-fmt
 fn main() uses console{

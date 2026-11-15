@@ -610,8 +610,23 @@ static void sort_imports(Vec *v, long from)
     }
 }
 
+/* 1 when the line after the comment's line is blank in the source (the comment is not attached to
+ * what follows it: a file header or a section comment, kept apart so `vo doc` does not read it). */
+static long blank_after(Node *c)
+{
+    char *p = fm_text + c->end;
+    while (*p && *p != '\n')
+        p++;
+    if (!*p) return 0;
+    p++;
+    while (*p == ' ' || *p == '\t' || *p == '\r')
+        p++;
+    return *p == '\n';
+}
+
 /* The canonical text of a parsed file: leading comments, sorted imports, then the other items in
- * order; one blank line between items, none after a comment or between imports. */
+ * order; one blank line between items, none between imports, and none after a comment unless the
+ * source had one there. */
 Str *fmt_file(int file)
 {
     FileRec *f = file_get(file);
@@ -633,12 +648,14 @@ Str *fmt_file(int file)
         if (it->kind != N_IMPORT) vec_push(order, it);
     }
     long prev = 0; /* kind of the previous element (0 = none) */
+    long gap = 0;  /* the previous comment had a blank line after it */
     for (long i = 0; i < order->n; i++) {
         Node *it = vec_get(order, i);
         long kind = it->kind;
-        if (prev && prev != N_COMMENT && !(prev == N_IMPORT && kind == N_IMPORT)) fm_b('\n'); /* blank line */
+        if (prev == N_COMMENT ? gap : prev && !(prev == N_IMPORT && kind == N_IMPORT)) fm_b('\n'); /* blank line */
         fm_item(it);
         prev = kind;
+        if (kind == N_COMMENT) gap = blank_after(it);
     }
     return sb_finish(fm_sb);
 }
