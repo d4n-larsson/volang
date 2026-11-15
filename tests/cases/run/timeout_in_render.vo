@@ -1,16 +1,17 @@
-# --timeout stops rendering huge values for a failed expect_eq (spec 003 US4).
+# --timeout stops rendering huge values for a failed expect_eq (spec 003 US4). Floats render slowly
+# per byte, and --max-memory 2048 puts the memory limit at about 7.5 s natively (spec 008), so the
+# 2 s limit always falls inside the rendering.
 test "huge values" {
-    var s = "alpha,beta,gamma,delta,";
-    for i in 0..15 {
-        set s = s + s;
+    let a = new list[float];
+    for i in 0..65536 {
+        push(a, 1.0 / float(i + 3));
     }
-    let a = split(s, ",");
-    let xs = new list[list[str]];
-    let ys = new list[list[str]];
-    for i in 0..1000 {
+    let xs = new list[list[float]];
+    let ys = new list[list[float]];
+    for _ in 0..400 {
         push(xs, a);
         push(ys, a);
     }
-    push(ys, ["different"]);
+    push(ys, [0.5]);
     expect_eq(xs, ys);
 }

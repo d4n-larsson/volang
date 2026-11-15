@@ -3,16 +3,17 @@
 What a developer runs. Command names are fixed; flags are research R3.
 
 ```sh
-make                      # build/vo: the mixed RV64 toolchain (stages 1-7), the native one after stage 8
-make ARCH=riscv64|aarch64|x86_64   # build-<arch>/vo (stage 8); non-host ones run under qemu
+make                      # build/vo: the host build (ARCH defaults to `uname -m`)
+make ARCH=riscv64|aarch64|x86_64   # build-<arch>/vo for a non-host ARCH, run under qemu (bin/vo)
 make asm                  # build-asm/vo from ASM_REV (the last assembly release)
 make test                 # unchanged suite; VO_BIN selects another build
 make gate                 # one migration step's gate (research R10), stops at the first failure
 make diff-asm COUNT=N     # tests/diff_asm.py: N generated programs vs build-asm/vo
 make ubtrap               # build-ubtrap/vo and the suite under it
 make instrumented         # (stage 8) build-instrumented/vo and the suite under ASan + UBSan
-make speed-check          # tests/speed.py against build-asm/vo (enforced from stage 7, SC-003/SC-004)
-make lint                 # SESI over remaining assembly; strict-warning C build (zero warnings)
+make speed-check          # tests/speed.py against build-asm/vo (enforced from stage 7, SC-003/SC-004;
+                          # `make gate` times build-riscv64/vo, both under qemu)
+make lint                 # SESI over src/platform/riscv64.S (the only pack); strict-warning C build
 ```
 
 - Per edit: `tools/cc_check.sh` runs as a PostToolUse hook on `src/*.c` and `src/vo.h` (strict warnings, `-fsyntax-only`), beside the SESI hook for assembly.

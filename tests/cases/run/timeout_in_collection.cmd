@@ -1,1 +1,1 @@
-run --timeout 2 {}
+run --max-memory 2048 --timeout 2 {}

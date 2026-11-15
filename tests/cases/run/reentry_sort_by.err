@@ -1,0 +1,25 @@
+reentry_sort_by.vo:4:44: runtime error[R0005]: Stack exhausted: the recursion is too deep.
+   4 |     sort_by(xs, fn(x: int) -> int { return f(x + 1); });
+     |                                            ^^^^^^^^
+trace:
+  at anonymous function (reentry_sort_by.vo:4:44)
+      x: int = 199728
+  at f (reentry_sort_by.vo:4:5)
+      n: int = 199728, xs: list[int] = [199728]
+  at anonymous function (reentry_sort_by.vo:4:44)
+      x: int = 199727
+  at f (reentry_sort_by.vo:4:5)
+      n: int = 199727, xs: list[int] = [199727]
+  at anonymous function (reentry_sort_by.vo:4:44)
+      x: int = 199726
+  at f (reentry_sort_by.vo:4:5)
+      n: int = 199726, xs: list[int] = [199726]
+  at anonymous function (reentry_sort_by.vo:4:44)
+      x: int = 199725
+  at f (reentry_sort_by.vo:4:5)
+      n: int = 199725, xs: list[int] = [199725]
+  at anonymous function (reentry_sort_by.vo:4:44)
+      x: int = 199724
+  at f (reentry_sort_by.vo:4:5)
+      n: int = 199724, xs: list[int] = [199724]
+  ... more frames omitted

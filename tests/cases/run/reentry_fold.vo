@@ -1,0 +1,8 @@
+# R7: recursion only through fold (spec 008): the depth of R0005 is pinned by the trace.
+fn f(n: int) -> int {
+    return fold([n], 0, fn(acc: int, x: int) -> int { return acc + f(x + 1); });
+}
+
+fn main() uses console {
+    print(str(f(1)));
+}

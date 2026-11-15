@@ -2,13 +2,14 @@
 """The fault-injection matrix (spec 003 SC-004, T030). Usage: tests/gc_faults.py [KIND...]
 
 For each kind, `make FAULT=<KIND>` builds a collector that skips one kind of root or object scan
-(src/gc.s, `.ifdef GC_FAULT_<KIND>`). The stress suite must notice: `tests/run.sh --stress 1` with
+(src/gc.c, `#ifdef GC_FAULT_<KIND>`). The stress suite must notice: `tests/run.sh --stress 1` with
 that binary must fail at least one case, first over tests/gc/fault_targets, then (only if nothing
 failed there) over tests/gc/edge and tests/cases/run, func and generic.
 
 SC-004's kinds and the fault that removes each: locals -> VSTACK, captured values -> CLOSURE,
 list elements -> LISTBUF, map entries -> MAPARR, record fields -> RECORD, variant payloads ->
-VARIANT, builtin temporaries -> NATSTACK, error or failure data -> GLOBALS. PERM (runtime caches)
+VARIANT, builtin temporaries -> ROOTS (the C root stack; spec 008 removed
+native-stack scanning, research R4), error or failure data -> GLOBALS. PERM (runtime caches)
 is extra: nothing on the heap is reachable only from the permanent arena today, so its row is
 informational and does not fail the script.
 """
@@ -21,7 +22,7 @@ import sys
 print = functools.partial(print, flush=True)  # one line per kind as soon as it is known
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-KINDS = ["VSTACK", "NATSTACK", "GLOBALS", "LISTBUF", "MAPARR", "RECORD", "VARIANT", "CLOSURE", "PERM"]
+KINDS = ["VSTACK", "ROOTS", "GLOBALS", "LISTBUF", "MAPARR", "RECORD", "VARIANT", "CLOSURE", "PERM"]
 INFORMATIONAL = {"PERM"}
 WIDER = ["tests/gc/edge", "tests/cases/run", "tests/cases/func", "tests/cases/generic"]
 

@@ -1,9 +1,15 @@
 #!/bin/sh
-# Runs the vo toolchain: natively on RV64 hosts, through qemu-riscv64 elsewhere.
-# VO_BIN overrides the binary (e.g. a development build in build-dev/).
+# Runs the vo toolchain: directly when the binary is for this machine, otherwise through qemu
+# (contracts/build.md). VO_BIN overrides the binary (e.g. build-riscv64/vo or build-asm/vo).
 root=$(cd "$(dirname "$0")/.." && pwd)
 bin=${VO_BIN:-$root/build/vo}
-if [ "$(uname -m)" = riscv64 ]; then
+case $(od -An -tu2 -j18 -N2 "$bin" 2>/dev/null | tr -d ' ') in  # ELF e_machine
+    62) arch=x86_64 ;;
+    183) arch=aarch64 ;;
+    243) arch=riscv64 ;;
+    *) exec "$bin" "$@" ;;      # not readable or unknown: let the kernel report it
+esac
+if [ "$arch" = "$(uname -m)" ]; then
     exec "$bin" "$@"
 fi
-exec qemu-riscv64 "$bin" "$@"
+exec qemu-$arch "$bin" "$@"

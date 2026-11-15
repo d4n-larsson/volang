@@ -4,15 +4,19 @@ One file per architecture, `src/platform/<arch>.S`, at most 300 lines (SC-008), 
 a pack exists (riscv64). Everything here is called from C with these prototypes:
 
 ```c
-void _start(void);                       /* entry: maps ADDR_STACK (64 MiB), switches sp, calls vo_main */
+void _start(void);                       /* entry: sys_start (C) maps ADDR_STACK and ADDR_ROOTS and returns
+                                            the stack top; _start switches sp, calls vo_main, then vo_exit */
 int  vo_main(long argc, char **argv, char **envp);   /* C; returns the exit status for vo_exit */
 long vo_syscall0(long n);
 long vo_syscall1(long n, long a);
 /* ... */
 long vo_syscall6(long n, long a, long b, long c, long d, long e, long f);
-__attribute__((returns_twice)) long jmp_save(void *buf);   /* 0 first, then jmp_restore's value */
+__attribute__((returns_twice)) long jmp_save(void *buf);   /* 0 first, then jmp_restore's value; saves the
+                                            callee-saved registers (integer and float) and gc_roots_n */
 __attribute__((noreturn)) void jmp_restore(void *buf, long value);
-void gc_spill_registers(void *out);      /* while the native stack is scanned (R4); removed after stage 7 */
+extern char vo_data_begin[];             /* a .data label in the first linked object: the start of the
+                                            globals the collector scans (to _end); only RISC-V's linker
+                                            script has __DATA_BEGIN__ */
 ```
 
 - System call numbers come from `src/platform/<arch>.h` (`SYS_openat`, ...). Only calls listed in

@@ -44,10 +44,10 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
 
 ## Phase 1: Setup
 
-- [ ] T001 Set `ASM_REV` in `Makefile` to the commit where spec 007 was merged into `main` (the last assembly release), and run `make gc-check` on it once (skipped at merge time, spec 007 results.md "Deferred"). The branch `008-c-rewrite` and `.specify/feature.json` already exist.
-- [ ] T002 Install and check the build tools: `gcc-riscv64-linux-gnu`, `gcc-aarch64-linux-gnu`, `binutils-aarch64-linux-gnu`, `qemu-user` (contracts/build.md). Extend `make check-tools` in `Makefile` so it names each missing tool.
-- [ ] T003 `make asm` in `Makefile`: builds `build-asm/vo` from `ASM_REV` (the same mechanism as `make baseline`, with a worktree under `build/`). Record its speed in `specs/008-c-rewrite/results.md`: the `tests/speed.py` times under qemu on this machine.
-- [ ] T004 [P] Create `specs/008-c-rewrite/results.md` with these sections:
+- [X] T001 Set `ASM_REV` in `Makefile` to the commit where spec 007 was merged into `main` (the last assembly release), and run `make gc-check` on it once (skipped at merge time, spec 007 results.md "Deferred"). The branch `008-c-rewrite` and `.specify/feature.json` already exist.
+- [X] T002 Install and check the build tools: `gcc-riscv64-linux-gnu`, `gcc-aarch64-linux-gnu`, `binutils-aarch64-linux-gnu`, `qemu-user` (contracts/build.md). Extend `make check-tools` in `Makefile` so it names each missing tool.
+- [X] T003 `make asm` in `Makefile`: builds `build-asm/vo` from `ASM_REV` (the same mechanism as `make baseline`, with a worktree under `build/`). Record its speed in `specs/008-c-rewrite/results.md`: the `tests/speed.py` times under qemu on this machine.
+- [X] T004 [P] Create `specs/008-c-rewrite/results.md` with these sections:
   - the SC-001–SC-009 table (all "open");
   - "Migration log" (the table from data-model.md);
   - "Audit findings (R13)";
@@ -61,16 +61,16 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
 
 **⚠️ CRITICAL:** no port step can start until the mixed build links and the gate runs.
 
-- [ ] T005 [P] `tools/gen_defs.py`: reads `src/defs.inc` (`.equ NAME, VALUE` lines, decimal and hex, comments) and writes `build/defs.h` with `#define NAME VALUE`, values in parentheses, `UL` suffix for hex above 2^31. The `Makefile` regenerates it when `defs.inc` changes (R14).
-- [ ] T006 [P] `tools/gen_protos.py`: collects the C prototype comments (`# <type> name(<args>)` followed by `.globl name`) from every remaining `src/*.s`, and writes `build/protos.h` with `extern` declarations. Comments of the form `sesi: allow ...` are stripped. Functions whose prototype cannot be expressed (handlers, `_start`) are skipped with a comment. Regenerated on every build (R14).
-- [ ] T007 `src/vo.h`, the shared C declarations:
+- [X] T005 [P] `tools/gen_defs.py`: reads `src/defs.inc` (`.equ NAME, VALUE` lines, decimal and hex, comments) and writes `build/defs.h` with `#define NAME VALUE`, values in parentheses, `UL` suffix for hex above 2^31. The `Makefile` regenerates it when `defs.inc` changes (R14).
+- [X] T006 [P] `tools/gen_protos.py`: collects the C prototype comments (`# <type> name(<args>)` followed by `.globl name`) from every remaining `src/*.s`, and writes `build/protos.h` with `extern` declarations. Comments of the form `sesi: allow ...` are stripped. Functions whose prototype cannot be expressed (handlers, `_start`) are skipped with a comment. Regenerated on every build (R14).
+- [X] T007 `src/vo.h`, the shared C declarations:
   - `#include "defs.h"` and `"protos.h"`;
   - `typedef`s for the 64-bit word;
   - structs for tokens, AST nodes, types, effect sets, FX records, file records, vectors, strings, string builders, heap object headers, lists, maps, compiled functions, instructions, frames and recording events;
   - every field checked with `_Static_assert(offsetof(...) == <defs.inc name>, ...)` (data-model.md "Shared layouts");
   - `GC_ROOT(&p)` / `GC_UNROOT(n)` over `gc_roots`/`gc_roots_n` (data-model.md "Root stack": 1 Mi entries reserved at `ADDR_ROOTS`; reaching the reservation is T0003);
   - `NORETURN` and `RETURNS_TWICE` attribute macros.
-- [ ] T008 Root-stack scanning in `src/gc.s` (research R4, data-model.md "Root stack"):
+- [X] T008 Root-stack scanning in `src/gc.s` (research R4, data-model.md "Root stack"):
   - `ADDR_ROOTS` = `0x22_8000_0000` in `src/defs.inc` (between the mark stack's 64 MiB and the value stack), 1 Mi entries (8 MiB) mapped at startup like the value stack, with `gc_roots_n` in `.bss`.
   - `gc_collect` marks from every `*gc_roots[i]` in addition to its current roots.
   - Under `GC_STRESS_BUILD`:
@@ -78,7 +78,7 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
     - the high-water mark is printed to stderr at exit when `VO_ROOTS_HWM=1` is set, and `make gc-check` fails if any case pushes it above 131,072 entries (1/8 of the reservation).
   
   This is an assembly change: SESI lint, then `make gc-check`.
-- [ ] T009 The mixed build in `Makefile`:
+- [X] T009 The mixed build in `Makefile`:
   - C rules for `src/*.c` with `riscv64-linux-gnu-gcc` and the R3 flags (RV64: `-march=rv64imafd -mabi=lp64d -mcmodel=medany -mno-relax -msmall-data-limit=0`);
   - the strict warning set with `-Werror`;
   - `-I build -I src`;
@@ -86,20 +86,20 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
   - `SRCS` covers `.s` and `.c`, and a file present in both forms is a build error.
   
   Add a pilot `src/vo_c.c` holding `memcpy`, `memmove`, `memset`, `memcmp` (R3), and check that `make test` still passes.
-- [ ] T010 The per-edit check for C (FR-012, constitution 1.3.0): `tools/cc_check.sh`, a PostToolUse hook entry in `.claude/settings.json` next to the SESI hook (matcher `Write|Edit`).
+- [X] T010 The per-edit check for C (FR-012, constitution 1.3.0): `tools/cc_check.sh`, a PostToolUse hook entry in `.claude/settings.json` next to the SESI hook (matcher `Write|Edit`).
   - When the edited file is `src/*.c` or `src/vo.h`, it compiles that file (or every C file, for the header) with the RV64 flags and the strict warning set to `-fsyntax-only`.
   - It reports each warning or error with file and line, and exits 2 (a blocking hook error) when there is one, as the SESI hook does.
   - Other files pass through untouched.
   - The script must not depend on `build/` existing: it regenerates `build/defs.h` and `build/protos.h` first if they are missing.
-- [ ] T011 `make ubtrap` in `Makefile`: `build-ubtrap/vo`, the same build with `-fsanitize=undefined,bounds -fsanitize-trap=all` on the C objects (R9). Together with `make gc-check`, this is the instrumented build that constitution 1.3.0 requires while assembly remains. The suite runs under it via `VO_BIN`. A trap is an illegal-instruction exit, which the gate reports as a failure with the case name.
-- [ ] T012 [P] `tests/diff_asm.py` (R12):
+- [X] T011 `make ubtrap` in `Makefile`: `build-ubtrap/vo`, the same build with `-fsanitize=undefined,bounds -fsanitize-trap=all` on the C objects (R9). Together with `make gc-check`, this is the instrumented build that constitution 1.3.0 requires while assembly remains. The suite runs under it via `VO_BIN`. A trap is an illegal-instruction exit, which the gate reports as a failure with the case name.
+- [X] T012 [P] `tests/diff_asm.py` (R12):
   - generates programs with `tests/gen_programs.py`;
   - runs each on `build-asm/vo` (qemu) and on `--new` (default `build/vo`), and compares stdout, stderr and exit status;
   - takes `--count N --seed S [--platform riscv64|aarch64|x86_64]`;
   - writes disagreements to `build/diff-failures/<seed>/`;
   - exits 1 on any disagreement;
   - `make diff-asm COUNT=N` in `Makefile`.
-- [ ] T013 `make gate` in `Makefile` (R10). It runs, in order, stopping at the first failure:
+- [X] T013 `make gate` in `Makefile` (R10). It runs, in order, stopping at the first failure:
   1. `make lint`
   2. `make test`
   3. `make gc-check`
@@ -122,77 +122,77 @@ description: "Task list for vo-lang spec 008: the toolchain in C (native builds)
 
 ### Stage 1: leaf code
 
-- [ ] T014 [P] [US3] Port `src/ast.s` (vectors and node construction) to `src/ast.c`. This is the first real step: it settles the conventions of `vo.h` on the simplest file.
-- [ ] T015 [P] [US3] Port `src/text.s` to `src/text.c`: memory and string helpers, the byte builder, UTF-8, JSON escaping and message templates. `mem_copy` and `mem_eq` stay as named symbols, implemented with the T009 functions.
-- [ ] T016 [US3] Port `src/num.s` to `src/num.c`. Audit (R13): integer division and remainder by zero and of the minimum integer by -1; float-to-integer conversion; the explicit rounding mode at `num.s:380` (`fcvt.l.d … rne`, round half to even), written without libm and without SSE4.1, for example with the 2^52 add-and-subtract on values below 2^52; `text_to_float`'s 15-digit path and `scale10`, which must give the same bits; `float_to_text`'s formatting of `-0.0`, `inf` and NaN, ignoring the NaN sign and payload.
-- [ ] T017 [P] [US3] Port `src/sha256.s` to `src/sha256.c` (32-bit rotations on `uint32_t`; the vectors from spec 007 T020 still pass through `tests/cases/packages`).
-- [ ] T018 [US3] Port `src/stdprim.s` to `src/stdprim.c`. The big-integer routines use `unsigned __int128` for `mulhu`. Check `exact_to_double`'s and `exact_digits`' ties-to-even rounding against `tests/json_corpus.py`. `std_only_ok` and `std_float_text` keep their prototypes.
-- [ ] T019 [US3] `tools/embed.py` (R8): writes `build/embedded.c` from `docs/reference.md`, `docs/errors.md` and `std/*.vo`, with the same symbol names, NUL terminators and `std_files` table (`{path, text, len}`, zero-terminated) as `src/data.s`. Delete `src/data.s`, and make `build/embedded.o` depend on the embedded files.
+- [X] T014 [P] [US3] Port `src/ast.s` (vectors and node construction) to `src/ast.c`. This is the first real step: it settles the conventions of `vo.h` on the simplest file.
+- [X] T015 [P] [US3] Port `src/text.s` to `src/text.c`: memory and string helpers, the byte builder, UTF-8, JSON escaping and message templates. `mem_copy` and `mem_eq` stay as named symbols, implemented with the T009 functions.
+- [X] T016 [US3] Port `src/num.s` to `src/num.c`. Audit (R13): integer division and remainder by zero and of the minimum integer by -1; float-to-integer conversion; the explicit rounding mode at `num.s:380` (`fcvt.l.d … rne`, round half to even), written without libm and without SSE4.1, for example with the 2^52 add-and-subtract on values below 2^52; `text_to_float`'s 15-digit path and `scale10`, which must give the same bits; `float_to_text`'s formatting of `-0.0`, `inf` and NaN, ignoring the NaN sign and payload.
+- [X] T017 [P] [US3] Port `src/sha256.s` to `src/sha256.c` (32-bit rotations on `uint32_t`; the vectors from spec 007 T020 still pass through `tests/cases/packages`).
+- [X] T018 [US3] Port `src/stdprim.s` to `src/stdprim.c`. The big-integer routines use `unsigned __int128` for `mulhu`. Check `exact_to_double`'s and `exact_digits`' ties-to-even rounding against `tests/json_corpus.py`. `std_only_ok` and `std_float_text` keep their prototypes.
+- [X] T019 [US3] `tools/embed.py` (R8): writes `build/embedded.c` from `docs/reference.md`, `docs/errors.md` and `std/*.vo`, with the same symbol names, NUL terminators and `std_files` table (`{path, text, len}`, zero-terminated) as `src/data.s`. Delete `src/data.s`, and make `build/embedded.o` depend on the embedded files.
 
 ### Stage 2: front end
 
-- [ ] T020 [US3] Port `src/lex.s` to `src/lex.c` (16-byte tokens; byte classification as in the assembly; invalid UTF-8 E0104).
-- [ ] T021 [US3] Port `src/parse.s` to `src/parse.c`, in parts. Keep the explicit 5,000-level limit (E0115). The native-stack guard stays as a last resort, at a threshold the counter always reaches first (R7). Record in `results.md` that `tests/cases/check/nesting.vo` reports at the same position.
-- [ ] T022 [US3] Port `src/diag.s` to `src/diag.c`: the file table, diagnostics, sorting (the same stable order), rendering, summaries and `toolchain_error`.
-- [ ] T023 [US3] Port `src/fmt.s` to `src/fmt.c`. If its recursion follows nesting, it needs the same limit as the parser (R7).
+- [X] T020 [US3] Port `src/lex.s` to `src/lex.c` (16-byte tokens; byte classification as in the assembly; invalid UTF-8 E0104).
+- [X] T021 [US3] Port `src/parse.s` to `src/parse.c`, in parts. Keep the explicit 5,000-level limit (E0115). The native-stack guard stays as a last resort, at a threshold the counter always reaches first (R7). Record in `results.md` that `tests/cases/check/nesting.vo` reports at the same position.
+- [X] T022 [US3] Port `src/diag.s` to `src/diag.c`: the file table, diagnostics, sorting (the same stable order), rendering, summaries and `toolchain_error`.
+- [X] T023 [US3] Port `src/fmt.s` to `src/fmt.c`. If its recursion follows nesting, it needs the same limit as the parser (R7).
 
 ### Stage 3: checker
 
-- [ ] T024 [P] [US3] Port `src/types.s` to `src/types.c` (interning and memo tables in the same order).
-- [ ] T025 [P] [US3] Port `src/effects.s` to `src/effects.c` (effect sets with scopes; `es_render` byte-identical).
-- [ ] T026 [US3] Port `src/check.s` to `src/check.c`, in parts.
-- [ ] T027 [US3] Port `src/check_expr.s` to `src/check_expr.c`, in parts. The builtin tables (`builtin_names`, `builtin_sigs`, `B_COUNT`) stay data in the same order.
-- [ ] T028 [P] [US3] Port `src/check_func.s` to `src/check_func.c`.
-- [ ] T029 [P] [US3] Port `src/check_generic.s` to `src/check_generic.c`.
-- [ ] T030 [US3] Port `src/check_effects.s` to `src/check_effects.c` (`builtin_effects` stays a 64-byte table).
-- [ ] T031 [US3] Port `src/loader.s` to `src/loader.c`: imports, `std_lookup`, `std_runtime_grants`, cycle detection and `str_join2`.
-- [ ] T032 [P] [US3] Port `src/packages.s` to `src/packages.c` (manifest parsing, `pkg_hash` over `walk_dir`/`sort_paths`, `vo package`).
-- [ ] T033 [US3] Port `src/effects_record.s` to `src/effects_record.c` (`find_up`, `find_up_dir`, `rec_relpath` with `@NAME/` paths).
+- [X] T024 [P] [US3] Port `src/types.s` to `src/types.c` (interning and memo tables in the same order).
+- [X] T025 [P] [US3] Port `src/effects.s` to `src/effects.c` (effect sets with scopes; `es_render` byte-identical).
+- [X] T026 [US3] Port `src/check.s` to `src/check.c`, in parts.
+- [X] T027 [US3] Port `src/check_expr.s` to `src/check_expr.c`, in parts. The builtin tables (`builtin_names`, `builtin_sigs`, `B_COUNT`) stay data in the same order.
+- [X] T028 [P] [US3] Port `src/check_func.s` to `src/check_func.c`.
+- [X] T029 [P] [US3] Port `src/check_generic.s` to `src/check_generic.c`.
+- [X] T030 [US3] Port `src/check_effects.s` to `src/check_effects.c` (`builtin_effects` stays a 64-byte table).
+- [X] T031 [US3] Port `src/loader.s` to `src/loader.c`: imports, `std_lookup`, `std_runtime_grants`, cycle detection and `str_join2`.
+- [X] T032 [P] [US3] Port `src/packages.s` to `src/packages.c` (manifest parsing, `pkg_hash` over `walk_dir`/`sort_paths`, `vo package`).
+- [X] T033 [US3] Port `src/effects_record.s` to `src/effects_record.c` (`find_up`, `find_up_dir`, `rec_relpath` with `@NAME/` paths).
 
 **Checkpoint:** run `make diff-asm COUNT=10000`. Expected: 0 disagreements, recorded in `results.md`.
 
 ### Stage 4: commands
 
-- [ ] T034 [P] [US3] Port `src/query.s` to `src/query.c`, in parts.
-- [ ] T035 [P] [US3] Port `src/edit.s` to `src/edit.c`, in parts.
-- [ ] T036 [P] [US3] Port `src/doc.s` to `src/doc.c`.
-- [ ] T037 [US3] Port `src/replay.s` to `src/replay.c`. Recording writes stay allocation-free (spec 006). Event kinds and fields are unchanged, so recordings are interchangeable.
-- [ ] T038 [US3] Port `src/testrun.s` to `src/testrun.c`. `jmp_save` is declared `RETURNS_TWICE`, and every local used after it returns twice is `volatile`.
-- [ ] T039 [US3] Port `src/main.s` to `src/main.c`: options, path expansion, `walk_dir`, `sort_paths`, `write_file_safely` and dispatch.
+- [X] T034 [P] [US3] Port `src/query.s` to `src/query.c`, in parts.
+- [X] T035 [P] [US3] Port `src/edit.s` to `src/edit.c`, in parts.
+- [X] T036 [P] [US3] Port `src/doc.s` to `src/doc.c`.
+- [X] T037 [US3] Port `src/replay.s` to `src/replay.c`. Recording writes stay allocation-free (spec 006). Event kinds and fields are unchanged, so recordings are interchangeable.
+- [X] T038 [US3] Port `src/testrun.s` to `src/testrun.c`. `jmp_save` is declared `RETURNS_TWICE`, and every local used after it returns twice is `volatile`.
+- [X] T039 [US3] Port `src/main.s` to `src/main.c`: options, path expansion, `walk_dir`, `sort_paths`, `write_file_safely` and dispatch.
 
 ### Stage 5: compiler
 
-- [ ] T040 [US3] Port `src/compile.s` to `src/compile.c`, in parts. Instruction words still hold handler addresses read from `vm_ops` (the assembly VM's table), and the code arena stays at `ADDR_CODE`.
+- [X] T040 [US3] Port `src/compile.s` to `src/compile.c`, in parts. Instruction words still hold handler addresses read from `vm_ops` (the assembly VM's table), and the code arena stays at `ADDR_CODE`.
 
 ### Stage 6: runtime
 
-- [ ] T041 [P] [US3] Port `src/rt_str.s`, `src/rt_list.s` and `src/rt_map.s` to C (FNV-1a with the fixed seed; growth policies byte-identical, since sizes drive memory figures). The page pins in `rt_list.s`/`rt_map.s` disappear: record the qemu speed ratio before and after.
-- [ ] T042 [P] [US3] Port `src/rt_render.s`, `src/rt_io.s` and `src/rt_test.s` to C. `rt_render` recursion over nested values needs a counter if it is depth-limited (R7). `rt_test`'s recovery goes through `jmp_restore`.
-- [ ] T043 [US3] Port `src/rt_func.s` and `src/rt_call.s` to C. `btab` becomes a table of function pointers or a `switch` with the same ids, and `B_LAST` bounds it.
-- [ ] T044 [US3] Port `src/rt_effects.s` and `src/net.s` to C (grant checks; clock, random, env, sockets and DNS through `vo_syscall*`).
-- [ ] T045 [US3] Port `src/prop.s` to `src/prop.c`. The generated values that the assembly kept alive through conservative roots (`pr_args`, `pr_best`, `pr_cand` and the generator's locals) are registered with `GC_ROOT` (R4).
-- [ ] T046 [US3] Port `src/interp.s` to `src/interp.c`:
+- [X] T041 [P] [US3] Port `src/rt_str.s`, `src/rt_list.s` and `src/rt_map.s` to C (FNV-1a with the fixed seed; growth policies byte-identical, since sizes drive memory figures). The page pins in `rt_list.s`/`rt_map.s` disappear: record the qemu speed ratio before and after.
+- [X] T042 [P] [US3] Port `src/rt_render.s`, `src/rt_io.s` and `src/rt_test.s` to C. `rt_render` recursion over nested values needs a counter if it is depth-limited (R7). `rt_test`'s recovery goes through `jmp_restore`.
+- [X] T043 [US3] Port `src/rt_func.s` and `src/rt_call.s` to C. `btab` becomes a table of function pointers or a `switch` with the same ids, and `B_LAST` bounds it.
+- [X] T044 [US3] Port `src/rt_effects.s` and `src/net.s` to C (grant checks; clock, random, env, sockets and DNS through `vo_syscall*`).
+- [X] T045 [US3] Port `src/prop.s` to `src/prop.c`. The generated values that the assembly kept alive through conservative roots (`pr_args`, `pr_best`, `pr_cand` and the generator's locals) are registered with `GC_ROOT` (R4).
+- [X] T046 [US3] Port `src/interp.s` to `src/interp.c`:
   - Frames entered from native code, runtime errors and reports, timeouts, equality, closures, `run_main`, test bodies.
   - R7: before porting, measure on `build-asm/vo`, for each builtin that calls back (`map`, `filter`, `fold`, `any`, `all`, `sort_by`, and the property runner), the nesting depth at which a program recursing only through that builtin reports R0005. Write these programs as step or golden cases in `tests/cases/run/reentry_<builtin>.vo` with expected output from `build-asm/vo`, so the depth is pinned. Then implement the per-builtin re-entry limits (a table indexed by builtin id; mixed recursion stops at the first exceeded limit), and record the table in `results.md` "Recursion limits (R7)". Record any mixed-recursion depth that differs from the assembly release as a deviation.
 
 ### Stage 7: engine
 
-- [ ] T047 [US3] Port `src/vm.s` and `src/trace.s` to `src/vm.c` (R6):
+- [X] T047 [US3] Port `src/vm.s` and `src/trace.s` to `src/vm.c` (R6):
   - one `vm_run` with `&&label` handlers;
   - `vm_ops` and the tracing table published by an init call before `compile_program`;
   - pc, frame and slots as locals;
   - the integer arithmetic checks explicit (R13).
   
   The page pin at the top of `vm.s` goes. From this task on, `make gate` enforces `tests/speed.py --baseline build-asm/vo` at 10% geometric mean (SC-004).
-- [ ] T048 [US3] Port `src/gc.s` to `src/gc.c`:
+- [X] T048 [US3] Port `src/gc.s` to `src/gc.c`:
   - mark-sweep over the same pages, page table and mark stack at the same addresses;
   - roots: the value stack, `gc_roots`, the globals, the permanent arena;
   - no native-stack or register scanning (R4);
   - `STRESS` and `FAULT=<KIND>` keep working, with the native-stack fault kind removed and `tests/gc/fault_targets` updated.
   
   Run `make gc-check` and the full gate. Compare every case that prints memory figures with `build-asm/vo`, and record any difference in `results.md` "Memory figures (R4)".
-- [ ] T049 [US3] Split `src/sys.s` and `src/jmp.s`: the C parts (system-call wrappers, buffered output, file reading, the arena allocator, `map_fixed`) go to `src/sys.c`. `_start`, `vo_syscall0`–`vo_syscall6` and `jmp_save`/`jmp_restore` go to `src/platform/riscv64.S`, with numbers in `src/platform/riscv64.h` (contracts/platform-layer.md, at most 300 lines, SESI-linted). Delete `gc_spill_registers` and the `RUNTIME` link order in `Makefile`.
-- [ ] T050 [US3] Confirm that no `src/*.s` remains. Then make `src/vo.h` the source of the constants, with `defs.inc` reduced to what `riscv64.S` uses or generated from `vo.h`, and remove `tools/gen_protos.py` and `build/protos.h` from the build. Run the full gate and `make diff-asm COUNT=10000` (0 disagreements). Record US3's independent test in `results.md`.
+- [X] T049 [US3] Split `src/sys.s` and `src/jmp.s`: the C parts (system-call wrappers, buffered output, file reading, the arena allocator, `map_fixed`) go to `src/sys.c`. `_start`, `vo_syscall0`–`vo_syscall6` and `jmp_save`/`jmp_restore` go to `src/platform/riscv64.S`, with numbers in `src/platform/riscv64.h` (contracts/platform-layer.md, at most 300 lines, SESI-linted). Delete `gc_spill_registers` and the `RUNTIME` link order in `Makefile`.
+- [X] T050 [US3] Confirm that no `src/*.s` remains. Then make `src/vo.h` the source of the constants, with `defs.inc` reduced to what `riscv64.S` uses or generated from `vo.h`, and remove `tools/gen_protos.py` and `build/protos.h` from the build. Run the full gate and `make diff-asm COUNT=10000` (0 disagreements). Record US3's independent test in `results.md`.
 
 **Checkpoint:** the whole toolchain is C plus one RISC-V platform file. It still runs under qemu, and every step was gated.
 

@@ -9,7 +9,8 @@
 Exit status 1 when a target is missed: geometric-mean speedup < 4.0, any program < 2.0,
 int_loop > 1350 ms; or (--bench2) total CPU > +10%, or one run slower by more than max(10%, 5 ms)
 (median of 5 alternated runs, then of 15 for a run still over the limit); or (--baseline) any
-program more than 5% slower than the baseline binary, by the same median rule.
+program more than 5% slower than the baseline binary, by the same median rule; with --max-geomean R
+(spec 008 SC-004), only the geometric mean of the per-program ratios must stay at or below R.
 """
 import importlib.util
 import math
@@ -130,8 +131,9 @@ def bench2():
     return ok
 
 
-def baseline(base):
+def baseline(base, max_geo=None):
     ok = True
+    ratios = []
     print(f"{'program':20} {'base ms':>8} {'new ms':>8} {'ratio':>6}")
     for n in sorted(f[:-3] for f in os.listdir(SPEED) if f.endswith(".vo")):
         def run(binary):
@@ -143,8 +145,15 @@ def baseline(base):
             if b <= a * 1.05:
                 break
         print(f"{n:20} {a:8.0f} {b:8.0f} {b / a:6.3f}")
-        if b > a * 1.05:
+        ratios.append(b / a)
+        if max_geo is None and b > a * 1.05:
             print(f"  FAIL {n}: {b / a:.3f}x the baseline")
+            ok = False
+    if max_geo is not None:
+        geo = math.exp(sum(math.log(r) for r in ratios) / len(ratios))
+        print(f"geometric-mean ratio {geo:.3f} (limit {max_geo})")
+        if geo > max_geo:
+            print("  FAIL geometric-mean ratio over the limit")
             ok = False
     return ok
 
@@ -158,7 +167,8 @@ def main():
         if not os.path.exists(base):
             print(f"speed: {base} is missing; run `make baseline-004`")
             return 1
-        return 0 if baseline(base) else 1
+        geo = float(sys.argv[sys.argv.index("--max-geomean") + 1]) if "--max-geomean" in sys.argv else None
+        return 0 if baseline(base, geo) else 1
     if not os.path.exists(ORACLE):
         print("speed: build-oracle/vo is missing; run `make oracle`")
         return 1

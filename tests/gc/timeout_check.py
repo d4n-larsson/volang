@@ -10,9 +10,13 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 bad = 0
 for path in sorted(glob.glob(os.path.join(ROOT, "tests", "cases", "run", "timeout_in_*.vo"))):
-    cmd = open(path[:-3] + ".cmd").read().split()[0]
+    args = [w for w in open(path[:-3] + ".cmd").read().split() if w != "{}"]  # the case's own options
+    if "--timeout" in args:
+        args[args.index("--timeout") + 1] = "2"
+    else:
+        args += ["--timeout", "2"]
     t0 = time.monotonic()
-    r = subprocess.run([os.path.join(ROOT, "bin", "vo"), cmd, "--timeout", "2", path], capture_output=True, timeout=60)
+    r = subprocess.run([os.path.join(ROOT, "bin", "vo")] + args + [path], capture_output=True, timeout=60)
     took = time.monotonic() - t0
     out = (r.stdout + r.stderr).decode()
     ok = "R0009" in out and took <= 3.0

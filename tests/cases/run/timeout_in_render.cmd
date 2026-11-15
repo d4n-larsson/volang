@@ -1,1 +1,1 @@
-test --timeout 2 {}
+test --max-memory 2048 --timeout 2 {}

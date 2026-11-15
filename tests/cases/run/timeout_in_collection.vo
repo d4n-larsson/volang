@@ -1,11 +1,12 @@
 # --timeout stops a program whose time goes into split and the collections of its huge live heap.
+# 200 rounds under --max-memory 2048: far past 2 s natively (spec 008), setup instant under qemu.
 fn main() uses console {
     var s = "a,";
     for i in 0..22 {
         set s = s + s;
     }
     var total = 0;
-    for round in 0..8 {
+    for round in 0..200 {
         let xs = split(s, ",");
         set total = total + len(xs);
     }

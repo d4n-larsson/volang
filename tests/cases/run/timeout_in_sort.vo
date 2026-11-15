@@ -1,10 +1,16 @@
-# --timeout stops a long sort inside the builtin (spec 003 US4). 4 s: split takes about 2 s, sort 6 s.
+# --timeout stops a long sort inside the builtin (spec 003 US4). 65,536 references to eight strings
+# that share a 32 KiB prefix: setup is instant on every platform, and the sort's comparisons take
+# about 12 s natively (spec 008), so the 4 s limit always falls inside the sort.
 fn main() uses console {
-    var s = "k9,k3,k7,k1,k5,k8,k2,k6,";
-    for i in 0..19 {
-        set s = s + s;
+    var p = "k";
+    for _ in 0..15 {
+        set p = p + p;
     }
-    let xs = split(s, ",");
+    let words = [p + "9", p + "3", p + "7", p + "1", p + "5", p + "8", p + "2", p + "6"];
+    let xs = new list[str];
+    for i in 0..65536 {
+        push(xs, words[i % 8]);
+    }
     sort(xs);
     print(xs[0]);
 }

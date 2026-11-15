@@ -1,0 +1,10 @@
+# R7: recursion only through sort_by (spec 008): the depth of R0005 is pinned by the trace.
+fn f(n: int) -> int {
+    let xs = [n];
+    sort_by(xs, fn(x: int) -> int { return f(x + 1); });
+    return xs[0];
+}
+
+fn main() uses console {
+    print(str(f(1)));
+}

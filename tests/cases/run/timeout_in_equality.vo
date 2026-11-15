@@ -1,4 +1,5 @@
-# --timeout stops a long == inside the runtime (spec 003 US4).
+# --timeout stops a long == inside the runtime (spec 003 US4). 20,000 pairs: the comparison takes
+# about 15 s natively (spec 008), setup well under a second under qemu.
 fn main() uses console {
     var s = "alpha,beta,gamma,delta,";
     for i in 0..15 {
@@ -8,7 +9,7 @@ fn main() uses console {
     let b = split(s, ",");
     let xs = new list[list[str]];
     let ys = new list[list[str]];
-    for i in 0..1000 {
+    for i in 0..20000 {
         push(xs, a);
         push(ys, b);
     }

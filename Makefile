@@ -1,54 +1,89 @@
-AS      := riscv64-linux-gnu-as
-LD      := riscv64-linux-gnu-ld
-ASFLAGS := -march=rv64imafd -mabi=lp64d -g -I src
 SESI    := /home/dan/dev/priv/sesi/scripts/sesi
+# Spec 008 T052 (contracts/build.md): ARCH defaults to the host, whose build is build/vo; another
+# architecture is cross-compiled into build-<arch>/vo and runs under qemu (bin/vo).
+HOST    := $(shell uname -m)
+ARCH    ?= $(HOST)
+ifeq ($(ARCH),riscv64)
+ARCH_CFLAGS := -march=rv64imafd -mabi=lp64d -mcmodel=medany -mno-relax -msmall-data-limit=0
+else ifeq ($(ARCH),x86_64)
+ARCH_CFLAGS := -fcf-protection=none
+else
+$(error unsupported ARCH=$(ARCH): riscv64 or x86_64)
+endif
+CROSS   := $(if $(filter $(ARCH),$(HOST)),,$(ARCH)-linux-gnu-)
+SUFFIX  := $(if $(filter $(ARCH),$(HOST)),,-$(ARCH))
+CC      := $(CROSS)gcc
+LD      := $(CROSS)ld
+# Spec 008 (research R3): freestanding C, one rounding per float operation, no libc.
+CFLAGS  := -std=gnu11 -O2 -g -ffreestanding -fno-builtin -nostdlib -fno-pie -fno-stack-protector \
+	-fno-asynchronous-unwind-tables -fno-strict-aliasing -ffp-contract=off -fno-math-errno \
+	-fno-trapping-math $(ARCH_CFLAGS)
+CWARN   := -Wall -Wextra -Werror -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wvla \
+	-Wimplicit-fallthrough -Wundef -Wdouble-promotion -Wformat=2
+LIBGCC   = $(shell $(CC) -print-libgcc-file-name)
 
-BUILD ?= build
+BUILD ?= build$(SUFFIX)
 # Maintainers' builds (spec 003): STRESS=1 collects constantly and poisons reclaimed memory;
 # FAULT=<KIND> also drops one kind of root or object scan, to prove the stress suite notices.
 ifdef FAULT
-BUILD := build-fault-$(FAULT)
-ASFLAGS += --defsym GC_FAULT_$(FAULT)=1 --defsym GC_STRESS_BUILD=1
+BUILD := build-fault-$(FAULT)$(SUFFIX)
+CFLAGS += -DGC_FAULT_$(FAULT)=1 -DGC_STRESS_BUILD=1
 else ifdef STRESS
-BUILD := build-stress
-ASFLAGS += --defsym GC_STRESS_BUILD=1
+BUILD := build-stress$(SUFFIX)
+CFLAGS += -DGC_STRESS_BUILD=1
+else ifdef UBTRAP
+# Spec 008 research R9: the C objects trap on undefined behavior and out-of-bounds array access.
+BUILD := build-ubtrap$(SUFFIX)
+CFLAGS += -fsanitize=undefined,bounds -fsanitize-trap=all
 endif
-SRCS := $(wildcard src/*.s)
-# The runtime links first, in a fixed order (spec 005): under qemu-user, where hot code falls within
-# a 4 KiB page changes its speed by up to 20%, so growth in the parser, checker or compiler must not
-# move the VM and the runtime it calls (see also the page offset at the top of src/vm.s).
-RUNTIME := vm gc sys interp jmp num text rt_call rt_effects rt_func rt_io rt_list rt_map rt_render rt_str rt_test
-RT_OBJS := $(patsubst %,$(BUILD)/%.o,$(RUNTIME))
-OBJS := $(RT_OBJS) $(filter-out $(RT_OBJS),$(patsubst src/%.s,$(BUILD)/%.o,$(SRCS)))
+# Spec 008: the toolchain is C plus one platform file (research R5), the only assembly, linted by SESI.
+C_SRCS   := $(wildcard src/*.c)
+PLATFORM := src/platform/$(ARCH).S
+HEADERS  := src/vo.h src/platform/$(ARCH).h Makefile
+# platform.o first: its vo_data_begin starts .data (the globals the collector scans).
+OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/embedded.o
 
-.PHONY: all check-tools lint test gc-check oracle baseline speed speed-check prop-eval refactor-eval clean
+.PHONY: all check-tools lint test gc-check oracle baseline asm ubtrap diff-asm gate-step gate speed speed-check prop-eval refactor-eval clean
 
 all: $(BUILD)/vo
 
-$(BUILD)/vo: $(OBJS) Makefile
-	$(LD) -static --no-relax -e _start -o $@ $(OBJS)
+# FR-003: a static binary, no interpreter or shared libraries.
+$(BUILD)/vo: $(OBJS)
+	$(LD) -static --no-relax -e _start -o $@ $(OBJS) $(LIBGCC)
+	@readelf -d $@ | grep -q "no dynamic section" || { echo "$@ has a dynamic section"; exit 1; }
 
-$(BUILD)/%.o: src/%.s src/defs.inc | $(BUILD)
-	$(AS) $(ASFLAGS) -o $@ $<
+$(BUILD)/platform.o: $(PLATFORM) Makefile | $(BUILD)
+	$(CC) $(ARCH_CFLAGS) -g -c -o $@ $<
 
-$(BUILD)/data.o: docs/reference.md docs/errors.md $(wildcard std/*.vo)
+$(BUILD)/%.o: src/%.c $(HEADERS) | $(BUILD)
+	$(CC) $(CFLAGS) $(CWARN) -I src -c -o $@ $<
+# memcpy and friends must not be turned back into calls to themselves.
+$(BUILD)/vo_c.o: CFLAGS += -fno-tree-loop-distribute-patterns
+
+# Spec 008 research R8: the reference, the catalog and the standard library, embedded as C arrays.
+STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo
+$(BUILD)/embedded.c: docs/reference.md docs/errors.md $(STD_FILES) tools/embed.py | $(BUILD)
+	python3 tools/embed.py $@ docs/reference.md docs/errors.md $(STD_FILES)
+$(BUILD)/embedded.o: $(BUILD)/embedded.c $(HEADERS)
+	$(CC) $(CFLAGS) $(CWARN) -I src -c -o $@ $<
 
 $(BUILD):
 	mkdir -p $(BUILD)
 
+# Spec 008 (contracts/build.md): every tool the C port and its cross checks need, each named when missing.
+TOOLS := riscv64-linux-gnu-as riscv64-linux-gnu-ld riscv64-linux-gnu-gcc aarch64-linux-gnu-gcc gcc \
+	qemu-riscv64 qemu-aarch64 python3
 check-tools:
-	@command -v $(AS) >/dev/null && command -v qemu-riscv64 >/dev/null || \
-	  { echo "missing toolchain: sudo apt install binutils-riscv64-linux-gnu qemu-user"; exit 1; }
+	@missing=0; for t in $(TOOLS); do command -v $$t >/dev/null || { echo "missing: $$t"; missing=1; }; done; \
+	  if [ $$missing = 1 ]; then echo "install: sudo apt install gcc binutils-riscv64-linux-gnu gcc-riscv64-linux-gnu gcc-aarch64-linux-gnu qemu-user python3"; exit 1; fi; \
+	  echo "check-tools: all present"
 
-# src/jmp.s (setjmp/longjmp) breaks the calling convention on purpose: see its header and
-# sesi-linter-issues.md #5. Every other file must lint clean; deliberate breaks marked
-# `sesi: allow` on their prototype line are listed as suppressed and do not count.
-LINT_EXEMPT := src/jmp.s
-
+# Every assembly file must lint clean; deliberate breaks marked `sesi: allow` on their prototype line
+# (jmp_restore, _start: sesi-linter-issues.md #5) are listed as suppressed and do not count.
 lint:
-	@fail=0; for f in $(filter-out $(LINT_EXEMPT),$(SRCS)); do out=$$($(SESI) lint $$f . </dev/null 2>&1 | grep -v 'suppressed by sesi: allow'); \
+	@fail=0; for f in src/platform/riscv64.S; do out=$$($(SESI) lint $$f . </dev/null 2>&1 | grep -v 'suppressed by sesi: allow'); \
 	  if [ -n "$$out" ]; then echo "$$out"; fail=1; fi; done; \
-	  echo "lint: exempt (explained): $(LINT_EXEMPT)"; exit $$fail
+	  echo "lint: clean"; exit $$fail
 
 # The constitution's quality gate: every check that exists so far.
 test: all
@@ -98,6 +133,47 @@ build-base/vo:
 	mkdir -p build-base
 	cp build-base/src/build/vo build-base/vo
 
+# The last assembly release (spec 008 research R10): the behavioral oracle of the C port and its speed
+# baseline. Built once in a worktree; `clean` keeps it.
+ASM_REV := bc610cb
+
+asm: build-asm/vo
+
+build-asm/vo:
+	@[ -d build-asm/src ] || git worktree add --detach build-asm/src $(ASM_REV)
+	$(MAKE) -C build-asm/src
+	mkdir -p build-asm
+	cp build-asm/src/build/vo build-asm/vo
+
+# Spec 008 research R9: the suite under the build whose C objects trap on undefined behavior.
+ubtrap:
+	$(MAKE) UBTRAP=1
+	VO_BIN=$(abspath build-ubtrap/vo) tests/run.sh
+
+# Spec 008 research R12: generated programs against the last assembly release.
+COUNT ?= 2000
+diff-asm: all asm
+	python3 tests/diff_asm.py --count $(COUNT) --seed 1
+
+# Spec 008 research R10 (results.md "Deviations"): gate-step after every migration step; gate (adds the
+# collector stress suite and the speed check) at every stage boundary and on every step from the
+# runtime stage on. Since the VM is C (T047), the speed check is enforced: at most 10% slower than
+# build-asm/vo, geometric mean (SC-004).
+gate-step: all asm
+	@echo "== gate: lint" && $(MAKE) -s lint </dev/null
+	@echo "== gate: test" && $(MAKE) -s test
+	@echo "== gate: ubtrap" && $(MAKE) -s ubtrap
+	@echo "== gate: diff-asm" && python3 tests/diff_asm.py --count 2000 --mutants 2000 --seed 1
+	@echo "== gate-step: passed"
+
+# SC-004 compares like with like: the RISC-V build against build-asm/vo, both under qemu.
+RV_BUILD := build$(if $(filter riscv64,$(HOST)),,-riscv64)
+gate: gate-step
+	@echo "== gate: gc-check" && $(MAKE) -s gc-check
+	@echo "== gate: speed" && $(MAKE) -s ARCH=riscv64 && \
+	  python3 tests/speed.py --baseline build-asm/vo --new $(RV_BUILD)/vo --max-geomean 1.10
+	@echo "== gate: passed"
+
 # Spec 004 speed targets (timing depends on machine load, so not part of `make test`).
 speed: all oracle
 	python3 tests/speed.py
@@ -114,4 +190,4 @@ prop-eval: all
 	python3 tests/prop_eval.py
 
 clean:
-	rm -rf build build-stress build-fault-*
+	rm -rf build build-stress build-ubtrap build-fault-* build-riscv64 build-*-riscv64

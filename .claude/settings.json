@@ -9,6 +9,12 @@
             "command": "sh /home/dan/dev/priv/sesi/scripts/sesi hook",
             "timeout": 60,
             "statusMessage": "Checking with SESI packs"
+          },
+          {
+            "type": "command",
+            "command": "sh /home/dan/dev/priv/volang/tools/cc_check.sh",
+            "timeout": 120,
+            "statusMessage": "Checking C with the strict warning set"
           }
         ]
       }

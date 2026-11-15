@@ -114,7 +114,7 @@ specs/008-c-rewrite/
 src/
 ├── *.c                  # one C file per former assembly file, same name (lex.c, parse.c, ..., vm.c, gc.c)
 ├── vo.h                 # shared C declarations: structs for the defs.inc layouts, GC_ROOT, helpers
-├── defs.inc             # offsets and constants (source of truth until stage 8, then platform-only)
+├── defs.inc             # offsets and constants until stage 8 (T050 folded them into vo.h)
 ├── *.s                  # assembly not yet ported (shrinks to nothing)
 └── platform/
     ├── riscv64.S  riscv64.h   # _start, syscalls, jmp_save/restore; syscall numbers
@@ -122,8 +122,8 @@ src/
     └── aarch64.S  aarch64.h
 tools/
 ├── embed.py             # docs/*.md + std/*.vo -> build/embedded.c (R8)
-├── gen_defs.py          # src/defs.inc -> build/defs.h (R14)
-├── gen_protos.py        # prototype comments of remaining .s -> build/protos.h (R14)
+├── gen_defs.py          # src/defs.inc -> build/defs.h (R14; removed in T050)
+├── gen_protos.py        # prototype comments of remaining .s -> build/protos.h (R14; removed in T050)
 └── cc_check.sh          # per-edit C check (PostToolUse hook, FR-012)
 tests/
 ├── diff_asm.py          # differential against build-asm/vo (R12)

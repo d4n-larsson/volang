@@ -1,0 +1,544 @@
+/* CLI: argument parsing, path expansion, command dispatch (contracts/cli.md; ported from
+ * src/main.s, spec 008). */
+#include "vo.h"
+
+enum {
+    CMD_CHECK = 1,
+    CMD_RUN,
+    CMD_TEST,
+    CMD_FMT,
+    CMD_EXPLAIN,
+    CMD_REFERENCE,
+    CMD_VERSION,
+    CMD_EFFECTS,
+    CMD_QUERY,
+    CMD_IMPACT,
+    CMD_EDIT,
+    CMD_REPLAY,
+    CMD_DOC,
+    CMD_PACKAGE
+};
+
+long opt_json;
+long opt_timeout = 10;
+long opt_mem_stats;
+long opt_remove; /* spec 007: vo package --remove */
+long opt_filter; /* Str * */
+long opt_check;
+long opt_update;
+long prog_argc;
+long prog_argv; /* char ** */
+long opt_cmd;
+long report_fd = 1;
+long pos_args; /* char ** (positional arguments) */
+long pos_n;
+/* spec 006 options (contracts/cli.md) */
+long opt_diff; /* char *: --diff FILE (impact) */
+long opt_dry_run;
+long opt_trace;            /* char *: --trace FILE */
+long opt_trace_limit;      /* 0: not given (default 100000) */
+long opt_record;           /* char *: --record FILE (run) */
+static long opt_seed_given; /* 1 when --seed or --clock-ms was given (replay refuses them) */
+long path_list;            /* Str ** (expanded .vo paths) */
+long path_n;
+static long path_cap;
+
+static char *const cmd_names[] = {"check", "run",    "test",   "fmt",  "explain", "reference", "version",
+                                  "effects", "query", "impact", "edit", "replay",  "doc",       "package", 0};
+
+int cstr_eq(char *a, char *b)
+{
+    for (; *a == *b; a++, b++)
+        if (!*a) return 1;
+    return 0;
+}
+
+/* Emits T0001 and exits 64. */
+void usage_error(Str *message)
+{
+    toolchain_error((int)opt_json, (int)report_fd, "T0001", message, 0);
+    vo_exit(EXIT_USAGE);
+}
+
+void usage_error_arg(char *tmpl, char *arg)
+{
+    usage_error(msg(tmpl, str_from_cstr(arg), 0, 0));
+}
+
+void path_push(Str *str)
+{
+    if (path_n >= path_cap) {
+        long cap = path_cap ? path_cap * 2 : 64;
+        void *grown = alloc(cap * 8);
+        void *old = (void *)path_list;
+        path_list = (long)grown;
+        mem_copy(grown, old, path_n * 8);
+        path_cap = cap;
+    }
+    ((Str **)path_list)[path_n++] = str;
+}
+
+/* Insertion sort (byte-wise) of path_list[from..path_n). */
+void sort_paths(long from)
+{
+    for (long i = from + 1; i < path_n; i++) {
+        Str **list = (Str **)path_list;
+        Str *s = list[i];
+        long j = i - 1;
+        for (; j >= from && str_cmp(list[j], s) > 0; j--) list[j + 1] = list[j];
+        list[j + 1] = s;
+    }
+}
+
+int ends_with_vo(Str *str)
+{
+    long n = str->len;
+    return n >= 3 && str->data[n - 3] == '.' && str->data[n - 2] == 'v' && str->data[n - 1] == 'o';
+}
+
+/* Adds every *.vo file below the open directory fd (recursively) to path_list. */
+void walk_dir(Str *dirpath, int fd)
+{
+    char *buf = alloc(32768); /* dirent buffer */
+    for (;;) {
+        long got = sys_getdents64(fd, buf, 32768);
+        if (got <= 0) return;
+        for (long off = 0; off < got;) {
+            char *ent = buf + off; /* struct linux_dirent64: ino 8, off 8, reclen 2, type 1, name */
+            off += *(uint16_t *)(ent + 16);
+            char *name = ent + 19;
+            if (name[0] == '.') continue; /* skip ".", ".." and hidden entries */
+            SB *sb = sb_new();
+            sb_str(sb, dirpath);
+            sb_byte(sb, '/');
+            sb_cstr(sb, name);
+            Str *full = sb_finish(sb);
+            if (ent[18] == 4) { /* DT_DIR */
+                long sub = sys_open(full->data, O_DIRECTORY);
+                if (sub < 0) continue;
+                walk_dir(full, (int)sub);
+                sys_close((int)sub);
+            } else if (ends_with_vo(full)) {
+                path_push(full);
+            }
+        }
+    }
+}
+
+/* Turns the positional arguments into path_list: directories become their sorted *.vo files. */
+void expand_paths(void)
+{
+    for (long i = 0; i < pos_n; i++) {
+        char *arg = ((char **)pos_args)[i];
+        long fd = sys_open(arg, O_DIRECTORY);
+        if (fd < 0) {
+            path_push(str_from_cstr(arg));
+            continue;
+        }
+        Str *dir = str_from_cstr(arg); /* strip trailing '/' for clean joins */
+        while (dir->len > 1 && dir->data[dir->len - 1] == '/') dir->len--;
+        long from = path_n;
+        walk_dir(dir, (int)fd);
+        sys_close((int)fd);
+        sort_paths(from);
+    }
+}
+
+/* Reads a source file and registers it; returns the file id, or exits 66 with T0002. */
+long load_source(Str *path)
+{
+    long id = file_find(path); /* already loaded (e.g. as another file's import) */
+    if (id >= 0) return id;
+    char *text;
+    long len = read_whole_file(path->data, &text);
+    if (len >= 0) return file_add(path, text, len);
+    Str *m = msg("Cannot read `$1`.", path, 0, 0);
+    toolchain_error((int)opt_json, (int)report_fd, "T0002", m, path);
+    diag_errors++;
+    /* run prints no summary for an unreadable input. The summary is always JSON: main.s passed
+       cmd_name's result where the json flag belongs (kept for identical output; results.md
+       "Deviations" lists it for a fix after the port). */
+    if (opt_cmd != CMD_RUN) summary_emit(1, (int)report_fd, cmd_name(), file_count, 0);
+    vo_exit(EXIT_NOINPUT);
+    return 0;
+}
+
+char *cmd_name(void)
+{
+    return cmd_names[opt_cmd - 1];
+}
+
+void need_paths(void)
+{
+    if (!pos_n) usage_error_arg("`$1` needs at least one path.", cmd_name());
+}
+
+/* A whole number option value; 0 when it is one. */
+static int option_number(char *text, long *out)
+{
+    return dec_to_int(text, cstr_len(text), out);
+}
+
+int vo_main(long argc, char **argv, char **env)
+{
+    envp = (long)env;
+    for (int i = 1; i < argc; i++) { /* pre-scan for --json (before any "--") */
+        if (cstr_eq(argv[i], "--")) break;
+        if (cstr_eq(argv[i], "--json")) opt_json = 1;
+    }
+    pos_args = (long)alloc(argc * 8L);
+    if (argc < 2)
+        usage_error(str_from_cstr("Missing command. Commands: check, run, test, fmt, effects, query, impact, edit, "
+                                  "replay, doc, package, explain, reference, version."));
+    char *cmd = argv[1];
+    long c = 0;
+    while (cmd_names[c] && !cstr_eq(cmd, cmd_names[c])) c++;
+    if (!cmd_names[c])
+        usage_error_arg("Unknown command `$1`. Commands: check, run, test, fmt, effects, query, impact, edit, replay, "
+                        "doc, package, explain, reference, version.",
+                        cmd);
+    opt_cmd = c + 1;
+    if (opt_cmd == CMD_REPLAY || opt_cmd == CMD_RUN) report_fd = 2;
+    for (int i = 2; i < argc;) { /* options and positional arguments */
+        char *a = argv[i++];
+        if (cstr_eq(a, "--")) { /* the program's arguments */
+            prog_argc = argc - i;
+            prog_argv = (long)(argv + i);
+            break;
+        }
+        if (a[0] != '-' || a[1] != '-') { /* positional */
+            ((char **)pos_args)[pos_n++] = a;
+            continue;
+        }
+        long v;
+        if (cstr_eq(a, "--json")) continue;
+        if (cstr_eq(a, "--check")) {
+            opt_check = 1;
+        } else if (cstr_eq(a, "--update")) {
+            opt_update = 1;
+        } else if (cstr_eq(a, "--timeout")) {
+            if (i >= argc || option_number(argv[i++], &v) || v < 0)
+                usage_error(str_from_cstr("`--timeout` needs a whole number of seconds."));
+            opt_timeout = v;
+        } else if (cstr_eq(a, "--filter")) {
+            if (i >= argc) usage_error(str_from_cstr("`--filter` needs a text to match."));
+            opt_filter = (long)str_from_cstr(argv[i++]);
+        } else if (cstr_eq(a, "--seed") || cstr_eq(a, "--clock-ms")) {
+            long which = cstr_eq(a, "--seed") ? 1 : 2;
+            opt_seed_given = 1;
+            if (i >= argc || option_number(argv[i++], &v) || v < 0)
+                usage_error(str_from_cstr("`--seed` and `--clock-ms` need a whole number."));
+            rt_set_option(which, v);
+        } else if (cstr_eq(a, "--remove")) { /* spec 007: vo package */
+            opt_remove = 1;
+        } else if (cstr_eq(a, "--mem-stats")) {
+            opt_mem_stats = 1;
+        } else if (cstr_eq(a, "--max-memory")) {
+            if (i >= argc || option_number(argv[i++], &v) || v < 1 || v > 65536)
+                usage_error(str_from_cstr("`--max-memory` needs a whole number of MiB from 1 to 65536."));
+            gc_limit = v << 20; /* MiB -> bytes */
+        } else { /* spec 006 options */
+            long used = opt_spec006(a, i < argc ? argv[i] : 0);
+            if (used < 0)
+                usage_error_arg("Unknown option `$1`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, "
+                                "--seed N, --clock-ms N, --max-memory MiB, --mem-stats, --trace FILE, --trace-limit N, "
+                                "--record FILE, --diff FILE, --dry-run.",
+                                a);
+            i += (int)used;
+        }
+    }
+    opt_spec006_check();
+    switch (opt_cmd) {
+    case CMD_QUERY: return cmd_query();
+    case CMD_IMPACT: return cmd_impact();
+    case CMD_EDIT: return cmd_edit();
+    case CMD_REPLAY: return cmd_replay();
+    case CMD_DOC: return cmd_doc();
+    case CMD_PACKAGE: return cmd_package();
+    case CMD_VERSION:
+        out_cstr(1, opt_json ? "{\"v\":1,\"kind\":\"version\",\"version\":\"0.1.0\",\"schema\":1}\n"
+                             : "vo 0.1.0 schema 1\n");
+        return 0;
+    case CMD_CHECK: return cmd_check();
+    case CMD_EXPLAIN: return cmd_explain();
+    case CMD_REFERENCE: return cmd_reference();
+    case CMD_RUN: return cmd_run();
+    case CMD_TEST: return cmd_test();
+    case CMD_EFFECTS: return cmd_effects();
+    default: return cmd_fmt();
+    }
+}
+
+/* The options added by spec 006. Returns -1 when flag is none of them, else how many of the
+ * following arguments it used (0 or 1). A missing or bad value is T0001. */
+long opt_spec006(char *flag, char *next)
+{
+    if (cstr_eq(flag, "--dry-run")) {
+        opt_dry_run = 1;
+        return 0;
+    }
+    long *file_opt = 0;
+    if (cstr_eq(flag, "--diff"))
+        file_opt = &opt_diff;
+    else if (cstr_eq(flag, "--trace"))
+        file_opt = &opt_trace;
+    else if (cstr_eq(flag, "--record"))
+        file_opt = &opt_record;
+    else if (!cstr_eq(flag, "--trace-limit"))
+        return -1;
+    if (file_opt) { /* FILE: any non-empty word */
+        if (!next || !*next) usage_error_arg("`$1` needs a file name.", flag);
+        *file_opt = (long)next;
+        return 1;
+    }
+    long v; /* --trace-limit N, 1..100000000 */
+    if (!next || option_number(next, &v) || v < 1 || v > 100000000)
+        usage_error(str_from_cstr("`--trace-limit` needs a whole number from 1 to 100000000."));
+    opt_trace_limit = v;
+    return 1;
+}
+
+/* T0001: "`flag` only works with `commands`." */
+void only_with(char *flag, char *commands)
+{
+    Str *f = str_from_cstr(flag);
+    Str *c = str_from_cstr(commands);
+    usage_error(msg("`$1` only works with `$2`.", f, c, 0));
+}
+
+/* Which commands the spec 006 options belong to (contracts/cli.md "Rules"). Paths that are
+ * program source files are checked after loading (out_paths_check). */
+void opt_spec006_check(void)
+{
+    long cmd = opt_cmd;
+    if (cmd == CMD_IMPACT) {
+        if (!opt_diff) usage_error(str_from_cstr("`impact` needs `--diff FILE` (or `--diff -` for stdin)."));
+    } else if (opt_diff) {
+        only_with("--diff", "impact");
+    }
+    if (opt_dry_run && cmd != CMD_EDIT) only_with("--dry-run", "edit");
+    if (opt_record && cmd != CMD_RUN) only_with("--record", "run");
+    if (opt_trace && cmd != CMD_RUN && cmd != CMD_TEST && cmd != CMD_REPLAY)
+        only_with("--trace", "run`, `test` or `replay");
+    if (opt_trace_limit && !opt_trace) usage_error(str_from_cstr("`--trace-limit` needs `--trace FILE`."));
+    if (cmd == CMD_REPLAY && (opt_seed_given || prog_argv))
+        usage_error(str_from_cstr(
+            "`replay` takes `--seed`, `--clock-ms` and program arguments from the recording; leave them out."));
+    if (opt_trace && opt_record && cstr_eq((char *)opt_trace, (char *)opt_record)) /* the same file for both */
+        usage_error_arg("`--trace` and `--record` name the same file `$1`.", (char *)opt_trace);
+}
+
+/* T0001 when --trace or --record names one of the loaded program's source files (contracts/cli.md). */
+void out_paths_check(void)
+{
+    if (opt_trace) out_path_is_source((char *)opt_trace);
+    if (opt_record) out_path_is_source((char *)opt_record);
+}
+
+/* T0001 if path equals the path of a loaded source file. */
+void out_path_is_source(char *path)
+{
+    Str *p = str_from_cstr(path);
+    for (long i = 0; i < file_count; i++)
+        if (str_eq(file_get((int)i)->path, p))
+            usage_error_arg("`$1` is a source file of the program; choose another file for the trace or recording.",
+                            path);
+}
+
+/* Spec 006: checks that --trace and --record do not name a source file, then starts them. */
+void outputs_start(long is_test)
+{
+    out_paths_check();
+    trace_start(is_test);
+    rcd_start();
+}
+
+int not_implemented(void)
+{
+    Str *m = msg("`$1` is not implemented yet.", str_from_cstr(cmd_name()), 0, 0);
+    toolchain_error((int)opt_json, (int)report_fd, "T0003", m, 0);
+    return EXIT_INTERNAL;
+}
+
+/* Emits diagnostics and the summary; returns 65 when there were errors. */
+int finish_check(long files)
+{
+    diag_emit_all((int)opt_json, (int)report_fd);
+    summary_emit((int)opt_json, (int)report_fd, cmd_name(), files, 0);
+    return diag_errors ? EXIT_CHECK : 0;
+}
+
+int cmd_check(void)
+{
+    need_paths();
+    expand_paths();
+    long i = 0;
+    for (; i < path_n; i++) {
+        long file = load_source(((Str **)path_list)[i]);
+        long errors = diag_errors;
+        check_program((int)file, 0); /* mode: check */
+        if (diag_errors == errors) rec_review((int)file, ld_files()); /* a clean program: its effects record */
+    }
+    return finish_check(i);
+}
+
+/* `vo effects [--json] [--update] FILE` (contracts/cli-v2.md). */
+int cmd_effects(void)
+{
+    need_paths();
+    if (pos_n != 1) usage_error(str_from_cstr("`effects` takes exactly one file."));
+    long file = load_source(str_from_cstr(((char **)pos_args)[0]));
+    check_program((int)file, 0);
+    if (!diag_errors) rec_command((int)file, ld_files(), (int)opt_update, (int)opt_json);
+    return finish_check(1);
+}
+
+/* Prints the catalog section of one code (or an `explain` record under --json). */
+int cmd_explain(void)
+{
+    if (pos_n != 1) usage_error(str_from_cstr("`explain` takes one error code, e.g. `vo explain E0301`."));
+    char *code = ((char **)pos_args)[0];
+    int ok = cstr_len(code) == 5 && (code[0] == 'E' || code[0] == 'W' || code[0] == 'R' || code[0] == 'T'); /* [EWRT][0-9]{4} */
+    for (int i = 1; ok && i < 5; i++) ok = code[i] >= '0' && code[i] <= '9';
+    Str *section = ok ? catalog_section(code) : 0;
+    if (!section)
+        usage_error_arg("Unknown error code `$1`. Codes look like E0301, W0201, R0002 or T0001.", code);
+    if (!opt_json) {
+        out_str(1, section);
+        return 0;
+    }
+    SB *sb = sb_new(); /* {"v":1,"kind":"explain","code":..,"name":..,"fixable":..,"text":..} */
+    sb_cstr(sb, "{\"v\":1,\"kind\":\"explain\",\"code\":\"");
+    sb_cstr(sb, code);
+    sb_cstr(sb, "\",\"name\":\"");
+    sb_str(sb, catalog_name(code));
+    sb_cstr(sb, "\",\"fixable\":");
+    sb_cstr(sb, catalog_fixable(code) ? "true" : "false");
+    sb_cstr(sb, ",\"text\":");
+    json_str_into(sb, section);
+    sb_cstr(sb, "}\n");
+    out_bytes(1, sb->ptr, sb->len);
+    return 0;
+}
+
+/* Prints the embedded language reference unchanged (or a `reference` record under --json). */
+int cmd_reference(void)
+{
+    if (!opt_json) {
+        out_bytes(1, (char *)ref_md, ref_md_len);
+        return 0;
+    }
+    SB *sb = sb_new();
+    sb_cstr(sb, "{\"v\":1,\"kind\":\"reference\",\"text\":");
+    json_str_into(sb, str_new((char *)ref_md, ref_md_len));
+    sb_cstr(sb, "}\n");
+    out_bytes(1, sb->ptr, sb->len);
+    return 0;
+}
+
+/* Checks one file (main required), then runs it. */
+int cmd_run(void)
+{
+    need_paths();
+    if (pos_n != 1) usage_error(str_from_cstr("`run` takes exactly one file."));
+    long file = load_source(str_from_cstr(((char **)pos_args)[0]));
+    check_program((int)file, 1);
+    if (diag_errors) return finish_check(1); /* warnings do not stop the run (not shown either) */
+    Node *main_fn = find_main(file_get((int)file)->ast->a.v);
+    outputs_start(0);    /* spec 006: --trace / --record */
+    compile_program();   /* bytecode for every function (spec 004) */
+    rt_effects_start(0);
+    int status = run_main(main_fn);
+    gc_report(2, "run", 0);
+    return status;
+}
+
+/* Checks every file (test mode), then runs their tests; 1 when any test did not pass. */
+int cmd_test(void)
+{
+    need_paths();
+    expand_paths();
+    long n = path_n;
+    long *ids = alloc(n * 8); /* entry file ids */
+    for (long i = 0; i < n; i++) {
+        ids[i] = load_source(((Str **)path_list)[i]);
+        check_program((int)ids[i], 2); /* mode: test */
+    }
+    if (diag_errors) return finish_check(n);
+    diag_emit_all((int)opt_json, 1); /* warnings first, then the tests */
+    outputs_start(1);                /* spec 006: --trace */
+    compile_program();               /* bytecode for every function and test (spec 004) */
+    interp_init();
+    gc_start();
+    for (long i = 0; i < n; i++) run_file_tests((int)ids[i]);
+    test_summary(n);
+    return t_failed + t_errored + t_timed_out ? EXIT_FAIL : 0;
+}
+
+/* Formats files in place (or lists them with --check). Any syntax error: nothing is written, 65. */
+int cmd_fmt(void)
+{
+    need_paths();
+    expand_paths();
+    long n = path_n;
+    long *ids = alloc(n * 8); /* file ids */
+    for (long i = 0; i < n; i++) {
+        ids[i] = load_source(((Str **)path_list)[i]);
+        lex((int)ids[i]);
+        parse_file((int)ids[i]);
+    }
+    if (diag_errors) return finish_check(n); /* refuse: report the syntax errors, change nothing */
+    long changed_files = 0;
+    for (long i = 0; i < n; i++) {
+        Str *text = fmt_file((int)ids[i]); /* formatted text */
+        FileRec *f = file_get((int)ids[i]);
+        int changed = !str_eq_bytes(text, f->text, f->len);
+        changed_files += changed;
+        if (changed && !opt_check) write_file_safely(f->path, text);
+        fmt_report(f->path, changed);
+    }
+    SB *sb = sb_new(); /* summary */
+    if (opt_json) {
+        sb_cstr(sb, ",\"changed\":");
+        int_to_dec(sb, changed_files);
+        summary_emit(1, 1, "fmt", n, sb_finish(sb));
+    } else {
+        int_to_dec(sb, changed_files);
+        sb_cstr(sb, " of ");
+        int_to_dec(sb, n);
+        sb_cstr(sb, opt_check ? " files need formatting\n" : " files changed\n");
+        out_bytes(1, sb->ptr, sb->len);
+    }
+    return opt_check && changed_files ? EXIT_FAIL : 0;
+}
+
+/* JSON: one fmt record per file. Human: a line per changed file. */
+void fmt_report(Str *path, int changed)
+{
+    SB *sb = sb_new();
+    if (opt_json) {
+        sb_cstr(sb, "{\"v\":1,\"kind\":\"fmt\",\"file\":");
+        json_str_into(sb, path);
+        sb_cstr(sb, changed ? ",\"changed\":true}\n" : ",\"changed\":false}\n");
+    } else {
+        if (!changed) return;
+        sb_cstr(sb, opt_check ? "not formatted: " : "formatted ");
+        sb_str(sb, path);
+        sb_byte(sb, '\n');
+    }
+    out_bytes(1, sb->ptr, sb->len);
+}
+
+/* Writes <path>.vo-fmt.tmp, then renames it over path, so a crash never truncates the source. */
+void write_file_safely(Str *path, Str *text)
+{
+    SB *sb = sb_new();
+    sb_str(sb, path);
+    sb_cstr(sb, ".vo-fmt.tmp");
+    Str *tmp = sb_finish(sb); /* temp path (NUL-terminated str) */
+    long fd = sys_open(tmp->data, O_WRCREAT);
+    if (fd < 0) return;
+    write_all((int)fd, text->data, text->len);
+    sys_close((int)fd);
+    sys_rename(tmp->data, path->data);
+}

@@ -1,5 +1,5 @@
-timeout_in_sort.vo:8:5: runtime error[R0009]: Time limit of 4 s exceeded.
-   8 |     sort(xs);
+timeout_in_sort.vo:14:5: runtime error[R0009]: Time limit of 4 s exceeded.
+  14 |     sort(xs);
      |     ^^^^^^^^
 trace:
-  at main (timeout_in_sort.vo:8:5)
+  at main (timeout_in_sort.vo:14:5)

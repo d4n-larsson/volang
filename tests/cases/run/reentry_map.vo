@@ -1,0 +1,9 @@
+# R7: recursion only through map (spec 008): the depth of R0005 is pinned by the trace.
+fn f(n: int) -> int {
+    let ys = map([n], fn(x: int) -> int { return f(x + 1); });
+    return ys[0];
+}
+
+fn main() uses console {
+    print(str(f(1)));
+}

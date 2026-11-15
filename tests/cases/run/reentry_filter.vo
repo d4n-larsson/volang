@@ -1,0 +1,9 @@
+# R7: recursion only through filter (spec 008): the depth of R0005 is pinned by the trace.
+fn f(n: int) -> int {
+    let ys = filter([n], fn(x: int) -> bool { return f(x + 1) > 0; });
+    return len(ys);
+}
+
+fn main() uses console {
+    print(str(f(1)));
+}
