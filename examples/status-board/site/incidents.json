@@ -1,0 +1,5 @@
+[
+ {"service": "search", "title": "index rebuild stalled", "open": true},
+ {"service": "billing", "title": "slow invoice export", "open": true},
+ {"service": "api", "title": "certificate renewed late", "open": false}
+]

@@ -1,0 +1,101 @@
+# The status board: reading the service's JSON documents and rendering the board. Everything here is
+# pure (no `uses`): it never touches the network, so the tests feed it JSON text directly.
+import std.json.Json;
+import std.json.as_array;
+import std.json.bool_field;
+import std.json.field;
+import std.json.int_field;
+import std.json.text_field;
+import std.text.pad_left;
+import std.text.pad_right;
+
+record Service {
+    name: str;
+    up: bool;
+    latency_ms: int;
+}
+
+record Incident {
+    service: str;
+    title: str;
+    open: bool;
+}
+
+# The services in /status.json: {"checked": ..., "services": [{"name", "up", "latency_ms"}, ...]}.
+fn services_from(doc: Json) -> result[list[Service]] {
+    let out = new list[Service];
+    for s in try as_array(try field(doc, "services")) {
+        push(out, new Service { name: try text_field(s, "name"), up: try bool_field(s, "up"), latency_ms: try int_field(s, "latency_ms") });
+    }
+    return ok(out);
+}
+
+# The incidents in /incidents.json: [{"service", "title", "open"}, ...].
+fn incidents_from(doc: Json) -> result[list[Incident]] {
+    let out = new list[Incident];
+    for i in try as_array(doc) {
+        push(out, new Incident { service: try text_field(i, "service"), title: try text_field(i, "title"), open: try bool_field(i, "open") });
+    }
+    return ok(out);
+}
+
+fn down_count(services: list[Service]) -> int {
+    var n = 0;
+    for s in services {
+        if not s.up {
+            set n = n + 1;
+        }
+    }
+    return n;
+}
+
+# One line per service (down ones first, then by name), the slowest service that is up, and the
+# open incidents.
+fn render(services: list[Service], incidents: list[Incident]) -> str {
+    let rows = new list[Service];
+    for s in services {
+        push(rows, s);
+    }
+    sort_by(rows, fn(s: Service) -> str {
+        return s.name;
+    });
+    sort_by(rows, fn(s: Service) -> int {
+        if s.up {
+            return 1;
+        }
+        return 0;
+    });
+    var w = 0;
+    for s in rows {
+        if len(chars(s.name)) > w {
+            set w = len(chars(s.name));
+        }
+    }
+    var out = str(len(rows) - down_count(rows)) + " of " + str(len(rows)) + " services up\n\n";
+    var slowest = "";
+    var slowest_ms = -1;
+    for s in rows {
+        if s.up {
+            set out = out + "  up    " + pad_right(s.name, w, " ") + pad_left(str(s.latency_ms), 6, " ") + " ms\n";
+            if s.latency_ms > slowest_ms {
+                set slowest = s.name;
+                set slowest_ms = s.latency_ms;
+            }
+        } else {
+            set out = out + "  DOWN  " + s.name + "\n";
+        }
+    }
+    if slowest_ms >= 0 {
+        set out = out + "\nslowest: " + slowest + " (" + str(slowest_ms) + " ms)\n";
+    }
+    var open = "";
+    for i in incidents {
+        if i.open {
+            set open = open + "  " + i.service + ": " + i.title + "\n";
+        }
+    }
+    if open != "" {
+        set out = out + "\nopen incidents:\n" + open;
+    }
+    return out;
+}
