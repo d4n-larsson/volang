@@ -13,9 +13,9 @@ enum {
     BU_SORT, BU_HAS, BU_REMOVE, BU_KEYS, BU_EXPECT, BU_EXPECT_EQ, BU_OK, BU_ERR,
     BU_ABS, BU_MIN, BU_MAX, BU_UPPER, BU_LOWER, BU_ORD, BU_CHR, BU_ENV, BU_RANDOM_INT,
     BU_SORT_BY, BU_MAP, BU_FILTER, BU_FOLD, BU_ANY, BU_ALL, BU_TODO, BU_ASSUME, BU_REQ_FAIL,
-    BU_ENS_FAIL, BU_FLOAT_TEXT, BU_HTTP_EXCHANGE, BU_TEXT_FLOAT
+    BU_ENS_FAIL, BU_FLOAT_TEXT, BU_HTTP_EXCHANGE, BU_TEXT_FLOAT, BU_GET_OR
 };
-_Static_assert(BU_TEXT_FLOAT == B_LAST, "the builtin ids end at B_LAST");
+_Static_assert(BU_GET_OR == B_LAST, "the builtin ids end at B_LAST");
 _Static_assert(BU_TODO == B_TODO && BU_REQ_FAIL == B_REQ_FAIL && BU_SORT_BY == B_SORT_BY, "builtin ids");
 
 /* The static type of the call's first argument. */
@@ -139,6 +139,10 @@ long builtin_call(Node *call, long a0, long a1, long a2)
         return 0;
     }
     case BU_HAS: return map_find((Map *)a0, a1, map_key_type()) >= 0;
+    case BU_GET_OR: { /* spec 009: the stored value, or the default; never inserts */
+        long e = map_find((Map *)a0, a1, map_key_type());
+        return e >= 0 ? ((Map *)a0)->entries[e].val.i : a2;
+    }
     case BU_REMOVE: map_remove((Map *)a0, a1, map_key_type()); return 0;
     case BU_KEYS: return (long)map_keys((Map *)a0);
     case BU_EXPECT: rt_expect(a0, call); return 0;

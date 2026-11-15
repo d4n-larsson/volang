@@ -62,6 +62,8 @@ pop (xs: list[T]) -> result[T]
 sort (xs: list[C])
     in place, ascending, stable
 has (m: map[K, T], k: K) -> bool
+get_or (m: map[K, T], k: K, default: T) -> T
+    the default when the key is missing; never adds it
 remove (m: map[K, T], k: K)
     no effect if the key is missing
 keys (m: map[K, T]) -> list[K]

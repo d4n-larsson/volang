@@ -240,11 +240,24 @@ Str *rt_start_cwd(void)
 }
 
 /* R0010: the effect (with target path or name, or 0) is outside the running declaration. */
+/* Spec 009: the frame whose function's `uses` clause gave the running frame its effects. Library and
+ * anonymous functions declare none at run time and run with their caller's grant (vm_push's rule),
+ * so the walk goes up through them; tests and functions with a declaration stop it, as does main. */
+static Frame *grant_frame(Frame *f)
+{
+    while (f && f->parent) {
+        Node *decl = f->fn;
+        if (decl->kind == N_TEST || (decl->a.n && decl->a.n->b.fx && decl->a.n->b.fx->declared)) break;
+        f = f->parent;
+    }
+    return f;
+}
+
 void rt_denied(long bit, Str *target)
 {
     EffSet *declared = rt_frame_effects(); /* (may be 0) */
     GC_ROOT(&target);
-    Str *fn = frame_fn_name((void *)cur_frame);
+    Str *fn = frame_fn_name(grant_frame((Frame *)cur_frame)); /* the function that declared them */
     GC_ROOT(&fn);
     SB *sb = sb_new(); /* what was attempted: effect("target") */
     GC_ROOT(&sb); /* (the same root covers the second builder below) */
@@ -286,7 +299,7 @@ void rt_denied(long bit, Str *target)
         sb_bytes(sb, text->data, text->len);
     }
     sb_cstr(sb, "],\"declared_by\":");
-    json_str_into(sb, frame_fn_name((void *)cur_frame));
+    json_str_into(sb, fn);
     rt_err_extra = (long)sb_finish(sb);
     GC_UNROOT(6);
     rt_raise("R0010", m, (void *)cur_node);

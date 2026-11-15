@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0202","name":"duplicate_definition","severity":"error","file":"get_or_redefined.vo","start":{"line":2,"col":4},"end":{"line":2,"col":10},"text":"get_or","message":"`get_or` is a builtin and cannot be redefined.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0302","name":"wrong_argument_count","severity":"error","file":"get_or_redefined.vo","start":{"line":10,"col":15},"end":{"line":10,"col":45},"text":"get_or(new map[str, int], \"a\")","message":"`get_or` takes 3 argument(s), got 2.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

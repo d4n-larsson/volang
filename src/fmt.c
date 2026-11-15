@@ -426,7 +426,9 @@ static void fm_stmt(Node *s, long level)
             }
             fm_c("case ");
             fm_name(arm->a.n);
-            if (arm->flags & NF_DISCARD) {
+            if (arm->flags & NF_EMPTY_ARM) { /* spec 009 */
+                fm_c("()");
+            } else if (arm->flags & NF_DISCARD) {
                 fm_b('(');
                 fm_c("_");
                 fm_b(')');

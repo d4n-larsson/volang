@@ -1,0 +1,17 @@
+# Empty parentheses on a variant case are E0411: `case none` has no value, `case one(_)` ignores one.
+variant Shape {
+    none;
+    one(int);
+}
+
+fn main() uses console {
+    let s = Shape.one(3);
+    match s {
+        case none() {
+            print("none");
+        }
+        case one() {
+            print("one");
+        }
+    }
+}

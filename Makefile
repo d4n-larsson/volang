@@ -200,11 +200,14 @@ diff-asm: all asm
 # collector stress suite and the speed check) at every stage boundary and on every step from the
 # runtime stage on. Since the VM is C (T047), the speed check is enforced: at most 10% slower than
 # build-asm/vo, geometric mean (SC-004).
+# Since spec 009 the language changes again, so mutated sources (`diff_asm.py --mutants`, the spec 008
+# porting check of the front end) disagree with build-asm/vo by design; generated programs, which use none
+# of the new features, are still compared. Malformed input stays covered by fuzz.py in `make test`.
 gate-step: all asm
 	@echo "== gate: lint" && $(MAKE) -s lint </dev/null
 	@echo "== gate: test" && $(MAKE) -s test
 	@echo "== gate: ubtrap" && $(MAKE) -s ubtrap
-	@echo "== gate: diff-asm" && python3 tests/diff_asm.py --count 2000 --mutants 2000 --seed 1
+	@echo "== gate: diff-asm" && python3 tests/diff_asm.py --count 2000 --seed 1
 	@echo "== gate-step: passed"
 
 # SC-004 compares like with like: the RISC-V build against build-asm/vo, both under qemu.

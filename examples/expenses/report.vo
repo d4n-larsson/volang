@@ -4,8 +4,8 @@ import std.json.Json;
 import std.json.as_array;
 import std.json.int_field;
 import std.json.text_field;
-import std.text.pad_left;
-import std.text.pad_right;
+import std.text.align_left;
+import std.text.align_right;
 import std.text.repeat;
 import std.time.parse_time;
 
@@ -57,11 +57,7 @@ fn totals(xs: list[Expense], key: fn(Expense) -> str) -> list[Total] {
     let sums = new map[str, int];
     for e in xs {
         let k = key(e);
-        if has(sums, k) {
-            set sums[k] = sums[k] + e.cents;
-        } else {
-            set sums[k] = e.cents;
-        }
+        set sums[k] = get_or(sums, k, 0) + e.cents;
     }
     let out = new list[Total];
     for k in keys(sums) {
@@ -86,12 +82,12 @@ fn table(title: str, rows: list[Total]) -> str {
             set w = len(chars(t.name));
         }
     }
-    var out = pad_right(title, w, " ") + "  " + pad_left("amount", 10, " ") + "\n";
+    var out = align_left(title, w) + "  " + align_right("amount", 10) + "\n";
     set out = out + repeat("-", w + 12) + "\n";
     for t in rows {
-        set out = out + pad_right(t.name, w, " ") + "  " + pad_left(money(t.cents), 10, " ") + "\n";
+        set out = out + align_left(t.name, w) + "  " + align_right(money(t.cents), 10) + "\n";
     }
-    return out + pad_right("total", w, " ") + "  " + pad_left(money(sum(rows)), 10, " ") + "\n";
+    return out + align_left("total", w) + "  " + align_right(money(sum(rows)), 10) + "\n";
 }
 
 # The whole report: by category (largest first) and by month (in date order).

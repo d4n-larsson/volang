@@ -1,0 +1,20 @@
+# get_or(m, key, default): the stored value, or the default; the map never changes (spec 009).
+fn main() uses console {
+    let ages = new map[str, int];
+    set ages["ana"] = 31;
+    print(str(get_or(ages, "ana", 0)) + " " + str(get_or(ages, "bo", -1)));
+    print(str(len(ages)) + " " + str(has(ages, "bo")));
+    let names = new map[int, str];
+    set names[7] = "seven";
+    print(get_or(names, 7, "?") + " " + get_or(names, 8, "?"));
+    let nested = new map[str, map[str, int]];
+    let inner = get_or(nested, "x", new map[str, int]);
+    print(str(len(inner)) + " " + str(len(nested)));
+    let counts = new map[str, int];
+    for w in split("a b a c b a", " ") {
+        set counts[w] = get_or(counts, w, 0) + 1;
+    }
+    for k in keys(counts) {
+        print(k + " " + str(counts[k]));
+    }
+}

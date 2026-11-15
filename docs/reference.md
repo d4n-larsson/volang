@@ -565,7 +565,7 @@ b
 
 vo has no exceptions and no `null`. A function that can fail returns `result[T]`, which is either `ok(value)` or `err(message)`; the error is always a `str`. A function that can fail but has no value returns `result[void]` and succeeds with `ok()`.
 
-- Build: `ok(v)`, `ok()`, `err("message")`. The result type must be known from the function's return type or an annotation: `let r: result[int] = ok(1);` (`let r = ok(1);` is E0307).
+- Build: `ok(v)`, `ok()`, `err("message")`. Match the success of a `result[void]` with `case ok()`, as it is built. The result type must be known from the function's return type or an annotation: `let r: result[int] = ok(1);` (`let r = ok(1);` is E0307).
 - Handle with `match`, which must cover both `ok` and `err`. For `result[void]` write `case ok { }` without a binding.
 - Propagate with `try`: `try e` gives the `ok` value, or immediately returns the `err` from the current function. `try` is only allowed in a function that returns a `result` (E0406). Any `result[T]` error can propagate through any `result[U]` function, since both carry a `str`.
 - `try f();` as a statement is only for `result[void]`. For other results use the value, or write `let _ = try f();`.
@@ -765,6 +765,7 @@ fn main() uses console {
 | pop | `(xs: list[T]) -> result[T]` | removes the last element; `err("empty")` |
 | sort | `(xs: list[C])` | in place, ascending, stable |
 | has | `(m: map[K, T], k: K) -> bool` | |
+| get_or | `(m: map[K, T], k: K, default: T) -> T` | the default when the key is missing; never adds it |
 | remove | `(m: map[K, T], k: K)` | no effect if the key is missing |
 | keys | `(m: map[K, T]) -> list[K]` | in insertion order |
 | expect | `(cond: bool)` | only inside `test` (E0410) |
@@ -1051,7 +1052,7 @@ renamed area to rect_area: 2 changes in 1 file (dry run, nothing written)
 
 - `vo run --trace FILE` (and `vo test`) writes JSON lines: `call` (function, call site, depth, `args` by name) and `return` (value) for every vo function, `error` when a runtime error ends it, `test` before each test, and `end` (`records`, `omitted`, `status`). Values are shortened to 200 bytes. After `--trace-limit N` records (default 100000) the rest are only counted.
 - A runtime error lists, under each frame, its parameters and the locals declared before the failing statement: `i: int = 3` (in JSON, `locals` of each `trace` entry). Timeouts show no values: they depend on the machine's speed.
-- `vo run --record FILE` saves everything the program receives: arguments, stdin, environment variables, file reads, results of file writes, the clock and the seed. `vo replay FILE` runs the current program on exactly that, reading and writing nothing outside: the same program gives the same output and exit status (unless it timed out). A changed program is run with a note; one that asks for a different input stops with R0014. A recording holds the file contents and variables the program read.
+- `vo run --record FILE` saves everything the program receives: arguments, stdin, environment variables, file reads, results of file writes, the clock and the seed. `vo replay FILE` runs the current program on exactly that, reading and writing nothing outside: the same program gives the same output and exit status (unless it timed out). A changed program is run with a note; one that asks for a different input (another file, variable or HTTP request: host, port, method or path) stops with R0014. A recording holds the file contents and variables the program read.
 
 ```vo
 fn last(xs: list[int]) -> int {

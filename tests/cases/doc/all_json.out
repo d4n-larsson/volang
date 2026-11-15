@@ -32,6 +32,7 @@
 {"v":1,"kind":"doc","module":"builtins","name":"pop","item":"builtin","signature":"(xs: list[T]) -> result[T]","description":"removes the last element; `err(\"empty\")`"}
 {"v":1,"kind":"doc","module":"builtins","name":"sort","item":"builtin","signature":"(xs: list[C])","description":"in place, ascending, stable"}
 {"v":1,"kind":"doc","module":"builtins","name":"has","item":"builtin","signature":"(m: map[K, T], k: K) -> bool","description":""}
+{"v":1,"kind":"doc","module":"builtins","name":"get_or","item":"builtin","signature":"(m: map[K, T], k: K, default: T) -> T","description":"the default when the key is missing; never adds it"}
 {"v":1,"kind":"doc","module":"builtins","name":"remove","item":"builtin","signature":"(m: map[K, T], k: K)","description":"no effect if the key is missing"}
 {"v":1,"kind":"doc","module":"builtins","name":"keys","item":"builtin","signature":"(m: map[K, T]) -> list[K]","description":"in insertion order"}
 {"v":1,"kind":"doc","module":"builtins","name":"expect","item":"builtin","signature":"(cond: bool)","description":"only inside `test` (E0410)"}
@@ -41,4 +42,4 @@
 {"v":1,"kind":"doc","module":"std.text","name":"std.text","item":"module","signature":"std.text","description":"Text helpers: search, replace, repeat, pad, lines and words."}
 {"v":1,"kind":"doc","module":"std.random","name":"std.random","item":"module","signature":"std.random","description":"Random floats, picks and shuffles (fixed by --seed)."}
 {"v":1,"kind":"doc","module":"std.http","name":"std.http","item":"module","signature":"std.http","description":"Plain HTTP GET and POST (needs net; https is not supported)."}
-{"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":43}
+{"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":44}

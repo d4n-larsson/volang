@@ -2,7 +2,8 @@
 """v1 -> v2 migration through fixes (US5, SC-005, FR-033).
 
 Default: for every entry in tests/migrate/v1/MANIFEST (the frozen v1 corpus), copy it, check it,
-require that only migration diagnostics appear (E0501, plus W0504 for multi-file programs) besides
+require that only migration diagnostics appear (E0501, W0402 since spec 009, plus W0504 for multi-file
+programs) besides
 those v1 already reported, apply
 the first fix of every diagnostic once, then require a clean check, canonical formatting
 (`fmt --check`, for files v1 already accepted as canonical), and byte-identical stdout and exit status against the recorded v1 run.
@@ -21,7 +22,7 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 CORPUS = os.path.join(ROOT, "tests", "migrate", "v1")
-MIGRATION = {"E0501", "W0504"}
+MIGRATION = {"E0501", "W0504", "W0402"}  # spec 009: `case ok` / `case ok(_)` on a result[void], with a fix
 # Intended behavior changes since v1, with the spec that made them: (stdout, exit status) expected now.
 CHANGED = {
     "run-oom_small/oom_small.vo": (b"58888890\n", 0),  # spec 003: memory is reclaimed, so it finishes

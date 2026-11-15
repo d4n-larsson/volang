@@ -14,6 +14,7 @@
 #define B_HAS 26
 #define B_REMOVE 27
 #define B_KEYS 28
+#define B_GET_OR 55 /* spec 009 */
 #define B_EXPECT 29
 #define B_EXPECT_EQ 30
 #define B_OK 31
@@ -21,7 +22,7 @@
 #define B_ABS 33
 #define B_MIN 34
 #define B_MAX 35
-#define B_COUNT 54 /* names up to here (50, 51 are internal and unnamed) */
+#define B_COUNT 55 /* names up to here (50, 51 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -31,7 +32,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "keys",     "expect",      "expect_eq", "ok",      "err",          "abs",          "min",
     "max",      "upper",       "lower",     "ord",     "chr",          "env",          "random_int",
     "sort_by",  "map",         "filter",    "fold",    "any",          "all",          "todo",
-    "assume",   0,             0,           "__float_text", "__http_exchange", "__text_float",
+    "assume",   0,             0,           "__float_text", "__http_exchange", "__text_float", "get_or",
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -279,6 +280,13 @@ Type *check_builtin(Node *call, long id, Type *expected)
             check_arg(call, 1, m ? m->a.t : 0);
         }
         return id == B_HAS ? t_bool : t_void;
+    case B_GET_OR: { /* get_or(map[K, V], K, V) -> V (spec 009) */
+        if (!check_argc(call, 3)) return t_error;
+        Type *m = map_arg(call);
+        check_arg(call, 1, m ? m->a.t : 0);
+        check_arg(call, 2, m ? m->b.t : 0);
+        return m ? m->b.t : t_error;
+    }
     case B_KEYS: { /* keys(map[K, V]) -> list[K] */
         if (!check_argc(call, 1)) return t_error;
         Type *m = map_arg(call);

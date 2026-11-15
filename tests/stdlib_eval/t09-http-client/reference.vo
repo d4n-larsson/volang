@@ -16,7 +16,7 @@ fn run(port: str) -> result[void] uses console, net("localhost") {
 
 fn main() uses console, net("localhost") {
     match run(args()[0]) {
-        case ok(_) {
+        case ok() {
         }
         case err(e) {
             print("error: " + e);

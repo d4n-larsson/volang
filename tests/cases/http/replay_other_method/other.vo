@@ -1,0 +1,24 @@
+# The changed program: POST instead of GET, to the same path.
+import std.http.Response;
+import std.http.post;
+
+fn show(r: result[Response]) uses console {
+    match r {
+        case ok(resp) {
+            print("status " + str(resp.status));
+            for h in resp.headers {
+                print("header " + h.name + ": " + h.value);
+            }
+            print("body (" + str(len(resp.body)) + "):");
+            print(resp.body);
+        }
+        case err(e) {
+            print("err " + e);
+        }
+    }
+}
+
+fn main() uses console, net("localhost") {
+    let a = args();
+    show(post("http://localhost:" + a[0] + a[1], "text/plain", "x"));
+}

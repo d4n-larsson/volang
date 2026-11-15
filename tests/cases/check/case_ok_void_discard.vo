@@ -1,0 +1,26 @@
+# `case ok(_)` and `case ok` on a `result[void]` still work, with W0402 and a fix to `case ok()`.
+fn check(n: int) -> result[void] {
+    if n < 0 {
+        return err("negative");
+    }
+    return ok();
+}
+
+fn main() uses console {
+    match check(1) {
+        case ok(_) {
+            print("ok");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    match check(2) {
+        case ok {
+            print("ok");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

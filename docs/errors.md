@@ -1369,6 +1369,44 @@ fn main() uses console {
 }
 ```
 
+## E0411 empty_case_parens
+
+`case NAME()` on anything but the success of a `result[void]`.
+
+Fixable: yes
+
+Empty parentheses in a `case` mean "the success of a `result[void]`", which `ok()` builds and `case ok()` matches. A case that carries a value binds it with `case NAME(v)` or ignores it with `case NAME(_)`; a variant case without a value is written `case NAME`. The fix writes the matching form.
+
+### Example
+
+```vo
+fn main() uses console {
+    match parse_int("4") {
+        case ok() {
+            print("a number");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    match parse_int("4") {
+        case ok(_) {
+            print("a number");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
+```
+
 ## E0501 missing_effect
 
 A function or test does something its `uses` clause does not declare.
@@ -1879,6 +1917,58 @@ fn main() uses console {
 fn main() uses console {
     print("start");
     print("now runs");
+}
+```
+
+## W0402 void_ok_pattern
+
+The success of a `result[void]` is matched with `case ok(_)` or `case ok`.
+
+Fixable: yes
+
+A `result[void]` succeeds with `ok()`, and its success is matched the same way: `case ok()`. `case ok(_)` and `case ok` still work, so this is a warning; the fix rewrites the pattern to `case ok()`.
+
+### Example
+
+```vo
+fn check(n: int) -> result[void] {
+    if n < 0 {
+        return err("negative");
+    }
+    return ok();
+}
+
+fn main() uses console {
+    match check(1) {
+        case ok(_) {
+            print("fine");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
+```
+
+### Fixed
+
+```vo
+fn check(n: int) -> result[void] {
+    if n < 0 {
+        return err("negative");
+    }
+    return ok();
+}
+
+fn main() uses console {
+    match check(1) {
+        case ok() {
+            print("fine");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
 }
 ```
 

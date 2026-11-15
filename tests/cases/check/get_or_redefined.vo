@@ -1,0 +1,11 @@
+# get_or is a builtin: a function of that name is E0202 (spec 009).
+fn get_or(m: map[str, int], k: str) -> int {
+    if has(m, k) {
+        return m[k];
+    }
+    return 0;
+}
+
+fn main() uses console {
+    print(str(get_or(new map[str, int], "a")));
+}

@@ -12,6 +12,7 @@
 long rcd_mode;                /* 0 off, 1 recording, 2 replaying */
 static void *rcd_fb;          /* the recording (FBuf), or 0 */
 static long rcd_failed;       /* it could not be created (T0009 at exit) */
+static Str *rcd_request; /* spec 009: the request line of the http event being written */
 static long rcd_pending_kind; /* a read/write being checked: written as `denied` if R0010 ends the run */
 static Str *rcd_pending_path;
 static Vec *rp_events;        /* replay: Event records */
@@ -37,7 +38,7 @@ static const char *const d_table[] = {0,
                                       "reads the variable `$1`",
                                       "reads the clock",
                                       "the end",
-                                      "makes an HTTP request to `$1`"};
+                                      "makes an HTTP request $1"};
 static const char *const n_table[] = {0,
                                       "a line of stdin",
                                       "the rest of stdin",
@@ -46,7 +47,7 @@ static const char *const n_table[] = {0,
                                       "the variable `$1`",
                                       "a clock reading",
                                       "the end",
-                                      "an HTTP request to `$1`"};
+                                      "an HTTP request $1"};
 
 #define J_HEAD "{\"v\":1,\"kind\":\""
 #define J_CLOSE "}\n"
@@ -126,9 +127,13 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
     if (name) {
         rw(kind == EVK_ENV ? "\",\"name\":" : kind == EVK_HTTP ? "\",\"host\":" : "\",\"path\":");
         rw_str(name->data, name->len, 0);
-        if (kind == EVK_HTTP) { /* spec 007: the port (int_value) */
+        if (kind == EVK_HTTP) { /* spec 007: the port (int_value); spec 009: the request line */
             rw(",\"port\":");
             rw_dec(int_value);
+            if (rcd_request) {
+                rw(",\"request\":");
+                rw_str(rcd_request->data, rcd_request->len, 0);
+            }
         }
     } else {
         rw("\"");
@@ -334,14 +339,32 @@ void *io_env(Str *name)
     return r;
 }
 
-/* "host:port", for R0014's messages. */
-static Str *host_port(Str *host, long port)
+/* For R0014's messages: "`GET /x` to `host:port`", or "to `host:port`" without a request line. */
+static Str *http_desc(Str *host, long port, Str *request)
 {
     SB *sb = sb_new();
+    if (request) {
+        sb_byte(sb, '`');
+        sb_str(sb, request);
+        sb_cstr(sb, "` ");
+    }
+    sb_cstr(sb, "to `");
     sb_str(sb, host);
     sb_byte(sb, ':');
     int_to_dec(sb, port);
+    sb_byte(sb, '`');
     return sb_finish(sb);
+}
+
+/* Spec 009: the request line without the protocol ("GET /status?x=1"): what replay compares. */
+static Str *request_line(Str *request)
+{
+    long end = 0;
+    while (end < request->len && request->data[end] != '\r' && request->data[end] != '\n') end++;
+    long cut = end; /* drop a final " HTTP/..." */
+    while (cut > 0 && request->data[cut - 1] != ' ') cut--;
+    if (cut > 0 && end - cut >= 5 && mem_eq(request->data + cut, "HTTP/", 5)) end = cut - 1;
+    return str_new(request->data, end);
 }
 
 /* Spec 007 (research R11): the host check (R0010) in every mode, then the exchange; replay returns
@@ -352,17 +375,25 @@ Variant *io_http_exchange(Str *host, long port, Str *request)
     GC_ROOT(&host);
     GC_ROOT(&request);
     rt_check_name(EF_NET, host);
+    Str *line = request_line(request);
+    GC_ROOT(&line);
     if (rcd_mode == 2) {
-        Str *asked = host_port(host, port);
+        Str *asked = http_desc(host, port, line);
         if (rp_next >= rp_events->n) rp_mismatch(EVK_HTTP, asked, 0);
         Event *e = vec_get(rp_events, rp_next++);
-        if (e->kind != EVK_HTTP || !str_eq(e->name, host) || e->port != port) rp_mismatch(EVK_HTTP, asked, e);
+        if (e->kind != EVK_HTTP || !str_eq(e->name, host) || e->port != port ||
+            (e->request && !str_eq(e->request, line))) /* older recordings: host and port only */
+            rp_mismatch(EVK_HTTP, asked, e);
         r = rp_result(e);
     } else {
         r = rt_http_exchange(host, port, request);
-        if (rcd_mode) rcd_event(EVK_HTTP, host, (long)(uint32_t)r->tag, r->pay.s, port);
+        if (rcd_mode) {
+            rcd_request = line;
+            rcd_event(EVK_HTTP, host, (long)(uint32_t)r->tag, r->pay.s, port);
+            rcd_request = 0;
+        }
     }
-    GC_UNROOT(2);
+    GC_UNROOT(3);
     return r;
 }
 
@@ -405,8 +436,9 @@ void rp_mismatch(long kind, Str *name, Event *event)
     Str *m;
     GC_ROOT(&asked);
     if (event) {
-        Str *has = rp_describe((char *)n_table[event->kind],
-                               event->kind == EVK_HTTP ? host_port(event->name, event->port) : event->name);
+        Str *has = rp_describe((char *)n_table[event->kind], event->kind == EVK_HTTP
+                                                              ? http_desc(event->name, event->port, event->request)
+                                                              : event->name);
         m = msg("The program $1, but the recording has $2 next: replay the program that was recorded, or record this "
                 "one.",
                 asked, has, 0);
@@ -440,13 +472,15 @@ static long rf_ivalue;
 static long rf_isint;
 static long rf_status;
 static long rf_port = -1; /* spec 007: http events */
+static Str *rf_request;   /* spec 009 */
 
-static const char *const rk_keys[] = {"kind",  "program", "fingerprint", "seed", "clock_ms", "args", "path",
-                                      "name",  "result",  "value",       "status", "host",   "port", 0};
+static const char *const rk_keys[] = {"kind",   "program", "fingerprint", "seed", "clock_ms", "args",    "path",
+                                      "name",   "result",  "value",       "status", "host",     "port",    "request",
+                                      0};
 
 /* Where each string-valued key is stored (rk_keys order; 0: not a string). */
 static Str **const rf_slots[] = {&rf_kind, &rf_program, &rf_fprint, 0, 0, 0, &rf_name, &rf_name, &rf_result,
-                                 &rf_value, 0, &rf_name, 0};
+                                 &rf_value, 0, &rf_name, 0, &rf_request};
 
 /* T0008 invalid_recording, exit 64. */
 void rp_bad(void)
@@ -541,6 +575,7 @@ void rp_line(char *p, char *end)
     rf_value = 0;
     rf_isint = 0;
     rf_port = -1;
+    rf_request = 0;
     p = rp_ws(p, end);
     if (p >= end || *p != '{') rp_bad();
     p++;
@@ -656,6 +691,7 @@ void rp_read(char *text, long len)
                 e->value.s = rf_value;
                 if (rf_isint) e->value.i = rf_ivalue;
                 e->port = rf_port;
+                e->request = rf_request;
                 rp_check_event(e); /* the fields its kind needs (T0008 otherwise) */
                 vec_push(rp_events, e);
             }

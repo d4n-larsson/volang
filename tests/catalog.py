@@ -84,7 +84,7 @@ def contract():
         else:
             fixable = "yes"
         out[code] = (name, fixable)
-    for spec in ("005-holes-props-contracts", "006-query-edit-trace", "007-stdlib-packages"):
+    for spec in ("005-holes-props-contracts", "006-query-edit-trace", "007-stdlib-packages", "009-small-fixes"):
         codes = os.path.join(ROOT, "specs", spec, "contracts", "codes.md")
         for code, name, fix in re.findall(r"^\| ([EWRT]\d{4}) \| `(\w+)` \| [^|]* \| ([^|]*) \|",
                                           open(codes, encoding="utf-8").read(), re.M):

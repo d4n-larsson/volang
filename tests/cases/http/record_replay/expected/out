@@ -19,7 +19,7 @@ hello, chunked world!
 $ vo replay r.jsonl
 --- stderr
 note: the program differs from the recorded one (recorded main.vo)
-std/http.vo:82:19: runtime error[R0014]: The program makes an HTTP request to `127.0.0.1:{port}`, but the recording has an HTTP request to `localhost:{port}` next: replay the program that was recorded, or record this one.
+std/http.vo:82:19: runtime error[R0014]: The program makes an HTTP request `GET /chunked` to `127.0.0.1:{port}`, but the recording has an HTTP request `GET /chunked` to `localhost:{port}` next: replay the program that was recorded, or record this one.
   82 |     let raw = try __http_exchange(u.host, u.port, request);
      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:

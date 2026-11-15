@@ -840,7 +840,9 @@ static Node *parse_stmt(void)
             p_expect(T_CASE);
             arm->a.n = p_name();
             if (p_accept(T_LPAREN)) {
-                if (p_kind() == T_UNDERSCORE) {
+                if (p_kind() == T_RPAREN) { /* spec 009: `case ok()` */
+                    arm->flags |= NF_EMPTY_ARM;
+                } else if (p_kind() == T_UNDERSCORE) {
                     arm->flags |= NF_DISCARD;
                     p_next();
                 } else {

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0411","name":"empty_case_parens","severity":"error","file":"case_ok_value.vo","start":{"line":4,"col":14},"end":{"line":4,"col":16},"text":"ok","message":"`case ok()` matches only the success of a `result[void]`; write `case ok(_)` to ignore the value.","fixes":[{"file":"case_ok_value.vo","start":{"line":4,"col":14},"end":{"line":4,"col":19},"replacement":"ok(_) "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

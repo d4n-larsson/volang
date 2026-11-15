@@ -1,0 +1,12 @@
+# An anonymous function runs with its caller's grant: when its read is denied, R0010 names the
+# function whose `uses` clause was checked (spec 009), not the anonymous function.
+fn load(path: str) -> result[str] uses file.read("data/") {
+    let read = fn(p: str) -> result[str] {
+        return read_file(p);
+    };
+    return read(path);
+}
+
+fn main() uses console, file.read("data/") {
+    print(str(load("other/x.txt") == ok("")));
+}

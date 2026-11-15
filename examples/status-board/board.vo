@@ -6,8 +6,8 @@ import std.json.bool_field;
 import std.json.field;
 import std.json.int_field;
 import std.json.text_field;
-import std.text.pad_left;
-import std.text.pad_right;
+import std.text.align_left;
+import std.text.align_right;
 
 record Service {
     name: str;
@@ -76,7 +76,7 @@ fn render(services: list[Service], incidents: list[Incident]) -> str {
     var slowest_ms = -1;
     for s in rows {
         if s.up {
-            set out = out + "  up    " + pad_right(s.name, w, " ") + pad_left(str(s.latency_ms), 6, " ") + " ms\n";
+            set out = out + "  up    " + align_left(s.name, w) + align_right(str(s.latency_ms), 6) + " ms\n";
             if s.latency_ms > slowest_ms {
                 set slowest = s.name;
                 set slowest_ms = s.latency_ms;

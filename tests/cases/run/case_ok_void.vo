@@ -1,0 +1,20 @@
+# `case ok()` matches the success of a `result[void]`, as `ok()` builds it (spec 009).
+fn check(n: int) -> result[void] {
+    if n < 0 {
+        return err("negative");
+    }
+    return ok();
+}
+
+fn main() uses console {
+    for n in [1, -1] {
+        match check(n) {
+            case ok() {
+                print(str(n) + " ok");
+            }
+            case err(e) {
+                print(str(n) + " " + e);
+            }
+        }
+    }
+}

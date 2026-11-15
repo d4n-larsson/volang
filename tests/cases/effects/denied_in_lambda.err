@@ -1,0 +1,9 @@
+denied_in_lambda.vo:5:16: runtime error[R0010]: file.read("other/x.txt") is not allowed: `load` declares file.read("data/").
+   5 |         return read_file(p);
+     |                ^^^^^^^^^^^^
+trace:
+  at anonymous function (denied_in_lambda.vo:5:16)
+      p: str = "other/x.txt"
+  at load (denied_in_lambda.vo:7:12)
+      path: str = "other/x.txt", read: fn(str) -> result[str] uses file.read = <fn(str) -> result[str] uses file.read>
+  at main (denied_in_lambda.vo:11:15)

@@ -180,7 +180,7 @@ class Gen:
                     m = r.choice(ms)
                     key = self.str_key()
                     if r.random() < 0.9:
-                        return f"get_or({m}, {key})"
+                        return f"lookup_or({m}, {key})"
                     return f"{m}[{key}]"  # may be missing: R0004 on purpose
             if k == 7 and not self.in_helper:
                 return f"side({a}, \"{self.fresh('t')}\")"
@@ -524,7 +524,7 @@ class Gen:
         for _ in range(self.r.randrange(6, 16)):
             self.stmt()
         self.lines.append("}")
-        return PRELUDE + "\nfn get_or(m: map[str, int], k: str) -> int {\n    if has(m, k) {\n        return m[k];\n    }\n    return -1;\n}\n\n" + "\n".join(self.lines) + "\n"
+        return PRELUDE + "\nfn lookup_or(m: map[str, int], k: str) -> int {\n    if has(m, k) {\n        return m[k];\n    }\n    return -1;\n}\n\n" + "\n".join(self.lines) + "\n"
 
 
 FLOAT_PRELUDE = """fn up(k: int) -> float {

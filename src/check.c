@@ -634,6 +634,33 @@ int str_eq_cstr(Str *str, char *s)
     return str_eq_bytes(str, s, cstr_len(s));
 }
 
+/* Spec 009: `case ok()` is the success pattern of a `result[void]` (as `ok()` builds it). Elsewhere
+ * empty parentheses are E0411; `case ok(_)` and `case ok` on a `result[void]` are W0402. Both fixes
+ * rewrite the pattern, from the case name to the arm's block. */
+static void check_ok_pattern(Node *arm, Type *scrutinee, long idx)
+{
+    Node *cn = arm->a.n;
+    Type *pt = case_payload(scrutinee, idx);
+    int void_ok = scrutinee->kind == TY_RESULT && idx == 0 && scrutinee->a.t->kind == TY_VOID;
+    long end = arm->c.n->start; /* the block's `{` */
+    if (arm->flags & NF_EMPTY_ARM) {
+        if (void_ok) return;
+        int value = pt != 0; /* the case carries a value (case_payload: 0 for none, and for ok() of void) */
+        Str *form = str_concat(cn->a.s, str_from_cstr(value ? "(_)" : ""));
+        Diag *d = ck_err("E0411", cn,
+                         msg(value ? "`case $1()` matches only the success of a `result[void]`; write `case $2` to "
+                                     "ignore the value."
+                                   : "`case $1()` matches only the success of a `result[void]`; `$1` has no value: "
+                                     "write `case $2`.",
+                             cn->a.s, form, 0));
+        diag_add_fix(d, (int)arm->file, cn->start, end, str_concat(form, str_from_cstr(" ")));
+    } else if (void_ok && !arm->b.n) { /* `case ok(_)` or `case ok` */
+        Diag *d = ck_warn("W0402", cn, str_from_cstr("Match the success of a `result[void]` with `case ok()`, as `ok()` "
+                                                     "builds it."));
+        diag_add_fix(d, (int)arm->file, cn->start, end, str_from_cstr("ok() "));
+    }
+}
+
 void check_arm(Node *arm, Type *scrutinee, long *seen)
 {
     Sym *saved = ck_scope;
@@ -657,6 +684,7 @@ void check_arm(Node *arm, Type *scrutinee, long *seen)
             } else {
                 seen[idx] = 1;
             }
+            check_ok_pattern(arm, scrutinee, idx);
             if (arm->b.n) { /* payload binding */
                 Type *pt = case_payload(scrutinee, idx);
                 if (!pt) {

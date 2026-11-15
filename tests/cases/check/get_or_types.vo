@@ -1,0 +1,8 @@
+# get_or's key must have the map's key type and its default the map's value type (spec 009).
+fn main() uses console {
+    let m = new map[str, int];
+    print(str(get_or(m, 1, 0)));
+    print(str(get_or(m, "a", "zero")));
+    print(str(get_or([1, 2], 0, 0)));
+    print(str(get_or(m, "a")));
+}

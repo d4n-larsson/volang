@@ -342,6 +342,7 @@
 #define NF_METHOD (16) /* N_CALL_VALUE written `obj.name(args)`: a field call, or v1's E0110 */
 #define NF_FNVAL (32) /* N_IDENT naming a function used as a value (N_D: the declaration) */
 #define NF_PROP (64) /* N_TEST that is a property (parameters in FX_PARAMS) */
+#define NF_EMPTY_ARM (128) /* spec 009: N_ARM written `case NAME()` */
 
 /* builtin ids used outside check_expr.c (all ids: check_expr.c builtin_names) */
 #define B_SORT_BY (42)
@@ -357,7 +358,7 @@
 #define B_FLOAT_TEXT (52) /* spec 007: __float_text, callable only from std/ (research R5) */
 #define B_HTTP_EXCHANGE (53) /* spec 007: __http_exchange (host, port, request) -> result[str], net */
 #define B_TEXT_FLOAT (54) /* spec 007: __text_float (s) -> float, up to 17 significant digits (json) */
-#define B_LAST (54) /* the last builtin id with a btab entry */
+#define B_LAST (55) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -620,7 +621,8 @@
 #define EV_VALUE (24) /* str, or int for now_ms */
 #define EV_BYTES (32) /* 1 when the value was written with "bytes":true */
 #define EV_PORT (40) /* spec 007: http events */
-#define EV_SIZE (48)
+#define EV_REQUEST (48) /* spec 009: http events: "METHOD TARGET", or 0 in older recordings */
+#define EV_SIZE (56)
 #define EVK_READ_LINE (1)
 #define EVK_READ_ALL (2)
 #define EVK_READ_FILE (3)
@@ -1105,6 +1107,7 @@ typedef struct Event {
     W value;
     long bytes;
     long port;
+    Str *request;
 } Event;
 CHECK_OFFSET(Event, kind, EV_KIND);
 CHECK_OFFSET(Event, name, EV_NAME);
@@ -1112,6 +1115,7 @@ CHECK_OFFSET(Event, result, EV_RESULT);
 CHECK_OFFSET(Event, value, EV_VALUE);
 CHECK_OFFSET(Event, bytes, EV_BYTES);
 CHECK_OFFSET(Event, port, EV_PORT);
+CHECK_OFFSET(Event, request, EV_REQUEST);
 CHECK_SIZE(Event, EV_SIZE);
 
 typedef struct FBuf {

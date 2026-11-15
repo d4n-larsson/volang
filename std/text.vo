@@ -56,6 +56,18 @@ fn pad_right(s: str, width: int, fill: str) -> str {
     return s + repeat(one_char(fill), max(missing, 0));
 }
 
+# s, then spaces up to width characters: s aligned left in a column.
+#     align_left("ab", 4) + "|" is "ab  |"
+fn align_left(s: str, width: int) -> str {
+    return pad_right(s, width, " ");
+}
+
+# Spaces, then s, up to width characters: s aligned right in a column.
+#     align_right("7", 3) is "  7"
+fn align_right(s: str, width: int) -> str {
+    return pad_left(s, width, " ");
+}
+
 fn one_char(fill: str) -> str {
     let _ = ord(fill);
     return fill;

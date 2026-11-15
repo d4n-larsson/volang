@@ -1,0 +1,6 @@
+server http
+vo run --seed 1 --record r.jsonl main.vo -- {port} /plain
+stop-server
+vo replay r.jsonl
+cp other.vo main.vo
+vo replay r.jsonl

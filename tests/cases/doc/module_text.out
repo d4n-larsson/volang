@@ -12,6 +12,10 @@ fn pad_left(s: str, width: int, fill: str) -> str
     s padded on the left with fill (one character) to width characters.
 fn pad_right(s: str, width: int, fill: str) -> str
     s padded on the right with fill (one character) to width characters.
+fn align_left(s: str, width: int) -> str
+    s, then spaces up to width characters: s aligned left in a column.
+fn align_right(s: str, width: int) -> str
+    Spaces, then s, up to width characters: s aligned right in a column.
 fn lines(s: str) -> list[str]
     The lines of s: split on newlines, a trailing carriage return dropped, no final empty line.
 fn words(s: str) -> list[str]

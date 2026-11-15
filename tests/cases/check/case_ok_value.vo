@@ -1,0 +1,11 @@
+# `case ok()` on a result with a value is E0411: bind the value or ignore it with `_` (spec 009).
+fn main() uses console {
+    match parse_int("4") {
+        case ok() {
+            print("number");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
