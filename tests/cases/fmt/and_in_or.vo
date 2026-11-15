@@ -1,0 +1,12 @@
+fn main() {
+    let a = true;
+    let b = false;
+    let c = true;
+    print(str((a and b) or c));
+    print(str(a or (b and c)));
+    print(str(a and b or c));
+    print(str((a and b) and c));
+    print(str(((a or b)) and c));
+    print(str((1 * 2) + 3));
+    print(str(not (a and b) or c));
+}

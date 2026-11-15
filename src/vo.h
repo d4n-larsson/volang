@@ -343,6 +343,7 @@
 #define NF_FNVAL (32) /* N_IDENT naming a function used as a value (N_D: the declaration) */
 #define NF_PROP (64) /* N_TEST that is a property (parameters in FX_PARAMS) */
 #define NF_EMPTY_ARM (128) /* spec 009: N_ARM written `case NAME()` */
+#define NF_PAREN (256) /* expression written in parentheses (vo fmt keeps them around `and` in `or`) */
 
 /* builtin ids used outside check_expr.c (all ids: check_expr.c builtin_names) */
 #define B_SORT_BY (42)

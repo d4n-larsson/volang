@@ -216,6 +216,12 @@ static void fm_list(Vec *v)
     }
 }
 
+/* 1 for an `and` written in parentheses as an operand of `or`: not needed, but kept for the reader. */
+static int keep_parens(Node *op, Node *operand)
+{
+    return op->c.i == T_OR && operand->kind == N_BINARY && operand->c.i == T_AND && (operand->flags & NF_PAREN);
+}
+
 /* Prints an expression, in parentheses when its precedence is below ctx. */
 static void fm_expr(Node *n, long ctx)
 {
@@ -255,11 +261,11 @@ static void fm_expr(Node *n, long ctx)
         fm_b(')');
         break;
     case N_BINARY: /* left at its own level, right one higher (comparisons: both) */
-        fm_expr(n->a.n, prec == 4 ? prec + 1 : prec);
+        fm_expr(n->a.n, keep_parens(n, n->a.n) ? 3 : prec == 4 ? prec + 1 : prec);
         fm_b(' ');
         fm_s(tok_raw((int)n->c.i));
         fm_b(' ');
-        fm_expr(n->b.n, prec + 1);
+        fm_expr(n->b.n, keep_parens(n, n->b.n) ? 3 : prec + 1);
         break;
     case N_UNARY:
         if (n->c.i == T_NOT)

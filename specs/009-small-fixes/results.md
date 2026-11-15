@@ -131,8 +131,10 @@ which are what users run since spec 008, are not affected.
   `std/text.vo` keeps its blank line. **Fixed after the spec**: `vo fmt` keeps one blank line after a
   top-level comment when the source has one there (case `fmt/comment_gap`; `fmt/comments` re-accepted; one
   clause in the reference's formatting paragraph). `std/http`, `random` and `text` now pass `fmt --check`.
-- **`vo fmt` removes clarifying parentheses**: `a or (b and c)` becomes `a or b and c` (same meaning, `and`
-  binds tighter), which is why `std/json.vo` and `std/time.vo` still fail `fmt --check`. Not changed.
+- **`vo fmt` removed clarifying parentheses**: `a or (b and c)` became `a or b and c` (same meaning, `and`
+  binds tighter). **Fixed after the spec**: the parser marks a parenthesized expression (`NF_PAREN`) and
+  `vo fmt` keeps the parentheses of an `and` operand of `or`; other unneeded parentheses still go (case
+  `fmt/and_in_or`). Every `std/*.vo` and example file now passes `fmt --check`.
 - **The qemu layout effect** (Final gate): if the RISC-V build under qemu matters again (for example as a
   speed baseline), align or order the hot string and map functions so they cannot cross a page, or measure
   speed natively only, as spec 008 made the native build the one that ships.

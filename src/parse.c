@@ -510,6 +510,7 @@ static Node *parse_primary(void)
         p_next();
         n = parse_expr();
         p_expect(T_RPAREN);
+        if (n) n->flags |= NF_PAREN;
         return n;
     case T_LBRACKET: /* [a, b, ...] */
         n = p_node(N_LIST);
