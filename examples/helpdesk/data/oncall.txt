@@ -1,0 +1,5 @@
+# minute the shift starts, who is on call
+0 alice
+10 bob
+18 carol
+25 dave

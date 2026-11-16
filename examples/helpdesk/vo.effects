@@ -1,0 +1,19 @@
+# vo effects record: update with `vo effects --update`
+helpdesk.vo:data_lines pure
+helpdesk.vo:handle pure
+helpdesk.vo:line_of pure
+helpdesk.vo:names pure
+helpdesk.vo:number pure
+helpdesk.vo:on_call pure
+helpdesk.vo:parse_shifts pure
+helpdesk.vo:parse_tickets pure
+helpdesk.vo:remember pure
+helpdesk.vo:report pure
+helpdesk.vo:triage pure
+main.vo:main uses console, file.read("data/")
+main.vo:prop "triage is the sorted order" pure
+main.vo:test "a malformed line is an error that shows the line" pure
+main.vo:test "on call: the shift that started last at or before the minute" pure
+main.vo:test "the history keeps the last three" pure
+main.vo:test "the most urgent ticket first, then the earliest" pure
+main.vo:ticket pure

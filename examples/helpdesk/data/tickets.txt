@@ -1,0 +1,7 @@
+# minute severity title (severity 1 is the most urgent)
+5 2 printer out of toner
+7 1 email down for everyone
+9 3 new monitor request
+12 1 VPN refuses logins
+15 2 laptop battery swollen
+20 3 password reset

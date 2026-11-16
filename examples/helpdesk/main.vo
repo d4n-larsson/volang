@@ -1,0 +1,65 @@
+# Reads data/tickets.txt and data/oncall.txt and prints the triage order, who was on call for each
+# ticket, who was never paged, and the last tickets handled. `vo run main.vo` runs main; `vo test
+# main.vo` runs the tests and the property below.
+import helpdesk.Ticket;
+import helpdesk.handle;
+import helpdesk.on_call;
+import helpdesk.parse_shifts;
+import helpdesk.parse_tickets;
+import helpdesk.remember;
+import helpdesk.report;
+import helpdesk.triage;
+
+fn main() -> result[void] uses console, file.read("data/") {
+    let tickets = try parse_tickets(try read_file("data/tickets.txt"));
+    let shifts = try parse_shifts(try read_file("data/oncall.txt"));
+    write(report(try handle(tickets, shifts), shifts));
+    return ok();
+}
+
+fn ticket(severity: int, minute: int, title: str) -> Ticket {
+    return new Ticket { severity: severity, minute: minute, title: title };
+}
+
+@spec("FR-001")
+test "the most urgent ticket first, then the earliest" {
+    let order = triage([ticket(2, 1, "b"), ticket(1, 9, "late"), ticket(1, 3, "early"), ticket(2, 1, "a")]);
+    expect_eq(order, [ticket(1, 3, "early"), ticket(1, 9, "late"), ticket(2, 1, "a"), ticket(2, 1, "b")]);
+}
+
+@spec("FR-002")
+test "on call: the shift that started last at or before the minute" {
+    let shifts = new ordered_map[int, str];
+    set shifts[8] = "ann";
+    set shifts[16] = "ben";
+    expect_eq(on_call(shifts, 8), ok("ann"));
+    expect_eq(on_call(shifts, 15), ok("ann"));
+    expect_eq(on_call(shifts, 99), ok("ben"));
+    expect_eq(on_call(shifts, 7), err("nobody is on call at minute 7"));
+}
+
+@spec("FR-003")
+test "the history keeps the last three" {
+    let history = new deque[str];
+    for title in ["a", "b", "c", "d", "e"] {
+        remember(history, title, 3);
+    }
+    expect_eq(history[0], "c");
+    expect_eq(len(history), 3);
+}
+
+@spec("FR-004")
+test "a malformed line is an error that shows the line" {
+    expect_eq(parse_tickets("5 x printer"), err("bad severity `x` in line `5 x printer`"));
+    expect_eq(parse_shifts("0 alice extra"), err("a shift needs a minute and a name: `0 alice extra`"));
+}
+
+# The priority queue and `sort` agree: both use the record's order, field by field.
+@spec("FR-001")
+prop "triage is the sorted order" (tickets: list[Ticket]) {
+    let order = triage(tickets);
+    # a copy to sort: lists are references, and `tickets` must stay as generated
+    var sorted = slice(tickets, 0, len(tickets));
+    sort(sorted);
+    expect_eq(order, sorted);
+}
