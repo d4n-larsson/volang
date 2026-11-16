@@ -57,7 +57,7 @@ endif
 OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/embedded.o \
 	$(if $(INSTRUMENTED),$(BUILD)/hosted.o)
 
-.PHONY: all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
+.PHONY: site site-serve site-check all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
 
 all: $(BUILD)/vo
 
@@ -122,7 +122,7 @@ lint-c:
 test: all
 	tests/run.sh
 	tests/run.sh --repeat 3 tests/cases/run tests/cases/effects tests/cases/func tests/cases/generic tests/cases/prop
-	@for s in "fuzz.py --iterations 200 --seed 1" apply_fixes.py catalog.py ref_examples.py fmt_corpus.py \
+	@for s in "fuzz.py --iterations 200 --seed 1" apply_fixes.py catalog.py ref_examples.py site_examples.py fmt_corpus.py \
 	  migrate.py record_changes.py doc_conformance.py json_corpus.py packages_check.py time_check.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
 	  steps.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1"; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
@@ -246,6 +246,32 @@ prop-eval: all
 
 clean:
 	rm -rf build build-stress build-ubtrap build-instrumented build-fault-* build-riscv64 build-*-riscv64 build-aarch64 build-*-aarch64
+
+# Spec 015: the documentation site (build/site), built with pinned MkDocs in build/site-venv (created once:
+# needs the network the first time). site-check: links, agent files, search lookups, contrast, install steps.
+SITE_VENV := build/site-venv
+export NO_MKDOCS_2_WARNING := 1
+export DISABLE_MKDOCS_2_WARNING := true
+$(SITE_VENV)/.ok: site/requirements.txt site/pygments_vo/pyproject.toml site/pygments_vo/pygments_vo.py
+	python3 -m venv $(SITE_VENV)
+	$(SITE_VENV)/bin/pip install -q -r site/requirements.txt
+	$(SITE_VENV)/bin/pip install -q --force-reinstall --no-deps ./site/pygments_vo
+	touch $@
+
+site: all $(SITE_VENV)/.ok
+	$(SITE_VENV)/bin/python tools/site.py
+	$(SITE_VENV)/bin/mkdocs build -q -f build/mkdocs.gen.yml
+	$(SITE_VENV)/bin/python tools/site.py --agents
+
+site-serve: site
+	$(SITE_VENV)/bin/mkdocs serve -f build/mkdocs.gen.yml
+
+site-check: site
+	$(SITE_VENV)/bin/python tests/site_lexer.py
+	python3 tests/site_agents_files.py
+	python3 tests/site_search.py
+	python3 tests/site_contrast.py
+	python3 tests/site_examples.py --start
 
 # Spec 013: the security review's reproductions that need timing, helper processes or long paths
 # (tests/security/); every finding's other cases run in `make test` (tests/cases/security/).

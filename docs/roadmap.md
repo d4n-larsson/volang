@@ -21,7 +21,8 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | Review | Security review against the threat model in [security.md](security.md) (effects as a security boundary) | **Review 1 done** ([findings](security-review-1.md): 5 Critical, 11 High, 5 Medium, 11 Low) |
 | [013](../specs/013-security-fixes/) | The fixes from review 1: the root grant, opening files without following swapped links, one HTTP framing, safe links in imports and packages, replay and server hardening | **Done** ([results](../specs/013-security-fixes/results.md)): all 32 findings fixed, each with a case |
 | [014](../specs/014-complex-data-structures/) | Built-in `ordered_map`, `ordered_set`, `priority_queue`, `deque` (created with `new`, like `map`) and `std.collections`; records of ordered fields are ordered; inferred type arguments for `new` and cases | **Done** ([results](../specs/014-complex-data-structures/results.md)) |
-| Next | Concurrency (see below) | **Next spec, 015** |
+| [015](../specs/015-docs-site/) | Documentation site on GitHub Pages: guides with checked examples, generated reference, catalog and library pages, `llms.txt` | **Done** ([results](../specs/015-docs-site/results.md)) |
+| Next | Concurrency (see below) | **Spec 016** |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -96,8 +97,8 @@ vo programs used to run by walking the checked syntax tree. Now:
 ## Next: concurrency
 
 Today a vo program does one thing at a time: a server answers one request at a time (a slow client holds
-it for up to 10 s), and a program that fetches ten URLs waits for each in turn. Concurrency is the next
-spec (015). What it has to keep:
+it for up to 10 s), and a program that fetches ten URLs waits for each in turn. Concurrency is spec 016, after
+the documentation site (015). What it has to keep:
 
 - **Determinism (Principle III).** The same program and inputs give the same output; record and replay
   keep working. A concurrent program's interleaving must be reproducible, or recorded and replayed.

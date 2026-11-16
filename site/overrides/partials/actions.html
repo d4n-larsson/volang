@@ -1,0 +1,15 @@
+{#-
+  Spec 015: the "edit this page" link. A generated page names its repository source in its front matter
+  (`source:`); a hand-written page is edited where it lives, site/docs (edit_uri).
+-#}
+{% if page.meta and page.meta.source %}
+  {% set edit = config.repo_url ~ "/edit/main/" ~ page.meta.source %}
+{% else %}
+  {% set edit = page.edit_url %}
+{% endif %}
+{% if edit and "content.action.edit" in features %}
+  <a href="{{ edit }}" title="{{ lang.t('action.edit') }}" class="md-content__button md-icon" rel="edit">
+    {% set icon = config.theme.icon.edit or "material/file-edit-outline" %}
+    {% include ".icons/" ~ icon ~ ".svg" %}
+  </a>
+{% endif %}

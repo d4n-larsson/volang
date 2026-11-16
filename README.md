@@ -33,6 +33,8 @@ fn main() -> result[void] uses console, file.write("out/") {
 
 **At a glance:** statically and strongly typed, with effects in every function type; imperative at its core, with functions as values, closures, generics, records and variants with `match`; no classes, exceptions or `null`. Programs are checked, compiled once to typed bytecode and run on a virtual machine (no JIT), with a deterministic garbage collector. C-style braces and semicolons, one canonical format. A small standard library built into the binary, local packages pinned by content hash, and no concurrency yet.
 
+**Documentation:** <https://d4n-larsson.github.io/volang/>: getting started, a language guide, a page per command, the reference, every error code and the standard library. Agents can read it as Markdown, starting from [`llms.txt`](https://d4n-larsson.github.io/volang/llms.txt).
+
 ## Why another language
 
 Mainstream languages were designed for people at keyboards. Agents work differently: they write code in one shot, read the compiler's output, and fix what it reports, often with nobody watching. vo is built for that loop.
@@ -90,11 +92,12 @@ Every command takes `--json`. Exit statuses are stable: 0 success, 1 failed test
 | `src/platform/` | Per architecture: process entry, system calls and `setjmp`/`longjmp` in assembly (`x86_64.S`, `aarch64.S`, `riscv64.S`) and the system call numbers; `hosted.c` for the sanitizer build |
 | `docs/reference.md` | The language reference (embedded in the binary; `vo reference`) |
 | `docs/errors.md` | The error catalog: every code with an example and its fix (`vo explain`) |
+| `site/` | The documentation site: hand-written guides (`site/docs/`), the MkDocs configuration and the vo syntax highlighter; `tools/site.py` adds the pages generated from the reference, the catalog and `vo doc` |
 | `tests/cases/` | Golden test cases: source plus expected stdout, stderr and exit status |
 | `tests/*.py` | Fuzzer, fix applier, catalog and reference checks, formatter corpus, v1→v2 migration, effects-record change sets, scope fuzzer |
 | `tests/cases/security/`, `tests/security/` | The security review's reproductions: golden and step cases, and the race, rename, package-swap and server-attack scripts |
 | `bench/`, `bench2/` | Agent benchmarks (v1: 50 single-file tasks; v2: multi-file, refactoring, hidden-property and capability tasks, plus a feature set) |
-| `specs/` | Specifications, plans, contracts, task lists and results, one directory per spec (`001-vo-lang-core` to `013-security-fixes`) |
+| `specs/` | Specifications, plans, contracts, task lists and results, one directory per spec (`001-vo-lang-core` to `015-docs-site`) |
 
 ## Development
 
@@ -108,12 +111,15 @@ make instrumented   # the suite under ASan and UBSan (x86-64)
 make security-check # the security review's races (1,000 runs each) and server attacks
 make speed-check    # native speed against the assembly release under qemu (SC-003, SC-004)
 sh tests/perf.sh    # check + run of a 1,000-line program in under 1 s; large inputs
+make site           # the documentation site into build/site (a Python venv with pinned MkDocs; network the first time)
+make site-check     # the site's links and anchors, agent files, search lookups, contrast, install steps
+make site-serve     # the site at http://127.0.0.1:8000 while you edit
 ```
 
 Conventions are in `.specify/memory/constitution.md`:
 - A behaviour change lands first as a golden case that fails.
 - Every error code has a catalog entry and a golden case.
-- Every reference example is executed by the test suite.
+- Every reference example, and every example on the documentation site, is executed by the test suite.
 - The reference stays under 15,000 tokens.
 
 Known false positives and negatives of the assembly linter (SESI, for `src/platform/riscv64.S`) are tracked in `sesi-linter-issues.md`.
@@ -124,6 +130,6 @@ Known false positives and negatives of the assembly linter (SESI, for `src/platf
 
 ## Status
 
-vo 0.1.0, schema 1, built through specs 001-014 ([`docs/roadmap.md`](docs/roadmap.md) has the status of each): the core language and toolchain, checked effects, generics, a garbage collector, a bytecode VM, typed holes, property tests and contracts, query and structural editing, trace and replay, a standard library (`std.json`, `std.time`, `std.text`, `std.random`, plain-HTTP `std.http` with a server) with exact signatures from `vo doc`, content-pinned packages, native builds from C, file-private items with `export`, `@spec` annotations linking tests to requirements, the fixes from the first security review, and built-in ordered maps, sets, priority queues and deques. Its security model is in [`docs/security.md`](docs/security.md). The benchmark v2 agent run is still to be completed.
+vo 0.1.0, schema 1, built through specs 001-015 ([`docs/roadmap.md`](docs/roadmap.md) has the status of each): the core language and toolchain, checked effects, generics, a garbage collector, a bytecode VM, typed holes, property tests and contracts, query and structural editing, trace and replay, a standard library (`std.json`, `std.time`, `std.text`, `std.random`, plain-HTTP `std.http` with a server) with exact signatures from `vo doc`, content-pinned packages, native builds from C, file-private items with `export`, `@spec` annotations linking tests to requirements, the fixes from the first security review, built-in ordered maps, sets, priority queues and deques, and a documentation site on GitHub Pages. Its security model is in [`docs/security.md`](docs/security.md). The benchmark v2 agent run is still to be completed.
 
 Not yet: concurrency (the next spec), HTTPS and downloading packages.

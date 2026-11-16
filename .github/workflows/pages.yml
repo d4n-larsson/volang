@@ -1,0 +1,51 @@
+# Spec 015 (FR-016): build the documentation site from main and publish it to GitHub Pages, only when the
+# toolchain builds and every documentation check passes. One-time setup (a maintainer, not this workflow):
+# the repository's Settings -> Pages -> Source: GitHub Actions.
+name: Documentation site
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the toolchain
+        run: make
+      - name: Check the documentation's examples and generated sources
+        run: |
+          python3 tests/site_examples.py
+          python3 tests/ref_examples.py
+          python3 tests/catalog.py
+          python3 tests/doc_conformance.py
+      - name: Build and check the site
+        run: make site-check
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

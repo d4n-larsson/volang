@@ -1,0 +1,74 @@
+# The documentation site (spec 015). tools/site.py reads this file, adds the navigation and the version,
+# and writes build/mkdocs.gen.yml, which `make site` builds. Paths below are relative to build/.
+site_name: vo
+site_description: A small, statically typed programming language for AI coding agents and the people who review their code.
+site_url: https://d4n-larsson.github.io/volang/
+repo_url: https://github.com/d4n-larsson/volang
+repo_name: d4n-larsson/volang
+edit_uri: edit/main/site/docs/
+docs_dir: site-src
+site_dir: site
+strict: true
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+theme:
+  name: material
+  custom_dir: ../site/overrides
+  font: false # no external fonts (FR-015)
+  logo: assets/vo.svg
+  favicon: assets/vo.svg
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom # Nord, in stylesheets/extra.css
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.footer
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+
+hooks:
+  - ../site/hooks.py
+
+plugins:
+  - search
+  - redirects:
+      redirect_maps: {} # moved pages: old address -> new page (FR-009)
+
+markdown_extensions:
+  - toc:
+      permalink: true
+  - admonition
+  - attr_list
+  - tables
+  - pymdownx.highlight:
+      use_pygments: true
+  - pymdownx.superfences
+
+extra:
+  generator: false
+
+extra_css:
+  - stylesheets/extra.css

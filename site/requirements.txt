@@ -1,0 +1,7 @@
+# The documentation site's build dependencies (spec 015), installed into build/site-venv by `make site`.
+# Used only to build the site: never by the toolchain or `make test`.
+mkdocs==1.6.1
+mkdocs-material==9.8.1
+mkdocs-redirects==1.2.3
+pymdown-extensions==13.1
+pygments==2.21.0

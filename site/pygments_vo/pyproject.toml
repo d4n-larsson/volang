@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pygments-vo"
+version = "0.1.0"
+description = "Pygments lexer for the vo language (the documentation site, spec 015)"
+requires-python = ">=3.8"
+dependencies = ["pygments"]
+
+[tool.setuptools]
+py-modules = ["pygments_vo"]
+
+[project.entry-points."pygments.lexers"]
+vo = "pygments_vo:VoLexer"
