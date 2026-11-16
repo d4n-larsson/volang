@@ -20,6 +20,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [012](../specs/012-spec-annotations/) | `@spec` annotations: tests name the requirements they prove; `vo query specs` | **Done** ([results](../specs/012-spec-annotations/results.md)) |
 | Review | Security review against the threat model in [security.md](security.md) (effects as a security boundary) | **Review 1 done** ([findings](security-review-1.md): 5 Critical, 11 High); the fixes are the next spec, 013 |
 | Next | Concurrency (see below) | **After the security fixes** |
+| Planned | Complex data structures: balanced trees (AVL), ordered maps and sets, heaps (see below) | **After concurrency** |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -99,6 +100,36 @@ Open questions for the spec: concurrency on one thread (an event loop over the e
 I/O-bound servers and clients) or parallelism on several cores (the collector and the VM are single-threaded
 today); the form in the language (a `spawn` builtin, a block, channels); how `serve` uses it to answer
 requests concurrently.
+
+## Planned: complex data structures
+
+vo has `list` and `map` (keys `int` or `str`, insertion-ordered), records and variants. Programs that need
+an ordered map, a set, a priority queue or a balanced tree must build it themselves. That is possible
+today: a generic AVL tree checks and runs, as a `variant Tree[T: ordered]` whose `node` case holds a
+`record Node[T]`. Writing it showed where it costs more than it should, and where an agent is likely to
+get it wrong:
+
+- **Generic construction is verbose:** `new Node[T] { ... }` needs its type argument written out, and an
+  empty `Tree.leaf` passed as an argument cannot be inferred (E0310) without a typed `let` first.
+- **A variant case carries one value,** so every tree or list node needs a separate record.
+- **`ordered` covers only `int`, `float` and `str`:** a tree keyed by a record or a tuple of fields
+  needs a comparison function passed in by hand.
+- **Rebalancing is easy to get subtly wrong** (rotations, height updates), and a wrong tree still
+  returns plausible answers. This is where properties and contracts (005) should carry the weight.
+
+What the spec should decide:
+
+- **A standard-library module** (for example `std.collections`) written in vo: an ordered map and set on
+  an AVL tree, a binary heap (priority queue), a deque. Each comes with properties for its invariants
+  (balance, ordering, size) in its own tests, and `vo doc` examples.
+- **Persistent or mutable:** persistent trees fit vo's value semantics and make replay and future
+  concurrency simpler; mutable ones are faster. Probably persistent by default, measured against
+  `list` and `map` on the speed benchmark.
+- **Language changes the module needs, kept small:** inference for type arguments of `new` and of cases
+  without a value; ordering for user types (a `compare` function parameter, or records of ordered fields
+  ordered field by field).
+- **Agent evaluation:** benchmark tasks that need one of these structures, with and without the module,
+  to see whether a checked, documented library beats hand-written trees.
 
 ## Benchmarks (ongoing)
 
