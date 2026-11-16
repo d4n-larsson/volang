@@ -18,9 +18,10 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [010](../specs/010-export-visibility/) | `export`: items are private to their file unless exported; the standard library exports only its interface | **Done** ([results](../specs/010-export-visibility/results.md)) |
 | [011](../specs/011-http-server/) | `std.http.serve`: answering HTTP requests under a scoped `serve` effect, with record and replay | **Done** ([results](../specs/011-http-server/results.md)) |
 | [012](../specs/012-spec-annotations/) | `@spec` annotations: tests name the requirements they prove; `vo query specs` | **Done** ([results](../specs/012-spec-annotations/results.md)) |
-| Review | Security review against the threat model in [security.md](security.md) (effects as a security boundary) | **Review 1 done** ([findings](security-review-1.md): 5 Critical, 11 High); the fixes are the next spec, 013 |
-| Next | Concurrency (see below) | **After the security fixes** |
-| Planned | Complex data structures: balanced trees (AVL), ordered maps and sets, heaps (see below) | **After concurrency** |
+| Review | Security review against the threat model in [security.md](security.md) (effects as a security boundary) | **Review 1 done** ([findings](security-review-1.md): 5 Critical, 11 High, 5 Medium, 11 Low) |
+| [013](../specs/013-security-fixes/) | The fixes from review 1: the root grant, opening files without following swapped links, one HTTP framing, safe links in imports and packages, replay and server hardening | **Done** ([results](../specs/013-security-fixes/results.md)): all 32 findings fixed, each with a case |
+| Next | Complex data structures: balanced trees (AVL), ordered maps and sets, heaps (see below) | **Next spec, 014** |
+| Planned | Concurrency (see below) | **After data structures** |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -80,30 +81,9 @@ vo programs used to run by walking the checked syntax tree. Now:
 - Packages pinned by content hash in `vo.packages` and resolved at check time, never at run time; a package's effects appear in `vo.effects`, so a new dependency that wants the network is visible in review.
 - Follow-ups: the agent run with and without `vo doc`, HTTPS, downloading packages.
 
-## Next: concurrency
+## Next: complex data structures
 
-Today a vo program does one thing at a time: a server answers one request at a time (a slow client holds
-it for up to 10 s), and a program that fetches ten URLs waits for each in turn. Concurrency is the next
-spec, after the security fixes (013). What it has to keep:
-
-- **Determinism (Principle III).** The same program and inputs give the same output; record and replay
-  keep working. A concurrent program's interleaving must be reproducible, or recorded and replayed.
-- **Effects as a boundary.** Every concurrent task runs within its spawner's grant (as anonymous
-  functions do today), and `vo.effects` still shows what each function may do.
-- **No data races by construction.** Agents get shared mutable state wrong; the design should make it
-  impossible rather than detected (for example tasks that share nothing and communicate by messages, or
-  structured `spawn`/`join` over immutable inputs).
-- **Structured lifetimes.** A task cannot outlive the block that started it, so errors, timeouts and
-  `--timeout` have one place to go.
-
-Open questions for the spec: concurrency on one thread (an event loop over the existing `ppoll`, enough for
-I/O-bound servers and clients) or parallelism on several cores (the collector and the VM are single-threaded
-today); the form in the language (a `spawn` builtin, a block, channels); how `serve` uses it to answer
-requests concurrently.
-
-## Planned: complex data structures
-
-vo has `list` and `map` (keys `int` or `str`, insertion-ordered), records and variants. Programs that need
+The next spec (014). vo has `list` and `map` (keys `int` or `str`, insertion-ordered), records and variants. Programs that need
 an ordered map, a set, a priority queue or a balanced tree must build it themselves. That is possible
 today: a generic AVL tree checks and runs, as a `variant Tree[T: ordered]` whose `node` case holds a
 `record Node[T]`. Writing it showed where it costs more than it should, and where an agent is likely to
@@ -130,6 +110,27 @@ What the spec should decide:
   ordered field by field).
 - **Agent evaluation:** benchmark tasks that need one of these structures, with and without the module,
   to see whether a checked, documented library beats hand-written trees.
+
+## Planned: concurrency
+
+Today a vo program does one thing at a time: a server answers one request at a time (a slow client holds
+it for up to 10 s), and a program that fetches ten URLs waits for each in turn. Concurrency comes
+after the data structures spec. What it has to keep:
+
+- **Determinism (Principle III).** The same program and inputs give the same output; record and replay
+  keep working. A concurrent program's interleaving must be reproducible, or recorded and replayed.
+- **Effects as a boundary.** Every concurrent task runs within its spawner's grant (as anonymous
+  functions do today), and `vo.effects` still shows what each function may do.
+- **No data races by construction.** Agents get shared mutable state wrong; the design should make it
+  impossible rather than detected (for example tasks that share nothing and communicate by messages, or
+  structured `spawn`/`join` over immutable inputs).
+- **Structured lifetimes.** A task cannot outlive the block that started it, so errors, timeouts and
+  `--timeout` have one place to go.
+
+Open questions for the spec: concurrency on one thread (an event loop over the existing `ppoll`, enough for
+I/O-bound servers and clients) or parallelism on several cores (the collector and the VM are single-threaded
+today); the form in the language (a `spawn` builtin, a block, channels); how `serve` uses it to answer
+requests concurrently.
 
 ## Benchmarks (ongoing)
 
