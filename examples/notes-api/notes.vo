@@ -1,0 +1,97 @@
+# Notes and their JSON form: pure, so every function here is tested without files or a network.
+import std.json.Json;
+import std.json.as_array;
+import std.json.bool_field;
+import std.json.field;
+import std.json.int_field;
+import std.json.parse_json;
+import std.json.text_field;
+
+export record Note {
+    id: int;
+    text: str;
+    done: bool;
+}
+
+# The notes of a JSON array of objects with id, text and done.
+export fn notes_from(doc: Json) -> result[list[Note]] {
+    let out = new list[Note];
+    for item in try as_array(doc) {
+        push(out, new Note { id: try int_field(item, "id"), text: try text_field(item, "text"), done: try bool_field(item, "done") });
+    }
+    return ok(out);
+}
+
+export fn note_json(n: Note) -> Json {
+    let m = new map[str, Json];
+    set m["id"] = Json.integer(n.id);
+    set m["text"] = Json.text(n.text);
+    set m["done"] = Json.boolean(n.done);
+    return Json.object(m);
+}
+
+export fn notes_json(notes: list[Note]) -> Json {
+    return Json.array(map(notes, note_json));
+}
+
+# The text of a new note from a request body `{"text": "..."}`: 1 to 200 bytes, not only spaces.
+export fn text_from(body: str) -> result[str] {
+    let doc = try parse_json(body);
+    match field(doc, "text") {
+        case ok(_) {
+        }
+        case err(_) {
+            return err("the body needs a \"text\" field");
+        }
+    }
+    let text = trim(try text_field(doc, "text"));
+    if text == "" {
+        return err("the text is empty");
+    }
+    if len(text) > 200 {
+        return err("the text is longer than 200 bytes");
+    }
+    return ok(text);
+}
+
+# The notes with a new one added: its id is one more than the largest so far.
+export fn add(notes: list[Note], text: str) -> list[Note] {
+    var next = 1;
+    for n in notes {
+        set next = max(next, n.id + 1);
+    }
+    let out = copy_notes(notes);
+    push(out, new Note { id: next, text: text, done: false });
+    return out;
+}
+
+export fn find_note(notes: list[Note], id: int) -> result[Note] {
+    for n in notes {
+        if n.id == id {
+            return ok(n);
+        }
+    }
+    return err("no note " + str(id));
+}
+
+export fn mark_done(notes: list[Note], id: int) -> list[Note] {
+    return map(notes, fn(n: Note) -> Note {
+        if n.id == id {
+            return new Note { id: n.id, text: n.text, done: true };
+        }
+        return n;
+    });
+}
+
+export fn remove_note(notes: list[Note], id: int) -> list[Note] {
+    return filter(notes, fn(n: Note) -> bool {
+        return n.id != id;
+    });
+}
+
+# A new list with the same notes (push changes a list in place; add returns a new one).
+fn copy_notes(notes: list[Note]) -> list[Note] {
+    return filter(notes, fn(n: Note) -> bool {
+        return true;
+    });
+}

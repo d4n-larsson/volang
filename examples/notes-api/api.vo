@@ -1,0 +1,139 @@
+# The HTTP API: `route` decides every answer from the request and the current notes (pure, tested
+# directly), `handle` loads the notes from data/notes.json, routes, and saves them when they changed.
+import notes.Note;
+import notes.add;
+import notes.find_note;
+import notes.mark_done;
+import notes.note_json;
+import notes.notes_from;
+import notes.notes_json;
+import notes.remove_note;
+import notes.text_from;
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.json.Json;
+import std.json.parse_json;
+import std.json.write_json;
+
+# A response and the notes after it (changed: they must be saved).
+export record Answer {
+    response: Response;
+    notes: list[Note];
+    changed: bool;
+}
+
+fn json(status: int, j: Json) -> Response {
+    match write_json(j) {
+        case ok(text) {
+            return new Response { status: status, headers: [new Header { name: "Content-Type", value: "application/json" }], body: text + "\n" };
+        }
+        case err(e) {
+            return new Response { status: 500, headers: new list[Header], body: e + "\n" };
+        }
+    }
+}
+
+fn problem(status: int, message: str) -> Response {
+    let m = new map[str, Json];
+    set m["error"] = Json.text(message);
+    return json(status, Json.object(m));
+}
+
+fn same(notes: list[Note], r: Response) -> Answer {
+    return new Answer { response: r, notes: notes, changed: false };
+}
+
+# GET /notes, POST /notes, GET /notes/ID, POST /notes/ID/done, DELETE /notes/ID.
+export fn route(r: Request, notes: list[Note]) -> Answer {
+    let parts = split(r.path, "/");
+    if len(parts) < 2 or parts[0] != "" or parts[1] != "notes" {
+        return same(notes, problem(404, "no such resource: " + r.path));
+    }
+    if len(parts) == 2 {
+        if r.method == "GET" {
+            return same(notes, json(200, notes_json(notes)));
+        }
+        if r.method == "POST" {
+            match text_from(r.body) {
+                case ok(text) {
+                    let after = add(notes, text);
+                    let created = after[len(after) - 1];
+                    let resp = json(201, note_json(created));
+                    push(resp.headers, new Header { name: "Location", value: "/notes/" + str(created.id) });
+                    return new Answer { response: resp, notes: after, changed: true };
+                }
+                case err(e) {
+                    return same(notes, problem(400, e));
+                }
+            }
+        }
+        return same(notes, problem(405, r.method + " is not allowed on /notes"));
+    }
+    var id = 0;
+    match parse_int(parts[2]) {
+        case ok(n) {
+            set id = n;
+        }
+        case err(_) {
+            return same(notes, problem(404, "no such note: " + parts[2]));
+        }
+    }
+    match find_note(notes, id) {
+        case ok(n) {
+            if len(parts) == 3 and r.method == "GET" {
+                return same(notes, json(200, note_json(n)));
+            }
+            if len(parts) == 3 and r.method == "DELETE" {
+                return new Answer { response: new Response { status: 204, headers: new list[Header], body: "" }, notes: remove_note(notes, id), changed: true };
+            }
+            if len(parts) == 4 and parts[3] == "done" and r.method == "POST" {
+                let updated = new Note { id: n.id, text: n.text, done: true };
+                return new Answer { response: json(200, note_json(updated)), notes: mark_done(notes, id), changed: true };
+            }
+            return same(notes, problem(405, r.method + " is not allowed on " + r.path));
+        }
+        case err(e) {
+            return same(notes, problem(404, e));
+        }
+    }
+}
+
+# The notes in data/notes.json; none when the file does not exist yet.
+fn load() -> result[list[Note]] uses file.read("data/") {
+    match read_file("data/notes.json") {
+        case ok(text) {
+            return notes_from(try parse_json(text));
+        }
+        case err(_) {
+            return ok(new list[Note]);
+        }
+    }
+}
+
+fn save(notes: list[Note]) -> result[void] uses file.write("data/") {
+    let text = try write_json(notes_json(notes));
+    return write_file("data/notes.json", text + "\n");
+}
+
+# One request: load the notes, route, save them when they changed.
+export fn handle(r: Request) -> Response uses file.read("data/"), file.write("data/") {
+    match load() {
+        case ok(notes) {
+            let a = route(r, notes);
+            if a.changed {
+                match save(a.notes) {
+                    case ok() {
+                    }
+                    case err(e) {
+                        return problem(500, "cannot save the notes: " + e);
+                    }
+                }
+            }
+            return a.response;
+        }
+        case err(e) {
+            return problem(500, "data/notes.json: " + e);
+        }
+    }
+}
