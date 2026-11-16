@@ -1,0 +1,6 @@
+start vo run service.vo
+request GET /x?ab
+request GET /x
+request GET /x?abcd
+signal TERM
+no-children

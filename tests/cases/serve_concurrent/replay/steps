@@ -1,0 +1,7 @@
+start vo run --record r.jsonl service.vo
+request-open half GET /x HTTP/1.1\r\n
+request GET /x
+request GET /x
+request-many 3 GET /x
+signal TERM
+vo replay r.jsonl

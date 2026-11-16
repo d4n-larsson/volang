@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0503","name":"scope_too_narrow","severity":"error","file":"scope.vo","start":{"line":5,"col":4},"end":{"line":5,"col":8},"text":"main","message":"`main` declares too narrow a scope: it needs file.write(\"out/\").","fixes":[{"file":"scope.vo","start":{"line":5,"col":11},"end":{"line":5,"col":36},"replacement":"uses file.write(\"logs/\", \"out/\") "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

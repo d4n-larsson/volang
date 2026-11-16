@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0511","name":"task_reads_input","severity":"error","file":"reads_input.vo","start":{"line":14,"col":56},"end":{"line":14,"col":59},"text":"ask","message":"Tasks cannot read stdin: read it before `concurrent_map` and pass the text in.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

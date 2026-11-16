@@ -1,0 +1,13 @@
+# A `task` record comes before each task's calls; depth continues from the call.
+fn square(x: int) -> int {
+    return helper(x) * x;
+}
+
+fn helper(x: int) -> int {
+    return x;
+}
+
+fn main() uses console {
+    let ys = concurrent_map([1, 2, 3], 3, square);
+    print(str(ys[2]));
+}

@@ -1,0 +1,33 @@
+$ request-raw NONSENSE\r\n\r\n
+HTTP/1.1 400 Bad Request
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw GET /x HTTP/1.1\r\nContent-Length: 99999999999\r\n\r\n
+HTTP/1.1 413 Content Too Large
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw GET /x HTTP/1.1\r\nX: {bytes:70000}\r\n\r\n
+HTTP/1.1 431 Request Header Fields Too Large
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request GET /x
+HTTP/1.1 200 OK
+Content-Length: 1
+Connection: close
+
+1
+--- end
+$ signal TERM
+serving
+stopped after 1
+--- stderr
+--- exit 0

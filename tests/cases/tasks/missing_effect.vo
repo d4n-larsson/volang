@@ -1,0 +1,9 @@
+fn shout(s: str) -> str uses console {
+    print(s);
+    return upper(s);
+}
+
+fn main() {
+    let ys = concurrent_map(["a"], 1, shout);
+    let _ = ys;
+}

@@ -1,0 +1,13 @@
+$ vo run --timeout 2 main.vo -- {port}
+--- stderr
+std/http.vo:83:19: runtime error[R0009]: Time limit of 2 s exceeded.
+  83 |     let raw = try __http_exchange(u.host, u.port, request);
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at exchange (std/http.vo:83:19)
+  at get (std/http.vo:127:12)
+  at work (main.vo:5:11)
+  at main (main.vo:17:14)
+--- exit 124
+$ no-children
+left-over processes: 0

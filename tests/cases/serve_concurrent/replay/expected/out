@@ -1,0 +1,30 @@
+$ request GET /x
+HTTP/1.1 200 OK
+Content-Length: 1
+Connection: close
+
+1
+--- end
+$ request GET /x
+HTTP/1.1 200 OK
+Content-Length: 1
+Connection: close
+
+2
+--- end
+$ request-many 3 GET /x
+3
+4
+5
+within 1 s: yes
+--- end
+$ signal TERM
+serving
+stopped after 5
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+serving
+stopped after 5
+--- stderr
+--- exit 0

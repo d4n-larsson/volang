@@ -478,6 +478,7 @@ fn(int) -> int uses console                 function type (parameter types, retu
 | filter | `(xs: list[T], f: fn(T) -> bool) -> list[T]` | |
 | fold | `(xs: list[T], init: A, f: fn(A, T) -> A) -> A` | |
 | any, all | `(xs: list[T], f: fn(T) -> bool) -> bool` | stop at the first element that decides |
+| concurrent_map | `(xs: list[T], limit: int, f: fn(T) -> U) -> list[U]` | like `map`, at most `limit` (1 to 64, else R0007) tasks at a time |
 
 The function's effects become the caller's: `map` with a function that prints needs `uses console`.
 
@@ -511,6 +512,27 @@ fn main() uses console {
 ```output
 al,cy
 10
+```
+
+**Tasks**: `concurrent_map` runs `f` on each element as a separate task, for waiting on several things at once (HTTP requests). Results, and each task's whole output, come in the order of `xs`, whatever order the tasks finish in. Each task works on its own copy of everything it gets or captures: changes stay in the task, only its result comes back. The first task in `xs` order that stops with a runtime error or `exit` stops the others and the program, as `map` would. Results cannot hold functions (E0314) or a collection with its own order (R0015); `f` cannot read stdin (E0511). Inside a task, tasks run one at a time. Each task has its own random sequence (fixed by `--seed`) and its own `--max-memory`.
+
+```vo
+fn work(n: int) -> int uses console {
+    print("task " + str(n));
+    return n * n;
+}
+
+fn main() uses console {
+    let squares = concurrent_map([3, 1, 2], 2, work);
+    print(str(squares[0] + squares[1] + squares[2]));
+}
+```
+
+```output
+task 3
+task 1
+task 2
+14
 ```
 
 ## Generics
@@ -993,7 +1015,7 @@ fn main() uses console {
 | std.collections | neighbors and ranges of the ordered collections, set algebra, deque fronts, `_by(cmp)` orders |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
-- `std.http.serve(address, handle)` answers HTTP requests one at a time with `handle(request) -> Response` until Ctrl-C or SIGTERM, then returns `ok()`. The caller declares `serve` with that address and the handler's effects. A handler that stops with a runtime error answers 500 (the report goes to stderr) and the server goes on; `--timeout` limits each handler call, not the server.
+- `std.http.serve(address, handle)` reads many requests at once and calls `handle(request) -> Response` for one at a time, in the order they arrive complete, until Ctrl-C or SIGTERM, then returns `ok()`. The caller declares `serve` with that address and the handler's effects. A handler that stops with a runtime error answers 500 (the report goes to stderr) and the server goes on; `--timeout` limits each handler call, not the server.
 - Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
 
 ```vo
@@ -1062,7 +1084,7 @@ renamed area to rect_area: 2 changes in 1 file (dry run, nothing written)
 
 ## Traces and replay
 
-- `vo run --trace FILE` (and `vo test`) writes JSON lines: `call` (function, call site, depth, `args` by name) and `return` (value) for every vo function, `error` when a runtime error ends it, `test` before each test, and `end` (`records`, `omitted`, `status`). Values are shortened to 200 bytes. After `--trace-limit N` records (default 100000) the rest are only counted.
+- `vo run --trace FILE` (and `vo test`) writes JSON lines: `call` (function, call site, depth, `args` by name) and `return` (value) for every vo function, `error` when a runtime error ends it, `test` before each test, `task` (`index`) before each task's records, and `end` (`records`, `omitted`, `status`). Values are shortened to 200 bytes. After `--trace-limit N` records (default 100000) the rest are only counted.
 - A runtime error lists, under each frame, its parameters and the locals declared before the failing statement: `i: int = 3` (in JSON, `locals` of each `trace` entry). Timeouts show no values: they depend on the machine's speed.
 - `vo run --record FILE` saves everything the program receives: arguments, stdin, environment variables, file reads, results of file writes, HTTP responses and requests, the clock and the seed. `vo replay FILE` runs the current program on exactly that, reading and writing nothing outside: the same program gives the same output and exit status (unless it timed out). A changed program is run with a note; one that asks for a different input (another file, variable or HTTP request: host, port, method or path) stops with R0014. A server gets the recorded requests again, opens no port, and each response that changed is a note. A recording holds the file contents and variables the program read.
 
@@ -1104,7 +1126,7 @@ vo package   [--json] ENTRY NAME DIRECTORY | --remove ENTRY NAME
 - `PATH` is a `.vo` file or a directory (every `*.vo` under it, recursively, in sorted order). Each file is checked as the entry of its own program.
 - `run` checks first and runs only if there are no errors. Arguments after `--` reach the program through `args()`.
 - `--timeout SEC` is in whole seconds, default 10; `0` disables it. For `test` it applies to each test.
-- Memory: values that can no longer be reached are reclaimed automatically. The limit applies to live data (512 MiB by default; `--max-memory MiB`, 1 to 65536); holding more is R0006. `--mem-stats` reports the peak live size, the total allocated and the number of collections after the run or each test (on stderr for `run`; a `memory` record with `--json`).
+- Memory: values that can no longer be reached are reclaimed automatically. The limit applies to live data (512 MiB by default; `--max-memory MiB`, 1 to 65536); holding more is R0006. `--mem-stats` reports the peak live size, the total allocated and the number of collections after the run or each test, without its tasks (on stderr for `run`; a `memory` record with `--json`).
 - `fmt` rewrites files in canonical form; `fmt --check` changes nothing and lists the files that are not canonical.
 - `explain CODE` prints the catalog entry for any `E`, `W`, `R` or `T` code, with an example and its fix.
 - `reference` prints this document. `version` prints `vo <semver> schema 1`.

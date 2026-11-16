@@ -1,0 +1,12 @@
+# Running into a hole in a task is R0011.
+fn todo_later(x: int) -> int {
+    if x > 1 {
+        return todo("big inputs");
+    }
+    return x;
+}
+
+fn main() uses console {
+    let ys = concurrent_map([1, 2], 2, todo_later);
+    print(str(len(ys)));
+}

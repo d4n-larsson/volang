@@ -1,0 +1,16 @@
+fn ask(prompt: str) -> str uses console, input {
+    print(prompt);
+    match read_line() {
+        case ok(line) {
+            return line;
+        }
+        case err(_) {
+            return "";
+        }
+    }
+}
+
+fn main() uses console, input {
+    let answers = concurrent_map(["name?", "age?"], 2, ask);
+    print(answers[0]);
+}

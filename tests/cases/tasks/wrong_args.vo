@@ -1,0 +1,11 @@
+fn id(x: int) -> int {
+    return x;
+}
+
+fn main() uses console {
+    let a = concurrent_map([1, 2], id);
+    let b = concurrent_map([1, 2], "4", id);
+    let c = concurrent_map([1, 2], 4, 5);
+    let d = concurrent_map(["a"], 4, id);
+    print(str(len(a) + len(b) + len(c) + len(d)));
+}

@@ -1,0 +1,18 @@
+record Job {
+    name: str;
+    on_done: fn(str) -> str;
+}
+
+fn make(name: str) -> Job {
+    return new Job { name: name, on_done: fn(s: str) -> str { return s; } };
+}
+
+fn adders(n: int) -> list[fn(int) -> int] {
+    return [fn(x: int) -> int { return x + n; }];
+}
+
+fn main() uses console {
+    let jobs = concurrent_map(["a", "b"], 2, make);
+    let fs = concurrent_map([1, 2], 2, adders);
+    print(jobs[0].name + str(len(fs)));
+}

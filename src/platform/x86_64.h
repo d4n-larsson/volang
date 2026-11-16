@@ -36,4 +36,15 @@
 #define O_DIRECTORY 0x10000
 #define O_NOFOLLOW 0x20000
 
+/* spec 016: tasks (one process each) */
+#define SYS_clone 56
+#define SYS_wait4 61
+#define SYS_pipe2 293
+#define SYS_dup3 292
+#define SYS_fcntl 72
+#define SYS_prctl 157
+#define SYS_kill 62
+#define SYS_getppid 110
+#define SYS_getpid 39
+
 #endif

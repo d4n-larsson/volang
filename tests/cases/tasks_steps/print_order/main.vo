@@ -1,0 +1,26 @@
+# Each task's output appears whole and in input order, whatever order the tasks finish in.
+import std.http.get;
+
+fn work(job: str) -> int uses console, net("127.0.0.1") {
+    let parts = split(job, " ");
+    print("task " + parts[1] + " starts");
+    let r = get("http://127.0.0.1:" + parts[0] + "/delay/" + parts[1]);
+    match r {
+        case ok(_) {
+            print("task " + parts[1] + " answered");
+        }
+        case err(e) {
+            print("task " + parts[1] + " failed: " + e);
+        }
+    }
+    eprint("task " + parts[1] + " on stderr");
+    print("task " + parts[1] + " ends");
+    return len(parts[1]);
+}
+
+fn main() uses console, net("127.0.0.1") {
+    let port = args()[0];
+    print("before");
+    let rs = concurrent_map([port + " 300", port + " 200", port + " 100", port + " 0"], 4, work);
+    print("after: " + str(len(rs)));
+}

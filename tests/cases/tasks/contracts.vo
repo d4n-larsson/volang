@@ -1,0 +1,9 @@
+# A task function's contract is checked as with `map`: R0012 at the call into it.
+fn half(x: int) -> int requires x % 2 == 0 {
+    return x / 2;
+}
+
+fn main() uses console {
+    let ys = concurrent_map([2, 4, 5], 3, half);
+    print(str(len(ys)));
+}

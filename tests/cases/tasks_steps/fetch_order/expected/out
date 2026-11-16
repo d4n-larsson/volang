@@ -1,0 +1,13 @@
+$ vo run main.vo -- {port}
+450 200 delay 450
+400 200 delay 400
+350 200 delay 350
+300 200 delay 300
+250 200 delay 250
+200 200 delay 200
+150 200 delay 150
+100 200 delay 100
+50 200 delay 50
+0 200 delay 0
+--- stderr
+--- exit 0

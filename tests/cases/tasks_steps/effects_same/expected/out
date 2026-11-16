@@ -1,0 +1,23 @@
+$ vo effects --update main.vo
++ main.vo:check: net("localhost")
++ main.vo:main: console, net("localhost")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo effects main.vo
+main uses console, net("localhost")
+test "a line per result" pure
+test "results come back in the order of the URLs" pure
+
+main.vo:check uses net("localhost")
+main.vo:line pure
+main.vo:main uses console, net("localhost")
+main.vo:test "a line per result" pure
+main.vo:test "results come back in the order of the URLs" pure
+0 errors, 0 warnings
+--- stderr
+--- exit 0

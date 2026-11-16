@@ -1,0 +1,39 @@
+## E0314 task_result_function
+
+The function given to `concurrent_map` returns something that holds a function.
+
+Fixable: no
+
+Each task of `concurrent_map` runs on its own copy of the program, and only its result comes back to the caller, as data. A function cannot come back, so the result type may not contain a function type anywhere: not itself, not in a record field, a variant case, a list or a map. The message names where the function is. Return the data the function would need instead, and build the function after the call.
+
+### Example
+
+```vo
+record Job {
+    name: str;
+    greet: fn(str) -> str;
+}
+
+fn make(name: str) -> Job {
+    return new Job { name: name, greet: fn(s: str) -> str { return s + "!"; } };
+}
+
+fn main() uses console {
+    let jobs = concurrent_map(["a", "b"], 2, make);
+    print(jobs[0].greet(jobs[0].name));
+}
+```
+
+### Fixed
+
+```vo
+fn make(name: str) -> str {
+    return name + "!";
+}
+
+fn main() uses console {
+    let jobs = concurrent_map(["a", "b"], 2, make);
+    print(jobs[0]);
+}
+```
+

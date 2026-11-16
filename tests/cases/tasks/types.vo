@@ -1,0 +1,162 @@
+# Every transferable result type comes back equal to what `map` gives (spec 016 research R4).
+record Point {
+    x: int;
+    y: float;
+}
+
+record Box[T] {
+    items: list[T];
+    label: str;
+}
+
+variant Shape {
+    circle(float);
+    named(Point);
+    empty;
+}
+
+fn ints(i: int) -> int {
+    return i * 1000000007;
+}
+
+fn floats(i: int) -> float {
+    if i == 0 {
+        return -0.0;
+    }
+    if i == 1 {
+        return 1.0 / 0.0;
+    }
+    return float(i) / 3.0;
+}
+
+fn bools(i: int) -> bool {
+    return i % 2 == 0;
+}
+
+fn strs(i: int) -> str {
+    return "é" + str(i) + "\n\"x\"";
+}
+
+fn lists(i: int) -> list[list[int]] {
+    return [[i], [i, i + 1], new list[int]];
+}
+
+fn maps(i: int) -> map[str, int] {
+    let m = new map[str, int];
+    set m["z"] = i;
+    set m["a"] = i + 1;
+    return m;
+}
+
+fn points(i: int) -> Point {
+    return new Point { x: i, y: float(i) * 0.5 };
+}
+
+fn boxes(i: int) -> Box[str] {
+    return new Box { items: [str(i), "b"], label: "box" };
+}
+
+fn shapes(i: int) -> Shape {
+    if i == 0 {
+        return Shape.circle(1.5);
+    }
+    if i == 1 {
+        return Shape.named(new Point { x: 3, y: 4.0 });
+    }
+    return Shape.empty;
+}
+
+fn results(i: int) -> result[int] {
+    if i == 1 {
+        return err("one");
+    }
+    return ok(i);
+}
+
+fn voids(i: int) -> result[void] {
+    if i == 2 {
+        return err("two");
+    }
+    return ok();
+}
+
+fn omaps(i: int) -> ordered_map[int, str] {
+    let m = new ordered_map[int, str];
+    set m[3 - i] = "c";
+    set m[10] = "x";
+    set m[-i] = "n";
+    return m;
+}
+
+fn osets(i: int) -> ordered_set[str] {
+    let s = new ordered_set[str];
+    push(s, "q" + str(i));
+    push(s, "a");
+    return s;
+}
+
+fn queues(i: int) -> priority_queue[Point] {
+    let q = new priority_queue[Point];
+    push(q, new Point { x: 2, y: 1.0 });
+    push(q, new Point { x: 1, y: 9.0 });
+    push(q, new Point { x: 2, y: 1.0 });
+    push(q, new Point { x: i, y: 0.0 });
+    return q;
+}
+
+fn deques(i: int) -> deque[int] {
+    let d = new deque[int];
+    push(d, i);
+    push(d, i + 1);
+    return d;
+}
+
+test "ints" {
+    expect_eq(concurrent_map([0, 1, 2], 2, ints), map([0, 1, 2], ints));
+}
+
+test "floats" {
+    expect_eq(concurrent_map([0, 1, 2], 2, floats), map([0, 1, 2], floats));
+    expect_eq(str(concurrent_map([0], 1, floats)[0]), "-0.0");
+}
+
+test "bools and strings" {
+    expect_eq(concurrent_map([0, 1, 2], 3, bools), map([0, 1, 2], bools));
+    expect_eq(concurrent_map([0, 1, 2], 3, strs), map([0, 1, 2], strs));
+}
+
+test "lists and maps" {
+    expect_eq(concurrent_map([0, 1, 2], 2, lists), map([0, 1, 2], lists));
+    expect_eq(concurrent_map([0, 1, 2], 2, maps), map([0, 1, 2], maps));
+    expect_eq(keys(concurrent_map([5], 1, maps)[0]), ["z", "a"]);
+}
+
+test "records and variants" {
+    expect_eq(concurrent_map([0, 1, 2], 2, points), map([0, 1, 2], points));
+    expect_eq(concurrent_map([0, 1, 2], 2, boxes), map([0, 1, 2], boxes));
+    expect_eq(concurrent_map([0, 1, 2], 2, shapes), map([0, 1, 2], shapes));
+}
+
+test "results" {
+    expect_eq(concurrent_map([0, 1, 2], 2, results), map([0, 1, 2], results));
+    expect_eq(concurrent_map([0, 1, 2], 2, voids), map([0, 1, 2], voids));
+}
+
+test "collections" {
+    expect_eq(concurrent_map([0, 1, 2], 2, omaps), map([0, 1, 2], omaps));
+    expect_eq(concurrent_map([0, 1, 2], 2, osets), map([0, 1, 2], osets));
+    expect_eq(concurrent_map([0, 1, 2], 2, deques), map([0, 1, 2], deques));
+    let q = concurrent_map([0], 1, queues)[0];
+    let first = pop(q);
+    let second = pop(q);
+    expect_eq(first, ok(new Point { x: 0, y: 0.0 }));
+    expect_eq(second, ok(new Point { x: 1, y: 9.0 }));
+    expect_eq(len(q), 2);
+}
+
+test "void-returning task functions" {
+    let r = concurrent_map([1, 2], 2, fn(i: int) {
+        let _ = i;
+    });
+    expect_eq(len(r), 2);
+}

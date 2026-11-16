@@ -1,0 +1,8 @@
+fn save(name: str) -> result[void] uses file.write("out/") {
+    return write_file("out/" + name, "x");
+}
+
+fn main() uses file.write("logs/") {
+    let rs = concurrent_map(["a.txt"], 1, save);
+    let _ = rs;
+}

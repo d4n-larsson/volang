@@ -9,6 +9,9 @@ than 50% (plus 8 MiB) after warm-up, or on a bad stop.
 
   serve_endurance.py [--requests N] [--minutes M] [--pause MS]   (MS between requests, for long runs:
                                                                   closed connections wait in TIME_WAIT)
+  serve_endurance.py --stalled [--requests N]   (spec 016 SC-002: one client holds half a request open
+                                                 while N requests (default 100) are sent; each must be
+                                                 answered within 1 s)
 """
 import os
 import signal
@@ -102,9 +105,16 @@ def main():
             break
         except OSError:
             time.sleep(0.05)
+    stalled = None
+    if "--stalled" in args:  # spec 016: a client that sends half a request and waits
+        n = int(args[args.index("--requests") + 1]) if "--requests" in args else 100
+        stalled = socket.create_connection(("127.0.0.1", port), timeout=30)
+        stalled.sendall(b"GET /count?a HTTP/1.1\r\nHost: lo")
+    slowest = 0.0
     start, done, bad, warm = time.time(), 0, 0, None
     while done < n or time.time() - start < minutes * 60:
         i = done
+        t0 = time.time()
         if i % 100 == 99:
             got = exchange(port, b"GET /fail HTTP/1.1\r\n\r\n")
             ok = got.startswith(b"HTTP/1.1 500 ")
@@ -114,6 +124,7 @@ def main():
         else:
             got = exchange(port, f"GET /count?a,{i},c HTTP/1.1\r\n\r\n".encode())
             ok = got.startswith(b"HTTP/1.1 200 ") and got.endswith(f'["a","{i}","c"]'.encode())
+        slowest = max(slowest, time.time() - t0)
         if not ok:
             bad += 1
             if bad <= 3:
@@ -124,6 +135,8 @@ def main():
         if done == max(1, n // 10):
             warm = rss_kib(proc.pid)
     end_rss = rss_kib(proc.pid)
+    if stalled:
+        stalled.close()
     elapsed = time.time() - start
     proc.send_signal(signal.SIGTERM)
     proc.wait(timeout=60)
@@ -138,10 +151,13 @@ def main():
         problems.append(f"{failures} handler failures reported, {done // 100} expected")
     if proc.returncode != 0 or out != b"stopped\n":
         problems.append(f"stop: exit {proc.returncode}, stdout {out!r}")
+    if stalled and slowest > 1.0:
+        problems.append(f"the slowest request took {slowest:.2f} s behind a stalled client (limit 1 s)")
     if warm and end_rss > warm * 1.5 + 8192:
         problems.append(f"memory grew from {warm} KiB to {end_rss} KiB")
     print(f"serve_endurance: {done} requests in {elapsed:.0f} s ({done / elapsed:.0f}/s), "
           f"memory {warm} KiB after warm-up, {end_rss} KiB at the end, "
+          f"slowest {slowest * 1000:.0f} ms{' behind a stalled client' if stalled else ''}, "
           f"{'0 problems' if not problems else '; '.join(problems)}")
     return 1 if problems else 0
 

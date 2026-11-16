@@ -658,7 +658,7 @@ void size_into_up(SB *sb, long bytes)
  * with --json, else one human line. test is the test's name (a str), or 0 for a run. */
 void gc_report(int fd, char *command, void *test)
 {
-    if (!opt_mem_stats) return;
+    if (!opt_mem_stats || task_depth) return; /* spec 016: the parent reports, without its tasks (R13) */
     sample_peak();
     long peak = gc_peak, allocated = gc_total + gc_since, count = gc_count; /* before the report allocates */
     GC_ROOT(&test);

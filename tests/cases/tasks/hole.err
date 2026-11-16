@@ -1,0 +1,7 @@
+hole.vo:4:16: runtime error[R0011]: Hole reached: big inputs.
+   4 |         return todo("big inputs");
+     |                ^^^^^^^^^^^^^^^^^^
+trace:
+  at todo_later (hole.vo:4:16)
+      x: int = 2
+  at main (hole.vo:10:14)

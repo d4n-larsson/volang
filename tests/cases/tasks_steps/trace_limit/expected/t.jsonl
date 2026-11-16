@@ -1,0 +1,6 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"task","index":0}
+{"v":1,"kind":"call","depth":2,"function":"square","file":"main.vo","start":{"line":11,"col":14},"args":[{"name":"x","value":"1"}]}
+{"v":1,"kind":"call","depth":3,"function":"helper","file":"main.vo","start":{"line":3,"col":12},"args":[{"name":"x","value":"1"}]}
+{"v":1,"kind":"return","depth":3,"function":"helper","value":"1"}
+{"v":1,"kind":"end","records":5,"omitted":12,"status":0}

@@ -1,0 +1,14 @@
+# Task 2 of 5 fails: the output of tasks 0-2 comes first, then the report; nothing from tasks 3 and 4.
+fn work(i: int) -> int uses console {
+    print("task " + str(i) + " starts");
+    eprint("task " + str(i) + " on stderr");
+    let d = 2 - i;
+    print("task " + str(i) + " gives " + str(10 / d));
+    return i;
+}
+
+fn main() uses console {
+    print("before");
+    let rs = concurrent_map([0, 1, 2, 3, 4], 5, work);
+    print("never: " + str(len(rs)));
+}

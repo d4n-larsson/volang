@@ -1,0 +1,14 @@
+$ vo run --seed 1 --record rec.jsonl main.vo -- {port}
+fetching 200
+fetching 100
+fetching 0
+delay 200; delay 100; delay 0
+--- stderr
+--- exit 0
+$ vo replay rec.jsonl
+fetching 200
+fetching 100
+fetching 0
+delay 200; delay 100; delay 0
+--- stderr
+--- exit 0

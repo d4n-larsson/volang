@@ -1,0 +1,21 @@
+$ vo run main.vo -- {port}
+before
+task 300 starts
+task 300 answered
+task 300 ends
+task 200 starts
+task 200 answered
+task 200 ends
+task 100 starts
+task 100 answered
+task 100 ends
+task 0 starts
+task 0 answered
+task 0 ends
+after: 4
+--- stderr
+task 300 on stderr
+task 200 on stderr
+task 100 on stderr
+task 0 on stderr
+--- exit 0

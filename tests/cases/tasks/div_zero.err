@@ -1,0 +1,7 @@
+div_zero.vo:2:18: runtime error[R0002]: Division by zero.
+   2 |     let scaled = 100 / x;
+     |                  ^^^^^^^
+trace:
+  at inverse (div_zero.vo:2:18)
+      x: int = 0
+  at main (div_zero.vo:7:14)

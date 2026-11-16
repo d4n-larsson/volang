@@ -1,0 +1,10 @@
+task 0 on stderr
+task 1 on stderr
+task 2 on stderr
+fail_output.vo:6:46: runtime error[R0002]: Division by zero.
+   6 |     print("task " + str(i) + " gives " + str(10 / d));
+     |                                              ^^^^^^
+trace:
+  at work (fail_output.vo:6:46)
+      i: int = 2, d: int = 0
+  at main (fail_output.vo:12:14)

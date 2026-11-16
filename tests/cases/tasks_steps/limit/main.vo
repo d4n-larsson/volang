@@ -1,0 +1,26 @@
+# At most `limit` requests are outstanding at once (the test server counts them).
+import std.http.get;
+
+fn fetch(url: str) -> str uses net("127.0.0.1") {
+    match get(url) {
+        case ok(r) {
+            return trim(r.body);
+        }
+        case err(e) {
+            return e;
+        }
+    }
+}
+
+fn main() uses console, net("127.0.0.1") {
+    let port = args()[0];
+    let base = "http://127.0.0.1:" + port;
+    let _ = fetch(base + "/peak");
+    var urls = new list[str];
+    for i in [1, 2, 3, 4, 5, 6, 7, 8, 9] {
+        push(urls, base + "/delay/" + str(100 + i));
+    }
+    let rs = concurrent_map(urls, 3, fetch);
+    print(join(rs, ", "));
+    print("most at once: " + fetch(base + "/peak"));
+}

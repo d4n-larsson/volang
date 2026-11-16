@@ -220,12 +220,50 @@ Type *check_method_form(Node *node, Type *expected)
     return check_call(node->d.n, expected);
 }
 
+/* Spec 016 (E0314): where t holds a function type ("field `on_done` of `Job`"), or 0. Each record and
+ * variant is entered once (seen), so recursive types end. */
+static Str *task_func_path(Type *t, Vec *seen)
+{
+    if (!t) return 0;
+    switch (t->kind) {
+    case TY_FUNC: return str_from_cstr("the result itself");
+    case TY_LIST:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE:
+        if (task_func_path(t->a.t, seen)) return str_from_cstr(t->kind == TY_LIST ? "list element" : "collection element");
+        return 0;
+    case TY_MAP:
+    case TY_OMAP:
+        if (task_func_path(t->a.t, seen) || task_func_path(t->b.t, seen)) return str_from_cstr("map value");
+        return 0;
+    case TY_RESULT: return task_func_path(t->a.t, seen) ? str_from_cstr("`ok` value") : 0;
+    case TY_RECORD:
+    case TY_VARIANT:
+        for (long i = 0; i < seen->n; i++)
+            if (vec_get(seen, i) == t) return 0;
+        vec_push(seen, t);
+        for (long i = 0;; i++) {
+            Node *m = member_at(t->decl.n->b.v, i);
+            if (!m) return 0;
+            Type *mt = t->kind == TY_RECORD ? field_type_in(t, m->b.n->type) : case_payload(t, i);
+            if (!mt) continue;
+            Str *inner = task_func_path(mt, seen);
+            if (!inner) continue;
+            if (mt->kind != TY_FUNC) return inner; /* the innermost place names it */
+            return msg(t->kind == TY_RECORD ? "field `$1` of `$2`" : "case `$1` of `$2`", m->a.n->a.s, ty_name(t), 0);
+        }
+    default: return 0;
+    }
+}
+
 /* sort_by, map, filter, fold, any, all: a list, (fold: a start value,) and a function of its
- * elements. The function's effects become the caller's. */
+ * elements; concurrent_map (spec 016): a list, the limit and a function. The function's effects
+ * become the caller's. */
 Type *check_hof(Node *call, long id)
 {
     Type *bool_or_bad = (id == B_ANY || id == B_ALL) ? t_bool : t_error; /* when the call is wrong */
-    if (!check_argc(call, id == B_FOLD ? 3 : 2)) return bool_or_bad;
+    if (!check_argc(call, id == B_FOLD || id == B_CMAP ? 3 : 2)) return bool_or_bad;
     Type *lt = check_arg(call, 0, 0); /* the list */
     if (ty_bad(lt)) return bool_or_bad;
     if (lt->kind != TY_LIST) {
@@ -237,6 +275,10 @@ Type *check_hof(Node *call, long id)
     long fi = 1;          /* the function's argument index */
     if (id == B_FOLD) {
         acc = check_arg(call, 1, 0);
+        fi = 2;
+    }
+    if (id == B_CMAP) {
+        check_arg(call, 1, t_int); /* the limit */
         fi = 2;
     }
     Type *ft = check_arg(call, fi, 0); /* the function */
@@ -266,6 +308,15 @@ Type *check_hof(Node *call, long id)
         return t_void;
     }
     case B_MAP: return ty_list(ft->b.t);
+    case B_CMAP: { /* spec 016: what cannot cross to the parent, and stdin */
+        Node *fn_arg = call->b.v->data[2].n;
+        Str *where = task_func_path(ft->b.t, vec_new());
+        if (where) ck_err1("E0314", fn_arg, "A task's result cannot hold a function ($1): return data instead.", where);
+        if (eff->mask & EF_INPUT)
+            ck_err("E0511", fn_arg,
+                   str_from_cstr("Tasks cannot read stdin: read it before `concurrent_map` and pass the text in."));
+        return ty_list(ft->b.t);
+    }
     case B_FILTER: return lt;
     case B_FOLD: return ft->b.t;
     default: return t_bool; /* any / all */

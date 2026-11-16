@@ -265,7 +265,8 @@ main.vo:main uses console, net("localhost")
 A failed connection is an `err`, like any other failure. A request to a host outside the `net` scope
 stops the program with [R0010](../errors/R0010.md) before anything is sent.
 
-`serve(address, handle)` answers requests one at a time, calling `handle` with each `Request` and
+`serve(address, handle)` reads many requests at once and calls `handle` for one at a time, in the order
+they arrive complete (see [Concurrency](concurrency.md)), with each `Request`,
 sending back the `Response` it returns, until the program receives Ctrl-C or SIGTERM. The caller
 declares `serve` with the address (`"8000"` for this machine only, `"0.0.0.0:8000"` for the network)
 and the handler's effects:

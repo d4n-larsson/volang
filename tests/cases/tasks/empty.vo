@@ -1,0 +1,9 @@
+fn shout(s: str) -> str uses console {
+    print("never");
+    return upper(s);
+}
+
+fn main() uses console {
+    let ys = concurrent_map(new list[str], 4, shout);
+    print("results: " + str(len(ys)));
+}

@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0314","name":"task_result_function","severity":"error","file":"result_function.vo","start":{"line":15,"col":46},"end":{"line":15,"col":50},"text":"make","message":"A task's result cannot hold a function (field `on_done` of `Job`): return data instead.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0314","name":"task_result_function","severity":"error","file":"result_function.vo","start":{"line":16,"col":40},"end":{"line":16,"col":46},"text":"adders","message":"A task's result cannot hold a function (list element): return data instead.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

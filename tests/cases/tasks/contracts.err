@@ -1,0 +1,5 @@
+contracts.vo:7:14: runtime error[R0012]: Precondition `x % 2 == 0` of `half` does not hold.
+   7 |     let ys = concurrent_map([2, 4, 5], 3, half);
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at main (contracts.vo:7:14)

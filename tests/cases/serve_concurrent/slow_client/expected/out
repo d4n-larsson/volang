@@ -1,0 +1,27 @@
+$ request-many 5 GET /x
+1
+2
+3
+4
+5
+within 1 s: yes
+--- end
+$ read-open half
+HTTP/1.1 408 Request Timeout
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request GET /x
+HTTP/1.1 200 OK
+Content-Length: 1
+Connection: close
+
+6
+--- end
+$ signal TERM
+serving
+stopped after 6
+--- stderr
+--- exit 0

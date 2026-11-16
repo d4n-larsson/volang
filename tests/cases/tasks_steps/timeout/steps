@@ -1,0 +1,3 @@
+server http
+vo run --timeout 2 main.vo -- {port}
+no-children

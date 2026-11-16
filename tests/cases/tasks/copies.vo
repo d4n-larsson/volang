@@ -1,0 +1,23 @@
+# Each task works on its own copy of what it gets and captures: the caller's values are unchanged.
+record Total {
+    n: int;
+}
+
+fn main() uses console {
+    let seen = new list[int];
+    let total = new Total { n: 0 };
+    let names = new map[str, int];
+    let order = new ordered_map[int, str];
+    let inputs = [[1], [2, 2], [3, 3, 3]];
+    let sizes = concurrent_map(inputs, 3, fn(xs: list[int]) -> int {
+        push(xs, 0);
+        push(seen, len(xs));
+        set total.n = total.n + len(xs);
+        set names["x" + str(len(xs))] = len(xs);
+        set order[len(xs)] = "seen";
+        return len(xs);
+    });
+    print("sizes: " + str(sizes[0]) + " " + str(sizes[1]) + " " + str(sizes[2]));
+    print("inputs: " + str(len(inputs[0])) + " " + str(len(inputs[1])) + " " + str(len(inputs[2])));
+    print("seen: " + str(len(seen)) + ", total: " + str(total.n) + ", names: " + str(len(names)) + ", order: " + str(len(order)));
+}

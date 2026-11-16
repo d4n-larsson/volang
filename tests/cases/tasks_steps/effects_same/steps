@@ -1,0 +1,6 @@
+# Making a loop concurrent changes one line of the program and no line of vo.effects (SC-005).
+vo effects --update main.vo
+cp concurrent.vo main.vo
+vo check main.vo
+vo effects main.vo
+keep vo.effects

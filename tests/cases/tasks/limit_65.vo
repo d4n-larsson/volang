@@ -1,0 +1,8 @@
+fn id(x: int) -> int {
+    return x;
+}
+
+fn main() uses console {
+    let ys = concurrent_map([1, 2], 65, id);
+    print(str(len(ys)));
+}

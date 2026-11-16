@@ -1,0 +1,56 @@
+# The same program as main.vo with `map` instead of `concurrent_map`: the URLs are checked one after
+# another. Its vo.effects is the same as main.vo's (making a loop concurrent is not a new capability).
+import std.http.get;
+
+record Check {
+    url: str;
+    up: bool;
+    detail: str;
+}
+
+# One URL: up when it answers 2xx.
+fn check(url: str) -> Check uses net("localhost") {
+    match get(url) {
+        case ok(r) {
+            return new Check { url: url, up: r.status >= 200 and r.status < 300, detail: "HTTP " + str(r.status) };
+        }
+        case err(e) {
+            return new Check { url: url, up: false, detail: e };
+        }
+    }
+}
+
+fn line(c: Check) -> str {
+    if c.up {
+        return "up    " + c.url + " (" + c.detail + ")";
+    }
+    return "DOWN  " + c.url + " (" + c.detail + ")";
+}
+
+fn main() uses console, net("localhost") {
+    let checks = map(args(), check);
+    var down = 0;
+    for c in checks {
+        print(line(c));
+        if not c.up {
+            set down = down + 1;
+        }
+    }
+    print(str(len(checks) - down) + " of " + str(len(checks)) + " up");
+    if down > 0 {
+        exit(2);
+    }
+}
+
+test "a line per result" {
+    expect_eq(line(new Check { url: "http://localhost/a", up: true, detail: "HTTP 200" }), "up    http://localhost/a (HTTP 200)");
+    expect_eq(line(new Check { url: "http://localhost/b", up: false, detail: "HTTP 500" }), "DOWN  http://localhost/b (HTTP 500)");
+}
+
+test "results come back in the order of the URLs" {
+    let urls = ["http://localhost:1/a", "http://localhost:1/b"];
+    let checks = map(urls, fn(u: str) -> Check {
+        return new Check { url: u, up: false, detail: "not fetched" };
+    });
+    expect_eq(map(checks, fn(c: Check) -> str { return c.url; }), urls);
+}

@@ -15,18 +15,26 @@ Routes:
   GET  /redirect        302 with Location: /plain (not followed by std.http)
   GET  /headers         repeated and mixed-case headers, in this order
   GET  /slow            waits 30 s before answering (for --timeout)
+  GET  /delay/MS        200 "delay MS\n" after MS milliseconds (0..60000, else 400; spec 016); with
+                        VO_TEST_JITTER_MS=N set, a random 0..N ms more
+  GET  /peak            200, the most /delay requests in flight at once since the last /peak, then resets
   GET  /large           a body of 17 MiB (over std.http's 16 MiB limit)
   GET  /malformed       a reply with no status line
   GET  /short           Content-Length larger than the body sent
   POST /echo            200, the request's Content-Type and body back
   anything else         404
 """
+import os
+import random
 import socket
 import sys
 import threading
 import time
 
 CRLF = b"\r\n"
+JITTER_MS = int(os.environ.get("VO_TEST_JITTER_MS", "0"))
+inflight_lock = threading.Lock()
+inflight = [0, 0]  # in flight now, most at once since the last /peak
 
 
 def reply(status, headers, body):
@@ -64,6 +72,23 @@ def route(method, target, headers, body):
     if target == "/slow":
         time.sleep(30)
         return reply("200 OK", [("Content-Length", 4)], b"late")
+    if target.startswith("/delay/"):
+        ms = target[len("/delay/"):]
+        if not ms.isdigit() or int(ms) > 60000:
+            return reply("400 Bad Request", [("Content-Length", 0)], b"")
+        with inflight_lock:
+            inflight[0] += 1
+            inflight[1] = max(inflight[1], inflight[0])
+        time.sleep((int(ms) + (random.randint(0, JITTER_MS) if JITTER_MS else 0)) / 1000)
+        with inflight_lock:
+            inflight[0] -= 1
+        b = f"delay {int(ms)}\n".encode()
+        return reply("200 OK", [("Content-Length", len(b))], b)
+    if target == "/peak":
+        with inflight_lock:
+            b = f"{inflight[1]}\n".encode()
+            inflight[1] = inflight[0]
+        return reply("200 OK", [("Content-Length", len(b))], b)
     if target == "/large":
         n = 17 * 1024 * 1024
         return reply("200 OK", [("Content-Length", n)], b"x" * n)
@@ -117,7 +142,7 @@ def main():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(("127.0.0.1", port))
-    s.listen(16)
+    s.listen(128)
     print(f"port {s.getsockname()[1]}", flush=True)
     while True:
         conn, _ = s.accept()

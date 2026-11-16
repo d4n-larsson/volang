@@ -1,0 +1,9 @@
+fn shout(s: str) -> str uses console {
+    print("in the task: " + s);
+    return upper(s);
+}
+
+fn main() uses console {
+    let ys = concurrent_map(["hello"], 1, shout);
+    print(ys[0]);
+}

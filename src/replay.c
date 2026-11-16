@@ -960,3 +960,43 @@ void io_serve_reply(Str *text)
     }
     GC_UNROOT(1);
 }
+
+/* ---- spec 016: recordings of tasks (research R10) ---- */
+
+/* In a task: its events go to the parent, which writes them in task order. */
+void rcd_task_child(void)
+{
+    if (rcd_mode == 1 && rcd_fb) ((FBuf *)rcd_fb)->fd = -5; /* TM_RECORD (task.c) */
+}
+
+/* In a task, at its end: a read or write that R0010 stopped is `denied`, as rcd_finish writes it. */
+void rcd_task_end(void)
+{
+    if (rcd_mode != 1 || !rcd_fb) return;
+    if (rcd_pending_kind) rcd_event_raw(rcd_pending_kind, rcd_pending_path, EVR_DENIED, 0, 0);
+    rcd_pending_kind = 0;
+    fbuf_flush(rcd_fb);
+}
+
+/* Before a task starts: nothing buffered is inherited. */
+void rcd_flush(void)
+{
+    if (rcd_mode == 1 && rcd_fb) fbuf_flush(rcd_fb);
+}
+
+/* In the parent: a task's events. */
+void rcd_take(char *p, long n)
+{
+    if (rcd_mode == 1 && rcd_fb) fbuf_write(rcd_fb, p, n);
+}
+
+/* Replay: where the next event is (tasks replay one at a time, each from where the last ended). */
+long rp_position(void)
+{
+    return rp_next;
+}
+
+void rp_set_position(long next)
+{
+    if (rcd_mode == 2) rp_next = next;
+}

@@ -188,12 +188,12 @@ void rt_raise(char *code, Str *message, Node *node)
         out_bytes(2, sb->ptr, sb->len);
         GC_UNROOT(1);
         rt_reporting = 0;
-        jmp_restore((void *)recover_point, 2);
+        rt_recover(2);
     }
     if (recover_point) { /* inside a test: let the runner record it */
         rt_err_extra = 0;
         capture_trace(node); /* spec 006: the frames and their values, for the test's report */
-        jmp_restore((void *)recover_point, 2);
+        rt_recover(2);
     }
     rt_reporting = 1; /* spec 006: no timeouts while the report renders values */
     SB *sb = sb_new();
@@ -206,6 +206,14 @@ void rt_raise(char *code, Str *message, Node *node)
     int status = (code[4] == '9' && code[3] == '0') ? EXIT_TIMEOUT : EXIT_RUNTIME; /* R0009 -> 124 */
     gc_report(2, "run", 0); /* --mem-stats: the run ends here */
     vo_exit(status);
+}
+
+/* Back to the recovery point (status 1: an expect failed, 2: a runtime error). In a task whose recovery
+ * point is the parent's, the parent goes back to it instead (spec 016, research R6). */
+void rt_recover(long status)
+{
+    if (task_depth && recover_point == task_recover_base) task_jump(status);
+    jmp_restore((void *)recover_point, status);
 }
 
 void rt_raise_c(char *code, char *message, Node *node)

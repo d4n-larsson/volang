@@ -1,0 +1,20 @@
+# A cycle in a result comes back as a cycle (research R4).
+record Node {
+    name: str;
+    next: list[Node];
+}
+
+fn ring(i: int) -> Node {
+    let a = new Node { name: "a" + str(i), next: new list[Node] };
+    let b = new Node { name: "b" + str(i), next: [a] };
+    push(a.next, b);
+    return a;
+}
+
+fn main() uses console {
+    let rs = concurrent_map([1, 2], 2, ring);
+    let a = rs[1];
+    print(a.name + " -> " + a.next[0].name + " -> " + a.next[0].next[0].name);
+    set a.name = "changed";
+    print(a.next[0].next[0].name);
+}

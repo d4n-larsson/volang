@@ -1312,6 +1312,45 @@ fn main() uses console {
 }
 ```
 
+## E0314 task_result_function
+
+The function given to `concurrent_map` returns something that holds a function.
+
+Fixable: no
+
+Each task of `concurrent_map` runs on its own copy of the program, and only its result comes back to the caller, as data. A function cannot come back, so the result type may not contain a function type anywhere: not itself, not in a record field, a variant case, a list or a map. The message names where the function is. Return the data the function would need instead, and build the function after the call.
+
+### Example
+
+```vo
+record Job {
+    name: str;
+    greet: fn(str) -> str;
+}
+
+fn make(name: str) -> Job {
+    return new Job { name: name, greet: fn(s: str) -> str { return s + "!"; } };
+}
+
+fn main() uses console {
+    let jobs = concurrent_map(["a", "b"], 2, make);
+    print(jobs[0].greet(jobs[0].name));
+}
+```
+
+### Fixed
+
+```vo
+fn make(name: str) -> str {
+    return name + "!";
+}
+
+fn main() uses console {
+    let jobs = concurrent_map(["a", "b"], 2, make);
+    print(jobs[0]);
+}
+```
+
 ## E0401 non_exhaustive_match
 
 A `match` does not handle every case.
@@ -2018,6 +2057,49 @@ fn main() uses console {
 ```text
 # file: vo.effects
 main.vo:main uses console
+```
+
+## E0511 task_reads_input
+
+The function given to `concurrent_map` reads stdin.
+
+Fixable: no
+
+The tasks of `concurrent_map` run at the same time, so they cannot share stdin: which task would get which line would depend on timing. A function whose effects include `input` cannot run as a task. Read the input before the call and pass the lines or the text to the tasks.
+
+### Example
+
+```vo
+fn answer(question: str) -> str uses console, input {
+    print(question);
+    match read_line() {
+        case ok(line) {
+            return line;
+        }
+        case err(_) {
+            return "";
+        }
+    }
+}
+
+fn main() uses console, input {
+    let answers = concurrent_map(["name?", "age?"], 2, answer);
+    print(answers[0]);
+}
+```
+
+### Fixed
+
+```vo
+fn shout(line: str) -> str {
+    return upper(line);
+}
+
+fn main() uses console, input {
+    for s in concurrent_map(split(read_all(), "\n"), 2, shout) {
+        print(s);
+    }
+}
 ```
 
 ## E0601 hole_type_unknown
@@ -3178,6 +3260,53 @@ vo replay r.jsonl
 ```sh
 vo run --record r.jsonl main.vo    # record the changed program
 vo replay r.jsonl
+```
+
+## R0015 task_result_order
+
+A task returned a collection created with its own comparison function.
+
+Fixable: no
+
+Each task of `concurrent_map` sends its result back to the caller as data. An `ordered_map`, `ordered_set` or `priority_queue` made with `ordered_map_by`, `ordered_set_by` or `priority_queue_by` carries its comparison function, which cannot come back (a result type with a function in it is E0314, but this function is not part of the type). The same happens when a type parameter of the result stands for a function type. Return the items instead (`keys`, or a list), and build the collection after the call.
+
+### Example
+
+```vo
+import std.collections.ordered_set_by;
+
+fn backwards(n: int) -> ordered_set[int] {
+    let s: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    push(s, n);
+    push(s, n + 1);
+    return s;
+}
+
+fn main() uses console {
+    let sets = concurrent_map([1, 2], 2, backwards);
+    print(str(len(sets)));
+}
+```
+
+### Fixed
+
+```vo
+import std.collections.ordered_set_by;
+
+fn items(n: int) -> list[int] {
+    return [n, n + 1];
+}
+
+fn main() uses console {
+    let lists = concurrent_map([1, 2], 2, items);
+    let s: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    for xs in lists {
+        for x in xs {
+            push(s, x);
+        }
+    }
+    print(str(len(s)));
+}
 ```
 
 ## T0001 usage_error

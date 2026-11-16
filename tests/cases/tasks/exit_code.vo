@@ -1,0 +1,13 @@
+# A task that calls exit(3) ends the program with 3, after the output of the tasks before it.
+fn work(i: int) -> int uses console {
+    print("task " + str(i));
+    if i == 1 {
+        exit(3);
+    }
+    return i;
+}
+
+fn main() uses console {
+    let rs = concurrent_map([0, 1, 2], 3, work);
+    print("never: " + str(len(rs)));
+}

@@ -75,7 +75,7 @@ static long trunc_rv(double d)
 /* ---- types ---- */
 
 /* The number of fields of a record type or cases of a variant type. */
-static long pg_nmembers(Type *t)
+long pg_nmembers(Type *t)
 {
     long n = 0;
     while (member_at(t->decl.n->b.v, n)) n++;
@@ -83,7 +83,7 @@ static long pg_nmembers(Type *t)
 }
 
 /* Field i's type (records) or case i's payload type, 0 when it has none (variants). */
-static Type *pg_member(Type *t, long i)
+Type *pg_member(Type *t, long i)
 {
     if (t->kind != TY_RECORD) return case_payload(t, i);
     return field_type_in(t, member_at(t->decl.n->b.v, i)->b.n->type);
@@ -231,7 +231,7 @@ static long pg_small_cases(Type *t, long pick)
     return -1 - seen;
 }
 
-static Variant *pg_new_variant(long tag, long payload)
+Variant *pg_new_variant(long tag, long payload)
 {
     GC_ROOT(&payload);
     Variant *v = alloc_obj(OBJ_VARIANT, VARIANT_SIZE);
@@ -335,7 +335,7 @@ long prop_gen(Type *t, long size, long depth)
 }
 
 /* A collection of type t with the elements xs (and, for a map, the values vs), in that order. */
-static long pg_coll_of(Type *t, List *xs, List *vs, int copy)
+long pg_coll_of(Type *t, List *xs, List *vs, int copy)
 {
     GC_ROOT(&t);
     GC_ROOT(&xs);

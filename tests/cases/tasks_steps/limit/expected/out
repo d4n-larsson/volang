@@ -1,0 +1,5 @@
+$ vo run main.vo -- {port}
+delay 101, delay 102, delay 103, delay 104, delay 105, delay 106, delay 107, delay 108, delay 109
+most at once: 3
+--- stderr
+--- exit 0

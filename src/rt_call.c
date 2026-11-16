@@ -14,9 +14,9 @@ enum {
     BU_ABS, BU_MIN, BU_MAX, BU_UPPER, BU_LOWER, BU_ORD, BU_CHR, BU_ENV, BU_RANDOM_INT,
     BU_SORT_BY, BU_MAP, BU_FILTER, BU_FOLD, BU_ANY, BU_ALL, BU_TODO, BU_ASSUME, BU_REQ_FAIL,
     BU_ENS_FAIL, BU_FLOAT_TEXT, BU_HTTP_EXCHANGE, BU_TEXT_FLOAT, BU_GET_OR, BU_SERVE_LISTEN, BU_SERVE_NEXT,
-    BU_SERVE_REPLY, BU_SERVE_CALL, BU_HTTP_PART, BU_COLL
+    BU_SERVE_REPLY, BU_SERVE_CALL, BU_HTTP_PART, BU_COLL, BU_CONCURRENT_MAP
 };
-_Static_assert(BU_COLL == B_LAST, "the builtin ids end at B_LAST");
+_Static_assert(BU_CONCURRENT_MAP == B_LAST && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
 _Static_assert(BU_TODO == B_TODO && BU_REQ_FAIL == B_REQ_FAIL && BU_SORT_BY == B_SORT_BY, "builtin ids");
 
 /* The static type of the call's first argument. */
@@ -101,6 +101,7 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_RANDOM_INT: return rt_random_int(a0, a1);
     case BU_SORT_BY: hof_sort_by((List *)a0, (void *)a1, call); return 0;
     case BU_MAP: return (long)hof_map((List *)a0, (void *)a1, call);
+    case BU_CONCURRENT_MAP: return (long)task_map((List *)a0, a1, (void *)a2, call); /* spec 016 */
     case BU_FILTER: return (long)hof_filter((List *)a0, (void *)a1, call);
     case BU_FOLD: return hof_fold((List *)a0, a1, (void *)a2, call);
     case BU_ANY: return hof_any((List *)a0, (void *)a1, call, 0);

@@ -1,0 +1,16 @@
+# Many quick tasks with a small limit: tasks that have ended wait in their slots until drained (more
+# than the 64 slots in all).
+fn work(i: int) -> int {
+    return i * 2;
+}
+
+fn main() uses console {
+    var xs = new list[int];
+    var i = 0;
+    while i < 300 {
+        push(xs, i);
+        set i = i + 1;
+    }
+    let ys = concurrent_map(xs, 4, work);
+    print(str(len(ys)) + " " + str(ys[0]) + " " + str(ys[299]));
+}

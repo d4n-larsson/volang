@@ -22,7 +22,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [013](../specs/013-security-fixes/) | The fixes from review 1: the root grant, opening files without following swapped links, one HTTP framing, safe links in imports and packages, replay and server hardening | **Done** ([results](../specs/013-security-fixes/results.md)): all 32 findings fixed, each with a case |
 | [014](../specs/014-complex-data-structures/) | Built-in `ordered_map`, `ordered_set`, `priority_queue`, `deque` (created with `new`, like `map`) and `std.collections`; records of ordered fields are ordered; inferred type arguments for `new` and cases | **Done** ([results](../specs/014-complex-data-structures/results.md)) |
 | [015](../specs/015-docs-site/) | Documentation site on GitHub Pages: guides with checked examples, generated reference, catalog and library pages, `llms.txt` | **Done** ([results](../specs/015-docs-site/results.md)) |
-| Next | Concurrency (see below) | **Spec 016** |
+| [016](../specs/016-concurrency/) | `concurrent_map(xs, limit, f)`: tasks in input order, sharing nothing, failures and output as `map` gives them, record/replay; `serve` reads many connections at once | **Done** ([results](../specs/016-concurrency/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -94,26 +94,27 @@ vo programs used to run by walking the checked syntax tree. Now:
 - **Evaluation:** eight benchmark tasks with a solution using the collections, a hand-written efficient
   one and a naive one; the agent run with and without the module is still to do (see Benchmarks).
 
-## Next: concurrency
+### 016: concurrency (done)
 
-Today a vo program does one thing at a time: a server answers one request at a time (a slow client holds
-it for up to 10 s), and a program that fetches ten URLs waits for each in turn. Concurrency is spec 016, after
-the documentation site (015). What it has to keep:
+A vo program used to do one thing at a time: a server answered one request at a time (a slow client held
+it for up to 10 s), and fetching ten URLs waited for each in turn. Now:
 
-- **Determinism (Principle III).** The same program and inputs give the same output; record and replay
-  keep working. A concurrent program's interleaving must be reproducible, or recorded and replayed.
-- **Effects as a boundary.** Every concurrent task runs within its spawner's grant (as anonymous
-  functions do today), and `vo.effects` still shows what each function may do.
-- **No data races by construction.** Agents get shared mutable state wrong; the design should make it
-  impossible rather than detected (for example tasks that share nothing and communicate by messages, or
-  structured `spawn`/`join` over immutable inputs).
-- **Structured lifetimes.** A task cannot outlive the block that started it, so errors, timeouts and
-  `--timeout` have one place to go.
-
-Open questions for the spec: concurrency on one thread (an event loop over the existing `ppoll`, enough for
-I/O-bound servers and clients) or parallelism on several cores (the collector and the VM are single-threaded
-today); the form in the language (a `spawn` builtin, a block, channels); how `serve` uses it to answer
-requests concurrently.
+- **`concurrent_map(xs, limit, f)`**, shaped like `map`: each element is a task, at most `limit` (1 to 64)
+  at a time, and the results come back in the order of `xs`. Ten 1-second requests take about 1 s.
+- **Tasks share nothing.** Each task is a child process (a fork), so it works on copies of everything it
+  gets or captures and only its result comes back; the VM and the collector stay single-threaded and
+  unchanged. Results that cannot come back are refused: functions (E0314), a collection with its own
+  order (R0015); stdin cannot be read in a task (E0511).
+- **Deterministic by ordering.** Output is task 0's, then task 1's, whatever order they finish in; the
+  failure reported is the first in input order, with the report `map` would give; per-task random
+  sequences come from `--seed`; traces get a `task` record per task; recordings keep their format and
+  replay exactly, on every platform.
+- **Effects unchanged.** Starting tasks is not an effect; each task has its caller's grant, and
+  `vo.effects` is the same for a loop and its concurrent version.
+- **`serve`** reads up to 64 connections at once (each with its 10 s limit) and calls the handler for one
+  request at a time, in the order requests arrive complete, so state kept between requests stays safe.
+- **Not done (on purpose):** parallel computation as a goal; concurrency inside tasks (nested calls run
+  one task at a time); handlers that overlap; closures in results.
 
 ## Benchmarks (ongoing)
 

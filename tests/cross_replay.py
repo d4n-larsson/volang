@@ -3,7 +3,7 @@
 
   cross_replay.py [--record BUILD_A --replay BUILD_B]
 
-Runs every replay step case (tests/cases/replay) with its `vo run --record` steps on BUILD_A and its
+Runs every replay step case (tests/cases/replay, and spec 016's tests/cases/tasks_steps/record_replay) with its `vo run --record` steps on BUILD_A and its
 `vo replay` steps on BUILD_B, against the case's expected output. The default runs every ordered pair
 of build/vo, build-aarch64/vo and build-riscv64/vo that exist (bin/vo runs foreign ones under qemu).
 """
@@ -13,7 +13,7 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CASES = os.path.join(ROOT, "tests", "cases", "replay")
+CASES = [os.path.join(ROOT, "tests", "cases", "replay"), os.path.join(ROOT, "tests", "cases", "tasks_steps", "record_replay")]
 
 
 def arg(name):
@@ -28,7 +28,7 @@ else:
 bad = 0
 for a, b in pairs:
     name = f"{os.path.relpath(a, ROOT)} -> {os.path.relpath(b, ROOT)}"
-    r = subprocess.run([sys.executable, os.path.join(ROOT, "tests", "steps.py"), CASES],
+    r = subprocess.run([sys.executable, os.path.join(ROOT, "tests", "steps.py")] + CASES,
                        env=dict(os.environ, VO_BIN=a, VO_REPLAY_BIN=b), capture_output=True, text=True)
     last = (r.stdout.strip().splitlines() or ["(no output)"])[-1]
     print(f"{'ok  ' if r.returncode == 0 else 'FAIL'} {name}: {last}")

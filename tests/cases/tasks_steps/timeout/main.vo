@@ -1,0 +1,19 @@
+# --timeout covers the tasks: one waits forever, the program stops with R0009, no task is left.
+import std.http.get;
+
+fn work(url: str) -> str uses net("127.0.0.1") {
+    match get(url) {
+        case ok(r) {
+            return str(r.status);
+        }
+        case err(e) {
+            return e;
+        }
+    }
+}
+
+fn main() uses console, net("127.0.0.1") {
+    let base = "http://127.0.0.1:" + args()[0];
+    let rs = concurrent_map([base + "/plain", base + "/slow", base + "/slow"], 3, work);
+    print(rs[0]);
+}

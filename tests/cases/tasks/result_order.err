@@ -1,0 +1,5 @@
+result_order.vo:11:14: runtime error[R0015]: A task cannot return a collection with its own order: return its items (`keys`) instead.
+  11 |     let ms = concurrent_map([1, 2], 2, backwards);
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at main (result_order.vo:11:14)

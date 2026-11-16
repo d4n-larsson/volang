@@ -63,6 +63,14 @@ void pcg_seed(long seed)
     pcg_next32();
 }
 
+/* Spec 016 (research R12): a task's own sequence, from the generator's state when the call started
+ * (the same for every task of a call) and the task's position path. */
+void rt_task_seed(long path)
+{
+    pcg_state ^= (unsigned long)path * 0x9E3779B97F4A7C15UL;
+    pcg_next32();
+}
+
 /* PCG-XSH-RR 64/32. */
 long pcg_next32(void)
 {

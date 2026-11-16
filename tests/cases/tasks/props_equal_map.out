@@ -1,0 +1,5 @@
+PASS ints and limits (100 cases, 0ms)
+PASS strings (100 cases, 0ms)
+PASS results and variants (100 cases, 0ms)
+PASS a task's changes stay in the task (100 cases, 0ms)
+4 passed, 0 failed

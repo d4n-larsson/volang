@@ -1,0 +1,12 @@
+# With --clock-ms the clock is fixed; each task reads it from where the call started.
+fn stamp(i: int) -> str uses clock {
+    return str(i) + ": " + str(now_ms()) + " " + str(now_ms());
+}
+
+fn main() uses console, clock {
+    print("before: " + str(now_ms()));
+    for line in concurrent_map([0, 1], 2, stamp) {
+        print(line);
+    }
+    print("after: " + str(now_ms()));
+}

@@ -1,0 +1,22 @@
+# In a test, a failing task makes the test `error` with the same report as `map`; the next test runs.
+fn inverse(x: int) -> int {
+    return 100 / x;
+}
+
+
+test "a task divides by zero" {
+    let ys = concurrent_map([5, 0, 4], 2, inverse);
+    expect_eq(len(ys), 3);
+}
+
+test "a task's expect fails" {
+    let ys = concurrent_map([1, 2, 3], 3, fn(x: int) -> int {
+        expect(x != 2);
+        return x;
+    });
+    expect_eq(len(ys), 3);
+}
+
+test "the next test still runs" {
+    expect_eq(concurrent_map([1, 2], 2, inverse), [100, 50]);
+}

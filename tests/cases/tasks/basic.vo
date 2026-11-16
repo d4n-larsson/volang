@@ -1,0 +1,8 @@
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    let ys = concurrent_map([1, 2, 3], 2, double);
+    print(str(len(ys)) + ": " + str(ys[0]) + " " + str(ys[1]) + " " + str(ys[2]));
+}

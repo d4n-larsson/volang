@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 61 /* names up to here (50, 51 are internal and unnamed) */
+#define B_COUNT 62 /* names up to here (50, 51 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -35,6 +35,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "sort_by",  "map",         "filter",    "fold",    "any",          "all",          "todo",
     "assume",   0,             0,           "__float_text", "__http_exchange", "__text_float", "get_or",
     "__serve_listen", "__serve_next", "__serve_reply", "__serve_call", "__http_part", "__coll",
+    "concurrent_map",
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -220,7 +221,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
     call->d.i = id;
     fx_builtin(id);
     fx_builtin_literal(call, id); /* spec 013 (L1) */
-    if (id >= B_SORT_BY && id <= B_ALL) return check_hof(call, id); /* sort_by, map, filter, fold, any, all */
+    if ((id >= B_SORT_BY && id <= B_ALL) || id == B_CMAP) return check_hof(call, id); /* sort_by, map, filter, fold, any, all, concurrent_map */
     if (id >= B_EXPECT && id <= B_EXPECT_EQ && !ck_in_test)          /* expect / expect_eq only in tests */
         ck_err1("E0410", call, "`$1` can only be used inside a `test` block.", call->a.n->a.s);
     if (id == B_ASSUME && ck_in_test != 2) /* assume only in properties */

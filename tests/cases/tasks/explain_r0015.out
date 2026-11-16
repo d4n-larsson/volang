@@ -1,0 +1,47 @@
+## R0015 task_result_order
+
+A task returned a collection created with its own comparison function.
+
+Fixable: no
+
+Each task of `concurrent_map` sends its result back to the caller as data. An `ordered_map`, `ordered_set` or `priority_queue` made with `ordered_map_by`, `ordered_set_by` or `priority_queue_by` carries its comparison function, which cannot come back (a result type with a function in it is E0314, but this function is not part of the type). The same happens when a type parameter of the result stands for a function type. Return the items instead (`keys`, or a list), and build the collection after the call.
+
+### Example
+
+```vo
+import std.collections.ordered_set_by;
+
+fn backwards(n: int) -> ordered_set[int] {
+    let s: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    push(s, n);
+    push(s, n + 1);
+    return s;
+}
+
+fn main() uses console {
+    let sets = concurrent_map([1, 2], 2, backwards);
+    print(str(len(sets)));
+}
+```
+
+### Fixed
+
+```vo
+import std.collections.ordered_set_by;
+
+fn items(n: int) -> list[int] {
+    return [n, n + 1];
+}
+
+fn main() uses console {
+    let lists = concurrent_map([1, 2], 2, items);
+    let s: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    for xs in lists {
+        for x in xs {
+            push(s, x);
+        }
+    }
+    print(str(len(s)));
+}
+```
+

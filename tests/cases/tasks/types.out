@@ -1,0 +1,9 @@
+PASS ints (0ms)
+PASS floats (0ms)
+PASS bools and strings (0ms)
+PASS lists and maps (0ms)
+PASS records and variants (0ms)
+PASS results (0ms)
+PASS collections (0ms)
+PASS void-returning task functions (0ms)
+8 passed, 0 failed

@@ -1,0 +1,21 @@
+# A task has its caller's grant: a host outside it is R0010, as in a sequential call.
+import std.http.get;
+
+fn fetch(url: str) -> str uses net("127.0.0.1") {
+    match get(url) {
+        case ok(r) {
+            return str(r.status);
+        }
+        case err(e) {
+            return e;
+        }
+    }
+}
+
+fn main() uses console, net("127.0.0.1") {
+    let port = args()[0];
+    let urls = ["http://127.0.0.1:" + port + "/plain", "http://example.com/", "http://127.0.0.1:" + port + "/plain"];
+    for s in concurrent_map(urls, 3, fetch) {
+        print(s);
+    }
+}

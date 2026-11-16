@@ -1,0 +1,20 @@
+# Shared objects inside one task's result stay shared after the transfer (research R4).
+record Counter {
+    n: int;
+}
+
+record Two {
+    a: Counter;
+    b: Counter;
+}
+
+fn make(i: int) -> Two {
+    let c = new Counter { n: i };
+    return new Two { a: c, b: c };
+}
+
+fn main() uses console {
+    let ts = concurrent_map([1, 2], 2, make);
+    set ts[0].a.n = 99;
+    print(str(ts[0].b.n) + " " + str(ts[1].b.n));
+}

@@ -1,0 +1,13 @@
+$ request-many 5 GET /x
+1
+2
+3
+4
+5
+within 1 s: yes
+--- end
+$ signal TERM
+serving
+stopped after 5
+--- stderr
+--- exit 0

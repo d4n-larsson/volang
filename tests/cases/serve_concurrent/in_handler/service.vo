@@ -1,0 +1,20 @@
+# A handler whose task fails answers 500, and the server goes on.
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve;
+
+fn inverse(x: int) -> int {
+    return 100 / x;
+}
+
+fn main() -> result[void] uses console, serve("{vport}") {
+    print("serving");
+    try serve("{vport}", fn(r: Request) -> Response {
+        let xs = [1, 2, len(r.query)];
+        let ys = concurrent_map(xs, 3, inverse);
+        return new Response { status: 200, headers: new list[Header], body: str(ys[2]) };
+    });
+    print("stopped");
+    return ok();
+}

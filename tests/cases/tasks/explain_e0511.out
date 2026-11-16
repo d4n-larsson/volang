@@ -1,0 +1,43 @@
+## E0511 task_reads_input
+
+The function given to `concurrent_map` reads stdin.
+
+Fixable: no
+
+The tasks of `concurrent_map` run at the same time, so they cannot share stdin: which task would get which line would depend on timing. A function whose effects include `input` cannot run as a task. Read the input before the call and pass the lines or the text to the tasks.
+
+### Example
+
+```vo
+fn answer(question: str) -> str uses console, input {
+    print(question);
+    match read_line() {
+        case ok(line) {
+            return line;
+        }
+        case err(_) {
+            return "";
+        }
+    }
+}
+
+fn main() uses console, input {
+    let answers = concurrent_map(["name?", "age?"], 2, answer);
+    print(answers[0]);
+}
+```
+
+### Fixed
+
+```vo
+fn shout(line: str) -> str {
+    return upper(line);
+}
+
+fn main() uses console, input {
+    for s in concurrent_map(split(read_all(), "\n"), 2, shout) {
+        print(s);
+    }
+}
+```
+

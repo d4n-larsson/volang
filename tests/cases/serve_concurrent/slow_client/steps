@@ -1,0 +1,7 @@
+# Half a request on one connection; the other clients are answered meanwhile, and the half one gets 408.
+start vo run service.vo
+request-open half GET /x HTTP/1.1\r\nHost: loc
+request-many 5 GET /x
+read-open half
+request GET /x
+signal TERM

@@ -209,6 +209,7 @@ gate-step: all asm
 	@echo "== gate: test" && $(MAKE) -s test
 	@echo "== gate: ubtrap" && $(MAKE) -s ubtrap
 	@echo "== gate: diff-asm" && python3 tests/diff_asm.py --count 2000 --seed 1
+	@echo "== gate: tasks determinism" && python3 tests/tasks_determinism.py --runs 20
 	@echo "== gate-step: passed"
 
 # SC-004 compares like with like: the RISC-V build against build-asm/vo, both under qemu.

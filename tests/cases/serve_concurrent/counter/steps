@@ -1,0 +1,5 @@
+start vo run service.vo
+request GET /x
+request GET /x
+request-many 20 GET /x
+signal TERM

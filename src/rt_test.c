@@ -14,7 +14,7 @@ void rt_expect(long cond, Node *node)
     tf_node = (long)node;
     tf_expected = 0;
     tf_actual = 0;
-    jmp_restore((void *)recover_point, 1);
+    rt_recover(1);
 }
 
 void rt_expect_eq(long actual, long expected, Node *node)
@@ -33,5 +33,5 @@ void rt_expect_eq(long actual, long expected, Node *node)
     GC_UNROOT(3);
     tf_msg = (long)str_from_cstr("`expect_eq` failed: the values differ.");
     tf_node = (long)node;
-    jmp_restore((void *)recover_point, 1);
+    rt_recover(1);
 }

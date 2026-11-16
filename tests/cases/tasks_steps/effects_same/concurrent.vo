@@ -1,0 +1,61 @@
+# Checks a list of URLs at the same time and prints one line per URL, in the order given; exits with
+# status 2 when one is down (for scripts).
+#   vo run main.vo -- URL...                       check them (on localhost only: the grant)
+#   vo run --record r.jsonl main.vo -- URL...      ... and save every response
+#   vo replay r.jsonl                              run again from the saved responses, no network
+# `concurrent_map` makes the checks run at once: the whole run takes about as long as the slowest
+# URL. sequential.vo is the same program with `map`; both have the same vo.effects.
+import std.http.get;
+
+record Check {
+    url: str;
+    up: bool;
+    detail: str;
+}
+
+# One URL: up when it answers 2xx.
+fn check(url: str) -> Check uses net("localhost") {
+    match get(url) {
+        case ok(r) {
+            return new Check { url: url, up: r.status >= 200 and r.status < 300, detail: "HTTP " + str(r.status) };
+        }
+        case err(e) {
+            return new Check { url: url, up: false, detail: e };
+        }
+    }
+}
+
+fn line(c: Check) -> str {
+    if c.up {
+        return "up    " + c.url + " (" + c.detail + ")";
+    }
+    return "DOWN  " + c.url + " (" + c.detail + ")";
+}
+
+fn main() uses console, net("localhost") {
+    let checks = concurrent_map(args(), 8, check);
+    var down = 0;
+    for c in checks {
+        print(line(c));
+        if not c.up {
+            set down = down + 1;
+        }
+    }
+    print(str(len(checks) - down) + " of " + str(len(checks)) + " up");
+    if down > 0 {
+        exit(2);
+    }
+}
+
+test "a line per result" {
+    expect_eq(line(new Check { url: "http://localhost/a", up: true, detail: "HTTP 200" }), "up    http://localhost/a (HTTP 200)");
+    expect_eq(line(new Check { url: "http://localhost/b", up: false, detail: "HTTP 500" }), "DOWN  http://localhost/b (HTTP 500)");
+}
+
+test "results come back in the order of the URLs" {
+    let urls = ["http://localhost:1/a", "http://localhost:1/b"];
+    let checks = concurrent_map(urls, 2, fn(u: str) -> Check {
+        return new Check { url: u, up: false, detail: "not fetched" };
+    });
+    expect_eq(map(checks, fn(c: Check) -> str { return c.url; }), urls);
+}

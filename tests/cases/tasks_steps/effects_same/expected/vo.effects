@@ -1,0 +1,6 @@
+# vo effects record: update with `vo effects --update`
+main.vo:check uses net("localhost")
+main.vo:line pure
+main.vo:main uses console, net("localhost")
+main.vo:test "a line per result" pure
+main.vo:test "results come back in the order of the URLs" pure

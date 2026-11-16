@@ -1,0 +1,42 @@
+$ request GET /x
+HTTP/1.1 200 OK
+Content-Length: 1
+Connection: close
+
+1
+--- end
+$ request GET /x
+HTTP/1.1 200 OK
+Content-Length: 1
+Connection: close
+
+2
+--- end
+$ request-many 20 GET /x
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+within 1 s: yes
+--- end
+$ signal TERM
+serving
+stopped after 22
+--- stderr
+--- exit 0

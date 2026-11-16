@@ -1,0 +1,24 @@
+$ vo run main.vo -- {port}
+--- stderr
+main.vo:14:16: runtime error[R0002]: Division by zero.
+  14 |         return 10 / (len(xs) - 2);
+     |                ^^^^^^^^^^^^^^^^^^
+trace:
+  at work (main.vo:14:16)
+      job: str = "{port} 1 300", parts: list[str] = ["{port}", "1", "300"], xs: list[int] = [1, 2]
+  at main (main.vo:24:14)
+      p: str = "{port}"
+--- exit 70
+$ vo run main.vo -- {port}
+--- stderr
+main.vo:14:16: runtime error[R0002]: Division by zero.
+  14 |         return 10 / (len(xs) - 2);
+     |                ^^^^^^^^^^^^^^^^^^
+trace:
+  at work (main.vo:14:16)
+      job: str = "{port} 1 300", parts: list[str] = ["{port}", "1", "300"], xs: list[int] = [1, 2]
+  at main (main.vo:24:14)
+      p: str = "{port}"
+--- exit 70
+$ no-children
+left-over processes: 0

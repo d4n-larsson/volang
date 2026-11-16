@@ -165,7 +165,7 @@ export fn request_header(r: Request, name: str) -> result[str] {
     return err("no header `" + name + "`");
 }
 
-# Answers HTTP requests on address ("8000": this machine, "0.0.0.0:8000": the network) with handle's responses until stopped.
+# Answers HTTP requests on address ("8000": this machine, "0.0.0.0:8000": the network) with handle's responses until stopped; many requests are read at once, and handle is called for one at a time.
 #     serve("0", fn(r: Request) -> Response { return new Response { status: 200, headers: new list[Header], body: "" }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
 export fn serve[E: effects](address: str, handle: fn(Request) -> Response uses E) -> result[void] uses serve, E {
     let listener = try __serve_listen(address);

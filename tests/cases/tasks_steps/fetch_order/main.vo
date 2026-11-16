@@ -1,0 +1,25 @@
+# Ten requests at once; later inputs are answered first, results still come in input order.
+import std.http.get;
+
+fn fetch(job: str) -> str uses net("127.0.0.1") {
+    let parts = split(job, " ");
+    match get("http://127.0.0.1:" + parts[0] + "/delay/" + parts[1]) {
+        case ok(r) {
+            return parts[1] + " " + str(r.status) + " " + trim(r.body);
+        }
+        case err(e) {
+            return parts[1] + " " + e;
+        }
+    }
+}
+
+fn main() uses console, net("127.0.0.1") {
+    let port = args()[0];
+    var jobs = new list[str];
+    for i in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] {
+        push(jobs, port + " " + str(50 * (9 - i)));
+    }
+    for line in concurrent_map(jobs, 10, fetch) {
+        print(line);
+    }
+}

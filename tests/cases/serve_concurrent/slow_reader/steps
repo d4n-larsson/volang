@@ -1,0 +1,6 @@
+# A client that does not read its (large) response holds up nobody.
+start vo run service.vo
+request-open reader GET /big HTTP/1.1\r\n\r\n
+wait 200
+request-many 5 GET /x
+signal TERM

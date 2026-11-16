@@ -118,6 +118,7 @@ Two limits:
 | `fold(xs, init, f)` | combines the elements left to right: `f(f(init, x0), x1)` ... |
 | `any(xs, f)`, `all(xs, f)` | whether `f` holds for some or every element; stop as soon as the answer is known |
 | `sort_by(xs, key)` | sorts the list in place, stably, by `key(x)`, which is an `int`, `float` or `str` |
+| `concurrent_map(xs, limit, f)` | like `map`, with each call as a separate task, at most `limit` at a time (see [Concurrency](concurrency.md)) |
 
 Their exact signatures are in [Functions as values](../reference/functions-as-values.md).
 

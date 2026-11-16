@@ -724,6 +724,55 @@ static void tr_emit(SB *sb)
     if (tr_fb) fbuf_write(tr_fb, sb->ptr, sb->len);
 }
 
+/* ---- spec 016: traces of tasks (research R11) ---- */
+static long tr_omitted_base; /* in a task: tr_omitted when it started */
+
+/* In a task: records go to the parent; the inherited count bounds how many it may write. */
+void tr_task_child(void)
+{
+    if (tr_fb) tr_fb->fd = -4; /* TM_TRACE (task.c) */
+    tr_omitted_base = tr_omitted;
+}
+
+/* In a task, at its end: the rest of its records; returns how many it left out. */
+long tr_task_end(void)
+{
+    if (tr_fb) fbuf_flush(tr_fb);
+    return tr_omitted - tr_omitted_base;
+}
+
+/* Before a task starts: nothing buffered is inherited. */
+void tr_flush(void)
+{
+    if (tr_on && tr_fb) fbuf_flush(tr_fb);
+}
+
+/* In the parent: the `task` record before the records of the task at index. */
+void tr_task_record(long index)
+{
+    if (!tr_on || !tr_room()) return;
+    SB *sb = sb_new();
+    GC_ROOT(&sb);
+    sb_cstr(sb, "{\"v\":1,\"kind\":\"task\",\"index\":");
+    int_to_dec(sb, index);
+    sb_cstr(sb, "}\n");
+    tr_emit(sb);
+    GC_UNROOT(1);
+}
+
+/* In the parent: a task's records (whole lines), counted against --trace-limit in merged order. */
+void tr_take(char *p, long n, long omitted)
+{
+    tr_omitted += omitted;
+    for (long i = 0; i < n;) {
+        long j = i;
+        while (j < n && p[j] != '\n') j++;
+        if (j < n) j++;
+        if (tr_on && tr_room() && tr_fb) fbuf_write(tr_fb, p + i, j - i);
+        i = j;
+    }
+}
+
 /* A value in vo syntax (shortened to 200 bytes) as a JSON string. */
 static void tr_value(SB *sb, long value, Type *type)
 {

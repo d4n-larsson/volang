@@ -28,6 +28,7 @@ long sys_start(void)
 
 void vo_exit(int code)
 {
+    if (task_depth) task_exit(code); /* spec 016: a task's end of the program is the parent's to do */
     code = (int)exit_hooks(code); /* spec 006: completes the trace and the recording; may change the status */
     out_flush();
     vo_syscall1(SYS_exit_group, code);
@@ -334,12 +335,23 @@ void *fbuf_open(char *path)
 }
 
 /* Writes the buffer out; a failed write sets err (reported by the caller at exit). */
+/* Writes p[0..n) to the buffer's file; in a task (spec 016) a negative fd -K sends them to the parent
+ * as message K instead (traces and recordings, research R10-R11). */
+static void fb_out(FBuf *fb, char *p, long n)
+{
+    if (fb->fd < -1) {
+        if (n) task_send((int)-fb->fd, p, n);
+        return;
+    }
+    if (write_checked((int)fb->fd, p, n)) fb->err = 1;
+}
+
 void fbuf_flush(void *fbp)
 {
     FBuf *fb = fbp;
     long n = fb->len;
     fb->len = 0;
-    if (write_checked((int)fb->fd, fb->buf, n)) fb->err = 1;
+    fb_out(fb, fb->buf, n);
 }
 
 void fbuf_write(void *fbp, char *p, long n)
@@ -348,10 +360,71 @@ void fbuf_write(void *fbp, char *p, long n)
     if (fb->len + n > FB_CAP) {
         fbuf_flush(fb);
         if (n >= FB_CAP) { /* larger than the buffer: straight out */
-            if (write_checked((int)fb->fd, p, n)) fb->err = 1;
+            fb_out(fb, p, n);
             return;
         }
     }
     mem_copy(fb->buf + fb->len, p, n);
     fb->len += n;
+}
+
+/* ---- spec 016: tasks, one process each (research R1, R16) ---- */
+#define SIGCHLD 17
+#define SIGKILL 9
+#define F_SETPIPE_SZ 1031
+#define PR_SET_PDEATHSIG 1
+
+/* A copy of this process (clone as fork: no shared memory, the parent gets SIGCHLD when it ends):
+ * the child's pid in the parent, 0 in the child, < 0 on failure. The pointer arguments are all 0, so
+ * x86-64's order (flags, stack, ptid, ctid, tls) and ARM64/RISC-V's (flags, stack, ptid, tls, ctid)
+ * agree. */
+long sys_fork(void)
+{
+    return vo_syscall5(SYS_clone, SIGCHLD, 0, 0, 0, 0);
+}
+
+/* A pipe (fds[0] reads, fds[1] writes), closed on exec; 0 or < 0. */
+long sys_pipe(int fds[2])
+{
+    return vo_syscall2(SYS_pipe2, (long)fds, O_CLOEXEC);
+}
+
+/* fd `from` also as fd `to` (kept across exec); `to` on success. */
+long sys_dup_to(int from, int to)
+{
+    return vo_syscall3(SYS_dup3, from, to, 0);
+}
+
+/* Asks for a pipe buffer of bytes (the kernel may give less). */
+void sys_pipe_size(int fd, long bytes)
+{
+    vo_syscall3(SYS_fcntl, fd, F_SETPIPE_SZ, bytes);
+}
+
+/* Waits for child pid to end: its pid with *status the wait status, or < 0. */
+long sys_wait(long pid, int *status)
+{
+    long r;
+    do {
+        r = vo_syscall4(SYS_wait4, pid, (long)status, 0, 0);
+    } while (r == -4); /* EINTR */
+    return r;
+}
+
+void sys_kill(long pid)
+{
+    vo_syscall2(SYS_kill, pid, SIGKILL);
+}
+
+/* In a task: the kernel kills this process when its parent ends; if the parent ended already
+ * (before the request took effect), end now. parent: the pid the parent had. */
+void sys_die_with_parent(long parent)
+{
+    vo_syscall2(SYS_prctl, PR_SET_PDEATHSIG, SIGKILL);
+    if (vo_syscall0(SYS_getppid) != parent) vo_syscall1(SYS_exit_group, 137);
+}
+
+long sys_getpid(void)
+{
+    return vo_syscall0(SYS_getpid);
 }

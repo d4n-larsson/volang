@@ -369,8 +369,9 @@
 #define B_FLOAT_TEXT (52) /* spec 007: __float_text, callable only from std/ (research R5) */
 #define B_HTTP_EXCHANGE (53) /* spec 007: __http_exchange (host, port, request) -> result[str], net */
 #define B_TEXT_FLOAT (54) /* spec 007: __text_float (s) -> float, up to 17 significant digits (json) */
-#define B_LAST (61)
-#define B_COLL (61) /* spec 014: __coll(OP, a, b, c), std.collections only */ /* the last builtin id with a btab entry */
+#define B_COLL (61) /* spec 014: __coll(OP, a, b, c), std.collections only */
+#define B_CMAP (62) /* spec 016: concurrent_map(xs, limit, f) */
+#define B_LAST (62) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -1840,6 +1841,10 @@ extern void prop_seed(long seed, long item, long case_no);
 extern int prop_generatable(Type *t);
 extern long prop_gen(Type *t, long size, long depth);
 extern long prop_copy(long value, Type *t);
+extern long pg_nmembers(Type *t);
+extern Type *pg_member(Type *t, long i);
+extern Variant *pg_new_variant(long tag, long payload);
+extern long pg_coll_of(Type *t, List *xs, List *vs, int copy);
 extern Vec *prop_shrinks(long value, Type *t);
 extern int prop_run(Node *test, long item);
 extern void prop_json(SB *sb, Node *test, int status);
@@ -2085,6 +2090,36 @@ extern long sys_clock_ms(void);
 extern long sys_clock_real_ms(void);
 extern long sys_wait_fd(long fd, long events, long ms);
 extern long sys_wait_stdin(long ms);
+extern long sys_fork(void);
+extern long sys_pipe(int fds[2]);
+extern long sys_dup_to(int from, int to);
+extern void sys_pipe_size(int fd, long bytes);
+extern long sys_wait(long pid, int *status);
+extern void sys_kill(long pid);
+extern void sys_die_with_parent(long parent);
+extern long sys_getpid(void);
+/* spec 016: tasks (src/task.c) */
+extern long task_depth;
+extern long task_ctl;
+extern long task_path;
+extern long task_recover_base;
+extern List *task_map(List *xs, long limit, Closure *fn, Node *call);
+extern void task_send(int kind, char *p, long n);
+extern void task_exit(long status) NORETURN;
+extern void task_jump(long status) NORETURN;
+extern void rt_recover(long status) NORETURN;
+extern void rt_task_seed(long path);
+extern void tr_task_child(void);
+extern long tr_task_end(void);
+extern void tr_flush(void);
+extern void tr_task_record(long index);
+extern void tr_take(char *p, long n, long omitted);
+extern void rcd_task_child(void);
+extern void rcd_task_end(void);
+extern void rcd_flush(void);
+extern void rcd_take(char *p, long n);
+extern long rp_position(void);
+extern void rp_set_position(long next);
 extern long write_checked(int fd, char *p, long n);
 extern void write_all(int fd, char *p, long n);
 extern void out_flush(void);

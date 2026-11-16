@@ -1,0 +1,9 @@
+fn inverse(x: int) -> int {
+    let scaled = 100 / x;
+    return scaled;
+}
+
+fn main() uses console {
+    let ys = concurrent_map([5, 2, 0, 4], 2, inverse);
+    print(str(len(ys)));
+}

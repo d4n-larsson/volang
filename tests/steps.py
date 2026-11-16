@@ -18,6 +18,13 @@ each line of `steps` runs there, in order:
                                 waits until it accepts connections (or exits); {vport} reads `{vport}`
   request METHOD PATH [BODY]    sends one HTTP/1.1 request to {vport}; the raw response goes to `out`
   request-raw TEXT              sends TEXT as is (\\r, \\n and \\xNN escapes; {bytes:N} is N bytes `a`)
+  request-open NAME TEXT        (spec 016) sends TEXT like request-raw on a connection NAME that stays open,
+                                unread, until read-open NAME (or the end of the case)
+  read-open NAME                reads connection NAME until the server closes it; the response goes to `out`
+  no-children                   (spec 016) `out` gets how many processes still run in the case's directory
+                                (left-over tasks), after up to 2 s for them to end
+  request-many N METHOD PATH    sends N requests at once; `out` gets their bodies sorted (numbers by value)
+                                and whether every one was answered within 1 s
   wait MS                       lets MS milliseconds pass
   signal TERM|INT               signals the started vo and waits; its stdout, stderr and exit status go to `out`
   vo~ ARGS...                   like vo, but its stdout is left out of `out` (it may differ between
@@ -72,6 +79,43 @@ def wait_listening(port, proc):
             time.sleep(0.05)
 
 
+def raw_bytes(text):
+    """request-raw's TEXT: \\r, \\n, \\xNN escapes and {bytes:N}."""
+    text = re.sub(r"\{bytes:(\d+)\}", lambda m: "a" * int(m.group(1)), text)
+    data = text.replace("\\r", "\r").replace("\\n", "\n").encode()
+    return re.sub(rb"\\x([0-9a-f]{2})", lambda m: bytes([int(m.group(1), 16)]), data)
+
+
+def read_all(s):
+    chunks = []
+    while True:
+        b = s.recv(65536)
+        if not b:
+            return b"".join(chunks)
+        chunks.append(b)
+
+
+def request_many(port, n, method, path):
+    """Spec 016: n requests at once; their bodies, sorted, and whether all took at most 1 s."""
+    import threading
+    results = []
+    lock = threading.Lock()
+
+    def one():
+        start = time.time()
+        r = http_exchange(port, f"{method} {path} HTTP/1.1\r\nHost: localhost\r\n\r\n".encode())
+        with lock:
+            results.append((r.split(b"\r\n\r\n", 1)[-1], time.time() - start))
+    threads = [threading.Thread(target=one) for _ in range(n)]
+    for th in threads:
+        th.start()
+    for th in threads:
+        th.join()
+    bodies = sorted((b for b, _ in results), key=lambda b: (0, int(b)) if b.strip().isdigit() else (1, b))
+    fast = all(dt <= 1.0 for _, dt in results)
+    return b"\n".join(bodies) + b"\nwithin 1 s: " + (b"yes" if fast else b"no") + b"\n"
+
+
 def http_exchange(port, data):
     """Sends data, reads until the server closes; b"(refused)" when nothing listens."""
     try:
@@ -106,6 +150,7 @@ def run_case(case):
     """Runs one case; returns {relative path: bytes} of the expected files it produced, plus 'out'."""
     work = tempfile.mkdtemp()
     servers = []
+    opened = {}  # spec 016: request-open connections by name (closed at the end of the case)
     try:
         for n in os.listdir(case):
             if n in ("expected", "steps"):
@@ -148,6 +193,39 @@ def run_case(case):
                     data = text.replace("\\r", "\r").replace("\\n", "\n").encode()
                     data = re.sub(rb"\\x([0-9a-f]{2})", lambda m: bytes([int(m.group(1), 16)]), data)
                 out += b"$ " + line.encode() + b"\n" + mask(http_exchange(vport, data), port, vport) + b"\n--- end\n"
+                continue
+            if words[0] == "request-open":  # spec 016: a connection left open (a slow or stalled client)
+                s = socket.create_connection(("127.0.0.1", vport), timeout=60)
+                s.sendall(raw_bytes(line_sub.split(None, 2)[2]))
+                opened[words[1]] = s
+                continue
+            if words[0] == "read-open":
+                s = opened.pop(words[1])
+                try:
+                    got = read_all(s)
+                except OSError as e:
+                    got = b"(" + type(e).__name__.encode() + b")"
+                s.close()
+                out += b"$ " + line.encode() + b"\n" + mask(got, port, vport) + b"\n--- end\n"
+                continue
+            if words[0] == "request-many":
+                out += b"$ " + line.encode() + b"\n" + mask(request_many(vport, int(words[1]), words[2], words[3]), port, vport) \
+                    + b"--- end\n"
+                continue
+            if words[0] == "no-children":  # spec 016: no task outlives its program
+                def left():
+                    n = 0
+                    for pid in os.listdir("/proc"):
+                        if pid.isdigit():
+                            try:
+                                n += os.path.realpath(os.readlink(f"/proc/{pid}/cwd")) == os.path.realpath(work)
+                            except OSError:
+                                pass
+                    return n
+                end = time.time() + 2
+                while left() and time.time() < end:
+                    time.sleep(0.05)
+                out += b"$ " + line.encode() + b"\nleft-over processes: " + str(left()).encode() + b"\n"
                 continue
             if words[0] == "wait":  # spec 011: let time pass (a server idle past --timeout)
                 time.sleep(int(words[1]) / 1000)
@@ -237,6 +315,8 @@ def run_case(case):
             got[rel] = mask(open(p, "rb").read(), port, vport) if os.path.isfile(p) else None
         return got
     finally:
+        for s in opened.values():
+            s.close()
         for sv in servers:
             sv.kill()
             sv.wait()

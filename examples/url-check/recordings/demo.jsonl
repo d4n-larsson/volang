@@ -1,0 +1,6 @@
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"aead12cb18c3239b","seed":1,"clock_ms":null,"args":["http://localhost:44503/plain","http://localhost:44503/status/500","http://localhost:44503/delay/500","http://localhost:44503/delay/400"]}
+{"v":1,"kind":"http","host":"localhost","port":44503,"request":"GET /plain","result":"ok","value":"HTTP/1.1 200 OK\u000d\u000aContent-Type: text/plain\u000d\u000aContent-Length: 14\u000d\u000a\u000d\u000ahello from vo\u000a"}
+{"v":1,"kind":"http","host":"localhost","port":44503,"request":"GET /status/500","result":"ok","value":"HTTP/1.1 500 Status\u000d\u000aContent-Length: 11\u000d\u000a\u000d\u000astatus 500\u000a"}
+{"v":1,"kind":"http","host":"localhost","port":44503,"request":"GET /delay/500","result":"ok","value":"HTTP/1.1 200 OK\u000d\u000aContent-Length: 10\u000d\u000a\u000d\u000adelay 500\u000a"}
+{"v":1,"kind":"http","host":"localhost","port":44503,"request":"GET /delay/400","result":"ok","value":"HTTP/1.1 200 OK\u000d\u000aContent-Length: 10\u000d\u000a\u000d\u000adelay 400\u000a"}
+{"v":1,"kind":"end","status":2}
