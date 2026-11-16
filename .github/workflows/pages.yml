@@ -25,6 +25,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install the ARM64 cross compiler (Getting started's cross build is run by site-check)
+        run: sudo apt-get update -q && sudo apt-get install -y -q gcc-aarch64-linux-gnu
       - name: Build the toolchain
         run: make
       - name: Check the documentation's examples and generated sources
