@@ -1,0 +1,9 @@
+{"v":1,"kind":"diagnostic","code":"W0101","name":"repeated_spec_id","severity":"warning","file":"report_json.vo","start":{"line":15,"col":1},"end":{"line":15,"col":26},"text":"@spec(\"FR-002\", \"FR-002\")","message":"`@spec` names the same ID more than once.","fixes":[{"file":"report_json.vo","start":{"line":15,"col":1},"end":{"line":15,"col":26},"replacement":"@spec(\"FR-002\")"}],"related":[]}
+{"v":1,"kind":"test","name":"doubles two","status":"pass","file":"report_json.vo","start":{"line":6,"col":1},"uses":"","ms":0,"spec":["FR-001","US1/AC1"]}
+{"v":1,"kind":"test","name":"doubles three (wrong on purpose)","status":"fail","file":"report_json.vo","start":{"line":11,"col":1},"uses":"","ms":0,"spec":["FR-001"],"failure":{"file":"report_json.vo","start":{"line":12,"col":5},"end":{"line":12,"col":28},"message":"`expect_eq` failed: the values differ.","expected":"7","actual":"6"}}
+{"v":1,"kind":"test","name":"doubles are even","status":"pass","file":"report_json.vo","start":{"line":16,"col":1},"uses":"","ms":0,"prop":true,"cases":100,"spec":["FR-002"]}
+{"v":1,"kind":"test","name":"not annotated","status":"pass","file":"report_json.vo","start":{"line":20,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"spec_result","id":"FR-001","tests":2,"passed":1}
+{"v":1,"kind":"spec_result","id":"FR-002","tests":1,"passed":1}
+{"v":1,"kind":"spec_result","id":"US1/AC1","tests":1,"passed":1}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":1,"truncated":0,"files":1,"passed":3,"failed":1,"errored":0,"timed_out":0}

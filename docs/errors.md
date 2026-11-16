@@ -287,6 +287,143 @@ fn main() uses console {
 }
 ```
 
+## E0116 unknown_annotation
+
+An annotation name is not one vo knows.
+
+Fixable: yes
+
+Annotations come from a closed set; the only one is `@spec`, which links a `test` or `prop` to requirement IDs. The fix replaces a misspelled name (within two letters) with `spec`.
+
+### Example
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+@spce("FR-001")
+test "doubles" {
+    expect_eq(double(2), 4);
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+@spec("FR-001")
+test "doubles" {
+    expect_eq(double(2), 4);
+}
+```
+
+## E0117 misplaced_annotation
+
+An annotation is not on the line right above a `test` or `prop`.
+
+Fixable: no
+
+`@spec` annotates the `test` or `prop` that follows it, with nothing but blank lines in between. On any other item, after a comment or at the end of the file, it is this error: move it above the test that proves the requirement.
+
+### Example
+
+```vo
+@spec("FR-001")
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+test "doubles" {
+    expect_eq(double(2), 4);
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+@spec("FR-001")
+test "doubles" {
+    expect_eq(double(2), 4);
+}
+```
+
+## E0118 invalid_spec_id
+
+A `@spec` ID is not a requirement ID, or there is none.
+
+Fixable: no
+
+An ID is letters, digits, `-` and `_`, optionally followed by `/`-separated parts of the same: `FR-003`, `SC-002`, `US1/AC2`. `@spec()` needs at least one.
+
+### Example
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+@spec("FR 1")
+test "doubles" {
+    expect_eq(double(2), 4);
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+@spec("FR-001")
+test "doubles" {
+    expect_eq(double(2), 4);
+}
+```
+
+## E0119 repeated_annotation
+
+An item has more than one `@spec`.
+
+Fixable: yes
+
+Each `test` or `prop` has one `@spec` with all its IDs. The fix merges them into one.
+
+### Example
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+@spec("FR-001")
+@spec("US1/AC2")
+test "doubles" {
+    expect_eq(double(2), 4);
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+@spec("FR-001", "US1/AC2")
+test "doubles" {
+    expect_eq(double(2), 4);
+}
+```
+
 ## E0201 undefined_name
 
 A name is used but never defined or imported.
@@ -1963,6 +2100,40 @@ test "halves" {
 prop "halves" (n: int) {
     assume(n % 2 == 0);
     expect_eq(n / 2 * 2, n);
+}
+```
+
+## W0101 repeated_spec_id
+
+A `@spec` names the same ID twice.
+
+Fixable: yes
+
+Each ID counts once; the fix removes the repeats.
+
+### Example
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+@spec("FR-001", "FR-001")
+test "doubles" {
+    expect_eq(double(2), 4);
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+@spec("FR-001")
+test "doubles" {
+    expect_eq(double(2), 4);
 }
 ```
 

@@ -1,0 +1,8 @@
+@spec("FR-001")
+@spec("FR-002", "US1/AC1")
+test "a" {
+}
+
+@spec("A", "B", "A")
+test "b" {
+}

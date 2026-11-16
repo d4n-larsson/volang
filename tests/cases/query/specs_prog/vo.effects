@@ -1,0 +1,8 @@
+# vo effects record: update with `vo effects --update`
+main.vo:double pure
+main.vo:main uses console
+main.vo:prop "doubles are even" pure
+main.vo:test "doubles" pure
+main.vo:test "not annotated" pure
+more.vo:test "triples" pure
+more.vo:triple pure

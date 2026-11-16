@@ -1,0 +1,15 @@
+report.vo:15:1: warning[W0101]: `@spec` names the same ID more than once.
+  15 | @spec("FR-002", "FR-002")
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+  fix: replace with `@spec("FR-002")`
+PASS doubles two (0ms)
+FAIL doubles three (wrong on purpose) (0ms) [FR-001]
+  report.vo:12:5: `expect_eq` failed: the values differ.
+    expected: 7
+    actual:   6
+PASS doubles are even (100 cases, 0ms)
+PASS not annotated (0ms)
+spec FR-001: 2 tests, 1 not passing
+spec FR-002: 1 test, all passing
+spec US1/AC1: 1 test, all passing
+3 passed, 1 failed

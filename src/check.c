@@ -997,6 +997,104 @@ static void check_export_types(Vec *items)
     }
 }
 
+/* ---- spec 012: annotations ---- */
+
+/* 1 when id is PART(/PART)*, PART one or more of A-Z a-z 0-9 _ -. */
+static int spec_id_ok(Str *id)
+{
+    long part = 0;
+    for (long i = 0; i <= id->len; i++) {
+        int c = i < id->len ? (unsigned char)id->data[i] : '/';
+        if (c == '/') {
+            if (!part) return 0;
+            part = 0;
+        } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' ||
+                   c == '-') {
+            part++;
+        } else {
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/* `@spec(` + the IDs (each once when dedup) + `)`, IDs of every annotation in vs (N_ANNOTATION nodes). */
+static Str *spec_text(Vec *anns, int dedup)
+{
+    SB *sb = sb_new();
+    Vec *seen = vec_new();
+    sb_cstr(sb, "@spec(");
+    for (long a = 0; a < anns->n; a++) {
+        Vec *ids = ((Node *)vec_get(anns, a))->b.v;
+        for (long i = 0; i < ids->n; i++) {
+            Str *s = ((Node *)vec_get(ids, i))->a.s;
+            int dup = 0;
+            for (long k = 0; dedup && k < seen->n; k++) dup |= str_eq(vec_get(seen, k), s);
+            if (dup) continue;
+            if (seen->n) sb_cstr(sb, ", ");
+            vec_push(seen, s);
+            render_str_lit(sb, s);
+        }
+    }
+    sb_byte(sb, ')');
+    return sb_finish(sb);
+}
+
+/* The annotations in front of each item: E0116 unknown name, E0117 not on a test or prop, E0118 a bad or
+ * missing ID, E0119 two @spec on one item, W0101 an ID twice (spec 012 research R2). */
+static void check_annotations(Vec *items)
+{
+    for (long i = 0; i < items->n;) {
+        Node *first = vec_get(items, i);
+        if (first->kind != N_ANNOTATION) {
+            i++;
+            continue;
+        }
+        Vec *specs = vec_new();
+        long j = i;
+        for (; j < items->n && ((Node *)vec_get(items, j))->kind == N_ANNOTATION; j++) {
+            Node *a = vec_get(items, j);
+            Str *name = a->a.n->a.s;
+            if (!str_eq_cstr(name, "spec")) {
+                Diag *d = ck_err1("E0116", a->a.n, "`@$1` is not an annotation: the only one is `@spec`.", name);
+                if (name_distance(name, str_from_cstr("spec")) <= 2)
+                    diag_add_fix(d, (int)a->file, a->a.n->start, a->a.n->end, str_from_cstr("spec"));
+                continue;
+            }
+            vec_push(specs, a);
+            Vec *ids = a->b.v;
+            if (!ids->n) ck_err("E0118", a, str_from_cstr("`@spec` needs at least one requirement ID: `@spec(\"FR-001\")`."));
+            int repeated = 0;
+            for (long k = 0; k < ids->n; k++) {
+                Node *id = vec_get(ids, k);
+                if (!spec_id_ok(id->a.s))
+                    ck_err1("E0118", id,
+                            "\"$1\" is not a requirement ID: use letters, digits, `-` and `_`, parts separated by `/` (`FR-003`, `US1/AC2`).",
+                            id->a.s);
+                for (long m = 0; m < k; m++) repeated |= str_eq(((Node *)vec_get(ids, m))->a.s, id->a.s);
+            }
+            if (repeated) {
+                Vec *one = vec_new();
+                vec_push(one, a);
+                Diag *d = ck_warn("W0101", a, str_from_cstr("`@spec` names the same ID more than once."));
+                diag_add_fix(d, (int)a->file, a->start, a->end, spec_text(one, 1));
+            }
+        }
+        Node *target = j < items->n ? vec_get(items, j) : 0;
+        if (target && target->kind != N_TEST)
+            for (long k = i; k < j; k++)
+                ck_err("E0117", vec_get(items, k),
+                       str_from_cstr("`@spec` goes on a `test` or `prop`, on the line right above it."));
+        if (specs->n > 1) { /* one fix: every @spec of the item merged into the first's place */
+            Node *a0 = vec_get(specs, 0), *an = vec_get(specs, specs->n - 1);
+            Diag *d = ck_err("E0119", vec_get(specs, 1), str_from_cstr("An item has one `@spec`: list all its IDs there."));
+            if (specs->n == j - i) /* only @spec in between: nothing else is replaced */
+                diag_add_fix(d, (int)a0->file, a0->start, an->end, spec_text(specs, 0));
+        }
+        i = j;
+    }
+}
+
 void check_items(int file, int mode)
 {
     ck_mode = mode;
@@ -1009,6 +1107,7 @@ void check_items(int file, int mode)
     for (long i = 0; i < items->n; i++) resolve_item(ck_item_set(vec_get(items, i)));
     check_export_types(items);
     check_tests_unique(items);
+    check_annotations(items);
     fx_file_begin();
     for (long i = 0; i < items->n; i++) {
         Node *it = ck_item_set(vec_get(items, i));

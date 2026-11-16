@@ -1,0 +1,7 @@
+PASS doubles (0ms)
+PASS even (100 cases, 0ms)
+PASS not annotated (0ms)
+spec FR-001: 1 test, all passing
+spec FR-002: 1 test, all passing
+spec US1/AC2: 1 test, all passing
+3 passed, 0 failed

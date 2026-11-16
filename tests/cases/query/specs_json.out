@@ -1,0 +1,4 @@
+{"v":1,"kind":"spec","id":"FR-001","tests":[{"name":"doubles","kind":"test","file":"specs_prog/main.vo","start":{"line":12,"col":1}},{"name":"doubles are even","kind":"prop","file":"specs_prog/main.vo","start":{"line":17,"col":1}}]}
+{"v":1,"kind":"spec","id":"FR-002","tests":[{"name":"triples","kind":"test","file":"specs_prog/more.vo","start":{"line":6,"col":1}}]}
+{"v":1,"kind":"spec","id":"US1/AC1","tests":[{"name":"doubles","kind":"test","file":"specs_prog/main.vo","start":{"line":12,"col":1}}]}
+{"v":1,"kind":"summary","command":"query","errors":0,"warnings":0,"truncated":0,"files":2,"results":3}

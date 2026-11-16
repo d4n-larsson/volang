@@ -38,6 +38,7 @@ fn get(path: str) -> Request {
     return new Request { method: "GET", path: path, query: "", headers: new list[Header], body: "" };
 }
 
+@spec("SV-001")
 test "the two pages are JSON from site/" uses file.read("site/") {
     let r = answer(get("/status.json"));
     expect_eq(r.status, 200);
@@ -45,6 +46,7 @@ test "the two pages are JSON from site/" uses file.read("site/") {
     expect_eq(answer(get("/incidents.json")).status, 200);
 }
 
+@spec("SV-002")
 test "anything else is 404, other methods 405" uses file.read("site/") {
     expect_eq(answer(get("/secrets")).status, 404);
     expect_eq(answer(new Request { method: "POST", path: "/status.json", query: "", headers: new list[Header], body: "" }).status, 405);

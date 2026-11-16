@@ -1,1 +1,1 @@
-error[T0001]: `query` needs a question: `vo query callers|refs|type-at ENTRY TARGET`.
+error[T0001]: `query` needs a question: `vo query callers|refs|type-at ENTRY TARGET` or `vo query specs ENTRY`.

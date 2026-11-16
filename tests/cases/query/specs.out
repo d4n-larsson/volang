@@ -1,0 +1,5 @@
+FR-001  specs_prog/main.vo:12:1 test "doubles"
+FR-001  specs_prog/main.vo:17:1 prop "doubles are even"
+FR-002  specs_prog/more.vo:6:1 test "triples"
+US1/AC1  specs_prog/main.vo:12:1 test "doubles"
+3 requirement IDs

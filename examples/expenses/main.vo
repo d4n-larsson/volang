@@ -22,12 +22,14 @@ fn expense(category: str, cents: int) -> Expense {
     return new Expense { date: "2026-01-01", category: category, cents: cents, note: "" };
 }
 
+@spec("FR-001")
 test "money pads the cents" {
     expect_eq(money(0), "0.00");
     expect_eq(money(5), "0.05");
     expect_eq(money(129050), "1290.50");
 }
 
+@spec("FR-002")
 test "totals keep the first-seen order" {
     let xs = [expense("b", 1), expense("a", 2), expense("b", 3)];
     let t = totals(xs, fn(e: Expense) -> str {
@@ -36,6 +38,7 @@ test "totals keep the first-seen order" {
     expect_eq(t, [new Total { name: "b", cents: 4 }, new Total { name: "a", cents: 2 }]);
 }
 
+@spec("FR-004")
 test "a bad date is an error, not a crash" {
     match parse_json("[{\"date\": \"2026-02-30\", \"category\": \"x\", \"cents\": 1, \"note\": \"\"}]") {
         case ok(doc) {
@@ -48,6 +51,7 @@ test "a bad date is an error, not a crash" {
 }
 
 # Whatever the amounts, grouping never loses or invents money.
+@spec("FR-003")
 prop "totals add up to the sum of the expenses" (amounts: list[int]) {
     let xs = new list[Expense];
     var expected = 0;
@@ -61,6 +65,7 @@ prop "totals add up to the sum of the expenses" (amounts: list[int]) {
     })), expected);
 }
 
+@spec("FR-005")
 test "an empty report" {
     expect_eq(slice(render(new list[Expense]), 0, 11), "0 expenses\n");
 }

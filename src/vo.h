@@ -180,6 +180,7 @@
 #define T_STAR (71)
 #define T_SLASH (72)
 #define T_PERCENT (73)
+#define T_AT (74) /* spec 012: `@` of an annotation */
 
 /* ---- source files (diag.c file table): FILE_SIZE bytes each ---- */
 #define FILE_PATH (0) /* str object */
@@ -291,6 +292,7 @@
 #define N_EFFECT (49) /* A effect bit (0 = unknown name), B vec of scope N_STR | 0, C effect-variable name node | 0, D name text (str) */
 #define N_LAMBDA (50) /* A name node ("anonymous function"; params in N_B like N_FN), B return type node|0, C N_USES|0 (only for E0507), D body, E local count */
 #define N_FN_TYPE (51) /* type node: A param type nodes vec, B return type node|0, C N_USES|0 */
+#define N_ANNOTATION (53) /* spec 012: `@NAME(STR, ...)`: A name node, B vec of N_STR; an item, before the item it annotates */
 #define N_CALL_VALUE (52) /* A callee expr, B args vec, C how (CV_*), D field index (CV_FIELD) */
 #define TPC_NONE (0)
 #define TPC_ORDERED (1)

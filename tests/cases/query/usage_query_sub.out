@@ -1,1 +1,1 @@
-error[T0001]: Unknown query `everything`. Queries: callers, refs, type-at.
+error[T0001]: Unknown query `everything`. Queries: callers, refs, type-at, specs.

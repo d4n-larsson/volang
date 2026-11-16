@@ -1,0 +1,14 @@
+$ vo package main.vo util shared/util
+added util shared/util sha256:43cafa0f9552751648f26009c8aa83be9ef42001f1a211ccda3db24608d0ce2c
+--- stderr
+--- exit 0
+$ vo effects --update main.vo
++ main.vo:main: console
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo query specs main.vo
+FR-010  main.vo:8:1 test "uses the package"
+1 requirement ID
+--- stderr
+--- exit 0

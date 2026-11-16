@@ -1,0 +1,24 @@
+@spce("FR-001")
+test "a" {
+}
+
+@spec("FR 2")
+test "b" {
+}
+
+@spec()
+test "c" {
+}
+
+@spec("FR-003")
+fn f() {
+}
+
+@spec("X")
+@spec("Y")
+test "d" {
+}
+
+@spec("Z", "Z")
+test "e" {
+}

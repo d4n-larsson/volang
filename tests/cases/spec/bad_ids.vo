@@ -1,0 +1,7 @@
+@spec("FR 2", "", "a//b", "ok/x-1_y")
+test "a" {
+}
+
+@spec()
+test "b" {
+}

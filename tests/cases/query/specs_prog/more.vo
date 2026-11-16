@@ -1,0 +1,8 @@
+export fn triple(x: int) -> int {
+    return x * 3;
+}
+
+@spec("FR-002")
+test "triples" {
+    expect_eq(triple(2), 6);
+}

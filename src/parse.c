@@ -23,7 +23,7 @@ static const char *const tok_spell[] = {
     "map", "result", "void", "uses", "prop", "requires", "ensures", "export", "?", "?",
     "(", ")", "{", "}", "[", "]", ",", ";", ":", ".",
     "..", "->", "=", "==", "!=", "<", "<=", ">", ">=", "+",
-    "-", "*", "/", "%",
+    "-", "*", "/", "%", "@",
 };
 static const char *const tok_display_class[] = {
     "the end of the file", "a name", "a type name", "a number", "a number", "a string", "a comment", "`_`",
@@ -1219,6 +1219,31 @@ static Node *parse_item(void)
         n = parse_item();
         n->flags |= NF_EXPORT;
         n->start = (uint32_t)start; /* the item's span starts at `export` */
+        return n;
+    }
+    case T_AT: { /* spec 012: @NAME("ID", ...) on the line before an item */
+        n = p_node(N_ANNOTATION);
+        p_next();
+        n->a.n = p_name();
+        n->b.v = vec_new();
+        if (!n->a.n || !p_expect(T_LPAREN)) goto finish;
+        while (p_kind() != T_RPAREN) {
+            if (p_kind() != T_STRING) {
+                p_expect(T_STRING);
+                goto finish;
+            }
+            Node *s = p_node(N_STR);
+            Token *t = p_next();
+            s->a.s = decode_string(t->start, t->end);
+            vec_push(n->b.v, s);
+            if (!p_accept(T_COMMA)) break;
+        }
+        p_expect(T_RPAREN);
+        p_finish(n, start);
+        int next = p_kind();
+        if (next == T_EOF || next == T_COMMENT) /* E0117: nothing (or a comment) follows it */
+            diag_add("E0117", SEV_ERROR, (int)cur_file, n->start, n->end,
+                     str_from_cstr("An annotation goes on the line right above the `test` or `prop` it annotates."));
         return n;
     }
     case T_IMPORT: /* import a.b.name; */

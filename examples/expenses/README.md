@@ -30,6 +30,18 @@ month        amount
 total        552.89
 ```
 
+## Requirements
+
+| ID | Requirement |
+|---|---|
+| FR-001 | Amounts are shown in units with two decimals (`0.05`, `1290.50`). |
+| FR-002 | Totals list each category once, in the order it first appears. |
+| FR-003 | Totals add up to the sum of the expenses: grouping never loses or invents money. |
+| FR-004 | An expense with an impossible date is an error with the reason, not a crash. |
+| FR-005 | With no expenses, the report says so. |
+
+Each test names the requirements it proves with `@spec("FR-...")` on the line above it; `vo query specs main.vo` lists them, and `vo test` ends with a line per requirement.
+
 ## What it shows
 
 - **Effects as the program's permissions.** `main` declares `uses console, file.read("data/"),

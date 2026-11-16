@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0117","name":"misplaced_annotation","severity":"error","file":"misplaced_end.vo","start":{"line":4,"col":1},"end":{"line":4,"col":16},"text":"@spec(\"FR-001\")","message":"An annotation goes on the line right above the `test` or `prop` it annotates.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

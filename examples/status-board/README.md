@@ -50,6 +50,19 @@ fix on the very input that broke it. Each request is matched to the recording by
 path: if the changed program asks for something else (`GET /v2/status` instead of `GET /status`), or
 makes more requests than were recorded, replay stops with R0014 instead of guessing.
 
+## Requirements
+
+| ID | Requirement |
+|---|---|
+| FR-001 | The board reads each service's name, state and latency from `/status.json`. |
+| FR-002 | A document with a missing field is an error naming the field. |
+| FR-003 | Down services are listed first, and the slowest service that is up is named. |
+| FR-004 | Only open incidents are listed. |
+| FR-005 | The exit status is 2 when a service is down. |
+| FR-006 | With every service up and no open incidents, the board has no incident section. |
+
+Each test names the requirements it proves with `@spec("FR-...")` on the line above it; `vo query specs main.vo` lists them, and `vo test` ends with a line per requirement.
+
 ## What it shows
 
 - **The network as a scoped effect.** `main` and `fetch` declare `uses net("localhost")`. A request to
@@ -88,3 +101,10 @@ and returns a `Response`; `serve("8000", answer)` runs it until Ctrl-C or SIGTER
 - **Record and replay work for servers too**: `service/recordings/demo.jsonl` holds the two requests the
   board made, the files read and the responses sent. `../../../bin/vo replay recordings/demo.jsonl` in
   `service/` answers them again without opening a port, and notes every response that differs.
+
+The service's own requirements, proved by its tests in `service/main.vo`:
+
+| ID | Requirement |
+|---|---|
+| SV-001 | `GET /status.json` and `/incidents.json` answer the files in `site/` as JSON. |
+| SV-002 | Other paths answer 404; other methods 405. |

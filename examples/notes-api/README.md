@@ -34,6 +34,23 @@ $ curl localhost:8080/nope                                                 # 404
 | `DELETE /notes/ID` | 204 |
 | anything else | 404 or 405, with `{"error": "..."}` |
 
+## Requirements
+
+| ID | Requirement |
+|---|---|
+| FR-001 | `GET /notes` lists every note as JSON. |
+| FR-002 | `POST /notes` adds a note with the next free id, answered with 201 and its `Location`. |
+| FR-003 | A missing, empty or too long text is 400 with the reason. |
+| FR-004 | A note can be read, marked done and deleted. |
+| FR-005 | Unknown notes and paths are 404; other methods on a resource are 405. |
+| FR-006 | The notes are kept in `data/notes.json` between requests. |
+
+Each test names the requirements it proves with `@spec("FR-...")` on the line above it; `vo query specs main.vo` lists them, and `vo test` ends with a line per requirement.
+
+`vo query specs main.vo` lists FR-001 to FR-005: FR-006 has no test (it is about `handle` and the file,
+which the tests leave out); the recorded session in `recordings/demo.jsonl` shows it instead. Comparing the
+query's IDs with this table is how a reviewer, or a tool, finds requirements without a test.
+
 ## What it shows
 
 - **`std.http.serve`**: `main` calls `serve("8080", handle)`; `handle` is an ordinary function from a

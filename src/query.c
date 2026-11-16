@@ -513,11 +513,94 @@ int q_finish(long results, char *noun1, char *noun_n)
     return 0;
 }
 
-/* `vo query callers|refs|type-at ENTRY TARGET` (contracts/cli.md). */
+/* spec 012: `vo query specs ENTRY`: every @spec ID of the program's tests and properties (not the
+ * standard library's or packages'), sorted, each with its tests in source order. */
+static int q_specs(void)
+{
+    Vec *ids = vec_new(), *tests = vec_new(); /* pairs, sorted by ID (stable: source order within one) */
+    Vec *files = ld_files();
+    for (long f = 0; f < files->n; f++) {
+        FileRec *fr = file_get((int)(long)vec_get(files, f));
+        if (fr->std || pkg_relpath(fr->path)) continue;
+        Vec *items = fr->ast->a.v;
+        for (long i = 0; i < items->n; i++) {
+            Node *t = vec_get(items, i);
+            if (t->kind != N_TEST) continue;
+            for (long a = i - 1; a >= 0 && ((Node *)vec_get(items, a))->kind == N_ANNOTATION; a--) {
+                Node *an = vec_get(items, a);
+                if (!str_eq_cstr(an->a.n->a.s, "spec")) continue;
+                for (long k = 0; k < an->b.v->n; k++) {
+                    Str *id = ((Node *)vec_get(an->b.v, k))->a.s;
+                    int dup = 0;
+                    for (long m = 0; m < ids->n; m++) dup |= vec_get(tests, m) == t && str_eq(vec_get(ids, m), id);
+                    if (dup) continue;
+                    vec_push(ids, id);
+                    vec_push(tests, t);
+                    for (long j = ids->n - 1; j > 0 && str_cmp(vec_get(ids, j - 1), id) > 0; j--) {
+                        ids->data[j] = ids->data[j - 1];
+                        tests->data[j] = tests->data[j - 1];
+                        ids->data[j - 1].s = id;
+                        tests->data[j - 1].n = t;
+                    }
+                }
+            }
+        }
+    }
+    long distinct = 0;
+    for (long i = 0; i < ids->n;) {
+        Str *id = vec_get(ids, i);
+        long j = i;
+        while (j < ids->n && str_eq(vec_get(ids, j), id)) j++;
+        SB *sb = sb_new();
+        if (opt_json) {
+            sb_cstr(sb, "{\"v\":1,\"kind\":\"spec\",\"id\":");
+            json_str_into(sb, id);
+            sb_cstr(sb, ",\"tests\":[");
+        }
+        for (long k = i; k < j; k++) {
+            Node *t = vec_get(tests, k);
+            char *kind = t->flags & NF_PROP ? "prop" : "test";
+            if (opt_json) {
+                if (k > i) sb_byte(sb, ',');
+                sb_cstr(sb, "{\"name\":");
+                json_str_into(sb, t->a.s);
+                sb_cstr(sb, ",\"kind\":\"");
+                sb_cstr(sb, kind);
+                sb_cstr(sb, "\",\"file\":");
+                json_str_into(sb, file_get((int)t->file)->path);
+                sb_cstr(sb, ",\"start\":");
+                json_pos(sb, (int)t->file, t->start);
+                sb_byte(sb, '}');
+            } else {
+                sb_str(sb, id);
+                sb_cstr(sb, "  ");
+                human_loc(sb, (int)t->file, t->start);
+                sb_byte(sb, ' ');
+                sb_cstr(sb, kind);
+                sb_byte(sb, ' ');
+                render_str_lit(sb, t->a.s);
+                sb_byte(sb, '\n');
+            }
+        }
+        if (opt_json) sb_cstr(sb, "]}\n");
+        q_out(sb);
+        distinct++;
+        i = j;
+    }
+    return q_finish(distinct, " requirement ID\n", " requirement IDs\n");
+}
+
+/* `vo query callers|refs|type-at ENTRY TARGET | specs ENTRY` (contracts/cli.md). */
 int cmd_query(void)
 {
     char **args = (char **)pos_args;
-    if (!pos_n) usage_error(str_from_cstr("`query` needs a question: `vo query callers|refs|type-at ENTRY TARGET`."));
+    if (!pos_n)
+        usage_error(str_from_cstr("`query` needs a question: `vo query callers|refs|type-at ENTRY TARGET` or `vo query specs ENTRY`."));
+    if (cstr_eq(args[0], "specs")) { /* spec 012 */
+        if (pos_n != 2) usage_error(str_from_cstr("`query specs` takes the entry file of the program: `vo query specs main.vo`."));
+        q_load(args[1]);
+        return q_specs();
+    }
     long kind = 0;
     if (cstr_eq(args[0], "callers"))
         kind = 1;
@@ -526,7 +609,7 @@ int cmd_query(void)
     else if (cstr_eq(args[0], "type-at"))
         kind = 3;
     else
-        usage_error_arg("Unknown query `$1`. Queries: callers, refs, type-at.", args[0]);
+        usage_error_arg("Unknown query `$1`. Queries: callers, refs, type-at, specs.", args[0]);
     if (pos_n != 3)
         usage_error_arg("`query $1` takes the entry file of the program and one target: `vo query $1 main.vo TARGET`.",
                         args[0]);

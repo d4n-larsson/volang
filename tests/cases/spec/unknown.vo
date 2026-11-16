@@ -1,0 +1,7 @@
+@spce("FR-001")
+test "a" {
+}
+
+@deprecated("FR-002")
+test "b" {
+}

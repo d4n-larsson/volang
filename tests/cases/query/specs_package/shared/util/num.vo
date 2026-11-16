@@ -1,0 +1,8 @@
+export fn inc(x: int) -> int {
+    return x + 1;
+}
+
+@spec("PKG-1")
+test "inc" {
+    expect_eq(inc(1), 2);
+}

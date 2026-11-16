@@ -536,6 +536,28 @@ static void fm_item(Node *item)
     case N_COMMENT:
         fm_source(item);
         break;
+    case N_ANNOTATION: { /* spec 012: @name("A", "B"), IDs sorted by bytes */
+        fm_b('@');
+        fm_s(item->a.n->a.s);
+        fm_b('(');
+        Vec *ids = item->b.v;
+        Str **sorted = alloc(8 * (ids->n + 1));
+        for (long i = 0; i < ids->n; i++) {
+            Str *s = ((Node *)vec_get(ids, i))->a.s;
+            long j = i;
+            while (j > 0 && str_cmp(sorted[j - 1], s) > 0) {
+                sorted[j] = sorted[j - 1];
+                j--;
+            }
+            sorted[j] = s;
+        }
+        for (long i = 0; i < ids->n; i++) {
+            if (i) fm_c(", ");
+            render_str_lit(fm_sb, sorted[i]);
+        }
+        fm_b(')');
+        break;
+    }
     case N_IMPORT:
         fm_c("import ");
         fm_s(import_text(item));
@@ -660,7 +682,10 @@ Str *fmt_file(int file)
     for (long i = 0; i < order->n; i++) {
         Node *it = vec_get(order, i);
         long kind = it->kind;
-        if (prev == N_COMMENT ? gap : prev && !(prev == N_IMPORT && kind == N_IMPORT)) fm_b('\n'); /* blank line */
+        if (prev == N_ANNOTATION) { /* spec 012: an annotation sits right above its item */
+        } else if (prev == N_COMMENT ? gap : prev && !(prev == N_IMPORT && kind == N_IMPORT)) {
+            fm_b('\n'); /* blank line */
+        }
         fm_item(it);
         prev = kind;
         if (kind == N_COMMENT) gap = blank_after(it);

@@ -256,6 +256,7 @@ Token *lex(int file)
         case '[': kind = T_LBRACKET; break;
         case ']': kind = T_RBRACKET; break;
         case ',': kind = T_COMMA; break;
+        case '@': kind = T_AT; break; /* spec 012 */
         case ';': kind = T_SEMI; break;
         case ':': kind = T_COLON; break;
         case '+': kind = T_PLUS; break;

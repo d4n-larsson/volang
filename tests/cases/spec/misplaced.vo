@@ -1,0 +1,8 @@
+@spec("FR-001")
+fn f() {
+}
+
+@spec("FR-002")
+record R {
+    x: int;
+}

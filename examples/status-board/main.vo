@@ -49,16 +49,19 @@ fn parsed(text: str) -> Json {
     }
 }
 
+@spec("FR-001")
 test "services are read from /status.json" {
     let doc = parsed("{\"services\": [{\"name\": \"api\", \"up\": true, \"latency_ms\": 42}]}");
     expect_eq(services_from(doc), ok([new Service { name: "api", up: true, latency_ms: 42 }]));
 }
 
+@spec("FR-002")
 test "a missing field is an error naming it" {
     let doc = parsed("{\"services\": [{\"name\": \"api\", \"up\": true}]}");
     expect_eq(services_from(doc), err("no field `latency_ms`"));
 }
 
+@spec("FR-003", "FR-004", "FR-005")
 test "down services come first and the slowest up one is named" {
     let s = [new Service { name: "web", up: true, latency_ms: 90 }, new Service { name: "db", up: false, latency_ms: 0 }, new Service { name: "api", up: true, latency_ms: 30 }];
     let i = [new Incident { service: "db", title: "disk full", open: true }, new Incident { service: "web", title: "old", open: false }];
@@ -66,6 +69,7 @@ test "down services come first and the slowest up one is named" {
     expect_eq(down_count(s), 1);
 }
 
+@spec("FR-006")
 test "all up, no incidents" {
     expect_eq(render([new Service { name: "api", up: true, latency_ms: 5 }], new list[Incident]), "1 of 1 services up\n\n  up    api     5 ms\n\nslowest: api (5 ms)\n");
 }

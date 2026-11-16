@@ -1,0 +1,3 @@
+vo package main.vo util shared/util
+vo effects --update main.vo
+vo query specs main.vo

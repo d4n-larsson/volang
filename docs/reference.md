@@ -941,6 +941,8 @@ PASS sorting twice changes nothing (100 cases, 0ms)
 1 passed, 1 failed
 ```
 
+`@spec("FR-003", "US1/AC2")` on the line right above a `test` or `prop` names the requirements it proves (an ID is letters, digits, `-` and `_`, parts separated by `/`). It changes nothing about the test: `vo test` adds the IDs to a failing test's line and ends with a summary per ID, and `vo query specs main.vo` lists every ID with its tests. `@spec` is the only annotation.
+
 ## Programs in several files
 
 `import a.b.name;` loads the file `a/b.vo`, relative to the directory of the importing file, and makes its top-level item `name` (a function, record or variant) visible. Only items declared with `export` (`export fn`, `export record`, `export variant`) can be imported; the others are private to their file, and importing one is E0209, whose fix adds `export`. An exported function, record or variant cannot use a private type of its file (E0210). Write one `import` per name. Imports come before all items. Paths cannot contain `..`, and import cycles are E0206. Using a name defined in a sibling file without importing it is E0204, whose fix adds the `import`. Run the program through the file that contains `main`: `vo run main.vo`.
@@ -1016,6 +1018,7 @@ Ask the toolchain instead of searching the text: answers follow the checker, so 
 
 ```text
 vo query callers ENTRY NAME              call sites, and uses as a value, of a function or builtin
+vo query specs ENTRY                     every `@spec` ID and the tests that name it
 vo query refs ENTRY TARGET               the declaration and every use
 vo query type-at ENTRY FILE:LINE:COL     the type of the name or expression there, and its declaration
 vo impact ENTRY --diff FILE              functions and tests a unified diff (git diff, diff -u) affects; - is stdin
@@ -1081,7 +1084,7 @@ vo effects   [--json] [--update] FILE
 vo explain   [--json] CODE
 vo reference [--json]
 vo version   [--json]
-vo query     [--json] callers|refs|type-at ENTRY TARGET
+vo query     [--json] callers|refs|type-at ENTRY TARGET | specs ENTRY
 vo impact    [--json] ENTRY --diff FILE
 vo edit      [--json] [--dry-run] rename|add-field ENTRY ...
 vo replay    [--json] [--trace FILE] [--timeout SEC] [--max-memory MiB] [--mem-stats] RECORDING
@@ -1172,7 +1175,7 @@ Other kinds: `toolchain_error` (`code`, `name`, `message`, optional `path` and `
 
 ## Error codes
 
-Every diagnostic, runtime error and toolchain error has a stable code, and `vo explain CODE` prints what it means, an example and the fix. The ranges are: E01xx syntax (E0101 to E0115), E02xx names and imports, E03xx types, E04xx control flow, `match` and results, Wxxxx warnings (they never fail a command), E07xx packages, R00xx runtime errors (exit status 70; R0009 timeout is 124) and T00xx toolchain errors. When a diagnostic has no fix, read `vo explain` before changing code.
+Every diagnostic, runtime error and toolchain error has a stable code, and `vo explain CODE` prints what it means, an example and the fix. The ranges are: E01xx syntax (E0101 to E0119), E02xx names and imports, E03xx types, E04xx control flow, `match` and results, Wxxxx warnings (they never fail a command), E07xx packages, R00xx runtime errors (exit status 70; R0009 timeout is 124) and T00xx toolchain errors. When a diagnostic has no fix, read `vo explain` before changing code.
 
 ```vo
 fn main() uses console {

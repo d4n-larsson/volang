@@ -1,0 +1,22 @@
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+@spec("FR-001", "US1/AC1")
+test "doubles two" {
+    expect_eq(double(2), 4);
+}
+
+@spec("FR-001")
+test "doubles three (wrong on purpose)" {
+    expect_eq(double(3), 7);
+}
+
+@spec("FR-002", "FR-002")
+prop "doubles are even" (x: int) {
+    expect(double(x % 1000) % 2 == 0);
+}
+
+test "not annotated" {
+    expect_eq(double(0), 0);
+}
