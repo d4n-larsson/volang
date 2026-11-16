@@ -14,6 +14,12 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [006](../specs/006-query-edit-trace/) | Query API, structural editing, trace and replay | **Done** ([results](../specs/006-query-edit-trace/results.md)) |
 | [007](../specs/007-stdlib-packages/) | Standard library and content-pinned packages | **Done** ([results](../specs/007-stdlib-packages/results.md)). Follow-ups: the agent run with and without `vo doc`, HTTPS, downloading packages |
 | [008](../specs/008-c-rewrite/) | The toolchain in C: native builds on Linux x86-64, ARM64 and RISC-V 64, byte-identical behavior | **Done** ([results](../specs/008-c-rewrite/results.md)) |
+| [009](../specs/009-small-fixes/) | Small fixes from writing the examples: `get_or`, replay matching the request line, R0010 naming the granting function, `case ok()`, `align_left`/`align_right` | **Done** ([results](../specs/009-small-fixes/results.md)) |
+| [010](../specs/010-export-visibility/) | `export`: items are private to their file unless exported; the standard library exports only its interface | **Done** ([results](../specs/010-export-visibility/results.md)) |
+| [011](../specs/011-http-server/) | `std.http.serve`: answering HTTP requests under a scoped `serve` effect, with record and replay | **Done** ([results](../specs/011-http-server/results.md)) |
+| [012](../specs/012-spec-annotations/) | `@spec` annotations: tests name the requirements they prove; `vo query specs` | **Done** ([results](../specs/012-spec-annotations/results.md)) |
+| Review | Security review against the threat model in [security.md](security.md) (effects as a security boundary) | **In progress**; its fixes become a spec |
+| Next | Concurrency (see below) | **Next spec** |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -73,6 +79,27 @@ vo programs used to run by walking the checked syntax tree. Now:
 - Packages pinned by content hash in `vo.packages` and resolved at check time, never at run time; a package's effects appear in `vo.effects`, so a new dependency that wants the network is visible in review.
 - Follow-ups: the agent run with and without `vo doc`, HTTPS, downloading packages.
 
+## Next: concurrency
+
+Today a vo program does one thing at a time: a server answers one request at a time (a slow client holds
+it for up to 10 s), and a program that fetches ten URLs waits for each in turn. Concurrency is the next
+spec, after the security review. What it has to keep:
+
+- **Determinism (Principle III).** The same program and inputs give the same output; record and replay
+  keep working. A concurrent program's interleaving must be reproducible, or recorded and replayed.
+- **Effects as a boundary.** Every concurrent task runs within its spawner's grant (as anonymous
+  functions do today), and `vo.effects` still shows what each function may do.
+- **No data races by construction.** Agents get shared mutable state wrong; the design should make it
+  impossible rather than detected (for example tasks that share nothing and communicate by messages, or
+  structured `spawn`/`join` over immutable inputs).
+- **Structured lifetimes.** A task cannot outlive the block that started it, so errors, timeouts and
+  `--timeout` have one place to go.
+
+Open questions for the spec: concurrency on one thread (an event loop over the existing `ppoll`, enough for
+I/O-bound servers and clients) or parallelism on several cores (the collector and the VM are single-threaded
+today); the form in the language (a `spawn` builtin, a block, channels); how `serve` uses it to answer
+requests concurrently.
+
 ## Benchmarks (ongoing)
 
 On the v1 benchmark both languages were at the ceiling, so it could not show whether vo helps agents. Benchmark v2 (40 tasks in multi-file, refactor, hidden-property and capability categories, plus a 20-task feature set) is built and validated. Its run is the next step:
@@ -105,6 +132,5 @@ The next specs start from C. The qemu-only effects (the pinned page offsets) are
 
 ## Out of scope for now
 
-- Concurrency.
 - Compiling to machine code: vo runs bytecode (004), and native code waits until that becomes the bottleneck for agent-sized programs.
 - User-defined interfaces or traits: generics with `ordered` and effect parameters cover the cases seen so far.
