@@ -93,7 +93,8 @@ Each property is a claim the review must try to break; each break is a finding.
 
 ## Open questions for the first review
 
-Recorded here so the review starts from what is already known, not as accepted limits:
+Answered by [review 1](security-review-1.md) (both confirmed: H4, and H7-H9/C5/L6 among the parsers).
+Recorded here so the review started from what was already known, not as accepted limits:
 
 - **Check-then-open (A4)**: `rt_check_path` resolves the path (following links) and the file is then
   opened by its original path, which follows links again. A local process that swaps a symbolic link

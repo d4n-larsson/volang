@@ -18,8 +18,8 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [010](../specs/010-export-visibility/) | `export`: items are private to their file unless exported; the standard library exports only its interface | **Done** ([results](../specs/010-export-visibility/results.md)) |
 | [011](../specs/011-http-server/) | `std.http.serve`: answering HTTP requests under a scoped `serve` effect, with record and replay | **Done** ([results](../specs/011-http-server/results.md)) |
 | [012](../specs/012-spec-annotations/) | `@spec` annotations: tests name the requirements they prove; `vo query specs` | **Done** ([results](../specs/012-spec-annotations/results.md)) |
-| Review | Security review against the threat model in [security.md](security.md) (effects as a security boundary) | **In progress**; its fixes become a spec |
-| Next | Concurrency (see below) | **Next spec** |
+| Review | Security review against the threat model in [security.md](security.md) (effects as a security boundary) | **Review 1 done** ([findings](security-review-1.md): 5 Critical, 11 High); the fixes are the next spec, 013 |
+| Next | Concurrency (see below) | **After the security fixes** |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -83,7 +83,7 @@ vo programs used to run by walking the checked syntax tree. Now:
 
 Today a vo program does one thing at a time: a server answers one request at a time (a slow client holds
 it for up to 10 s), and a program that fetches ten URLs waits for each in turn. Concurrency is the next
-spec, after the security review. What it has to keep:
+spec, after the security fixes (013). What it has to keep:
 
 - **Determinism (Principle III).** The same program and inputs give the same output; record and replay
   keep working. A concurrent program's interleaving must be reproducible, or recorded and replayed.
