@@ -16,6 +16,7 @@ CHECK_SIZE(Pkg, 80);
 
 #define NO_PACKAGE ((void *)-1)
 #define M_MISSING "Package $1: the directory $2 is missing or has no .vo files."
+#define M_UNREADABLE "Package $1: the directory $2 has a directory that cannot be read, or a link leading outside it."
 #define MANIFEST "/vo.packages"
 
 static long pkg_searched; /* 1 once the manifest was looked for */
@@ -93,6 +94,8 @@ static void pkg_parse_line(long file, char *text, char *line, char *le)
     char *name_end = pkg_tok_end;
     char *code = "E0703";
     Str *m;
+    for (char *c = name; c < le; c++) /* spec 013 (L3): no control bytes (NUL, escapes) in an entry */
+        if (((unsigned char)*c < 0x20 && *c != '\t' && *c != '\r') || *c == 0x7f) goto bad;
     if (!pkg_name_ok(name, name_end - name)) goto bad;
     char *dir = pkg_token(name_end, le); /* DIRECTORY */
     if (dir == le) goto bad;
@@ -161,18 +164,55 @@ void *pkg_find(Str *name)
 
 /* ---- the content hash ---- */
 
+static Vec *pkg_files; /* spec 013 (H6): {path, bytes} of every hashed file: what is loaded */
+
+/* The bytes hashed for path (their length), -2 when path lies in a listed package but was not hashed
+ * (H5: never loaded from the disk), or -1 when it is no package file. */
+long pkg_cached(Str *path, char **text)
+{
+    for (long i = 0; pkg_files && i + 1 < pkg_files->n; i += 2)
+        if (str_eq(vec_get(pkg_files, i), path)) {
+            Str *t = vec_get(pkg_files, i + 1);
+            *text = t->data;
+            return t->len;
+        }
+    for (long i = 0; pkg_entries && i < pkg_entries->n; i++) {
+        Pkg *e = vec_get(pkg_entries, i);
+        if (e->state == 1 && path_under(path, e->dir)) return -2;
+    }
+    return -1;
+}
+
+/* Spec 013 (M4): 1 when the resolved path lies in a listed package's directory (resolved). */
+int pkg_contains(Str *real)
+{
+    for (long i = 0; pkg_entries && i < pkg_entries->n; i++) {
+        Pkg *e = vec_get(pkg_entries, i);
+        Str *dir = rt_resolve(e->dir);
+        if (dir && path_under(real, dir)) return 1;
+    }
+    return 0;
+}
+
 /* SHA-256 over every .vo file under dir, in byte order of the relative paths:
- * PATH 0 LENGTH 0 BYTES each. 0 when hashed; -1 when dir is missing or has no .vo file. */
-long pkg_hash(Str *dir, char *out)
+ * PATH 0 LENGTH 0 BYTES each. 0 when hashed (keep: the bytes are kept for loading); -1 when dir is
+ * missing or has no .vo file; -2 when a directory cannot be read or a link leads outside it (H5). */
+long pkg_hash(Str *dir, char *out, int keep)
 {
     long fd = sys_open(dir->data, O_DIRECTORY);
     if (fd < 0) return -1;
     long from = path_n; /* the files, appended to path_list and taken back after */
-    walk_dir(dir, (int)fd);
+    walk_strict = 1;
+    walk_failed = 0;
+    walk_root = rt_resolve(dir);
+    if (!walk_root) walk_failed = 1;
+    else walk_dir(dir, (int)fd);
+    walk_strict = 0;
     sys_close((int)fd);
     sort_paths(from);
-    long r = -1;
-    if (path_n != from) {
+    long r = walk_failed ? -2 : -1;
+    if (keep && !pkg_files) pkg_files = vec_new();
+    if (!walk_failed && path_n != from) {
         sha256_init();
         long i;
         for (i = from; i < path_n; i++) {
@@ -190,6 +230,10 @@ long pkg_hash(Str *dir, char *out)
             pkg_hash_buf[0] = 0;
             sha256_update(pkg_hash_buf, 1);
             sha256_update(text, n);
+            if (keep) {
+                vec_push(pkg_files, p);
+                vec_push(pkg_files, str_new(text, n));
+            }
         }
         if (i == path_n) {
             sha256_final(out);
@@ -221,8 +265,9 @@ long pkg_verify(void *entry, Node *node)
     if (e->state) return e->state != 2;
     char *code;
     Str *m;
-    if (pkg_hash(e->dir, pkg_hash_buf) < 0) {
-        m = msg(M_MISSING, e->name, e->raw, 0);
+    long h = pkg_hash(e->dir, pkg_hash_buf, 1);
+    if (h < 0) {
+        m = msg(h == -2 ? M_UNREADABLE : M_MISSING, e->name, e->raw, 0);
         code = "E0702";
     } else if (mem_eq(pkg_hash_buf, e->pin, 32)) {
         e->state = 1;
@@ -236,7 +281,9 @@ long pkg_verify(void *entry, Node *node)
         sb_byte(sb, ' ');
         sb_str(sb, e->name);
         sb_byte(sb, ' ');
-        sb_str(sb, e->raw);
+        /* spec 013 (L5): the directory as the command will read it: from the working directory */
+        Str *cwd = rt_start_cwd(), *real = rt_resolve(e->dir);
+        sb_str(sb, e->raw->data[0] == '/' || !cwd || !real ? e->raw : pkg_rel_dir(cwd, real));
         m = msg("$1 Review the change, then run `vo package $2`.", changed, sb_finish(sb), 0);
         code = "E0701";
     }
@@ -512,7 +559,8 @@ int cmd_package(void)
     Str *dir_arg = str_from_cstr(args[2]); /* DIRECTORY: resolved, hashed */
     Str *abs = rt_resolve(dir_arg);
     if (!abs) pkg_fail("E0702", msg("Cannot find the directory `$1`.", dir_arg, 0, 0));
-    if (pkg_hash(abs, pkg_hash_buf) < 0) pkg_fail("E0702", msg(M_MISSING, name, str_from_cstr(args[2]), 0));
+    long h = pkg_hash(abs, pkg_hash_buf, 0);
+    if (h < 0) pkg_fail("E0702", msg(h == -2 ? M_UNREADABLE : M_MISSING, name, str_from_cstr(args[2]), 0));
     Str *raw = pkg_rel_dir(pkg_dir, abs); /* the directory as the manifest writes it */
     if (!e) {                             /* added */
         e = alloc(sizeof(Pkg));

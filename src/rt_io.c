@@ -84,14 +84,15 @@ Str *rt_read_all(Node *node)
 Variant *rt_read_file(Str *path)
 {
     char *text;
-    long len = read_whole_file(path->data, &text);
+    long fd = rt_open_file(EF_FREAD, path, O_RDONLY | O_NONBLOCK); /* spec 013: checked, beneath its scope */
+    long len = fd < 0 ? fd : read_whole_fd(fd, &text);
     if (len >= 0) return make_result(0, (long)str_new(text, len));
     return make_result(1, (long)msg("cannot read $1", path, 0, 0));
 }
 
 Variant *rt_write_file(Str *path, Str *text)
 {
-    long fd = sys_open(path->data, O_WRCREAT);
+    long fd = rt_open_file(EF_FWRITE, path, O_WRCREAT); /* spec 013: checked, beneath its scope */
     if (fd < 0) return make_result(1, (long)msg("cannot write $1", path, 0, 0));
     write_all((int)fd, text->data, text->len);
     sys_close((int)fd);

@@ -1,0 +1,15 @@
+# H1: a callee's narrower scope reached outside main's through a link (data/up -> ..).
+fn show(p: str) uses console, file.read("data/up/") {
+    match read_file(p) {
+        case ok(s) {
+            print("callee read " + p + ": " + s);
+        }
+        case err(e) {
+            print("err: " + e);
+        }
+    }
+}
+
+fn main() uses console, file.read("data/") {
+    show("data/up/secret.txt");
+}

@@ -1,0 +1,3 @@
+export fn quiet(s: str) -> str {
+    return lower(s);
+}

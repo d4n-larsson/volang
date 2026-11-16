@@ -1,0 +1,6 @@
+h11_cyclic_eq.vo:11:15: runtime error[R0005]: Stack exhausted: the recursion is too deep.
+  11 |     print(str(a == b));
+     |               ^^^^^^
+trace:
+  at main (h11_cyclic_eq.vo:11:15)
+      a: R = ..., b: R = ...

@@ -1,5 +1,6 @@
-scope_escape.vo:2:9: runtime error[R0010]: file.write("out/../x.txt") is not allowed: `main` declares console, file.write("out/").
-   2 |     try write_file("out/../x.txt", "no");
-     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+scope_escape.vo:3:9: runtime error[R0010]: file.write("out/../x.txt") is not allowed: `main` declares console, file.write("out/").
+   3 |     try write_file(path, "no");
+     |         ^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at main (scope_escape.vo:2:9)
+  at main (scope_escape.vo:3:9)
+      path: str = "out/../x.txt"

@@ -1,0 +1,8 @@
+write victim.txt untouched\n
+symlink victim.txt main.vo.vo-fmt.tmp
+symlink victim.txt main.vo.vo-edit.tmp
+symlink victim.txt vo.effects.vo-fmt.tmp
+vo fmt main.vo
+vo edit rename main.vo main.vo:1:4 hello
+vo effects --update main.vo
+keep victim.txt main.vo vo.effects

@@ -28,6 +28,9 @@
 #define AT_FDCWD (-100)
 #define O_RDONLY (0)
 #define O_WRCREAT (0x241) /* O_WRONLY | O_CREAT | O_TRUNC */
+#define O_NONBLOCK (0x800) /* spec 013: the same on x86-64, ARM64 and RISC-V */
+#define O_CLOEXEC (0x80000)
+#define O_PATH (0x200000)
 
 /* ---- heap objects: header size:u32 | kind:u32 ---- */
 #define OBJ_STR (1)
@@ -364,7 +367,7 @@
 #define B_FLOAT_TEXT (52) /* spec 007: __float_text, callable only from std/ (research R5) */
 #define B_HTTP_EXCHANGE (53) /* spec 007: __http_exchange (host, port, request) -> result[str], net */
 #define B_TEXT_FLOAT (54) /* spec 007: __text_float (s) -> float, up to 17 significant digits (json) */
-#define B_LAST (59) /* the last builtin id with a btab entry */
+#define B_LAST (60) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -1438,8 +1441,29 @@ extern long doc_file(long file, Str *module, Str *item_name);
 extern long serve_address_port(Str *s, long *all);
 /* src/serve.c (spec 011) */
 extern long serve_guard;
+extern long rt_root_frame;
+extern int rt_start_cwd_known(void);
+extern long rt_open_file(long bit, Str *path, long flags);
+extern long read_whole_fd(long fd, char **out);
+extern EffSet *rt_es_grant(EffSet *declared, EffSet *caller);
 extern Variant *rt_serve_listen(Str *address);
+/* spec 013 (R4): the state of framing one HTTP message (serve.c http_frame) */
+typedef struct HttpFrame {
+    long scanned;  /* bytes searched for the end of the head */
+    long head;     /* the head's length with its blank line, 0 until found */
+    long length;   /* Content-Length, -1 when none */
+    long chunked;  /* Transfer-Encoding: chunked */
+    long trailers; /* the last chunk was read */
+    long at;       /* where chunk parsing resumes */
+    long overhead; /* chunk framing bytes so far (counted against the head limit) */
+    SB *body;      /* the decoded body */
+    Str *out;      /* the framed message, when complete */
+    char *why;     /* what was wrong, after -400 */
+} HttpFrame;
+extern long http_frame(HttpFrame *f, char *buf, long n, int eof, int response);
+extern Str *rt_http_part(Str *m, long which);
 extern Variant *rt_serve_next(long listener);
+extern void fx_builtin_literal(Node *call, long id);
 extern void rt_serve_reply(Str *text);
 extern Variant *rt_serve_call(void *fn, long request, Node *call);
 extern long tr_depth_get(void);
@@ -1554,6 +1578,7 @@ extern Str *fmt_file(int file);
 
 /* src/gc.c */
 extern long gc_on;
+extern long gc_busy;
 extern long gc_perm;
 extern long gc_limit;
 extern long gc_since;
@@ -1675,6 +1700,12 @@ extern void path_push(Str *str);
 extern void sort_paths(long from);
 extern int ends_with_vo(Str *str);
 extern void walk_dir(Str *dirpath, int fd);
+extern long walk_strict, walk_failed;
+extern Str *walk_root;
+extern long pkg_cached(Str *path, char **text);
+extern int pkg_contains(Str *real);
+extern SB *sb_escape_controls(SB *sb);
+extern long render_depth;
 extern void expand_paths(void);
 extern long load_source(Str *path);
 extern char *cmd_name(void);
@@ -1723,7 +1754,7 @@ extern long pkg_hex_decode(char *p, char *out);
 extern void pkg_parse(long file);
 extern Str *path_join(Str *dir, Str *rel);
 extern void *pkg_find(Str *name);
-extern long pkg_hash(Str *dir, char *out);
+extern long pkg_hash(Str *dir, char *out, int keep);
 extern Str *pkg_hash_text(char *hash);
 extern long pkg_verify(void *entry, Node *node);
 extern void *pkg_import_path(Node *import, FileRec *importer);
@@ -1990,6 +2021,8 @@ extern void vo_exit(int code);
 extern long sys_read(int fd, void *buf, long n);
 extern long sys_write(int fd, void *buf, long n);
 extern long sys_open(char *path, int flags);
+extern Str *tmp_path(Str *path, char *tag);
+extern long open_tmp(Str *tmp);
 extern long sys_close(int fd);
 extern long sys_getdents64(int fd, void *buf, long n);
 extern long sys_rename(char *from, char *to);

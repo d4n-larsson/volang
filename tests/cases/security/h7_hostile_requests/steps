@@ -1,0 +1,13 @@
+start vo run service.vo
+request-raw GET / HTTP/1.1\r\nX:\x80\r\n\r\n
+request-raw GET /?\x80 HTTP/1.1\r\n\r\n
+request-raw POST / HTTP/1.1\r\nContent-Length: 1\r\n\r\n\x80
+request-raw POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1\r\n\x80\r\n0\r\n\r\n
+request-raw POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nx\n2a\r\nFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF\r\n\r\n0\r\n\r\n
+request-raw POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nx\n21\r\nabc1d\r\nyyyyyyyyyyyyyyyyyyyyyyyyyy\r\n0\r\n2\r\n\r\n
+request-raw POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1;{bytes:70000}\r\nx\r\n0\r\n\r\n
+request-raw POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1\r\nx\r\n0\r\nX-T: {bytes:70000}\r\n\r\n
+request-raw POST / HTTP/1.1\r\nTransfer-Encoding: chunked\r\n\r\n1;a=b\r\nx\r\n0\r\nX-T: 1\r\n\r\n
+request-raw GET /bare-lf HTTP/1.1\nX: 1\r\n\r\n
+request GET /fine
+signal TERM

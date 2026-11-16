@@ -423,6 +423,34 @@ void diag_human(SB *sb, Diag *d)
     }
 }
 
+/* Spec 013 (L7): human output shows control bytes from hostile source (escape sequences, a lone CR)
+ * as \xNN instead of sending them to the terminal; tab, newline and CR before LF stay.
+ * ponytail: the caret line still counts an escaped byte as one column */
+SB *sb_escape_controls(SB *sb)
+{
+    long n = sb->len, k = 0;
+    for (long i = 0; i < n; i++) {
+        int c = (unsigned char)sb->ptr[i];
+        k += (c < 0x20 && c != '\t' && c != '\n' && !(c == '\r' && i + 1 < n && sb->ptr[i + 1] == '\n')) || c == 0x7f;
+    }
+    if (!k) return sb;
+    GC_ROOT(&sb);
+    SB *out = sb_new();
+    GC_ROOT(&out);
+    for (long i = 0; i < n; i++) {
+        int c = (unsigned char)sb->ptr[i];
+        if ((c < 0x20 && c != '\t' && c != '\n' && !(c == '\r' && i + 1 < n && sb->ptr[i + 1] == '\n')) || c == 0x7f) {
+            sb_cstr(out, "\\x");
+            sb_byte(out, "0123456789abcdef"[c >> 4]);
+            sb_byte(out, "0123456789abcdef"[c & 15]);
+        } else {
+            sb_byte(out, c);
+        }
+    }
+    GC_UNROOT(2);
+    return out;
+}
+
 /* Sorts, drops overlapping fixes, caps at 50, and writes every diagnostic once. */
 void diag_emit_all(int json, int fd)
 {
@@ -439,10 +467,12 @@ void diag_emit_all(int json, int fd)
         Diag *d = diag_arr[i];
         diag_filter_fixes(d);
         sb = sb_new();
-        if (json)
+        if (json) {
             diag_json(sb, d);
-        else
+        } else {
             diag_human(sb, d);
+            sb = sb_escape_controls(sb);
+        }
         out_bytes(fd, sb->ptr, sb->len);
     }
     GC_UNROOT(1);

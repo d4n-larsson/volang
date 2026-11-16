@@ -1,0 +1,20 @@
+$ vo effects --update main.vo
++ main.vo:each: E
++ main.vo:main: console, file.read("data/")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+read data/x: inside
+
+--- stderr
+main.vo:10:15: runtime error[R0010]: file.read("secret.txt") is not allowed: `main` declares console, file.read("data/").
+  10 |         match read_file(p) {
+     |               ^^^^^^^^^^^^
+trace:
+  at anonymous function (main.vo:10:15)
+      p: str = "secret.txt"
+  at each (main.vo:4:9)
+      xs: list[str] = ["data/x", "secret.txt"], f: fn(str) uses console, file.read = <fn(str) uses console, file.read>, x: str = "secret.txt"
+  at main (main.vo:9:5)
+--- exit 70

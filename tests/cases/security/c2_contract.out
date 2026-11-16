@@ -1,0 +1,8 @@
+c2_contract.vo:16:36: error[E0301]: Expected `list[fn(str)]`, found `list[fn(str) uses console, file.read]`.
+  16 |     requires each("/etc/hostname", [leak])
+     |                                    ^^^^^^
+  expected `list[fn(str)]`, found `list[fn(str) uses console, file.read]`
+c2_contract.vo:22:9: warning[W0201]: `y` is never used.
+  22 |     let y = double(2);
+     |         ^
+1 error, 1 warning

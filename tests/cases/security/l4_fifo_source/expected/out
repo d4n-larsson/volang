@@ -1,0 +1,10 @@
+$ vo check src
+error[T0002]: Cannot read `src/pipe.vo`.
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}
+--- stderr
+--- exit 66
+$ vo check src/pipe.vo
+error[T0002]: Cannot read `src/pipe.vo`.
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":0}
+--- stderr
+--- exit 66

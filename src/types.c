@@ -321,7 +321,7 @@ int ty_unify(Type *pattern, Type *t, Node *owner, Type **bindings)
  * Generic code resolves its types at run time. The results are permanent (interned types and
  * type-argument vecs in the permanent arena), so they are memoized by the pointers they depend on: a
  * hot generic loop pays one table lookup instead of a substitution walk and an allocation. */
-enum { MEMO_HASP = 1, MEMO_HASPV, MEMO_TARGS, MEMO_CONCRETE, MEMO_ESUBST };
+enum { MEMO_HASP = 1, MEMO_HASPV, MEMO_TARGS, MEMO_CONCRETE, MEMO_ESUBST, MEMO_EGRANT };
 
 typedef struct MemoEntry {
     unsigned long a, b, kind, value;
@@ -444,5 +444,22 @@ EffSet *rt_es_subst(EffSet *set, Node *owner, Vec *args)
     if (r) return r;
     r = es_subst(set, owner, args);
     memo_put(MEMO_ESUBST, (long)set, (long)args, (long)r);
+    return r;
+}
+
+/* Spec 013 (C3): the grant of a frame whose declaration has effect parameters: its own declared
+ * effects, with every effect parameter standing for the caller's grant. The parameter's binding is
+ * a requirement set ("any scope" bits) and is never used as a grant. */
+EffSet *rt_es_grant(EffSet *declared, EffSet *caller)
+{
+    if (!declared || !es_evar_count(declared)) return declared;
+    EffSet *r = (EffSet *)memo_get(MEMO_EGRANT, (long)declared, (long)caller);
+    if (r) return r;
+    perm_begin(); /* memoized: never collected */
+    EffSet *own = es_new((long)declared->mask);
+    own->scopes = declared->scopes;
+    r = caller ? es_union(own, caller) : own;
+    perm_end();
+    memo_put(MEMO_EGRANT, (long)declared, (long)caller, (long)r);
     return r;
 }

@@ -1,0 +1,5 @@
+mkdir src
+write src/main.vo fn main() uses console {\n    print("ok");\n}\n
+mkfifo src/pipe.vo
+vo check src
+vo check src/pipe.vo

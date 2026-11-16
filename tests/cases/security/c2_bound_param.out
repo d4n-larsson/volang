@@ -1,0 +1,5 @@
+c2_bound_param.vo:16:36: error[E0301]: Expected `list[fn() uses console]`, found `list[fn() uses console, file.read]`.
+  16 |     run_all(fn() { print("hi"); }, [fn() { leak(); }]);
+     |                                    ^^^^^^^^^^^^^^^^^^
+  expected `list[fn() uses console]`, found `list[fn() uses console, file.read]`
+1 error, 0 warnings

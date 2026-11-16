@@ -1,0 +1,19 @@
+variant Action[T] {
+    run(fn(T));
+    skip;
+}
+
+fn leak(name: str) uses console, file.read {
+    match read_file(name) {
+        case ok(s) { print("read: " + s); }
+        case err(e) { print("err: " + e); }
+    }
+}
+
+fn main() {
+    let a = Action.run(leak);
+    match a {
+        case run(f) { f("/etc/hostname"); }
+        case skip { }
+    }
+}

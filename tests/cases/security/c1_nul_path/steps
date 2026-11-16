@@ -1,0 +1,4 @@
+vo effects --update main.vo
+vo run main.vo
+vo test main.vo
+keep victim.txt

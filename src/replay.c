@@ -286,8 +286,8 @@ void *io_read_file(Str *path)
     GC_ROOT(&path);
     if (rcd_mode == 2) {
         Event *e = rp_take(EVK_READ_FILE, path);
-        if (e->result == EVR_DENIED) {
-            rt_check_path(EF_FREAD, path);         /* the same R0010 as the recorded run */
+        rt_check_path(EF_FREAD, path); /* spec 013 (M1, L2): every file event, lexically, whatever its result */
+        if (e->result == EVR_DENIED) {         /* the same R0010 as the recorded run */
             rp_mismatch_now(EVK_READ_FILE, path); /* (allowed now: the program or its grant changed) */
         }
         r = rp_result(e);
@@ -313,8 +313,8 @@ void *io_write_file(Str *path, Str *text)
     GC_ROOT(&text);
     if (rcd_mode == 2) {
         Event *e = rp_take(EVK_WRITE_FILE, path);
+        rt_check_path(EF_FWRITE, path); /* spec 013 (M1, L2): every file event, lexically, whatever its result */
         if (e->result == EVR_DENIED) {
-            rt_check_path(EF_FWRITE, path);
             rp_mismatch_now(EVK_WRITE_FILE, path);
         }
         r = rp_result(e);
@@ -401,6 +401,25 @@ Variant *io_http_exchange(Str *host, long port, Str *request)
             rcd_event(EVK_HTTP, host, (long)(uint32_t)r->tag, r->pay.s, port);
             rcd_request = 0;
         }
+    }
+    if (!r->tag) { /* spec 013 (R4): the raw response (as recorded) is framed here, by the server's rules */
+        HttpFrame f = {0};
+        GC_ROOT(&r);
+        GC_ROOT(&f.body);
+        GC_ROOT(&f.out);
+        Str *raw = r->pay.s;
+        long st = http_frame(&f, raw->data, raw->len, 1, 1);
+        if (st > 0) {
+            r = make_result(0, (long)f.out);
+        } else {
+            SB *sb = sb_new();
+            GC_ROOT(&sb);
+            sb_cstr(sb, "malformed response: ");
+            sb_cstr(sb, st == -413 ? "the body is larger than 16 MiB" : st == -431 ? "the head is larger than 64 KiB" : f.why);
+            r = make_result(1, (long)sb_finish(sb));
+            GC_UNROOT(1);
+        }
+        GC_UNROOT(3);
     }
     GC_UNROOT(3);
     return r;
@@ -560,8 +579,12 @@ char *rp_int(char *p, char *end, long *out)
         p++;
     }
     char *digits = p;
-    while (p < end && (unsigned)(*p - '0') < 10) v = v * 10 + (unsigned long)(*p++ - '0');
-    if (p == digits) rp_bad();
+    while (p < end && (unsigned)(*p - '0') < 10) {
+        unsigned long d = (unsigned long)(*p++ - '0');
+        if (v > (0x8000000000000000UL - d) / 10) rp_bad(); /* spec 013 (L6): over 64 bits */
+        v = v * 10 + d;
+    }
+    if (p == digits || (!negative && v > 0x7fffffffffffffffUL)) rp_bad();
     *out = negative ? (long)(0UL - v) : (long)v;
     return p;
 }
@@ -614,11 +637,14 @@ void rp_line(char *p, char *end)
             }
             p++;
             if (field == 5) rf_args = v;
-        } else if (*p == 't') { /* true */
+        } else if (*p == 't') { /* true (spec 013, L6: the literals exactly) */
+            if (end - p < 4 || !mem_eq(p, "true", 4)) rp_bad();
             p += 4;
         } else if (*p == 'f') { /* false */
+            if (end - p < 5 || !mem_eq(p, "false", 5)) rp_bad();
             p += 5;
         } else if (*p == 'n') { /* null (clock_ms) */
+            if (end - p < 4 || !mem_eq(p, "null", 4)) rp_bad();
             p += 4;
             if (field == 4) rf_clock = -1;
         } else { /* an integer */
@@ -749,6 +775,26 @@ void rp_check_event(Event *e)
 
 /* ---- the command ---- */
 
+/* Spec 013 (C5): the recorded program must be a relative path ending in `.vo`, without `..` or empty
+ * components, naming a regular file. */
+static int rp_program_ok(Str *program)
+{
+    if (!program || program->len < 4 || program->data[0] == '/') return 0;
+    char *p = program->data;
+    long n = program->len;
+    if (!mem_eq(p + n - 3, ".vo", 3)) return 0;
+    for (long i = 0; i < n;) {
+        long j = i;
+        while (j < n && p[j] != '/') j++;
+        if (j == i || (j - i == 2 && p[i] == '.' && p[i + 1] == '.')) return 0;
+        for (long k = i; k < j; k++)
+            if (!p[k]) return 0;
+        i = j + 1;
+    }
+    char *text;
+    return read_whole_file(p, &text) >= 0; /* opened without blocking; regular files only */
+}
+
 /* `vo replay RECORDING` (contracts/cli.md, contracts/recording.md). */
 int cmd_replay(void)
 {
@@ -762,7 +808,9 @@ int cmd_replay(void)
         toolchain_error((int)opt_json, (int)report_fd, "T0002", m, ps);
         return EXIT_NOINPUT;
     }
+    if (gc_limit && len > gc_limit) rp_bad(); /* spec 013 (L6): a recording larger than --max-memory */
     rp_read(text, len);
+    if (!rp_program_ok(rp_program)) rp_bad(); /* spec 013 (C5) */
     rt_set_option(1, rp_seed); /* the recorded run's seed, clock and arguments */
     if (rp_clock >= 0) rt_set_option(2, rp_clock);
     long n = rp_args ? rp_args->n : 0;

@@ -5,6 +5,6 @@ std/http.vo:83:19: runtime error[R0009]: Time limit of 1 s exceeded.
      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at exchange (std/http.vo:83:19)
-  at get (std/http.vo:188:12)
+  at get (std/http.vo:127:12)
   at main (main.vo:23:10)
 --- exit 124

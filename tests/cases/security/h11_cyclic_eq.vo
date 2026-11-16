@@ -1,0 +1,12 @@
+# H11: == on cyclic values recursed until the native stack ran out (SIGSEGV).
+record R {
+    kids: list[R];
+}
+
+fn main() uses console {
+    let a = new R { kids: new list[R] };
+    push(a.kids, a);
+    let b = new R { kids: new list[R] };
+    push(b.kids, b);
+    print(str(a == b));
+}

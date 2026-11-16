@@ -1,0 +1,18 @@
+fn call_all[T](x: T, m: map[str, fn(T)]) {
+    for k in keys(m) {
+        m[k](x);
+    }
+}
+
+fn leak(name: str) uses console, file.read {
+    match read_file(name) {
+        case ok(s) { print("map: " + s); }
+        case err(e) { print("err: " + e); }
+    }
+}
+
+fn main() {
+    var m = new map[str, fn(str) uses console, file.read];
+    set m["a"] = leak;
+    call_all("/etc/hostname", m);
+}

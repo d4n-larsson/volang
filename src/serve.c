@@ -145,133 +145,207 @@ static int sv_lower_prefix(char *p, char *end, char *lower)
     return 1;
 }
 
-/* Where the request in buf[0..n) ends, given the head ends at head (after its blank line): 0 when
- * more is needed, or the length; a negative status when it is refused (-400, -413, -431). */
-static long sv_framing(char *buf, long n, long head)
+/* ---- spec 013 (R4): one framing for requests (server) and responses (client) ----
+ * http_frame decides where a message ends and decodes its body, incrementally (called again as bytes
+ * arrive, resuming where it stopped: L9). The head must be ASCII text in CRLF lines; the head and all
+ * chunk framing (size lines, extensions, trailers) count against HEAD_MAX, the decoded body against
+ * BODY_MAX (H9). A finished message is the head (with its blank line) followed by the decoded body;
+ * __http_part splits it without UTF-8 boundary checks, so vo code slices only ASCII (H7, M2). */
+
+/* Frames buf[0..n) with state f (zeroed before the first call): >0 when the message is complete (then
+ * f->out holds it), 0 when more bytes are needed, or -400/-413/-431. eof: no more bytes will come;
+ * response: a body without a length runs to the end. */
+#define BAD(reason) return (f->why = (reason), -400)
+long http_frame(HttpFrame *f, char *buf, long n, int eof, int response)
 {
-    long lines = 0, length = -1;
-    int chunked = 0;
-    for (char *p = buf; p < buf + head;) { /* header lines: Content-Length, Transfer-Encoding */
-        char *le = p;
-        while (le < buf + head && *le != '\n') le++;
-        lines++;
-        if (sv_lower_prefix(p, le, "content-length:")) {
-            char *q = p + 15;
-            while (q < le && (*q == ' ' || *q == '\t')) q++;
-            length = 0;
-            if (q >= le || *q < '0' || *q > '9') return -400;
-            for (; q < le && *q >= '0' && *q <= '9'; q++) {
-                length = length * 10 + (*q - '0');
-                if (length > BODY_MAX) return -413;
-            }
-        } else if (sv_lower_prefix(p, le, "transfer-encoding:")) {
-            for (char *q = p + 18; q + 7 <= le; q++)
-                if (sv_lower_prefix(q, le, "chunked")) chunked = 1;
+    if (!f->head) { /* the blank line ending the head, searched from where the last call stopped */
+        long i = f->scanned > 3 ? f->scanned - 3 : 0;
+        for (; i + 3 < n; i++)
+            if (buf[i] == '\r' && buf[i + 1] == '\n' && buf[i + 2] == '\r' && buf[i + 3] == '\n') break;
+        if (i + 3 >= n) {
+            f->scanned = n;
+            if (n > HEAD_MAX) return -431;
+            if (eof) BAD("no end of headers");
+            return 0;
         }
-        p = le + 1;
+        f->head = i + 4;
+        if (f->head > HEAD_MAX) return -431;
+        long lines = 0; /* ASCII text in CRLF lines; header names and values are read by vo */
+        for (long k = 0; k < f->head; k++) {
+            int c = (unsigned char)buf[k];
+            if (c == '\r') {
+                if (buf[k + 1] != '\n') BAD("a CR without LF in the head");
+            } else if (c == '\n') {
+                if (!k || buf[k - 1] != '\r') BAD("an LF without CR in the head");
+                lines++;
+            } else if ((c < 0x20 && c != '\t') || c >= 0x7f) {
+                BAD("a byte that is not ASCII text in the head");
+            }
+        }
+        if (lines - 2 > HEADERS_MAX) return -431; /* the first line and the blank line are not headers */
+        f->length = -1;
+        for (char *p = buf; p < buf + f->head;) { /* Content-Length, Transfer-Encoding */
+            char *le = p;
+            while (le < buf + f->head && *le != '\n') le++;
+            if (sv_lower_prefix(p, le, "content-length:")) {
+                char *q = p + 15;
+                while (q < le && (*q == ' ' || *q == '\t')) q++;
+                if (q >= le || *q < '0' || *q > '9') BAD("bad Content-Length");
+                f->length = 0;
+                for (; q < le && *q >= '0' && *q <= '9'; q++) {
+                    f->length = f->length * 10 + (*q - '0');
+                    if (f->length > BODY_MAX) return -413;
+                }
+                while (q < le && (*q == ' ' || *q == '\t' || *q == '\r')) q++;
+                if (q < le) BAD("bad Content-Length");
+            } else if (sv_lower_prefix(p, le, "transfer-encoding:")) {
+                for (char *q = p + 18; q + 7 <= le; q++)
+                    if (sv_lower_prefix(q, le, "chunked")) f->chunked = 1;
+            }
+            p = le + 1;
+        }
+        f->at = f->head;
+        if (f->chunked) { /* the decoded message: the head, then each chunk's data */
+            f->body = sb_new();
+            sb_bytes(f->body, buf, f->head);
+        }
     }
-    if (lines - 2 > HEADERS_MAX) return -431; /* the request line and the blank line are not headers */
-    if (!chunked) {
-        if (length < 0) length = 0;
-        return n - head >= length ? head + length : 0;
+    SB *body = f->body;
+    if (!f->chunked) { /* the message as received: no copy but the result */
+        long have = n - f->head;
+        if (f->length < 0 && !response) f->length = 0; /* a request without a length has no body */
+        if (f->length >= 0) {
+            if (have < f->length) {
+                if (eof) BAD("body shorter than Content-Length");
+                return 0;
+            }
+            have = f->length;
+        } else {          /* a response without a length: up to the end */
+            if (have > BODY_MAX) return -413;
+            if (!eof) return 0;
+        }
+        f->out = str_new(buf, f->head + have);
+        return 1;
     }
-    long at = head, total = 0; /* chunks: HEX\r\n DATA \r\n ... 0\r\n\r\n */
-    for (;;) {
-        long size = 0, digits = 0;
-        while (at < n && buf[at] != '\r' && buf[at] != '\n' && buf[at] != ';') {
+    while (!f->trailers) { /* chunks: HEX[;ext]CRLF DATA CRLF ... 0 CRLF [trailers] CRLF */
+        long at = f->at, size = 0, digits = 0;
+        while (at < n && buf[at] != '\r' && buf[at] != ';') {
             int c = (unsigned char)buf[at++];
             int v = c >= '0' && c <= '9' ? c - '0' : c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
-            if (v < 0) return -400;
-            size = size * 16 + v;
+            if (v < 0) BAD("bad chunk");
             if (++digits > 8) return -413;
+            size = size * 16 + v;
         }
-        while (at < n && buf[at] != '\n') at++; /* chunk extensions, \r */
-        if (at >= n) return 0;
-        if (!digits) return -400;
-        at++;
-        total += size;
-        if (total > BODY_MAX) return -413;
-        if (size == 0) { /* trailers, then a blank line */
-            for (;;) {
-                long le = at;
-                while (le < n && buf[le] != '\n') le++;
-                if (le >= n) return 0;
-                if (le == at || (le == at + 1 && buf[at] == '\r')) return le + 1;
-                at = le + 1;
-            }
+        while (at < n && buf[at] != '\r') { /* an extension: counted as framing */
+            if (buf[at] == '\n') BAD("bad chunk");
+            if (f->head + f->overhead + (++at - f->at) > HEAD_MAX) return -431;
         }
-        if (n - at < size + 1) return 0;
-        at += size;
-        if (buf[at] == '\r') at++;
-        if (at >= n) return 0;
-        if (buf[at] != '\n') return -400;
-        at++;
+        if (at + 1 >= n) goto more;
+        if (!digits || buf[at + 1] != '\n') BAD("bad chunk");
+        at += 2;
+        long overhead = f->overhead + (at - f->at);
+        if (f->head + overhead > HEAD_MAX) return -431;
+        if (size == 0) { /* the last chunk: trailers follow */
+            f->overhead = overhead;
+            f->at = at;
+            f->trailers = 1;
+            break;
+        }
+        if (n - at < size + 2) goto more; /* (the size line is parsed again when more bytes come) */
+        if (body->len - f->head + size > BODY_MAX) return -413;
+        if (buf[at + size] != '\r' || buf[at + size + 1] != '\n') BAD("bad chunk");
+        sb_bytes(body, buf + at, size);
+        f->overhead = overhead;
+        f->at = at + size + 2;
     }
+    for (;;) { /* trailer lines (ignored), then the blank line */
+        long at = f->at, le = at;
+        while (le < n && buf[le] != '\n') le++;
+        if (le >= n) {
+            if (f->head + f->overhead + (n - at) > HEAD_MAX) return -431;
+            goto more;
+        }
+        if (le == at || buf[le - 1] != '\r') BAD("bad chunk");
+        f->overhead += le + 1 - at;
+        if (f->head + f->overhead > HEAD_MAX) return -431;
+        f->at = le + 1;
+        if (le == at + 1) goto done;
+    }
+more:
+    if (eof) BAD("chunk cut short");
+    return 0;
+done:
+    f->out = sb_finish(body);
+    return 1;
 }
 
-/* Reads one request from a new connection: its bytes, or 0 with *status the refusal (0: the
- * client closed without sending anything, which is not a request: the readiness probe of a test
- * harness, a port scanner). */
+/* Reads one request from a new connection: its framed message, or 0 with *status: the refusal (400,
+ * 408, 413, 431), 0 when the client closed without sending anything (not a request: a readiness probe,
+ * a port scanner), or 1 when a stop signal came (the server stops after closing the connection). The
+ * deadline and the stop signal are checked on every read (H9). */
 static Str *sv_read(long fd, long *status)
 {
+    HttpFrame f = {0};
     SB *sb = sb_new();
     GC_ROOT(&sb);
-    long end = sys_clock_ms() + READ_MS, head = 0;
+    GC_ROOT(&f.body);
+    GC_ROOT(&f.out);
+    long end = sys_clock_ms() + READ_MS;
     char buf[65536];
+    Str *msg_ = 0;
     *status = 0;
     for (;;) {
-        long got = vo_syscall6(SYS_recvfrom, fd, (long)buf, sizeof buf, 0, 0, 0);
-        if (got == -E_AGAIN) {
-            long left = end - sys_clock_ms();
-            if (left <= 0 || !sys_wait_fd(fd, POLLIN, left)) {
-                *status = sb->len ? 408 : 0;
-                break;
-            }
-            continue;
+        long left = end - sys_clock_ms();
+        if (left <= 0) {
+            *status = sb->len ? 408 : 0;
+            break;
         }
-        if (got <= 0) { /* closed before the request was complete */
-            *status = sb->len ? 400 : 0;
+        int w = sv_wait(fd, POLLIN, left);
+        if (w == 2) {
+            *status = 1;
+            break;
+        }
+        if (w != 1) continue;
+        long got = vo_syscall6(SYS_recvfrom, fd, (long)buf, sizeof buf, 0, 0, 0);
+        if (got == -E_AGAIN) continue;
+        if (got <= 0) { /* closed */
+            if (!sb->len) break;
+            long r = http_frame(&f, sb->ptr, sb->len, 1, 0);
+            if (r > 0) msg_ = f.out;
+            else *status = r < 0 ? -r : 400;
             break;
         }
         sb_bytes(sb, buf, got);
-        if (!head) {
-            for (long i = 3; i < sb->len; i++)
-                if (sb->ptr[i] == '\n' && sb->ptr[i - 1] == '\r' && sb->ptr[i - 2] == '\n' && sb->ptr[i - 3] == '\r') {
-                    head = i + 1;
-                    break;
-                }
-            if (!head && sb->len > HEAD_MAX) {
-                *status = 431;
-                break;
-            }
-            if (!head) continue;
-            if (head > HEAD_MAX) {
-                *status = 431;
-                break;
-            }
+        long r = http_frame(&f, sb->ptr, sb->len, 0, 0);
+        if (r > 0) {
+            msg_ = f.out;
+            break;
         }
-        long r = sv_framing(sb->ptr, sb->len, head);
         if (r < 0) {
             *status = -r;
             break;
         }
-        if (r > 0) {
-            Str *s = str_new(sb->ptr, r);
-            GC_UNROOT(1);
-            return s;
+        long need = f.head + f.length; /* a known length: room for exactly the whole message */
+        if (f.head && !f.chunked && f.length >= 0 && sb->cap < need) {
+            char *p = alloc_bytes(need);
+            mem_copy(p, sb->ptr, sb->len);
+            sb->ptr = p;
+            sb->cap = need;
         }
     }
-    GC_UNROOT(1);
-    return 0;
+    GC_UNROOT(3);
+    return msg_;
 }
 
-/* result[str]: the next request's bytes, or ok("") when a stop signal came (the server is then
- * stopped). Requests refused by sv_read are answered here and never reach the program. */
+/* result[str]: the next request (framed: head and decoded body), or ok("") when a stop signal came
+ * (the server is then stopped). Requests refused by sv_read are answered here and never reach the
+ * program. */
 Variant *rt_serve_next(long listener)
 {
     for (;;) {
         int w = sv_wait(listener, POLLIN, -1);
         if (w == 2) {
+        stop:;
             char info[128]; /* struct signalfd_siginfo */
             vo_syscall3(SYS_read, sv_sig, (long)info, sizeof info);
             sv_stop(listener);
@@ -283,15 +357,30 @@ Variant *rt_serve_next(long listener)
         long status;
         Str *req = sv_read(fd, &status);
         if (!req) {
-            if (status)
+            if (status > 1)
                 sv_refuse(fd, status);
             else
                 sys_close((int)fd);
+            if (status == 1) goto stop;
             continue;
         }
         sv_conn = fd;
         return make_result(0, (long)req);
     }
+}
+
+/* __http_part(message, 0|1): the head (without its blank line) or the body of a framed message, cut
+ * without UTF-8 boundary checks (spec 013: the body may hold any bytes). */
+Str *rt_http_part(Str *m, long which)
+{
+    long head = -1;
+    for (long i = 0; i + 3 < m->len; i++)
+        if (m->data[i] == '\r' && m->data[i + 1] == '\n' && m->data[i + 2] == '\r' && m->data[i + 3] == '\n') {
+            head = i;
+            break;
+        }
+    if (head < 0) return which ? str_new("", 0) : m;
+    return which ? str_new(m->data + head + 4, m->len - head - 4) : str_new(m->data, head);
 }
 
 /* Sends the response text on the current connection and closes it. */
@@ -312,6 +401,7 @@ Variant *rt_serve_call(void *fn, long request, Node *call)
     GC_ROOT(&fn);
     GC_ROOT(&request);
     long saved_vsp = vsp, saved_frame = cur_frame, outer = recover_point, depth = tr_depth_get();
+    long saved_gc_on = gc_on, saved_oom = oom_hook; /* spec 013 (H10): R0006 switches them off */
     volatile long result = 0;
     recover_point = (long)jb;
     serve_guard = 1;
@@ -329,6 +419,9 @@ Variant *rt_serve_call(void *fn, long request, Node *call)
         cur_frame = saved_frame;
         tr_depth_set(depth);
         rt_reporting = 0;
+        gc_on = saved_gc_on; /* spec 013 (H10, L11): the server goes on as before the request */
+        oom_hook = saved_oom;
+        rt_err_extra = 0;
         if (status == 1 && outer) jmp_restore((void *)outer, 1); /* the enclosing test's failure */
         result = (long)make_result(1, (long)str_from_cstr((char *)rt_err_code));
     }

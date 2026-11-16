@@ -8,7 +8,8 @@ each line of `steps` runs there, in order:
   vo ARGS... [< FILE]          run bin/vo ($VO_BIN, natively or under qemu) with stdin from FILE (default: empty)
   env NAME=VALUE ... vo ARGS... the same, with extra environment variables
   unset NAME ... vo ARGS...     the same, without those variables
-  rm PATH | cp A B | write PATH TEXT (TEXT with \\n escapes) | chmod MODE PATH
+  rm PATH | cp A B | write PATH TEXT (TEXT with \\n and \\xNN escapes, {bytes:N}) | chmod MODE PATH
+  symlink TARGET LINK | mkdir PATH | mkfifo PATH (spec 013)
   keep PATH...                  files the case produces or changes, compared with expected/PATH
   server http                   starts tests/http_server.py on a free port (spec 007): later lines may
                                 use {port}, and the port number reads `{port}` in outputs and kept files
@@ -16,7 +17,7 @@ each line of `steps` runs there, in order:
   start vo ARGS...              starts bin/vo in the background (spec 011) with {vport} a free port, and
                                 waits until it accepts connections (or exits); {vport} reads `{vport}`
   request METHOD PATH [BODY]    sends one HTTP/1.1 request to {vport}; the raw response goes to `out`
-  request-raw TEXT              sends TEXT as is (\\r and \\n escapes; {bytes:N} is N bytes `a`)
+  request-raw TEXT              sends TEXT as is (\\r, \\n and \\xNN escapes; {bytes:N} is N bytes `a`)
   wait MS                       lets MS milliseconds pass
   signal TERM|INT               signals the started vo and waits; its stdout, stderr and exit status go to `out`
   vo~ ARGS...                   like vo, but its stdout is left out of `out` (it may differ between
@@ -145,6 +146,7 @@ def run_case(case):
                     text = line_sub.split(None, 1)[1]
                     text = re.sub(r"\{bytes:(\d+)\}", lambda m: "a" * int(m.group(1)), text)
                     data = text.replace("\\r", "\r").replace("\\n", "\n").encode()
+                    data = re.sub(rb"\\x([0-9a-f]{2})", lambda m: bytes([int(m.group(1), 16)]), data)
                 out += b"$ " + line.encode() + b"\n" + mask(http_exchange(vport, data), port, vport) + b"\n--- end\n"
                 continue
             if words[0] == "wait":  # spec 011: let time pass (a server idle past --timeout)
@@ -179,17 +181,30 @@ def run_case(case):
                 continue
             if words[0] == "rm":
                 p = os.path.join(work, words[1])
-                shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)
+                shutil.rmtree(p) if os.path.isdir(p) and not os.path.islink(p) else os.remove(p)
                 continue
             if words[0] == "cp":
                 shutil.copy(os.path.join(work, words[1]), os.path.join(work, words[2]))
+                continue
+            if words[0] == "symlink":  # spec 013: symlink TARGET LINK (TARGET as written, LINK in the work dir)
+                os.symlink(words[1], os.path.join(work, words[2]))
+                continue
+            if words[0] == "mkdir":
+                os.makedirs(os.path.join(work, words[1]), exist_ok=True)
+                continue
+            if words[0] == "mkfifo":
+                os.mkfifo(os.path.join(work, words[1]))
                 continue
             if words[0] == "chmod":
                 os.chmod(os.path.join(work, words[2]), int(words[1], 8))
                 continue
             if words[0] == "write":
                 text = line.split(None, 2)[2] if len(line.split(None, 2)) > 2 else ""
-                open(os.path.join(work, words[1]), "w", encoding="utf-8").write(text.replace("\\n", "\n"))
+                text = re.sub(r"\{bytes:(\d+)\}", lambda m: "a" * int(m.group(1)), text)
+                text = re.sub(r"\\x([0-9a-f]{2})", lambda m: chr(int(m.group(1), 16)), text)
+                path = os.path.join(work, words[1])
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                open(path, "w", encoding="utf-8").write(text.replace("\\n", "\n"))
                 continue
             env = dict(os.environ)
             while words[0] in ("env", "unset"):

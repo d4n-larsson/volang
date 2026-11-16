@@ -1,0 +1,21 @@
+# C1: a NUL byte made the check see `data/x` and the open see `secret.txt`.
+fn main() uses console, file.read("data/") {
+    match read_file("secret.txt" + chr(0) + "/../data/x") {
+        case ok(s) {
+            print("read: " + s);
+        }
+        case err(e) {
+            print("err: " + e);
+        }
+    }
+}
+
+test "a NUL in a write path" uses file.write("out/") {
+    match write_file("victim.txt" + chr(0) + "/../out/y", "pwned") {
+        case ok() {
+            expect(false);
+        }
+        case err(_) {
+        }
+    }
+}

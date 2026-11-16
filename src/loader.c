@@ -12,6 +12,18 @@ static Vec *ld_order; /* files in dependency order (dependencies first) */
 static Vec *ex_decls; /* spec 010: declarations already reported as needing `export` ... */
 static Vec *ex_diags; /* ... and the diagnostic that carries the fix for each */
 static Vec *ld_stack; /* import nodes on the current DFS path */
+static Str *ld_tree;  /* spec 013 (M4): the program's tree (the entry file's directory, resolved) */
+
+/* 1 when the file at path, links followed, lies in the program's tree or a listed package (or does
+ * not exist: reported as missing instead). */
+static int inside_tree(Str *path)
+{
+    long fd = sys_open(path->data, O_PATH | O_CLOEXEC);
+    if (fd < 0) return 1;
+    sys_close((int)fd);
+    Str *real = rt_resolve(path);
+    return real && ((ld_tree && path_under(real, ld_tree)) || pkg_contains(real));
+}
 long ld_hard;         /* a loaded file had a hard syntax error */
 
 /* The id of the registered file with this path, or -1. */
@@ -100,7 +112,9 @@ long load_file(Str *path)
         if (id < 0) return -1;
         if (!id) {
             char *text;
-            long len = read_whole_file(path->data, &text);
+            long len = pkg_cached(path, &text); /* spec 013 (H5, H6): a package file: the bytes that were hashed */
+            if (len == -2) return -1;
+            if (len < 0) len = read_whole_file(path->data, &text);
             if (len < 0) return -1;
             id = file_add(path, text, len);
         }
@@ -153,6 +167,13 @@ void load_imports(int file)
         Str *rel = import_rel(imp);
         Str *path = import_path(imp, rel, f); /* spec 007: std/ and package roots */
         if ((void *)path == NO_PACKAGE) continue; /* E0701/E0702, reported */
+        if (!str_eq_cstr(vec_get(imp->a.v, 0), "std") && !inside_tree(path)) { /* (std is embedded) */
+            ck_err("E0211", imp,
+                   msg("`$1` leads outside this program's directory through a symbolic link: an import must "
+                       "stay inside it (or inside a listed package).",
+                       path, 0, 0));
+            continue;
+        }
         long target = load_file(path);
         if (target < 0) { /* missing file: E0205 */
             ck_err("E0205", imp, msg("Cannot find `$1` for this import.", rel, 0, 0));
@@ -271,6 +292,7 @@ void check_program(int file, int mode)
     ld_stack = vec_new();
     ex_decls = vec_new();
     ex_diags = vec_new();
+    ld_tree = rt_resolve(f->dir);
     load_imports(file);
     if (ld_hard) return;
     for (long i = 0; i < ld_order->n; i++) {
@@ -370,6 +392,7 @@ Str *scan_dir(Str *dir, Str *rel, Str *name, int self)
                 continue;
             }
             if (!ends_with_vo(ename)) continue;
+            if (!inside_tree(str_join2(dir, ename))) continue; /* spec 013 (M4): never read outside */
             long id = path_defines(str_join2(dir, ename), name);
             if (id < 0 || id == self) continue; /* the importing file itself */
             found = import_text_for(str_join2(rel, ename), name);

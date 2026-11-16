@@ -1,0 +1,7 @@
+fn hello(name: str) -> str {
+    return "hi " + name;
+}
+
+fn main() uses console {
+    print(hello("vo"));
+}

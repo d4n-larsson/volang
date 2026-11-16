@@ -1,0 +1,58 @@
+$ request-raw GET /echo HTTP/1.1\r\nX-Echo: a\nSet-Cookie: s=1\r\n\r\n
+HTTP/1.1 400 Bad Request
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw POST /echo HTTP/1.1\r\nContent-Length: 18\r\n\r\na\r\nSet-Cookie: s=1
+HTTP/1.1 500 Internal Server Error
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw POST /echo HTTP/1.1\r\nContent-Length: 17\r\n\r\na\nSet-Cookie: s=1
+HTTP/1.1 500 Internal Server Error
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw POST /echo HTTP/1.1\r\nContent-Length: 3\r\n\r\na\x00b
+HTTP/1.1 500 Internal Server Error
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw POST /echo HTTP/1.1\r\nContent-Length: 5\r\n\r\nplain
+HTTP/1.1 200 OK
+X-Echo: plain
+Content-Length: 7
+Connection: close
+
+echoed
+
+--- end
+$ request-raw POST /name HTTP/1.1\r\nContent-Length: 13\r\n\r\nSet-Cookie: s
+HTTP/1.1 500 Internal Server Error
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request-raw POST /name HTTP/1.1\r\nContent-Length: 4\r\n\r\nX-Ok
+HTTP/1.1 200 OK
+X-Ok: 1
+Content-Length: 6
+Connection: close
+
+named
+
+--- end
+$ signal TERM
+serving
+stopped
+--- stderr
+--- exit 0

@@ -1,0 +1,6 @@
+import leak.thing;
+import inside.quiet;
+
+fn main() uses console {
+    print(quiet("A"));
+}

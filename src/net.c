@@ -151,6 +151,7 @@ static int dns_lookup(Str *host, uint8_t *out)
     uint8_t q[512]; /* the query: header, QNAME, QTYPE A, QCLASS IN */
     static const uint8_t head[12] = {0x76, 0x6f, 0x01, 0x00, 0, 1, 0, 0, 0, 0, 0, 0};
     mem_copy((char *)q, (char *)head, 12);
+    vo_syscall3(SYS_getrandom, (long)q, 2, 0); /* spec 013 (L8): a random ID (the fixed one if it fails) */
     long n = 12, label = 0;
     for (long i = 0; i <= host->len; i++) {
         if (i == host->len || host->data[i] == '.') {
@@ -176,7 +177,10 @@ static int dns_lookup(Str *host, uint8_t *out)
             if (vo_syscall6(SYS_sendto, fd, (long)q, n, MSG_NOSIGNAL, 0, 0) != n) break;
             if (!net_wait(fd, POLLIN, DNS_WAIT_MS)) continue; /* no reply yet: ask again */
             long got = vo_syscall6(SYS_recvfrom, fd, (long)r, sizeof r, 0, 0, 0);
-            if (got < 12 || r[0] != 0x76 || r[1] != 0x6f || !(r[2] & 0x80)) continue;
+            /* our ID, a reply, and our question echoed (spec 013, L8) */
+            if (got < n || r[0] != q[0] || r[1] != q[1] || !(r[2] & 0x80) || r[4] || r[5] != 1 ||
+                !mem_eq((char *)r + 12, (char *)q + 12, n - 12))
+                continue;
             int rcode = r[3] & 15;
             if (rcode == 3) { /* NXDOMAIN */
                 found = 0;

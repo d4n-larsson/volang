@@ -1,0 +1,19 @@
+# C3: the reference's own `each` pattern dropped every scope of main's grant.
+fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
+    for x in xs {
+        f(x);
+    }
+}
+
+fn main() uses console, file.read("data/") {
+    each(["data/x", "secret.txt"], fn(p: str) {
+        match read_file(p) {
+            case ok(s) {
+                print("read " + p + ": " + s);
+            }
+            case err(e) {
+                print("err: " + e);
+            }
+        }
+    });
+}

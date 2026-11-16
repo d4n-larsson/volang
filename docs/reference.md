@@ -266,7 +266,7 @@ test "loads fixtures" uses file.read("fixtures/") { ... }
 - A function must declare everything it does and everything its callees declare (E0501, with a fix that adds exactly the missing effects). An effect nothing needs is W0501, with a fix that removes it.
 - Scopes narrow an effect: directories for `file.read`/`file.write` (relative to the directory the program starts in, e.g. `"out/"`; `"./"` is that directory itself), variable names for `env`, hosts for `net`, addresses for `serve` (`"8000"`: this machine only; `"0.0.0.0:8000"`: the network). A scope covers the directories under it. A caller's scopes must cover its callees' (E0503); an empty or absolute scope, or one with `..`, is E0506.
 - Canonical order (`vo fmt`): console, input, file.read, file.write, net, clock, random, env, serve; scopes sorted.
-- `main`'s clause is the grant of `vo run`, a test's clause the grant of that test. Paths and names are also checked at run time against the running function's declaration, after resolving `..`, absolute paths and symbolic links: anything outside is R0010 (exit 70).
+- `main`'s clause is the grant of `vo run`, a test's clause the grant of that test. Paths and names are also checked at run time, after resolving `..`, absolute paths and symbolic links, against both the running function's declaration and that root grant: anything outside either is R0010 (exit 70), so no callee widens the root. A literal target outside the scopes is E0503 at check time.
 - `--seed N` fixes `random_int`; `--clock-ms N` makes `now_ms` return N, N+1, ... `vo test` uses seed 1 and clock 0 for every test.
 
 ```vo

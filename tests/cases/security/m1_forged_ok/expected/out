@@ -1,0 +1,25 @@
+$ vo run --record r.jsonl main.vo -- data/x.txt
+inside
+
+--- stderr
+--- exit 0
+$ vo replay forged.jsonl
+--- stderr
+note: the program differs from the recorded one (recorded main.vo)
+main.vo:3:11: runtime error[R0010]: file.read("secret.txt") is not allowed: `main` declares console, file.read("data/").
+   3 |     match read_file(a[0]) {
+     |           ^^^^^^^^^^^^^^^
+trace:
+  at main (main.vo:3:11)
+      a: list[str] = ["secret.txt"]
+--- exit 70
+$ vo replay probe.jsonl
+--- stderr
+note: the program differs from the recorded one (recorded main.vo)
+main.vo:3:11: runtime error[R0014]: The program reads the file `data/link`, but the recording has a read of `data/link` next: replay the program that was recorded, or record this one.
+   3 |     match read_file(a[0]) {
+     |           ^^^^^^^^^^^^^^^
+trace:
+  at main (main.vo:3:11)
+      a: list[str] = ["data/link"]
+--- exit 70

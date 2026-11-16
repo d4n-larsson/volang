@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 59 /* names up to here (50, 51 are internal and unnamed) */
+#define B_COUNT 60 /* names up to here (50, 51 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -34,7 +34,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "max",      "upper",       "lower",     "ord",     "chr",          "env",          "random_int",
     "sort_by",  "map",         "filter",    "fold",    "any",          "all",          "todo",
     "assume",   0,             0,           "__float_text", "__http_exchange", "__text_float", "get_or",
-    "__serve_listen", "__serve_next", "__serve_reply", "__serve_call",
+    "__serve_listen", "__serve_next", "__serve_reply", "__serve_call", "__http_part",
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -45,7 +45,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [14] = "s>n",  [15] = "s>x",  [18] = "ss>i", [19] = "ss>S", [20] = "Ss>s",  [21] = "s>s",
     [22] = "s>S",  [29] = "b>v",  [36] = "s>s",  [37] = "s>s",  [38] = "s>i",   [39] = "i>s",
     [40] = "s>r",  [41] = "ii>i", [49] = "b>v",  [52] = "f>s",  [53] = "sis>r", [54] = "s>f",
-    [56] = "s>n",  [57] = "i>r",  [58] = "s>v",
+    [56] = "s>n",  [57] = "i>r",  [58] = "s>v",  [60] = "si>s",
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."
@@ -214,6 +214,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
 {
     call->d.i = id;
     fx_builtin(id);
+    fx_builtin_literal(call, id); /* spec 013 (L1) */
     if (id >= B_SORT_BY && id <= B_ALL) return check_hof(call, id); /* sort_by, map, filter, fold, any, all */
     if (id >= B_EXPECT && id <= B_EXPECT_EQ && !ck_in_test)          /* expect / expect_eq only in tests */
         ck_err1("E0410", call, "`$1` can only be used inside a `test` block.", call->a.n->a.s);

@@ -1,11 +1,11 @@
-vm_effect_forward.vo:15:11: runtime error[R0010]: env("PATH") is not allowed: `show` declares console, env("HOME").
-  15 |     match env(name) {
-     |           ^^^^^^^^^
+vm_effect_forward.vo:27:15: runtime error[R0010]: env("PATH") is not allowed: `main` declares console, env("HOME").
+  27 |         match env(name) {
+     |               ^^^^^^^^^
 trace:
-  at show (vm_effect_forward.vo:15:11)
+  at anonymous function (vm_effect_forward.vo:27:15)
       name: str = "PATH"
   at each (vm_effect_forward.vo:6:9)
-      xs: list[str] = ["HOME", "PATH"], f: fn(str) uses console, env("HOME") = <fn(str) uses console, env("HOME")>, x: str = "PATH"
+      xs: list[str] = ["HOME", "PATH"], f: fn(str) uses console, env = <fn(str) uses console, env>, x: str = "PATH"
   at forward (vm_effect_forward.vo:11:5)
-      xs: list[str] = ["HOME", "PATH"], f: fn(str) uses console, env("HOME") = <fn(str) uses console, env("HOME")>
-  at main (vm_effect_forward.vo:36:5)
+      xs: list[str] = ["HOME", "PATH"], f: fn(str) uses console, env = <fn(str) uses console, env>
+  at main (vm_effect_forward.vo:26:5)

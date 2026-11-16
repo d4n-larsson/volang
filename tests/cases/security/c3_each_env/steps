@@ -1,0 +1,2 @@
+vo effects --update main.vo
+env VO_OK=fine VO_SECRET=hunter2 vo run main.vo

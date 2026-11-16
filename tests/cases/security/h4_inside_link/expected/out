@@ -1,0 +1,20 @@
+$ vo effects --update main.vo
++ main.vo:main: console, file.read("data/")
++ main.vo:show: console, file.read("data/")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+data/link: hello from a
+
+data/sub/up: hello from a
+
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("data/out") is not allowed: `show` declares console, file.read("data/").
+   3 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at show (main.vo:3:11)
+      p: str = "data/out"
+  at main (main.vo:16:5)
+--- exit 70

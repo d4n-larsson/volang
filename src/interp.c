@@ -171,6 +171,7 @@ static void report_json(SB *sb, char *code, Str *message, Node *node)
 /* Stops the program with a runtime error report (or returns to the test runner). */
 void rt_raise(char *code, Str *message, Node *node)
 {
+    render_depth = 0; /* spec 013: a raise unwinds any rendering in progress */
     rt_err_code = (long)code;
     rt_err_msg = (long)message;
     rt_err_node = (long)node;
@@ -252,16 +253,16 @@ void tick(Node *node)
     if (sys_clock_ms() >= deadline_ms) rt_timeout(node);
 }
 
-/* The POLL budget ran out: refills it and stops with R0009 when the deadline has passed. The
- * collector may be in the middle of a pass, so the report allocates from the permanent arena
- * (the heap is rebuilt by the next gc_start). */
+/* The POLL budget ran out: refills it and stops with R0009 when the deadline has passed, but never
+ * while the collector is in the middle of a pass (spec 013: a jump out of it left the heap half
+ * swept, and a server went on using it). */
 void rt_poll(void)
 {
     rt_budget = BUDGET_UNITS;
     if (rt_reporting || !deadline_ms) return; /* spec 006: a runtime error report is being built */
     if (sys_clock_ms() < deadline_ms) return;
     if (!cur_node) return; /* no location yet: the next tick reports it */
-    gc_on = 0;
+    if (gc_busy) return;    /* spec 013 (H10): never inside a collection; the next poll after it */
     rt_timeout((void *)cur_node);
 }
 
@@ -308,7 +309,9 @@ typedef union {
 int values_equal(long a, long b, Type *type)
 {
     POLL(1);
+    check_stack((Node *)cur_node); /* spec 013 (H11): deep or cyclic values are R0005, not a crash */
     type = rt_concrete(type); /* type parameters: the running frame's type arguments */
+    if (type->kind != TY_FLOAT && a == b) return 1; /* the same object (NaN is never equal to itself) */
     switch (type->kind) {
     case TY_FLOAT: {
         Bits x = {.i = a}, y = {.i = b};

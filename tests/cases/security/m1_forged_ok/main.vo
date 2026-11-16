@@ -1,0 +1,11 @@
+fn main() uses console, file.read("data/") {
+    let a = args();
+    match read_file(a[0]) {
+        case ok(t) {
+            print(t);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

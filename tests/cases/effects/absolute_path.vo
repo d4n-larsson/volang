@@ -1,4 +1,5 @@
 fn main() -> result[void] uses file.write("out/") {
-    try write_file("/tmp/vo_scope_absolute.txt", "no");
+    let path = "/tmp/vo_scope_absolute.txt";
+    try write_file(path, "no");
     return ok();
 }

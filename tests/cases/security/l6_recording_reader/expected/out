@@ -1,0 +1,26 @@
+$ vo replay nul.jsonl
+--- stderr
+error[T0008]: `nul.jsonl` is not a complete recording: record the run again with `vo run --record FILE`.
+--- exit 64
+$ vo replay tru.jsonl
+--- stderr
+error[T0008]: `tru.jsonl` is not a complete recording: record the run again with `vo run --record FILE`.
+--- exit 64
+$ vo replay big.jsonl
+--- stderr
+error[T0008]: `big.jsonl` is not a complete recording: record the run again with `vo run --record FILE`.
+--- exit 64
+$ vo replay max.jsonl
+ran
+--- stderr
+note: the program differs from the recorded one (recorded main.vo)
+--- exit 0
+$ vo replay --max-memory 1 pad.jsonl
+--- stderr
+error[T0008]: `pad.jsonl` is not a complete recording: record the run again with `vo run --record FILE`.
+--- exit 64
+$ vo replay pad.jsonl
+ran
+--- stderr
+note: the program differs from the recorded one (recorded main.vo)
+--- exit 0

@@ -1,0 +1,17 @@
+# H4: links that stay inside the scope keep working after the race fix (only escapes are refused).
+fn show(p: str) uses console, file.read("data/") {
+    match read_file(p) {
+        case ok(s) {
+            print(p + ": " + s);
+        }
+        case err(e) {
+            print(p + ": err " + e);
+        }
+    }
+}
+
+fn main() uses console, file.read("data/") {
+    show("data/link");
+    show("data/sub/up");
+    show("data/out");
+}

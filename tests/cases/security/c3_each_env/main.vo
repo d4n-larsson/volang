@@ -1,0 +1,18 @@
+fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
+    for x in xs {
+        f(x);
+    }
+}
+
+fn main() uses console, env("VO_OK") {
+    each(["VO_OK", "VO_SECRET"], fn(n: str) {
+        match env(n) {
+            case ok(v) {
+                print(n + "=" + v);
+            }
+            case err(e) {
+                print("err: " + e);
+            }
+        }
+    });
+}

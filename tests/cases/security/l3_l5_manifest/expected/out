@@ -1,0 +1,17 @@
+$ vo check sub/main.vo
+sub/main.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
+   1 | import money.format.cents;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+sub/vo.packages:1:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 lowercase hex digits).
+   1 | money ../shared/money\x00/etc sha256:0000000000000000000000000000000000000000000000000000000000000000
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2 errors, 0 warnings
+--- stderr
+--- exit 65
+$ vo check sub/main.vo
+sub/main.vo:1:1: error[E0701]: Package money changed: the manifest pins sha256:0000000000000000000000000000000000000000000000000000000000000000, its files hash to sha256:0e9d2276b99db4fe1f54e3b6ac20266ee55749dcc178f38ddb2f53feaea55e16. Review the change, then run `vo package sub/main.vo money shared/money`.
+   1 | import money.format.cents;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65

@@ -1,0 +1,4 @@
+c2_variant.vo:14:24: error[E0502]: This function uses console, file.read, which `fn(str)` does not allow.
+  14 |     let a = Action.run(leak);
+     |                        ^^^^
+1 error, 0 warnings

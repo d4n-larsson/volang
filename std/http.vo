@@ -89,13 +89,9 @@ fn crlf() -> str {
 }
 
 fn parse_response(raw: str) -> result[Response] {
-    let head_end = find(raw, crlf() + crlf());
-    if head_end < 0 {
-        return err("malformed response: no end of headers");
-    }
-    let head = split(slice(raw, 0, head_end), crlf());
-    let status_line = head[0];
-    let parts = split(status_line, " ");
+    # raw: the response framed by the runtime (spec 013): an ASCII head, then the decoded body.
+    let head = split(__http_part(raw, 0), crlf());
+    let parts = split(head[0], " ");
     if len(parts) < 2 or len(parts[0]) < 5 or slice(parts[0], 0, 5) != "HTTP/" {
         return err("malformed response: bad status line");
     }
@@ -108,78 +104,21 @@ fn parse_response(raw: str) -> result[Response] {
             return err("malformed response: bad status code");
         }
     }
+    let headers = try parse_headers(head, "malformed response: bad header line");
+    return ok(new Response { status: status, headers: headers, body: __http_part(raw, 1) });
+}
+
+fn parse_headers(head: list[str], bad: str) -> result[list[Header]] {
     let headers = new list[Header];
     for i in 1..len(head) {
         let line = head[i];
         let colon = find(line, ":");
         if colon <= 0 {
-            return err("malformed response: bad header line");
+            return err(bad);
         }
         push(headers, new Header { name: slice(line, 0, colon), value: trim(slice(line, colon + 1, len(line))) });
     }
-    let rest = slice(raw, head_end + 4, len(raw));
-    let r = new Response { status: status, headers: headers, body: rest };
-    match header(r, "transfer-encoding") {
-        case ok(te) {
-            if lower(te) == "chunked" {
-                let b = try dechunk(rest);
-                return ok(new Response { status: status, headers: headers, body: b });
-            }
-        }
-        case err(_) {
-        }
-    }
-    match header(r, "content-length") {
-        case ok(cl) {
-            match parse_int(trim(cl)) {
-                case ok(n) {
-                    if n < 0 or n > len(rest) {
-                        return err("malformed response: body shorter than Content-Length");
-                    }
-                    return ok(new Response { status: status, headers: headers, body: slice(rest, 0, n) });
-                }
-                case err(_) {
-                    return err("malformed response: bad Content-Length");
-                }
-            }
-        }
-        case err(_) {
-        }
-    }
-    return ok(r);
-}
-
-fn dechunk(s: str) -> result[str] {
-    let out = new list[str];
-    var i = 0;
-    while true {
-        let line_end = find(slice(s, i, len(s)), crlf());
-        if line_end < 0 {
-            return err("malformed response: bad chunk");
-        }
-        var size_text = slice(s, i, i + line_end);
-        let semi = find(size_text, ";");
-        if semi >= 0 {
-            set size_text = slice(size_text, 0, semi);
-        }
-        var size = 0;
-        for c in chars(trim(size_text)) {
-            let d = find("0123456789abcdef", lower(c));
-            if d < 0 or len(c) != 1 {
-                return err("malformed response: bad chunk size");
-            }
-            set size = size * 16 + d;
-        }
-        set i = i + line_end + 2;
-        if size == 0 {
-            return ok(join(out, ""));
-        }
-        if i + size > len(s) {
-            return err("malformed response: chunk cut short");
-        }
-        push(out, slice(s, i, i + size));
-        set i = i + size + 2;
-    }
+    return ok(headers);
 }
 
 # Sends GET to an http:// URL (needs net; the host must be in the caller's net scope).
@@ -230,35 +169,35 @@ export fn request_header(r: Request, name: str) -> result[str] {
 #     serve("0", fn(r: Request) -> Response { return new Response { status: 200, headers: new list[Header], body: "" }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
 export fn serve[E: effects](address: str, handle: fn(Request) -> Response uses E) -> result[void] uses serve, E {
     let listener = try __serve_listen(address);
+    let answer = fn(raw: str) -> str {
+        match parse_request(raw) {
+            case ok(req) {
+                return response_text(req.method, handle(req));
+            }
+            case err(_) {
+                return response_text("GET", new Response { status: 400, headers: new list[Header], body: "" });
+            }
+        }
+    };
     while true {
         let raw = try __serve_next(listener);
         if raw == "" {
             return ok();
         }
-        match parse_request(raw) {
-            case ok(req) {
-                match __serve_call(handle, req) {
-                    case ok(resp) {
-                        __serve_reply(response_text(req.method, resp));
-                    }
-                    case err(_) {
-                        __serve_reply(response_text(req.method, new Response { status: 500, headers: new list[Header], body: "" }));
-                    }
-                }
+        match __serve_call(answer, raw) {
+            case ok(text) {
+                __serve_reply(text);
             }
             case err(_) {
-                __serve_reply(response_text("GET", new Response { status: 400, headers: new list[Header], body: "" }));
+                __serve_reply(response_text("GET", new Response { status: 500, headers: new list[Header], body: "" }));
             }
         }
     }
 }
 
 fn parse_request(raw: str) -> result[Request] {
-    let head_end = find(raw, crlf() + crlf());
-    if head_end < 0 {
-        return err("no end of headers");
-    }
-    let head = split(slice(raw, 0, head_end), crlf());
+    # raw: the request framed by the runtime (spec 013): an ASCII head, then the decoded body.
+    let head = split(__http_part(raw, 0), crlf());
     let parts = split(head[0], " ");
     if len(parts) != 3 or parts[0] == "" or parts[1] == "" or len(parts[2]) < 5 or slice(parts[2], 0, 5) != "HTTP/" {
         return err("bad request line");
@@ -270,27 +209,8 @@ fn parse_request(raw: str) -> result[Request] {
         set query = slice(path, q + 1, len(path));
         set path = slice(path, 0, q);
     }
-    let headers = new list[Header];
-    for i in 1..len(head) {
-        let line = head[i];
-        let colon = find(line, ":");
-        if colon <= 0 {
-            return err("bad header line");
-        }
-        push(headers, new Header { name: slice(line, 0, colon), value: trim(slice(line, colon + 1, len(line))) });
-    }
-    var body = slice(raw, head_end + 4, len(raw));
-    let r = new Request { method: parts[0], path: path, query: query, headers: headers, body: body };
-    match request_header(r, "transfer-encoding") {
-        case ok(te) {
-            if find(lower(te), "chunked") >= 0 {
-                set body = try dechunk(body);
-            }
-        }
-        case err(_) {
-        }
-    }
-    return ok(new Request { method: parts[0], path: path, query: query, headers: headers, body: body });
+    let headers = try parse_headers(head, "bad header line");
+    return ok(new Request { method: parts[0], path: path, query: query, headers: headers, body: __http_part(raw, 1) });
 }
 
 fn reason(status: int) -> str {
@@ -304,8 +224,27 @@ fn reason(status: int) -> str {
     return "";
 }
 
+fn header_ok(h: Header) -> bool {
+    # A header name must be a token and no name or value may hold CR, LF or NUL (spec 013, M5).
+    if h.name == "" or find(h.value, chr(13)) >= 0 or find(h.value, "\n") >= 0 or find(h.value, chr(0)) >= 0 {
+        return false;
+    }
+    let token = "!#$%&'*+-.^_`|~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for c in chars(h.name) {
+        if find(token, c) < 0 {
+            return false;
+        }
+    }
+    return true;
+}
+
 fn response_text(method: str, r: Response) -> str {
     let nl = crlf();
+    for h in r.headers {
+        if not header_ok(h) {
+            return response_text(method, new Response { status: 500, headers: new list[Header], body: "" });
+        }
+    }
     var out = "HTTP/1.1 " + str(r.status) + " " + reason(r.status) + nl;
     for h in r.headers {
         let name = lower(h.name);

@@ -1,0 +1,5 @@
+symlink a.txt data/link
+symlink ../a.txt data/sub/up
+symlink ../main.vo data/out
+vo effects --update main.vo
+vo run main.vo

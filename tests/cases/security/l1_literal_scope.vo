@@ -1,0 +1,34 @@
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve;
+
+# Spec 013 (L1): a literal target outside the declared scopes is E0503 at `vo check`.
+fn load() -> result[str] uses file.read("data/") {
+    return read_file("secret.txt");
+}
+
+fn save() -> result[void] uses file.write("out/") {
+    return write_file("/etc/passwd", "x");
+}
+
+fn home() -> result[str] uses env("PATH") {
+    return env("HOME");
+}
+
+fn inside() -> result[str] uses file.read("data/") {
+    return read_file("./data/x.txt");
+}
+
+fn handle(r: Request) -> Response {
+    return new Response { status: 200, headers: new list[Header], body: r.path };
+}
+
+fn main() -> result[void] uses file.read("data/"), file.write("out/"), env("PATH"), serve("8000") {
+    let _ = try load();
+    try save();
+    let _ = try home();
+    let _ = try inside();
+    try serve("8001", handle);
+    return ok();
+}

@@ -1,0 +1,11 @@
+# L10: rendering a value whose structure has no end (a failing expect_eq) stopped vo test with T0003.
+record R {
+    kids: list[R];
+}
+
+test "a cyclic value in a failing expect_eq" {
+    let a = new R { kids: new list[R] };
+    push(a.kids, a);
+    let b = new R { kids: new list[R] };
+    expect_eq(a, b);
+}

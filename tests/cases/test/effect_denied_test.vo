@@ -1,5 +1,6 @@
 test "reads fixtures" uses file.read("fixtures/") {
-    match read_file("other/x.txt") {
+    let path = "other/x.txt";
+    match read_file(path) {
         case ok(t) {
             expect_eq(t, "never");
         }

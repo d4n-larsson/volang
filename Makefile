@@ -57,7 +57,7 @@ endif
 OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/embedded.o \
 	$(if $(INSTRUMENTED),$(BUILD)/hosted.o)
 
-.PHONY: all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval clean
+.PHONY: all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
 
 all: $(BUILD)/vo
 
@@ -246,3 +246,8 @@ prop-eval: all
 
 clean:
 	rm -rf build build-stress build-ubtrap build-instrumented build-fault-* build-riscv64 build-*-riscv64 build-aarch64 build-*-aarch64
+
+# Spec 013: the security review's reproductions that need timing, helper processes or long paths
+# (tests/security/); every finding's other cases run in `make test` (tests/cases/security/).
+security-check: all
+	@for t in tests/security/*.py; do python3 $$t $(abspath build/vo) || exit 1; done

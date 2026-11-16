@@ -537,20 +537,16 @@ void sb_visible_plain(SB *sb, Str *str)
         if (str->data[i] != '`') sb_byte(sb, (unsigned char)str->data[i]);
 }
 
-/* "<path>.vo-edit.tmp", NUL-terminated. */
+/* "<path>.vo-edit-<random>.tmp", NUL-terminated (the same name for the whole run). */
 Str *ed_tmp_path(long file)
 {
-    Str *path = file_get((int)file)->path;
-    SB *sb = sb_new();
-    sb_str(sb, path);
-    sb_cstr(sb, ".vo-edit.tmp");
-    return sb_finish(sb);
+    return tmp_path(file_get((int)file)->path, "edit"); /* spec 013 (M3) */
 }
 
 /* Writes text to the file's temporary path; 0 on success. */
 long ed_write_tmp(long file, Str *text)
 {
-    long fd = sys_open(ed_tmp_path(file)->data, O_WRCREAT);
+    long fd = open_tmp(ed_tmp_path(file)); /* exclusive: never through a planted link */
     if (fd < 0) return 1;
     long r = write_checked((int)fd, text->data, text->len);
     sys_close((int)fd);

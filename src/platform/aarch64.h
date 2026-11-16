@@ -30,6 +30,10 @@
 #define SYS_setsockopt 208
 #define SYS_accept4 242
 
+/* spec 013 */
+#define SYS_getrandom 278
+
 #define O_DIRECTORY 0x4000 /* 0x10000 is O_DIRECT here */
+#define O_NOFOLLOW 0x8000
 
 #endif

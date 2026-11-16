@@ -30,6 +30,10 @@
 #define SYS_accept4 288
 #define SYS_signalfd4 289
 
+/* spec 013 */
+#define SYS_getrandom 318
+
 #define O_DIRECTORY 0x10000
+#define O_NOFOLLOW 0x20000
 
 #endif

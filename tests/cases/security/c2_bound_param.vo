@@ -1,0 +1,17 @@
+fn run_all[E: effects](first: fn() uses E, fs: list[fn() uses E]) uses E {
+    first();
+    for f in fs {
+        f();
+    }
+}
+
+fn leak() uses console, file.read {
+    match read_file("secret.txt") {
+        case ok(s) { print("read: " + s); }
+        case err(e) { print("err: " + e); }
+    }
+}
+
+fn main() uses console {
+    run_all(fn() { print("hi"); }, [fn() { leak(); }]);
+}

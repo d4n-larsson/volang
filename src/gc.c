@@ -569,8 +569,11 @@ static void gc_selfcheck(void)
 #endif
 
 /* One full mark-sweep. */
+long gc_busy; /* spec 013 (H10): 1 during a collection: rt_poll does not raise then */
+
 void gc_collect(void)
 {
+    gc_busy = 1;
     sample_peak();
     ms_ptr = (unsigned long *)ADDR_MARKSTACK;
     ms_overflow = 0;
@@ -603,6 +606,7 @@ void gc_collect(void)
 #ifdef GC_STRESS_BUILD
     gc_selfcheck();
 #endif
+    gc_busy = 0;
 }
 
 /* GC_ROOT found the C root stack full (ROOTS_CAP, or ROOTS_HWM_LIMIT in stress builds): T0003. */

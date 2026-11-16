@@ -837,6 +837,43 @@ fn main() uses console {
 }
 ```
 
+## E0211 link_outside_tree
+
+An import reaches a file outside the program's directory through a symbolic link.
+
+Fixable: no
+
+An import loads a file from the importing file's directory (or from a listed package). When that file is a symbolic link, or lies under a linked directory, that leads outside the directory of the program's entry file and outside every listed package, the import is refused: checking or formatting a tree you were given must never read files elsewhere on the machine. Copy the file into the tree, or list its directory as a package with `vo package`.
+
+### Example
+
+```vo
+# Illustration only: the trigger is a link, here `leak.vo -> ../secret.vo`,
+# which a code block cannot show.
+import leak.thing;
+
+fn main() uses console {
+    print(thing());
+}
+```
+
+### Fixed
+
+```vo
+# file: leak.vo
+export fn thing() -> str {
+    return "inside the tree";
+}
+```
+
+```vo
+import leak.thing;
+
+fn main() uses console {
+    print(thing());
+}
+```
+
 ## E0301 type_mismatch
 
 An expression has a different type than the one required.
@@ -2983,13 +3020,14 @@ The program tried to use an effect, path or variable outside the declaration of 
 
 Fixable: no
 
-File paths and environment names are values, so scopes are also checked when the program runs: the path is resolved (`..`, absolute paths and symbolic links included) and must lie under a declared directory, and an env name must be one of the declared names. The innermost function's declaration applies; `main`'s and a test's declarations are their grants. The report names the target, the allowed scopes and the function whose declaration refused it.
+File paths and environment names are values, so scopes are also checked when the program runs: the path is resolved (`..`, absolute paths and symbolic links included) and must lie under a declared directory, and an env name must be one of the declared names. Two declarations apply: the running function's, and the root's (`main`'s, or the running test's or property's), so no callee can widen what the root declared. A path containing a NUL byte is always refused. The report names the target, the allowed scopes and the function whose declaration refused it. (A literal target outside the scopes is already E0503 at `vo check`.)
 
 ### Example
 
 ```vo
 fn main() -> result[void] uses console, file.write("out/") {
-    try write_file("out/../x.txt", "no");
+    let path = "out/../x.txt";
+    try write_file(path, "no");
     return ok();
 }
 ```

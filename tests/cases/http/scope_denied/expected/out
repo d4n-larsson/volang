@@ -6,7 +6,7 @@ std/http.vo:83:19: runtime error[R0010]: net("localhost") is not allowed: `main`
 trace:
   at exchange (std/http.vo:83:19)
       method: str = "GET", url: str = "http://localhost:{port}/plain", content_type: str = "", body: str = "", u: Url = new Url { host: "localhost", port: {port}, target: "/plain" }, nl: str = "\n", request: str = "GET /plain HTTP/1.1\nHost: localhost:{port}\nConnection: close\nUser-Agent: vo\n\n"
-  at get (std/http.vo:188:12)
+  at get (std/http.vo:127:12)
       url: str = "http://localhost:{port}/plain"
   at main (main.vo:22:10)
 --- exit 70

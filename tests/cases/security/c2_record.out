@@ -1,0 +1,5 @@
+c2_record.vo:18:27: error[E0301]: Expected `Box[fn(str)]`, found `Box[fn(str) uses console, file.read]`.
+  18 |     open("/etc/hostname", new Box[fn(str) uses console, file.read] { f: leak });
+     |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  expected `Box[fn(str)]`, found `Box[fn(str) uses console, file.read]`
+1 error, 0 warnings

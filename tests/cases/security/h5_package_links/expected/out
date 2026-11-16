@@ -1,0 +1,30 @@
+$ vo package main.vo money vendor/money
+added money vendor/money sha256:1415dbaee683c9e432fbd05ff50e0849446e8736ecea3b296d1d1e00be9851ba
+--- stderr
+--- exit 0
+$ vo run main.vo
+inside 1234
+--- stderr
+--- exit 0
+$ vo run main.vo
+--- stderr
+main.vo:1:1: error[E0702]: Package money: the directory vendor/money has a directory that cannot be read, or a link leading outside it.
+   1 | import money.format.cents;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- exit 65
+$ vo package main.vo money vendor/money
+error[E0702]: Package money: the directory vendor/money has a directory that cannot be read, or a link leading outside it.
+--- stderr
+--- exit 65
+$ vo package main.vo money vendor/money
+updated money: sha256:1415dbaee683c9e432fbd05ff50e0849446e8736ecea3b296d1d1e00be9851ba -> sha256:c63f14608930ed8e51fba3e263b6570a0ffd84dcb64bfd5aa07fb84177488e1a
+--- stderr
+--- exit 0
+$ vo run main.vo
+--- stderr
+main.vo:1:1: error[E0702]: Package money: the directory vendor/money has a directory that cannot be read, or a link leading outside it.
+   1 | import money.format.cents;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- exit 65

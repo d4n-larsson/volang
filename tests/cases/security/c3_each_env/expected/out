@@ -1,0 +1,19 @@
+$ vo effects --update main.vo
++ main.vo:each: E
++ main.vo:main: console, env("VO_OK")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ env VO_OK=fine VO_SECRET=hunter2 vo run main.vo
+VO_OK=fine
+--- stderr
+main.vo:9:15: runtime error[R0010]: env("VO_SECRET") is not allowed: `main` declares console, env("VO_OK").
+   9 |         match env(n) {
+     |               ^^^^^^
+trace:
+  at anonymous function (main.vo:9:15)
+      n: str = "VO_SECRET"
+  at each (main.vo:3:9)
+      xs: list[str] = ["VO_OK", "VO_SECRET"], f: fn(str) uses console, env = <fn(str) uses console, env>, x: str = "VO_SECRET"
+  at main (main.vo:8:5)
+--- exit 70

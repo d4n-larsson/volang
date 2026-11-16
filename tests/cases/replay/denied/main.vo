@@ -1,5 +1,6 @@
 fn main() uses console, file.read("data/") {
-    match read_file("secret.txt") {
+    let path = "secret.txt";
+    match read_file(path) {
         case ok(t) {
             print(t);
         }

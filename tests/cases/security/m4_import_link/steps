@@ -1,0 +1,7 @@
+symlink ../outside/secret.vo repo/leak.vo
+symlink sub/real.vo repo/inside.vo
+symlink ../outside/helper.vo repo/helper.vo
+vo check repo/main.vo
+vo check repo/scan.vo
+write repo/main.vo import inside.quiet;\n\nfn main() uses console {\n    print(quiet("A"));\n}\n
+vo run repo/main.vo

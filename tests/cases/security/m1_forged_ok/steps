@@ -1,0 +1,7 @@
+write data/x.txt inside\n
+vo run --record r.jsonl main.vo -- data/x.txt
+write forged.jsonl {"v":1,"kind":"recording","program":"main.vo","fingerprint":"0","seed":1,"clock_ms":null,"args":["secret.txt"]}\n{"v":1,"kind":"read_file","path":"secret.txt","result":"ok","value":"TOPSECRET"}\n{"v":1,"kind":"end","status":0}\n
+vo replay forged.jsonl
+symlink ../secret.txt data/link
+write probe.jsonl {"v":1,"kind":"recording","program":"main.vo","fingerprint":"0","seed":1,"clock_ms":null,"args":["data/link"]}\n{"v":1,"kind":"read_file","path":"data/link","result":"denied"}\n{"v":1,"kind":"end","status":0}\n
+vo replay probe.jsonl

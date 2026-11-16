@@ -49,12 +49,17 @@ Each property is a claim the review must try to break; each break is a finding.
   not check (E0501, E0503) and is not run. No construct (function values, generics with effect
   parameters, anonymous functions, imports, packages, contracts, properties) hides an effect from the
   checker.
-- **S2 Run-time containment.** Every effectful operation checks its target against the running grant
-  at run time (R0010): file paths after resolving `.`, `..`, absolute paths and symbolic links; host
-  names; variable names; serve addresses. This holds inside library functions, anonymous functions and
-  packages, which run with their caller's grant, and during replay.
+- **S2 Run-time containment.** Every effectful operation checks its target at run time (R0010) against
+  the running grant and the root grant (`main`'s, or the test's or property's clause): file paths after
+  resolving `.`, `..`, absolute paths and symbolic links; host names; variable names; serve addresses.
+  This holds inside library functions, anonymous functions and packages, which run with their caller's
+  grant, and during replay (lexically: replay never looks at the file system). A scoped file is opened
+  from its scope directory (itself opened from the directory the program started in) one path
+  component at a time without following links, so a link swapped in after the check fails the open
+  instead of escaping; links inside a scope that stay
+  inside it work, absolute ones or ones leaving it do not (spec 013). Paths with a NUL byte are refused.
 - **S3 No other capabilities.** The only things a program can do are the effects above. The binary
-  reaches 24 system calls (`src/platform/*.h`): no process creation, no signals sent, no native code
+  reaches 25 system calls (`src/platform/*.h`): no process creation, no signals sent, no native code
   loading, no raw sockets, no file descriptors a program can name. No environment variable, file or
   argument outside the grant changes what a program may do.
 - **S4 Memory safety.** No program and no input (A1-A3) makes the toolchain read or write memory it
@@ -71,8 +76,11 @@ Each property is a claim the review must try to break; each break is a finding.
 - **S7 Replay containment.** `vo replay` reads and writes nothing but the recording: no files, network,
   environment, clock or stdin. A hostile recording can only feed the program wrong inputs or be refused
   (T0008); it cannot widen the program's grant, which replay checks as in the recorded run.
-- **S8 Package integrity.** A package runs only when its files hash to the pin in `vo.packages` (E0701);
-  a package has no grant of its own and cannot be imported past its exports.
+- **S8 Package integrity.** A package runs only when its files hash to the pin in `vo.packages` (E0701),
+  and the bytes that ran are the bytes that were hashed; a directory that cannot be read, or a link
+  leading outside the package, refuses it (E0702). A package has no grant of its own and cannot be
+  imported past its exports. An import never reaches a file outside the program's tree or a listed
+  package through a link (E0211).
 - **S9 Server robustness.** A vo server listens only on its declared address, answers one request at a
   time, and keeps serving after malformed, oversized or failing requests; no request makes it crash,
   grow without bound, or run outside its grant.
@@ -93,8 +101,9 @@ Each property is a claim the review must try to break; each break is a finding.
 
 ## Open questions for the first review
 
-Answered by [review 1](security-review-1.md) (both confirmed: H4, and H7-H9/C5/L6 among the parsers).
-Recorded here so the review started from what was already known, not as accepted limits:
+Answered by [review 1](security-review-1.md) (both confirmed: H4, and H7-H9/C5/L6 among the parsers) and
+fixed by spec 013. Recorded here so the review started from what was already known, not as accepted
+limits:
 
 - **Check-then-open (A4)**: `rt_check_path` resolves the path (following links) and the file is then
   opened by its original path, which follows links again. A local process that swaps a symbolic link

@@ -1,0 +1,5 @@
+l7_escape_diag.vo:2:18: error[E0301]: Expected `int`, found `str`.
+   2 |     let x: int = "\x1b[2J\x1b]0;pwned\x07 cleared\x0d";
+     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+  expected `int`, found `str`
+1 error, 0 warnings

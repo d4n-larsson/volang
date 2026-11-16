@@ -1,0 +1,19 @@
+write secret.txt TOPSECRET\n
+mkfifo fifo.vo
+mkdir sub
+write r__etc_passwd.jsonl {"v":1,"kind":"recording","program":"/etc/passwd","fingerprint":"0","seed":1,"clock_ms":null,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay r__etc_passwd.jsonl
+write r____outside_vo.jsonl {"v":1,"kind":"recording","program":"../outside.vo","fingerprint":"0","seed":1,"clock_ms":null,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay r____outside_vo.jsonl
+write r_secret_txt.jsonl {"v":1,"kind":"recording","program":"secret.txt","fingerprint":"0","seed":1,"clock_ms":null,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay r_secret_txt.jsonl
+write r_fifo_vo.jsonl {"v":1,"kind":"recording","program":"fifo.vo","fingerprint":"0","seed":1,"clock_ms":null,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay r_fifo_vo.jsonl
+write r_sub____main_vo.jsonl {"v":1,"kind":"recording","program":"sub/../main.vo","fingerprint":"0","seed":1,"clock_ms":null,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay r_sub____main_vo.jsonl
+write r_sub__main_vo.jsonl {"v":1,"kind":"recording","program":"sub//main.vo","fingerprint":"0","seed":1,"clock_ms":null,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay r_sub__main_vo.jsonl
+write r___main_vo.jsonl {"v":1,"kind":"recording","program":"./main.vo","fingerprint":"0","seed":1,"clock_ms":null,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay r___main_vo.jsonl
+write r_ok.jsonl {"v":1,"kind":"recording","program":"main.vo","fingerprint":"0","seed":1,"clock_ms":null,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay r_ok.jsonl

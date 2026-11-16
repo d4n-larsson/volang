@@ -1,0 +1,18 @@
+$ vo effects --update main.vo
++ main.vo:each: E
++ main.vo:main: console, file.write("out/")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+--- stderr
+main.vo:9:15: runtime error[R0010]: file.write("pwned.txt") is not allowed: `main` declares console, file.write("out/").
+   9 |         match write_file(p, "x") {
+     |               ^^^^^^^^^^^^^^^^^^
+trace:
+  at anonymous function (main.vo:9:15)
+      p: str = "pwned.txt"
+  at each (main.vo:3:9)
+      xs: list[str] = ["pwned.txt"], f: fn(str) uses console, file.write = <fn(str) uses console, file.write>, x: str = "pwned.txt"
+  at main (main.vo:8:5)
+--- exit 70

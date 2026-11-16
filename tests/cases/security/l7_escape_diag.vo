@@ -1,0 +1,4 @@
+fn main() uses console {
+    let x: int = "[2J]0;pwned cleared";
+    print(str(x));
+}

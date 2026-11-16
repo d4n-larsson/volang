@@ -1,0 +1,25 @@
+# C4: a sort_by key function that shrinks the list made sort_by read and write past its buffer.
+fn main() uses console {
+    let xs = new list[int];
+    for i in 0..2000 {
+        push(xs, 2000 - i);
+    }
+    sort_by(xs, fn(x: int) -> int {
+        while len(xs) > 2 {
+            match pop(xs) {
+                case ok(v) {
+                }
+                case err(e) {
+                }
+            }
+        }
+        sort(xs);
+        return x;
+    });
+    print(str(len(xs)));
+    let ys = new list[str];
+    for i in 0..100 {
+        push(ys, "after " + str(i));
+    }
+    print(join(ys, ","));
+}

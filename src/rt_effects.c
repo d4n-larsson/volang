@@ -120,41 +120,78 @@ EffSet *rt_frame_effects(void)
     return f ? f->effects : 0;
 }
 
-/* R0010 when builtin id's effect is not declared by the running function or test. */
+/* ---- spec 013 (R1): every effect is checked against the running frame's grant and the root grant
+ * (main's clause; a test's or property's), so no callee's own declaration, effect parameter or
+ * static gap reaches outside what a person reviewed. ---- */
+
+static Frame *rt_root(void)
+{
+    return (Frame *)rt_root_frame;
+}
+
+static int grant_has_bit(EffSet *e, long bit)
+{
+    return e && ((e->mask | e->any) & (unsigned long)bit); /* any-scope bits count too */
+}
+
+static int grant_has_name(EffSet *e, long bit, Str *name)
+{
+    return !e || !es_scoped(e, bit) || es_has_pair(e, bit, name);
+}
+
+/* 1 when the resolved path lies under one of e's scopes for bit (or bit is unscoped in e). */
+static int grant_has_path(EffSet *e, long bit, Str *resolved)
+{
+    if (!e || !es_scoped(e, bit)) return 1;
+    for (long i = 0; resolved && i < e->scopes->n; i++) {
+        EffScope *sc = vec_get(e->scopes, i);
+        if (sc->bit != bit) continue;
+        Str *dir = rt_resolve(sc->str);
+        if (dir && path_under(resolved, dir)) return 1;
+    }
+    return 0;
+}
+
+static void rt_denied_by(Frame *f, long bit, Str *target);
+
+/* R0010 when builtin id's effect is not declared by the running function or test, or by the root. */
 void rt_check_bit(long id)
 {
     long bit = builtin_effects[id];
     if (!bit) return;
-    EffSet *eff = rt_frame_effects();
-    if (eff && ((eff->mask | eff->any) & (unsigned long)bit)) return; /* any-scope bits count too */
-    rt_denied(bit, 0);
+    if (!grant_has_bit(rt_frame_effects(), bit)) rt_denied(bit, 0);
+    Frame *root = rt_root();
+    if (root && !grant_has_bit(root->effects, bit)) rt_denied_by(root, bit, 0);
 }
 
-/* Scoped env (or net) effects: name must be one of the declared names. */
+/* Scoped env (or net, serve) effects: name must be one of the declared names, in both grants. */
 void rt_check_name(long bit, Str *name)
 {
-    EffSet *eff = rt_frame_effects();
-    if (!eff || !es_scoped(eff, bit) || es_has_pair(eff, bit, name)) return;
-    rt_denied(bit, name);
+    if (!grant_has_name(rt_frame_effects(), bit, name)) rt_denied(bit, name);
+    Frame *root = rt_root();
+    if (root && !grant_has_name(root->effects, bit, name)) rt_denied_by(root, bit, name);
 }
 
-/* Scoped file effects: the resolved path must lie under a resolved scope. */
+/* Scoped file effects: the resolved path must lie under a resolved scope of both grants. A NUL byte
+ * is refused outright (C1: the check would see the whole string, the open only its first part), and
+ * so is every scoped access when the start directory is unknown (H2). */
 void rt_check_path(long bit, Str *path)
 {
     EffSet *eff = rt_frame_effects();
-    if (!eff || !es_scoped(eff, bit)) return;
+    Frame *root = rt_root();
+    int scoped = (eff && es_scoped(eff, bit)) || (root && root->effects && es_scoped(root->effects, bit));
+    int nul = 0;
+    for (long i = 0; i < path->len; i++) nul |= path->data[i] == 0;
+    if (nul || (scoped && !rt_start_cwd_known())) rt_denied(bit, path);
+    if (!scoped) return;
     GC_ROOT(&path);
     Str *resolved = rt_resolve(path);
     GC_ROOT(&resolved);
-    int ok = 0;
-    for (long i = 0; resolved && !ok && i < eff->scopes->n; i++) {
-        EffScope *sc = vec_get(eff->scopes, i);
-        if (sc->bit != bit) continue;
-        Str *dir = rt_resolve(sc->str);
-        ok = dir && path_under(resolved, dir);
-    }
+    int ok = resolved && grant_has_path(eff, bit, resolved);
+    int root_ok = resolved && (!root || grant_has_path(root->effects, bit, resolved));
     GC_UNROOT(2);
     if (!ok) rt_denied(bit, path);
+    if (!root_ok) rt_denied_by(root, bit, path);
 }
 
 /* 1 when the resolved path is dir or lies inside it ("" is the root). */
@@ -206,7 +243,8 @@ Str *rt_resolve(Str *path)
         mem_copy(res_buf + len, p + from, clen);
         len += clen;
         res_buf[len] = 0;
-        long target = sys_readlink(res_buf, link_buf, PATH_MAX); /* a symbolic link? */
+        /* a symbolic link? (spec 013, L2: never looked at while replaying: the check is lexical) */
+        long target = rcd_mode == 2 ? 0 : sys_readlink(res_buf, link_buf, PATH_MAX);
         if (target <= 0) continue;
         if (++links > 40) break;
         len = link_buf[0] == '/' ? 0 : before; /* replace the link with its target, then the rest */
@@ -225,6 +263,9 @@ Str *rt_resolve(Str *path)
     return result;
 }
 
+static int start_cwd_failed; /* spec 013 (H2): getcwd failed: scoped file access is refused */
+static long start_fd = -1;    /* spec 013 (H3): the start directory, opened once: relative paths follow it */
+
 /* The working directory at the first call, as a str without a trailing "/" ("" for /). */
 Str *rt_start_cwd(void)
 {
@@ -234,9 +275,20 @@ Str *rt_start_cwd(void)
     if (got > 0) {
         len = got - 1; /* without the NUL */
         if (len == 1) len = 0; /* "/" itself */
+    } else {
+        start_cwd_failed = 1; /* not "/": fail closed */
     }
+    start_fd = vo_syscall4(SYS_openat, AT_FDCWD, (long)".", O_PATH | O_DIRECTORY | O_CLOEXEC, 0);
+    if (start_fd < 0) start_cwd_failed = 1;
     start_cwd = str_new(link_buf, len);
     return start_cwd;
+}
+
+/* 0 when the start directory could not be determined (every scoped file access is then refused). */
+int rt_start_cwd_known(void)
+{
+    rt_start_cwd();
+    return !start_cwd_failed;
 }
 
 /* R0010: the effect (with target path or name, or 0) is outside the running declaration. */
@@ -247,7 +299,10 @@ static Frame *grant_frame(Frame *f)
 {
     while (f && f->parent) {
         Node *decl = f->fn;
-        if (decl->kind == N_TEST || (decl->a.n && decl->a.n->b.fx && decl->a.n->b.fx->declared)) break;
+        EffSet *d = decl->kind == N_TEST ? 0 : decl->a.n && decl->a.n->b.fx ? decl->a.n->b.fx->declared : 0;
+        /* spec 013: a declaration made only of effect parameters (`uses E`) takes its caller's grant */
+        int only_params = d && !d->mask && (!d->scopes || !d->scopes->n) && es_evar_count(d);
+        if (decl->kind == N_TEST || (d && !only_params)) break;
         f = f->parent;
     }
     return f;
@@ -255,9 +310,35 @@ static Frame *grant_frame(Frame *f)
 
 void rt_denied(long bit, Str *target)
 {
-    EffSet *declared = rt_frame_effects(); /* (may be 0) */
+    rt_denied_by(grant_frame((Frame *)cur_frame), bit, target);
+}
+
+/* A target in an R0010 message: like a scope, with control bytes as \xNN (spec 013: a path with a NUL
+ * byte must not put raw bytes on the terminal). */
+static void render_target(SB *sb, Str *t)
+{
+    static const char hex[] = "0123456789abcdef";
+    sb_byte(sb, '"');
+    for (long i = 0; i < t->len; i++) {
+        unsigned char c = (unsigned char)t->data[i];
+        if (c < 0x20 || c == 0x7f) {
+            sb_cstr(sb, "\\x");
+            sb_byte(sb, hex[c >> 4]);
+            sb_byte(sb, hex[c & 15]);
+            continue;
+        }
+        if (c == '"' || c == '\\') sb_byte(sb, '\\');
+        sb_byte(sb, c);
+    }
+    sb_byte(sb, '"');
+}
+
+/* R0010 naming the grant of frame gf: the running one's (via grant_frame) or the root's. */
+static void rt_denied_by(Frame *gf, long bit, Str *target)
+{
+    EffSet *declared = gf ? gf->effects : 0; /* (may be 0) */
     GC_ROOT(&target);
-    Str *fn = frame_fn_name(grant_frame((Frame *)cur_frame)); /* the function that declared them */
+    Str *fn = frame_fn_name(gf); /* the function that declared them */
     GC_ROOT(&fn);
     SB *sb = sb_new(); /* what was attempted: effect("target") */
     GC_ROOT(&sb); /* (the same root covers the second builder below) */
@@ -265,7 +346,7 @@ void rt_denied(long bit, Str *target)
     sb_cstr(sb, effect);
     if (target) {
         sb_byte(sb, '(');
-        es_render_scope(sb, target);
+        render_target(sb, target);
         sb_byte(sb, ')');
     }
     Str *what = sb_finish(sb);
@@ -303,4 +384,67 @@ void rt_denied(long bit, Str *target)
     rt_err_extra = (long)sb_finish(sb);
     GC_UNROOT(6);
     rt_raise("R0010", m, (void *)cur_node);
+}
+
+/* ---- spec 013 (R2, H3, H4): opening a file that passed rt_check_path ----
+ * Unscoped grants open from the start directory's descriptor. Scoped grants open the resolved path
+ * relative to the deepest granted scope directory that holds it (opened from the start descriptor, so
+ * a renamed working directory changes nothing), one component at a time with O_NOFOLLOW: whatever links
+ * change after the check, the open cannot leave that directory; an attempt is R0010. Works on every
+ * kernel (research R3's fallback; openat2 is missing under qemu user mode). The fd, or a negative errno. */
+#define E_LOOP 40
+
+long rt_open_file(long bit, Str *path, long flags)
+{
+    rt_start_cwd();
+    long base = start_fd >= 0 ? start_fd : AT_FDCWD;
+    EffSet *grants[2] = {rt_frame_effects(), rt_root() ? rt_root()->effects : 0};
+    int scoped = 0;
+    for (int g = 0; g < 2; g++) scoped |= grants[g] && es_scoped(grants[g], bit);
+    if (!scoped) return vo_syscall4(SYS_openat, base, (long)path->data, flags | O_CLOEXEC, 0644);
+    GC_ROOT(&path);
+    Str *resolved = rt_resolve(path);
+    GC_ROOT(&resolved);
+    Str *scope = 0, *dir = 0; /* the deepest granted scope holding the path, and its resolved form */
+    GC_ROOT(&scope);
+    GC_ROOT(&dir);
+    for (int g = 0; resolved && g < 2; g++) {
+        EffSet *e = grants[g];
+        if (!e || !e->scopes) continue;
+        for (long i = 0; i < e->scopes->n; i++) {
+            EffScope *sc = vec_get(e->scopes, i);
+            if (sc->bit != bit) continue;
+            Str *d = rt_resolve(sc->str);
+            if (d && path_under(resolved, d) && (!dir || d->len > dir->len)) {
+                dir = d;
+                scope = sc->str;
+            }
+        }
+    }
+    if (!dir) { /* changed since the check: refuse */
+        GC_UNROOT(4);
+        rt_denied(bit, path);
+    }
+    long fd = vo_syscall4(SYS_openat, base, (long)(scope->len ? scope->data : "."), O_PATH | O_DIRECTORY | O_CLOEXEC, 0);
+    /* the resolved path below the scope (no links, no ".."), one component at a time without following
+       links: a component swapped for a link after the check fails the open instead of escaping (H4) */
+    char *rel = resolved->data + dir->len, *end = resolved->data + resolved->len;
+    while (fd >= 0) {
+        while (rel < end && *rel == '/') rel++;
+        char *c = rel;
+        while (rel < end && *rel != '/') rel++;
+        char save = *rel;
+        *rel = 0;
+        int last = rel >= end;
+        long next = last ? vo_syscall4(SYS_openat, fd, (long)(*c ? c : "."), flags | O_NOFOLLOW | O_CLOEXEC, 0644)
+                         : vo_syscall4(SYS_openat, fd, (long)c, O_PATH | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC, 0);
+        *rel = save;
+        sys_close((int)fd);
+        fd = next;
+        if (last) break;
+    }
+    long r = fd;
+    GC_UNROOT(4);
+    if (r == -E_LOOP) rt_denied(bit, path); /* a link where the check saw none */
+    return r;
 }

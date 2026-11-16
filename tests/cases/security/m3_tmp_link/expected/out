@@ -1,0 +1,16 @@
+$ vo fmt main.vo
+formatted main.vo
+1 of 1 files changed
+--- stderr
+--- exit 0
+$ vo edit rename main.vo main.vo:1:4 hello
+main.vo:1:4 greet -> hello
+main.vo:6:11 greet -> hello
+renamed greet to hello: 2 changes in 1 file
+--- stderr
+--- exit 0
+$ vo effects --update main.vo
++ main.vo:main: console
+0 errors, 0 warnings
+--- stderr
+--- exit 0

@@ -1,0 +1,13 @@
+l1_literal_scope.vo:8:22: error[E0503]: `load` declares too narrow a scope: it needs file.read("secret.txt").
+   8 |     return read_file("secret.txt");
+     |                      ^^^^^^^^^^^^
+l1_literal_scope.vo:12:23: error[E0503]: `save` declares too narrow a scope: it needs file.write("/etc/passwd").
+  12 |     return write_file("/etc/passwd", "x");
+     |                       ^^^^^^^^^^^^^
+l1_literal_scope.vo:16:16: error[E0503]: `home` declares too narrow a scope: it needs env("HOME").
+  16 |     return env("HOME");
+     |                ^^^^^^
+l1_literal_scope.vo:32:15: error[E0503]: `main` declares too narrow a scope: it needs serve("8001").
+  32 |     try serve("8001", handle);
+     |               ^^^^^^
+4 errors, 0 warnings

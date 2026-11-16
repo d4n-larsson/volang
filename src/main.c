@@ -97,12 +97,23 @@ int ends_with_vo(Str *str)
 }
 
 /* Adds every *.vo file below the open directory fd (recursively) to path_list. */
+long walk_strict;   /* spec 013 (H5): a package's walk: links to directories inside walk_root are followed, */
+long walk_failed;   /* and a directory that cannot be read or a link leading outside sets walk_failed */
+Str *walk_root;     /* the package directory, resolved */
+static long walk_depth;
+
 void walk_dir(Str *dirpath, int fd)
 {
     char *buf = alloc(32768); /* dirent buffer */
+    if (++walk_depth > 64) { /* (a loop of links inside the package) */
+        walk_failed = 1;
+        walk_depth--;
+        return;
+    }
     for (;;) {
         long got = sys_getdents64(fd, buf, 32768);
-        if (got <= 0) return;
+        if (got < 0 && walk_strict) walk_failed = 1;
+        if (got <= 0) break;
         for (long off = 0; off < got;) {
             char *ent = buf + off; /* struct linux_dirent64: ino 8, off 8, reclen 2, type 1, name */
             off += *(uint16_t *)(ent + 16);
@@ -113,16 +124,25 @@ void walk_dir(Str *dirpath, int fd)
             sb_byte(sb, '/');
             sb_cstr(sb, name);
             Str *full = sb_finish(sb);
-            if (ent[18] == 4) { /* DT_DIR */
-                long sub = sys_open(full->data, O_DIRECTORY);
-                if (sub < 0) continue;
-                walk_dir(full, (int)sub);
+            int type = ent[18];
+            long sub = -1;
+            if (type == 4 || (walk_strict && (type == 10 || type == 0))) { /* DT_DIR, or a link (DT_LNK, unknown) */
+                sub = sys_open(full->data, O_DIRECTORY);
+                if (sub < 0 && type == 4 && walk_strict) walk_failed = 1; /* an unreadable directory */
+            }
+            if (sub >= 0) {
+                if (type != 4) { /* a link to a directory: followed only when it stays inside the package */
+                    Str *real = rt_resolve(full);
+                    if (!real || !path_under(real, walk_root)) walk_failed = 1;
+                }
+                if (!walk_failed) walk_dir(full, (int)sub);
                 sys_close((int)sub);
-            } else if (ends_with_vo(full)) {
+            } else if (type != 4 && ends_with_vo(full)) {
                 path_push(full);
             }
         }
     }
+    walk_depth--;
 }
 
 /* Turns the positional arguments into path_list: directories become their sorted *.vo files. */
@@ -529,14 +549,12 @@ void fmt_report(Str *path, int changed)
     out_bytes(1, sb->ptr, sb->len);
 }
 
-/* Writes <path>.vo-fmt.tmp, then renames it over path, so a crash never truncates the source. */
+/* Writes <path>.vo-fmt-<random>.tmp (created exclusively), then renames it over path, so a crash never
+ * truncates the source. */
 void write_file_safely(Str *path, Str *text)
 {
-    SB *sb = sb_new();
-    sb_str(sb, path);
-    sb_cstr(sb, ".vo-fmt.tmp");
-    Str *tmp = sb_finish(sb); /* temp path (NUL-terminated str) */
-    long fd = sys_open(tmp->data, O_WRCREAT);
+    Str *tmp = tmp_path(path, "fmt"); /* spec 013 (M3): unpredictable, created exclusively */
+    long fd = open_tmp(tmp);
     if (fd < 0) return;
     write_all((int)fd, text->data, text->len);
     sys_close((int)fd);

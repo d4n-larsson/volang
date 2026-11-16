@@ -1,0 +1,11 @@
+write nul.jsonl {"v":1,"kind":"recording","program":"main.vo","fingerprint":"0","seed":1,"clock_ms":nul,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay nul.jsonl
+write tru.jsonl {"v":1,"kind":"recording","program":"main.vo","fingerprint":"0","seed":1,"clock_ms":null,"x":trux,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay tru.jsonl
+write big.jsonl {"v":1,"kind":"recording","program":"main.vo","fingerprint":"0","seed":99999999999999999999,"clock_ms":null,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay big.jsonl
+write max.jsonl {"v":1,"kind":"recording","program":"main.vo","fingerprint":"0","seed":9223372036854775807,"clock_ms":null,"args":[]}\n{"v":1,"kind":"end","status":0}\n
+vo replay max.jsonl
+write pad.jsonl {"v":1,"kind":"recording","program":"main.vo","fingerprint":"0","seed":1,"clock_ms":null,"args":["{bytes:1100000}"]}\n{"v":1,"kind":"end","status":0}\n
+vo replay --max-memory 1 pad.jsonl
+vo replay pad.jsonl

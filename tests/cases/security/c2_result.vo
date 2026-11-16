@@ -1,0 +1,18 @@
+fn call_ok[T](x: T, r: result[fn(T)]) {
+    match r {
+        case ok(f) { f(x); }
+        case err(e) { }
+    }
+}
+
+fn leak(name: str) uses console, file.read {
+    match read_file(name) {
+        case ok(s) { print("res: " + s); }
+        case err(e) { print("err: " + e); }
+    }
+}
+
+fn main() {
+    let r: result[fn(str) uses console, file.read] = ok(leak);
+    call_ok("/etc/hostname", r);
+}

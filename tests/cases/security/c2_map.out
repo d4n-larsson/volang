@@ -1,0 +1,5 @@
+c2_map.vo:17:31: error[E0301]: Expected `map[str, fn(str)]`, found `map[str, fn(str) uses console, file.read]`.
+  17 |     call_all("/etc/hostname", m);
+     |                               ^
+  expected `map[str, fn(str)]`, found `map[str, fn(str) uses console, file.read]`
+1 error, 0 warnings

@@ -79,24 +79,29 @@ void hof_merge(long lo, long mid, long hi, long *keys, long *from, long *to, int
     }
 }
 
-/* Stable, in place: each key is computed once, then a merge sort of the positions by key. */
+/* Stable, in place: each key is computed once, then a merge sort of the positions by key. The
+ * elements are taken from a snapshot made before any key is computed; a key function that changes
+ * the list (its length or its buffer) is R0007 (spec 013, C4: it made sort_by read and write past
+ * the list's buffer). */
 void hof_sort_by(List *list, void *fn, Node *call)
 {
     /* the key's type: the function argument's return type */
     int kind = (int)((Node *)call->b.v->data[1].p)->type->b.t->kind;
     long n = list->len;
+    W *before = list->data;
     GC_ROOT(&list);
     GC_ROOT(&fn);
-    long *keys = alloc(n * 8);
-    GC_ROOT(&keys);
-    long *pos = alloc(n * 8); /* positions */
-    GC_ROOT(&pos);
-    long *scratch = alloc(n * 8);
-    GC_ROOT(&scratch);
+    long *block = alloc(n * 32); /* keys, positions, scratch and the snapshot: one root (deep re-entry) */
+    GC_ROOT(&block);
+    long *keys = block, *pos = block + n, *scratch = block + 2 * n, *elems = block + 3 * n;
+    for (long i = 0; i < n; i++) elems[i] = list->data[i].i;
     for (long i = 0; i < n; i++) {
         pos[i] = i;
-        keys[i] = call_value(fn, call, &list->data[i].i);
+        keys[i] = call_value(fn, call, &elems[i]);
     }
+    if (list->len != n || list->data != before)
+        rt_raise_c("R0007", "The list changed while `sort_by` computed its keys: do not change it in the key function.",
+                   call);
     for (long width = 1; width < n; width *= 2) {
         for (long left = 0; left < n;) {
             long mid = left + width < n ? left + width : n;
@@ -108,9 +113,7 @@ void hof_sort_by(List *list, void *fn, Node *call)
         pos = scratch;
         scratch = t;
     }
-    scratch = alloc(n * 8); /* permute the elements */
-    W *data = list->data;
-    for (long i = 0; i < n; i++) scratch[i] = data[pos[i]].i;
-    for (long i = 0; i < n; i++) data[i].i = scratch[i];
-    GC_UNROOT(5);
+    W *data = list->data; /* permute the elements (the same buffer, n long: checked above) */
+    for (long i = 0; i < n; i++) data[i].i = elems[pos[i]];
+    GC_UNROOT(3);
 }

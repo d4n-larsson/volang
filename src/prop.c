@@ -576,6 +576,11 @@ static int pr_try(Node *test, List *args)
     GC_UNROOT(2);
     recover_point = 0;
     interp_reset();
+    if (status) { /* spec 013: the next case starts as this one did (R0006 switches these off) */
+        gc_on = 1;
+        oom_hook = (long)rt_oom;
+        rt_err_extra = 0;
+    }
     if (!status) return O_PASS;
     if (status == 1) {
         pr_kind = tf_node;

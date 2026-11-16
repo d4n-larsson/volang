@@ -1,0 +1,8 @@
+c2_result.vo:4:18: warning[W0201]: `e` is never used.
+   4 |         case err(e) { }
+     |                  ^
+c2_result.vo:17:30: error[E0301]: Expected `result[fn(str)]`, found `result[fn(str) uses console, file.read]`.
+  17 |     call_ok("/etc/hostname", r);
+     |                              ^
+  expected `result[fn(str)]`, found `result[fn(str) uses console, file.read]`
+1 error, 1 warning

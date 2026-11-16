@@ -14,9 +14,9 @@ enum {
     BU_ABS, BU_MIN, BU_MAX, BU_UPPER, BU_LOWER, BU_ORD, BU_CHR, BU_ENV, BU_RANDOM_INT,
     BU_SORT_BY, BU_MAP, BU_FILTER, BU_FOLD, BU_ANY, BU_ALL, BU_TODO, BU_ASSUME, BU_REQ_FAIL,
     BU_ENS_FAIL, BU_FLOAT_TEXT, BU_HTTP_EXCHANGE, BU_TEXT_FLOAT, BU_GET_OR, BU_SERVE_LISTEN, BU_SERVE_NEXT,
-    BU_SERVE_REPLY, BU_SERVE_CALL
+    BU_SERVE_REPLY, BU_SERVE_CALL, BU_HTTP_PART
 };
-_Static_assert(BU_SERVE_CALL == B_LAST, "the builtin ids end at B_LAST");
+_Static_assert(BU_HTTP_PART == B_LAST, "the builtin ids end at B_LAST");
 _Static_assert(BU_TODO == B_TODO && BU_REQ_FAIL == B_REQ_FAIL && BU_SORT_BY == B_SORT_BY, "builtin ids");
 
 /* The static type of the call's first argument. */
@@ -119,6 +119,7 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_SERVE_NEXT: return (long)io_serve_next(a0);
     case BU_SERVE_REPLY: io_serve_reply((void *)a0); return 0;
     case BU_SERVE_CALL: return (long)rt_serve_call((void *)a0, a1, call);
+    case BU_HTTP_PART: return (long)rt_http_part((Str *)a0, a1); /* spec 013 */
     case BU_TEXT_FLOAT: return std_text_float((Str *)a0); /* spec 007: up to 19 digits, exactly */
     case BU_PARSE_INT: return (long)rt_parse_int((Str *)a0);
     case BU_PARSE_FLOAT: return (long)rt_parse_float((Str *)a0);

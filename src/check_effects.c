@@ -11,6 +11,7 @@
 Fx *ck_fx;             /* FX of the function or test being checked, or 0 */
 static Vec *ck_edges;  /* call edges of the current file */
 static Vec *all_edges; /* call edges of the whole program */
+static Vec *ck_lits;   /* spec 013 (L1): {fx, literal node, bit} for literal targets of the current file */
 
 /* A call edge: {caller FX, callee decl, call node}. */
 typedef struct Edge {
@@ -150,6 +151,64 @@ void fx_builtin(long id)
     ck_fx->direct->any |= builtin_effects[id];
 }
 
+/* Spec 013 (L1): a string literal as the target (path, name, address) of an effect: checked against
+ * the caller's scopes when the file's effects are reported. */
+static void fx_literal(Node *call, long bit)
+{
+    if (!ck_fx || !ck_fx->declared || call->b.v->n < 1) return;
+    Node *arg = vec_get(call->b.v, 0);
+    if (arg->kind != N_STR) return;
+    if (!ck_lits) ck_lits = vec_new();
+    Edge *e = alloc(sizeof(Edge));
+    e->caller = ck_fx;
+    e->callee = arg;
+    e->call = (Node *)bit;
+    vec_push(ck_lits, e);
+}
+
+/* The literal targets of builtins: read_file, write_file, env. */
+void fx_builtin_literal(Node *call, long id)
+{
+    if (id == 6 || id == 7 || id == 40) fx_literal(call, builtin_effects[id]);
+}
+
+/* E0503 on each literal target outside the scopes its function declares for that effect. */
+static void fx_report_literals(Vec *items)
+{
+    for (long i = 0; ck_lits && i < ck_lits->n; i++) {
+        Edge *e = vec_get(ck_lits, i);
+        Fx *fx = e->caller;
+        long bit = (long)e->call;
+        EffSet *d = fx->declared;
+        if (fx->bad || !(d->mask & (unsigned long)bit) || !es_scoped(d, bit)) continue; /* E0501, or any scope */
+        Str *lit = e->callee->a.s;
+        if (bit & (EF_FREAD | EF_FWRITE)) {
+            /* resolved as the run-time check does (links followed, from the working directory), so a
+               path the run would allow is never refused here */
+            Str *real = rt_resolve(lit);
+            int inside = !real;
+            for (long k = 0; !inside && k < d->scopes->n; k++) {
+                EffScope *sc = vec_get(d->scopes, k);
+                Str *dir = sc->bit == bit ? rt_resolve(sc->str) : 0;
+                inside = dir && path_under(real, dir);
+            }
+            if (inside) continue;
+        } else if (es_has_pair(d, bit, lit)) { /* env names, serve addresses: exact */
+            continue;
+        }
+        EffSet *r = es_new(0); /* shown as written */
+        es_put_pair(r, bit, lit);
+        for (long k = 0; k < items->n; k++) {
+            Node *item = vec_get(items, k);
+            if (item_fx(item) != fx) continue;
+            Str *m = msg(M_NARROW, fx_item_name(item), fx_render(r), 0);
+            diag_add("E0503", SEV_ERROR, (int)e->callee->file, e->callee->start, e->callee->end, m);
+            break;
+        }
+    }
+    ck_lits = 0;
+}
+
 /* Records a call from the current function or test to a user function. */
 void fx_call(Node *call, Node *decl)
 {
@@ -157,6 +216,7 @@ void fx_call(Node *call, Node *decl)
     Fx *callee = item_fx(decl);
     if (file_get((int)decl->file)->std) { /* spec 007: a standard-library callee counts like a builtin */
         if (!callee || !callee->declared || !ck_fx->direct) return;
+        if (str_eq_cstr(decl->a.n->a.s, "serve")) fx_literal(call, EF_SERVE); /* std.http.serve's address */
         ck_fx->direct->any |= callee->declared->mask; /* its effects, needed in any scope */
         return;
     }
@@ -189,6 +249,7 @@ Vec *fx_edges(void)
 
 void fx_file_begin(void)
 {
+    ck_lits = 0;
     ck_edges = vec_new();
 }
 
@@ -217,6 +278,7 @@ void fx_file_end(Vec *items)
         }
     } while (changed);
     for (long i = 0; i < items->n; i++) fx_report(vec_get(items, i)); /* report */
+    fx_report_literals(items);
 }
 
 /* `name` for a function, `test "name"` for a test, as a str. */

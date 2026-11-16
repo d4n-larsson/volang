@@ -32,10 +32,24 @@ void render_str_lit(SB *sb, Str *str)
     sb_byte(sb, '"');
 }
 
+long render_depth; /* nesting of render_value (rt_raise resets it: a raise unwinds the rendering) */
+
 void render_value(SB *sb, long value, Type *type)
 {
     POLL(1);
     if (over_cap(sb)) return;
+    /* spec 013 (L10): too deep (or cyclic) for the native stack or the C root stack: R0005, or an
+     * ellipsis while a runtime error report is being rendered (no error inside a report) */
+    /* (the depth limit keeps the unwind small and the result the same on every build) */
+    if ((unsigned long)__builtin_frame_address(0) < (unsigned long)stack_floor + 0x10000 ||
+        gc_roots_n > ROOTS_LIMIT - 4096 || render_depth >= 50000) {
+        if (rt_reporting) {
+            sb_cstr(sb, "...");
+            return;
+        }
+        rt_raise_c("R0005", "Stack exhausted: the value is too deeply nested (or cyclic) to show.", (Node *)cur_node);
+    }
+    render_depth++;
     GC_ROOT(&value);
     type = rt_concrete(type); /* type parameters: the running frame's type arguments */
     GC_ROOT(&type);
@@ -117,6 +131,7 @@ void render_value(SB *sb, long value, Type *type)
     default: break;
     }
     GC_UNROOT(2);
+    render_depth--;
 }
 
 /* render_value, shortened to at most 200 bytes (cut at a UTF-8 boundary) with "..." appended when

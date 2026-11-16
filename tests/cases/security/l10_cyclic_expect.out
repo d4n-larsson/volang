@@ -1,0 +1,5 @@
+ERROR a cyclic value in a failing expect_eq (0ms)
+  l10_cyclic_expect.vo:10:5: runtime error[R0005]: Stack exhausted: the value is too deeply nested (or cyclic) to show.
+    at test "a cyclic value in a failing expect_eq" (l10_cyclic_expect.vo:10:5)
+        a: R = new R { kids: [new R { kids: [new R { kids: [new R { kids: [new R { kids: [new R { kids: [new R { kids: [new R { kids: [new R { kids: [new R { kids: [new R { kids: [new R { kids: [new R { kids: [new R..., b: R = new R { kids: [] }
+0 passed, 0 failed, 1 errored

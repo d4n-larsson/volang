@@ -12,6 +12,47 @@ with no grant at all can read any file (C2), a program granted one directory can
 (C1, C3), the toolchain's memory can be corrupted from vo code (C4), and a hostile recording can make
 `vo replay` read any file (C5).
 
+## Status
+
+All findings are fixed by [spec 013](../specs/013-security-fixes/spec.md). Cases are under
+`tests/cases/security/` (run by `make test`) unless they name a script in `tests/security/` (run by
+`make security-check`).
+
+| ID | Status | Case |
+|---|---|---|
+| C1 | fixed | `c1_nul_path` |
+| C2 | fixed | `c2_list`, `c2_map`, `c2_result`, `c2_record`, `c2_variant`, `c2_bound_param`, `c2_contract` |
+| C3 | fixed | `c3_each_read`, `c3_each_write`, `c3_each_env` |
+| C4 | fixed | `c4_sort_by_shrink` |
+| C5 | fixed | `c5_replay_program` |
+| H1 | fixed | `h1_subscope_link` |
+| H2 | fixed | `longcwd.py` |
+| H3 | fixed | `rename.py` |
+| H4 | fixed | `race.py`, `h4_inside_link` |
+| H5 | fixed | `h5_package_links` |
+| H6 | fixed | `pkg_race.py` |
+| H7 | fixed | `h7_hostile_requests` |
+| H8 | fixed | `server_attacks.py`, `h7_hostile_requests` |
+| H9 | fixed | `server_attacks.py`, `h7_hostile_requests` |
+| H10 | fixed | `server_attacks.py` |
+| H11 | fixed | `h11_cyclic_eq` |
+| M1 | fixed | `m1_forged_ok` |
+| M2 | fixed | `server_attacks.py` |
+| M3 | fixed | `m3_tmp_link` |
+| M4 | fixed | `m4_import_link` |
+| M5 | fixed | `m5_header_injection` |
+| L1 | fixed | `l1_literal_scope`, `tests/scope_fuzz.py` |
+| L2 | fixed | `m1_forged_ok` |
+| L3 | fixed | `l3_l5_manifest` |
+| L4 | fixed | `l4_fifo_source`, `c5_replay_program` |
+| L5 | fixed | `l3_l5_manifest` |
+| L6 | fixed | `l6_recording_reader` |
+| L7 | fixed | `l7_escape_diag` |
+| L8 | fixed | none (needs a fake resolver); checked by tracing three runs: three different IDs |
+| L9 | fixed | `server_attacks.py` (H8, H9 timings) |
+| L10 | fixed | `l10_cyclic_expect` |
+| L11 | fixed | `server_attacks.py` |
+
 ## Root causes
 
 Most findings share one of five causes; fixing the cause fixes the group.

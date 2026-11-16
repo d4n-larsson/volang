@@ -1,0 +1,23 @@
+fn each[T](x: T, fs: list[fn(T)]) -> bool {
+    for f in fs {
+        f(x);
+    }
+    return true;
+}
+
+fn leak(name: str) uses console, file.read {
+    match read_file(name) {
+        case ok(s) { print("contract: " + s); }
+        case err(e) { print("err: " + e); }
+    }
+}
+
+fn double(x: int) -> int
+    requires each("/etc/hostname", [leak])
+{
+    return x * 2;
+}
+
+fn main() {
+    let y = double(2);
+}

@@ -1,0 +1,34 @@
+$ vo replay r__etc_passwd.jsonl
+--- stderr
+error[T0008]: `r__etc_passwd.jsonl` is not a complete recording: record the run again with `vo run --record FILE`.
+--- exit 64
+$ vo replay r____outside_vo.jsonl
+--- stderr
+error[T0008]: `r____outside_vo.jsonl` is not a complete recording: record the run again with `vo run --record FILE`.
+--- exit 64
+$ vo replay r_secret_txt.jsonl
+--- stderr
+error[T0008]: `r_secret_txt.jsonl` is not a complete recording: record the run again with `vo run --record FILE`.
+--- exit 64
+$ vo replay r_fifo_vo.jsonl
+--- stderr
+error[T0008]: `r_fifo_vo.jsonl` is not a complete recording: record the run again with `vo run --record FILE`.
+--- exit 64
+$ vo replay r_sub____main_vo.jsonl
+--- stderr
+error[T0008]: `r_sub____main_vo.jsonl` is not a complete recording: record the run again with `vo run --record FILE`.
+--- exit 64
+$ vo replay r_sub__main_vo.jsonl
+--- stderr
+error[T0008]: `r_sub__main_vo.jsonl` is not a complete recording: record the run again with `vo run --record FILE`.
+--- exit 64
+$ vo replay r___main_vo.jsonl
+the recorded program
+--- stderr
+note: the program differs from the recorded one (recorded ./main.vo)
+--- exit 0
+$ vo replay r_ok.jsonl
+the recorded program
+--- stderr
+note: the program differs from the recorded one (recorded main.vo)
+--- exit 0

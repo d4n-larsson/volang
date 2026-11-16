@@ -5,6 +5,8 @@
 #define AT_EMPTY_PATH 0x1000
 #define STATX_SIZE 0x200
 #define STATX_SIZE_OFF 40 /* struct statx: stx_size */
+#define STATX_TYPE 0x1
+#define STATX_MODE_OFF 28 /* struct statx: stx_mode (u16) */
 #define OUT_CAP 65536
 
 long oom_hook = (long)oom_default;
@@ -45,6 +47,34 @@ long sys_write(int fd, void *buf, long n)
 long sys_open(char *path, int flags)
 {
     return vo_syscall4(SYS_openat, AT_FDCWD, (long)path, flags, 0644);
+}
+
+/* Spec 013 (M3): "<path>.vo-<tag>-<16 hex>.tmp", the hex drawn once per process from getrandom, so
+ * nobody can plant a link at the name beforehand; open_tmp creates it only if nothing is there. */
+Str *tmp_path(Str *path, char *tag)
+{
+    static char suffix[17];
+    if (!suffix[0]) {
+        unsigned char r[8] = {0};
+        vo_syscall3(SYS_getrandom, (long)r, 8, 0);
+        for (int i = 0; i < 8; i++) {
+            suffix[2 * i] = "0123456789abcdef"[r[i] >> 4];
+            suffix[2 * i + 1] = "0123456789abcdef"[r[i] & 15];
+        }
+    }
+    SB *sb = sb_new();
+    sb_str(sb, path);
+    sb_cstr(sb, ".vo-");
+    sb_cstr(sb, tag);
+    sb_byte(sb, '-');
+    sb_cstr(sb, suffix);
+    sb_cstr(sb, ".tmp");
+    return sb_finish(sb);
+}
+
+long open_tmp(Str *tmp)
+{
+    return sys_open(tmp->data, 0x1 | 0x40 | 0x80 | O_NOFOLLOW | O_CLOEXEC); /* O_WRONLY|O_CREAT|O_EXCL */
 }
 
 long sys_close(int fd)
@@ -180,13 +210,21 @@ void out_str(int fd, void *str)
     out_bytes(fd, ((Str *)str)->data, ((Str *)str)->len);
 }
 
-/* The length, or a negative errno. The bytes are followed by a NUL. */
+/* The length, or a negative errno. The bytes are followed by a NUL. Only a regular file is read
+ * (spec 013, L4: a FIFO or device is refused without blocking: open with O_NONBLOCK). */
 long read_whole_file(char *path, char **out)
 {
-    long fd = sys_open(path, O_RDONLY);
+    long fd = sys_open(path, O_RDONLY | O_NONBLOCK);
     if (fd < 0) return fd;
+    return read_whole_fd(fd, out);
+}
+
+/* read_whole_file for an open descriptor, which it closes. */
+long read_whole_fd(long fd, char **out)
+{
     long stx[32]; /* struct statx, 256 bytes */
-    long r = vo_syscall5(SYS_statx, fd, (long)"", AT_EMPTY_PATH, STATX_SIZE, (long)stx);
+    long r = vo_syscall5(SYS_statx, fd, (long)"", AT_EMPTY_PATH, STATX_SIZE | STATX_TYPE, (long)stx);
+    if (r >= 0 && (*(uint16_t *)((char *)stx + STATX_MODE_OFF) & 0170000) != 0100000) r = -22; /* EINVAL */
     if (r >= 0) {
         long size = *(long *)((char *)stx + STATX_SIZE_OFF);
         char *data = alloc_bytes(size + 1);

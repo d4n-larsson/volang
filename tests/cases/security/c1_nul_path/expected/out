@@ -1,0 +1,21 @@
+$ vo effects --update main.vo
++ main.vo:main: console, file.read("data/")
++ main.vo:test "a NUL in a write path": file.write("out/")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("secret.txt\x00/../data/x") is not allowed: `main` declares console, file.read("data/").
+   3 |     match read_file("secret.txt" + chr(0) + "/../data/x") {
+     |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at main (main.vo:3:11)
+--- exit 70
+$ vo test main.vo
+ERROR a NUL in a write path (0ms)
+  main.vo:14:11: runtime error[R0010]: file.write("victim.txt\x00/../out/y") is not allowed: `test "a NUL in a write path"` declares file.write("out/").
+    at test "a NUL in a write path" (main.vo:14:11)
+0 passed, 0 failed, 1 errored
+--- stderr
+--- exit 1

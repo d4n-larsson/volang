@@ -31,7 +31,8 @@ static long tr_omitted;
 static long tr_depth;
 static long tr_is_test;
 
-long rt_reporting; /* 1 while a runtime error report is built (no timeouts) */
+long rt_reporting;
+long rt_root_frame; /* spec 013: Frame * of the root grant (the frame pushed with no caller) */ /* 1 while a runtime error report is built (no timeouts) */
 long rt_err_trace_txt;  /* Str *: "    at f (loc)\n        values\n..." or 0 */
 long rt_err_trace_json; /* Str *: [{"function",...,"locals":[...]},...] or 0 */
 
@@ -58,7 +59,7 @@ static void vm_generic_resolve(GenericSite *gs, EffSet *eff0, Frame *frame, Inst
     Vec *targs = rt_targs(pc->node->e.v, frame);
     gs->targs = targs;
     gs->eff = 0;
-    if (eff0) gs->eff = rt_es_subst(eff0, gs->decl, targs);
+    (void)eff0; /* spec 013: the grant is computed per call from the caller's (rt_es_grant) */
     gs->ctargs = frame->targs;
     gs->eff0 = eff0;
     gs->valid = 1;
@@ -86,6 +87,7 @@ void *vm_push(void *cf_, void *decl_, void *call_, long *vals, void *closure_)
         for (long i = 0; i < n; i++) f->slots[i].i = vals[i];
     }
     Frame *caller = (Frame *)cur_frame;
+    if (!caller) rt_root_frame = (long)f; /* spec 013: main's, a test's or a property case's frame */
     f->parent = caller;
     f->fn = decl;
     f->call = call;
@@ -105,7 +107,7 @@ void *vm_push(void *cf_, void *decl_, void *call_, long *vals, void *closure_)
     GC_ROOT(&closure);
     if (call && call->kind == N_CALL && call->e.v) { /* a generic call: its type arguments */
         f->targs = rt_targs(call->e.v, caller);
-        if (f->effects) f->effects = rt_es_subst(f->effects, decl, f->targs);
+        f->effects = rt_es_grant(f->effects, caller ? caller->effects : 0); /* spec 013 (C3) */
     }
     GC_UNROOT(1);
     if (closure) { /* its type arguments and captured values */
@@ -632,7 +634,7 @@ op_call_generic: {
     nf->fn = gs->decl;
     nf->call = pc->node;
     nf->targs = gs->targs;
-    nf->effects = gs->eff;
+    nf->effects = rt_es_grant(eff0, frame->effects); /* spec 013 (C3) */
     nf->code = cf;
     nf->rpc = pc;
     nf->rdst = pc->a;

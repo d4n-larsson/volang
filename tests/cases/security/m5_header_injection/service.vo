@@ -1,0 +1,19 @@
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve;
+
+# Spec 013 (M5): a header built from request data cannot split the response.
+fn handle(r: Request) -> Response {
+    if r.path == "/name" {
+        return new Response { status: 200, headers: [new Header { name: r.body, value: "1" }], body: "named\n" };
+    }
+    return new Response { status: 200, headers: [new Header { name: "X-Echo", value: r.body }], body: "echoed\n" };
+}
+
+fn main() -> result[void] uses console, serve("{vport}") {
+    print("serving");
+    try serve("{vport}", handle);
+    print("stopped");
+    return ok();
+}

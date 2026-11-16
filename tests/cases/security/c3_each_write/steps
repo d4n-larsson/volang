@@ -1,0 +1,3 @@
+vo effects --update main.vo
+vo run main.vo
+keep pwned.txt

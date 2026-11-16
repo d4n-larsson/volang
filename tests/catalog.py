@@ -21,7 +21,7 @@ CONTRACTS = [os.path.join(ROOT, "specs", "001-vo-lang-core", "contracts", "error
 # Codes whose trigger cannot be shown in a short program: content is checked, execution is not.
 # E0115 needs nesting deep enough to exhaust a 64 MiB stack (golden case: check/nesting.vo).
 # E0104 needs an invalid UTF-8 byte, which a UTF-8 doc block cannot hold (golden case: lex/invalid_utf8.vo).
-NO_SHORT_EXAMPLE = {"E0115", "E0104", "R0014"}  # R0014 needs vo replay (a step case)
+NO_SHORT_EXAMPLE = {"E0115", "E0104", "R0014", "E0211"}  # R0014 needs vo replay, E0211 a link (step cases)
 
 
 def sections():
@@ -84,7 +84,7 @@ def contract():
         else:
             fixable = "yes"
         out[code] = (name, fixable)
-    for spec in ("005-holes-props-contracts", "006-query-edit-trace", "007-stdlib-packages", "009-small-fixes", "010-export-visibility", "012-spec-annotations"):
+    for spec in ("005-holes-props-contracts", "006-query-edit-trace", "007-stdlib-packages", "009-small-fixes", "010-export-visibility", "012-spec-annotations", "013-security-fixes"):
         codes = os.path.join(ROOT, "specs", spec, "contracts", "codes.md")
         for code, name, fix in re.findall(r"^\| ([EWRT]\d{4}) \| `(\w+)` \| [^|]* \| ([^|]*) \|",
                                           open(codes, encoding="utf-8").read(), re.M):

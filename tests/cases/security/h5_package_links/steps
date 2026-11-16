@@ -1,0 +1,15 @@
+symlink inner vendor/money/lib
+vo package main.vo money vendor/money
+vo run main.vo
+rm vendor/money/lib
+symlink ../money_extra vendor/money/lib
+vo run main.vo
+vo package main.vo money vendor/money
+rm vendor/money/lib
+mkdir vendor/money/lib
+write vendor/money/lib/impl.vo export fn fmt(n: int) -> str {\n    return "plain " + str(n);\n}\n
+vo package main.vo money vendor/money
+chmod 000 vendor/money/lib
+vo run main.vo
+chmod 755 vendor/money/lib
+keep vo.packages

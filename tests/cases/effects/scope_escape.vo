@@ -1,5 +1,6 @@
 fn main() -> result[void] uses console, file.write("out/") {
-    try write_file("out/../x.txt", "no");
+    let path = "out/../x.txt";
+    try write_file(path, "no");
     print("unreachable");
     return ok();
 }

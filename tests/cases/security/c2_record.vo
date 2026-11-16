@@ -1,0 +1,19 @@
+record Box[T] {
+    f: T;
+}
+
+fn open[T](x: T, b: Box[fn(T)]) {
+    let g = b.f;
+    g(x);
+}
+
+fn leak(name: str) uses console, file.read {
+    match read_file(name) {
+        case ok(s) { print("rec: " + s); }
+        case err(e) { print("err: " + e); }
+    }
+}
+
+fn main() {
+    open("/etc/hostname", new Box[fn(str) uses console, file.read] { f: leak });
+}

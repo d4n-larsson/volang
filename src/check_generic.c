@@ -106,16 +106,39 @@ int bind_rest(Node *node, Vec *tparams, Type **bindings, Str *what)
     return all;
 }
 
+/* 1 when t contains a function type anywhere (spec 013, C2: such arguments are checked again after
+ * inference, since unification does not compare effects). */
+static int ty_has_func(Type *t)
+{
+    if (!t) return 0;
+    switch (t->kind) {
+    case TY_FUNC: return 1;
+    case TY_LIST:
+    case TY_RESULT: return ty_has_func(t->a.t);
+    case TY_MAP: return ty_has_func(t->a.t) || ty_has_func(t->b.t);
+    case TY_RECORD:
+    case TY_VARIANT:
+        for (long i = 0; t->b.v && i < t->b.v->n; i++)
+            if (ty_has_func(vec_get(t->b.v, i))) return 1;
+        return 0;
+    default: return 0;
+    }
+}
+
 /* A call of a generic function: arguments, inference, constraints, effects; the return type. */
 Type *check_generic_call(Node *call, Node *decl, Type *expected)
 {
     Vec *tparams = ty_tparams_of(decl);
     Type **b = alloc(tparams->n * 8); /* bindings */
     if (!check_argc(call, decl->b.v->n)) return t_error;
+    long unified = 0; /* bit i: argument i unified (spec 013: only those are checked again) */
     for (long i = 0; i < decl->b.v->n; i++) { /* each argument: unify its type with the parameter's */
         Type *pt = ((Node *)vec_get(decl->b.v, i))->type;
         Type *at = check_arg(call, i, ty_has_params(pt) ? 0 : pt); /* nothing to infer: check directly */
-        if (ty_unify(pt, at, decl, b)) continue;
+        if (ty_unify(pt, at, decl, b)) {
+            if (i < 63) unified |= 1L << i;
+            continue;
+        }
         Type *known = ty_subst_bindings(pt, decl, b); /* the parameter's type as far as it is known */
         ck_mismatch(call->b.v->data[i].n, known, at);
     }
@@ -129,10 +152,10 @@ Type *check_generic_call(Node *call, Node *decl, Type *expected)
     }
     Vec *targs = bindings_vec(b, tparams->n); /* bindings for the runtime */
     call->e.v = targs;
-    for (long i = 0; i < decl->b.v->n; i++) { /* function values must fit the instantiated type */
+    for (long i = 0; i < decl->b.v->n; i++) { /* function values, also nested (spec 013, C2), must fit */
         Type *want = ty_subst(((Node *)vec_get(decl->b.v, i))->type, decl, targs);
         Node *arg = vec_get(call->b.v, i);
-        if (arg->type->kind == TY_FUNC) expect_type(arg, want, arg->type);
+        if ((i >= 63 || (unified >> i & 1)) && arg->type && ty_has_func(arg->type)) expect_type(arg, want, arg->type);
     }
     EffSet *declared = decl->a.n->b.fx->declared; /* the declaration with its effect parameters bound */
     if (declared && file_get((int)decl->file)->std) { /* spec 011: as for non-generic library calls (fx_call), */
@@ -168,6 +191,8 @@ Type *vcase_generic(Node *node, Node *decl, Node *payload_type_node, Type *expec
         if (!ty_unify(payload_type_node->type, at, decl, b)) {
             Type *known = ty_subst_bindings(payload_type_node->type, decl, b);
             ck_mismatch(node->c.n, known, at);
+        } else if (ty_has_func(at)) { /* spec 013 (C2): effects of function values in the payload */
+            expect_type(node->c.n, ty_subst_bindings(payload_type_node->type, decl, b), at);
         }
     }
     SB *sb = sb_new(); /* `Tree.case` for messages */
