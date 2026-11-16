@@ -1,0 +1,8 @@
+comparator_changes.vo:16:13: runtime error[R0007]: The collection changed while it was being ordered (by its comparison function).
+  16 |             push(holder[0], 99);
+     |             ^^^^^^^^^^^^^^^^^^^
+trace:
+  at anonymous function (comparator_changes.vo:16:13)
+      a: int = 2, b: int = 1, holder: list[ordered_set[int]] = [ordered_set{1}]
+  at main (comparator_changes.vo:22:5)
+      other: ordered_set[int] = ordered_set{2}, s: ordered_set[int] = ordered_set{1, 2}, holder: list[ordered_set[int]] = [ordered_set{1}], own: ordered_set[int] = ordered_set{1}

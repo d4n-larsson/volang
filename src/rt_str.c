@@ -181,6 +181,8 @@ long rt_minmax(long a, long b, int kind, int want_max)
         b_less = y.d < x.d;
     } else if (kind == TY_STR) {
         b_less = str_cmp((Str *)b, (Str *)a) < 0;
+    } else if (kind == TY_RECORD) { /* spec 014 */
+        b_less = elem_less(b, a, kind);
     } else {
         b_less = b < a;
     }

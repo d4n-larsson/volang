@@ -1,5 +1,6 @@
 record P {
     x: int;
+    tags: list[str];
 }
 
 fn bigger[T: ordered](a: T, b: T) -> T {
@@ -10,6 +11,6 @@ fn bigger[T: ordered](a: T, b: T) -> T {
 }
 
 fn main() uses console {
-    let p = bigger(new P { x: 1 }, new P { x: 2 });
+    let p = bigger(new P { x: 1, tags: new list[str] }, new P { x: 2, tags: new list[str] });
     print(str(p.x));
 }

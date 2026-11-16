@@ -1,0 +1,59 @@
+import std.text.words;
+
+# The best price of a side: the highest when highest is true, else the lowest; -1 when empty.
+fn best(book: map[int, int], highest: bool) -> int {
+    var b = -1;
+    for p in keys(book) {
+        if b < 0 or (highest and p > b) or (not highest and p < b) {
+            set b = p;
+        }
+    }
+    return b;
+}
+
+fn show(p: int) -> str {
+    if p < 0 {
+        return "-";
+    }
+    return str(p);
+}
+
+fn main() -> result[void] uses console, input {
+    let bids = new map[int, int];
+    let asks = new map[int, int];
+    for line in split(read_all(), "\n") {
+        let w = words(line);
+        if len(w) == 3 {
+            let buy = w[0] == "buy";
+            let price = try parse_int(w[1]);
+            var qty = try parse_int(w[2]);
+            var traded = 0;
+            var cost = 0;
+            var other = bids;
+            var own = asks;
+            if buy {
+                set other = asks;
+                set own = bids;
+            }
+            while qty > 0 and len(other) > 0 {
+                let p = best(other, not buy);
+                if (buy and p > price) or (not buy and p < price) {
+                    break;
+                }
+                let t = min(qty, other[p]);
+                set qty = qty - t;
+                set traded = traded + t;
+                set cost = cost + t * p;
+                set other[p] = other[p] - t;
+                if other[p] == 0 {
+                    remove(other, p);
+                }
+            }
+            if qty > 0 {
+                set own[price] = get_or(own, price, 0) + qty;
+            }
+            print(str(traded) + " " + str(cost) + " " + show(best(bids, true)) + " " + show(best(asks, false)));
+        }
+    }
+    return ok();
+}

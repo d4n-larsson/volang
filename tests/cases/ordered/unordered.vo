@@ -1,0 +1,15 @@
+
+record Tagged {
+    name: str;
+    tags: list[str];
+}
+
+fn main() uses console {
+    let a = new Tagged { name: "a", tags: new list[str] };
+    let b = new Tagged { name: "b", tags: new list[str] };
+    print(str(a < b));
+    var xs = [a, b];
+    sort(xs);
+    let m = new ordered_map[Tagged, int];
+    print(str(a == b));
+}

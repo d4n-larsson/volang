@@ -1,2 +1,2 @@
-{"v":1,"kind":"diagnostic","code":"E0313","name":"not_ordered","severity":"error","file":"not_ordered.vo","start":{"line":13,"col":13},"end":{"line":13,"col":51},"text":"bigger(new P { x: 1 }, new P { x: 2 })","message":"`P` is not ordered, but `bigger` needs `int`, `float` or `str`.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0313","name":"not_ordered","severity":"error","file":"not_ordered.vo","start":{"line":14,"col":13},"end":{"line":14,"col":93},"text":"bigger(new P { x: 1, tags: new list[str] }, new P { x: 2, tags: new list[str] })","message":"`P` is not ordered: its field `tags` (`list[str]`) has no order.","fixes":[],"related":[]}
 {"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

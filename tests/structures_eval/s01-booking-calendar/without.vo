@@ -1,0 +1,151 @@
+# An AVL tree keyed by start time, its nodes stored by index in parallel lists (-1: no node).
+record Calendar {
+    root: int;
+    start: list[int];
+    end: list[int];
+    name: list[str];
+    left: list[int];
+    right: list[int];
+    height: list[int];
+}
+
+fn height(t: Calendar, n: int) -> int {
+    if n < 0 {
+        return 0;
+    }
+    return t.height[n];
+}
+
+fn update(t: Calendar, n: int) {
+    set t.height[n] = 1 + max(height(t, t.left[n]), height(t, t.right[n]));
+}
+
+fn rotate_right(t: Calendar, n: int) -> int {
+    let l = t.left[n];
+    set t.left[n] = t.right[l];
+    set t.right[l] = n;
+    update(t, n);
+    update(t, l);
+    return l;
+}
+
+fn rotate_left(t: Calendar, n: int) -> int {
+    let r = t.right[n];
+    set t.right[n] = t.left[r];
+    set t.left[r] = n;
+    update(t, n);
+    update(t, r);
+    return r;
+}
+
+fn balance(t: Calendar, n: int) -> int {
+    update(t, n);
+    let b = height(t, t.left[n]) - height(t, t.right[n]);
+    if b > 1 {
+        if height(t, t.left[t.left[n]]) < height(t, t.right[t.left[n]]) {
+            set t.left[n] = rotate_left(t, t.left[n]);
+        }
+        return rotate_right(t, n);
+    }
+    if b < -1 {
+        if height(t, t.right[t.right[n]]) < height(t, t.left[t.right[n]]) {
+            set t.right[n] = rotate_right(t, t.right[n]);
+        }
+        return rotate_left(t, n);
+    }
+    return n;
+}
+
+fn insert(t: Calendar, n: int, id: int) -> int {
+    if n < 0 {
+        return id;
+    }
+    if t.start[id] < t.start[n] {
+        set t.left[n] = insert(t, t.left[n], id);
+    } else {
+        set t.right[n] = insert(t, t.right[n], id);
+    }
+    return balance(t, n);
+}
+
+fn add(t: Calendar, s: int, e: int, name: str) {
+    push(t.start, s);
+    push(t.end, e);
+    push(t.name, name);
+    push(t.left, -1);
+    push(t.right, -1);
+    push(t.height, 1);
+    set t.root = insert(t, t.root, len(t.start) - 1);
+}
+
+# The node with the largest start <= k, or -1.
+fn at_or_below(t: Calendar, k: int) -> int {
+    var n = t.root;
+    var best = -1;
+    while n >= 0 {
+        if t.start[n] <= k {
+            set best = n;
+            set n = t.right[n];
+        } else {
+            set n = t.left[n];
+        }
+    }
+    return best;
+}
+
+# The node with the smallest start >= k, or -1.
+fn at_or_above(t: Calendar, k: int) -> int {
+    var n = t.root;
+    var best = -1;
+    while n >= 0 {
+        if t.start[n] >= k {
+            set best = n;
+            set n = t.left[n];
+        } else {
+            set n = t.right[n];
+        }
+    }
+    return best;
+}
+
+# The node of the booking that covers time k, or -1.
+fn covering(t: Calendar, k: int) -> int {
+    let n = at_or_below(t, k);
+    if n >= 0 and t.end[n] > k {
+        return n;
+    }
+    return -1;
+}
+
+fn main() -> result[void] uses console, input {
+    let cal = new Calendar { root: -1, start: new list[int], end: new list[int], name: new list[str], left: new list[int], right: new list[int], height: new list[int] };
+    for line in split(read_all(), "\n") {
+        let w = split(trim(line), " ");
+        if w[0] == "book" {
+            let s = try parse_int(w[1]);
+            let e = try parse_int(w[2]);
+            let after = at_or_above(cal, s);
+            if covering(cal, s) < 0 and (after < 0 or cal.start[after] >= e) {
+                add(cal, s, e, w[3]);
+                print("accepted");
+            } else {
+                print("rejected");
+            }
+        } else if w[0] == "at" {
+            let n = covering(cal, try parse_int(w[1]));
+            if n < 0 {
+                print("free");
+            } else {
+                print(cal.name[n]);
+            }
+        } else if w[0] == "next" {
+            let n = at_or_above(cal, try parse_int(w[1]));
+            if n < 0 {
+                print("none");
+            } else {
+                print(cal.name[n] + " " + str(cal.start[n]) + " " + str(cal.end[n]));
+            }
+        }
+    }
+    return ok();
+}

@@ -1,0 +1,6 @@
+
+fn main() uses console {
+    let m = new ordered_map[str, int];
+    set m["a"] = 1;
+    print(str(m["b"]));
+}

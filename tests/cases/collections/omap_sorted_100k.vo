@@ -1,0 +1,18 @@
+import std.collections.first_key;
+import std.collections.last_key;
+
+# Spec 014 US1/AC4: 100,000 keys inserted in ascending order (the worst case for an unbalanced tree).
+fn main() uses console {
+    let m = new ordered_map[int, int];
+    for i in 0..100000 {
+        set m[i] = i * 2;
+    }
+    var sum = 0;
+    for i in 0..100000 {
+        set sum = sum + m[i];
+    }
+    for i in 0..50000 {
+        remove(m, i * 2);
+    }
+    print(str(len(m)) + " " + str(sum) + " " + str(first_key(m) == ok(1)) + " " + str(last_key(m) == ok(99999)));
+}

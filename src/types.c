@@ -182,6 +182,11 @@ int ty_has_params(Type *t)
         return ty_has_params(t->a.t);
     case TY_MAP:
         return ty_has_params(t->a.t) || ty_has_params(t->b.t);
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE:
+        return ty_has_params(t->a.t) || (t->b.t && ty_has_params(t->b.t));
     case TY_FUNC: {
         Vec *evars = t->decl.es->evars; /* effect parameters */
         if (evars && evars->n) return 1;
@@ -231,6 +236,19 @@ Type *ty_subst(Type *t, Node *owner, Vec *args)
         GC_ROOT(&k);
         Type *v = ty_subst(t->b.t, owner, args);
         Type *m = ty_make(TY_MAP, k, v, 0);
+        GC_UNROOT(3);
+        return m;
+    }
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: { /* spec 014 */
+        GC_ROOT(&t);
+        GC_ROOT(&args);
+        Type *k = ty_subst(t->a.t, owner, args);
+        GC_ROOT(&k);
+        Type *v = t->b.t ? ty_subst(t->b.t, owner, args) : 0;
+        Type *m = ty_make(t->kind, k, v, 0);
         GC_UNROOT(3);
         return m;
     }
@@ -292,6 +310,12 @@ int ty_unify(Type *pattern, Type *t, Node *owner, Type **bindings)
         return ty_unify(pattern->a.t, t->a.t, owner, bindings);
     case TY_MAP:
         return ty_unify(pattern->a.t, t->a.t, owner, bindings) && ty_unify(pattern->b.t, t->b.t, owner, bindings);
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE:
+        return ty_unify(pattern->a.t, t->a.t, owner, bindings) &&
+               (!pattern->b.t || ty_unify(pattern->b.t, t->b.t, owner, bindings));
     case TY_FUNC: {
         if (pattern->a.v->n != t->a.v->n) return 0; /* same number of parameters */
         for (long i = 0; i < pattern->a.v->n; i++)

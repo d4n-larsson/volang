@@ -1,0 +1,24 @@
+
+# Spec 014 US2/AC3: 100,000 pushes then pops.
+fn main() uses console {
+    let big = new priority_queue[int];
+    for i in 0..100000 {
+        push(big, (i * 7919) % 100000);
+    }
+    var ok_order = true;
+    var last = -1;
+    while len(big) > 0 {
+        match pop(big) {
+            case ok(x) {
+                if x < last {
+                    set ok_order = false;
+                }
+                set last = x;
+            }
+            case err(_) {
+                set ok_order = false;
+            }
+        }
+    }
+    print("100000 in order: " + str(ok_order));
+}

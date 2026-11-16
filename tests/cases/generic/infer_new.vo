@@ -1,0 +1,23 @@
+# Spec 014 US4: `new` of a generic record infers its type arguments from the expected type or the fields.
+record Pair[A, B] {
+    first: A;
+    second: B;
+}
+
+record Box[T] {
+    items: list[T];
+}
+
+fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
+    return new Pair { first: p.second, second: p.first };
+}
+
+fn main() uses console {
+    let p = new Pair { first: 1, second: "one" };
+    let q = swap(p);
+    print(q.first + " " + str(q.second));
+    let b: Box[int] = new Box { items: new list[int] };
+    let pairs: list[Pair[str, bool]] = [new Pair { first: "x", second: true }];
+    let explicit = new Pair[int, int] { first: 1, second: 2 };
+    print(str(len(b.items)) + " " + pairs[0].first + " " + str(explicit.second));
+}

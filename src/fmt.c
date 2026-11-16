@@ -172,6 +172,19 @@ static void fm_type(Node *t)
     case TY_FUNC:
         fm_fn_type(t);
         return;
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: { /* spec 014 */
+        static const char *const names[] = {"ordered_map[", "ordered_set[", "priority_queue[", "deque["};
+        fm_c((char *)names[t->a.i - TY_OMAP]);
+        fm_type(t->b.n);
+        if (t->c.n) {
+            fm_c(", ");
+            fm_type(t->c.n);
+        }
+        break;
+    }
     default: /* map[K, V] */
         fm_c("map[");
         fm_type(t->b.n);
@@ -313,6 +326,10 @@ static void fm_expr(Node *n, long ctx)
         fm_c("list[");
         fm_type(n->a.n);
         fm_b(']');
+        break;
+    case N_NEW_COLL: /* spec 014: new ordered_map[K, V] */
+        fm_c("new ");
+        fm_type(n->a.n);
         break;
     case N_NEW_MAP:
         fm_c("new ");

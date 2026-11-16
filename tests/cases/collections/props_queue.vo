@@ -1,0 +1,38 @@
+
+# Spec 014 SC-001: pops equal the sorted pushes.
+prop "pops come out sorted" (xs: list[int]) {
+    let q = new priority_queue[int];
+    for x in xs {
+        push(q, x);
+    }
+    var out = new list[int];
+    while len(q) > 0 {
+        match pop(q) {
+            case ok(x) {
+                push(out, x);
+            }
+            case err(_) {
+                expect(false);
+            }
+        }
+    }
+    var sorted = xs;
+    sort(sorted);
+    expect_eq(out, sorted);
+}
+
+prop "interleaved pushes and pops agree with a sorted list" (ops: list[int]) {
+    let q = new priority_queue[int];
+    var model = new list[int];
+    for op in ops {
+        if op % 3 == 0 and len(model) > 0 {
+            sort(model);
+            expect_eq(pop(q), ok(model[0]));
+            set model = slice(model, 1, len(model));
+        } else {
+            push(q, op);
+            push(model, op);
+        }
+    }
+    expect_eq(len(q), len(model));
+}

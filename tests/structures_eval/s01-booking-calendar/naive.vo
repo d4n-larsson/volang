@@ -1,0 +1,49 @@
+record Booking {
+    start: int;
+    end: int;
+    name: str;
+}
+
+fn main() -> result[void] uses console, input {
+    let cal = new list[Booking];
+    for line in split(read_all(), "\n") {
+        let w = split(trim(line), " ");
+        if w[0] == "book" {
+            let s = try parse_int(w[1]);
+            let e = try parse_int(w[2]);
+            var free = true;
+            for b in cal {
+                if b.start < e and s < b.end {
+                    set free = false;
+                }
+            }
+            if free {
+                push(cal, new Booking { start: s, end: e, name: w[3] });
+                print("accepted");
+            } else {
+                print("rejected");
+            }
+        } else if w[0] == "at" {
+            let t = try parse_int(w[1]);
+            var name = "free";
+            for b in cal {
+                if b.start <= t and t < b.end {
+                    set name = b.name;
+                }
+            }
+            print(name);
+        } else if w[0] == "next" {
+            let t = try parse_int(w[1]);
+            var found = "none";
+            var best = -1;
+            for b in cal {
+                if b.start >= t and (best < 0 or b.start < best) {
+                    set best = b.start;
+                    set found = b.name + " " + str(b.start) + " " + str(b.end);
+                }
+            }
+            print(found);
+        }
+    }
+    return ok();
+}

@@ -1,0 +1,20 @@
+# Spec 014 US4: what cannot be inferred keeps today's errors.
+variant Tree[T] {
+    leaf;
+    node(T);
+}
+
+record Box[T] {
+    items: list[T];
+}
+
+record Tagged[T] {
+    count: int;
+}
+
+fn main() uses console {
+    let t = Tree.leaf;
+    let b = new Tagged { count: 1 };
+    let wrong = new Box[int, str] { items: new list[int] };
+    print("never");
+}

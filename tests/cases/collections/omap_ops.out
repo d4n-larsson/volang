@@ -1,0 +1,9 @@
+empty: err(empty) err(empty) err(none)
+len 5, keys 10,20,30,40,50, m[20] twenty
+first ok(10), last ok(50)
+at or above 25: ok(30), 30: ok(30), 51: err(none)
+at or below 25: ok(20), 10: ok(10), 9: err(none)
+between 15 and 40: 20,30,40, 41..49: []
+has 40 true, has 41 false, get_or 41 none
+after remove: 10,20,30,50; the copy: 10,20,30,40,50
+false

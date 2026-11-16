@@ -328,7 +328,9 @@ static void cset(Node *st)
         long obj = cexpr(place->a.n, -1);
         long key = cexpr(place->b.n, -1);
         long val = cexpr(st->b.n, -1);
-        if (place->flags & NF_MAP)
+        if (TY_IS_COLL(place->a.n->type->kind))
+            c_emit(OPC_SET_INDEX_COLL, obj, key, val, place); /* spec 014 */
+        else if (place->flags & NF_MAP)
             c_emit(OPC_SET_INDEX_MAP, obj, key, val, st); /* cur_node: the statement */
         else
             c_emit(OPC_SET_INDEX_LIST, obj, key, val, place); /* R0003 at the place */
@@ -349,6 +351,7 @@ static void cfor(Node *st)
         op = OPC_FOR_RANGE;
     } else { /* list: evaluated once; the index starts at 0 */
         c_mov(it, cexpr(st->b.n, it), st);
+        if (TY_IS_COLL(st->b.n->type->kind)) c_emit(OPC_SNAPSHOT, it, it, 0, st); /* spec 014 */
         c_emit(OPC_LOADK, it + 8, 0, 0, st);
         op = OPC_FOR_LIST;
     }
@@ -548,8 +551,9 @@ static long cbuiltin(Node *node, long dst, long mark)
 {
     long slots[3] = {0, 0, 0};
     Vec *args = node->b.v;
-    long n = args->n > 3 ? 3 : args->n; /* builtins take at most three */
-    for (long i = 0; i < n; i++) slots[i] = cexpr(vec_get(args, i), -1);
+    long skip = node->d.i == B_COLL; /* spec 014: __coll's OP literal is read from the node at run time */
+    long n = args->n - skip > 3 ? 3 : args->n - skip; /* builtins take at most three */
+    for (long i = 0; i < n; i++) slots[i] = cexpr(vec_get(args, i + skip), -1);
     c_temp = mark; /* the arguments are read by the call itself */
     dst = c_dst(dst);
     long c = slots[1] << 16 | slots[2] << 40 | n; /* count | second slot << 16 | third slot << 40 */
@@ -692,9 +696,9 @@ long cexpr(Node *node, long dst)
         if (!id) return ccall(node, dst, OPC_CALL, 0, mark);
         Vec *args = node->b.v;
         if (id == BI_LEN) return cunary_op(node, dst, mark, OPC_LEN, args->data[0].n, 0); /* len(x) */
-        if (id == BI_HAS) /* has(m, k) */
+        if (id == BI_HAS && args->data[0].n->type->kind == TY_MAP) /* has(m, k) (spec 014: maps only) */
             return cpair_op(node, dst, mark, OPC_HAS, args->data[0].n, args->data[1].n);
-        if (id == BI_PUSH) { /* push(xs, v): no value */
+        if (id == BI_PUSH && args->data[0].n->type->kind == TY_LIST) { /* push(xs, v): no value */
             long xs = cexpr(args->data[0].n, -1);
             long v = cexpr(args->data[1].n, -1);
             c_emit(OPC_PUSH, xs, v, 0, node);
@@ -706,6 +710,8 @@ long cexpr(Node *node, long dst)
     case N_FIELD: /* r.f */
         return cunary_op(node, dst, mark, OPC_GET_FIELD, node->a.n, node->c.i * 8 + R_FIELDS);
     case N_INDEX: /* xs[i] / m[k] */
+        if (TY_IS_COLL(node->a.n->type->kind)) /* spec 014 */
+            return cpair_op(node, dst, mark, OPC_INDEX_COLL, node->a.n, node->b.n);
         return cpair_op(node, dst, mark, (node->flags & NF_MAP) ? OPC_INDEX_MAP : OPC_INDEX_LIST, node->a.n,
                         node->b.n);
     case N_LIST:
@@ -714,6 +720,10 @@ long cexpr(Node *node, long dst)
     case N_NEW_LIST: /* new list[T] */
         dst = c_dst(dst);
         c_emit(OPC_NEW_LIST, dst, 0, 4, node);
+        return dst;
+    case N_NEW_COLL: /* spec 014: new ordered_map[K, V] */
+        dst = c_dst(dst);
+        c_emit(OPC_NEW_COLL, dst, 0, 0, node);
         return dst;
     case N_NEW_MAP: /* new map[K, V] */
         dst = c_dst(dst);

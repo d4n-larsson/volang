@@ -99,6 +99,11 @@ def main():
     rng = random.Random(a.seed)
     os.makedirs(WORK, exist_ok=True)
     files = corpus()
+    if a.stress:  # the cases tests/run.sh --stress skips (`<case>.stress-every` is `skip`) do not fit that build
+        def skipped(f):
+            mark = f[:-3] + ".stress-every"
+            return os.path.exists(mark) and open(mark).read().strip() == "skip"
+        files = [f for f in files if not skipped(f)]
     if not files:
         print("fuzz: empty corpus")
         return 0

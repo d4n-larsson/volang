@@ -1,0 +1,69 @@
+import std.text.words;
+
+# A binary min-heap of ints at index 0.
+fn heap_push(h: list[int], x: int) {
+    push(h, x);
+    var i = len(h) - 1;
+    while i > 0 and h[i] < h[(i - 1) / 2] {
+        let p = (i - 1) / 2;
+        let t = h[i];
+        set h[i] = h[p];
+        set h[p] = t;
+        set i = p;
+    }
+}
+
+fn heap_pop(h: list[int]) -> result[int] {
+    let top = h[0];
+    let last = try pop(h);
+    if len(h) > 0 {
+        set h[0] = last;
+        var i = 0;
+        while true {
+            var b = i;
+            let l = 2 * i + 1;
+            if l < len(h) and h[l] < h[b] {
+                set b = l;
+            }
+            if l + 1 < len(h) and h[l + 1] < h[b] {
+                set b = l + 1;
+            }
+            if b == i {
+                break;
+            }
+            let t = h[i];
+            set h[i] = h[b];
+            set h[b] = t;
+            set i = b;
+        }
+    }
+    return ok(top);
+}
+
+fn main() -> result[void] uses console, input {
+    let xs = words(read_all());
+    # low: the smaller half, negated so that its largest is at the top; high: the larger half.
+    let low = new list[int];
+    let high = new list[int];
+    var checksum = 0;
+    for i in 1..len(xs) {
+        let x = try parse_int(xs[i]);
+        if len(low) == 0 or x <= -low[0] {
+            heap_push(low, -x);
+        } else {
+            heap_push(high, x);
+        }
+        if len(low) > len(high) + 1 {
+            heap_push(high, -try heap_pop(low));
+        } else if len(high) > len(low) {
+            heap_push(low, -try heap_pop(high));
+        }
+        let median = -low[0];
+        set checksum = (checksum + i * (median + 1000000000)) % 1000000007;
+        if i <= 50 or i % 1000 == 0 {
+            print(str(i) + " " + str(median));
+        }
+    }
+    print("END " + str(checksum));
+    return ok();
+}

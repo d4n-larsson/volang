@@ -1,0 +1,67 @@
+import std.collections.key_at_or_above;
+import std.collections.key_at_or_below;
+
+record Booking {
+    start: int;
+    end: int;
+    name: str;
+}
+
+# The booking that covers time t.
+fn covering(cal: ordered_map[int, Booking], t: int) -> result[Booking] {
+    let k = try key_at_or_below(cal, t);
+    if cal[k].end > t {
+        return ok(cal[k]);
+    }
+    return err("free");
+}
+
+fn main() -> result[void] uses console, input {
+    let cal = new ordered_map[int, Booking];
+    for line in split(read_all(), "\n") {
+        let w = split(trim(line), " ");
+        if w[0] == "book" {
+            let b = new Booking { start: try parse_int(w[1]), end: try parse_int(w[2]), name: w[3] };
+            var free = true;
+            match covering(cal, b.start) {
+                case ok(_) {
+                    set free = false;
+                }
+                case err(_) {
+                }
+            }
+            match key_at_or_above(cal, b.start) {
+                case ok(k) {
+                    set free = free and k >= b.end;
+                }
+                case err(_) {
+                }
+            }
+            if free {
+                set cal[b.start] = b;
+                print("accepted");
+            } else {
+                print("rejected");
+            }
+        } else if w[0] == "at" {
+            match covering(cal, try parse_int(w[1])) {
+                case ok(b) {
+                    print(b.name);
+                }
+                case err(_) {
+                    print("free");
+                }
+            }
+        } else if w[0] == "next" {
+            match key_at_or_above(cal, try parse_int(w[1])) {
+                case ok(k) {
+                    print(cal[k].name + " " + str(k) + " " + str(cal[k].end));
+                }
+                case err(_) {
+                    print("none");
+                }
+            }
+        }
+    }
+    return ok();
+}

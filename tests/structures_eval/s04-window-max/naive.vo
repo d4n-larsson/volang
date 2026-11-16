@@ -1,0 +1,18 @@
+import std.text.words;
+
+fn main() -> result[void] uses console, input {
+    let xs = new list[int];
+    for word in words(read_all()) {
+        push(xs, try parse_int(word));
+    }
+    let k = xs[1];
+    let nums = slice(xs, 2, len(xs));
+    for i in k - 1..len(nums) {
+        var best = nums[i];
+        for j in i - k + 1..i {
+            set best = max(best, nums[j]);
+        }
+        print(str(best));
+    }
+    return ok();
+}

@@ -96,6 +96,17 @@ void ty_name_into(SB *sb, Type *t)
         sb_cstr(sb, "result[");
         ty_name_into(sb, t->a.t);
         break;
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: /* spec 014 */
+        sb_cstr(sb, t->kind == TY_OMAP ? "ordered_map[" : t->kind == TY_OSET ? "ordered_set[" : t->kind == TY_PQUEUE ? "priority_queue[" : "deque[");
+        ty_name_into(sb, t->a.t);
+        if (t->b.t) {
+            sb_cstr(sb, ", ");
+            ty_name_into(sb, t->b.t);
+        }
+        break;
     case TY_RECORD:
     case TY_VARIANT:
         sb_str(sb, t->decl.n->a.n->a.s);
@@ -252,6 +263,17 @@ Type *resolve_type(Node *tn)
         break;
     }
     case TY_RESULT: t = ty_result(resolve_type(tn->b.n)); break;
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: { /* spec 014: the built-in collections */
+        Type *k = resolve_type(tn->b.n);
+        GC_ROOT(&k);
+        Type *v = tn->c.n ? resolve_type(tn->c.n) : 0;
+        t = ty_make(tn->a.i, k, v, 0);
+        GC_UNROOT(1);
+        break;
+    }
     case TY_NAMED: {
         Node *nm = tn->b.n;
         if (!nm) break;
@@ -421,8 +443,8 @@ static void check_for(Node *st)
         Type *hi = check_expr(st->c.n, t_int);
         expect_type(st->c.n, t_int, hi);
         elem = t_int;
-    } else if (ty_is(it, TY_LIST)) {
-        elem = it->a.t;
+    } else if (ty_is(it, TY_LIST) || ty_is(it, TY_OSET) || ty_is(it, TY_PQUEUE) || ty_is(it, TY_DEQUE)) {
+        elem = it->a.t; /* spec 014: collections iterate over a snapshot (a map: `for k in keys(m)`) */
     } else {
         elem = t_error;
         if (!ty_bad(it))
@@ -890,8 +912,9 @@ void check_test(Node *test)
             p->type = resolve_type(p->b.n);
             int why = prop_generatable(p->type);
             if (why) {
-                char *tmpl = why == 1 ? "Cannot generate values of `$1` for `$2`: it contains a function type."
-                                      : "Cannot generate values of `$1` for `$2`: it has no finite value.";
+                char *tmpl = why == 1   ? "Cannot generate values of `$1` for `$2`: it contains a function type."
+                             : why == 3 ? "Cannot generate values of `$1` for `$2`: its elements have no built-in order."
+                                        : "Cannot generate values of `$1` for `$2`: it has no finite value.";
                 Str *tn = ty_name(p->type);
                 ck_err("E0602", p, msg(tmpl, tn, p->a.n->a.s, 0));
             }

@@ -1,0 +1,59 @@
+import std.collections.first_key;
+import std.collections.last_key;
+import std.text.words;
+
+fn show(best: result[int]) -> str {
+    match best {
+        case ok(p) {
+            return str(p);
+        }
+        case err(_) {
+            return "-";
+        }
+    }
+}
+
+fn main() -> result[void] uses console, input {
+    let bids = new ordered_map[int, int];
+    let asks = new ordered_map[int, int];
+    for line in split(read_all(), "\n") {
+        let w = words(line);
+        if len(w) == 3 {
+            let buy = w[0] == "buy";
+            let price = try parse_int(w[1]);
+            var qty = try parse_int(w[2]);
+            var traded = 0;
+            var cost = 0;
+            var other = bids;
+            if buy {
+                set other = asks;
+            }
+            while qty > 0 and len(other) > 0 {
+                var p = try last_key(other);
+                if buy {
+                    set p = try first_key(other);
+                }
+                if (buy and p > price) or (not buy and p < price) {
+                    break;
+                }
+                let t = min(qty, other[p]);
+                set qty = qty - t;
+                set traded = traded + t;
+                set cost = cost + t * p;
+                set other[p] = other[p] - t;
+                if other[p] == 0 {
+                    remove(other, p);
+                }
+            }
+            if qty > 0 {
+                var own = asks;
+                if buy {
+                    set own = bids;
+                }
+                set own[price] = get_or(own, price, 0) + qty;
+            }
+            print(str(traded) + " " + str(cost) + " " + show(last_key(bids)) + " " + show(first_key(asks)));
+        }
+    }
+    return ok();
+}

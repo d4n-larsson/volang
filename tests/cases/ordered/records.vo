@@ -1,0 +1,55 @@
+
+record Slot {
+    date: str;
+    room: int;
+}
+
+record Pair[A, B] {
+    first: A;
+    second: B;
+}
+
+fn largest[T: ordered](xs: list[T]) -> T {
+    var best = xs[0];
+    for x in xs {
+        if x > best {
+            set best = x;
+        }
+    }
+    return best;
+}
+
+fn text(s: Slot) -> str {
+    return s.date + "/" + str(s.room);
+}
+
+# Spec 014 US5: a record of ordered fields is ordered field by field, in declaration order.
+fn main() uses console {
+    let a = new Slot { date: "2026-11-16", room: 3 };
+    let b = new Slot { date: "2026-11-16", room: 12 };
+    let c = new Slot { date: "2026-11-15", room: 99 };
+    print(str(a < b) + " " + str(c < a) + " " + str(a <= a) + " " + str(b >= c) + " " + str(a > b));
+    var slots = [b, c, a];
+    sort(slots);
+    print(join(map(slots, fn(s: Slot) -> str { return text(s); }), " "));
+    print(text(min(a, b)) + " " + text(max(a, c)) + " " + text(largest(slots)));
+    var people = [new Pair { first: 2, second: "b" }, new Pair { first: 1, second: "z" }, new Pair { first: 2, second: "a" }];
+    sort_by(people, fn(p: Pair[int, str]) -> Pair[int, str] { return p; });
+    print(join(map(people, fn(p: Pair[int, str]) -> str { return str(p.first) + p.second; }), " "));
+    let bookings = new ordered_map[Slot, str];
+    set bookings[b] = "standup";
+    set bookings[c] = "review";
+    set bookings[a] = "planning";
+    print(join(map(keys(bookings), fn(s: Slot) -> str { return text(s) + "=" + bookings[s]; }), " "));
+    let q = new priority_queue[Pair[int, str]];
+    push(q, new Pair { first: 5, second: "e" });
+    push(q, new Pair { first: 1, second: "a" });
+    match pop(q) {
+        case ok(p) {
+            print("first out: " + p.second);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

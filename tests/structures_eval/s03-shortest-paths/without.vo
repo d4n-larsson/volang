@@ -1,0 +1,89 @@
+record Road {
+    to: int;
+    length: int;
+}
+
+record State {
+    dist: int;
+    node: int;
+}
+
+fn before(a: State, b: State) -> bool {
+    return a.dist < b.dist or (a.dist == b.dist and a.node < b.node);
+}
+
+# A binary heap with the closest state at index 0.
+fn heap_push(h: list[State], s: State) {
+    push(h, s);
+    var i = len(h) - 1;
+    while i > 0 and before(h[i], h[(i - 1) / 2]) {
+        let p = (i - 1) / 2;
+        let t = h[i];
+        set h[i] = h[p];
+        set h[p] = t;
+        set i = p;
+    }
+}
+
+fn heap_pop(h: list[State]) -> result[State] {
+    let top = h[0];
+    let last = try pop(h);
+    if len(h) > 0 {
+        set h[0] = last;
+        var i = 0;
+        while true {
+            var b = i;
+            let l = 2 * i + 1;
+            if l < len(h) and before(h[l], h[b]) {
+                set b = l;
+            }
+            if l + 1 < len(h) and before(h[l + 1], h[b]) {
+                set b = l + 1;
+            }
+            if b == i {
+                break;
+            }
+            let t = h[i];
+            set h[i] = h[b];
+            set h[b] = t;
+            set i = b;
+        }
+    }
+    return ok(top);
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = split(read_all(), "\n");
+    let head = split(trim(lines[0]), " ");
+    let n = try parse_int(head[0]);
+    let roads = new list[list[Road]];
+    let dist = new list[int];
+    for _ in 0..n {
+        push(roads, new list[Road]);
+        push(dist, -1);
+    }
+    for i in 1..try parse_int(head[1]) + 1 {
+        let w = split(trim(lines[i]), " ");
+        push(roads[try parse_int(w[0])], new Road { to: try parse_int(w[1]), length: try parse_int(w[2]) });
+    }
+    let q = [new State { dist: 0, node: 0 }];
+    while len(q) > 0 {
+        let s = try heap_pop(q);
+        if dist[s.node] < 0 {
+            set dist[s.node] = s.dist;
+            for r in roads[s.node] {
+                if dist[r.to] < 0 {
+                    heap_push(q, new State { dist: s.dist + r.length, node: r.to });
+                }
+            }
+        }
+    }
+    for d in dist {
+        if d < 0 {
+            print("unreachable");
+        } else {
+            print(str(d));
+        }
+    }
+    return ok();
+}

@@ -52,7 +52,7 @@ Mainstream languages were designed for people at keyboards. Agents work differen
 - **Debugging without print statements.** `vo run --trace` writes every call and return as JSON lines, runtime errors show each frame's parameters and locals, and `vo run --record` saves everything a run read so `vo replay` can run the fixed program on exactly that input.
 - **The whole language fits in a prompt.** `vo reference` prints the complete reference, about 10,000 tokens with a runnable example in every section. That is all an agent needs to know.
 
-The language also has records, variants with exhaustive `match`, `result[T]` with `try`, lists and maps, built-in tests, multi-file programs, functions as values and closures, and user-defined generics: inferred type arguments, `T: ordered`, and effect parameters for higher-order functions.
+The language also has records, variants with exhaustive `match`, `result[T]` with `try`, lists and maps, ordered maps and sets, priority queues and deques, built-in tests, multi-file programs, functions as values and closures, and user-defined generics: inferred type arguments, `T: ordered`, and effect parameters for higher-order functions.
 
 ## Getting started
 
@@ -124,6 +124,6 @@ Known false positives and negatives of the assembly linter (SESI, for `src/platf
 
 ## Status
 
-vo 0.1.0, schema 1, built through specs 001-013 ([`docs/roadmap.md`](docs/roadmap.md) has the status of each): the core language and toolchain, checked effects, generics, a garbage collector, a bytecode VM, typed holes, property tests and contracts, query and structural editing, trace and replay, a standard library (`std.json`, `std.time`, `std.text`, `std.random`, plain-HTTP `std.http` with a server) with exact signatures from `vo doc`, content-pinned packages, native builds from C, file-private items with `export`, `@spec` annotations linking tests to requirements, and the fixes from the first security review. Its security model is in [`docs/security.md`](docs/security.md). The benchmark v2 agent run is still to be completed.
+vo 0.1.0, schema 1, built through specs 001-014 ([`docs/roadmap.md`](docs/roadmap.md) has the status of each): the core language and toolchain, checked effects, generics, a garbage collector, a bytecode VM, typed holes, property tests and contracts, query and structural editing, trace and replay, a standard library (`std.json`, `std.time`, `std.text`, `std.random`, plain-HTTP `std.http` with a server) with exact signatures from `vo doc`, content-pinned packages, native builds from C, file-private items with `export`, `@spec` annotations linking tests to requirements, the fixes from the first security review, and built-in ordered maps, sets, priority queues and deques. Its security model is in [`docs/security.md`](docs/security.md). The benchmark v2 agent run is still to be completed.
 
-Not yet: data structures beyond lists and maps (ordered maps and sets, balanced trees, heaps: the next spec), concurrency, HTTPS and downloading packages.
+Not yet: concurrency (the next spec), HTTPS and downloading packages.

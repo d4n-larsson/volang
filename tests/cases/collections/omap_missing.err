@@ -1,0 +1,6 @@
+omap_missing.vo:5:15: runtime error[R0004]: Key "b" is not in the map.
+   5 |     print(str(m["b"]));
+     |               ^^^^^^
+trace:
+  at main (omap_missing.vo:5:15)
+      m: ordered_map[str, int] = ordered_map{"a": 1}

@@ -1,0 +1,72 @@
+# The next value of a stream; ordered by value, then by stream.
+record Head {
+    value: int;
+    stream: int;
+}
+
+fn before(a: Head, b: Head) -> bool {
+    return a.value < b.value or (a.value == b.value and a.stream < b.stream);
+}
+
+# A binary heap with the smallest head at index 0.
+fn heap_push(h: list[Head], s: Head) {
+    push(h, s);
+    var i = len(h) - 1;
+    while i > 0 and before(h[i], h[(i - 1) / 2]) {
+        let p = (i - 1) / 2;
+        let t = h[i];
+        set h[i] = h[p];
+        set h[p] = t;
+        set i = p;
+    }
+}
+
+fn heap_pop(h: list[Head]) -> result[Head] {
+    let top = h[0];
+    let last = try pop(h);
+    if len(h) > 0 {
+        set h[0] = last;
+        var i = 0;
+        while true {
+            var b = i;
+            let l = 2 * i + 1;
+            if l < len(h) and before(h[l], h[b]) {
+                set b = l;
+            }
+            if l + 1 < len(h) and before(h[l + 1], h[b]) {
+                set b = l + 1;
+            }
+            if b == i {
+                break;
+            }
+            let t = h[i];
+            set h[i] = h[b];
+            set h[b] = t;
+            set i = b;
+        }
+    }
+    return ok(top);
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = split(read_all(), "\n");
+    let first = split(trim(lines[0]), " ");
+    let steps = new list[int];
+    let heads = new list[Head];
+    for i in 0..try parse_int(first[0]) {
+        let w = split(trim(lines[i + 1]), " ");
+        push(steps, try parse_int(w[1]));
+        heap_push(heads, new Head { value: try parse_int(w[0]), stream: i });
+    }
+    var checksum = 0;
+    for j in 1..try parse_int(first[1]) + 1 {
+        let h = try heap_pop(heads);
+        set checksum = (checksum + j * (h.value + h.stream)) % 1000000007;
+        if j <= 50 or j % 1000 == 0 {
+            print(str(j) + " " + str(h.value) + " " + str(h.stream));
+        }
+        heap_push(heads, new Head { value: h.value + steps[h.stream], stream: h.stream });
+    }
+    print("END " + str(checksum));
+    return ok();
+}

@@ -81,9 +81,14 @@ List *list_slice(List *list, long a, long b, Node *node)
     return r;
 }
 
-/* a < b for sortable element kinds (int, float, str). */
+/* Spec 014: the record type elem_less compares when kind is TY_RECORD, set by the caller (sort, min,
+ * max, sort_by). ponytail: a global, safe because record comparison runs no vo code (no nesting). */
+Type *elem_record_type;
+
+/* a < b for sortable element kinds (int, float, str; records field by field). */
 int elem_less(long a, long b, int kind)
 {
+    if (kind == TY_RECORD) return value_cmp(a, b, elem_record_type) < 0;
     if (kind == TY_FLOAT) {
         Bits x = {.i = a}, y = {.i = b};
         return x.d < y.d;

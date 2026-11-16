@@ -1,0 +1,13 @@
+
+# Spec 014 foundation: the four types, their constructors, `len`, `==` and rendering of empty ones.
+fn main() uses console {
+    let m = new ordered_map[int, str];
+    let s = new ordered_set[str];
+    let q = new priority_queue[float];
+    let d = new deque[bool];
+    print(str(len(m)) + " " + str(len(s)) + " " + str(len(q)) + " " + str(len(d)));
+    let m2 = new ordered_map[int, str];
+    print(str(m == m2));
+    set m2[1] = "x";
+    print(str(m == m2) + " " + str(m != m2));
+}

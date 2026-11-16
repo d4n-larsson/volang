@@ -1,0 +1,119 @@
+import std.collections.after;
+import std.collections.before;
+import std.collections.first;
+import std.collections.key_at_or_above;
+
+# Spec 014 SC-001: the ordered map and set against list models, over generated operation sequences
+# (a non-negative op inserts op % 64, a negative one removes (-1 - op) % 64).
+
+prop "the map agrees with a model map and its sorted keys" (ops: list[int]) {
+    let m = new ordered_map[int, int];
+    let model = new map[int, int];
+    for op in ops {
+        if op >= 0 {
+            set m[op % 64] = op;
+            set model[op % 64] = op;
+        } else {
+            remove(m, (-1 - op) % 64);
+            remove(model, (-1 - op) % 64);
+        }
+    }
+    var ks = keys(model);
+    sort(ks);
+    expect_eq(keys(m), ks);
+    expect_eq(len(m), len(model));
+    for k in ks {
+        expect_eq(m[k], model[k]);
+    }
+}
+
+prop "neighbors agree with a scan" (xs: list[int], probe: int) {
+    let m = new ordered_map[int, bool];
+    for x in xs {
+        set m[x] = true;
+    }
+    var best = new list[int];
+    for k in keys(m) {
+        if k >= probe and len(best) == 0 {
+            push(best, k);
+        }
+    }
+    match key_at_or_above(m, probe) {
+        case ok(k) {
+            expect_eq([k], best);
+        }
+        case err(_) {
+            expect_eq(len(best), 0);
+        }
+    }
+}
+
+prop "a set iterates sorted and distinct" (xs: list[str]) {
+    let s = new ordered_set[str];
+    for x in xs {
+        push(s, x);
+    }
+    var out = new list[str];
+    for x in s {
+        push(out, x);
+    }
+    var model = new list[str];
+    var sorted = xs;
+    sort(sorted);
+    for x in sorted {
+        if len(model) == 0 or model[len(model) - 1] != x {
+            push(model, x);
+        }
+    }
+    expect_eq(out, model);
+    if len(model) > 0 {
+        expect_eq(first(s), ok(model[0]));
+    }
+}
+
+prop "generated sets are valid" (s: ordered_set[int], m: ordered_map[str, int]) {
+    var prev = new list[int];
+    for x in s {
+        if len(prev) > 0 {
+            expect(prev[0] < x);
+        }
+        set prev = [x];
+    }
+    let ks = keys(m);
+    for i in 1..len(ks) {
+        expect(ks[i - 1] < ks[i]);
+    }
+}
+
+prop "after and before agree with a scan" (xs: list[int], probe: int) {
+    let s = new ordered_set[int];
+    for x in xs {
+        push(s, x);
+    }
+    var above = new list[int];
+    var below = new list[int];
+    for x in s {
+        if x > probe and len(above) == 0 {
+            push(above, x);
+        }
+        if x < probe {
+            set below = [x];
+        }
+    }
+    match after(s, probe) {
+        case ok(x) {
+            expect_eq([x], above);
+        }
+        case err(_) {
+            expect_eq(len(above), 0);
+        }
+    }
+    match before(s, probe) {
+        case ok(x) {
+            expect_eq([x], below);
+        }
+        case err(_) {
+            expect_eq(len(below), 0);
+        }
+    }
+}

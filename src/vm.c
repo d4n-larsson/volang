@@ -187,6 +187,7 @@ long vm_run(void *start)
         &&op_for_step, &&op_for_list_step, &&op_call_fast,
         &&op_len, &&op_push, &&op_has, &&op_call_generic,
         &&op_not_compiled, /* OPC_TRACE_ENTER: only emitted with --trace (vm_ops_trace) */
+        &&op_index_coll, &&op_set_index_coll, &&op_snapshot, &&op_new_coll, /* spec 014 */
     };
     if (!start) {
         for (int i = 0; i < OPC_COUNT; i++) vm_ops[i] = vm_ops_trace[i] = ops[i];
@@ -316,6 +317,11 @@ op_cmp_param: {
         kind = frame->targs->data[t->a.i].t->kind; /* rt_concrete's bare-parameter case, inline */
     else
         kind = rt_concrete(t)->kind;
+    if (kind == TY_RECORD) { /* spec 014: field by field */
+        long rc = value_cmp(SL(pc->b), SL(pc->c.i), rt_concrete(t));
+        long which = pc->node->d.i - OP_LT_PARAM; /* <, <=, >, >= */
+        STORE(which == 0 ? rc < 0 : which == 1 ? rc <= 0 : which == 2 ? rc > 0 : rc >= 0);
+    }
     long base = kind == TY_FLOAT ? OP_LT_FLOAT : kind == TY_STR ? OP_LT_STR : OP_LT_INT;
     goto *ops[pc->node->d.i - OP_LT_PARAM + base + (OPC_ADD_INT - OP_ADD_INT)];
 }
@@ -449,6 +455,19 @@ op_set_index_list: {
     l->data[i].i = SL(pc->c.i);
     NEXT;
 }
+op_index_coll: /* spec 014: R0004 / R0003 from the collection */
+    cur_node = (long)pc->node;
+    STORE(coll_index((Coll *)SL(pc->b), SL(pc->c.i), pc->node));
+op_set_index_coll:
+    cur_node = (long)pc->node;
+    coll_set_index((Coll *)SL(pc->a), SL(pc->b), SL(pc->c.i), pc->node);
+    NEXT;
+op_snapshot:
+    cur_node = (long)pc->node;
+    STORE((long)coll_snapshot((Coll *)SL(pc->b)));
+op_new_coll: /* the concrete collection type orders it */
+    cur_node = (long)pc->node;
+    STORE((long)coll_new(rt_concrete(pc->node->type), 0));
 op_set_index_map:
     cur_node = (long)pc->node; /* the `set` statement; its place gives the map's key type */
     map_set((Map *)SL(pc->a), SL(pc->b), SL(pc->c.i), pc->node->a.n->a.n->type->a.t);
@@ -966,7 +985,7 @@ static void fl_stmt(Vec *vec, Node *stmt, long off)
         Type *t = t_int; /* a range: int */
         if (!stmt->c.n) { /* a list: its element type */
             Type *lt = stmt->b.n->type;
-            t = lt && lt->kind == TY_LIST ? lt->a.t : 0;
+            t = lt && (lt->kind == TY_LIST || TY_IS_COLL(lt->kind)) ? lt->a.t : 0; /* spec 014: collections too */
         }
         if (t) fl_add(vec, stmt->a.n ? stmt->a.n->a.s : 0, t, stmt->e.i);
         fl_block(vec, stmt->d.n, off);

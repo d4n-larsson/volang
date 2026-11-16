@@ -1,0 +1,24 @@
+import std.text.words;
+
+fn main() -> result[void] uses console, input {
+    let xs = words(read_all());
+    let sorted = new list[int];
+    var checksum = 0;
+    for i in 1..len(xs) {
+        let x = try parse_int(xs[i]);
+        push(sorted, x);
+        var j = len(sorted) - 1;
+        while j > 0 and sorted[j - 1] > x {
+            set sorted[j] = sorted[j - 1];
+            set j = j - 1;
+        }
+        set sorted[j] = x;
+        let median = sorted[(i + 1) / 2 - 1];
+        set checksum = (checksum + i * (median + 1000000000)) % 1000000007;
+        if i <= 50 or i % 1000 == 0 {
+            print(str(i) + " " + str(median));
+        }
+    }
+    print("END " + str(checksum));
+    return ok();
+}

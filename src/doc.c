@@ -3,7 +3,7 @@
  * library source, builtins from the reference's table. `vo doc [--json] [NAME]` (contracts/cli.md). */
 #include "vo.h"
 
-static char *const doc_modules[] = {"json", "time", "text", "random", "http", 0};
+static char *const doc_modules[] = {"json", "time", "text", "random", "http", "collections", 0};
 
 static Vec *doc_collect; /* doc_module and doc_builtins collect names here instead of printing */
 
@@ -65,9 +65,8 @@ void doc_out(SB *sb)
 /* [T, U: ordered, E: effects] when the item has type parameters. */
 void doc_tparams(SB *sb, Node *decl)
 {
-    Fx *fx = item_fx(decl);
-    if (!fx || !fx->tparams || !fx->tparams->n) return;
-    Vec *tps = fx->tparams;
+    Vec *tps = ty_tparams_of(decl); /* (records and variants keep theirs on the declaration) */
+    if (!tps || !tps->n) return;
     sb_byte(sb, '[');
     for (long i = 0; i < tps->n; i++) {
         if (i) sb_cstr(sb, ", ");

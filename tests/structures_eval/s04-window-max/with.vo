@@ -1,0 +1,28 @@
+import std.collections.back;
+import std.collections.front;
+import std.collections.pop_front;
+import std.text.words;
+
+fn main() -> result[void] uses console, input {
+    let xs = new list[int];
+    for word in words(read_all()) {
+        push(xs, try parse_int(word));
+    }
+    let k = xs[1];
+    let nums = slice(xs, 2, len(xs));
+    # Indices of the window whose numbers decrease from front to back: the front is the maximum.
+    let window = new deque[int];
+    for i in 0..len(nums) {
+        while len(window) > 0 and nums[try back(window)] <= nums[i] {
+            let _ = try pop(window);
+        }
+        push(window, i);
+        if try front(window) <= i - k {
+            let _ = try pop_front(window);
+        }
+        if i >= k - 1 {
+            print(str(nums[try front(window)]));
+        }
+    }
+    return ok();
+}

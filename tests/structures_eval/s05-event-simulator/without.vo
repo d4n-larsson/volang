@@ -1,0 +1,80 @@
+record Event {
+    time: int;
+    id: int;
+    value: int;
+}
+
+fn before(a: Event, b: Event) -> bool {
+    return a.time < b.time or (a.time == b.time and a.id < b.id);
+}
+
+# A binary heap with the earliest event at index 0.
+fn heap_push(h: list[Event], s: Event) {
+    push(h, s);
+    var i = len(h) - 1;
+    while i > 0 and before(h[i], h[(i - 1) / 2]) {
+        let p = (i - 1) / 2;
+        let t = h[i];
+        set h[i] = h[p];
+        set h[p] = t;
+        set i = p;
+    }
+}
+
+fn heap_pop(h: list[Event]) -> result[Event] {
+    let top = h[0];
+    let last = try pop(h);
+    if len(h) > 0 {
+        set h[0] = last;
+        var i = 0;
+        while true {
+            var b = i;
+            let l = 2 * i + 1;
+            if l < len(h) and before(h[l], h[b]) {
+                set b = l;
+            }
+            if l + 1 < len(h) and before(h[l + 1], h[b]) {
+                set b = l + 1;
+            }
+            if b == i {
+                break;
+            }
+            let t = h[i];
+            set h[i] = h[b];
+            set h[b] = t;
+            set i = b;
+        }
+    }
+    return ok(top);
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = split(read_all(), "\n");
+    let pending = new list[Event];
+    var next_id = 1;
+    for i in 1..try parse_int(trim(lines[0])) + 1 {
+        let w = split(trim(lines[i]), " ");
+        heap_push(pending, new Event { time: try parse_int(w[0]), id: next_id, value: try parse_int(w[1]) });
+        set next_id = next_id + 1;
+    }
+    var k = 0;
+    var checksum = 0;
+    while len(pending) > 0 {
+        let e = try heap_pop(pending);
+        set k = k + 1;
+        set checksum = (checksum + k * e.id) % 1000000007;
+        if k <= 50 or k % 1000 == 0 {
+            print(str(k) + " " + str(e.time) + " " + str(e.id) + " " + str(e.value));
+        }
+        if e.value >= 2 {
+            heap_push(pending, new Event { time: e.time + e.value % 4, id: next_id, value: e.value / 2 });
+            set next_id = next_id + 1;
+        }
+        if e.value % 3 == 0 {
+            heap_push(pending, new Event { time: e.time + 1, id: next_id, value: e.value / 3 });
+            set next_id = next_id + 1;
+        }
+    }
+    print("END " + str(k) + " " + str(checksum));
+    return ok();
+}

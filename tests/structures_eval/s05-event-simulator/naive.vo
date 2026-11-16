@@ -1,0 +1,44 @@
+record Event {
+    time: int;
+    id: int;
+    value: int;
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = split(read_all(), "\n");
+    let pending = new list[Event];
+    var next_id = 1;
+    for i in 1..try parse_int(trim(lines[0])) + 1 {
+        let w = split(trim(lines[i]), " ");
+        push(pending, new Event { time: try parse_int(w[0]), id: next_id, value: try parse_int(w[1]) });
+        set next_id = next_id + 1;
+    }
+    var k = 0;
+    var checksum = 0;
+    while len(pending) > 0 {
+        var b = 0;
+        for i in 1..len(pending) {
+            if pending[i].time < pending[b].time or (pending[i].time == pending[b].time and pending[i].id < pending[b].id) {
+                set b = i;
+            }
+        }
+        let e = pending[b];
+        set pending[b] = pending[len(pending) - 1];
+        let _ = try pop(pending);
+        set k = k + 1;
+        set checksum = (checksum + k * e.id) % 1000000007;
+        if k <= 50 or k % 1000 == 0 {
+            print(str(k) + " " + str(e.time) + " " + str(e.id) + " " + str(e.value));
+        }
+        if e.value >= 2 {
+            push(pending, new Event { time: e.time + e.value % 4, id: next_id, value: e.value / 2 });
+            set next_id = next_id + 1;
+        }
+        if e.value % 3 == 0 {
+            push(pending, new Event { time: e.time + 1, id: next_id, value: e.value / 3 });
+            set next_id = next_id + 1;
+        }
+    }
+    print("END " + str(k) + " " + str(checksum));
+    return ok();
+}

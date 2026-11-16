@@ -1,0 +1,4 @@
+empty: err(empty) err(empty) err(empty) err(empty)
+0 1 2; d[0] 0, d[2] 2, front 0, back 2
+len 43, front 119, back 219, d[20] 0, d[21] 10
+119/219 118/218 117/217; len 37, copy len 43, true

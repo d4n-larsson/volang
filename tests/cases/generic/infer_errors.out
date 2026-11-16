@@ -1,0 +1,19 @@
+infer_errors.vo:16:9: warning[W0201]: `t` is never used.
+  16 |     let t = Tree.leaf;
+     |         ^
+infer_errors.vo:16:13: error[E0310]: Cannot infer `T` for `Tree.leaf`: give the variable a type.
+  16 |     let t = Tree.leaf;
+     |             ^^^^^^^^^
+infer_errors.vo:17:9: warning[W0201]: `b` is never used.
+  17 |     let b = new Tagged { count: 1 };
+     |         ^
+infer_errors.vo:17:13: error[E0310]: Cannot infer `T` for `Tagged`: give the variable a type.
+  17 |     let b = new Tagged { count: 1 };
+     |             ^^^^^^^^^^^^^^^^^^^^^^^
+infer_errors.vo:18:9: warning[W0201]: `wrong` is never used.
+  18 |     let wrong = new Box[int, str] { items: new list[int] };
+     |         ^^^^^
+infer_errors.vo:18:17: error[E0312]: `Box` takes 1 type argument(s), got 2.
+  18 |     let wrong = new Box[int, str] { items: new list[int] };
+     |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3 errors, 3 warnings

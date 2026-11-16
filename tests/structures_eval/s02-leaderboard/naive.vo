@@ -1,0 +1,30 @@
+record Entry {
+    neg: int;
+    name: str;
+}
+
+fn main() -> result[void] uses console, input {
+    let totals = new map[str, int];
+    for line in split(read_all(), "\n") {
+        let w = split(trim(line), " ");
+        if w[0] == "score" {
+            set totals[w[1]] = get_or(totals, w[1], 0) + try parse_int(w[2]);
+        } else if w[0] == "top" {
+            let all = new list[Entry];
+            for name in keys(totals) {
+                push(all, new Entry { neg: -totals[name], name: name });
+            }
+            sort(all);
+            let shown = new list[str];
+            for e in slice(all, 0, min(len(all), try parse_int(w[1]))) {
+                push(shown, e.name + ":" + str(-e.neg));
+            }
+            if len(shown) == 0 {
+                print("empty");
+            } else {
+                print(join(shown, " "));
+            }
+        }
+    }
+    return ok();
+}

@@ -1,0 +1,6 @@
+PASS the map agrees with a model map and its sorted keys (100 cases, 0ms)
+PASS neighbors agree with a scan (100 cases, 0ms)
+PASS a set iterates sorted and distinct (100 cases, 0ms)
+PASS generated sets are valid (100 cases, 0ms)
+PASS after and before agree with a scan (100 cases, 0ms)
+5 passed, 0 failed

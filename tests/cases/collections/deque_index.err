@@ -1,0 +1,6 @@
+deque_index.vo:5:11: runtime error[R0003]: Index 1 is out of bounds for length 1.
+   5 |     print(d[1]);
+     |           ^^^^
+trace:
+  at main (deque_index.vo:5:11)
+      d: deque[str] = deque{"a"}

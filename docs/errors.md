@@ -1276,39 +1276,39 @@ A type that cannot be ordered is used where an order is needed.
 
 Fixable: no
 
-Sorting and `<`, `<=`, `>`, `>=` work on `int`, `float` and `str`. A `sort_by` key, and a type argument for an `ordered` type parameter, must be one of them. Sort records by one of their fields instead.
+Sorting, `min`, `max`, `<`, `<=`, `>`, `>=`, a `sort_by` key, an `ordered` type parameter and the keys of the ordered collections need an order: `int`, `float`, `str`, or a record whose fields all have one (compared field by field, in declaration order). Lists, maps, variants and functions have no order, so a record with such a field has none either; the message names that field. Sort by one of the ordered fields instead, or give the collection a comparison function.
 
 ### Example
 
 ```vo
-record Point {
-    x: int;
-    y: int;
+record Task {
+    name: str;
+    tags: list[str];
 }
 
 fn main() uses console {
-    let ps = [new Point { x: 2, y: 1 }, new Point { x: 1, y: 5 }];
-    sort_by(ps, fn(p: Point) -> Point {
-        return p;
+    let ts = [new Task { name: "b", tags: new list[str] }, new Task { name: "a", tags: new list[str] }];
+    sort_by(ts, fn(t: Task) -> Task {
+        return t;
     });
-    print(str(ps[0].x));
+    print(ts[0].name);
 }
 ```
 
 ### Fixed
 
 ```vo
-record Point {
-    x: int;
-    y: int;
+record Task {
+    name: str;
+    tags: list[str];
 }
 
 fn main() uses console {
-    let ps = [new Point { x: 2, y: 1 }, new Point { x: 1, y: 5 }];
-    sort_by(ps, fn(p: Point) -> int {
-        return p.x;
+    let ts = [new Task { name: "b", tags: new list[str] }, new Task { name: "a", tags: new list[str] }];
+    sort_by(ts, fn(t: Task) -> str {
+        return t.name;
     });
-    print(str(ps[0].x));
+    print(ts[0].name);
 }
 ```
 

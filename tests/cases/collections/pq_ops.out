@@ -1,0 +1,4 @@
+empty: err(empty) err(empty)
+for: 1 1 3 5 9, len still 5, peek 1
+pops: 1 1 3 5 9, copy len 5
+true false

@@ -172,6 +172,7 @@ static void report_json(SB *sb, char *code, Str *message, Node *node)
 void rt_raise(char *code, Str *message, Node *node)
 {
     render_depth = 0; /* spec 013: a raise unwinds any rendering in progress */
+    coll_reset_active(); /* spec 014: and any collection operation */
     rt_err_code = (long)code;
     rt_err_msg = (long)message;
     rt_err_node = (long)node;
@@ -318,6 +319,10 @@ int values_equal(long a, long b, Type *type)
         return x.d == y.d;
     }
     case TY_STR: return str_eq((Str *)a, (Str *)b);
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: return coll_equal((Coll *)a, (Coll *)b, type); /* spec 014: contents in order */
     case TY_LIST: {
         List *x = (List *)a, *y = (List *)b;
         if (x->len != y->len) return 0;

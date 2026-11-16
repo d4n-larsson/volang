@@ -84,6 +84,29 @@ void render_value(SB *sb, long value, Type *type)
         sb_byte(sb, '}');
         break;
     }
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: { /* spec 014: Name{a, b} / OrderedMap{k: v}, contents in iteration order */
+        Coll *c = (Coll *)value;
+        GC_ROOT(&c);
+        sb_cstr(sb, type->kind == TY_OMAP ? "ordered_map{" : type->kind == TY_OSET ? "ordered_set{" : type->kind == TY_PQUEUE ? "priority_queue{" : "deque{");
+        List *xs = coll_snapshot(c);
+        GC_ROOT(&xs);
+        List *vs = type->kind == TY_OMAP ? coll_values(c) : 0;
+        GC_ROOT(&vs);
+        for (long i = 0; i < xs->len && !over_cap(sb); i++) {
+            if (i) sb_cstr(sb, ", ");
+            render_value(sb, xs->data[i].i, type->a.t);
+            if (vs) {
+                sb_cstr(sb, ": ");
+                render_value(sb, vs->data[i].i, type->b.t);
+            }
+        }
+        sb_byte(sb, '}');
+        GC_UNROOT(3);
+        break;
+    }
     case TY_RECORD: { /* new T { f: v, ... } */
         Record *r = (Record *)value;
         sb_cstr(sb, "new ");

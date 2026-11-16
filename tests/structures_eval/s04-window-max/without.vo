@@ -1,0 +1,26 @@
+import std.text.words;
+
+fn main() -> result[void] uses console, input {
+    let xs = new list[int];
+    for word in words(read_all()) {
+        push(xs, try parse_int(word));
+    }
+    let k = xs[1];
+    let nums = slice(xs, 2, len(xs));
+    # window[head..] holds indices whose numbers decrease from front to back: the front is the maximum.
+    let window = new list[int];
+    var head = 0;
+    for i in 0..len(nums) {
+        while len(window) > head and nums[window[len(window) - 1]] <= nums[i] {
+            let _ = try pop(window);
+        }
+        push(window, i);
+        if window[head] <= i - k {
+            set head = head + 1;
+        }
+        if i >= k - 1 {
+            print(str(nums[window[head]]));
+        }
+    }
+    return ok();
+}

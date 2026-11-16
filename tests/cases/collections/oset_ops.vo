@@ -1,0 +1,54 @@
+import std.collections.at_or_above;
+import std.collections.at_or_below;
+import std.collections.between;
+import std.collections.copy_set;
+import std.collections.difference;
+import std.collections.first;
+import std.collections.intersection;
+import std.collections.last;
+import std.collections.union;
+
+fn of(xs: list[str]) -> ordered_set[str] {
+    let s = new ordered_set[str];
+    for x in xs {
+        push(s, x);
+    }
+    return s;
+}
+
+fn text(s: ordered_set[str]) -> str {
+    var out = new list[str];
+    for x in s {
+        push(out, x);
+    }
+    return "{" + join(out, " ") + "}";
+}
+
+# Spec 014 US1: ordered_set operations, set algebra, and a loop that changes the set it iterates.
+fn main() uses console {
+    let a = of(["pear", "apple", "fig", "apple", "kiwi"]);
+    let b = of(["fig", "plum", "apple"]);
+    print(text(a) + " len " + str(len(a)));
+    print("first " + get_or_none(first(a)) + ", last " + get_or_none(last(a)));
+    print("at or above g: " + get_or_none(at_or_above(a, "g")) + ", at or below g: " + get_or_none(at_or_below(a, "g")) + ", above z: " + get_or_none(at_or_above(a, "z")));
+    print("between b and p: " + join(between(a, "b", "p"), " "));
+    print("union " + text(union(a, b)) + ", intersection " + text(intersection(a, b)) + ", difference " + text(difference(a, b)));
+    let c = copy_set(a);
+    for x in a {
+        remove(a, x);
+        push(a, x + "!");
+    }
+    print("changed while iterating: " + text(a) + "; the copy: " + text(c));
+    print(str(of(["b", "a"]) == of(["a", "b", "a"])));
+}
+
+fn get_or_none(r: result[str]) -> str {
+    match r {
+        case ok(x) {
+            return x;
+        }
+        case err(e) {
+            return "err(" + e + ")";
+        }
+    }
+}

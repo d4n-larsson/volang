@@ -108,6 +108,10 @@ static int pg_find(Type *t, Type *target, Vec *stack)
     case TY_LIST:
     case TY_RESULT: return pg_find(t->a.t, target, stack);
     case TY_MAP: return pg_find(t->a.t, target, stack) || pg_find(t->b.t, target, stack);
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: return pg_find(t->a.t, target, stack) || (t->b.t && pg_find(t->b.t, target, stack));
     case TY_RECORD:
     case TY_VARIANT: {
         if (pg_on_stack(stack, t)) return 0;
@@ -159,11 +163,30 @@ static int pg_finite(Type *t, Vec *stack)
 
 /* 0 when values of type can be generated; 1 when it contains a function type (or a type
  * parameter); 2 when it has no finite value (research R6). */
+/* Spec 014: 1 when t holds an ordered collection whose element (key) type has no built-in order
+ * (generated collections use the built-in order). ponytail: not looked for inside records and
+ * variants; a field of such a type would be generated in an arbitrary but fixed order. */
+static int pg_unordered(Type *t)
+{
+    if (!t) return 0;
+    switch (t->kind) {
+    case TY_LIST:
+    case TY_RESULT: return pg_unordered(t->a.t);
+    case TY_MAP: return pg_unordered(t->a.t) || pg_unordered(t->b.t);
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE: return !ty_ordered(t->a.t) || pg_unordered(t->a.t) || (t->b.t && pg_unordered(t->b.t));
+    case TY_DEQUE: return pg_unordered(t->a.t);
+    default: return 0;
+    }
+}
+
 int prop_generatable(Type *t)
 {
     if (!t || t->kind == TY_ERROR) return 0;
     Vec *stack = vec_new();
     if (pg_find(t, 0, stack)) return 1;
+    if (pg_unordered(t)) return 3;
     return (1 - pg_finite(t, stack)) * 2; /* finite: 0, not: 2 */
 }
 
@@ -257,6 +280,25 @@ long prop_gen(Type *t, long size, long depth)
         GC_UNROOT(1);
         return (long)m;
     }
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: { /* spec 014: elements generated, then added through the operations (valid by construction) */
+        long n = pg_count(size);
+        Coll *c = coll_new(t, 0);
+        GC_ROOT(&c);
+        while (n--) {
+            long k = prop_gen(t->a.t, (long)((unsigned long)size >> 1), depth);
+            GC_ROOT(&k);
+            if (t->kind == TY_OMAP)
+                coll_set_index(c, k, prop_gen(t->b.t, (long)((unsigned long)size >> 1), depth), 0);
+            else
+                coll_push(c, k);
+            GC_UNROOT(1);
+        }
+        GC_UNROOT(1);
+        return (long)c;
+    }
     case TY_RESULT: { /* result[T]: 1 in 4 err */
         if (!pr_below(4)) return (long)make_result(1, (long)pg_str(size));
         long v = 0;
@@ -292,10 +334,41 @@ long prop_gen(Type *t, long size, long depth)
     }
 }
 
+/* A collection of type t with the elements xs (and, for a map, the values vs), in that order. */
+static long pg_coll_of(Type *t, List *xs, List *vs, int copy)
+{
+    GC_ROOT(&t);
+    GC_ROOT(&xs);
+    GC_ROOT(&vs);
+    Coll *c = coll_new(t, 0);
+    GC_ROOT(&c);
+    for (long i = 0; i < xs->len; i++) {
+        long k = copy ? prop_copy(xs->data[i].i, t->a.t) : xs->data[i].i;
+        GC_ROOT(&k);
+        if (vs) coll_set_index(c, k, copy ? prop_copy(vs->data[i].i, t->b.t) : vs->data[i].i, 0);
+        else coll_push(c, k);
+        GC_UNROOT(1);
+    }
+    GC_UNROOT(4);
+    return (long)c;
+}
+
 /* A deep copy: lists, maps, records, variants and results are new; strings are shared. */
 long prop_copy(long value, Type *t)
 {
     switch (t->kind) {
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: { /* spec 014 */
+        Coll *c = (Coll *)value;
+        GC_ROOT(&c);
+        List *xs = coll_snapshot(c);
+        GC_ROOT(&xs);
+        long r = pg_coll_of(t, xs, t->kind == TY_OMAP ? coll_values(c) : 0, 1);
+        GC_UNROOT(2);
+        return r;
+    }
     case TY_LIST: {
         List *src = (List *)value;
         GC_ROOT(&src);
@@ -478,6 +551,38 @@ Vec *prop_shrinks(long value, Type *t)
         break;
     }
     case TY_LIST: out = pg_seq((List *)value, t->a.t, 0); break;
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: { /* spec 014: as the list of its elements (a map: entries removed), rebuilt */
+        Coll *c = (Coll *)value;
+        if (!c->count) break;
+        List *xs = coll_snapshot(c);
+        GC_ROOT(&xs);
+        List *vs = t->kind == TY_OMAP ? coll_values(c) : 0;
+        GC_ROOT(&vs);
+        if (vs) { /* empty, then each entry removed */
+            List *none = list_new(1);
+            vec_push(out, (void *)pg_coll_of(t, none, none, 0));
+            for (long e = 0; e < xs->len; e++) {
+                List *k2 = list_new(xs->len), *v2 = 0;
+                GC_ROOT(&k2);
+                v2 = list_new(xs->len);
+                for (long i = 0; i < xs->len; i++)
+                    if (i != e) {
+                        list_push(k2, xs->data[i].i);
+                        list_push(v2, vs->data[i].i);
+                    }
+                vec_push(out, (void *)pg_coll_of(t, k2, v2, 0));
+                GC_UNROOT(1);
+            }
+        } else {
+            cands = pg_seq(xs, t->a.t, 0);
+            for (long i = 0; i < cands->n; i++) vec_push(out, (void *)pg_coll_of(t, cands->data[i].p, 0, 0));
+        }
+        GC_UNROOT(2);
+        break;
+    }
     case TY_MAP: { /* map: empty, each entry removed, each value shrunk */
         Map *m = (Map *)value;
         if (!m->count) break;

@@ -1,0 +1,91 @@
+# Spec 014 US4: a generic AVL tree written without type arguments on `new` or on `Tree.leaf`.
+variant Tree[T: ordered] {
+    leaf;
+    node(Node[T]);
+}
+
+record Node[T: ordered] {
+    left: Tree[T];
+    value: T;
+    right: Tree[T];
+    height: int;
+}
+
+fn height[T: ordered](t: Tree[T]) -> int {
+    match t {
+        case leaf {
+            return 0;
+        }
+        case node(n) {
+            return n.height;
+        }
+    }
+}
+
+fn make[T: ordered](l: Tree[T], v: T, r: Tree[T]) -> Tree[T] {
+    return Tree.node(new Node { left: l, value: v, right: r, height: max(height(l), height(r)) + 1 });
+}
+
+fn rotate_right[T: ordered](n: Node[T]) -> Tree[T] {
+    match n.left {
+        case node(l) {
+            return make(l.left, l.value, make(l.right, n.value, n.right));
+        }
+        case leaf {
+            return Tree.node(n);
+        }
+    }
+}
+
+fn rotate_left[T: ordered](n: Node[T]) -> Tree[T] {
+    match n.right {
+        case node(r) {
+            return make(make(n.left, n.value, r.left), r.value, r.right);
+        }
+        case leaf {
+            return Tree.node(n);
+        }
+    }
+}
+
+fn balance[T: ordered](t: Tree[T]) -> Tree[T] {
+    match t {
+        case leaf {
+            return t;
+        }
+        case node(n) {
+            let b = height(n.left) - height(n.right);
+            if b > 1 {
+                return rotate_right(n);
+            }
+            if b < -1 {
+                return rotate_left(n);
+            }
+            return t;
+        }
+    }
+}
+
+fn insert[T: ordered](t: Tree[T], x: T) -> Tree[T] {
+    match t {
+        case leaf {
+            return make(Tree.leaf, x, Tree.leaf);
+        }
+        case node(n) {
+            if x < n.value {
+                return balance(make(insert(n.left, x), n.value, n.right));
+            }
+            return balance(make(n.left, n.value, insert(n.right, x)));
+        }
+    }
+}
+
+fn main() uses console {
+    var t = insert(Tree.leaf, 0);
+    for i in 1..1000 {
+        set t = insert(t, i);
+    }
+    print("height " + str(height(t)));
+    let one = insert(Tree.leaf, "a");
+    print("strings " + str(height(one)));
+}

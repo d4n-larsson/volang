@@ -86,7 +86,9 @@ void hof_merge(long lo, long mid, long hi, long *keys, long *from, long *to, int
 void hof_sort_by(List *list, void *fn, Node *call)
 {
     /* the key's type: the function argument's return type */
-    int kind = (int)((Node *)call->b.v->data[1].p)->type->b.t->kind;
+    Type *key_type = rt_concrete(((Node *)call->b.v->data[1].p)->type->b.t);
+    int kind = (int)key_type->kind;
+    elem_record_type = key_type; /* spec 014: record keys field by field */
     long n = list->len;
     W *before = list->data;
     GC_ROOT(&list);

@@ -1,0 +1,48 @@
+record Road {
+    to: int;
+    length: int;
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = split(read_all(), "\n");
+    let head = split(trim(lines[0]), " ");
+    let n = try parse_int(head[0]);
+    let roads = new list[list[Road]];
+    let dist = new list[int];
+    let done = new list[bool];
+    for _ in 0..n {
+        push(roads, new list[Road]);
+        push(dist, -1);
+        push(done, false);
+    }
+    for i in 1..try parse_int(head[1]) + 1 {
+        let w = split(trim(lines[i]), " ");
+        push(roads[try parse_int(w[0])], new Road { to: try parse_int(w[1]), length: try parse_int(w[2]) });
+    }
+    set dist[0] = 0;
+    while true {
+        var u = -1;
+        for i in 0..n {
+            if not done[i] and dist[i] >= 0 and (u < 0 or dist[i] < dist[u]) {
+                set u = i;
+            }
+        }
+        if u < 0 {
+            break;
+        }
+        set done[u] = true;
+        for r in roads[u] {
+            if dist[r.to] < 0 or dist[u] + r.length < dist[r.to] {
+                set dist[r.to] = dist[u] + r.length;
+            }
+        }
+    }
+    for d in dist {
+        if d < 0 {
+            print("unreachable");
+        } else {
+            print(str(d));
+        }
+    }
+    return ok();
+}

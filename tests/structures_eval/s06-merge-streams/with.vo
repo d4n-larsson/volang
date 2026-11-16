@@ -1,0 +1,29 @@
+
+# The next value of a stream; ordered by value, then by stream.
+record Head {
+    value: int;
+    stream: int;
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = split(read_all(), "\n");
+    let first = split(trim(lines[0]), " ");
+    let steps = new list[int];
+    let heads = new priority_queue[Head];
+    for i in 0..try parse_int(first[0]) {
+        let w = split(trim(lines[i + 1]), " ");
+        push(steps, try parse_int(w[1]));
+        push(heads, new Head { value: try parse_int(w[0]), stream: i });
+    }
+    var checksum = 0;
+    for j in 1..try parse_int(first[1]) + 1 {
+        let h = try pop(heads);
+        set checksum = (checksum + j * (h.value + h.stream)) % 1000000007;
+        if j <= 50 or j % 1000 == 0 {
+            print(str(j) + " " + str(h.value) + " " + str(h.stream));
+        }
+        push(heads, new Head { value: h.value + steps[h.stream], stream: h.stream });
+    }
+    print("END " + str(checksum));
+    return ok();
+}

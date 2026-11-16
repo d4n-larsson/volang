@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 60 /* names up to here (50, 51 are internal and unnamed) */
+#define B_COUNT 61 /* names up to here (50, 51 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -34,7 +34,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "max",      "upper",       "lower",     "ord",     "chr",          "env",          "random_int",
     "sort_by",  "map",         "filter",    "fold",    "any",          "all",          "todo",
     "assume",   0,             0,           "__float_text", "__http_exchange", "__text_float", "get_or",
-    "__serve_listen", "__serve_next", "__serve_reply", "__serve_call", "__http_part",
+    "__serve_listen", "__serve_next", "__serve_reply", "__serve_call", "__http_part", "__coll",
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -196,9 +196,14 @@ static Node *arg0(Node *call)
     return vec_get(call->b.v, 0);
 }
 
-static int is_ordered_kind(long k)
+/* A concrete ordered type: int, float, str, or a record of ordered fields (spec 014). Records without
+ * an order report E0313 naming the field (and count as handled). */
+static int is_ordered_type(Type *t, Node *at)
 {
-    return k == TY_INT || k == TY_FLOAT || k == TY_STR;
+    if (t->kind == TY_INT || t->kind == TY_FLOAT || t->kind == TY_STR) return 1;
+    if (t->kind != TY_RECORD) return 0;
+    if (!ty_ordered(t)) order_error(t, at, 0);
+    return 1;
 }
 
 /* ok/err without a known result type: E0307. */
@@ -232,6 +237,14 @@ Type *check_builtin(Node *call, long id, Type *expected)
         return id == B_INT ? t_int : t_float;
     }
     if (builtin_sigs[id]) return check_sig_builtin(call, (char *)builtin_sigs[id]);
+    if (id == B_COLL) { /* spec 014: __coll(OP, ...): OP an int literal; the result takes the expected type.
+                           ponytail: typed loosely (std.collections only, whose wrappers declare the
+                           public types); typed primitives if the library grows */
+        Vec *args = call->b.v;
+        if (!args->n || ((Node *)vec_get(args, 0))->kind != N_INT) return infer_error(call, expected);
+        for (long i = 0; i < args->n; i++) check_arg(call, i, 0);
+        return expected ? expected : t_void;
+    }
     if (id == B_SERVE_CALL) { /* spec 011: __serve_call(f, x): result of f(x); f's effects become the caller's */
         if (!check_argc(call, 2)) return t_error;
         Type *ft = check_arg(call, 0, 0);
@@ -249,10 +262,10 @@ Type *check_builtin(Node *call, long id, Type *expected)
                 err_one_of(arg0(call), "`int`, `float` or `bool`", t);
         }
         return t_str;
-    case B_LEN: /* len(str|list|map) */
+    case B_LEN: /* len(str|list|map|collection) */
         if (check_argc(call, 1)) {
             Type *t = check_arg(call, 0, 0);
-            if (t->kind != TY_STR && t->kind != TY_LIST && t->kind != TY_MAP)
+            if (t->kind != TY_STR && t->kind != TY_LIST && t->kind != TY_MAP && !TY_IS_COLL(t->kind))
                 err_one_of(arg0(call), "a `str`, list or map", t);
         }
         return t_int;
@@ -264,15 +277,15 @@ Type *check_builtin(Node *call, long id, Type *expected)
         if (t->kind == TY_STR || t->kind == TY_LIST) return t;
         return err_one_of(arg0(call), "a `str` or list", t);
     }
-    case B_PUSH: /* push(list[T], T) */
+    case B_PUSH: /* push(list[T], T); spec 014: OrderedSet, PriorityQueue, Deque */
         if (check_argc(call, 2)) {
-            Type *l = list_arg(call);
+            Type *l = kind_arg(call, 1 << TY_LIST | 1 << TY_OSET | 1 << TY_PQUEUE | 1 << TY_DEQUE, "a list");
             check_arg(call, 1, l ? l->a.t : 0);
         }
         return t_void;
     case B_POP: { /* pop(list[T]) -> result[T] */
         if (!check_argc(call, 1)) return t_error;
-        Type *l = list_arg(call);
+        Type *l = kind_arg(call, 1 << TY_LIST | 1 << TY_PQUEUE | 1 << TY_DEQUE, "a list");
         return l ? ty_result(l->a.t) : t_error;
     }
     case B_SORT: /* sort(list[int|float|str]) */
@@ -280,7 +293,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
             Type *t = check_arg(call, 0, 0);
             if (!ty_bad(t)) {
                 int ok = t->kind == TY_LIST && /* a list of an `ordered` type parameter (E0311 otherwise) */
-                         (is_ordered_kind(t->a.t->kind) || ck_param_order(t->a.t, arg0(call)));
+                         (is_ordered_type(t->a.t, arg0(call)) || ck_param_order(t->a.t, arg0(call)));
                 if (!ok) err_one_of(arg0(call), "a list of `int`, `float` or `str`", t);
             }
         }
@@ -288,20 +301,20 @@ Type *check_builtin(Node *call, long id, Type *expected)
     case B_HAS: /* has(map, key) -> bool / remove(map, key) */
     case B_REMOVE:
         if (check_argc(call, 2)) {
-            Type *m = map_arg(call);
+            Type *m = kind_arg(call, 1 << TY_MAP | 1 << TY_OMAP | 1 << TY_OSET, "a map");
             check_arg(call, 1, m ? m->a.t : 0);
         }
         return id == B_HAS ? t_bool : t_void;
     case B_GET_OR: { /* get_or(map[K, V], K, V) -> V (spec 009) */
         if (!check_argc(call, 3)) return t_error;
-        Type *m = map_arg(call);
+        Type *m = kind_arg(call, 1 << TY_MAP | 1 << TY_OMAP, "a map");
         check_arg(call, 1, m ? m->a.t : 0);
         check_arg(call, 2, m ? m->b.t : 0);
         return m ? m->b.t : t_error;
     }
     case B_KEYS: { /* keys(map[K, V]) -> list[K] */
         if (!check_argc(call, 1)) return t_error;
-        Type *m = map_arg(call);
+        Type *m = kind_arg(call, 1 << TY_MAP | 1 << TY_OMAP, "a map");
         return m ? ty_list(m->a.t) : t_error;
     }
     case B_EXPECT_EQ: /* expect_eq(T, T): the first argument's type is the expected type of the second */
@@ -332,7 +345,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
         if (!check_argc(call, 2)) return t_error;
         Type *t = check_arg(call, 0, 0);
         if (ty_bad(t)) return t_error;
-        if (!is_ordered_kind(t->kind) && !ck_param_order(t, arg0(call))) /* an `ordered` type parameter */
+        if (!is_ordered_type(t, arg0(call)) && !ck_param_order(t, arg0(call))) /* an `ordered` type parameter */
             return err_one_of(arg0(call), "`int`, `float` or `str`", t);
         check_arg(call, 1, t);
         return t;
@@ -350,6 +363,17 @@ Type *list_arg(Node *call)
     Type *t = check_arg(call, 0, 0);
     if (ty_is(t, TY_LIST)) return t;
     err_one_of(arg0(call), "a list", t);
+    return 0;
+}
+
+/* Checks argument 0 as one of the type kinds in mask (bit per kind); returns its type, or 0 after
+ * E0301 naming what (the message of the builtin's original kind). */
+Type *kind_arg(Node *call, long mask, char *what)
+{
+    Type *t = check_arg(call, 0, 0);
+    if (!ty_bad(t) && (mask >> t->kind & 1)) return t;
+    if (ty_bad(t)) return 0;
+    err_one_of(arg0(call), what, t);
     return 0;
 }
 
@@ -565,6 +589,12 @@ Type *check_index(Node *node)
             expect_type(node->b.n, key, k);
             return t->b.t;
         }
+        if (t->kind == TY_OMAP || t->kind == TY_DEQUE) { /* spec 014: a map's value by key, a deque's element */
+            Type *key = t->kind == TY_OMAP ? t->a.t : t_int;
+            Type *k = check_expr(node->b.n, key);
+            expect_type(node->b.n, key, k);
+            return t->kind == TY_OMAP ? t->b.t : t->a.t;
+        }
         if (t->kind == TY_STR)
             ck_err("E0308", node, str_from_cstr("Strings cannot be indexed; use `slice` or `chars`."));
         else
@@ -634,6 +664,9 @@ Type *check_binary(Node *node)
         } else if (k == TY_PARAM) { /* an `ordered` type parameter (E0311 otherwise) */
             ck_param_order(l, node);
             base = OP_LT_PARAM;
+        } else if (k == TY_RECORD) { /* spec 014: field by field (E0313 naming the field otherwise) */
+            if (!ty_ordered(l)) order_error(l, node, 0);
+            base = OP_LT_PARAM; /* the generic comparison at run time */
         } else {
             return op_error(node, l, r);
         }
@@ -736,7 +769,26 @@ Node *lookup_decl(Node *name_node, long kind, char *not_kind_msg)
     return 0;
 }
 
-Type *check_new_record(Node *node)
+/* Spec 014: `new ordered_map[str, int]` creates an empty collection ordered by its key or element
+ * type, which must then be ordered (another order: `ordered_map_by` with a comparison function). */
+static Type *check_new_coll(Node *node)
+{
+    Type *t = resolve_type(node->a.n);
+    if (ty_bad(t) || t->kind == TY_DEQUE || ty_ordered(t->a.t)) return t;
+    if (t->a.t->kind == TY_RECORD) {
+        order_error(t->a.t, node, 0);
+        return t;
+    }
+    static char *const by[] = {"ordered_map_by", "ordered_set_by", "priority_queue_by"};
+    SB *sb = sb_new();
+    sb_cstr(sb, "`$1` is not ordered, so `new $2` cannot order it: use `");
+    sb_cstr(sb, by[t->kind - TY_OMAP]);
+    sb_cstr(sb, "` with a comparison function.");
+    ck_err("E0313", node, msg(sb_finish(sb)->data, ty_name(t->a.t), ty_name(t), 0));
+    return t;
+}
+
+Type *check_new_record(Node *node, Type *expected)
 {
     Node *decl = lookup_decl(node->a.n, SYM_RECORD, "`$1` is not a record.");
     node->c.n = decl;
@@ -746,8 +798,30 @@ Type *check_new_record(Node *node)
         return t_error;
     }
     q_note((long)decl, -2, node, RR_USE); /* (record, -2) marks a literal (vo edit add-field) */
-    Type *rt = resolve_instance(node, decl, TY_RECORD, node->d.p); /* an instance when generic */
-    long *seen = alloc((count_members(decl->b.v) + 1) * 8);    /* seen fields */
+    Vec *tparams = ty_tparams_of(decl);
+    Type **vts = alloc((inits->n + 1) * 8); /* field values already checked (inference), else 0 */
+    Type *rt;
+    if (tparams && tparams->n && (!node->d.v || !node->d.v->n)) { /* spec 014 (R8): no type arguments written */
+        Type **b = alloc(tparams->n * 8);
+        if (expected && expected->kind == TY_RECORD && expected->decl.n == decl && expected->b.v)
+            for (long i = 0; i < tparams->n; i++) b[i] = expected->b.v->data[i].t;
+        for (long pass = 0; pass < 2; pass++) /* values that need their context (`Tree.leaf`) last */
+            for (long i = 0; i < inits->n; i++) {
+                Node *init = vec_get(inits, i);
+                long idx = member_index(decl->b.v, init->a.n->a.s);
+                if (idx < 0 || needs_context(init->b.n) != pass) continue;
+                Type *ft = member_at(decl->b.v, idx)->b.n->type;
+                Type *known = ty_subst_bindings(ft, decl, b);
+                vts[i] = check_expr(init->b.n, ty_mentions_owner(known, decl) ? 0 : known);
+                ty_unify(ft, vts[i], decl, b); /* a mismatch is reported below, against the instance */
+            }
+        if (bind_rest(node, tparams, b, decl->a.n->a.s))
+            for (long i = 0; i < tparams->n; i++) check_targ(b[i], vec_get(tparams, i), node, decl->a.n->a.s);
+        rt = ty_instance(TY_RECORD, decl, bindings_vec(b, tparams->n));
+    } else {
+        rt = resolve_instance(node, decl, TY_RECORD, node->d.p); /* an instance when generic */
+    }
+    long *seen = alloc((count_members(decl->b.v) + 1) * 8); /* seen fields */
     for (long i = 0; i < inits->n; i++) {
         Node *init = vec_get(inits, i); /* N_FINIT */
         long idx = member_index(decl->b.v, init->a.n->a.s);
@@ -762,7 +836,7 @@ Type *check_new_record(Node *node)
         seen[idx] = 1;
         Node *m = member_at(decl->b.v, idx);
         Type *ft = field_type_in(rt, m->b.n->type);
-        Type *vt = check_expr(init->b.n, ft);
+        Type *vt = vts[i] ? vts[i] : check_expr(init->b.n, ft);
         expect_type(init->b.n, ft, vt);
     }
     SB *missing = sb_new();
@@ -846,9 +920,10 @@ Type *check_expr(Node *node, Type *expected)
         case N_UNARY: t = check_unary(node); break;
         case N_TRY: t = check_try(node); break;
         case N_LIST: t = check_list(node, expected); break;
-        case N_NEW_RECORD: t = check_new_record(node); break;
+        case N_NEW_RECORD: t = check_new_record(node, expected); break;
         case N_NEW_LIST: t = ty_list(resolve_type(node->a.n)); break;
         case N_NEW_MAP: t = new_map_type(TY_MAP, node); break; /* reusing the map rules of resolve_type */
+        case N_NEW_COLL: t = check_new_coll(node); break; /* spec 014 */
         case N_VCASE: t = check_vcase(node, expected); break;
         case N_LAMBDA: t = check_lambda(node); break;
         case N_CALL_VALUE: t = check_call_value(node, expected); break;

@@ -1,0 +1,7 @@
+unordered_key.vo:5:9: warning[W0201]: `bad` is never used.
+   5 |     let bad = new ordered_set[list[int]];
+     |         ^^^
+unordered_key.vo:5:15: error[E0313]: `list[int]` is not ordered, so `new ordered_set[list[int]]` cannot order it: use `ordered_set_by` with a comparison function.
+   5 |     let bad = new ordered_set[list[int]];
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 1 warning

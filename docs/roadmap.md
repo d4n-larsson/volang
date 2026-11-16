@@ -20,8 +20,8 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [012](../specs/012-spec-annotations/) | `@spec` annotations: tests name the requirements they prove; `vo query specs` | **Done** ([results](../specs/012-spec-annotations/results.md)) |
 | Review | Security review against the threat model in [security.md](security.md) (effects as a security boundary) | **Review 1 done** ([findings](security-review-1.md): 5 Critical, 11 High, 5 Medium, 11 Low) |
 | [013](../specs/013-security-fixes/) | The fixes from review 1: the root grant, opening files without following swapped links, one HTTP framing, safe links in imports and packages, replay and server hardening | **Done** ([results](../specs/013-security-fixes/results.md)): all 32 findings fixed, each with a case |
-| Next | Complex data structures: balanced trees (AVL), ordered maps and sets, heaps (see below) | **Next spec, 014** |
-| Planned | Concurrency (see below) | **After data structures** |
+| [014](../specs/014-complex-data-structures/) | Built-in `ordered_map`, `ordered_set`, `priority_queue`, `deque` (created with `new`, like `map`) and `std.collections`; records of ordered fields are ordered; inferred type arguments for `new` and cases | **Done** ([results](../specs/014-complex-data-structures/results.md)) |
+| Next | Concurrency (see below) | **Next spec, 015** |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -81,41 +81,23 @@ vo programs used to run by walking the checked syntax tree. Now:
 - Packages pinned by content hash in `vo.packages` and resolved at check time, never at run time; a package's effects appear in `vo.effects`, so a new dependency that wants the network is visible in review.
 - Follow-ups: the agent run with and without `vo doc`, HTTPS, downloading packages.
 
-## Next: complex data structures
+### 014: complex data structures (done)
 
-The next spec (014). vo has `list` and `map` (keys `int` or `str`, insertion-ordered), records and variants. Programs that need
-an ordered map, a set, a priority queue or a balanced tree must build it themselves. That is possible
-today: a generic AVL tree checks and runs, as a `variant Tree[T: ordered]` whose `node` case holds a
-`record Node[T]`. Writing it showed where it costs more than it should, and where an agent is likely to
-get it wrong:
+- **Built-in collections,** written and created like `list` and `map`: `new ordered_map[str, int]`,
+  `ordered_set[T]`, `priority_queue[T]` (equal items leave in push order), `deque[T]`. AVL trees, a binary
+  heap and a ring buffer in the runtime; mutable; equality, printing and generated test inputs by
+  contents. The existing builtins work on them; `std.collections` adds neighbors (`key_at_or_above`,
+  `after`, ...), ranges, set algebra, deque fronts and `_by(cmp)` orders.
+- **Language:** a record whose fields are all ordered is ordered, field by field; type arguments of
+  `new` on generic records and of cases like `Tree.leaf` are inferred from the fields and the context.
+- **Evaluation:** eight benchmark tasks with a solution using the collections, a hand-written efficient
+  one and a naive one; the agent run with and without the module is still to do (see Benchmarks).
 
-- **Generic construction is verbose:** `new Node[T] { ... }` needs its type argument written out, and an
-  empty `Tree.leaf` passed as an argument cannot be inferred (E0310) without a typed `let` first.
-- **A variant case carries one value,** so every tree or list node needs a separate record.
-- **`ordered` covers only `int`, `float` and `str`:** a tree keyed by a record or a tuple of fields
-  needs a comparison function passed in by hand.
-- **Rebalancing is easy to get subtly wrong** (rotations, height updates), and a wrong tree still
-  returns plausible answers. This is where properties and contracts (005) should carry the weight.
-
-What the spec should decide:
-
-- **A standard-library module** (for example `std.collections`) written in vo: an ordered map and set on
-  an AVL tree, a binary heap (priority queue), a deque. Each comes with properties for its invariants
-  (balance, ordering, size) in its own tests, and `vo doc` examples.
-- **Persistent or mutable:** persistent trees fit vo's value semantics and make replay and future
-  concurrency simpler; mutable ones are faster. Probably persistent by default, measured against
-  `list` and `map` on the speed benchmark.
-- **Language changes the module needs, kept small:** inference for type arguments of `new` and of cases
-  without a value; ordering for user types (a `compare` function parameter, or records of ordered fields
-  ordered field by field).
-- **Agent evaluation:** benchmark tasks that need one of these structures, with and without the module,
-  to see whether a checked, documented library beats hand-written trees.
-
-## Planned: concurrency
+## Next: concurrency
 
 Today a vo program does one thing at a time: a server answers one request at a time (a slow client holds
-it for up to 10 s), and a program that fetches ten URLs waits for each in turn. Concurrency comes
-after the data structures spec. What it has to keep:
+it for up to 10 s), and a program that fetches ten URLs waits for each in turn. Concurrency is the next
+spec (015). What it has to keep:
 
 - **Determinism (Principle III).** The same program and inputs give the same output; record and replay
   keep working. A concurrent program's interleaving must be reproducible, or recorded and replayed.

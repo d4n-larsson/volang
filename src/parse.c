@@ -54,6 +54,24 @@ static Diag *p_last_diag(void);
 static void p_unclosed(long open_start);
 static Str *node_text(Node *n);
 
+static Token *p_tok(void);
+static int p_kind(void);
+static int p_kind_at(long ahead);
+
+/* Spec 014: TY_OMAP.. when the current token is one of the built-in collection names followed by `[`
+ * (`ordered_map[K, V]`, `ordered_set[T]`, `priority_queue[T]`, `deque[T]`), else 0. The names are
+ * types only there: elsewhere they are ordinary identifiers. */
+static long p_coll_kind(void)
+{
+    static const char *const names[] = {"ordered_map", "ordered_set", "priority_queue", "deque"};
+    if (p_kind() != T_IDENT || p_kind_at(1) != T_LBRACKET) return 0;
+    Token *t = p_tok();
+    for (int i = 0; i < 4; i++)
+        if (str_eq_bytes(str_from_cstr((char *)names[i]), p_text + t->start, (long)t->end - (long)t->start))
+            return TY_OMAP + i;
+    return 0;
+}
+
 static Token *p_tok(void)
 {
     return &p_toks[p_pos];
@@ -367,6 +385,16 @@ static Node *parse_type(void)
         p_expect(T_COMMA);
         n->c.n = parse_type();
         p_expect(T_RBRACKET);
+    } else if (p_coll_kind()) { /* spec 014: ordered_map[K, V], ordered_set[T], priority_queue[T], deque[T] */
+        n->a.i = p_coll_kind();
+        p_next();
+        p_expect(T_LBRACKET);
+        n->b.n = parse_type();
+        if (n->a.i == TY_OMAP) {
+            p_expect(T_COMMA);
+            n->c.n = parse_type();
+        }
+        p_expect(T_RBRACKET);
     } else if (k == T_KRESULT) {
         n->a.i = TY_RESULT;
         p_next();
@@ -539,6 +567,9 @@ static Node *parse_primary(void)
             p_expect(T_COMMA);
             n->b.n = parse_type();
             p_expect(T_RBRACKET);
+        } else if (p_coll_kind()) { /* spec 014: new ordered_map[K, V] */
+            n = p_node(N_NEW_COLL);
+            n->a.n = parse_type();
         } else {
             n = p_node(N_NEW_RECORD);
             if (p_kind() == T_TYPE_IDENT)

@@ -42,4 +42,5 @@
 {"v":1,"kind":"doc","module":"std.text","name":"std.text","item":"module","signature":"std.text","description":"Text helpers: search, replace, repeat, pad, lines and words."}
 {"v":1,"kind":"doc","module":"std.random","name":"std.random","item":"module","signature":"std.random","description":"Random floats, picks and shuffles (fixed by --seed)."}
 {"v":1,"kind":"doc","module":"std.http","name":"std.http","item":"module","signature":"std.http","description":"Plain HTTP: GET and POST (needs net), and serving requests (needs serve); no https."}
+{"v":1,"kind":"doc","module":"std.collections","name":"std.collections","item":"module","signature":"std.collections","description":"Operations on the built-in ordered_map, ordered_set, priority_queue and deque."}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":44}

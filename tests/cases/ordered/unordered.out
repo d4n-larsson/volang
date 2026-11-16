@@ -1,0 +1,13 @@
+unordered.vo:10:15: error[E0313]: `Tagged` is not ordered: its field `tags` (`list[str]`) has no order.
+  10 |     print(str(a < b));
+     |               ^^^^^
+unordered.vo:12:10: error[E0313]: `Tagged` is not ordered: its field `tags` (`list[str]`) has no order.
+  12 |     sort(xs);
+     |          ^^
+unordered.vo:13:9: warning[W0201]: `m` is never used.
+  13 |     let m = new ordered_map[Tagged, int];
+     |         ^
+unordered.vo:13:13: error[E0313]: `Tagged` is not ordered: its field `tags` (`list[str]`) has no order.
+  13 |     let m = new ordered_map[Tagged, int];
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+3 errors, 1 warning

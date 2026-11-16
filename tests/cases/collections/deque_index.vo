@@ -1,0 +1,6 @@
+
+fn main() uses console {
+    let d = new deque[str];
+    push(d, "a");
+    print(d[1]);
+}

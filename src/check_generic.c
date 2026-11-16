@@ -21,8 +21,22 @@ void tparams_push(Vec *tparams, Node *owner)
     }
 }
 
-/* int, float, str, an `ordered` type parameter, or an error type. */
-int ty_ordered(Type *t)
+static int ty_ordered_d(Type *t, long depth);
+
+/* Spec 014 (FR-012): the first field of record type t that has no order, or 0 (t is ordered field by
+ * field). depth bounds records that contain records. */
+static Node *unordered_field(Type *t, long depth)
+{
+    Vec *fields = t->decl.n->b.v;
+    for (long i = 0;; i++) {
+        Node *m = member_at(fields, i);
+        if (!m) return 0;
+        if (m->kind == N_COMMENT) continue;
+        if (!ty_ordered_d(field_type_in(t, m->b.n->type), depth + 1)) return m;
+    }
+}
+
+static int ty_ordered_d(Type *t, long depth)
 {
     switch (t->kind) {
     case TY_INT:
@@ -30,14 +44,42 @@ int ty_ordered(Type *t)
     case TY_STR:
     case TY_ERROR: return 1;
     case TY_PARAM: return t->b.i == TPC_ORDERED;
+    case TY_RECORD: return depth < 32 && !unordered_field(t, depth); /* spec 014: records of ordered fields */
     default: return 0;
     }
+}
+
+/* int, float, str, a record of ordered fields, an `ordered` type parameter, or an error type. */
+int ty_ordered(Type *t)
+{
+    return ty_ordered_d(t, 0);
+}
+
+/* E0313 at node for a type with no order: a record names its first field without one. */
+void order_error(Type *t, Node *node, char *needed_by)
+{
+    Node *f = t->kind == TY_RECORD ? unordered_field(t, 0) : 0;
+    if (f) {
+        SB *sb = sb_new();
+        sb_byte(sb, '`');
+        sb_str(sb, f->a.n->a.s);
+        sb_cstr(sb, "` (`");
+        ty_name_into(sb, field_type_in(t, f->b.n->type));
+        sb_cstr(sb, "`)");
+        ck_err("E0313", node, msg("`$1` is not ordered: its field $2 has no order.", ty_name(t), sb_finish(sb), 0));
+        return;
+    }
+    ck_err("E0313", node, msg(needed_by, ty_name(t), 0, 0));
 }
 
 /* E0313 when an `ordered` type parameter gets a type without an order. 1 = fine. */
 int check_targ(Type *t, Node *tparam, Node *node, Str *owner_name)
 {
     if (tparam->b.i != TPC_ORDERED || ty_ordered(t)) return 1;
+    if (t->kind == TY_RECORD) {
+        order_error(t, node, 0);
+        return 0;
+    }
     ck_err("E0313", node,
            msg("`$1` is not ordered, but `$2` needs `int`, `float` or `str`.", ty_name(t), owner_name, 0));
     return 0;
@@ -116,6 +158,10 @@ static int ty_has_func(Type *t)
     case TY_LIST:
     case TY_RESULT: return ty_has_func(t->a.t);
     case TY_MAP: return ty_has_func(t->a.t) || ty_has_func(t->b.t);
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: return ty_has_func(t->a.t) || (t->b.t && ty_has_func(t->b.t));
     case TY_RECORD:
     case TY_VARIANT:
         for (long i = 0; t->b.v && i < t->b.v->n; i++)
@@ -125,6 +171,41 @@ static int ty_has_func(Type *t)
     }
 }
 
+/* Spec 014 (research R8): 1 when t mentions a type parameter of owner (one not bound yet). */
+int ty_mentions_owner(Type *t, Node *owner)
+{
+    if (!t) return 0;
+    switch (t->kind) {
+    case TY_PARAM: return t->decl.n == owner;
+    case TY_LIST:
+    case TY_RESULT: return ty_mentions_owner(t->a.t, owner);
+    case TY_MAP:
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: return ty_mentions_owner(t->a.t, owner) || (t->b.t && ty_mentions_owner(t->b.t, owner));
+    case TY_FUNC:
+        if (ty_mentions_owner(t->b.t, owner)) return 1;
+        for (long i = 0; i < t->a.v->n; i++)
+            if (ty_mentions_owner(vec_get(t->a.v, i), owner)) return 1;
+        return 0;
+    case TY_RECORD:
+    case TY_VARIANT:
+        for (long i = 0; t->b.v && i < t->b.v->n; i++)
+            if (ty_mentions_owner(vec_get(t->b.v, i), owner)) return 1;
+        return 0;
+    default: return 0;
+    }
+}
+
+/* Spec 014 (R8): an expression whose type comes from where it is used: a generic case without a value,
+ * `new` without type arguments, a call without arguments (a constructor such as `ordered_map()`). */
+int needs_context(Node *v)
+{
+    return (v->kind == N_VCASE && !v->c.n) || (v->kind == N_NEW_RECORD && (!v->d.v || !v->d.v->n)) ||
+           (v->kind == N_CALL && v->b.v && !v->b.v->n);
+}
+
 /* A call of a generic function: arguments, inference, constraints, effects; the return type. */
 Type *check_generic_call(Node *call, Node *decl, Type *expected)
 {
@@ -132,17 +213,31 @@ Type *check_generic_call(Node *call, Node *decl, Type *expected)
     Type **b = alloc(tparams->n * 8); /* bindings */
     if (!check_argc(call, decl->b.v->n)) return t_error;
     long unified = 0; /* bit i: argument i unified (spec 013: only those are checked again) */
-    for (long i = 0; i < decl->b.v->n; i++) { /* each argument: unify its type with the parameter's */
-        Type *pt = ((Node *)vec_get(decl->b.v, i))->type;
-        Type *at = check_arg(call, i, ty_has_params(pt) ? 0 : pt); /* nothing to infer: check directly */
-        if (ty_unify(pt, at, decl, b)) {
-            if (i < 63) unified |= 1L << i;
-            continue;
+    long deferred = 0; /* bit i: argument i takes its type from the parameter (spec 014, R8): checked last */
+    for (long pass = 0; pass < 2; pass++) {
+        if (pass && expected) ty_unify(decl->type, expected, decl, b); /* it can bind what the arguments did not */
+        for (long i = 0; i < decl->b.v->n; i++) { /* each argument: unify its type with the parameter's */
+            Type *pt = ((Node *)vec_get(decl->b.v, i))->type;
+            Node *an = call->b.v->data[i].n;
+            if (!pass && i < 63 && ty_has_params(pt) && needs_context(an)) {
+                deferred |= 1L << i;
+                continue;
+            }
+            if (pass && (i >= 63 || !(deferred >> i & 1))) continue;
+            Type *want = ty_has_params(pt) ? 0 : pt; /* nothing to infer: check directly */
+            if (pass) { /* the parameter's type as far as the other arguments made it known */
+                Type *known = ty_subst_bindings(pt, decl, b);
+                if (!ty_mentions_owner(known, decl)) want = known;
+            }
+            Type *at = check_arg(call, i, want);
+            if (ty_unify(pt, at, decl, b)) {
+                if (i < 63) unified |= 1L << i;
+                continue;
+            }
+            Type *known = ty_subst_bindings(pt, decl, b); /* the parameter's type as far as it is known */
+            ck_mismatch(an, known, at);
         }
-        Type *known = ty_subst_bindings(pt, decl, b); /* the parameter's type as far as it is known */
-        ck_mismatch(call->b.v->data[i].n, known, at);
     }
-    if (expected) ty_unify(decl->type, expected, decl, b); /* it can bind what the arguments did not */
     if (!bind_rest(call, tparams, b, call->a.n->a.s))     /* what stayed unbound */
         infer_fix(call, diag_last()); /* E0310: an annotation fix when a later use shows the type */
     for (long i = 0; i < tparams->n; i++) { /* `ordered` parameters */

@@ -1,0 +1,34 @@
+import std.collections.copy_queue;
+import std.collections.peek;
+
+fn show(r: result[int]) -> str {
+    match r {
+        case ok(x) {
+            return str(x);
+        }
+        case err(e) {
+            return "err(" + e + ")";
+        }
+    }
+}
+
+# Spec 014 US2: pops in order, empty gives err, `for` in pop order without removing, copies, equality.
+fn main() uses console {
+    let q = new priority_queue[int];
+    print("empty: " + show(pop(q)) + " " + show(peek(q)));
+    for x in [5, 1, 3, 1, 9] {
+        push(q, x);
+    }
+    var seen = new list[str];
+    for x in q {
+        push(seen, str(x));
+    }
+    print("for: " + join(seen, " ") + ", len still " + str(len(q)) + ", peek " + show(peek(q)));
+    let c = copy_queue(q);
+    var out = new list[str];
+    while len(q) > 0 {
+        push(out, show(pop(q)));
+    }
+    print("pops: " + join(out, " ") + ", copy len " + str(len(c)));
+    print(str(c == copy_queue(c)) + " " + str(q == c));
+}

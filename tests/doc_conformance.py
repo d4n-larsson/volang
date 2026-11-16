@@ -28,6 +28,8 @@ BUILTIN_EFFECTS = {"print": "console", "write": "console", "eprint": "console",
 TEST_ONLY = {"expect", "expect_eq"}
 TYPE_PATHS = {}  # record/variant name -> its import path
 WRONG = [('"a"', "str"), ("1", "int"), ("true", "bool")]
+# spec 014: the built-in collections are created with `new ordered_map[K, V]` etc.
+COLLECTIONS = {"ordered_map", "ordered_set", "priority_queue", "deque"}
 
 
 def doc(*args):
@@ -89,6 +91,9 @@ class Values:
             return "true"
         if t == "str":
             return '"a"'
+        m = re.fullmatch(r"(\w+)\[(.*)\]", t)
+        if m and m.group(1) in COLLECTIONS:
+            return f"new {self.inst(t, tv)}"
         m = re.fullmatch(r"(list|map|result)\[(.*)\]", t)
         if m:
             if m.group(1) == "result":
@@ -143,12 +148,13 @@ def run(src):
         return p.returncode, p.stdout, p.stderr
 
 
-def program(imports, effects, call, void, test_only):
+def program(imports, effects, call, void, test_only, ret=None):
+    text = call + " " + (ret or "")
     imports = list(imports) + [q for n, q in TYPE_PATHS.items()
-                               if q not in imports and re.search(rf"\b{n}\b", call)]
+                               if q not in imports and re.search(rf"\b{n}\b", text)]
     head = "".join(f"import {i};\n" for i in imports)
     uses = f" uses {', '.join(effects)}" if effects else ""
-    stmt = f"{call};" if void else f"let r = {call};"
+    stmt = f"{call};" if void else f"let r{': ' + ret if ret else ''} = {call};"
     if test_only:
         return f'{head}\ntest "probe"{uses} {{\n    {stmt}\n}}\n'
     return f"{head}\nfn probe(){uses} {{\n    {stmt}\n}}\n"
@@ -180,7 +186,10 @@ def main():
         tv = {k: "int" for k in tvars}
         void = ret in (None, "void")
         args = [vals.value(t, tv) for _, t in params]
-        ok, out = check(program(imports, effects, f"{name}({', '.join(args)})", void, test_only))
+        # spec 014: a type parameter only the result mentions comes from a declared type
+        free = [x for x in re.findall(r"\b[A-Z]\b", ret or "") if not any(re.search(rf"\b{x}\b", t) for _, t in params)]
+        annot = vals.inst(ret, tv) if free and not void else None
+        ok, out = check(program(imports, effects, f"{name}({', '.join(args)})", void, test_only, annot))
         calls += 1
         if not ok:
             failures.append(f"{label}: the documented call is rejected\n{out}")
@@ -190,12 +199,12 @@ def main():
             w = vals.wrong(t, tv, tvars, others, over)
             if w is not None:
                 bad = args[:i] + [w] + args[i + 1:]
-                ok, _ = check(program(imports, effects, f"{name}({', '.join(bad)})", void, test_only))
+                ok, _ = check(program(imports, effects, f"{name}({', '.join(bad)})", void, test_only, annot))
                 calls += 1
                 if ok:
                     failures.append(f"{label}: a wrong type for `{pname}` ({w}) checks")
             fewer = args[:i] + args[i + 1:]
-            ok, _ = check(program(imports, effects, f"{name}({', '.join(fewer)})", void, test_only))
+            ok, _ = check(program(imports, effects, f"{name}({', '.join(fewer)})", void, test_only, annot))
             calls += 1
             if ok:
                 failures.append(f"{label}: a call without `{pname}` checks")
@@ -226,6 +235,10 @@ def main():
                 failures.append(f"{label}: no example `EXPR is VALUE`")
                 continue
             expr, value = ex.rsplit(" is ", 1)
+            setup = ""
+            if expr.startswith("let ") and "; " in expr:  # spec 014: statements first (`let s = ...; push(s, 1); EXPR`)
+                setup, expr = expr.rsplit("; ", 1)
+                setup += ";\n    "
             examples += 1
             if value.startswith('"'):
                 show, want = expr, json.loads(value)
@@ -235,7 +248,7 @@ def main():
                          key=["console", "input", "file.read", "file.write", "net", "clock", "random", "env",
                               "serve"].index)  # effect parameters (E) are not effects to declare
             src = "".join(f"import {i};\n" for i in every) + \
-                f"\nfn main() uses {', '.join(eff)} {{\n    print({show});\n}}\n"
+                f"\nfn main() uses {', '.join(eff)} {{\n    {setup}print({show});\n}}\n"
             code, out, err = run(src)
             if code != 0 or out != want + "\n":
                 failures.append(f"{label}: example `{ex}` printed {out!r} (exit {code})\n{err}")

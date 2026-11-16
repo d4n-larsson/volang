@@ -63,6 +63,10 @@ line two
 | `str` | immutable UTF-8 text | `len` counts bytes |
 | `list[T]` | ordered, growable | reference type |
 | `map[K, V]` | insertion-ordered | `K` is `int` or `str` (E0309); reference type |
+| `ordered_map[K, V]` | keys ascending | `K` ordered; reference type |
+| `ordered_set[T]` | ascending, each once | `T` ordered; reference type |
+| `priority_queue[T]` | `pop` gives the smallest | ties leave in push order; reference type |
+| `deque[T]` | cheap at both ends | reference type |
 | `result[T]` | `ok(T)` or `err(str)` | `result[void]` for "ok or error, no value" |
 | `Name` | a declared `record` or `variant` | records are reference types |
 
@@ -518,9 +522,9 @@ variant Tree[T] { leaf; node(Node[T]); }
 fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E { ... }
 ```
 
-- Type parameters follow the name. A plain `T` supports only `==` and `!=`; `T: ordered` also `<`, `<=`, `>`, `>=`, `min`, `max` and `sort`, and must be `int`, `float` or `str` (E0311, E0313). `E: effects` is an effect parameter: whatever effects the function passed in has, the caller needs.
-- Generic types are written with their arguments: `Pair[int, str]`, `new Pair[int, str] { ... }` (E0312).
-- Type arguments are never written at calls. They come from the arguments, then from the expected type: `let t: Tree[int] = Tree.leaf;`. When they cannot be inferred, annotate the variable (E0310).
+- Type parameters follow the name. A plain `T` supports only `==` and `!=`; `T: ordered` also `<`, `<=`, `>`, `>=`, `min`, `max` and `sort`, and must be `int`, `float`, `str`, or a record whose fields are all ordered, compared field by field in declaration order (E0311, E0313). `E: effects` is an effect parameter: whatever effects the function passed in has, the caller needs.
+- Generic types are written with their arguments: `Pair[int, str]` (E0312).
+- Type arguments are never written at calls, and may be left out of `new` and of cases: they come from the arguments or field values, then from the expected type (a parameter, a return type, an annotated variable): `insert(Tree.leaf, 5)`, `new Pair { first: 1, second: "a" }`. When they cannot be inferred, annotate the variable (E0310).
 - Generic code is checked once, where it is written.
 
 ```vo
@@ -774,6 +778,8 @@ fn main() uses console {
 
 Indexing is not a builtin but follows the same rules: `xs[i]` (R0003 out of range), `m[k]` (R0004 missing key), `set xs[i] = v;`, `set m[k] = v;`.
 
+Create the collections like maps: `new ordered_map[str, int]`, `new deque[int]`. `len`, `has`, `remove`, `get_or`, `keys`, `push`, `pop`, indexing and `for` work on them: `push` adds to a set or queue (a deque: at the back), `pop` takes a queue's smallest item or a deque's back element. `std.collections` has the rest (`first_key`, `after`, `union`, `push_front`, ...) and `ordered_map_by(cmp)` etc. for another order. A `for` loop over a collection copies it first (all of it, even with `break`). Changing a record while it is a key or set element breaks the order: remove it, change it, add it again.
+
 ```vo
 fn main() uses console {
     let s = "  héllo, world ";
@@ -984,6 +990,7 @@ fn main() uses console {
 | std.text | `replace`, `contains`, `pad_left`, `lines`, `words`, ... |
 | std.random | `unit`, `pick`, `shuffle` (random) |
 | std.http | plain HTTP: `get` and `post` (net), `serve` (serve); no HTTPS |
+| std.collections | neighbors and ranges of the ordered collections, set algebra, deque fronts, `_by(cmp)` orders |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
 - `std.http.serve(address, handle)` answers HTTP requests one at a time with `handle(request) -> Response` until Ctrl-C or SIGTERM, then returns `ok()`. The caller declares `serve` with that address and the handler's effects. A handler that stops with a runtime error answers 500 (the report goes to stderr) and the server goes on; `--timeout` limits each handler call, not the server.

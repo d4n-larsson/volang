@@ -1,0 +1,114 @@
+import std.text.words;
+
+# A binary min-heap of ints at index 0.
+fn heap_push(h: list[int], x: int) {
+    push(h, x);
+    var i = len(h) - 1;
+    while i > 0 and h[i] < h[(i - 1) / 2] {
+        let p = (i - 1) / 2;
+        let t = h[i];
+        set h[i] = h[p];
+        set h[p] = t;
+        set i = p;
+    }
+}
+
+fn heap_pop(h: list[int]) -> result[int] {
+    let top = h[0];
+    let last = try pop(h);
+    if len(h) > 0 {
+        set h[0] = last;
+        var i = 0;
+        while true {
+            var b = i;
+            let l = 2 * i + 1;
+            if l < len(h) and h[l] < h[b] {
+                set b = l;
+            }
+            if l + 1 < len(h) and h[l + 1] < h[b] {
+                set b = l + 1;
+            }
+            if b == i {
+                break;
+            }
+            let t = h[i];
+            set h[i] = h[b];
+            set h[b] = t;
+            set i = b;
+        }
+    }
+    return ok(top);
+}
+
+# One side of the book: quantity per price level, and a heap of sign * price (-price for bids, so
+# the highest bid comes first). A price whose level was emptied stays in the heap until it reaches the top.
+record Side {
+    levels: map[int, int];
+    heap: list[int];
+    sign: int;
+}
+
+# The best price of the side, or -1 when it is empty.
+fn best(s: Side) -> result[int] {
+    while len(s.heap) > 0 and not has(s.levels, s.sign * s.heap[0]) {
+        let _ = try heap_pop(s.heap);
+    }
+    if len(s.heap) == 0 {
+        return ok(-1);
+    }
+    return ok(s.sign * s.heap[0]);
+}
+
+fn add(s: Side, price: int, qty: int) {
+    if not has(s.levels, price) {
+        heap_push(s.heap, s.sign * price);
+    }
+    set s.levels[price] = get_or(s.levels, price, 0) + qty;
+}
+
+fn show(p: int) -> str {
+    if p < 0 {
+        return "-";
+    }
+    return str(p);
+}
+
+fn main() -> result[void] uses console, input {
+    let bids = new Side { levels: new map[int, int], heap: new list[int], sign: -1 };
+    let asks = new Side { levels: new map[int, int], heap: new list[int], sign: 1 };
+    for line in split(read_all(), "\n") {
+        let w = words(line);
+        if len(w) == 3 {
+            let buy = w[0] == "buy";
+            let price = try parse_int(w[1]);
+            var qty = try parse_int(w[2]);
+            var traded = 0;
+            var cost = 0;
+            var other = bids;
+            var own = asks;
+            if buy {
+                set other = asks;
+                set own = bids;
+            }
+            while qty > 0 {
+                let p = try best(other);
+                if p < 0 or (buy and p > price) or (not buy and p < price) {
+                    break;
+                }
+                let t = min(qty, other.levels[p]);
+                set qty = qty - t;
+                set traded = traded + t;
+                set cost = cost + t * p;
+                set other.levels[p] = other.levels[p] - t;
+                if other.levels[p] == 0 {
+                    remove(other.levels, p);
+                }
+            }
+            if qty > 0 {
+                add(own, price, qty);
+            }
+            print(str(traded) + " " + str(cost) + " " + show(try best(bids)) + " " + show(try best(asks)));
+        }
+    }
+    return ok();
+}

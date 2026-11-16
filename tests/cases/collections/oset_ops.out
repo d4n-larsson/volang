@@ -1,0 +1,7 @@
+{apple fig kiwi pear} len 4
+first apple, last pear
+at or above g: kiwi, at or below g: fig, above z: err(none)
+between b and p: fig kiwi
+union {apple fig kiwi pear plum}, intersection {apple fig}, difference {kiwi pear}
+changed while iterating: {apple! fig! kiwi! pear!}; the copy: {apple fig kiwi pear}
+true

@@ -41,6 +41,7 @@
 #define OBJ_RAW (6)
 #define OBJ_CLOSURE (7)
 #define OBJ_BYTES (8) /* a raw buffer that holds no pointers (never scanned) */
+#define OBJ_COLL (9)  /* spec 014: a std.collections value (Coll) */
 #define OBJ_FREE (15) /* a reclaimed heap slot */
 #define OBJ_MARK (0x80000000UL) /* mark bit in the kind word, set only while collecting */
 
@@ -296,6 +297,7 @@
 #define N_LAMBDA (50) /* A name node ("anonymous function"; params in N_B like N_FN), B return type node|0, C N_USES|0 (only for E0507), D body, E local count */
 #define N_FN_TYPE (51) /* type node: A param type nodes vec, B return type node|0, C N_USES|0 */
 #define N_ANNOTATION (53) /* spec 012: `@NAME(STR, ...)`: A name node, B vec of N_STR; an item, before the item it annotates */
+#define N_NEW_COLL (54) /* spec 014: `new ordered_map[K, V]` etc.: A the collection type node */
 #define N_CALL_VALUE (52) /* A callee expr, B args vec, C how (CV_*), D field index (CV_FIELD) */
 #define TPC_NONE (0)
 #define TPC_ORDERED (1)
@@ -367,7 +369,8 @@
 #define B_FLOAT_TEXT (52) /* spec 007: __float_text, callable only from std/ (research R5) */
 #define B_HTTP_EXCHANGE (53) /* spec 007: __http_exchange (host, port, request) -> result[str], net */
 #define B_TEXT_FLOAT (54) /* spec 007: __text_float (s) -> float, up to 17 significant digits (json) */
-#define B_LAST (60) /* the last builtin id with a btab entry */
+#define B_LAST (61)
+#define B_COLL (61) /* spec 014: __coll(OP, a, b, c), std.collections only */ /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -424,7 +427,14 @@
 #define TY_NAMED (12) /* syntax only: a TYPE_IDENT before resolution */
 #define TY_FUNC (13) /* A param type vec, B return type, DECL effect set */
 #define TY_PARAM (14) /* A index, B constraint (TPC_*), DECL owner decl node */
-#define TY_EFFSET (15) /* an effect parameter's binding: DECL = the effect set */
+#define TY_EFFSET (15)
+/* spec 014: the std.collections types (A key or element type, B value type or 0); numbered above
+   TY_VOID for rt_concrete's shortcut */
+#define TY_OMAP (16)
+#define TY_OSET (17)
+#define TY_PQUEUE (18)
+#define TY_DEQUE (19)
+#define TY_IS_COLL(k) ((k) >= TY_OMAP && (k) <= TY_DEQUE) /* an effect parameter's binding: DECL = the effect set */
 
 /* ---- symbols: name | kind | flags | decl | type | slot | next | name node ---- */
 #define SY_NAME (0)
@@ -573,7 +583,11 @@
 #define OPC_HAS (82) /* a = has(b, c) */
 #define OPC_CALL_GENERIC (83) /* a = generic call (arguments in b), c = its call-site record (GS_*) */
 #define OPC_TRACE_ENTER (84) /* spec 006: first instruction of every function, only with --trace */
-#define OPC_COUNT (85)
+#define OPC_INDEX_COLL (85)     /* spec 014: a = b[c] for an OrderedMap or Deque */
+#define OPC_SET_INDEX_COLL (86) /* b... a[b] = c */
+#define OPC_SNAPSHOT (87)       /* a = the elements of collection b as a list (for loops) */
+#define OPC_NEW_COLL (88) /* spec 014: a = new OrderedMap[...] etc. (the node's type) */
+#define OPC_COUNT (89)
 /* generic call-site record (permanent): rt_targs and rt_es_subst results for the last caller */
 #define GS_DECL (0) /* the callee */
 #define GS_VALID (8) /* 1 once filled */
@@ -952,6 +966,22 @@ CHECK_OFFSET(List, len, L_LEN);
 CHECK_OFFSET(List, cap, L_CAP);
 CHECK_OFFSET(List, data, L_DATA);
 
+/* spec 014: OrderedMap, OrderedSet, PriorityQueue, Deque (src/rt_coll.c) */
+typedef struct Coll {
+    ObjHdr hdr;
+    long count;    /* at offset 8, like a list's length: OPC_LEN */
+    long kind;     /* TY_OMAP, TY_OSET, TY_PQUEUE, TY_DEQUE */
+    Type *type;    /* the concrete collection type: its key or element type orders it */
+    void *cmp;     /* the comparison function (a Closure), or 0 for the built-in order */
+    void *root;    /* map and set: the AVL tree */
+    W *data;       /* queue: (item, sequence) pairs in heap order; deque: the ring buffer */
+    long cap;      /* data capacity in elements (a power of two) */
+    long head;     /* deque: the front's index */
+    long seq;      /* queue: pushes so far (ties leave in push order) */
+} Coll;
+#define COLL_SIZE (72) /* the fields after the header */
+CHECK_OFFSET(Coll, count, L_LEN);
+
 typedef struct MapEntry {
     W key;
     W val;
@@ -1312,7 +1342,7 @@ extern Type *check_unary(Node *node);
 extern Type *check_try(Node *node);
 extern Type *check_list(Node *node, Type *expected);
 extern Node *lookup_decl(Node *name_node, long kind, char *not_kind_msg);
-extern Type *check_new_record(Node *node);
+extern Type *check_new_record(Node *node, Type *expected);
 extern Str *str_new_copy(Str *str);
 extern Type *check_vcase(Node *node, Type *expected);
 extern Type *check_expr(Node *node, Type *expected);
@@ -1464,6 +1494,11 @@ extern long http_frame(HttpFrame *f, char *buf, long n, int eof, int response);
 extern Str *rt_http_part(Str *m, long which);
 extern Variant *rt_serve_next(long listener);
 extern void fx_builtin_literal(Node *call, long id);
+extern int ty_mentions_owner(Type *t, Node *owner);
+extern void order_error(Type *t, Node *node, char *needed_by);
+extern Type *elem_record_type;
+extern int needs_context(Node *v);
+extern Type *kind_arg(Node *call, long mask, char *what);
 extern void rt_serve_reply(Str *text);
 extern Variant *rt_serve_call(void *fn, long request, Node *call);
 extern long tr_depth_get(void);
@@ -1705,6 +1740,22 @@ extern Str *walk_root;
 extern long pkg_cached(Str *path, char **text);
 extern int pkg_contains(Str *real);
 extern SB *sb_escape_controls(SB *sb);
+extern void coll_reset_active(void);
+extern long value_cmp(long a, long b, Type *t);
+extern long record_cmp(long a, long b, Type *t);
+extern Coll *coll_new(Type *type, struct Closure *cmp);
+extern Coll *coll_copy(Coll *c);
+extern List *coll_snapshot(Coll *c);
+extern List *coll_values(Coll *c);
+extern long coll_has(Coll *c, long key);
+extern void coll_remove(Coll *c, long key);
+extern long coll_get_or(Coll *c, long key, long dflt);
+extern void coll_push(Coll *c, long x);
+extern Variant *coll_pop(Coll *c);
+extern long coll_index(Coll *c, long k, Node *node);
+extern void coll_set_index(Coll *c, long k, long v, Node *node);
+extern long coll_op(Node *call, long a0, long a1, long a2);
+extern int coll_equal(Coll *a, Coll *b, Type *t);
 extern long render_depth;
 extern void expand_paths(void);
 extern long load_source(Str *path);

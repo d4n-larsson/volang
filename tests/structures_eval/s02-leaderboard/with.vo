@@ -1,0 +1,40 @@
+import std.collections.first;
+
+# Ordered field by field: the highest total first, then the name.
+record Entry {
+    neg: int;
+    name: str;
+}
+
+fn main() -> result[void] uses console, input {
+    let totals = new map[str, int];
+    let board = new ordered_set[Entry];
+    for line in split(read_all(), "\n") {
+        let w = split(trim(line), " ");
+        if w[0] == "score" {
+            let old = get_or(totals, w[1], 0);
+            remove(board, new Entry { neg: -old, name: w[1] });
+            set totals[w[1]] = old + try parse_int(w[2]);
+            push(board, new Entry { neg: -totals[w[1]], name: w[1] });
+        } else if w[0] == "top" {
+            let k = try parse_int(w[1]);
+            let best = new list[Entry];
+            while len(best) < k and len(board) > 0 {
+                let e = try first(board);
+                remove(board, e);
+                push(best, e);
+            }
+            let shown = new list[str];
+            for e in best {
+                push(board, e);
+                push(shown, e.name + ":" + str(-e.neg));
+            }
+            if len(shown) == 0 {
+                print("empty");
+            } else {
+                print(join(shown, " "));
+            }
+        }
+    }
+    return ok();
+}

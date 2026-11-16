@@ -14,9 +14,9 @@ enum {
     BU_ABS, BU_MIN, BU_MAX, BU_UPPER, BU_LOWER, BU_ORD, BU_CHR, BU_ENV, BU_RANDOM_INT,
     BU_SORT_BY, BU_MAP, BU_FILTER, BU_FOLD, BU_ANY, BU_ALL, BU_TODO, BU_ASSUME, BU_REQ_FAIL,
     BU_ENS_FAIL, BU_FLOAT_TEXT, BU_HTTP_EXCHANGE, BU_TEXT_FLOAT, BU_GET_OR, BU_SERVE_LISTEN, BU_SERVE_NEXT,
-    BU_SERVE_REPLY, BU_SERVE_CALL, BU_HTTP_PART
+    BU_SERVE_REPLY, BU_SERVE_CALL, BU_HTTP_PART, BU_COLL
 };
-_Static_assert(BU_HTTP_PART == B_LAST, "the builtin ids end at B_LAST");
+_Static_assert(BU_COLL == B_LAST, "the builtin ids end at B_LAST");
 _Static_assert(BU_TODO == B_TODO && BU_REQ_FAIL == B_REQ_FAIL && BU_SORT_BY == B_SORT_BY, "builtin ids");
 
 /* The static type of the call's first argument. */
@@ -120,6 +120,7 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_SERVE_REPLY: io_serve_reply((void *)a0); return 0;
     case BU_SERVE_CALL: return (long)rt_serve_call((void *)a0, a1, call);
     case BU_HTTP_PART: return (long)rt_http_part((Str *)a0, a1); /* spec 013 */
+    case BU_COLL: return coll_op(call, a0, a1, a2); /* spec 014: std.collections */
     case BU_TEXT_FLOAT: return std_text_float((Str *)a0); /* spec 007: up to 19 digits, exactly */
     case BU_PARSE_INT: return (long)rt_parse_int((Str *)a0);
     case BU_PARSE_FLOAT: return (long)rt_parse_float((Str *)a0);
@@ -137,27 +138,39 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_JOIN: return (long)rt_join((List *)a0, (Str *)a1);
     case BU_TRIM: return (long)rt_trim((Str *)a0);
     case BU_CHARS: return (long)rt_chars((Str *)a0);
-    case BU_PUSH: list_push((List *)a0, a1); return 0;
-    case BU_POP: return (long)list_pop((List *)a0);
+    case BU_PUSH:
+        if (TY_IS_COLL(arg0_type(call)->kind)) coll_push((Coll *)a0, a1); /* spec 014 */
+        else list_push((List *)a0, a1);
+        return 0;
+    case BU_POP: return TY_IS_COLL(arg0_type(call)->kind) ? (long)coll_pop((Coll *)a0) : (long)list_pop((List *)a0);
     case BU_SORT: { /* by the element type */
         Type *elem = rt_concrete(arg0_type(call)->a.t);
+        elem_record_type = elem; /* spec 014: records field by field */
         list_sort((List *)a0, (int)elem->kind);
         return 0;
     }
-    case BU_HAS: return map_find((Map *)a0, a1, map_key_type()) >= 0;
+    case BU_HAS:
+        if (TY_IS_COLL(arg0_type(call)->kind)) return coll_has((Coll *)a0, a1); /* spec 014 */
+        return map_find((Map *)a0, a1, map_key_type()) >= 0;
     case BU_GET_OR: { /* spec 009: the stored value, or the default; never inserts */
+        if (TY_IS_COLL(arg0_type(call)->kind)) return coll_get_or((Coll *)a0, a1, a2);
         long e = map_find((Map *)a0, a1, map_key_type());
         return e >= 0 ? ((Map *)a0)->entries[e].val.i : a2;
     }
-    case BU_REMOVE: map_remove((Map *)a0, a1, map_key_type()); return 0;
-    case BU_KEYS: return (long)map_keys((Map *)a0);
+    case BU_REMOVE:
+        if (TY_IS_COLL(arg0_type(call)->kind)) coll_remove((Coll *)a0, a1);
+        else map_remove((Map *)a0, a1, map_key_type());
+        return 0;
+    case BU_KEYS: return TY_IS_COLL(arg0_type(call)->kind) ? (long)coll_snapshot((Coll *)a0) : (long)map_keys((Map *)a0);
     case BU_EXPECT: rt_expect(a0, call); return 0;
     case BU_EXPECT_EQ: rt_expect_eq(a0, a1, call); return 0;
     case BU_OK: return (long)make_result(0, a0);
     case BU_ERR: return (long)make_result(1, a0);
     case BU_ABS: return rt_abs(a0, (int)arg0_kind(), call);
-    case BU_MIN: return rt_minmax(a0, a1, (int)arg0_kind(), 0);
-    case BU_MAX: return rt_minmax(a0, a1, (int)arg0_kind(), 1);
+    case BU_MIN:
+    case BU_MAX:
+        elem_record_type = rt_concrete(arg0_type(call)); /* spec 014: records field by field */
+        return rt_minmax(a0, a1, (int)arg0_kind(), id == BU_MAX);
     case BU_UPPER: return (long)rt_case((Str *)a0, 1);
     case BU_LOWER: return (long)rt_case((Str *)a0, 0);
     case BU_ORD: return rt_ord((Str *)a0, call);

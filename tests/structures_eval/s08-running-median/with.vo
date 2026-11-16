@@ -1,0 +1,33 @@
+import std.collections.peek;
+import std.collections.priority_queue_by;
+import std.text.words;
+
+fn main() -> result[void] uses console, input {
+    let xs = words(read_all());
+    # low: the smaller half, largest first; high: the larger half, smallest first.
+    let low: priority_queue[int] = priority_queue_by(fn(a: int, b: int) -> int {
+        return b - a;
+    });
+    let high = new priority_queue[int];
+    var checksum = 0;
+    for i in 1..len(xs) {
+        let x = try parse_int(xs[i]);
+        if len(low) == 0 or x <= try peek(low) {
+            push(low, x);
+        } else {
+            push(high, x);
+        }
+        if len(low) > len(high) + 1 {
+            push(high, try pop(low));
+        } else if len(high) > len(low) {
+            push(low, try pop(high));
+        }
+        let median = try peek(low);
+        set checksum = (checksum + i * (median + 1000000000)) % 1000000007;
+        if i <= 50 or i % 1000 == 0 {
+            print(str(i) + " " + str(median));
+        }
+    }
+    print("END " + str(checksum));
+    return ok();
+}
