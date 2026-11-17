@@ -1,0 +1,77 @@
+# Spec 018 US3: one gap of each kind of coverage point, next to covered ones.
+variant Shape {
+    circle(float);
+    square(float);
+    dot;
+}
+
+fn helper() -> int {
+    return 1;
+}
+
+fn classify(n: int) -> str {
+    if n < 0 {
+        return "negative";
+    } else {
+        return "positive";
+    }
+}
+
+fn clamp(x: int, hi: int) -> int {
+    if x > hi {
+        return hi;
+    }
+    return x;
+}
+
+fn area(s: Shape) -> float {
+    match s {
+        case circle(r) {
+            return 3.0 * r * r;
+        }
+        case square(w) {
+            return w * w;
+        }
+        case dot {
+            return 0.0;
+        }
+    }
+}
+
+fn total(xs: list[int]) -> int {
+    var t = 0;
+    for x in xs {
+        set t = t + x;
+    }
+    var i = 0;
+    while i < 0 {
+        set i = i + 1;
+    }
+    return t;
+}
+
+fn twice(xs: list[int]) -> list[int] {
+    return map(xs, fn(x: int) -> int {
+        return x * 2;
+    });
+}
+
+fn unused_lambda() -> int {
+    let f = fn(x: int) -> int {
+        return x + 1;
+    };
+    if len("a") > 5 {
+        return f(1);
+    }
+    return 0;
+}
+
+test "uses most" {
+    expect_eq(classify(-3), "negative");
+    expect_eq(clamp(9, 5), 5);
+    expect_eq(area(Shape.circle(1.0)), 3.0);
+    expect_eq(area(Shape.dot), 0.0);
+    expect_eq(total([1, 2]), 3);
+    expect_eq(twice(new list[int]), new list[int]);
+    expect_eq(unused_lambda(), 0);
+}

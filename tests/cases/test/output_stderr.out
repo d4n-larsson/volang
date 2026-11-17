@@ -1,0 +1,6 @@
+FAIL complains (0ms)
+  output_stderr.vo:5:5: `expect` failed: `1 > len("a")` is false.
+    len("a"): 1
+  output:
+    to stdout
+0 passed, 1 failed

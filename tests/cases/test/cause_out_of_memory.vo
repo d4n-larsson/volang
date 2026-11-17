@@ -1,0 +1,10 @@
+# Spec 018 US2: a test that holds more than --max-memory is `out_of_memory`.
+test "grows" {
+    var xs = new list[str];
+    var i = 0;
+    while i < 100000000 {
+        push(xs, "some text that takes room " + str(i));
+        set i = i + 1;
+    }
+    expect(len(xs) == 0);
+}

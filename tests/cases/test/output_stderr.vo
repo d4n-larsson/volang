@@ -1,0 +1,6 @@
+# Spec 018 US2: standard error is not captured.
+test "complains" uses console {
+    eprint("to stderr");
+    print("to stdout");
+    expect(1 > len("a"));
+}

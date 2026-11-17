@@ -35,6 +35,53 @@ static long c_exitslot;   /* the slot holding the exit node for R0013 (bytes) */
 #define INSTR(off) ((Instr *)(c_buf + (off)))
 
 static void c_prologue(Node *decl);
+
+/* ---- spec 018: coverage points (research R8) ----
+ * ponytail: at most COV_MAX points per run (T0003 beyond); allocate the table on demand if programs
+ * grow past it. */
+Node *cov_node[COV_MAX];
+char cov_kind[COV_MAX];
+Node *cov_owner[COV_MAX];
+long cov_n;
+long cov_on;
+char *cov_hit;
+char *cov_reach;
+long cov_nfn;
+long cov_test;
+Node **cov_fns;
+static Node *c_owner;  /* the function being compiled when its points count, else 0 */
+static long c_owner_fn; /* its index among the functions with points */
+static long c_in_contract; /* compiling `requires`/`ensures`: no mutants there (research R10) */
+
+/* spec 018: a mutation candidate for --mutate (only in the program's own functions, not contracts). */
+static void c_mut(Node *n)
+{
+    if (opt_mutate && c_owner && !c_in_contract) mut_note(n, c_owner, c_owner_fn);
+}
+
+/* spec 018: mutant children compile the whole program again (research R11), without points. */
+void compile_reset(void)
+{
+    c_done = 0;
+    c_owner = 0;
+    cov_on = 0;
+    cov_n = 0;
+    cov_nfn = 0;
+}
+
+/* Emits a coverage point for node (nothing unless points are on for this function). */
+static void c_cover(Node *node, int kind)
+{
+    if (!c_owner) return;
+    if (cov_n == COV_MAX) {
+        out_cstr(2, "error[T0003]: the program has more than 65536 coverage points\n");
+        vo_exit(EXIT_INTERNAL);
+    }
+    cov_node[cov_n] = node;
+    cov_kind[cov_n] = (char)kind;
+    cov_owner[cov_n] = c_owner;
+    c_emit(OPC_COVER, cov_n++, kind == COV_FUNCTION || kind == COV_LAMBDA ? c_owner_fn : -1, 0, node);
+}
 static void c_fn_end(Node *decl);
 
 /* Compiles every function and test of every loaded file (once). */
@@ -55,8 +102,16 @@ void compile_program(void)
         for (long i = 0; i < items->n; i++) {
             Node *it = vec_get(items, i);
             if (it->kind != N_FN && it->kind != N_TEST) continue;
+            c_owner = 0; /* spec 018: the program's own functions (and their lambdas) get points */
+            if (cov_on && it->kind == N_FN && !file_is_library((int)f)) {
+                if (!cov_fns) cov_fns = perm_alloc(COV_MAX * 8);
+                c_owner = it;
+                c_owner_fn = cov_nfn;
+                cov_fns[cov_nfn++] = it;
+            }
             compile_fn(it);
             while (c_lams->n) compile_fn(c_lams->data[--c_lams->n].n); /* then the lambdas it reached */
+            c_owner = 0;
         }
     }
 }
@@ -104,6 +159,7 @@ void compile_fn(Node *decl)
     c_cont = 0;
     if (tr_on) c_emit(OPC_TRACE_ENTER, 0, 0, 0, decl); /* spec 006: with --trace, the call record first */
     c_prologue(decl);                                  /* contracts (spec 005): `requires` checks first */
+    if (decl->kind != N_TEST) c_cover(decl, decl->kind == N_FN ? COV_FUNCTION : COV_LAMBDA); /* spec 018 */
     cblock(body);
     c_fn_end(decl); /* falling off the end returns 0 (or goes to the `ensures` checks) */
     if (c_fail) return;
@@ -141,10 +197,12 @@ static void c_prologue(Node *decl)
     if (!fx || (!fx->requires_ && !fx->ensures)) return;
     c_exitslot = c_new_temp();
     c_reqj = vec_new();
+    c_in_contract = 1;
     for (long i = 0; fx->requires_ && i < fx->requires_->n; i++) {
         long j = ccond(vec_get(fx->requires_, i));
         vec_push(c_reqj, (void *)j);
     }
+    c_in_contract = 0;
     if (!fx->ensures) return;
     c_ens = vec_new();
     c_retslot = decl->type->kind == TY_VOID ? -1 : fx->retslot * 8;
@@ -203,10 +261,12 @@ static void c_fn_end(Node *decl)
     if (c_ens) {
         c_patch_all(c_ens, c_here()); /* the epilogue */
         Vec *jumps = vec_new();
+        c_in_contract = 1;
         for (long i = 0; i < fx->ensures->n; i++) {
             long j = ccond(vec_get(fx->ensures, i));
             vec_push(jumps, (void *)j);
         }
+        c_in_contract = 0;
         c_emit(OPC_RET, 0, c_retslot, 0, decl);
         c_stubs(fx->ensures, jumps, B_ENS_FAIL, decl);
     }
@@ -306,6 +366,7 @@ static void cmatch(Node *st)
         long next = c_emit(OPC_JTAG_NE, arm->d.i, scrut, 0, arm); /* not this case: the next arm */
         vec_push(c_fix, (void *)next);
         if (arm->e.i >= 0) c_emit(OPC_PAYLOAD, arm->e.i * 8, scrut, 0, arm); /* the binding */
+        c_cover(arm, COV_CASE); /* spec 018 */
         cblock(arm->c.n);
         long j = c_jump(OPC_JMP, 0, 0, arm);
         vec_push(ends, (void *)j);
@@ -358,6 +419,7 @@ static void cfor(Node *st)
     long head = c_emit(op, st->e.i * 8, it, 0, st); /* the first test (its exit target comes later) */
     vec_push(c_fix, (void *)head);
     long body = c_here();
+    c_cover(st->d.n, COV_LOOP); /* spec 018 */
     cblock(st->d.n);
     long cont = c_here(); /* continue: the back-edge (step, test, next value, jump) */
     long step = c_emit(st->c.n ? OPC_FOR_STEP : OPC_FOR_LIST_STEP, st->e.i * 8, it, body, st);
@@ -386,18 +448,28 @@ void cstmt(Node *st)
     case N_IF: { /* if c { } else ... */
         long to_else = ccond(st->a.n);
         c_temp = mark;
+        c_cover(st->b.n, COV_THEN); /* spec 018 */
         cblock(st->b.n);
         Node *e = st->c.n;
+        if (!e && c_owner) { /* spec 018: a landing for "the condition was false" */
+            long skip = c_jump(OPC_JMP, 0, 0, st);
+            c_target(to_else, c_here());
+            c_cover(st, COV_IF_FALSE);
+            c_target(skip, c_here());
+            break;
+        }
         if (!e) {
             c_target(to_else, c_here());
             break;
         }
         long over = c_jump(OPC_JMP, 0, 0, st); /* over the else part */
         c_target(to_else, c_here());
-        if (e->kind == N_IF)
+        if (e->kind == N_IF) {
             cstmt(e);
-        else
+        } else {
+            c_cover(e, COV_ELSE);
             cblock(e);
+        }
         c_target(over, c_here());
         break;
     }
@@ -408,6 +480,7 @@ void cstmt(Node *st)
         c_emit(OPC_TICK, 0, 0, 0, st);
         long exit_jump = ccond(st->a.n);
         c_temp = mark;
+        c_cover(st->b.n, COV_LOOP); /* spec 018 */
         cblock(st->b.n);
         c_jump(OPC_JMP, 0, top, st);
         long exit = c_here();
@@ -497,10 +570,12 @@ long ccond(Node *cond)
         else if (op == OP_NE && c_int_eq(cond))
             jump = OPC_JEQ;
         if (jump >= 0) {
+            c_mut(cond); /* spec 018 */
             long left = cexpr(cond->a.n, -1);
             long right;
             Node *rhs = cond->b.n;
             if (rhs->kind == N_INT && c_fits32(rhs->a.i)) { /* a constant right side */
+                c_mut(rhs);
                 right = rhs->a.i;
                 jump += OPC_JLT_K - OPC_JLT;
             } else {
@@ -561,12 +636,67 @@ static long cbuiltin(Node *node, long dst, long mark)
     return dst;
 }
 
+/* spec 018 (research R5): `expect(cond)` by the shape of cond. A comparison passes its operands to
+ * the check (NF_EXPECT_OPS on the call), `not` of a comparison inverts it (NF_EXPECT_NEG), and
+ * `expect(a and b)` becomes `expect(a)` then `expect(b)`: the same short-circuit order. */
+static int c_is_cmp(Node *n)
+{
+    return n->kind == N_BINARY && n->d.i >= OP_EQ && n->d.i <= OP_GE_STR;
+}
+
+/* A copy of the expect call checking only part, located at part. */
+static Node *c_expect_part(Node *call, Node *part)
+{
+    Node *p = alloc(NODE_SIZE);
+    *p = *call;
+    p->b.v = vec_new();
+    vec_push(p->b.v, part);
+    p->start = part->start;
+    p->end = part->end;
+    return p;
+}
+
+static long cbuiltin(Node *node, long dst, long mark);
+
+static long cexpect(Node *call, long dst, long mark)
+{
+    Node *cond = call->b.v->data[0].n;
+    if (cond->kind == N_BINARY && cond->d.i == OP_AND) {
+        cexpect(c_expect_part(call, cond->a.n), -1, mark);
+        c_temp = mark;
+        cexpect(c_expect_part(call, cond->b.n), -1, mark);
+        c_temp = mark;
+        return c_dst(dst); /* (a void value: any slot) */
+    }
+    Node *cmp = cond;
+    if (cond->kind == N_UNARY && cond->d.i == OP_NOT && c_is_cmp(cond->a.n)) {
+        cmp = cond->a.n;
+        call->flags |= NF_EXPECT_NEG;
+    }
+    if (!c_is_cmp(cmp)) return cbuiltin(call, dst, mark);
+    call->flags |= NF_EXPECT_OPS;
+    long left = c_new_temp(), right = c_new_temp(), c = c_new_temp();
+    c_mov(left, cexpr(cmp->a.n, left), cmp);
+    c_mov(right, cexpr(cmp->b.n, right), cmp);
+    long op = cmp->d.i, opc = op + (OPC_ADD_INT - OP_ADD_INT); /* as cbinary */
+    int int_eq = c_int_eq(cmp);
+    if (op == OP_EQ && int_eq) opc = OPC_EQ_INT;
+    if (op == OP_NE && int_eq) opc = OPC_NE_INT;
+    c_emit(opc, c, left, right, cmp);
+    if (call->flags & NF_EXPECT_NEG) c_emit(OPC_NOT, c, c, 0, cond);
+    c_temp = mark;
+    dst = c_dst(dst);
+    c_emit(OPC_CALL_BUILTIN, dst, c, left << 16 | right << 40 | 3, call);
+    return dst;
+}
+
 /* A binary operator (not and/or). */
 static long cbinary(Node *node, long dst, long mark)
 {
     long op = node->d.i;
     long kop = c_const_op(node);
     if (kop >= 0) { /* x op constant: one instruction (US1) */
+        c_mut(node->b.n); /* spec 018: the constant, read in place */
         long left = cexpr(node->a.n, -1);
         c_temp = mark;
         dst = c_dst(dst);
@@ -667,6 +797,7 @@ static long cconstruct(Node *node)
 /* Compiles an expression; returns the slot holding its value (dst < 0: any). */
 long cexpr(Node *node, long dst)
 {
+    c_mut(node); /* spec 018: every expression the program's own functions evaluate */
     long mark = c_temp; /* temporaries mark */
     switch (node->kind) {
     case N_INT:
@@ -688,6 +819,7 @@ long cexpr(Node *node, long dst)
         return cbinary(node, dst, mark);
     case N_UNARY: {
         long op = node->d.i;
+        if (node->flags & NF_MUT_SKIP) return cexpr(node->a.n, dst); /* spec 018: a mutant without this `not` */
         long opc = op == OP_NOT ? OPC_NOT : op == OP_NEG_FLOAT ? OPC_NEG_FLOAT : OPC_NEG_INT;
         return cunary_op(node, dst, mark, opc, node->a.n, 0);
     }
@@ -695,6 +827,7 @@ long cexpr(Node *node, long dst)
         long id = node->d.i;
         if (!id) return ccall(node, dst, OPC_CALL, 0, mark);
         Vec *args = node->b.v;
+        if (id == BI_EXPECT) return cexpect(node, dst, mark); /* spec 018 */
         if (id == BI_LEN) return cunary_op(node, dst, mark, OPC_LEN, args->data[0].n, 0); /* len(x) */
         if (id == BI_HAS && args->data[0].n->type->kind == TY_MAP) /* has(m, k) (spec 014: maps only) */
             return cpair_op(node, dst, mark, OPC_HAS, args->data[0].n, args->data[1].n);

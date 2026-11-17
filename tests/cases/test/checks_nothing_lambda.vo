@@ -1,0 +1,12 @@
+# Spec 018 US4: a check inside a lambda in the test counts.
+test "each" {
+    let xs = [2, 4];
+    let ok_all = all(xs, fn(x: int) -> bool {
+        expect(x % 2 == 0);
+        return true;
+    });
+    expect(ok_all);
+}
+
+fn main() {
+}

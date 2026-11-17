@@ -355,6 +355,9 @@
 #define NF_PROP (64) /* N_TEST that is a property (parameters in FX_PARAMS) */
 #define NF_EMPTY_ARM (128) /* spec 009: N_ARM written `case NAME()` */
 #define NF_EXPORT (512) /* spec 010: item declared with `export` */
+#define NF_EXPECT_OPS (1024) /* spec 018: an `expect` call compiled with the comparison's operands */
+#define NF_EXPECT_NEG (2048) /* spec 018: ... of `not (comparison)` */
+#define NF_MUT_SKIP (4096)   /* spec 018: a `not` that a mutant child compiles as its operand alone */
 #define NF_PAREN (256) /* expression written in parentheses (vo fmt keeps them around `and` in `or`) */
 
 /* builtin ids used outside check_expr.c (all ids: check_expr.c builtin_names) */
@@ -592,7 +595,8 @@
 #define OPC_SET_INDEX_COLL (86) /* b... a[b] = c */
 #define OPC_SNAPSHOT (87)       /* a = the elements of collection b as a list (for loops) */
 #define OPC_NEW_COLL (88) /* spec 014: a = new OrderedMap[...] etc. (the node's type) */
-#define OPC_COUNT (89)
+#define OPC_COVER (89)    /* spec 018: coverage point a reached (b: its function's index for reach, or -1) */
+#define OPC_COUNT (90)
 /* generic call-site record (permanent): rt_targs and rt_es_subst results for the last caller */
 #define GS_DECL (0) /* the callee */
 #define GS_VALID (8) /* 1 once filled */
@@ -604,6 +608,7 @@
 #define BI_LEN (16) /* builtin ids (check_expr.c builtin_names) */
 #define BI_PUSH (23)
 #define BI_HAS (26)
+#define BI_EXPECT (29) /* spec 018 */
 
 /* statement results */
 #define ST_NORMAL (0)
@@ -1244,6 +1249,8 @@ extern Type * t_error;
 extern Sym * ck_scope;
 extern Type * ck_ret;
 extern long ck_in_test;
+extern long ck_test_checks;
+extern long ck_test_holes;
 extern long ck_loops;
 extern long ck_locals;
 extern long ck_mode;
@@ -1673,6 +1680,7 @@ extern long steps;
 extern long rt_budget;
 extern long recover_point;
 extern long rt_err_code;
+extern long rt_err_in_test; /* spec 018 */
 extern long rt_err_msg;
 extern long rt_err_node;
 extern long rt_err_extra;
@@ -1747,6 +1755,12 @@ extern long report_fd;
 extern long pos_args;
 extern long pos_n;
 extern long opt_diff;
+extern long opt_list; /* spec 018: vo test --list, --coverage, --mutate, --max-mutants, --test, --spec */
+extern long opt_coverage;
+extern long opt_mutate;
+extern long opt_max_mutants;
+extern Vec *opt_tests;
+extern Vec *opt_specs;
 extern long opt_dry_run;
 extern long opt_trace;
 extern long opt_trace_limit;
@@ -2077,6 +2091,17 @@ extern long tf_msg;
 extern long tf_expected;
 extern long tf_actual;
 extern void rt_expect(long cond, Node *node);
+extern void rt_expect_cmp(long cond, long left, long right, Node *call);
+extern int node_is_literal(Node *n);
+extern long tf_nops; /* spec 018: operands of a failing comparison */
+extern long tf_diff_path; /* spec 018: the first difference of a failing expect_eq */
+extern long tf_diff_exp;
+extern long tf_diff_act;
+extern long tf_diff_char;
+extern long tf_diff_len_a;
+extern long tf_diff_len_e;
+extern long tf_op_text[2];
+extern long tf_op_val[2];
 extern void rt_expect_eq(long actual, long expected, Node *node);
 
 /* src/sha256.c */
@@ -2170,6 +2195,44 @@ extern long t_errored;
 extern long t_timed_out;
 extern void report_test(Node *test, int status, long ms);
 extern void run_file_tests(int file);
+extern long run_one_test(Node *test, long index);
+extern void mut_note_test(Node *test, long index, long ms);
+extern void mut_note(Node *n, Node *fn, long fn_index);
+extern void compile_reset(void);
+extern long mutate_run(void);
+extern void mut_report(SB *sb);
+extern Vec *sel_diff_fns;
+#define CAP_MAX 65536 /* spec 018: captured test output per test */
+extern char cap_buf[CAP_MAX];
+extern long cap_len;
+extern long cap_dropped;
+extern long cap_on;
+extern void cap_bytes(char *p, long n);
+/* spec 018: coverage points (research R8), filled by the compiler with --coverage or --mutate */
+#define COV_MAX 65536
+enum { COV_FUNCTION, COV_LAMBDA, COV_THEN, COV_ELSE, COV_IF_FALSE, COV_CASE, COV_LOOP };
+extern Node *cov_node[COV_MAX];
+extern char cov_kind[COV_MAX];
+extern Node *cov_owner[COV_MAX];
+extern long cov_n;
+extern long cov_on;     /* the compiler emits points */
+extern char *cov_hit;   /* a shared byte per point */
+extern char *cov_reach; /* --mutate: a shared byte per (test, function) */
+extern long cov_nfn;    /* functions with a point */
+extern long cov_test;   /* the index of the running test, for reach */
+extern Node **cov_fns;  /* the functions, by index */
+extern void *map_shared(long size);
+extern int file_is_library(int file);
+extern Str *test_id(Node *test); /* spec 018 */
+extern int test_id_eq(Node *test, Str *id);
+extern void json_test_id_into(SB *sb, Node *test);
+extern int test_selected(Node *test, Vec *items, long index);
+extern void impact_for_test(Vec *tests, Vec *fns);
+extern void test_select_start(long *ids, long n);
+extern void list_file_tests(int file);
+extern void list_summary(long files);
+extern Str *doc_block(long file, Vec *items, long index);
+extern Vec *sel_diff_fns;
 extern void test_summary(long files);
 
 /* src/text.c */

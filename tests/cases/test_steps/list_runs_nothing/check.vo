@@ -1,0 +1,20 @@
+import std.fs.Info;
+import std.fs.info;
+
+fn main() -> result[void] uses console, file.read("./") {
+    match try info("out/x.txt") {
+        case missing {
+            print("out/x.txt is missing");
+        }
+        case file(size) {
+            print("out/x.txt has " + str(size) + " bytes");
+        }
+        case directory {
+            print("out/x.txt is a directory");
+        }
+        case other {
+            print("out/x.txt is something else");
+        }
+    }
+    return ok();
+}

@@ -1,0 +1,12 @@
+# Spec 018 US3: nothing left out: only the totals.
+fn sign(n: int) -> int {
+    if n < 0 {
+        return -1;
+    }
+    return 1;
+}
+
+test "both signs" {
+    expect_eq(sign(-5), -1);
+    expect_eq(sign(5), 1);
+}

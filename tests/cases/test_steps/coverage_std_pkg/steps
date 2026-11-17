@@ -1,0 +1,2 @@
+vo package main.vo money shared/money
+vo test --coverage main.vo

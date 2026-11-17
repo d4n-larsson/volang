@@ -1,0 +1,12 @@
+# Spec 018 US4: the boundary `>=` is never checked at 18, so changing it to `>` survives.
+fn is_adult(age: int) -> bool {
+    return age >= 18;
+}
+
+test "adults" {
+    expect(is_adult(30));
+}
+
+test "children" {
+    expect(not is_adult(10));
+}

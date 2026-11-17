@@ -242,6 +242,18 @@ long read_whole_fd(long fd, char **out)
 }
 
 /* Maps zeroed read-write memory at exactly addr (flags: extra MAP_* bits), or stops with T0003. */
+/* spec 018: zeroed memory shared with forked children (tasks, mutants), not reserved up front. */
+void *map_shared(long size)
+{
+    long r = vo_syscall6(SYS_mmap, 0, size, 3 /* PROT_READ | PROT_WRITE */,
+                         0x4021 /* MAP_SHARED | MAP_ANONYMOUS | MAP_NORESERVE */, -1, 0);
+    if (r < 0 && r > -4096) {
+        out_cstr(2, "error[T0003]: cannot map memory for coverage\n");
+        vo_exit(EXIT_INTERNAL);
+    }
+    return (void *)r;
+}
+
 void *map_fixed(long addr, long size, long flags)
 {
     long r = vo_syscall6(SYS_mmap, addr, size, 3 /* PROT_READ | PROT_WRITE */,

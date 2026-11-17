@@ -1,0 +1,3 @@
+list_selected.vo::parses negative (test, list_selected.vo:8:1) spec FR-003
+list_selected.vo::rejects-text (test, list_selected.vo:13:1) spec FR-003, US1/AC4
+2 tests

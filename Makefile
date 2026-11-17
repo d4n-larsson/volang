@@ -124,7 +124,7 @@ test: all
 	tests/run.sh --repeat 3 tests/cases/run tests/cases/effects tests/cases/func tests/cases/generic tests/cases/prop
 	@for s in "fuzz.py --iterations 200 --seed 1" apply_fixes.py catalog.py ref_examples.py site_examples.py fmt_corpus.py \
 	  migrate.py record_changes.py doc_conformance.py json_corpus.py packages_check.py time_check.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
-	  steps.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1"; do \
+	  steps.py json_stream.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1"; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
 	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \
@@ -212,6 +212,9 @@ gate-step: all asm
 	@echo "== gate: tasks determinism" && python3 tests/tasks_determinism.py --runs 20
 	@echo "== gate: files and processes determinism" && tests/run.sh --repeat 20 tests/cases/fs tests/cases/process && \
 	  python3 tests/steps.py --repeat 20 tests/cases/fs_steps tests/cases/process_steps
+	@echo "== gate: agent testing determinism" && tests/run.sh --repeat 20 tests/cases/test tests/cases/coverage tests/cases/mutate && \
+	  python3 tests/steps.py --repeat 20 tests/cases/test_steps
+	@echo "== gate: agent testing scale" && python3 tests/test_scale.py && python3 tests/mutate_eval.py
 	@echo "== gate-step: passed"
 
 # SC-004 compares like with like: the RISC-V build against build-asm/vo, both under qemu.

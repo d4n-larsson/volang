@@ -1,0 +1,34 @@
+# Spec 018 US2: each comparison operator on int, float and str shows its operands.
+fn half(x: float) -> float {
+    return x / 2.0;
+}
+
+test "int equal" {
+    let n = 3;
+    expect(n * 2 == 7);
+}
+
+test "int not equal" {
+    let n = 3;
+    expect(n != 3);
+}
+
+test "float at most" {
+    expect(half(5.0) <= 2.0);
+}
+
+test "str greater" {
+    let a = "apple";
+    expect(a > "banana");
+}
+
+test "str at least" {
+    let a = "apple";
+    let b = "apples";
+    expect(a >= b);
+}
+
+test "list equal" {
+    let xs = [1, 2];
+    expect(xs == [1, 2, 3]);
+}

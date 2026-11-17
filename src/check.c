@@ -15,6 +15,8 @@ static Vec *type_tab; /* interned types */
 Sym *ck_scope;        /* innermost symbol */
 Type *ck_ret;         /* return type of the function being checked (0 in tests) */
 long ck_in_test;
+long ck_test_checks; /* spec 018: expect/expect_eq calls in the test being checked (W0602) */
+long ck_test_holes;  /* and its holes */
 long ck_loops;
 long ck_locals;
 long ck_mode;
@@ -903,6 +905,8 @@ void check_test(Node *test)
     ck_in_test = 1;
     ck_loops = 0;
     ck_locals = 0;
+    ck_test_checks = 0;
+    ck_test_holes = 0;
     Sym *saved = ck_scope;
     int prop = test->flags & NF_PROP;
     if (prop) {
@@ -924,6 +928,11 @@ void check_test(Node *test)
         }
     }
     if (test->b.n) check_block(test->b.n);
+    if (!ck_test_checks && !ck_test_holes) { /* spec 018: W0602 at the `test` / `prop` keyword */
+        Str *m = msg("Test `$1` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a "
+                     "runtime error.", test->a.s, 0, 0);
+        diag_add("W0602", SEV_WARNING, (int)test->file, test->start, test->start + 4, m);
+    }
     fx_end();
     if (prop) scope_leave(saved);
     test->e.i = ck_locals;

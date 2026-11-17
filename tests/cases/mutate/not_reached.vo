@@ -1,0 +1,12 @@
+# Spec 018 US4: a function no test calls is not changed (coverage reports it).
+fn used(x: int) -> int {
+    return x;
+}
+
+fn unused(x: int) -> int {
+    return x * 2 + 1;
+}
+
+test "used" {
+    expect_eq(used(3), 3);
+}

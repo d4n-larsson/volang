@@ -1,0 +1,4 @@
+# Spec 018 US2: a failed check is `check_failed`.
+test "fails" {
+    expect_eq(len("abc"), 2);
+}

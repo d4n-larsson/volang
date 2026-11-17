@@ -1,0 +1,6 @@
+{"v":1,"kind":"test","id":"adult_json.vo::adults","name":"adults","status":"pass","file":"adult_json.vo","start":{"line":6,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"test","id":"adult_json.vo::children","name":"children","status":"pass","file":"adult_json.vo","start":{"line":10,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"mutant","file":"adult_json.vo","start":{"line":3,"col":12},"end":{"line":3,"col":21},"function":"is_adult","text":"age >= 18","mutated":"age > 18","tests":["adult_json.vo::adults","adult_json.vo::children"]}
+{"v":1,"kind":"mutant","file":"adult_json.vo","start":{"line":3,"col":19},"end":{"line":3,"col":21},"function":"is_adult","text":"18","mutated":"19","tests":["adult_json.vo::adults","adult_json.vo::children"]}
+{"v":1,"kind":"mutation_summary","mutants":2,"caught":0,"survived":2,"not_tried":0}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":2,"failed":0,"errored":0,"timed_out":0,"selected":2}

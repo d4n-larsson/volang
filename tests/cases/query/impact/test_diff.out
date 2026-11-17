@@ -1,0 +1,3 @@
+PASS checkout total (0ms)
+PASS subtotal grows (100 cases, 0ms)
+2 passed, 0 failed

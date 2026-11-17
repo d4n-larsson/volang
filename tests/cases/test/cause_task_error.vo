@@ -1,0 +1,8 @@
+# Spec 018 US2: an error inside a task is `error_in_code`.
+fn inverse(x: int) -> int {
+    return 100 / x;
+}
+
+test "inverses" {
+    expect_eq(concurrent_map([1, 0, 4], 2, inverse), [100, 0, 25]);
+}

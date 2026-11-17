@@ -303,7 +303,8 @@ prop "a price is never negative" (l: Line) {
 
 ```output
 FAIL a price is never negative (58 cases, 0ms)
-  main.vo:48:5: `expect` failed: the condition is false.
+  main.vo:48:5: `expect` failed: `price(l) >= 0` is false.
+    price(l): -1
     counterexample: l = new Line { cents: 0, quantity: 0, discount: Discount.fixed(1) }
     shrunk in 2 steps
 0 passed, 1 failed
@@ -370,13 +371,17 @@ prop "unique leaves no element twice" (xs: list[int]) {
 ```console
 $ vo test main.vo
 FAIL unique leaves no element twice (23 cases, 0ms)
-  main.vo:15:13: `expect` failed: the condition is false.
+  main.vo:15:13: `expect` failed: `u[i] != u[j]` is false.
+    u[i]: 0
+    u[j]: 0
     counterexample: xs = [0, -1, 0]
     shrunk in 3 steps
 0 passed, 1 failed
 $ vo test --seed 2 main.vo
 FAIL unique leaves no element twice (21 cases, 0ms)
-  main.vo:15:13: `expect` failed: the condition is false.
+  main.vo:15:13: `expect` failed: `u[i] != u[j]` is false.
+    u[i]: 3
+    u[j]: 3
     counterexample: xs = [3, 0, 3]
     shrunk in 1 step
 0 passed, 1 failed

@@ -1,0 +1,12 @@
+# Spec 018 US3: a function with a hole is reported like any other.
+fn later(x: int) -> int {
+    todo("not written yet");
+}
+
+fn now(x: int) -> int {
+    return x;
+}
+
+test "now" {
+    expect_eq(now(3), 3);
+}

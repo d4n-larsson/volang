@@ -1,3 +1,4 @@
-{"v":1,"kind":"test","name":"add zero","status":"pass","file":"json.vo","start":{"line":1,"col":1},"uses":"","ms":0,"prop":true,"cases":100}
-{"v":1,"kind":"test","name":"plain","status":"pass","file":"json.vo","start":{"line":5,"col":1},"uses":"","ms":0}
-{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":2,"failed":0,"errored":0,"timed_out":0}
+{"v":1,"kind":"diagnostic","code":"W0603","name":"constant_check","severity":"warning","file":"json.vo","start":{"line":6,"col":5},"end":{"line":6,"col":17},"text":"expect(true)","message":"This check always has the same outcome: it does not depend on the program.","fixes":[],"related":[]}
+{"v":1,"kind":"test","id":"json.vo::add zero","name":"add zero","status":"pass","file":"json.vo","start":{"line":1,"col":1},"uses":"","ms":0,"prop":true,"cases":100}
+{"v":1,"kind":"test","id":"json.vo::plain","name":"plain","status":"pass","file":"json.vo","start":{"line":5,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":1,"truncated":0,"files":1,"passed":2,"failed":0,"errored":0,"timed_out":0,"selected":2}

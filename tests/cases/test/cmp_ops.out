@@ -1,0 +1,20 @@
+FAIL int equal (0ms)
+  cmp_ops.vo:8:5: `expect` failed: `n * 2 == 7` is false.
+    n * 2: 6
+FAIL int not equal (0ms)
+  cmp_ops.vo:13:5: `expect` failed: `n != 3` is false.
+    n: 3
+FAIL float at most (0ms)
+  cmp_ops.vo:17:5: `expect` failed: `half(5.0) <= 2.0` is false.
+    half(5.0): 2.5
+FAIL str greater (0ms)
+  cmp_ops.vo:22:5: `expect` failed: `a > "banana"` is false.
+    a: "apple"
+FAIL str at least (0ms)
+  cmp_ops.vo:28:5: `expect` failed: `a >= b` is false.
+    a: "apple"
+    b: "apples"
+FAIL list equal (0ms)
+  cmp_ops.vo:33:5: `expect` failed: `xs == [1, 2, 3]` is false.
+    xs: [1, 2]
+0 passed, 6 failed

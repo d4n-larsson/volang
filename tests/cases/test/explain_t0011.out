@@ -1,0 +1,20 @@
+## T0011 unknown_test
+
+`vo test --test ID` names no test, or `--spec ID` is named by no test.
+
+Fixable: no
+
+A test's identifier is `FILE::NAME`, with FILE as reports print it (`main.vo::parses`). `--spec ID` selects the tests whose `@spec` names `ID` or an ID starting with `ID/`. The message lists up to three closest identifiers. Nothing runs. Run `vo test --list` for every identifier.
+
+### Example
+
+```sh
+vo test --test main.vo::parse main.vo
+```
+
+### Fixed
+
+```sh
+vo test --test main.vo::parses main.vo
+```
+

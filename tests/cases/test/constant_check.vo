@@ -1,0 +1,17 @@
+# Spec 018 US4: checks that compare literals with literals (W0603).
+record P {
+    x: int;
+}
+
+test "constants" {
+    expect(true);
+    expect(not false);
+    expect(1 < 2);
+    expect_eq(3, 3);
+    expect_eq([1, 2], [1, 2]);
+    expect_eq(new P { x: 1 }, new P { x: 1 });
+    expect_eq(-1, -1);
+}
+
+fn main() {
+}

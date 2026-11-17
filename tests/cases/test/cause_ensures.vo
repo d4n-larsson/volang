@@ -1,0 +1,9 @@
+# Spec 018 US2: a broken `ensures` is `ensures_broken`: the function is at fault.
+fn magnitude(x: int) -> int
+    ensures ret >= 0 {
+    return x;
+}
+
+test "magnitude of minus two" {
+    expect_eq(magnitude(-2), 2);
+}

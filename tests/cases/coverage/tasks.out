@@ -1,0 +1,4 @@
+PASS tasks (0ms)
+not run: tasks.vo:3:16 then in slow_square
+coverage: 1 of 1 function, 1 of 2 branches
+1 passed, 0 failed

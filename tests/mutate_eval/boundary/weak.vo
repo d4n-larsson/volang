@@ -1,0 +1,12 @@
+# Mutation fixture: the boundary of `>=` is never tested.
+fn is_adult(age: int) -> bool {
+    return age >= 18;
+}
+
+test "adults" {
+    expect(is_adult(30));
+}
+
+test "children" {
+    expect(not is_adult(10));
+}

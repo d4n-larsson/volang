@@ -1,0 +1,1 @@
+error[T0001]: `--list`, `--coverage` and `--mutate` cannot be combined: use one at a time.

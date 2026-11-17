@@ -1,0 +1,4 @@
+PASS one (0ms)
+not run: selection.vo:6:1 function two
+coverage: 1 of 2 functions, 0 of 0 branches
+1 passed, 0 failed

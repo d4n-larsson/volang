@@ -1,0 +1,16 @@
+# Mutation fixture: the same, with an adult foreigner tested.
+fn can_vote(age: int, citizen: bool) -> bool {
+    return age >= 18 and citizen;
+}
+
+test "adult citizen" {
+    expect(can_vote(30, true));
+}
+
+test "child foreigner" {
+    expect(not can_vote(10, false));
+}
+
+test "adult foreigner" {
+    expect(not can_vote(30, false));
+}

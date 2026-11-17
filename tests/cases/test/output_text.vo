@@ -1,0 +1,20 @@
+# Spec 018 US2: what a test prints is kept in its record, so every stdout line is JSON.
+fn total(xs: list[int]) -> int {
+    var t = 0;
+    for x in xs {
+        set t = t + x;
+    }
+    return t;
+}
+
+test "totals" uses console {
+    print("checking three lists");
+    print("first: " + str(total([1, 2])));
+    write("second: ");
+    print(str(total([3])));
+    expect_eq(total([4, 5]), 10);
+}
+
+test "quiet" {
+    expect_eq(total(new list[int]), 0);
+}

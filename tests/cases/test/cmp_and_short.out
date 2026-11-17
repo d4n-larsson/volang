@@ -1,0 +1,4 @@
+FAIL short circuit (0ms)
+  cmp_and_short.vo:9:12: `expect` failed: `a > 0` is false.
+    a: -4
+0 passed, 1 failed

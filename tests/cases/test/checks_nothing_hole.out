@@ -1,0 +1,5 @@
+checks_nothing_hole.vo:3:18: warning[W0601]: Hole: `"the expected value"` needs a value of type `int`.
+   3 |     let x: int = todo("the expected value");
+     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: nothing
+0 errors, 1 warning (1 hole)

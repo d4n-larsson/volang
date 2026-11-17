@@ -1,0 +1,7 @@
+list_text.vo::doubles (test, list_text.vo:9:1)
+  Doubling keeps the sign.
+  Zero stays zero.
+list_text.vo::double is a sum (property, list_text.vo:16:1) spec FR-003
+  Doubling is the same as adding to itself.
+list_text.vo::plain (test, list_text.vo:21:1) uses console
+3 tests

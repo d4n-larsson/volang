@@ -1,0 +1,10 @@
+# Spec 018 US2: a failing comparison in `expect` shows each operand that is not a literal.
+fn take(xs: list[int], n: int) -> list[int] {
+    return slice(xs, 0, n);
+}
+
+test "limits" {
+    let limit = 5;
+    let xs = take([1, 2, 3, 4, 5, 6, 7], 7);
+    expect(len(xs) < limit);
+}

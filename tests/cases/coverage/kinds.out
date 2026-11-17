@@ -1,0 +1,11 @@
+PASS uses most (0ms)
+not run: kinds.vo:8:1 function helper
+not run: kinds.vo:15:12 else in classify
+not run: kinds.vo:21:5 if_false in clamp
+not run: kinds.vo:32:9 case in area
+not run: kinds.vo:47:17 loop in total
+not run: kinds.vo:54:20 lambda in twice
+not run: kinds.vo:60:13 lambda in unused_lambda
+not run: kinds.vo:63:21 then in unused_lambda
+coverage: 6 of 9 functions, 6 of 11 branches
+1 passed, 0 failed

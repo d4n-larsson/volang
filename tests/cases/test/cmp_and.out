@@ -1,0 +1,4 @@
+FAIL both positive (0ms)
+  cmp_and.vo:5:22: `expect` failed: `b > 0` is false.
+    b: -1
+0 passed, 1 failed

@@ -1,0 +1,9 @@
+# Spec 018 US2: a property whose inputs are all discarded is `too_few_inputs`.
+prop "never applies" (n: int) {
+    assume(n > 1000000);
+    expect(n > 0);
+}
+
+test "after it" {
+    expect_eq(1 + len("a"), 3);
+}

@@ -1,0 +1,10 @@
+# Spec 018 US2: with the left part false, the right part is never evaluated (no "checked" line).
+fn checked(x: int) -> int uses console {
+    print("checked " + str(x));
+    return x;
+}
+
+test "short circuit" uses console {
+    let a = -4;
+    expect(a > 0 and checked(a) > 0);
+}

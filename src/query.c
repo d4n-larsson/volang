@@ -992,11 +992,11 @@ void im_print_role(char *role)
 }
 
 /* `vo impact ENTRY --diff FILE` (contracts/cli.md, research R5). */
-int cmd_impact(void)
+/* Reads the diff named by --diff (- is stdin) and computes the impact entries of the checked program:
+ * changed, added and removed items, then their callers (T0002, T0007 on a bad diff). */
+static void im_from_diff(void)
 {
-    if (pos_n != 1) usage_error(str_from_cstr("`impact` takes the entry file of the program: `vo impact main.vo --diff FILE`."));
-    q_load(((char **)pos_args)[0]);
-    char *path = (char *)opt_diff; /* the diff (- is stdin) */
+    char *path = (char *)opt_diff;
     if (path[0] == '-' && !path[1]) path = "/dev/stdin";
     char *text;
     long len = read_whole_file(path, &text);
@@ -1010,6 +1010,30 @@ int cmd_impact(void)
     im_items();
     im_removed();
     im_callers();
+}
+
+/* spec 018: vo test --diff. After the program was checked with q_collect set, the tests and
+ * properties the diff reaches in any role (into tests), and the functions it changes or adds (into
+ * fns), as declaration nodes in impact order. */
+void impact_for_test(Vec *tests, Vec *fns)
+{
+    im_from_diff();
+    for (long i = 0; im_list && i < im_list->n; i++) {
+        Impact *e = vec_get(im_list, i);
+        if (e->role == r_removed || e->role == r_ignored) continue; /* names, not items */
+        Node *x = e->x;
+        if (x->kind == N_TEST)
+            vec_push(tests, x);
+        else if (x->kind == N_FN && (e->role == r_changed || e->role == r_added))
+            vec_push(fns, x);
+    }
+}
+
+int cmd_impact(void)
+{
+    if (pos_n != 1) usage_error(str_from_cstr("`impact` takes the entry file of the program: `vo impact main.vo --diff FILE`."));
+    q_load(((char **)pos_args)[0]);
+    im_from_diff();
     for (long i = 0; df_ignored && i < df_ignored->n; i++) /* ignored diff files come last */
         im_add(vec_get(df_ignored, i), r_ignored, 0);
     im_print_role(r_changed); /* changed, added, removed, then the rest */

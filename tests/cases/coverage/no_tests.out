@@ -1,0 +1,4 @@
+not run: no_tests.vo:2:1 function a
+not run: no_tests.vo:6:1 function main
+coverage: 0 of 2 functions, 0 of 0 branches
+0 passed, 0 failed

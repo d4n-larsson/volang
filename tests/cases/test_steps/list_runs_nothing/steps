@@ -1,0 +1,5 @@
+mkdir out
+vo test --list main.vo
+vo run check.vo
+vo test main.vo
+vo run check.vo

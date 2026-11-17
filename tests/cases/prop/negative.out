@@ -1,5 +1,6 @@
 FAIL digit sum is positive for non-zero (1 case, 0ms)
-  negative.vo:14:9: `expect` failed: the condition is false.
+  negative.vo:14:9: `expect` failed: `digit_sum(n) > 0` is false.
+    digit_sum(n): 0
     counterexample: n = -1
     shrunk in 0 steps
 0 passed, 1 failed

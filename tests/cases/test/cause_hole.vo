@@ -1,0 +1,8 @@
+# Spec 018 US2: running into a hole is `hole`.
+fn mean(xs: list[int]) -> int {
+    todo("the average, 0 for an empty list");
+}
+
+test "mean of three" {
+    expect_eq(mean([1, 2, 3]), 2);
+}

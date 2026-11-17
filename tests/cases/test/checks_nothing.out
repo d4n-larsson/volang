@@ -1,0 +1,4 @@
+checks_nothing.vo:6:1: warning[W0602]: Test `prints only` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.
+   6 | test "prints only" uses console {
+     | ^^^^
+0 errors, 1 warning

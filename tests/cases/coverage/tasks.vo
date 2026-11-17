@@ -1,0 +1,11 @@
+# Spec 018 US3: code run only inside tasks counts as run.
+fn slow_square(x: int) -> int {
+    if x > 100 {
+        return 0;
+    }
+    return x * x;
+}
+
+test "tasks" {
+    expect_eq(concurrent_map([1, 2, 3], 3, slow_square), [1, 4, 9]);
+}

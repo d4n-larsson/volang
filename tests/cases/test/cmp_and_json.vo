@@ -1,0 +1,6 @@
+# Spec 018 US2: for `and`, the part that was false is reported, with its operands.
+test "both positive" {
+    let a = 4;
+    let b = -1;
+    expect(a > 0 and b > 0);
+}

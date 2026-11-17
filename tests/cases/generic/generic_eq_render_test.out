@@ -1,5 +1,9 @@
+generic_eq_render.vo:17:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+  17 |     expect_eq(new Pair[int, str] { first: 1, second: "x" }, new Pair[int, str] { first: 2, second: "x" });
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 FAIL pairs render (0ms)
   generic_eq_render.vo:17:5: `expect_eq` failed: the values differ.
     expected: new Pair[int, str] { first: 2, second: "x" }
     actual:   new Pair[int, str] { first: 1, second: "x" }
+    first difference at .first: expected 2, actual 1
 0 passed, 1 failed

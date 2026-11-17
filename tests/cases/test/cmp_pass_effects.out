@@ -1,0 +1,13 @@
+FAIL in order (0ms)
+  cmp_pass_effects.vo:11:5: `expect` failed: `noisy(7) > 8` is false.
+    noisy(7): 7
+  output:
+    noisy 1
+    noisy 2
+    noisy 3
+    noisy 4
+    noisy 5
+    noisy 6
+    done
+    noisy 7
+0 passed, 1 failed

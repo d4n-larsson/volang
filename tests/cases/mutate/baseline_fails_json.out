@@ -1,0 +1,3 @@
+{"v":1,"kind":"test","id":"baseline_fails_json.vo::doubles","name":"doubles","status":"fail","file":"baseline_fails_json.vo","start":{"line":6,"col":1},"uses":"","ms":0,"cause":"check_failed","failure":{"file":"baseline_fails_json.vo","start":{"line":7,"col":5},"end":{"line":7,"col":28},"message":"`expect_eq` failed: the values differ.","expected":"5","actual":"4"}}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":0,"failed":1,"errored":0,"timed_out":0,"selected":1}
+{"v":1,"kind":"toolchain_error","code":"T0012","name":"mutation_needs_passing_tests","message":"Mutation testing needs passing tests: 1 of the selected tests did not pass. Fix them first."}

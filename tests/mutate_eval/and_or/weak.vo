@@ -1,0 +1,12 @@
+# Mutation fixture: `and` against `or`, never told apart by the tests.
+fn can_vote(age: int, citizen: bool) -> bool {
+    return age >= 18 and citizen;
+}
+
+test "adult citizen" {
+    expect(can_vote(30, true));
+}
+
+test "child foreigner" {
+    expect(not can_vote(10, false));
+}

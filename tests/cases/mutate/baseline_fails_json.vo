@@ -1,0 +1,8 @@
+# Spec 018 US4: a failing test stops mutation testing (T0012, exit 1).
+fn double(x: int) -> int {
+    return x + x;
+}
+
+test "doubles" {
+    expect_eq(double(2), 5);
+}

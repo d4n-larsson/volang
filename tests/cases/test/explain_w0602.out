@@ -1,0 +1,41 @@
+## W0602 test_checks_nothing
+
+A test or property has no `expect` or `expect_eq`, so it can only fail by a runtime error.
+
+Fixable: no
+
+A test proves something only through its checks. One that calls code and prints the result passes whatever the result is, so a wrong change goes unnoticed. Add an `expect` or `expect_eq` that states what must hold. A test that calls a function with `ensures` is not reported (the contract checks each result), and a test with a hole (`todo`) is reported as W0601 instead.
+
+### Example
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}
+
+test "doubles" {
+    let d = double(4);
+    print(str(d));
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}
+
+test "doubles" {
+    expect_eq(double(4), 8);
+}
+```
+

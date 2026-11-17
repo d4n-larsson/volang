@@ -1,0 +1,8 @@
+# Mutation fixture: a sign that the test cannot see (it withdraws nothing).
+fn balance(deposits: int, withdrawals: int) -> int {
+    return deposits - withdrawals;
+}
+
+test "no withdrawals" {
+    expect_eq(balance(5, 0), 5);
+}

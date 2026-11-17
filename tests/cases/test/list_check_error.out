@@ -1,0 +1,5 @@
+list_check_error.vo:3:18: error[E0301]: Expected `int`, found `str`.
+   3 |     let x: int = "text";
+     |                  ^^^^^^
+  expected `int`, found `str`
+1 error, 0 warnings

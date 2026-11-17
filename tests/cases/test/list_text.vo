@@ -1,0 +1,24 @@
+# Spec 018 US1: --list prints every test and property with its identifier, kind, location,
+# @spec IDs, effects and documentation comment, and runs nothing.
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+# Doubling keeps the sign.
+# Zero stays zero.
+test "doubles" {
+    expect_eq(double(-2), -4);
+    expect_eq(double(0), 0);
+}
+
+# Doubling is the same as adding to itself.
+@spec("FR-003")
+prop "double is a sum" (x: int) {
+    assume(x > -1000 and x < 1000);
+    expect_eq(double(x), x + x);
+}
+
+test "plain" uses console {
+    print("checking one");
+    expect(double(1) == 2);
+}

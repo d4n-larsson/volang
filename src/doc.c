@@ -55,6 +55,36 @@ void doc_comments(long file, Vec *items, long index, Str **out)
     }
 }
 
+/* spec 018: a test's documentation: every comment line directly above items[index] (above its
+ * annotations), `#` and one space removed, joined by newlines; "" when there is none. */
+Str *doc_block(long file, Vec *items, long index)
+{
+    long next = pos_line((int)file, ((Node *)vec_get(items, index))->start);
+    long top = index; /* the first comment of the block */
+    for (long i = index - 1; i >= 0; i--) {
+        Node *c = vec_get(items, i);
+        if (c->kind != N_COMMENT && c->kind != N_ANNOTATION) break;
+        long line = pos_line((int)file, c->start);
+        if (line + 1 != next) break;
+        next = line;
+        if (c->kind == N_COMMENT) top = i;
+        else if (top != index) break; /* an annotation above the comments ends the block */
+    }
+    SB *sb = sb_new();
+    GC_ROOT(&sb);
+    for (long i = top; i < index; i++) {
+        Node *c = vec_get(items, i);
+        if (c->kind != N_COMMENT) continue;
+        if (sb->len) sb_byte(sb, '\n');
+        char *text = file_get((int)file)->text;
+        long from = (long)c->start + 1; /* past `#`, then one space */
+        if (from < c->end && text[from] == ' ') from++;
+        sb_bytes(sb, text + from, c->end - from);
+    }
+    GC_UNROOT(1);
+    return sb_finish(sb);
+}
+
 void doc_out(SB *sb)
 {
     out_bytes(1, sb->ptr, sb->len);

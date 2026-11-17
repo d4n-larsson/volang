@@ -1,0 +1,5 @@
+# Spec 018 US2: a literal operand is not repeated as a value.
+test "big enough" {
+    let n = 2;
+    expect(n > 3);
+}

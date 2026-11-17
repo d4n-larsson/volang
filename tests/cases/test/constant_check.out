@@ -1,0 +1,22 @@
+constant_check.vo:7:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+   7 |     expect(true);
+     |     ^^^^^^^^^^^^
+constant_check.vo:8:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+   8 |     expect(not false);
+     |     ^^^^^^^^^^^^^^^^^
+constant_check.vo:9:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+   9 |     expect(1 < 2);
+     |     ^^^^^^^^^^^^^
+constant_check.vo:10:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+  10 |     expect_eq(3, 3);
+     |     ^^^^^^^^^^^^^^^
+constant_check.vo:11:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+  11 |     expect_eq([1, 2], [1, 2]);
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+constant_check.vo:12:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+  12 |     expect_eq(new P { x: 1 }, new P { x: 1 });
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+constant_check.vo:13:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+  13 |     expect_eq(-1, -1);
+     |     ^^^^^^^^^^^^^^^^^
+0 errors, 7 warnings

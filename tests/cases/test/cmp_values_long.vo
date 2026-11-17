@@ -1,0 +1,14 @@
+# Spec 018 US2: long operand values are shortened to 200 bytes.
+fn count_to(n: int) -> list[int] {
+    var xs = new list[int];
+    var i = 0;
+    while i < n {
+        push(xs, i);
+        set i = i + 1;
+    }
+    return xs;
+}
+
+test "long lists" {
+    expect(count_to(1000) == count_to(999));
+}

@@ -1,0 +1,16 @@
+# Spec 018 US3: only the selected tests count.
+fn one() -> int {
+    return 1;
+}
+
+fn two() -> int {
+    return 2;
+}
+
+test "one" {
+    expect_eq(one(), 1);
+}
+
+test "two" {
+    expect_eq(two(), 2);
+}

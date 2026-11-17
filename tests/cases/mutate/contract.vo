@@ -1,0 +1,10 @@
+# Spec 018 US4: a change that breaks the function's own `ensures` is caught even when the test's
+# check still holds (`2` -> `3` makes the result negative); the contract itself is never changed.
+fn left(x: int) -> int
+    ensures ret >= 0 {
+    return 10 - x * 2;
+}
+
+test "small" {
+    expect(left(4) < 5);
+}

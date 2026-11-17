@@ -1,0 +1,6 @@
+# Spec 018 US2: for `or`, both parts were false: the report names them, without values.
+test "either" {
+    let a = 1;
+    let b = 2;
+    expect(a > 5 or b > 5);
+}

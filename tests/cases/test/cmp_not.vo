@@ -1,0 +1,5 @@
+# Spec 018 US2: `not` of a comparison reports that the comparison was true.
+test "not three" {
+    let x = 1 + 2;
+    expect(not (x == 3));
+}

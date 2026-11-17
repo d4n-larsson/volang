@@ -1,0 +1,5 @@
+# Spec 018 US2: a failing property keeps the output of its reported counterexample only.
+prop "small numbers" (n: int) uses console {
+    print("trying " + str(n));
+    expect(n < 50);
+}

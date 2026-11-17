@@ -1,0 +1,8 @@
+# Spec 018 US3: without tests every function is listed as never run.
+fn a() -> int {
+    return 1;
+}
+
+fn main() uses console {
+    print(str(a()));
+}

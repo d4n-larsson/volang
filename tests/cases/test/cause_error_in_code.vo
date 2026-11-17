@@ -1,0 +1,8 @@
+# Spec 018 US2: a runtime error in a called function is `error_in_code`.
+fn average(total: int, count: int) -> int {
+    return total / count;
+}
+
+test "average of nothing" {
+    expect_eq(average(10, 0), 0);
+}

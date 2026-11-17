@@ -1,0 +1,6 @@
+FAIL doubles (0ms)
+  baseline_fails.vo:7:5: `expect_eq` failed: the values differ.
+    expected: 5
+    actual:   4
+0 passed, 1 failed
+error[T0012]: Mutation testing needs passing tests: 1 of the selected tests did not pass. Fix them first.

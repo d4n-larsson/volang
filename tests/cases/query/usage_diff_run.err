@@ -1,1 +1,1 @@
-error[T0001]: `--diff` only works with `impact`.
+error[T0001]: `--diff` only works with `impact` or `test`.

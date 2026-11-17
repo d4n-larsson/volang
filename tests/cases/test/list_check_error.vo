@@ -1,0 +1,5 @@
+# Spec 018 US1: a program that does not check is reported, not listed.
+test "broken" {
+    let x: int = "text";
+    expect(x == 1);
+}

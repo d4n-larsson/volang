@@ -1,0 +1,42 @@
+## W0603 constant_check
+
+This check always has the same outcome: it does not depend on the program.
+
+Fixable: no
+
+`expect(true)`, `expect(1 < 2)` or `expect_eq(3, 3)` compares literals with literals, so it passes (or fails) whatever the program does. A literal is a number, string or bool constant, or a list, record or case built only of literals. Check a value the program computes instead.
+
+### Example
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}
+
+test "doubles" {
+    expect_eq(double(4), 8);
+    expect_eq(8, 8);
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}
+
+test "doubles" {
+    expect_eq(double(4), 8);
+    expect_eq(double(-4), -8);
+}
+```
+

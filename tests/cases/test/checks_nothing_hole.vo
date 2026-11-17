@@ -1,0 +1,7 @@
+# Spec 018 US4: a test with a hole is W0601 only, not W0602.
+test "later" {
+    let x: int = todo("the expected value");
+}
+
+fn main() {
+}

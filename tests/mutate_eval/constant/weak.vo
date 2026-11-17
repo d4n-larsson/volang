@@ -1,0 +1,8 @@
+# Mutation fixture: a rate that the test multiplies by zero.
+fn tax(cents: int) -> int {
+    return cents * 25 / 100;
+}
+
+test "no tax on nothing" {
+    expect_eq(tax(0), 0);
+}

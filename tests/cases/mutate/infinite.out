@@ -1,0 +1,5 @@
+PASS sum to four (0ms)
+SURVIVED infinite.vo:3:13 in sum_to: `0` -> `1` (1 test ran)
+mutation: 6 changes, 5 caught, 1 survived, 0 not tried
+survivors are candidates: a change can behave exactly like the original
+1 passed, 0 failed

@@ -1,0 +1,26 @@
+# Spec 018 US2: expect_eq on large values reports the path to the first difference.
+record Person {
+    name: str;
+    age: int;
+}
+
+fn people(n: int, odd: int) -> list[Person] {
+    var xs = new list[Person];
+    var i = 0;
+    while i < n {
+        var name = "ann";
+        if i == odd {
+            set name = "bab";
+        }
+        if i == 412 and odd < 0 {
+            set name = "bob";
+        }
+        push(xs, new Person { name: name, age: i % 90 });
+        set i = i + 1;
+    }
+    return xs;
+}
+
+test "people" {
+    expect_eq(people(10000, 412), people(10000, -1));
+}

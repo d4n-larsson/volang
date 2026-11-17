@@ -1,0 +1,10 @@
+# Spec 018 US4: library code is never changed, only the program's own functions.
+import std.text.pad_left;
+
+fn label(n: int) -> str {
+    return pad_left(str(n), 4, " ");
+}
+
+test "label" {
+    expect_eq(label(7), "   7");
+}

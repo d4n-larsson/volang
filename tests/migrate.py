@@ -23,6 +23,9 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 CORPUS = os.path.join(ROOT, "tests", "migrate", "v1")
 MIGRATION = {"E0501", "W0504", "W0402"}  # spec 009: `case ok` / `case ok(_)` on a result[void], with a fix
+# spec 018: advice about the corpus tests themselves (literal checks, tests that check nothing), not about
+# the migration
+MIGRATION |= {"W0602", "W0603"}
 # Intended behavior changes since v1, with the spec that made them: (stdout, exit status) expected now.
 CHANGED = {
     "run-oom_small/oom_small.vo": (b"58888890\n", 0),  # spec 003: memory is reclaimed, so it finishes
@@ -33,6 +36,10 @@ CHANGED = {
                                             b"        a: int = 1, b: int = 0\n"
                                             b"    at test \"divides by zero\" (runtime_error.vo:6:15)\n"
                                             b"PASS after the error (0ms)\n1 passed, 0 failed, 1 errored\n", 1),
+    # spec 018: W0602/W0603 on the corpus tests, `expect` operands, the first difference of `expect_eq`
+    'test-filter/filter.vo': (b'filter.vo:6:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n   6 |     expect(false);\n     |     ^^^^^^^^^^^^^\nfilter.vo:10:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  10 |     expect(true);\n     |     ^^^^^^^^^^^^\nPASS parse numbers (0ms)\nFAIL format numbers (0ms)\n  filter.vo:6:5: `expect` failed: the condition is false.\nPASS parse words (0ms)\n2 passed, 1 failed\n', 1),
+    'test-infinite/infinite.vo': (b'infinite.vo:1:1: warning[W0602]: Test `loops forever` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.\n   1 | test "loops forever" {\n     | ^^^^\ninfinite.vo:7:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n   7 |     expect(true);\n     |     ^^^^^^^^^^^^\nTIMEOUT loops forever (0ms)\n  infinite.vo:2:5: runtime error[R0009]: Time limit of 10 s exceeded.\nPASS still runs (0ms)\n1 passed, 0 failed, 1 timed out\n', 1),
+    'test-values/values.vo': (b'values.vo:12:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  12 |     expect_eq("abc", "abd");\n     |     ^^^^^^^^^^^^^^^^^^^^^^^\nvalues.vo:16:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  16 |     expect_eq([1, 2], [1, 3]);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^\nvalues.vo:20:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  20 |     expect_eq(new Point { x: 1, y: 2 }, new Point { x: 1, y: 3 });\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nvalues.vo:24:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  24 |     expect_eq(Shape.circle(1.0), Shape.empty);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFAIL strings (0ms)\n  values.vo:12:5: `expect_eq` failed: the values differ.\n    expected: "abd"\n    actual:   "abc"\nFAIL lists (0ms)\n  values.vo:16:5: `expect_eq` failed: the values differ.\n    expected: [1, 3]\n    actual:   [1, 2]\n    first difference at [1]: expected 3, actual 2\nFAIL records (0ms)\n  values.vo:20:5: `expect_eq` failed: the values differ.\n    expected: new Point { x: 1, y: 3 }\n    actual:   new Point { x: 1, y: 2 }\n    first difference at .y: expected 3, actual 2\nFAIL variants (0ms)\n  values.vo:24:5: `expect_eq` failed: the values differ.\n    expected: Shape.empty\n    actual:   Shape.circle(1.0)\n0 passed, 4 failed\n', 1),
 }
 
 

@@ -1,0 +1,3 @@
+shop/main.vo::checkout total (test, shop/main.vo:10:1)
+shop/main.vo::subtotal grows (property, shop/main.vo:18:1)
+2 tests

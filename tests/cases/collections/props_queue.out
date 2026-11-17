@@ -1,3 +1,6 @@
+props_queue.vo:15:17: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+  15 |                 expect(false);
+     |                 ^^^^^^^^^^^^^
 PASS pops come out sorted (100 cases, 0ms)
 PASS interleaved pushes and pops agree with a sorted list (100 cases, 0ms)
 2 passed, 0 failed

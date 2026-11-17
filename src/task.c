@@ -390,6 +390,7 @@ static void task_fail(Group *g, Reader *r)
         rt_err_extra = (long)get_str(r);
         rt_err_trace_txt = (long)get_str(r);
         rt_err_trace_json = (long)get_str(r);
+        rt_err_in_test = 0; /* spec 018: a task always runs a function */
     }
     group_stop(g, -1);
     if (!recover_point) task_internal(g, "a task returned to a recovery point that does not exist");
@@ -411,6 +412,7 @@ static void child_run(Group *g, int *pipes, long pos, List *xs, Closure *fn, Nod
     sys_close(pipes[3]);
     sys_close(pipes[4]);
     task_ctl = pipes[5];
+    cap_on = 0; /* its output goes up the pipe; the parent captures it (spec 018) */
     task_depth++;
     task_path = task_path * (TASK_MAX + 1) + pos + 1;
     task_recover_base = recover_point;
@@ -473,7 +475,8 @@ static int drain(Slot *s, int k, SB *ctl)
         s->fd[k] = -1;
         return 0;
     }
-    if (k < 2) out_bytes(k + 1, buf, n);
+    if (k == 0 && cap_on) cap_bytes(buf, n); /* spec 018: a test's task output stays with the test */
+    else if (k < 2) out_bytes(k + 1, buf, n);
     else sb_bytes(ctl, buf, n);
     return 1;
 }

@@ -1,0 +1,4 @@
+FAIL big enough (0ms)
+  cmp_literal_side.vo:4:5: `expect` failed: `n > 3` is false.
+    n: 2
+0 passed, 1 failed

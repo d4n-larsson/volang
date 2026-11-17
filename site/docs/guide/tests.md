@@ -109,8 +109,38 @@ spaces (that is its documented behavior: call `trim` first), and the third test 
 a list ([R0003](../errors/R0003.md)). The first check of `money shows two decimals` passed; the report
 names the line of the one that failed.
 
-`expect` has no values to show, so it reports only that the condition is false. Prefer `expect_eq`
-whenever there is an expected value: the report then says what the code produced.
+A failing `expect` on a comparison shows each side that is not a literal, with its value; for
+`expect(a and b)` it shows the part that was false. On larger values `expect_eq` also shows where they
+first differ, `first difference at [412].name: expected "bob", actual "bab"`, so a long list of records
+does not have to be compared by eye. Prefer `expect_eq` whenever there is an expected value.
+
+What a test prints is kept with its report. It is shown under a test that did not pass and dropped for
+a passing one, so a long run stays short:
+
+```vo-test
+fn clamp(x: int, hi: int) -> int {
+    if x > hi {
+        return hi;
+    }
+    return x;
+}
+
+test "clamps" uses console {
+    let limit = 5;
+    print("checking");
+    expect(clamp(7, limit) < limit);
+}
+```
+
+```output
+FAIL clamps (0ms)
+  main.vo:11:5: `expect` failed: `clamp(7, limit) < limit` is false.
+    clamp(7, limit): 5
+    limit:           5
+  output:
+    checking
+0 passed, 1 failed
+```
 
 ## Effects in tests
 
@@ -214,6 +244,48 @@ PASS count no words (0ms)
 3 passed, 0 failed
 ```
 
+Every test has an identifier, `FILE::NAME`. `--list` checks the program and lists the tests with their
+identifiers, `@spec` IDs, effects and the comment above each, without running anything; `--test ID`
+then runs exactly one, where `--filter` would also run every name that contains the text:
+
+```vo
+# Word counting ignores repeated spaces.
+fn word_count(text: str) -> int {
+    var n = 0;
+    for w in split(text, " ") {
+        if w != "" {
+            set n = n + 1;
+        }
+    }
+    return n;
+}
+
+# A plain sentence.
+test "count" {
+    expect_eq(word_count("to be or not"), 4);
+}
+
+test "count spaces" {
+    expect_eq(word_count("to  be"), 2);
+}
+```
+
+```console
+$ vo test --list main.vo
+main.vo::count (test, main.vo:13:1)
+  A plain sentence.
+main.vo::count spaces (test, main.vo:17:1)
+2 tests
+$ vo test --test main.vo::count main.vo
+PASS count (0ms)
+1 passed, 0 failed
+```
+
+`--spec ID` runs the tests that name a requirement (see below), and `--diff FILE` the tests that a
+change can affect, as [vo impact](../tools/impact.md) finds them. These options combine; an
+identifier that names no test is [T0011](../errors/T0011.md). Tests share the working directory and run
+in the listed order, so a test can see files that an earlier one wrote.
+
 Other options:
 
 - `--timeout SEC` limits each test (default 10 seconds); a test that runs out is `TIMEOUT`.
@@ -227,12 +299,14 @@ any test starts (exit status 65). The full list of options is on the [vo test](.
 ### JSON output
 
 With `--json`, each test is one `test` record and the run ends with a `summary`. A failing record has a
-`failure` with the location and, for `expect_eq`, both values as text. Here is
+`cause` (`check_failed`, `error_in_code`, `error_in_test`, `hole`, `timeout`, ...: who is likely at
+fault) and a `failure` with the location and, for `expect_eq`, both values as text. What the test printed
+is in `output`, so every line of the stream is JSON. Here is
 `vo test --json --filter money main.vo` on the failing example above:
 
 ```json
-{"v":1,"kind":"test","name":"money shows two decimals","status":"fail","file":"main.vo","start":{"line":6,"col":1},"uses":"","ms":0,"failure":{"file":"main.vo","start":{"line":8,"col":5},"end":{"line":8,"col":36},"message":"`expect_eq` failed: the values differ.","expected":"\"12.05\"","actual":"\"12.5\""}}
-{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":0,"failed":1,"errored":0,"timed_out":0}
+{"v":1,"kind":"test","id":"main.vo::money shows two decimals","name":"money shows two decimals","status":"fail","file":"main.vo","start":{"line":6,"col":1},"uses":"","ms":0,"cause":"check_failed","failure":{"file":"main.vo","start":{"line":8,"col":5},"end":{"line":8,"col":36},"message":"`expect_eq` failed: the values differ.","expected":"\"12.05\"","actual":"\"12.5\""}}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":0,"failed":1,"errored":0,"timed_out":0,"selected":1}
 ```
 
 `status` is `pass`, `fail`, `error` or `timeout`; an `error` record's `failure` adds the runtime error's
@@ -314,6 +388,75 @@ FR-003  main.vo:37:1 test "labels show the severity"
 With `--json`, each test record carries its IDs in `spec`, and the per-ID lines are `spec_result`
 records (`id`, `tests`, `passed`). `@spec` works the same on [properties](properties.md). It is the only
 annotation in vo. The [help-desk example](../examples/helpdesk.md) uses it throughout.
+
+## What the tests never ran
+
+`--coverage` lists, after the results, every function, branch, `match` case and loop body of your own
+files that no test ran (the standard library and packages are left out), then the totals. An `if`
+without `else` counts its "condition was false" path too:
+
+```vo
+fn shipping(cents: int) -> int {
+    if cents >= 5000 {
+        return 0;
+    }
+    return 495;
+}
+
+test "small order pays shipping" {
+    expect_eq(shipping(1200), 495);
+}
+```
+
+```console
+$ vo test --coverage main.vo
+PASS small order pays shipping (0ms)
+not run: main.vo:2:22 then in shipping
+coverage: 1 of 1 function, 1 of 2 branches
+1 passed, 0 failed
+```
+
+## Would the tests catch a mistake?
+
+Code that ran is not code whose result was checked. `--mutate` first runs the tests, which must all
+pass ([T0012](../errors/T0012.md)). It then changes the code one small step at a time (`>=` to `>`, `+`
+to `-`, `and` to `or`, `true` to `false`, dropping a `not`, a number `n` to `n + 1`) and runs the tests
+that reach the change. A change that no test notices is a check you are missing:
+
+```vo
+fn is_adult(age: int) -> bool {
+    return age >= 18;
+}
+
+test "adults" {
+    expect(is_adult(30));
+}
+
+test "children" {
+    expect(not is_adult(10));
+}
+```
+
+```console
+$ vo test --mutate main.vo
+PASS adults (0ms)
+PASS children (0ms)
+SURVIVED main.vo:2:12 in is_adult: `age >= 18` -> `age > 18` (2 tests ran)
+SURVIVED main.vo:2:19 in is_adult: `18` -> `19` (2 tests ran)
+mutation: 2 changes, 0 caught, 2 survived, 0 not tried
+survivors are candidates: a change can behave exactly like the original
+2 passed, 0 failed
+```
+
+Nobody tested the age of 18: add `expect(is_adult(18))` and `expect(not is_adult(17))`, and both changes
+are caught. A change that makes a test fail, stop with an error or run far longer counts as caught.
+Some changes cannot be told apart from the original by any test, so a survivor is a question to look
+at, not a failure: the exit status stays 0. `--max-mutants N` (default 500) caps the changes and
+`--diff FILE` limits them to the functions a change touches.
+
+Two warnings point at tests that cannot fail: [W0602](../errors/W0602.md) for a test without
+`expect` or `expect_eq`, and [W0603](../errors/W0603.md) for a check that compares literals with
+literals.
 
 ## Where tests go
 

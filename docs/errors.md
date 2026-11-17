@@ -2584,6 +2584,89 @@ fn main() uses console {
 }
 ```
 
+## W0602 test_checks_nothing
+
+A test or property has no `expect` or `expect_eq`, so it can only fail by a runtime error.
+
+Fixable: no
+
+A test proves something only through its checks. One that calls code and prints the result passes whatever the result is, so a wrong change goes unnoticed. Add an `expect` or `expect_eq` that states what must hold. A test that calls a function with `ensures` is not reported (the contract checks each result), and a test with a hole (`todo`) is reported as W0601 instead.
+
+### Example
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}
+
+test "doubles" {
+    let d = double(4);
+    print(str(d));
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}
+
+test "doubles" {
+    expect_eq(double(4), 8);
+}
+```
+
+## W0603 constant_check
+
+This check always has the same outcome: it does not depend on the program.
+
+Fixable: no
+
+`expect(true)`, `expect(1 < 2)` or `expect_eq(3, 3)` compares literals with literals, so it passes (or fails) whatever the program does. A literal is a number, string or bool constant, or a list, record or case built only of literals. Check a value the program computes instead.
+
+### Example
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}
+
+test "doubles" {
+    expect_eq(double(4), 8);
+    expect_eq(8, 8);
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}
+
+test "doubles" {
+    expect_eq(double(4), 8);
+    expect_eq(double(-4), -8);
+}
+```
+
 ## E0701 package_changed
 
 A package's files no longer match the hash its manifest pins.
@@ -3545,4 +3628,45 @@ vo doc std.jsn
 
 ```sh
 vo doc std.json
+```
+
+## T0011 unknown_test
+
+`vo test --test ID` names no test, or `--spec ID` is named by no test.
+
+Fixable: no
+
+A test's identifier is `FILE::NAME`, with FILE as reports print it (`main.vo::parses`). `--spec ID` selects the tests whose `@spec` names `ID` or an ID starting with `ID/`. The message lists up to three closest identifiers. Nothing runs. Run `vo test --list` for every identifier.
+
+### Example
+
+```sh
+vo test --test main.vo::parse main.vo
+```
+
+### Fixed
+
+```sh
+vo test --test main.vo::parses main.vo
+```
+
+## T0012 mutation_needs_passing_tests
+
+`vo test --mutate` found selected tests that do not pass without changes.
+
+Fixable: no
+
+Mutation testing changes the code and checks whether a test notices, so it needs a baseline where every selected test passes: a test that already fails would "notice" every change. The failing tests are reported first, and no change is tried. Fix the failing tests (or narrow the selection with `--filter`, `--test` or `--spec`), then run `--mutate` again.
+
+### Example
+
+```sh
+vo test --mutate main.vo
+```
+
+### Fixed
+
+```sh
+vo test main.vo
+vo test --mutate main.vo
 ```

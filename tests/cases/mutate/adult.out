@@ -1,0 +1,7 @@
+PASS adults (0ms)
+PASS children (0ms)
+SURVIVED adult.vo:3:12 in is_adult: `age >= 18` -> `age > 18` (2 tests ran)
+SURVIVED adult.vo:3:19 in is_adult: `18` -> `19` (2 tests ran)
+mutation: 2 changes, 0 caught, 2 survived, 0 not tried
+survivors are candidates: a change can behave exactly like the original
+2 passed, 0 failed

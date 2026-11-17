@@ -188,6 +188,7 @@ long vm_run(void *start)
         &&op_len, &&op_push, &&op_has, &&op_call_generic,
         &&op_not_compiled, /* OPC_TRACE_ENTER: only emitted with --trace (vm_ops_trace) */
         &&op_index_coll, &&op_set_index_coll, &&op_snapshot, &&op_new_coll, /* spec 014 */
+        &&op_cover, /* spec 018 */
     };
     if (!start) {
         for (int i = 0; i < OPC_COUNT; i++) vm_ops[i] = vm_ops_trace[i] = ops[i];
@@ -361,6 +362,11 @@ op_inc:
     NEXT;
 op_tick:
     STEP_FAST;
+    NEXT;
+
+op_cover: /* spec 018: a coverage point; a constant store, so tasks writing the same bytes cannot race */
+    cov_hit[pc->a] = 1;
+    if (pc->b >= 0 && cov_reach) cov_reach[cov_test * cov_nfn + pc->b] = 1;
     NEXT;
 
     /* ---- calls ----
@@ -1165,6 +1171,9 @@ void capture_trace(void *node)
 {
     rt_err_trace_txt = 0;
     rt_err_trace_json = 0;
+    /* spec 018: whether the innermost frame is a test's own body (the cause of the report; for
+       R0012 this frame is the caller that broke the `requires`) */
+    rt_err_in_test = cur_frame && ((Frame *)cur_frame)->fn && ((Frame *)cur_frame)->fn->kind == N_TEST;
     if (err_is_timeout()) return; /* a timeout keeps its report as it was (no frames) */
     rt_reporting = 1;
     SB *txt = sb_new();

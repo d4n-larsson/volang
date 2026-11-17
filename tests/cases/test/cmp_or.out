@@ -1,0 +1,3 @@
+FAIL either (0ms)
+  cmp_or.vo:5:5: `expect` failed: neither `a > 5` nor `b > 5` is true.
+0 passed, 1 failed

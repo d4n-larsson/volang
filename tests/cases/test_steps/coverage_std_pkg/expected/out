@@ -1,0 +1,11 @@
+$ vo package main.vo money shared/money
+added money shared/money sha256:db27bffed6b9c5496b1cc132e27c8e4f54a90d7997715591426219bb6d9ad56e
+--- stderr
+--- exit 0
+$ vo test --coverage main.vo
+PASS label (0ms)
+not run: main.vo:6:14 then in label
+coverage: 1 of 1 function, 1 of 2 branches
+1 passed, 0 failed
+--- stderr
+--- exit 0

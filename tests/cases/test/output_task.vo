@@ -1,0 +1,10 @@
+# Spec 018 US2: output of tasks inside a test is captured in input order.
+fn shout(x: int) -> int uses console {
+    print("task " + str(x));
+    return x * 10;
+}
+
+test "tasks" uses console {
+    let ys = concurrent_map([1, 2, 3], 3, shout);
+    expect_eq(ys, [10, 20, 31]);
+}

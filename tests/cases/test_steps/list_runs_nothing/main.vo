@@ -1,0 +1,10 @@
+# Spec 018 US1: listing runs no test body, so the file this test writes is not written.
+test "writes a file" uses file.write("out/") {
+    match write_file("out/x.txt", "written\n") {
+        case ok() {
+        }
+        case err(e) {
+            expect_eq(e, "");
+        }
+    }
+}

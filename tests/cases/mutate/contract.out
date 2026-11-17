@@ -1,0 +1,5 @@
+PASS small (0ms)
+SURVIVED contract.vo:5:12 in left: `10` -> `11` (1 test ran)
+mutation: 4 changes, 3 caught, 1 survived, 0 not tried
+survivors are candidates: a change can behave exactly like the original
+1 passed, 0 failed

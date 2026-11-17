@@ -1,0 +1,12 @@
+# Mutation fixture: the same, with a real amount.
+fn tax(cents: int) -> int {
+    return cents * 25 / 100;
+}
+
+test "no tax on nothing" {
+    expect_eq(tax(0), 0);
+}
+
+test "a quarter" {
+    expect_eq(tax(400), 100);
+}

@@ -1,0 +1,4 @@
+PASS checkout total (0ms)
+PASS subtotal grows (100 cases, 0ms)
+mutation: 4 changes, 4 caught, 0 survived, 0 not tried
+2 passed, 0 failed

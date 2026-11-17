@@ -1,0 +1,6 @@
+# Spec 018 US2: a runtime error in the test's own statements is `error_in_test`.
+test "reads past the end" {
+    let xs = [1, 2, 3];
+    let i = len(xs);
+    expect_eq(xs[i], 3);
+}

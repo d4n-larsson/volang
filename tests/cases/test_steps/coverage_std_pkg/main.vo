@@ -1,0 +1,14 @@
+# Spec 018 US3: coverage counts only the program's own files, not the standard library or packages.
+import money.format.cents;
+import std.text.pad_left;
+
+fn label(n: int) -> str {
+    if n < 0 {
+        return "minus " + cents(0 - n);
+    }
+    return pad_left(cents(n), 8, " ");
+}
+
+test "label" {
+    expect_eq(label(1234), "   12.34");
+}

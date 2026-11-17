@@ -195,6 +195,13 @@ void load_imports(int file)
     vec_push(ld_order, (void *)(long)file);
 }
 
+/* spec 018: 1 for a standard library or package file (coverage and mutation leave them out). */
+int file_is_library(int file)
+{
+    FileRec *f = file_get(file);
+    return f->std || pkg_relpath(f->path) != 0;
+}
+
 /* The package name when the file lies in a listed package ("@NAME/a/b.vo"), else 0. */
 static Str *package_of(FileRec *f)
 {

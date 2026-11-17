@@ -1,0 +1,11 @@
+# Mutation fixture: a negated condition whose result is never checked.
+fn label(x: int) -> str {
+    if not (x > 0) {
+        return "non-positive";
+    }
+    return "positive";
+}
+
+test "has a label" {
+    expect(len(label(3)) > 0);
+}

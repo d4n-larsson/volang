@@ -1,0 +1,19 @@
+$ vo test --list main.vo
+main.vo::writes a file (test, main.vo:2:1) uses file.write("out/")
+  Spec 018 US1: listing runs no test body, so the file this test writes is not written.
+1 test
+--- stderr
+--- exit 0
+$ vo run check.vo
+out/x.txt is missing
+--- stderr
+--- exit 0
+$ vo test main.vo
+PASS writes a file (0ms)
+1 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo run check.vo
+out/x.txt has 8 bytes
+--- stderr
+--- exit 0

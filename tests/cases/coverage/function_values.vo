@@ -1,0 +1,13 @@
+# Spec 018 US3: code reached only through a function value or `map` counts as run.
+fn inc(x: int) -> int {
+    return x + 1;
+}
+
+fn apply(f: fn(int) -> int, x: int) -> int {
+    return f(x);
+}
+
+test "through values" {
+    expect_eq(apply(inc, 1), 2);
+    expect_eq(map([1, 2], inc), [2, 3]);
+}

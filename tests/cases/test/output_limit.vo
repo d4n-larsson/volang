@@ -1,0 +1,9 @@
+# Spec 018 US2: captured output stops at 64 KiB per test, with a note on what was left out.
+test "floods" uses console {
+    var i = 0;
+    while i < 7000 {
+        print("line " + str(i % 10) + "...");
+        set i = i + 1;
+    }
+    expect(i == 0);
+}

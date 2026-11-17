@@ -1,0 +1,8 @@
+FAIL small numbers (15 cases, 0ms)
+  output_prop.vo:4:5: `expect` failed: `n < 50` is false.
+    n: 50
+    counterexample: n = 50
+    shrunk in 70 steps
+  output:
+    trying 50
+0 passed, 1 failed

@@ -1,0 +1,8 @@
+--- old/pricing.vo
++++ pricing.vo
+@@ -9,4 +9,4 @@
+ 
+ fn unused() -> int {
+-    return 1;
++    return 0;
+ }

@@ -165,7 +165,12 @@ long builtin_call(Node *call, long a0, long a1, long a2)
         else map_remove((Map *)a0, a1, map_key_type());
         return 0;
     case BU_KEYS: return TY_IS_COLL(arg0_type(call)->kind) ? (long)coll_snapshot((Coll *)a0) : (long)map_keys((Map *)a0);
-    case BU_EXPECT: rt_expect(a0, call); return 0;
+    case BU_EXPECT:
+        if (call->flags & NF_EXPECT_OPS) /* spec 018: with the comparison's operands */
+            rt_expect_cmp(a0, a1, a2, call);
+        else
+            rt_expect(a0, call);
+        return 0;
     case BU_EXPECT_EQ: rt_expect_eq(a0, a1, call); return 0;
     case BU_OK: return (long)make_result(0, a0);
     case BU_ERR: return (long)make_result(1, a0);

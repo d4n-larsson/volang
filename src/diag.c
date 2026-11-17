@@ -485,7 +485,7 @@ static long holes_for(char *command)
     long n = 0;
     for (long i = 0; i < diag_n; i++) {
         const char *code = diag_arr[i]->code;
-        if (code[0] == 'W' && code[2] == '6') n++; /* "W06": W0601 is the only W06xx code */
+        if (code[0] == 'W' && code[2] == '6' && code[3] == '0' && code[4] == '1') n++; /* W0601 (spec 018 adds W0602, W0603) */
     }
     return n;
 }

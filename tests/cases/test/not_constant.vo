@@ -1,0 +1,14 @@
+# Spec 018 US4: a check of a computed value is not W0603.
+fn f(x: int) -> int {
+    return x;
+}
+
+test "computed" {
+    let three = 3;
+    expect_eq(f(3), 3);
+    expect(three > 2);
+    expect_eq([f(1)], [1]);
+}
+
+fn main() {
+}

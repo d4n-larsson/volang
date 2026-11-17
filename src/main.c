@@ -38,6 +38,13 @@ long opt_dry_run;
 long opt_trace;            /* char *: --trace FILE */
 long opt_trace_limit;      /* 0: not given (default 100000) */
 long opt_record;           /* char *: --record FILE (run) */
+/* spec 018 options of `vo test` (contracts/cli.md) */
+long opt_list;             /* --list */
+long opt_coverage;         /* --coverage */
+long opt_mutate;           /* --mutate */
+long opt_max_mutants;      /* --max-mutants N; 0: not given (default 500) */
+Vec *opt_tests;            /* --test ID (Str *), repeatable; 0: none */
+Vec *opt_specs;            /* --spec ID (Str *), repeatable; 0: none */
 static long opt_seed_given; /* 1 when --seed or --clock-ms was given (replay refuses them) */
 long path_list;            /* Str ** (expanded .vo paths) */
 long path_n;
@@ -249,6 +256,21 @@ int vo_main(long argc, char **argv, char **env)
             if (i >= argc || option_number(argv[i++], &v) || v < 0)
                 usage_error(str_from_cstr("`--seed` and `--clock-ms` need a whole number."));
             rt_set_option(which, v);
+        } else if (cstr_eq(a, "--list")) { /* spec 018 */
+            opt_list = 1;
+        } else if (cstr_eq(a, "--coverage")) {
+            opt_coverage = 1;
+        } else if (cstr_eq(a, "--mutate")) {
+            opt_mutate = 1;
+        } else if (cstr_eq(a, "--test") || cstr_eq(a, "--spec")) {
+            if (i >= argc || !*argv[i]) usage_error_arg("`$1` needs an identifier.", a);
+            Vec **list = cstr_eq(a, "--test") ? &opt_tests : &opt_specs;
+            if (!*list) *list = vec_new();
+            vec_push(*list, str_from_cstr(argv[i++]));
+        } else if (cstr_eq(a, "--max-mutants")) {
+            if (i >= argc || option_number(argv[i++], &v) || v < 1 || v > 100000)
+                usage_error(str_from_cstr("`--max-mutants` needs a whole number from 1 to 100000."));
+            opt_max_mutants = v;
         } else if (cstr_eq(a, "--remove")) { /* spec 007: vo package */
             opt_remove = 1;
         } else if (cstr_eq(a, "--mem-stats")) {
@@ -262,7 +284,8 @@ int vo_main(long argc, char **argv, char **env)
             if (used < 0)
                 usage_error_arg("Unknown option `$1`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, "
                                 "--seed N, --clock-ms N, --max-memory MiB, --mem-stats, --trace FILE, --trace-limit N, "
-                                "--record FILE, --diff FILE, --dry-run.",
+                                "--record FILE, --diff FILE, --dry-run, --list, --test ID, --spec ID, --coverage, "
+                                "--mutate, --max-mutants N.",
                                 a);
             i += (int)used;
         }
@@ -333,9 +356,21 @@ void opt_spec006_check(void)
     long cmd = opt_cmd;
     if (cmd == CMD_IMPACT) {
         if (!opt_diff) usage_error(str_from_cstr("`impact` needs `--diff FILE` (or `--diff -` for stdin)."));
-    } else if (opt_diff) {
-        only_with("--diff", "impact");
+    } else if (opt_diff && cmd != CMD_TEST) {
+        only_with("--diff", "impact` or `test");
     }
+    if (cmd != CMD_TEST) { /* spec 018: the options of `vo test` */
+        if (opt_list) only_with("--list", "test");
+        if (opt_coverage) only_with("--coverage", "test");
+        if (opt_mutate) only_with("--mutate", "test");
+        if (opt_tests) only_with("--test", "test");
+        if (opt_specs) only_with("--spec", "test");
+        if (opt_max_mutants) only_with("--max-mutants", "test");
+    }
+    if (opt_list + opt_coverage + opt_mutate > 1)
+        usage_error(str_from_cstr("`--list`, `--coverage` and `--mutate` cannot be combined: use one at a time."));
+    if (opt_max_mutants && !opt_mutate) usage_error(str_from_cstr("`--max-mutants` needs `--mutate`."));
+    if (!opt_max_mutants) opt_max_mutants = 500;
     if (opt_dry_run && cmd != CMD_EDIT) only_with("--dry-run", "edit");
     if (opt_record && cmd != CMD_RUN) only_with("--record", "run");
     if (opt_trace && cmd != CMD_RUN && cmd != CMD_TEST && cmd != CMD_REPLAY)
@@ -480,19 +515,46 @@ int cmd_test(void)
     expand_paths();
     long n = path_n;
     long *ids = alloc(n * 8); /* entry file ids */
+    if (opt_diff) q_collect = 1; /* spec 018: --diff needs the reference log, as `vo impact` */
     for (long i = 0; i < n; i++) {
         ids[i] = load_source(((Str **)path_list)[i]);
         check_program((int)ids[i], 2); /* mode: test */
     }
+    q_collect = 0;
     if (diag_errors) return finish_check(n);
+    test_select_start(ids, n); /* spec 018: --diff, and T0011 before anything runs */
     diag_emit_all((int)opt_json, 1); /* warnings first, then the tests */
+    if (opt_list) { /* spec 018: nothing is compiled or run */
+        for (long i = 0; i < n; i++) list_file_tests((int)ids[i]);
+        list_summary(n);
+        return 0;
+    }
     outputs_start(1);                /* spec 006: --trace */
+    if (opt_coverage || opt_mutate) { /* spec 018: coverage points, shared with tasks */
+        cov_on = 1;
+        cov_hit = map_shared(COV_MAX);
+    }
     compile_program();               /* bytecode for every function and test (spec 004) */
+    if (opt_mutate) { /* spec 018: which tests reach which functions (a byte each, shared) */
+        long tests = 0;
+        for (long i = 0; i < n; i++) {
+            Vec *items = file_get((int)ids[i])->ast->a.v;
+            for (long j = 0; j < items->n; j++) tests += ((Node *)vec_get(items, j))->kind == N_TEST;
+        }
+        cov_reach = map_shared((tests ? tests : 1) * (cov_nfn ? cov_nfn : 1));
+    }
     interp_init();
     gc_start();
     for (long i = 0; i < n; i++) run_file_tests((int)ids[i]);
+    long failing = t_failed + t_errored + t_timed_out;
+    if (opt_mutate && !failing) mutate_run(); /* spec 018: before the summary, which reports it */
     test_summary(n);
-    return t_failed + t_errored + t_timed_out ? EXIT_FAIL : 0;
+    if (opt_mutate && failing) { /* T0012: changes cannot be judged against failing tests */
+        Str *m = msg("Mutation testing needs passing tests: $1 of the selected tests did not pass. Fix them first.",
+                     int_to_str(failing), 0, 0);
+        toolchain_error((int)opt_json, 1, "T0012", m, 0);
+    }
+    return failing ? EXIT_FAIL : 0;
 }
 
 /* Formats files in place (or lists them with --check). Any syntax error: nothing is written, 65. */

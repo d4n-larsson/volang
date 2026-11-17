@@ -1,0 +1,15 @@
+# Spec 018 US1: --test runs exactly the test with that identifier, not every name containing it.
+@spec("US1/AC2")
+test "parses" {
+    expect_eq(parse_int("21"), ok(21));
+}
+
+@spec("FR-003")
+test "parses negative" {
+    expect_eq(parse_int("-2"), ok(-2));
+}
+
+@spec("FR-003", "US1/AC4")
+test "rejects-text" {
+    expect_eq(parse_int("x"), err("invalid int: x"));
+}

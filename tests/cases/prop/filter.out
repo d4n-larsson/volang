@@ -1,2 +1,5 @@
+filter.vo:7:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+   7 |     expect(false);
+     |     ^^^^^^^^^^^^^
 PASS abs is not negative (100 cases, 0ms)
 1 passed, 0 failed

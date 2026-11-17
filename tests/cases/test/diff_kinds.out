@@ -1,0 +1,56 @@
+diff_kinds.vo:21:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+  21 |     expect_eq([1, 2, 3], [1, 2, 3, 4]);
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+diff_kinds.vo:25:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+  25 |     expect_eq([Shape.circle(1.0)], [Shape.square(1.0)]);
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FAIL length (0ms)
+  diff_kinds.vo:21:5: `expect_eq` failed: the values differ.
+    expected: [1, 2, 3, 4]
+    actual:   [1, 2, 3]
+    first difference at [3]: expected 4, actual (none) (lengths: actual 3, expected 4)
+FAIL case (0ms)
+  diff_kinds.vo:25:5: `expect_eq` failed: the values differ.
+    expected: [Shape.square(1.0)]
+    actual:   [Shape.circle(1.0)]
+    first difference at [0]: expected Shape.square(1.0), actual Shape.circle(1.0)
+FAIL payload (0ms)
+  diff_kinds.vo:29:5: `expect_eq` failed: the values differ.
+    expected: new Box { shape: Shape.circle(2.0), tags: {"a": 1, "b": 2} }
+    actual:   new Box { shape: Shape.circle(1.0), tags: {"a": 1, "b": 2} }
+    first difference at .shape.circle: expected 2.0, actual 1.0
+FAIL map key missing (0ms)
+  diff_kinds.vo:35:5: `expect_eq` failed: the values differ.
+    expected: {"a": 1, "b": 2}
+    actual:   {"a": 1}
+    first difference at ["b"]: expected 2, actual (none)
+FAIL map value (0ms)
+  diff_kinds.vo:41:5: `expect_eq` failed: the values differ.
+    expected: {"a": 1, "b": 2}
+    actual:   {"a": 1, "b": 5}
+    first difference at ["b"]: expected 2, actual 5
+FAIL result (0ms)
+  diff_kinds.vo:45:5: `expect_eq` failed: the values differ.
+    expected: [ok(3)]
+    actual:   [err("invalid int: x")]
+    first difference at [0]: expected ok(3), actual err("invalid int: x")
+FAIL ordered (0ms)
+  diff_kinds.vo:55:5: `expect_eq` failed: the values differ.
+    expected: ordered_map{"x": 1, "y": 3}
+    actual:   ordered_map{"x": 1, "y": 2}
+    first difference at ["y"]: expected 3, actual 2
+FAIL deque (0ms)
+  diff_kinds.vo:65:5: `expect_eq` failed: the values differ.
+    expected: deque{1, 7}
+    actual:   deque{1, 2}
+    first difference at [1]: expected 7, actual 2
+FAIL long string (0ms)
+  diff_kinds.vo:70:5: `expect_eq` failed: the values differ.
+    expected: "abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij one TWO three"
+    actual:   "abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij one two three"
+    first difference at character 60: expected "TWO three", actual "two three"
+FAIL scalar (0ms)
+  diff_kinds.vo:74:5: `expect_eq` failed: the values differ.
+    expected: 4
+    actual:   3
+0 passed, 10 failed

@@ -5,8 +5,9 @@
 ## Synopsis
 
 ```text
-vo test [--json] [--filter TEXT] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats]
-        [--trace FILE] [--trace-limit N] PATH...
+vo test [--json] [--filter TEXT] [--test ID] [--spec ID] [--diff FILE] [--timeout SEC] [--seed N]
+        [--clock-ms N] [--max-memory MiB] [--mem-stats] [--trace FILE] [--trace-limit N]
+        [--list | --coverage | --mutate [--max-mutants N]] PATH...
 ```
 
 `PATH` is a `.vo` file or a directory (every `*.vo` file under it, recursively, in sorted order). A file
@@ -23,6 +24,13 @@ file order.
 |---|---|
 | `--json` | Report one JSON object per line (see [JSON output](json-output.md)). |
 | `--filter TEXT` | Run only the tests and properties whose name contains `TEXT`. |
+| `--test ID` | Run only the test with identifier `ID` (`FILE::NAME`, as `--list` shows it); repeatable. An unknown one is [T0011](../errors/T0011.md). |
+| `--spec ID` | Run only the tests whose `@spec` names `ID` or an ID starting with `ID/`; repeatable. |
+| `--diff FILE` | Run only the tests and properties that `vo impact` reports for the unified diff `FILE` (`-` is stdin). |
+| `--list` | Check, then list the selected tests (identifier, kind, location, `@spec` IDs, effects, documentation comment) without running anything. |
+| `--coverage` | After the tests, list the functions, branches, `match` cases and loop bodies of the program's own files that no selected test ran. |
+| `--mutate` | After the tests (which must pass, [T0012](../errors/T0012.md)), change the code one small step at a time and list the changes no test notices. |
+| `--max-mutants N` | With `--mutate`: try at most `N` changes (1 to 100000, default 500). |
 | `--timeout SEC` | The time limit of **each** test, in whole seconds (default 10, `0`: none). A property's limit covers all its cases. |
 | `--seed N` | The seed of `random_int` in every test, and of the inputs a `prop` generates. Default 1. |
 | `--clock-ms N` | `now_ms` returns `N`, `N+1`, ... in every test. Default 0. |
@@ -36,11 +44,13 @@ reproducible. `--record` is not available: only `vo run` records.
 
 ## Output
 
-Results go to stdout; a test's own `print` output passes through. In text, one line per test:
+Results go to stdout. What a test prints is kept with its report: shown under a test that did not pass,
+dropped for a passing one, and in the `output` field with `--json`. In text, one line per test:
 
 - `PASS name (Nms)`; for a property, `PASS name (100 cases, Nms)`.
-- `FAIL name (Nms)`, then the failed check's place and message, and `expected:` and `actual:` for
-  `expect_eq`. A property adds `counterexample: x = ...` lines (the input shrunk to a small one that
+- `FAIL name (Nms)`, then the failed check's place and message: for a comparison in `expect`, each
+  operand and its value; for `expect_eq`, `expected:`, `actual:` and, for larger values, the first
+  difference (`first difference at [412].name: ...`). A property adds `counterexample: x = ...` lines (the input shrunk to a small one that
   fails the same way) and `shrunk in N steps`.
 - `ERROR name (Nms)` for a runtime error, with the error and the call stack with values.
 - `TIMEOUT name (Nms)` when the test ran past `--timeout` ([R0009](../errors/R0009.md)).
@@ -48,15 +58,16 @@ Results go to stdout; a test's own `print` output passes through. In text, one l
   a line: `spec FR-001: 2 tests, 1 not passing` (or `all passing`).
 - The last line counts the results: `2 passed, 1 failed`, plus `N errored` and `N timed out` when there are any.
 
-With `--json`, each test is a `test` record (`name`, `status`, `file`, `start`, `uses`, `ms`, `spec`, the
-property's `prop`, `cases`, `discarded`, `shrinks`, `counterexample`, and `failure` unless it passed), each
+With `--json`, each test is a `test` record (`id`, `name`, `status`, `file`, `start`, `uses`, `ms`, `spec`,
+the property's `prop`, `cases`, `discarded`, `shrinks`, `counterexample`, `output` when it printed, and
+`cause` and `failure` unless it passed), each
 `@spec` ID a `spec_result` record, and the last record a `summary` with `passed`, `failed`, `errored` and
 `timed_out`:
 
 ```json
-{"v":1,"kind":"test","name":"clamps high values","status":"fail","file":"main.vo","start":{"line":17,"col":1},"uses":"","ms":0,"spec":["FR-001"],"failure":{"file":"main.vo","start":{"line":18,"col":5},"end":{"line":18,"col":36},"message":"`expect_eq` failed: the values differ.","expected":"10","actual":"0"}}
+{"v":1,"kind":"test","id":"main.vo::clamps high values","name":"clamps high values","status":"fail","file":"main.vo","start":{"line":17,"col":1},"uses":"","ms":0,"spec":["FR-001"],"cause":"check_failed","failure":{"file":"main.vo","start":{"line":18,"col":5},"end":{"line":18,"col":36},"message":"`expect_eq` failed: the values differ.","expected":"10","actual":"0"}}
 {"v":1,"kind":"spec_result","id":"FR-001","tests":1,"passed":0}
-{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":0,"failed":1,"errored":0,"timed_out":0}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":0,"failed":1,"errored":0,"timed_out":0,"selected":1}
 ```
 
 `ms` is the only field that varies from run to run. Values in `expected` and `actual` are written in vo

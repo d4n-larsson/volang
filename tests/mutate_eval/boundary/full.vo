@@ -1,0 +1,16 @@
+# Mutation fixture: the same, with the boundary tested.
+fn is_adult(age: int) -> bool {
+    return age >= 18;
+}
+
+test "adults" {
+    expect(is_adult(30));
+}
+
+test "children" {
+    expect(not is_adult(10));
+}
+
+test "eighteen" {
+    expect(is_adult(18));
+}

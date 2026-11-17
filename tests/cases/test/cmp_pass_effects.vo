@@ -1,0 +1,12 @@
+# Spec 018 US2: a passing comparison runs its operands once, in order, as before.
+fn noisy(x: int) -> int uses console {
+    print("noisy " + str(x));
+    return x;
+}
+
+test "in order" uses console {
+    expect(noisy(1) < noisy(2));
+    expect(noisy(3) < noisy(4) and noisy(5) < noisy(6));
+    print("done");
+    expect(noisy(7) > 8);
+}

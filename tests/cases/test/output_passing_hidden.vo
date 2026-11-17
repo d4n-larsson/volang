@@ -1,0 +1,5 @@
+# Spec 018 US2: a passing test's output is not shown in the text report.
+test "prints and passes" uses console {
+    print("not shown");
+    expect(len("ab") == 2);
+}

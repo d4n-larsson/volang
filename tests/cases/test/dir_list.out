@@ -1,0 +1,9 @@
+dir/a.vo:2:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+   2 |     expect(true);
+     |     ^^^^^^^^^^^^
+dir/b.vo:2:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+   2 |     expect(true);
+     |     ^^^^^^^^^^^^
+dir/a.vo::in a (test, dir/a.vo:1:1)
+dir/b.vo::in b (test, dir/b.vo:1:1)
+2 tests

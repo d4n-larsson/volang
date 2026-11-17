@@ -1,0 +1,7 @@
+FAIL half of four (0ms)
+  failing_test.vo:10:5: `expect_eq` failed: the values differ.
+    expected: 3
+    actual:   2
+not run: failing_test.vo:3:19 then in half
+coverage: 1 of 1 function, 1 of 2 branches
+0 passed, 1 failed

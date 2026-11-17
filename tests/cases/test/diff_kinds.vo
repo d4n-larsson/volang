@@ -1,0 +1,75 @@
+# Spec 018 US2: each kind of first difference: length, case, payload, map key, result, ordered
+# collections, long strings; a scalar keeps today's report.
+variant Shape {
+    circle(float);
+    square(float);
+}
+
+record Box {
+    shape: Shape;
+    tags: map[str, int];
+}
+
+fn counts() -> map[str, int] {
+    let m = new map[str, int];
+    set m["a"] = 1;
+    set m["b"] = 2;
+    return m;
+}
+
+test "length" {
+    expect_eq([1, 2, 3], [1, 2, 3, 4]);
+}
+
+test "case" {
+    expect_eq([Shape.circle(1.0)], [Shape.square(1.0)]);
+}
+
+test "payload" {
+    expect_eq(new Box { shape: Shape.circle(1.0), tags: counts() }, new Box { shape: Shape.circle(2.0), tags: counts() });
+}
+
+test "map key missing" {
+    let m = counts();
+    remove(m, "b");
+    expect_eq(m, counts());
+}
+
+test "map value" {
+    let m = counts();
+    set m["b"] = 5;
+    expect_eq(m, counts());
+}
+
+test "result" {
+    expect_eq([parse_int("x")], [ok(3)]);
+}
+
+test "ordered" {
+    let a = new ordered_map[str, int];
+    set a["x"] = 1;
+    set a["y"] = 2;
+    let b = new ordered_map[str, int];
+    set b["x"] = 1;
+    set b["y"] = 3;
+    expect_eq(a, b);
+}
+
+test "deque" {
+    let a = new deque[int];
+    push(a, 1);
+    push(a, 2);
+    let b = new deque[int];
+    push(b, 1);
+    push(b, 7);
+    expect_eq(a, b);
+}
+
+test "long string" {
+    let base = "abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij ";
+    expect_eq(base + "one two three", base + "one TWO three");
+}
+
+test "scalar" {
+    expect_eq(len("abc"), 4);
+}

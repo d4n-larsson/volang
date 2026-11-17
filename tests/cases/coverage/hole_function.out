@@ -1,0 +1,8 @@
+hole_function.vo:3:5: warning[W0601]: Hole: `"not written yet"` needs a value of type `int`.
+   3 |     todo("not written yet");
+     |     ^^^^^^^^^^^^^^^^^^^^^^^
+    in scope: x: int
+PASS now (0ms)
+not run: hole_function.vo:2:1 function later
+coverage: 1 of 2 functions, 0 of 0 branches
+1 passed, 0 failed

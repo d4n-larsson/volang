@@ -1,0 +1,12 @@
+# Mutation fixture: the same, with a withdrawal tested.
+fn balance(deposits: int, withdrawals: int) -> int {
+    return deposits - withdrawals;
+}
+
+test "no withdrawals" {
+    expect_eq(balance(5, 0), 5);
+}
+
+test "withdraws" {
+    expect_eq(balance(5, 2), 3);
+}

@@ -1,0 +1,8 @@
+# Spec 018 US4: a change that divides by zero is caught (the test errors).
+fn per_item(total: int, n: int) -> int {
+    return total / (n - 1 + 1);
+}
+
+test "per item" {
+    expect_eq(per_item(10, 0 + 2), 5);
+}

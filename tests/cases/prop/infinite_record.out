@@ -1,4 +1,7 @@
 infinite_record.vo:5:15: error[E0602]: Cannot generate values of `Loop` for `l`: it has no finite value.
    5 | prop "loops" (l: Loop) {
      |               ^^^^^^^
-1 error, 0 warnings
+infinite_record.vo:6:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+   6 |     expect(true);
+     |     ^^^^^^^^^^^^
+1 error, 1 warning

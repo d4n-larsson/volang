@@ -1,0 +1,8 @@
+# Spec 018 US2: a path outside the test's grant, built at run time, is `outside_grant` (R0010).
+fn load(name: str) -> result[str] uses file.read("data/") {
+    return read_file("data/" + name);
+}
+
+test "reads outside" uses file.read("data/") {
+    expect_eq(load("../secret.txt"), err("x"));
+}

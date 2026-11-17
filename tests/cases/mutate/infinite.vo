@@ -1,0 +1,14 @@
+# Spec 018 US4: a change that makes a loop run forever is caught by the time limit.
+fn sum_to(n: int) -> int {
+    var i = 0;
+    var t = 0;
+    while i < n {
+        set t = t + i;
+        set i = i + 1;
+    }
+    return t;
+}
+
+test "sum to four" {
+    expect_eq(sum_to(4), 6);
+}

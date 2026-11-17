@@ -24,6 +24,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [015](../specs/015-docs-site/) | Documentation site on GitHub Pages: guides with checked examples, generated reference, catalog and library pages, `llms.txt` | **Done** ([results](../specs/015-docs-site/results.md)) |
 | [016](../specs/016-concurrency/) | `concurrent_map(xs, limit, f)`: tasks in input order, sharing nothing, failures and output as `map` gives them, record/replay; `serve` reads many connections at once | **Done** ([results](../specs/016-concurrency/results.md)) |
 | [017](../specs/017-filesystem-processes/) | Directories and file changes (list, information, append, create directories; delete and rename under a new `file.delete` effect) and running other programs under a scoped `process` effect | **Done** ([results](../specs/017-filesystem-processes/results.md)) |
+| [018](../specs/018-agent-testing/) | Agent-friendly testing: list and select tests by identifier, `@spec` ID or diff; explained failures (comparison operands, the path to the first difference, a cause per failure, captured output); coverage; warnings for tests that cannot fail; mutation testing | **Done** ([results](../specs/018-agent-testing/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -130,6 +131,19 @@ user's full rights, and security.md says so.
   interactive children, a shell, modification times, permissions, links, copying, recursive delete;
   names and output that are not UTF-8 (they wait for a bytes type).
 
+### 018: agent-friendly testing (done)
+
+From the proposal in [agent_friendly_test_framework.md](agent_friendly_test_framework.md), fitted to vo:
+one language, so the CLI with `--json` is the agent interface. `vo test` now lists tests without running
+them (`--list`, identifiers `FILE::NAME`) and selects exactly (`--test`, `--spec`, `--diff`); a failing
+`expect` shows its operands, `expect_eq` the first difference, every failure carries a `cause`, and a
+test's output stays in its record; `--coverage` lists what no test ran; `--mutate` changes the code one
+step at a time and lists the changes no test catches; W0602 and W0603 flag tests that cannot fail.
+
+- **Not done (on purpose):** recorded tests (planned below), isolating tests that write files, retries
+  and flaky-test detection (runs are deterministic), skips and expected failures, mock objects, parallel
+  mutant runs.
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -152,6 +166,8 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Tuples, more map keys | no tuple type; map keys are `int` or `str` only | records and ordered maps cover some cases |
 | `old()` in `ensures` | contracts cannot compare with values from before the call | spec 005 follow-up |
 | Confined child programs | a program started under `process` runs with the user's full rights | opt-in confinement to the grant (Landlock); spec 017 follow-up |
+| Recorded tests | a test that uses HTTP, files, programs or the environment depends on the machine and the network | spec 018 follow-up, decided: `vo test --record DIR` saves one recording per test, `vo test --replay DIR` runs offline on them; replaces mock objects |
+| Events | investigate if we should support events | |
 
 User-defined interfaces and compiling to machine code stay out of scope (below).
 

@@ -1,0 +1,5 @@
+FAIL limits (0ms)
+  cmp_lt.vo:9:5: `expect` failed: `len(xs) < limit` is false.
+    len(xs): 7
+    limit:   5
+0 passed, 1 failed

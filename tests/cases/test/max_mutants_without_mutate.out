@@ -1,0 +1,1 @@
+error[T0001]: `--max-mutants` needs `--mutate`.

@@ -7,8 +7,30 @@ static long in_pos;
 static long in_len;
 static long in_eof;
 
+/* spec 018: what a test writes to standard output, kept with its report (research R4).
+ * ponytail: a static 64 KiB per test (it survives the per-test heap reset); further bytes are only
+ * counted. A growable buffer outside the heap if tests need longer output. */
+char cap_buf[CAP_MAX];
+long cap_len;
+long cap_dropped;
+long cap_on;
+
+void cap_bytes(char *p, long n)
+{
+    long room = CAP_MAX - cap_len;
+    long k = n < room ? n : room;
+    mem_copy(cap_buf + cap_len, p, k);
+    cap_len += k;
+    cap_dropped += n - k;
+}
+
 void rt_print(int fd, Str *s, int newline)
 {
+    if (fd == 1 && cap_on) {
+        cap_bytes(s->data, s->len);
+        if (newline) cap_bytes("\n", 1);
+        return;
+    }
     out_str(fd, s);
     if (newline) out_cstr(fd, "\n");
 }

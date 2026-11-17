@@ -1,0 +1,10 @@
+FAIL totals (0ms)
+  output_text.vo:15:5: `expect_eq` failed: the values differ.
+    expected: 10
+    actual:   9
+  output:
+    checking three lists
+    first: 3
+    second: 3
+PASS quiet (0ms)
+1 passed, 1 failed

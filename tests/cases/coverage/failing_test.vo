@@ -1,0 +1,11 @@
+# Spec 018 US3: coverage is reported for failing tests too, and the exit status stays 1.
+fn half(x: int) -> int {
+    if x % 2 == 1 {
+        return 0;
+    }
+    return x / 2;
+}
+
+test "half of four" {
+    expect_eq(half(4), 3);
+}

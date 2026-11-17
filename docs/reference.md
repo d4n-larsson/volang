@@ -898,6 +898,33 @@ A `test "name" uses ... { ... }` item (the clause is optional, see Effects) hold
 
 `vo test file.vo` runs every test and property in the file (a file with tests needs no `main`); `vo run` ignores tests. `--filter TEXT` runs only tests whose name contains `TEXT`. A test that hits a runtime error is reported as `error`, and the remaining tests still run. The exit status is 1 if any test did not pass.
 
+Each test has an identifier `FILE::NAME` (`main.vo::doubles`). `--list` checks and lists the selected tests (identifier, kind, location, `@spec` IDs, effects, the comment above) without running anything. `--test ID` runs exactly that test, `--spec ID` the tests naming `ID` (or `ID/...`), `--diff FILE` the tests `vo impact` reports. Options combine; an empty selection passes. A failing `expect` on a comparison shows each operand (for `and`, the false part); a failing `expect_eq` on larger values shows the first difference. What a test prints is kept with its report: under a test that did not pass, and as `output` in JSON. Tests share the working directory and run in listed order, so a test can see files another wrote.
+
+```vo-test
+fn clamp(x: int, hi: int) -> int {
+    if x > hi {
+        return hi;
+    }
+    return x;
+}
+
+test "clamps" uses console {
+    let limit = 5;
+    print("checking");
+    expect(clamp(7, limit) < limit);
+}
+```
+
+```output
+FAIL clamps (0ms)
+  main.vo:11:5: `expect` failed: `clamp(7, limit) < limit` is false.
+    clamp(7, limit): 5
+    limit:           5
+  output:
+    checking
+0 passed, 1 failed
+```
+
 ```vo-test
 fn double(x: int) -> int {
     return x * 2;
@@ -972,6 +999,10 @@ PASS sorting twice changes nothing (100 cases, 0ms)
 ```
 
 `@spec("FR-003", "US1/AC2")` on the line right above a `test` or `prop` names the requirements it proves (an ID is letters, digits, `-` and `_`, parts separated by `/`). It changes nothing about the test: `vo test` adds the IDs to a failing test's line and ends with a summary per ID, and `vo query specs main.vo` lists every ID with its tests. `@spec` is the only annotation.
+
+### Coverage and mutation testing
+
+`vo test --coverage` lists what the selected tests never ran in the program's own files: functions, branches (also an `if` whose condition was never false), `match` cases, loop bodies, then totals. `vo test --mutate` runs the tests (they must pass, T0012), then changes the functions they reach one step at a time (`<` to `<=`, `+` to `-`, `and` to `or`, `true` to `false`, dropping `not`, `n` to `n + 1`) and reruns the tests that reach it. Each change no test notices is a check you are missing: `SURVIVED main.vo:2:12 in is_adult: \`age >= 18\` -> \`age > 18\``. A failing, erroring or much slower test counts as noticing. Survivors are candidates: a change can behave like the original. `--max-mutants N` (default 500) caps the changes, `--diff` limits them to changed functions; neither option changes the exit status. W0602 is a test with no check, W0603 a check that cannot depend on the program.
 
 ## Programs in several files
 
@@ -1145,7 +1176,7 @@ fn main() uses console {
 ```sh
 vo check     [--json] PATH...
 vo run       [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] FILE [-- ARG...]
-vo test      [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--filter TEXT] PATH...
+vo test      [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--filter TEXT] [--test ID] [--spec ID] [--diff FILE] [--list | --coverage | --mutate [--max-mutants N]] PATH...
 vo fmt       [--json] [--check] PATH...
 vo effects   [--json] [--update] FILE
 vo explain   [--json] CODE
@@ -1230,7 +1261,7 @@ With `print(total);` on line 3 instead, `vo check --json main.vo` prints:
 {"v":1,"kind":"runtime_error","code":"R0002","name":"division_by_zero","message":"Division by zero.","file":"main.vo","start":{"line":2,"col":12},"end":{"line":2,"col":25},"trace":[{"function":"average","file":"main.vo","start":{"line":2,"col":12},"locals":[{"name":"total","type":"int","value":"10"},{"name":"count","type":"int","value":"0"}]},{"function":"main","file":"main.vo","start":{"line":6,"col":15},"locals":[]}]}
 ```
 
-**test** (from `test`): `name`, `status` (`"pass"`, `"fail"`, `"error"`, `"timeout"`), `file`, `start`, `ms`, the property members above, and unless the status is `pass`, `failure`: `{file, start, end, message, expected?, actual?}` (plus `code` and `trace` for `error`). Values are shown in vo syntax: `"abc"`, `[1, 2]`, `new Point { x: 1, y: 2 }`, `Shape.circle(1.0)`, `ok(1)`; maps as `{k: v}`.
+**test** (from `test`): `id`, `name`, `status` (`"pass"`, `"fail"`, `"error"`, `"timeout"`), `file`, `start`, `ms`, the property members above, `output` when it printed, and unless the status is `pass`, `cause` (`check_failed`, `too_few_inputs`, `error_in_code`, `error_in_test`, `requires_broken_by_test`, `requires_broken_by_code`, `ensures_broken`, `hole`, `outside_grant`, `timeout`, `out_of_memory`) and `failure`: `{file, start, end, message, expected?, actual?, operands?, difference?}` (operands: `{text, value}`; difference: `{path, expected, actual}`, `character` for strings; plus `code` and `trace` for `error`). Values are shown in vo syntax: `"abc"`, `[1, 2]`, `new Point { x: 1, y: 2 }`, `Shape.circle(1.0)`, `ok(1)`; maps as `{k: v}`.
 
 ```json
 {"v":1,"kind":"test","name":"doubles","status":"fail","file":"main.vo","start":{"line":5,"col":1},"ms":0,"failure":{"file":"main.vo","start":{"line":6,"col":5},"end":{"line":6,"col":28},"message":"`expect_eq` failed: the values differ.","expected":"8","actual":"9"}}
@@ -1238,7 +1269,7 @@ With `print(total);` on line 3 instead, `vo check --json main.vo` prints:
 
 **summary**: the last record of every `check`, `test` and `fmt`, and of `run` when it stops before the program starts: `{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}`. `test` adds `passed`, `failed`, `errored`, `timed_out`; `fmt` adds `changed`. At most 50 diagnostics are listed; `truncated` counts the rest.
 
-Other kinds: `toolchain_error` (`code`, `name`, `message`, optional `path` and `related` declarations) for T codes, `ref`, `type_at`, `impact` and `edit` (see Querying and editing programs; `edit` is a fix with the replaced `text`), `replay` (a changed program), `explain` (`code`, `name`, `fixable`, `text`), `reference` (`text`), `version` (`version`, `schema`) and `fmt` (`file`, `changed`).
+Other kinds: `toolchain_error` (`code`, `name`, `message`, optional `path` and `related` declarations) for T codes, `ref`, `type_at`, `impact` and `edit` (see Querying and editing programs; `edit` is a fix with the replaced `text`), `replay` (a changed program), `explain` (`code`, `name`, `fixable`, `text`), `reference` (`text`), `version` (`version`, `schema`), `fmt` (`file`, `changed`), and from `test`: `test_entry` (`--list`: `id`, `name`, `test_kind`, `file`, `start`, `end`, `doc`, `uses`, `spec`), `coverage` (`file`, `start`, `end`, `point`, `function`), `coverage_summary`, `mutant` (`file`, `start`, `end`, `function`, `text`, `mutated`, `tests`) and `mutation_summary` (`mutants`, `caught`, `survived`, `not_tried`). The test summary adds `selected` (or `listed`).
 
 ## Error codes
 

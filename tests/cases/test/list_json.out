@@ -1,0 +1,4 @@
+{"v":1,"kind":"test_entry","id":"list_json.vo::doubles","name":"doubles","test_kind":"test","file":"list_json.vo","start":{"line":9,"col":1},"end":{"line":12,"col":2},"doc":"Doubling keeps the sign.\nZero stays zero.","uses":"","spec":[]}
+{"v":1,"kind":"test_entry","id":"list_json.vo::double is a sum","name":"double is a sum","test_kind":"property","file":"list_json.vo","start":{"line":16,"col":1},"end":{"line":19,"col":2},"doc":"Doubling is the same as adding to itself.","uses":"","spec":["FR-003"]}
+{"v":1,"kind":"test_entry","id":"list_json.vo::plain","name":"plain","test_kind":"test","file":"list_json.vo","start":{"line":21,"col":1},"end":{"line":24,"col":2},"doc":"","uses":"console","spec":[]}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"listed":3}

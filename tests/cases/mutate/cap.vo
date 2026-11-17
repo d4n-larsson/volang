@@ -1,0 +1,8 @@
+# Spec 018 US4: --max-mutants caps the changes tried; the rest are counted as not tried.
+fn score(a: int, b: int) -> int {
+    return a * 2 + b * 3 - 1;
+}
+
+test "score" {
+    expect_eq(score(1, 1), 4);
+}

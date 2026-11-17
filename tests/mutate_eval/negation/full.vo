@@ -1,0 +1,15 @@
+# Mutation fixture: the same, with the label checked.
+fn label(x: int) -> str {
+    if not (x > 0) {
+        return "non-positive";
+    }
+    return "positive";
+}
+
+test "has a label" {
+    expect(len(label(3)) > 0);
+}
+
+test "positive" {
+    expect_eq(label(3), "positive");
+}

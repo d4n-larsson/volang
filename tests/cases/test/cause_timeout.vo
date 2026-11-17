@@ -1,0 +1,12 @@
+# Spec 018 US2: a test that runs past --timeout is `timeout`.
+fn forever() -> int {
+    var i = 0;
+    while i >= 0 {
+        set i = (i + 1) % 10;
+    }
+    return i;
+}
+
+test "never ends" {
+    expect_eq(forever(), 0);
+}

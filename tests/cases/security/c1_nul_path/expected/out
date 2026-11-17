@@ -1,7 +1,10 @@
 $ vo effects --update main.vo
 + main.vo:main: console, file.read("data/")
 + main.vo:test "a NUL in a write path": file.write("out/")
-0 errors, 0 warnings
+main.vo:16:13: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+  16 |             expect(false);
+     |             ^^^^^^^^^^^^^
+0 errors, 1 warning
 --- stderr
 --- exit 0
 $ vo run main.vo
@@ -13,6 +16,9 @@ trace:
   at main (main.vo:3:11)
 --- exit 70
 $ vo test main.vo
+main.vo:16:13: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+  16 |             expect(false);
+     |             ^^^^^^^^^^^^^
 ERROR a NUL in a write path (0ms)
   main.vo:14:11: runtime error[R0010]: file.write("victim.txt\x00/../out/y") is not allowed: `test "a NUL in a write path"` declares file.write("out/").
     at test "a NUL in a write path" (main.vo:14:11)

@@ -1,0 +1,20 @@
+# Spec 018 US4: with a test at the boundary, both changes are caught.
+fn is_adult(age: int) -> bool {
+    return age >= 18;
+}
+
+test "adults" {
+    expect(is_adult(30));
+}
+
+test "children" {
+    expect(not is_adult(10));
+}
+
+test "eighteen" {
+    expect(is_adult(18));
+}
+
+test "seventeen" {
+    expect(not is_adult(17));
+}

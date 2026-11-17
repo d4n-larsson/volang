@@ -1,3 +1,5 @@
-{"v":1,"kind":"test","name":"in a","status":"pass","file":"dir/a.vo","start":{"line":1,"col":1},"uses":"","ms":0}
-{"v":1,"kind":"test","name":"in b","status":"pass","file":"dir/b.vo","start":{"line":1,"col":1},"uses":"","ms":0}
-{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":2,"passed":2,"failed":0,"errored":0,"timed_out":0}
+{"v":1,"kind":"diagnostic","code":"W0603","name":"constant_check","severity":"warning","file":"dir/a.vo","start":{"line":2,"col":5},"end":{"line":2,"col":17},"text":"expect(true)","message":"This check always has the same outcome: it does not depend on the program.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"W0603","name":"constant_check","severity":"warning","file":"dir/b.vo","start":{"line":2,"col":5},"end":{"line":2,"col":17},"text":"expect(true)","message":"This check always has the same outcome: it does not depend on the program.","fixes":[],"related":[]}
+{"v":1,"kind":"test","id":"dir/a.vo::in a","name":"in a","status":"pass","file":"dir/a.vo","start":{"line":1,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"test","id":"dir/b.vo::in b","name":"in b","status":"pass","file":"dir/b.vo","start":{"line":1,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":2,"truncated":0,"files":2,"passed":2,"failed":0,"errored":0,"timed_out":0,"selected":2}

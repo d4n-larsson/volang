@@ -1,0 +1,28 @@
+# Spec 018 US4: one change of each kind, each surviving weak tests.
+fn kinds(a: int, b: float, on: bool) -> str {
+    var out = "";
+    if a <= 100 {
+        set out = out + "small ";
+    }
+    if a + 1 > 0 {
+        set out = out + "positive ";
+    }
+    if b * 2.0 >= 0.0 {
+        set out = out + "float ";
+    }
+    if on and a != 7 {
+        set out = out + "on ";
+    }
+    if not on {
+        set out = out + "off ";
+    }
+    let flag = true;
+    if flag {
+        set out = out + "flag";
+    }
+    return out;
+}
+
+test "weak" {
+    expect(len(kinds(3, 1.5, true)) > 0);
+}

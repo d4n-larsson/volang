@@ -3,4 +3,7 @@ prop "prints" uses console
 
 effects_record.vo:main uses console
 effects_record.vo:prop "prints" uses console
-0 errors, 0 warnings
+effects_record.vo:1:1: warning[W0602]: Test `prints` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.
+   1 | prop "prints" (n: int) uses console {
+     | ^^^^
+0 errors, 1 warning

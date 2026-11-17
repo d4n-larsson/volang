@@ -1,8 +1,5 @@
-zero
-zero
-zero
-zero
-zero
-zero
+uses_console.vo:5:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+   5 |     expect(true);
+     |     ^^^^^^^^^^^^
 PASS prints a number (100 cases, 0ms)
 1 passed, 0 failed

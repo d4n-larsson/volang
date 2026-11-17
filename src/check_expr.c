@@ -225,6 +225,21 @@ Type *check_builtin(Node *call, long id, Type *expected)
     if ((id >= B_SORT_BY && id <= B_ALL) || id == B_CMAP) return check_hof(call, id); /* sort_by, map, filter, fold, any, all, concurrent_map */
     if (id >= B_EXPECT && id <= B_EXPECT_EQ && !ck_in_test)          /* expect / expect_eq only in tests */
         ck_err1("E0410", call, "`$1` can only be used inside a `test` block.", call->a.n->a.s);
+    if (id >= B_EXPECT && id <= B_EXPECT_EQ && ck_in_test) { /* spec 018: W0602 counts checks; W0603 */
+        ck_test_checks++;
+        Vec *args = call->b.v;
+        Node *c = args->n ? vec_get(args, 0) : 0;
+        int fixed = 0;
+        if (c && id == B_EXPECT) {
+            if (c->kind == N_UNARY && c->a.n->kind == N_BOOL) c = c->a.n; /* not true */
+            fixed = node_is_literal(c) ||
+                    (c->kind == N_BINARY && node_is_literal(c->a.n) && node_is_literal(c->b.n));
+        } else if (c && args->n == 2) {
+            fixed = node_is_literal(c) && node_is_literal(vec_get(args, 1));
+        }
+        if (fixed) ck_warn("W0603", call, str_from_cstr("This check always has the same outcome: it does not depend on the program."));
+    }
+    if (id == B_TODO && ck_in_test) ck_test_holes++;
     if (id == B_ASSUME && ck_in_test != 2) /* assume only in properties */
         ck_err1("E0604", call, "`$1` can only be used inside a `prop` block.", call->a.n->a.s);
     if ((id == B_INT || id == B_FLOAT) && call->b.v->n == 1) { /* of a str: point to parse_int / parse_float */
@@ -401,6 +416,10 @@ Type *check_call(Node *call, Type *expected)
             q_note_sym(s, call->a.n, RR_CALL); /* spec 006 reference log */
             call->c.n = s->decl;
             fx_call(call, s->decl);
+            if (ck_in_test) { /* spec 018: a function with `ensures` checks its results (W0602) */
+                Fx *cfx = item_fx(s->decl);
+                if (cfx && cfx->ensures) ck_test_checks++;
+            }
             if (ty_tparams_of(call->c.n)) return check_generic_call(call, call->c.n, expected); /* inference */
             if (check_argc(call, call->c.n->b.v->n)) {
                 for (long i = 0; i < call->c.n->b.v->n; i++) {

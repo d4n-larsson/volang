@@ -776,6 +776,7 @@ int prop_run(Node *test, long item)
         if (o == O_OOM) return ST_ERROR;
         pr_shrink(test, o, pr_kind);
         deadline_ms = 0; /* the report describes the final counterexample: run it again */
+        cap_len = cap_dropped = 0; /* spec 018: keep the output of that run only */
         pr_try(test, (List *)pr_best);
         return o == O_FAIL ? ST_FAIL : ST_ERROR;
     }

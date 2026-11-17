@@ -1,0 +1,6 @@
+PASS parses (0ms)
+PASS rejects-text (0ms)
+spec FR-003: 1 test, all passing
+spec US1/AC2: 1 test, all passing
+spec US1/AC4: 1 test, all passing
+2 passed, 0 failed
