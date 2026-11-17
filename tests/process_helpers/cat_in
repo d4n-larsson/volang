@@ -1,0 +1,3 @@
+#!/bin/sh
+# Copies stdin to stdout.
+exec cat

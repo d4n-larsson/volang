@@ -1,0 +1,8 @@
+# Spec 017: a bare program name is found through PATH.
+import std.process.run;
+
+fn main() -> result[void] uses console, process("true") {
+    let out = try run("true", new list[str]);
+    print("code " + str(out.code) + ", stdout [" + out.stdout + "]");
+    return ok();
+}

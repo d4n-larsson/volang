@@ -1,0 +1,6 @@
+$ vo run main.vo
+[3]
+[1]
+[2]
+--- stderr
+--- exit 0

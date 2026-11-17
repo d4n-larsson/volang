@@ -1,0 +1,9 @@
+# Spec 017: an empty path is an invalid argument (R0007), not a file-system error.
+import std.fs.delete;
+
+fn main() -> result[void] uses console, file.delete("./") {
+    let empty = "";
+    try delete(empty);
+    print("deleted");
+    return ok();
+}

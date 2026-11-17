@@ -1,0 +1,6 @@
+write data/b.txt x
+write data/a.txt yy
+write data/B.txt
+mkdir data/old
+vo run main.vo
+vo run main.vo

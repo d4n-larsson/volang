@@ -1,0 +1,5 @@
+write keep.txt keep
+mkdir work
+vo run --seed 1 --record r.jsonl main.vo
+keep r.jsonl keep.txt
+vo replay r.jsonl

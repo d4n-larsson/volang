@@ -1,0 +1,15 @@
+$ vo run main.vo
+args: code 0
+[a b]
+['quoted']
+["double"]
+[x; rm -rf /]
+[$(echo no)]
+[*]
+[]
+[héllo]
+none: code 0
+with: code 0
+[one]
+--- stderr
+--- exit 0

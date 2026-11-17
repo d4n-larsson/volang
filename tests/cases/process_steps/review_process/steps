@@ -1,0 +1,3 @@
+vo effects --update main.vo
+cp changed.vo main.vo
+vo check main.vo

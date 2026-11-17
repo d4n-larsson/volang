@@ -1,0 +1,5 @@
+$ vo run main.vo
+flood: err output is larger than 16 MiB
+bad utf-8: err output is not UTF-8
+--- stderr
+--- exit 0

@@ -1,0 +1,55 @@
+# Spec 017 (US2): delete removes a file, a link or an empty directory; never a non-empty one or the scope.
+import std.fs.Entry;
+import std.fs.Info;
+import std.fs.delete;
+import std.fs.list_dir;
+
+# Prints every entry below dir, depth first, with its kind.
+fn tree(dir: str, indent: str) uses console, file.read("work/") {
+    match list_dir(dir) {
+        case ok(entries) {
+            for e in entries {
+                match e.info {
+                    case directory {
+                        print(indent + e.name + "/");
+                        if not e.link {
+                            tree(dir + "/" + e.name, indent + "  ");
+                        }
+                    }
+                    case file(n) {
+                        print(indent + e.name + " (" + str(n) + ")");
+                    }
+                    case missing {
+                    }
+                    case other {
+                        print(indent + e.name + " (other)");
+                    }
+                }
+            }
+        }
+        case err(e) {
+            print(indent + dir + ": err " + e);
+        }
+    }
+}
+
+fn said(what: str, r: result[void]) uses console {
+    match r {
+        case ok() {
+            print(what + ": ok");
+        }
+        case err(e) {
+            print(what + ": err " + e);
+        }
+    }
+}
+
+fn main() uses console, file.read("work/"), file.delete("work/") {
+    said("a file", delete("work/a.txt"));
+    said("an empty directory", delete("work/empty"));
+    said("a link", delete("work/link"));
+    said("a non-empty directory", delete("work/full"));
+    said("a missing file", delete("work/none.txt"));
+    tree("work", "");
+    said("the scope itself", delete("work/"));
+}

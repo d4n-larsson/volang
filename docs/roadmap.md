@@ -23,6 +23,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [014](../specs/014-complex-data-structures/) | Built-in `ordered_map`, `ordered_set`, `priority_queue`, `deque` (created with `new`, like `map`) and `std.collections`; records of ordered fields are ordered; inferred type arguments for `new` and cases | **Done** ([results](../specs/014-complex-data-structures/results.md)) |
 | [015](../specs/015-docs-site/) | Documentation site on GitHub Pages: guides with checked examples, generated reference, catalog and library pages, `llms.txt` | **Done** ([results](../specs/015-docs-site/results.md)) |
 | [016](../specs/016-concurrency/) | `concurrent_map(xs, limit, f)`: tasks in input order, sharing nothing, failures and output as `map` gives them, record/replay; `serve` reads many connections at once | **Done** ([results](../specs/016-concurrency/results.md)) |
+| [017](../specs/017-filesystem-processes/) | Directories and file changes (list, information, append, create directories; delete and rename under a new `file.delete` effect) and running other programs under a scoped `process` effect | **Done** ([results](../specs/017-filesystem-processes/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -115,6 +116,44 @@ it for up to 10 s), and fetching ten URLs waited for each in turn. Now:
   request at a time, in the order requests arrive complete, so state kept between requests stays safe.
 - **Not done (on purpose):** parallel computation as a goal; concurrency inside tasks (nested calls run
   one task at a time); handlers that overlap; closures in results.
+
+### 017: filesystem and processes (done)
+
+A program could only read and replace whole files. Spec 017 adds directory listings and path
+information under `file.read`; appending and creating directories under `file.write`; deleting files and
+empty directories, and renaming, under a new `file.delete` effect, so destructive changes stand out in
+review; and running a named program (no shell) to completion under a new `process` effect scoped to the
+programs it may run, with captured output, `--timeout`, record and replay. A started program runs with the
+user's full rights, and security.md says so.
+
+- **Not done (on purpose):** confining started programs to the grant (planned below), streaming or
+  interactive children, a shell, modification times, permissions, links, copying, recursive delete;
+  names and output that are not UTF-8 (they wait for a bytes type).
+
+## Planned after 017
+
+The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
+it is next; anything that reaches the outside world gets an effect, scopes, and record and replay.
+
+| Gap | What is missing | Notes |
+|---|---|---|
+| HTTPS | `std.http` speaks plain HTTP only, so most public APIs are out of reach | spec 007 follow-up; TLS without libc is the cost |
+| Math builtins | `sqrt`, `pow`, `floor`, `ceil`, `round`, trigonometry, `log` | pure; results must be byte-identical on all three platforms |
+| Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; decides what matters next |
+| Binary data | `str` must be UTF-8, so images, archives and binary protocols cannot be handled | a `bytes` type; also lifts 017's "output is not UTF-8" error |
+| Sleep | no way to wait (retries, polling, rate limits) | under `clock`; replay must not wait |
+| String formatting | only `+`, `str()` and padding | one formatting builtin within the reference budget |
+| Regular expressions | `std.text` has `find`, `split`, `replace` only | linear-time matching only (no backtracking) |
+| TCP and UDP | only HTTP reaches the network | scoped like `net` and `serve` |
+| macOS | Linux only (x86-64, ARM64, RISC-V) | the raw-syscall, no-libc design makes this a real port |
+| Downloading packages | packages are local and pinned by hash, never fetched | spec 007 follow-up; needs HTTPS |
+| Language server | no completion, hover or diagnostics in editors | `vo query` and `vo check --json` already have the data |
+| Debugger | traces, locals in errors and replay, but no stepping | replay makes a deterministic stepper possible |
+| Tuples, more map keys | no tuple type; map keys are `int` or `str` only | records and ordered maps cover some cases |
+| `old()` in `ensures` | contracts cannot compare with values from before the call | spec 005 follow-up |
+| Confined child programs | a program started under `process` runs with the user's full rights | opt-in confinement to the grant (Landlock); spec 017 follow-up |
+
+User-defined interfaces and compiling to machine code stay out of scope (below).
 
 ## Benchmarks (ongoing)
 

@@ -1,0 +1,8 @@
+$ vo run main.vo
+run: code 0
+run_with: code 0
+A=1
+B=x y
+EMPTY=
+--- stderr
+--- exit 0

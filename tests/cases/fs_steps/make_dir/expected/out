@@ -1,0 +1,16 @@
+$ vo run file.vo
+made
+--- stderr
+--- exit 0
+$ vo run main.vo
+make work/2026-11/reports: ok
+again: ok
+make work: ok
+a file in the way: err not a directory
+a file there: err already exists
+2026-11/
+  reports/
+file.txt (1)
+x/
+--- stderr
+--- exit 0

@@ -1,0 +1,7 @@
+helpers
+write work/a.txt hello
+vo run --seed 1 --record r.jsonl main.vo
+keep r.jsonl
+rm work
+rm bin
+vo replay r.jsonl

@@ -165,7 +165,11 @@ static void rt_denied_by(Frame *f, long bit, Str *target);
 /* R0010 when builtin id's effect is not declared by the running function or test, or by the root. */
 void rt_check_bit(long id)
 {
-    long bit = builtin_effects[id];
+    rt_check_effect(builtin_effects[id]);
+}
+
+void rt_check_effect(long bit)
+{
     if (!bit) return;
     if (!grant_has_bit(rt_frame_effects(), bit)) rt_denied(bit, 0);
     Frame *root = rt_root();
@@ -193,13 +197,38 @@ void rt_check_path(long bit, Str *path)
     if (nul || (scoped && !rt_start_cwd_known())) rt_denied(bit, path);
     if (!scoped) return;
     GC_ROOT(&path);
-    Str *resolved = rt_resolve(path);
+    Str *resolved = rt_resolve_for(bit, path);
     GC_ROOT(&resolved);
     int ok = resolved && grant_has_path(eff, bit, resolved);
     int root_ok = resolved && (!root || grant_has_path(root->effects, bit, resolved));
     GC_UNROOT(2);
     if (!ok) rt_denied(bit, path);
     if (!root_ok) rt_denied_by(root, bit, path);
+}
+
+/* Spec 017: 1 when either grant scopes bit (operations then walk beneath the scopes, never following links). */
+int rt_bit_scoped(long bit)
+{
+    EffSet *eff = rt_frame_effects();
+    Frame *root = rt_root();
+    return (eff && es_scoped(eff, bit)) || (root && root->effects && es_scoped(root->effects, bit));
+}
+
+/* Spec 017: 1 when rt_check_path(bit, path) would pass (without raising). */
+int rt_path_allowed(long bit, Str *path)
+{
+    for (long i = 0; i < path->len; i++)
+        if (!path->data[i]) return 0;
+    if (!rt_bit_scoped(bit)) return 1;
+    if (!rt_start_cwd_known()) return 0;
+    GC_ROOT(&path);
+    Str *resolved = rt_resolve_for(bit, path);
+    GC_ROOT(&resolved);
+    Frame *root = rt_root();
+    int ok = resolved && grant_has_path(rt_frame_effects(), bit, resolved) &&
+             (!root || grant_has_path(root->effects, bit, resolved));
+    GC_UNROOT(2);
+    return ok;
 }
 
 /* 1 when the resolved path is dir or lies inside it ("" is the root). */
@@ -210,6 +239,35 @@ int path_under(Str *path, Str *dir)
     if ((unsigned long)path->len < (unsigned long)dl) return 0;
     if (path->len != dl && path->data[dl] != '/') return 0; /* the next byte must start a component */
     return mem_eq(path->data, dir->data, dl);
+}
+
+/* Spec 017: the path a file.delete operation acts on: the directory resolved, the last component not
+ * followed (deleting or renaming a link acts on the link, wherever it points). Other bits: rt_resolve. */
+Str *rt_resolve_for(long bit, Str *path)
+{
+    if (bit != EF_FDELETE) return rt_resolve(path);
+    long cut = path->len;
+    while (cut > 1 && path->data[cut - 1] == '/') cut--;
+    long slash = cut;
+    while (slash > 0 && path->data[slash - 1] != '/') slash--;
+    long nlen = cut - slash;
+    char *nm = path->data + slash;
+    if (!nlen || (nlen == 1 && nm[0] == '.') || (nlen == 2 && nm[0] == '.' && nm[1] == '.')) return rt_resolve(path);
+    GC_ROOT(&path);
+    Str *dir = rt_resolve(slash ? str_new(path->data, slash) : str_from_cstr("."));
+    Str *r = 0;
+    if (dir) {
+        GC_ROOT(&dir);
+        SB *sb = sb_new();
+        GC_ROOT(&sb);
+        sb_str(sb, dir);
+        sb_byte(sb, '/');
+        sb_bytes(sb, path->data + slash, nlen);
+        r = sb_finish(sb);
+        GC_UNROOT(2);
+    }
+    GC_UNROOT(1);
+    return r;
 }
 
 /* The absolute real path as a str ("" for /), or 0 when it cannot be resolved (too long, loops).
@@ -402,16 +460,30 @@ static void rt_denied_by(Frame *gf, long bit, Str *target)
  * kernel (research R3's fallback; openat2 is missing under qemu user mode). The fd, or a negative errno. */
 #define E_LOOP 40
 
-long rt_open_file(long bit, Str *path, long flags)
+/* Spec 017: the parent directory of a path that passed rt_check_path, as a descriptor (closed by the
+ * caller), and the last component in *name ("." for the scope directory itself). Scoped grants walk
+ * from the deepest granted scope directory as rt_open_file does; with strict, the scope directory
+ * itself is refused (R0010: delete and rename never remove a scope). Unscoped: the path's directory,
+ * opened from the start directory. A negative errno on failure. */
+long rt_open_parent(long bit, Str *path, Str **name, int strict)
 {
     rt_start_cwd();
     long base = start_fd >= 0 ? start_fd : AT_FDCWD;
     EffSet *grants[2] = {rt_frame_effects(), rt_root() ? rt_root()->effects : 0};
     int scoped = 0;
     for (int g = 0; g < 2; g++) scoped |= grants[g] && es_scoped(grants[g], bit);
-    if (!scoped) return vo_syscall4(SYS_openat, base, (long)path->data, flags | O_CLOEXEC, 0644);
     GC_ROOT(&path);
-    Str *resolved = rt_resolve(path);
+    if (!scoped) {
+        long cut = path->len;
+        while (cut > 0 && path->data[cut - 1] == '/') cut--; /* "a/b/" names b */
+        long slash = cut;
+        while (slash > 0 && path->data[slash - 1] != '/') slash--;
+        *name = slash == cut ? str_from_cstr(".") : str_new(path->data + slash, cut - slash);
+        Str *dir = slash ? str_new(path->data, slash) : str_from_cstr(".");
+        GC_UNROOT(1);
+        return vo_syscall4(SYS_openat, base, (long)dir->data, O_PATH | O_DIRECTORY | O_CLOEXEC, 0);
+    }
+    Str *resolved = rt_resolve_for(bit, path);
     GC_ROOT(&resolved);
     Str *scope = 0, *dir = 0; /* the deepest granted scope holding the path, and its resolved form */
     GC_ROOT(&scope);
@@ -429,7 +501,7 @@ long rt_open_file(long bit, Str *path, long flags)
             }
         }
     }
-    if (!dir) { /* changed since the check: refuse */
+    if (!dir || (strict && resolved->len == dir->len)) { /* changed since the check, or the scope itself */
         GC_UNROOT(4);
         rt_denied(bit, path);
     }
@@ -437,22 +509,45 @@ long rt_open_file(long bit, Str *path, long flags)
     /* the resolved path below the scope (no links, no ".."), one component at a time without following
        links: a component swapped for a link after the check fails the open instead of escaping (H4) */
     char *rel = resolved->data + dir->len, *end = resolved->data + resolved->len;
+    *name = str_from_cstr(".");
     while (fd >= 0) {
         while (rel < end && *rel == '/') rel++;
+        if (rel >= end) break;
         char *c = rel;
         while (rel < end && *rel != '/') rel++;
+        if (rel >= end) { /* the last component: its parent is fd */
+            *name = str_new(c, rel - c);
+            break;
+        }
         char save = *rel;
         *rel = 0;
-        int last = rel >= end;
-        long next = last ? vo_syscall4(SYS_openat, fd, (long)(*c ? c : "."), flags | O_NOFOLLOW | O_CLOEXEC, 0644)
-                         : vo_syscall4(SYS_openat, fd, (long)c, O_PATH | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC, 0);
+        long next = vo_syscall4(SYS_openat, fd, (long)c, O_PATH | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC, 0);
         *rel = save;
         sys_close((int)fd);
         fd = next;
-        if (last) break;
     }
-    long r = fd;
     GC_UNROOT(4);
+    if (fd == -E_LOOP) rt_denied(bit, path); /* a link where the check saw none */
+    return fd;
+}
+
+long rt_open_file(long bit, Str *path, long flags)
+{
+    rt_start_cwd();
+    long base = start_fd >= 0 ? start_fd : AT_FDCWD;
+    EffSet *grants[2] = {rt_frame_effects(), rt_root() ? rt_root()->effects : 0};
+    int scoped = 0;
+    for (int g = 0; g < 2; g++) scoped |= grants[g] && es_scoped(grants[g], bit);
+    if (!scoped) return vo_syscall4(SYS_openat, base, (long)path->data, flags | O_CLOEXEC, 0644);
+    Str *name = 0;
+    GC_ROOT(&name);
+    long parent = rt_open_parent(bit, path, &name, 0);
+    long r = parent;
+    if (parent >= 0) {
+        r = vo_syscall4(SYS_openat, parent, (long)name->data, flags | O_NOFOLLOW | O_CLOEXEC, 0644);
+        sys_close((int)parent);
+    }
+    GC_UNROOT(1);
     if (r == -E_LOOP) rt_denied(bit, path); /* a link where the check saw none */
     return r;
 }

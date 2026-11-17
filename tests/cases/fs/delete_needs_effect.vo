@@ -1,0 +1,8 @@
+# Spec 017: deleting needs file.delete; file.write alone is not enough (E0501).
+import std.fs.delete;
+
+fn main() -> result[void] uses console, file.write("out/") {
+    try delete("out/old.txt");
+    print("deleted");
+    return ok();
+}

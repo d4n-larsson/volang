@@ -1,0 +1,54 @@
+# Spec 017 (US2): rename moves a file; an existing target is an error and nothing changes.
+import std.fs.Entry;
+import std.fs.Info;
+import std.fs.list_dir;
+import std.fs.rename;
+
+# Prints every entry below dir, depth first, with its kind.
+fn tree(dir: str, indent: str) uses console, file.read("work/") {
+    match list_dir(dir) {
+        case ok(entries) {
+            for e in entries {
+                match e.info {
+                    case directory {
+                        print(indent + e.name + "/");
+                        if not e.link {
+                            tree(dir + "/" + e.name, indent + "  ");
+                        }
+                    }
+                    case file(n) {
+                        print(indent + e.name + " (" + str(n) + ")");
+                    }
+                    case missing {
+                    }
+                    case other {
+                        print(indent + e.name + " (other)");
+                    }
+                }
+            }
+        }
+        case err(e) {
+            print(indent + dir + ": err " + e);
+        }
+    }
+}
+
+fn said(what: str, r: result[void]) uses console {
+    match r {
+        case ok() {
+            print(what + ": ok");
+        }
+        case err(e) {
+            print(what + ": err " + e);
+        }
+    }
+}
+
+fn main() uses console, file.read("work/"), file.write("work/"), file.delete("work/") {
+    said("inbox/a.txt to done/a.txt", rename("work/inbox/a.txt", "work/done/a.txt"));
+    said("onto an existing name", rename("work/inbox/b.txt", "work/done/b.txt"));
+    said("a missing file", rename("work/inbox/none.txt", "work/done/none.txt"));
+    said("a directory", rename("work/inbox", "work/old_inbox"));
+    tree("work", "");
+    said("the scope itself", rename("work", "work/x"));
+}

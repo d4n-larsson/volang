@@ -14,6 +14,8 @@ static void *rcd_fb;          /* the recording (FBuf), or 0 */
 static long rcd_failed;       /* it could not be created (T0009 at exit) */
 static Str *rcd_request; /* spec 009: the request line of the http event being written */
 static long rcd_pending_kind; /* a read/write being checked: written as `denied` if R0010 ends the run */
+static Str *rcd_to;           /* spec 017: rename's new path, written as "to" */
+static List *rcd_args;        /* spec 017: a run's argv, written as "args" (without the program) */
 static Str *rcd_pending_path;
 static Vec *rp_events;        /* replay: Event records */
 static long rp_next;          /* replay: index of the next event */
@@ -24,9 +26,12 @@ static long rp_clock = -1;
 static Vec *rp_args; /* strs */
 static long rp_saw_end;
 
-static const char *const ev_names[] = {0, "read_line", "read_all", "read_file", "write_file", "env", "now_ms", "end",
-                                       "http", "listen", "request", "response"};
+static const char *const ev_names[] = {0,         "read_line", "read_all",    "read_file", "write_file",
+                                       "env",     "now_ms",    "end",         "http",      "listen",
+                                       "request", "response",  "info",        "list_dir",  "append_file",
+                                       "make_dir", "delete",   "rename",      "run"};
 static const char *const ev_results[] = {"ok", "err", "denied"};
+static Str *run_desc(Str *program, Str *joined);
 static const char hexd[] = "0123456789abcdef";
 
 /* What the program asked for (d_) and what the recording has (n_), by event kind. */
@@ -41,7 +46,14 @@ static const char *const d_table[] = {0,
                                       "makes an HTTP request $1",
                                       "serves on `$1`",
                                       "waits for an HTTP request to answer",
-                                      "sends an HTTP response"};
+                                      "sends an HTTP response",
+                                      "looks at `$1`",
+                                      "lists the directory `$1`",
+                                      "appends to `$1`",
+                                      "creates the directory `$1`",
+                                      "deletes `$1`",
+                                      "renames `$1`",
+                                      "runs `$1`"};
 static const char *const n_table[] = {0,
                                       "a line of stdin",
                                       "the rest of stdin",
@@ -53,7 +65,14 @@ static const char *const n_table[] = {0,
                                       "an HTTP request $1",
                                       "a server on `$1`",
                                       "a received HTTP request",
-                                      "a sent HTTP response"};
+                                      "a sent HTTP response",
+                                      "a look at `$1`",
+                                      "a listing of `$1`",
+                                      "an append to `$1`",
+                                      "a directory created at `$1`",
+                                      "a delete of `$1`",
+                                      "a rename of `$1`",
+                                      "a run of `$1`"};
 
 #define J_HEAD "{\"v\":1,\"kind\":\""
 #define J_CLOSE "}\n"
@@ -134,8 +153,22 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
         rw(kind == EVK_ENV                ? "\",\"name\":"
            : kind == EVK_HTTP           ? "\",\"host\":"
            : kind == EVK_SERVE_LISTEN   ? "\",\"address\":"
+           : kind == EVK_RUN            ? "\",\"program\":"
                                         : "\",\"path\":");
         rw_str(name->data, name->len, 0);
+        if (kind == EVK_RENAME && rcd_to) { /* spec 017 */
+            rw(",\"to\":");
+            rw_str(rcd_to->data, rcd_to->len, 0);
+        }
+        if (kind == EVK_RUN && rcd_args) {
+            rw(",\"args\":[");
+            for (long i = 1; i < rcd_args->len; i++) {
+                Str *a = (Str *)rcd_args->data[i].p;
+                if (i > 1) rw(",");
+                rw_str(a->data, a->len, !rw_valid_utf8(a->data, a->len));
+            }
+            rw("]");
+        }
         if (kind == EVK_HTTP) { /* spec 007: the port (int_value); spec 009: the request line */
             rw(",\"port\":");
             rw_dec(int_value);
@@ -464,9 +497,10 @@ void rp_mismatch(long kind, Str *name, Event *event)
     Str *m;
     GC_ROOT(&asked);
     if (event) {
-        Str *has = rp_describe((char *)n_table[event->kind], event->kind == EVK_HTTP
-                                                              ? http_desc(event->name, event->port, event->request)
-                                                              : event->name);
+        Str *has = rp_describe((char *)n_table[event->kind],
+                               event->kind == EVK_HTTP ? http_desc(event->name, event->port, event->request)
+                               : event->kind == EVK_RUN ? run_desc(event->name, event->request)
+                                                        : event->name);
         m = msg("The program $1, but the recording has $2 next: replay the program that was recorded, or record this "
                 "one.",
                 asked, has, 0);
@@ -483,6 +517,81 @@ void rp_mismatch(long kind, Str *name, Event *event)
 void rp_mismatch_now(long kind, Str *name)
 {
     rp_mismatch(kind, name, vec_get(rp_events, rp_next - 1));
+}
+
+/* ---- spec 017: std.fs and std.process events ---- */
+
+/* The strs of v (a Vec of the reader, or the List of a run's argv from index 1) joined by NUL bytes. */
+static Str *join_strs(W *data, long from, long n)
+{
+    SB *sb = sb_new();
+    GC_ROOT(&sb);
+    for (long i = from; i < n; i++) {
+        Str *s = (Str *)data[i].p;
+        if (i > from) sb_byte(sb, 0);
+        sb_bytes(sb, s->data, s->len);
+    }
+    GC_UNROOT(1);
+    return sb_finish(sb);
+}
+
+static Str *join_args(Vec *v)
+{
+    return join_strs(v->data, 0, v->n);
+}
+
+/* "program arg arg" for R0014's texts (a joined argument str: NUL bytes as spaces). */
+static Str *run_desc(Str *program, Str *joined)
+{
+    SB *sb = sb_new();
+    GC_ROOT(&sb);
+    sb_str(sb, program);
+    for (long i = 0; joined && i < joined->len; i++) {
+        if (!i) sb_byte(sb, ' ');
+        sb_byte(sb, joined->data[i] ? joined->data[i] : ' ');
+    }
+    GC_UNROOT(1);
+    return sb_finish(sb);
+}
+
+/* While recording: name is being checked; R0010 ends the run with it written as `denied`. */
+void io_pend(long kind, Str *name)
+{
+    if (rcd_mode != 1) return;
+    rcd_pending_kind = kind;
+    rcd_pending_path = name;
+}
+
+/* While recording: the event of an operation that ran (to: rename's new path; argv: a run's). */
+void io_record(long kind, Str *name, Str *to, List *argv, Variant *r)
+{
+    rcd_pending_kind = 0;
+    if (rcd_mode != 1) return;
+    rcd_to = to;
+    rcd_args = argv;
+    rcd_result(kind, name, r);
+    rcd_to = 0;
+    rcd_args = 0;
+}
+
+/* While replaying: the next event, which must be this operation (R0014 otherwise; a recorded `denied`
+ * that is allowed now too); its recorded result. The grant was checked before. */
+Variant *io_replay(long kind, Str *name, Str *to, List *argv)
+{
+    GC_ROOT(&name);
+    GC_ROOT(&to);
+    Str *extra = kind == EVK_RUN ? join_strs(argv->data, 1, argv->len) : to;
+    GC_ROOT(&extra);
+    Str *asked = kind == EVK_RUN ? run_desc(name, extra) : name;
+    GC_ROOT(&asked);
+    if (rp_next >= rp_events->n) rp_mismatch(kind, asked, 0);
+    Event *e = vec_get(rp_events, rp_next++);
+    if (e->kind != kind || !e->name || !str_eq(e->name, name) ||
+        (e->result != EVR_DENIED && extra && (!e->request || !str_eq(e->request, extra))))
+        rp_mismatch(kind, asked, e);
+    if (e->result == EVR_DENIED) rp_mismatch(kind, asked, e); /* allowed now: the program or its grant changed */
+    GC_UNROOT(4);
+    return rp_result(e);
 }
 
 /* ---- reading a recording ---- */
@@ -504,11 +613,12 @@ static Str *rf_request;   /* spec 009 */
 
 static const char *const rk_keys[] = {"kind",   "program", "fingerprint", "seed", "clock_ms", "args",    "path",
                                       "name",   "result",  "value",       "status", "host",     "port",    "request",
-                                      "address", 0};
+                                      "address", "to", 0};
+static long rf_args_line; /* spec 017: this line had "args" (a run event's arguments) */
 
 /* Where each string-valued key is stored (rk_keys order; 0: not a string). */
 static Str **const rf_slots[] = {&rf_kind, &rf_program, &rf_fprint, 0, 0, 0, &rf_name, &rf_name, &rf_result,
-                                 &rf_value, 0, &rf_name, 0, &rf_request, &rf_name};
+                                 &rf_value, 0, &rf_name, 0, &rf_request, &rf_name, &rf_request};
 
 /* T0008 invalid_recording, exit 64. */
 void rp_bad(void)
@@ -608,6 +718,8 @@ void rp_line(char *p, char *end)
     rf_isint = 0;
     rf_port = -1;
     rf_request = 0;
+    rf_program = 0;
+    rf_args_line = 0;
     p = rp_ws(p, end);
     if (p >= end || *p != '{') rp_bad();
     p++;
@@ -636,7 +748,10 @@ void rp_line(char *p, char *end)
                 if (*p == ',') p++;
             }
             p++;
-            if (field == 5) rf_args = v;
+            if (field == 5) {
+                rf_args = v;
+                rf_args_line = 1;
+            }
         } else if (*p == 't') { /* true (spec 013, L6: the literals exactly) */
             if (end - p < 4 || !mem_eq(p, "true", 4)) rp_bad();
             p += 4;
@@ -677,7 +792,7 @@ long rp_kind_of(Str *str)
 {
     if (!str) return -1;
     if (str_eq_cstr(str, "recording")) return 0;
-    for (long k = 1; k <= EVK_SERVE_RESPONSE; k++)
+    for (long k = 1; k <= EVK_RUN; k++)
         if (str_eq_cstr(str, (char *)ev_names[k])) return k;
     return -1;
 }
@@ -727,6 +842,10 @@ void rp_read(char *text, long len)
                 if (rf_isint) e->value.i = rf_ivalue;
                 e->port = rf_port;
                 e->request = rf_request;
+                if (kind == EVK_RUN) { /* spec 017: the program, and the arguments joined by NUL bytes */
+                    e->name = rf_program;
+                    e->request = rf_args_line ? join_args(rf_args) : 0;
+                }
                 rp_check_event(e); /* the fields its kind needs (T0008 otherwise) */
                 vec_push(rp_events, e);
             }
@@ -755,6 +874,14 @@ void rp_check_event(Event *e)
         return;
     }
     if (rf_isint) rp_bad(); /* everything else: no integer value */
+    if (e->kind >= EVK_INFO) { /* spec 017: path or program, a result, `to` and `args`, and the value */
+        if (!e->name || e->result < 0) rp_bad();
+        if (e->result == EVR_DENIED) return;
+        if ((e->kind == EVK_RENAME || e->kind == EVK_RUN) && !e->request) rp_bad();
+        if (e->result == EVR_OK && e->kind >= EVK_APPEND_FILE && e->kind <= EVK_RENAME) return; /* ok() */
+        if (!e->value.p) rp_bad();
+        return;
+    }
     if (e->kind == EVK_HTTP) { /* host, port, ok/err and the response or the error text */
         if (!e->name || e->port < 0 || e->result < 0 || e->result == EVR_DENIED || !e->value.p) rp_bad();
         return;

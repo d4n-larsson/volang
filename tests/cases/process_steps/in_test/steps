@@ -1,0 +1,5 @@
+helpers
+write fixtures/a.txt a
+write fixtures/sub/b.txt b
+vo test main.vo
+vo test main.vo

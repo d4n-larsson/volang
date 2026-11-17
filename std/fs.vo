@@ -1,0 +1,130 @@
+# std.fs: Directories and file information (needs file.read), and file changes (needs file.write, file.delete).
+# Part of the vo standard library (spec 017). Import items one by one: `import std.fs.NAME;`.
+# Every path is checked against the caller's scopes at run time, and each operation stays beneath them.
+# ponytail: names that are not UTF-8 are left out of listings (no bytes type yet).
+
+# What is at a path: missing, a file with its size in bytes, a directory, or something else.
+#     Info.file(3) == Info.file(3) is true
+export variant Info {
+    missing;
+    file(int);
+    directory;
+    other;
+}
+
+# A directory entry: its name, what it is, and whether it is a link (then the kind of its target when that is inside the caller's file.read scopes, otherwise other).
+#     new Entry { name: "a.txt", info: Info.file(1), link: false }.name is "a.txt"
+export record Entry {
+    name: str;
+    info: Info;
+    link: bool;
+}
+
+fn decode_info(t: str) -> Info {
+    let k = slice(t, 0, 1);
+    if k == "m" {
+        return Info.missing;
+    }
+    if k == "d" {
+        return Info.directory;
+    }
+    if k == "f" {
+        match parse_int(slice(t, 1, len(t))) {
+            case ok(n) {
+                return Info.file(n);
+            }
+            case err(_) {
+            }
+        }
+    }
+    return Info.other;
+}
+
+# What is at path (needs file.read): a missing path is a value, not an error.
+#     info("no-such-file.vo-doc") == ok(Info.missing) is true
+export fn info(path: str) -> result[Info] uses file.read {
+    return ok(decode_info(try __fs(1, path, "")));
+}
+
+# The entries of a directory (needs file.read), sorted by the bytes of their names, without . and ..
+#     list_dir("no-such-dir.vo-doc") == err("not found") is true
+export fn list_dir(path: str) -> result[list[Entry]] uses file.read {
+    let text = try __fs(2, path, "");
+    let entries = new list[Entry];
+    if text == "" {
+        return ok(entries);
+    }
+    for part in split(text, "/") {
+        let space = find(part, " ");
+        var head = slice(part, 0, space);
+        var link = false;
+        if slice(head, len(head) - 1, len(head)) == "l" {
+            set link = true;
+            set head = slice(head, 0, len(head) - 1);
+        }
+        push(entries, new Entry { name: slice(part, space + 1, len(part)), info: decode_info(head), link: link });
+    }
+    return ok(entries);
+}
+
+# Every file below dir (needs file.read), sorted, as paths that start with dir; links to directories are not followed.
+#     walk("no-such-dir.vo-doc") == err("not found") is true
+export fn walk(dir: str) -> result[list[str]] uses file.read {
+    var base = dir;
+    while len(base) > 1 and slice(base, len(base) - 1, len(base)) == "/" {
+        set base = slice(base, 0, len(base) - 1);
+    }
+    let out = new list[str];
+    try walk_into(base, out);
+    sort(out);
+    return ok(out);
+}
+
+fn walk_into(dir: str, out: list[str]) -> result[void] uses file.read {
+    for e in try list_dir(dir) {
+        let p = dir + "/" + e.name;
+        match e.info {
+            case directory {
+                if not e.link {
+                    try walk_into(p, out);
+                }
+            }
+            case file(_) {
+                push(out, p);
+            }
+            case missing {
+            }
+            case other {
+            }
+        }
+    }
+    return ok();
+}
+
+# Appends text to a file (needs file.write), creating the file when it is missing.
+#     append_file("/", "x") == err("is a directory") is true
+export fn append_file(path: str, text: str) -> result[void] uses file.write {
+    let _ = try __fs(3, path, text);
+    return ok();
+}
+
+# Creates a directory and its missing parents (needs file.write); a directory already there is ok.
+#     make_dir("/") == ok() is true
+export fn make_dir(path: str) -> result[void] uses file.write {
+    let _ = try __fs(4, path, "");
+    return ok();
+}
+
+# Deletes a file, a link (not its target) or an empty directory (needs file.delete), never a scope directory itself.
+#     delete("no-such-file.vo-doc") == err("not found") is true
+export fn delete(path: str) -> result[void] uses file.delete {
+    let _ = try __fs(5, path, "");
+    return ok();
+}
+
+# Renames (moves) from to to (needs file.delete for from, file.write for to); an existing to is an error and nothing changes.
+#     rename("no-such-file.vo-doc", "other.vo-doc") == err("not found") is true
+export fn rename(from: str, to: str) -> result[void] uses file.write, file.delete {
+    let _ = try __fs(6, from, to);
+    return ok();
+}

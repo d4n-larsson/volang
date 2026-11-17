@@ -1,0 +1,38 @@
+# std.process: Running other programs to their end, with no shell (needs process).
+# Part of the vo standard library (spec 017). Import items one by one: `import std.process.NAME;`.
+# The program is checked against the caller's process scopes at run time, exactly as written.
+# A started program is not confined: it can do anything the user running vo can.
+
+# What a finished program returned: its exit code (128 + n when killed by signal n), its standard output and its standard error.
+#     new Output { code: 0, stdout: "", stderr: "" }.code is 0
+export record Output {
+    code: int;
+    stdout: str;
+    stderr: str;
+}
+
+fn decode(text: str) -> result[Output] {
+    let first = find(text, "\n");
+    let rest = slice(text, first + 1, len(text));
+    let second = find(rest, "\n");
+    let code = try parse_int(slice(text, 0, first));
+    let n = try parse_int(slice(rest, 0, second));
+    let body = slice(rest, second + 1, len(rest));
+    return ok(new Output { code: code, stdout: slice(body, 0, n), stderr: slice(body, n, len(body)) });
+}
+
+# Runs program with args (no shell: each argument is passed as it is), no input and an empty environment, and waits for it to end (needs process).
+#     run("no-such-program.vo-doc", new list[str]) == err("not found") is true
+export fn run(program: str, args: list[str]) -> result[Output] uses process {
+    return run_with(program, args, "", new list[str]);
+}
+
+# Runs program like run, with input as its standard input and env ("NAME=value" entries) as its environment (needs process).
+#     run_with("no-such-program.vo-doc", new list[str], "", ["A=1"]) == err("not found") is true
+export fn run_with(program: str, args: list[str], input: str, env: list[str]) -> result[Output] uses process {
+    let argv = [program];
+    for a in args {
+        push(argv, a);
+    }
+    return decode(try __run(argv, input, env));
+}

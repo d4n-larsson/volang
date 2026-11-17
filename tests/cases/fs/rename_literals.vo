@@ -1,0 +1,9 @@
+# Spec 017: rename's old path is checked against file.delete, its new path against file.write (E0503).
+import std.fs.rename;
+
+fn main() -> result[void] uses console, file.write("out/"), file.delete("out/") {
+    try rename("in/a.txt", "out/a.txt");
+    try rename("out/b.txt", "done/b.txt");
+    print("renamed");
+    return ok();
+}

@@ -1953,7 +1953,7 @@ A scope in a `uses` clause is empty, absolute, or leaves the working directory w
 
 Fixable: no
 
-File scopes are directories relative to the directory the program starts in, such as `"out/"` or `"data/raw/"`; `"./"` is the working directory itself. Environment and network scopes are non-empty names.
+File scopes are directories relative to the directory the program starts in, such as `"out/"` or `"data/raw/"`; `"./"` is the working directory itself. Environment and network scopes are non-empty names. Program scopes (`process`) are a name found through `PATH`, or a relative or absolute path to the program, without `..` and not ending in `/`.
 
 ### Example
 
@@ -1999,7 +1999,7 @@ A `uses` clause names something that is not an effect.
 
 Fixable: sometimes
 
-The effects are `console`, `input`, `file.read`, `file.write`, `net`, `clock`, `random` and `env`. When the name is within two edits of one of them, the fix replaces it.
+The effects are `console`, `input`, `file.read`, `file.write`, `file.delete`, `net`, `clock`, `random`, `env`, `serve` and `process`. When the name is within two edits of one of them, the fix replaces it.
 
 ### Example
 
@@ -2099,6 +2099,38 @@ fn main() uses console, input {
     for s in concurrent_map(split(read_all(), "\n"), 2, shout) {
         print(s);
     }
+}
+```
+
+## E0512 process_unscoped
+
+`uses process` does not name the programs it may run.
+
+Fixable: no
+
+A `process` grant without scopes would allow running every program on the machine, and a started program can do anything the user running `vo` can. Name each program the code runs: a name found through `PATH` (`"git"`), or a relative or absolute path (`"tools/gen"`, `"/usr/bin/git"`). Which programs to allow is the reviewer's decision, so there is no automatic fix.
+
+### Example
+
+```vo
+import std.process.run;
+
+fn main() -> result[void] uses console, process {
+    let out = try run("git", ["--version"]);
+    print(out.stdout);
+    return ok();
+}
+```
+
+### Fixed
+
+```vo
+import std.process.run;
+
+fn main() -> result[void] uses console, process("git") {
+    let out = try run("git", ["--version"]);
+    print(out.stdout);
+    return ok();
 }
 ```
 

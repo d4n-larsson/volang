@@ -1,0 +1,4 @@
+#!/bin/sh
+# Kills itself with the signal given (TERM, KILL, ...).
+kill -"$1" $$
+sleep 5

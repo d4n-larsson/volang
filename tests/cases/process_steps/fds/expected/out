@@ -1,0 +1,6 @@
+$ vo run main.vo
+main: code 0
+task 1: []
+task 2: []
+--- stderr
+--- exit 0

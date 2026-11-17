@@ -1,0 +1,6 @@
+$ vo run main.vo
+data:
+  café.txt: file 0
+  good.txt: file 1
+--- stderr
+--- exit 0

@@ -1,0 +1,9 @@
+# Spec 017: process scopes are program names: a bare name, a relative or an absolute path.
+fn tools() uses process("git", "tools/gen", "./bin/run", "/usr/bin/make") {
+}
+
+fn bad() uses process("../x", "bin/", "", "a/../b") {
+}
+
+fn main() {
+}

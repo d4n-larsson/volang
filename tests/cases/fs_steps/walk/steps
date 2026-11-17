@@ -1,0 +1,7 @@
+write data/z.txt 1
+write data/a/one.txt 1
+write data/a/two/deep.txt 1
+write data/b/c.txt 1
+mkdir data/empty
+symlink ../a data/b/loop
+vo run main.vo

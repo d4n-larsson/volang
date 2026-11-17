@@ -1,0 +1,3 @@
+#!/bin/sh
+# Sleeps the given number of seconds.
+exec sleep "$1"

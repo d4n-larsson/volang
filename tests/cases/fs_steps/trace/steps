@@ -1,0 +1,4 @@
+helpers
+write data/a.txt a
+vo run --trace t.jsonl main.vo
+keep t.jsonl

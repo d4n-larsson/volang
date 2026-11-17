@@ -1,0 +1,8 @@
+$ vo run main.vo
+data/a/one.txt
+data/a/two/deep.txt
+data/b/c.txt
+data/z.txt
+data/b/c.txt
+--- stderr
+--- exit 0

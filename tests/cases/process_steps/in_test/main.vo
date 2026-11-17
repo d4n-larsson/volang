@@ -1,0 +1,19 @@
+# Spec 017 (US5): tests that list fixtures and run a helper give the same results on every run.
+import std.fs.walk;
+import std.process.run;
+
+fn main() {
+}
+
+test "fixtures and a helper" uses file.read("fixtures/"), process("bin/args") {
+    let files = walk("fixtures");
+    expect(files == ok(["fixtures/a.txt", "fixtures/sub/b.txt"]));
+    match run("bin/args", ["one"]) {
+        case ok(out) {
+            expect_eq(out.stdout, "[one]\n");
+        }
+        case err(e) {
+            expect_eq(e, "");
+        }
+    }
+}

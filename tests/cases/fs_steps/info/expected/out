@@ -1,0 +1,11 @@
+$ vo run main.vo
+data/a.txt is file 5
+data/empty.txt is file 0
+data/sub is directory
+data/none is missing
+data/none/deeper is missing
+data/a.txt/inside is missing
+data/fifo is other
+data is directory
+--- stderr
+--- exit 0

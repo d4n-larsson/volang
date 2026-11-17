@@ -1,0 +1,17 @@
+$ vo effects --update main.vo
++ main.vo:main: console, process("git")
++ main.vo:release: console, process("git")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:4:4: error[E0504]: `release` gains process("make"); approve with `vo effects --update`.
+   4 | fn release() -> result[void] uses console, process("git", "make") {
+     |    ^^^^^^^
+main.vo:12:4: error[E0504]: `main` gains process("make"); approve with `vo effects --update`.
+  12 | fn main() -> result[void] uses console, process("git", "make") {
+     |    ^^^^
+  note: main.vo:13:9: `main` calls `release`, which uses console, process("git", "make").
+2 errors, 0 warnings
+--- stderr
+--- exit 65

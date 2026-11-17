@@ -1,0 +1,4 @@
+#!/bin/sh
+# Starts a long sleep in the background that keeps stdout open, then exits 0.
+sleep 30 &
+echo started

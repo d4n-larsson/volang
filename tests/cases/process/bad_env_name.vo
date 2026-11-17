@@ -1,0 +1,21 @@
+# Spec 017: invalid arguments are R0007: a NUL byte, an environment entry without a name or without `=`.
+import std.process.run;
+import std.process.run_with;
+
+fn main() -> result[void] uses console, process("true") {
+    for a in args() {
+        if a == "nul" {
+            let out = try run("true", ["a" + chr(0) + "b"]);
+            print(str(out.code));
+        }
+        if a == "noname" {
+            let out = try run_with("true", new list[str], "", ["=x"]);
+            print(str(out.code));
+        }
+        if a == "noeq" {
+            let out = try run_with("true", new list[str], "", ["HOME"]);
+            print(str(out.code));
+        }
+    }
+    return ok();
+}

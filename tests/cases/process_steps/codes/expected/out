@@ -1,0 +1,8 @@
+$ vo run main.vo
+exit 0: code 0
+exit 3: code 3
+exit 255: code 255
+TERM: code 143
+KILL: code 137
+--- stderr
+--- exit 0

@@ -1,0 +1,7 @@
+$ vo run main.vo
+grandchild: code 0
+started
+--- stderr
+--- exit 0
+$ no-children
+left-over processes: 0

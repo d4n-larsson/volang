@@ -259,17 +259,19 @@ test "loads fixtures" uses file.read("fixtures/") { ... }
 |---|---|
 | console | `print`, `write`, `eprint` (stdout and stderr) |
 | input | `read_line`, `read_all` |
-| file.read, file.write | `read_file`, `write_file` |
+| file.read, file.write | `read_file`, `write_file`; `std.fs` |
+| file.delete | `std.fs.delete` and `rename` |
 | net | `std.http` (`get`, `post`) |
 | clock | `now_ms` |
 | random | `random_int` |
 | env | `env` |
 | serve | `std.http.serve` (answering HTTP requests) |
+| process | `std.process.run` and `run_with` (running other programs) |
 
 - No `uses` clause means pure: the function cannot do any of these, so it always returns the same result for the same arguments.
 - A function must declare everything it does and everything its callees declare (E0501, with a fix that adds exactly the missing effects). An effect nothing needs is W0501, with a fix that removes it.
-- Scopes narrow an effect: directories for `file.read`/`file.write` (relative to the directory the program starts in, e.g. `"out/"`; `"./"` is that directory itself), variable names for `env`, hosts for `net`, addresses for `serve` (`"8000"`: this machine only; `"0.0.0.0:8000"`: the network). A scope covers the directories under it. A caller's scopes must cover its callees' (E0503); an empty or absolute scope, or one with `..`, is E0506.
-- Canonical order (`vo fmt`): console, input, file.read, file.write, net, clock, random, env, serve; scopes sorted.
+- Scopes narrow an effect: directories for `file.read`/`file.write`/`file.delete` (relative to the directory the program starts in, e.g. `"out/"`; `"./"` is that directory itself), variable names for `env`, hosts for `net`, addresses for `serve` (`"8000"`: this machine only; `"0.0.0.0:8000"`: the network), programs for `process` (`"git"`: found through `PATH`; `"tools/gen"`, `"/usr/bin/git"`: that file; required, E0512; matched exactly). A scope covers the directories under it. A caller's scopes must cover its callees' (E0503); an empty or absolute scope, or one with `..`, is E0506.
+- Canonical order (`vo fmt`): console, input, file.read, file.write, file.delete, net, clock, random, env, serve, process; scopes sorted.
 - `main`'s clause is the grant of `vo run`, a test's clause the grant of that test. Paths and names are also checked at run time, after resolving `..`, absolute paths and symbolic links, against both the running function's declaration and that root grant: anything outside either is R0010 (exit 70), so no callee widens the root. A literal target outside the scopes is E0503 at check time.
 - `--seed N` fixes `random_int`; `--clock-ms N` makes `now_ms` return N, N+1, ... `vo test` uses seed 1 and clock 0 for every test.
 
@@ -1013,9 +1015,13 @@ fn main() uses console {
 | std.random | `unit`, `pick`, `shuffle` (random) |
 | std.http | plain HTTP: `get` and `post` (net), `serve` (serve); no HTTPS |
 | std.collections | neighbors and ranges of the ordered collections, set algebra, deque fronts, `_by(cmp)` orders |
+| std.fs | `info`, `list_dir`, `walk` (file.read); `append_file`, `make_dir` (file.write); `delete`, `rename` (file.delete) |
+| std.process | `run`, `run_with`: run a program to its end, no shell (process) |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
 - `std.http.serve(address, handle)` reads many requests at once and calls `handle(request) -> Response` for one at a time, in the order they arrive complete, until Ctrl-C or SIGTERM, then returns `ok()`. The caller declares `serve` with that address and the handler's effects. A handler that stops with a runtime error answers 500 (the report goes to stderr) and the server goes on; `--timeout` limits each handler call, not the server.
+- `std.process.run(program, args)` runs a program with no shell (arguments are passed as they are), no input and an empty environment, waits for it and returns `Output { code, stdout, stderr }`; `run_with` adds input text and `NAME=value` variables. A non-zero exit is `ok`; killed by signal n, `code` is 128 + n. `--timeout` covers the program and everything it starts. A started program is not confined: `process("git")` grants whatever `git` can do.
+- File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.
 - Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
 
 ```vo
@@ -1032,6 +1038,38 @@ fn main() -> result[void] uses console {
 
 ```output
 007
+```
+
+```vo
+import std.fs.info;
+import std.process.run;
+
+fn main() -> result[void] uses console, file.read("./"), process("echo") {
+    match try info("no-such-file.txt") {
+        case missing {
+            print("missing");
+        }
+        case file(size) {
+            print(str(size));
+        }
+        case directory {
+            print("directory");
+        }
+        case other {
+            print("other");
+        }
+    }
+    let out = try run("echo", ["a b", "$HOME"]);
+    write(out.stdout);
+    print(str(out.code));
+    return ok();
+}
+```
+
+```output
+missing
+a b $HOME
+0
 ```
 
 ```console

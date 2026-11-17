@@ -1,0 +1,6 @@
+$ vo run main.vo
+stderr: code 0
+stderr: oops
+
+--- stderr
+--- exit 0

@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 62 /* names up to here (50, 51 are internal and unnamed) */
+#define B_COUNT 64 /* names up to here (50, 51 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -35,7 +35,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "sort_by",  "map",         "filter",    "fold",    "any",          "all",          "todo",
     "assume",   0,             0,           "__float_text", "__http_exchange", "__text_float", "get_or",
     "__serve_listen", "__serve_next", "__serve_reply", "__serve_call", "__http_part", "__coll",
-    "concurrent_map",
+    "concurrent_map", "__fs", "__run",
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -46,7 +46,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [14] = "s>n",  [15] = "s>x",  [18] = "ss>i", [19] = "ss>S", [20] = "Ss>s",  [21] = "s>s",
     [22] = "s>S",  [29] = "b>v",  [36] = "s>s",  [37] = "s>s",  [38] = "s>i",   [39] = "i>s",
     [40] = "s>r",  [41] = "ii>i", [49] = "b>v",  [52] = "f>s",  [53] = "sis>r", [54] = "s>f",
-    [56] = "s>n",  [57] = "i>r",  [58] = "s>v",  [60] = "si>s",
+    [56] = "s>n",  [57] = "i>r",  [58] = "s>v",  [60] = "si>s",  [63] = "iss>r", [64] = "SsS>r",
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."
@@ -220,6 +220,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
 {
     call->d.i = id;
     fx_builtin(id);
+    if (id == B_FS) fx_builtin_fs(call); /* spec 017: the effect of __fs depends on its operation */
     fx_builtin_literal(call, id); /* spec 013 (L1) */
     if ((id >= B_SORT_BY && id <= B_ALL) || id == B_CMAP) return check_hof(call, id); /* sort_by, map, filter, fold, any, all, concurrent_map */
     if (id >= B_EXPECT && id <= B_EXPECT_EQ && !ck_in_test)          /* expect / expect_eq only in tests */

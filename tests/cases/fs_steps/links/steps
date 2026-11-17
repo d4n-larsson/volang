@@ -1,0 +1,8 @@
+write data/real.txt abc
+mkdir data/sub
+write secret.txt TOPSECRET
+symlink real.txt data/to_file
+symlink sub data/to_dir
+symlink ../secret.txt data/to_outside
+symlink missing.txt data/dangling
+vo run main.vo

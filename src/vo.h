@@ -329,12 +329,14 @@
 #define EF_INPUT (2)
 #define EF_FREAD (4)
 #define EF_FWRITE (8)
-#define EF_NET (16)
-#define EF_CLOCK (32)
-#define EF_RANDOM (64)
-#define EF_ENV (128)
-#define EF_SERVE (256) /* spec 011 */
-#define EF_ALL (511)
+#define EF_FDELETE (16) /* spec 017; bit order is the canonical order */
+#define EF_NET (32)
+#define EF_CLOCK (64)
+#define EF_RANDOM (128)
+#define EF_ENV (256)
+#define EF_SERVE (512) /* spec 011 */
+#define EF_PROCESS (1024) /* spec 017 */
+#define EF_ALL (2047)
 #define ES_MASK (0) /* u64 bits */
 #define ES_SCOPES (8) /* vec of scope pairs (ESC_*) sorted by (bit, bytes) | 0 */
 #define ES_EVARS (16) /* vec of effect-variable N_TPARAM nodes | 0 */
@@ -371,7 +373,9 @@
 #define B_TEXT_FLOAT (54) /* spec 007: __text_float (s) -> float, up to 17 significant digits (json) */
 #define B_COLL (61) /* spec 014: __coll(OP, a, b, c), std.collections only */
 #define B_CMAP (62) /* spec 016: concurrent_map(xs, limit, f) */
-#define B_LAST (62) /* the last builtin id with a btab entry */
+#define B_FS (63) /* spec 017: __fs(op, a, b) -> result[str], std.fs only (effects by op, in std/fs.vo) */
+#define B_RUN (64) /* spec 017: __run(argv, input, env) -> result[str], process; argv[0] is the program */
+#define B_LAST (64) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -658,6 +662,13 @@
 #define EVK_SERVE_LISTEN (9)   /* spec 011 */
 #define EVK_SERVE_REQUEST (10)
 #define EVK_SERVE_RESPONSE (11)
+#define EVK_INFO (12) /* spec 017: std.fs and std.process events */
+#define EVK_LIST_DIR (13)
+#define EVK_APPEND_FILE (14)
+#define EVK_MAKE_DIR (15)
+#define EVK_DELETE (16)
+#define EVK_RENAME (17)
+#define EVK_RUN (18)
 #define EVR_OK (0)
 #define EVR_ERR (1)
 #define EVR_DENIED (2)
@@ -1204,7 +1215,8 @@ extern const char errors_md[];
 extern const long errors_md_len;
 extern const StdFile std_files[];
 
-extern const unsigned short builtin_effects[64]; /* check_effects.c: effect bit per builtin id */
+extern Str *process_name(Str *s); /* effects.c, spec 017 */
+extern const unsigned short builtin_effects[B_LAST + 1]; /* check_effects.c: effect bit per builtin id */
 
 /* ---- the C side's own memory helpers (src/vo_c.c): GCC may emit calls to these ---- */
 void *memcpy(void *dst, const void *src, size_t n);
@@ -1475,6 +1487,18 @@ extern long serve_guard;
 extern long rt_root_frame;
 extern int rt_start_cwd_known(void);
 extern long rt_open_file(long bit, Str *path, long flags);
+extern long rt_open_parent(long bit, Str *path, Str **name, int strict); /* spec 017 */
+extern long fs_op_effects(long op);  /* check_effects.c, spec 017 */
+extern void fx_builtin_fs(Node *call);
+extern void rt_check_effect(long bit); /* rt_effects.c, spec 017: R0010 unless both grants have bit */
+extern int rt_bit_scoped(long bit);
+extern void io_pend(long kind, Str *name);                               /* replay.c, spec 017 */
+extern void io_record(long kind, Str *name, Str *to, List *argv, Variant *r);
+extern Variant *io_replay(long kind, Str *name, Str *to, List *argv);
+extern Str *rt_resolve_for(long bit, Str *path); /* spec 017 */                                      /* spec 017 */
+extern int rt_path_allowed(long bit, Str *path);                         /* spec 017 */
+extern Variant *io_fs(long op, Str *a, Str *b);                         /* fs.c, spec 017 */
+extern Variant *io_run(List *argv, Str *input, List *env);              /* process.c, spec 017 */
 extern long read_whole_fd(long fd, char **out);
 extern EffSet *rt_es_grant(EffSet *declared, EffSet *caller);
 extern Variant *rt_serve_listen(Str *address);

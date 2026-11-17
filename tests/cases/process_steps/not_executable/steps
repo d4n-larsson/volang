@@ -1,0 +1,3 @@
+helpers
+chmod 644 bin/args
+vo run main.vo

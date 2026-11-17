@@ -1,0 +1,10 @@
+$ vo test main.vo
+PASS fixtures and a helper (0ms)
+1 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test main.vo
+PASS fixtures and a helper (0ms)
+1 passed, 0 failed
+--- stderr
+--- exit 0

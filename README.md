@@ -31,7 +31,7 @@ fn main() -> result[void] uses console, file.write("out/") {
 }
 ```
 
-**At a glance:** statically and strongly typed, with effects in every function type; imperative at its core, with functions as values, closures, generics, records and variants with `match`; no classes, exceptions or `null`. Programs are checked, compiled once to typed bytecode and run on a virtual machine (no JIT), with a deterministic garbage collector. C-style braces and semicolons, one canonical format. A small standard library built into the binary, local packages pinned by content hash, and structured concurrency for waiting on several things at once (`concurrent_map`: tasks that share nothing, results and output in input order).
+**At a glance:** statically and strongly typed, with effects in every function type; imperative at its core, with functions as values, closures, generics, records and variants with `match`; no classes, exceptions or `null`. Programs are checked, compiled once to typed bytecode and run on a virtual machine (no JIT), with a deterministic garbage collector. C-style braces and semicolons, one canonical format. A small standard library built into the binary (with directories, file changes and running other programs under scoped effects), local packages pinned by content hash, and structured concurrency for waiting on several things at once (`concurrent_map`: tasks that share nothing, results and output in input order).
 
 **Documentation:** <https://d4n-larsson.github.io/volang/>: getting started, a language guide, a page per command, the reference, every error code and the standard library. Agents can read it as Markdown, starting from [`llms.txt`](https://d4n-larsson.github.io/volang/llms.txt).
 
@@ -108,7 +108,7 @@ make lint     # strict-warning C for all three architectures, SESI over riscv64.
 make gate     # lint, test, the UB-trap and collector stress suites, 2,000 programs against the
               # last assembly release, and the speed check
 make instrumented   # the suite under ASan and UBSan (x86-64)
-make security-check # the security review's races (1,000 runs each) and server attacks
+make security-check # the security review's races (1,000 runs each), the std.fs link-swap race, and server attacks
 make speed-check    # native speed against the assembly release under qemu (SC-003, SC-004)
 sh tests/perf.sh    # check + run of a 1,000-line program in under 1 s; large inputs
 make site           # the documentation site into build/site (a Python venv with pinned MkDocs; network the first time)
@@ -130,6 +130,6 @@ Known false positives and negatives of the assembly linter (SESI, for `src/platf
 
 ## Status
 
-vo 0.1.0, schema 1, built through specs 001-016 ([`docs/roadmap.md`](docs/roadmap.md) has the status of each): the core language and toolchain, checked effects, generics, a garbage collector, a bytecode VM, typed holes, property tests and contracts, query and structural editing, trace and replay, a standard library (`std.json`, `std.time`, `std.text`, `std.random`, plain-HTTP `std.http` with a server) with exact signatures from `vo doc`, content-pinned packages, native builds from C, file-private items with `export`, `@spec` annotations linking tests to requirements, the fixes from the first security review, built-in ordered maps, sets, priority queues and deques, a documentation site on GitHub Pages, and concurrency: `concurrent_map` and a server that reads many connections at once. Its security model is in [`docs/security.md`](docs/security.md). The benchmark v2 agent run is still to be completed.
+vo 0.1.0, schema 1, built through specs 001-017 ([`docs/roadmap.md`](docs/roadmap.md) has the status of each): the core language and toolchain, checked effects, generics, a garbage collector, a bytecode VM, typed holes, property tests and contracts, query and structural editing, trace and replay, a standard library (`std.json`, `std.time`, `std.text`, `std.random`, plain-HTTP `std.http` with a server) with exact signatures from `vo doc`, content-pinned packages, native builds from C, file-private items with `export`, `@spec` annotations linking tests to requirements, the fixes from the first security review, built-in ordered maps, sets, priority queues and deques, a documentation site on GitHub Pages, concurrency: `concurrent_map` and a server that reads many connections at once, and files and processes: `std.fs` (listing, append, directories, delete and rename under a separate `file.delete` effect) and `std.process` (running named programs with no shell under a scoped `process` effect). Its security model is in [`docs/security.md`](docs/security.md). The benchmark v2 agent run is still to be completed.
 
 Not yet: HTTPS and downloading packages.

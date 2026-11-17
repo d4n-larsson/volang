@@ -1,0 +1,49 @@
+# Spec 017 (US5): a run that looks at, lists, changes files and runs a program replays from its
+# recording without touching any file or starting any program.
+import std.fs.Info;
+import std.fs.append_file;
+import std.fs.delete;
+import std.fs.info;
+import std.fs.list_dir;
+import std.fs.make_dir;
+import std.fs.rename;
+import std.process.run;
+
+fn kind(i: Info) -> str {
+    match i {
+        case missing {
+            return "missing";
+        }
+        case file(n) {
+            return "file " + str(n);
+        }
+        case directory {
+            return "directory";
+        }
+        case other {
+            return "other";
+        }
+    }
+}
+
+fn main() -> result[void] uses console, file.read("work/"), file.write("work/"), file.delete("work/"), process("bin/args") {
+    print("a.txt: " + kind(try info("work/a.txt")));
+    try append_file("work/log.txt", "run\n");
+    try make_dir("work/sub");
+    try rename("work/a.txt", "work/sub/a.txt");
+    match delete("work/none") {
+        case ok() {
+            print("deleted");
+        }
+        case err(e) {
+            print("delete: " + e);
+        }
+    }
+    for e in try list_dir("work") {
+        print("  " + e.name + ": " + kind(e.info));
+    }
+    let out = try run("bin/args", ["x y", "z"]);
+    write(out.stdout);
+    print("code " + str(out.code));
+    return ok();
+}

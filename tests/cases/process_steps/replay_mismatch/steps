@@ -1,0 +1,4 @@
+helpers
+vo run --seed 1 --record r.jsonl main.vo -- bin
+cp other.vo main.vo
+vo replay r.jsonl

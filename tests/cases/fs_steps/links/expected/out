@@ -1,0 +1,18 @@
+$ vo run main.vo
+data:
+  dangling: other (link)
+  real.txt: file 3
+  sub: directory
+  to_dir: directory (link)
+  to_file: file 3 (link)
+  to_outside: other (link)
+data/to_file is file 3
+data/to_dir is directory
+--- stderr
+main.vo:62:11: runtime error[R0010]: file.read("data/to_outside") is not allowed: `main` declares console, file.read("data/").
+  62 |     match read_file(outside) {
+     |           ^^^^^^^^^^^^^^^^^^
+trace:
+  at main (main.vo:62:11)
+      outside: str = "data/to_outside"
+--- exit 70

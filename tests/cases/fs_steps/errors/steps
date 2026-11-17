@@ -1,0 +1,6 @@
+write data/a.txt a
+mkdir data/closed
+write data/closed/x.txt x
+chmod 000 data/closed
+vo run main.vo
+chmod 755 data/closed

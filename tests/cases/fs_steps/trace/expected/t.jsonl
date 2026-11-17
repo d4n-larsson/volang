@@ -1,0 +1,13 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"list_dir","file":"main.vo","start":{"line":6,"col":23},"args":[{"name":"path","value":"\"data\""}]}
+{"v":1,"kind":"call","depth":3,"function":"decode_info","file":"std/fs.vo","start":{"line":65,"col":82},"args":[{"name":"t","value":"\"f1\""}]}
+{"v":1,"kind":"return","depth":3,"function":"decode_info","value":"Info.file(1)"}
+{"v":1,"kind":"return","depth":2,"function":"list_dir","value":"ok([new Entry { name: \"a.txt\", info: Info.file(1), link: false }])"}
+{"v":1,"kind":"call","depth":2,"function":"run","file":"main.vo","start":{"line":7,"col":19},"args":[{"name":"program","value":"\"bin/args\""},{"name":"args","value":"[\"t\"]"}]}
+{"v":1,"kind":"call","depth":3,"function":"run_with","file":"std/process.vo","start":{"line":27,"col":12},"args":[{"name":"program","value":"\"bin/args\""},{"name":"args","value":"[\"t\"]"},{"name":"input","value":"\"\""},{"name":"env","value":"[]"}]}
+{"v":1,"kind":"call","depth":4,"function":"decode","file":"std/process.vo","start":{"line":37,"col":12},"args":[{"name":"text","value":"\"0\\n4\\n[t]\\n\""}]}
+{"v":1,"kind":"return","depth":4,"function":"decode","value":"ok(new Output { code: 0, stdout: \"[t]\\n\", stderr: \"\" })"}
+{"v":1,"kind":"return","depth":3,"function":"run_with","value":"ok(new Output { code: 0, stdout: \"[t]\\n\", stderr: \"\" })"}
+{"v":1,"kind":"return","depth":2,"function":"run","value":"ok(new Output { code: 0, stdout: \"[t]\\n\", stderr: \"\" })"}
+{"v":1,"kind":"return","depth":1,"function":"main","value":"ok()"}
+{"v":1,"kind":"end","records":12,"omitted":0,"status":0}

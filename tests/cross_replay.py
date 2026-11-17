@@ -3,7 +3,7 @@
 
   cross_replay.py [--record BUILD_A --replay BUILD_B]
 
-Runs every replay step case (tests/cases/replay, and spec 016's tests/cases/tasks_steps/record_replay) with its `vo run --record` steps on BUILD_A and its
+Runs every replay step case (tests/cases/replay, and spec 016's tests/cases/tasks_steps/record_replay, spec 017's tests/cases/fs_steps/record_replay) with its `vo run --record` steps on BUILD_A and its
 `vo replay` steps on BUILD_B, against the case's expected output. The default runs every ordered pair
 of build/vo, build-aarch64/vo and build-riscv64/vo that exist (bin/vo runs foreign ones under qemu).
 """
@@ -13,7 +13,8 @@ import subprocess
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CASES = [os.path.join(ROOT, "tests", "cases", "replay"), os.path.join(ROOT, "tests", "cases", "tasks_steps", "record_replay")]
+CASES = [os.path.join(ROOT, "tests", "cases", "replay"), os.path.join(ROOT, "tests", "cases", "tasks_steps", "record_replay"),
+         os.path.join(ROOT, "tests", "cases", "fs_steps", "record_replay")]  # spec 017: files and a run
 
 
 def arg(name):

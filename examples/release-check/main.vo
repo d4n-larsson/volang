@@ -1,0 +1,100 @@
+# release-check: is this checkout ready to release? Runs three git checks (no shell, only git may run),
+# prints a report and writes it to out/report.txt, replacing the previous one. Exit status 1 when a
+# check fails.
+import std.fs.append_file;
+import std.fs.delete;
+import std.fs.make_dir;
+import std.process.run;
+
+# One check: what it is, whether it passed, and what it found.
+record Check {
+    name: str;
+    passed: bool;
+    detail: str;
+}
+
+# The first line of a text, without its newline.
+fn first_line(s: str) -> str {
+    let i = find(s, "\n");
+    if i < 0 {
+        return s;
+    }
+    return slice(s, 0, i);
+}
+
+# The lines of the report: one per check, then the verdict.
+fn report(checks: list[Check]) -> list[str] {
+    let lines = new list[str];
+    var failed = 0;
+    for c in checks {
+        var mark = "PASS";
+        if not c.passed {
+            set mark = "FAIL";
+            set failed = failed + 1;
+        }
+        push(lines, mark + " " + c.name + ": " + c.detail);
+    }
+    if failed == 0 {
+        push(lines, "ready to release");
+    } else {
+        push(lines, "not ready: " + str(failed) + " of " + str(len(checks)) + " checks failed");
+    }
+    return lines;
+}
+
+# Runs git with args; passes when git exits 0 and, with want_empty, prints nothing.
+fn git(name: str, args: list[str], want_empty: bool) -> Check uses process("git") {
+    match run("git", args) {
+        case ok(out) {
+            let text = trim(out.stdout);
+            if out.code != 0 {
+                return new Check { name: name, passed: false, detail: "git exited " + str(out.code) + ": " + first_line(out.stderr) };
+            }
+            if want_empty and text != "" {
+                return new Check { name: name, passed: false, detail: first_line(text) };
+            }
+            if text == "" {
+                return new Check { name: name, passed: true, detail: "nothing found" };
+            }
+            return new Check { name: name, passed: true, detail: first_line(text) };
+        }
+        case err(e) {
+            return new Check { name: name, passed: false, detail: e };
+        }
+    }
+}
+
+fn main() -> result[void] uses console, file.write("out/"), file.delete("out/"), process("git") {
+    let checks = [git("committed", ["status", "--porcelain"], true), git("whitespace", ["diff", "--check", "HEAD"], true), git("last commit", ["log", "-1", "--format=%h %s"], false)];
+    match delete("out/report.txt") {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+    try make_dir("out");
+    let lines = report(checks);
+    for line in lines {
+        print(line);
+        try append_file("out/report.txt", line + "\n");
+    }
+    if lines[len(lines) - 1] != "ready to release" {
+        exit(1);
+    }
+    return ok();
+}
+
+test "a clean checkout is ready" {
+    let lines = report([new Check { name: "committed", passed: true, detail: "nothing found" }]);
+    expect_eq(lines, ["PASS committed: nothing found", "ready to release"]);
+}
+
+test "a failed check says how many" {
+    let lines = report([new Check { name: "a", passed: false, detail: "x" }, new Check { name: "b", passed: true, detail: "y" }]);
+    expect_eq(lines[2], "not ready: 1 of 2 checks failed");
+}
+
+test "the first line" {
+    expect_eq(first_line("one\ntwo"), "one");
+    expect_eq(first_line("only"), "only");
+}

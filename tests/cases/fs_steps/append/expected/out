@@ -1,0 +1,10 @@
+$ vo run main.vo
+append log: ok
+append log: ok
+append new: ok
+append to a directory: err is a directory
+log.txt (13)
+new.txt (6)
+sub/
+--- stderr
+--- exit 0

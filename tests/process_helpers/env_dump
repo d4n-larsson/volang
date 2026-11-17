@@ -1,0 +1,3 @@
+#!/bin/sh
+# Prints its environment, sorted (without the variables sh sets itself).
+env | grep -v "^PWD=\|^SHLVL=\|^_=\|^OLDPWD=" | sort

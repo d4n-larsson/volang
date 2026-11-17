@@ -148,12 +148,20 @@ def run(src):
         return p.returncode, p.stdout, p.stderr
 
 
+# spec 017: `process` needs scopes (E0512): the programs the probes ("a") and the examples run
+PROCESS_SCOPE = 'process("a", "no-such-program.vo-doc")'
+
+
+def scoped(effect):
+    return PROCESS_SCOPE if effect == "process" else effect
+
+
 def program(imports, effects, call, void, test_only, ret=None):
     text = call + " " + (ret or "")
     imports = list(imports) + [q for n, q in TYPE_PATHS.items()
                                if q not in imports and re.search(rf"\b{n}\b", text)]
     head = "".join(f"import {i};\n" for i in imports)
-    uses = f" uses {', '.join(effects)}" if effects else ""
+    uses = f" uses {', '.join(map(scoped, effects))}" if effects else ""
     stmt = f"{call};" if void else f"let r{': ' + ret if ret else ''} = {call};"
     if test_only:
         return f'{head}\ntest "probe"{uses} {{\n    {stmt}\n}}\n'
@@ -245,10 +253,10 @@ def main():
             else:
                 show, want = f"str({expr})", value
             eff = sorted(set(["console"] + [e for e in r.get("effects", []) if not re.fullmatch(r"[A-Z]", e)]),
-                         key=["console", "input", "file.read", "file.write", "net", "clock", "random", "env",
-                              "serve"].index)  # effect parameters (E) are not effects to declare
+                         key=["console", "input", "file.read", "file.write", "file.delete", "net", "clock", "random",
+                              "env", "serve", "process"].index)  # effect parameters (E) are not effects to declare
             src = "".join(f"import {i};\n" for i in every) + \
-                f"\nfn main() uses {', '.join(eff)} {{\n    {setup}print({show});\n}}\n"
+                f"\nfn main() uses {', '.join(map(scoped, eff))} {{\n    {setup}print({show});\n}}\n"
             code, out, err = run(src)
             if code != 0 or out != want + "\n":
                 failures.append(f"{label}: example `{ex}` printed {out!r} (exit {code})\n{err}")

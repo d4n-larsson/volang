@@ -1,0 +1,3 @@
+# Spec 017: `vo effects` shows program scopes normalized (no leading ./) and sorted.
+fn main() uses process("./tools/gen", "git", "/usr/bin/make") {
+}

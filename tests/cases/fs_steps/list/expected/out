@@ -1,0 +1,28 @@
+$ vo run main.vo
+data:
+  B.txt: file 0
+  a.txt: file 2
+  b.txt: file 1
+  old: directory
+data/:
+  B.txt: file 0
+  a.txt: file 2
+  b.txt: file 1
+  old: directory
+data/old:
+--- stderr
+--- exit 0
+$ vo run main.vo
+data:
+  B.txt: file 0
+  a.txt: file 2
+  b.txt: file 1
+  old: directory
+data/:
+  B.txt: file 0
+  a.txt: file 2
+  b.txt: file 1
+  old: directory
+data/old:
+--- stderr
+--- exit 0

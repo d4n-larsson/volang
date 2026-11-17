@@ -1,0 +1,8 @@
+# Spec 017: listing a directory needs file.read (E0501, with the fix).
+import std.fs.list_dir;
+
+fn main() -> result[void] uses console {
+    let entries = try list_dir("data");
+    print(str(len(entries)));
+    return ok();
+}

@@ -1,0 +1,8 @@
+#!/bin/sh
+# Lists its open file descriptors from 3 to 64, except 10 (where dash reads this script); tests with -e,
+# which opens nothing itself.
+n=3
+while [ $n -le 64 ]; do
+    if [ $n -ne 10 ] && [ -e /proc/$$/fd/$n ]; then echo "$n"; fi
+    n=$((n + 1))
+done

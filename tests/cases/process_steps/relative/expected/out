@@ -1,0 +1,7 @@
+$ vo run main.vo
+bin/args: code 0
+[1]
+./bin/args: code 0
+[2]
+--- stderr
+--- exit 0

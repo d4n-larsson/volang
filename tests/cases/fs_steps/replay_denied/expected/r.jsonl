@@ -1,0 +1,3 @@
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"b7d66e03aa486af0","seed":1,"clock_ms":null,"args":[]}
+{"v":1,"kind":"delete","path":"work/../keep.txt","result":"denied"}
+{"v":1,"kind":"end","status":70}

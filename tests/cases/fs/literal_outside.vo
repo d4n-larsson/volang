@@ -1,0 +1,23 @@
+# Spec 017: a literal path outside the file.read scope is E0503 at check time, for each std.fs reader.
+import std.fs.info;
+import std.fs.list_dir;
+import std.fs.walk;
+
+fn main() -> result[void] uses console, file.read("data/") {
+    let a = try list_dir("secrets");
+    let b = try info("secrets/key");
+    let c = try walk("data/sub");
+    print(str(len(a)) + str(len(c)));
+    match b {
+        case missing {
+            print("missing");
+        }
+        case file(_) {
+        }
+        case directory {
+        }
+        case other {
+        }
+    }
+    return ok();
+}

@@ -1,0 +1,66 @@
+# Spec 017 (US1): what is at a path: a file with its size, a directory, missing, or something else.
+import std.fs.Entry;
+import std.fs.Info;
+import std.fs.info;
+import std.fs.list_dir;
+
+fn kind(i: Info) -> str {
+    match i {
+        case missing {
+            return "missing";
+        }
+        case file(size) {
+            return "file " + str(size);
+        }
+        case directory {
+            return "directory";
+        }
+        case other {
+            return "other";
+        }
+    }
+}
+
+fn show(e: Entry) uses console {
+    var link = "";
+    if e.link {
+        set link = " (link)";
+    }
+    print("  " + e.name + ": " + kind(e.info) + link);
+}
+
+fn listing(path: str) uses console, file.read("data/") {
+    match list_dir(path) {
+        case ok(entries) {
+            print(path + ":");
+            for e in entries {
+                show(e);
+            }
+        }
+        case err(e) {
+            print(path + ": err " + e);
+        }
+    }
+}
+
+fn look(path: str) uses console, file.read("data/") {
+    match info(path) {
+        case ok(i) {
+            print(path + " is " + kind(i));
+        }
+        case err(e) {
+            print(path + ": err " + e);
+        }
+    }
+}
+
+fn main() uses console, file.read("data/") {
+    look("data/a.txt");
+    look("data/empty.txt");
+    look("data/sub");
+    look("data/none");
+    look("data/none/deeper");
+    look("data/a.txt/inside");
+    look("data/fifo");
+    look("data");
+}

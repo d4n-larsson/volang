@@ -1,0 +1,17 @@
+$ vo effects --update main.vo
++ main.vo:log: file.write("logs/")
++ main.vo:main: file.write("logs/")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:5:4: error[E0504]: `log` gains file.delete("logs/"); approve with `vo effects --update`.
+   5 | fn log(line: str) -> result[void] uses file.write("logs/"), file.delete("logs/") {
+     |    ^^^
+main.vo:16:4: error[E0504]: `main` gains file.delete("logs/"); approve with `vo effects --update`.
+  16 | fn main() -> result[void] uses file.write("logs/"), file.delete("logs/") {
+     |    ^^^^
+  note: main.vo:17:9: `main` calls `log`, which uses file.write("logs/"), file.delete("logs/").
+2 errors, 0 warnings
+--- stderr
+--- exit 65

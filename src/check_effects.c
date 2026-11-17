@@ -22,11 +22,12 @@ typedef struct Edge {
 CHECK_SIZE(Edge, 24);
 
 /* Effect bit per builtin id (check_expr.c builtin_names); 0 = pure. */
-const unsigned short builtin_effects[64] = {
+const unsigned short builtin_effects[B_LAST + 1] = {
     [1] = EF_CONSOLE, [2] = EF_CONSOLE, [3] = EF_CONSOLE, [4] = EF_INPUT, [5] = EF_INPUT,
     [6] = EF_FREAD,   [7] = EF_FWRITE,  [10] = EF_CLOCK,  [40] = EF_ENV,  [41] = EF_RANDOM,
     [53] = EF_NET, /* __http_exchange */
     [56] = EF_SERVE, [57] = EF_SERVE, [58] = EF_SERVE, /* spec 011: __serve_listen, __serve_next, __serve_reply */
+    [B_RUN] = EF_PROCESS, /* spec 017; __fs's effect depends on the operation: checked in src/fs.c */
 };
 
 #define M_MISSING "`$1` does not declare $2, which it needs."
@@ -80,6 +81,11 @@ EffSet *fx_build_set(Node *uses, Fx *fx)
         }
         Vec *scopes = eff->b.v;
         if (!scopes) {
+            if (bit == EF_PROCESS && !file_get((int)eff->file)->std) { /* spec 017: every program is too much */
+                if (fx) fx->bad = 1;
+                ck_err("E0512", eff, str_from_cstr("`process` needs the programs it may run: write `process(\"NAME\")`."));
+                continue;
+            }
             set->mask |= (unsigned long)bit;
             continue;
         }
@@ -89,6 +95,8 @@ EffSet *fx_build_set(Node *uses, Fx *fx)
             if (fx) fx->bad = 1;
             if (bit == EF_SERVE)
                 ck_err1("E0506", sc, "\"$1\" is not a valid serve address: write \"PORT\" or \"0.0.0.0:PORT\".", sc->a.s);
+            else if (bit == EF_PROCESS)
+                ck_err1("E0506", sc, "\"$1\" is not a valid program: write a name, or a path without `..`.", sc->a.s);
             else
                 ck_err1("E0506", sc,
                         "\"$1\" is not a valid scope: write a relative directory without `..`, or a non-empty name.",
@@ -103,7 +111,7 @@ void fx_unknown_effect(Node *eff)
 {
     Str *name = eff->d.s;
     Diag *d = ck_err1(
-        "E0509", eff, "`$1` is not an effect: use console, input, file.read, file.write, net, clock, random, env or serve.",
+        "E0509", eff, "`$1` is not an effect: use console, input, file.read, file.write, file.delete, net, clock, random, env, serve or process.",
         name);
     char *best = 0;
     unsigned long dist = 3;
@@ -151,12 +159,27 @@ void fx_builtin(long id)
     ck_fx->direct->any |= builtin_effects[id];
 }
 
+/* Spec 017: the effect bits of __fs operation op (1-6), or 0. */
+long fs_op_effects(long op)
+{
+    static const unsigned short bits[] = {0, EF_FREAD, EF_FREAD, EF_FWRITE, EF_FWRITE, EF_FDELETE, EF_FWRITE | EF_FDELETE};
+    return op >= 1 && op <= 6 ? bits[op] : 0;
+}
+
+/* Spec 017: __fs(OP, ...) in std/fs.vo needs the effect of its literal operation, in some scope. */
+void fx_builtin_fs(Node *call)
+{
+    if (!ck_fx || !ck_fx->direct || call->b.v->n < 1) return;
+    Node *op = vec_get(call->b.v, 0);
+    if (op->kind == N_INT) ck_fx->direct->any |= (unsigned long)fs_op_effects(op->a.i);
+}
+
 /* Spec 013 (L1): a string literal as the target (path, name, address) of an effect: checked against
  * the caller's scopes when the file's effects are reported. */
-static void fx_literal(Node *call, long bit)
+static void fx_literal_at(Node *call, long index, long bit)
 {
-    if (!ck_fx || !ck_fx->declared || call->b.v->n < 1) return;
-    Node *arg = vec_get(call->b.v, 0);
+    if (!ck_fx || !ck_fx->declared || call->b.v->n <= index) return;
+    Node *arg = vec_get(call->b.v, index);
     if (arg->kind != N_STR) return;
     if (!ck_lits) ck_lits = vec_new();
     Edge *e = alloc(sizeof(Edge));
@@ -164,6 +187,31 @@ static void fx_literal(Node *call, long bit)
     e->callee = arg;
     e->call = (Node *)bit;
     vec_push(ck_lits, e);
+}
+
+static void fx_literal(Node *call, long bit)
+{
+    fx_literal_at(call, 0, bit);
+}
+
+/* Spec 017: the library functions whose arguments are effect targets: (module file, name, index, bit). */
+static const struct {
+    const char *file, *name;
+    long index, bit;
+} std_targets[] = {
+    {"std/fs.vo", "info", 0, EF_FREAD},          {"std/fs.vo", "list_dir", 0, EF_FREAD},
+    {"std/fs.vo", "walk", 0, EF_FREAD},          {"std/fs.vo", "append_file", 0, EF_FWRITE},
+    {"std/fs.vo", "make_dir", 0, EF_FWRITE},     {"std/fs.vo", "delete", 0, EF_FDELETE},
+    {"std/fs.vo", "rename", 0, EF_FDELETE},      {"std/fs.vo", "rename", 1, EF_FWRITE},
+    {"std/process.vo", "run", 0, EF_PROCESS},    {"std/process.vo", "run_with", 0, EF_PROCESS},
+};
+
+static void fx_std_literals(Node *call, Node *decl)
+{
+    Str *path = file_get((int)decl->file)->path;
+    for (unsigned long i = 0; i < sizeof std_targets / sizeof std_targets[0]; i++)
+        if (str_eq_cstr(path, (char *)std_targets[i].file) && str_eq_cstr(decl->a.n->a.s, (char *)std_targets[i].name))
+            fx_literal_at(call, std_targets[i].index, std_targets[i].bit);
 }
 
 /* The literal targets of builtins: read_file, write_file, env. */
@@ -182,10 +230,10 @@ static void fx_report_literals(Vec *items)
         EffSet *d = fx->declared;
         if (fx->bad || !(d->mask & (unsigned long)bit) || !es_scoped(d, bit)) continue; /* E0501, or any scope */
         Str *lit = e->callee->a.s;
-        if (bit & (EF_FREAD | EF_FWRITE)) {
+        if (bit & (EF_FREAD | EF_FWRITE | EF_FDELETE)) {
             /* resolved as the run-time check does (links followed, from the working directory), so a
                path the run would allow is never refused here */
-            Str *real = rt_resolve(lit);
+            Str *real = rt_resolve_for(bit, lit);
             int inside = !real;
             for (long k = 0; !inside && k < d->scopes->n; k++) {
                 EffScope *sc = vec_get(d->scopes, k);
@@ -193,6 +241,9 @@ static void fx_report_literals(Vec *items)
                 inside = dir && path_under(real, dir);
             }
             if (inside) continue;
+        } else if (bit == EF_PROCESS) { /* spec 017: programs, exactly after process_name */
+            Str *norm = process_name(lit);
+            if (norm && es_has_pair(d, bit, norm)) continue;
         } else if (es_has_pair(d, bit, lit)) { /* env names, serve addresses: exact */
             continue;
         }
@@ -217,6 +268,7 @@ void fx_call(Node *call, Node *decl)
     if (file_get((int)decl->file)->std) { /* spec 007: a standard-library callee counts like a builtin */
         if (!callee || !callee->declared || !ck_fx->direct) return;
         if (str_eq_cstr(decl->a.n->a.s, "serve")) fx_literal(call, EF_SERVE); /* std.http.serve's address */
+        fx_std_literals(call, decl);                                             /* spec 017 */
         ck_fx->direct->any |= callee->declared->mask; /* its effects, needed in any scope */
         return;
     }

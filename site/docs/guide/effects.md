@@ -60,13 +60,15 @@ order: console, input, file.read, file.write, net, clock, random, env, serve.
 |---|---|---|
 | `console` | `print`, `write`, `eprint` (standard output and error) | |
 | `input` | `read_line`, `read_all` (standard input) | |
-| `file.read` | `read_file` | directories |
-| `file.write` | `write_file` | directories |
+| `file.read` | `read_file`; `std.fs.info`, `list_dir`, `walk` | directories |
+| `file.write` | `write_file`; `std.fs.append_file`, `make_dir` | directories |
+| `file.delete` | `std.fs.delete`, `rename` (see [Files and processes](files-and-processes.md)) | directories |
 | `net` | `std.http.get`, `std.http.post` | hosts |
 | `clock` | `now_ms` (and `std.time.now`) | |
 | `random` | `random_int` (and `std.random`) | |
 | `env` | `env` (environment variables) | variable names |
 | `serve` | `std.http.serve` (answering HTTP requests) | addresses |
+| `process` | `std.process.run`, `run_with` (running other programs) | programs |
 
 Everything else is pure: arithmetic, strings, lists and maps, the collections, `std.json`,
 `std.text`. Program arguments (`args()`) and `exit` need no effect.
@@ -78,10 +80,11 @@ An effect without a scope is not narrowed: `file.read` may read any file the pro
 
 | Effect | Scope | Example |
 |---|---|---|
-| `file.read`, `file.write` | directories, relative to where the program starts | `file.write("out/")`; `"./"` is that directory itself |
+| `file.read`, `file.write`, `file.delete` | directories, relative to where the program starts | `file.write("out/")`; `"./"` is that directory itself |
 | `env` | variable names | `env("HOME", "LANG")` |
 | `net` | host names | `net("api.example.com")` |
 | `serve` | addresses | `serve("8000")` (this machine only), `serve("0.0.0.0:8000")` (the network) |
+| `process` | programs, required | `process("git")` (through `PATH`), `process("tools/gen")` (that file) |
 
 A directory scope covers the directories under it: `file.read("data/")` covers a callee that declares
 `file.read("data/2026/")`. A caller's scopes must cover its callees' scopes, so the scope in `main`'s

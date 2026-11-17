@@ -1,0 +1,3 @@
+write data/a.txt a
+vo run main.vo
+vo run abs.vo

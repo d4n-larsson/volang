@@ -305,6 +305,12 @@ A server can be recorded and replayed like any program (see [Determinism](determ
 [std.http](../std/http.md); the [notes-api](../examples/notes-api.md) and
 [status-board](../examples/status-board.md) examples are complete servers.
 
+## std.fs and std.process
+
+`std.fs` lists directories and looks at paths (`file.read`), appends and creates directories
+(`file.write`), and deletes and renames (`file.delete`); `std.process` runs other programs to their end
+with no shell (`process`). Both have their own page: [Files and processes](files-and-processes.md).
+
 ## std.collections
 
 The builtin collections `ordered_map`, `ordered_set`, `priority_queue` and `deque` support `len`, `has`,
@@ -360,8 +366,8 @@ The neighbor functions return a `result` because there may be no such key. Detai
 
 ## What is not in the library
 
-There is no file-system module beyond the builtins `read_file` and `write_file`, no regular
-expressions, no HTTPS, no process or thread control, and no way to call code in another language. A
-program that needs such a thing gets it from outside, for example by reading what another tool wrote
-to a file, or by talking HTTP to a local service. Shared vo code that is not in the library comes in as a
+There are no regular expressions, no HTTPS, no threads, no long-running or interactive child
+processes, no file permissions, links or modification times, and no way to call code in another
+language. A program that needs such a thing gets it from outside, for example by running a tool with
+`std.process`, or by talking HTTP to a local service. Shared vo code that is not in the library comes in as a
 [package](modules-and-packages.md#packages).

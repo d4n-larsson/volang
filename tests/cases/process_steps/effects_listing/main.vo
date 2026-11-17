@@ -1,0 +1,15 @@
+# Spec 017 (US4): `vo effects` lists the programs main may run.
+import std.process.run;
+
+fn release() -> result[void] uses console, process("git", "make") {
+    let out = try run("git", ["status", "--porcelain"]);
+    print(out.stdout);
+    let built = try run("make", ["dist"]);
+    print(built.stdout);
+    return ok();
+}
+
+fn main() -> result[void] uses console, process("git", "make") {
+    try release();
+    return ok();
+}

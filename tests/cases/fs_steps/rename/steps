@@ -1,0 +1,5 @@
+write work/inbox/a.txt a
+write work/inbox/b.txt new b
+write work/done/b.txt old b
+vo run main.vo
+keep work/done/b.txt work/old_inbox/b.txt

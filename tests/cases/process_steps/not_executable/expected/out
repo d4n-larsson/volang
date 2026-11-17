@@ -1,0 +1,4 @@
+$ vo run main.vo
+not executable: err permission denied
+--- stderr
+--- exit 0

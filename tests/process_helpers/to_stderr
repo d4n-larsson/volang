@@ -1,0 +1,3 @@
+#!/bin/sh
+# Writes its first argument to stderr.
+printf "%s\n" "$1" >&2

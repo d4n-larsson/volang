@@ -1,0 +1,4 @@
+# Spec 017: `uses process` must name the programs it may run (E0512).
+fn main() uses console, process {
+    print("hi");
+}

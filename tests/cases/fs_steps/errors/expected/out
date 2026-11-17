@@ -1,0 +1,6 @@
+$ vo run main.vo
+data/a.txt: err not a directory
+data/none: err not found
+data/closed: err permission denied
+--- stderr
+--- exit 0

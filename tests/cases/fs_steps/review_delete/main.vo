@@ -1,0 +1,12 @@
+# Spec 017 (US4): a function that only wrote and now deletes fails the check: it gains file.delete.
+import std.fs.append_file;
+
+fn log(line: str) -> result[void] uses file.write("logs/") {
+    try append_file("logs/run.txt", line + "\n");
+    return ok();
+}
+
+fn main() -> result[void] uses file.write("logs/") {
+    try log("started");
+    return ok();
+}

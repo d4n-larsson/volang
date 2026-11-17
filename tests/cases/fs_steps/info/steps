@@ -1,0 +1,5 @@
+write data/a.txt hello
+write data/empty.txt
+mkdir data/sub
+mkfifo data/fifo
+vo run main.vo

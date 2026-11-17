@@ -1,0 +1,23 @@
+# Spec 017 (US3): --timeout stops the program and everything it started (R0009).
+import std.process.Output;
+import std.process.run;
+import std.process.run_with;
+
+fn show(what: str, r: result[Output]) uses console {
+    match r {
+        case ok(out) {
+            print(what + ": code " + str(out.code));
+            write(out.stdout);
+            if out.stderr != "" {
+                print("stderr: " + out.stderr);
+            }
+        }
+        case err(e) {
+            print(what + ": err " + e);
+        }
+    }
+}
+
+fn main() uses console, process("bin/sleep_for") {
+    show("sleep", run("bin/sleep_for", ["30"]));
+}

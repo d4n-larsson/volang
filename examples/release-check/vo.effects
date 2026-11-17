@@ -1,0 +1,8 @@
+# vo effects record: update with `vo effects --update`
+main.vo:first_line pure
+main.vo:git uses process("git")
+main.vo:main uses console, file.write("out/"), file.delete("out/"), process("git")
+main.vo:report pure
+main.vo:test "a clean checkout is ready" pure
+main.vo:test "a failed check says how many" pure
+main.vo:test "the first line" pure

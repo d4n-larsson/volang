@@ -1,0 +1,41 @@
+# Spec 017 (US2): every change outside the scope stops with R0010 and changes nothing.
+import std.fs.append_file;
+import std.fs.delete;
+import std.fs.make_dir;
+import std.fs.rename;
+
+fn said(what: str, r: result[void]) uses console {
+    match r {
+        case ok() {
+            print(what + ": ok");
+        }
+        case err(e) {
+            print(what + ": err " + e);
+        }
+    }
+}
+
+fn try_it(what: str) uses console, file.write("work/"), file.delete("work/") {
+    let up = "work/../";
+    if what == "append" {
+        said(what, append_file(up + "keep.txt", "x"));
+    }
+    if what == "make_dir" {
+        said(what, make_dir(up + "made"));
+    }
+    if what == "delete" {
+        said(what, delete(up + "keep.txt"));
+    }
+    if what == "rename_from" {
+        said(what, rename(up + "keep.txt", "work/stolen.txt"));
+    }
+    if what == "rename_to" {
+        said(what, rename("work/a.txt", up + "escaped.txt"));
+    }
+}
+
+fn main() uses console, file.write("work/"), file.delete("work/") {
+    for a in args() {
+        try_it(a);
+    }
+}

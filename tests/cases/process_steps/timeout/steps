@@ -1,0 +1,3 @@
+helpers
+vo run --timeout 1 main.vo
+no-children

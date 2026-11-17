@@ -1,0 +1,8 @@
+$ vo effects main.vo
+main uses console, process("git", "make")
+
+main.vo:main uses console, process("git", "make")
+main.vo:release uses console, process("git", "make")
+0 errors, 0 warnings
+--- stderr
+--- exit 0

@@ -1,0 +1,7 @@
+$ vo run main.vo
+with input: code 0
+line one
+line two
+without: code 0
+--- stderr
+--- exit 0

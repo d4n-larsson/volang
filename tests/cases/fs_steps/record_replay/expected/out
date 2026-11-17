@@ -1,0 +1,20 @@
+$ vo run --seed 1 --record r.jsonl main.vo
+a.txt: file 5
+delete: not found
+  log.txt: file 4
+  sub: directory
+[x y]
+[z]
+code 0
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+a.txt: file 5
+delete: not found
+  log.txt: file 4
+  sub: directory
+[x y]
+[z]
+code 0
+--- stderr
+--- exit 0

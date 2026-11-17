@@ -1,0 +1,7 @@
+write work/a.txt a
+mkdir work/empty
+write work/full/x.txt x
+write target.txt still here
+symlink ../target.txt work/link
+vo run main.vo
+keep target.txt

@@ -1,0 +1,9 @@
+# Spec 017: a program must match a scope exactly: process("true") does not allow /bin/true (R0010).
+import std.process.run;
+
+fn main() -> result[void] uses console, process("true") {
+    let program = "/bin/true";
+    let out = try run(program, new list[str]);
+    print(str(out.code));
+    return ok();
+}

@@ -1,0 +1,3 @@
+vo effects main.vo
+vo effects --update main.vo
+keep vo.effects

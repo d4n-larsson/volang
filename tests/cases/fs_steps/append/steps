@@ -1,0 +1,4 @@
+write work/log.txt zero\n
+mkdir work/sub
+vo run main.vo
+keep work/log.txt work/new.txt

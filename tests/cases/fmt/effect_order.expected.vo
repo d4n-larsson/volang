@@ -1,0 +1,2 @@
+fn main() uses console, file.write("t/"), file.delete("t/"), net("x"), process("a", "b") {
+}

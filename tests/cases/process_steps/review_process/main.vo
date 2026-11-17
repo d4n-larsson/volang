@@ -1,0 +1,13 @@
+# Spec 017 (US4): a function that starts running another program fails the check against vo.effects.
+import std.process.run;
+
+fn release() -> result[void] uses console, process("git") {
+    let out = try run("git", ["status", "--porcelain"]);
+    print(out.stdout);
+    return ok();
+}
+
+fn main() -> result[void] uses console, process("git") {
+    try release();
+    return ok();
+}

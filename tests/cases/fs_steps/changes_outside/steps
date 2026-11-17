@@ -1,0 +1,8 @@
+write keep.txt keep
+write work/a.txt a
+vo run main.vo -- append
+vo run main.vo -- make_dir
+vo run main.vo -- delete
+vo run main.vo -- rename_from
+vo run main.vo -- rename_to
+keep keep.txt work/a.txt

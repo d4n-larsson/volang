@@ -10,6 +10,8 @@ each line of `steps` runs there, in order:
   unset NAME ... vo ARGS...     the same, without those variables
   rm PATH | cp A B | write PATH TEXT (TEXT with \\n and \\xNN escapes, {bytes:N}) | chmod MODE PATH
   symlink TARGET LINK | mkdir PATH | mkfifo PATH (spec 013)
+  helpers                       (spec 017) copies tests/process_helpers/* into ./bin/
+  touch PATH                    (spec 017) an empty file; \\xNN in PATH is that byte (names that are not UTF-8)
   keep PATH...                  files the case produces or changes, compared with expected/PATH
   server http                   starts tests/http_server.py on a free port (spec 007): later lines may
                                 use {port}, and the port number reads `{port}` in outputs and kept files
@@ -269,6 +271,16 @@ def run_case(case):
                 continue
             if words[0] == "mkdir":
                 os.makedirs(os.path.join(work, words[1]), exist_ok=True)
+                continue
+            if words[0] == "helpers":  # spec 017: the helper programs of tests/process_helpers/ in ./bin/
+                os.makedirs(os.path.join(work, "bin"), exist_ok=True)
+                hdir = os.path.join(ROOT, "tests", "process_helpers")
+                for h in os.listdir(hdir):
+                    shutil.copy(os.path.join(hdir, h), os.path.join(work, "bin", h))
+                continue
+            if words[0] == "touch":  # spec 017: an empty file whose name may hold any byte (\\xNN)
+                name = re.sub(rb"\\x([0-9a-f]{2})", lambda m: bytes([int(m.group(1), 16)]), line.split()[1].encode())
+                open(os.path.join(os.fsencode(work), name), "wb").close()
                 continue
             if words[0] == "mkfifo":
                 os.mkfifo(os.path.join(work, words[1]))

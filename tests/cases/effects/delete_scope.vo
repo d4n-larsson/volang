@@ -1,0 +1,9 @@
+# Spec 017: file.delete takes directory scopes like file.write; absolute, `..` and empty ones are E0506.
+fn clean() uses file.delete("tmp/", "./out") {
+}
+
+fn bad() uses file.delete("/abs/", "../x", "") {
+}
+
+fn main() {
+}

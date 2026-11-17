@@ -10,8 +10,8 @@
  * "./". */
 #include "vo.h"
 
-static const char *const es_names[] = {"console", "input", "file.read", "file.write",
-                                       "net",     "clock", "random",    "env",        "serve", 0};
+static const char *const es_names[] = {"console", "input",  "file.read", "file.write", "file.delete", "net",
+                                       "clock",   "random", "env",       "serve",      "process",     0};
 
 EffSet *es_new(long mask)
 {
@@ -107,6 +107,31 @@ long serve_address_port(Str *s, long *all)
     return port <= 65535 ? port : 0;
 }
 
+/* Spec 017: a program as a `process` scope or a program a run names: a bare name, or a relative or
+ * absolute path without a ".." component, a trailing "/" or a NUL byte; 0 otherwise. A leading "./"
+ * is dropped while a "/" remains ("./bin/x" is "bin/x"; "./x", a file here, stays apart from "x",
+ * which is looked up through PATH). */
+Str *process_name(Str *s)
+{
+    long i = 0;
+    for (;;) {
+        if (s->len - i < 2 || s->data[i] != '.' || s->data[i + 1] != '/') break;
+        int slash = 0;
+        for (long k = i + 2; k < s->len; k++) slash |= s->data[k] == '/';
+        if (!slash) break;
+        i += 2;
+    }
+    long n = s->len - i;
+    char *p = s->data + i;
+    if (n == 0 || p[n - 1] == '/') return 0;
+    for (long k = 0; k < n; k++) {
+        if (!p[k]) return 0;
+        int start = k == 0 || p[k - 1] == '/';
+        if (start && n - k >= 2 && p[k] == '.' && p[k + 1] == '.' && (n - k == 2 || p[k + 2] == '/')) return 0;
+    }
+    return i ? str_new(p, n) : s;
+}
+
 /* Normalizes the scope (directories for file effects) and adds it. 0 when the scope is invalid:
  * empty, absolute, or with a ".." component (E0506). */
 int es_add_scope(EffSet *set, long bit, Str *str)
@@ -116,7 +141,14 @@ int es_add_scope(EffSet *set, long bit, Str *str)
     if (bit == EF_SERVE && !serve_address_port(str, 0)) return 0; /* spec 011: "PORT" or "0.0.0.0:PORT" */
     GC_ROOT(&set);
     GC_ROOT(&str);
-    if (bit & (EF_FREAD | EF_FWRITE)) { /* env, net: kept verbatim */
+    if (bit == EF_PROCESS) { /* spec 017: kept verbatim after process_name */
+        str = process_name(str);
+        if (!str) {
+            GC_UNROOT(2);
+            return 0;
+        }
+    }
+    if (bit & (EF_FREAD | EF_FWRITE | EF_FDELETE)) { /* env, net: kept verbatim */
         if (str->data[0] == '/') { /* absolute */
             GC_UNROOT(2);
             return 0;
@@ -169,7 +201,7 @@ int es_pair_covered(EffSet *set, long bit, Str *str)
     for (long i = 0; i < v->n; i++) {
         EffScope *p = vec_get(v, i);
         if (p->bit != bit) continue;
-        if (bit & (EF_FREAD | EF_FWRITE)) { /* prefix test */
+        if (bit & (EF_FREAD | EF_FWRITE | EF_FDELETE)) { /* prefix test */
             if ((unsigned long)str->len < (unsigned long)p->str->len) continue;
             if (mem_eq(p->str->data, str->data, p->str->len)) return 1;
         } else if (str_eq(p->str, str)) {

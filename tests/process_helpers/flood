@@ -1,0 +1,3 @@
+#!/bin/sh
+# Writes 17 MiB to stdout.
+head -c 17825792 /dev/zero | tr "\000" a

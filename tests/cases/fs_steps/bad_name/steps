@@ -1,0 +1,4 @@
+write data/good.txt g
+touch data/bad\xff.txt
+touch data/caf\xc3\xa9.txt
+vo run main.vo

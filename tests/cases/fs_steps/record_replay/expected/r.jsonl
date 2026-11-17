@@ -1,0 +1,9 @@
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"b508b1706877d2c4","seed":1,"clock_ms":null,"args":[]}
+{"v":1,"kind":"info","path":"work/a.txt","result":"ok","value":"f5"}
+{"v":1,"kind":"append_file","path":"work/log.txt","result":"ok"}
+{"v":1,"kind":"make_dir","path":"work/sub","result":"ok"}
+{"v":1,"kind":"rename","path":"work/a.txt","to":"work/sub/a.txt","result":"ok"}
+{"v":1,"kind":"delete","path":"work/none","result":"err","value":"not found"}
+{"v":1,"kind":"list_dir","path":"work","result":"ok","value":"f4 log.txt/d sub"}
+{"v":1,"kind":"run","program":"bin/args","args":["x y","z"],"result":"ok","value":"0\u000a10\u000a[x y]\u000a[z]\u000a"}
+{"v":1,"kind":"end","status":0}

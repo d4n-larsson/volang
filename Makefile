@@ -84,7 +84,7 @@ $(BUILD)/%.o: src/%.c $(HEADERS) | $(BUILD)
 $(BUILD)/vo_c.o: CFLAGS += -fno-tree-loop-distribute-patterns
 
 # Spec 008 research R8: the reference, the catalog and the standard library, embedded as C arrays.
-STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo
+STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo std/fs.vo std/process.vo
 $(BUILD)/embedded.c: docs/reference.md docs/errors.md $(STD_FILES) tools/embed.py | $(BUILD)
 	python3 tools/embed.py $@ docs/reference.md docs/errors.md $(STD_FILES)
 $(BUILD)/embedded.o: $(BUILD)/embedded.c $(HEADERS)
@@ -210,6 +210,8 @@ gate-step: all asm
 	@echo "== gate: ubtrap" && $(MAKE) -s ubtrap
 	@echo "== gate: diff-asm" && python3 tests/diff_asm.py --count 2000 --seed 1
 	@echo "== gate: tasks determinism" && python3 tests/tasks_determinism.py --runs 20
+	@echo "== gate: files and processes determinism" && tests/run.sh --repeat 20 tests/cases/fs tests/cases/process && \
+	  python3 tests/steps.py --repeat 20 tests/cases/fs_steps tests/cases/process_steps
 	@echo "== gate-step: passed"
 
 # SC-004 compares like with like: the RISC-V build against build-asm/vo, both under qemu.

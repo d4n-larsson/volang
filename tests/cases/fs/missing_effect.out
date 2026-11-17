@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0501","name":"missing_effect","severity":"error","file":"missing_effect.vo","start":{"line":4,"col":4},"end":{"line":4,"col":8},"text":"main","message":"`main` does not declare file.read, which it needs.","fixes":[{"file":"missing_effect.vo","start":{"line":4,"col":27},"end":{"line":4,"col":40},"replacement":"uses console, file.read "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

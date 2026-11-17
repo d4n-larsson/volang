@@ -12,11 +12,13 @@ the grant of `vo test` is each test's `uses` clause. A grant names effects and, 
 |---|---|---|
 | console | write stdout and stderr | — |
 | input | read stdin | — |
-| file.read, file.write | read or write files | directories, relative to where the program starts |
+| file.read, file.write | read or write files; list directories, look at paths, append, create directories (`std.fs`) | directories, relative to where the program starts |
+| file.delete | delete files, links and empty directories; rename (it removes the old name) | directories, like `file.write` |
 | net | HTTP requests | host names |
 | clock, random | the time, random numbers | — |
 | env | environment variables | variable names |
 | serve | answer HTTP requests | an address (`"8000"`: this machine; `"0.0.0.0:8000"`: the network) |
+| process | start a named program and wait for it (`std.process`) | programs: a name found through `PATH`, or a path; required (E0512) |
 
 The promise holds **whatever the rest of the program does**: every function, anonymous function,
 imported file, standard-library function and package runs within the grant, however it was written and
@@ -58,8 +60,16 @@ Each property is a claim the review must try to break; each break is a finding.
   component at a time without following links, so a link swapped in after the check fails the open
   instead of escaping; links inside a scope that stay
   inside it work, absolute ones or ones leaving it do not (spec 013). Paths with a NUL byte are refused.
+  Spec 017's directory operations (listing, information, append, create, delete, rename) reach their
+  target the same way and then act through the `*at` system call on the parent directory, so a swapped
+  link cannot redirect them either; deleting and renaming act on a link itself, never on its target,
+  and never remove a scope directory itself. A listing reports a link's target kind only when the
+  target is inside the grant. A program is allowed only when its text matches a `process` scope of
+  both grants exactly.
 - **S3 No other capabilities.** The only things a program can do are the effects above. The binary
-  reaches 25 system calls (`src/platform/*.h`): no process creation, no signals sent, no native code
+  reaches 39 system calls (`src/platform/*.h`). Processes are created only for tasks (spec 016: copies
+  of the program, which share nothing) and for `process` (spec 017); signals are sent only to those
+  children and their process groups; no native code
   loading, no raw sockets, no file descriptors a program can name. No environment variable, file or
   argument outside the grant changes what a program may do.
 - **S4 Memory safety.** No program and no input (A1-A3) makes the toolchain read or write memory it
@@ -81,7 +91,8 @@ Each property is a claim the review must try to break; each break is a finding.
   leading outside the package, refuses it (E0702). A package has no grant of its own and cannot be
   imported past its exports. An import never reaches a file outside the program's tree or a listed
   package through a link (E0211).
-- **S9 Server robustness.** A vo server listens only on its declared address, answers one request at a
+- **S9 Server robustness.** A vo server listens only on its declared address, reads up to 64 connections
+  at once and answers them one handler call at a
   time, and keeps serving after malformed, oversized or failing requests; no request makes it crash,
   grow without bound, or run outside its grant.
 
@@ -90,8 +101,16 @@ Each property is a claim the review must try to break; each break is a finding.
 - **Plain HTTP and DNS**: no TLS, no DNSSEC; an A2 attacker on the path can change what the program
   receives. Programs must treat network input as untrusted data, which S4 and S5 protect the toolchain
   from.
-- **One request at a time**: a slow client can hold a vo server for up to 10 s per connection (a
-  denial of service that the request limits bound but do not prevent).
+- **64 connections**: a vo server reads up to 64 connections at once (spec 016), each with 10 s to send
+  its request; 64 slow clients can still hold it (a denial of service that the limits bound but do not
+  prevent), and a handler that waits delays the next one.
+- **A granted program is not confined** (spec 017): `process("git")` allows starting `git`, which then
+  runs with the rights of the user running `vo`, outside the program's file, network and environment
+  scopes. Granting a program grants everything it can do; whoever can replace that program's file (A4)
+  decides what runs. Confining children to the grant is planned (roadmap).
+- **Escaped grandchildren** (spec 017): a run kills the child's process group when the child ends or
+  the time is up, and the child dies with `vo`; a grandchild that leaves the group (`setsid`), or any
+  grandchild when `vo` itself is killed with SIGKILL, survives.
 - **Console output is not filtered**: a program (or data it prints) can send terminal escape sequences
   to the runner's terminal.
 - **Recordings contain the inputs**: file contents, variables and HTTP traffic a program read are in its

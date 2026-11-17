@@ -1,0 +1,11 @@
+# Spec 017 (US4): a program that only lists and reads shows no write, delete or process capability.
+import std.fs.list_dir;
+
+fn count(dir: str) -> result[int] uses file.read("data/") {
+    return ok(len(try list_dir(dir)));
+}
+
+fn main() -> result[void] uses console, file.read("data/") {
+    print(str(try count("data")));
+    return ok();
+}

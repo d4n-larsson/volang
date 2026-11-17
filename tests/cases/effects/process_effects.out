@@ -1,0 +1,8 @@
+main uses process("/usr/bin/make", "git", "tools/gen")
+
+process_effects.vo:main uses process("/usr/bin/make", "git", "tools/gen")
+process_effects.vo:2:4: warning[W0501]: `main` declares process("/usr/bin/make", "git", "tools/gen"), which it never needs.
+   2 | fn main() uses process("./tools/gen", "git", "/usr/bin/make") {
+     |    ^^^^
+  fix: remove `uses process("./tools/gen", "git", "/usr/bin/make") `
+0 errors, 1 warning

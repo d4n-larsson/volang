@@ -47,4 +47,11 @@
 #define SYS_getppid 110
 #define SYS_getpid 39
 
+/* spec 017: file changes and running programs */
+#define SYS_mkdirat 258
+#define SYS_execve 59
+#define SYS_setpgid 109
+#define SYS_fchdir 81
+#define SYS_close_range 436
+
 #endif
