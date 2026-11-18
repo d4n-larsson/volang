@@ -80,7 +80,7 @@ OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/
 	$(if $(INSTRUMENTED),$(BUILD)/hosted.o) $(MBED_OBJS) $(CM_OBJS)
 
 PHONY_TLS := tls-selftest tls-deps
-.PHONY: $(PHONY_TLS) cm-noasm math-selftest math-vectors site site-serve site-check all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
+.PHONY: $(PHONY_TLS) quick cm-noasm math-selftest math-vectors site site-serve site-check all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
 
 all: $(BUILD)/vo
 
@@ -187,6 +187,12 @@ math-selftest:
 math-vectors:
 	python3 -m pip install --quiet --no-deps --require-hashes --target build/py -r tests/math/requirements.txt
 	python3 tools/math_vectors_gen.py
+
+# Between edits: only the tests of the areas a change touches (tools/quick.sh has the table), chosen
+# from the files changed since the last commit, or named: `make quick AREA=math,docs`. A shared file
+# (vo.h, the VM, the runtime core, this Makefile) selects everything. `make test` still completes a change.
+quick: all
+	@tools/quick.sh $(AREA)
 
 # The constitution's quality gate: every check that exists so far.
 test: all
