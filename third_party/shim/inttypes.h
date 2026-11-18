@@ -2,4 +2,5 @@
 #define VO_SHIM_INTTYPES_H
 #include <stdint.h>
 #define PRId64 "lld"
+#define PRIx64 "llx"
 #endif

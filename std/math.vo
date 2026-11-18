@@ -1,0 +1,95 @@
+# std.math: Square roots, powers, logarithms, trigonometry and rounding to int, correctly rounded.
+# Part of the vo standard library (spec 020). Import items one by one: `import std.math.NAME;`.
+# Every float result is correctly rounded (the nearest double, ties to even), so it is the same on
+# every platform. An argument outside a function's domain stops the program with R0007 at the call;
+# a NaN argument gives NaN. Overflow gives inf and underflow 0.0, as float arithmetic does.
+
+# The double nearest to π.
+#     pi() is 3.14159265358979
+export fn pi() -> float {
+    return __math(0, 0.0, 0.0);
+}
+
+# The square root of x; R0007 if x is below 0.0 (sqrt(-0.0) is -0.0).
+#     sqrt(2.0) is 1.4142135623731
+export fn sqrt(x: float) -> float {
+    return __math(1, x, 0.0);
+}
+
+# e raised to x: inf above about 709.78, 0.0 below about -745.13.
+#     exp(1.0) is 2.71828182845904
+export fn exp(x: float) -> float {
+    return __math(2, x, 0.0);
+}
+
+# The natural logarithm of x; R0007 unless x is greater than 0.0 (log(inf) is inf).
+#     log(10.0) is 2.30258509299405
+export fn log(x: float) -> float {
+    return __math(3, x, 0.0);
+}
+
+# The sine of x, in radians; R0007 if x is infinite. Huge arguments are reduced exactly.
+#     sin(pi() / 6.0) is 0.5
+export fn sin(x: float) -> float {
+    return __math(4, x, 0.0);
+}
+
+# The cosine of x, in radians; R0007 if x is infinite.
+#     cos(0.0) is 1.0
+export fn cos(x: float) -> float {
+    return __math(5, x, 0.0);
+}
+
+# The tangent of x, in radians; R0007 if x is infinite.
+#     tan(pi() / 4.0) is 1.0
+export fn tan(x: float) -> float {
+    return __math(6, x, 0.0);
+}
+
+# The arc sine of x, in radians from -pi()/2 to pi()/2; R0007 unless x is from -1.0 to 1.0.
+#     asin(1.0) is 1.5707963267949
+export fn asin(x: float) -> float {
+    return __math(7, x, 0.0);
+}
+
+# The arc cosine of x, in radians from 0.0 to pi(); R0007 unless x is from -1.0 to 1.0.
+#     acos(-1.0) is 3.14159265358979
+export fn acos(x: float) -> float {
+    return __math(8, x, 0.0);
+}
+
+# The arc tangent of x, in radians from -pi()/2 to pi()/2.
+#     atan(1.0) is 0.785398163397448
+export fn atan(x: float) -> float {
+    return __math(9, x, 0.0);
+}
+
+# The angle of the point (x, y) from the positive x axis, in radians from -pi() to pi(); y comes first, as in C. Signed zeros and infinities follow IEEE 754 (atan2(0.0, 0.0) is 0.0).
+#     atan2(1.0, -1.0) is 2.35619449019234
+export fn atan2(y: float, x: float) -> float {
+    return __math(10, y, x);
+}
+
+# x raised to y; R0007 for a negative x with a non-integer y, and for x 0.0 with a negative y. pow(x, 0.0) and pow(1.0, y) are 1.0, even for NaN.
+#     pow(2.0, 10.0) is 1024.0
+export fn pow(x: float, y: float) -> float {
+    return __math(11, x, y);
+}
+
+# The largest int not above x; R0007 for NaN, an infinity or a result outside the int range.
+#     floor(-2.5) is -3
+export fn floor(x: float) -> int {
+    return __math_int(1, x);
+}
+
+# The smallest int not below x; R0007 for NaN, an infinity or a result outside the int range.
+#     ceil(-2.5) is -2
+export fn ceil(x: float) -> int {
+    return __math_int(2, x);
+}
+
+# x rounded to the nearest int, halves away from zero (round(2.5) is 3, round(-2.5) is -3); R0007 for NaN, an infinity or a result outside the int range.
+#     round(2.5) is 3
+export fn round(x: float) -> int {
+    return __math_int(3, x);
+}

@@ -45,4 +45,5 @@
 {"v":1,"kind":"doc","module":"std.collections","name":"std.collections","item":"module","signature":"std.collections","description":"Operations on the built-in ordered_map, ordered_set, priority_queue and deque."}
 {"v":1,"kind":"doc","module":"std.fs","name":"std.fs","item":"module","signature":"std.fs","description":"Directories and file information (needs file.read), and file changes (needs file.write, file.delete)."}
 {"v":1,"kind":"doc","module":"std.process","name":"std.process","item":"module","signature":"std.process","description":"Running other programs to their end, with no shell (needs process)."}
+{"v":1,"kind":"doc","module":"std.math","name":"std.math","item":"module","signature":"std.math","description":"Square roots, powers, logarithms, trigonometry and rounding to int, correctly rounded."}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":44}

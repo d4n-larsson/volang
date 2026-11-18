@@ -1,0 +1,13 @@
+# Spec 020: functions keep the IEEE sign of zero, which a division shows.
+import std.math.sin;
+import std.math.sqrt;
+import std.math.atan;
+import std.math.tan;
+import std.math.asin;
+import std.math.atan2;
+
+fn main() uses console {
+    let z = -0.0;
+    print(str(1.0 / sin(z)) + " " + str(1.0 / sqrt(z)) + " " + str(1.0 / atan(z)) + " " + str(1.0 / tan(z)) + " " + str(1.0 / asin(z)));
+    print(str(atan2(0.0, -1.0)) + " " + str(atan2(z, -1.0)) + " " + str(atan2(0.0, 0.0)) + " " + str(1.0 / atan2(z, 1.0)));
+}

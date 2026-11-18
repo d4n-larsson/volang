@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0202","name":"duplicate_definition","severity":"error","file":"name_clash.vo","start":{"line":4,"col":4},"end":{"line":4,"col":7},"text":"log","message":"`log` is already defined.","fixes":[],"related":[{"file":"name_clash.vo","start":{"line":2,"col":17},"end":{"line":2,"col":20},"message":"`log` is first defined here."}]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

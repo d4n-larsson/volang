@@ -1,0 +1,12 @@
+# Spec 020: a program that defines its own `log` and does not import std.math is unaffected.
+fn log(s: str) -> str {
+    return "log: " + s;
+}
+
+fn round(x: int) -> int {
+    return x;
+}
+
+fn main() uses console {
+    print(log("x") + " " + str(round(3)));
+}

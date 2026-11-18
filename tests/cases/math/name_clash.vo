@@ -1,0 +1,10 @@
+# Spec 020: importing std.math.log into a file that defines its own `log` is the existing clash error.
+import std.math.log;
+
+fn log(s: str) -> str {
+    return s;
+}
+
+fn main() uses console {
+    print("x");
+}

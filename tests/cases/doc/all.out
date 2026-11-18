@@ -81,3 +81,4 @@ modules:
   std.collections Operations on the built-in ordered_map, ordered_set, priority_queue and deque.
   std.fs Directories and file information (needs file.read), and file changes (needs file.write, file.delete).
   std.process Running other programs to their end, with no shell (needs process).
+  std.math Square roots, powers, logarithms, trigonometry and rounding to int, correctly rounded.

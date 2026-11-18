@@ -1,0 +1,1 @@
+doc std.math.pow

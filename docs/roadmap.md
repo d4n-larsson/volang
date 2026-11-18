@@ -26,6 +26,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [017](../specs/017-filesystem-processes/) | Directories and file changes (list, information, append, create directories; delete and rename under a new `file.delete` effect) and running other programs under a scoped `process` effect | **Done** ([results](../specs/017-filesystem-processes/results.md)) |
 | [018](../specs/018-agent-testing/) | Agent-friendly testing: list and select tests by identifier, `@spec` ID or diff; explained failures (comparison operands, the path to the first difference, a cause per failure, captured output); coverage; warnings for tests that cannot fail; mutation testing | **Done** ([results](../specs/018-agent-testing/results.md)) |
 | [019](../specs/019-https/) | HTTPS for `std.http.get`/`post`: TLS 1.3 and 1.2 from the vendored Mbed TLS 4.1 LTS, certificates always verified against the machine's trust store (plus `--ca-file`), nine fixed `err` messages, recordings with the scheme | **Done** ([results](../specs/019-https/results.md)) |
+| [020](../specs/020-math/) | `std.math`: `sqrt`, `pow`, `exp`, `log`, trigonometry, `pi`, `floor`/`ceil`/`round` to `int`; correctly rounded from the vendored CORE-MATH, bit-identical on three platforms; out of domain is R0007 | **Done** ([results](../specs/020-math/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -156,6 +157,19 @@ gives; every failure is an `err` with a fixed message, and nothing turns verific
 - **Not done (on purpose):** serving over HTTPS (planned below), session resumption and connection
   reuse, revocation checks (OCSP, CRL), client certificates, HTTP/2.
 
+### 020: math functions (done)
+
+`std.math` has `sqrt`, `pow`, `exp`, `log`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `atan2`, `pi`,
+and `floor`, `ceil` and `round` to `int`. The transcendental functions are CORE-MATH's correctly rounded
+ones, vendored at a commit under constitution 1.4.1 (CORE-MATH publishes no releases), so every result is
+the nearest double and the same on all three platforms; 109,517 reference values, the library's
+published hardest cases among them, match bit for bit on each. Out-of-domain arguments are R0007 at the
+call; NaN passes through; overflow is `inf`.
+
+- **Not done (on purpose):** `log2`, `log10`, `hypot`, `cbrt`, hyperbolic functions (each comes from the
+  same library when a program needs it); hardware FMA on x86-64 (a software `fma` keeps one binary
+  for every x86-64 processor; one million calls take about 0.4 s).
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -163,7 +177,6 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 
 | Gap | What is missing | Notes |
 |---|---|---|
-| Math builtins | `sqrt`, `pow`, `floor`, `ceil`, `round`, trigonometry, `log` | pure; results must be byte-identical on all three platforms |
 | Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; decides what matters next |
 | Binary data | `str` must be UTF-8, so images, archives and binary protocols cannot be handled | a `bytes` type; also lifts 017's "output is not UTF-8" error |
 | Sleep | no way to wait (retries, polling, rate limits) | under `clock`; replay must not wait |

@@ -1,0 +1,35 @@
+Replace the empty register barriers asm("":"=x"(r):"0"(x)) on x86-64 with _mm_set_sd(x),
+upstream's own clang branch, which gives the same value. Reason: constitution 1.4.1, vendored code
+is built with no assembly (spec 020 research R4).
+
+--- a/src/binary64/atan2/tint.h
++++ b/src/binary64/atan2/tint.h
+@@ -369,7 +369,7 @@
+ #if defined(__clang__)
+     __m128d r = _mm_set_sd(x);
+ #else
+-    __m128d r; asm("":"=x"(r):"0"(x));
++    __m128d r = _mm_set_sd(x);
+ #endif
+     r = (__m128d)_mm_add_epi64(sb, (__m128i)r);
+     return r[0];
+--- a/src/binary64/exp/exp.c
++++ b/src/binary64/exp/exp.c
+@@ -153,7 +153,7 @@
+ #if defined(__clang__)
+     __m128d r = _mm_set_sd(x);
+ #else
+-    __m128d r; asm("":"=x"(r):"0"(x));
++    __m128d r = _mm_set_sd(x);
+ #endif
+     r = (__m128d)_mm_add_epi64(sb, (__m128i)r);
+     return r[0];
+@@ -171,7 +171,7 @@
+ #if defined(__clang__)
+     __m128d r = _mm_set_sd(x);
+ #else
+-    __m128d r; asm("":"=x"(r):"0"(x));
++    __m128d r = _mm_set_sd(x);
+ #endif
+     r = _mm_and_pd(r, (__m128d)sb);
+     // forces the underflow exception

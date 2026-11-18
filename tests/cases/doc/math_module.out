@@ -1,0 +1,30 @@
+fn pi() -> float
+    The double nearest to π.
+fn sqrt(x: float) -> float
+    The square root of x; R0007 if x is below 0.0 (sqrt(-0.0) is -0.0).
+fn exp(x: float) -> float
+    e raised to x: inf above about 709.78, 0.0 below about -745.13.
+fn log(x: float) -> float
+    The natural logarithm of x; R0007 unless x is greater than 0.0 (log(inf) is inf).
+fn sin(x: float) -> float
+    The sine of x, in radians; R0007 if x is infinite. Huge arguments are reduced exactly.
+fn cos(x: float) -> float
+    The cosine of x, in radians; R0007 if x is infinite.
+fn tan(x: float) -> float
+    The tangent of x, in radians; R0007 if x is infinite.
+fn asin(x: float) -> float
+    The arc sine of x, in radians from -pi()/2 to pi()/2; R0007 unless x is from -1.0 to 1.0.
+fn acos(x: float) -> float
+    The arc cosine of x, in radians from 0.0 to pi(); R0007 unless x is from -1.0 to 1.0.
+fn atan(x: float) -> float
+    The arc tangent of x, in radians from -pi()/2 to pi()/2.
+fn atan2(y: float, x: float) -> float
+    The angle of the point (x, y) from the positive x axis, in radians from -pi() to pi(); y comes first, as in C. Signed zeros and infinities follow IEEE 754 (atan2(0.0, 0.0) is 0.0).
+fn pow(x: float, y: float) -> float
+    x raised to y; R0007 for a negative x with a non-integer y, and for x 0.0 with a negative y. pow(x, 0.0) and pow(1.0, y) are 1.0, even for NaN.
+fn floor(x: float) -> int
+    The largest int not above x; R0007 for NaN, an infinity or a result outside the int range.
+fn ceil(x: float) -> int
+    The smallest int not below x; R0007 for NaN, an infinity or a result outside the int range.
+fn round(x: float) -> int
+    x rounded to the nearest int, halves away from zero (round(2.5) is 3, round(-2.5) is -3); R0007 for NaN, an infinity or a result outside the int range.

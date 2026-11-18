@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 65 /* names up to here (50, 51 are internal and unnamed) */
+#define B_COUNT 67 /* names up to here (50, 51 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -35,7 +35,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "sort_by",  "map",         "filter",    "fold",    "any",          "all",          "todo",
     "assume",   0,             0,           "__float_text", "__http_exchange", "__text_float", "get_or",
     "__serve_listen", "__serve_next", "__serve_reply", "__serve_call", "__http_part", "__coll",
-    "concurrent_map", "__fs", "__run", "__https_exchange",
+    "concurrent_map", "__fs", "__run", "__https_exchange", "__math", "__math_int",
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -47,6 +47,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [22] = "s>S",  [29] = "b>v",  [36] = "s>s",  [37] = "s>s",  [38] = "s>i",   [39] = "i>s",
     [40] = "s>r",  [41] = "ii>i", [49] = "b>v",  [52] = "f>s",  [53] = "sis>r", [54] = "s>f",
     [56] = "s>n",  [57] = "i>r",  [58] = "s>v",  [60] = "si>s",  [63] = "iss>r", [64] = "SsS>r", [65] = "sis>r",
+    [66] = "iff>f", [67] = "if>i", /* spec 020: __math, __math_int */
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."

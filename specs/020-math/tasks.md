@@ -44,9 +44,9 @@ piece.
 - [X] T001 Apply the constitution amendment 1.4.0 → 1.4.1 (vendoring pinned to a commit when the
   upstream has no releases, with per-file SHA-256) in `.specify/memory/constitution.md`, and re-check
   the gate in `specs/020-math/plan.md`.
-- [ ] T002 [P] Create `specs/020-math/results.md` with an SC-001 to SC-006 table (status, evidence), a
+- [X] T002 [P] Create `specs/020-math/results.md` with an SC-001 to SC-006 table (status, evidence), a
   Verification table and a Size section, in the format of `specs/019-https/results.md`.
-- [ ] T003 Vendoring (research R1, R4), `tools/vendor_core_math.sh`:
+- [X] T003 Vendoring (research R1, R4), `tools/vendor_core_math.sh`:
   - `tools/vendor_core_math.sh COMMIT` fetches
     `https://gitlab.inria.fr/core-math/core-math/-/raw/COMMIT/PATH` for each kept file into
     `third_party/core-math/PATH`, keeping upstream paths. The kept files:
@@ -69,7 +69,7 @@ piece.
     `__m128d r = _mm_set_sd(x);` (upstream's clang branch). The reason: constitution "no assembly"; same
     value.
   - Run it at the pinned commit and commit the result.
-- [ ] T004 [P] Reference vectors (research R7):
+- [X] T004 [P] Reference vectors (research R7):
   - `tools/math_vectors_gen.py` (dev only, Python 3 with mpmath). `make math-vectors` installs a pinned
     mpmath into `build/py/` (as `make tls-deps` does) and runs it.
   - It writes `tests/math/vectors.txt` with rows in the form `FN X_HEX [Y_HEX] EXPECTED_HEX`, as hex
@@ -89,7 +89,7 @@ piece.
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] T005 Shim headers (research R2):
+- [X] T005 Shim headers (research R2):
   - `third_party/shim/fenv.h`: `FE_TONEAREST 0`, `FE_DOWNWARD`, `FE_UPWARD`, `FE_TOWARDZERO`,
     `FE_INVALID`, `FE_DIVBYZERO`, `FE_OVERFLOW`, `FE_UNDERFLOW`, `FE_INEXACT`, `FE_ALL_EXCEPT`, and
     `typedef struct { unsigned v; } fenv_t; typedef unsigned fexcept_t;`. The functions are
@@ -105,7 +105,7 @@ piece.
     `<x86intrin.h>` (through `mm_malloc.h`) needs them to compile; no definition, since nothing calls
     them.
   - Update `third_party/shim/README.md` (CORE-MATH, and where `printf` is implemented).
-- [ ] T006 Build in `Makefile`:
+- [X] T006 Build in `Makefile`:
   - `CM := third_party/core-math`, and `CM_SRCS` read from `$(CM)/VENDOR.md`'s `## C files` list (as
     `MBED_SRCS` is).
   - `CM_FLAGS = -nostdinc -isystem $(gcc include) -I third_party/shim -I $(dir $<)`, so each file finds
@@ -118,7 +118,7 @@ piece.
     values.
   - `make ARCH=aarch64` and `make ARCH=riscv64` must build. Record the undefined symbols that the
     `CM` objects need from outside (`nm -u`) for each platform in `results.md`.
-- [ ] T007 vo's libm functions in `src/math.c` (research R2, R3). They are compiled only without
+- [X] T007 vo's libm functions in `src/math.c` (research R2, R3). They are compiled only without
   `VO_HOSTED`; the hosted build uses glibc's.
   - `double fma(double, double, double)`, correctly rounded in software on x86-64, with the comment
     `ponytail: software fma, ~10x slower than vfmadd; cpuid dispatch with a -mfma build of CORE-MATH if
@@ -134,7 +134,7 @@ piece.
     operand returns the other), all exact, through bit manipulation.
   - The software `fma` is also built under the name `vo_soft_fma` so the self-test can call it.
   - The link must succeed on all three platforms with no undefined symbol.
-- [ ] T008 [P] `make math-selftest` (research R3), the hosted program `tests/math/fma_selftest.c`:
+- [X] T008 [P] `make math-selftest` (research R3), the hosted program `tests/math/fma_selftest.c`:
   - built with `-mfma` and linked with `src/math.c`'s `vo_soft_fma` (compiled hosted, with a define
     that exposes it);
   - compares `vo_soft_fma(a, b, c)` with `__builtin_fma` (hardware) bit for bit:
@@ -146,7 +146,7 @@ piece.
   - skips with a message when the host CPU has no FMA (`__builtin_cpu_supports("fma")`).
 
   Part of `make test` on x86-64.
-- [ ] T009 Primitives (research R6), in `src/vo.h`, `src/check_expr.c` and `src/rt_call.c`:
+- [X] T009 Primitives (research R6), in `src/vo.h`, `src/check_expr.c` and `src/rt_call.c`:
   - builtin ids 66 `__math` (signature `"iff>f"`) and 67 `__math_int` (signature `"if>i"`);
   - `B_COUNT` and `B_LAST` (and the `_Static_assert` in `src/rt_call.c`) updated;
   - std-only, through the existing `__` rule (`std_only_ok`); no effect entry in `src/check_effects.c`;
@@ -154,7 +154,7 @@ piece.
     `src/vo.h`;
   - check every switch over builtin ids (`grep -n 'B_HTTPS\|BU_HTTPS' src/*.c`) for the new ids:
     compile, the VM, `vo doc` and query/edit (names that cannot be used for a rename).
-- [ ] T010 `math_call` in `src/math.c` (research R5, contracts/std-math.md):
+- [X] T010 `math_call` in `src/math.c` (research R5, contracts/std-math.md):
   - op 0: π as `0x1.921fb54442d18p+1`;
   - op 1: `__builtin_sqrt`;
   - ops 2-11: `cr_exp`, `cr_log`, `cr_sin`, `cr_cos`, `cr_tan`, `cr_asin`, `cr_acos`, `cr_atan`,
@@ -186,7 +186,7 @@ R0007 for out-of-domain arguments.
 
 ### Tests (first, failing)
 
-- [ ] T011 [P] [US1] Golden cases in `tests/cases/math/`:
+- [X] T011 [P] [US1] Golden cases in `tests/cases/math/`:
   - `values`: `sqrt(2.0)` prints `1.4142135623731`, plus `pow(1.05, 10.0)`, `exp(1.0)`, `log(10.0)`,
     `sin(pi() / 6.0)`, `atan2(1.0, 1.0)`, `pi()`. Print them through `str` and through
     `std.json.write_json` (17 digits), with values from mpmath.
@@ -208,7 +208,7 @@ R0007 for out-of-domain arguments.
 
 ### Implementation
 
-- [ ] T012 [US1] `std/math.vo`:
+- [X] T012 [US1] `std/math.vo`:
   - a header comment like `std/time.vo`'s;
   - `export fn pi() -> float`, `sqrt`, `exp`, `log`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`,
     `atan2(y: float, x: float)` and `pow(x: float, y: float)`, each returning `__math(op, x, y)` with the
@@ -231,7 +231,7 @@ are R0007.
 
 ### Tests (first, failing)
 
-- [ ] T013 [P] [US2] Golden cases in `tests/cases/math/`:
+- [X] T013 [P] [US2] Golden cases in `tests/cases/math/`:
   - `rounding`: `floor(-2.5) ceil(-2.5) round(-2.5) round(2.5) round(h)` prints `-3 -2 -3 3 0`, where
     `h` is 0.49999999999999994, built as `0.5 - 1.0 / float(18014398509481984)`. Float literals have at
     most 15 significant digits, so every value below with more digits is built with `float(int)`. Also: `floor` and `ceil` of exact integers, of ±0.0 (both `0`), of
@@ -245,7 +245,7 @@ are R0007.
 
 ### Implementation
 
-- [ ] T014 [US2] `math_int(op, x, node)` in `src/math.c`, and `floor`, `ceil`, `round` in
+- [X] T014 [US2] `math_int(op, x, node)` in `src/math.c`, and `floor`, `ceil`, `round` in
   `std/math.vo` with `vo doc` comments:
   - R0007 unless `x` is finite and `-9223372036854775808.0 <= r < 9223372036854775808.0`, where `r` is
     the rounded value;
@@ -267,7 +267,7 @@ build.
 
 ### Tests (first, failing)
 
-- [ ] T015 [P] [US3] `tests/math_vectors.py`:
+- [X] T015 [P] [US3] `tests/math_vectors.py`:
   - reads `tests/math/vectors.txt` (or `.gz`) and, per function, writes one vo program to a temporary
     directory. The inputs are built from their bits; since float literals have no exponent, use a vo
     helper that parses hex digits into an `int` and then into a float by exact scaling, or pass the
@@ -285,11 +285,11 @@ build.
 
 ### Implementation
 
-- [ ] T016 [US3] Run T015 on x86-64 (native), ARM64 and RISC-V (qemu), and with
+- [X] T016 [US3] Run T015 on x86-64 (native), ARM64 and RISC-V (qemu), and with
   `VO_BIN=build-instrumented/vo`. Every mismatch is fixed in vo's code (shim, `fma`, flags, input
   parsing), never in the vectors or the vendored files. Record the counts in `results.md` (SC-001,
   SC-002).
-- [ ] T017 [P] [US3] Determinism: add `tests/run.sh --repeat 20 tests/cases/math` to the `gate-step`
+- [X] T017 [P] [US3] Determinism: add `tests/run.sh --repeat 20 tests/cases/math` to the `gate-step`
   target in `Makefile` ("math determinism").
 
 **Checkpoint**: T015 passes on three platforms and instrumented.
@@ -305,7 +305,7 @@ examples.
 
 ### Tests (first, failing)
 
-- [ ] T018 [P] [US4] Golden cases in `tests/cases/doc/`:
+- [X] T018 [P] [US4] Golden cases in `tests/cases/doc/`:
   - `math_module`: `vo doc std.math`;
   - `math_item`: `vo doc std.math.pow` and `vo doc std.math.round`;
   - `math_json`: `vo doc std.math.log --json`.
@@ -314,7 +314,7 @@ examples.
 
 ### Implementation
 
-- [ ] T019 [US4] Make every `std/math.vo` doc comment state the domain and the R0007 condition, and
+- [X] T019 [US4] Make every `std/math.vo` doc comment state the domain and the R0007 condition, and
   carry one example `EXPR is VALUE` that `tests/doc_conformance.py` and the doc-example runner execute
   (examples whose value has more than 15 digits use a rounded `str` form). Fix any conformance failure.
 
@@ -324,10 +324,10 @@ examples.
 
 ## Phase 7: Polish and the gate
 
-- [ ] T020 [P] Reference (`docs/reference.md`): add the `std.math` row from `contracts/std-math.md` to
+- [X] T020 [P] Reference (`docs/reference.md`): add the `std.math` row from `contracts/std-math.md` to
   the "Standard library and packages" table. Record the token growth (expected about +25; budget 15,000)
   in `results.md` (SC-004).
-- [ ] T021 [P] Docs:
+- [X] T021 [P] Docs:
   - `site/docs/guide/standard-library.md`: a short math section (import, R0007 domains, correct
     rounding);
   - `docs/roadmap.md`: the "Math builtins" row is replaced by spec 020 in the Status table (**Done**),
@@ -336,11 +336,11 @@ examples.
   - `README.md`: the std list gains `std.math`, and the vendored-library sentence becomes "two vendored
     libraries (Mbed TLS for HTTPS, CORE-MATH for math)";
   - `docs/security.md`: CORE-MATH in the trust boundary, with how it is updated.
-- [ ] T022 [P] Speed (SC-006): a `tests/speed/` case (or `tests/perf`) that calls `pow`, `sin` and
+- [X] T022 [P] Speed (SC-006): a `tests/speed/` case (or `tests/perf`) that calls `pow`, `sin` and
   `log` one million times in total and prints a checksum. It must run in under 1,000 ms on native
   x86-64; add it to `make speed-check`. If it fails, record the figure, and do the `ponytail:` upgrade
   (cpuid dispatch) only if it is over budget.
-- [ ] T023 Gate in `Makefile`:
+- [X] T023 Gate in `Makefile`:
   - `make test` runs `math-selftest` (x86-64) and `tests/math_vectors.py`;
   - `make gate` includes the math determinism step (T017);
   - `make instrumented` builds the CORE-MATH objects with the sanitizers;

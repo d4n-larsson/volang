@@ -163,6 +163,24 @@ the check greps the preprocessed vendored sources for `asm`/`__asm__`.
   rewrites the hashes in `VENDOR.md`. A security fix in CORE-MATH (for example a wrong result) is applied
   in the spec cycle in which it appears, as the rule requires.
 
+## Implementation notes (task outcomes)
+
+- **Undefined symbols measured** (T006), by `nm -u` on the objects: x86-64 needs `fma`, `fmax`, `fmin` and
+  `roundeven`; RISC-V needs `floor` and `round`; ARM64 needs none (plus libgcc helpers `__lshrti3`,
+  `__ashlti3`, `__clzdi2`, `__ctzdi2`, already linked). All are in `src/math_libm.c` (a file of its own,
+  without `vo.h`, so the hosted self-test builds it); `fma` is defined only on x86-64 without FMA.
+- **More shims than planned** (T005): `pow.h` includes `<math.h>` (for `NAN`, `INFINITY`) and `<errno.h>`
+  (unconditionally, to set `ERANGE`); `atan2` uses `fegetexceptflag`/`fesetexceptflag`. The shim's
+  `errno` is `vo_cm_errno`, a name of vo's own, so the hosted build never meets the C library's.
+- **Vector inputs** (T015): `parse_float` keeps 15 digits, so the runner reads inputs through `std.json`
+  (exact, 17 digits) and prints results with `std.json.write_json`.
+- **The generator took the machine down twice** (T004): for `pow` results far below the subnormal range
+  its rounding built a bit mask of about 2^34 bits, and mpmath raises to large integer powers exactly.
+  Fixed (results below half the smallest subnormal are zero; `pow` with `|y| > 2^20` goes through
+  `exp(y log|x|)`), and the generator now runs under a 4 GiB address-space limit and 20 s per call.
+- **Midpoint threshold** (T004): the "too close to trust" margin is `2^-(prec-110)` of a quantum, so the
+  1,000-bit pass settles CORE-MATH's hardest `atan2` cases instead of dropping them.
+
 ## R9. Performance
 
 - On ARM64 and RISC-V, the `cr_*` fast paths are about 20–60 cycles. On x86-64 each call also uses 3–17
@@ -170,3 +188,5 @@ the check greps the preprocessed vendored sources for `asm`/`__asm__`.
 - The worst case is `pow`, at about 300 ns per call, so one million calls take about 0.3 s, plus about
   0.1 s of VM call overhead. This is within the 1,000 ms of SC-006.
 - A `tests/perf` case measures it. If it fails, the upgrade is cpuid dispatch (R3).
+- Measured (`tests/math_speed.py`, native x86-64, software `fma`): 1,000,002 calls of `pow`, `sin` and
+  `log` in 436 ms; the same loop without them, 7 ms.

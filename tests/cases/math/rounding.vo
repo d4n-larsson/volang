@@ -1,0 +1,15 @@
+# Spec 020 US2: floor, ceil and round to int, exact; round takes halves away from zero.
+import std.math.floor;
+import std.math.ceil;
+import std.math.round;
+
+fn main() uses console {
+    let h = 0.5 - 1.0 / float(18014398509481984);
+    print(str(floor(-2.5)) + " " + str(ceil(-2.5)) + " " + str(round(-2.5)) + " " + str(round(2.5)) + " " + str(round(h)));
+    print(str(floor(3.0)) + " " + str(ceil(3.0)) + " " + str(round(-3.0)) + " " + str(floor(0.0)) + " " + str(ceil(-0.0)) + " " + str(round(-0.4)));
+    print(str(floor(-0.5)) + " " + str(ceil(0.5)) + " " + str(round(0.5)) + " " + str(round(-0.5)) + " " + str(round(1.5)));
+    let big = float(4503599627370496) + 1.0;
+    print(str(floor(big)) + " " + str(ceil(big + 0.5)) + " " + str(round(big)));
+    let top = float(9223372036854774784);
+    print(str(floor(top)) + " " + str(ceil(-top)) + " " + str(floor(-float(9223372036854775807))));
+}

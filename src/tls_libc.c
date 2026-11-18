@@ -8,6 +8,7 @@ char *strchr(const char *s, int c);
 char *strstr(const char *h, const char *n);
 int getpid(void);
 void exit(int code);
+int printf(const char *fmt, ...);
 
 size_t strlen(const char *s)
 {
@@ -48,10 +49,18 @@ int getpid(void)
     return (int)vo_syscall0(SYS_getpid);
 }
 
-/* Only the library's own fatal paths could call this; vo treats it as an internal error (T0003). */
+/* CORE-MATH's report of an input it cannot round (spec 020), printed just before exit: the format
+ * text only, since that path is a library bug. */
+int printf(const char *fmt, ...)
+{
+    out_cstr(2, (char *)fmt);
+    return 0;
+}
+
+/* Only the vendored libraries' fatal paths could call this; vo treats it as an internal error (T0003). */
 void exit(int code)
 {
     (void)code;
-    out_cstr(2, "error[T0003]: the TLS library stopped the program\n");
+    out_cstr(2, "error[T0003]: a vendored library stopped the program\n");
     vo_exit(EXIT_INTERNAL);
 }

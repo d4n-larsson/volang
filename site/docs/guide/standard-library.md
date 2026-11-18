@@ -333,6 +333,39 @@ A server can be recorded and replayed like any program (see [Determinism](determ
 (`file.write`), and deletes and renames (`file.delete`); `std.process` runs other programs to their end
 with no shell (`process`). Both have their own page: [Files and processes](files-and-processes.md).
 
+## std.math
+
+Square roots, powers, logarithms, trigonometry, `pi()`, and `floor`, `ceil` and `round` to `int`.
+Import each function like any other library item:
+
+```vo
+import std.math.sqrt;
+import std.math.round;
+
+fn main() uses console {
+    print(str(sqrt(2.0)) + " " + str(round(-2.5)));
+}
+```
+
+```output
+1.4142135623731 -3
+```
+
+- **Correctly rounded**: every float result is the double nearest to the exact value, so a program prints
+  the same digits on x86-64, ARM64 and RISC-V. The functions come from CORE-MATH, a library of proved
+  correctly rounded functions, built into `vo`.
+- **Out of domain stops the program**: `sqrt` of a negative number, `log` of zero or less, `asin` or
+  `acos` outside -1 to 1, `sin`, `cos` or `tan` of an infinity, and `pow` of a negative number to a
+  fraction are runtime error R0007 at the call, never a silent `nan`. Check the value first when it can
+  be out of range. A `nan` argument (from `0.0 / 0.0`) passes through as `nan`.
+- **Overflow is not an error**: `exp(1000.0)` is `inf` and `exp(-1000.0)` is `0.0`, as with `*` and `/`.
+- **Rounding to int**: `round` takes halves away from zero (`round(2.5)` is 3, `round(-2.5)` is -3).
+  `floor`, `ceil` and `round` stop with R0007 for `nan`, an infinity, or a result outside the `int`
+  range, like `int(f)`.
+- Angles are in radians; `atan2(y, x)` takes `y` first, as in C.
+
+`vo doc std.math` lists every function with its domain and an example.
+
 ## std.collections
 
 The builtin collections `ordered_map`, `ordered_set`, `priority_queue` and `deque` support `len`, `has`,

@@ -379,7 +379,9 @@
 #define B_FS (63) /* spec 017: __fs(op, a, b) -> result[str], std.fs only (effects by op, in std/fs.vo) */
 #define B_RUN (64) /* spec 017: __run(argv, input, env) -> result[str], process; argv[0] is the program */
 #define B_HTTPS (65) /* spec 019: __https_exchange(host, port, request) -> result[str], net, std.http only */
-#define B_LAST (65) /* the last builtin id with a btab entry */
+#define B_MATH (66) /* spec 020: __math(op, x, y) -> float, std.math only (src/math.c) */
+#define B_MATH_INT (67) /* spec 020: __math_int(op, x) -> int: floor, ceil, round */
+#define B_LAST (67) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -1834,6 +1836,8 @@ extern long text_to_float(char *p, long n);
 extern int float_parse(char *p, long n, long *out);
 extern void float_to_text(SB *sb, long bits);
 extern Str *float_to_str(long bits);
+extern long math_call(long op, long x, long y, Node *node); /* spec 020: src/math.c */
+extern long math_int(long op, long x, Node *node);
 
 /* src/packages.c */
 extern long pkg_manifest;

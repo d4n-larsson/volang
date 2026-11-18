@@ -1,0 +1,6 @@
+# Spec 020: no implicit conversion; an int argument is a type error.
+import std.math.sqrt;
+
+fn main() uses console {
+    print(str(sqrt(2)));
+}

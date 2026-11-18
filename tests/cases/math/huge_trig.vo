@@ -1,0 +1,17 @@
+# Spec 020: huge arguments are reduced exactly; values checked against mpmath.
+import std.math.sin;
+import std.math.cos;
+import std.json.Json;
+import std.json.write_json;
+
+fn main() uses console {
+    let x = 1000000000000.0 * 10000000000.0;
+    match write_json(Json.array([Json.number(x), Json.number(sin(x)), Json.number(cos(x))])) {
+        case ok(t) {
+            print(t);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

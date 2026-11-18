@@ -68,12 +68,19 @@ MBED_FLAGS = -nostdinc -isystem $(shell $(CC) -print-file-name=include) -I third
 # vo's own TLS code sees the library's headers as system headers (no strict warnings from them).
 TLS_FLAGS = -isystem third_party/shim $(addprefix -isystem ,$(MBED_DIRS)) $(MBED_CONF)
 MBED_OBJS := $(patsubst %.c,$(BUILD)/%.o,$(MBED_SRCS))
+# Spec 020 (constitution 1.4.1): CORE-MATH's correctly rounded functions, vendored under third_party/
+# with one recorded patch, built like Mbed TLS: freestanding, the compiler's own headers and
+# third_party/shim, upstream warnings, -ffp-contract=off (CFLAGS). Each file finds its own dint.h.
+CM       := third_party/core-math
+CM_SRCS  := $(addprefix $(CM)/,$(shell sed -n 's/^- `\(.*\.c\)`$$/\1/p' $(CM)/VENDOR.md))
+CM_FLAGS  = -nostdinc -isystem $(shell $(CC) -print-file-name=include) -I third_party/shim
+CM_OBJS  := $(patsubst %.c,$(BUILD)/%.o,$(CM_SRCS))
 # platform.o first: its vo_data_begin starts .data (the globals the collector scans).
 OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/embedded.o \
-	$(if $(INSTRUMENTED),$(BUILD)/hosted.o) $(MBED_OBJS)
+	$(if $(INSTRUMENTED),$(BUILD)/hosted.o) $(MBED_OBJS) $(CM_OBJS)
 
 PHONY_TLS := tls-selftest tls-deps
-.PHONY: $(PHONY_TLS) site site-serve site-check all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
+.PHONY: $(PHONY_TLS) cm-noasm math-selftest math-vectors site site-serve site-check all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
 
 all: $(BUILD)/vo
 
@@ -102,11 +109,20 @@ $(BUILD)/tls.o $(BUILD)/tls_libc.o: src/tls_config.h src/tls_crypto_config.h
 $(BUILD)/third_party/%.o: third_party/%.c src/tls_config.h src/tls_crypto_config.h Makefile
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -Wall $(MBED_FLAGS) -c -o $@ $<
+$(BUILD)/third_party/core-math/%.o: third_party/core-math/%.c third_party/shim/fenv.h Makefile
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -Wall $(CM_FLAGS) -I $(dir $<) -c -o $@ $<
+# Constitution 1.4.1: no assembly in vendored code. CORE-MATH's inline asm sits behind compiler and
+# processor tests (spec 020 research R4); this fails if any of it is compiled for this platform. Only
+# the preprocessed lines that come from the vendored files are read (compiler headers have asm).
+cm-noasm:
+	@for f in $(CM_SRCS); do $(CC) $(CFLAGS) $(CM_FLAGS) -I $$(dirname $$f) -E $$f | \
+	  awk -v f=$$f -f tools/cm_noasm.awk || exit 1; done
 # memcpy and friends must not be turned back into calls to themselves.
 $(BUILD)/vo_c.o: CFLAGS += -fno-tree-loop-distribute-patterns
 
 # Spec 008 research R8: the reference, the catalog and the standard library, embedded as C arrays.
-STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo std/fs.vo std/process.vo
+STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo std/fs.vo std/process.vo std/math.vo
 $(BUILD)/embedded.c: docs/reference.md docs/errors.md $(STD_FILES) tools/embed.py | $(BUILD)
 	python3 tools/embed.py $@ docs/reference.md docs/errors.md $(STD_FILES)
 $(BUILD)/embedded.o: $(BUILD)/embedded.c $(HEADERS)
@@ -135,7 +151,8 @@ lint:
 	  if [ -n "$$stray" ]; then echo "lint: assembly outside src/platform/: $$stray"; fail=1; fi; \
 	  for f in src/platform/*.S; do n=$$(wc -l < $$f); \
 	    if [ $$n -gt 300 ]; then echo "lint: $$f has $$n lines (at most 300)"; fail=1; fi; done; \
-	  if [ $$fail = 0 ]; then echo "lint: clean (C for x86_64, aarch64 and riscv64; SESI; platform files)"; fi; \
+	  tools/vendor_core_math.sh --verify >/dev/null || fail=1; \
+	  if [ $$fail = 0 ]; then echo "lint: clean (C for x86_64, aarch64 and riscv64; SESI; platform files; vendored CORE-MATH)"; fi; \
 	  exit $$fail
 # Spec 019 (FR-012, FR-013, research R11): the vendored cryptography's self-tests and known-answer
 # vectors, built from the same sources and configuration as vo for each platform (a static test
@@ -157,17 +174,33 @@ tls-selftest:
 	  echo "tls-selftest: $$(grep -c ' ok$$' build-selftest/out-x86_64) checks passed, identical on x86_64, aarch64 and riscv64"
 lint-c:
 	@for f in $(C_SRCS); do $(CC) $(CFLAGS) $(CWARN) $(TLS_FLAGS) -I src -fsyntax-only $$f || exit 1; done
+# Spec 020 (research R3): src/math_libm.c's software fma and rounding functions against the x86-64
+# instructions, bit for bit (a hosted program; it skips on a CPU without FMA). x86-64 hosts only.
+math-selftest:
+	@mkdir -p build-selftest
+	@if [ $(HOST) = x86_64 ]; then \
+	  gcc -std=gnu11 -O2 -mfma -msse4.1 -ffp-contract=off -fno-builtin-floor -fno-builtin-ceil -fno-builtin-round \
+	    -fno-builtin-roundeven -fno-builtin-fmax -fno-builtin-fmin -Wall -Wextra -Werror \
+	    -o build-selftest/math-selftest tests/math/fma_selftest.c src/math_libm.c && build-selftest/math-selftest; \
+	  else echo "math-selftest: skipped (not an x86-64 host)"; fi
+# Spec 020 (research R7): regenerates tests/math/vectors.txt.gz (dev only; mpmath pinned by hash).
+math-vectors:
+	python3 -m pip install --quiet --no-deps --require-hashes --target build/py -r tests/math/requirements.txt
+	python3 tools/math_vectors_gen.py
 
 # The constitution's quality gate: every check that exists so far.
 test: all
 	tests/run.sh
 	$(MAKE) -s --no-print-directory tls-selftest
+	$(MAKE) -s --no-print-directory math-selftest
+	@for a in x86_64 aarch64 riscv64; do $(MAKE) -s --no-print-directory ARCH=$$a cm-noasm || exit 1; done
 	@! grep -n 'MBEDTLS_SSL_VERIFY_NONE\|MBEDTLS_SSL_VERIFY_OPTIONAL\|\*flags *=' src/tls.c || \
 	  { echo "src/tls.c must never weaken certificate verification (spec 019 FR-006)"; exit 1; }
 	tests/run.sh --repeat 3 tests/cases/run tests/cases/effects tests/cases/func tests/cases/generic tests/cases/prop
 	@for s in "fuzz.py --iterations 200 --seed 1" apply_fixes.py catalog.py ref_examples.py site_examples.py fmt_corpus.py \
 	  migrate.py record_changes.py doc_conformance.py json_corpus.py packages_check.py time_check.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
-	  steps.py json_stream.py https_interop.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1"; do \
+	  steps.py json_stream.py https_interop.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1" \
+	  math_vectors.py; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
 	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \
@@ -262,6 +295,8 @@ gate-step: all asm
 	  python3 tests/steps.py --repeat 20 tests/cases/https_steps
 	@echo "== gate: https interop, fuzz, speed" && $(MAKE) -s --no-print-directory tls-deps && \
 	  python3 tests/https_interop.py --require-tlslite && python3 tests/tls_fuzz.py && python3 tests/https_scale.py
+	@echo "== gate: math determinism and speed" && tests/run.sh --repeat 20 tests/cases/math && \
+	  python3 tests/math_speed.py
 	@echo "== gate-step: passed"
 
 # SC-004 compares like with like: the RISC-V build against build-asm/vo, both under qemu.

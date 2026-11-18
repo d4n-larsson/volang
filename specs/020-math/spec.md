@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-18
 
-**Status**: Draft
+**Status**: Implemented (make gate pending)
 
 **Input**: User description: "Math builtins for vo: sqrt, pow, floor, ceil, round, trigonometry (sin, cos,
 tan, asin, acos, atan, atan2), log, exp. Pure (no effects). Results must be byte-identical on x86-64,

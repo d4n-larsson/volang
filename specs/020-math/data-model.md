@@ -40,5 +40,6 @@ outside `-2^63 .. 2^63-1`.
 
 ## Vector row (`tests/math/vectors.txt`)
 
-`FN X_HEX [Y_HEX] EXPECTED_HEX`: hex float bit patterns, one call per line, `#` comments for each
-row's source (random, worst case, special).
+`FN X [Y] EXPECTED` in Python's `float.hex` form (`0x1.8p+1`, `-0x0.0p+0`, `inf`, `nan`), one call per
+line, gzipped (`tests/math/vectors.txt.gz`), with a `#` comment before each group naming its source
+(random, worst, special).

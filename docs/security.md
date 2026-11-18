@@ -27,8 +27,10 @@ clause. `vo.effects` (per function) and `vo.packages` (pinned packages) make the
 the enforcement does not depend on anyone reading them.
 
 The trusted computing base is the `vo` binary (with its embedded standard library and, since spec
-019, the vendored TLS library Mbed TLS under `third_party/`, pinned and updated under constitution
-1.4.0) and the Linux kernel. Nothing else is trusted: not the program's source, not its packages, not its inputs.
+019, the vendored TLS library Mbed TLS, and since spec 020 the vendored math library CORE-MATH, both
+under `third_party/`, pinned and updated under constitution 1.4.1: Mbed TLS to a release, CORE-MATH,
+which publishes none, to a commit with the hash of every kept file, checked by `make lint`) and the
+Linux kernel. Nothing else is trusted: not the program's source, not its packages, not its inputs.
 
 ## Attackers
 

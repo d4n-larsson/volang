@@ -1,0 +1,3 @@
+fn pow(x: float, y: float) -> float
+    x raised to y; R0007 for a negative x with a non-integer y, and for x 0.0 with a negative y. pow(x, 0.0) and pow(1.0, y) are 1.0, even for NaN.
+    example: pow(2.0, 10.0) is 1024.0
