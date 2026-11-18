@@ -1836,6 +1836,7 @@ extern long text_to_float(char *p, long n);
 extern int float_parse(char *p, long n, long *out);
 extern void float_to_text(SB *sb, long bits);
 extern Str *float_to_str(long bits);
+extern long exact_digits(unsigned long bits, long n, char *out); /* stdprim.c: n digits, exactly rounded */
 extern long math_call(long op, long x, long y, Node *node); /* spec 020: src/math.c */
 extern long math_int(long op, long x, Node *node);
 

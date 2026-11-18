@@ -186,7 +186,7 @@ static long floor_div_2_18(long x)
 
 /* The n significant decimal digits of |x| (x finite, not zero), rounded to nearest with ties to
  * even, written to out as ASCII; returns k with |x| about d1.d2...dn * 10^k. */
-static long exact_digits(unsigned long bits, long n, char *out)
+long exact_digits(unsigned long bits, long n, char *out)
 {
     long biased = (long)((bits >> 52) & 2047);
     unsigned long m = bits & ((1UL << 52) - 1); /* m * 2^e */

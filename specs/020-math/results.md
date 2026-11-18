@@ -21,7 +21,7 @@
 | ARM64 | `make ARCH=aarch64 test` (qemu): golden 709, step 210 + 212 + 35, doc conformance, `math_vectors.py` 109,517 rows (0 failures), diff-engines 1,000 (0 disagreements). A first run failed 29 cases only because a second `tests/run.sh` shared `build/run-work/` with it; alone it passes. |
 | RISC-V | `make ARCH=riscv64 test` (qemu): golden 709, step 210 + 212 + 35, doc conformance, `math_vectors.py` 109,517 rows (0 failures), diff-engines 1,000 (0 disagreements) |
 | Math determinism | `tests/run.sh --repeat 20 tests/cases/math`: 24 of 24, identical over 20 runs |
-| `make gate` | not run in this session (see Deviations) |
+| `make gate` (partial, stopped) | passed: lint, test, ubtrap (709 of 709), diff-asm 2,000 (0 disagreements), tasks / files and processes / agent testing determinism (20 runs each, all identical), agent testing scale; stopped during https determinism (golden 8 of 8 had passed) at the user's request. Not run: https step cases and interop/fuzz/speed, the math step (run on its own: passed), gc-check, the RISC-V speed comparison |
 
 ## Size
 
@@ -49,10 +49,15 @@
 - **Vector inputs** go through `std.json` (exact), since `parse_float` keeps 15 digits.
 - **The vector generator took the machine down twice** before its memory use was bounded (research.md);
   it now runs under a 4 GiB limit.
-- **`make gate` was not run**: its full run (gc-check, diff-asm, speed against build-asm under qemu) takes
+- **`make gate` was run only in part**: its full run (gc-check, diff-asm, speed against build-asm under qemu) takes
   long, and this session's machine went down three times. `make test`, `make lint`, `make instrumented` and
   the three-platform suites passed; the gate's new math step (`tests/cases/math` 20 times, `math_speed.py`)
-  was run on its own and passed. The rest of `make gate` is unchanged by this spec and remains to be run.
-- **Found, not changed**: `str` of a float rounds twice (to 17 digits, then to 15), so `str(exp(1.0))` is
-  `2.71828182845904`, though the 15-digit rounding of 2.718281828459045090… is `…905`. This is the
-  existing `str` (spec 001), not this spec; the `exp` doc example shows what vo prints.
+  was run on its own and passed. A later `make gate` run passed every step up to https determinism and
+  was then stopped (Verification); gc-check and the speed comparison remain to be run.
+- **Fixed after the spec (`str` of a float)**: `str` scaled by a power of ten in floating point before
+  rounding to 15 digits, so it rounded twice and printed a wrong last digit for about 4% of values
+  (8,772 of 199,959 random doubles; `str(exp(1.0))` was `2.71828182845904`). It now rounds the exact
+  value once, ties to even: in 128-bit integers for |x| from about 1e-8 to 1e34 (as fast as before:
+  200,000 calls in 0.06 s), else with `std.json`'s big integers. 0 wrong of 399,924 values against C's
+  `printf`; case `run/float_str_rounding`. The only existing output that changed is `math/values`
+  (`2.71828182845905`), and the `exp` doc example is back to `2.71828182845905`.

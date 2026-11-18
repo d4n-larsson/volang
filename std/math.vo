@@ -17,7 +17,7 @@ export fn sqrt(x: float) -> float {
 }
 
 # e raised to x: inf above about 709.78, 0.0 below about -745.13.
-#     exp(1.0) is 2.71828182845904
+#     exp(1.0) is 2.71828182845905
 export fn exp(x: float) -> float {
     return __math(2, x, 0.0);
 }

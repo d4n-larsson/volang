@@ -176,15 +176,47 @@ int float_parse(char *p, long n, long *out)
     return 0;
 }
 
-/* Round to nearest, ties to even, as RISC-V `fcvt.l.d ... rne` (research R13): no libm, and no
- * SSE4.1 on x86-64. Below 2^52, adding and subtracting 2^52 rounds in the default rounding mode
- * (ties to even); from 2^52 on, every double is an integer already. */
-static long round_half_even(double v)
+/* round(x / 10^(e-14)) for the finite positive double with these bits, rounded once (ties to even),
+ * in 128-bit integers: x = m * 2^b, so the quotient is m * 10^p / 2^-b or m * 2^b / 10^-p. Returns 0
+ * where that does not fit (|x| below about 1e-8 or above about 1e34): the caller uses big integers. */
+static int digits15_u128(unsigned long abs_bits, long e, unsigned long *out)
 {
-    const double two52 = 4503599627370496.0;
-    if (v >= two52 || v <= -two52) return (long)v;
-    double t = v >= 0 ? (v + two52) - two52 : (v - two52) + two52;
-    return (long)t;
+    typedef unsigned __int128 u128;
+    long biased = (long)(abs_bits >> 52);
+    unsigned long m = abs_bits & ((1UL << 52) - 1);
+    long b = -1074;
+    if (biased) {
+        m |= 1UL << 52;
+        b = biased - 1075;
+    }
+    long p = 14 - e;
+    u128 q, rem, half;
+    int odd;
+    if (p >= 0) { /* m * 10^p < 2^53 * 10^22 < 2^127, then an exact shift right */
+        if (p > 22 || b >= 0 || b < -127) return 0;
+        u128 n = m;
+        for (long i = 0; i < p; i++) n *= 10;
+        long s = -b;
+        q = n >> s;
+        rem = n & (((u128)1 << s) - 1);
+        half = (u128)1 << (s - 1);
+        odd = (int)(q & 1);
+        if (rem > half || (rem == half && odd)) q++;
+    } else { /* m * 2^b over 10^-p (times 2^-b when b < 0), one division */
+        if (-p > 19 || b > 73) return 0;
+        u128 n = m, den = 1;
+        for (long i = 0; i < -p; i++) den *= 10;
+        if (b >= 0)
+            n <<= b;
+        else
+            den <<= -b;
+        q = n / den;
+        rem = n % den;
+        u128 twice = rem * 2; /* rem < den < 2^67: no overflow */
+        if (twice > den || (twice == den && (q & 1))) q++;
+    }
+    *out = (unsigned long)q;
+    return 1;
 }
 
 /* ponytail: 15 significant digits, not shortest round-trip; upgrade: Ryu port */
@@ -217,7 +249,12 @@ void float_to_text(SB *sb, long bits)
         sb_bytes(sb, out, w - out);
         return;
     }
-    double a = bits_to_double((long)abs_bits); /* e = floor(log10(|x|)) by repeated scaling */
+    /* The 15 significant digits of the exact value, rounded once (ties to even), and e, the power of
+     * ten of the first. Scaling by a power of ten in floating point first (before spec 020) rounded
+     * twice and got about 4% of values wrong in the last digit. 128-bit integers where they fit, else
+     * big integers (src/stdprim.c, about 30 times slower). */
+    char d[15];
+    double a = bits_to_double((long)abs_bits); /* e = floor(log10(|x|)), estimated, then checked */
     long e = 0;
     while (10.0 <= a) {
         a /= 10.0;
@@ -227,26 +264,26 @@ void float_to_text(SB *sb, long bits)
         a *= 10.0;
         e--;
     }
-    long digits;
-    long tries = 0; /* correction rounds */
-    for (;;) {
-        digits = round_half_even(bits_to_double(scale10((long)abs_bits, 14 - e)));
-        if (tries >= 3) break;
-        tries++;
-        if (digits < 100000000000000L) {
+    unsigned long digits = 0;
+    int fast = 0;
+    for (int tries = 0; tries < 3; tries++) {
+        fast = digits15_u128(abs_bits, e, &digits);
+        if (!fast) break;
+        if (digits < 100000000000000UL) {
             e--;
-            continue;
-        }
-        if (digits >= 1000000000000000L) {
+        } else if (digits >= 1000000000000000UL) {
             e++;
-            continue;
+        } else {
+            break;
         }
-        break;
     }
-    char d[15];
-    for (int i = 14; i >= 0; i--) { /* 15 digits of the value, as the assembly (signed division) */
-        d[i] = (char)('0' + digits % 10);
-        digits /= 10;
+    if (fast && digits >= 100000000000000UL && digits < 1000000000000000UL) {
+        for (int i = 14; i >= 0; i--) {
+            d[i] = (char)('0' + digits % 10);
+            digits /= 10;
+        }
+    } else {
+        e = exact_digits(abs_bits, 15, d);
     }
     if (e >= 0) {
         long i = 0;

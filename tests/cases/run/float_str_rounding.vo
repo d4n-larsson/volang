@@ -1,0 +1,22 @@
+# str rounds a float to 15 significant digits exactly, ties to even (it used to scale in floating
+# point first, which rounded twice and got about 4% of values wrong in the last digit).
+import std.json.parse_json;
+import std.json.as_float;
+
+fn num(s: str) -> result[float] {
+    let j = try parse_json(s);
+    return as_float(j);
+}
+
+fn main() uses console {
+    for s in ["2.718281828459045", "301868.9460797075", "95488.93141911575", "750955.6236617765", "-741319.5559626315", "7.765387138513795e-140", "0.30000000000000004", "123456789012345.67", "1e300", "5e-324", "1.7976931348623157e308"] {
+        match num(s) {
+            case ok(x) {
+                print(s + " " + str(x));
+            }
+            case err(e) {
+                print(e);
+            }
+        }
+    }
+}
