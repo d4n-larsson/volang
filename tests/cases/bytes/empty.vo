@@ -1,0 +1,11 @@
+# Spec 021: the empty bytes value.
+import std.bytes.from_ints;
+import std.bytes.from_text;
+import std.bytes.to_hex;
+
+fn main() uses console {
+    let e = from_text("");
+    print(str(len(e)) + " " + str(e == from_ints(new list[int])) + " [" + to_hex(e) + "] " + to_hex(e + from_ints([7])));
+    let f = slice(from_ints([1, 2]), 1, 1);
+    print(str(f == e) + " " + str(e < f) + " " + str(1 / len(e)));
+}

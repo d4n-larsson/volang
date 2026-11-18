@@ -30,6 +30,15 @@ int is_cont(Str *s, long i)
     return i < s->len && ((unsigned char)s->data[i] & 0xC0) == 0x80;
 }
 
+/* spec 021: bytes a to b - 1 of a bytes value (no character boundaries). */
+Str *rt_slice_bytes(Str *s, long a, long b, Node *node)
+{
+    long len = s->len;
+    if (a < 0 || a > len) rt_index_error(node, a, len);
+    if (b < a || b > len) rt_index_error(node, b, len);
+    return str_new(s->data + a, b - a);
+}
+
 Str *rt_slice_str(Str *s, long a, long b, Node *node)
 {
     long len = s->len;

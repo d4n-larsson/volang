@@ -108,6 +108,26 @@ export fn append_file(path: str, text: str) -> result[void] uses file.write {
     return ok();
 }
 
+# The bytes of a file (needs file.read), whatever they are; read_file needs the file to be UTF-8 text.
+#     read_bytes("/") == err("cannot read /") is true
+export fn read_bytes(path: str) -> result[bytes] uses file.read {
+    return __fsb(1, path, __bytes_of_text(""));
+}
+
+# Writes b to a file (needs file.write), creating or replacing it.
+#     write_bytes("/", from_text("")) == err("cannot write /") is true
+export fn write_bytes(path: str, b: bytes) -> result[void] uses file.write {
+    let _ = try __fsb(2, path, b);
+    return ok();
+}
+
+# Appends b to a file (needs file.write), creating the file when it is missing.
+#     append_bytes("/", from_text("x")) == err("is a directory") is true
+export fn append_bytes(path: str, b: bytes) -> result[void] uses file.write {
+    let _ = try __fsb(3, path, b);
+    return ok();
+}
+
 # Creates a directory and its missing parents (needs file.write); a directory already there is ok.
 #     make_dir("/") == ok() is true
 export fn make_dir(path: str) -> result[void] uses file.write {

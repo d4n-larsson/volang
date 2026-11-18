@@ -1,0 +1,4 @@
+# Spec 021: a surrogate (ED A0 80) is not UTF-8, so the source is refused.
+fn main() uses console {
+    print("í €");
+}

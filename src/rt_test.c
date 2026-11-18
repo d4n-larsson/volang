@@ -281,6 +281,18 @@ static Str *str_excerpt(Str *s, long from)
     return sb_finish(sb);
 }
 
+/* spec 021: the hex of up to 8 bytes of s from offset i ("..." after them), or 0 past its end. */
+static Str *bytes_excerpt(Str *s, long i)
+{
+    if (i >= s->len) return 0;
+    long n = s->len - i < 8 ? s->len - i : 8;
+    GC_ROOT(&s);
+    Str *hex = bytes_to_hex(str_new(s->data + i, n));
+    GC_UNROOT(1);
+    if (i + n < s->len) hex = msg("$1...", hex, 0, 0);
+    return hex;
+}
+
 /* Fills tf_diff_* for a failing expect_eq on a non-scalar, or on strings longer than 40 characters. */
 static void expect_eq_diff(long actual, long expected, Type *type)
 {
@@ -307,6 +319,22 @@ static void expect_eq_diff(long actual, long expected, Type *type)
         tf_diff_path = (long)str_from_cstr("");
         tf_diff_exp = (long)str_excerpt(e, first);
         tf_diff_act = (long)str_excerpt(a, first);
+        return;
+    }
+    if (type->kind == TY_BYTES) { /* spec 021: the first differing byte offset, in hex from there */
+        Str *a = (Str *)actual, *e = (Str *)expected;
+        long i = 0;
+        while (i < a->len && i < e->len && a->data[i] == e->data[i]) i++;
+        GC_ROOT(&a);
+        GC_ROOT(&e);
+        tf_diff_path = (long)msg("byte $1", int_to_str(i), 0, 0);
+        tf_diff_exp = (long)bytes_excerpt(e, i);
+        tf_diff_act = (long)bytes_excerpt(a, i);
+        if (a->len != e->len) {
+            tf_diff_len_a = a->len;
+            tf_diff_len_e = e->len;
+        }
+        GC_UNROOT(2);
         return;
     }
     if (type->kind == TY_INT || type->kind == TY_FLOAT || type->kind == TY_BOOL) return;

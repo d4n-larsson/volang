@@ -1,0 +1,7 @@
+# Spec 021: a list element outside 0 to 255 is R0007, naming its index and value.
+import std.bytes.from_ints;
+
+fn main() uses console {
+    let b = from_ints([1, 2, 256, 3]);
+    print(str(len(b)));
+}

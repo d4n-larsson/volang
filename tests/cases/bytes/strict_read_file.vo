@@ -1,0 +1,22 @@
+# Spec 021 US7: read_file of a file that is not UTF-8 is an err naming the byte and read_bytes.
+import std.fs.read_bytes;
+
+fn main() uses console, file.read {
+    let path = args()[0];
+    match read_file(path) {
+        case ok(s) {
+            print("ok " + s);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    match read_bytes(path) {
+        case ok(b) {
+            print("bytes " + str(len(b)));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

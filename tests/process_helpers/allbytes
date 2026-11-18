@@ -1,0 +1,6 @@
+#!/bin/sh
+# Spec 021: writes the bytes 0..255 to stdout, and 255..0 to stderr.
+i=0
+while [ $i -le 255 ]; do printf "\\$(printf '%03o' $i)"; i=$((i + 1)); done
+i=255
+while [ $i -ge 0 ]; do printf "\\$(printf '%03o' $i)" >&2; i=$((i - 1)); done

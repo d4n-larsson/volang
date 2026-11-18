@@ -1,0 +1,15 @@
+# Spec 021 US6: a text serve handler is not called for a body that is not UTF-8: the answer is 400.
+import std.http.Request;
+import std.http.Response;
+import std.http.Header;
+import std.http.serve;
+
+fn handle(r: Request) -> Response {
+    return new Response { status: 200, headers: new list[Header], body: "got " + r.body };
+}
+
+fn main() -> result[void] uses console, serve("{vport}") {
+    try serve("{vport}", handle);
+    print("stopped");
+    return ok();
+}

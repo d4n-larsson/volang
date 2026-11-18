@@ -9,6 +9,7 @@ Type *t_int;
 Type *t_float;
 Type *t_bool;
 Type *t_str;
+Type *t_bytes;
 Type *t_void;
 Type *t_error;
 static Vec *type_tab; /* interned types */
@@ -36,6 +37,7 @@ void ck_init(void)
     t_float = ty_basic(TY_FLOAT);
     t_bool = ty_basic(TY_BOOL);
     t_str = ty_basic(TY_STR);
+    t_bytes = ty_basic(TY_BYTES);
     t_void = ty_basic(TY_VOID);
     t_error = ty_basic(TY_ERROR);
 }
@@ -83,6 +85,7 @@ void ty_name_into(SB *sb, Type *t)
     case TY_FLOAT: sb_cstr(sb, "float"); return;
     case TY_BOOL: sb_cstr(sb, "bool"); return;
     case TY_STR: sb_cstr(sb, "str"); return;
+    case TY_BYTES: sb_cstr(sb, "bytes"); return;
     case TY_VOID: sb_cstr(sb, "void"); return;
     case TY_LIST:
         sb_cstr(sb, "list[");
@@ -252,13 +255,17 @@ Type *resolve_type(Node *tn)
     case TY_FLOAT: t = t_float; break;
     case TY_BOOL: t = t_bool; break;
     case TY_STR: t = t_str; break;
+    case TY_BYTES: t = t_bytes; break;
     case TY_VOID: t = t_void; break;
     case TY_LIST: t = ty_list(resolve_type(tn->b.n)); break;
     case TY_MAP: {
         Type *k = resolve_type(tn->b.n);
         Type *v = resolve_type(tn->c.n);
         if (!ty_bad(k) && !ty_is(k, TY_INT) && !ty_is(k, TY_STR)) {
-            ck_err1("E0309", tn->b.n, "Map keys must be `int` or `str`, found `$1`.", ty_name(k));
+            ck_err1("E0309", tn->b.n,
+                    ty_is(k, TY_BYTES) ? "Map keys must be `int` or `str`, found `bytes`: use `std.bytes.to_hex` for a text key."
+                                       : "Map keys must be `int` or `str`, found `$1`.",
+                    ty_name(k));
             break;
         }
         t = ty_make(TY_MAP, k, v, 0);
@@ -355,6 +362,11 @@ int expect_type(Node *node, Type *expected, Type *found)
         return 0;
     }
     Diag *d = ck_mismatch(node, expected, found);
+    if (expected->kind == TY_STR && found->kind == TY_BYTES) /* spec 021: never implicit; name the conversion */
+        d->msg = str_from_cstr("Expected `str`, found `bytes`: convert with `std.bytes.to_text` (UTF-8, a `result`) "
+                               "or `std.bytes.to_hex`.");
+    else if (expected->kind == TY_BYTES && found->kind == TY_STR)
+        d->msg = str_from_cstr("Expected `bytes`, found `str`: convert with `std.bytes.from_text`.");
     suggest_conversion(d, expected, found, node);
     return 0;
 }
@@ -431,6 +443,12 @@ static void check_set(Node *st)
         }
     }
     Type *pt = check_place(place, 0);
+    if (place->kind == N_INDEX && place->a.n->type && ty_is(place->a.n->type, TY_BYTES)) { /* spec 021 */
+        ck_err("E0308", place, str_from_cstr("`bytes` cannot be changed: build new bytes with `slice`, `+` or "
+                                             "`std.bytes.from_ints`."));
+        check_expr(st->b.n, t_int);
+        return;
+    }
     Type *vt = check_expr(st->b.n, pt);
     expect_type(st->b.n, pt, vt);
 }
@@ -449,7 +467,11 @@ static void check_for(Node *st)
         elem = it->a.t; /* spec 014: collections iterate over a snapshot (a map: `for k in keys(m)`) */
     } else {
         elem = t_error;
-        if (!ty_bad(it))
+        if (ty_is(it, TY_BYTES)) /* spec 021 */
+            ck_err("E0301", st->b.n,
+                   str_from_cstr("`for ... in` needs a list or a range `a..b`, found `bytes`: loop over "
+                                 "`std.bytes.to_ints(...)` or over the indexes `0..len(...)`."));
+        else if (!ty_bad(it))
             ck_err1("E0301", st->b.n, "`for ... in` needs a list or a range `a..b`, found `$1`.", ty_name(it));
     }
     if (st->a.n) {

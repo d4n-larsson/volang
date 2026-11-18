@@ -1,0 +1,4 @@
+$ vo run main.vo -- http://127.0.0.1:{port}/echo-bytes
+200 00ff0a0d800001 true
+--- stderr
+--- exit 0

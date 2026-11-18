@@ -1,0 +1,5 @@
+$ vo run main.vo
+0 256 256 256 256
+00010203 fcfdfeff
+--- stderr
+--- exit 0

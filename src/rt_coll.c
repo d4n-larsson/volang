@@ -48,7 +48,8 @@ long value_cmp(long a, long b, Type *t)
         Bits x = {.i = a}, y = {.i = b};
         return x.d < y.d ? -1 : x.d > y.d ? 1 : 0;
     }
-    case TY_STR: {
+    case TY_STR:
+    case TY_BYTES: { /* spec 021 */
         int r = str_cmp((Str *)a, (Str *)b);
         return r < 0 ? -1 : r > 0;
     }

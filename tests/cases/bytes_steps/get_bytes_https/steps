@@ -1,0 +1,3 @@
+server https a.test
+vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/allbytes
+keep out.bin

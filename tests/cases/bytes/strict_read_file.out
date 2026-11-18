@@ -1,0 +1,2 @@
+not UTF-8 at byte 3 (std.fs.read_bytes reads any bytes)
+bytes 5

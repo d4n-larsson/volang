@@ -1,0 +1,12 @@
+PASS same (0ms)
+FAIL differ (0ms)
+  expect_eq_bytes.vo:18:5: `expect_eq` failed: the values differ.
+    expected: <2000 bytes: 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f...>
+    actual:   <2000 bytes: 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f...>
+    first difference at byte 1000: expected 4101020304050607..., actual 4201020304050607...
+FAIL shorter (0ms)
+  expect_eq_bytes.vo:22:5: `expect_eq` failed: the values differ.
+    expected: <3 bytes: 010203>
+    actual:   <2 bytes: 0102>
+    first difference at byte 2: expected 03, actual (none) (lengths: actual 2, expected 3)
+1 passed, 2 failed

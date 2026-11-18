@@ -1,0 +1,4 @@
+$ vo run main.vo
+output is not UTF-8 (run_bytes reads it)
+--- stderr
+--- exit 0

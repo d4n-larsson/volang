@@ -15,9 +15,10 @@ enum {
     BU_SORT_BY, BU_MAP, BU_FILTER, BU_FOLD, BU_ANY, BU_ALL, BU_TODO, BU_ASSUME, BU_REQ_FAIL,
     BU_ENS_FAIL, BU_FLOAT_TEXT, BU_HTTP_EXCHANGE, BU_TEXT_FLOAT, BU_GET_OR, BU_SERVE_LISTEN, BU_SERVE_NEXT,
     BU_SERVE_REPLY, BU_SERVE_CALL, BU_HTTP_PART, BU_COLL, BU_CONCURRENT_MAP, BU_FS, BU_RUN, BU_HTTPS,
-    BU_MATH, BU_MATH_INT
+    BU_MATH, BU_MATH_INT, BU_BYTES_OF_TEXT, BU_TEXT_OF_BYTES, BU_BYTES_OF_INTS, BU_INTS_OF_BYTES, BU_BYTES_HEX,
+    BU_BYTES_UNHEX, BU_BYTES_B64, BU_BYTES_UNB64, BU_STDIN_BYTES, BU_STDOUT_BYTES, BU_FSB, BU_RUN_BYTES, BU_RAW_TEXT
 };
-_Static_assert(BU_MATH_INT == B_LAST && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
+_Static_assert(BU_RAW_TEXT == B_LAST && BU_RAW_TEXT == B_RAW_TEXT && BU_RUN_BYTES == B_RUN_BYTES && BU_FSB == B_FSB && BU_BYTES_OF_TEXT == B_BYTES_FIRST && BU_STDIN_BYTES == B_STDIN_BYTES && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
 _Static_assert(BU_TODO == B_TODO && BU_REQ_FAIL == B_REQ_FAIL && BU_SORT_BY == B_SORT_BY, "builtin ids");
 
 /* The static type of the call's first argument. */
@@ -91,14 +92,19 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_PRINT: rt_print(1, (Str *)a0, 1); return 0;
     case BU_WRITE: rt_print(1, (Str *)a0, 0); return 0;
     case BU_EPRINT: rt_print(2, (Str *)a0, 1); return 0;
-    case BU_READ_LINE: return (long)io_read_line(call); /* spec 006: io_* record or replay inputs */
-    case BU_READ_ALL: return (long)io_read_all(call);
-    case BU_READ_FILE: return (long)io_read_file((Str *)a0);
+    /* spec 006: io_* record or replay inputs; spec 021: text from outside is checked as UTF-8 after */
+    case BU_READ_LINE:
+        return (long)strict_result(io_read_line(call), "not UTF-8 at byte $1 (std.bytes.read_stdin reads any bytes)");
+    case BU_READ_ALL:
+        return (long)strict_str(io_read_all(call), "Standard input is not UTF-8 at byte $1: read it with `std.bytes.read_stdin`.",
+                                call);
+    case BU_READ_FILE:
+        return (long)strict_result(io_read_file((Str *)a0), "not UTF-8 at byte $1 (std.fs.read_bytes reads any bytes)");
     case BU_WRITE_FILE: return (long)io_write_file((Str *)a0, (Str *)a1);
-    case BU_ARGS: return (long)rt_args();
+    case BU_ARGS: return (long)strict_args(rt_args(), call);
     case BU_EXIT: rt_exit(a0, call); return 0;
     case BU_NOW: return io_now_ms();
-    case BU_ENV: return (long)io_env((Str *)a0);
+    case BU_ENV: return (long)strict_result(io_env((Str *)a0), "not UTF-8 at byte $1");
     case BU_RANDOM_INT: return rt_random_int(a0, a1);
     case BU_SORT_BY: hof_sort_by((List *)a0, (void *)a1, call); return 0;
     case BU_MAP: return (long)hof_map((List *)a0, (void *)a1, call);
@@ -124,21 +130,35 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_HTTP_PART: return (long)rt_http_part((Str *)a0, a1); /* spec 013 */
     case BU_COLL: return coll_op(call, a0, a1, a2); /* spec 014: std.collections */
     case BU_FS: return (long)io_fs(a0, (Str *)a1, (Str *)a2); /* spec 017: std.fs */
-    case BU_RUN: return (long)io_run((List *)a0, (Str *)a1, (List *)a2); /* spec 017: std.process */
+    case BU_RUN: return (long)io_run((List *)a0, (Str *)a1, (List *)a2, 0); /* spec 017: std.process */
     case BU_HTTPS: return (long)io_https_exchange((void *)a0, a1, (void *)a2); /* spec 019: std.http */
     case BU_MATH: return math_call(a0, a1, a2, call); /* spec 020: std.math */
     case BU_MATH_INT: return math_int(a0, a1, call);
+    case BU_BYTES_OF_TEXT: return a0; /* spec 021: the same object; UTF-8 is already bytes */
+    case BU_TEXT_OF_BYTES: return (long)bytes_to_text((Str *)a0);
+    case BU_BYTES_OF_INTS: return (long)bytes_from_ints((List *)a0, call);
+    case BU_INTS_OF_BYTES: return (long)bytes_to_ints((Str *)a0);
+    case BU_BYTES_HEX: return (long)bytes_to_hex((Str *)a0);
+    case BU_BYTES_UNHEX: return (long)bytes_from_hex((Str *)a0);
+    case BU_BYTES_B64: return (long)bytes_to_base64((Str *)a0);
+    case BU_BYTES_UNB64: return (long)bytes_from_base64((Str *)a0);
+    case BU_STDIN_BYTES: return (long)io_read_all(call); /* spec 021: any bytes (read_all checks its text) */
+    case BU_STDOUT_BYTES: rt_print(1, (Str *)a0, 0); return 0;
+    case BU_FSB: return (long)io_fsb(a0, (Str *)a1, (Str *)a2); /* spec 021: std.fs */
+    case BU_RAW_TEXT: return a0; /* spec 021: std.http only; never reaches user code unchecked */
+    case BU_RUN_BYTES: return (long)io_run((List *)a0, (Str *)a1, (List *)a2, 1); /* spec 021: std.process */
     case BU_TEXT_FLOAT: return std_text_float((Str *)a0); /* spec 007: up to 19 digits, exactly */
     case BU_PARSE_INT: return (long)rt_parse_int((Str *)a0);
     case BU_PARSE_FLOAT: return (long)rt_parse_float((Str *)a0);
     case BU_LEN: {
         long kind = arg0_type(call)->kind;
-        if (kind == TY_STR) return ((Str *)a0)->len;
+        if (kind == TY_STR || kind == TY_BYTES) return ((Str *)a0)->len;
         if (kind == TY_MAP) return ((Map *)a0)->count;
         return ((List *)a0)->len;
     }
     case BU_SLICE:
         if (arg0_type(call)->kind == TY_STR) return (long)rt_slice_str((Str *)a0, a1, a2, call);
+        if (arg0_type(call)->kind == TY_BYTES) return (long)rt_slice_bytes((Str *)a0, a1, a2, call); /* spec 021 */
         return (long)list_slice((List *)a0, a1, a2, call);
     case BU_FIND: return rt_find((Str *)a0, (Str *)a1);
     case BU_SPLIT: return (long)rt_split((Str *)a0, (Str *)a1, call);

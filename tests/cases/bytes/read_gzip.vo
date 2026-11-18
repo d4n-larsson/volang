@@ -1,0 +1,20 @@
+# Spec 021 US1: tell a file's type from its magic bytes.
+import std.fs.read_bytes;
+
+fn kind(b: bytes) -> str {
+    if len(b) >= 2 and b[0] == 31 and b[1] == 139 {
+        return "gzip";
+    }
+    if len(b) >= 4 and b[0] == 137 and b[1] == 80 {
+        return "png";
+    }
+    return "unknown";
+}
+
+fn main() -> result[void] uses console, file.read {
+    for path in args() {
+        let b = try read_bytes(path);
+        print(kind(b) + " " + str(len(b)));
+    }
+    return ok();
+}

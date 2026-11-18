@@ -1,0 +1,5 @@
+$ vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/allbytes
+200 256
+the body is not UTF-8 at byte 128 (get_bytes reads it)
+--- stderr
+--- exit 0

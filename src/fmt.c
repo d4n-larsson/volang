@@ -156,6 +156,7 @@ static void fm_type(Node *t)
     case TY_FLOAT: fm_c("float"); return;
     case TY_BOOL: fm_c("bool"); return;
     case TY_STR: fm_c("str"); return;
+    case TY_BYTES: fm_c("bytes"); return;
     case TY_VOID: fm_c("void"); return;
     case TY_NAMED:
         fm_name(t->b.n);

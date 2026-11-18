@@ -36,3 +36,52 @@ export fn run_with(program: str, args: list[str], input: str, env: list[str]) ->
     }
     return decode(try __run(argv, input, env));
 }
+
+# What a finished program returned, its output as bytes (spec 021): the exit code, standard output and standard error.
+#     new BytesOutput { code: 0, stdout: from_text(""), stderr: from_text("") }.code is 0
+export record BytesOutput {
+    code: int;
+    stdout: bytes;
+    stderr: bytes;
+}
+
+fn header_int(raw: bytes, at: int) -> result[int] {
+    var i = at;
+    while i < len(raw) and raw[i] != 10 {
+        set i = i + 1;
+    }
+    let digits = try __text_of_bytes(slice(raw, at, i));
+    return parse_int(digits);
+}
+
+fn header_end(raw: bytes, at: int) -> int {
+    var i = at;
+    while i < len(raw) and raw[i] != 10 {
+        set i = i + 1;
+    }
+    return i + 1;
+}
+
+fn decode_bytes(raw: bytes) -> result[BytesOutput] {
+    let code = try header_int(raw, 0);
+    let second = header_end(raw, 0);
+    let n = try header_int(raw, second);
+    let body = header_end(raw, second);
+    return ok(new BytesOutput { code: code, stdout: slice(raw, body, body + n), stderr: slice(raw, body + n, len(raw)) });
+}
+
+# Runs program like run, and returns its output as bytes, whatever it is (needs process); run needs UTF-8 output.
+#     run_bytes("no-such-program.vo-doc", new list[str]) == err("not found") is true
+export fn run_bytes(program: str, args: list[str]) -> result[BytesOutput] uses process {
+    return run_with_bytes(program, args, __bytes_of_text(""), new list[str]);
+}
+
+# Runs program like run_with, with input as bytes, and returns its output as bytes (needs process).
+#     run_with_bytes("no-such-program.vo-doc", new list[str], from_text(""), ["A=1"]) == err("not found") is true
+export fn run_with_bytes(program: str, args: list[str], input: bytes, env: list[str]) -> result[BytesOutput] uses process {
+    let argv = [program];
+    for a in args {
+        push(argv, a);
+    }
+    return decode_bytes(try __run_bytes(argv, input, env));
+}

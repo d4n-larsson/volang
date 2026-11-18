@@ -1,0 +1,21 @@
+# Spec 021 US1: read_bytes fails as read_file does.
+import std.fs.read_bytes;
+
+fn main() uses console, file.read {
+    match read_bytes("no-such-file.bin") {
+        case ok(b) {
+            print("ok " + str(len(b)));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    match read_file("no-such-file.bin") {
+        case ok(s) {
+            print("ok " + s);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

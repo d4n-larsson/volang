@@ -74,7 +74,49 @@ fn parse_url(url: str) -> result[Url] {
     return ok(new Url { tls: tls, host: lower(host), port: port, target: target });
 }
 
+# A response whose body is bytes (spec 021): the status code, the headers in their order, and the body.
+#     new BytesResponse { status: 200, headers: new list[Header], body: from_text("") }.status is 200
+export record BytesResponse {
+    status: int;
+    headers: list[Header];
+    body: bytes;
+}
+
 fn exchange(method: str, url: str, content_type: str, body: str) -> result[Response] uses net {
+    let raw = try exchange_raw(method, url, content_type, body);
+    let r = try parse_response(raw);
+    var hint = "get_bytes";
+    if method == "POST" {
+        set hint = "post_bytes";
+    }
+    return ok(new Response { status: r.status, headers: r.headers, body: try text_body(raw, hint) });
+}
+
+fn text_body(raw: str, hint: str) -> result[str] {
+    # spec 021: the body of a raw message as text, checked (a str is always UTF-8).
+    match __text_of_bytes(__bytes_of_text(__http_part(raw, 1))) {
+        case ok(t) {
+            return ok(t);
+        }
+        case err(e) {
+            return err("the body is " + e + " (" + hint + " reads it)");
+        }
+    }
+}
+
+fn head_text(raw: str) -> result[str] {
+    # spec 021: the head of a raw message as text, checked.
+    match __text_of_bytes(__bytes_of_text(__http_part(raw, 0))) {
+        case ok(t) {
+            return ok(t);
+        }
+        case err(_) {
+            return err("a header is not UTF-8");
+        }
+    }
+}
+
+fn exchange_raw(method: str, url: str, content_type: str, body: str) -> result[str] uses net {
     let u = try parse_url(url);
     let nl = crlf();
     var request = method + " " + u.target + " HTTP/1.1" + nl + "Host: " + u.host;
@@ -87,10 +129,9 @@ fn exchange(method: str, url: str, content_type: str, body: str) -> result[Respo
     }
     set request = request + nl + body;
     if u.tls {
-        return parse_response(try __https_exchange(u.host, u.port, request));
+        return __https_exchange(u.host, u.port, request);
     }
-    let raw = try __http_exchange(u.host, u.port, request);
-    return parse_response(raw);
+    return __http_exchange(u.host, u.port, request);
 }
 
 fn crlf() -> str {
@@ -98,8 +139,9 @@ fn crlf() -> str {
 }
 
 fn parse_response(raw: str) -> result[Response] {
-    # raw: the response framed by the runtime (spec 013): an ASCII head, then the decoded body.
-    let head = split(__http_part(raw, 0), crlf());
+    # raw: the response framed by the runtime (spec 013): a head, then the decoded body (any bytes; the
+    # caller takes it as text or bytes). The body field is left empty here.
+    let head = split(try head_text(raw), crlf());
     let parts = split(head[0], " ");
     if len(parts) < 2 or len(parts[0]) < 5 or slice(parts[0], 0, 5) != "HTTP/" {
         return err("malformed response: bad status line");
@@ -114,7 +156,7 @@ fn parse_response(raw: str) -> result[Response] {
         }
     }
     let headers = try parse_headers(head, "malformed response: bad header line");
-    return ok(new Response { status: status, headers: headers, body: __http_part(raw, 1) });
+    return ok(new Response { status: status, headers: headers, body: "" });
 }
 
 fn parse_headers(head: list[str], bad: str) -> result[list[Header]] {
@@ -140,6 +182,28 @@ export fn get(url: str) -> result[Response] uses net {
 #     post("ftp://x/", "text/plain", "") == err("not an http:// or https:// URL: ftp://x/") is true
 export fn post(url: str, content_type: str, body: str) -> result[Response] uses net {
     return exchange("POST", url, content_type, body);
+}
+
+# Sends GET like get, and returns the body as bytes, whatever it is (needs net); get needs a UTF-8 body.
+#     get_bytes("ftp://example.com/") == err("not an http:// or https:// URL: ftp://example.com/") is true
+export fn get_bytes(url: str) -> result[BytesResponse] uses net {
+    return exchange_bytes("GET", url, "", from_bytes_empty());
+}
+
+# Sends POST like post, with a body of bytes, and returns the body as bytes (needs net).
+#     post_bytes("ftp://x/", "application/octet-stream", from_text("")) == err("not an http:// or https:// URL: ftp://x/") is true
+export fn post_bytes(url: str, content_type: str, body: bytes) -> result[BytesResponse] uses net {
+    return exchange_bytes("POST", url, content_type, body);
+}
+
+fn from_bytes_empty() -> bytes {
+    return __bytes_of_text("");
+}
+
+fn exchange_bytes(method: str, url: str, content_type: str, body: bytes) -> result[BytesResponse] uses net {
+    let raw = try exchange_raw(method, url, content_type, __raw_text(body));
+    let r = try parse_response(raw);
+    return ok(new BytesResponse { status: r.status, headers: r.headers, body: __bytes_of_text(__http_part(raw, 1)) });
 }
 
 # The value of the first header with this name, compared without case.
@@ -177,17 +241,61 @@ export fn request_header(r: Request, name: str) -> result[str] {
 # Answers HTTP requests on address ("8000": this machine, "0.0.0.0:8000": the network) with handle's responses until stopped; many requests are read at once, and handle is called for one at a time.
 #     serve("0", fn(r: Request) -> Response { return new Response { status: 200, headers: new list[Header], body: "" }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
 export fn serve[E: effects](address: str, handle: fn(Request) -> Response uses E) -> result[void] uses serve, E {
-    let listener = try __serve_listen(address);
     let answer = fn(raw: str) -> str {
         match parse_request(raw) {
             case ok(req) {
-                return response_text(req.method, handle(req));
+                match text_body(raw, "serve_bytes") {
+                    case ok(body) {
+                        let r = new Request { method: req.method, path: req.path, query: req.query, headers: req.headers, body: body };
+                        return response_text(req.method, handle(r));
+                    }
+                    case err(_) {
+                        return bad_request();
+                    }
+                }
             }
             case err(_) {
-                return response_text("GET", new Response { status: 400, headers: new list[Header], body: "" });
+                return bad_request();
             }
         }
     };
+    return serve_loop(address, answer);
+}
+
+# A request whose body is bytes (spec 021): method, path, query, headers in their order, and body.
+#     new BytesRequest { method: "GET", path: "/", query: "", headers: new list[Header], body: from_text("") }.path is "/"
+export record BytesRequest {
+    method: str;
+    path: str;
+    query: str;
+    headers: list[Header];
+    body: bytes;
+}
+
+# Answers HTTP requests like serve, with request and response bodies as bytes, whatever they are (needs serve); serve needs UTF-8 bodies.
+#     serve_bytes("0", fn(r: BytesRequest) -> BytesResponse { return new BytesResponse { status: 200, headers: new list[Header], body: r.body }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
+export fn serve_bytes[E: effects](address: str, handle: fn(BytesRequest) -> BytesResponse uses E) -> result[void] uses serve, E {
+    let answer = fn(raw: str) -> str {
+        match parse_request(raw) {
+            case ok(req) {
+                let r = new BytesRequest { method: req.method, path: req.path, query: req.query, headers: req.headers, body: __bytes_of_text(__http_part(raw, 1)) };
+                let out = handle(r);
+                return response_text(req.method, new Response { status: out.status, headers: out.headers, body: __raw_text(out.body) });
+            }
+            case err(_) {
+                return bad_request();
+            }
+        }
+    };
+    return serve_loop(address, answer);
+}
+
+fn bad_request() -> str {
+    return response_text("GET", new Response { status: 400, headers: new list[Header], body: "" });
+}
+
+fn serve_loop[E: effects](address: str, answer: fn(str) -> str uses E) -> result[void] uses serve, E {
+    let listener = try __serve_listen(address);
     while true {
         let raw = try __serve_next(listener);
         if raw == "" {
@@ -205,8 +313,9 @@ export fn serve[E: effects](address: str, handle: fn(Request) -> Response uses E
 }
 
 fn parse_request(raw: str) -> result[Request] {
-    # raw: the request framed by the runtime (spec 013): an ASCII head, then the decoded body.
-    let head = split(__http_part(raw, 0), crlf());
+    # raw: the request framed by the runtime (spec 013): a head, then the decoded body (any bytes; the
+    # caller takes it as text or bytes). The body field is left empty here.
+    let head = split(try head_text(raw), crlf());
     let parts = split(head[0], " ");
     if len(parts) != 3 or parts[0] == "" or parts[1] == "" or len(parts[2]) < 5 or slice(parts[2], 0, 5) != "HTTP/" {
         return err("bad request line");
@@ -219,7 +328,7 @@ fn parse_request(raw: str) -> result[Request] {
         set path = slice(path, 0, q);
     }
     let headers = try parse_headers(head, "bad header line");
-    return ok(new Request { method: parts[0], path: path, query: query, headers: headers, body: __http_part(raw, 1) });
+    return ok(new Request { method: parts[0], path: path, query: query, headers: headers, body: "" });
 }
 
 fn reason(status: int) -> str {

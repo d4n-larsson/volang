@@ -124,21 +124,34 @@ Str *sb_finish(SB *sb)
     return str_new(sb->ptr, sb->len);
 }
 
-/* Length of the valid UTF-8 sequence starting at p (1-4), or 0 if it is invalid.
- * ponytail: checks lead and continuation bytes only, not overlong 3/4-byte forms or surrogates */
+/* Length of the well-formed UTF-8 sequence starting at p (1-4), or 0 if it is not one: Unicode's
+ * Table 3-7, so overlong forms, surrogates (U+D800-U+DFFF) and code points above U+10FFFF are refused
+ * (spec 021; before, only lead and continuation bytes were checked). */
 long utf8_seq_len(char *p, long n)
 {
     if (n <= 0) return 0;
     unsigned c = (unsigned char)p[0];
     long len;
+    unsigned lo = 0x80, hi = 0xBF; /* the range of the second byte */
     if (c < 0x80) return 1;
     if (c < 0xC2) return 0;
-    if (c < 0xE0) len = 2;
-    else if (c < 0xF0) len = 3;
-    else if (c < 0xF5) len = 4;
-    else return 0;
+    if (c < 0xE0) {
+        len = 2;
+    } else if (c < 0xF0) {
+        len = 3;
+        if (c == 0xE0) lo = 0xA0; /* no overlong 3-byte forms */
+        if (c == 0xED) hi = 0x9F; /* no surrogates */
+    } else if (c < 0xF5) {
+        len = 4;
+        if (c == 0xF0) lo = 0x90; /* no overlong 4-byte forms */
+        if (c == 0xF4) hi = 0x8F; /* nothing above U+10FFFF */
+    } else {
+        return 0;
+    }
     if (len > n) return 0;
-    for (long i = 1; i < len; i++)
+    unsigned c1 = (unsigned char)p[1];
+    if (c1 < lo || c1 > hi) return 0;
+    for (long i = 2; i < len; i++)
         if (((unsigned char)p[i] & 0xC0) != 0x80) return 0;
     return len;
 }

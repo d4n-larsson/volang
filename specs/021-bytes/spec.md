@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-18
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: User description: "Binary data for vo: a `bytes` type, because `str` must be UTF-8 and so images,
 archives, hashes and binary protocols cannot be handled. Roadmap gap "Binary data"; also lifts spec 017's

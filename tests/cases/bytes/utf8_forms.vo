@@ -1,0 +1,26 @@
+# Spec 021: to_text accepts exactly well-formed UTF-8 (Unicode Table 3-7) and names the first bad byte.
+import std.bytes.from_ints;
+import std.bytes.to_text;
+
+fn show(xs: list[int]) uses console {
+    match to_text(from_ints(xs)) {
+        case ok(s) {
+            print("ok " + str(len(s)));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
+
+fn main() uses console {
+    show([97, 128, 98]);
+    show([97, 192, 175, 98]);
+    show([97, 224, 128, 175, 98]);
+    show([97, 240, 128, 128, 175, 98]);
+    show([97, 237, 160, 128, 98]);
+    show([97, 244, 144, 128, 128, 98]);
+    show([97, 98, 226, 130]);
+    show([97, 195, 169, 239, 191, 191, 244, 143, 191, 191, 237, 159, 191]);
+    show(new list[int]);
+}

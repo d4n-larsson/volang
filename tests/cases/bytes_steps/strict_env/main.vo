@@ -1,0 +1,13 @@
+# Spec 021 US7: an environment variable that is not UTF-8 is an err from env().
+fn main() uses console, env("GOOD", "BAD") {
+    for name in ["GOOD", "BAD"] {
+        match env(name) {
+            case ok(v) {
+                print(name + " ok " + v);
+            }
+            case err(e) {
+                print(name + " " + e);
+            }
+        }
+    }
+}

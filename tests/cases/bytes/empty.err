@@ -1,0 +1,1 @@
+{"v":1,"kind":"runtime_error","code":"R0002","name":"division_by_zero","message":"Division by zero.","file":"empty.vo","start":{"line":10,"col":54},"end":{"line":10,"col":64},"trace":[{"function":"main","file":"empty.vo","start":{"line":10,"col":54},"locals":[{"name":"e","type":"bytes","value":"<0 bytes>"},{"name":"f","type":"bytes","value":"<0 bytes>"}]}]}

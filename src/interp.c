@@ -326,7 +326,8 @@ int values_equal(long a, long b, Type *type)
         Bits x = {.i = a}, y = {.i = b};
         return x.d == y.d;
     }
-    case TY_STR: return str_eq((Str *)a, (Str *)b);
+    case TY_STR:
+    case TY_BYTES: return str_eq((Str *)a, (Str *)b); /* spec 021: the same object */
     case TY_OMAP:
     case TY_OSET:
     case TY_PQUEUE:

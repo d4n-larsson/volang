@@ -1,0 +1,12 @@
+# Spec 021 US3: binary input to a program and back, unchanged.
+import std.process.BytesOutput;
+import std.process.run_with_bytes;
+import std.bytes.from_ints;
+import std.bytes.to_hex;
+
+fn main() -> result[void] uses console, process("bin/cat_in") {
+    let input = from_ints([0, 1, 128, 255, 10, 13, 0]);
+    let out = try run_with_bytes("bin/cat_in", new list[str], input, new list[str]);
+    print(str(out.code) + " " + to_hex(out.stdout) + " " + str(out.stdout == input));
+    return ok();
+}

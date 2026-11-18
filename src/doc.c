@@ -3,7 +3,7 @@
  * library source, builtins from the reference's table. `vo doc [--json] [NAME]` (contracts/cli.md). */
 #include "vo.h"
 
-static char *const doc_modules[] = {"json", "time", "text", "random", "http", "collections", "fs", "process", "math", 0};
+static char *const doc_modules[] = {"json", "time", "text", "random", "http", "collections", "fs", "process", "math", "bytes", 0};
 
 static Vec *doc_collect; /* doc_module and doc_builtins collect names here instead of printing */
 

@@ -302,7 +302,8 @@ Type *check_hof(Node *call, long id)
         Type *key = ft->b.t; /* the key must be ordered (spec 014: or a record of ordered fields) */
         if (key->kind == TY_RECORD && !ty_ordered(key))
             order_error(key, call->b.v->data[1].n, 0);
-        else if (key->kind != TY_INT && key->kind != TY_FLOAT && key->kind != TY_STR && key->kind != TY_RECORD)
+        else if (key->kind != TY_INT && key->kind != TY_FLOAT && key->kind != TY_STR && key->kind != TY_BYTES &&
+                 key->kind != TY_RECORD)
             ck_err1("E0313", call->b.v->data[1].n, "`$1` is not ordered: a sort key must be `int`, `float` or `str`.",
                     ty_name(key));
         return t_void;

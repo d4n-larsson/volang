@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 67 /* names up to here (50, 51 are internal and unnamed) */
+#define B_COUNT 80 /* names up to here (50, 51 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -36,6 +36,8 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "assume",   0,             0,           "__float_text", "__http_exchange", "__text_float", "get_or",
     "__serve_listen", "__serve_next", "__serve_reply", "__serve_call", "__http_part", "__coll",
     "concurrent_map", "__fs", "__run", "__https_exchange", "__math", "__math_int",
+    "__bytes_of_text", "__text_of_bytes", "__bytes_of_ints", "__ints_of_bytes", "__bytes_hex", "__bytes_unhex",
+    "__bytes_b64", "__bytes_unb64", "__stdin_bytes", "__stdout_bytes", "__fsb", "__run_bytes", "__raw_text", /* spec 021 */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -48,6 +50,8 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [40] = "s>r",  [41] = "ii>i", [49] = "b>v",  [52] = "f>s",  [53] = "sis>r", [54] = "s>f",
     [56] = "s>n",  [57] = "i>r",  [58] = "s>v",  [60] = "si>s",  [63] = "iss>r", [64] = "SsS>r", [65] = "sis>r",
     [66] = "iff>f", [67] = "if>i", /* spec 020: __math, __math_int */
+    [68] = "s>y",   [69] = "y>r",  [70] = "I>y",  [71] = "y>I",  [72] = "y>s",  [73] = "s>Y",
+    [74] = "y>s",   [75] = "s>Y",  [76] = ">y",   [77] = "y>v",  [78] = "isy>Y", [79] = "SyS>Y", [80] = "y>s", /* spec 021: y bytes, Y result[bytes], I list[int] */
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."
@@ -75,6 +79,9 @@ Type *code_type(int c)
     case 'r': return ty_result(t_str);
     case 'u': return ty_result(t_void);
     case 'n': return ty_result(t_int);
+    case 'y': return t_bytes; /* spec 021 */
+    case 'Y': return ty_result(t_bytes);
+    case 'I': return ty_list(t_int);
     default: return ty_result(t_float);
     }
 }
@@ -202,7 +209,7 @@ static Node *arg0(Node *call)
  * an order report E0313 naming the field (and count as handled). */
 static int is_ordered_type(Type *t, Node *at)
 {
-    if (t->kind == TY_INT || t->kind == TY_FLOAT || t->kind == TY_STR) return 1;
+    if (t->kind == TY_INT || t->kind == TY_FLOAT || t->kind == TY_STR || t->kind == TY_BYTES) return 1;
     if (t->kind != TY_RECORD) return 0;
     if (!ty_ordered(t)) order_error(t, at, 0);
     return 1;
@@ -222,6 +229,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
     call->d.i = id;
     fx_builtin(id);
     if (id == B_FS) fx_builtin_fs(call); /* spec 017: the effect of __fs depends on its operation */
+    if (id == B_FSB) fx_builtin_fsb(call); /* spec 021: the same for __fsb */
     fx_builtin_literal(call, id); /* spec 013 (L1) */
     if ((id >= B_SORT_BY && id <= B_ALL) || id == B_CMAP) return check_hof(call, id); /* sort_by, map, filter, fold, any, all, concurrent_map */
     if (id >= B_EXPECT && id <= B_EXPECT_EQ && !ck_in_test)          /* expect / expect_eq only in tests */
@@ -283,8 +291,9 @@ Type *check_builtin(Node *call, long id, Type *expected)
     case B_LEN: /* len(str|list|map|collection) */
         if (check_argc(call, 1)) {
             Type *t = check_arg(call, 0, 0);
-            if (t->kind != TY_STR && t->kind != TY_LIST && t->kind != TY_MAP && !TY_IS_COLL(t->kind))
-                err_one_of(arg0(call), "a `str`, list or map", t);
+            if (t->kind != TY_STR && t->kind != TY_BYTES && t->kind != TY_LIST && t->kind != TY_MAP &&
+                !TY_IS_COLL(t->kind))
+                err_one_of(arg0(call), "a `str`, `bytes`, list or map", t);
         }
         return t_int;
     case B_SLICE: { /* slice(str|list, int, int) */
@@ -292,8 +301,8 @@ Type *check_builtin(Node *call, long id, Type *expected)
         Type *t = check_arg(call, 0, 0);
         check_arg(call, 1, t_int);
         check_arg(call, 2, t_int);
-        if (t->kind == TY_STR || t->kind == TY_LIST) return t;
-        return err_one_of(arg0(call), "a `str` or list", t);
+        if (t->kind == TY_STR || t->kind == TY_BYTES || t->kind == TY_LIST) return t;
+        return err_one_of(arg0(call), "a `str`, `bytes` or list", t);
     }
     case B_PUSH: /* push(list[T], T); spec 014: OrderedSet, PriorityQueue, Deque */
         if (check_argc(call, 2)) {
@@ -604,6 +613,11 @@ Type *check_index(Node *node)
             expect_type(node->b.n, t_int, i);
             return t->a.t;
         }
+        if (t->kind == TY_BYTES) { /* spec 021: a byte, 0 to 255 */
+            Type *i = check_expr(node->b.n, t_int);
+            expect_type(node->b.n, t_int, i);
+            return t_int;
+        }
         if (t->kind == TY_MAP) {
             node->flags |= NF_MAP;
             Type *key = t->a.t;
@@ -657,7 +671,7 @@ Type *check_binary(Node *node)
     long k = l->kind;
     if (l != r) { /* operand types differ: E0301 when a conversion helps, else E0308 */
         long rk = r->kind;
-        if ((op == T_PLUS && k == TY_STR) || op == T_EQ || op == T_NE) { /* "a" + 1: str(1) */
+        if ((op == T_PLUS && (k == TY_STR || k == TY_BYTES)) || op == T_EQ || op == T_NE) { /* "a" + 1: str(1) */
             expect_type(node->b.n, l, r);
             return t_error;
         }
@@ -681,7 +695,7 @@ Type *check_binary(Node *node)
             base = OP_LT_INT;
         } else if (k == TY_FLOAT) {
             base = OP_LT_FLOAT;
-        } else if (k == TY_STR) {
+        } else if (k == TY_STR || k == TY_BYTES) { /* spec 021: bytes compare byte by byte, as str */
             base = OP_LT_STR;
         } else if (k == TY_PARAM) { /* an `ordered` type parameter (E0311 otherwise) */
             ck_param_order(l, node);
@@ -713,7 +727,7 @@ Type *check_binary(Node *node)
             code = OP_DIV_FLOAT;
         else
             return op_error(node, l, r); /* % on floats */
-    } else if (k == TY_STR && op == T_PLUS) {
+    } else if ((k == TY_STR || k == TY_BYTES) && op == T_PLUS) {
         code = OP_CONCAT;
     } else {
         return op_error(node, l, r);

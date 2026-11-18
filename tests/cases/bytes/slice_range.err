@@ -1,0 +1,1 @@
+{"v":1,"kind":"runtime_error","code":"R0003","name":"index_out_of_bounds","message":"Index 5 is out of bounds for length 3.","file":"slice_range.vo","start":{"line":6,"col":13},"end":{"line":6,"col":27},"trace":[{"function":"main","file":"slice_range.vo","start":{"line":6,"col":13},"locals":[{"name":"b","type":"bytes","value":"<3 bytes: 010203>"}]}]}

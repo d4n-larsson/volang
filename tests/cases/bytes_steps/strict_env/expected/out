@@ -1,0 +1,5 @@
+$ env GOOD=fine BAD=a\\xffb vo run main.vo
+GOOD ok fine
+BAD not UTF-8 at byte 1
+--- stderr
+--- exit 0

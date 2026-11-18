@@ -27,6 +27,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [018](../specs/018-agent-testing/) | Agent-friendly testing: list and select tests by identifier, `@spec` ID or diff; explained failures (comparison operands, the path to the first difference, a cause per failure, captured output); coverage; warnings for tests that cannot fail; mutation testing | **Done** ([results](../specs/018-agent-testing/results.md)) |
 | [019](../specs/019-https/) | HTTPS for `std.http.get`/`post`: TLS 1.3 and 1.2 from the vendored Mbed TLS 4.1 LTS, certificates always verified against the machine's trust store (plus `--ca-file`), nine fixed `err` messages, recordings with the scheme | **Done** ([results](../specs/019-https/results.md)) |
 | [020](../specs/020-math/) | `std.math`: `sqrt`, `pow`, `exp`, `log`, trigonometry, `pi`, `floor`/`ceil`/`round` to `int`; correctly rounded from the vendored CORE-MATH, bit-identical on three platforms; out of domain is R0007 | **Done** ([results](../specs/020-math/results.md)) |
+| [021](../specs/021-bytes/) | `bytes`: binary data in files, standard input and output, other programs' output and HTTP bodies (`std.bytes`, `read_bytes`, `run_bytes`, `get_bytes`, `serve_bytes`), hex and base64; every `str` is valid UTF-8, checked where text is read | **Done** ([results](../specs/021-bytes/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -170,6 +171,18 @@ call; NaN passes through; overflow is `inf`.
   same library when a program needs it); hardware FMA on x86-64 (a software `fma` keeps one binary
   for every x86-64 processor; one million calls take about 0.4 s).
 
+### 021: binary data (done)
+
+`bytes` is a built-in type: an immutable sequence of integers 0 to 255, with no literal. `std.bytes`
+converts it to and from text, integers, hex and base64, and reads and writes standard input and output;
+`std.fs`, `std.process` and `std.http` gained bytes twins of their text functions. Every `str` is now valid
+UTF-8: text read from files, input, arguments, the environment, programs and HTTP is checked when it is
+read, and the UTF-8 check follows the standard exactly (overlong forms and surrogates are refused, in
+source files too).
+
+- **Not done (on purpose):** a bytes literal, `for` over bytes, bytes as map keys, base64url, streaming
+  reads, directory names that are not UTF-8.
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -178,7 +191,6 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Gap | What is missing | Notes |
 |---|---|---|
 | Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; decides what matters next |
-| Binary data | `str` must be UTF-8, so images, archives and binary protocols cannot be handled | a `bytes` type; also lifts 017's "output is not UTF-8" error |
 | Sleep | no way to wait (retries, polling, rate limits) | under `clock`; replay must not wait |
 | String formatting | only `+`, `str()` and padding | one formatting builtin within the reference budget |
 | Regular expressions | `std.text` has `find`, `split`, `replace` only | linear-time matching only (no backtracking) |

@@ -158,7 +158,8 @@
 #define T_REQUIRES (45)
 #define T_ENSURES (46)
 #define T_EXPORT (47) /* spec 010 */
-#define T_KW_LAST (47)
+#define T_KBYTES (48) /* spec 021 */
+#define T_KW_LAST (48)
 /* punctuation */
 #define T_LPAREN (50)
 #define T_RPAREN (51)
@@ -381,7 +382,13 @@
 #define B_HTTPS (65) /* spec 019: __https_exchange(host, port, request) -> result[str], net, std.http only */
 #define B_MATH (66) /* spec 020: __math(op, x, y) -> float, std.math only (src/math.c) */
 #define B_MATH_INT (67) /* spec 020: __math_int(op, x) -> int: floor, ceil, round */
-#define B_LAST (67) /* the last builtin id with a btab entry */
+#define B_BYTES_FIRST (68) /* spec 021: 68 __bytes_of_text .. 77 __stdout_bytes (check_expr.c builtin_names) */
+#define B_STDIN_BYTES (76) /* input */
+#define B_STDOUT_BYTES (77) /* console */
+#define B_FSB (78) /* spec 021: __fsb(op, path, data) -> result[bytes], std.fs only (effects by op) */
+#define B_RUN_BYTES (79) /* spec 021: __run_bytes(argv, input: bytes, env) -> result[bytes], process */
+#define B_RAW_TEXT (80) /* spec 021: __raw_text(b) -> str, the same object; std.http builds raw messages */
+#define B_LAST (80) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -445,6 +452,7 @@
 #define TY_OSET (17)
 #define TY_PQUEUE (18)
 #define TY_DEQUE (19)
+#define TY_BYTES (20) /* spec 021: the str object, any bytes; the checker tells them apart */
 #define TY_IS_COLL(k) ((k) >= TY_OMAP && (k) <= TY_DEQUE) /* an effect parameter's binding: DECL = the effect set */
 
 /* ---- symbols: name | kind | flags | decl | type | slot | next | name node ---- */
@@ -599,7 +607,8 @@
 #define OPC_SNAPSHOT (87)       /* a = the elements of collection b as a list (for loops) */
 #define OPC_NEW_COLL (88) /* spec 014: a = new OrderedMap[...] etc. (the node's type) */
 #define OPC_COVER (89)    /* spec 018: coverage point a reached (b: its function's index for reach, or -1) */
-#define OPC_COUNT (90)
+#define OPC_INDEX_BYTES (90) /* spec 021: a = b[c], one byte as an int (R0003 at the node) */
+#define OPC_COUNT (91)
 /* generic call-site record (permanent): rt_targs and rt_es_subst results for the last caller */
 #define GS_DECL (0) /* the callee */
 #define GS_VALID (8) /* 1 once filled */
@@ -1248,6 +1257,7 @@ extern Type * t_int;
 extern Type * t_float;
 extern Type * t_bool;
 extern Type * t_str;
+extern Type *t_bytes; /* spec 021 */
 extern Type * t_void;
 extern Type * t_error;
 extern Sym * ck_scope;
@@ -1501,6 +1511,7 @@ extern long rt_open_file(long bit, Str *path, long flags);
 extern long rt_open_parent(long bit, Str *path, Str **name, int strict); /* spec 017 */
 extern long fs_op_effects(long op);  /* check_effects.c, spec 017 */
 extern void fx_builtin_fs(Node *call);
+extern void fx_builtin_fsb(Node *call); /* spec 021 */
 extern void rt_check_effect(long bit); /* rt_effects.c, spec 017: R0010 unless both grants have bit */
 extern int rt_bit_scoped(long bit);
 extern void io_pend(long kind, Str *name);                               /* replay.c, spec 017 */
@@ -1509,7 +1520,7 @@ extern Variant *io_replay(long kind, Str *name, Str *to, List *argv);
 extern Str *rt_resolve_for(long bit, Str *path); /* spec 017 */                                      /* spec 017 */
 extern int rt_path_allowed(long bit, Str *path);                         /* spec 017 */
 extern Variant *io_fs(long op, Str *a, Str *b);                         /* fs.c, spec 017 */
-extern Variant *io_run(List *argv, Str *input, List *env);              /* process.c, spec 017 */
+extern Variant *io_run(List *argv, Str *input, List *env, int raw);              /* process.c, spec 017 */
 extern long read_whole_fd(long fd, char **out);
 extern EffSet *rt_es_grant(EffSet *declared, EffSet *caller);
 extern Variant *rt_serve_listen(Str *address);
@@ -1839,6 +1850,19 @@ extern Str *float_to_str(long bits);
 extern long exact_digits(unsigned long bits, long n, char *out); /* stdprim.c: n digits, exactly rounded */
 extern long math_call(long op, long x, long y, Node *node); /* spec 020: src/math.c */
 extern long math_int(long op, long x, Node *node);
+extern Node *std_user_call(Node *node); /* math.c: the call in user code above std/ frames */
+/* spec 021: src/bytes.c */
+extern Variant *bytes_to_text(Str *b);
+extern Str *bytes_from_ints(List *xs, Node *node);
+extern List *bytes_to_ints(Str *b);
+extern Str *bytes_to_hex(Str *b);
+extern Variant *bytes_from_hex(Str *s);
+extern Str *bytes_to_base64(Str *b);
+extern Variant *bytes_from_base64(Str *s);
+extern Variant *io_fsb(long op, Str *path, Str *data); /* fs.c */
+extern Variant *strict_result(Variant *r, char *tmpl);
+extern Str *strict_str(Str *s, char *tmpl, Node *node);
+extern List *strict_args(List *l, Node *node);
 
 /* src/packages.c */
 extern long pkg_manifest;
@@ -2074,6 +2098,7 @@ extern void render_capped(SB *sb, long value, Type *type);
 extern Str *str_concat(Str *a, Str *b);
 extern int is_cont(Str *s, long i);
 extern Str *rt_slice_str(Str *s, long a, long b, Node *node);
+extern Str *rt_slice_bytes(Str *s, long a, long b, Node *node); /* spec 021 */
 extern long str_find_from(Str *s, Str *sub, long from);
 extern long rt_find(Str *s, Str *sub);
 extern List *rt_split(Str *s, Str *sep, Node *node);

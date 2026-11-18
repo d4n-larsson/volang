@@ -1,10 +1,23 @@
 # Reads a JSON document on stdin; prints write_json of it and whether it survives
-# parse(write(v)) == v, or `error: ` and the parse error (tests/json_corpus.py).
+# parse(write(v)) == v, or `error: ` and the parse error (tests/json_corpus.py). Spec 021: the
+# document is read as bytes, since text that is not UTF-8 never becomes a str.
 import std.json.parse_json;
 import std.json.write_json;
+import std.bytes.read_stdin;
+import std.bytes.to_text;
 
 fn main() -> result[void] uses console, input {
-    match parse_json(read_all()) {
+    var doc = "";
+    match to_text(read_stdin()) {
+        case ok(t) {
+            set doc = t;
+        }
+        case err(e) {
+            print("error: " + e + ": the document is not text");
+            return ok();
+        }
+    }
+    match parse_json(doc) {
         case ok(j) {
             let text = try write_json(j);
             print(text);

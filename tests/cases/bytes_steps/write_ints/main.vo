@@ -1,0 +1,13 @@
+# Spec 021 US2: bytes from integers, written to a file.
+import std.bytes.from_ints;
+import std.fs.write_bytes;
+
+fn main() -> result[void] uses console, file.write("./") {
+    var xs = new list[int];
+    for i in 0..256 {
+        push(xs, i);
+    }
+    try write_bytes("out.bin", from_ints(xs));
+    print("written");
+    return ok();
+}

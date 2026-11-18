@@ -1,0 +1,15 @@
+# Spec 021 US4: hex of every byte value and back; uppercase is accepted.
+import std.bytes.from_ints;
+import std.bytes.to_hex;
+import std.bytes.from_hex;
+
+fn main() uses console {
+    var xs = new list[int];
+    for i in 0..256 {
+        push(xs, i);
+    }
+    let b = from_ints(xs);
+    let h = to_hex(b);
+    print(str(len(h)) + " " + slice(h, 0, 8) + " " + slice(h, 504, 512) + " " + str(from_hex(h) == ok(b)));
+    print(str(from_hex("ABcdEF") == from_hex("abcdef")) + " " + str(from_hex("") == ok(from_ints(new list[int]))));
+}

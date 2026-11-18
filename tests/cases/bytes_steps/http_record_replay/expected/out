@@ -1,0 +1,10 @@
+$ vo run --record r.jsonl main.vo -- http://127.0.0.1:{port}/allbytes
+200 256
+the body is not UTF-8 at byte 128 (get_bytes reads it)
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+200 256
+the body is not UTF-8 at byte 128 (get_bytes reads it)
+--- stderr
+--- exit 0

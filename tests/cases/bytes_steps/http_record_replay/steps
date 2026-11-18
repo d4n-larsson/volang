@@ -1,0 +1,4 @@
+server http
+vo run --record r.jsonl main.vo -- http://127.0.0.1:{port}/allbytes
+stop-server
+vo replay r.jsonl

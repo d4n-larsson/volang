@@ -23,6 +23,9 @@ Routes:
   GET  /malformed       a reply with no status line
   GET  /short           Content-Length larger than the body sent
   POST /echo            200, the request's Content-Type and body back
+  GET  /allbytes        200, application/octet-stream, the bytes 0..255 (spec 021)
+  POST /echo-bytes      200, application/octet-stream, the request's body back unchanged (spec 021)
+  GET  /hex/HEX         200, text/plain, the bytes HEX stands for, whatever they are (spec 021)
   anything else         404
 """
 import os
@@ -44,6 +47,14 @@ def reply(status, headers, body):
 
 
 def route(method, target, headers, body):
+    if method == "POST" and target == "/echo-bytes":  # spec 021
+        return reply("200 OK", [("Content-Type", "application/octet-stream"), ("Content-Length", len(body))], body)
+    if method == "GET" and target.startswith("/hex/"):  # spec 021: any bytes, even not UTF-8
+        b = bytes.fromhex(target[5:])
+        return reply("200 OK", [("Content-Type", "text/plain"), ("Content-Length", len(b))], b)
+    if method == "GET" and target == "/allbytes":  # spec 021
+        b = bytes(range(256))
+        return reply("200 OK", [("Content-Type", "application/octet-stream"), ("Content-Length", len(b))], b)
     if method == "POST" and target == "/echo":
         ctype = headers.get("content-type", "")
         out = b"content-type: " + ctype.encode() + b"\n" + body

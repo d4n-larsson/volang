@@ -189,6 +189,7 @@ long vm_run(void *start)
         &&op_not_compiled, /* OPC_TRACE_ENTER: only emitted with --trace (vm_ops_trace) */
         &&op_index_coll, &&op_set_index_coll, &&op_snapshot, &&op_new_coll, /* spec 014 */
         &&op_cover, /* spec 018 */
+        &&op_index_bytes, /* spec 021 */
     };
     if (!start) {
         for (int i = 0; i < OPC_COUNT; i++) vm_ops[i] = vm_ops_trace[i] = ops[i];
@@ -323,7 +324,7 @@ op_cmp_param: {
         long which = pc->node->d.i - OP_LT_PARAM; /* <, <=, >, >= */
         STORE(which == 0 ? rc < 0 : which == 1 ? rc <= 0 : which == 2 ? rc > 0 : rc >= 0);
     }
-    long base = kind == TY_FLOAT ? OP_LT_FLOAT : kind == TY_STR ? OP_LT_STR : OP_LT_INT;
+    long base = kind == TY_FLOAT ? OP_LT_FLOAT : (kind == TY_STR || kind == TY_BYTES) ? OP_LT_STR : OP_LT_INT;
     goto *ops[pc->node->d.i - OP_LT_PARAM + base + (OPC_ADD_INT - OP_ADD_INT)];
 }
 
@@ -463,6 +464,15 @@ op_set_index_list: {
     }
     l->data[i].i = SL(pc->c.i);
     NEXT;
+}
+op_index_bytes: { /* spec 021 */
+    Str *s = (Str *)SL(pc->b);
+    long i = SL(pc->c.i);
+    if (i < 0 || i >= s->len) {
+        rt_index_error(pc->node, i, s->len);
+        return 0; /* (not reached) */
+    }
+    STORE((long)(unsigned char)s->data[i]);
 }
 op_index_coll: /* spec 014: R0004 / R0003 from the collection */
     cur_node = (long)pc->node;

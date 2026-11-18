@@ -208,6 +208,22 @@ static Str *pg_str(long size)
     return sb_finish(sb);
 }
 
+/* spec 021: bytes of length 0..min(size/4 + 1, 32); a quarter 0 or 255, a quarter printable ASCII, the
+ * rest any value. */
+static Str *pg_bytes(long size)
+{
+    long max = (long)((unsigned long)size >> 2) + 1;
+    if (max > 32) max = 32;
+    long n = pr_below(max + 1);
+    SB *sb = sb_new();
+    while (n--) {
+        long k = pr_below(4);
+        long v = k == 0 ? (pr_below(2) ? 255 : 0) : k == 1 ? 32 + pr_below(95) : pr_below(256);
+        sb_byte(sb, (int)v);
+    }
+    return sb_finish(sb);
+}
+
 /* A collection length: uniform in 0..min(size/8 + 1, 16). */
 static long pg_count(long size)
 {
@@ -258,6 +274,7 @@ long prop_gen(Type *t, long size, long depth)
     }
     case TY_BOOL: return pr_below(2);
     case TY_STR: return (long)pg_str(size);
+    case TY_BYTES: return (long)pg_bytes(size); /* spec 021 */
     case TY_LIST: { /* list[T] */
         long n = pg_count(size);
         List *l = list_new(n);
@@ -551,6 +568,11 @@ Vec *prop_shrinks(long value, Type *t)
         break;
     }
     case TY_LIST: out = pg_seq((List *)value, t->a.t, 0); break;
+    case TY_BYTES: { /* spec 021: as its list of ints (shorter first, then smaller values), back to bytes */
+        cands = pg_seq(bytes_to_ints((Str *)value), t_int, 0);
+        for (long i = 0; i < cands->n; i++) vec_push(out, bytes_from_ints(cands->data[i].p, 0));
+        break;
+    }
     case TY_OMAP:
     case TY_OSET:
     case TY_PQUEUE:

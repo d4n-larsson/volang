@@ -39,9 +39,9 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ## Phase 1: Setup
 
-- [ ] T001 [P] Create `specs/021-bytes/results.md` (SC-001 to SC-008, Verification, Behavior changes,
+- [X] T001 [P] Create `specs/021-bytes/results.md` (SC-001 to SC-008, Verification, Behavior changes,
   Deviations), as in `specs/020-math/results.md`.
-- [ ] T002 [P] Fixtures in `tests/bytes/`, each made by a committed script
+- [X] T002 [P] Fixtures in `tests/bytes/`, each made by a committed script
   `tests/bytes/make_fixtures.py` (deterministic):
   - `all256.bin` (bytes 0..255);
   - `png-3x2.png` (a valid 3×2 PNG; width at bytes 16–19, height at 20–23);
@@ -49,12 +49,12 @@ contracts/library.md, contracts/recording.md, quickstart.md
   - `latin1.txt` (`caf\xe9\n`, not UTF-8);
   - `utf8-invalid/`: one file per invalid form (lone continuation, overlong 2/3/4-byte, surrogate
     `ED A0 80`, above U+10FFFF `F4 90 80 80`, truncated at the end), named after the form.
-- [ ] T003 [P] Add the area `bytes` to `tools/quick.sh`:
+- [X] T003 [P] Add the area `bytes` to `tools/quick.sh`:
   - cases: `bytes bytes_steps run doc`;
   - scripts: `doc_conformance.py`;
   - files: `src/bytes.c`, `std/bytes.vo`, `tests/bytes/*`, `tests/bytes_*.py` → `bytes`.
   - Check with `QUICK_FILES=src/bytes.c tools/quick.sh --which`.
-- [ ] T004 [P] Process helper `tests/process_helpers/allbytes`: a shell script that writes the bytes
+- [X] T004 [P] Process helper `tests/process_helpers/allbytes`: a shell script that writes the bytes
   0..255 to stdout with `printf`, and the same reversed to stderr; executable, as the other helpers.
 
 ---
@@ -63,7 +63,7 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Tests (first, failing)
 
-- [ ] T005 [P] Golden cases in `tests/cases/bytes/`:
+- [X] T005 [P] Golden cases in `tests/cases/bytes/`:
   - `ops`: `len`, `b[i]`, `slice`, `+`, `==`, `<` (prefix first), `sort` of a `list[bytes]`, `min`/`max`,
     an `ordered_set[bytes]`, built with `std.bytes.from_ints` and `from_text`;
   - `index_range` and `slice_range`: R0003 with the contract messages, run with `--json`;
@@ -74,19 +74,19 @@ contracts/library.md, contracts/recording.md, quickstart.md
     (`<3 bytes: 010203>`, `<40 bytes: …...>`);
   - `empty`: `from_text("")` has length 0, equals `from_ints(new list[int])`, and renders `<0 bytes>`;
   - `keyword`: `let bytes = 1;` is the existing keyword error.
-- [ ] T006 [P] Golden cases for the validator, `tests/cases/bytes/utf8_forms`: `to_text` of each fixture
+- [X] T006 [P] Golden cases for the validator, `tests/cases/bytes/utf8_forms`: `to_text` of each fixture
   in `tests/bytes/utf8-invalid/` gives `err("not UTF-8 at byte N")` with the right N; valid 1–4 byte
   sequences, including U+10FFFF and U+FFFF, give `ok`.
 
 ### Implementation
 
-- [ ] T007 Type `bytes` (research R1, R2):
+- [X] T007 Type `bytes` (research R1, R2):
   - `TY_BYTES (20)` in `src/vo.h`;
   - the keyword in `src/lex.c` and `src/parse.c`;
   - the type name in `src/types.c` (printing `bytes`);
   - the ordered constraint `C`/`T: ordered` accepts it (`src/check_generic.c`, `src/check_expr.c`);
   - map keys refuse it with the existing key-type error and a note naming `std.bytes.to_hex`.
-- [ ] T008 Operations in the checker (`src/check_expr.c`), per `contracts/language.md`:
+- [X] T008 Operations in the checker (`src/check_expr.c`), per `contracts/language.md`:
   - `len`, `slice`, `+` (`OP_CONCAT`), the comparison operators, `sort`/`min`/`max`, `expect_eq`;
   - indexing `b[i]` → `int`, read only;
   - E0301/E0302 messages and fixes for mixing with `str`, `print`/`str()`, and `for` (each fix only when
@@ -95,21 +95,21 @@ contracts/library.md, contracts/recording.md, quickstart.md
   Review every `TY_STR` site (`grep -n TY_STR src/*.c`, 35 sites). For each, add `TY_BYTES` where the
   runtime behavior is the same (ordering, equality, `concurrent_map` transfer in `src/task.c`, ordered
   collections in `src/rt_coll.c`), or make sure it refuses `bytes` (text-only builtins, map keys).
-- [ ] T009 Runtime:
+- [X] T009 Runtime:
   - byte indexing: one compiled instruction in `src/compile.c` and `src/vm.c`, returning
     `(unsigned char)data[i]`, R0003 with the contract message;
   - `slice` of `bytes` uses the `str` slice without the UTF-8 boundary check (`src/rt_str.c`);
   - `+` and comparisons share the `str` code.
-- [ ] T010 Rendering (research R9): `<N bytes: HEX>` (first 32 bytes, then `...`; `<0 bytes>`) in
+- [X] T010 Rendering (research R9): `<N bytes: HEX>` (first 32 bytes, then `...`; `<0 bytes>`) in
   `src/rt_render.c` for traces, locals, test reports and JSON value fields.
-- [ ] T011 Exact UTF-8 (research R5):
+- [X] T011 Exact UTF-8 (research R5):
   - `utf8_seq_len` in `src/text.c` follows Unicode Table 3-7 (E0 needs A0–BF, ED needs 80–9F, F0 needs
     90–BF, F4 needs 80–8F);
   - remove its `ponytail:` note;
   - check that source-file lexing (`src/lex.c`) now reports overlong forms and surrogates with the
     existing code, and add a case `tests/cases/lex/surrogate_source` with such a source file (written by
     the case's `.cmd`, or committed as bytes).
-- [ ] T012 Primitives and `std.bytes` conversions (research R4):
+- [X] T012 Primitives and `std.bytes` conversions (research R4):
   - `src/bytes.c`: `from_text` (copy), `to_text` (validate, `err("not UTF-8 at byte N")`), `from_ints`
     (R0007 "Byte K is V, not 0 to 255."), `to_ints`;
   - the signature codes `y` (`bytes`), `Y` (`result[bytes]`) and `I` (`list[int]`) in
@@ -130,7 +130,7 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Tests (first, failing)
 
-- [ ] T013 [P] [US1] Golden cases (`.cmd`: `run {}` from a directory with the fixtures, as `tests/cases/fs`
+- [X] T013 [P] [US1] Golden cases (`.cmd`: `run {}` from a directory with the fixtures, as `tests/cases/fs`
   cases do), using `std.fs.read_bytes`:
   - `read_png` prints `137 80 78 71` and the width and height `3 2`;
   - `read_gzip` prints `gzip` from the magic `1f 8b`;
@@ -140,7 +140,7 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Implementation
 
-- [ ] T014 [US1] `std.fs.read_bytes(path) -> result[bytes]` (research R6):
+- [X] T014 [US1] `std.fs.read_bytes(path) -> result[bytes]` (research R6):
   - a primitive `__fsb(op, path, data: bytes) -> result[bytes]` in `src/fs.c` with op 1 = read, sharing
     the open, scope and link code of `read_file`;
   - its effect is checked by op, like `__fs`;
@@ -158,7 +158,7 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Tests (first, failing)
 
-- [ ] T015 [P] [US2] Step cases in `tests/cases/bytes_steps/`:
+- [X] T015 [P] [US2] Step cases in `tests/cases/bytes_steps/`:
   - `write_ints`: `from_ints` of 0..255 written with `write_bytes`; `cmp` against `all256.bin` through
     an `expected/` file;
   - `write_text`: `from_text("héllo")` written; the file holds its 6 UTF-8 bytes;
@@ -168,7 +168,7 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Implementation
 
-- [ ] T016 [US2] `write_bytes` and `append_bytes` in `std/fs.vo` (ops 2 and 3 of `__fsb`), sharing
+- [X] T016 [US2] `write_bytes` and `append_bytes` in `std/fs.vo` (ops 2 and 3 of `__fsb`), sharing
   `write_file`/`append_file`'s code in `src/fs.c` (the same atomic-replace and link rules).
 
 **Checkpoint**: T015 passes.
@@ -183,7 +183,7 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Tests (first, failing)
 
-- [ ] T017 [P] [US3] Step cases in `tests/cases/bytes_steps/`:
+- [X] T017 [P] [US3] Step cases in `tests/cases/bytes_steps/`:
   - `run_bytes`: `allbytes` gives 256 bytes on stdout and the reverse on stderr, and the exit code;
   - `run_with_bytes`: `cat` gets a binary input and echoes it unchanged;
   - `run_text_binary`: `run` of `allbytes` is still an `err`, with the new message
@@ -193,11 +193,11 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Implementation
 
-- [ ] T018 [US3] `__run_bytes` in `src/process.c`, sharing `__run`'s argument, grant and timeout code and
+- [X] T018 [US3] `__run_bytes` in `src/process.c`, sharing `__run`'s argument, grant and timeout code and
   returning the raw output.
   - `record BytesOutput`, `run_bytes` and `run_with_bytes` in `std/process.vo` with `vo doc` comments;
   - the text `run`'s message gains `(run_bytes reads it)`; update the spec 017 case that shows it.
-- [ ] T019 [US3] Recordings (`contracts/recording.md`): `run` events written by the bytes functions carry
+- [X] T019 [US3] Recordings (`contracts/recording.md`): `run` events written by the bytes functions carry
   `stdout_base64`/`stderr_base64` (`src/replay.c`), with base64 encode and decode shared with
   `src/bytes.c`.
   - Replay reads them back exactly.
@@ -215,7 +215,7 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Tests (first, failing)
 
-- [ ] T020 [P] [US4] Golden cases:
+- [X] T020 [P] [US4] Golden cases:
   - `base64_rfc`: the 7 RFC 4648 vectors (`""`, `f`, `fo`, `foo`, `foob`, `fooba`, `foobar`), both ways;
   - `hex`: `to_hex` of `all256.bin` and back; uppercase accepted;
   - `decode_errors`: `from_hex("0g")` → position 1, `from_hex("abc")` → odd count, `from_base64("Zm9v!")`
@@ -226,7 +226,7 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Implementation
 
-- [ ] T021 [US4] Hex and base64 in `src/bytes.c` (single pass, one allocation; decoding names the first
+- [X] T021 [US4] Hex and base64 in `src/bytes.c` (single pass, one allocation; decoding names the first
   invalid position), and `read_stdin` (shares `read_all`'s reading, without the check) and
   `write_stdout` (shares `write`'s output), with their effects.
   - `std/bytes.vo` gains them with `vo doc` comments.
@@ -244,7 +244,7 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Tests (first, failing)
 
-- [ ] T022 [P] [US5] Golden cases (`test --json {}`):
+- [X] T022 [P] [US5] Golden cases (`test --json {}`):
   - `expect_eq_bytes`: two 2,000-byte values that differ at offset 1,000; the report names byte 1000,
     both bytes, and 8 bytes of context in hex;
   - `prop_bytes`: a property over `b: bytes` (`len(from_hex(to_hex(b))) == len(b)`) passes, and a
@@ -252,9 +252,9 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Implementation
 
-- [ ] T023 [US5] `expect_eq` on `bytes`: the first differing offset (or length difference), in
+- [X] T023 [US5] `expect_eq` on `bytes`: the first differing offset (or length difference), in
   `src/rt_test.c`, beside the `str` case.
-- [ ] T024 [US5] Property generation and shrinking for `bytes` in `src/prop.c`: lengths from the size
+- [X] T024 [US5] Property generation and shrinking for `bytes` in `src/prop.c`: lengths from the size
   schedule, elements biased to 0, 255 and printable ASCII; shrink shorter first, then smaller elements.
 
 **Checkpoint**: T022 passes.
@@ -269,9 +269,9 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Tests (first, failing)
 
-- [ ] T025 [P] [US6] Test servers: `tests/http_server.py` (and so `tests/https_server.py`) gain
+- [X] T025 [P] [US6] Test servers: `tests/http_server.py` (and so `tests/https_server.py`) gain
   `/allbytes` (bytes 0..255, `application/octet-stream`) and `/echo-bytes` (echoes a POST body).
-- [ ] T026 [P] [US6] Step cases in `tests/cases/bytes_steps/`:
+- [X] T026 [P] [US6] Step cases in `tests/cases/bytes_steps/`:
   - `get_bytes` and `get_bytes_https` (`/allbytes` written to a file, compared);
   - `post_bytes` (binary body echoed back);
   - `get_text_binary`: `get` of `/allbytes` is `err("the body is not UTF-8 at byte 128 (get_bytes reads it)")`;
@@ -284,17 +284,17 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Implementation
 
-- [ ] T027 [US6] Raw exchange as bytes (research R8):
+- [X] T027 [US6] Raw exchange as bytes (research R8):
   - `__http_exchange`, `__https_exchange` and `__serve_next` return `result[bytes]`; `__serve_reply`
     takes `bytes`; `__http_part` splits `bytes` (`src/net.c`, `src/serve.c`, `src/tls.c`, the signature
     table);
   - `std/http.vo` parses the head through `to_text` (a non-UTF-8 header: `err("a header is not
     UTF-8")`) and converts text bodies with `to_text` (the R5 message);
   - `serve` answers 400 for a non-UTF-8 text request body.
-- [ ] T028 [US6] Bytes API in `std/http.vo`: `BytesResponse`, `BytesRequest`, `get_bytes`, `post_bytes`
+- [X] T028 [US6] Bytes API in `std/http.vo`: `BytesResponse`, `BytesRequest`, `get_bytes`, `post_bytes`
   and `serve_bytes` (same effects and scopes), with `vo doc` comments; examples that run offline (the
   serve address error, as `serve`'s example does).
-- [ ] T029 [US6] Recordings: `http`, `request` and `response` events write `request_base64` and
+- [X] T029 [US6] Recordings: `http`, `request` and `response` events write `request_base64` and
   `response_base64` (`src/replay.c`). Replay reads both these and the old text fields, so existing HTTP
   recordings and `tests/cross_replay.py` still pass.
 
@@ -310,14 +310,14 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Tests (first, failing)
 
-- [ ] T030 [P] [US7] Golden cases in `tests/cases/bytes/` (contract messages, `--json` for spans):
+- [X] T030 [P] [US7] Golden cases in `tests/cases/bytes/` (contract messages, `--json` for spans):
   - `strict_read_file` (`latin1.txt`: `err` naming byte 3 and `read_bytes`);
   - `strict_read_line` and `strict_read_all` (binary `.in`; `read_all` is R0007);
   - `strict_args` (a `.cmd` passing a non-UTF-8 argument through `printf`, or a step case if the case
     runner cannot);
   - `strict_env` (a step case with `env NAME=\xff`);
   - `utf8_unchanged`: a UTF-8 file with every 1–4 byte length reads exactly as before.
-- [ ] T031 [P] [US7] `tests/bytes_fuzz.py` (SC-007): 10,000 seeded random byte strings (half valid UTF-8
+- [X] T031 [P] [US7] `tests/bytes_fuzz.py` (SC-007): 10,000 seeded random byte strings (half valid UTF-8
   with corruptions, half random) through each path:
   - `read_file` (files), `read_line`/`read_all` (stdin), `args`, `env`, process text output, HTTP text
     body (local server);
@@ -328,7 +328,7 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ### Implementation
 
-- [ ] T032 [US7] Checks at each input point (research R5):
+- [X] T032 [US7] Checks at each input point (research R5):
   - `read_file` and `read_line` (`src/rt_io.c` and their replay paths in `src/replay.c`), `read_all`
     and `args` (R0007 at the call), `env`;
   - the messages exactly as in `contracts/library.md`;
@@ -341,7 +341,7 @@ contracts/library.md, contracts/recording.md, quickstart.md
 
 ## Phase 10: Polish and verification
 
-- [ ] T033 [P] Reference (`docs/reference.md`):
+- [X] T033 [P] Reference (`docs/reference.md`):
   - the `bytes` row in the types table;
   - a short operations paragraph (contract text);
   - the strict-text sentence;
@@ -349,31 +349,31 @@ contracts/library.md, contracts/recording.md, quickstart.md
   - the bytes functions named in the `std.fs`, `std.process` and `std.http` rows.
 
   Record the token growth (estimate +170, limit +200) in `results.md`.
-- [ ] T034 [P] `docs/errors.md`: the new R0003 and R0007 messages, and the E0301 fixes, in their
+- [X] T034 [P] `docs/errors.md`: the new R0003 and R0007 messages, and the E0301 fixes, in their
   sections; `tests/catalog.py` passes.
-- [ ] T035 [P] Site and roadmap:
+- [X] T035 [P] Site and roadmap:
   - `site/docs/guide/`: a "Binary data" section (reading, writing, hex/base64, processes, HTTP, strict
     text);
   - `docs/roadmap.md`: spec 021 **Done**, with "Not done" (literal, `for`, map keys, base64url,
     streaming, non-UTF-8 directory names), and the "Binary data" gap row removed;
   - `README.md`: the spec list;
   - `docs/security.md`: recordings are now lossless for binary data.
-- [ ] T036 [P] `tests/bytes_scale.py` (SC-004, SC-008):
+- [X] T036 [P] `tests/bytes_scale.py` (SC-004, SC-008):
   - 100 MB read, slice, write as bytes against the same as text (at most 2×), within the default
     memory limit;
   - hex and base64 of 100 MB under 1 s each;
   - a 10 MB `get_bytes` against `get` of a text body (at most 1×, plus 10% noise).
 
   Added to `make gate`.
-- [ ] T037 Gate in `Makefile`: `make test` includes `bytes_fuzz.py`; `make gate` adds "bytes determinism"
+- [X] T037 Gate in `Makefile`: `make test` includes `bytes_fuzz.py`; `make gate` adds "bytes determinism"
   (`tests/run.sh --repeat 20 tests/cases/bytes` and `steps.py --repeat 20 tests/cases/bytes_steps`) and
   `bytes_scale.py`.
-- [ ] T038 [P] `vo doc` cases in `tests/cases/doc/` (`bytes_module`, `bytes_item`, `doc/all` updated);
+- [X] T038 [P] `vo doc` cases in `tests/cases/doc/` (`bytes_module`, `bytes_item`, `doc/all` updated);
   `tests/doc_conformance.py` passes, with every new item's example run.
-- [ ] T039 `make test` on x86-64; `make instrumented`.
-- [ ] T040 Cross-platform, once: `make ARCH=aarch64 test` and `make ARCH=riscv64 test`, run one after the
+- [X] T039 `make test` on x86-64; `make instrumented`.
+- [X] T040 Cross-platform, once: `make ARCH=aarch64 test` and `make ARCH=riscv64 test`, run one after the
   other (never at the same time); `tests/cross_replay.py` with the new recordings.
-- [ ] T041 Record everything in `results.md` (SC-001 to SC-008, the behavior changes, sizes,
+- [X] T041 Record everything in `results.md` (SC-001 to SC-008, the behavior changes, sizes,
   deviations); set the spec status to Implemented; mark every task [X]. `make gate` only if the user
   asks for it.
 

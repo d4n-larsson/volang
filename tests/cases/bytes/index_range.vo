@@ -1,0 +1,7 @@
+# Spec 021: reading a byte outside the data is R0003.
+import std.bytes.from_ints;
+
+fn main() uses console {
+    let b = from_ints([1, 2, 3]);
+    print(str(b[3]));
+}

@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"keyword.vo","start":{"line":3,"col":9},"end":{"line":3,"col":14},"text":"bytes","message":"Expected a name, found `bytes`.","expected":"name","found":"bytes","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0110","name":"unexpected_token","severity":"error","file":"keyword.vo","start":{"line":4,"col":15},"end":{"line":4,"col":20},"text":"bytes","message":"Expected an expression, found `bytes`.","expected":"expression","found":"bytes","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

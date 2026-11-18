@@ -1,0 +1,64 @@
+# std.bytes: Conversions of binary data with text, integers, hex and base64, and standard input and output as bytes.
+# Part of the vo standard library (spec 021). Import items one by one: `import std.bytes.NAME;`.
+# `bytes` is an immutable sequence of integers 0 to 255: len, b[i], slice, + and comparisons work on it.
+# There is no bytes literal; make values with these functions or read them (std.fs.read_bytes, ...).
+
+# The UTF-8 encoding of s; from_text("") is the empty bytes value.
+#     len(from_text("héllo")) is 6
+export fn from_text(s: str) -> bytes {
+    return __bytes_of_text(s);
+}
+
+# b as text when it is well-formed UTF-8; else err("not UTF-8 at byte N").
+#     to_text(from_ints([104, 105])) == ok("hi") is true
+export fn to_text(b: bytes) -> result[str] {
+    return __text_of_bytes(b);
+}
+
+# Bytes from integers 0 to 255; another value stops the program with R0007 naming its index.
+#     to_hex(from_ints([0, 15, 255])) is "000fff"
+export fn from_ints(xs: list[int]) -> bytes {
+    return __bytes_of_ints(xs);
+}
+
+# The bytes as integers 0 to 255.
+#     to_ints(from_text("A")) == [65] is true
+export fn to_ints(b: bytes) -> list[int] {
+    return __ints_of_bytes(b);
+}
+
+# Two lowercase hex digits per byte.
+#     to_hex(from_text("hi")) is "6869"
+export fn to_hex(b: bytes) -> str {
+    return __bytes_hex(b);
+}
+
+# Bytes from hex digits (either case); err("not hex at position N") or err("odd number of hex digits").
+#     from_hex("6869") == ok(from_text("hi")) is true
+export fn from_hex(s: str) -> result[bytes] {
+    return __bytes_unhex(s);
+}
+
+# Base64 (RFC 4648, standard alphabet, padded).
+#     to_base64(from_text("foobar")) is "Zm9vYmFy"
+export fn to_base64(b: bytes) -> str {
+    return __bytes_b64(b);
+}
+
+# Bytes from padded standard base64; err("not base64 at position N") or err("base64 length is not a multiple of 4").
+#     from_base64("Zm9vYmFy") == ok(from_text("foobar")) is true
+export fn from_base64(s: str) -> result[bytes] {
+    return __bytes_unb64(s);
+}
+
+# All of standard input, as bytes (any bytes; read_all and read_line need UTF-8).
+#     len(read_stdin()) >= 0 is true
+export fn read_stdin() -> bytes uses input {
+    return __stdin_bytes();
+}
+
+# Writes b to standard output as it is, with no newline.
+#     let e = from_text(""); write_stdout(e); len(e) is 0
+export fn write_stdout(b: bytes) uses console {
+    __stdout_bytes(b);
+}

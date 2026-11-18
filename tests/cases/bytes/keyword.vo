@@ -1,0 +1,5 @@
+# Spec 021: bytes is a keyword now.
+fn main() uses console {
+    let bytes = 1;
+    print(str(bytes));
+}

@@ -1,0 +1,7 @@
+PASS hex round trip (100 cases, 0ms)
+FAIL short (9 cases, 0ms)
+  prop_bytes.vo:10:5: `expect` failed: `len(b) < 3` is false.
+    len(b): 3
+    counterexample: b = <3 bytes: 000000>
+    shrunk in 2 steps
+1 passed, 1 failed

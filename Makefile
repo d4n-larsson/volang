@@ -122,7 +122,7 @@ cm-noasm:
 $(BUILD)/vo_c.o: CFLAGS += -fno-tree-loop-distribute-patterns
 
 # Spec 008 research R8: the reference, the catalog and the standard library, embedded as C arrays.
-STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo std/fs.vo std/process.vo std/math.vo
+STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo std/fs.vo std/process.vo std/math.vo std/bytes.vo
 $(BUILD)/embedded.c: docs/reference.md docs/errors.md $(STD_FILES) tools/embed.py | $(BUILD)
 	python3 tools/embed.py $@ docs/reference.md docs/errors.md $(STD_FILES)
 $(BUILD)/embedded.o: $(BUILD)/embedded.c $(HEADERS)
@@ -206,7 +206,7 @@ test: all
 	@for s in "fuzz.py --iterations 200 --seed 1" apply_fixes.py catalog.py ref_examples.py site_examples.py fmt_corpus.py \
 	  migrate.py record_changes.py doc_conformance.py json_corpus.py packages_check.py time_check.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
 	  steps.py json_stream.py https_interop.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1" \
-	  math_vectors.py; do \
+	  math_vectors.py "bytes_fuzz.py --count 2000 --runs 200"; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
 	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \
@@ -303,6 +303,9 @@ gate-step: all asm
 	  python3 tests/https_interop.py --require-tlslite && python3 tests/tls_fuzz.py && python3 tests/https_scale.py
 	@echo "== gate: math determinism and speed" && tests/run.sh --repeat 20 tests/cases/math && \
 	  python3 tests/math_speed.py
+	@echo "== gate: bytes determinism, fuzz and scale" && tests/run.sh --repeat 20 tests/cases/bytes && \
+	  python3 tests/steps.py --repeat 20 tests/cases/bytes_steps && python3 tests/bytes_fuzz.py && \
+	  python3 tests/bytes_scale.py
 	@echo "== gate-step: passed"
 
 # SC-004 compares like with like: the RISC-V build against build-asm/vo, both under qemu.

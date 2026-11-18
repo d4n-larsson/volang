@@ -1,0 +1,3 @@
+#!/bin/sh
+# Spec 021: writes the files named by its arguments to stdout.
+exec cat "$@"

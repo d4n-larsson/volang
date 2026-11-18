@@ -1,0 +1,22 @@
+# Spec 021 US6: a binary download as bytes, saved to a file; the text get of it is an err naming get_bytes.
+import std.http.BytesResponse;
+import std.http.Response;
+import std.http.get_bytes;
+import std.http.get;
+import std.fs.write_bytes;
+
+fn main() -> result[void] uses console, net("127.0.0.1"), file.write("./") {
+    let url = args()[0];
+    let r = try get_bytes(url);
+    try write_bytes("out.bin", r.body);
+    print(str(r.status) + " " + str(len(r.body)));
+    match get(url) {
+        case ok(t) {
+            print("ok " + str(len(t.body)));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    return ok();
+}

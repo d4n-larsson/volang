@@ -6,7 +6,7 @@ such folders). Everything in the folder except `expected/` is copied to a tempor
 each line of `steps` runs there, in order:
 
   vo ARGS... [< FILE]          run bin/vo ($VO_BIN, natively or under qemu) with stdin from FILE (default: empty)
-  env NAME=VALUE ... vo ARGS... the same, with extra environment variables
+  env NAME=VALUE ... vo ARGS... the same, with extra environment variables (\\\\xNN in VALUE, written so, is that byte)
   unset NAME ... vo ARGS...     the same, without those variables
   rm PATH | cp A B | write PATH TEXT (TEXT with \\n and \\xNN escapes, {bytes:N}) | chmod MODE PATH
   symlink TARGET LINK | mkdir PATH | mkfifo PATH (spec 013)
@@ -314,7 +314,8 @@ def run_case(case):
                     w = words.pop(0)
                     if kind == "env":
                         k, v = w.split("=", 1)
-                        env[k] = v
+                        # spec 021: \xNN is that byte (values that are not UTF-8)
+                        env[k] = os.fsdecode(re.sub(rb"\\x([0-9a-f]{2})", lambda m: bytes([int(m.group(1), 16)]), v.encode()))
                     else:
                         env.pop(w, None)
             jail = words[0] == "no-trust-store"  # spec 019

@@ -1,0 +1,13 @@
+# Spec 021 US7: read_line of a line that is not UTF-8 is an err; the next line still reads.
+fn main() uses console, input {
+    for _ in 0..3 {
+        match read_line() {
+            case ok(s) {
+                print("ok " + s);
+            }
+            case err(e) {
+                print(e);
+            }
+        }
+    }
+}

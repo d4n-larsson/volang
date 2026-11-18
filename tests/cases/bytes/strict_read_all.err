@@ -1,0 +1,1 @@
+{"v":1,"kind":"runtime_error","code":"R0007","name":"invalid_argument","message":"Standard input is not UTF-8 at byte 2: read it with `std.bytes.read_stdin`.","file":"strict_read_all.vo","start":{"line":3,"col":13},"end":{"line":3,"col":23},"trace":[{"function":"main","file":"strict_read_all.vo","start":{"line":3,"col":13},"locals":[]}]}

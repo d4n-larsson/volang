@@ -371,3 +371,16 @@ Variant *io_fs(long op, Str *a, Str *b)
     GC_UNROOT(2);
     return r;
 }
+
+/* spec 021: __fsb(op, path, data): std.fs's bytes functions, through the text functions' own code
+ * (the same grant checks, link rules, errors and recordings): 1 read_bytes (the file's bytes, not
+ * checked as text), 2 write_bytes, 3 append_bytes. */
+Variant *io_fsb(long op, Str *path, Str *data)
+{
+    switch (op) {
+    case 1: rt_check_effect(EF_FREAD); return io_read_file(path);
+    case 2: rt_check_effect(EF_FWRITE); return io_write_file(path, data);
+    case 3: return io_fs(3, path, data);
+    default: return make_result(1, (long)str_from_cstr("not supported"));
+    }
+}

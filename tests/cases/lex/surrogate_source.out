@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0104","name":"invalid_utf8","severity":"error","file":"surrogate_source.vo","start":{"line":3,"col":12},"end":{"line":3,"col":13},"text":"\ufffd","message":"Invalid UTF-8 byte 0xED.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

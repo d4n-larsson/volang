@@ -1,0 +1,5 @@
+# Spec 021 US7: valid UTF-8 of every sequence length reads exactly as before.
+fn main() uses console, input {
+    let s = read_all();
+    print(str(len(s)) + " " + str(len(chars(s))) + " " + s);
+}

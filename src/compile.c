@@ -845,6 +845,8 @@ long cexpr(Node *node, long dst)
     case N_INDEX: /* xs[i] / m[k] */
         if (TY_IS_COLL(node->a.n->type->kind)) /* spec 014 */
             return cpair_op(node, dst, mark, OPC_INDEX_COLL, node->a.n, node->b.n);
+        if (node->a.n->type->kind == TY_BYTES) /* spec 021 */
+            return cpair_op(node, dst, mark, OPC_INDEX_BYTES, node->a.n, node->b.n);
         return cpair_op(node, dst, mark, (node->flags & NF_MAP) ? OPC_INDEX_MAP : OPC_INDEX_LIST, node->a.n,
                         node->b.n);
     case N_LIST:

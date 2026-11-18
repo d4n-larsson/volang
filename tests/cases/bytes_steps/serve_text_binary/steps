@@ -1,0 +1,4 @@
+start vo run service.vo
+request-raw POST /up HTTP/1.1\r\nContent-Length: 3\r\n\r\nabc
+request-raw POST /up HTTP/1.1\r\nContent-Length: 3\r\n\r\na\xffb
+signal TERM

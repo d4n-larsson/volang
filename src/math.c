@@ -52,7 +52,7 @@ static double double_of(long i)
 
 /* The call in the user's code: a primitive runs inside a std/ function, so the report points at the
  * call of the outermost standard-library function instead (the frame's call node). */
-static Node *user_call(Node *node)
+Node *std_user_call(Node *node)
 {
     for (Frame *f = (Frame *)cur_frame; f && f->fn && f->call; f = f->parent) {
         if (!((FileRec *)file_get((int)f->fn->file))->std) break;
@@ -66,7 +66,7 @@ static void raise_math(char *tmpl, long x, long y, int two, Node *node)
     Str *a = float_to_str(x), *b = 0;
     GC_ROOT(&a); /* (rt_raise does not return: no unroot) */
     if (two) b = float_to_str(y);
-    rt_raise("R0007", msg(tmpl, a, b, 0), user_call(node));
+    rt_raise("R0007", msg(tmpl, a, b, 0), std_user_call(node));
 }
 
 long math_call(long op, long xb, long yb, Node *node)

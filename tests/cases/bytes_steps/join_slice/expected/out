@@ -1,0 +1,4 @@
+$ vo run main.vo
+010203 fa 010203fa 03fa 3
+--- stderr
+--- exit 0

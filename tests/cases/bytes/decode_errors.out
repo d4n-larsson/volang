@@ -1,0 +1,7 @@
+not hex at position 1
+odd number of hex digits
+not base64 at position 4
+base64 length is not a multiple of 4
+not base64 at position 2
+not base64 at position 2
+ok 66

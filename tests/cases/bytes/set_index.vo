@@ -1,0 +1,7 @@
+# Spec 021: bytes are immutable; assigning to an element is an error.
+import std.bytes.from_ints;
+
+fn main() uses console {
+    let b = from_ints([1, 2]);
+    set b[0] = 7;
+}

@@ -34,6 +34,26 @@ void render_str_lit(SB *sb, Str *str)
 
 long render_depth; /* nesting of render_value (rt_raise resets it: a raise unwinds the rendering) */
 
+/* spec 021: `<N bytes: HEX>`, the hex of the first 32 bytes and `...` after them; `<0 bytes>`. Not a vo
+ * literal (there is none), so it cannot be copied into code by mistake. */
+static void render_bytes(SB *sb, Str *b)
+{
+    static const char hex[] = "0123456789abcdef";
+    long n = b->len;
+    GC_ROOT(&b);
+    sb_byte(sb, '<');
+    int_to_dec(sb, n);
+    sb_cstr(sb, n ? " bytes: " : " bytes");
+    for (long i = 0; i < n && i < 32; i++) {
+        unsigned char c = (unsigned char)b->data[i];
+        sb_byte(sb, hex[c >> 4]);
+        sb_byte(sb, hex[c & 15]);
+    }
+    if (n > 32) sb_cstr(sb, "...");
+    sb_byte(sb, '>');
+    GC_UNROOT(1);
+}
+
 void render_value(SB *sb, long value, Type *type)
 {
     POLL(1);
@@ -58,6 +78,7 @@ void render_value(SB *sb, long value, Type *type)
     case TY_FLOAT: float_to_text(sb, value); break;
     case TY_BOOL: sb_cstr(sb, value ? "true" : "false"); break;
     case TY_STR: render_str_lit(sb, (Str *)value); break;
+    case TY_BYTES: render_bytes(sb, (Str *)value); break; /* spec 021 */
     case TY_LIST: { /* [a, b] */
         List *l = (List *)value;
         sb_byte(sb, '[');

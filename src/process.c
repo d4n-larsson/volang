@@ -156,7 +156,7 @@ static void child(int in, int out, int err, int ex, char *path, char **argv, cha
 }
 
 /* Runs a checked program; the result text or err. */
-static Variant *rt_run(List *argv, Str *input, List *env)
+static Variant *rt_run(List *argv, Str *input, List *env, int raw)
 {
     Str *program = (Str *)argv->data[0].p;
     GC_ROOT(&argv);
@@ -280,8 +280,8 @@ static Variant *rt_run(List *argv, Str *input, List *env)
         GC_ROOT(&o);
         Str *e = sb_finish(err);
         GC_ROOT(&e);
-        if (utf8_validate(o->data, o->len) >= 0 || utf8_validate(e->data, e->len) >= 0) {
-            res = make_result(1, (long)str_from_cstr("output is not UTF-8"));
+        if (!raw && (utf8_validate(o->data, o->len) >= 0 || utf8_validate(e->data, e->len) >= 0)) {
+            res = make_result(1, (long)str_from_cstr("output is not UTF-8 (run_bytes reads it)")); /* spec 021 */
         } else {
             long code = (status & 0x7f) ? 128 + (status & 0x7f) : (status >> 8) & 0xff;
             SB *sb = sb_new();
@@ -301,8 +301,9 @@ static Variant *rt_run(List *argv, Str *input, List *env)
     return res;
 }
 
-/* Checks the arguments (R0007) and the program against both grants (R0010), then runs it. */
-Variant *io_run(List *argv, Str *input, List *env)
+/* Checks the arguments (R0007) and the program against both grants (R0010), then runs it. raw (spec
+ * 021, run_bytes): the output is returned as it is, not checked as UTF-8. */
+Variant *io_run(List *argv, Str *input, List *env, int raw)
 {
     GC_ROOT(&argv);
     GC_ROOT(&input);
@@ -327,7 +328,7 @@ Variant *io_run(List *argv, Str *input, List *env)
     if (rcd_mode == 2) {
         r = io_replay(EVK_RUN, program, 0, argv); /* nothing starts */
     } else {
-        r = rt_run(argv, input, env);
+        r = rt_run(argv, input, env, raw);
         io_record(EVK_RUN, program, 0, argv, r);
     }
     GC_UNROOT(1);

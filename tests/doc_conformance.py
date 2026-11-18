@@ -26,7 +26,7 @@ BUILTIN_EFFECTS = {"print": "console", "write": "console", "eprint": "console",
                    "write_file": "file.write", "now_ms": "clock", "random_int": "random",
                    "env": "env"}
 TEST_ONLY = {"expect", "expect_eq"}
-TYPE_PATHS = {}  # record/variant name -> its import path
+TYPE_PATHS = {"from_text": "std.bytes.from_text"}  # record/variant name -> its import path (spec 021: bytes values)
 WRONG = [('"a"', "str"), ("1", "int"), ("true", "bool")]
 # spec 014: the built-in collections are created with `new ordered_map[K, V]` etc.
 COLLECTIONS = {"ordered_map", "ordered_set", "priority_queue", "deque"}
@@ -91,6 +91,8 @@ class Values:
             return "true"
         if t == "str":
             return '"a"'
+        if t == "bytes":  # spec 021: no literal
+            return 'from_text("a")'
         m = re.fullmatch(r"(\w+)\[(.*)\]", t)
         if m and m.group(1) in COLLECTIONS:
             return f"new {self.inst(t, tv)}"
@@ -144,7 +146,7 @@ def run(src):
     with tempfile.TemporaryDirectory() as d:
         f = os.path.join(d, "probe.vo")
         open(f, "w").write(src)
-        p = subprocess.run([VO, "run", "--seed", "1", f], capture_output=True, text=True)
+        p = subprocess.run([VO, "run", "--seed", "1", f], capture_output=True, text=True, stdin=subprocess.DEVNULL)
         return p.returncode, p.stdout, p.stderr
 
 
@@ -255,7 +257,10 @@ def main():
             eff = sorted(set(["console"] + [e for e in r.get("effects", []) if not re.fullmatch(r"[A-Z]", e)]),
                          key=["console", "input", "file.read", "file.write", "file.delete", "net", "clock", "random",
                               "env", "serve", "process"].index)  # effect parameters (E) are not effects to declare
-            src = "".join(f"import {i};\n" for i in every) + \
+            # spec 021: an example in another module may make its bytes with std.bytes functions
+            extra = [f"std.bytes.{r2['name']}" for r2 in items.get("std.bytes", [])
+                     if module != "std.bytes" and re.search(r"\b" + r2["name"] + r"\(", ex)]
+            src = "".join(f"import {i};\n" for i in every + extra) + \
                 f"\nfn main() uses {', '.join(map(scoped, eff))} {{\n    {setup}print({show});\n}}\n"
             code, out, err = run(src)
             if code != 0 or out != want + "\n":

@@ -1,0 +1,18 @@
+# Spec 021 US4: bytes to text when they are UTF-8; latin1.txt's bytes are not.
+import std.fs.read_bytes;
+import std.bytes.to_text;
+import std.bytes.from_text;
+
+fn main() -> result[void] uses console, file.read {
+    print(str(to_text(from_text("héllo")) == ok("héllo")));
+    let b = try read_bytes(args()[0]);
+    match to_text(b) {
+        case ok(s) {
+            print("ok " + s);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    return ok();
+}

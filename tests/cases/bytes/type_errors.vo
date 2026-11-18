@@ -1,0 +1,13 @@
+# Spec 021: bytes and str never mix; each misuse is a type error, with a fix where one conversion fits.
+import std.bytes.from_ints;
+
+fn main() uses console {
+    let b = from_ints([104, 105]);
+    let c = b + "x";
+    print(b);
+    let s = str(b);
+    for x in b {
+        print("x");
+    }
+    let m = new map[bytes, int];
+}

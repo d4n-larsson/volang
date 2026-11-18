@@ -1,0 +1,1 @@
+{"v":1,"kind":"runtime_error","code":"R0007","name":"invalid_argument","message":"Argument 1 is not UTF-8 at byte 1.","file":"strict_args.vo","start":{"line":3,"col":13},"end":{"line":3,"col":19},"trace":[{"function":"main","file":"strict_args.vo","start":{"line":3,"col":13},"locals":[]}]}

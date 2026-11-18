@@ -1,0 +1,5 @@
+# Spec 021 US7: read_all of input that is not UTF-8 stops with R0007 naming the byte and read_stdin.
+fn main() uses console, input {
+    let s = read_all();
+    print(str(len(s)));
+}

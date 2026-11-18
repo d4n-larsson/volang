@@ -1,10 +1,12 @@
-std/http.vo:90:35: runtime error[R0010]: net("other.test") is not allowed: `main` declares console, net("a.test").
-  90 |         return parse_response(try __https_exchange(u.host, u.port, request));
-     |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+std/http.vo:132:16: runtime error[R0010]: net("other.test") is not allowed: `main` declares console, net("a.test").
+ 132 |         return __https_exchange(u.host, u.port, request);
+     |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange (std/http.vo:90:35)
+  at exchange_raw (std/http.vo:132:16)
       method: str = "GET", url: str = "https://other.test/x", content_type: str = "", body: str = "", u: Url = new Url { tls: true, host: "other.test", port: 443, target: "/x" }, nl: str = "\n", request: str = "GET /x HTTP/1.1\nHost: other.test\nConnection: close\nUser-Agent: vo\n\n"
-  at get (std/http.vo:136:12)
+  at exchange (std/http.vo:86:19)
+      method: str = "GET", url: str = "https://other.test/x", content_type: str = "", body: str = ""
+  at get (std/http.vo:178:12)
       url: str = "https://other.test/x"
   at main (outside_runtime.vo:6:17)
       host: str = "other.test"

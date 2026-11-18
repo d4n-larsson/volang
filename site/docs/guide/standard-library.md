@@ -333,6 +333,49 @@ A server can be recorded and replayed like any program (see [Determinism](determ
 (`file.write`), and deletes and renames (`file.delete`); `std.process` runs other programs to their end
 with no shell (`process`). Both have their own page: [Files and processes](files-and-processes.md).
 
+## std.bytes: binary data
+
+`bytes` is the type for data that is not text: images, archives, hashes, binary protocols. It has no
+literal; make values with `std.bytes`, or read them (`std.fs.read_bytes`, `std.bytes.read_stdin`,
+`std.process.run_bytes`, `std.http.get_bytes`). `len`, `b[i]` (an `int` from 0 to 255), `slice`, `+`,
+`==` and `<` work on it; `bytes` and `str` never mix without a conversion.
+
+```vo
+import std.bytes.from_text;
+import std.bytes.from_ints;
+import std.bytes.to_hex;
+import std.bytes.to_base64;
+import std.bytes.to_text;
+
+fn main() uses console {
+    let b = from_text("hé") + from_ints([0, 255]);
+    print(str(len(b)) + " " + str(b[0]) + " " + to_hex(b) + " " + to_base64(b));
+    match to_text(b) {
+        case ok(s) {
+            print(s);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
+```
+
+```output
+5 104 68c3a900ff aMOpAP8=
+not UTF-8 at byte 4
+```
+
+- **Text is always text.** Every `str` is valid UTF-8: text read from files, standard input,
+  arguments, the environment, other programs and HTTP is checked when it is read. `read_file` of a file
+  that is not UTF-8 returns `err("not UTF-8 at byte N (std.fs.read_bytes reads any bytes)")`;
+  `read_all` and `args`, which return no `result`, stop with R0007. Read such data as `bytes`.
+- **Hex and base64**: `to_hex`/`from_hex` and `to_base64`/`from_base64` (RFC 4648, padded); decoding
+  returns an `err` naming the first invalid position.
+- **Every bytes function has a text twin**: `read_bytes`, `write_bytes`, `append_bytes` (`std.fs`),
+  `run_bytes`, `run_with_bytes` (`std.process`), `get_bytes`, `post_bytes`, `serve_bytes` (`std.http`),
+  with the same effects and scopes.
+
 ## std.math
 
 Square roots, powers, logarithms, trigonometry, `pi()`, and `floor`, `ceil` and `round` to `int`.

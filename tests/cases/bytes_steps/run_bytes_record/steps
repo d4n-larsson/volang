@@ -1,0 +1,4 @@
+helpers
+vo run --record r.jsonl main.vo
+rm bin/allbytes
+vo replay r.jsonl

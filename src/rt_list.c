@@ -93,7 +93,7 @@ int elem_less(long a, long b, int kind)
         Bits x = {.i = a}, y = {.i = b};
         return x.d < y.d;
     }
-    if (kind == TY_STR) return str_cmp((Str *)a, (Str *)b) < 0;
+    if (kind == TY_STR || kind == TY_BYTES) return str_cmp((Str *)a, (Str *)b) < 0;
     return a < b;
 }
 

@@ -33,7 +33,7 @@ hello vo, count = 3
 - **Floats**: digits, `.`, digits: `1.0`, `0.5`, `3.14`. Both sides of `.` are required (`1.` and `.5` are invalid). No exponent (`1e3` is invalid); at most 15 significant digits.
 - **Strings**: `"..."` on one line. The only escapes are `\n`, `\t`, `\\` and `\"` (any other is E0103). There are no single-quoted strings, no character type, no raw or multi-line strings and no interpolation: build strings with `+` and `str(...)`.
 - **Booleans**: `true`, `false`.
-- **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void uses prop requires ensures export`.
+- **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void uses prop requires ensures export bytes`.
 - There are no trailing commas anywhere (E0113).
 
 ```vo
@@ -60,7 +60,8 @@ line two
 | `int` | 64-bit signed | overflow is runtime error R0001 |
 | `float` | 64-bit IEEE | `str(0.1 + 0.2)` is `"0.3"` (15 significant digits) |
 | `bool` | `true`, `false` | conditions must be `bool`: no truthiness |
-| `str` | immutable UTF-8 text | `len` counts bytes |
+| `str` | immutable UTF-8 text, always valid | `len` counts bytes; text from files, input, arguments, the environment, programs and HTTP is checked when read (`err`, or R0007 where no `result` is returned) |
+| `bytes` | immutable bytes 0–255 | no literal: `std.bytes`; `len`, `b[i]` (an `int`), `slice`, `+`, `==`, `<`; not a map key; never mixed with `str` |
 | `list[T]` | ordered, growable | reference type |
 | `map[K, V]` | insertion-ordered | `K` is `int` or `str` (E0309); reference type |
 | `ordered_map[K, V]` | keys ascending | `K` ordered; reference type |
@@ -1044,10 +1045,11 @@ fn main() uses console {
 | std.time | UTC calendar times, ISO 8601 text, durations, `now` (clock) |
 | std.text | `replace`, `contains`, `pad_left`, `lines`, `words`, ... |
 | std.random | `unit`, `pick`, `shuffle` (random) |
-| std.http | HTTP and HTTPS: `get` and `post` (net), `serve` (serve, HTTP only) |
+| std.http | HTTP and HTTPS: `get` and `post` (net), `serve` (serve, HTTP only); `get_bytes`, `post_bytes`, `serve_bytes` for `bytes` bodies |
 | std.collections | neighbors and ranges of the ordered collections, set algebra, deque fronts, `_by(cmp)` orders |
-| std.fs | `info`, `list_dir`, `walk` (file.read); `append_file`, `make_dir` (file.write); `delete`, `rename` (file.delete) |
-| std.process | `run`, `run_with`: run a program to its end, no shell (process) |
+| std.fs | `info`, `list_dir`, `walk`, `read_bytes` (file.read); `append_file`, `write_bytes`, `append_bytes`, `make_dir` (file.write); `delete`, `rename` (file.delete) |
+| std.process | `run`, `run_with` (and `run_bytes`, `run_with_bytes`): run a program to its end, no shell (process) |
+| std.bytes | `from_text`, `to_text`, `from_ints`, `to_ints`, hex, base64, `read_stdin`, `write_stdout` |
 | std.math | `sqrt`, `pow`, `exp`, `log`, trigonometry, `pi`; `floor`, `ceil`, `round` to `int` (correctly rounded; out of domain is R0007) |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.

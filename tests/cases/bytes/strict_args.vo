@@ -1,0 +1,5 @@
+# Spec 021 US7: an argument that is not UTF-8 stops args() with R0007 naming it.
+fn main() uses console {
+    let a = args();
+    print(str(len(a)));
+}

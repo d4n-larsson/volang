@@ -1,0 +1,3 @@
+ok good
+not UTF-8 at byte 3 (std.bytes.read_stdin reads any bytes)
+ok ok again

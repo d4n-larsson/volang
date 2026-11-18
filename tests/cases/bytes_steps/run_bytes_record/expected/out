@@ -1,0 +1,10 @@
+$ vo run --record r.jsonl main.vo
+0 256 256 256 256
+00010203 fcfdfeff
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+0 256 256 256 256
+00010203 fcfdfeff
+--- stderr
+--- exit 0

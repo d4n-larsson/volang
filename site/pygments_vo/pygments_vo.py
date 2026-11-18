@@ -6,7 +6,7 @@ from pygments.token import Comment, Keyword, Name, Number, Operator, Punctuation
 KEYWORDS = ("fn", "record", "variant", "test", "prop", "import", "export", "let", "var", "set", "if", "else",
             "while", "for", "in", "match", "case", "return", "break", "continue", "try", "new", "and", "or",
             "not", "uses", "requires", "ensures")
-TYPES = ("int", "float", "bool", "str", "list", "map", "result", "void", "ordered_map", "ordered_set",
+TYPES = ("int", "float", "bool", "str", "bytes", "list", "map", "result", "void", "ordered_map", "ordered_set",
          "priority_queue", "deque", "ordered", "effects")
 BUILTINS = ("print", "write", "eprint", "read_line", "read_all", "read_file", "write_file", "args", "exit",
             "now_ms", "len", "slice", "find", "split", "join", "trim", "chars", "push", "pop", "sort", "has",

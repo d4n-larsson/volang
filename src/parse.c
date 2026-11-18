@@ -20,7 +20,7 @@ static const char *const tok_spell[] = {
     "fn", "record", "variant", "test", "import", "let", "var", "set", "if", "else",
     "while", "for", "in", "match", "case", "return", "break", "continue", "try", "new",
     "and", "or", "not", "true", "false", "int", "float", "bool", "str", "list",
-    "map", "result", "void", "uses", "prop", "requires", "ensures", "export", "?", "?",
+    "map", "result", "void", "uses", "prop", "requires", "ensures", "export", "bytes", "?",
     "(", ")", "{", "}", "[", "]", ",", ";", ":", ".",
     "..", "->", "=", "==", "!=", "<", "<=", ">", ">=", "+",
     "-", "*", "/", "%", "@",
@@ -362,6 +362,7 @@ static Node *parse_type(void)
     case T_KFLOAT: simple = TY_FLOAT; break;
     case T_KBOOL: simple = TY_BOOL; break;
     case T_KSTR: simple = TY_STR; break;
+    case T_KBYTES: simple = TY_BYTES; break; /* spec 021 */
     default: break;
     }
     if (simple) {
@@ -1282,8 +1283,10 @@ static Node *parse_item(void)
         p_next();
         n->a.v = vec_new();
         for (;;) {
-            Node *name = p_name();
+            /* spec 021: the module std.bytes, whose name is the keyword `bytes`, as a path segment */
+            Node *name = p_kind() == T_KBYTES && n->a.v->n ? p_node(N_NAME) : p_name();
             if (!name) goto finish;
+            if (name->kind == N_NAME && !name->a.s) name->a.s = p_tok_str(p_next());
             n->b.n = name;
             vec_push(n->a.v, name->a.s);
             if (!p_accept(T_DOT)) break;

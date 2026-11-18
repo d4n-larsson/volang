@@ -1,0 +1,8 @@
+# Spec 021: slicing outside the data is R0003.
+import std.bytes.from_ints;
+
+fn main() uses console {
+    let b = from_ints([1, 2, 3]);
+    let c = slice(b, 1, 5);
+    print(str(len(c)));
+}

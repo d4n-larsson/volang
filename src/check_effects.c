@@ -28,6 +28,7 @@ const unsigned short builtin_effects[B_LAST + 1] = {
     [53] = EF_NET, /* __http_exchange */
     [B_HTTPS] = EF_NET, /* spec 019: __https_exchange */
     [56] = EF_SERVE, [57] = EF_SERVE, [58] = EF_SERVE, /* spec 011: __serve_listen, __serve_next, __serve_reply */
+    [B_STDIN_BYTES] = EF_INPUT, [B_STDOUT_BYTES] = EF_CONSOLE, [B_RUN_BYTES] = EF_PROCESS, /* spec 021 */
     [B_RUN] = EF_PROCESS, /* spec 017; __fs's effect depends on the operation: checked in src/fs.c */
 };
 
@@ -173,6 +174,14 @@ void fx_builtin_fs(Node *call)
     if (!ck_fx || !ck_fx->direct || call->b.v->n < 1) return;
     Node *op = vec_get(call->b.v, 0);
     if (op->kind == N_INT) ck_fx->direct->any |= (unsigned long)fs_op_effects(op->a.i);
+}
+
+/* spec 021: __fsb(op, ...): 1 reads (file.read), 2 and 3 write (file.write). */
+void fx_builtin_fsb(Node *call)
+{
+    if (!ck_fx || !ck_fx->direct || call->b.v->n < 1) return;
+    Node *op = vec_get(call->b.v, 0);
+    if (op->kind == N_INT) ck_fx->direct->any |= op->a.i == 1 ? EF_FREAD : EF_FWRITE;
 }
 
 /* Spec 013 (L1): a string literal as the target (path, name, address) of an effect: checked against

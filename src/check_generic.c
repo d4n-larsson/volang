@@ -42,6 +42,7 @@ static int ty_ordered_d(Type *t, long depth)
     case TY_INT:
     case TY_FLOAT:
     case TY_STR:
+    case TY_BYTES: /* spec 021: byte by byte */
     case TY_ERROR: return 1;
     case TY_PARAM: return t->b.i == TPC_ORDERED;
     case TY_RECORD: return depth < 32 && !unordered_field(t, depth); /* spec 014: records of ordered fields */

@@ -1,0 +1,2 @@
+server http
+vo run main.vo -- http://127.0.0.1:{port}/echo-bytes

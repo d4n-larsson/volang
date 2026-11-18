@@ -1,0 +1,21 @@
+# Spec 021 US3: a recorded run with binary output replays the same bytes, with nothing started.
+import std.process.BytesOutput;
+import std.process.run_bytes;
+import std.bytes.to_hex;
+
+fn main() -> result[void] uses console, process("bin/allbytes") {
+    let out = try run_bytes("bin/allbytes", new list[str]);
+    var ok_out = 0;
+    var ok_err = 0;
+    for i in 0..256 {
+        if out.stdout[i] == i {
+            set ok_out = ok_out + 1;
+        }
+        if out.stderr[i] == 255 - i {
+            set ok_err = ok_err + 1;
+        }
+    }
+    print(str(out.code) + " " + str(len(out.stdout)) + " " + str(ok_out) + " " + str(len(out.stderr)) + " " + str(ok_err));
+    print(to_hex(slice(out.stdout, 0, 4)) + " " + to_hex(slice(out.stdout, 252, 256)));
+    return ok();
+}

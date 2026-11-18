@@ -99,6 +99,7 @@ static int is_ref(Type *t)
 {
     switch (t->kind) {
     case TY_STR:
+    case TY_BYTES: /* spec 021 */
     case TY_LIST:
     case TY_MAP:
     case TY_RECORD:
@@ -137,7 +138,8 @@ static void enc_value(SB *sb, long value, Type *t)
     map_set(enc_seen, value, enc_count++, t_int);
     put_word(sb, -1); /* a new object follows */
     switch (t->kind) {
-    case TY_STR: put_str(sb, (Str *)value); return;
+    case TY_STR:
+    case TY_BYTES: put_str(sb, (Str *)value); return; /* spec 021: length and data, any bytes */
     case TY_LIST: {
         List *l = (List *)value;
         put_word(sb, l->len);
@@ -230,7 +232,8 @@ static long dec_value(Reader *r, Type *t)
     long slot = dec_objs->len; /* the object goes in before its contents: cycles find it */
     list_push(dec_objs, 0);
     switch (t->kind) {
-    case TY_STR: {
+    case TY_STR:
+    case TY_BYTES: { /* spec 021 */
         Str *s = get_str(r);
         if (!s) task_internal(r->g, "a task's message is cut short");
         dec_objs->data[slot].i = (long)s;

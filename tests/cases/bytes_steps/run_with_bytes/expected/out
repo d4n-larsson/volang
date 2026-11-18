@@ -1,0 +1,4 @@
+$ vo run main.vo
+0 000180ff0a0d00 true
+--- stderr
+--- exit 0

@@ -1126,7 +1126,7 @@ A map key type is not `int` or `str`.
 
 Fixable: no
 
-Map keys must be `int` or `str`. Convert other keys to one of these, for example a `bool` to `"true"`/`"false"` or a record to a `str` built from its fields.
+Map keys must be `int` or `str`. Convert other keys to one of these, for example a `bool` to `"true"`/`"false"`, `bytes` to their hex with `std.bytes.to_hex`, or a record to a `str` built from its fields.
 
 ### Example
 
@@ -3132,7 +3132,7 @@ A builtin received an argument it cannot handle.
 
 Fixable: no
 
-A builtin got a value it cannot work with: `int(...)` of NaN or of a float out of range, `split` with an empty separator, or `slice` of a `str` at a position inside a multi-byte character. The message says which. Check the value first. For `slice`, use byte offsets that `find` returned, or work on the `list[str]` from `chars`.
+A builtin got a value it cannot work with: `int(...)` of NaN or of a float out of range, `split` with an empty separator, `slice` of a `str` at a position inside a multi-byte character, an integer outside 0 to 255 for `std.bytes.from_ints`, or text that is not UTF-8 where no `result` can say so (`read_all`, `args`). The message says which. Check the value first. For `slice`, use byte offsets that `find` returned, or work on the `list[str]` from `chars`. For input that may not be text, read it as `bytes` (`std.bytes.read_stdin`, `std.fs.read_bytes`) and convert with `std.bytes.to_text`.
 
 ### Example
 
