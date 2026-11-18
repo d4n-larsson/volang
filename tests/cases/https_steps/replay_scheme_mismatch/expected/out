@@ -1,0 +1,23 @@
+$ vo run --seed 1 --record r.jsonl main.vo -- http://127.0.0.1:{port}/plain
+status 200
+header Content-Type: text/plain
+header Content-Length: 14
+body (14):
+hello from vo
+
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+--- stderr
+note: the program differs from the recorded one (recorded main.vo)
+std/http.vo:90:35: runtime error[R0014]: The program makes an HTTP request `GET /plain` to `https://127.0.0.1:{port}`, but the recording has an HTTP request `GET /plain` to `127.0.0.1:{port}` next: replay the program that was recorded, or record this one.
+  90 |         return parse_response(try __https_exchange(u.host, u.port, request));
+     |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at exchange (std/http.vo:90:35)
+      method: str = "GET", url: str = "https://127.0.0.1:{port}/plain", content_type: str = "", body: str = "", u: Url = new Url { tls: true, host: "127.0.0.1", port: {port}, target: "/plain" }, nl: str = "\n", request: str = "GET /plain HTTP/1.1\nHost: 127.0.0.1:{port}\nConnection: close\nUser-Agent: vo\n\n"
+  at get (std/http.vo:136:12)
+      url: str = "https://127.0.0.1:{port}/plain"
+  at main (main.vo:29:14)
+      a: list[str] = ["http://127.0.0.1:{port}/plain"], url: str = "http://127.0.0.1:{port}/plain"
+--- exit 70

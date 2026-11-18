@@ -1,0 +1,4 @@
+# Spec 019 US3: --ca-file only works with run and test (T0001).
+fn main() uses console {
+    print("never");
+}

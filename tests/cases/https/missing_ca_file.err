@@ -1,0 +1,1 @@
+error[T0002]: Cannot read the certificate file `no_such_file.pem`.

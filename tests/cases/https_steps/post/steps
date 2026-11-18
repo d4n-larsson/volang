@@ -1,0 +1,2 @@
+server https a.test
+vo run --ca-file test-ca.pem main.vo -- post https://127.0.0.1:{port}/echo hello-over-tls

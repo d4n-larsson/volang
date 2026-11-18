@@ -1,13 +1,13 @@
 # The standard library
 
-The standard library is six modules written in vo and built into the toolchain, for JSON, time, text, randomness, HTTP and the ordered collections, imported one item at a time with `import std.MODULE.NAME;`.
+The standard library is six modules written in vo and built into the toolchain, for JSON, time, text, randomness, HTTP and HTTPS, and the ordered collections, imported one item at a time with `import std.MODULE.NAME;`.
 
 ## How the library works
 
 The library is small on purpose. Common operations on strings, lists and maps are
 [builtins](../reference/builtins.md), always available without an import: `len`, `split`, `join`,
 `trim`, `sort`, `keys` and so on. The modules hold everything else that most programs need: reading
-and writing JSON, dates and times, text formatting, random choices, plain HTTP, and the neighbors and
+and writing JSON, dates and times, text formatting, random choices, HTTP and HTTPS, and the neighbors and
 ranges of the ordered collections.
 
 Library items are imported like items of your own files, one name per line:
@@ -237,7 +237,7 @@ Details: [std.random](../std/random.md).
 
 ## std.http
 
-Plain HTTP (no HTTPS). `get` and `post` send a request and return a `Response` with the status, the
+HTTP and HTTPS. `get` and `post` send a request and return a `Response` with the status, the
 headers in order and the body; `header` reads a header without regard to case. They need `net`, scoped
 to the hosts the program may reach.
 
@@ -264,6 +264,28 @@ main.vo:main uses console, net("localhost")
 
 A failed connection is an `err`, like any other failure. A request to a host outside the `net` scope
 stops the program with [R0010](../errors/R0010.md) before anything is sent.
+
+An `https://` URL works the same way, on port 443 unless the URL names another. The request is sent
+only after the server proves it is the host in the URL: its certificate must lead to an authority in
+the machine's trust store, be valid now, and name the host. TLS 1.3 and 1.2 are accepted, with modern
+ciphers only. Anything else is an `err` that says what is wrong, and nothing turns verification off:
+
+| `err` | What to do |
+|---|---|
+| `the certificate of HOST:PORT is not trusted` | an authority the machine does not trust (or the server left out an intermediate): for a private or test authority, run with `--ca-file` |
+| `the certificate of HOST:PORT is self-signed and not trusted` | give the certificate itself with `--ca-file`, or use a real authority |
+| `the certificate of HOST:PORT is for another host` | the URL's host is not in the certificate: use the name it was issued for |
+| `the certificate of HOST:PORT has expired` / `is not valid yet` | the server's certificate (or the machine's clock) is wrong |
+| `HOST:PORT offers no TLS version or algorithm that vo accepts` | the server only speaks old TLS or weak ciphers |
+| `the connection to HOST:PORT was tampered with` | something on the network changed the data |
+| `the TLS handshake with HOST:PORT failed` | the server broke the protocol |
+| `no trusted certificate authorities found (looked in ...)` | the machine has no trust store: install one, or use `--ca-file` |
+
+`vo run --ca-file FILE` (and `vo test`) trusts the authorities in a PEM file for that run, in addition
+to the machine's store: a company's internal authority, or the test authority of a local HTTPS server.
+The person running the program decides; the program cannot. A recording made with `--record` keeps the
+requests and responses, marked as HTTPS, and never any keys; `vo replay` needs neither the network nor
+the authorities.
 
 `serve(address, handle)` reads many requests at once and calls `handle` for one at a time, in the order
 they arrive complete (see [Concurrency](concurrency.md)), with each `Request`,
@@ -366,7 +388,7 @@ The neighbor functions return a `result` because there may be no such key. Detai
 
 ## What is not in the library
 
-There are no regular expressions, no HTTPS, no threads, no long-running or interactive child
+There are no regular expressions, no serving over HTTPS (run a vo server behind a proxy for that), no threads, no long-running or interactive child
 processes, no file permissions, links or modification times, and no way to call code in another
 language. A program that needs such a thing gets it from outside, for example by running a tool with
 `std.process`, or by talking HTTP to a local service. Shared vo code that is not in the library comes in as a

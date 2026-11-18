@@ -1,0 +1,1 @@
+error[T0001]: `--ca-file` only works with `run` or `test`.

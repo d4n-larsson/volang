@@ -1,5 +1,5 @@
-# std.http: Plain HTTP: GET and POST (needs net), and serving requests (needs serve); no https.
-# Part of the vo standard library (spec 007, serving spec 011). Import items one by one: `import std.http.NAME;`.
+# std.http: HTTP and HTTPS: GET and POST (needs net), and serving plain HTTP requests (needs serve).
+# Part of the vo standard library (spec 007, serving spec 011, https spec 019). Import items one by one: `import std.http.NAME;`.
 # The host is checked against the caller's net scope at run time, the address against its serve scope.
 # ponytail: one request per connection (Connection: close), redirects returned, not followed; a
 # server answers one request at a time.
@@ -20,19 +20,22 @@ export record Response {
 }
 
 record Url {
+    tls: bool;
     host: str;
     port: int;
     target: str;
 }
 
 fn parse_url(url: str) -> result[Url] {
+    var tls = false;
+    var skip = 7;
     if len(url) >= 8 and lower(slice(url, 0, 8)) == "https://" {
-        return err("https is not supported");
+        set tls = true;
+        set skip = 8;
+    } else if len(url) < 7 or lower(slice(url, 0, 7)) != "http://" {
+        return err("not an http:// or https:// URL: " + url);
     }
-    if len(url) < 7 or lower(slice(url, 0, 7)) != "http://" {
-        return err("not an http:// URL: " + url);
-    }
-    let rest = slice(url, 7, len(url));
+    let rest = slice(url, skip, len(url));
     var cut = len(rest);
     for c in [find(rest, "/"), find(rest, "?"), find(rest, "#")] {
         if c >= 0 and c < cut {
@@ -50,6 +53,9 @@ fn parse_url(url: str) -> result[Url] {
     }
     var host = authority;
     var port = 80;
+    if tls {
+        set port = 443;
+    }
     let colon = find(authority, ":");
     if colon >= 0 {
         set host = slice(authority, 0, colon);
@@ -65,14 +71,14 @@ fn parse_url(url: str) -> result[Url] {
     if host == "" or port < 1 or port > 65535 or find(host, "@") >= 0 {
         return err("bad host in " + url);
     }
-    return ok(new Url { host: lower(host), port: port, target: target });
+    return ok(new Url { tls: tls, host: lower(host), port: port, target: target });
 }
 
 fn exchange(method: str, url: str, content_type: str, body: str) -> result[Response] uses net {
     let u = try parse_url(url);
     let nl = crlf();
     var request = method + " " + u.target + " HTTP/1.1" + nl + "Host: " + u.host;
-    if u.port != 80 {
+    if (u.port != 80 and not u.tls) or (u.port != 443 and u.tls) {
         set request = request + ":" + str(u.port);
     }
     set request = request + nl + "Connection: close" + nl + "User-Agent: vo" + nl;
@@ -80,6 +86,9 @@ fn exchange(method: str, url: str, content_type: str, body: str) -> result[Respo
         set request = request + "Content-Type: " + content_type + nl + "Content-Length: " + str(len(body)) + nl;
     }
     set request = request + nl + body;
+    if u.tls {
+        return parse_response(try __https_exchange(u.host, u.port, request));
+    }
     let raw = try __http_exchange(u.host, u.port, request);
     return parse_response(raw);
 }
@@ -121,14 +130,14 @@ fn parse_headers(head: list[str], bad: str) -> result[list[Header]] {
     return ok(headers);
 }
 
-# Sends GET to an http:// URL (needs net; the host must be in the caller's net scope).
-#     get("https://example.com/") == err("https is not supported") is true
+# Sends GET to an http:// or https:// URL (needs net; the host must be in the caller's net scope); an https:// server that cannot be verified gives an err saying why: not trusted, self-signed, for another host, expired, not valid yet, no acceptable TLS version or algorithm, tampered with, or handshake failed.
+#     get("ftp://example.com/") == err("not an http:// or https:// URL: ftp://example.com/") is true
 export fn get(url: str) -> result[Response] uses net {
     return exchange("GET", url, "", "");
 }
 
-# Sends POST with a body and its content type to an http:// URL (needs net).
-#     post("ftp://x/", "text/plain", "") == err("not an http:// URL: ftp://x/") is true
+# Sends POST with a body and its content type to an http:// or https:// URL (needs net).
+#     post("ftp://x/", "text/plain", "") == err("not an http:// or https:// URL: ftp://x/") is true
 export fn post(url: str, content_type: str, body: str) -> result[Response] uses net {
     return exchange("POST", url, content_type, body);
 }

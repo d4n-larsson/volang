@@ -1,0 +1,1 @@
+error[T0013]: `not_a_cert.txt` holds no certificate vo can read: give a PEM file with one or more `BEGIN CERTIFICATE` blocks.

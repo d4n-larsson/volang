@@ -1,0 +1,2 @@
+server https a.test
+vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/plain https://127.0.0.1:{port}/json https://127.0.0.1:{port}/chunked https://127.0.0.1:{port}/close https://127.0.0.1:{port}/status/404 https://127.0.0.1:{port}/headers

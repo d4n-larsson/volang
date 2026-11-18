@@ -1,0 +1,4 @@
+$ no-trust-store vo run main.vo -- https://127.0.0.1:{port}/plain
+err no trusted certificate authorities found (looked in /etc/ssl/certs/ca-certificates.crt, /etc/pki/tls/certs/ca-bundle.crt, /etc/ssl/cert.pem)
+--- stderr
+--- exit 0

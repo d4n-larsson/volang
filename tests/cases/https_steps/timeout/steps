@@ -1,0 +1,2 @@
+server https a.test
+vo run --timeout 1 --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/slow

@@ -1,0 +1,4 @@
+write server.log 
+server https self-signed --log server.log
+vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/plain
+keep server.log

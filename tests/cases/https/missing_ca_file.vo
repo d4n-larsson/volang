@@ -1,0 +1,4 @@
+# Spec 019 US3: --ca-file that cannot be read is T0002, before the program runs.
+fn main() uses console {
+    print("never");
+}

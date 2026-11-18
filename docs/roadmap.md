@@ -25,6 +25,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [016](../specs/016-concurrency/) | `concurrent_map(xs, limit, f)`: tasks in input order, sharing nothing, failures and output as `map` gives them, record/replay; `serve` reads many connections at once | **Done** ([results](../specs/016-concurrency/results.md)) |
 | [017](../specs/017-filesystem-processes/) | Directories and file changes (list, information, append, create directories; delete and rename under a new `file.delete` effect) and running other programs under a scoped `process` effect | **Done** ([results](../specs/017-filesystem-processes/results.md)) |
 | [018](../specs/018-agent-testing/) | Agent-friendly testing: list and select tests by identifier, `@spec` ID or diff; explained failures (comparison operands, the path to the first difference, a cause per failure, captured output); coverage; warnings for tests that cannot fail; mutation testing | **Done** ([results](../specs/018-agent-testing/results.md)) |
+| [019](../specs/019-https/) | HTTPS for `std.http.get`/`post`: TLS 1.3 and 1.2 from the vendored Mbed TLS 4.1 LTS, certificates always verified against the machine's trust store (plus `--ca-file`), nine fixed `err` messages, recordings with the scheme | **Done** ([results](../specs/019-https/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -144,6 +145,17 @@ step at a time and lists the changes no test catches; W0602 and W0603 flag tests
   and flaky-test detection (runs are deterministic), skips and expected failures, mock objects, parallel
   mutant runs.
 
+### 019: HTTPS (done)
+
+`std.http.get` and `post` accept `https://` URLs. TLS comes from Mbed TLS 4.1.2 (the LTS branch,
+supported until March 2029), vendored unmodified under `third_party/` and built into the one static
+binary under constitution 1.4.0, which added the rules for vendored code. A request is sent only after
+the server's certificate is verified against the machine's trust store and any `--ca-file` the runner
+gives; every failure is an `err` with a fixed message, and nothing turns verification off.
+
+- **Not done (on purpose):** serving over HTTPS (planned below), session resumption and connection
+  reuse, revocation checks (OCSP, CRL), client certificates, HTTP/2.
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -151,7 +163,6 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 
 | Gap | What is missing | Notes |
 |---|---|---|
-| HTTPS | `std.http` speaks plain HTTP only, so most public APIs are out of reach | spec 007 follow-up; TLS without libc is the cost |
 | Math builtins | `sqrt`, `pow`, `floor`, `ceil`, `round`, trigonometry, `log` | pure; results must be byte-identical on all three platforms |
 | Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; decides what matters next |
 | Binary data | `str` must be UTF-8, so images, archives and binary protocols cannot be handled | a `bytes` type; also lifts 017's "output is not UTF-8" error |
@@ -160,12 +171,13 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Regular expressions | `std.text` has `find`, `split`, `replace` only | linear-time matching only (no backtracking) |
 | TCP and UDP | only HTTP reaches the network | scoped like `net` and `serve` |
 | macOS | Linux only (x86-64, ARM64, RISC-V) | the raw-syscall, no-libc design makes this a real port |
-| Downloading packages | packages are local and pinned by hash, never fetched | spec 007 follow-up; needs HTTPS |
+| Downloading packages | packages are local and pinned by hash, never fetched | spec 007 follow-up; HTTPS exists since spec 019 |
 | Language server | no completion, hover or diagnostics in editors | `vo query` and `vo check --json` already have the data |
 | Debugger | traces, locals in errors and replay, but no stepping | replay makes a deterministic stepper possible |
 | Tuples, more map keys | no tuple type; map keys are `int` or `str` only | records and ordered maps cover some cases |
 | `old()` in `ensures` | contracts cannot compare with values from before the call | spec 005 follow-up |
 | Confined child programs | a program started under `process` runs with the user's full rights | opt-in confinement to the grant (Landlock); spec 017 follow-up |
+| Serving over HTTPS | `std.http.serve` answers plain HTTP only; a public server needs a proxy in front | spec 019 follow-up: certificate and key under the program's grants |
 | Recorded tests | a test that uses HTTP, files, programs or the environment depends on the machine and the network | spec 018 follow-up, decided: `vo test --record DIR` saves one recording per test, `vo test --replay DIR` runs offline on them; replaces mock objects |
 | Events | investigate if we should support events | |
 

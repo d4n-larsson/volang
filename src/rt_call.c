@@ -14,9 +14,9 @@ enum {
     BU_ABS, BU_MIN, BU_MAX, BU_UPPER, BU_LOWER, BU_ORD, BU_CHR, BU_ENV, BU_RANDOM_INT,
     BU_SORT_BY, BU_MAP, BU_FILTER, BU_FOLD, BU_ANY, BU_ALL, BU_TODO, BU_ASSUME, BU_REQ_FAIL,
     BU_ENS_FAIL, BU_FLOAT_TEXT, BU_HTTP_EXCHANGE, BU_TEXT_FLOAT, BU_GET_OR, BU_SERVE_LISTEN, BU_SERVE_NEXT,
-    BU_SERVE_REPLY, BU_SERVE_CALL, BU_HTTP_PART, BU_COLL, BU_CONCURRENT_MAP, BU_FS, BU_RUN
+    BU_SERVE_REPLY, BU_SERVE_CALL, BU_HTTP_PART, BU_COLL, BU_CONCURRENT_MAP, BU_FS, BU_RUN, BU_HTTPS
 };
-_Static_assert(BU_RUN == B_LAST && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
+_Static_assert(BU_HTTPS == B_LAST && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
 _Static_assert(BU_TODO == B_TODO && BU_REQ_FAIL == B_REQ_FAIL && BU_SORT_BY == B_SORT_BY, "builtin ids");
 
 /* The static type of the call's first argument. */
@@ -124,6 +124,7 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_COLL: return coll_op(call, a0, a1, a2); /* spec 014: std.collections */
     case BU_FS: return (long)io_fs(a0, (Str *)a1, (Str *)a2); /* spec 017: std.fs */
     case BU_RUN: return (long)io_run((List *)a0, (Str *)a1, (List *)a2); /* spec 017: std.process */
+    case BU_HTTPS: return (long)io_https_exchange((void *)a0, a1, (void *)a2); /* spec 019: std.http */
     case BU_TEXT_FLOAT: return std_text_float((Str *)a0); /* spec 007: up to 19 digits, exactly */
     case BU_PARSE_INT: return (long)rt_parse_int((Str *)a0);
     case BU_PARSE_FLOAT: return (long)rt_parse_float((Str *)a0);

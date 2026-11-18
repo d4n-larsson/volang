@@ -30,7 +30,7 @@ typedef struct SockAddrIn {
 
 /* Waits for events on fd: 1 when ready, 0 after cap_ms (cap_ms < 0: no cap of its own). The run's
  * deadline is the outer bound: past it, the run stops with R0009 at the current call. */
-static int net_wait(long fd, int events, long cap_ms)
+int net_wait(long fd, int events, long cap_ms)
 {
     long wait = cap_ms;
     if (deadline_ms) {
@@ -44,7 +44,7 @@ static int net_wait(long fd, int events, long cap_ms)
 }
 
 /* Parses a dotted IPv4 address (four decimal parts 0..255) of n bytes; 1 when it is one. */
-static int parse_ipv4(char *s, long n, uint8_t *out)
+int parse_ipv4(char *s, long n, uint8_t *out)
 {
     long part = 0, value = -1;
     for (long i = 0; i <= n; i++) {
@@ -218,7 +218,7 @@ static int dns_lookup(Str *host, uint8_t *out)
     return found;
 }
 
-static Variant *net_err(char *tmpl, Str *host, long port)
+Variant *net_err(char *tmpl, Str *host, long port)
 {
     SB *sb = sb_new();
     sb_str(sb, host);
@@ -227,27 +227,27 @@ static Variant *net_err(char *tmpl, Str *host, long port)
     return make_result(1, (long)msg(tmpl, sb_finish(sb), 0, 0));
 }
 
-/* result[str]: the raw response, or err with the reason. The host is not checked here: the
- * caller (io_http_exchange) checks it against the running grant first. */
-Variant *rt_http_exchange(Str *host, long port, Str *request)
+/* Resolves host and connects to port (spec 019: shared by HTTP and HTTPS): the connected,
+ * non-blocking socket, or -1 with *err set to the err result saying why. */
+long net_open(Str *host, long port, Variant **err)
 {
     GC_ROOT(&host);
-    GC_ROOT(&request);
     uint8_t addr[4];
-    Variant *result = 0;
+    *err = 0;
     if (!parse_ipv4(host->data, host->len, addr) && !hosts_lookup(host, addr)) {
         int r = dns_lookup(host, addr);
         if (r <= 0) {
-            result = make_result(1, (long)msg(r == 0 ? "unknown host `$1`" : "cannot resolve `$1`: no answer from a name server",
-                                              host, 0, 0));
-            GC_UNROOT(2);
-            return result;
+            *err = make_result(1, (long)msg(r == 0 ? "unknown host `$1`" : "cannot resolve `$1`: no answer from a name server",
+                                            host, 0, 0));
+            GC_UNROOT(1);
+            return -1;
         }
     }
     long fd = net_socket(SOCK_STREAM);
     if (fd < 0) {
-        GC_UNROOT(2);
-        return make_err("cannot open a socket");
+        *err = make_err("cannot open a socket");
+        GC_UNROOT(1);
+        return -1;
     }
     long c = net_connect(fd, addr, port);
     if (c == -E_INPROGRESS) { /* wait, then ask again: 0 or EISCONN when connected */
@@ -257,8 +257,25 @@ Variant *rt_http_exchange(Str *host, long port, Str *request)
     }
     if (c < 0) {
         sys_close((int)fd);
+        *err = net_err(c == -E_CONNREFUSED ? "connection refused by $1" : "cannot connect to $1", host, port);
+        GC_UNROOT(1);
+        return -1;
+    }
+    GC_UNROOT(1);
+    return fd;
+}
+
+/* result[str]: the raw response, or err with the reason. The host is not checked here: the
+ * caller (io_http_exchange) checks it against the running grant first. */
+Variant *rt_http_exchange(Str *host, long port, Str *request)
+{
+    GC_ROOT(&host);
+    GC_ROOT(&request);
+    Variant *result = 0;
+    long fd = net_open(host, port, &result);
+    if (fd < 0) {
         GC_UNROOT(2);
-        return net_err(c == -E_CONNREFUSED ? "connection refused by $1" : "cannot connect to $1", host, port);
+        return result;
     }
     for (long sent = 0; sent < request->len;) {
         long w = vo_syscall6(SYS_sendto, fd, (long)request->data + sent, request->len - sent, MSG_NOSIGNAL, 0, 0);

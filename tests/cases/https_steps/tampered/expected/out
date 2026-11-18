@@ -1,0 +1,4 @@
+$ vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/plain
+err the connection to 127.0.0.1:{port} was tampered with
+--- stderr
+--- exit 0

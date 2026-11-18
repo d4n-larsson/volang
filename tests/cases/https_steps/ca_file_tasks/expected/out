@@ -1,0 +1,6 @@
+$ vo run --ca-file test-ca.pem main.vo -- {port}
+200 /plain
+200 /json
+404 /status/404
+--- stderr
+--- exit 0

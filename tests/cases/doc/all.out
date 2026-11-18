@@ -77,7 +77,7 @@ modules:
   std.time UTC calendar time, ISO 8601 text and durations in milliseconds.
   std.text Text helpers: search, replace, repeat, pad, lines and words.
   std.random Random floats, picks and shuffles (fixed by --seed).
-  std.http Plain HTTP: GET and POST (needs net), and serving requests (needs serve); no https.
+  std.http HTTP and HTTPS: GET and POST (needs net), and serving plain HTTP requests (needs serve).
   std.collections Operations on the built-in ordered_map, ordered_set, priority_queue and deque.
   std.fs Directories and file information (needs file.read), and file changes (needs file.write, file.delete).
   std.process Running other programs to their end, with no shell (needs process).

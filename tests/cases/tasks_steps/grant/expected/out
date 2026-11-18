@@ -1,12 +1,12 @@
 $ vo run main.vo -- {port}
 --- stderr
-std/http.vo:83:19: runtime error[R0010]: net("example.com") is not allowed: `fetch` declares net("127.0.0.1").
-  83 |     let raw = try __http_exchange(u.host, u.port, request);
+std/http.vo:92:19: runtime error[R0010]: net("example.com") is not allowed: `fetch` declares net("127.0.0.1").
+  92 |     let raw = try __http_exchange(u.host, u.port, request);
      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange (std/http.vo:83:19)
-      method: str = "GET", url: str = "http://example.com/", content_type: str = "", body: str = "", u: Url = new Url { host: "example.com", port: 80, target: "/" }, nl: str = "\n", request: str = "GET / HTTP/1.1\nHost: example.com\nConnection: close\nUser-Agent: vo\n\n"
-  at get (std/http.vo:127:12)
+  at exchange (std/http.vo:92:19)
+      method: str = "GET", url: str = "http://example.com/", content_type: str = "", body: str = "", u: Url = new Url { tls: false, host: "example.com", port: 80, target: "/" }, nl: str = "\n", request: str = "GET / HTTP/1.1\nHost: example.com\nConnection: close\nUser-Agent: vo\n\n"
+  at get (std/http.vo:136:12)
       url: str = "http://example.com/"
   at fetch (main.vo:5:11)
       url: str = "http://example.com/"
@@ -15,5 +15,5 @@ trace:
 --- exit 70
 $ vo run --json main.vo -- {port}
 --- stderr
-{"v":1,"kind":"runtime_error","code":"R0010","name":"capability_denied","message":"net(\"example.com\") is not allowed: `fetch` declares net(\"127.0.0.1\").","file":"std/http.vo","start":{"line":83,"col":19},"end":{"line":83,"col":59},"effect":"net","target":"example.com","allowed":["127.0.0.1"],"declared_by":"fetch","trace":[{"function":"exchange","file":"std/http.vo","start":{"line":83,"col":19},"locals":[{"name":"method","type":"str","value":"\"GET\""},{"name":"url","type":"str","value":"\"http://example.com/\""},{"name":"content_type","type":"str","value":"\"\""},{"name":"body","type":"str","value":"\"\""},{"name":"u","type":"Url","value":"new Url { host: \"example.com\", port: 80, target: \"/\" }"},{"name":"nl","type":"str","value":"\"\u000d\\n\""},{"name":"request","type":"str","value":"\"GET / HTTP/1.1\u000d\\nHost: example.com\u000d\\nConnection: close\u000d\\nUser-Agent: vo\u000d\\n\u000d\\n\""}]},{"function":"get","file":"std/http.vo","start":{"line":127,"col":12},"locals":[{"name":"url","type":"str","value":"\"http://example.com/\""}]},{"function":"fetch","file":"main.vo","start":{"line":5,"col":11},"locals":[{"name":"url","type":"str","value":"\"http://example.com/\""}]},{"function":"main","file":"main.vo","start":{"line":18,"col":14},"locals":[{"name":"port","type":"str","value":"\"{port}\""},{"name":"urls","type":"list[str]","value":"[\"http://127.0.0.1:{port}/plain\", \"http://example.com/\", \"http://127.0.0.1:{port}/plain\"]"}]}]}
+{"v":1,"kind":"runtime_error","code":"R0010","name":"capability_denied","message":"net(\"example.com\") is not allowed: `fetch` declares net(\"127.0.0.1\").","file":"std/http.vo","start":{"line":92,"col":19},"end":{"line":92,"col":59},"effect":"net","target":"example.com","allowed":["127.0.0.1"],"declared_by":"fetch","trace":[{"function":"exchange","file":"std/http.vo","start":{"line":92,"col":19},"locals":[{"name":"method","type":"str","value":"\"GET\""},{"name":"url","type":"str","value":"\"http://example.com/\""},{"name":"content_type","type":"str","value":"\"\""},{"name":"body","type":"str","value":"\"\""},{"name":"u","type":"Url","value":"new Url { tls: false, host: \"example.com\", port: 80, target: \"/\" }"},{"name":"nl","type":"str","value":"\"\u000d\\n\""},{"name":"request","type":"str","value":"\"GET / HTTP/1.1\u000d\\nHost: example.com\u000d\\nConnection: close\u000d\\nUser-Agent: vo\u000d\\n\u000d\\n\""}]},{"function":"get","file":"std/http.vo","start":{"line":136,"col":12},"locals":[{"name":"url","type":"str","value":"\"http://example.com/\""}]},{"function":"fetch","file":"main.vo","start":{"line":5,"col":11},"locals":[{"name":"url","type":"str","value":"\"http://example.com/\""}]},{"function":"main","file":"main.vo","start":{"line":18,"col":14},"locals":[{"name":"port","type":"str","value":"\"{port}\""},{"name":"urls","type":"list[str]","value":"[\"http://127.0.0.1:{port}/plain\", \"http://example.com/\", \"http://127.0.0.1:{port}/plain\"]"}]}]}
 --- exit 70

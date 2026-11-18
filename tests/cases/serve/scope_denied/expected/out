@@ -1,17 +1,17 @@
 $ vo run service.vo -- {vport}
 --- stderr
-std/http.vo:171:24: runtime error[R0010]: serve("{vport}") is not allowed: `main` declares console, serve("1").
- 171 |     let listener = try __serve_listen(address);
+std/http.vo:180:24: runtime error[R0010]: serve("{vport}") is not allowed: `main` declares console, serve("1").
+ 180 |     let listener = try __serve_listen(address);
      |                        ^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at serve (std/http.vo:171:24)
+  at serve (std/http.vo:180:24)
       address: str = "{vport}", handle: fn(Request) -> Response = <fn(Request) -> Response>
   at main (service.vo:12:9)
       a: list[str] = ["{vport}"]
 --- exit 70
 $ vo run --json service.vo -- {vport}
 --- stderr
-{"v":1,"kind":"runtime_error","code":"R0010","name":"capability_denied","message":"serve(\"{vport}\") is not allowed: `main` declares console, serve(\"1\").","file":"std/http.vo","start":{"line":171,"col":24},"end":{"line":171,"col":47},"effect":"serve","target":"{vport}","allowed":["1"],"declared_by":"main","trace":[{"function":"serve","file":"std/http.vo","start":{"line":171,"col":24},"locals":[{"name":"address","type":"str","value":"\"{vport}\""},{"name":"handle","type":"fn(Request) -> Response","value":"<fn(Request) -> Response>"}]},{"function":"main","file":"service.vo","start":{"line":12,"col":9},"locals":[{"name":"a","type":"list[str]","value":"[\"{vport}\"]"}]}]}
+{"v":1,"kind":"runtime_error","code":"R0010","name":"capability_denied","message":"serve(\"{vport}\") is not allowed: `main` declares console, serve(\"1\").","file":"std/http.vo","start":{"line":180,"col":24},"end":{"line":180,"col":47},"effect":"serve","target":"{vport}","allowed":["1"],"declared_by":"main","trace":[{"function":"serve","file":"std/http.vo","start":{"line":180,"col":24},"locals":[{"name":"address","type":"str","value":"\"{vport}\""},{"name":"handle","type":"fn(Request) -> Response","value":"<fn(Request) -> Response>"}]},{"function":"main","file":"service.vo","start":{"line":12,"col":9},"locals":[{"name":"a","type":"list[str]","value":"[\"{vport}\"]"}]}]}
 --- exit 70
 $ request GET /x
 (refused)

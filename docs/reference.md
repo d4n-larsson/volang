@@ -1044,12 +1044,13 @@ fn main() uses console {
 | std.time | UTC calendar times, ISO 8601 text, durations, `now` (clock) |
 | std.text | `replace`, `contains`, `pad_left`, `lines`, `words`, ... |
 | std.random | `unit`, `pick`, `shuffle` (random) |
-| std.http | plain HTTP: `get` and `post` (net), `serve` (serve); no HTTPS |
+| std.http | HTTP and HTTPS: `get` and `post` (net), `serve` (serve, HTTP only) |
 | std.collections | neighbors and ranges of the ordered collections, set algebra, deque fronts, `_by(cmp)` orders |
 | std.fs | `info`, `list_dir`, `walk` (file.read); `append_file`, `make_dir` (file.write); `delete`, `rename` (file.delete) |
 | std.process | `run`, `run_with`: run a program to its end, no shell (process) |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
+- `https://` URLs are verified: the server's certificate must lead to an authority in the machine's trust store (or a file given with `--ca-file`), be valid now and name the host; otherwise `get`/`post` return an `err` saying why (`vo doc std.http.get` lists them). Nothing turns verification off. TLS 1.3 and 1.2 only; `--clock-ms` does not affect certificate dates. A recording keeps requests and responses, never keys; replay needs no network.
 - `std.http.serve(address, handle)` reads many requests at once and calls `handle(request) -> Response` for one at a time, in the order they arrive complete, until Ctrl-C or SIGTERM, then returns `ok()`. The caller declares `serve` with that address and the handler's effects. A handler that stops with a runtime error answers 500 (the report goes to stderr) and the server goes on; `--timeout` limits each handler call, not the server.
 - `std.process.run(program, args)` runs a program with no shell (arguments are passed as they are), no input and an empty environment, waits for it and returns `Output { code, stdout, stderr }`; `run_with` adds input text and `NAME=value` variables. A non-zero exit is `ok`; killed by signal n, `code` is 128 + n. `--timeout` covers the program and everything it starts. A started program is not confined: `process("git")` grants whatever `git` can do.
 - File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.
@@ -1175,8 +1176,8 @@ fn main() uses console {
 
 ```sh
 vo check     [--json] PATH...
-vo run       [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] FILE [-- ARG...]
-vo test      [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--filter TEXT] [--test ID] [--spec ID] [--diff FILE] [--list | --coverage | --mutate [--max-mutants N]] PATH...
+vo run       [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--ca-file FILE] FILE [-- ARG...]
+vo test      [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--filter TEXT] [--test ID] [--spec ID] [--diff FILE] [--ca-file FILE] [--list | --coverage | --mutate [--max-mutants N]] PATH...
 vo fmt       [--json] [--check] PATH...
 vo effects   [--json] [--update] FILE
 vo explain   [--json] CODE

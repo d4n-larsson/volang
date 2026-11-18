@@ -6,7 +6,7 @@
 
 ```text
 vo run [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats]
-       [--trace FILE] [--trace-limit N] [--record FILE] FILE [-- ARG...]
+       [--trace FILE] [--trace-limit N] [--record FILE] [--ca-file FILE] FILE [-- ARG...]
 ```
 
 `FILE` is the program's entry file, the one that declares `main`. The words after `--` are the program's
@@ -28,6 +28,7 @@ address outside it stops the program with [R0010](../errors/R0010.md) (see [Effe
 | `--mem-stats` | After the run, report the peak live size, the total allocated and the number of collections (on stderr; a `memory` record with `--json`). |
 | `--trace FILE` | Write a trace of every vo function call and return to `FILE` as JSON lines. |
 | `--trace-limit N` | With `--trace`: write at most `N` records (1 to 100000000, default 100000) and only count the rest. |
+| `--ca-file FILE` | Trust the certificate authorities in `FILE` (PEM) for HTTPS, in addition to the machine's trust store, for this run; repeatable. Read before the program starts: unreadable is [T0002](../errors/T0002.md), no certificate is [T0013](../errors/T0013.md). Nothing turns certificate verification off. |
 | `--record FILE` | Save everything the program receives to `FILE`, so [vo replay](replay.md) can run it again exactly. |
 
 `--seed` and `--clock-ms` take whole numbers from 0. A trace or recording path cannot be one of the

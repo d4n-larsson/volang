@@ -1,0 +1,5 @@
+server https a.test
+vo run --seed 1 --record r.jsonl --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/plain https://127.0.0.1:{port}/json
+stop-server
+vo replay r.jsonl
+keep r.jsonl

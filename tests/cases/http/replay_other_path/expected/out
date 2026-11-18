@@ -19,13 +19,13 @@ hello from vo
 $ vo replay r.jsonl
 --- stderr
 note: the program differs from the recorded one (recorded main.vo)
-std/http.vo:83:19: runtime error[R0014]: The program makes an HTTP request `GET /json` to `localhost:{port}`, but the recording has an HTTP request `GET /plain` to `localhost:{port}` next: replay the program that was recorded, or record this one.
-  83 |     let raw = try __http_exchange(u.host, u.port, request);
+std/http.vo:92:19: runtime error[R0014]: The program makes an HTTP request `GET /json` to `localhost:{port}`, but the recording has an HTTP request `GET /plain` to `localhost:{port}` next: replay the program that was recorded, or record this one.
+  92 |     let raw = try __http_exchange(u.host, u.port, request);
      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange (std/http.vo:83:19)
-      method: str = "GET", url: str = "http://localhost:{port}/json", content_type: str = "", body: str = "", u: Url = new Url { host: "localhost", port: {port}, target: "/json" }, nl: str = "\n", request: str = "GET /json HTTP/1.1\nHost: localhost:{port}\nConnection: close\nUser-Agent: vo\n\n"
-  at get (std/http.vo:127:12)
+  at exchange (std/http.vo:92:19)
+      method: str = "GET", url: str = "http://localhost:{port}/json", content_type: str = "", body: str = "", u: Url = new Url { tls: false, host: "localhost", port: {port}, target: "/json" }, nl: str = "\n", request: str = "GET /json HTTP/1.1\nHost: localhost:{port}\nConnection: close\nUser-Agent: vo\n\n"
+  at get (std/http.vo:136:12)
       url: str = "http://localhost:{port}/json"
   at main (main.vo:23:10)
       a: list[str] = ["{port}", "/plain"]

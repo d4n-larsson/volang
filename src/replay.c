@@ -13,6 +13,7 @@ long rcd_mode;                /* 0 off, 1 recording, 2 replaying */
 static void *rcd_fb;          /* the recording (FBuf), or 0 */
 static long rcd_failed;       /* it could not be created (T0009 at exit) */
 static Str *rcd_request; /* spec 009: the request line of the http event being written */
+static int rcd_tls;      /* spec 019: ... and whether it went over HTTPS */
 static long rcd_pending_kind; /* a read/write being checked: written as `denied` if R0010 ends the run */
 static Str *rcd_to;           /* spec 017: rename's new path, written as "to" */
 static List *rcd_args;        /* spec 017: a run's argv, written as "args" (without the program) */
@@ -172,6 +173,7 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
         if (kind == EVK_HTTP) { /* spec 007: the port (int_value); spec 009: the request line */
             rw(",\"port\":");
             rw_dec(int_value);
+            if (rcd_tls) rw(",\"scheme\":\"https\""); /* spec 019 (absent: http) */
             if (rcd_request) {
                 rw(",\"request\":");
                 rw_str(rcd_request->data, rcd_request->len, 0);
@@ -382,7 +384,7 @@ void *io_env(Str *name)
 }
 
 /* For R0014's messages: "`GET /x` to `host:port`", or "to `host:port`" without a request line. */
-static Str *http_desc(Str *host, long port, Str *request)
+static Str *http_desc(Str *host, long port, Str *request, long tls)
 {
     SB *sb = sb_new();
     if (request) {
@@ -391,6 +393,7 @@ static Str *http_desc(Str *host, long port, Str *request)
         sb_cstr(sb, "` ");
     }
     sb_cstr(sb, "to `");
+    if (tls) sb_cstr(sb, "https://"); /* spec 019: plain HTTP keeps its old description */
     sb_str(sb, host);
     sb_byte(sb, ':');
     int_to_dec(sb, port);
@@ -411,7 +414,20 @@ static Str *request_line(Str *request)
 
 /* Spec 007 (research R11): the host check (R0010) in every mode, then the exchange; replay returns
  * the recorded response without the network, and refuses another host or port (R0014). */
+static Variant *io_exchange(Str *host, long port, Str *request, int tls);
+
 Variant *io_http_exchange(Str *host, long port, Str *request)
+{
+    return io_exchange(host, port, request, 0);
+}
+
+/* spec 019: the same over TLS (std.http with an https:// URL). */
+Variant *io_https_exchange(Str *host, long port, Str *request)
+{
+    return io_exchange(host, port, request, 1);
+}
+
+static Variant *io_exchange(Str *host, long port, Str *request, int tls)
 {
     Variant *r;
     GC_ROOT(&host);
@@ -420,19 +436,21 @@ Variant *io_http_exchange(Str *host, long port, Str *request)
     Str *line = request_line(request);
     GC_ROOT(&line);
     if (rcd_mode == 2) {
-        Str *asked = http_desc(host, port, line);
+        Str *asked = http_desc(host, port, line, tls);
         if (rp_next >= rp_events->n) rp_mismatch(EVK_HTTP, asked, 0);
         Event *e = vec_get(rp_events, rp_next++);
-        if (e->kind != EVK_HTTP || !str_eq(e->name, host) || e->port != port ||
+        if (e->kind != EVK_HTTP || !str_eq(e->name, host) || e->port != port || e->tls != tls ||
             (e->request && !str_eq(e->request, line))) /* older recordings: host and port only */
             rp_mismatch(EVK_HTTP, asked, e);
         r = rp_result(e);
     } else {
-        r = rt_http_exchange(host, port, request);
+        r = tls ? tls_exchange(host, port, request) : rt_http_exchange(host, port, request);
         if (rcd_mode) {
             rcd_request = line;
+            rcd_tls = tls;
             rcd_event(EVK_HTTP, host, (long)(uint32_t)r->tag, r->pay.s, port);
             rcd_request = 0;
+            rcd_tls = 0;
         }
     }
     if (!r->tag) { /* spec 013 (R4): the raw response (as recorded) is framed here, by the server's rules */
@@ -498,7 +516,7 @@ void rp_mismatch(long kind, Str *name, Event *event)
     GC_ROOT(&asked);
     if (event) {
         Str *has = rp_describe((char *)n_table[event->kind],
-                               event->kind == EVK_HTTP ? http_desc(event->name, event->port, event->request)
+                               event->kind == EVK_HTTP ? http_desc(event->name, event->port, event->request, event->tls)
                                : event->kind == EVK_RUN ? run_desc(event->name, event->request)
                                                         : event->name);
         m = msg("The program $1, but the recording has $2 next: replay the program that was recorded, or record this "
@@ -610,15 +628,16 @@ static long rf_isint;
 static long rf_status;
 static long rf_port = -1; /* spec 007: http events */
 static Str *rf_request;   /* spec 009 */
+static Str *rf_scheme;    /* spec 019: "https" on an HTTPS http event */
 
 static const char *const rk_keys[] = {"kind",   "program", "fingerprint", "seed", "clock_ms", "args",    "path",
                                       "name",   "result",  "value",       "status", "host",     "port",    "request",
-                                      "address", "to", 0};
+                                      "address", "to", "scheme", 0};
 static long rf_args_line; /* spec 017: this line had "args" (a run event's arguments) */
 
 /* Where each string-valued key is stored (rk_keys order; 0: not a string). */
 static Str **const rf_slots[] = {&rf_kind, &rf_program, &rf_fprint, 0, 0, 0, &rf_name, &rf_name, &rf_result,
-                                 &rf_value, 0, &rf_name, 0, &rf_request, &rf_name, &rf_request};
+                                 &rf_value, 0, &rf_name, 0, &rf_request, &rf_name, &rf_request, &rf_scheme};
 
 /* T0008 invalid_recording, exit 64. */
 void rp_bad(void)
@@ -718,6 +737,7 @@ void rp_line(char *p, char *end)
     rf_isint = 0;
     rf_port = -1;
     rf_request = 0;
+    rf_scheme = 0;
     rf_program = 0;
     rf_args_line = 0;
     p = rp_ws(p, end);
@@ -842,6 +862,7 @@ void rp_read(char *text, long len)
                 if (rf_isint) e->value.i = rf_ivalue;
                 e->port = rf_port;
                 e->request = rf_request;
+                e->tls = rf_scheme && str_eq_cstr(rf_scheme, "https");
                 if (kind == EVK_RUN) { /* spec 017: the program, and the arguments joined by NUL bytes */
                     e->name = rf_program;
                     e->request = rf_args_line ? join_args(rf_args) : 0;

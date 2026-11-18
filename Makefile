@@ -53,11 +53,27 @@ HEADERS  := src/vo.h src/platform/$(ARCH).h Makefile
 ifneq ($(SUFFIX),)
 export VO_BIN ?= $(abspath build$(SUFFIX)/vo)
 endif
+# Spec 019 (constitution 1.4.0): Mbed TLS, vendored unmodified under third_party/, built freestanding
+# with only the compiler's own headers and third_party/shim, with its upstream's warnings (not vo's
+# strict set), configured by src/tls_config.h and src/tls_crypto_config.h. The C files are the ones
+# listed in third_party/mbedtls/VENDOR.md.
+MBED      := third_party/mbedtls
+MBED_SRCS := $(addprefix $(MBED)/,$(shell sed -n 's/^- `\(.*\.c\)`$$/\1/p' $(MBED)/VENDOR.md))
+MBED_DIRS := $(MBED)/include $(MBED)/tf-psa-crypto/include $(MBED)/tf-psa-crypto/drivers/builtin/include \
+	$(MBED)/tf-psa-crypto/core $(MBED)/tf-psa-crypto/drivers/builtin/src $(MBED)/tf-psa-crypto/platform \
+	$(MBED)/tf-psa-crypto/utilities $(MBED)/tf-psa-crypto/extras $(MBED)/tf-psa-crypto/dispatch $(MBED)/library
+MBED_CONF := -DMBEDTLS_CONFIG_FILE='"tls_config.h"' -DTF_PSA_CRYPTO_CONFIG_FILE='"tls_crypto_config.h"'
+MBED_FLAGS = -nostdinc -isystem $(shell $(CC) -print-file-name=include) -I third_party/shim -I src \
+	$(addprefix -I ,$(MBED_DIRS)) $(MBED_CONF) -U__ARM_NEON
+# vo's own TLS code sees the library's headers as system headers (no strict warnings from them).
+TLS_FLAGS = -isystem third_party/shim $(addprefix -isystem ,$(MBED_DIRS)) $(MBED_CONF)
+MBED_OBJS := $(patsubst %.c,$(BUILD)/%.o,$(MBED_SRCS))
 # platform.o first: its vo_data_begin starts .data (the globals the collector scans).
 OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/embedded.o \
-	$(if $(INSTRUMENTED),$(BUILD)/hosted.o)
+	$(if $(INSTRUMENTED),$(BUILD)/hosted.o) $(MBED_OBJS)
 
-.PHONY: site site-serve site-check all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
+PHONY_TLS := tls-selftest tls-deps
+.PHONY: $(PHONY_TLS) site site-serve site-check all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
 
 all: $(BUILD)/vo
 
@@ -80,6 +96,12 @@ $(BUILD)/platform.o: $(PLATFORM) Makefile | $(BUILD)
 
 $(BUILD)/%.o: src/%.c $(HEADERS) | $(BUILD)
 	$(CC) $(CFLAGS) $(CWARN) -I src -c -o $@ $<
+# Spec 019: vo's TLS layer includes the library's headers; the vendored files keep their own warnings.
+$(BUILD)/tls.o $(BUILD)/tls_libc.o: CFLAGS += $(TLS_FLAGS)
+$(BUILD)/tls.o $(BUILD)/tls_libc.o: src/tls_config.h src/tls_crypto_config.h
+$(BUILD)/third_party/%.o: third_party/%.c src/tls_config.h src/tls_crypto_config.h Makefile
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -Wall $(MBED_FLAGS) -c -o $@ $<
 # memcpy and friends must not be turned back into calls to themselves.
 $(BUILD)/vo_c.o: CFLAGS += -fno-tree-loop-distribute-patterns
 
@@ -115,16 +137,37 @@ lint:
 	    if [ $$n -gt 300 ]; then echo "lint: $$f has $$n lines (at most 300)"; fail=1; fi; done; \
 	  if [ $$fail = 0 ]; then echo "lint: clean (C for x86_64, aarch64 and riscv64; SESI; platform files)"; fi; \
 	  exit $$fail
+# Spec 019 (FR-012, FR-013, research R11): the vendored cryptography's self-tests and known-answer
+# vectors, built from the same sources and configuration as vo for each platform (a static test
+# program; its C library only prints) and run natively and under qemu; the three outputs must say
+# "all passed" and be identical.
+SELFTEST_FLAGS = -std=gnu11 -O2 -static -w -ffp-contract=off -fno-strict-aliasing -DVO_TLS_SELF_TEST \
+	-I src $(addprefix -I ,$(MBED_DIRS)) $(MBED_CONF) -U__ARM_NEON
+# Spec 019: the second TLS implementation of the interoperability tests (test-only), pinned by hash.
+tls-deps:
+	python3 -m pip install --quiet --no-deps --require-hashes --target build/py -r tests/tls/requirements.txt
+tls-selftest:
+	@mkdir -p build-selftest; for a in x86_64 aarch64 riscv64; do \
+	  c=$$([ $$a = $(HOST) ] && echo gcc || echo $$a-linux-gnu-gcc); \
+	  $$c $(SELFTEST_FLAGS) -o build-selftest/selftest-$$a tests/tls/selftest.c $(MBED_SRCS) || exit 1; \
+	  r=$$([ $$a = $(HOST) ] && echo "" || echo qemu-$$a); \
+	  $$r build-selftest/selftest-$$a > build-selftest/out-$$a || { cat build-selftest/out-$$a; exit 1; }; done; \
+	  cmp -s build-selftest/out-x86_64 build-selftest/out-aarch64 && cmp -s build-selftest/out-x86_64 build-selftest/out-riscv64 \
+	  || { echo "tls-selftest: outputs differ between platforms"; exit 1; }; \
+	  echo "tls-selftest: $$(grep -c ' ok$$' build-selftest/out-x86_64) checks passed, identical on x86_64, aarch64 and riscv64"
 lint-c:
-	@for f in $(C_SRCS); do $(CC) $(CFLAGS) $(CWARN) -I src -fsyntax-only $$f || exit 1; done
+	@for f in $(C_SRCS); do $(CC) $(CFLAGS) $(CWARN) $(TLS_FLAGS) -I src -fsyntax-only $$f || exit 1; done
 
 # The constitution's quality gate: every check that exists so far.
 test: all
 	tests/run.sh
+	$(MAKE) -s --no-print-directory tls-selftest
+	@! grep -n 'MBEDTLS_SSL_VERIFY_NONE\|MBEDTLS_SSL_VERIFY_OPTIONAL\|\*flags *=' src/tls.c || \
+	  { echo "src/tls.c must never weaken certificate verification (spec 019 FR-006)"; exit 1; }
 	tests/run.sh --repeat 3 tests/cases/run tests/cases/effects tests/cases/func tests/cases/generic tests/cases/prop
 	@for s in "fuzz.py --iterations 200 --seed 1" apply_fixes.py catalog.py ref_examples.py site_examples.py fmt_corpus.py \
 	  migrate.py record_changes.py doc_conformance.py json_corpus.py packages_check.py time_check.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
-	  steps.py json_stream.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1"; do \
+	  steps.py json_stream.py https_interop.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1"; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
 	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \
@@ -215,6 +258,10 @@ gate-step: all asm
 	@echo "== gate: agent testing determinism" && tests/run.sh --repeat 20 tests/cases/test tests/cases/coverage tests/cases/mutate && \
 	  python3 tests/steps.py --repeat 20 tests/cases/test_steps
 	@echo "== gate: agent testing scale" && python3 tests/test_scale.py && python3 tests/mutate_eval.py
+	@echo "== gate: https determinism" && tests/run.sh --repeat 20 tests/cases/https && \
+	  python3 tests/steps.py --repeat 20 tests/cases/https_steps
+	@echo "== gate: https interop, fuzz, speed" && $(MAKE) -s --no-print-directory tls-deps && \
+	  python3 tests/https_interop.py --require-tlslite && python3 tests/tls_fuzz.py && python3 tests/https_scale.py
 	@echo "== gate-step: passed"
 
 # SC-004 compares like with like: the RISC-V build against build-asm/vo, both under qemu.

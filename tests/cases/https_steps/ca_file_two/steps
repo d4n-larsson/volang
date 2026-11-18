@@ -1,0 +1,3 @@
+server https rogue
+vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/plain
+vo run --ca-file test-ca.pem --ca-file rogue-ca.pem main.vo -- https://127.0.0.1:{port}/plain

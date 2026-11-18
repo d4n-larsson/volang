@@ -1,0 +1,8 @@
+$ vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/redirect
+status 302
+header Location: /plain
+header Content-Length: 0
+body (0):
+
+--- stderr
+--- exit 0

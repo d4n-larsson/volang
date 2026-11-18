@@ -1,21 +1,23 @@
 <!--
 Sync Impact Report
-- Version change: 1.2.0 → 1.3.0
-- Bump rationale: MINOR. Implementation Constraints gain a phased rule for the instrumented
-  build while toolchain code is being ported from assembly (materially expanded guidance). No
-  principle is added, removed or redefined; nothing written under 1.2.0 is invalidated.
+- Version change: 1.3.0 → 1.4.0
+- Bump rationale: MINOR. Implementation Constraints gain rules for vendored third-party code
+  (materially expanded guidance). No principle is added, removed or redefined; the rules for vo's
+  own C code are unchanged and are now stated to apply to it, not to vendored code.
 - Modified principles: none
-- Modified sections: Implementation Constraints (instrumented build during a port from
-  assembly: undefined-behavior and bounds traps plus the collector stress build until a native
-  build exists, address sanitizing from then on)
+- Modified sections: Implementation Constraints (vendored code: location under third_party/,
+  pinning with checksum, license and kept files in VENDOR.md, unmodified with recorded patches,
+  permissive licenses; the same build constraints as the binary and the instrumented build;
+  exempt from the strict warning set and authorship rules; prompt security updates)
 - Added sections: none
 - Removed sections: none
 - Templates reviewed (read-only, not modified): plan-template.md, spec-template.md,
   tasks-template.md, all compatible.
-- Follow-up TODOs: none. specs/008-c-rewrite/plan.md re-evaluated against 1.3.0 (its
-  instrumented-build row is now a plain PASS and leaves Complexity Tracking).
-- Earlier amendment, 1.1.0 → 1.2.0 (same day): the toolchain moved from RISC-V assembly to
-  freestanding C on Linux x86-64, ARM64 and RISC-V 64.
+- Follow-up TODOs: none. specs/019-https/plan.md re-evaluated against 1.4.0: its
+  Implementation constraints row is now a PASS (the Complexity Tracking entry records why
+  vendoring was chosen).
+- Earlier amendment, 1.2.0 → 1.3.0: a phased rule for the instrumented build during the port
+  from assembly.
 -->
 
 # vo-lang Constitution
@@ -126,6 +128,19 @@ costs toolchain code, which is expensive to write and to change.
   access, run together with the collector stress build (which poisons reclaimed memory).
   Address sanitizing (memory errors in any memory, including the collected heap) is required
   from the first native build on.
+- Third-party source code (vendored code) MAY be built into the toolchain only under
+  `third_party/`, pinned to a released version whose archive checksum, license and list of kept
+  files are recorded in `third_party/<name>/VENDOR.md`. Vendored files are kept unmodified; a
+  necessary change is a patch file in `third_party/<name>/patches/` with its reason. Licenses
+  MUST be permissive (Apache-2.0, MIT, BSD).
+- Vendored code is built under the same constraints as the rest of the binary (freestanding, no
+  system libraries, `-ffp-contract=off`, no assembly, identical results on every supported
+  platform) and MUST pass the instrumented build. It is exempt from the project's strict warning
+  set and from the rules that assume vo's authors wrote the C code: it compiles with its
+  upstream's warnings, without warnings treated as errors, and a new warning on an update is
+  reviewed. The other C rules in this section apply to vo's own code.
+- A security release of a vendored library MUST be applied in the spec cycle in which it
+  appears.
 - Developer scripts (shell, Python) are allowed for building, testing, and benchmarking only.
   They MUST NOT become part of the shipped product.
 - `bin/vo` runs the native build on a supported host. RISC-V builds (the mixed toolchain while
@@ -161,4 +176,4 @@ other document, this constitution wins until it is amended.
 - **Compliance**: Every `/speckit-plan` runs the Constitution Check gate, and every change is
   reviewed against the quality gates above before it is considered complete.
 
-**Version**: 1.3.0 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-14
+**Version**: 1.4.0 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-18

@@ -1,0 +1,38 @@
+$ vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/plain https://127.0.0.1:{port}/json https://127.0.0.1:{port}/chunked https://127.0.0.1:{port}/close https://127.0.0.1:{port}/status/404 https://127.0.0.1:{port}/headers
+status 200
+header Content-Type: text/plain
+header Content-Length: 14
+body (14):
+hello from vo
+
+status 200
+header Content-Type: application/json
+header Content-Length: 56
+body (56):
+{"name": "vo", "tags": ["small", "typed"], "version": 7}
+status 200
+header Content-Type: text/plain
+header Transfer-Encoding: chunked
+body (22):
+hello, chunked world!
+
+status 200
+header Content-Type: text/plain
+body (28):
+until the connection closes
+
+status 404
+header Content-Length: 11
+body (11):
+status 404
+
+status 200
+header X-Multi: first
+header x-multi: second
+header Content-Type: text/plain
+header X-Spaces: padded
+header Content-Length: 2
+body (2):
+ok
+--- stderr
+--- exit 0

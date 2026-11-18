@@ -1,0 +1,28 @@
+$ vo run --seed 1 --record r.jsonl --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/plain https://127.0.0.1:{port}/json
+status 200
+header Content-Type: text/plain
+header Content-Length: 14
+body (14):
+hello from vo
+
+status 200
+header Content-Type: application/json
+header Content-Length: 56
+body (56):
+{"name": "vo", "tags": ["small", "typed"], "version": 7}
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+status 200
+header Content-Type: text/plain
+header Content-Length: 14
+body (14):
+hello from vo
+
+status 200
+header Content-Type: application/json
+header Content-Length: 56
+body (56):
+{"name": "vo", "tags": ["small", "typed"], "version": 7}
+--- stderr
+--- exit 0

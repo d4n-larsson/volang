@@ -367,6 +367,9 @@ op_tick:
 op_cover: /* spec 018: a coverage point; a constant store, so tasks writing the same bytes cannot race */
     cov_hit[pc->a] = 1;
     if (pc->b >= 0 && cov_reach) cov_reach[cov_test * cov_nfn + pc->b] = 1;
+    else if (!cov_reach) pc->handler = &&op_cover_done; /* --coverage: once is enough (--mutate needs reach per test) */
+    NEXT;
+op_cover_done: /* a coverage point already reached */
     NEXT;
 
     /* ---- calls ----

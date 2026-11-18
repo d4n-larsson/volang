@@ -7,7 +7,7 @@
 ```text
 vo test [--json] [--filter TEXT] [--test ID] [--spec ID] [--diff FILE] [--timeout SEC] [--seed N]
         [--clock-ms N] [--max-memory MiB] [--mem-stats] [--trace FILE] [--trace-limit N]
-        [--list | --coverage | --mutate [--max-mutants N]] PATH...
+        [--ca-file FILE] [--list | --coverage | --mutate [--max-mutants N]] PATH...
 ```
 
 `PATH` is a `.vo` file or a directory (every `*.vo` file under it, recursively, in sorted order). A file
@@ -36,6 +36,7 @@ file order.
 | `--clock-ms N` | `now_ms` returns `N`, `N+1`, ... in every test. Default 0. |
 | `--max-memory MiB` | The live-data limit of each test, 1 to 65536 MiB (default 512); more is [R0006](../errors/R0006.md). |
 | `--mem-stats` | After each test, report its peak live size, total allocated and collections (a line on stdout, or a `memory` record after the `test` record with `--json`). |
+| `--ca-file FILE` | Trust the certificate authorities in `FILE` (PEM) for HTTPS, in addition to the machine's trust store, for this run; repeatable. Read before the program starts: unreadable is [T0002](../errors/T0002.md), no certificate is [T0013](../errors/T0013.md). Nothing turns certificate verification off. |
 | `--trace FILE` | Write a trace of every test's calls to `FILE` (a `test` record before each test, and before each case of a property). |
 | `--trace-limit N` | With `--trace`: at most `N` records (1 to 100000000, default 100000); the rest are counted. |
 

@@ -378,7 +378,8 @@
 #define B_CMAP (62) /* spec 016: concurrent_map(xs, limit, f) */
 #define B_FS (63) /* spec 017: __fs(op, a, b) -> result[str], std.fs only (effects by op, in std/fs.vo) */
 #define B_RUN (64) /* spec 017: __run(argv, input, env) -> result[str], process; argv[0] is the program */
-#define B_LAST (64) /* the last builtin id with a btab entry */
+#define B_HTTPS (65) /* spec 019: __https_exchange(host, port, request) -> result[str], net, std.http only */
+#define B_LAST (65) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -655,7 +656,7 @@
 #define EV_BYTES (32) /* 1 when the value was written with "bytes":true */
 #define EV_PORT (40) /* spec 007: http events */
 #define EV_REQUEST (48) /* spec 009: http events: "METHOD TARGET", or 0 in older recordings */
-#define EV_SIZE (56)
+#define EV_SIZE (64)
 #define EVK_READ_LINE (1)
 #define EVK_READ_ALL (2)
 #define EVK_READ_FILE (3)
@@ -1167,6 +1168,7 @@ typedef struct Event {
     long bytes;
     long port;
     Str *request;
+    long tls; /* spec 019: an http event over HTTPS ("scheme":"https") */
 } Event;
 CHECK_OFFSET(Event, kind, EV_KIND);
 CHECK_OFFSET(Event, name, EV_NAME);
@@ -2208,6 +2210,14 @@ extern long cap_len;
 extern long cap_dropped;
 extern long cap_on;
 extern void cap_bytes(char *p, long n);
+extern void tls_init(void); /* spec 019 */
+extern int net_wait(long fd, int events, long cap_ms);
+extern long net_open(Str *host, long port, Variant **err);
+extern int parse_ipv4(char *s, long n, uint8_t *out);
+extern Variant *net_err(char *tmpl, Str *host, long port);
+extern Variant *tls_exchange(Str *host, long port, Str *request);
+extern void tls_add_ca_file(char *path);
+extern Variant *io_https_exchange(Str *host, long port, Str *request);
 /* spec 018: coverage points (research R8), filled by the compiler with --coverage or --mutate */
 #define COV_MAX 65536
 enum { COV_FUNCTION, COV_LAMBDA, COV_THEN, COV_ELSE, COV_IF_FALSE, COV_CASE, COV_LOOP };

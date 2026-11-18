@@ -1,0 +1,19 @@
+## T0013 invalid_certificate_file
+
+`--ca-file` names a file that holds no certificate vo can read.
+
+Fixable: no
+
+`vo run --ca-file FILE` and `vo test --ca-file FILE` trust the certificate authorities in FILE for that run, in addition to the machine's trust store, so that HTTPS to a server with a private or test authority can be verified. FILE must be PEM: one or more blocks from `-----BEGIN CERTIFICATE-----` to `-----END CERTIFICATE-----` (a private key, a certificate request or an empty file is not). The file is read before the program runs. Give the authority's certificate, not the server's key.
+
+### Example
+
+```sh
+vo run --ca-file server.key main.vo
+```
+
+### Fixed
+
+```sh
+vo run --ca-file company-ca.pem main.vo
+```

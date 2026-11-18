@@ -1,0 +1,21 @@
+# Spec 019 US1: https:// URLs are accepted in any case, other schemes and user parts are refused,
+# all before any connection.
+import std.http.get;
+
+fn show(url: str) uses console, net("a.test") {
+    match get(url) {
+        case ok(r) {
+            print(url + ": " + str(r.status));
+        }
+        case err(e) {
+            print(url + ": " + e);
+        }
+    }
+}
+
+fn main() uses console, net("a.test") {
+    show("ftp://a.test/");
+    show("https://user@a.test/");
+    show("HTTPS://a.test:0/");
+    show("https://a.test:99999/");
+}

@@ -19,6 +19,7 @@ Routes:
                         VO_TEST_JITTER_MS=N set, a random 0..N ms more
   GET  /peak            200, the most /delay requests in flight at once since the last /peak, then resets
   GET  /large           a body of 17 MiB (over std.http's 16 MiB limit)
+  GET  /big             a body of 10 MiB (spec 019: HTTPS against HTTP speed)
   GET  /malformed       a reply with no status line
   GET  /short           Content-Length larger than the body sent
   POST /echo            200, the request's Content-Type and body back
@@ -91,6 +92,9 @@ def route(method, target, headers, body):
         return reply("200 OK", [("Content-Length", len(b))], b)
     if target == "/large":
         n = 17 * 1024 * 1024
+        return reply("200 OK", [("Content-Length", n)], b"x" * n)
+    if target == "/big":  # spec 019 (tests/https_scale.py): 10 MiB, under the limit
+        n = 10 * 1024 * 1024
         return reply("200 OK", [("Content-Length", n)], b"x" * n)
     if target == "/malformed":
         return b"this is not HTTP\r\n\r\n"

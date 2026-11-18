@@ -26,6 +26,7 @@ const unsigned short builtin_effects[B_LAST + 1] = {
     [1] = EF_CONSOLE, [2] = EF_CONSOLE, [3] = EF_CONSOLE, [4] = EF_INPUT, [5] = EF_INPUT,
     [6] = EF_FREAD,   [7] = EF_FWRITE,  [10] = EF_CLOCK,  [40] = EF_ENV,  [41] = EF_RANDOM,
     [53] = EF_NET, /* __http_exchange */
+    [B_HTTPS] = EF_NET, /* spec 019: __https_exchange */
     [56] = EF_SERVE, [57] = EF_SERVE, [58] = EF_SERVE, /* spec 011: __serve_listen, __serve_next, __serve_reply */
     [B_RUN] = EF_PROCESS, /* spec 017; __fs's effect depends on the operation: checked in src/fs.c */
 };

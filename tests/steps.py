@@ -15,6 +15,12 @@ each line of `steps` runs there, in order:
   keep PATH...                  files the case produces or changes, compared with expected/PATH
   server http                   starts tests/http_server.py on a free port (spec 007): later lines may
                                 use {port}, and the port number reads `{port}` in outputs and kept files
+  server https NAME [OPTION...] (spec 019) starts tests/https_server.py with certificate NAME of
+                                tests/tls/certs/ and its OPTIONs (--tls12-only, --tamper, --log FILE, ...)
+                                on a free port; {port} as for `server http`
+  no-trust-store vo ARGS...     (spec 019) runs vo where none of the machine's trust store paths exist
+                                (a user and mount namespace with tmpfs over /etc/ssl and /etc/pki); where
+                                namespaces are not permitted, prints `skipped: no user namespaces` instead
   stop-server                   stops it ({port} keeps its number: a refused connection)
   start vo ARGS...              starts bin/vo in the background (spec 011) with {vport} a free port, and
                                 waits until it accepts connections (or exits); {vport} reads `{vport}`
@@ -56,10 +62,11 @@ VO = os.path.join(ROOT, "bin", "vo")  # runs $VO_BIN (default build/vo) natively
 
 
 def mask(b, port=None, vport=None):
+    # (a whole number only: a random port must not be masked inside a hash or a longer number)
     if port:
-        b = b.replace(str(port).encode(), b"{port}")
+        b = re.sub(rb"(?<![0-9a-fA-F])" + str(port).encode() + rb"(?![0-9a-fA-F])", b"{port}", b)
     if vport:
-        b = b.replace(str(vport).encode(), b"{vport}")
+        b = re.sub(rb"(?<![0-9a-fA-F])" + str(vport).encode() + rb"(?![0-9a-fA-F])", b"{vport}", b)
     b = re.sub(rb'"ms":\d+', b'"ms":0', b)
     return re.sub(rb"([ (])\d+ms\)", rb"\g<1>0ms)", b)
 
@@ -242,8 +249,12 @@ def run_case(case):
                     + mask(e.read(), port, vport) + b"--- exit " + str(code).encode() + b"\n"
                 continue
             if words[0] == "server":
-                server = subprocess.Popen([sys.executable, os.path.join(ROOT, "tests", "http_server.py"), "0"],
-                                          stdout=subprocess.PIPE)
+                cmd = [sys.executable, os.path.join(ROOT, "tests", "http_server.py"), "0"]
+                if words[1:2] == ["https"]:  # spec 019: certificate NAME and options
+                    cmd = [sys.executable, os.path.join(ROOT, "tests", "https_server.py"), "--cert", words[2]]
+                    cmd += [os.path.join(work, w) if prev == "--log" else w
+                            for prev, w in zip(words[2:], words[3:])]
+                server = subprocess.Popen(cmd, stdout=subprocess.PIPE)
                 servers.append(server)
                 port = int(server.stdout.readline().split()[1])
                 continue
@@ -306,6 +317,9 @@ def run_case(case):
                         env[k] = v
                     else:
                         env.pop(w, None)
+            jail = words[0] == "no-trust-store"  # spec 019
+            if jail:
+                words.pop(0)
             hide = words[0] == "vo~"
             if hide:
                 words[0] = "vo"
@@ -316,7 +330,15 @@ def run_case(case):
             if len(words) >= 2 and words[-2] == "<":
                 stdin = open(os.path.join(work, words[-1]), "rb").read()
                 words = words[:-2]
-            r = subprocess.run([VO] + words[1:], cwd=work, input=stdin, capture_output=True, env=env, timeout=120)
+            argv = [VO] + words[1:]
+            if jail:
+                ok = subprocess.run(["unshare", "-rm", "true"], capture_output=True).returncode == 0
+                if not ok:
+                    out += b"$ " + line.encode() + b"\nskipped: no user namespaces\n"
+                    continue
+                argv = ["unshare", "-rm", "sh", "-c", "mount -t tmpfs none /etc/ssl; [ -d /etc/pki ] && "
+                        "mount -t tmpfs none /etc/pki; exec \"$@\"", "sh"] + argv
+            r = subprocess.run(argv, cwd=work, input=stdin, capture_output=True, env=env, timeout=120)
             if hide:
                 hidden.append(r.stdout)
             out += b"$ " + line.encode() + b"\n" + (b"(stdout not shown)\n" if hide else mask(r.stdout, port, vport)) \

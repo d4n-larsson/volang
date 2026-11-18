@@ -1,0 +1,4 @@
+# Spec 019 US3: there is no option that turns verification off.
+fn main() uses console {
+    print("never");
+}

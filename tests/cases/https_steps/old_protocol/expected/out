@@ -1,0 +1,4 @@
+$ vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/plain
+err 127.0.0.1:{port} offers no TLS version or algorithm that vo accepts
+--- stderr
+--- exit 0

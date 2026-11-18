@@ -1,5 +1,5 @@
 #!/bin/sh
-# Per-edit check for C sources (spec 008 FR-012, constitution 1.3.0): a Claude Code PostToolUse hook
+# Per-edit check for C sources (spec 008 FR-012, constitution 1.4.0): a Claude Code PostToolUse hook
 # beside the SESI hook. Reads the hook's JSON on stdin; when the edited file is src/*.c or src/vo.h,
 # compiles it (every C file, for the header) with the toolchain's flags and strict warnings, and
 # reports problems with exit status 2 (shown to the editor). Other files pass through.
@@ -14,7 +14,7 @@ esac
 cd "$root" || exit 0
 flags=$(make -s -f Makefile -f - print-cflags <<'MK' 2>/dev/null
 print-cflags:
-	@echo $(CC) $(CFLAGS) $(CWARN)
+	@echo $(CC) $(CFLAGS) $(CWARN) $(TLS_FLAGS)
 MK
 )
 [ -n "$flags" ] || { echo "cc_check: could not read the compiler flags from the Makefile" >&2; exit 2; }

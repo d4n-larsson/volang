@@ -1,0 +1,4 @@
+# Spec 019 US3: --ca-file with no certificate in it is T0013, before the program runs.
+fn main() uses console {
+    print("never");
+}

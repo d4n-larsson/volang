@@ -1,0 +1,4 @@
+ftp://a.test/: not an http:// or https:// URL: ftp://a.test/
+https://user@a.test/: bad host in https://user@a.test/
+HTTPS://a.test:0/: bad host in HTTPS://a.test:0/
+https://a.test:99999/: bad host in https://a.test:99999/

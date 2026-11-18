@@ -1,0 +1,13 @@
+$ vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/plain
+err the certificate of 127.0.0.1:{port} is not trusted
+--- stderr
+--- exit 0
+$ vo run --ca-file test-ca.pem --ca-file rogue-ca.pem main.vo -- https://127.0.0.1:{port}/plain
+status 200
+header Content-Type: text/plain
+header Content-Length: 14
+body (14):
+hello from vo
+
+--- stderr
+--- exit 0

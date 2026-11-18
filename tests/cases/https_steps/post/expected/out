@@ -1,0 +1,9 @@
+$ vo run --ca-file test-ca.pem main.vo -- post https://127.0.0.1:{port}/echo hello-over-tls
+status 200
+header Content-Type: text/plain
+header Content-Length: 39
+body (39):
+content-type: text/plain
+hello-over-tls
+--- stderr
+--- exit 0

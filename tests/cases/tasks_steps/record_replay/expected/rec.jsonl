@@ -1,4 +1,4 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"8d22d86a203fa889","seed":1,"clock_ms":null,"args":["{port}"]}
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"478a1bf442c3f65c","seed":1,"clock_ms":null,"args":["{port}"]}
 {"v":1,"kind":"http","host":"127.0.0.1","port":{port},"request":"GET /delay/200","result":"ok","value":"HTTP/1.1 200 OK\u000d\u000aContent-Length: 10\u000d\u000a\u000d\u000adelay 200\u000a"}
 {"v":1,"kind":"http","host":"127.0.0.1","port":{port},"request":"GET /delay/100","result":"ok","value":"HTTP/1.1 200 OK\u000d\u000aContent-Length: 10\u000d\u000a\u000d\u000adelay 100\u000a"}
 {"v":1,"kind":"http","host":"127.0.0.1","port":{port},"request":"GET /delay/0","result":"ok","value":"HTTP/1.1 200 OK\u000d\u000aContent-Length: 8\u000d\u000a\u000d\u000adelay 0\u000a"}

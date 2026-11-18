@@ -1,0 +1,5 @@
+server http
+vo run --seed 1 --record r.jsonl main.vo -- http://127.0.0.1:{port}/plain
+stop-server
+cp other.vo main.vo
+vo replay r.jsonl

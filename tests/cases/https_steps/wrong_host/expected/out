@@ -1,0 +1,4 @@
+$ vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/plain
+err the certificate of 127.0.0.1:{port} is for another host
+--- stderr
+--- exit 0

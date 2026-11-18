@@ -1,0 +1,4 @@
+$ vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/plain
+err the certificate of 127.0.0.1:{port} has expired
+--- stderr
+--- exit 0

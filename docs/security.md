@@ -26,8 +26,9 @@ by whom. This is what lets a person run code an agent wrote after reading one li
 clause. `vo.effects` (per function) and `vo.packages` (pinned packages) make the rest reviewable, but
 the enforcement does not depend on anyone reading them.
 
-The trusted computing base is the `vo` binary (with its embedded standard library) and the Linux
-kernel. Nothing else is trusted: not the program's source, not its packages, not its inputs.
+The trusted computing base is the `vo` binary (with its embedded standard library and, since spec
+019, the vendored TLS library Mbed TLS under `third_party/`, pinned and updated under constitution
+1.4.0) and the Linux kernel. Nothing else is trusted: not the program's source, not its packages, not its inputs.
 
 ## Attackers
 
@@ -39,8 +40,9 @@ kernel. Nothing else is trusted: not the program's source, not its packages, not
 | A4 | **Local process** running beside the program as another user or the same user | the file system the program uses (renames, symlinks) | to redirect a scoped file access outside its scope |
 
 Out of scope: an attacker who can change the `vo` binary or the runner's account, the kernel, physical
-or side-channel access (timing, cache), the confidentiality and integrity of plain HTTP on the network
-(vo has no HTTPS: anyone on the path can read and change requests and responses), and the build
+or side-channel access (timing, cache), the confidentiality and integrity of plain `http://` on the
+network (anyone on the path can read and change it; `https://` is verified, see the known limits), and
+the build
 toolchain that produced `vo`.
 
 ## Security properties
@@ -98,9 +100,15 @@ Each property is a claim the review must try to break; each break is a finding.
 
 ## Known limits (accepted, documented)
 
-- **Plain HTTP and DNS**: no TLS, no DNSSEC; an A2 attacker on the path can change what the program
-  receives. Programs must treat network input as untrusted data, which S4 and S5 protect the toolchain
-  from.
+- **HTTPS, plain HTTP and DNS** (spec 019): `https://` requests are sent only after the server's
+  certificate chain is verified against the machine's trust store (plus `--ca-file` authorities given
+  by whoever runs the program), for validity now and for the host; TLS 1.3 and 1.2 with forward-secret
+  authenticated ciphers only, and nothing turns verification off. This protects the confidentiality
+  and integrity of the exchange and the server's identity. It does not cover: plain `http://` URLs
+  (an A2 attacker on the path can change them), DNS (no DNSSEC; a spoofed address fails verification
+  instead of connecting), certificate revocation (no OCSP or CRL: a revoked certificate is accepted until
+  it expires), a compromised server or authority, and side channels. Programs must still treat network
+  input as untrusted data, which S4 and S5 protect the toolchain from.
 - **64 connections**: a vo server reads up to 64 connections at once (spec 016), each with 10 s to send
   its request; 64 slow clients can still hold it (a denial of service that the limits bound but do not
   prevent), and a handler that waits delays the next one.

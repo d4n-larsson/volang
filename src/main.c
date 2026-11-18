@@ -45,6 +45,7 @@ long opt_mutate;           /* --mutate */
 long opt_max_mutants;      /* --max-mutants N; 0: not given (default 500) */
 Vec *opt_tests;            /* --test ID (Str *), repeatable; 0: none */
 Vec *opt_specs;            /* --spec ID (Str *), repeatable; 0: none */
+Vec *opt_ca_files;         /* spec 019: --ca-file FILE (char *), repeatable; 0: none */
 static long opt_seed_given; /* 1 when --seed or --clock-ms was given (replay refuses them) */
 long path_list;            /* Str ** (expanded .vo paths) */
 long path_n;
@@ -267,6 +268,10 @@ int vo_main(long argc, char **argv, char **env)
             Vec **list = cstr_eq(a, "--test") ? &opt_tests : &opt_specs;
             if (!*list) *list = vec_new();
             vec_push(*list, str_from_cstr(argv[i++]));
+        } else if (cstr_eq(a, "--ca-file")) { /* spec 019 */
+            if (i >= argc || !*argv[i]) usage_error(str_from_cstr("`--ca-file` needs a certificate file."));
+            if (!opt_ca_files) opt_ca_files = vec_new();
+            vec_push(opt_ca_files, argv[i++]);
         } else if (cstr_eq(a, "--max-mutants")) {
             if (i >= argc || option_number(argv[i++], &v) || v < 1 || v > 100000)
                 usage_error(str_from_cstr("`--max-mutants` needs a whole number from 1 to 100000."));
@@ -285,7 +290,7 @@ int vo_main(long argc, char **argv, char **env)
                 usage_error_arg("Unknown option `$1`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, "
                                 "--seed N, --clock-ms N, --max-memory MiB, --mem-stats, --trace FILE, --trace-limit N, "
                                 "--record FILE, --diff FILE, --dry-run, --list, --test ID, --spec ID, --coverage, "
-                                "--mutate, --max-mutants N.",
+                                "--mutate, --max-mutants N, --ca-file FILE.",
                                 a);
             i += (int)used;
         }
@@ -367,6 +372,7 @@ void opt_spec006_check(void)
         if (opt_specs) only_with("--spec", "test");
         if (opt_max_mutants) only_with("--max-mutants", "test");
     }
+    if (opt_ca_files && cmd != CMD_RUN && cmd != CMD_TEST) only_with("--ca-file", "run` or `test"); /* spec 019 */
     if (opt_list + opt_coverage + opt_mutate > 1)
         usage_error(str_from_cstr("`--list`, `--coverage` and `--mutate` cannot be combined: use one at a time."));
     if (opt_max_mutants && !opt_mutate) usage_error(str_from_cstr("`--max-mutants` needs `--mutate`."));
@@ -492,6 +498,12 @@ int cmd_reference(void)
 }
 
 /* Checks one file (main required), then runs it. */
+/* spec 019: reads every --ca-file into the trust anchors (T0002 unreadable, T0013 no certificate). */
+static void ca_files_load(void)
+{
+    for (long i = 0; opt_ca_files && i < opt_ca_files->n; i++) tls_add_ca_file(vec_get(opt_ca_files, i));
+}
+
 int cmd_run(void)
 {
     need_paths();
@@ -500,6 +512,7 @@ int cmd_run(void)
     check_program((int)file, 1);
     if (diag_errors) return finish_check(1); /* warnings do not stop the run (not shown either) */
     Node *main_fn = find_main(file_get((int)file)->ast->a.v);
+    ca_files_load();     /* spec 019: --ca-file, before the program runs */
     outputs_start(0);    /* spec 006: --trace / --record */
     compile_program();   /* bytecode for every function (spec 004) */
     rt_effects_start(0);
@@ -524,6 +537,7 @@ int cmd_test(void)
     if (diag_errors) return finish_check(n);
     test_select_start(ids, n); /* spec 018: --diff, and T0011 before anything runs */
     diag_emit_all((int)opt_json, 1); /* warnings first, then the tests */
+    ca_files_load();                 /* spec 019: --ca-file, before any test runs */
     if (opt_list) { /* spec 018: nothing is compiled or run */
         for (long i = 0; i < n; i++) list_file_tests((int)ids[i]);
         list_summary(n);

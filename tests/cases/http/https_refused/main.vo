@@ -1,4 +1,5 @@
-# https:// is refused before anything is sent; so are URLs that do not parse.
+# URLs that do not parse are refused before anything is sent (spec 019: https:// is now supported,
+# so its forms here are malformed ones).
 import std.http.Response;
 import std.http.get;
 
@@ -19,8 +20,8 @@ fn show(r: result[Response]) uses console {
 }
 
 fn main() uses console, net("localhost", "x") {
-    show(get("https://localhost/"));
-    show(get("HTTPS://localhost/"));
+    show(get("https://"));
+    show(get("HTTPS://user@x/"));
     show(get("ftp://localhost/"));
     show(get("http://"));
     show(get("http://x:99999/"));

@@ -1,10 +1,10 @@
 $ vo run --timeout 1 main.vo -- {port} /slow
 --- stderr
-std/http.vo:83:19: runtime error[R0009]: Time limit of 1 s exceeded.
-  83 |     let raw = try __http_exchange(u.host, u.port, request);
+std/http.vo:92:19: runtime error[R0009]: Time limit of 1 s exceeded.
+  92 |     let raw = try __http_exchange(u.host, u.port, request);
      |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange (std/http.vo:83:19)
-  at get (std/http.vo:127:12)
+  at exchange (std/http.vo:92:19)
+  at get (std/http.vo:136:12)
   at main (main.vo:23:10)
 --- exit 124
