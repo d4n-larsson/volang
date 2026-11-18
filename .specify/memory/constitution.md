@@ -1,23 +1,21 @@
 <!--
 Sync Impact Report
-- Version change: 1.3.0 → 1.4.0
-- Bump rationale: MINOR. Implementation Constraints gain rules for vendored third-party code
-  (materially expanded guidance). No principle is added, removed or redefined; the rules for vo's
-  own C code are unchanged and are now stated to apply to it, not to vendored code.
+- Version change: 1.4.0 → 1.4.1
+- Bump rationale: PATCH. Clarifies how vendored code is pinned when the upstream publishes no
+  releases (CORE-MATH, spec 020): a commit, with the SHA-256 of each kept file in place of an
+  archive checksum, since generated archives have no stable checksum. No principle or rule is
+  added, removed or redefined; the other vendoring rules are unchanged.
 - Modified principles: none
-- Modified sections: Implementation Constraints (vendored code: location under third_party/,
-  pinning with checksum, license and kept files in VENDOR.md, unmodified with recorded patches,
-  permissive licenses; the same build constraints as the binary and the instrumented build;
-  exempt from the strict warning set and authorship rules; prompt security updates)
+- Modified sections: Implementation Constraints (vendored code: pin to a release or, failing
+  that, a commit; per-file SHA-256 for a commit)
 - Added sections: none
 - Removed sections: none
 - Templates reviewed (read-only, not modified): plan-template.md, spec-template.md,
   tasks-template.md, all compatible.
-- Follow-up TODOs: none. specs/019-https/plan.md re-evaluated against 1.4.0: its
-  Implementation constraints row is now a PASS (the Complexity Tracking entry records why
-  vendoring was chosen).
-- Earlier amendment, 1.2.0 → 1.3.0: a phased rule for the instrumented build during the port
-  from assembly.
+- Follow-up TODOs: none. specs/020-math/plan.md re-evaluated against 1.4.1: its "pinned to a
+  released version" gate is now a PASS (commit 1851882b0f85 with per-file hashes).
+  specs/019-https is unaffected (Mbed TLS 4.1.2 is a release).
+- Earlier amendment, 1.3.0 → 1.4.0: rules for vendored third-party code.
 -->
 
 # vo-lang Constitution
@@ -129,8 +127,9 @@ costs toolchain code, which is expensive to write and to change.
   Address sanitizing (memory errors in any memory, including the collected heap) is required
   from the first native build on.
 - Third-party source code (vendored code) MAY be built into the toolchain only under
-  `third_party/`, pinned to a released version whose archive checksum, license and list of kept
-  files are recorded in `third_party/<name>/VENDOR.md`. Vendored files are kept unmodified; a
+  `third_party/`, pinned to a released version or, when the upstream publishes no releases, to a
+  commit. The archive checksum (for a commit: the SHA-256 of each kept file), the license and the
+  list of kept files are recorded in `third_party/<name>/VENDOR.md`. Vendored files are kept unmodified; a
   necessary change is a patch file in `third_party/<name>/patches/` with its reason. Licenses
   MUST be permissive (Apache-2.0, MIT, BSD).
 - Vendored code is built under the same constraints as the rest of the binary (freestanding, no
@@ -176,4 +175,4 @@ other document, this constitution wins until it is amended.
 - **Compliance**: Every `/speckit-plan` runs the Constitution Check gate, and every change is
   reviewed against the quality gates above before it is considered complete.
 
-**Version**: 1.4.0 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-18
+**Version**: 1.4.1 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-18
