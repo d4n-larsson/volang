@@ -1,0 +1,4 @@
+fn main() uses console {
+    print(format("{:1001}", 1));
+    print(format("{:.101f}", 1.0));
+}

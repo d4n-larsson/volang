@@ -1,0 +1,4 @@
+fn main() uses console {
+    print(format("a\t{}\"b\\", 1));
+    write(format("{}\n", "line"));
+}

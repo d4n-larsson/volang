@@ -1,0 +1,8 @@
+fn main() uses console {
+    let name = "al";
+    let n = 7;
+    print(f"hi {name}, {n:>3}");
+    print(f"{n + 1}");
+    print(f"plain {{x}}");
+    let s: int = "x";
+}

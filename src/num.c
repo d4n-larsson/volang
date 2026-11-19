@@ -312,3 +312,106 @@ Str *float_to_str(long bits)
     GC_UNROOT(1);
     return s;
 }
+
+/* ---- spec 024: one placeholder of `format` ---- */
+
+/* Inserts `,` every three digits of the n digits at d (in place; room for them); returns the length. */
+static long group3(char *d, long n)
+{
+    long commas = (n - 1) / 3, len = n + commas;
+    for (long i = n - 1, o = len - 1, k = 0; i >= 0; i--, k++) {
+        if (k && k % 3 == 0) d[o--] = ',';
+        d[o--] = d[i];
+    }
+    return len;
+}
+
+/* value (of type kind: TY_INT, TY_FLOAT, TY_BOOL or TY_STR) as one placeholder with the packed
+ * spec (FS_* in vo.h; contracts/language.md "Output"). Integer arithmetic only: the same bytes on
+ * every platform. */
+Str *fmt_piece(long value, long kind, long spec)
+{
+    if (!spec) { /* `{}`: what str gives */
+        if (kind == TY_STR) return (Str *)value;
+        if (kind == TY_BOOL) return bool_str(value);
+        return kind == TY_FLOAT ? float_to_str(value) : int_to_str(value);
+    }
+    long width = FS_WIDTH(spec), align = spec & 3;
+    char num[1100]; /* sign + up to 309 + 103 grouped integer digits + '.' + 100 decimals */
+    char *body = num + 1, sign = 0;
+    long n = 0;     /* body length */
+    int zero_ok = 1; /* the zero flag applies (finite numbers) */
+    Str *s = 0;
+    if (kind == TY_STR || kind == TY_BOOL) {
+        s = kind == TY_STR ? (Str *)value : bool_str(value);
+        long cps = cp_count(s->data, s->len);
+        if (cps >= width) return s;
+        GC_ROOT(&s);
+        SB *sb = sb_new();
+        long pad = width - cps, left = align == 2 ? pad : align == 3 ? pad / 2 : 0;
+        for (long i = 0; i < left; i++) sb_byte(sb, ' ');
+        sb_bytes(sb, s->data, s->len);
+        for (long i = left; i < pad; i++) sb_byte(sb, ' ');
+        Str *out = sb_finish(sb);
+        GC_UNROOT(1);
+        return out;
+    }
+    if (kind == TY_INT) {
+        unsigned long u = magnitude(value);
+        if (value < 0) sign = '-';
+        long radix = FS_RADIX(spec) == 1 ? 16 : FS_RADIX(spec) == 2 ? 2 : 10;
+        char tmp[70], *e = tmp + sizeof tmp, *p = e;
+        do {
+            *--p = "0123456789abcdef"[u % (unsigned long)radix];
+            u /= (unsigned long)radix;
+        } while (u);
+        n = e - p;
+        mem_copy(body, p, n);
+        if (spec & FS_GROUP) n = group3(body, n);
+    } else { /* TY_FLOAT */
+        unsigned long bits = (unsigned long)value, abs_bits = bits << 1 >> 1;
+        int special = (abs_bits >> 52) == 2047;
+        if (bits >> 63 && !(special && abs_bits << 12)) sign = '-'; /* NaN prints without a sign, as str */
+        if (special) {
+            zero_ok = 0;
+            n = 3;
+            mem_copy(body, (char *)(abs_bits << 12 ? "nan" : "inf"), 3);
+        } else if (spec & FS_PREC_ON) {
+            long prec = FS_PREC(spec);
+            char d[420];
+            long k = exact_fixed(abs_bits, prec, d); /* k integer digits, then prec decimals */
+            mem_copy(body, d, k);
+            n = (spec & FS_GROUP) ? group3(body, k) : k;
+            if (prec) {
+                body[n++] = '.';
+                mem_copy(body + n, d + k, prec);
+                n += prec;
+            }
+        } else { /* str's digits */
+            Str *t = float_to_str((long)abs_bits);
+            long dot = 0;
+            while (dot < t->len && t->data[dot] != '.') dot++;
+            mem_copy(body, t->data, dot);
+            n = (spec & FS_GROUP) ? group3(body, dot) : dot;
+            mem_copy(body + n, t->data + dot, t->len - dot);
+            n += t->len - dot;
+        }
+    }
+    if (!sign && (spec & FS_PLUS)) sign = '+';
+    long len = n + (sign != 0);
+    char out[2200]; /* width (at most 1000) or the number (at most 1,100 bytes) */
+    char *w = out;
+    long pad = width > len ? width - len : 0;
+    if ((spec & FS_ZERO) && zero_ok) { /* zeros between the sign and the digits */
+        if (sign) *w++ = sign;
+        for (long i = 0; i < pad; i++) *w++ = '0';
+        pad = 0;
+    }
+    long left = align == 1 ? 0 : align == 3 ? pad / 2 : pad;
+    for (long i = 0; i < left; i++) *w++ = ' ';
+    if (sign && !((spec & FS_ZERO) && zero_ok)) *w++ = sign;
+    mem_copy(w, body, n);
+    w += n;
+    for (long i = left; i < pad; i++) *w++ = ' ';
+    return str_new(out, w - out);
+}

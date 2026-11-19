@@ -192,6 +192,7 @@ waited 351 ms
 Text helpers beyond the builtins: `starts_with`, `ends_with`, `contains`, `replace`, `repeat`,
 `pad_left` and `pad_right`, `align_left` and `align_right` for columns, `lines` and `words` for
 splitting input. Widths count characters, not bytes, so a column of names with accents still lines up.
+The `format` builtin pads the same way in one call: `format("{:<18}{:>6}", page, visits)`.
 
 ```vo
 import std.text.align_left;

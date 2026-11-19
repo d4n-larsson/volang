@@ -1,0 +1,2 @@
+format (template: str, args...) -> str
+    `template` a string literal; each `{}` or `{:spec}` takes the next argument (see Types)

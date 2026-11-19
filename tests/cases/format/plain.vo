@@ -1,0 +1,7 @@
+fn main() uses console {
+    print(format("{} of {} done", 3, 10));
+    print(format("plain"));
+    print(format("{} {} {}", 2.5, true, "x"));
+    print(format("{}", 0.1 + 0.2) + " " + str(0.1 + 0.2));
+    print(format("{}{}", -7, ""));
+}

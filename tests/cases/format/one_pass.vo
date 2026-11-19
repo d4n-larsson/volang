@@ -1,0 +1,9 @@
+fn main() uses console {
+    let n = 3;
+    let s: int = "five";
+    print(format("{} {}", n));
+    print(format("{:.2f}", n));
+    print(format("{:e}", 2.5));
+    print(format("a {", n));
+    print(format("{}", n) + 1);
+}

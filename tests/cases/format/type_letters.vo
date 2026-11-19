@@ -1,0 +1,4 @@
+fn main() uses console {
+    let n = 3;
+    print(format("{:d} {:s} {:>5d}", n, "a", n));
+}

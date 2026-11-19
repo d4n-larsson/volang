@@ -1,0 +1,6 @@
+fn main() uses console {
+    let a = 1;
+    let b = 2.5;
+    print(format("{0} and {1:.1f}", a, b));
+    print(format("{1} {0}", a, b));
+}

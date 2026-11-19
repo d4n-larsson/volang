@@ -23,8 +23,9 @@ VO = os.path.join(ROOT, "bin", "vo")
 # Builtin type variables and what they range over ("*": anything).
 TVARS = {"T": "*", "U": "*", "A": "*", "K": {"int", "str"}, "C": {"int", "float", "str"}}
 # spec 023: builtins whose type comes from their place (ok, err, todo) or that only work in a `prop`
-# (assume): documented for vo doc and hover, but a call on its own cannot be probed
-CONTEXT_TYPED = {"ok", "err", "todo", "assume"}
+# (assume): documented for vo doc and hover, but a call on its own cannot be probed; spec 024: format is
+# variadic with a literal template (its checks are golden cases in tests/cases/format)
+CONTEXT_TYPED = {"ok", "err", "todo", "assume", "format"}
 BUILTIN_EFFECTS = {"print": "console", "write": "console", "eprint": "console",
                    "read_line": "input", "read_all": "input", "read_file": "file.read",
                    "write_file": "file.write", "now_ms": "clock", "random_int": "random",
@@ -68,6 +69,9 @@ def parse_builtin_sig(sig):
             break
     params = []
     for p in split_top(sig[1:i]):
+        if p.endswith("..."):  # spec 024: format's `args...`
+            params.append((p[:-3].strip(), "..."))
+            continue
         name, ty = p.split(":", 1)
         params.append((name.strip(), ty.strip()))
     rest = sig[i + 1:].strip()

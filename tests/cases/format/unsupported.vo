@@ -1,0 +1,10 @@
+fn main() uses console {
+    let x = 2.5;
+    let n = 255;
+    print(format("{:e}", x));
+    print(format("{:#x}", n));
+    print(format("{:*^9}", n));
+    print(format("{:X}", n));
+    print(format("{: }", n));
+    print(format("{:5<}", n));
+}

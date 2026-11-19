@@ -17,6 +17,7 @@
 {"v":1,"kind":"doc","module":"builtins","name":"random_int","item":"builtin","signature":"(lo: int, hi: int) -> int","description":"uniform in `lo..hi` inclusive; R0007 if `lo > hi`; fixed by `--seed N`"}
 {"v":1,"kind":"doc","module":"builtins","name":"env","item":"builtin","signature":"(name: str) -> result[str]","description":"an environment variable; `err(\"not set\")`"}
 {"v":1,"kind":"doc","module":"builtins","name":"str","item":"builtin","signature":"(x: int | float | bool) -> str","description":"floats keep at most 15 significant digits; `str(1.0)` is `\"1.0\"`"}
+{"v":1,"kind":"doc","module":"builtins","name":"format","item":"builtin","signature":"(template: str, args...) -> str","description":"`template` a string literal; each `{}` or `{:spec}` takes the next argument (see Types)"}
 {"v":1,"kind":"doc","module":"builtins","name":"int","item":"builtin","signature":"(f: float) -> int","description":"truncates toward zero; R0007 for NaN or out of range"}
 {"v":1,"kind":"doc","module":"builtins","name":"float","item":"builtin","signature":"(i: int) -> float","description":"exact up to 2^53, else the nearest float"}
 {"v":1,"kind":"doc","module":"builtins","name":"parse_int","item":"builtin","signature":"(s: str) -> result[int]","description":"the whole text must be the number: no spaces, no `+` (`trim` first); else `err(\"invalid int: ...\")`"}
@@ -57,4 +58,4 @@
 {"v":1,"kind":"doc","module":"std.process","name":"std.process","item":"module","signature":"std.process","description":"Running other programs to their end, with no shell (needs process)."}
 {"v":1,"kind":"doc","module":"std.math","name":"std.math","item":"module","signature":"std.math","description":"Square roots, powers, logarithms, trigonometry and rounding to int, correctly rounded."}
 {"v":1,"kind":"doc","module":"std.bytes","name":"std.bytes","item":"module","signature":"std.bytes","description":"Conversions of binary data with text, integers, hex and base64, and standard input and output as bytes."}
-{"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":54}
+{"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":55}

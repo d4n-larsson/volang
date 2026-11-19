@@ -3,7 +3,8 @@
 
 For each check/parse case whose expected JSONL has a diagnostic with fixes, the first fix is
 applied to a copy of the case and `vo check --json` must no longer report that code at that
-position. Also reports fix coverage over the error corpus (tests/cases/{lex,parse,check,multi}).
+position (spec 024: also tests/cases/format). Also reports fix coverage over the error corpus
+(tests/cases/{lex,parse,check,multi}).
 """
 import json
 import os
@@ -75,7 +76,7 @@ def json_cases(dirs):
 def main():
     failures = []
     tried = resolved = 0
-    for base, recs in json_cases(["check", "parse", "effects", "func", "generic"]):
+    for base, recs in json_cases(["check", "parse", "effects", "func", "generic", "format"]):
         for rec in recs:
             if rec.get("kind") != "diagnostic" or not rec.get("fixes"):
                 continue

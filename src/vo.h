@@ -389,7 +389,9 @@
 #define B_RUN_BYTES (79) /* spec 021: __run_bytes(argv, input: bytes, env) -> result[bytes], process */
 #define B_RAW_TEXT (80) /* spec 021: __raw_text(b) -> str, the same object; std.http builds raw messages */
 #define B_SLEEP (81) /* spec 022: __sleep(ms), clock, std.time only */
-#define B_LAST (81) /* the last builtin id with a btab entry */
+#define B_FORMAT (82) /* spec 024: format(template, args...) -> str; lowered by the compiler (cformat) */
+#define B_FMT_PIECE (83) /* spec 024: internal, unnamed: one placeholder's value by its packed spec (e.i) */
+#define B_LAST (83) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -1360,6 +1362,24 @@ extern Type *check_arg(Node *call, long i, Type *expected);
 extern int check_argc(Node *call, long want);
 extern Type *check_sig_builtin(Node *call, char *sig);
 extern Type *check_builtin(Node *call, long id, Type *expected);
+/* src/check_format.c (spec 024): format's template, parsed into pieces stored on the call (e.p) */
+typedef struct FmtPiece {
+    Str *text; /* a literal piece, or 0 for a placeholder */
+    long arg;  /* a placeholder's argument (0 = the first after the template) */
+    long spec; /* a placeholder's packed spec (FS_*) */
+} FmtPiece;
+/* packed spec (data-model.md): align 0-1 (1 <, 2 >, 3 ^), flags, width 4-13, precision 16-22, radix 23-24 */
+#define FS_PLUS (4L)
+#define FS_ZERO (8L)
+#define FS_WIDTH(s) ((s) >> 4 & 1023)
+#define FS_GROUP (1L << 14)
+#define FS_PREC_ON (1L << 15)
+#define FS_PREC(s) ((s) >> 16 & 127)
+#define FS_RADIX(s) ((s) >> 23 & 3)
+extern Type *check_format_call(Node *call);
+extern FmtPiece *fmt_new_piece(Str *text, long arg, long spec);
+extern Str *fmt_piece(long value, long kind, long spec); /* src/num.c */
+extern long exact_fixed(unsigned long bits, long prec, char *out); /* src/stdprim.c */
 extern Type *list_arg(Node *call);
 extern Type *map_arg(Node *call);
 extern Type *check_call(Node *call, Type *expected);

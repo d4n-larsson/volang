@@ -1,0 +1,5 @@
+{"v":1,"kind":"diagnostic","code":"E0317","name":"format_placeholder_invalid","severity":"error","file":"combos.vo","start":{"line":3,"col":19},"end":{"line":3,"col":25},"text":"{:<05}","message":"`0` pads numbers by itself: drop the alignment.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0317","name":"format_placeholder_invalid","severity":"error","file":"combos.vo","start":{"line":4,"col":19},"end":{"line":4,"col":24},"text":"{:0,}","message":"`0` pads numbers by itself: drop the `,`.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0317","name":"format_placeholder_invalid","severity":"error","file":"combos.vo","start":{"line":5,"col":19},"end":{"line":5,"col":24},"text":"{:,x}","message":"`x` cannot be combined with `,`.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0317","name":"format_placeholder_invalid","severity":"error","file":"combos.vo","start":{"line":6,"col":19},"end":{"line":6,"col":26},"text":"{:.2fx}","message":"`x` cannot be combined with a precision.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":4,"warnings":0,"truncated":0,"files":1}

@@ -1,0 +1,16 @@
+record Item {
+    name: str;
+    price: float;
+    count: int;
+}
+
+fn main() uses console {
+    let items = [new Item { name: "coffee", price: 4.5, count: 2 }, new Item { name: "bagel", price: 2.25, count: 1 }, new Item { name: "orange juice", price: 3.1, count: 3 }];
+    var total = 0.0;
+    for it in items {
+        let line = float(it.count) * it.price;
+        set total = total + line;
+        print(format("{:<14}{:>3} x {:>6.2f} = {:>7.2f}", it.name, it.count, it.price, line));
+    }
+    print(format("{:<14}{:>22.2f}", "total", total));
+}

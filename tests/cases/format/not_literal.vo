@@ -1,0 +1,4 @@
+fn main() uses console {
+    let t = "{}";
+    print(format(t, 1));
+}

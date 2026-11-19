@@ -1,0 +1,32 @@
+record Row {
+    name: str;
+    score: int;
+}
+
+fn main() -> result[void] uses console, input {
+    var rows = new list[Row];
+    var total = 0;
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, ",");
+                let score = try parse_int(p[1]);
+                push(rows, new Row { name: p[0], score: score });
+                set total = total + score;
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    let sep = "------------+----------+-------";
+    print(format("{:<12}|{:>10}|{:>7}", "name", "score", "share"));
+    print(sep);
+    for r in rows {
+        let share = float(r.score) * 100.0 / float(total);
+        print(format("{:<12}|{:>10,}|{:>6.1f}%", r.name, r.score, share));
+    }
+    print(sep);
+    print(format("{:<12}|{:>10,}|{:>6.1f}%", "total", total, 100.0));
+    return ok();
+}

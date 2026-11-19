@@ -1,0 +1,5 @@
+fn main() uses console {
+    let pct = 50;
+    print(format("{}%", pct));
+    print(format("100%"));
+}

@@ -1,0 +1,23 @@
+fn main() -> result[void] uses console, input {
+    var previous = 0;
+    var first = true;
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                let value = try parse_int(p[1]);
+                var change = "-";
+                if not first {
+                    set change = format("{:+.1f}%", float(value - previous) * 100.0 / float(previous));
+                }
+                print(format("{} {:>18,} {:>9}", p[0], value, change));
+                set previous = value;
+                set first = false;
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

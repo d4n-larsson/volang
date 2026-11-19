@@ -30,6 +30,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [021](../specs/021-bytes/) | `bytes`: binary data in files, standard input and output, other programs' output and HTTP bodies (`std.bytes`, `read_bytes`, `run_bytes`, `get_bytes`, `serve_bytes`), hex and base64; every `str` is valid UTF-8, checked where text is read | **Done** ([results](../specs/021-bytes/results.md)) |
 | [022](../specs/022-sleep/) | `std.time.sleep(ms)` under `clock`: real waits with the real clock, bounded by `--timeout`; with a fixed clock (`vo test`, `--clock-ms`) and in replay no wait, the clock moves on | **Done** ([results](../specs/022-sleep/results.md)) |
 | [023](../specs/023-hover-docs/) | Documentation on hover: `vo query type-at` adds the declared signature and the doc comment of the item at a position (`doc` in JSON, as `vo doc --json` prints it), for functions, records, variants, fields, cases, library items and builtins; `vo doc ENTRY NAME` for the program's own items | **Done** ([results](../specs/023-hover-docs/results.md)) |
+| [024](../specs/024-string-formatting/) | String formatting: the `format` builtin with checked `{}` placeholders (alignment, width, `+`, zero padding, thousands, fixed decimals, hex and binary), the same digits as Python; template mistakes and habits from C, Python and Go (`%d`, `{0}`, `{:.2}`, `f"..."`) are check errors with fixes | **Done** ([results](../specs/024-string-formatting/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -206,6 +207,18 @@ did not change.
 - **Not done (on purpose):** markup or tags in doc comments, completion, a standing language server
   (the "Language server" row below).
 
+### 024: string formatting (done)
+
+`format("{:<12}|{:>8.2f}", name, price)`: a builtin whose template is a string literal, checked against
+its arguments when the program is checked, so a call that checks cannot fail at run time. Placeholders
+are positional `{}` with the Python and Rust option syntax (a subset); ints and floats with a precision
+print exactly what Python's `format()` prints (100,000 random values, all three platforms). Wrong
+counts, unsupported options and options on the wrong type are E0315-E0318; `%d` templates, `{0}`,
+`{name}`, `{:.2}`, `{:d}` and `f"..."` (E0120) get fixes to the vo form.
+
+- **Not done (on purpose):** interpolation, scientific notation (`e`), percentages, fill characters, `#`
+  prefixes, debug printing of lists and records, locale-aware output, a `printf` that writes directly.
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -214,7 +227,6 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Gap | What is missing | Notes |
 |---|---|---|
 | Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; decides what matters next |
-| String formatting | only `+`, `str()` and padding | one formatting builtin within the reference budget |
 | Regular expressions | `std.text` has `find`, `split`, `replace` only | linear-time matching only (no backtracking) |
 | TCP and UDP | only HTTP reaches the network | scoped like `net` and `serve` |
 | macOS | Linux only (x86-64, ARM64, RISC-V) | the raw-syscall, no-libc design makes this a real port |
@@ -232,7 +244,7 @@ User-defined interfaces and compiling to machine code stay out of scope (below).
 
 ## Benchmarks (ongoing)
 
-On the v1 benchmark both languages were at the ceiling, so it could not show whether vo helps agents. Benchmark v2 (40 tasks in multi-file, refactor, hidden-property and capability categories, plus a 20-task feature set) is built and validated. Its run is the next step:
+On the v1 benchmark both languages were at the ceiling, so it could not show whether vo helps agents. Benchmark v2 (40 tasks in multi-file, refactor, hidden-property and capability categories, plus a 24-task feature set; f21–f24 are formatting tasks from spec 024) is built and validated. Its run is the next step:
 
 1. **Run v2 to completion** with the corrected harness: no tools, no user settings, an empty working directory. The first run was invalid because the agent could read the answers.
 2. **Re-run v1** the same way: its results were collected with the flawed harness.

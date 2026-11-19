@@ -1,0 +1,4 @@
+fn main() uses console {
+    let x = 3.14159;
+    print(format("{:.2} {:>8.3}", x, x));
+}

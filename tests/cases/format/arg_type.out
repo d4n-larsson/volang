@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"arg_type.vo","start":{"line":8,"col":27},"end":{"line":8,"col":29},"text":"xs","message":"Expected `int`, `float`, `bool` or `str`, found `list[int]`.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"arg_type.vo","start":{"line":8,"col":31},"end":{"line":8,"col":32},"text":"p","message":"Expected `int`, `float`, `bool` or `str`, found `Point`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

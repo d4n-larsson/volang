@@ -31,7 +31,7 @@ hello vo, count = 3
 - `_` alone is the discard name. It is allowed only as `let _ = ...;` and as a `case` binding such as `case err(_)`. It is not allowed as a `for` variable or a parameter.
 - **Integers**: `0`, `42`, `1000000`. No `_` separators, hex, octal or suffixes. Negative numbers use unary `-`: `-5`. The maximum is 9223372036854775807 (larger literals are E0105).
 - **Floats**: digits, `.`, digits: `1.0`, `0.5`, `3.14`. Both sides of `.` are required (`1.` and `.5` are invalid). No exponent (`1e3` is invalid); at most 15 significant digits.
-- **Strings**: `"..."` on one line. The only escapes are `\n`, `\t`, `\\` and `\"` (any other is E0103). There are no single-quoted strings, no character type, no raw or multi-line strings and no interpolation: build strings with `+` and `str(...)`.
+- **Strings**: `"..."` on one line. The only escapes are `\n`, `\t`, `\\` and `\"` (any other is E0103). There are no single-quoted strings, no character type, no raw or multi-line strings and no interpolation: use `format` or `+`.
 - **Booleans**: `true`, `false`.
 - **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void uses prop requires ensures export bytes`.
 - There are no trailing commas anywhere (E0113).
@@ -101,6 +101,20 @@ fn main() uses console {
 ```output
 5 2.5 2
 1.0 true
+```
+
+**Formatting**: `format("{} of {} done", 3, 10)` is `"3 of 10 done"`. The template must be a string literal; each `{}` takes the next argument (`int`, `float`, `bool` or `str`), and `{{`/`}}` are braces. Options go after a colon, in this order: alignment `<` `>` `^`, `+`, `0` (zero-pad), width, `,` (thousands), `.Nf` (N decimals, floats only), `x` or `b` (hex or binary, ints only). Numbers align right, text left. `vo check` reports a wrong count or option, with a fix where it can (also for `%d` and `f"..."`).
+
+```vo
+fn main() uses console {
+    print(format("{:<8}|{:>8.2f}|{:05}|{:x}", "tea", 3.14159, 42, 255));
+    print(format("{:,} {:+}", 1234567, 5));
+}
+```
+
+```output
+tea     |    3.14|00042|ff
+1,234,567 +5
 ```
 
 ## Declarations
@@ -774,6 +788,7 @@ fn main() uses console {
 | random_int | `(lo: int, hi: int) -> int` | uniform in `lo..hi` inclusive; R0007 if `lo > hi`; fixed by `--seed N` |
 | env | `(name: str) -> result[str]` | an environment variable; `err("not set")` |
 | str | `(x: int \| float \| bool) -> str` | floats keep at most 15 significant digits; `str(1.0)` is `"1.0"` |
+| format | `(template: str, args...) -> str` | `template` a string literal; each `{}` or `{:spec}` takes the next argument (see Types) |
 | int | `(f: float) -> int` | truncates toward zero; R0007 for NaN or out of range |
 | float | `(i: int) -> float` | exact up to 2^53, else the nearest float |
 | parse_int | `(s: str) -> result[int]` | the whole text must be the number: no spaces, no `+` (`trim` first); else `err("invalid int: ...")` |
@@ -1283,7 +1298,7 @@ Other kinds: `toolchain_error` (`code`, `name`, `message`, optional `path` and `
 
 ## Error codes
 
-Every diagnostic, runtime error and toolchain error has a stable code, and `vo explain CODE` prints what it means, an example and the fix. The ranges are: E01xx syntax (E0101 to E0119), E02xx names and imports, E03xx types, E04xx control flow, `match` and results, Wxxxx warnings (they never fail a command), E07xx packages, R00xx runtime errors (exit status 70; R0009 timeout is 124) and T00xx toolchain errors. When a diagnostic has no fix, read `vo explain` before changing code.
+Every diagnostic, runtime error and toolchain error has a stable code, and `vo explain CODE` prints what it means, an example and the fix. The ranges are: E01xx syntax (E0101 to E0120), E02xx names and imports, E03xx types, E04xx control flow, `match` and results, Wxxxx warnings (they never fail a command), E07xx packages, R00xx runtime errors (exit status 70; R0009 timeout is 124) and T00xx toolchain errors. When a diagnostic has no fix, read `vo explain` before changing code.
 
 ```vo
 fn main() uses console {

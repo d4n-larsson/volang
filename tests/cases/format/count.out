@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0316","name":"format_argument_count","severity":"error","file":"count.vo","start":{"line":3,"col":18},"end":{"line":3,"col":29},"text":"\"{} and {}\"","message":"The template has 2 placeholder(s) and 1 argument(s) follow it.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0316","name":"format_argument_count","severity":"error","file":"count.vo","start":{"line":4,"col":18},"end":{"line":4,"col":22},"text":"\"{}\"","message":"The template has 1 placeholder(s) and 2 argument(s) follow it.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

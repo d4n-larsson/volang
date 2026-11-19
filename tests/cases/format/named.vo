@@ -1,0 +1,10 @@
+record User {
+    age: int;
+}
+
+fn main() uses console {
+    let name = "al";
+    let user = new User { age: 3 };
+    print(format("hi {name}, {user.age}"));
+    print(format("hi {name}", name));
+}

@@ -309,6 +309,7 @@ gate-step: all asm
 	@echo "== gate: sleep determinism and timing" && tests/run.sh --repeat 20 tests/cases/time && \
 	  python3 tests/steps.py --repeat 20 tests/cases/sleep_steps && python3 tests/sleep_check.py
 	@echo "== gate: hover documentation speed" && python3 tests/hover_speed.py
+	@echo "== gate: format speed" && python3 tests/format_speed.py
 	@echo "== gate-step: passed"
 
 # SC-004 compares like with like: the RISC-V build against build-asm/vo, both under qemu.

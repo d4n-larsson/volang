@@ -1,4 +1,4 @@
-import main.format;
+import main.reflow;
 import main.wrap;
 
 # A word of 1 to 13 lowercase letters, all derived from n.
@@ -94,7 +94,7 @@ prop "wrapping is greedy" (ns: list[int], w: int) {
 prop "paragraphs are separated by exactly one empty line" (xs: list[int], w: int) {
     let width = width_of(w);
     let lines = map(xs, line_of);
-    let out = format(lines, width);
+    let out = reflow(lines, width);
     var paras = 0;
     var in_para = false;
     var words = "";
@@ -129,6 +129,6 @@ test "edge cases from the statement" {
     expect_eq(wrap(["ab", "abcdefg", "c"], 3), ["ab", "abc", "def", "g c"]);
     expect_eq(wrap(["abc", "d"], 3), ["abc", "d"]);
     expect_eq(wrap(["a", "b", "c"], 1), ["a", "b", "c"]);
-    expect_eq(format(["", "  ", "a b", "", "", "c", " "], 10), ["a b", "", "c"]);
-    expect_eq(format(["", "   "], 5), new list[str]);
+    expect_eq(reflow(["", "  ", "a b", "", "", "c", " "], 10), ["a b", "", "c"]);
+    expect_eq(reflow(["", "   "], 5), new list[str]);
 }

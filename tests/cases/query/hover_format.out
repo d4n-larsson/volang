@@ -1,0 +1,2 @@
+{"v":1,"kind":"type_at","file":"hover_format.vo","start":{"line":2,"col":11},"end":{"line":2,"col":17},"text":"format","type":"str","name":"format","doc":{"module":"builtins","name":"format","item":"builtin","signature":"(template: str, args...) -> str","description":"`template` a string literal; each `{}` or `{:spec}` takes the next argument (see Types)"}}
+{"v":1,"kind":"summary","command":"query","errors":0,"warnings":0,"truncated":0,"files":1,"results":1}

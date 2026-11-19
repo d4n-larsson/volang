@@ -1,0 +1,11 @@
+fn main() uses console {
+    let n = 3;
+    let p = 2.5;
+    let s = "ab";
+    print(format("%d items, %.2f each", n, p));
+    print(format("%5s|%-5d|%05d|%+d|%f|%x|%%", s, n, n, n, p, n));
+    print(format("%e", p));
+    print(format("%X", n));
+    print(format("{%d}", n));
+    print(format("%-5s|%5d|%t|%v", s, n, true, p));
+}

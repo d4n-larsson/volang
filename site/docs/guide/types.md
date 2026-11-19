@@ -145,8 +145,29 @@ safe when `find` succeeds. The string builtins (`split`, `join`, `trim`, `find`,
 [Builtins](../reference/builtins.md), and [`std.text`](../std/text.md) has more, such as
 [`pad_left`](../std/text.md#pad_left).
 
-Strings are built with `+`. There is no interpolation and no formatting function in the language, so
-every non-string value goes through `str(...)` on its way into text.
+Strings are built with `+` and `str(...)`, or with `format`, which puts values into a template. There is
+no interpolation: the template is a string literal, each `{}` takes the next argument, and options after
+a colon set the width, the alignment, the number of decimals and more:
+
+```vo
+fn main() uses console {
+    let name = "tea";
+    let price = 3.14159;
+    print(format("{:<8}{:>6.2f}", name, price));
+    print(format("{} items, {:+} since {:,}", 3, -2, 1250000));
+    print(format("{:05} {:x} {{}}", 42, 255));
+}
+```
+
+```output
+tea       3.14
+3 items, -2 since 1,250,000
+00042 ff {}
+```
+
+`vo check` checks the template against the arguments: a missing argument, `{:.2f}` on an `int` or a
+`%d` from C each get a diagnostic, most with a fix. The options are listed in the
+[reference](../reference/types.md).
 
 ## Conversions
 

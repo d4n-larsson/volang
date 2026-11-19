@@ -1,0 +1,21 @@
+fn main() -> result[void] uses console, input {
+    var largest = -1;
+    while true {
+        match read_line() {
+            case ok(line) {
+                let n = try parse_int(line);
+                print(format("{:>5} {:04x} {:016b}", n, n, n));
+                set largest = max(largest, n);
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    if largest < 0 {
+        print("max -");
+    } else {
+        print(format("max {:x}", largest));
+    }
+    return ok();
+}

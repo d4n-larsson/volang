@@ -45,7 +45,7 @@ Literals are strict, so that every value has one spelling:
 - Floats need digits on both sides of the `.`: `1.0` and `0.5`, never `1.` or `.5`. There is no exponent
   form (`1e3` is invalid).
 - Strings use double quotes and stay on one line. The only escapes are `\n`, `\t`, `\\` and `\"`. There
-  is no interpolation: build strings with `+` and `str(...)`.
+  is no interpolation: build strings with `format("{} of {}", 3, 10)` or with `+` and `str(...)`.
 
 Lists (`[1, 2, 3]`), maps, records and variants come in later chapters. There is no `null`: a value that
 may be missing is a variant or a `result`.

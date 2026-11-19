@@ -104,6 +104,69 @@ static long lx_single_quote(long pos)
     return end;
 }
 
+/* Spec 024: f"..." at pos (the `f`), the string closed at end. E0120 over it, with a fix to the
+ * equivalent `format` call when every hole is `name(.name)*`, optionally followed by `:spec`. */
+static void lx_fstring(long pos, long end)
+{
+    Diag *d = lx_err("E0120", pos, end,
+                     str_from_cstr("vo has no f-strings: use `format` with `{}` placeholders and the values as arguments."));
+    SB *tmpl = sb_new(), *args = sb_new(), *plain = sb_new(); /* plain: the text with no holes */
+    for (long i = pos + 2; i < end - 1;) {
+        char c = lx_text[i];
+        if ((c == '{' || c == '}') && lx_text[i + 1] == c && i + 1 < end - 1) {
+            sb_byte(tmpl, c);
+            sb_byte(tmpl, c);
+            sb_byte(plain, c);
+            i += 2;
+            continue;
+        }
+        if (c == '}') return; /* a lone brace: no fix */
+        if (c != '{') {
+            sb_byte(tmpl, c);
+            sb_byte(plain, c);
+            i++;
+            continue;
+        }
+        long j = i + 1, colon = 0;
+        while (j < end - 1 && lx_text[j] != '}') {
+            if (lx_text[j] == ':' && !colon) colon = j;
+            j++;
+        }
+        if (j >= end - 1) return;
+        long e = colon ? colon : j; /* the hole's expression: i + 1 .. e */
+        int start = 1;
+        for (long k = i + 1; k < e; k++) {
+            unsigned char h = (unsigned char)lx_text[k];
+            if (start) {
+                if (!is_word_char(h) || (h >= '0' && h <= '9')) return;
+                start = 0;
+            } else if (h == '.') {
+                start = 1;
+            } else if (!is_word_char(h)) {
+                return;
+            }
+        }
+        if (start) return; /* empty, or ending with `.` */
+        sb_byte(tmpl, '{');
+        if (colon) sb_str(tmpl, lx_slice(colon, j));
+        sb_byte(tmpl, '}');
+        sb_cstr(args, ", ");
+        sb_str(args, lx_slice(i + 1, e));
+        i = j + 1;
+    }
+    SB *fix = sb_new();
+    Str *a = sb_finish(args);
+    if (a->len) sb_cstr(fix, "format(");
+    sb_byte(fix, '"');
+    sb_str(fix, a->len ? sb_finish(tmpl) : sb_finish(plain));
+    sb_byte(fix, '"');
+    if (a->len) {
+        sb_str(fix, a);
+        sb_byte(fix, ')');
+    }
+    diag_add_fix(d, (int)lx_file, pos, end, sb_finish(fix));
+}
+
 /* Tokenizes a registered file; stores and returns the token array (ending with T_EOF). */
 Token *lex(int file)
 {
@@ -156,6 +219,13 @@ Token *lex(int file)
             sb_byte(sb, '\n');
             for (long i = lx_lstart; text[i] == ' ' || text[i] == '\t'; i++) sb_byte(sb, text[i]);
             diag_add_fix(d, (int)lx_file, start, start, sb_finish(sb));
+            continue;
+        }
+        if (c == 'f' && pos + 1 < len && text[pos + 1] == '"') { /* spec 024: f"...": E0120, then a plain string */
+            long e = pos + 2;
+            while (e < len && text[e] != '\n' && text[e] != '"') e += text[e] == '\\' && e + 1 < len && text[e + 1] != '\n' ? 2 : 1;
+            if (e < len && text[e] == '"') lx_fstring(pos, e + 1);
+            pos++;
             continue;
         }
         if (c == '"') { /* string */

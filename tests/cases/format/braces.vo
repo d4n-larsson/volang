@@ -1,0 +1,5 @@
+fn main() uses console {
+    print(format("{{}} {}", 1));
+    print(format("{{{}}}", 7));
+    print(format("}}{{"));
+}

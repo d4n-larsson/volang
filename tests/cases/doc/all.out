@@ -37,6 +37,8 @@ env (name: str) -> result[str]
     an environment variable; `err("not set")`
 str (x: int | float | bool) -> str
     floats keep at most 15 significant digits; `str(1.0)` is `"1.0"`
+format (template: str, args...) -> str
+    `template` a string literal; each `{}` or `{:spec}` takes the next argument (see Types)
 int (f: float) -> int
     truncates toward zero; R0007 for NaN or out of range
 float (i: int) -> float

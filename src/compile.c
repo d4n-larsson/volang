@@ -636,6 +636,44 @@ static long cbuiltin(Node *node, long dst, long mark)
     return dst;
 }
 
+/* spec 024 (research R2): format(template, args...) as its pieces joined with string `+`: a
+ * constant per literal piece, a call of the internal piece builtin per placeholder (a copy of the
+ * call holding its argument, the packed spec in e.i). The checker always leaves at least one piece.
+ * ponytail: one concatenation per piece copies the growing string each time (quadratic in pieces);
+ * a join instruction if long templates are measured slow. */
+static long cformat(Node *node, long dst, long mark)
+{
+    Vec *pieces = node->e.v;
+    long acc = c_new_temp();
+    for (long i = 0; i < pieces->n; i++) {
+        FmtPiece *pc = pieces->data[i].p;
+        Node *k = alloc(NODE_SIZE);
+        *k = *node;
+        k->flags = 0;
+        long v;
+        if (pc->text) {
+            k->kind = N_STR;
+            k->a.s = pc->text;
+            v = cexpr(k, -1);
+        } else {
+            k->d.i = B_FMT_PIECE;
+            k->e.i = pc->spec;
+            k->b.v = vec_new();
+            vec_push(k->b.v, node->b.v->data[pc->arg + 1].p);
+            v = cbuiltin(k, -1, acc + 8);
+        }
+        if (i == 0)
+            c_mov(acc, v, node);
+        else
+            c_emit(OP_CONCAT + (OPC_ADD_INT - OP_ADD_INT), acc, acc, v, node);
+        c_temp = acc + 8;
+    }
+    if (dst < 0) return acc;
+    c_mov(dst, acc, node);
+    c_temp = mark;
+    return dst;
+}
+
 /* spec 018 (research R5): `expect(cond)` by the shape of cond. A comparison passes its operands to
  * the check (NF_EXPECT_OPS on the call), `not` of a comparison inverts it (NF_EXPECT_NEG), and
  * `expect(a and b)` becomes `expect(a)` then `expect(b)`: the same short-circuit order. */
@@ -828,6 +866,7 @@ long cexpr(Node *node, long dst)
         if (!id) return ccall(node, dst, OPC_CALL, 0, mark);
         Vec *args = node->b.v;
         if (id == BI_EXPECT) return cexpect(node, dst, mark); /* spec 018 */
+        if (id == B_FORMAT) return cformat(node, dst, mark); /* spec 024 */
         if (id == BI_LEN) return cunary_op(node, dst, mark, OPC_LEN, args->data[0].n, 0); /* len(x) */
         if (id == BI_HAS && args->data[0].n->type->kind == TY_MAP) /* has(m, k) (spec 014: maps only) */
             return cpair_op(node, dst, mark, OPC_HAS, args->data[0].n, args->data[1].n);

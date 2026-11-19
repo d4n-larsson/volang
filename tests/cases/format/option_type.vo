@@ -1,0 +1,7 @@
+fn main() uses console {
+    let n = 3;
+    print(format("{:.2f}", n));
+    print(format("{:x}", 2.5));
+    print(format("{:+}", "s"));
+    print(format("{:,}", true));
+}

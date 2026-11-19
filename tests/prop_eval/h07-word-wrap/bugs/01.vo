@@ -49,7 +49,7 @@ export fn wrap(words: list[str], width: int) -> list[str] {
     return out;
 }
 
-export fn format(lines: list[str], width: int) -> list[str] {
+export fn reflow(lines: list[str], width: int) -> list[str] {
     let out = new list[str];
     var first = true;
     for p in paragraphs(lines) {
@@ -77,7 +77,7 @@ fn main() -> result[void] uses console, input {
             }
         }
     }
-    for l in format(lines, width) {
+    for l in reflow(lines, width) {
         print(l);
     }
     return ok();

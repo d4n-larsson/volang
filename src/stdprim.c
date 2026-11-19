@@ -242,6 +242,61 @@ long exact_digits(unsigned long bits, long n, char *out)
     return k;
 }
 
+/* Spec 024 (research R3): |x| (x finite) with exactly prec decimals: the exact value rounded at
+ * 10^-prec, ties to even. Writes the integer digits (at least one) then the prec decimals, with no
+ * point, to out (room: 310 + prec); returns the number of integer digits.
+ * ponytail: big integers for every value, about 2.4 us per `{:.2f}` (tests/format_speed.py); upgrade:
+ * a 128-bit path for |x| < 2^64 and prec <= 19, as digits15_u128 does for str. */
+long exact_fixed(unsigned long bits, long prec, char *out)
+{
+    long biased = (long)((bits >> 52) & 2047);
+    unsigned long m = bits & ((1UL << 52) - 1); /* m * 2^e */
+    long e = -1074;
+    if (biased) {
+        m |= 1UL << 52;
+        e = biased - 1075;
+    }
+    bn_set(bn_n, m);
+    bn_set(bn_d, 1);
+    if (e >= 0)
+        bn_shl(bn_n, e);
+    else
+        bn_shl(bn_d, -e);
+    long k = 1; /* integer digits: D is scaled by 10^(k-1) so that N < 10 D */
+    for (;;) {
+        bn_copy(bn_c, bn_d);
+        bn_mul_small(bn_c, 10);
+        if (bn_cmp(bn_n, bn_c) < 0) break;
+        bn_mul_small(bn_d, 10);
+        k++;
+    }
+    long n = k + prec;
+    for (long i = 0; i < n; i++) { /* each digit: N / D (below 10), then N = 10 (N mod D) */
+        int d = 0;
+        while (bn_cmp(bn_n, bn_d) >= 0) {
+            bn_sub(bn_n, bn_d);
+            d++;
+        }
+        out[i] = (char)('0' + d);
+        bn_mul_small(bn_n, 10);
+    }
+    bn_copy(bn_c, bn_d); /* round: 10 R against 5 D */
+    bn_mul_small(bn_c, 5);
+    int c = bn_cmp(bn_n, bn_c);
+    if (c > 0 || (c == 0 && ((out[n - 1] - '0') & 1))) {
+        long i = n - 1;
+        while (i >= 0 && out[i] == '9') out[i--] = '0';
+        if (i >= 0) {
+            out[i]++;
+        } else { /* 99.99 rounded up: one more integer digit */
+            for (long j = n; j > 0; j--) out[j] = out[j - 1];
+            out[0] = '1';
+            k++;
+        }
+    }
+    return k;
+}
+
 /* __text_float: "-"? digits ["." digits] with at most 19 significant digits, to the nearest
  * double (exact_to_double). */
 long std_text_float(Str *s)

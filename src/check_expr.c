@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 81 /* names up to here (50, 51 are internal and unnamed) */
+#define B_COUNT 83 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -39,6 +39,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__bytes_of_text", "__text_of_bytes", "__bytes_of_ints", "__ints_of_bytes", "__bytes_hex", "__bytes_unhex",
     "__bytes_b64", "__bytes_unb64", "__stdin_bytes", "__stdout_bytes", "__fsb", "__run_bytes", "__raw_text", /* spec 021 */
     "__sleep", /* spec 022 */
+    "format", 0, /* spec 024: format; 83 the internal piece */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -269,6 +270,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
             expect_type(arg, code_type(id == B_INT ? 'f' : 'i'), t);
         return id == B_INT ? t_int : t_float;
     }
+    if (id == B_FORMAT) return check_format_call(call); /* spec 024: src/check_format.c */
     if (builtin_sigs[id]) return check_sig_builtin(call, (char *)builtin_sigs[id]);
     if (id == B_COLL) { /* spec 014: __coll(OP, ...): OP an int literal; the result takes the expected type.
                            ponytail: typed loosely (std.collections only, whose wrappers declare the

@@ -16,9 +16,10 @@ enum {
     BU_ENS_FAIL, BU_FLOAT_TEXT, BU_HTTP_EXCHANGE, BU_TEXT_FLOAT, BU_GET_OR, BU_SERVE_LISTEN, BU_SERVE_NEXT,
     BU_SERVE_REPLY, BU_SERVE_CALL, BU_HTTP_PART, BU_COLL, BU_CONCURRENT_MAP, BU_FS, BU_RUN, BU_HTTPS,
     BU_MATH, BU_MATH_INT, BU_BYTES_OF_TEXT, BU_TEXT_OF_BYTES, BU_BYTES_OF_INTS, BU_INTS_OF_BYTES, BU_BYTES_HEX,
-    BU_BYTES_UNHEX, BU_BYTES_B64, BU_BYTES_UNB64, BU_STDIN_BYTES, BU_STDOUT_BYTES, BU_FSB, BU_RUN_BYTES, BU_RAW_TEXT, BU_SLEEP
+    BU_BYTES_UNHEX, BU_BYTES_B64, BU_BYTES_UNB64, BU_STDIN_BYTES, BU_STDOUT_BYTES, BU_FSB, BU_RUN_BYTES, BU_RAW_TEXT, BU_SLEEP,
+    BU_FORMAT, BU_FMT_PIECE
 };
-_Static_assert(BU_SLEEP == B_LAST && BU_SLEEP == B_SLEEP && BU_RAW_TEXT == B_RAW_TEXT && BU_RUN_BYTES == B_RUN_BYTES && BU_FSB == B_FSB && BU_BYTES_OF_TEXT == B_BYTES_FIRST && BU_STDIN_BYTES == B_STDIN_BYTES && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
+_Static_assert(BU_FMT_PIECE == B_LAST && BU_FMT_PIECE == B_FMT_PIECE && BU_FORMAT == B_FORMAT && BU_SLEEP == B_SLEEP && BU_RAW_TEXT == B_RAW_TEXT && BU_RUN_BYTES == B_RUN_BYTES && BU_FSB == B_FSB && BU_BYTES_OF_TEXT == B_BYTES_FIRST && BU_STDIN_BYTES == B_STDIN_BYTES && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
 _Static_assert(BU_TODO == B_TODO && BU_REQ_FAIL == B_REQ_FAIL && BU_SORT_BY == B_SORT_BY, "builtin ids");
 
 /* The static type of the call's first argument. */
@@ -146,6 +147,8 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_STDOUT_BYTES: rt_print(1, (Str *)a0, 0); return 0;
     case BU_FSB: return (long)io_fsb(a0, (Str *)a1, (Str *)a2); /* spec 021: std.fs */
     case BU_SLEEP: rt_sleep(a0, call); return 0; /* spec 022: std.time */
+    case BU_FORMAT: return 0; /* spec 024: never reached (cformat lowers every call) */
+    case BU_FMT_PIECE: return (long)fmt_piece(a0, arg0_type(call)->kind, call->e.i); /* spec 024 */
     case BU_RAW_TEXT: return a0; /* spec 021: std.http only; never reaches user code unchecked */
     case BU_RUN_BYTES: return (long)io_run((List *)a0, (Str *)a1, (List *)a2, 1); /* spec 021: std.process */
     case BU_TEXT_FLOAT: return std_text_float((Str *)a0); /* spec 007: up to 19 digits, exactly */

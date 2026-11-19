@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0317","name":"format_placeholder_invalid","severity":"error","file":"bounds.vo","start":{"line":2,"col":19},"end":{"line":2,"col":26},"text":"{:1001}","message":"Width is at most 1000 and precision at most 100.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0317","name":"format_placeholder_invalid","severity":"error","file":"bounds.vo","start":{"line":3,"col":19},"end":{"line":3,"col":27},"text":"{:.101f}","message":"Width is at most 1000 and precision at most 100.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

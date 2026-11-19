@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0317","name":"format_placeholder_invalid","severity":"error","file":"lone_brace.vo","start":{"line":2,"col":21},"end":{"line":2,"col":22},"text":"{","message":"Unmatched `{` in the template: write `{{` or `}}` for a brace.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0317","name":"format_placeholder_invalid","severity":"error","file":"lone_brace.vo","start":{"line":3,"col":21},"end":{"line":3,"col":22},"text":"}","message":"Unmatched `}` in the template: write `{{` or `}}` for a brace.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

@@ -424,6 +424,32 @@ test "doubles" {
 }
 ```
 
+## E0120 f_string
+
+A string is written with an `f` prefix, as in Python.
+
+Fixable: sometimes
+
+vo has no f-strings and no interpolation. Use `format` with `{}` placeholders and pass the values as arguments, after the template: `format("hi {}", name)`. Options stay after a colon: `{:.2f}`. When every hole is a name or a field access, the fix writes the `format` call.
+
+### Example
+
+```vo
+fn main() uses console {
+    let name = "al";
+    print(f"hi {name}");
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let name = "al";
+    print(format("hi {}", name));
+}
+```
+
 ## E0201 undefined_name
 
 A name is used but never defined or imported.
@@ -1348,6 +1374,111 @@ fn make(name: str) -> str {
 fn main() uses console {
     let jobs = concurrent_map(["a", "b"], 2, make);
     print(jobs[0]);
+}
+```
+
+## E0315 format_template_not_literal
+
+The template of `format` is not a string literal.
+
+Fixable: no
+
+`format` checks every placeholder against its argument when the program is checked, so the template must be written in the call as a string literal, not built at run time or passed in a variable. Write the template in the call. To choose between templates, choose between calls.
+
+### Example
+
+```vo
+fn main() uses console {
+    let template = "{} items";
+    print(format(template, 3));
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    print(format("{} items", 3));
+}
+```
+
+## E0316 format_argument_count
+
+The template of `format` has a different number of placeholders than there are arguments after it.
+
+Fixable: sometimes
+
+Each `{}` or `{:spec}` takes the next argument after the template, in order, so their numbers must be equal. Add or remove placeholders or arguments. A template written with C or Go verbs (`%d`, `%s`, `%.2f`, `%x`) has no placeholders; when every verb has a vo form, the fix rewrites them: `%d` and `%s` become `{}`, `%.2f` becomes `{:.2f}`, `%5s` becomes `{:>5}`, `%%` becomes `%`.
+
+### Example
+
+```vo
+fn main() uses console {
+    let n = 3;
+    let price = 2.5;
+    print(format("%d items, %.2f each", n, price));
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let n = 3;
+    let price = 2.5;
+    print(format("{} items, {:.2f} each", n, price));
+}
+```
+
+## E0317 format_placeholder_invalid
+
+A placeholder or brace in a `format` template is not one vo accepts.
+
+Fixable: sometimes
+
+A placeholder is `{}` or `{:spec}`, with the spec's options in this order, all optional: an alignment `<`, `>` or `^`, `+`, `0` (pad with zeros), a width, `,` (thousands), `.Nf` (N decimals) and `x` or `b` (hex or binary). Write a brace as `{{` or `}}`. Placeholders take the arguments in order: there are no indexes (`{0}`) or names (`{name}`); pass the value as an argument. Precision needs `f` (`{:.2f}`), and type letters such as `d` and `s` are not used: the argument's type decides how it prints. The fix rewrites indexes in order, names with no arguments, `{:.2}`, `{:d}` and `{:0>5}`.
+
+### Example
+
+```vo
+fn main() uses console {
+    let x = 3.14159;
+    print(format("{0}: {1:.2}", "pi", x));
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let x = 3.14159;
+    print(format("{}: {:.2f}", "pi", x));
+}
+```
+
+## E0318 format_option_type
+
+An option of a placeholder does not apply to its argument's type.
+
+Fixable: sometimes
+
+`.Nf` applies to `float` values, `x` and `b` to `int` values, and `+`, `0` and `,` to numbers; widths and alignments apply to every type. vo never converts implicitly: convert the argument, or change the option. For `.Nf` on an `int`, the fix converts the argument with `float(...)`.
+
+### Example
+
+```vo
+fn main() uses console {
+    let total = 12;
+    print(format("{:.2f}", total));
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let total = 12;
+    print(format("{:.2f}", float(total)));
 }
 ```
 

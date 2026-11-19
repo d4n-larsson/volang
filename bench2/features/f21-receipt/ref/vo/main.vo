@@ -1,0 +1,21 @@
+fn main() -> result[void] uses console, input {
+    var total = 0.0;
+    while true {
+        match read_line() {
+            case ok(line) {
+                let p = split(line, " ");
+                let qty = try parse_int(p[1]);
+                let price = try parse_float(p[2]);
+                let amount = float(qty) * price;
+                set total = total + amount;
+                print(format("{:<14} {:>3} x {:>7.2f} = {:>9.2f}", p[0], qty, price, amount));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    print("----------------------------------------");
+    print(format("{:<14} {:>25.2f}", "total", total));
+    return ok();
+}

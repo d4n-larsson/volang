@@ -1,0 +1,23 @@
+record User {
+    age: int;
+}
+
+fn main() uses console {
+    let n = 3;
+    let p = 2.5;
+    let s = "ab";
+    let name = "al";
+    let user = new User { age: 3 };
+    let x = 3.14159;
+    print(format("{} items, {:.2f} each", n, p));
+    print(format("{:>5}|{:<5}|{:05}|{:+}|{:.6f}|{:x}|%", s, n, n, n, p, n));
+    print(format("{{{}}}", n));
+    print(format("{:5}|{:5}|{}|{}", s, n, true, p));
+    print(format("{} and {:.1f}", n, p));
+    print(format("hi {}, {}", name, user.age));
+    print(format("{:.2f} {:>8.3f}", x, x));
+    print(format("{} {} {:>5}", n, "a", n));
+    print(format("{:05}", n));
+    print(format("hi {}, {:>3}", name, n));
+    print("plain {x}");
+}
