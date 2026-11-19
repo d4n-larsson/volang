@@ -391,7 +391,10 @@
 #define B_SLEEP (81) /* spec 022: __sleep(ms), clock, std.time only */
 #define B_FORMAT (82) /* spec 024: format(template, args...) -> str; lowered by the compiler (cformat) */
 #define B_FMT_PIECE (83) /* spec 024: internal, unnamed: one placeholder's value by its packed spec (e.i) */
-#define B_LAST (83) /* the last builtin id with a btab entry */
+#define B_RE_COMPILE (84) /* spec 025: __re_compile(pattern) -> result[str] (group names), std.regex only */
+#define B_RE (85) /* spec 025: __re(op, pattern, text) -> list[int] (byte offsets) */
+#define B_RE_REPL (86) /* spec 025: __re_repl(pattern, replacement) -> list[int] (parts) */
+#define B_LAST (86) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -1377,9 +1380,26 @@ typedef struct FmtPiece {
 #define FS_PREC(s) ((s) >> 16 & 127)
 #define FS_RADIX(s) ((s) >> 23 & 3)
 extern Type *check_format_call(Node *call);
+extern long lit_decode(Node *lit, char **buf, long **offs);
+extern void check_regex_call(Node *call); /* src/check_regex.c (spec 025) */
 extern FmtPiece *fmt_new_piece(Str *text, long arg, long spec);
 extern Str *fmt_piece(long value, long kind, long spec); /* src/num.c */
 extern long exact_fixed(unsigned long bits, long prec, char *out); /* src/stdprim.c */
+/* src/regex.c (spec 025) */
+typedef struct ReErr {
+    long start, end; /* byte range in the pattern */
+    char *code;      /* E0319 or E0320 */
+    char *tmpl;      /* the message, $1 = pattern bytes as..ae (as < 0: no argument): re_err_text */
+    long as, ae;
+    char *fix;       /* replacement for the range, or 0 */
+    Str *msg;        /* replacement errors (re_repl_parse): the message itself */
+} ReErr;
+extern Str *re_err_text(char *pat, ReErr *e);
+extern long re_check(char *pat, long n, ReErr *err, Str **names);
+extern Variant *re_prim_compile(Str *p);
+extern List *re_prim(long op, Str *p, Str *s, Node *call);
+extern int re_repl_parse(char *r, long n, long ngroups, char *names, long names_len, ReErr *err, List *l);
+extern List *re_prim_repl(Str *p, Str *r, Node *call);
 extern Type *list_arg(Node *call);
 extern Type *map_arg(Node *call);
 extern Type *check_call(Node *call, Type *expected);

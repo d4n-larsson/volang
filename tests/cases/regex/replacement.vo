@@ -1,0 +1,14 @@
+import std.regex.regex;
+import std.regex.replace_all;
+
+fn main() uses console {
+    let s = "abc";
+    print(replace_all(regex("(a)"), s, "\\1"));
+    print(replace_all(regex("(?<x>a)"), s, "\\g<x>"));
+    print(replace_all(regex("(a)"), s, "$2"));
+    let re = regex("(a)");
+    print(replace_all(re, s, "[$2]"));
+    print(replace_all(re, s, "$x"));
+    print(replace_all(re, s, "${nope}"));
+    print(replace_all(re, s, "$1 costs $$5 ${1}0"));
+}

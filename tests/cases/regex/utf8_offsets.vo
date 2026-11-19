@@ -1,0 +1,22 @@
+import std.regex.regex;
+import std.regex.first_match;
+
+fn main() uses console {
+    let s = "é日本 x42 ü";
+    match first_match(regex("x(\\d+)"), s) {
+        case ok(m) {
+            print(str(m.start) + " " + str(m.end) + " " + m.groups[1] + " " + slice(s, m.start, m.end));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    match first_match(regex("本.x"), s) {
+        case ok(m) {
+            print(str(m.start) + " " + str(m.end) + " " + m.text);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

@@ -57,9 +57,9 @@ fn main() uses console {
 
 A string contains an escape other than \n, \t, \\ or \".
 
-Fixable: no
+Fixable: yes
 
-vo has only four escapes: `\n`, `\t`, `\\` and `\"`. A single backslash before any other character, as in a Windows path, is an error. Write a literal backslash as `\\`.
+vo has only four escapes: `\n`, `\t`, `\\` and `\"`. A single backslash before any other character, as in a Windows path or a regular expression, is an error. Write a literal backslash as `\\`: the pattern `\d+` is the string `"\\d+"`. The fix doubles the backslash.
 
 ### Example
 
@@ -1479,6 +1479,124 @@ fn main() uses console {
 fn main() uses console {
     let total = 12;
     print(format("{:.2f}", float(total)));
+}
+```
+
+## E0319 regex_pattern_invalid
+
+The pattern of `regex(...)` has a syntax error or is too large.
+
+Fixable: no
+
+The diagnostic points at the part of the pattern that is wrong: a group or class that is not closed, a quantifier with nothing before it, a reversed range or repetition, a `{` that does not start a repetition, a group name used twice. Patterns are limited (10,000 bytes, repetition counts up to 1,000, 20,000 instructions after repetitions, groups nested 200 deep) so that every pattern compiles and matches in bounded time and memory. Remember that the pattern is a vo string: a backslash is written `\\`.
+
+### Example
+
+```vo
+import std.regex.regex;
+
+fn main() uses console {
+    print(regex("(\\d+").pattern);
+}
+```
+
+### Fixed
+
+```vo
+import std.regex.regex;
+
+fn main() uses console {
+    print(regex("(\\d+)").pattern);
+}
+```
+
+## E0320 regex_unsupported
+
+The pattern uses a feature that vo's regular expressions do not have.
+
+Fixable: sometimes
+
+Every vo pattern runs in time linear in the text, so features that need backtracking are not available: backreferences (`\1`), lookahead and lookbehind (`(?=...)`, `(?<=...)`), atomic groups and possessive quantifiers. Match more, capture the parts, and check the rest in code. Unicode classes (`\p{L}`), anchors other than `^` and `$`, and comments are not supported either. Named groups are written `(?<name>...)`; the fix rewrites Python's `(?P<name>...)`.
+
+### Example
+
+```vo
+import std.regex.regex;
+
+fn main() uses console {
+    print(regex("(?P<year>\\d{4})").pattern);
+}
+```
+
+### Fixed
+
+```vo
+import std.regex.regex;
+
+fn main() uses console {
+    print(regex("(?<year>\\d{4})").pattern);
+}
+```
+
+## E0321 regex_not_literal
+
+`regex` is called with something other than a string literal.
+
+Fixable: no
+
+`regex` checks its pattern when the program is checked, so the pattern must be written in the call. For a pattern built at run time, such as one a user types, use `parse_regex(s)`, which returns a `result`: `err` when the pattern is not valid.
+
+### Example
+
+```vo
+import std.regex.regex;
+
+fn main() uses console {
+    let digits = "\\d+";
+    print(regex(digits).pattern);
+}
+```
+
+### Fixed
+
+```vo
+import std.regex.parse_regex;
+
+fn main() -> result[void] uses console {
+    let digits = "\\d+";
+    let re = try parse_regex(digits);
+    print(re.pattern);
+    return ok();
+}
+```
+
+## E0322 regex_replacement_invalid
+
+The replacement text of `replace_all` refers to a group in a way vo does not accept.
+
+Fixable: sometimes
+
+In a replacement, `$1` or `${1}` is group 1, `${name}` a named group and `$$` a dollar sign; any other `$` is an error, and so is a group the pattern does not have. Python's `\1` and `\g<name>` are not references in vo: the fix rewrites them to `$1` and `${name}`.
+
+### Example
+
+```vo
+import std.regex.regex;
+import std.regex.replace_all;
+
+fn main() uses console {
+    print(replace_all(regex("(\\w+)@(\\w+)"), "al@vo", "\\2 at \\1"));
+}
+```
+
+### Fixed
+
+```vo
+import std.regex.regex;
+import std.regex.replace_all;
+
+fn main() uses console {
+    print(replace_all(regex("(\\w+)@(\\w+)"), "al@vo", "$2 at $1"));
 }
 ```
 

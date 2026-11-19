@@ -1,0 +1,6 @@
+import std.regex.regex;
+
+fn main() uses console {
+    print(regex("(a{1000}){1000}").pattern);
+    print(regex("x{1001}").pattern);
+}

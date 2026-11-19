@@ -1,0 +1,21 @@
+import std.regex.parse_regex;
+import std.text.repeat;
+
+fn show(p: str) uses console {
+    match parse_regex(p) {
+        case ok(_) {
+            print("ok");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
+
+fn main() uses console {
+    show(repeat("a", 20000));
+    show("(a{1000}){1000}");
+    show(repeat("(", 201) + "a" + repeat(")", 201));
+    show(repeat("(", 200) + "a" + repeat(")", 200));
+    show("a{1000}");
+}

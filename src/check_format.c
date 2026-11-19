@@ -100,28 +100,39 @@ static Str *rewrite(Edit *e, long ne)
     return sb_finish(sb);
 }
 
-/* Decodes the source between the quotes of lit; 0 when it is not a plain one-line literal. */
-static int decode(Node *lit)
+/* Spec 025: decodes the source between the quotes of string literal lit, with the source offset of
+ * every decoded byte (offs[n] is the closing quote's); returns n, or -1 when lit is not a plain
+ * one-line literal. Shared by format templates and regex patterns. */
+long lit_decode(Node *lit, char **buf, long **offs)
 {
-    long s = lit->start, e = lit->end;
-    if (e - s < 2 || fsrc[s] != '"' || fsrc[e - 1] != '"') return 0;
-    fb = alloc(e - s + 1);
-    fo = alloc((e - s + 1) * 8);
-    fn = 0;
+    char *src = file_get((int)lit->file)->text;
+    long s = lit->start, e = lit->end, n = 0;
+    if (e - s < 2 || src[s] != '"' || src[e - 1] != '"') return -1;
+    char *b = alloc(e - s + 1);
+    long *o = alloc((e - s + 1) * 8);
     for (long i = s + 1; i < e - 1;) {
-        fo[fn] = i;
-        int c = (unsigned char)fsrc[i];
+        o[n] = i;
+        int c = (unsigned char)src[i];
         if (c == '\\' && i + 1 < e - 1) {
-            int n = (unsigned char)fsrc[i + 1];
-            fb[fn++] = (char)(n == 'n' ? '\n' : n == 't' ? '\t' : n);
+            int k = (unsigned char)src[i + 1];
+            b[n++] = (char)(k == 'n' ? '\n' : k == 't' ? '\t' : k);
             i += 2;
         } else {
-            fb[fn++] = (char)c;
+            b[n++] = (char)c;
             i++;
         }
     }
-    fo[fn] = e - 1;
-    return 1;
+    o[n] = e - 1;
+    *buf = b;
+    *offs = o;
+    return n;
+}
+
+/* Decodes the template literal into fb, fo, fn; 0 when it is not a plain one-line literal. */
+static int decode(Node *lit)
+{
+    fn = lit_decode(lit, &fb, &fo);
+    return fn >= 0;
 }
 
 /* Whether the template has a `{}` or `{:...}` placeholder (not counting `{{`). */

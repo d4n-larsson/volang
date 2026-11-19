@@ -31,6 +31,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [022](../specs/022-sleep/) | `std.time.sleep(ms)` under `clock`: real waits with the real clock, bounded by `--timeout`; with a fixed clock (`vo test`, `--clock-ms`) and in replay no wait, the clock moves on | **Done** ([results](../specs/022-sleep/results.md)) |
 | [023](../specs/023-hover-docs/) | Documentation on hover: `vo query type-at` adds the declared signature and the doc comment of the item at a position (`doc` in JSON, as `vo doc --json` prints it), for functions, records, variants, fields, cases, library items and builtins; `vo doc ENTRY NAME` for the program's own items | **Done** ([results](../specs/023-hover-docs/results.md)) |
 | [024](../specs/024-string-formatting/) | String formatting: the `format` builtin with checked `{}` placeholders (alignment, width, `+`, zero padding, thousands, fixed decimals, hex and binary), the same digits as Python; template mistakes and habits from C, Python and Go (`%d`, `{0}`, `{:.2}`, `f"..."`) are check errors with fixes | **Done** ([results](../specs/024-string-formatting/results.md)) |
+| [025](../specs/025-regular-expressions/) | Regular expressions: `std.regex` with compiled patterns (`regex("...")` checked by `vo check`, `parse_regex` for data), test, first and all matches with groups, replace with `$1`, split; linear-time matching (a Pike VM), Python's results for the supported syntax; pattern mistakes and Python habits are check errors with fixes, and `"\d"` (E0103) gets a fix | **Done** ([results](../specs/025-regular-expressions/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -219,6 +220,19 @@ counts, unsupported options and options on the wrong type are E0315-E0318; `%d` 
 - **Not done (on purpose):** interpolation, scientific notation (`e`), percentages, fill characters, `#`
   prefixes, debug printing of lists and records, locale-aware output, a `printf` that writes directly.
 
+### 025: regular expressions (done)
+
+`std.regex`: `regex("...")` compiles a literal pattern, checked by `vo check` (E0319-E0321, with spans
+inside the pattern), and `parse_regex(s)` one from data; `is_match`, `first_match` (groups, named
+groups, byte offsets), `all_matches`, `replace_all` (`$1`, `${name}`; E0322) and `split_on`. The engine
+is vo's own Pike VM: time linear in the text for every pattern, Python's leftmost-first results (100,000
+random patterns and texts, all three platforms), 10 MB of logs searched in half a second. Python's
+`(?P<name>`, `\1` in replacements and `"\d"` in any string (E0103) get fixes.
+
+- **Not done (on purpose):** lookaround and backreferences (they need backtracking), Unicode classes
+  and case folding (vo's text functions are ASCII), replacement by a function, matching over streams, a
+  regex literal syntax.
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -227,7 +241,6 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Gap | What is missing | Notes |
 |---|---|---|
 | Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; decides what matters next |
-| Regular expressions | `std.text` has `find`, `split`, `replace` only | linear-time matching only (no backtracking) |
 | TCP and UDP | only HTTP reaches the network | scoped like `net` and `serve` |
 | macOS | Linux only (x86-64, ARM64, RISC-V) | the raw-syscall, no-libc design makes this a real port |
 | Downloading packages | packages are local and pinned by hash, never fetched | spec 007 follow-up; HTTPS exists since spec 019 |

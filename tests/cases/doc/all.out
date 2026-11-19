@@ -110,3 +110,4 @@ modules:
   std.process Running other programs to their end, with no shell (needs process).
   std.math Square roots, powers, logarithms, trigonometry and rounding to int, correctly rounded.
   std.bytes Conversions of binary data with text, integers, hex and base64, and standard input and output as bytes.
+  std.regex Regular expressions that run in linear time: test, find, replace and split with compiled patterns.

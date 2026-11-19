@@ -1,0 +1,25 @@
+import std.regex.regex;
+import std.regex.first_match;
+
+fn main() uses console {
+    let line = "2026-11-19 12:04:55 ERROR disk full (sda1)";
+    let re = regex("(\\d{4})-(\\d{2})-(\\d{2}) \\S+ (?<level>ERROR|WARN)");
+    match first_match(re, line) {
+        case ok(m) {
+            print(join(m.groups, "|"));
+            print(str(m.start) + " " + str(m.end) + " " + str(slice(line, m.start, m.end) == m.text));
+            print(m.named["level"] + " " + str(len(m.named)));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    match first_match(regex("\\((\\w+)\\)"), line) {
+        case ok(m) {
+            print(m.groups[1]);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

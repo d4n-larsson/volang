@@ -1,0 +1,157 @@
+# std.regex: Regular expressions that run in linear time: test, find, replace and split with compiled patterns.
+# Part of the vo standard library (spec 025). Import items one by one: `import std.regex.NAME;`.
+# Patterns are vo strings, so a backslash is written twice: the pattern \d+ is "\\d+". Every operation
+# searches anywhere in the text; ^ and $ anchor. \d \w \s \b and (?i) are ASCII; offsets are bytes.
+
+# A compiled pattern: make one with regex("...") or parse_regex(s), and reuse it.
+#     regex("a+").pattern is "a+"
+export record Regex {
+    # The pattern text.
+    pattern: str;
+}
+
+# One match: its text, its byte offsets and its groups (group 0 is the whole match).
+#     new Match { text: "", start: 0, end: 0, groups: [""], took_part: [true], named: new map[str, str] }.end is 0
+export record Match {
+    # The matched text: slice(s, m.start, m.end).
+    text: str;
+    # The byte offset where the match starts.
+    start: int;
+    # The byte offset after the match.
+    end: int;
+    # Group 0 (the whole match), then groups 1..n by opening parenthesis; "" for a group that did not take part.
+    groups: list[str];
+    # Whether each group took part in the match, indexed as groups.
+    took_part: list[bool];
+    # The text of each named group (?<name>...) by name; "" when it did not take part.
+    named: map[str, str];
+}
+
+# The pattern as a Regex. The pattern must be a string literal: vo check checks it (E0319, E0320, E0321).
+#     is_match(regex("^[a-z]+$"), "abc") is true
+export fn regex(pattern: str) -> Regex {
+    return new Regex { pattern: pattern };
+}
+
+# The pattern as a Regex, for a pattern built at run time; err("at byte N: ...") when it is not valid.
+#     parse_regex("a(") == err("at byte 1: The group is not closed: add `)`.") is true
+export fn parse_regex(pattern: str) -> result[Regex] {
+    let _ = try __re_compile(pattern);
+    return ok(new Regex { pattern: pattern });
+}
+
+# Whether the pattern matches anywhere in s.
+#     is_match(regex("\\d"), "a1") is true
+export fn is_match(re: Regex, s: str) -> bool {
+    return len(__re(1, re.pattern, s)) > 0;
+}
+
+fn group_names(re: Regex) -> list[str] {
+    # The names of the pattern's groups 1..n ("" for an unnamed group).
+    match __re_compile(re.pattern) {
+        case ok(text) {
+            let parts = split(text, "\n");
+            return slice(parts, 0, len(parts) - 1);
+        }
+        case err(_) {
+            return new list[str];
+        }
+    }
+}
+
+fn build_match(s: str, offs: list[int], base: int, names: list[str]) -> Match {
+    # The match whose offsets start at offs[base]: 2 per group, -1 for a group that did not take part.
+    var groups = new list[str];
+    var took = new list[bool];
+    var named = new map[str, str];
+    for g in 0..len(names) + 1 {
+        let a = offs[base + 2 * g];
+        if a < 0 {
+            push(groups, "");
+            push(took, false);
+        } else {
+            push(groups, slice(s, a, offs[base + 2 * g + 1]));
+            push(took, true);
+        }
+        if g > 0 and names[g - 1] != "" {
+            set named[names[g - 1]] = groups[g];
+        }
+    }
+    return new Match { text: groups[0], start: offs[base], end: offs[base + 1], groups: groups, took_part: took, named: named };
+}
+
+# The leftmost match in s, with its groups; err("no match") when there is none.
+#     first_match(regex("b+"), "abbc") == ok(new Match { text: "bb", start: 1, end: 3, groups: ["bb"], took_part: [true], named: new map[str, str] }) is true
+export fn first_match(re: Regex, s: str) -> result[Match] {
+    let offs = __re(2, re.pattern, s);
+    if len(offs) == 0 {
+        return err("no match");
+    }
+    return ok(build_match(s, offs, 0, group_names(re)));
+}
+
+# Every match in s, left to right, without overlapping (an empty match may follow a non-empty one, as in Python).
+#     len(all_matches(regex("\\d+"), "1 22 333")) is 3
+export fn all_matches(re: Regex, s: str) -> list[Match] {
+    let offs = __re(3, re.pattern, s);
+    let names = group_names(re);
+    let per = 2 * (len(names) + 1);
+    var out = new list[Match];
+    for k in 0..len(offs) / per {
+        push(out, build_match(s, offs, k * per, names));
+    }
+    return out;
+}
+
+# s with every match replaced: $1 or ${1} is group 1, ${name} a named group, $$ a dollar sign (anything else after $ is R0007).
+#     replace_all(regex("(\\d+)-(\\d+)"), "10-20", "$2-$1") is "20-10"
+export fn replace_all(re: Regex, s: str, replacement: str) -> str {
+    let parts = __re_repl(re.pattern, replacement);
+    let offs = __re(3, re.pattern, s);
+    let per = 2 * (len(group_names(re)) + 1);
+    var out = new list[str];
+    var last = 0;
+    for k in 0..len(offs) / per {
+        let base = k * per;
+        push(out, slice(s, last, offs[base]));
+        for i in 0..len(parts) / 3 {
+            let g = parts[3 * i];
+            if g < 0 {
+                push(out, slice(replacement, parts[3 * i + 1], parts[3 * i + 2]));
+            } else if offs[base + 2 * g] >= 0 {
+                push(out, slice(s, offs[base + 2 * g], offs[base + 2 * g + 1]));
+            }
+        }
+        set last = offs[base + 1];
+    }
+    push(out, slice(s, last, len(s)));
+    return join(out, "");
+}
+
+# The parts of s between matches (n matches give n + 1 parts), as Python's re.split.
+#     split_on(regex("\\s*,\\s*"), "a , b,c") == ["a", "b", "c"] is true
+export fn split_on(re: Regex, s: str) -> list[str] {
+    let offs = __re(3, re.pattern, s);
+    let per = 2 * (len(group_names(re)) + 1);
+    var out = new list[str];
+    var last = 0;
+    for k in 0..len(offs) / per {
+        push(out, slice(s, last, offs[k * per]));
+        set last = offs[k * per + 1];
+    }
+    push(out, slice(s, last, len(s)));
+    return out;
+}
+
+# s with a backslash before each character that has a meaning in a pattern, so parse_regex(escape(s)) matches s itself.
+#     escape("1+1=2?") is "1\\+1=2\\?"
+export fn escape(s: str) -> str {
+    var out = new list[str];
+    for c in chars(s) {
+        if find(".^$*+?()[]{}|\\-", c) >= 0 {
+            push(out, "\\");
+        }
+        push(out, c);
+    }
+    return join(out, "");
+}

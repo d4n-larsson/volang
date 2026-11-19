@@ -1,0 +1,6 @@
+timeout.vo:10:15: runtime error[R0009]: Time limit of 1 s exceeded.
+  10 |     print(str(is_match(regex("(a|aa)*c"), text)));
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at is_match (timeout.vo:10:15)
+  at main (timeout.vo:10:15)

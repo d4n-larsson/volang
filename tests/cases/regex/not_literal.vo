@@ -1,0 +1,6 @@
+import std.regex.regex;
+
+fn main() uses console {
+    let p = "a";
+    print(regex(p).pattern);
+}

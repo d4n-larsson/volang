@@ -1070,6 +1070,7 @@ fn main() uses console {
 | std.process | `run`, `run_with` (and `run_bytes`, `run_with_bytes`): run a program to its end, no shell (process) |
 | std.bytes | `from_text`, `to_text`, `from_ints`, `to_ints`, hex, base64, `read_stdin`, `write_stdout` |
 | std.math | `sqrt`, `pow`, `exp`, `log`, trigonometry, `pi`; `floor`, `ceil`, `round` to `int` (correctly rounded; out of domain is R0007) |
+| std.regex | `regex("...")` (checked by `vo check`), `parse_regex`, `is_match`, `first_match`, `all_matches`, `replace_all` (`$1`), `split_on`: linear time; write `\\d` for `\d` |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
 - `https://` URLs are verified: the server's certificate must lead to an authority in the machine's trust store (or a file given with `--ca-file`), be valid now and name the host; otherwise `get`/`post` return an `err` saying why (`vo doc std.http.get` lists them). Nothing turns verification off. TLS 1.3 and 1.2 only; `--clock-ms` does not affect certificate dates. A recording keeps requests and responses, never keys; replay needs no network.

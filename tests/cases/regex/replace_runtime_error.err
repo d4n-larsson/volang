@@ -1,0 +1,8 @@
+replace_runtime_error.vo:6:11: runtime error[R0007]: The pattern has no group 9.
+   6 |     print(replace_all(regex("(a)"), "a", template));
+     |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at replace_all (replace_runtime_error.vo:6:11)
+      re: Regex = new Regex { pattern: "(a)" }, s: str = "a", replacement: str = "$9"
+  at main (replace_runtime_error.vo:6:11)
+      template: str = "$9"

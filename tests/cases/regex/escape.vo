@@ -1,0 +1,12 @@
+import std.regex.escape;
+import std.regex.parse_regex;
+import std.regex.is_match;
+import std.regex.all_matches;
+
+fn main() -> result[void] uses console {
+    print(escape("1+1=2?"));
+    let s = "a.b*c(d)[e]{f}|g^h$i\\j-k";
+    let re = try parse_regex(escape(s));
+    print(str(is_match(re, s)) + " " + str(len(all_matches(re, s + s))));
+    return ok();
+}

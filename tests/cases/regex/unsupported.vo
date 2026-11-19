@@ -1,0 +1,10 @@
+import std.regex.regex;
+import std.regex.Regex;
+
+fn patterns() -> list[Regex] {
+    return [regex("(?=x)"), regex("(?!x)"), regex("(?<=x)"), regex("(?<!x)"), regex("(a)\\1"), regex("\\k<n>"), regex("(?>a)"), regex("a*+"), regex("\\p{L}"), regex("\\A"), regex("(?#c)"), regex("(?P<y>a)"), regex("(?x)a")];
+}
+
+fn main() uses console {
+    print(str(len(patterns())));
+}

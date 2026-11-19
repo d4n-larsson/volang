@@ -1,0 +1,7 @@
+import std.regex.regex;
+import std.regex.replace_all;
+
+fn main() uses console {
+    let template = "$" + "9";
+    print(replace_all(regex("(a)"), "a", template));
+}

@@ -82,7 +82,11 @@ Each property is a claim the review must try to break; each break is a finding.
 - **S5 Bounded resources.** Time (`--timeout`, default 10 s, per request for servers), live memory
   (`--max-memory`), stack depth, HTTP responses (16 MiB), server requests (head 64 KiB, 100 headers, body
   16 MiB, 10 s to arrive) are limited, and reaching a limit is a reported error. `--timeout 0` turns the
-  time limit off on purpose.
+  time limit off on purpose. Regular expressions (spec 025) are safe on hostile patterns and texts:
+  matching never backtracks, so its time is linear in the text for every pattern (and stops at
+  `--timeout`), and a pattern from data (`parse_regex`) is bounded (10,000 bytes, repetition counts up to
+  1,000, 20,000 instructions after repetitions, groups nested 200 deep) or refused with an `err`; the
+  compiled patterns are kept in a cache of 16.
 - **S6 Commands that do not run programs are safe on hostile source.** `vo check`, `fmt`, `doc`, `query`,
   `explain`, `effects`, `package` and `edit` never execute program code, and write only what they
   document (`fmt` and `edit`: the program's files; `effects --update`: `vo.effects`; `package`:

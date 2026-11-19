@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 83 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 86 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -40,6 +40,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__bytes_b64", "__bytes_unb64", "__stdin_bytes", "__stdout_bytes", "__fsb", "__run_bytes", "__raw_text", /* spec 021 */
     "__sleep", /* spec 022 */
     "format", 0, /* spec 024: format; 83 the internal piece */
+    "__re_compile", "__re", "__re_repl", /* spec 025 */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -54,6 +55,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [66] = "iff>f", [67] = "if>i", /* spec 020: __math, __math_int */
     [68] = "s>y",   [69] = "y>r",  [70] = "I>y",  [71] = "y>I",  [72] = "y>s",  [73] = "s>Y",
     [74] = "y>s",   [75] = "s>Y",  [76] = ">y",   [77] = "y>v",  [78] = "isy>Y", [79] = "SyS>Y", [80] = "y>s", [81] = "i>v", /* spec 021: y bytes, Y result[bytes], I list[int] */
+    [84] = "s>r", [85] = "iss>I", [86] = "ss>I", /* spec 025: __re_compile, __re, __re_repl */
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."
@@ -447,6 +449,7 @@ Type *check_call(Node *call, Type *expected)
                     check_arg(call, i, p->type);
                     ck_exp_tnode = 0;
                 }
+                if (file_get((int)call->c.n->file)->std) check_regex_call(call); /* spec 025 */
             }
             return call->c.n->type;
         }

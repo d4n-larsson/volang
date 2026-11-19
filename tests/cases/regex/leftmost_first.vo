@@ -1,0 +1,25 @@
+import std.regex.regex;
+import std.regex.first_match;
+import std.regex.Match;
+
+fn show(r: result[Match]) uses console {
+    match r {
+        case ok(m) {
+            print("[" + join(m.groups, "|") + "] " + str(m.start));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
+
+fn main() uses console {
+    show(first_match(regex("a|ab"), "ab"));
+    show(first_match(regex("a*?"), "aaa"));
+    show(first_match(regex("(a+)(a*)"), "aaa"));
+    show(first_match(regex("(a+?)(a*)"), "aaa"));
+    show(first_match(regex("x*"), "aaa"));
+    show(first_match(regex("(a|ab)(c|bcd)(d*)"), "abcd"));
+    show(first_match(regex("(a|)*"), "aa"));
+    show(first_match(regex("(?:(a)|b)*"), "ab"));
+}

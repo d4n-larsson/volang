@@ -489,9 +489,50 @@ The neighbor functions return a `result` because there may be no such key. Detai
 [std.collections](../std/collections.md) and the [collections](collections.md) chapter; the
 [help-desk example](../examples/helpdesk.md) uses all four collections.
 
+## std.regex
+
+Regular expressions with the syntax agents know from Python and JavaScript: classes, `\d \w \s \b`,
+greedy and lazy quantifiers, numbered and named groups `(?<name>...)`, alternation, and the flags
+`(?i)`, `(?m)`, `(?s)`. Every pattern runs in time linear in the text, so a pattern a user types cannot
+hang the program; lookaround and backreferences, which need backtracking, are not supported. A pattern
+is a vo string, so its backslashes are doubled: the pattern `\d+` is written `"\\d+"`.
+
+```vo
+import std.regex.regex;
+import std.regex.is_match;
+import std.regex.first_match;
+import std.regex.replace_all;
+
+fn main() uses console {
+    let id = regex("^[A-Z]{3}-\\d{4}$");
+    print(str(is_match(id, "ABC-1234")) + " " + str(is_match(id, "ABC-12")));
+    let log = regex("(\\d{4})-(\\d{2})-(\\d{2}) (?<level>ERROR|WARN)");
+    match first_match(log, "2026-11-19 ERROR disk full") {
+        case ok(m) {
+            print(m.groups[1] + " " + m.named["level"] + " at byte " + str(m.start));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    print(replace_all(regex("(\\d{2})/(\\d{2})/(\\d{4})"), "due 19/11/2026", "$3-$2-$1"));
+}
+```
+
+```output
+true false
+2026 ERROR at byte 0
+due 2026-11-19
+```
+
+`regex("...")` takes a string literal, and `vo check` checks the pattern: a group that is not closed, a
+lookahead or Python's `(?P<name>...)` is reported at its place in the pattern, with a fix where there is
+one. For a pattern built at run time, `parse_regex(s)` returns `err` instead. Every operation searches
+anywhere in the text: anchor with `^` and `$`. Details: [std.regex](../std/regex.md).
+
 ## What is not in the library
 
-There are no regular expressions, no serving over HTTPS (run a vo server behind a proxy for that), no threads, no long-running or interactive child
+There is no serving over HTTPS (run a vo server behind a proxy for that), no threads, no long-running or interactive child
 processes, no file permissions, links or modification times, and no way to call code in another
 language. A program that needs such a thing gets it from outside, for example by running a tool with
 `std.process`, or by talking HTTP to a local service. Shared vo code that is not in the library comes in as a

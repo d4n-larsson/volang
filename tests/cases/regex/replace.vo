@@ -1,0 +1,13 @@
+import std.regex.regex;
+import std.regex.replace_all;
+
+fn main() uses console {
+    print(replace_all(regex("\\s+"), "a  b\t\tc", " "));
+    print(replace_all(regex("(\\d{2})/(\\d{2})/(\\d{4})"), "19/11/2026 and 01/02/2003", "$3-$2-$1"));
+    print(replace_all(regex("(\\d+)"), "5 and 7", "$$$1"));
+    print(replace_all(regex("(\\d)"), "1 2", "${1}0"));
+    print(replace_all(regex("(?<word>[a-z]+)"), "hi vo", "<${word}>"));
+    print(replace_all(regex("^\\d{12}(\\d{4})$"), "1234567812345678", "************$1"));
+    print(replace_all(regex("(a)|b"), "ab", "[$1]"));
+    print(replace_all(regex("z"), "abc", "-"));
+}

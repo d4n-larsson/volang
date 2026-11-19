@@ -1,0 +1,13 @@
+import std.regex.regex;
+import std.regex.first_match;
+
+fn main() uses console {
+    match first_match(regex("\\d"), "no digits here") {
+        case ok(m) {
+            print("found " + m.text);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

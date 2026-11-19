@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0319","name":"regex_pattern_invalid","severity":"error","file":"limits_check.vo","start":{"line":4,"col":18},"end":{"line":4,"col":33},"text":"(a{1000}){1000}","message":"Pattern is too large (more than 20000 instructions after repetitions).","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0319","name":"regex_pattern_invalid","severity":"error","file":"limits_check.vo","start":{"line":5,"col":19},"end":{"line":5,"col":25},"text":"{1001}","message":"Repetition count above 1000.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

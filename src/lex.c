@@ -262,8 +262,9 @@ Token *lex(int file)
                 long k = utf8_seq_len(text + pos + 1, len - (pos + 1)); /* unknown escape: report \x */
                 if (k == 0) k = 1;
                 long esc_end = pos + 1 + k;
-                lx_err("E0103", pos, esc_end,
-                       msg("Unknown escape sequence `$1`. Use \\n, \\t, \\\\ or \\\".", lx_slice(pos, esc_end), 0, 0));
+                Diag *d = lx_err("E0103", pos, esc_end,
+                                 msg("Unknown escape sequence `$1`. Use \\n, \\t, \\\\ or \\\".", lx_slice(pos, esc_end), 0, 0));
+                diag_add_fix(d, (int)lx_file, pos, pos, str_from_cstr("\\")); /* spec 025: a literal backslash */
                 pos = esc_end;
             }
             continue;

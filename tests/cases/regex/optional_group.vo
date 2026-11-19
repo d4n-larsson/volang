@@ -1,0 +1,21 @@
+import std.regex.regex;
+import std.regex.first_match;
+import std.regex.Match;
+
+fn show(r: result[Match]) uses console {
+    match r {
+        case ok(m) {
+            print("[" + join(m.groups, "|") + "] " + str(m.took_part[1]));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
+
+fn main() uses console {
+    let re = regex("(a)?b");
+    show(first_match(re, "b"));
+    show(first_match(re, "ab"));
+    show(first_match(regex("(x)|(y)"), "y"));
+}

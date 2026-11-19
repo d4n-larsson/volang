@@ -1,0 +1,9 @@
+import std.regex.regex;
+import std.regex.split_on;
+
+fn main() uses console {
+    print(join(split_on(regex("\\s*,\\s*"), "a , b,c"), "|"));
+    print(join(split_on(regex(";"), "no separator"), "|"));
+    print(join(split_on(regex(","), ",a,b,"), "|"));
+    print(str(len(split_on(regex(","), ""))));
+}

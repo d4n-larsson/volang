@@ -1,0 +1,11 @@
+import std.regex.regex;
+import std.regex.is_match;
+
+fn main() uses console {
+    var text = "a";
+    for i in 0..25 {
+        set text = text + text;
+    }
+    print(str(len(text)));
+    print(str(is_match(regex("(a|aa)*c"), text)));
+}
