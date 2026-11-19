@@ -237,8 +237,8 @@ before-and-after example runs and the after version checks with no warnings.
   rerunning the experiment (noted in results.md as follow-up).
 - [X] T028 `make lint`; `make instrumented`; the stress build over `tests/cases/structure`
   (`tests/run.sh --stress 64 tests/cases/structure`).
-- [ ] T029 `make test` on x86-64, then `make ARCH=aarch64 test` and `make ARCH=riscv64 test`, one at a time.
-- [ ] T030 Fill in `results.md`; spec status Implemented; every task [X].
+- [X] T029 `make test` on x86-64, then `make ARCH=aarch64 test` and `make ARCH=riscv64 test`, one at a time.
+- [X] T030 Fill in `results.md`; spec status Implemented; every task [X].
 
 ---
 

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-19
 
-**Status**: Draft (clarified 2026-11-19: accepted warnings are annotated with a reason)
+**Status**: Implemented (clarified 2026-11-19: accepted warnings are annotated with a reason)
 
 **Input**: User description: "Application structure standards: vo recommends, and checks, how to
 structure a program, following DRY and other generally accepted principles, adapted to vo's effects.
