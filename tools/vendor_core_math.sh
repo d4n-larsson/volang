@@ -1,5 +1,6 @@
 #!/bin/sh
-# Vendors CORE-MATH into third_party/core-math (spec 020 research R1, R8; constitution 1.4.1).
+# Vendors CORE-MATH into third_party/core-math (spec 020 research R1, R8; constitution 1.4.1; spec 026 adds
+# log10, log2 and the hyperbolic functions for SQLite's math functions).
 #
 #   tools/vendor_core_math.sh COMMIT     fetch the kept files at COMMIT, apply patches/, write VENDOR.md
 #   tools/vendor_core_math.sh --verify   check the files against VENDOR.md (patches reversed)
@@ -13,20 +14,29 @@ DEST=$ROOT/third_party/core-math
 FILES="
 LICENSE
 src/binary64/acos/acos.c
+src/binary64/acosh/acosh.c
 src/binary64/asin/asin.c
+src/binary64/asinh/asinh.c
 src/binary64/atan/atan.c
 src/binary64/atan2/atan2.c
 src/binary64/atan2/tint.h
+src/binary64/atanh/atanh.c
 src/binary64/cos/cos.c
+src/binary64/cosh/cosh.c
 src/binary64/exp/exp.c
 src/binary64/log/dint.h
 src/binary64/log/log.c
+src/binary64/log10/dint.h
+src/binary64/log10/log10.c
+src/binary64/log2/log2.c
 src/binary64/pow/dint.h
 src/binary64/pow/pow.c
 src/binary64/pow/pow.h
 src/binary64/pow/qint.h
 src/binary64/sin/sin.c
+src/binary64/sinh/sinh.c
 src/binary64/tan/tan.c
+src/binary64/tanh/tanh.c
 "
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT

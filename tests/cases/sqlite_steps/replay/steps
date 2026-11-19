@@ -1,0 +1,8 @@
+mkdir data
+vo run --record rec.jsonl app.vo
+rm data/app.db
+vo replay rec.jsonl
+cp changed.vo app.vo
+vo replay rec.jsonl
+cp params.vo app.vo
+vo replay rec.jsonl

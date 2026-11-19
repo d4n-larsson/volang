@@ -29,6 +29,7 @@ long sys_start(void)
 void vo_exit(int code)
 {
     if (task_depth) task_exit(code); /* spec 016: a task's end of the program is the parent's to do */
+    sql_close_since(0); /* spec 026: every database closed (an open transaction rolls back) */
     code = (int)exit_hooks(code); /* spec 006: completes the trace and the recording; may change the status */
     out_flush();
     vo_syscall1(SYS_exit_group, code);

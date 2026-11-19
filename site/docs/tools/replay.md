@@ -1,6 +1,6 @@
 # vo replay
 
-`vo replay` runs a program again on exactly what a recorded run received, its arguments, input, files, variables, HTTP traffic, clock and seed, without reading or writing anything outside.
+`vo replay` runs a program again on exactly what a recorded run received, its arguments, input, files, variables, HTTP traffic, database results, clock and seed, without reading or writing anything outside.
 
 ## Synopsis
 
@@ -20,7 +20,9 @@ made the old one fail.
   file, variable or HTTP request: host, port, method or path) stops with [R0014](../errors/R0014.md).
   Reading less than was recorded is fine.
 - Writes are not performed: `write_file` returns the recorded result. A server opens no port: it gets the
-  recorded requests again, and each response that changed is a note.
+  recorded requests again, and each response that changed is a note. Databases are not opened: each
+  `std.sqlite` call must be the recorded one (statement, parameters and connection) and returns the
+  recorded rows or error, so the database file need not exist.
 - Effects are still checked against the grant; a read the recorded run was denied is denied again
   ([R0010](../errors/R0010.md)).
 

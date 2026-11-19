@@ -53,5 +53,9 @@
 #define SYS_setpgid 109
 #define SYS_fchdir 81
 #define SYS_close_range 436
+#define SYS_pread64 17 /* spec 026: SQLite's file layer (src/sqlite_vfs.c) */
+#define SYS_pwrite64 18
+#define SYS_fsync 74
+#define SYS_ftruncate 77
 
 #endif

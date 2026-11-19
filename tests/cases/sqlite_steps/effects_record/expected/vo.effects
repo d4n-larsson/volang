@@ -1,0 +1,5 @@
+# vo effects record: update with `vo effects --update`
+main.vo:add uses file.read, file.write
+main.vo:main uses console, file.read, file.write
+main.vo:names uses file.read, file.write
+main.vo:scratch pure

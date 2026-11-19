@@ -1,0 +1,64 @@
+# Damaged database files are err("corrupt: ..."), never a crash: a file that is not a database, and
+# a database cut in half.
+import std.sqlite.open;
+import std.sqlite.sql;
+import std.sqlite.exec;
+import std.sqlite.query;
+import std.sqlite.close;
+import std.sqlite.Database;
+import std.sqlite.Row;
+import std.sqlite.Value;
+import std.fs.read_bytes;
+import std.fs.write_bytes;
+import std.bytes.from_ints;
+
+fn show(r: result[list[Row]]) -> str {
+    match r {
+        case ok(rows) {
+            return "ok " + str(len(rows));
+        }
+        case err(e) {
+            return "err " + e;
+        }
+    }
+}
+
+fn noise() -> bytes {
+    var xs = new list[int];
+    var x = 7;
+    for i in 0..4096 {
+        set x = (x * 1103515245 + 12345) % 2147483648;
+        push(xs, x % 256);
+    }
+    return from_ints(xs);
+}
+
+fn main() -> result[void] uses console, file.read, file.write {
+    try write_bytes("noise.db", noise());
+    match open("noise.db") {
+        case ok(db) {
+            print("noise: " + show(query(db, sql("select * from sqlite_schema"), new list[Value])));
+        }
+        case err(e) {
+            print("noise: open err " + e);
+        }
+    }
+
+    let db = try open("whole.db");
+    let _ = try exec(db, sql("create table t(x text)"), new list[Value]);
+    for i in 0..400 {
+        let _ = try exec(db, sql("insert into t values (?)"), [Value.text("row number " + str(i) + " with some padding text")]);
+    }
+    close(db);
+    let whole = try read_bytes("whole.db");
+    try write_bytes("half.db", slice(whole, 0, len(whole) / 2));
+    match open("half.db") {
+        case ok(half) {
+            print("half: " + show(query(half, sql("select count(*) as n, max(x) as m from t"), new list[Value])));
+        }
+        case err(e) {
+            print("half: open err " + e);
+        }
+    }
+    return ok();
+}

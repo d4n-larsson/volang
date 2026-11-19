@@ -1,0 +1,18 @@
+# The run stops (R0007) inside a transaction: nothing it inserted is kept.
+import std.sqlite.open;
+import std.sqlite.sql;
+import std.sqlite.exec;
+import std.sqlite.transaction;
+import std.sqlite.Database;
+import std.sqlite.Value;
+
+fn main() -> result[void] uses console, file.read, file.write {
+    let db = try open("app.db");
+    let r = transaction(db, fn() -> result[int] {
+        let _ = try exec(db, sql("insert into t values (2)"), new list[Value]);
+        let _ = try exec(new Database { id: 63 }, sql("insert into t values (3)"), new list[Value]);
+        return ok(0);
+    });
+    print("not reached " + str(r == ok(0)));
+    return ok();
+}

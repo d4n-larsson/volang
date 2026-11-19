@@ -1,0 +1,20 @@
+import std.sqlite.open_memory;
+import std.sqlite.open;
+import std.sqlite.sql;
+import std.sqlite.exec;
+import std.sqlite.query;
+import std.sqlite.Statement;
+import std.sqlite.Value;
+
+fn statements(name: str) -> list[Statement] {
+    return [sql("selec * from items"), sql("select 'abc from t"), sql("select # from t"), sql("select * from"), sql(name), sql("select 1 " + name), sql("create table a(x); create table b(y)"), sql("select * from t where id = :id and k = :k"), sql("select ?1, ?2"), sql("select @a, @a"), sql("select random()"), sql("select randomblob(4)"), sql("select current_timestamp"), sql("select datetime('now')"), sql("pragma temp_store_directory = '/tmp'"), sql("pragma journal_mode = WAL"), sql("pragma foreign_keys = off"), sql("select * from no_such_table")];
+}
+
+fn main() -> result[void] uses console, file.read, file.write {
+    let db = open_memory();
+    let _ = try exec(db, sql("insert into t values (?, ?)"), [Value.integer(1), Value.integer(2), Value.integer(3)]);
+    let _ = try query(db, sql("select ?"), new list[Value]);
+    let _ = try open(":memory:");
+    print(str(len(statements("x"))));
+    return ok();
+}

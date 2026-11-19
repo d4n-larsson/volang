@@ -1,0 +1,9 @@
+forged_handle.vo:12:12: runtime error[R0010]: file.read is not allowed: `sneak` declares nothing (pure).
+  12 |     return query(new Database { id: 0 }, sql("select name from people"), new list[Value]);
+     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at query (forged_handle.vo:12:12)
+      db: Database = new Database { id: 0 }, st: Statement = new Statement { text: "select name from people" }, params: list[Value] = []
+  at sneak (forged_handle.vo:12:12)
+  at main (forged_handle.vo:18:23)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }

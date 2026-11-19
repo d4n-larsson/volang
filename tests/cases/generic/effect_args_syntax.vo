@@ -1,0 +1,32 @@
+record Conn[E: effects] {
+    id: int;
+}
+
+record Pair[A, B] {
+    first: A;
+    second: B;
+}
+
+record Two[T, E: effects] {
+    v: T;
+}
+
+fn first(c: Conn[console]) -> int {
+    return c.id;
+}
+
+fn second(p: Pair[int, uses console]) -> int {
+    return p.first;
+}
+
+fn third(t: Two[uses console, int]) -> int {
+    return t.v;
+}
+
+fn fourth(x: Conn[uses net]) -> int {
+    return x.id;
+}
+
+fn main() uses console {
+    print(str(fourth(new Conn[uses console] { id: 1 })));
+}

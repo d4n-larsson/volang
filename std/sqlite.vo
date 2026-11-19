@@ -1,0 +1,307 @@
+# std.sqlite: SQLite databases in files (file.read, file.write) or in memory (no effect), with checked statements and ? parameters.
+# Part of the vo standard library (spec 026). Import items one by one: `import std.sqlite.NAME;`.
+# A database's type names the effects it was opened with, and using it needs them: open gives a
+# Database[uses file.read, file.write], open_readonly a Database[uses file.read], open_memory a Database.
+# Statements are literals, sql("..."), checked by vo check; values are ? parameters, never part of the text.
+# Changed SQLite defaults: foreign keys are enforced, and "x" is always a name (strings are 'x').
+
+# An open database: from open, open_readonly or open_memory; close it with close.
+#     open_memory().id >= 0 is true
+export record Database[E: effects] {
+    # The connection's number (a Database built by hand is refused when used).
+    id: int;
+}
+
+# One SQL statement with ? parameters: sql("...") (checked by vo check) or parse_sql(s).
+#     sql("select 1").text is "select 1"
+export record Statement {
+    # The SQL text.
+    text: str;
+}
+
+# A parameter or column value.
+#     Value.integer(1) == Value.integer(1) is true
+export variant Value {
+    # An INTEGER.
+    integer(int);
+    # A REAL.
+    real(float);
+    # TEXT (valid UTF-8; other text comes back as a blob).
+    text(str);
+    # A BLOB.
+    blob(bytes);
+    # NULL.
+    null;
+}
+
+# One result row: its column names and values, in the statement's column order.
+#     new Row { columns: ["x"], values: [Value.null] }.columns[0] is "x"
+export record Row {
+    # The column names (AS names where given).
+    columns: list[str];
+    # The values, one per column.
+    values: list[Value];
+}
+
+# What a changing statement did: the rows it changed and the row id of the last row it inserted (0 if it inserted none).
+#     new Changes { changed: 1, last_id: 0 }.changed is 1
+export record Changes {
+    # The rows inserted, updated or deleted.
+    changed: int;
+    # The row id of the last row this statement inserted, or 0.
+    last_id: int;
+}
+
+# Opens the database file at path for reading and writing, creating it if missing (needs file.read and file.write).
+#     open("no-such-dir/x.db") == err("error: unable to open database file") is true
+export fn open(path: str) -> result[Database[uses file.read, file.write]] uses file.read, file.write {
+    let id = try __sql_open(path, 0);
+    return ok(new Database[uses file.read, file.write] { id: id });
+}
+
+# Opens the database file at path for reading only (needs file.read); changing statements return err("readonly: ...").
+#     open_readonly("no-such-file.db") == err("error: unable to open database file") is true
+export fn open_readonly(path: str) -> result[Database[uses file.read]] uses file.read {
+    let id = try __sql_open(path, 1);
+    return ok(new Database[uses file.read] { id: id });
+}
+
+# A new, empty in-memory database of this program alone: no file, no effect.
+#     open_memory().id >= 0 is true
+export fn open_memory() -> Database {
+    match __sql_open("", 2) {
+        case ok(id) {
+            return new Database { id: id };
+        }
+        case err(_) {
+            return new Database { id: -1 };
+        }
+    }
+}
+
+# Ends the connection; using the database afterwards stops the program (R0007).
+#     let db = open_memory(); close(db); 1 is 1
+export fn close[E: effects](db: Database[E]) {
+    __sql_close(db.id);
+}
+
+# The statement: text must be a string literal, checked by vo check (syntax, one statement, ? parameters).
+#     sql("select ?").text is "select ?"
+export fn sql(text: str) -> Statement {
+    return new Statement { text: text };
+}
+
+# The statement for SQL built at run time: err on a syntax error, more than one statement, or named parameters.
+#     parse_sql("selec 1") == err("near \"selec\": syntax error") is true
+export fn parse_sql(text: str) -> result[Statement] {
+    let _ = try __sql_prepare(text);
+    return ok(new Statement { text: text });
+}
+
+# Runs a statement that changes data or the schema, with its ? parameters in order (needs the database's effects).
+#     exec(open_memory(), sql("create table t(x)"), new list[Value]) == ok(new Changes { changed: 0, last_id: 0 }) is true
+export fn exec[E: effects](db: Database[E], st: Statement, params: list[Value]) -> result[Changes] uses E {
+    let raw: result[list[int]] = __sql_exec(db.id, st.text, params);
+    let r = try raw;
+    return ok(new Changes { changed: r[0], last_id: r[1] });
+}
+
+fn text_of(v: Value) -> str {
+    match v {
+        case text(s) {
+            return s;
+        }
+        case integer(_) {
+            return "";
+        }
+        case real(_) {
+            return "";
+        }
+        case blob(_) {
+            return "";
+        }
+        case null {
+            return "";
+        }
+    }
+}
+
+# Runs a statement that returns rows, with its ? parameters in order: every row (needs the database's effects).
+#     query(open_memory(), sql("select 1 as x"), new list[Value]) == ok([new Row { columns: ["x"], values: [Value.integer(1)] }]) is true
+export fn query[E: effects](db: Database[E], st: Statement, params: list[Value]) -> result[list[Row]] uses E {
+    let raw: result[list[list[Value]]] = __sql_query(db.id, st.text, params);
+    let all = try raw;
+    var names = new list[str];
+    for v in all[0] {
+        push(names, text_of(v));
+    }
+    var rows = new list[Row];
+    for i in 1..len(all) {
+        push(rows, new Row { columns: names, values: all[i] });
+    }
+    return ok(rows);
+}
+
+# Runs f inside a transaction: committed when f returns ok, rolled back when it returns err (which is returned).
+#     transaction(open_memory(), fn() -> result[int] { return ok(5); }) == ok(5) is true
+export fn transaction[T, E: effects, F: effects](db: Database[E], f: fn() -> result[T] uses F) -> result[T] uses E, F {
+    try __sql_tx(db.id, 1);
+    match f() {
+        case ok(v) {
+            try __sql_tx(db.id, 2);
+            return ok(v);
+        }
+        case err(e) {
+            match __sql_tx(db.id, 3) {
+                case ok() {
+                }
+                case err(_) {
+                }
+            }
+            return err(e);
+        }
+    }
+}
+
+fn kind_of(v: Value) -> str {
+    match v {
+        case integer(_) {
+            return "integer";
+        }
+        case real(_) {
+            return "real";
+        }
+        case text(_) {
+            return "text";
+        }
+        case blob(_) {
+            return "blob";
+        }
+        case null {
+            return "null";
+        }
+    }
+}
+
+fn index_of(row: Row, column: str) -> result[int] {
+    var found = -1;
+    for i in 0..len(row.columns) {
+        if row.columns[i] == column {
+            if found >= 0 {
+                return err("ambiguous column " + column + ": name each column with AS");
+            }
+            set found = i;
+        }
+    }
+    if found < 0 {
+        return err("no column " + column);
+    }
+    return ok(found);
+}
+
+# The value of a column by name; err for an unknown name or one that two columns have.
+#     get(new Row { columns: ["x"], values: [Value.null] }, "y") == err("no column y") is true
+export fn get(row: Row, column: str) -> result[Value] {
+    return ok(row.values[try index_of(row, column)]);
+}
+
+# A column's value as an int; err unless it is an INTEGER.
+#     get_int(new Row { columns: ["x"], values: [Value.integer(7)] }, "x") == ok(7) is true
+export fn get_int(row: Row, column: str) -> result[int] {
+    let v = try get(row, column);
+    match v {
+        case integer(i) {
+            return ok(i);
+        }
+        case real(_) {
+        }
+        case text(_) {
+        }
+        case blob(_) {
+        }
+        case null {
+        }
+    }
+    return err(column + " is " + kind_of(v) + ", not integer");
+}
+
+# A column's value as a float; err unless it is a REAL (an INTEGER is not converted).
+#     get_float(new Row { columns: ["x"], values: [Value.integer(7)] }, "x") == err("x is integer, not real") is true
+export fn get_float(row: Row, column: str) -> result[float] {
+    let v = try get(row, column);
+    match v {
+        case real(f) {
+            return ok(f);
+        }
+        case integer(_) {
+        }
+        case text(_) {
+        }
+        case blob(_) {
+        }
+        case null {
+        }
+    }
+    return err(column + " is " + kind_of(v) + ", not real");
+}
+
+# A column's value as text; err unless it is valid UTF-8 TEXT (read other text with get_bytes).
+#     get_str(new Row { columns: ["x"], values: [Value.text("hi")] }, "x") == ok("hi") is true
+export fn get_str(row: Row, column: str) -> result[str] {
+    let v = try get(row, column);
+    match v {
+        case text(s) {
+            return ok(s);
+        }
+        case integer(_) {
+        }
+        case real(_) {
+        }
+        case blob(_) {
+        }
+        case null {
+        }
+    }
+    return err(column + " is " + kind_of(v) + ", not text");
+}
+
+# A column's value as bytes: a BLOB, or TEXT as its UTF-8 bytes.
+#     get_bytes(new Row { columns: ["x"], values: [Value.null] }, "x") == err("x is null, not blob") is true
+export fn get_bytes(row: Row, column: str) -> result[bytes] {
+    let v = try get(row, column);
+    match v {
+        case blob(b) {
+            return ok(b);
+        }
+        case text(s) {
+            return ok(__bytes_of_text(s));
+        }
+        case integer(_) {
+        }
+        case real(_) {
+        }
+        case null {
+        }
+    }
+    return err(column + " is " + kind_of(v) + ", not blob");
+}
+
+# Whether a column's value is NULL.
+#     is_null(new Row { columns: ["x"], values: [Value.null] }, "x") == ok(true) is true
+export fn is_null(row: Row, column: str) -> result[bool] {
+    let v = try get(row, column);
+    match v {
+        case null {
+            return ok(true);
+        }
+        case integer(_) {
+        }
+        case real(_) {
+        }
+        case text(_) {
+        }
+        case blob(_) {
+        }
+    }
+    return ok(false);
+}

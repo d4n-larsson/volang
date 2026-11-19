@@ -1,0 +1,15 @@
+record Conn[E: effects] {
+    id: int;
+}
+
+fn ping[E: effects](c: Conn[E]) -> int uses E {
+    return c.id;
+}
+
+fn quiet(c: Conn[uses console]) -> int {
+    return ping(c);
+}
+
+fn main() uses console {
+    print(str(quiet(new Conn[uses console] { id: 1 })));
+}

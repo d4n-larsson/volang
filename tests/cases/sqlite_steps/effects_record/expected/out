@@ -1,0 +1,25 @@
+$ vo effects main.vo
+main uses console, file.read, file.write
+
+main.vo:add uses file.read, file.write
+main.vo:main uses console, file.read, file.write
+main.vo:names uses file.read, file.write
+main.vo:scratch pure
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo effects --update main.vo
++ main.vo:add: file.read, file.write
++ main.vo:main: console, file.read, file.write
++ main.vo:names: file.read, file.write
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+1 1
+--- stderr
+--- exit 0

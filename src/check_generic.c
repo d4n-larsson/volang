@@ -102,16 +102,64 @@ Type *resolve_instance(Node *node, Node *decl, int kind, Vec *arg_nodes)
     Vec *tparams = ty_tparams_of(decl);
     long np = tparams ? tparams->n : 0;
     long na = arg_nodes ? arg_nodes->n : 0; /* arguments written */
-    if (np != na) return ty_argn_error(node, decl->a.n->a.s, np, na);
+    /* spec 026: a last effect parameter takes the `uses ...` argument; written without it, no effects */
+    int eff_last = np && ((Node *)vec_get(tparams, np - 1))->b.i == TPC_EFFECTS;
+    Node *uses = na ? vec_get(arg_nodes, na - 1) : 0;
+    if (uses && uses->kind != N_USES) uses = 0;
+    for (long i = 0; i < na; i++) { /* E0327: effects in the wrong form or place */
+        Node *an = vec_get(arg_nodes, i);
+        if (an->kind != N_USES) continue;
+        if (!eff_last) return effect_arg_error(an, decl, 1);
+        if (i != na - 1) return effect_arg_error(an, decl, 2);
+        if (an->b.i) return effect_arg_error(an, decl, 3);
+    }
+    /* the effect argument: `uses ...`, an effect parameter's name (`Conn[E]`, na == np), or left out */
+    long given = na + (eff_last && !uses && na == np - 1 ? 1 : 0);
+    if (np != given) return ty_argn_error(node, decl->a.n->a.s, np - eff_last, na - (uses != 0));
     if (!np) return ty_make(kind, 0, 0, decl); /* not generic */
     Vec *args = vec_new();
-    for (long i = 0; i < na; i++) {
-        Node *an = vec_get(arg_nodes, i);
-        Type *t = resolve_type(an);
-        check_targ(t, vec_get(tparams, i), an, decl->a.n->a.s);
+    for (long i = 0; i < np; i++) {
+        Node *an = i < na ? vec_get(arg_nodes, i) : 0;
+        Type *t;
+        if (!an) { /* the effect argument left out: no effects */
+            t = ty_make(TY_EFFSET, 0, 0, es_new(0));
+        } else if (an->kind == N_USES) {
+            /* unscoped effects in a type mean "in some scope", as a library function's own `uses`: the
+               value's real target (a database's path) is checked at run time (spec 026, research R14) */
+            EffSet *es = fx_build_set(an, 0);
+            es->any |= es->mask;
+            es->mask = 0;
+            t = ty_make(TY_EFFSET, 0, 0, es);
+        } else {
+            t = resolve_type(an);
+            Node *tp = vec_get(tparams, i);
+            int eff_param = t->kind == TY_PARAM && t->b.i == TPC_EFFECTS;
+            if (tp->b.i == TPC_EFFECTS && !eff_param && !ty_bad(t)) return effect_arg_error(an, decl, 3);
+            if (tp->b.i != TPC_EFFECTS && eff_param) return effect_arg_error(an, decl, 1);
+            check_targ(t, tp, an, decl->a.n->a.s);
+        }
         vec_push(args, t);
     }
     return ty_instance(kind, decl, args);
+}
+
+/* Spec 026, E0327: an effect argument where the type has no effect parameter (why 1), not last (2), or
+ * written without `uses` (3, with the fix inserting it). Returns the error type. */
+Type *effect_arg_error(Node *an, Node *decl, int why)
+{
+    if (why == 1) {
+        ck_err("E0327", an, msg("`$1` has no effect parameter.", decl->a.n->a.s, 0, 0));
+    } else if (why == 2) {
+        ck_err("E0327", an, str_from_cstr("Effects in a type are written last, after `uses`."));
+    } else {
+        SB *sb = sb_new();
+        sb_cstr(sb, "uses ");
+        sb_str(sb, src_text(an));
+        Str *fixed = sb_finish(sb);
+        Diag *d = ck_err("E0327", an, msg("Effects in a type are written last, after `uses`: `$1`.", fixed, 0, 0));
+        diag_add_fix(d, (int)an->file, an->start, an->start, str_from_cstr("uses "));
+    }
+    return t_error;
 }
 
 /* A field's type in an instance: the declared type with the instance's arguments substituted. */

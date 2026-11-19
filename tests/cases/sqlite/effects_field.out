@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0501","name":"missing_effect","severity":"error","file":"effects_field.vo","start":{"line":13,"col":4},"end":{"line":13,"col":9},"text":"names","message":"`names` does not declare file.read, file.write, which it needs.","fixes":[{"file":"effects_field.vo","start":{"line":13,"col":41},"end":{"line":13,"col":41},"replacement":"uses file.read, file.write "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

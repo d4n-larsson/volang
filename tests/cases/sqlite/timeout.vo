@@ -1,0 +1,11 @@
+# A statement that runs past --timeout stops with R0009 at the call.
+import std.sqlite.open_memory;
+import std.sqlite.sql;
+import std.sqlite.query;
+import std.sqlite.Value;
+
+fn main() -> result[void] uses console {
+    let rows = try query(open_memory(), sql("with recursive c(n) as (select 1 union all select n + 1 from c where n < 1000000000000) select count(*) as n from c"), new list[Value]);
+    print(str(len(rows)));
+    return ok();
+}

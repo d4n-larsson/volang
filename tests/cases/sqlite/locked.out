@@ -1,0 +1,3 @@
+second while the first writes: err busy: database is locked
+first committed: true
+second afterwards: ok 1

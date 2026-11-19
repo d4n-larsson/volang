@@ -1,0 +1,17 @@
+# A function without uses that queries a file database it was given: E0501 names the file effects.
+import std.sqlite.open;
+import std.sqlite.sql;
+import std.sqlite.query;
+import std.sqlite.Database;
+import std.sqlite.Row;
+import std.sqlite.Value;
+
+fn names(db: Database[uses file.read, file.write]) -> result[list[Row]] {
+    return query(db, sql("select name from people"), new list[Value]);
+}
+
+fn main() -> result[void] uses console, file.read, file.write {
+    let db = try open("people.db");
+    print(str(len(try names(db))));
+    return ok();
+}

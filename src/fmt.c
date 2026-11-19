@@ -112,10 +112,18 @@ static void fm_tparams(Vec *tparams)
 
 /* ` uses ...` in canonical order (effects by kind, scopes sorted and normalized). A clause with an
  * unknown name or invalid scope is printed as written, so formatting never loses text. */
+static void fm_uses_body(Node *uses);
+
 static void fm_uses(Node *uses)
 {
     if (!uses) return;
     fm_c(" uses ");
+    fm_uses_body(uses);
+}
+
+/* The effects of a `uses` clause or effect argument, canonical (see fm_uses). */
+static void fm_uses_body(Node *uses)
+{
     EffSet *set = es_new(0);
     Vec *effects = uses->a.v;
     for (long i = 0; i < effects->n; i++) {
@@ -151,6 +159,11 @@ as_written:
 static void fm_type(Node *t)
 {
     if (!t) return;
+    if (t->kind == N_USES) { /* spec 026: an effect argument, `Database[uses file.read]` */
+        fm_c("uses ");
+        fm_uses_body(t);
+        return;
+    }
     switch (t->a.i) {
     case TY_INT: fm_c("int"); return;
     case TY_FLOAT: fm_c("float"); return;

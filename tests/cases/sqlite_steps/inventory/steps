@@ -1,0 +1,4 @@
+mkdir data
+vo run create.vo
+vo run read.vo
+vo run write_ro.vo

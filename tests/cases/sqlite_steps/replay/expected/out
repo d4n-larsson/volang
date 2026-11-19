@@ -1,0 +1,48 @@
+$ vo run --record rec.jsonl app.vo
+inserted 1 id 1
+true
+false
+Ada "q" ü 4
+Bob 4
+--- stderr
+--- exit 0
+$ vo replay rec.jsonl
+inserted 1 id 1
+true
+false
+Ada "q" ü 4
+Bob 4
+--- stderr
+--- exit 0
+$ vo replay rec.jsonl
+inserted 1 id 1
+true
+false
+--- stderr
+note: the program differs from the recorded one (recorded app.vo)
+app.vo:22:20: runtime error[R0014]: The program makes the database call `select name, f, b, z from t order by id desc`, but the recording has the database call `select name, f, b, z from t order by id` next: replay the program that was recorded, or record this one.
+  22 |     for row in try query(db, sql("select name, f, b, z from t order by id desc"), new list[Value]) {
+     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at query (app.vo:22:20)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }, st: Statement = new Statement { text: "select name, f, b, z from t order by id desc" }, params: list[Value] = []
+  at main (app.vo:22:20)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }, c: Changes = new Changes { changed: 1, last_id: 1 }, n: result[int] = ok(1)
+--- exit 70
+$ vo replay rec.jsonl
+inserted 1 id 1
+--- stderr
+note: the program differs from the recorded one (recorded app.vo)
+app.vo:17:21: runtime error[R0014]: The program makes the database call `insert into t(name) values (?)` with other arguments (connection or parameters) than the recording: replay the program that was recorded, or record this one.
+  17 |         let x = try exec(db, sql("insert into t(name) values (?)"), [Value.text("Eve")]);
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at exec (app.vo:17:21)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }, st: Statement = new Statement { text: "insert into t(name) values (?)" }, params: list[Value] = [Value.text("Eve")]
+  at anonymous function (app.vo:17:21)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }
+  at transaction (std/sqlite.vo:149:11)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }, f: fn() -> result[int] uses file.read, file.write = <fn() -> result[int] uses file.read, file.write>
+  at main (app.vo:16:13)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }, c: Changes = new Changes { changed: 1, last_id: 1 }
+--- exit 70

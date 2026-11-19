@@ -3,7 +3,8 @@
 vo links no C library (constitution, "Implementation Constraints"). The vendored libraries include a
 few standard headers; these files declare only the types, constants and functions they use. The
 functions are implemented in `src/vo_c.c` and `src/tls_libc.c` (the math functions CORE-MATH needs in
-`src/math_libm.c`); `stddef.h`, `stdint.h`, `stdarg.h` and
+`src/math_libm.c`; the string, character and math functions SQLite needs in `src/sqlite_libc.c`, the
+math ones through CORE-MATH); `stddef.h`, `stdint.h`, `stdarg.h` and
 `stdbool.h` come from the compiler itself.
 
 `fenv.h` (spec 020, CORE-MATH) is complete in itself: vo always rounds to nearest and never reads the

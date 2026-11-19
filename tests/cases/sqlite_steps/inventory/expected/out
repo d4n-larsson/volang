@@ -1,0 +1,16 @@
+$ vo run create.vo
+bolt 1 1
+nut 1 2
+washer 1 3
+--- stderr
+--- exit 0
+$ vo run read.vo
+bolt 3
+washer 7
+--- stderr
+--- exit 0
+$ vo run write_ro.vo
+readonly: attempt to write a readonly database
+error: unable to open database file
+--- stderr
+--- exit 0

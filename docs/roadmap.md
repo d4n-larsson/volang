@@ -233,6 +233,26 @@ random patterns and texts, all three platforms), 10 MB of logs searched in half 
   and case folding (vo's text functions are ASCII), replacement by a function, matching over streams, a
   regex literal syntax.
 
+### 026: SQLite databases (done)
+
+`std.sqlite`: SQLite 3.54.1 (public domain, allowed by constitution 1.5.0) vendored unmodified and
+built into the static binary with vo's own OS layer, so every file it opens goes through the program's
+grant. `open` (file.read, file.write), `open_readonly` (file.read) and `open_memory` (no effect: real
+SQL in `vo test`, closed when each test ends). Statements are literals, `sql("...")`, parsed by
+`vo check` (E0323-E0326, with spans inside the SQL); values are only `?` parameters, so SQL injection
+cannot be written by accident; `parse_sql(s)` for SQL built at run time. A database's type names its
+effects, `Database[uses file.read, file.write]`, the first effect arguments in types (E0327), so a
+function that queries one needs them wherever the handle came from. Results are the same on all three
+platforms (1,000+ statements, floats included); clock and randomness in SQL are refused; record and
+replay cover every call.
+
+- **Not done (on purpose):** PostgreSQL and other servers (a later spec, over TCP), streaming rows (a
+  query returns every row), named parameters, scripts of several statements, WAL mode, an ORM or query
+  builder, user-defined SQL functions.
+- **Standing obligation:** as for Mbed TLS, SQLite security releases
+  ([sqlite.org/cves.html](https://www.sqlite.org/cves.html)) are applied in their spec cycle with
+  `tools/vendor_sqlite.sh`.
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when

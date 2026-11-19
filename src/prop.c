@@ -693,6 +693,7 @@ static int pr_try(Node *test, List *args)
     }
     tf_node = 0;
     rt_err_code = 0;
+    volatile long sql_mark = sql_serial(); /* spec 026: the databases this case opens */
     recover_point = (long)jb;
     long status = jmp_save(jb); /* 0 ran through, 1 expect failed, 2 runtime error */
     if (!status) {
@@ -701,6 +702,7 @@ static int pr_try(Node *test, List *args)
         vm_run(vm_push(test->d.fx->code, test, 0, &copy->data->i, 0));
     }
     GC_UNROOT(2);
+    sql_close_since(sql_mark);
     recover_point = 0;
     interp_reset();
     if (status) { /* spec 013: the next case starts as this one did (R0006 switches these off) */

@@ -1,0 +1,12 @@
+record Conn[E: effects] {
+    id: int;
+}
+
+record Holder {
+    conn: Conn[uses console, file.read, file.write("b/")];
+    plain: Conn;
+}
+
+fn ping[E: effects](c: Conn[E]) -> int uses E {
+    return c.id;
+}

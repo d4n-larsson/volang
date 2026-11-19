@@ -53,6 +53,8 @@ Type *ty_make(long kind, void *a, void *b, void *decl)
     for (long i = 0; i < type_tab->n; i++) {
         Type *t = type_tab->data[i].t;
         if (t->kind == kind && t->a.p == a && t->b.p == b && t->decl.p == decl) return t;
+        /* spec 026: an effect argument is interned by its effects, so Conn[uses console] is one type */
+        if (kind == TY_EFFSET && t->kind == TY_EFFSET && decl && t->decl.p && es_equal(t->decl.es, decl)) return t;
     }
     GC_ROOT(&a);
     GC_ROOT(&b);
@@ -118,6 +120,10 @@ void ty_name_into(SB *sb, Type *t)
         if (t->b.v) ty_args_into(sb, t->b.v); /* an instance: Name[args] */
         return;
     case TY_FUNC: ty_func_name_into(sb, t); return;
+    case TY_EFFSET: /* spec 026: an effect argument of a type */
+        sb_cstr(sb, "uses ");
+        es_render(t->decl.es, sb);
+        return;
     case TY_PARAM: sb_str(sb, ty_param_name(t)); return;
     default: sb_cstr(sb, "<error>"); return;
     }

@@ -14,7 +14,7 @@ esac
 cd "$root" || exit 0
 flags=$(make -s -f Makefile -f - print-cflags <<'MK' 2>/dev/null
 print-cflags:
-	@echo $(CC) $(CFLAGS) $(CWARN) $(TLS_FLAGS)
+	@echo $(CC) $(CFLAGS) $(CWARN) $(TLS_FLAGS) -isystem $(SQL) $(SQLITE_OPTS)
 MK
 )
 [ -n "$flags" ] || { echo "cc_check: could not read the compiler flags from the Makefile" >&2; exit 2; }

@@ -369,7 +369,9 @@ void rec_review(int entry, Vec *files)
 {
     long record = rec_find(entry);
     if (record < 0) {
-        if (files->n >= 2)
+        long own = 0; /* the standard library is not the program's (spec 007) */
+        for (long i = 0; i < files->n; i++) own += !file_get((int)(long)vec_get(files, i))->std;
+        if (own >= 2)
             diag_add("W0504", SEV_WARNING, entry, 0, 0,
                      str_from_cstr("This program has no effects record: create vo.effects with `vo effects --update`."));
         return;

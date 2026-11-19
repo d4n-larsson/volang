@@ -1,0 +1,5 @@
+1 1
+3
+n,f,s,b,z: integer 3 | real 3.0 | text c | blob 2 | null
+n,f,s,b,z: integer 2 | real -0.25 | text é | blob 0 | integer 9
+n,f,s,b,z: integer 1 | real 1.5 | text a | blob 2 | null

@@ -40,6 +40,7 @@ static Node *parse_fn_kind(int kind);
 static Vec *parse_tparams(void);
 static Vec *parse_type_args(void);
 static Node *parse_uses(void);
+static Node *parse_effect(void);
 static void p_hard_msg(const char *message);
 static Node *p_method_call(Node *object, Node *name, long start, Node *field);
 static int p_elif(void);
@@ -1065,7 +1066,9 @@ static Vec *parse_tparams(void)
     return v;
 }
 
-/* Optional type arguments `[type, ...]` after a type name (vec of type nodes), or 0. */
+/* Optional type arguments `[type, ..., uses effects]` after a type name (vec of type nodes, the
+ * effect argument an N_USES node), or 0. Spec 026: effects written without `uses` (`Db[file.read]`)
+ * are kept as an N_USES node with B = 1, which the checker reports as E0327 with the fix. */
 static Vec *parse_type_args(void)
 {
     if (p_kind() != T_LBRACKET) return 0;
@@ -1073,6 +1076,23 @@ static Vec *parse_type_args(void)
     Vec *v = vec_new();
     do {
         if (p_failed()) return v;
+        int written = p_kind() == T_USES;
+        if (written || p_kind() == T_IDENT) { /* effects; T_IDENT: an effect name, `uses` missing */
+            long start = p_start();
+            Node *u = p_node(N_USES);
+            u->a.v = vec_new();
+            u->b.i = !written;
+            if (written) p_next();
+            while (!p_failed()) {
+                Node *e = parse_effect();
+                if (!e) break;
+                vec_push(u->a.v, e);
+                if (p_kind() != T_COMMA || p_kind_at(1) != T_IDENT) break; /* the next is a type: E0327 */
+                p_next();
+            }
+            vec_push(v, p_finish(u, start));
+            continue;
+        }
         vec_push(v, parse_type());
     } while (p_accept(T_COMMA));
     p_expect(T_RBRACKET);

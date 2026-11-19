@@ -9,7 +9,9 @@ of variation, so that a run can be repeated:
 
 - **There is no hidden input.** Everything a program receives from outside goes through an effect:
   arguments, standard input, files, environment variables, the network, the clock and random numbers.
-  Pure code cannot reach any of them (see [Effects](effects.md)).
+  Pure code cannot reach any of them (see [Effects](effects.md)). SQL is held to the same rule:
+  `CURRENT_TIMESTAMP`, `'now'` and `random()` are refused in `std.sqlite` statements, so a query gives
+  the same rows on every run and platform.
 - **The language has no unspecified order.** Maps keep insertion order, `sort` and `sort_by` are
   stable, `for` visits elements in order, and there are no threads.
 - **Values print the same everywhere.** `str` of a float always gives the same text, and integers have
@@ -124,7 +126,8 @@ environment variable, a line of input and a file, and reads the clock twice:
 ```
 
 Recorded inputs are arguments, standard input, environment variables, file reads, the results of file
-writes, HTTP responses (and, for a server, the requests it received), the clock and the seed. The
+writes, HTTP responses (and, for a server, the requests it received), what each `std.sqlite` call on a
+database returned (never the database file itself), the clock and the seed. The
 program's output is not recorded: replaying produces it again.
 
 A recording holds the contents of every file and the value of every variable the program read. Treat it
@@ -141,8 +144,9 @@ recorded run timed out, since that depends on the machine's speed.
 The program may have changed since the recording. That is the point: record a failure in production,
 then replay it while you fix the code. A changed program is run with a note on stderr,
 `note: the program differs from the recorded one`. As long as it asks for the same inputs in the same
-order, it runs on the recorded ones. When it asks for something else, another file, another variable, or
-an HTTP request to another host, port, method or path, it stops with [R0014](../errors/R0014.md):
+order, it runs on the recorded ones. When it asks for something else, another file, another variable,
+an HTTP request to another host, port, method or path, or another SQL statement or parameters, it stops
+with [R0014](../errors/R0014.md):
 
 ```text
 main.vo:5:21: runtime error[R0014]: The program reads the file `data/other.txt`, but the recording has a read of `data/notes.txt` next: replay the program that was recorded, or record this one.

@@ -293,7 +293,7 @@
 #define N_NEW_LIST (45) /* A element type node */
 #define N_NEW_MAP (46) /* A key type node, B value type node */
 #define N_TPARAM (47) /* A name node, B constraint (TPC_*) */
-#define N_USES (48) /* A vec of N_EFFECT */
+#define N_USES (48) /* A vec of N_EFFECT; B 1: an effect argument in a type written without `uses` (spec 026, E0327) */
 #define N_EFFECT (49) /* A effect bit (0 = unknown name), B vec of scope N_STR | 0, C effect-variable name node | 0, D name text (str) */
 #define N_LAMBDA (50) /* A name node ("anonymous function"; params in N_B like N_FN), B return type node|0, C N_USES|0 (only for E0507), D body, E local count */
 #define N_FN_TYPE (51) /* type node: A param type nodes vec, B return type node|0, C N_USES|0 */
@@ -394,7 +394,13 @@
 #define B_RE_COMPILE (84) /* spec 025: __re_compile(pattern) -> result[str] (group names), std.regex only */
 #define B_RE (85) /* spec 025: __re(op, pattern, text) -> list[int] (byte offsets) */
 #define B_RE_REPL (86) /* spec 025: __re_repl(pattern, replacement) -> list[int] (parts) */
-#define B_LAST (86) /* the last builtin id with a btab entry */
+#define B_SQL_OPEN (87) /* spec 026: __sql_open(path, mode) -> result[int] */
+#define B_SQL_CLOSE (88) /* __sql_close(id) */
+#define B_SQL_EXEC (89) /* __sql_exec(id, text, params: list[Value]) -> result[list[int]] (typed loosely) */
+#define B_SQL_QUERY (90) /* __sql_query(id, text, params) -> result[list[list[Value]]] (typed loosely) */
+#define B_SQL_TX (91) /* __sql_tx(id, op) -> result[void] */
+#define B_SQL_PREPARE (92) /* __sql_prepare(text) -> result[str] */
+#define B_LAST (92) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -692,6 +698,7 @@
 #define EVK_DELETE (16)
 #define EVK_RENAME (17)
 #define EVK_RUN (18)
+#define EVK_SQL (19) /* spec 026 */
 #define EVR_OK (0)
 #define EVR_ERR (1)
 #define EVR_DENIED (2)
@@ -1382,6 +1389,8 @@ typedef struct FmtPiece {
 extern Type *check_format_call(Node *call);
 extern long lit_decode(Node *lit, char **buf, long **offs);
 extern void check_regex_call(Node *call); /* src/check_regex.c (spec 025) */
+extern void fx_builtin_sql_open(Node *call); /* spec 026 */
+extern void check_sqlite_call(Node *call); /* src/check_sqlite.c (spec 026) */
 extern FmtPiece *fmt_new_piece(Str *text, long arg, long spec);
 extern Str *fmt_piece(long value, long kind, long spec); /* src/num.c */
 extern long exact_fixed(unsigned long bits, long prec, char *out); /* src/stdprim.c */
@@ -1400,6 +1409,26 @@ extern Variant *re_prim_compile(Str *p);
 extern List *re_prim(long op, Str *p, Str *s, Node *call);
 extern int re_repl_parse(char *r, long n, long ngroups, char *names, long names_len, ReErr *err, List *l);
 extern List *re_prim_repl(Str *p, Str *r, Node *call);
+/* src/sqlite_rt.c (spec 026) */
+typedef struct SqlScan {
+    long qmarks;      /* `?` parameters */
+    long named_at;    /* byte of the first named or numbered parameter (:a @a $a ?N), or -1 */
+    long named_len;
+    long named_count; /* named or numbered parameters */
+    long second_at;   /* byte where a second statement starts, or -1 */
+    long now_at;      /* byte of a 'now' string (the date functions' clock), or -1 */
+    long named_starts[32], named_lens[32]; /* the first 32 named or numbered parameters */
+} SqlScan;
+extern void sql_scan(const char *s, long n, SqlScan *out);
+extern char *sql_check_text(const char *s, long n, long *at);
+extern Variant *sql_prim_prepare(Str *text);
+extern Variant *sql_prim_open(Str *path, long mode, Node *call);
+extern void sql_prim_close(long id, Node *call);
+extern Variant *sql_prim_exec(long id, Str *text, List *params, Node *call);
+extern Variant *sql_prim_query(long id, Str *text, List *params, Node *call);
+extern Variant *sql_prim_tx(long id, long op, Node *call);
+extern void sql_close_since(long serial);
+extern long sql_serial(void);
 extern Type *list_arg(Node *call);
 extern Type *map_arg(Node *call);
 extern Type *check_call(Node *call, Type *expected);
@@ -1444,6 +1473,7 @@ extern int ty_ordered(Type *t);
 extern int check_targ(Type *t, Node *tparam, Node *node, Str *owner_name);
 extern Type *ty_argn_error(Node *node, Str *name, long want, long got);
 extern Type *resolve_instance(Node *node, Node *decl, int kind, Vec *arg_nodes);
+extern Type *effect_arg_error(Node *an, Node *decl, int why); /* spec 026: E0327 */
 extern Type *field_type_in(Type *record_type, Type *field_type);
 extern Vec *bindings_vec(Type **bindings, long n);
 extern int bind_rest(Node *node, Vec *tparams, Type **bindings, Str *what);
@@ -2059,6 +2089,8 @@ extern void rp_bad(void);
 extern char *rp_ws(char *p, char *end);
 extern char *rp_string(char *p, char *end, Str **out);
 extern char *rp_int(char *p, char *end, long *out);
+extern void rw_bytes(char *p, long n);
+extern Str *rp_take_sql(Str *ident, Str *name);
 extern long rp_key(Str *str);
 extern void rp_line(char *p, char *end);
 extern long rp_kind_of(Str *str);

@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 86 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 92 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -41,6 +41,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__sleep", /* spec 022 */
     "format", 0, /* spec 024: format; 83 the internal piece */
     "__re_compile", "__re", "__re_repl", /* spec 025 */
+    "__sql_open", "__sql_close", "__sql_exec", "__sql_query", "__sql_tx", "__sql_prepare", /* spec 026 */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -56,6 +57,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [68] = "s>y",   [69] = "y>r",  [70] = "I>y",  [71] = "y>I",  [72] = "y>s",  [73] = "s>Y",
     [74] = "y>s",   [75] = "s>Y",  [76] = ">y",   [77] = "y>v",  [78] = "isy>Y", [79] = "SyS>Y", [80] = "y>s", [81] = "i>v", /* spec 021: y bytes, Y result[bytes], I list[int] */
     [84] = "s>r", [85] = "iss>I", [86] = "ss>I", /* spec 025: __re_compile, __re, __re_repl */
+    [87] = "si>n", [88] = "i>v", [91] = "ii>u", [92] = "s>r", /* spec 026; 89, 90 typed loosely */
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."
@@ -240,6 +242,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
     fx_builtin(id);
     if (id == B_FS) fx_builtin_fs(call); /* spec 017: the effect of __fs depends on its operation */
     if (id == B_FSB) fx_builtin_fsb(call); /* spec 021: the same for __fsb */
+    if (id == B_SQL_OPEN) fx_builtin_sql_open(call); /* spec 026: by mode */
     fx_builtin_literal(call, id); /* spec 013 (L1) */
     if ((id >= B_SORT_BY && id <= B_ALL) || id == B_CMAP) return check_hof(call, id); /* sort_by, map, filter, fold, any, all, concurrent_map */
     if (id >= B_EXPECT && id <= B_EXPECT_EQ && !ck_in_test)          /* expect / expect_eq only in tests */
@@ -281,6 +284,15 @@ Type *check_builtin(Node *call, long id, Type *expected)
         if (!args->n || ((Node *)vec_get(args, 0))->kind != N_INT) return infer_error(call, expected);
         for (long i = 0; i < args->n; i++) check_arg(call, i, 0);
         return expected ? expected : t_void;
+    }
+    if (id == B_SQL_EXEC || id == B_SQL_QUERY) { /* spec 026: (id, text, params: list[Value]); the result
+                                                     takes the expected type (std.sqlite's wrappers annotate it).
+                                                     ponytail: typed loosely, as __coll */
+        if (!check_argc(call, 3)) return t_error;
+        check_arg(call, 0, t_int);
+        check_arg(call, 1, t_str);
+        check_arg(call, 2, 0);
+        return expected ? expected : infer_error(call, expected);
     }
     if (id == B_SERVE_CALL) { /* spec 011: __serve_call(f, x): result of f(x); f's effects become the caller's */
         if (!check_argc(call, 2)) return t_error;
@@ -441,7 +453,11 @@ Type *check_call(Node *call, Type *expected)
                 Fx *cfx = item_fx(s->decl);
                 if (cfx && cfx->ensures) ck_test_checks++;
             }
-            if (ty_tparams_of(call->c.n)) return check_generic_call(call, call->c.n, expected); /* inference */
+            if (ty_tparams_of(call->c.n)) { /* inference */
+                Type *gt = check_generic_call(call, call->c.n, expected);
+                if (file_get((int)call->c.n->file)->std) check_sqlite_call(call); /* spec 026: exec, query */
+                return gt;
+            }
             if (check_argc(call, call->c.n->b.v->n)) {
                 for (long i = 0; i < call->c.n->b.v->n; i++) {
                     Node *p = vec_get(call->c.n->b.v, i);
@@ -449,7 +465,10 @@ Type *check_call(Node *call, Type *expected)
                     check_arg(call, i, p->type);
                     ck_exp_tnode = 0;
                 }
-                if (file_get((int)call->c.n->file)->std) check_regex_call(call); /* spec 025 */
+                if (file_get((int)call->c.n->file)->std) {
+                    check_regex_call(call);  /* spec 025 */
+                    check_sqlite_call(call); /* spec 026 */
+                }
             }
             return call->c.n->type;
         }

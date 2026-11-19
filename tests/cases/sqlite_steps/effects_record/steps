@@ -1,0 +1,5 @@
+vo effects main.vo
+vo effects --update main.vo
+keep vo.effects
+vo check main.vo
+vo run main.vo

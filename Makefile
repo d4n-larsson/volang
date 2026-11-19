@@ -75,9 +75,20 @@ CM       := third_party/core-math
 CM_SRCS  := $(addprefix $(CM)/,$(shell sed -n 's/^- `\(.*\.c\)`$$/\1/p' $(CM)/VENDOR.md))
 CM_FLAGS  = -nostdinc -isystem $(shell $(CC) -print-file-name=include) -I third_party/shim
 CM_OBJS  := $(patsubst %.c,$(BUILD)/%.o,$(CM_SRCS))
+# Spec 026 (constitution 1.5.0): SQLite, vendored unmodified (public domain), built like Mbed TLS:
+# freestanding, the compiler's own headers and third_party/shim, upstream warnings, -ffp-contract=off
+# (CFLAGS). Its OS layer is vo's (src/sqlite_vfs.c); the options are research R2 of specs/026-sqlite.
+SQL       := third_party/sqlite
+SQL_SRCS  := $(addprefix $(SQL)/,$(shell sed -n 's/^- `\(.*\.c\)` sha256 .*$$/\1/p' $(SQL)/VENDOR.md))
+SQLITE_OPTS := -DSQLITE_OS_OTHER=1 -DSQLITE_THREADSAFE=0 -DSQLITE_OMIT_LOAD_EXTENSION -DSQLITE_OMIT_WAL \
+	-DSQLITE_TEMP_STORE=3 -DSQLITE_ENABLE_MEMSYS5 -DSQLITE_ZERO_MALLOC -DSQLITE_DEFAULT_MEMSTATUS=0 \
+	-DSQLITE_OMIT_DEPRECATED -DSQLITE_OMIT_SHARED_CACHE -DSQLITE_UNTESTABLE -DSQLITE_DQS=0 \
+	-DSQLITE_OMIT_LOCALTIME -DSQLITE_ENABLE_MATH_FUNCTIONS -DSQLITE_DEFAULT_FOREIGN_KEYS=1
+SQL_FLAGS  = -nostdinc -isystem $(shell $(CC) -print-file-name=include) -I third_party/shim $(SQLITE_OPTS)
+SQL_OBJS  := $(patsubst %.c,$(BUILD)/%.o,$(SQL_SRCS))
 # platform.o first: its vo_data_begin starts .data (the globals the collector scans).
 OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/embedded.o \
-	$(if $(INSTRUMENTED),$(BUILD)/hosted.o) $(MBED_OBJS) $(CM_OBJS)
+	$(if $(INSTRUMENTED),$(BUILD)/hosted.o) $(MBED_OBJS) $(CM_OBJS) $(SQL_OBJS)
 
 PHONY_TLS := tls-selftest tls-deps
 .PHONY: $(PHONY_TLS) quick cm-noasm math-selftest math-vectors site site-serve site-check all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
@@ -105,10 +116,15 @@ $(BUILD)/%.o: src/%.c $(HEADERS) | $(BUILD)
 	$(CC) $(CFLAGS) $(CWARN) -I src -c -o $@ $<
 # Spec 019: vo's TLS layer includes the library's headers; the vendored files keep their own warnings.
 $(BUILD)/tls.o $(BUILD)/tls_libc.o: CFLAGS += $(TLS_FLAGS)
+# Spec 026: vo's SQLite code sees sqlite3.h as a system header (no strict warnings from it).
+$(BUILD)/sqlite_vfs.o $(BUILD)/sqlite_rt.o $(BUILD)/check_sqlite.o: CFLAGS += -isystem $(SQL) $(SQLITE_OPTS)
 $(BUILD)/tls.o $(BUILD)/tls_libc.o: src/tls_config.h src/tls_crypto_config.h
 $(BUILD)/third_party/%.o: third_party/%.c src/tls_config.h src/tls_crypto_config.h Makefile
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -Wall $(MBED_FLAGS) -c -o $@ $<
+$(BUILD)/third_party/sqlite/%.o: third_party/sqlite/%.c third_party/sqlite/sqlite3.h Makefile
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -Wall -Wno-unused-variable $(SQL_FLAGS) -c -o $@ $<
 $(BUILD)/third_party/core-math/%.o: third_party/core-math/%.c third_party/shim/fenv.h Makefile
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -Wall $(CM_FLAGS) -I $(dir $<) -c -o $@ $<
@@ -122,7 +138,7 @@ cm-noasm:
 $(BUILD)/vo_c.o: CFLAGS += -fno-tree-loop-distribute-patterns
 
 # Spec 008 research R8: the reference, the catalog and the standard library, embedded as C arrays.
-STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo std/fs.vo std/process.vo std/math.vo std/bytes.vo std/regex.vo
+STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo std/fs.vo std/process.vo std/math.vo std/bytes.vo std/regex.vo std/sqlite.vo
 $(BUILD)/embedded.c: docs/reference.md docs/errors.md $(STD_FILES) tools/embed.py | $(BUILD)
 	python3 tools/embed.py $@ docs/reference.md docs/errors.md $(STD_FILES)
 $(BUILD)/embedded.o: $(BUILD)/embedded.c $(HEADERS)
@@ -152,7 +168,8 @@ lint:
 	  for f in src/platform/*.S; do n=$$(wc -l < $$f); \
 	    if [ $$n -gt 300 ]; then echo "lint: $$f has $$n lines (at most 300)"; fail=1; fi; done; \
 	  tools/vendor_core_math.sh --verify >/dev/null || fail=1; \
-	  if [ $$fail = 0 ]; then echo "lint: clean (C for x86_64, aarch64 and riscv64; SESI; platform files; vendored CORE-MATH)"; fi; \
+	  tools/vendor_sqlite.sh --verify >/dev/null || fail=1; \
+	  if [ $$fail = 0 ]; then echo "lint: clean (C for x86_64, aarch64 and riscv64; SESI; platform files; vendored CORE-MATH and SQLite)"; fi; \
 	  exit $$fail
 # Spec 019 (FR-012, FR-013, research R11): the vendored cryptography's self-tests and known-answer
 # vectors, built from the same sources and configuration as vo for each platform (a static test
@@ -173,7 +190,7 @@ tls-selftest:
 	  || { echo "tls-selftest: outputs differ between platforms"; exit 1; }; \
 	  echo "tls-selftest: $$(grep -c ' ok$$' build-selftest/out-x86_64) checks passed, identical on x86_64, aarch64 and riscv64"
 lint-c:
-	@for f in $(C_SRCS); do $(CC) $(CFLAGS) $(CWARN) $(TLS_FLAGS) -I src -fsyntax-only $$f || exit 1; done
+	@for f in $(C_SRCS); do $(CC) $(CFLAGS) $(CWARN) $(TLS_FLAGS) -isystem $(SQL) $(SQLITE_OPTS) -I src -fsyntax-only $$f || exit 1; done
 # Spec 020 (research R3): src/math_libm.c's software fma and rounding functions against the x86-64
 # instructions, bit for bit (a hosted program; it skips on a CPU without FMA). x86-64 hosts only.
 math-selftest:
@@ -207,7 +224,7 @@ test: all
 	  migrate.py record_changes.py doc_conformance.py json_corpus.py packages_check.py time_check.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
 	  steps.py json_stream.py https_interop.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1" \
 	  math_vectors.py "bytes_fuzz.py --count 2000 --runs 200" "format_diff.py --quick" "regex_diff.py --quick" \
-	  "regex_fuzz.py --count 20000"; do \
+	  "regex_fuzz.py --count 20000" "sqlite_scope.py --quick" "sqlite_fuzz.py --count 1000" sqlite_corpus.py; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
 	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \
@@ -312,6 +329,7 @@ gate-step: all asm
 	@echo "== gate: hover documentation speed" && python3 tests/hover_speed.py
 	@echo "== gate: format speed" && python3 tests/format_speed.py
 	@echo "== gate: regex speed" && python3 tests/regex_speed.py
+	@echo "== gate: sqlite speed" && python3 tests/sqlite_speed.py
 	@echo "== gate-step: passed"
 
 # SC-004 compares like with like: the RISC-V build against build-asm/vo, both under qemu.

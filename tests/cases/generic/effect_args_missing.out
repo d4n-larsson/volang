@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0501","name":"missing_effect","severity":"error","file":"effect_args_missing.vo","start":{"line":9,"col":4},"end":{"line":9,"col":9},"text":"quiet","message":"`quiet` does not declare console, which it needs.","fixes":[{"file":"effect_args_missing.vo","start":{"line":9,"col":40},"end":{"line":9,"col":40},"replacement":"uses console "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

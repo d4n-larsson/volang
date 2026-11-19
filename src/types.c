@@ -157,11 +157,18 @@ done:
     return t;
 }
 
-/* `[int, str]` */
+/* `[int, str]`; spec 026: an effect argument last as `uses ...`, left out when it has no effects
+ * (and the brackets with it when nothing else is left: `Database`). */
 void ty_args_into(SB *sb, Vec *args)
 {
+    long n = args->n;
+    if (n) {
+        Type *last = vec_get(args, n - 1);
+        if (last->kind == TY_EFFSET && es_is_empty(last->decl.es)) n--;
+    }
+    if (!n) return;
     sb_cstr(sb, "[");
-    for (long i = 0; i < args->n; i++) {
+    for (long i = 0; i < n; i++) {
         if (i) sb_cstr(sb, ", ");
         ty_name_into(sb, vec_get(args, i));
     }

@@ -1,0 +1,72 @@
+import std.sqlite.open_memory;
+import std.sqlite.sql;
+import std.sqlite.exec;
+import std.sqlite.query;
+import std.sqlite.get_int;
+import std.sqlite.Database;
+import std.sqlite.Value;
+import std.sqlite.Changes;
+
+fn ran(r: result[Changes]) -> bool {
+    match r {
+        case ok(_) {
+            return true;
+        }
+        case err(_) {
+            return false;
+        }
+    }
+}
+
+fn count(db: Database) -> int {
+    match query(db, sql("select count(*) as n from t"), new list[Value]) {
+        case ok(rows) {
+            match get_int(rows[0], "n") {
+                case ok(n) {
+                    return n;
+                }
+                case err(_) {
+                    return -1;
+                }
+            }
+        }
+        case err(_) {
+            return -1;
+        }
+    }
+}
+
+test "first test sees its own rows" {
+    let db = open_memory();
+    expect(ran(exec(db, sql("create table t(x)"), new list[Value])));
+    expect(ran(exec(db, sql("insert into t values (?), (?)"), [Value.integer(1), Value.integer(2)])));
+    expect_eq(count(db), 2);
+}
+
+test "second test starts empty" {
+    let db = open_memory();
+    expect(ran(exec(db, sql("create table t(x)"), new list[Value])));
+    expect(ran(exec(db, sql("insert into t values (?)"), [Value.integer(3)])));
+    expect_eq(count(db), 1);
+}
+
+test "stops mid-way with the database open" {
+    let db = open_memory();
+    expect(ran(exec(db, sql("create table t(x)"), new list[Value])));
+    let none = new list[int];
+    expect_eq(none[0], 0);
+}
+
+test "passes after the error" {
+    let db = open_memory();
+    expect(ran(exec(db, sql("create table t(x)"), new list[Value])));
+    expect_eq(count(db), 0);
+}
+
+prop "every case has its own database" (n: int) {
+    let db = open_memory();
+    expect(db.id >= 0);
+    expect(ran(exec(db, sql("create table t(x)"), new list[Value])));
+    expect(ran(exec(db, sql("insert into t values (?)"), [Value.integer(n)])));
+    expect_eq(count(db), 1);
+}

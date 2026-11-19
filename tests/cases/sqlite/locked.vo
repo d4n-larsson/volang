@@ -1,0 +1,33 @@
+# Two connections to one file (locks are per open file, so this is what a second process sees): while
+# the first holds a write transaction, the second's write waits (at most 5 s) and returns busy.
+import std.sqlite.open;
+import std.sqlite.sql;
+import std.sqlite.exec;
+import std.sqlite.transaction;
+import std.sqlite.Changes;
+import std.sqlite.Value;
+
+fn show(r: result[Changes]) -> str {
+    match r {
+        case ok(c) {
+            return "ok " + str(c.changed);
+        }
+        case err(e) {
+            return "err " + e;
+        }
+    }
+}
+
+fn main() -> result[void] uses console, file.read, file.write {
+    let a = try open("shared.db");
+    let b = try open("shared.db");
+    let _ = try exec(a, sql("create table t(x)"), new list[Value]);
+    let r = transaction(a, fn() -> result[int] {
+        let _ = try exec(a, sql("insert into t values (1)"), new list[Value]);
+        print("second while the first writes: " + show(exec(b, sql("insert into t values (2)"), new list[Value])));
+        return ok(0);
+    });
+    print("first committed: " + str(r == ok(0)));
+    print("second afterwards: " + show(exec(b, sql("insert into t values (2)"), new list[Value])));
+    return ok();
+}

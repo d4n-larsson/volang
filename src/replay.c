@@ -30,7 +30,7 @@ static long rp_saw_end;
 static const char *const ev_names[] = {0,         "read_line", "read_all",    "read_file", "write_file",
                                        "env",     "now_ms",    "end",         "http",      "listen",
                                        "request", "response",  "info",        "list_dir",  "append_file",
-                                       "make_dir", "delete",   "rename",      "run"};
+                                       "make_dir", "delete",   "rename",      "run",       "sql"};
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static Str *run_desc(Str *program, Str *joined);
 static const char hexd[] = "0123456789abcdef";
@@ -54,7 +54,8 @@ static const char *const d_table[] = {0,
                                       "creates the directory `$1`",
                                       "deletes `$1`",
                                       "renames `$1`",
-                                      "runs `$1`"};
+                                      "runs `$1`",
+                                      "makes the database call `$1`"};
 static const char *const n_table[] = {0,
                                       "a line of stdin",
                                       "the rest of stdin",
@@ -73,7 +74,8 @@ static const char *const n_table[] = {0,
                                       "a directory created at `$1`",
                                       "a delete of `$1`",
                                       "a rename of `$1`",
-                                      "a run of `$1`"};
+                                      "a run of `$1`",
+                                      "the database call `$1`"};
 
 #define J_HEAD "{\"v\":1,\"kind\":\""
 #define J_CLOSE "}\n"
@@ -537,6 +539,35 @@ void rp_mismatch_now(long kind, Str *name)
     rp_mismatch(kind, name, vec_get(rp_events, rp_next - 1));
 }
 
+/* ---- spec 026: std.sqlite events (contracts/recording.md of specs/026-sqlite) ---- */
+
+/* Writes n bytes to the recording. */
+void rw_bytes(char *p, long n)
+{
+    if (rcd_fb) fbuf_write(rcd_fb, p, n);
+}
+
+/* The next event, which must be the database call whose line starts with ident (its operation,
+ * connection, path or statement and parameters: what the program asked for) followed by its outcome;
+ * returns the line. name: the statement, path or operation, for R0014. */
+Str *rp_take_sql(Str *ident, Str *name)
+{
+    if (rp_next >= rp_events->n) rp_mismatch(EVK_SQL, name, 0);
+    Event *e = vec_get(rp_events, rp_next++);
+    Str *line = e->request;
+    if (e->kind == EVK_SQL && line->len > ident->len && mem_eq(line->data, ident->data, ident->len) &&
+        line->data[ident->len] == ',')
+        return line;
+    if (e->kind == EVK_SQL && str_eq(e->name, name)) /* the same call with other arguments */
+        rt_raise("R0014",
+                 msg("The program makes the database call `$1` with other arguments (connection or parameters) than "
+                     "the recording: replay the program that was recorded, or record this one.",
+                     name, 0, 0),
+                 (void *)cur_node);
+    rp_mismatch(EVK_SQL, name, e);
+    return 0;
+}
+
 /* ---- spec 017: std.fs and std.process events ---- */
 
 /* The strs of v (a Vec of the reader, or the List of a run's argv from index 1) joined by NUL bytes. */
@@ -629,15 +660,19 @@ static long rf_status;
 static long rf_port = -1; /* spec 007: http events */
 static Str *rf_request;   /* spec 009 */
 static Str *rf_scheme;    /* spec 019: "https" on an HTTPS http event */
+static Str *rf_op;        /* spec 026: an sql event's operation and statement */
+static Str *rf_sql;
+static Str *rf_line; /* ... and its whole line */
 
 static const char *const rk_keys[] = {"kind",   "program", "fingerprint", "seed", "clock_ms", "args",    "path",
                                       "name",   "result",  "value",       "status", "host",     "port",    "request",
-                                      "address", "to", "scheme", 0};
+                                      "address", "to", "scheme", "op", "sql", 0};
 static long rf_args_line; /* spec 017: this line had "args" (a run event's arguments) */
 
 /* Where each string-valued key is stored (rk_keys order; 0: not a string). */
 static Str **const rf_slots[] = {&rf_kind, &rf_program, &rf_fprint, 0, 0, 0, &rf_name, &rf_name, &rf_result,
-                                 &rf_value, 0, &rf_name, 0, &rf_request, &rf_name, &rf_request, &rf_scheme};
+                                 &rf_value, 0, &rf_name, 0, &rf_request, &rf_name, &rf_request, &rf_scheme,
+                                 &rf_op, &rf_sql};
 
 /* T0008 invalid_recording, exit 64. */
 void rp_bad(void)
@@ -726,8 +761,26 @@ long rp_key(Str *str)
     return -1;
 }
 
+/* Spec 026: skips an array or object (an sql event's params, columns and rows: src/sqlite_rt.c reads
+ * them from the line). */
+static char *rp_skip(char *p, char *end)
+{
+    long depth = 0;
+    do {
+        if (p >= end) rp_bad();
+        if (*p == '"') {
+            Str *s;
+            p = rp_string(p, end, &s);
+            continue;
+        }
+        depth += (*p == '[' || *p == '{') - (*p == ']' || *p == '}');
+        p++;
+    } while (depth > 0);
+    return p;
+}
+
 /* One record into the rf_* fields: a flat object of strings, integers, true/false/null and (for
- * args) an array of strings. Anything else is T0008. */
+ * args) an array of strings; other arrays and objects are skipped. Anything else is T0008. */
 void rp_line(char *p, char *end)
 {
     rf_kind = 0;
@@ -738,6 +791,8 @@ void rp_line(char *p, char *end)
     rf_port = -1;
     rf_request = 0;
     rf_scheme = 0;
+    rf_op = 0;
+    rf_sql = 0;
     rf_program = 0;
     rf_args_line = 0;
     p = rp_ws(p, end);
@@ -754,6 +809,8 @@ void rp_line(char *p, char *end)
             Str *s;
             p = rp_string(p, end, &s);
             if (field >= 0 && rf_slots[field]) *rf_slots[field] = s;
+        } else if ((*p == '[' && field != 5) || *p == '{') {
+            p = rp_skip(p, end);
         } else if (*p == '[') { /* an array of strings (args) */
             p++;
             Vec *v = vec_new();
@@ -812,7 +869,7 @@ long rp_kind_of(Str *str)
 {
     if (!str) return -1;
     if (str_eq_cstr(str, "recording")) return 0;
-    for (long k = 1; k <= EVK_RUN; k++)
+    for (long k = 1; k <= EVK_SQL; k++)
         if (str_eq_cstr(str, (char *)ev_names[k])) return k;
     return -1;
 }
@@ -854,6 +911,7 @@ void rp_read(char *text, long len)
             } else if (kind == EVK_END) {
                 rp_saw_end = 1;
             } else { /* an event */
+                rf_line = kind == EVK_SQL ? str_new(p, le - p) : 0;
                 Event *e = alloc(EV_SIZE);
                 e->kind = kind;
                 e->name = rf_name;
@@ -863,6 +921,10 @@ void rp_read(char *text, long len)
                 e->port = rf_port;
                 e->request = rf_request;
                 e->tls = rf_scheme && str_eq_cstr(rf_scheme, "https");
+                if (kind == EVK_SQL) { /* spec 026: the statement, path or operation, and the whole line */
+                    e->name = rf_sql ? rf_sql : rf_name ? rf_name : rf_op;
+                    e->request = rf_line;
+                }
                 if (kind == EVK_RUN) { /* spec 017: the program, and the arguments joined by NUL bytes */
                     e->name = rf_program;
                     e->request = rf_args_line ? join_args(rf_args) : 0;
@@ -881,6 +943,10 @@ void rp_read(char *text, long len)
  * there is one, a str value for ok/err results and read_all, an integer for now_ms. */
 void rp_check_event(Event *e)
 {
+    if (e->kind == EVK_SQL) { /* spec 026: the outcome is checked when it is replayed */
+        if (!rf_op || e->result < 0) rp_bad();
+        return;
+    }
     if (e->kind == EVK_NOW_MS) { /* now_ms: an integer */
         if (!rf_isint) rp_bad();
         return;

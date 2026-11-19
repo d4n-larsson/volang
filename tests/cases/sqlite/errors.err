@@ -1,0 +1,4 @@
+errors.vo:28:68: error[E0325]: The statement has 1 parameter(s) and the list has 2.
+  28 |     print(show(exec(db, sql("insert into items(name) values (?)"), [Value.text("x"), Value.integer(1)])));
+     |                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings

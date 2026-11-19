@@ -27,10 +27,10 @@ clause. `vo.effects` (per function) and `vo.packages` (pinned packages) make the
 the enforcement does not depend on anyone reading them.
 
 The trusted computing base is the `vo` binary (with its embedded standard library and, since spec
-019, the vendored TLS library Mbed TLS, and since spec 020 the vendored math library CORE-MATH, both
-under `third_party/`, pinned and updated under constitution 1.4.1: Mbed TLS to a release, CORE-MATH,
-which publishes none, to a commit with the hash of every kept file, checked by `make lint`) and the
-Linux kernel. Nothing else is trusted: not the program's source, not its packages, not its inputs.
+019, the vendored TLS library Mbed TLS, since spec 020 the vendored math library CORE-MATH, and since
+spec 026 the vendored database engine SQLite, all under `third_party/`, pinned and updated under
+constitution 1.5.0: Mbed TLS and SQLite to a release, CORE-MATH, which publishes none, to a commit, each
+with the hash of every kept file, checked by `make lint`) and the Linux kernel. Nothing else is trusted: not the program's source, not its packages, not its inputs.
 
 ## Attackers
 
@@ -69,16 +69,25 @@ Each property is a claim the review must try to break; each break is a finding.
   link cannot redirect them either; deleting and renaming act on a link itself, never on its target,
   and never remove a scope directory itself. A listing reports a link's target kind only when the
   target is inside the grant. A program is allowed only when its text matches a `process` scope of
-  both grants exactly.
+  both grants exactly. SQLite (spec 026) reaches files only through vo's own OS layer
+  (`src/sqlite_vfs.c`), which checks every file SQLite opens (the database, its journal, files of
+  `attach` and `vacuum into`) against both grants and opens it the same way; a database's effects are
+  part of its type (`Database[uses file.read, file.write]`), and every statement on a file database
+  checks them again at run time, so a handle built by hand (`new Database { id: 0 }`) is R0010.
+  Temporary files stay in memory; WAL mode and the pragmas that name directories are refused.
 - **S3 No other capabilities.** The only things a program can do are the effects above. The binary
-  reaches 39 system calls (`src/platform/*.h`). Processes are created only for tasks (spec 016: copies
+  reaches 43 system calls (`src/platform/*.h`; spec 026 added `pread64`, `pwrite64`, `fsync` and
+  `ftruncate` for SQLite's files). Processes are created only for tasks (spec 016: copies
   of the program, which share nothing) and for `process` (spec 017); signals are sent only to those
   children and their process groups; no native code
-  loading, no raw sockets, no file descriptors a program can name. No environment variable, file or
+  loading (SQLite is built without extension loading), no raw sockets, no file descriptors a program
+  can name. No environment variable, file or
   argument outside the grant changes what a program may do.
 - **S4 Memory safety.** No program and no input (A1-A3) makes the toolchain read or write memory it
   does not own, or run code other than the program's: overflows, out-of-bounds access, division by zero,
   stack exhaustion and allocation failure are runtime errors with a code, not undefined behavior.
+  SQLite's memory is its own fixed heap (64 MiB, outside the collected heap); a damaged database file is
+  an `err("corrupt: ...")`, never a crash (tests/sqlite_fuzz.py).
 - **S5 Bounded resources.** Time (`--timeout`, default 10 s, per request for servers), live memory
   (`--max-memory`), stack depth, HTTP responses (16 MiB), server requests (head 64 KiB, 100 headers, body
   16 MiB, 10 s to arrive) are limited, and reaching a limit is a reported error. `--timeout 0` turns the
@@ -86,7 +95,9 @@ Each property is a claim the review must try to break; each break is a finding.
   matching never backtracks, so its time is linear in the text for every pattern (and stops at
   `--timeout`), and a pattern from data (`parse_regex`) is bounded (10,000 bytes, repetition counts up to
   1,000, 20,000 instructions after repetitions, groups nested 200 deep) or refused with an `err`; the
-  compiled patterns are kept in a cache of 16.
+  compiled patterns are kept in a cache of 16. SQL statements stop at `--timeout` (a progress handler
+  every 1,000 SQLite steps), waiting for another process's lock is bounded (5 s, never past the
+  deadline), and SQLite's heap is fixed (64 MiB: a statement needing more is `err("nomem: ...")`).
 - **S6 Commands that do not run programs are safe on hostile source.** `vo check`, `fmt`, `doc`, `query`,
   `explain`, `effects`, `package` and `edit` never execute program code, and write only what they
   document (`fmt` and `edit`: the program's files; `effects --update`: `vo.effects`; `package`:

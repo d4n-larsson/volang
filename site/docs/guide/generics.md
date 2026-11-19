@@ -430,6 +430,45 @@ other effects next to it (`uses E, console`), and the parameter can stand alone:
 `fn twice[E: effects](f: fn() uses E) uses E`. The standard library uses the same pattern, for
 example `std.http.serve`, whose handler's effects become the caller's.
 
+## Effects in a type
+
+A record or variant can take an effect parameter too, for a value that stands for access to something
+outside, so that the access stays visible wherever the value goes. In a type the effects come last,
+after `uses`; without them the type has none. `std.sqlite` works this way: `open` returns a
+`Database[uses file.read, file.write]`, `open_memory` a plain `Database`, and `query` is declared
+`query[E: effects](db: Database[E], ...) uses E`, so querying a file database needs the file effects
+and querying an in-memory one needs nothing:
+
+```vo
+record Account[E: effects] {
+    name: str;
+}
+
+fn charge[E: effects](a: Account[E], f: fn() uses E) uses E {
+    f();
+}
+
+fn main() uses console {
+    let live = new Account[uses console] { name: "live" };
+    let sandbox = new Account { name: "sandbox" };
+    charge(live, fn() {
+        print("charged");
+    });
+    charge(sandbox, fn() {
+    });
+}
+```
+
+```output
+charged
+```
+
+A function that receives such a value as a parameter, a record field or a list element, captures it, or
+gets it back from another function, needs its effects to use it ([E0501](../errors/E0501.md)), and a
+value with fewer effects than a type names is a different type ([E0301](../errors/E0301.md)). A type
+argument where effects are expected, or effects without `uses`, is [E0327](../errors/E0327.md), with a
+fix.
+
 ## Limits
 
 - Type arguments are never written at calls, only in types and optionally in `new` and variant cases.
@@ -449,4 +488,5 @@ example `std.http.serve`, whose handler's effects become the caller's.
 | [E0311](../errors/E0311.md) | a plain type parameter is compared or sorted: add `: ordered` |
 | [E0312](../errors/E0312.md) | a generic type is written with the wrong number of arguments |
 | [E0313](../errors/E0313.md) | a type without an order is used where an order is needed |
+| [E0327](../errors/E0327.md) | effect arguments in a type are not written last, after `uses` |
 | [E0502](../errors/E0502.md) | a function value has effects its expected type does not allow |

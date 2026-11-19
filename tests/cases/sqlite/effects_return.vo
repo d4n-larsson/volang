@@ -1,0 +1,21 @@
+# A file database returned from a helper and queried by a function without uses: E0501.
+import std.sqlite.open;
+import std.sqlite.sql;
+import std.sqlite.query;
+import std.sqlite.Database;
+import std.sqlite.Row;
+import std.sqlite.Value;
+
+fn connect() -> result[Database[uses file.read, file.write]] uses file.read, file.write {
+    return open("people.db");
+}
+
+fn names() -> result[list[Row]] {
+    let db = try connect();
+    return query(db, sql("select name from people"), new list[Value]);
+}
+
+fn main() -> result[void] uses console {
+    print(str(len(try names())));
+    return ok();
+}

@@ -627,6 +627,7 @@ long run_one_test(Node *test_in, long index_in)
         if (test->flags & NF_PROP) { /* a property runs its own cases (prop.s) */
             status = prop_run(test, i);
         } else {
+            volatile long sql_mark = sql_serial(); /* spec 026: the databases this test opens */
             recover_point = (long)jb;
             status = jmp_save(jb);
             if (!status) {
@@ -634,6 +635,7 @@ long run_one_test(Node *test_in, long index_in)
                 run_test_body(test);
                 status = ST_PASS;
             }
+            sql_close_since(sql_mark); /* closed however it ended: the next test's heap starts empty */
         }
         recover_point = 0;
         deadline_ms = 0;

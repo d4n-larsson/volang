@@ -1600,6 +1600,174 @@ fn main() uses console {
 }
 ```
 
+## E0323 sql_invalid
+
+The SQL of `sql(...)` is not one valid statement that vo can run.
+
+Fixable: no
+
+`vo check` prepares every statement written with `sql("...")` against an empty database, so a syntax error, an incomplete statement or an unknown token is reported at its place. Each `sql(...)` holds exactly one statement: split a script into one `exec` per statement. SQL may not read the clock or randomness behind the program's back (`random()`, `randomblob()`, `CURRENT_TIMESTAMP`, `'now'`): compute the value in vo (`std.time`, `std.random`) and pass it as a `?` parameter. Three pragmas that would put files elsewhere or change the journal are refused. Table and column names are not checked here: the database is only there when the program runs.
+
+### Example
+
+```vo
+import std.sqlite.sql;
+
+fn main() uses console {
+    print(sql("selec name from items").text);
+}
+```
+
+### Fixed
+
+```vo
+import std.sqlite.sql;
+
+fn main() uses console {
+    print(sql("select name from items").text);
+}
+```
+
+## E0324 sql_not_literal
+
+`sql` is called with something other than a string literal.
+
+Fixable: no
+
+A statement is written as a literal, and values go in as `?` parameters, never into the text: SQL built with `+` is how SQL injection happens. Write the statement in the call with `?` where the values go, and pass them in the parameter list. For SQL that really must be built at run time, `parse_sql(s)` returns a `result`.
+
+### Example
+
+```vo
+import std.sqlite.open_memory;
+import std.sqlite.sql;
+import std.sqlite.query;
+import std.sqlite.Value;
+
+fn main() -> result[void] uses console {
+    let name = "al";
+    let rows = try query(open_memory(), sql("select '" + name + "' as n"), new list[Value]);
+    print(str(len(rows)));
+    return ok();
+}
+```
+
+### Fixed
+
+```vo
+import std.sqlite.open_memory;
+import std.sqlite.sql;
+import std.sqlite.query;
+import std.sqlite.Value;
+
+fn main() -> result[void] uses console {
+    let name = "al";
+    let rows = try query(open_memory(), sql("select ? as n"), [Value.text(name)]);
+    print(str(len(rows)));
+    return ok();
+}
+```
+
+## E0325 sql_parameters
+
+The parameters of a statement are written in another form, or the list has the wrong length.
+
+Fixable: sometimes
+
+Parameters are `?`, filled from the list in order: `:name`, `@name`, `$name` and `?1` are other spellings of the same thing. When each is used once (numbered ones in order), the fix rewrites them to `?`. A parameter list written in the call must have as many values as the statement has `?`.
+
+### Example
+
+```vo
+import std.sqlite.sql;
+
+fn main() uses console {
+    print(sql("select * from items where id = :id").text);
+}
+```
+
+### Fixed
+
+```vo
+import std.sqlite.sql;
+
+fn main() uses console {
+    print(sql("select * from items where id = ?").text);
+}
+```
+
+## E0326 sqlite_memory_path
+
+An in-memory database is opened by its SQLite file name, `":memory:"`.
+
+Fixable: yes
+
+An in-memory database needs no file and no effect: open it with `open_memory()`, which returns a `Database` with no effects, so tests that use it declare none.
+
+### Example
+
+```vo
+import std.sqlite.open;
+
+fn main() -> result[void] uses console, file.read, file.write {
+    let db = try open(":memory:");
+    print(str(db.id));
+    return ok();
+}
+```
+
+### Fixed
+
+```vo
+import std.sqlite.open_memory;
+
+fn main() -> result[void] uses console {
+    let db = open_memory();
+    print(str(db.id));
+    return ok();
+}
+```
+
+## E0327 effect_argument_syntax
+
+Effects in a type are written in the wrong place or form.
+
+Fixable: sometimes
+
+A record or variant can take an effect parameter (`record Database[E: effects]`). In a type, its effects come last in the brackets, after `uses`, as in a function type: `Database[uses file.read, file.write]`. Without them the type has no effects (`Database`). The fix adds the missing `uses`.
+
+### Example
+
+```vo
+record Conn[E: effects] {
+    id: int;
+}
+
+fn ping(c: Conn[console]) -> int {
+    return c.id;
+}
+
+fn main() uses console {
+    print(str(ping(new Conn[uses console] { id: 1 })));
+}
+```
+
+### Fixed
+
+```vo
+record Conn[E: effects] {
+    id: int;
+}
+
+fn ping(c: Conn[uses console]) -> int {
+    return c.id;
+}
+
+fn main() uses console {
+    print(str(ping(new Conn[uses console] { id: 1 })));
+}
+```
+
 ## E0401 non_exhaustive_match
 
 A `match` does not handle every case.

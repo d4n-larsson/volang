@@ -1,0 +1,23 @@
+record Conn[E: effects] {
+    id: int;
+}
+
+record Holder {
+    conn: Conn[uses console];
+}
+
+fn ping[E: effects](c: Conn[E]) -> int uses E {
+    return c.id;
+}
+
+fn plain_id(c: Conn) -> int {
+    return ping(c);
+}
+
+fn main() uses console {
+    let c = new Conn[uses console] { id: 1 };
+    print(str(ping(c)));
+    let h = new Holder { conn: new Conn[uses console] { id: 2 } };
+    print(str(ping(h.conn)));
+    print(str(plain_id(new Conn { id: 3 })));
+}

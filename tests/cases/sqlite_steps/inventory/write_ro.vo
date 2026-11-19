@@ -1,0 +1,26 @@
+# Spec 026 (US1): a read-only connection refuses changes with an err.
+import std.sqlite.open_readonly;
+import std.sqlite.sql;
+import std.sqlite.exec;
+import std.sqlite.Value;
+
+fn main() -> result[void] uses console, file.read("data/") {
+    let db = try open_readonly("data/inventory.db");
+    match exec(db, sql("insert into items values ('gear', 1)"), new list[Value]) {
+        case ok(c) {
+            print("changed " + str(c.changed));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    match open_readonly("data/missing.db") {
+        case ok(_) {
+            print("opened");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    return ok();
+}

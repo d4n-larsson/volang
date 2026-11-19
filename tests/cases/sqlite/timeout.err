@@ -1,0 +1,6 @@
+timeout.vo:8:20: runtime error[R0009]: Time limit of 1 s exceeded.
+   8 |     let rows = try query(open_memory(), sql("with recursive c(n) as (select 1 union all select n + 1 from c where n < 1000000000000) select count(*) as n from c"), new list[Value]);
+     |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at query (timeout.vo:8:20)
+  at main (timeout.vo:8:20)

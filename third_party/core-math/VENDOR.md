@@ -9,7 +9,7 @@ Third-party code built into vo under constitution 1.4.1 ("Implementation Constra
 | Commit | `1851882b0f85ed581af9185cfa020992cec9e7a1` (the project publishes no releases) |
 | SHA-256 | of each file as upstream has it, below |
 | License | MIT, see LICENSE |
-| Kept | the files below, 14266 lines of C |
+| Kept | the files below, 18948 lines of C |
 | Modified | one patch, below |
 
 vo calls the functions from `src/math.c`, which also supplies the C math functions the compiler
@@ -19,33 +19,50 @@ emits calls to (`fma` on x86-64, `round`, ...). Other declarations are in `third
 
 - `LICENSE` 81830875362f4d477637de58eecd6d458db108cc90c40904fca3694807b86de3
 - `src/binary64/acos/acos.c` ecd6173837214367f0140c038c615a4f37d27795c0cc74e16bdaa59f7df8cff1
+- `src/binary64/acosh/acosh.c` ca517d3b64191614bad37213dad652f09c16c2b1e5355090715f36105209befe
 - `src/binary64/asin/asin.c` d9cc7c44922ac3caef5a25d0eb3d9e1e2aa94a0fea761737416d68d6f3a2a8e9
+- `src/binary64/asinh/asinh.c` 0d15a17f72dc95b296a611dab973e72c5fa80cda8674218b71e5a5e667f92b22
 - `src/binary64/atan/atan.c` 2d62a4d780f233fd0460b8e6076880fcb9d2f55280ead5799180983b6b77c863
 - `src/binary64/atan2/atan2.c` 404b0db90e536f8248101544d0fcad9141fd76b2a6cc3d189dd80dbfc865bd91
 - `src/binary64/atan2/tint.h` 41264d54812a8ce2b3f8ca4c8c033094df7cbf2d214da1c7555783328171b921
+- `src/binary64/atanh/atanh.c` 5f0fb27971fcb545e4ce5ae05e2578f328c57d2d46ad8a1c41387f128ecaa537
 - `src/binary64/cos/cos.c` 972c2d35266ffa872d7e5da26fcd2a5aa22b885a01dca8febbfaf289288e75e1
+- `src/binary64/cosh/cosh.c` aa9e80b3fe3fa4aa0b3b2abf11a9fe184f0170c5faa042ad80dcd4698417842b
 - `src/binary64/exp/exp.c` 65af7f572ce97327b63700dd76bd6bf753c087fe326c83c7dbbd674ab168a84d
 - `src/binary64/log/dint.h` 9eb5878abe785c3ef4c232255ed6d9d71a80ea70252f983a38756f10abc7e515
 - `src/binary64/log/log.c` 73f778e1ca7656fa473fc48e934ac5d359d4fd7d3c2d8ebcaa2edd5ff09b3eb5
+- `src/binary64/log10/dint.h` 3bdfe6175e6d107506badbaf3f6cd1005165bee4e601827d1f1da2560f84d264
+- `src/binary64/log10/log10.c` 32eae639bee4d0f77721c7abc9322a58eb05d6303be49386961b6399fe4de066
+- `src/binary64/log2/log2.c` 2097e97c8955de82c0c5df22997ba13617e148ef691c2a86f01ece4cc2310ace
 - `src/binary64/pow/dint.h` c62a9788d872c314c743a821602d6819e5c13113b70f6d4a5d0076695dc413ef
 - `src/binary64/pow/pow.c` b14c65a1d1367f49a0d3e00e65370c3e9dd0fd004fe00e30cdad2a9887954562
 - `src/binary64/pow/pow.h` 8e28930b514f1f439011cb201c738c6b8940f321f03f4679362e7f6b7893fd6a
 - `src/binary64/pow/qint.h` 32de9c10388056e2294339e3302c3695cdf4abc87ca790ad48917d9794bfb6e4
 - `src/binary64/sin/sin.c` 336a684326c7ac4543fe2493938dc0c58c63f9f2a7d803610be97e1db781251c
+- `src/binary64/sinh/sinh.c` bafb6b0e42c69607ee36d00b5d72724c4662881e1152cdc0adc02c4bdbf3edb6
 - `src/binary64/tan/tan.c` dd662b7af88a86d85e01b88c57f9df4b6019ddfd02120ca381b5ba42283987ae
+- `src/binary64/tanh/tanh.c` e89441340424ea7d137269ce4626b9c1426c37fade09c0853c0ffcca606fb111
 
 ## C files
 
 - `src/binary64/acos/acos.c`
+- `src/binary64/acosh/acosh.c`
 - `src/binary64/asin/asin.c`
+- `src/binary64/asinh/asinh.c`
 - `src/binary64/atan/atan.c`
 - `src/binary64/atan2/atan2.c`
+- `src/binary64/atanh/atanh.c`
 - `src/binary64/cos/cos.c`
+- `src/binary64/cosh/cosh.c`
 - `src/binary64/exp/exp.c`
 - `src/binary64/log/log.c`
+- `src/binary64/log10/log10.c`
+- `src/binary64/log2/log2.c`
 - `src/binary64/pow/pow.c`
 - `src/binary64/sin/sin.c`
+- `src/binary64/sinh/sinh.c`
 - `src/binary64/tan/tan.c`
+- `src/binary64/tanh/tanh.c`
 
 ## Patches
 

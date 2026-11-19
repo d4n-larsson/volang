@@ -60,8 +60,8 @@ order: console, input, file.read, file.write, net, clock, random, env, serve.
 |---|---|---|
 | `console` | `print`, `write`, `eprint` (standard output and error) | |
 | `input` | `read_line`, `read_all` (standard input) | |
-| `file.read` | `read_file`; `std.fs.info`, `list_dir`, `walk` | directories |
-| `file.write` | `write_file`; `std.fs.append_file`, `make_dir` | directories |
+| `file.read` | `read_file`; `std.fs.info`, `list_dir`, `walk`; `std.sqlite.open_readonly` and using its database | directories |
+| `file.write` | `write_file`; `std.fs.append_file`, `make_dir`; `std.sqlite.open` (with `file.read`) and using its database | directories |
 | `file.delete` | `std.fs.delete`, `rename` (see [Files and processes](files-and-processes.md)) | directories |
 | `net` | `std.http.get`, `std.http.post` | hosts |
 | `clock` | `now_ms` (and `std.time.now`) | |
@@ -71,7 +71,7 @@ order: console, input, file.read, file.write, net, clock, random, env, serve.
 | `process` | `std.process.run`, `run_with` (running other programs) | programs |
 
 Everything else is pure: arithmetic, strings, lists and maps, the collections, `std.json`,
-`std.text`. Program arguments (`args()`) and `exit` need no effect.
+`std.text`, in-memory databases (`std.sqlite.open_memory`). Program arguments (`args()`) and `exit` need no effect.
 
 ## Scopes
 

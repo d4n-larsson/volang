@@ -201,6 +201,10 @@ PASS the clock starts at zero (0ms)
 `--seed N` and `--clock-ms N` change the starting values for every test of a run; see
 [Determinism](determinism.md).
 
+Code that uses a database can be tested against a real one with no effect and no setup:
+`std.sqlite.open_memory()` gives each test its own empty database, closed when the test ends, so tests
+never see each other's rows (see [Standard library](standard-library.md#stdsqlite)).
+
 ## Running tests
 
 `vo test PATH...` takes files or directories. For a file, it runs every test and property in that file;

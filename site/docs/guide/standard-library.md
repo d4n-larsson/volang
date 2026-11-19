@@ -530,6 +530,63 @@ lookahead or Python's `(?P<name>...)` is reported at its place in the pattern, w
 one. For a pattern built at run time, `parse_regex(s)` returns `err` instead. Every operation searches
 anywhere in the text: anchor with `^` and `$`. Details: [std.regex](../std/regex.md).
 
+## std.sqlite
+
+SQLite databases, built into vo: a database file with `open` (`file.read` and `file.write`) or
+`open_readonly` (`file.read`), or one in memory with `open_memory` (no effect, so `vo test` can use real
+SQL with no setup). A statement is a literal, `sql("...")`, which `vo check` parses: a syntax error, a
+second statement or a missing `?` is reported at its place. Values are always `?` parameters, given as a
+list of `Value`, so a value can never become SQL. For SQL built at run time, `parse_sql(s)` returns `err`
+instead.
+
+```vo
+import std.sqlite.open_memory;
+import std.sqlite.sql;
+import std.sqlite.exec;
+import std.sqlite.query;
+import std.sqlite.transaction;
+import std.sqlite.get_str;
+import std.sqlite.get_int;
+import std.sqlite.Value;
+
+fn main() -> result[void] uses console {
+    let db = open_memory();
+    let _ = try exec(db, sql("create table people(id integer primary key, name text not null, age integer)"), new list[Value]);
+    let added = try transaction(db, fn() -> result[int] {
+        let a = try exec(db, sql("insert into people(name, age) values (?, ?)"), [Value.text("Ada"), Value.integer(36)]);
+        let _ = try exec(db, sql("insert into people(name, age) values (?, ?)"), [Value.text("Alan"), Value.integer(41)]);
+        return ok(a.last_id);
+    });
+    print("first id " + str(added));
+    for row in try query(db, sql("select name, age from people where age > ? order by name"), [Value.integer(30)]) {
+        print(try get_str(row, "name") + " " + str(try get_int(row, "age")));
+    }
+    match exec(db, sql("insert into people(age) values (?)"), [Value.integer(1)]) {
+        case ok(_) {
+            print("added");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    return ok();
+}
+```
+
+```output
+first id 1
+Ada 36
+Alan 41
+constraint: NOT NULL constraint failed: people.name
+```
+
+A database's type carries its effects: `open` gives a `Database[uses file.read, file.write]`, and a
+function that queries one declares those effects, wherever the database came from (a parameter, a record
+field, a list). `transaction(db, f)` commits when `f` returns `ok` and rolls back when it returns `err`.
+SQL that reads the clock or randomness (`CURRENT_TIMESTAMP`, `random()`) is refused, so results are the
+same on every run and platform; compute those values in vo and pass them. `vo run --record` records each
+call's results, and `vo replay` answers from them without the file. Details: [std.sqlite](../std/sqlite.md).
+
 ## What is not in the library
 
 There is no serving over HTTPS (run a vo server behind a proxy for that), no threads, no long-running or interactive child

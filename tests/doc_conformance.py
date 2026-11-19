@@ -116,6 +116,9 @@ class Values:
                 r = self.inst(m.group(2), tv)
                 return f"fn({ps}) -> {r} {{ return {self.value(r, tv)}; }}"
             return f"fn({ps}) {{ }}"
+        m = re.fullmatch(r"(\w+)\[(.*)\]", t)  # spec 026: a generic record (Database[E]): inferred arguments
+        if m and m.group(1) in self.types:
+            t = m.group(1)
         d = self.types[t]
         if d["item"] == "record":
             fs = ", ".join(f'{f["name"]}: {self.value(f["type"], tv)}' for f in d["fields"])
@@ -206,6 +209,8 @@ def main():
         tv = {k: "int" for k in tvars}
         void = ret in (None, "void")
         args = [vals.value(t, tv) for _, t in params]
+        if label == "std.sqlite.sql":  # spec 026: the literal is checked SQL
+            args = ['"select 1"']
         # spec 014: a type parameter only the result mentions comes from a declared type
         free = [x for x in re.findall(r"\b[A-Z]\b", ret or "") if not any(re.search(rf"\b{x}\b", t) for _, t in params)]
         annot = vals.inst(ret, tv) if free and not void else None

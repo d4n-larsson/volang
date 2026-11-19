@@ -1,0 +1,8 @@
+selec 1 -> near "selec": syntax error
+select 1; select 2 -> One statement per `sql(...)`: split it into one call per statement.
+select :a -> Parameters are `?`, taken from the list in order; named and numbered parameters are a second spelling.
+select random() -> `random()` reads randomness: compute the value in vo (std.random) and pass it as a parameter.
+select datetime('now') -> `'now'` reads the clock: compute the time in vo (std.time) and pass it as a parameter.
+pragma journal_mode = wal -> PRAGMA journal_mode = WAL is not available in vo
+select * from no_such_table -> run: error: no such table: no_such_table
+select ? + 1 -> 1 row(s)

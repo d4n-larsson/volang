@@ -1,0 +1,26 @@
+# Recorded with --record, replayed with the database file deleted: the same output, no file touched.
+import std.sqlite.open;
+import std.sqlite.sql;
+import std.sqlite.exec;
+import std.sqlite.query;
+import std.sqlite.transaction;
+import std.sqlite.get_str;
+import std.sqlite.Value;
+import std.bytes.from_ints;
+
+fn main() -> result[void] uses console, file.read("data/"), file.write("data/") {
+    let db = try open("data/app.db");
+    let _ = try exec(db, sql("create table if not exists t(id integer primary key, name text, f real, b blob, z)"), new list[Value]);
+    let c = try exec(db, sql("insert into t(name, f, b, z) values (?, ?, ?, ?)"), [Value.text("Ada \"q\" ü"), Value.real(0.1), Value.blob(from_ints([0, 255, 10])), Value.null]);
+    print("inserted " + str(c.changed) + " id " + str(c.last_id));
+    let n = transaction(db, fn() -> result[int] {
+        let x = try exec(db, sql("insert into t(name) values (?)"), [Value.text("Bob")]);
+        return ok(x.changed);
+    });
+    print(str(n == ok(1)));
+    print(str(exec(db, sql("insert into nope values (1)"), new list[Value]) == ok(c)));
+    for row in try query(db, sql("select name, f, b, z from t order by id"), new list[Value]) {
+        print(try get_str(row, "name") + " " + str(len(row.values)));
+    }
+    return ok();
+}

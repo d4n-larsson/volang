@@ -185,6 +185,15 @@ void fx_builtin_fsb(Node *call)
     if (op->kind == N_INT) ck_fx->direct->any |= op->a.i == 1 ? EF_FREAD : EF_FWRITE;
 }
 
+/* spec 026: __sql_open(path, mode): 0 read-write (file.read, file.write), 1 read-only (file.read), 2 in
+ * memory (none); the effects of using a database come from its type (std.sqlite). */
+void fx_builtin_sql_open(Node *call)
+{
+    if (!ck_fx || !ck_fx->direct || call->b.v->n < 2) return;
+    Node *mode = vec_get(call->b.v, 1);
+    if (mode->kind == N_INT) ck_fx->direct->any |= mode->a.i == 0 ? EF_FREAD | EF_FWRITE : mode->a.i == 1 ? EF_FREAD : 0;
+}
+
 /* Spec 013 (L1): a string literal as the target (path, name, address) of an effect: checked against
  * the caller's scopes when the file's effects are reported. */
 static void fx_literal_at(Node *call, long index, long bit)
@@ -397,6 +406,44 @@ void fx_fix_clause(Diag *d, Node *item, EffSet *set)
     diag_add_fix(d, (int)item->file, uses ? (long)uses->start : at, at, sb_finish(sb));
 }
 
+/* Spec 026: 1 when t carries effect parameter ev as an effect argument of a record or variant
+ * (`Database[E]`), at any depth of lists, maps, results and instances. */
+static int ty_carries_evar(Type *t, Type *ev)
+{
+    if (!t) return 0;
+    switch (t->kind) {
+    case TY_PARAM: return t == ev;
+    case TY_LIST:
+    case TY_RESULT: return ty_carries_evar(t->a.t, ev);
+    case TY_MAP: return ty_carries_evar(t->a.t, ev) || ty_carries_evar(t->b.t, ev);
+    case TY_RECORD:
+    case TY_VARIANT:
+        for (long i = 0; t->b.v && i < t->b.v->n; i++)
+            if (ty_carries_evar(t->b.v->data[i].p, ev)) return 1;
+        return 0;
+    default: return 0;
+    }
+}
+
+/* The effect parameters of unused that a parameter of item carries in its type: the effects come
+ * with the value (a database opened with them), so declaring them is the point, not a waste. */
+static EffSet *carried_evars(Node *item, EffSet *unused)
+{
+    EffSet *keep = es_new(0);
+    Vec *params = item->b.v;
+    for (long i = 0; unused->evars && i < unused->evars->n; i++) {
+        Type *ev = unused->evars->data[i].p;
+        for (long j = 0; params && j < params->n; j++) {
+            Node *p = vec_get(params, j);
+            if (p && p->type && ty_carries_evar(p->type, ev)) {
+                es_add_evar(keep, ev);
+                break;
+            }
+        }
+    }
+    return keep;
+}
+
 /* E0501 / E0503 when the declaration does not cover the requirement, W0501 for unused effects. */
 void fx_report(Node *item)
 {
@@ -412,6 +459,8 @@ void fx_report(Node *item)
     }
     if (fx->holes) return; /* an unfinished body: its effects are not known yet */
     EffSet *unused = es_unused(fx->declared, fx->required);
+    if (es_is_empty(unused)) return;
+    if (item->kind == N_FN || item->kind == N_LAMBDA) unused = es_minus(unused, carried_evars(item, unused));
     if (es_is_empty(unused)) return;
     Diag *d = fx_diag("W0501", SEV_WARNING, item, "`$1` declares $2, which it never needs.", unused);
     fx_fix_clause(d, item, es_minus(fx->declared, unused));

@@ -17,9 +17,10 @@ enum {
     BU_SERVE_REPLY, BU_SERVE_CALL, BU_HTTP_PART, BU_COLL, BU_CONCURRENT_MAP, BU_FS, BU_RUN, BU_HTTPS,
     BU_MATH, BU_MATH_INT, BU_BYTES_OF_TEXT, BU_TEXT_OF_BYTES, BU_BYTES_OF_INTS, BU_INTS_OF_BYTES, BU_BYTES_HEX,
     BU_BYTES_UNHEX, BU_BYTES_B64, BU_BYTES_UNB64, BU_STDIN_BYTES, BU_STDOUT_BYTES, BU_FSB, BU_RUN_BYTES, BU_RAW_TEXT, BU_SLEEP,
-    BU_FORMAT, BU_FMT_PIECE, BU_RE_COMPILE, BU_RE, BU_RE_REPL
+    BU_FORMAT, BU_FMT_PIECE, BU_RE_COMPILE, BU_RE, BU_RE_REPL,
+    BU_SQL_OPEN, BU_SQL_CLOSE, BU_SQL_EXEC, BU_SQL_QUERY, BU_SQL_TX, BU_SQL_PREPARE
 };
-_Static_assert(BU_RE_REPL == B_LAST && BU_RE_REPL == B_RE_REPL && BU_RE == B_RE && BU_RE_COMPILE == B_RE_COMPILE && BU_FMT_PIECE == B_FMT_PIECE && BU_FORMAT == B_FORMAT && BU_SLEEP == B_SLEEP && BU_RAW_TEXT == B_RAW_TEXT && BU_RUN_BYTES == B_RUN_BYTES && BU_FSB == B_FSB && BU_BYTES_OF_TEXT == B_BYTES_FIRST && BU_STDIN_BYTES == B_STDIN_BYTES && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
+_Static_assert(BU_SQL_PREPARE == B_LAST && BU_SQL_PREPARE == B_SQL_PREPARE && BU_SQL_OPEN == B_SQL_OPEN && BU_RE_REPL == B_RE_REPL && BU_RE == B_RE && BU_RE_COMPILE == B_RE_COMPILE && BU_FMT_PIECE == B_FMT_PIECE && BU_FORMAT == B_FORMAT && BU_SLEEP == B_SLEEP && BU_RAW_TEXT == B_RAW_TEXT && BU_RUN_BYTES == B_RUN_BYTES && BU_FSB == B_FSB && BU_BYTES_OF_TEXT == B_BYTES_FIRST && BU_STDIN_BYTES == B_STDIN_BYTES && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
 _Static_assert(BU_TODO == B_TODO && BU_REQ_FAIL == B_REQ_FAIL && BU_SORT_BY == B_SORT_BY, "builtin ids");
 
 /* The static type of the call's first argument. */
@@ -152,6 +153,12 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_RE_COMPILE: return (long)re_prim_compile((Str *)a0); /* spec 025: std.regex */
     case BU_RE: return (long)re_prim(a0, (Str *)a1, (Str *)a2, call);
     case BU_RE_REPL: return (long)re_prim_repl((Str *)a0, (Str *)a1, call);
+    case BU_SQL_OPEN: return (long)sql_prim_open((Str *)a0, a1, call); /* spec 026: std.sqlite */
+    case BU_SQL_CLOSE: sql_prim_close(a0, call); return 0;
+    case BU_SQL_EXEC: return (long)sql_prim_exec(a0, (Str *)a1, (List *)a2, call);
+    case BU_SQL_QUERY: return (long)sql_prim_query(a0, (Str *)a1, (List *)a2, call);
+    case BU_SQL_TX: return (long)sql_prim_tx(a0, a1, call);
+    case BU_SQL_PREPARE: return (long)sql_prim_prepare((Str *)a0);
     case BU_RAW_TEXT: return a0; /* spec 021: std.http only; never reaches user code unchecked */
     case BU_RUN_BYTES: return (long)io_run((List *)a0, (Str *)a1, (List *)a2, 1); /* spec 021: std.process */
     case BU_TEXT_FLOAT: return std_text_float((Str *)a0); /* spec 007: up to 19 digits, exactly */

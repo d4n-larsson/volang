@@ -1,0 +1,23 @@
+$ vo run create.vo
+created
+--- stderr
+--- exit 0
+$ vo run crash.vo
+--- stderr
+crash.vo:13:21: runtime error[R0007]: No open database with this id: it was closed, or built by hand.
+  13 |         let _ = try exec(new Database { id: 63 }, sql("insert into t values (3)"), new list[Value]);
+     |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at exec (crash.vo:13:21)
+      db: Database = new Database { id: 63 }, st: Statement = new Statement { text: "insert into t values (3)" }, params: list[Value] = []
+  at anonymous function (crash.vo:13:21)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }
+  at transaction (std/sqlite.vo:149:11)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }, f: fn() -> result[int] uses file.read, file.write = <fn() -> result[int] uses file.read, file.write>
+  at main (crash.vo:11:13)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }
+--- exit 70
+$ vo run read.vo
+1
+--- stderr
+--- exit 0
