@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-19
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: User description: "Hover documentation for editors: `vo query type-at --json` gains an optional
 `doc` object (signature, description, example, effects) when the name at the position refers to a

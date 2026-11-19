@@ -1122,11 +1122,13 @@ Ask the toolchain instead of searching the text: answers follow the checker, so 
 vo query callers ENTRY NAME              call sites, and uses as a value, of a function or builtin
 vo query specs ENTRY                     every `@spec` ID and the tests that name it
 vo query refs ENTRY TARGET               the declaration and every use
-vo query type-at ENTRY FILE:LINE:COL     the type of the name or expression there, and its declaration
+vo query type-at ENTRY FILE:LINE:COL     the type of the name or expression there, its declaration and documentation
 vo impact ENTRY --diff FILE              functions and tests a unified diff (git diff, diff -u) affects; - is stdin
 vo edit rename [--dry-run] ENTRY TARGET NEW_NAME
 vo edit add-field [--dry-run] ENTRY RECORD FIELD: TYPE = DEFAULT
 ```
+
+Comment lines directly above a function, record, variant, field or case document it (a line `#     EXPR is VALUE` is its example): `type-at` adds the declared signature and that text (`doc` in JSON, as `vo doc --json` prints it), and `vo doc ENTRY NAME` prints it for the program's own items.
 
 A TARGET is `name` (a function, record or variant), `Record.field`, `Variant.case`, or `FILE:LINE:COL` (anything at that position: also parameters, locals and type parameters). A name declared in two files is T0005; a missing one T0004. Answers list `FILE:LINE:COL ROLE in FUNCTION: line`, with ROLE `declaration`, `call`, `value`, `type`, `import` or `use`.
 
@@ -1190,7 +1192,7 @@ vo query     [--json] callers|refs|type-at ENTRY TARGET | specs ENTRY
 vo impact    [--json] ENTRY --diff FILE
 vo edit      [--json] [--dry-run] rename|add-field ENTRY ...
 vo replay    [--json] [--trace FILE] [--timeout SEC] [--max-memory MiB] [--mem-stats] RECORDING
-vo doc       [--json] [NAME]
+vo doc       [--json] [ENTRY] [NAME]
 vo package   [--json] ENTRY NAME DIRECTORY | --remove ENTRY NAME
 ```
 

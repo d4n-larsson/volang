@@ -1,0 +1,26 @@
+import geo.Point;
+import geo.Shape;
+import geo.dist2;
+import geo.first;
+import geo.origin;
+import std.math.sqrt;
+
+fn helper(n: int) -> int {
+    return n + 1;
+}
+
+fn main() uses console {
+    let p = new Point { x: 1.0, y: 2.0 };
+    let d = sqrt(dist2(p, origin()));
+    let s = Shape.circle(1.0);
+    print(str(d) + " " + str(p.x) + " " + str(p.y) + " " + str(len([1, 2])) + " " + str(helper(1)));
+    print(str(first([1, 2]) == ok(1)));
+    match s {
+        case circle(r) {
+            print(str(r));
+        }
+        case square(w) {
+            print(str(w));
+        }
+    }
+}

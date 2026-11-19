@@ -1,1 +1,2 @@
 shop/io.vo:23:35 price: int (declared at shop/model.vo:3:5)
+    price: int

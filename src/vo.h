@@ -1566,6 +1566,11 @@ extern Str *doc_cell(char *row, long index);
 extern long doc_names_has(Str *names, Str *name);
 extern long doc_builtins(Str *name);
 extern void doc_print_builtin(Str *names, Str *signature, Str *notes);
+extern void doc_builtin_fields(SB *sb, Str *names, Str *signature, Str *notes); /* spec 023 */
+extern void doc_item_fields(SB *sb, Str *module, Node *item, Str *desc, Str *example);
+extern int doc_record_for(SB *sb, long key_a, long key_b, Str **sig, Str **desc);
+extern long doc_entry_file; /* the program's entry (module names of program files are relative to it) */
+extern const char *builtin_name_of(long id); /* check_expr.c */
 extern void doc_module_list(void);
 extern void doc_print_module(Str *name, void *unused, Str *description);
 extern void doc_not_found(Str *name);

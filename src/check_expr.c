@@ -60,6 +60,12 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
 
 Node *ck_stmt_call; /* the call of the expression statement being checked (hole statements) */
 
+/* spec 023: a builtin's name by id, or 0 (unnamed, out of range). */
+const char *builtin_name_of(long id)
+{
+    return id >= 1 && id <= B_COUNT ? builtin_names[id] : 0;
+}
+
 int builtin_id(Str *name)
 {
     for (int id = 1; id <= B_COUNT; id++)

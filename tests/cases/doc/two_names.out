@@ -1,1 +1,1 @@
-error[T0001]: `doc` takes at most one name: `vo doc std.json` or `vo doc std.json.parse_json`.
+error[T0001]: `doc` takes one name (`vo doc std.json`, `vo doc std.json.parse_json`) or a program and a name (`vo doc main.vo NAME`).

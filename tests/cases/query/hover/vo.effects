@@ -1,0 +1,6 @@
+# vo effects record: update with `vo effects --update`
+geo.vo:dist2 pure
+geo.vo:first pure
+geo.vo:origin pure
+main.vo:helper pure
+main.vo:main uses console

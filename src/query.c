@@ -101,6 +101,7 @@ void q_note_decl(Sym *sym)
 long q_load(char *entry)
 {
     long file = (long)load_source(str_from_cstr(entry));
+    doc_entry_file = file; /* spec 023: module names of the program's files, for doc records */
     q_collect = 1;
     check_program((int)file, 0);
     if (ld_hard) vo_exit(finish_check(1));
@@ -1120,6 +1121,12 @@ int q_type_at(long file, long off)
         shown = expr;
     }
     int f = (int)shown->file;
+    SB *doc = 0; /* spec 023: the doc record of the item the name refers to */
+    Str *doc_sig = 0, *doc_desc = 0;
+    if (name) {
+        doc = sb_new();
+        if (!doc_record_for(doc, name->key_a.i, name->key_b.i, &doc_sig, &doc_desc)) doc = 0;
+    }
     SB *sb = sb_new();
     if (opt_json) {
         sb_cstr(sb, "{\"v\":1,\"kind\":\"type_at\",\"file\":");
@@ -1137,6 +1144,11 @@ int q_type_at(long file, long off)
                 json_span(sb, (int)dn->file, dn->start, dn->end);
                 sb_byte(sb, '}');
             }
+            if (doc) {
+                sb_cstr(sb, ",\"doc\":{");
+                sb_bytes(sb, doc->ptr, doc->len);
+                sb_byte(sb, '}');
+            }
         }
         sb_cstr(sb, J_CLOSE);
     } else { /* FILE:LINE:COL TEXT: TYPE (declared at FILE:LINE:COL) */
@@ -1151,6 +1163,16 @@ int q_type_at(long file, long off)
             sb_byte(sb, ')');
         }
         sb_byte(sb, '\n');
+        if (doc && doc_sig) { /* spec 023: the signature and the description, indented */
+            sb_cstr(sb, "    ");
+            sb_str(sb, doc_sig);
+            sb_byte(sb, '\n');
+            if (doc_desc) {
+                sb_cstr(sb, "    ");
+                sb_str(sb, doc_desc);
+                sb_byte(sb, '\n');
+            }
+        }
     }
     q_out(sb);
     return q_finish(1, 0, 0);

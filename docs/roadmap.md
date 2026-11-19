@@ -29,6 +29,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [020](../specs/020-math/) | `std.math`: `sqrt`, `pow`, `exp`, `log`, trigonometry, `pi`, `floor`/`ceil`/`round` to `int`; correctly rounded from the vendored CORE-MATH, bit-identical on three platforms; out of domain is R0007 | **Done** ([results](../specs/020-math/results.md)) |
 | [021](../specs/021-bytes/) | `bytes`: binary data in files, standard input and output, other programs' output and HTTP bodies (`std.bytes`, `read_bytes`, `run_bytes`, `get_bytes`, `serve_bytes`), hex and base64; every `str` is valid UTF-8, checked where text is read | **Done** ([results](../specs/021-bytes/results.md)) |
 | [022](../specs/022-sleep/) | `std.time.sleep(ms)` under `clock`: real waits with the real clock, bounded by `--timeout`; with a fixed clock (`vo test`, `--clock-ms`) and in replay no wait, the clock moves on | **Done** ([results](../specs/022-sleep/results.md)) |
+| [023](../specs/023-hover-docs/) | Documentation on hover: `vo query type-at` adds the declared signature and the doc comment of the item at a position (`doc` in JSON, as `vo doc --json` prints it), for functions, records, variants, fields, cases, library items and builtins; `vo doc ENTRY NAME` for the program's own items | **Done** ([results](../specs/023-hover-docs/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -193,6 +194,17 @@ run with a fixed clock too.
 
 - **Not done (on purpose):** timers, async waits, sub-millisecond durations, ending a sleeping `serve`
   handler at once on Ctrl-C (it ends when the handler returns, within its time limit).
+
+### 023: documentation on hover (done)
+
+`vo query type-at` answers with the declared signature and the documentation of the item at a position:
+the comment lines directly above it (the convention the standard library already used, now stated in the
+reference) and its example. JSON gains a `doc` field holding the record `vo doc --json` prints, so an
+editor plugin shows it on hover; `vo doc ENTRY NAME` prints it for the program's own items. The doc syntax
+did not change.
+
+- **Not done (on purpose):** markup or tags in doc comments, completion, a standing language server
+  (the "Language server" row below).
 
 ## Planned after 017
 

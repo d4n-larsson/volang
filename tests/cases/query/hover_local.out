@@ -1,0 +1,2 @@
+{"v":1,"kind":"type_at","file":"hover/main.vo","start":{"line":16,"col":15},"end":{"line":16,"col":16},"text":"d","type":"float","name":"d","declaration":{"file":"hover/main.vo","start":{"line":14,"col":9},"end":{"line":14,"col":10}}}
+{"v":1,"kind":"summary","command":"query","errors":0,"warnings":0,"truncated":0,"files":3,"results":1}

@@ -42,17 +42,29 @@ void doc_comments(long file, Vec *items, long index, Str **out)
     out[0] = 0;
     out[1] = 0;
     long next = pos_line((int)file, ((Node *)vec_get(items, index))->start); /* the line below a comment */
-    while (--index >= 0) {
-        Node *c = vec_get(items, index);
-        if (c->kind != N_COMMENT) return;
+    long top = index; /* the topmost comment of the block */
+    while (top > 0) {
+        Node *c = vec_get(items, top - 1);
+        if (c->kind != N_COMMENT) break;
         long line = pos_line((int)file, c->start);
-        if (line + 1 != next) return;
+        if (line + 1 != next) break;
         next = line;
-        if (doc_is_example(file, c))
-            out[1] = doc_line_text(file, c, 5); /* the topmost example line wins */
-        else
-            out[0] = doc_line_text(file, c, 1); /* the topmost description line wins */
+        top--;
     }
+    SB *desc = 0; /* spec 023: every description line, joined by spaces (std uses one line) */
+    GC_ROOT(&desc);
+    for (long i = top; i < index; i++) {
+        Node *c = vec_get(items, i);
+        if (doc_is_example(file, c)) {
+            if (!out[1]) out[1] = doc_line_text(file, c, 5); /* the topmost example line wins */
+            continue;
+        }
+        if (!desc) desc = sb_new();
+        else sb_byte(desc, ' ');
+        sb_str(desc, doc_line_text(file, c, 1));
+    }
+    if (desc) out[0] = sb_finish(desc);
+    GC_UNROOT(1);
 }
 
 /* spec 018: a test's documentation: every comment line directly above items[index] (above its
@@ -243,32 +255,44 @@ void doc_json_shape(SB *sb, Node *item)
 /* ---- one item ---- */
 
 /* Text: the signature, the description indented, and (full) the example; or one JSON record. */
+/* spec 023: the fields of an item's doc record, from "module" on (vo doc prints them in its record,
+ * vo query type-at as "doc"); desc 0 leaves "description" out. */
+void doc_item_fields(SB *sb, Str *module, Node *item, Str *desc, Str *example)
+{
+    SB *sig = sb_new(); /* the signature on its own */
+    doc_signature(sig, item);
+    sb_cstr(sb, "\"module\":");
+    json_str_into(sb, module);
+    sb_cstr(sb, J_NAME);
+    json_str_into(sb, item->a.n->a.s);
+    sb_cstr(sb, J_ITEM);
+    sb_cstr(sb, item->kind == N_RECORD ? "record" : item->kind == N_VARIANT ? "variant" : "fn");
+    sb_cstr(sb, J_SIG);
+    json_str_into(sb, sb_finish(sig));
+    doc_json_shape(sb, item);
+    if (desc) {
+        sb_cstr(sb, J_DESC);
+        json_str_into(sb, desc);
+    }
+    if (example) {
+        sb_cstr(sb, ",\"example\":");
+        json_str_into(sb, example);
+    }
+}
+
 void doc_print_item(Str *module, Node *item, Str *desc, Str *example, long full)
 {
     SB *sb = sb_new();
     SB *sig = sb_new(); /* the signature on its own */
     doc_signature(sig, item);
     if (opt_json) {
-        sb_cstr(sb, J_HEAD);
-        json_str_into(sb, module);
-        sb_cstr(sb, J_NAME);
-        json_str_into(sb, item->a.n->a.s);
-        sb_cstr(sb, J_ITEM);
-        sb_cstr(sb, item->kind == N_RECORD ? "record" : item->kind == N_VARIANT ? "variant" : "fn");
-        sb_cstr(sb, J_SIG);
-        json_str_into(sb, sb_finish(sig));
-        doc_json_shape(sb, item);
-        sb_cstr(sb, J_DESC);
-        json_str_into(sb, desc);
-        if (example) {
-            sb_cstr(sb, ",\"example\":");
-            json_str_into(sb, example);
-        }
+        sb_cstr(sb, "{\"v\":1,\"kind\":\"doc\",");
+        doc_item_fields(sb, module, item, desc, example);
         sb_cstr(sb, J_CLOSE);
     } else {
         sb_bytes(sb, sig->ptr, sig->len);
         sb_byte(sb, '\n');
-        if (desc->len) { /* none for an exported package item without a doc comment */
+        if (desc && desc->len) { /* none for an exported package item without a doc comment */
             sb_cstr(sb, "    ");
             sb_str(sb, desc);
             sb_byte(sb, '\n');
@@ -522,20 +546,27 @@ long doc_builtins(Str *name)
     return printed;
 }
 
+/* spec 023: the fields of a builtin's doc record, from "module" on. */
+void doc_builtin_fields(SB *sb, Str *names, Str *signature, Str *notes)
+{
+    sb_cstr(sb, "\"module\":");
+    json_str_into(sb, str_from_cstr("builtins"));
+    sb_cstr(sb, J_NAME);
+    json_str_into(sb, names);
+    sb_cstr(sb, J_ITEM);
+    sb_cstr(sb, "builtin");
+    sb_cstr(sb, J_SIG);
+    json_str_into(sb, signature);
+    sb_cstr(sb, J_DESC);
+    json_str_into(sb, notes);
+}
+
 void doc_print_builtin(Str *names, Str *signature, Str *notes)
 {
     SB *sb = sb_new();
     if (opt_json) {
-        sb_cstr(sb, J_HEAD);
-        json_str_into(sb, str_from_cstr("builtins"));
-        sb_cstr(sb, J_NAME);
-        json_str_into(sb, names);
-        sb_cstr(sb, J_ITEM);
-        sb_cstr(sb, "builtin");
-        sb_cstr(sb, J_SIG);
-        json_str_into(sb, signature);
-        sb_cstr(sb, J_DESC);
-        json_str_into(sb, notes);
+        sb_cstr(sb, "{\"v\":1,\"kind\":\"doc\",");
+        doc_builtin_fields(sb, names, signature, notes);
         sb_cstr(sb, J_CLOSE);
     } else { /* NAMES SIGNATURE, then the notes indented */
         sb_str(sb, names);
@@ -641,6 +672,47 @@ void doc_summary(long items)
 }
 
 /* `vo doc [--json] [NAME]` (contracts/cli.md). */
+static Str *doc_module_of(long file); /* below, with the hover records */
+
+/* spec 023: vo doc ENTRY.vo NAME: the item NAME of the program (any of its files, exported or not),
+ * printed as library items are; T0010 with the nearest name when it has none. */
+static int doc_program(char *entry, Str *name)
+{
+    q_load(entry);
+    Vec *names = vec_new();
+    for (long id = 0; id < file_count; id++) {
+        FileRec *f = file_get((int)id);
+        if (f->std || !f->ast) continue;
+        Vec *items = f->ast->a.v;
+        for (long i = 0; i < items->n; i++) {
+            Node *it = vec_get(items, i);
+            if (it->kind != N_FN && it->kind != N_RECORD && it->kind != N_VARIANT) continue;
+            if (!str_eq(it->a.n->a.s, name)) {
+                vec_push(names, it->a.n->a.s);
+                continue;
+            }
+            Str *found[2];
+            doc_comments(id, items, i, found);
+            doc_print_item(doc_module_of(id), it, found[0], found[1], 1);
+            doc_summary(1);
+            return 0;
+        }
+    }
+    Str *best = 0; /* the closest name, distance below 3 */
+    long dist = 3;
+    for (long i = 0; i < names->n; i++) {
+        long d = name_distance(vec_get(names, i), name);
+        if (d >= dist) continue;
+        dist = d;
+        best = vec_get(names, i);
+    }
+    Str *m = msg("Nothing is documented as `$1` in $2.", name, str_from_cstr(entry), 0);
+    if (best) m = msg("$1 Did you mean `$2`?", m, best, 0);
+    toolchain_error((int)opt_json, (int)report_fd, "T0010", m, 0);
+    vo_exit(EXIT_USAGE);
+    return 0;
+}
+
 int cmd_doc(void)
 {
     if (!pos_n) { /* no NAME: builtins, then modules */
@@ -652,8 +724,15 @@ int cmd_doc(void)
         doc_summary(n + 5 + p);
         return 0;
     }
+    if (pos_n == 2) { /* spec 023: vo doc ENTRY.vo NAME, an item of the program */
+        char *entry = ((char **)pos_args)[0];
+        long n = cstr_len(entry);
+        if (n > 3 && entry[n - 3] == '.' && entry[n - 2] == 'v' && entry[n - 1] == 'o')
+            return doc_program(entry, str_from_cstr(((char **)pos_args)[1]));
+    }
     if (pos_n != 1)
-        usage_error(str_from_cstr("`doc` takes at most one name: `vo doc std.json` or `vo doc std.json.parse_json`."));
+        usage_error(str_from_cstr("`doc` takes one name (`vo doc std.json`, `vo doc std.json.parse_json`) or a "
+                                  "program and a name (`vo doc main.vo NAME`)."));
     char *name = ((char **)pos_args)[0];
     Str *written = str_from_cstr(name); /* NAME as written, for the message */
     if (doc_starts(name, "std.")) { /* std.MODULE[.ITEM] */
@@ -691,4 +770,109 @@ long cstr_index_doc(char *s, int c)
     for (char *p = s; *p; p++)
         if ((unsigned char)*p == c) return p - s;
     return -1;
+}
+
+/* ---- spec 023: the doc record of a name (vo query type-at, vo doc ENTRY NAME) ---- */
+
+long doc_entry_file = -1;
+
+/* The module of a file: std.x for std/x.vo; else the path relative to the entry's directory, without
+ * .vo, with / as . (geo, util.text, main). */
+static Str *doc_module_of(long file)
+{
+    FileRec *f = file_get((int)file);
+    Str *p = f->path;
+    long from = 0, to = p->len;
+    if (to > 3 && mem_eq(p->data + to - 3, ".vo", 3)) to -= 3;
+    if (!f->std && doc_entry_file >= 0) { /* strip the entry's directory */
+        Str *e = file_get((int)doc_entry_file)->path;
+        long slash = e->len;
+        while (slash > 0 && e->data[slash - 1] != '/') slash--;
+        if (slash && slash <= p->len && mem_eq(p->data, e->data, slash)) from = slash;
+    }
+    SB *sb = sb_new();
+    for (long i = from; i < to; i++) sb_byte(sb, p->data[i] == '/' ? '.' : p->data[i]);
+    return sb_finish(sb);
+}
+
+/* Writes the fields of the doc record of what (key_a, key_b) of the reference log names (an item, a
+ * field or case, a builtin with a row) into sb and returns 1, with its signature and description (0
+ * when none) in *sig and *desc; returns 0 for anything else (locals, parameters, type parameters). */
+int doc_record_for(SB *sb, long key_a, long key_b, Str **sig, Str **desc)
+{
+    *sig = 0;
+    *desc = 0;
+    if (!key_a) { /* a builtin by id: its row of the reference's table */
+        const char *name = builtin_name_of(key_b);
+        if (!name) return 0;
+        Str *n = str_from_cstr((char *)name);
+        for (char *row = doc_builtin_rows(); row && *row == '|'; row = doc_next_line(row)) {
+            Str *names = doc_cell(row, 0);
+            if (!doc_names_has(names, n)) continue;
+            Str *s = doc_cell(row, 1), *notes = doc_cell(row, 2);
+            doc_builtin_fields(sb, names, s, notes);
+            SB *full = sb_new();
+            sb_str(full, names);
+            sb_byte(full, ' ');
+            sb_str(full, s);
+            *sig = sb_finish(full);
+            *desc = notes->len ? notes : 0;
+            return 1;
+        }
+        return 0;
+    }
+    Node *decl = (Node *)key_a;
+    if (decl->kind != N_FN && decl->kind != N_RECORD && decl->kind != N_VARIANT) return 0; /* a local */
+    long file = (long)decl->file;
+    Str *module = doc_module_of(file);
+    Str *found[2];
+    if (key_b < 0) { /* the item itself (-2: a record literal) */
+        Vec *items = file_get((int)file)->ast->a.v;
+        long at = -1;
+        for (long i = 0; i < items->n && at < 0; i++)
+            if (vec_get(items, i) == decl) at = i;
+        if (at < 0) return 0;
+        doc_comments(file, items, at, found);
+        doc_item_fields(sb, module, decl, found[0], found[1]);
+        SB *s = sb_new();
+        doc_signature(s, decl);
+        *sig = sb_finish(s);
+        *desc = found[0];
+        return 1;
+    }
+    if (decl->kind == N_FN) return 0;
+    Vec *members = decl->b.v; /* a field or case: the key_b-th member, comments not counted */
+    long at = -1;
+    for (long i = 0, k = 0; i < members->n && at < 0; i++) {
+        if (((Node *)vec_get(members, i))->kind == N_COMMENT) continue;
+        if (k++ == key_b) at = i;
+    }
+    if (at < 0) return 0;
+    Node *m = vec_get(members, at);
+    doc_comments(file, members, at, found);
+    int record = decl->kind == N_RECORD;
+    SB *s = sb_new(); /* x: float / circle(float) / none */
+    sb_str(s, m->a.n->a.s);
+    if (m->b.n) {
+        sb_cstr(s, record ? ": " : "(");
+        ty_name_into(s, m->b.n->type);
+        if (!record) sb_byte(s, ')');
+    }
+    *sig = sb_finish(s);
+    *desc = found[0];
+    sb_cstr(sb, "\"module\":");
+    json_str_into(sb, module);
+    sb_cstr(sb, J_NAME);
+    json_str_into(sb, m->a.n->a.s);
+    sb_cstr(sb, J_ITEM);
+    sb_cstr(sb, record ? "field" : "case");
+    sb_cstr(sb, "\",\"owner\":");
+    json_str_into(sb, decl->a.n->a.s);
+    sb_cstr(sb, ",\"signature\":");
+    json_str_into(sb, *sig);
+    if (found[0]) {
+        sb_cstr(sb, J_DESC);
+        json_str_into(sb, found[0]);
+    }
+    return 1;
 }

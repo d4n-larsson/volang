@@ -1,0 +1,3 @@
+hover/main.vo:14:18 dist2: float (declared at hover/geo.vo:11:11)
+    fn dist2(a: Point, b: Point) -> float
+    The squared distance between a and b, cheaper than the distance.

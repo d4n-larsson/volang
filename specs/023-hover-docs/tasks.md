@@ -32,8 +32,8 @@ description: "Task list for vo-lang spec 023: Documentation on hover"
 
 ## Phase 1: Setup
 
-- [ ] T001 [P] Create `specs/023-hover-docs/results.md` (SC-001 to SC-004, Verification, Deviations).
-- [ ] T002 [P] Fixture program `tests/cases/query/hover/`:
+- [X] T001 [P] Create `specs/023-hover-docs/results.md` (SC-001 to SC-004, Verification, Deviations).
+- [X] T002 [P] Fixture program `tests/cases/query/hover/`:
   - `geo.vo`: a documented `export record Point` (a comment above the field `x`, none above `y`), a
     documented `export fn dist2(a: Point, b: Point) -> float` with a two-line description and an example
     line, an undocumented `export fn origin() -> Point`, a generic documented
@@ -48,7 +48,7 @@ description: "Task list for vo-lang spec 023: Documentation on hover"
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] T003 Split `vo doc`'s printing in `src/doc.c` (research R2):
+- [X] T003 Split `vo doc`'s printing in `src/doc.c` (research R2):
   - `doc_item_record(SB *sb, Str *module, Node *item, Str *desc, Str *example)` writes the fields of the
     record (`"module":…,"name":…,"item":…,"signature":…,` shape, `description` when non-empty,
     `example`) without the `{"v":1,"kind":"doc",` head and the closing brace;
@@ -56,10 +56,10 @@ description: "Task list for vo-lang spec 023: Documentation on hover"
     check this);
   - the same split for builtins: `doc_builtin_record(SB *sb, Str *names, Str *signature, Str *notes)`
     from `doc_print_builtin`.
-- [ ] T004 `doc_comments` (research R3): the description is every description line of the block
+- [X] T004 `doc_comments` (research R3): the description is every description line of the block
   directly above, without `# `, joined by single spaces; the example stays the topmost `#     ` line. No
   `std` item has more than one description line, so the `doc` cases must not change; run them.
-- [ ] T005 `int doc_record_for(SB *sb, long key_a, long key_b)` in `src/doc.c`, declared in `src/vo.h`,
+- [X] T005 `int doc_record_for(SB *sb, long key_a, long key_b)` in `src/doc.c`, declared in `src/vo.h`,
   returning 1 when it wrote a record (research R1):
   - an item (`key_a` an `N_FN`/`N_RECORD`/`N_VARIANT` node, `key_b == -1`): find the item's index in its
     file's item list, read its comments, and write `doc_item_record` with the module name of its file.
@@ -87,7 +87,7 @@ description: "Task list for vo-lang spec 023: Documentation on hover"
 
 ### Tests (first, failing)
 
-- [ ] T006 [P] [US1] Golden cases in `tests/cases/query/` (JSON), on the T002 fixture, at:
+- [X] T006 [P] [US1] Golden cases in `tests/cases/query/` (JSON), on the T002 fixture, at:
   - `hover_call`: the call of `dist2` (with the joined two-line description and the example);
   - `hover_decl`: the name `dist2` in its declaration in `geo.vo`;
   - `hover_import`: `dist2` in `import geo.dist2;`;
@@ -99,7 +99,7 @@ description: "Task list for vo-lang spec 023: Documentation on hover"
 
 ### Implementation
 
-- [ ] T007 [US1] `q_type_at` in `src/query.c`: when the name wins and `doc_record_for(name->key_a.i,
+- [X] T007 [US1] `q_type_at` in `src/query.c`: when the name wins and `doc_record_for(name->key_a.i,
   name->key_b.i)` writes a record, append `,"doc":{` + record + `}` to the JSON, after `declaration`.
   The human output is done in T011.
 
@@ -109,27 +109,27 @@ description: "Task list for vo-lang spec 023: Documentation on hover"
 
 ## Phase 4: User Story 2 — Hover a type, a field or a case (P2)
 
-- [ ] T008 [P] [US2] Golden cases (JSON):
+- [X] T008 [P] [US2] Golden cases (JSON):
   - `hover_record`: `Point` in `new Point { ... }` and in a type;
   - `hover_field`: `p.x` (described) and `p.y` (no description);
   - `hover_variant`: `Shape` in `Shape.circle(1.0)`;
   - `hover_case`: `circle` there.
-- [ ] T009 [US2] Make T008 pass through T005's member branch; add a description to the field or case
+- [X] T009 [US2] Make T008 pass through T005's member branch; add a description to the field or case
   JSON only when a comment is directly above it.
 
 ---
 
 ## Phase 5: User Story 3 — The same in the terminal (P2)
 
-- [ ] T010 [P] [US3] Golden cases:
+- [X] T010 [P] [US3] Golden cases:
   - `query/hover_human`: `type-at` without `--json` at `dist2`, `sqrt` and a local;
   - `doc/program_item`: `doc {dir}/../query/hover/main.vo dist2` (text) and `program_item_json` (`--json`);
   - `doc/program_private`: a non-exported function of the fixture;
   - `doc/program_unknown`: `doc .../main.vo nosuch`, T0010 with a suggestion.
-- [ ] T011 [US3] Human output in `q_type_at`: after today's line, `    SIGNATURE` and `    DESCRIPTION`
+- [X] T011 [US3] Human output in `q_type_at`: after today's line, `    SIGNATURE` and `    DESCRIPTION`
   (when present), read from the same record (`doc_record_for` also fills a small struct, or a second
   function returns the signature and description strings).
-- [ ] T012 [US3] `vo doc ENTRY NAME` in `src/doc.c`'s `cmd_doc` (research R5):
+- [X] T012 [US3] `vo doc ENTRY NAME` in `src/doc.c`'s `cmd_doc` (research R5):
   - when the first argument ends in `.vo` and names a file, load and check the program as `vo query`
     does;
   - find NAME among the items of all its files and print it with `doc_print_item` (text) or the record
@@ -140,7 +140,7 @@ description: "Task list for vo-lang spec 023: Documentation on hover"
 
 ## Phase 6: User Story 4 — Locals and parameters stay as they are (P3)
 
-- [ ] T013 [P] [US4] Golden cases `hover_local` and `hover_param` (JSON and human): exactly today's
+- [X] T013 [P] [US4] Golden cases `hover_local` and `hover_param` (JSON and human): exactly today's
   answer, no `doc`. All existing `type-at` cases pass unchanged apart from added `doc` fields (list any
   that gained one in `results.md`).
 
@@ -148,21 +148,21 @@ description: "Task list for vo-lang spec 023: Documentation on hover"
 
 ## Phase 7: Polish and verification
 
-- [ ] T014 [P] Reference (`docs/reference.md`, research R7):
+- [X] T014 [P] Reference (`docs/reference.md`, research R7):
   - two sentences in "Querying and editing programs" (doc comments for program items, and what
     `type-at` and `vo doc ENTRY NAME` return);
   - the `vo doc` line in "Command line" gains `ENTRY NAME`.
 
   Record the token growth (limit +80) in `results.md`.
-- [ ] T015 [P] `tests/hover_speed.py` (SC-003): generate a 2,000-line two-file program with documented
+- [X] T015 [P] `tests/hover_speed.py` (SC-003): generate a 2,000-line two-file program with documented
   functions; the median of 5 `type-at --json` runs at a call is under 100 ms. Added to `make gate`.
-- [ ] T016 [P] Docs:
+- [X] T016 [P] Docs:
   - `site/docs/` (the tools page for `vo query` and `vo doc`): hover documentation and `vo doc ENTRY NAME`;
   - `docs/roadmap.md`: spec 023 **Done**, with "Not done" (completion, a standing language server);
   - `README.md`: the spec list.
-- [ ] T017 `make test` on x86-64, then `make ARCH=aarch64 test` and `make ARCH=riscv64 test`, one at a
+- [X] T017 `make test` on x86-64, then `make ARCH=aarch64 test` and `make ARCH=riscv64 test`, one at a
   time.
-- [ ] T018 Fill in `results.md`; set the spec status to Implemented; mark every task [X].
+- [X] T018 Fill in `results.md`; set the spec status to Implemented; mark every task [X].
 
 ---
 

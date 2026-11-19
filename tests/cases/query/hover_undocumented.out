@@ -1,0 +1,2 @@
+{"v":1,"kind":"type_at","file":"hover/main.vo","start":{"line":14,"col":27},"end":{"line":14,"col":33},"text":"origin","type":"Point","name":"origin","declaration":{"file":"hover/geo.vo","start":{"line":17,"col":11},"end":{"line":17,"col":17}},"doc":{"module":"geo","name":"origin","item":"fn","signature":"fn origin() -> Point","tparams":[],"params":[],"returns":"Point","effects":[]}}
+{"v":1,"kind":"summary","command":"query","errors":0,"warnings":0,"truncated":0,"files":3,"results":1}

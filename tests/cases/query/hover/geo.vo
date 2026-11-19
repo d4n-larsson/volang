@@ -1,0 +1,34 @@
+# A point in the plane.
+export record Point {
+    # The horizontal position.
+    x: float;
+    y: float;
+}
+
+# The squared distance between a and b,
+# cheaper than the distance.
+#     dist2(new Point { x: 0.0, y: 0.0 }, new Point { x: 3.0, y: 4.0 }) is 25.0
+export fn dist2(a: Point, b: Point) -> float {
+    let dx = a.x - b.x;
+    let dy = a.y - b.y;
+    return dx * dx + dy * dy;
+}
+
+export fn origin() -> Point {
+    return new Point { x: 0.0, y: 0.0 };
+}
+
+# The first element, or an error for an empty list.
+export fn first[T](xs: list[T]) -> result[T] {
+    if len(xs) == 0 {
+        return err("empty");
+    }
+    return ok(xs[0]);
+}
+
+# A shape and its size.
+export variant Shape {
+    # A circle by its radius.
+    circle(float);
+    square(float);
+}

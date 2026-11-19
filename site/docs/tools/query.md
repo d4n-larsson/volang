@@ -19,7 +19,7 @@ unrelated local with the same name never matches, which a text search cannot pro
 |---|---|
 | `callers ENTRY NAME` | the call sites, and uses as a value, of a function or builtin |
 | `refs ENTRY TARGET` | the declaration and every use of a target |
-| `type-at ENTRY FILE:LINE:COL` | the type of the name or expression at that position, and where the name is declared |
+| `type-at ENTRY FILE:LINE:COL` | the type of the name or expression at that position, where the name is declared, and its documentation |
 | `specs ENTRY` | every `@spec` ID and the tests and properties that name it |
 
 A `TARGET` is:
@@ -55,7 +55,22 @@ function, `test "name"` or `prop "name"` (absent at top level). `refs` lists the
 lists only `call` and `value`. Then a count: `6 references`.
 
 `type-at` prints `FILE:LINE:COL NAME: TYPE (declared at FILE:LINE:COL)` on a name, or
-`FILE:LINE:COL EXPRESSION: TYPE` on an expression. `specs` prints `ID  FILE:LINE:COL test "name"` per pair,
+`FILE:LINE:COL EXPRESSION: TYPE` on an expression. When the name is a function, record, variant, field,
+case, library item or builtin, two indented lines follow: its declared signature and its description.
+
+The description comes from the comment lines directly above the declaration, the same convention the
+standard library uses; a line `#     EXPR is VALUE` is its example. This is what an editor shows on hover:
+
+```text
+# The squared distance between a and b,
+# cheaper than the distance.
+#     dist2(new Point { x: 0.0, y: 0.0 }, new Point { x: 3.0, y: 4.0 }) is 25.0
+export fn dist2(a: Point, b: Point) -> float {
+```
+
+In JSON the answer gains `"doc"`, the record `vo doc --json` prints for the item (`signature`,
+`description`, `example`, `effects`, …; fields get `"item":"field"` and `"owner"`, cases `"item":"case"`).
+Locals and parameters have no `doc`. `vo doc ENTRY NAME` prints the same for an item of the program. `specs` prints `ID  FILE:LINE:COL test "name"` per pair,
 IDs sorted, then a count of IDs.
 
 When the program has errors, the text ends with `note: the program has N errors; answers cover the parts that check`.

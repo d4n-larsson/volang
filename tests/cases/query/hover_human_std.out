@@ -1,0 +1,3 @@
+hover/main.vo:14:13 sqrt: float (declared at std/math.vo:15:11)
+    fn sqrt(x: float) -> float
+    The square root of x; R0007 if x is below 0.0 (sqrt(-0.0) is -0.0).

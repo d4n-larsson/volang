@@ -1,0 +1,1 @@
+error[T0010]: Nothing is documented as `dist` in ../query/hover/main.vo. Did you mean `dist2`?
