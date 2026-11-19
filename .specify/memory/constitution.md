@@ -1,21 +1,22 @@
 <!--
 Sync Impact Report
-- Version change: 1.4.0 → 1.4.1
-- Bump rationale: PATCH. Clarifies how vendored code is pinned when the upstream publishes no
-  releases (CORE-MATH, spec 020): a commit, with the SHA-256 of each kept file in place of an
-  archive checksum, since generated archives have no stable checksum. No principle or rule is
-  added, removed or redefined; the other vendoring rules are unchanged.
+- Version change: 1.4.1 → 1.5.0
+- Bump rationale: MINOR. The vendored-code rule admits one more kind of license: code its authors
+  dedicated to the public domain with no conditions (SQLite, for the planned std.sqlite module).
+  This widens which dependencies may be vendored, so it is more than a clarification; no principle
+  or rule is removed or redefined, and every other vendoring rule (pinned version, checksums, kept
+  files, unmodified files with patches, freestanding and instrumented builds, security releases)
+  applies unchanged.
 - Modified principles: none
-- Modified sections: Implementation Constraints (vendored code: pin to a release or, failing
-  that, a commit; per-file SHA-256 for a commit)
+- Modified sections: Implementation Constraints (vendored code: licenses)
 - Added sections: none
 - Removed sections: none
 - Templates reviewed (read-only, not modified): plan-template.md, spec-template.md,
   tasks-template.md, all compatible.
-- Follow-up TODOs: none. specs/020-math/plan.md re-evaluated against 1.4.1: its "pinned to a
-  released version" gate is now a PASS (commit 1851882b0f85 with per-file hashes).
-  specs/019-https is unaffected (Mbed TLS 4.1.2 is a release).
-- Earlier amendment, 1.3.0 → 1.4.0: rules for vendored third-party code.
+- Follow-up TODOs: none. Plans re-evaluated: specs/019-https (Mbed TLS, Apache-2.0) and
+  specs/020-math (CORE-MATH, MIT) are unaffected.
+- Earlier amendments: 1.4.0 → 1.4.1 (pinning to a commit when no releases exist), 1.3.0 → 1.4.0
+  (rules for vendored third-party code).
 -->
 
 # vo-lang Constitution
@@ -131,7 +132,8 @@ costs toolchain code, which is expensive to write and to change.
   commit. The archive checksum (for a commit: the SHA-256 of each kept file), the license and the
   list of kept files are recorded in `third_party/<name>/VENDOR.md`. Vendored files are kept unmodified; a
   necessary change is a patch file in `third_party/<name>/patches/` with its reason. Licenses
-  MUST be permissive (Apache-2.0, MIT, BSD).
+  MUST be permissive (Apache-2.0, MIT, BSD), or the code MUST be dedicated to the public domain
+  with no conditions (as SQLite is); `VENDOR.md` records the license or the dedication.
 - Vendored code is built under the same constraints as the rest of the binary (freestanding, no
   system libraries, `-ffp-contract=off`, no assembly, identical results on every supported
   platform) and MUST pass the instrumented build. It is exempt from the project's strict warning
@@ -175,4 +177,4 @@ other document, this constitution wins until it is amended.
 - **Compliance**: Every `/speckit-plan` runs the Constitution Check gate, and every change is
   reviewed against the quality gates above before it is considered complete.
 
-**Version**: 1.4.1 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-18
+**Version**: 1.5.0 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-19
