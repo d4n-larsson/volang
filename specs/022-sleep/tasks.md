@@ -32,9 +32,9 @@ description: "Task list for vo-lang spec 022: Sleep"
 
 ## Phase 1: Setup
 
-- [ ] T001 [P] Create `specs/022-sleep/results.md` (SC-001 to SC-006, Verification, Deviations), as in
+- [X] T001 [P] Create `specs/022-sleep/results.md` (SC-001 to SC-006, Verification, Deviations), as in
   `specs/021-bytes/results.md`.
-- [ ] T002 [P] `tools/quick.sh`:
+- [X] T002 [P] `tools/quick.sh`:
   - the `time` area's cases become `time sleep_steps doc`;
   - `std/time.vo`, `src/rt_effects.c` and `tests/sleep_check.py` map to `time` (rt_effects.c is
     shared: keep it mapping to `all` if it already does, and add `time` only for `std/time.vo` and the
@@ -46,9 +46,9 @@ description: "Task list for vo-lang spec 022: Sleep"
 
 ## Phase 2: Foundational (blocks every story)
 
-- [ ] T003 [P] Golden case `tests/cases/time/sleep_doc` (`.cmd`: `doc std.time.sleep`), expecting the
+- [X] T003 [P] Golden case `tests/cases/time/sleep_doc` (`.cmd`: `doc std.time.sleep`), expecting the
   signature `fn sleep(ms: int) uses clock` and the contract's example. It fails until T005.
-- [ ] T004 Primitive `__sleep(ms: int)` (research R1, R2):
+- [X] T004 Primitive `__sleep(ms: int)` (research R1, R2):
   - builtin id 81, signature `"i>v"`, effect `EF_CLOCK`, in `src/vo.h` (`B_SLEEP`, `B_LAST`),
     `src/check_expr.c` (`B_COUNT`, `builtin_names`, `builtin_sigs`), `src/check_effects.c` and
     `src/rt_call.c` (enum, `_Static_assert`, dispatch to `rt_sleep(a0, call)`);
@@ -61,7 +61,7 @@ description: "Task list for vo-lang spec 022: Sleep"
        - when `deadline_ms` is set and `sys_clock_ms() >= deadline_ms`, `rt_timeout(std_user_call(node))`;
        - wait `min(target, deadline if set) - now`, at most 1,000 ms, with
          `vo_syscall5(SYS_ppoll, 0, 0, (long)ts, 0, 8)`.
-- [ ] T005 `std/time.vo`: `export fn sleep(ms: int) uses clock { __sleep(ms); }`. Its `vo doc` comment
+- [X] T005 `std/time.vo`: `export fn sleep(ms: int) uses clock { __sleep(ms); }`. Its `vo doc` comment
   covers the real, fixed and replayed clocks, R0007, R0009 and `serve` handlers, with the example
   `let a = now(); sleep(500); now() - a is 501`. `tests/doc_conformance.py` runs examples with
   `vo run --seed 1` (the real clock), so it also gets `--clock-ms 0`, as `vo test` does; the existing
@@ -77,7 +77,7 @@ description: "Task list for vo-lang spec 022: Sleep"
 
 **Independent Test**: the step cases below.
 
-- [ ] T006 [P] [US1] Step cases in `tests/cases/sleep_steps/`:
+- [X] T006 [P] [US1] Step cases in `tests/cases/sleep_steps/`:
   - `real_wait`: a program that reads `now_ms`, sleeps 200, reads again, and prints whether the
     difference is at least 200 (`true`) and `sleep(0)` returns;
   - `retry`: a retry loop against the test server (`server http`, a route that fails), with pauses of
@@ -93,7 +93,7 @@ description: "Task list for vo-lang spec 022: Sleep"
 
 **Goal**: no waits with a fixed clock; the clock moves on.
 
-- [ ] T007 [P] [US2] Golden cases in `tests/cases/time/`:
+- [X] T007 [P] [US2] Golden cases in `tests/cases/time/`:
   - `sleep_fixed` (`.cmd`: `run --clock-ms 1000 {}`): prints `1000` then `1501` around `sleep(500)`;
   - `sleep_test_hour` (`.cmd`: `test {}`): tests that sleep 3,600,000 ms in total and check the clock
     readings, passing (run time is checked by T015);
@@ -101,7 +101,7 @@ description: "Task list for vo-lang spec 022: Sleep"
   - `sleep_overflow` (`run --clock-ms 9223372036854775000 --json {}`): `sleep(1000)` is R0001;
   - `sleep_fixed_timeout` (`run --clock-ms 0 --timeout 1 {}`): `sleep(60000)` returns at once, with no
     R0009, and the clock moved 60,000.
-- [ ] T008 [US2] Make T007 pass. Implemented by T004's fixed branch: fix whatever the cases show, such
+- [X] T008 [US2] Make T007 pass. Implemented by T004's fixed branch: fix whatever the cases show, such
   as the overflow check's location.
 
 **Checkpoint**: T007 passes.
@@ -110,14 +110,14 @@ description: "Task list for vo-lang spec 022: Sleep"
 
 ## Phase 5: User Story 3 — Replay does not wait (P1)
 
-- [ ] T009 [P] [US3] Step case `tests/cases/sleep_steps/replay`:
+- [X] T009 [P] [US3] Step case `tests/cases/sleep_steps/replay`:
   - record a program that sleeps 4 × 500 ms with the real clock and prints the elapsed clock time
     rounded down to seconds;
   - `vo replay` it;
   - the outputs are identical.
 
   The replay's duration is checked by T015.
-- [ ] T010 [P] [US3] Step case `tests/cases/sleep_steps/replay_changed`: replay the recording of T009
+- [X] T010 [P] [US3] Step case `tests/cases/sleep_steps/replay_changed`: replay the recording of T009
   with a program that sleeps differently but reads the clock the same number of times, which replays
   with no R0014; and one that reads the clock once more, which is R0014.
 
@@ -127,18 +127,18 @@ description: "Task list for vo-lang spec 022: Sleep"
 
 ## Phase 6: User Story 4 — Waiting stays within the limits (P2)
 
-- [ ] T011 [P] [US4] Step cases in `tests/cases/sleep_steps/`:
+- [X] T011 [P] [US4] Step cases in `tests/cases/sleep_steps/`:
   - `timeout`: `vo run --timeout 1` of `sleep(60000)` is R0009 at the call, exit 124;
   - `signal`: `start vo run main.vo` of a program that sleeps 60 s, then `signal TERM`; it ends at once
     with the usual exit status for SIGTERM.
-- [ ] T012 [US4] Make T011 pass: T004's deadline branch; check that the `signal` case's exit status is
+- [X] T012 [US4] Make T011 pass: T004's deadline branch; check that the `signal` case's exit status is
   the same as a program busy in a loop.
 
 ---
 
 ## Phase 7: User Story 5 — Concurrent work and servers (P3)
 
-- [ ] T013 [P] [US5] Step cases in `tests/cases/sleep_steps/`:
+- [X] T013 [P] [US5] Step cases in `tests/cases/sleep_steps/`:
   - `tasks`: `concurrent_map` over 10 items, limit 10, each task sleeping 300 ms with the real clock,
     printing the results (timing is checked by T015);
   - `serve_handler`: a `serve` handler that sleeps 100 ms; `request GET /` gets its answer; `signal TERM`
@@ -150,10 +150,10 @@ description: "Task list for vo-lang spec 022: Sleep"
 
 ## Phase 8: Polish and verification
 
-- [ ] T014 [P] Reference (`docs/reference.md`): the effects row `| clock | now_ms, std.time.sleep |`, and
+- [X] T014 [P] Reference (`docs/reference.md`): the effects row `| clock | now_ms, std.time.sleep |`, and
   the `--clock-ms` sentence gains "; `sleep` then does not wait but moves the clock on". Record the token
   growth in `results.md`.
-- [ ] T015 [P] `tests/sleep_check.py`, each figure the median of 5 runs:
+- [X] T015 [P] `tests/sleep_check.py`, each figure the median of 5 runs:
   - SC-001: a 200 ms sleep adds 200–300 ms, with CPU time (`resource.getrusage(RUSAGE_CHILDREN)`) under
     10 ms more than without it;
   - SC-002: the hour-long test finishes in under 1 s;
@@ -162,15 +162,15 @@ description: "Task list for vo-lang spec 022: Sleep"
   - SC-005: the 10 tasks finish in under 1.5 s.
 
   Added to `make gate`.
-- [ ] T016 [P] Docs:
+- [X] T016 [P] Docs:
   - `site/docs/guide/standard-library.md`: `sleep` in the std.time section, with a fixed-clock example
     that the site checker can run;
   - `docs/roadmap.md`: spec 022 **Done**, the "Sleep" gap row removed, and a short section with
     "Not done" (timers, async, sub-millisecond, interrupting a sleeping `serve` handler at once);
   - `README.md`: the spec list.
-- [ ] T017 `make test` on x86-64, then `make ARCH=aarch64 test` and `make ARCH=riscv64 test`, one at a
+- [X] T017 `make test` on x86-64, then `make ARCH=aarch64 test` and `make ARCH=riscv64 test`, one at a
   time.
-- [ ] T018 Fill in `results.md`; set the spec status to Implemented; mark every task [X].
+- [X] T018 Fill in `results.md`; set the spec status to Implemented; mark every task [X].
 
 ---
 

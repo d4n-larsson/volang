@@ -1,0 +1,8 @@
+$ vo run --record r.jsonl main.vo
+slept at least 2 s: true
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+slept at least 2 s: true
+--- stderr
+--- exit 0

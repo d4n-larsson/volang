@@ -1,0 +1,5 @@
+vo run --record r.jsonl main.vo
+cp fewer_sleeps.vo main.vo
+vo replay r.jsonl
+cp more_readings.vo main.vo
+vo replay r.jsonl

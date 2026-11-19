@@ -102,6 +102,32 @@ long rt_random_int(long lo, long hi)
     return (long)((unsigned long)lo + x);
 }
 
+/* spec 022: std.time.sleep. A negative duration is R0007; replay does not wait (the readings come from
+ * the recording); a fixed clock (--clock-ms, every vo test) does not wait but moves the clock on; the
+ * real clock waits with ppoll until a monotonic target, never past the --timeout deadline (R0009 at
+ * the user's call). Nothing is recorded: a sleep receives no data. */
+void rt_sleep(long ms, Node *node)
+{
+    if (ms < 0) rt_raise("R0007", msg("`sleep` needs a duration of at least 0 ms, got $1.", int_to_str(ms), 0, 0),
+                         std_user_call(node));
+    if (rcd_mode == 2) return;
+    if (clock_fixed) {
+        if (clock_next > 9223372036854775807L - ms) rt_overflow(std_user_call(node));
+        clock_next += ms;
+        return;
+    }
+    long now = sys_clock_ms();
+    long target = ms > 9223372036854775807L - now ? 9223372036854775807L : now + ms;
+    while (now < target) {
+        if (deadline_ms && now >= deadline_ms) rt_timeout(std_user_call(node));
+        long until = deadline_ms && deadline_ms < target ? deadline_ms : target;
+        long wait = until - now > 1000 ? 1000 : until - now;
+        long ts[2] = {wait / 1000, wait % 1000 * 1000000};
+        vo_syscall5(SYS_ppoll, 0, 0, (long)ts, 0, 8); /* no descriptors: a timeout, or a signal */
+        now = sys_clock_ms();
+    }
+}
+
 long rt_now_ms(void)
 {
     if (clock_fixed) return clock_next++;

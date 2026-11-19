@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-19
 
-**Status**: Draft
+**Status**: Implemented
 
 **Input**: User description: "Sleep: a way for a vo program to wait (retries, polling, rate limits). Roadmap
 gap "Sleep": under the clock effect; replay must not wait. std.time.sleep(ms) next to std.time.now (no new

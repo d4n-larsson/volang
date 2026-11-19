@@ -1,0 +1,12 @@
+$ request GET /
+HTTP/1.1 200 OK
+Content-Length: 7
+Connection: close
+
+rested
+
+--- end
+$ signal TERM
+stopped
+--- stderr
+--- exit 0

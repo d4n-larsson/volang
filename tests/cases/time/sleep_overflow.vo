@@ -1,0 +1,7 @@
+# Spec 022 US2: moving the fixed clock past the largest int is R0001.
+import std.time.sleep;
+
+fn main() uses console, clock {
+    sleep(1000);
+    print("not reached");
+}

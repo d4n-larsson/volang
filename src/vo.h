@@ -388,7 +388,8 @@
 #define B_FSB (78) /* spec 021: __fsb(op, path, data) -> result[bytes], std.fs only (effects by op) */
 #define B_RUN_BYTES (79) /* spec 021: __run_bytes(argv, input: bytes, env) -> result[bytes], process */
 #define B_RAW_TEXT (80) /* spec 021: __raw_text(b) -> str, the same object; std.http builds raw messages */
-#define B_LAST (80) /* the last builtin id with a btab entry */
+#define B_SLEEP (81) /* spec 022: __sleep(ms), clock, std.time only */
+#define B_LAST (81) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -2168,6 +2169,7 @@ extern long sys_readlink(char *path, char *buf, long size);
 extern long sys_getcwd(char *buf, long size);
 extern long sys_clock_ns(void);
 extern long sys_clock_ms(void);
+extern void rt_sleep(long ms, Node *node); /* spec 022: rt_effects.c */
 extern long sys_clock_real_ms(void);
 extern long sys_wait_fd(long fd, long events, long ms);
 extern long sys_wait_stdin(long ms);

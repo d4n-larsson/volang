@@ -1,0 +1,3 @@
+start vo run service.vo
+request GET /
+signal TERM

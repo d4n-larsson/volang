@@ -306,6 +306,8 @@ gate-step: all asm
 	@echo "== gate: bytes determinism, fuzz and scale" && tests/run.sh --repeat 20 tests/cases/bytes && \
 	  python3 tests/steps.py --repeat 20 tests/cases/bytes_steps && python3 tests/bytes_fuzz.py && \
 	  python3 tests/bytes_scale.py
+	@echo "== gate: sleep determinism and timing" && tests/run.sh --repeat 20 tests/cases/time && \
+	  python3 tests/steps.py --repeat 20 tests/cases/sleep_steps && python3 tests/sleep_check.py
 	@echo "== gate-step: passed"
 
 # SC-004 compares like with like: the RISC-V build against build-asm/vo, both under qemu.

@@ -18,7 +18,7 @@ cases() {
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
     text) echo "text doc" ;;
-    time) echo "time doc" ;;
+    time) echo "time sleep_steps doc" ;;
     random) echo "random doc" ;;
     collections) echo "collections ordered doc" ;;
     http) echo "http https https_steps serve serve_concurrent replay security" ;;
@@ -63,7 +63,7 @@ area_of() {
     src/bytes.c|std/bytes.vo|tests/bytes/*|tests/bytes_*.py|tests/process_helpers/allbytes) echo bytes ;;
     std/json.vo) echo json ;;
     std/text.vo|src/text.c) echo text ;;
-    std/time.vo) echo time ;;
+    std/time.vo|tests/sleep_check.py) echo time ;;
     std/random.vo) echo random ;;
     std/collections.vo|src/rt_coll.c) echo collections ;;
     third_party/shim/*) echo "math http" ;; # both vendored libraries

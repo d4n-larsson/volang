@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 80 /* names up to here (50, 51 are internal and unnamed) */
+#define B_COUNT 81 /* names up to here (50, 51 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -38,6 +38,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "concurrent_map", "__fs", "__run", "__https_exchange", "__math", "__math_int",
     "__bytes_of_text", "__text_of_bytes", "__bytes_of_ints", "__ints_of_bytes", "__bytes_hex", "__bytes_unhex",
     "__bytes_b64", "__bytes_unb64", "__stdin_bytes", "__stdout_bytes", "__fsb", "__run_bytes", "__raw_text", /* spec 021 */
+    "__sleep", /* spec 022 */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -51,7 +52,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [56] = "s>n",  [57] = "i>r",  [58] = "s>v",  [60] = "si>s",  [63] = "iss>r", [64] = "SsS>r", [65] = "sis>r",
     [66] = "iff>f", [67] = "if>i", /* spec 020: __math, __math_int */
     [68] = "s>y",   [69] = "y>r",  [70] = "I>y",  [71] = "y>I",  [72] = "y>s",  [73] = "s>Y",
-    [74] = "y>s",   [75] = "s>Y",  [76] = ">y",   [77] = "y>v",  [78] = "isy>Y", [79] = "SyS>Y", [80] = "y>s", /* spec 021: y bytes, Y result[bytes], I list[int] */
+    [74] = "y>s",   [75] = "s>Y",  [76] = ">y",   [77] = "y>v",  [78] = "isy>Y", [79] = "SyS>Y", [80] = "y>s", [81] = "i>v", /* spec 021: y bytes, Y result[bytes], I list[int] */
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."

@@ -146,7 +146,9 @@ def run(src):
     with tempfile.TemporaryDirectory() as d:
         f = os.path.join(d, "probe.vo")
         open(f, "w").write(src)
-        p = subprocess.run([VO, "run", "--seed", "1", f], capture_output=True, text=True, stdin=subprocess.DEVNULL)
+        # spec 022: a fixed clock, as vo test uses, so clock examples (sleep) are exact and do not wait
+        p = subprocess.run([VO, "run", "--seed", "1", "--clock-ms", "0", f], capture_output=True, text=True,
+                           stdin=subprocess.DEVNULL)
         return p.returncode, p.stdout, p.stderr
 
 

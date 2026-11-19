@@ -28,6 +28,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [019](../specs/019-https/) | HTTPS for `std.http.get`/`post`: TLS 1.3 and 1.2 from the vendored Mbed TLS 4.1 LTS, certificates always verified against the machine's trust store (plus `--ca-file`), nine fixed `err` messages, recordings with the scheme | **Done** ([results](../specs/019-https/results.md)) |
 | [020](../specs/020-math/) | `std.math`: `sqrt`, `pow`, `exp`, `log`, trigonometry, `pi`, `floor`/`ceil`/`round` to `int`; correctly rounded from the vendored CORE-MATH, bit-identical on three platforms; out of domain is R0007 | **Done** ([results](../specs/020-math/results.md)) |
 | [021](../specs/021-bytes/) | `bytes`: binary data in files, standard input and output, other programs' output and HTTP bodies (`std.bytes`, `read_bytes`, `run_bytes`, `get_bytes`, `serve_bytes`), hex and base64; every `str` is valid UTF-8, checked where text is read | **Done** ([results](../specs/021-bytes/results.md)) |
+| [022](../specs/022-sleep/) | `std.time.sleep(ms)` under `clock`: real waits with the real clock, bounded by `--timeout`; with a fixed clock (`vo test`, `--clock-ms`) and in replay no wait, the clock moves on | **Done** ([results](../specs/022-sleep/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -183,6 +184,16 @@ source files too).
 - **Not done (on purpose):** a bytes literal, `for` over bytes, bytes as map keys, base64url, streaming
   reads, directory names that are not UTF-8.
 
+### 022: sleep (done)
+
+`std.time.sleep(ms)` waits, under `clock`. With the real clock it waits without using the processor and
+never past `--timeout`; with a fixed clock (every `vo test`, `--clock-ms`) it returns at once and moves
+the clock on, so code that sleeps is tested instantly and exactly; replay does not wait. Doc examples now
+run with a fixed clock too.
+
+- **Not done (on purpose):** timers, async waits, sub-millisecond durations, ending a sleeping `serve`
+  handler at once on Ctrl-C (it ends when the handler returns, within its time limit).
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -191,7 +202,6 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Gap | What is missing | Notes |
 |---|---|---|
 | Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; decides what matters next |
-| Sleep | no way to wait (retries, polling, rate limits) | under `clock`; replay must not wait |
 | String formatting | only `+`, `str()` and padding | one formatting builtin within the reference budget |
 | Regular expressions | `std.text` has `find`, `split`, `replace` only | linear-time matching only (no backtracking) |
 | TCP and UDP | only HTTP reaches the network | scoped like `net` and `serve` |

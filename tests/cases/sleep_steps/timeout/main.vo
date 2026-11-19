@@ -1,0 +1,7 @@
+# Spec 022 US4: a sleep past --timeout stops with R0009 at the deadline, at the call.
+import std.time.sleep;
+
+fn main() uses console, clock {
+    sleep(60000);
+    print("not reached");
+}

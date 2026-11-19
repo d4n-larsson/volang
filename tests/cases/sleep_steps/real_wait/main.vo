@@ -1,0 +1,11 @@
+# Spec 022 US1: with the real clock, sleep(200) waits at least 200 ms; sleep(0) returns at once.
+import std.time.now;
+import std.time.sleep;
+
+fn main() uses console, clock {
+    let a = now();
+    sleep(200);
+    let b = now();
+    sleep(0);
+    print(str(b - a >= 200));
+}

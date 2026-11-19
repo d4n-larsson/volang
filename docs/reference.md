@@ -263,7 +263,7 @@ test "loads fixtures" uses file.read("fixtures/") { ... }
 | file.read, file.write | `read_file`, `write_file`; `std.fs` |
 | file.delete | `std.fs.delete` and `rename` |
 | net | `std.http` (`get`, `post`) |
-| clock | `now_ms` |
+| clock | `now_ms`, `std.time.sleep` |
 | random | `random_int` |
 | env | `env` |
 | serve | `std.http.serve` (answering HTTP requests) |
@@ -274,7 +274,7 @@ test "loads fixtures" uses file.read("fixtures/") { ... }
 - Scopes narrow an effect: directories for `file.read`/`file.write`/`file.delete` (relative to the directory the program starts in, e.g. `"out/"`; `"./"` is that directory itself), variable names for `env`, hosts for `net`, addresses for `serve` (`"8000"`: this machine only; `"0.0.0.0:8000"`: the network), programs for `process` (`"git"`: found through `PATH`; `"tools/gen"`, `"/usr/bin/git"`: that file; required, E0512; matched exactly). A scope covers the directories under it. A caller's scopes must cover its callees' (E0503); an empty or absolute scope, or one with `..`, is E0506.
 - Canonical order (`vo fmt`): console, input, file.read, file.write, file.delete, net, clock, random, env, serve, process; scopes sorted.
 - `main`'s clause is the grant of `vo run`, a test's clause the grant of that test. Paths and names are also checked at run time, after resolving `..`, absolute paths and symbolic links, against both the running function's declaration and that root grant: anything outside either is R0010 (exit 70), so no callee widens the root. A literal target outside the scopes is E0503 at check time.
-- `--seed N` fixes `random_int`; `--clock-ms N` makes `now_ms` return N, N+1, ... `vo test` uses seed 1 and clock 0 for every test.
+- `--seed N` fixes `random_int`; `--clock-ms N` makes `now_ms` return N, N+1, ... (`sleep` then does not wait but moves the clock on) `vo test` uses seed 1 and clock 0 for every test.
 
 ```vo
 fn area(w: int, h: int) -> int {

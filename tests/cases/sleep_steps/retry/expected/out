@@ -1,0 +1,8 @@
+$ vo run main.vo -- http://127.0.0.1:{port}/status/500
+try 1: status 500
+try 2: status 500
+try 3: status 500
+try 4: status 500
+waited enough: true
+--- stderr
+--- exit 0

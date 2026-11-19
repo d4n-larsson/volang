@@ -1,0 +1,14 @@
+# Spec 022 US5: concurrent tasks sleep independently, not one after another.
+import std.time.sleep;
+
+fn main() uses console, clock {
+    let out = concurrent_map([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], 10, fn(x: int) -> int {
+        sleep(300);
+        return x * x;
+    });
+    var sum = 0;
+    for v in out {
+        set sum = sum + v;
+    }
+    print(str(len(out)) + " " + str(sum));
+}

@@ -161,6 +161,32 @@ now     2026-02-28T00:00:00Z
 `vo test` it starts at 0 (see [Determinism](determinism.md)). Everything else in the module is pure.
 Details: [std.time](../std/time.md).
 
+
+`sleep(ms)` waits (needs `clock`): for retries, polling and rate limits. With the real clock it really
+waits, without using the processor, and never past `--timeout` (R0009). With a fixed clock, as in every
+`vo test` and with `--clock-ms`, it returns at once and moves the clock on, so code that sleeps is tested
+instantly and exactly; `vo replay` does not wait either.
+
+```vo
+import std.time.now;
+import std.time.sleep;
+
+fn main() uses console, clock {
+    let start = now();
+    var pause = 50;
+    for _ in 0..3 {
+        sleep(pause);
+        set pause = pause * 2;
+    }
+    print("waited " + str(now() - start) + " ms");
+}
+```
+
+```console
+$ vo run --clock-ms 0 main.vo
+waited 351 ms
+```
+
 ## std.text
 
 Text helpers beyond the builtins: `starts_with`, `ends_with`, `contains`, `replace`, `repeat`,

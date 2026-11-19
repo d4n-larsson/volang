@@ -1,0 +1,9 @@
+# Spec 022 US2: with a fixed clock, sleep does not wait; the next reading is ms later.
+import std.time.now;
+import std.time.sleep;
+
+fn main() uses console, clock {
+    print(str(now()));
+    sleep(500);
+    print(str(now()));
+}

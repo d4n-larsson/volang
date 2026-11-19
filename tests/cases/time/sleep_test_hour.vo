@@ -1,0 +1,17 @@
+# Spec 022 US2: tests use a fixed clock, so an hour of sleeping takes no time.
+import std.time.now;
+import std.time.sleep;
+
+test "an hour of retries" uses clock {
+    let a = now();
+    for _ in 0..60 {
+        sleep(60000);
+    }
+    expect_eq(now() - a, 3600001);
+}
+
+test "each test starts at 0" uses clock {
+    expect_eq(now(), 0);
+    sleep(10);
+    expect_eq(now(), 11);
+}

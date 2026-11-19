@@ -1,0 +1,10 @@
+# One more clock reading than recorded: R0014 (no clock values kept in locals, so the report is stable).
+import std.time.now;
+import std.time.sleep;
+
+fn main() uses console, clock {
+    sleep(500);
+    print(str(now() > 0));
+    print(str(now() > 0));
+    print(str(now() > 0));
+}
