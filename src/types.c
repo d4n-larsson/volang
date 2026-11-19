@@ -79,9 +79,11 @@ void ty_func_name_into(SB *sb, Type *t)
         ty_name_into(sb, vec_get(params, i));
     }
     sb_byte(sb, ')');
-    if (t->b.t->kind != TY_VOID) {
-        sb_cstr(sb, " -> ");
+    if (t->b.t->kind != TY_VOID) { /* a pure returned function type before ` uses`: in parentheses */
+        int open = t->b.t->kind == TY_FUNC && es_is_empty(t->b.t->decl.es) && !es_is_empty(t->decl.es);
+        sb_cstr(sb, open ? " -> (" : " -> ");
         ty_name_into(sb, t->b.t);
+        if (open) sb_byte(sb, ')');
     }
     if (!es_is_empty(t->decl.es)) {
         sb_cstr(sb, " uses ");
@@ -343,6 +345,18 @@ int ty_unify(Type *pattern, Type *t, Node *owner, Type **bindings)
         for (long i = 0; i < pattern->b.v->n; i++)
             if (!ty_unify(vec_get(pattern->b.v, i), vec_get(t->b.v, i), owner, bindings)) return 0;
         return 1;
+    case TY_EFFSET: { /* spec 026: a type's effect argument; owner's lone effect parameter binds to the value's */
+        EffSet *p = pattern->decl.es;
+        if (es_evar_count(p) == 1 && !p->mask && !p->any && !(p->scopes && p->scopes->n)) {
+            Type *ev = vec_get(p->evars, 0);
+            if (ev->decl.n == owner) {
+                Type **slot = &bindings[ev->a.i];
+                if (!*slot) *slot = t;
+                return *slot == t;
+            }
+        }
+        return 0; /* (equal interned sets matched above) */
+    }
     default:
         return 0;
     }

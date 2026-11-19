@@ -127,6 +127,7 @@ Type *resolve_instance(Node *node, Node *decl, int kind, Vec *arg_nodes)
             /* unscoped effects in a type mean "in some scope", as a library function's own `uses`: the
                value's real target (a database's path) is checked at run time (spec 026, research R14) */
             EffSet *es = fx_build_set(an, 0);
+            if (es->scopes && es->scopes->n) return scoped_effect_arg_error(an, es);
             es->any |= es->mask;
             es->mask = 0;
             t = ty_make(TY_EFFSET, 0, 0, es);
@@ -137,10 +138,31 @@ Type *resolve_instance(Node *node, Node *decl, int kind, Vec *arg_nodes)
             if (tp->b.i == TPC_EFFECTS && !eff_param && !ty_bad(t)) return effect_arg_error(an, decl, 3);
             if (tp->b.i != TPC_EFFECTS && eff_param) return effect_arg_error(an, decl, 1);
             check_targ(t, tp, an, decl->a.n->a.s);
+            if (eff_param) { /* `Conn[E]` is `Conn[uses E]`: one form, so instances unify and compare */
+                EffSet *es = es_new(0);
+                es_add_evar(es, t);
+                t = ty_make(TY_EFFSET, 0, 0, es);
+            }
         }
         vec_push(args, t);
     }
     return ty_instance(kind, decl, args);
+}
+
+/* Spec 026, E0327: scopes in an effect argument. A type names effects; the scopes are the grant's, checked
+ * where the value is used. The fix drops the scopes. Returns the error type. */
+Type *scoped_effect_arg_error(Node *an, EffSet *es)
+{
+    EffSet *plain = es_new((long)es->mask);
+    plain->evars = es->evars;
+    for (long i = 0; i < es->scopes->n; i++) plain->mask |= (unsigned long)((EffScope *)vec_get(es->scopes, i))->bit;
+    Str *fixed = ty_name(ty_make(TY_EFFSET, 0, 0, plain));
+    Diag *d = ck_err("E0327", an,
+                     msg("A type names effects without scopes: `$1`. The scopes are the grant's, checked where the value "
+                         "is used.",
+                         fixed, 0, 0));
+    diag_add_fix(d, (int)an->file, an->start, an->end, fixed);
+    return t_error;
 }
 
 /* Spec 026, E0327: an effect argument where the type has no effect parameter (why 1), not last (2), or
@@ -242,6 +264,10 @@ int ty_mentions_owner(Type *t, Node *owner)
     case TY_VARIANT:
         for (long i = 0; t->b.v && i < t->b.v->n; i++)
             if (ty_mentions_owner(vec_get(t->b.v, i), owner)) return 1;
+        return 0;
+    case TY_EFFSET: /* spec 026: a type's effect argument */
+        for (long i = 0; i < es_evar_count(t->decl.es); i++)
+            if (((Type *)vec_get(t->decl.es->evars, i))->decl.n == owner) return 1;
         return 0;
     default: return 0;
     }

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0501","name":"missing_effect","severity":"error","file":"fn_return_uses_fix.vo","start":{"line":3,"col":4},"end":{"line":3,"col":11},"text":"greeter","message":"`greeter` does not declare console, which it needs.","fixes":[{"file":"fn_return_uses_fix.vo","start":{"line":3,"col":26},"end":{"line":3,"col":38},"replacement":"(fn() -> str) uses console "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

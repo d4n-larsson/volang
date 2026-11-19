@@ -1,0 +1,10 @@
+mkdir data
+vo check main.vo
+vo run main.vo
+vo run main.vo
+vo test main.vo
+vo run memory.vo
+vo effects main.vo
+vo effects --update main.vo
+keep vo.effects
+vo check main.vo

@@ -83,3 +83,24 @@ runtime, the checker, the nine added CORE-MATH functions):
 - Connections are closed when each test or property case ends and at every program exit
   (`vo_exit`), so an open transaction is rolled back rather than left to the next open.
 
+
+## Follow-up (2026-11-19, from the voledger experiment)
+
+An agent building a program on `std.sqlite` reported what got in its way; fixed after the spec was
+committed:
+
+- **Effect-generic database code**: `fn f[D: effects](db: Database[D]) uses D` (or `Database[uses D]`)
+  did not accept `open` or `open_memory` results. An effect parameter as a type argument is now stored as
+  the effect set `uses D`, so both spellings are one type; unification binds an effect parameter inside an
+  effect set; an argument whose type comes from context (`open_memory()`) is no longer checked against an
+  unresolved `Database[uses D]`. Scopes in a type argument are E0327 with a fix that removes them.
+  `tests/cases/sqlite_steps/generic_db`, `tests/cases/generic/effect_args_scoped`.
+- **`vo.effects` with effect parameters** (older than this spec): `vo effects --update` wrote `uses D`,
+  which the record reader rejected (E0510). Names are resolved against the function's declaration.
+- **Functions that return a pure function and have effects of their own** (older than this spec) could
+  not be written: a `uses` after a function type belongs to that type. Types can now be parenthesized,
+  `fn f() -> (fn() -> int) uses console {`; `vo fmt`, type names, `vo doc` and hover write the
+  parentheses exactly where a `uses` follows a pure function type, and the E0501 fix adds them.
+  `tests/cases/fmt/fn_type_parens`, `tests/cases/effects/fn_return_uses_fix`.
+- **Docs**: the reference and the results guide still showed `case ok { }` for `result[void]` (W0402
+  since spec 009). Runnable doc examples must now also check without warnings (`tests/doc_examples.py`).

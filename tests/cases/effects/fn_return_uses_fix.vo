@@ -1,0 +1,12 @@
+# A function that prints and returns a pure function: the fix puts the returned type in parentheses,
+# since a `uses` right after it would belong to the returned type.
+fn greeter(name: str) -> fn() -> str {
+    print("making " + name);
+    return fn() -> str {
+        return "hi " + name;
+    };
+}
+
+fn main() uses console {
+    print(greeter("ana")());
+}

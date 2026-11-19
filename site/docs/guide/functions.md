@@ -334,6 +334,31 @@ QUIT
 
 A pure function also fits a type with effects, since doing less than allowed is always fine.
 
+A `uses` right after a function type belongs to that type. When the function itself has effects and
+returns a pure function, put the returned type in parentheses, so that the `uses` is the function's own:
+
+```vo
+fn make_counter(start: int) -> (fn() -> int) uses console {
+    print("counting from " + str(start));
+    return fn() -> int {
+        return start + 1;
+    };
+}
+
+fn main() uses console {
+    let next = make_counter(41);
+    print(str(next()));
+}
+```
+
+```output
+counting from 41
+42
+```
+
+`vo fmt` writes the parentheses only where they are needed, and the fix for a missing effect
+([E0501](../errors/E0501.md)) adds them when it must.
+
 A function that takes a callback and should work with any effects the callback has, such as an `each`
 over a list, uses an effect parameter, `fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E`.
 See [Generics](generics.md).

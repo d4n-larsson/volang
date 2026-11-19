@@ -1,0 +1,6 @@
+# Scopes in an effect argument: a type names effects, the grant's scopes are checked where it is used.
+import std.sqlite.Database;
+
+fn keep(db: Database[uses file.read("data/"), file.write("data/")]) -> int {
+    return db.id;
+}

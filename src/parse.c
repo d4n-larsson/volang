@@ -424,6 +424,11 @@ static Node *parse_type(void)
         }
         if (p_accept(T_ARROW)) n->c.n = parse_type();
         n->d.n = parse_uses();
+    } else if (k == T_LPAREN) { /* `(fn() -> T) uses e`: the `uses` that follows is not the type's */
+        p_next();
+        Node *inner = parse_type();
+        p_expect(T_RPAREN);
+        return inner;
     } else {
         p_fail_c("a type", "type");
         return n;

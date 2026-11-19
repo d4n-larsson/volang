@@ -139,12 +139,15 @@ void doc_signature(SB *sb, Node *item)
             ty_name_into(sb, p->type);
         }
         sb_byte(sb, ')');
-        if (item->type && item->type->kind != TY_VOID) { /* the return type, unless void */
-            sb_cstr(sb, " -> ");
-            ty_name_into(sb, item->type);
-        }
         Fx *fx = item_fx(item); /* effects */
-        if (!fx || !fx->declared || es_is_empty(fx->declared)) return;
+        int effects = fx && fx->declared && !es_is_empty(fx->declared);
+        if (item->type && item->type->kind != TY_VOID) { /* the return type, unless void */
+            int open = effects && item->type->kind == TY_FUNC && es_is_empty(item->type->decl.es);
+            sb_cstr(sb, open ? " -> (" : " -> "); /* a pure function type would take the ` uses` */
+            ty_name_into(sb, item->type);
+            if (open) sb_byte(sb, ')');
+        }
+        if (!effects) return;
         sb_cstr(sb, " uses ");
         es_render(fx->declared, sb);
         return;

@@ -163,8 +163,22 @@ long rec_skip_spaces(char *p, long i, long n)
     return i;
 }
 
-/* Effects in `uses` syntax (`console, file.write("out/")`) as a set, or 0 when malformed. */
-EffSet *rec_parse_set(char *p, long n)
+/* The effect parameter of the program's function `match` named p[0..n), or 0 (spec 026). */
+static Type *rec_evar(Rec *match, char *p, long n)
+{
+    Vec *evars = match && match->set ? match->set->evars : 0;
+    for (long i = 0; evars && i < evars->n; i++) {
+        Str *name = ty_param_name(vec_get(evars, i));
+        if (name->len == n && mem_eq(name->data, p, n)) return vec_get(evars, i);
+    }
+    return 0;
+}
+
+/* Effects in `uses` syntax (`console, file.write("out/")`) as a set, or 0 when malformed. An effect
+ * parameter (`uses E`, a capitalized name) is the one of that name the program's function `match`
+ * declares; ponytail: a name it no longer declares is left out (the bits still compare), so a renamed
+ * parameter shows as added; keep names if that misleads. */
+EffSet *rec_parse_set(char *p, long n, void *match)
 {
     EffSet *set = es_new(0);
     long i = 0;
@@ -172,6 +186,16 @@ EffSet *rec_parse_set(char *p, long n)
         i = rec_skip_spaces(p, i, n);
         if (i >= n) return 0; /* an effect is expected */
         long from = i;
+        if ((unsigned)(p[i] - 'A') < 26) { /* an effect parameter */
+            while (i < n && (p[i] == '_' || (unsigned)((p[i] | 0x20) - 'a') < 26 || (unsigned)(p[i] - '0') < 10)) i++;
+            Type *ev = rec_evar(match, p + from, i - from);
+            if (ev) es_add_evar(set, ev);
+            i = rec_skip_spaces(p, i, n);
+            if (i >= n) return set;
+            if (p[i] != ',') return 0;
+            i++;
+            continue;
+        }
         while (i < n && (p[i] == '.' || p[i] == '_' || (unsigned)(p[i] - 'a') < 26)) i++;
         if (i == from) return 0;
         long bit = es_bit_by_name(p + from, i - from);
@@ -214,7 +238,7 @@ EffSet *rec_parse_set(char *p, long n)
 }
 
 /* One record line [start, end): an entry, or 0 when it cannot be read. */
-static Rec *rec_parse_line(char *text, long start, long end)
+static Rec *rec_parse_line(char *text, long start, long end, Vec *program)
 {
     long colon = start; /* ':' ends the path */
     while (colon < end && text[colon] != ':') colon++;
@@ -231,7 +255,8 @@ static Rec *rec_parse_line(char *text, long start, long end)
             if (mem_eq(text + u, " uses ", 6)) break;
         }
         name_end = u;
-        set = rec_parse_set(text + u + 6, end - (u + 6));
+        Rec *probe = rec_entry(str_new(text + start, colon - start), str_new(text + colon + 1, u - colon - 1), 0);
+        set = rec_parse_set(text + u + 6, end - (u + 6), program ? rec_lookup(program, probe) : 0);
         if (!set) return 0;
     }
     Str *path = str_new(text + start, colon - start);
@@ -240,7 +265,7 @@ static Rec *rec_parse_line(char *text, long start, long end)
 }
 
 /* The entries of a registered vo.effects; E0510 for each line that cannot be read. */
-Vec *rec_parse(int file)
+Vec *rec_parse(int file, Vec *program)
 {
     FileRec *f = file_get(file);
     char *text = f->text;
@@ -250,7 +275,7 @@ Vec *rec_parse(int file)
         long end = start;
         while (end < len && text[end] != '\n') end++;
         if (start != end && text[start] != '#') { /* not an empty or comment line */
-            Rec *e = rec_parse_line(text, start, end);
+            Rec *e = rec_parse_line(text, start, end, program);
             if (e) {
                 e->file = file;
                 e->start = start;
@@ -377,7 +402,7 @@ void rec_review(int entry, Vec *files)
         return;
     }
     long errors = diag_errors;
-    Vec *old = rec_parse((int)record);
+    Vec *old = rec_parse((int)record, rec_entries(files));
     if (diag_errors != errors) return; /* a malformed record: E0510 only */
     Vec *changes = rec_compare(old, rec_entries(files));
     for (long i = 0; i < changes->n; i++) rec_change_diag(vec_get(changes, i));
@@ -495,7 +520,7 @@ int rec_command(int entry, Vec *files, int update, int json)
     long record = rec_find(entry); /* file id or -1 */
     Vec *old = vec_new();
     if (record >= 0) {
-        old = rec_parse((int)record);
+        old = rec_parse((int)record, rec_entries(files));
         if (diag_errors) return 1; /* a malformed record: report, change nothing */
     }
     Vec *entries = rec_entries(files);

@@ -105,6 +105,10 @@ def check_text(text, page=""):
                 r = vo(["run", entry], d, stdin)
                 if r.stdout.decode() != nxt[3]:
                     problems.append(f"{label}: output differs.\n  expected: {nxt[3]!r}\n  got: {r.stdout.decode()!r}\n  stderr: {r.stderr.decode()[:300]}")
+                diags = [c for c in re.findall(r'"code":"(\w+)"', vo(["check", "--json", entry], d).stdout.decode())
+                         if c not in ("W0504", "W0601")]  # no vo.effects in the example's directory; holes run on purpose
+                if diags:  # an example that runs also teaches: no warnings either
+                    problems.append(f"{label}: example does not check clean: {diags}")
                 i += 1
             elif nxt and nxt[1] == "error":
                 code = nxt[2] or ""

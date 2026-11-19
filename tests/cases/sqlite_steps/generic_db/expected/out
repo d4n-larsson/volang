@@ -1,0 +1,43 @@
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+1 1
+--- stderr
+--- exit 0
+$ vo run main.vo
+2 1
+--- stderr
+--- exit 0
+$ vo test main.vo
+PASS an in-memory database needs no effect (0ms)
+1 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo run memory.vo
+0
+--- stderr
+--- exit 0
+$ vo effects main.vo
+main uses console, file.read("data/", "imports/"), file.write("data/")
+test "an in-memory database needs no effect" pure
+
+main.vo:count uses D
+main.vo:main uses console, file.read("data/", "imports/"), file.write("data/")
+main.vo:setup uses D
+main.vo:test "an in-memory database needs no effect" pure
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo effects --update main.vo
++ main.vo:count: D
++ main.vo:main: console, file.read("data/", "imports/"), file.write("data/")
++ main.vo:setup: D
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0

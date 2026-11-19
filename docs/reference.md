@@ -486,7 +486,7 @@ fn(int) -> int uses console                 function type (parameter types, retu
 - Anonymous functions write parameter and return types like named functions. They never write `uses`: their effects come from their body (E0507). A function value fits a function type whose effects cover its own (E0502 otherwise).
 - They capture the `let` bindings and parameters they use, by value, when they are created. Capturing a `var` is E0505; copy it into a `let` first.
 - Function types go anywhere a type can: parameters, return types, `let`, record fields, lists, maps. Functions cannot be compared with `==`.
-- A function returning a function type writes the type's `uses` first: `fn f() -> fn(str) uses console {` declares that the returned function prints.
+- A function returning a function type writes the type's `uses` first: `fn f() -> fn(str) uses console {` declares that the returned function prints. To declare that `f` itself prints and returns a pure function, parenthesize the type: `fn f() -> (fn(str)) uses console {`.
 
 | Builtin | Signature | Notes |
 |---|---|---|
@@ -565,7 +565,7 @@ fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E { ... }
 - Generic types are written with their arguments: `Pair[int, str]` (E0312).
 - Type arguments are never written at calls, and may be left out of `new` and of cases: they come from the arguments or field values, then from the expected type (a parameter, a return type, an annotated variable): `insert(Tree.leaf, 5)`, `new Pair { first: 1, second: "a" }`. When they cannot be inferred, annotate the variable (E0310).
 - Generic code is checked once, where it is written.
-- Records and variants can take an effect parameter, `record Database[E: effects] { ... }`. In a type, effects come last, after `uses`: `Database[uses file.read, file.write]`; without them the type has no effects (`Database`). A function using such a value declares `uses E`, as for a function value (E0327).
+- Records and variants can take an effect parameter, `record Database[E: effects] { ... }`. In a type, effects come last, after `uses`: `Database[uses file.read, file.write]`; without them the type has no effects (`Database`). A function using such a value declares `uses E`, as for a function value; `fn save[D: effects](db: Database[D]) uses D` takes any database. Types carry no scopes (E0327).
 
 ```vo
 record Pair[A, B] {
@@ -611,7 +611,7 @@ b
 vo has no exceptions and no `null`. A function that can fail returns `result[T]`, which is either `ok(value)` or `err(message)`; the error is always a `str`. A function that can fail but has no value returns `result[void]` and succeeds with `ok()`.
 
 - Build: `ok(v)`, `ok()`, `err("message")`. Match the success of a `result[void]` with `case ok()`, as it is built. The result type must be known from the function's return type or an annotation: `let r: result[int] = ok(1);` (`let r = ok(1);` is E0307).
-- Handle with `match`, which must cover both `ok` and `err`. For `result[void]` write `case ok { }` without a binding.
+- Handle with `match`, which must cover both `ok` and `err`.
 - Propagate with `try`: `try e` gives the `ok` value, or immediately returns the `err` from the current function. `try` is only allowed in a function that returns a `result` (E0406). Any `result[T]` error can propagate through any `result[U]` function, since both carry a `str`.
 - `try f();` as a statement is only for `result[void]`. For other results use the value, or write `let _ = try f();`.
 - A `result` can never be ignored: calling `f();` alone or `let _ = f();` when `f` returns a result is E0404.
@@ -669,7 +669,7 @@ fn main() -> result[void] uses console {
     let n = try parse_int("42");
     try check_positive(n);
     match check_positive(-1) {
-        case ok {
+        case ok() {
             print("fine");
         }
         case err(e) {

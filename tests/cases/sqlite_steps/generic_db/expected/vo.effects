@@ -1,0 +1,5 @@
+# vo effects record: update with `vo effects --update`
+main.vo:count uses D
+main.vo:main uses console, file.read("data/", "imports/"), file.write("data/")
+main.vo:setup uses D
+main.vo:test "an in-memory database needs no effect" pure

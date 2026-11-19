@@ -1734,7 +1734,7 @@ Effects in a type are written in the wrong place or form.
 
 Fixable: sometimes
 
-A record or variant can take an effect parameter (`record Database[E: effects]`). In a type, its effects come last in the brackets, after `uses`, as in a function type: `Database[uses file.read, file.write]`. Without them the type has no effects (`Database`). The fix adds the missing `uses`.
+A record or variant can take an effect parameter (`record Database[E: effects]`). In a type, its effects come last in the brackets, after `uses`, as in a function type: `Database[uses file.read, file.write]`. Without them the type has no effects (`Database`). The fix adds the missing `uses`. A type names effects without scopes (`file.read`, not `file.read("data/")`): the scopes belong to the grant and are checked where the value is used; the fix removes them. Code that takes any such value is generic over its effects: `fn save[D: effects](db: Database[D]) uses D` (`Database[uses D]` is the same type) takes a file database and an in-memory one alike.
 
 ### Example
 

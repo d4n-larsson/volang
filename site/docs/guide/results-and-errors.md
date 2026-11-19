@@ -342,7 +342,7 @@ fn check_all(names: list[str]) -> result[void] {
 
 fn main() uses console {
     match check_all(["ana", "bo"]) {
-        case ok {
+        case ok() {
             print("all valid");
         }
         case err(e) {
@@ -350,7 +350,7 @@ fn main() uses console {
         }
     }
     match check_all(["ana", "bo b", ""]) {
-        case ok {
+        case ok() {
             print("all valid");
         }
         case err(e) {

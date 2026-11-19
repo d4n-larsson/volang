@@ -1,0 +1,16 @@
+# The in-memory database alone: the same generic code, called without any file effect.
+import std.sqlite.open_memory;
+import std.sqlite.sql;
+import std.sqlite.exec;
+import std.sqlite.Database;
+import std.sqlite.Value;
+
+fn setup[D: effects](db: Database[D]) -> result[int] uses D {
+    let c = try exec(db, sql("create table t(x)"), new list[Value]);
+    return ok(c.changed);
+}
+
+fn main() -> result[void] uses console {
+    print(str(try setup(open_memory())));
+    return ok();
+}

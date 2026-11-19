@@ -2,10 +2,13 @@
 # Part of the vo standard library (spec 026). Import items one by one: `import std.sqlite.NAME;`.
 # A database's type names the effects it was opened with, and using it needs them: open gives a
 # Database[uses file.read, file.write], open_readonly a Database[uses file.read], open_memory a Database.
+# Code for any database (a file in main, open_memory in tests) is generic over its effects:
+# `fn save[D: effects](db: Database[D], ...) uses D`. A type names no scopes: the grant's are checked at use.
 # Statements are literals, sql("..."), checked by vo check; values are ? parameters, never part of the text.
 # Changed SQLite defaults: foreign keys are enforced, and "x" is always a name (strings are 'x').
 
-# An open database: from open, open_readonly or open_memory; close it with close.
+# An open database: from open, open_readonly or open_memory; close it with close. Code for any database is
+# generic over its effects: `fn save[D: effects](db: Database[D]) uses D` takes a file and an in-memory one.
 #     open_memory().id >= 0 is true
 export record Database[E: effects] {
     # The connection's number (a Database built by hand is refused when used).

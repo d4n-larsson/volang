@@ -42,6 +42,16 @@ static void fm_source(Node *n)
     sb_bytes(fm_sb, fm_text + n->start, (long)n->end - (long)n->start);
 }
 
+/* A return type that a `uses` clause follows: a function type without its own `uses` would take that
+ * clause, so it is written in parentheses, `-> (fn() -> int) uses console`. */
+static void fm_ret_type(Node *t, Node *uses)
+{
+    int open = uses && t && t->kind == N_TYPE_NODE && t->a.i == TY_FUNC && !t->d.n;
+    if (open) fm_b('(');
+    fm_type(t);
+    if (open) fm_b(')');
+}
+
 /* `fn(int, str) -> bool uses console`. */
 static void fm_fn_type(Node *t)
 {
@@ -53,7 +63,7 @@ static void fm_fn_type(Node *t)
     fm_b(')');
     if (t->c.n) {
         fm_c(" -> ");
-        fm_type(t->c.n);
+        fm_ret_type(t->c.n, t->d.n);
     }
     fm_uses(t->d.n);
 }
@@ -73,7 +83,7 @@ static void fm_lambda(Node *f)
     fm_b(')');
     if (f->c.n) {
         fm_c(" -> ");
-        fm_type(f->c.n);
+        fm_ret_type(f->c.n, f->a.n->b.fx->uses);
     }
     fm_uses(f->a.n->b.fx->uses); /* a `uses` clause (E0507) is kept, so nothing is lost */
     fm_b(' ');
@@ -611,7 +621,7 @@ static void fm_item(Node *item)
         fm_b(')');
         if (item->c.n) {
             fm_c(" -> ");
-            fm_type(item->c.n);
+            fm_ret_type(item->c.n, fx ? fx->uses : 0);
         }
         if (fx) {
             fm_uses(fx->uses);

@@ -398,12 +398,20 @@ void fx_fix_clause(Diag *d, Node *item, EffSet *set)
     long clause_at = item_fx(item)->clause_at; /* contract clauses follow `uses`: it ends before them */
     if (clause_at) at = clause_at;
     SB *sb = sb_new();
+    Node *ret = item->kind == N_FN ? item->c.n : 0;
+    long from = uses ? (long)uses->start : at;
+    if (!uses && !es_is_empty(set) && ret && ret->kind == N_TYPE_NODE && ret->a.i == TY_FUNC && !ret->d.n) {
+        sb_byte(sb, '('); /* a returned function type without its own `uses` would take the clause */
+        sb_str(sb, src_text(ret));
+        sb_cstr(sb, ") ");
+        from = ret->start;
+    }
     if (!es_is_empty(set)) {
         sb_cstr(sb, "uses ");
         es_render(set, sb);
         sb_cstr(sb, " ");
     }
-    diag_add_fix(d, (int)item->file, uses ? (long)uses->start : at, at, sb_finish(sb));
+    diag_add_fix(d, (int)item->file, from, at, sb_finish(sb));
 }
 
 /* Spec 026: 1 when t carries effect parameter ev as an effect argument of a record or variant
@@ -413,6 +421,7 @@ static int ty_carries_evar(Type *t, Type *ev)
     if (!t) return 0;
     switch (t->kind) {
     case TY_PARAM: return t == ev;
+    case TY_EFFSET: return es_has_evar(t->decl.es, ev); /* `Database[E]` */
     case TY_LIST:
     case TY_RESULT: return ty_carries_evar(t->a.t, ev);
     case TY_MAP: return ty_carries_evar(t->a.t, ev) || ty_carries_evar(t->b.t, ev);

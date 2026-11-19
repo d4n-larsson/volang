@@ -1,0 +1,25 @@
+# A function type without its own `uses` is parenthesized only where a `uses` follows it.
+fn needed(x: int) -> (fn() -> int) uses console {
+    print("making");
+    return fn() -> int {
+        return x;
+    };
+}
+
+fn not_needed() -> (fn() -> int) {
+    return fn() -> int {
+        return 2;
+    };
+}
+
+fn nested(f: fn() -> (fn() -> int) uses console) -> int uses console {
+    return f()();
+}
+
+fn its_own() -> fn() -> int uses console uses console {
+    print("its own");
+    return fn() -> int {
+        print("inner");
+        return 3;
+    };
+}
