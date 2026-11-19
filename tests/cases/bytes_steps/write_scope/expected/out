@@ -1,10 +1,10 @@
 $ vo run main.vo
 --- stderr
-std/fs.vo:120:17: runtime error[R0010]: file.write("elsewhere.bin") is not allowed: `main` declares console, file.write("out/").
- 120 |     let _ = try __fsb(2, path, b);
+std/fs.vo:127:17: runtime error[R0010]: file.write("elsewhere.bin") is not allowed: `main` declares console, file.write("out/").
+ 127 |     let _ = try __fsb(2, path, b);
      |                 ^^^^^^^^^^^^^^^^^
 trace:
-  at write_bytes (std/fs.vo:120:17)
+  at write_bytes (std/fs.vo:127:17)
       path: str = "elsewhere.bin", b: bytes = <1 bytes: 01>
   at main (main.vo:6:9)
 --- exit 70

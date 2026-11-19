@@ -445,16 +445,27 @@ void doc_package_names(void)
 /* ---- builtins (the reference's table) ---- */
 
 /* The first `| ` row of the reference's Builtins table after its header and separator rows. */
+/* The first row of the first builtin table at or after p (a `| Builtin | Signature | Notes |` header),
+ * or 0. */
+static char *doc_table_from(char *p)
+{
+    for (; p && *p; p = doc_next_line(p))
+        if (doc_starts(p, "| Builtin | Signature | Notes |")) return doc_next_line(doc_next_line(p));
+    return 0;
+}
+
+/* spec 023: every builtin table of the reference, in order (the main one under "## Builtins", and the
+ * others such as the functions-as-values table), so every named builtin is documented. */
 char *doc_builtin_rows(void)
 {
-    char *p = (char *)ref_md;
-    while (*p && !doc_starts(p, "## Builtins")) p = doc_next_line(p);
-    if (!*p) return 0;
-    do { /* skip to the table: header, then separator, then rows */
-        p = doc_next_line(p);
-        if (!*p) return 0;
-    } while (*p != '|');
-    return doc_next_line(doc_next_line(p)); /* past the header and the separator rows */
+    return doc_table_from((char *)ref_md);
+}
+
+/* The next builtin row after row: the next line of the table, or the first row of the next table. */
+char *doc_next_builtin_row(char *row)
+{
+    char *p = doc_next_line(row);
+    return p && *p == '|' ? p : doc_table_from(p);
 }
 
 char *doc_next_line(char *p)
@@ -531,7 +542,7 @@ long doc_names_has(Str *names, Str *name)
 long doc_builtins(Str *name)
 {
     long printed = 0;
-    for (char *row = doc_builtin_rows(); row && *row == '|'; row = doc_next_line(row)) {
+    for (char *row = doc_builtin_rows(); row && *row == '|'; row = doc_next_builtin_row(row)) {
         Str *names = doc_cell(row, 0);
         if (name && !doc_names_has(names, name)) continue;
         if (doc_collect) { /* collecting names for a suggestion */
@@ -806,7 +817,7 @@ int doc_record_for(SB *sb, long key_a, long key_b, Str **sig, Str **desc)
         const char *name = builtin_name_of(key_b);
         if (!name) return 0;
         Str *n = str_from_cstr((char *)name);
-        for (char *row = doc_builtin_rows(); row && *row == '|'; row = doc_next_line(row)) {
+        for (char *row = doc_builtin_rows(); row && *row == '|'; row = doc_next_builtin_row(row)) {
             Str *names = doc_cell(row, 0);
             if (!doc_names_has(names, n)) continue;
             Str *s = doc_cell(row, 1), *notes = doc_cell(row, 2);

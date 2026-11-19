@@ -31,11 +31,11 @@ trace:
       x: int = 0
   at anonymous function (service.vo:15:18)
       r: Request = new Request { method: "GET", path: "/x", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, xs: list[int] = [1, 2, 0]
-  at anonymous function (std/http.vo:250:58)
+  at anonymous function (std/http.vo:263:58)
       raw: str = "GET /x HTTP/1.1\nHost: localhost\n\n", handle: fn(Request) -> Response = <fn(Request) -> Response>, req: Request = new Request { method: "GET", path: "/x", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/x", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
-  at serve_loop (std/http.vo:304:15)
+  at serve_loop (std/http.vo:322:15)
       address: str = "{vport}", answer: fn(str) -> str = <fn(str) -> str>, listener: int = 4, raw: str = "GET /x HTTP/1.1\nHost: localhost\n\n"
-  at serve (std/http.vo:262:12)
+  at serve (std/http.vo:275:12)
       address: str = "{vport}", handle: fn(Request) -> Response = <fn(Request) -> Response>, answer: fn(str) -> str = <fn(str) -> str>
   at main (service.vo:13:9)
 --- exit 0

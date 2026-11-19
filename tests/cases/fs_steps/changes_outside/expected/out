@@ -1,10 +1,10 @@
 $ vo run main.vo -- append
 --- stderr
-std/fs.vo:107:17: runtime error[R0010]: file.write("work/../keep.txt") is not allowed: `try_it` declares console, file.write("work/"), file.delete("work/").
- 107 |     let _ = try __fs(3, path, text);
+std/fs.vo:114:17: runtime error[R0010]: file.write("work/../keep.txt") is not allowed: `try_it` declares console, file.write("work/"), file.delete("work/").
+ 114 |     let _ = try __fs(3, path, text);
      |                 ^^^^^^^^^^^^^^^^^^^
 trace:
-  at append_file (std/fs.vo:107:17)
+  at append_file (std/fs.vo:114:17)
       path: str = "work/../keep.txt", text: str = "x"
   at try_it (main.vo:21:20)
       what: str = "append", up: str = "work/../"
@@ -13,11 +13,11 @@ trace:
 --- exit 70
 $ vo run main.vo -- make_dir
 --- stderr
-std/fs.vo:134:17: runtime error[R0010]: file.write("work/../made") is not allowed: `try_it` declares console, file.write("work/"), file.delete("work/").
- 134 |     let _ = try __fs(4, path, "");
+std/fs.vo:141:17: runtime error[R0010]: file.write("work/../made") is not allowed: `try_it` declares console, file.write("work/"), file.delete("work/").
+ 141 |     let _ = try __fs(4, path, "");
      |                 ^^^^^^^^^^^^^^^^^
 trace:
-  at make_dir (std/fs.vo:134:17)
+  at make_dir (std/fs.vo:141:17)
       path: str = "work/../made"
   at try_it (main.vo:24:20)
       what: str = "make_dir", up: str = "work/../"
@@ -26,11 +26,11 @@ trace:
 --- exit 70
 $ vo run main.vo -- delete
 --- stderr
-std/fs.vo:141:17: runtime error[R0010]: file.delete("work/../keep.txt") is not allowed: `try_it` declares console, file.write("work/"), file.delete("work/").
- 141 |     let _ = try __fs(5, path, "");
+std/fs.vo:148:17: runtime error[R0010]: file.delete("work/../keep.txt") is not allowed: `try_it` declares console, file.write("work/"), file.delete("work/").
+ 148 |     let _ = try __fs(5, path, "");
      |                 ^^^^^^^^^^^^^^^^^
 trace:
-  at delete (std/fs.vo:141:17)
+  at delete (std/fs.vo:148:17)
       path: str = "work/../keep.txt"
   at try_it (main.vo:27:20)
       what: str = "delete", up: str = "work/../"
@@ -39,11 +39,11 @@ trace:
 --- exit 70
 $ vo run main.vo -- rename_from
 --- stderr
-std/fs.vo:148:17: runtime error[R0010]: file.delete("work/../keep.txt") is not allowed: `try_it` declares console, file.write("work/"), file.delete("work/").
- 148 |     let _ = try __fs(6, from, to);
+std/fs.vo:155:17: runtime error[R0010]: file.delete("work/../keep.txt") is not allowed: `try_it` declares console, file.write("work/"), file.delete("work/").
+ 155 |     let _ = try __fs(6, from, to);
      |                 ^^^^^^^^^^^^^^^^^
 trace:
-  at rename (std/fs.vo:148:17)
+  at rename (std/fs.vo:155:17)
       from: str = "work/../keep.txt", to: str = "work/stolen.txt"
   at try_it (main.vo:30:20)
       what: str = "rename_from", up: str = "work/../"
@@ -52,11 +52,11 @@ trace:
 --- exit 70
 $ vo run main.vo -- rename_to
 --- stderr
-std/fs.vo:148:17: runtime error[R0010]: file.write("work/../escaped.txt") is not allowed: `try_it` declares console, file.write("work/"), file.delete("work/").
- 148 |     let _ = try __fs(6, from, to);
+std/fs.vo:155:17: runtime error[R0010]: file.write("work/../escaped.txt") is not allowed: `try_it` declares console, file.write("work/"), file.delete("work/").
+ 155 |     let _ = try __fs(6, from, to);
      |                 ^^^^^^^^^^^^^^^^^
 trace:
-  at rename (std/fs.vo:148:17)
+  at rename (std/fs.vo:155:17)
       from: str = "work/a.txt", to: str = "work/../escaped.txt"
   at try_it (main.vo:33:20)
       what: str = "rename_to", up: str = "work/../"

@@ -6,12 +6,19 @@
 # A JSON value: object keys keep their order, integers that fit an int are integer.
 #     Json.integer(3) == Json.integer(3) is true
 export variant Json {
+    # JSON null.
     null;
+    # true or false.
     boolean(bool);
+    # A number without a fraction or exponent that fits an int.
     integer(int);
+    # Any other number.
     number(float);
+    # A string.
     text(str);
+    # An array, its elements in order.
     array(list[Json]);
+    # An object, its keys in their order.
     object(map[str, Json]);
 }
 

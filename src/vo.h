@@ -1561,6 +1561,7 @@ extern long doc_package_list(void);
 extern void doc_package_names(void);
 extern char *doc_builtin_rows(void);
 extern char *doc_next_line(char *p);
+extern char *doc_next_builtin_row(char *row); /* spec 023: across every builtin table */
 extern long doc_starts(char *p, char *prefix);
 extern Str *doc_cell(char *row, long index);
 extern long doc_names_has(Str *names, Str *name);

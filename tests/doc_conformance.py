@@ -8,6 +8,7 @@ For every item `vo doc --json` lists (builtins and standard-library items):
 - (library items) the example `EXPR is VALUE` checks and prints exactly VALUE.
 Also times `vo doc --json` with no NAME (must be under 1 s).
 """
+import glob
 import json
 import os
 import re
@@ -20,7 +21,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 
 # Builtin type variables and what they range over ("*": anything).
-TVARS = {"T": "*", "U": "*", "K": {"int", "str"}, "C": {"int", "float", "str"}}
+TVARS = {"T": "*", "U": "*", "A": "*", "K": {"int", "str"}, "C": {"int", "float", "str"}}
+# spec 023: builtins whose type comes from their place (ok, err, todo) or that only work in a `prop`
+# (assume): documented for vo doc and hover, but a call on its own cannot be probed
+CONTEXT_TYPED = {"ok", "err", "todo", "assume"}
 BUILTIN_EFFECTS = {"print": "console", "write": "console", "eprint": "console",
                    "read_line": "input", "read_all": "input", "read_file": "file.read",
                    "write_file": "file.write", "now_ms": "clock", "random_int": "random",
@@ -228,9 +232,38 @@ def main():
     for b in builtins:
         params, ret = parse_builtin_sig(b["signature"])
         for name in [n.strip() for n in b["name"].split(",")]:
+            if name in CONTEXT_TYPED:
+                continue
             eff = [BUILTIN_EFFECTS[name]] if name in BUILTIN_EFFECTS else []
             probe(f"builtin {name}{b['signature']}", [], eff, params, ret, TVARS,
                   name in TEST_ONLY, name, sigs[name])
+
+    # spec 023: everything a user can hover is documented: every builtin row has notes, every named
+    # builtin is in vo doc, and every field and case of an exported std record or variant has a comment
+    for b in builtins:
+        if not b.get("description"):
+            failures.append(f"builtin {b['name']}: no notes in the reference's table (hover shows none)")
+    table = open(os.path.join(ROOT, "src", "check_expr.c")).read()
+    names_src = table[table.index("builtin_names[B_COUNT + 1] = {"):]
+    names_src = names_src[:names_src.index("};")]
+    documented = {n.strip() for b in builtins for n in b["name"].split(",")}
+    for n in re.findall(r'"([a-z_]+)"', names_src):
+        if not n.startswith("__") and n not in documented:
+            failures.append(f"builtin {n}: not in any builtin table of the reference (vo doc and hover miss it)")
+    for path in sorted(glob.glob(os.path.join(ROOT, "std", "*.vo"))):
+        lines = open(path).read().split("\n")
+        inside = None
+        for i, line in enumerate(lines):
+            m = re.match(r"export (record|variant) (\w+)", line)
+            if m:
+                inside = m.group(2)
+                continue
+            if inside and line.startswith("}"):
+                inside = None
+            elif inside and line.strip() and not line.strip().startswith("#") \
+                    and not lines[i - 1].strip().startswith("#"):
+                failures.append(f"std/{os.path.basename(path)}:{i + 1}: `{inside}.{line.strip().rstrip(';')}` "
+                                "has no comment (hover shows none)")
 
     examples = 0
     for module, rs in items.items():

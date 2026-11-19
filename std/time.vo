@@ -5,13 +5,21 @@
 # A UTC calendar time; weekday is 1 for Monday through 7 for Sunday.
 #     from_ms(0).weekday is 4
 export record DateTime {
+    # The year, such as 2026.
     year: int;
+    # The month, 1 to 12.
     month: int;
+    # The day of the month, 1 to 31.
     day: int;
+    # The hour, 0 to 23.
     hour: int;
+    # The minute, 0 to 59.
     minute: int;
+    # The second, 0 to 59.
     second: int;
+    # The millisecond, 0 to 999.
     ms: int;
+    # The day of the week: 1 for Monday through 7 for Sunday.
     weekday: int;
 }
 

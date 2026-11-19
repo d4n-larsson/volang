@@ -1,8 +1,8 @@
-std/fs.vo:141:17: runtime error[R0007]: A path must be non-empty and without NUL bytes.
- 141 |     let _ = try __fs(5, path, "");
+std/fs.vo:148:17: runtime error[R0007]: A path must be non-empty and without NUL bytes.
+ 148 |     let _ = try __fs(5, path, "");
      |                 ^^^^^^^^^^^^^^^^^
 trace:
-  at delete (std/fs.vo:141:17)
+  at delete (std/fs.vo:148:17)
       path: str = ""
   at main (bad_path.vo:6:9)
       empty: str = ""

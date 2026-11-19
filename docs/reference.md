@@ -477,9 +477,9 @@ fn(int) -> int uses console                 function type (parameter types, retu
 | Builtin | Signature | Notes |
 |---|---|---|
 | sort_by | `(xs: list[T], key: fn(T) -> C)` | in place, stable; `C` is `int`, `float` or `str` (E0313) |
-| map | `(xs: list[T], f: fn(T) -> U) -> list[U]` | |
-| filter | `(xs: list[T], f: fn(T) -> bool) -> list[T]` | |
-| fold | `(xs: list[T], init: A, f: fn(A, T) -> A) -> A` | |
+| map | `(xs: list[T], f: fn(T) -> U) -> list[U]` | `f` of each element, in order |
+| filter | `(xs: list[T], f: fn(T) -> bool) -> list[T]` | the elements for which `f` is true, in order |
+| fold | `(xs: list[T], init: A, f: fn(A, T) -> A) -> A` | `f(f(init, xs[0]), xs[1])` ..., `init` for an empty list |
 | any, all | `(xs: list[T], f: fn(T) -> bool) -> bool` | stop at the first element that decides |
 | concurrent_map | `(xs: list[T], limit: int, f: fn(T) -> U) -> list[U]` | like `map`, at most `limit` (1 to 64, else R0007) tasks at a time |
 
@@ -766,7 +766,7 @@ fn main() uses console {
 | eprint | `(s: str)` | stderr, adds `\n` |
 | read_line | `() -> result[str]` | one line of stdin without its `\n` (or `\r\n`); `err("eof")` at end of input |
 | read_all | `() -> str` | the rest of stdin |
-| read_file | `(path: str) -> result[str]` | |
+| read_file | `(path: str) -> result[str]` | the whole file; `err` if it cannot be read or is not UTF-8 |
 | write_file | `(path: str, s: str) -> result[void]` | creates or replaces the file |
 | args | `() -> list[str]` | arguments after `--` in `vo run f.vo -- a b` |
 | exit | `(code: int)` | ends the program; code 0–63, else R0008 |
@@ -775,15 +775,15 @@ fn main() uses console {
 | env | `(name: str) -> result[str]` | an environment variable; `err("not set")` |
 | str | `(x: int \| float \| bool) -> str` | floats keep at most 15 significant digits; `str(1.0)` is `"1.0"` |
 | int | `(f: float) -> int` | truncates toward zero; R0007 for NaN or out of range |
-| float | `(i: int) -> float` | |
+| float | `(i: int) -> float` | exact up to 2^53, else the nearest float |
 | parse_int | `(s: str) -> result[int]` | the whole text must be the number: no spaces, no `+` (`trim` first); else `err("invalid int: ...")` |
-| parse_float | `(s: str) -> result[float]` | |
+| parse_float | `(s: str) -> result[float]` | `-`, digits, optionally `.` and digits, at most 15 significant digits; else `err("invalid float: ...")` |
 | len | `(x: str \| list[T] \| map[K, T]) -> int` | for `str`: bytes, not characters |
 | slice | `(s: str, a: int, b: int) -> str` | bytes `a` to `b - 1`; R0003 out of range; R0007 if it splits a UTF-8 character |
 | slice | `(xs: list[T], a: int, b: int) -> list[T]` | a new list; R0003 out of range |
 | find | `(s: str, sub: str) -> int` | byte offset of the first match, or -1 |
 | split | `(s: str, sep: str) -> list[str]` | `split("a,,b", ",")` is `["a", "", "b"]`; empty `sep` is R0007 |
-| join | `(xs: list[str], sep: str) -> str` | |
+| join | `(xs: list[str], sep: str) -> str` | the strings with `sep` between them |
 | trim | `(s: str) -> str` | removes ASCII whitespace at both ends |
 | chars | `(s: str) -> list[str]` | one string per code point |
 | upper, lower | `(s: str) -> str` | ASCII letters only |
@@ -794,10 +794,14 @@ fn main() uses console {
 | push | `(xs: list[T], v: T)` | appends |
 | pop | `(xs: list[T]) -> result[T]` | removes the last element; `err("empty")` |
 | sort | `(xs: list[C])` | in place, ascending, stable |
-| has | `(m: map[K, T], k: K) -> bool` | |
+| has | `(m: map[K, T], k: K) -> bool` | whether the map has the key |
 | get_or | `(m: map[K, T], k: K, default: T) -> T` | the default when the key is missing; never adds it |
 | remove | `(m: map[K, T], k: K)` | no effect if the key is missing |
 | keys | `(m: map[K, T]) -> list[K]` | in insertion order |
+| ok | `(v: T) -> result[T]` | success; `ok()` for `result[void]`; its type comes from its place |
+| err | `(message: str) -> result[T]` | failure with a message |
+| todo | `(what: str) -> T` | a hole of any type: the program checks; reaching it is R0011 |
+| assume | `(cond: bool)` | only in `prop`: discards an input that does not apply |
 | expect | `(cond: bool)` | only inside `test` (E0410) |
 | expect_eq | `(actual: T, expected: T)` | only inside `test` (E0410); reports both values |
 

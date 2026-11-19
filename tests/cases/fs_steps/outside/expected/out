@@ -2,11 +2,11 @@ $ vo run main.vo
 data/../data:
   a.txt: file 1
 --- stderr
-std/fs.vo:52:20: runtime error[R0010]: file.read("data/../") is not allowed: `listing` declares console, file.read("data/").
-  52 |     let text = try __fs(2, path, "");
+std/fs.vo:59:20: runtime error[R0010]: file.read("data/../") is not allowed: `listing` declares console, file.read("data/").
+  59 |     let text = try __fs(2, path, "");
      |                    ^^^^^^^^^^^^^^^^^
 trace:
-  at list_dir (std/fs.vo:52:20)
+  at list_dir (std/fs.vo:59:20)
       path: str = "data/../"
   at listing (main.vo:33:11)
       path: str = "data/../"
@@ -15,11 +15,11 @@ trace:
 --- exit 70
 $ vo run abs.vo
 --- stderr
-std/fs.vo:46:31: runtime error[R0010]: file.read("/etc") is not allowed: `main` declares console, file.read("data/").
-  46 |     return ok(decode_info(try __fs(1, path, "")));
+std/fs.vo:53:31: runtime error[R0010]: file.read("/etc") is not allowed: `main` declares console, file.read("data/").
+  53 |     return ok(decode_info(try __fs(1, path, "")));
      |                               ^^^^^^^^^^^^^^^^^
 trace:
-  at info (std/fs.vo:46:31)
+  at info (std/fs.vo:53:31)
       path: str = "/etc"
   at main (abs.vo:6:15)
       root: str = "/"

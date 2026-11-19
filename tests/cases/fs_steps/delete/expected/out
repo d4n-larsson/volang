@@ -7,11 +7,11 @@ a missing file: err not found
 full/
   x.txt (1)
 --- stderr
-std/fs.vo:141:17: runtime error[R0010]: file.delete("work/") is not allowed: `main` declares console, file.read("work/"), file.delete("work/").
- 141 |     let _ = try __fs(5, path, "");
+std/fs.vo:148:17: runtime error[R0010]: file.delete("work/") is not allowed: `main` declares console, file.read("work/"), file.delete("work/").
+ 148 |     let _ = try __fs(5, path, "");
      |                 ^^^^^^^^^^^^^^^^^
 trace:
-  at delete (std/fs.vo:141:17)
+  at delete (std/fs.vo:148:17)
       path: str = "work/"
   at main (main.vo:54:30)
 --- exit 70

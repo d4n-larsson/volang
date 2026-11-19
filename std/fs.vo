@@ -6,17 +6,24 @@
 # What is at a path: missing, a file with its size in bytes, a directory, or something else.
 #     Info.file(3) == Info.file(3) is true
 export variant Info {
+    # Nothing is at the path.
     missing;
+    # A file, with its size in bytes.
     file(int);
+    # A directory.
     directory;
+    # Something else, such as a device, a socket or a pipe.
     other;
 }
 
 # A directory entry: its name, what it is, and whether it is a link (then the kind of its target when that is inside the caller's file.read scopes, otherwise other).
 #     new Entry { name: "a.txt", info: Info.file(1), link: false }.name is "a.txt"
 export record Entry {
+    # The entry's name in its directory (not a path).
     name: str;
+    # What it is (for a link: what its target is, when inside the caller's file.read scopes).
     info: Info;
+    # Whether the entry is a symbolic link.
     link: bool;
 }
 

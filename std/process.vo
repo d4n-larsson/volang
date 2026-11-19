@@ -6,8 +6,11 @@
 # What a finished program returned: its exit code (128 + n when killed by signal n), its standard output and its standard error.
 #     new Output { code: 0, stdout: "", stderr: "" }.code is 0
 export record Output {
+    # The exit code; 128 + n when the program was killed by signal n.
     code: int;
+    # What the program wrote to standard output (UTF-8; run_bytes reads any output).
     stdout: str;
+    # What the program wrote to standard error.
     stderr: str;
 }
 
@@ -40,8 +43,11 @@ export fn run_with(program: str, args: list[str], input: str, env: list[str]) ->
 # What a finished program returned, its output as bytes (spec 021): the exit code, standard output and standard error.
 #     new BytesOutput { code: 0, stdout: from_text(""), stderr: from_text("") }.code is 0
 export record BytesOutput {
+    # The exit code; 128 + n when the program was killed by signal n.
     code: int;
+    # What the program wrote to standard output.
     stdout: bytes;
+    # What the program wrote to standard error.
     stderr: bytes;
 }
 

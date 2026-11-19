@@ -7,15 +7,20 @@
 # One response header, as received.
 #     new Header { name: "a", value: "b" }.name is "a"
 export record Header {
+    # The header name, as received (compare with lower or header()).
     name: str;
+    # The header value, without surrounding spaces.
     value: str;
 }
 
 # A response: the status code, the headers in their order, and the body.
 #     new Response { status: 200, headers: new list[Header], body: "" }.status is 200
 export record Response {
+    # The HTTP status code, such as 200 or 404.
     status: int;
+    # The headers in the order they were sent.
     headers: list[Header];
+    # The body as text (UTF-8; get_bytes reads any body).
     body: str;
 }
 
@@ -77,8 +82,11 @@ fn parse_url(url: str) -> result[Url] {
 # A response whose body is bytes (spec 021): the status code, the headers in their order, and the body.
 #     new BytesResponse { status: 200, headers: new list[Header], body: from_text("") }.status is 200
 export record BytesResponse {
+    # The HTTP status code, such as 200 or 404.
     status: int;
+    # The headers in the order they were sent.
     headers: list[Header];
+    # The body, whatever its bytes.
     body: bytes;
 }
 
@@ -220,10 +228,15 @@ export fn header(r: Response, name: str) -> result[str] {
 # A request a server received: method, path, query (after `?`), headers in their order, and body.
 #     new Request { method: "GET", path: "/", query: "", headers: new list[Header], body: "" }.path is "/"
 export record Request {
+    # The method, such as GET or POST.
     method: str;
+    # The path, without the query.
     path: str;
+    # The text after `?`, or "".
     query: str;
+    # The headers in the order they were sent.
     headers: list[Header];
+    # The body as text (UTF-8; serve answers 400 otherwise).
     body: str;
 }
 
@@ -265,10 +278,15 @@ export fn serve[E: effects](address: str, handle: fn(Request) -> Response uses E
 # A request whose body is bytes (spec 021): method, path, query, headers in their order, and body.
 #     new BytesRequest { method: "GET", path: "/", query: "", headers: new list[Header], body: from_text("") }.path is "/"
 export record BytesRequest {
+    # The method, such as GET or POST.
     method: str;
+    # The path, without the query.
     path: str;
+    # The text after `?`, or "".
     query: str;
+    # The headers in the order they were sent.
     headers: list[Header];
+    # The body, whatever its bytes.
     body: bytes;
 }
 
