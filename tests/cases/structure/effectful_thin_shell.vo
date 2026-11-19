@@ -1,0 +1,30 @@
+# The logic lives in a pure function that tests can call with no effects; `main` only does the effects.
+fn total(n: int) -> int {
+    let a = 1;
+    let b = 2;
+    var sum = 0;
+    for i in 0..n {
+        set sum = sum + i;
+    }
+    let c = a + b;
+    let d = c * 2;
+    if sum > 10 {
+        set sum = sum - 1;
+    }
+    let e = sum + d;
+    let f = e - 1;
+    let g = f + 2;
+    let h = g * 3;
+    let k = h + 1;
+    let m = k + 2;
+    return m;
+}
+
+fn main() uses console {
+    print("start");
+    print(str(total(10)));
+}
+
+test "total" {
+    expect_eq(total(0), 24);
+}

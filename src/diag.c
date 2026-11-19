@@ -507,6 +507,10 @@ void summary_emit(int json, int fd, char *command, long files, Str *extra)
         sb_cstr(sb, ",\"files\":");
         int_to_dec(sb, files);
         sb_str(sb, extra);
+        if (diag_accepted) { /* spec 027: warnings an `@allow` accepted */
+            sb_cstr(sb, ",\"accepted\":");
+            int_to_dec(sb, diag_accepted);
+        }
         long holes = holes_for(command);
         if (holes) {
             sb_cstr(sb, ",\"holes\":");
@@ -522,6 +526,11 @@ void summary_emit(int json, int fd, char *command, long files, Str *extra)
             sb_cstr(sb, ", ");
             int_to_dec(sb, diag_warnings);
             sb_cstr(sb, " warnings");
+        }
+        if (diag_accepted) { /* spec 027: " (N accepted)" */
+            sb_cstr(sb, " (");
+            int_to_dec(sb, diag_accepted);
+            sb_cstr(sb, " accepted)");
         }
         long holes = holes_for(command); /* " (N holes)" */
         if (holes) {

@@ -1,0 +1,537 @@
+# A file over 400 code lines (blank lines and comments do not count): W0702 at line 1.
+
+fn s1(x: int) -> int {
+    return x + 1;
+}
+
+fn s2(x: int) -> int {
+    return x + 2;
+}
+
+fn s3(x: int) -> int {
+    return x + 3;
+}
+
+fn s4(x: int) -> int {
+    return x + 4;
+}
+
+fn s5(x: int) -> int {
+    return x + 5;
+}
+
+fn s6(x: int) -> int {
+    return x + 6;
+}
+
+fn s7(x: int) -> int {
+    return x + 7;
+}
+
+fn s8(x: int) -> int {
+    return x + 8;
+}
+
+fn s9(x: int) -> int {
+    return x + 9;
+}
+
+fn s10(x: int) -> int {
+    return x + 10;
+}
+
+fn s11(x: int) -> int {
+    return x + 11;
+}
+
+fn s12(x: int) -> int {
+    return x + 12;
+}
+
+fn s13(x: int) -> int {
+    return x + 13;
+}
+
+fn s14(x: int) -> int {
+    return x + 14;
+}
+
+fn s15(x: int) -> int {
+    return x + 15;
+}
+
+fn s16(x: int) -> int {
+    return x + 16;
+}
+
+fn s17(x: int) -> int {
+    return x + 17;
+}
+
+fn s18(x: int) -> int {
+    return x + 18;
+}
+
+fn s19(x: int) -> int {
+    return x + 19;
+}
+
+fn s20(x: int) -> int {
+    return x + 20;
+}
+
+fn s21(x: int) -> int {
+    return x + 21;
+}
+
+fn s22(x: int) -> int {
+    return x + 22;
+}
+
+fn s23(x: int) -> int {
+    return x + 23;
+}
+
+fn s24(x: int) -> int {
+    return x + 24;
+}
+
+fn s25(x: int) -> int {
+    return x + 25;
+}
+
+fn s26(x: int) -> int {
+    return x + 26;
+}
+
+fn s27(x: int) -> int {
+    return x + 27;
+}
+
+fn s28(x: int) -> int {
+    return x + 28;
+}
+
+fn s29(x: int) -> int {
+    return x + 29;
+}
+
+fn s30(x: int) -> int {
+    return x + 30;
+}
+
+fn s31(x: int) -> int {
+    return x + 31;
+}
+
+fn s32(x: int) -> int {
+    return x + 32;
+}
+
+fn s33(x: int) -> int {
+    return x + 33;
+}
+
+fn s34(x: int) -> int {
+    return x + 34;
+}
+
+fn s35(x: int) -> int {
+    return x + 35;
+}
+
+fn s36(x: int) -> int {
+    return x + 36;
+}
+
+fn s37(x: int) -> int {
+    return x + 37;
+}
+
+fn s38(x: int) -> int {
+    return x + 38;
+}
+
+fn s39(x: int) -> int {
+    return x + 39;
+}
+
+fn s40(x: int) -> int {
+    return x + 40;
+}
+
+fn s41(x: int) -> int {
+    return x + 41;
+}
+
+fn s42(x: int) -> int {
+    return x + 42;
+}
+
+fn s43(x: int) -> int {
+    return x + 43;
+}
+
+fn s44(x: int) -> int {
+    return x + 44;
+}
+
+fn s45(x: int) -> int {
+    return x + 45;
+}
+
+fn s46(x: int) -> int {
+    return x + 46;
+}
+
+fn s47(x: int) -> int {
+    return x + 47;
+}
+
+fn s48(x: int) -> int {
+    return x + 48;
+}
+
+fn s49(x: int) -> int {
+    return x + 49;
+}
+
+fn s50(x: int) -> int {
+    return x + 50;
+}
+
+fn s51(x: int) -> int {
+    return x + 51;
+}
+
+fn s52(x: int) -> int {
+    return x + 52;
+}
+
+fn s53(x: int) -> int {
+    return x + 53;
+}
+
+fn s54(x: int) -> int {
+    return x + 54;
+}
+
+fn s55(x: int) -> int {
+    return x + 55;
+}
+
+fn s56(x: int) -> int {
+    return x + 56;
+}
+
+fn s57(x: int) -> int {
+    return x + 57;
+}
+
+fn s58(x: int) -> int {
+    return x + 58;
+}
+
+fn s59(x: int) -> int {
+    return x + 59;
+}
+
+fn s60(x: int) -> int {
+    return x + 60;
+}
+
+fn s61(x: int) -> int {
+    return x + 61;
+}
+
+fn s62(x: int) -> int {
+    return x + 62;
+}
+
+fn s63(x: int) -> int {
+    return x + 63;
+}
+
+fn s64(x: int) -> int {
+    return x + 64;
+}
+
+fn s65(x: int) -> int {
+    return x + 65;
+}
+
+fn s66(x: int) -> int {
+    return x + 66;
+}
+
+fn s67(x: int) -> int {
+    return x + 67;
+}
+
+fn s68(x: int) -> int {
+    return x + 68;
+}
+
+fn s69(x: int) -> int {
+    return x + 69;
+}
+
+fn s70(x: int) -> int {
+    return x + 70;
+}
+
+fn s71(x: int) -> int {
+    return x + 71;
+}
+
+fn s72(x: int) -> int {
+    return x + 72;
+}
+
+fn s73(x: int) -> int {
+    return x + 73;
+}
+
+fn s74(x: int) -> int {
+    return x + 74;
+}
+
+fn s75(x: int) -> int {
+    return x + 75;
+}
+
+fn s76(x: int) -> int {
+    return x + 76;
+}
+
+fn s77(x: int) -> int {
+    return x + 77;
+}
+
+fn s78(x: int) -> int {
+    return x + 78;
+}
+
+fn s79(x: int) -> int {
+    return x + 79;
+}
+
+fn s80(x: int) -> int {
+    return x + 80;
+}
+
+fn s81(x: int) -> int {
+    return x + 81;
+}
+
+fn s82(x: int) -> int {
+    return x + 82;
+}
+
+fn s83(x: int) -> int {
+    return x + 83;
+}
+
+fn s84(x: int) -> int {
+    return x + 84;
+}
+
+fn s85(x: int) -> int {
+    return x + 85;
+}
+
+fn s86(x: int) -> int {
+    return x + 86;
+}
+
+fn s87(x: int) -> int {
+    return x + 87;
+}
+
+fn s88(x: int) -> int {
+    return x + 88;
+}
+
+fn s89(x: int) -> int {
+    return x + 89;
+}
+
+fn s90(x: int) -> int {
+    return x + 90;
+}
+
+fn s91(x: int) -> int {
+    return x + 91;
+}
+
+fn s92(x: int) -> int {
+    return x + 92;
+}
+
+fn s93(x: int) -> int {
+    return x + 93;
+}
+
+fn s94(x: int) -> int {
+    return x + 94;
+}
+
+fn s95(x: int) -> int {
+    return x + 95;
+}
+
+fn s96(x: int) -> int {
+    return x + 96;
+}
+
+fn s97(x: int) -> int {
+    return x + 97;
+}
+
+fn s98(x: int) -> int {
+    return x + 98;
+}
+
+fn s99(x: int) -> int {
+    return x + 99;
+}
+
+fn s100(x: int) -> int {
+    return x + 100;
+}
+
+fn s101(x: int) -> int {
+    return x + 101;
+}
+
+fn s102(x: int) -> int {
+    return x + 102;
+}
+
+fn s103(x: int) -> int {
+    return x + 103;
+}
+
+fn s104(x: int) -> int {
+    return x + 104;
+}
+
+fn s105(x: int) -> int {
+    return x + 105;
+}
+
+fn s106(x: int) -> int {
+    return x + 106;
+}
+
+fn s107(x: int) -> int {
+    return x + 107;
+}
+
+fn s108(x: int) -> int {
+    return x + 108;
+}
+
+fn s109(x: int) -> int {
+    return x + 109;
+}
+
+fn s110(x: int) -> int {
+    return x + 110;
+}
+
+fn s111(x: int) -> int {
+    return x + 111;
+}
+
+fn s112(x: int) -> int {
+    return x + 112;
+}
+
+fn s113(x: int) -> int {
+    return x + 113;
+}
+
+fn s114(x: int) -> int {
+    return x + 114;
+}
+
+fn s115(x: int) -> int {
+    return x + 115;
+}
+
+fn s116(x: int) -> int {
+    return x + 116;
+}
+
+fn s117(x: int) -> int {
+    return x + 117;
+}
+
+fn s118(x: int) -> int {
+    return x + 118;
+}
+
+fn s119(x: int) -> int {
+    return x + 119;
+}
+
+fn s120(x: int) -> int {
+    return x + 120;
+}
+
+fn s121(x: int) -> int {
+    return x + 121;
+}
+
+fn s122(x: int) -> int {
+    return x + 122;
+}
+
+fn s123(x: int) -> int {
+    return x + 123;
+}
+
+fn s124(x: int) -> int {
+    return x + 124;
+}
+
+fn s125(x: int) -> int {
+    return x + 125;
+}
+
+fn s126(x: int) -> int {
+    return x + 126;
+}
+
+fn s127(x: int) -> int {
+    return x + 127;
+}
+
+fn s128(x: int) -> int {
+    return x + 128;
+}
+
+fn s129(x: int) -> int {
+    return x + 129;
+}
+
+fn s130(x: int) -> int {
+    return x + 130;
+}
+
+fn s131(x: int) -> int {
+    return x + 131;
+}
+
+fn s132(x: int) -> int {
+    return x + 132;
+}
+
+# a comment line, not code
+
+fn main() uses console {
+    print("x");
+    print("y");
+    print("z");
+}

@@ -253,6 +253,21 @@ replay cover every call.
   ([sqlite.org/cves.html](https://www.sqlite.org/cves.html)) are applied in their spec cycle with
   `tools/vendor_sqlite.sh`.
 
+### 027: structure standards (done)
+
+How a vo program is structured, written down and checked: a thin shell of effects over a pure core,
+one concept per file, small functions, one function instead of copies, tests next to the code. `vo
+check` warns (W0701–W0705) about a function with effects holding 15 or more statements that use no
+effect, a file over 400 code lines, a function over 50 statements, 6 or more statements repeating
+earlier ones (with the effect-parameter advice when copies differ only in effects), and a test that
+calls only another file's functions; `@allow("W07NN", "reason")` accepts one warning where the
+structure is deliberate (W0706 when it silences nothing). `vo test main.vo` now runs the tests of every
+file the program loads. The limits come from measuring the examples, std, the golden cases and two
+programs agents wrote in one file (739 and 1,350 lines).
+
+- **Not done (on purpose):** an extract-function edit that would make the W0701/W0704 advice a fix,
+  per-project limits, rules about naming or comments (`vo fmt` covers layout).
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when

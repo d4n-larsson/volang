@@ -1,0 +1,22 @@
+# Tests may repeat themselves for readability: no warning.
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+test "doubles small numbers" {
+    let a = double(1);
+    let b = double(2);
+    let c = double(3);
+    expect_eq(a, 2);
+    expect_eq(b, 4);
+    expect_eq(c, 6);
+}
+
+test "doubles other numbers" {
+    let a = double(5);
+    let b = double(6);
+    let c = double(7);
+    expect_eq(a, 10);
+    expect_eq(b, 12);
+    expect_eq(c, 14);
+}

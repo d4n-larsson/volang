@@ -44,9 +44,22 @@ def blocks(text):
             if lang == "vo" or b.startswith(("# file: vo.effects", "# file: vo.packages"))]
 
 
+REPEAT = re.compile(r"^(\s*)# \(the next line, (\d+) times: [A-Za-z]\w*?_(\d+) to [A-Za-z]\w*?_\d+\)\n(.*\n)", re.M)
+
+
+def expand(block):
+    """Spec 027: `# (the next line, K times: name_A to name_B)` stands for that line written K times with
+    `_N` numbered from A, so an example can show a 400-line file or a 51-statement function briefly."""
+    def rep(m):
+        k, start, line = int(m.group(2)), int(m.group(3)), m.group(4)
+        return "".join(line.replace("_N", f"_{start + i}") for i in range(k))
+    return REPEAT.sub(rep, block)
+
+
 def write_program(blks, d):
     """Writes code blocks into d; returns the entry path."""
     paths = []
+    blks = [expand(b) for b in blks]
     for i, b in enumerate(blks):
         m = re.match(r"# file: (\S+)\n", b)
         unnamed = [x for x in blks if not x.startswith("# file:")]
@@ -84,7 +97,7 @@ def contract():
         else:
             fixable = "yes"
         out[code] = (name, fixable)
-    for spec in ("005-holes-props-contracts", "006-query-edit-trace", "007-stdlib-packages", "009-small-fixes", "010-export-visibility", "012-spec-annotations", "013-security-fixes", "014-complex-data-structures", "016-concurrency", "017-filesystem-processes", "018-agent-testing", "019-https", "024-string-formatting", "025-regular-expressions", "026-sqlite"):
+    for spec in ("005-holes-props-contracts", "006-query-edit-trace", "007-stdlib-packages", "009-small-fixes", "010-export-visibility", "012-spec-annotations", "013-security-fixes", "014-complex-data-structures", "016-concurrency", "017-filesystem-processes", "018-agent-testing", "019-https", "024-string-formatting", "025-regular-expressions", "026-sqlite", "027-structure-standards"):
         codes = os.path.join(ROOT, "specs", spec, "contracts", "codes.md")
         for code, name, fix in re.findall(r"^\| ([EWRT]\d{4}) \| `(\w+)` \| [^|]* \| ([^|]*) \|",
                                           open(codes, encoding="utf-8").read(), re.M):

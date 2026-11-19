@@ -1,0 +1,23 @@
+# The same with 14 statements that use no effect: under the limit, no warning.
+fn main() uses console {
+    let a = 1;
+    let b = 2;
+    print("start");
+    var total = 0;
+    for i in 0..10 {
+        set total = total + i;
+    }
+    let c = a + b;
+    let d = c * 2;
+    print(str(d));
+    if total > 10 {
+        set total = total - 1;
+    }
+    let e = total + d;
+    let f = e - 1;
+    let g = f + 2;
+    print(str(g));
+    let h = g * 3;
+    let k = h + 1;
+    print(str(k));
+}

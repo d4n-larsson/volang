@@ -1,0 +1,5 @@
+vo test main.vo
+vo test --list main.vo
+vo test --test "money.vo::two decimals" main.vo
+vo test .
+vo test alone.vo

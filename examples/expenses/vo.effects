@@ -1,14 +1,14 @@
 # vo effects record: update with `vo effects --update`
-main.vo:expense pure
 main.vo:main uses console, file.read("data/"), file.write("out/")
-main.vo:prop "totals add up to the sum of the expenses" pure
-main.vo:test "a bad date is an error, not a crash" pure
-main.vo:test "an empty report" pure
-main.vo:test "money pads the cents" pure
-main.vo:test "totals keep the first-seen order" pure
+report.vo:expense pure
 report.vo:expenses_from pure
 report.vo:money pure
+report.vo:prop "totals add up to the sum of the expenses" pure
 report.vo:render pure
 report.vo:sum pure
 report.vo:table pure
+report.vo:test "a bad date is an error, not a crash" pure
+report.vo:test "an empty report" pure
+report.vo:test "money pads the cents" pure
+report.vo:test "totals keep the first-seen order" pure
 report.vo:totals pure

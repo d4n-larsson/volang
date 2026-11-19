@@ -1,0 +1,17 @@
+# A copy in another file of the program is reported too; "first" is program order (imported files first).
+import prices.cost;
+
+fn price(base: int) -> int {
+    let tax = base * 25 / 100;
+    let fee = 3;
+    var total = base + tax;
+    set total = total + fee;
+    if total > 1000 {
+        set total = total - 10;
+    }
+    return total;
+}
+
+fn main() uses console {
+    print(str(price(100) + cost(100)));
+}

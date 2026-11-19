@@ -200,7 +200,10 @@ def main():
         lines = open(os.path.join(ROOT, "std", path), encoding="utf-8").read().split("\n")
         for i, line in enumerate(lines):
             m = re.match(r"(export )?(fn|record|variant) (\w+)", line)
-            if m and bool(m.group(1)) != (i > 0 and lines[i - 1].startswith("#")):
+            above = i - 1
+            while above >= 0 and lines[above].startswith("@"):  # spec 027: `@allow` below the doc comment
+                above -= 1
+            if m and bool(m.group(1)) != (above >= 0 and lines[above].startswith("#")):
                 failures.append(f"std/{path}:{i + 1}: `{m.group(3)}` is "
                                 + ("exported without a doc comment" if m.group(1) else "documented but not exported"))
 

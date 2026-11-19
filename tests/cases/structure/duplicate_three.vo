@@ -1,0 +1,37 @@
+# Three copies: each later copy is reported, both pointing at the first.
+fn price(base: int) -> int {
+    let tax = base * 25 / 100;
+    let fee = 3;
+    var total = base + tax;
+    set total = total + fee;
+    if total > 1000 {
+        set total = total - 10;
+    }
+    return total;
+}
+
+fn cost(amount: int) -> int {
+    let vat = amount * 12 / 100;
+    let charge = 5;
+    var sum = amount + vat;
+    set sum = sum + charge;
+    if sum > 500 {
+        set sum = sum - 7;
+    }
+    return sum;
+}
+
+fn levy_cost(x: int) -> int {
+    let levy = x * 6 / 100;
+    let extra = 1;
+    var n = x + levy;
+    set n = n + extra;
+    if n > 50 {
+        set n = n - 2;
+    }
+    return n;
+}
+
+fn main() uses console {
+    print(str(price(100) + cost(100) + levy_cost(100)));
+}

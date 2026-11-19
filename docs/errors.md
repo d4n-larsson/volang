@@ -293,7 +293,7 @@ An annotation name is not one vo knows.
 
 Fixable: yes
 
-Annotations come from a closed set; the only one is `@spec`, which links a `test` or `prop` to requirement IDs. The fix replaces a misspelled name (within two letters) with `spec`.
+Annotations come from a closed set: `@spec`, which links a `test` or `prop` to requirement IDs, and `@allow`, which accepts a structure warning on a `fn`, `test` or `prop`. The fix replaces a misspelled name (within two letters) with the closer of the two.
 
 ### Example
 
@@ -323,11 +323,11 @@ test "doubles" {
 
 ## E0117 misplaced_annotation
 
-An annotation is not on the line right above a `test` or `prop`.
+An annotation is not on the line right above the item it annotates (`@spec`: a `test` or `prop`; `@allow`: a `fn`, `test` or `prop`).
 
 Fixable: no
 
-`@spec` annotates the `test` or `prop` that follows it, with nothing but blank lines in between. On any other item, after a comment or at the end of the file, it is this error: move it above the test that proves the requirement.
+`@spec` annotates the `test` or `prop` that follows it, and `@allow` the `fn`, `test` or `prop`, with nothing but blank lines or other annotations in between. On any other item, after a comment or at the end of the file, it is this error: move it above the test that proves the requirement.
 
 ### Example
 
@@ -447,6 +447,39 @@ fn main() uses console {
 fn main() uses console {
     let name = "al";
     print(format("hi {}", name));
+}
+```
+
+## E0121 invalid_allow
+
+An `@allow` annotation does not have a structure warning code and a reason.
+
+Fixable: no
+
+`@allow("W0703", "why it stays")` accepts one structure warning (W0701 to W0705) on the function, test or property right below it. The reason is required: it tells the next reader why the code stays as it is. Other warnings and errors cannot be allowed: fix them.
+
+### Example
+
+```vo
+@allow("W0703")
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
 }
 ```
 
@@ -3350,6 +3383,303 @@ export fn cents(n: int) -> str {
 ```text
 # file: vo.packages
 cash shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f52bc74c951
+```
+
+## W0701 effectful_logic
+
+A function with effects has 15 or more statements that use no effect: its logic belongs in pure functions.
+
+Fixable: no
+
+Keep a program's decisions and computations in pure functions, and the functions with effects (`main`, the ones that read, write, print or fetch) thin: they gather input, call the pure core, and act on its result. Pure functions are the ones a test can call with no `uses` clause, no files and no grant. The warning counts the statements, at every depth, whose own expressions use no effect, and points at the longest stretches of them: move those into a function without `uses`, and call it. Tests and properties are not held to this rule.
+
+### Example
+
+```vo
+fn main() uses console {
+    let prices = [120, 80, 45];
+    let currency = "EUR";
+    var total = 0;
+    for p in prices {
+        set total = total + p;
+    }
+    let count = len(prices);
+    let average = total / count;
+    var discount = 0;
+    if total > 200 {
+        set discount = total / 10;
+    }
+    let net = total - discount;
+    let tax = net * 25 / 100;
+    let gross = net + tax;
+    let rounded = gross / 10 * 10;
+    let label = "total: " + str(rounded) + " " + currency;
+    print(label);
+    print("average: " + str(average));
+}
+```
+
+### Fixed
+
+```vo
+record Summary {
+    label: str;
+    average: int;
+}
+
+fn summarize(prices: list[int]) -> Summary {
+    var total = 0;
+    for p in prices {
+        set total = total + p;
+    }
+    var discount = 0;
+    if total > 200 {
+        set discount = total / 10;
+    }
+    let net = total - discount;
+    let gross = net + net * 25 / 100;
+    return new Summary { label: "total: " + str(gross / 10 * 10) + " EUR", average: total / len(prices) };
+}
+
+fn main() uses console {
+    let s = summarize([120, 80, 45]);
+    print(s.label);
+    print("average: " + str(s.average));
+}
+
+test "summarize" {
+    expect_eq(summarize([100, 100]).label, "total: 250 EUR");
+}
+```
+
+## W0702 file_too_long
+
+A file has more than 400 code lines: split it into modules, one concept each.
+
+Fixable: no
+
+A module (a file) holds one concept: the money arithmetic, the parser, the report. Code lines are lines that are neither blank nor only a comment. A file past 400 of them does several jobs; split it and import what each part needs (`import money.cents;`). When a file must stay whole (one module per import path), `@allow("W0702", "reason")` on its first function, test or property accepts it.
+
+### Example
+
+```vo
+# (the next line, 400 times: helper_1 to helper_400)
+fn helper_N() -> int { return 1; }
+
+fn main() uses console {
+    print(str(helper_1()));
+}
+```
+
+### Fixed
+
+```vo
+# file: helpers_a.vo
+# (the next line, 200 times: helper_1 to helper_200)
+export fn helper_N() -> int { return 1; }
+```
+
+```vo
+# file: helpers_b.vo
+# (the next line, 200 times: helper_201 to helper_400)
+export fn helper_N() -> int { return 1; }
+```
+
+```vo
+import helpers_a.helper_1;
+
+fn main() uses console {
+    print(str(helper_1()));
+}
+```
+
+## W0703 function_too_long
+
+A function, test or property has more than 50 statements: split it into functions that each do one thing.
+
+Fixable: no
+
+Statements are counted at every depth, those of anonymous functions included. A long function usually does several things in a row: give each its own function with a name that says what it does. `@allow("W0703", "reason")` accepts a function that reads best whole (a scanner, a table of cases).
+
+### Example
+
+```vo
+# (the next line, 50 times: step_1 to step_50)
+fn step_N(x: int) -> int { return x + 1; }
+
+fn pipeline(x: int) -> int {
+    var v = x;
+    # (the next line, 50 times: step_1 to step_50)
+    set v = step_N(v);
+    return v;
+}
+
+fn main() uses console {
+    print(str(pipeline(0)));
+}
+```
+
+### Fixed
+
+```vo
+# (the next line, 50 times: step_1 to step_50)
+fn step_N(x: int) -> int { return x + 1; }
+
+fn first_half(x: int) -> int {
+    var v = x;
+    # (the next line, 25 times: step_1 to step_25)
+    set v = step_N(v);
+    return v;
+}
+
+fn second_half(x: int) -> int {
+    var v = x;
+    # (the next line, 25 times: step_26 to step_50)
+    set v = step_N(v);
+    return v;
+}
+
+fn main() uses console {
+    print(str(second_half(first_half(0))));
+}
+```
+
+## W0704 duplicate_code
+
+Six or more consecutive statements repeat earlier ones, up to local names and literal values.
+
+Fixable: no
+
+Copied code drifts apart: a fix in one copy misses the others. Two runs of statements of one block count as copies when they are equal after renaming their local variables and parameters and replacing their literals; calls, fields, case names and operators must match. The later copy is reported, with the first as a related location. Make one function and pass what differs as parameters. Functions that differ only in their effects (one takes `Database[uses file.read, file.write]`, the other `Database`) are one function with an effect parameter, `[E: effects]`. Tests may repeat themselves and are not reported.
+
+### Example
+
+```vo
+fn price(base: int) -> int {
+    let tax = base * 25 / 100;
+    let fee = 3;
+    var total = base + tax;
+    set total = total + fee;
+    if total > 1000 {
+        set total = total - 10;
+    }
+    return total;
+}
+
+fn cost(amount: int) -> int {
+    let vat = amount * 12 / 100;
+    let charge = 5;
+    var sum = amount + vat;
+    set sum = sum + charge;
+    if sum > 500 {
+        set sum = sum - 7;
+    }
+    return sum;
+}
+
+fn main() uses console {
+    print(str(price(100) + cost(100)));
+}
+```
+
+### Fixed
+
+```vo
+fn with_charges(base: int, percent: int, fee: int, cap: int, rebate: int) -> int {
+    let tax = base * percent / 100;
+    var total = base + tax + fee;
+    if total > cap {
+        set total = total - rebate;
+    }
+    return total;
+}
+
+fn main() uses console {
+    print(str(with_charges(100, 25, 3, 1000, 10) + with_charges(100, 12, 5, 500, 7)));
+}
+```
+
+## W0705 test_elsewhere
+
+A test calls only functions of one other file: move it into that file, next to the code it tests.
+
+Fixable: no
+
+A test belongs next to the code it tests, so that reading, changing and moving that code takes its tests along. `vo test main.vo` runs the tests of every file the program loads, so a test in `money.vo` runs with the others. A test that calls functions of two or more files (or of its own file) tests how they work together and is not reported.
+
+### Example
+
+```vo
+# file: money.vo
+export fn cents(units: int) -> int {
+    return units * 100;
+}
+```
+
+```vo
+import money.cents;
+
+fn main() uses console {
+    print(str(cents(2)));
+}
+
+test "cents of units" {
+    expect_eq(cents(3), 300);
+}
+```
+
+### Fixed
+
+```vo
+# file: money.vo
+export fn cents(units: int) -> int {
+    return units * 100;
+}
+
+test "cents of units" {
+    expect_eq(cents(3), 300);
+}
+```
+
+```vo
+import money.cents;
+
+fn main() uses console {
+    print(str(cents(2)));
+}
+```
+
+## W0706 unused_allow
+
+An `@allow` accepts a structure warning that is not there.
+
+Fixable: yes
+
+`@allow("W07NN", "reason")` accepts one structure warning on the function, test or property below it. When the code no longer has that warning, the annotation only misleads: the fix removes its line.
+
+### Example
+
+```vo
+@allow("W0703", "one scanner, read top to bottom")
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}
+```
+
+### Fixed
+
+```vo
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}
 ```
 
 ## R0001 integer_overflow

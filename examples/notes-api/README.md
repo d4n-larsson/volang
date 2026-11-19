@@ -57,7 +57,7 @@ query's IDs with this table is how a reviewer, or a tool, finds requirements wit
   `Request` to a `Response`. Requests are answered one at a time; Ctrl-C or SIGTERM lets the request in
   progress finish, then `serve` returns and `main` prints `stopped`.
 - **A pure core, a thin shell.** `route(request, notes)` in `api.vo` decides every answer and returns
-  the notes after it; it reads and writes nothing, so the tests in `main.vo` call it directly with
+  the notes after it; it reads and writes nothing, so its tests, next to it in `api.vo`, call it directly with
   `Request` values. Only `handle` touches `data/notes.json` (load, route, save when changed).
 - **Effects as the service's permissions.** `main` declares `serve("8080")` (this machine only; the
   network would need `serve("0.0.0.0:8080")`), `file.read("data/")` and `file.write("data/")`, which
@@ -79,9 +79,9 @@ query's IDs with this table is how a reviewer, or a tool, finds requirements wit
 
 | File | Contents |
 |---|---|
-| `main.vo` | `main` (serving) and the tests |
-| `api.vo` | `route` (pure), `handle`, `load`, `save` |
-| `notes.vo` | the `Note` record, its JSON form, adding, finding, completing and removing notes (pure) |
+| `main.vo` | `main` (serving): only the effects |
+| `api.vo` | `route` (pure), `handle`, `load`, `save`, and the tests of `route` |
+| `notes.vo` | the `Note` record, its JSON form, adding, finding, completing and removing notes (pure), and the property of `add` |
 | `data/notes.json` | the notes |
 | `recordings/demo.jsonl` | the recorded session, replayed by `make test` |
 | `vo.effects` | the effects record, updated with `vo effects --update main.vo` |

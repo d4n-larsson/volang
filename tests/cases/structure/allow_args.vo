@@ -1,0 +1,15 @@
+# `@allow` takes a structure warning code and a non-empty reason.
+@allow("W0703")
+fn one(s: str) -> int {
+    return len(s);
+}
+
+@allow("W0501", "not a structure warning")
+fn two(s: str) -> int {
+    return len(s);
+}
+
+@allow("W0703", "")
+fn three(s: str) -> int {
+    return len(s);
+}

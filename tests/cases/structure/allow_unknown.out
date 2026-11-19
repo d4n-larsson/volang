@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0116","name":"unknown_annotation","severity":"error","file":"allow_unknown.vo","start":{"line":2,"col":2},"end":{"line":2,"col":6},"text":"alow","message":"`@alow` is not an annotation: they are `@spec` and `@allow`.","fixes":[{"file":"allow_unknown.vo","start":{"line":2,"col":2},"end":{"line":2,"col":6},"replacement":"allow"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

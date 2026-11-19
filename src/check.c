@@ -1100,8 +1100,32 @@ static Str *spec_text(Vec *anns, int dedup)
     return sb_finish(sb);
 }
 
-/* The annotations in front of each item: E0116 unknown name, E0117 not on a test or prop, E0118 a bad or
- * missing ID, E0119 two @spec on one item, W0101 an ID twice (spec 012 research R2). */
+/* Spec 027: 1 when `@allow`'s arguments are a structure code (W0701-W0705) and a non-empty reason;
+ * E0121 otherwise. */
+static int allow_args_ok(Node *a)
+{
+    Vec *args = a->b.v;
+    if (args->n != 2) {
+        ck_err("E0121", a, str_from_cstr("`@allow` takes a structure warning code and a reason: "
+                                         "`@allow(\"W0703\", \"why it stays\")`."));
+        return 0;
+    }
+    Node *code = vec_get(args, 0), *reason = vec_get(args, 1);
+    Str *c = code->a.s;
+    if (c->len != 5 || !mem_eq(c->data, "W070", 4) || c->data[4] < '1' || c->data[4] > '5') {
+        ck_err1("E0121", code, "`$1` is not a structure warning: `@allow` accepts W0701 to W0705.", c);
+        return 0;
+    }
+    if (!reason->a.s->len) {
+        ck_err("E0121", reason, str_from_cstr("The reason must say why the warning stays; it cannot be empty."));
+        return 0;
+    }
+    return 1;
+}
+
+/* The annotations in front of each item: E0116 unknown name, E0117 not on a test or prop (`@allow`: not on
+ * a fn, test or prop), E0118 a bad or missing ID, E0119 two @spec on one item, W0101 an ID twice (spec 012
+ * research R2), E0121 bad `@allow` arguments (spec 027). */
 static void check_annotations(Vec *items)
 {
     for (long i = 0; i < items->n;) {
@@ -1115,10 +1139,16 @@ static void check_annotations(Vec *items)
         for (; j < items->n && ((Node *)vec_get(items, j))->kind == N_ANNOTATION; j++) {
             Node *a = vec_get(items, j);
             Str *name = a->a.n->a.s;
+            if (str_eq_cstr(name, "allow")) { /* spec 027: checked below, with its target */
+                a->c.i = allow_args_ok(a);
+                continue;
+            }
             if (!str_eq_cstr(name, "spec")) {
-                Diag *d = ck_err1("E0116", a->a.n, "`@$1` is not an annotation: the only one is `@spec`.", name);
-                if (name_distance(name, str_from_cstr("spec")) <= 2)
-                    diag_add_fix(d, (int)a->file, a->a.n->start, a->a.n->end, str_from_cstr("spec"));
+                Diag *d = ck_err1("E0116", a->a.n, "`@$1` is not an annotation: they are `@spec` and `@allow`.", name);
+                long ds = name_distance(name, str_from_cstr("spec")), da = name_distance(name, str_from_cstr("allow"));
+                if ((ds < da ? ds : da) <= 2)
+                    diag_add_fix(d, (int)a->file, a->a.n->start, a->a.n->end, str_from_cstr(ds <= da ? "spec" : "allow"));
+                a->c.i = -1; /* unknown: no placement error on top */
                 continue;
             }
             vec_push(specs, a);
@@ -1141,10 +1171,18 @@ static void check_annotations(Vec *items)
             }
         }
         Node *target = j < items->n ? vec_get(items, j) : 0;
-        if (target && target->kind != N_TEST)
-            for (long k = i; k < j; k++)
-                ck_err("E0117", vec_get(items, k),
-                       str_from_cstr("`@spec` goes on a `test` or `prop`, on the line right above it."));
+        for (long k = i; target && k < j; k++) {
+            Node *a = vec_get(items, k);
+            if (a->c.i < 0) continue; /* an unknown name (E0116) */
+            if (str_eq_cstr(a->a.n->a.s, "allow")) {
+                if (target->kind != N_FN && target->kind != N_TEST)
+                    ck_err("E0117", a, str_from_cstr("`@allow` goes on a `fn`, `test` or `prop`, on the line right above it."));
+                else if (a->c.i)
+                    structure_allow(a, target);
+            } else if (target->kind != N_TEST) {
+                ck_err("E0117", a, str_from_cstr("`@spec` goes on a `test` or `prop`, on the line right above it."));
+            }
+        }
         if (specs->n > 1) { /* one fix: every @spec of the item merged into the first's place */
             Node *a0 = vec_get(specs, 0), *an = vec_get(specs, specs->n - 1);
             Diag *d = ck_err("E0119", vec_get(specs, 1), str_from_cstr("An item has one `@spec`: list all its IDs there."));

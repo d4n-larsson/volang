@@ -1,0 +1,7 @@
+export fn cents(units: int) -> int {
+    return units * 100;
+}
+
+test "cents of units" {
+    expect_eq(cents(3), 300);
+}

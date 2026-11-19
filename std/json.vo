@@ -31,6 +31,7 @@ record JsonParser {
 
 # Parses JSON text (RFC 8259); an error gives its line and column.
 #     parse_json("[1, true]") == ok(Json.array([Json.integer(1), Json.boolean(true)])) is true
+@allow("W0702", "one module per import path: std.json is one file")
 export fn parse_json(s: str) -> result[Json] {
     let p = new JsonParser { cs: chars(s), pos: 0, line: 1, column: 1 };
     skip_space(p);
@@ -208,6 +209,7 @@ fn string_fail(p: JsonParser, what: str) -> result[str] {
     return err("line " + str(p.line) + ", column " + str(p.column) + ": " + what);
 }
 
+@allow("W0703", "one scanner, read top to bottom")
 fn parse_string(p: JsonParser) -> result[str] {
     advance(p);
     var out = "";
@@ -285,6 +287,7 @@ fn is_digit(c: str) -> bool {
     return c >= "0" and c <= "9" and len(c) == 1;
 }
 
+@allow("W0703", "one scanner, read top to bottom")
 fn parse_number(p: JsonParser) -> result[Json] {
     let line = p.line;
     let column = p.column;

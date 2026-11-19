@@ -17,6 +17,7 @@ cases() {
     format) echo "format check lex doc" ;;
     regex) echo "regex lex doc" ;;
     sqlite) echo "sqlite sqlite_steps generic fmt lex doc" ;;
+    structure) echo "structure test test_steps check" ;;
     bytes) echo "bytes bytes_steps run doc" ;;
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
@@ -42,6 +43,7 @@ scripts() { # one per line, with arguments
     format) printf '%s\n' apply_fixes.py catalog.py ref_examples.py "format_diff.py --quick" ;;
     regex) printf '%s\n' apply_fixes.py catalog.py doc_conformance.py "regex_diff.py --quick" ;;
     sqlite) printf '%s\n' apply_fixes.py catalog.py doc_conformance.py "sqlite_scope.py --quick" "sqlite_fuzz.py --count 1000" ;;
+    structure) printf '%s\n' apply_fixes.py catalog.py structure_corpus.py ;;
     bytes) echo doc_conformance.py ;;
     float) printf '%s\n' math_vectors.py json_corpus.py json_stream.py ref_examples.py doc_conformance.py ;;
     json) printf '%s\n' json_corpus.py json_stream.py doc_conformance.py ;;
@@ -68,6 +70,7 @@ area_of() {
     src/check_format.c|tests/format_diff.py) echo format ;; # spec 024 (before src/check*.c)
     src/regex.c|src/check_regex.c|std/regex.vo|tests/regex_*.py) echo regex ;; # spec 025
     src/sqlite_*.c|src/check_sqlite.c|std/sqlite.vo|third_party/sqlite/*|tests/sqlite_*.py) echo sqlite ;; # spec 026
+    src/check_structure.c|tests/structure_*.py|tests/structure_seeds/*) echo structure ;; # spec 027
     src/num.c|src/stdprim.c) echo float ;;
     src/bytes.c|std/bytes.vo|tests/bytes/*|tests/bytes_*.py|tests/process_helpers/allbytes) echo bytes ;;
     std/json.vo) echo json ;;
@@ -119,7 +122,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite bytes float json text time random collections http fs front query testing tasks trace packages docs cli)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure bytes float json text time random collections http fs front query testing tasks trace packages docs cli)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done

@@ -1475,6 +1475,9 @@ extern Type *ty_argn_error(Node *node, Str *name, long want, long got);
 extern Type *resolve_instance(Node *node, Node *decl, int kind, Vec *arg_nodes);
 extern Type *effect_arg_error(Node *an, Node *decl, int why);
 extern Type *scoped_effect_arg_error(Node *an, EffSet *es);
+extern void structure_allow(Node *ann, Node *decl); /* spec 027 */
+extern void structure_check(int entry, Vec *program);
+extern long diag_accepted;
 extern Type *field_type_in(Type *record_type, Type *field_type);
 extern Vec *bindings_vec(Type **bindings, long n);
 extern int bind_rest(Node *node, Vec *tparams, Type **bindings, Str *what);

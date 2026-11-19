@@ -1,0 +1,6 @@
+# The standard library is never reported: std.json is long, and its `@allow`s are not this program's.
+import std.json.parse_json;
+
+fn main() uses console {
+    print(str(parse_json("1") == parse_json("1")));
+}

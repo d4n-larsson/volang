@@ -80,8 +80,8 @@ Each test names the requirements it proves with `@spec("FR-...")` on the line ab
 
 | File | Contents |
 |---|---|
-| `main.vo` | `fetch`, `main` and the tests |
-| `board.vo` | the `Service` and `Incident` records, parsing and rendering (pure) |
+| `main.vo` | `fetch` and `main`: only the effects |
+| `board.vo` | the `Service` and `Incident` records, parsing and rendering (pure), and their tests |
 | `service/` | the service: `main.vo` (handler, tests), `site/` (the two JSON documents), its `vo.effects` and a recording |
 | `recordings/demo.jsonl` | a recorded run, replayed by `make test` |
 | `vo.effects` | the effects record, updated with `vo effects --update main.vo` |

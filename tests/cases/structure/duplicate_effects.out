@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"W0704","name":"duplicate_code","severity":"warning","file":"duplicate_effects.vo","start":{"line":15,"col":4},"end":{"line":15,"col":16},"text":"setup_memory","message":"`setup_memory` repeats `setup_file` except for its effects: make one function with an effect parameter, `[E: effects]`, and use it for both.","fixes":[],"related":[{"file":"duplicate_effects.vo","start":{"line":9,"col":4},"end":{"line":9,"col":14},"message":"the first copy"}]}
+{"v":1,"kind":"summary","command":"check","errors":0,"warnings":1,"truncated":0,"files":1}

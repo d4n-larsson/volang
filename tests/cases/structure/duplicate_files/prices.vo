@@ -1,0 +1,10 @@
+export fn cost(amount: int) -> int {
+    let vat = amount * 12 / 100;
+    let charge = 5;
+    var sum = amount + vat;
+    set sum = sum + charge;
+    if sum > 500 {
+        set sum = sum - 7;
+    }
+    return sum;
+}

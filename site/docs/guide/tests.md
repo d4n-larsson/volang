@@ -207,9 +207,10 @@ never see each other's rows (see [Standard library](standard-library.md#stdsqlit
 
 ## Running tests
 
-`vo test PATH...` takes files or directories. For a file, it runs every test and property in that file;
-a test in an imported file runs when that file is tested. For a directory, it tests every `.vo` file
-under it, each as the entry of its own program. Tests run in the order they are written.
+`vo test PATH...` takes files or directories. For a file, it runs every test and property of its
+program: the file's own, then those of the files it imports, so tests can live next to the code they
+test. For a directory, it tests every `.vo` file under it, each test once. Tests run in the order they
+are written.
 
 `--filter TEXT` runs only the tests whose name contains `TEXT`:
 
@@ -466,7 +467,9 @@ literals.
 
 Put tests in the file whose code they test. Tests of pure functions are the cheapest kind: they need no
 effects, no files and no setup. This is one reason to keep logic in pure functions and the effects at
-the edges, in `main` and a few functions it calls; see [Effects](effects.md).
+the edges, in `main` and a few functions it calls; see [Effects](effects.md) and
+[Structuring a program](structure.md). `vo check` reports a test whose calls all go to one other file
+([W0705](../errors/W0705.md)).
 
 When a function has a rule that must hold for every input, not just a few examples, write a
 [property](properties.md). When it has conditions that must hold on every call, in tests and in

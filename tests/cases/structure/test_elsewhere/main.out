@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"W0705","name":"test_elsewhere","severity":"warning","file":"main.vo","start":{"line":8,"col":1},"end":{"line":8,"col":5},"text":"test","message":"This test calls only functions of `money.vo`: move it into `money.vo`, next to the code it tests (`vo test` runs it from there).","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":0,"warnings":1,"truncated":0,"files":1}

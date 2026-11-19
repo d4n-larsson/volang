@@ -439,6 +439,7 @@ int cmd_check(void)
         long errors = diag_errors;
         check_program((int)file, 0); /* mode: check */
         if (diag_errors == errors) rec_review((int)file, ld_files()); /* a clean program: its effects record */
+        if (diag_errors == errors) structure_check((int)file, ld_files()); /* spec 027 */
     }
     return finish_check(i);
 }
@@ -522,24 +523,41 @@ int cmd_run(void)
 }
 
 /* Checks every file (test mode), then runs their tests; 1 when any test did not pass. */
+/* Spec 027 (FR-014): adds file to the test files unless it is there already. */
+static void add_test_file(Vec *files, long file)
+{
+    for (long k = 0; k < files->n; k++)
+        if ((long)vec_get(files, k) == file) return;
+    vec_push(files, (void *)file);
+}
+
 int cmd_test(void)
 {
     need_paths();
     expand_paths();
     long n = path_n;
-    long *ids = alloc(n * 8); /* entry file ids */
+    Vec *files = vec_new(); /* the program files of every entry (spec 027: not only the entries), each once */
     if (opt_diff) q_collect = 1; /* spec 018: --diff needs the reference log, as `vo impact` */
     for (long i = 0; i < n; i++) {
-        ids[i] = load_source(((Str **)path_list)[i]);
-        check_program((int)ids[i], 2); /* mode: test */
+        long entry = load_source(((Str **)path_list)[i]);
+        check_program((int)entry, 2); /* mode: test */
+        add_test_file(files, entry); /* the entry first, then its imports as loaded */
+        Vec *program = ld_files();
+        for (long k = 0; k < program->n; k++) {
+            FileRec *f = file_get((int)(long)vec_get(program, k));
+            if (!f->std && !f->pkg) add_test_file(files, (long)vec_get(program, k));
+        }
     }
+    long m = files->n;
+    long *ids = alloc(m * 8); /* test file ids */
+    for (long i = 0; i < m; i++) ids[i] = (long)vec_get(files, i);
     q_collect = 0;
     if (diag_errors) return finish_check(n);
-    test_select_start(ids, n); /* spec 018: --diff, and T0011 before anything runs */
+    test_select_start(ids, m); /* spec 018: --diff, and T0011 before anything runs */
     diag_emit_all((int)opt_json, 1); /* warnings first, then the tests */
     ca_files_load();                 /* spec 019: --ca-file, before any test runs */
     if (opt_list) { /* spec 018: nothing is compiled or run */
-        for (long i = 0; i < n; i++) list_file_tests((int)ids[i]);
+        for (long i = 0; i < m; i++) list_file_tests((int)ids[i]);
         list_summary(n);
         return 0;
     }
@@ -551,7 +569,7 @@ int cmd_test(void)
     compile_program();               /* bytecode for every function and test (spec 004) */
     if (opt_mutate) { /* spec 018: which tests reach which functions (a byte each, shared) */
         long tests = 0;
-        for (long i = 0; i < n; i++) {
+        for (long i = 0; i < m; i++) {
             Vec *items = file_get((int)ids[i])->ast->a.v;
             for (long j = 0; j < items->n; j++) tests += ((Node *)vec_get(items, j))->kind == N_TEST;
         }
@@ -559,14 +577,14 @@ int cmd_test(void)
     }
     interp_init();
     gc_start();
-    for (long i = 0; i < n; i++) run_file_tests((int)ids[i]);
+    for (long i = 0; i < m; i++) run_file_tests((int)ids[i]);
     long failing = t_failed + t_errored + t_timed_out;
     if (opt_mutate && !failing) mutate_run(); /* spec 018: before the summary, which reports it */
     test_summary(n);
     if (opt_mutate && failing) { /* T0012: changes cannot be judged against failing tests */
-        Str *m = msg("Mutation testing needs passing tests: $1 of the selected tests did not pass. Fix them first.",
-                     int_to_str(failing), 0, 0);
-        toolchain_error((int)opt_json, 1, "T0012", m, 0);
+        Str *why = msg("Mutation testing needs passing tests: $1 of the selected tests did not pass. Fix them first.",
+                       int_to_str(failing), 0, 0);
+        toolchain_error((int)opt_json, 1, "T0012", why, 0);
     }
     return failing ? EXIT_FAIL : 0;
 }

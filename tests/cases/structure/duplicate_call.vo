@@ -1,0 +1,26 @@
+# One statement calls something else (`max` instead of `min`): different code, no warning.
+fn price(base: int) -> int {
+    let tax = min(base, 25);
+    let fee = 3;
+    var total = base + tax;
+    set total = total + fee;
+    if total > 1000 {
+        set total = total - 10;
+    }
+    return total;
+}
+
+fn cost(amount: int) -> int {
+    let vat = max(amount, 12);
+    let charge = 5;
+    var sum = amount + vat;
+    set sum = sum + charge;
+    if sum > 500 {
+        set sum = sum - 7;
+    }
+    return sum;
+}
+
+fn main() uses console {
+    print(str(price(100) + cost(100)));
+}

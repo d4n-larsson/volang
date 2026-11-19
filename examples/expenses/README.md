@@ -56,8 +56,8 @@ Each test names the requirements it proves with `@spec("FR-...")` on the line ab
   table. `vo doc std.text` lists what else is there.
 - **Errors as values.** Bad input (an invalid date, a negative amount, a missing field) is an `err`
   passed up with `try`; `main` returning `err` exits with status 1 and prints the message.
-- **Tests next to the code.** The tests and the property live in `main.vo`, the program's entry file:
-  `vo run` ignores them and `vo test` runs them. The property checks that grouping never loses money,
+- **Tests next to the code.** The tests and the property live in `report.vo`, beside the functions they
+  test: `vo run` ignores them, and `vo test main.vo` runs them with the rest of the program. The property checks that grouping never loses money,
   whatever the amounts.
 - **A contract.** `money` declares `requires cents >= 0`, checked on every call.
 
@@ -65,8 +65,8 @@ Each test names the requirements it proves with `@spec("FR-...")` on the line ab
 
 | File | Contents |
 |---|---|
-| `main.vo` | `main` (read, render, print, save) and the tests |
-| `report.vo` | the `Expense` record, parsing, totals and the table (pure) |
+| `main.vo` | `main` (read, render, print, save): only the effects |
+| `report.vo` | the `Expense` record, parsing, totals and the table (pure), and their tests |
 | `data/expenses.json` | the input |
 | `vo.effects` | the effects record, updated with `vo effects --update main.vo` |
 | `out/` | where the report is written (its contents are not committed) |

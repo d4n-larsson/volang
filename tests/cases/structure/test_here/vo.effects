@@ -1,0 +1,4 @@
+# vo effects record: update with `vo effects --update`
+main.vo:main uses console
+money.vo:cents pure
+money.vo:test "cents of units" pure

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"W0702","name":"file_too_long","severity":"warning","file":"file_too_long.vo","start":{"line":1,"col":1},"end":{"line":1,"col":1},"text":"","message":"This file has 401 code lines, more than 400: split it into modules, one concept each, and import what `main.vo` needs.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":0,"warnings":1,"truncated":0,"files":1}

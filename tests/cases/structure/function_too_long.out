@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"W0703","name":"function_too_long","severity":"warning","file":"function_too_long.vo","start":{"line":243,"col":4},"end":{"line":243,"col":8},"text":"long","message":"`long` has 51 statements, more than 50: split it into functions that each do one thing.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":0,"warnings":1,"truncated":0,"files":1}

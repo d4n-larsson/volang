@@ -10,8 +10,9 @@ vo test [--json] [--filter TEXT] [--test ID] [--spec ID] [--diff FILE] [--timeou
         [--ca-file FILE] [--list | --coverage | --mutate [--max-mutants N]] PATH...
 ```
 
-`PATH` is a `.vo` file or a directory (every `*.vo` file under it, recursively, in sorted order). A file
-with tests needs no `main`. Each test runs with the grant of its own `uses` clause (see
+`PATH` is a `.vo` file or a directory (every `*.vo` file under it, recursively, in sorted order). For a
+file, the tests and properties of every file its program loads run (the file's own first, then its
+imports'; never the standard library's or packages'), each once. A file with tests needs no `main`. Each test runs with the grant of its own `uses` clause (see
 [Tests](../reference/tests.md) and [Effects](../guide/effects.md)); `vo run` ignores tests.
 
 The files are checked first, in test mode. If any has an error, the diagnostics and a summary are

@@ -1,0 +1,24 @@
+# Two functions that differ only in their effects: make one function with an effect parameter.
+import std.sqlite.open;
+import std.sqlite.open_memory;
+import std.sqlite.sql;
+import std.sqlite.exec;
+import std.sqlite.Database;
+import std.sqlite.Value;
+
+fn setup_file(db: Database[uses file.read, file.write]) -> result[int] uses file.read, file.write {
+    let a = try exec(db, sql("create table if not exists t(x)"), new list[Value]);
+    let b = try exec(db, sql("create table if not exists u(y)"), new list[Value]);
+    return ok(a.changed + b.changed);
+}
+
+fn setup_memory(db: Database) -> result[int] {
+    let a = try exec(db, sql("create table if not exists t(x)"), new list[Value]);
+    let b = try exec(db, sql("create table if not exists u(y)"), new list[Value]);
+    return ok(a.changed + b.changed);
+}
+
+fn main() -> result[void] uses console, file.read, file.write {
+    print(str(try setup_file(try open("app.db")) + try setup_memory(open_memory())));
+    return ok();
+}

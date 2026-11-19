@@ -1,0 +1,17 @@
+# `@allow` and `@spec` above one test, in either order, and `@allow` above a function: no error here
+# (each is unused, W0706, until the rules run).
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+@spec("FR-001")
+@allow("W0703", "a table of cases reads best in one test")
+test "doubles" {
+    expect_eq(double(2), 4);
+}
+
+@allow("W0703", "a table of cases reads best in one test")
+@spec("FR-002")
+test "doubles zero" {
+    expect_eq(double(0), 0);
+}

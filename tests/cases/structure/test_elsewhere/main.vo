@@ -1,0 +1,10 @@
+# A test in main.vo that calls only functions of money.vo: W0705, move it next to the code it tests.
+import money.cents;
+
+fn main() uses console {
+    print(str(cents(2)));
+}
+
+test "cents of units" {
+    expect_eq(cents(3), 300);
+}

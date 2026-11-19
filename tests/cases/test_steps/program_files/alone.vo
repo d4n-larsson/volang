@@ -1,0 +1,4 @@
+# A program whose imports have no tests runs exactly its own.
+test "alone" {
+    expect(true);
+}

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0117","name":"misplaced_annotation","severity":"error","file":"allow_misplaced.vo","start":{"line":2,"col":1},"end":{"line":2,"col":46},"text":"@allow(\"W0703\", \"a record has no statements\")","message":"`@allow` goes on a `fn`, `test` or `prop`, on the line right above it.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

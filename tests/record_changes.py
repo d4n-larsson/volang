@@ -25,6 +25,11 @@ SETS = os.path.join(ROOT, "tests", "effect_changes")
 CODES = {"E0504", "W0502", "W0503"}
 
 
+def structure(code):
+    """Spec 027: structure advice (W07xx) is about the fixtures' layout, not their effects records."""
+    return code.startswith("W07")
+
+
 def vo(args, cwd):
     r = subprocess.run([VO] + args, cwd=cwd, capture_output=True, timeout=120)
     recs = [json.loads(l) for l in r.stdout.decode("utf-8", "replace").splitlines() if l.startswith("{")]
@@ -88,7 +93,7 @@ def run_set(d, problems):
             return
         rc, recs = vo(["check", "--json", "main.vo"], proj)
         diags = [r for r in recs if r.get("kind") == "diagnostic"]
-        others = [r["code"] + " " + r["message"] for r in diags if r["code"] not in CODES]
+        others = [r["code"] + " " + r["message"] for r in diags if r["code"] not in CODES and not structure(r["code"])]
         if others:
             problems.append(f"{name}: unexpected diagnostics {others}")
         _, recs = vo(["effects", "--update", "--json", "main.vo"], proj)
@@ -110,7 +115,7 @@ def run_set(d, problems):
         if changed != listed:
             problems.append(f"{name}: record lines changed for {sorted(changed)}, listed {sorted(listed)}")
         rc, recs = vo(["check", "--json", "main.vo"], proj)
-        left = [r["code"] for r in recs if r.get("kind") == "diagnostic"]
+        left = [r["code"] for r in recs if r.get("kind") == "diagnostic" and not structure(r["code"])]
         if rc != 0 or left:
             problems.append(f"{name}: after --update, check still reports {left}")
 

@@ -36,25 +36,29 @@ long doc_is_example(long file, Node *node)
 }
 
 /* The description (out[0], the first comment line) and example (out[1]) of the item at index:
- * the comments on the lines right above it. Both 0 when it has none (an internal item). */
+ * the comments on the lines right above it, or right above its annotations (spec 027: `@allow` stands
+ * between a function's documentation and the function). Both 0 when it has none (an internal item). */
 void doc_comments(long file, Vec *items, long index, Str **out)
 {
     out[0] = 0;
     out[1] = 0;
     long next = pos_line((int)file, ((Node *)vec_get(items, index))->start); /* the line below a comment */
     long top = index; /* the topmost comment of the block */
+    int comments = 0;
     while (top > 0) {
         Node *c = vec_get(items, top - 1);
-        if (c->kind != N_COMMENT) break;
+        if (c->kind != N_COMMENT && (c->kind != N_ANNOTATION || comments)) break;
         long line = pos_line((int)file, c->start);
         if (line + 1 != next) break;
         next = line;
+        comments |= c->kind == N_COMMENT;
         top--;
     }
     SB *desc = 0; /* spec 023: every description line, joined by spaces (std uses one line) */
     GC_ROOT(&desc);
     for (long i = top; i < index; i++) {
         Node *c = vec_get(items, i);
+        if (c->kind != N_COMMENT) continue; /* an annotation */
         if (doc_is_example(file, c)) {
             if (!out[1]) out[1] = doc_line_text(file, c, 5); /* the topmost example line wins */
             continue;

@@ -95,3 +95,17 @@ fn copy_notes(notes: list[Note]) -> list[Note] {
         return true;
     });
 }
+
+@spec("FR-002")
+prop "added notes get distinct ids" (texts: list[str]) {
+    var notes = new list[Note];
+    for t in texts {
+        set notes = add(notes, t);
+    }
+    let ids = new map[int, bool];
+    for n in notes {
+        expect(not has(ids, n.id));
+        set ids[n.id] = true;
+    }
+    expect_eq(len(notes), len(texts));
+}

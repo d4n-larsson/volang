@@ -1,0 +1,295 @@
+# A function with exactly 50 statements: no warning.
+
+fn s1(x: int) -> int {
+    return x + 1;
+}
+
+fn s2(x: int) -> int {
+    return x + 2;
+}
+
+fn s3(x: int) -> int {
+    return x + 3;
+}
+
+fn s4(x: int) -> int {
+    return x + 4;
+}
+
+fn s5(x: int) -> int {
+    return x + 5;
+}
+
+fn s6(x: int) -> int {
+    return x + 6;
+}
+
+fn s7(x: int) -> int {
+    return x + 7;
+}
+
+fn s8(x: int) -> int {
+    return x + 8;
+}
+
+fn s9(x: int) -> int {
+    return x + 9;
+}
+
+fn s10(x: int) -> int {
+    return x + 10;
+}
+
+fn s11(x: int) -> int {
+    return x + 11;
+}
+
+fn s12(x: int) -> int {
+    return x + 12;
+}
+
+fn s13(x: int) -> int {
+    return x + 13;
+}
+
+fn s14(x: int) -> int {
+    return x + 14;
+}
+
+fn s15(x: int) -> int {
+    return x + 15;
+}
+
+fn s16(x: int) -> int {
+    return x + 16;
+}
+
+fn s17(x: int) -> int {
+    return x + 17;
+}
+
+fn s18(x: int) -> int {
+    return x + 18;
+}
+
+fn s19(x: int) -> int {
+    return x + 19;
+}
+
+fn s20(x: int) -> int {
+    return x + 20;
+}
+
+fn s21(x: int) -> int {
+    return x + 21;
+}
+
+fn s22(x: int) -> int {
+    return x + 22;
+}
+
+fn s23(x: int) -> int {
+    return x + 23;
+}
+
+fn s24(x: int) -> int {
+    return x + 24;
+}
+
+fn s25(x: int) -> int {
+    return x + 25;
+}
+
+fn s26(x: int) -> int {
+    return x + 26;
+}
+
+fn s27(x: int) -> int {
+    return x + 27;
+}
+
+fn s28(x: int) -> int {
+    return x + 28;
+}
+
+fn s29(x: int) -> int {
+    return x + 29;
+}
+
+fn s30(x: int) -> int {
+    return x + 30;
+}
+
+fn s31(x: int) -> int {
+    return x + 31;
+}
+
+fn s32(x: int) -> int {
+    return x + 32;
+}
+
+fn s33(x: int) -> int {
+    return x + 33;
+}
+
+fn s34(x: int) -> int {
+    return x + 34;
+}
+
+fn s35(x: int) -> int {
+    return x + 35;
+}
+
+fn s36(x: int) -> int {
+    return x + 36;
+}
+
+fn s37(x: int) -> int {
+    return x + 37;
+}
+
+fn s38(x: int) -> int {
+    return x + 38;
+}
+
+fn s39(x: int) -> int {
+    return x + 39;
+}
+
+fn s40(x: int) -> int {
+    return x + 40;
+}
+
+fn s41(x: int) -> int {
+    return x + 41;
+}
+
+fn s42(x: int) -> int {
+    return x + 42;
+}
+
+fn s43(x: int) -> int {
+    return x + 43;
+}
+
+fn s44(x: int) -> int {
+    return x + 44;
+}
+
+fn s45(x: int) -> int {
+    return x + 45;
+}
+
+fn s46(x: int) -> int {
+    return x + 46;
+}
+
+fn s47(x: int) -> int {
+    return x + 47;
+}
+
+fn s48(x: int) -> int {
+    return x + 48;
+}
+
+fn s49(x: int) -> int {
+    return x + 49;
+}
+
+fn s50(x: int) -> int {
+    return x + 50;
+}
+
+fn s51(x: int) -> int {
+    return x + 51;
+}
+
+fn s52(x: int) -> int {
+    return x + 52;
+}
+
+fn s53(x: int) -> int {
+    return x + 53;
+}
+
+fn s54(x: int) -> int {
+    return x + 54;
+}
+
+fn s55(x: int) -> int {
+    return x + 55;
+}
+
+fn s56(x: int) -> int {
+    return x + 56;
+}
+
+fn s57(x: int) -> int {
+    return x + 57;
+}
+
+fn s58(x: int) -> int {
+    return x + 58;
+}
+
+fn s59(x: int) -> int {
+    return x + 59;
+}
+
+fn s60(x: int) -> int {
+    return x + 60;
+}
+
+fn long() -> int {
+    let f = fn(x: int) -> int {
+        let a = s1(x);
+        let b = s2(a);
+        return s3(b);
+    };
+    var v = f(0);
+    set v = s4(v);
+    set v = s5(v);
+    set v = s6(v);
+    set v = s7(v);
+    set v = s8(v);
+    set v = s9(v);
+    set v = s10(v);
+    set v = s11(v);
+    set v = s12(v);
+    set v = s13(v);
+    set v = s14(v);
+    set v = s15(v);
+    set v = s16(v);
+    set v = s17(v);
+    set v = s18(v);
+    set v = s19(v);
+    set v = s20(v);
+    set v = s21(v);
+    set v = s22(v);
+    set v = s23(v);
+    set v = s24(v);
+    set v = s25(v);
+    set v = s26(v);
+    set v = s27(v);
+    set v = s28(v);
+    set v = s29(v);
+    set v = s30(v);
+    set v = s31(v);
+    set v = s32(v);
+    set v = s33(v);
+    set v = s34(v);
+    set v = s35(v);
+    set v = s36(v);
+    set v = s37(v);
+    set v = s38(v);
+    set v = s39(v);
+    set v = s40(v);
+    set v = s41(v);
+    set v = s42(v);
+    set v = s43(v);
+    set v = s44(v);
+    set v = s45(v);
+    set v = s46(v);
+    set v = s47(v);
+    return v;
+}

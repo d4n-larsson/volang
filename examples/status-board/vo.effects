@@ -1,12 +1,12 @@
 # vo effects record: update with `vo effects --update`
 board.vo:down_count pure
 board.vo:incidents_from pure
+board.vo:parsed pure
 board.vo:render pure
 board.vo:services_from pure
+board.vo:test "a missing field is an error naming it" pure
+board.vo:test "all up, no incidents" pure
+board.vo:test "down services come first and the slowest up one is named" pure
+board.vo:test "services are read from /status.json" pure
 main.vo:fetch uses net("localhost")
 main.vo:main uses console, net("localhost")
-main.vo:parsed pure
-main.vo:test "a missing field is an error naming it" pure
-main.vo:test "all up, no incidents" pure
-main.vo:test "down services come first and the slowest up one is named" pure
-main.vo:test "services are read from /status.json" pure

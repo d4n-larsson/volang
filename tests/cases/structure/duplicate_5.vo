@@ -1,0 +1,24 @@
+# Only five statements repeat: under the limit, no warning.
+fn price(base: int) -> int {
+    let tax = base * 25 / 100;
+    var total = base + tax;
+    set total = total + 3;
+    if total > 1000 {
+        set total = total - 10;
+    }
+    return total;
+}
+
+fn cost(amount: int) -> int {
+    let vat = amount * 12 / 100;
+    var sum = amount + vat;
+    set sum = sum + 5;
+    if sum > 500 {
+        set sum = sum - 7;
+    }
+    return sum;
+}
+
+fn main() uses console {
+    print(str(price(100) + cost(100)));
+}

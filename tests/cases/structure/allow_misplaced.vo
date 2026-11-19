@@ -1,0 +1,5 @@
+# `@allow` goes above a `fn`, `test` or `prop`: not above a record.
+@allow("W0703", "a record has no statements")
+record Point {
+    x: int;
+}

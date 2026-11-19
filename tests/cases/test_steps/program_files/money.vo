@@ -1,0 +1,23 @@
+export fn cents(units: int) -> int {
+    return units * 100;
+}
+
+export fn format_cents(c: int) -> str {
+    let rest = c % 100;
+    return str(c / 100) + "." + (if_small(rest));
+}
+
+fn if_small(n: int) -> str {
+    if n < 10 {
+        return "0" + str(n);
+    }
+    return str(n);
+}
+
+test "cents of units" {
+    expect_eq(cents(3), 300);
+}
+
+test "two decimals" {
+    expect_eq(format_cents(105), "1.05");
+}

@@ -3,18 +3,17 @@ api.vo:handle uses file.read("data/"), file.write("data/")
 api.vo:json pure
 api.vo:load uses file.read("data/")
 api.vo:problem pure
+api.vo:req pure
 api.vo:route pure
 api.vo:same pure
 api.vo:save uses file.write("data/")
+api.vo:test "GET /notes lists the notes as JSON" pure
+api.vo:test "POST /notes adds a note with the next id" pure
+api.vo:test "a bad body is 400 with the reason" pure
+api.vo:test "one note: read, mark done, delete" pure
+api.vo:test "unknown notes and paths are 404, other methods 405" pure
+api.vo:two pure
 main.vo:main uses console, file.read("data/"), file.write("data/"), serve("8080")
-main.vo:prop "added notes get distinct ids" pure
-main.vo:req pure
-main.vo:test "GET /notes lists the notes as JSON" pure
-main.vo:test "POST /notes adds a note with the next id" pure
-main.vo:test "a bad body is 400 with the reason" pure
-main.vo:test "one note: read, mark done, delete" pure
-main.vo:test "unknown notes and paths are 404, other methods 405" pure
-main.vo:two pure
 notes.vo:add pure
 notes.vo:copy_notes pure
 notes.vo:find_note pure
@@ -22,5 +21,6 @@ notes.vo:mark_done pure
 notes.vo:note_json pure
 notes.vo:notes_from pure
 notes.vo:notes_json pure
+notes.vo:prop "added notes get distinct ids" pure
 notes.vo:remove_note pure
 notes.vo:text_from pure

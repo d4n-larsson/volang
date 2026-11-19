@@ -1,0 +1,25 @@
+# A call of an effect-generic function whose effects at that call are empty uses no effect: these 15
+# statements (one inside the anonymous function) make W0701.
+fn apply[E: effects](f: fn() -> int uses E) -> int uses E {
+    return f();
+}
+
+fn main() uses console {
+    let a = apply(fn() -> int {
+        return 1;
+    });
+    let b = a + 1;
+    let c = b + 1;
+    let d = c + 1;
+    let e = d + 1;
+    let f = e + 1;
+    let g = f + 1;
+    let h = g + 1;
+    let i = h + 1;
+    let j = i + 1;
+    let k = j + 1;
+    let l = k + 1;
+    let m = l + 1;
+    let n = m + 1;
+    print(str(n));
+}

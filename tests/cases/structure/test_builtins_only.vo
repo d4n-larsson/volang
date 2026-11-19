@@ -1,0 +1,4 @@
+# A test that calls no function of the program: no warning.
+test "arithmetic" {
+    expect_eq(len("abc"), 3);
+}

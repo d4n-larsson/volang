@@ -1,0 +1,11 @@
+# A test that calls functions of two other files tests how they work together: no warning.
+import money.cents;
+import tax.with_tax;
+
+fn main() uses console {
+    print(str(with_tax(cents(2))));
+}
+
+test "taxed cents" {
+    expect_eq(with_tax(cents(1)), 125);
+}

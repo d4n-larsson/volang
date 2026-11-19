@@ -1,0 +1,24 @@
+# Tests and properties are not held to W0701: a test may compute what it checks.
+fn twice(x: int) -> int {
+    return x * 2;
+}
+
+test "arithmetic" uses console {
+    let a = twice(1);
+    let b = twice(a);
+    let c = twice(b);
+    let d = twice(c);
+    let e = twice(d);
+    let f = twice(e);
+    let g = twice(f);
+    let h = twice(g);
+    let i = twice(h);
+    let j = twice(i);
+    let k = twice(j);
+    let l = twice(k);
+    let m = twice(l);
+    let n = twice(m);
+    let o = twice(n);
+    print(str(o));
+    expect_eq(o, 32768);
+}

@@ -1,0 +1,38 @@
+$ vo test main.vo
+PASS main formats twelve (0ms)
+PASS cents of units (0ms)
+PASS two decimals (0ms)
+3 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test --list main.vo
+main.vo::main formats twelve (test, main.vo:9:1)
+money.vo::cents of units (test, money.vo:17:1)
+money.vo::two decimals (test, money.vo:21:1)
+3 tests
+--- stderr
+--- exit 0
+$ vo test --test "money.vo::two decimals" main.vo
+PASS two decimals (0ms)
+1 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test .
+./alone.vo:3:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+   3 |     expect(true);
+     |     ^^^^^^^^^^^^
+PASS alone (0ms)
+PASS main formats twelve (0ms)
+PASS cents of units (0ms)
+PASS two decimals (0ms)
+4 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test alone.vo
+alone.vo:3:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+   3 |     expect(true);
+     |     ^^^^^^^^^^^^
+PASS alone (0ms)
+1 passed, 0 failed
+--- stderr
+--- exit 0

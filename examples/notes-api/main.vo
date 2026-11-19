@@ -3,13 +3,7 @@
 #   vo run --record r.jsonl main.vo               ... and save every request, file access and response
 #   vo replay r.jsonl                             answer the saved requests again: no port, no files
 # The grant is `serve("8080")` (this machine only) and data/ for reading and writing.
-import api.Answer;
 import api.handle;
-import api.route;
-import notes.Note;
-import notes.add;
-import std.http.Header;
-import std.http.Request;
 import std.http.serve;
 
 fn main() -> result[void] uses console, file.read("data/"), file.write("data/"), serve("8080") {
@@ -17,69 +11,4 @@ fn main() -> result[void] uses console, file.read("data/"), file.write("data/"),
     try serve("8080", handle);
     print("stopped");
     return ok();
-}
-
-fn req(method: str, path: str, body: str) -> Request {
-    return new Request { method: method, path: path, query: "", headers: new list[Header], body: body };
-}
-
-fn two() -> list[Note] {
-    return [new Note { id: 1, text: "water the plants", done: false }, new Note { id: 2, text: "call home", done: true }];
-}
-
-@spec("FR-001")
-test "GET /notes lists the notes as JSON" {
-    let a = route(req("GET", "/notes", ""), two());
-    expect_eq(a.response.status, 200);
-    expect_eq(a.response.body, "[{\"id\":1,\"text\":\"water the plants\",\"done\":false},{\"id\":2,\"text\":\"call home\",\"done\":true}]\n");
-    expect(not a.changed);
-}
-
-@spec("FR-002")
-test "POST /notes adds a note with the next id" {
-    let a = route(req("POST", "/notes", "{\"text\": \" buy bread \"}"), two());
-    expect_eq(a.response.status, 201);
-    expect_eq(a.response.body, "{\"id\":3,\"text\":\"buy bread\",\"done\":false}\n");
-    expect_eq(a.response.headers[1], new Header { name: "Location", value: "/notes/3" });
-    expect_eq(len(a.notes), 3);
-    expect(a.changed);
-}
-
-@spec("FR-003")
-test "a bad body is 400 with the reason" {
-    expect_eq(route(req("POST", "/notes", "{}"), two()).response.body, "{\"error\":\"the body needs a \\\"text\\\" field\"}\n");
-    expect_eq(route(req("POST", "/notes", "{\"text\": \"   \"}"), two()).response.status, 400);
-    expect_eq(route(req("POST", "/notes", "not json"), two()).response.status, 400);
-}
-
-@spec("FR-004")
-test "one note: read, mark done, delete" {
-    expect_eq(route(req("GET", "/notes/2", ""), two()).response.body, "{\"id\":2,\"text\":\"call home\",\"done\":true}\n");
-    let done = route(req("POST", "/notes/1/done", ""), two());
-    expect_eq(done.notes[0].done, true);
-    let gone = route(req("DELETE", "/notes/1", ""), two());
-    expect_eq(gone.response.status, 204);
-    expect_eq(gone.notes, [new Note { id: 2, text: "call home", done: true }]);
-}
-
-@spec("FR-005")
-test "unknown notes and paths are 404, other methods 405" {
-    expect_eq(route(req("GET", "/notes/9", ""), two()).response.status, 404);
-    expect_eq(route(req("GET", "/notes/x", ""), two()).response.status, 404);
-    expect_eq(route(req("GET", "/", ""), two()).response.status, 404);
-    expect_eq(route(req("PUT", "/notes", ""), two()).response.status, 405);
-}
-
-@spec("FR-002")
-prop "added notes get distinct ids" (texts: list[str]) {
-    var notes = new list[Note];
-    for t in texts {
-        set notes = add(notes, t);
-    }
-    let ids = new map[int, bool];
-    for n in notes {
-        expect(not has(ids, n.id));
-        set ids[n.id] = true;
-    }
-    expect_eq(len(notes), len(texts));
 }

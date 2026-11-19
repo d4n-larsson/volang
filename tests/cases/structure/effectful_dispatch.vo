@@ -1,0 +1,34 @@
+# A dispatcher whose arms print: the printing statements do not count, so it stays under the limit.
+variant Command {
+    add;
+    remove;
+    items;
+    show;
+    help;
+}
+
+fn run(c: Command) uses console {
+    let prefix = "> ";
+    match c {
+        case add {
+            print(prefix + "added");
+        }
+        case remove {
+            print(prefix + "removed");
+        }
+        case items {
+            print(prefix + "listed");
+        }
+        case show {
+            print(prefix + "shown");
+        }
+        case help {
+            print(prefix + "add, remove, list, show");
+        }
+    }
+}
+
+fn main() uses console {
+    run(Command.add);
+    run(Command.help);
+}

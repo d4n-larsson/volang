@@ -1,13 +1,9 @@
 # Reads data/expenses.json, prints a report and saves it to out/report.txt. The `uses` clause is
 # the whole grant: this program can read only under data/ and write only under out/.
-# `vo run main.vo` runs main; `vo test main.vo` runs the tests and the property below.
-import report.Expense;
-import report.Total;
+# `vo run main.vo` runs main; `vo test main.vo` runs the tests and the property in report.vo, next to
+# the code they test.
 import report.expenses_from;
-import report.money;
 import report.render;
-import report.sum;
-import report.totals;
 import std.json.parse_json;
 
 fn main() -> result[void] uses console, file.read("data/"), file.write("out/") {
@@ -16,56 +12,4 @@ fn main() -> result[void] uses console, file.read("data/"), file.write("out/") {
     write(text);
     try write_file("out/report.txt", text);
     return ok();
-}
-
-fn expense(category: str, cents: int) -> Expense {
-    return new Expense { date: "2026-01-01", category: category, cents: cents, note: "" };
-}
-
-@spec("FR-001")
-test "money pads the cents" {
-    expect_eq(money(0), "0.00");
-    expect_eq(money(5), "0.05");
-    expect_eq(money(129050), "1290.50");
-}
-
-@spec("FR-002")
-test "totals keep the first-seen order" {
-    let xs = [expense("b", 1), expense("a", 2), expense("b", 3)];
-    let t = totals(xs, fn(e: Expense) -> str {
-        return e.category;
-    });
-    expect_eq(t, [new Total { name: "b", cents: 4 }, new Total { name: "a", cents: 2 }]);
-}
-
-@spec("FR-004")
-test "a bad date is an error, not a crash" {
-    match parse_json("[{\"date\": \"2026-02-30\", \"category\": \"x\", \"cents\": 1, \"note\": \"\"}]") {
-        case ok(doc) {
-            expect_eq(expenses_from(doc), err("bad date `2026-02-30`: day 30 is not in that month"));
-        }
-        case err(_) {
-            expect(false);
-        }
-    }
-}
-
-# Whatever the amounts, grouping never loses or invents money.
-@spec("FR-003")
-prop "totals add up to the sum of the expenses" (amounts: list[int]) {
-    let xs = new list[Expense];
-    var expected = 0;
-    for a in amounts {
-        assume(a >= 0 and a < 1000000);
-        push(xs, expense(str(a % 3), a));
-        set expected = expected + a;
-    }
-    expect_eq(sum(totals(xs, fn(e: Expense) -> str {
-        return e.category;
-    })), expected);
-}
-
-@spec("FR-005")
-test "an empty report" {
-    expect_eq(slice(render(new list[Expense]), 0, 11), "0 expenses\n");
 }

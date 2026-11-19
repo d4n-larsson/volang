@@ -917,7 +917,7 @@ ERROR mean of three (0ms)
 
 A `test "name" uses ... { ... }` item (the clause is optional, see Effects) holds statements that check behavior with `expect(cond)` and `expect_eq(actual, expected)`. These two builtins work only inside tests. A test fails at its first failing check, and `expect_eq` reports both values. Test names must be unique in a file. Tests cannot use `try` (they do not return a result): `match` instead, or compare whole results with `expect_eq(parse_int("3"), ok(3))`.
 
-`vo test file.vo` runs every test and property in the file (a file with tests needs no `main`); `vo run` ignores tests. `--filter TEXT` runs only tests whose name contains `TEXT`. A test that hits a runtime error is reported as `error`, and the remaining tests still run. The exit status is 1 if any test did not pass.
+`vo test file.vo` runs every test and property of the program: the file and the files it imports (a file with tests needs no `main`); `vo run` ignores tests. `--filter TEXT` runs only tests whose name contains `TEXT`. A test that hits a runtime error is reported as `error`, and the remaining tests still run. The exit status is 1 if any test did not pass.
 
 Each test has an identifier `FILE::NAME` (`main.vo::doubles`). `--list` checks and lists the selected tests (identifier, kind, location, `@spec` IDs, effects, the comment above) without running anything. `--test ID` runs exactly that test, `--spec ID` the tests naming `ID` (or `ID/...`), `--diff FILE` the tests `vo impact` reports. Options combine; an empty selection passes. A failing `expect` on a comparison shows each operand (for `and`, the false part); a failing `expect_eq` on larger values shows the first difference. What a test prints is kept with its report: under a test that did not pass, and as `output` in JSON. Tests share the working directory and run in listed order, so a test can see files another wrote.
 
@@ -1019,7 +1019,7 @@ PASS sorting twice changes nothing (100 cases, 0ms)
 1 passed, 1 failed
 ```
 
-`@spec("FR-003", "US1/AC2")` on the line right above a `test` or `prop` names the requirements it proves (an ID is letters, digits, `-` and `_`, parts separated by `/`). It changes nothing about the test: `vo test` adds the IDs to a failing test's line and ends with a summary per ID, and `vo query specs main.vo` lists every ID with its tests. `@spec` is the only annotation.
+`@spec("FR-003", "US1/AC2")` on the line right above a `test` or `prop` names the requirements it proves (an ID is letters, digits, `-` and `_`, parts separated by `/`). It changes nothing about the test: `vo test` adds the IDs to a failing test's line and ends with a summary per ID, and `vo query specs main.vo` lists every ID with its tests. The other annotation is `@allow` (Structure).
 
 ### Coverage and mutation testing
 
@@ -1054,6 +1054,10 @@ fn main() uses console {
 ```output
 25
 ```
+
+### Structure
+
+A program is a thin shell over a pure core: `main` and the other functions with effects gather input, call functions without `uses` and act on their result, so the decisions can be tested with no grant. Write one concept per file, tests next to the code they test, and one function instead of copies (with an effect parameter when copies differ only in effects). `vo check` warns about a function with effects that has 15 or more statements using no effect (W0701), a file over 400 code lines (W0702), a function over 50 statements (W0703), 6 or more statements repeating earlier ones (W0704), and a test calling only another file's functions (W0705). `@allow("W0703", "reason")` on the line above a `fn`, `test` or `prop` accepts one such warning there; an unused one is W0706.
 
 ## Standard library and packages
 
