@@ -31,6 +31,7 @@ record Url {
     target: str;
 }
 
+@allow("W0702", "one module per import path: std.http is one file")
 fn parse_url(url: str) -> result[Url] {
     var tls = false;
     var skip = 7;
@@ -97,7 +98,11 @@ fn exchange(method: str, url: str, content_type: str, body: str) -> result[Respo
     if method == "POST" {
         set hint = "post_bytes";
     }
-    return ok(new Response { status: r.status, headers: r.headers, body: try text_body(raw, hint) });
+    return ok(new Response {
+        status: r.status,
+        headers: r.headers,
+        body: try text_body(raw, hint)
+    });
 }
 
 fn text_body(raw: str, hint: str) -> result[str] {
@@ -175,7 +180,10 @@ fn parse_headers(head: list[str], bad: str) -> result[list[Header]] {
         if colon <= 0 {
             return err(bad);
         }
-        push(headers, new Header { name: slice(line, 0, colon), value: trim(slice(line, colon + 1, len(line))) });
+        push(headers, new Header {
+            name: slice(line, 0, colon),
+            value: trim(slice(line, colon + 1, len(line)))
+        });
     }
     return ok(headers);
 }
@@ -211,7 +219,11 @@ fn from_bytes_empty() -> bytes {
 fn exchange_bytes(method: str, url: str, content_type: str, body: bytes) -> result[BytesResponse] uses net {
     let raw = try exchange_raw(method, url, content_type, __raw_text(body));
     let r = try parse_response(raw);
-    return ok(new BytesResponse { status: r.status, headers: r.headers, body: __bytes_of_text(__http_part(raw, 1)) });
+    return ok(new BytesResponse {
+        status: r.status,
+        headers: r.headers,
+        body: __bytes_of_text(__http_part(raw, 1))
+    });
 }
 
 # The value of the first header with this name, compared without case.
@@ -259,7 +271,13 @@ export fn serve[E: effects](address: str, handle: fn(Request) -> Response uses E
             case ok(req) {
                 match text_body(raw, "serve_bytes") {
                     case ok(body) {
-                        let r = new Request { method: req.method, path: req.path, query: req.query, headers: req.headers, body: body };
+                        let r = new Request {
+                            method: req.method,
+                            path: req.path,
+                            query: req.query,
+                            headers: req.headers,
+                            body: body
+                        };
                         return response_text(req.method, handle(r));
                     }
                     case err(_) {
@@ -296,9 +314,19 @@ export fn serve_bytes[E: effects](address: str, handle: fn(BytesRequest) -> Byte
     let answer = fn(raw: str) -> str {
         match parse_request(raw) {
             case ok(req) {
-                let r = new BytesRequest { method: req.method, path: req.path, query: req.query, headers: req.headers, body: __bytes_of_text(__http_part(raw, 1)) };
+                let r = new BytesRequest {
+                    method: req.method,
+                    path: req.path,
+                    query: req.query,
+                    headers: req.headers,
+                    body: __bytes_of_text(__http_part(raw, 1))
+                };
                 let out = handle(r);
-                return response_text(req.method, new Response { status: out.status, headers: out.headers, body: __raw_text(out.body) });
+                return response_text(req.method, new Response {
+                    status: out.status,
+                    headers: out.headers,
+                    body: __raw_text(out.body)
+                });
             }
             case err(_) {
                 return bad_request();
@@ -324,7 +352,11 @@ fn serve_loop[E: effects](address: str, answer: fn(str) -> str uses E) -> result
                 __serve_reply(text);
             }
             case err(_) {
-                __serve_reply(response_text("GET", new Response { status: 500, headers: new list[Header], body: "" }));
+                __serve_reply(response_text("GET", new Response {
+                    status: 500,
+                    headers: new list[Header],
+                    body: ""
+                }));
             }
         }
     }
@@ -346,12 +378,76 @@ fn parse_request(raw: str) -> result[Request] {
         set path = slice(path, 0, q);
     }
     let headers = try parse_headers(head, "bad header line");
-    return ok(new Request { method: parts[0], path: path, query: query, headers: headers, body: "" });
+    return ok(new Request {
+        method: parts[0],
+        path: path,
+        query: query,
+        headers: headers,
+        body: ""
+    });
 }
 
 fn reason(status: int) -> str {
-    let codes = [200, 201, 202, 204, 301, 302, 303, 304, 307, 308, 400, 401, 403, 404, 405, 408, 409, 410, 413, 415, 422, 429, 431, 500, 501, 502, 503, 504];
-    let names = ["OK", "Created", "Accepted", "No Content", "Moved Permanently", "Found", "See Other", "Not Modified", "Temporary Redirect", "Permanent Redirect", "Bad Request", "Unauthorized", "Forbidden", "Not Found", "Method Not Allowed", "Request Timeout", "Conflict", "Gone", "Content Too Large", "Unsupported Media Type", "Unprocessable Content", "Too Many Requests", "Request Header Fields Too Large", "Internal Server Error", "Not Implemented", "Bad Gateway", "Service Unavailable", "Gateway Timeout"];
+    let codes = [
+        200,
+        201,
+        202,
+        204,
+        301,
+        302,
+        303,
+        304,
+        307,
+        308,
+        400,
+        401,
+        403,
+        404,
+        405,
+        408,
+        409,
+        410,
+        413,
+        415,
+        422,
+        429,
+        431,
+        500,
+        501,
+        502,
+        503,
+        504
+    ];
+    let names = [
+        "OK",
+        "Created",
+        "Accepted",
+        "No Content",
+        "Moved Permanently",
+        "Found",
+        "See Other",
+        "Not Modified",
+        "Temporary Redirect",
+        "Permanent Redirect",
+        "Bad Request",
+        "Unauthorized",
+        "Forbidden",
+        "Not Found",
+        "Method Not Allowed",
+        "Request Timeout",
+        "Conflict",
+        "Gone",
+        "Content Too Large",
+        "Unsupported Media Type",
+        "Unprocessable Content",
+        "Too Many Requests",
+        "Request Header Fields Too Large",
+        "Internal Server Error",
+        "Not Implemented",
+        "Bad Gateway",
+        "Service Unavailable",
+        "Gateway Timeout"
+    ];
     for i in 0..len(codes) {
         if codes[i] == status {
             return names[i];
@@ -378,7 +474,11 @@ fn response_text(method: str, r: Response) -> str {
     let nl = crlf();
     for h in r.headers {
         if not header_ok(h) {
-            return response_text(method, new Response { status: 500, headers: new list[Header], body: "" });
+            return response_text(method, new Response {
+                status: 500,
+                headers: new list[Header],
+                body: ""
+            });
         }
     }
     var out = "HTTP/1.1 " + str(r.status) + " " + reason(r.status) + nl;
@@ -401,7 +501,9 @@ export fn serve_workers[S, E: effects, F: effects](address: str, workers: int, s
     # __serve_workers serves on the listener opened here
     let _ = try __serve_listen(address);
     return __serve_workers(workers, setup, fn(state: S, raw: str) -> str {
-        return answer_text(raw, fn(r: Request) -> Response { return handle(state, r); });
+        return answer_text(raw, fn(r: Request) -> Response {
+            return handle(state, r);
+        });
     });
 }
 
@@ -411,7 +513,13 @@ fn answer_text[E: effects](raw: str, handle: fn(Request) -> Response uses E) -> 
         case ok(req) {
             match text_body(raw, "serve_bytes") {
                 case ok(body) {
-                    let r = new Request { method: req.method, path: req.path, query: req.query, headers: req.headers, body: body };
+                    let r = new Request {
+                        method: req.method,
+                        path: req.path,
+                        query: req.query,
+                        headers: req.headers,
+                        body: body
+                    };
                     return response_text(req.method, handle(r));
                 }
                 case err(_) {
@@ -431,16 +539,28 @@ export fn serve_bytes_workers[S, E: effects, F: effects](address: str, workers: 
     # __serve_workers serves on the listener opened here
     let _ = try __serve_listen(address);
     return __serve_workers(workers, setup, fn(state: S, raw: str) -> str {
-        return answer_bytes(raw, fn(r: BytesRequest) -> BytesResponse { return handle(state, r); });
+        return answer_bytes(raw, fn(r: BytesRequest) -> BytesResponse {
+            return handle(state, r);
+        });
     });
 }
 
 fn answer_bytes[E: effects](raw: str, handle: fn(BytesRequest) -> BytesResponse uses E) -> str uses E {
     match parse_request(raw) {
         case ok(req) {
-            let r = new BytesRequest { method: req.method, path: req.path, query: req.query, headers: req.headers, body: __bytes_of_text(__http_part(raw, 1)) };
+            let r = new BytesRequest {
+                method: req.method,
+                path: req.path,
+                query: req.query,
+                headers: req.headers,
+                body: __bytes_of_text(__http_part(raw, 1))
+            };
             let out = handle(r);
-            return response_text(req.method, new Response { status: out.status, headers: out.headers, body: __raw_text(out.body) });
+            return response_text(req.method, new Response {
+                status: out.status,
+                headers: out.headers,
+                body: __raw_text(out.body)
+            });
         }
         case err(_) {
             return bad_request();

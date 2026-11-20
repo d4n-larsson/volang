@@ -1,21 +1,21 @@
 $ vo run --seed 1 --record r.jsonl main.vo
 --- stderr
-std/fs.vo:148:17: runtime error[R0010]: file.delete("work/../keep.txt") is not allowed: `main` declares console, file.delete("work/").
- 148 |     let _ = try __fs(5, path, "");
+std/fs.vo:152:17: runtime error[R0010]: file.delete("work/../keep.txt") is not allowed: `main` declares console, file.delete("work/").
+ 152 |     let _ = try __fs(5, path, "");
      |                 ^^^^^^^^^^^^^^^^^
 trace:
-  at delete (std/fs.vo:148:17)
+  at delete (std/fs.vo:152:17)
       path: str = "work/../keep.txt"
   at main (main.vo:6:9)
       up: str = "work/../"
 --- exit 70
 $ vo replay r.jsonl
 --- stderr
-std/fs.vo:148:17: runtime error[R0010]: file.delete("work/../keep.txt") is not allowed: `main` declares console, file.delete("work/").
- 148 |     let _ = try __fs(5, path, "");
+std/fs.vo:152:17: runtime error[R0010]: file.delete("work/../keep.txt") is not allowed: `main` declares console, file.delete("work/").
+ 152 |     let _ = try __fs(5, path, "");
      |                 ^^^^^^^^^^^^^^^^^
 trace:
-  at delete (std/fs.vo:148:17)
+  at delete (std/fs.vo:152:17)
       path: str = "work/../keep.txt"
   at main (main.vo:6:9)
       up: str = "work/../"

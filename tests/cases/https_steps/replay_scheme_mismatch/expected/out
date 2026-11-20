@@ -10,15 +10,15 @@ hello from vo
 $ vo replay r.jsonl
 --- stderr
 note: the program differs from the recorded one (recorded main.vo)
-std/http.vo:140:16: runtime error[R0014]: The program makes an HTTP request `GET /plain` to `https://127.0.0.1:{port}`, but the recording has an HTTP request `GET /plain` to `127.0.0.1:{port}` next: replay the program that was recorded, or record this one.
- 140 |         return __https_exchange(u.host, u.port, request);
+std/http.vo:145:16: runtime error[R0014]: The program makes an HTTP request `GET /plain` to `https://127.0.0.1:{port}`, but the recording has an HTTP request `GET /plain` to `127.0.0.1:{port}` next: replay the program that was recorded, or record this one.
+ 145 |         return __https_exchange(u.host, u.port, request);
      |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange_raw (std/http.vo:140:16)
+  at exchange_raw (std/http.vo:145:16)
       method: str = "GET", url: str = "https://127.0.0.1:{port}/plain", content_type: str = "", body: str = "", u: Url = new Url { tls: true, host: "127.0.0.1", port: {port}, target: "/plain" }, nl: str = "\n", request: str = "GET /plain HTTP/1.1\nHost: 127.0.0.1:{port}\nConnection: close\nUser-Agent: vo\n\n"
-  at exchange (std/http.vo:94:19)
+  at exchange (std/http.vo:95:19)
       method: str = "GET", url: str = "https://127.0.0.1:{port}/plain", content_type: str = "", body: str = ""
-  at get (std/http.vo:186:12)
+  at get (std/http.vo:194:12)
       url: str = "https://127.0.0.1:{port}/plain"
   at main (main.vo:29:14)
       a: list[str] = ["http://127.0.0.1:{port}/plain"], url: str = "http://127.0.0.1:{port}/plain"

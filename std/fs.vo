@@ -69,7 +69,11 @@ export fn list_dir(path: str) -> result[list[Entry]] uses file.read {
             set link = true;
             set head = slice(head, 0, len(head) - 1);
         }
-        push(entries, new Entry { name: slice(part, space + 1, len(part)), info: decode_info(head), link: link });
+        push(entries, new Entry {
+            name: slice(part, space + 1, len(part)),
+            info: decode_info(head),
+            link: link
+        });
     }
     return ok(entries);
 }

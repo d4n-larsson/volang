@@ -9,11 +9,11 @@ done/
 old_inbox/
   b.txt (5)
 --- stderr
-std/fs.vo:155:17: runtime error[R0010]: file.delete("work") is not allowed: `main` declares console, file.read("work/"), file.write("work/"), file.delete("work/").
- 155 |     let _ = try __fs(6, from, to);
+std/fs.vo:159:17: runtime error[R0010]: file.delete("work") is not allowed: `main` declares console, file.read("work/"), file.write("work/"), file.delete("work/").
+ 159 |     let _ = try __fs(6, from, to);
      |                 ^^^^^^^^^^^^^^^^^
 trace:
-  at rename (std/fs.vo:155:17)
+  at rename (std/fs.vo:159:17)
       from: str = "work", to: str = "work/x"
   at main (main.vo:53:30)
 --- exit 70

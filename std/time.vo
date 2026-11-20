@@ -68,7 +68,16 @@ export fn from_ms(ms: int) -> DateTime {
         set y = y + 1;
     }
     let wd = day_count + 3 - floor_div(day_count + 3, 7) * 7 + 1;
-    return new DateTime { year: y, month: m, day: d, hour: rest / 3600000, minute: rest / 60000 % 60, second: rest / 1000 % 60, ms: rest % 1000, weekday: wd };
+    return new DateTime {
+        year: y,
+        month: m,
+        day: d,
+        hour: rest / 3600000,
+        minute: rest / 60000 % 60,
+        second: rest / 1000 % 60,
+        ms: rest % 1000,
+        weekday: wd
+    };
 }
 
 # Whether year is a leap year.
@@ -117,7 +126,16 @@ export fn to_ms(d: DateTime) -> result[int] {
 # Midnight UTC of a date.
 #     date(1970, 1, 2) == ok(86400000) is true
 export fn date(year: int, month: int, day: int) -> result[int] {
-    return to_ms(new DateTime { year: year, month: month, day: day, hour: 0, minute: 0, second: 0, ms: 0, weekday: 0 });
+    return to_ms(new DateTime {
+        year: year,
+        month: month,
+        day: day,
+        hour: 0,
+        minute: 0,
+        second: 0,
+        ms: 0,
+        weekday: 0
+    });
 }
 
 fn pad(n: int, width: int) -> str {
@@ -196,7 +214,16 @@ export fn parse_time(s: str) -> result[int] {
         }
         set millis = try parse_int(frac);
     }
-    let local = try to_ms(new DateTime { year: y, month: mo, day: dd, hour: hh, minute: mi, second: ss, ms: millis, weekday: 0 });
+    let local = try to_ms(new DateTime {
+        year: y,
+        month: mo,
+        day: dd,
+        hour: hh,
+        minute: mi,
+        second: ss,
+        ms: millis,
+        weekday: 0
+    });
     if i < len(s) and slice(s, i, i + 1) == "Z" and i + 1 == len(s) {
         return ok(local);
     }

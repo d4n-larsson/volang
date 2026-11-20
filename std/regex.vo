@@ -77,7 +77,14 @@ fn build_match(s: str, offs: list[int], base: int, names: list[str]) -> Match {
             set named[names[g - 1]] = groups[g];
         }
     }
-    return new Match { text: groups[0], start: offs[base], end: offs[base + 1], groups: groups, took_part: took, named: named };
+    return new Match {
+        text: groups[0],
+        start: offs[base],
+        end: offs[base + 1],
+        groups: groups,
+        took_part: took,
+        named: named
+    };
 }
 
 # The leftmost match in s, with its groups; err("no match") when there is none.

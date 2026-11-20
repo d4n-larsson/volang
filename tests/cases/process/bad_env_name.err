@@ -1,8 +1,8 @@
-std/process.vo:40:23: runtime error[R0007]: An environment entry must be NAME=value with a non-empty NAME and no NUL byte.
-  40 |     return decode(try __run(argv, input, env));
+std/process.vo:44:23: runtime error[R0007]: An environment entry must be NAME=value with a non-empty NAME and no NUL byte.
+  44 |     return decode(try __run(argv, input, env));
      |                       ^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at run_with (std/process.vo:40:23)
+  at run_with (std/process.vo:44:23)
       program: str = "true", args: list[str] = [], input: str = "", env: list[str] = ["=x"], argv: list[str] = ["true"]
   at main (bad_env_name.vo:12:27)
       a: str = "noname"

@@ -112,7 +112,9 @@ fn parse_word(p: JsonParser, word: str, value: Json) -> result[Json] {
     let column = p.column;
     for c in chars(word) {
         if peek(p) != c {
-            return err("line " + str(p.line) + ", column " + str(column) + ": expected `" + word + "`");
+            return err(
+                "line " + str(p.line) + ", column " + str(column) + ": expected `" + word + "`"
+            );
         }
         advance(p);
     }
@@ -197,7 +199,9 @@ fn parse_hex4(p: JsonParser) -> result[int] {
     for _ in 0..4 {
         let d = hex_digit(peek(p));
         if d < 0 {
-            return err("line " + str(p.line) + ", column " + str(p.column) + ": expected four hex digits after \\u");
+            return err(
+                "line " + str(p.line) + ", column " + str(p.column) + ": expected four hex digits after \\u"
+            );
         }
         set n = n * 16 + d;
         advance(p);

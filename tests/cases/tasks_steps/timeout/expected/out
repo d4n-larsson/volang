@@ -1,12 +1,12 @@
 $ vo run --timeout 2 main.vo -- {port}
 --- stderr
-std/http.vo:142:12: runtime error[R0009]: Time limit of 2 s exceeded.
- 142 |     return __http_exchange(u.host, u.port, request);
+std/http.vo:147:12: runtime error[R0009]: Time limit of 2 s exceeded.
+ 147 |     return __http_exchange(u.host, u.port, request);
      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange_raw (std/http.vo:142:12)
-  at exchange (std/http.vo:94:19)
-  at get (std/http.vo:186:12)
+  at exchange_raw (std/http.vo:147:12)
+  at exchange (std/http.vo:95:19)
+  at get (std/http.vo:194:12)
   at work (main.vo:5:11)
   at main (main.vo:17:14)
 --- exit 124

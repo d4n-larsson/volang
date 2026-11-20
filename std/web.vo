@@ -17,8 +17,8 @@ import std.http.Header;
 import std.http.Request;
 import std.http.Response;
 import std.http.serve_workers;
-import std.json.as_object;
 import std.json.Json;
+import std.json.as_object;
 import std.json.parse_json;
 import std.json.to_json;
 import std.json.write_json;
@@ -130,7 +130,12 @@ fn route[C, I: json, E: effects](method: str, pattern: str, op: fn(C, I) -> resu
             }
         }
     };
-    return new Route { method: method, pattern: pattern, segments: split(slice(pattern, 1, len(pattern)), "/"), run: run };
+    return new Route {
+        method: method,
+        pattern: pattern,
+        segments: split(slice(pattern, 1, len(pattern)), "/"),
+        run: run
+    };
 }
 
 # ---- answers ----
@@ -138,7 +143,11 @@ fn route[C, I: json, E: effects](method: str, pattern: str, op: fn(C, I) -> resu
 # An answer with this status and v as JSON (records as objects, lists as arrays, ...).
 #     json_reply(200, [1, 2]).body is "[1,2]"
 export fn json_reply[T: json](status: int, v: T) -> Response {
-    return new Response { status: status, headers: [new Header { name: "Content-Type", value: "application/json" }], body: __json_text(v) };
+    return new Response {
+        status: status,
+        headers: [new Header { name: "Content-Type", value: "application/json" }],
+        body: __json_text(v)
+    };
 }
 
 # A 201 answer with v as JSON and its Location.
@@ -229,10 +238,18 @@ fn dispatch[C, E: effects](app: App[C, E], ctx: C, r: Request) -> Response uses 
     }
     let allow = join(allowed, ", ");
     if r.method == "OPTIONS" {
-        return new Response { status: 204, headers: [new Header { name: "Allow", value: allow + ", OPTIONS" }], body: "" };
+        return new Response {
+            status: 204,
+            headers: [new Header { name: "Allow", value: allow + ", OPTIONS" }],
+            body: ""
+        };
     }
     if best < 0 {
-        let resp = problem(405, r.method + " is not allowed on " + r.path + "; allowed: " + allow, new list[Json]);
+        let resp = problem(
+            405,
+            r.method + " is not allowed on " + r.path + "; allowed: " + allow,
+            new list[Json]
+        );
         push(resp.headers, new Header { name: "Allow", value: allow });
         return resp;
     }
@@ -337,7 +354,15 @@ fn error_answer(errors: list[ErrorStatus], e: str) -> Response {
                 return problem(es.status, detail, new list[Json]);
             }
         }
-        let kinds = ["bad_request", "unauthorized", "forbidden", "not_found", "conflict", "gone", "unprocessable"];
+        let kinds = [
+            "bad_request",
+            "unauthorized",
+            "forbidden",
+            "not_found",
+            "conflict",
+            "gone",
+            "unprocessable"
+        ];
         let statuses = [400, 401, 403, 404, 409, 410, 422];
         for i in 0..len(kinds) {
             if kinds[i] == kind {
@@ -490,12 +515,30 @@ fn problem(status: int, detail: str, errors: list[Json]) -> Response {
         case err(_) {
         }
     }
-    return new Response { status: status, headers: [new Header { name: "Content-Type", value: "application/problem+json" }], body: body };
+    return new Response {
+        status: status,
+        headers: [new Header { name: "Content-Type", value: "application/problem+json" }],
+        body: body
+    };
 }
 
 fn title(status: int) -> str {
     let codes = [400, 401, 403, 404, 405, 409, 410, 413, 415, 422, 429, 500, 503];
-    let names = ["Bad Request", "Unauthorized", "Forbidden", "Not Found", "Method Not Allowed", "Conflict", "Gone", "Content Too Large", "Unsupported Media Type", "Unprocessable Content", "Too Many Requests", "Internal Server Error", "Service Unavailable"];
+    let names = [
+        "Bad Request",
+        "Unauthorized",
+        "Forbidden",
+        "Not Found",
+        "Method Not Allowed",
+        "Conflict",
+        "Gone",
+        "Content Too Large",
+        "Unsupported Media Type",
+        "Unprocessable Content",
+        "Too Many Requests",
+        "Internal Server Error",
+        "Service Unavailable"
+    ];
     for i in 0..len(codes) {
         if codes[i] == status {
             return names[i];
@@ -525,7 +568,9 @@ fn check_routes[C, E: effects](routes: list[Route[C, E]]) -> result[void] {
         for j in 0..i {
             let b = routes[j];
             if a.method == b.method and same_shape(a.segments, b.segments) {
-                return err("routes `" + a.method + " " + a.pattern + "` and `" + b.method + " " + b.pattern + "` match the same paths");
+                return err(
+                    "routes `" + a.method + " " + a.pattern + "` and `" + b.method + " " + b.pattern + "` match the same paths"
+                );
             }
         }
     }
@@ -556,7 +601,7 @@ fn without_vo_error(r: Response) -> Response {
 
 # Settings of type T: the JSON object in file (when there is one), then for each field the environment variable PREFIX_FIELD (upper case) instead; checked as from_json checks: defaults from @default, limits, every problem in one err.
 #     load_settings("no-such-settings.json", "app") == ok(new NoInput {}) is true
-export fn load_settings[T: json](file: str, prefix: str) -> result[T] uses env, file.read {
+export fn load_settings[T: json](file: str, prefix: str) -> result[T] uses file.read, env {
     let values = new map[str, Json];
     match try info(file) {
         case missing {
@@ -656,22 +701,25 @@ export fn info_route[C, E: effects](name: str, version: str) -> Route[C, E] {
 # A step that gives every response an X-Request-Id: the request's own, or one from new_id (random_id), also passed on to operations as the request's header.
 #     handle_request(new App[int] { routes: new list[Route[int]], steps: [request_ids(fn() -> str { return "id-1"; })], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).headers[1].value is "id-1"
 export fn request_ids[C, E: effects](new_id: fn() -> str uses E) -> Step[C, E] {
-    return new Step { prefix: "/", run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
-        var id = "";
-        var req = r;
-        match header_of(r, "X-Request-Id") {
-            case ok(v) {
-                set id = v;
+    return new Step {
+        prefix: "/",
+        run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+            var id = "";
+            var req = r;
+            match header_of(r, "X-Request-Id") {
+                case ok(v) {
+                    set id = v;
+                }
+                case err(_) {
+                    set id = new_id();
+                    set req = with_header(r, "X-Request-Id", id);
+                }
             }
-            case err(_) {
-                set id = new_id();
-                set req = with_header(r, "X-Request-Id", id);
-            }
+            let resp = next(req);
+            push(resp.headers, new Header { name: "X-Request-Id", value: id });
+            return resp;
         }
-        let resp = next(req);
-        push(resp.headers, new Header { name: "X-Request-Id", value: id });
-        return resp;
-    } };
+    };
 }
 
 # 16 hexadecimal digits from random_int, for request_ids.
@@ -683,20 +731,23 @@ export fn random_id() -> str uses random {
 # A step that writes one line per request with log: method, path, status and milliseconds (from now), and an unmapped error's text.
 #     handle_request(new App[int] { routes: new list[Route[int]], steps: [log_requests(fn() -> int { return 0; }, fn(line: str) { })], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).status is 404
 export fn log_requests[C, E: effects](now: fn() -> int uses E, log: fn(str) uses E) -> Step[C, E] {
-    return new Step { prefix: "/", run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
-        let start = now();
-        let resp = next(r);
-        var line = r.method + " " + r.path + " " + str(resp.status) + " " + str(now() - start) + "ms";
-        match header_of_response(resp, "Vo-Error") {
-            case ok(e) {
-                set line = line + " error: " + e;
+    return new Step {
+        prefix: "/",
+        run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+            let start = now();
+            let resp = next(r);
+            var line = r.method + " " + r.path + " " + str(resp.status) + " " + str(now() - start) + "ms";
+            match header_of_response(resp, "Vo-Error") {
+                case ok(e) {
+                    set line = line + " error: " + e;
+                }
+                case err(_) {
+                }
             }
-            case err(_) {
-            }
+            log(line);
+            return resp;
         }
-        log(line);
-        return resp;
-    } };
+    };
 }
 
 # The clock in milliseconds, for log_requests.
@@ -714,42 +765,61 @@ export fn to_stderr(line: str) uses console {
 # A step answering CORS for the listed origins: preflight OPTIONS requests (204 with the allowed methods and headers) and the Access-Control-Allow-Origin header on answers.
 #     handle_request(new App[int] { routes: new list[Route[int]], steps: [cors(["https://app.example"])], errors: new list[ErrorStatus] }, 0, with_header(request("GET", "/", ""), "Origin", "https://app.example")).headers[1].value is "https://app.example"
 export fn cors[C, E: effects](origins: list[str]) -> Step[C, E] {
-    return new Step { prefix: "/", run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
-        var origin = "";
-        match header_of(r, "Origin") {
-            case ok(o) {
-                if has_item(origins, o) {
-                    set origin = o;
-                }
-            }
-            case err(_) {
-            }
-        }
-        if origin == "" {
-            return next(r);
-        }
-        match header_of(r, "Access-Control-Request-Method") {
-            case ok(_) {
-                if r.method == "OPTIONS" {
-                    var allow_headers = "Content-Type, Authorization";
-                    match header_of(r, "Access-Control-Request-Headers") {
-                        case ok(h) {
-                            set allow_headers = h;
-                        }
-                        case err(_) {
-                        }
+    return new Step {
+        prefix: "/",
+        run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+            var origin = "";
+            match header_of(r, "Origin") {
+                case ok(o) {
+                    if has_item(origins, o) {
+                        set origin = o;
                     }
-                    return new Response { status: 204, headers: [new Header { name: "Access-Control-Allow-Origin", value: origin }, new Header { name: "Access-Control-Allow-Methods", value: "GET, POST, PUT, PATCH, DELETE, OPTIONS" }, new Header { name: "Access-Control-Allow-Headers", value: allow_headers }, new Header { name: "Access-Control-Max-Age", value: "600" }, new Header { name: "Vary", value: "Origin" }], body: "" };
+                }
+                case err(_) {
                 }
             }
-            case err(_) {
+            if origin == "" {
+                return next(r);
             }
+            match header_of(r, "Access-Control-Request-Method") {
+                case ok(_) {
+                    if r.method == "OPTIONS" {
+                        var allow_headers = "Content-Type, Authorization";
+                        match header_of(r, "Access-Control-Request-Headers") {
+                            case ok(h) {
+                                set allow_headers = h;
+                            }
+                            case err(_) {
+                            }
+                        }
+                        return new Response {
+                            status: 204,
+                            headers: [
+                                new Header { name: "Access-Control-Allow-Origin", value: origin },
+                                new Header {
+                                    name: "Access-Control-Allow-Methods",
+                                    value: "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+                                },
+                                new Header {
+                                    name: "Access-Control-Allow-Headers",
+                                    value: allow_headers
+                                },
+                                new Header { name: "Access-Control-Max-Age", value: "600" },
+                                new Header { name: "Vary", value: "Origin" }
+                            ],
+                            body: ""
+                        };
+                    }
+                }
+                case err(_) {
+                }
+            }
+            let resp = next(r);
+            push(resp.headers, new Header { name: "Access-Control-Allow-Origin", value: origin });
+            push(resp.headers, new Header { name: "Vary", value: "Origin" });
+            return resp;
         }
-        let resp = next(r);
-        push(resp.headers, new Header { name: "Access-Control-Allow-Origin", value: origin });
-        push(resp.headers, new Header { name: "Vary", value: "Origin" });
-        return resp;
-    } };
+    };
 }
 
 # A step for requests under prefix: the `Authorization: Bearer TOKEN` given to check, whose ok(identity) is passed on as the request header X-Identity (bind it with @header("X-Identity")); a missing or refused token answers 401. An X-Identity a client sends is always dropped.
@@ -765,32 +835,35 @@ export fn api_key_auth[C, E: effects](prefix: str, header: str, check: fn(C, str
 }
 
 fn auth_step[C, E: effects](prefix: str, header: str, scheme: str, check: fn(C, str) -> result[str] uses E) -> Step[C, E] {
-    return new Step { prefix: "/", run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
-        if not under(r.path, prefix) {
-            return next(r);
-        }
-        var token = "";
-        match header_of(r, header) {
-            case ok(v) {
-                if len(v) > len(scheme) and lower(slice(v, 0, len(scheme))) == lower(scheme) {
-                    set token = trim(slice(v, len(scheme), len(v)));
+    return new Step {
+        prefix: "/",
+        run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+            if not under(r.path, prefix) {
+                return next(r);
+            }
+            var token = "";
+            match header_of(r, header) {
+                case ok(v) {
+                    if len(v) > len(scheme) and lower(slice(v, 0, len(scheme))) == lower(scheme) {
+                        set token = trim(slice(v, len(scheme), len(v)));
+                    }
+                }
+                case err(_) {
                 }
             }
-            case err(_) {
+            if token == "" {
+                return unauthorized(scheme, "missing credentials in " + header);
+            }
+            match check(ctx, token) {
+                case ok(identity) {
+                    return next(with_header(r, "X-Identity", identity));
+                }
+                case err(e) {
+                    return unauthorized(scheme, e);
+                }
             }
         }
-        if token == "" {
-            return unauthorized(scheme, "missing credentials in " + header);
-        }
-        match check(ctx, token) {
-            case ok(identity) {
-                return next(with_header(r, "X-Identity", identity));
-            }
-            case err(e) {
-                return unauthorized(scheme, e);
-            }
-        }
-    } };
+    };
 }
 
 fn unauthorized(scheme: str, detail: str) -> Response {
@@ -826,7 +899,13 @@ fn without_header(r: Request, name: str) -> Request {
             push(headers, h);
         }
     }
-    return new Request { method: r.method, path: r.path, query: r.query, headers: headers, body: r.body };
+    return new Request {
+        method: r.method,
+        path: r.path,
+        query: r.query,
+        headers: headers,
+        body: r.body
+    };
 }
 
 # ---- tests ----
@@ -856,5 +935,11 @@ export fn with_header(r: Request, name: str, value: str) -> Request {
         push(headers, h);
     }
     push(headers, new Header { name: name, value: value });
-    return new Request { method: r.method, path: r.path, query: r.query, headers: headers, body: r.body };
+    return new Request {
+        method: r.method,
+        path: r.path,
+        query: r.query,
+        headers: headers,
+        body: r.body
+    };
 }

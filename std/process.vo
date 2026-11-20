@@ -21,7 +21,11 @@ fn decode(text: str) -> result[Output] {
     let code = try parse_int(slice(text, 0, first));
     let n = try parse_int(slice(rest, 0, second));
     let body = slice(rest, second + 1, len(rest));
-    return ok(new Output { code: code, stdout: slice(body, 0, n), stderr: slice(body, n, len(body)) });
+    return ok(new Output {
+        code: code,
+        stdout: slice(body, 0, n),
+        stderr: slice(body, n, len(body))
+    });
 }
 
 # Runs program with args (no shell: each argument is passed as it is), no input and an empty environment, and waits for it to end (needs process).
@@ -73,7 +77,11 @@ fn decode_bytes(raw: bytes) -> result[BytesOutput] {
     let second = header_end(raw, 0);
     let n = try header_int(raw, second);
     let body = header_end(raw, second);
-    return ok(new BytesOutput { code: code, stdout: slice(raw, body, body + n), stderr: slice(raw, body + n, len(raw)) });
+    return ok(new BytesOutput {
+        code: code,
+        stdout: slice(raw, body, body + n),
+        stderr: slice(raw, body + n, len(raw))
+    });
 }
 
 # Runs program like run, and returns its output as bytes, whatever it is (needs process); run needs UTF-8 output.

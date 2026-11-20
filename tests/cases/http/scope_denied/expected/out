@@ -1,14 +1,14 @@
 $ vo run main.vo -- {port}
 --- stderr
-std/http.vo:142:12: runtime error[R0010]: net("localhost") is not allowed: `main` declares console, net("example.invalid").
- 142 |     return __http_exchange(u.host, u.port, request);
+std/http.vo:147:12: runtime error[R0010]: net("localhost") is not allowed: `main` declares console, net("example.invalid").
+ 147 |     return __http_exchange(u.host, u.port, request);
      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange_raw (std/http.vo:142:12)
+  at exchange_raw (std/http.vo:147:12)
       method: str = "GET", url: str = "http://localhost:{port}/plain", content_type: str = "", body: str = "", u: Url = new Url { tls: false, host: "localhost", port: {port}, target: "/plain" }, nl: str = "\n", request: str = "GET /plain HTTP/1.1\nHost: localhost:{port}\nConnection: close\nUser-Agent: vo\n\n"
-  at exchange (std/http.vo:94:19)
+  at exchange (std/http.vo:95:19)
       method: str = "GET", url: str = "http://localhost:{port}/plain", content_type: str = "", body: str = ""
-  at get (std/http.vo:186:12)
+  at get (std/http.vo:194:12)
       url: str = "http://localhost:{port}/plain"
   at main (main.vo:22:10)
 --- exit 70
