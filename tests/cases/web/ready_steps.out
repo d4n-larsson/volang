@@ -1,0 +1,11 @@
+plain -> 200 [X-Request-Id: 0c31fc48822c03d4] "anonymous"
+own id -> 200 [X-Request-Id: abc] "anonymous"
+spoofed identity -> 200 [X-Request-Id: 1b75dde3c9748b79] "anonymous"
+admin without token -> 401 [WWW-Authenticate: Bearer] [X-Request-Id: 7703c57955ef7cfc] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"missing credentials in Authorization"}
+admin bad token -> 401 [WWW-Authenticate: Bearer] [X-Request-Id: 73494c1ce6bb375a] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"unknown token"}
+admin good token -> 200 [X-Request-Id: 172818e6f60a2764] "ada"
+service key -> 200 [X-Request-Id: 49bfd6891392c87d] "service-1"
+service bad key -> 401 [X-Request-Id: 612f2b8479fe9131] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"unknown key"}
+cors listed -> 200 [Access-Control-Allow-Origin: https://app.example] [Vary: Origin] [X-Request-Id: a6b6fda9b1dce3b5] "anonymous"
+cors other -> 200 [X-Request-Id: 13087adeaf330959] "anonymous"
+preflight -> 204 [Access-Control-Allow-Origin: https://app.example] [Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS] [Access-Control-Allow-Headers: Content-Type, Authorization] [Access-Control-Max-Age: 600] [Vary: Origin] [X-Request-Id: af69855d429dcc18] 

@@ -303,6 +303,7 @@
 #define TPC_NONE (0)
 #define TPC_ORDERED (1)
 #define TPC_EFFECTS (2)
+#define TPC_JSON (3) /* spec 029: convertible to and from JSON */
 #define CV_CLOSURE (1)
 #define CV_FIELD (2)
 
@@ -401,7 +402,11 @@
 #define B_SQL_TX (91) /* __sql_tx(id, op) -> result[void] */
 #define B_SQL_PREPARE (92) /* __sql_prepare(text) -> result[str] */
 #define B_SERVE_WORKERS (93) /* spec 028: __serve_workers(workers, setup, answer) -> result[void] */
-#define B_LAST (93) /* the last builtin id with a btab entry */
+#define B_TO_JSON (94) /* spec 029: __to_json(v) -> Json */
+#define B_FROM_JSON (95) /* spec 029: __from_json(j, mode) -> result[T] */
+#define B_JSON_FIELDS (96) /* spec 029: __json_fields(xs: list[T]) -> list[str] */
+#define B_JSON_TEXT (97) /* spec 029: __json_text(v) -> str */
+#define B_LAST (97) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -1449,7 +1454,7 @@ extern Type *check_index(Node *node);
 extern Type *op_error(Node *node, Type *left, Type *right);
 extern Type *check_binary(Node *node);
 extern Type *check_unary(Node *node);
-extern Type *check_try(Node *node);
+extern Type *check_try(Node *node, Type *expected);
 extern Type *check_list(Node *node, Type *expected);
 extern Node *lookup_decl(Node *name_node, long kind, char *not_kind_msg);
 extern Type *check_new_record(Node *node, Type *expected);
@@ -1634,6 +1639,19 @@ extern Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *
 extern long sv_listener, opt_workers;
 extern void sv_note(Str *m);
 extern int rp_skip_setups(void);
+extern long utf8_chars(Str *s);                 /* spec 029: check_annot.c */
+extern int ty_enum_like(Type *t);
+extern void check_field_annotations(Node *record);
+extern int check_regex_literal(Node *lit);
+extern long json_to(long v, Node *call);            /* json_derive.c */
+extern Variant *json_from(long j, long mode, Node *call);
+extern List *json_fields(Node *call);
+extern Str *json_text(long v, Node *call);
+extern void check_web_call(Node *call);      /* check_web.c */
+extern void check_web_routes(Node *list);
+extern Vec *web_inputs;
+extern void check_web_headers(Vec *files);
+extern Node *ck_infer_owner; /* check_generic.c (spec 029) */      /* check_regex.c: 1 when the literal is a valid pattern */
 extern int rp_block_ended(void);
 extern void rt_seed_mark(void);
 extern void rt_request_seed(long number);

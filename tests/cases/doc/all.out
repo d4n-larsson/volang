@@ -112,3 +112,4 @@ modules:
   std.bytes Conversions of binary data with text, integers, hex and base64, and standard input and output as bytes.
   std.regex Regular expressions that run in linear time: test, find, replace and split with compiled patterns.
   std.sqlite SQLite databases in files (file.read, file.write) or in memory (no effect), with checked statements and ? parameters.
+  std.web Building HTTP APIs: a route table, typed request input, JSON answers, errors mapped in one place, steps around requests, settings, health, and tests without a network.

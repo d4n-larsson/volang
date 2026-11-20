@@ -1,0 +1,90 @@
+# Typed input (spec 029 US2): fields take the path variable of their name, the JSON body (`body`), a
+# header (`@header`) or the query parameter of their name; bad input never reaches the operation and is
+# answered 400 (malformed) or 422 (only limits broken), naming every problem.
+import std.http.Response;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.Route;
+import std.web.Step;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.on_get;
+import std.web.on_post;
+import std.web.request;
+import std.web.with_header;
+
+variant Sort {
+    newest;
+    oldest;
+}
+
+record NoteText {
+    @size(1, 20)
+    text: str;
+    @size(0, 2)
+    @default([])
+    tags: list[str];
+}
+
+record NewNote {
+    board: str;
+    body: NoteText;
+    @header("X-Author")
+    @default("anonymous")
+    author: str;
+}
+
+record Listing {
+    board: str;
+    @range(1, 50)
+    @default(10)
+    limit: int;
+    @default(false)
+    done: bool;
+    @default(Sort.newest)
+    sort: Sort;
+    @default([])
+    tag: list[str];
+}
+
+fn add(n: int, input: NewNote) -> result[Response] {
+    return ok(json_reply(200, input.board + ": " + input.body.text + " by " + input.author + " #" + str(len(input.body.tags))));
+}
+
+fn listing(n: int, input: Listing) -> result[Response] {
+    var sort = "newest";
+    match input.sort {
+        case newest {
+        }
+        case oldest {
+            set sort = "oldest";
+        }
+    }
+    return ok(json_reply(200, input.board + " limit " + str(input.limit) + " done " + str(input.done) + " " + sort + " tags " + join(input.tag, ",")));
+}
+
+fn routes() -> list[Route[int]] {
+    return [on_post("/boards/{board}/notes", add), on_get("/boards/{board}/notes", listing)];
+}
+
+fn show(app: App[int], method: str, path: str, body: str) uses console {
+    let r = handle_request(app, 0, with_header(request(method, path, body), "X-Author", "ada"));
+    print(method + " " + path + " " + body + " -> " + str(r.status) + " " + r.body);
+}
+
+fn main() uses console {
+    let app = new App { routes: routes(), steps: new list[Step[int]], errors: new list[ErrorStatus] };
+    show(app, "POST", "/boards/home/notes", "{\"text\": \"milk\", \"tags\": [\"shop\"]}");
+    show(app, "POST", "/boards/home/notes", "{\"tags\": [\"a\", 2]}");
+    show(app, "POST", "/boards/home/notes", "{\"text\": \"\"}");
+    show(app, "POST", "/boards/home/notes", "{\"text\": \"x\", \"tags\": [\"a\", \"b\", \"c\"], \"color\": \"red\"}");
+    show(app, "POST", "/boards/home/notes", "{\"text\": 5}");
+    show(app, "POST", "/boards/home/notes", "not json");
+    show(app, "POST", "/boards/home/notes", "");
+    show(app, "GET", "/boards/home/notes", "");
+    show(app, "GET", "/boards/home/notes?limit=3&done=true&sort=oldest&tag=a&tag=b&utm=x", "");
+    show(app, "GET", "/boards/home/notes?limit=99", "");
+    show(app, "GET", "/boards/home/notes?limit=x&done=maybe&sort=random", "");
+    show(app, "GET", "/boards/home/notes?limit=1&limit=2", "");
+    show(app, "GET", "/boards/h%C3%A9/notes?tag=a%20b", "");
+}

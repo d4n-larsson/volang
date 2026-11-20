@@ -1,15 +1,15 @@
-# A notes service: a JSON API over plain HTTP, the notes kept in the SQLite database data/notes.db.
+# A notes service: a JSON API over plain HTTP built with std.web, the notes kept in data/notes.db (SQLite).
 #   vo run main.vo                                serve on http://localhost:8080 with 4 workers until Ctrl-C
 #   vo run --record r.jsonl main.vo               ... and save every request, database call and response
 #   vo replay r.jsonl                             answer the saved requests again: no port, no files
 # The grant is `serve("8080")` (this machine only) and data/ for reading and writing.
-import api.handle;
+import api.notes_app;
 import api.open_notes;
-import std.http.serve_workers;
+import std.web.serve_app;
 
 fn main() -> result[void] uses console, file.read("data/"), file.write("data/"), serve("8080") {
     print("notes on http://localhost:8080/notes (Ctrl-C stops)");
-    try serve_workers("8080", 4, open_notes, handle);
+    try serve_app("8080", 4, open_notes, notes_app());
     print("stopped");
     return ok();
 }

@@ -1,0 +1,9 @@
+# `@header` binds a request header of a std.web operation's input; elsewhere it is E0329.
+record Login {
+    @header("X-Api-Key")
+    key: str;
+}
+
+fn main() uses console {
+    print(new Login { key: "k" }.key);
+}

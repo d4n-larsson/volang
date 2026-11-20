@@ -3,7 +3,7 @@
  * library source, builtins from the reference's table. `vo doc [--json] [NAME]` (contracts/cli.md). */
 #include "vo.h"
 
-static char *const doc_modules[] = {"json", "time", "text", "random", "http", "collections", "fs", "process", "math", "bytes", "regex", "sqlite", 0};
+static char *const doc_modules[] = {"json", "time", "text", "random", "http", "collections", "fs", "process", "math", "bytes", "regex", "sqlite", "web", 0};
 
 static Vec *doc_collect; /* doc_module and doc_builtins collect names here instead of printing */
 
@@ -122,6 +122,8 @@ void doc_tparams(SB *sb, Node *decl)
             sb_cstr(sb, ": ordered");
         else if (tp->b.i == TPC_EFFECTS)
             sb_cstr(sb, ": effects");
+        else if (tp->b.i == TPC_JSON)
+            sb_cstr(sb, ": json");
     }
     sb_byte(sb, ']');
 }

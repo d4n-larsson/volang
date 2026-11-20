@@ -1,0 +1,36 @@
+# Types without a JSON form are E0328 where they are bound, naming the part that has none.
+import std.json.Json;
+import std.json.to_json;
+import std.sqlite.Database;
+import std.sqlite.open_memory;
+
+record Handler {
+    name: str;
+    on_save: fn(int) -> int;
+}
+
+record Wrapper {
+    items: list[Handler];
+}
+
+record Conn {
+    db: Database;
+}
+
+fn twice(x: int) -> int {
+    return x * 2;
+}
+
+fn convert[T](v: T) -> Json {
+    return to_json(v);
+}
+
+fn main() {
+    let a = to_json(new Wrapper { items: [new Handler { name: "a", on_save: twice }] });
+    let by_id = new map[int, str];
+    let b = to_json(by_id);
+    let c = to_json(new ordered_map[str, int]);
+    let d = to_json(parse_int("1"));
+    let e = to_json(new Conn { db: open_memory() });
+    let f = to_json(twice);
+}

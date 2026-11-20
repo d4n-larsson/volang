@@ -83,6 +83,11 @@ class Values:
         self.types = types  # record/variant name -> doc record
 
     def inst(self, t, tv):
+        for x, v in tv.items():  # spec 029: an effect parameter (mapped to "") leaves the type: App[C, E] -> App[int]
+            if v == "":
+                t = re.sub(rf",\s*(uses )?{x}\b", "", t)
+                t = re.sub(rf"\[(uses )?{x}\]", "", t)
+                t = re.sub(rf"\s*\buses {x}\b", "", t)
         return re.sub(r"\b[A-Z]\b", lambda m: tv.get(m.group(0), m.group(0)), t)
 
     def value(self, t, tv):
@@ -209,11 +214,13 @@ def main():
 
     def probe(label, imports, effects, params, ret, tvars, test_only=False, name=None, rows=()):
         nonlocal calls
-        tv = {k: "int" for k in tvars}
+        tv = {k: "" if v == "effects" else "int" for k, v in tvars.items()}
         void = ret in (None, "void")
         args = [vals.value(t, tv) for _, t in params]
         if label == "std.sqlite.sql":  # spec 026: the literal is checked SQL
             args = ['"select 1"']
+        if label.startswith("std.web.on_"):  # spec 029: the pattern is a checked literal
+            args[0] = '"/x"'
         # spec 014: a type parameter only the result mentions comes from a declared type
         free = [x for x in re.findall(r"\b[A-Z]\b", ret or "") if not any(re.search(rf"\b{x}\b", t) for _, t in params)]
         annot = vals.inst(ret, tv) if free and not void else None
@@ -283,7 +290,7 @@ def main():
         for r in rs:
             label = f"{module}.{r['name']}"
             if r["item"] == "fn":
-                tvars = {t.split(":")[0].strip(): "*" for t in r["tparams"]}
+                tvars = {t.split(":")[0].strip(): "effects" if t.strip().endswith(": effects") else "*" for t in r["tparams"]}
                 params = [(p["name"], p["type"]) for p in r["params"]]
                 probe(label, [label], [e for e in r["effects"] if not re.fullmatch(r"[A-Z]", e)], params,
                       r["returns"], tvars, name=r["name"])
@@ -307,6 +314,9 @@ def main():
             # spec 021: an example in another module may make its bytes with std.bytes functions
             extra = [f"std.bytes.{r2['name']}" for r2 in items.get("std.bytes", [])
                      if module != "std.bytes" and re.search(r"\b" + r2["name"] + r"\(", ex)]
+            # spec 029: an example may name another module's types (std.web's use std.http's Request, Response)
+            extra += [q for n, q in TYPE_PATHS.items()
+                      if q not in every and q not in extra and n[0].isupper() and re.search(rf"\b{n}\b", ex)]
             src = "".join(f"import {i};\n" for i in every + extra) + \
                 f"\nfn main() uses {', '.join(map(scoped, eff))} {{\n    {setup}print({show});\n}}\n"
             code, out, err = run(src)

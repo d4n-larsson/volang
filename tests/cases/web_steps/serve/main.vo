@@ -1,0 +1,73 @@
+# serve_app (spec 029 US6): an application served by worker processes, each with its own database
+# connection as context; real requests over HTTP, a 404, a 422, health; SIGTERM stops it cleanly.
+import std.http.Response;
+import std.sqlite.Database;
+import std.sqlite.Value;
+import std.sqlite.exec;
+import std.sqlite.get_str;
+import std.sqlite.open;
+import std.sqlite.query;
+import std.sqlite.sql;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.HealthCheck;
+import std.web.Route;
+import std.web.Step;
+import std.web.created;
+import std.web.health_route;
+import std.web.json_reply;
+import std.web.on_get;
+import std.web.on_post;
+import std.web.serve_app;
+
+record Notes {
+    db: Database[uses file.read, file.write];
+}
+
+record NoteText {
+    @size(1, 50)
+    text: str;
+}
+
+record NewNote {
+    body: NoteText;
+}
+
+record NoteId {
+    id: int;
+}
+
+fn open_notes() -> result[Notes] uses file.read("data/"), file.write("data/") {
+    let db = try open("data/notes.db");
+    let _ = try exec(db, sql("create table if not exists notes (id integer primary key, text text not null)"), new list[Value]);
+    return ok(new Notes { db: db });
+}
+
+fn add(app: Notes, input: NewNote) -> result[Response] uses file.read("data/"), file.write("data/") {
+    let c = try exec(app.db, sql("insert into notes (text) values (?)"), [Value.text(input.body.text)]);
+    return ok(created("/notes/" + str(c.last_id), c.last_id));
+}
+
+fn show(app: Notes, input: NoteId) -> result[Response] uses file.read("data/"), file.write("data/") {
+    let rows = try query(app.db, sql("select text from notes where id = ?"), [Value.integer(input.id)]);
+    if len(rows) == 0 {
+        return err("not_found: no note " + str(input.id));
+    }
+    return ok(json_reply(200, try get_str(rows[0], "text")));
+}
+
+fn db_alive(app: Notes) -> result[void] uses file.read("data/"), file.write("data/") {
+    let _ = try query(app.db, sql("select 1"), new list[Value]);
+    return ok();
+}
+
+fn routes() -> list[Route[Notes, uses file.read, file.write]] {
+    return [on_post("/notes", add), on_get("/notes/{id}", show), health_route([new HealthCheck { name: "database", check: db_alive }])];
+}
+
+fn main() -> result[void] uses console, file.read("data/"), file.write("data/"), serve("{vport}") {
+    print("serving");
+    try serve_app("{vport}", 2, open_notes, new App { routes: routes(), steps: new list[Step[Notes, uses file.read, file.write]], errors: new list[ErrorStatus] });
+    print("stopped");
+    return ok();
+}

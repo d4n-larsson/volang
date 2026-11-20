@@ -1,0 +1,25 @@
+# The table's declared effects must cover each function's: a function writing files does not fit
+# `Route[uses file.read]` (E0502).
+record Route[E: effects] {
+    name: str;
+    run: fn(int) -> int uses E;
+}
+
+fn route[E: effects](name: str, f: fn(int) -> int uses E) -> Route[E] {
+    return new Route { name: name, run: f };
+}
+
+fn save(x: int) -> int uses file.write("data/") {
+    match write_file("data/x.txt", str(x)) {
+        case ok() {
+            return x;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn table() -> list[Route[uses file.read]] {
+    return [route("save", save)];
+}

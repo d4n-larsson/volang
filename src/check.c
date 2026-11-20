@@ -839,8 +839,9 @@ void resolve_item_types(Node *item)
             Node *m = vec_get(members, i);
             if (m->kind == N_COMMENT) continue;
             check_naming(m->a.n, 0);
-            if (m->b.n) resolve_type(m->b.n);
+            if (m->b.n) m->b.n->type = resolve_type(m->b.n);
         }
+        if (item->kind == N_RECORD) check_field_annotations(item); /* spec 029 */
     }
 }
 

@@ -1,0 +1,67 @@
+# Answers and errors in one form (spec 029 US3): helpers for 200/201/204, a hand-built Response passed
+# through, `err("kind: detail")` mapped by the default table and the application's entries, any other
+# err and a runtime error answered 500 with no detail.
+import std.http.Header;
+import std.http.Response;
+import std.http.header;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.Route;
+import std.web.Step;
+import std.web.created;
+import std.web.error_status;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.no_content;
+import std.web.on_get;
+import std.web.request;
+
+record Item {
+    id: int;
+    name: str;
+}
+
+record Fail {
+    kind: str;
+}
+
+fn answer(n: int, input: Fail) -> result[Response] {
+    if input.kind == "ok" {
+        return ok(json_reply(200, new Item { id: 1, name: "cup" }));
+    }
+    if input.kind == "created" {
+        return ok(created("/items/2", new Item { id: 2, name: "pot" }));
+    }
+    if input.kind == "none" {
+        return ok(no_content());
+    }
+    if input.kind == "accepted" {
+        return ok(json_reply(202, "queued"));
+    }
+    if input.kind == "raw" {
+        return ok(new Response { status: 302, headers: [new Header { name: "Location", value: "/elsewhere" }], body: "" });
+    }
+    if input.kind == "crash" {
+        return ok(json_reply(200, 10 / (len(input.kind) - 5)));
+    }
+    if input.kind == "plain" {
+        return err("disk full");
+    }
+    return err(input.kind + ": the " + input.kind + " detail");
+}
+
+fn routes() -> list[Route[int]] {
+    return [on_get("/{kind}", answer)];
+}
+
+fn main() uses console {
+    let app = new App { routes: routes(), steps: new list[Step[int]], errors: [error_status("quota", 429), error_status("conflict", 423)] };
+    for kind in ["ok", "created", "none", "accepted", "raw", "bad_request", "unauthorized", "forbidden", "not_found", "conflict", "gone", "unprocessable", "quota", "teapot", "plain", "crash"] {
+        let r = handle_request(app, 0, request("GET", "/" + kind, ""));
+        var extra = "";
+        for h in r.headers {
+            set extra = extra + " [" + h.name + ": " + h.value + "]";
+        }
+        print(kind + " -> " + str(r.status) + extra + " " + r.body);
+    }
+}

@@ -1,0 +1,52 @@
+$ request POST /notes '{"text":"milk"}'
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /notes/1
+Content-Length: 1
+Connection: close
+
+1
+--- end
+$ request POST /notes '{"text":"bread"}'
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /notes/2
+Content-Length: 1
+Connection: close
+
+2
+--- end
+$ request GET /notes/2
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 7
+Connection: close
+
+"bread"
+--- end
+$ request GET /notes/7
+HTTP/1.1 404 Not Found
+Content-Type: application/problem+json
+Content-Length: 76
+Connection: close
+
+{"type":"about:blank","title":"Not Found","status":404,"detail":"no note 7"}
+--- end
+$ request POST /notes '{"txt":"x"}'
+HTTP/1.1 400 Bad Request
+Content-Type: application/problem+json
+Content-Length: 145
+Connection: close
+
+{"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"txt","reason":"unknown field"},{"field":"text","reason":"missing"}]}
+--- end
+$ signal TERM
+serving
+stopped
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+serving
+stopped
+--- stderr
+--- exit 0

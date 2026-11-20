@@ -1,0 +1,16 @@
+ok -> 200 [Content-Type: application/json] {"id":1,"name":"cup"}
+created -> 201 [Content-Type: application/json] [Location: /items/2] {"id":2,"name":"pot"}
+none -> 204 
+accepted -> 202 [Content-Type: application/json] "queued"
+raw -> 302 [Location: /elsewhere] 
+bad_request -> 400 [Content-Type: application/problem+json] {"type":"about:blank","title":"Bad Request","status":400,"detail":"the bad_request detail"}
+unauthorized -> 401 [Content-Type: application/problem+json] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"the unauthorized detail"}
+forbidden -> 403 [Content-Type: application/problem+json] {"type":"about:blank","title":"Forbidden","status":403,"detail":"the forbidden detail"}
+not_found -> 404 [Content-Type: application/problem+json] {"type":"about:blank","title":"Not Found","status":404,"detail":"the not_found detail"}
+conflict -> 423 [Content-Type: application/problem+json] {"type":"about:blank","title":"Error","status":423,"detail":"the conflict detail"}
+gone -> 410 [Content-Type: application/problem+json] {"type":"about:blank","title":"Gone","status":410,"detail":"the gone detail"}
+unprocessable -> 422 [Content-Type: application/problem+json] {"type":"about:blank","title":"Unprocessable Content","status":422,"detail":"the unprocessable detail"}
+quota -> 429 [Content-Type: application/problem+json] {"type":"about:blank","title":"Too Many Requests","status":429,"detail":"the quota detail"}
+teapot -> 500 [Content-Type: application/problem+json] [Vo-Error: teapot: the teapot detail] {"type":"about:blank","title":"Internal Server Error","status":500}
+plain -> 500 [Content-Type: application/problem+json] [Vo-Error: disk full] {"type":"about:blank","title":"Internal Server Error","status":500}
+crash -> 500 [Content-Type: application/problem+json] {"type":"about:blank","title":"Internal Server Error","status":500}

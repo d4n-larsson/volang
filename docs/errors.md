@@ -1801,6 +1801,156 @@ fn main() uses console {
 }
 ```
 
+## E0328 not_json
+
+A type bound to a `json` type parameter has a part with no JSON form.
+
+Fixable: sometimes
+
+`to_json`, `from_json` (std.json) and std.web convert values by their type: `int`, `float`, `bool`, `str`, `bytes`, lists, `map[str, V]`, and records and variants made of them. A function, a map with `int` keys, an ordered collection, a `result` or a value with effects (a `Database`) has no JSON form; the message names the path to it (`items[].on_save`). Keep such parts out of the record you convert: convert a record of just the data. A type parameter passed on needs the constraint itself, `T: json`; the fix adds it.
+
+### Example
+
+```vo
+import std.json.Json;
+import std.json.to_json;
+
+fn convert[T](v: T) -> Json {
+    return to_json(v);
+}
+```
+
+### Fixed
+
+```vo
+import std.json.Json;
+import std.json.to_json;
+
+fn convert[T: json](v: T) -> Json {
+    return to_json(v);
+}
+```
+
+## E0329 bad_field_annotation
+
+A record field's annotation is unknown, repeated, misplaced or does not fit the field.
+
+Fixable: sometimes
+
+Annotations on the lines above a record field limit what `from_json` (and std.web) accepts for it: `@size(min, max)` for a `str` (characters), list or map; `@range(min, max)` for an `int` or `float`, with literals of the field's type; `@pattern("re")` for a `str`; `@default(v)` for a scalar, an enum-like variant (`Priority.normal`) or a list (`[]` only), which makes the field optional and must keep the field's other limits; `@header("Name")` for a scalar field of a std.web input record. Each at most once per field; a variant case takes none, and an annotation must have a field below it. A misspelled name gets the nearest one as a fix, a whole number in a `float` range gets `.0`. A field of another type (a record) cannot have a default: make it a list of at most one item to make it optional.
+
+### Example
+
+```vo
+record NewNote {
+    @sise(1, 200)
+    text: str;
+}
+```
+
+### Fixed
+
+```vo
+record NewNote {
+    @size(1, 200)
+    text: str;
+}
+```
+
+## E0330 bad_route_pattern
+
+A std.web route pattern is not a literal, is malformed, or names a variable its operation cannot take.
+
+Fixable: no
+
+A route pattern is a string literal (so it can be checked): `/`, then segments separated by `/`, each either letters, digits, `-`, `_`, `.` and `~`, or a variable `{name}` that is a whole segment; no empty segment and no `/` at the end (except the pattern `/`). Each variable appears once, and the operation's input record has a field of that name whose type a path can give: `str`, `int`, `float`, `bool` or an enum-like variant.
+
+### Example
+
+```vo
+import std.http.Response;
+import std.web.Route;
+import std.web.no_content;
+import std.web.on_get;
+
+record NoteId {
+    id: int;
+}
+
+fn show(n: int, input: NoteId) -> result[Response] {
+    return ok(no_content());
+}
+
+fn routes() -> list[Route[int]] {
+    return [on_get("/notes/{note}", show)];
+}
+```
+
+### Fixed
+
+```vo
+import std.http.Response;
+import std.web.Route;
+import std.web.no_content;
+import std.web.on_get;
+
+record NoteId {
+    id: int;
+}
+
+fn show(n: int, input: NoteId) -> result[Response] {
+    return ok(no_content());
+}
+
+fn routes() -> list[Route[int]] {
+    return [on_get("/notes/{id}", show)];
+}
+```
+
+## E0331 route_conflict
+
+Two routes of one table and one method match the same paths.
+
+Fixable: no
+
+A request goes to the route whose pattern matches; where two patterns differ, a literal segment beats a variable (`/notes/latest` before `/notes/{id}`). Two routes of the same method whose patterns have the same literal segments and variables in the same places (`/notes/{id}` and `/notes/{name}`) match the same requests, so the second could never answer. Make the patterns differ, or remove one. Tables built in code, not written in one list, are checked when the application is served.
+
+### Example
+
+```vo
+import std.http.Response;
+import std.web.NoInput;
+import std.web.Route;
+import std.web.no_content;
+import std.web.on_get;
+
+fn a(n: int, input: NoInput) -> result[Response] {
+    return ok(no_content());
+}
+
+fn routes() -> list[Route[int]] {
+    return [on_get("/notes", a), on_get("/notes", a)];
+}
+```
+
+### Fixed
+
+```vo
+import std.http.Response;
+import std.web.NoInput;
+import std.web.Route;
+import std.web.no_content;
+import std.web.on_get;
+
+fn a(n: int, input: NoInput) -> result[Response] {
+    return ok(no_content());
+}
+
+fn routes() -> list[Route[int]] {
+    return [on_get("/notes", a), on_get("/notes/all", a)];
+}
+```
+
 ## E0401 non_exhaustive_match
 
 A `match` does not handle every case.

@@ -74,8 +74,73 @@ void order_error(Type *t, Node *node, char *needed_by)
 }
 
 /* E0313 when an `ordered` type parameter gets a type without an order. 1 = fine. */
+/* Spec 029: 0 when t converts to and from JSON (research R2); otherwise why the first part that does not
+ * cannot, with its path from the top (`items[].on_save` is a function). */
+static Str *json_part(Str *path, char *what, Str *a)
+{
+    Str *w = msg(what, a, 0, 0);
+    return path->len ? msg("`$1` $2", path, w, 0) : msg("it $1", w, 0, 0);
+}
+
+static Vec *json_seen; /* the records and variants already looked at in this check (recursive types) */
+
+static Str *json_why(Type *t, Str *path, long depth)
+{
+    if (!t || depth > 64) return 0;
+    switch (t->kind) {
+    case TY_INT:
+    case TY_FLOAT:
+    case TY_BOOL:
+    case TY_STR:
+    case TY_BYTES:
+    case TY_ERROR: return 0;
+    case TY_PARAM:
+        if (t->b.i == TPC_JSON) return 0;
+        return json_part(path, "is the type parameter `$1`, which needs `: json`", ty_param_name(t));
+    case TY_LIST: return json_why(t->a.t, msg("$1[]", path, 0, 0), depth + 1);
+    case TY_MAP:
+        if (t->a.t->kind != TY_STR) return json_part(path, "is a map with `$1` keys (JSON keys are text)", ty_name(t->a.t));
+        return json_why(t->b.t, msg("$1[]", path, 0, 0), depth + 1);
+    case TY_RECORD:
+    case TY_VARIANT: {
+        for (long i = 0; i < json_seen->n; i++)
+            if (vec_get(json_seen, i) == t) return 0; /* (each instance once: recursive types end) */
+        vec_push(json_seen, t);
+        Node *decl = t->decl.n;
+        Vec *tps = ty_tparams_of(decl);
+        for (long i = 0; tps && i < tps->n; i++)
+            if (((Node *)vec_get(tps, i))->b.i == TPC_EFFECTS) return json_part(path, "is `$1`, which has effects", ty_name(t));
+        Vec *ms = decl->b.v;
+        for (long i = 0; i < ms->n; i++) {
+            Node *m = vec_get(ms, i);
+            if (m->kind == N_COMMENT || !m->b.n || !m->b.n->type) continue;
+            Type *mt = tps && tps->n && t->b.v ? ty_subst(m->b.n->type, decl, t->b.v) : m->b.n->type;
+            Str *p = path->len ? msg("$1.$2", path, m->a.n->a.s, 0) : m->a.n->a.s;
+            Str *why = json_why(mt, p, depth + 1);
+            if (why) return why;
+        }
+        return 0;
+    }
+    case TY_FUNC: return json_part(path, "is a function", 0);
+    case TY_RESULT: return json_part(path, "is a result", 0);
+    default: return json_part(path, "is `$1`, which has no JSON form", ty_name(t));
+    }
+}
+
 int check_targ(Type *t, Node *tparam, Node *node, Str *owner_name)
 {
+    if (tparam->b.i == TPC_JSON) { /* spec 029: E0328 */
+        json_seen = vec_new();
+        Str *why = json_why(t, str_from_cstr(""), 0);
+        if (!why) return 1;
+        Diag *d = ck_err("E0328", node, msg("`$1` cannot be converted to JSON: $2.", ty_name(t), why, 0));
+        if (t->kind == TY_PARAM && !t->b.i) { /* a bare `T`: the fix declares it `T: json` */
+            Vec *tps = ty_tparams_of(t->decl.n);
+            Node *nn = tps ? ((Node *)vec_get(tps, t->a.i))->a.n : 0;
+            if (nn) diag_add_fix(d, (int)nn->file, nn->end, nn->end, str_from_cstr(": json"));
+        }
+        return 0;
+    }
     if (tparam->b.i != TPC_ORDERED || ty_ordered(t)) return 1;
     if (t->kind == TY_RECORD) {
         order_error(t, node, 0);
@@ -286,12 +351,26 @@ int needs_context(Node *v)
            (v->kind == N_CALL && v->b.v && !v->b.v->n);
 }
 
+Node *ck_infer_owner; /* spec 029: the generic call whose deferred argument is being checked, or 0 */
+
 /* A call of a generic function: arguments, inference, constraints, effects; the return type. */
 Type *check_generic_call(Node *call, Node *decl, Type *expected)
 {
     Vec *tparams = ty_tparams_of(decl);
     Type **b = alloc(tparams->n * 8); /* bindings */
     if (!check_argc(call, decl->b.v->n)) return t_error;
+    if (expected) { /* spec 029 (R10): parameters the expected type determines are bound first, so function
+                       values with fewer effects fit (checked again below, E0502 otherwise) */
+        Type **eb = alloc(tparams->n * 8);
+        Node *outer = ck_infer_owner; /* (checked as a later argument of another generic call: its own
+                                         parameters are still open in expected; what does not mention them is
+                                         kept even when the rest does not match) */
+        ck_infer_owner = 0;
+        int all = ty_unify(decl->type, expected, decl, eb);
+        if (all || outer)
+            for (long i = 0; i < tparams->n; i++)
+                if (eb[i] && !ty_bad(eb[i]) && !(outer && ty_mentions_owner(eb[i], outer))) b[i] = eb[i];
+    }
     long unified = 0; /* bit i: argument i unified (spec 013: only those are checked again) */
     long deferred = 0; /* bit i: argument i takes its type from the parameter (spec 014, R8): checked last */
     for (long pass = 0; pass < 2; pass++) {
@@ -305,13 +384,26 @@ Type *check_generic_call(Node *call, Node *decl, Type *expected)
             }
             if (pass && (i >= 63 || !(deferred >> i & 1))) continue;
             Type *want = ty_has_params(pt) ? 0 : pt; /* nothing to infer: check directly */
+            if (!want && !pass) { /* spec 029: what the expected type already bound makes it known */
+                Type *known = ty_subst_bindings(pt, decl, b);
+                if (!ty_mentions_owner(known, decl) && !ty_has_func(known)) want = known;
+            }
             if (pass) { /* the parameter's type as far as the other arguments made it known */
                 Type *known = ty_subst_bindings(pt, decl, b);
                 if (!ty_mentions_owner(known, decl)) want = known;
             }
             /* spec 028: a generic function named as a value is instantiated from the parameter's type; its
                effects bind the parameter's effect parameter (checked again below, as function values are) */
-            Type *at = pass && an->kind == N_IDENT ? check_expr(an, ty_subst_bindings(pt, decl, b)) : check_arg(call, i, want);
+            Type *at;
+            if (pass && (an->kind == N_IDENT || an->kind == N_CALL)) { /* spec 029: a generic value or call that
+                                                                          takes its type from this parameter */
+                Node *saved = ck_infer_owner;
+                ck_infer_owner = decl;
+                at = check_expr(an, ty_subst_bindings(pt, decl, b));
+                ck_infer_owner = saved;
+            } else {
+                at = check_arg(call, i, want);
+            }
             if (ty_unify(pt, at, decl, b)) {
                 if (i < 63) unified |= 1L << i;
                 continue;

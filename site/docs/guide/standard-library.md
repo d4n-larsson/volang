@@ -163,7 +163,7 @@ Details: [std.time](../std/time.md).
 
 
 `sleep(ms)` waits (needs `clock`): for retries, polling and rate limits. With the real clock it really
-waits, without using the processor, and never past `--timeout` (R0009). With a fixed clock, as in every
+waits, without using the processor, and never past `--timeout` ([R0009](../errors/R0009.md)). With a fixed clock, as in every
 `vo test` and with `--clock-ms`, it returns at once and moves the clock on, so code that sleeps is tested
 instantly and exactly; `vo replay` does not wait either.
 
@@ -397,7 +397,8 @@ fn main() -> result[void] uses file.read("data/"), file.write("data/"), serve("8
 `vo run --workers N main.vo` overrides the count. A handler that fails answers 500 and its worker goes
 on; a worker that dies is replaced; Ctrl-C or SIGTERM answers the requests already read, then
 `serve_workers` returns `ok()`. A recording keeps each request's inputs together, and `vo replay` runs
-the requests one at a time in one process, with the same responses.
+the requests one at a time in one process, with the same responses. For an API, `std.web` adds routes,
+typed input, JSON answers and error bodies on top: see [Building APIs](apis.md).
 
 A server can be recorded and replayed like any program (see [Determinism](determinism.md)). Details:
 [std.http](../std/http.md); the [notes-api](../examples/notes-api.md) and
@@ -445,7 +446,7 @@ not UTF-8 at byte 4
 - **Text is always text.** Every `str` is valid UTF-8: text read from files, standard input,
   arguments, the environment, other programs and HTTP is checked when it is read. `read_file` of a file
   that is not UTF-8 returns `err("not UTF-8 at byte N (std.fs.read_bytes reads any bytes)")`;
-  `read_all` and `args`, which return no `result`, stop with R0007. Read such data as `bytes`.
+  `read_all` and `args`, which return no `result`, stop with [R0007](../errors/R0007.md). Read such data as `bytes`.
 - **Hex and base64**: `to_hex`/`from_hex` and `to_base64`/`from_base64` (RFC 4648, padded); decoding
   returns an `err` naming the first invalid position.
 - **Every bytes function has a text twin**: `read_bytes`, `write_bytes`, `append_bytes` (`std.fs`),

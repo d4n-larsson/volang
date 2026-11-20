@@ -797,3 +797,15 @@ export fn bool_field(j: Json, key: str) -> result[bool] {
         }
     }
 }
+
+# The JSON form of v (spec 029): a record is an object of its fields, a list an array, a map[str, V] an object, a case without a value its name, a case with one {"case": value}, bytes base64.
+#     to_json([1, 2]) == Json.array([Json.integer(1), Json.integer(2)]) is true
+export fn to_json[T: json](v: T) -> Json {
+    return __to_json(v);
+}
+
+# The value of type T that j describes (spec 029): unknown keys, missing fields (without @default), wrong types and broken field limits are each a problem; err lists them all as "path: reason; ...".
+#     from_json(Json.integer(3)) == ok(3) is true
+export fn from_json[T: json](j: Json) -> result[T] {
+    return __from_json(j, 0);
+}

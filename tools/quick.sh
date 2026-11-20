@@ -19,6 +19,7 @@ cases() {
     sqlite) echo "sqlite sqlite_steps generic fmt lex doc" ;;
     structure) echo "structure test test_steps check" ;;
     serve_workers) echo "serve serve_concurrent serve_workers_steps replay" ;;
+    web) echo "json_derive annotations web web_steps generic json" ;;
     bytes) echo "bytes bytes_steps run doc" ;;
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
@@ -46,6 +47,7 @@ scripts() { # one per line, with arguments
     sqlite) printf '%s\n' apply_fixes.py catalog.py doc_conformance.py "sqlite_scope.py --quick" "sqlite_fuzz.py --count 1000" ;;
     structure) printf '%s\n' apply_fixes.py catalog.py structure_corpus.py ;;
     serve_workers) printf '%s\n' doc_conformance.py "serve_workers.py --quick" ;;
+    web) printf '%s\n' doc_conformance.py "web_fuzz.py --quick" ;;
     bytes) echo doc_conformance.py ;;
     float) printf '%s\n' math_vectors.py json_corpus.py json_stream.py ref_examples.py doc_conformance.py ;;
     json) printf '%s\n' json_corpus.py json_stream.py doc_conformance.py ;;
@@ -74,6 +76,7 @@ area_of() {
     src/sqlite_*.c|src/check_sqlite.c|std/sqlite.vo|third_party/sqlite/*|tests/sqlite_*.py) echo sqlite ;; # spec 026
     src/check_structure.c|tests/structure_*.py|tests/structure_seeds/*) echo structure ;; # spec 027
     src/serve.c|src/serve_workers.c|std/http.vo|tests/serve_workers*.py) echo serve_workers ;; # spec 028
+    src/json_derive.c|src/check_web.c|std/web.vo|std/json.vo|tests/web_*.py) echo web ;; # spec 029
     src/num.c|src/stdprim.c) echo float ;;
     src/bytes.c|std/bytes.vo|tests/bytes/*|tests/bytes_*.py|tests/process_helpers/allbytes) echo bytes ;;
     std/json.vo) echo json ;;
@@ -125,7 +128,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers bytes float json text time random collections http fs front query testing tasks trace packages docs cli)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web bytes float json text time random collections http fs front query testing tasks trace packages docs cli)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done
@@ -148,7 +151,10 @@ paths=""; for d in $dirs; do [ -d tests/cases/$d ] && paths="$paths tests/cases/
 steps_paths=""; for p in $paths; do [ -n "$(find $p -name steps -print -quit)" ] && steps_paths="$steps_paths $p"; done
 [ -n "$steps_paths" ] && step "step cases" python3 tests/steps.py $steps_paths
 printf '%s\n' "$scr" | grep . > "$root/build/quick.scripts"
-while IFS= read -r s; do step "$s" sh -c "python3 tests/$s" </dev/null; done < "$root/build/quick.scripts"
+while IFS= read -r s; do
+    [ -f "tests/${s%% *}" ] || { echo "  skip $s (not created yet)"; continue; }
+    step "$s" sh -c "python3 tests/$s" </dev/null
+done < "$root/build/quick.scripts"
 for t in $tgt; do step "make $t" make -s --no-print-directory $t; done
 [ $fail = 0 ] && echo "quick: passed (make test before the change is complete)" || echo "quick: FAILED"
 exit $fail

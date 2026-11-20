@@ -1,0 +1,4 @@
+effects_from_expected_narrow.vo:24:27: error[E0502]: This function uses file.write("data/"), which `fn(int) -> int uses file.read` does not allow.
+  24 |     return [route("save", save)];
+     |                           ^^^^
+1 error, 0 warnings

@@ -1,0 +1,35 @@
+# A table of generic records whose effects come from the table's declared type: a pure function and one
+# reading files both fit `Route[uses file.read]`.
+record Route[E: effects] {
+    name: str;
+    run: fn(int) -> int uses E;
+}
+
+fn route[E: effects](name: str, f: fn(int) -> int uses E) -> Route[E] {
+    return new Route { name: name, run: f };
+}
+
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn plus_len(x: int) -> int uses file.read("data/") {
+    match read_file("data/a.txt") {
+        case ok(t) {
+            return x + len(t);
+        }
+        case err(_) {
+            return x;
+        }
+    }
+}
+
+fn table() -> list[Route[uses file.read]] {
+    return [route("double", double), route("plus_len", plus_len)];
+}
+
+fn main() uses console, file.read("data/") {
+    for r in table() {
+        print(r.name + " " + str(r.run(3)));
+    }
+}

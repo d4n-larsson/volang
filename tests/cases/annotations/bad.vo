@@ -1,0 +1,46 @@
+# Misused field annotations: each is E0329, all reported in one pass.
+record Wrong {
+    @sise(1, 2)
+    a: str;
+    @size(1, 2)
+    @size(1, 3)
+    b: str;
+    @size(1, 2)
+    c: int;
+    @range(1, 2)
+    d: str;
+    @range(5, 1)
+    e: int;
+    @default("x")
+    f: int;
+    @range(1, 5)
+    @default(0)
+    g: int;
+    @default(["x"])
+    h: list[str];
+    @default(new Inner { x: 1 })
+    i: Inner;
+    @size(-1, 2)
+    j: str;
+    @range(1.5, 2.5)
+    k: int;
+    @size(1)
+    l: str;
+    @size(0, 2)
+    @default("abc")
+    m: str;
+}
+
+record Inner {
+    x: int;
+}
+
+variant V {
+    @size(1, 2)
+    one;
+}
+
+record Trailing {
+    x: int;
+    @default(1)
+}

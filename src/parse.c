@@ -458,7 +458,7 @@ static void parse_record_literal(Node *n)
     n->d.v = parse_type_args();
     n->b.v = vec_new();
     p_expect(T_LBRACE);
-    if (p_failed()) return;
+    if (p_failed() || p_accept(T_RBRACE)) return; /* spec 029: `new Name {}` for a record without fields */
     do {
         long start = p_start();
         Node *init = p_node(N_FINIT);
@@ -1057,9 +1057,11 @@ static Vec *parse_tparams(void)
                     c = TPC_ORDERED;
                 else if (str_eq_cstr(p_tok_str(p_tok()), "effects"))
                     c = TPC_EFFECTS;
+                else if (str_eq_cstr(p_tok_str(p_tok()), "json"))
+                    c = TPC_JSON;
             }
             if (!c) {
-                p_fail_c("`ordered` or `effects`", "constraint");
+                p_fail_c("`ordered`, `effects` or `json`", "constraint");
                 return v;
             }
             t->b.i = c;
@@ -1174,6 +1176,7 @@ static Node *parse_uses(void)
 static Vec *parse_members(int kind)
 {
     Vec *v = vec_new();
+    Vec *notes = 0; /* spec 029: field annotations waiting for their field */
     p_expect(T_LBRACE);
     for (;;) {
         if (p_failed()) return v;
@@ -1185,7 +1188,26 @@ static Vec *parse_members(int kind)
             continue;
         }
         long start = p_start();
+        if (k == T_AT) { /* spec 029: @name(literal, ...) on the line above a record field */
+            Node *a = p_node(N_ANNOTATION);
+            p_next();
+            a->a.n = p_name();
+            if (!a->a.n || p_kind() != T_LPAREN) {
+                p_expect(T_LPAREN);
+                return v;
+            }
+            a->b.v = parse_args();
+            p_finish(a, start);
+            if (kind != N_FIELD_DECL)
+                diag_add("E0329", SEV_ERROR, (int)cur_file, a->start, a->end,
+                         str_from_cstr("Annotations limit record fields; a variant case takes none."));
+            if (!notes) notes = vec_new();
+            vec_push(notes, a);
+            continue;
+        }
         Node *m = p_node(kind);
+        if (kind == N_FIELD_DECL) m->c.v = notes;
+        notes = 0;
         m->a.n = p_name();
         if (kind == N_FIELD_DECL) {
             p_expect(T_COLON);
@@ -1196,6 +1218,11 @@ static Vec *parse_members(int kind)
         }
         if (!p_member_comma()) p_end_stmt(); /* `x: int,`: members end with `;` */
         vec_push(v, p_finish(m, start));
+    }
+    if (notes) {
+        Node *a = vec_get(notes, notes->n - 1);
+        diag_add("E0329", SEV_ERROR, (int)cur_file, a->start, a->end,
+                 str_from_cstr("An annotation goes on the line right above the field it limits."));
     }
     p_expect(T_RBRACE);
     return v;

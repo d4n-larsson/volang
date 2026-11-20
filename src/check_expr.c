@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 93 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 97 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -43,6 +43,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__re_compile", "__re", "__re_repl", /* spec 025 */
     "__sql_open", "__sql_close", "__sql_exec", "__sql_query", "__sql_tx", "__sql_prepare", /* spec 026 */
     "__serve_workers", /* spec 028 */
+    "__to_json", "__from_json", "__json_fields", "__json_text", /* spec 029 */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -63,6 +64,8 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
 
 #define M_NO_FIELD "`$1` has no field `$2`."
 #define M_NO_CASE "`$1` is not a case of `$2`."
+
+static int ok_from_value; /* spec 029: the next ok(v) takes its type from v (compared with a generic call) */
 
 Node *ck_stmt_call; /* the call of the expression statement being checked (hole statements) */
 
@@ -295,6 +298,23 @@ Type *check_builtin(Node *call, long id, Type *expected)
         check_arg(call, 2, 0);
         return expected ? expected : infer_error(call, expected);
     }
+    if (id == B_JSON_TEXT) { /* spec 029: __json_text(v) -> str (std.web's answers) */
+        if (!check_argc(call, 1)) return t_error;
+        check_arg(call, 0, 0);
+        return t_str;
+    }
+    if (id == B_JSON_FIELDS) { /* spec 029: __json_fields(xs: list[T]) -> list[str] (std.web's settings) */
+        if (!check_argc(call, 1)) return t_error;
+        check_arg(call, 0, 0);
+        return ty_list(t_str);
+    }
+    if (id == B_TO_JSON || id == B_FROM_JSON) { /* spec 029: std.json's to_json / from_json (typed loosely: the
+                                                   wrappers declare the types; the value's type drives it) */
+        if (!check_argc(call, id == B_TO_JSON ? 1 : 2)) return t_error;
+        check_arg(call, 0, 0);
+        if (id == B_FROM_JSON) check_arg(call, 1, t_int);
+        return expected ? expected : infer_error(call, expected);
+    }
     if (id == B_SERVE_WORKERS) { /* spec 028: __serve_workers(n, setup, answer): both functions' effects become
                                     the caller's. ponytail: typed loosely (std.http's wrappers declare the types) */
         if (!check_argc(call, 3)) return t_error;
@@ -386,6 +406,11 @@ Type *check_builtin(Node *call, long id, Type *expected)
         }
         return t_void;
     case B_OK: { /* ok(v) / ok() */
+        if (!expected && ok_from_value && call->b.v->n == 1) { /* spec 029: `from_json(j) == ok(3)` */
+            ok_from_value = 0;
+            Type *vt = check_arg(call, 0, 0);
+            return ty_bad(vt) ? t_error : ty_result(vt);
+        }
         if (!ty_is(expected, TY_RESULT)) return infer_error(call, expected);
         Type *inner = expected->a.t;
         if (ty_is(inner, TY_VOID)) {
@@ -467,7 +492,10 @@ Type *check_call(Node *call, Type *expected)
             }
             if (ty_tparams_of(call->c.n)) { /* inference */
                 Type *gt = check_generic_call(call, call->c.n, expected);
-                if (file_get((int)call->c.n->file)->std) check_sqlite_call(call); /* spec 026: exec, query */
+                if (file_get((int)call->c.n->file)->std) {
+                    check_sqlite_call(call); /* spec 026: exec, query */
+                    check_web_call(call);    /* spec 029: on_get, ... */
+                }
                 return gt;
             }
             if (check_argc(call, call->c.n->b.v->n)) {
@@ -580,8 +608,11 @@ static Type *fn_value_instance(Node *node, Node *decl, Type *ft, Type *expected)
     Type **b = alloc(tparams->n * 8);
     if (expected && expected->kind == TY_FUNC && expected->a.v->n == ft->a.v->n) {
         /* the parameters bind (the expected type's own parameters may still be open in its result) */
-        for (long i = 0; i < ft->a.v->n; i++)
-            if (!ty_unify(vec_get(ft->a.v, i), vec_get(expected->a.v, i), decl, b)) return ft; /* reported where used */
+        for (long i = 0; i < ft->a.v->n; i++) {
+            Type *ep = vec_get(expected->a.v, i);
+            if (ck_infer_owner && ty_mentions_owner(ep, ck_infer_owner)) continue; /* the outer call's open part */
+            if (!ty_unify(vec_get(ft->a.v, i), ep, decl, b)) return ft; /* reported where used */
+        }
         ty_unify(ft->b.t, expected->b.t, decl, b); /* what the parameters left open, from the result */
     }
     bind_rest(node, tparams, b, node->a.s); /* E0310 for what stays open */
@@ -727,6 +758,47 @@ Type *op_error(Node *node, Type *left, Type *right)
     return t_error;
 }
 
+/* Spec 029: whether t mentions type parameter idx of owner. */
+static int ty_has_tparam(Type *t, Node *owner, long idx)
+{
+    if (!t) return 0;
+    switch (t->kind) {
+    case TY_PARAM: return t->decl.n == owner && t->a.i == idx;
+    case TY_LIST:
+    case TY_RESULT: return ty_has_tparam(t->a.t, owner, idx);
+    case TY_MAP: return ty_has_tparam(t->a.t, owner, idx) || ty_has_tparam(t->b.t, owner, idx);
+    case TY_FUNC:
+        if (ty_has_tparam(t->b.t, owner, idx)) return 1;
+        for (long i = 0; i < t->a.v->n; i++)
+            if (ty_has_tparam(vec_get(t->a.v, i), owner, idx)) return 1;
+        return 0;
+    case TY_RECORD:
+    case TY_VARIANT:
+        for (long i = 0; t->b.v && i < t->b.v->n; i++)
+            if (ty_has_tparam(vec_get(t->b.v, i), owner, idx)) return 1;
+        return 0;
+    default: return 0;
+    }
+}
+
+/* Spec 029: a call of a generic function with a type parameter only its result names (`from_json(j)`):
+ * its type must come from where it is used. */
+static int needs_expected(Node *e)
+{
+    if (e->kind != N_CALL || !e->a.n || !e->a.n->a.s) return 0;
+    Sym *s = scope_find(e->a.n->a.s);
+    if (!s || s->kind != SYM_FN) return 0;
+    Vec *tps = ty_tparams_of(s->decl);
+    for (long k = 0; tps && k < tps->n; k++) {
+        if (((Node *)vec_get(tps, k))->b.i == TPC_EFFECTS) continue;
+        int used = 0;
+        for (long i = 0; i < s->decl->b.v->n && !used; i++)
+            used = ty_has_tparam(((Node *)vec_get(s->decl->b.v, i))->type, s->decl, k);
+        if (!used) return 1;
+    }
+    return 0;
+}
+
 Type *check_binary(Node *node)
 {
     long op = node->c.i; /* operator token */
@@ -736,8 +808,16 @@ Type *check_binary(Node *node)
         node->d.i = op == T_AND ? OP_AND : OP_OR;
         return t_bool;
     }
-    Type *l = check_expr(node->a.n, 0);
-    Type *r = check_expr(node->b.n, l);
+    Type *l, *r;
+    if ((op == T_EQ || op == T_NE) && needs_expected(node->a.n) && !needs_expected(node->b.n)) {
+        ok_from_value = 1; /* spec 029: `from_json(j) == ok(3)`: the right side gives the type */
+        r = check_expr(node->b.n, 0);
+        ok_from_value = 0;
+        l = check_expr(node->a.n, r);
+    } else {
+        l = check_expr(node->a.n, 0);
+        r = check_expr(node->b.n, l);
+    }
     if (ty_bad(l) || ty_bad(r)) return t_error;
     long k = l->kind;
     if (l != r) { /* operand types differ: E0301 when a conversion helps, else E0308 */
@@ -827,11 +907,13 @@ Type *check_unary(Node *node)
     return op_error(node, t, 0);
 }
 
-Type *check_try(Node *node)
+Type *check_try(Node *node, Type *expected)
 {
     if (!ty_is(ck_ret, TY_RESULT))
         ck_err("E0406", node, str_from_cstr("`try` can only be used in a function that returns a `result`."));
-    Type *t = check_expr(node->a.n, 0);
+    /* spec 029: `let s: Settings = try load_settings(...)`: the call's result type comes from where it is used */
+    Type *want = expected && !ty_bad(expected) && needs_expected(node->a.n) ? ty_result(expected) : 0;
+    Type *t = check_expr(node->a.n, want);
     if (ty_bad(t)) return t_error;
     if (ty_is(t, TY_RESULT)) return t->a.t;
     ck_err1("E0301", node->a.n, "`try` needs a `result`, found `$1`.", ty_name(t));
@@ -856,6 +938,7 @@ Type *check_list(Node *node, Type *expected)
         Type *t = check_expr(item, et);
         expect_type(item, et, t);
     }
+    check_web_routes(node); /* spec 029: routes of one table that collide */
     return ty_bad(et) ? t_error : ty_list(et);
 }
 
@@ -1025,7 +1108,7 @@ Type *check_expr(Node *node, Type *expected)
         case N_INDEX: t = check_index(node); break;
         case N_BINARY: t = check_binary(node); break;
         case N_UNARY: t = check_unary(node); break;
-        case N_TRY: t = check_try(node); break;
+        case N_TRY: t = check_try(node, expected); break;
         case N_LIST: t = check_list(node, expected); break;
         case N_NEW_RECORD: t = check_new_record(node, expected); break;
         case N_NEW_LIST: t = ty_list(resolve_type(node->a.n)); break;

@@ -1,0 +1,76 @@
+# The ready steps (spec 029 US5): request ids (kept when sent, else from random_id), one log line per
+# request (to stderr), CORS for listed origins, bearer tokens and API keys checked by the program's
+# function, the identity passed on as X-Identity (and never taken from the client).
+import std.http.Request;
+import std.http.Response;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.Route;
+import std.web.Step;
+import std.web.api_key_auth;
+import std.web.bearer_auth;
+import std.web.clock_ms;
+import std.web.cors;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.log_requests;
+import std.web.on_get;
+import std.web.random_id;
+import std.web.request;
+import std.web.request_ids;
+import std.web.to_stderr;
+import std.web.with_header;
+
+record Caller {
+    @header("X-Identity")
+    @default("anonymous")
+    who: str;
+}
+
+fn whoami(n: int, input: Caller) -> result[Response] {
+    return ok(json_reply(200, input.who));
+}
+
+fn token_ok(n: int, token: str) -> result[str] {
+    if token == "secret" {
+        return ok("ada");
+    }
+    return err("unknown token");
+}
+
+fn key_ok(n: int, key: str) -> result[str] {
+    if key == "k1" {
+        return ok("service-1");
+    }
+    return err("unknown key");
+}
+
+fn app() -> App[int, uses console, clock, random] {
+    let routes: list[Route[int, uses console, clock, random]] = [on_get("/me", whoami), on_get("/admin/me", whoami), on_get("/svc/me", whoami)];
+    return new App { routes: routes, steps: [request_ids(random_id), log_requests(clock_ms, to_stderr), cors(["https://app.example"]), bearer_auth("/admin", token_ok), api_key_auth("/svc", "X-Api-Key", key_ok)], errors: new list[ErrorStatus] };
+}
+
+fn show(label: str, r: Request) uses console, clock, random {
+    let resp = handle_request(app(), 0, r);
+    var hs = "";
+    for h in resp.headers {
+        if h.name != "Content-Type" {
+            set hs = hs + " [" + h.name + ": " + h.value + "]";
+        }
+    }
+    print(label + " -> " + str(resp.status) + hs + " " + resp.body);
+}
+
+fn main() uses console, clock, random {
+    show("plain", request("GET", "/me", ""));
+    show("own id", with_header(request("GET", "/me", ""), "X-Request-Id", "abc"));
+    show("spoofed identity", with_header(request("GET", "/me", ""), "X-Identity", "root"));
+    show("admin without token", request("GET", "/admin/me", ""));
+    show("admin bad token", with_header(request("GET", "/admin/me", ""), "Authorization", "Bearer nope"));
+    show("admin good token", with_header(request("GET", "/admin/me", ""), "Authorization", "Bearer secret"));
+    show("service key", with_header(request("GET", "/svc/me", ""), "X-Api-Key", "k1"));
+    show("service bad key", with_header(request("GET", "/svc/me", ""), "X-Api-Key", "k2"));
+    show("cors listed", with_header(request("GET", "/me", ""), "Origin", "https://app.example"));
+    show("cors other", with_header(request("GET", "/me", ""), "Origin", "https://evil.example"));
+    show("preflight", with_header(with_header(request("OPTIONS", "/me", ""), "Origin", "https://app.example"), "Access-Control-Request-Method", "POST"));
+}

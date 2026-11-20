@@ -41,6 +41,22 @@ static Node *pattern_literal(Node *e)
     return lit->kind == N_STR && !has_lex_error(lit) ? lit : 0;
 }
 
+/* A pattern literal (a regex call's, or a field's @pattern, spec 029): its errors reported at the bytes
+ * they name; 1 when it is valid. */
+int check_regex_literal(Node *lit)
+{
+    if (has_lex_error(lit)) return 0;
+    char *buf;
+    long *offs;
+    long n = lit_decode(lit, &buf, &offs);
+    if (n < 0) return 0;
+    ReErr e;
+    if (re_check(buf, n, &e, 0) >= 0) return 1;
+    Diag *d = diag_add(e.code, SEV_ERROR, (int)lit->file, offs[e.start], offs[e.end], re_err_text(buf, &e));
+    if (e.fix) diag_add_fix(d, (int)lit->file, offs[e.start], offs[e.end], str_from_cstr(e.fix));
+    return 0;
+}
+
 static void check_pattern(Node *call)
 {
     Node *lit = vec_get(call->b.v, 0);
@@ -49,15 +65,7 @@ static void check_pattern(Node *call)
                                            "`parse_regex(s)` for a pattern built at run time."));
         return;
     }
-    if (has_lex_error(lit)) return;
-    char *buf;
-    long *offs;
-    long n = lit_decode(lit, &buf, &offs);
-    if (n < 0) return;
-    ReErr e;
-    if (re_check(buf, n, &e, 0) >= 0) return;
-    Diag *d = diag_add(e.code, SEV_ERROR, (int)lit->file, offs[e.start], offs[e.end], re_err_text(buf, &e));
-    if (e.fix) diag_add_fix(d, (int)lit->file, offs[e.start], offs[e.end], str_from_cstr(e.fix));
+    check_regex_literal(lit);
 }
 
 static void check_replacement(Node *call)

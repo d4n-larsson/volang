@@ -1,0 +1,5 @@
+PASS a greeting is created with its id and text (0ms)
+PASS the language comes from a header (0ms)
+PASS a long name is 422 naming the field (0ms)
+PASS the same request gives the same answer (0ms)
+4 passed, 0 failed

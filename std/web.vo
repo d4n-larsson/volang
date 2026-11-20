@@ -1,0 +1,860 @@
+# std.web: Building HTTP APIs: a route table, typed request input, JSON answers, errors mapped in one place, steps around requests, settings, health, and tests without a network.
+# Part of the vo standard library (spec 029). Import items one by one: `import std.web.NAME;`.
+# An application is a value: `web_app(routes)`, or `new App { routes: ..., steps: ..., errors: ... }` with steps and error kinds, served with serve_app
+# (worker processes, as serve_workers) or called in tests with handle_request. An operation is
+# `fn(ctx: C, input: I) -> result[Response]`: C is the context every operation gets (a database, settings),
+# I a record whose fields take the path variable of their name, the JSON body (a field named `body`), a
+# header (`@header("Name")`) or else the query parameter of their name; input that does not fit (types,
+# missing fields, field limits) is answered 400 or 422 and the operation does not run.
+# Errors are `err("kind: detail")`: bad_request 400, unauthorized 401, forbidden 403, not_found 404,
+# conflict 409, gone 410, unprocessable 422, and the kinds in App.errors; any other err is 500.
+import std.bytes.from_hex;
+import std.bytes.from_text;
+import std.bytes.to_text;
+import std.fs.Info;
+import std.fs.info;
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve_workers;
+import std.json.as_object;
+import std.json.Json;
+import std.json.parse_json;
+import std.json.to_json;
+import std.json.write_json;
+
+# An application: its routes, the steps around every request, and error kinds beside the defaults.
+#     len(new App[int] { routes: new list[Route[int]], steps: new list[Step[int]], errors: new list[ErrorStatus] }.routes) is 0
+export record App[C, E: effects] {
+    # The operations, health and info routes; made with on_get, on_post, on_put, on_patch, on_delete, health_route, info_route.
+    routes: list[Route[C, E]];
+    # Run around each request whose path starts with their prefix, in this order.
+    steps: list[Step[C, E]];
+    # `kind: detail` errors answered with a status, beside (or instead of) the defaults.
+    errors: list[ErrorStatus];
+}
+
+# An application of these routes, with no steps and only the default error kinds.
+#     len(web_app(new list[Route[int]]).steps) is 0
+export fn web_app[C, E: effects](routes: list[Route[C, E]]) -> App[C, E] {
+    return new App { routes: routes, steps: new list[Step[C, E]], errors: new list[ErrorStatus] };
+}
+
+# One route: a method, a path pattern and what answers it (made by on_get and the others).
+#     on_get("/x", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "GET"
+export record Route[C, E: effects] {
+    # GET, POST, PUT, PATCH or DELETE.
+    method: str;
+    # The pattern, such as "/notes/{id}".
+    pattern: str;
+    # The pattern's segments ("{id}" for a variable).
+    segments: list[str];
+    # The operation with its input binding: the context, the request, the path variables.
+    run: fn(C, Request, map[str, str]) -> result[Response] uses E;
+}
+
+# A step around requests: run(ctx, request, next) answers, calling next(request) for the rest of the chain or not.
+#     new Step[int] { prefix: "/admin", run: fn(n: int, r: Request, next: fn(Request) -> Response) -> Response { return next(r); } }.prefix is "/admin"
+export record Step[C, E: effects] {
+    # The step runs for requests whose path starts with this ("/" for all).
+    prefix: str;
+    # The step: the context, the request and the rest of the chain.
+    run: fn(C, Request, fn(Request) -> Response uses E) -> Response uses E;
+}
+
+# An error kind (the text before ": " in an err) and the status it answers.
+#     error_status("quota", 429).status is 429
+export record ErrorStatus {
+    # The kind, such as "quota".
+    kind: str;
+    # The status it answers.
+    status: int;
+}
+
+# The input of an operation that takes none.
+#     new NoInput {} == new NoInput {} is true
+export record NoInput {
+}
+
+# A check of health: its name and a function giving err(reason) when the part is down.
+#     new HealthCheck[int] { name: "db", check: fn(n: int) -> result[void] { return ok(); } }.name is "db"
+export record HealthCheck[C, E: effects] {
+    # The name shown under "checks" when it fails.
+    name: str;
+    # ok() when the part works.
+    check: fn(C) -> result[void] uses E;
+}
+
+# ---- routes ----
+
+# A GET route: requests for pattern ("/notes/{id}": literal segments and {variables}) are answered by op with the input bound from the request.
+#     on_get("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).pattern is "/notes"
+@allow("W0702", "one module per import path: std.web is one file")
+export fn on_get[C, I: json, E: effects](pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+    return route("GET", pattern, op);
+}
+
+# A POST route (see on_get).
+#     on_post("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "POST"
+export fn on_post[C, I: json, E: effects](pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+    return route("POST", pattern, op);
+}
+
+# A PUT route (see on_get).
+#     on_put("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "PUT"
+export fn on_put[C, I: json, E: effects](pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+    return route("PUT", pattern, op);
+}
+
+# A PATCH route (see on_get).
+#     on_patch("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "PATCH"
+export fn on_patch[C, I: json, E: effects](pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+    return route("PATCH", pattern, op);
+}
+
+# A DELETE route (see on_get).
+#     on_delete("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "DELETE"
+export fn on_delete[C, I: json, E: effects](pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+    return route("DELETE", pattern, op);
+}
+
+fn route[C, I: json, E: effects](method: str, pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+    let run = fn(ctx: C, r: Request, vars: map[str, str]) -> result[Response] {
+        let bound: result[I] = bind(r, vars);
+        match bound {
+            case ok(input) {
+                return op(ctx, input);
+            }
+            case err(problems) {
+                return ok(input_problem(problems));
+            }
+        }
+    };
+    return new Route { method: method, pattern: pattern, segments: split(slice(pattern, 1, len(pattern)), "/"), run: run };
+}
+
+# ---- answers ----
+
+# An answer with this status and v as JSON (records as objects, lists as arrays, ...).
+#     json_reply(200, [1, 2]).body is "[1,2]"
+export fn json_reply[T: json](status: int, v: T) -> Response {
+    return new Response { status: status, headers: [new Header { name: "Content-Type", value: "application/json" }], body: __json_text(v) };
+}
+
+# A 201 answer with v as JSON and its Location.
+#     created("/notes/3", 3).headers[1].value is "/notes/3"
+export fn created[T: json](location: str, v: T) -> Response {
+    let r = json_reply(201, v);
+    push(r.headers, new Header { name: "Location", value: location });
+    return r;
+}
+
+# A 204 answer without a body.
+#     no_content().status is 204
+export fn no_content() -> Response {
+    return new Response { status: 204, headers: new list[Header], body: "" };
+}
+
+# The status an error kind answers: `err("quota: 100 requests a day")` with error_status("quota", 429) in App.errors is 429.
+#     error_status("teapot", 418).kind is "teapot"
+export fn error_status(kind: str, status: int) -> ErrorStatus {
+    return new ErrorStatus { kind: kind, status: status };
+}
+
+# ---- handling a request ----
+
+# The application's answer to one request (steps, routing, input, the operation, errors): what serve_app sends, and what tests check.
+#     handle_request(new App[int] { routes: new list[Route[int]], steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).status is 404
+export fn handle_request[C, E: effects](app: App[C, E], ctx: C, r: Request) -> Response uses E {
+    let all = fn(req: Request) -> Response {
+        return chain(app, ctx, 0, req);
+    };
+    match __serve_call(all, without_header(r, "X-Identity")) {
+        case ok(resp) {
+            return resp;
+        }
+        case err(_) {
+            return problem(500, "", new list[Json]);
+        }
+    }
+}
+
+fn chain[C, E: effects](app: App[C, E], ctx: C, i: int, r: Request) -> Response uses E {
+    if i == len(app.steps) {
+        return dispatch(app, ctx, r);
+    }
+    let s = app.steps[i];
+    if not under(r.path, s.prefix) {
+        return chain(app, ctx, i + 1, r);
+    }
+    return s.run(ctx, r, fn(next: Request) -> Response {
+        return chain(app, ctx, i + 1, next);
+    });
+}
+
+fn under(path: str, prefix: str) -> bool {
+    if prefix == "/" {
+        return true;
+    }
+    return path == prefix or (len(path) > len(prefix) and slice(path, 0, len(prefix)) == prefix and slice(path, len(prefix), len(prefix) + 1) == "/");
+}
+
+fn dispatch[C, E: effects](app: App[C, E], ctx: C, r: Request) -> Response uses E {
+    let segs = split(slice(r.path, 1, len(r.path)), "/");
+    let method = if_head(r.method);
+    var best = -1;
+    var best_vars = new map[str, str];
+    var allowed = new list[str];
+    for i in 0..len(app.routes) {
+        let rt = app.routes[i];
+        match match_path(rt.segments, segs) {
+            case ok(vars) {
+                if not has_item(allowed, rt.method) {
+                    push(allowed, rt.method);
+                }
+                if rt.method == method and (best < 0 or more_specific(rt.segments, app.routes[best].segments)) {
+                    set best = i;
+                    set best_vars = vars;
+                }
+            }
+            case err(_) {
+            }
+        }
+    }
+    if len(allowed) == 0 {
+        return problem(404, "no route for " + r.path, new list[Json]);
+    }
+    if has_item(allowed, "GET") {
+        push(allowed, "HEAD");
+    }
+    let allow = join(allowed, ", ");
+    if r.method == "OPTIONS" {
+        return new Response { status: 204, headers: [new Header { name: "Allow", value: allow + ", OPTIONS" }], body: "" };
+    }
+    if best < 0 {
+        let resp = problem(405, r.method + " is not allowed on " + r.path + "; allowed: " + allow, new list[Json]);
+        push(resp.headers, new Header { name: "Allow", value: allow });
+        return resp;
+    }
+    let resp = answer_of(app, app.routes[best].run(ctx, r, best_vars));
+    if r.method == "HEAD" {
+        return new Response { status: resp.status, headers: resp.headers, body: "" };
+    }
+    return resp;
+}
+
+fn if_head(method: str) -> str {
+    if method == "HEAD" {
+        return "GET";
+    }
+    return method;
+}
+
+fn has_item(xs: list[str], x: str) -> bool {
+    for y in xs {
+        if y == x {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn match_path(pattern: list[str], segs: list[str]) -> result[map[str, str]] {
+    # The path variables when segs match the pattern's segments.
+    let vars = new map[str, str];
+    if len(pattern) != len(segs) {
+        return err("length");
+    }
+    for i in 0..len(pattern) {
+        let p = pattern[i];
+        let s = segs[i];
+        if s == "" and p != "" {
+            return err("empty");
+        }
+        if is_var(p) {
+            set vars[slice(p, 1, len(p) - 1)] = try percent_decoded(s);
+        } else if p != s {
+            return err("literal");
+        }
+    }
+    return ok(vars);
+}
+
+fn is_var(seg: str) -> bool {
+    return len(seg) > 2 and slice(seg, 0, 1) == "{";
+}
+
+fn more_specific(a: list[str], b: list[str]) -> bool {
+    # At the first segment where they differ, a literal is more specific than a variable.
+    for i in 0..len(a) {
+        if is_var(a[i]) != is_var(b[i]) {
+            return not is_var(a[i]);
+        }
+    }
+    return false;
+}
+
+fn percent_decoded(s: str) -> result[str] {
+    if find(s, "%") < 0 and find(s, "+") < 0 {
+        return ok(s);
+    }
+    var out = from_text("");
+    var i = 0;
+    while i < len(s) {
+        let c = slice(s, i, i + 1);
+        if c == "%" and i + 3 <= len(s) {
+            set out = out + try from_hex(slice(s, i + 1, i + 3));
+            set i = i + 3;
+        } else if c == "+" {
+            set out = out + from_text(" ");
+            set i = i + 1;
+        } else {
+            set out = out + from_text(c);
+            set i = i + 1;
+        }
+    }
+    return to_text(out);
+}
+
+fn answer_of[C, E: effects](app: App[C, E], answered: result[Response]) -> Response {
+    match answered {
+        case ok(resp) {
+            return resp;
+        }
+        case err(e) {
+            return error_answer(app.errors, e);
+        }
+    }
+}
+
+fn error_answer(errors: list[ErrorStatus], e: str) -> Response {
+    let at = find(e, ": ");
+    if at > 0 {
+        let kind = slice(e, 0, at);
+        let detail = slice(e, at + 2, len(e));
+        for es in errors {
+            if es.kind == kind {
+                return problem(es.status, detail, new list[Json]);
+            }
+        }
+        let kinds = ["bad_request", "unauthorized", "forbidden", "not_found", "conflict", "gone", "unprocessable"];
+        let statuses = [400, 401, 403, 404, 409, 410, 422];
+        for i in 0..len(kinds) {
+            if kinds[i] == kind {
+                return problem(statuses[i], detail, new list[Json]);
+            }
+        }
+    }
+    let resp = problem(500, "", new list[Json]);
+    push(resp.headers, new Header { name: "Vo-Error", value: e });
+    return resp;
+}
+
+# ---- input ----
+
+fn bind[I: json](r: Request, vars: map[str, str]) -> result[I] {
+    let parts = new map[str, Json];
+    let path = new map[str, Json];
+    for k in keys(vars) {
+        set path[k] = Json.text(vars[k]);
+    }
+    set parts["path"] = Json.object(path);
+    set parts["query"] = Json.object(try query_values(r.query));
+    let headers = new map[str, Json];
+    for h in r.headers {
+        set headers[h.name] = Json.text(h.value);
+    }
+    set parts["headers"] = Json.object(headers);
+    if r.body != "" {
+        match header_of(r, "Content-Type") {
+            case ok(ct) {
+                if not json_type(Json.text(ct)) {
+                    return err("U\tbody\tthe body must be application/json");
+                }
+            }
+            case err(_) {
+            }
+        }
+        match parse_json(r.body) {
+            case ok(j) {
+                set parts["body"] = j;
+            }
+            case err(e) {
+                return err("S\tbody\tnot JSON: " + e);
+            }
+        }
+    }
+    return __from_json(Json.object(parts), 6);
+}
+
+fn json_type(j: Json) -> bool {
+    match j {
+        case text(t) {
+            let base = lower(trim(split(t, ";")[0]));
+            return base == "application/json" or (len(base) > 5 and slice(base, len(base) - 5, len(base)) == "+json");
+        }
+        case null {
+            return false;
+        }
+        case boolean(_) {
+            return false;
+        }
+        case integer(_) {
+            return false;
+        }
+        case number(_) {
+            return false;
+        }
+        case array(_) {
+            return false;
+        }
+        case object(_) {
+            return false;
+        }
+    }
+}
+
+fn query_values(query: str) -> result[map[str, Json]] {
+    let out = new map[str, list[Json]];
+    if query != "" {
+        for pair in split(query, "&") {
+            if pair == "" {
+                continue;
+            }
+            let eq = find(pair, "=");
+            var k = pair;
+            var v = "";
+            if eq >= 0 {
+                set k = slice(pair, 0, eq);
+                set v = slice(pair, eq + 1, len(pair));
+            }
+            let key = try percent_decoded(k);
+            if not has(out, key) {
+                set out[key] = new list[Json];
+            }
+            push(out[key], Json.text(try percent_decoded(v)));
+        }
+    }
+    let res = new map[str, Json];
+    for k in keys(out) {
+        set res[k] = Json.array(out[k]);
+    }
+    return ok(res);
+}
+
+fn input_problem(problems: str) -> Response {
+    # 400 (or 422 when only limits failed, 415 for a body that is not JSON) listing every problem.
+    let errors = new list[Json];
+    var limits_only = true;
+    var status = 400;
+    for line in split(problems, "\n") {
+        let parts = split(line, "\t");
+        if len(parts) != 3 {
+            continue;
+        }
+        if parts[0] == "U" {
+            set status = 415;
+        }
+        if parts[0] != "L" {
+            set limits_only = false;
+        }
+        let e = new map[str, Json];
+        set e["field"] = Json.text(parts[1]);
+        set e["reason"] = Json.text(parts[2]);
+        push(errors, Json.object(e));
+    }
+    if status != 415 and limits_only {
+        set status = 422;
+    }
+    return problem(status, "", errors);
+}
+
+# ---- problems (RFC 9457) ----
+
+fn problem(status: int, detail: str, errors: list[Json]) -> Response {
+    let m = new map[str, Json];
+    set m["type"] = Json.text("about:blank");
+    set m["title"] = Json.text(title(status));
+    set m["status"] = Json.integer(status);
+    if detail != "" {
+        set m["detail"] = Json.text(detail);
+    }
+    if len(errors) > 0 {
+        set m["errors"] = Json.array(errors);
+    }
+    var body = "";
+    match write_json(Json.object(m)) {
+        case ok(t) {
+            set body = t;
+        }
+        case err(_) {
+        }
+    }
+    return new Response { status: status, headers: [new Header { name: "Content-Type", value: "application/problem+json" }], body: body };
+}
+
+fn title(status: int) -> str {
+    let codes = [400, 401, 403, 404, 405, 409, 410, 413, 415, 422, 429, 500, 503];
+    let names = ["Bad Request", "Unauthorized", "Forbidden", "Not Found", "Method Not Allowed", "Conflict", "Gone", "Content Too Large", "Unsupported Media Type", "Unprocessable Content", "Too Many Requests", "Internal Server Error", "Service Unavailable"];
+    for i in 0..len(codes) {
+        if codes[i] == status {
+            return names[i];
+        }
+    }
+    return "Error";
+}
+
+# ---- serving, settings, health ----
+
+# Serves app on address with `workers` processes (as serve_workers: setup builds each worker's context once), after checking its route table; each request is answered by handle_request.
+#     serve_app("0", 1, fn() -> result[int] { return ok(0); }, new App[int] { routes: new list[Route[int]], steps: new list[Step[int]], errors: new list[ErrorStatus] }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
+export fn serve_app[C, E: effects, F: effects](address: str, workers: int, setup: fn() -> result[C] uses F, app: App[C, E]) -> result[void] uses serve, E, F {
+    try check_routes(app.routes);
+    return serve_workers(address, workers, setup, fn(ctx: C, r: Request) -> Response {
+        return without_vo_error(handle_request(app, ctx, r));
+    });
+}
+
+fn check_routes[C, E: effects](routes: list[Route[C, E]]) -> result[void] {
+    # The checks vo check makes on route tables written in one list, for tables built otherwise.
+    for i in 0..len(routes) {
+        let a = routes[i];
+        if len(a.pattern) == 0 or slice(a.pattern, 0, 1) != "/" {
+            return err("route `" + a.pattern + "` does not start with /");
+        }
+        for j in 0..i {
+            let b = routes[j];
+            if a.method == b.method and same_shape(a.segments, b.segments) {
+                return err("routes `" + a.method + " " + a.pattern + "` and `" + b.method + " " + b.pattern + "` match the same paths");
+            }
+        }
+    }
+    return ok();
+}
+
+fn same_shape(a: list[str], b: list[str]) -> bool {
+    if len(a) != len(b) {
+        return false;
+    }
+    for i in 0..len(a) {
+        if is_var(a[i]) != is_var(b[i]) or (not is_var(a[i]) and a[i] != b[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn without_vo_error(r: Response) -> Response {
+    let headers = new list[Header];
+    for h in r.headers {
+        if h.name != "Vo-Error" {
+            push(headers, h);
+        }
+    }
+    return new Response { status: r.status, headers: headers, body: r.body };
+}
+
+# Settings of type T: the JSON object in file (when there is one), then for each field the environment variable PREFIX_FIELD (upper case) instead; checked as from_json checks: defaults from @default, limits, every problem in one err.
+#     load_settings("no-such-settings.json", "app") == ok(new NoInput {}) is true
+export fn load_settings[T: json](file: str, prefix: str) -> result[T] uses env, file.read {
+    let values = new map[str, Json];
+    match try info(file) {
+        case missing {
+        }
+        case file(_) {
+            match read_file(file) {
+                case ok(text) {
+                    match parse_json(text) {
+                        case ok(j) {
+                            match as_object(j) {
+                                case ok(m) {
+                                    for k in keys(m) {
+                                        set values[k] = m[k];
+                                    }
+                                }
+                                case err(_) {
+                                    return err(file + ": the settings are not a JSON object");
+                                }
+                            }
+                        }
+                        case err(e) {
+                            return err(file + ": " + e);
+                        }
+                    }
+                }
+                case err(e) {
+                    return err(e);
+                }
+            }
+        }
+        case directory {
+            return err(file + " is a directory");
+        }
+        case other {
+            return err(file + " is not a file");
+        }
+    }
+    let fields: list[str] = __json_fields(new list[T]);
+    for f in fields {
+        match env(upper(prefix + "_" + f)) {
+            case ok(v) {
+                set values[f] = Json.text(v);
+            }
+            case err(_) {
+            }
+        }
+    }
+    let decoded: result[T] = __from_json(Json.object(values), 1);
+    match decoded {
+        case ok(v) {
+            return ok(v);
+        }
+        case err(e) {
+            return err("settings: " + e);
+        }
+    }
+}
+
+# A GET /health route: 200 {"status":"up"} when every check gives ok(), else 503 {"status":"down","checks":{name: reason}}.
+#     handle_request(new App[int] { routes: [health_route(new list[HealthCheck[int]])], steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/health", "")).body is "{\"status\":\"up\"}"
+export fn health_route[C, E: effects](checks: list[HealthCheck[C, E]]) -> Route[C, E] {
+    return on_get("/health", fn(ctx: C, input: NoInput) -> result[Response] {
+        let failed = new map[str, Json];
+        for c in checks {
+            match c.check(ctx) {
+                case ok() {
+                }
+                case err(e) {
+                    set failed[c.name] = Json.text(e);
+                }
+            }
+        }
+        let m = new map[str, Json];
+        if len(failed) == 0 {
+            set m["status"] = Json.text("up");
+            return ok(json_reply(200, Json.object(m)));
+        }
+        set m["status"] = Json.text("down");
+        set m["checks"] = Json.object(failed);
+        return ok(json_reply(503, Json.object(m)));
+    });
+}
+
+# A GET /info route answering {"name": name, "version": version}.
+#     handle_request(new App[int] { routes: [info_route("notes", "1.0")], steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/info", "")).body is "{\"name\":\"notes\",\"version\":\"1.0\"}"
+export fn info_route[C, E: effects](name: str, version: str) -> Route[C, E] {
+    return on_get("/info", fn(ctx: C, input: NoInput) -> result[Response] {
+        let m = new map[str, Json];
+        set m["name"] = Json.text(name);
+        set m["version"] = Json.text(version);
+        return ok(json_reply(200, Json.object(m)));
+    });
+}
+
+# ---- steps ----
+
+# A step that gives every response an X-Request-Id: the request's own, or one from new_id (random_id), also passed on to operations as the request's header.
+#     handle_request(new App[int] { routes: new list[Route[int]], steps: [request_ids(fn() -> str { return "id-1"; })], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).headers[1].value is "id-1"
+export fn request_ids[C, E: effects](new_id: fn() -> str uses E) -> Step[C, E] {
+    return new Step { prefix: "/", run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+        var id = "";
+        var req = r;
+        match header_of(r, "X-Request-Id") {
+            case ok(v) {
+                set id = v;
+            }
+            case err(_) {
+                set id = new_id();
+                set req = with_header(r, "X-Request-Id", id);
+            }
+        }
+        let resp = next(req);
+        push(resp.headers, new Header { name: "X-Request-Id", value: id });
+        return resp;
+    } };
+}
+
+# 16 hexadecimal digits from random_int, for request_ids.
+#     len(random_id()) is 16
+export fn random_id() -> str uses random {
+    return format("{:08x}{:08x}", random_int(0, 4294967295), random_int(0, 4294967295));
+}
+
+# A step that writes one line per request with log: method, path, status and milliseconds (from now), and an unmapped error's text.
+#     handle_request(new App[int] { routes: new list[Route[int]], steps: [log_requests(fn() -> int { return 0; }, fn(line: str) { })], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).status is 404
+export fn log_requests[C, E: effects](now: fn() -> int uses E, log: fn(str) uses E) -> Step[C, E] {
+    return new Step { prefix: "/", run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+        let start = now();
+        let resp = next(r);
+        var line = r.method + " " + r.path + " " + str(resp.status) + " " + str(now() - start) + "ms";
+        match header_of_response(resp, "Vo-Error") {
+            case ok(e) {
+                set line = line + " error: " + e;
+            }
+            case err(_) {
+            }
+        }
+        log(line);
+        return resp;
+    } };
+}
+
+# The clock in milliseconds, for log_requests.
+#     clock_ms() >= 0 is true
+export fn clock_ms() -> int uses clock {
+    return now_ms();
+}
+
+# A line on stderr, for log_requests.
+#     handle_request(new App[int, uses console] { routes: new list[Route[int, uses console]], steps: [log_requests(fn() -> int { return 0; }, to_stderr)], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).status is 404
+export fn to_stderr(line: str) uses console {
+    eprint(line);
+}
+
+# A step answering CORS for the listed origins: preflight OPTIONS requests (204 with the allowed methods and headers) and the Access-Control-Allow-Origin header on answers.
+#     handle_request(new App[int] { routes: new list[Route[int]], steps: [cors(["https://app.example"])], errors: new list[ErrorStatus] }, 0, with_header(request("GET", "/", ""), "Origin", "https://app.example")).headers[1].value is "https://app.example"
+export fn cors[C, E: effects](origins: list[str]) -> Step[C, E] {
+    return new Step { prefix: "/", run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+        var origin = "";
+        match header_of(r, "Origin") {
+            case ok(o) {
+                if has_item(origins, o) {
+                    set origin = o;
+                }
+            }
+            case err(_) {
+            }
+        }
+        if origin == "" {
+            return next(r);
+        }
+        match header_of(r, "Access-Control-Request-Method") {
+            case ok(_) {
+                if r.method == "OPTIONS" {
+                    var allow_headers = "Content-Type, Authorization";
+                    match header_of(r, "Access-Control-Request-Headers") {
+                        case ok(h) {
+                            set allow_headers = h;
+                        }
+                        case err(_) {
+                        }
+                    }
+                    return new Response { status: 204, headers: [new Header { name: "Access-Control-Allow-Origin", value: origin }, new Header { name: "Access-Control-Allow-Methods", value: "GET, POST, PUT, PATCH, DELETE, OPTIONS" }, new Header { name: "Access-Control-Allow-Headers", value: allow_headers }, new Header { name: "Access-Control-Max-Age", value: "600" }, new Header { name: "Vary", value: "Origin" }], body: "" };
+                }
+            }
+            case err(_) {
+            }
+        }
+        let resp = next(r);
+        push(resp.headers, new Header { name: "Access-Control-Allow-Origin", value: origin });
+        push(resp.headers, new Header { name: "Vary", value: "Origin" });
+        return resp;
+    } };
+}
+
+# A step for requests under prefix: the `Authorization: Bearer TOKEN` given to check, whose ok(identity) is passed on as the request header X-Identity (bind it with @header("X-Identity")); a missing or refused token answers 401. An X-Identity a client sends is always dropped.
+#     bearer_auth("/admin", fn(n: int, token: str) -> result[str] { return ok("ada"); }).prefix is "/"
+export fn bearer_auth[C, E: effects](prefix: str, check: fn(C, str) -> result[str] uses E) -> Step[C, E] {
+    return auth_step(prefix, "Authorization", "Bearer ", check);
+}
+
+# A step like bearer_auth with the key read from the header named header (such as "X-Api-Key").
+#     api_key_auth("/", "X-Api-Key", fn(n: int, key: str) -> result[str] { return ok("svc"); }).prefix is "/"
+export fn api_key_auth[C, E: effects](prefix: str, header: str, check: fn(C, str) -> result[str] uses E) -> Step[C, E] {
+    return auth_step(prefix, header, "", check);
+}
+
+fn auth_step[C, E: effects](prefix: str, header: str, scheme: str, check: fn(C, str) -> result[str] uses E) -> Step[C, E] {
+    return new Step { prefix: "/", run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+        if not under(r.path, prefix) {
+            return next(r);
+        }
+        var token = "";
+        match header_of(r, header) {
+            case ok(v) {
+                if len(v) > len(scheme) and lower(slice(v, 0, len(scheme))) == lower(scheme) {
+                    set token = trim(slice(v, len(scheme), len(v)));
+                }
+            }
+            case err(_) {
+            }
+        }
+        if token == "" {
+            return unauthorized(scheme, "missing credentials in " + header);
+        }
+        match check(ctx, token) {
+            case ok(identity) {
+                return next(with_header(r, "X-Identity", identity));
+            }
+            case err(e) {
+                return unauthorized(scheme, e);
+            }
+        }
+    } };
+}
+
+fn unauthorized(scheme: str, detail: str) -> Response {
+    let resp = problem(401, detail, new list[Json]);
+    if scheme != "" {
+        push(resp.headers, new Header { name: "WWW-Authenticate", value: trim(scheme) });
+    }
+    return resp;
+}
+
+fn header_of(r: Request, name: str) -> result[str] {
+    for h in r.headers {
+        if lower(h.name) == lower(name) {
+            return ok(h.value);
+        }
+    }
+    return err("no header");
+}
+
+fn header_of_response(r: Response, name: str) -> result[str] {
+    for h in r.headers {
+        if lower(h.name) == lower(name) {
+            return ok(h.value);
+        }
+    }
+    return err("no header");
+}
+
+fn without_header(r: Request, name: str) -> Request {
+    let headers = new list[Header];
+    for h in r.headers {
+        if lower(h.name) != lower(name) {
+            push(headers, h);
+        }
+    }
+    return new Request { method: r.method, path: r.path, query: r.query, headers: headers, body: r.body };
+}
+
+# ---- tests ----
+
+# A request for tests: the path may carry a query (`/notes?limit=2`); a body is sent as JSON.
+#     request("GET", "/notes?limit=2", "").query is "limit=2"
+export fn request(method: str, path: str, body: str) -> Request {
+    var p = path;
+    var q = "";
+    let at = find(path, "?");
+    if at >= 0 {
+        set p = slice(path, 0, at);
+        set q = slice(path, at + 1, len(path));
+    }
+    let headers = new list[Header];
+    if body != "" {
+        push(headers, new Header { name: "Content-Type", value: "application/json" });
+    }
+    return new Request { method: method, path: p, query: q, headers: headers, body: body };
+}
+
+# The request with one more header.
+#     len(with_header(request("GET", "/", ""), "X-Api-Key", "k").headers) is 1
+export fn with_header(r: Request, name: str, value: str) -> Request {
+    let headers = new list[Header];
+    for h in r.headers {
+        push(headers, h);
+    }
+    push(headers, new Header { name: name, value: value });
+    return new Request { method: r.method, path: r.path, query: r.query, headers: headers, body: r.body };
+}

@@ -1,0 +1,5 @@
+text: at least 2 characters, got 1; tags: at least 1 item, got 0; n: at most 3; level: unknown case "middle" (expected one of: low, high); shape: case "circle" needs a value: {"circle": ...}; raw: not base64; inner.name: does not match [a-z]+; inner.ratio: at most 1.5; big: out of range for int; frac: not an integer
+text: expected string, got number; tags[1]: expected string, got number; n: expected integer, got string; level: case "low" has no value: write "low"; shape: case "empty" has no value: write "empty"; raw: expected string, got number; inner: expected object, got array; big: expected integer, got null; frac: expected integer, got boolean; ["odd key"]: unknown field
+text: at most 5 characters, got 6; tags: missing; n: missing; level: missing; shape: missing; raw: missing; inner: missing; big: missing; frac: missing
+(root): expected object, got array
+ok

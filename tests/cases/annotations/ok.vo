@@ -1,0 +1,36 @@
+# Every field annotation on the field types it allows: no diagnostics.
+variant Priority {
+    low;
+    normal;
+    high;
+}
+
+record NewNote {
+    @size(1, 200)
+    text: str;
+    @size(0, 5)
+    @default([])
+    tags: list[str];
+    @range(1, 5)
+    @default(3)
+    stars: int;
+    @range(-1.5, 2.5)
+    @default(0.0)
+    weight: float;
+    @pattern("[a-z0-9-]+")
+    slug: str;
+    @default(Priority.normal)
+    priority: Priority;
+    @default(false)
+    done: bool;
+    # a comment above a field's annotations
+    @default("")
+    note: str;
+    @size(0, 3)
+    extra: map[str, int];
+}
+
+fn main() uses console {
+    let n = new NewNote { text: "a", tags: ["x"], stars: 3, weight: 0.0, slug: "a", priority: Priority.low, done: false, note: "", extra: new map[str, int] };
+    print(n.text);
+}

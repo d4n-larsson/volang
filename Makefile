@@ -138,7 +138,7 @@ cm-noasm:
 $(BUILD)/vo_c.o: CFLAGS += -fno-tree-loop-distribute-patterns
 
 # Spec 008 research R8: the reference, the catalog and the standard library, embedded as C arrays.
-STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo std/fs.vo std/process.vo std/math.vo std/bytes.vo std/regex.vo std/sqlite.vo
+STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo std/fs.vo std/process.vo std/math.vo std/bytes.vo std/regex.vo std/sqlite.vo std/web.vo
 $(BUILD)/embedded.c: docs/reference.md docs/errors.md $(STD_FILES) tools/embed.py | $(BUILD)
 	python3 tools/embed.py $@ docs/reference.md docs/errors.md $(STD_FILES)
 $(BUILD)/embedded.o: $(BUILD)/embedded.c $(HEADERS)
@@ -224,7 +224,7 @@ test: all
 	  migrate.py record_changes.py doc_conformance.py json_corpus.py packages_check.py time_check.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
 	  steps.py json_stream.py https_interop.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1" \
 	  math_vectors.py "bytes_fuzz.py --count 2000 --runs 200" "format_diff.py --quick" "regex_diff.py --quick" \
-	  "regex_fuzz.py --count 20000" "sqlite_scope.py --quick" "sqlite_fuzz.py --count 1000" sqlite_corpus.py structure_corpus.py "serve_workers.py --quick"; do \
+	  "regex_fuzz.py --count 20000" "sqlite_scope.py --quick" "sqlite_fuzz.py --count 1000" sqlite_corpus.py structure_corpus.py "serve_workers.py --quick" "web_fuzz.py --quick"; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
 	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \
@@ -338,6 +338,7 @@ RV_BUILD := build$(if $(filter riscv64,$(HOST)),,-riscv64)
 gate: gate-step
 	@echo "== gate: gc-check" && $(MAKE) -s gc-check
 	@echo "== gate: serve_workers_speed" && python3 tests/serve_workers_speed.py
+	@echo "== gate: web_speed" && python3 tests/web_speed.py
 	@echo "== gate: speed" && $(MAKE) -s ARCH=riscv64 && \
 	  python3 tests/speed.py --baseline build-asm/vo --new $(RV_BUILD)/vo --max-geomean 1.10
 	@echo "== gate: passed"

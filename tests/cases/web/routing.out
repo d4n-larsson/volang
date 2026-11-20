@@ -1,0 +1,14 @@
+GET /notes -> 200 ["corner","notes"]
+POST /notes -> 204 
+GET /notes/7 -> 200 70
+GET /notes/latest -> 200 "latest"
+DELETE /notes/7 -> 204 
+PUT /notes/7 -> 405 Allow: GET, DELETE, HEAD {"type":"about:blank","title":"Method Not Allowed","status":405,"detail":"PUT is not allowed on /notes/7; allowed: GET, DELETE, HEAD"}
+GET /users -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for /users"}
+GET /notes/abc -> 400 {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"id","reason":"expected integer, got \"abc\""}]}
+GET /shelves/a%20b/slots/3 -> 200 "a b/3"
+HEAD /notes/7 -> 200 
+OPTIONS /notes/7 -> 204 Allow: GET, DELETE, HEAD, OPTIONS 
+GET /notes/ -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for /notes/"}
+GET /notes//7 -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for /notes//7"}
+GET / -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for /"}

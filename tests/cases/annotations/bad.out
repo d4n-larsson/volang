@@ -1,0 +1,47 @@
+bad.vo:3:6: error[E0329]: `@sise` is not a field annotation: use @size, @range, @pattern, @default or @header.
+   3 |     @sise(1, 2)
+     |      ^^^^
+  fix: replace with `size`
+bad.vo:6:5: error[E0329]: `@size` is given twice for this field.
+   6 |     @size(1, 3)
+     |     ^^^^^^^^^^^
+bad.vo:8:5: error[E0329]: `@size` limits a `str`, list or map; this field is `int`.
+   8 |     @size(1, 2)
+     |     ^^^^^^^^^^^
+bad.vo:10:5: error[E0329]: `@range` limits an `int` or `float`; this field is `str`.
+  10 |     @range(1, 2)
+     |     ^^^^^^^^^^^^
+bad.vo:12:5: error[E0329]: The lower bound is above the upper one.
+  12 |     @range(5, 1)
+     |     ^^^^^^^^^^^^
+bad.vo:14:14: error[E0329]: The default must be a literal of the field's type `int`.
+  14 |     @default("x")
+     |              ^^^
+bad.vo:17:14: error[E0329]: The default breaks the field's own limits.
+  17 |     @default(0)
+     |              ^
+bad.vo:19:14: error[E0329]: A list field's default can only be `[]`.
+  19 |     @default(["x"])
+     |              ^^^^^
+bad.vo:21:5: error[E0329]: A field of this type cannot have a default: make it a list of at most one item to make it optional.
+  21 |     @default(new Inner { x: 1 })
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+bad.vo:23:11: error[E0329]: `@size` bounds are whole numbers from 0.
+  23 |     @size(-1, 2)
+     |           ^^
+bad.vo:25:12: error[E0329]: This field is an `int`: its range is whole numbers.
+  25 |     @range(1.5, 2.5)
+     |            ^^^
+bad.vo:27:5: error[E0329]: `@size` takes two whole numbers: `@size(min, max)`.
+  27 |     @size(1)
+     |     ^^^^^^^^
+bad.vo:30:14: error[E0329]: The default breaks the field's own limits.
+  30 |     @default("abc")
+     |              ^^^^^
+bad.vo:39:5: error[E0329]: Annotations limit record fields; a variant case takes none.
+  39 |     @size(1, 2)
+     |     ^^^^^^^^^^^
+bad.vo:45:5: error[E0329]: An annotation goes on the line right above the field it limits.
+  45 |     @default(1)
+     |     ^^^^^^^^^^^
+15 errors, 0 warnings

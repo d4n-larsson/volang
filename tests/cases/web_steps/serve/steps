@@ -1,0 +1,10 @@
+mkdir data
+start vo run main.vo
+request POST /notes '{"text":"milk"}'
+request POST /notes '{"text":""}'
+request GET /notes/1
+request GET /notes/9
+request GET /health
+request DELETE /notes/1
+signal TERM
+no-children

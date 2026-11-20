@@ -290,7 +290,10 @@ EffSet *es_missing(EffSet *d, EffSet *r)
     GC_ROOT(&m);
     for (long bit = 1; bit <= EF_ALL; bit <<= 1) {
         if (r->mask & (unsigned long)bit) {
-            if (!(d->mask & (unsigned long)bit)) { /* d lacks the bit: copy r's form of it */
+            if ((d->any & (unsigned long)bit) && !(d->mask & (unsigned long)bit)) {
+                /* spec 029: d from a type's effect argument (`Route[uses file.read]`): types carry no
+                   scopes, so it allows the effect in any scope */
+            } else if (!(d->mask & (unsigned long)bit)) { /* d lacks the bit: copy r's form of it */
                 if (es_scoped(r, bit))
                     es_copy_pairs(m, r, bit);
                 else

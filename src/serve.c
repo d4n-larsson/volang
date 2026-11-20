@@ -592,18 +592,19 @@ Variant *rt_serve_call_n(void *fn, long *vals, long n, Node *call)
     for (long k = 0; k < n; k++) GC_ROOT(&vals[k]);
     long saved_vsp = vsp, saved_frame = cur_frame, outer = recover_point, depth = tr_depth_get();
     long saved_gc_on = gc_on, saved_oom = oom_hook; /* spec 013 (H10): R0006 switches them off */
+    long saved_guard = serve_guard; /* spec 029: std.web's call inside a server's handler call nests */
     volatile long result = 0;
     recover_point = (long)jb;
     serve_guard = 1;
-    deadline_ms = opt_timeout ? sys_clock_ms() + opt_timeout * 1000 : 0;
+    if (!saved_guard) deadline_ms = opt_timeout ? sys_clock_ms() + opt_timeout * 1000 : 0; /* (nested: the outer one goes on) */
     long status = jmp_save(jb); /* 0 ran through, 1 an expect failed (in a test), 2 runtime error */
     if (!status) {
         long r = call_value(fn, call, vals);
         result = (long)make_result(0, r);
     }
-    serve_guard = 0;
+    serve_guard = saved_guard;
     recover_point = outer;
-    deadline_ms = 0;
+    if (!saved_guard) deadline_ms = 0; /* (nested: the outer call's deadline goes on) */
     if (status) {
         vsp = saved_vsp;
         cur_frame = saved_frame;

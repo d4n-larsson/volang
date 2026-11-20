@@ -1,0 +1,13 @@
+# A record without fields is built with `new Name {}`.
+record NoInput {
+}
+
+fn describe(n: NoInput) -> str {
+    return "nothing";
+}
+
+fn main() uses console {
+    let a = new NoInput {};
+    let b = new NoInput {};
+    print(describe(a) + " " + str(a == b));
+}

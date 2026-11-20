@@ -1,0 +1,70 @@
+# Steps around requests (spec 029 US5): in list order on the way in, reverse on the way out; one may
+# answer early (later steps and the operation do not run); prefixes scope them; a step may change the
+# request and the response; a step's runtime error is a 500 problem.
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.NoInput;
+import std.web.Route;
+import std.web.Step;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.on_get;
+import std.web.request;
+
+record Who {
+    @header("X-Who")
+    @default("nobody")
+    who: str;
+}
+
+fn hello(n: int, input: Who) -> result[Response] {
+    return ok(json_reply(200, "hello " + input.who));
+}
+
+fn tagged(name: str) -> Step[int] {
+    return new Step { prefix: "/", run: fn(n: int, r: Request, next: fn(Request) -> Response) -> Response {
+        let resp = next(r);
+        push(resp.headers, new Header { name: "X-Trail", value: name });
+        return resp;
+    } };
+}
+
+fn stop_admin() -> Step[int] {
+    return new Step { prefix: "/admin", run: fn(n: int, r: Request, next: fn(Request) -> Response) -> Response {
+        return new Response { status: 403, headers: new list[Header], body: "stopped" };
+    } };
+}
+
+fn name_it() -> Step[int] {
+    return new Step { prefix: "/", run: fn(n: int, r: Request, next: fn(Request) -> Response) -> Response {
+        return next(new Request { method: r.method, path: r.path, query: r.query, headers: [new Header { name: "X-Who", value: "ada" }], body: r.body });
+    } };
+}
+
+fn crash() -> Step[int] {
+    return new Step { prefix: "/boom", run: fn(n: int, r: Request, next: fn(Request) -> Response) -> Response {
+        let xs = [1];
+        if xs[len(r.path)] == 1 {
+            return next(r);
+        }
+        return next(r);
+    } };
+}
+
+fn main() uses console {
+    let routes: list[Route[int]] = [on_get("/hello", hello), on_get("/admin/stats", hello), on_get("/boom", hello)];
+    let app = new App { routes: routes, steps: [tagged("outer"), tagged("inner"), stop_admin(), name_it(), crash()], errors: new list[ErrorStatus] };
+    for path in ["/hello", "/admin/stats", "/administrator", "/boom"] {
+        let r = handle_request(app, 0, request("GET", path, ""));
+        var trail = "";
+        for h in r.headers {
+            if h.name == "X-Trail" {
+                set trail = trail + " " + h.value;
+            }
+        }
+        print(path + " -> " + str(r.status) + trail + " " + r.body);
+    }
+}

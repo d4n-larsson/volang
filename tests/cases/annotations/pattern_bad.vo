@@ -1,0 +1,5 @@
+# A field pattern is checked as a regex literal is (spec 025).
+record Slug {
+    @pattern("[a-z")
+    slug: str;
+}

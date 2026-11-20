@@ -1,8 +1,12 @@
-# Notes and their JSON form: pure, so every function here is tested without files or a network.
-import std.json.Json;
-import std.json.field;
-import std.json.parse_json;
-import std.json.text_field;
+# Notes in SQLite: every function takes the database, so the tests use one in memory and the server a file.
+import std.sqlite.Database;
+import std.sqlite.Row;
+import std.sqlite.Value;
+import std.sqlite.exec;
+import std.sqlite.get_int;
+import std.sqlite.get_str;
+import std.sqlite.query;
+import std.sqlite.sql;
 
 export record Note {
     id: int;
@@ -10,90 +14,45 @@ export record Note {
     done: bool;
 }
 
-export fn note_json(n: Note) -> Json {
-    let m = new map[str, Json];
-    set m["id"] = Json.integer(n.id);
-    set m["text"] = Json.text(n.text);
-    set m["done"] = Json.boolean(n.done);
-    return Json.object(m);
+export fn prepare[D: effects](db: Database[D]) -> result[void] uses D {
+    let _ = try exec(db, sql("create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)"), new list[Value]);
+    return ok();
 }
 
-export fn notes_json(notes: list[Note]) -> Json {
-    return Json.array(map(notes, note_json));
-}
-
-# The text of a new note from a request body `{"text": "..."}`: 1 to 200 bytes, not only spaces.
-export fn text_from(body: str) -> result[str] {
-    let doc = try parse_json(body);
-    match field(doc, "text") {
-        case ok(_) {
-        }
-        case err(_) {
-            return err("the body needs a \"text\" field");
-        }
+export fn all_notes[D: effects](db: Database[D]) -> result[list[Note]] uses D {
+    let out = new list[Note];
+    for row in try query(db, sql("select id, text, done from notes order by id"), new list[Value]) {
+        push(out, try note_of(row));
     }
-    let text = trim(try text_field(doc, "text"));
-    if text == "" {
-        return err("the text is empty");
-    }
-    if len(text) > 200 {
-        return err("the text is longer than 200 bytes");
-    }
-    return ok(text);
+    return ok(out);
 }
 
-# The notes with a new one added: its id is one more than the largest so far.
-export fn add(notes: list[Note], text: str) -> list[Note] {
-    var next = 1;
-    for n in notes {
-        set next = max(next, n.id + 1);
+# The note with this id, or err("not_found: ...") (std.web answers 404).
+export fn find_note[D: effects](db: Database[D], id: int) -> result[Note] uses D {
+    let rows = try query(db, sql("select id, text, done from notes where id = ?"), [Value.integer(id)]);
+    if len(rows) == 0 {
+        return err("not_found: no note " + str(id));
     }
-    let out = copy_notes(notes);
-    push(out, new Note { id: next, text: text, done: false });
-    return out;
+    return note_of(rows[0]);
 }
 
-export fn find_note(notes: list[Note], id: int) -> result[Note] {
-    for n in notes {
-        if n.id == id {
-            return ok(n);
-        }
-    }
-    return err("no note " + str(id));
+export fn add_note[D: effects](db: Database[D], text: str) -> result[Note] uses D {
+    let c = try exec(db, sql("insert into notes (text) values (?)"), [Value.text(text)]);
+    return ok(new Note { id: c.last_id, text: text, done: false });
 }
 
-export fn mark_done(notes: list[Note], id: int) -> list[Note] {
-    return map(notes, fn(n: Note) -> Note {
-        if n.id == id {
-            return new Note { id: n.id, text: n.text, done: true };
-        }
-        return n;
-    });
+export fn mark_done[D: effects](db: Database[D], id: int) -> result[Note] uses D {
+    let _ = try find_note(db, id);
+    let _ = try exec(db, sql("update notes set done = 1 where id = ?"), [Value.integer(id)]);
+    return find_note(db, id);
 }
 
-export fn remove_note(notes: list[Note], id: int) -> list[Note] {
-    return filter(notes, fn(n: Note) -> bool {
-        return n.id != id;
-    });
+export fn remove_note[D: effects](db: Database[D], id: int) -> result[void] uses D {
+    let _ = try find_note(db, id);
+    let _ = try exec(db, sql("delete from notes where id = ?"), [Value.integer(id)]);
+    return ok();
 }
 
-# A new list with the same notes (push changes a list in place; add returns a new one).
-fn copy_notes(notes: list[Note]) -> list[Note] {
-    return filter(notes, fn(n: Note) -> bool {
-        return true;
-    });
-}
-
-@spec("FR-002")
-prop "added notes get distinct ids" (texts: list[str]) {
-    var notes = new list[Note];
-    for t in texts {
-        set notes = add(notes, t);
-    }
-    let ids = new map[int, bool];
-    for n in notes {
-        expect(not has(ids, n.id));
-        set ids[n.id] = true;
-    }
-    expect_eq(len(notes), len(texts));
+fn note_of(row: Row) -> result[Note] {
+    return ok(new Note { id: try get_int(row, "id"), text: try get_str(row, "text"), done: try get_int(row, "done") == 1 });
 }

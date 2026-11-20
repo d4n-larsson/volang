@@ -1,0 +1,10 @@
+mkdir data
+start vo run --record r.jsonl main.vo
+request POST /notes '{"text":"milk"}'
+request POST /notes '{"text":"bread"}'
+request GET /notes/2
+request GET /notes/7
+request POST /notes '{"txt":"x"}'
+signal TERM
+rm data
+vo replay r.jsonl

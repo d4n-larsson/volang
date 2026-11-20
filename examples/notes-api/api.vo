@@ -1,242 +1,195 @@
-# The HTTP API: `route` decides every answer from the request and the current notes (pure, tested
-# directly); `handle` loads the notes from the database, routes, and saves what changed, in one
-# transaction, so requests answered at once by several workers never lose a change.
+# The HTTP API: the route table, each operation's input (checked by std.web before it runs) and its answer.
+# Errors such as err("not_found: no note 7") become 404 problems; bad input becomes 400 or 422.
 import notes.Note;
-import notes.add;
+import notes.add_note;
+import notes.all_notes;
 import notes.find_note;
 import notes.mark_done;
-import notes.note_json;
-import notes.notes_json;
+import notes.prepare;
 import notes.remove_note;
-import notes.text_from;
-import std.http.Header;
-import std.http.Request;
 import std.http.Response;
-import std.json.Json;
-import std.json.write_json;
+import std.json.int_field;
+import std.json.parse_json;
+import std.json.text_field;
 import std.sqlite.Database;
 import std.sqlite.Value;
-import std.sqlite.exec;
-import std.sqlite.get_int;
-import std.sqlite.get_str;
 import std.sqlite.open;
 import std.sqlite.open_memory;
 import std.sqlite.query;
 import std.sqlite.sql;
-import std.sqlite.transaction;
+import std.web.App;
+import std.web.HealthCheck;
+import std.web.NoInput;
+import std.web.created;
+import std.web.handle_request;
+import std.web.health_route;
+import std.web.json_reply;
+import std.web.no_content;
+import std.web.on_delete;
+import std.web.on_get;
+import std.web.on_post;
+import std.web.request;
+import std.web.web_app;
 
-# A response and the notes after it (changed: they must be saved).
-export record Answer {
-    response: Response;
-    notes: list[Note];
-    changed: bool;
+# Each worker's context: its connection to the notes database.
+export record Notes[D: effects] {
+    db: Database[D];
 }
 
-fn json(status: int, j: Json) -> Response {
-    match write_json(j) {
-        case ok(text) {
-            return new Response { status: status, headers: [new Header { name: "Content-Type", value: "application/json" }], body: text + "\n" };
-        }
-        case err(e) {
-            return new Response { status: 500, headers: new list[Header], body: e + "\n" };
-        }
-    }
+record NoteText {
+    @size(1, 200)
+    text: str;
 }
 
-fn problem(status: int, message: str) -> Response {
-    let m = new map[str, Json];
-    set m["error"] = Json.text(message);
-    return json(status, Json.object(m));
+record NewNote {
+    body: NoteText;
 }
 
-fn same(notes: list[Note], r: Response) -> Answer {
-    return new Answer { response: r, notes: notes, changed: false };
+record NoteId {
+    id: int;
 }
 
-# GET /notes, POST /notes, GET /notes/ID, POST /notes/ID/done, DELETE /notes/ID.
-export fn route(r: Request, notes: list[Note]) -> Answer {
-    let parts = split(r.path, "/");
-    if len(parts) < 2 or parts[0] != "" or parts[1] != "notes" {
-        return same(notes, problem(404, "no such resource: " + r.path));
-    }
-    if len(parts) == 2 {
-        if r.method == "GET" {
-            return same(notes, json(200, notes_json(notes)));
-        }
-        if r.method == "POST" {
-            match text_from(r.body) {
-                case ok(text) {
-                    let after = add(notes, text);
-                    let created = after[len(after) - 1];
-                    let resp = json(201, note_json(created));
-                    push(resp.headers, new Header { name: "Location", value: "/notes/" + str(created.id) });
-                    return new Answer { response: resp, notes: after, changed: true };
-                }
-                case err(e) {
-                    return same(notes, problem(400, e));
-                }
-            }
-        }
-        return same(notes, problem(405, r.method + " is not allowed on /notes"));
-    }
-    var id = 0;
-    match parse_int(parts[2]) {
-        case ok(n) {
-            set id = n;
-        }
-        case err(_) {
-            return same(notes, problem(404, "no such note: " + parts[2]));
-        }
-    }
-    match find_note(notes, id) {
-        case ok(n) {
-            if len(parts) == 3 and r.method == "GET" {
-                return same(notes, json(200, note_json(n)));
-            }
-            if len(parts) == 3 and r.method == "DELETE" {
-                return new Answer { response: new Response { status: 204, headers: new list[Header], body: "" }, notes: remove_note(notes, id), changed: true };
-            }
-            if len(parts) == 4 and parts[3] == "done" and r.method == "POST" {
-                let updated = new Note { id: n.id, text: n.text, done: true };
-                return new Answer { response: json(200, note_json(updated)), notes: mark_done(notes, id), changed: true };
-            }
-            return same(notes, problem(405, r.method + " is not allowed on " + r.path));
-        }
-        case err(e) {
-            return same(notes, problem(404, e));
-        }
-    }
+# GET /notes, POST /notes, GET /notes/ID, POST /notes/ID/done, DELETE /notes/ID, GET /health.
+export fn notes_app[D: effects]() -> App[Notes[D], uses D] {
+    return web_app([on_get("/notes", list_notes), on_post("/notes", create), on_get("/notes/{id}", show), on_post("/notes/{id}/done", done), on_delete("/notes/{id}", erase), health_route([new HealthCheck { name: "database", check: alive }])]);
 }
 
-# Each worker's database connection (serve_workers runs this once per worker): data/notes.db, with the
-# notes table created the first time.
-export fn open_notes() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
+# serve_app's setup: data/notes.db, with its table the first time.
+export fn open_notes() -> result[Notes[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
     let db = try open("data/notes.db");
     try prepare(db);
-    return ok(db);
+    return ok(new Notes { db: db });
 }
 
-fn prepare[D: effects](db: Database[D]) -> result[void] uses D {
-    let _ = try exec(db, sql("create table if not exists notes (id integer primary key, text text not null, done integer not null)"), new list[Value]);
+fn list_notes[D: effects](app: Notes[D], input: NoInput) -> result[Response] uses D {
+    return ok(json_reply(200, try all_notes(app.db)));
+}
+
+fn create[D: effects](app: Notes[D], input: NewNote) -> result[Response] uses D {
+    let text = trim(input.body.text);
+    if text == "" {
+        return err("unprocessable: the text is only spaces");
+    }
+    let note = try add_note(app.db, text);
+    return ok(created("/notes/" + str(note.id), note));
+}
+
+fn show[D: effects](app: Notes[D], input: NoteId) -> result[Response] uses D {
+    return ok(json_reply(200, try find_note(app.db, input.id)));
+}
+
+fn done[D: effects](app: Notes[D], input: NoteId) -> result[Response] uses D {
+    return ok(json_reply(200, try mark_done(app.db, input.id)));
+}
+
+fn erase[D: effects](app: Notes[D], input: NoteId) -> result[Response] uses D {
+    try remove_note(app.db, input.id);
+    return ok(no_content());
+}
+
+fn alive[D: effects](app: Notes[D]) -> result[void] uses D {
+    let _ = try query(app.db, sql("select 1"), new list[Value]);
     return ok();
 }
 
-fn load[D: effects](db: Database[D]) -> result[list[Note]] uses D {
-    let out = new list[Note];
-    for row in try query(db, sql("select id, text, done from notes order by id"), new list[Value]) {
-        push(out, new Note { id: try get_int(row, "id"), text: try get_str(row, "text"), done: try get_int(row, "done") == 1 });
-    }
-    return ok(out);
-}
-
-# Writes what changed between before and after: new notes, notes now done, deleted notes.
-fn save[D: effects](db: Database[D], before: list[Note], after: list[Note]) -> result[void] uses D {
-    let old = new map[int, Note];
-    for n in before {
-        set old[n.id] = n;
-    }
-    let kept = new map[int, bool];
-    for n in after {
-        set kept[n.id] = true;
-        if not has(old, n.id) {
-            let _ = try exec(db, sql("insert into notes (id, text, done) values (?, ?, ?)"), [Value.integer(n.id), Value.text(n.text), Value.integer(if_done(n))]);
-        } else if old[n.id].done != n.done {
-            let _ = try exec(db, sql("update notes set done = ? where id = ?"), [Value.integer(if_done(n)), Value.integer(n.id)]);
+fn memory() -> Notes {
+    let db = open_memory();
+    match prepare(db) {
+        case ok() {
+        }
+        case err(_) {
         }
     }
-    for n in before {
-        if not has(kept, n.id) {
-            let _ = try exec(db, sql("delete from notes where id = ?"), [Value.integer(n.id)]);
-        }
-    }
-    return ok();
+    return new Notes { db: db };
 }
 
-fn if_done(n: Note) -> int {
-    if n.done {
-        return 1;
-    }
-    return 0;
-}
-
-# One request, in one transaction: load the notes, route, save what changed.
-export fn handle[D: effects](db: Database[D], r: Request) -> Response uses D {
-    let answered = transaction(db, fn() -> result[Response] {
-        let before = try load(db);
-        let a = route(r, before);
-        if a.changed {
-            try save(db, before, a.notes);
-        }
-        return ok(a.response);
-    });
-    match answered {
-        case ok(resp) {
-            return resp;
-        }
-        case err(e) {
-            return problem(500, "the notes database: " + e);
-        }
-    }
-}
-
-fn req(method: str, path: str, body: str) -> Request {
-    return new Request { method: method, path: path, query: "", headers: new list[Header], body: body };
-}
-
-fn two() -> list[Note] {
-    return [new Note { id: 1, text: "water the plants", done: false }, new Note { id: 2, text: "call home", done: true }];
+fn call(n: Notes, method: str, path: str, body: str) -> Response {
+    return handle_request(notes_app(), n, request(method, path, body));
 }
 
 @spec("FR-001")
 test "GET /notes lists the notes as JSON" {
-    let a = route(req("GET", "/notes", ""), two());
-    expect_eq(a.response.status, 200);
-    expect_eq(a.response.body, "[{\"id\":1,\"text\":\"water the plants\",\"done\":false},{\"id\":2,\"text\":\"call home\",\"done\":true}]\n");
-    expect(not a.changed);
+    let n = memory();
+    let _ = call(n, "POST", "/notes", "{\"text\": \"water the plants\"}");
+    let r = call(n, "GET", "/notes", "");
+    expect_eq(r.status, 200);
+    expect_eq(r.body, "[{\"id\":1,\"text\":\"water the plants\",\"done\":false}]");
 }
 
 @spec("FR-002")
 test "POST /notes adds a note with the next id" {
-    let a = route(req("POST", "/notes", "{\"text\": \" buy bread \"}"), two());
-    expect_eq(a.response.status, 201);
-    expect_eq(a.response.body, "{\"id\":3,\"text\":\"buy bread\",\"done\":false}\n");
-    expect_eq(a.response.headers[1], new Header { name: "Location", value: "/notes/3" });
-    expect_eq(len(a.notes), 3);
-    expect(a.changed);
+    let n = memory();
+    let _ = call(n, "POST", "/notes", "{\"text\": \"a\"}");
+    let r = call(n, "POST", "/notes", "{\"text\": \" buy bread \"}");
+    expect_eq(r.status, 201);
+    expect_eq(r.body, "{\"id\":2,\"text\":\"buy bread\",\"done\":false}");
+    expect_eq(r.headers[1].value, "/notes/2");
 }
 
 @spec("FR-003")
-test "a bad body is 400 with the reason" {
-    expect_eq(route(req("POST", "/notes", "{}"), two()).response.body, "{\"error\":\"the body needs a \\\"text\\\" field\"}\n");
-    expect_eq(route(req("POST", "/notes", "{\"text\": \"   \"}"), two()).response.status, 400);
-    expect_eq(route(req("POST", "/notes", "not json"), two()).response.status, 400);
+test "a missing, empty or too long text is refused with the reason" {
+    let n = memory();
+    expect_eq(call(n, "POST", "/notes", "{}").status, 400);
+    expect_eq(call(n, "POST", "/notes", "{\"text\": \"   \"}").status, 422);
+    expect_eq(call(n, "POST", "/notes", "not json").status, 400);
+    match parse_json(call(n, "POST", "/notes", "{\"txt\": \"typo\"}").body) {
+        case ok(j) {
+            expect_eq(int_field(j, "status"), ok(400));
+        }
+        case err(e) {
+            expect_eq(e, "");
+        }
+    }
 }
 
 @spec("FR-004")
 test "one note: read, mark done, delete" {
-    expect_eq(route(req("GET", "/notes/2", ""), two()).response.body, "{\"id\":2,\"text\":\"call home\",\"done\":true}\n");
-    let done = route(req("POST", "/notes/1/done", ""), two());
-    expect_eq(done.notes[0].done, true);
-    let gone = route(req("DELETE", "/notes/1", ""), two());
-    expect_eq(gone.response.status, 204);
-    expect_eq(gone.notes, [new Note { id: 2, text: "call home", done: true }]);
-}
-
-@spec("FR-006")
-test "the notes are kept in the database between requests" {
-    let db = open_memory();
-    expect_eq(prepare(db), ok());
-    expect_eq(handle(db, req("POST", "/notes", "{\"text\": \"buy bread\"}")).status, 201);
-    expect_eq(handle(db, req("POST", "/notes", "{\"text\": \"call home\"}")).status, 201);
-    expect_eq(handle(db, req("POST", "/notes/1/done", "")).status, 200);
-    expect_eq(handle(db, req("DELETE", "/notes/2", "")).status, 204);
-    expect_eq(load(db), ok([new Note { id: 1, text: "buy bread", done: true }]));
+    let n = memory();
+    let _ = call(n, "POST", "/notes", "{\"text\": \"call home\"}");
+    expect_eq(call(n, "GET", "/notes/1", "").body, "{\"id\":1,\"text\":\"call home\",\"done\":false}");
+    match parse_json(call(n, "POST", "/notes/1/done", "").body) {
+        case ok(j) {
+            expect_eq(text_field(j, "text"), ok("call home"));
+        }
+        case err(e) {
+            expect_eq(e, "");
+        }
+    }
+    expect_eq(call(n, "DELETE", "/notes/1", "").status, 204);
+    expect_eq(call(n, "GET", "/notes", "").body, "[]");
 }
 
 @spec("FR-005")
 test "unknown notes and paths are 404, other methods 405" {
-    expect_eq(route(req("GET", "/notes/9", ""), two()).response.status, 404);
-    expect_eq(route(req("GET", "/notes/x", ""), two()).response.status, 404);
-    expect_eq(route(req("GET", "/", ""), two()).response.status, 404);
-    expect_eq(route(req("PUT", "/notes", ""), two()).response.status, 405);
+    let n = memory();
+    expect_eq(call(n, "GET", "/notes/9", "").status, 404);
+    expect_eq(call(n, "GET", "/notes/x", "").status, 400);
+    expect_eq(call(n, "GET", "/", "").status, 404);
+    expect_eq(call(n, "PUT", "/notes", "").status, 405);
+}
+
+@spec("FR-006")
+test "the notes are kept in the database between requests" {
+    let n = memory();
+    let _ = call(n, "POST", "/notes", "{\"text\": \"one\"}");
+    let _ = call(n, "POST", "/notes", "{\"text\": \"two\"}");
+    expect_eq(all_notes(n.db), ok([new Note { id: 1, text: "one", done: false }, new Note { id: 2, text: "two", done: false }]));
+}
+
+@spec("FR-002")
+prop "added notes get distinct ids" (texts: list[str]) {
+    let n = memory();
+    let ids = new map[int, bool];
+    for t in texts {
+        match add_note(n.db, t) {
+            case ok(note) {
+                expect(not has(ids, note.id));
+                set ids[note.id] = true;
+            }
+            case err(e) {
+                expect_eq(e, "");
+            }
+        }
+    }
+    expect_eq(len(ids), len(texts));
 }

@@ -1,0 +1,4 @@
+header_unused.vo:3:5: error[E0329]: `@header` binds a request header, but no std.web operation takes `Login` as its input.
+   3 |     @header("X-Api-Key")
+     |     ^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings

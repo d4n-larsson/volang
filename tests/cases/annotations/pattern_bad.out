@@ -1,0 +1,4 @@
+pattern_bad.vo:3:15: error[E0319]: The class is not closed: add `]`.
+   3 |     @pattern("[a-z")
+     |               ^
+1 error, 0 warnings

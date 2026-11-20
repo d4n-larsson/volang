@@ -35,6 +35,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [026](../specs/026-sqlite/) | SQLite databases: `std.sqlite` with checked statements, `?` parameters, transactions, effect-typed connections | **Done** ([results](../specs/026-sqlite/results.md)) |
 | [027](../specs/027-structure-standards/) | Structure standards: a thin shell of effects over a pure core, small files and functions, no copies, tests next to the code (W0701–W0706, `@allow`) | **Done** ([results](../specs/027-structure-standards/results.md)) |
 | [028](../specs/028-concurrent-serve/) | Concurrent request handling: `std.http.serve_workers` with worker processes, a setup per worker, `--workers`, replay one request at a time | **Done** ([results](../specs/028-concurrent-serve/results.md)) |
+| [029](../specs/029-web-package/) | `std.web` for APIs, after Spring: route tables, typed input from path, query, headers and JSON body checked by field annotations, answers and RFC 9457 problems, errors mapped in one place, steps, settings, health, tests without a network; derived JSON conversion (`to_json`, `from_json`) for every program | **Done** ([results](../specs/029-web-package/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -287,6 +288,22 @@ SQLite.
 - **Not done (on purpose):** automatic scaling of the worker count, a cache shared between workers,
   serving over HTTPS (run a proxy in front).
 
+### 029: a web package for APIs (done)
+
+`std.web` gives APIs what Spring gives Java ones, as values instead of annotations and reflection: a
+route table (`on_get("/notes/{id}", show)`) checked by `vo check` (E0330, E0331), operations
+`fn(ctx, input) -> result[Response]` whose input record is bound from the path, query, headers and JSON
+body and checked by field annotations (`@size`, `@range`, `@pattern`, `@default`, `@header`; E0329)
+before they run, answers and RFC 9457 problems, errors `err("not_found: ...")` mapped in one place,
+steps around requests (request ids, logging, CORS, bearer tokens, API keys), typed settings, health and
+info routes, `serve_app` over `serve_workers`, and `handle_request` for tests. Underneath, every program
+gains derived JSON conversion (`to_json`, `from_json` for any `T: json`, E0328) and better inference
+(generic functions as values, a call's type from the other side of `==`, `try` and the expected type).
+The notes-api example is rewritten with it.
+
+- **Not done (on purpose):** sessions and cookies, HTML views, OpenAPI generation, rate limiting, HTTPS
+  serving, form and multipart bodies.
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -302,6 +319,7 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Debugger | traces, locals in errors and replay, but no stepping | replay makes a deterministic stepper possible |
 | Tuples, more map keys | no tuple type; map keys are `int` or `str` only | records and ordered maps cover some cases |
 | `old()` in `ensures` | contracts cannot compare with values from before the call | spec 005 follow-up |
+| Effects as an annotation | the `uses ...` clause sits between the signature and the body (`fn f(x: int) -> int uses file.read("data/") {`), which makes long signatures hard to read | move it to an annotation on the line above, as `@spec`/`@allow` are (`@uses(file.read("data/"))`); one form only, so `vo fmt` and a `vo edit` migration rewrite every program; function types (`fn(int) -> int uses E`) and effect arguments in types need their own spelling |
 | Confined child programs | a program started under `process` runs with the user's full rights | opt-in confinement to the grant (Landlock); spec 017 follow-up |
 | Serving over HTTPS | `std.http.serve` answers plain HTTP only; a public server needs a proxy in front | spec 019 follow-up: certificate and key under the program's grants |
 | Recorded tests | a test that uses HTTP, files, programs or the environment depends on the machine and the network | spec 018 follow-up, decided: `vo test --record DIR` saves one recording per test, `vo test --replay DIR` runs offline on them; replaces mock objects |

@@ -1,0 +1,57 @@
+$ request POST /notes '{"text":"milk"}'
+HTTP/1.1 201 Created
+Content-Type: application/json
+Location: /notes/1
+Content-Length: 1
+Connection: close
+
+1
+--- end
+$ request POST /notes '{"text":""}'
+HTTP/1.1 422 Unprocessable Content
+Content-Type: application/problem+json
+Content-Length: 134
+Connection: close
+
+{"type":"about:blank","title":"Unprocessable Content","status":422,"errors":[{"field":"text","reason":"at least 1 character, got 0"}]}
+--- end
+$ request GET /notes/1
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 6
+Connection: close
+
+"milk"
+--- end
+$ request GET /notes/9
+HTTP/1.1 404 Not Found
+Content-Type: application/problem+json
+Content-Length: 76
+Connection: close
+
+{"type":"about:blank","title":"Not Found","status":404,"detail":"no note 9"}
+--- end
+$ request GET /health
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 15
+Connection: close
+
+{"status":"up"}
+--- end
+$ request DELETE /notes/1
+HTTP/1.1 405 Method Not Allowed
+Content-Type: application/problem+json
+Allow: GET, HEAD
+Content-Length: 129
+Connection: close
+
+{"type":"about:blank","title":"Method Not Allowed","status":405,"detail":"DELETE is not allowed on /notes/1; allowed: GET, HEAD"}
+--- end
+$ signal TERM
+serving
+stopped
+--- stderr
+--- exit 0
+$ no-children
+left-over processes: 0

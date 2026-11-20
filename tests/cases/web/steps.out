@@ -1,0 +1,4 @@
+/hello -> 200 inner outer "hello ada"
+/admin/stats -> 403 inner outer stopped
+/administrator -> 404 inner outer {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for /administrator"}
+/boom -> 500 {"type":"about:blank","title":"Internal Server Error","status":500}

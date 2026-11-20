@@ -1,0 +1,65 @@
+# from_json's problems (spec 029): every reason with its path, all collected, in document order, then
+# the missing fields.
+import std.json.Json;
+import std.json.from_json;
+import std.json.parse_json;
+
+variant Level {
+    low;
+    high;
+}
+
+variant Shape {
+    circle(float);
+    empty;
+}
+
+record Inner {
+    @pattern("[a-z]+")
+    name: str;
+    @range(0.5, 1.5)
+    @default(1.0)
+    ratio: float;
+}
+
+record Doc {
+    @size(2, 5)
+    text: str;
+    @size(1, 2)
+    tags: list[str];
+    @range(-3, 3)
+    n: int;
+    level: Level;
+    shape: Shape;
+    raw: bytes;
+    inner: Inner;
+    big: int;
+    frac: int;
+}
+
+fn report(text: str) uses console {
+    match parse_json(text) {
+        case ok(j) {
+            let d: result[Doc] = from_json(j);
+            match d {
+                case ok(_) {
+                    print("ok");
+                }
+                case err(e) {
+                    print(e);
+                }
+            }
+        }
+        case err(e) {
+            print("not JSON: " + e);
+        }
+    }
+}
+
+fn main() uses console {
+    report("{\"text\": \"a\", \"tags\": [], \"n\": 4, \"level\": \"middle\", \"shape\": \"circle\", \"raw\": \"@@\", \"inner\": {\"name\": \"A1\", \"ratio\": 2.0}, \"big\": 1e20, \"frac\": 1.5}");
+    report("{\"text\": 3, \"tags\": [\"a\", 2, \"b\"], \"n\": \"4\", \"level\": {\"low\": 1}, \"shape\": {\"empty\": 1}, \"raw\": 1, \"inner\": [], \"big\": null, \"frac\": true, \"odd key\": 0}");
+    report("{\"text\": \"abcdef\"}");
+    report("[1]");
+    report("{\"text\": \"\\u00e9\\u00e9\", \"tags\": [\"x\"], \"n\": 0, \"level\": \"low\", \"shape\": {\"circle\": 2.0}, \"raw\": \"AAEC\", \"inner\": {\"name\": \"ok\"}, \"big\": 1, \"frac\": 2}");
+}

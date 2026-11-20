@@ -1,0 +1,44 @@
+# A generic call without arguments as a later argument of another generic call takes its type from that
+# parameter (handle_request(notes_app(), ...)), and a generic function value inside it from the route's.
+import std.http.Response;
+import std.sqlite.Database;
+import std.sqlite.Value;
+import std.sqlite.open;
+import std.sqlite.open_memory;
+import std.sqlite.query;
+import std.sqlite.sql;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.NoInput;
+import std.web.Step;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.on_get;
+import std.web.request;
+import std.web.serve_app;
+
+record Notes[D: effects] {
+    db: Database[D];
+}
+
+fn count[D: effects](app: Notes[D], input: NoInput) -> result[Response] uses D {
+    let rows = try query(app.db, sql("select 1 as one"), new list[Value]);
+    return ok(json_reply(200, len(rows)));
+}
+
+fn notes_app[D: effects]() -> App[Notes[D], uses D] {
+    return new App { routes: [on_get("/count", count)], steps: new list[Step[Notes[D], uses D]], errors: new list[ErrorStatus] };
+}
+
+fn open_notes() -> result[Notes[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
+    return ok(new Notes { db: try open("data/n.db") });
+}
+
+test "counts" {
+    let r = handle_request(notes_app(), new Notes { db: open_memory() }, request("GET", "/count", ""));
+    expect_eq(r.body, "1");
+}
+
+fn main() -> result[void] uses file.read("data/"), file.write("data/"), serve("8080") {
+    return serve_app("8080", 4, open_notes, notes_app());
+}

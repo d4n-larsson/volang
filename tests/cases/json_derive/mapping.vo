@@ -1,0 +1,65 @@
+# Every row of the derived JSON mapping (spec 029), and round trips back to equal values.
+import std.bytes.from_text;
+import std.json.Json;
+import std.json.from_json;
+import std.json.to_json;
+import std.json.write_json;
+
+variant Level {
+    low;
+    high;
+}
+
+variant Shape {
+    circle(float);
+    square(Size);
+    empty;
+}
+
+record Size {
+    w: int;
+    h: int;
+}
+
+record Pair[A, B] {
+    first: A;
+    second: B;
+}
+
+record All {
+    i: int;
+    f: float;
+    b: bool;
+    s: str;
+    raw: bytes;
+    xs: list[int];
+    m: map[str, Level];
+    shapes: list[Shape];
+    pair: Pair[str, list[bool]];
+}
+
+fn show(j: Json) uses console {
+    match write_json(j) {
+        case ok(t) {
+            print(t);
+        }
+        case err(e) {
+            print("error: " + e);
+        }
+    }
+}
+
+fn main() uses console {
+    let m = new map[str, Level];
+    set m["b"] = Level.high;
+    set m["a"] = Level.low;
+    let all = new All { i: -7, f: 2.5, b: true, s: "h\"i", raw: from_text("vo!"), xs: [1, 2], m: m, shapes: [Shape.circle(1.5), Shape.square(new Size { w: 2, h: 3 }), Shape.empty], pair: new Pair { first: "p", second: [false] } };
+    show(to_json(all));
+    let back: result[All] = from_json(to_json(all));
+    print(str(back == ok(all)));
+    show(to_json(Level.high));
+    show(to_json(0.0 / 0.0 + 1.0));
+    show(to_json(new map[str, int]));
+    let xs: result[list[float]] = from_json(Json.array([Json.integer(1), Json.number(2.5)]));
+    print(str(xs == ok([1.0, 2.5])));
+}

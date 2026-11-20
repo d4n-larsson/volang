@@ -52,7 +52,10 @@ def mutate(data, rng):
                                     b" uses ", b"console", b"file.write(\"out/\")", b"env(\"X\")",
                                     b"fn(", b"-> ", b"fn(x: int) { return x; }", b")(", b"[T]",
                                     b"[T: ordered]", b": effects", b"sort_by(", b"map(", b"new Box[int] ",
-                                    b"uses E", b"Stack[", b"fold("])
+                                    b"uses E", b"Stack[", b"fold(",
+                                    # spec 029: field annotations, records without fields
+                                    b"@size(1, 2)\n", b"@range(-1.5, ", b"@default(", b"@default([])\n",
+                                    b"@pattern(\"[a-z\")\n", b"@header(\"X\")", b"@", b"new P {}", b"{}"])
     return bytes(data)
 
 

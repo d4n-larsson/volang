@@ -1,0 +1,138 @@
+# Reference solution of bench/web (std.web): validates the acceptance suite.
+import std.http.Response;
+import std.sqlite.Database;
+import std.sqlite.Row;
+import std.sqlite.Value;
+import std.sqlite.exec;
+import std.sqlite.get_int;
+import std.sqlite.get_str;
+import std.sqlite.open;
+import std.sqlite.query;
+import std.sqlite.sql;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.Route;
+import std.web.Step;
+import std.web.created;
+import std.web.json_reply;
+import std.web.no_content;
+import std.web.on_delete;
+import std.web.on_get;
+import std.web.on_post;
+import std.web.on_put;
+import std.web.serve_app;
+
+record Store {
+    db: Database[uses file.read, file.write];
+}
+
+record Item {
+    id: int;
+    sku: str;
+    name: str;
+    quantity: int;
+}
+
+record Fields {
+    @size(3, 12)
+    @pattern("[A-Z0-9]+")
+    sku: str;
+    @size(1, 50)
+    name: str;
+    @range(0, 10000)
+    quantity: int;
+}
+
+record NewItem {
+    body: Fields;
+}
+
+record ItemId {
+    id: int;
+}
+
+record Change {
+    id: int;
+    body: Fields;
+}
+
+record Filter {
+    @default(-1)
+    min_quantity: int;
+}
+
+fn open_store() -> result[Store] uses file.read("data/"), file.write("data/") {
+    let db = try open("data/inventory.db");
+    let _ = try exec(db, sql("create table if not exists items (id integer primary key, sku text not null unique, name text not null, quantity integer not null)"), new list[Value]);
+    return ok(new Store { db: db });
+}
+
+fn item_of(row: Row) -> result[Item] {
+    return ok(new Item { id: try get_int(row, "id"), sku: try get_str(row, "sku"), name: try get_str(row, "name"), quantity: try get_int(row, "quantity") });
+}
+
+fn find_item(s: Store, id: int) -> result[Item] uses file.read("data/"), file.write("data/") {
+    let rows = try query(s.db, sql("select id, sku, name, quantity from items where id = ?"), [Value.integer(id)]);
+    if len(rows) == 0 {
+        return err("not_found: no item " + str(id));
+    }
+    return item_of(rows[0]);
+}
+
+fn unique(e: str) -> str {
+    if find(e, "UNIQUE") >= 0 {
+        return "conflict: the sku is taken";
+    }
+    return e;
+}
+
+fn list_items(s: Store, input: Filter) -> result[Response] uses file.read("data/"), file.write("data/") {
+    let out = new list[Item];
+    for row in try query(s.db, sql("select id, sku, name, quantity from items where quantity >= ? order by id"), [Value.integer(input.min_quantity)]) {
+        push(out, try item_of(row));
+    }
+    return ok(json_reply(200, out));
+}
+
+fn add(s: Store, input: NewItem) -> result[Response] uses file.read("data/"), file.write("data/") {
+    let f = input.body;
+    match exec(s.db, sql("insert into items (sku, name, quantity) values (?, ?, ?)"), [Value.text(f.sku), Value.text(f.name), Value.integer(f.quantity)]) {
+        case ok(c) {
+            return ok(created("/items/" + str(c.last_id), new Item { id: c.last_id, sku: f.sku, name: f.name, quantity: f.quantity }));
+        }
+        case err(e) {
+            return err(unique(e));
+        }
+    }
+}
+
+fn show(s: Store, input: ItemId) -> result[Response] uses file.read("data/"), file.write("data/") {
+    return ok(json_reply(200, try find_item(s, input.id)));
+}
+
+fn change(s: Store, input: Change) -> result[Response] uses file.read("data/"), file.write("data/") {
+    let _ = try find_item(s, input.id);
+    let f = input.body;
+    match exec(s.db, sql("update items set sku = ?, name = ?, quantity = ? where id = ?"), [Value.text(f.sku), Value.text(f.name), Value.integer(f.quantity), Value.integer(input.id)]) {
+        case ok(_) {
+            return ok(json_reply(200, new Item { id: input.id, sku: f.sku, name: f.name, quantity: f.quantity }));
+        }
+        case err(e) {
+            return err(unique(e));
+        }
+    }
+}
+
+fn remove_item(s: Store, input: ItemId) -> result[Response] uses file.read("data/"), file.write("data/") {
+    let _ = try find_item(s, input.id);
+    let _ = try exec(s.db, sql("delete from items where id = ?"), [Value.integer(input.id)]);
+    return ok(no_content());
+}
+
+fn routes() -> list[Route[Store, uses file.read, file.write]] {
+    return [on_get("/items", list_items), on_post("/items", add), on_get("/items/{id}", show), on_put("/items/{id}", change), on_delete("/items/{id}", remove_item)];
+}
+
+fn main() -> result[void] uses file.read("data/"), file.write("data/"), serve("8765") {
+    return serve_app("8765", 2, open_store, new App { routes: routes(), steps: new list[Step[Store, uses file.read, file.write]], errors: new list[ErrorStatus] });
+}

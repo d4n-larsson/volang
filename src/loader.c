@@ -302,6 +302,7 @@ void check_program(int file, int mode)
     ld_tree = rt_resolve(f->dir);
     load_imports(file);
     if (ld_hard) return;
+    web_inputs = vec_new(); /* spec 029: std.web operations' input records, for @header */
     for (long i = 0; i < ld_order->n; i++) {
         int id = (int)(long)vec_get(ld_order, i);
         FileRec *g = file_get(id);
@@ -309,6 +310,7 @@ void check_program(int file, int mode)
         g->state = FS_CHECKED;
         check_items(id, id == file ? mode : 0);
     }
+    check_web_headers(ld_order);
 }
 
 /* A silent symbol for a name whose import failed (later uses are not reported). */

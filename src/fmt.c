@@ -114,7 +114,7 @@ static void fm_tparams(Vec *tparams)
         fm_name(t->a.n);
         if (t->b.i) {
             fm_c(": ");
-            fm_c(t->b.i == TPC_ORDERED ? "ordered" : "effects");
+            fm_c(t->b.i == TPC_ORDERED ? "ordered" : t->b.i == TPC_JSON ? "json" : "effects");
         }
     }
     fm_b(']');
@@ -335,6 +335,10 @@ static void fm_expr(Node *n, long ctx)
         fm_c("new ");
         fm_name(n->a.n);
         fm_type_args(n->d.v);
+        if (!n->b.v->n) { /* spec 029: a record without fields */
+            fm_c(" {}");
+            break;
+        }
         fm_c(" { ");
         for (long i = 0; i < n->b.v->n; i++) {
             if (i) fm_c(", ");
@@ -524,6 +528,17 @@ static void fm_members(Vec *v, int is_record)
         if (m->kind == N_COMMENT) {
             fm_source(m);
         } else {
+            for (long j = 0; is_record && m->c.v && j < m->c.v->n; j++) { /* spec 029: field annotations */
+                Node *a = vec_get(m->c.v, j);
+                fm_b('@');
+                fm_name(a->a.n);
+                fm_b('(');
+                for (long k = 0; k < a->b.v->n; k++) {
+                    if (k) fm_c(", ");
+                    fm_expr(vec_get(a->b.v, k), 0);
+                }
+                fm_c(")\n    ");
+            }
             fm_name(m->a.n);
             if (is_record) {
                 fm_c(": ");

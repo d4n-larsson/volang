@@ -1,0 +1,7 @@
+vo run main.vo
+write settings.json {"max_notes": 50, "mode": "prod"}
+vo run main.vo
+env NOTES_MAX_NOTES=7 NOTES_PORT=9000 vo run main.vo
+env NOTES_MAX_NOTES=abc NOTES_PORT=0 vo run main.vo
+write settings.json [1]
+vo run main.vo
