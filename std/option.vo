@@ -1,0 +1,52 @@
+# std.option: a value that may be absent: Option[T] is some(value) or none (spec 032).
+# Part of the vo standard library. Import items one by one: `import std.option.NAME;`.
+# Use it when "nothing there" is a normal answer (a lookup that finds nothing); use a result when
+# something went wrong.
+
+# A value, or none.
+#     Option.some(3) == Option.some(3) is true
+export variant Option[T] {
+    # The value.
+    some(T);
+    # No value.
+    none;
+}
+
+# The value, or the default when there is none.
+#     or_else(Option.some(3), 0) is 3
+export fn or_else[T](o: Option[T], default: T) -> T {
+    match o {
+        case some(v) {
+            return v;
+        }
+        case none {
+            return default;
+        }
+    }
+}
+
+# Whether there is a value.
+#     is_some(Option.some("a")) is true
+export fn is_some[T](o: Option[T]) -> bool {
+    match o {
+        case some(_) {
+            return true;
+        }
+        case none {
+            return false;
+        }
+    }
+}
+
+# The value as ok, or err(e) when there is none.
+#     to_result(Option.some(1), "missing") == ok(1) is true
+export fn to_result[T, E](o: Option[T], e: E) -> result[T, E] {
+    match o {
+        case some(v) {
+            return ok(v);
+        }
+        case none {
+            return err(e);
+        }
+    }
+}

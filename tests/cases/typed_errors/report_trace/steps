@@ -1,0 +1,2 @@
+vo run --trace trace.jsonl main.vo
+keep trace.jsonl

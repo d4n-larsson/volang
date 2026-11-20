@@ -67,7 +67,7 @@ reviewer, or a tool, finds requirements without a test.
   (`on_get("/notes/{id}", show)`, ...), the input of each operation as a record (`NoteId { id: int }`
   from the path, `NewNote { body: NoteText }` from the JSON body, with `@size(1, 200)` on the text), and a
   health route. Routing, 404/405, reading and checking the input, JSON answers and problem bodies come
-  from `std.web`; there is no code for them here. An operation's `err("not_found: no note 7")` answers 404.
+  from `std.web`; there is no code for them here. The operations fail with a `NoteError` (`not_found(id)`, `blank`, `database(message)`), and one function, `note_problem`, gives each case its status, so the checker sees that every way to fail has one; `typed(op, note_problem)` makes each operation one the routes take.
 - **Workers and a database**: `main` calls `serve_app("8080", 4, open_notes, notes_app())`: four worker
   processes, each opening the database once (`open_notes`). Notes live in SQLite, so requests answered
   at once never lose each other's changes.

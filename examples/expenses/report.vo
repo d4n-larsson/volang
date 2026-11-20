@@ -22,27 +22,62 @@ export record Total {
     cents: int;
 }
 
+# A date that does not parse, and why.
+export record DateProblem {
+    date: str;
+    reason: str;
+}
+
+# How reading the expenses can fail: callers can tell a bad date from a negative amount (spec 032).
+export variant ExpenseError {
+    # The JSON is not an array of objects with the four fields; the message says where.
+    shape(str);
+    # A date that is not a calendar date.
+    bad_date(DateProblem);
+    # An amount below zero, on this date.
+    negative(str);
+}
+
+# The message for an ExpenseError.
+export fn describe(e: ExpenseError) -> str {
+    match e {
+        case shape(message) {
+            return message;
+        }
+        case bad_date(p) {
+            return "bad date `" + p.date + "`: " + p.reason;
+        }
+        case negative(date) {
+            return "negative amount on " + date;
+        }
+    }
+}
+
+fn shape_error(message: str) -> ExpenseError {
+    return ExpenseError.shape(message);
+}
+
 # The expenses in a parsed JSON array of objects with date, category, cents and note.
-export fn expenses_from(doc: Json) -> result[list[Expense]] {
+export fn expenses_from(doc: Json) -> result[list[Expense], ExpenseError] {
     let out = new list[Expense];
-    for item in try as_array(doc) {
-        let date = try text_field(item, "date");
+    for item in try map_err(as_array(doc), shape_error) {
+        let date = try map_err(text_field(item, "date"), shape_error);
         match parse_time(date) {
             case ok(_) {
             }
             case err(e) {
-                return err("bad date `" + date + "`: " + e);
+                return err(ExpenseError.bad_date(new DateProblem { date: date, reason: e }));
             }
         }
-        let cents = try int_field(item, "cents");
+        let cents = try map_err(int_field(item, "cents"), shape_error);
         if cents < 0 {
-            return err("negative amount on " + date);
+            return err(ExpenseError.negative(date));
         }
         push(out, new Expense {
             date: date,
-            category: try text_field(item, "category"),
+            category: try map_err(text_field(item, "category"), shape_error),
             cents: cents,
-            note: try text_field(item, "note")
+            note: try map_err(text_field(item, "note"), shape_error)
         });
     }
     return ok(out);
@@ -140,7 +175,10 @@ test "a bad date is an error, not a crash" {
     ) {
         case ok(doc) {
             expect_eq(expenses_from(doc), err(
-                "bad date `2026-02-30`: day 30 is not in that month"
+                ExpenseError.bad_date(new DateProblem {
+                    date: "2026-02-30",
+                    reason: "day 30 is not in that month"
+                })
             ));
         }
         case err(e) {

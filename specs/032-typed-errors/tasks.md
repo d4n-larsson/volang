@@ -134,14 +134,14 @@ contracts/diagnostics.md, contracts/library.md, quickstart.md
 
 **Independent Test**: quickstart step 4.
 
-- [ ] T017 [P] [US3] Golden cases first: `tests/cases/typed_errors/report_test.vo` (`test`: a failing
+- [X] T017 [P] [US3] Golden cases first: `tests/cases/typed_errors/report_test.vo` (`test`: a failing
   `expect_eq(load(""), ok(1))` shows `err(LoadError.missing("config.txt"))` and its first difference),
   `report_runtime.vo` (a runtime error with a typed-error local: shown in vo syntax),
   `report_trace` (a step case: `vo run --trace` with a function returning a typed error),
   `tests/cases/prop/typed.vo` (a property over `result[int, LoadError]`: a failing case shrunk to a
   minimal typed error), `tests/cases/tasks/typed.vo` (`concurrent_map` returning `result[int, LoadError]`
   values in input order).
-- [ ] T018 [US3] `src/rt_render.c`, `src/task.c`, `src/prop.c`, `src/rt_test.c`: verify each goes
+- [X] T018 [US3] `src/rt_render.c`, `src/task.c`, `src/prop.c`, `src/rt_test.c`: verify each goes
   through `case_payload` for the error (T005); fix any that assumes `str` (for example a generator that
   builds an error message directly); the cases of T017 pass.
 
@@ -153,17 +153,17 @@ contracts/diagnostics.md, contracts/library.md, quickstart.md
 
 **Independent Test**: quickstart step 5.
 
-- [ ] T019 [P] [US4] Golden cases first: `tests/cases/web/typed.vo` (an app with `NoteError` operations
+- [X] T019 [P] [US4] Golden cases first: `tests/cases/web/typed.vo` (an app with `NoteError` operations
   through `typed(..., note_problem)` and one prefix-form operation; `handle_request` answers 404 and 409
   with problem bodies identical to the prefix form's, 200 for success, and the prefix operation as
   before), `tests/cases/web/typed_missing.vo` (`check --json`: `note_problem` missing a case is E0401
   with its fix).
-- [ ] T020 [US4] `std/web.vo`: `export record Problem { status: int; detail: str; }` and `export fn
+- [X] T020 [US4] `std/web.vo`: `export record Problem { status: int; detail: str; }` and `export fn
   typed[C, I: json, X, E: effects](op: fn(C, I) -> result[Response, X] uses E, answer: fn(X) ->
   Problem) -> fn(C, I) -> result[Response] uses E`, answering `err(x)` with the problem body the prefix
   form builds (the same function), documented with an example; the module comment mentions both forms;
   `python3 tests/doc_conformance.py`.
-- [ ] T021 [US4] `examples/notes-api`: `NoteError` (`not_found(int)`, `blank`), `note_problem`, the
+- [X] T021 [US4] `examples/notes-api`: `NoteError` (`not_found(int)`, `blank`), `note_problem`, the
   operations through `typed`; its tests and `vo.effects` unchanged in meaning (record updated only if a
   function's effects change; they should not); the README's error paragraph.
 
@@ -175,9 +175,9 @@ contracts/diagnostics.md, contracts/library.md, quickstart.md
 
 **Independent Test**: quickstart step 6.
 
-- [ ] T022 [P] [US5] Golden cases first: `tests/cases/typed_errors/option.vo` (`Option[Note]` returned,
+- [X] T022 [P] [US5] Golden cases first: `tests/cases/typed_errors/option.vo` (`Option[Note]` returned,
   matched exhaustively, `or_else`, `is_some`, `to_result` into `result[Note, LoadError]`).
-- [ ] T023 [US5] `std/option.vo` (new; `export variant Option[T] { some(T); none; }`, `or_else`,
+- [X] T023 [US5] `std/option.vo` (new; `export variant Option[T] { some(T); none; }`, `or_else`,
   `is_some`, `to_result`, each documented with an example), registered with the other std modules
   (`Makefile` embed list, `tools/embed.py` inputs, `vo doc` module list); `docs/reference.md`'s module
   table gets a `std.option` row.
@@ -191,20 +191,20 @@ contracts/diagnostics.md, contracts/library.md, quickstart.md
 **Independent Test**: `ref_examples.py`, `site_examples.py`, `catalog.py` pass; the reference is under
 budget.
 
-- [ ] T024 [P] [US6] `tests/cases/fmt/typed_errors.vo` with `.expected.vo` (`result[int,LoadError]` and
+- [X] T024 [P] [US6] `tests/cases/fmt/typed_errors.vo` with `.expected.vo` (`result[int,LoadError]` and
   `result[ void , E ]` formatted to `result[int, LoadError]`, `result[void, E]`; `result[int, str]` kept),
   `.code` 0; `tests/cases/query/typed_errors` (a step case: `vo query refs` on an error case finds its
   `err(...)` uses and `case` arms; `vo edit rename` of the case changes them all).
-- [ ] T025 [US6] `docs/reference.md`: in "Results and errors", `result[T, E]`, `err` of the error type,
+- [X] T025 [US6] `docs/reference.md`: in "Results and errors", `result[T, E]`, `err` of the error type,
   `try` with the same error type (E0412 otherwise), `map_err`, `main` and tests with `str` errors, one
   runnable example; the Types table row for `result`; +≤ 300 tokens in all with T016 and T023.
-- [ ] T026 [P] [US6] `site/docs/guide/results-and-errors.md`: a section on typed errors (when callers act
+- [X] T026 [P] [US6] `site/docs/guide/results-and-errors.md`: a section on typed errors (when callers act
   on the kind of failure; a `describe` function for messages; `map_err` at layer boundaries) with checked
   examples; `site/docs/guide/apis.md`: `typed` and `Problem`; `python3 tests/site_examples.py`.
-- [ ] T027 [P] [US6] `examples/expenses`: `expenses_from` returns `result[list[Expense], ExpenseError]`
+- [X] T027 [P] [US6] `examples/expenses`: `expenses_from` returns `result[list[Expense], ExpenseError]`
   (`bad_date(str)`, `negative(str)`, `field(str)`), `main` converts it with `map_err` and a `describe`;
   output byte-identical; its tests pass.
-- [ ] T028 [P] [US6] `docs/roadmap.md`, `README.md`, `docs/review-2026-11/README.md`: spec 032 in the
+- [X] T028 [P] [US6] `docs/roadmap.md`, `README.md`, `docs/review-2026-11/README.md`: spec 032 in the
   status table and the notes (what was left out: `Option` for builtins, automatic messages, per-app error
   types).
 
@@ -212,12 +212,12 @@ budget.
 
 ## Phase 9: Polish & cross-cutting
 
-- [ ] T029 SC-005: `tests/perf.sh` (check time) and a loop of one million calls returning `err` with a
+- [X] T029 SC-005: `tests/perf.sh` (check time) and a loop of one million calls returning `err` with a
   variant against the same with a `str`, median of five; figures in results.md.
-- [ ] T030 `make test` (via `tools/progress.py run test`), then `make ARCH=aarch64` and `make
+- [X] T030 `make test` (via `tools/progress.py run test`), then `make ARCH=aarch64` and `make
   ARCH=riscv64` with `tests/run.sh tests/cases/typed_errors tests/cases/web tests/cases/prop
   tests/cases/tasks` under each (byte-identical outputs); not the gate unless asked.
-- [ ] T031 `specs/032-typed-errors/results.md`: SC-001–SC-006 with measurements, Verification,
+- [X] T031 `specs/032-typed-errors/results.md`: SC-001–SC-006 with measurements, Verification,
   Deviations; spec status; SC-007's agent run left for the user to schedule.
 
 ---

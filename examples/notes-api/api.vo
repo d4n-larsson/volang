@@ -1,8 +1,11 @@
 # The HTTP API: the route table, each operation's input (checked by std.web before it runs) and its answer.
-# Errors such as err("not_found: no note 7") become 404 problems; bad input becomes 400 or 422.
+# The operations fail with a NoteError, which note_problem answers with a status: one function, so
+# every way to fail has its status (spec 032); bad input becomes 400 or 422.
 import notes.Note;
+import notes.NoteError;
 import notes.add_note;
 import notes.all_notes;
+import notes.db_error;
 import notes.find_note;
 import notes.mark_done;
 import notes.prepare;
@@ -20,6 +23,7 @@ import std.sqlite.sql;
 import std.web.App;
 import std.web.HealthCheck;
 import std.web.NoInput;
+import std.web.Problem;
 import std.web.created;
 import std.web.handle_request;
 import std.web.health_route;
@@ -29,6 +33,7 @@ import std.web.on_delete;
 import std.web.on_get;
 import std.web.on_post;
 import std.web.request;
+import std.web.typed;
 import std.web.web_app;
 
 # Where the notes are kept: the database in data/, read and written.
@@ -55,13 +60,20 @@ record NoteId {
 }
 
 # GET /notes, POST /notes, GET /notes/ID, POST /notes/ID/done, DELETE /notes/ID, GET /health.
+# Each operation is typed(op, note_problem); the types are written out because the operations are
+# generic in the database's effects, which inference does not follow through two generic calls.
 export fn notes_app[D: effects]() -> App[Notes[D], uses D] {
+    let listing: fn(Notes[D], NoInput) -> result[Response] uses D = typed(list_notes, note_problem);
+    let adding: fn(Notes[D], NewNote) -> result[Response] uses D = typed(create, note_problem);
+    let showing: fn(Notes[D], NoteId) -> result[Response] uses D = typed(show, note_problem);
+    let finishing: fn(Notes[D], NoteId) -> result[Response] uses D = typed(done, note_problem);
+    let erasing: fn(Notes[D], NoteId) -> result[Response] uses D = typed(erase, note_problem);
     return web_app([
-        on_get("/notes", list_notes),
-        on_post("/notes", create),
-        on_get("/notes/{id}", show),
-        on_post("/notes/{id}/done", done),
-        on_delete("/notes/{id}", erase),
+        on_get("/notes", listing),
+        on_post("/notes", adding),
+        on_get("/notes/{id}", showing),
+        on_post("/notes/{id}/done", finishing),
+        on_delete("/notes/{id}", erasing),
         health_route([new HealthCheck { name: "database", check: alive }])
     ]);
 }
@@ -73,28 +85,43 @@ export fn open_notes() -> result[Notes[uses Storage]] uses Storage {
     return ok(new Notes { db: db });
 }
 
-fn list_notes[D: effects](app: Notes[D], input: NoInput) -> result[Response] uses D {
-    return ok(json_reply(200, try all_notes(app.db)));
+# The status and detail of each way the notes can fail (a database failure is 500, with no detail).
+fn note_problem(e: NoteError) -> Problem {
+    match e {
+        case not_found(id) {
+            return new Problem { status: 404, detail: "no note " + str(id) };
+        }
+        case blank {
+            return new Problem { status: 422, detail: "the text is only spaces" };
+        }
+        case database(_) {
+            return new Problem { status: 500, detail: "" };
+        }
+    }
 }
 
-fn create[D: effects](app: Notes[D], input: NewNote) -> result[Response] uses D {
+fn list_notes[D: effects](app: Notes[D], input: NoInput) -> result[Response, NoteError] uses D {
+    return ok(json_reply(200, try map_err(all_notes(app.db), db_error)));
+}
+
+fn create[D: effects](app: Notes[D], input: NewNote) -> result[Response, NoteError] uses D {
     let text = trim(input.body.text);
     if text == "" {
-        return err("unprocessable: the text is only spaces");
+        return err(NoteError.blank);
     }
-    let note = try add_note(app.db, text);
+    let note = try map_err(add_note(app.db, text), db_error);
     return ok(created("/notes/" + str(note.id), note));
 }
 
-fn show[D: effects](app: Notes[D], input: NoteId) -> result[Response] uses D {
+fn show[D: effects](app: Notes[D], input: NoteId) -> result[Response, NoteError] uses D {
     return ok(json_reply(200, try find_note(app.db, input.id)));
 }
 
-fn done[D: effects](app: Notes[D], input: NoteId) -> result[Response] uses D {
+fn done[D: effects](app: Notes[D], input: NoteId) -> result[Response, NoteError] uses D {
     return ok(json_reply(200, try mark_done(app.db, input.id)));
 }
 
-fn erase[D: effects](app: Notes[D], input: NoteId) -> result[Response] uses D {
+fn erase[D: effects](app: Notes[D], input: NoteId) -> result[Response, NoteError] uses D {
     try remove_note(app.db, input.id);
     return ok(no_content());
 }

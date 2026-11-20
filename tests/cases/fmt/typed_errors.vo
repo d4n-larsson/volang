@@ -1,0 +1,15 @@
+variant LoadError {
+    missing(str);
+}
+
+fn a() -> result[int,LoadError] {
+    return ok(1);
+}
+
+fn b() -> result[ void , LoadError ] {
+    return ok();
+}
+
+fn c() -> result[int, str] {
+    return ok(1);
+}

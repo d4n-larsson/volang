@@ -1,0 +1,27 @@
+# Property inputs of result[T, E] include errors of E, and a failing one is shrunk.
+variant LoadError {
+    missing(str);
+    malformed(int);
+}
+
+fn size(r: result[int, LoadError]) -> int {
+    match r {
+        case ok(_) {
+            return 0;
+        }
+        case err(e) {
+            match e {
+                case missing(_) {
+                    return 0;
+                }
+                case malformed(n) {
+                    return n;
+                }
+            }
+        }
+    }
+}
+
+prop "sizes are small" (r: result[int, LoadError]) {
+    expect(size(r) < 50);
+}

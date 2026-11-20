@@ -1,0 +1,18 @@
+# The mapping from a typed error to statuses is a match: a case without a status is E0401.
+import std.web.Problem;
+
+variant NoteError {
+    not_found(int);
+    duplicate(str);
+}
+
+fn note_problem(e: NoteError) -> Problem {
+    match e {
+        case not_found(id) {
+            return new Problem { status: 404, detail: "no note " + str(id) };
+        }
+    }
+}
+
+fn main() {
+}

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-20
 
-**Status**: Draft
+**Status**: Implemented (gate not run)
 
 **Input**: User description: "Typed errors: `result[T, E]` where E is the error type, so callers can tell
 failures apart with an exhaustive `match` instead of comparing message text. Today every `result[T]`

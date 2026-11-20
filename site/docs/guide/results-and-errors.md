@@ -297,6 +297,63 @@ fn main() uses console {
 line 3: invalid int: 3O
 ```
 
+## Typed errors: `result[T, E]`
+
+A message is enough when the caller only reports the failure. When callers must act on the kind of
+failure (retry on a timeout, answer 404 for a missing record, skip a bad line), declare the ways to fail
+as a variant and return `result[T, E]`: the caller matches the error, and the checker makes sure every
+case is handled. `result[T]` is `result[T, str]`.
+
+```vo
+variant LineError {
+    empty;
+    not_a_number(str);
+}
+
+fn parse_line(line: str) -> result[int, LineError] {
+    if trim(line) == "" {
+        return err(LineError.empty);
+    }
+    return map_err(parse_int(trim(line)), fn(m: str) -> LineError {
+        return LineError.not_a_number(line);
+    });
+}
+
+fn main() uses console {
+    var total = 0;
+    for line in ["4", "", "x", "6"] {
+        match parse_line(line) {
+            case ok(n) {
+                set total = total + n;
+            }
+            case err(e) {
+                match e {
+                    case empty {
+                    }
+                    case not_a_number(text) {
+                        print("skipped " + text);
+                    }
+                }
+            }
+        }
+    }
+    print(str(total));
+}
+```
+
+```output
+skipped x
+10
+```
+
+`try` passes an error up unchanged, so it works only between functions with the same error type
+([E0412](../errors/E0412.md) otherwise). Where a low-level error becomes a higher-level one, convert it
+with `map_err(r, f)`: an `ok` passes through, `err(e)` becomes `err(f(e))`, and `f`'s effects are the
+caller's. There is no other conversion, and none happens by itself. `main` and tests fail with a message
+(`result[void]`), so a program converts a typed error to text where it reaches them, usually with a
+`describe` function that matches every case. For a value that may simply be absent, `std.option` has
+`Option[T]` (`some(value)` or `none`).
+
 ## A result cannot be ignored
 
 Calling a function that returns a result and doing nothing with it is

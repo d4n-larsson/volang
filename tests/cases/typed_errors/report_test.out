@@ -1,0 +1,10 @@
+FAIL loads the empty text (0ms)
+  report_test.vo:15:5: `expect_eq` failed: the values differ.
+    expected: ok(1)
+    actual:   err(LoadError.missing("config.txt"))
+FAIL the wrong file (0ms)
+  report_test.vo:19:5: `expect_eq` failed: the values differ.
+    expected: err(LoadError.missing("other.txt"))
+    actual:   err(LoadError.missing("config.txt"))
+    first difference at .err.missing: expected "other.txt", actual "config.txt"
+0 passed, 2 failed

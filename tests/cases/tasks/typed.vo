@@ -1,0 +1,18 @@
+# Tasks return typed errors in input order.
+variant LoadError {
+    missing(str);
+}
+
+fn load(n: int) -> result[int, LoadError] {
+    if n % 2 == 0 {
+        return err(LoadError.missing(str(n)));
+    }
+    return ok(n * 10);
+}
+
+fn main() uses console {
+    let rs = concurrent_map([1, 2, 3], 2, load);
+    print(
+        str(rs[0] == ok(10)) + " " + str(rs[1] == err(LoadError.missing("2"))) + " " + str(rs[2] == ok(30))
+    );
+}

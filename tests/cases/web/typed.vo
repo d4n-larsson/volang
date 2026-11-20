@@ -1,0 +1,63 @@
+# Typed operations (spec 032): an operation fails with its own error type, and one function maps each
+# error to its status; the answers are the problems the "kind: detail" form gives.
+import std.http.Response;
+import std.web.App;
+import std.web.Problem;
+import std.web.Route;
+import std.web.Step;
+import std.web.error_status;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.on_get;
+import std.web.request;
+import std.web.typed;
+
+variant NoteError {
+    not_found(int);
+    duplicate(str);
+}
+
+record ById {
+    id: int;
+}
+
+fn note_problem(e: NoteError) -> Problem {
+    match e {
+        case not_found(id) {
+            return new Problem { status: 404, detail: "no note " + str(id) };
+        }
+        case duplicate(title) {
+            return new Problem { status: 409, detail: "a note is already called " + title };
+        }
+    }
+}
+
+fn show(n: int, input: ById) -> result[Response, NoteError] {
+    if input.id == 7 {
+        return ok(json_reply(200, "seven"));
+    }
+    if input.id == 8 {
+        return err(NoteError.duplicate("eight"));
+    }
+    return err(NoteError.not_found(input.id));
+}
+
+fn old_style(n: int, input: ById) -> result[Response] {
+    return err("not_found: no note " + str(input.id));
+}
+
+fn routes() -> list[Route[int]] {
+    return [on_get("/notes/{id}", typed(show, note_problem)), on_get("/old/{id}", old_style)];
+}
+
+fn main() uses console {
+    let app = new App {
+        routes: routes(),
+        steps: new list[Step[int]],
+        errors: [error_status("quota", 429)]
+    };
+    for path in ["/notes/7", "/notes/8", "/notes/3", "/old/3"] {
+        let r = handle_request(app, 0, request("GET", path, ""));
+        print(path + " -> " + str(r.status) + " " + r.body);
+    }
+}

@@ -1,0 +1,20 @@
+$ vo query refs main.vo LoadError.missing
+main.vo:3:5 declaration: missing(str);
+main.vo:9:30 use in load: return err(LoadError.missing("config.txt"));
+main.vo:23:14 use in describe: case missing(path) {
+3 references
+--- stderr
+--- exit 0
+$ vo edit rename main.vo LoadError.missing absent
+main.vo:3:5 missing -> absent
+main.vo:9:30 missing -> absent
+main.vo:23:14 missing -> absent
+renamed missing to absent: 3 changes in 1 file
+--- stderr
+--- exit 0
+$ vo run main.vo
+loaded 12
+no file config.txt
+bad number of 2 characters
+--- stderr
+--- exit 0

@@ -68,7 +68,7 @@ line two
 | `ordered_set[T]` | ascending, each once | `T` ordered; reference type |
 | `priority_queue[T]` | `pop` gives the smallest | ties leave in push order; reference type |
 | `deque[T]` | cheap at both ends | reference type |
-| `result[T]` | `ok(T)` or `err(str)` | `result[void]` for "ok or error, no value" |
+| `result[T]` | `ok(T)` or `err(str)` | `result[void]` for "ok or error, no value"; `result[T, E]` fails with an `E` |
 | `Name` | a declared `record` or `variant` | records are reference types |
 
 Types nest: `list[list[int]]`, `map[str, list[Point]]`, `result[list[str]]`.
@@ -711,6 +711,53 @@ not positive: -1
 50
 ```
 
+**Typed errors**: `result[T, E]` fails with a value of type `E`, usually a variant of the ways to fail, so callers `match` the error and the checker sees every case (`result[T]` is `result[T, str]`). `err(e)` takes an `E`. `try` passes an error up only to a function with the same error type (E0412); `map_err(r, f)` converts one. `main` and tests fail with a `str`.
+
+```vo
+variant LoadError {
+    missing(str);
+    bad_number(str);
+}
+
+fn load(text: str) -> result[int, LoadError] {
+    if text == "" {
+        return err(LoadError.missing("count"));
+    }
+    return map_err(parse_int(text), fn(m: str) -> LoadError {
+        return LoadError.bad_number(text);
+    });
+}
+
+fn describe(e: LoadError) -> str {
+    match e {
+        case missing(what) {
+            return "no " + what;
+        }
+        case bad_number(text) {
+            return "not a number: " + text;
+        }
+    }
+}
+
+fn main() -> result[void] uses console {
+    print(str(try map_err(load("7"), describe)));
+    match load("x") {
+        case ok(n) {
+            print(str(n));
+        }
+        case err(e) {
+            print(describe(e));
+        }
+    }
+    return ok();
+}
+```
+
+```output
+7
+not a number: x
+```
+
 `try e + 1` means `(try e) + 1`. A `result` must be handled:
 
 ```vo
@@ -1102,13 +1149,14 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 | std.math | `sqrt`, `pow`, `exp`, `log`, trigonometry, `pi`; `floor`, `ceil`, `round` to `int` (correctly rounded; out of domain is R0007) |
 | std.regex | `regex("...")` (checked by `vo check`), `parse_regex`, `is_match`, `first_match`, `all_matches`, `replace_all` (`$1`), `split_on`: linear time; write `\\d` for `\d` |
 | std.sqlite | `open` → `Database[uses file.read, file.write]`, `open_readonly` → `Database[uses file.read]`, `open_memory` → `Database`; `exec`, `query` (need the database's effects) with `sql("...")` (checked) and `?` parameters (`Value`); `transaction`; `get_int`, `get_str`, ... |
+| std.option | `Option[T]` (`some`, `none`) for absence, `or_else`, `is_some`, `to_result` |
 | std.web | APIs over `serve_workers`: `web_app`, `on_get`/`on_post`/`on_put`/`on_patch`/`on_delete`, `json_reply(status, v)`, `created`, `no_content`, `serve_app`, `handle_request`, steps, `load_settings`, `health_route` |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
 - `https://` URLs are verified: the server's certificate must lead to an authority in the machine's trust store (or a file given with `--ca-file`), be valid now and name the host; otherwise `get`/`post` return an `err` saying why (`vo doc std.http.get` lists them). Nothing turns verification off. TLS 1.3 and 1.2 only; `--clock-ms` does not affect certificate dates. A recording keeps requests and responses, never keys; replay needs no network.
 - `std.http.serve(address, handle)` reads many requests at once and calls `handle(request) -> Response` for one at a time, in the order they arrive complete, until Ctrl-C or SIGTERM, then returns `ok()`. The caller declares `serve` with that address and the handler's effects. A handler that stops with a runtime error answers 500 (the report goes to stderr) and the server goes on; `--timeout` limits each handler call, not the server.
 - `serve_workers(address, workers, setup, handle)` handles up to `workers` requests at once (1 to 64; `vo run --workers N` overrides it): each worker is a separate process that runs `setup() -> result[S]` once (open the database there) and then `handle(state, request)` for one request at a time. Nothing in memory is shared between requests: keep state in a database and change it in a `transaction`, never by reading, changing and writing back a file. A dead worker is replaced; replay runs the requests one at a time.
-- `std.web`: an app is `web_app([on_get("/notes/{id}", show), ...])` (or `new App { routes: ..., steps: ..., errors: ... }` with steps and error kinds); an operation is `fn(ctx: C, input: I) -> result[Response]`, `I` a record whose fields take the path variable of their name, the JSON body (field `body`), a header (`@header("Name")`) or the query parameter of their name, checked with the field annotations before it runs (else a 400/415/422 problem naming each field). `err("not_found: detail")` answers 404 (also `bad_request`, `unauthorized`, `forbidden`, `conflict`, `gone`, `unprocessable`, and `App.errors`); other errors 500. Patterns are checked literals (E0330, E0331). `serve_app(address, workers, setup, app)` serves it; tests call `handle_request(app, ctx, request(method, path, body))`. Answers: `ok(json_reply(200, note))`, `created("/notes/7", note)`, `no_content()`. JSON bodies need `Content-Type: application/json`.
+- `std.web`: an app is `web_app([on_get("/notes/{id}", show), ...])` (or `new App { routes: ..., steps: ..., errors: ... }` with steps and error kinds); an operation is `fn(ctx: C, input: I) -> result[Response]`, `I` a record whose fields take the path variable of their name, the JSON body (field `body`), a header (`@header("Name")`) or the query parameter of their name, checked with the field annotations before it runs (else a 400/415/422 problem naming each field). `err("not_found: detail")` answers 404 (also `bad_request`, `unauthorized`, `forbidden`, `conflict`, `gone`, `unprocessable`, and `App.errors`); other errors 500. An operation with a typed error is wrapped, `typed(op, answer)`, `answer` mapping each error to a `Problem { status, detail }`. Patterns are checked literals (E0330, E0331). `serve_app(address, workers, setup, app)` serves it; tests call `handle_request(app, ctx, request(method, path, body))`. Answers: `ok(json_reply(200, note))`, `created("/notes/7", note)`, `no_content()`. JSON bodies need `Content-Type: application/json`.
 - `std.process.run(program, args)` runs a program with no shell (arguments are passed as they are), no input and an empty environment, waits for it and returns `Output { code, stdout, stderr }`; `run_with` adds input text and `NAME=value` variables. A non-zero exit is `ok`; killed by signal n, `code` is 128 + n. `--timeout` covers the program and everything it starts. A started program is not confined: `process("git")` grants whatever `git` can do.
 - File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.
 - Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.

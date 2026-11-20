@@ -1,0 +1,4 @@
+/notes/7 -> 200 "seven"
+/notes/8 -> 409 {"type":"about:blank","title":"Conflict","status":409,"detail":"a note is already called eight"}
+/notes/3 -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no note 3"}
+/old/3 -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no note 3"}

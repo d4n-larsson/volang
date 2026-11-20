@@ -38,6 +38,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [029](../specs/029-web-package/) | `std.web` for APIs, after Spring: route tables, typed input from path, query, headers and JSON body checked by field annotations, answers and RFC 9457 problems, errors mapped in one place, steps, settings, health, tests without a network; derived JSON conversion (`to_json`, `from_json`) for every program | **Done** ([results](../specs/029-web-package/results.md)) |
 | [030](../specs/030-readable-signatures/) | readable signatures: `vo fmt` lays out headers over 100 characters (the effect clause on its own line, then parameters one per line); named effect sets (`effects Storage = ...;`, `uses console, Storage`) with one form for effects everywhere | **Done** ([results](../specs/030-readable-signatures/results.md)) |
 | [031](../specs/031-constants/) | Constants: `const name = value;` items of type `int`, `float`, `bool` or `str`, worked out by the checker from literals, constants and operators; usable as effect scopes, annotation limits and checked templates; reviews show values | **Implemented** ([results](../specs/031-constants/results.md)) |
+| [032](../specs/032-typed-errors/) | Typed errors: `result[T, E]` (`result[T]` is `result[T, str]`), `try` only between the same error types (E0412), `map_err` the one conversion; `std.web`'s `typed(op, answer)` maps a variant to statuses in one checked function; `std.option` | **Implemented** ([results](../specs/032-typed-errors/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -332,6 +333,20 @@ constant changes nothing in review, and changing the constant is reported for ea
 - **Not done (on purpose):** calls in values (even `len` or `str`), lists, maps and records as
   constants (they can be changed in place), constants inside functions (`let` names a value there),
   generic constants.
+
+### 032: typed errors (implemented)
+
+Every `result` used to fail with a `str`, so callers could only compare text, and `std.web` read a status
+out of a message prefix. `result[T, E]` fails with a value of `E`, usually a variant of the ways to fail:
+callers `match` it and the checker sees every case. `try` passes an error up only between the same error
+types (E0412); `map_err(r, f)` is the one conversion; `main` and tests keep `str` errors. `std.web` gains
+`typed(op, answer)`, `std.option` gives `Option[T]` for absence.
+
+- **Not done (on purpose):** builtins returning `Option` (`pop`, `env`, `get_or` keep their results),
+  any automatic message from an error value, one error type per `std.web` app.
+- **Found on the way:** a generic function value two generic calls deep does not get its effect
+  arguments inferred (`on_get(p, typed(op, f))` with `op` generic in its effects): the notes API writes
+  the operations' types out. Worth a small spec of its own.
 
 ## Planned after 017
 

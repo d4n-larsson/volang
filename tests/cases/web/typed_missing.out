@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0403","name":"missing_return","severity":"error","file":"typed_missing.vo","start":{"line":9,"col":4},"end":{"line":9,"col":16},"text":"note_problem","message":"`note_problem` can reach its end without returning a value.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0401","name":"non_exhaustive_match","severity":"error","file":"typed_missing.vo","start":{"line":10,"col":5},"end":{"line":10,"col":12},"text":"match e","message":"This `match` is missing cases: `duplicate`.","fixes":[{"file":"typed_missing.vo","start":{"line":14,"col":5},"end":{"line":14,"col":5},"replacement":"case duplicate(_) {\n}\n"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

@@ -1,0 +1,14 @@
+# A runtime error shows a typed-error local in vo syntax.
+variant LoadError {
+    missing(str);
+}
+
+fn load() -> result[int, LoadError] {
+    return err(LoadError.missing("config.txt"));
+}
+
+fn main() uses console {
+    let r = load();
+    let xs = [1];
+    print(str(xs[3]) + str(r == ok(1)));
+}

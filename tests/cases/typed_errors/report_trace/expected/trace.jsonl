@@ -1,0 +1,5 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"load","file":"main.vo","start":{"line":11,"col":15},"args":[{"name":"name","value":"\"a.txt\""}]}
+{"v":1,"kind":"return","depth":2,"function":"load","value":"err(LoadError.missing(\"a.txt\"))"}
+{"v":1,"kind":"return","depth":1,"function":"main"}
+{"v":1,"kind":"end","records":4,"omitted":0,"status":0}

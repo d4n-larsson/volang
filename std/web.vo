@@ -7,7 +7,9 @@
 # header (`@header("Name")`) or else the query parameter of their name; input that does not fit (types,
 # missing fields, field limits) is answered 400 or 422 and the operation does not run.
 # Errors are `err("kind: detail")`: bad_request 400, unauthorized 401, forbidden 403, not_found 404,
-# conflict 409, gone 410, unprocessable 422, and the kinds in App.errors; any other err is 500.
+# conflict 409, gone 410, unprocessable 422, and the kinds in App.errors; any other err is 500. An operation
+# that fails with its own error type (a variant) is wrapped with typed(op, answer), answer mapping each
+# error to a Problem: one function with a match, so the checker sees every case has a status.
 import std.bytes.from_hex;
 import std.bytes.from_text;
 import std.bytes.to_text;
@@ -181,6 +183,34 @@ export fn created[T: json](location: str, v: T) -> Response {
 #     no_content().status is 204
 export fn no_content() -> Response {
     return new Response { status: 204, headers: new list[Header], body: "" };
+}
+
+# What a typed operation's error is answered with (typed): the status and the problem's detail.
+#     new Problem { status: 404, detail: "no note 7" }.status is 404
+export record Problem {
+    # The HTTP status, such as 404.
+    status: int;
+    # The problem's detail (left out of the body when empty).
+    detail: str;
+}
+
+# An operation that fails with its own error type X, made into one routes take: `ok` is answered as it is, `err(x)` with the problem answer(x) gives (spec 032).
+#     on_get("/n", typed(fn(n: int, input: NoInput) -> result[Response, int] { return err(7); }, fn(x: int) -> Problem { return new Problem { status: 404, detail: str(x) }; })).pattern is "/n"
+export fn typed[C, I: json, X, E: effects](
+    op: fn(C, I) -> result[Response, X] uses E,
+    answer: fn(X) -> Problem
+) -> fn(C, I) -> result[Response] uses E {
+    return fn(ctx: C, input: I) -> result[Response] {
+        match op(ctx, input) {
+            case ok(r) {
+                return ok(r);
+            }
+            case err(x) {
+                let p = answer(x);
+                return ok(problem(p.status, p.detail, new list[Json]));
+            }
+        }
+    };
 }
 
 # The status an error kind answers: `err("quota: 100 requests a day")` with error_status("quota", 429) in App.errors is 429.

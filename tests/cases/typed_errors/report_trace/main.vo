@@ -1,0 +1,12 @@
+# A trace shows a typed error returned by a function in vo syntax.
+variant LoadError {
+    missing(str);
+}
+
+fn load(name: str) -> result[int, LoadError] {
+    return err(LoadError.missing(name));
+}
+
+fn main() uses console {
+    print(str(load("a.txt") == ok(1)));
+}

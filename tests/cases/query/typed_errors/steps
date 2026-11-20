@@ -1,0 +1,4 @@
+vo query refs main.vo LoadError.missing
+vo edit rename main.vo LoadError.missing absent
+vo run main.vo
+keep main.vo

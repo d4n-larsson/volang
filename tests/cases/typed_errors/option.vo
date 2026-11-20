@@ -1,0 +1,32 @@
+# std.option: absence is a value, matched like any variant, and turned into a typed error when needed.
+import std.option.Option;
+import std.option.is_some;
+import std.option.or_else;
+import std.option.to_result;
+
+variant LoadError {
+    missing(int);
+}
+
+fn lookup(ids: list[int], id: int) -> Option[int] {
+    for x in ids {
+        if x == id {
+            return Option.some(x * 10);
+        }
+    }
+    return Option.none;
+}
+
+fn main() uses console {
+    let ids = [1, 2, 3];
+    match lookup(ids, 2) {
+        case some(v) {
+            print("found " + str(v));
+        }
+        case none {
+            print("none");
+        }
+    }
+    print(str(or_else(lookup(ids, 9), -1)) + " " + str(is_some(lookup(ids, 3))));
+    print(str(to_result(lookup(ids, 9), LoadError.missing(9)) == err(LoadError.missing(9))));
+}

@@ -63,4 +63,5 @@
 {"v":1,"kind":"doc","module":"std.regex","name":"std.regex","item":"module","signature":"std.regex","description":"Regular expressions that run in linear time: test, find, replace and split with compiled patterns."}
 {"v":1,"kind":"doc","module":"std.sqlite","name":"std.sqlite","item":"module","signature":"std.sqlite","description":"SQLite databases in files (file.read, file.write) or in memory (no effect), with checked statements and ? parameters."}
 {"v":1,"kind":"doc","module":"std.web","name":"std.web","item":"module","signature":"std.web","description":"Building HTTP APIs: a route table, typed request input, JSON answers, errors mapped in one place, steps around requests, settings, health, and tests without a network."}
+{"v":1,"kind":"doc","module":"std.option","name":"std.option","item":"module","signature":"std.option","description":"a value that may be absent: Option[T] is some(value) or none (spec 032)."}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":57}

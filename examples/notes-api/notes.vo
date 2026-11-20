@@ -33,15 +33,31 @@ export fn all_notes[D: effects](db: Database[D]) -> result[list[Note]] uses D {
     return ok(out);
 }
 
-# The note with this id, or err("not_found: ...") (std.web answers 404).
-export fn find_note[D: effects](db: Database[D], id: int) -> result[Note] uses D {
-    let rows = try query(db, sql("select id, text, done from notes where id = ?"), [
-        Value.integer(id)
-    ]);
+# How the notes can fail: the API answers each with its own status (api.vo, note_problem).
+export variant NoteError {
+    # No note has this id.
+    not_found(int);
+    # A note's text is only spaces.
+    blank;
+    # The database failed; the message is for the log, not the client.
+    database(str);
+}
+
+# A database message as a NoteError (for map_err).
+export fn db_error(message: str) -> NoteError {
+    return NoteError.database(message);
+}
+
+# The note with this id, or err(NoteError.not_found(id)).
+export fn find_note[D: effects](db: Database[D], id: int) -> result[Note, NoteError] uses D {
+    let rows = try map_err(
+        query(db, sql("select id, text, done from notes where id = ?"), [Value.integer(id)]),
+        db_error
+    );
     if len(rows) == 0 {
-        return err("not_found: no note " + str(id));
+        return err(NoteError.not_found(id));
     }
-    return note_of(rows[0]);
+    return map_err(note_of(rows[0]), db_error);
 }
 
 export fn add_note[D: effects](db: Database[D], text: str) -> result[Note] uses D {
@@ -49,15 +65,21 @@ export fn add_note[D: effects](db: Database[D], text: str) -> result[Note] uses 
     return ok(new Note { id: c.last_id, text: text, done: false });
 }
 
-export fn mark_done[D: effects](db: Database[D], id: int) -> result[Note] uses D {
+export fn mark_done[D: effects](db: Database[D], id: int) -> result[Note, NoteError] uses D {
     let _ = try find_note(db, id);
-    let _ = try exec(db, sql("update notes set done = 1 where id = ?"), [Value.integer(id)]);
+    let _ = try map_err(
+        exec(db, sql("update notes set done = 1 where id = ?"), [Value.integer(id)]),
+        db_error
+    );
     return find_note(db, id);
 }
 
-export fn remove_note[D: effects](db: Database[D], id: int) -> result[void] uses D {
+export fn remove_note[D: effects](db: Database[D], id: int) -> result[void, NoteError] uses D {
     let _ = try find_note(db, id);
-    let _ = try exec(db, sql("delete from notes where id = ?"), [Value.integer(id)]);
+    let _ = try map_err(
+        exec(db, sql("delete from notes where id = ?"), [Value.integer(id)]),
+        db_error
+    );
     return ok();
 }
 

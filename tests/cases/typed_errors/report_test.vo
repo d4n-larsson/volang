@@ -1,0 +1,20 @@
+# A failing check shows typed errors in vo syntax, with the first difference inside the error.
+variant LoadError {
+    missing(str);
+    malformed(int);
+}
+
+fn load(text: str) -> result[int, LoadError] {
+    if text == "" {
+        return err(LoadError.missing("config.txt"));
+    }
+    return ok(len(text));
+}
+
+test "loads the empty text" {
+    expect_eq(load(""), ok(1));
+}
+
+test "the wrong file" {
+    expect_eq(load(""), err(LoadError.missing("other.txt")));
+}

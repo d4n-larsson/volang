@@ -1,0 +1,43 @@
+# A function says how it can fail; callers match the error and the checker sees every case.
+variant LoadError {
+    absent(str);
+    malformed(int);
+}
+
+fn load(text: str) -> result[int, LoadError] {
+    if text == "" {
+        return err(LoadError.absent("config.txt"));
+    }
+    match parse_int(text) {
+        case ok(n) {
+            return ok(n);
+        }
+        case err(_) {
+            return err(LoadError.malformed(len(text)));
+        }
+    }
+}
+
+fn describe(e: LoadError) -> str {
+    match e {
+        case absent(path) {
+            return "no file " + path;
+        }
+        case malformed(n) {
+            return "bad number of " + str(n) + " characters";
+        }
+    }
+}
+
+fn main() uses console {
+    for text in ["12", "", "1x"] {
+        match load(text) {
+            case ok(n) {
+                print("loaded " + str(n));
+            }
+            case err(e) {
+                print(describe(e));
+            }
+        }
+    }
+}

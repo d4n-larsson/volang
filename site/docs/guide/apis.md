@@ -130,6 +130,54 @@ anywhere below the operation with `try`: `bad_request` 400, `unauthorized` 401, 
 `error_status("quota", 429)` in `App.errors`. Any other error, and a runtime error, answers 500 with no
 details for the client. Every failure is an RFC 9457 problem (`application/problem+json`).
 
+An operation can instead fail with its own error type. Wrap it with `typed(op, answer)`, where `answer`
+maps each error to a `Problem { status, detail }`. Because `answer` is one function with a `match`, the
+checker sees that every way to fail has a status:
+
+```vo
+import std.http.Response;
+import std.web.Problem;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.on_get;
+import std.web.request;
+import std.web.typed;
+import std.web.web_app;
+
+variant NoteError {
+    not_found(int);
+}
+
+record ById {
+    id: int;
+}
+
+fn note_problem(e: NoteError) -> Problem {
+    match e {
+        case not_found(id) {
+            return new Problem { status: 404, detail: "no note " + str(id) };
+        }
+    }
+}
+
+fn show(ctx: int, input: ById) -> result[Response, NoteError] {
+    if input.id == 1 {
+        return ok(json_reply(200, "first"));
+    }
+    return err(NoteError.not_found(input.id));
+}
+
+fn main() uses console {
+    let app = web_app([on_get("/notes/{id}", typed(show, note_problem))]);
+    let r = handle_request(app, 0, request("GET", "/notes/5", ""));
+    print(str(r.status) + " " + r.body);
+}
+```
+
+```output
+404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no note 5"}
+```
+
 ## Steps, settings and health
 
 Steps run around requests in list order: `request_ids(random_id)`, `log_requests(clock_ms, to_stderr)`,

@@ -1,0 +1,6 @@
+FAIL sizes are small (60 cases, 0ms)
+  typed.vo:26:5: `expect` failed: `size(r) < 50` is false.
+    size(r): 50
+    counterexample: r = err(LoadError.malformed(50))
+    shrunk in 70 steps
+0 passed, 1 failed
