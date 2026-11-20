@@ -476,7 +476,7 @@ fn main() uses console {
 ```
 
 ```output
-1.4142135623731 -3
+1.4142135623730951 -3
 ```
 
 - **Correctly rounded**: every float result is the double nearest to the exact value, so a program prints

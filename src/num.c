@@ -103,8 +103,11 @@ long scale10(long bits, long k)
     return double_to_bits(x);
 }
 
-/* Decimal text ("-"? digits ["." digits]) to f64 bits. Digits up to the last non-zero one form an
- * exact mantissa (at most 15 significant digits); trailing zeros only move the power of ten. */
+/* Decimal text ("-"? digits ["." digits], at most 17 significant digits) to the nearest f64, as
+ * bits. Digits up to the last non-zero one form the mantissa; trailing zeros only move the power of
+ * ten. A mantissa below 2^53 with a power of at most 22 either way is one exact operation; anything
+ * else goes through big integers (exact_to_double), so every text reads as the nearest double and
+ * what float_to_text writes reads back as the same value. */
 long text_to_float(char *p, long n)
 {
     int negative = 0;
@@ -131,13 +134,15 @@ long text_to_float(char *p, long n)
         mant = mant * 10 + (unsigned long)(p[i] - '0');
         power -= point; /* fraction digits divide by ten */
     }
+    if (mant >> 53 || power > 22 || power < -22)
+        return (long)(exact_to_double(mant, power) | (negative ? 1UL << 63 : 0));
     double x = (double)(long)mant;
     if (negative) x = -x;
     return scale10(double_to_bits(x), power);
 }
 
 /* Validates and converts text for parse_float: 0 = ok, 2 = malformed.
- * Accepts "-"? digits ["." digits] with at most 15 significant digits. */
+ * Accepts "-"? digits ["." digits] with at most 17 significant digits. */
 int float_parse(char *p, long n, long *out)
 {
     char *q = p;
@@ -171,15 +176,15 @@ int float_parse(char *p, long n, long *out)
     }
     if (before == 0) return 2;
     if (point && after == 0) return 2;
-    if (significant > 15) return 2;
+    if (significant > 17) return 2;
     *out = text_to_float(p, n);
     return 0;
 }
 
-/* round(x / 10^(e-14)) for the finite positive double with these bits, rounded once (ties to even),
+/* round(x / 10^(e-n+1)) (n digits when e is right) for the finite positive double with these bits, rounded once (ties to even),
  * in 128-bit integers: x = m * 2^b, so the quotient is m * 10^p / 2^-b or m * 2^b / 10^-p. Returns 0
  * where that does not fit (|x| below about 1e-8 or above about 1e34): the caller uses big integers. */
-static int digits15_u128(unsigned long abs_bits, long e, unsigned long *out)
+static int digits_u128(unsigned long abs_bits, long e, int nd, unsigned long *out)
 {
     typedef unsigned __int128 u128;
     long biased = (long)(abs_bits >> 52);
@@ -189,7 +194,7 @@ static int digits15_u128(unsigned long abs_bits, long e, unsigned long *out)
         m |= 1UL << 52;
         b = biased - 1075;
     }
-    long p = 14 - e;
+    long p = nd - 1 - e;
     u128 q, rem, half;
     int odd;
     if (p >= 0) { /* m * 10^p < 2^53 * 10^22 < 2^127, then an exact shift right */
@@ -219,7 +224,74 @@ static int digits15_u128(unsigned long abs_bits, long e, unsigned long *out)
     return 1;
 }
 
-/* ponytail: 15 significant digits, not shortest round-trip; upgrade: Ryu port */
+/* The nd significant digits (15 to 17) of the finite positive double with these bits at d, rounded
+ * once (ties to even); returns e, the power of ten of the first, starting from the estimate e.
+ * 128-bit integers where they fit, else big integers (src/stdprim.c, about 30 times slower). */
+static long digits_of(unsigned long abs_bits, long e, int nd, char *d)
+{
+    unsigned long lo = 1, digits = 0;
+    for (int i = 1; i < nd; i++) lo *= 10;
+    int fast = 0;
+    for (int tries = 0; tries < 3; tries++) {
+        fast = digits_u128(abs_bits, e, nd, &digits);
+        if (!fast) break;
+        if (digits < lo) {
+            e--;
+        } else if (digits >= lo * 10) {
+            e++;
+        } else {
+            break;
+        }
+    }
+    if (!fast || digits < lo || digits >= lo * 10) return exact_digits(abs_bits, nd, d);
+    if (digits == lo) { /* 10..0: really that, or 9.99.. rounded up with e one too high? */
+        unsigned long below;
+        if (!digits_u128(abs_bits, e - 1, nd, &below)) return exact_digits(abs_bits, nd, d);
+        if (below < lo * 10) {
+            digits = below;
+            e--;
+        }
+    }
+    for (int i = nd - 1; i >= 0; i--) {
+        d[i] = (char)('0' + digits % 10);
+        digits /= 10;
+    }
+    return e;
+}
+
+/* Whether nd digits can stand for the double with these bits: the digits at d (its value rounded to
+ * nd digits, first digit worth 10^*e), or the number one step above or below them, which can be the
+ * one that reads back when the value is a power of two (the doubles below it lie closer than those
+ * above). Leaves the digits that read back at d and their power of ten in *e. */
+static int digits_read_back(char *d, int nd, long *e, unsigned long abs_bits)
+{
+    unsigned long w = 0, lo = 1;
+    for (int i = 0; i < nd; i++) w = w * 10 + (unsigned long)(d[i] - '0');
+    for (int i = 1; i < nd; i++) lo *= 10;
+    for (int step = 0; step < 3; step++) {
+        unsigned long c = step == 0 ? w : step == 1 ? w + 1 : w - 1;
+        long ce = *e;
+        if (c >= lo * 10) { /* 99..9 + 1 */
+            c = lo;
+            ce++;
+        }
+        if (c < lo) continue; /* 10..0 - 1 has fewer digits: tried before */
+        if (exact_to_double(c, ce - nd + 1) != abs_bits) continue;
+        for (int i = nd - 1; i >= 0; i--) {
+            d[i] = (char)('0' + c % 10);
+            c /= 10;
+        }
+        *e = ce;
+        return 1;
+    }
+    return 0;
+}
+
+/* The shortest text that reads back as the same double (text_to_float), so parse_float(str(x)) == x:
+ * the fewest significant digits that do, 15 to 17 (from 1 for the subnormals, which hold fewer),
+ * and of those the nearest to the value. Python's repr gives the same digits.
+ * ponytail: up to three roundings and several read-backs per value, in big integers outside about
+ * 1e-6 to 1e30; upgrade: a Ryu port if printing floats shows up in profiles. */
 void float_to_text(SB *sb, long bits)
 {
     double x = bits_to_double(bits);
@@ -249,11 +321,12 @@ void float_to_text(SB *sb, long bits)
         sb_bytes(sb, out, w - out);
         return;
     }
-    /* The 15 significant digits of the exact value, rounded once (ties to even), and e, the power of
+    /* First the 15 significant digits of the exact value, rounded once (ties to even), and e, the power of
      * ten of the first. Scaling by a power of ten in floating point first (before spec 020) rounded
      * twice and got about 4% of values wrong in the last digit. 128-bit integers where they fit, else
      * big integers (src/stdprim.c, about 30 times slower). */
-    char d[15];
+    char d[17];
+    int nd = 15;
     double a = bits_to_double((long)abs_bits); /* e = floor(log10(|x|)), estimated, then checked */
     long e = 0;
     while (10.0 <= a) {
@@ -264,40 +337,25 @@ void float_to_text(SB *sb, long bits)
         a *= 10.0;
         e--;
     }
-    unsigned long digits = 0;
-    int fast = 0;
-    for (int tries = 0; tries < 3; tries++) {
-        fast = digits15_u128(abs_bits, e, &digits);
-        if (!fast) break;
-        if (digits < 100000000000000UL) {
-            e--;
-        } else if (digits >= 1000000000000000UL) {
-            e++;
-        } else {
-            break;
-        }
-    }
-    if (fast && digits >= 100000000000000UL && digits < 1000000000000000UL) {
-        for (int i = 14; i >= 0; i--) {
-            d[i] = (char)('0' + digits % 10);
-            digits /= 10;
-        }
-    } else {
-        e = exact_digits(abs_bits, 15, d);
+    long e0 = e; /* each rounding starts from the estimate: a carry (9.99 to 10.0) moves only its own e */
+    if (!(abs_bits >> 52)) nd = 1;
+    for (;; nd++) {
+        e = digits_of(abs_bits, e0, nd, d);
+        if (nd == 17 || digits_read_back(d, nd, &e, abs_bits)) break;
     }
     if (e >= 0) {
         long i = 0;
-        for (; i <= e; i++) *w++ = i < 15 ? d[i] : '0'; /* the integer part, padded with zeros */
+        for (; i <= e; i++) *w++ = i < nd ? d[i] : '0'; /* the integer part, padded with zeros */
         *w++ = '.';
         frac = w;
-        for (; i < 15; i++) *w++ = d[i];
+        for (; i < nd; i++) *w++ = d[i];
         if (w == frac) *w++ = '0';
     } else {
         *w++ = '0'; /* "0." then -e-1 zeros, then the digits */
         *w++ = '.';
         frac = w;
         for (long z = -e - 1; z > 0; z--) *w++ = '0';
-        for (int i = 0; i < 15; i++) *w++ = d[i];
+        for (int i = 0; i < nd; i++) *w++ = d[i];
     }
     while (w > frac + 1 && w[-1] == '0') w--; /* trim trailing zeros, keep one fraction digit */
     sb_bytes(sb, out, w - out);

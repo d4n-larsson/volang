@@ -1,0 +1,45 @@
+# The text of a float reads back as the same float: parse_float(str(x)) is ok(x), a literal of up to
+# 17 significant digits is the nearest float, and so is a text with a large power of ten.
+fn back(x: float) -> bool {
+    match parse_float(str(x)) {
+        case ok(y) {
+            return y == x;
+        }
+        case err(_) {
+            return false;
+        }
+    }
+}
+
+fn main() uses console {
+    let third = 1.0 / 3.0;
+    let sum = 0.1 + 0.2;
+    print(
+        str(sum) + " " + str(third) + " " + str(sum == 0.30000000000000004) + " " + str(sum == 0.3)
+    );
+    print(
+        str(back(sum)) + " " + str(back(third)) + " " + str(back(2.0 / 3.0)) + " " + str(back(
+            -123456.789
+        ))
+    );
+    var x = 0.1;
+    var all = true;
+    for _ in 0..200 {
+        set x = x * 1.37 + 0.011;
+        set all = all and back(x) and back(1.0 / x) and back(0.0 - x);
+    }
+    print(str(all) + " " + str(x));
+    var tiny = 1.0;
+    for _ in 0..1074 {
+        set tiny = tiny / 2.0;
+    }
+    print(str(back(tiny)) + " " + str(back(tiny * 3.0)) + " " + str(len(str(tiny))));
+    print(
+        str(9007199254740992.0) + " " + str(0.9999999999999999) + " " + str(4.35) + " " + str(100.0)
+    );
+    print(str(0.00000000000000000000000001) + " " + str(100000000000000000000000000.0));
+    print(
+        str(parse_float("0.30000000000000004") == ok(sum)) + " " + str(parse_float("0.1") == ok(0.1))
+    );
+    print(str(parse_float("1.23456789012345678") == err("invalid float: 1.23456789012345678")));
+}

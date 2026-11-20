@@ -5,31 +5,31 @@
 # a NaN argument gives NaN. Overflow gives inf and underflow 0.0, as float arithmetic does.
 
 # The double nearest to π.
-#     pi() is 3.14159265358979
+#     pi() is 3.141592653589793
 export fn pi() -> float {
     return __math(0, 0.0, 0.0);
 }
 
 # The square root of x; R0007 if x is below 0.0 (sqrt(-0.0) is -0.0).
-#     sqrt(2.0) is 1.4142135623731
+#     sqrt(2.0) is 1.4142135623730951
 export fn sqrt(x: float) -> float {
     return __math(1, x, 0.0);
 }
 
 # e raised to x: inf above about 709.78, 0.0 below about -745.13.
-#     exp(1.0) is 2.71828182845905
+#     exp(1.0) is 2.718281828459045
 export fn exp(x: float) -> float {
     return __math(2, x, 0.0);
 }
 
 # The natural logarithm of x; R0007 unless x is greater than 0.0 (log(inf) is inf).
-#     log(10.0) is 2.30258509299405
+#     log(10.0) is 2.302585092994046
 export fn log(x: float) -> float {
     return __math(3, x, 0.0);
 }
 
 # The sine of x, in radians; R0007 if x is infinite. Huge arguments are reduced exactly.
-#     sin(pi() / 6.0) is 0.5
+#     sin(pi() / 2.0) is 1.0
 export fn sin(x: float) -> float {
     return __math(4, x, 0.0);
 }
@@ -41,31 +41,31 @@ export fn cos(x: float) -> float {
 }
 
 # The tangent of x, in radians; R0007 if x is infinite.
-#     tan(pi() / 4.0) is 1.0
+#     tan(0.0) is 0.0
 export fn tan(x: float) -> float {
     return __math(6, x, 0.0);
 }
 
 # The arc sine of x, in radians from -pi()/2 to pi()/2; R0007 unless x is from -1.0 to 1.0.
-#     asin(1.0) is 1.5707963267949
+#     asin(1.0) is 1.5707963267948966
 export fn asin(x: float) -> float {
     return __math(7, x, 0.0);
 }
 
 # The arc cosine of x, in radians from 0.0 to pi(); R0007 unless x is from -1.0 to 1.0.
-#     acos(-1.0) is 3.14159265358979
+#     acos(-1.0) is 3.141592653589793
 export fn acos(x: float) -> float {
     return __math(8, x, 0.0);
 }
 
 # The arc tangent of x, in radians from -pi()/2 to pi()/2.
-#     atan(1.0) is 0.785398163397448
+#     atan(1.0) is 0.7853981633974483
 export fn atan(x: float) -> float {
     return __math(9, x, 0.0);
 }
 
 # The angle of the point (x, y) from the positive x axis, in radians from -pi() to pi(); y comes first, as in C. Signed zeros and infinities follow IEEE 754 (atan2(0.0, 0.0) is 0.0).
-#     atan2(1.0, -1.0) is 2.35619449019234
+#     atan2(1.0, -1.0) is 2.356194490192345
 export fn atan2(y: float, x: float) -> float {
     return __math(10, y, x);
 }

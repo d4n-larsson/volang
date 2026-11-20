@@ -288,8 +288,8 @@ Token *lex(int file)
                     count++;
                     if (d != '0') through = count;
                 }
-                if (through > 15)
-                    lx_err("E0105", start, pos, str_from_cstr("Float literal has more than 15 significant digits."));
+                if (through > 17)
+                    lx_err("E0105", start, pos, str_from_cstr("Float literal has more than 17 significant digits."));
             } else {
                 lx_number_suffix(start, pos);
                 lx_push(T_INT, start, pos);

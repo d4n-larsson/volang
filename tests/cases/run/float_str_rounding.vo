@@ -1,5 +1,5 @@
-# str rounds a float to 15 significant digits exactly, ties to even (it used to scale in floating
-# point first, which rounded twice and got about 4% of values wrong in the last digit).
+# str gives the shortest text that reads back as the same float (15 to 17 significant digits): the
+# text Python's repr gives, and the one write_json writes. It used to round to 15 digits.
 import std.json.parse_json;
 import std.json.as_float;
 

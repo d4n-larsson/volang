@@ -11,14 +11,13 @@ long std_only_ok(Str *name, Node *node)
 }
 
 /* ---- exact decimal conversion for std.json ----
- * The language's own float text (literals, parse_float, str) stays at 15 digits through
+ * The language's own float text (literals, parse_float, str) takes the fast paths of
  * text_to_float/float_to_text. JSON needs 17 digits both ways and exact round trips, so these use
  * big integers: fixed 40-limb (2560-bit) little-endian numbers, enough for 2^1074 * 10^324. */
 #define BN_LIMBS 40
 typedef unsigned long BigNum[BN_LIMBS];
 
 static BigNum bn_n, bn_d, bn_c;
-static char digit_buf[24];
 
 static void bn_set(unsigned long *a, unsigned long v)
 {
@@ -133,10 +132,66 @@ static unsigned long bn_div_small_q(void)
     return q;
 }
 
-/* The double nearest to w * 10^q (ties to even), as bits; above the range: infinity. */
-static unsigned long exact_to_double(unsigned long w, long q)
+/* exact_to_double in 128-bit integers, for w below 2^57 (17 digits) and 10^q within 10^21 either way:
+ * the results are normal doubles. 0 when the operands do not fit. */
+static int near_u128(unsigned long w, long q, unsigned long *out)
+{
+    typedef unsigned __int128 u128;
+    if (!w || w >> 57 || q > 21 || q < -21) return 0;
+    u128 n = w, ten = 1;
+    for (long i = q < 0 ? -q : q; i > 0; i--) ten *= 10;
+    long e2 = 0; /* the value is n * 2^e2, plus a little when sticky */
+    int sticky = 0;
+    if (q >= 0) {
+        n *= ten; /* below 2^57 * 2^70 */
+    } else {
+        long tl = 0;
+        for (u128 t = ten; t; t >>= 1) tl++;
+        long s = 56 + tl - bitlen64(w); /* the quotient has 55 bits or more; w << s is below 2^(56 + 70) */
+        n <<= s;
+        sticky = n % ten != 0;
+        n /= ten;
+        e2 = -s;
+    }
+    long len = 0;
+    for (u128 t = n; t; t >>= 1) len++;
+    unsigned long mant;
+    if (len > 53) {
+        long drop = len - 53;
+        u128 rest = n & (((u128)1 << drop) - 1), half = (u128)1 << (drop - 1);
+        mant = (unsigned long)(n >> drop);
+        e2 += drop;
+        if (rest > half || (rest == half && (sticky || (mant & 1)))) mant++;
+        if (mant >> 53) {
+            mant >>= 1;
+            e2++;
+        }
+    } else { /* exact (q >= 0) */
+        mant = (unsigned long)n << (53 - len);
+        e2 -= 53 - len;
+    }
+    long biased = e2 + 1075;
+    if (biased < 1 || biased > 2046) return 0;
+    *out = (unsigned long)biased << 52 | (mant & ((1UL << 52) - 1));
+    return 1;
+}
+
+/* The double nearest to w * 10^q (ties to even), as bits; above the range: infinity. Big integers
+ * only where 128 bits do not hold the operands (about 3 us against 30 ns). */
+unsigned long exact_to_double(unsigned long w, long q)
 {
     const unsigned long inf = 2047UL << 52;
+    unsigned long fast;
+    if (!(w >> 53) && q >= -22 && q <= 22) { /* both operands exact doubles: one rounded operation */
+        static const double ten[23] = {1e0,  1e1,  1e2,  1e3,  1e4,  1e5,  1e6,  1e7,  1e8,  1e9,  1e10, 1e11,
+                                       1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19, 1e20, 1e21, 1e22};
+        union {
+            double d;
+            unsigned long u;
+        } x = {.d = q >= 0 ? (double)w * ten[q] : (double)w / ten[-q]};
+        return x.u;
+    }
+    if (near_u128(w, q, &fast)) return fast;
     if (w == 0 || q < -345) return 0;
     if (q > 310) return inf;
     bn_set(bn_n, w); /* N / D = w * 10^q, scaled by 2^p */
@@ -328,56 +383,9 @@ long std_text_float(Str *s)
     return (long)(exact_to_double(w, e) | sign);
 }
 
-/* Appends digit_buf's n digits d1..dn as d1.d2...dn * 10^k in plain decimal, with at least one
- * digit after the point. */
-static void float_digits_out(SB *sb, long n, long k)
-{
-    GC_ROOT(&sb);
-    if (k < 0) { /* "0." then -k-1 zeros, then the digits */
-        sb_byte(sb, '0');
-        sb_byte(sb, '.');
-        for (long z = -1; z > k; z--) sb_byte(sb, '0');
-        for (long i = 0; i < n; i++) sb_byte(sb, digit_buf[i]);
-    } else { /* digits (or zeros) up to the point, then the rest or 0 */
-        long i = 0;
-        for (; i <= k; i++) sb_byte(sb, i < n ? digit_buf[i] : '0');
-        sb_byte(sb, '.');
-        if (i >= n) sb_byte(sb, '0');
-        for (; i < n; i++) sb_byte(sb, digit_buf[i]);
-    }
-    GC_UNROOT(1);
-}
-
-/* __float_text: the shortest of 15, 16 or 17 significant digits that reads back to the same
- * double, in plain decimal ("0.000025", "100.0"). NaN and infinities keep float_to_text's text
- * (std.json refuses them). */
+/* __float_text: a float as str writes it, the shortest text that reads back as the same double, in
+ * plain decimal ("0.000025", "100.0"). std.json refuses NaN and the infinities before it gets here. */
 Str *std_float_text(long bits)
 {
-    unsigned long ubits = (unsigned long)bits;
-    SB *sb = sb_new();
-    GC_ROOT(&sb);
-    if (((ubits >> 52) & 2047) == 2047) { /* NaN, infinity */
-        float_to_text(sb, bits);
-    } else {
-        if (bits < 0) sb_byte(sb, '-');
-        unsigned long abs_bits = ubits << 1 >> 1;
-        if (abs_bits == 0) {
-            sb_cstr(sb, "0.0");
-        } else {
-            long n = 15, k;
-            for (;;) {
-                k = exact_digits(ubits, n, digit_buf);
-                if (n == 17) break;
-                unsigned long w = 0; /* w = the digits, q = k - n + 1: same bits? */
-                for (long i = 0; i < n; i++) w = w * 10 + (unsigned long)(digit_buf[i] - '0');
-                if (exact_to_double(w, k - n + 1) == abs_bits) break;
-                n++;
-            }
-            while (n > 1 && digit_buf[n - 1] == '0') n--; /* drop trailing zero digits */
-            float_digits_out(sb, n, k);
-        }
-    }
-    Str *s = sb_finish(sb);
-    GC_UNROOT(1);
-    return s;
+    return float_to_str(bits);
 }

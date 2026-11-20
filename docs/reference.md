@@ -30,7 +30,7 @@ hello vo, count = 3
 - **Names**: functions, variables, parameters, record fields and variant cases are `snake_case` (`[a-z][a-z0-9_]*`). Records and variants are `PascalCase` (`[A-Z][A-Za-z0-9]*`). Other spellings are E0207, whose fix is the converted name.
 - `_` alone is the discard name. It is allowed only as `let _ = ...;` and as a `case` binding such as `case err(_)`. It is not allowed as a `for` variable or a parameter.
 - **Integers**: `0`, `42`, `1000000`. No `_` separators, hex, octal or suffixes. Negative numbers use unary `-`: `-5`. The maximum is 9223372036854775807 (larger literals are E0105).
-- **Floats**: digits, `.`, digits: `1.0`, `0.5`, `3.14`. Both sides of `.` are required (`1.` and `.5` are invalid). No exponent (`1e3` is invalid); at most 15 significant digits.
+- **Floats**: digits, `.`, digits: `1.0`, `0.5`, `3.14`. Both sides of `.` are required (`1.` and `.5` are invalid). No exponent (`1e3` is invalid); at most 17 significant digits.
 - **Strings**: `"..."` on one line. The only escapes are `\n`, `\t`, `\\` and `\"` (any other is E0103). There are no single-quoted strings, no character type, no raw or multi-line strings and no interpolation: use `format` or `+`.
 - **Booleans**: `true`, `false`.
 - **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void uses prop requires ensures export bytes`.
@@ -58,7 +58,7 @@ line two
 | Type | Values | Notes |
 |---|---|---|
 | `int` | 64-bit signed | overflow is runtime error R0001 |
-| `float` | 64-bit IEEE | `str(0.1 + 0.2)` is `"0.3"` (15 significant digits) |
+| `float` | 64-bit IEEE | `str` gives the shortest text that reads back as the same value: `str(0.1 + 0.2)` is `"0.30000000000000004"` |
 | `bool` | `true`, `false` | conditions must be `bool`: no truthiness |
 | `str` | immutable UTF-8 text, always valid | `len` counts bytes; text from files, input, arguments, the environment, programs and HTTP is checked when read (`err`, or R0007 where no `result` is returned) |
 | `bytes` | immutable bytes 0–255 | no literal: `std.bytes`; `len`, `b[i]` (an `int`), `slice`, `+`, `==`, `<`; not a map key; never mixed with `str` |
@@ -789,12 +789,12 @@ fn main() uses console {
 | now_ms | `() -> int` | wall-clock milliseconds; with `--clock-ms N`: N, N+1, ... |
 | random_int | `(lo: int, hi: int) -> int` | uniform in `lo..hi` inclusive; R0007 if `lo > hi`; fixed by `--seed N` |
 | env | `(name: str) -> result[str]` | an environment variable; `err("not set")` |
-| str | `(x: int \| float \| bool) -> str` | floats keep at most 15 significant digits; `str(1.0)` is `"1.0"` |
+| str | `(x: int \| float \| bool) -> str` | a float as the shortest text `parse_float` reads back as the same value; `str(1.0)` is `"1.0"` |
 | format | `(template: str, args...) -> str` | `template` a string literal; each `{}` or `{:spec}` takes the next argument (see Types) |
 | int | `(f: float) -> int` | truncates toward zero; R0007 for NaN or out of range |
 | float | `(i: int) -> float` | exact up to 2^53, else the nearest float |
 | parse_int | `(s: str) -> result[int]` | the whole text must be the number: no spaces, no `+` (`trim` first); else `err("invalid int: ...")` |
-| parse_float | `(s: str) -> result[float]` | `-`, digits, optionally `.` and digits, at most 15 significant digits; else `err("invalid float: ...")` |
+| parse_float | `(s: str) -> result[float]` | `-`, digits, optionally `.` and digits, at most 17 significant digits; else `err("invalid float: ...")` |
 | len | `(x: str \| list[T] \| map[K, T]) -> int` | for `str`: bytes, not characters |
 | slice | `(s: str, a: int, b: int) -> str` | bytes `a` to `b - 1`; R0003 out of range; R0007 if it splits a UTF-8 character |
 | slice | `(xs: list[T], a: int, b: int) -> list[T]` | a new list; R0003 out of range |

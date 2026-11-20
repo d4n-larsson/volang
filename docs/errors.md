@@ -102,11 +102,11 @@ fn main() uses console {
 
 ## E0105 number_out_of_range
 
-A number literal is out of range: an integer above 2^63-1, or a float with more than 15 significant digits.
+A number literal is out of range: an integer above 2^63-1, or a float with more than 17 significant digits.
 
 Fixable: no
 
-Integer literals must fit in a signed 64-bit integer (at most 9223372036854775807), and float literals may have at most 15 significant digits. Use a smaller value, or fewer digits for a float.
+Integer literals must fit in a signed 64-bit integer (at most 9223372036854775807), and float literals may have at most 17 significant digits (a `float` holds no more). Use a smaller value, or fewer digits for a float.
 
 ### Example
 

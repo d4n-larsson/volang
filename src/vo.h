@@ -2288,6 +2288,7 @@ extern void sha256(char *p, long n, char *out);
 /* src/stdprim.c */
 extern long std_only_ok(Str *name, Node *node);
 extern long std_text_float(Str *s);
+extern unsigned long exact_to_double(unsigned long w, long q);
 extern Str *std_float_text(long bits);
 
 /* src/sys.c */

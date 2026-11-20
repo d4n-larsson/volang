@@ -75,8 +75,8 @@ expression, `-9223372036854775807 - 1`. Integer division truncates toward zero, 
 `float` is an IEEE 754 double. Arithmetic follows IEEE: `1.0 / 0.0` is `inf`, `0.0 / 0.0` is `nan`, and
 `nan` is not equal to anything, itself included.
 
-`str` of a float rounds it to at most 15 significant digits and always shows a `.`, so a float never
-prints like an integer. There is no exponent notation: large and small values are written out in full.
+`str` of a float is the shortest text that reads back as the same value (`parse_float(str(x))` is
+`ok(x)`), at most 17 significant digits. It always shows a `.`, so a float never prints like an integer. There is no exponent notation: large and small values are written out in full.
 
 ```vo
 fn main() uses console {
@@ -89,18 +89,18 @@ fn main() uses console {
 ```
 
 ```output
-0.3 0.333333333333333 0.666666666666667
+0.30000000000000004 0.3333333333333333 0.6666666666666666
 100.0 2.5 -0.0
 1000000000000000000.0 0.0000001
 inf -inf nan
 false
 ```
 
-The last line is a reminder that printing rounds but the value does not: `0.1 + 0.2` is not exactly
-`0.3`. Compare floats against a tolerance, `abs(a - b) < 0.000001`, when exact equality is not what you
-mean.
+The first and last lines show the same thing: `0.1 + 0.2` is not exactly `0.3`, and its text says so.
+For a fixed number of decimals use `format("{:.2f}", x)`. Compare floats against a tolerance,
+`abs(a - b) < 0.000001`, when exact equality is not what you mean.
 
-A float literal has at most 15 significant digits ([E0105](../errors/E0105.md) otherwise), needs digits on
+A float literal has at most 17 significant digits ([E0105](../errors/E0105.md) otherwise), needs digits on
 both sides of the `.`, and has no exponent form.
 
 ## bool
@@ -177,7 +177,7 @@ function call you can see:
 
 | Call | From | To | Notes |
 |---|---|---|---|
-| `str(x)` | `int`, `float`, `bool` | `str` | floats keep at most 15 significant digits |
+| `str(x)` | `int`, `float`, `bool` | `str` | the shortest text that reads back as the same float |
 | `float(i)` | `int` | `float` | |
 | `int(f)` | `float` | `int` | truncates toward zero; [R0007](../errors/R0007.md) for `nan`, `inf` or out of range |
 | `parse_int(s)` | `str` | `result[int]` | the whole string must be the number |
