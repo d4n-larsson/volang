@@ -1,0 +1,15 @@
+# The error of a result is a value the caller can read and print: not void, not a function.
+fn a() -> result[int, void] {
+    return ok(1);
+}
+
+fn b() -> result[int, fn(int) -> int] {
+    return ok(1);
+}
+
+fn c() -> result[int, list[fn(int) -> int]] {
+    return ok(1);
+}
+
+fn main() {
+}

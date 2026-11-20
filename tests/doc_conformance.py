@@ -21,11 +21,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 
 # Builtin type variables and what they range over ("*": anything).
-TVARS = {"T": "*", "U": "*", "A": "*", "K": {"int", "str"}, "C": {"int", "float", "str"}}
+TVARS = {"T": "*", "U": "*", "A": "*", "E1": "*", "E2": "*", "K": {"int", "str"}, "C": {"int", "float", "str"}}
 # spec 023: builtins whose type comes from their place (ok, err, todo) or that only work in a `prop`
 # (assume): documented for vo doc and hover, but a call on its own cannot be probed; spec 024: format is
-# variadic with a literal template (its checks are golden cases in tests/cases/format)
-CONTEXT_TYPED = {"ok", "err", "todo", "assume", "format"}
+# variadic with a literal template (its checks are golden cases in tests/cases/format); spec 032: map_err
+# takes a result, whose sample (`ok(1)`) has no type of its own (tests/cases/typed_errors/map_err*)
+CONTEXT_TYPED = {"ok", "err", "todo", "assume", "format", "map_err"}
 BUILTIN_EFFECTS = {"print": "console", "write": "console", "eprint": "console",
                    "read_line": "input", "read_all": "input", "read_file": "file.read",
                    "write_file": "file.write", "now_ms": "clock", "random_int": "random",
@@ -111,8 +112,9 @@ class Values:
             return f"new {self.inst(t, tv)}"
         m = re.fullmatch(r"(list|map|result)\[(.*)\]", t)
         if m:
-            if m.group(1) == "result":
-                return "ok()" if m.group(2) == "void" else f"ok({self.value(m.group(2), tv)})"
+            if m.group(1) == "result":  # spec 032: result[T] or result[T, E]: an ok of T
+                okt = split_top(m.group(2))[0]
+                return "ok()" if okt == "void" else f"ok({self.value(okt, tv)})"
             return f"new {m.group(1)}[{self.inst(m.group(2), tv)}]"
         m = re.fullmatch(r"fn\((.*?)\)(?: -> (.*?))?(?: uses .*)?", t)  # a pure sample fits `uses E`
         if m:

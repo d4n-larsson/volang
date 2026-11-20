@@ -1,0 +1,4 @@
+main_typed.vo:6:4: error[E0409]: `main` returns `result[void]`, whose error is a message: convert a typed error with `map_err` before it reaches `main`.
+   6 | fn main() -> result[void, LoadError] {
+     |    ^^^^
+1 error, 0 warnings

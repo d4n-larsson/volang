@@ -300,13 +300,13 @@ int bind_rest(Node *node, Vec *tparams, Type **bindings, Str *what)
 
 /* 1 when t contains a function type anywhere (spec 013, C2: such arguments are checked again after
  * inference, since unification does not compare effects). */
-static int ty_has_func(Type *t)
+int ty_has_func(Type *t)
 {
     if (!t) return 0;
     switch (t->kind) {
     case TY_FUNC: return 1;
     case TY_LIST:
-    case TY_RESULT: return ty_has_func(t->a.t);
+    case TY_RESULT: return ty_has_func(t->a.t) || (t->b.t && ty_has_func(t->b.t));
     case TY_MAP: return ty_has_func(t->a.t) || ty_has_func(t->b.t);
     case TY_OMAP:
     case TY_OSET:
@@ -328,7 +328,7 @@ int ty_mentions_owner(Type *t, Node *owner)
     switch (t->kind) {
     case TY_PARAM: return t->decl.n == owner;
     case TY_LIST:
-    case TY_RESULT: return ty_mentions_owner(t->a.t, owner);
+    case TY_RESULT: return ty_mentions_owner(t->a.t, owner) || (t->b.t && ty_mentions_owner(t->b.t, owner));
     case TY_MAP:
     case TY_OMAP:
     case TY_OSET:

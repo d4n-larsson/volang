@@ -1,0 +1,51 @@
+# `map_err` is the one way to change an error's type: an ok passes through untouched (the function is
+# not called), an err becomes the function's value, and the function's effects are the caller's.
+variant LoadError {
+    missing(str);
+    malformed(int);
+}
+
+fn load(text: str) -> result[int, LoadError] {
+    if text == "" {
+        return err(LoadError.missing("config.txt"));
+    }
+    match parse_int(text) {
+        case ok(n) {
+            return ok(n);
+        }
+        case err(_) {
+            return err(LoadError.malformed(len(text)));
+        }
+    }
+}
+
+fn describe(e: LoadError) -> str {
+    match e {
+        case missing(path) {
+            return "no file " + path;
+        }
+        case malformed(n) {
+            return "bad number of " + str(n) + " characters";
+        }
+    }
+}
+
+fn loud(e: LoadError) -> str uses console {
+    print("describing");
+    return describe(e);
+}
+
+fn from_text(path: str) -> result[str, LoadError] uses file.read("./") {
+    return map_err(read_file(path), fn(m: str) -> LoadError {
+        return LoadError.missing(path);
+    });
+}
+
+fn main() -> result[void] uses console, file.read("./") {
+    let n = try map_err(load("12"), describe);
+    print(str(n));
+    print(str(map_err(load("7"), loud) == ok(7)));
+    print(str(map_err(load(""), loud) == err("no file config.txt")));
+    print(str(from_text("no-such-file.txt") == err(LoadError.missing("no-such-file.txt"))));
+    return ok();
+}

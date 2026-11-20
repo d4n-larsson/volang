@@ -1,0 +1,19 @@
+# `try` never converts an error: a different error type is E0412, also in `main` (a `str` error).
+variant LoadError {
+    missing(str);
+}
+
+fn read(path: str) -> result[str] {
+    return err("no file " + path);
+}
+
+fn load(path: str) -> result[int, LoadError] {
+    let text = try read(path);
+    return ok(len(text));
+}
+
+fn main() -> result[void] uses console {
+    let n = try load("a");
+    print(str(n));
+    return ok();
+}

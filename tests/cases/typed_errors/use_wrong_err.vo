@@ -1,0 +1,14 @@
+# An err carries a value of the result's error type.
+variant LoadError {
+    missing(str);
+}
+
+fn load(text: str) -> result[int, LoadError] {
+    if text == "" {
+        return err("missing");
+    }
+    return ok(1);
+}
+
+fn main() {
+}

@@ -187,8 +187,9 @@ int ty_has_params(Type *t)
     case TY_PARAM:
         return 1;
     case TY_LIST:
-    case TY_RESULT:
         return ty_has_params(t->a.t);
+    case TY_RESULT: /* spec 032: and the error type */
+        return ty_has_params(t->a.t) || (t->b.t && ty_has_params(t->b.t));
     case TY_MAP:
         return ty_has_params(t->a.t) || ty_has_params(t->b.t);
     case TY_OMAP:
@@ -236,8 +237,15 @@ Type *ty_subst(Type *t, Node *owner, Vec *args)
     }
     case TY_LIST:
         return ty_list(ty_subst(t->a.t, owner, args));
-    case TY_RESULT:
-        return ty_result(ty_subst(t->a.t, owner, args));
+    case TY_RESULT: { /* spec 032: and the error type */
+        GC_ROOT(&t);
+        GC_ROOT(&args);
+        Type *ok_t = ty_subst(t->a.t, owner, args);
+        GC_ROOT(&ok_t);
+        Type *r = ty_result_e(ok_t, t->b.t ? ty_subst(t->b.t, owner, args) : 0);
+        GC_UNROOT(3);
+        return r;
+    }
     case TY_MAP: {
         GC_ROOT(&t);
         GC_ROOT(&args);
@@ -315,8 +323,9 @@ int ty_unify(Type *pattern, Type *t, Node *owner, Type **bindings)
     if (pattern->kind != t->kind) return 0;
     switch (pattern->kind) {
     case TY_LIST:
-    case TY_RESULT:
         return ty_unify(pattern->a.t, t->a.t, owner, bindings);
+    case TY_RESULT: /* spec 032: the error types too (a `str` error when not written) */
+        return ty_unify(pattern->a.t, t->a.t, owner, bindings) && ty_unify(err_type(pattern), err_type(t), owner, bindings);
     case TY_MAP:
         return ty_unify(pattern->a.t, t->a.t, owner, bindings) && ty_unify(pattern->b.t, t->b.t, owner, bindings);
     case TY_OMAP:

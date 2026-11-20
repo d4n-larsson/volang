@@ -413,7 +413,8 @@
 #define B_JSON_WRITE (99) /* __json_write(j, pretty) -> result[str] (write_json, write_json_pretty) */
 #define B_BYTE_AT (100) /* byte_at(s, i) -> int: one byte of a str (compiled to OPC_INDEX_BYTES) */
 #define B_HTTP_TIMEOUT (101) /* __http_timeout(ms): a bound of its own for the next exchange (std.http's send) */
-#define B_LAST (101) /* the last builtin id with a btab entry */
+#define B_MAP_ERR (102) /* spec 032: map_err(r, f) -> result[T, E2] */
+#define B_LAST (102) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -1346,6 +1347,9 @@ extern Type *ty_basic(long kind);
 extern Type *ty_make(long kind, void *a, void *b, void *decl);
 extern Type *ty_list(Type *elem);
 extern Type *ty_result(Type *inner);
+extern Type *ty_result_e(Type *inner, Type *err);
+extern Type *err_type(Type *result);
+extern int ty_has_func(Type *t);
 extern void ty_name_into(SB *sb, Type *t);
 extern Str *ty_name(Type *t);
 extern int ty_is(Type *t, long kind);
@@ -2241,6 +2245,8 @@ extern void rt_denied(long bit, Str *target);
 
 /* src/rt_func.c */
 extern List *hof_map(List *list, void *fn, Node *call);
+extern Variant *hof_map_err(Variant *r, void *fn, Node *call);
+extern Type *check_map_err(Node *call);
 extern List *hof_filter(List *list, void *fn, Node *call);
 extern long hof_fold(List *list, long init, void *fn, Node *call);
 extern int hof_any(List *list, void *fn, Node *call, int all);

@@ -519,6 +519,7 @@ fn(int) -> int uses console                 function type (parameter types, retu
 | fold | `(xs: list[T], init: A, f: fn(A, T) -> A) -> A` | `f(f(init, xs[0]), xs[1])` ..., `init` for an empty list |
 | any, all | `(xs: list[T], f: fn(T) -> bool) -> bool` | stop at the first element that decides |
 | concurrent_map | `(xs: list[T], limit: int, f: fn(T) -> U) -> list[U]` | like `map`, at most `limit` (1 to 64, else R0007) tasks at a time |
+| map_err | `(r: result[T, E1], f: fn(E1) -> E2) -> result[T, E2]` | an `ok` unchanged; `err(e)` becomes `err(f(e))` |
 
 The function's effects become the caller's: `map` with a function that prints needs `uses console`.
 

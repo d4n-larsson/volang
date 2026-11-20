@@ -128,6 +128,19 @@ Type *ty_result(Type *inner)
     return ty_make(TY_RESULT, inner, 0, 0);
 }
 
+/* Spec 032: result[inner, err]; a `str` error (or none) is plain result[inner], so the two are one type. */
+Type *ty_result_e(Type *inner, Type *err)
+{
+    if (!err || err == t_str) return ty_result(inner);
+    return ty_make(TY_RESULT, inner, err, 0);
+}
+
+/* The error type of a result type: `str` unless written. */
+Type *err_type(Type *result)
+{
+    return result->b.t ? result->b.t : t_str;
+}
+
 void ty_name_into(SB *sb, Type *t)
 {
     switch (t->kind) {
@@ -150,6 +163,10 @@ void ty_name_into(SB *sb, Type *t)
     case TY_RESULT:
         sb_cstr(sb, "result[");
         ty_name_into(sb, t->a.t);
+        if (t->b.t) { /* spec 032 */
+            sb_cstr(sb, ", ");
+            ty_name_into(sb, t->b.t);
+        }
         break;
     case TY_OMAP:
     case TY_OSET:
@@ -392,7 +409,17 @@ Type *resolve_type(Node *tn)
         t = ty_make(TY_MAP, k, v, 0);
         break;
     }
-    case TY_RESULT: t = ty_result(resolve_type(tn->b.n)); break;
+    case TY_RESULT: { /* spec 032: result[T] or result[T, E] */
+        Type *ok_t = resolve_type(tn->b.n);
+        Type *err_t = tn->c.n ? resolve_type(tn->c.n) : 0;
+        if (err_t && !ty_bad(err_t) && (err_t->kind == TY_VOID || ty_has_func(err_t))) {
+            ck_err1("E0334", tn->c.n, "The error of a `result` is a value the caller can read and print: `$1` cannot be one.",
+                    ty_name(err_t));
+            err_t = t_error;
+        }
+        t = ty_bad(err_t) && err_t ? t_error : ty_result_e(ok_t, err_t);
+        break;
+    }
     case TY_OMAP:
     case TY_OSET:
     case TY_PQUEUE:
@@ -785,7 +812,7 @@ Str *case_name(Type *scrutinee, long index)
 Type *case_payload(Type *scrutinee, long index)
 {
     if (scrutinee->kind == TY_RESULT) {
-        if (index) return t_str;
+        if (index) return err_type(scrutinee); /* spec 032 */
         Type *a = scrutinee->a.t;
         return a->kind == TY_VOID ? 0 : a;
     }
@@ -1128,7 +1155,13 @@ void check_main(int file, Node *fn)
     if (fn->b.v->n == 0) {
         Type *t = fn->type;
         if (t->kind == TY_VOID || t->kind == TY_ERROR) return;
-        if (t->kind == TY_RESULT && t->a.t->kind == TY_VOID) return;
+        if (t->kind == TY_RESULT && t->a.t->kind == TY_VOID && !t->b.t) return;
+        if (t->kind == TY_RESULT && t->a.t->kind == TY_VOID) { /* spec 032: a typed error */
+            ck_err("E0409", fn->a.n,
+                   str_from_cstr("`main` returns `result[void]`, whose error is a message: convert a typed error with "
+                                 "`map_err` before it reaches `main`."));
+            return;
+        }
     }
     ck_err("E0409", fn->a.n, str_from_cstr("`main` must be `fn main()` or `fn main() -> result[void]`."));
 }
@@ -1141,7 +1174,10 @@ static void export_type(Node *tn, Node *item)
     if (!tn || tn->kind != N_TYPE_NODE) return;
     switch (tn->a.i) {
     case TY_LIST:
-    case TY_RESULT: export_type(tn->b.n, item); break;
+    case TY_RESULT:
+        export_type(tn->b.n, item);
+        if (tn->c.n) export_type(tn->c.n, item); /* spec 032 */
+        break;
     case TY_MAP:
         export_type(tn->b.n, item);
         export_type(tn->c.n, item);

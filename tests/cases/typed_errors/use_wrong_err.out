@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"use_wrong_err.vo","start":{"line":8,"col":20},"end":{"line":8,"col":29},"text":"\"missing\"","message":"Expected `LoadError`, found `str`.","expected":"LoadError","found":"str","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

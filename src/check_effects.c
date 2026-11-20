@@ -563,7 +563,7 @@ static int ty_carries_evar(Type *t, Type *ev)
     case TY_PARAM: return t == ev;
     case TY_EFFSET: return es_has_evar(t->decl.es, ev); /* `Database[E]` */
     case TY_LIST:
-    case TY_RESULT: return ty_carries_evar(t->a.t, ev);
+    case TY_RESULT: return ty_carries_evar(t->a.t, ev) || (t->b.t && ty_carries_evar(t->b.t, ev));
     case TY_MAP: return ty_carries_evar(t->a.t, ev) || ty_carries_evar(t->b.t, ev);
     case TY_RECORD:
     case TY_VARIANT:

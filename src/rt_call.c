@@ -19,9 +19,9 @@ enum {
     BU_BYTES_UNHEX, BU_BYTES_B64, BU_BYTES_UNB64, BU_STDIN_BYTES, BU_STDOUT_BYTES, BU_FSB, BU_RUN_BYTES, BU_RAW_TEXT, BU_SLEEP,
     BU_FORMAT, BU_FMT_PIECE, BU_RE_COMPILE, BU_RE, BU_RE_REPL,
     BU_SQL_OPEN, BU_SQL_CLOSE, BU_SQL_EXEC, BU_SQL_QUERY, BU_SQL_TX, BU_SQL_PREPARE, BU_SERVE_WORKERS, BU_TO_JSON, BU_FROM_JSON, BU_JSON_FIELDS, BU_JSON_TEXT,
-    BU_JSON_PARSE, BU_JSON_WRITE, BU_BYTE_AT, BU_HTTP_TIMEOUT
+    BU_JSON_PARSE, BU_JSON_WRITE, BU_BYTE_AT, BU_HTTP_TIMEOUT, BU_MAP_ERR
 };
-_Static_assert(BU_HTTP_TIMEOUT == B_LAST && BU_BYTE_AT == B_BYTE_AT && BU_JSON_WRITE == B_JSON_WRITE && BU_JSON_TEXT == B_JSON_TEXT && BU_JSON_FIELDS == B_JSON_FIELDS && BU_FROM_JSON == B_FROM_JSON && BU_TO_JSON == B_TO_JSON && BU_SERVE_WORKERS == B_SERVE_WORKERS && BU_SQL_PREPARE == B_SQL_PREPARE && BU_SQL_OPEN == B_SQL_OPEN && BU_RE_REPL == B_RE_REPL && BU_RE == B_RE && BU_RE_COMPILE == B_RE_COMPILE && BU_FMT_PIECE == B_FMT_PIECE && BU_FORMAT == B_FORMAT && BU_SLEEP == B_SLEEP && BU_RAW_TEXT == B_RAW_TEXT && BU_RUN_BYTES == B_RUN_BYTES && BU_FSB == B_FSB && BU_BYTES_OF_TEXT == B_BYTES_FIRST && BU_STDIN_BYTES == B_STDIN_BYTES && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
+_Static_assert(BU_MAP_ERR == B_LAST && BU_HTTP_TIMEOUT == B_HTTP_TIMEOUT && BU_BYTE_AT == B_BYTE_AT && BU_JSON_WRITE == B_JSON_WRITE && BU_JSON_TEXT == B_JSON_TEXT && BU_JSON_FIELDS == B_JSON_FIELDS && BU_FROM_JSON == B_FROM_JSON && BU_TO_JSON == B_TO_JSON && BU_SERVE_WORKERS == B_SERVE_WORKERS && BU_SQL_PREPARE == B_SQL_PREPARE && BU_SQL_OPEN == B_SQL_OPEN && BU_RE_REPL == B_RE_REPL && BU_RE == B_RE && BU_RE_COMPILE == B_RE_COMPILE && BU_FMT_PIECE == B_FMT_PIECE && BU_FORMAT == B_FORMAT && BU_SLEEP == B_SLEEP && BU_RAW_TEXT == B_RAW_TEXT && BU_RUN_BYTES == B_RUN_BYTES && BU_FSB == B_FSB && BU_BYTES_OF_TEXT == B_BYTES_FIRST && BU_STDIN_BYTES == B_STDIN_BYTES && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
 _Static_assert(BU_TODO == B_TODO && BU_REQ_FAIL == B_REQ_FAIL && BU_SORT_BY == B_SORT_BY, "builtin ids");
 
 /* The static type of the call's first argument. */
@@ -111,6 +111,7 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_RANDOM_INT: return rt_random_int(a0, a1);
     case BU_SORT_BY: hof_sort_by((List *)a0, (void *)a1, call); return 0;
     case BU_MAP: return (long)hof_map((List *)a0, (void *)a1, call);
+    case BU_MAP_ERR: return (long)hof_map_err((Variant *)a0, (void *)a1, call); /* spec 032 */
     case BU_CONCURRENT_MAP: return (long)task_map((List *)a0, a1, (void *)a2, call); /* spec 016 */
     case BU_FILTER: return (long)hof_filter((List *)a0, (void *)a1, call);
     case BU_FOLD: return hof_fold((List *)a0, a1, (void *)a2, call);

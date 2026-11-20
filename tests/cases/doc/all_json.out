@@ -4,6 +4,7 @@
 {"v":1,"kind":"doc","module":"builtins","name":"fold","item":"builtin","signature":"(xs: list[T], init: A, f: fn(A, T) -> A) -> A","description":"`f(f(init, xs[0]), xs[1])` ..., `init` for an empty list"}
 {"v":1,"kind":"doc","module":"builtins","name":"any, all","item":"builtin","signature":"(xs: list[T], f: fn(T) -> bool) -> bool","description":"stop at the first element that decides"}
 {"v":1,"kind":"doc","module":"builtins","name":"concurrent_map","item":"builtin","signature":"(xs: list[T], limit: int, f: fn(T) -> U) -> list[U]","description":"like `map`, at most `limit` (1 to 64, else R0007) tasks at a time"}
+{"v":1,"kind":"doc","module":"builtins","name":"map_err","item":"builtin","signature":"(r: result[T, E1], f: fn(E1) -> E2) -> result[T, E2]","description":"an `ok` unchanged; `err(e)` becomes `err(f(e))`"}
 {"v":1,"kind":"doc","module":"builtins","name":"print","item":"builtin","signature":"(s: str)","description":"stdout, adds `\\n`"}
 {"v":1,"kind":"doc","module":"builtins","name":"write","item":"builtin","signature":"(s: str)","description":"stdout, no newline"}
 {"v":1,"kind":"doc","module":"builtins","name":"eprint","item":"builtin","signature":"(s: str)","description":"stderr, adds `\\n`"}
@@ -62,4 +63,4 @@
 {"v":1,"kind":"doc","module":"std.regex","name":"std.regex","item":"module","signature":"std.regex","description":"Regular expressions that run in linear time: test, find, replace and split with compiled patterns."}
 {"v":1,"kind":"doc","module":"std.sqlite","name":"std.sqlite","item":"module","signature":"std.sqlite","description":"SQLite databases in files (file.read, file.write) or in memory (no effect), with checked statements and ? parameters."}
 {"v":1,"kind":"doc","module":"std.web","name":"std.web","item":"module","signature":"std.web","description":"Building HTTP APIs: a route table, typed request input, JSON answers, errors mapped in one place, steps around requests, settings, health, and tests without a network."}
-{"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":56}
+{"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":57}

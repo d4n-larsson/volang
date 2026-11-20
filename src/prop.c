@@ -105,8 +105,8 @@ static int pg_find(Type *t, Type *target, Vec *stack)
     switch (t->kind) {
     case TY_FUNC:
     case TY_PARAM: return !target; /* functions matter only when looking for them */
-    case TY_LIST:
-    case TY_RESULT: return pg_find(t->a.t, target, stack);
+    case TY_LIST: return pg_find(t->a.t, target, stack);
+    case TY_RESULT: return pg_find(t->a.t, target, stack) || (t->b.t && pg_find(t->b.t, target, stack)); /* spec 032 */
     case TY_MAP: return pg_find(t->a.t, target, stack) || pg_find(t->b.t, target, stack);
     case TY_OMAP:
     case TY_OSET:
@@ -170,8 +170,8 @@ static int pg_unordered(Type *t)
 {
     if (!t) return 0;
     switch (t->kind) {
-    case TY_LIST:
-    case TY_RESULT: return pg_unordered(t->a.t);
+    case TY_LIST: return pg_unordered(t->a.t);
+    case TY_RESULT: return pg_unordered(t->a.t) || (t->b.t && pg_unordered(t->b.t)); /* spec 032 */
     case TY_MAP: return pg_unordered(t->a.t) || pg_unordered(t->b.t);
     case TY_OMAP:
     case TY_OSET:
@@ -316,8 +316,8 @@ long prop_gen(Type *t, long size, long depth)
         GC_UNROOT(1);
         return (long)c;
     }
-    case TY_RESULT: { /* result[T]: 1 in 4 err */
-        if (!pr_below(4)) return (long)make_result(1, (long)pg_str(size));
+    case TY_RESULT: { /* result[T]: 1 in 4 err (spec 032: of its error type) */
+        if (!pr_below(4)) return (long)make_result(1, t->b.t ? prop_gen(t->b.t, size, depth) : (long)pg_str(size));
         long v = 0;
         if (t->a.t->kind != TY_VOID) v = prop_gen(t->a.t, size, depth);
         return (long)make_result(0, v);
@@ -413,7 +413,8 @@ long prop_copy(long value, Type *t)
         Variant *src = (Variant *)value;
         long tag = (long)(uint32_t)src->tag;
         long pay = src->pay.i;
-        if (!tag && t->a.t->kind != TY_VOID) pay = prop_copy(pay, t->a.t); /* err: the str is shared */
+        if (!tag && t->a.t->kind != TY_VOID) pay = prop_copy(pay, t->a.t); /* err: a str is shared */
+        if (tag && t->b.t) pay = prop_copy(pay, t->b.t);                    /* spec 032: a typed error is copied */
         return (long)make_result((int)tag, pay);
     }
     case TY_RECORD: {
@@ -621,7 +622,7 @@ Vec *prop_shrinks(long value, Type *t)
     case TY_RESULT: { /* result: the payload shrunk, in the same case */
         Variant *v = (Variant *)value;
         long tag = (long)(uint32_t)v->tag;
-        Type *pt = t_str; /* err carries a str */
+        Type *pt = err_type(t); /* err carries its error type (spec 032) */
         if (!tag) {
             pt = t->a.t;
             if (pt->kind == TY_VOID) break;

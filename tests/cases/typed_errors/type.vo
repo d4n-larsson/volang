@@ -1,0 +1,32 @@
+# result[T, str] and result[T] are one type; result[T, E] takes any error type that can be read.
+variant LoadError {
+    missing(str);
+}
+
+fn half(n: int) -> result[int, str] {
+    if n % 2 != 0 {
+        return err("odd");
+    }
+    return ok(n / 2);
+}
+
+fn quarter(n: int) -> result[int] {
+    let h = try half(n);
+    return half(h);
+}
+
+fn nothing() -> result[void, LoadError] {
+    return ok();
+}
+
+fn many() -> result[list[int], LoadError] {
+    return ok([1, 2]);
+}
+
+fn main() uses console {
+    let a: result[int] = half(8);
+    let b: result[int, str] = quarter(8);
+    let both = [a, b];
+    print(str(a == b) + " " + str(len(both)));
+    print(str(nothing() == ok()) + " " + str(many() == ok([1, 2])));
+}

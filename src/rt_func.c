@@ -15,6 +15,14 @@ List *hof_map(List *list, void *fn, Node *call)
     return out;
 }
 
+/* Spec 032: map_err(r, f): an ok as it is (values have no identity), err(e) as err(f(e)). */
+Variant *hof_map_err(Variant *r, void *fn, Node *call)
+{
+    if (!(uint32_t)r->tag) return r;
+    long e = call_value(fn, call, &r->pay.i);
+    return make_result(1, e);
+}
+
 List *hof_filter(List *list, void *fn, Node *call)
 {
     GC_ROOT(&list);

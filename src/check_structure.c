@@ -751,7 +751,7 @@ static unsigned long type_plain(Type *t, int *effects)
     case TY_PQUEUE:
     case TY_DEQUE:
         h = (h ^ type_plain(t->a.t, effects)) * 1099511628211UL;
-        return t->kind == TY_LIST || t->kind == TY_RESULT ? h : (h ^ type_plain(t->b.t, effects)) * 31;
+        return t->kind == TY_LIST || (t->kind == TY_RESULT && !t->b.t) ? h : (h ^ type_plain(t->b.t, effects)) * 31; /* spec 032 */
     default: return h ^ (unsigned long)t->a.i;
     }
 }

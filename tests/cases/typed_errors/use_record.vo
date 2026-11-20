@@ -1,0 +1,32 @@
+# Any value can be an error: here a record with a line number and a reason.
+record ParseError {
+    line: int;
+    reason: str;
+}
+
+fn parse(lines: list[str]) -> result[int, ParseError] {
+    var total = 0;
+    for i in 0..len(lines) {
+        match parse_int(lines[i]) {
+            case ok(n) {
+                set total = total + n;
+            }
+            case err(_) {
+                return err(new ParseError { line: i + 1, reason: "not a number: " + lines[i] });
+            }
+        }
+    }
+    return ok(total);
+}
+
+fn main() uses console {
+    match parse(["1", "2", "x"]) {
+        case ok(n) {
+            print(str(n));
+        }
+        case err(e) {
+            print("line " + str(e.line) + ": " + e.reason);
+        }
+    }
+    print(str(parse(["4", "5"]) == ok(9)));
+}

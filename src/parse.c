@@ -427,6 +427,15 @@ static Node *parse_type(void)
         } else {
             n->b.n = parse_type();
         }
+        if (p_accept(T_COMMA)) { /* spec 032: result[T, E] (`void` parsed so E0334 can name it) */
+            if (p_kind() == T_KVOID) {
+                n->c.n = p_node(N_TYPE_NODE);
+                n->c.n->a.i = TY_VOID;
+                p_next();
+            } else {
+                n->c.n = parse_type();
+            }
+        }
         p_expect(T_RBRACKET);
     } else if (k == T_FN) { /* fn(types) -> type uses ... */
         n->a.i = TY_FUNC;

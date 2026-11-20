@@ -1,0 +1,27 @@
+# map_err needs a result and a function from its error type; the function's effects must be declared.
+variant LoadError {
+    missing(str);
+}
+
+fn load() -> result[int, LoadError] {
+    return ok(1);
+}
+
+fn shout(e: str) -> str uses console {
+    print(e);
+    return e;
+}
+
+fn main() {
+    let a = map_err(load(), fn(e: str) -> str {
+        return e;
+    });
+    let b = map_err(3, fn(e: str) -> str {
+        return e;
+    });
+    let c = map_err(map_err(load(), fn(e: LoadError) -> str {
+        return "x";
+    }), shout);
+    let d = map_err(load(), fn(e: LoadError) {
+    });
+}

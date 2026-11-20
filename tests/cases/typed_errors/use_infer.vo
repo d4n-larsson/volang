@@ -1,0 +1,9 @@
+# An err needs a known result type, typed or not (E0307).
+variant LoadError {
+    missing(str);
+}
+
+fn main() uses console {
+    let r = err(LoadError.missing("a"));
+    print("x");
+}

@@ -1,0 +1,27 @@
+# A match on an error variant must handle every case (E0401, with the case as the fix).
+variant LoadError {
+    missing(str);
+    malformed(int);
+}
+
+fn load(text: str) -> result[int, LoadError] {
+    if text == "" {
+        return err(LoadError.missing("config.txt"));
+    }
+    return ok(len(text));
+}
+
+fn main() uses console {
+    match load("") {
+        case ok(n) {
+            print(str(n));
+        }
+        case err(e) {
+            match e {
+                case missing(path) {
+                    print(path);
+                }
+            }
+        }
+    }
+}

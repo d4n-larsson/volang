@@ -1,0 +1,28 @@
+# `try` passes an error up when the error types are the same: the caller gets the value that started at
+# the bottom.
+variant LoadError {
+    missing(str);
+    malformed(int);
+}
+
+fn read_part(name: str) -> result[int, LoadError] {
+    if name == "" {
+        return err(LoadError.missing("part"));
+    }
+    return ok(len(name));
+}
+
+fn read_two(a: str, b: str) -> result[int, LoadError] {
+    let x = try read_part(a);
+    let y = try read_part(b);
+    return ok(x + y);
+}
+
+fn load(a: str, b: str) -> result[int, LoadError] {
+    return ok(try read_two(a, b) * 10);
+}
+
+fn main() uses console {
+    print(str(load("ab", "c") == ok(30)));
+    print(str(load("ab", "") == err(LoadError.missing("part"))));
+}

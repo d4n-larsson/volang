@@ -1,0 +1,24 @@
+# Generic functions take the error type as a type parameter, inferred like the others.
+variant LoadError {
+    missing(str);
+}
+
+fn first_ok[T, E](rs: list[result[T, E]], fallback: E) -> result[T, E] {
+    for r in rs {
+        match r {
+            case ok(v) {
+                return ok(v);
+            }
+            case err(_) {
+            }
+        }
+    }
+    return err(fallback);
+}
+
+fn main() uses console {
+    let texts: list[result[int]] = [err("a"), ok(2), ok(3)];
+    print(str(first_ok(texts, "none") == ok(2)));
+    let typed: list[result[int, LoadError]] = [err(LoadError.missing("x"))];
+    print(str(first_ok(typed, LoadError.missing("all")) == err(LoadError.missing("all"))));
+}

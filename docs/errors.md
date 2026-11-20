@@ -2095,6 +2095,45 @@ fn main() uses console {
 }
 ```
 
+## E0334 bad_error_type
+
+The error type of a `result` cannot be read or printed.
+
+Fixable: no
+
+`result[T, E]` fails with a value of type `E` that callers match, compare and print: a variant of the ways to fail, a record, `str` or another value. `void` (nothing to read), a function type or a type that contains one cannot be an error. Use a variant, or `result[T]` for a message.
+
+### Example
+
+```vo
+fn check(n: int) -> result[int, void] {
+    return ok(n);
+}
+
+fn main() uses console {
+    print(str(check(1) == ok(1)));
+}
+```
+
+### Fixed
+
+```vo
+variant CheckError {
+    negative;
+}
+
+fn check(n: int) -> result[int, CheckError] {
+    if n < 0 {
+        return err(CheckError.negative);
+    }
+    return ok(n);
+}
+
+fn main() uses console {
+    print(str(check(1) == ok(1)));
+}
+```
+
 ## E0401 non_exhaustive_match
 
 A `match` does not handle every case.
@@ -2459,6 +2498,62 @@ fn main() uses console {
             print(e);
         }
     }
+}
+```
+
+## E0412 try_error_mismatch
+
+`try` on a `result` whose error type differs from the function's.
+
+Fixable: no
+
+`try` passes an error up unchanged, so the error types must be the same: `try` in a function returning `result[T, LoadError]` takes a `result[U, LoadError]`. An error of another type is converted where it crosses the boundary, with `map_err(r, f)`; `main` and tests fail with a message (`result[void]`), so a typed error is converted to a `str` before it reaches them.
+
+### Example
+
+```vo
+variant LoadError {
+    missing(str);
+}
+
+fn load(path: str) -> result[int, LoadError] {
+    if path == "" {
+        return err(LoadError.missing("config"));
+    }
+    return ok(1);
+}
+
+fn main() -> result[void] uses console {
+    print(str(try load("a")));
+    return ok();
+}
+```
+
+### Fixed
+
+```vo
+variant LoadError {
+    missing(str);
+}
+
+fn load(path: str) -> result[int, LoadError] {
+    if path == "" {
+        return err(LoadError.missing("config"));
+    }
+    return ok(1);
+}
+
+fn describe(e: LoadError) -> str {
+    match e {
+        case missing(what) {
+            return "missing " + what;
+        }
+    }
+}
+
+fn main() -> result[void] uses console {
+    print(str(try map_err(load("a"), describe)));
+    return ok();
 }
 ```
 

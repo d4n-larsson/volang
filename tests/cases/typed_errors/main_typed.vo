@@ -1,0 +1,8 @@
+# main returns result[void]: a str error. A typed error is converted before it reaches main.
+variant LoadError {
+    missing(str);
+}
+
+fn main() -> result[void, LoadError] {
+    return ok();
+}

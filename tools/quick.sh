@@ -22,6 +22,7 @@ cases() {
     web) echo "json_derive annotations web web_steps generic json" ;;
     effects) echo "effect_sets effects fmt" ;;
     const) echo "const check effects effect_sets fmt query annotations format regex sqlite web doc" ;; # spec 031
+    typed_errors) echo "typed_errors check generic prop tasks test run web doc" ;; # spec 032
     bytes) echo "bytes bytes_steps run doc" ;;
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
@@ -52,6 +53,7 @@ scripts() { # one per line, with arguments
     web) printf '%s\n' doc_conformance.py "web_fuzz.py --quick" ;;
     effects) printf '%s\n' fmt_corpus.py catalog.py effect_sets_records.py ;;
     const) printf '%s\n' apply_fixes.py catalog.py fmt_corpus.py ref_examples.py const_equiv.py ;; # spec 031
+    typed_errors) printf '%s\n' catalog.py apply_fixes.py ref_examples.py doc_conformance.py ;; # spec 032
     bytes) echo doc_conformance.py ;;
     float) printf '%s\n' math_vectors.py json_corpus.py json_stream.py ref_examples.py doc_conformance.py ;;
     json) printf '%s\n' json_corpus.py json_stream.py doc_conformance.py ;;
@@ -134,7 +136,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const bytes float json text time random collections http fs front query testing tasks trace packages docs cli)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors bytes float json text time random collections http fs front query testing tasks trace packages docs cli)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done

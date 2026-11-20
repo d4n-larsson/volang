@@ -1,0 +1,7 @@
+use_infer.vo:7:9: warning[W0201]: `r` is never used.
+   7 |     let r = err(LoadError.missing("a"));
+     |         ^
+use_infer.vo:7:13: error[E0307]: Cannot infer the type of `err(...)` here. Add a type annotation.
+   7 |     let r = err(LoadError.missing("a"));
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 1 warning

@@ -260,6 +260,37 @@ static Str *task_func_path(Type *t, Vec *seen)
 /* sort_by, map, filter, fold, any, all: a list, (fold: a start value,) and a function of its
  * elements; concurrent_map (spec 016): a list, the limit and a function. The function's effects
  * become the caller's. */
+/* Spec 032: map_err(r: result[T, E1], f: fn(E1) -> E2) -> result[T, E2]; f's effects are the caller's. */
+Type *check_map_err(Node *call)
+{
+    if (!check_argc(call, 2)) return t_error;
+    Type *rt = check_arg(call, 0, 0);
+    if (ty_bad(rt)) return t_error;
+    if (rt->kind != TY_RESULT) {
+        ck_err1("E0301", call->b.v->data[0].n, "Expected a `result`, found `$1`.", ty_name(rt));
+        return t_error;
+    }
+    Type *ft = check_arg(call, 1, 0);
+    if (ty_bad(ft)) return t_error;
+    Type *ret = ft->kind == TY_FUNC ? ft->b.t : t_error;
+    EffSet *eff = ft->kind == TY_FUNC ? ft->decl.es : 0;
+    if (!eff) eff = es_new(0);
+    Vec *params = vec_new();
+    vec_push(params, err_type(rt));
+    Type *want = ty_func(params, ret, eff);
+    if (want != ft) {
+        ck_mismatch(vec_get(call->b.v, 1), want, ft);
+        return t_error;
+    }
+    fx_value_call(ft->decl.p);
+    if (ret->kind == TY_VOID || ty_has_func(ret)) {
+        ck_err1("E0334", call->b.v->data[1].n,
+                "The error of a `result` is a value the caller can read and print: `$1` cannot be one.", ty_name(ret));
+        return t_error;
+    }
+    return ty_result_e(rt->a.t, ret);
+}
+
 Type *check_hof(Node *call, long id)
 {
     Type *bool_or_bad = (id == B_ANY || id == B_ALL) ? t_bool : t_error; /* when the call is wrong */

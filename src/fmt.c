@@ -307,6 +307,10 @@ static void fm_type(Node *t)
     case TY_RESULT:
         fm_c("result[");
         fm_type(t->b.n);
+        if (t->c.n) { /* spec 032: the error type */
+            fm_c(", ");
+            fm_type(t->c.n);
+        }
         break;
     case TY_FUNC:
         fm_fn_type(t);

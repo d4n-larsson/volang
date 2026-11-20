@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 101 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 102 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -45,7 +45,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__serve_workers", /* spec 028 */
     "__to_json", "__from_json", "__json_fields", "__json_text", /* spec 029 */
     "__json_parse", "__json_write",
-    "byte_at", "__http_timeout",
+    "byte_at", "__http_timeout", "map_err",
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -260,6 +260,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
     if (id == B_FSB) fx_builtin_fsb(call); /* spec 021: the same for __fsb */
     if (id == B_SQL_OPEN) fx_builtin_sql_open(call); /* spec 026: by mode */
     fx_builtin_literal(call, id); /* spec 013 (L1) */
+    if (id == B_MAP_ERR) return check_map_err(call); /* spec 032 */
     if ((id >= B_SORT_BY && id <= B_ALL) || id == B_CMAP) return check_hof(call, id); /* sort_by, map, filter, fold, any, all, concurrent_map */
     if (id >= B_EXPECT && id <= B_EXPECT_EQ && !ck_in_test)          /* expect / expect_eq only in tests */
         ck_err1("E0410", call, "`$1` can only be used inside a `test` block.", call->a.n->a.s);
@@ -461,7 +462,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
     }
     default: /* err(msg) */
         if (!ty_is(expected, TY_RESULT)) return infer_error(call, expected);
-        if (check_argc(call, 1)) check_arg(call, 0, t_str);
+        if (check_argc(call, 1)) check_arg(call, 0, err_type(expected)); /* spec 032: the error type */
         return expected;
     }
 }
@@ -793,7 +794,7 @@ static int ty_has_tparam(Type *t, Node *owner, long idx)
     switch (t->kind) {
     case TY_PARAM: return t->decl.n == owner && t->a.i == idx;
     case TY_LIST:
-    case TY_RESULT: return ty_has_tparam(t->a.t, owner, idx);
+    case TY_RESULT: return ty_has_tparam(t->a.t, owner, idx) || (t->b.t && ty_has_tparam(t->b.t, owner, idx));
     case TY_MAP: return ty_has_tparam(t->a.t, owner, idx) || ty_has_tparam(t->b.t, owner, idx);
     case TY_FUNC:
         if (ty_has_tparam(t->b.t, owner, idx)) return 1;
@@ -943,7 +944,17 @@ Type *check_try(Node *node, Type *expected)
     Type *want = expected && !ty_bad(expected) && needs_expected(node->a.n) ? ty_result(expected) : 0;
     Type *t = check_expr(node->a.n, want);
     if (ty_bad(t)) return t_error;
-    if (ty_is(t, TY_RESULT)) return t->a.t;
+    if (ty_is(t, TY_RESULT)) {
+        if (ty_is(ck_ret, TY_RESULT) && err_type(t) != err_type(ck_ret) && !ty_bad(err_type(t)) &&
+            !ty_bad(err_type(ck_ret))) { /* spec 032: errors pass up unchanged, never converted */
+            Str *fname = ck_fn && ck_fn->kind == N_FN && ck_fn->a.n ? ck_fn->a.n->a.s : str_from_cstr("this function");
+            ck_err("E0412", node,
+                   msg("`try` passes the error on, but this `result` fails with `$1` and `$2` fails with `$3`: convert it "
+                       "with `map_err`.",
+                       ty_name(err_type(t)), fname, ty_name(err_type(ck_ret))));
+        }
+        return t->a.t;
+    }
     ck_err1("E0301", node->a.n, "`try` needs a `result`, found `$1`.", ty_name(t));
     return t_error;
 }

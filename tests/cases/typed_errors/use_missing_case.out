@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0401","name":"non_exhaustive_match","severity":"error","file":"use_missing_case.vo","start":{"line":20,"col":13},"end":{"line":20,"col":20},"text":"match e","message":"This `match` is missing cases: `malformed`.","fixes":[{"file":"use_missing_case.vo","start":{"line":24,"col":13},"end":{"line":24,"col":13},"replacement":"case malformed(_) {\n}\n"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}
