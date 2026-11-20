@@ -47,7 +47,9 @@ fn main() uses console, clock, random {
         print(caller + " waits " + str(wait) + " min");
     }
     print("average " + str(total / 3) + " min");
-    print("started " + format_time(start) + ", next reading " + str(now_ms() - start) + " ms later");
+    print(
+        "started " + format_time(start) + ", next reading " + str(now_ms() - start) + " ms later"
+    );
 }
 ```
 

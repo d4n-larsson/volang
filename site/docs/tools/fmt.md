@@ -14,7 +14,17 @@ the files given are formatted, not the files they import.
 The canonical form is described in the reference's [Command line](../reference/command-line.md) section:
 4-space indent, `{` on the same line, one statement per line, no blank lines inside blocks, one blank line
 between items, single spaces around binary operators and after `,` and `:`, parentheses only where needed,
-and effects in canonical order. Comments are kept.
+and effects in canonical order. Comments are kept. A line over 100 characters is broken inside the
+outermost list, argument list or `new` record that ends it, one item per line; a call's last list or
+record argument keeps its bracket on the call's line, and operands of operators are never broken:
+
+```text
+    return web_app([
+        on_get("/notes", list_notes),
+        on_post("/notes", create),
+        on_get("/notes/{id}", show)
+    ]);
+```
 
 `fmt` needs the files to parse, not to check: a file with a type error is formatted. A syntax error in
 any of the files stops the command before it writes anything.

@@ -63,7 +63,9 @@ fn main() uses console {
     let units = total / 100;
     let rest = total % 100;
     print("total: " + str(units) + "." + str(rest));
-    print("average: " + str(average) + ", largest: " + str(largest) + ", over the limit: " + str(over));
+    print(
+        "average: " + str(average) + ", largest: " + str(largest) + ", over the limit: " + str(over)
+    );
 }
 ```
 
@@ -114,13 +116,15 @@ test "money" {
 
 ```vo
 # file: main.vo
-import report.report;
 import report.money;
+import report.report;
 
 fn main() uses console {
     let r = report([1250, 830, 4999, 120], 2000);
     print("total: " + money(r.total));
-    print("average: " + str(r.average) + ", largest: " + str(r.largest) + ", over the limit: " + str(r.over));
+    print(
+        "average: " + str(r.average) + ", largest: " + str(r.largest) + ", over the limit: " + str(r.over)
+    );
 }
 ```
 

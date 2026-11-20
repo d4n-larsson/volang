@@ -1252,7 +1252,7 @@ Exit statuses:
 | 124 | timeout (R0009) |
 | 125 | internal error in vo (T0003) |
 
-Canonical formatting, as produced by `vo fmt`: 4-space indent, `{` on the same line, one statement per line, no blank lines inside blocks, one blank line between items (none after a comment unless the source has one: a comment right above an item is its documentation), single spaces around binary operators and after `,` and `:`, and parentheses only where needed, except that an `and` written in parentheses inside an `or` keeps them.
+Canonical formatting, as produced by `vo fmt`: 4-space indent, `{` on the same line, one statement per line, no blank lines inside blocks, one blank line between items (none after a comment unless the source has one: a comment right above an item is its documentation), single spaces around binary operators and after `,` and `:`, and parentheses only where needed, except that an `and` written in parentheses inside an `or` keeps them. A line over 100 characters is broken inside the outermost list, argument list or `new` record that ends it, one item per line with the closing bracket on its own line (a call's last list or record argument keeps its bracket on the call's line: `web_app([`); operands of operators are never broken.
 
 ```vo-fmt
 fn main() uses console{

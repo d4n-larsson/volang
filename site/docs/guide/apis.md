@@ -46,7 +46,11 @@ fn routes() -> list[Route[Shop]] {
 }
 
 fn main() uses console {
-    let app = new App { routes: routes(), steps: new list[Step[Shop]], errors: new list[ErrorStatus] };
+    let app = new App {
+        routes: routes(),
+        steps: new list[Step[Shop]],
+        errors: new list[ErrorStatus]
+    };
     for path in ["/items/2", "/items/9", "/items/x", "/users"] {
         let r = handle_request(app, new Shop { name: "corner" }, request("GET", path, ""));
         print(str(r.status) + " " + r.body);

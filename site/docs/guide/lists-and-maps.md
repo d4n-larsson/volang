@@ -91,7 +91,11 @@ record Person {
 }
 
 fn main() uses console {
-    let people = [new Person { name: "cy", team: "ops", age: 30 }, new Person { name: "al", team: "dev", age: 41 }, new Person { name: "bo", team: "ops", age: 25 }];
+    let people = [
+        new Person { name: "cy", team: "ops", age: 30 },
+        new Person { name: "al", team: "dev", age: 41 },
+        new Person { name: "bo", team: "ops", age: 25 }
+    ];
     sort_by(people, fn(p: Person) -> int {
         return p.age;
     });

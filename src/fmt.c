@@ -6,6 +6,16 @@ static SB *fm_sb;     /* the output builder */
 static char *fm_text; /* source text of the file being formatted */
 static long fm_level; /* indentation level of the statement being printed */
 
+/* Lines over FM_WIDTH characters: a statement is printed, then printed again with the outermost list
+ * literal, argument list or record literal crossing the limit written one item per line (fm_wrap), until
+ * every line fits or nothing is left to break. A call's last argument that is a list or record literal
+ * keeps its opening bracket on the call's line (`web_app([` ... `])`). Only a group that ends its line (closing
+ * brackets, `;`, `,` or ` {` after it) is broken: a long operator chain stays on one line. */
+#define FM_WIDTH 100
+static Vec *fm_wrap;   /* the groups written one item per line */
+static Vec *fm_groups; /* the groups the statement being printed wrote on one line: node, start, end */
+static long fm_operand; /* > 0 while printing an operand of a binary operator: its groups are not broken */
+
 static void fm_type(Node *t);
 static void fm_expr(Node *n, long ctx);
 static void fm_block(Node *block, long level);
@@ -29,6 +39,48 @@ static void fm_b(int byte)
 static void fm_indent(long level)
 {
     for (; level > 0; level--) fm_c("    ");
+}
+
+static long fm_line_start(long pos)
+{
+    while (pos > 0 && fm_sb->ptr[pos - 1] != '\n') pos--;
+    return pos;
+}
+
+/* The spaces at the start of the line being written. */
+static long fm_cur_indent(void)
+{
+    long s = fm_line_start(fm_sb->len), n = 0;
+    while (s + n < fm_sb->len && fm_sb->ptr[s + n] == ' ') n++;
+    return n;
+}
+
+/* Characters (not bytes) of the output in [from, to). */
+static long fm_chars(long from, long to)
+{
+    long n = 0;
+    for (long i = from; i < to; i++) n += ((unsigned char)fm_sb->ptr[i] & 0xC0) != 0x80;
+    return n;
+}
+
+static int fm_wrapped(Node *n)
+{
+    for (long i = 0; i < fm_wrap->n; i++)
+        if (vec_get(fm_wrap, i) == n) return 1;
+    return 0;
+}
+
+static void fm_group(Node *n, long start)
+{
+    if (fm_operand) return; /* (`a + f(x)`: an operator chain is not broken) */
+    vec_push(fm_groups, n);
+    vec_push(fm_groups, (void *)start);
+    vec_push(fm_groups, (void *)fm_sb->len);
+}
+
+static void fm_spaces(long n)
+{
+    for (; n > 0; n--) fm_b(' ');
 }
 
 static void fm_name(Node *name)
@@ -71,7 +123,7 @@ static void fm_fn_type(Node *t)
 /* `fn(x: int) -> int {` + the body one level deeper than the statement it is in + `}`. */
 static void fm_lambda(Node *f)
 {
-    long level = fm_level;
+    long level = fm_cur_indent() / 4; /* (its body one level deeper than the line it starts on) */
     fm_c("fn(");
     for (long i = 0; i < f->b.v->n; i++) {
         if (i) fm_c(", ");
@@ -243,14 +295,40 @@ static long expr_prec(Node *n)
     }
 }
 
-/* Comma-separated expressions. */
+/* Comma-separated expressions (each its own context: an operand's argument may still be broken). */
 static void fm_list(Vec *v)
 {
     if (!v) return;
+    long saved = fm_operand;
+    fm_operand = 0;
     for (long i = 0; i < v->n; i++) {
         if (i) fm_c(", ");
         fm_expr(vec_get(v, i), 0);
     }
+    fm_operand = saved;
+}
+
+/* Items one per line, one level deeper than the line they start on, then the line's indent (the caller
+ * writes the brackets). Record literals: `name: value` items. */
+static void fm_items(Vec *v, int fields)
+{
+    long ind = fm_cur_indent(), saved = fm_operand;
+    fm_operand = 0;
+    fm_b('\n');
+    for (long i = 0; i < v->n; i++) {
+        fm_spaces(ind + 4);
+        Node *e = vec_get(v, i);
+        if (fields) {
+            fm_name(e->a.n);
+            fm_c(": ");
+            e = e->b.n;
+        }
+        fm_expr(e, 0);
+        if (i + 1 < v->n) fm_b(',');
+        fm_b('\n');
+    }
+    fm_spaces(ind);
+    fm_operand = saved;
 }
 
 /* 1 for an `and` written in parentheses as an operand of `or`: not needed, but kept for the reader. */
@@ -270,12 +348,18 @@ static void fm_expr(Node *n, long ctx)
     case N_LAMBDA:
         fm_lambda(n);
         break;
-    case N_CALL_VALUE: /* callee(args) */
+    case N_CALL_VALUE: { /* callee(args) */
+        long st = fm_sb->len;
         fm_expr(n->a.n, 8);
         fm_b('(');
-        fm_list(n->b.v);
+        if (n->b.v && n->b.v->n && fm_wrapped(n))
+            fm_items(n->b.v, 0);
+        else
+            fm_list(n->b.v);
         fm_b(')');
+        if (n->b.v && n->b.v->n && !fm_wrapped(n)) fm_group(n, st);
         break;
+    }
     case N_INT:
         int_to_dec(fm_sb, n->a.i);
         break;
@@ -291,18 +375,26 @@ static void fm_expr(Node *n, long ctx)
     case N_IDENT:
         fm_s(n->a.s);
         break;
-    case N_CALL:
+    case N_CALL: {
+        long st = fm_sb->len;
         fm_name(n->a.n);
         fm_b('(');
-        fm_list(n->b.v);
+        if (n->b.v && n->b.v->n && fm_wrapped(n))
+            fm_items(n->b.v, 0);
+        else
+            fm_list(n->b.v);
         fm_b(')');
+        if (n->b.v && n->b.v->n && !fm_wrapped(n)) fm_group(n, st);
         break;
+    }
     case N_BINARY: /* left at its own level, right one higher (comparisons: both) */
+        fm_operand++;
         fm_expr(n->a.n, keep_parens(n, n->a.n) ? 3 : prec == 4 ? prec + 1 : prec);
         fm_b(' ');
         fm_s(tok_raw((int)n->c.i));
         fm_b(' ');
         fm_expr(n->b.n, keep_parens(n, n->b.n) ? 3 : prec + 1);
+        fm_operand--;
         break;
     case N_UNARY:
         if (n->c.i == T_NOT)
@@ -326,11 +418,17 @@ static void fm_expr(Node *n, long ctx)
         fm_expr(n->b.n, 0);
         fm_b(']');
         break;
-    case N_LIST:
+    case N_LIST: {
+        long st = fm_sb->len;
         fm_b('[');
-        fm_list(n->a.v);
+        if (n->a.v->n && fm_wrapped(n))
+            fm_items(n->a.v, 0);
+        else
+            fm_list(n->a.v);
         fm_b(']');
+        if (n->a.v->n && !fm_wrapped(n)) fm_group(n, st);
         break;
+    }
     case N_NEW_RECORD: /* new T { f: e, ... } */
         fm_c("new ");
         fm_name(n->a.n);
@@ -339,7 +437,15 @@ static void fm_expr(Node *n, long ctx)
             fm_c(" {}");
             break;
         }
+        if (fm_wrapped(n)) {
+            fm_c(" {");
+            fm_items(n->b.v, 1);
+            fm_c("}");
+            break;
+        }
+        long st = fm_sb->len, saved_op = fm_operand;
         fm_c(" { ");
+        fm_operand = 0;
         for (long i = 0; i < n->b.v->n; i++) {
             if (i) fm_c(", ");
             Node *init = vec_get(n->b.v, i);
@@ -348,6 +454,8 @@ static void fm_expr(Node *n, long ctx)
             fm_expr(init->b.n, 0);
         }
         fm_c(" }");
+        fm_operand = saved_op;
+        fm_group(n, st);
         break;
     case N_NEW_LIST:
         fm_c("new ");
@@ -409,8 +517,62 @@ static void fm_if(Node *n, long level)
         fm_block(n->c.n, level);
 }
 
-/* One statement (with its indentation and newline). */
+/* The group to write one item per line next: on the first line over FM_WIDTH, the outermost group crossing
+ * the limit (else the widest on that line); a call's last list or record argument instead of the call. */
+static Node *fm_pick(long mark)
+{
+    Node *best = 0;
+    long best_line = -1, best_start = 0, best_w = 0;
+    int best_cross = 0;
+    for (long i = mark; i < fm_groups->n; i += 3) {
+        Node *g = vec_get(fm_groups, i);
+        long st = (long)vec_get(fm_groups, i + 1), en = (long)vec_get(fm_groups, i + 2);
+        long ls = fm_line_start(st), le = st;
+        while (le < fm_sb->len && fm_sb->ptr[le] != '\n') le++;
+        if (fm_chars(ls, le) <= FM_WIDTH) continue;
+        long k = en; /* only closing brackets, `;`, `,` or ` {` may follow it on its line (an operator chain
+                        is not broken in the middle) */
+        while (k < le && (fm_sb->ptr[k] == ')' || fm_sb->ptr[k] == ']' || fm_sb->ptr[k] == '}' || fm_sb->ptr[k] == ';' ||
+                          fm_sb->ptr[k] == ',' || fm_sb->ptr[k] == ' ' || fm_sb->ptr[k] == '{'))
+            k++;
+        if (k < le) continue;
+        int cross = fm_chars(ls, en) > FM_WIDTH;
+        long w = fm_chars(st, en);
+        int better = !best || ls < best_line ||
+                     (ls == best_line && (cross > best_cross || (cross == best_cross && (cross ? st < best_start : w > best_w))));
+        if (better) best = g, best_line = ls, best_start = st, best_w = w, best_cross = cross;
+    }
+    /* `f(a, [` ... `])`, `print(str(total([` ... `])))`: while a call's last argument is a call, list or record
+       that starts within the limit, it is broken instead */
+    while (best && (best->kind == N_CALL || best->kind == N_CALL_VALUE)) {
+        Node *last = vec_get(best->b.v, best->b.v->n - 1);
+        long at = -1;
+        for (long i = mark; i < fm_groups->n; i += 3)
+            if (vec_get(fm_groups, i) == last) at = (long)vec_get(fm_groups, i + 1);
+        if (at < 0 || fm_wrapped(last) || fm_chars(fm_line_start(at), at) >= FM_WIDTH - 1) break;
+        best = last;
+    }
+    return best;
+}
+
+static void fm_stmt_once(Node *s, long level);
+
+/* One statement (with its indentation and newline), its long lines broken (FM_WIDTH). */
 static void fm_stmt(Node *s, long level)
+{
+    long start = fm_sb->len, mark = fm_groups->n;
+    for (int round = 0; round < 200; round++) {
+        fm_sb->len = start;
+        fm_groups->n = mark;
+        fm_stmt_once(s, level);
+        Node *g = fm_pick(mark);
+        if (!g) break;
+        vec_push(fm_wrap, g);
+    }
+    fm_groups->n = mark; /* (an enclosing statement's lines are its own) */
+}
+
+static void fm_stmt_once(Node *s, long level)
 {
     fm_level = level;
     fm_indent(level);
@@ -719,6 +881,9 @@ Str *fmt_file(int file)
     fm_text = f->text;
     Vec *items = f->ast->a.v;
     fm_sb = sb_new();
+    fm_wrap = vec_new();
+    fm_groups = vec_new();
+    fm_operand = 0;
     Vec *order = vec_new();
     long first = 0; /* leading comments */
     while (first < items->n && ((Node *)vec_get(items, first))->kind == N_COMMENT)

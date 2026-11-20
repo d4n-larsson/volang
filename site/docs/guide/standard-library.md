@@ -88,7 +88,9 @@ import std.json.text_field;
 import std.json.write_json_pretty;
 
 fn main() -> result[void] uses console {
-    let doc = try parse_json("{\"order\": 1042, \"lines\": [{\"sku\": \"tea\", \"qty\": 2}, {\"sku\": \"scone\", \"qty\": 1}]}");
+    let doc = try parse_json(
+        "{\"order\": 1042, \"lines\": [{\"sku\": \"tea\", \"qty\": 2}, {\"sku\": \"scone\", \"qty\": 1}]}"
+    );
     let counts = new map[str, Json];
     var total = 0;
     for line in try as_array(try field(doc, "lines")) {
@@ -381,7 +383,11 @@ fn hit(db: Database[uses file.read, file.write], req: Request) -> Response uses 
     });
     match saved {
         case ok(id) {
-            return new Response { status: 200, headers: new list[Header], body: "hit " + str(id) + "\n" };
+            return new Response {
+                status: 200,
+                headers: new list[Header],
+                body: "hit " + str(id) + "\n"
+            };
         }
         case err(e) {
             return new Response { status: 500, headers: new list[Header], body: e + "\n" };
@@ -590,25 +596,37 @@ list of `Value`, so a value can never become SQL. For SQL built at run time, `pa
 instead.
 
 ```vo
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.exec;
-import std.sqlite.query;
-import std.sqlite.transaction;
-import std.sqlite.get_str;
-import std.sqlite.get_int;
 import std.sqlite.Value;
+import std.sqlite.exec;
+import std.sqlite.get_int;
+import std.sqlite.get_str;
+import std.sqlite.open_memory;
+import std.sqlite.query;
+import std.sqlite.sql;
+import std.sqlite.transaction;
 
 fn main() -> result[void] uses console {
     let db = open_memory();
-    let _ = try exec(db, sql("create table people(id integer primary key, name text not null, age integer)"), new list[Value]);
+    let _ = try exec(
+        db,
+        sql("create table people(id integer primary key, name text not null, age integer)"),
+        new list[Value]
+    );
     let added = try transaction(db, fn() -> result[int] {
-        let a = try exec(db, sql("insert into people(name, age) values (?, ?)"), [Value.text("Ada"), Value.integer(36)]);
-        let _ = try exec(db, sql("insert into people(name, age) values (?, ?)"), [Value.text("Alan"), Value.integer(41)]);
+        let a = try exec(db, sql("insert into people(name, age) values (?, ?)"), [
+            Value.text("Ada"),
+            Value.integer(36)
+        ]);
+        let _ = try exec(db, sql("insert into people(name, age) values (?, ?)"), [
+            Value.text("Alan"),
+            Value.integer(41)
+        ]);
         return ok(a.last_id);
     });
     print("first id " + str(added));
-    for row in try query(db, sql("select name, age from people where age > ? order by name"), [Value.integer(30)]) {
+    for row in try query(db, sql("select name, age from people where age > ? order by name"), [
+        Value.integer(30)
+    ]) {
         print(try get_str(row, "name") + " " + str(try get_int(row, "age")));
     }
     match exec(db, sql("insert into people(age) values (?)"), [Value.integer(1)]) {

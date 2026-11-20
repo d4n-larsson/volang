@@ -51,7 +51,14 @@ record NoteId {
 
 # GET /notes, POST /notes, GET /notes/ID, POST /notes/ID/done, DELETE /notes/ID, GET /health.
 export fn notes_app[D: effects]() -> App[Notes[D], uses D] {
-    return web_app([on_get("/notes", list_notes), on_post("/notes", create), on_get("/notes/{id}", show), on_post("/notes/{id}/done", done), on_delete("/notes/{id}", erase), health_route([new HealthCheck { name: "database", check: alive }])]);
+    return web_app([
+        on_get("/notes", list_notes),
+        on_post("/notes", create),
+        on_get("/notes/{id}", show),
+        on_post("/notes/{id}/done", done),
+        on_delete("/notes/{id}", erase),
+        health_route([new HealthCheck { name: "database", check: alive }])
+    ]);
 }
 
 # serve_app's setup: data/notes.db, with its table the first time.
@@ -146,7 +153,10 @@ test "a missing, empty or too long text is refused with the reason" {
 test "one note: read, mark done, delete" {
     let n = memory();
     let _ = call(n, "POST", "/notes", "{\"text\": \"call home\"}");
-    expect_eq(call(n, "GET", "/notes/1", "").body, "{\"id\":1,\"text\":\"call home\",\"done\":false}");
+    expect_eq(
+        call(n, "GET", "/notes/1", "").body,
+        "{\"id\":1,\"text\":\"call home\",\"done\":false}"
+    );
     match parse_json(call(n, "POST", "/notes/1/done", "").body) {
         case ok(j) {
             expect_eq(text_field(j, "text"), ok("call home"));
@@ -173,7 +183,10 @@ test "the notes are kept in the database between requests" {
     let n = memory();
     let _ = call(n, "POST", "/notes", "{\"text\": \"one\"}");
     let _ = call(n, "POST", "/notes", "{\"text\": \"two\"}");
-    expect_eq(all_notes(n.db), ok([new Note { id: 1, text: "one", done: false }, new Note { id: 2, text: "two", done: false }]));
+    expect_eq(all_notes(n.db), ok([
+        new Note { id: 1, text: "one", done: false },
+        new Note { id: 2, text: "two", done: false }
+    ]));
 }
 
 @spec("FR-002")

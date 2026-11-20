@@ -38,7 +38,12 @@ export fn expenses_from(doc: Json) -> result[list[Expense]] {
         if cents < 0 {
             return err("negative amount on " + date);
         }
-        push(out, new Expense { date: date, category: try text_field(item, "category"), cents: cents, note: try text_field(item, "note") });
+        push(out, new Expense {
+            date: date,
+            category: try text_field(item, "category"),
+            cents: cents,
+            note: try text_field(item, "note")
+        });
     }
     return ok(out);
 }
@@ -130,9 +135,13 @@ test "totals keep the first-seen order" {
 
 @spec("FR-004")
 test "a bad date is an error, not a crash" {
-    match parse_json("[{\"date\": \"2026-02-30\", \"category\": \"x\", \"cents\": 1, \"note\": \"\"}]") {
+    match parse_json(
+        "[{\"date\": \"2026-02-30\", \"category\": \"x\", \"cents\": 1, \"note\": \"\"}]"
+    ) {
         case ok(doc) {
-            expect_eq(expenses_from(doc), err("bad date `2026-02-30`: day 30 is not in that month"));
+            expect_eq(expenses_from(doc), err(
+                "bad date `2026-02-30`: day 30 is not in that month"
+            ));
         }
         case err(e) {
             expect_eq(e, "the test's JSON parses");

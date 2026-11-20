@@ -56,7 +56,11 @@ export fn parse_tickets(text: str) -> result[list[Ticket]] {
         }
         let minute = try number(ws[0], "minute", line);
         let severity = try number(ws[1], "severity", line);
-        push(out, new Ticket { severity: severity, minute: minute, title: join(slice(ws, 2, len(ws)), " ") });
+        push(out, new Ticket {
+            severity: severity,
+            minute: minute,
+            title: join(slice(ws, 2, len(ws)), " ")
+        });
     }
     return ok(out);
 }
@@ -163,8 +167,18 @@ fn ticket(severity: int, minute: int, title: str) -> Ticket {
 
 @spec("FR-001")
 test "the most urgent ticket first, then the earliest" {
-    let order = triage([ticket(2, 1, "b"), ticket(1, 9, "late"), ticket(1, 3, "early"), ticket(2, 1, "a")]);
-    expect_eq(order, [ticket(1, 3, "early"), ticket(1, 9, "late"), ticket(2, 1, "a"), ticket(2, 1, "b")]);
+    let order = triage([
+        ticket(2, 1, "b"),
+        ticket(1, 9, "late"),
+        ticket(1, 3, "early"),
+        ticket(2, 1, "a")
+    ]);
+    expect_eq(order, [
+        ticket(1, 3, "early"),
+        ticket(1, 9, "late"),
+        ticket(2, 1, "a"),
+        ticket(2, 1, "b")
+    ]);
 }
 
 @spec("FR-002")
@@ -191,7 +205,9 @@ test "the history keeps the last three" {
 @spec("FR-004")
 test "a malformed line is an error that shows the line" {
     expect_eq(parse_tickets("5 x printer"), err("bad severity `x` in line `5 x printer`"));
-    expect_eq(parse_shifts("0 alice extra"), err("a shift needs a minute and a name: `0 alice extra`"));
+    expect_eq(parse_shifts("0 alice extra"), err(
+        "a shift needs a minute and a name: `0 alice extra`"
+    ));
 }
 
 # The priority queue and `sort` agree: both use the record's order, field by field.

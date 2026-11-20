@@ -121,7 +121,11 @@ fn insert[T: ordered](t: Tree[T], x: T) -> Tree[T] {
         }
         case node(n) {
             if x < n.value {
-                return Tree.node(new Node { left: insert(n.left, x), value: n.value, right: n.right });
+                return Tree.node(new Node {
+                    left: insert(n.left, x),
+                    value: n.value,
+                    right: n.right
+                });
             }
             return Tree.node(new Node { left: n.left, value: n.value, right: insert(n.right, x) });
         }
@@ -304,7 +308,11 @@ fn show(v: Version) -> str {
 fn main() uses console {
     print(str(largest([3, 9, 4], 0)));
     print(largest(["pear", "apple"], ""));
-    let versions = [new Version { major: 1, minor: 10, patch: 0 }, new Version { major: 1, minor: 2, patch: 7 }, new Version { major: 0, minor: 9, patch: 9 }];
+    let versions = [
+        new Version { major: 1, minor: 10, patch: 0 },
+        new Version { major: 1, minor: 2, patch: 7 },
+        new Version { major: 0, minor: 9, patch: 9 }
+    ];
     let zero = new Version { major: 0, minor: 0, patch: 0 };
     print(show(largest(versions, zero)));
     sort(versions);

@@ -26,7 +26,11 @@ export record Incident {
 export fn services_from(doc: Json) -> result[list[Service]] {
     let out = new list[Service];
     for s in try as_array(try field(doc, "services")) {
-        push(out, new Service { name: try text_field(s, "name"), up: try bool_field(s, "up"), latency_ms: try int_field(s, "latency_ms") });
+        push(out, new Service {
+            name: try text_field(s, "name"),
+            up: try bool_field(s, "up"),
+            latency_ms: try int_field(s, "latency_ms")
+        });
     }
     return ok(out);
 }
@@ -35,7 +39,11 @@ export fn services_from(doc: Json) -> result[list[Service]] {
 export fn incidents_from(doc: Json) -> result[list[Incident]] {
     let out = new list[Incident];
     for i in try as_array(doc) {
-        push(out, new Incident { service: try text_field(i, "service"), title: try text_field(i, "title"), open: try bool_field(i, "open") });
+        push(out, new Incident {
+            service: try text_field(i, "service"),
+            title: try text_field(i, "title"),
+            open: try bool_field(i, "open")
+        });
     }
     return ok(out);
 }
@@ -126,13 +134,26 @@ test "a missing field is an error naming it" {
 
 @spec("FR-003", "FR-004", "FR-005")
 test "down services come first and the slowest up one is named" {
-    let s = [new Service { name: "web", up: true, latency_ms: 90 }, new Service { name: "db", up: false, latency_ms: 0 }, new Service { name: "api", up: true, latency_ms: 30 }];
-    let i = [new Incident { service: "db", title: "disk full", open: true }, new Incident { service: "web", title: "old", open: false }];
-    expect_eq(render(s, i), "2 of 3 services up\n\n  DOWN  db\n  up    api    30 ms\n  up    web    90 ms\n\nslowest: web (90 ms)\n\nopen incidents:\n  db: disk full\n");
+    let s = [
+        new Service { name: "web", up: true, latency_ms: 90 },
+        new Service { name: "db", up: false, latency_ms: 0 },
+        new Service { name: "api", up: true, latency_ms: 30 }
+    ];
+    let i = [
+        new Incident { service: "db", title: "disk full", open: true },
+        new Incident { service: "web", title: "old", open: false }
+    ];
+    expect_eq(
+        render(s, i),
+        "2 of 3 services up\n\n  DOWN  db\n  up    api    30 ms\n  up    web    90 ms\n\nslowest: web (90 ms)\n\nopen incidents:\n  db: disk full\n"
+    );
     expect_eq(down_count(s), 1);
 }
 
 @spec("FR-006")
 test "all up, no incidents" {
-    expect_eq(render([new Service { name: "api", up: true, latency_ms: 5 }], new list[Incident]), "1 of 1 services up\n\n  up    api     5 ms\n\nslowest: api (5 ms)\n");
+    expect_eq(
+        render([new Service { name: "api", up: true, latency_ms: 5 }], new list[Incident]),
+        "1 of 1 services up\n\n  up    api     5 ms\n\nslowest: api (5 ms)\n"
+    );
 }

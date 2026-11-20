@@ -12,7 +12,11 @@ record Check {
 fn check(url: str) -> Check uses net("localhost") {
     match get(url) {
         case ok(r) {
-            return new Check { url: url, up: r.status >= 200 and r.status < 300, detail: "HTTP " + str(r.status) };
+            return new Check {
+                url: url,
+                up: r.status >= 200 and r.status < 300,
+                detail: "HTTP " + str(r.status)
+            };
         }
         case err(e) {
             return new Check { url: url, up: false, detail: e };
@@ -43,8 +47,14 @@ fn main() uses console, net("localhost") {
 }
 
 test "a line per result" {
-    expect_eq(line(new Check { url: "http://localhost/a", up: true, detail: "HTTP 200" }), "up    http://localhost/a (HTTP 200)");
-    expect_eq(line(new Check { url: "http://localhost/b", up: false, detail: "HTTP 500" }), "DOWN  http://localhost/b (HTTP 500)");
+    expect_eq(
+        line(new Check { url: "http://localhost/a", up: true, detail: "HTTP 200" }),
+        "up    http://localhost/a (HTTP 200)"
+    );
+    expect_eq(
+        line(new Check { url: "http://localhost/b", up: false, detail: "HTTP 500" }),
+        "DOWN  http://localhost/b (HTTP 500)"
+    );
 }
 
 test "results come back in the order of the URLs" {
@@ -52,5 +62,7 @@ test "results come back in the order of the URLs" {
     let checks = map(urls, fn(u: str) -> Check {
         return new Check { url: u, up: false, detail: "not fetched" };
     });
-    expect_eq(map(checks, fn(c: Check) -> str { return c.url; }), urls);
+    expect_eq(map(checks, fn(c: Check) -> str {
+        return c.url;
+    }), urls);
 }

@@ -354,7 +354,10 @@ fn describe(c: Chain) -> str {
 }
 
 fn main() uses console {
-    let c = Chain.link(new Node { value: "a", next: Chain.link(new Node { value: "b", next: Chain.end }) });
+    let c = Chain.link(new Node {
+        value: "a",
+        next: Chain.link(new Node { value: "b", next: Chain.end })
+    });
     print(describe(c));
 }
 ```

@@ -15,7 +15,13 @@ export record Note {
 }
 
 export fn prepare[D: effects](db: Database[D]) -> result[void] uses D {
-    let _ = try exec(db, sql("create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)"), new list[Value]);
+    let _ = try exec(
+        db,
+        sql(
+            "create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)"
+        ),
+        new list[Value]
+    );
     return ok();
 }
 
@@ -29,7 +35,9 @@ export fn all_notes[D: effects](db: Database[D]) -> result[list[Note]] uses D {
 
 # The note with this id, or err("not_found: ...") (std.web answers 404).
 export fn find_note[D: effects](db: Database[D], id: int) -> result[Note] uses D {
-    let rows = try query(db, sql("select id, text, done from notes where id = ?"), [Value.integer(id)]);
+    let rows = try query(db, sql("select id, text, done from notes where id = ?"), [
+        Value.integer(id)
+    ]);
     if len(rows) == 0 {
         return err("not_found: no note " + str(id));
     }
@@ -54,5 +62,9 @@ export fn remove_note[D: effects](db: Database[D], id: int) -> result[void] uses
 }
 
 fn note_of(row: Row) -> result[Note] {
-    return ok(new Note { id: try get_int(row, "id"), text: try get_str(row, "text"), done: try get_int(row, "done") == 1 });
+    return ok(new Note {
+        id: try get_int(row, "id"),
+        text: try get_str(row, "text"),
+        done: try get_int(row, "done") == 1
+    });
 }

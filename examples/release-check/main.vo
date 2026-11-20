@@ -48,7 +48,11 @@ fn git(name: str, args: list[str], want_empty: bool) -> Check uses process("git"
         case ok(out) {
             let text = trim(out.stdout);
             if out.code != 0 {
-                return new Check { name: name, passed: false, detail: "git exited " + str(out.code) + ": " + first_line(out.stderr) };
+                return new Check {
+                    name: name,
+                    passed: false,
+                    detail: "git exited " + str(out.code) + ": " + first_line(out.stderr)
+                };
             }
             if want_empty and text != "" {
                 return new Check { name: name, passed: false, detail: first_line(text) };
@@ -65,7 +69,11 @@ fn git(name: str, args: list[str], want_empty: bool) -> Check uses process("git"
 }
 
 fn main() -> result[void] uses console, file.write("out/"), file.delete("out/"), process("git") {
-    let checks = [git("committed", ["status", "--porcelain"], true), git("whitespace", ["diff", "--check", "HEAD"], true), git("last commit", ["log", "-1", "--format=%h %s"], false)];
+    let checks = [
+        git("committed", ["status", "--porcelain"], true),
+        git("whitespace", ["diff", "--check", "HEAD"], true),
+        git("last commit", ["log", "-1", "--format=%h %s"], false)
+    ];
     match delete("out/report.txt") {
         case ok() {
         }
@@ -90,7 +98,10 @@ test "a clean checkout is ready" {
 }
 
 test "a failed check says how many" {
-    let lines = report([new Check { name: "a", passed: false, detail: "x" }, new Check { name: "b", passed: true, detail: "y" }]);
+    let lines = report([
+        new Check { name: "a", passed: false, detail: "x" },
+        new Check { name: "b", passed: true, detail: "y" }
+    ]);
     expect_eq(lines[2], "not ready: 1 of 2 checks failed");
 }
 

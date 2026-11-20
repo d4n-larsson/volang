@@ -43,7 +43,10 @@ fn report(sums: map[str, int]) -> str {
 }
 
 fn main() uses console {
-    let xs = [new Expense { category: "food", cents: 1250 }, new Expense { category: "rent", cents: 90000 }];
+    let xs = [
+        new Expense { category: "food", cents: 1250 },
+        new Expense { category: "rent", cents: 90000 }
+    ];
     print(str(len(xs)) + " expenses");
     write(report(totals(xs)));
 }
@@ -213,7 +216,11 @@ fn report(sums: map[str, int]) -> str {
 }
 
 fn main() uses console {
-    let xs = [new Expense { category: "food", cents: 1250 }, new Expense { category: "rent", cents: 90000 }, new Expense { category: "food", cents: 305 }];
+    let xs = [
+        new Expense { category: "food", cents: 1250 },
+        new Expense { category: "rent", cents: 90000 },
+        new Expense { category: "food", cents: 305 }
+    ];
     write(report(totals(xs)));
 }
 ```

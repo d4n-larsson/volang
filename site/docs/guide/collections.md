@@ -219,8 +219,8 @@ position from the front ([R0003](../errors/R0003.md) outside the deque), and `fo
 Keeping only the last three items is `push` at the back and `pop_front` when it is full:
 
 ```vo
-import std.collections.pop_front;
 import std.collections.front;
+import std.collections.pop_front;
 
 fn main() -> result[void] uses console {
     let recent = new deque[str];
@@ -234,7 +234,9 @@ fn main() -> result[void] uses console {
     for p in recent {
         push(parts, p);
     }
-    print(join(parts, " > ") + " (oldest " + try front(recent) + ", newest " + recent[len(recent) - 1] + ")");
+    print(
+        join(parts, " > ") + " (oldest " + try front(recent) + ", newest " + recent[len(recent) - 1] + ")"
+    );
     return ok();
 }
 ```

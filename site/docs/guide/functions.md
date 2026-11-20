@@ -89,7 +89,9 @@ fn main() uses console {
     print(join(map(map(xs, double), fn(x: int) -> str {
         return str(x);
     }), " "));
-    print(str(len(filter(xs, is_even))) + " " + str(any(xs, is_even)) + " " + str(all(xs, is_even)));
+    print(
+        str(len(filter(xs, is_even))) + " " + str(any(xs, is_even)) + " " + str(all(xs, is_even))
+    );
 }
 ```
 
@@ -134,7 +136,11 @@ record Task {
 }
 
 fn main() uses console {
-    let tasks = [new Task { title: "write docs", priority: 2 }, new Task { title: "fix bug", priority: 1 }, new Task { title: "lunch", priority: 3 }];
+    let tasks = [
+        new Task { title: "write docs", priority: 2 },
+        new Task { title: "fix bug", priority: 1 },
+        new Task { title: "lunch", priority: 3 }
+    ];
     sort_by(tasks, fn(t: Task) -> int {
         return t.priority;
     });
@@ -320,7 +326,10 @@ fn shout(msg: str) uses console {
 }
 
 fn main() uses console {
-    let buttons = [new Button { label: "save", on_click: make_logger("log: ") }, new Button { label: "quit", on_click: shout }];
+    let buttons = [
+        new Button { label: "save", on_click: make_logger("log: ") },
+        new Button { label: "quit", on_click: shout }
+    ];
     for b in buttons {
         b.on_click(b.label);
     }

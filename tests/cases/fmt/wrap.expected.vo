@@ -1,0 +1,63 @@
+# Lines over 100 characters are broken inside the outermost list, argument list or record that ends them.
+record Item {
+    name: str;
+    count: int;
+    tags: list[str];
+}
+
+fn item(name: str, count: int) -> Item {
+    return new Item {
+        name: name,
+        count: count,
+        tags: ["alpha", "beta", "gamma", "delta", "epsilon"]
+    };
+}
+
+fn total(items: list[Item]) -> int {
+    var n = 0;
+    for i in items {
+        set n = n + i.count;
+    }
+    return n;
+}
+
+fn main() uses console {
+    let names = [
+        "first",
+        "second",
+        "third",
+        "fourth",
+        "fifth",
+        "sixth",
+        "seventh",
+        "eighth",
+        "ninth"
+    ];
+    let fits = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nin"];
+    let items = [
+        new Item { name: "a", count: 1, tags: new list[str] },
+        new Item { name: "b", count: 2, tags: ["x"] }
+    ];
+    let nested = [
+        new Item {
+            name: "a long name for an item",
+            count: 1,
+            tags: ["one", "two", "three", "four"]
+        },
+        item("b", 2)
+    ];
+    print(str(total([
+        item("one", 1),
+        item("two", 2),
+        item("three", 3),
+        item("four", 4),
+        item("five", 5)
+    ])));
+    print(
+        join(names, ", ") + " and also " + join(names, " / ") + " and once more " + join(names, " | ")
+    );
+    let sorted = sort_by(items, fn(a: Item) -> int {
+        return a.count * 1000 + len(a.name) + len(a.tags) * 7 + 11;
+    });
+    print(str(len(names) + len(fits) + len(nested) + len(sorted)));
+}

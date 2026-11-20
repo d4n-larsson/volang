@@ -130,7 +130,10 @@ import shop.cart.Item;
 import shop.cart.subtotal;
 
 fn main() uses console {
-    let items = [new Item { name: "tea", cents: 450, quantity: 2 }, new Item { name: "scone", cents: 305, quantity: 1 }];
+    let items = [
+        new Item { name: "tea", cents: 450, quantity: 2 },
+        new Item { name: "scone", cents: 305, quantity: 1 }
+    ];
     print("subtotal " + str(subtotal(items)) + " cents");
 }
 ```

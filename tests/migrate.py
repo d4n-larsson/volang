@@ -104,6 +104,22 @@ def write_mode(paths):
     print(f"migrate --write: {changed} of {len(files)} files changed")
 
 
+def only_line_breaks(files, cwd):
+    """Whether formatting changes nothing but line breaks and spaces (the 100-column wrapping that came
+    after v1's canonical form)."""
+    before = {f: open(f, encoding="utf-8").read() for f in files}
+    with tempfile.TemporaryDirectory() as d:
+        copies = []
+        for f in files:
+            c = os.path.join(d, os.path.relpath(f, cwd))
+            os.makedirs(os.path.dirname(c), exist_ok=True)
+            open(c, "w", encoding="utf-8").write(before[f])
+            copies.append(c)
+        vo(["fmt"] + copies, d)
+        return all(re.sub(r"\s+", "", open(c, encoding="utf-8").read()) == re.sub(r"\s+", "", before[f])
+                   for f, c in zip(files, copies))
+
+
 def norm(b):
     return re.sub(rb"\((\d+)ms\)", b"(0ms)", b)
 
@@ -132,7 +148,8 @@ def verify():
             files = [os.path.join(d, n) for d, _, ns in os.walk(os.path.dirname(entry)) for n in ns
                      if n.endswith(".vo")]
             v1canon = open(base + ".v1fmt").read().strip() == "canonical"
-            if v1canon and vo(["fmt", "--check"] + files, os.path.dirname(entry)).returncode != 0:
+            if v1canon and vo(["fmt", "--check"] + files, os.path.dirname(entry)).returncode != 0 \
+                    and not only_line_breaks(files, os.path.dirname(entry)):
                 problems.append(f"{rel}: not canonical after the fixes (fmt --check)")
                 continue
             mode = open(base + ".mode").read().strip()
