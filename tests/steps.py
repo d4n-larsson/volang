@@ -397,6 +397,11 @@ def main():
     for case in cases(args or [os.path.join(ROOT, "tests", "cases")]):
         name = os.path.relpath(case, ROOT)
         got = run_case(case)
+        if b"\nskipped: no user namespaces\n" in got["out"]:
+            # spec 019: a `no-trust-store` step where the machine does not permit user namespaces (GitHub's
+            # Ubuntu runners restrict them): the case cannot run here; it is not a failure
+            print("SKIP", name, "(no user namespaces)")
+            continue
         bad = [k for k in sorted(set(expected(case)) | set(got)) if expected(case).get(k) != got.get(k)]
         for _ in range(repeat - 1):
             if bad:

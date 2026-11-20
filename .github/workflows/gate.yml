@@ -33,6 +33,10 @@ jobs:
         run: |
           sudo apt-get update -q
           sudo apt-get install -y -q gcc binutils-riscv64-linux-gnu gcc-riscv64-linux-gnu gcc-aarch64-linux-gnu qemu-user
+      - name: Permit user namespaces
+        # tests/cases/https_steps/no_trust_store hides the machine's trust store in a user and mount
+        # namespace; Ubuntu 24.04 restricts those by default (the case is skipped where it cannot run)
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
       - name: Check the tools
         run: make check-tools
       - name: Run the gate
