@@ -47,14 +47,55 @@ Type *ty_basic(long kind)
     return ty_make(kind, 0, 0, 0);
 }
 
+/* Interned types by hash of their fields (type_tab keeps them all, in order). Effect arguments are
+ * matched by their effects, not by pointer, so they stay on a list of their own: there are few. */
+static Type **ty_idx; /* open addressing; ty_cap is a power of two, more than twice ty_n */
+static long ty_cap;
+static long ty_n;
+static Vec *ty_effsets;
+
+static Type **ty_slot(long kind, void *a, void *b, void *decl)
+{
+    unsigned long h = (unsigned long)kind * 0x9E3779B97F4A7C15UL;
+    h = (h ^ (unsigned long)a) * 0x9E3779B97F4A7C15UL;
+    h = (h ^ (unsigned long)b) * 0x9E3779B97F4A7C15UL;
+    h = (h ^ (unsigned long)decl) * 0x9E3779B97F4A7C15UL;
+    unsigned long mask = (unsigned long)ty_cap - 1;
+    for (unsigned long at = (h >> 32) & mask;; at = (at + 1) & mask) {
+        Type *t = ty_idx[at];
+        if (!t || (t->kind == kind && t->a.p == a && t->b.p == b && t->decl.p == decl)) return &ty_idx[at];
+    }
+}
+
+/* Room for one more type: twice the slots when half are used. */
+static void ty_idx_grow(void)
+{
+    if (ty_n * 2 + 2 <= ty_cap) return;
+    Type **old = ty_idx;
+    long old_cap = ty_cap;
+    long cap = old_cap ? old_cap * 2 : 256;
+    Type **idx = alloc(cap * 8); /* the old index stays reachable from ty_idx meanwhile */
+    for (long i = 0; i < cap; i++) idx[i] = 0;
+    ty_idx = idx;
+    ty_cap = cap;
+    for (long i = 0; i < old_cap; i++)
+        if (old[i]) *ty_slot(old[i]->kind, old[i]->a.p, old[i]->b.p, old[i]->decl.p) = old[i];
+}
+
 /* The interned type with these fields (also used while programs run: generic instances). */
 Type *ty_make(long kind, void *a, void *b, void *decl)
 {
-    for (long i = 0; i < type_tab->n; i++) {
-        Type *t = type_tab->data[i].t;
-        if (t->kind == kind && t->a.p == a && t->b.p == b && t->decl.p == decl) return t;
-        /* spec 026: an effect argument is interned by its effects, so Conn[uses console] is one type */
-        if (kind == TY_EFFSET && t->kind == TY_EFFSET && decl && t->decl.p && es_equal(t->decl.es, decl)) return t;
+    if (kind == TY_EFFSET) {
+        if (!ty_effsets) ty_effsets = vec_new();
+        for (long i = 0; i < ty_effsets->n; i++) {
+            Type *t = ty_effsets->data[i].t;
+            if (t->a.p == a && t->b.p == b && t->decl.p == decl) return t;
+            /* spec 026: an effect argument is interned by its effects, so Conn[uses console] is one type */
+            if (decl && t->decl.p && es_equal(t->decl.es, decl)) return t;
+        }
+    } else if (ty_cap) {
+        Type *t = *ty_slot(kind, a, b, decl);
+        if (t) return t;
     }
     GC_ROOT(&a);
     GC_ROOT(&b);
@@ -66,6 +107,13 @@ Type *ty_make(long kind, void *a, void *b, void *decl)
     t->decl.p = decl;
     GC_ROOT(&t);
     vec_push(type_tab, t);
+    if (kind == TY_EFFSET) {
+        vec_push(ty_effsets, t);
+    } else {
+        ty_idx_grow();
+        *ty_slot(kind, a, b, decl) = t;
+        ty_n++;
+    }
     GC_UNROOT(4);
     return t;
 }
@@ -186,17 +234,81 @@ Sym *sym_new(Str *name, long kind, Node *decl, Type *type, Node *name_node)
     return s;
 }
 
+/* File-level names by hash, so a lookup does not walk every item of the file. The table holds the
+ * innermost symbol of each name on the chain from st_base down; chains never change below a symbol,
+ * so it stays true whatever ck_scope becomes. Locals stay on the chain above st_base. */
+static Sym **st_tab;
+static long st_cap;  /* a power of two, more than twice st_n */
+static long st_n;
+static Sym *st_base; /* the innermost symbol in the table */
+static long st_on;   /* the table is built */
+static long st_top;  /* file-level names are being defined: scope_add extends the table */
+
+/* The slot of the name: its symbol's, or the empty one where it would go. */
+static Sym **st_slot(Str *name)
+{
+    unsigned long mask = (unsigned long)st_cap - 1;
+    unsigned long at = (unsigned long)map_hash((long)name, TY_STR) & mask;
+    while (st_tab[at] && !str_eq(st_tab[at]->name, name)) at = (at + 1) & mask;
+    return &st_tab[at];
+}
+
+/* A table of cap slots for the chain from head. */
+static void st_build(Sym *head, long cap)
+{
+    st_tab = alloc(cap * 8);
+    for (long i = 0; i < cap; i++) st_tab[i] = 0;
+    st_cap = cap;
+    st_n = 0;
+    st_base = head;
+    for (Sym *s = head; s; s = s->next) { /* innermost first: an outer symbol of the same name stays out */
+        if (st_n * 2 + 2 > st_cap) {
+            st_build(head, cap * 2);
+            return;
+        }
+        Sym **slot = st_slot(s->name);
+        if (!*slot) {
+            *slot = s;
+            st_n++;
+        }
+    }
+}
+
+/* Starts a file's top level: the names already on its chain, then every scope_add until scope_top_end. */
+static void scope_top_begin(void)
+{
+    st_build(ck_scope, 64);
+    st_on = 1;
+    st_top = 1;
+}
+
+static void scope_top_end(void)
+{
+    st_top = 0;
+}
+
 void scope_add(Sym *s)
 {
     s->next = ck_scope;
     ck_scope = s;
+    if (!st_top || s->next != st_base) return;
+    if (st_n * 2 + 2 > st_cap) {
+        st_build(s, st_cap * 2);
+        return;
+    }
+    Sym **slot = st_slot(s->name);
+    if (!*slot) st_n++;
+    *slot = s; /* the innermost of its name */
+    st_base = s;
 }
 
 /* The innermost symbol with this name, or 0. */
 Sym *scope_find(Str *name)
 {
-    for (Sym *s = ck_scope; s; s = s->next)
+    for (Sym *s = ck_scope; s; s = s->next) {
+        if (st_on && s == st_base) return *st_slot(name);
         if (str_eq(s->name, name)) return s;
+    }
     return 0;
 }
 
@@ -1200,9 +1312,11 @@ void check_items(int file, int mode)
     ck_mode = mode;
     FileRec *f = file_get(file);
     ck_scope = f->scope;
+    scope_top_begin();
     bind_imports(file); /* imported items first (dependencies are already checked) */
     Vec *items = f->ast->a.v;
     for (long i = 0; i < items->n; i++) define_item(vec_get(items, i));
+    scope_top_end();
     f->scope = ck_scope;
     fx_expand_sets(items); /* spec 030: before any clause names them */
     for (long i = 0; i < items->n; i++) resolve_item(ck_item_set(vec_get(items, i)));

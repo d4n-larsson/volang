@@ -79,6 +79,30 @@ for pair in max same stack; do
     [ $((g * 10)) -le $((s * 15)) ] || { echo "FAIL SC-008: generic $pair ${g} ms > 1.5 x ${s} ms"; fail=1; }
 done
 
+# Checking grows with the program, not with its square: four times the items (2,000 and 8,000
+# records and functions) take at most 8 times as long (it was 34 times with names on one chain).
+python3 - "$tmp" <<'PY'
+import sys, os
+for n in (2000, 8000):
+    out = []
+    for i in range(n):
+        last = "x" if i % 200 == 0 else f"f{i - 1}(x) + 1"
+        out += [f"record R{i} {{", "    a: int;", "    b: str;", "}", "",
+                f"fn f{i}(x: int) -> int {{", f"    let r = new R{i} {{ a: x + {i}, b: \"s\" }};",
+                "    if r.a > 10 {", "        return r.a * 2 + len(r.b);", "    }", f"    return {last};", "}", ""]
+    out += ["fn main() uses console {", f"    print(str(f{n - 1}(1)));", "}"]
+    open(os.path.join(sys.argv[1], f"items{n}.vo"), "w").write("\n".join(out) + "\n")
+PY
+check_ms() {
+    for i in 1 2 3; do
+        t0=$(date +%s%N); "$vo" check "$1" >/dev/null || echo "FAIL $1 does not check" >&2; t1=$(date +%s%N)
+        echo $(( (t1 - t0) / 1000000 + 1 ))
+    done | sort -n | sed -n 2p
+}
+small=$(check_ms "$tmp/items2000.vo"); large=$(check_ms "$tmp/items8000.vo")
+echo "check scaling: 2,000 items ${small} ms, 8,000 items ${large} ms (limit 8 x)"
+[ "$large" -le $((small * 8)) ] || { echo "FAIL check scaling: ${large} ms > 8 x ${small} ms"; fail=1; }
+
 # SC-006 (v3): at most 20% slower than the baseline recorded before the collector
 # (tests/gc/baseline/perf.txt), comparing the median of five check + run timings.
 base="$root/tests/gc/baseline/perf.txt"
