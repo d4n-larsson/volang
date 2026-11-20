@@ -158,10 +158,12 @@ check-tools:
 # Spec 008 T065 (FR-005, FR-012, SC-008): the strict-warning C build for every architecture; SESI over
 # the RISC-V platform file (the only pack; deliberate breaks marked `sesi: allow` on their prototype
 # line, sesi-linter-issues.md #5, are listed as suppressed and do not count); no assembly outside
-# src/platform/, and at most 300 lines per platform file.
+# src/platform/, and at most 300 lines per platform file. SESI is not in this repository: where it
+# is not installed (CI), `make lint SESI_SKIP=1` runs everything else and says so.
 lint:
-	@fail=0; out=$$($(SESI) lint src/platform/riscv64.S . </dev/null 2>&1 | grep -v 'suppressed by sesi: allow'); \
-	  if [ -n "$$out" ]; then echo "$$out"; fail=1; fi; \
+	@fail=0; if [ -n "$(SESI_SKIP)" ]; then echo "lint: SESI skipped (SESI_SKIP is set)"; else \
+	  out=$$($(SESI) lint src/platform/riscv64.S . </dev/null 2>&1 | grep -v 'suppressed by sesi: allow'); \
+	  if [ -n "$$out" ]; then echo "$$out"; fail=1; fi; fi; \
 	  for a in x86_64 aarch64 riscv64; do $(MAKE) -s --no-print-directory ARCH=$$a lint-c || fail=1; done; \
 	  stray=$$(git ls-files -co --exclude-standard -- '*.s' '*.S' | grep -v '^src/platform/'); \
 	  if [ -n "$$stray" ]; then echo "lint: assembly outside src/platform/: $$stray"; fail=1; fi; \

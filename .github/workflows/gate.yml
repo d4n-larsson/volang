@@ -1,0 +1,46 @@
+# The quality gate (`make gate`: lint, the whole test suite, the UB-trap and collector stress suites,
+# generated programs against the frozen reference builds, and the speed checks) on every push to main
+# and every pull request. The gate builds its reference binaries from earlier commits, so the checkout
+# takes the full history. SESI, the assembly linter, is not in this repository: its step is skipped
+# here (SESI_SKIP) and stays a local check.
+name: Quality gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the cross compilers and qemu
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q gcc binutils-riscv64-linux-gnu gcc-riscv64-linux-gnu gcc-aarch64-linux-gnu qemu-user
+      - name: Check the tools
+        run: make check-tools
+      - name: Run the gate
+        run: make gate SESI_SKIP=1
+      - name: Keep the programs the comparisons disagreed on
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: diff-failures
+          path: build/diff-failures
+          if-no-files-found: ignore

@@ -73,6 +73,9 @@ On branch `perf-review-fixes`. The figures in `optimizations.md` are from before
 | Float text (10) | `str(0.1 + 0.2)` was `"0.3"`; `parse_float(str(x))` was not `x` | the shortest text that reads back, as Python's `repr`; literals and `parse_float` take 17 digits |
 | HTTP client (ecosystem) | `get(url)` and `post(url, type, body)` only | `send(method, url, headers, body, timeout_ms)` and `send_bytes` |
 
+| `format` | one concatenation per piece | one allocation for all pieces (`OPC_JOIN`) |
+| License and CI (ecosystem) | no license; only the docs site built in CI | MIT `LICENSE`; `.github/workflows/gate.yml` runs `make gate` (not yet run on GitHub) |
+
 Measured and left alone, finding 6: collection is 10% to 40% of the allocating workloads, nearly all
 of it marking; the permanent arena costs nothing. A larger heap growth factor bought 0% to 17% for
 47% more memory. Only a generational collector addresses it.
