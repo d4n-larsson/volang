@@ -811,6 +811,34 @@ static long cexpect(Node *call, long dst, long mark)
     return dst;
 }
 
+/* `+` on two str values. */
+static int c_is_str_plus(Node *n)
+{
+    return n->kind == N_BINARY && n->d.i == OP_CONCAT && n->type && n->type->kind == TY_STR;
+}
+
+/* a + b + c ... on strings (three parts or more): each part to a slot in a row, in source order,
+ * then one OPC_JOIN, so the string is allocated once and each byte copied once. One `+` at a time
+ * copied the parts before it again at every step. */
+static long cjoin(Node *node, long dst, long mark)
+{
+    Vec *parts = vec_new(); /* the last first: the chain leans left */
+    Node *e = node;
+    for (; c_is_str_plus(e); e = e->a.n) vec_push(parts, e->b.n);
+    vec_push(parts, e);
+    long base = c_temp, top = base + parts->n * 8;
+    for (long i = 0; i < parts->n; i++) c_new_temp();
+    for (long i = 0; i < parts->n; i++) {
+        long slot = base + i * 8;
+        c_mov(slot, cexpr(vec_get(parts, parts->n - 1 - i), slot), node);
+        c_temp = top;
+    }
+    c_temp = mark;
+    dst = c_dst(dst);
+    c_emit(OPC_JOIN, dst, base, parts->n, node);
+    return dst;
+}
+
 /* A binary operator (not and/or). */
 static long cbinary(Node *node, long dst, long mark)
 {
@@ -905,6 +933,8 @@ static long cconstruct(Node *node)
             c_emit(OPC_SET_FIELD, v, cexpr(init->b.n, -1), init->c.i * 8 + R_FIELDS, init);
             c_temp = v + 8;
         }
+    } else if (!node->c.n && (unsigned long)node->e.i < BARE_CASES) { /* V.case: the one value of that case */
+        c_emit(OPC_LOADK, v, 0, (long)variant_bare(node->e.i), node);
     } else { /* V.case(payload): the variant first, then the payload */
         c_emit(OPC_NEW_VARIANT, v, 0, node->e.i, node);
         if (node->c.n) {
@@ -933,13 +963,12 @@ long cexpr(Node *node, long dst)
             dst = c_dst(dst);
             c_emit(OPC_FNVAL, dst, 0, node->d.i, node);
             return dst;
-    } else if (!node->c.n && (unsigned long)node->e.i < BARE_CASES) { /* V.case: the one value of that case */
-        c_emit(OPC_LOADK, v, 0, (long)variant_bare(node->e.i), node);
         }
         if (c_app_of(node->c.i)) c_emit(OPC_LOADK, c_app_of(node->c.i), 0, 0, node); /* read: no longer only s's */
         return node->c.i * 8; /* a local: its own slot */
     case N_BINARY:
         if (node->d.i == OP_AND || node->d.i == OP_OR) return cand_or(node);
+        if (c_is_str_plus(node) && c_is_str_plus(node->a.n)) return cjoin(node, dst, mark);
         return cbinary(node, dst, mark);
     case N_UNARY: {
         long op = node->d.i;

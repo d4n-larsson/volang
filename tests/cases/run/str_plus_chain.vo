@@ -1,0 +1,18 @@
+# a + b + c on strings is built in one step: the parts are still evaluated left to right, each once.
+fn say(s: str) -> str uses console {
+    print("eval " + s);
+    return s;
+}
+
+fn main() uses console {
+    let a = "a";
+    var v = "v";
+    print(say("1") + say("2") + say("3") + say("4"));
+    print(a + v + a + "" + v + "!" + str(len(a + v + a)));
+    print(a + (v + a + v) + ("(" + a + ")") + v);
+    set v = v + a + v + (a + v + a);
+    let w = v + "|" + v + "|" + a;
+    print(v + " " + w + " " + str(len("é" + "ö" + "ü")) + " " + str("a" + "b" + "c" == "abc"));
+    let parts = [a + "1" + a, v + "2" + v + "3" + v];
+    print(join(parts, ",") + " " + str(a + "x" + a < a + "y" + a));
+}
