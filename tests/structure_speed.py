@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Spec 027 SC-004: the structure rules make `vo check` at most 10% slower, on the largest example
 program and on a generated, well-structured 5,000-line program (13 modules, 400 functions with loops and
-branches, no warnings, so only the analysis is measured). The fastest of 21 interleaved runs each, with the rules and with VO_STRUCTURE_OFF=1 (a maintainers' switch that
-skips them). Needs an idle machine: in `make gate`, not `make test`.
+branches, no warnings, so only the analysis is measured). 31 pairs of runs, with the rules and with
+VO_STRUCTURE_OFF=1 (a maintainers' switch that skips them); the slowdown is the median over the pairs. Needs an idle machine: in `make gate`, not `make test`.
 """
 import os
 import statistics
@@ -54,13 +54,19 @@ def once(path, env):
 
 
 def timed_pair(path, off, on):
-    """The fastest of 21 runs without and with the rules, interleaved so that drift hits both alike (for
-    work that only uses the CPU, the minimum measures the work; medians move with the machine's load)."""
+    """The fastest run without and with the rules, and the slowdown: the median over 31 pairs of runs of
+    with / without. The two runs of a pair are back to back, so they see the same machine (its clock
+    speed changes between runs: comparing the two overall minimums compared a boosted run with a normal
+    one about one time in four); the order within a pair alternates, so neither side always goes first."""
     a, b = [], []
-    for _ in range(21):
-        a.append(once(path, off))
-        b.append(once(path, on))
-    return min(a), min(b)
+    for i in range(31):
+        if i % 2:
+            b.append(once(path, on))
+            a.append(once(path, off))
+        else:
+            a.append(once(path, off))
+            b.append(once(path, on))
+    return min(a), min(b), statistics.median(y / x for x, y in zip(a, b))
 
 
 def main():
@@ -73,8 +79,7 @@ def main():
         targets = [("examples/helpdesk/main.vo", os.path.join(ROOT, "examples", "helpdesk", "main.vo")),
                    (f"generated ({lines} lines)", big)]
         for name, path in targets:
-            a, b = timed_pair(path, off, on)
-            ratio = b / a if a else 1.0
+            a, b, ratio = timed_pair(path, off, on)
             ok = ratio <= 1.10
             fails += not ok
             print(f"{'PASS' if ok else 'FAIL'} {name}: {a * 1000:.1f} ms without the rules, {b * 1000:.1f} ms with "
