@@ -193,7 +193,7 @@ long vm_run(void *start)
         &&op_index_coll, &&op_set_index_coll, &&op_snapshot, &&op_new_coll, /* spec 014 */
         &&op_cover, /* spec 018 */
         &&op_index_bytes, /* spec 021 */
-        &&op_append,
+        &&op_append, &&op_join,
     };
     if (!start) {
         for (int i = 0; i < OPC_COUNT; i++) vm_ops[i] = vm_ops_trace[i] = ops[i];
@@ -273,6 +273,9 @@ op_append:
     r = (long)str_append((Str *)SL(pc->a), (Str *)SL(pc->c.i), SL(pc->b) == SL(pc->a));
     SL(pc->b) = r;
     STORE(r);
+op_join: /* the pieces stay in their slots for the collector */
+    cur_node = (long)pc->node;
+    STORE((long)str_join((W *)((char *)slots + pc->b), pc->c.i));
 op_eq: {
     Type *t = pc->node->a.n->type;
     if (RAW_EQ_TYPE(t)) {

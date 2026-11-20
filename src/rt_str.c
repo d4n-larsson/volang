@@ -69,6 +69,23 @@ Str *str_append(Str *a, Str *b, int owned)
     return s;
 }
 
+/* The n strings at parts as one (OPC_JOIN): measured, allocated once, each byte copied once. parts
+ * is on the value stack, so the pieces are rooted. */
+Str *str_join(W *parts, long n)
+{
+    if (n == 1) return parts[0].s;
+    long total = 0;
+    for (long i = 0; i < n; i++) total += parts[i].s->len;
+    Str *s = alloc_obj(OBJ_STR, total + 9);
+    s->len = total;
+    char *p = s->data;
+    for (long i = 0; i < n; i++) {
+        mem_copy(p, parts[i].s->data, parts[i].s->len);
+        p += parts[i].s->len;
+    }
+    return s;
+}
+
 /* 1 when byte i of s is a UTF-8 continuation byte (i < len). */
 int is_cont(Str *s, long i)
 {

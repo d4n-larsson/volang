@@ -726,38 +726,34 @@ static long cbuiltin(Node *node, long dst, long mark)
 /* spec 024 (research R2): format(template, args...) as its pieces joined with string `+`: a
  * constant per literal piece, a call of the internal piece builtin per placeholder (a copy of the
  * call holding its argument, the packed spec in e.i). The checker always leaves at least one piece.
- * ponytail: one concatenation per piece copies the growing string each time (quadratic in pieces);
- * a join instruction if long templates are measured slow. */
+ * The pieces go to slots in a row and one OPC_JOIN makes the string: one allocation, each byte copied once. */
 static long cformat(Node *node, long dst, long mark)
 {
     Vec *pieces = node->e.v;
-    long acc = c_new_temp();
+    long base = c_temp, top = base + pieces->n * 8;
+    for (long i = 0; i < pieces->n; i++) c_new_temp();
     for (long i = 0; i < pieces->n; i++) {
         FmtPiece *pc = pieces->data[i].p;
         Node *k = alloc(NODE_SIZE);
         *k = *node;
         k->flags = 0;
-        long v;
+        long slot = base + i * 8;
         if (pc->text) {
             k->kind = N_STR;
             k->a.s = pc->text;
-            v = cexpr(k, -1);
+            c_mov(slot, cexpr(k, slot), node);
         } else {
             k->d.i = B_FMT_PIECE;
             k->e.i = pc->spec;
             k->b.v = vec_new();
             vec_push(k->b.v, node->b.v->data[pc->arg + 1].p);
-            v = cbuiltin(k, -1, acc + 8);
+            c_mov(slot, cbuiltin(k, slot, top), node);
         }
-        if (i == 0)
-            c_mov(acc, v, node);
-        else
-            c_emit(OP_CONCAT + (OPC_ADD_INT - OP_ADD_INT), acc, acc, v, node);
-        c_temp = acc + 8;
+        c_temp = top;
     }
-    if (dst < 0) return acc;
-    c_mov(dst, acc, node);
     c_temp = mark;
+    dst = c_dst(dst);
+    c_emit(OPC_JOIN, dst, base, pieces->n, node);
     return dst;
 }
 
