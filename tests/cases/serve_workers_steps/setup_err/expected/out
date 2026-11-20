@@ -1,0 +1,7 @@
+$ vo run main.vo
+setting up
+--- stderr
+error: no database
+--- exit 1
+$ no-children
+left-over processes: 0

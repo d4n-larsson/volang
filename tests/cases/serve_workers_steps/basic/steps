@@ -1,0 +1,6 @@
+start vo run main.vo
+request GET /a
+request GET /b
+request GET /c
+signal TERM
+no-children

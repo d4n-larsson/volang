@@ -1,0 +1,15 @@
+$ vo run main.vo -- secret.txt
+--- stderr
+main.vo:13:64: runtime error[R0010]: file.read("secret.txt") is not allowed: `main` declares file.read("data/"), serve("{vport}").
+  13 |     try serve_workers("{vport}", 2, fn() -> result[str] { return read_file(path); }, handle);
+     |                                                                ^^^^^^^^^^^^^^^
+trace:
+  at anonymous function (main.vo:13:64)
+      path: str = "secret.txt"
+  at serve_workers (std/http.vo:403:12)
+      address: str = "{vport}", workers: int = 2, setup: fn() -> result[str] uses file.read = <fn() -> result[str] uses file.read>, handle: fn(str, Request) -> Response = <fn(str, Request) -> Response>
+  at main (main.vo:13:9)
+      path: str = "secret.txt"
+--- exit 70
+$ no-children
+left-over processes: 0

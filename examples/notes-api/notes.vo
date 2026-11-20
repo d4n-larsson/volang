@@ -1,9 +1,6 @@
 # Notes and their JSON form: pure, so every function here is tested without files or a network.
 import std.json.Json;
-import std.json.as_array;
-import std.json.bool_field;
 import std.json.field;
-import std.json.int_field;
 import std.json.parse_json;
 import std.json.text_field;
 
@@ -11,15 +8,6 @@ export record Note {
     id: int;
     text: str;
     done: bool;
-}
-
-# The notes of a JSON array of objects with id, text and done.
-export fn notes_from(doc: Json) -> result[list[Note]] {
-    let out = new list[Note];
-    for item in try as_array(doc) {
-        push(out, new Note { id: try int_field(item, "id"), text: try text_field(item, "text"), done: try bool_field(item, "done") });
-    }
-    return ok(out);
 }
 
 export fn note_json(n: Note) -> Json {

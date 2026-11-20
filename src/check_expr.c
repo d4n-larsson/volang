@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 92 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 93 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -42,6 +42,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "format", 0, /* spec 024: format; 83 the internal piece */
     "__re_compile", "__re", "__re_repl", /* spec 025 */
     "__sql_open", "__sql_close", "__sql_exec", "__sql_query", "__sql_tx", "__sql_prepare", /* spec 026 */
+    "__serve_workers", /* spec 028 */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -293,6 +294,17 @@ Type *check_builtin(Node *call, long id, Type *expected)
         check_arg(call, 1, t_str);
         check_arg(call, 2, 0);
         return expected ? expected : infer_error(call, expected);
+    }
+    if (id == B_SERVE_WORKERS) { /* spec 028: __serve_workers(n, setup, answer): both functions' effects become
+                                    the caller's. ponytail: typed loosely (std.http's wrappers declare the types) */
+        if (!check_argc(call, 3)) return t_error;
+        check_arg(call, 0, t_int);
+        for (int k = 1; k < 3; k++) {
+            Type *ft = check_arg(call, k, 0);
+            if (ty_bad(ft) || ft->kind != TY_FUNC) return t_error;
+            fx_value_call(ft->decl.p);
+        }
+        return ty_result(t_void);
     }
     if (id == B_SERVE_CALL) { /* spec 011: __serve_call(f, x): result of f(x); f's effects become the caller's */
         if (!check_argc(call, 2)) return t_error;

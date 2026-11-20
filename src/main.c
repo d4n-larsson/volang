@@ -22,6 +22,7 @@ enum {
 long opt_json;
 long opt_timeout = 10;
 long opt_mem_stats;
+long opt_workers; /* spec 028: vo run --workers N (0: as declared) */
 long opt_remove; /* spec 007: vo package --remove */
 long opt_filter; /* Str * */
 long opt_check;
@@ -278,6 +279,10 @@ int vo_main(long argc, char **argv, char **env)
             opt_max_mutants = v;
         } else if (cstr_eq(a, "--remove")) { /* spec 007: vo package */
             opt_remove = 1;
+        } else if (cstr_eq(a, "--workers")) { /* spec 028 */
+            if (i >= argc || option_number(argv[i++], &v) || v < 1 || v > 64)
+                usage_error(str_from_cstr("`--workers` needs a whole number from 1 to 64."));
+            opt_workers = v;
         } else if (cstr_eq(a, "--mem-stats")) {
             opt_mem_stats = 1;
         } else if (cstr_eq(a, "--max-memory")) {
@@ -290,7 +295,7 @@ int vo_main(long argc, char **argv, char **env)
                 usage_error_arg("Unknown option `$1`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, "
                                 "--seed N, --clock-ms N, --max-memory MiB, --mem-stats, --trace FILE, --trace-limit N, "
                                 "--record FILE, --diff FILE, --dry-run, --list, --test ID, --spec ID, --coverage, "
-                                "--mutate, --max-mutants N, --ca-file FILE.",
+                                "--mutate, --max-mutants N, --ca-file FILE, --workers N.",
                                 a);
             i += (int)used;
         }
@@ -379,6 +384,7 @@ void opt_spec006_check(void)
     if (!opt_max_mutants) opt_max_mutants = 500;
     if (opt_dry_run && cmd != CMD_EDIT) only_with("--dry-run", "edit");
     if (opt_record && cmd != CMD_RUN) only_with("--record", "run");
+    if (opt_workers && cmd != CMD_RUN) only_with("--workers", "run"); /* spec 028 */
     if (opt_trace && cmd != CMD_RUN && cmd != CMD_TEST && cmd != CMD_REPLAY)
         only_with("--trace", "run`, `test` or `replay");
     if (opt_trace_limit && !opt_trace) usage_error(str_from_cstr("`--trace-limit` needs `--trace FILE`."));

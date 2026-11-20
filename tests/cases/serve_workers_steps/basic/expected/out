@@ -1,0 +1,28 @@
+$ request GET /a
+HTTP/1.1 200 OK
+Content-Length: 8
+Connection: close
+
+ready /a
+--- end
+$ request GET /b
+HTTP/1.1 200 OK
+Content-Length: 8
+Connection: close
+
+ready /b
+--- end
+$ request GET /c
+HTTP/1.1 200 OK
+Content-Length: 8
+Connection: close
+
+ready /c
+--- end
+$ signal TERM
+serving
+stopped
+--- stderr
+--- exit 0
+$ no-children
+left-over processes: 0

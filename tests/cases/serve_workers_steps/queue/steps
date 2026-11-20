@@ -1,0 +1,13 @@
+start vo run main.vo
+request-open s1 GET /s1 HTTP/1.1\r\n\r\n
+wait 50
+request-open s2 GET /s2 HTTP/1.1\r\n\r\n
+wait 50
+request-open s3 GET /s3 HTTP/1.1\r\n\r\n
+wait 50
+request GET /fast
+read-open s1
+read-open s2
+read-open s3
+signal TERM
+no-children

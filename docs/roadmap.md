@@ -32,6 +32,9 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [023](../specs/023-hover-docs/) | Documentation on hover: `vo query type-at` adds the declared signature and the doc comment of the item at a position (`doc` in JSON, as `vo doc --json` prints it), for functions, records, variants, fields, cases, library items and builtins; `vo doc ENTRY NAME` for the program's own items | **Done** ([results](../specs/023-hover-docs/results.md)) |
 | [024](../specs/024-string-formatting/) | String formatting: the `format` builtin with checked `{}` placeholders (alignment, width, `+`, zero padding, thousands, fixed decimals, hex and binary), the same digits as Python; template mistakes and habits from C, Python and Go (`%d`, `{0}`, `{:.2}`, `f"..."`) are check errors with fixes | **Done** ([results](../specs/024-string-formatting/results.md)) |
 | [025](../specs/025-regular-expressions/) | Regular expressions: `std.regex` with compiled patterns (`regex("...")` checked by `vo check`, `parse_regex` for data), test, first and all matches with groups, replace with `$1`, split; linear-time matching (a Pike VM), Python's results for the supported syntax; pattern mistakes and Python habits are check errors with fixes, and `"\d"` (E0103) gets a fix | **Done** ([results](../specs/025-regular-expressions/results.md)) |
+| [026](../specs/026-sqlite/) | SQLite databases: `std.sqlite` with checked statements, `?` parameters, transactions, effect-typed connections | **Done** ([results](../specs/026-sqlite/results.md)) |
+| [027](../specs/027-structure-standards/) | Structure standards: a thin shell of effects over a pure core, small files and functions, no copies, tests next to the code (W0701–W0706, `@allow`) | **Done** ([results](../specs/027-structure-standards/results.md)) |
+| [028](../specs/028-concurrent-serve/) | Concurrent request handling: `std.http.serve_workers` with worker processes, a setup per worker, `--workers`, replay one request at a time | **Done** ([results](../specs/028-concurrent-serve/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -267,6 +270,22 @@ programs agents wrote in one file (739 and 1,350 lines).
 
 - **Not done (on purpose):** an extract-function edit that would make the W0701/W0704 advice a fix,
   per-project limits, rules about naming or comments (`vo fmt` covers layout).
+
+### 028: concurrent request handling (done)
+
+`std.http.serve_workers(address, workers, setup, handle)` and `serve_bytes_workers` answer up to
+`workers` requests at once, so a slow request no longer delays the others. The server process keeps the
+connections and their limits; worker processes, forked at start, run `setup` once (a database
+connection per worker) and then one request at a time, with nothing shared between requests. A failing
+handler answers 500, a dead worker is replaced, SIGTERM answers the requests already read; `vo run
+--workers N` overrides the count. Recordings keep each request's inputs as one block in arrival order,
+so replay runs the requests one at a time with the same responses. `std.sqlite`'s `transaction` now
+takes the write lock at once on a writable database, so read-then-write transactions in several
+processes wait for each other instead of failing with `busy`. The notes-api example keeps its notes in
+SQLite.
+
+- **Not done (on purpose):** automatic scaling of the worker count, a cache shared between workers,
+  serving over HTTPS (run a proxy in front).
 
 ## Planned after 017
 

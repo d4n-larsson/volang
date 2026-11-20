@@ -1,0 +1,57 @@
+# Recorded with two workers, replayed in one process: the same responses (database results, random
+# values per request) with the database gone.
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve_workers;
+import std.sqlite.Database;
+import std.sqlite.Value;
+import std.sqlite.exec;
+import std.sqlite.get_int;
+import std.sqlite.open;
+import std.sqlite.query;
+import std.sqlite.sql;
+
+fn setup() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
+    let db = try open("data/other.db");
+    let _ = try exec(db, sql("create table if not exists items (id integer primary key, tag integer)"), new list[Value]);
+    return ok(db);
+}
+
+fn respond(status: int, body: str) -> Response {
+    return new Response { status: status, headers: new list[Header], body: body };
+}
+
+fn handle(db: Database[uses file.read, file.write], r: Request) -> Response uses random, file.read("data/"), file.write("data/") {
+    if r.path == "/count" {
+        match query(db, sql("select count(*) as n from items"), new list[Value]) {
+            case ok(rows) {
+                match get_int(rows[0], "n") {
+                    case ok(n) {
+                        return respond(200, str(n));
+                    }
+                    case err(e) {
+                        return respond(500, e);
+                    }
+                }
+            }
+            case err(e) {
+                return respond(500, e);
+            }
+        }
+    }
+    let tag = random_int(0, 1000000);
+    match exec(db, sql("insert into items (tag) values (?)"), [Value.integer(tag)]) {
+        case ok(c) {
+            return respond(200, str(tag));
+        }
+        case err(e) {
+            return respond(500, e);
+        }
+    }
+}
+
+fn main() -> result[void] uses console, random, file.read("data/"), file.write("data/"), serve("{vport}") {
+    try serve_workers("{vport}", 2, setup, handle);
+    return ok();
+}

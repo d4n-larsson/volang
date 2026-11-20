@@ -1,4 +1,4 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"630601ac25ade5ce","seed":1,"clock_ms":null,"args":["https://127.0.0.1:{port}/plain","https://127.0.0.1:{port}/json"]}
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"2e2980cfd4f4638b","seed":1,"clock_ms":null,"args":["https://127.0.0.1:{port}/plain","https://127.0.0.1:{port}/json"]}
 {"v":1,"kind":"http","host":"127.0.0.1","port":{port},"scheme":"https","request":"GET /plain","result":"ok","value":"HTTP/1.1 200 OK\u000d\u000aContent-Type: text/plain\u000d\u000aContent-Length: 14\u000d\u000a\u000d\u000ahello from vo\u000a"}
 {"v":1,"kind":"http","host":"127.0.0.1","port":{port},"scheme":"https","request":"GET /json","result":"ok","value":"HTTP/1.1 200 OK\u000d\u000aContent-Type: application/json\u000d\u000aContent-Length: 56\u000d\u000a\u000d\u000a{\"name\": \"vo\", \"tags\": [\"small\", \"typed\"], \"version\": 7}"}
 {"v":1,"kind":"end","status":0}

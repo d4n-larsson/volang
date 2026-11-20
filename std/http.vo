@@ -394,3 +394,56 @@ fn response_text(method: str, r: Response) -> str {
     }
     return out;
 }
+
+# Serves requests like serve with `workers` processes (1 to 64; `vo run --workers N` overrides it), each running setup once and then handle (with setup's result) for one request at a time; nothing else is shared between requests. On Ctrl-C or SIGTERM the requests already read are answered, then it returns ok().
+#     serve_workers("0", 2, fn() -> result[int] { return ok(0); }, fn(n: int, r: Request) -> Response { return new Response { status: 200, headers: new list[Header], body: "" }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
+export fn serve_workers[S, E: effects, F: effects](address: str, workers: int, setup: fn() -> result[S] uses F, handle: fn(S, Request) -> Response uses E) -> result[void] uses serve, E, F {
+    # __serve_workers serves on the listener opened here
+    let _ = try __serve_listen(address);
+    return __serve_workers(workers, setup, fn(state: S, raw: str) -> str {
+        return answer_text(raw, fn(r: Request) -> Response { return handle(state, r); });
+    });
+}
+
+fn answer_text[E: effects](raw: str, handle: fn(Request) -> Response uses E) -> str uses E {
+    # As serve's own closure (kept apart so that serve's error traces stay as they were).
+    match parse_request(raw) {
+        case ok(req) {
+            match text_body(raw, "serve_bytes") {
+                case ok(body) {
+                    let r = new Request { method: req.method, path: req.path, query: req.query, headers: req.headers, body: body };
+                    return response_text(req.method, handle(r));
+                }
+                case err(_) {
+                    return bad_request();
+                }
+            }
+        }
+        case err(_) {
+            return bad_request();
+        }
+    }
+}
+
+# Serves requests like serve_workers, with request and response bodies as bytes, whatever they are (needs serve).
+#     serve_bytes_workers("0", 2, fn() -> result[int] { return ok(0); }, fn(n: int, r: BytesRequest) -> BytesResponse { return new BytesResponse { status: 200, headers: new list[Header], body: r.body }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
+export fn serve_bytes_workers[S, E: effects, F: effects](address: str, workers: int, setup: fn() -> result[S] uses F, handle: fn(S, BytesRequest) -> BytesResponse uses E) -> result[void] uses serve, E, F {
+    # __serve_workers serves on the listener opened here
+    let _ = try __serve_listen(address);
+    return __serve_workers(workers, setup, fn(state: S, raw: str) -> str {
+        return answer_bytes(raw, fn(r: BytesRequest) -> BytesResponse { return handle(state, r); });
+    });
+}
+
+fn answer_bytes[E: effects](raw: str, handle: fn(BytesRequest) -> BytesResponse uses E) -> str uses E {
+    match parse_request(raw) {
+        case ok(req) {
+            let r = new BytesRequest { method: req.method, path: req.path, query: req.query, headers: req.headers, body: __bytes_of_text(__http_part(raw, 1)) };
+            let out = handle(r);
+            return response_text(req.method, new Response { status: out.status, headers: out.headers, body: __raw_text(out.body) });
+        }
+        case err(_) {
+            return bad_request();
+        }
+    }
+}

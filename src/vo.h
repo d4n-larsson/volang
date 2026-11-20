@@ -400,7 +400,8 @@
 #define B_SQL_QUERY (90) /* __sql_query(id, text, params) -> result[list[list[Value]]] (typed loosely) */
 #define B_SQL_TX (91) /* __sql_tx(id, op) -> result[void] */
 #define B_SQL_PREPARE (92) /* __sql_prepare(text) -> result[str] */
-#define B_LAST (92) /* the last builtin id with a btab entry */
+#define B_SERVE_WORKERS (93) /* spec 028: __serve_workers(workers, setup, answer) -> result[void] */
+#define B_LAST (93) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -699,6 +700,8 @@
 #define EVK_RENAME (17)
 #define EVK_RUN (18)
 #define EVK_SQL (19) /* spec 026 */
+#define EVK_SETUP (20) /* spec 028: a worker's setup block, then */
+#define EVK_SETUP_END (21)
 #define EVR_OK (0)
 #define EVR_ERR (1)
 #define EVR_DENIED (2)
@@ -1623,6 +1626,25 @@ extern int needs_context(Node *v);
 extern Type *kind_arg(Node *call, long mask, char *what);
 extern void rt_serve_reply(Str *text);
 extern Variant *rt_serve_call(void *fn, long request, Node *call);
+extern Variant *rt_serve_call_n(void *fn, long *vals, long n, Node *call);
+extern Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call);
+extern long sv_listener, opt_workers;
+extern void sv_note(Str *m);
+extern int rp_skip_setups(void);
+extern void rt_seed_mark(void);
+extern void rt_request_seed(long number);
+typedef struct SvPoll { /* spec 028: an extra file descriptor for sv_round */
+    int fd;
+    short events, revents;
+} SvPoll;
+#define SV_EXTRA_MAX 192 /* 64 workers, three descriptors each */
+extern long sv_take_ready(Str **req);
+extern int sv_round(long listener, int accepting, SvPoll *extra, long nextra);
+extern void sv_reply_to(long conn, Str *text);
+extern long sv_pending(void);
+extern void sv_drop_partial(void);
+extern void sv_end(long listener);
+extern void sv_child_close(long listener);
 extern long tr_depth_get(void);
 extern void tr_depth_set(long depth);
 extern Variant *io_serve_listen(Str *address);

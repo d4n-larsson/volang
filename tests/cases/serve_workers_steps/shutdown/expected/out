@@ -1,0 +1,41 @@
+$ signal TERM
+stopped
+--- stderr
+--- exit 0
+$ read-open r1
+HTTP/1.1 200 OK
+Content-Length: 2
+Connection: close
+
+/1
+--- end
+$ read-open r2
+HTTP/1.1 200 OK
+Content-Length: 2
+Connection: close
+
+/2
+--- end
+$ read-open r3
+HTTP/1.1 200 OK
+Content-Length: 2
+Connection: close
+
+/3
+--- end
+$ read-open r4
+HTTP/1.1 200 OK
+Content-Length: 2
+Connection: close
+
+/4
+--- end
+$ read-open r5
+HTTP/1.1 200 OK
+Content-Length: 2
+Connection: close
+
+/5
+--- end
+$ no-children
+left-over processes: 0

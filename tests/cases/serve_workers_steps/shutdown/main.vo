@@ -1,0 +1,22 @@
+# Three workers, five slow requests read before SIGTERM (three running, two waiting): all five are
+# answered, then serve_workers returns ok().
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve_workers;
+import std.time.sleep;
+
+fn setup() -> result[int] {
+    return ok(0);
+}
+
+fn handle(n: int, r: Request) -> Response uses clock {
+    sleep(400);
+    return new Response { status: 200, headers: new list[Header], body: r.path };
+}
+
+fn main() -> result[void] uses console, clock, serve("{vport}") {
+    try serve_workers("{vport}", 3, setup, handle);
+    print("stopped");
+    return ok();
+}

@@ -350,6 +350,55 @@ main.vo:main uses serve("8000")
 
 The handler here is pure: it can only compute a response from the request. A handler that stops with a
 runtime error answers 500 and the server goes on; `--timeout` limits each handler call, not the server.
+
+`serve_workers(address, workers, setup, handle)` answers up to `workers` requests at once, so a slow
+request (a large query, a call to another service) no longer delays the others. Each worker is a
+separate process: it runs `setup` once, keeps its result (a database connection, say), and calls
+`handle` with it for one request at a time. Nothing in memory is shared between requests, so keep state
+in a database and change it inside a `transaction`; reading a file, changing it and writing it back
+loses updates when two requests do it at once.
+
+```vo
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.http.serve_workers;
+import std.sqlite.Database;
+import std.sqlite.Value;
+import std.sqlite.exec;
+import std.sqlite.open;
+import std.sqlite.sql;
+import std.sqlite.transaction;
+
+fn open_db() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
+    return open("data/app.db");
+}
+
+fn hit(db: Database[uses file.read, file.write], req: Request) -> Response uses file.read("data/"), file.write("data/") {
+    let saved = transaction(db, fn() -> result[int] {
+        let c = try exec(db, sql("insert into hits (path) values (?)"), [Value.text(req.path)]);
+        return ok(c.last_id);
+    });
+    match saved {
+        case ok(id) {
+            return new Response { status: 200, headers: new list[Header], body: "hit " + str(id) + "\n" };
+        }
+        case err(e) {
+            return new Response { status: 500, headers: new list[Header], body: e + "\n" };
+        }
+    }
+}
+
+fn main() -> result[void] uses file.read("data/"), file.write("data/"), serve("8000") {
+    return serve_workers("8000", 4, open_db, hit);
+}
+```
+
+`vo run --workers N main.vo` overrides the count. A handler that fails answers 500 and its worker goes
+on; a worker that dies is replaced; Ctrl-C or SIGTERM answers the requests already read, then
+`serve_workers` returns `ok()`. A recording keeps each request's inputs together, and `vo replay` runs
+the requests one at a time in one process, with the same responses.
+
 A server can be recorded and replayed like any program (see [Determinism](determinism.md)). Details:
 [std.http](../std/http.md); the [notes-api](../examples/notes-api.md) and
 [status-board](../examples/status-board.md) examples are complete servers.

@@ -78,8 +78,9 @@ Each property is a claim the review must try to break; each break is a finding.
 - **S3 No other capabilities.** The only things a program can do are the effects above. The binary
   reaches 43 system calls (`src/platform/*.h`; spec 026 added `pread64`, `pwrite64`, `fsync` and
   `ftruncate` for SQLite's files). Processes are created only for tasks (spec 016: copies
-  of the program, which share nothing) and for `process` (spec 017); signals are sent only to those
-  children and their process groups; no native code
+  of the program, which share nothing), for server workers (spec 028: copies of the program that hold no
+  connection and no listening socket, only pipes to their server) and for `process` (spec 017); signals
+  are sent only to those children and their process groups; no native code
   loading (SQLite is built without extension loading), no raw sockets, no file descriptors a program
   can name. No environment variable, file or
   argument outside the grant changes what a program may do.
@@ -89,7 +90,7 @@ Each property is a claim the review must try to break; each break is a finding.
   SQLite's memory is its own fixed heap (64 MiB, outside the collected heap); a damaged database file is
   an `err("corrupt: ...")`, never a crash (tests/sqlite_fuzz.py).
 - **S5 Bounded resources.** Time (`--timeout`, default 10 s, per request for servers), live memory
-  (`--max-memory`), stack depth, HTTP responses (16 MiB), server requests (head 64 KiB, 100 headers, body
+  (`--max-memory`; for `serve_workers`, per worker, as `--timeout` is per handler call and per setup), stack depth, HTTP responses (16 MiB), server requests (head 64 KiB, 100 headers, body
   16 MiB, 10 s to arrive) are limited, and reaching a limit is a reported error. `--timeout 0` turns the
   time limit off on purpose. Regular expressions (spec 025) are safe on hostile patterns and texts:
   matching never backtracks, so its time is linear in the text for every pattern (and stops at
@@ -112,8 +113,9 @@ Each property is a claim the review must try to break; each break is a finding.
   package through a link (E0211).
 - **S9 Server robustness.** A vo server listens only on its declared address, reads up to 64 connections
   at once and answers them one handler call at a
-  time, and keeps serving after malformed, oversized or failing requests; no request makes it crash,
-  grow without bound, or run outside its grant.
+  time (with `serve_workers`, one per worker, up to 64 workers, every worker with `main`'s grant), and
+  keeps serving after malformed, oversized or failing requests; a worker that dies is replaced and only
+  its request fails (500); no request makes it crash, grow without bound, or run outside its grant.
 
 ## Known limits (accepted, documented)
 

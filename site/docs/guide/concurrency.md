@@ -129,3 +129,8 @@ Inside a task, `concurrent_map` runs one task at a time. Each task has its own `
 others. It still calls the handler for one request at a time, in the order the requests arrive
 complete, so a handler that keeps state between requests (a counter in a record it captures) works
 without locks. See [Standard library](standard-library.md).
+
+`std.http.serve_workers` answers several requests at once: each worker is a separate process, like a
+task, that runs a setup once and then the handler for one request at a time. Workers share nothing, so a
+value a handler changes stays in its worker; state that every request must see belongs in a database,
+changed in a `transaction`.

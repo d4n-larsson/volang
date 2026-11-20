@@ -1,0 +1,8 @@
+start vo run main.vo
+request-open a GET /a HTTP/1.1\r\n\r\n
+request-open b GET /b HTTP/1.1\r\n\r\n
+read-open a
+read-open b
+request GET /crash
+signal TERM
+no-children

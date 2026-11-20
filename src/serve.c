@@ -38,6 +38,7 @@ static long sv_sig = -1;          /* signalfd for SIGINT and SIGTERM while servi
 static long sv_conn = -1;         /* the index in sv_conns of the request being handled */
 static unsigned long sv_old_mask; /* the signal mask before serving */
 long serve_guard;                 /* 1 while a handler runs: rt_raise reports, then jumps here */
+long sv_listener = -1;            /* the last listening socket (spec 028: serve_workers serves on it) */
 
 static Variant *sv_err(char *tmpl, Str *a)
 {
@@ -70,6 +71,7 @@ Variant *rt_serve_listen(Str *address)
     vo_syscall4(SYS_rt_sigprocmask, SIG_BLOCK, (long)&mask, (long)&sv_old_mask, 8);
     sv_sig = vo_syscall4(SYS_signalfd4, -1, (long)&mask, 8, SOCK_NONBLOCK | SOCK_CLOEXEC);
     serve_deadline(0);
+    sv_listener = fd;
     return make_result(0, fd);
 }
 
@@ -366,90 +368,188 @@ static void conns_stop(void)
     }
 }
 
+/* ---- the connection loop, shared by serve and serve_workers (spec 028) ---- */
+
+/* The oldest complete request: its connection is handled from now on and *req gets the framed request;
+ * the connection's index, or -1 when no request is complete. */
+long sv_take_ready(Str **req)
+{
+    Conn *best = 0; /* the request that became complete first */
+    for (int i = 0; i < CONN_MAX; i++) {
+        Conn *c = &sv_conns[i];
+        if (c->state == C_READY && (!best || c->seq < best->seq)) best = c;
+    }
+    if (!best) return -1;
+    best->state = C_HANDLING;
+    *req = best->f.out;
+    best->in = 0; /* the request is the handler's now */
+    best->f.out = 0;
+    best->f.body = 0;
+    return best - sv_conns;
+}
+
+/* One round of waiting: accepts new connections (when accepting and there is room), reads requests,
+ * writes responses, expires connections out of time; the extra file descriptors are polled too (their
+ * revents filled in). 1 when a stop signal came (it is read), 0 otherwise. */
+int sv_round(long listener, int accepting, SvPoll *extra, long nextra)
+{
+    struct {
+        int fd;
+        short events, revents;
+    } p[CONN_MAX + 2 + SV_EXTRA_MAX];
+    Conn *who[CONN_MAX + 2 + SV_EXTRA_MAX];
+    long np = 0, now = sys_clock_ms(), wait = -1, open = 0;
+    for (int i = 0; i < CONN_MAX; i++) open += sv_conns[i].state != C_FREE;
+    p[np].fd = (int)sv_sig;
+    p[np].events = POLLIN;
+    p[np].revents = 0;
+    who[np++] = 0;
+    long lst = -1; /* the listener's place in p */
+    if (accepting && open < CONN_MAX) {
+        lst = np;
+        p[np].fd = (int)listener;
+        p[np].events = POLLIN;
+        p[np].revents = 0;
+        who[np++] = 0;
+    }
+    for (int i = 0; i < CONN_MAX; i++) {
+        Conn *c = &sv_conns[i];
+        if (c->state != C_READING && c->state != C_WRITING) continue;
+        if (c->deadline <= now) { /* out of time: 408 for a part of a request, else just closed */
+            if (c->state == C_READING && c->in->len) conn_refuse(c, 408); /* (then written in time) */
+            else conn_close(c);
+            continue;
+        }
+        long left = c->deadline - now;
+        if (wait < 0 || left < wait) wait = left;
+        p[np].fd = (int)c->fd;
+        p[np].events = c->state == C_READING ? POLLIN : POLLOUT;
+        p[np].revents = 0;
+        who[np++] = c;
+    }
+    long first_extra = np;
+    for (long k = 0; k < nextra; k++) {
+        extra[k].revents = 0;
+        p[np].fd = extra[k].fd;
+        p[np].events = extra[k].events;
+        p[np].revents = 0;
+        who[np++] = 0;
+    }
+    long ts[2] = {wait / 1000, wait % 1000 * 1000000};
+    long n = vo_syscall5(SYS_ppoll, (long)p, np, wait < 0 ? 0 : (long)ts, 0, 8);
+    if (n <= 0) return 0;
+    if (p[0].revents) { /* a stop signal */
+        char info[128]; /* struct signalfd_siginfo */
+        vo_syscall3(SYS_read, sv_sig, (long)info, sizeof info);
+        return 1;
+    }
+    for (long k = 0; k < nextra; k++) extra[k].revents = p[first_extra + k].revents;
+    for (long i = 1; i < first_extra; i++) {
+        if (!p[i].revents) continue;
+        Conn *c = who[i];
+        if (i == lst) { /* the listener: every waiting connection, while there is room */
+            for (;;) {
+                Conn *f = 0;
+                for (int k = 0; k < CONN_MAX && !f; k++)
+                    if (sv_conns[k].state == C_FREE) f = &sv_conns[k];
+                if (!f) break;
+                long fd = vo_syscall4(SYS_accept4, listener, 0, 0, SOCK_NONBLOCK | SOCK_CLOEXEC);
+                if (fd < 0) break;
+                f->fd = fd;
+                f->state = C_READING;
+                f->deadline = sys_clock_ms() + READ_MS;
+                f->in = sb_new();
+            }
+        } else if (c && c->state == C_READING) {
+            conn_read(c);
+        } else if (c && c->state == C_WRITING) {
+            conn_write(c);
+        }
+    }
+    return 0;
+}
+
+/* Queues text as the response on connection conn (being handled). */
+void sv_reply_to(long conn, Str *text)
+{
+    if (conn >= 0 && conn < CONN_MAX && sv_conns[conn].state == C_HANDLING) conn_reply(&sv_conns[conn], text);
+}
+
+/* Requests still to answer: complete, being handled, or being written. */
+long sv_pending(void)
+{
+    long n = 0;
+    for (int i = 0; i < CONN_MAX; i++) {
+        long s = sv_conns[i].state;
+        n += s == C_READY || s == C_HANDLING || s == C_WRITING;
+    }
+    return n;
+}
+
+/* Shutting down: connections whose request is not complete yet are closed (only requests already read
+ * are answered). */
+void sv_drop_partial(void)
+{
+    for (int i = 0; i < CONN_MAX; i++)
+        if (sv_conns[i].state == C_READING) conn_close(&sv_conns[i]);
+}
+
+/* The end of serving: queued responses finished, the rest closed, the listener and the signals back. */
+void sv_end(long listener)
+{
+    conns_stop();
+    sv_stop(listener);
+}
+
+/* In a forked worker: its copies of the listener, the signal descriptor and the connections are closed
+ * (the parent owns them), without touching the parent's. */
+void sv_child_close(long listener)
+{
+    sys_close((int)listener);
+    if (sv_sig >= 0) sys_close((int)sv_sig);
+    for (int i = 0; i < CONN_MAX; i++)
+        if (sv_conns[i].state != C_FREE) sys_close((int)sv_conns[i].fd);
+}
+
+/* A note on stderr (with --json, a `note` record), spec 028. */
+void sv_note(Str *m)
+{
+    GC_ROOT(&m);
+    SB *sb = sb_new();
+    GC_ROOT(&sb);
+    if (opt_json) {
+        sb_cstr(sb, "{\"v\":1,\"kind\":\"note\",\"message\":");
+        json_str_into(sb, m);
+        sb_cstr(sb, "}\n");
+    } else {
+        sb_cstr(sb, "note: ");
+        sb_str(sb, m);
+        sb_byte(sb, '\n');
+    }
+    out_bytes(2, sb->ptr, sb->len);
+    GC_UNROOT(2);
+}
+
 /* result[str]: the next request (framed: head and decoded body), or ok("") when a stop signal came
  * (the server is then stopped). Requests refused here never reach the program. */
 Variant *rt_serve_next(long listener)
 {
+    static int noted;
+    if (opt_workers && !noted) { /* spec 028: --workers is serve_workers' */
+        noted = 1;
+        sv_note(str_from_cstr("--workers has no effect: this program serves one request at a time (serve_workers runs several)"));
+    }
     for (;;) {
-        Conn *best = 0; /* the request that became complete first */
-        long open = 0;
-        for (int i = 0; i < CONN_MAX; i++) {
-            Conn *c = &sv_conns[i];
-            if (c->state == C_FREE) continue;
-            open++;
-            if (c->state == C_READY && (!best || c->seq < best->seq)) best = c;
-        }
-        if (best) {
-            best->state = C_HANDLING;
-            sv_conn = best - sv_conns;
-            Str *req = best->f.out;
-            best->in = 0; /* the request is the handler's now */
-            best->f.out = 0;
-            best->f.body = 0;
+        Str *req;
+        long i = sv_take_ready(&req);
+        if (i >= 0) {
+            sv_conn = i;
             return make_result(0, (long)req);
         }
-        struct {
-            int fd;
-            short events, revents;
-        } p[CONN_MAX + 2];
-        Conn *who[CONN_MAX + 2];
-        long np = 0, now = sys_clock_ms(), wait = -1;
-        p[np].fd = (int)sv_sig;
-        p[np].events = POLLIN;
-        p[np].revents = 0;
-        who[np++] = 0;
-        if (open < CONN_MAX) {
-            p[np].fd = (int)listener;
-            p[np].events = POLLIN;
-            p[np].revents = 0;
-            who[np++] = 0;
-        }
-        for (int i = 0; i < CONN_MAX; i++) {
-            Conn *c = &sv_conns[i];
-            if (c->state != C_READING && c->state != C_WRITING) continue;
-            if (c->deadline <= now) { /* out of time: 408 for a part of a request, else just closed */
-                if (c->state == C_READING && c->in->len) conn_refuse(c, 408); /* (then written in time) */
-                else conn_close(c);
-                continue;
-            }
-            long left = c->deadline - now;
-            if (wait < 0 || left < wait) wait = left;
-            p[np].fd = (int)c->fd;
-            p[np].events = c->state == C_READING ? POLLIN : POLLOUT;
-            p[np].revents = 0;
-            who[np++] = c;
-        }
-        long ts[2] = {wait / 1000, wait % 1000 * 1000000};
-        long n = vo_syscall5(SYS_ppoll, (long)p, np, wait < 0 ? 0 : (long)ts, 0, 8);
-        if (n <= 0) continue;
-        if (p[0].revents) { /* a stop signal */
-            char info[128]; /* struct signalfd_siginfo */
-            vo_syscall3(SYS_read, sv_sig, (long)info, sizeof info);
+        if (sv_round(listener, 1, 0, 0)) {
             conns_stop();
             sv_stop(listener);
             return make_result(0, (long)str_from_cstr(""));
-        }
-        for (long i = 1; i < np; i++) {
-            if (!p[i].revents) continue;
-            Conn *c = who[i];
-            if (!c) { /* the listener: every waiting connection, while there is room */
-                for (;;) {
-                    Conn *f = 0;
-                    for (int k = 0; k < CONN_MAX && !f; k++)
-                        if (sv_conns[k].state == C_FREE) f = &sv_conns[k];
-                    if (!f) break;
-                    long fd = vo_syscall4(SYS_accept4, listener, 0, 0, SOCK_NONBLOCK | SOCK_CLOEXEC);
-                    if (fd < 0) break;
-                    f->fd = fd;
-                    f->state = C_READING;
-                    f->deadline = sys_clock_ms() + READ_MS;
-                    f->in = sb_new();
-                }
-            } else if (c->state == C_READING) {
-                conn_read(c);
-            } else if (c->state == C_WRITING) {
-                conn_write(c);
-            }
         }
     }
 }
@@ -481,9 +581,15 @@ void rt_serve_reply(Str *text)
  * put back where this call started. */
 Variant *rt_serve_call(void *fn, long request, Node *call)
 {
+    return rt_serve_call_n(fn, &request, 1, call);
+}
+
+/* The same with n argument values (spec 028: a worker's handler takes the setup's result too). */
+Variant *rt_serve_call_n(void *fn, long *vals, long n, Node *call)
+{
     long jb[JB_SIZE / 8];
     GC_ROOT(&fn);
-    GC_ROOT(&request);
+    for (long k = 0; k < n; k++) GC_ROOT(&vals[k]);
     long saved_vsp = vsp, saved_frame = cur_frame, outer = recover_point, depth = tr_depth_get();
     long saved_gc_on = gc_on, saved_oom = oom_hook; /* spec 013 (H10): R0006 switches them off */
     volatile long result = 0;
@@ -492,7 +598,7 @@ Variant *rt_serve_call(void *fn, long request, Node *call)
     deadline_ms = opt_timeout ? sys_clock_ms() + opt_timeout * 1000 : 0;
     long status = jmp_save(jb); /* 0 ran through, 1 an expect failed (in a test), 2 runtime error */
     if (!status) {
-        long r = call_value(fn, call, &request);
+        long r = call_value(fn, call, vals);
         result = (long)make_result(0, r);
     }
     serve_guard = 0;
@@ -509,6 +615,6 @@ Variant *rt_serve_call(void *fn, long request, Node *call)
         if (status == 1 && outer) rt_recover(1); /* the enclosing test's failure (recover_point is outer again) */
         result = (long)make_result(1, (long)str_from_cstr((char *)rt_err_code));
     }
-    GC_UNROOT(2);
+    GC_UNROOT(n + 1);
     return (Variant *)result;
 }

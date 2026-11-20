@@ -1,0 +1,14 @@
+start vo run main.vo
+request-open r1 GET /1 HTTP/1.1\r\n\r\n
+request-open r2 GET /2 HTTP/1.1\r\n\r\n
+request-open r3 GET /3 HTTP/1.1\r\n\r\n
+request-open r4 GET /4 HTTP/1.1\r\n\r\n
+request-open r5 GET /5 HTTP/1.1\r\n\r\n
+wait 100
+signal TERM
+read-open r1
+read-open r2
+read-open r3
+read-open r4
+read-open r5
+no-children

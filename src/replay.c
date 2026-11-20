@@ -30,7 +30,8 @@ static long rp_saw_end;
 static const char *const ev_names[] = {0,         "read_line", "read_all",    "read_file", "write_file",
                                        "env",     "now_ms",    "end",         "http",      "listen",
                                        "request", "response",  "info",        "list_dir",  "append_file",
-                                       "make_dir", "delete",   "rename",      "run",       "sql"};
+                                       "make_dir", "delete",   "rename",      "run",       "sql",
+                                       "setup",   "setup_end"}; /* spec 028 */
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static Str *run_desc(Str *program, Str *joined);
 static const char hexd[] = "0123456789abcdef";
@@ -55,7 +56,9 @@ static const char *const d_table[] = {0,
                                       "deletes `$1`",
                                       "renames `$1`",
                                       "runs `$1`",
-                                      "makes the database call `$1`"};
+                                      "makes the database call `$1`",
+                                      "starts serving with workers",
+                                      "finishes a worker's setup"};
 static const char *const n_table[] = {0,
                                       "a line of stdin",
                                       "the rest of stdin",
@@ -75,7 +78,9 @@ static const char *const n_table[] = {0,
                                       "a delete of `$1`",
                                       "a rename of `$1`",
                                       "a run of `$1`",
-                                      "the database call `$1`"};
+                                      "the database call `$1`",
+                                      "a worker's setup",
+                                      "the end of a worker's setup"};
 
 #define J_HEAD "{\"v\":1,\"kind\":\""
 #define J_CLOSE "}\n"
@@ -189,7 +194,10 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
         rw((char *)ev_results[result]);
         rw("\"");
     }
-    if (kind == EVK_NOW_MS || (kind == EVK_SERVE_LISTEN && result == EVR_OK)) { /* spec 011: the listener */
+    if (kind == EVK_SETUP) { /* spec 028: the worker's number */
+        rw(",\"worker\":");
+        rw_dec(int_value);
+    } else if (kind == EVK_NOW_MS || (kind == EVK_SERVE_LISTEN && result == EVR_OK)) { /* spec 011: the listener */
         rw(",\"value\":");
         rw_dec(int_value);
     } else if (value) {
@@ -869,7 +877,7 @@ long rp_kind_of(Str *str)
 {
     if (!str) return -1;
     if (str_eq_cstr(str, "recording")) return 0;
-    for (long k = 1; k <= EVK_SQL; k++)
+    for (long k = 1; k <= EVK_SETUP_END; k++)
         if (str_eq_cstr(str, (char *)ev_names[k])) return k;
     return -1;
 }
@@ -943,6 +951,7 @@ void rp_read(char *text, long len)
  * there is one, a str value for ok/err results and read_all, an integer for now_ms. */
 void rp_check_event(Event *e)
 {
+    if (e->kind == EVK_SETUP || e->kind == EVK_SETUP_END) return; /* spec 028: markers */
     if (e->kind == EVK_SQL) { /* spec 026: the outcome is checked when it is replayed */
         if (!rf_op || e->result < 0) rp_bad();
         return;
@@ -1173,6 +1182,18 @@ void io_serve_reply(Str *text)
         if (rcd_mode) rcd_event(EVK_SERVE_RESPONSE, 0, -1, text, 0);
     }
     GC_UNROOT(1);
+}
+
+/* ---- spec 028: recordings of servers with workers ---- */
+
+/* In replay: past any `setup` blocks (the other workers' setups, R9); 1 when an event follows. */
+int rp_skip_setups(void)
+{
+    while (rp_next < rp_events->n && ((Event *)vec_get(rp_events, rp_next))->kind == EVK_SETUP) {
+        while (rp_next < rp_events->n && ((Event *)vec_get(rp_events, rp_next))->kind != EVK_SETUP_END) rp_next++;
+        rp_next++;
+    }
+    return rp_next < rp_events->n;
 }
 
 /* ---- spec 016: recordings of tasks (research R10) ---- */

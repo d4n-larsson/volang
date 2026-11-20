@@ -1,0 +1,4 @@
+mkdir data
+write secret.txt hidden
+vo run main.vo -- secret.txt
+no-children

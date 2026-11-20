@@ -1,0 +1,20 @@
+# --workers 1: the fast request waits behind every slow one (one request at a time).
+start vo run --workers 1 main.vo
+request-open s1 GET /s1 HTTP/1.1\r\n\r\n
+wait 50
+request-open s2 GET /s2 HTTP/1.1\r\n\r\n
+wait 50
+request GET /fast
+read-open s1
+read-open s2
+signal TERM
+no-children
+# --workers on a serve program: a note, served as before.
+start vo run --workers 2 plain.vo
+request GET /x
+signal TERM
+vo run --workers 0 main.vo
+vo run --workers 65 main.vo
+vo run --workers main.vo
+vo test --workers 2 main.vo
+vo check --workers 2 main.vo

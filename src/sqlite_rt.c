@@ -656,7 +656,11 @@ static Variant *query_db(Slot *s, Str *text, List *params, Node *call)
 static Variant *tx_db(Slot *s, long op, Node *call)
 {
     if (op == 1 && s->in_tx) return err_result(str_from_cstr("error: a transaction is already open"));
-    int rc = sqlite3_exec(s->db, op == 1 ? "BEGIN" : op == 2 ? "COMMIT" : "ROLLBACK", 0, 0, 0);
+    /* spec 028: a writable database's transaction takes the write lock at once, waiting in the busy
+       handler: a deferred one that reads, then writes, fails with busy at once when another process
+       (a serve_workers worker) holds it */
+    char *begin = sqlite3_db_readonly(s->db, "main") == 1 ? "BEGIN" : "BEGIN IMMEDIATE";
+    int rc = sqlite3_exec(s->db, op == 1 ? begin : op == 2 ? "COMMIT" : "ROLLBACK", 0, 0, 0);
     after_sqlite(call);
     if (rc != SQLITE_OK) {
         if (op == 2) sqlite3_exec(s->db, "ROLLBACK", 0, 0, 0); /* a failed commit leaves nothing open */

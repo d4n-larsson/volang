@@ -1,0 +1,38 @@
+$ request GET /fast
+HTTP/1.1 200 OK
+Content-Length: 5
+Connection: close
+
+/fast
+--- end
+$ read-open s1
+HTTP/1.1 200 OK
+Content-Length: 3
+Connection: close
+
+/s1
+--- end
+$ read-open s2
+HTTP/1.1 200 OK
+Content-Length: 3
+Connection: close
+
+/s2
+--- end
+$ read-open s3
+HTTP/1.1 200 OK
+Content-Length: 3
+Connection: close
+
+/s3
+--- end
+$ signal TERM
+done /s1
+done /s2
+done /fast
+done /s3
+stopped
+--- stderr
+--- exit 0
+$ no-children
+left-over processes: 0

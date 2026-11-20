@@ -71,6 +71,20 @@ void rt_task_seed(long path)
     pcg_next32();
 }
 
+/* Spec 028 (research R8): a request's own sequence, from the generator's state when serving started and
+ * the request's arrival number, whichever worker runs it (and in replay). */
+static unsigned long pcg_serve_base;
+void rt_seed_mark(void)
+{
+    pcg_serve_base = pcg_state;
+}
+
+void rt_request_seed(long number)
+{
+    pcg_state = pcg_serve_base;
+    rt_task_seed(number + 1);
+}
+
 /* PCG-XSH-RR 64/32. */
 long pcg_next32(void)
 {

@@ -1,0 +1,49 @@
+$ read-open a
+HTTP/1.1 200 OK
+Content-Length: 2
+Connection: close
+
+/a
+--- end
+$ read-open b
+HTTP/1.1 200 OK
+Content-Length: 2
+Connection: close
+
+/b
+--- end
+$ request GET /crash
+HTTP/1.1 500 Internal Server Error
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ signal TERM
+/a line 1
+/a line 2
+/a line 3
+/b line 1
+/b line 2
+/b line 3
+stopped
+--- stderr
+before the crash
+main.vo:16:81: runtime error[R0002]: Division by zero.
+  16 |         return new Response { status: 200, headers: new list[Header], body: str(1 / zero) };
+     |                                                                                 ^^^^^^^^
+trace:
+  at handle (main.vo:16:81)
+      zero: int = 0, r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
+  at anonymous function (std/http.vo:404:69)
+      r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>, state: int = 0
+  at answer_text (std/http.vo:415:54)
+      raw: str = "GET /crash HTTP/1.1\nHost: localhost\n\n", handle: fn(Request) -> Response uses console, clock = <fn(Request) -> Response uses console, clock>, req: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
+  at anonymous function (std/http.vo:404:16)
+      state: int = 0, raw: str = "GET /crash HTTP/1.1\nHost: localhost\n\n", handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>
+  at serve_workers (std/http.vo:403:12)
+      address: str = "{vport}", workers: int = 2, setup: fn() -> result[int] = <fn() -> result[int]>, handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>
+  at main (main.vo:30:9)
+--- exit 0
+$ no-children
+left-over processes: 0

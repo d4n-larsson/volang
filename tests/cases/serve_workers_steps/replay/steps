@@ -1,0 +1,12 @@
+mkdir data
+start vo run --seed 1 --record r.jsonl main.vo
+request-many 20 GET /add
+request GET /count
+signal TERM
+rm data
+vo~ replay r.jsonl
+vo~ replay r.jsonl
+same
+cp changed.vo main.vo
+vo replay r.jsonl
+vo replay --workers 2 r.jsonl

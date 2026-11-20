@@ -6,7 +6,7 @@
 
 ```text
 vo run [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats]
-       [--trace FILE] [--trace-limit N] [--record FILE] [--ca-file FILE] FILE [-- ARG...]
+       [--trace FILE] [--trace-limit N] [--record FILE] [--ca-file FILE] [--workers N] FILE [-- ARG...]
 ```
 
 `FILE` is the program's entry file, the one that declares `main`. The words after `--` are the program's
@@ -30,6 +30,7 @@ address outside it stops the program with [R0010](../errors/R0010.md) (see [Effe
 | `--trace-limit N` | With `--trace`: write at most `N` records (1 to 100000000, default 100000) and only count the rest. |
 | `--ca-file FILE` | Trust the certificate authorities in `FILE` (PEM) for HTTPS, in addition to the machine's trust store, for this run; repeatable. Read before the program starts: unreadable is [T0002](../errors/T0002.md), no certificate is [T0013](../errors/T0013.md). Nothing turns certificate verification off. |
 | `--record FILE` | Save everything the program receives to `FILE`, so [vo replay](replay.md) can run it again exactly. |
+| `--workers N` | Serve with `N` worker processes (1 to 64) in every `std.http.serve_workers` call, whatever the program declares. A program that serves with `serve` keeps answering one request at a time, with a note. |
 
 `--seed` and `--clock-ms` take whole numbers from 0. A trace or recording path cannot be one of the
 program's source files, and `--trace` and `--record` cannot name the same file

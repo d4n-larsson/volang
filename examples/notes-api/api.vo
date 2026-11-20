@@ -1,11 +1,11 @@
 # The HTTP API: `route` decides every answer from the request and the current notes (pure, tested
-# directly), `handle` loads the notes from data/notes.json, routes, and saves them when they changed.
+# directly); `handle` loads the notes from the database, routes, and saves what changed, in one
+# transaction, so requests answered at once by several workers never lose a change.
 import notes.Note;
 import notes.add;
 import notes.find_note;
 import notes.mark_done;
 import notes.note_json;
-import notes.notes_from;
 import notes.notes_json;
 import notes.remove_note;
 import notes.text_from;
@@ -13,8 +13,17 @@ import std.http.Header;
 import std.http.Request;
 import std.http.Response;
 import std.json.Json;
-import std.json.parse_json;
 import std.json.write_json;
+import std.sqlite.Database;
+import std.sqlite.Value;
+import std.sqlite.exec;
+import std.sqlite.get_int;
+import std.sqlite.get_str;
+import std.sqlite.open;
+import std.sqlite.open_memory;
+import std.sqlite.query;
+import std.sqlite.sql;
+import std.sqlite.transaction;
 
 # A response and the notes after it (changed: they must be saved).
 export record Answer {
@@ -99,41 +108,73 @@ export fn route(r: Request, notes: list[Note]) -> Answer {
     }
 }
 
-# The notes in data/notes.json; none when the file does not exist yet.
-fn load() -> result[list[Note]] uses file.read("data/") {
-    match read_file("data/notes.json") {
-        case ok(text) {
-            return notes_from(try parse_json(text));
-        }
-        case err(_) {
-            return ok(new list[Note]);
+# Each worker's database connection (serve_workers runs this once per worker): data/notes.db, with the
+# notes table created the first time.
+export fn open_notes() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
+    let db = try open("data/notes.db");
+    try prepare(db);
+    return ok(db);
+}
+
+fn prepare[D: effects](db: Database[D]) -> result[void] uses D {
+    let _ = try exec(db, sql("create table if not exists notes (id integer primary key, text text not null, done integer not null)"), new list[Value]);
+    return ok();
+}
+
+fn load[D: effects](db: Database[D]) -> result[list[Note]] uses D {
+    let out = new list[Note];
+    for row in try query(db, sql("select id, text, done from notes order by id"), new list[Value]) {
+        push(out, new Note { id: try get_int(row, "id"), text: try get_str(row, "text"), done: try get_int(row, "done") == 1 });
+    }
+    return ok(out);
+}
+
+# Writes what changed between before and after: new notes, notes now done, deleted notes.
+fn save[D: effects](db: Database[D], before: list[Note], after: list[Note]) -> result[void] uses D {
+    let old = new map[int, Note];
+    for n in before {
+        set old[n.id] = n;
+    }
+    let kept = new map[int, bool];
+    for n in after {
+        set kept[n.id] = true;
+        if not has(old, n.id) {
+            let _ = try exec(db, sql("insert into notes (id, text, done) values (?, ?, ?)"), [Value.integer(n.id), Value.text(n.text), Value.integer(if_done(n))]);
+        } else if old[n.id].done != n.done {
+            let _ = try exec(db, sql("update notes set done = ? where id = ?"), [Value.integer(if_done(n)), Value.integer(n.id)]);
         }
     }
+    for n in before {
+        if not has(kept, n.id) {
+            let _ = try exec(db, sql("delete from notes where id = ?"), [Value.integer(n.id)]);
+        }
+    }
+    return ok();
 }
 
-fn save(notes: list[Note]) -> result[void] uses file.write("data/") {
-    let text = try write_json(notes_json(notes));
-    return write_file("data/notes.json", text + "\n");
+fn if_done(n: Note) -> int {
+    if n.done {
+        return 1;
+    }
+    return 0;
 }
 
-# One request: load the notes, route, save them when they changed.
-export fn handle(r: Request) -> Response uses file.read("data/"), file.write("data/") {
-    match load() {
-        case ok(notes) {
-            let a = route(r, notes);
-            if a.changed {
-                match save(a.notes) {
-                    case ok() {
-                    }
-                    case err(e) {
-                        return problem(500, "cannot save the notes: " + e);
-                    }
-                }
-            }
-            return a.response;
+# One request, in one transaction: load the notes, route, save what changed.
+export fn handle[D: effects](db: Database[D], r: Request) -> Response uses D {
+    let answered = transaction(db, fn() -> result[Response] {
+        let before = try load(db);
+        let a = route(r, before);
+        if a.changed {
+            try save(db, before, a.notes);
+        }
+        return ok(a.response);
+    });
+    match answered {
+        case ok(resp) {
+            return resp;
         }
         case err(e) {
-            return problem(500, "data/notes.json: " + e);
+            return problem(500, "the notes database: " + e);
         }
     }
 }
@@ -179,6 +220,17 @@ test "one note: read, mark done, delete" {
     let gone = route(req("DELETE", "/notes/1", ""), two());
     expect_eq(gone.response.status, 204);
     expect_eq(gone.notes, [new Note { id: 2, text: "call home", done: true }]);
+}
+
+@spec("FR-006")
+test "the notes are kept in the database between requests" {
+    let db = open_memory();
+    expect_eq(prepare(db), ok());
+    expect_eq(handle(db, req("POST", "/notes", "{\"text\": \"buy bread\"}")).status, 201);
+    expect_eq(handle(db, req("POST", "/notes", "{\"text\": \"call home\"}")).status, 201);
+    expect_eq(handle(db, req("POST", "/notes/1/done", "")).status, 200);
+    expect_eq(handle(db, req("DELETE", "/notes/2", "")).status, 204);
+    expect_eq(load(db), ok([new Note { id: 1, text: "buy bread", done: true }]));
 }
 
 @spec("FR-005")

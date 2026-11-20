@@ -1,0 +1,62 @@
+$ request GET /fast
+HTTP/1.1 200 OK
+Content-Length: 5
+Connection: close
+
+/fast
+--- end
+$ read-open s1
+HTTP/1.1 200 OK
+Content-Length: 3
+Connection: close
+
+/s1
+--- end
+$ read-open s2
+HTTP/1.1 200 OK
+Content-Length: 3
+Connection: close
+
+/s2
+--- end
+$ signal TERM
+done /s1
+done /s2
+done /fast
+stopped
+--- stderr
+--- exit 0
+$ no-children
+left-over processes: 0
+$ request GET /x
+HTTP/1.1 200 OK
+Content-Length: 2
+Connection: close
+
+/x
+--- end
+$ signal TERM
+stopped
+--- stderr
+note: --workers has no effect: this program serves one request at a time (serve_workers runs several)
+--- exit 0
+$ vo run --workers 0 main.vo
+--- stderr
+error[T0001]: `--workers` needs a whole number from 1 to 64.
+--- exit 64
+$ vo run --workers 65 main.vo
+--- stderr
+error[T0001]: `--workers` needs a whole number from 1 to 64.
+--- exit 64
+$ vo run --workers main.vo
+--- stderr
+error[T0001]: `--workers` needs a whole number from 1 to 64.
+--- exit 64
+$ vo test --workers 2 main.vo
+error[T0001]: `--workers` only works with `run`.
+--- stderr
+--- exit 64
+$ vo check --workers 2 main.vo
+error[T0001]: `--workers` only works with `run`.
+--- stderr
+--- exit 64
