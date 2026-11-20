@@ -1,0 +1,28 @@
+# Removing costs the same whatever the map's size: 200,000 removes, far under the default timeout.
+fn main() uses console {
+    let m = new map[int, int];
+    for i in 0..200000 {
+        set m[i] = i;
+    }
+    for i in 0..200000 {
+        if i % 1000 != 7 {
+            remove(m, i);
+        }
+    }
+    print(str(len(m)) + " " + str(has(m, 6)) + " " + str(m[7]) + " " + str(m[199007]));
+    remove(m, 7);
+    set m[7] = 70;
+    set m[6] = 60;
+    let ks = keys(m);
+    print(
+        str(len(m)) + " " + str(ks[0]) + " " + str(ks[len(ks) - 2]) + " " + str(m[ks[len(ks) - 1]])
+    );
+    let names = new map[str, int];
+    for i in 0..50000 {
+        set names["k" + str(i)] = i;
+    }
+    for i in 1..50000 {
+        remove(names, "k" + str(i));
+    }
+    print(str(len(names)) + " " + str(names["k0"]) + " " + str(has(names, "k49999")));
+}

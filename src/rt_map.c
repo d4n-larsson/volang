@@ -136,13 +136,11 @@ void map_remove(Map *map, long key, Type *key_type)
     me->key.i = 0; /* let the collector reclaim them */
     me->val.i = 0;
     map->count--;
-    /* ponytail: linear scan of the index for the removed entry, O(capacity) per remove; upgrade:
-       probe from the stored hash. Finds the index slot holding entry+1 and marks it removed. */
-    for (long i = 0; i < map->cap * 2; i++)
-        if (map->index[i] == (uint32_t)(e + 1)) {
-            map->index[i] = TOMB;
-            return;
-        }
+    /* The index slot holding entry+1 is on the probe sequence of its hash (map_find just walked it). */
+    unsigned long mask = (unsigned long)map->cap * 2 - 1;
+    unsigned long at = me->hash & mask;
+    while (map->index[at] != (uint32_t)(e + 1)) at = (at + 1) & mask;
+    map->index[at] = TOMB;
 }
 
 /* The live keys in insertion order. */
