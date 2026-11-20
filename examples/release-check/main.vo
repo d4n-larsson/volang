@@ -84,7 +84,7 @@ fn main() -> result[void] uses console, file.write(out_dir), file.delete(out_dir
         case err(_) {
         }
     }
-    try make_dir(out_dir);
+    try make_dir("out");
     let lines = report(checks);
     for line in lines {
         print(line);

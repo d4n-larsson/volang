@@ -81,9 +81,12 @@ def main():
         for i in range(max(10, a.iterations // 10)):
             name = rng.choice(names)
             split = rng.randint(0, len(name))
-            src = ('fn main() uses console, env("A_OK") {\n'
-                   f'    match env({vo_str(name[:split])} + {vo_str(name[split:])}) {{\n'
-                   '        case ok(v) {\n            print("set");\n        }\n'
+            # the name comes from a call, so only the run-time check can see it (spec 031: a constant
+            # expression such as "A_N" + "O" is checked by `vo check`, E0503)
+            src = (f'fn part() -> str {{\n    return {vo_str(name[split:])};\n}}\n\n'
+                   'fn main() uses console, env("A_OK") {\n'
+                   f'    match env({vo_str(name[:split])} + part()) {{\n'
+                   '        case ok(_) {\n            print("set");\n        }\n'
                    '        case err(e) {\n            print(e);\n        }\n    }\n}\n')
             code, err = run(src, tmp, env)
             denied = "R0010" in err
