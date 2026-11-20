@@ -1,0 +1,12 @@
+fn count(m: map[Reading, int]) -> int {
+    return len(m);
+}
+
+record Reading {
+    sensor: str;
+    value: float;
+}
+
+fn main() uses console {
+    print("readings");
+}

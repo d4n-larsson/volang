@@ -1,0 +1,33 @@
+# Spec 033: a generic function keyed by `K: key`, with every kind of key, and passed on.
+record Point {
+    x: int;
+    y: int;
+}
+
+variant Status {
+    open;
+    closed(str);
+}
+
+fn count[K: key](xs: list[K]) -> map[K, int] {
+    let m = new map[K, int];
+    for x in xs {
+        set m[x] = get_or(m, x, 0) + 1;
+    }
+    return m;
+}
+
+fn distinct[K: key](xs: list[K]) -> int {
+    return len(count(xs));
+}
+
+fn main() uses console {
+    let ints = count([3, 1, 3, 3]);
+    print(str(len(ints)) + " " + str(ints[3]) + " " + str(keys(ints)[1]));
+    let words = count(["a", "b", "a"]);
+    print(str(words["a"]) + " " + str(has(words, "c")));
+    let points = count([new Point { x: 1, y: 2 }, new Point { x: 1, y: 2 }, new Point { x: 2, y: 1 }]);
+    print(str(points[new Point { x: 1, y: 2 }]) + " " + str(distinct([new Point { x: 0, y: 0 }, new Point { x: 0, y: 0 }])));
+    let statuses = count([Status.open, Status.closed("a"), Status.open]);
+    print(str(statuses[Status.open]) + " " + str(distinct([Status.closed("a"), Status.closed("b")])));
+}

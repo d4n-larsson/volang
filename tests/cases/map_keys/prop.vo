@@ -1,0 +1,20 @@
+# Spec 033: property inputs include maps with record and variant keys, and a failing one is shrunk.
+record Point {
+    x: int;
+    y: int;
+}
+
+variant Status {
+    open;
+    closed(str);
+}
+
+prop "few points" (m: map[Point, int]) {
+    expect(len(m) < 3);
+}
+
+prop "statuses come back" (m: map[Status, int]) {
+    for s in keys(m) {
+        expect(has(m, s));
+    }
+}

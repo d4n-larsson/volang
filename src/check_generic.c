@@ -135,8 +135,114 @@ static Str *json_why(Type *t, Str *path, long depth)
     }
 }
 
+/* Spec 033: 0 when t can be a map key (research R1), otherwise why the first part that cannot, with
+ * its path from the top (`items` is a list). */
+static Vec *key_seen; /* the records and variants already looked at in this check (recursive types) */
+
+static Str *key_why_d(Type *t, Str *path, long depth)
+{
+    if (!t || depth > 64) return 0;
+    switch (t->kind) {
+    case TY_INT:
+    case TY_BOOL:
+    case TY_STR:
+    case TY_BYTES:
+    case TY_ERROR: return 0;
+    case TY_FLOAT:
+        if (!path->len) return str_from_cstr("key by `str(x)` or a scaled `int`");
+        return json_part(path, "is `float`", 0);
+    case TY_PARAM:
+        if (t->b.i == TPC_KEY) return 0;
+        if (!path->len)
+            return t->b.i == TPC_ORDERED ? str_from_cstr("it is declared `ordered`, not `key`")
+                 : t->b.i == TPC_JSON    ? str_from_cstr("it is declared `json`, not `key`")
+                                         : msg("declare it as `$1: key`", ty_param_name(t), 0, 0);
+        return json_part(path, "is the type parameter `$1`, which needs `: key`", ty_param_name(t));
+    case TY_LIST: return json_part(path, "is a list, which can change", 0);
+    case TY_MAP: return json_part(path, "is a map, which can change", 0);
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: return json_part(path, "is `$1`, which can change", ty_name(t));
+    case TY_FUNC: return json_part(path, "is a function", 0);
+    case TY_RESULT: return json_part(path, "is a result", 0);
+    case TY_RECORD:
+    case TY_VARIANT: {
+        for (long i = 0; i < key_seen->n; i++)
+            if (vec_get(key_seen, i) == t) return 0; /* (each instance once: recursive types end) */
+        vec_push(key_seen, t);
+        Node *decl = t->decl.n;
+        Vec *tps = ty_tparams_of(decl);
+        Vec *ms = decl->b.v;
+        for (long i = 0; i < ms->n; i++) {
+            Node *m = vec_get(ms, i);
+            if (m->kind == N_COMMENT || !m->b.n || !m->b.n->type) continue; /* (a case without a value) */
+            Type *mt = tps && tps->n && t->b.v ? ty_subst(m->b.n->type, decl, t->b.v) : m->b.n->type;
+            Str *p = path->len ? msg("$1.$2", path, m->a.n->a.s, 0) : m->a.n->a.s;
+            Str *why = key_why_d(mt, p, depth + 1);
+            if (why) return why;
+        }
+        return 0;
+    }
+    default: return json_part(path, "is `$1`, which cannot be a key", ty_name(t));
+    }
+}
+
+Str *key_why(Type *t)
+{
+    key_seen = vec_new();
+    return key_why_d(t, str_from_cstr(""), 0);
+}
+
+/* While the items' types are being resolved, a record's fields may not be yet: key checks wait in this
+ * list (type, node pairs) until every item is resolved (key_checks_end). */
+static Vec *key_pending;
+
+/* E0309 at node when t cannot be a map key; a bare type parameter gets the fix `: key`. */
+static void key_report(Type *t, Node *node)
+{
+    Str *why = key_why(t);
+    if (!why) return;
+    Diag *d = ck_err("E0309", node, msg("`$1` cannot be a map key: $2.", ty_name(t), why, 0));
+    if (t->kind == TY_PARAM && !t->b.i) { /* a bare `K`: the fix declares it `K: key` */
+        Vec *tps = ty_tparams_of(t->decl.n);
+        Node *nn = tps ? ((Node *)vec_get(tps, t->a.i))->a.n : 0;
+        if (nn) diag_add_fix(d, (int)nn->file, nn->end, nn->end, str_from_cstr(": key"));
+    }
+}
+
+void key_check(Type *t, Node *node)
+{
+    if (!key_pending) {
+        key_report(t, node);
+        return;
+    }
+    vec_push(key_pending, t);
+    vec_push(key_pending, node);
+}
+
+Vec *key_checks_begin(void)
+{
+    Vec *saved = key_pending;
+    key_pending = vec_new();
+    return saved;
+}
+
+void key_checks_end(Vec *saved)
+{
+    Vec *v = key_pending;
+    key_pending = 0;
+    for (long i = 0; i + 1 < v->n; i += 2) key_report(vec_get(v, i), vec_get(v, i + 1));
+    key_pending = saved;
+}
+
 int check_targ(Type *t, Node *tparam, Node *node, Str *owner_name)
 {
+    if (tparam->b.i == TPC_KEY) { /* spec 033: E0309 */
+        (void)owner_name;
+        key_check(t, node);
+        return 1;
+    }
     if (tparam->b.i == TPC_JSON) { /* spec 029: E0328 */
         json_seen = vec_new();
         Str *why = json_why(t, str_from_cstr(""), 0);

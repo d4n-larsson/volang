@@ -1,0 +1,26 @@
+# Spec 033: a record is a map key; a fresh equal record finds the entry.
+record Point {
+    x: int;
+    y: int;
+}
+
+fn at(x: int, y: int) -> Point {
+    return new Point { x: x, y: y };
+}
+
+fn main() uses console {
+    let seen = new map[Point, int];
+    set seen[at(1, 2)] = 1;
+    set seen[at(1, 2)] = get_or(seen, at(1, 2), 0) + 1;
+    print(str(len(seen)) + " " + str(seen[at(1, 2)]));
+    set seen[at(3, 4)] = 30;
+    set seen[at(0, 0)] = 0;
+    remove(seen, at(1, 2));
+    print(str(has(seen, at(1, 2))) + " " + str(len(seen)));
+    set seen[at(1, 2)] = 5;
+    for p in keys(seen) {
+        print(str(p.x) + "," + str(p.y) + " = " + str(seen[p]));
+    }
+    remove(seen, at(9, 9));
+    print(str(len(seen)));
+}

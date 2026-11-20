@@ -1,6 +1,6 @@
 # Lists and maps
 
-`list[T]` is a growable sequence and `map[K, V]` a table from `int` or `str` keys to values in insertion order; both are references, changed in place by builtins such as `push` and `set m[k] = v;`.
+`list[T]` is a growable sequence and `map[K, V]` a table from keys to values in insertion order; both are references, changed in place by builtins such as `push` and `set m[k] = v;`.
 
 ## Two collections for most programs
 
@@ -198,9 +198,10 @@ the elements are lists, maps or records, the copy points at the same ones.
 
 ## Maps
 
-A map is created empty with `new map[K, V]`; there is no map literal. Keys are `int` or `str`
-([E0309](../errors/E0309.md) for any other type); values can be any type, including lists and other
-maps.
+A map is created empty with `new map[K, V]`; there is no map literal. Keys are `int`,
+`bool`, `str`, `bytes`, or records and variants made of those ([E0309](../errors/E0309.md) for a
+`float`, a list, a map, a function or a `result`, alone or inside a record); values can be any type,
+including lists and other maps.
 
 ```vo
 fn main() uses console {
@@ -310,6 +311,39 @@ even: 2
 Maps are references in the same way as lists: a map passed to a function is the caller's map. There is
 no builtin to copy a `map`; build a new one from `keys(m)`.
 
+### Keys made of several values
+
+A key that combines several values is a record. Two keys are the same entry when `==` says they are
+equal, so a fresh record with the same fields finds the entry:
+
+```vo
+record Visit {
+    user: str;
+    day: int;
+}
+
+fn main() uses console {
+    let pages = new map[Visit, int];
+    for user in ["ada", "bo", "ada"] {
+        let v = new Visit { user: user, day: 3 };
+        set pages[v] = get_or(pages, v, 0) + 1;
+    }
+    print(str(len(pages)) + " " + str(pages[new Visit { user: "ada", day: 3 }]));
+}
+```
+
+```output
+2 2
+```
+
+Building the key as text instead, `user + "," + str(day)`, formats and allocates on every lookup,
+loses the key's type (`keys(m)` gives text to parse back) and merges two keys when a field contains the
+separator. Do not change a record while it is a key: the map keeps it under its old value, so remove it,
+change it and add it again.
+
+A generic function that keys a map by its type parameter declares it `K: key`:
+`fn count[K: key](xs: list[K]) -> map[K, int]`.
+
 ## Iteration
 
 `for x in xs` visits the elements of a list in order. A map is not iterable itself: loop over its keys
@@ -354,7 +388,7 @@ Changing a collection while looping over it needs care:
 | Code | Meaning |
 |---|---|
 | [E0306](../errors/E0306.md) | `[]` has no element type: write `new list[T]` |
-| [E0309](../errors/E0309.md) | a map key type is not `int` or `str` |
+| [E0309](../errors/E0309.md) | a map key type contains a `float`, a collection, a function or a `result` |
 | [E0313](../errors/E0313.md) | `sort` or a `sort_by` key on a type without an order |
 | [R0003](../errors/R0003.md) | an index or `slice` bound outside the list |
 | [R0004](../errors/R0004.md) | `m[k]` for a missing key |

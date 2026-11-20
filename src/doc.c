@@ -124,6 +124,8 @@ void doc_tparams(SB *sb, Node *decl)
             sb_cstr(sb, ": effects");
         else if (tp->b.i == TPC_JSON)
             sb_cstr(sb, ": json");
+        else if (tp->b.i == TPC_KEY)
+            sb_cstr(sb, ": key");
     }
     sb_byte(sb, ']');
 }

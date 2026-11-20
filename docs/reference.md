@@ -61,9 +61,9 @@ line two
 | `float` | 64-bit IEEE | `str` gives the shortest text that reads back as the same value: `str(0.1 + 0.2)` is `"0.30000000000000004"` |
 | `bool` | `true`, `false` | conditions must be `bool`: no truthiness |
 | `str` | immutable UTF-8 text, always valid | `len` counts bytes; text from files, input, arguments, the environment, programs and HTTP is checked when read (`err`, or R0007 where no `result` is returned) |
-| `bytes` | immutable bytes 0–255 | no literal: `std.bytes`; `len`, `b[i]` (an `int`), `slice`, `+`, `==`, `<`; not a map key; never mixed with `str` |
+| `bytes` | immutable bytes 0–255 | no literal: `std.bytes`; `len`, `b[i]` (an `int`), `slice`, `+`, `==`, `<`; never mixed with `str` |
 | `list[T]` | ordered, growable | reference type |
-| `map[K, V]` | insertion-ordered | `K` is `int` or `str` (E0309); reference type |
+| `map[K, V]` | insertion-ordered | `K` is a key: `int`, `bool`, `str`, `bytes`, or a record or variant made of those (E0309); reference type |
 | `ordered_map[K, V]` | keys ascending | `K` ordered; reference type |
 | `ordered_set[T]` | ascending, each once | `T` ordered; reference type |
 | `priority_queue[T]` | `pop` gives the smallest | ties leave in push order; reference type |
@@ -585,7 +585,7 @@ variant Tree[T] { leaf; node(Node[T]); }
 fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E { ... }
 ```
 
-- Type parameters follow the name. A plain `T` supports only `==` and `!=`; `T: ordered` also `<`, `<=`, `>`, `>=`, `min`, `max` and `sort`, and must be `int`, `float`, `str`, or a record whose fields are all ordered, compared field by field in declaration order (E0311, E0313). `T: json` is any type made of scalars, `bytes`, lists, `map[str, V]`, records and variants (E0328 otherwise). `E: effects` is an effect parameter: whatever effects the function passed in has, the caller needs.
+- Type parameters follow the name. A plain `T` supports only `==` and `!=`; `T: ordered` also `<`, `<=`, `>`, `>=`, `min`, `max` and `sort`, and must be `int`, `float`, `str`, or a record whose fields are all ordered, compared field by field in declaration order (E0311, E0313). `T: json` is any type made of scalars, `bytes`, lists, `map[str, V]`, records and variants (E0328 otherwise). `K: key` is a map key type (E0309). `E: effects` is an effect parameter: whatever effects the function passed in has, the caller needs.
 - Generic types are written with their arguments: `Pair[int, str]` (E0312).
 - Type arguments are never written at calls, and may be left out of `new` and of cases: they come from the arguments or field values, then from the expected type (a parameter, a return type, an annotated variable): `insert(Tree.leaf, 5)`, `new Pair { first: 1, second: "a" }`. Effect arguments come from the expected type first when it has them, so values with fewer effects fit a declared `list[Route[uses file.read]]`; a type's effects allow any scope. When they cannot be inferred, annotate the variable (E0310).
 - Generic code is checked once, where it is written.
@@ -773,7 +773,7 @@ fn main() {
 
 **Lists**: `[1, 2, 3]` builds a list from at least one element of one type. An empty list needs its type: `new list[int]` (`[]` is E0306). `xs[i]` reads (0-based; out of range is R0003), `set xs[i] = v;` replaces an existing element, `push(xs, v)` appends, `pop(xs)` removes the last element and returns a `result`. `len(xs)` is the length. `slice(xs, a, b)` returns a new list with elements `a` to `b - 1`. `sort(xs)` sorts a list of `int`, `float` or `str` in place.
 
-**Maps**: there is no map literal. Create with `new map[str, int]` (keys are `int` or `str`). `set m[k] = v;` inserts or updates. `m[k]` reads and stops the program with R0004 if the key is missing, so check `has(m, k)` first. `remove(m, k)` deletes. `keys(m)` lists keys in insertion order; updating an existing key keeps its position. `len(m)` counts entries.
+**Maps**: there is no map literal. Create with `new map[str, int]`. A record key (`map[Cell, str]`) replaces a key glued together from text. `set m[k] = v;` inserts or updates. `m[k]` reads and stops the program with R0004 if the key is missing, so check `has(m, k)` first. `remove(m, k)` deletes. `keys(m)` lists keys in insertion order; updating an existing key keeps its position. `len(m)` counts entries.
 
 **References**: lists, maps and records are shared, not copied, by assignment, by passing them to a function and by storing them in another collection. `let` only stops rebinding the name; the contents can still change. Copy a list with `slice(xs, 0, len(xs))`.
 
@@ -808,7 +808,15 @@ apple,fig,pear
 ```
 
 ```vo
+record Cell {
+    row: int;
+    col: int;
+}
+
 fn main() uses console {
+    let seen = new map[Cell, str];
+    set seen[new Cell { row: 1, col: 2 }] = "x";
+    print(seen[new Cell { row: 1, col: 2 }]);
     let counts = new map[str, int];
     for w in split("b a b c b", " ") {
         if has(counts, w) {
@@ -826,6 +834,7 @@ fn main() uses console {
 ```
 
 ```output
+x
 b=3
 a=1
 2
@@ -843,7 +852,7 @@ fn main() uses console {
 
 ## Builtins
 
-`T` is any type, `K` is `int` or `str`, `C` is `int`, `float` or `str`. Builtins are called like functions: `len(xs)`, never `xs.len()`.
+`T` is any type, `K` a key type, `C` is `int`, `float` or `str`. Builtins are called like functions: `len(xs)`, never `xs.len()`.
 
 | Builtin | Signature | Notes |
 |---|---|---|
@@ -895,7 +904,7 @@ fn main() uses console {
 
 Indexing is not a builtin but follows the same rules: `xs[i]` (R0003 out of range), `m[k]` (R0004 missing key), `set xs[i] = v;`, `set m[k] = v;`.
 
-Create the collections like maps: `new ordered_map[str, int]`, `new deque[int]`. `len`, `has`, `remove`, `get_or`, `keys`, `push`, `pop`, indexing and `for` work on them: `push` adds to a set or queue (a deque: at the back), `pop` takes a queue's smallest item or a deque's back element. `std.collections` has the rest (`first_key`, `after`, `union`, `push_front`, ...) and `ordered_map_by(cmp)` etc. for another order. A `for` loop over a collection copies it first (all of it, even with `break`). Changing a record while it is a key or set element breaks the order: remove it, change it, add it again.
+Create the collections like maps: `new ordered_map[str, int]`, `new deque[int]`. `len`, `has`, `remove`, `get_or`, `keys`, `push`, `pop`, indexing and `for` work on them: `push` adds to a set or queue (a deque: at the back), `pop` takes a queue's smallest item or a deque's back element. `std.collections` has the rest (`first_key`, `after`, `union`, `push_front`, ...) and `ordered_map_by(cmp)` etc. for another order. A `for` loop over a collection copies it first (all of it, even with `break`). Changing a record while it is a key or set element (here or in a `map`) loses it: remove it, change it, add it again.
 
 ```vo
 fn main() uses console {

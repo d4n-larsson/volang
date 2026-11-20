@@ -1,0 +1,18 @@
+$ vo package main.vo keys shared/keys
+added keys shared/keys sha256:3849c47598624326b616c98ee8568389275101f80788892165da365ce5e7b55a
+--- stderr
+--- exit 0
+$ vo doc keys.count
+fn count[K: key](xs: list[K]) -> map[K, int]
+    How often each value occurs, in the order values first appear.
+--- stderr
+--- exit 0
+$ vo doc keys.count.count
+fn count[K: key](xs: list[K]) -> map[K, int]
+    How often each value occurs, in the order values first appear.
+--- stderr
+--- exit 0
+$ vo run main.vo
+2
+--- stderr
+--- exit 0

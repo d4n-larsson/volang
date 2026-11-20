@@ -1,0 +1,5 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"bump","file":"main.vo","start":{"line":14,"col":15},"args":[{"name":"m","value":"{}"},{"name":"p","value":"new Point { x: 1, y: 2 }"}]}
+{"v":1,"kind":"return","depth":2,"function":"bump","value":"1"}
+{"v":1,"kind":"return","depth":1,"function":"main"}
+{"v":1,"kind":"end","records":4,"omitted":0,"status":0}

@@ -1,0 +1,22 @@
+# Spec 033: many record keys; lookups and removes stay correct.
+record P {
+    a: int;
+    b: str;
+}
+
+fn main() uses console {
+    let m = new map[P, int];
+    for i in 0..100000 {
+        set m[new P { a: i % 317, b: str(i / 317) }] = i;
+    }
+    var found = 0;
+    for i in 0..100000 {
+        if get_or(m, new P { a: i % 317, b: str(i / 317) }, -1) == i {
+            set found = found + 1;
+        }
+    }
+    for i in 0..50000 {
+        remove(m, new P { a: i % 317, b: str(i / 317) });
+    }
+    print(str(found) + " " + str(len(m)) + " " + str(has(m, new P { a: 0, b: "0" })) + " " + str(has(m, new P { a: 99999 % 317, b: str(99999 / 317) })));
+}

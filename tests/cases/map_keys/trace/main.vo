@@ -1,0 +1,15 @@
+# Spec 033: a trace shows record keys in vo syntax.
+record Point {
+    x: int;
+    y: int;
+}
+
+fn bump(m: map[Point, int], p: Point) -> int {
+    set m[p] = get_or(m, p, 0) + 1;
+    return m[p];
+}
+
+fn main() uses console {
+    let m = new map[Point, int];
+    print(str(bump(m, new Point { x: 1, y: 2 })));
+}

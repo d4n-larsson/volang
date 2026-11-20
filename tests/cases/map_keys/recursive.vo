@@ -1,0 +1,22 @@
+# Spec 033: a recursive variant is a key; equal trees are the same key.
+variant Tree {
+    leaf(int);
+    node(Pair);
+}
+
+record Pair {
+    left: Tree;
+    right: Tree;
+}
+
+fn pair(a: Tree, b: Tree) -> Tree {
+    return Tree.node(new Pair { left: a, right: b });
+}
+
+fn main() uses console {
+    let m = new map[Tree, int];
+    set m[pair(Tree.leaf(1), Tree.leaf(2))] = 12;
+    set m[pair(Tree.leaf(2), Tree.leaf(1))] = 21;
+    set m[pair(pair(Tree.leaf(1), Tree.leaf(2)), Tree.leaf(3))] = 123;
+    print(str(len(m)) + " " + str(m[pair(Tree.leaf(1), Tree.leaf(2))]) + " " + str(m[pair(pair(Tree.leaf(1), Tree.leaf(2)), Tree.leaf(3))]));
+}

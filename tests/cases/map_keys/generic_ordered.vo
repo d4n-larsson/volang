@@ -1,0 +1,8 @@
+fn count[K: ordered](xs: list[K]) -> int {
+    let m = new map[K, int];
+    return len(m) + len(xs);
+}
+
+fn main() uses console {
+    print(str(count([1])));
+}

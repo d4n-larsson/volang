@@ -1,0 +1,6 @@
+missing.vo:10:15: runtime error[R0004]: Key new Point { x: 1, y: 2 } is not in the map.
+  10 |     print(str(m[new Point { x: 1, y: 2 }]));
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at main (missing.vo:10:15)
+      m: map[Point, int] = {new Point { x: 0, y: 0 }: 1}

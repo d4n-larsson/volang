@@ -1084,7 +1084,7 @@ static Vec *parse_tparams(void)
         long start = p_start();
         Node *t = p_node(N_TPARAM);
         t->a.n = p_name();
-        if (p_accept(T_COLON)) { /* the constraint: `ordered` or `effects` */
+        if (p_accept(T_COLON)) { /* the constraint: `ordered`, `effects`, `json` or `key` */
             long c = 0;
             if (p_kind() == T_IDENT) {
                 if (str_eq_cstr(p_tok_str(p_tok()), "ordered"))
@@ -1093,9 +1093,11 @@ static Vec *parse_tparams(void)
                     c = TPC_EFFECTS;
                 else if (str_eq_cstr(p_tok_str(p_tok()), "json"))
                     c = TPC_JSON;
+                else if (str_eq_cstr(p_tok_str(p_tok()), "key"))
+                    c = TPC_KEY;
             }
             if (!c) {
-                p_fail_c("`ordered`, `effects` or `json`", "constraint");
+                p_fail_c("`ordered`, `effects`, `json` or `key`", "constraint");
                 return v;
             }
             t->b.i = c;

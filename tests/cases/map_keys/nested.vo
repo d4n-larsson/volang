@@ -1,0 +1,29 @@
+# Spec 033: a record holding a record and a variant is a key; the whole value is compared.
+variant Kind {
+    small;
+    big(int);
+}
+
+record Cell {
+    row: int;
+    col: int;
+}
+
+record Slot {
+    cell: Cell;
+    kind: Kind;
+    label: str;
+}
+
+fn slot(r: int, c: int, k: Kind) -> Slot {
+    return new Slot { cell: new Cell { row: r, col: c }, kind: k, label: "s" };
+}
+
+fn main() uses console {
+    let m = new map[Slot, str];
+    set m[slot(1, 1, Kind.small)] = "a";
+    set m[slot(1, 1, Kind.big(2))] = "b";
+    set m[slot(1, 1, Kind.big(3))] = "c";
+    set m[slot(1, 1, Kind.big(2))] = "B";
+    print(str(len(m)) + " " + m[slot(1, 1, Kind.big(2))] + " " + get_or(m, slot(2, 1, Kind.small), "-"));
+}

@@ -1,0 +1,16 @@
+record Index[K: key, V] {
+    by: map[K, V];
+}
+
+fn count[K: key](xs: list[K]) -> int {
+    let m = new map[K, int];
+    return len(m) + len(xs);
+}
+
+fn main() uses console {
+    print(str(count([1.5, 2.5])));
+}
+
+fn size(i: Index[float, int]) -> int {
+    return len(i.by);
+}

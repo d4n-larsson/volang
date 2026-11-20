@@ -1,0 +1,10 @@
+record Point {
+    x: int;
+    y: int;
+}
+
+fn main() uses console {
+    let seen = new map[Point, int];
+    set seen[new Point { x: 1, y: 2 }] = 1;
+    print(str(len(seen)));
+}

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0309","name":"invalid_map_key","severity":"error","file":"generic_ordered.vo","start":{"line":2,"col":21},"end":{"line":2,"col":22},"text":"K","message":"`K` cannot be a map key: it is declared `ordered`, not `key`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

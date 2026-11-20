@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0309","name":"invalid_map_key","severity":"error","file":"generic_call.vo","start":{"line":11,"col":15},"end":{"line":11,"col":32},"text":"count([1.5, 2.5])","message":"`float` cannot be a map key: key by `str(x)` or a scaled `int`.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0309","name":"invalid_map_key","severity":"error","file":"generic_call.vo","start":{"line":14,"col":18},"end":{"line":14,"col":23},"text":"float","message":"`float` cannot be a map key: key by `str(x)` or a scaled `int`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

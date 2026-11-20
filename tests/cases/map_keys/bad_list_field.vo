@@ -1,0 +1,9 @@
+record Order {
+    id: int;
+    items: list[str];
+}
+
+fn main() uses console {
+    let m = new map[Order, int];
+    print(str(len(m)));
+}

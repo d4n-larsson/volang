@@ -1,0 +1,18 @@
+# Spec 033: a record changed while it is a key: the documented hazard, never a crash.
+record Point {
+    x: int;
+    y: int;
+}
+
+fn main() uses console {
+    let m = new map[Point, int];
+    let p = new Point { x: 1, y: 1 };
+    set m[p] = 1;
+    set p.x = 2;
+    print(str(has(m, new Point { x: 2, y: 1 })) + " " + str(has(m, new Point { x: 1, y: 1 })) + " " + str(len(m)));
+    remove(m, p);
+    print(str(len(m)));
+    for k in keys(m) {
+        print(str(k.x));
+    }
+}

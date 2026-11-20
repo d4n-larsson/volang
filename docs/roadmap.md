@@ -39,6 +39,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [030](../specs/030-readable-signatures/) | readable signatures: `vo fmt` lays out headers over 100 characters (the effect clause on its own line, then parameters one per line); named effect sets (`effects Storage = ...;`, `uses console, Storage`) with one form for effects everywhere | **Done** ([results](../specs/030-readable-signatures/results.md)) |
 | [031](../specs/031-constants/) | Constants: `const name = value;` items of type `int`, `float`, `bool` or `str`, worked out by the checker from literals, constants and operators; usable as effect scopes, annotation limits and checked templates; reviews show values | **Implemented** ([results](../specs/031-constants/results.md)) |
 | [032](../specs/032-typed-errors/) | Typed errors: `result[T, E]` (`result[T]` is `result[T, str]`), `try` only between the same error types (E0412), `map_err` the one conversion; `std.web`'s `typed(op, answer)` maps a variant to statuses in one checked function; `std.option` | **Implemented** ([results](../specs/032-typed-errors/results.md)) |
+| [033](../specs/033-map-keys/) | Structural map keys: `map[K, V]` keyed by `int`, `bool`, `str`, `bytes`, records and variants of those, compared like `==`; `K: key` for generic code; E0309 names the part that is not a key | **Implemented** ([results](../specs/033-map-keys/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -348,6 +349,19 @@ types (E0412); `map_err(r, f)` is the one conversion; `main` and tests keep `str
   arguments inferred (`on_get(p, typed(op, f))` with `op` generic in its effects): the notes API writes
   the operations' types out. Worth a small spec of its own.
 
+### 033: structural map keys (implemented)
+
+Map keys were `int` or `str`, so programs glued compound keys together from text
+(`str(x) + "," + str(y)`): slower, untyped, and wrong when a field holds the separator. A key is now any
+type made of `int`, `bool`, `str`, `bytes`, records and variants, hashed and compared structurally, so
+two keys are one entry exactly when `==` says so. Generic code declares `K: key`; E0309 names the part
+that cannot be a key (`value` is `float`) and adds `: key` to a bare parameter. `int` and `str` keys run
+the same code as before.
+
+- **Not done (on purpose):** `float` and `result` keys, tuples (a record is the one way to group values),
+  detecting a record changed while it is a key (documented, as for `ordered_map`), combining two
+  constraints on one parameter.
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -361,7 +375,7 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Downloading packages | packages are local and pinned by hash, never fetched | spec 007 follow-up; HTTPS exists since spec 019 |
 | Language server | no completion, hover or diagnostics in editors | `vo query` and `vo check --json` already have the data |
 | Debugger | traces, locals in errors and replay, but no stepping | replay makes a deterministic stepper possible |
-| Tuples, more map keys | no tuple type; map keys are `int` or `str` only | records and ordered maps cover some cases |
+| Tuples | no tuple type | map keys done in spec 033; tuples declined for now: a record groups values and is a key |
 | `old()` in `ensures` | contracts cannot compare with values from before the call | spec 005 follow-up |
 | Confined child programs | a program started under `process` runs with the user's full rights | opt-in confinement to the grant (Landlock); spec 017 follow-up |
 | Serving over HTTPS | `std.http.serve` answers plain HTTP only; a public server needs a proxy in front | spec 019 follow-up: certificate and key under the program's grants |

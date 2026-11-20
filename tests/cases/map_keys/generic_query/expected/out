@@ -1,0 +1,15 @@
+$ vo query refs main.vo main.vo:5:10
+main.vo:5:10 declaration in count: fn count[K: key](xs: list[K]) -> int {
+main.vo:5:27 type in count: fn count[K: key](xs: list[K]) -> int {
+main.vo:6:21 type in count: let m = new map[K, int];
+3 references
+--- stderr
+--- exit 0
+$ vo query refs main.vo main.vo:1:8
+main.vo:1:8 declaration in big: fn big[T: ordered](a: T, b: T) -> T {
+main.vo:1:23 type in big: fn big[T: ordered](a: T, b: T) -> T {
+main.vo:1:29 type in big: fn big[T: ordered](a: T, b: T) -> T {
+main.vo:1:35 type in big: fn big[T: ordered](a: T, b: T) -> T {
+4 references
+--- stderr
+--- exit 0

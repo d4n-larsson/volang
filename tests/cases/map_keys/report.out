@@ -1,0 +1,6 @@
+FAIL the grid (0ms)
+  report.vo:18:5: `expect_eq` failed: the values differ.
+    expected: {new Point { x: 1, y: 2 }: 3, new Point { x: 2, y: 2 }: 4}
+    actual:   {new Point { x: 1, y: 2 }: 3, new Point { x: 2, y: 1 }: 4}
+    first difference at [new Point { x: 2, y: 2 }]: expected 4, actual (none)
+0 passed, 1 failed

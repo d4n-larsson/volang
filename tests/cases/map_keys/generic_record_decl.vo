@@ -1,0 +1,20 @@
+# Spec 033: a generic record whose field is a map keyed by its `K: key` parameter.
+record Index[K: key, V] {
+    by: map[K, V];
+}
+
+record Point {
+    x: int;
+    y: int;
+}
+
+fn put[K: key, V](i: Index[K, V], k: K, v: V) {
+    set i.by[k] = v;
+}
+
+fn main() uses console {
+    let i = new Index[Point, str] { by: new map[Point, str] };
+    put(i, new Point { x: 1, y: 1 }, "a");
+    put(i, new Point { x: 1, y: 1 }, "b");
+    print(str(len(i.by)) + " " + i.by[new Point { x: 1, y: 1 }]);
+}

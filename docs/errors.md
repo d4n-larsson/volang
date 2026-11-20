@@ -1265,17 +1265,18 @@ fn main() uses console {
 
 ## E0309 invalid_map_key
 
-A map key type is not `int` or `str`.
+A map key type contains a part that cannot be compared as a key.
 
-Fixable: no
+Fixable: sometimes
 
-Map keys must be `int` or `str`. Convert other keys to one of these, for example a `bool` to `"true"`/`"false"`, `bytes` to their hex with `std.bytes.to_hex`, or a record to a `str` built from its fields.
+Map keys are `int`, `bool`, `str`, `bytes`, and records and variants made of those. A `float` (NaN is not equal to itself), a list, a map or another collection (they change in place), a function or a `result` cannot be a key, alone or inside a record or variant; the message names the part. A type parameter used as a key must be declared `K: key`; the fix adds `: key` to a parameter declared without a constraint.
 
 ### Example
 
 ```vo
 fn main() uses console {
-    let m = new map[bool, int];
+    let m = new map[float, int];
+    set m[0.5] = 1;
     print(str(len(m)));
 }
 ```
@@ -1284,7 +1285,8 @@ fn main() uses console {
 
 ```vo
 fn main() uses console {
-    let m = new map[str, int];
+    let m = new map[int, int];
+    set m[50] = 1;
     print(str(len(m)));
 }
 ```

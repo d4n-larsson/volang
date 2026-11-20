@@ -306,6 +306,7 @@
 #define TPC_ORDERED (1)
 #define TPC_EFFECTS (2)
 #define TPC_JSON (3) /* spec 029: convertible to and from JSON */
+#define TPC_KEY (4)  /* spec 033: usable as a map key */
 #define CV_CLOSURE (1)
 #define CV_FIELD (2)
 
@@ -1546,6 +1547,10 @@ extern Type *check_hof(Node *call, long id);
 extern void tparams_push(Vec *tparams, Node *owner);
 extern int ty_ordered(Type *t);
 extern int check_targ(Type *t, Node *tparam, Node *node, Str *owner_name);
+extern Str *key_why(Type *t);
+extern void key_check(Type *t, Node *node);
+extern Vec *key_checks_begin(void);
+extern void key_checks_end(Vec *saved);
 extern Type *ty_argn_error(Node *node, Str *name, long want, long got);
 extern Type *resolve_instance(Node *node, Node *decl, int kind, Vec *arg_nodes);
 extern Type *effect_arg_error(Node *an, Node *decl, int why);

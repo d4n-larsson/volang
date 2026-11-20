@@ -210,7 +210,7 @@ static void fm_tparams(Vec *tparams)
         fm_name(t->a.n);
         if (t->b.i) {
             fm_c(": ");
-            fm_c(t->b.i == TPC_ORDERED ? "ordered" : t->b.i == TPC_JSON ? "json" : "effects");
+            fm_c(t->b.i == TPC_ORDERED ? "ordered" : t->b.i == TPC_JSON ? "json" : t->b.i == TPC_KEY ? "key" : "effects");
         }
     }
     fm_b(']');

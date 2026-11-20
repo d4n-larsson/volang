@@ -399,13 +399,7 @@ Type *resolve_type(Node *tn)
     case TY_MAP: {
         Type *k = resolve_type(tn->b.n);
         Type *v = resolve_type(tn->c.n);
-        if (!ty_bad(k) && !ty_is(k, TY_INT) && !ty_is(k, TY_STR)) {
-            ck_err1("E0309", tn->b.n,
-                    ty_is(k, TY_BYTES) ? "Map keys must be `int` or `str`, found `bytes`: use `std.bytes.to_hex` for a text key."
-                                       : "Map keys must be `int` or `str`, found `$1`.",
-                    ty_name(k));
-            break;
-        }
+        if (!ty_bad(k)) key_check(k, tn->b.n); /* spec 033: E0309 (deferred while items resolve) */
         t = ty_make(TY_MAP, k, v, 0);
         break;
     }
@@ -1369,7 +1363,10 @@ void check_items(int file, int mode)
     f->scope = ck_scope;
     const_check_all(items); /* spec 031: before effect sets and signatures, which may name them */
     fx_expand_sets(items); /* spec 030: before any clause names them */
+    Vec *saved_keys = key_checks_begin(); /* spec 033: map keys once every record's fields are known */
     for (long i = 0; i < items->n; i++) resolve_item(ck_item_set(vec_get(items, i)));
+    ck_item_set(0);
+    key_checks_end(saved_keys);
     check_export_types(items);
     check_tests_unique(items);
     check_annotations(items);

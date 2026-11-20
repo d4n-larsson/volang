@@ -1,0 +1,11 @@
+fn count[K:key,  V](xs: list[K], v: V) -> int {
+    return len(xs);
+}
+
+record Index[K :key, V] {
+    n: int;
+}
+
+fn main() {
+    let n = count([1], 2);
+}

@@ -1,0 +1,19 @@
+# Spec 033: a failing check shows record-keyed maps in vo syntax.
+record Point {
+    x: int;
+    y: int;
+}
+
+fn grid() -> map[Point, int] {
+    let m = new map[Point, int];
+    set m[new Point { x: 1, y: 2 }] = 3;
+    set m[new Point { x: 2, y: 1 }] = 4;
+    return m;
+}
+
+test "the grid" {
+    let want = new map[Point, int];
+    set want[new Point { x: 1, y: 2 }] = 3;
+    set want[new Point { x: 2, y: 2 }] = 4;
+    expect_eq(grid(), want);
+}

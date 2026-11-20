@@ -1,0 +1,4 @@
+vo edit rename main.vo main.vo:5:10 Key
+vo check main.vo
+vo run main.vo
+keep main.vo

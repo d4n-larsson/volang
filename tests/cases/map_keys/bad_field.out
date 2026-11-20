@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0309","name":"invalid_map_key","severity":"error","file":"bad_field.vo","start":{"line":1,"col":17},"end":{"line":1,"col":24},"text":"Reading","message":"`Reading` cannot be a map key: `value` is `float`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

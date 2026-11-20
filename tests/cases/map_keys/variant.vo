@@ -1,0 +1,28 @@
+# Spec 033: a variant is a map key; cases with and without a value.
+variant Status {
+    open;
+    closed(str);
+}
+
+fn name(s: Status) -> str {
+    match s {
+        case open {
+            return "open";
+        }
+        case closed(why) {
+            return "closed " + why;
+        }
+    }
+}
+
+fn main() uses console {
+    let by_status = new map[Status, int];
+    set by_status[Status.open] = 3;
+    set by_status[Status.closed("late")] = 1;
+    set by_status[Status.closed("done")] = 2;
+    set by_status[Status.closed("late")] = by_status[Status.closed("late")] + 10;
+    print(str(has(by_status, Status.closed("late"))) + " " + str(has(by_status, Status.closed("x"))));
+    for s in keys(by_status) {
+        print(name(s) + ": " + str(by_status[s]));
+    }
+}

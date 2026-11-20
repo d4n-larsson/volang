@@ -1,0 +1,4 @@
+$ vo query type-at main.vo main.vo:7:9
+main.vo:7:9 seen: map[Point, int] (declared at main.vo:7:9)
+--- stderr
+--- exit 0

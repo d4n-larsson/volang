@@ -1,0 +1,8 @@
+# How often each value occurs, in the order values first appear.
+export fn count[K: key](xs: list[K]) -> map[K, int] {
+    let m = new map[K, int];
+    for x in xs {
+        set m[x] = get_or(m, x, 0) + 1;
+    }
+    return m;
+}

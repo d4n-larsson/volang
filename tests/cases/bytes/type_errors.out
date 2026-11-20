@@ -6,5 +6,4 @@
 {"v":1,"kind":"diagnostic","code":"W0201","name":"unused_variable","severity":"warning","file":"type_errors.vo","start":{"line":9,"col":9},"end":{"line":9,"col":10},"text":"x","message":"`x` is never used.","fixes":[],"related":[]}
 {"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"type_errors.vo","start":{"line":9,"col":14},"end":{"line":9,"col":15},"text":"b","message":"`for ... in` needs a list or a range `a..b`, found `bytes`: loop over `std.bytes.to_ints(...)` or over the indexes `0..len(...)`.","fixes":[],"related":[]}
 {"v":1,"kind":"diagnostic","code":"W0201","name":"unused_variable","severity":"warning","file":"type_errors.vo","start":{"line":12,"col":9},"end":{"line":12,"col":10},"text":"m","message":"`m` is never used.","fixes":[],"related":[]}
-{"v":1,"kind":"diagnostic","code":"E0309","name":"invalid_map_key","severity":"error","file":"type_errors.vo","start":{"line":12,"col":21},"end":{"line":12,"col":26},"text":"bytes","message":"Map keys must be `int` or `str`, found `bytes`: use `std.bytes.to_hex` for a text key.","fixes":[],"related":[]}
-{"v":1,"kind":"summary","command":"check","errors":5,"warnings":4,"truncated":0,"files":1}
+{"v":1,"kind":"summary","command":"check","errors":4,"warnings":4,"truncated":0,"files":1}

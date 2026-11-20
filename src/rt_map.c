@@ -41,10 +41,78 @@ long map_hash(long key, int key_kind)
     return (long)((h ^ (h >> 32)) & 0xffffffffUL); /* keep 32 bits (stored as u32) */
 }
 
+/* Spec 033: FNV-1a over a key's structure (research R4): ints 8 bytes low first, text and bytes their
+ * length then their bytes, records field by field, variants their tag then their value. Equal keys
+ * (values_equal) hash equally; nothing depends on memory layout, so every platform agrees. */
+static unsigned long fnv_word(unsigned long h, unsigned long k)
+{
+    for (int i = 0; i < 8; i++, k >>= 8) h = (h ^ (k & 0xff)) * 0x100000001b3UL;
+    return h;
+}
+
+static unsigned long fnv_key(unsigned long h, long key, Type *type)
+{
+    check_stack((Node *)cur_node); /* deep keys are R0005, as for == */
+    type = rt_concrete(type);
+    switch (type->kind) {
+    case TY_STR:
+    case TY_BYTES: {
+        Str *s = (Str *)key;
+        h = fnv_word(h, (unsigned long)s->len);
+        for (long i = 0; i < s->len; i++) h = (h ^ (unsigned char)s->data[i]) * 0x100000001b3UL;
+        return h;
+    }
+    case TY_RECORD: {
+        Vec *fields = type->decl.n->b.v;
+        for (long i = 0;; i++) {
+            Node *m = member_at(fields, i);
+            if (!m) return h;
+            h = fnv_key(h, ((Record *)key)->fields[i].i, field_type_in(type, m->b.n->type));
+        }
+    }
+    case TY_VARIANT: {
+        long tag = (long)(uint32_t)((Variant *)key)->tag;
+        h = fnv_word(h, (unsigned long)tag);
+        Node *pt = member_at(type->decl.n->b.v, tag)->b.n; /* payload type node */
+        return pt ? fnv_key(h, ((Variant *)key)->pay.i, field_type_in(type, pt->type)) : h;
+    }
+    default: return fnv_word(h, (unsigned long)key); /* int, bool */
+    }
+}
+
+/* The 32-bit hash of a key of type t: int, bool and str as map_hash, others structurally. */
+static long key_hash(long key, Type *t)
+{
+    if ((unsigned long)t->kind > TY_VOID) t = rt_concrete(t); /* type parameters: the frame's arguments */
+    if ((unsigned long)t->kind <= TY_VOID) return map_hash(key, (int)t->kind); /* int, bool, str */
+    unsigned long h = fnv_key(0xcbf29ce484222325UL, key, t);
+    return (long)((h ^ (h >> 32)) & 0xffffffffUL);
+}
+
+/* map_find for keys that are not int, bool or str: hashed and compared structurally (out of line, so
+ * the int and str loop below stays as it was). */
+__attribute__((noinline)) static long map_find_structural(Map *map, long key, Type *key_type)
+{
+    key_type = rt_concrete(key_type); /* type parameters: the running frame's arguments */
+    if ((unsigned long)key_type->kind <= TY_VOID) return map_find(map, key, key_type); /* a K bound to int or str */
+    unsigned long hash = (unsigned long)key_hash(key, key_type);
+    unsigned long mask = (unsigned long)map->cap * 2 - 1;
+    for (unsigned long at = hash & mask;; at = (at + 1) & mask) {
+        uint32_t slot = map->index[at];
+        if (!slot) return -1;
+        if (slot == TOMB) continue;
+        long e = (long)slot - 1;
+        MapEntry *me = &map->entries[e];
+        if (me->hash != hash) continue;
+        if (values_equal(me->key.i, key, key_type)) return e;
+    }
+}
+
 /* The entry index of the key, or -1. */
 long map_find(Map *map, long key, Type *key_type)
 {
     long kind = key_type->kind;
+    if ((unsigned long)kind > TY_VOID) return map_find_structural(map, key, key_type); /* spec 033 */
     unsigned long hash = (unsigned long)map_hash(key, (int)kind);
     unsigned long mask = (unsigned long)map->cap * 2 - 1; /* index mask */
     for (unsigned long at = hash & mask;; at = (at + 1) & mask) {
@@ -97,6 +165,8 @@ void map_grow(Map *map, Type *key_type)
     GC_UNROOT(2);
 }
 
+/* ponytail: a record changed while it is a key keeps its old hash and is not detected (spec 033 R7,
+ * documented as for ordered_map); copying keys on insert would detect it at one allocation per insert. */
 void map_set(Map *map, long key, long value, Type *key_type)
 {
 #ifdef GC_STRESS_BUILD
@@ -114,7 +184,7 @@ void map_set(Map *map, long key, long value, Type *key_type)
         map_grow(map, key_type);
         GC_UNROOT(3);
     }
-    long hash = map_hash(key, (int)key_type->kind);
+    long hash = key_hash(key, key_type); /* (spec 033: structural for keys other than int, bool, str) */
     e = map->used;
     MapEntry *me = &map->entries[e];
     me->key.i = key;

@@ -1,0 +1,17 @@
+# Spec 033: tasks return maps with variant keys.
+variant Status {
+    open;
+    closed(str);
+}
+
+fn tally(n: int) -> map[Status, int] {
+    let m = new map[Status, int];
+    set m[Status.open] = n;
+    set m[Status.closed(str(n))] = n * 10;
+    return m;
+}
+
+fn main() uses console {
+    let ms = concurrent_map([1, 2, 3], 2, tally);
+    print(str(ms[1][Status.open]) + " " + str(ms[2][Status.closed("3")]) + " " + str(len(ms[0])));
+}

@@ -1,0 +1,4 @@
+vo package main.vo keys shared/keys
+vo doc keys.count
+vo doc keys.count.count
+vo run main.vo

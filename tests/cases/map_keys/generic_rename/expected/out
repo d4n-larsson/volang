@@ -1,0 +1,15 @@
+$ vo edit rename main.vo main.vo:5:10 Key
+main.vo:5:10 K -> Key
+main.vo:5:27 K -> Key
+main.vo:6:21 K -> Key
+renamed K to Key: 3 changes in 1 file
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+20
+--- stderr
+--- exit 0

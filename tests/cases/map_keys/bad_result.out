@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0309","name":"invalid_map_key","severity":"error","file":"bad_result.vo","start":{"line":2,"col":21},"end":{"line":2,"col":32},"text":"result[int]","message":"`result[int]` cannot be a map key: it is a result.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

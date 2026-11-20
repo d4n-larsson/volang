@@ -1,0 +1,15 @@
+# Spec 033: keys a hand-built text key would merge stay apart.
+record Name {
+    first: str;
+    last: str;
+}
+
+fn main() uses console {
+    let joined = new map[str, int];
+    set joined["a,b" + "," + "c"] = 1;
+    set joined["a" + "," + "b,c"] = 2;
+    let m = new map[Name, int];
+    set m[new Name { first: "a,b", last: "c" }] = 1;
+    set m[new Name { first: "a", last: "b,c" }] = 2;
+    print("joined " + str(len(joined)) + ", record " + str(len(m)));
+}

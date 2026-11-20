@@ -1,0 +1,12 @@
+fn big[T: ordered](a: T, b: T) -> T {
+    return max(a, b);
+}
+
+fn count[K: key](xs: list[K]) -> int {
+    let m = new map[K, int];
+    return len(m);
+}
+
+fn main() uses console {
+    print(str(big(1, 2)) + str(count([1])));
+}

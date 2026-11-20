@@ -1,4 +1,4 @@
 fn main() uses console {
-    let m = new map[bool, int];
+    let m = new map[float, int];
     print(str(len(m)));
 }
