@@ -323,6 +323,8 @@ its record.
 | `listen` | `address`, `result` `"ok"` with `value` or `"err"` with `value` (the reason) |
 | `request` | `value`: the raw request a server received (`""`: the server was stopped) |
 | `response` | `value`: the raw response the server sent |
+| `setup`, `setup_end` | around one `serve_workers` worker's setup and its records; `setup` has `worker` (from 0) |
+| `worker_ended` | in a request's records: its worker ended without answering (the `response` after it is 500); replay passes the request over |
 | `end` | `status`: the exit status of the run |
 
 `random_int` needs no records: it is fixed by `seed`. A run that read stdin, a variable and the clock,

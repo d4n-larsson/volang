@@ -83,6 +83,7 @@ static void worker_run(Worker *w, int *p, long listener, long parent)
     task_ctl = p[3];
     cap_on = 0;
     task_depth++;
+    task_top_depth = task_depth; /* a handler's tasks run as in a program (R10) */
     recover_point = 0; /* a runtime error outside a handler ends the program: the parent's to do */
     task_recover_base = 0;
     tr_task_child();
@@ -374,6 +375,7 @@ static Variant *sw_replay(void)
     if (!v->tag) {
         for (long number = 0; rp_skip_setups(); number++) {
             Variant *req = io_serve_next(0);
+            if (rp_block_ended()) continue;
             rt_request_seed(number);
             long vals[2] = {v->pay.i, (long)req->pay.s};
             Variant *r = rt_serve_call_n(sw_answer, vals, 2, sw_call);
@@ -499,8 +501,8 @@ Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call)
                 sys_kill(w->pid);
                 sys_wait(w->pid, &st);
                 sw_output(w);
-                if (w->state == W_BUSY) { /* its block: the request (sent first) and what else came, then 500 */
-                    char *line = "{\"v\":1,\"kind\":\"response\",\"value\":\"HTTP/1.1 500 Internal Server Error\\r\\n"
+                if (w->state == W_BUSY) { /* its block: the request (sent first), what else came, the marker, 500 */
+                    char *line = "{\"v\":1,\"kind\":\"worker_ended\"}\n{\"v\":1,\"kind\":\"response\",\"value\":\"HTTP/1.1 500 Internal Server Error\\r\\n"
                                  "Content-Length: 0\\r\\nConnection: close\\r\\n\\r\\n\"}\n";
                     sb_cstr(w->events, line);
                     if (rcd_mode == 1) sw_hold(w->number, w->events);

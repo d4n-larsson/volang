@@ -31,7 +31,7 @@ static const char *const ev_names[] = {0,         "read_line", "read_all",    "r
                                        "env",     "now_ms",    "end",         "http",      "listen",
                                        "request", "response",  "info",        "list_dir",  "append_file",
                                        "make_dir", "delete",   "rename",      "run",       "sql",
-                                       "setup",   "setup_end"}; /* spec 028 */
+                                       "setup",   "setup_end", "worker_ended"}; /* spec 028 */
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static Str *run_desc(Str *program, Str *joined);
 static const char hexd[] = "0123456789abcdef";
@@ -58,7 +58,8 @@ static const char *const d_table[] = {0,
                                       "runs `$1`",
                                       "makes the database call `$1`",
                                       "starts serving with workers",
-                                      "finishes a worker's setup"};
+                                      "finishes a worker's setup",
+                                      "answers a request whose worker ended"};
 static const char *const n_table[] = {0,
                                       "a line of stdin",
                                       "the rest of stdin",
@@ -80,7 +81,8 @@ static const char *const n_table[] = {0,
                                       "a run of `$1`",
                                       "the database call `$1`",
                                       "a worker's setup",
-                                      "the end of a worker's setup"};
+                                      "the end of a worker's setup",
+                                      "a request whose worker ended"};
 
 #define J_HEAD "{\"v\":1,\"kind\":\""
 #define J_CLOSE "}\n"
@@ -877,7 +879,7 @@ long rp_kind_of(Str *str)
 {
     if (!str) return -1;
     if (str_eq_cstr(str, "recording")) return 0;
-    for (long k = 1; k <= EVK_SETUP_END; k++)
+    for (long k = 1; k <= EVK_WORKER_ENDED; k++)
         if (str_eq_cstr(str, (char *)ev_names[k])) return k;
     return -1;
 }
@@ -951,7 +953,7 @@ void rp_read(char *text, long len)
  * there is one, a str value for ok/err results and read_all, an integer for now_ms. */
 void rp_check_event(Event *e)
 {
-    if (e->kind == EVK_SETUP || e->kind == EVK_SETUP_END) return; /* spec 028: markers */
+    if (e->kind == EVK_SETUP || e->kind == EVK_SETUP_END || e->kind == EVK_WORKER_ENDED) return; /* spec 028: markers */
     if (e->kind == EVK_SQL) { /* spec 026: the outcome is checked when it is replayed */
         if (!rf_op || e->result < 0) rp_bad();
         return;
@@ -1194,6 +1196,23 @@ int rp_skip_setups(void)
         rp_next++;
     }
     return rp_next < rp_events->n;
+}
+
+/* In replay, after a request: when its worker ended without answering (killed from outside), its block is
+ * passed over up to its response (the handler is not run: what it would have asked for was never
+ * recorded); 1 then. */
+int rp_block_ended(void)
+{
+    for (long i = rp_next; i < rp_events->n; i++) {
+        long kind = ((Event *)vec_get(rp_events, i))->kind;
+        if (kind == EVK_SERVE_RESPONSE) return 0;
+        if (kind == EVK_WORKER_ENDED) {
+            while (i < rp_events->n && ((Event *)vec_get(rp_events, i))->kind != EVK_SERVE_RESPONSE) i++;
+            rp_next = i + 1;
+            return 1;
+        }
+    }
+    return 0;
 }
 
 /* ---- spec 016: recordings of tasks (research R10) ---- */

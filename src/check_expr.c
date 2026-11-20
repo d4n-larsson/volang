@@ -570,7 +570,35 @@ int suggest_name(Diag *d, Str *name, Node *node)
     return 1;
 }
 
+/* A generic function named as a value where a function type is expected: its type parameters bound from
+ * that type (an effect parameter from a `Database[uses ...]` parameter, say), the bindings kept on the
+ * name (N_E) for the closure the runtime makes. */
+static Type *fn_value_instance(Node *node, Node *decl, Type *ft, Type *expected)
+{
+    Vec *tparams = ty_tparams_of(decl);
+    if (!tparams || !tparams->n) return ft;
+    Type **b = alloc(tparams->n * 8);
+    if (expected && expected->kind == TY_FUNC && expected->a.v->n == ft->a.v->n) {
+        /* the parameters bind (the expected type's own parameters may still be open in its result) */
+        for (long i = 0; i < ft->a.v->n; i++)
+            if (!ty_unify(vec_get(ft->a.v, i), vec_get(expected->a.v, i), decl, b)) return ft; /* reported where used */
+        ty_unify(ft->b.t, expected->b.t, decl, b); /* what the parameters left open, from the result */
+    }
+    bind_rest(node, tparams, b, node->a.s); /* E0310 for what stays open */
+    for (long i = 0; i < tparams->n; i++) {
+        Node *tp = vec_get(tparams, i);
+        if (tp->b.i != TPC_EFFECTS) check_targ(b[i], tp, node, node->a.s);
+    }
+    node->e.v = bindings_vec(b, tparams->n);
+    return ty_subst(ft, decl, node->e.v);
+}
+
 Type *check_ident(Node *node)
+{
+    return check_ident_as(node, 0);
+}
+
+Type *check_ident_as(Node *node, Type *expected)
 {
     Sym *s = scope_find(node->a.s);
     if (s) {
@@ -585,7 +613,7 @@ Type *check_ident(Node *node)
         if (s->kind == SYM_FN) { /* a named function as a value */
             node->flags |= NF_FNVAL;
             node->d.n = s->decl;
-            return ty_func_of(s->decl);
+            return fn_value_instance(node, s->decl, ty_func_of(s->decl), expected);
         }
         ck_err1("E0301", node, "`$1` is not a value.", node->a.s);
         return t_error;
@@ -991,7 +1019,7 @@ Type *check_expr(Node *node, Type *expected)
         case N_FLOAT: t = t_float; break;
         case N_STR: t = t_str; break;
         case N_BOOL: t = t_bool; break;
-        case N_IDENT: t = check_ident(node); break;
+        case N_IDENT: t = check_ident_as(node, expected); break;
         case N_CALL: t = check_call(node, expected); break;
         case N_FIELD: t = check_field(node); break;
         case N_INDEX: t = check_index(node); break;

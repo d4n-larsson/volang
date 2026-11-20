@@ -444,6 +444,17 @@ Closure *fn_closure(Node *fn)
     return fx->closure.p;
 }
 
+/* Spec 028: a generic function as a value, with its type arguments (made at each use). */
+Closure *fn_closure_with(Node *fn, Vec *targs)
+{
+    GC_ROOT(&targs);
+    Closure *c = alloc_obj(OBJ_CLOSURE, CL_CAPS - 8);
+    GC_UNROOT(1);
+    c->fn = fn;
+    c->targs = targs;
+    return c;
+}
+
 /* Runs a test block's compiled code in a fresh frame (the test's declared effects are its grant). */
 void run_test_body(Node *test)
 {

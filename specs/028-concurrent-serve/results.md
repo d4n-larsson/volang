@@ -40,18 +40,24 @@
   upgrade): 240 of 1,000 counter requests failed through 4 workers. A read-only database keeps `BEGIN`.
 - R7: a worker server writes each request's output as the request ends (flushed then); `serve` keeps
   buffering its output as before.
-- R9: a worker killed from outside mid-request leaves its block as the request, the events it sent, and
-  the 500 response; replaying that block may stop with R0014 (the handler asks for inputs the recording
-  never got). A block more than 4,096 requests ahead of the oldest unfinished one is written at once, out
-  of arrival order (ponytail: a bounded ring).
-- R10: as planned, `concurrent_map` inside a worker runs its tasks one at a time (the task rule for
-  nested tasks), not up to its limit.
+- R9: a block more than 4,096 requests ahead of the oldest unfinished one is written at once, out of
+  arrival order (ponytail: a bounded ring).
 
-## Follow-ups
+## Follow-ups (done after the first commit)
 
-- A generic function cannot be passed as a function value: `serve_workers("8080", 4, open_notes, handle)`
-  with `handle[D: effects](db: Database[D], ...)` is E0301 (D is not inferred from the expected type), so
-  notes-api wraps it in a lambda. The voledger agent hit the same wall with `Database[D]`.
-- The parent's per-request work (poll over up to 64 connections and 192 pipes, one write and one message
-  per request) caps a trivial handler at a few thousand requests per second whatever the worker count
-  (2,286 req/s with 1 worker, 4,687 with 4 for a 0.2 ms handler, with a Python client).
+- **Generic functions as values.** A generic function named where a function type is expected takes its
+  type and effect arguments from that type: notes-api passes `handle[D: effects](db: Database[D], ...)`
+  straight to `serve_workers` (the voledger agent's `Database[D]` problem). Its parameters bind first,
+  the expected result fills in the rest; as an argument of a generic call it is checked after the other
+  arguments; at run time it is a closure carrying its type arguments, its effect parameters standing for
+  the caller's grant as in a generic call. With nothing to fix them it is E0310 ("give the variable a
+  type") instead of a confusing E0301 at the call. Cases `generic/fn_value`, `generic/fn_value_unbound`.
+- **Throughput ceiling.** The "few thousand requests per second" first noted here was the Python test
+  client. Measured with `ab` (20,000 requests, 16 at once, a trivial handler): `serve` 28,718 req/s,
+  `serve_workers` with 1 worker 21,979, with 4 workers 39,026. Nothing to change.
+- **A worker killed mid-request.** Its block now ends with `{"kind":"worker_ended"}` before the 500
+  response, and replay passes that request over instead of running its handler on inputs that were never
+  recorded (`serve_workers.py killed_replay`).
+- **Tasks in a handler (R10).** `concurrent_map` inside a worker's handler now runs its tasks at once, as in
+  a program; tasks inside tasks still run one at a time. `serve_workers.py tasks_in_handler`: 4 tasks of
+  300 ms answer in about 0.3 s, output in task order, the recording replays the same.

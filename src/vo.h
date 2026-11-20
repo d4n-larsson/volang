@@ -702,6 +702,7 @@
 #define EVK_SQL (19) /* spec 026 */
 #define EVK_SETUP (20) /* spec 028: a worker's setup block, then */
 #define EVK_SETUP_END (21)
+#define EVK_WORKER_ENDED (22) /* spec 028: the request's worker ended without answering (its response is 500) */
 #define EVR_OK (0)
 #define EVR_ERR (1)
 #define EVR_DENIED (2)
@@ -1439,6 +1440,8 @@ extern void report_undefined(Str *name, Node *node);
 extern int is_placeholder(Sym *sym);
 extern int suggest_name(Diag *d, Str *name, Node *node);
 extern Type *check_ident(Node *node);
+extern Type *check_ident_as(Node *node, Type *expected);
+extern Closure *fn_closure_with(Node *fn, Vec *targs);
 extern Type *check_place(Node *node, void *unused);
 extern Type *check_field(Node *node);
 extern void suggest_field(Diag *d, Type *record_type, Node *name_node);
@@ -1631,6 +1634,7 @@ extern Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *
 extern long sv_listener, opt_workers;
 extern void sv_note(Str *m);
 extern int rp_skip_setups(void);
+extern int rp_block_ended(void);
 extern void rt_seed_mark(void);
 extern void rt_request_seed(long number);
 typedef struct SvPoll { /* spec 028: an extra file descriptor for sv_round */
@@ -2290,6 +2294,7 @@ extern long task_depth;
 extern long task_ctl;
 extern long task_path;
 extern long task_recover_base;
+extern long task_top_depth;
 extern List *task_map(List *xs, long limit, Closure *fn, Node *call);
 extern void task_send(int kind, char *p, long n);
 extern void task_exit(long status) NORETURN;

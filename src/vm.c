@@ -108,6 +108,9 @@ void *vm_push(void *cf_, void *decl_, void *call_, long *vals, void *closure_)
     if (call && call->kind == N_CALL && call->e.v) { /* a generic call: its type arguments */
         f->targs = rt_targs(call->e.v, caller);
         f->effects = rt_es_grant(f->effects, caller ? caller->effects : 0); /* spec 013 (C3) */
+    } else if (closure && closure->targs && decl->kind != N_TEST && decl->a.n->b.fx->declared) {
+        /* spec 028: a generic function as a value: its effect parameters stand for the caller's grant */
+        f->effects = rt_es_grant(f->effects, caller ? caller->effects : 0);
     }
     GC_UNROOT(1);
     if (closure) { /* its type arguments and captured values */
@@ -517,7 +520,7 @@ op_try: { /* ok: unwrap; err: the err value is the function's result */
 op_closure:
     STORE((long)make_closure(pc->node));
 op_fnval:
-    STORE((long)fn_closure(pc->c.n));
+    STORE((long)(pc->node->e.v ? fn_closure_with(pc->c.n, rt_targs(pc->node->e.v, frame)) : fn_closure(pc->c.n)));
     /* a = closure(c)(arguments in b, ...) */
 op_call_value: {
     Closure *cl = (Closure *)SL(pc->c.i);

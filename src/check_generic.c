@@ -277,6 +277,11 @@ int ty_mentions_owner(Type *t, Node *owner)
  * `new` without type arguments, a call without arguments (a constructor such as `ordered_map()`). */
 int needs_context(Node *v)
 {
+    if (v->kind == N_IDENT) { /* spec 028: a generic function as a value takes its bindings from the parameter */
+        Sym *s = scope_find(v->a.s);
+        Vec *tp = s && s->kind == SYM_FN ? ty_tparams_of(s->decl) : 0;
+        return tp && tp->n;
+    }
     return (v->kind == N_VCASE && !v->c.n) || (v->kind == N_NEW_RECORD && (!v->d.v || !v->d.v->n)) ||
            (v->kind == N_CALL && v->b.v && !v->b.v->n);
 }
@@ -304,7 +309,9 @@ Type *check_generic_call(Node *call, Node *decl, Type *expected)
                 Type *known = ty_subst_bindings(pt, decl, b);
                 if (!ty_mentions_owner(known, decl)) want = known;
             }
-            Type *at = check_arg(call, i, want);
+            /* spec 028: a generic function named as a value is instantiated from the parameter's type; its
+               effects bind the parameter's effect parameter (checked again below, as function values are) */
+            Type *at = pass && an->kind == N_IDENT ? check_expr(an, ty_subst_bindings(pt, decl, b)) : check_arg(call, i, want);
             if (ty_unify(pt, at, decl, b)) {
                 if (i < 63) unified |= 1L << i;
                 continue;

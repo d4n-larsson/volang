@@ -482,7 +482,7 @@ fn(x: int) -> int { return x * 2; }        anonymous function (the same syntax a
 fn(int) -> int uses console                 function type (parameter types, return type, effects)
 ```
 
-- A named function used without `(...)` is a value: `map(xs, double)`. Builtins are not values: wrap one, `fn(s: str) -> int { return len(s); }`. Anything that evaluates to a function can be called: `f(1)`, `make_adder(1)(2)`, `handlers[0](x)`, `box.on_save(x)` (a record field of function type).
+- A named function used without `(...)` is a value: `map(xs, double)`. A generic one takes its type and effect arguments from the function type expected there (`serve_workers("8080", 4, open_db, handle)` with `handle[D: effects](db: Database[D], ...)`; E0310 when nothing fixes them). Builtins are not values: wrap one, `fn(s: str) -> int { return len(s); }`. Anything that evaluates to a function can be called: `f(1)`, `make_adder(1)(2)`, `handlers[0](x)`, `box.on_save(x)` (a record field of function type).
 - Anonymous functions write parameter and return types like named functions. They never write `uses`: their effects come from their body (E0507). A function value fits a function type whose effects cover its own (E0502 otherwise).
 - They capture the `let` bindings and parameters they use, by value, when they are created. Capturing a `var` is E0505; copy it into a `let` first.
 - Function types go anywhere a type can: parameters, return types, `let`, record fields, lists, maps. Functions cannot be compared with `==`.

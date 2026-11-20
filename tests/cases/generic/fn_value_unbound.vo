@@ -1,0 +1,9 @@
+# A generic function as a value with nothing to say what its type parameters are: E0310.
+fn same[T](a: T, b: T) -> bool {
+    return a == b;
+}
+
+fn main() uses console {
+    let f = same;
+    print(str(f(1, 1)));
+}

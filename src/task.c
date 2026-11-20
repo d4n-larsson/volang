@@ -20,6 +20,7 @@ long task_depth;    /* > 0 in a task */
 long task_ctl = -1; /* in a task: the control pipe to the parent */
 long task_path;     /* in a task: its position path (research R12) */
 long task_recover_base; /* in a task: the recovery point it inherited (the parent's, R6) */
+long task_top_depth;   /* spec 028: 1 in a serve_workers worker (its tasks are not nested ones) */
 
 typedef struct Slot {
     long pos;  /* the task's position in xs, -1 when the slot is free */
@@ -550,7 +551,7 @@ List *task_map(List *xs, long limit, Closure *fn, Node *call)
         rt_raise("R0007", msg("The task limit $1 is outside 1-64.", int_to_str(limit), 0, 0), call);
     /* ponytail: inside a task (and in replay) tasks run one at a time; a jobserver pipe inherited by
        the tasks if nested concurrency is ever needed (research R7, R10) */
-    if (task_depth || rcd_mode == 2) limit = 1;
+    if (task_depth > task_top_depth || rcd_mode == 2) limit = 1;
     GC_ROOT(&xs);
     GC_ROOT(&fn);
     Type *elem = rt_concrete(call->type)->a.t;

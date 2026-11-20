@@ -5,16 +5,11 @@
 # The grant is `serve("8080")` (this machine only) and data/ for reading and writing.
 import api.handle;
 import api.open_notes;
-import std.http.Request;
-import std.http.Response;
 import std.http.serve_workers;
-import std.sqlite.Database;
 
 fn main() -> result[void] uses console, file.read("data/"), file.write("data/"), serve("8080") {
     print("notes on http://localhost:8080/notes (Ctrl-C stops)");
-    try serve_workers("8080", 4, open_notes, fn(db: Database[uses file.read, file.write], r: Request) -> Response {
-        return handle(db, r);
-    });
+    try serve_workers("8080", 4, open_notes, handle);
     print("stopped");
     return ok();
 }

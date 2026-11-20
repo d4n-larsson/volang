@@ -1,14 +1,14 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"f5eb517026737ff6","seed":64391825852464,"clock_ms":null,"args":[]}
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"a307c9e1f7878264","seed":99551621347498,"clock_ms":null,"args":[]}
 {"v":1,"kind":"listen","address":"8080","result":"ok","value":5}
-{"v":1,"kind":"setup","worker":1}
-{"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
-{"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null)","params":[],"result":"ok","changed":0,"last_id":0}
-{"v":1,"kind":"setup_end"}
 {"v":1,"kind":"setup","worker":0}
 {"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
 {"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null)","params":[],"result":"ok","changed":0,"last_id":0}
 {"v":1,"kind":"setup_end"}
 {"v":1,"kind":"setup","worker":2}
+{"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
+{"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null)","params":[],"result":"ok","changed":0,"last_id":0}
+{"v":1,"kind":"setup_end"}
+{"v":1,"kind":"setup","worker":1}
 {"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
 {"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null)","params":[],"result":"ok","changed":0,"last_id":0}
 {"v":1,"kind":"setup_end"}

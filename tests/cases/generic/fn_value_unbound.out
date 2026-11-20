@@ -1,0 +1,4 @@
+fn_value_unbound.vo:7:13: error[E0310]: Cannot infer `T` for `same`: give the variable a type.
+   7 |     let f = same;
+     |             ^^^^
+1 error, 0 warnings

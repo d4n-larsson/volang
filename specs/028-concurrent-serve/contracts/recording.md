@@ -19,6 +19,9 @@ kinds, removes none.
 ```
 
 - One `setup` block per worker started (replacements included), written when the worker is ready.
+- A request whose worker ended without answering (killed from outside) keeps the events the worker sent,
+  then `{"v":1,"kind":"worker_ended"}` and the 500 `response`; replay passes that block over without
+  running the handler (its inputs were never recorded).
 - Request blocks (`request` ... `response`) in arrival order, each contiguous, whatever order the workers
   finished them in.
 - Replay runs in one process: the setup once, with the first `setup` block's events; the other `setup`

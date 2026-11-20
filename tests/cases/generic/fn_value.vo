@@ -1,0 +1,39 @@
+# Generic functions as values: their type parameters come from the function type expected where they are used.
+import std.sqlite.Database;
+import std.sqlite.Value;
+import std.sqlite.exec;
+import std.sqlite.open_memory;
+import std.sqlite.sql;
+
+fn same[T](a: T, b: T) -> bool {
+    return a == b;
+}
+
+fn twice[T](x: T) -> list[T] {
+    return [x, x];
+}
+
+fn apply[A, B](xs: list[A], f: fn(A) -> B) -> list[B] {
+    let out = new list[B];
+    for x in xs {
+        push(out, f(x));
+    }
+    return out;
+}
+
+fn add_row[D: effects](db: Database[D], n: int) -> result[int] uses D {
+    let c = try exec(db, sql("insert into t (n) values (?)"), [Value.integer(n)]);
+    return ok(c.last_id);
+}
+
+fn main() -> result[void] uses console {
+    let eq: fn(str, str) -> bool = same;
+    print(str(eq("a", "a")) + " " + str(eq("a", "b")));
+    let pairs = apply(["x", "y"], twice);
+    print(join(pairs[1], "+"));
+    let db = open_memory();
+    let _ = try exec(db, sql("create table t (n integer)"), new list[Value]);
+    let add: fn(Database, int) -> result[int] = add_row;
+    print(str(add(db, 7) == ok(1)) + " " + str(add(db, 8) == ok(2)));
+    return ok();
+}

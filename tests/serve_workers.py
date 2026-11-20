@@ -581,7 +581,67 @@ def check_notes_load():
     return problems
 
 
+def check_killed_replay():
+    """R9: a recording in which a worker was killed while handling a request replays cleanly: that request
+    is passed over (its handler's inputs were never recorded), the others answered the same."""
+    problems = []
+    with Server(FAILING, args=("--record", "r.jsonl")) as srv:
+        before = get_many(srv.port, ["/a", "/b"])
+        t = in_background(srv.port, ["/block"])
+        busy = [w for w in workers_of(srv.proc.pid) if "pipe_read" not in open("/proc/%d/wchan" % w).read()]
+        os.kill(busy[0], signal.SIGKILL)
+        t.join()
+        after = get_many(srv.port, ["/c", "/d"])
+        if [r[0] for r in before + after] != [200] * 4 or t.result[0][0] not in (0, 500):
+            problems.append("recording: %s, killed %s" % ([r[0] for r in before + after], t.result[0][0]))
+        stopped_cleanly(srv, problems)
+        r = subprocess.run([VO, "replay", "r.jsonl"], cwd=srv.dir.name, capture_output=True)
+        if r.returncode != 0 or r.stderr:
+            problems.append("replay: exit %d, stderr %r" % (r.returncode, r.stderr[-300:]))
+    return problems
+
+
+TASKS = HEAD + """import std.time.sleep;
+
+fn setup() -> result[int] {
+    return ok(300);
+}
+
+fn handle(ms: int, r: Request) -> Response uses console, clock, random {
+    let parts = concurrent_map([1, 2, 3, 4], 4, fn(i: int) -> str {
+        sleep(ms);
+        print("task " + str(i));
+        return str(i * random_int(1, 1000));
+    });
+    return new Response { status: 200, headers: new list[Header], body: join(parts, ",") };
+}
+
+fn main() -> result[void] uses console, clock, random, serve("PORT") {
+    return serve_workers("PORT", 2, setup, handle);
+}
+"""
+
+
+def check_tasks_in_handler():
+    """R10: concurrent_map in a handler runs its tasks at once (4 tasks of 300 ms: well under 1.2 s), their
+    output comes in task order, and the recording replays to the same responses."""
+    problems = []
+    with Server(TASKS, args=("--record", "r.jsonl")) as srv:
+        status, body, took = get(srv.port, "/")
+        if status != 200 or took > 0.9:
+            problems.append("request: %s %r in %.2f s (want 200 within 0.9 s)" % (status, body, took))
+        stopped_cleanly(srv, problems)
+        if "task 1\ntask 2\ntask 3\ntask 4\n" not in srv.stdout():
+            problems.append("output: %r" % srv.stdout())
+        r = subprocess.run([VO, "replay", "r.jsonl"], cwd=srv.dir.name, capture_output=True)
+        if r.returncode != 0 or r.stderr:
+            problems.append("replay: exit %d, stderr %r" % (r.returncode, r.stderr[-300:]))
+    return problems
+
+
 CHECKS = [  # (name, function, in --quick)
+    ("tasks_in_handler", check_tasks_in_handler, True),
+    ("killed_replay", check_killed_replay, True),
     ("smoke", check_smoke, True),
     ("slow_vs_fast", check_slow_vs_fast, False),  # timing: not under the load of make test
     ("isolation", check_isolation, True),
