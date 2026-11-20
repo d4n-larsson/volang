@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-20
 
-**Status**: Draft (clarified 2026-11-20: routes as a route table value; record/JSON conversion derived by the toolchain with limits declared on fields; shipped as `std.web`)
+**Status**: Implemented, the agent benchmark (SC-004) not yet run (clarified 2026-11-20: routes as a route table value; record/JSON conversion derived by the toolchain with limits declared on fields; shipped as `std.web`; see [results](results.md))
 
 **Input**: User description: "A web package for building APIs in vo: helpers and tools on top of
 std.http.serve / serve_workers, taking inspiration from how the Java Spring framework (Spring Web MVC /

@@ -308,8 +308,8 @@ the environment with every problem reported at start.
   golden that changed and why in results.md).
 - [X] T037 `make lint`; `make instrumented` (golden suite with `VO_BIN=build-instrumented/vo`); the stress
   build over `tests/cases/json_derive`, `web`, `web_steps`.
-- [ ] T038 `make test` on x86-64, then `make ARCH=aarch64 test` and `make ARCH=riscv64 test`, one at a time.
-- [ ] T039 Fill in `results.md`; spec status Implemented; every task [X].
+- [X] T038 `make test` on x86-64, then `make ARCH=aarch64 test` and `make ARCH=riscv64 test`, one at a time.
+- [X] T039 Fill in `results.md`; spec status Implemented; every task [X].
 
 ---
 

@@ -10,14 +10,14 @@
 | SC-004 | pending | Not run (the user chose to run it later: about 15 minutes per run, 40 runs). The kit is ready: `bench/web/task.md` (an inventory API), `bench/web/accept.py` (29 checks; the std.web reference solution `bench/web/reference/` passes 29/29), `bench/web/run.py --arm web|http --runs N` (isolated `claude -p`, no tools, one attempt, 30-minute limit) and `--summary`. Two sanity runs of the `web` arm: one failed to check (`json_reply(200, x)`, `steps: []`, two ignored `Changes`), which led to `json_reply(status, v)` and `web_app`; one did not answer within 15 minutes. |
 | SC-005 | met | `vo test examples/notes-api/main.vo`: 6 tests and a property through `handle_request` with an in-memory database, no `serve` effect: 0.01 s. |
 | SC-006 | met | `tests/web_speed.py` (`make gate`): a 20-route app, std.web against the same API hand-written on std.http, one worker, ab, median of 5 interleaved runs: 94–99% of the hand-written throughput (single runs vary ±20% on this machine; JSON answers are rendered in C, `__json_text`). |
-| SC-007 | PENDING | |
+| SC-007 | met | Every existing golden and step case passes unchanged on three platforms, except `doc/all` and `doc/all_json` (`vo doc` lists the new module std.web). The inference changes let more programs check and change no existing result. |
 
 ## Verification
 
 | Check | Result |
 |---|---|
-| `make test` (x86-64) | PENDING |
-| `make ARCH=aarch64 test`, `make ARCH=riscv64 test` | PENDING |
+| `make test` (x86-64) | passed: golden 901/901, steps 252/252, scripts (`web_fuzz.py --quick` included), examples |
+| `make ARCH=aarch64 test`, `make ARCH=riscv64 test` | both passed under qemu, as x86-64 |
 | `make lint` | clean |
 | Instrumented build (ASan, UBSan) | golden suite 901/901; `web_steps` 3/3; `web_fuzz.py --quick` passes |
 | Stress build | `json_derive`, `web`, `annotations`, `generic` 49/49; `web_steps` 3/3 |
