@@ -192,6 +192,7 @@ void rt_raise(char *code, Str *message, Node *node)
     }
     if (recover_point) { /* inside a test: let the runner record it */
         rt_err_extra = 0;
+        if (gc_mark_on_raise) gc_report_mark(); /* --mem-stats: the test's memory, not its error report's */
         capture_trace(node); /* spec 006: the frames and their values, for the test's report */
         rt_recover(2);
     }

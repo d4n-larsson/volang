@@ -656,11 +656,29 @@ void size_into_up(SB *sb, long bytes)
 
 /* With --mem-stats: the memory report of a run or a test (contracts/cli-v3.md), as a JSON record
  * with --json, else one human line. test is the test's name (a str), or 0 for a run. */
+static long mark_set, mark_peak, mark_allocated, mark_count;
+long gc_mark_on_raise; /* 1 while a plain test's body runs: a runtime error ends the test's memory */
+
+/* Fixes the figures of the next gc_report here (the first call wins): a test's memory ends when the
+ * test does, before the trace of its error and its report are built (they hold the file's path, so
+ * their size would follow where the file is). */
+void gc_report_mark(void)
+{
+    if (!opt_mem_stats || task_depth || mark_set) return;
+    sample_peak();
+    mark_set = 1;
+    mark_peak = gc_peak;
+    mark_allocated = gc_total + gc_since;
+    mark_count = gc_count;
+}
+
 void gc_report(int fd, char *command, void *test)
 {
     if (!opt_mem_stats || task_depth) return; /* spec 016: the parent reports, without its tasks (R13) */
     sample_peak();
     long peak = gc_peak, allocated = gc_total + gc_since, count = gc_count; /* before the report allocates */
+    if (mark_set) peak = mark_peak, allocated = mark_allocated, count = mark_count;
+    mark_set = 0;
     GC_ROOT(&test);
     SB *sb = sb_new();
     GC_ROOT(&sb);

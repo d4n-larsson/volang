@@ -2369,6 +2369,8 @@ extern long sys_open(char *path, int flags);
 extern Str *tmp_path(Str *path, char *tag);
 extern long open_tmp(Str *tmp);
 extern long sys_close(int fd);
+extern void gc_report_mark(void);
+extern long gc_mark_on_raise;
 extern long sys_file_size(int fd);
 extern long sys_fchmod(int fd, long mode);
 extern long sys_pread_all(int fd, char *buf, long n, long off);

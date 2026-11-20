@@ -105,7 +105,9 @@ def check_test_order():
     src = open(path).read()
     blocks = src.split("\ntest ")
     rev = blocks[0] + "".join("\ntest " + b.rstrip("\n") + "\n" for b in reversed(blocks[1:]))
-    tmp = os.path.join(ROOT, "build", "tmp-gc-order")
+    # a much longer path as well: a test's memory must not follow where its file is (the CI checkout's
+    # longer path once made a report's buffer grow inside a test's figures)
+    tmp = os.path.join(ROOT, "build", "tmp-gc-order", "p" * 80)
     os.makedirs(tmp, exist_ok=True)
     rpath = os.path.join(tmp, "test_order.vo")
     open(rpath, "w").write(rev)

@@ -1,5 +1,5 @@
 {"v":1,"kind":"test","id":"../../tests/cases/prop/mem_stats.vo::lists","name":"lists","status":"pass","file":"../../tests/cases/prop/mem_stats.vo","start":{"line":1,"col":1},"uses":"","ms":0,"prop":true,"cases":100}
-{"v":1,"kind":"memory","command":"test","test":"lists","peak_live":26400,"allocated":26400,"collections":0,"limit":536870912}
+{"v":1,"kind":"memory","command":"test","test":"lists","peak_live":25536,"allocated":25536,"collections":0,"limit":536870912}
 {"v":1,"kind":"test","id":"../../tests/cases/prop/mem_stats.vo::strs","name":"strs","status":"pass","file":"../../tests/cases/prop/mem_stats.vo","start":{"line":5,"col":1},"uses":"","ms":0,"prop":true,"cases":100}
-{"v":1,"kind":"memory","command":"test","test":"strs","peak_live":26784,"allocated":26784,"collections":0,"limit":536870912}
+{"v":1,"kind":"memory","command":"test","test":"strs","peak_live":25920,"allocated":25920,"collections":0,"limit":536870912}
 {"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":2,"failed":0,"errored":0,"timed_out":0,"selected":2}

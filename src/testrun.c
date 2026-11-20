@@ -629,6 +629,7 @@ long run_one_test(Node *test_in, long index_in)
         } else {
             volatile long sql_mark = sql_serial(); /* spec 026: the databases this test opens */
             recover_point = (long)jb;
+            gc_mark_on_raise = 1;
             status = jmp_save(jb);
             if (!status) {
                 rt_effects_start(1); /* every test starts from seed and clock defaults */
@@ -637,6 +638,7 @@ long run_one_test(Node *test_in, long index_in)
             }
             sql_close_since(sql_mark); /* closed however it ended: the next test's heap starts empty */
         }
+        gc_mark_on_raise = 0;
         recover_point = 0;
         deadline_ms = 0;
         cap_on = 0;
@@ -669,6 +671,7 @@ void run_file_tests(int file)
         else
             t_timed_out++;
         sp_index = i;
+        gc_report_mark(); /* the test's memory, not its report's */
         report_test(test, (int)status, sys_clock_ms() - start);
         gc_report(1, "test", test->a.s); /* --mem-stats: right after the test's record */
         /* the test's leftovers point into a heap about to be reset; they must not keep anything
