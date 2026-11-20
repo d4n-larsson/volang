@@ -1,0 +1,38 @@
+# A constant is usable wherever an expression of its type is: in functions, tests, properties,
+# contracts and anonymous functions, before or after its declaration.
+fn clip(n: int) -> int
+    requires n >= 0
+    ensures ret <= max_items {
+    return min(n, max_items);
+}
+
+const max_items = 100;
+const greeting = "hello";
+const banner = greeting + ", world";
+const rate: float = 0.25;
+
+fn scaled(xs: list[int]) -> list[float] {
+    return map(xs, fn(x: int) -> float {
+        return float(x) * rate;
+    });
+}
+
+test "clips at the limit" {
+    expect_eq(clip(150), max_items);
+}
+
+prop "never over the limit" (n: int) {
+    assume(n >= 0);
+    expect(clip(n) <= max_items);
+}
+
+fn main() uses console {
+    print(banner + " " + str(clip(150)) + " " + str(clip(7)));
+    let s = scaled([4, 8]);
+    print(str(s[0]) + " " + str(s[1]));
+    var total = 0;
+    for i in 0..max_items {
+        set total = total + i;
+    }
+    print(str(total));
+}

@@ -103,7 +103,7 @@ fn main() uses console {
 1.0 true
 ```
 
-**Formatting**: `format("{} of {} done", 3, 10)` is `"3 of 10 done"`. The template must be a string literal; each `{}` takes the next argument (`int`, `float`, `bool` or `str`), and `{{`/`}}` are braces. Options go after a colon, in this order: alignment `<` `>` `^`, `+`, `0` (zero-pad), width, `,` (thousands), `.Nf` (N decimals, floats only), `x` or `b` (hex or binary, ints only). Numbers align right, text left. `vo check` reports a wrong count or option, with a fix where it can (also for `%d` and `f"..."`).
+**Formatting**: `format("{} of {} done", 3, 10)` is `"3 of 10 done"`. The template must be a string literal or a constant; each `{}` takes the next argument (`int`, `float`, `bool` or `str`), and `{{`/`}}` are braces. Options go after a colon, in this order: alignment `<` `>` `^`, `+`, `0` (zero-pad), width, `,` (thousands), `.Nf` (N decimals, floats only), `x` or `b` (hex or binary, ints only). Numbers align right, text left. `vo check` reports a wrong count or option, with a fix where it can (also for `%d` and `f"..."`).
 
 ```vo
 fn main() uses console {
@@ -119,7 +119,7 @@ tea     |    3.14|00042|ff
 
 ## Declarations
 
-A file contains `import` lines first, then items in any order: `fn`, `record`, `variant` (each optionally after `export`) and `test`. An item can use items declared later in the file. There are no global variables or constants, no methods, no classes and no nested functions.
+A file contains `import` lines first, then items in any order: `fn`, `record`, `variant`, `const`, `effects` (each optionally after `export`) and `test`. An item can use items declared later in the file. There are no global variables, no methods, no classes and no nested functions.
 
 ### Functions
 
@@ -189,7 +189,7 @@ fn main() uses console {
 
 ### Records
 
-A record is a named set of fields. Each field ends with `;`. Create one with `new Name { field: value, ... }`, giving every field exactly once (E0305 if one is missing), in any order. A record without fields is built with `new Name {}`. Annotations on the lines above a field limit what `from_json` and std.web accept: `@size(min, max)` (characters of a `str`, items of a list or map), `@range(min, max)` (`int`, `float`), `@pattern("re")` (the whole `str`), `@default(v)` (the field may be absent: a literal, an enum-like case or `[]`), `@header("Name")` (std.web input) (E0329). Read with `p.x` and write with `set p.x = v;`. Records are references: a copy of the variable, an argument or a list element points to the same record.
+A record is a named set of fields. Each field ends with `;`. Create one with `new Name { field: value, ... }`, giving every field exactly once (E0305 if one is missing), in any order. A record without fields is built with `new Name {}`. Annotations on the lines above a field limit what `from_json` and std.web accept: `@size(min, max)` (characters of a `str`, items of a list or map), `@range(min, max)` (`int`, `float`), `@pattern("re")` (the whole `str`), `@default(v)` (the field may be absent: a literal or constant, an enum-like case or `[]`), `@header("Name")` (std.web input) (E0329). Read with `p.x` and write with `set p.x = v;`. Records are references: a copy of the variable, an argument or a list element points to the same record.
 
 ```vo
 record Point {
@@ -257,6 +257,28 @@ fn main() uses console {
 0.0
 ```
 
+### Constants
+
+`const name = value;` (or `const name: type = value;`) names a value at the top level, written in `snake_case`. Its type is `int`, `float`, `bool` or `str` (E0332), and its value is made of literals, other constants and operators: no calls, not even `len` or `str` (E0212). The checker works it out once, with the same rules as at run time, so an overflow or a division by zero is a check error (E0333). A constant cannot be changed (E0208) or declared inside a function (E0122: use `let`). It is usable wherever a value of its type is, and also where a literal is required: effect scopes, field annotations, and the templates of `format`, `regex`, `sql` and routes. `vo.effects` and every report show the value.
+
+```vo
+const out_dir = "out/";
+const report = out_dir + "report.txt";
+const max_lines = 3;
+
+fn save(text: str) -> result[void] uses file.write(out_dir) {
+    return write_file(report, text);
+}
+
+fn main() uses console {
+    print(report + " " + str(max_lines * 2));
+}
+```
+
+```output
+out/report.txt 6
+```
+
 ### Tests and imports
 
 `test "name" { ... }` declares a test (see Tests). `import path.name;` makes an item from another file visible (see Programs in several files).
@@ -285,7 +307,7 @@ test "loads fixtures" uses file.read("fixtures/") { ... }
 
 - No `uses` clause means pure: the function cannot do any of these, so it always returns the same result for the same arguments.
 - A function must declare everything it does and everything its callees declare (E0501, with a fix that adds exactly the missing effects). An effect nothing needs is W0501, with a fix that removes it.
-- Scopes narrow an effect: directories for `file.read`/`file.write`/`file.delete` (relative to the directory the program starts in, e.g. `"out/"`; `"./"` is that directory itself), variable names for `env`, hosts for `net`, addresses for `serve` (`"8000"`: this machine only; `"0.0.0.0:8000"`: the network), programs for `process` (`"git"`: found through `PATH`; `"tools/gen"`, `"/usr/bin/git"`: that file; required, E0512; matched exactly). A scope covers the directories under it. A caller's scopes must cover its callees' (E0503); an empty or absolute scope, or one with `..`, is E0506.
+- Scopes (string literals or constants) narrow an effect: directories for `file.read`/`file.write`/`file.delete` (relative to the directory the program starts in, e.g. `"out/"`; `"./"` is that directory itself), variable names for `env`, hosts for `net`, addresses for `serve` (`"8000"`: this machine only; `"0.0.0.0:8000"`: the network), programs for `process` (`"git"`: found through `PATH`; `"tools/gen"`, `"/usr/bin/git"`: that file; required, E0512; matched exactly). A scope covers the directories under it. A caller's scopes must cover its callees' (E0503); an empty or absolute scope, or one with `..`, is E0506.
 - Canonical order (`vo fmt`): console, input, file.read, file.write, file.delete, net, clock, random, env, serve, process; scopes sorted; then effect parameters and sets, alphabetically.
 - An effect set names effects a program repeats: `effects Storage = file.read("data/"), file.write("data/");` (an item, `export` like others). `uses console, Storage` means the union; a set may include sets (a cycle is E0513), and an unused private set is W0505. In a type's effect argument (`Db[uses Storage]`) its scopes are dropped. Records and reports show the effects it stands for.
 - `main`'s clause is the grant of `vo run`, a test's clause the grant of that test. Paths and names are also checked at run time, after resolving `..`, absolute paths and symbolic links, against both the running function's declaration and that root grant: anything outside either is R0010 (exit 70), so no callee widens the root. A literal target outside the scopes is E0503 at check time.

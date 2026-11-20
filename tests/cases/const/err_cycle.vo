@@ -1,0 +1,12 @@
+# A constant cannot be defined from itself, directly or through other constants.
+const a = b + 1;
+const b = a + 1;
+const p = q;
+const q = r;
+const r = p;
+const s = s + 1;
+const t = a * 2;
+
+fn main() uses console {
+    print(str(a) + str(t));
+}

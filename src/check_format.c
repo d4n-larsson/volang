@@ -105,6 +105,18 @@ static Str *rewrite(Edit *e, long ne)
  * one-line literal. Shared by format templates and regex patterns. */
 long lit_decode(Node *lit, char **buf, long **offs)
 {
+    if (lit->flags & NF_CONST) { /* spec 031: a constant's value; every offset is the use (diag_const_node) */
+        if (diag_const_node != lit) return -1;
+        Str *v = lit->a.s;
+        char *b = alloc(v->len + 1);
+        long *o = alloc((v->len + 1) * 8);
+        mem_copy(b, v->data, v->len);
+        for (long i = 0; i < v->len; i++) o[i] = lit->start;
+        o[v->len] = lit->end;
+        *buf = b;
+        *offs = o;
+        return v->len;
+    }
     char *src = file_get((int)lit->file)->text;
     long s = lit->start, e = lit->end, n = 0;
     if (e - s < 2 || src[s] != '"' || src[e - 1] != '"') return -1;
@@ -404,7 +416,17 @@ static void field_fixes(Ph *ph, long nph, long nargs, Node *call)
     }
 }
 
+static Type *format_call(Node *call);
+
+/* spec 031: diagnostics inside a template that came from a constant are placed on its use. */
 Type *check_format_call(Node *call)
+{
+    Type *t = format_call(call);
+    diag_const_node = 0;
+    return t;
+}
+
+static Type *format_call(Node *call)
 {
     Vec *args = call->b.v;
     if (args->n == 0) {
@@ -427,11 +449,12 @@ Type *check_format_call(Node *call)
     ffile = (int)lit->file;
     fsrc = file_get(ffile)->text;
     ferr = 0;
-    if (lit->kind != N_STR) {
+    if (lit->kind != N_STR && !const_template(lit)) {
         check_arg(call, 0, 0);
-        ck_err("E0315", lit, str_from_cstr("The template of `format` must be a string literal, so its placeholders can be checked."));
+        ck_err("E0315", lit, str_from_cstr("The template of `format` must be a string literal or a constant, so its placeholders can be checked."));
         return t_str;
     }
+    if (lit->flags & NF_CONST) diag_const_node = lit;
     check_arg(call, 0, t_str);
     if (!decode(lit)) return t_str;
     if (nargs && !has_placeholder()) { /* the C habit (`%d`, even inside braces: "{%d}") */

@@ -1,0 +1,22 @@
+# `vo effects` shows a scope's value, never the constant's name.
+const out_dir = "out/";
+
+effects Storage = file.read(data_dir), file.write(data_dir);
+
+const data_dir = "data/" + "notes/";
+
+fn save(text: str) -> result[void] uses file.write(out_dir) {
+    return write_file(out_dir + "x.txt", text);
+}
+
+fn load() -> result[str] uses Storage {
+    return read_file(data_dir + "a.txt");
+}
+
+fn log(line: str) -> result[void] uses file.write(out_dir + "logs/") {
+    return write_file(out_dir + "logs/today.txt", line);
+}
+
+fn main() uses console {
+    print("effects");
+}

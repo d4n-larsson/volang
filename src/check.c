@@ -342,9 +342,12 @@ Str *convert_name(Str *name, int upper)
             }
             if (start && c >= 'a' && c <= 'z') c -= 32;
             start = 0;
-        } else if (c >= 'A' && c <= 'Z') { /* '_' before inner capitals, lower everything */
+        } else if (c >= 'A' && c <= 'Z') { /* '_' where a capital starts a word, lower everything */
+            int prev = p - 1 > name->data ? (unsigned char)p[-2] : 0, next = n > 1 ? (unsigned char)*p : 0;
+            int after_lower = (prev >= 'a' && prev <= 'z') || (prev >= '0' && prev <= '9');
+            int ends_run = prev >= 'A' && prev <= 'Z' && next >= 'a' && next <= 'z'; /* HTTPServer: http_server */
             c += 32;
-            if (sb->len && sb->ptr[sb->len - 1] != '_') sb_byte(sb, '_');
+            if (sb->len && sb->ptr[sb->len - 1] != '_' && (after_lower || ends_run)) sb_byte(sb, '_');
         }
         sb_byte(sb, c);
     }
@@ -551,6 +554,12 @@ static void check_set(Node *st)
     Node *place = st->a.n;
     if (place->kind == N_IDENT) {
         Sym *s = scope_find(place->a.s);
+        if (s && s->kind == SYM_CONST) { /* spec 031 */
+            Type *t = const_eval(s->decl, place);
+            ck_err1("E0208", place, "`$1` is a constant and cannot be changed.", place->a.s);
+            check_expr(st->b.n, ty_bad(t) ? 0 : t);
+            return;
+        }
         if (s && s->kind == SYM_LOCAL && !(s->flags & SYF_MUT)) { /* a `let` or a parameter */
             Node *decl = s->decl;
             int is_let = decl && decl->kind == N_LET;
@@ -905,17 +914,21 @@ void define_item(Node *item)
     case N_RECORD: kind = SYM_RECORD; break;
     case N_VARIANT: kind = SYM_VARIANT; break;
     case N_EFFECTS: kind = SYM_EFFECTS; break;
+    case N_CONST: kind = SYM_CONST; break; /* spec 031 */
     default: return;
     }
     Node *nn = item->a.n;
     if (!nn) return;
-    check_naming(nn, kind != SYM_FN);
+    int upper = kind != SYM_FN && kind != SYM_CONST; /* types and sets are capitalized */
+    check_naming(nn, upper);
     if (builtin_id(nn->a.s)) {
+        if (kind == SYM_CONST) item->d.i = CS_BAD; /* spec 031: no value, no W0202 */
         ck_err1("E0202", nn, "`$1` is a builtin and cannot be redefined.", nn->a.s);
         return;
     }
     Sym *prev = scope_find(nn->a.s);
     if (prev) {
+        if (kind == SYM_CONST) item->d.i = CS_BAD; /* spec 031: no value, no W0202 */
         Diag *d = ck_err1("E0202", nn, "`$1` is already defined.", nn->a.s);
         Str *m = msg("`$1` is first defined here.", nn->a.s, 0, 0);
         Node *pn = prev->node;
@@ -923,7 +936,7 @@ void define_item(Node *item)
         return;
     }
     Sym *s = sym_new(nn->a.s, kind, item, 0, nn);
-    s->rename = naming_rename(nn, kind != SYM_FN); /* a name that breaks the convention: uses too */
+    s->rename = naming_rename(nn, upper); /* a name that breaks the convention: uses too */
     scope_add(s);
 }
 
@@ -1162,7 +1175,7 @@ static void check_export_types(Vec *items)
         if (it->kind == N_FN) {
             for (long j = 0; j < it->b.v->n; j++) export_type(((Node *)vec_get(it->b.v, j))->b.n, it);
             export_type(it->c.n, it);
-        } else if (it->kind != N_EFFECTS) { /* fields or cases; comments are skipped */
+        } else if (it->kind == N_RECORD || it->kind == N_VARIANT) { /* fields or cases; comments are skipped */
             for (long j = 0; j < it->b.v->n; j++) {
                 Node *m = vec_get(it->b.v, j);
                 if (m->kind == N_FIELD_DECL || m->kind == N_CASE_DECL) export_type(m->b.n, it);
@@ -1318,6 +1331,7 @@ void check_items(int file, int mode)
     for (long i = 0; i < items->n; i++) define_item(vec_get(items, i));
     scope_top_end();
     f->scope = ck_scope;
+    const_check_all(items); /* spec 031: before effect sets and signatures, which may name them */
     fx_expand_sets(items); /* spec 030: before any clause names them */
     for (long i = 0; i < items->n; i++) resolve_item(ck_item_set(vec_get(items, i)));
     check_export_types(items);
@@ -1333,6 +1347,7 @@ void check_items(int file, int mode)
     }
     ck_item_set(0);
     fx_file_end(items);
+    const_report_unused(items); /* spec 031: W0202 */
     if (ck_mode == 1) check_main(file, find_main(items));
 }
 

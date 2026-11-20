@@ -1,0 +1,18 @@
+# Constants are items: declared at the top level, used before or after their declaration. `const` is a
+# word only where an item starts: a local may still be named `const`.
+fn twice(n: int) -> int {
+    return n * max_items;
+}
+
+const max_items = 100;
+const rate: float = 0.25;
+export const out_dir = "out/";
+
+fn bump(x: int) -> int {
+    let const = x + 1;
+    return const;
+}
+
+fn main() uses console {
+    print(str(twice(2)) + " " + str(rate) + " " + out_dir + " " + str(bump(1)));
+}

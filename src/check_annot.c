@@ -158,6 +158,10 @@ static void check_default(Node *a, Node *field, Type *ft)
 static void check_field_annots(Node *field, Type *ft)
 {
     Vec *v = field->c.v;
+    for (long i = 0; i < v->n; i++) { /* spec 031: constants in the arguments become their values */
+        Node *a = vec_get(v, i);
+        for (long j = 0; a->b.v && j < a->b.v->n; j++) const_literal_any(vec_get(a->b.v, j));
+    }
     for (long i = 0; i < v->n; i++) {
         Node *a = vec_get(v, i);
         if (!a->a.n) continue;
@@ -202,9 +206,12 @@ static void check_field_annots(Node *field, Type *ft)
             if (ft->kind != TY_STR) {
                 bad(a, "`@pattern` limits a `str`; this field is `$1`.", ty_name(ft));
             } else if (a->b.v->n != 1 || ((Node *)vec_get(a->b.v, 0))->kind != N_STR) {
-                bad(a, "`@pattern` takes one string literal.", 0);
+                bad(a, "`@pattern` takes one string literal or constant.", 0);
             } else {
-                check_regex_literal(vec_get(a->b.v, 0));
+                Node *lit = vec_get(a->b.v, 0);
+                if (lit->flags & NF_CONST) diag_const_node = lit; /* spec 031 */
+                check_regex_literal(lit);
+                diag_const_node = 0;
             }
             break;
         case 3: check_default(a, field, ft); break;
@@ -212,7 +219,7 @@ static void check_field_annots(Node *field, Type *ft)
             if (!is_scalar(ft))
                 bad(a, "`@header` binds a `str`, `int`, `float` or `bool`; this field is `$1`.", ty_name(ft));
             else if (a->b.v->n != 1 || ((Node *)vec_get(a->b.v, 0))->kind != N_STR)
-                bad(a, "`@header` takes the header's name as a string literal.", 0);
+                bad(a, "`@header` takes the header's name as a string literal or constant.", 0);
             break;
         }
     next:;

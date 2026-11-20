@@ -1,0 +1,15 @@
+# A constant in an annotation must have the type the annotation needs.
+const label = "five";
+const small = 1.5;
+
+record Item {
+    @size(1, label)
+    name: str;
+    @range(0, small)
+    qty: int;
+    @pattern(small)
+    code: str;
+}
+
+fn main() {
+}

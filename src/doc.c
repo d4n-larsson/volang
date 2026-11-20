@@ -131,6 +131,16 @@ void doc_tparams(SB *sb, Node *decl)
 /* fn name[T](a: A, b: B) -> R uses E; record Name { f: T; ... }; variant Name { c(T); d; }. */
 void doc_signature(SB *sb, Node *item)
 {
+    if (item->kind == N_CONST) { /* spec 031: const name: type = value */
+        sb_cstr(sb, "const ");
+        sb_str(sb, item->a.n->a.s);
+        if (ty_bad(item->type)) return;
+        sb_cstr(sb, ": ");
+        sb_str(sb, ty_name(item->type));
+        sb_cstr(sb, " = ");
+        render_value(sb, item->c.n->a.i, item->type);
+        return;
+    }
     if (item->kind == N_EFFECTS) { /* spec 030: effects Name = e, ... (and what it stands for) */
         sb_cstr(sb, "effects ");
         sb_str(sb, item->a.n->a.s);
@@ -269,6 +279,7 @@ void doc_json_shape(SB *sb, Node *item)
         doc_json_split(sb, sb_finish(eff));
         return;
     }
+    if (item->kind == N_CONST) return; /* spec 031: the signature says it all */
     if (item->kind == N_EFFECTS) { /* spec 030: the effects it stands for */
         sb_cstr(sb, ",\"effects\":");
         SB *eff = sb_new();
@@ -303,6 +314,7 @@ void doc_item_fields(SB *sb, Str *module, Node *item, Str *desc, Str *example)
     sb_cstr(sb, item->kind == N_RECORD    ? "record"
                 : item->kind == N_VARIANT ? "variant"
                 : item->kind == N_EFFECTS ? "effects"
+                : item->kind == N_CONST   ? "const"
                                           : "fn");
     sb_cstr(sb, J_SIG);
     json_str_into(sb, sb_finish(sig));
@@ -377,7 +389,9 @@ long doc_file(long file, Str *module, Str *item_name)
     long printed = 0;
     for (long i = 0; i < items->n; i++) {
         Node *it = vec_get(items, i);
-        if (it->kind != N_FN && it->kind != N_RECORD && it->kind != N_VARIANT && it->kind != N_EFFECTS) continue;
+        if (it->kind != N_FN && it->kind != N_RECORD && it->kind != N_VARIANT && it->kind != N_EFFECTS &&
+            it->kind != N_CONST)
+            continue;
         if (item_name && !str_eq(it->a.n->a.s, item_name)) continue; /* only the named item */
         if (!(it->flags & NF_EXPORT)) continue; /* spec 010: private to its file */
         Str *found[2];
@@ -734,7 +748,9 @@ static int doc_program(char *entry, Str *name)
         Vec *items = f->ast->a.v;
         for (long i = 0; i < items->n; i++) {
             Node *it = vec_get(items, i);
-            if (it->kind != N_FN && it->kind != N_RECORD && it->kind != N_VARIANT && it->kind != N_EFFECTS) continue;
+            if (it->kind != N_FN && it->kind != N_RECORD && it->kind != N_VARIANT && it->kind != N_EFFECTS &&
+            it->kind != N_CONST)
+            continue;
             if (!str_eq(it->a.n->a.s, name)) {
                 vec_push(names, it->a.n->a.s);
                 continue;
@@ -870,7 +886,8 @@ int doc_record_for(SB *sb, long key_a, long key_b, Str **sig, Str **desc)
         return 0;
     }
     Node *decl = (Node *)key_a;
-    if (decl->kind != N_FN && decl->kind != N_RECORD && decl->kind != N_VARIANT && decl->kind != N_EFFECTS)
+    if (decl->kind != N_FN && decl->kind != N_RECORD && decl->kind != N_VARIANT && decl->kind != N_EFFECTS &&
+        decl->kind != N_CONST)
         return 0; /* a local */
     long file = (long)decl->file;
     Str *module = doc_module_of(file);
@@ -889,7 +906,7 @@ int doc_record_for(SB *sb, long key_a, long key_b, Str **sig, Str **desc)
         *desc = found[0];
         return 1;
     }
-    if (decl->kind == N_FN || decl->kind == N_EFFECTS) return 0;
+    if (decl->kind == N_FN || decl->kind == N_EFFECTS || decl->kind == N_CONST) return 0;
     Vec *members = decl->b.v; /* a field or case: the key_b-th member, comments not counted */
     long at = -1;
     for (long i = 0, k = 0; i < members->n && at < 0; i++) {

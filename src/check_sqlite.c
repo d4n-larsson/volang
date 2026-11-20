@@ -40,16 +40,26 @@ static long token_end(char *s, long n, long at)
     return e > at ? e : (at < n ? at + 1 : at);
 }
 
+static void sql_literal(Node *call);
+
+/* spec 031: diagnostics inside a statement that came from a constant are placed on its use. */
 static void check_sql(Node *call)
 {
+    sql_literal(call);
+    diag_const_node = 0;
+}
+
+static void sql_literal(Node *call)
+{
     Node *lit = vec_get(call->b.v, 0);
-    if (lit->kind != N_STR) {
-        ck_err("E0324", lit, str_from_cstr("Statements are written as literals, so values can only be parameters (no SQL "
+    if (lit->kind != N_STR && !const_template(lit)) {
+        ck_err("E0324", lit, str_from_cstr("Statements are written as literals or constants, so values can only be parameters (no SQL "
                                            "injection); use `?` for values, or `parse_sql(s)` for SQL that must be built "
                                            "at run time."));
         return;
     }
     if (has_lex_error(lit)) return;
+    if (lit->flags & NF_CONST) diag_const_node = lit;
     char *buf;
     long *offs;
     long n = lit_decode(lit, &buf, &offs);
@@ -97,7 +107,9 @@ static long literal_qmarks(Node *arg)
     if (lit->kind != N_STR || has_lex_error(lit)) return -1;
     char *buf;
     long *offs;
+    if (lit->flags & NF_CONST) diag_const_node = lit; /* spec 031: (only to read it: no report here) */
     long n = lit_decode(lit, &buf, &offs);
+    diag_const_node = 0;
     if (n < 0) return -1;
     SqlScan sc;
     sql_scan(buf, n, &sc);

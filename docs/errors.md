@@ -483,6 +483,32 @@ fn main() uses console {
 }
 ```
 
+## E0122 const_in_function
+
+A constant is declared inside a function.
+
+Fixable: yes
+
+Constants are items: `const name = value;` goes at the top level of a file, next to functions and records. Inside a function a value is named with `let`; the fix replaces `const` with `let`.
+
+### Example
+
+```vo
+fn main() uses console {
+    const greeting = "hi";
+    print(greeting);
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let greeting = "hi";
+    print(greeting);
+}
+```
+
 ## E0201 undefined_name
 
 A name is used but never defined or imported.
@@ -772,7 +798,7 @@ A `let` binding is assigned with `set`; only `var` bindings can change.
 
 Fixable: sometimes
 
-`let` bindings cannot be reassigned. The fix changes the declaration to `var`. Lists, maps and records bound with `let` can still be changed through `set xs[i]`, `set m[k]` and `set r.field`; only rebinding the name is forbidden.
+`let` bindings cannot be reassigned. The fix changes the declaration to `var`. Parameters and constants cannot be assigned either (no fix: copy the value into a `var`). Lists, maps and records bound with `let` can still be changed through `set xs[i]`, `set m[k]` and `set r.field`; only rebinding the name is forbidden.
 
 ### Example
 
@@ -930,6 +956,64 @@ import leak.thing;
 
 fn main() uses console {
     print(thing());
+}
+```
+
+## E0212 const_not_constant
+
+A constant's value uses something other than literals, constants and operators.
+
+Fixable: no
+
+The checker works out a constant's value once, before the program runs, so the value can only be made of literals, other constants, parentheses and operators (`+ - * / %`, comparisons, `and`, `or`, `not`). Calls (even `len` or `str`), variables, lists, records and anything else are not constants: compute the value in a function, or write it out.
+
+### Example
+
+```vo
+const words = len("one two");
+
+fn main() uses console {
+    print(str(words));
+}
+```
+
+### Fixed
+
+```vo
+const words = 7;
+
+fn main() uses console {
+    print(str(words));
+}
+```
+
+## E0213 const_cycle
+
+Constants are defined from each other in a cycle.
+
+Fixable: no
+
+A constant may use other constants, but not itself, directly or through others: the message names the chain (`low -> high -> low`). Give one of them a value that does not depend on the other.
+
+### Example
+
+```vo
+const low = high - 10;
+const high = low + 10;
+
+fn main() uses console {
+    print(str(low) + " " + str(high));
+}
+```
+
+### Fixed
+
+```vo
+const low = 0;
+const high = low + 10;
+
+fn main() uses console {
+    print(str(low) + " " + str(high));
 }
 ```
 
@@ -1951,6 +2035,66 @@ fn routes() -> list[Route[int]] {
 }
 ```
 
+## E0332 const_type
+
+A constant's type is not `int`, `float`, `bool` or `str`.
+
+Fixable: no
+
+Constants hold values that cannot change: `int`, `float`, `bool` and `str`. Lists, maps and records can be changed in place, so they are not constants; build them in a function.
+
+### Example
+
+```vo
+const sizes: list[int] = 3;
+
+fn main() uses console {
+    print(str(len(sizes)));
+}
+```
+
+### Fixed
+
+```vo
+fn sizes() -> list[int] {
+    return [1, 2, 3];
+}
+
+fn main() uses console {
+    print(str(len(sizes())));
+}
+```
+
+## E0333 const_arithmetic
+
+A constant's value overflows `int` or divides by zero.
+
+Fixable: no
+
+What would stop a run with R0001 or R0002 stops the check when it is a constant's value: the checker works it out with the same rules. Change the value or the expression.
+
+### Example
+
+```vo
+const per_page = 0;
+const pages = 100 / per_page;
+
+fn main() uses console {
+    print(str(pages));
+}
+```
+
+### Fixed
+
+```vo
+const per_page = 20;
+const pages = 100 / per_page;
+
+fn main() uses console {
+    print(str(pages));
+}
+```
+
 ## E0401 non_exhaustive_match
 
 A `match` does not handle every case.
@@ -2940,6 +3084,35 @@ fn main() uses console {
 ```vo
 fn main() uses console {
     print("done");
+}
+```
+
+## W0202 unused_constant
+
+A constant that is not exported is never used.
+
+Fixable: yes
+
+A private constant that no function, test, other constant, effect scope or annotation of its file refers to is left over from an edit; the fix removes its declaration. Exported constants are not reported: other files may import them.
+
+### Example
+
+```vo
+const limit = 10;
+const spare = 3;
+
+fn main() uses console {
+    print(str(limit));
+}
+```
+
+### Fixed
+
+```vo
+const limit = 10;
+
+fn main() uses console {
+    print(str(limit));
 }
 ```
 

@@ -1,4 +1,4 @@
-route_errors.vo:35:20: error[E0330]: A route pattern must be a string literal, so it can be checked.
+route_errors.vo:35:20: error[E0330]: A route pattern must be a string literal or a constant, so it can be checked.
   35 |     return [on_get(pattern(), op), on_get("notes", op), on_get("/notes/", op), on_get("/notes//x", op), on_get("/notes/{id", by_id), on_get("/a b", op), on_get("/notes/{id}/{id}", by_id), on_get("/notes/{name}", by_id), on_get("/tags/{id}", tags)];
      |                    ^^^^^^^^^
 route_errors.vo:35:44: error[E0330]: A route pattern starts with `/`.

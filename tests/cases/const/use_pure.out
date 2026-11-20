@@ -1,0 +1,5 @@
+main uses console
+
+use_pure.vo:describe pure
+use_pure.vo:main uses console
+0 errors, 0 warnings

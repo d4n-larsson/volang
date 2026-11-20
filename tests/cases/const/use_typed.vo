@@ -1,0 +1,8 @@
+# A stated type must be the value's type, as for `let`.
+const rate: float = 0.25;
+const count: int = 0.5;
+const name: str = "vo";
+
+fn main() uses console {
+    print(str(rate) + " " + str(count) + name);
+}

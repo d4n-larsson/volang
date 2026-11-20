@@ -1,0 +1,8 @@
+# The limits other files share.
+export const max_items = 100;
+export const max_total = max_items * 10;
+const internal = 7;
+
+export fn internal_twice() -> int {
+    return internal * 2;
+}

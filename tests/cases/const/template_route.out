@@ -1,0 +1,4 @@
+template_route.vo:19:45: error[E0330]: A variable is written `{name}`, a whole segment (`bad_path` is "/notes/{id").
+  19 |     return [on_get(note_path, show), on_get(bad_path, show)];
+     |                                             ^^^^^^^^
+1 error, 0 warnings

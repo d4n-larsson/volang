@@ -322,7 +322,7 @@ void bind_placeholder(Node *name_node)
     scope_add(s);
 }
 
-/* 1 when the file (lexed) declares a top-level fn, record or variant with this name. */
+/* 1 when the file (lexed) declares a top-level fn, record, variant or constant with this name. */
 int file_defines(int file, Str *name)
 {
     FileRec *f = file_get(file);
@@ -332,7 +332,9 @@ int file_defines(int file, Str *name)
             depth++;
         } else if (t->kind == T_RBRACE) {
             depth--;
-        } else if (!depth && (t->kind == T_FN || t->kind == T_RECORD || t->kind == T_VARIANT)) {
+        } else if (!depth && (t->kind == T_FN || t->kind == T_RECORD || t->kind == T_VARIANT ||
+                              (t->kind == T_IDENT && str_eq_bytes(str_from_cstr("const"), f->text + t->start,
+                                                                  (long)t->end - t->start)))) { /* spec 031 */
             Token *n = t + 1;
             if ((n->kind == T_IDENT || n->kind == T_TYPE_IDENT) &&
                 str_eq_bytes(name, f->text + n->start, (long)n->end - n->start))

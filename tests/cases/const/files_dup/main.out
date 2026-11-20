@@ -1,0 +1,4 @@
+main.vo:2:10: error[E0202]: `limit` is already defined.
+   2 | import b.limit;
+     |          ^^^^^
+1 error, 0 warnings

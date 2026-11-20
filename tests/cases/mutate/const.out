@@ -1,0 +1,4 @@
+PASS eighteen is adult (0ms)
+PASS seventeen is not (0ms)
+mutation: 1 change, 1 caught, 0 survived, 0 not tried
+2 passed, 0 failed

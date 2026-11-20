@@ -300,6 +300,7 @@
 #define N_ANNOTATION (53) /* spec 012: `@NAME(STR, ...)`: A name node, B vec of N_STR; an item, before the item it annotates */
 #define N_NEW_COLL (54) /* spec 014: `new ordered_map[K, V]` etc.: A the collection type node */
 #define N_EFFECTS (55) /* spec 030: `effects Name = e, ...;`: A name node, B N_USES of the written effects, C expanded EffSet | 0, D 1 while expanding (cycle check), E 1 once a clause or set names it */
+#define N_CONST (56) /* spec 031: `const name[: type] = expr;`: A name node, B type node|0, C expression (folded to its literal once evaluated), D evaluation state (CS_*) */
 #define N_CALL_VALUE (52) /* A callee expr, B args vec, C how (CV_*), D field index (CV_FIELD) */
 #define TPC_NONE (0)
 #define TPC_ORDERED (1)
@@ -361,6 +362,7 @@
 #define NF_EXPECT_OPS (1024) /* spec 018: an `expect` call compiled with the comparison's operands */
 #define NF_EXPECT_NEG (2048) /* spec 018: ... of `not (comparison)` */
 #define NF_MUT_SKIP (4096)   /* spec 018: a `not` that a mutant child compiles as its operand alone */
+#define NF_CONST (8192) /* spec 031: a literal the checker worked out (a constant's use: N_B its N_CONST) */
 #define NF_PAREN (256) /* expression written in parentheses (vo fmt keeps them around `and` in `or`) */
 
 /* builtin ids used outside check_expr.c (all ids: check_expr.c builtin_names) */
@@ -448,6 +450,41 @@
 #define OP_GT_PARAM (32)
 #define OP_GE_PARAM (33)
 
+/* spec 031: integer arithmetic exactly as the VM does it, shared with constant folding (check_const.c) so
+ * the two cannot drift. vo_int_op: 0 with the result in *r, 1 on overflow (R0001), 2 on division by zero
+ * (R0002). vo_div and vo_rem give RISC-V's results where C leaves them undefined: x / -1, x % -1 (R13). */
+static inline long vo_div(long x, long y)
+{
+    return y == -1 ? (long)(0UL - (unsigned long)x) : x / y;
+}
+static inline long vo_rem(long x, long y)
+{
+    return y == -1 ? 0 : x % y;
+}
+static inline int vo_int_op(long op, long x, long y, long *r)
+{
+    const long min = (long)(1UL << 63);
+    switch (op) {
+    case OP_ADD_INT: return __builtin_add_overflow(x, y, r);
+    case OP_SUB_INT: return __builtin_sub_overflow(x, y, r);
+    case OP_MUL_INT: return __builtin_mul_overflow(x, y, r);
+    case OP_DIV_INT:
+        if (!y) return 2;
+        if (y == -1 && x == min) return 1;
+        *r = vo_div(x, y);
+        return 0;
+    case OP_REM_INT:
+        if (!y) return 2;
+        *r = vo_rem(x, y);
+        return 0;
+    case OP_NEG_INT:
+        if (x == min) return 1;
+        *r = -x;
+        return 0;
+    default: return 1;
+    }
+}
+
 /* ---- semantic types (interned): kind | a | b | decl ---- */
 #define TY_KIND (0)
 #define TY_A (8)
@@ -497,6 +534,8 @@
 #define SYM_LOCAL (4)
 #define SYM_TPARAM (5) /* a type parameter: SY_TYPE is its TY_PARAM */
 #define SYM_EFFECTS (6) /* spec 030: an effect set (SY_DECL its N_EFFECTS) */
+#define SYM_CONST (7)   /* spec 031: a constant (SY_DECL its N_CONST; its type is the declaration's) */
+#define CS_BAD (3)      /* spec 031: an N_CONST in error (N_D; the other states are in check_const.c) */
 #define SYF_MUT (1)
 #define SYF_USED (2)
 
@@ -1318,6 +1357,15 @@ extern Diag *ck_mismatch(Node *node, Type *expected, Type *found);
 extern Sym *sym_new(Str *name, long kind, Node *decl, Type *type, Node *name_node);
 extern void scope_add(Sym *s);
 extern Sym *scope_find(Str *name);
+extern int const_fold(Node *e, int report); /* spec 031: check_const.c */
+extern int const_literal(Node *e, Type *want);
+extern int const_literal_any(Node *e);
+extern int const_template(Node *e);
+extern Node *diag_const_node; /* diag.c */
+extern Type *const_eval(Node *decl, Node *at);
+extern void const_use(Node *node, Node *decl);
+extern void const_check_all(Vec *items);
+extern void const_report_unused(Vec *items);
 extern void scope_leave(Sym *saved);
 extern Str *convert_name(Str *name, int upper);
 extern void check_naming(Node *name_node, int upper);

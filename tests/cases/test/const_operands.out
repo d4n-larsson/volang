@@ -1,0 +1,10 @@
+const_operands.vo:19:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
+  19 |     expect(max_items == 2);
+     |     ^^^^^^^^^^^^^^^^^^^^^^
+FAIL limit holds (0ms)
+  const_operands.vo:11:5: `expect` failed: `len(xs) <= max_items` is false.
+    len(xs):   3
+    max_items: 2
+PASS count (0ms)
+PASS constants only (0ms)
+2 passed, 1 failed

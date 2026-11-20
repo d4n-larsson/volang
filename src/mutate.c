@@ -85,6 +85,7 @@ void mut_note(Node *n, Node *fn, long fn_index)
 {
     for (long i = mut_n - 1; i >= 0 && i >= mut_n - 8; i--) /* (a node can be visited twice in a row) */
         if (muts[i].node == n) return;
+    if (n->flags & NF_CONST) return; /* spec 031: a constant's use: its value is the declaration's */
     if (n->kind == N_BINARY) {
         long op = swap_op(n->d.i);
         if (op) push_mut(n, fn, fn_index, MK_OP, op);

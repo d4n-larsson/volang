@@ -1,0 +1,7 @@
+err_type.vo:2:11: error[E0332]: A constant is an `int`, `float`, `bool` or `str`, found `list[int]`.
+   2 | const xs: list[int] = 1;
+     |           ^^^^^^^^^
+err_type.vo:3:11: error[E0332]: A constant is an `int`, `float`, `bool` or `str`, found `map[str, int]`.
+   3 | const ys: map[str, int] = 2;
+     |           ^^^^^^^^^^^^^
+2 errors, 0 warnings

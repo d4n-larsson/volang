@@ -6,10 +6,14 @@ import report.expenses_from;
 import report.render;
 import std.json.parse_json;
 
-fn main() -> result[void] uses console, file.read("data/"), file.write("out/") {
-    let doc = try parse_json(try read_file("data/expenses.json"));
+# Where the expenses are read from, and where the report goes: the grant and the paths in one place.
+const data_dir = "data/";
+const out_dir = "out/";
+
+fn main() -> result[void] uses console, file.read(data_dir), file.write(out_dir) {
+    let doc = try parse_json(try read_file(data_dir + "expenses.json"));
     let text = render(try expenses_from(doc));
     write(text);
-    try write_file("out/report.txt", text);
+    try write_file(out_dir + "report.txt", text);
     return ok();
 }

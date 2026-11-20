@@ -58,7 +58,10 @@ def mutate(data, rng):
                                     b"@pattern(\"[a-z\")\n", b"@header(\"X\")", b"@", b"new P {}", b"{}",
                                     # spec 030: effect sets
                                     b"\neffects S = ", b"\neffects S = file.read(\"x/\");\n", b"export effects ",
-                                    b"uses Storage", b"uses console, Storage", b"effects ", b"Storage"])
+                                    b"uses Storage", b"uses console, Storage", b"effects ", b"Storage",
+                                    # spec 031: constants
+                                    b"\nconst a = ", b"\nconst a: int = 1;\n", b"export const ", b"const A = 1 +;",
+                                    b"\nconst a = a;\n", b"const x = 1;", b"const ", b"max_items"])
     return bytes(data)
 
 

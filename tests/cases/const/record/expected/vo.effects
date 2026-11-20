@@ -1,0 +1,4 @@
+# vo effects record: update with `vo effects --update`
+main.vo:log uses file.write("out/")
+main.vo:main uses console
+main.vo:save uses file.write("out/")

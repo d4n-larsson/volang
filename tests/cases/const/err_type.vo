@@ -1,0 +1,7 @@
+# A constant is an `int`, `float`, `bool` or `str`.
+const xs: list[int] = 1;
+const ys: map[str, int] = 2;
+
+fn main() uses console {
+    print(str(xs) + str(ys));
+}

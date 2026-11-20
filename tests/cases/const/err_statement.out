@@ -1,0 +1,5 @@
+err_statement.vo:7:5: error[E0122]: Constants are declared at the top level of a file; inside a function use `let`.
+   7 |     const x = 1;
+     |     ^^^^^
+  fix: replace with `let`
+1 error, 0 warnings

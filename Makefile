@@ -226,7 +226,8 @@ test: all
 	  migrate.py record_changes.py doc_conformance.py json_corpus.py packages_check.py time_check.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
 	  steps.py json_stream.py https_interop.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1" \
 	  math_vectors.py "bytes_fuzz.py --count 2000 --runs 200" "format_diff.py --quick" "regex_diff.py --quick" \
-	  "regex_fuzz.py --count 20000" "sqlite_scope.py --quick" "sqlite_fuzz.py --count 1000" sqlite_corpus.py structure_corpus.py "serve_workers.py --quick" "web_fuzz.py --quick" effect_sets_records.py; do \
+	  "regex_fuzz.py --count 20000" "sqlite_scope.py --quick" "sqlite_fuzz.py --count 1000" sqlite_corpus.py structure_corpus.py "serve_workers.py --quick" "web_fuzz.py --quick" effect_sets_records.py \
+	  "const_equiv.py --count 300" const_records.py; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
 	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \

@@ -252,6 +252,7 @@ static void fm_uses_body(Node *uses)
         }
         for (long j = 0; j < e->b.v->n; j++) {
             Node *scope = vec_get(e->b.v, j);
+            if (scope->kind != N_STR) goto as_written; /* spec 031: a constant: its value is not known here */
             if (!es_add_scope(set, bit, scope->a.s)) goto as_written;
         }
     }
@@ -270,7 +271,11 @@ as_written:
         fm_b('(');
         for (long j = 0; j < e->b.v->n; j++) {
             if (j) fm_c(", ");
-            render_str_lit(fm_sb, ((Node *)vec_get(e->b.v, j))->a.s);
+            Node *scope = vec_get(e->b.v, j);
+            if (scope->kind == N_STR)
+                render_str_lit(fm_sb, scope->a.s);
+            else
+                fm_expr(scope, 0);
         }
         fm_b(')');
     }
@@ -639,6 +644,18 @@ static void fm_stmt_once(Node *s, long level)
     case N_COMMENT:
         fm_source(s);
         break;
+    case N_CONST: /* spec 031: an item, laid out as a statement (the 100-column rule) */
+        if (s->flags & NF_EXPORT) fm_c("export ");
+        fm_c("const ");
+        fm_name(s->a.n);
+        if (s->b.n) {
+            fm_c(": ");
+            fm_type(s->b.n);
+        }
+        fm_c(" = ");
+        fm_expr(s->c.n, 0);
+        fm_b(';');
+        break;
     case N_LET:
         fm_c(s->flags & NF_MUT ? "var " : "let ");
         if (s->flags & NF_DISCARD)
@@ -862,6 +879,9 @@ static void fm_item(Node *item)
         fm_block(item->d.n, 0);
         break;
     }
+    case N_CONST: /* spec 031: fm_stmt ends the line itself */
+        fm_stmt(item, 0);
+        return;
     case N_EFFECTS: /* spec 030: effects Name = e, ...; */
         if (item->flags & NF_EXPORT) fm_c("export ");
         fm_c("effects ");
@@ -966,7 +986,7 @@ Str *fmt_file(int file)
         Node *it = vec_get(order, i);
         long kind = it->kind;
         if (prev == N_ANNOTATION) { /* spec 012: an annotation sits right above its item */
-        } else if (prev == N_COMMENT ? gap : prev && !(prev == kind && (kind == N_IMPORT || kind == N_EFFECTS))) {
+        } else if (prev == N_COMMENT ? gap : prev && !(prev == kind && (kind == N_IMPORT || kind == N_EFFECTS || kind == N_CONST))) {
             fm_b('\n'); /* blank line */
         }
         fm_item(it);

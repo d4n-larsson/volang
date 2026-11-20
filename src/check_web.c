@@ -49,18 +49,30 @@ static int path_type_ok(Type *t)
     return t->kind == TY_STR || t->kind == TY_INT || t->kind == TY_FLOAT || t->kind == TY_BOOL || ty_enum_like(t);
 }
 
+static void web_route(Node *call);
+
+/* spec 031: diagnostics inside a route pattern that came from a constant are placed on its use. */
 void check_web_call(Node *call)
+{
+    web_route(call);
+    diag_const_node = 0;
+}
+
+static void web_route(Node *call)
 {
     if (route_fn(call->c.n) < 0 || call->b.v->n != 2) return;
     Node *lit = vec_get(call->b.v, 0);
-    if (lit->kind != N_STR) {
-        ck_err("E0330", lit, str_from_cstr("A route pattern must be a string literal, so it can be checked."));
+    if (lit->kind != N_STR && !const_template(lit)) {
+        ck_err("E0330", lit, str_from_cstr("A route pattern must be a string literal or a constant, so it can be checked."));
         return;
     }
     Str *p = lit->a.s;
     char *s = p->data;
     long n = p->len;
-    if (n != (long)(lit->end - lit->start - 2)) return; /* escapes in the literal: offsets would be off */
+    if (lit->flags & NF_CONST)
+        diag_const_node = lit;
+    else if (n != (long)(lit->end - lit->start - 2))
+        return; /* escapes in the literal: offsets would be off */
     if (!n || s[0] != '/') {
         bad_at(lit, 0, 1, "A route pattern starts with `/`.");
         return;

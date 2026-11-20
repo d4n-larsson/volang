@@ -1,0 +1,8 @@
+vo effects --update main.vo
+cp with_const.vo main.vo
+vo check main.vo
+keep vo.effects
+cp wider.vo main.vo
+vo check main.vo
+cp narrower.vo main.vo
+vo check main.vo

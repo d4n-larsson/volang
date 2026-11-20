@@ -1,0 +1,46 @@
+# Field annotations take constants: the limits a program uses elsewhere are written once.
+import std.json.from_json;
+import std.json.parse_json;
+
+const max_name = 5;
+const max_qty = 3 * 4;
+const top_rate = 0.5;
+const code_pattern = "[a-z]+[0-9]";
+const default_port = "8080";
+
+record Order {
+    @size(1, max_name)
+    name: str;
+    @range(1, max_qty)
+    qty: int;
+    @range(0.0, top_rate)
+    rate: float;
+    @pattern(code_pattern)
+    code: str;
+    @default(default_port)
+    port: str;
+}
+
+fn show(text: str) uses console {
+    match parse_json(text) {
+        case ok(j) {
+            let r: result[Order] = from_json(j);
+            match r {
+                case ok(o) {
+                    print("ok " + o.name + " " + str(o.qty) + " " + o.port);
+                }
+                case err(e) {
+                    print("err " + e);
+                }
+            }
+        }
+        case err(e) {
+            print("bad json " + e);
+        }
+    }
+}
+
+fn main() uses console {
+    show("{\"name\": \"tea\", \"qty\": 12, \"rate\": 0.5, \"code\": \"ab1\"}");
+    show("{\"name\": \"teapot\", \"qty\": 13, \"rate\": 0.6, \"code\": \"1ab\"}");
+}

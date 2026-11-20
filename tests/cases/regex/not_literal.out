@@ -1,2 +1,2 @@
-{"v":1,"kind":"diagnostic","code":"E0321","name":"regex_not_literal","severity":"error","file":"not_literal.vo","start":{"line":5,"col":17},"end":{"line":5,"col":18},"text":"p","message":"`regex` needs a string literal, so the pattern can be checked; use `parse_regex(s)` for a pattern built at run time.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0321","name":"regex_not_literal","severity":"error","file":"not_literal.vo","start":{"line":5,"col":17},"end":{"line":5,"col":18},"text":"p","message":"`regex` needs a string literal or a constant, so the pattern can be checked; use `parse_regex(s)` for a pattern built at run time.","fixes":[],"related":[]}
 {"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -1,0 +1,17 @@
+const max_items = 100;
+export const rate: float = 0.25;
+
+# The directory reports go to.
+const out_dir = "out/";
+const report = out_dir + "report.txt";
+const big = 1;
+
+fn save() -> result[void] uses file.write(out_dir, "a/") {
+    return write_file(report, str(max_items * big));
+}
+
+const after_fn = rate * 2.0;
+
+fn main() uses console {
+    print(str(after_fn));
+}

@@ -1,0 +1,15 @@
+# Reading a constant is not an effect: a function that uses constants and declares nothing is pure.
+const limit = 3;
+const label = "items";
+
+fn describe(n: int) -> str {
+    if n > limit {
+        return "too many " + label;
+    }
+    return str(n) + " " + label;
+}
+
+fn main() uses console {
+    print(describe(2));
+    print(describe(5));
+}

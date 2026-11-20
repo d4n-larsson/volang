@@ -1,0 +1,28 @@
+err_call.vo:11:11: error[E0212]: A constant's value is made of literals, constants and operators: it cannot call `items`.
+  11 | const a = items();
+     |           ^^^^^^^
+err_call.vo:12:11: error[E0212]: A constant's value is made of literals, constants and operators: it cannot call `len`.
+  12 | const b = len("abc");
+     |           ^^^^^^^^^^
+err_call.vo:13:11: error[E0212]: A constant's value is made of literals, constants and operators: it cannot call `str`.
+  13 | const c = str(1);
+     |           ^^^^^^
+err_call.vo:14:11: error[E0212]: A constant's value is made of literals, constants and operators: it cannot call `todo`.
+  14 | const d = todo("later");
+     |           ^^^^^^^^^^^^^
+err_call.vo:15:11: error[E0212]: A constant's value is made of literals, constants and operators: this is not allowed here.
+  15 | const e = new Point { x: 1, y: 2 };
+     |           ^^^^^^^^^^^^^^^^^^^^^^^^
+err_call.vo:16:11: error[E0212]: A constant's value is made of literals, constants and operators: this is not allowed here.
+  16 | const f = [1, 2];
+     |           ^^^^^^
+err_call.vo:17:11: error[E0212]: A constant's value is made of literals, constants and operators: this is not allowed here.
+  17 | const g = "abc"[0];
+     |           ^^^^^^^^
+err_call.vo:18:21: error[E0212]: A constant's value is made of literals, constants and operators: `items` is not a constant.
+  18 | const h = (1 + 2) * items;
+     |                     ^^^^^
+err_call.vo:19:11: error[E0212]: A constant's value is made of literals, constants and operators: this is not allowed here.
+  19 | const i = fn(x: int) -> int {
+     |           ^^^^^^^^^^^^^^^^^^^
+9 errors, 0 warnings

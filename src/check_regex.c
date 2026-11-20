@@ -60,12 +60,14 @@ int check_regex_literal(Node *lit)
 static void check_pattern(Node *call)
 {
     Node *lit = vec_get(call->b.v, 0);
-    if (lit->kind != N_STR) {
-        ck_err("E0321", lit, str_from_cstr("`regex` needs a string literal, so the pattern can be checked; use "
+    if (lit->kind != N_STR && !const_template(lit)) {
+        ck_err("E0321", lit, str_from_cstr("`regex` needs a string literal or a constant, so the pattern can be checked; use "
                                            "`parse_regex(s)` for a pattern built at run time."));
         return;
     }
+    if (lit->flags & NF_CONST) diag_const_node = lit; /* spec 031 */
     check_regex_literal(lit);
+    diag_const_node = 0;
 }
 
 static void check_replacement(Node *call)

@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0205","name":"import_not_found","severity":"error","file":"main.vo","start":{"line":1,"col":15},"end":{"line":1,"col":23},"text":"max_size","message":"`config.vo` has no item `max_size`.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0204","name":"missing_import","severity":"error","file":"main.vo","start":{"line":4,"col":15},"end":{"line":4,"col":24},"text":"max_items","message":"`max_items` is defined in another file but not imported: add `import config.max_items;`.","fixes":[{"file":"main.vo","start":{"line":2,"col":1},"end":{"line":2,"col":1},"replacement":"import config.max_items;\n"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

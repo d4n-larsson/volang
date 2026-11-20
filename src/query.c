@@ -32,7 +32,7 @@ static char r_ignored[] = "ignored";
 
 static char *const role_names[] = {"declaration", "call", "value", "type", "import", "use"};
 
-#define QK_ITEMS ((1L << N_FN) | (1L << N_RECORD) | (1L << N_VARIANT) | (1L << N_EFFECTS))
+#define QK_ITEMS ((1L << N_FN) | (1L << N_RECORD) | (1L << N_VARIANT) | (1L << N_EFFECTS) | (1L << N_CONST))
 #define QK_TYPES ((1L << N_RECORD) | (1L << N_VARIANT))
 #define M_DF_HUNK "The diff is not a valid unified diff (a hunk is malformed or cut short)."
 #define J_ROLE ",\"role\":\""
@@ -857,10 +857,14 @@ void im_items(void)
         Vec *items = file_get((int)file)->ast->a.v;
         for (long j = 0; j < items->n; j++) {
             Node *it = vec_get(items, j);
-            if (it->kind != N_FN && it->kind != N_TEST) continue;
+            if (it->kind != N_FN && it->kind != N_TEST && it->kind != N_CONST) continue; /* spec 031: constants */
             long l1 = pos_line((int)file, it->start); /* its lines */
             long l2 = pos_line((int)file, (long)it->end - 1);
             long added = df_count_in(df_plus, file, l1, l2, 0); /* added lines inside */
+            if (it->kind == N_CONST && df_count_in(df_minus, file, l1, l2, 0)) { /* spec 031: a value edited in place */
+                im_add(it, r_changed, 0);
+                continue;
+            }
             if (added == l2 - l1 + 1) { /* every line is new: added */
                 im_add(it, r_added, 0);
                 continue;
@@ -885,18 +889,33 @@ void im_removed(void)
     }
 }
 
+/* Spec 031: the constant whose value holds node n (a reference made outside any function), or 0. */
+static Node *im_const_at(Node *n)
+{
+    Vec *items = file_get((int)n->file)->ast->a.v;
+    for (long i = 0; i < items->n; i++) {
+        Node *it = vec_get(items, i);
+        if (it->kind == N_CONST && it->start <= n->start && n->end <= it->end) return it;
+    }
+    return 0;
+}
+
 /* Breadth first from the changed, added and removed functions: every function, test and
- * property that calls one of them, directly or not (calls and uses as values). */
+ * property that calls one of them, directly or not (calls and uses as values); spec 031: and every
+ * function, test, property and constant that uses a changed constant. */
 void im_callers(void)
 {
     for (long q = 0; im_list && q < im_list->n; q++) { /* queue position in im_list */
         Impact *e = vec_get(im_list, q);
         void *x = e->x; /* an item, or a removed name (a str) */
         if (e->role == r_test) continue; /* nothing calls a test */
+        int is_const = e->role != r_removed && ((Node *)x)->kind == N_CONST;
         for (long k = 0; q_log && k < q_log->n; k++) {
             RefLog *r = vec_get(q_log, k);
-            if (r->role != RR_CALL && r->role != RR_VALUE) continue;
-            if (!r->item) continue;
+            if (r->role != RR_CALL && r->role != RR_VALUE && !(is_const && r->role == RR_USE)) continue;
+            Node *by = r->item;
+            if (!by && is_const) by = im_const_at(r->node); /* a constant defined from x */
+            if (!by) continue;
             if (r->key_a.i) { /* a call of x? (by declaration, or by name when removed) */
                 if (r->key_a.p != x || r->key_b.i != -1) continue;
             } else {
@@ -905,8 +924,8 @@ void im_callers(void)
                 if (xn->kind == N_FN || xn->kind == N_TEST) continue;
                 if (!str_eq(x, r->key_b.s)) continue;
             }
-            if (im_has(r->item)) continue;
-            im_add(r->item, r->item->kind == N_TEST ? r_test : r_affected, x);
+            if (im_has(by)) continue;
+            im_add(by, by->kind == N_TEST ? r_test : r_affected, x);
         }
     }
 }
@@ -916,6 +935,7 @@ Str *im_name(void *x)
 {
     Node *n = x;
     if (n->kind == N_FN || n->kind == N_TEST) return fx_item_name(n);
+    if (n->kind == N_CONST) return n->a.n->a.s; /* spec 031 */
     return x;
 }
 
@@ -1107,10 +1127,16 @@ int q_type_at(long file, long off)
     RefLog *decl = 0;                     /* the declaration entry */
     Type *t;
     Node *shown; /* the node reported */
+    Node *cdecl = 0; /* spec 031: the constant the name refers to, or 0 */
     if (!name && !expr) q_fail(str_from_cstr("Nothing to look up at this position: point at a name or an expression."));
     if (name && (!expr || (long)name->node->end - name->node->start <= (long)expr->end - expr->start)) {
         decl = q_decl_of(name->key_a.i, name->key_b.i); /* the smaller span wins; a name on a tie */
         t = name->type; /* the type: declared here, the checked expression, or the declaration's */
+        Node *item = name->key_b.i < 0 ? (Node *)name->key_a.i : 0;
+        if (item && item->kind == N_CONST) { /* spec 031: a constant's type and value */
+            cdecl = item;
+            if (!t) t = item->type;
+        }
         if (!t && expr && name->node == expr) t = expr->type;
         if (!t && decl) t = decl->type;
         if (!t && expr) t = expr->type;
@@ -1135,6 +1161,12 @@ int q_type_at(long file, long off)
         json_src_text(sb, f, shown->start, shown->end);
         sb_cstr(sb, ",\"type\":");
         json_str_into(sb, q_type_name(t));
+        if (cdecl && !ty_bad(cdecl->type)) { /* spec 031: the constant's value, in vo syntax */
+            SB *v = sb_new();
+            render_value(v, cdecl->c.n->a.i, cdecl->type);
+            sb_cstr(sb, ",\"value\":");
+            json_str_into(sb, sb_finish(v));
+        }
         if (name) {
             sb_cstr(sb, ",\"name\":");
             json_src_text(sb, f, shown->start, shown->end);
@@ -1157,6 +1189,10 @@ int q_type_at(long file, long off)
         sb_bytes(sb, file_get(f)->text + shown->start, (long)shown->end - shown->start);
         sb_cstr(sb, ": ");
         sb_str(sb, q_type_name(t));
+        if (cdecl && !ty_bad(cdecl->type)) { /* spec 031: = value */
+            sb_cstr(sb, " = ");
+            render_value(sb, cdecl->c.n->a.i, cdecl->type);
+        }
         if (decl) {
             sb_cstr(sb, " (declared at ");
             human_loc(sb, (int)decl->node->file, decl->node->start);

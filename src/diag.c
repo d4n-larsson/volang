@@ -113,8 +113,39 @@ long pos_offset(int file, long line, long col)
     return p;
 }
 
+/* Spec 031: while a template, pattern, statement or route that came from a constant is checked, every
+ * new diagnostic spans the constant's use and names its value, and gets no fix (offsets inside the
+ * value are not places in the source). */
+Node *diag_const_node;
+
+/* " (`name` is "value")", or " (its value is "value")" for a folded expression. */
+static Str *const_note(Node *n)
+{
+    SB *sb = sb_new();
+    if (n->b.n && n->b.n->kind == N_CONST && n->b.n->a.n) {
+        sb_cstr(sb, " (`");
+        sb_str(sb, n->b.n->a.n->a.s);
+        sb_cstr(sb, "` is ");
+    } else {
+        sb_cstr(sb, " (its value is ");
+    }
+    render_str_lit(sb, n->a.s);
+    sb_byte(sb, ')');
+    return sb_finish(sb);
+}
+
 Diag *diag_add(char *code, int sev, int file, long start, long end, Str *message)
 {
+    if (diag_const_node) {
+        Node *n = diag_const_node;
+        file = (int)n->file;
+        start = n->start;
+        end = n->end;
+        if (message && message->len && message->data[message->len - 1] == '.') /* before the full stop */
+            message = str_concat(str_new(message->data, message->len - 1), str_concat(const_note(n), str_from_cstr(".")));
+        else if (message)
+            message = str_concat(message, const_note(n));
+    }
     Diag *d = alloc(D_SIZE);
     d->code = code;
     d->sev = sev;
@@ -160,6 +191,7 @@ int ranges_touch(long s1, long e1, long s2, long e2)
 /* Appends a fix unless it overlaps or touches one the diagnostic already has. */
 void diag_add_fix(Diag *d, int file, long start, long end, Str *replacement)
 {
+    if (diag_const_node) return; /* spec 031: not a place in the source */
     Fix **link = (Fix **)&d->fixes.p;
     for (; *link; link = &(*link)->next)
         if (ranges_touch((*link)->start, (*link)->end, start, end)) return;

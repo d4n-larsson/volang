@@ -1,0 +1,13 @@
+# Replacing a literal scope by a constant of the same value changes nothing in review; changing the
+# constant is reported for every function that uses it.
+fn save(text: str) -> result[void] uses file.write("out/") {
+    return write_file("out/report.txt", text);
+}
+
+fn log(line: str) -> result[void] uses file.write("out/") {
+    return write_file("out/log.txt", line);
+}
+
+fn main() uses console {
+    print("ready");
+}

@@ -1,0 +1,10 @@
+# Inside a function, a value is named with `let`.
+fn const(n: int) -> int {
+    return n + 1;
+}
+
+fn main() uses console {
+    const x = 1;
+    let y = const(x);
+    print(str(y));
+}

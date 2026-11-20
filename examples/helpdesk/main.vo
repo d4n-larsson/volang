@@ -7,9 +7,12 @@ import helpdesk.parse_tickets;
 import helpdesk.report;
 import helpdesk.triage;
 
-fn main() -> result[void] uses console, file.read("data/") {
-    let tickets = try parse_tickets(try read_file("data/tickets.txt"));
-    let shifts = try parse_shifts(try read_file("data/oncall.txt"));
+# Where the tickets and the on-call shifts are read from: the program's whole file grant.
+const data_dir = "data/";
+
+fn main() -> result[void] uses console, file.read(data_dir) {
+    let tickets = try parse_tickets(try read_file(data_dir + "tickets.txt"));
+    let shifts = try parse_shifts(try read_file(data_dir + "oncall.txt"));
     write(report(try handle(tickets, shifts), shifts));
     return ok();
 }

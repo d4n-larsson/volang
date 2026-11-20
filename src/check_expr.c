@@ -244,6 +244,14 @@ static Type *infer_error(Node *call, Type *expected)
     return t_error;
 }
 
+/* W0603: a literal or (spec 031) a constant: a value that cannot depend on the program. */
+static int fixed_operand(Node *n)
+{
+    if (node_is_literal(n) || (n->flags & NF_CONST)) return 1;
+    Sym *s = n->kind == N_IDENT ? scope_find(n->a.s) : 0;
+    return s && s->kind == SYM_CONST;
+}
+
 Type *check_builtin(Node *call, long id, Type *expected)
 {
     call->d.i = id;
@@ -262,10 +270,9 @@ Type *check_builtin(Node *call, long id, Type *expected)
         int fixed = 0;
         if (c && id == B_EXPECT) {
             if (c->kind == N_UNARY && c->a.n->kind == N_BOOL) c = c->a.n; /* not true */
-            fixed = node_is_literal(c) ||
-                    (c->kind == N_BINARY && node_is_literal(c->a.n) && node_is_literal(c->b.n));
+            fixed = fixed_operand(c) || (c->kind == N_BINARY && fixed_operand(c->a.n) && fixed_operand(c->b.n));
         } else if (c && args->n == 2) {
-            fixed = node_is_literal(c) && node_is_literal(vec_get(args, 1));
+            fixed = fixed_operand(c) && fixed_operand(vec_get(args, 1));
         }
         if (fixed) ck_warn("W0603", call, str_from_cstr("This check always has the same outcome: it does not depend on the program."));
     }
@@ -655,6 +662,12 @@ Type *check_ident_as(Node *node, Type *expected)
             s->flags |= SYF_USED;
             node->c.i = ck_capture(s, node); /* its slot here (a capture inside anonymous functions) */
             return s->type ? s->type : t_error;
+        }
+        if (s->kind == SYM_CONST) { /* spec 031: the use becomes the literal of its value */
+            Type *t = const_eval(s->decl, node);
+            if (ty_bad(t)) return t_error;
+            const_use(node, s->decl);
+            return t;
         }
         if (s->kind == SYM_FN) { /* a named function as a value */
             node->flags |= NF_FNVAL;

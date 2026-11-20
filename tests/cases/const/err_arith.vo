@@ -1,0 +1,14 @@
+# What would stop a run (R0001, R0002) stops the check when it is a constant's value.
+const big = 9223372036854775807;
+const over = big + 1;
+const under = -big - 2;
+const twice = big * 2;
+const by_zero = 10 / 0;
+const rem_zero = 10 % 0;
+const smallest = -big - 1;
+const min_div = smallest / -1;
+const min_neg = -smallest;
+
+fn main() uses console {
+    print(str(over + under + twice + by_zero + rem_zero + min_div + min_neg));
+}

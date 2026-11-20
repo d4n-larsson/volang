@@ -3,7 +3,7 @@ builtins, effects in `uses` clauses, `@spec` annotations, strings, numbers and `
 from pygments.lexer import RegexLexer, bygroups, words
 from pygments.token import Comment, Keyword, Name, Number, Operator, Punctuation, String, Text, Whitespace
 
-KEYWORDS = ("fn", "record", "variant", "test", "prop", "import", "export", "let", "var", "set", "if", "else",
+KEYWORDS = ("fn", "record", "variant", "test", "prop", "import", "export", "const", "let", "var", "set", "if", "else",
             "while", "for", "in", "match", "case", "return", "break", "continue", "try", "new", "and", "or",
             "not", "uses", "requires", "ensures")
 TYPES = ("int", "float", "bool", "str", "bytes", "list", "map", "result", "void", "ordered_map", "ordered_set",

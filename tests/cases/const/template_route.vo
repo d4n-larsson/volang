@@ -1,0 +1,23 @@
+# A route pattern may be a constant; a problem in it is reported at its use, with the value.
+import std.http.Response;
+import std.web.Route;
+import std.web.json_reply;
+import std.web.on_get;
+
+const note_path = "/notes/{id}";
+const bad_path = "/notes/{id";
+
+record ById {
+    id: int;
+}
+
+fn show(n: int, input: ById) -> result[Response] {
+    return ok(json_reply(200, input.id + n));
+}
+
+fn routes() -> list[Route[int]] {
+    return [on_get(note_path, show), on_get(bad_path, show)];
+}
+
+fn main() {
+}

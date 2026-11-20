@@ -1,0 +1,10 @@
+annot_bad.vo:6:14: error[E0329]: `@size` bounds are whole numbers from 0.
+   6 |     @size(1, label)
+     |              ^^^^^
+annot_bad.vo:8:15: error[E0329]: This field is an `int`: its range is whole numbers.
+   8 |     @range(0, small)
+     |               ^^^^^
+annot_bad.vo:10:5: error[E0329]: `@pattern` takes one string literal or constant.
+  10 |     @pattern(small)
+     |     ^^^^^^^^^^^^^^^
+3 errors, 0 warnings

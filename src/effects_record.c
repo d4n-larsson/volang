@@ -408,6 +408,31 @@ void rec_review(int entry, Vec *files)
     for (long i = 0; i < changes->n; i++) rec_change_diag(vec_get(changes, i));
 }
 
+/* Spec 031: a related note at each constant the function's own clause uses as a scope, so a reviewer
+ * sees why a function whose text did not change gained or lost a capability. */
+static void rec_const_notes(Diag *d, Rec *r)
+{
+    if (!d || !r || !r->item) return;
+    Fx *fx = item_fx(r->item);
+    Node *uses = fx ? fx->uses : 0;
+    if (!uses) return;
+    for (long i = 0; i < uses->a.v->n; i++) {
+        Node *eff = vec_get(uses->a.v, i);
+        for (long j = 0; eff->b.v && j < eff->b.v->n; j++) {
+            Node *sc = vec_get(eff->b.v, j);
+            if (!(sc->flags & NF_CONST) || sc->kind != N_STR || !sc->b.n || sc->b.n->kind != N_CONST) continue;
+            Node *decl = sc->b.n;
+            SB *sb = sb_new();
+            sb_cstr(sb, "`");
+            sb_str(sb, decl->a.n->a.s);
+            sb_cstr(sb, "` is ");
+            render_str_lit(sb, sc->a.s);
+            sb_cstr(sb, " here.");
+            diag_add_related(d, (int)decl->file, decl->a.n->start, decl->a.n->end, sb_finish(sb));
+        }
+    }
+}
+
 void rec_change_diag(void *change)
 {
     RecChange *c = change;
@@ -421,8 +446,9 @@ void rec_change_diag(void *change)
     case CH_REMOVED:
     case CH_NARROWED:
         if (n) /* the function is still there: fewer effects */
-            diag_add("W0502", SEV_WARNING, (int)n->file, n->start, n->end,
-                     msg("`$1` no longer uses $2.", n->name, delta, 0));
+            rec_const_notes(diag_add("W0502", SEV_WARNING, (int)n->file, n->start, n->end,
+                                     msg("`$1` no longer uses $2.", n->name, delta, 0)),
+                            n);
         else /* removed: point at its record line */
             diag_add("W0502", SEV_WARNING, (int)o->file, o->start, o->end,
                      msg("`$1` was removed; it used $2.", o->name, delta, 0));
@@ -431,6 +457,7 @@ void rec_change_diag(void *change)
         Diag *d = diag_add("E0504", SEV_ERROR, (int)n->file, n->start, n->end,
                            msg("`$1` gains $2; approve with `vo effects --update`.", n->name, delta, 0));
         rec_via(d, 0, n, o ? o->set : es_new(0));
+        rec_const_notes(d, n);
         return;
     }
     }

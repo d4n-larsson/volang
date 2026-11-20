@@ -1,0 +1,2 @@
+ok tea 12 8080
+err name: at most 5 characters, got 6; qty: at most 12; rate: at most 0.5; code: does not match [a-z]+[0-9]

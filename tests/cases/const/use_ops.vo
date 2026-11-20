@@ -1,0 +1,32 @@
+# The value of a constant is worked out once, with the rules the same expression has when it runs.
+const seven = 7;
+const half = seven / 2;
+const neg_rem = -seven % 3;
+const big = 9223372036854775807;
+const smallest = -big - 1;
+const product = seven * 6 - (2 + 3) * 4;
+const third = 1.0 / 3.0;
+const inf = 1.0 / 0.0;
+const neg_zero = -0.0;
+const joined = "a" + "b" + ("c" + "d");
+const before = "apple" < "banana";
+const same = joined == "abcd";
+const mixed = not half > 3 and (seven >= 7 or false);
+const fneq = 0.1 + 0.2 == 0.3;
+const c1 = c2 + 1;
+const c2 = c3 + 1;
+const c3 = c4 + 1;
+const c4 = c5 + 1;
+const c5 = c6 + 1;
+const c6 = c7 + 1;
+const c7 = c8 + 1;
+const c8 = c9 + 1;
+const c9 = c10 + 1;
+const c10 = 0;
+
+fn main() uses console {
+    print(str(half) + " " + str(neg_rem) + " " + str(smallest) + " " + str(product));
+    print(str(third) + " " + str(inf) + " " + str(neg_zero) + " " + joined);
+    print(str(before) + " " + str(same) + " " + str(mixed) + " " + str(fneq) + " " + str(c1));
+    print(str(7 / 2 == half) + " " + str(-7 % 3 == neg_rem) + " " + str(1.0 / 3.0 == third));
+}

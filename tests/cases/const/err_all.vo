@@ -1,0 +1,20 @@
+# Every kind of mistake in a constant, in one file: each is reported at its own place, in one pass.
+fn now() -> int {
+    return 1;
+}
+
+const called = now();
+const loop_a = loop_b;
+const loop_b = loop_a;
+const huge = 9223372036854775807 * 10;
+const zero_div = 1 / 0;
+const listed: list[int] = 1;
+const MAX_ITEMS = 100;
+const unused = 1;
+const limit = 10;
+
+fn main() uses console {
+    const local = 1;
+    set limit = 5;
+    print(str(local + limit));
+}

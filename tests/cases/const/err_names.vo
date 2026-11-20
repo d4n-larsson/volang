@@ -1,0 +1,24 @@
+# Constants are named like functions and variables, and share their names' rules: E0207 (with the
+# name to use), E0202 (another item or a builtin), E0203 (a local, loop variable or parameter).
+const MaxItems = 100;
+const MAX_ITEMS = 200;
+const limit = 10;
+const len = 3;
+
+fn limit_of(n: int) -> int {
+    return n;
+}
+
+const limit_of = 4;
+
+fn main() uses console {
+    let limit = 5;
+    for limit in [1] {
+        print(str(limit));
+    }
+    print(str(limit_of(limit)));
+}
+
+fn shadow(limit: int) -> int {
+    return limit;
+}

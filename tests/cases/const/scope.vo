@@ -1,0 +1,27 @@
+# A directory written once: the scope of the effect and the paths under it come from one constant.
+import std.fs.info;
+import std.fs.make_dir;
+
+const out_dir = "const_scope_out/";
+const report = out_dir + "report.txt";
+
+fn save(text: str) -> result[void] uses file.write(out_dir) {
+    return write_file(report, text);
+}
+
+fn main() -> result[void] uses console, file.write(out_dir), file.read(out_dir) {
+    match try info(out_dir) {
+        case missing {
+            try make_dir(out_dir);
+        }
+        case file(_) {
+        }
+        case directory {
+        }
+        case other {
+        }
+    }
+    try save("ready");
+    print(try read_file(report));
+    return ok();
+}

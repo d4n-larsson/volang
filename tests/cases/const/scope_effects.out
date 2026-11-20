@@ -1,0 +1,7 @@
+main uses console
+
+scope_effects.vo:load uses file.read("data/notes/"), file.write("data/notes/")
+scope_effects.vo:log uses file.write("out/logs/")
+scope_effects.vo:main uses console
+scope_effects.vo:save uses file.write("out/")
+0 errors, 0 warnings

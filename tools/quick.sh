@@ -21,6 +21,7 @@ cases() {
     serve_workers) echo "serve serve_concurrent serve_workers_steps replay" ;;
     web) echo "json_derive annotations web web_steps generic json" ;;
     effects) echo "effect_sets effects fmt" ;;
+    const) echo "const check effects effect_sets fmt query annotations format regex sqlite web doc" ;; # spec 031
     bytes) echo "bytes bytes_steps run doc" ;;
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
@@ -50,6 +51,7 @@ scripts() { # one per line, with arguments
     serve_workers) printf '%s\n' doc_conformance.py "serve_workers.py --quick" ;;
     web) printf '%s\n' doc_conformance.py "web_fuzz.py --quick" ;;
     effects) printf '%s\n' fmt_corpus.py catalog.py effect_sets_records.py ;;
+    const) printf '%s\n' apply_fixes.py catalog.py fmt_corpus.py ref_examples.py const_equiv.py ;; # spec 031
     bytes) echo doc_conformance.py ;;
     float) printf '%s\n' math_vectors.py json_corpus.py json_stream.py ref_examples.py doc_conformance.py ;;
     json) printf '%s\n' json_corpus.py json_stream.py doc_conformance.py ;;
@@ -79,6 +81,7 @@ area_of() {
     src/check_structure.c|tests/structure_*.py|tests/structure_seeds/*) echo structure ;; # spec 027
     src/serve.c|src/serve_workers.c|std/http.vo|tests/serve_workers*.py) echo serve_workers ;; # spec 028
     src/json_derive.c|src/check_web.c|std/web.vo|std/json.vo|tests/web_*.py) echo web ;; # spec 029
+    src/check_const.c|tests/const_*.py) echo const ;; # spec 031
     src/check_effects.c|src/fmt.c|tests/effect_sets_*.py) echo effects ;; # spec 030
     src/num.c|src/stdprim.c) echo float ;;
     src/bytes.c|std/bytes.vo|tests/bytes/*|tests/bytes_*.py|tests/process_helpers/allbytes) echo bytes ;;
@@ -131,7 +134,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects bytes float json text time random collections http fs front query testing tasks trace packages docs cli)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const bytes float json text time random collections http fs front query testing tasks trace packages docs cli)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done

@@ -1,0 +1,21 @@
+import config.max_items;
+import config.twice;
+
+const out_dir = "out/";
+
+record Note {
+    @size(1, max_items)
+    text: str;
+}
+
+fn add(xs: list[str]) -> bool {
+    return len(xs) >= max_items;
+}
+
+fn save() -> result[void] uses file.write(out_dir) {
+    return write_file(out_dir + "x", str(twice));
+}
+
+fn main() uses console {
+    print(str(add(["a"])) + " " + str(new Note { text: "a" }.text == "a"));
+}

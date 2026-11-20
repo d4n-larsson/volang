@@ -1,2 +1,2 @@
-{"v":1,"kind":"diagnostic","code":"E0315","name":"format_template_not_literal","severity":"error","file":"not_literal.vo","start":{"line":3,"col":18},"end":{"line":3,"col":19},"text":"t","message":"The template of `format` must be a string literal, so its placeholders can be checked.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0315","name":"format_template_not_literal","severity":"error","file":"not_literal.vo","start":{"line":3,"col":18},"end":{"line":3,"col":19},"text":"t","message":"The template of `format` must be a string literal or a constant, so its placeholders can be checked.","fixes":[],"related":[]}
 {"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

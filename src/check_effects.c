@@ -104,6 +104,10 @@ EffSet *fx_build_set(Node *uses, Fx *fx)
         }
         for (long j = 0; j < scopes->n; j++) {
             Node *sc = vec_get(scopes, j);
+            if (!const_literal(sc, t_str)) { /* spec 031: a constant expression, reported there */
+                if (fx) fx->bad = 1;
+                continue;
+            }
             if (es_add_scope(set, bit, sc->a.s)) continue;
             if (fx) fx->bad = 1;
             if (bit == EF_SERVE)
@@ -285,7 +289,7 @@ static void fx_literal_at(Node *call, long index, long bit)
 {
     if (!ck_fx || !ck_fx->declared || call->b.v->n <= index) return;
     Node *arg = vec_get(call->b.v, index);
-    if (arg->kind != N_STR) return;
+    if (arg->kind != N_STR && arg->kind != N_IDENT && arg->kind != N_BINARY) return; /* spec 031: or a constant expression (folded when reported) */
     if (!ck_lits) ck_lits = vec_new();
     Edge *e = alloc(sizeof(Edge));
     e->caller = ck_fx;
@@ -334,6 +338,8 @@ static void fx_report_literals(Vec *items)
         long bit = (long)e->call;
         EffSet *d = fx->declared;
         if (fx->bad || !(d->mask & (unsigned long)bit) || !es_scoped(d, bit)) continue; /* E0501, or any scope */
+        if (e->callee->kind != N_STR && !const_fold(e->callee, 0)) continue; /* spec 031: not a constant expression */
+        if (e->callee->kind != N_STR) continue;
         Str *lit = e->callee->a.s;
         if (bit & (EF_FREAD | EF_FWRITE | EF_FDELETE)) {
             /* resolved as the run-time check does (links followed, from the working directory), so a

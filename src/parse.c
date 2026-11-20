@@ -206,6 +206,15 @@ static int p_at_effects(void)
     return str_eq_bytes(str_from_cstr("effects"), p_text + t->start, (long)t->end - (long)t->start);
 }
 
+/* Spec 031: `const name`: the word `const` starts an item (inside a function: E0122) only when a name
+ * follows it (it is not reserved: elsewhere it is an ordinary identifier). */
+static int p_at_const(void)
+{
+    if (p_kind() != T_IDENT || (p_kind_at(1) != T_IDENT && p_kind_at(1) != T_TYPE_IDENT)) return 0;
+    Token *t = p_tok();
+    return str_eq_bytes(str_from_cstr("const"), p_text + t->start, (long)t->end - (long)t->start);
+}
+
 /* After an error in a statement: skips to the next `;` (consumed) or the enclosing `}` and clears the
  * error (returns 0); stops at an item keyword or the end of the file (returns 1, error kept). */
 static int p_sync_stmt(void)
@@ -238,7 +247,7 @@ static void p_sync_item(void)
     for (;;) {
         int k = p_kind();
         if (k == 0) break;
-        if (depth <= 0 && (is_item_kw(k) || p_at_effects())) break;
+        if (depth <= 0 && (is_item_kw(k) || p_at_effects() || p_at_const())) break;
         if (k == T_LBRACE) depth++;
         if (k == T_RBRACE) depth--;
         p_next();
@@ -809,6 +818,13 @@ static Node *parse_stmt(void)
     long start = p_start();
     int k = p_kind();
     Node *n;
+    if (k == T_IDENT && p_at_const()) { /* spec 031: E0122, then read as the `let` it should be */
+        Token *t = p_tok();
+        Diag *d = p_soft_err("E0122", t->start, t->end,
+                             "Constants are declared at the top level of a file; inside a function use `let`.");
+        p_fix(d, t->start, t->end, "let");
+        k = T_LET;
+    }
     switch (k) {
     case T_COMMENT:
         n = p_node(N_COMMENT);
@@ -1147,14 +1163,9 @@ static Node *parse_effect(void)
     n->a.i = es_bit_by_name(name->data, name->len);
     if (p_accept(T_LPAREN)) {
         n->b.v = vec_new();
-        do {
-            if (p_kind() != T_STRING) {
-                p_expect(T_STRING);
-                return p_finish(n, start);
-            }
-            Node *s = p_node(N_STR);
-            Token *t = p_next();
-            s->a.s = decode_string(t->start, t->end);
+        do { /* spec 031: a constant expression (a string literal is an N_STR, as before) */
+            Node *s = parse_expr();
+            if (!s || p_failed()) return p_finish(n, start);
             vec_push(n->b.v, s);
         } while (p_accept(T_COMMA));
         p_expect(T_RPAREN);
@@ -1302,11 +1313,11 @@ static Node *parse_item(void)
         n->b.n = parse_block();
         break;
     }
-    case T_EXPORT: { /* spec 010: export fn|record|variant; spec 030: export effects */
+    case T_EXPORT: { /* spec 010: export fn|record|variant; spec 030: export effects; spec 031: export const */
         p_next();
         int k2 = p_kind();
-        if (k2 != T_FN && k2 != T_RECORD && k2 != T_VARIANT && !p_at_effects()) {
-            p_fail_c("`fn`, `record`, `variant` or `effects` after `export`", "item");
+        if (k2 != T_FN && k2 != T_RECORD && k2 != T_VARIANT && !p_at_effects() && !p_at_const()) {
+            p_fail_c("`fn`, `record`, `variant`, `effects` or `const` after `export`", "item");
             return p_node(N_ERROR);
         }
         n = parse_item();
@@ -1355,6 +1366,17 @@ static Node *parse_item(void)
         p_end_stmt();
         break;
     case T_IDENT:
+        if (p_at_const()) { /* spec 031: const name[: type] = expr; */
+            n = p_node(N_CONST);
+            p_next();
+            n->a.n = p_name();
+            if (p_accept(T_COLON)) n->b.n = parse_type();
+            p_expect(T_ASSIGN);
+            if (p_failed()) goto finish;
+            n->c.n = parse_expr();
+            p_end_stmt();
+            break;
+        }
         if (p_at_effects()) { /* spec 030: effects Name = e, e(...), Other; */
             n = p_node(N_EFFECTS);
             p_next();

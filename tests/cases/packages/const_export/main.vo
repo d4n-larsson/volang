@@ -1,0 +1,6 @@
+# A package's exported constants are imported like its functions.
+import units.sizes.mib;
+
+fn main() uses console {
+    print(str(mib));
+}

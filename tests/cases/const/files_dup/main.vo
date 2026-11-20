@@ -1,0 +1,6 @@
+import a.limit;
+import b.limit;
+
+fn main() uses console {
+    print(str(limit));
+}

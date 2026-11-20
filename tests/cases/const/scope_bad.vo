@@ -1,0 +1,29 @@
+# A scope's value must be a valid scope; a scope is a string literal or a constant.
+const empty = "";
+const absolute = "/etc/";
+const up = "a/../b/";
+const count = 3;
+
+fn a() uses file.read(empty) {
+}
+
+fn b() uses file.read(absolute) {
+}
+
+fn c() uses file.read(up) {
+}
+
+fn d() uses file.read(count) {
+}
+
+fn e() uses file.read(nowhere) {
+}
+
+fn f(dir: str) uses file.read(dir) {
+}
+
+fn g() uses file.read(count + 1) {
+}
+
+fn main() {
+}

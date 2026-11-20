@@ -1,0 +1,5 @@
+err_unused.vo:3:7: warning[W0202]: `unused` is never used.
+   3 | const unused = 1;
+     |       ^^^^^^
+  fix: remove `const unused = 1;\n`
+0 errors, 1 warning

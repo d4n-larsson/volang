@@ -1,0 +1,32 @@
+err_names.vo:3:7: error[E0207]: `MaxItems` should be snake_case: `max_items`.
+   3 | const MaxItems = 100;
+     |       ^^^^^^^^
+  fix: replace with `max_items`
+err_names.vo:4:7: error[E0207]: `MAX_ITEMS` should be snake_case: `max_items`.
+   4 | const MAX_ITEMS = 200;
+     |       ^^^^^^^^^
+  fix: replace with `max_items`
+err_names.vo:5:7: warning[W0202]: `limit` is never used.
+   5 | const limit = 10;
+     |       ^^^^^
+  fix: remove `const limit = 10;\n`
+err_names.vo:6:7: error[E0202]: `len` is a builtin and cannot be redefined.
+   6 | const len = 3;
+     |       ^^^
+err_names.vo:12:7: error[E0202]: `limit_of` is already defined.
+  12 | const limit_of = 4;
+     |       ^^^^^^^^
+  note: err_names.vo:8:4: `limit_of` is first defined here.
+err_names.vo:15:9: error[E0203]: `limit` is already defined in an outer scope.
+  15 |     let limit = 5;
+     |         ^^^^^
+  note: err_names.vo:5:7: `limit` is defined here.
+err_names.vo:16:9: error[E0203]: `limit` is already defined in an outer scope.
+  16 |     for limit in [1] {
+     |         ^^^^^
+  note: err_names.vo:15:9: `limit` is defined here.
+err_names.vo:22:11: error[E0203]: `limit` is already defined in an outer scope.
+  22 | fn shadow(limit: int) -> int {
+     |           ^^^^^
+  note: err_names.vo:5:7: `limit` is defined here.
+7 errors, 1 warning

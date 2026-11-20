@@ -1,0 +1,10 @@
+# A private constant that nothing refers to is a warning; an exported one, or one used only by another
+# constant, is not.
+const unused = 1;
+export const shared = 2;
+const base = 3;
+const derived = base * 2;
+
+fn main() uses console {
+    print(str(derived));
+}

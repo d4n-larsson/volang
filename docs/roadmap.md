@@ -37,6 +37,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [028](../specs/028-concurrent-serve/) | Concurrent request handling: `std.http.serve_workers` with worker processes, a setup per worker, `--workers`, replay one request at a time | **Done** ([results](../specs/028-concurrent-serve/results.md)) |
 | [029](../specs/029-web-package/) | `std.web` for APIs, after Spring: route tables, typed input from path, query, headers and JSON body checked by field annotations, answers and RFC 9457 problems, errors mapped in one place, steps, settings, health, tests without a network; derived JSON conversion (`to_json`, `from_json`) for every program | **Done** ([results](../specs/029-web-package/results.md)) |
 | [030](../specs/030-readable-signatures/) | readable signatures: `vo fmt` lays out headers over 100 characters (the effect clause on its own line, then parameters one per line); named effect sets (`effects Storage = ...;`, `uses console, Storage`) with one form for effects everywhere | **Done** ([results](../specs/030-readable-signatures/results.md)) |
+| [031](../specs/031-constants/) | Constants: `const name = value;` items of type `int`, `float`, `bool` or `str`, worked out by the checker from literals, constants and operators; usable as effect scopes, annotation limits and checked templates; reviews show values | **Implemented** ([results](../specs/031-constants/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -317,6 +318,20 @@ two spellings.
 
 - **Not done (on purpose):** parameters on sets, set operations other than union, comments between
   parameters (a syntax error, as before).
+
+### 031: constants (implemented)
+
+A value with one meaning used in several places (a limit, a directory, a message) was a repeated literal
+or a function with no parameters, and the two string literals of a scope and the path under it had to
+agree by hand. `const name = value;` names it once. The checker works out the value from literals, other
+constants and operators with the run-time rules, folds every use into that literal, and accepts a
+constant wherever a literal is read: effect scopes, field annotations, and the templates of `format`,
+`regex`, `sql` and routes. `vo.effects` and every report show values, so replacing a literal with a
+constant changes nothing in review, and changing the constant is reported for each function it reaches.
+
+- **Not done (on purpose):** calls in values (even `len` or `str`), lists, maps and records as
+  constants (they can be changed in place), constants inside functions (`let` names a value there),
+  generic constants.
 
 ## Planned after 017
 

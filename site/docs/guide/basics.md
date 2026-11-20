@@ -129,6 +129,36 @@ fn main() uses console {
 A local that is declared and never read is warning [W0201](../errors/W0201.md). Warnings do not make a
 command fail, but they usually point at a mistake.
 
+## Constants
+
+A value with one meaning that several functions use, such as a limit, a rate, a directory or a message,
+is a constant: `const name = value;` at the top level of a file, next to the functions. Its type is
+`int`, `float`, `bool` or `str`, and its value is made of literals, other constants and operators.
+
+```vo
+const max_items = 100;
+const greeting = "hello";
+const banner = greeting + ", world";
+
+fn clip(n: int) -> int {
+    return min(n, max_items);
+}
+
+fn main() uses console {
+    print(banner + " " + str(clip(250)));
+}
+```
+
+```output
+hello, world 100
+```
+
+The checker works the value out once, before the program runs, so it cannot call anything (`len`, `str`
+and your own functions included: [E0212](../errors/E0212.md)), and an overflow or a division by zero in
+it is a check error ([E0333](../errors/E0333.md)). A value that depends on input or on a computation
+belongs in a function. Constants are exported and imported like functions, cannot be changed with `set`,
+and are not declared inside functions: there, `let` names a value ([E0122](../errors/E0122.md)).
+
 ## Statements
 
 The **first-token rule**: every statement starts with one of `let`, `var`, `set`, `if`, `while`, `for`,

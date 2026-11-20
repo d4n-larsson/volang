@@ -1,0 +1,23 @@
+$ vo package main.vo units shared/units
+added units shared/units sha256:948f27cba4ffd43b9a60b1a1a62b79d14c9184f6c20b2fff2f4e63110a78a99f
+--- stderr
+--- exit 0
+$ vo run main.vo
+1048576
+--- stderr
+--- exit 0
+$ vo doc units.sizes
+const kib: int = 1024
+    Sizes shared by every program that pins this package.
+const mib: int = 1048576
+--- stderr
+--- exit 0
+$ vo doc --json units.sizes.kib
+{"v":1,"kind":"doc","module":"units.sizes","name":"kib","item":"const","signature":"const kib: int = 1024","tparams":[],"description":"Sizes shared by every program that pins this package."}
+{"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":1}
+--- stderr
+--- exit 0
+$ vo doc main.vo mib
+const mib: int = 1048576
+--- stderr
+--- exit 0

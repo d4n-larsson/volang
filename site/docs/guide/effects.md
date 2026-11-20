@@ -152,6 +152,29 @@ of a set gets no warning (`load` above only reads), but one that needs none of i
 ([W0501](../errors/W0501.md)), and a private set nothing uses is [W0505](../errors/W0505.md). In a type's
 effect argument (`Database[uses Storage]`) the set's scopes are dropped, as for any effects in a type.
 
+A scope can also be a constant, so the directory a function may write and the paths it writes are
+written once:
+
+```vo
+const out_dir = "out/";
+
+fn save(name: str, text: str) -> result[void] uses file.write(out_dir) {
+    return write_file(out_dir + name, text);
+}
+
+fn main() uses console {
+    print("saved under " + out_dir);
+}
+```
+
+```output
+saved under out/
+```
+
+`vo.effects` records the value (`file.write("out/")`), never the name, so replacing a literal with a
+constant changes nothing in review, and changing the constant is reported for every function whose scope
+it is ([E0504](../errors/E0504.md)), with a note at the constant.
+
 ## What the checker reports
 
 A function that does something it did not declare is [E0501](../errors/E0501.md). The message lists

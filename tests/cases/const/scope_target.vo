@@ -1,0 +1,11 @@
+# A target the checker compares with the caller's scopes (E0503) may be a constant expression.
+const out_dir = "out/";
+const tmp_dir = "tmp/";
+
+fn save() -> result[void] uses file.write(out_dir) {
+    try write_file(out_dir + "fine.txt", "a");
+    return write_file(tmp_dir + "x.txt", "b");
+}
+
+fn main() {
+}

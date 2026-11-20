@@ -74,6 +74,9 @@ On branch `perf-review-fixes`. The figures in `optimizations.md` are from before
 | HTTP client (ecosystem) | `get(url)` and `post(url, type, body)` only | `send(method, url, headers, body, timeout_ms)` and `send_bytes` |
 
 | `format` | one concatenation per piece | one allocation for all pieces (`OPC_JOIN`) |
+| Value-less variant cases (5) | each `Light.off` allocated | one shared value per case: a million in a list hold 12.1 MiB instead of 38.6 |
+| `a + b + c` on strings | one copy per `+` | one allocation for the chain (0.47 s instead of 0.82 for a message-building loop) |
+| Constants (language 2) | none | spec 031: `const name = value;`, usable as scopes, annotation limits and checked templates |
 | License and CI (ecosystem) | no license; only the docs site built in CI | MIT `LICENSE`; `.github/workflows/gate.yml` runs `make gate` (not yet run on GitHub) |
 
 Measured and left alone, finding 6: collection is 10% to 40% of the allocating workloads, nearly all

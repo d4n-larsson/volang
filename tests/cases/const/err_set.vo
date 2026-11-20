@@ -1,0 +1,7 @@
+# A constant cannot be changed.
+const max_items = 100;
+
+fn main() uses console {
+    set max_items = 5;
+    print(str(max_items));
+}

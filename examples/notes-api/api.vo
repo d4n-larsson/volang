@@ -32,7 +32,9 @@ import std.web.request;
 import std.web.web_app;
 
 # Where the notes are kept: the database in data/, read and written.
-export effects Storage = file.read("data/"), file.write("data/");
+const data_dir = "data/";
+
+export effects Storage = file.read(data_dir), file.write(data_dir);
 
 # Each worker's context: its connection to the notes database.
 export record Notes[D: effects] {
@@ -66,7 +68,7 @@ export fn notes_app[D: effects]() -> App[Notes[D], uses D] {
 
 # serve_app's setup: data/notes.db, with its table the first time.
 export fn open_notes() -> result[Notes[uses Storage]] uses Storage {
-    let db = try open("data/notes.db");
+    let db = try open(data_dir + "notes.db");
     try prepare(db);
     return ok(new Notes { db: db });
 }

@@ -1,0 +1,35 @@
+$ vo effects --update main.vo
++ main.vo:log: file.write("out/")
++ main.vo:main: console
++ main.vo:save: file.write("out/")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:5:4: error[E0504]: `save` gains file.write("./"); approve with `vo effects --update`.
+   5 | fn save(text: str) -> result[void] uses file.write(out_dir) {
+     |    ^^^^
+  note: main.vo:3:7: `out_dir` is "./" here.
+main.vo:9:4: error[E0504]: `log` gains file.write("./"); approve with `vo effects --update`.
+   9 | fn log(line: str) -> result[void] uses file.write(out_dir) {
+     |    ^^^
+  note: main.vo:3:7: `out_dir` is "./" here.
+2 errors, 0 warnings
+--- stderr
+--- exit 65
+$ vo check main.vo
+main.vo:5:4: warning[W0502]: `save` no longer uses file.write("out/").
+   5 | fn save(text: str) -> result[void] uses file.write(out_dir) {
+     |    ^^^^
+  note: main.vo:3:7: `out_dir` is "out/reports/" here.
+main.vo:9:4: warning[W0502]: `log` no longer uses file.write("out/").
+   9 | fn log(line: str) -> result[void] uses file.write(out_dir) {
+     |    ^^^
+  note: main.vo:3:7: `out_dir` is "out/reports/" here.
+0 errors, 2 warnings
+--- stderr
+--- exit 0

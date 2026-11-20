@@ -1,5 +1,5 @@
 fn main() uses console, env("HOME") {
-    match env("PA" + "TH") {
+    match env(variable()) {
         case ok(v) {
             print("got it");
         }
@@ -7,4 +7,10 @@ fn main() uses console, env("HOME") {
             print(e);
         }
     }
+}
+
+# The name comes from a call, so only the run-time check can see it (a constant expression such as
+# "PA" + "TH" is checked by `vo check`, E0503).
+fn variable() -> str {
+    return "PATH";
 }

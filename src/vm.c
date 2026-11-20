@@ -124,16 +124,6 @@ void *vm_push(void *cf_, void *decl_, void *call_, long *vals, void *closure_)
     return f;
 }
 
-/* RISC-V results where C leaves them undefined: x / -1 and x % -1 for MIN (R13). */
-static inline long div_rv(long x, long y)
-{
-    return y == -1 ? (long)(0UL - (unsigned long)x) : x / y;
-}
-static inline long rem_rv(long x, long y)
-{
-    return y == -1 ? 0 : x % y;
-}
-
 #define SL(off) (*(long *)((char *)slots + (off)))
 #define SD(off) (*(double *)((char *)slots + (off)))
 #define NEXT          \
@@ -233,12 +223,12 @@ op_div_int:
     y = SL(pc->c.i);
     if (!y) goto div_zero;
     if (y == -1 && x == VO_MIN) goto overflow; /* MIN / -1 */
-    STORE(div_rv(x, y));
+    STORE(vo_div(x, y));
 op_rem_int:
     x = SL(pc->b);
     y = SL(pc->c.i);
     if (!y) goto div_zero;
-    STORE(rem_rv(x, y)); /* MIN % -1 is 0 */
+    STORE(vo_rem(x, y)); /* MIN % -1 is 0 */
 
     /* ---- floats (the bits stay in the slots) ---- */
 op_add_float: {
@@ -555,9 +545,9 @@ op_mul_int_k:
     if (__builtin_mul_overflow(SL(pc->b), pc->c.i, &r)) goto overflow;
     STORE(r);
 op_div_int_k: /* c not 0 or -1 */
-    STORE(div_rv(SL(pc->b), pc->c.i));
+    STORE(vo_div(SL(pc->b), pc->c.i));
 op_rem_int_k: /* c not 0 */
-    STORE(rem_rv(SL(pc->b), pc->c.i));
+    STORE(vo_rem(SL(pc->b), pc->c.i));
 op_eq_int:
     cur_node = (long)pc->node; /* `==` sets cur_node (out-of-memory reports) */
     STORE(SL(pc->b) == SL(pc->c.i));

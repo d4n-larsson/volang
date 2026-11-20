@@ -1,0 +1,22 @@
+err_arith.vo:3:14: error[E0333]: This overflows `int`.
+   3 | const over = big + 1;
+     |              ^^^^^^^
+err_arith.vo:4:15: error[E0333]: This overflows `int`.
+   4 | const under = -big - 2;
+     |               ^^^^^^^^
+err_arith.vo:5:15: error[E0333]: This overflows `int`.
+   5 | const twice = big * 2;
+     |               ^^^^^^^
+err_arith.vo:6:17: error[E0333]: This divides by zero.
+   6 | const by_zero = 10 / 0;
+     |                 ^^^^^^
+err_arith.vo:7:18: error[E0333]: This divides by zero.
+   7 | const rem_zero = 10 % 0;
+     |                  ^^^^^^
+err_arith.vo:9:17: error[E0333]: This overflows `int`.
+   9 | const min_div = smallest / -1;
+     |                 ^^^^^^^^^^^^^
+err_arith.vo:10:17: error[E0333]: This overflows `int`.
+  10 | const min_neg = -smallest;
+     |                 ^^^^^^^^^
+7 errors, 0 warnings

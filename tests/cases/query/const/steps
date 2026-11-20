@@ -1,0 +1,12 @@
+vo query refs main.vo max_items
+vo query refs main.vo out_dir
+vo query type-at main.vo main.vo:12:26
+vo query type-at main.vo config.vo:2:14
+vo query type-at --json main.vo main.vo:16:24
+vo query callers main.vo max_items
+vo edit rename --dry-run main.vo max_items twice
+cp config_changed.vo config.vo
+vo impact main.vo --diff change.diff
+vo edit rename main.vo max_items item_limit
+vo run main.vo
+keep main.vo config.vo

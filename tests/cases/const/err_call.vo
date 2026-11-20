@@ -1,0 +1,25 @@
+# A constant's value is made of literals, constants and operators only.
+record Point {
+    x: int;
+    y: int;
+}
+
+fn items() -> list[int] {
+    return [1, 2];
+}
+
+const a = items();
+const b = len("abc");
+const c = str(1);
+const d = todo("later");
+const e = new Point { x: 1, y: 2 };
+const f = [1, 2];
+const g = "abc"[0];
+const h = (1 + 2) * items;
+const i = fn(x: int) -> int {
+    return x;
+};
+
+fn main() uses console {
+    print("checked");
+}

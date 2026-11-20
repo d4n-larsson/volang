@@ -1,0 +1,14 @@
+# A constant's use is not a mutation site: the operators around it are.
+const adult_age = 18;
+
+fn is_adult(age: int) -> bool {
+    return age >= adult_age;
+}
+
+test "eighteen is adult" {
+    expect(is_adult(18));
+}
+
+test "seventeen is not" {
+    expect(not is_adult(17));
+}

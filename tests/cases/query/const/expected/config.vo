@@ -1,0 +1,3 @@
+# The most notes a list may hold.
+export const item_limit = 50;
+export const twice = item_limit * 2;

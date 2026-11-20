@@ -16,6 +16,7 @@ long tf_op_val[2];   /* their values in vo syntax, shortened (Str *) */
  * `expect` leaves out). */
 int node_is_literal(Node *n)
 {
+    if (n->flags & NF_CONST) return 0; /* spec 031: a constant's use is shown, with its value */
     if (n->kind == N_UNARY && (n->a.n->kind == N_INT || n->a.n->kind == N_FLOAT)) n = n->a.n; /* -1, -2.5 */
     if (n->kind == N_INT || n->kind == N_FLOAT || n->kind == N_STR || n->kind == N_BOOL) return 1;
     if (n->kind == N_LIST) {
