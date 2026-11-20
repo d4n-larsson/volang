@@ -296,7 +296,7 @@ static long jp_word(char *word, long tag, long pay)
             GC_UNROOT(1);
             return 0;
         }
-    return (long)pg_new_variant(tag, pay);
+    return tag == J_NULL ? (long)variant_bare(J_NULL) : (long)pg_new_variant(tag, pay);
 }
 
 static long jp_object(long depth)

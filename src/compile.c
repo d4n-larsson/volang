@@ -933,6 +933,8 @@ long cexpr(Node *node, long dst)
             dst = c_dst(dst);
             c_emit(OPC_FNVAL, dst, 0, node->d.i, node);
             return dst;
+    } else if (!node->c.n && (unsigned long)node->e.i < BARE_CASES) { /* V.case: the one value of that case */
+        c_emit(OPC_LOADK, v, 0, (long)variant_bare(node->e.i), node);
         }
         if (c_app_of(node->c.i)) c_emit(OPC_LOADK, c_app_of(node->c.i), 0, 0, node); /* read: no longer only s's */
         return node->c.i * 8; /* a local: its own slot */

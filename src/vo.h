@@ -2214,6 +2214,8 @@ extern List *list_new(long cap);
 extern void list_push(List *list, long value);
 extern void mem_copy8(long *dst, long *src, long bytes);
 extern Variant *make_result(int tag, long payload);
+#define BARE_CASES (64) /* case indexes with a shared value (variant_bare); a larger variant allocates */
+extern Variant *variant_bare(long tag);
 extern Variant *make_err(char *message);
 extern Variant *list_pop(List *list);
 extern List *list_slice(List *list, long a, long b, Node *node);

@@ -45,6 +45,22 @@ void mem_copy8(long *dst, long *src, long bytes)
     for (; bytes > 0; bytes -= 8) *dst++ = *src++;
 }
 
+/* The value of a case that carries nothing (tag below BARE_CASES): one permanent object per case
+ * index, shared by every variant type and every place that writes the case. Nothing changes a
+ * variant after it is made, and values have no identity, so sharing cannot be seen. */
+Variant *variant_bare(long tag)
+{
+    static Variant *bare[BARE_CASES];
+    if (!bare[tag]) {
+        perm_begin();
+        Variant *v = alloc_obj(OBJ_VARIANT, VARIANT_SIZE);
+        perm_end();
+        *(uint32_t *)&v->tag = (uint32_t)tag;
+        bare[tag] = v;
+    }
+    return bare[tag];
+}
+
 Variant *make_result(int tag, long payload)
 {
     GC_ROOT(&payload);

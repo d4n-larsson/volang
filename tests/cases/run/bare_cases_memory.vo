@@ -1,0 +1,44 @@
+# A case that carries no value is one shared value, not an allocation each time it is written: half
+# a million of them in a list fit in 12 MiB.
+variant Light {
+    off;
+    dim(int);
+    on;
+}
+
+fn count(xs: list[Light], want: Light) -> int {
+    var n = 0;
+    for x in xs {
+        if x == want {
+            set n = n + 1;
+        }
+    }
+    return n;
+}
+
+fn main() uses console {
+    let xs = new list[Light];
+    for i in 0..500000 {
+        if i % 5 == 0 {
+            push(xs, Light.on);
+        } else {
+            push(xs, Light.off);
+        }
+    }
+    push(xs, Light.dim(3));
+    var dims = 0;
+    for x in xs {
+        match x {
+            case off {
+            }
+            case dim(level) {
+                set dims = dims + level;
+            }
+            case on {
+            }
+        }
+    }
+    print(
+        str(count(xs, Light.off)) + " " + str(count(xs, Light.on)) + " " + str(dims) + " " + str(Light.on == Light.off)
+    );
+}
