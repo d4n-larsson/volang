@@ -18,9 +18,10 @@ enum {
     BU_MATH, BU_MATH_INT, BU_BYTES_OF_TEXT, BU_TEXT_OF_BYTES, BU_BYTES_OF_INTS, BU_INTS_OF_BYTES, BU_BYTES_HEX,
     BU_BYTES_UNHEX, BU_BYTES_B64, BU_BYTES_UNB64, BU_STDIN_BYTES, BU_STDOUT_BYTES, BU_FSB, BU_RUN_BYTES, BU_RAW_TEXT, BU_SLEEP,
     BU_FORMAT, BU_FMT_PIECE, BU_RE_COMPILE, BU_RE, BU_RE_REPL,
-    BU_SQL_OPEN, BU_SQL_CLOSE, BU_SQL_EXEC, BU_SQL_QUERY, BU_SQL_TX, BU_SQL_PREPARE, BU_SERVE_WORKERS, BU_TO_JSON, BU_FROM_JSON, BU_JSON_FIELDS, BU_JSON_TEXT
+    BU_SQL_OPEN, BU_SQL_CLOSE, BU_SQL_EXEC, BU_SQL_QUERY, BU_SQL_TX, BU_SQL_PREPARE, BU_SERVE_WORKERS, BU_TO_JSON, BU_FROM_JSON, BU_JSON_FIELDS, BU_JSON_TEXT,
+    BU_JSON_PARSE, BU_JSON_WRITE
 };
-_Static_assert(BU_JSON_TEXT == B_LAST && BU_JSON_FIELDS == B_JSON_FIELDS && BU_FROM_JSON == B_FROM_JSON && BU_TO_JSON == B_TO_JSON && BU_SERVE_WORKERS == B_SERVE_WORKERS && BU_SQL_PREPARE == B_SQL_PREPARE && BU_SQL_OPEN == B_SQL_OPEN && BU_RE_REPL == B_RE_REPL && BU_RE == B_RE && BU_RE_COMPILE == B_RE_COMPILE && BU_FMT_PIECE == B_FMT_PIECE && BU_FORMAT == B_FORMAT && BU_SLEEP == B_SLEEP && BU_RAW_TEXT == B_RAW_TEXT && BU_RUN_BYTES == B_RUN_BYTES && BU_FSB == B_FSB && BU_BYTES_OF_TEXT == B_BYTES_FIRST && BU_STDIN_BYTES == B_STDIN_BYTES && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
+_Static_assert(BU_JSON_WRITE == B_LAST && BU_JSON_TEXT == B_JSON_TEXT && BU_JSON_FIELDS == B_JSON_FIELDS && BU_FROM_JSON == B_FROM_JSON && BU_TO_JSON == B_TO_JSON && BU_SERVE_WORKERS == B_SERVE_WORKERS && BU_SQL_PREPARE == B_SQL_PREPARE && BU_SQL_OPEN == B_SQL_OPEN && BU_RE_REPL == B_RE_REPL && BU_RE == B_RE && BU_RE_COMPILE == B_RE_COMPILE && BU_FMT_PIECE == B_FMT_PIECE && BU_FORMAT == B_FORMAT && BU_SLEEP == B_SLEEP && BU_RAW_TEXT == B_RAW_TEXT && BU_RUN_BYTES == B_RUN_BYTES && BU_FSB == B_FSB && BU_BYTES_OF_TEXT == B_BYTES_FIRST && BU_STDIN_BYTES == B_STDIN_BYTES && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
 _Static_assert(BU_TODO == B_TODO && BU_REQ_FAIL == B_REQ_FAIL && BU_SORT_BY == B_SORT_BY, "builtin ids");
 
 /* The static type of the call's first argument. */
@@ -163,6 +164,8 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_FROM_JSON: return (long)json_from(a0, a1, call);
     case BU_JSON_FIELDS: return (long)json_fields(call);
     case BU_JSON_TEXT: return (long)json_text(a0, call);
+    case BU_JSON_PARSE: return (long)json_parse((Str *)a0, call);
+    case BU_JSON_WRITE: return (long)json_write(a0, a1, call);
     case BU_SERVE_WORKERS: return (long)rt_serve_workers(a0, (void *)a1, (void *)a2, call); /* spec 028 */
     case BU_RAW_TEXT: return a0; /* spec 021: std.http only; never reaches user code unchecked */
     case BU_RUN_BYTES: return (long)io_run((List *)a0, (Str *)a1, (List *)a2, 1); /* spec 021: std.process */

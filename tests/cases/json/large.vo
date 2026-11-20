@@ -1,0 +1,25 @@
+# A JSON document of 13 MB parses and is written again inside the default memory limit.
+import std.json.as_array;
+import std.json.int_field;
+import std.json.parse_json;
+import std.json.write_json;
+import std.json.write_json_pretty;
+
+fn main() -> result[void] uses console {
+    let parts = new list[str];
+    for i in 0..200000 {
+        push(parts, format(
+            "{{\"id\": {}, \"name\": \"user{}\", \"tags\": [\"a\", \"é\\n\"], \"score\": 1.5}}",
+            i,
+            i
+        ));
+    }
+    let text = "[" + join(parts, ",\n") + "]";
+    let doc = try parse_json(text);
+    let items = try as_array(doc);
+    print(str(len(text)) + " " + str(len(items)) + " " + str(try int_field(items[199999], "id")));
+    let compact = try write_json(doc);
+    print(str(len(compact)) + " " + slice(compact, 0, 54));
+    print(str(try parse_json(compact) == doc) + " " + str(len(try write_json_pretty(doc))));
+    return ok();
+}

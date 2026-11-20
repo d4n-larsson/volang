@@ -140,11 +140,16 @@ long json_to(long v, Node *call)
 
 /* ---- JSON text (std.web's answers): write_json(to_json(v)) without the Json values in between ---- */
 
-static void jt_quote(SB *sb, Str *s)
+void json_quote(SB *sb, Str *s)
 {
     static const char hx[] = "0123456789abcdef";
     sb_byte(sb, '"');
+    GC_ROOT(&s);
     for (long i = 0; i < s->len; i++) { /* the escapes of std.json's quote */
+        long from = i; /* a run without escapes goes in as it is */
+        while (i < s->len && (unsigned char)s->data[i] >= 0x20 && s->data[i] != '"' && s->data[i] != '\\') i++;
+        if (i > from) sb_bytes(sb, s->data + from, i - from);
+        if (i >= s->len) break;
         unsigned char c = (unsigned char)s->data[i];
         if (c == '"') sb_cstr(sb, "\\\"");
         else if (c == '\\') sb_cstr(sb, "\\\\");
@@ -153,12 +158,13 @@ static void jt_quote(SB *sb, Str *s)
         else if (c == 13) sb_cstr(sb, "\\r");
         else if (c == 8) sb_cstr(sb, "\\b");
         else if (c == 12) sb_cstr(sb, "\\f");
-        else if (c < 0x20) {
+        else {
             sb_cstr(sb, "\\u00");
             sb_byte(sb, hx[c >> 4]);
             sb_byte(sb, hx[c & 15]);
-        } else sb_byte(sb, (char)c);
+        }
     }
+    GC_UNROOT(1);
     sb_byte(sb, '"');
 }
 
@@ -184,8 +190,8 @@ static void jt_value(SB *sb, long v, Type *t, Node *call)
     case TY_INT: sb_str(sb, int_to_str(v)); break;
     case TY_FLOAT: jt_float(sb, v); break;
     case TY_BOOL: sb_cstr(sb, v ? "true" : "false"); break;
-    case TY_STR: jt_quote(sb, (Str *)v); break;
-    case TY_BYTES: jt_quote(sb, bytes_to_base64((Str *)v)); break;
+    case TY_STR: json_quote(sb, (Str *)v); break;
+    case TY_BYTES: json_quote(sb, bytes_to_base64((Str *)v)); break;
     case TY_LIST:
         sb_byte(sb, '[');
         for (long i = 0; i < ((List *)v)->len; i++) {
@@ -202,7 +208,7 @@ static void jt_value(SB *sb, long v, Type *t, Node *call)
             if (!me->live) continue;
             if (!first) sb_byte(sb, ',');
             first = 0;
-            jt_quote(sb, me->key.s);
+            json_quote(sb, me->key.s);
             sb_byte(sb, ':');
             jt_value(sb, ((Map *)v)->entries[i].val.i, t->b.t, call);
         }
@@ -213,7 +219,7 @@ static void jt_value(SB *sb, long v, Type *t, Node *call)
         sb_byte(sb, '{');
         for (long i = 0; i < pg_nmembers(t); i++) {
             if (i) sb_byte(sb, ',');
-            jt_quote(sb, member_name(t, i));
+            json_quote(sb, member_name(t, i));
             sb_byte(sb, ':');
             jt_value(sb, ((Record *)v)->fields[i].i, pg_member(t, i), call);
         }
@@ -223,11 +229,11 @@ static void jt_value(SB *sb, long v, Type *t, Node *call)
         long tag = (long)(uint32_t)((Variant *)v)->tag;
         Type *pt = pg_member(t, tag);
         if (!pt) {
-            jt_quote(sb, member_name(t, tag));
+            json_quote(sb, member_name(t, tag));
             break;
         }
         sb_byte(sb, '{');
-        jt_quote(sb, member_name(t, tag));
+        json_quote(sb, member_name(t, tag));
         sb_byte(sb, ':');
         jt_value(sb, ((Variant *)v)->pay.i, pt, call);
         sb_byte(sb, '}');
@@ -250,7 +256,7 @@ static void jt_json(SB *sb, long j, Node *call)
     case J_BOOL: sb_cstr(sb, jj->pay.i ? "true" : "false"); break;
     case J_INT: sb_str(sb, int_to_str(jj->pay.i)); break;
     case J_NUM: jt_float(sb, jj->pay.i); break;
-    case J_TEXT: jt_quote(sb, jj->pay.s); break;
+    case J_TEXT: json_quote(sb, jj->pay.s); break;
     case J_ARRAY:
         sb_byte(sb, '[');
         for (long i = 0; i < ((List *)((Variant *)j)->pay.p)->len; i++) {
@@ -267,7 +273,7 @@ static void jt_json(SB *sb, long j, Node *call)
             if (!me->live) continue;
             if (!first) sb_byte(sb, ',');
             first = 0;
-            jt_quote(sb, me->key.s);
+            json_quote(sb, me->key.s);
             sb_byte(sb, ':');
             jt_json(sb, ((Map *)((Variant *)j)->pay.p)->entries[i].val.i, call);
         }

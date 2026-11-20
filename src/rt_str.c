@@ -7,6 +7,22 @@ typedef union {
     double d;
 } Bits;
 
+/* The one-character string of an ASCII byte: one permanent string each, shared by `chars`, `slice`
+ * and `chr`, so text read a character at a time allocates nothing per character. */
+Str *str_one(int c)
+{
+    static Str *one[128];
+    if (!one[0]) {
+        perm_begin();
+        for (int i = 0; i < 128; i++) {
+            char b = (char)i;
+            one[i] = str_new(&b, 1);
+        }
+        perm_end();
+    }
+    return one[c & 127];
+}
+
 Str *str_concat(Str *a, Str *b)
 {
 #ifdef GC_STRESS_BUILD
@@ -80,6 +96,7 @@ Str *rt_slice_str(Str *s, long a, long b, Node *node)
         split = b;
     if (split >= 0)
         rt_raise("R0007", msg("Slice boundary $1 splits a UTF-8 character.", int_to_str(split), 0, 0), node);
+    if (b - a == 1 && !(s->data[a] & 0x80)) return str_one(s->data[a]);
     return str_new(s->data + a, b - a);
 }
 
@@ -158,7 +175,7 @@ List *rt_chars(Str *s)
     for (long i = 0; i < s->len;) {
         long k = utf8_seq_len(s->data + i, s->len - i);
         if (!k) k = 1;
-        list_push(list, (long)str_new(s->data + i, k));
+        list_push(list, (long)(k == 1 && !(s->data[i] & 0x80) ? str_one(s->data[i]) : str_new(s->data + i, k)));
         i += k;
     }
     GC_UNROOT(2);
@@ -270,8 +287,7 @@ Str *rt_chr(long cp, Node *node)
     char buf[4];
     long n;
     if (cp < 0x80) {
-        buf[0] = (char)cp;
-        n = 1;
+        return str_one((int)cp);
     } else if (cp < 0x800) {
         buf[0] = (char)(cp >> 6 | 0xC0);
         buf[1] = (char)((cp & 0x3f) | 0x80);

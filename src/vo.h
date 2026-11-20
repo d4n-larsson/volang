@@ -407,7 +407,9 @@
 #define B_FROM_JSON (95) /* spec 029: __from_json(j, mode) -> result[T] */
 #define B_JSON_FIELDS (96) /* spec 029: __json_fields(xs: list[T]) -> list[str] */
 #define B_JSON_TEXT (97) /* spec 029: __json_text(v) -> str */
-#define B_LAST (97) /* the last builtin id with a btab entry */
+#define B_JSON_PARSE (98) /* __json_parse(s) -> result[Json] (std.json's parse_json) */
+#define B_JSON_WRITE (99) /* __json_write(j, pretty) -> result[str] (write_json, write_json_pretty) */
+#define B_LAST (99) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -1653,6 +1655,10 @@ extern int check_regex_literal(Node *lit);
 extern long json_to(long v, Node *call);            /* json_derive.c */
 extern Variant *json_from(long j, long mode, Node *call);
 extern List *json_fields(Node *call);
+extern void json_quote(SB *sb, Str *s);
+extern Variant *json_parse(Str *s, Node *call);
+extern Variant *json_write(long j, long pretty, Node *call);
+extern Str *str_one(int c);
 extern Str *json_text(long v, Node *call);
 extern void check_web_call(Node *call);      /* check_web.c */
 extern void check_web_routes(Node *list);

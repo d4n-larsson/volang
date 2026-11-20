@@ -56,6 +56,21 @@ In order of value for effort. Details are in the linked files.
 | 9 | Finish the benchmark v2 run ([ecosystem](ecosystem.md#evidence)) | the claim that vo helps agents is still unmeasured, and it is the whole pitch | days |
 | 10 | Constants, tuples, structural map keys ([language](language.md)) | the most common workarounds in the examples | a spec each |
 
+## Fixed since the review
+
+On branch `perf-review-fixes`. The figures in `optimizations.md` are from before these changes.
+
+| Finding | Before | After |
+|---|---|---|
+| Map `remove` (1) | 200,000 removes: 14 s | 0.05 s |
+| String building (2) | 200,000 × `set s = s + "x"`: 4.9 s, 24 GiB allocated | under 20 ms, 871 KiB. Locals only; `+` chains elsewhere and `format` are unchanged |
+| Checker scaling (3) | 8,000 records and functions: 6.8 s | 0.09 s, linear (`ty_make` was the second quadratic pass) |
+| `chars` (4) | 40 bytes per ASCII character | 8: one-character ASCII strings are shared |
+| JSON (4) | 5 MB: parse 930 ms, write 770 ms, peak 512 MiB; 13 MB: R0006 | parse 156 ms, write 192 ms, peak 119 MiB; 13 MB parses. Python: 49 ms and 29 ms |
+
+Still open from finding 4: `byte_at`, so parsers written in vo need no list at all. What remains of the
+JSON time is the collector walking the tree and float conversion (findings 6 and 10).
+
 ## A note on scope
 
 Some suggestions here go against decisions in the roadmap (interfaces and native code are "out of scope

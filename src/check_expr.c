@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 97 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 99 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -44,6 +44,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__sql_open", "__sql_close", "__sql_exec", "__sql_query", "__sql_tx", "__sql_prepare", /* spec 026 */
     "__serve_workers", /* spec 028 */
     "__to_json", "__from_json", "__json_fields", "__json_text", /* spec 029 */
+    "__json_parse", "__json_write",
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -302,6 +303,17 @@ Type *check_builtin(Node *call, long id, Type *expected)
         if (!check_argc(call, 1)) return t_error;
         check_arg(call, 0, 0);
         return t_str;
+    }
+    if (id == B_JSON_PARSE) { /* __json_parse(s) -> result[Json]: std.json's wrapper declares the type */
+        if (!check_argc(call, 1)) return t_error;
+        check_arg(call, 0, t_str);
+        return expected ? expected : infer_error(call, expected);
+    }
+    if (id == B_JSON_WRITE) { /* __json_write(j, pretty) -> result[str] */
+        if (!check_argc(call, 2)) return t_error;
+        check_arg(call, 0, 0);
+        check_arg(call, 1, t_int);
+        return ty_result(t_str);
     }
     if (id == B_JSON_FIELDS) { /* spec 029: __json_fields(xs: list[T]) -> list[str] (std.web's settings) */
         if (!check_argc(call, 1)) return t_error;
