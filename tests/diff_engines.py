@@ -5,7 +5,8 @@
 
 Runs N generated programs (tests/gen_programs.py, seeds S..S+N-1) on build-oracle/vo, the tree walker
 before spec 004, and on build/vo (with --stress: build-stress/vo collecting every 64 allocations), and
-compares stdout, stderr and exit status. Disagreements go to build/diff-failures/<seed>/.
+compares stdout, stderr and exit status (floats at the oracle's 15 significant digits, tests/float15.py).
+Disagreements go to build/diff-failures/<seed>/.
 """
 import argparse
 import concurrent.futures as cf
@@ -16,6 +17,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tests"))
+import float15  # noqa: E402
 import gen_programs  # noqa: E402
 
 VO = os.path.join(ROOT, "bin", "vo")
@@ -43,7 +45,7 @@ def one(seed, new_bin, new_env):
         return "unchecked", seed, src, a, b
     if b"error[R0009]" in a[1] or b"error[R0009]" in b[1]:
         return "timeout", seed, src, a, b
-    if a != b:
+    if not float15.same(a, b):  # the oracle writes floats to 15 digits
         return "diff", seed, src, a, b
     return ("runtime" if b"runtime error[" in a[1] else "ok"), seed, src, a, b
 

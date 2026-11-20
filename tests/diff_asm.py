@@ -22,6 +22,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tests"))
+import float15  # noqa: E402
 import gen_programs  # noqa: E402
 import fuzz  # noqa: E402
 
@@ -45,7 +46,7 @@ def one(seed, new_bin, mode):
     os.remove(path)
     if b"error[R0009]" in a[1] or b"error[R0009]" in b[1]:
         return "timeout", seed, src, a, b
-    return ("diff" if a != b else "ok"), seed, src, a, b
+    return ("ok" if float15.same(a, b) else "diff"), seed, src, a, b  # the release writes floats to 15 digits
 
 
 def run_cmd(binary, args, cwd):

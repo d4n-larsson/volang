@@ -1,4 +1,5 @@
 symlink a.txt data/link
+mkdir data/sub
 symlink ../a.txt data/sub/up
 symlink ../main.vo data/out
 vo effects --update main.vo
