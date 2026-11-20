@@ -69,6 +69,7 @@ order: console, input, file.read, file.write, net, clock, random, env, serve.
 | `env` | `env` (environment variables) | variable names |
 | `serve` | `std.http.serve` (answering HTTP requests) | addresses |
 | `process` | `std.process.run`, `run_with` (running other programs) | programs |
+| `entropy` | `std.crypto.random_bytes`, `hash_password` (the system's random source, for secrets) | |
 
 Everything else is pure: arithmetic, strings, lists and maps, the collections, `std.json`,
 `std.text`, in-memory databases (`std.sqlite.open_memory`). Program arguments (`args()`) and `exit` need no effect.

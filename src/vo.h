@@ -341,7 +341,8 @@
 #define EF_ENV (256)
 #define EF_SERVE (512) /* spec 011 */
 #define EF_PROCESS (1024) /* spec 017 */
-#define EF_ALL (2047)
+#define EF_ENTROPY (2048) /* spec 035: the system's random source */
+#define EF_ALL (4095)
 #define ES_MASK (0) /* u64 bits */
 #define ES_SCOPES (8) /* vec of scope pairs (ESC_*) sorted by (bit, bytes) | 0 */
 #define ES_EVARS (16) /* vec of effect-variable N_TPARAM nodes | 0 */
@@ -415,7 +416,12 @@
 #define B_BYTE_AT (100) /* byte_at(s, i) -> int: one byte of a str (compiled to OPC_INDEX_BYTES) */
 #define B_HTTP_TIMEOUT (101) /* __http_timeout(ms): a bound of its own for the next exchange (std.http's send) */
 #define B_MAP_ERR (102) /* spec 032: map_err(r, f) -> result[T, E2] */
-#define B_LAST (102) /* the last builtin id with a btab entry */
+#define B_SHA256 (103) /* spec 035: __sha256(b) -> bytes */
+#define B_HMAC_SHA256 (104) /* __hmac_sha256(key, message) -> bytes */
+#define B_PBKDF2 (105) /* __pbkdf2_sha256(password, salt, iterations) -> bytes (32) */
+#define B_BYTES_SAME (106) /* __bytes_same(a, b) -> bool, in constant time */
+#define B_ENTROPY (107) /* __entropy(n) -> bytes from the system's random source */
+#define B_LAST (107) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -756,6 +762,7 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define EVK_SQL (19) /* spec 026 */
 #define EVK_SETUP (20) /* spec 028: a worker's setup block, then */
 #define EVK_SETUP_END (21)
+#define EVK_ENTROPY (23) /* spec 035: the bytes random_bytes returned */
 #define EVK_WORKER_ENDED (22) /* spec 028: the request's worker ended without answering (its response is 500) */
 #define EVR_OK (0)
 #define EVR_ERR (1)
@@ -2344,6 +2351,29 @@ extern long tf_op_val[2];
 extern void rt_expect_eq(long actual, long expected, Node *node);
 
 /* src/sha256.c */
+typedef struct Sha256 { /* spec 035: one hash in progress */
+    uint32_t h[8];
+    unsigned char buf[64];
+    long buffered;
+    unsigned long total;
+} Sha256;
+extern void sha256_compress(uint32_t *hh, const unsigned char *block);
+extern void sha256_start(Sha256 *c);
+extern void sha256_add(Sha256 *c, char *p, long n);
+extern void sha256_end(Sha256 *c, char *out);
+/* src/crypto.c (spec 035) */
+typedef struct Hmac { /* the key's inner and outer pads, hashed once */
+    Sha256 inner, outer;
+} Hmac;
+extern void hmac_key(Hmac *h, char *key, long klen);
+extern void hmac_sha256(Hmac *h, char *msg, long mlen, char *out);
+extern void pbkdf2_sha256(char *pw, long pwlen, char *salt, long saltlen, long iterations, char *out);
+extern int bytes_same(char *a, long alen, char *b, long blen);
+extern Str *crypto_sha256(Str *b);
+extern Str *crypto_hmac(Str *key, Str *msg);
+extern Str *crypto_pbkdf2(Str *pw, Str *salt, long iterations, Node *call);
+extern Str *rt_entropy(long n, Node *call);
+extern Str *io_entropy(long n, Node *call);
 extern void sha256_init(void);
 extern void sha256_update(char *p, long n);
 extern void sha256_final(char *out);

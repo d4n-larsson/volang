@@ -31,7 +31,8 @@ static const char *const ev_names[] = {0,         "read_line", "read_all",    "r
                                        "env",     "now_ms",    "end",         "http",      "listen",
                                        "request", "response",  "info",        "list_dir",  "append_file",
                                        "make_dir", "delete",   "rename",      "run",       "sql",
-                                       "setup",   "setup_end", "worker_ended"}; /* spec 028 */
+                                       "setup",   "setup_end", "worker_ended", /* spec 028 */
+                                       "entropy"}; /* spec 035 */
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static Str *run_desc(Str *program, Str *joined);
 static const char hexd[] = "0123456789abcdef";
@@ -59,7 +60,8 @@ static const char *const d_table[] = {0,
                                       "makes the database call `$1`",
                                       "starts serving with workers",
                                       "finishes a worker's setup",
-                                      "answers a request whose worker ended"};
+                                      "answers a request whose worker ended",
+                                      "draws random bytes (another count than recorded, or none recorded)"};
 static const char *const n_table[] = {0,
                                       "a line of stdin",
                                       "the rest of stdin",
@@ -82,7 +84,8 @@ static const char *const n_table[] = {0,
                                       "the database call `$1`",
                                       "a worker's setup",
                                       "the end of a worker's setup",
-                                      "a request whose worker ended"};
+                                      "a request whose worker ended",
+                                      "a draw of random bytes"};
 
 #define J_HEAD "{\"v\":1,\"kind\":\""
 #define J_CLOSE "}\n"
@@ -377,6 +380,23 @@ void *io_write_file(Str *path, Str *text)
     }
     GC_UNROOT(2);
     return r;
+}
+
+/* Spec 035: random_bytes. The bytes drawn are recorded; replay returns them (R0014 for another count). */
+Str *io_entropy(long n, Node *call)
+{
+    if (rcd_mode == 2) {
+        Str *b = rp_take(EVK_ENTROPY, 0)->value.p;
+        if (b->len != n) rp_mismatch_now(EVK_ENTROPY, 0);
+        return b;
+    }
+    Str *b = rt_entropy(n, call);
+    if (rcd_mode) {
+        GC_ROOT(&b);
+        rcd_event(EVK_ENTROPY, 0, -1, b, 0);
+        GC_UNROOT(1);
+    }
+    return b;
 }
 
 void *io_env(Str *name)
@@ -884,7 +904,7 @@ long rp_kind_of(Str *str)
 {
     if (!str) return -1;
     if (str_eq_cstr(str, "recording")) return 0;
-    for (long k = 1; k <= EVK_WORKER_ENDED; k++)
+    for (long k = 1; k <= EVK_ENTROPY; k++)
         if (str_eq_cstr(str, (char *)ev_names[k])) return k;
     return -1;
 }
@@ -959,6 +979,10 @@ void rp_read(char *text, long len)
 void rp_check_event(Event *e)
 {
     if (e->kind == EVK_SETUP || e->kind == EVK_SETUP_END || e->kind == EVK_WORKER_ENDED) return; /* spec 028: markers */
+    if (e->kind == EVK_ENTROPY) { /* spec 035: the bytes */
+        if (rf_isint || !e->value.p) rp_bad();
+        return;
+    }
     if (e->kind == EVK_SQL) { /* spec 026: the outcome is checked when it is replayed */
         if (!rf_op || e->result < 0) rp_bad();
         return;

@@ -107,7 +107,7 @@ modules:
   std.json JSON values: parse, write, and read fields and elements.
   std.time UTC calendar time, ISO 8601 text and durations in milliseconds.
   std.text Text helpers: search, replace, repeat, pad, lines and words.
-  std.random Random floats, picks and shuffles (fixed by --seed).
+  std.random Random floats, picks and shuffles (fixed by --seed; not for secrets: std.crypto.random_bytes).
   std.http HTTP and HTTPS requests (needs net), and serving plain HTTP requests (needs serve).
   std.collections Operations on the built-in ordered_map, ordered_set, priority_queue and deque.
   std.fs Directories and file information (needs file.read), and file changes (needs file.write, file.delete).
@@ -118,3 +118,4 @@ modules:
   std.sqlite SQLite databases in files (file.read, file.write) or in memory (no effect), with checked statements and ? parameters.
   std.web Building HTTP APIs: a route table, typed request input, JSON answers, errors mapped in one place, steps around requests, settings, health, and tests without a network.
   std.option a value that may be absent: Option[T] is some(value) or none (spec 032).
+  std.crypto Hashes, message signatures, secret random bytes and password storage.

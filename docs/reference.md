@@ -300,10 +300,11 @@ test "loads fixtures" uses file.read("fixtures/") { ... }
 | file.delete | `std.fs.delete` and `rename` |
 | net | `std.http` (`get`, `post`) |
 | clock | `now_ms`, `std.time.sleep` |
-| random | `random_int` |
+| random | `random_int` (seeded: not for secrets) |
 | env | `env` |
 | serve | `std.http.serve` (answering HTTP requests) |
 | process | `std.process.run` and `run_with` (running other programs) |
+| entropy | `std.crypto.random_bytes`, `hash_password` (the system's random source) |
 
 - No `uses` clause means pure: the function cannot do any of these, so it always returns the same result for the same arguments.
 - A function must declare everything it does and everything its callees declare (E0501, with a fix that adds exactly the missing effects). An effect nothing needs is W0501, with a fix that removes it.
@@ -1158,6 +1159,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 | std.math | `sqrt`, `pow`, `exp`, `log`, trigonometry, `pi`; `floor`, `ceil`, `round` to `int` (correctly rounded; out of domain is R0007) |
 | std.regex | `regex("...")` (checked by `vo check`), `parse_regex`, `is_match`, `first_match`, `all_matches`, `replace_all` (`$1`), `split_on`: linear time; write `\\d` for `\d` |
 | std.sqlite | `open` → `Database[uses file.read, file.write]`, `open_readonly` → `Database[uses file.read]`, `open_memory` → `Database`; `exec`, `query` (need the database's effects) with `sql("...")` (checked) and `?` parameters (`Value`); `transaction`; `get_int`, `get_str`, ... |
+| std.crypto | `sha256`, `hmac_sha256`, `same_bytes` (constant time) on `bytes`; `random_bytes(n)` for tokens and keys, `hash_password` (entropy); `verify_password` |
 | std.option | `Option[T]` (`some`, `none`) for absence, `or_else`, `is_some`, `to_result` |
 | std.web | APIs over `serve_workers`: `web_app`, `on_get`/`on_post`/`on_put`/`on_patch`/`on_delete`, `json_reply(status, v)`, `created`, `no_content`, `serve_app`, `handle_request`, steps, `load_settings`, `health_route` |
 
@@ -1272,7 +1274,7 @@ renamed area to rect_area: 2 changes in 1 file (dry run, nothing written)
 
 - `vo run --trace FILE` (and `vo test`) writes JSON lines: `call` (function, call site, depth, `args` by name) and `return` (value) for every vo function, `error` when a runtime error ends it, `test` before each test, `task` (`index`) before each task's records, and `end` (`records`, `omitted`, `status`). Values are shortened to 200 bytes. After `--trace-limit N` records (default 100000) the rest are only counted.
 - A runtime error lists, under each frame, its parameters and the locals declared before the failing statement: `i: int = 3` (in JSON, `locals` of each `trace` entry). Timeouts show no values: they depend on the machine's speed.
-- `vo run --record FILE` saves everything the program receives: arguments, stdin, environment variables, file reads, results of file writes, HTTP responses and requests, the clock and the seed. `vo replay FILE` runs the current program on exactly that, reading and writing nothing outside: the same program gives the same output and exit status (unless it timed out). A changed program is run with a note; one that asks for a different input (another file, variable or HTTP request: host, port, method or path) stops with R0014. A server gets the recorded requests again, opens no port, and each response that changed is a note. A recording holds the file contents and variables the program read.
+- `vo run --record FILE` saves everything the program receives: arguments, stdin, environment variables, file reads, results of file writes, HTTP responses and requests, the clock, the seed and the bytes of `random_bytes`. `vo replay FILE` runs the current program on exactly that, reading and writing nothing outside: the same program gives the same output and exit status (unless it timed out). A changed program is run with a note; one that asks for a different input (another file, variable or HTTP request: host, port, method or path) stops with R0014. A server gets the recorded requests again, opens no port, and each response that changed is a note. A recording holds the file contents and variables the program read.
 
 ```vo
 fn last(xs: list[int]) -> int {

@@ -1,0 +1,6 @@
+std/crypto.vo:82:47: runtime error[R0009]: Time limit of 1 s exceeded.
+  82 |                             return same_bytes(__pbkdf2_sha256(from_text(password), salt, n), key);
+     |                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at verify_password (std/crypto.vo:82:47)
+  at main (timeout.vo:5:15)

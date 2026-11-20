@@ -4358,7 +4358,7 @@ A builtin received an argument it cannot handle.
 
 Fixable: no
 
-A builtin got a value it cannot work with: `int(...)` of NaN or of a float out of range, `split` with an empty separator, `slice` of a `str` at a position inside a multi-byte character, an integer outside 0 to 255 for `std.bytes.from_ints`, or text that is not UTF-8 where no `result` can say so (`read_all`, `args`). The message says which. Check the value first. For `slice`, use byte offsets that `find` returned, or work on the `list[str]` from `chars`. For input that may not be text, read it as `bytes` (`std.bytes.read_stdin`, `std.fs.read_bytes`) and convert with `std.bytes.to_text`.
+A builtin got a value it cannot work with: `int(...)` of NaN or of a float out of range, `split` with an empty separator, `slice` of a `str` at a position inside a multi-byte character, an integer outside 0 to 255 for `std.bytes.from_ints`, text that is not UTF-8 where no `result` can say so (`read_all`, `args`), or a count outside 0 to 65536 for `std.crypto.random_bytes` (which also stops here if the system's random source fails: it never continues with other bytes). The message says which. Check the value first. For `slice`, use byte offsets that `find` returned, or work on the `list[str]` from `chars`. For input that may not be text, read it as `bytes` (`std.bytes.read_stdin`, `std.fs.read_bytes`) and convert with `std.bytes.to_text`.
 
 ### Example
 

@@ -1,4 +1,4 @@
-# std.random: Random floats, picks and shuffles (fixed by --seed).
+# std.random: Random floats, picks and shuffles (fixed by --seed; not for secrets: std.crypto.random_bytes).
 # Part of the vo standard library (spec 007). Import items one by one: `import std.random.NAME;`.
 
 # A float in [0, 1) from 53 random bits.

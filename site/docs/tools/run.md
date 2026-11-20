@@ -104,7 +104,8 @@ reference's [Traces and replay](../reference/traces-and-replay.md).
 ### Recordings
 
 `--record FILE` saves the arguments, standard input, environment variables read, file reads, the results
-of file writes, HTTP requests and responses, the clock and the seed, as JSON lines. The recording holds
+of file writes, HTTP requests and responses, the clock, the seed and the bytes `random_bytes` returned,
+as JSON lines. The recording holds
 the contents of the files and variables the program read: treat it like them. See [vo replay](replay.md).
 
 ## Exit statuses

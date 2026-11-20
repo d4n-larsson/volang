@@ -492,6 +492,74 @@ not UTF-8 at byte 4
   `run_bytes`, `run_with_bytes` (`std.process`), `get_bytes`, `post_bytes`, `serve_bytes` (`std.http`),
   with the same effects and scopes.
 
+## std.crypto: hashes and secrets
+
+`sha256` and `hmac_sha256` hash `bytes` to 32 bytes, `same_bytes` compares two values without showing
+where they differ, `random_bytes` draws secrets from the operating system, and `hash_password` with
+`verify_password` store passwords. Text goes in through `std.bytes.from_text`, results come out through
+`to_hex` or `to_base64`.
+
+A webhook is checked by computing the signature again and comparing in constant time:
+
+```vo
+import std.bytes.from_text;
+import std.bytes.to_hex;
+import std.crypto.hmac_sha256;
+import std.crypto.same_bytes;
+import std.crypto.sha256;
+
+fn signed_by(secret: str, body: bytes, signature: bytes) -> bool {
+    return same_bytes(hmac_sha256(from_text(secret), body), signature);
+}
+
+fn main() uses console {
+    let body = from_text("{\"event\":\"paid\"}");
+    let signature = hmac_sha256(from_text("whsec_1"), body);
+    print(to_hex(sha256(from_text("abc"))));
+    print(str(signed_by("whsec_1", body, signature)) + " " + str(signed_by("whsec_2", body, signature)));
+}
+```
+
+```output
+ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+true false
+```
+
+Secrets need their own effect, `entropy`, so `vo.effects` shows which functions draw them, and a
+function that only declares `random` cannot. `random_int` follows the seed and is for simulations and
+shuffles; a session token, an API key or a reset code is `random_bytes`:
+
+```vo
+import std.bytes.to_hex;
+import std.crypto.hash_password;
+import std.crypto.random_bytes;
+import std.crypto.verify_password;
+
+fn main() uses console, entropy {
+    let token = to_hex(random_bytes(16));
+    print(str(len(token)));
+    let stored = hash_password("correct horse");
+    print(slice(stored, 0, 21));
+    print(str(verify_password("correct horse", stored)) + " " + str(verify_password("wrong", stored)));
+}
+```
+
+```output
+32
+pbkdf2-sha256$600000$
+true false
+```
+
+- No option makes `random_bytes` predictable under `vo run` or in a built executable. In `vo test` the
+  bytes are the same on every run, so tests stay reproducible. A recording holds the bytes that were
+  drawn: keep recordings as private as the secrets.
+- `hash_password` returns one line to store: the method (PBKDF2-HMAC-SHA256), its cost, a fresh salt and
+  the key, so two hashes of one password differ and old hashes still verify if the cost is raised
+  later. It takes about a third of a second on purpose. `verify_password` answers `false` for anything
+  that is not such a line.
+
+Details: [std.crypto](../std/crypto.md).
+
 ## std.math
 
 Square roots, powers, logarithms, trigonometry, `pi()`, and `floor`, `ceil` and `round` to `int`.

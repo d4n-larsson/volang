@@ -1,0 +1,16 @@
+import std.bytes.from_text;
+import std.bytes.to_hex;
+import std.crypto.hash_password;
+import std.crypto.hmac_sha256;
+import std.crypto.random_bytes;
+import std.crypto.same_bytes;
+import std.crypto.sha256;
+import std.crypto.verify_password;
+
+fn main() uses console, entropy {
+    let key = random_bytes(32);
+    print(to_hex(random_bytes(0)) + to_hex(random_bytes(5)));
+    print(to_hex(hmac_sha256(key, sha256(from_text("body")))));
+    let stored = hash_password("pw");
+    print(stored + " " + str(verify_password("pw", stored)) + " " + str(same_bytes(key, key)));
+}

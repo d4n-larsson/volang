@@ -25,6 +25,7 @@ cases() {
     typed_errors) echo "typed_errors check generic prop tasks test run web doc" ;; # spec 032
     map_keys) echo "map_keys check bytes generic prop tasks test fmt doc" ;; # spec 033
     build) echo "build cli run replay packages" ;; # spec 034
+    crypto) echo "crypto effects effect_sets replay tasks doc" ;; # spec 035
     bytes) echo "bytes bytes_steps run doc" ;;
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
@@ -58,6 +59,7 @@ scripts() { # one per line, with arguments
     typed_errors) printf '%s\n' catalog.py apply_fixes.py ref_examples.py doc_conformance.py ;; # spec 032
     map_keys) printf '%s\n' catalog.py apply_fixes.py ref_examples.py doc_conformance.py ;; # spec 033
     build) printf '%s\n' catalog.py ref_examples.py build_examples.py ;; # spec 034
+    crypto) printf '%s\n' catalog.py ref_examples.py doc_conformance.py crypto_vectors.py ;; # spec 035
     bytes) echo doc_conformance.py ;;
     float) printf '%s\n' math_vectors.py json_corpus.py json_stream.py ref_examples.py doc_conformance.py ;;
     json) printf '%s\n' json_corpus.py json_stream.py doc_conformance.py ;;
@@ -90,6 +92,7 @@ area_of() {
     src/check_const.c|tests/const_*.py) echo const ;; # spec 031
     src/rt_map.c|tests/map_keys_bench.py) echo map_keys ;; # spec 033
     src/build.c|tests/build_examples.py) echo build ;; # spec 034
+    src/crypto.c|src/sha256.c|std/crypto.vo|tests/crypto_vectors.py) echo crypto ;; # spec 035
     src/check_effects.c|src/fmt.c|tests/effect_sets_*.py) echo effects ;; # spec 030
     src/num.c|src/stdprim.c) echo float ;;
     src/bytes.c|std/bytes.vo|tests/bytes/*|tests/bytes_*.py|tests/process_helpers/allbytes) echo bytes ;;
@@ -142,7 +145,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build bytes float json text time random collections http fs front query testing tasks trace packages docs cli)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done

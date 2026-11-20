@@ -1,0 +1,31 @@
+$ vo~ run main.vo
+(stdout not shown)
+--- stderr
+--- exit 0
+$ vo~ run main.vo
+(stdout not shown)
+--- stderr
+--- exit 0
+same stdout: no
+$ vo~ run --seed 1 main.vo
+(stdout not shown)
+--- stderr
+--- exit 0
+$ vo~ run --seed 1 main.vo
+(stdout not shown)
+--- stderr
+--- exit 0
+same stdout: no
+$ vo build main.vo -o app
+built app: 1 file, 0 bytes
+--- stderr
+--- exit 0
+$ app~ app --vo-seed 1
+(stdout not shown)
+--- stderr
+--- exit 0
+$ app~ app --vo-seed 1
+(stdout not shown)
+--- stderr
+--- exit 0
+same stdout: no

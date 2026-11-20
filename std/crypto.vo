@@ -1,0 +1,89 @@
+# std.crypto: Hashes, message signatures, secret random bytes and password storage.
+# Part of the vo standard library (spec 035). Import items one by one: `import std.crypto.NAME;`.
+# Everything works on `bytes`: turn text into bytes with std.bytes.from_text and show results with
+# std.bytes.to_hex or to_base64. Secrets come from random_bytes, never from random_int.
+import std.bytes.from_base64;
+import std.bytes.from_text;
+import std.bytes.to_base64;
+
+# The SHA-256 hash of b: 32 bytes.
+#     to_hex(sha256(from_text("abc"))) is "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+export fn sha256(b: bytes) -> bytes {
+    return __sha256(b);
+}
+
+# The HMAC-SHA256 of message under key: 32 bytes that only a holder of the key can compute. Compare a
+# received signature with same_bytes.
+#     to_hex(hmac_sha256(from_text("key"), from_text("The quick brown fox jumps over the lazy dog"))) is "f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8"
+export fn hmac_sha256(key: bytes, message: bytes) -> bytes {
+    return __hmac_sha256(key, message);
+}
+
+# Whether a and b are equal, in a time that does not show where they differ: for comparing a secret
+# (a token, a signature) with what a caller sent. Lengths are not hidden.
+#     same_bytes(from_text("token"), from_text("token")) is true
+#     same_bytes(from_text("token"), from_text("tokem")) is false
+export fn same_bytes(a: bytes, b: bytes) -> bool {
+    return __bytes_same(a, b);
+}
+
+# n bytes (0 to 65536) from the operating system's random source, for tokens, keys and salts:
+# to_hex(random_bytes(16)) is a session token. No option makes them predictable; in `vo test` they
+# are the same on every run, and a recording holds them.
+#     len(random_bytes(16)) is 16
+export fn random_bytes(n: int) -> bytes uses entropy {
+    return __entropy(n);
+}
+
+const method = "pbkdf2-sha256";
+const cost = 600000;
+const max_cost = 10000000;
+
+# A text to store instead of the password: the method, its cost, a fresh salt and the derived key
+# (PBKDF2-HMAC-SHA256). Two calls give different texts; check a password with verify_password.
+#     slice(hash_password("correct horse"), 0, 21) is "pbkdf2-sha256$600000$"
+export fn hash_password(password: str) -> str uses entropy {
+    let salt = random_bytes(16);
+    let key = __pbkdf2_sha256(from_text(password), salt, cost);
+    return method + "$" + str(cost) + "$" + to_base64(salt) + "$" + to_base64(key);
+}
+
+# Whether password is the one stored was made from. False for a text hash_password did not make
+# (and for a cost above 10000000), never an error.
+#     verify_password("passwd", "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=") is true
+#     verify_password("other", "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=") is false
+#     verify_password("passwd", "not a hash") is false
+export fn verify_password(password: str, stored: str) -> bool {
+    let parts = split(stored, "$");
+    if len(parts) != 4 or parts[0] != method {
+        return false;
+    }
+    match parse_int(parts[1]) {
+        case err(_) {
+            return false;
+        }
+        case ok(n) {
+            if n < 1 or n > max_cost or str(n) != parts[1] {
+                return false;
+            }
+            match from_base64(parts[2]) {
+                case err(_) {
+                    return false;
+                }
+                case ok(salt) {
+                    match from_base64(parts[3]) {
+                        case err(_) {
+                            return false;
+                        }
+                        case ok(key) {
+                            if len(key) != 32 {
+                                return false;
+                            }
+                            return same_bytes(__pbkdf2_sha256(from_text(password), salt, n), key);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

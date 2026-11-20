@@ -141,7 +141,8 @@ Each property is a claim the review must try to break; each break is a finding.
 - **Console output is not filtered**: a program (or data it prints) can send terminal escape sequences
   to the runner's terminal.
 - **Recordings contain the inputs**: file contents, variables and HTTP traffic a program read are in its
-  recording; recordings are as sensitive as those inputs.
+  recording, and so are the bytes `std.crypto.random_bytes` returned (tokens, keys, salts); recordings
+  are as sensitive as those inputs.
 - **The grant is only as good as its review**: a broad grant (`file.read("./")`, an unscoped `net`) is
   honored as written.
 

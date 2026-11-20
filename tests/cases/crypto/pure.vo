@@ -1,0 +1,14 @@
+import std.bytes.from_text;
+import std.crypto.hmac_sha256;
+import std.crypto.same_bytes;
+import std.crypto.sha256;
+import std.crypto.verify_password;
+
+fn check(a: str, b: str) -> bool {
+    let h = sha256(from_text(a));
+    return same_bytes(hmac_sha256(h, from_text(b)), h) or verify_password(a, b);
+}
+
+fn main() uses console {
+    print(str(check("a", "b")));
+}

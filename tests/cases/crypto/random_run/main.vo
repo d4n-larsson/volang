@@ -1,0 +1,11 @@
+import std.bytes.to_hex;
+import std.crypto.random_bytes;
+
+fn main() uses console, entropy {
+    let a = to_hex(random_bytes(16));
+    let b = to_hex(random_bytes(16));
+    if a == b or len(a) != 32 {
+        eprint("bad draw");
+    }
+    print(a);
+}

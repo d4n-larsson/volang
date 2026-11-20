@@ -1,0 +1,10 @@
+vo~ run main.vo
+vo~ run main.vo
+same
+vo~ run --seed 1 main.vo
+vo~ run --seed 1 main.vo
+same
+vo build main.vo -o app
+app~ app --vo-seed 1
+app~ app --vo-seed 1
+same

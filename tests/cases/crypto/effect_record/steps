@@ -1,0 +1,7 @@
+vo effects --update main.vo
+vo effects main.vo
+vo build main.vo -o app
+app app --vo-effects
+vo run --trace t.jsonl main.vo
+write helper.vo import std.crypto.random_bytes;\n\nexport fn label() -> str uses entropy {\n    return "n" + str(len(random_bytes(1))) + "=";\n}\n
+vo check main.vo

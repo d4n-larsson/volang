@@ -315,7 +315,7 @@ def run_case(case):
             env = dict(os.environ)
             while words[0] in ("env", "unset"):
                 kind = words.pop(0)
-                while words and words[0] not in ("vo", "app", "env", "unset"):
+                while words and words[0] not in ("vo", "vo~", "app", "app~", "env", "unset"):
                     w = words.pop(0)
                     if kind == "env":
                         k, v = w.split("=", 1)
@@ -326,9 +326,9 @@ def run_case(case):
             jail = words[0] == "no-trust-store"  # spec 019
             if jail:
                 words.pop(0)
-            hide = words[0] == "vo~"
+            hide = words[0] in ("vo~", "app~")  # app~ (spec 035): app with its stdout left out
             if hide:
-                words[0] = "vo"
+                words[0] = words[0][:-1]
             if words[0] == "app":  # spec 034: a built executable, run the way bin/vo runs $VO_BIN
                 env["VO_BIN"] = os.path.join(work, words[1])
                 words[0:2] = ["vo"]

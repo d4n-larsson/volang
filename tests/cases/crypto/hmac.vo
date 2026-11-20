@@ -1,0 +1,24 @@
+# Spec 035: the HMAC-SHA256 vectors of RFC 4231 (cases 1, 2, 3, 4, 6 and 7).
+import std.bytes.from_hex;
+import std.bytes.from_text;
+import std.bytes.to_hex;
+import std.crypto.hmac_sha256;
+import std.text.repeat;
+
+fn show(key_hex: str, data: bytes) -> result[void] uses console {
+    print(to_hex(hmac_sha256(try from_hex(key_hex), data)));
+    return ok();
+}
+
+fn main() -> result[void] uses console {
+    try show(repeat("0b", 20), from_text("Hi There"));
+    try show("4a656665", from_text("what do ya want for nothing?"));
+    try show(repeat("aa", 20), try from_hex(repeat("dd", 50)));
+    try show("0102030405060708090a0b0c0d0e0f10111213141516171819", try from_hex(repeat("cd", 50)));
+    try show(repeat("aa", 131), from_text("Test Using Larger Than Block-Size Key - Hash Key First"));
+    try show(
+        repeat("aa", 131),
+        from_text("This is a test using a larger than block-size key and a larger than block-size data. The key needs to be hashed before being used by the HMAC algorithm.")
+    );
+    return ok();
+}

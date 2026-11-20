@@ -1,0 +1,12 @@
+import std.bytes.to_hex;
+import std.crypto.random_bytes;
+
+fn draw(n: int) -> str uses entropy {
+    return to_hex(random_bytes(n));
+}
+
+test "tasks in a test draw different, reproducible bytes" uses entropy {
+    let xs = concurrent_map([4, 4], 2, draw);
+    expect(xs[0] != xs[1]);
+    expect_eq(xs[0] + " " + xs[1], "9ec4175a 73c20f38");
+}

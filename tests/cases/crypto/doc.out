@@ -1,0 +1,12 @@
+fn sha256(b: bytes) -> bytes
+    The SHA-256 hash of b: 32 bytes.
+fn hmac_sha256(key: bytes, message: bytes) -> bytes
+    The HMAC-SHA256 of message under key: 32 bytes that only a holder of the key can compute. Compare a received signature with same_bytes.
+fn same_bytes(a: bytes, b: bytes) -> bool
+    Whether a and b are equal, in a time that does not show where they differ: for comparing a secret (a token, a signature) with what a caller sent. Lengths are not hidden.
+fn random_bytes(n: int) -> bytes uses entropy
+    n bytes (0 to 65536) from the operating system's random source, for tokens, keys and salts: to_hex(random_bytes(16)) is a session token. No option makes them predictable; in `vo test` they are the same on every run, and a recording holds them.
+fn hash_password(password: str) -> str uses entropy
+    A text to store instead of the password: the method, its cost, a fresh salt and the derived key (PBKDF2-HMAC-SHA256). Two calls give different texts; check a password with verify_password.
+fn verify_password(password: str, stored: str) -> bool
+    Whether password is the one stored was made from. False for a text hash_password did not make (and for a cost above 10000000), never an error.

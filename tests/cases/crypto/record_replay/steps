@@ -1,0 +1,5 @@
+vo~ run --record r.jsonl main.vo
+vo~ replay r.jsonl
+same
+write main.vo import std.crypto.random_bytes;\n\nfn main() uses console, entropy {\n    print(str(len(random_bytes(8))));\n}\n
+vo replay r.jsonl

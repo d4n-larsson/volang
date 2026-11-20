@@ -17,97 +17,115 @@ static const uint32_t sha_iv[8] = {
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 };
 
-static uint32_t sha_h[8];
-static unsigned char sha_buf[64];
-static long sha_buffered;
-static unsigned long sha_total;
+static Sha256 sha_one; /* the context of sha256_init/update/final (package hashes, vo build) */
 
 static uint32_t rotr(uint32_t x, int n)
 {
     return (x >> n) | (x << (32 - n));
 }
 
-void sha256_init(void)
+void sha256_start(Sha256 *c)
 {
-    for (int i = 0; i < 8; i++) sha_h[i] = sha_iv[i];
-    sha_buffered = 0;
-    sha_total = 0;
+    for (int i = 0; i < 8; i++) c->h[i] = sha_iv[i];
+    c->buffered = 0;
+    c->total = 0;
 }
 
-/* Compresses sha_buf into sha_h. */
-static void sha256_block(void)
+/* Compresses one 64-byte block into the state hh. */
+void sha256_compress(uint32_t *hh, const unsigned char *block)
 {
     uint32_t w[64];
     for (int t = 0; t < 16; t++)
-        w[t] = (uint32_t)sha_buf[4 * t] << 24 | (uint32_t)sha_buf[4 * t + 1] << 16 |
-               (uint32_t)sha_buf[4 * t + 2] << 8 | sha_buf[4 * t + 3];
+        w[t] = (uint32_t)block[4 * t] << 24 | (uint32_t)block[4 * t + 1] << 16 |
+               (uint32_t)block[4 * t + 2] << 8 | block[4 * t + 3];
     for (int t = 16; t < 64; t++) {
         uint32_t s0 = rotr(w[t - 15], 7) ^ rotr(w[t - 15], 18) ^ (w[t - 15] >> 3);
         uint32_t s1 = rotr(w[t - 2], 17) ^ rotr(w[t - 2], 19) ^ (w[t - 2] >> 10);
         w[t] = w[t - 16] + s0 + w[t - 7] + s1;
     }
-    uint32_t a = sha_h[0], b = sha_h[1], c = sha_h[2], d = sha_h[3];
-    uint32_t e = sha_h[4], f = sha_h[5], g = sha_h[6], h = sha_h[7];
+    uint32_t a = hh[0], b = hh[1], cc = hh[2], d = hh[3];
+    uint32_t e = hh[4], f = hh[5], g = hh[6], h = hh[7];
     for (int t = 0; t < 64; t++) {
         uint32_t S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
         uint32_t ch = (e & f) ^ (~e & g);
         uint32_t t1 = h + S1 + ch + sha_k[t] + w[t];
         uint32_t S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
-        uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
+        uint32_t maj = (a & b) ^ (a & cc) ^ (b & cc);
         uint32_t t2 = S0 + maj;
         h = g;
         g = f;
         f = e;
         e = d + t1;
-        d = c;
-        c = b;
+        d = cc;
+        cc = b;
         b = a;
         a = t1 + t2;
     }
-    sha_h[0] += a;
-    sha_h[1] += b;
-    sha_h[2] += c;
-    sha_h[3] += d;
-    sha_h[4] += e;
-    sha_h[5] += f;
-    sha_h[6] += g;
-    sha_h[7] += h;
+    hh[0] += a;
+    hh[1] += b;
+    hh[2] += cc;
+    hh[3] += d;
+    hh[4] += e;
+    hh[5] += f;
+    hh[6] += g;
+    hh[7] += h;
 }
 
-/* Appends one byte (sha256_update and the padding). */
-static void sha256_byte(unsigned char b)
+static void sha256_block(Sha256 *c)
 {
-    sha_buf[sha_buffered++] = b;
-    if (sha_buffered == 64) {
-        sha_buffered = 0;
-        sha256_block();
+    sha256_compress(c->h, c->buf);
+}
+
+/* Appends one byte (sha256_add and the padding). */
+static void sha256_byte(Sha256 *c, unsigned char b)
+{
+    c->buf[c->buffered++] = b;
+    if (c->buffered == 64) {
+        c->buffered = 0;
+        sha256_block(c);
     }
+}
+
+void sha256_add(Sha256 *c, char *p, long n)
+{
+    c->total += (unsigned long)n;
+    for (long i = 0; i < n; i++) sha256_byte(c, (unsigned char)p[i]);
+}
+
+/* Pads, and writes the 32-byte digest to out. */
+void sha256_end(Sha256 *c, char *out)
+{
+    unsigned long bits = c->total << 3;
+    sha256_byte(c, 0x80);
+    while (c->buffered != 56) sha256_byte(c, 0);
+    for (int shift = 56; shift >= 0; shift -= 8) sha256_byte(c, (unsigned char)(bits >> shift));
+    for (int i = 0; i < 8; i++) {
+        out[4 * i] = (char)(c->h[i] >> 24);
+        out[4 * i + 1] = (char)(c->h[i] >> 16);
+        out[4 * i + 2] = (char)(c->h[i] >> 8);
+        out[4 * i + 3] = (char)c->h[i];
+    }
+}
+
+void sha256_init(void)
+{
+    sha256_start(&sha_one);
 }
 
 void sha256_update(char *p, long n)
 {
-    sha_total += (unsigned long)n;
-    for (long i = 0; i < n; i++) sha256_byte((unsigned char)p[i]);
+    sha256_add(&sha_one, p, n);
 }
 
-/* Pads, and writes the 32-byte digest to out. */
 void sha256_final(char *out)
 {
-    unsigned long bits = sha_total << 3;
-    sha256_byte(0x80);
-    while (sha_buffered != 56) sha256_byte(0);
-    for (int shift = 56; shift >= 0; shift -= 8) sha256_byte((unsigned char)(bits >> shift));
-    for (int i = 0; i < 8; i++) {
-        out[4 * i] = (char)(sha_h[i] >> 24);
-        out[4 * i + 1] = (char)(sha_h[i] >> 16);
-        out[4 * i + 2] = (char)(sha_h[i] >> 8);
-        out[4 * i + 3] = (char)sha_h[i];
-    }
+    sha256_end(&sha_one, out);
 }
 
 void sha256(char *p, long n, char *out)
 {
-    sha256_init();
-    sha256_update(p, n);
-    sha256_final(out);
+    Sha256 c;
+    sha256_start(&c);
+    sha256_add(&c, p, n);
+    sha256_end(&c, out);
 }

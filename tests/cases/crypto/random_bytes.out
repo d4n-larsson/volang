@@ -1,0 +1,6 @@
+PASS lengths (0ms)
+PASS two draws differ, and are the same on every run (0ms)
+PASS random_int is not shifted by drawing bytes (0ms)
+PASS random_int after a draw (0ms)
+PASS a property draws the same bytes on every run (100 cases, 0ms)
+5 passed, 0 failed

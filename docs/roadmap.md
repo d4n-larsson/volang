@@ -41,6 +41,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [032](../specs/032-typed-errors/) | Typed errors: `result[T, E]` (`result[T]` is `result[T, str]`), `try` only between the same error types (E0412), `map_err` the one conversion; `std.web`'s `typed(op, answer)` maps a variant to statuses in one checked function; `std.option` | **Implemented** ([results](../specs/032-typed-errors/results.md)) |
 | [033](../specs/033-map-keys/) | Structural map keys: `map[K, V]` keyed by `int`, `bool`, `str`, `bytes`, records and variants of those, compared like `==`; `K: key` for generic code; E0309 names the part that is not a key | **Implemented** ([results](../specs/033-map-keys/results.md)) |
 | [034](../specs/034-vo-build/) | `vo build`: a program as one static executable (the toolchain with the program's files attached and hashed), run without sources; `--vo-effects` prints its grant; `vo run`'s options as `--vo-NAME`; `--base` for other architectures | **Implemented** ([results](../specs/034-vo-build/results.md)) |
+| [035](../specs/035-std-crypto/) | `std.crypto`: `sha256`, `hmac_sha256`, constant-time `same_bytes`, `random_bytes` from the system under a new effect `entropy`, `hash_password` / `verify_password` (PBKDF2-HMAC-SHA256) | **Implemented** ([results](../specs/035-std-crypto/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -376,6 +377,18 @@ ARGS`, from any directory, on any Linux machine of that architecture. `./app --v
   smaller runtime (an executable is about 10 MB), signing, `check` and `test` inside an executable.
 - **Known limit:** a file cut off at its end has lost its program part and starts as the plain toolchain
   (a usage error); bytes changed in the part are T0014.
+
+### 035: hashing and secrets (implemented)
+
+Nothing in vo could make a value nobody can guess (`random_int` is seeded), store a password or check a
+signed webhook. `std.crypto` adds `random_bytes(n)` from the operating system under its own effect,
+`entropy`, so `vo.effects` shows who draws secrets; `hash_password` and `verify_password`
+(PBKDF2-HMAC-SHA256, 600,000 iterations, a self-describing stored text); `sha256`, `hmac_sha256` and a
+constant-time `same_bytes`, all on `bytes`. Secret bytes ignore `--seed`, are reproducible in `vo test`,
+and are recorded and replayed like every other input.
+
+- **Not done (on purpose):** Argon2 and scrypt (the stored text names its method, so they can be added),
+  SHA-1, MD5, SHA-512, encryption, public-key signatures; `std.web` request IDs stay on `random`.
 
 ## Planned after 017
 

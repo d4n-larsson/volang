@@ -114,4 +114,5 @@ gives them back. A run with no `--seed` recorded:
 {"v":1,"kind":"end","status":0}
 ```
 
-A recording contains the files and environment variables the program read: keep it as private as they are.
+A recording contains the files and environment variables the program read, and any secret bytes it drew
+with `std.crypto.random_bytes`: keep it as private as they are.

@@ -1,0 +1,13 @@
+# Spec 035: the SHA-256 vectors of FIPS 180-4.
+import std.bytes.from_text;
+import std.bytes.to_hex;
+import std.crypto.sha256;
+import std.text.repeat;
+
+fn main() uses console {
+    print(to_hex(sha256(from_text(""))));
+    print(to_hex(sha256(from_text("abc"))));
+    print(to_hex(sha256(from_text("abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"))));
+    print(to_hex(sha256(from_text(repeat("a", 1000000)))));
+    print(str(len(sha256(from_text("x")))));
+}

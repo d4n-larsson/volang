@@ -1,0 +1,9 @@
+# Spec 035: the PBKDF2-HMAC-SHA256 vectors of RFC 7914 (section 11), first 32 bytes, as stored texts.
+import std.crypto.verify_password;
+
+fn main() uses console {
+    print(str(verify_password("passwd", "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=")));
+    print(str(verify_password("Password", "pbkdf2-sha256$80000$TmFDbA==$TdzY9guYviGDDO5e8icB+WQaRBjQTAQUrv8Ih2s0q1Y=")));
+    print(str(verify_password("passwe", "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=")));
+    print(str(verify_password("password", "pbkdf2-sha256$80000$TmFDbA==$TdzY9guYviGDDO5e8icB+WQaRBjQTAQUrv8Ih2s0q1Y=")));
+}

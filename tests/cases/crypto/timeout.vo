@@ -1,0 +1,6 @@
+# Spec 035: the time limit applies inside a password hash.
+import std.crypto.verify_password;
+
+fn main() uses console {
+    print(str(verify_password("hunter2", "pbkdf2-sha256$10000000$MDEyMzQ1Njc4OWFiY2RlZg==$pj4T35D2v4tYmC1sTJ1y5tcMADOdtnQGvuHmyYDQh2g=")));
+}

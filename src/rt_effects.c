@@ -34,6 +34,9 @@ void rt_set_option(long which, long value)
     }
 }
 
+static long ent_test;
+static unsigned long ent_state;
+
 /* Seeds the generator and sets the clock for a run, or for one test (defaults: seed 1, clock 0). */
 void rt_effects_start(int is_test)
 {
@@ -52,6 +55,42 @@ void rt_effects_start(int is_test)
     else
         seed = sys_clock_ns(); /* runs: seeded from the clock */
     pcg_seed(seed);
+    ent_test = is_test; /* spec 035: tests draw reproducible "secret" bytes, from the same seed */
+    ent_state = (unsigned long)seed * 0x9E3779B97F4A7C15UL + 0x243F6A8885A308D3UL;
+}
+
+/* Spec 035: random_bytes. Outside tests: the system's random source, whatever --seed says; in a test:
+ * a sequence of its own from the test's seed (random_int's sequence is not disturbed). */
+static unsigned long ent_next(void)
+{ /* splitmix64 */
+    unsigned long z = (ent_state += 0x9E3779B97F4A7C15UL);
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9UL;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EBUL;
+    return z ^ (z >> 31);
+}
+
+Str *rt_entropy(long n, Node *call)
+{
+    if (n < 0 || n > 65536)
+        rt_raise("R0007", msg("`random_bytes` needs a count from 0 to 65536, got $1.", int_to_str(n), 0, 0),
+                 std_user_call(call));
+    Str *b = str_new("", 0);
+    if (n) {
+        b = alloc_obj(OBJ_STR, n + 9);
+        b->len = n;
+    }
+    if (ent_test) {
+        for (long i = 0; i < n; i++) b->data[i] = (char)(ent_next() >> 56);
+        return b;
+    }
+    for (long got = 0; got < n;) {
+        long r = vo_syscall3(SYS_getrandom, (long)(b->data + got), n - got, 0);
+        if (r == -4) continue; /* EINTR */
+        if (r <= 0) /* never continue with other bytes */
+            rt_raise_c("R0007", "The system's random source failed: `random_bytes` cannot continue.", std_user_call(call));
+        got += r;
+    }
+    return b;
 }
 
 void pcg_seed(long seed)
@@ -67,6 +106,7 @@ void pcg_seed(long seed)
  * (the same for every task of a call) and the task's position path. */
 void rt_task_seed(long path)
 {
+    ent_state ^= (unsigned long)path * 0xD6E8FEB86659FD93UL; /* spec 035: a test's tasks draw different bytes */
     pcg_state ^= (unsigned long)path * 0x9E3779B97F4A7C15UL;
     pcg_next32();
 }
