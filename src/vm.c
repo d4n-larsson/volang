@@ -193,6 +193,7 @@ long vm_run(void *start)
         &&op_index_coll, &&op_set_index_coll, &&op_snapshot, &&op_new_coll, /* spec 014 */
         &&op_cover, /* spec 018 */
         &&op_index_bytes, /* spec 021 */
+        &&op_append,
     };
     if (!start) {
         for (int i = 0; i < OPC_COUNT; i++) vm_ops[i] = vm_ops_trace[i] = ops[i];
@@ -265,6 +266,13 @@ op_div_float: {
 op_concat:
     cur_node = (long)pc->node;
     STORE((long)str_concat((Str *)SL(pc->b), (Str *)SL(pc->c.i)));
+    /* a = a + c, for `set s = s + c`: slot b holds a's value while nothing has read it since the last
+       append (the compiler clears b before every read of s), so that string can grow in place */
+op_append:
+    cur_node = (long)pc->node;
+    r = (long)str_append((Str *)SL(pc->a), (Str *)SL(pc->c.i), SL(pc->b) == SL(pc->a));
+    SL(pc->b) = r;
+    STORE(r);
 op_eq: {
     Type *t = pc->node->a.n->type;
     if (RAW_EQ_TYPE(t)) {

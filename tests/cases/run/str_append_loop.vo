@@ -1,0 +1,43 @@
+# `set s = s + ...` appends in place while nothing else has read s: 600,000 appends, far under the
+# default timeout. A value read earlier never changes.
+fn build(n: int) -> str {
+    var s = "";
+    for i in 0..n {
+        set s = s + "x";
+    }
+    return s;
+}
+
+fn main() uses console {
+    print(str(len(build(600000))));
+    var s = "a";
+    let kept = new list[str];
+    for i in 0..5 {
+        push(kept, s);
+        set s = s + str(i);
+    }
+    print(join(kept, " ") + " " + s);
+    let before = s;
+    set s = s + "!";
+    set s = s + "?";
+    print(before + " " + s);
+    set s = s + s;
+    print(s);
+    var t = "ab";
+    set t = t + "-" + t + "-" + str(len(t));
+    set t = t + "." + t;
+    print(t);
+    var u = "";
+    for i in 0..4 {
+        set u = u + "é";
+        if len(u) == 4 {
+            set u = "<" + u;
+        }
+        var w = "w";
+        set w = w + str(i) + u;
+        set w = w + "|";
+        write(w);
+    }
+    print("");
+    print(u + " " + str(len(u)));
+}

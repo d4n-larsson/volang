@@ -24,6 +24,35 @@ Str *str_concat(Str *a, Str *b)
     return s;
 }
 
+/* a + b for `set s = s + b` (OPC_APPEND). owned: a came from here and nothing has read it since, so
+ * no other value can show the change: b goes into a's spare room when it fits. Otherwise a new
+ * string: with half as much room again when a was owned and outgrown (appending n bytes one at a
+ * time then copies about 3n bytes in all, not n * n / 2), with none when it was not, so a loop that
+ * reads and appends allocates exactly what str_concat would. */
+Str *str_append(Str *a, Str *b, int owned)
+{
+#ifdef GC_STRESS_BUILD
+    gc_check(a, OBJ_STR);
+    gc_check(b, OBJ_STR);
+#endif
+    long n = a->len + b->len;
+    if (owned && n + 17 <= (long)a->hdr.size) { /* header 8, length 8, the bytes and their NUL */
+        mem_copy(a->data + a->len, b->data, b->len); /* the room beyond was zeroed when a was made */
+        a->len = n;
+        return a;
+    }
+    long room = owned ? n + (n >> 1) : n;
+    if (room + 17 >= 1L << 31) room = n; /* no header describes more: alloc_obj reports what does not fit */
+    GC_ROOT(&a);
+    GC_ROOT(&b);
+    Str *s = alloc_obj(OBJ_STR, room + 9);
+    GC_UNROOT(2);
+    s->len = n;
+    mem_copy(s->data, a->data, a->len);
+    mem_copy(s->data + a->len, b->data, b->len);
+    return s;
+}
+
 /* 1 when byte i of s is a UTF-8 continuation byte (i < len). */
 int is_cont(Str *s, long i)
 {

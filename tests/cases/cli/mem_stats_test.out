@@ -1,5 +1,5 @@
 {"v":1,"kind":"test","id":"../../tests/gc/edge/test_order.vo::small","name":"small","status":"pass","file":"../../tests/gc/edge/test_order.vo","start":{"line":3,"col":1},"uses":"","ms":0}
-{"v":1,"kind":"memory","command":"test","test":"small","peak_live":17120,"allocated":17120,"collections":0,"limit":536870912}
+{"v":1,"kind":"memory","command":"test","test":"small","peak_live":5248,"allocated":5248,"collections":0,"limit":536870912}
 {"v":1,"kind":"test","id":"../../tests/gc/edge/test_order.vo::lists","name":"lists","status":"pass","file":"../../tests/gc/edge/test_order.vo","start":{"line":11,"col":1},"uses":"","ms":0}
 {"v":1,"kind":"memory","command":"test","test":"lists","peak_live":348496,"allocated":348496,"collections":0,"limit":536870912}
 {"v":1,"kind":"test","id":"../../tests/gc/edge/test_order.vo::strings","name":"strings","status":"pass","file":"../../tests/gc/edge/test_order.vo","start":{"line":19,"col":1},"uses":"","ms":0}

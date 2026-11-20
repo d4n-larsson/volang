@@ -628,7 +628,8 @@
 #define OPC_NEW_COLL (88) /* spec 014: a = new OrderedMap[...] etc. (the node's type) */
 #define OPC_COVER (89)    /* spec 018: coverage point a reached (b: its function's index for reach, or -1) */
 #define OPC_INDEX_BYTES (90) /* spec 021: a = b[c], one byte as an int (R0003 at the node) */
-#define OPC_COUNT (91)
+#define OPC_APPEND (91) /* a = a + c for `set s = s + ...`: in place while slot b still holds a's value */
+#define OPC_COUNT (92)
 /* generic call-site record (permanent): rt_targs and rt_es_subst results for the last caller */
 #define GS_DECL (0) /* the callee */
 #define GS_VALID (8) /* 1 once filled */
@@ -2229,6 +2230,7 @@ extern void render_capped(SB *sb, long value, Type *type);
 
 /* src/rt_str.c */
 extern Str *str_concat(Str *a, Str *b);
+extern Str *str_append(Str *a, Str *b, int owned);
 extern int is_cont(Str *s, long i);
 extern Str *rt_slice_str(Str *s, long a, long b, Node *node);
 extern Str *rt_slice_bytes(Str *s, long a, long b, Node *node); /* spec 021 */

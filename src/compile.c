@@ -32,9 +32,19 @@ static Vec *c_reqj;       /* `requires` jumps taken when a condition is false */
 static long c_retslot;    /* the `ret` slot (bytes), or -1 (no return type) */
 static long c_exitslot;   /* the slot holding the exit node for R0013 (bytes) */
 
+static long *c_app;       /* per local slot: the owner slot (bytes) of a `var` built by appending, or 0 */
+static long c_app_n;      /* its length: the function's locals */
+
 #define INSTR(off) ((Instr *)(c_buf + (off)))
 
 static void c_prologue(Node *decl);
+static void c_find_appends(Node *block);
+
+/* The owner slot of local i, or 0. */
+static long c_app_of(long i)
+{
+    return c_app && (unsigned long)i < (unsigned long)c_app_n ? c_app[i] : 0;
+}
 
 /* ---- spec 018: coverage points (research R8) ----
  * ponytail: at most COV_MAX points per run (T0003 beyond); allocate the table on demand if programs
@@ -157,6 +167,9 @@ void compile_fn(Node *decl)
     c_fail = 0;
     c_brk = 0;
     c_cont = 0;
+    c_app_n = decl->e.i;
+    c_app = 0; /* made at the first append found; before any temporary: owner slots live as long as the frame */
+    c_find_appends(body);
     if (tr_on) c_emit(OPC_TRACE_ENTER, 0, 0, 0, decl); /* spec 006: with --trace, the call record first */
     c_prologue(decl);                                  /* contracts (spec 005): `requires` checks first */
     if (decl->kind != N_TEST) c_cover(decl, decl->kind == N_FN ? COV_FUNCTION : COV_LAMBDA); /* spec 018 */
@@ -375,10 +388,84 @@ static void cmatch(Node *st)
     c_patch_all(ends, c_here());
 }
 
+/* `set s = s + e1 + e2 ...` on a str local: 1, with the `+` nodes pushed on parts (when given), the
+ * last first; a part is its node's right operand. */
+static int c_append_parts(Node *st, Vec *parts)
+{
+    Node *place = st->a.n, *e = st->b.n;
+    if (place->kind != N_IDENT || !e->type || e->type->kind != TY_STR) return 0;
+    long n = 0;
+    while (e->kind == N_BINARY && e->d.i == OP_CONCAT) { /* left-deep: the last part first */
+        if (parts) vec_push(parts, e);
+        n++;
+        e = e->a.n;
+    }
+    return n && e->kind == N_IDENT && !(e->flags & NF_FNVAL) && e->c.i == place->c.i;
+}
+
+/* Gives every local that some statement of the block appends to an owner slot (c_app): the slot
+ * holds the string's value while only the local refers to it (OPC_APPEND, vm.c). Lambdas are
+ * compiled on their own, and cannot reach a `var`. */
+static void c_find_appends(Node *block)
+{
+    if (!block) return;
+    if (block->kind == N_IF) { /* an `else if` */
+        c_find_appends(block->b.n);
+        c_find_appends(block->c.n);
+        return;
+    }
+    Vec *stmts = block->a.v;
+    for (long i = 0; i < stmts->n; i++) {
+        Node *st = vec_get(stmts, i);
+        switch (st->kind) {
+        case N_SET:
+            if (c_append_parts(st, 0) && (unsigned long)st->a.n->c.i < (unsigned long)c_app_n) {
+                if (!c_app) {
+                    c_app = alloc(c_app_n * 8);
+                    for (long k = 0; k < c_app_n; k++) c_app[k] = 0;
+                }
+                if (!c_app[st->a.n->c.i]) c_app[st->a.n->c.i] = c_new_temp();
+            }
+            break;
+        case N_IF: c_find_appends(st); break;
+        case N_WHILE: c_find_appends(st->b.n); break;
+        case N_FOR: c_find_appends(st->d.n); break;
+        case N_MATCH:
+            for (long k = 0; k < st->b.v->n; k++) {
+                Node *arm = vec_get(st->b.v, k);
+                if (arm->kind == N_ARM) c_find_appends(arm->c.n);
+            }
+            break;
+        default: break;
+        }
+    }
+}
+
+/* `set s = s + e1 + ...`: every part is evaluated first, as `+` would, then appended in turn. */
+static void cappend(Node *st, long slot)
+{
+    Vec *parts = vec_new();
+    c_append_parts(st, parts);
+    Vec *vals = vec_new();
+    for (long i = parts->n - 1; i >= 0; i--) { /* in source order */
+        Node *plus = vec_get(parts, i);
+        long v = cexpr(plus->b.n, -1);
+        if (v == slot) { /* s itself: its value now, not after the appends before it */
+            v = c_new_temp();
+            c_emit(OPC_MOV, v, slot, 0, plus);
+        }
+        vec_push(vals, (void *)v);
+    }
+    for (long i = 0; i < vals->n; i++) /* each at its `+`, where a concatenation's errors point */
+        c_emit(OPC_APPEND, slot, c_app_of(slot >> 3), vals->data[i].i, vec_get(parts, parts->n - 1 - i));
+}
+
 static void cset(Node *st)
 {
     Node *place = st->a.n;
-    if (place->kind == N_IDENT) {
+    if (place->kind == N_IDENT && c_app_of(place->c.i) && c_append_parts(st, 0)) {
+        cappend(st, place->c.i * 8);
+    } else if (place->kind == N_IDENT) {
         long slot = place->c.i * 8;
         c_mov(slot, cexpr(st->b.n, slot), st);
     } else if (place->kind == N_FIELD) { /* field: object, value, store */
@@ -851,6 +938,7 @@ long cexpr(Node *node, long dst)
             c_emit(OPC_FNVAL, dst, 0, node->d.i, node);
             return dst;
         }
+        if (c_app_of(node->c.i)) c_emit(OPC_LOADK, c_app_of(node->c.i), 0, 0, node); /* read: no longer only s's */
         return node->c.i * 8; /* a local: its own slot */
     case N_BINARY:
         if (node->d.i == OP_AND || node->d.i == OP_OR) return cand_or(node);
