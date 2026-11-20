@@ -447,6 +447,9 @@ static Variant *io_exchange(Str *host, long port, Str *request, int tls)
     rt_check_name(EF_NET, host);
     Str *line = request_line(request);
     GC_ROOT(&line);
+    long own_ms = net_timeout_next; /* std.http's send: this request's own timeout (a replay has no waits) */
+    net_timeout_next = 0;
+    net_capped = 0;
     if (rcd_mode == 2) {
         Str *asked = http_desc(host, port, line, tls);
         if (rp_next >= rp_events->n) rp_mismatch(EVK_HTTP, asked, 0);
@@ -456,7 +459,9 @@ static Variant *io_exchange(Str *host, long port, Str *request, int tls)
             rp_mismatch(EVK_HTTP, asked, e);
         r = rp_result(e);
     } else {
+        net_cap_ms = own_ms > 0 ? sys_clock_ms() + own_ms : 0;
         r = tls ? tls_exchange(host, port, request) : rt_http_exchange(host, port, request);
+        net_cap_ms = 0;
         if (rcd_mode) {
             rcd_request = line;
             rcd_tls = tls;

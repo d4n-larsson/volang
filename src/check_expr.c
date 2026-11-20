@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 100 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 101 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -45,7 +45,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__serve_workers", /* spec 028 */
     "__to_json", "__from_json", "__json_fields", "__json_text", /* spec 029 */
     "__json_parse", "__json_write",
-    "byte_at",
+    "byte_at", "__http_timeout",
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -63,6 +63,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [84] = "s>r", [85] = "iss>I", [86] = "ss>I", /* spec 025: __re_compile, __re, __re_repl */
     [87] = "si>n", [88] = "i>v", [91] = "ii>u", [92] = "s>r", /* spec 026; 89, 90 typed loosely */
     [100] = "si>i", /* byte_at */
+    [101] = "i>v",  /* __http_timeout */
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."

@@ -206,7 +206,19 @@ static int tls_wait(TlsIo *io, int events)
             return 0;
         }
     }
+    if (net_cap_ms) { /* the request's own timeout: an err, not R0009 */
+        long left = net_cap_ms - sys_clock_ms();
+        if (left <= 0) {
+            net_capped = 1;
+            return 0;
+        }
+        if (wait < 0 || left < wait) wait = left;
+    }
     if (sys_wait_fd(io->fd, events, wait)) return 1;
+    if (net_cap_ms && sys_clock_ms() >= net_cap_ms) {
+        net_capped = 1;
+        return 0;
+    }
     io->timed_out = deadline_ms != 0;
     return !io->timed_out;
 }
@@ -359,6 +371,7 @@ Variant *tls_exchange(Str *host, long port, Str *request)
     mbedtls_ssl_config_free(&conf);
     sys_close((int)fd);
     if (io.timed_out) rt_timeout((Node *)cur_node); /* R0009, after everything was freed */
+    if (net_capped) result = net_timed_out(host, port);
     if (!result) result = make_result(0, (long)sb_finish(sb));
     GC_UNROOT(4);
     return result;

@@ -1,0 +1,47 @@
+$ vo run main.vo -- {port}
+get: status 200
+GET /inspect
+accept: application/json
+authorization: Bearer s3cret
+connection: close
+host: localhost:{port}
+user-agent: ledger/1.0
+
+
+put: status 200
+PUT /inspect
+connection: close
+content-length: 8
+content-type: application/json
+host: localhost:{port}
+user-agent: vo
+
+{"n": 1}
+delete: status 200
+DELETE /inspect
+connection: close
+host: localhost:{port}
+user-agent: vo
+
+
+patch, no body: status 200
+PATCH /inspect
+connection: close
+content-length: 0
+host: localhost:{port}
+user-agent: vo
+
+
+timeout: err the request to localhost:{port} timed out
+after a timeout: status 200
+hello from vo
+
+line break in a value: err bad value for header `X-A`: ASCII text on one line only
+bad name: err bad header name `X A`: letters, digits, `-` and `_` only
+reserved: err header `content-length` is set by std.http
+method: err bad method `get`: capital letters only, as in `GET`
+head: err method `HEAD` is not supported
+url: err bad URL: a space, a control character or a character outside ASCII at byte 30
+negative: err bad timeout: -1 ms
+--- stderr
+--- exit 0

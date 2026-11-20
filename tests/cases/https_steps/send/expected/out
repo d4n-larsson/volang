@@ -1,0 +1,20 @@
+$ vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}
+put: status 200
+PUT /inspect
+authorization: Bearer s3cret
+connection: close
+content-length: 4
+host: 127.0.0.1:{port}
+user-agent: vo
+
+data
+timeout: err the request to 127.0.0.1:{port} timed out
+after a timeout: status 200
+DELETE /inspect
+connection: close
+host: 127.0.0.1:{port}
+user-agent: vo
+
+
+--- stderr
+--- exit 0

@@ -1,0 +1,2 @@
+server https a.test-ecdsa
+vo run --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}

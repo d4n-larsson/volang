@@ -1,19 +1,19 @@
 $ vo run service.vo -- {vport}
 --- stderr
-std/http.vo:350:24: runtime error[R0010]: serve("{vport}") is not allowed: `main` declares console, serve("1").
- 350 |     let listener = try __serve_listen(address);
+std/http.vo:474:24: runtime error[R0010]: serve("{vport}") is not allowed: `main` declares console, serve("1").
+ 474 |     let listener = try __serve_listen(address);
      |                        ^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at serve_loop (std/http.vo:350:24)
+  at serve_loop (std/http.vo:474:24)
       address: str = "{vport}", answer: fn(str) -> str = <fn(str) -> str>
-  at serve (std/http.vo:295:12)
+  at serve (std/http.vo:419:12)
       address: str = "{vport}", handle: fn(Request) -> Response = <fn(Request) -> Response>, answer: fn(str) -> str = <fn(str) -> str>
   at main (service.vo:12:9)
       a: list[str] = ["{vport}"]
 --- exit 70
 $ vo run --json service.vo -- {vport}
 --- stderr
-{"v":1,"kind":"runtime_error","code":"R0010","name":"capability_denied","message":"serve(\"{vport}\") is not allowed: `main` declares console, serve(\"1\").","file":"std/http.vo","start":{"line":350,"col":24},"end":{"line":350,"col":47},"effect":"serve","target":"{vport}","allowed":["1"],"declared_by":"main","trace":[{"function":"serve_loop","file":"std/http.vo","start":{"line":350,"col":24},"locals":[{"name":"address","type":"str","value":"\"{vport}\""},{"name":"answer","type":"fn(str) -> str","value":"<fn(str) -> str>"}]},{"function":"serve","file":"std/http.vo","start":{"line":295,"col":12},"locals":[{"name":"address","type":"str","value":"\"{vport}\""},{"name":"handle","type":"fn(Request) -> Response","value":"<fn(Request) -> Response>"},{"name":"answer","type":"fn(str) -> str","value":"<fn(str) -> str>"}]},{"function":"main","file":"service.vo","start":{"line":12,"col":9},"locals":[{"name":"a","type":"list[str]","value":"[\"{vport}\"]"}]}]}
+{"v":1,"kind":"runtime_error","code":"R0010","name":"capability_denied","message":"serve(\"{vport}\") is not allowed: `main` declares console, serve(\"1\").","file":"std/http.vo","start":{"line":474,"col":24},"end":{"line":474,"col":47},"effect":"serve","target":"{vport}","allowed":["1"],"declared_by":"main","trace":[{"function":"serve_loop","file":"std/http.vo","start":{"line":474,"col":24},"locals":[{"name":"address","type":"str","value":"\"{vport}\""},{"name":"answer","type":"fn(str) -> str","value":"<fn(str) -> str>"}]},{"function":"serve","file":"std/http.vo","start":{"line":419,"col":12},"locals":[{"name":"address","type":"str","value":"\"{vport}\""},{"name":"handle","type":"fn(Request) -> Response","value":"<fn(Request) -> Response>"},{"name":"answer","type":"fn(str) -> str","value":"<fn(str) -> str>"}]},{"function":"main","file":"service.vo","start":{"line":12,"col":9},"locals":[{"name":"a","type":"list[str]","value":"[\"{vport}\"]"}]}]}
 --- exit 70
 $ request GET /x
 (refused)

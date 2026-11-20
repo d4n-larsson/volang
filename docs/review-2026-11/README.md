@@ -68,8 +68,14 @@ On branch `perf-review-fixes`. The figures in `optimizations.md` are from before
 | `chars` (4) | 40 bytes per ASCII character | 8: one-character ASCII strings are shared |
 | JSON (4) | 5 MB: parse 930 ms, write 770 ms, peak 512 MiB; 13 MB: R0006 | parse 156 ms, write 192 ms, peak 119 MiB; 13 MB parses. Python: 49 ms and 29 ms |
 
-Still open from finding 4: `byte_at`, so parsers written in vo need no list at all. What remains of the
-JSON time is the collector walking the tree and float conversion (findings 6 and 10).
+| JSON floats | 2.7 us per float in big integers | 128-bit integers where they fit: 5 MB parses in 55 ms and writes in 42 ms |
+| `byte_at` (4) | a string read only through `chars` | `byte_at(s, i)` reads one byte in place |
+| Float text (10) | `str(0.1 + 0.2)` was `"0.3"`; `parse_float(str(x))` was not `x` | the shortest text that reads back, as Python's `repr`; literals and `parse_float` take 17 digits |
+| HTTP client (ecosystem) | `get(url)` and `post(url, type, body)` only | `send(method, url, headers, body, timeout_ms)` and `send_bytes` |
+
+Measured and left alone, finding 6: collection is 10% to 40% of the allocating workloads, nearly all
+of it marking; the permanent arena costs nothing. A larger heap growth factor bought 0% to 17% for
+47% more memory. Only a generational collector addresses it.
 
 ## A note on scope
 

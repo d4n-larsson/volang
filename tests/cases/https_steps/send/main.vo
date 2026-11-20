@@ -1,0 +1,24 @@
+# send over HTTPS: headers and a body reach the server, and the request's own timeout is an err.
+import std.http.Header;
+import std.http.Response;
+import std.http.send;
+
+fn show(what: str, r: result[Response]) uses console {
+    match r {
+        case ok(resp) {
+            print(what + ": status " + str(resp.status));
+            print(resp.body);
+        }
+        case err(e) {
+            print(what + ": err " + e);
+        }
+    }
+}
+
+fn main() uses console, net("127.0.0.1") {
+    let base = args()[0];
+    let auth = [new Header { name: "Authorization", value: "Bearer s3cret" }];
+    show("put", send("PUT", base + "/inspect", auth, "data", 0));
+    show("timeout", send("GET", base + "/slow", auth, "", 300));
+    show("after a timeout", send("DELETE", base + "/inspect", new list[Header], "", 2000));
+}

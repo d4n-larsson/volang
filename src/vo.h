@@ -410,7 +410,8 @@
 #define B_JSON_PARSE (98) /* __json_parse(s) -> result[Json] (std.json's parse_json) */
 #define B_JSON_WRITE (99) /* __json_write(j, pretty) -> result[str] (write_json, write_json_pretty) */
 #define B_BYTE_AT (100) /* byte_at(s, i) -> int: one byte of a str (compiled to OPC_INDEX_BYTES) */
-#define B_LAST (100) /* the last builtin id with a btab entry */
+#define B_HTTP_TIMEOUT (101) /* __http_timeout(ms): a bound of its own for the next exchange (std.http's send) */
+#define B_LAST (101) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -2388,9 +2389,13 @@ extern long cap_on;
 extern void cap_bytes(char *p, long n);
 extern void tls_init(void); /* spec 019 */
 extern int net_wait(long fd, int events, long cap_ms);
+extern long net_timeout_next; /* net.c: ms for the next exchange (__http_timeout), 0 none */
+extern long net_cap_ms;       /* the running exchange's own deadline (clock ms), 0 none */
+extern long net_capped;       /* 1 when a wait of the running exchange stopped at net_cap_ms */
 extern long net_open(Str *host, long port, Variant **err);
 extern int parse_ipv4(char *s, long n, uint8_t *out);
 extern Variant *net_err(char *tmpl, Str *host, long port);
+extern Variant *net_timed_out(Str *host, long port);
 extern Variant *tls_exchange(Str *host, long port, Str *request);
 extern void tls_add_ca_file(char *path);
 extern Variant *io_https_exchange(Str *host, long port, Str *request);

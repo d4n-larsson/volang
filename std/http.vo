@@ -1,4 +1,4 @@
-# std.http: HTTP and HTTPS: GET and POST (needs net), and serving plain HTTP requests (needs serve).
+# std.http: HTTP and HTTPS requests (needs net), and serving plain HTTP requests (needs serve).
 # Part of the vo standard library (spec 007, serving spec 011, https spec 019). Import items one by one: `import std.http.NAME;`.
 # The host is checked against the caller's net scope at run time, the address against its serve scope.
 # ponytail: one request per connection (Connection: close), redirects returned, not followed; a
@@ -33,6 +33,14 @@ record Url {
 
 @allow("W0702", "one module per import path: std.http is one file")
 fn parse_url(url: str) -> result[Url] {
+    for i in 0..len(url) {
+        let b = byte_at(url, i);
+        if b <= 32 or b >= 127 {
+            return err(
+                "bad URL: a space, a control character or a character outside ASCII at byte " + str(i)
+            );
+        }
+    }
     var tls = false;
     var skip = 7;
     if len(url) >= 8 and lower(slice(url, 0, 8)) == "https://" {
@@ -91,13 +99,16 @@ export record BytesResponse {
     body: bytes;
 }
 
-fn exchange(method: str, url: str, content_type: str, body: str) -> result[Response] uses net {
-    let raw = try exchange_raw(method, url, content_type, body);
+fn exchange(
+    method: str,
+    url: str,
+    headers: list[Header],
+    body: str,
+    timeout_ms: int,
+    hint: str
+) -> result[Response] uses net {
+    let raw = try exchange_raw(method, url, headers, body, timeout_ms);
     let r = try parse_response(raw);
-    var hint = "get_bytes";
-    if method == "POST" {
-        set hint = "post_bytes";
-    }
     return ok(new Response {
         status: r.status,
         headers: r.headers,
@@ -129,22 +140,93 @@ fn head_text(raw: str) -> result[str] {
     }
 }
 
-fn exchange_raw(method: str, url: str, content_type: str, body: str) -> result[str] uses net {
+fn exchange_raw(
+    method: str,
+    url: str,
+    headers: list[Header],
+    body: str,
+    timeout_ms: int
+) -> result[str] uses net {
     let u = try parse_url(url);
-    let nl = crlf();
-    var request = method + " " + u.target + " HTTP/1.1" + nl + "Host: " + u.host;
-    if (u.port != 80 and not u.tls) or (u.port != 443 and u.tls) {
-        set request = request + ":" + str(u.port);
+    let request = try request_text(method, u, headers, body);
+    if timeout_ms < 0 {
+        return err("bad timeout: " + str(timeout_ms) + " ms");
     }
-    set request = request + nl + "Connection: close" + nl + "User-Agent: vo" + nl;
-    if method == "POST" {
-        set request = request + "Content-Type: " + content_type + nl + "Content-Length: " + str(len(body)) + nl;
-    }
-    set request = request + nl + body;
+    __http_timeout(timeout_ms);
     if u.tls {
         return __https_exchange(u.host, u.port, request);
     }
     return __http_exchange(u.host, u.port, request);
+}
+
+fn request_text(method: str, u: Url, headers: list[Header], body: str) -> result[str] {
+    # The request as sent: the request line, Host, Connection, User-Agent, the caller's headers in
+    # their order, Content-Length when there is a body or the method usually has one, then the body.
+    try check_method(method);
+    let nl = crlf();
+    var agent = "vo";
+    let lines = new list[str];
+    for h in headers {
+        try check_header(h);
+        if lower(h.name) == "user-agent" {
+            set agent = h.value;
+        } else {
+            push(lines, h.name + ": " + h.value + nl);
+        }
+    }
+    var host = u.host;
+    if (u.port != 80 and not u.tls) or (u.port != 443 and u.tls) {
+        set host = host + ":" + str(u.port);
+    }
+    var length = "";
+    if len(body) > 0 or method == "POST" or method == "PUT" or method == "PATCH" {
+        set length = "Content-Length: " + str(len(body)) + nl;
+    }
+    return ok(
+        method + " " + u.target + " HTTP/1.1" + nl + "Host: " + host + nl + "Connection: close" + nl + "User-Agent: " + agent + nl + join(lines, "") + length + nl + body
+    );
+}
+
+fn check_method(method: str) -> result[void] {
+    if method == "" {
+        return err("bad method: empty");
+    }
+    for i in 0..len(method) {
+        let b = byte_at(method, i);
+        if b < 65 or b > 90 {
+            return err("bad method `" + method + "`: capital letters only, as in `GET`");
+        }
+    }
+    if method == "HEAD" or method == "CONNECT" {
+        return err("method `" + method + "` is not supported");
+    }
+    return ok();
+}
+
+fn check_header(h: Header) -> result[void] {
+    # A name of letters, digits, `-` and `_`; a value of visible ASCII and spaces: nothing that could
+    # end the line and start another header.
+    if h.name == "" {
+        return err("bad header name: empty");
+    }
+    for i in 0..len(h.name) {
+        let b = byte_at(h.name, i);
+        let letter = (b >= 65 and b <= 90) or (b >= 97 and b <= 122);
+        if not (letter or (b >= 48 and b <= 57) or b == 45 or b == 95) {
+            return err("bad header name `" + h.name + "`: letters, digits, `-` and `_` only");
+        }
+    }
+    for i in 0..len(h.value) {
+        let b = byte_at(h.value, i);
+        if b < 32 or b >= 127 {
+            return err("bad value for header `" + h.name + "`: ASCII text on one line only");
+        }
+    }
+    let name = lower(h.name);
+    if name == "host" or name == "connection" or name == "content-length" or name == "transfer-encoding" {
+        return err("header `" + h.name + "` is set by std.http");
+    }
+    return ok();
 }
 
 fn crlf() -> str {
@@ -191,40 +273,82 @@ fn parse_headers(head: list[str], bad: str) -> result[list[Header]] {
 # Sends GET to an http:// or https:// URL (needs net; the host must be in the caller's net scope); an https:// server that cannot be verified gives an err saying why: not trusted, self-signed, for another host, expired, not valid yet, no acceptable TLS version or algorithm, tampered with, or handshake failed.
 #     get("ftp://example.com/") == err("not an http:// or https:// URL: ftp://example.com/") is true
 export fn get(url: str) -> result[Response] uses net {
-    return exchange("GET", url, "", "");
+    return exchange("GET", url, new list[Header], "", 0, "get_bytes");
 }
 
 # Sends POST with a body and its content type to an http:// or https:// URL (needs net).
 #     post("ftp://x/", "text/plain", "") == err("not an http:// or https:// URL: ftp://x/") is true
 export fn post(url: str, content_type: str, body: str) -> result[Response] uses net {
-    return exchange("POST", url, content_type, body);
+    return exchange(
+        "POST",
+        url,
+        [new Header { name: "Content-Type", value: content_type }],
+        body,
+        0,
+        "post_bytes"
+    );
 }
 
 # Sends GET like get, and returns the body as bytes, whatever it is (needs net); get needs a UTF-8 body.
 #     get_bytes("ftp://example.com/") == err("not an http:// or https:// URL: ftp://example.com/") is true
 export fn get_bytes(url: str) -> result[BytesResponse] uses net {
-    return exchange_bytes("GET", url, "", from_bytes_empty());
+    return exchange_bytes("GET", url, new list[Header], from_bytes_empty(), 0);
 }
 
 # Sends POST like post, with a body of bytes, and returns the body as bytes (needs net).
 #     post_bytes("ftp://x/", "application/octet-stream", from_text("")) == err("not an http:// or https:// URL: ftp://x/") is true
 export fn post_bytes(url: str, content_type: str, body: bytes) -> result[BytesResponse] uses net {
-    return exchange_bytes("POST", url, content_type, body);
+    return exchange_bytes(
+        "POST",
+        url,
+        [new Header { name: "Content-Type", value: content_type }],
+        body,
+        0
+    );
 }
 
 fn from_bytes_empty() -> bytes {
     return __bytes_of_text("");
 }
 
-fn exchange_bytes(method: str, url: str, content_type: str, body: bytes) -> result[BytesResponse]
-    uses net {
-    let raw = try exchange_raw(method, url, content_type, __raw_text(body));
+fn exchange_bytes(
+    method: str,
+    url: str,
+    headers: list[Header],
+    body: bytes,
+    timeout_ms: int
+) -> result[BytesResponse] uses net {
+    let raw = try exchange_raw(method, url, headers, __raw_text(body), timeout_ms);
     let r = try parse_response(raw);
     return ok(new BytesResponse {
         status: r.status,
         headers: r.headers,
         body: __bytes_of_text(__http_part(raw, 1))
     });
+}
+
+# Sends a request with any method (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, ...), the headers given (in their order, after Host, Connection and User-Agent; a `User-Agent` given replaces `vo`) and a body, to an http:// or https:// URL (needs net). `timeout_ms` bounds the whole request: when it passes, the result is err("the request to HOST:PORT timed out"); 0 leaves only the run's `--timeout`. A header that could break the request (a line break, `Host`, `Content-Length`) is an err before anything is sent.
+#     send("PUT", "ftp://x/", new list[Header], "", 0) == err("not an http:// or https:// URL: ftp://x/") is true
+export fn send(
+    method: str,
+    url: str,
+    headers: list[Header],
+    body: str,
+    timeout_ms: int
+) -> result[Response] uses net {
+    return exchange(method, url, headers, body, timeout_ms, "send_bytes");
+}
+
+# Sends a request like send, with a body of bytes, and returns the body as bytes (needs net).
+#     send_bytes("PUT", "ftp://x/", new list[Header], from_text(""), 0) == err("not an http:// or https:// URL: ftp://x/") is true
+export fn send_bytes(
+    method: str,
+    url: str,
+    headers: list[Header],
+    body: bytes,
+    timeout_ms: int
+) -> result[BytesResponse] uses net {
+    return exchange_bytes(method, url, headers, body, timeout_ms);
 }
 
 # The value of the first header with this name, compared without case.

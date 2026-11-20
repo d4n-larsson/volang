@@ -28,8 +28,13 @@ typedef struct SockAddrIn {
     uint8_t zero[8];
 } SockAddrIn;
 
+long net_timeout_next;
+long net_cap_ms;
+long net_capped;
+
 /* Waits for events on fd: 1 when ready, 0 after cap_ms (cap_ms < 0: no cap of its own). The run's
- * deadline is the outer bound: past it, the run stops with R0009 at the current call. */
+ * deadline is the outer bound: past it, the run stops with R0009 at the current call. A request's
+ * own timeout (net_cap_ms) ends the wait with 0 and net_capped set: the caller gives up with an err. */
 int net_wait(long fd, int events, long cap_ms)
 {
     long wait = cap_ms;
@@ -38,9 +43,24 @@ int net_wait(long fd, int events, long cap_ms)
         if (left <= 0) rt_timeout((Node *)cur_node);
         if (wait < 0 || left < wait) wait = left;
     }
+    if (net_cap_ms) {
+        long left = net_cap_ms - sys_clock_ms();
+        if (left <= 0) {
+            net_capped = 1;
+            return 0;
+        }
+        if (wait < 0 || left < wait) wait = left;
+    }
     if (sys_wait_fd(fd, events, wait)) return 1;
     if (deadline_ms && sys_clock_ms() >= deadline_ms) rt_timeout((Node *)cur_node);
+    if (net_cap_ms && sys_clock_ms() >= net_cap_ms) net_capped = 1;
     return 0;
+}
+
+/* The err of a request that ran into its own timeout. */
+Variant *net_timed_out(Str *host, long port)
+{
+    return net_err("the request to $1 timed out", host, port);
 }
 
 /* Parses a dotted IPv4 address (four decimal parts 0..255) of n bytes; 1 when it is one. */
@@ -175,7 +195,10 @@ static int dns_lookup(Str *host, uint8_t *out)
         uint8_t r[512];
         for (int t = 0; t < DNS_TRIES && found < 0; t++) {
             if (vo_syscall6(SYS_sendto, fd, (long)q, n, MSG_NOSIGNAL, 0, 0) != n) break;
-            if (!net_wait(fd, POLLIN, DNS_WAIT_MS)) continue; /* no reply yet: ask again */
+            if (!net_wait(fd, POLLIN, DNS_WAIT_MS)) { /* no reply yet: ask again */
+                if (net_capped) break;
+                continue;
+            }
             long got = vo_syscall6(SYS_recvfrom, fd, (long)r, sizeof r, 0, 0, 0);
             /* our ID, a reply, and our question echoed (spec 013, L8) */
             if (got < n || r[0] != q[0] || r[1] != q[1] || !(r[2] & 0x80) || r[4] || r[5] != 1 ||
@@ -236,6 +259,11 @@ long net_open(Str *host, long port, Variant **err)
     *err = 0;
     if (!parse_ipv4(host->data, host->len, addr) && !hosts_lookup(host, addr)) {
         int r = dns_lookup(host, addr);
+        if (net_capped) {
+            *err = net_timed_out(host, port);
+            GC_UNROOT(1);
+            return -1;
+        }
         if (r <= 0) {
             *err = make_result(1, (long)msg(r == 0 ? "unknown host `$1`" : "cannot resolve `$1`: no answer from a name server",
                                             host, 0, 0));
@@ -257,7 +285,7 @@ long net_open(Str *host, long port, Variant **err)
     }
     if (c < 0) {
         sys_close((int)fd);
-        *err = net_err(c == -E_CONNREFUSED ? "connection refused by $1" : "cannot connect to $1", host, port);
+        *err = net_capped ? net_timed_out(host, port) : net_err(c == -E_CONNREFUSED ? "connection refused by $1" : "cannot connect to $1", host, port);
         GC_UNROOT(1);
         return -1;
     }
@@ -281,7 +309,10 @@ Variant *rt_http_exchange(Str *host, long port, Str *request)
         long w = vo_syscall6(SYS_sendto, fd, (long)request->data + sent, request->len - sent, MSG_NOSIGNAL, 0, 0);
         if (w == -E_AGAIN) {
             net_wait(fd, POLLOUT, -1);
-            continue;
+            if (!net_capped) continue;
+            sys_close((int)fd);
+            GC_UNROOT(2);
+            return net_timed_out(host, port);
         }
         if (w <= 0) {
             sys_close((int)fd);
@@ -297,7 +328,9 @@ Variant *rt_http_exchange(Str *host, long port, Str *request)
         long got = vo_syscall6(SYS_recvfrom, fd, (long)buf, sizeof buf, 0, 0, 0);
         if (got == -E_AGAIN) {
             net_wait(fd, POLLIN, -1);
-            continue;
+            if (!net_capped) continue;
+            result = net_timed_out(host, port);
+            break;
         }
         if (got < 0) {
             result = net_err("the connection to $1 failed while reading", host, port);

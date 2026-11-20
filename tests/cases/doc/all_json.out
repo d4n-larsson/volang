@@ -53,7 +53,7 @@
 {"v":1,"kind":"doc","module":"std.time","name":"std.time","item":"module","signature":"std.time","description":"UTC calendar time, ISO 8601 text and durations in milliseconds."}
 {"v":1,"kind":"doc","module":"std.text","name":"std.text","item":"module","signature":"std.text","description":"Text helpers: search, replace, repeat, pad, lines and words."}
 {"v":1,"kind":"doc","module":"std.random","name":"std.random","item":"module","signature":"std.random","description":"Random floats, picks and shuffles (fixed by --seed)."}
-{"v":1,"kind":"doc","module":"std.http","name":"std.http","item":"module","signature":"std.http","description":"HTTP and HTTPS: GET and POST (needs net), and serving plain HTTP requests (needs serve)."}
+{"v":1,"kind":"doc","module":"std.http","name":"std.http","item":"module","signature":"std.http","description":"HTTP and HTTPS requests (needs net), and serving plain HTTP requests (needs serve)."}
 {"v":1,"kind":"doc","module":"std.collections","name":"std.collections","item":"module","signature":"std.collections","description":"Operations on the built-in ordered_map, ordered_set, priority_queue and deque."}
 {"v":1,"kind":"doc","module":"std.fs","name":"std.fs","item":"module","signature":"std.fs","description":"Directories and file information (needs file.read), and file changes (needs file.write, file.delete)."}
 {"v":1,"kind":"doc","module":"std.process","name":"std.process","item":"module","signature":"std.process","description":"Running other programs to their end, with no shell (needs process)."}

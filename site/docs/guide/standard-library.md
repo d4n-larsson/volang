@@ -294,6 +294,37 @@ main.vo:main uses console, net("localhost")
 A failed connection is an `err`, like any other failure. A request to a host outside the `net` scope
 stops the program with [R0010](../errors/R0010.md) before anything is sent.
 
+`send(method, url, headers, body, timeout_ms)` is the general form: any method, request headers such
+as `Authorization`, and a timeout of the request's own (`0` for none: the run's `--timeout` still
+applies). When the timeout passes, the result is `err("the request to HOST:PORT timed out")` and the
+program goes on.
+
+```vo
+import std.http.Header;
+import std.http.Response;
+import std.http.send;
+
+# Replace one note on an API that wants a token, waiting at most 5 seconds.
+fn put_note(token: str, id: int, json: str) -> result[Response] uses net("api.example.com") {
+    let headers = [
+        new Header { name: "Authorization", value: "Bearer " + token },
+        new Header { name: "Content-Type", value: "application/json" }
+    ];
+    return send("PUT", "https://api.example.com/notes/" + str(id), headers, json, 5000);
+}
+
+fn main() uses console {
+    print("ready");
+}
+```
+
+```output
+ready
+```
+
+`send` sets `Host`, `Connection` and `Content-Length` itself and refuses them, and refuses a header
+name or value that could start another line, so text from outside cannot add headers to a request.
+
 An `https://` URL works the same way, on port 443 unless the URL names another. The request is sent
 only after the server proves it is the host in the URL: its certificate must lead to an authority in
 the machine's trust store, be valid now, and name the host. TLS 1.3 and 1.2 are accepted, with modern

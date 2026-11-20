@@ -23,6 +23,7 @@ Routes:
   GET  /malformed       a reply with no status line
   GET  /short           Content-Length larger than the body sent
   POST /echo            200, the request's Content-Type and body back
+  ANY  /inspect         200, the method and target, the request's headers sorted by name, a blank line, the body
   GET  /allbytes        200, application/octet-stream, the bytes 0..255 (spec 021)
   POST /echo-bytes      200, application/octet-stream, the request's body back unchanged (spec 021)
   GET  /hex/HEX         200, text/plain, the bytes HEX stands for, whatever they are (spec 021)
@@ -58,6 +59,10 @@ def route(method, target, headers, body):
     if method == "POST" and target == "/echo":
         ctype = headers.get("content-type", "")
         out = b"content-type: " + ctype.encode() + b"\n" + body
+        return reply("200 OK", [("Content-Type", "text/plain"), ("Content-Length", len(out))], out)
+    if target == "/inspect":  # any method: the request as the server saw it
+        lines = [f"{method} {target}"] + [f"{k}: {v}" for k, v in sorted(headers.items())]
+        out = "\n".join(lines).encode() + b"\n\n" + body
         return reply("200 OK", [("Content-Type", "text/plain"), ("Content-Length", len(out))], out)
     if method != "GET":
         return reply("405 Method Not Allowed", [("Content-Length", 0)], b"")

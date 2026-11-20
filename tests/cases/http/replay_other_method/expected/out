@@ -19,15 +19,15 @@ hello from vo
 $ vo replay r.jsonl
 --- stderr
 note: the program differs from the recorded one (recorded main.vo)
-std/http.vo:147:12: runtime error[R0014]: The program makes an HTTP request `POST /plain` to `localhost:{port}`, but the recording has an HTTP request `GET /plain` to `localhost:{port}` next: replay the program that was recorded, or record this one.
- 147 |     return __http_exchange(u.host, u.port, request);
+std/http.vo:159:12: runtime error[R0014]: The program makes an HTTP request `POST /plain` to `localhost:{port}`, but the recording has an HTTP request `GET /plain` to `localhost:{port}` next: replay the program that was recorded, or record this one.
+ 159 |     return __http_exchange(u.host, u.port, request);
      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange_raw (std/http.vo:147:12)
-      method: str = "POST", url: str = "http://localhost:{port}/plain", content_type: str = "text/plain", body: str = "x", u: Url = new Url { tls: false, host: "localhost", port: {port}, target: "/plain" }, nl: str = "\n", request: str = "POST /plain HTTP/1.1\nHost: localhost:{port}\nConnection: close\nUser-Agent: vo\nContent-Type: text/plain\nContent-Length: 1\n\nx"
-  at exchange (std/http.vo:95:19)
-      method: str = "POST", url: str = "http://localhost:{port}/plain", content_type: str = "text/plain", body: str = "x"
-  at post (std/http.vo:200:12)
+  at exchange_raw (std/http.vo:159:12)
+      method: str = "POST", url: str = "http://localhost:{port}/plain", headers: list[Header] = [new Header { name: "Content-Type", value: "text/plain" }], body: str = "x", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "localhost", port: {port}, target: "/plain" }, request: str = "POST /plain HTTP/1.1\nHost: localhost:{port}\nConnection: close\nUser-Agent: vo\nContent-Type: text/plain\nContent-Length: 1\n\nx"
+  at exchange (std/http.vo:110:19)
+      method: str = "POST", url: str = "http://localhost:{port}/plain", headers: list[Header] = [new Header { name: "Content-Type", value: "text/plain" }], body: str = "x", timeout_ms: int = 0, hint: str = "post_bytes"
+  at post (std/http.vo:282:12)
       url: str = "http://localhost:{port}/plain", content_type: str = "text/plain", body: str = "x"
   at main (main.vo:23:10)
       a: list[str] = ["{port}", "/plain"]

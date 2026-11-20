@@ -1071,7 +1071,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 | std.time | UTC calendar times, ISO 8601 text, durations, `now` (clock) |
 | std.text | `replace`, `contains`, `pad_left`, `lines`, `words`, ... |
 | std.random | `unit`, `pick`, `shuffle` (random) |
-| std.http | HTTP and HTTPS: `get` and `post` (net), `serve` and `serve_workers` (serve, HTTP only); `get_bytes`, `post_bytes`, `serve_bytes`, `serve_bytes_workers` for `bytes` bodies |
+| std.http | HTTP and HTTPS: `get`, `post`, and `send(method, url, headers, body, timeout_ms)` for any method, request headers and a timeout (net); `serve` and `serve_workers` (serve, HTTP only); `get_bytes`, `post_bytes`, `send_bytes`, `serve_bytes`, `serve_bytes_workers` for `bytes` bodies |
 | std.collections | neighbors and ranges of the ordered collections, set algebra, deque fronts, `_by(cmp)` orders |
 | std.fs | `info`, `list_dir`, `walk`, `read_bytes` (file.read); `append_file`, `write_bytes`, `append_bytes`, `make_dir` (file.write); `delete`, `rename` (file.delete) |
 | std.process | `run`, `run_with` (and `run_bytes`, `run_with_bytes`): run a program to its end, no shell (process) |

@@ -50,7 +50,7 @@ trace:
   at open (main.vo:16:18)
       path: str = "data/other.db"
   at setup (main.vo:16:18)
-  at serve_workers (std/http.vo:514:12)
+  at serve_workers (std/http.vo:638:12)
       address: str = "{vport}", workers: int = 2, setup: fn() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") = <fn() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/")>, handle: fn(Database[uses file.read, file.write], Request) -> Response uses file.read("data/"), file.write("data/"), random = <fn(Database[uses file.read, file.write], Request) -> Response uses file.read("data/"), file.write("data/"), random>
   at main (main.vo:55:9)
 --- exit 70
