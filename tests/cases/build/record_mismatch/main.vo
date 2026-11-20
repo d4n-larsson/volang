@@ -1,0 +1,5 @@
+import helper.greet;
+
+fn main() uses console, file.read {
+    greet();
+}

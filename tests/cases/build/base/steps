@@ -1,0 +1,10 @@
+write notes.txt just text
+vo build main.vo -o app
+vo build main.vo -o x --base notes.txt
+vo build main.vo -o x --base missing
+vo build main.vo -o x --base app
+vo build main.vo -o x --base
+vo run show.vo
+vo run --max-memory 256 copy.vo
+vo build main.vo -o y --base toolchain-copy
+app y

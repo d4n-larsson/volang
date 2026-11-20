@@ -2369,6 +2369,17 @@ extern long sys_open(char *path, int flags);
 extern Str *tmp_path(Str *path, char *tag);
 extern long open_tmp(Str *tmp);
 extern long sys_close(int fd);
+extern long sys_file_size(int fd);
+extern long sys_fchmod(int fd, long mode);
+extern long sys_pread_all(int fd, char *buf, long n, long off);
+/* src/build.c (spec 034) */
+extern const char vo_version_text[];
+extern long ld_app;      /* 1 while a built executable loads its embedded program (no source is read from the disk) */
+extern Str *app_entry;   /* the embedded entry path, or 0 in a toolchain */
+extern long app_manifest; /* the embedded vo.packages' file id, or -1 */
+extern char **app_start(long *argc, char **argv);
+extern int cmd_build(char *output, char *base);
+extern long opt_app_effects;
 extern long sys_getdents64(int fd, void *buf, long n);
 extern long sys_rename(char *from, char *to);
 extern long sys_unlink(char *path);

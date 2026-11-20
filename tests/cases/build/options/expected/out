@@ -1,0 +1,74 @@
+$ vo build main.vo -o app
+built app: 1 file, 0 bytes
+--- stderr
+--- exit 0
+$ vo build loop.vo
+built loop: 1 file, 0 bytes
+--- stderr
+--- exit 0
+$ vo run --seed 3 --clock-ms 5 main.vo -- --seed x -- --help
+args: --seed|x|--|--help
+978977 5
+--- stderr
+--- exit 0
+$ app app --vo-seed 3 --seed x --vo-clock-ms 5 -- --help
+args: --seed|x|--|--help
+978977 5
+--- stderr
+--- exit 0
+$ app app --vo-seed 3 --vo-clock-ms 5 --vo-mem-stats --vo-trace t.jsonl one
+args: one
+978977 5
+--- stderr
+memory: peak live 624 B, allocated 624 B, 0 collections (limit 512 MiB)
+--- exit 0
+$ app loop --vo-timeout 1
+--- stderr
+loop.vo:4:5: runtime error[R0009]: Time limit of 1 s exceeded.
+   4 |     while true {
+     |     ^^^^^^^^^^^^
+trace:
+  at main (loop.vo:4:5)
+--- exit 124
+$ app loop --vo-max-memory 1 fill
+--- stderr
+loop.vo:7:13: runtime error[R0006]: The program holds 1.7 MiB of live data, over the 1 MiB limit.
+   7 |             push(xs, n);
+     |             ^^^^^^^^^^^
+trace:
+  at main (loop.vo:7:13)
+      n: int = 65537, xs: list[int] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, ...
+--- exit 70
+$ app app --vo-timeout 0 --vo-seed 3 --vo-clock-ms 5
+args: 
+978977 5
+--- stderr
+--- exit 0
+$ app app --vo-bogus
+--- stderr
+error[T0001]: Unknown option `--vo-bogus`. Options: --vo-effects, --vo-version, --vo-replay FILE, --vo-record FILE, --vo-seed N, --vo-clock-ms N, --vo-timeout SEC, --vo-max-memory MiB, --vo-mem-stats, --vo-trace FILE, --vo-trace-limit N, --vo-ca-file FILE, --vo-workers N, --vo-json. Every other argument goes to the program.
+--- exit 64
+$ app app --vo-json --vo-bogus
+--- stderr
+{"v":1,"kind":"toolchain_error","code":"T0001","name":"usage_error","message":"Unknown option `--vo-bogus`. Options: --vo-effects, --vo-version, --vo-replay FILE, --vo-record FILE, --vo-seed N, --vo-clock-ms N, --vo-timeout SEC, --vo-max-memory MiB, --vo-mem-stats, --vo-trace FILE, --vo-trace-limit N, --vo-ca-file FILE, --vo-workers N, --vo-json. Every other argument goes to the program."}
+--- exit 64
+$ app app --vo-seed
+--- stderr
+error[T0001]: `--vo-seed` needs a value.
+--- exit 64
+$ app app --vo-seed x
+--- stderr
+error[T0001]: `--seed` and `--clock-ms` need a whole number.
+--- exit 64
+$ app app --vo-version
+vo 0.1.0 schema 1
+--- stderr
+--- exit 0
+$ app app --vo-version --vo-json
+{"v":1,"kind":"version","version":"0.1.0","schema":1}
+--- stderr
+--- exit 0
+$ app app --vo-check
+--- stderr
+error[T0001]: Unknown option `--vo-check`. Options: --vo-effects, --vo-version, --vo-replay FILE, --vo-record FILE, --vo-seed N, --vo-clock-ms N, --vo-timeout SEC, --vo-max-memory MiB, --vo-mem-stats, --vo-trace FILE, --vo-trace-limit N, --vo-ca-file FILE, --vo-workers N, --vo-json. Every other argument goes to the program.
+--- exit 64

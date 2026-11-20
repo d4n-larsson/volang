@@ -34,6 +34,15 @@ void pkg_load(Str *dir)
     if (pkg_searched) return;
     pkg_searched = 1;
     pkg_entries = vec_new();
+    if (ld_app) { /* spec 034: the manifest the build embedded; its directory is the path's */
+        pkg_manifest = app_manifest;
+        if (pkg_manifest >= 0) {
+            Str *p = file_get((int)pkg_manifest)->path;
+            pkg_dir = str_new(p->data, p->len - (long)sizeof MANIFEST + 1);
+            pkg_parse(pkg_manifest);
+        }
+        return;
+    }
     pkg_manifest = find_up_dir(dir, MANIFEST, (void **)&pkg_dir);
     if (pkg_manifest >= 0) pkg_parse(pkg_manifest);
 }
@@ -263,6 +272,7 @@ long pkg_verify(void *entry, Node *node)
 {
     Pkg *e = entry;
     if (e->state) return e->state != 2;
+    if (ld_app) return e->state = 1; /* spec 034: verified by the build; the payload's hash covers the bytes */
     char *code;
     Str *m;
     long h = pkg_hash(e->dir, pkg_hash_buf, 1);
@@ -308,7 +318,7 @@ void *pkg_import_path(Node *import, FileRec *importer)
     SB *sb = sb_new(); /* E0705: NAME is also a directory next to the importer */
     sb_str(sb, importer->dir);
     sb_str(sb, e->name);
-    long fd = sys_open(sb_finish(sb)->data, O_DIRECTORY);
+    long fd = ld_app ? -1 : sys_open(sb_finish(sb)->data, O_DIRECTORY); /* (spec 034: checked by the build) */
     if (fd >= 0) {
         sys_close((int)fd);
         ck_err("E0705", import,

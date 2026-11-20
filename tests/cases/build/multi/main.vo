@@ -1,0 +1,7 @@
+import lib.words.shout;
+import money.format.cents;
+import std.text.pad_left;
+
+fn main() uses console {
+    print(shout("total") + " " + pad_left(cents(1234), 8, " "));
+}

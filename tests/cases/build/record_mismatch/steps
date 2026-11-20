@@ -1,0 +1,4 @@
+vo effects --update main.vo
+write helper.vo export fn greet() uses console, file.read {\n    match read_file("x") {\n        case ok(t) {\n            print(t);\n        }\n        case err(_) {\n            print("hi");\n        }\n    }\n}\n
+vo build main.vo -o app
+vo run show.vo

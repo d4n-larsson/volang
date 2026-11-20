@@ -1,0 +1,48 @@
+$ vo build main.vo -o app
+built app: 1 file, 0 bytes
+--- stderr
+--- exit 0
+$ app app --vo-record r.jsonl --vo-seed 9 a b < in.txt
+args: a|b
+stdin: typed
+
+file: seven
+149371
+--- stderr
+--- exit 0
+$ vo run --record v.jsonl --seed 9 main.vo -- a b < in.txt
+args: a|b
+stdin: typed
+
+file: seven
+149371
+--- stderr
+--- exit 0
+$ app app --vo-replay r.jsonl
+args: a|b
+stdin: typed
+
+file: seven
+149371
+--- stderr
+--- exit 0
+$ app app --vo-replay v.jsonl
+args: a|b
+stdin: typed
+
+file: seven
+149371
+--- stderr
+--- exit 0
+$ app app --vo-replay r.jsonl extra
+--- stderr
+error[T0001]: `replay` takes `--seed`, `--clock-ms` and program arguments from the recording; leave them out.
+--- exit 64
+$ app app --vo-replay
+--- stderr
+error[T0001]: `--vo-replay` needs a recording: `--vo-replay FILE`.
+--- exit 64
+$ app app --vo-replay missing.jsonl
+--- stderr
+error[T0002]: Cannot read the recording `missing.jsonl`.
+--- exit 66

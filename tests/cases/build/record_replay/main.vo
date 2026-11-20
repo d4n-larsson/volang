@@ -1,0 +1,7 @@
+fn main() -> result[void] uses console, input, file.read, random {
+    print("args: " + join(args(), "|"));
+    print("stdin: " + read_all());
+    print("file: " + try read_file("data/n.txt"));
+    print(str(random_int(1, 1000000)));
+    return ok();
+}

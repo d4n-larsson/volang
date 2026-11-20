@@ -1,0 +1,4 @@
+mkdir sub
+vo build main.vo -o one
+vo build main.vo -o sub/two
+vo run cmp.vo

@@ -1,0 +1,22 @@
+$ vo build main.vo -o app
+built app: 1 file, 0 bytes
+--- stderr
+--- exit 0
+$ app app
+--- stderr
+main.vo:2:12: runtime error[R0003]: Index 5 is out of bounds for length 2.
+   2 |     return xs[i];
+     |            ^^^^^
+trace:
+  at pick (main.vo:2:12)
+      xs: list[int] = [1, 2], i: int = 5
+  at main (main.vo:9:15)
+--- exit 70
+$ app app why
+--- stderr
+error: stopped: why
+--- exit 1
+$ app app --vo-json
+--- stderr
+{"v":1,"kind":"runtime_error","code":"R0003","name":"index_out_of_bounds","message":"Index 5 is out of bounds for length 2.","file":"main.vo","start":{"line":2,"col":12},"end":{"line":2,"col":17},"trace":[{"function":"pick","file":"main.vo","start":{"line":2,"col":12},"locals":[{"name":"xs","type":"list[int]","value":"[1, 2]"},{"name":"i","type":"int","value":"5"}]},{"function":"main","file":"main.vo","start":{"line":9,"col":15},"locals":[]}]}
+--- exit 70

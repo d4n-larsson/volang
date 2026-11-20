@@ -1,0 +1,4 @@
+fn main() uses console, random, clock {
+    print("args: " + join(args(), "|"));
+    print(str(random_int(1, 1000000)) + " " + str(now_ms()));
+}

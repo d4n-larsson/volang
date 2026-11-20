@@ -1,0 +1,12 @@
+$ vo build main.vo -o one
+built one: 1 file, 10328734 bytes
+--- stderr
+--- exit 0
+$ vo build main.vo -o sub/two
+built sub/two: 1 file, 10328734 bytes
+--- stderr
+--- exit 0
+$ vo run cmp.vo
+true true
+--- stderr
+--- exit 0

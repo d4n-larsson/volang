@@ -1,0 +1,15 @@
+vo build main.vo -o app
+vo build loop.vo
+vo run --seed 3 --clock-ms 5 main.vo -- --seed x -- --help
+app app --vo-seed 3 --seed x --vo-clock-ms 5 -- --help
+app app --vo-seed 3 --vo-clock-ms 5 --vo-mem-stats --vo-trace t.jsonl one
+app loop --vo-timeout 1
+app loop --vo-max-memory 1 fill
+app app --vo-timeout 0 --vo-seed 3 --vo-clock-ms 5
+app app --vo-bogus
+app app --vo-json --vo-bogus
+app app --vo-seed
+app app --vo-seed x
+app app --vo-version
+app app --vo-version --vo-json
+app app --vo-check

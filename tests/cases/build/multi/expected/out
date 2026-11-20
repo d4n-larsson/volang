@@ -1,0 +1,16 @@
+$ vo package main.vo money shared/money
+added money shared/money sha256:dfdee8f43616a41002118e08feb5aa2c51d6e2c4cf540422d4e4445b5f7b55d2
+--- stderr
+--- exit 0
+$ vo run main.vo
+totaltotal!    12.34
+--- stderr
+--- exit 0
+$ vo build main.vo -o out/app
+built out/app: 3 files, 0 bytes
+--- stderr
+--- exit 0
+$ app out/app
+totaltotal!    12.34
+--- stderr
+--- exit 0

@@ -1,0 +1,6 @@
+vo build main.vo -o app
+vo build --json main.vo -o app
+vo build nomain.vo -o app
+vo build
+vo build main.vo -o
+vo run show.vo

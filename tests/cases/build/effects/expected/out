@@ -1,0 +1,46 @@
+$ vo build main.vo -o app
+built app: 1 file, 0 bytes
+--- stderr
+--- exit 0
+$ vo build pure.vo
+built pure: 1 file, 0 bytes
+--- stderr
+--- exit 0
+$ app app --vo-effects
+main uses console, file.read("data/")
+--- stderr
+--- exit 0
+$ app app --vo-effects --vo-json
+{"v":1,"kind":"capabilities","entry":"main","file":"main.vo","uses":"console, file.read(\"data/\")"}
+--- stderr
+--- exit 0
+$ app app --vo-effects ignored argument
+main uses console, file.read("data/")
+--- stderr
+--- exit 0
+$ app pure --vo-effects
+main pure
+--- stderr
+--- exit 0
+$ vo run main.vo -- other/b.txt
+ran
+inside
+--- stderr
+main.vo:8:15: runtime error[R0010]: file.read("other/b.txt") is not allowed: `main` declares console, file.read("data/").
+   8 |         match read_file(path) {
+     |               ^^^^^^^^^^^^^^^
+trace:
+  at main (main.vo:8:15)
+      paths: list[str] = ["data/a.txt", "other/b.txt"], path: str = "other/b.txt"
+--- exit 70
+$ app app other/b.txt
+ran
+inside
+--- stderr
+main.vo:8:15: runtime error[R0010]: file.read("other/b.txt") is not allowed: `main` declares console, file.read("data/").
+   8 |         match read_file(path) {
+     |               ^^^^^^^^^^^^^^^
+trace:
+  at main (main.vo:8:15)
+      paths: list[str] = ["data/a.txt", "other/b.txt"], path: str = "other/b.txt"
+--- exit 70

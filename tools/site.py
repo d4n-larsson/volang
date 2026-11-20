@@ -32,7 +32,7 @@ START = ["install", "first-program", "tests-and-effects"]
 GUIDE = ["basics", "types", "records-and-variants", "functions", "generics", "results-and-errors", "lists-and-maps",
          "collections", "effects", "tests", "properties", "contracts", "holes", "modules-and-packages",
          "standard-library", "files-and-processes", "concurrency", "apis", "determinism", "structure"]
-TOOLS = ["check", "run", "test", "fmt", "effects", "explain", "doc", "reference", "query", "impact", "edit",
+TOOLS = ["check", "run", "test", "build", "fmt", "effects", "explain", "doc", "reference", "query", "impact", "edit",
          "replay", "package", "version", "json-output", "exit-statuses"]
 
 # repository file -> generated page (site-src path), for rewriting links between sources

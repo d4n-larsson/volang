@@ -1,0 +1,20 @@
+$ vo build main.vo -o out/app
+built out/app: 1 file, 0 bytes
+--- stderr
+--- exit 0
+$ app out/app a --b "c d" < in.txt
+args: a|--b|c d
+stdin: hello
+
+--- stderr
+--- exit 0
+$ app out/app
+args: 
+stdin: 
+--- stderr
+--- exit 0
+$ vo build --json missing.vo
+{"v":1,"kind":"toolchain_error","code":"T0002","name":"cannot_read_input","message":"Cannot read `missing.vo`.","path":"missing.vo"}
+{"v":1,"kind":"summary","command":"build","errors":1,"warnings":0,"truncated":0,"files":0}
+--- stderr
+--- exit 66

@@ -40,6 +40,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [031](../specs/031-constants/) | Constants: `const name = value;` items of type `int`, `float`, `bool` or `str`, worked out by the checker from literals, constants and operators; usable as effect scopes, annotation limits and checked templates; reviews show values | **Implemented** ([results](../specs/031-constants/results.md)) |
 | [032](../specs/032-typed-errors/) | Typed errors: `result[T, E]` (`result[T]` is `result[T, str]`), `try` only between the same error types (E0412), `map_err` the one conversion; `std.web`'s `typed(op, answer)` maps a variant to statuses in one checked function; `std.option` | **Implemented** ([results](../specs/032-typed-errors/results.md)) |
 | [033](../specs/033-map-keys/) | Structural map keys: `map[K, V]` keyed by `int`, `bool`, `str`, `bytes`, records and variants of those, compared like `==`; `K: key` for generic code; E0309 names the part that is not a key | **Implemented** ([results](../specs/033-map-keys/results.md)) |
+| [034](../specs/034-vo-build/) | `vo build`: a program as one static executable (the toolchain with the program's files attached and hashed), run without sources; `--vo-effects` prints its grant; `vo run`'s options as `--vo-NAME`; `--base` for other architectures | **Implemented** ([results](../specs/034-vo-build/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -361,6 +362,20 @@ the same code as before.
 - **Not done (on purpose):** `float` and `result` keys, tuples (a record is the one way to group values),
   detecting a record changed while it is a key (documented, as for `ordered_map`), combining two
   constraints on one parameter.
+
+### 034: one executable per program (implemented)
+
+A vo program used to travel as its source tree plus the toolchain. `vo build main.vo -o app` checks it as
+`vo check` does (an effects record that disagrees refuses the build) and writes the toolchain binary with
+the program's files, a hash and a 64-byte trailer appended; `./app ARGS` then runs as `vo run main.vo --
+ARGS`, from any directory, on any Linux machine of that architecture. `./app --vo-effects` prints what
+`main` declares, enforced as always. `vo run`'s options are `--vo-NAME`; recordings replay with
+`--vo-replay`. Other architectures: `--base` with that architecture's `vo`.
+
+- **Not done (on purpose):** a compiled form (the program is checked at each start, in milliseconds), a
+  smaller runtime (an executable is about 10 MB), signing, `check` and `test` inside an executable.
+- **Known limit:** a file cut off at its end has lost its program part and starts as the plain toolchain
+  (a usage error); bytes changed in the part are T0014.
 
 ## Planned after 017
 

@@ -1,0 +1,4 @@
+fn main() uses console, input {
+    print("args: " + join(args(), "|"));
+    print("stdin: " + read_all());
+}

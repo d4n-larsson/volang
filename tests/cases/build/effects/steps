@@ -1,0 +1,10 @@
+write data/a.txt inside
+write other/b.txt outside
+vo build main.vo -o app
+vo build pure.vo
+app app --vo-effects
+app app --vo-effects --vo-json
+app app --vo-effects ignored argument
+app pure --vo-effects
+vo run main.vo -- other/b.txt
+app app other/b.txt

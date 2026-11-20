@@ -1,0 +1,35 @@
+$ vo build main.vo -o app
+main.vo:2:11: error[E0301]: Expected `str`, found `int`.
+   2 |     print(1);
+     |           ^
+  expected `str`, found `int`
+  fix: replace with `str(1)`
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo build --json main.vo -o app
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"main.vo","start":{"line":2,"col":11},"end":{"line":2,"col":12},"text":"1","message":"Expected `str`, found `int`.","expected":"str","found":"int","fixes":[{"file":"main.vo","start":{"line":2,"col":11},"end":{"line":2,"col":12},"replacement":"str(1)"}],"related":[]}
+{"v":1,"kind":"summary","command":"build","errors":1,"warnings":0,"truncated":0,"files":1}
+--- stderr
+--- exit 65
+$ vo build nomain.vo -o app
+nomain.vo:1:1: error[E0408]: `vo run` needs a `fn main()`.
+   1 | fn helper() -> int {
+     | ^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo build
+error[T0001]: `build` needs at least one path.
+--- stderr
+--- exit 64
+$ vo build main.vo -o
+error[T0001]: `-o` needs a file name.
+--- stderr
+--- exit 64
+$ vo run show.vo
+main.vo
+nomain.vo
+show.vo
+--- stderr
+--- exit 0

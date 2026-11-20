@@ -1,0 +1,10 @@
+vo build main.vo -o app
+app app --vo-record r.jsonl --vo-seed 9 a b < in.txt
+vo run --record v.jsonl --seed 9 main.vo -- a b < in.txt
+rm data/n.txt
+rm main.vo
+app app --vo-replay r.jsonl
+app app --vo-replay v.jsonl
+app app --vo-replay r.jsonl extra
+app app --vo-replay
+app app --vo-replay missing.jsonl

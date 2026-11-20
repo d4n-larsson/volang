@@ -1293,6 +1293,7 @@ fn main() uses console {
 ```sh
 vo check     [--json] PATH...
 vo run       [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--ca-file FILE] [--workers N] FILE [-- ARG...]
+vo build     [--json] [-o OUTPUT] [--base TOOLCHAIN] FILE
 vo test      [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--filter TEXT] [--test ID] [--spec ID] [--diff FILE] [--ca-file FILE] [--list | --coverage | --mutate [--max-mutants N]] PATH...
 vo fmt       [--json] [--check] PATH...
 vo effects   [--json] [--update] FILE
@@ -1311,6 +1312,7 @@ vo package   [--json] ENTRY NAME DIRECTORY | --remove ENTRY NAME
 
 - `PATH` is a `.vo` file or a directory (every `*.vo` under it, recursively, in sorted order). Each file is checked as the entry of its own program.
 - `run` checks first and runs only if there are no errors. Arguments after `--` reach the program through `args()`.
+- `build` checks like `check` (with the effects record) and writes one executable holding the program: `./app ARG...` runs as `vo run FILE -- ARG...`, with no source tree. Its `vo run` options are `--vo-NAME` (`--vo-seed 3`, `--vo-record FILE`); it has no default timeout; `--vo-effects` prints what `main` declares; `--vo-replay FILE` replays. `--base` takes another architecture's `vo`.
 - `--timeout SEC` is in whole seconds, default 10; `0` disables it. For `test` it applies to each test.
 - Memory: values that can no longer be reached are reclaimed automatically. The limit applies to live data (512 MiB by default; `--max-memory MiB`, 1 to 65536); holding more is R0006. `--mem-stats` reports the peak live size, the total allocated and the number of collections after the run or each test, without its tasks (on stderr for `run`; a `memory` record with `--json`).
 - `fmt` rewrites files in canonical form; `fmt --check` changes nothing and lists the files that are not canonical.

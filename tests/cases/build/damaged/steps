@@ -1,0 +1,7 @@
+vo build main.vo -o app
+vo run --max-memory 256 damage.vo
+chmod 755 flipped
+chmod 755 short
+app flipped
+app flipped --vo-effects
+app short

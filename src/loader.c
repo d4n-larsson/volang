@@ -18,6 +18,7 @@ static Str *ld_tree;  /* spec 013 (M4): the program's tree (the entry file's dir
  * not exist: reported as missing instead). */
 static int inside_tree(Str *path)
 {
+    if (ld_app) return 1; /* spec 034: only embedded files can load */
     long fd = sys_open(path->data, O_PATH | O_CLOEXEC);
     if (fd < 0) return 1;
     sys_close((int)fd);
@@ -111,6 +112,7 @@ long load_file(Str *path)
         id = std_lookup(path); /* spec 007: std/MODULE.vo comes from the binary, never the disk */
         if (id < 0) return -1;
         if (!id) {
+            if (ld_app) return -1; /* spec 034: a built executable reads no source from the disk */
             char *text;
             long len = pkg_cached(path, &text); /* spec 013 (H5, H6): a package file: the bytes that were hashed */
             if (len == -2) return -1;

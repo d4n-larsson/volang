@@ -544,7 +544,7 @@ void rec_print_change(SB *sb, void *change, int json)
 /* `vo effects`: the capability summary, or (update) rewrite vo.effects and print its changes. */
 int rec_command(int entry, Vec *files, int update, int json)
 {
-    long record = rec_find(entry); /* file id or -1 */
+    long record = opt_app_effects ? -1 : rec_find(entry); /* file id or -1 (spec 034: none in an executable) */
     Vec *old = vec_new();
     if (record >= 0) {
         old = rec_parse((int)record, rec_entries(files));
@@ -557,6 +557,7 @@ int rec_command(int entry, Vec *files, int update, int json)
             Rec *e = vec_get(entries, i);
             if (e->file != entry) continue;
             if (e->item->kind != N_TEST && !str_eq_cstr(e->name, "main")) continue;
+            if (opt_app_effects && e->item->kind == N_TEST) continue; /* spec 034: what the executable may do */
             if (json) {
                 sb_cstr(out, "{\"v\":1,\"kind\":\"capabilities\",\"entry\":");
                 json_str_into(out, e->name);
@@ -571,7 +572,7 @@ int rec_command(int entry, Vec *files, int update, int json)
                 sb_byte(out, '\n');
             }
         }
-        if (!json) { /* then the record lines that `--update` would write */
+        if (!json && !opt_app_effects) { /* then the record lines that `--update` would write */
             sb_byte(out, '\n');
             for (long i = 0; i < entries->n; i++) rec_line(out, vec_get(entries, i));
         }

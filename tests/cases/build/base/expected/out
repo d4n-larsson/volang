@@ -1,0 +1,39 @@
+$ vo build main.vo -o app
+built app: 1 file, 0 bytes
+--- stderr
+--- exit 0
+$ vo build main.vo -o x --base notes.txt
+error[T0001]: `notes.txt` is not a vo toolchain: `--base` takes the `vo` binary of another architecture.
+--- stderr
+--- exit 64
+$ vo build main.vo -o x --base missing
+error[T0001]: Cannot read the base toolchain `missing`.
+--- stderr
+--- exit 64
+$ vo build main.vo -o x --base app
+error[T0001]: `app` is a built program, not a toolchain: `--base` takes a `vo` binary.
+--- stderr
+--- exit 64
+$ vo build main.vo -o x --base
+error[T0001]: `--base` needs a file name.
+--- stderr
+--- exit 64
+$ vo run show.vo
+app
+copy.vo
+main.vo
+notes.txt
+show.vo
+--- stderr
+--- exit 0
+$ vo run --max-memory 256 copy.vo
+--- stderr
+--- exit 0
+$ vo build main.vo -o y --base toolchain-copy
+built y: 1 file, 0 bytes
+--- stderr
+--- exit 0
+$ app y
+tool
+--- stderr
+--- exit 0

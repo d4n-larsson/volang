@@ -1,0 +1,13 @@
+import std.bytes.from_ints;
+import std.fs.read_bytes;
+import std.fs.write_bytes;
+
+# flipped: one byte of the program part changed; short: the last ten bytes cut off.
+fn main() -> result[void] uses file.read, file.write {
+    let b = try read_bytes("app");
+    let n = len(b);
+    let at = n - 100;
+    try write_bytes("flipped", slice(b, 0, at) + from_ints([(b[at] + 1) % 256]) + slice(b, at + 1, n));
+    try write_bytes("short", slice(b, 0, n - 10));
+    return ok();
+}

@@ -1,0 +1,7 @@
+mkdir away
+write away/note.txt elsewhere
+write note.txt here
+vo build main.vo -o app
+cp app away/renamed
+rm main.vo
+app away/renamed

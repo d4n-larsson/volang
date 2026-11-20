@@ -8,6 +8,8 @@ each line of `steps` runs there, in order:
   vo ARGS... [< FILE]          run bin/vo ($VO_BIN, natively or under qemu) with stdin from FILE (default: empty)
   env NAME=VALUE ... vo ARGS... the same, with extra environment variables (\\\\xNN in VALUE, written so, is that byte)
   unset NAME ... vo ARGS...     the same, without those variables
+  app PATH ARGS... [< FILE]    (spec 034) runs the executable at PATH, built by `vo build`, with ARGS,
+                                natively or under qemu like vo; reported like a `vo` step
   rm PATH | cp A B | write PATH TEXT (TEXT with \\n and \\xNN escapes, {bytes:N}) | chmod MODE PATH
   symlink TARGET LINK | mkdir PATH | mkfifo PATH (spec 013)
   helpers                       (spec 017) copies tests/process_helpers/* into ./bin/
@@ -68,6 +70,9 @@ def mask(b, port=None, vport=None):
     if vport:
         b = re.sub(rb"(?<![0-9a-fA-F])" + str(vport).encode() + rb"(?![0-9a-fA-F])", b"{vport}", b)
     b = re.sub(rb'"ms":\d+', b'"ms":0', b)
+    # spec 034: the size of a built executable follows the toolchain's, which differs by platform
+    b = re.sub(rb"(?m)^(built .*, )\d+ bytes$", rb"\g<1>0 bytes", b)
+    b = re.sub(rb'("kind":"build".*"bytes":)\d+', rb"\g<1>0", b)
     return re.sub(rb"([ (])\d+ms\)", rb"\g<1>0ms)", b)
 
 
@@ -310,7 +315,7 @@ def run_case(case):
             env = dict(os.environ)
             while words[0] in ("env", "unset"):
                 kind = words.pop(0)
-                while words and words[0] != "vo" and words[0] not in ("env", "unset"):
+                while words and words[0] not in ("vo", "app", "env", "unset"):
                     w = words.pop(0)
                     if kind == "env":
                         k, v = w.split("=", 1)
@@ -324,6 +329,9 @@ def run_case(case):
             hide = words[0] == "vo~"
             if hide:
                 words[0] = "vo"
+            if words[0] == "app":  # spec 034: a built executable, run the way bin/vo runs $VO_BIN
+                env["VO_BIN"] = os.path.join(work, words[1])
+                words[0:2] = ["vo"]
             assert words[0] == "vo", f"{case}: unknown step {line!r}"
             if words[1:2] == ["replay"] and os.environ.get("VO_REPLAY_BIN"):
                 env["VO_BIN"] = os.environ["VO_REPLAY_BIN"]  # tests/cross_replay.py: another build replays

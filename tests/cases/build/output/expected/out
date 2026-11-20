@@ -1,0 +1,30 @@
+$ vo build tool.vo
+built tool: 1 file, 10328734 bytes
+--- stderr
+--- exit 0
+$ app tool
+tool
+--- stderr
+--- exit 0
+$ vo build tool.vo
+built tool: 1 file, 10328736 bytes
+--- stderr
+--- exit 0
+$ app tool
+tool 2
+--- stderr
+--- exit 0
+$ vo build tool.vo -o tool.vo
+error[T0001]: The output `tool.vo` is one of the program's source files: choose another name with `-o`.
+--- stderr
+--- exit 64
+$ vo build tool.vo -o nowhere/tool
+error[T0009]: Cannot write `nowhere/tool`.
+--- stderr
+--- exit 74
+$ vo run show.vo
+show.vo
+tool
+tool.vo
+--- stderr
+--- exit 0

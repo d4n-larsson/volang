@@ -1,0 +1,8 @@
+$ vo build main.vo -o app
+built app: 1 file, 10328897 bytes
+--- stderr
+--- exit 0
+$ app away/renamed
+note: here
+--- stderr
+--- exit 0

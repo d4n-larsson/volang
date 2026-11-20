@@ -1,0 +1,9 @@
+vo package main.vo money shared/money
+vo run main.vo
+mkdir out
+vo build main.vo -o out/app
+rm main.vo
+rm lib/words.vo
+rm shared/money/format.vo
+rm vo.packages
+app out/app

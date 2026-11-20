@@ -1,0 +1,8 @@
+vo build tool.vo
+app tool
+write tool.vo fn main() uses console {\n    print("tool 2");\n}\n
+vo build tool.vo
+app tool
+vo build tool.vo -o tool.vo
+vo build tool.vo -o nowhere/tool
+vo run show.vo

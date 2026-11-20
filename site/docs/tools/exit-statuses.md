@@ -18,9 +18,9 @@ Every `vo` command ends with an exit status that says what happened, so scripts 
 | 64 | Nothing documented under that name ([T0010](../errors/T0010.md)). | `doc` |
 | 65 | Check errors: at least one error-severity diagnostic, including effects that grew ([E0504](../errors/E0504.md)) and changed packages ([E0701](../errors/E0701.md)). Nothing ran or was written. | `check`, `run`, `test`, `fmt` (syntax errors), `effects`, `replay`, `doc`, `package`; `query`, `impact` and `edit` when a syntax error stops the checker |
 | 65 | An edit was refused ([T0006](../errors/T0006.md)); no file changed. | `edit` |
-| 66 | An input file or directory cannot be read ([T0002](../errors/T0002.md)): a program, a diff, a recording. | all that read files |
+| 66 | An input file or directory cannot be read ([T0002](../errors/T0002.md)): a program, a diff, a recording. A built executable whose program part is damaged ([T0014](../errors/T0014.md)). | all that read files; executables from `build` |
 | 70 | A runtime error: any R code except R0009, for example [R0002](../errors/R0002.md) division by zero, [R0008](../errors/R0008.md) an `exit()` code outside 0–63, [R0010](../errors/R0010.md) an effect outside the grant, [R0014](../errors/R0014.md) a replay mismatch. | `run`, `replay` |
-| 74 | A trace or recording cannot be written ([T0009](../errors/T0009.md)). | `run`, `test`, `replay` |
+| 74 | A trace, a recording or a built executable cannot be written ([T0009](../errors/T0009.md)). | `run`, `test`, `replay`, `build` |
 | 124 | Timeout ([R0009](../errors/R0009.md)): the program ran past `--timeout`. | `run`, `replay` |
 | 125 | Internal error in `vo` ([T0003](../errors/T0003.md)): always a bug in the toolchain, never in the program. | all |
 

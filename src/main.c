@@ -16,7 +16,8 @@ enum {
     CMD_EDIT,
     CMD_REPLAY,
     CMD_DOC,
-    CMD_PACKAGE
+    CMD_PACKAGE,
+    CMD_BUILD /* spec 034 */
 };
 
 long opt_json;
@@ -53,7 +54,7 @@ long path_n;
 static long path_cap;
 
 static char *const cmd_names[] = {"check", "run",    "test",   "fmt",  "explain", "reference", "version",
-                                  "effects", "query", "impact", "edit", "replay",  "doc",       "package", 0};
+                                  "effects", "query", "impact", "edit", "replay",  "doc",       "package", "build", 0};
 
 int cstr_eq(char *a, char *b)
 {
@@ -211,20 +212,22 @@ static int option_number(char *text, long *out)
 int vo_main(long argc, char **argv, char **env)
 {
     envp = (long)env;
+    static char *opt_output, *opt_base; /* spec 034: vo build -o OUTPUT --base TOOLCHAIN */
+    argv = app_start(&argc, argv);      /* spec 034: a built executable stands for a toolchain command */
     for (int i = 1; i < argc; i++) { /* pre-scan for --json (before any "--") */
         if (cstr_eq(argv[i], "--")) break;
         if (cstr_eq(argv[i], "--json")) opt_json = 1;
     }
     pos_args = (long)alloc(argc * 8L);
     if (argc < 2)
-        usage_error(str_from_cstr("Missing command. Commands: check, run, test, fmt, effects, query, impact, edit, "
-                                  "replay, doc, package, explain, reference, version."));
+        usage_error(str_from_cstr("Missing command. Commands: check, run, test, build, fmt, effects, query, impact, "
+                                  "edit, replay, doc, package, explain, reference, version."));
     char *cmd = argv[1];
     long c = 0;
     while (cmd_names[c] && !cstr_eq(cmd, cmd_names[c])) c++;
     if (!cmd_names[c])
-        usage_error_arg("Unknown command `$1`. Commands: check, run, test, fmt, effects, query, impact, edit, replay, "
-                        "doc, package, explain, reference, version.",
+        usage_error_arg("Unknown command `$1`. Commands: check, run, test, build, fmt, effects, query, impact, edit, "
+                        "replay, doc, package, explain, reference, version.",
                         cmd);
     opt_cmd = c + 1;
     if (opt_cmd == CMD_REPLAY || opt_cmd == CMD_RUN) report_fd = 2;
@@ -234,6 +237,12 @@ int vo_main(long argc, char **argv, char **env)
             prog_argc = argc - i;
             prog_argv = (long)(argv + i);
             break;
+        }
+        if (opt_cmd == CMD_BUILD && (cstr_eq(a, "-o") || cstr_eq(a, "--base"))) { /* spec 034 */
+            if (i >= argc) usage_error_arg("`$1` needs a file name.", a);
+            if (a[1] == 'o') opt_output = argv[i++];
+            else opt_base = argv[i++];
+            continue;
         }
         if (a[0] != '-' || a[1] != '-') { /* positional */
             ((char **)pos_args)[pos_n++] = a;
@@ -310,8 +319,9 @@ int vo_main(long argc, char **argv, char **env)
     case CMD_PACKAGE: return cmd_package();
     case CMD_VERSION:
         out_cstr(1, opt_json ? "{\"v\":1,\"kind\":\"version\",\"version\":\"0.1.0\",\"schema\":1}\n"
-                             : "vo 0.1.0 schema 1\n");
+                             : (char *)vo_version_text);
         return 0;
+    case CMD_BUILD: return cmd_build(opt_output, opt_base);
     case CMD_CHECK: return cmd_check();
     case CMD_EXPLAIN: return cmd_explain();
     case CMD_REFERENCE: return cmd_reference();
@@ -458,6 +468,7 @@ int cmd_effects(void)
     long file = load_source(str_from_cstr(((char **)pos_args)[0]));
     check_program((int)file, 0);
     if (!diag_errors) rec_command((int)file, ld_files(), (int)opt_update, (int)opt_json);
+    if (opt_app_effects && !diag_errors) return 0; /* spec 034: `--vo-effects` prints the line only */
     return finish_check(1);
 }
 

@@ -1,0 +1,11 @@
+fn pick(xs: list[int], i: int) -> int {
+    return xs[i];
+}
+
+fn main() -> result[void] uses console {
+    if len(args()) > 0 {
+        return err("stopped: " + args()[0]);
+    }
+    print(str(pick([1, 2], 5)));
+    return ok();
+}

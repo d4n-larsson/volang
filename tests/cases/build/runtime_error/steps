@@ -1,0 +1,5 @@
+vo build main.vo -o app
+rm main.vo
+app app
+app app why
+app app --vo-json

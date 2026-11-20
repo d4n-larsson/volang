@@ -77,6 +77,7 @@ On branch `perf-review-fixes`. The figures in `optimizations.md` are from before
 | Value-less variant cases (5) | each `Light.off` allocated | one shared value per case: a million in a list hold 12.1 MiB instead of 38.6 |
 | `a + b + c` on strings | one copy per `+` | one allocation for the chain (0.47 s instead of 0.82 for a message-building loop) |
 | Typed errors (language 1) | every error a `str`; `std.web` read statuses from message prefixes | spec 032: `result[T, E]`, E0412, `map_err`, `std.web` `typed`, `std.option` |
+| `vo build` (ecosystem, distribution) | a program shipped as sources plus the toolchain | spec 034: one static executable per program, `--vo-effects` prints its grant, `--base` for the other architectures |
 | Map keys (language 3) | `int` or `str` only; compound keys glued from text | spec 033: records, variants, `bool` and `bytes` keys, `K: key`; tuples declined |
 | Constants (language 2) | none | spec 031: `const name = value;`, usable as scopes, annotation limits and checked templates |
 | License and CI (ecosystem) | no license; only the docs site built in CI | MIT `LICENSE`; `.github/workflows/gate.yml` runs `make gate` (not yet run on GitHub) |

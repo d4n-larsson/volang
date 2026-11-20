@@ -1,0 +1,10 @@
+fn main() uses console {
+    var n = 0;
+    let xs = new list[int];
+    while true {
+        set n = n + 1;
+        if len(args()) > 0 {
+            push(xs, n);
+        }
+    }
+}

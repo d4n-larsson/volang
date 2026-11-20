@@ -79,6 +79,30 @@ long open_tmp(Str *tmp)
     return sys_open(tmp->data, 0x1 | 0x40 | 0x80 | O_NOFOLLOW | O_CLOEXEC); /* O_WRONLY|O_CREAT|O_EXCL */
 }
 
+/* spec 034: the size of an open file (seeks to its end), or a negative error. */
+long sys_file_size(int fd)
+{
+    return vo_syscall3(SYS_lseek, fd, 0, 2); /* SEEK_END */
+}
+
+long sys_fchmod(int fd, long mode)
+{
+    return vo_syscall2(SYS_fchmod, fd, mode);
+}
+
+/* Reads exactly n bytes at offset off; 0 when all were read. */
+long sys_pread_all(int fd, char *buf, long n, long off)
+{
+    while (n > 0) {
+        long r = vo_syscall4(SYS_pread64, fd, (long)buf, n, off);
+        if (r <= 0) return 1;
+        buf += r;
+        off += r;
+        n -= r;
+    }
+    return 0;
+}
+
 long sys_close(int fd)
 {
     return vo_syscall1(SYS_close, fd);

@@ -1,0 +1,19 @@
+$ vo build main.vo -o app
+built app: 1 file, 10328734 bytes
+--- stderr
+--- exit 0
+$ vo run --max-memory 256 damage.vo
+--- stderr
+--- exit 0
+$ app flipped
+--- stderr
+error[T0014]: This executable's program part is damaged or cut short: build or copy it again.
+--- exit 66
+$ app flipped --vo-effects
+--- stderr
+error[T0014]: This executable's program part is damaged or cut short: build or copy it again.
+--- exit 66
+$ app short
+error[T0001]: Missing command. Commands: check, run, test, build, fmt, effects, query, impact, edit, replay, doc, package, explain, reference, version.
+--- stderr
+--- exit 64

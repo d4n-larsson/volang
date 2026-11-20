@@ -1,0 +1,10 @@
+fn main() uses console, file.read {
+    match read_file("note.txt") {
+        case ok(t) {
+            print("note: " + t);
+        }
+        case err(_) {
+            print("no note here");
+        }
+    }
+}

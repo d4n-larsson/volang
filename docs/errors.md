@@ -4818,11 +4818,11 @@ vo replay r.jsonl
 
 ## T0009 cannot_write_output
 
-A trace or recording file could not be written.
+A trace, a recording or a built executable could not be written.
 
 Fixable: no
 
-`--trace FILE` and `--record FILE` write their file next to the program's own output. When the file cannot be created (a missing directory, no permission) or a write fails (a full disk), the run still happens, the error is reported once at the end, and the exit status is 74 unless the run already failed. Choose a path that can be written.
+`--trace FILE` and `--record FILE` write their file next to the program's own output. When the file cannot be created (a missing directory, no permission) or a write fails (a full disk), the run still happens, the error is reported once at the end, and the exit status is 74 unless the run already failed. Choose a path that can be written. `vo build` reports it the same way when its output cannot be written, and leaves nothing behind.
 
 ### Example
 
@@ -4915,4 +4915,24 @@ vo run --ca-file server.key main.vo
 
 ```sh
 vo run --ca-file company-ca.pem main.vo
+```
+
+## T0014 damaged_executable
+
+A program built with `vo build` cannot start because its program part is not intact.
+
+Fixable: no
+
+An executable from `vo build` carries the program's files and their hash after the toolchain. When bytes of that part were changed after the build (a bad copy, a patched file), the hash does not match and nothing runs (exit status 66). Build it again or copy it again. A file whose end is cut off has lost the part altogether: it starts as the plain `vo` toolchain and reports a usage error (T0001) instead.
+
+### Example
+
+```sh
+printf x | dd of=app bs=1 seek=10300000 conv=notrunc && ./app
+```
+
+### Fixed
+
+```sh
+vo build main.vo -o app && ./app
 ```

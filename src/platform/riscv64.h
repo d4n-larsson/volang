@@ -58,4 +58,6 @@
 #define SYS_fsync 82
 #define SYS_ftruncate 46
 
+#define SYS_lseek 62 /* spec 034: vo build and the program part of a built executable (src/build.c) */
+#define SYS_fchmod 52
 #endif

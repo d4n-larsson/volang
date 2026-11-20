@@ -1,0 +1,6 @@
+mkdir out
+vo build main.vo -o out/app
+rm main.vo
+app out/app a --b "c d" < in.txt
+app out/app
+vo build --json missing.vo

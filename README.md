@@ -74,6 +74,7 @@ what is missing.
 ```sh
 bin/vo check --json main.vo        # diagnostics with fixes (JSON lines)
 bin/vo run main.vo                 # check, then run
+bin/vo build main.vo -o app        # one executable: ./app runs it anywhere, ./app --vo-effects says what it may touch
 bin/vo test file.vo                # run the file's tests
 bin/vo fmt main.vo                 # rewrite in canonical form (--check to only report)
 bin/vo effects --update main.vo    # write vo.effects; prints the capability changes

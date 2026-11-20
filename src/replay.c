@@ -1040,7 +1040,8 @@ int cmd_replay(void)
     }
     if (gc_limit && len > gc_limit) rp_bad(); /* spec 013 (L6): a recording larger than --max-memory */
     rp_read(text, len);
-    if (!rp_program_ok(rp_program)) rp_bad(); /* spec 013 (C5) */
+    if (app_entry) rp_program = app_entry; /* spec 034: a built executable replays its own program */
+    if (!app_entry && !rp_program_ok(rp_program)) rp_bad(); /* spec 013 (C5) */
     rt_set_option(1, rp_seed); /* the recorded run's seed, clock and arguments */
     if (rp_clock >= 0) rt_set_option(2, rp_clock);
     long n = rp_args ? rp_args->n : 0;

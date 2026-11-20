@@ -1,0 +1,5 @@
+import std.text.repeat;
+
+export fn shout(s: str) -> str {
+    return repeat(s, 2) + "!";
+}

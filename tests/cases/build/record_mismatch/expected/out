@@ -1,0 +1,24 @@
+$ vo effects --update main.vo
++ helper.vo:greet: console
++ main.vo:main: console, file.read
+main.vo:3:4: warning[W0501]: `main` declares file.read, which it never needs.
+   3 | fn main() uses console, file.read {
+     |    ^^^^
+  fix: replace with `uses console `
+0 errors, 1 warning
+--- stderr
+--- exit 0
+$ vo build main.vo -o app
+helper.vo:1:11: error[E0504]: `greet` gains file.read; approve with `vo effects --update`.
+   1 | export fn greet() uses console, file.read {
+     |           ^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo run show.vo
+helper.vo
+main.vo
+show.vo
+vo.effects
+--- stderr
+--- exit 0
