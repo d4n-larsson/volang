@@ -32,7 +32,7 @@ static char r_ignored[] = "ignored";
 
 static char *const role_names[] = {"declaration", "call", "value", "type", "import", "use"};
 
-#define QK_ITEMS ((1L << N_FN) | (1L << N_RECORD) | (1L << N_VARIANT))
+#define QK_ITEMS ((1L << N_FN) | (1L << N_RECORD) | (1L << N_VARIANT) | (1L << N_EFFECTS))
 #define QK_TYPES ((1L << N_RECORD) | (1L << N_VARIANT))
 #define M_DF_HUNK "The diff is not a valid unified diff (a hunk is malformed or cut short)."
 #define J_ROLE ",\"role\":\""

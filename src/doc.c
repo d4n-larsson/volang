@@ -131,6 +131,17 @@ void doc_tparams(SB *sb, Node *decl)
 /* fn name[T](a: A, b: B) -> R uses E; record Name { f: T; ... }; variant Name { c(T); d; }. */
 void doc_signature(SB *sb, Node *item)
 {
+    if (item->kind == N_EFFECTS) { /* spec 030: effects Name = e, ... (and what it stands for) */
+        sb_cstr(sb, "effects ");
+        sb_str(sb, item->a.n->a.s);
+        sb_cstr(sb, " = ");
+        fx_render_written(sb, item->b.n);
+        if (!fx_names_set(item->b.n) || !item->c.p) return;
+        sb_cstr(sb, " (");
+        es_render(item->c.p, sb);
+        sb_byte(sb, ')');
+        return;
+    }
     if (item->kind != N_RECORD && item->kind != N_VARIANT) { /* a function */
         sb_cstr(sb, "fn ");
         sb_str(sb, item->a.n->a.s);
@@ -155,6 +166,13 @@ void doc_signature(SB *sb, Node *item)
         }
         if (!effects) return;
         sb_cstr(sb, " uses ");
+        if (fx_names_set(fx->uses)) { /* spec 030: as written, then what it stands for */
+            fx_render_written(sb, fx->uses);
+            sb_cstr(sb, " (");
+            es_render(fx->declared, sb);
+            sb_byte(sb, ')');
+            return;
+        }
         es_render(fx->declared, sb);
         return;
     }
@@ -251,6 +269,13 @@ void doc_json_shape(SB *sb, Node *item)
         doc_json_split(sb, sb_finish(eff));
         return;
     }
+    if (item->kind == N_EFFECTS) { /* spec 030: the effects it stands for */
+        sb_cstr(sb, ",\"effects\":");
+        SB *eff = sb_new();
+        if (item->c.p) es_render(item->c.p, eff);
+        doc_json_split(sb, sb_finish(eff));
+        return;
+    }
     sb_cstr(sb, item->kind == N_RECORD ? ",\"fields\":[" : ",\"cases\":["); /* fields or cases */
     for (long i = 0;; i++) {
         Node *m = member_at(item->b.v, i);
@@ -275,7 +300,10 @@ void doc_item_fields(SB *sb, Str *module, Node *item, Str *desc, Str *example)
     sb_cstr(sb, J_NAME);
     json_str_into(sb, item->a.n->a.s);
     sb_cstr(sb, J_ITEM);
-    sb_cstr(sb, item->kind == N_RECORD ? "record" : item->kind == N_VARIANT ? "variant" : "fn");
+    sb_cstr(sb, item->kind == N_RECORD    ? "record"
+                : item->kind == N_VARIANT ? "variant"
+                : item->kind == N_EFFECTS ? "effects"
+                                          : "fn");
     sb_cstr(sb, J_SIG);
     json_str_into(sb, sb_finish(sig));
     doc_json_shape(sb, item);
@@ -349,7 +377,7 @@ long doc_file(long file, Str *module, Str *item_name)
     long printed = 0;
     for (long i = 0; i < items->n; i++) {
         Node *it = vec_get(items, i);
-        if (it->kind != N_FN && it->kind != N_RECORD && it->kind != N_VARIANT) continue;
+        if (it->kind != N_FN && it->kind != N_RECORD && it->kind != N_VARIANT && it->kind != N_EFFECTS) continue;
         if (item_name && !str_eq(it->a.n->a.s, item_name)) continue; /* only the named item */
         if (!(it->flags & NF_EXPORT)) continue; /* spec 010: private to its file */
         Str *found[2];
@@ -706,7 +734,7 @@ static int doc_program(char *entry, Str *name)
         Vec *items = f->ast->a.v;
         for (long i = 0; i < items->n; i++) {
             Node *it = vec_get(items, i);
-            if (it->kind != N_FN && it->kind != N_RECORD && it->kind != N_VARIANT) continue;
+            if (it->kind != N_FN && it->kind != N_RECORD && it->kind != N_VARIANT && it->kind != N_EFFECTS) continue;
             if (!str_eq(it->a.n->a.s, name)) {
                 vec_push(names, it->a.n->a.s);
                 continue;
@@ -842,7 +870,8 @@ int doc_record_for(SB *sb, long key_a, long key_b, Str **sig, Str **desc)
         return 0;
     }
     Node *decl = (Node *)key_a;
-    if (decl->kind != N_FN && decl->kind != N_RECORD && decl->kind != N_VARIANT) return 0; /* a local */
+    if (decl->kind != N_FN && decl->kind != N_RECORD && decl->kind != N_VARIANT && decl->kind != N_EFFECTS)
+        return 0; /* a local */
     long file = (long)decl->file;
     Str *module = doc_module_of(file);
     Str *found[2];
@@ -860,7 +889,7 @@ int doc_record_for(SB *sb, long key_a, long key_b, Str **sig, Str **desc)
         *desc = found[0];
         return 1;
     }
-    if (decl->kind == N_FN) return 0;
+    if (decl->kind == N_FN || decl->kind == N_EFFECTS) return 0;
     Vec *members = decl->b.v; /* a field or case: the key_b-th member, comments not counted */
     long at = -1;
     for (long i = 0, k = 0; i < members->n && at < 0; i++) {

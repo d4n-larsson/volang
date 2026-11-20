@@ -216,7 +216,8 @@ fn from_bytes_empty() -> bytes {
     return __bytes_of_text("");
 }
 
-fn exchange_bytes(method: str, url: str, content_type: str, body: bytes) -> result[BytesResponse] uses net {
+fn exchange_bytes(method: str, url: str, content_type: str, body: bytes) -> result[BytesResponse]
+    uses net {
     let raw = try exchange_raw(method, url, content_type, __raw_text(body));
     let r = try parse_response(raw);
     return ok(new BytesResponse {
@@ -265,7 +266,8 @@ export fn request_header(r: Request, name: str) -> result[str] {
 
 # Answers HTTP requests on address ("8000": this machine, "0.0.0.0:8000": the network) with handle's responses until stopped; many requests are read at once, and handle is called for one at a time.
 #     serve("0", fn(r: Request) -> Response { return new Response { status: 200, headers: new list[Header], body: "" }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
-export fn serve[E: effects](address: str, handle: fn(Request) -> Response uses E) -> result[void] uses serve, E {
+export fn serve[E: effects](address: str, handle: fn(Request) -> Response uses E) -> result[void]
+    uses serve, E {
     let answer = fn(raw: str) -> str {
         match parse_request(raw) {
             case ok(req) {
@@ -310,7 +312,10 @@ export record BytesRequest {
 
 # Answers HTTP requests like serve, with request and response bodies as bytes, whatever they are (needs serve); serve needs UTF-8 bodies.
 #     serve_bytes("0", fn(r: BytesRequest) -> BytesResponse { return new BytesResponse { status: 200, headers: new list[Header], body: r.body }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
-export fn serve_bytes[E: effects](address: str, handle: fn(BytesRequest) -> BytesResponse uses E) -> result[void] uses serve, E {
+export fn serve_bytes[E: effects](
+    address: str,
+    handle: fn(BytesRequest) -> BytesResponse uses E
+) -> result[void] uses serve, E {
     let answer = fn(raw: str) -> str {
         match parse_request(raw) {
             case ok(req) {
@@ -340,7 +345,8 @@ fn bad_request() -> str {
     return response_text("GET", new Response { status: 400, headers: new list[Header], body: "" });
 }
 
-fn serve_loop[E: effects](address: str, answer: fn(str) -> str uses E) -> result[void] uses serve, E {
+fn serve_loop[E: effects](address: str, answer: fn(str) -> str uses E) -> result[void]
+    uses serve, E {
     let listener = try __serve_listen(address);
     while true {
         let raw = try __serve_next(listener);
@@ -497,7 +503,12 @@ fn response_text(method: str, r: Response) -> str {
 
 # Serves requests like serve with `workers` processes (1 to 64; `vo run --workers N` overrides it), each running setup once and then handle (with setup's result) for one request at a time; nothing else is shared between requests. On Ctrl-C or SIGTERM the requests already read are answered, then it returns ok().
 #     serve_workers("0", 2, fn() -> result[int] { return ok(0); }, fn(n: int, r: Request) -> Response { return new Response { status: 200, headers: new list[Header], body: "" }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
-export fn serve_workers[S, E: effects, F: effects](address: str, workers: int, setup: fn() -> result[S] uses F, handle: fn(S, Request) -> Response uses E) -> result[void] uses serve, E, F {
+export fn serve_workers[S, E: effects, F: effects](
+    address: str,
+    workers: int,
+    setup: fn() -> result[S] uses F,
+    handle: fn(S, Request) -> Response uses E
+) -> result[void] uses serve, E, F {
     # __serve_workers serves on the listener opened here
     let _ = try __serve_listen(address);
     return __serve_workers(workers, setup, fn(state: S, raw: str) -> str {
@@ -535,7 +546,12 @@ fn answer_text[E: effects](raw: str, handle: fn(Request) -> Response uses E) -> 
 
 # Serves requests like serve_workers, with request and response bodies as bytes, whatever they are (needs serve).
 #     serve_bytes_workers("0", 2, fn() -> result[int] { return ok(0); }, fn(n: int, r: BytesRequest) -> BytesResponse { return new BytesResponse { status: 200, headers: new list[Header], body: r.body }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
-export fn serve_bytes_workers[S, E: effects, F: effects](address: str, workers: int, setup: fn() -> result[S] uses F, handle: fn(S, BytesRequest) -> BytesResponse uses E) -> result[void] uses serve, E, F {
+export fn serve_bytes_workers[S, E: effects, F: effects](
+    address: str,
+    workers: int,
+    setup: fn() -> result[S] uses F,
+    handle: fn(S, BytesRequest) -> BytesResponse uses E
+) -> result[void] uses serve, E, F {
     # __serve_workers serves on the listener opened here
     let _ = try __serve_listen(address);
     return __serve_workers(workers, setup, fn(state: S, raw: str) -> str {
@@ -545,7 +561,8 @@ export fn serve_bytes_workers[S, E: effects, F: effects](address: str, workers: 
     });
 }
 
-fn answer_bytes[E: effects](raw: str, handle: fn(BytesRequest) -> BytesResponse uses E) -> str uses E {
+fn answer_bytes[E: effects](raw: str, handle: fn(BytesRequest) -> BytesResponse uses E) -> str
+    uses E {
     match parse_request(raw) {
         case ok(req) {
             let r = new BytesRequest {

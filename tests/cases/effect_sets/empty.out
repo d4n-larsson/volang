@@ -1,0 +1,5 @@
+empty.vo:1:19: error[E0110]: Expected an effect, found `;`.
+   1 | effects Nothing = ;
+     |                   ^
+  expected `effect`, found `;`
+1 error, 0 warnings

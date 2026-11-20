@@ -1,0 +1,11 @@
+# The set is exported like any item; Scratch is not.
+export effects Storage = file.read("data/"), file.write("data/");
+effects Scratch = file.write("tmp/");
+
+export fn save(text: str) -> result[void] uses Storage {
+    return write_file("data/i.txt", text);
+}
+
+export fn scratch(text: str) -> result[void] uses Scratch {
+    return write_file("tmp/i.txt", text);
+}

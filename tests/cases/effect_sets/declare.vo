@@ -1,0 +1,14 @@
+# Named effect sets (spec 030): declared, exported, one including another.
+effects Storage = file.read("data/"), file.write("data/");
+export effects Logged = console, Storage;
+export effects Spare = clock;
+
+# `effects` is a word only at the start of an item.
+fn count(effects: int) -> int {
+    let more = effects + 1;
+    return more;
+}
+
+fn main() uses console {
+    print(str(count(1)));
+}

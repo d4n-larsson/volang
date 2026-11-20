@@ -2599,7 +2599,7 @@ A `uses` clause names something that is not an effect.
 
 Fixable: sometimes
 
-The effects are `console`, `input`, `file.read`, `file.write`, `file.delete`, `net`, `clock`, `random`, `env`, `serve` and `process`. When the name is within two edits of one of them, the fix replaces it.
+The effects are `console`, `input`, `file.read`, `file.write`, `file.delete`, `net`, `clock`, `random`, `env`, `serve` and `process`. When the name is within two edits of one of them, the fix replaces it. A capitalized name must be an effect parameter or an effect set in scope (`effects Storage = ...;`, declared in the file or imported); the fix replaces it with the nearest one.
 
 ### Example
 
@@ -2731,6 +2731,36 @@ fn main() -> result[void] uses console, process("git") {
     let out = try run("git", ["--version"]);
     print(out.stdout);
     return ok();
+}
+```
+
+## E0513 effect_set_cycle
+
+Effect sets include each other in a cycle.
+
+Fixable: no
+
+A set may name other sets (`effects App = console, Storage;`), but not itself, directly or through others: the message names the chain (`Files -> Storage -> Files`). Write the shared effects in one set and name it from the others.
+
+### Example
+
+```vo
+effects Files = file.read("data/"), Storage;
+effects Storage = file.write("data/"), Files;
+
+fn main() uses console, Storage {
+    print(str(write_file("data/note.txt", "hi") == ok()));
+}
+```
+
+### Fixed
+
+```vo
+effects Files = file.read("data/");
+effects Storage = file.write("data/"), Files;
+
+fn main() uses console, Storage {
+    print(str(write_file("data/note.txt", "hi") == ok()));
 }
 ```
 
@@ -3150,6 +3180,35 @@ fn main() uses console {
 # file: vo.effects
 geom.vo:area pure
 main.vo:main uses console
+```
+
+## W0505 unused_effect_set
+
+An effect set that is not exported is named by no clause.
+
+Fixable: yes
+
+A set (`effects Storage = ...;`) is a name for effects a program repeats. One that no `uses` clause, type or other set of its file names is left over from an edit; the fix removes its declaration. Exported sets are not reported: other files may import them.
+
+### Example
+
+```vo
+effects Storage = file.read("data/"), file.write("data/");
+effects Spare = clock;
+
+fn main() uses console, Storage {
+    print(str(write_file("data/note.txt", "hi") == ok()));
+}
+```
+
+### Fixed
+
+```vo
+effects Storage = file.read("data/"), file.write("data/");
+
+fn main() uses console, Storage {
+    print(str(write_file("data/note.txt", "hi") == ok()));
+}
 ```
 
 ## W0601 hole

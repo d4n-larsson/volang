@@ -1,0 +1,4 @@
+use_narrow.vo:5:23: error[E0503]: `save` declares too narrow a scope: it needs file.write("other/note.txt").
+   5 |     return write_file("other/note.txt", text);
+     |                       ^^^^^^^^^^^^^^^^
+1 error, 0 warnings

@@ -36,7 +36,8 @@ export fn run(program: str, args: list[str]) -> result[Output] uses process {
 
 # Runs program like run, with input as its standard input and env ("NAME=value" entries) as its environment (needs process).
 #     run_with("no-such-program.vo-doc", new list[str], "", ["A=1"]) == err("not found") is true
-export fn run_with(program: str, args: list[str], input: str, env: list[str]) -> result[Output] uses process {
+export fn run_with(program: str, args: list[str], input: str, env: list[str]) -> result[Output]
+    uses process {
     let argv = [program];
     for a in args {
         push(argv, a);
@@ -92,7 +93,12 @@ export fn run_bytes(program: str, args: list[str]) -> result[BytesOutput] uses p
 
 # Runs program like run_with, with input as bytes, and returns its output as bytes (needs process).
 #     run_with_bytes("no-such-program.vo-doc", new list[str], from_text(""), ["A=1"]) == err("not found") is true
-export fn run_with_bytes(program: str, args: list[str], input: bytes, env: list[str]) -> result[BytesOutput] uses process {
+export fn run_with_bytes(
+    program: str,
+    args: list[str],
+    input: bytes,
+    env: list[str]
+) -> result[BytesOutput] uses process {
     let argv = [program];
     for a in args {
         push(argv, a);

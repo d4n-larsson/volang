@@ -1,0 +1,35 @@
+# A function that `uses Storage` reads and writes in data/ and is refused elsewhere at run time.
+import std.fs.make_dir;
+
+effects Storage = file.read("data/"), file.write("data/");
+
+fn save(path: str, text: str) -> result[void] uses Storage {
+    return write_file(path, text);
+}
+
+fn load(path: str) -> result[str] uses Storage {
+    return read_file(path);
+}
+
+fn main() -> result[void] uses console, Storage {
+    try make_dir("data");
+    match save("data/note.txt", "hello") {
+        case ok() {
+            print("saved");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    match load("data/note.txt") {
+        case ok(text) {
+            print(text);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    let elsewhere = "other" + "/note.txt";
+    try save(elsewhere, "no");
+    return ok();
+}

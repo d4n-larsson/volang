@@ -26,6 +26,21 @@ record argument keeps its bracket on the call's line, and operands of operators 
     ]);
 ```
 
+A header (`fn`, `test`, `prop`) over 100 characters gets its `uses` clause on its own line, one level
+deeper; if the line before it is still too long, its parameters go one per line, with `) -> Type` (and
+the clause, when that line fits) after them. Function types are never broken; an anonymous function's
+parameters go one per line like a call's arguments:
+
+```text
+fn open_notes() -> result[Notes[uses file.read, file.write]]
+    uses file.read("data/"), file.write("data/") {
+
+export fn on_get[C, I: json, E: effects](
+    pattern: str,
+    op: fn(C, I) -> result[Response] uses E
+) -> Route[C, E] {
+```
+
 `fmt` needs the files to parse, not to check: a file with a type error is formatted. A syntax error in
 any of the files stops the command before it writes anything.
 

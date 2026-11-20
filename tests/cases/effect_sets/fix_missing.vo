@@ -1,0 +1,11 @@
+# E0501 in a clause naming a set: the fix keeps the name and adds the effect, in canonical order.
+effects Storage = file.read("data/"), file.write("data/");
+
+fn save(text: str) -> result[void] uses Storage {
+    print("saving");
+    return write_file("data/r.txt", text);
+}
+
+fn main() uses console, Storage {
+    print(str(save("x") == ok()));
+}

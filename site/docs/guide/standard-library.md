@@ -372,11 +372,13 @@ import std.sqlite.open;
 import std.sqlite.sql;
 import std.sqlite.transaction;
 
-fn open_db() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
+fn open_db() -> result[Database[uses file.read, file.write]]
+    uses file.read("data/"), file.write("data/") {
     return open("data/app.db");
 }
 
-fn hit(db: Database[uses file.read, file.write], req: Request) -> Response uses file.read("data/"), file.write("data/") {
+fn hit(db: Database[uses file.read, file.write], req: Request) -> Response
+    uses file.read("data/"), file.write("data/") {
     let saved = transaction(db, fn() -> result[int] {
         let c = try exec(db, sql("insert into hits (path) values (?)"), [Value.text(req.path)]);
         return ok(c.last_id);

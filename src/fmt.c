@@ -20,6 +20,7 @@ static void fm_type(Node *t);
 static void fm_expr(Node *n, long ctx);
 static void fm_block(Node *block, long level);
 static void fm_uses(Node *uses);
+static void fm_uses_body(Node *uses);
 
 static void fm_c(const char *s)
 {
@@ -120,24 +121,67 @@ static void fm_fn_type(Node *t)
     fm_uses(t->d.n);
 }
 
-/* `fn(x: int) -> int {` + the body one level deeper than the statement it is in + `}`. */
-static void fm_lambda(Node *f)
+/* `(a: T, b: U)`, or (wrap) each parameter on its own line one level deeper than ind, `)` at ind. */
+static void fm_params(Vec *params, int wrap, long ind)
 {
-    long level = fm_cur_indent() / 4; /* (its body one level deeper than the line it starts on) */
-    fm_c("fn(");
-    for (long i = 0; i < f->b.v->n; i++) {
-        if (i) fm_c(", ");
-        Node *p = vec_get(f->b.v, i);
+    fm_b('(');
+    for (long i = 0; i < params->n; i++) {
+        if (wrap) {
+            fm_b('\n');
+            fm_spaces(ind + 4);
+        } else if (i) {
+            fm_c(", ");
+        }
+        Node *p = vec_get(params, i);
         fm_name(p->a.n);
         fm_c(": ");
         fm_type(p->b.n);
+        if (wrap && i + 1 < params->n) fm_b(',');
+    }
+    if (wrap && params->n) {
+        fm_b('\n');
+        fm_spaces(ind);
     }
     fm_b(')');
+}
+
+/* Spec 030 (research R7): an item's ` uses ...` on its line when that line (with tail more characters
+ * after it) fits FM_WIDTH, else on its own line one level deeper. */
+static void fm_header_uses(Node *uses, long tail)
+{
+    if (!uses) return;
+    long at = fm_sb->len;
+    fm_uses(uses);
+    if (fm_chars(fm_line_start(at), fm_sb->len) + tail <= FM_WIDTH) return;
+    fm_sb->len = at;
+    fm_c("\n    uses ");
+    fm_uses_body(uses);
+}
+
+/* 1 when the header written from hs has a first line that fits FM_WIDTH (with tail more characters when
+ * the header is one line). */
+static int fm_header_fits(long hs, long tail)
+{
+    long nl = hs;
+    while (nl < fm_sb->len && fm_sb->ptr[nl] != '\n') nl++;
+    return fm_chars(hs, nl) + (nl == fm_sb->len ? tail : 0) <= FM_WIDTH;
+}
+
+/* `fn(x: int) -> int {` + the body one level deeper than the statement it is in + `}`. Its parameters go
+ * one per line when the statement's line is too long (a group of fm_pick). */
+static void fm_lambda(Node *f)
+{
+    long level = fm_cur_indent() / 4; /* (its body one level deeper than the line it starts on) */
+    long st = fm_sb->len;
+    int wrap = f->b.v->n && fm_wrapped(f);
+    fm_c("fn");
+    fm_params(f->b.v, wrap, fm_cur_indent());
     if (f->c.n) {
         fm_c(" -> ");
         fm_ret_type(f->c.n, f->a.n->b.fx->uses);
     }
     fm_uses(f->a.n->b.fx->uses); /* a `uses` clause (E0507) is kept, so nothing is lost */
+    if (f->b.v->n && !wrap) fm_group(f, st);
     fm_b(' ');
     fm_block(f->d.n, level);
     fm_level = level; /* a later anonymous function in the same statement */
@@ -174,7 +218,6 @@ static void fm_tparams(Vec *tparams)
 
 /* ` uses ...` in canonical order (effects by kind, scopes sorted and normalized). A clause with an
  * unknown name or invalid scope is printed as written, so formatting never loses text. */
-static void fm_uses_body(Node *uses);
 
 static void fm_uses(Node *uses)
 {
@@ -188,10 +231,21 @@ static void fm_uses_body(Node *uses)
 {
     EffSet *set = es_new(0);
     Vec *effects = uses->a.v;
+    Vec *names = vec_new(); /* effect parameters and sets (spec 030): after the effects, sorted */
     for (long i = 0; i < effects->n; i++) {
         Node *e = vec_get(effects, i);
         long bit = e->a.i;
-        if (!bit) goto as_written; /* unknown name or effect parameter: as written */
+        if (!bit && e->c.n && !e->b.v) {
+            long j = names->n;
+            vec_push(names, e->d.s);
+            while (j > 0 && str_cmp(names->data[j - 1].p, e->d.s) > 0) {
+                names->data[j] = names->data[j - 1];
+                j--;
+            }
+            names->data[j].p = e->d.s;
+            continue;
+        }
+        if (!bit) goto as_written; /* unknown name: as written */
         if (!e->b.v) {
             set->mask |= (unsigned long)bit;
             continue;
@@ -201,7 +255,11 @@ static void fm_uses_body(Node *uses)
             if (!es_add_scope(set, bit, scope->a.s)) goto as_written;
         }
     }
-    es_render(set, fm_sb);
+    if (!es_is_empty(set)) es_render(set, fm_sb);
+    for (long i = 0; i < names->n; i++) {
+        if (i || !es_is_empty(set)) fm_c(", ");
+        fm_s(names->data[i].p);
+    }
     return;
 as_written:
     for (long i = 0; i < effects->n; i++) {
@@ -549,7 +607,8 @@ static Node *fm_pick(long mark)
         long at = -1;
         for (long i = mark; i < fm_groups->n; i += 3)
             if (vec_get(fm_groups, i) == last) at = (long)vec_get(fm_groups, i + 1);
-        if (at < 0 || fm_wrapped(last) || fm_chars(fm_line_start(at), at) >= FM_WIDTH - 1) break;
+        if (at < 0 || last->kind == N_LAMBDA || fm_wrapped(last) || fm_chars(fm_line_start(at), at) >= FM_WIDTH - 1)
+            break;
         best = last;
     }
     return best;
@@ -782,32 +841,35 @@ static void fm_item(Node *item)
         fm_b(';');
         break;
     case N_FN: {
-        if (item->flags & NF_EXPORT) fm_c("export ");
-        fm_c("fn ");
-        fm_name(item->a.n);
         Fx *fx = item->a.n ? item->a.n->b.fx : 0;
-        if (fx) fm_tparams(fx->tparams); /* [T, ...] */
-        fm_b('(');
-        for (long i = 0; i < item->b.v->n; i++) {
-            if (i) fm_c(", ");
-            Node *p = vec_get(item->b.v, i);
-            fm_name(p->a.n);
-            fm_c(": ");
-            fm_type(p->b.n);
+        long hs = fm_sb->len, tail = fx && (fx->requires_ || fx->ensures) ? 0 : 2; /* ` {` */
+        for (int wrap = 0; wrap < 2; wrap++) { /* spec 030: long headers (research R7) */
+            fm_sb->len = hs;
+            if (item->flags & NF_EXPORT) fm_c("export ");
+            fm_c("fn ");
+            fm_name(item->a.n);
+            if (fx) fm_tparams(fx->tparams); /* [T, ...] */
+            fm_params(item->b.v, wrap, 0);
+            if (item->c.n) {
+                fm_c(" -> ");
+                fm_ret_type(item->c.n, fx ? fx->uses : 0);
+            }
+            if (fx) fm_header_uses(fx->uses, tail);
+            if (wrap || !item->b.v->n || fm_header_fits(hs, tail)) break;
         }
-        fm_b(')');
-        if (item->c.n) {
-            fm_c(" -> ");
-            fm_ret_type(item->c.n, fx ? fx->uses : 0);
-        }
-        if (fx) {
-            fm_uses(fx->uses);
-            fm_clauses(fx);
-        }
+        if (fx) fm_clauses(fx);
         fm_b(' ');
         fm_block(item->d.n, 0);
         break;
     }
+    case N_EFFECTS: /* spec 030: effects Name = e, ...; */
+        if (item->flags & NF_EXPORT) fm_c("export ");
+        fm_c("effects ");
+        fm_name(item->a.n);
+        fm_c(" = ");
+        fm_uses_body(item->b.n);
+        fm_b(';');
+        break;
     case N_RECORD:
     case N_VARIANT:
         if (item->flags & NF_EXPORT) fm_c("export ");
@@ -819,21 +881,21 @@ static void fm_item(Node *item)
         fm_c("}");
         break;
     case N_TEST:
-        fm_c(item->flags & NF_PROP ? "prop " : "test ");
-        render_str_lit(fm_sb, item->a.s);
-        if (item->flags & NF_PROP) { /* prop: " (a: T, b: U)" */
-            fm_c(" (");
-            Vec *params = item->d.fx->params;
-            for (long i = 0; i < params->n; i++) {
-                if (i) fm_c(", ");
-                Node *p = vec_get(params, i);
-                fm_name(p->a.n);
-                fm_c(": ");
-                fm_type(p->b.n);
+    {
+        long hs = fm_sb->len;
+        Vec *params = item->flags & NF_PROP ? item->d.fx->params : 0;
+        for (int wrap = 0; wrap < 2; wrap++) { /* spec 030: as a function's header */
+            fm_sb->len = hs;
+            fm_c(item->flags & NF_PROP ? "prop " : "test ");
+            render_str_lit(fm_sb, item->a.s);
+            if (params) { /* prop: " (a: T, b: U)" */
+                fm_b(' ');
+                fm_params(params, wrap, 0);
             }
-            fm_b(')');
+            fm_header_uses(item->c.n, 2);
+            if (wrap || !params || !params->n || fm_header_fits(hs, 2)) break;
         }
-        fm_uses(item->c.n);
+    }
         fm_b(' ');
         fm_block(item->b.n, 0);
         break;
@@ -904,7 +966,7 @@ Str *fmt_file(int file)
         Node *it = vec_get(order, i);
         long kind = it->kind;
         if (prev == N_ANNOTATION) { /* spec 012: an annotation sits right above its item */
-        } else if (prev == N_COMMENT ? gap : prev && !(prev == N_IMPORT && kind == N_IMPORT)) {
+        } else if (prev == N_COMMENT ? gap : prev && !(prev == kind && (kind == N_IMPORT || kind == N_EFFECTS))) {
             fm_b('\n'); /* blank line */
         }
         fm_item(it);

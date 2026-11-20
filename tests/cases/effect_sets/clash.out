@@ -1,0 +1,5 @@
+clash.vo:4:8: error[E0202]: `Note` is already defined.
+   4 | record Note {
+     |        ^^^^
+  note: clash.vo:2:9: `Note` is first defined here.
+1 error, 0 warnings

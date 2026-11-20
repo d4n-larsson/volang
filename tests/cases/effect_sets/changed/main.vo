@@ -1,0 +1,10 @@
+# A set's definition grows: every function using it gains the new effect (E0504 each, by name).
+effects Storage = file.read("data/"), file.write("data/"), file.delete("data/");
+
+fn save(text: str) -> result[void] uses Storage {
+    return write_file("data/r.txt", text);
+}
+
+fn main() uses console, Storage {
+    print(str(save("x") == ok()));
+}

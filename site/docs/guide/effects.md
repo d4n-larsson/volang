@@ -120,6 +120,38 @@ fn main() uses console, file.read("/etc/") {
 ```error E0506
 ```
 
+## Naming effects a program repeats
+
+When three or more functions declare the same scoped effects, name them once with an effect set: an
+item `effects Name = ...;` written like a `uses` clause. A clause (or a function type) that names the set
+means the effects it stands for, and can add others: `uses console, Storage`. A set can include other
+sets, and is exported and imported like any item (`export effects Storage = ...;`, `import
+store.Storage;`).
+
+```vo
+effects Storage = file.read("data/"), file.write("data/");
+
+fn save(name: str, text: str) -> result[void] uses Storage {
+    return write_file("data/" + name, text);
+}
+
+fn load(name: str) -> result[str] uses Storage {
+    return read_file("data/" + name);
+}
+
+fn main() -> result[void] uses console, Storage {
+    try save("note.txt", "hello");
+    print(try load("note.txt"));
+    return ok();
+}
+```
+
+Reviews stay exact: `vo.effects`, the checker's messages and `vo doc` show the effects a set stands for,
+so changing its definition is reported for every function that uses it. A function that needs only part
+of a set gets no warning (`load` above only reads), but one that needs none of it does
+([W0501](../errors/W0501.md)), and a private set nothing uses is [W0505](../errors/W0505.md). In a type's
+effect argument (`Database[uses Storage]`) the set's scopes are dropped, as for any effects in a type.
+
 ## What the checker reports
 
 A function that does something it did not declare is [E0501](../errors/E0501.md). The message lists
@@ -436,4 +468,7 @@ the change. Standard library functions are not listed; package functions are, as
 | [W0502](../errors/W0502.md) | a function has fewer effects than `vo.effects` lists, or was removed |
 | [W0503](../errors/W0503.md) | a function was renamed with unchanged effects |
 | [W0504](../errors/W0504.md) | a program in several files has no `vo.effects` |
+| [W0505](../errors/W0505.md) | a private effect set that no clause uses |
+| [E0509](../errors/E0509.md) | a name in a clause is not an effect, effect parameter or effect set |
+| [E0513](../errors/E0513.md) | effect sets include each other in a cycle |
 | [R0010](../errors/R0010.md) | at run time, a path, name or host outside the declared scopes |

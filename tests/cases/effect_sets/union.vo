@@ -1,0 +1,27 @@
+# A clause names effects and sets together; sets include other sets.
+import std.fs.make_dir;
+
+effects Timing = clock;
+effects Chance = random, Timing;
+effects Storage = file.read("data/"), file.write("data/");
+
+fn stamp() -> int uses Chance {
+    return now_ms() + random_int(1, 1);
+}
+
+fn record_stamp() -> result[void] uses Chance, Storage {
+    return write_file("data/stamp.txt", str(stamp()));
+}
+
+fn main() -> result[void] uses console, Chance, Storage {
+    try make_dir("data");
+    match record_stamp() {
+        case ok() {
+            print(str(stamp()));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    return ok();
+}

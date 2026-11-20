@@ -1,0 +1,10 @@
+# A set's name is an item name: E0202 when another item has it.
+effects Note = console;
+
+record Note {
+    text: str;
+}
+
+fn main() uses Note {
+    print("hi");
+}

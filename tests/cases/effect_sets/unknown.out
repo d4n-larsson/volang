@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0509","name":"unknown_effect","severity":"error","file":"unknown.vo","start":{"line":4,"col":31},"end":{"line":4,"col":37},"text":"Storge","message":"`Storge` is neither an effect parameter nor an effect set in scope.","fixes":[{"file":"unknown.vo","start":{"line":4,"col":31},"end":{"line":4,"col":37},"replacement":"Storage"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

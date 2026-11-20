@@ -1,0 +1,19 @@
+# W0505 for a private set no clause uses; no W0501 for a set's unneeded parts; a set nothing needs
+# at all is W0501 by name.
+effects Storage = file.read("data/"), file.write("data/");
+effects Spare = clock;
+export effects Shared = random;
+effects Timing = clock;
+
+fn load() -> result[str] uses Storage {
+    return read_file("data/r.txt");
+}
+
+fn idle() -> int uses console, Timing {
+    print("idle");
+    return 1;
+}
+
+fn main() uses console, Storage, Timing {
+    print(str(load() == ok("")) + str(idle()));
+}

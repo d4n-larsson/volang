@@ -1,10 +1,10 @@
 $ vo run --timeout 1 main.vo
 --- stderr
-std/process.vo:44:23: runtime error[R0009]: Time limit of 1 s exceeded.
-  44 |     return decode(try __run(argv, input, env));
+std/process.vo:45:23: runtime error[R0009]: Time limit of 1 s exceeded.
+  45 |     return decode(try __run(argv, input, env));
      |                       ^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at run_with (std/process.vo:44:23)
+  at run_with (std/process.vo:45:23)
   at run (std/process.vo:34:12)
   at main (main.vo:22:19)
 --- exit 124

@@ -36,6 +36,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [027](../specs/027-structure-standards/) | Structure standards: a thin shell of effects over a pure core, small files and functions, no copies, tests next to the code (W0701–W0706, `@allow`) | **Done** ([results](../specs/027-structure-standards/results.md)) |
 | [028](../specs/028-concurrent-serve/) | Concurrent request handling: `std.http.serve_workers` with worker processes, a setup per worker, `--workers`, replay one request at a time | **Done** ([results](../specs/028-concurrent-serve/results.md)) |
 | [029](../specs/029-web-package/) | `std.web` for APIs, after Spring: route tables, typed input from path, query, headers and JSON body checked by field annotations, answers and RFC 9457 problems, errors mapped in one place, steps, settings, health, tests without a network; derived JSON conversion (`to_json`, `from_json`) for every program | **Done** ([results](../specs/029-web-package/results.md)) |
+| [030](../specs/030-readable-signatures/) | readable signatures: `vo fmt` lays out headers over 100 characters (the effect clause on its own line, then parameters one per line); named effect sets (`effects Storage = ...;`, `uses console, Storage`) with one form for effects everywhere | **Done** ([results](../specs/030-readable-signatures/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -304,6 +305,19 @@ The notes-api example is rewritten with it.
 - **Not done (on purpose):** sessions and cookies, HTML views, OpenAPI generation, rate limiting, HTTPS
   serving, form and multipart bodies.
 
+### 030: readable signatures (done)
+
+`vo fmt` lays out a `fn`, `test` or `prop` header over 100 characters: the `uses` clause on its own line,
+then, if still too long, the parameters one per line; anonymous functions' parameters break like a call's
+arguments, and function types never break. Effect sets name scoped effects a program repeats
+(`effects Storage = file.read("data/"), file.write("data/");`), usable wherever effects are written,
+exported and imported like items; records, messages and `vo doc` show what they stand for, so reviews
+stay exact. Moving `uses` into an annotation was rejected: types keep `uses`, so the concept would get
+two spellings.
+
+- **Not done (on purpose):** parameters on sets, set operations other than union, comments between
+  parameters (a syntax error, as before).
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -319,7 +333,6 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Debugger | traces, locals in errors and replay, but no stepping | replay makes a deterministic stepper possible |
 | Tuples, more map keys | no tuple type; map keys are `int` or `str` only | records and ordered maps cover some cases |
 | `old()` in `ensures` | contracts cannot compare with values from before the call | spec 005 follow-up |
-| Effects as an annotation | the `uses ...` clause sits between the signature and the body (`fn f(x: int) -> int uses file.read("data/") {`), which makes long signatures hard to read | move it to an annotation on the line above, as `@spec`/`@allow` are (`@uses(file.read("data/"))`); one form only, so `vo fmt` and a `vo edit` migration rewrite every program; function types (`fn(int) -> int uses E`) and effect arguments in types need their own spelling |
 | Confined child programs | a program started under `process` runs with the user's full rights | opt-in confinement to the grant (Landlock); spec 017 follow-up |
 | Serving over HTTPS | `std.http.serve` answers plain HTTP only; a public server needs a proxy in front | spec 019 follow-up: certificate and key under the program's grants |
 | Recorded tests | a test that uses HTTP, files, programs or the environment depends on the machine and the network | spec 018 follow-up, decided: `vo test --record DIR` saves one recording per test, `vo test --replay DIR` runs offline on them; replaces mock objects |

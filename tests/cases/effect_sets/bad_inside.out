@@ -1,0 +1,4 @@
+bad_inside.vo:2:29: error[E0506]: "../data/" is not a valid scope: write a relative directory without `..`, or a non-empty name.
+   2 | effects Storage = file.read("../data/"), file.write("data/");
+     |                             ^^^^^^^^^^
+1 error, 0 warnings

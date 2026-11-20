@@ -1,0 +1,16 @@
+# Only the effect clause makes this header long: it moves to its own line.
+fn save_note(path: str, text: str, tags: list[str]) -> result[int] uses file.read("data/"), file.write("data/") {
+    try write_file(path, text);
+    return ok(len(tags));
+}
+
+fn main() uses console, file.read("data/"), file.write("data/") {
+    match save_note("data/n.txt", "hello", ["a"]) {
+        case ok(n) {
+            print(str(n));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

@@ -1,0 +1,8 @@
+import store.Storage;
+import store.save;
+
+effects App = console, Storage;
+
+fn main() uses App {
+    print(str(save("x") == ok()));
+}

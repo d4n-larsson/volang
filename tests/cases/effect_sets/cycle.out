@@ -1,0 +1,4 @@
+cycle.vo:3:40: error[E0513]: Effect sets include each other in a cycle: Files -> Storage -> Files.
+   3 | effects Storage = file.write("data/"), Files;
+     |                                        ^^^^^
+1 error, 0 warnings

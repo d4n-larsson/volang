@@ -1,0 +1,17 @@
+# A literal path outside the set's scopes: E0503 at check time, as if the effects were written out.
+effects Storage = file.read("data/"), file.write("data/");
+
+fn save(text: str) -> result[void] uses Storage {
+    return write_file("other/note.txt", text);
+}
+
+fn main() uses console, Storage {
+    match save("x") {
+        case ok() {
+            print("saved");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

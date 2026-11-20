@@ -1,0 +1,28 @@
+# Parameters one per line when the header is long without its clause; the clause stays after
+# `) -> Type` when that line fits, else it goes on its own line.
+fn import_rows(source_path: str, rows: list[map[str, str]], on_error: fn(int, str) -> result[void] uses console, limit: int) -> result[int] uses console {
+    var n = 0;
+    for row in rows {
+        if n < limit {
+            set n = n + len(row);
+        }
+    }
+    try on_error(n, source_path);
+    return ok(n);
+}
+
+fn export_everything_to_disk(destination_directory: str, rows: list[map[str, str]], compress: bool) -> result[int] uses console, file.read("exports/"), file.write("exports/"), file.delete("exports/") {
+    print(destination_directory);
+    if compress {
+        return ok(0);
+    }
+    return ok(len(rows));
+}
+
+fn main() uses console {
+    let n = import_rows("x", new list[map[str, str]], fn(i: int, s: str) -> result[void] {
+        print(s + str(i));
+        return ok();
+    }, 3);
+    print(str(n == ok(0)));
+}

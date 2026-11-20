@@ -31,6 +31,9 @@ import std.web.on_post;
 import std.web.request;
 import std.web.web_app;
 
+# Where the notes are kept: the database in data/, read and written.
+export effects Storage = file.read("data/"), file.write("data/");
+
 # Each worker's context: its connection to the notes database.
 export record Notes[D: effects] {
     db: Database[D];
@@ -62,7 +65,7 @@ export fn notes_app[D: effects]() -> App[Notes[D], uses D] {
 }
 
 # serve_app's setup: data/notes.db, with its table the first time.
-export fn open_notes() -> result[Notes[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
+export fn open_notes() -> result[Notes[uses Storage]] uses Storage {
     let db = try open("data/notes.db");
     try prepare(db);
     return ok(new Notes { db: db });

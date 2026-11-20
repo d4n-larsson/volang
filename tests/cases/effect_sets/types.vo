@@ -1,0 +1,36 @@
+# Sets in types: in an effect argument (scopes dropped) and in a function type (kept).
+import std.fs.make_dir;
+
+effects Storage = file.read("data/"), file.write("data/");
+
+record Store[E: effects] {
+    save: fn(str) -> result[void] uses E;
+}
+
+fn write_note(text: str) -> result[void] uses Storage {
+    return write_file("data/note.txt", text);
+}
+
+fn read_only(text: str) -> result[void] uses file.read("data/") {
+    let s = try read_file("data/note.txt");
+    let _ = s + text;
+    return ok();
+}
+
+fn keep[E: effects](s: Store[E], text: str) -> result[void] uses E {
+    return s.save(text);
+}
+
+fn run_with(save: fn(str) -> result[void] uses Storage, text: str) -> result[void] uses Storage {
+    return save(text);
+}
+
+fn main() -> result[void] uses console, Storage {
+    try make_dir("data");
+    let store: Store[uses Storage] = new Store[uses Storage] { save: write_note };
+    let a = keep(store, "one");
+    let b = run_with(write_note, "two");
+    let c = run_with(read_only, "three");
+    print(str(a == ok()) + " " + str(b == ok()) + " " + str(c == ok()));
+    return ok();
+}

@@ -1,0 +1,25 @@
+$ vo package main.vo store shared/store
+added store shared/store sha256:2a4712d532091525caf618153ec997a2add29a0f09c76a4d206e09ba251f374c
+--- stderr
+--- exit 0
+$ vo doc store.store
+effects Storage = file.read("data/"), file.write("data/")
+    Where notes are kept.
+effects Logged = console, Storage (console, file.read("data/"), file.write("data/"))
+    Storage and the console.
+fn save(text: str) -> result[void] uses Storage (file.read("data/"), file.write("data/"))
+    Saves a note in data/.
+fn save_loud(text: str) -> result[void] uses Logged (console, file.read("data/"), file.write("data/"))
+    Saves a note and says so.
+--- stderr
+--- exit 0
+$ vo doc store.store.Storage
+effects Storage = file.read("data/"), file.write("data/")
+    Where notes are kept.
+--- stderr
+--- exit 0
+$ vo doc --json store.store.save_loud
+{"v":1,"kind":"doc","module":"store.store","name":"save_loud","item":"fn","signature":"fn save_loud(text: str) -> result[void] uses Logged (console, file.read(\"data/\"), file.write(\"data/\"))","tparams":[],"params":[{"name":"text","type":"str"}],"returns":"result[void]","effects":["console","file.read(\"data/\")","file.write(\"data/\")"],"description":"Saves a note and says so."}
+{"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":1}
+--- stderr
+--- exit 0

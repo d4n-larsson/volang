@@ -1,0 +1,8 @@
+main.vo:4:4: error[E0504]: `save` gains file.delete("data/"); approve with `vo effects --update`.
+   4 | fn save(text: str) -> result[void] uses Storage {
+     |    ^^^^
+main.vo:8:4: error[E0504]: `main` gains file.delete("data/"); approve with `vo effects --update`.
+   8 | fn main() uses console, Storage {
+     |    ^^^^
+  note: main.vo:9:15: `main` calls `save`, which uses file.read("data/"), file.write("data/"), file.delete("data/").
+2 errors, 0 warnings

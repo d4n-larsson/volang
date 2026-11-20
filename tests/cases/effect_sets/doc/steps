@@ -1,0 +1,4 @@
+vo package main.vo store shared/store
+vo doc store.store
+vo doc store.store.Storage
+vo doc --json store.store.save_loud

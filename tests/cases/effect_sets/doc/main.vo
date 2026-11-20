@@ -1,0 +1,5 @@
+import store.save;
+
+fn main() uses console, file.read("data/"), file.write("data/") {
+    print(str(save("x") == ok()));
+}

@@ -1,0 +1,5 @@
+export effects Storage = file.read("data/"), file.write("data/");
+
+export fn save(text: str) -> result[void] uses Storage {
+    return write_file("data/r.txt", text);
+}

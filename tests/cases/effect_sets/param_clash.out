@@ -1,0 +1,9 @@
+param_clash.vo:2:9: warning[W0505]: Effect set `Storage` is declared but no clause uses it.
+   2 | effects Storage = file.read("data/"), file.write("data/");
+     |         ^^^^^^^
+  fix: remove `effects Storage = file.read("data/"), file.write("data/");\n`
+param_clash.vo:4:9: error[E0203]: `Storage` is already an effect set: give the effect parameter another name.
+   4 | fn each[Storage: effects](f: fn() uses Storage) uses Storage {
+     |         ^^^^^^^
+  note: param_clash.vo:2:9: `Storage` is declared here.
+1 error, 1 warning

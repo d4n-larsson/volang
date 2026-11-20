@@ -1,0 +1,12 @@
+# An effect parameter may not take the name of a set in scope (vo has no shadowing): E0203.
+effects Storage = file.read("data/"), file.write("data/");
+
+fn each[Storage: effects](f: fn() uses Storage) uses Storage {
+    f();
+}
+
+fn main() uses console {
+    each(fn() {
+        print("hi");
+    });
+}

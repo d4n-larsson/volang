@@ -6,11 +6,11 @@ $ vo run --seed 1 --record r.jsonl main.vo -- bin
 $ vo replay r.jsonl
 --- stderr
 note: the program differs from the recorded one (recorded main.vo)
-std/process.vo:44:23: runtime error[R0014]: The program runs `bin/args bin extra`, but the recording has a run of `bin/args bin` next: replay the program that was recorded, or record this one.
-  44 |     return decode(try __run(argv, input, env));
+std/process.vo:45:23: runtime error[R0014]: The program runs `bin/args bin extra`, but the recording has a run of `bin/args bin` next: replay the program that was recorded, or record this one.
+  45 |     return decode(try __run(argv, input, env));
      |                       ^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at run_with (std/process.vo:44:23)
+  at run_with (std/process.vo:45:23)
       program: str = "bin/args", args: list[str] = ["bin", "extra"], input: str = "", env: list[str] = [], argv: list[str] = ["bin/args", "bin", "extra"]
   at run (std/process.vo:34:12)
       program: str = "bin/args", args: list[str] = ["bin", "extra"]

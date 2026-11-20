@@ -1,0 +1,8 @@
+use.vo:7:12: runtime error[R0010]: file.write("other/note.txt") is not allowed: `save` declares file.read("data/"), file.write("data/").
+   7 |     return write_file(path, text);
+     |            ^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at save (use.vo:7:12)
+      path: str = "other/note.txt", text: str = "no"
+  at main (use.vo:33:9)
+      elsewhere: str = "other/note.txt"

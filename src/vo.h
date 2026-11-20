@@ -299,6 +299,7 @@
 #define N_FN_TYPE (51) /* type node: A param type nodes vec, B return type node|0, C N_USES|0 */
 #define N_ANNOTATION (53) /* spec 012: `@NAME(STR, ...)`: A name node, B vec of N_STR; an item, before the item it annotates */
 #define N_NEW_COLL (54) /* spec 014: `new ordered_map[K, V]` etc.: A the collection type node */
+#define N_EFFECTS (55) /* spec 030: `effects Name = e, ...;`: A name node, B N_USES of the written effects, C expanded EffSet | 0, D 1 while expanding (cycle check), E 1 once a clause or set names it */
 #define N_CALL_VALUE (52) /* A callee expr, B args vec, C how (CV_*), D field index (CV_FIELD) */
 #define TPC_NONE (0)
 #define TPC_ORDERED (1)
@@ -491,6 +492,7 @@
 #define SYM_VARIANT (3)
 #define SYM_LOCAL (4)
 #define SYM_TPARAM (5) /* a type parameter: SY_TYPE is its TY_PARAM */
+#define SYM_EFFECTS (6) /* spec 030: an effect set (SY_DECL its N_EFFECTS) */
 #define SYF_MUT (1)
 #define SYF_USED (2)
 
@@ -1352,6 +1354,10 @@ extern Fx *item_fx(Node *item);
 extern void fx_declare(Node *item);
 extern EffSet *fx_build_set(Node *uses, Fx *fx);
 extern void fx_unknown_effect(Node *eff);
+extern void fx_expand_sets(Vec *items);
+extern EffSet *fx_set_of(Node *decl, Node *at);
+extern int fx_names_set(Node *uses);
+extern void fx_render_written(SB *sb, Node *uses);
 extern void fx_begin(Node *item);
 extern Fx *fx_swap(Fx *fx);
 extern void fx_value_call(EffSet *effects);

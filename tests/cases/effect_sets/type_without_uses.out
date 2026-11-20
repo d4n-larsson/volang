@@ -1,0 +1,5 @@
+type_without_uses.vo:8:19: error[E0327]: Effects in a type are written last, after `uses`: `uses Storage`.
+   8 | fn id_of(s: Store[Storage]) -> int {
+     |                   ^^^^^^^
+  fix: insert `uses `
+1 error, 0 warnings

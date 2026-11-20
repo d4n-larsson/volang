@@ -792,6 +792,7 @@ void define_item(Node *item)
     case N_FN: kind = SYM_FN; break;
     case N_RECORD: kind = SYM_RECORD; break;
     case N_VARIANT: kind = SYM_VARIANT; break;
+    case N_EFFECTS: kind = SYM_EFFECTS; break;
     default: return;
     }
     Node *nn = item->a.n;
@@ -1049,7 +1050,7 @@ static void check_export_types(Vec *items)
         if (it->kind == N_FN) {
             for (long j = 0; j < it->b.v->n; j++) export_type(((Node *)vec_get(it->b.v, j))->b.n, it);
             export_type(it->c.n, it);
-        } else { /* fields or cases; comments are skipped */
+        } else if (it->kind != N_EFFECTS) { /* fields or cases; comments are skipped */
             for (long j = 0; j < it->b.v->n; j++) {
                 Node *m = vec_get(it->b.v, j);
                 if (m->kind == N_FIELD_DECL || m->kind == N_CASE_DECL) export_type(m->b.n, it);
@@ -1203,6 +1204,7 @@ void check_items(int file, int mode)
     Vec *items = f->ast->a.v;
     for (long i = 0; i < items->n; i++) define_item(vec_get(items, i));
     f->scope = ck_scope;
+    fx_expand_sets(items); /* spec 030: before any clause names them */
     for (long i = 0; i < items->n; i++) resolve_item(ck_item_set(vec_get(items, i)));
     check_export_types(items);
     check_tests_unique(items);

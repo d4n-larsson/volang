@@ -11,6 +11,7 @@ import std.sqlite.query;
 import std.sqlite.sql;
 import std.web.App;
 import std.web.ErrorStatus;
+import std.web.NoInput;
 import std.web.Route;
 import std.web.Step;
 import std.web.created;
@@ -22,8 +23,11 @@ import std.web.on_post;
 import std.web.on_put;
 import std.web.serve_app;
 
+# The inventory database in data/, read and written by every operation.
+effects Storage = file.read("data/"), file.write("data/");
+
 record Store {
-    db: Database[uses file.read, file.write];
+    db: Database[uses Storage];
 }
 
 record Item {
@@ -56,12 +60,49 @@ record Change {
     body: Fields;
 }
 
+record BySku {
+    sku: str;
+}
+
+record Delta {
+    @range(-10000, 10000)
+    delta: int;
+}
+
+record Adjust {
+    id: int;
+    body: Delta;
+}
+
+record NewName {
+    @size(1, 50)
+    name: str;
+}
+
+record Rename {
+    id: int;
+    body: NewName;
+}
+
+record Ids {
+    @size(1, 100)
+    ids: list[int];
+}
+
+record BulkDelete {
+    body: Ids;
+}
+
+record Count {
+    count: int;
+}
+
 record Filter {
     @default(-1)
     min_quantity: int;
 }
 
-fn open_store() -> result[Store] uses file.read("data/"), file.write("data/") {
+fn open_store() -> result[Store] uses Storage {
     let db = try open("data/inventory.db");
     let _ = try exec(
         db,
@@ -82,7 +123,7 @@ fn item_of(row: Row) -> result[Item] {
     });
 }
 
-fn find_item(s: Store, id: int) -> result[Item] uses file.read("data/"), file.write("data/") {
+fn find_item(s: Store, id: int) -> result[Item] uses Storage {
     let rows = try query(s.db, sql("select id, sku, name, quantity from items where id = ?"), [
         Value.integer(id)
     ]);
@@ -99,7 +140,7 @@ fn unique(e: str) -> str {
     return e;
 }
 
-fn list_items(s: Store, input: Filter) -> result[Response] uses file.read("data/"), file.write("data/") {
+fn list_items(s: Store, input: Filter) -> result[Response] uses Storage {
     let out = new list[Item];
     for row in try query(
         s.db,
@@ -111,7 +152,7 @@ fn list_items(s: Store, input: Filter) -> result[Response] uses file.read("data/
     return ok(json_reply(200, out));
 }
 
-fn add(s: Store, input: NewItem) -> result[Response] uses file.read("data/"), file.write("data/") {
+fn add(s: Store, input: NewItem) -> result[Response] uses Storage {
     let f = input.body;
     match exec(s.db, sql("insert into items (sku, name, quantity) values (?, ?, ?)"), [
         Value.text(f.sku),
@@ -132,11 +173,11 @@ fn add(s: Store, input: NewItem) -> result[Response] uses file.read("data/"), fi
     }
 }
 
-fn show(s: Store, input: ItemId) -> result[Response] uses file.read("data/"), file.write("data/") {
+fn show(s: Store, input: ItemId) -> result[Response] uses Storage {
     return ok(json_reply(200, try find_item(s, input.id)));
 }
 
-fn change(s: Store, input: Change) -> result[Response] uses file.read("data/"), file.write("data/") {
+fn change(s: Store, input: Change) -> result[Response] uses Storage {
     let _ = try find_item(s, input.id);
     let f = input.body;
     match exec(s.db, sql("update items set sku = ?, name = ?, quantity = ? where id = ?"), [
@@ -159,26 +200,85 @@ fn change(s: Store, input: Change) -> result[Response] uses file.read("data/"), 
     }
 }
 
-fn remove_item(s: Store, input: ItemId) -> result[Response] uses file.read("data/"), file.write("data/") {
+fn remove_item(s: Store, input: ItemId) -> result[Response] uses Storage {
     let _ = try find_item(s, input.id);
     let _ = try exec(s.db, sql("delete from items where id = ?"), [Value.integer(input.id)]);
     return ok(no_content());
 }
 
-fn routes() -> list[Route[Store, uses file.read, file.write]] {
+fn by_sku(s: Store, input: BySku) -> result[Response] uses Storage {
+    let rows = try query(s.db, sql("select id, sku, name, quantity from items where sku = ?"), [
+        Value.text(input.sku)
+    ]);
+    if len(rows) == 0 {
+        return err("not_found: no item with sku " + input.sku);
+    }
+    return ok(json_reply(200, try item_of(rows[0])));
+}
+
+fn adjust(s: Store, input: Adjust) -> result[Response] uses Storage {
+    let item = try find_item(s, input.id);
+    let quantity = item.quantity + input.body.delta;
+    if quantity < 0 or quantity > 10000 {
+        return err("unprocessable: the quantity would be " + str(quantity));
+    }
+    let _ = try exec(s.db, sql("update items set quantity = ? where id = ?"), [
+        Value.integer(quantity),
+        Value.integer(input.id)
+    ]);
+    return ok(json_reply(200, new Item {
+        id: item.id,
+        sku: item.sku,
+        name: item.name,
+        quantity: quantity
+    }));
+}
+
+fn count(s: Store, input: NoInput) -> result[Response] uses Storage {
+    let rows = try query(s.db, sql("select count(*) as n from items"), new list[Value]);
+    return ok(json_reply(200, new Count { count: try get_int(rows[0], "n") }));
+}
+
+fn rename_item(s: Store, input: Rename) -> result[Response] uses Storage {
+    let item = try find_item(s, input.id);
+    let _ = try exec(s.db, sql("update items set name = ? where id = ?"), [
+        Value.text(input.body.name),
+        Value.integer(input.id)
+    ]);
+    return ok(json_reply(200, new Item {
+        id: item.id,
+        sku: item.sku,
+        name: input.body.name,
+        quantity: item.quantity
+    }));
+}
+
+fn delete_many(s: Store, input: BulkDelete) -> result[Response] uses Storage {
+    for id in input.body.ids {
+        let _ = try exec(s.db, sql("delete from items where id = ?"), [Value.integer(id)]);
+    }
+    return ok(no_content());
+}
+
+fn routes() -> list[Route[Store, uses Storage]] {
     return [
         on_get("/items", list_items),
         on_post("/items", add),
         on_get("/items/{id}", show),
         on_put("/items/{id}", change),
-        on_delete("/items/{id}", remove_item)
+        on_delete("/items/{id}", remove_item),
+        on_get("/skus/{sku}", by_sku),
+        on_post("/items/{id}/adjust", adjust),
+        on_get("/stats/count", count),
+        on_post("/items/{id}/rename", rename_item),
+        on_post("/bulk/delete", delete_many)
     ];
 }
 
-fn main() -> result[void] uses file.read("data/"), file.write("data/"), serve("8765") {
+fn main() -> result[void] uses serve("8765"), Storage {
     return serve_app("8765", 2, open_store, new App {
         routes: routes(),
-        steps: new list[Step[Store, uses file.read, file.write]],
+        steps: new list[Step[Store, uses Storage]],
         errors: new list[ErrorStatus]
     });
 }

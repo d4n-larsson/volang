@@ -1,0 +1,5 @@
+effects Nothing = ;
+
+fn main() uses console {
+    print("hi");
+}

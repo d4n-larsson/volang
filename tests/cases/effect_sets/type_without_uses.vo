@@ -1,0 +1,14 @@
+# A set as a type's effect argument is written after `uses`, as effects are: E0327 with the fix.
+effects Storage = file.read("data/"), file.write("data/");
+
+record Store[E: effects] {
+    id: int;
+}
+
+fn id_of(s: Store[Storage]) -> int {
+    return s.id;
+}
+
+fn main() uses console {
+    print(str(id_of(new Store[uses Storage] { id: 1 })));
+}

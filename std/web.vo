@@ -90,35 +90,54 @@ export record HealthCheck[C, E: effects] {
 # A GET route: requests for pattern ("/notes/{id}": literal segments and {variables}) are answered by op with the input bound from the request.
 #     on_get("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).pattern is "/notes"
 @allow("W0702", "one module per import path: std.web is one file")
-export fn on_get[C, I: json, E: effects](pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+export fn on_get[C, I: json, E: effects](
+    pattern: str,
+    op: fn(C, I) -> result[Response] uses E
+) -> Route[C, E] {
     return route("GET", pattern, op);
 }
 
 # A POST route (see on_get).
 #     on_post("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "POST"
-export fn on_post[C, I: json, E: effects](pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+export fn on_post[C, I: json, E: effects](
+    pattern: str,
+    op: fn(C, I) -> result[Response] uses E
+) -> Route[C, E] {
     return route("POST", pattern, op);
 }
 
 # A PUT route (see on_get).
 #     on_put("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "PUT"
-export fn on_put[C, I: json, E: effects](pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+export fn on_put[C, I: json, E: effects](
+    pattern: str,
+    op: fn(C, I) -> result[Response] uses E
+) -> Route[C, E] {
     return route("PUT", pattern, op);
 }
 
 # A PATCH route (see on_get).
 #     on_patch("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "PATCH"
-export fn on_patch[C, I: json, E: effects](pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+export fn on_patch[C, I: json, E: effects](
+    pattern: str,
+    op: fn(C, I) -> result[Response] uses E
+) -> Route[C, E] {
     return route("PATCH", pattern, op);
 }
 
 # A DELETE route (see on_get).
 #     on_delete("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "DELETE"
-export fn on_delete[C, I: json, E: effects](pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+export fn on_delete[C, I: json, E: effects](
+    pattern: str,
+    op: fn(C, I) -> result[Response] uses E
+) -> Route[C, E] {
     return route("DELETE", pattern, op);
 }
 
-fn route[C, I: json, E: effects](method: str, pattern: str, op: fn(C, I) -> result[Response] uses E) -> Route[C, E] {
+fn route[C, I: json, E: effects](
+    method: str,
+    pattern: str,
+    op: fn(C, I) -> result[Response] uses E
+) -> Route[C, E] {
     let run = fn(ctx: C, r: Request, vars: map[str, str]) -> result[Response] {
         let bound: result[I] = bind(r, vars);
         match bound {
@@ -551,7 +570,12 @@ fn title(status: int) -> str {
 
 # Serves app on address with `workers` processes (as serve_workers: setup builds each worker's context once), after checking its route table; each request is answered by handle_request.
 #     serve_app("0", 1, fn() -> result[int] { return ok(0); }, new App[int] { routes: new list[Route[int]], steps: new list[Step[int]], errors: new list[ErrorStatus] }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
-export fn serve_app[C, E: effects, F: effects](address: str, workers: int, setup: fn() -> result[C] uses F, app: App[C, E]) -> result[void] uses serve, E, F {
+export fn serve_app[C, E: effects, F: effects](
+    address: str,
+    workers: int,
+    setup: fn() -> result[C] uses F,
+    app: App[C, E]
+) -> result[void] uses serve, E, F {
     try check_routes(app.routes);
     return serve_workers(address, workers, setup, fn(ctx: C, r: Request) -> Response {
         return without_vo_error(handle_request(app, ctx, r));
@@ -824,17 +848,29 @@ export fn cors[C, E: effects](origins: list[str]) -> Step[C, E] {
 
 # A step for requests under prefix: the `Authorization: Bearer TOKEN` given to check, whose ok(identity) is passed on as the request header X-Identity (bind it with @header("X-Identity")); a missing or refused token answers 401. An X-Identity a client sends is always dropped.
 #     bearer_auth("/admin", fn(n: int, token: str) -> result[str] { return ok("ada"); }).prefix is "/"
-export fn bearer_auth[C, E: effects](prefix: str, check: fn(C, str) -> result[str] uses E) -> Step[C, E] {
+export fn bearer_auth[C, E: effects](
+    prefix: str,
+    check: fn(C, str) -> result[str] uses E
+) -> Step[C, E] {
     return auth_step(prefix, "Authorization", "Bearer ", check);
 }
 
 # A step like bearer_auth with the key read from the header named header (such as "X-Api-Key").
 #     api_key_auth("/", "X-Api-Key", fn(n: int, key: str) -> result[str] { return ok("svc"); }).prefix is "/"
-export fn api_key_auth[C, E: effects](prefix: str, header: str, check: fn(C, str) -> result[str] uses E) -> Step[C, E] {
+export fn api_key_auth[C, E: effects](
+    prefix: str,
+    header: str,
+    check: fn(C, str) -> result[str] uses E
+) -> Step[C, E] {
     return auth_step(prefix, header, "", check);
 }
 
-fn auth_step[C, E: effects](prefix: str, header: str, scheme: str, check: fn(C, str) -> result[str] uses E) -> Step[C, E] {
+fn auth_step[C, E: effects](
+    prefix: str,
+    header: str,
+    scheme: str,
+    check: fn(C, str) -> result[str] uses E
+) -> Step[C, E] {
     return new Step {
         prefix: "/",
         run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {

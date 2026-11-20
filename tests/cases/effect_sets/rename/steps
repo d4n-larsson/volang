@@ -1,0 +1,4 @@
+vo effects --update main.vo
+vo edit rename main.vo Storage Files
+vo check main.vo
+keep main.vo store.vo vo.effects

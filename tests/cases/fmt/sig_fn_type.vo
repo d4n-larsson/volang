@@ -1,0 +1,13 @@
+# A function type is never broken: a parameter with a long one gets its own line, which may be long.
+fn run_all(handler: fn(map[str, str], list[int], list[str], map[str, int], str) -> map[str, list[int]] uses console, times: int) uses console {
+    for i in 0..times {
+        let _ = handler(new map[str, str], [i], new list[str], new map[str, int], "x");
+    }
+}
+
+fn main() uses console {
+    run_all(fn(a: map[str, str], b: list[int], c: list[str], d: map[str, int], e: str) -> map[str, list[int]] {
+        print(e + str(len(a) + len(b) + len(c) + len(d)));
+        return new map[str, list[int]];
+    }, 2);
+}

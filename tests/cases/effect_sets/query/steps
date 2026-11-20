@@ -1,0 +1,3 @@
+vo query refs main.vo Storage
+vo query refs main.vo App
+vo query type-at --json main.vo main.vo:6:16

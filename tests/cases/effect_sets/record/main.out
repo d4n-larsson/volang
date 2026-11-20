@@ -1,0 +1,5 @@
+main uses console, file.read("data/"), file.write("data/")
+
+main.vo:main uses console, file.read("data/"), file.write("data/")
+main.vo:save uses file.read("data/"), file.write("data/")
+0 errors, 0 warnings

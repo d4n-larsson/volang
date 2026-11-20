@@ -1,0 +1,22 @@
+# Test and property headers follow the same rules.
+fn double(n: int) -> int {
+    return n * 2;
+}
+
+test "doubling a number read from the fixtures directory gives the expected number"
+    uses file.read("fixtures/") {
+    expect_eq(double(2), 4);
+}
+
+prop "doubling keeps the order of every pair of numbers we can think of" (
+    first_number: int,
+    second_number: int
+) {
+    if first_number < second_number {
+        expect(double(first_number) < double(second_number));
+    }
+}
+
+fn main() uses console {
+    print(str(double(2)));
+}

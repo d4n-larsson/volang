@@ -1,0 +1,9 @@
+# Headers of at most 100 characters are not changed (this one is exactly 100 with ` {`).
+fn save_note_now(path: str, text: str, tags: list[str]) -> result[int] uses file.write("data/") {
+    try write_file(path, text);
+    return ok(len(tags));
+}
+
+fn main() uses console {
+    print("ok");
+}

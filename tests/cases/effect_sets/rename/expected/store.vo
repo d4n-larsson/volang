@@ -1,0 +1,5 @@
+export effects Files = file.read("data/"), file.write("data/");
+
+export fn save(text: str) -> result[void] uses Files {
+    return write_file("data/r.txt", text);
+}

@@ -1,0 +1,18 @@
+$ vo effects --update main.vo
++ main.vo:main: console, file.read("data/"), file.write("data/")
++ store.vo:save: file.read("data/"), file.write("data/")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo edit rename main.vo Storage Files
+main.vo:1:14 Storage -> Files
+main.vo:4:24 Storage -> Files
+store.vo:1:16 Storage -> Files
+store.vo:3:48 Storage -> Files
+renamed Storage to Files: 4 changes in 2 files
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0

@@ -12,6 +12,7 @@ Fx *ck_fx;             /* FX of the function or test being checked, or 0 */
 static Vec *ck_edges;  /* call edges of the current file */
 static Vec *all_edges; /* call edges of the whole program */
 static Vec *ck_lits;   /* spec 013 (L1): {fx, literal node, bit} for literal targets of the current file */
+static EffSet *fx_written(Node *uses, Vec *names, long *sets);
 
 /* A call edge: {caller FX, callee decl, call node}. */
 typedef struct Edge {
@@ -72,10 +73,18 @@ EffSet *fx_build_set(Node *uses, Fx *fx)
         Node *eff = vec_get(effects, i);
         long bit = eff->a.i;
         if (!bit) {
-            if (eff->c.n) { /* an effect parameter in scope? */
+            if (eff->c.n) { /* an effect parameter or an effect set in scope? */
                 Sym *s = scope_find(eff->c.n->a.s);
                 if (s && s->kind == SYM_TPARAM && s->type->b.i == TPC_EFFECTS) {
                     es_add_evar(set, s->type);
+                    continue;
+                }
+                if (s && s->kind == SYM_EFFECTS) { /* spec 030: its effects, expanded */
+                    eff->e.p = s->decl; /* (vo doc: the clause names a set) */
+                    q_note_sym(s, eff->c.n, RR_USE);
+                    EffSet *sub = fx_set_of(s->decl, eff);
+                    if (s->decl->d.i == 3 && fx) fx->bad = 1; /* errors inside it: reported there */
+                    set = es_union(set, sub);
                     continue;
                 }
             }
@@ -110,10 +119,85 @@ EffSet *fx_build_set(Node *uses, Fx *fx)
     return set;
 }
 
+/* Spec 030: the sets being expanded (cycle check) and the expanded set of an `effects` item: N_C the
+ * set, N_D 0 not yet, 1 expanding, 2 done, 3 done with errors inside; N_E 1 once something names it. */
+static Vec *fx_expanding;
+
+EffSet *fx_set_of(Node *decl, Node *at)
+{
+    if (at) decl->e.i = 1;
+    if (decl->d.i >= 2) return decl->c.p;
+    if (decl->d.i == 1) { /* a cycle: E0513 at the name that closes it */
+        SB *sb = sb_new();
+        long from = 0;
+        while (from < fx_expanding->n && fx_expanding->data[from].n != decl) from++;
+        for (long i = from; i < fx_expanding->n; i++) {
+            sb_str(sb, ((Node *)vec_get(fx_expanding, i))->a.n->a.s);
+            sb_cstr(sb, " -> ");
+        }
+        sb_str(sb, decl->a.n->a.s);
+        ck_err1("E0513", at, "Effect sets include each other in a cycle: $1.", sb_finish(sb));
+        decl->d.i = 3;
+        return es_new(0);
+    }
+    if (!fx_expanding) fx_expanding = vec_new();
+    decl->d.i = 1;
+    vec_push(fx_expanding, decl);
+    Fx bad = {0};
+    EffSet *set = fx_build_set(decl->b.n, &bad);
+    fx_expanding->n--;
+    decl->c.p = set;
+    if (decl->d.i == 1) decl->d.i = bad.bad ? 3 : 2;
+    return set;
+}
+
+/* Expands the file's sets once, before any clause names them (their errors reported here, once). */
+void fx_expand_sets(Vec *items)
+{
+    fx_expanding = vec_new();
+    for (long i = 0; i < items->n; i++) {
+        Node *it = vec_get(items, i);
+        if (it->kind == N_EFFECTS && it->a.n && it->b.n) fx_set_of(it, 0);
+    }
+}
+
+/* Spec 030: 1 when the clause names an effect set. */
+int fx_names_set(Node *uses)
+{
+    for (long i = 0; uses && i < uses->a.v->n; i++)
+        if (((Node *)vec_get(uses->a.v, i))->e.p) return 1;
+    return 0;
+}
+
+/* Spec 030: a valid clause as written, canonical: its effects, then its names (parameters, sets) sorted. */
+void fx_render_written(SB *sb, Node *uses)
+{
+    Vec *names = vec_new();
+    long sets;
+    EffSet *plain = fx_written(uses, names, &sets);
+    if (!es_is_empty(plain)) es_render(plain, sb);
+    for (long i = 0; i < names->n; i++) {
+        if (i || !es_is_empty(plain)) sb_cstr(sb, ", ");
+        sb_str(sb, ((Node *)vec_get(names, i))->d.s);
+    }
+}
+
 /* E0509, with a fix to the closest effect name within edit distance 2. */
 void fx_unknown_effect(Node *eff)
 {
     Str *name = eff->d.s;
+    if (eff->c.n) { /* spec 030: a capitalized name; the fix is the nearest effect parameter or set */
+        Diag *d = ck_err1("E0509", eff, "`$1` is neither an effect parameter nor an effect set in scope.", name);
+        Str *best = 0;
+        long dist = 3;
+        for (Sym *s = ck_scope; s; s = s->next) {
+            if (s->kind != SYM_EFFECTS && !(s->kind == SYM_TPARAM && s->type->b.i == TPC_EFFECTS)) continue;
+            long k = levenshtein(name->data, name->len, s->name->data, s->name->len, 2);
+            if (k < dist) dist = k, best = s->name;
+        }
+        if (best) diag_add_fix(d, (int)eff->file, eff->start, eff->end, best);
+        return;
+    }
     Diag *d = ck_err1(
         "E0509", eff, "`$1` is not an effect: use console, input, file.read, file.write, file.delete, net, clock, random, env, serve or process.",
         name);
@@ -352,6 +436,15 @@ void fx_file_end(Vec *items)
     } while (changed);
     for (long i = 0; i < items->n; i++) fx_report(vec_get(items, i)); /* report */
     fx_report_literals(items);
+    for (long i = 0; i < items->n; i++) { /* spec 030: W0505, a private set nothing names */
+        Node *it = vec_get(items, i);
+        if (it->kind != N_EFFECTS || (it->flags & NF_EXPORT) || it->e.i || !it->a.n) continue;
+        Diag *d = ck_warn("W0505", it->a.n, msg("Effect set `$1` is declared but no clause uses it.", it->a.n->a.s, 0, 0));
+        FileRec *f = file_get((int)it->file);
+        long end = it->end;
+        if (end < f->len && f->text[end] == '\n') end++;
+        diag_add_fix(d, (int)it->file, it->start, end, str_from_cstr(""));
+    }
 }
 
 /* `name` for a function, `test "name"` for a test, as a str. */
@@ -389,8 +482,43 @@ Diag *fx_diag(char *code, int sev, Node *item, char *tmpl, EffSet *set)
     return diag_add(code, sev, (int)item->file, start, end, m);
 }
 
+static void fx_fix_text(Diag *d, Node *item, EffSet *set, Vec *names);
+
 /* A fix that makes the item's `uses` clause declare exactly set (removing the clause when empty). */
 void fx_fix_clause(Diag *d, Node *item, EffSet *set)
+{
+    fx_fix_text(d, item, set, 0);
+}
+
+/* Spec 030: a clause's written parts: the set of its effects written directly (returned) and, in names,
+ * its capitalized names (effect parameters and sets) sorted; *sets counts the sets among them. */
+static EffSet *fx_written(Node *uses, Vec *names, long *sets)
+{
+    Node *tmp = alloc(NODE_SIZE);
+    tmp->kind = N_USES;
+    tmp->a.v = vec_new();
+    *sets = 0;
+    for (long i = 0; uses && i < uses->a.v->n; i++) {
+        Node *e = vec_get(uses->a.v, i);
+        if (!e->c.n) {
+            vec_push(tmp->a.v, e);
+            continue;
+        }
+        Sym *s = scope_find(e->c.n->a.s);
+        if (s && s->kind == SYM_EFFECTS) (*sets)++;
+        long j = names->n;
+        vec_push(names, e);
+        while (j > 0 && str_cmp(((Node *)names->data[j - 1].p)->d.s, e->d.s) > 0) {
+            names->data[j] = names->data[j - 1];
+            j--;
+        }
+        names->data[j].p = e;
+    }
+    return fx_build_set(tmp, 0);
+}
+
+/* `uses SET, Name, ...` (names: N_EFFECT nodes) as the item's clause, or no clause when both are empty. */
+static void fx_fix_text(Diag *d, Node *item, EffSet *set, Vec *names)
 {
     Node *uses = item_fx(item)->uses;
     Node *body = item->kind == N_FN ? item->d.n : item->b.n; /* N_D of a function, N_B of a test */
@@ -407,9 +535,14 @@ void fx_fix_clause(Diag *d, Node *item, EffSet *set)
         sb_cstr(sb, ") ");
         from = ret->start;
     }
-    if (!es_is_empty(set)) {
+    long nn = names ? names->n : 0;
+    if (!es_is_empty(set) || nn) {
         sb_cstr(sb, "uses ");
-        es_render(set, sb);
+        if (!es_is_empty(set)) es_render(set, sb);
+        for (long i = 0; i < nn; i++) {
+            if (i || !es_is_empty(set)) sb_cstr(sb, ", ");
+            sb_str(sb, ((Node *)vec_get(names, i))->d.s);
+        }
         sb_cstr(sb, " ");
     }
     diag_add_fix(d, (int)item->file, from, at, sb_finish(sb));
@@ -459,11 +592,17 @@ void fx_report(Node *item)
 {
     Fx *fx = item_fx(item);
     if (!fx || fx->bad || !fx->declared || !fx->required) return;
+    Vec *names = vec_new();
+    long sets = 0;
+    EffSet *written = fx_written(fx->uses, names, &sets); /* spec 030: a clause naming sets keeps them */
     EffSet *missing = es_missing(fx->declared, fx->required);
     if (!es_is_empty(missing)) {
         int lacks = es_lacks_bits(fx->declared, missing);
         Diag *d = fx_diag(lacks ? "E0501" : "E0503", SEV_ERROR, item, lacks ? M_MISSING : M_NARROW, missing);
-        fx_fix_clause(d, item, es_union(fx->declared, fx->required));
+        if (sets)
+            fx_fix_text(d, item, es_union(written, missing), names);
+        else
+            fx_fix_clause(d, item, es_union(fx->declared, fx->required));
         fx_related(d, fx);
         return;
     }
@@ -472,6 +611,31 @@ void fx_report(Node *item)
     if (es_is_empty(unused)) return;
     if (item->kind == N_FN || item->kind == N_LAMBDA) unused = es_minus(unused, carried_evars(item, unused));
     if (es_is_empty(unused)) return;
+    if (sets) { /* W0501 for effects written directly, and for sets (and parameters) nothing needs at all */
+        EffSet *direct = es_unused(written, fx->required);
+        if (item->kind == N_FN || item->kind == N_LAMBDA) direct = es_minus(direct, carried_evars(item, direct));
+        Vec *keep = vec_new();
+        SB *dropped = sb_new();
+        if (!es_is_empty(direct)) es_render(direct, dropped);
+        for (long i = 0; i < names->n; i++) {
+            Node *e = vec_get(names, i);
+            Sym *s = scope_find(e->c.n->a.s);
+            int none = s && s->kind == SYM_EFFECTS ? es_is_empty(es_minus(fx_set_of(s->decl, 0), unused))
+                                                   : s && s->kind == SYM_TPARAM && es_has_evar(unused, s->type);
+            if (!none) {
+                vec_push(keep, e);
+                continue;
+            }
+            if (dropped->len) sb_cstr(dropped, ", ");
+            sb_str(dropped, e->d.s);
+        }
+        if (!dropped->len) return;
+        Str *m = msg("`$1` declares $2, which it never needs.", fx_item_name(item), sb_finish(dropped), 0);
+        Diag *d = fx_diag("W0501", SEV_WARNING, item, "$1", es_new(0));
+        d->msg = m;
+        fx_fix_text(d, item, es_minus(written, direct), keep);
+        return;
+    }
     Diag *d = fx_diag("W0501", SEV_WARNING, item, "`$1` declares $2, which it never needs.", unused);
     fx_fix_clause(d, item, es_minus(fx->declared, unused));
 }

@@ -1,0 +1,14 @@
+# An invalid scope inside a set is reported once, at the declaration, not at each use.
+effects Storage = file.read("../data/"), file.write("data/");
+
+fn save(text: str) -> result[void] uses Storage {
+    return write_file("data/r.txt", text);
+}
+
+fn load() -> result[str] uses Storage {
+    return read_file("data/r.txt");
+}
+
+fn main() uses console, Storage {
+    print(str(save("x") == ok()) + str(load() == ok("")));
+}

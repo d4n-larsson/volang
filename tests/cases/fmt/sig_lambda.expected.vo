@@ -1,0 +1,12 @@
+# A long anonymous-function header in a statement: its parameters one per line.
+fn main() uses console {
+    let describe = fn(
+        first_name: str,
+        last_name: str,
+        street_address: str,
+        postal_code: str
+    ) -> str {
+        return first_name + " " + last_name + ", " + street_address + " " + postal_code;
+    };
+    print(describe("Ada", "Lovelace", "1 Main Street", "12345"));
+}

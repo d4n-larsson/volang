@@ -197,6 +197,15 @@ static int is_item_kw(int kind)
     return kind >= T_FN && kind <= T_IMPORT;
 }
 
+/* Spec 030: `effects Name`: the word `effects` starts an item only when a type name follows it (it is
+ * not reserved: elsewhere it is an ordinary identifier). */
+static int p_at_effects(void)
+{
+    if (p_kind() != T_IDENT || p_kind_at(1) != T_TYPE_IDENT) return 0;
+    Token *t = p_tok();
+    return str_eq_bytes(str_from_cstr("effects"), p_text + t->start, (long)t->end - (long)t->start);
+}
+
 /* After an error in a statement: skips to the next `;` (consumed) or the enclosing `}` and clears the
  * error (returns 0); stops at an item keyword or the end of the file (returns 1, error kept). */
 static int p_sync_stmt(void)
@@ -229,7 +238,7 @@ static void p_sync_item(void)
     for (;;) {
         int k = p_kind();
         if (k == 0) break;
-        if (depth <= 0 && is_item_kw(k)) break;
+        if (depth <= 0 && (is_item_kw(k) || p_at_effects())) break;
         if (k == T_LBRACE) depth++;
         if (k == T_RBRACE) depth--;
         p_next();
@@ -1293,11 +1302,11 @@ static Node *parse_item(void)
         n->b.n = parse_block();
         break;
     }
-    case T_EXPORT: { /* spec 010: export fn|record|variant */
+    case T_EXPORT: { /* spec 010: export fn|record|variant; spec 030: export effects */
         p_next();
         int k2 = p_kind();
-        if (k2 != T_FN && k2 != T_RECORD && k2 != T_VARIANT) {
-            p_fail_c("`fn`, `record` or `variant` after `export`", "item");
+        if (k2 != T_FN && k2 != T_RECORD && k2 != T_VARIANT && !p_at_effects()) {
+            p_fail_c("`fn`, `record`, `variant` or `effects` after `export`", "item");
             return p_node(N_ERROR);
         }
         n = parse_item();
@@ -1345,6 +1354,31 @@ static Node *parse_item(void)
         }
         p_end_stmt();
         break;
+    case T_IDENT:
+        if (p_at_effects()) { /* spec 030: effects Name = e, e(...), Other; */
+            n = p_node(N_EFFECTS);
+            p_next();
+            n->a.n = p_name();
+            p_expect(T_ASSIGN);
+            if (p_failed()) goto finish;
+            long ustart = p_start();
+            Node *u = p_node(N_USES);
+            u->a.v = vec_new();
+            n->b.n = u;
+            do {
+                if (p_kind() != T_IDENT && p_kind() != T_TYPE_IDENT) {
+                    p_fail_c("an effect", "effect");
+                    goto finish;
+                }
+                Node *e = parse_effect();
+                if (!e) goto finish;
+                vec_push(u->a.v, e);
+            } while (p_accept(T_COMMA));
+            p_finish(u, ustart);
+            p_end_stmt();
+            break;
+        }
+        /* fall through */
     default:
         p_fail_c("`fn`, `record`, `variant`, `test` or `import`", "item");
         return p_node(N_ERROR);

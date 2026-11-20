@@ -1,0 +1,8 @@
+import store.Files;
+import store.save;
+
+effects App = console, Files;
+
+fn main() uses App {
+    print(str(save("x") == ok()));
+}

@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0501","name":"missing_effect","severity":"error","file":"fix_missing.vo","start":{"line":4,"col":4},"end":{"line":4,"col":8},"text":"save","message":"`save` does not declare console, which it needs.","fixes":[{"file":"fix_missing.vo","start":{"line":4,"col":36},"end":{"line":4,"col":49},"replacement":"uses console, Storage "}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -5,7 +5,7 @@
 {"v":1,"kind":"return","depth":2,"function":"list_dir","value":"ok([new Entry { name: \"a.txt\", info: Info.file(1), link: false }])"}
 {"v":1,"kind":"call","depth":2,"function":"run","file":"main.vo","start":{"line":7,"col":19},"args":[{"name":"program","value":"\"bin/args\""},{"name":"args","value":"[\"t\"]"}]}
 {"v":1,"kind":"call","depth":3,"function":"run_with","file":"std/process.vo","start":{"line":34,"col":12},"args":[{"name":"program","value":"\"bin/args\""},{"name":"args","value":"[\"t\"]"},{"name":"input","value":"\"\""},{"name":"env","value":"[]"}]}
-{"v":1,"kind":"call","depth":4,"function":"decode","file":"std/process.vo","start":{"line":44,"col":12},"args":[{"name":"text","value":"\"0\\n4\\n[t]\\n\""}]}
+{"v":1,"kind":"call","depth":4,"function":"decode","file":"std/process.vo","start":{"line":45,"col":12},"args":[{"name":"text","value":"\"0\\n4\\n[t]\\n\""}]}
 {"v":1,"kind":"return","depth":4,"function":"decode","value":"ok(new Output { code: 0, stdout: \"[t]\\n\", stderr: \"\" })"}
 {"v":1,"kind":"return","depth":3,"function":"run_with","value":"ok(new Output { code: 0, stdout: \"[t]\\n\", stderr: \"\" })"}
 {"v":1,"kind":"return","depth":2,"function":"run","value":"ok(new Output { code: 0, stdout: \"[t]\\n\", stderr: \"\" })"}

@@ -1,0 +1,14 @@
+# Sets: consecutive declarations stay together; in a clause, effects first, then names alphabetically.
+effects Storage = file.read("data/"), file.write("data/");
+export effects Network = net("api.example.com");
+effects Logs = file.write("logs/");
+
+fn sync() -> result[void] uses console, Logs, Network, Storage {
+    print("sync");
+    try write_file("logs/x", "x");
+    return write_file("data/x", "x");
+}
+
+fn each[E: effects](f: fn() uses E) uses clock, E {
+    f();
+}

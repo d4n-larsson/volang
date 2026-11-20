@@ -1,0 +1,8 @@
+import store.Storage;
+import std.fs.make_dir;
+import store.save;
+
+fn main() uses console, Storage {
+    print(str(make_dir("data") == ok()));
+    print(str(save("x") == ok()));
+}

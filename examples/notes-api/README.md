@@ -75,9 +75,10 @@ reviewer, or a tool, finds requirements without a test.
   in-memory database; the operations and `notes.vo` are generic over the database's effects
   (`Notes[D]`), so the same code runs on the file in `main` and in memory in the tests.
 - **Effects as the service's permissions.** `main` declares `serve("8080")` (this machine only; the
-  network would need `serve("0.0.0.0:8080")`), `file.read("data/")` and `file.write("data/")`, which
-  `open_notes` needs. `vo.effects` shows that only `open_notes` touches files and that the operations use
-  only the database they are given.
+  network would need `serve("0.0.0.0:8080")`) and `Storage`, the effect set `api.vo` names once:
+  `file.read("data/")` and `file.write("data/")`, which `open_notes` needs. `vo.effects` lists those
+  effects written out; it shows that only `open_notes` touches files and that the operations use only the
+  database they are given.
 - **Record and replay.** `recordings/demo.jsonl` is the session above: each worker's setup, then every
   request with its database calls and its response. `../../bin/vo replay recordings/demo.jsonl` answers
   the same requests again, one at a time, without opening a port or touching `data/`.

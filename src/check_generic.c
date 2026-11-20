@@ -15,6 +15,14 @@ void tparams_push(Vec *tparams, Node *owner)
         Node *tp = vec_get(tparams, i); /* N_TPARAM */
         Type *t = ty_make(TY_PARAM, (void *)i, tp->b.p, owner);
         if (!tp->a.n) continue;
+        Sym *set = tp->b.i == TPC_EFFECTS ? scope_find(tp->a.n->a.s) : 0;
+        if (set && set->kind == SYM_EFFECTS && !tp->e.i) { /* spec 030: one meaning per name (no shadowing) */
+            tp->e.i = 1; /* pushed again for the body: reported once */
+            Diag *d = ck_err1("E0203", tp->a.n, "`$1` is already an effect set: give the effect parameter another name.",
+                              tp->a.n->a.s);
+            Node *pn = set->node;
+            diag_add_related(d, (int)pn->file, pn->start, pn->end, msg("`$1` is declared here.", pn->a.s, 0, 0));
+        }
         Sym *s = sym_new(tp->a.n->a.s, SYM_TPARAM, owner, t, tp->a.n);
         s->flags = SYF_USED;
         scope_add(s);
@@ -192,13 +200,19 @@ Type *resolve_instance(Node *node, Node *decl, int kind, Vec *arg_nodes)
             /* unscoped effects in a type mean "in some scope", as a library function's own `uses`: the
                value's real target (a database's path) is checked at run time (spec 026, research R14) */
             EffSet *es = fx_build_set(an, 0);
-            if (es->scopes && es->scopes->n) return scoped_effect_arg_error(an, es);
+            for (long k = 0; k < an->a.v->n; k++) /* written scopes; a set's are dropped (spec 030) */
+                if (((Node *)vec_get(an->a.v, k))->b.v) return scoped_effect_arg_error(an, es);
+            for (long k = 0; es->scopes && k < es->scopes->n; k++) es->any |= (unsigned long)((EffScope *)vec_get(es->scopes, k))->bit;
+            es->scopes = 0;
             es->any |= es->mask;
             es->mask = 0;
             t = ty_make(TY_EFFSET, 0, 0, es);
         } else {
-            t = resolve_type(an);
             Node *tp = vec_get(tparams, i);
+            Sym *set = an->kind == N_TYPE_NODE && an->a.i == TY_NAMED && an->b.n ? scope_find(an->b.n->a.s) : 0;
+            if (tp->b.i == TPC_EFFECTS && set && set->kind == SYM_EFFECTS) /* `Store[Storage]`: `uses` left out */
+                return effect_arg_error(an, decl, 3);
+            t = resolve_type(an);
             int eff_param = t->kind == TY_PARAM && t->b.i == TPC_EFFECTS;
             if (tp->b.i == TPC_EFFECTS && !eff_param && !ty_bad(t)) return effect_arg_error(an, decl, 3);
             if (tp->b.i != TPC_EFFECTS && eff_param) return effect_arg_error(an, decl, 1);

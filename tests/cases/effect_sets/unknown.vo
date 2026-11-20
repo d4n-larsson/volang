@@ -1,0 +1,17 @@
+# A capitalized name that is neither an effect parameter nor a set: E0509 with the nearest name.
+effects Storage = file.read("data/"), file.write("data/");
+
+fn load() -> result[str] uses Storge {
+    return read_file("data/x");
+}
+
+fn main() uses console, Storage {
+    match load() {
+        case ok(s) {
+            print(s);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

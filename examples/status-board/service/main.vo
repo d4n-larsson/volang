@@ -12,14 +12,22 @@ import std.http.serve;
 # The answer to one request: a file of site/ for the two known paths.
 fn answer(r: Request) -> Response uses file.read("site/") {
     if r.method != "GET" and r.method != "HEAD" {
-        return new Response { status: 405, headers: [new Header { name: "Allow", value: "GET, HEAD" }], body: "" };
+        return new Response {
+            status: 405,
+            headers: [new Header { name: "Allow", value: "GET, HEAD" }],
+            body: ""
+        };
     }
     if r.path != "/status.json" and r.path != "/incidents.json" {
         return new Response { status: 404, headers: new list[Header], body: "no such page\n" };
     }
     match read_file("site" + r.path) {
         case ok(body) {
-            return new Response { status: 200, headers: [new Header { name: "Content-Type", value: "application/json" }], body: body };
+            return new Response {
+                status: 200,
+                headers: [new Header { name: "Content-Type", value: "application/json" }],
+                body: body
+            };
         }
         case err(e) {
             return new Response { status: 500, headers: new list[Header], body: e + "\n" };
@@ -35,7 +43,13 @@ fn main() -> result[void] uses console, file.read("site/"), serve("8000") {
 }
 
 fn get(path: str) -> Request {
-    return new Request { method: "GET", path: path, query: "", headers: new list[Header], body: "" };
+    return new Request {
+        method: "GET",
+        path: path,
+        query: "",
+        headers: new list[Header],
+        body: ""
+    };
 }
 
 @spec("SV-001")
@@ -49,5 +63,8 @@ test "the two pages are JSON from site/" uses file.read("site/") {
 @spec("SV-002")
 test "anything else is 404, other methods 405" uses file.read("site/") {
     expect_eq(answer(get("/secrets")).status, 404);
-    expect_eq(answer(new Request { method: "POST", path: "/status.json", query: "", headers: new list[Header], body: "" }).status, 405);
+    expect_eq(
+        answer(new Request { method: "POST", path: "/status.json", query: "", headers: new list[Header], body: "" }).status,
+        405
+    );
 }

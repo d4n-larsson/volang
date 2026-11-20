@@ -55,7 +55,10 @@ def mutate(data, rng):
                                     b"uses E", b"Stack[", b"fold(",
                                     # spec 029: field annotations, records without fields
                                     b"@size(1, 2)\n", b"@range(-1.5, ", b"@default(", b"@default([])\n",
-                                    b"@pattern(\"[a-z\")\n", b"@header(\"X\")", b"@", b"new P {}", b"{}"])
+                                    b"@pattern(\"[a-z\")\n", b"@header(\"X\")", b"@", b"new P {}", b"{}",
+                                    # spec 030: effect sets
+                                    b"\neffects S = ", b"\neffects S = file.read(\"x/\");\n", b"export effects ",
+                                    b"uses Storage", b"uses console, Storage", b"effects ", b"Storage"])
     return bytes(data)
 
 

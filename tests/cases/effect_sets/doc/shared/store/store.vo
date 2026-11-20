@@ -1,0 +1,16 @@
+# Where notes are kept.
+export effects Storage = file.read("data/"), file.write("data/");
+
+# Storage and the console.
+export effects Logged = console, Storage;
+
+# Saves a note in data/.
+export fn save(text: str) -> result[void] uses Storage {
+    return write_file("data/note.txt", text);
+}
+
+# Saves a note and says so.
+export fn save_loud(text: str) -> result[void] uses Logged {
+    print("saving");
+    return save(text);
+}
