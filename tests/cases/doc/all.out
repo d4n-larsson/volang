@@ -63,6 +63,8 @@ trim (s: str) -> str
     removes ASCII whitespace at both ends
 chars (s: str) -> list[str]
     one string per code point
+byte_at (s: str, i: int) -> int
+    byte `i`, 0 to 255, without a list; R0003 out of range
 upper, lower (s: str) -> str
     ASCII letters only
 ord (s: str) -> int

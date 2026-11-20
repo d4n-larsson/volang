@@ -120,7 +120,8 @@ A `str` is immutable UTF-8 text. Strings are compared and measured as bytes:
 
 To work with characters (Unicode code points), split the string with `chars(s)`, which returns a
 `list[str]` of one-character strings. `ord(c)` gives the code point of a one-character string and
-`chr(i)` the reverse.
+`chr(i)` the reverse. To scan a long text, read it in place: `byte_at(s, i)` is byte `i` as an `int`
+(0 to 255), and makes no list.
 
 ```vo
 fn main() uses console {

@@ -277,6 +277,13 @@ long rt_ord(Str *s, Node *node)
     return 0;
 }
 
+/* Byte i of s, 0 to 255 (R0003 out of range). */
+long rt_byte_at(Str *s, long i, Node *node)
+{
+    if (i < 0 || i >= s->len) rt_index_error(node, i, s->len);
+    return (unsigned char)s->data[i];
+}
+
 /* The one-character string for a code point (R0007 for negatives, surrogates, > 0x10FFFF). */
 Str *rt_chr(long cp, Node *node)
 {

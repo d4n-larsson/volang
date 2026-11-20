@@ -429,7 +429,7 @@ Precedence, from tightest to loosest:
 - `int` division truncates toward zero: `7 / 2` is `3`, `-7 / 2` is `-3`, `-7 % 3` is `-1`. Dividing an `int` by zero is runtime error R0002. Overflow, including `-9223372036854775807 - 2`, is R0001. `float` arithmetic follows IEEE: `1.0 / 0.0` is `inf`, `0.0 / 0.0` is `nan`.
 - `<`, `<=`, `>`, `>=` compare two `int`, two `float` or two `str` (byte order). They do not apply to `bool`.
 - `==` and `!=` work on every type and compare structurally: lists, maps, records, variants and results are equal when their contents are equal. `nan != nan`.
-- `x.field` reads a record field. Strings cannot be indexed (`s[0]` is E0308): use `slice` or `chars`. There are no methods: write `len(xs)`, not `xs.len()`.
+- `x.field` reads a record field. Strings cannot be indexed (`s[0]` is E0308): use `slice`, `chars` or `byte_at`. There are no methods: write `len(xs)`, not `xs.len()`.
 - There is no ternary `a ? b : c`, no `+=`, no `++`, no bitwise operators and no `**`.
 
 ```vo
@@ -803,6 +803,7 @@ fn main() uses console {
 | join | `(xs: list[str], sep: str) -> str` | the strings with `sep` between them |
 | trim | `(s: str) -> str` | removes ASCII whitespace at both ends |
 | chars | `(s: str) -> list[str]` | one string per code point |
+| byte_at | `(s: str, i: int) -> int` | byte `i`, 0 to 255, without a list; R0003 out of range |
 | upper, lower | `(s: str) -> str` | ASCII letters only |
 | ord | `(s: str) -> int` | code point of a one-character string (R0007 otherwise) |
 | chr | `(i: int) -> str` | the one-character string for a code point |

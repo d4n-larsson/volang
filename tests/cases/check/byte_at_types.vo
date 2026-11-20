@@ -1,0 +1,5 @@
+fn main() uses console {
+    print(str(byte_at("abc", "1")));
+    print(byte_at("abc", 1));
+    print(str(byte_at([1, 2], 0)));
+}

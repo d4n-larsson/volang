@@ -12,7 +12,7 @@ BUILTINS = ("print", "write", "eprint", "read_line", "read_all", "read_file", "w
             "now_ms", "len", "slice", "find", "split", "join", "trim", "chars", "push", "pop", "sort", "has",
             "remove", "keys", "get_or", "expect", "expect_eq", "ok", "err", "abs", "min", "max", "upper",
             "lower", "ord", "chr", "env", "random_int", "sort_by", "map", "filter", "fold", "any", "all",
-            "todo", "assume", "parse_int", "parse_float")
+            "todo", "assume", "parse_int", "parse_float", "byte_at")
 EFFECTS = ("console", "input", "file", "net", "serve", "clock", "random", "env")
 
 

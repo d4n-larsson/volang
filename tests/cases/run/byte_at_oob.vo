@@ -1,0 +1,5 @@
+fn main() uses console {
+    let s = "héllo";
+    print(str(byte_at(s, 5)));
+    print(str(byte_at(s, 6)));
+}

@@ -1,0 +1,6 @@
+byte_at_oob.vo:4:15: runtime error[R0003]: Index 6 is out of bounds for length 6.
+   4 |     print(str(byte_at(s, 6)));
+     |               ^^^^^^^^^^^^^
+trace:
+  at main (byte_at_oob.vo:4:15)
+      s: str = "héllo"

@@ -30,6 +30,7 @@
 {"v":1,"kind":"doc","module":"builtins","name":"join","item":"builtin","signature":"(xs: list[str], sep: str) -> str","description":"the strings with `sep` between them"}
 {"v":1,"kind":"doc","module":"builtins","name":"trim","item":"builtin","signature":"(s: str) -> str","description":"removes ASCII whitespace at both ends"}
 {"v":1,"kind":"doc","module":"builtins","name":"chars","item":"builtin","signature":"(s: str) -> list[str]","description":"one string per code point"}
+{"v":1,"kind":"doc","module":"builtins","name":"byte_at","item":"builtin","signature":"(s: str, i: int) -> int","description":"byte `i`, 0 to 255, without a list; R0003 out of range"}
 {"v":1,"kind":"doc","module":"builtins","name":"upper, lower","item":"builtin","signature":"(s: str) -> str","description":"ASCII letters only"}
 {"v":1,"kind":"doc","module":"builtins","name":"ord","item":"builtin","signature":"(s: str) -> int","description":"code point of a one-character string (R0007 otherwise)"}
 {"v":1,"kind":"doc","module":"builtins","name":"chr","item":"builtin","signature":"(i: int) -> str","description":"the one-character string for a code point"}

@@ -1,0 +1,27 @@
+# `byte_at(s, i)` reads one byte of a string as an int, without making a list of its characters.
+fn count_digits(s: str) -> int {
+    var n = 0;
+    for i in 0..len(s) {
+        let b = byte_at(s, i);
+        if b >= 48 and b <= 57 {
+            set n = n + 1;
+        }
+    }
+    return n;
+}
+
+fn main() uses console {
+    let s = "a1é9";
+    print(
+        str(byte_at(s, 0)) + " " + str(byte_at(s, 1)) + " " + str(byte_at(s, 2)) + " " + str(byte_at(
+            s,
+            3
+        ))
+    );
+    print(str(count_digits(s)) + " " + str(byte_at(s, len(s) - 1) == ord("9")));
+    var big = "";
+    for i in 0..100000 {
+        set big = big + str(i % 10) + ",";
+    }
+    print(str(count_digits(big)));
+}

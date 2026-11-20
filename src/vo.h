@@ -409,7 +409,8 @@
 #define B_JSON_TEXT (97) /* spec 029: __json_text(v) -> str */
 #define B_JSON_PARSE (98) /* __json_parse(s) -> result[Json] (std.json's parse_json) */
 #define B_JSON_WRITE (99) /* __json_write(j, pretty) -> result[str] (write_json, write_json_pretty) */
-#define B_LAST (99) /* the last builtin id with a btab entry */
+#define B_BYTE_AT (100) /* byte_at(s, i) -> int: one byte of a str (compiled to OPC_INDEX_BYTES) */
+#define B_LAST (100) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -2256,6 +2257,7 @@ extern long rt_abs(long v, int kind, Node *node);
 extern long rt_minmax(long a, long b, int kind, int want_max);
 extern Str *rt_case(Str *s, int upper);
 extern long rt_ord(Str *s, Node *node);
+extern long rt_byte_at(Str *s, long i, Node *node);
 extern Str *rt_chr(long cp, Node *node);
 
 /* src/rt_test.c */

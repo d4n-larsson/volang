@@ -956,6 +956,8 @@ long cexpr(Node *node, long dst)
         if (id == BI_EXPECT) return cexpect(node, dst, mark); /* spec 018 */
         if (id == B_FORMAT) return cformat(node, dst, mark); /* spec 024 */
         if (id == BI_LEN) return cunary_op(node, dst, mark, OPC_LEN, args->data[0].n, 0); /* len(x) */
+        if (id == B_BYTE_AT) /* byte_at(s, i): a str has a bytes value's layout */
+            return cpair_op(node, dst, mark, OPC_INDEX_BYTES, args->data[0].n, args->data[1].n);
         if (id == BI_HAS && args->data[0].n->type->kind == TY_MAP) /* has(m, k) (spec 014: maps only) */
             return cpair_op(node, dst, mark, OPC_HAS, args->data[0].n, args->data[1].n);
         if (id == BI_PUSH && args->data[0].n->type->kind == TY_LIST) { /* push(xs, v): no value */
