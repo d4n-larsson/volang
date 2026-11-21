@@ -1,0 +1,14 @@
+import std.fs.each_line;
+
+fn main() uses console, file.read("data/") {
+    match each_line("other/x.txt", fn(line: str) -> result[bool] {
+        return ok(true);
+    }) {
+        case ok() {
+            print("read");
+        }
+        case err(m) {
+            print(m);
+        }
+    }
+}

@@ -1,11 +1,11 @@
 $ vo run --timeout 1 --ca-file test-ca.pem main.vo -- https://127.0.0.1:{port}/slow
 --- stderr
-std/http.vo:157:16: runtime error[R0009]: Time limit of 1 s exceeded.
- 157 |         return __https_exchange(u.host, u.port, request);
+std/http.vo:167:16: runtime error[R0009]: Time limit of 1 s exceeded.
+ 167 |         return __https_exchange(u.host, u.port, request);
      |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange_raw (std/http.vo:157:16)
-  at exchange (std/http.vo:110:19)
-  at get (std/http.vo:276:12)
+  at exchange_raw (std/http.vo:167:16)
+  at exchange (std/http.vo:120:19)
+  at get (std/http.vo:290:12)
   at main (main.vo:29:14)
 --- exit 124

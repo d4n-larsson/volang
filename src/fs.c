@@ -384,3 +384,144 @@ Variant *io_fsb(long op, Str *path, Str *data)
     default: return make_result(1, (long)str_from_cstr("not supported"));
     }
 }
+
+/* ---- spec 040: a file in pieces, with no file kept open ----
+ * `__fs_block(path, offset, size)` reads up to size bytes at offset: the grant check and link rules
+ * of read_bytes, open, read, close. A result shorter than size is the end of the file. Every block is
+ * one `file_block` event in a recording, written when it is read, so a stream of any length never
+ * accumulates. `__fs_lines(path, offset)` reads a block and returns the whole lines in it, split here
+ * because a byte loop in vo would be a hundred times slower. Only regular files have offsets. */
+
+#define BLOCK_LINES (256L << 10)
+#define LINE_MAX (16L << 20)
+#define AT_EMPTY_PATH 0x1000
+
+/* Up to size bytes of path at offset, or 0 with *err the err result. */
+static Str *fs_block_read(Str *path, long offset, long size, Variant **err)
+{
+    GC_ROOT(&path);
+    long fd = rt_open_file(EF_FREAD, path, O_RDONLY | O_NONBLOCK);
+    long bad = 0, got = 0; /* bad: an errno, -1 for a file that is not a regular one */
+    char *buf = 0;
+    Str *s = 0;
+    int dir = 0;
+    if (fd >= 0) {
+        long stx[32]; /* struct statx, 256 bytes */
+        long r = vo_syscall5(SYS_statx, fd, (long)"", AT_EMPTY_PATH, STATX_TYPE, (long)stx);
+        long kind = r < 0 ? 0 : *(uint16_t *)((char *)stx + STATX_MODE_OFF) & S_IFMT;
+        dir = kind == S_IFDIR;
+        if (kind != S_IFREG) bad = -1;
+    }
+    if (fd >= 0 && !bad) {
+        buf = (char *)vo_syscall6(SYS_mmap, 0, size, 3 /* read, write */, 0x4022 /* private, anonymous, no reserve */, -1, 0);
+        if ((long)buf < 0 && (long)buf > -4096) {
+            bad = -12;
+        } else {
+            while (got < size) {
+                long r = vo_syscall4(SYS_pread64, fd, (long)buf + got, size - got, offset + got);
+                if (r <= 0) {
+                    if (r < 0 && !got) bad = r;
+                    break;
+                }
+                got += r;
+            }
+            if (!bad) s = str_new(buf, got);
+            vo_syscall2(SYS_munmap, (long)buf, size);
+        }
+    }
+    if (fd >= 0) sys_close((int)fd);
+    if (!s)
+        *err = fd >= 0 && bad == -1 && !dir ? make_err("not a regular file: read it whole with read_file")
+                                            : make_result(1, (long)msg("cannot read $1", path, 0, 0));
+    GC_UNROOT(1);
+    return s;
+}
+
+/* The block through the grant check, the recording and the replay. grow: a block of exactly `size`
+ * bytes without a line end is read again, twice as large, while it may still be one line. */
+static Str *fs_block(Str *path, long offset, long size, int grow, Variant **err)
+{
+    GC_ROOT(&path);
+    *err = 0;
+    fs_check_text(path);
+    Str *s = 0;
+    GC_ROOT(&s);
+    if (rcd_mode == 2) {
+        rt_check_path(EF_FREAD, path);
+        Event *e = rp_take(EVK_FILE_BLOCK, path);
+        if (e->result == EVR_DENIED || e->port != offset) rp_mismatch_now(EVK_FILE_BLOCK, path);
+        if (e->result == EVR_OK)
+            s = e->value.s;
+        else
+            *err = make_result(1, (long)e->value.s);
+    } else {
+        io_pend(EVK_FILE_BLOCK, path);
+        rt_check_path(EF_FREAD, path);
+        io_pend(0, 0);
+        for (;;) {
+            s = fs_block_read(path, offset, size, err);
+            if (!s || !grow || s->len < size || size > LINE_MAX) break;
+            int nl = 0;
+            for (long i = 0; i < s->len && !nl; i++) nl = s->data[i] == '\n';
+            if (nl) break;
+            size *= 2;
+        }
+        if (rcd_mode == 1) rcd_event(EVK_FILE_BLOCK, path, s ? EVR_OK : EVR_ERR, s ? s : (*err)->pay.s, offset);
+    }
+    GC_UNROOT(2);
+    return s;
+}
+
+/* __fs_block(path, offset, size) -> result[bytes] */
+Variant *io_fs_block(Str *path, long offset, long size)
+{
+    if (offset < 0 || size < 1 || size > LINE_MAX) return make_err("the chunk size must be 1 to 16777216");
+    Variant *err;
+    Str *s = fs_block(path, offset, size, 0, &err);
+    return s ? make_result(0, (long)s) : err;
+}
+
+/* __fs_lines(path, offset) -> result[list[str]]: the offset after the lines (decimal text), then
+ * the whole lines of the block at offset, without `\n` or `\r\n`. At the end of the file the rest is
+ * a line; no line at all means the end. A line that is not UTF-8, or longer than 16 MiB, is an err
+ * when it is the first of the block; otherwise the lines before it are returned and the next call
+ * starts at it (so the caller, which counts lines, can name its number). */
+Variant *io_fs_lines(Str *path, long offset)
+{
+    if (offset < 0) return make_err("bad offset");
+    Variant *err;
+    Str *s = fs_block(path, offset, BLOCK_LINES, 1, &err);
+    if (!s) return err;
+    GC_ROOT(&s);
+    List *out = list_new(64);
+    GC_ROOT(&out);
+    list_push(out, 0); /* the next offset, set at the end */
+    long start = 0, why = 0; /* why: 1 not UTF-8, 2 too long */
+    while (start < s->len) {
+        long end = start;
+        while (end < s->len && s->data[end] != '\n') end++;
+        int closed = end < s->len;
+        if (!closed && out->len > 1) break; /* the tail without a line end: the next block's first line */
+        long n = end - start;
+        if (n > LINE_MAX) {
+            why = 2;
+            break;
+        }
+        if (closed && n && s->data[end - 1] == '\r') n--;
+        if (utf8_validate(s->data + start, n) >= 0) {
+            why = 1;
+            break;
+        }
+        list_push(out, (long)str_new(s->data + start, n));
+        start = end + closed;
+    }
+    Variant *r;
+    if (why && out->len == 1) {
+        r = make_err(why == 1 ? "not UTF-8" : "longer than 16 MiB");
+    } else {
+        out->data[0].p = int_to_str(offset + start);
+        r = make_result(0, (long)out);
+    }
+    GC_UNROOT(2);
+    return r;
+}

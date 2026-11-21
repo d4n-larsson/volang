@@ -1,0 +1,62 @@
+$ vo run main.vo
+lines: [line 1] [line 2] [line 3] -> code 4, stdout [], stderr [done]
+stop: [line 1] [line 2] -> code 137, stdout [], stderr []
+fail: [line 1] [line 2] -> err the function failed at line 3
+input: [one] [two] [no line end] -> code 0, stdout [], stderr []
+env: [A=1] [B=two] -> code 0, stdout [], stderr []
+closes its output: [before closing] -> code 3, stdout [], stderr []
+not UTF-8:  -> err line 1: not UTF-8
+17 MiB on one line:  -> err line 1: longer than 16 MiB
+missing:  -> err not found
+--- stderr
+--- exit 0
+$ vo run outside.vo
+--- stderr
+std/process.vo:139:18: runtime error[R0010]: process("bin/slow_lines") is not allowed: `main` declares console, process("bin/cat_in").
+ 139 |     let id = try __proc_start(argv, input, env);
+     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at run_lines (std/process.vo:139:18)
+      program: str = "bin/slow_lines", args: list[str] = ["1", "0", "0"], input: str = "", env: list[str] = [], f: fn(str) -> result[bool] = <fn(str) -> result[bool]>, argv: list[str] = ["bin/slow_lines", "1", "0", "0"]
+  at main (outside.vo:4:11)
+--- exit 70
+$ vo run crash.vo
+line 1
+--- stderr
+crash.vo:13:23: runtime error[R0003]: Index 0 is out of bounds for length 0.
+  13 |             return ok(empty[0] == 0);
+     |                       ^^^^^^^^
+trace:
+  at anonymous function (crash.vo:13:23)
+      line: str = "line 1", empty: list[int] = []
+  at run_lines (std/process.vo:145:38)
+      program: str = "bin/slow_lines", args: list[str] = ["1000", "0.05", "0"], input: str = "", env: list[str] = [], f: fn(str) -> result[bool] uses console = <fn(str) -> result[bool] uses console>, argv: list[str] = ["bin/slow_lines", "1000", "0.05", "0"], id: int = 0, count: int = 1, line: str = "line 1"
+  at main (crash.vo:6:11)
+      empty: list[int] = []
+--- exit 70
+$ no-children
+left-over processes: 0
+$ vo run --record r.jsonl main.vo
+lines: [line 1] [line 2] [line 3] -> code 4, stdout [], stderr [done]
+stop: [line 1] [line 2] -> code 137, stdout [], stderr []
+fail: [line 1] [line 2] -> err the function failed at line 3
+input: [one] [two] [no line end] -> code 0, stdout [], stderr []
+env: [A=1] [B=two] -> code 0, stdout [], stderr []
+closes its output: [before closing] -> code 3, stdout [], stderr []
+not UTF-8:  -> err line 1: not UTF-8
+17 MiB on one line:  -> err line 1: longer than 16 MiB
+missing:  -> err not found
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+lines: [line 1] [line 2] [line 3] -> code 4, stdout [], stderr [done]
+stop: [line 1] [line 2] -> code 137, stdout [], stderr []
+fail: [line 1] [line 2] -> err the function failed at line 3
+input: [one] [two] [no line end] -> code 0, stdout [], stderr []
+env: [A=1] [B=two] -> code 0, stdout [], stderr []
+closes its output: [before closing] -> code 3, stdout [], stderr []
+not UTF-8:  -> err line 1: not UTF-8
+17 MiB on one line:  -> err line 1: longer than 16 MiB
+missing:  -> err not found
+--- stderr
+--- exit 0

@@ -1,0 +1,71 @@
+$ vo run main.vo -- {port} /plain
+status 200 (in the function: 200)
+header Content-Type: text/plain
+header Content-Length: 14
+body: 14 bytes, pieces of at most 65536: true
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /chunked
+status 200 (in the function: 200)
+header Content-Type: text/plain
+header Transfer-Encoding: chunked
+body: 22 bytes, pieces of at most 65536: true
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /close
+status 200 (in the function: 200)
+header Content-Type: text/plain
+body: 28 bytes, pieces of at most 65536: true
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /large
+status 200 (in the function: 200)
+header Content-Length: 17825792
+body: 17825792 bytes, pieces of at most 65536: true
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /status/404
+status 404 (in the function: 404)
+header Content-Length: 11
+body: 11 bytes, pieces of at most 65536: true
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /redirect
+status 302 (in the function: 0)
+header Location: /plain
+header Content-Length: 0
+body: 0 bytes, pieces of at most 65536: true
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /short
+err the response ended early after 13 bytes
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /malformed
+err malformed response: bad status line after 0 bytes
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /large stop
+status 200 (in the function: 200)
+header Content-Length: 17825792
+stopped after one piece: true
+--- stderr
+--- exit 0
+$ vo run --seed 1 --record r.jsonl main.vo -- {port} /chunked
+status 200 (in the function: 200)
+header Content-Type: text/plain
+header Transfer-Encoding: chunked
+body: 22 bytes, pieces of at most 65536: true
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+status 200 (in the function: 200)
+header Content-Type: text/plain
+header Transfer-Encoding: chunked
+body: 22 bytes, pieces of at most 65536: true
+--- stderr
+--- exit 0
+$ vo run main.vo -- {port} /plain
+err the connection was refused after 0 bytes
+--- stderr
+--- exit 0

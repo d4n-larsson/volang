@@ -159,3 +159,71 @@ export fn rename(from: str, to: str) -> result[void] uses file.write, file.delet
     let _ = try __fs(6, from, to);
     return ok();
 }
+
+# Reads a file of any size in pieces of size bytes (1 to 16777216; the last piece is shorter), calling f
+# with each (needs file.read and f's effects). f answers ok(true) to go on, ok(false) to stop (each_chunk
+# then returns ok()), or an error, which each_chunk returns. Memory does not grow with the file. Only
+# regular files: a pipe is err("not a regular file: read it whole with read_file").
+#     each_chunk("no-such-file.vo-doc", 4096, fn(piece: bytes) -> result[bool] { return ok(true); }) == err("cannot read no-such-file.vo-doc") is true
+export fn each_chunk[E: effects](
+    path: str,
+    size: int,
+    f: fn(bytes) -> result[bool] uses E
+) -> result[void] uses file.read, E {
+    var offset = 0;
+    while true {
+        let piece = try __fs_block(path, offset, size);
+        if len(piece) == 0 {
+            return ok();
+        }
+        if not try f(piece) {
+            return ok();
+        }
+        if len(piece) < size {
+            return ok();
+        }
+        set offset = offset + len(piece);
+    }
+}
+
+# Reads a text file of any size line by line, calling f with each line without its line end (\n or
+# \r\n; needs file.read and f's effects). f answers as for each_chunk. A line that is not UTF-8 or is
+# longer than 16 MiB ends the read with err("line N: ..."); the lines before it were delivered.
+#     each_line("no-such-file.vo-doc", fn(line: str) -> result[bool] { return ok(true); }) == err("cannot read no-such-file.vo-doc") is true
+export fn each_line[E: effects](path: str, f: fn(str) -> result[bool] uses E) -> result[void]
+    uses file.read, E {
+    var offset = 0;
+    var count = 0;
+    while true {
+        let got: result[list[str]] = __fs_lines(path, offset);
+        match got {
+            case ok(batch) {
+                if len(batch) == 1 or not try each_of(batch, f) {
+                    return ok();
+                }
+                set count = count + len(batch) - 1;
+                set offset = try parse_int(batch[0]);
+            }
+            case err(m) {
+                return err(line_error(m, count + 1));
+            }
+        }
+    }
+}
+
+fn each_of[E: effects](batch: list[str], f: fn(str) -> result[bool] uses E) -> result[bool] uses E {
+    # The lines of a batch (after its first element, the next offset) to f; false when f stopped.
+    for i in 1..len(batch) {
+        if not try f(batch[i]) {
+            return ok(false);
+        }
+    }
+    return ok(true);
+}
+
+fn line_error(m: str, number: int) -> str {
+    if m == "not UTF-8" or m == "longer than 16 MiB" {
+        return "line " + str(number) + ": " + m;
+    }
+    return m;
+}

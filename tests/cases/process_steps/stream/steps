@@ -1,0 +1,9 @@
+helpers
+vo run main.vo
+vo run outside.vo
+vo run crash.vo
+no-children
+vo run --record r.jsonl main.vo
+rm bin/slow_lines
+rm bin/cat_in
+vo replay r.jsonl

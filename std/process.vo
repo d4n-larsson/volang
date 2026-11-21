@@ -105,3 +105,67 @@ export fn run_with_bytes(
     }
     return decode_bytes(try __run_bytes(argv, input, env));
 }
+
+fn ended(text: str) -> result[Output] {
+    let first = find(text, "\n");
+    return ok(new Output {
+        code: try parse_int(slice(text, 0, first)),
+        stdout: "",
+        stderr: slice(text, first + 1, len(text))
+    });
+}
+
+fn stop(id: int) -> result[Output] {
+    return ended(try __proc(3, id));
+}
+
+# Runs program like run_with and calls f with each line of its standard output (without the line end)
+# as soon as the program has written it (needs process and f's effects). f answers ok(true) to go on,
+# ok(false) to stop, or an error, which run_lines returns; stopping kills the program (code 137, unless it had just ended). When
+# the output ends, run_lines waits for the program and returns its code and standard error (stdout is
+# empty). Memory does not grow with the output. There is no time limit per line.
+#     run_lines("no-such-program.vo-doc", new list[str], "", new list[str], fn(line: str) -> result[bool] { return ok(true); }) == err("not found") is true
+export fn run_lines[E: effects](
+    program: str,
+    args: list[str],
+    input: str,
+    env: list[str],
+    f: fn(str) -> result[bool] uses E
+) -> result[Output] uses process, E {
+    let argv = [program];
+    for a in args {
+        push(argv, a);
+    }
+    let id = try __proc_start(argv, input, env);
+    var count = 0;
+    while true {
+        match __proc(1, id) {
+            case ok(line) {
+                set count = count + 1;
+                if not try go_on(id, f(line)) {
+                    return stop(id);
+                }
+            }
+            case err(m) {
+                if m == "eof" {
+                    return ended(try __proc(2, id));
+                }
+                let _ = try stop(id);
+                return err("line " + str(count + 1) + ": " + m);
+            }
+        }
+    }
+}
+
+fn go_on(id: int, answer: result[bool]) -> result[bool] {
+    # The function's answer; its error after the program was stopped.
+    match answer {
+        case ok(more) {
+            return ok(more);
+        }
+        case err(m) {
+            let _ = try stop(id);
+            return err(m);
+        }
+    }
+}

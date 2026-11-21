@@ -1,0 +1,14 @@
+server http
+vo run main.vo -- {port} /plain
+vo run main.vo -- {port} /chunked
+vo run main.vo -- {port} /close
+vo run main.vo -- {port} /large
+vo run main.vo -- {port} /status/404
+vo run main.vo -- {port} /redirect
+vo run main.vo -- {port} /short
+vo run main.vo -- {port} /malformed
+vo run main.vo -- {port} /large stop
+vo run --seed 1 --record r.jsonl main.vo -- {port} /chunked
+stop-server
+vo replay r.jsonl
+vo run main.vo -- {port} /plain

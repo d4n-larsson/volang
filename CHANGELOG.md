@@ -15,6 +15,8 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
   replay.
 - `net` scopes can name a port: `net("db.internal:5432")`. A bare host still means any port. `std.http`
   obeys ported scopes too. `serve` scopes accept port `0` (a free port, for `std.tcp.listen`).
+- Streaming: `std.fs.each_line` and `each_chunk`, `std.http.send_stream` and `std.process.run_lines` read
+  files, response bodies and a program's output one piece at a time, in memory that does not grow.
 - Editor grammars in `editors/`: VS Code (TextMate), Neovim, Helix and Zed (tree-sitter), Vim.
 - Fixed: `vo impact --diff -` and `vo test --diff -` read a pipe (`git diff | vo impact main.vo --diff -`);
   before, standard input had to be a regular file.

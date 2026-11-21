@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 109 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 113 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -48,6 +48,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "byte_at", "__http_timeout", "map_err",
     "__sha256", "__hmac_sha256", "__pbkdf2_sha256", "__bytes_same", "__entropy", /* spec 035 */
     "__tcp", "__tcp_io", /* spec 039 */
+    "__fs_block", "__fs_lines", "__proc_start", "__proc", /* spec 040 */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -68,6 +69,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [101] = "i>v",  /* __http_timeout */
     [103] = "y>y", [104] = "yy>y", [105] = "yyi>y", [106] = "yy>b", [107] = "i>y", /* spec 035 */
     [108] = "iis>n", [109] = "iiy>Y", /* spec 039 */
+    [110] = "sii>Y", [112] = "SsS>n", [113] = "ii>r", /* spec 040; 111 typed loosely */
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."
@@ -313,6 +315,12 @@ Type *check_builtin(Node *call, long id, Type *expected)
         check_arg(call, 0, t_int);
         check_arg(call, 1, t_str);
         check_arg(call, 2, 0);
+        return expected ? expected : infer_error(call, expected);
+    }
+    if (id == B_FS_LINES) { /* spec 040: (path, offset) -> result[list[str]]; std.fs annotates it */
+        if (!check_argc(call, 2)) return t_error;
+        check_arg(call, 0, t_str);
+        check_arg(call, 1, t_int);
         return expected ? expected : infer_error(call, expected);
     }
     if (id == B_JSON_TEXT) { /* spec 029: __json_text(v) -> str (std.web's answers) */

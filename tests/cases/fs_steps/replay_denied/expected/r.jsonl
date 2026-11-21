@@ -1,3 +1,3 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"b998a2b42105fb81","seed":1,"clock_ms":null,"args":[]}
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"29c2dae7bc02c51b","seed":1,"clock_ms":null,"args":[]}
 {"v":1,"kind":"delete","path":"work/../keep.txt","result":"denied"}
 {"v":1,"kind":"end","status":70}

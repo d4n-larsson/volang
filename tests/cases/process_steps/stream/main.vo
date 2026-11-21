@@ -1,0 +1,55 @@
+# Spec 040: run_lines delivers a program's standard output line by line.
+import std.process.Output;
+import std.process.run_lines;
+
+record Seen {
+    lines: list[str];
+}
+
+fn follow(
+    what: str,
+    program: str,
+    args: list[str],
+    input: str,
+    env: list[str],
+    stop_at: str,
+    fail_at: str
+)
+    uses console, process("bin/bad_utf8", "bin/cat_in", "bin/close_out", "bin/env_dump", "bin/flood", "bin/missing", "bin/slow_lines", "bin/to_stderr") {
+    let seen = new Seen { lines: new list[str] };
+    let r = run_lines(program, args, input, env, fn(line: str) -> result[bool] {
+        if line == fail_at {
+            return err("the function failed at " + line);
+        }
+        push(seen.lines, "[" + line + "]");
+        return ok(line != stop_at);
+    });
+    var shown = join(seen.lines, " ");
+    if len(shown) > 60 {
+        set shown = str(len(seen.lines)) + " lines";
+    }
+    match r {
+        case ok(out) {
+            print(
+                what + ": " + shown + " -> code " + str(out.code) + ", stdout [" + out.stdout + "], stderr [" + trim(out.stderr) + "]"
+            );
+        }
+        case err(m) {
+            print(what + ": " + shown + " -> err " + m);
+        }
+    }
+}
+
+fn main()
+    uses console, process("bin/bad_utf8", "bin/cat_in", "bin/close_out", "bin/env_dump", "bin/flood", "bin/missing", "bin/slow_lines", "bin/to_stderr") {
+    let none = new list[str];
+    follow("lines", "bin/slow_lines", ["3", "0", "4"], "", none, "-", "-");
+    follow("stop", "bin/slow_lines", ["1000", "0.01", "0"], "", none, "line 2", "-");
+    follow("fail", "bin/slow_lines", ["1000", "0.01", "0"], "", none, "-", "line 3");
+    follow("input", "bin/cat_in", none, "one" + chr(13) + "\ntwo\nno line end", none, "-", "-");
+    follow("env", "bin/env_dump", none, "", ["A=1", "B=two"], "-", "-");
+    follow("closes its output", "bin/close_out", none, "", none, "-", "-");
+    follow("not UTF-8", "bin/bad_utf8", none, "", none, "-", "-");
+    follow("17 MiB on one line", "bin/flood", none, "", none, "-", "-");
+    follow("missing", "bin/missing", none, "", none, "-", "-");
+}

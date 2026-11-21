@@ -1,0 +1,20 @@
+import std.process.run_lines;
+
+fn main() uses console, process("bin/cat_in") {
+    match run_lines(
+        "bin/slow_lines",
+        ["1", "0", "0"],
+        "",
+        new list[str],
+        fn(line: str) -> result[bool] {
+            return ok(true);
+        }
+    ) {
+        case ok(out) {
+            print(str(out.code));
+        }
+        case err(m) {
+            print(m);
+        }
+    }
+}

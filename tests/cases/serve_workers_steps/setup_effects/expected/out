@@ -6,7 +6,7 @@ main.vo:13:64: runtime error[R0010]: file.read("secret.txt") is not allowed: `ma
 trace:
   at anonymous function (main.vo:13:64)
       path: str = "secret.txt"
-  at serve_workers (std/http.vo:638:12)
+  at serve_workers (std/http.vo:652:12)
       address: str = "{vport}", workers: int = 2, setup: fn() -> result[str] uses file.read = <fn() -> result[str] uses file.read>, handle: fn(str, Request) -> Response = <fn(str, Request) -> Response>
   at main (main.vo:13:9)
       path: str = "secret.txt"

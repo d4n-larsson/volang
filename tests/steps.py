@@ -12,6 +12,7 @@ each line of `steps` runs there, in order:
                                 natively or under qemu like vo; reported like a `vo` step
   rm PATH | cp A B | write PATH TEXT (TEXT with \\n and \\xNN escapes, {bytes:N}) | chmod MODE PATH
   symlink TARGET LINK | mkdir PATH | mkfifo PATH (spec 013)
+  write-bytes PATH TEXT         (spec 040) like write, with \\xNN as that byte (files that are not UTF-8)
   helpers                       (spec 017) copies tests/process_helpers/* into ./bin/
   touch PATH                    (spec 017) an empty file; \\xNN in PATH is that byte (names that are not UTF-8)
   keep PATH...                  files the case produces or changes, compared with expected/PATH
@@ -304,13 +305,17 @@ def run_case(case):
             if words[0] == "chmod":
                 os.chmod(os.path.join(work, words[2]), int(words[1], 8))
                 continue
-            if words[0] == "write":
+            if words[0] in ("write", "write-bytes"):
                 text = line.split(None, 2)[2] if len(line.split(None, 2)) > 2 else ""
                 text = re.sub(r"\{bytes:(\d+)\}", lambda m: "a" * int(m.group(1)), text)
                 text = re.sub(r"\\x([0-9a-f]{2})", lambda m: chr(int(m.group(1), 16)), text)
                 path = os.path.join(work, words[1])
                 os.makedirs(os.path.dirname(path), exist_ok=True)
-                open(path, "w", encoding="utf-8").write(text.replace("\\n", "\n"))
+                text = text.replace("\\n", "\n")
+                if words[0] == "write-bytes":  # spec 040: \xNN is that byte, not that character
+                    open(path, "wb").write(text.encode("latin-1"))
+                else:
+                    open(path, "w", encoding="utf-8").write(text)
                 continue
             env = dict(os.environ)
             while words[0] in ("env", "unset"):

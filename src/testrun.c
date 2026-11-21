@@ -638,6 +638,7 @@ long run_one_test(Node *test_in, long index_in)
             }
             sql_close_since(sql_mark); /* closed however it ended: the next test's heap starts empty */
         }
+        proc_sweep(); /* spec 040: a child a failed test was following */
         gc_mark_on_raise = 0;
         recover_point = 0;
         deadline_ms = 0;

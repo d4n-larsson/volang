@@ -4,6 +4,16 @@
 # ponytail: one request per connection (Connection: close), redirects returned, not followed; a
 # server answers one request at a time.
 
+import std.tcp.Conn;
+import std.tcp.TcpError;
+import std.tcp.close;
+import std.tcp.connect;
+import std.tcp.connect_tls;
+import std.tcp.describe;
+import std.tcp.read;
+import std.tcp.read_exact;
+import std.tcp.read_until;
+
 # One response header, as received.
 #     new Header { name: "a", value: "b" }.name is "a"
 export record Header {
@@ -236,7 +246,11 @@ fn crlf() -> str {
 fn parse_response(raw: str) -> result[Response] {
     # raw: the response framed by the runtime (spec 013): a head, then the decoded body (any bytes; the
     # caller takes it as text or bytes). The body field is left empty here.
-    let head = split(try head_text(raw), crlf());
+    return parse_head(split(try head_text(raw), crlf()));
+}
+
+fn parse_head(head: list[str]) -> result[Response] {
+    # The status line and header lines of a response, as a Response with an empty body.
     let parts = split(head[0], " ");
     if len(parts) < 2 or len(parts[0]) < 5 or slice(parts[0], 0, 5) != "HTTP/" {
         return err("malformed response: bad status line");
@@ -707,4 +721,229 @@ fn answer_bytes[E: effects](raw: str, handle: fn(BytesRequest) -> BytesResponse 
             return bad_request();
         }
     }
+}
+
+fn body_error(e: TcpError) -> str {
+    if e == TcpError.closed {
+        return "the response ended early";
+    }
+    return describe(e);
+}
+
+fn stream_send(c: Conn[uses net], text: str, wait: int) -> result[void] {
+    # std.tcp's send (this module has a send of its own): all of text, within wait ms.
+    __http_timeout(wait);
+    match __tcp_io(4, c.id, __bytes_of_text(text)) {
+        case ok(_) {
+            return ok();
+        }
+        case err(m) {
+            return err(slice(m, find(m, ": ") + 2, len(m)));
+        }
+    }
+}
+
+fn stream_line(c: Conn[uses net], wait: int) -> result[str] uses net {
+    # One line of the framing (a chunk size, a trailer), without its line end.
+    let raw = try map_err(read_until(c, __bytes_of_text(crlf()), wait), body_error);
+    if len(raw) > 1024 {
+        return err("malformed response: a chunk size line is too long");
+    }
+    match __text_of_bytes(slice(raw, 0, len(raw) - 2)) {
+        case ok(t) {
+            return ok(t);
+        }
+        case err(_) {
+            return err("malformed response: bad chunk size");
+        }
+    }
+}
+
+fn chunk_size(line: str) -> result[int] {
+    # The hexadecimal size that starts a chunk; an extension after `;` is ignored.
+    var digits = trim(line);
+    let semi = find(digits, ";");
+    if semi >= 0 {
+        set digits = trim(slice(digits, 0, semi));
+    }
+    if digits == "" or len(digits) > 15 {
+        return err("malformed response: bad chunk size");
+    }
+    var n = 0;
+    for i in 0..len(digits) {
+        let b = byte_at(digits, i);
+        var d = -1;
+        if b >= 48 and b <= 57 {
+            set d = b - 48;
+        } else if b >= 97 and b <= 102 {
+            set d = b - 87;
+        } else if b >= 65 and b <= 70 {
+            set d = b - 55;
+        }
+        if d < 0 {
+            return err("malformed response: bad chunk size");
+        }
+        set n = n * 16 + d;
+    }
+    return ok(n);
+}
+
+fn stream_sized[E: effects](
+    c: Conn[uses net],
+    head: Response,
+    size: int,
+    wait: int,
+    f: fn(Response, bytes) -> result[bool] uses E
+) -> result[bool] uses net, E {
+    # size bytes of body in pieces of at most 64 KiB; false when f stopped the stream.
+    var left = size;
+    while left > 0 {
+        let piece = try map_err(read(c, min(left, 65536), wait), body_error);
+        set left = left - len(piece);
+        if not try f(head, piece) {
+            return ok(false);
+        }
+    }
+    return ok(true);
+}
+
+fn stream_chunked[E: effects](
+    c: Conn[uses net],
+    head: Response,
+    wait: int,
+    f: fn(Response, bytes) -> result[bool] uses E
+) -> result[void] uses net, E {
+    while true {
+        let size = try chunk_size(try stream_line(c, wait));
+        if size == 0 {
+            while try stream_line(c, wait) != "" {
+            }
+            return ok();
+        }
+        if not try stream_sized(c, head, size, wait, f) {
+            return ok();
+        }
+        if try map_err(read_exact(c, 2, wait), body_error) != __bytes_of_text(crlf()) {
+            return err("malformed response: a chunk without its line end");
+        }
+    }
+}
+
+fn stream_to_close[E: effects](
+    c: Conn[uses net],
+    head: Response,
+    wait: int,
+    f: fn(Response, bytes) -> result[bool] uses E
+) -> result[void] uses net, E {
+    while true {
+        match read(c, 65536, wait) {
+            case ok(piece) {
+                if not try f(head, piece) {
+                    return ok();
+                }
+            }
+            case err(e) {
+                if e == TcpError.closed {
+                    return ok();
+                }
+                return err(describe(e));
+            }
+        }
+    }
+}
+
+fn stream_head(c: Conn[uses net], wait: int) -> result[Response] uses net {
+    # The status and headers of the response (after any 1xx responses), with an empty body.
+    while true {
+        let raw = try map_err(read_until(c, __bytes_of_text(crlf() + crlf()), wait), body_error);
+        if len(raw) > 65536 {
+            return err("the response head is larger than 64 KiB");
+        }
+        match __text_of_bytes(slice(raw, 0, len(raw) - 4)) {
+            case ok(text) {
+                let head = try parse_head(split(text, crlf()));
+                if head.status >= 200 {
+                    return ok(head);
+                }
+            }
+            case err(_) {
+                return err("a header is not UTF-8");
+            }
+        }
+    }
+}
+
+fn stream_body[E: effects](
+    c: Conn[uses net],
+    request: str,
+    wait: int,
+    f: fn(Response, bytes) -> result[bool] uses E
+) -> result[Response] uses net, E {
+    try stream_send(c, request, wait);
+    let head = try stream_head(c, wait);
+    if head.status == 204 or head.status == 304 {
+        return ok(head);
+    }
+    match header(head, "Transfer-Encoding") {
+        case ok(coding) {
+            if find(lower(coding), "chunked") >= 0 {
+                try stream_chunked(c, head, wait, f);
+                return ok(head);
+            }
+        }
+        case err(_) {
+        }
+    }
+    match header(head, "Content-Length") {
+        case ok(text) {
+            match parse_int(text) {
+                case ok(size) {
+                    if size < 0 {
+                        return err("malformed response: bad Content-Length");
+                    }
+                    let _ = try stream_sized(c, head, size, wait, f);
+                }
+                case err(_) {
+                    return err("malformed response: bad Content-Length");
+                }
+            }
+        }
+        case err(_) {
+            try stream_to_close(c, head, wait, f);
+        }
+    }
+    return ok(head);
+}
+
+# Sends a request like send and calls f with the response's status and headers (a Response with an
+# empty body) and each piece of the body (1 to 65536 bytes) as it arrives, for bodies of any size
+# (needs net and f's effects). f answers ok(true) to go on, ok(false) to stop, or an error, which
+# send_stream returns. The result is the status and headers. `timeout_ms` (1 to 600000; 0 means
+# 600000) bounds each wait for the server, not the whole transfer. Redirects are not followed.
+#     send_stream("GET", "ftp://x/", new list[Header], "", 0, fn(head: Response, piece: bytes) -> result[bool] { return ok(true); }) == err("not an http:// or https:// URL: ftp://x/") is true
+export fn send_stream[E: effects](
+    method: str,
+    url: str,
+    headers: list[Header],
+    body: str,
+    timeout_ms: int,
+    f: fn(Response, bytes) -> result[bool] uses E
+) -> result[Response] uses net, E {
+    let u = try parse_url(url);
+    let request = try request_text(method, u, headers, body);
+    if timeout_ms < 0 or timeout_ms > 600000 {
+        return err("bad timeout: " + str(timeout_ms) + " ms");
+    }
+    var wait = timeout_ms;
+    if wait == 0 {
+        set wait = 600000;
+    }
+    var dialed = connect(u.host, u.port, wait);
+    if u.tls {
+        set dialed = connect_tls(u.host, u.port, wait);
+    }
+    let c = try map_err(dialed, describe);
+    let done = stream_body(c, request, wait, f);
+    close(c);
+    return done;
 }

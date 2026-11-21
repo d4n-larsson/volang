@@ -423,7 +423,11 @@
 #define B_ENTROPY (107) /* __entropy(n) -> bytes from the system's random source */
 #define B_TCP (108) /* spec 039: __tcp(op, a, text) -> result[int], std.tcp only */
 #define B_TCP_IO (109) /* __tcp_io(op + 8 * n, id, data) -> result[bytes] */
-#define B_LAST (109) /* the last builtin id with a btab entry */
+#define B_FS_BLOCK (110) /* spec 040: __fs_block(path, offset, size) -> result[bytes] */
+#define B_FS_LINES (111) /* __fs_lines(path, offset) -> result[list[str]] (typed loosely) */
+#define B_PROC_START (112) /* __proc_start(argv, input, env) -> result[int]: a followed child */
+#define B_PROC (113) /* __proc(op, id) -> result[str]: 1 next line, 2 finish, 3 stop */
+#define B_LAST (113) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -771,7 +775,10 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define EVK_TCP_SEND (27)
 #define EVK_TCP_LISTEN (28)
 #define EVK_TCP_ACCEPT (29)
-#define EVK_LAST (29)
+#define EVK_FILE_BLOCK (30) /* spec 040: a block of a file at an offset (the port field) */
+#define EVK_PROC_LINE (31) /* a line of a followed child, or how its output ended */
+#define EVK_PROC_END (32) /* its exit status and standard error */
+#define EVK_LAST (32)
 #define EVK_WORKER_ENDED (22) /* spec 028: the request's worker ended without answering (its response is 500) */
 #define EVR_OK (0)
 #define EVR_ERR (1)
@@ -2545,6 +2552,12 @@ extern void rt_check_net(Str *host, long port);
 extern Variant *rt_tcp(long op, long a, Str *text);
 extern Variant *rt_tcp_io(long op, long id, Str *data);
 extern Event *rp_peek(long kind, Str *name);
+/* spec 040 */
+extern Variant *io_fs_block(Str *path, long offset, long size);
+extern Variant *io_fs_lines(Str *path, long offset);
+extern Variant *io_proc_start(List *argv, Str *input, List *env);
+extern Variant *io_proc(long op, long id);
+extern void proc_sweep(void);
 extern void tls_add_ca_file(char *path);
 extern Variant *io_https_exchange(Str *host, long port, Str *request);
 /* spec 018: coverage points (research R8), filled by the compiler with --coverage or --mutate */

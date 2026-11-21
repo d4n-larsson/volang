@@ -1,0 +1,46 @@
+# Spec 040: send_stream delivers a response body in pieces. Arguments: PORT PATH [stop].
+import std.http.Header;
+import std.http.Response;
+import std.http.send_stream;
+
+record Seen {
+    total: int;
+    largest: int;
+    status: int;
+}
+
+fn main() uses console, net("localhost") {
+    let a = args();
+    let seen = new Seen { total: 0, largest: 0, status: 0 };
+    let r = send_stream(
+        "GET",
+        "http://localhost:" + a[0] + a[1],
+        new list[Header],
+        "",
+        2000,
+        fn(head: Response, piece: bytes) -> result[bool] {
+            set seen.status = head.status;
+            set seen.total = seen.total + len(piece);
+            set seen.largest = max(seen.largest, len(piece));
+            return ok(len(a) < 3);
+        }
+    );
+    match r {
+        case ok(head) {
+            print("status " + str(head.status) + " (in the function: " + str(seen.status) + ")");
+            for h in head.headers {
+                print("header " + h.name + ": " + h.value);
+            }
+            if len(a) < 3 {
+                print(
+                    "body: " + str(seen.total) + " bytes, pieces of at most 65536: " + str(seen.largest <= 65536)
+                );
+            } else {
+                print("stopped after one piece: " + str(seen.total > 0 and seen.total <= 65536));
+            }
+        }
+        case err(e) {
+            print("err " + e + " after " + str(seen.total) + " bytes");
+        }
+    }
+}

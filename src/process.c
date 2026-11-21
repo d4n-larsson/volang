@@ -301,13 +301,10 @@ static Variant *rt_run(List *argv, Str *input, List *env, int raw)
     return res;
 }
 
-/* Checks the arguments (R0007) and the program against both grants (R0010), then runs it. raw (spec
- * 021, run_bytes): the output is returned as it is, not checked as UTF-8. */
-Variant *io_run(List *argv, Str *input, List *env, int raw)
+/* The argument checks (R0007) and the program against both grants (R0010) for a run of argv with
+ * env: the program as given. */
+static Str *run_check(List *argv, List *env)
 {
-    GC_ROOT(&argv);
-    GC_ROOT(&input);
-    GC_ROOT(&env);
     if (!argv->len) raise_arg("A program to run is needed.");
     Str *program = (Str *)argv->data[0].p;
     if (!program->len || has_nul(program)) raise_arg("A program must be a non-empty name or path without NUL bytes.");
@@ -321,9 +318,20 @@ Variant *io_run(List *argv, Str *input, List *env, int raw)
             raise_arg("An environment entry must be NAME=value with a non-empty NAME and no NUL byte.");
     }
     Str *name = process_name(program);
-    GC_ROOT(&program);
     io_pend(EVK_RUN, program);
     rt_check_name(EF_PROCESS, name ? name : program);
+    return program;
+}
+
+/* Checks the arguments (R0007) and the program against both grants (R0010), then runs it. raw (spec
+ * 021, run_bytes): the output is returned as it is, not checked as UTF-8. */
+Variant *io_run(List *argv, Str *input, List *env, int raw)
+{
+    GC_ROOT(&argv);
+    GC_ROOT(&input);
+    GC_ROOT(&env);
+    Str *program = run_check(argv, env);
+    GC_ROOT(&program);
     Variant *r;
     if (rcd_mode == 2) {
         r = io_replay(EVK_RUN, program, 0, argv); /* nothing starts */
@@ -333,5 +341,331 @@ Variant *io_run(List *argv, Str *input, List *env, int raw)
     }
     GC_UNROOT(1);
     GC_UNROOT(3);
+    return r;
+}
+
+/* ---- spec 040: a followed child (std.process.run_lines) ----
+ * `__proc_start` starts a program as `run_with` does and keeps it in a table; `__proc(1, id)` returns
+ * its next line of standard output as soon as it is complete, feeding its input and collecting its
+ * standard error meanwhile; `__proc(2, id)` waits for it to end after its output ended, and
+ * `__proc(3, id)` kills it (the passed function stopped the stream). Both return "CODE\nSTDERR".
+ * The loop that calls these is vo code (std/process.vo). proc_sweep ends what a stopped program or
+ * test left running. Buffers are mapped: nothing here is in the collected heap or large and static.
+ * ponytail: 16 followed children at a time; no time limit per line (the run's deadline only). */
+
+#define PROC_MAX 16
+#define LINE_MAX (16L << 20)
+
+typedef struct MBuf {
+    char *p;
+    long len, cap;
+} MBuf;
+
+typedef struct Proc {
+    int used;
+    long pid;   /* 0 in a replay */
+    long owner; /* the process that started it: a task's copy of the table owns nothing */
+    int in, out, err; /* the parent's pipe ends; -1 when closed */
+    MBuf input; /* what is still to be written starts at sent */
+    long sent;
+    MBuf line; /* standard output not yet delivered starts at pos */
+    long pos;
+    MBuf errb; /* standard error so far */
+    int over;  /* standard error passed the limit */
+    char name[256]; /* the program as given: the name in recordings */
+} Proc;
+
+static Proc procs[PROC_MAX];
+
+/* Room for need more bytes; 0 when memory cannot be mapped. */
+static int mbuf_room(MBuf *b, long need)
+{
+    if (b->cap - b->len >= need) return 1;
+    long cap = b->cap ? b->cap * 2 : 65536;
+    while (cap - b->len < need) cap *= 2;
+    long p = vo_syscall6(SYS_mmap, 0, cap, 3 /* read, write */, 0x4022 /* private, anonymous, no reserve */, -1, 0);
+    if (p < 0 && p > -4096) return 0;
+    mem_copy((char *)p, b->p, b->len);
+    if (b->p) vo_syscall2(SYS_munmap, (long)b->p, b->cap);
+    b->p = (char *)p;
+    b->cap = cap;
+    return 1;
+}
+
+static void mbuf_free(MBuf *b)
+{
+    if (b->p) vo_syscall2(SYS_munmap, (long)b->p, b->cap);
+    *b = (MBuf){0, 0, 0};
+}
+
+static void proc_free(Proc *p)
+{
+    close_fd(&p->in), close_fd(&p->out), close_fd(&p->err);
+    mbuf_free(&p->input), mbuf_free(&p->line), mbuf_free(&p->errb);
+    p->used = 0;
+}
+
+/* Kills the child's group and reaps it: its wait status. */
+static int proc_kill(Proc *p)
+{
+    int status = 0;
+    vo_syscall2(SYS_kill, -p->pid, SIGKILL);
+    vo_syscall2(SYS_kill, p->pid, SIGKILL);
+    sys_wait(p->pid, &status);
+    return status;
+}
+
+/* Ends every followed child this process started: at exit and after each test, so a stream that a
+ * runtime error or `exit` cut short leaves nothing running. */
+void proc_sweep(void)
+{
+    long me = 0;
+    for (int i = 0; i < PROC_MAX; i++) {
+        Proc *p = &procs[i];
+        if (!p->used) continue;
+        if (!me) me = sys_getpid();
+        if (p->pid > 0 && p->owner == me) proc_kill(p);
+        if (p->owner == me || !p->pid) proc_free(p);
+    }
+}
+
+/* Reads what the pipe has into b (up to limit bytes in all); the pipe is closed at its end. */
+static void proc_read(int *fd, MBuf *b, long limit, int *over)
+{
+    while (*fd >= 0) {
+        if (b->len >= limit) {
+            if (over) *over = 1;
+            char drop[4096]; /* past the limit: read and drop, so the child is not left blocked */
+            long n = over ? sys_read(*fd, drop, sizeof drop) : -E_AGAIN;
+            if (n == -E_AGAIN || !over) return;
+            if (n == -E_INTR) continue;
+            if (n <= 0) close_fd(fd);
+            continue;
+        }
+        if (!mbuf_room(b, 65536)) return;
+        long want = b->cap - b->len < limit - b->len ? b->cap - b->len : limit - b->len;
+        long n = sys_read(*fd, b->p + b->len, want);
+        if (n == -E_AGAIN) return;
+        if (n == -E_INTR) continue;
+        if (n <= 0) {
+            close_fd(fd);
+            return;
+        }
+        b->len += n;
+    }
+}
+
+/* Waits (at most tick ms; -1: until something happens) for the child's pipes and moves what it can:
+ * standard output when out is set, standard error, the input. R0009 past the run's deadline. */
+static void proc_pump(Proc *p, int out, long tick)
+{
+    PollFd fds[3];
+    int nf = 0;
+    if (out && p->out >= 0) fds[nf++] = (PollFd){p->out, POLLIN, 0};
+    if (p->err >= 0) fds[nf++] = (PollFd){p->err, POLLIN, 0};
+    if (p->in >= 0) fds[nf++] = (PollFd){p->in, POLLOUT, 0};
+    long wait = tick;
+    if (deadline_ms) {
+        long left = deadline_ms - sys_clock_ms();
+        if (left <= 0) rt_timeout((Node *)cur_node); /* (the sweep ends the child) */
+        if (wait < 0 || left < wait) wait = left;
+    }
+    long ts[2] = {wait / 1000, (wait % 1000) * 1000000};
+    vo_syscall5(SYS_ppoll, (long)fds, nf, wait < 0 ? 0 : (long)ts, 0, 8);
+    if (out) proc_read(&p->out, &p->line, LINE_MAX + 65536, 0);
+    proc_read(&p->err, &p->errb, MAX_OUTPUT, &p->over);
+    if (p->in >= 0) { /* a child that stopped reading gives EPIPE, with SIGPIPE held back and dropped */
+        unsigned long pipe_sig = 1UL << (SIGPIPE - 1), old = 0;
+        vo_syscall4(SYS_rt_sigprocmask, SIG_BLOCK, (long)&pipe_sig, (long)&old, 8);
+        long w = sys_write(p->in, p->input.p + p->sent, p->input.len - p->sent);
+        if (w > 0) p->sent += w;
+        if ((w < 0 && w != -E_AGAIN && w != -E_INTR) || p->sent >= p->input.len) close_fd(&p->in);
+        int s2 = (int)vo_syscall4(SYS_signalfd4, -1, (long)&pipe_sig, 8, O_NONBLOCK | O_CLOEXEC);
+        char info[128];
+        while (s2 >= 0 && sys_read(s2, info, sizeof info) > 0) {}
+        if (s2 >= 0) sys_close(s2);
+        vo_syscall4(SYS_rt_sigprocmask, SIG_SETMASK, (long)&old, 0, 8);
+    }
+}
+
+/* __proc_start(argv, input, env) -> result[int] */
+Variant *io_proc_start(List *argv, Str *input, List *env)
+{
+    GC_ROOT(&argv);
+    GC_ROOT(&input);
+    GC_ROOT(&env);
+    Str *program = run_check(argv, env);
+    GC_ROOT(&program);
+    Variant *r = 0;
+    GC_ROOT(&r);
+    Proc *p = 0;
+    for (int i = 0; i < PROC_MAX && !p; i++)
+        if (!procs[i].used) p = &procs[i];
+    Str *path = 0;
+    GC_ROOT(&path);
+    if (rcd_mode == 2) {
+        r = io_replay(EVK_RUN, program, 0, argv);
+        if (r->tag == 0 && !p) r = make_err("too many programs are being followed");
+    } else if (!p) {
+        r = make_err("too many programs are being followed");
+    } else if (!(path = resolve_program(program))) {
+        r = make_err("not found");
+    }
+    if (r && (r->tag || !p)) {
+        if (rcd_mode != 2) io_record(EVK_RUN, program, 0, argv, r);
+        GC_UNROOT(6);
+        return r;
+    }
+    *p = (Proc){0};
+    p->in = p->out = p->err = -1;
+    long n = program->len < 255 ? program->len : 255;
+    mem_copy(p->name, program->data, n);
+    if (rcd_mode == 2) { /* nothing starts: the lines come from the recording */
+        p->used = 1;
+        GC_UNROOT(6);
+        return make_result(0, p - procs);
+    }
+    char **av = alloc_bytes((argv->len + 1) * 8);
+    GC_ROOT(&av);
+    char **ev = alloc_bytes((env->len + 1) * 8);
+    GC_ROOT(&ev);
+    for (long i = 0; i < argv->len; i++) av[i] = ((Str *)argv->data[i].p)->data;
+    for (long i = 0; i < env->len; i++) ev[i] = ((Str *)env->data[i].p)->data;
+    int pin[2] = {-1, -1}, pout[2] = {-1, -1}, perr[2] = {-1, -1}, pex[2] = {-1, -1};
+    long pid = -1;
+    int failed = 0;
+    if (!mbuf_room(&p->input, input->len + 1) || sys_pipe(pin) < 0 || sys_pipe(pout) < 0 || sys_pipe(perr) < 0 ||
+        sys_pipe(pex) < 0) {
+        close_fd(&pin[0]), close_fd(&pin[1]), close_fd(&pout[0]), close_fd(&pout[1]);
+        close_fd(&perr[0]), close_fd(&perr[1]), close_fd(&pex[0]), close_fd(&pex[1]);
+        r = make_err("cannot run: no pipes");
+    } else { /* (as rt_run starts its child) */
+        long parent = sys_getpid();
+        pid = sys_fork();
+        if (pid == 0) child(pin[0], pout[1], perr[1], pex[1], path->data, av, ev, parent);
+        close_fd(&pin[0]), close_fd(&pout[1]), close_fd(&perr[1]), close_fd(&pex[1]);
+        if (pid > 0) {
+            int code = 0;
+            long got;
+            do {
+                got = sys_read(pex[0], &code, sizeof code);
+            } while (got == -E_INTR);
+            if (got == sizeof code) failed = code ? code : 1;
+        }
+        close_fd(&pex[0]);
+        if (pid < 0 || failed) {
+            int status = 0;
+            if (pid > 0) sys_wait(pid, &status);
+            close_fd(&pin[1]), close_fd(&pout[0]), close_fd(&perr[0]);
+            r = pid < 0             ? make_result(1, (long)msg("cannot run: error $1", int_to_str(-pid), 0, 0))
+                : failed == E_NOENT ? make_err("not found")
+                : failed == E_ACCES ? make_err("permission denied")
+                                    : make_result(1, (long)msg("cannot run: error $1", int_to_str(failed), 0, 0));
+        }
+    }
+    if (r) {
+        mbuf_free(&p->input);
+        io_record(EVK_RUN, program, 0, argv, r);
+        GC_UNROOT(8);
+        return r;
+    }
+    set_flags(pin[1], O_NONBLOCK);
+    set_flags(pout[0], O_NONBLOCK);
+    set_flags(perr[0], O_NONBLOCK);
+    p->used = 1;
+    p->pid = pid;
+    p->owner = sys_getpid();
+    p->in = pin[1], p->out = pout[0], p->err = perr[0];
+    mem_copy(p->input.p, input->data, input->len);
+    p->input.len = input->len;
+    if (!input->len) close_fd(&p->in);
+    r = make_result(0, (long)str_new("", 0));
+    io_record(EVK_RUN, program, 0, argv, r);
+    GC_UNROOT(8);
+    return make_result(0, p - procs);
+}
+
+/* The next line of standard output (without `\n` or `\r\n`), err("eof") at its end, or err for a
+ * line that is not UTF-8 or too long. */
+static Variant *proc_line(Proc *p)
+{
+    long looked = 0;
+    for (;;) {
+        char *s = p->line.p + p->pos;
+        long have = p->line.len - p->pos, n = -1;
+        for (; looked < have; looked++)
+            if (s[looked] == '\n') {
+                n = looked;
+                break;
+            }
+        long used = n + 1;
+        if (n < 0 && p->out < 0) { /* the output ended: what is left is the last line */
+            if (!have) return make_err("eof");
+            n = used = have;
+        }
+        if (n >= 0) {
+            if (n && used > n && s[n - 1] == '\r') n--;
+            Variant *r = n > LINE_MAX                  ? make_err("longer than 16 MiB")
+                         : utf8_validate(s, n) >= 0 ? make_err("not UTF-8")
+                                                    : make_result(0, (long)str_new(s, n));
+            p->pos += used;
+            if (p->pos == p->line.len) p->pos = p->line.len = 0;
+            return r;
+        }
+        if (have > LINE_MAX) return make_err("longer than 16 MiB");
+        if (p->pos) { /* slide what is left to the start before reading more */
+            for (long i = 0; i < have; i++) p->line.p[i] = s[i];
+            p->line.len = have;
+            p->pos = 0;
+        }
+        proc_pump(p, 1, -1);
+    }
+}
+
+/* "CODE\nSTDERR" for a child that ended with wait status `status`, or err as `run` gives. */
+static Variant *proc_result(Proc *p, int status)
+{
+    if (p->over) return make_err("output is larger than 16 MiB");
+    if (utf8_validate(p->errb.p, p->errb.len) >= 0) return make_err("output is not UTF-8 (run_bytes reads it)");
+    SB *sb = sb_new();
+    int_to_dec(sb, (status & 0x7f) ? 128 + (status & 0x7f) : (status >> 8) & 0xff);
+    sb_byte(sb, '\n');
+    sb_bytes(sb, p->errb.p, p->errb.len);
+    return make_result(0, (long)sb_finish(sb));
+}
+
+/* __proc(op, id) -> result[str] */
+Variant *io_proc(long op, long id)
+{
+    if (id < 0 || id >= PROC_MAX || !procs[id].used || op < 1 || op > 3) return make_err("not running");
+    Proc *p = &procs[id];
+    Str *name = str_from_cstr(p->name);
+    GC_ROOT(&name);
+    long kind = op == 1 ? EVK_PROC_LINE : EVK_PROC_END;
+    Variant *r;
+    if (rcd_mode == 2) {
+        r = rp_result(rp_take(kind, name));
+    } else if (op == 1) {
+        r = proc_line(p);
+    } else {
+        int status = 0;
+        if (op == 3) {
+            status = proc_kill(p);
+        } else { /* the output ended: wait as `run` does, still feeding input and collecting stderr */
+            close_fd(&p->out);
+            while (vo_syscall4(SYS_wait4, p->pid, (long)&status, WNOHANG, 0) != p->pid) proc_pump(p, 0, 20);
+            vo_syscall2(SYS_kill, -p->pid, SIGKILL); /* the child's group: whatever it started */
+        }
+        p->pid = 0;
+        proc_read(&p->err, &p->errb, MAX_OUTPUT, &p->over);
+        r = proc_result(p, status);
+    }
+    if (rcd_mode == 1) {
+        GC_ROOT(&r);
+        rcd_event(kind, name, r->tag ? EVR_ERR : EVR_OK, r->pay.s, 0);
+        GC_UNROOT(1);
+    }
+    if (op != 1) proc_free(p);
+    GC_UNROOT(1);
     return r;
 }

@@ -1,0 +1,15 @@
+write data/lines.txt one\x0d\ntwo\n\nthree\na\x0db\x00c\nlast
+touch data/empty.txt
+write-bytes data/bad.txt good\nalso good\n\xff\xfe\nnever\n
+write data/ten.txt 0123456789
+write data/two.txt a\nb\n
+write data/grow.txt first\n
+write other/x.txt hi\n
+mkfifo data/pipe
+vo run main.vo
+vo run outside.vo
+vo check effect.vo
+vo run --record r.jsonl main.vo
+rm data/lines.txt
+rm data/ten.txt
+vo replay r.jsonl

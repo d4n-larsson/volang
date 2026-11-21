@@ -1,0 +1,6 @@
+#!/bin/sh
+# Spec 040: prints "line N" for N from 1 to $1, pausing $2 seconds after each; a note on stderr; exits $3.
+i=1
+while [ $i -le "$1" ]; do echo "line $i"; sleep "$2"; i=$((i + 1)); done
+echo "done" >&2
+exit "$3"

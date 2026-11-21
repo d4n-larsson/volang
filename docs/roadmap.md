@@ -46,6 +46,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [037](../specs/037-editor-grammars/) | Editor grammars in `editors/`: TextMate (VS Code, and the format GitHub reads), tree-sitter (Neovim, Helix, Zed), Vim; held to the language by a check over every `.vo` file in the repository | **Implemented** ([results](../specs/037-editor-grammars/results.md)) |
 | [038](../specs/038-vo-lsp/) | `vo lsp`: the toolchain as a language server; diagnostics on unsaved text, quick fixes, hover, definition, references, rename, format, outline, each answer computed by the command it stands for in its own process | **Implemented** ([results](../specs/038-vo-lsp/results.md)) |
 | [039](../specs/039-std-tcp/) | `std.tcp`: TCP connections under the existing `net` and `serve` effects, with ports in `net` scopes (`net("db:5432")`), three reads with time limits, TLS from the first byte or as an upgrade, listen and accept, typed errors, record and replay | **Implemented** ([results](../specs/039-std-tcp/results.md)) |
+| [040](../specs/040-streaming/) | Streaming: `std.fs.each_line` and `each_chunk`, `std.http.send_stream`, `std.process.run_lines` hand a program one piece at a time through a function it passes; memory does not grow with the source; no new type | **Implemented** ([results](../specs/040-streaming/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -449,6 +450,18 @@ each wait for the peer brought in, so the three reads replay as ordinary code.
 - **Not done (on purpose):** UDP, IPv6, TLS for accepted connections, a worker pool for TCP servers,
   trying every address of a name, rebuilding `std.http` on `std.tcp`.
 - **Found on the way:** strings have no `\r` escape, so a protocol's line end is `chr(13) + "\n"`.
+
+### 040: streaming (implemented)
+
+Four functions take a function and call it once per piece: lines or chunks of a file, pieces of an HTTP
+response body, lines of a child program's output. The function answers `ok(true)`, `ok(false)` (stop) or
+an error. Each is a loop written in vo over a primitive, so nothing calls back from C. A file is never
+kept open (a block is read at an offset, opened and closed each time); `send_stream` is written on
+`std.tcp` with no new C; only a followed child is kept state, and a sweep ends any child a stopped
+program or test left behind.
+
+- **Not done (on purpose):** handles or iterators, `defer`, streaming upload, a child's output as bytes,
+  streaming JSON or SQLite rows, an incremental hash (so a large file cannot be hashed in vo yet).
 
 ## Planned after 017
 

@@ -142,6 +142,112 @@ exit 0
   program's other scopes. Granting `process("git")` grants whatever `git` can do: grant the programs you
   would run by hand.
 
+## Large inputs
+
+`read_file`, `std.http.get` and `run` return everything at once, so the whole file, body or output has
+to fit in memory (and a body in 16 MiB). For anything larger, or anything you want to see while it
+arrives, four functions hand you one piece at a time. You pass a function; it is called once per piece
+and answers `ok(true)` to go on, `ok(false)` to stop early, or an error, which becomes the result.
+Nothing is left open when the call returns, and memory does not grow with the size of the source.
+
+`each_line(path, f)` reads a text file line by line, and `each_chunk(path, size, f)` reads any file in
+pieces of `size` bytes. What the function wants to keep goes into a record or list it captures:
+
+```vo
+import std.fs.each_chunk;
+import std.fs.each_line;
+
+record Count {
+    lines: int;
+    errors: int;
+    size: int;
+}
+
+fn main() -> result[void] uses console, file.read("./"), file.write("./") {
+    try write_file("app.log", "start\nerror: disk full\nretry\nerror: disk full\nstop\n");
+    let count = new Count { lines: 0, errors: 0, size: 0 };
+    try each_line("app.log", fn(line: str) -> result[bool] {
+        set count.lines = count.lines + 1;
+        if find(line, "error") == 0 {
+            set count.errors = count.errors + 1;
+        }
+        return ok(count.errors < 2);
+    });
+    print(str(count.errors) + " errors in the first " + str(count.lines) + " lines");
+    try each_chunk("app.log", 16, fn(piece: bytes) -> result[bool] {
+        set count.size = count.size + len(piece);
+        return ok(true);
+    });
+    print(str(count.size) + " bytes");
+    return ok();
+}
+```
+
+```output
+2 errors in the first 4 lines
+51 bytes
+```
+
+`run_lines(program, args, input, env, f)` runs a program like `run_with` and calls the function with
+each line of its standard output as soon as the program has written it, so a long build shows its
+progress and can be stopped at its first error:
+
+```vo
+import std.process.run_lines;
+
+fn main() -> result[void] uses console, process("sh") {
+    let script = "echo compiling; echo linking; sleep 5; echo done";
+    let out = try run_lines("sh", ["-c", script], "", new list[str], fn(line: str) -> result[bool] {
+        print("> " + line);
+        return ok(line != "linking");
+    });
+    print("exit " + str(out.code));
+    return ok();
+}
+```
+
+```output
+> compiling
+> linking
+exit 137
+```
+
+`std.http.send_stream` takes the arguments of `send` and a function that gets the response's status
+and headers with each piece of the body, at most 64 KiB at a time, with no limit on the whole:
+
+```vo
+import std.fs.append_bytes;
+import std.http.Header;
+import std.http.Response;
+import std.http.send_stream;
+
+fn main() -> result[void] uses console, file.write("downloads/"), net("example.com") {
+    let head = try send_stream("GET", "https://example.com/big.tar", new list[Header], "", 30000, fn(head: Response, piece: bytes) -> result[bool] {
+        if head.status != 200 {
+            return ok(false);
+        }
+        try append_bytes("downloads/big.tar", piece);
+        return ok(true);
+    });
+    print("status " + str(head.status));
+    return ok();
+}
+```
+
+- The function's effects are yours to declare: the first example needs nothing more, the second needs
+  `console` because its function prints.
+- A line comes without its line end (`\n` or `\r\n`). A line that is not UTF-8, or is longer than
+  16 MiB, ends the read with `err("line N: ...")`. `each_chunk` takes a size from 1 to 16 MiB.
+- Only regular files can be read in pieces; a pipe is `err("not a regular file: read it whole with
+  read_file")`.
+- Stopping `run_lines` kills the program (its code is then 137, unless it had just ended by itself). When the output ends by itself,
+  `run_lines` waits for the program and returns its code and standard error. There is no time limit
+  per line: a silent program is bounded by `--timeout`.
+- `send_stream`'s time limit bounds each wait for the server, not the whole transfer. Redirects are
+  returned, not followed.
+- A recording holds every piece that was delivered, so it is as large as what was read.
+- Writing is already piece by piece: `append_file` and `append_bytes`. Standard input too: `read_line`.
+
 ## Replay and tests
 
 Listings, file information, results of changes and program outputs are inputs: `vo run --record`

@@ -1,0 +1,81 @@
+$ vo run main.vo
+data/lines.txt: [one] [two] [] [three] [a<CR>b<NUL>c] [last] -> ok
+data/lines.txt: [one] [two] [] [three] -> ok
+data/lines.txt: [one] [two] [] -> err the function failed at three
+data/empty.txt:  -> ok
+data/bad.txt: [good] [also good] -> err line 3: not UTF-8
+data/missing.txt:  -> err cannot read data/missing.txt
+data:  -> err cannot read data
+data/pipe:  -> err not a regular file: read it whole with read_file
+data/ten.txt by 5: 5 5 -> ok
+data/ten.txt by 4: 4 4 2 -> ok
+data/ten.txt by 100: 10 -> ok
+data/empty.txt by 4: -> ok
+data/ten.txt by 0: -> err the chunk size must be 1 to 16777216
+data/ten.txt by 16777217: -> err the chunk size must be 1 to 16777216
+data/missing.txt by 4: -> err cannot read data/missing.txt
+data/pipe by 4: -> err not a regular file: read it whole with read_file
+nested: aa ab ba bb
+growing: 4 lines, no error
+--- stderr
+--- exit 0
+$ vo run outside.vo
+--- stderr
+std/fs.vo:198:38: runtime error[R0010]: file.read("other/x.txt") is not allowed: `main` declares console, file.read("data/").
+ 198 |         let got: result[list[str]] = __fs_lines(path, offset);
+     |                                      ^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at each_line (std/fs.vo:198:38)
+      path: str = "other/x.txt", f: fn(str) -> result[bool] = <fn(str) -> result[bool]>, offset: int = 0, count: int = 0
+  at main (outside.vo:4:11)
+--- exit 70
+$ vo check effect.vo
+effect.vo:4:4: error[E0501]: `show` does not declare console, which it needs.
+   4 | fn show(path: str) uses file.read {
+     |    ^^^^
+  fix: replace with `uses console, file.read `
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo run --record r.jsonl main.vo
+data/lines.txt: [one] [two] [] [three] [a<CR>b<NUL>c] [last] -> ok
+data/lines.txt: [one] [two] [] [three] -> ok
+data/lines.txt: [one] [two] [] -> err the function failed at three
+data/empty.txt:  -> ok
+data/bad.txt: [good] [also good] -> err line 3: not UTF-8
+data/missing.txt:  -> err cannot read data/missing.txt
+data:  -> err cannot read data
+data/pipe:  -> err not a regular file: read it whole with read_file
+data/ten.txt by 5: 5 5 -> ok
+data/ten.txt by 4: 4 4 2 -> ok
+data/ten.txt by 100: 10 -> ok
+data/empty.txt by 4: -> ok
+data/ten.txt by 0: -> err the chunk size must be 1 to 16777216
+data/ten.txt by 16777217: -> err the chunk size must be 1 to 16777216
+data/missing.txt by 4: -> err cannot read data/missing.txt
+data/pipe by 4: -> err not a regular file: read it whole with read_file
+nested: aa ab ba bb
+growing: 7 lines, no error
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+data/lines.txt: [one] [two] [] [three] [a<CR>b<NUL>c] [last] -> ok
+data/lines.txt: [one] [two] [] [three] -> ok
+data/lines.txt: [one] [two] [] -> err the function failed at three
+data/empty.txt:  -> ok
+data/bad.txt: [good] [also good] -> err line 3: not UTF-8
+data/missing.txt:  -> err cannot read data/missing.txt
+data:  -> err cannot read data
+data/pipe:  -> err not a regular file: read it whole with read_file
+data/ten.txt by 5: 5 5 -> ok
+data/ten.txt by 4: 4 4 2 -> ok
+data/ten.txt by 100: 10 -> ok
+data/empty.txt by 4: -> ok
+data/ten.txt by 0: -> err the chunk size must be 1 to 16777216
+data/ten.txt by 16777217: -> err the chunk size must be 1 to 16777216
+data/missing.txt by 4: -> err cannot read data/missing.txt
+data/pipe by 4: -> err not a regular file: read it whole with read_file
+nested: aa ab ba bb
+growing: 7 lines, no error
+--- stderr
+--- exit 0

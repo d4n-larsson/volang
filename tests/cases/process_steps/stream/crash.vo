@@ -1,0 +1,23 @@
+import std.process.run_lines;
+
+# A runtime error inside the function ends the program; the child must not be left running.
+fn main() uses console, process("bin/slow_lines") {
+    let empty = new list[int];
+    match run_lines(
+        "bin/slow_lines",
+        ["1000", "0.05", "0"],
+        "",
+        new list[str],
+        fn(line: str) -> result[bool] {
+            print(line);
+            return ok(empty[0] == 0);
+        }
+    ) {
+        case ok(out) {
+            print(str(out.code));
+        }
+        case err(m) {
+            print(m);
+        }
+    }
+}

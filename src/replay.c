@@ -33,7 +33,8 @@ static const char *const ev_names[] = {0,         "read_line", "read_all",    "r
                                        "make_dir", "delete",   "rename",      "run",       "sql",
                                        "setup",   "setup_end", "worker_ended", /* spec 028 */
                                        "entropy", /* spec 035 */
-                                       "tcp_open", "tcp_tls", "tcp_recv", "tcp_send", "tcp_listen", "tcp_accept"}; /* spec 039 */
+                                       "tcp_open", "tcp_tls", "tcp_recv", "tcp_send", "tcp_listen", "tcp_accept", /* spec 039 */
+                                       "file_block", "proc_line", "proc_end"}; /* spec 040 */
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static Str *run_desc(Str *program, Str *joined);
 static const char hexd[] = "0123456789abcdef";
@@ -68,7 +69,10 @@ static const char *const d_table[] = {0,
                                       "waits for bytes from $1",
                                       "writes to $1",
                                       "listens on `$1`",
-                                      "accepts a connection on `$1`"};
+                                      "accepts a connection on `$1`",
+                                      "reads a piece of the file `$1` (another piece than recorded, or none recorded)",
+                                      "waits for a line from `$1`",
+                                      "ends `$1`"};
 static const char *const n_table[] = {0,
                                       "a line of stdin",
                                       "the rest of stdin",
@@ -98,7 +102,10 @@ static const char *const n_table[] = {0,
                                       "bytes received from $1",
                                       "a failed write to $1",
                                       "a listener on `$1`",
-                                      "a connection accepted on `$1`"};
+                                      "a connection accepted on `$1`",
+                                      "a piece of the file `$1`",
+                                      "a line from `$1`",
+                                      "the end of `$1`"};
 
 #define J_HEAD "{\"v\":1,\"kind\":\""
 #define J_CLOSE "}\n"
@@ -180,6 +187,8 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
            : kind == EVK_HTTP           ? "\",\"host\":"
            : kind == EVK_SERVE_LISTEN   ? "\",\"address\":"
            : kind == EVK_RUN            ? "\",\"program\":"
+           : kind >= EVK_PROC_LINE      ? "\",\"program\":"
+           : kind == EVK_FILE_BLOCK     ? "\",\"path\":"
            : kind >= EVK_TCP_OPEN       ? "\",\"name\":"
                                         : "\",\"path\":");
         rw_str(name->data, name->len, 0);
@@ -195,6 +204,10 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
                 rw_str(a->data, a->len, !rw_valid_utf8(a->data, a->len));
             }
             rw("]");
+        }
+        if (kind == EVK_FILE_BLOCK) { /* spec 040: where the block starts */
+            rw(",\"offset\":");
+            rw_dec(int_value);
         }
         if (kind == EVK_HTTP) { /* spec 007: the port (int_value); spec 009: the request line */
             rw(",\"port\":");
@@ -726,13 +739,13 @@ static Str *rf_line; /* ... and its whole line */
 
 static const char *const rk_keys[] = {"kind",   "program", "fingerprint", "seed", "clock_ms", "args",    "path",
                                       "name",   "result",  "value",       "status", "host",     "port",    "request",
-                                      "address", "to", "scheme", "op", "sql", 0};
+                                      "address", "to", "scheme", "op", "sql", "offset", 0};
 static long rf_args_line; /* spec 017: this line had "args" (a run event's arguments) */
 
 /* Where each string-valued key is stored (rk_keys order; 0: not a string). */
 static Str **const rf_slots[] = {&rf_kind, &rf_program, &rf_fprint, 0, 0, 0, &rf_name, &rf_name, &rf_result,
                                  &rf_value, 0, &rf_name, 0, &rf_request, &rf_name, &rf_request, &rf_scheme,
-                                 &rf_op, &rf_sql};
+                                 &rf_op, &rf_sql, 0};
 
 /* T0008 invalid_recording, exit 64. */
 void rp_bad(void)
@@ -911,7 +924,7 @@ void rp_line(char *p, char *end)
                 rf_isint = 1;
             } else if (field == 10) {
                 rf_status = v;
-            } else if (field == 12) {
+            } else if (field == 12 || field == 19) { /* spec 040: a file block's offset */
                 rf_port = v;
             }
         }
@@ -985,6 +998,7 @@ void rp_read(char *text, long len)
                     e->name = rf_sql ? rf_sql : rf_name ? rf_name : rf_op;
                     e->request = rf_line;
                 }
+                if (kind == EVK_PROC_LINE || kind == EVK_PROC_END) e->name = rf_program; /* spec 040 */
                 if (kind == EVK_RUN) { /* spec 017: the program, and the arguments joined by NUL bytes */
                     e->name = rf_program;
                     e->request = rf_args_line ? join_args(rf_args) : 0;

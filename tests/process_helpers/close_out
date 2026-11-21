@@ -1,0 +1,6 @@
+#!/bin/sh
+# Spec 040: prints a line, closes standard output, keeps running for half a second, exits 3.
+echo "before closing"
+exec 1>&-
+sleep 0.5
+exit 3

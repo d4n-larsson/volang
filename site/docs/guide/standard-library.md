@@ -443,6 +443,9 @@ A server can be recorded and replayed like any program (see [Determinism](determ
 [std.http](../std/http.md); the [notes-api](../examples/notes-api.md) and
 [status-board](../examples/status-board.md) examples are complete servers.
 
+A body larger than 16 MiB, or one you want while it arrives, is read with `send_stream`: see
+[Large inputs](files-and-processes.md#large-inputs).
+
 ## std.fs and std.process
 
 `std.fs` lists directories and looks at paths (`file.read`), appends and creates directories

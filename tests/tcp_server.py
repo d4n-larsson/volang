@@ -13,6 +13,12 @@ Listens on a free loopback port and prints "port N". Modes:
   burst      sends 17 MiB of "x" with no line end, then "\\n"
   tls        echo over TLS from the first byte (--cert NAME of tests/tls/certs/)
   starttls   sends "220 ready\\n", waits for "STARTTLS\\n", sends "220 go\\n", then echo over TLS
+  http       (spec 040) one HTTP response per connection, chosen by the request path (--cert: over TLS):
+             /length/N /chunked/N /close/N   N MiB of PATTERN with that framing
+             /stall      declares 1000 bytes, sends 500 and goes silent
+             /bad-hex /bad-long /bad-end /bad-length   malformed framing
+             /echo       the request as received, as the body
+             /nothing    204
 """
 import argparse
 import os
@@ -85,6 +91,59 @@ def redis(c, store):
             c.sendall(b"-ERR unknown command\r\n")
 
 
+PATTERN = bytes((k * 31 + 7) % 256 for k in range(1 << 20))  # one MiB of a /length, /chunked or /close body
+
+
+def http(c):
+    request = b""
+    while b"\r\n\r\n" not in request:
+        data = c.recv(65536)
+        if not data:
+            return
+        request += data
+    head, rest = request.split(b"\r\n\r\n", 1)
+    for line in head.split(b"\r\n"):
+        if line.lower().startswith(b"content-length:"):
+            while len(rest) < int(line.split(b":")[1]):
+                rest += c.recv(65536)
+    path = head.split(b" ")[1].decode()
+    kind, _, n = path.strip("/").partition("/")
+    ok = b"HTTP/1.1 200 OK\r\nX-Test: yes\r\n"
+    if kind == "length":
+        c.sendall(ok + b"Content-Length: %d\r\n\r\n" % (int(n) << 20))
+        for _ in range(int(n)):
+            c.sendall(PATTERN)
+    elif kind == "chunked":
+        c.sendall(ok + b"Transfer-Encoding: chunked\r\n\r\n")
+        for _ in range(int(n)):
+            for at in range(0, 1 << 20, 100000):  # uneven chunks, one with an extension
+                piece = PATTERN[at:at + 100000]
+                c.sendall(b"%x;note=1\r\n" % len(piece) + piece + b"\r\n")
+        c.sendall(b"0\r\nX-Trailer: yes\r\n\r\n")
+    elif kind == "close":
+        c.sendall(ok + b"\r\n")
+        for _ in range(int(n)):
+            c.sendall(PATTERN)
+    elif kind == "stall":
+        c.sendall(ok + b"Content-Length: 1000\r\n\r\n" + b"x" * 500)
+        c.recv(1)
+    elif kind == "bad-hex":
+        c.sendall(ok + b"Transfer-Encoding: chunked\r\n\r\nzz\r\nabc\r\n0\r\n\r\n")
+    elif kind == "bad-long":
+        c.sendall(ok + b"Transfer-Encoding: chunked\r\n\r\n11111111111111111\r\nabc\r\n0\r\n\r\n")
+    elif kind == "bad-end":
+        c.sendall(ok + b"Transfer-Encoding: chunked\r\n\r\n3\r\nabcXX0\r\n\r\n")
+    elif kind == "bad-length":
+        c.sendall(ok + b"Content-Length: abc\r\n\r\nabc")
+    elif kind == "echo":
+        body = head + b"\r\n\r\n" + rest
+        c.sendall(ok + b"Content-Length: %d\r\n\r\n" % len(body) + body)
+    elif kind == "nothing":
+        c.sendall(b"HTTP/1.1 204 No Content\r\n\r\n")
+    else:
+        c.sendall(b"HTTP/1.1 404 Not Found\r\nContent-Length: 9\r\n\r\nnot found")
+
+
 def serve(c, a, store):
     try:
         if a.mode == "echo":
@@ -110,6 +169,8 @@ def serve(c, a, store):
             c.recv(1)
         elif a.mode == "tls":
             echo(context(a.cert).wrap_socket(c, server_side=True))
+        elif a.mode == "http":
+            http(context(a.cert).wrap_socket(c, server_side=True) if a.cert_given else c)
         elif a.mode == "starttls":
             c.sendall(b"220 ready\n")
             line = b""
@@ -134,6 +195,7 @@ def main():
     p.add_argument("mode")
     p.add_argument("--cert", default="a.test")
     a = p.parse_args()
+    a.cert_given = "--cert" in sys.argv
     s = socket.socket()
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind(("127.0.0.1", 0))
