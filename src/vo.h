@@ -2412,6 +2412,20 @@ extern long app_manifest; /* the embedded vo.packages' file id, or -1 */
 extern char **app_start(long *argc, char **argv);
 extern int cmd_build(char *output, char *base);
 extern int cmd_mcp(void); /* src/mcp.c (spec 036) */
+extern int cmd_lsp(void); /* src/lsp.c (spec 038) */
+extern SB *out_capture;
+extern long (*read_overlay)(char *path, char **out);
+extern int (*lsp_finish)(int code);
+extern Str *write_captured;
+extern long write_capture;
+/* src/jsonrpc.c: shared by vo mcp and vo lsp */
+extern int utf8_seq(unsigned char *p, long n);
+extern char *js_ws(char *p);
+extern char *js_skip(char *p, int depth);
+extern int js_member(char **p, char **key, char **val);
+extern int js_is(char *p, char *lit, long n);
+extern char *js_get(char *object, char *key);
+extern long js_unescape(char *p, char *dst);
 extern long opt_app_effects;
 extern long sys_getdents64(int fd, void *buf, long n);
 extern long sys_rename(char *from, char *to);

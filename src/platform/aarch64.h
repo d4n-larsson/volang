@@ -14,6 +14,7 @@
 #define SYS_exit_group 94
 #define SYS_clock_gettime 113
 #define SYS_mmap 222
+#define SYS_munmap 215
 #define SYS_renameat2 276
 #define SYS_statx 291
 

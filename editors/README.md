@@ -4,7 +4,7 @@ Grammars and editor files. How to install each: [the site's Editors page](../sit
 
 | Folder | What | Read by |
 |---|---|---|
-| `vscode/` | a TextMate grammar (`syntaxes/vo.tmLanguage.json`, scope `source.vo`) in a VS Code extension folder | VS Code, GitHub's Linguist, JetBrains, Sublime Text |
+| `vscode/` | a TextMate grammar (`syntaxes/vo.tmLanguage.json`, scope `source.vo`) in a VS Code extension folder; `extension.js` starts `vo lsp` (after `npm install` there) | VS Code, GitHub's Linguist, JetBrains, Sublime Text |
 | `tree-sitter-vo/` | a tree-sitter grammar (`grammar.js`), its generated parser (`src/`, ABI 14) and queries | Neovim, Helix, Zed |
 | `zed/` | a Zed extension around the tree-sitter grammar | Zed |
 | `vim/` | syntax, file detection and settings | Vim, Neovim |

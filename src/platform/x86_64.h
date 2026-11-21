@@ -6,6 +6,7 @@
 #define SYS_write 1
 #define SYS_close 3
 #define SYS_mmap 9
+#define SYS_munmap 11
 #define SYS_getcwd 79
 #define SYS_getdents64 217
 #define SYS_clock_gettime 228

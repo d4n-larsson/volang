@@ -44,6 +44,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [035](../specs/035-std-crypto/) | `std.crypto`: `sha256`, `hmac_sha256`, constant-time `same_bytes`, `random_bytes` from the system under a new effect `entropy`, `hash_password` / `verify_password` (PBKDF2-HMAC-SHA256) | **Implemented** ([results](../specs/035-std-crypto/results.md)) |
 | [036](../specs/036-vo-mcp/) | `vo mcp`: the toolchain as a Model Context Protocol server on stdin/stdout; ten commands as tools with the commands' own JSON output, the reference as a resource; every call in its own process | **Implemented** ([results](../specs/036-vo-mcp/results.md)) |
 | [037](../specs/037-editor-grammars/) | Editor grammars in `editors/`: TextMate (VS Code, and the format GitHub reads), tree-sitter (Neovim, Helix, Zed), Vim; held to the language by a check over every `.vo` file in the repository | **Implemented** ([results](../specs/037-editor-grammars/results.md)) |
+| [038](../specs/038-vo-lsp/) | `vo lsp`: the toolchain as a language server; diagnostics on unsaved text, quick fixes, hover, definition, references, rename, format, outline, each answer computed by the command it stands for in its own process | **Implemented** ([results](../specs/038-vo-lsp/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -218,7 +219,7 @@ editor plugin shows it on hover; `vo doc ENTRY NAME` prints it for the program's
 did not change.
 
 - **Not done (on purpose):** markup or tags in doc comments, completion, a standing language server
-  (the "Language server" row below).
+  (spec 038 added the server; completion is still open).
 
 ### 024: string formatting (done)
 
@@ -418,6 +419,22 @@ grammar or run those checks.
   list (it needs wide use first), semantic highlighting (the language server's job).
 - **Not verified by hand:** VS Code, Zed, Neovim and Helix were not available; only Vim was opened.
 
+### 038: the toolchain in the editor (implemented)
+
+`vo lsp` serves the Language Server Protocol. Each answer is computed in a forked copy of the server that
+reads the editor's open documents in place of the files on disk, runs the ordinary command (`check`,
+`query type-at`, `query refs`, `edit rename --dry-run`, `fmt`) with its output kept in memory and nothing
+written, and turns the command's records into the protocol's answer. So the editor shows exactly what the
+command line would, on unsaved text, and a text that breaks a check cannot end the session. A file's
+program is the nearest `main.vo` above it that imports it. The JSON reader is shared with `vo mcp`
+(`src/jsonrpc.c`).
+
+- **Not done (on purpose):** completion and signature help (they need the checker to answer "what can
+  stand here"), semantic tokens, inlay hints, test lenses, workspace symbol search, a Zed extension that
+  starts the server (Zed needs compiled extension code), publishing the VS Code extension.
+- **Not verified by hand:** no editor with a protocol client was available; a scripted editor compares
+  every answer with its command.
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -429,7 +446,6 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | TCP and UDP | only HTTP reaches the network | scoped like `net` and `serve` |
 | macOS | Linux only (x86-64, ARM64, RISC-V) | the raw-syscall, no-libc design makes this a real port |
 | Downloading packages | packages are local and pinned by hash, never fetched | spec 007 follow-up; HTTPS exists since spec 019 |
-| Language server | no completion, hover or diagnostics in editors | `vo query` and `vo check --json` already have the data |
 | Debugger | traces, locals in errors and replay, but no stepping | replay makes a deterministic stepper possible |
 | Tuples | no tuple type | map keys done in spec 033; tuples declined for now: a record groups values and is a key |
 | `old()` in `ensures` | contracts cannot compare with values from before the call | spec 005 follow-up |

@@ -1,6 +1,8 @@
 # Editors
 
-vo code is highlighted in VS Code, Zed, Neovim, Helix and Vim with the grammars in the repository's [`editors/`](https://github.com/d4n-larsson/volang/tree/main/editors) directory. Nothing is published to an editor's marketplace yet: each editor is pointed at a checkout of the repository.
+vo code is highlighted in VS Code, Zed, Neovim, Helix and Vim with the grammars in the repository's [`editors/`](https://github.com/d4n-larsson/volang/tree/main/editors) directory, and VS Code, Neovim and Helix can start the toolchain as a language server ([vo lsp](lsp.md)) for diagnostics, quick fixes, hover, go to definition, references, rename and formatting. Nothing is published to an editor's marketplace yet: each editor is pointed at a checkout of the repository.
+
+The language server needs `vo` on your `PATH`.
 
 The grammars only say what each piece of code is (a keyword, a type, a string, an effect); the colours are your theme's. They are checked against the toolchain on every `.vo` file in the repository, so they follow the language as it changes.
 
@@ -18,7 +20,15 @@ Link the extension folder into VS Code's extensions directory and restart the ed
 ln -s "$PWD/volang/editors/vscode" ~/.vscode/extensions/vo
 ```
 
-`.vo` files then have highlighting, `#` comment toggling, bracket matching and closing, and indentation after an opening bracket. The same folder works in editors built on VS Code (their extensions directory has another name). The grammar file, `syntaxes/vo.tmLanguage.json`, is a TextMate grammar: JetBrains editors and Sublime Text can load it as well.
+`.vo` files then have highlighting, `#` comment toggling, bracket matching and closing, and indentation after an opening bracket.
+
+For the language server, install the editor's client library in that folder once (it needs Node.js), and restart:
+
+```text
+cd volang/editors/vscode && npm install
+```
+
+The setting `vo.path` names the toolchain to start if `vo` is not on the `PATH`. Without `npm install` the highlighting still works and VS Code reports that the extension could not be activated. The same folder works in editors built on VS Code (their extensions directory has another name). The grammar file, `syntaxes/vo.tmLanguage.json`, is a TextMate grammar: JetBrains editors and Sublime Text can load it as well.
 
 ## Neovim
 
@@ -47,6 +57,21 @@ ln -s "$PWD/volang/editors/tree-sitter-vo/queries" ~/.config/nvim/queries/vo
 
 Without tree-sitter, use the Vim files below: they work in Neovim too.
 
+The language server needs no plugin:
+
+```text
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "vo",
+  callback = function(args)
+    vim.lsp.start({
+      name = "vo",
+      cmd = { "vo", "lsp" },
+      root_dir = vim.fs.root(args.buf, { "vo.effects", "vo.packages", ".git" }),
+    })
+  end,
+})
+```
+
 ## Helix
 
 Add the language and its grammar to `~/.config/helix/languages.toml`:
@@ -58,6 +83,12 @@ scope = "source.vo"
 file-types = ["vo"]
 comment-token = "#"
 indent = { tab-width = 4, unit = "    " }
+
+language-servers = ["vo"]
+
+[language-server.vo]
+command = "vo"
+args = ["lsp"]
 
 [[grammar]]
 name = "vo"
@@ -77,7 +108,7 @@ Helix asks for a commit in `rev`; replace `main` with the commit you cloned (`gi
 
 ## Zed
 
-`editors/zed` is a Zed extension. In Zed, run "zed: install dev extension" and choose that folder. Its `extension.toml` names the grammar's repository and revision; set `rev` to the commit you cloned, or point `repository` at your checkout with a `file://` address.
+`editors/zed` is a Zed extension for highlighting, brackets and the outline. In Zed, run "zed: install dev extension" and choose that folder. It does not start the language server: Zed starts one only from extension code compiled to WebAssembly, which this folder does not have yet. Its `extension.toml` names the grammar's repository and revision; set `rev` to the commit you cloned, or point `repository` at your checkout with a `file://` address.
 
 ## Vim
 
@@ -95,4 +126,4 @@ GitHub colours a language once it is in its language list (Linguist), and a lang
 
 ## What is not there
 
-Highlighting is by syntax only. Colouring by meaning (a name's kind after checking), completion, and diagnostics in the editor need a language server, which vo does not have yet. Agents get all of that today from [vo mcp](mcp.md).
+The language server does not offer completion, signature help or colouring by meaning yet. Agents use the toolchain through [vo mcp](mcp.md) instead.

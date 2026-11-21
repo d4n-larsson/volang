@@ -18,7 +18,8 @@ enum {
     CMD_DOC,
     CMD_PACKAGE,
     CMD_BUILD, /* spec 034 */
-    CMD_MCP    /* spec 036 */
+    CMD_MCP,   /* spec 036 */
+    CMD_LSP    /* spec 038 */
 };
 
 long opt_json;
@@ -55,7 +56,7 @@ long path_n;
 static long path_cap;
 
 static char *const cmd_names[] = {"check", "run",    "test",   "fmt",  "explain", "reference", "version",
-                                  "effects", "query", "impact", "edit", "replay",  "doc",       "package", "build", "mcp", 0};
+                                  "effects", "query", "impact", "edit", "replay",  "doc",       "package", "build", "mcp", "lsp", 0};
 
 int cstr_eq(char *a, char *b)
 {
@@ -222,13 +223,13 @@ int vo_main(long argc, char **argv, char **env)
     pos_args = (long)alloc(argc * 8L);
     if (argc < 2)
         usage_error(str_from_cstr("Missing command. Commands: check, run, test, build, fmt, effects, query, impact, "
-                                  "edit, replay, doc, package, mcp, explain, reference, version."));
+                                  "edit, replay, doc, package, mcp, lsp, explain, reference, version."));
     char *cmd = argv[1];
     long c = 0;
     while (cmd_names[c] && !cstr_eq(cmd, cmd_names[c])) c++;
     if (!cmd_names[c])
         usage_error_arg("Unknown command `$1`. Commands: check, run, test, build, fmt, effects, query, impact, edit, "
-                        "replay, doc, package, mcp, explain, reference, version.",
+                        "replay, doc, package, mcp, lsp, explain, reference, version.",
                         cmd);
     opt_cmd = c + 1;
     if (opt_cmd == CMD_MCP) { /* spec 036: a server, before any option is read; its calls run vo_main again */
@@ -236,6 +237,12 @@ int vo_main(long argc, char **argv, char **env)
             usage_error(str_from_cstr("`mcp` takes no arguments: it serves the Model Context Protocol on standard "
                                       "input and output."));
         return cmd_mcp();
+    }
+    if (opt_cmd == CMD_LSP) { /* spec 038: likewise */
+        if (argc != 2)
+            usage_error(str_from_cstr("`lsp` takes no arguments: it serves the Language Server Protocol on standard "
+                                      "input and output."));
+        return cmd_lsp();
     }
     if (opt_cmd == CMD_REPLAY || opt_cmd == CMD_RUN) report_fd = 2;
     for (int i = 2; i < argc;) { /* options and positional arguments */
@@ -669,8 +676,15 @@ void fmt_report(Str *path, int changed)
 
 /* Writes <path>.vo-fmt-<random>.tmp (created exclusively), then renames it over path, so a crash never
  * truncates the source. */
+Str *write_captured; /* spec 038: the last text a command would have written */
+long write_capture;  /* spec 038: 1 in a copy of `vo lsp`: nothing is written, the text is kept */
+
 void write_file_safely(Str *path, Str *text)
 {
+    if (write_capture) {
+        write_captured = text;
+        return;
+    }
     Str *tmp = tmp_path(path, "fmt"); /* spec 013 (M3): unpredictable, created exclusively */
     long fd = open_tmp(tmp);
     if (fd < 0) return;

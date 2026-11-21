@@ -31,6 +31,7 @@ void vo_exit(int code)
     if (task_depth) task_exit(code); /* spec 016: a task's end of the program is the parent's to do */
     sql_close_since(0); /* spec 026: every database closed (an open transaction rolls back) */
     code = (int)exit_hooks(code); /* spec 006: completes the trace and the recording; may change the status */
+    if (lsp_finish) code = lsp_finish(code); /* spec 038: turns the captured output into the answer */
     out_flush();
     vo_syscall1(SYS_exit_group, code);
     for (;;) {}
@@ -198,6 +199,12 @@ void write_all(int fd, char *p, long n)
     write_checked(fd, p, n); /* an error: give up rather than spin */
 }
 
+/* Spec 038 (`vo lsp` runs each command in a copy of the server, src/lsp.c): the three points where the
+ * copy takes over. All are unset everywhere else. */
+SB *out_capture;                              /* output for descriptors 1 and 2 goes here instead */
+long (*read_overlay)(char *path, char **out); /* a file's text from the editor: its length, or < 0 */
+int (*lsp_finish)(int code);                  /* called when the command ends; gives the exit status */
+
 void out_flush(void)
 {
     for (int i = 0; i < 2; i++) {
@@ -210,6 +217,10 @@ void out_flush(void)
 /* Buffered for fds 1 and 2 (flushed together, which keeps them ordered); other fds unbuffered. */
 void out_bytes(int fd, char *p, long n)
 {
+    if (out_capture && (fd == 1 || fd == 2)) { /* spec 038: a command's output kept in memory */
+        sb_bytes(out_capture, p, n);
+        return;
+    }
     if (fd != 1 && fd != 2) {
         write_all(fd, p, n);
         return;
@@ -240,6 +251,10 @@ void out_str(int fd, void *str)
  * (spec 013, L4: a FIFO or device is refused without blocking: open with O_NONBLOCK). */
 long read_whole_file(char *path, char **out)
 {
+    if (read_overlay) { /* spec 038: an open document is read from the editor, not the disk */
+        long n = read_overlay(path, out);
+        if (n >= 0) return n;
+    }
     long fd = sys_open(path, O_RDONLY | O_NONBLOCK);
     if (fd < 0) return fd;
     return read_whole_fd(fd, out);

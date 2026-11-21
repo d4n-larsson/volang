@@ -12,3 +12,4 @@ site/pygments_vo/build/
 /editors/tree-sitter-vo/build/
 /editors/tree-sitter-vo/*.so
 /editors/tree-sitter-vo/*.wasm
+/editors/vscode/node_modules/

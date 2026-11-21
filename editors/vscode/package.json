@@ -1,19 +1,56 @@
 {
   "name": "vo",
   "displayName": "vo",
-  "description": "Syntax highlighting and editing basics for the vo language.",
+  "description": "The vo language: syntax highlighting, and the vo toolchain as a language server (diagnostics, quick fixes, hover, definition, references, rename, formatting, outline).",
   "version": "0.1.0",
   "publisher": "volang",
   "license": "MIT",
-  "repository": { "type": "git", "url": "https://github.com/d4n-larsson/volang" },
-  "engines": { "vscode": "^1.75.0" },
-  "categories": ["Programming Languages"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/d4n-larsson/volang"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
   "contributes": {
     "languages": [
-      { "id": "vo", "aliases": ["vo"], "extensions": [".vo"], "configuration": "./language-configuration.json" }
+      {
+        "id": "vo",
+        "aliases": [
+          "vo"
+        ],
+        "extensions": [
+          ".vo"
+        ],
+        "configuration": "./language-configuration.json"
+      }
     ],
     "grammars": [
-      { "language": "vo", "scopeName": "source.vo", "path": "./syntaxes/vo.tmLanguage.json" }
-    ]
+      {
+        "language": "vo",
+        "scopeName": "source.vo",
+        "path": "./syntaxes/vo.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "vo",
+      "properties": {
+        "vo.path": {
+          "type": "string",
+          "default": "vo",
+          "description": "The vo toolchain to start as the language server (`vo lsp`)."
+        }
+      }
+    }
+  },
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:vo"
+  ],
+  "dependencies": {
+    "vscode-languageclient": "9.0.1"
   }
 }
