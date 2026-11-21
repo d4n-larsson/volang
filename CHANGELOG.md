@@ -8,6 +8,7 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 - `vo mcp`: the toolchain as a Model Context Protocol server for agent hosts (ten commands as tools, the
   reference as the resource `vo://reference`).
+- Editor grammars in `editors/`: VS Code (TextMate), Neovim, Helix and Zed (tree-sitter), Vim.
 - Fixed: `vo impact --diff -` and `vo test --diff -` read a pipe (`git diff | vo impact main.vo --diff -`);
   before, standard input had to be a regular file.
 

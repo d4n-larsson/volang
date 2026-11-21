@@ -34,11 +34,13 @@ typedef struct PollFd {
     short revents;
 } PollFd;
 
-static char in[IN_CAP + 1];    /* unread input; a line is NUL-terminated where its newline was */
+/* The three large buffers are mapped when the server starts, not static: the collector scans the whole
+ * data segment at every collection, in every vo process (10 MiB here would slow each one). */
+static char *in;               /* IN_CAP + 1: unread input; a line is NUL-terminated where its newline was */
 static long in_len, in_pos, in_scan, in_eof;
-static char words[IN_CAP + 1]; /* a call's argument words and stdin text, unescaped */
+static char *words;            /* IN_CAP + 1: a call's argument words and stdin text, unescaped */
 static long words_len;
-static char cap[2][OUT_CAP];   /* a call's stdout and stderr */
+static char *cap[2];           /* OUT_CAP each: a call's stdout and stderr */
 static long got_len[2], got_over[2];
 static char wbuf[65536];       /* the reply being written */
 static long wlen;
@@ -978,6 +980,13 @@ int cmd_mcp(void)
     unsigned long mask = (1UL << (SIGCHLD - 1)) | (1UL << (SIGPIPE - 1)), chld = 1UL << (SIGCHLD - 1);
     vo_syscall4(SYS_rt_sigprocmask, SIG_BLOCK, (long)&mask, (long)&old_mask, 8);
     sig_fd = (int)vo_syscall4(SYS_signalfd4, -1, (long)&chld, 8, O_NONBLOCK | O_CLOEXEC);
+    long room = 2 * (IN_CAP + 1) + 2 * OUT_CAP;
+    char *mem = (char *)vo_syscall6(SYS_mmap, 0, room, 3 /* read, write */, 0x22 /* private, anonymous */, -1, 0);
+    if ((unsigned long)mem >= (unsigned long)-4095L) return 125;
+    in = mem;
+    words = in + IN_CAP + 1;
+    cap[0] = words + IN_CAP + 1;
+    cap[1] = cap[0] + OUT_CAP;
     int skipping = 0; /* inside a line that is too long */
     while (!host_gone) {
         long nl = in_pos;

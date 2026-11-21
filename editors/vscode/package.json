@@ -1,0 +1,19 @@
+{
+  "name": "vo",
+  "displayName": "vo",
+  "description": "Syntax highlighting and editing basics for the vo language.",
+  "version": "0.1.0",
+  "publisher": "volang",
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/d4n-larsson/volang" },
+  "engines": { "vscode": "^1.75.0" },
+  "categories": ["Programming Languages"],
+  "contributes": {
+    "languages": [
+      { "id": "vo", "aliases": ["vo"], "extensions": [".vo"], "configuration": "./language-configuration.json" }
+    ],
+    "grammars": [
+      { "language": "vo", "scopeName": "source.vo", "path": "./syntaxes/vo.tmLanguage.json" }
+    ]
+  }
+}

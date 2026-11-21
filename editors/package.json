@@ -1,0 +1,14 @@
+{
+  "name": "vo-editors-dev",
+  "private": true,
+  "description": "Development tools for vo's editor grammars: the tree-sitter generator and a TextMate tokenizer for tests/grammars.py. Not needed to build or test the toolchain.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "0.24.7",
+    "vscode-oniguruma": "2.0.1",
+    "vscode-textmate": "9.3.2"
+  }
+}

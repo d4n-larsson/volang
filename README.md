@@ -95,6 +95,7 @@ Every command takes `--json`. Exit statuses are stable: 0 success, 1 failed test
 | `src/platform/` | Per architecture: process entry, system calls and `setjmp`/`longjmp` in assembly (`x86_64.S`, `aarch64.S`, `riscv64.S`) and the system call numbers; `hosted.c` for the sanitizer build |
 | `docs/reference.md` | The language reference (embedded in the binary; `vo reference`) |
 | `docs/errors.md` | The error catalog: every code with an example and its fix (`vo explain`) |
+| `editors/` | Editor grammars: VS Code (TextMate), Neovim, Helix and Zed (tree-sitter), Vim; `tests/grammars.py` checks them against the toolchain |
 | `site/` | The documentation site: hand-written guides (`site/docs/`), the MkDocs configuration and the vo syntax highlighter; `tools/site.py` adds the pages generated from the reference, the catalog and `vo doc` |
 | `tests/cases/` | Golden test cases: source plus expected stdout, stderr and exit status |
 | `tests/*.py` | Fuzzer, fix applier, catalog and reference checks, formatter corpus, v1→v2 migration, effects-record change sets, scope fuzzer |

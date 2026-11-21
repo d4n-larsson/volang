@@ -43,6 +43,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [034](../specs/034-vo-build/) | `vo build`: a program as one static executable (the toolchain with the program's files attached and hashed), run without sources; `--vo-effects` prints its grant; `vo run`'s options as `--vo-NAME`; `--base` for other architectures | **Implemented** ([results](../specs/034-vo-build/results.md)) |
 | [035](../specs/035-std-crypto/) | `std.crypto`: `sha256`, `hmac_sha256`, constant-time `same_bytes`, `random_bytes` from the system under a new effect `entropy`, `hash_password` / `verify_password` (PBKDF2-HMAC-SHA256) | **Implemented** ([results](../specs/035-std-crypto/results.md)) |
 | [036](../specs/036-vo-mcp/) | `vo mcp`: the toolchain as a Model Context Protocol server on stdin/stdout; ten commands as tools with the commands' own JSON output, the reference as a resource; every call in its own process | **Implemented** ([results](../specs/036-vo-mcp/results.md)) |
+| [037](../specs/037-editor-grammars/) | Editor grammars in `editors/`: TextMate (VS Code, and the format GitHub reads), tree-sitter (Neovim, Helix, Zed), Vim; held to the language by a check over every `.vo` file in the repository | **Implemented** ([results](../specs/037-editor-grammars/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -403,6 +404,19 @@ a call can be cancelled. `--diff -` now also reads a pipe (it needed a regular f
 
 - **Not done (on purpose):** the HTTP transport, prompts, sampling, `build`/`package`/`replay` as tools,
   `--trace` and `--record` in calls, a sandbox (a program runs with what `main` declares, as always).
+
+### 037: editor grammars (implemented)
+
+vo was uncoloured everywhere but its own site. `editors/` now has a TextMate grammar in a VS Code
+extension folder, a tree-sitter grammar with its generated parser and queries (and a Zed extension around
+it), and Vim files. `tests/grammars.py` keeps them right: their word lists equal the reference's and the
+parser's, the tree-sitter grammar parses every `.vo` file the toolchain parses, and the TextMate grammar
+agrees with it token by token. The toolchain is unchanged; the node tools are needed only to change a
+grammar or run those checks.
+
+- **Not done (on purpose):** publishing to any marketplace or registry, the request to GitHub's language
+  list (it needs wide use first), semantic highlighting (the language server's job).
+- **Not verified by hand:** VS Code, Zed, Neovim and Helix were not available; only Vim was opened.
 
 ## Planned after 017
 

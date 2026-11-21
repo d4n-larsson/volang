@@ -1,0 +1,66 @@
+# A comment stands on its own line.
+# <- comment
+
+import std.json.parse_json;
+# <- keyword
+#      ^ module
+
+@spec("BILL-1")
+# <- attribute
+# ^ attribute
+#     ^ string
+
+export const limit: int = 100;
+# <- keyword
+#      ^ keyword
+#            ^ constant
+#                   ^ type.builtin
+#                         ^ number
+
+record Item {
+# <- keyword
+#      ^ type
+    name: str;
+#   ^ property
+#         ^ type.builtin
+    prices: map[str, list[float]];
+#           ^ type.builtin
+#                    ^ type.builtin
+}
+
+fn total[K: key](items: list[Item], rate: float) -> result[int, str] uses console, file.read("data") {
+# <- keyword
+#  ^ function
+#        ^ type
+#           ^ keyword.modifier
+#                ^ variable.parameter
+#                             ^ type
+#                                                    ^ type.builtin
+#                                                                    ^ keyword
+#                                                                         ^ constant.builtin
+#                                                                                  ^ constant.builtin
+#                                                                                            ^ string
+    var sum = 0;
+#   ^ keyword
+#             ^ number
+    for it in items {
+#   ^ keyword.repeat
+#          ^ keyword.repeat
+        set sum = sum + it.price;
+#       ^ keyword
+#                          ^ property
+    }
+    if rate > 1.5 and not true {
+#   ^ keyword.conditional
+#             ^ number.float
+#                 ^ keyword.operator
+#                         ^ boolean
+        return err("too\thigh");
+#       ^ keyword.return
+#                      ^ string.escape
+    }
+    print(str(sum));
+#   ^ function.call
+#         ^ function.builtin
+    return ok(sum);
+}

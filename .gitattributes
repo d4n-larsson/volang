@@ -1,0 +1,5 @@
+# For tools that read language attributes. GitHub's Linguist does not know vo yet, so the first line has
+# no effect there until it does (site/docs/tools/editors.md, "GitHub").
+*.vo linguist-language=Vo
+editors/tree-sitter-vo/src/** linguist-generated
+editors/package-lock.json linguist-generated

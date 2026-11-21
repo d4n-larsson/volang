@@ -7,3 +7,8 @@ __pycache__/
 .DS_Store
 *.egg-info/
 site/pygments_vo/build/
+# spec 037: the grammar tools and what tree-sitter builds
+/editors/node_modules/
+/editors/tree-sitter-vo/build/
+/editors/tree-sitter-vo/*.so
+/editors/tree-sitter-vo/*.wasm

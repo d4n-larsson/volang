@@ -32,15 +32,24 @@ jobs:
       - name: Install the cross compilers and qemu
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q gcc binutils-riscv64-linux-gnu gcc-riscv64-linux-gnu gcc-aarch64-linux-gnu qemu-user
+          sudo apt-get install -y -q gcc binutils-riscv64-linux-gnu gcc-riscv64-linux-gnu gcc-aarch64-linux-gnu qemu-user vim
       - name: Permit user namespaces
         # tests/cases/https_steps/no_trust_store hides the machine's trust store in a user and mount
         # namespace; Ubuntu 24.04 restricts those by default (the case is skipped where it cannot run)
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install the grammar tools
+        # only tests/grammars.py needs them; VO_GRAMMARS=require below makes a skipped grammar check fail
+        run: npm ci
+        working-directory: editors
       - name: Check the tools
         run: make check-tools
       - name: Run the gate
         run: make gate SESI_SKIP=1
+        env:
+          VO_GRAMMARS: require
       - name: Keep the programs the comparisons disagreed on
         if: failure()
         uses: actions/upload-artifact@v4

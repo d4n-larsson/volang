@@ -91,7 +91,7 @@ OBJS := $(BUILD)/platform.o $(patsubst src/%.c,$(BUILD)/%.o,$(C_SRCS)) $(BUILD)/
 	$(if $(INSTRUMENTED),$(BUILD)/hosted.o) $(MBED_OBJS) $(CM_OBJS) $(SQL_OBJS)
 
 PHONY_TLS := tls-selftest tls-deps
-.PHONY: $(PHONY_TLS) quick cm-noasm math-selftest math-vectors site site-serve site-check all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
+.PHONY: $(PHONY_TLS) quick grammars cm-noasm math-selftest math-vectors site site-serve site-check all check-tools lint lint-c test gc-check oracle baseline asm ubtrap instrumented diff-asm gate-step gate speed speed-check prop-eval refactor-eval stdlib-eval security-check clean
 
 all: $(BUILD)/vo
 
@@ -213,6 +213,12 @@ math-vectors:
 quick: all
 	@tools/quick.sh $(AREA)
 
+# Spec 037: after a change to editors/tree-sitter-vo/grammar.js: the generated parser (ABI 14, which
+# current Neovim, Helix and Zed load) and the hash tests/grammars.py compares. Needs `npm ci` in editors/.
+grammars:
+	cd editors/tree-sitter-vo && ../node_modules/.bin/tree-sitter generate --abi 14
+	python3 tests/grammars.py --hash
+
 # The constitution's quality gate: every check that exists so far.
 test: all
 	tests/run.sh
@@ -227,7 +233,7 @@ test: all
 	  steps.py json_stream.py https_interop.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1" \
 	  math_vectors.py "bytes_fuzz.py --count 2000 --runs 200" "format_diff.py --quick" "regex_diff.py --quick" \
 	  "regex_fuzz.py --count 20000" "sqlite_scope.py --quick" "sqlite_fuzz.py --count 1000" sqlite_corpus.py structure_corpus.py "serve_workers.py --quick" "web_fuzz.py --quick" effect_sets_records.py \
-	  "const_equiv.py --count 300" const_records.py build_examples.py crypto_vectors.py mcp.py; do \
+	  "const_equiv.py --count 300" const_records.py build_examples.py crypto_vectors.py mcp.py grammars.py; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
 	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \

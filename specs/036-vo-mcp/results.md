@@ -34,6 +34,13 @@ each).
 - **Tests and code were written together**, not test-first task by task: the client (`tests/mcp.py`) was
   first run against a server that already existed.
 
+## Found afterwards (fixed with spec 037)
+
+The server's three buffers (about 10 MiB) were static. The collector scans the whole data segment at
+every collection in every vo process, so every program's collections got slower, and the gate's stress
+step timed out on `run/oom_small` in CI. They are now mapped when `vo mcp` starts. `make test` did not
+show this; the gate, which was not run, would have.
+
 ## Known limits
 
 - When only one of stdout and stderr is not empty, a result has one output block and nothing says which

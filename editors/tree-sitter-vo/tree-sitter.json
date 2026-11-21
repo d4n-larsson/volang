@@ -1,0 +1,20 @@
+{
+  "grammars": [
+    {
+      "name": "vo",
+      "camelcase": "Vo",
+      "scope": "source.vo",
+      "path": ".",
+      "file-types": ["vo"],
+      "highlights": "queries/highlights.scm",
+      "locals": "queries/locals.scm",
+      "injections": "queries/injections.scm"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "vo grammar for tree-sitter",
+    "links": { "repository": "https://github.com/d4n-larsson/volang" }
+  }
+}

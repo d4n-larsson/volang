@@ -7,13 +7,13 @@ KEYWORDS = ("fn", "record", "variant", "test", "prop", "import", "export", "cons
             "while", "for", "in", "match", "case", "return", "break", "continue", "try", "new", "and", "or",
             "not", "uses", "requires", "ensures")
 TYPES = ("int", "float", "bool", "str", "bytes", "list", "map", "result", "void", "ordered_map", "ordered_set",
-         "priority_queue", "deque", "ordered", "effects")
+         "priority_queue", "deque", "ordered", "effects", "json", "key")
 BUILTINS = ("print", "write", "eprint", "read_line", "read_all", "read_file", "write_file", "args", "exit",
             "now_ms", "len", "slice", "find", "split", "join", "trim", "chars", "push", "pop", "sort", "has",
             "remove", "keys", "get_or", "expect", "expect_eq", "ok", "err", "abs", "min", "max", "upper",
             "lower", "ord", "chr", "env", "random_int", "sort_by", "map", "filter", "fold", "any", "all",
             "todo", "assume", "parse_int", "parse_float", "byte_at")
-EFFECTS = ("console", "input", "file", "net", "serve", "clock", "random", "env")
+EFFECTS = ("console", "input", "file", "net", "serve", "clock", "random", "env", "process", "entropy")
 
 
 class VoLexer(RegexLexer):

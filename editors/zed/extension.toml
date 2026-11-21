@@ -1,0 +1,14 @@
+id = "vo"
+name = "vo"
+version = "0.1.0"
+schema_version = 1
+authors = ["Dan Larsson"]
+description = "The vo language: syntax highlighting, brackets and indentation."
+repository = "https://github.com/d4n-larsson/volang"
+
+# The grammar is in this repository. `rev` must be a commit that contains editors/tree-sitter-vo;
+# site/docs/tools/editors.md says how to set it (for a local checkout: a file:// repository).
+[grammars.vo]
+repository = "https://github.com/d4n-larsson/volang"
+rev = "main"
+path = "editors/tree-sitter-vo"

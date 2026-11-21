@@ -1,0 +1,338 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "vo",
+  "scopeName": "source.vo",
+  "fileTypes": [
+    "vo"
+  ],
+  "comment": "TextMate grammar for vo. No rule spans a line: strings and comments end with their line, so a mistake never changes the lines after it. tests/grammars.py compares every token class with the tree-sitter grammar on every .vo file of the repository, and every word list here with the language's.",
+  "patterns": [
+    {
+      "include": "#code"
+    }
+  ],
+  "repository": {
+    "code": {
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "include": "#annotation"
+        },
+        {
+          "include": "#effects-definition"
+        },
+        {
+          "include": "#uses"
+        },
+        {
+          "include": "#type-parameters"
+        },
+        {
+          "include": "#function-definition"
+        },
+        {
+          "include": "#const"
+        },
+        {
+          "include": "#words"
+        },
+        {
+          "include": "#types"
+        },
+        {
+          "include": "#numbers"
+        },
+        {
+          "include": "#call"
+        },
+        {
+          "include": "#operators"
+        }
+      ]
+    },
+    "comment": {
+      "match": "#.*$",
+      "name": "comment.line.number-sign.vo"
+    },
+    "string": {
+      "begin": "\"",
+      "end": "\"|$",
+      "name": "string.quoted.double.vo",
+      "patterns": [
+        {
+          "match": "\\\\[nt\"\\\\]",
+          "name": "constant.character.escape.vo"
+        },
+        {
+          "match": "\\\\.",
+          "name": "invalid.illegal.escape.vo"
+        }
+      ]
+    },
+    "annotation": {
+      "match": "@[a-z_][A-Za-z0-9_]*",
+      "name": "entity.name.tag.annotation.vo"
+    },
+    "type-parameters": {
+      "comment": "`fn name[K: key, V]` and `record Name[T]`: the only place a constraint word is one",
+      "patterns": [
+        {
+          "begin": "\\b(fn)\\s+([a-z_][A-Za-z0-9_]*)\\s*(\\[)",
+          "end": "\\]|$",
+          "beginCaptures": {
+            "1": {
+              "name": "storage.type.function.vo"
+            },
+            "2": {
+              "name": "entity.name.function.definition.vo"
+            },
+            "3": {
+              "name": "punctuation.section.brackets.vo"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.brackets.vo"
+            }
+          },
+          "patterns": [
+            {
+              "match": "(?<=:)\\s*(ordered|effects|json|key)\\b",
+              "captures": {
+                "1": {
+                  "name": "storage.modifier.constraint.vo"
+                }
+              }
+            },
+            {
+              "match": "\\b[A-Z][A-Za-z0-9_]*",
+              "name": "entity.name.type.vo"
+            },
+            {
+              "match": "[,:]",
+              "name": "punctuation.separator.vo"
+            }
+          ]
+        },
+        {
+          "begin": "\\b(record|variant)\\s+([A-Z][A-Za-z0-9_]*)\\s*(\\[)",
+          "end": "\\]|$",
+          "beginCaptures": {
+            "1": {
+              "name": "storage.type.vo"
+            },
+            "2": {
+              "name": "entity.name.type.vo"
+            },
+            "3": {
+              "name": "punctuation.section.brackets.vo"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.brackets.vo"
+            }
+          },
+          "patterns": [
+            {
+              "match": "(?<=:)\\s*(ordered|effects|json|key)\\b",
+              "captures": {
+                "1": {
+                  "name": "storage.modifier.constraint.vo"
+                }
+              }
+            },
+            {
+              "match": "\\b[A-Z][A-Za-z0-9_]*",
+              "name": "entity.name.type.vo"
+            },
+            {
+              "match": "[,:]",
+              "name": "punctuation.separator.vo"
+            }
+          ]
+        }
+      ]
+    },
+    "function-definition": {
+      "match": "\\b(fn)\\s+([a-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": {
+          "name": "storage.type.function.vo"
+        },
+        "2": {
+          "name": "entity.name.function.definition.vo"
+        }
+      }
+    },
+    "const": {
+      "comment": "`const` is a word of the language only where it starts a definition",
+      "match": "\\b(const)(?=\\s+[A-Za-z_][A-Za-z0-9_]*\\s*[:=])",
+      "captures": {
+        "1": {
+          "name": "storage.type.const.vo"
+        }
+      }
+    },
+    "effects-definition": {
+      "comment": "`effects Name = console, file.read(\"data\");`",
+      "begin": "\\b(effects)(?=\\s+[A-Z])",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.effects.vo"
+        }
+      },
+      "end": "(?=;)|$",
+      "patterns": [
+        {
+          "include": "#effect-list"
+        }
+      ]
+    },
+    "uses": {
+      "comment": "the effects after `uses`, up to the body, a contract clause, the end of a type argument list, or the next parameter",
+      "begin": "\\b(uses)\\b",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.uses.vo"
+        }
+      },
+      "end": "(?=[{;\\])=]|\\b(?:requires|ensures|uses)\\b|,\\s*[a-z_][A-Za-z0-9_]*\\s*:)|$",
+      "patterns": [
+        {
+          "include": "#effect-list"
+        }
+      ]
+    },
+    "effect-list": {
+      "patterns": [
+        {
+          "include": "#comment"
+        },
+        {
+          "begin": "\\(",
+          "end": "\\)|$",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.parens.begin.vo"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.parens.end.vo"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#code"
+            }
+          ]
+        },
+        {
+          "match": "\\b[A-Z][A-Za-z0-9_]*",
+          "name": "entity.name.type.vo"
+        },
+        {
+          "match": "\\b[a-z_][A-Za-z0-9_]*(?:\\.[a-z_][A-Za-z0-9_]*)?",
+          "name": "support.constant.effect.vo"
+        },
+        {
+          "match": "=",
+          "name": "keyword.operator.symbol.vo"
+        },
+        {
+          "match": ",",
+          "name": "punctuation.separator.vo"
+        }
+      ]
+    },
+    "words": {
+      "patterns": [
+        {
+          "match": "\\b(true|false)\\b",
+          "name": "constant.language.boolean.vo"
+        },
+        {
+          "match": "\\b(if|else|while|for|in|match|case|return|break|continue|try)\\b",
+          "name": "keyword.control.vo"
+        },
+        {
+          "match": "\\b(fn|record|variant|test|prop|import|export|let|var|set|new)\\b",
+          "name": "storage.type.vo"
+        },
+        {
+          "match": "\\b(and|or|not)\\b",
+          "name": "keyword.operator.word.vo"
+        },
+        {
+          "match": "\\b(requires|ensures)\\b",
+          "name": "keyword.other.contract.vo"
+        }
+      ]
+    },
+    "types": {
+      "patterns": [
+        {
+          "comment": "the module std.bytes in an import path is a name",
+          "match": "(?<=\\.)bytes\\b",
+          "name": "variable.other.vo"
+        },
+        {
+          "comment": "conversions and the `map` function are called; the same words are types elsewhere",
+          "match": "\\b(str|int|float|map)(?=\\s*\\()",
+          "name": "support.function.builtin.vo"
+        },
+        {
+          "match": "\\b(int|float|bool|str|bytes|list|map|result|void)\\b",
+          "name": "support.type.vo"
+        },
+        {
+          "comment": "collection types are types only before `[`",
+          "match": "\\b(ordered_map|ordered_set|priority_queue|deque)(?=\\s*\\[)",
+          "name": "support.type.collection.vo"
+        },
+        {
+          "match": "\\b[A-Z][A-Za-z0-9_]*",
+          "name": "entity.name.type.vo"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "match": "\\b[0-9]+\\.[0-9]+",
+          "name": "constant.numeric.float.vo"
+        },
+        {
+          "match": "\\b[0-9]+",
+          "name": "constant.numeric.integer.vo"
+        }
+      ]
+    },
+    "call": {
+      "match": "\\b[a-z_][A-Za-z0-9_]*(?=\\()",
+      "name": "entity.name.function.call.vo"
+    },
+    "operators": {
+      "patterns": [
+        {
+          "match": "->|\\.\\.|==|!=|<=|>=|[-+*/%<>=]",
+          "name": "keyword.operator.symbol.vo"
+        },
+        {
+          "match": "[,;:.]",
+          "name": "punctuation.separator.vo"
+        },
+        {
+          "match": "[\\[\\](){}]",
+          "name": "punctuation.section.brackets.vo"
+        }
+      ]
+    }
+  }
+}
