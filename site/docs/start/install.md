@@ -1,10 +1,30 @@
 # Installing vo
 
-Build the vo toolchain from source with GCC and GNU make, check it with `vo version`, and put it on your `PATH`.
+Download the vo toolchain as one binary, or build it from source with GCC and GNU make, check it with `vo version`, and put it on your `PATH`.
 
 The whole toolchain is one static binary, `vo`, written in freestanding C with no dependencies: the
 checker, formatter, test runner, compiler, virtual machine, the language reference and the standard
 library are all inside it. There are no packages to install and no runtime to set up.
+
+## Download a release
+
+Each release has one static binary per architecture and a list of checksums. The install script picks the
+one for your machine, checks it against the list and writes it to `~/.local/bin/vo`:
+
+```console
+$ curl -fsSL https://raw.githubusercontent.com/d4n-larsson/volang/main/tools/install.sh | sh
+installed vo 0.1.0 schema 1 to /home/you/.local/bin/vo
+```
+
+`VO_INSTALL_DIR` chooses another directory and `VO_VERSION` (for example `v0.1.0`) another release. To
+do it by hand, download `vo-linux-x86_64`, `vo-linux-aarch64` or `vo-linux-riscv64` and `SHA256SUMS` from
+the [releases page](https://github.com/d4n-larsson/volang/releases), run `sha256sum -c --ignore-missing
+SHA256SUMS`, make the file executable and put it on your `PATH` as `vo`. The binary for another
+architecture is also what `vo build --base` takes to build a program for that architecture.
+
+What a version promises is in the
+[stability statement](https://github.com/d4n-larsson/volang/blob/main/docs/stability.md). The rest of
+this page builds vo from source instead.
 
 ## Prerequisites
 

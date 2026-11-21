@@ -81,6 +81,7 @@ On branch `perf-review-fixes`. The figures in `optimizations.md` are from before
 | `vo build` (ecosystem, distribution) | a program shipped as sources plus the toolchain | spec 034: one static executable per program, `--vo-effects` prints its grant, `--base` for the other architectures |
 | Map keys (language 3) | `int` or `str` only; compound keys glued from text | spec 033: records, variants, `bool` and `bytes` keys, `K: key`; tuples declined |
 | Constants (language 2) | none | spec 031: `const name = value;`, usable as scopes, annotation limits and checked templates |
+| Releases, stability, contributing (ecosystem, project basics) | no tags, binaries, policy or guide | a release workflow (three binaries and checksums per tag), `tools/install.sh`, `docs/stability.md`, `CHANGELOG.md`, `CONTRIBUTING.md`; no release has been tagged yet |
 | License and CI (ecosystem) | no license; only the docs site built in CI | MIT `LICENSE`; `.github/workflows/gate.yml` runs `make gate` (not yet run on GitHub) |
 
 Measured and left alone, finding 6: collection is 10% to 40% of the allocating workloads, nearly all

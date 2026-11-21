@@ -1,0 +1,60 @@
+# A release: pushing a tag `vX.Y.Z` builds the toolchain for the three architectures, runs the test
+# suite, and publishes `vo-linux-x86_64`, `vo-linux-aarch64`, `vo-linux-riscv64` and `SHA256SUMS` with
+# that version's section of CHANGELOG.md as the notes. The tag must match `vo version`.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install the cross compilers and qemu
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q gcc binutils-riscv64-linux-gnu gcc-riscv64-linux-gnu gcc-aarch64-linux-gnu qemu-user
+      - name: Permit user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+      - name: Build and check the version
+        run: |
+          make
+          want="vo ${GITHUB_REF_NAME#v} schema"
+          got="$(build/vo version)"
+          case "$got" in
+            "$want"*) ;;
+            *) echo "the tag $GITHUB_REF_NAME does not match \`vo version\` ($got)"; exit 1 ;;
+          esac
+      - name: Run the tests
+        run: make test
+      - name: Build the other architectures and try them
+        run: |
+          for arch in aarch64 riscv64; do
+            make ARCH=$arch
+            VO_BIN=$PWD/build-$arch/vo bin/vo version
+            VO_BIN=$PWD/build-$arch/vo tests/run.sh tests/cases/run tests/cases/crypto
+          done
+      - name: Collect the files
+        run: |
+          mkdir dist
+          cp build/vo dist/vo-linux-x86_64
+          cp build-aarch64/vo dist/vo-linux-aarch64
+          cp build-riscv64/vo dist/vo-linux-riscv64
+          (cd dist && sha256sum vo-linux-* > SHA256SUMS && cat SHA256SUMS)
+          awk -v v="${GITHUB_REF_NAME#v}" '$0 ~ "^## " v { on = 1; next } /^## / { on = 0 } on' CHANGELOG.md > notes.md
+          test -s notes.md || echo "See CHANGELOG.md." > notes.md
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "vo ${GITHUB_REF_NAME#v}" --notes-file notes.md
