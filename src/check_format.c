@@ -101,8 +101,8 @@ static Str *rewrite(Edit *e, long ne)
 }
 
 /* Spec 025: decodes the source between the quotes of string literal lit, with the source offset of
- * every decoded byte (offs[n] is the closing quote's); returns n, or -1 when lit is not a plain
- * one-line literal. Shared by format templates and regex patterns. */
+ * every decoded byte (offs[n] is the closing delimiter's); returns n, or -1 when lit is not a closed
+ * literal. Shared by format templates and regex patterns. */
 long lit_decode(Node *lit, char **buf, long **offs)
 {
     if (lit->flags & NF_CONST) { /* spec 031: a constant's value; every offset is the use (diag_const_node) */
@@ -118,23 +118,11 @@ long lit_decode(Node *lit, char **buf, long **offs)
         return v->len;
     }
     char *src = file_get((int)lit->file)->text;
-    long s = lit->start, e = lit->end, n = 0;
-    if (e - s < 2 || src[s] != '"' || src[e - 1] != '"') return -1;
+    long s = lit->start, e = lit->end;
+    if (e - s < 2 || (src[s] != '"' && src[s] != '`') || src[e - 1] != src[s]) return -1;
     char *b = alloc(e - s + 1);
     long *o = alloc((e - s + 1) * 8);
-    for (long i = s + 1; i < e - 1;) {
-        o[n] = i;
-        int c = (unsigned char)src[i];
-        if (c == '\\' && i + 1 < e - 1) {
-            int k = (unsigned char)src[i + 1];
-            b[n++] = (char)(k == 'n' ? '\n' : k == 't' ? '\t' : k);
-            i += 2;
-        } else {
-            b[n++] = (char)c;
-            i++;
-        }
-    }
-    o[n] = e - 1;
+    long n = str_lit_decode(src, s, e, b, o); /* spec 042: one decoder for quoted and raw literals */
     *buf = b;
     *offs = o;
     return n;

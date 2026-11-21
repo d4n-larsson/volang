@@ -1,0 +1,10 @@
+vo query type-at main.vo main.vo:19:9
+vo query refs main.vo total
+vo edit rename main.vo total sum_of
+keep main.vo
+vo check main.vo
+vo run --trace t.jsonl main.vo
+keep t.jsonl
+vo run --record r.jsonl main.vo
+vo replay r.jsonl
+vo test --coverage main.vo

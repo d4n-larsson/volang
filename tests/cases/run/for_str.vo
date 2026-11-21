@@ -1,0 +1,42 @@
+fn first_wide(s: str) -> str {
+    for c in s {
+        if len(c) > 1 {
+            return c;
+        }
+    }
+    return "";
+}
+
+fn pick() -> str {
+    return "ab";
+}
+
+# Spec 042: for over a str visits its characters.
+fn main() uses console {
+    var s = "héj€😀!";
+    var out = "";
+    for c in s {
+        set s = "changed";
+        if c == "j" {
+            continue;
+        }
+        set out = out + "[" + c + ":" + str(len(c)) + "]";
+        if c == "😀" {
+            break;
+        }
+    }
+    print(out + " " + s + " " + first_wide("abcåd") + first_wide("abc"));
+    for c in "" {
+        print("never");
+    }
+    for a in "xy" {
+        for b in pick() {
+            print(a + b);
+        }
+    }
+    var n = 0;
+    for _ in "åäö" {
+        set n = n + 1;
+    }
+    print(str(n));
+}

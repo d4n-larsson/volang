@@ -1,6 +1,6 @@
 # std.regex: Regular expressions that run in linear time: test, find, replace and split with compiled patterns.
 # Part of the vo standard library (spec 025). Import items one by one: `import std.regex.NAME;`.
-# Patterns are vo strings, so a backslash is written twice: the pattern \d+ is "\\d+". Every operation
+# Write a pattern as a raw string, between backticks, where a backslash is itself: regex(`\d+`). Every operation
 # searches anywhere in the text; ^ and $ anchor. \d \w \s \b and (?i) are ASCII; offsets are bytes.
 
 # A compiled pattern: make one with regex("...") or parse_regex(s), and reuse it.
@@ -41,7 +41,7 @@ export fn parse_regex(pattern: str) -> result[Regex] {
 }
 
 # Whether the pattern matches anywhere in s.
-#     is_match(regex("\\d"), "a1") is true
+#     is_match(regex(`\d`), "a1") is true
 export fn is_match(re: Regex, s: str) -> bool {
     return len(__re(1, re.pattern, s)) > 0;
 }
@@ -98,7 +98,7 @@ export fn first_match(re: Regex, s: str) -> result[Match] {
 }
 
 # Every match in s, left to right, without overlapping (an empty match may follow a non-empty one, as in Python).
-#     len(all_matches(regex("\\d+"), "1 22 333")) is 3
+#     len(all_matches(regex(`\d+`), "1 22 333")) is 3
 export fn all_matches(re: Regex, s: str) -> list[Match] {
     let offs = __re(3, re.pattern, s);
     let names = group_names(re);
@@ -111,7 +111,7 @@ export fn all_matches(re: Regex, s: str) -> list[Match] {
 }
 
 # s with every match replaced: $1 or ${1} is group 1, ${name} a named group, $$ a dollar sign (anything else after $ is R0007).
-#     replace_all(regex("(\\d+)-(\\d+)"), "10-20", "$2-$1") is "20-10"
+#     replace_all(regex(`(\d+)-(\d+)`), "10-20", "$2-$1") is "20-10"
 export fn replace_all(re: Regex, s: str, replacement: str) -> str {
     let parts = __re_repl(re.pattern, replacement);
     let offs = __re(3, re.pattern, s);
@@ -136,7 +136,7 @@ export fn replace_all(re: Regex, s: str, replacement: str) -> str {
 }
 
 # The parts of s between matches (n matches give n + 1 parts), as Python's re.split.
-#     split_on(regex("\\s*,\\s*"), "a , b,c") == ["a", "b", "c"] is true
+#     split_on(regex(`\s*,\s*`), "a , b,c") == ["a", "b", "c"] is true
 export fn split_on(re: Regex, s: str) -> list[str] {
     let offs = __re(3, re.pattern, s);
     let per = 2 * (len(group_names(re)) + 1);
@@ -155,8 +155,8 @@ export fn split_on(re: Regex, s: str) -> list[str] {
 export fn escape(s: str) -> str {
     var out = new list[str];
     for c in chars(s) {
-        if find(".^$*+?()[]{}|\\-", c) >= 0 {
-            push(out, "\\");
+        if find(`.^$*+?()[]{}|\-`, c) >= 0 {
+            push(out, `\`);
         }
         push(out, c);
     }

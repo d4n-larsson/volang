@@ -122,13 +122,13 @@ fn parsed(text: str) -> Json {
 
 @spec("FR-001")
 test "services are read from /status.json" {
-    let doc = parsed("{\"services\": [{\"name\": \"api\", \"up\": true, \"latency_ms\": 42}]}");
+    let doc = parsed(`{"services": [{"name": "api", "up": true, "latency_ms": 42}]}`);
     expect_eq(services_from(doc), ok([new Service { name: "api", up: true, latency_ms: 42 }]));
 }
 
 @spec("FR-002")
 test "a missing field is an error naming it" {
-    let doc = parsed("{\"services\": [{\"name\": \"api\", \"up\": true}]}");
+    let doc = parsed(`{"services": [{"name": "api", "up": true}]}`);
     expect_eq(services_from(doc), err("no field `latency_ms`"));
 }
 

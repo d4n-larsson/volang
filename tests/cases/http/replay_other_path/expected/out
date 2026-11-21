@@ -24,7 +24,7 @@ std/http.vo:169:12: runtime error[R0014]: The program makes an HTTP request `GET
      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at exchange_raw (std/http.vo:169:12)
-      method: str = "GET", url: str = "http://localhost:{port}/json", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "localhost", port: {port}, target: "/json" }, request: str = "GET /json HTTP/1.1\nHost: localhost:{port}\nConnection: close\nUser-Agent: vo\n\n"
+      method: str = "GET", url: str = "http://localhost:{port}/json", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "localhost", port: {port}, target: "/json" }, request: str = "GET /json HTTP/1.1\r\nHost: localhost:{port}\r\nConnection: close\r\nUser-Agent: vo\r\n\r\n"
   at exchange (std/http.vo:120:19)
       method: str = "GET", url: str = "http://localhost:{port}/json", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, hint: str = "get_bytes"
   at get (std/http.vo:290:12)

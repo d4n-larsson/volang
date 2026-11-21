@@ -99,6 +99,10 @@ fn lines(s: str) -> list[str]
     The lines of s: split on newlines, a trailing carriage return dropped, no final empty line.
 fn words(s: str) -> list[str]
     The words of s: runs of characters between spaces, tabs, newlines and carriage returns.
+fn char_count(s: str) -> int
+    The number of characters (code points) in s; len(s) counts bytes.
+fn equal_fold(a: str, b: str) -> bool
+    Whether a and b are equal when letter case is ignored (lower(a) == lower(b)): Latin, Greek and Cyrillic letters.
 ```
 
 A package's modules are documented the same way once it is in `vo.packages`; see [vo package](package.md).

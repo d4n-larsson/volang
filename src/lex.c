@@ -56,14 +56,66 @@ int keyword_kind(char *p, long n)
     return T_IDENT;
 }
 
-/* Letters right after a number (1e3, 10px): E0105 over the whole run; the letters are skipped, so
+/* Spec 042: the escape `\u...` at pos (its backslash): the offset after it. A well-formed one is
+ * `\u{H}` to `\u{HHHHHH}` naming a Unicode scalar value that has no short escape; anything else is
+ * E0103, with a fix where exactly one correction exists. */
+static long lx_unicode_escape(long pos)
+{
+    char *t = lx_text;
+    long len = lx_len, i = pos + 2, v = 0, digits = 0;
+    if (i >= len || t[i] != '{') { /* å: the form of other languages */
+        long k = i;
+        while (k < len && k - i < 6 && ((t[k] >= '0' && t[k] <= '9') || (t[k] >= 'a' && t[k] <= 'f') || (t[k] >= 'A' && t[k] <= 'F'))) k++;
+        Diag *d = lx_err("E0103", pos, k, str_from_cstr("A Unicode escape is written with braces: `\\u{e5}`."));
+        if (k - i == 4) { /* \uHHHH: the same digits in braces */
+            SB *fix = sb_new();
+            sb_cstr(fix, "\\u{");
+            sb_str(fix, lx_slice(i, k));
+            sb_byte(fix, '}');
+            diag_add_fix(d, (int)lx_file, pos, k, sb_finish(fix));
+        }
+        return k;
+    }
+    long k = i + 1;
+    for (; k < len; k++, digits++) {
+        int h = (unsigned char)t[k];
+        int dgt = h >= '0' && h <= '9' ? h - '0' : h >= 'a' && h <= 'f' ? h - 87 : h >= 'A' && h <= 'F' ? h - 55 : -1;
+        if (dgt < 0) break;
+        if (digits < 7) v = v * 16 + dgt;
+    }
+    int closed = k < len && t[k] == '}';
+    long end = closed ? k + 1 : k;
+    char *why = !digits                                  ? "A Unicode escape needs 1 to 6 hexadecimal digits in its braces: `\\u{e5}`."
+                : digits > 6                             ? "A Unicode escape has at most 6 hexadecimal digits."
+                : v > 0x10ffff                           ? "A Unicode escape names a character up to 10FFFF."
+                : v >= 0xd800 && v <= 0xdfff             ? "A Unicode escape cannot name a surrogate (D800 to DFFF): they are not characters."
+                : !closed && k < len && t[k] != '"' && t[k] != '\n' && t[k] != ' ' ? "A Unicode escape holds hexadecimal digits only: `\\u{e5}`."
+                                                         : 0;
+    if (why) {
+        lx_err("E0103", pos, end, str_from_cstr(why));
+        return end;
+    }
+    if (!closed) {
+        Diag *d = lx_err("E0103", pos, end, str_from_cstr("This Unicode escape is not closed: add `}`."));
+        diag_add_fix(d, (int)lx_file, end, end, str_from_cstr("}"));
+        return end;
+    }
+    char *shorter = v == 9 ? "\\t" : v == 10 ? "\\n" : v == 13 ? "\\r" : v == 0x22 ? "\\\"" : v == 0x5c ? "\\\\" : 0;
+    if (shorter) { /* one escape per character */
+        Diag *d = lx_err("E0103", pos, end, msg("This character has a short escape: write `$1`.", str_from_cstr(shorter), 0, 0));
+        diag_add_fix(d, (int)lx_file, pos, end, str_from_cstr(shorter));
+    }
+    return end;
+}
+
+/* Letters right after a number (10px, 1ex): E0105 over the whole run; the letters are skipped, so
  * lexing goes on after them. */
 static void lx_number_suffix(long start, long end)
 {
     if (end >= lx_len || !is_word_char((unsigned char)lx_text[end])) return;
     while (end < lx_len && is_word_char((unsigned char)lx_text[end])) end++;
     lx_err("E0105", start, end,
-           str_from_cstr("Number literals have no exponent or suffix: write the number in full, like 1000.0."));
+           str_from_cstr("Number literals have no suffix: write the number alone, like 1000 or 1.5e3."));
     lx_skip_to = end; /* tell the caller where lexing resumes */
 }
 
@@ -228,6 +280,24 @@ Token *lex(int file)
             pos++;
             continue;
         }
+        if (c == '`') { /* spec 042: a raw string, to the next backtick; line breaks are part of it */
+            pos++;
+            while (pos < len && text[pos] != '`') {
+                if (text[pos] == '\n') lx_lstart = pos + 1;
+                pos++;
+            }
+            if (pos < len) {
+                pos++;
+                lx_push(T_STRING, start, pos);
+            } else {
+                lx_push(T_STRING, start, pos);
+                lx_err("E0102", start, start + 1,
+                       str_from_cstr("This raw string is not closed: it runs from this backtick to the end of the file. Add a backtick "
+                                     "where the text ends."));
+            }
+            lx_code = 1;
+            continue;
+        }
         if (c == '"') { /* string */
             pos++;
             for (;;) {
@@ -255,30 +325,58 @@ Token *lex(int file)
                     break;
                 }
                 char e = text[pos + 1];
-                if (e == 'n' || e == 't' || e == '\\' || e == '"') {
+                if (e == 'n' || e == 't' || e == '\\' || e == '"' || e == 'r') { /* spec 042: \r */
                     pos += 2;
+                    continue;
+                }
+                if (e == 'u') { /* spec 042: \u{HEX} */
+                    pos = lx_unicode_escape(pos);
                     continue;
                 }
                 long k = utf8_seq_len(text + pos + 1, len - (pos + 1)); /* unknown escape: report \x */
                 if (k == 0) k = 1;
                 long esc_end = pos + 1 + k;
                 Diag *d = lx_err("E0103", pos, esc_end,
-                                 msg("Unknown escape sequence `$1`. Use \\n, \\t, \\\\ or \\\".", lx_slice(pos, esc_end), 0, 0));
-                diag_add_fix(d, (int)lx_file, pos, pos, str_from_cstr("\\")); /* spec 025: a literal backslash */
+                                 msg("Unknown escape sequence `$1`. Use \\n, \\t, \\r, \\\\, \\\" or \\u{HEX}.", lx_slice(pos, esc_end), 0, 0));
+                if (e == '0') /* spec 042: a NUL has one spelling */
+                    diag_add_fix(d, (int)lx_file, pos, esc_end, str_from_cstr("\\u{0}"));
+                else
+                    diag_add_fix(d, (int)lx_file, pos, pos, str_from_cstr("\\")); /* spec 025: a literal backslash */
                 pos = esc_end;
             }
             continue;
         }
         if (c >= '0' && c <= '9') { /* number */
             while (pos < len && text[pos] >= '0' && text[pos] <= '9') pos++;
+            int is_float = 0;
             if (pos + 1 < len && text[pos] == '.' && text[pos + 1] >= '0' && text[pos + 1] <= '9') {
+                is_float = 1;
                 pos++;
                 while (pos < len && text[pos] >= '0' && text[pos] <= '9') pos++;
-                lx_number_suffix(start, pos);
-                lx_push(T_FLOAT, start, pos);
+            }
+            long mant_end = pos, bad_exp = 0;
+            if (pos < len && (text[pos] == 'e' || text[pos] == 'E')) { /* spec 042: an exponent makes a float */
+                long k = pos + 1;
+                if (k < len && (text[k] == '+' || text[k] == '-')) k++;
+                if (k < len && text[k] >= '0' && text[k] <= '9') {
+                    while (k < len && text[k] >= '0' && text[k] <= '9') k++;
+                    is_float = 1;
+                    pos = k;
+                } else if (k >= len || !is_word_char((unsigned char)text[k])) { /* 1e, 1e+: an exponent without digits */
+                    is_float = 1;
+                    bad_exp = 1;
+                    pos = k;
+                }
+            }
+            if (is_float) {
+                if (bad_exp)
+                    lx_err("E0105", start, pos, str_from_cstr("An exponent needs digits: write `1e9` or `1.5e-3`."));
+                else
+                    lx_number_suffix(start, pos);
+                lx_push(T_FLOAT, start, bad_exp ? mant_end : pos);
                 long count = 0, through = 0; /* significant digits: first through last non-zero */
                 int started = 0;
-                for (long i = start; i < pos; i++) {
+                for (long i = start; i < mant_end; i++) {
                     char d = text[i];
                     if (d == '.') continue;
                     if (!started) {
@@ -290,6 +388,8 @@ Token *lex(int file)
                 }
                 if (through > 17)
                     lx_err("E0105", start, pos, str_from_cstr("Float literal has more than 17 significant digits."));
+                else if (!bad_exp && ((unsigned long)text_to_float(text + start, pos - start) << 1) == (2047UL << 53))
+                    lx_err("E0105", start, pos, str_from_cstr("Float literal is larger than the largest float (about 1.8e308)."));
             } else {
                 lx_number_suffix(start, pos);
                 lx_push(T_INT, start, pos);

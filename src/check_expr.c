@@ -258,6 +258,22 @@ static int fixed_operand(Node *n)
     return s && s->kind == SYM_CONST;
 }
 
+/* Spec 042 (W0102): a raw string whose text has no backslash, no quote and no line break says
+ * nothing a quoted string does not: one spelling per text, with the quoted form as the fix. */
+static void raw_string_check(Node *n)
+{
+    if (n->flags & NF_CONST) return;
+    FileRec *f = file_get((int)n->file);
+    if (n->end <= n->start || f->text[n->start] != '`' || f->text[n->end - 1] != '`') return;
+    Str *v = n->a.s;
+    for (long i = 0; i < v->len; i++)
+        if (v->data[i] == '\\' || v->data[i] == '"' || v->data[i] == '\n') return;
+    Diag *d = ck_warn("W0102", n, str_from_cstr("This raw string needs no backticks: its text has no backslash, quote or line break. Write it in quotes."));
+    SB *sb = sb_new();
+    render_str_lit(sb, v);
+    diag_add_fix(d, (int)n->file, n->start, n->end, sb_finish(sb));
+}
+
 Type *check_builtin(Node *call, long id, Type *expected)
 {
     call->d.i = id;
@@ -1152,7 +1168,10 @@ Type *check_expr(Node *node, Type *expected)
         switch (node->kind) {
         case N_INT: t = t_int; break;
         case N_FLOAT: t = t_float; break;
-        case N_STR: t = t_str; break;
+        case N_STR:
+            t = t_str;
+            raw_string_check(node);
+            break;
         case N_BOOL: t = t_bool; break;
         case N_IDENT: t = check_ident_as(node, expected); break;
         case N_CALL: t = check_call(node, expected); break;

@@ -1,0 +1,7 @@
+{"v":1,"kind":"call","depth":1,"function":"main","args":[]}
+{"v":1,"kind":"call","depth":2,"function":"sum_of","file":"main.vo","start":{"line":20,"col":23},"args":[{"name":"xs","value":"[1, 2, 3]"}]}
+{"v":1,"kind":"return","depth":2,"function":"sum_of","value":"6"}
+{"v":1,"kind":"call","depth":2,"function":"sum_of","file":"main.vo","start":{"line":20,"col":23},"args":[{"name":"xs","value":"[1, 2, 3]"}]}
+{"v":1,"kind":"return","depth":2,"function":"sum_of","value":"6"}
+{"v":1,"kind":"return","depth":1,"function":"main"}
+{"v":1,"kind":"end","records":6,"omitted":0,"status":0}

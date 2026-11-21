@@ -613,6 +613,8 @@ static void check_for(Node *st)
         elem = t_int;
     } else if (ty_is(it, TY_LIST) || ty_is(it, TY_OSET) || ty_is(it, TY_PQUEUE) || ty_is(it, TY_DEQUE)) {
         elem = it->a.t; /* spec 014: collections iterate over a snapshot (a map: `for k in keys(m)`) */
+    } else if (ty_is(it, TY_STR)) {
+        elem = t_str; /* spec 042: each character (code point) as a one-character str */
     } else {
         elem = t_error;
         if (ty_is(it, TY_BYTES)) /* spec 021 */
@@ -620,7 +622,7 @@ static void check_for(Node *st)
                    str_from_cstr("`for ... in` needs a list or a range `a..b`, found `bytes`: loop over "
                                  "`std.bytes.to_ints(...)` or over the indexes `0..len(...)`."));
         else if (!ty_bad(it))
-            ck_err1("E0301", st->b.n, "`for ... in` needs a list or a range `a..b`, found `$1`.", ty_name(it));
+            ck_err1("E0301", st->b.n, "`for ... in` needs a list, a `str` or a range `a..b`, found `$1`.", ty_name(it));
     }
     if (st->a.n) {
         Sym *s = new_local(st->a.n, elem, 0);

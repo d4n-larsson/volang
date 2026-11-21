@@ -47,6 +47,8 @@ def mutate(data, rng):
         else:  # insert syntax-shaped noise
             i = rng.randrange(n + 1)
             data[i:i] = rng.choice([b"{", b"}", b"(", b")", b";", b",", b"\"", b"\n",
+                                    # spec 042: raw strings, the \\u escape, exponents, a text loop
+                                    b"`", b"\\u{", b"\\u{e5}", b"\\r", b"1e", b"e+9", b"for c in \"ab\" ",
                                     b"let ", b"fn ", b"match ", b"case ", b"[", b"]", b"..", b"#",
                                     # v2: effects, functions as values, generics
                                     b" uses ", b"console", b"file.write(\"out/\")", b"env(\"X\")",

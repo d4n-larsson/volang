@@ -5,7 +5,7 @@ std/http.vo:169:12: runtime error[R0010]: net("localhost") is not allowed: `main
      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at exchange_raw (std/http.vo:169:12)
-      method: str = "GET", url: str = "http://localhost:{port}/plain", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "localhost", port: {port}, target: "/plain" }, request: str = "GET /plain HTTP/1.1\nHost: localhost:{port}\nConnection: close\nUser-Agent: vo\n\n"
+      method: str = "GET", url: str = "http://localhost:{port}/plain", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "localhost", port: {port}, target: "/plain" }, request: str = "GET /plain HTTP/1.1\r\nHost: localhost:{port}\r\nConnection: close\r\nUser-Agent: vo\r\n\r\n"
   at exchange (std/http.vo:120:19)
       method: str = "GET", url: str = "http://localhost:{port}/plain", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, hint: str = "get_bytes"
   at get (std/http.vo:290:12)

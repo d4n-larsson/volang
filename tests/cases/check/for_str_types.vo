@@ -1,0 +1,13 @@
+import std.bytes.from_text;
+
+fn main() uses console {
+    for c in "ab" {
+        print(str(c + 1));
+    }
+    for x in 5 {
+        print("no");
+    }
+    for b in from_text("ab") {
+        print("no");
+    }
+}

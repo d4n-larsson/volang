@@ -108,7 +108,7 @@ fn add(n: int, input: AddItem) -> result[Response] {
 fn main() uses console {
     let routes: list[Route[int]] = [on_post("/items", add)];
     let app = new App { routes: routes, steps: new list[Step[int]], errors: new list[ErrorStatus] };
-    for body in ["{\"name\": \"cup\"}", "{\"name\": \"\", \"count\": 5000}", "{\"nam\": \"cup\"}"] {
+    for body in [`{"name": "cup"}`, `{"name": "", "count": 5000}`, `{"nam": "cup"}`] {
         let r = handle_request(app, 0, request("POST", "/items", body));
         print(str(r.status) + " " + r.body);
     }

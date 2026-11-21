@@ -1,0 +1,6 @@
+# Spec 042 (W0102): a raw string that needs no backticks is written in quotes.
+fn main() uses console {
+    print(`plain`);
+    print(`` + `needs \ these` + `and "these"` + `and
+these`);
+}

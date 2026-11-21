@@ -5,7 +5,7 @@
   "fileTypes": [
     "vo"
   ],
-  "comment": "TextMate grammar for vo. No rule spans a line: strings and comments end with their line, so a mistake never changes the lines after it. tests/grammars.py compares every token class with the tree-sitter grammar on every .vo file of the repository, and every word list here with the language's.",
+  "comment": "TextMate grammar for vo. No rule spans a line except a raw string between backticks: quoted strings and comments end with their line, so a mistake never changes the lines after it. tests/grammars.py compares every token class with the tree-sitter grammar on every .vo file of the repository, and every word list here with the language's.",
   "patterns": [
     {
       "include": "#code"
@@ -60,17 +60,27 @@
       "name": "comment.line.number-sign.vo"
     },
     "string": {
-      "begin": "\"",
-      "end": "\"|$",
-      "name": "string.quoted.double.vo",
       "patterns": [
         {
-          "match": "\\\\[nt\"\\\\]",
-          "name": "constant.character.escape.vo"
+          "begin": "\"",
+          "end": "\"|$",
+          "name": "string.quoted.double.vo",
+          "patterns": [
+            {
+              "match": "\\\\(?:[ntr\"\\\\]|u\\{[0-9A-Fa-f]{1,6}\\})",
+              "name": "constant.character.escape.vo"
+            },
+            {
+              "match": "\\\\.",
+              "name": "invalid.illegal.escape.vo"
+            }
+          ]
         },
         {
-          "match": "\\\\.",
-          "name": "invalid.illegal.escape.vo"
+          "comment": "A raw string: the one rule that spans lines, since its text may.",
+          "begin": "`",
+          "end": "`",
+          "name": "string.quoted.other.raw.vo"
         }
       ]
     },
@@ -305,7 +315,7 @@
     "numbers": {
       "patterns": [
         {
-          "match": "\\b[0-9]+\\.[0-9]+",
+          "match": "\\b[0-9]+(?:\\.[0-9]+(?:[eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)",
           "name": "constant.numeric.float.vo"
         },
         {

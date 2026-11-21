@@ -1,0 +1,7 @@
+raw_position.vo:3:3: error[E0317]: Unsupported option `q`: the options are `<` `>` `^` `+` `0` width `,` `.Nf` `x` `b`, in that order.
+   3 | b {:q}`, 1, 2));
+     |   ^^^^
+raw_position.vo:4:27: error[E0317]: Unsupported option `q`: the options are `<` `>` `^` `+` `0` width `,` `.Nf` `x` `b`, in that order.
+   4 |     print(format("\u{e5}\t{:q}", 1));
+     |                           ^^^^
+2 errors, 0 warnings

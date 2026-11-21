@@ -1,0 +1,12 @@
+fn main() uses console {
+    print("\u00e5");
+    print("\u{}");
+    print("\u{1234567}");
+    print("\u{zz}");
+    print("\u{D800}");
+    print("\u{110000}");
+    print("\u{e5");
+    print("\u{a}\u{d}\u{9}\u{22}\u{5c}");
+    print("\x41\a\'\0");
+    print("\u");
+}

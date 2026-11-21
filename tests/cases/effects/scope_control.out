@@ -1,0 +1,20 @@
+scope_control.vo:2:23: error[E0506]: A scope cannot hold a line break or another control character: it is written on one line of vo.effects.
+   2 | fn a() uses file.read("data\n") {
+     |                       ^^^^^^^^
+scope_control.vo:5:17: error[E0506]: A scope cannot hold a line break or another control character: it is written on one line of vo.effects.
+   5 | fn b() uses env("A\rB") {
+     |                 ^^^^^^
+scope_control.vo:8:17: error[E0506]: A scope cannot hold a line break or another control character: it is written on one line of vo.effects.
+   8 | fn c() uses net("h\u{0}") {
+     |                 ^^^^^^^^
+scope_control.vo:11:23: error[E0506]: A scope cannot hold a line break or another control character: it is written on one line of vo.effects.
+  11 | fn d() uses file.read(`two
+     |                       ^^^^
+scope_control.vo:15:4: warning[W0501]: `main` declares file.read("data/"), which it never needs.
+  15 | fn main() uses file.read(`data/`) {
+     |    ^^^^
+  fix: remove `uses file.read(`data/`) `
+scope_control.vo:15:26: warning[W0102]: This raw string needs no backticks: its text has no backslash, quote or line break. Write it in quotes.
+  15 | fn main() uses file.read(`data/`) {
+     |                          ^^^^^^^
+4 errors, 2 warnings

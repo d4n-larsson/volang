@@ -27,6 +27,7 @@ class VoLexer(RegexLexer):
             (r"#.*?$", Comment.Single),
             (r"@\w+", Name.Decorator),
             (r'"', String, "string"),
+            (r"`[^`]*`", String),  # a raw string: any text, any lines
             (r"\b(true|false)\b", Keyword.Constant),
             (r"\b(ret)\b", Name.Builtin.Pseudo),
             (r"\buses\b", Keyword, "uses"),
@@ -34,7 +35,7 @@ class VoLexer(RegexLexer):
             (words(TYPES, suffix=r"\b"), Keyword.Type),
             (words(BUILTINS, prefix=r"\b", suffix=r"(?=\s*\()"), Name.Builtin),
             (r"\b[A-Z]\w*", Name.Class),
-            (r"\b\d+\.\d+([eE][+-]?\d+)?\b", Number.Float),
+            (r"\b\d+(\.\d+([eE][+-]?\d+)?|[eE][+-]?\d+)\b", Number.Float),
             (r"\b\d+\b", Number.Integer),
             (r"(fn)(\s+)([a-z_]\w*)", bygroups(Keyword, Whitespace, Name.Function)),
             (r"[a-z_]\w*", Name),
@@ -43,7 +44,7 @@ class VoLexer(RegexLexer):
             (r".", Text),
         ],
         "string": [
-            (r'\\[nrt"\\]|\\u[0-9a-fA-F]{4}', String.Escape),
+            (r'\\[nrt"\\]|\\u\{[0-9a-fA-F]{1,6}\}', String.Escape),
             (r'"', String, "#pop"),
             (r'[^"\\]+', String),
             (r"\\", String),
@@ -52,6 +53,7 @@ class VoLexer(RegexLexer):
             (r"\s+", Whitespace),
             (words(EFFECTS, suffix=r"\b"), Name.Builtin.Pseudo),
             (r'"', String, "string"),
+            (r"`[^`]*`", String),
             (r"[A-Z]\w*", Name.Class),
             (r"[.,()]", Punctuation),
             (r"(?=[{;]|requires|ensures)", Text, "#pop"),

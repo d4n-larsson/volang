@@ -1,0 +1,11 @@
+fn before() -> int {
+    return 1;
+}
+
+fn main() uses console {
+    print(`never closed);
+}
+
+fn after() -> int {
+    return 2;
+}

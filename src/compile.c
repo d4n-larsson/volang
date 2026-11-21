@@ -501,7 +501,7 @@ static void cfor(Node *st)
         c_mov(it, cexpr(st->b.n, it), st);
         if (TY_IS_COLL(st->b.n->type->kind)) c_emit(OPC_SNAPSHOT, it, it, 0, st); /* spec 014 */
         c_emit(OPC_LOADK, it + 8, 0, 0, st);
-        op = OPC_FOR_LIST;
+        op = st->b.n->type->kind == TY_STR ? OPC_FOR_STR : OPC_FOR_LIST; /* spec 042: a text's characters */
     }
     long head = c_emit(op, st->e.i * 8, it, 0, st); /* the first test (its exit target comes later) */
     vec_push(c_fix, (void *)head);
@@ -509,7 +509,7 @@ static void cfor(Node *st)
     c_cover(st->d.n, COV_LOOP); /* spec 018 */
     cblock(st->d.n);
     long cont = c_here(); /* continue: the back-edge (step, test, next value, jump) */
-    long step = c_emit(st->c.n ? OPC_FOR_STEP : OPC_FOR_LIST_STEP, st->e.i * 8, it, body, st);
+    long step = c_emit(st->c.n ? OPC_FOR_STEP : op == OPC_FOR_STR ? OPC_FOR_STR_STEP : OPC_FOR_LIST_STEP, st->e.i * 8, it, body, st);
     vec_push(c_fix, (void *)step);
     long exit = c_here();
     c_target(head, exit);

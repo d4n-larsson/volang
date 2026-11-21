@@ -1,0 +1,6 @@
+fn main() uses console {
+    print(str(len(`a
+b`)) + " " + str(`a
+b` == "a\nb"));
+    print(`plain\`);
+}

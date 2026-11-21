@@ -48,6 +48,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [039](../specs/039-std-tcp/) | `std.tcp`: TCP connections under the existing `net` and `serve` effects, with ports in `net` scopes (`net("db:5432")`), three reads with time limits, TLS from the first byte or as an upgrade, listen and accept, typed errors, record and replay | **Implemented** ([results](../specs/039-std-tcp/results.md)) |
 | [040](../specs/040-streaming/) | Streaming: `std.fs.each_line` and `each_chunk`, `std.http.send_stream`, `std.process.run_lines` hand a program one piece at a time through a function it passes; memory does not grow with the source; no new type | **Implemented** ([results](../specs/040-streaming/results.md)) |
 | [041](../specs/041-package-download/) | Downloading packages: `vo package ENTRY NAME URL` fetches a tar or tar.gz archive over HTTPS, unpacks its `.vo` files, pins them by content and prints the effects the package declares; `--restore` on a fresh clone; hostile archives refused whole | **Implemented** ([results](../specs/041-package-download/results.md)) |
+| [042](../specs/042-strings/) | Strings: raw strings between backticks, the escapes `\\r` and `\\u{HEX}`, `for c in s`, `upper`/`lower` for Latin, Greek and Cyrillic, exponent float literals, `std.text.char_count` and `equal_fold` | **Implemented** ([results](../specs/042-strings/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -476,6 +477,19 @@ The command prints the effects the package's exported functions declare, read fr
 
 - **Not done (on purpose):** git itself, zip, a registry, versions, fetching a package's dependencies,
   credentials, proxies, signatures.
+
+### 042: strings (implemented)
+
+A raw string, between backticks, takes its text as written, so a regular expression, SQL or JSON is no
+longer written with doubled backslashes and escaped quotes. It is a second literal form, recorded as a
+justified deviation from "one form per construct": the formatter and W0102 keep one spelling per text
+(raw only for text with a backslash, a quote or a line break). Quoted strings gain `\r` and `\u{HEX}`,
+with one escape per character. `for c in s` walks a string's characters without building a list.
+`upper` and `lower` map Latin, Greek and Cyrillic letters from a generated table. Float literals take an
+exponent.
+
+- **Not done (on purpose):** interpolation, a character type, full case mapping (`ß`), normalization,
+  hex and binary integer literals (with the bitwise operations of the review's item 5).
 
 ## Planned after 017
 

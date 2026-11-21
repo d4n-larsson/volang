@@ -149,19 +149,19 @@ fn call(n: Notes, method: str, path: str, body: str) -> Response {
 @spec("FR-001")
 test "GET /notes lists the notes as JSON" {
     let n = memory();
-    let _ = call(n, "POST", "/notes", "{\"text\": \"water the plants\"}");
+    let _ = call(n, "POST", "/notes", `{"text": "water the plants"}`);
     let r = call(n, "GET", "/notes", "");
     expect_eq(r.status, 200);
-    expect_eq(r.body, "[{\"id\":1,\"text\":\"water the plants\",\"done\":false}]");
+    expect_eq(r.body, `[{"id":1,"text":"water the plants","done":false}]`);
 }
 
 @spec("FR-002")
 test "POST /notes adds a note with the next id" {
     let n = memory();
-    let _ = call(n, "POST", "/notes", "{\"text\": \"a\"}");
-    let r = call(n, "POST", "/notes", "{\"text\": \" buy bread \"}");
+    let _ = call(n, "POST", "/notes", `{"text": "a"}`);
+    let r = call(n, "POST", "/notes", `{"text": " buy bread "}`);
     expect_eq(r.status, 201);
-    expect_eq(r.body, "{\"id\":2,\"text\":\"buy bread\",\"done\":false}");
+    expect_eq(r.body, `{"id":2,"text":"buy bread","done":false}`);
     expect_eq(r.headers[1].value, "/notes/2");
 }
 
@@ -169,9 +169,9 @@ test "POST /notes adds a note with the next id" {
 test "a missing, empty or too long text is refused with the reason" {
     let n = memory();
     expect_eq(call(n, "POST", "/notes", "{}").status, 400);
-    expect_eq(call(n, "POST", "/notes", "{\"text\": \"   \"}").status, 422);
+    expect_eq(call(n, "POST", "/notes", `{"text": "   "}`).status, 422);
     expect_eq(call(n, "POST", "/notes", "not json").status, 400);
-    match parse_json(call(n, "POST", "/notes", "{\"txt\": \"typo\"}").body) {
+    match parse_json(call(n, "POST", "/notes", `{"txt": "typo"}`).body) {
         case ok(j) {
             expect_eq(int_field(j, "status"), ok(400));
         }
@@ -184,11 +184,8 @@ test "a missing, empty or too long text is refused with the reason" {
 @spec("FR-004")
 test "one note: read, mark done, delete" {
     let n = memory();
-    let _ = call(n, "POST", "/notes", "{\"text\": \"call home\"}");
-    expect_eq(
-        call(n, "GET", "/notes/1", "").body,
-        "{\"id\":1,\"text\":\"call home\",\"done\":false}"
-    );
+    let _ = call(n, "POST", "/notes", `{"text": "call home"}`);
+    expect_eq(call(n, "GET", "/notes/1", "").body, `{"id":1,"text":"call home","done":false}`);
     match parse_json(call(n, "POST", "/notes/1/done", "").body) {
         case ok(j) {
             expect_eq(text_field(j, "text"), ok("call home"));
@@ -213,8 +210,8 @@ test "unknown notes and paths are 404, other methods 405" {
 @spec("FR-006")
 test "the notes are kept in the database between requests" {
     let n = memory();
-    let _ = call(n, "POST", "/notes", "{\"text\": \"one\"}");
-    let _ = call(n, "POST", "/notes", "{\"text\": \"two\"}");
+    let _ = call(n, "POST", "/notes", `{"text": "one"}`);
+    let _ = call(n, "POST", "/notes", `{"text": "two"}`);
     expect_eq(all_notes(n.db), ok([
         new Note { id: 1, text: "one", done: false },
         new Note { id: 2, text: "two", done: false }

@@ -1,0 +1,51 @@
+$ vo query type-at main.vo main.vo:19:9
+main.vo:19:9 c: str (declared at main.vo:19:9)
+--- stderr
+--- exit 0
+$ vo query refs main.vo total
+main.vo:3:4 declaration: fn total(xs: list[int]) -> int {
+main.vo:12:15 call in test "total adds": expect_eq(total([1, 2]), 3);
+main.vo:20:23 call in main: print(c + str(total([1, 2, 3])));
+3 references
+--- stderr
+--- exit 0
+$ vo edit rename main.vo total sum_of
+main.vo:3:4 total -> sum_of
+main.vo:12:15 total -> sum_of
+main.vo:20:23 total -> sum_of
+renamed total to sum_of: 3 changes in 1 file
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run --trace t.jsonl main.vo
+the "total" is
+total(xs) \ summed
+a6
+b6
+--- stderr
+--- exit 0
+$ vo run --record r.jsonl main.vo
+the "total" is
+total(xs) \ summed
+a6
+b6
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+the "total" is
+total(xs) \ summed
+a6
+b6
+--- stderr
+--- exit 0
+$ vo test --coverage main.vo
+PASS total adds (0ms)
+not run: main.vo:15:1 function main
+not run: main.vo:19:19 loop in main
+coverage: 1 of 2 functions, 1 of 2 branches
+1 passed, 0 failed
+--- stderr
+--- exit 0

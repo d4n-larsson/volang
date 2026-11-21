@@ -112,6 +112,12 @@ EffSet *fx_build_set(Node *uses, Fx *fx)
             }
             if (es_add_scope(set, bit, sc->a.s)) continue;
             if (fx) fx->bad = 1;
+            int control = 0; /* spec 042: a scope is one line of vo.effects */
+            for (long k = 0; k < sc->a.s->len; k++) control |= (unsigned char)sc->a.s->data[k] < 0x20 || sc->a.s->data[k] == 0x7f;
+            if (control) {
+                ck_err("E0506", sc, str_from_cstr("A scope cannot hold a line break or another control character: it is written on one line of vo.effects."));
+                continue;
+            }
             if (bit == EF_SERVE)
                 ck_err1("E0506", sc, "\"$1\" is not a valid serve address: write \"PORT\" or \"0.0.0.0:PORT\".", sc->a.s);
             else if (bit == EF_PROCESS)

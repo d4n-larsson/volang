@@ -96,7 +96,7 @@ export fn sql(text: str) -> Statement {
 }
 
 # The statement for SQL built at run time: err on a syntax error, more than one statement, or named parameters.
-#     parse_sql("selec 1") == err("near \"selec\": syntax error") is true
+#     parse_sql("selec 1") == err(`near "selec": syntax error`) is true
 export fn parse_sql(text: str) -> result[Statement] {
     let _ = try __sql_prepare(text);
     return ok(new Statement { text: text });

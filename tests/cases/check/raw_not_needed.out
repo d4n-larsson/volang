@@ -1,0 +1,9 @@
+raw_not_needed.vo:3:11: warning[W0102]: This raw string needs no backticks: its text has no backslash, quote or line break. Write it in quotes.
+   3 |     print(`plain`);
+     |           ^^^^^^^
+  fix: replace with `"plain"`
+raw_not_needed.vo:4:11: warning[W0102]: This raw string needs no backticks: its text has no backslash, quote or line break. Write it in quotes.
+   4 |     print(`` + `needs \ these` + `and "these"` + `and
+     |           ^^
+  fix: replace with `""`
+0 errors, 2 warnings

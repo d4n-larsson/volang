@@ -240,7 +240,7 @@ fn check_header(h: Header) -> result[void] {
 }
 
 fn crlf() -> str {
-    return chr(13) + "\n";
+    return "\r\n";
 }
 
 fn parse_response(raw: str) -> result[Response] {

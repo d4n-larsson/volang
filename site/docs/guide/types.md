@@ -101,7 +101,7 @@ For a fixed number of decimals use `format("{:.2f}", x)`. Compare floats against
 `abs(a - b) < 0.000001`, when exact equality is not what you mean.
 
 A float literal has at most 17 significant digits ([E0105](../errors/E0105.md) otherwise), needs digits on
-both sides of the `.`, and has no exponent form.
+both sides of the `.`, and may have an exponent: `1e9`, `1.5e-3`.
 
 ## bool
 
@@ -118,8 +118,8 @@ A `str` is immutable UTF-8 text. Strings are compared and measured as bytes:
 - `<`, `<=`, `>`, `>=` compare bytes, so `"Zebra" < "apple"`.
 - Strings cannot be indexed: `s[0]` is [E0308](../errors/E0308.md).
 
-To work with characters (Unicode code points), split the string with `chars(s)`, which returns a
-`list[str]` of one-character strings. `ord(c)` gives the code point of a one-character string and
+To work with characters (Unicode code points), loop over the string with `for c in s`, or split it with
+`chars(s)`, which returns a `list[str]` of one-character strings. `ord(c)` gives the code point of a one-character string and
 `chr(i)` the reverse. To scan a long text, read it in place: `byte_at(s, i)` is byte `i` as an `int`
 (0 to 255), and makes no list.
 
@@ -137,10 +137,11 @@ fn main() uses console {
 6 bytes, 5 characters
 é 233 é
 hé|3
-HéLLO
+HÉLLO
 ```
 
-`upper` and `lower` change ASCII letters only, which is why `é` stays as it is. Operations that need byte
+`upper` and `lower` change Latin, Greek and Cyrillic letters; a letter whose other case is several
+characters, such as `ß`, stays as it is. Operations that need byte
 offsets, like `find` and `slice`, agree with each other, so `slice(s, find(s, x), len(s))` is always
 safe when `find` succeeds. The string builtins (`split`, `join`, `trim`, `find`, ...) are listed in
 [Builtins](../reference/builtins.md), and [`std.text`](../std/text.md) has more, such as
@@ -228,7 +229,8 @@ fn main() uses console {
 ### Parsing text
 
 `parse_int` and `parse_float` return a `result`, because text may not be a number. The whole string must
-be the number: no spaces (use `trim` first), no `+` sign, no exponent. `parse_float("2")` succeeds with
+be the number: no spaces (use `trim` first) and no `+` sign; `parse_float` accepts an exponent (`"1e9"`).
+`parse_float("2")` succeeds with
 `2.0`.
 
 ```vo

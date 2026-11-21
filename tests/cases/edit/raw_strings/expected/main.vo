@@ -1,0 +1,22 @@
+# Spec 042: tools on a program with raw strings. `total` appears inside a raw string, which a rename
+# must not touch.
+fn sum_of(xs: list[int]) -> int {
+    var sum = 0;
+    for x in xs {
+        set sum = sum + x;
+    }
+    return sum;
+}
+
+test "total adds" {
+    expect_eq(sum_of([1, 2]), 3);
+}
+
+fn main() uses console {
+    let note = `the "total" is
+total(xs) \ summed`;
+    print(note);
+    for c in "ab" {
+        print(c + str(sum_of([1, 2, 3])));
+    }
+}

@@ -38,9 +38,9 @@ trace:
   at anonymous function (std/http.vo:654:20)
       r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>, state: int = 0
   at answer_text (std/http.vo:672:54)
-      raw: str = "GET /crash HTTP/1.1\nHost: localhost\n\n", handle: fn(Request) -> Response uses console, clock = <fn(Request) -> Response uses console, clock>, req: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
+      raw: str = "GET /crash HTTP/1.1\r\nHost: localhost\r\n\r\n", handle: fn(Request) -> Response uses console, clock = <fn(Request) -> Response uses console, clock>, req: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
   at anonymous function (std/http.vo:653:16)
-      state: int = 0, raw: str = "GET /crash HTTP/1.1\nHost: localhost\n\n", handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>
+      state: int = 0, raw: str = "GET /crash HTTP/1.1\r\nHost: localhost\r\n\r\n", handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>
   at serve_workers (std/http.vo:652:12)
       address: str = "{vport}", workers: int = 2, setup: fn() -> result[int] = <fn() -> result[int]>, handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>
   at main (main.vo:30:9)

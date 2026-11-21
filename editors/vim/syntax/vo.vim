@@ -20,12 +20,14 @@ syn match voConstraint /\(\h\w*\s*:\s*\)\@<=\(ordered\|effects\|json\|key\)\ze\s
 
 syn match voTypeName /\<\u\w*/
 syn match voFunction /\(\<fn\s\+\)\@<=\l\w*/
-syn match voFloat /\<\d\+\.\d\+\>/
+syn match voFloat /\<\d\+\(\.\d\+\([eE][+-]\=\d\+\)\=\|[eE][+-]\=\d\+\)\>/
 syn match voNumber /\<\d\+\>/
 syn match voAnnotation /@\l\w*/
 
-syn match voEscape /\\[nt"\\]/ contained
+syn match voEscape /\\\([ntr"\\]\|u{\x\{1,6}}\)/ contained
 syn region voString start=/"/ skip=/\\\\\|\\"/ end=/"\|$/ oneline contains=voEscape
+" a raw string: any text between backticks, over any number of lines
+syn region voString start=/`/ end=/`/
 
 " the effects after `uses`, on its line
 syn match voEffect /\<\(console\|input\|file\.read\|file\.write\|file\.delete\|net\|clock\|random\|env\|serve\|process\|entropy\)\>/ contained

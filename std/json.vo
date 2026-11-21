@@ -28,7 +28,7 @@ export fn parse_json(s: str) -> result[Json] {
 }
 
 # Writes compact JSON; a NaN or infinite number is an error.
-#     write_json(Json.array([Json.integer(1), Json.text("a")])) == ok("[1,\"a\"]") is true
+#     write_json(Json.array([Json.integer(1), Json.text("a")])) == ok(`[1,"a"]`) is true
 export fn write_json(j: Json) -> result[str] {
     return __json_write(j, 0);
 }

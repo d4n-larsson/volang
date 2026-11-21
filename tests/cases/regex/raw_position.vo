@@ -1,0 +1,9 @@
+import std.regex.regex;
+import std.regex.is_match;
+
+# The error is on the second line of a raw pattern, and after an escape in a quoted one.
+fn main() uses console {
+    print(str(is_match(regex(`a
+b(c`), "x")));
+    print(str(is_match(regex("\u{e5}\\d(x"), "x")));
+}

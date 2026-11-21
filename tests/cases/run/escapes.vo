@@ -1,0 +1,10 @@
+import std.bytes.from_text;
+import std.bytes.to_hex;
+
+# Spec 042: \r and \u{HEX} in a quoted string.
+fn main() uses console {
+    print(to_hex(from_text("a\r\n")));
+    print(to_hex(from_text("\u{e5}\u{1F600}\u{0}\u{10FFFF}\u{E5}\u{7f}")));
+    print(str("\u{e5}" == "å") + " " + str("\r" == chr(13)) + " " + str("\u{1b}[0m" == chr(27) + "[0m"));
+    print(str(len("\u{0}")) + " " + str(ord("\u{20AC}")));
+}

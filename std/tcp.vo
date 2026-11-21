@@ -226,7 +226,7 @@ export fn close[E: effects](c: Conn[E]) uses E {
 
 # Listens on address (needs serve with it): "9000" is port 9000 for this machine only, "0.0.0.0:9000"
 # for the network; port 0 asks the system for a free port, found in the listener's port.
-#     listen("nowhere") == err(TcpError.invalid("the address is \"PORT\" or \"0.0.0.0:PORT\"")) is true
+#     listen("nowhere") == err(TcpError.invalid(`the address is "PORT" or "0.0.0.0:PORT"`)) is true
 export fn listen(address: str) -> result[Listener, TcpError] uses serve {
     let id = try map_err(__tcp(3, 0, address), fail);
     let port = try map_err(__tcp(7, id, ""), fail);

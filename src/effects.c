@@ -163,6 +163,8 @@ int es_add_scope(EffSet *set, long bit, Str *str)
 {
     long n = str->len;
     if (n == 0) return 0;
+    for (long i = 0; i < n; i++) /* spec 042: a scope is written on one line of vo.effects */
+        if ((unsigned char)str->data[i] < 0x20 || str->data[i] == 0x7f) return 0;
     if (bit == EF_SERVE && serve_address_parse(str, 0) < 0) return 0; /* spec 011: "PORT" or "0.0.0.0:PORT" */
     if (bit == EF_NET && net_scope_port(str) < 0) return 0; /* spec 039: "HOST" or "HOST:PORT" */
     GC_ROOT(&set);

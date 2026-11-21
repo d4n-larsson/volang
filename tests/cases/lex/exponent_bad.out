@@ -1,0 +1,30 @@
+exponent_bad.vo:2:15: error[E0105]: An exponent needs digits: write `1e9` or `1.5e-3`.
+   2 |     print(str(1e));
+     |               ^^
+exponent_bad.vo:3:15: error[E0105]: An exponent needs digits: write `1e9` or `1.5e-3`.
+   3 |     print(str(1e+));
+     |               ^^^
+exponent_bad.vo:4:15: error[E0105]: An exponent needs digits: write `1e9` or `1.5e-3`.
+   4 |     print(str(1.5e-));
+     |               ^^^^^
+exponent_bad.vo:5:15: error[E0105]: Float literal is larger than the largest float (about 1.8e308).
+   5 |     print(str(1e400));
+     |               ^^^^^
+exponent_bad.vo:6:15: error[E0105]: Float literal has more than 17 significant digits.
+   6 |     print(str(123456789012345678e2));
+     |               ^^^^^^^^^^^^^^^^^^^^
+exponent_bad.vo:7:15: error[E0105]: Number literals have no suffix: write the number alone, like 1000 or 1.5e3.
+   7 |     print(str(2em));
+     |               ^^^
+exponent_bad.vo:8:15: error[E0105]: Number literals have no suffix: write the number alone, like 1000 or 1.5e3.
+   8 |     print(str(1e5x));
+     |               ^^^^
+exponent_bad.vo:9:9: warning[W0201]: `n` is never used.
+   9 |     let n: int = 1e3;
+     |         ^
+exponent_bad.vo:9:18: error[E0301]: Expected `int`, found `float`.
+   9 |     let n: int = 1e3;
+     |                  ^^^
+  expected `int`, found `float`
+  fix: replace with `int(1e3)`
+8 errors, 1 warning

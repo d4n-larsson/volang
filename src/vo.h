@@ -687,7 +687,9 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define OPC_INDEX_BYTES (90) /* spec 021: a = b[c], one byte as an int (R0003 at the node) */
 #define OPC_APPEND (91) /* a = a + c for `set s = s + ...`: in place while slot b still holds a's value */
 #define OPC_JOIN (92) /* a = the c strings in the slots from b on, joined (format's pieces) */
-#define OPC_COUNT (93)
+#define OPC_FOR_STR (93) /* spec 042: text b, byte offset b+8: at the end: pc = c; else a = that character, offset past it */
+#define OPC_FOR_STR_STEP (94) /* text back-edge: at the end fall through; else step, a = the character, pc = c */
+#define OPC_COUNT (95)
 /* generic call-site record (permanent): rt_targs and rt_es_subst results for the last caller */
 #define GS_DECL (0) /* the callee */
 #define GS_VALID (8) /* 1 once filled */
@@ -1485,6 +1487,7 @@ typedef struct FmtPiece {
 #define FS_RADIX(s) ((s) >> 23 & 3)
 extern Type *check_format_call(Node *call);
 extern long lit_decode(Node *lit, char **buf, long **offs);
+extern long str_lit_decode(char *src, long s, long e, char *out, long *offs); /* spec 042 */
 extern void check_regex_call(Node *call); /* src/check_regex.c (spec 025) */
 extern void fx_builtin_sql_open(Node *call); /* spec 026 */
 extern void fx_builtin_tcp(Node *call); /* spec 039 */

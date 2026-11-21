@@ -116,3 +116,22 @@ export fn words(s: str) -> list[str] {
     }
     return out;
 }
+
+# The number of characters (code points) in s; len(s) counts bytes.
+#     char_count("håll") is 4
+export fn char_count(s: str) -> int {
+    var n = 0;
+    for i in 0..len(s) {
+        let b = byte_at(s, i);
+        if b < 128 or b >= 192 {
+            set n = n + 1;
+        }
+    }
+    return n;
+}
+
+# Whether a and b are equal when letter case is ignored (lower(a) == lower(b)): Latin, Greek and Cyrillic letters.
+#     equal_fold("Ångström", "ÅNGSTRÖM") is true
+export fn equal_fold(a: str, b: str) -> bool {
+    return lower(a) == lower(b);
+}

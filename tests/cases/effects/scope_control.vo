@@ -1,0 +1,16 @@
+# Spec 042: a scope is written on one line of vo.effects, so it holds no control character.
+fn a() uses file.read("data\n") {
+}
+
+fn b() uses env("A\rB") {
+}
+
+fn c() uses net("h\u{0}") {
+}
+
+fn d() uses file.read(`two
+lines`) {
+}
+
+fn main() uses file.read(`data/`) {
+}

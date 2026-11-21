@@ -348,26 +348,78 @@ static Node *p_name(void)
     return n;
 }
 
-/* The value of a string literal token (quotes removed, escapes decoded). */
+/* Spec 042: decodes the string literal at src[s..e) into out (room for e - s bytes): a quoted string
+ * with its escapes (\n \t \r \\ \" and \u{HEX}), or a raw string between backticks, whose text is
+ * taken as written except that a carriage return directly before a line feed is dropped (a file saved
+ * with CRLF line ends means the same). offs, when given, gets the source offset each decoded byte came
+ * from (an escape's backslash for all its bytes) and, at [n], the closing delimiter's. Returns n.
+ * Malformed escapes were reported by the lexer; here they decode to the character after the backslash. */
+long str_lit_decode(char *src, long s, long e, char *out, long *offs)
+{
+    long n = 0, i = s + 1, end = e;
+    int raw = src[s] == '`';
+    if (end - 1 > s && src[end - 1] == src[s]) end--; /* (an unterminated literal has no closing delimiter) */
+    while (i < end) {
+        long at = i;
+        int c = (unsigned char)src[i++];
+        if (raw) {
+            if (c == '\r' && i < end && src[i] == '\n') continue;
+        } else if (c == '\\' && i < end) {
+            c = (unsigned char)src[i++];
+            if (c == 'n') {
+                c = '\n';
+            } else if (c == 't') {
+                c = '\t';
+            } else if (c == 'r') {
+                c = '\r';
+            } else if (c == 'u' && i < end && src[i] == '{') {
+                long v = 0, k = i + 1, digits = 0;
+                for (; k < end && digits < 7; k++, digits++) {
+                    int h = (unsigned char)src[k];
+                    int d = h >= '0' && h <= '9' ? h - '0' : h >= 'a' && h <= 'f' ? h - 87 : h >= 'A' && h <= 'F' ? h - 55 : -1;
+                    if (d < 0) break;
+                    v = v * 16 + d;
+                }
+                if (digits >= 1 && digits <= 6 && k < end && src[k] == '}' && v <= 0x10ffff && (v < 0xd800 || v > 0xdfff)) {
+                    char u[4];
+                    long len = v < 0x80 ? 1 : v < 0x800 ? 2 : v < 0x10000 ? 3 : 4;
+                    if (len == 1) {
+                        u[0] = (char)v;
+                    } else if (len == 2) {
+                        u[0] = (char)(0xc0 | v >> 6);
+                        u[1] = (char)(0x80 | (v & 63));
+                    } else if (len == 3) {
+                        u[0] = (char)(0xe0 | v >> 12);
+                        u[1] = (char)(0x80 | (v >> 6 & 63));
+                        u[2] = (char)(0x80 | (v & 63));
+                    } else {
+                        u[0] = (char)(0xf0 | v >> 18);
+                        u[1] = (char)(0x80 | (v >> 12 & 63));
+                        u[2] = (char)(0x80 | (v >> 6 & 63));
+                        u[3] = (char)(0x80 | (v & 63));
+                    }
+                    for (long j = 0; j < len; j++) {
+                        if (offs) offs[n] = at;
+                        out[n++] = u[j];
+                    }
+                    i = k + 1;
+                    continue;
+                }
+            }
+        }
+        if (offs) offs[n] = at;
+        out[n++] = (char)c;
+    }
+    if (offs) offs[n] = end;
+    return n;
+}
+
+/* The value of a string literal token (delimiters removed, escapes decoded). */
 static Str *decode_string(long start, long end)
 {
-    char *p = p_text + start + 1; /* skip the opening quote */
-    char *e = p_text + end;
-    char *last = e - 1; /* drop the closing quote (the same character as the opening one) */
-    if (last >= p && *last == p[-1]) e = last;
-    SB *sb = sb_new();
-    while (p < e) {
-        int c = (unsigned char)*p++;
-        if (c == '\\' && p < e) {
-            c = (unsigned char)*p++;
-            if (c == 'n')
-                c = '\n';
-            else if (c == 't')
-                c = '\t';
-        }
-        sb_byte(sb, c);
-    }
-    return sb_finish(sb);
+    char *out = alloc_bytes(end - start + 1);
+    long n = str_lit_decode(p_text, start, end, out, 0);
+    return str_new(out, n);
 }
 
 static Node *parse_type(void)

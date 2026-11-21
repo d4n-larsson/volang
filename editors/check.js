@@ -65,17 +65,22 @@ function tmTokens(g, text) {
   });
 }
 
-// file -> [{row, start, end, cls}] from `tree-sitter query highlights.scm` (single-line captures only matter).
+// file -> [{row, start, end, cls}] from `tree-sitter query highlights.scm`, one entry per row of a capture.
 function tsCaptures(pathsFile) {
   const out = execFileSync(TS, ['query', 'queries/highlights.scm', '--paths', pathsFile],
     { cwd: TS_DIR, maxBuffer: 1 << 30, stdio: ['ignore', 'pipe', 'ignore'] }).toString();
   const byFile = new Map();
   let cur = null;
-  const re = /^\s+capture: \d+ - ([\w.]+), start: \((\d+), (\d+)\), end: \((\d+), (\d+)\)/;
+  // (a capture over several rows is printed without its index and text)
+  const re = /^\s+capture: (?:\d+ - )?([\w.]+), start: \((\d+), (\d+)\), end: \((\d+), (\d+)\)/;
   for (const line of out.split('\n')) {
     const m = re.exec(line);
     if (m) {
-      if (cur && tsClass(m[1]) && m[2] === m[4]) cur.push({ row: +m[2], start: +m[3], end: +m[5], cls: tsClass(m[1]) });
+      if (cur && tsClass(m[1])) { // a capture over several rows (a raw string) covers each of them
+        for (let row = +m[2]; row <= +m[4]; row++) {
+          cur.push({ row, start: row === +m[2] ? +m[3] : 0, end: row === +m[4] ? +m[5] : Infinity, cls: tsClass(m[1]) });
+        }
+      }
     } else if (line && !/^\s/.test(line) && fs.existsSync(line)) {
       byFile.set(line, cur = []);
     }

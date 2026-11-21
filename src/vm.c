@@ -184,6 +184,7 @@ long vm_run(void *start)
         &&op_cover, /* spec 018 */
         &&op_index_bytes, /* spec 021 */
         &&op_append, &&op_join,
+        &&op_for_str, &&op_for_str_step, /* spec 042 */
     };
     if (!start) {
         for (int i = 0; i < OPC_COUNT; i++) vm_ops[i] = vm_ops_trace[i] = ops[i];
@@ -365,6 +366,25 @@ op_for_list:
 op_inc:
     SL(pc->a)++;
     NEXT;
+    /* spec 042: for over a str: the text at b, the byte offset of the next character at b+8. A str is
+       valid UTF-8, so the lead byte gives the length; ASCII characters are the shared strings */
+op_for_str:
+    x = SL(pc->b + 8);
+    if (x >= ((Str *)SL(pc->b))->len) JUMP;
+    tick(pc->node);
+    goto for_str_take;
+op_for_str_step:
+    x = SL(pc->b + 8);
+    if (x >= ((Str *)SL(pc->b))->len) NEXT;
+    STEP_FAST;
+for_str_take:
+    y = (unsigned char)((Str *)SL(pc->b))->data[x];
+    y = y < 0x80 ? 1 : y < 0xe0 ? 2 : y < 0xf0 ? 3 : 4;
+    SL(pc->b + 8) = x + y;
+    cur_node = (long)pc->node;
+    SL(pc->a) = (long)(y == 1 ? str_one(((Str *)SL(pc->b))->data[x]) : str_new(((Str *)SL(pc->b))->data + x, y));
+    if (pc->handler == &&op_for_str) NEXT;
+    JUMP;
 op_tick:
     STEP_FAST;
     NEXT;
@@ -1058,6 +1078,7 @@ static void fl_stmt(Vec *vec, Node *stmt, long off)
         if (!stmt->c.n) { /* a list: its element type */
             Type *lt = stmt->b.n->type;
             t = lt && (lt->kind == TY_LIST || TY_IS_COLL(lt->kind)) ? lt->a.t : 0; /* spec 014: collections too */
+            if (lt && lt->kind == TY_STR) t = t_str; /* spec 042: a text's characters */
         }
         if (t) fl_add(vec, stmt->a.n ? stmt->a.n->a.s : 0, t, stmt->e.i);
         fl_block(vec, stmt->d.n, off);

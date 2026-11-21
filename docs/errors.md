@@ -33,7 +33,7 @@ A string literal is not closed before the end of its line.
 
 Fixable: yes
 
-Strings must open and close on the same line. The usual cause is a missing closing `"`, which can also cause follow-on parse errors on the next lines. The fix inserts the `"`. Use `\n` for a line break inside a string.
+A quoted string must open and close on the same line. The usual cause is a missing closing `"`, which can also cause follow-on parse errors on the next lines. The fix inserts the `"`. Use `\n` for a line break inside a quoted string, or a raw string between backticks, which may span lines. A raw string that is never closed runs to the end of the file and is reported at its opening backtick, without a fix.
 
 ### Example
 
@@ -55,11 +55,11 @@ fn main() uses console {
 
 ## E0103 invalid_escape
 
-A string contains an escape other than \n, \t, \\ or \".
+A string contains an escape other than \n, \t, \r, \\, \" or \u{HEX}, or a malformed \u{HEX}.
 
-Fixable: yes
+Fixable: sometimes
 
-vo has only four escapes: `\n`, `\t`, `\\` and `\"`. A single backslash before any other character, as in a Windows path or a regular expression, is an error. Write a literal backslash as `\\`: the pattern `\d+` is the string `"\\d+"`. The fix doubles the backslash.
+A quoted string has six escapes: `\n`, `\t`, `\r`, `\\`, `\"` and `\u{HEX}` (1 to 6 hexadecimal digits naming a Unicode character, such as `\u{e5}` or `\u{1b}`). A single backslash before any other character, as in a Windows path or a regular expression, is an error; the fix doubles the backslash, and text full of backslashes is better written as a raw string between backticks: `` `\d+` ``. A `\u` must have braces, name a character (not a surrogate, at most 10FFFF), and not name one that has a short escape: `\u{a}` is written `\n`. A NUL is `\u{0}`.
 
 ### Example
 
@@ -102,11 +102,11 @@ fn main() uses console {
 
 ## E0105 number_out_of_range
 
-A number literal is out of range: an integer above 2^63-1, or a float with more than 17 significant digits.
+A number literal is out of range or malformed: an integer above 2^63-1, a float with more than 17 significant digits or too large, an exponent without digits, or letters after the number.
 
 Fixable: no
 
-Integer literals must fit in a signed 64-bit integer (at most 9223372036854775807), and float literals may have at most 17 significant digits (a `float` holds no more). Use a smaller value, or fewer digits for a float.
+Integer literals must fit in a signed 64-bit integer (at most 9223372036854775807). Float literals may have at most 17 significant digits (a `float` holds no more), an optional exponent with digits (`1e9`, `1.5e-3`), and a value below about 1.8e308. A number has no suffix: `10px` and `2em` are errors.
 
 ### Example
 
@@ -3156,6 +3156,30 @@ fn double(x: int) -> int {
 @spec("FR-001")
 test "doubles" {
     expect_eq(double(2), 4);
+}
+```
+
+## W0102 raw_string_not_needed
+
+A raw string is used for text that needs no backticks.
+
+Fixable: yes
+
+A raw string, between backticks, takes its text as written: no escapes, and line breaks allowed. It is for text with backslashes, quotes or several lines: a regular expression, JSON, SQL. Text with none of these is written in quotes, so that each text has one spelling. The fix, and `vo fmt`, rewrite it.
+
+### Example
+
+```vo
+fn main() uses console {
+    print(`hello`);
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    print("hello");
 }
 ```
 

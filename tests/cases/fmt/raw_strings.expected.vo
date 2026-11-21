@@ -1,0 +1,15 @@
+fn show(a: str, b: list[str]) uses console {
+    print(a + str(len(b)));
+}
+
+fn main() uses console {
+    show(`first
+  second "x"`, ["a", `multi
+line \ here`, "c"]);
+    if true {
+        let t = `{
+  "k": 1
+}`;
+        print(t + "quoted \\ stays quoted" + "plain" + "" + "tab\tinside");
+    }
+}

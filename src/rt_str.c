@@ -261,16 +261,76 @@ long rt_minmax(long a, long b, int kind, int want_max)
     return (b_less ^ want_max) ? b : a; /* min: b when b < a; max: b when not (b < a) */
 }
 
-/* ASCII letters to upper (1) or lower (0) case; other bytes unchanged. */
+#include "case_table.h"
+
+/* The simple case mapping of code point cp in a generated table (binary search), or cp. */
+static unsigned case_lookup(const unsigned (*t)[2], long n, unsigned cp)
+{
+    long lo = 0, hi = n - 1;
+    while (lo <= hi) {
+        long mid = (lo + hi) / 2;
+        if (t[mid][0] == cp) return t[mid][1];
+        if (t[mid][0] < cp) lo = mid + 1;
+        else hi = mid - 1;
+    }
+    return cp;
+}
+
+/* Letters to upper (1) or lower (0) case. ASCII in place; spec 042: Latin, Greek and Cyrillic letters by
+ * their simple (one code point) mapping from src/case_table.h, whose UTF-8 length may differ; every
+ * other character unchanged. */
 Str *rt_case(Str *s, int upper)
 {
-    Str *r = str_new(s->data, s->len);
-    for (long i = 0; i < r->len; i++) {
-        int c = (unsigned char)r->data[i];
-        if (upper && c >= 'a' && c <= 'z') c -= 32;
-        if (!upper && c >= 'A' && c <= 'Z') c += 32;
-        r->data[i] = (char)c;
+    long i = 0;
+    while (i < s->len && !((unsigned char)s->data[i] & 0x80)) i++;
+    if (i == s->len) { /* ASCII only: a byte loop over a copy */
+        Str *r = str_new(s->data, s->len);
+        for (i = 0; i < r->len; i++) {
+            int c = (unsigned char)r->data[i];
+            if (upper && c >= 'a' && c <= 'z') c -= 32;
+            if (!upper && c >= 'A' && c <= 'Z') c += 32;
+            r->data[i] = (char)c;
+        }
+        return r;
     }
+    GC_ROOT(&s);
+    SB *sb = sb_new();
+    GC_ROOT(&sb);
+    const unsigned (*t)[2] = upper ? case_upper : case_lower;
+    long tn = (long)(upper ? sizeof case_upper : sizeof case_lower) / (long)sizeof t[0];
+    for (i = 0; i < s->len;) {
+        int c = (unsigned char)s->data[i];
+        if (c < 0x80) {
+            if (upper && c >= 'a' && c <= 'z') c -= 32;
+            if (!upper && c >= 'A' && c <= 'Z') c += 32;
+            sb_byte(sb, c);
+            i++;
+            continue;
+        }
+        long k = c < 0xe0 ? 2 : c < 0xf0 ? 3 : 4; /* (a str is valid UTF-8) */
+        unsigned cp = 0, to;
+        if (k == 2) { /* every table entry is below U+0800 */
+            cp = (unsigned)(c & 0x1f) << 6 | ((unsigned char)s->data[i + 1] & 0x3f);
+            to = case_lookup(t, tn, cp);
+        } else {
+            to = cp;
+        }
+        if (k != 2 || to == cp) {
+            sb_bytes(sb, s->data + i, k);
+        } else if (to < 0x80) {
+            sb_byte(sb, (int)to);
+        } else if (to < 0x800) {
+            sb_byte(sb, (int)(0xc0 | to >> 6));
+            sb_byte(sb, (int)(0x80 | (to & 63)));
+        } else {
+            sb_byte(sb, (int)(0xe0 | to >> 12));
+            sb_byte(sb, (int)(0x80 | (to >> 6 & 63)));
+            sb_byte(sb, (int)(0x80 | (to & 63)));
+        }
+        i += k;
+    }
+    Str *r = sb_finish(sb);
+    GC_UNROOT(2);
     return r;
 }
 

@@ -29,6 +29,8 @@ MIGRATION |= {"W0602", "W0603"}
 # Intended behavior changes since v1, with the spec that made them: (stdout, exit status) expected now.
 CHANGED = {
     "run-oom_small/oom_small.vo": (b"58888890\n", 0),  # spec 003: memory is reclaimed, so it finishes
+    # spec 042: upper and lower map Latin letters beyond ASCII ("w\u00f6rld" is now "W\u00d6RLD")
+    "run-builtins_more/builtins_more.vo": (b'5 2.5\n3 7 1.5 apple\nHELLO, W\xc3\x96RLD abc\n65 233 B\xc3\xa9\n', 0),
     # spec 006 FR-025: a runtime error in a test lists its frames and their values
     "test-runtime_error/runtime_error.vo": (b"ERROR divides by zero (0ms)\n"
                                             b"  runtime_error.vo:2:12: runtime error[R0002]: Division by zero.\n"

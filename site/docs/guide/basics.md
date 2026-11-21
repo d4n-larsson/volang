@@ -42,10 +42,14 @@ Literals are strict, so that every value has one spelling:
 
 - Integers are plain decimal digits: no `_` separators, hexadecimal, octal or suffixes. A negative number
   is unary `-` applied to a literal.
-- Floats need digits on both sides of the `.`: `1.0` and `0.5`, never `1.` or `.5`. There is no exponent
-  form (`1e3` is invalid).
-- Strings use double quotes and stay on one line. The only escapes are `\n`, `\t`, `\\` and `\"`. There
-  is no interpolation: build strings with `format("{} of {}", 3, 10)` or with `+` and `str(...)`.
+- Floats need digits on both sides of the `.`: `1.0` and `0.5`, never `1.` or `.5`. An exponent is
+  allowed: `1e9`, `1.5e-3`.
+- Strings use double quotes and stay on one line. The escapes are `\n`, `\t`, `\r`, `\\`, `\"` and
+  `\u{HEX}` for any Unicode character (`"\u{e5}"` is `"å"`). There is no interpolation: build strings
+  with `format("{} of {}", 3, 10)` or with `+` and `str(...)`.
+- A raw string, between backticks, is its text exactly as written: no escapes, and it may span lines.
+  Use it for text with its own syntax, such as a regular expression (`` `\d+` ``), JSON or SQL. Text
+  without a backslash, a `"` or a line break is written in quotes (`vo fmt` rewrites it, W0102).
 
 Lists (`[1, 2, 3]`), maps, records and variants come in later chapters. There is no `null`: a value that
 may be missing is a variant or a `result`.
@@ -262,7 +266,8 @@ fn main() uses console {
 
 ### for
 
-`for` has two forms. `for x in xs { }` visits the elements of a list in order. `for i in a..b { }` visits
+`for` has two forms. `for x in xs { }` visits the elements of a list in order, or the characters of a
+`str`. `for i in a..b { }` visits
 the integers `a`, `a + 1`, ..., `b - 1`; the range is empty when `a >= b`. The bounds can be any `int`
 expressions, evaluated once before the loop starts. `for _ in 0..n { }` repeats `n` times without naming
 the counter.
@@ -284,6 +289,9 @@ fn main() uses console {
     for i in 5..2 {
         print("never printed " + str(i));
     }
+    for c in "blå" {
+        print(c + " is " + str(len(c)) + " byte(s)");
+    }
 }
 ```
 
@@ -295,7 +303,13 @@ pear
 1: fig
 2: pear
 ***
+b is 1 byte(s)
+l is 1 byte(s)
+å is 2 byte(s)
 ```
+
+Looping over a `str` gives each character (a Unicode code point) as a one-character string, without
+building the list `chars(s)` would.
 
 The `..` range exists only in `for`; it is not a value you can store. To loop over a map, loop over its
 keys with `for k in keys(m)` (see [Lists and maps](lists-and-maps.md)).

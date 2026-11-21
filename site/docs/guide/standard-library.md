@@ -89,7 +89,7 @@ import std.json.write_json_pretty;
 
 fn main() -> result[void] uses console {
     let doc = try parse_json(
-        "{\"order\": 1042, \"lines\": [{\"sku\": \"tea\", \"qty\": 2}, {\"sku\": \"scone\", \"qty\": 1}]}"
+        `{"order": 1042, "lines": [{"sku": "tea", "qty": 2}, {"sku": "scone", "qty": 1}]}`
     );
     let counts = new map[str, Json];
     var total = 0;
@@ -100,7 +100,7 @@ fn main() -> result[void] uses console {
     }
     set counts["total"] = Json.integer(total);
     print(try write_json_pretty(Json.object(counts)));
-    match parse_json("{\"order\": }") {
+    match parse_json(`{"order": }`) {
         case ok(_) {
             print("parsed");
         }
@@ -229,6 +229,10 @@ page              visits
 /blog/first post      46
 true
 ```
+
+`char_count(s)` counts characters where `len(s)` counts bytes, and `equal_fold(a, b)` compares without
+letter case. The builtins `upper` and `lower` map Latin, Greek and Cyrillic letters (`upper("åäö")` is
+`"ÅÄÖ"`); a letter whose upper case is several characters, such as `ß`, stays as it is.
 
 `lines` drops a trailing carriage return and the empty line after a final newline; `words` splits on
 any run of spaces, tabs and newlines, so it ignores the double space after `/home`. Details:
@@ -516,7 +520,7 @@ fn signed_by(secret: str, body: bytes, signature: bytes) -> bool {
 }
 
 fn main() uses console {
-    let body = from_text("{\"event\":\"paid\"}");
+    let body = from_text(`{"event":"paid"}`);
     let signature = hmac_sha256(from_text("whsec_1"), body);
     print(to_hex(sha256(from_text("abc"))));
     print(str(signed_by("whsec_1", body, signature)) + " " + str(signed_by("whsec_2", body, signature)));
@@ -587,11 +591,7 @@ import std.tcp.read_until;
 import std.tcp.send;
 
 const redis = "127.0.0.1:6379";
-
-# Redis ends every line with a carriage return and a line feed.
-fn crlf() -> str {
-    return chr(13) + "\n";
-}
+const crlf = "\r\n";
 
 fn other(message: str) -> TcpError {
     return TcpError.other(message);
@@ -599,12 +599,12 @@ fn other(message: str) -> TcpError {
 
 # Sends one command as an array of bulk strings and returns the reply's text.
 fn command[E: effects](c: Conn[E], words: list[str]) -> result[str, TcpError] uses E {
-    var request = "*" + str(len(words)) + crlf();
+    var request = "*" + str(len(words)) + crlf;
     for w in words {
-        set request = request + "$" + str(len(w)) + crlf() + w + crlf();
+        set request = request + "$" + str(len(w)) + crlf + w + crlf;
     }
     try send(c, from_text(request), 1000);
-    let head = trim(try map_err(to_text(try read_until(c, from_text(crlf()), 1000)), other));
+    let head = trim(try map_err(to_text(try read_until(c, from_text(crlf), 1000)), other));
     if slice(head, 0, 1) != "$" {
         return ok(slice(head, 1, len(head)));
     }
@@ -656,8 +656,7 @@ fn main() uses console, net(redis) {
   private as the conversation.
 - **Tasks.** A listener or connection opened before `concurrent_map` is open in every task, so a test
   can listen on port `0` and run both ends as two tasks. Use each connection from one task at a time.
-- **Not there yet:** UDP, IPv6, TLS for accepted connections, and a pool of workers per connection. A
-  string has no `\r` escape: write a carriage return as `chr(13)`, as `crlf` does above.
+- **Not there yet:** UDP, IPv6, TLS for accepted connections, and a pool of workers per connection.
 
 ## std.math
 
@@ -760,9 +759,9 @@ import std.regex.first_match;
 import std.regex.replace_all;
 
 fn main() uses console {
-    let id = regex("^[A-Z]{3}-\\d{4}$");
+    let id = regex(`^[A-Z]{3}-\d{4}$`);
     print(str(is_match(id, "ABC-1234")) + " " + str(is_match(id, "ABC-12")));
-    let log = regex("(\\d{4})-(\\d{2})-(\\d{2}) (?<level>ERROR|WARN)");
+    let log = regex(`(\d{4})-(\d{2})-(\d{2}) (?<level>ERROR|WARN)`);
     match first_match(log, "2026-11-19 ERROR disk full") {
         case ok(m) {
             print(m.groups[1] + " " + m.named["level"] + " at byte " + str(m.start));
@@ -771,7 +770,7 @@ fn main() uses console {
             print(e);
         }
     }
-    print(replace_all(regex("(\\d{2})/(\\d{2})/(\\d{4})"), "due 19/11/2026", "$3-$2-$1"));
+    print(replace_all(regex(`(\d{2})/(\d{2})/(\d{4})`), "due 19/11/2026", "$3-$2-$1"));
 }
 ```
 

@@ -1,0 +1,18 @@
+for_str_types.vo:5:23: error[E0301]: Expected `str`, found `int`.
+   5 |         print(str(c + 1));
+     |                       ^
+  expected `str`, found `int`
+  fix: replace with `str(1)`
+for_str_types.vo:7:9: warning[W0201]: `x` is never used.
+   7 |     for x in 5 {
+     |         ^
+for_str_types.vo:7:14: error[E0301]: `for ... in` needs a list, a `str` or a range `a..b`, found `int`.
+   7 |     for x in 5 {
+     |              ^
+for_str_types.vo:10:9: warning[W0201]: `b` is never used.
+  10 |     for b in from_text("ab") {
+     |         ^
+for_str_types.vo:10:14: error[E0301]: `for ... in` needs a list or a range `a..b`, found `bytes`: loop over `std.bytes.to_ints(...)` or over the indexes `0..len(...)`.
+  10 |     for b in from_text("ab") {
+     |              ^^^^^^^^^^^^^^^
+3 errors, 2 warnings

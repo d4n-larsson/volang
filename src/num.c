@@ -116,11 +116,22 @@ long text_to_float(char *p, long n)
         p++;
         n--;
     }
+    long exponent = 0; /* spec 042: "e" [sign] digits after the mantissa */
+    for (long i = 0; i < n; i++) {
+        if (p[i] != 'e' && p[i] != 'E') continue;
+        long k = i + 1;
+        int minus = k < n && p[k] == '-';
+        if (k < n && (p[k] == '+' || p[k] == '-')) k++;
+        for (; k < n && exponent < 100000; k++) exponent = exponent * 10 + (p[k] - '0');
+        if (minus) exponent = -exponent;
+        n = i;
+        break;
+    }
     long last = -1; /* offset of the last non-zero digit */
     for (long i = 0; i < n; i++)
         if (p[i] >= '1' && p[i] <= '9') last = i;
     unsigned long mant = 0;
-    long power = 0;
+    long power = exponent;
     int point = 0;
     for (long i = 0; i < n; i++) {
         if (p[i] == '.') {
@@ -142,7 +153,7 @@ long text_to_float(char *p, long n)
 }
 
 /* Validates and converts text for parse_float: 0 = ok, 2 = malformed.
- * Accepts "-"? digits ["." digits] with at most 17 significant digits. */
+ * Accepts "-"? digits ["." digits] [("e"|"E") ["+"|"-"] digits] with at most 17 significant digits. */
 int float_parse(char *p, long n, long *out)
 {
     char *q = p;
@@ -160,6 +171,14 @@ int float_parse(char *p, long n, long *out)
             if (point) return 2;
             point = 1;
             continue;
+        }
+        if ((*q == 'e' || *q == 'E') && before) { /* spec 042: an exponent, as in a literal */
+            long k = 1;
+            if (k < m && (q[k] == '+' || q[k] == '-')) k++;
+            if (m - k < 1 || m - k > 5) return 2; /* (no float has an exponent of six digits) */
+            for (long j = k; j < m; j++)
+                if (q[j] < '0' || q[j] > '9') return 2;
+            break;
         }
         int d = *q - '0';
         if (d < 0 || d > 9) return 2;

@@ -21,10 +21,16 @@ void render_str_lit(SB *sb, Str *str)
     sb_byte(sb, '"');
     for (; n && !over_cap(sb); n--) {
         int c = (unsigned char)*p++;
-        int esc = c == 10 ? 'n' : c == 9 ? 't' : (c == '\\' || c == '"') ? c : 0;
+        int esc = c == 10 ? 'n' : c == 9 ? 't' : c == 13 ? 'r' : (c == '\\' || c == '"') ? c : 0;
         if (esc) {
             sb_byte(sb, '\\');
             sb_byte(sb, esc);
+        } else if (c < 0x20 || c == 0x7f) { /* spec 042: any other control character, as its escape */
+            static const char hex[] = "0123456789abcdef";
+            sb_cstr(sb, "\\u{");
+            if (c >> 4) sb_byte(sb, hex[c >> 4]);
+            sb_byte(sb, hex[c & 15]);
+            sb_byte(sb, '}');
         } else {
             sb_byte(sb, c);
         }

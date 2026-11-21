@@ -6,6 +6,14 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- **Breaking:** `upper` and `lower` now map Latin, Greek and Cyrillic letters, not only ASCII: `upper("åäö")`
+  is `"ÅÄÖ"`. A program that upper- or lower-cased such text prints something else. Letters whose mapping
+  is several characters (`ß`) stay as they are.
+- Strings: raw strings between backticks (`` `\d+` ``, any text, any lines); the escapes `\r` and `\u{HEX}`;
+  `for c in s` over a string's characters; `std.text.char_count` and `equal_fold`. `vo fmt` writes a raw
+  string that needs no backticks in quotes (W0102), and control characters in shown values as escapes.
+- Float literals and `parse_float` accept an exponent: `1e9`, `1.5e-3`.
+- An effect scope cannot hold a control character (E0506).
 - `vo mcp`: the toolchain as a Model Context Protocol server for agent hosts (ten commands as tools, the
   reference as the resource `vo://reference`).
 - `vo lsp`: the toolchain as a language server for editors (diagnostics on unsaved text, quick fixes, hover,

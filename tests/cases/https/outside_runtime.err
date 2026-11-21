@@ -3,7 +3,7 @@ std/http.vo:167:16: runtime error[R0010]: net("other.test") is not allowed: `mai
      |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at exchange_raw (std/http.vo:167:16)
-      method: str = "GET", url: str = "https://other.test/x", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, u: Url = new Url { tls: true, host: "other.test", port: 443, target: "/x" }, request: str = "GET /x HTTP/1.1\nHost: other.test\nConnection: close\nUser-Agent: vo\n\n"
+      method: str = "GET", url: str = "https://other.test/x", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, u: Url = new Url { tls: true, host: "other.test", port: 443, target: "/x" }, request: str = "GET /x HTTP/1.1\r\nHost: other.test\r\nConnection: close\r\nUser-Agent: vo\r\n\r\n"
   at exchange (std/http.vo:120:19)
       method: str = "GET", url: str = "https://other.test/x", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, hint: str = "get_bytes"
   at get (std/http.vo:290:12)

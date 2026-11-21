@@ -1,0 +1,4 @@
+fn main() uses console {
+    print("a\r\n\t\\\"" + "\u{1b}[0m" + "\u{e5}" + "å" + "\u{0}" + "\u{7F}");
+    print(str(1e9) + str(1.5E-3) + str(2e+2) + str(1.50) + str(6.02e23));
+}

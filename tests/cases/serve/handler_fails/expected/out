@@ -37,9 +37,9 @@ trace:
   at handle (service.vo:9:81)
       r: Request = new Request { method: "GET", path: "/div", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, n: int = 0
   at anonymous function (std/http.vo:421:58)
-      raw: str = "GET /div HTTP/1.1\nHost: localhost\n\n", handle: fn(Request) -> Response = <fn(Request) -> Response>, req: Request = new Request { method: "GET", path: "/div", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/div", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
+      raw: str = "GET /div HTTP/1.1\r\nHost: localhost\r\n\r\n", handle: fn(Request) -> Response = <fn(Request) -> Response>, req: Request = new Request { method: "GET", path: "/div", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/div", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
   at serve_loop (std/http.vo:494:15)
-      address: str = "{vport}", answer: fn(str) -> str = <fn(str) -> str>, listener: int = 4, raw: str = "GET /div HTTP/1.1\nHost: localhost\n\n"
+      address: str = "{vport}", answer: fn(str) -> str = <fn(str) -> str>, listener: int = 4, raw: str = "GET /div HTTP/1.1\r\nHost: localhost\r\n\r\n"
   at serve (std/http.vo:433:12)
       address: str = "{vport}", handle: fn(Request) -> Response = <fn(Request) -> Response>, answer: fn(str) -> str = <fn(str) -> str>
   at main (service.vo:25:9)
@@ -52,9 +52,9 @@ trace:
   at handle (service.vo:12:18)
       r: Request = new Request { method: "GET", path: "/callback", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
   at anonymous function (std/http.vo:421:58)
-      raw: str = "GET /callback HTTP/1.1\nHost: localhost\n\n", handle: fn(Request) -> Response = <fn(Request) -> Response>, req: Request = new Request { method: "GET", path: "/callback", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/callback", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
+      raw: str = "GET /callback HTTP/1.1\r\nHost: localhost\r\n\r\n", handle: fn(Request) -> Response = <fn(Request) -> Response>, req: Request = new Request { method: "GET", path: "/callback", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/callback", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
   at serve_loop (std/http.vo:494:15)
-      address: str = "{vport}", answer: fn(str) -> str = <fn(str) -> str>, listener: int = 4, raw: str = "GET /callback HTTP/1.1\nHost: localhost\n\n"
+      address: str = "{vport}", answer: fn(str) -> str = <fn(str) -> str>, listener: int = 4, raw: str = "GET /callback HTTP/1.1\r\nHost: localhost\r\n\r\n"
   at serve (std/http.vo:433:12)
       address: str = "{vport}", handle: fn(Request) -> Response = <fn(Request) -> Response>, answer: fn(str) -> str = <fn(str) -> str>
   at main (service.vo:25:9)
@@ -65,9 +65,9 @@ trace:
   at handle (service.vo:19:81)
       r: Request = new Request { method: "GET", path: "/index", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, xs: list[int] = [1, 2]
   at anonymous function (std/http.vo:421:58)
-      raw: str = "GET /index HTTP/1.1\nHost: localhost\n\n", handle: fn(Request) -> Response = <fn(Request) -> Response>, req: Request = new Request { method: "GET", path: "/index", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/index", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
+      raw: str = "GET /index HTTP/1.1\r\nHost: localhost\r\n\r\n", handle: fn(Request) -> Response = <fn(Request) -> Response>, req: Request = new Request { method: "GET", path: "/index", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/index", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
   at serve_loop (std/http.vo:494:15)
-      address: str = "{vport}", answer: fn(str) -> str = <fn(str) -> str>, listener: int = 4, raw: str = "GET /index HTTP/1.1\nHost: localhost\n\n"
+      address: str = "{vport}", answer: fn(str) -> str = <fn(str) -> str>, listener: int = 4, raw: str = "GET /index HTTP/1.1\r\nHost: localhost\r\n\r\n"
   at serve (std/http.vo:433:12)
       address: str = "{vport}", handle: fn(Request) -> Response = <fn(Request) -> Response>, answer: fn(str) -> str = <fn(str) -> str>
   at main (service.vo:25:9)

@@ -1,0 +1,8 @@
+raw_unclosed.vo:6:11: error[E0102]: This raw string is not closed: it runs from this backtick to the end of the file. Add a backtick where the text ends.
+   6 |     print(`never closed);
+     |           ^
+raw_unclosed.vo:12:1: error[E0110]: Expected `)`, found the end of the file.
+  12 | 
+     | ^
+  expected `)`, found `end of file`
+2 errors, 0 warnings

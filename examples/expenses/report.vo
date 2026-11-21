@@ -170,9 +170,7 @@ test "totals keep the first-seen order" {
 
 @spec("FR-004")
 test "a bad date is an error, not a crash" {
-    match parse_json(
-        "[{\"date\": \"2026-02-30\", \"category\": \"x\", \"cents\": 1, \"note\": \"\"}]"
-    ) {
+    match parse_json(`[{"date": "2026-02-30", "category": "x", "cents": 1, "note": ""}]`) {
         case ok(doc) {
             expect_eq(expenses_from(doc), err(
                 ExpenseError.bad_date(new DateProblem {

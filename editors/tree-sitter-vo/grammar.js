@@ -300,10 +300,15 @@ module.exports = grammar({
 
     boolean: _ => choice('true', 'false'),
     integer: _ => /[0-9]+/,
-    float: _ => /[0-9]+\.[0-9]+/,
-    string: $ => seq('"', repeat(choice($.escape_sequence, $.string_content)), token.immediate('"')),
+    float: _ => /[0-9]+(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)/,
+    // a quoted string on one line, or a raw string between backticks (any text, any lines)
+    string: $ => choice(
+      seq('"', repeat(choice($.escape_sequence, $.string_content)), token.immediate('"')),
+      seq('`', optional(alias($.raw_content, $.string_content)), token.immediate('`')),
+    ),
     string_content: _ => token.immediate(prec(1, /[^"\\\n]+/)),
-    escape_sequence: _ => token.immediate(/\\[nt"\\]/),
+    raw_content: _ => token.immediate(prec(1, /[^`]+/)),
+    escape_sequence: _ => token.immediate(/\\([ntr"\\]|u\{[0-9a-fA-F]{1,6}\})/),
     comment: _ => token(seq('#', /[^\n]*/)),
     identifier: _ => /[a-z_][A-Za-z0-9_]*/,
     type_identifier: _ => /[A-Z][A-Za-z0-9_]*/,

@@ -30,8 +30,8 @@ hello vo, count = 3
 - **Names**: functions, variables, parameters, record fields and variant cases are `snake_case` (`[a-z][a-z0-9_]*`). Records and variants are `PascalCase` (`[A-Z][A-Za-z0-9]*`). Other spellings are E0207, whose fix is the converted name.
 - `_` alone is the discard name. It is allowed only as `let _ = ...;` and as a `case` binding such as `case err(_)`. It is not allowed as a `for` variable or a parameter.
 - **Integers**: `0`, `42`, `1000000`. No `_` separators, hex, octal or suffixes. Negative numbers use unary `-`: `-5`. The maximum is 9223372036854775807 (larger literals are E0105).
-- **Floats**: digits, `.`, digits: `1.0`, `0.5`, `3.14`. Both sides of `.` are required (`1.` and `.5` are invalid). No exponent (`1e3` is invalid); at most 17 significant digits.
-- **Strings**: `"..."` on one line. The only escapes are `\n`, `\t`, `\\` and `\"` (any other is E0103). There are no single-quoted strings, no character type, no raw or multi-line strings and no interpolation: use `format` or `+`.
+- **Floats**: `1.0`, `0.5`, `1e9`, `1.5e-3`. Both sides of `.` are required (`1.` and `.5` are invalid); at most 17 significant digits.
+- **Strings**: `"..."` on one line, with the escapes `\n`, `\t`, `\r`, `\\`, `\"` and `\u{HEX}` (any other is E0103). A raw string, `` `...` ``, is its text as written (no escapes, any lines, no backtick), only for text with a backslash, a `"` or a line break (W0102). No single quotes, character type or interpolation: use `format` or `+`.
 - **Booleans**: `true`, `false`.
 - **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void uses prop requires ensures export bytes`.
 - There are no trailing commas anywhere (E0113).
@@ -367,7 +367,7 @@ Simple statements (`let`, `var`, `set`, `return`, `break`, `continue`, calls, `t
 | assignment | `set name = expr;`, `set p.field = expr;`, `set xs[i] = expr;`, `set m[k] = expr;` |
 | discard a value | `let _ = expr;` (not for `result` values: E0404) |
 | condition | `if c { } else if c { } else { }` |
-| loops | `while c { }`, `for x in list { }`, `for i in a..b { }`, `for _ in 0..n { }` |
+| loops | `while c { }`, `for x in list { }`, `for c in text { }`, `for i in a..b { }`, `for _ in 0..n { }` |
 | match | `match e { case name(binding) { } case other { } }` |
 | leave | `return;`, `return expr;`, `break;`, `continue;` |
 | call | `f(args);` (only if `f` returns nothing; see below) |
@@ -379,7 +379,7 @@ Details:
 - A name cannot be declared again inside a nested block while it is visible (shadowing, E0203). Sibling blocks may reuse names. A local that is never read is warning W0201.
 - A call statement must not drop a value: calling `len(s);` alone is E0405 (write `let _ = len(s);` or use the value), and ignoring a `result` is E0404.
 - `if` and `while` conditions must be `bool` (E0301). Parentheses around a condition are allowed but not needed.
-- `for x in xs` visits list elements. `for i in a..b` visits the ints `a, a+1, ..., b-1` (empty when `a >= b`). `for _ in 0..n` repeats n times without naming the counter. The `..` form exists only in `for`. To loop over a map, use `for k in keys(m)`. There is no C-style `for (;;)`, and no `do`/`loop`/`until`.
+- `for x in xs` visits list elements, `for c in s` the characters of a `str`. `for i in a..b` visits the ints `a, a+1, ..., b-1` (empty when `a >= b`). `for _ in 0..n` repeats n times without naming the counter. The `..` form exists only in `for`. To loop over a map, use `for k in keys(m)`. No C-style `for (;;)`, `do`, `loop` or `until`.
 - `break` and `continue` apply to the innermost `while` or `for` (E0407 outside a loop), also from inside a `match` arm.
 - `match` works on variant and `result` values only, not on `int` or `str` (use `if`/`else if`). Each case must appear exactly once (E0401 if one is missing, with a fix that inserts it; E0402 if repeated). There is no default arm. Bind a case's value with `case name(v)`, ignore it with `case name(_)`, and write a case without a value as `case name`.
 
@@ -452,7 +452,7 @@ Precedence, from tightest to loosest:
 - `int` division truncates toward zero: `7 / 2` is `3`, `-7 / 2` is `-3`, `-7 % 3` is `-1`. Dividing an `int` by zero is runtime error R0002. Overflow, including `-9223372036854775807 - 2`, is R0001. `float` arithmetic follows IEEE: `1.0 / 0.0` is `inf`, `0.0 / 0.0` is `nan`.
 - `<`, `<=`, `>`, `>=` compare two `int`, two `float` or two `str` (byte order). They do not apply to `bool`.
 - `==` and `!=` work on every type and compare structurally: lists, maps, records, variants and results are equal when their contents are equal. `nan != nan`.
-- `x.field` reads a record field. Strings cannot be indexed (`s[0]` is E0308): use `slice`, `chars` or `byte_at`. There are no methods: write `len(xs)`, not `xs.len()`.
+- `x.field` reads a record field. Strings cannot be indexed (`s[0]` is E0308): use `slice`, `for c in s` or `byte_at`. There are no methods: write `len(xs)`, not `xs.len()`.
 - There is no ternary `a ? b : c`, no `+=`, no `++`, no bitwise operators and no `**`.
 
 ```vo
@@ -884,7 +884,7 @@ fn main() uses console {
 | trim | `(s: str) -> str` | removes ASCII whitespace at both ends |
 | chars | `(s: str) -> list[str]` | one string per code point |
 | byte_at | `(s: str, i: int) -> int` | byte `i`, 0 to 255, without a list; R0003 out of range |
-| upper, lower | `(s: str) -> str` | ASCII letters only |
+| upper, lower | `(s: str) -> str` | Latin, Greek and Cyrillic letters |
 | ord | `(s: str) -> int` | code point of a one-character string (R0007 otherwise) |
 | chr | `(i: int) -> str` | the one-character string for a code point |
 | abs | `(x: int \| float) -> int \| float` | same type as `x` |
@@ -1149,15 +1149,15 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 |---|---|
 | std.json | `Json` values: `parse_json`, `write_json`, `write_json_pretty`, field readers; `to_json(v)`, `from_json(j)` for any `T: json` (records as objects, cases as `"name"` or `{"name": value}`, strict: every problem as `path: reason`) |
 | std.time | UTC calendar times, ISO 8601 text, durations, `now` (clock) |
-| std.text | `replace`, `contains`, `pad_left`, `lines`, `words`, ... |
+| std.text | `replace`, `contains`, `pad_left`, `lines`, `words`, `char_count`, `equal_fold`, ... |
 | std.random | `unit`, `pick`, `shuffle` (random) |
-| std.http | HTTP and HTTPS: `get`, `post`, and `send(method, url, headers, body, timeout_ms)` for any method, request headers and a timeout (net); `serve` and `serve_workers` (serve, HTTP only); `get_bytes`, `post_bytes`, `send_bytes`, `serve_bytes`, `serve_bytes_workers` for `bytes` bodies; `send_stream` |
+| std.http | HTTP and HTTPS: `get`, `post`, `send(method, url, headers, body, timeout_ms)` (net); `serve` and `serve_workers` (serve, HTTP only); `*_bytes` forms of each for `bytes` bodies; `send_stream` |
 | std.collections | neighbors and ranges of the ordered collections, set algebra, deque fronts, `_by(cmp)` orders |
 | std.fs | `info`, `list_dir`, `walk`, `read_bytes`, `each_line`, `each_chunk` (file.read); `append_file`, `write_bytes`, `append_bytes`, `make_dir` (file.write); `delete`, `rename` (file.delete) |
 | std.process | `run`, `run_with` (and `run_bytes`, `run_with_bytes`): run a program to its end, no shell (process); `run_lines` |
 | std.bytes | `from_text`, `to_text`, `from_ints`, `to_ints`, hex, base64, `read_stdin`, `write_stdout` |
 | std.math | `sqrt`, `pow`, `exp`, `log`, trigonometry, `pi`; `floor`, `ceil`, `round` to `int` (correctly rounded; out of domain is R0007) |
-| std.regex | `regex("...")` (checked by `vo check`), `parse_regex`, `is_match`, `first_match`, `all_matches`, `replace_all` (`$1`), `split_on`: linear time; write `\\d` for `\d` |
+| std.regex | `regex("...")` (checked by `vo check`), `parse_regex`, `is_match`, `first_match`, `all_matches`, `replace_all` (`$1`), `split_on`: linear time |
 | std.sqlite | `open` → `Database[uses file.read, file.write]`, `open_readonly` → `Database[uses file.read]`, `open_memory` → `Database`; `exec`, `query` (need the database's effects) with `sql("...")` (checked) and `?` parameters (`Value`); `transaction`; `get_int`, `get_str`, ... |
 | std.crypto | `sha256`, `hmac_sha256`, `same_bytes` (constant time) on `bytes`; `random_bytes(n)` for tokens and keys, `hash_password` (entropy); `verify_password` |
 | std.tcp | TCP connections as `bytes`: `connect`, `connect_tls`, `start_tls` (net), `listen`, `accept` (serve); `send`, `read`, `read_exact`, `read_until`, `close` on a `Conn[E]` (need `E`); every wait takes a time limit; errors are `TcpError` |
@@ -1170,7 +1170,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 - `serve_workers(address, workers, setup, handle)` handles up to `workers` requests at once (1 to 64; `vo run --workers N` overrides it): each worker is a separate process that runs `setup() -> result[S]` once (open the database there) and then `handle(state, request)` for one request at a time. Nothing in memory is shared between requests: keep state in a database and change it in a `transaction`, never by reading, changing and writing back a file. A dead worker is replaced; replay runs the requests one at a time.
 - `std.web`: an app is `web_app([on_get("/notes/{id}", show), ...])` (or `new App { routes: ..., steps: ..., errors: ... }` with steps and error kinds); an operation is `fn(ctx: C, input: I) -> result[Response]`, `I` a record whose fields take the path variable of their name, the JSON body (field `body`), a header (`@header("Name")`) or the query parameter of their name, checked with the field annotations before it runs (else a 400/415/422 problem naming each field). `err("not_found: detail")` answers 404 (also `bad_request`, `unauthorized`, `forbidden`, `conflict`, `gone`, `unprocessable`, and `App.errors`); other errors 500. An operation with a typed error is wrapped, `typed(op, answer)`, `answer` mapping each error to a `Problem { status, detail }`. Patterns are checked literals (E0330, E0331). `serve_app(address, workers, setup, app)` serves it; tests call `handle_request(app, ctx, request(method, path, body))`. Answers: `ok(json_reply(200, note))`, `created("/notes/7", note)`, `no_content()`. JSON bodies need `Content-Type: application/json`.
 - `std.process.run(program, args)` runs a program with no shell (arguments are passed as they are), no input and an empty environment, waits for it and returns `Output { code, stdout, stderr }`; `run_with` adds input text and `NAME=value` variables. A non-zero exit is `ok`; killed by signal n, `code` is 128 + n. `--timeout` covers the program and everything it starts. A started program is not confined: `process("git")` grants whatever `git` can do.
-- Large inputs come in pieces: `each_line(path, f)`, `each_chunk`, `send_stream` and `run_lines` call `f` per line or chunk; `f` returns `ok(true)` to go on, `ok(false)` to stop.
+- Large inputs come in pieces: `each_line(path, f)`, `each_chunk`, `send_stream` and `run_lines` call `f` per piece; `f` returns `ok(true)` to go on, `ok(false)` to stop.
 - File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.
 - Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` (or an `https://` archive URL, unpacked into `packages/NAME`; `--restore ENTRY` fetches missing ones again) adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
 

@@ -24,7 +24,7 @@ std/http.vo:169:12: runtime error[R0014]: The program makes an HTTP request `POS
      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at exchange_raw (std/http.vo:169:12)
-      method: str = "POST", url: str = "http://localhost:{port}/plain", headers: list[Header] = [new Header { name: "Content-Type", value: "text/plain" }], body: str = "x", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "localhost", port: {port}, target: "/plain" }, request: str = "POST /plain HTTP/1.1\nHost: localhost:{port}\nConnection: close\nUser-Agent: vo\nContent-Type: text/plain\nContent-Length: 1\n\nx"
+      method: str = "POST", url: str = "http://localhost:{port}/plain", headers: list[Header] = [new Header { name: "Content-Type", value: "text/plain" }], body: str = "x", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "localhost", port: {port}, target: "/plain" }, request: str = "POST /plain HTTP/1.1\r\nHost: localhost:{port}\r\nConnection: close\r\nUser-Agent: vo\r\nContent-Type: text/plain\r\nContent-Length: 1\r\n\r\nx"
   at exchange (std/http.vo:120:19)
       method: str = "POST", url: str = "http://localhost:{port}/plain", headers: list[Header] = [new Header { name: "Content-Type", value: "text/plain" }], body: str = "x", timeout_ms: int = 0, hint: str = "post_bytes"
   at post (std/http.vo:296:12)

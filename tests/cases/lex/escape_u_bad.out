@@ -1,0 +1,61 @@
+escape_u_bad.vo:2:12: error[E0103]: A Unicode escape is written with braces: `\u{e5}`.
+   2 |     print("\u00e5");
+     |            ^^^^^^
+  fix: replace with `\u{00e5}`
+escape_u_bad.vo:3:12: error[E0103]: A Unicode escape needs 1 to 6 hexadecimal digits in its braces: `\u{e5}`.
+   3 |     print("\u{}");
+     |            ^^^^
+escape_u_bad.vo:4:12: error[E0103]: A Unicode escape has at most 6 hexadecimal digits.
+   4 |     print("\u{1234567}");
+     |            ^^^^^^^^^^^
+escape_u_bad.vo:5:12: error[E0103]: A Unicode escape needs 1 to 6 hexadecimal digits in its braces: `\u{e5}`.
+   5 |     print("\u{zz}");
+     |            ^^^
+escape_u_bad.vo:6:12: error[E0103]: A Unicode escape cannot name a surrogate (D800 to DFFF): they are not characters.
+   6 |     print("\u{D800}");
+     |            ^^^^^^^^
+escape_u_bad.vo:7:12: error[E0103]: A Unicode escape names a character up to 10FFFF.
+   7 |     print("\u{110000}");
+     |            ^^^^^^^^^^
+escape_u_bad.vo:8:12: error[E0103]: This Unicode escape is not closed: add `}`.
+   8 |     print("\u{e5");
+     |            ^^^^^
+  fix: insert `}`
+escape_u_bad.vo:9:12: error[E0103]: This character has a short escape: write `\n`.
+   9 |     print("\u{a}\u{d}\u{9}\u{22}\u{5c}");
+     |            ^^^^^
+  fix: replace with `\n`
+escape_u_bad.vo:9:17: error[E0103]: This character has a short escape: write `\r`.
+   9 |     print("\u{a}\u{d}\u{9}\u{22}\u{5c}");
+     |                 ^^^^^
+escape_u_bad.vo:9:22: error[E0103]: This character has a short escape: write `\t`.
+   9 |     print("\u{a}\u{d}\u{9}\u{22}\u{5c}");
+     |                      ^^^^^
+  fix: replace with `\t`
+escape_u_bad.vo:9:27: error[E0103]: This character has a short escape: write `\"`.
+   9 |     print("\u{a}\u{d}\u{9}\u{22}\u{5c}");
+     |                           ^^^^^^
+escape_u_bad.vo:9:33: error[E0103]: This character has a short escape: write `\\`.
+   9 |     print("\u{a}\u{d}\u{9}\u{22}\u{5c}");
+     |                                 ^^^^^^
+  fix: replace with `\\`
+escape_u_bad.vo:10:12: error[E0103]: Unknown escape sequence `\x`. Use \n, \t, \r, \\, \" or \u{HEX}.
+  10 |     print("\x41\a\'\0");
+     |            ^^
+  fix: insert `\`
+escape_u_bad.vo:10:16: error[E0103]: Unknown escape sequence `\a`. Use \n, \t, \r, \\, \" or \u{HEX}.
+  10 |     print("\x41\a\'\0");
+     |                ^^
+  fix: insert `\`
+escape_u_bad.vo:10:18: error[E0103]: Unknown escape sequence `\'`. Use \n, \t, \r, \\, \" or \u{HEX}.
+  10 |     print("\x41\a\'\0");
+     |                  ^^
+  fix: insert `\`
+escape_u_bad.vo:10:20: error[E0103]: Unknown escape sequence `\0`. Use \n, \t, \r, \\, \" or \u{HEX}.
+  10 |     print("\x41\a\'\0");
+     |                    ^^
+  fix: replace with `\u{0}`
+escape_u_bad.vo:11:12: error[E0103]: A Unicode escape is written with braces: `\u{e5}`.
+  11 |     print("\u");
+     |            ^^
+17 errors, 0 warnings

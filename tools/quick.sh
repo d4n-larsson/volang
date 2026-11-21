@@ -34,7 +34,7 @@ cases() {
     bytes) echo "bytes bytes_steps run doc" ;;
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
-    text) echo "text doc" ;;
+    text) echo "text doc run" ;;
     time) echo "time sleep_steps doc" ;;
     random) echo "random doc" ;;
     collections) echo "collections ordered doc" ;;
@@ -59,6 +59,7 @@ scripts() { # one per line, with arguments
     structure) printf '%s\n' apply_fixes.py catalog.py structure_corpus.py ;;
     serve_workers) printf '%s\n' doc_conformance.py "serve_workers.py --quick" ;;
     web) printf '%s\n' doc_conformance.py "web_fuzz.py --quick" ;;
+    text) printf '%s\n' doc_conformance.py catalog.py ref_examples.py strings.py ;; # spec 042
     effects) printf '%s\n' fmt_corpus.py catalog.py effect_sets_records.py ;;
     const) printf '%s\n' apply_fixes.py catalog.py fmt_corpus.py ref_examples.py const_equiv.py ;; # spec 031
     typed_errors) printf '%s\n' catalog.py apply_fixes.py ref_examples.py doc_conformance.py ;; # spec 032

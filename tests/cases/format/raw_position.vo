@@ -1,0 +1,5 @@
+fn main() uses console {
+    print(format(`a "{}"
+b {:q}`, 1, 2));
+    print(format("\u{e5}\t{:q}", 1));
+}

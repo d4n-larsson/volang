@@ -1,0 +1,10 @@
+fn main() uses console {
+    print(str(1e));
+    print(str(1e+));
+    print(str(1.5e-));
+    print(str(1e400));
+    print(str(123456789012345678e2));
+    print(str(2em));
+    print(str(1e5x));
+    let n: int = 1e3;
+}

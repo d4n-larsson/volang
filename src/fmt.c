@@ -430,12 +430,34 @@ static void fm_expr(Node *n, long ctx)
     case N_INT:
         int_to_dec(fm_sb, n->a.i);
         break;
-    case N_FLOAT:
-        float_to_text(fm_sb, n->a.i);
+    case N_FLOAT: {
+        /* spec 042: a literal with an exponent keeps it (lower case, no `+`); others are rewritten */
+        char *src = file_get((int)n->file)->text;
+        int exp = 0;
+        for (long i = n->start; i < n->end && !exp; i++) exp = src[i] == 'e' || src[i] == 'E';
+        if (!exp) {
+            float_to_text(fm_sb, n->a.i);
+            break;
+        }
+        for (long i = n->start; i < n->end; i++)
+            if (src[i] != '+') fm_b(src[i] == 'E' ? 'e' : src[i]);
         break;
-    case N_STR:
-        render_str_lit(fm_sb, n->a.s);
+    }
+    case N_STR: {
+        /* spec 042: a raw string stays raw only while its text needs it (a backslash, a quote or a line
+           break); its inside is written as it is, never re-indented */
+        Str *v = n->a.s;
+        int raw = file_get((int)n->file)->text[n->start] == '`', needed = 0;
+        for (long i = 0; raw && i < v->len && !needed; i++) needed = v->data[i] == '\\' || v->data[i] == '"' || v->data[i] == '\n';
+        if (!needed) {
+            render_str_lit(fm_sb, v);
+            break;
+        }
+        fm_b('`');
+        fm_s(v);
+        fm_b('`');
         break;
+    }
     case N_BOOL:
         fm_c(n->a.i ? "true" : "false");
         break;

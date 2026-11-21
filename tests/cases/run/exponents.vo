@@ -1,0 +1,19 @@
+fn same(text: str, x: float) -> str {
+    match parse_float(text) {
+        case ok(y) {
+            return text + " " + str(x == y);
+        }
+        case err(m) {
+            return text + " " + m;
+        }
+    }
+}
+
+# Spec 042: float literals with an exponent.
+fn main() uses console {
+    print(str(1e9) + " " + str(1.5e-3) + " " + str(2E+2) + " " + str(1e0) + " " + str(12e1));
+    print(same("1e9", 1e9) + ", " + same("1.5e-3", 1.5e-3) + ", " + same("6.02e23", 6.02e23) + ", " + same("1e-320", 1e-320));
+    print(same("1.7976931348623157e308", 1.7976931348623157e308) + ", " + same("5e-324", 5e-324) + ", " + same("1e-400", 1e-400));
+    print(str(1e3 == 1000.0) + " " + str(int(1e3)) + " " + str(1e22) + " " + str(1e23));
+    print(same("1e", 0.0) + ", " + same("e5", 0.0) + ", " + same("1.e5", 0.0) + ", " + same("1e1234567", 0.0));
+}

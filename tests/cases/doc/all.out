@@ -68,7 +68,7 @@ chars (s: str) -> list[str]
 byte_at (s: str, i: int) -> int
     byte `i`, 0 to 255, without a list; R0003 out of range
 upper, lower (s: str) -> str
-    ASCII letters only
+    Latin, Greek and Cyrillic letters
 ord (s: str) -> int
     code point of a one-character string (R0007 otherwise)
 chr (i: int) -> str
