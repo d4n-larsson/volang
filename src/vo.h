@@ -2411,6 +2411,7 @@ extern Str *app_entry;   /* the embedded entry path, or 0 in a toolchain */
 extern long app_manifest; /* the embedded vo.packages' file id, or -1 */
 extern char **app_start(long *argc, char **argv);
 extern int cmd_build(char *output, char *base);
+extern int cmd_mcp(void); /* src/mcp.c (spec 036) */
 extern long opt_app_effects;
 extern long sys_getdents64(int fd, void *buf, long n);
 extern long sys_rename(char *from, char *to);

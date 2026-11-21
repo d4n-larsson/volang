@@ -1308,6 +1308,7 @@ vo edit      [--json] [--dry-run] rename|add-field ENTRY ...
 vo replay    [--json] [--trace FILE] [--timeout SEC] [--max-memory MiB] [--mem-stats] RECORDING
 vo doc       [--json] [ENTRY] [NAME]
 vo package   [--json] ENTRY NAME DIRECTORY | --remove ENTRY NAME
+vo mcp
 ```
 
 `run` and `test` also take `--trace FILE` and `--trace-limit N`; `run` takes `--record FILE` (see Traces and replay).
@@ -1319,6 +1320,7 @@ vo package   [--json] ENTRY NAME DIRECTORY | --remove ENTRY NAME
 - Memory: values that can no longer be reached are reclaimed automatically. The limit applies to live data (512 MiB by default; `--max-memory MiB`, 1 to 65536); holding more is R0006. `--mem-stats` reports the peak live size, the total allocated and the number of collections after the run or each test, without its tasks (on stderr for `run`; a `memory` record with `--json`).
 - `fmt` rewrites files in canonical form; `fmt --check` changes nothing and lists the files that are not canonical.
 - `explain CODE` prints the catalog entry for any `E`, `W`, `R` or `T` code, with an example and its fix.
+- `mcp` serves the Model Context Protocol on stdin/stdout for agent hosts: `check`, `run`, `test`, `fmt`, `effects`, `explain`, `doc`, `query`, `impact` and `edit` as tools with the same JSON output, and this document as `vo://reference`.
 - `reference` prints this document. `version` prints `vo <semver> schema 1`.
 - `--json` works with every command and switches reports to JSON lines (see Machine-readable output).
 - `run` writes its own reports (diagnostics, runtime errors) to stderr, so the program's stdout stays clean. Every other command reports on stdout.

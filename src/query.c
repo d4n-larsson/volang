@@ -1018,9 +1018,19 @@ void im_print_role(char *role)
 static void im_from_diff(void)
 {
     char *path = (char *)opt_diff;
-    if (path[0] == '-' && !path[1]) path = "/dev/stdin";
     char *text;
-    long len = read_whole_file(path, &text);
+    long len;
+    if (path[0] == '-' && !path[1]) { /* standard input to its end: a pipe (`git diff | vo impact`) or a file */
+        path = "/dev/stdin";
+        SB *sb = sb_new();
+        static char buf[65536];
+        while ((len = sys_read(0, buf, sizeof buf)) > 0 || len == -4 /* EINTR */)
+            if (len > 0) sb_bytes(sb, buf, len);
+        text = sb->ptr;
+        if (len == 0) len = sb->len;
+    } else {
+        len = read_whole_file(path, &text);
+    }
     if (len < 0) {
         Str *ps = str_from_cstr(path);
         Str *m = msg("Cannot read the diff `$1`.", ps, 0, 0);

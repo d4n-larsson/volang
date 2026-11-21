@@ -33,7 +33,7 @@ GUIDE = ["basics", "types", "records-and-variants", "functions", "generics", "re
          "collections", "effects", "tests", "properties", "contracts", "holes", "modules-and-packages",
          "standard-library", "files-and-processes", "concurrency", "apis", "determinism", "structure"]
 TOOLS = ["check", "run", "test", "build", "fmt", "effects", "explain", "doc", "reference", "query", "impact", "edit",
-         "replay", "package", "version", "json-output", "exit-statuses"]
+         "replay", "package", "mcp", "version", "json-output", "exit-statuses"]
 
 # repository file -> generated page (site-src path), for rewriting links between sources
 PAGES = {"docs/reference.md": "reference/index.md", "docs/errors.md": "errors/index.md",

@@ -6,7 +6,10 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
-Nothing yet.
+- `vo mcp`: the toolchain as a Model Context Protocol server for agent hosts (ten commands as tools, the
+  reference as the resource `vo://reference`).
+- Fixed: `vo impact --diff -` and `vo test --diff -` read a pipe (`git diff | vo impact main.vo --diff -`);
+  before, standard input had to be a regular file.
 
 ## 0.1.0
 

@@ -42,6 +42,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [033](../specs/033-map-keys/) | Structural map keys: `map[K, V]` keyed by `int`, `bool`, `str`, `bytes`, records and variants of those, compared like `==`; `K: key` for generic code; E0309 names the part that is not a key | **Implemented** ([results](../specs/033-map-keys/results.md)) |
 | [034](../specs/034-vo-build/) | `vo build`: a program as one static executable (the toolchain with the program's files attached and hashed), run without sources; `--vo-effects` prints its grant; `vo run`'s options as `--vo-NAME`; `--base` for other architectures | **Implemented** ([results](../specs/034-vo-build/results.md)) |
 | [035](../specs/035-std-crypto/) | `std.crypto`: `sha256`, `hmac_sha256`, constant-time `same_bytes`, `random_bytes` from the system under a new effect `entropy`, `hash_password` / `verify_password` (PBKDF2-HMAC-SHA256) | **Implemented** ([results](../specs/035-std-crypto/results.md)) |
+| [036](../specs/036-vo-mcp/) | `vo mcp`: the toolchain as a Model Context Protocol server on stdin/stdout; ten commands as tools with the commands' own JSON output, the reference as a resource; every call in its own process | **Implemented** ([results](../specs/036-vo-mcp/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -389,6 +390,19 @@ and are recorded and replayed like every other input.
 
 - **Not done (on purpose):** Argon2 and scrypt (the stored text names its method, so they can be added),
   SHA-1, MD5, SHA-512, encryption, public-key signatures; `std.web` request IDs stay on `random`.
+
+### 036: the toolchain as an agent server (implemented)
+
+An agent had to be told that vo's commands exist. `vo mcp` serves the Model Context Protocol on standard
+input and output: `check`, `run`, `test`, `fmt`, `effects`, `explain`, `doc`, `query`, `impact` and `edit`
+are tools whose arguments are the commands' operands and options, and whose result is the command's
+`--json` output, its stderr and one `exit` line; the reference is the resource `vo://reference`. A call is
+the command itself in a forked copy of the server, so a timeout, memory exhaustion or a crash ends with
+that call, and the limits and the effect grant are the command line's. Output is cut at 1 MiB per stream;
+a call can be cancelled. `--diff -` now also reads a pipe (it needed a regular file).
+
+- **Not done (on purpose):** the HTTP transport, prompts, sampling, `build`/`package`/`replay` as tools,
+  `--trace` and `--record` in calls, a sandbox (a program runs with what `main` declares, as always).
 
 ## Planned after 017
 

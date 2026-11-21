@@ -26,6 +26,7 @@ cases() {
     map_keys) echo "map_keys check bytes generic prop tasks test fmt doc" ;; # spec 033
     build) echo "build cli run replay packages" ;; # spec 034
     crypto) echo "crypto effects effect_sets replay tasks doc" ;; # spec 035
+    mcp) echo "cli query" ;; # spec 036
     bytes) echo "bytes bytes_steps run doc" ;;
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
@@ -60,6 +61,7 @@ scripts() { # one per line, with arguments
     map_keys) printf '%s\n' catalog.py apply_fixes.py ref_examples.py doc_conformance.py ;; # spec 033
     build) printf '%s\n' catalog.py ref_examples.py build_examples.py ;; # spec 034
     crypto) printf '%s\n' catalog.py ref_examples.py doc_conformance.py crypto_vectors.py ;; # spec 035
+    mcp) printf '%s\n' catalog.py ref_examples.py mcp.py ;; # spec 036
     bytes) echo doc_conformance.py ;;
     float) printf '%s\n' math_vectors.py json_corpus.py json_stream.py ref_examples.py doc_conformance.py ;;
     json) printf '%s\n' json_corpus.py json_stream.py doc_conformance.py ;;
@@ -93,6 +95,7 @@ area_of() {
     src/rt_map.c|tests/map_keys_bench.py) echo map_keys ;; # spec 033
     src/build.c|tests/build_examples.py) echo build ;; # spec 034
     src/crypto.c|src/sha256.c|std/crypto.vo|tests/crypto_vectors.py) echo crypto ;; # spec 035
+    src/mcp.c|tests/mcp.py) echo mcp ;; # spec 036
     src/check_effects.c|src/fmt.c|tests/effect_sets_*.py) echo effects ;; # spec 030
     src/num.c|src/stdprim.c) echo float ;;
     src/bytes.c|std/bytes.vo|tests/bytes/*|tests/bytes_*.py|tests/process_helpers/allbytes) echo bytes ;;
