@@ -1,0 +1,39 @@
+import std.tcp.Conn;
+import std.tcp.connect;
+import std.tcp.listen;
+import std.tcp.read;
+
+fn open() {
+    match connect("db.internal", 5432, 1000) {
+        case ok(_) {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn wait() {
+    match listen("9000") {
+        case ok(_) {
+        }
+        case err(_) {
+        }
+    }
+}
+
+# Using a connection needs its effect.
+fn first(c: Conn[uses net]) -> int {
+    match read(c, 1, 1000) {
+        case ok(b) {
+            return b[0];
+        }
+        case err(_) {
+            return -1;
+        }
+    }
+}
+
+fn main() {
+    open();
+    wait();
+}

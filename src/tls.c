@@ -15,7 +15,7 @@
 /* ponytail: one 4 MiB region per process for the trust store (about 0.4 MiB for the 120 roots of a
  * common store) and connections (research R2, measured in implementation: the allocator zeroes the
  * whole region at startup, so 16 MiB cost 15 ms); grow it if a very large trust store needs more. */
-#define TLS_ARENA (4L << 20)
+#define TLS_ARENA (8L << 20) /* spec 039: 8 MiB, with room for the sessions std.tcp keeps open */
 
 static int tls_ready;
 
@@ -268,26 +268,44 @@ static Variant *tls_failure(mbedtls_ssl_context *ssl, TlsIo *io, int ret, Str *h
     return net_err("the TLS handshake with $1 failed", host, port);
 }
 
-/* result[str]: the raw response of request over a verified TLS connection to host:port, or err. The
- * host is checked against the grant by the caller (io_https_exchange); no request byte is sent before
- * the server's certificate is verified. */
-Variant *tls_exchange(Str *host, long port, Str *request)
+/* spec 039: a verified TLS session over a connected socket, kept open (std.tcp) or used for one
+ * exchange (std.http). It lives in the TLS arena. */
+typedef struct TlsSession {
+    mbedtls_ssl_config conf;
+    mbedtls_ssl_context ssl;
+    TlsIo io;
+} TlsSession;
+
+static void tls_free(TlsSession *s)
+{
+    mbedtls_ssl_free(&s->ssl);
+    mbedtls_ssl_config_free(&s->conf);
+    mbedtls_free(s);
+}
+
+/* The session after a verified handshake with host on the connected socket fd, or 0 with *err the err
+ * result saying why (*full set when the arena had no room: std.tcp's "too many"). http: offer
+ * HTTP/1.1 (ALPN). No application byte is sent before the server's certificate is verified. A handshake
+ * that ran into the request's own timeout gives the timeout err; one that ran into --timeout stops
+ * the run with R0009 after freeing. The socket stays the caller's. */
+void *tls_open(long fd, Str *host, long port, int http, Variant **err, int *full)
 {
     GC_ROOT(&host);
-    GC_ROOT(&request);
-    Variant *result = 0;
-    GC_ROOT(&result);
+    *err = 0;
+    if (full) *full = 0;
     tls_init();
     if (!anchors_ready()) {
-        result = make_err("no trusted certificate authorities found (looked in /etc/ssl/certs/ca-certificates.crt, "
-                          "/etc/pki/tls/certs/ca-bundle.crt, /etc/ssl/cert.pem)");
-        GC_UNROOT(3);
-        return result;
+        *err = make_err("no trusted certificate authorities found (looked in /etc/ssl/certs/ca-certificates.crt, "
+                        "/etc/pki/tls/certs/ca-bundle.crt, /etc/ssl/cert.pem)");
+        GC_UNROOT(1);
+        return 0;
     }
-    long fd = net_open(host, port, &result);
-    if (fd < 0) {
-        GC_UNROOT(3);
-        return result;
+    TlsSession *s = mbedtls_calloc(1, sizeof *s);
+    if (!s) {
+        if (full) *full = 1;
+        *err = make_err("too many TLS connections are open");
+        GC_UNROOT(1);
+        return 0;
     }
     int one = 1; /* TCP_NODELAY: the handshake's last message and the request go out at once, not 40 ms
                     apart (Nagle's algorithm waiting for the server's delayed acknowledgement) */
@@ -296,12 +314,10 @@ Variant *tls_exchange(Str *host, long port, Str *request)
     long n = host->len < 255 ? host->len : 255;
     mem_copy(name, host->data, n);
     name[n] = 0;
-    TlsIo io = {fd, 0, 0, 0, 0, {0}};
-    io.is_ip = parse_ipv4(host->data, host->len, io.ip);
-    mbedtls_ssl_config conf;
-    mbedtls_ssl_context ssl;
-    mbedtls_ssl_config_init(&conf);
-    mbedtls_ssl_init(&ssl);
+    s->io.fd = fd;
+    s->io.is_ip = parse_ipv4(host->data, host->len, s->io.ip);
+    mbedtls_ssl_config_init(&s->conf);
+    mbedtls_ssl_init(&s->ssl);
     static const uint16_t groups[] = {MBEDTLS_SSL_IANA_TLS_GROUP_X25519, MBEDTLS_SSL_IANA_TLS_GROUP_SECP256R1,
                                       MBEDTLS_SSL_IANA_TLS_GROUP_SECP384R1, MBEDTLS_SSL_IANA_TLS_GROUP_NONE};
     static const char *alpn[] = {"http/1.1", 0};
@@ -312,65 +328,133 @@ Variant *tls_exchange(Str *host, long port, Str *request)
         MBEDTLS_TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256, MBEDTLS_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256,
         MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256, MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,
         MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384, MBEDTLS_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384, 0};
-    int ret = mbedtls_ssl_config_defaults(&conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM,
+    int ret = mbedtls_ssl_config_defaults(&s->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM,
                                           MBEDTLS_SSL_PRESET_DEFAULT);
     if (!ret) {
-        mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED); /* always (FR-006) */
-        mbedtls_ssl_conf_ca_chain(&conf, &anchors, 0);
-        mbedtls_ssl_conf_verify(&conf, tls_verify_note, &io);
-        mbedtls_ssl_conf_min_tls_version(&conf, MBEDTLS_SSL_VERSION_TLS1_2);
-        mbedtls_ssl_conf_max_tls_version(&conf, MBEDTLS_SSL_VERSION_TLS1_3);
-        mbedtls_ssl_conf_groups(&conf, groups);
-        mbedtls_ssl_conf_ciphersuites(&conf, suites);
-        ret = mbedtls_ssl_conf_alpn_protocols(&conf, alpn);
+        mbedtls_ssl_conf_authmode(&s->conf, MBEDTLS_SSL_VERIFY_REQUIRED); /* always (FR-006) */
+        mbedtls_ssl_conf_ca_chain(&s->conf, &anchors, 0);
+        mbedtls_ssl_conf_verify(&s->conf, tls_verify_note, &s->io);
+        mbedtls_ssl_conf_min_tls_version(&s->conf, MBEDTLS_SSL_VERSION_TLS1_2);
+        mbedtls_ssl_conf_max_tls_version(&s->conf, MBEDTLS_SSL_VERSION_TLS1_3);
+        mbedtls_ssl_conf_groups(&s->conf, groups);
+        mbedtls_ssl_conf_ciphersuites(&s->conf, suites);
+        if (http) ret = mbedtls_ssl_conf_alpn_protocols(&s->conf, alpn);
     }
-    if (!ret) ret = mbedtls_ssl_setup(&ssl, &conf);
-    if (!ret) ret = mbedtls_ssl_set_hostname(&ssl, io.is_ip ? 0 : name); /* SNI and name check, or the IP check above */
+    if (!ret) ret = mbedtls_ssl_setup(&s->ssl, &s->conf);
+    if (!ret) ret = mbedtls_ssl_set_hostname(&s->ssl, s->io.is_ip ? 0 : name); /* SNI and name check, or the IP check above */
+    if (ret == MBEDTLS_ERR_SSL_ALLOC_FAILED && full) *full = 1;
     if (!ret) {
-        mbedtls_ssl_set_bio(&ssl, &io, tls_send, tls_recv, 0);
-        do ret = mbedtls_ssl_handshake(&ssl);
+        mbedtls_ssl_set_bio(&s->ssl, &s->io, tls_send, tls_recv, 0);
+        do ret = mbedtls_ssl_handshake(&s->ssl);
         while (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE);
     }
-    if (!ret && mbedtls_ssl_get_verify_result(&ssl) != 0) ret = MBEDTLS_ERR_X509_CERT_VERIFY_FAILED; /* (never: required) */
-    if (ret && !io.timed_out) result = tls_failure(&ssl, &io, ret, host, port);
-    for (long sent = 0; !ret && sent < request->len;) { /* verified: the request */
-        int w = mbedtls_ssl_write(&ssl, (const unsigned char *)request->data + sent, (size_t)(request->len - sent));
-        if (w == MBEDTLS_ERR_SSL_WANT_READ || w == MBEDTLS_ERR_SSL_WANT_WRITE) continue;
-        if (w < 0) {
-            ret = w;
-            if (!io.timed_out)
-                result = w == MBEDTLS_ERR_SSL_INVALID_MAC ? net_err("the connection to $1 was tampered with", host, port)
-                                                          : net_err("the connection to $1 failed while sending", host, port);
-        } else {
-            sent += w;
-        }
+    if (!ret && mbedtls_ssl_get_verify_result(&s->ssl) != 0) ret = MBEDTLS_ERR_X509_CERT_VERIFY_FAILED; /* (never: required) */
+    if (!ret) {
+        GC_UNROOT(1);
+        return s;
     }
+    int timed_out = s->io.timed_out;
+    if (!timed_out) *err = net_capped ? net_timed_out(host, port) : tls_failure(&s->ssl, &s->io, ret, host, port);
+    tls_free(s);
+    GC_UNROOT(1);
+    if (timed_out) {
+        sys_close((int)fd);
+        rt_timeout((Node *)cur_node); /* R0009, after everything was freed */
+    }
+    return 0;
+}
+
+/* Reads up to n decrypted bytes: the count, 0 when the peer closed, TLS_CAPPED when the request's own
+ * timeout passed, TLS_DEADLINE when --timeout did (the caller frees, then R0009), TLS_TAMPERED,
+ * TLS_FAILED. */
+long tls_read(void *session, char *buf, long n)
+{
+    TlsSession *s = session;
+    for (;;) {
+        int r = mbedtls_ssl_read(&s->ssl, (unsigned char *)buf, (size_t)n);
+        if (r > 0) return r;
+        if (s->io.timed_out) return TLS_DEADLINE;
+        if (net_capped) return TLS_CAPPED;
+        if (r == MBEDTLS_ERR_SSL_WANT_READ || r == MBEDTLS_ERR_SSL_WANT_WRITE) continue;
+#ifdef MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET
+        if (r == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) continue;
+#endif
+        if (r == 0 || r == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || r == MBEDTLS_ERR_SSL_CONN_EOF) return 0;
+        if (r < 0) return r == MBEDTLS_ERR_SSL_INVALID_MAC ? TLS_TAMPERED : TLS_FAILED;
+        return r;
+    }
+}
+
+/* Writes all n bytes: 0, or TLS_CAPPED, TLS_DEADLINE, TLS_TAMPERED, TLS_FAILED as tls_read. */
+long tls_write(void *session, char *buf, long n)
+{
+    TlsSession *s = session;
+    for (long sent = 0; sent < n;) {
+        int w = mbedtls_ssl_write(&s->ssl, (const unsigned char *)buf + sent, (size_t)(n - sent));
+        if (w > 0) {
+            sent += w;
+            continue;
+        }
+        if (s->io.timed_out) return TLS_DEADLINE;
+        if (net_capped) return TLS_CAPPED;
+        if (w == MBEDTLS_ERR_SSL_WANT_READ || w == MBEDTLS_ERR_SSL_WANT_WRITE) continue;
+        if (w < 0) return w == MBEDTLS_ERR_SSL_INVALID_MAC ? TLS_TAMPERED : TLS_FAILED;
+        sent += w;
+    }
+    return 0;
+}
+
+/* Ends the session (notify: tell the peer first) and frees it; the socket stays the caller's. */
+void tls_close(void *session, int notify)
+{
+    TlsSession *s = session;
+    if (notify) mbedtls_ssl_close_notify(&s->ssl);
+    tls_free(s);
+}
+
+/* result[str]: the raw response of request over a verified TLS connection to host:port, or err. The
+ * host is checked against the grant by the caller (io_https_exchange); no request byte is sent before
+ * the server's certificate is verified. */
+Variant *tls_exchange(Str *host, long port, Str *request)
+{
+    GC_ROOT(&host);
+    GC_ROOT(&request);
+    Variant *result = 0;
+    GC_ROOT(&result);
+    long fd = net_open(host, port, &result);
+    if (fd < 0) {
+        GC_UNROOT(3);
+        return result;
+    }
+    void *s = tls_open(fd, host, port, 1, &result, 0);
+    if (!s) {
+        sys_close((int)fd);
+        GC_UNROOT(3);
+        return result;
+    }
+    long r = tls_write(s, request->data, request->len);
+    if (r == TLS_TAMPERED) result = net_err("the connection to $1 was tampered with", host, port);
+    if (r == TLS_FAILED) result = net_err("the connection to $1 failed while sending", host, port);
     SB *sb = sb_new();
     GC_ROOT(&sb);
-    unsigned char buf[16384];
-    while (!ret) { /* the response, until the server closes */
-        int r = mbedtls_ssl_read(&ssl, buf, sizeof buf);
-        if (r == MBEDTLS_ERR_SSL_WANT_READ || r == MBEDTLS_ERR_SSL_WANT_WRITE) continue;
-        if (r == 0 || r == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || r == MBEDTLS_ERR_SSL_CONN_EOF) break;
-        if (r < 0) {
-            ret = r;
-            if (!io.timed_out)
-                result = r == MBEDTLS_ERR_SSL_INVALID_MAC ? net_err("the connection to $1 was tampered with", host, port)
-                                                          : net_err("the connection to $1 failed while reading", host, port);
-            break;
-        }
+    char buf[16384];
+    while (!r) { /* the response, until the server closes */
+        r = tls_read(s, buf, sizeof buf);
+        if (r == 0) break;
+        if (r == TLS_TAMPERED) result = net_err("the connection to $1 was tampered with", host, port);
+        if (r == TLS_FAILED) result = net_err("the connection to $1 failed while reading", host, port);
+        if (r < 0) break;
         if (sb->len + r > (16L << 20)) {
-            ret = -1;
+            r = TLS_FAILED;
             result = net_err("the response from $1 is larger than 16 MiB", host, port);
             break;
         }
-        sb_bytes(sb, (char *)buf, r);
+        sb_bytes(sb, buf, r);
+        r = 0;
     }
-    if (!ret) mbedtls_ssl_close_notify(&ssl);
-    mbedtls_ssl_free(&ssl);
-    mbedtls_ssl_config_free(&conf);
+    tls_close(s, r == 0);
     sys_close((int)fd);
-    if (io.timed_out) rt_timeout((Node *)cur_node); /* R0009, after everything was freed */
+    if (r == TLS_DEADLINE) rt_timeout((Node *)cur_node); /* R0009, after everything was freed */
     if (net_capped) result = net_timed_out(host, port);
     if (!result) result = make_result(0, (long)sb_finish(sb));
     GC_UNROOT(4);

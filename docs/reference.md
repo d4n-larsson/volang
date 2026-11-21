@@ -298,17 +298,17 @@ test "loads fixtures" uses file.read("fixtures/") { ... }
 | input | `read_line`, `read_all` |
 | file.read, file.write | `read_file`, `write_file`; `std.fs` |
 | file.delete | `std.fs.delete` and `rename` |
-| net | `std.http` (`get`, `post`) |
+| net | `std.http` (`get`, `post`), `std.tcp.connect` |
 | clock | `now_ms`, `std.time.sleep` |
 | random | `random_int` (seeded: not for secrets) |
 | env | `env` |
-| serve | `std.http.serve` (answering HTTP requests) |
+| serve | `std.http.serve` (answering HTTP requests), `std.tcp.listen` |
 | process | `std.process.run` and `run_with` (running other programs) |
 | entropy | `std.crypto.random_bytes`, `hash_password` (the system's random source) |
 
 - No `uses` clause means pure: the function cannot do any of these, so it always returns the same result for the same arguments.
 - A function must declare everything it does and everything its callees declare (E0501, with a fix that adds exactly the missing effects). An effect nothing needs is W0501, with a fix that removes it.
-- Scopes (string literals or constants) narrow an effect: directories for `file.read`/`file.write`/`file.delete` (relative to the directory the program starts in, e.g. `"out/"`; `"./"` is that directory itself), variable names for `env`, hosts for `net`, addresses for `serve` (`"8000"`: this machine only; `"0.0.0.0:8000"`: the network), programs for `process` (`"git"`: found through `PATH`; `"tools/gen"`, `"/usr/bin/git"`: that file; required, E0512; matched exactly). A scope covers the directories under it. A caller's scopes must cover its callees' (E0503); an empty or absolute scope, or one with `..`, is E0506.
+- Scopes (string literals or constants) narrow an effect: directories for `file.read`/`file.write`/`file.delete` (relative to the directory the program starts in, e.g. `"out/"`; `"./"` is that directory itself), variable names for `env`, hosts for `net` (`"db"`: any port; `"db:5432"`: that port), addresses for `serve` (`"8000"`: this machine only; `"0.0.0.0:8000"`: the network), programs for `process` (`"git"`: found through `PATH`; `"tools/gen"`, `"/usr/bin/git"`: that file; required, E0512; matched exactly). A scope covers the directories under it. A caller's scopes must cover its callees' (E0503); an empty or absolute scope, or one with `..`, is E0506.
 - Canonical order (`vo fmt`): console, input, file.read, file.write, file.delete, net, clock, random, env, serve, process; scopes sorted; then effect parameters and sets, alphabetically.
 - An effect set names effects a program repeats: `effects Storage = file.read("data/"), file.write("data/");` (an item, `export` like others). `uses console, Storage` means the union; a set may include sets (a cycle is E0513), and an unused private set is W0505. In a type's effect argument (`Db[uses Storage]`) its scopes are dropped. Records and reports show the effects it stands for.
 - `main`'s clause is the grant of `vo run`, a test's clause the grant of that test. Paths and names are also checked at run time, after resolving `..`, absolute paths and symbolic links, against both the running function's declaration and that root grant: anything outside either is R0010 (exit 70), so no callee widens the root. A literal target outside the scopes is E0503 at check time.
@@ -1160,6 +1160,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 | std.regex | `regex("...")` (checked by `vo check`), `parse_regex`, `is_match`, `first_match`, `all_matches`, `replace_all` (`$1`), `split_on`: linear time; write `\\d` for `\d` |
 | std.sqlite | `open` → `Database[uses file.read, file.write]`, `open_readonly` → `Database[uses file.read]`, `open_memory` → `Database`; `exec`, `query` (need the database's effects) with `sql("...")` (checked) and `?` parameters (`Value`); `transaction`; `get_int`, `get_str`, ... |
 | std.crypto | `sha256`, `hmac_sha256`, `same_bytes` (constant time) on `bytes`; `random_bytes(n)` for tokens and keys, `hash_password` (entropy); `verify_password` |
+| std.tcp | TCP connections as `bytes`: `connect`, `connect_tls`, `start_tls` (net), `listen`, `accept` (serve); `send`, `read`, `read_exact`, `read_until`, `close` on a `Conn[E]` (need `E`); every wait takes a time limit; errors are `TcpError` |
 | std.option | `Option[T]` (`some`, `none`) for absence, `or_else`, `is_some`, `to_result` |
 | std.web | APIs over `serve_workers`: `web_app`, `on_get`/`on_post`/`on_put`/`on_patch`/`on_delete`, `json_reply(status, v)`, `created`, `no_content`, `serve_app`, `handle_request`, steps, `load_settings`, `health_route` |
 

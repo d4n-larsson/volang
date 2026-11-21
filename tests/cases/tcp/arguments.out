@@ -1,0 +1,31 @@
+invalid: the port must be 1 to 65535
+invalid: the port must be 1 to 65535
+invalid: the time limit must be 1 to 600000 ms
+invalid: the time limit must be 1 to 600000 ms
+invalid: the host is empty or longer than 253 bytes
+invalid: the host is a name or an IPv4 address, without a scheme, port or path
+invalid: the host is a name or an IPv4 address, without a scheme, port or path
+invalid: the port must be 1 to 65535
+invalid: the size must be 1 to 16777216 bytes
+invalid: the size must be 1 to 16777216 bytes
+invalid: the size must be 1 to 16777216 bytes
+the connection is closed
+the connection is closed
+the connection is closed
+the connection is closed
+the connection is closed
+invalid: the address is "PORT" or "0.0.0.0:PORT"
+invalid: the time limit must be 1 to 600000 ms
+the connection is closed
+0
+the connection was refused
+the time limit passed
+the connection is closed
+the host was not found
+the host cannot be reached
+TLS failed: why
+the port is already in use
+more than 16 MiB arrived without what the read asked for
+too many connections are open
+invalid: what
+why

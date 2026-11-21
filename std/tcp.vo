@@ -1,0 +1,261 @@
+# std.tcp: TCP connections: connect, send, read, TLS, listen and accept, for protocols other than HTTP.
+# Part of the vo standard library (spec 039). Import items one by one: `import std.tcp.NAME;`.
+# Connecting needs `net` with the host in its scopes (`net("db.internal")`, or one port of it:
+# `net("db.internal:5432")`); listening needs `serve` with the address. A connection's type names the
+# effect it was opened under, and using it needs that effect: `fn ask[E: effects](c: Conn[E]) uses E`.
+# Everything is `bytes` (std.bytes.from_text, to_text). Every call that can wait takes a time limit in
+# milliseconds, 1 to 600000. One read returns at most 16 MiB; 256 connections and listeners can be open.
+# A recording (`vo run --record`) holds what was received, and `vo replay` opens no connection.
+# With concurrent_map, a connection or listener opened before it is open in every task: use each
+# connection from one task at a time.
+
+# Why a call failed. `describe` gives a sentence for a person.
+#     describe(TcpError.refused) is "the connection was refused"
+export variant TcpError {
+    # Nothing listens on that port.
+    refused;
+    # The call's time limit passed. The connection is still usable after a read; close it after a send.
+    timed_out;
+    # The peer closed or reset the connection, or the program closed it.
+    closed;
+    # The name has no IPv4 address, or no name server answered.
+    not_found;
+    # No route to the host or network.
+    unreachable;
+    # The TLS handshake or the server's certificate failed: the reason, as std.http words it.
+    tls(str);
+    # listen: the port is taken.
+    in_use;
+    # 16 MiB arrived without what the read asked for; the bytes are still there to read.
+    too_large;
+    # 256 connections and listeners are open.
+    too_many;
+    # An argument is out of range (which one), or start_tls is not possible here.
+    invalid(str);
+    # Anything else the system reports.
+    other(str);
+}
+
+# An open connection: from connect, connect_tls (Conn[uses net]) or accept (Conn[uses serve]); close it
+# with close.
+#     new Conn { id: 0, peer: "example.com:80" }.peer is "example.com:80"
+export record Conn[E: effects] {
+    # The connection's number (a Conn built by hand is closed).
+    id: int;
+    # The other end: "host:port" as given to connect, or the client's "a.b.c.d:port" from accept.
+    peer: str;
+}
+
+# An address the program accepts connections on: from listen; close it with close_listener.
+#     new Listener { id: 0, port: 9000 }.port is 9000
+export record Listener {
+    # The listener's number.
+    id: int;
+    # The port it listens on (the one the system chose when the address said 0).
+    port: int;
+}
+
+# A sentence saying what e means.
+#     describe(TcpError.tls("the certificate of db:5432 has expired")) is "TLS failed: the certificate of db:5432 has expired"
+export fn describe(e: TcpError) -> str {
+    match e {
+        case refused {
+            return "the connection was refused";
+        }
+        case timed_out {
+            return "the time limit passed";
+        }
+        case closed {
+            return "the connection is closed";
+        }
+        case not_found {
+            return "the host was not found";
+        }
+        case unreachable {
+            return "the host cannot be reached";
+        }
+        case tls(why) {
+            return "TLS failed: " + why;
+        }
+        case in_use {
+            return "the port is already in use";
+        }
+        case too_large {
+            return "more than 16 MiB arrived without what the read asked for";
+        }
+        case too_many {
+            return "too many connections are open";
+        }
+        case invalid(what) {
+            return "invalid: " + what;
+        }
+        case other(why) {
+            return why;
+        }
+    }
+}
+
+fn fail(text: str) -> TcpError {
+    let at = find(text, ": ");
+    if at < 0 {
+        return TcpError.other(text);
+    }
+    let kind = slice(text, 0, at);
+    let why = slice(text, at + 2, len(text));
+    if kind == "refused" {
+        return TcpError.refused;
+    }
+    if kind == "timed_out" {
+        return TcpError.timed_out;
+    }
+    if kind == "closed" {
+        return TcpError.closed;
+    }
+    if kind == "not_found" {
+        return TcpError.not_found;
+    }
+    if kind == "unreachable" {
+        return TcpError.unreachable;
+    }
+    if kind == "tls" {
+        return TcpError.tls(why);
+    }
+    if kind == "in_use" {
+        return TcpError.in_use;
+    }
+    if kind == "too_large" {
+        return TcpError.too_large;
+    }
+    if kind == "too_many" {
+        return TcpError.too_many;
+    }
+    if kind == "invalid" {
+        return TcpError.invalid(why);
+    }
+    return TcpError.other(why);
+}
+
+fn no_bytes() -> bytes {
+    return __bytes_of_text("");
+}
+
+# Connects to host (a name or an IPv4 address) on port within timeout_ms (needs net with that host).
+#     connect("example.com", 0, 1000) == err(TcpError.invalid("the port must be 1 to 65535")) is true
+export fn connect(host: str, port: int, timeout_ms: int) -> result[Conn[uses net], TcpError]
+    uses net {
+    __http_timeout(timeout_ms);
+    let id = try map_err(__tcp(1, port, host), fail);
+    return ok(new Conn[uses net] { id: id, peer: host + ":" + str(port) });
+}
+
+# Like connect, then a TLS handshake within the same limit: the server's certificate must verify for
+# host exactly as for an https:// URL (the trust store or --ca-file; nothing turns it off).
+#     connect_tls("", 443, 1000) == err(TcpError.invalid("the host is empty or longer than 253 bytes")) is true
+export fn connect_tls(host: str, port: int, timeout_ms: int) -> result[Conn[uses net], TcpError]
+    uses net {
+    __http_timeout(timeout_ms);
+    let id = try map_err(__tcp(2, port, host), fail);
+    return ok(new Conn[uses net] { id: id, peer: host + ":" + str(port) });
+}
+
+# Turns an open plain connection into a TLS one (STARTTLS), verifying the server for host. Refused
+# with invalid when received bytes are waiting unread, on a TLS connection and on an accepted one.
+#     start_tls(new Conn[uses net] { id: 0, peer: "" }, "example.com", 1000) == err(TcpError.closed) is true
+export fn start_tls(c: Conn[uses net], host: str, timeout_ms: int) -> result[void, TcpError]
+    uses net {
+    __http_timeout(timeout_ms);
+    let _ = try map_err(__tcp(5, c.id, host), fail);
+    return ok();
+}
+
+# 1 to max bytes (max: 1 to 16777216), as soon as any have arrived or within timeout_ms. After the
+# peer closed and everything was read: err(closed).
+#     read(new Conn { id: 0, peer: "" }, 100, 1000) == err(TcpError.closed) is true
+export fn read[E: effects](c: Conn[E], max: int, timeout_ms: int) -> result[bytes, TcpError]
+    uses E {
+    if max < 1 or max > 16777216 {
+        return err(TcpError.invalid("the size must be 1 to 16777216 bytes"));
+    }
+    __http_timeout(timeout_ms);
+    return map_err(__tcp_io(1 + 8 * max, c.id, no_bytes()), fail);
+}
+
+# Exactly n bytes (1 to 16777216), or an error; on timed_out the bytes that came stay for the next read.
+#     read_exact(new Conn { id: 0, peer: "" }, 0, 1000) == err(TcpError.invalid("the size must be 1 to 16777216 bytes")) is true
+export fn read_exact[E: effects](c: Conn[E], n: int, timeout_ms: int) -> result[bytes, TcpError]
+    uses E {
+    if n < 1 or n > 16777216 {
+        return err(TcpError.invalid("the size must be 1 to 16777216 bytes"));
+    }
+    __http_timeout(timeout_ms);
+    return map_err(__tcp_io(2 + 8 * n, c.id, no_bytes()), fail);
+}
+
+# The bytes through the first delimiter (included), e.g. a line with from_text("\n"). too_large when
+# 16 MiB hold none; the bytes stay readable.
+#     read_until(new Conn { id: 0, peer: "" }, from_text("\n"), 1000) == err(TcpError.closed) is true
+export fn read_until[E: effects](
+    c: Conn[E],
+    delimiter: bytes,
+    timeout_ms: int
+) -> result[bytes, TcpError] uses E {
+    __http_timeout(timeout_ms);
+    return map_err(__tcp_io(3, c.id, delimiter), fail);
+}
+
+# Sends all of data within timeout_ms, or returns an error (after timed_out, part may have been sent:
+# close the connection).
+#     send(new Conn { id: 0, peer: "" }, from_text("PING\n"), 1000) == err(TcpError.closed) is true
+export fn send[E: effects](c: Conn[E], data: bytes, timeout_ms: int) -> result[void, TcpError]
+    uses E {
+    __http_timeout(timeout_ms);
+    let _ = try map_err(__tcp_io(4, c.id, data), fail);
+    return ok();
+}
+
+# Ends the connection; every later use returns err(closed). Harmless to repeat.
+#     let c = new Conn { id: 0, peer: "" }; close(c); 1 is 1
+export fn close[E: effects](c: Conn[E]) uses E {
+    match __tcp(6, c.id, "") {
+        case ok(_) {
+        }
+        case err(_) {
+        }
+    }
+}
+
+# Listens on address (needs serve with it): "9000" is port 9000 for this machine only, "0.0.0.0:9000"
+# for the network; port 0 asks the system for a free port, found in the listener's port.
+#     listen("nowhere") == err(TcpError.invalid("the address is \"PORT\" or \"0.0.0.0:PORT\"")) is true
+export fn listen(address: str) -> result[Listener, TcpError] uses serve {
+    let id = try map_err(__tcp(3, 0, address), fail);
+    let port = try map_err(__tcp(7, id, ""), fail);
+    return ok(new Listener { id: id, port: port });
+}
+
+# The next connection to the listener, within timeout_ms; its peer is the client's "a.b.c.d:port".
+#     accept(new Listener { id: 0, port: 0 }, 1000) == err(TcpError.closed) is true
+export fn accept(l: Listener, timeout_ms: int) -> result[Conn[uses serve], TcpError] uses serve {
+    __http_timeout(timeout_ms);
+    let id = try map_err(__tcp(4, l.id, ""), fail);
+    let peer = try map_err(__tcp_io(5, id, no_bytes()), fail);
+    match __text_of_bytes(peer) {
+        case ok(text) {
+            return ok(new Conn[uses serve] { id: id, peer: text });
+        }
+        case err(_) {
+            return ok(new Conn[uses serve] { id: id, peer: "" });
+        }
+    }
+}
+
+# Stops listening; accept then returns err(closed). Harmless to repeat.
+#     let l = new Listener { id: 0, port: 0 }; close_listener(l); 1 is 1
+export fn close_listener(l: Listener) uses serve {
+    match __tcp(8, l.id, "") {
+        case ok(_) {
+        }
+        case err(_) {
+        }
+    }
+}

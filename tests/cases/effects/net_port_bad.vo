@@ -1,0 +1,20 @@
+fn a() uses net("h:0") {
+}
+
+fn b() uses net("h:65536") {
+}
+
+fn c() uses net("h:05") {
+}
+
+fn d() uses net("h:x") {
+}
+
+fn e() uses net(":80") {
+}
+
+fn f() uses net("h:1:2") {
+}
+
+fn main() {
+}

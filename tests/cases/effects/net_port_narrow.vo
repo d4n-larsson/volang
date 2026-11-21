@@ -1,0 +1,17 @@
+import std.tcp.close;
+import std.tcp.connect;
+
+# The callee may reach any port of the host; the caller declares one.
+fn any_port(port: int) uses net("db.internal") {
+    match connect("db.internal", port, 1000) {
+        case ok(c) {
+            close(c);
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn main() uses net("db.internal:5432") {
+    any_port(5432);
+}

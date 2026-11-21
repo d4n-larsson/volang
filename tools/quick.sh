@@ -29,6 +29,7 @@ cases() {
     mcp) echo "cli query" ;; # spec 036
     grammars) echo "lex" ;; # spec 037
     lsp) echo "cli query edit fmt" ;; # spec 038
+    tcp) echo "tcp effects effect_sets http https replay serve tasks doc" ;; # spec 039
     bytes) echo "bytes bytes_steps run doc" ;;
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
@@ -66,6 +67,7 @@ scripts() { # one per line, with arguments
     mcp) printf '%s\n' catalog.py ref_examples.py mcp.py ;; # spec 036
     grammars) echo grammars.py ;; # spec 037
     lsp) printf '%s\n' lsp.py mcp.py ;; # spec 038
+    tcp) printf '%s\n' catalog.py ref_examples.py doc_conformance.py tcp.py ;; # spec 039
     bytes) echo doc_conformance.py ;;
     float) printf '%s\n' math_vectors.py json_corpus.py json_stream.py ref_examples.py doc_conformance.py ;;
     json) printf '%s\n' json_corpus.py json_stream.py doc_conformance.py ;;
@@ -101,6 +103,7 @@ area_of() {
     src/crypto.c|src/sha256.c|std/crypto.vo|tests/crypto_vectors.py) echo crypto ;; # spec 035
     src/mcp.c|tests/mcp.py) echo mcp lsp ;; # spec 036 (the JSON reader is shared with vo lsp)
     src/lsp.c|src/jsonrpc.c|tests/lsp.py) echo lsp ;; # spec 038
+    src/tcp.c|src/tls.c|src/net.c|std/tcp.vo|tests/tcp.py|tests/tcp_server.py) echo tcp ;; # spec 039
     editors/*|tests/grammars.py|site/pygments_vo/pygments_vo.py) echo grammars ;; # spec 037
     src/check_effects.c|src/fmt.c|tests/effect_sets_*.py) echo effects ;; # spec 030
     src/num.c|src/stdprim.c) echo float ;;
@@ -154,7 +157,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done

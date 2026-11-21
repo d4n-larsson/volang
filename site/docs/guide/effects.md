@@ -63,11 +63,11 @@ order: console, input, file.read, file.write, net, clock, random, env, serve.
 | `file.read` | `read_file`; `std.fs.info`, `list_dir`, `walk`; `std.sqlite.open_readonly` and using its database | directories |
 | `file.write` | `write_file`; `std.fs.append_file`, `make_dir`; `std.sqlite.open` (with `file.read`) and using its database | directories |
 | `file.delete` | `std.fs.delete`, `rename` (see [Files and processes](files-and-processes.md)) | directories |
-| `net` | `std.http.get`, `std.http.post` | hosts |
+| `net` | `std.http.get`, `std.http.post`; `std.tcp.connect` | hosts, or a host and port (`"db.internal:5432"`) |
 | `clock` | `now_ms` (and `std.time.now`) | |
 | `random` | `random_int` (and `std.random`) | |
 | `env` | `env` (environment variables) | variable names |
-| `serve` | `std.http.serve` (answering HTTP requests) | addresses |
+| `serve` | `std.http.serve` (answering HTTP requests); `std.tcp.listen` | addresses |
 | `process` | `std.process.run`, `run_with` (running other programs) | programs |
 | `entropy` | `std.crypto.random_bytes`, `hash_password` (the system's random source, for secrets) | |
 

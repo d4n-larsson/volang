@@ -32,7 +32,8 @@ static const char *const ev_names[] = {0,         "read_line", "read_all",    "r
                                        "request", "response",  "info",        "list_dir",  "append_file",
                                        "make_dir", "delete",   "rename",      "run",       "sql",
                                        "setup",   "setup_end", "worker_ended", /* spec 028 */
-                                       "entropy"}; /* spec 035 */
+                                       "entropy", /* spec 035 */
+                                       "tcp_open", "tcp_tls", "tcp_recv", "tcp_send", "tcp_listen", "tcp_accept"}; /* spec 039 */
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static Str *run_desc(Str *program, Str *joined);
 static const char hexd[] = "0123456789abcdef";
@@ -61,7 +62,13 @@ static const char *const d_table[] = {0,
                                       "starts serving with workers",
                                       "finishes a worker's setup",
                                       "answers a request whose worker ended",
-                                      "draws random bytes (another count than recorded, or none recorded)"};
+                                      "draws random bytes (another count than recorded, or none recorded)",
+                                      "connects to $1",
+                                      "starts TLS on the connection to $1",
+                                      "waits for bytes from $1",
+                                      "writes to $1",
+                                      "listens on `$1`",
+                                      "accepts a connection on `$1`"};
 static const char *const n_table[] = {0,
                                       "a line of stdin",
                                       "the rest of stdin",
@@ -85,7 +92,13 @@ static const char *const n_table[] = {0,
                                       "a worker's setup",
                                       "the end of a worker's setup",
                                       "a request whose worker ended",
-                                      "a draw of random bytes"};
+                                      "a draw of random bytes",
+                                      "a connection to $1",
+                                      "the start of TLS on the connection to $1",
+                                      "bytes received from $1",
+                                      "a failed write to $1",
+                                      "a listener on `$1`",
+                                      "a connection accepted on `$1`"};
 
 #define J_HEAD "{\"v\":1,\"kind\":\""
 #define J_CLOSE "}\n"
@@ -167,6 +180,7 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
            : kind == EVK_HTTP           ? "\",\"host\":"
            : kind == EVK_SERVE_LISTEN   ? "\",\"address\":"
            : kind == EVK_RUN            ? "\",\"program\":"
+           : kind >= EVK_TCP_OPEN       ? "\",\"name\":"
                                         : "\",\"path\":");
         rw_str(name->data, name->len, 0);
         if (kind == EVK_RENAME && rcd_to) { /* spec 017 */
@@ -464,7 +478,7 @@ static Variant *io_exchange(Str *host, long port, Str *request, int tls)
     Variant *r;
     GC_ROOT(&host);
     GC_ROOT(&request);
-    rt_check_name(EF_NET, host);
+    rt_check_net(host, port); /* spec 039: the host, or the host with this port */
     Str *line = request_line(request);
     GC_ROOT(&line);
     long own_ms = net_timeout_next; /* std.http's send: this request's own timeout (a replay has no waits) */
@@ -536,6 +550,17 @@ Event *rp_take(long kind, Str *name)
     if (rp_next >= rp_events->n) rp_mismatch(kind, name, 0); /* nothing left */
     Event *e = vec_get(rp_events, rp_next++);
     if (e->kind != kind || (name && (!e->name || !str_eq(e->name, name)))) rp_mismatch(kind, name, e);
+    return e;
+}
+
+/* spec 039: the next event when it is of this kind and name (taken), else 0: for an event that is
+ * recorded only when something went wrong (a failed write). */
+Event *rp_peek(long kind, Str *name)
+{
+    if (rp_next >= rp_events->n) return 0;
+    Event *e = vec_get(rp_events, rp_next);
+    if (e->kind != kind || !e->name || !str_eq(e->name, name)) return 0;
+    rp_next++;
     return e;
 }
 
@@ -904,7 +929,7 @@ long rp_kind_of(Str *str)
 {
     if (!str) return -1;
     if (str_eq_cstr(str, "recording")) return 0;
-    for (long k = 1; k <= EVK_ENTROPY; k++)
+    for (long k = 1; k <= EVK_LAST; k++)
         if (str_eq_cstr(str, (char *)ev_names[k])) return k;
     return -1;
 }

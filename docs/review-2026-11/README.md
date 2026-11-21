@@ -81,6 +81,7 @@ On branch `perf-review-fixes`. The figures in `optimizations.md` are from before
 | `vo build` (ecosystem, distribution) | a program shipped as sources plus the toolchain | spec 034: one static executable per program, `--vo-effects` prints its grant, `--base` for the other architectures |
 | Map keys (language 3) | `int` or `str` only; compound keys glued from text | spec 033: records, variants, `bool` and `bytes` keys, `K: key`; tuples declined |
 | Constants (language 2) | none | spec 031: `const name = value;`, usable as scopes, annotation limits and checked templates |
+| TCP (ecosystem, standard library) | only HTTP reached the network | spec 039: `std.tcp`, connections with time limits, TLS and STARTTLS, listen and accept, ports in `net` scopes, typed errors, replay; no UDP or IPv6; strings still have no `\r` escape |
 | Language server (ecosystem, tooling) | nothing in editors but colour | spec 038: `vo lsp`, diagnostics on unsaved text, quick fixes, hover, definition, references, rename, format, outline; no completion yet; not tried in a real editor |
 | Editor grammar (ecosystem, tooling) | highlighting on the site only | spec 037: TextMate, tree-sitter and Vim grammars in `editors/`, checked against the toolchain on every `.vo` file; nothing published to marketplaces or GitHub's language list yet |
 | An MCP server for agents (ecosystem, tooling) | an agent had to be told the commands exist | spec 036: `vo mcp`, ten commands as tools with unchanged JSON output, the reference as a resource, each call isolated |

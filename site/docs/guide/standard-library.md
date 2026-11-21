@@ -53,7 +53,7 @@ fn pick[T](xs: list[T]) -> result[T] uses random
 With `--json`, each item is a `doc` record with `signature`, `params`, `returns`, `effects`,
 `description` and `example`. The same pages are on this site: [std.json](../std/json.md),
 [std.time](../std/time.md), [std.text](../std/text.md), [std.random](../std/random.md),
-[std.http](../std/http.md) and [std.collections](../std/collections.md).
+[std.http](../std/http.md), [std.tcp](../std/tcp.md) and [std.collections](../std/collections.md).
 
 ## Effects of library functions
 
@@ -559,6 +559,102 @@ true false
   that is not such a line.
 
 Details: [std.crypto](../std/crypto.md).
+
+## std.tcp: connections
+
+`std.tcp` gives a program the connection itself, for protocols that are not HTTP: a database, a cache,
+mail, a queue. `connect` opens one, `send` writes `bytes`, and three reads take them back: `read` (what
+has arrived, up to a size), `read_exact` (exactly so many) and `read_until` (through a delimiter, such
+as a line end). `connect_tls` does the same over TLS, verified exactly as an `https://` URL is, and
+`start_tls` upgrades an open connection, as SMTP and PostgreSQL ask for. `listen` and `accept` are the
+server side.
+
+A client for three Redis commands:
+
+```vo
+import std.bytes.from_text;
+import std.bytes.to_text;
+import std.tcp.Conn;
+import std.tcp.TcpError;
+import std.tcp.close;
+import std.tcp.connect;
+import std.tcp.describe;
+import std.tcp.read_exact;
+import std.tcp.read_until;
+import std.tcp.send;
+
+const redis = "127.0.0.1:6379";
+
+# Redis ends every line with a carriage return and a line feed.
+fn crlf() -> str {
+    return chr(13) + "\n";
+}
+
+fn other(message: str) -> TcpError {
+    return TcpError.other(message);
+}
+
+# Sends one command as an array of bulk strings and returns the reply's text.
+fn command[E: effects](c: Conn[E], words: list[str]) -> result[str, TcpError] uses E {
+    var request = "*" + str(len(words)) + crlf();
+    for w in words {
+        set request = request + "$" + str(len(w)) + crlf() + w + crlf();
+    }
+    try send(c, from_text(request), 1000);
+    let head = trim(try map_err(to_text(try read_until(c, from_text(crlf()), 1000)), other));
+    if slice(head, 0, 1) != "$" {
+        return ok(slice(head, 1, len(head)));
+    }
+    let size = try map_err(parse_int(slice(head, 1, len(head))), other);
+    if size < 0 {
+        return ok("(nil)");
+    }
+    return ok(trim(try map_err(to_text(try read_exact(c, size + 2, 1000)), other)));
+}
+
+fn session() -> result[void, TcpError] uses console, net(redis) {
+    let c = try connect("127.0.0.1", 6379, 1000);
+    print(try command(c, ["PING"]));
+    print(try command(c, ["SET", "drink", "tea"]));
+    print(try command(c, ["GET", "drink"]));
+    close(c);
+    return ok();
+}
+
+fn main() uses console, net(redis) {
+    match session() {
+        case ok() {
+        }
+        case err(e) {
+            print(describe(e));
+        }
+    }
+}
+```
+
+- **Scopes.** Connecting needs `net`, and a `net` scope names a host, or one port of it:
+  `net("db.internal")` allows every port, `net("db.internal:5432")` only that one. A bare host covers
+  its ports, not the other way round, in `vo check`, in `vo.effects` and at run time (R0010, before
+  anything is sent). `std.http` obeys the same scopes with the URL's port. Listening needs `serve` with
+  the address, written as for `std.http.serve`; port `0` (`serve("0")`) asks the system for a free
+  port, which the listener's `port` field then holds.
+- **A connection carries its effect.** `connect` returns a `Conn[uses net]` and `accept` a
+  `Conn[uses serve]`; a function that takes any connection is generic, `fn ask[E: effects](c: Conn[E])
+  uses E`, like `command` above.
+- **Every wait has a time limit**, in milliseconds (1 to 600000), given at the call. After a read that
+  timed out the connection is still usable and no byte is lost; after a `send` that timed out, close it.
+- **Errors are a variant**, `TcpError`: `refused`, `timed_out`, `closed`, `not_found`, `unreachable`,
+  `tls(reason)`, `in_use`, `too_large`, `too_many`, `invalid(what)` and `other(reason)`. `describe`
+  turns one into a sentence. Using a closed connection is `closed`, never a stopped program.
+- **Limits.** One read returns at most 16 MiB (`too_large` when that much arrived without the
+  delimiter; the bytes stay readable), and 256 connections and listeners can be open at once.
+- **Recording.** `vo run --record` saves how each connection opened and everything it received;
+  `vo replay` opens no connection and never waits. A TLS recording holds the decrypted bytes: keep it as
+  private as the conversation.
+- **Tasks.** A listener or connection opened before `concurrent_map` is open in every task, so a test
+  can listen on port `0` and run both ends as two tasks. Use each connection from one task at a time.
+- **Not there yet:** UDP, IPv6, TLS for accepted connections, and a pool of workers per connection. A
+  string has no `\r` escape: write a carriage return as `chr(13)`, as `crlf` does above.
 
 ## std.math
 

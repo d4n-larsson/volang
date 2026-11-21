@@ -421,7 +421,9 @@
 #define B_PBKDF2 (105) /* __pbkdf2_sha256(password, salt, iterations) -> bytes (32) */
 #define B_BYTES_SAME (106) /* __bytes_same(a, b) -> bool, in constant time */
 #define B_ENTROPY (107) /* __entropy(n) -> bytes from the system's random source */
-#define B_LAST (107) /* the last builtin id with a btab entry */
+#define B_TCP (108) /* spec 039: __tcp(op, a, text) -> result[int], std.tcp only */
+#define B_TCP_IO (109) /* __tcp_io(op + 8 * n, id, data) -> result[bytes] */
+#define B_LAST (109) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -763,6 +765,13 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define EVK_SETUP (20) /* spec 028: a worker's setup block, then */
 #define EVK_SETUP_END (21)
 #define EVK_ENTROPY (23) /* spec 035: the bytes random_bytes returned */
+#define EVK_TCP_OPEN (24) /* spec 039: std.tcp; each has a name, a result and a value */
+#define EVK_TCP_TLS (25)
+#define EVK_TCP_RECV (26)
+#define EVK_TCP_SEND (27)
+#define EVK_TCP_LISTEN (28)
+#define EVK_TCP_ACCEPT (29)
+#define EVK_LAST (29)
 #define EVK_WORKER_ENDED (22) /* spec 028: the request's worker ended without answering (its response is 500) */
 #define EVR_OK (0)
 #define EVR_ERR (1)
@@ -1471,6 +1480,7 @@ extern Type *check_format_call(Node *call);
 extern long lit_decode(Node *lit, char **buf, long **offs);
 extern void check_regex_call(Node *call); /* src/check_regex.c (spec 025) */
 extern void fx_builtin_sql_open(Node *call); /* spec 026 */
+extern void fx_builtin_tcp(Node *call); /* spec 039 */
 extern void check_sqlite_call(Node *call); /* src/check_sqlite.c (spec 026) */
 extern FmtPiece *fmt_new_piece(Str *text, long arg, long spec);
 extern Str *fmt_piece(long value, long kind, long spec); /* src/num.c */
@@ -2518,6 +2528,23 @@ extern int parse_ipv4(char *s, long n, uint8_t *out);
 extern Variant *net_err(char *tmpl, Str *host, long port);
 extern Variant *net_timed_out(Str *host, long port);
 extern Variant *tls_exchange(Str *host, long port, Str *request);
+/* spec 039: a kept TLS session (std.tcp) */
+#define TLS_CAPPED (-1)
+#define TLS_DEADLINE (-2)
+#define TLS_TAMPERED (-3)
+#define TLS_FAILED (-4)
+extern void *tls_open(long fd, Str *host, long port, int http, Variant **err, int *full);
+extern long tls_read(void *session, char *buf, long n);
+extern long tls_write(void *session, char *buf, long n);
+extern void tls_close(void *session, int notify);
+enum { NET_OK, NET_NOT_FOUND, NET_REFUSED, NET_TIMED_OUT, NET_UNREACHABLE, NET_OTHER };
+extern int net_kind; /* net.c: why the last net_open failed */
+extern long net_scope_port(Str *s);
+extern long serve_address_parse(Str *s, long *all);
+extern void rt_check_net(Str *host, long port);
+extern Variant *rt_tcp(long op, long a, Str *text);
+extern Variant *rt_tcp_io(long op, long id, Str *data);
+extern Event *rp_peek(long kind, Str *name);
 extern void tls_add_ca_file(char *path);
 extern Variant *io_https_exchange(Str *host, long port, Str *request);
 /* spec 018: coverage points (research R8), filled by the compiler with --coverage or --mutate */

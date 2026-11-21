@@ -28,6 +28,7 @@
 #define SYS_bind 49
 #define SYS_listen 50
 #define SYS_setsockopt 54
+#define SYS_getsockname 51
 #define SYS_accept4 288
 #define SYS_signalfd4 289
 

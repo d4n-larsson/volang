@@ -91,20 +91,45 @@ void es_put_pair(EffSet *set, long bit, Str *str)
     GC_UNROOT(4);
 }
 
-/* The port of a serve address, "PORT" (loopback) or "0.0.0.0:PORT" (all interfaces), 1-65535; 0 when
- * the text is neither. *all is set to 1 for the second form (when all is given). */
-long serve_address_port(Str *s, long *all)
+/* The port of a serve address, "PORT" (loopback) or "0.0.0.0:PORT" (all interfaces), 0-65535 (spec
+ * 039: 0 is a port the system picks, for std.tcp); -1 when the text is neither. *all is set to 1 for
+ * the second form (when all is given). */
+long serve_address_parse(Str *s, long *all)
 {
     long i = 0;
     if (s->len > 8 && mem_eq(s->data, "0.0.0.0:", 8)) i = 8;
     if (all) *all = i != 0;
-    if (i == s->len || s->len - i > 5 || s->data[i] == '0') return 0;
+    if (i == s->len || s->len - i > 5 || (s->data[i] == '0' && s->len - i > 1)) return -1;
     long port = 0;
     for (; i < s->len; i++) {
-        if (s->data[i] < '0' || s->data[i] > '9') return 0;
+        if (s->data[i] < '0' || s->data[i] > '9') return -1;
         port = port * 10 + (s->data[i] - '0');
     }
-    return port <= 65535 ? port : 0;
+    return port <= 65535 ? port : -1;
+}
+
+/* The same for std.http.serve, which needs a port of its own: 1-65535, 0 otherwise. */
+long serve_address_port(Str *s, long *all)
+{
+    long port = serve_address_parse(s, all);
+    return port > 0 ? port : 0;
+}
+
+/* Spec 039: where the port of a `net` scope "HOST:PORT" starts (after the colon), or 0 for a bare
+ * host. -1 when there is a colon without a host before it or a port 1-65535 (no leading zero) after. */
+long net_scope_port(Str *s)
+{
+    long c = -1;
+    for (long i = 0; i < s->len && c < 0; i++)
+        if (s->data[i] == ':') c = i;
+    if (c < 0) return 0;
+    long n = s->len - c - 1, port = 0;
+    if (c == 0 || n < 1 || n > 5 || s->data[c + 1] == '0') return -1;
+    for (long i = c + 1; i < s->len; i++) {
+        if (s->data[i] < '0' || s->data[i] > '9') return -1;
+        port = port * 10 + (s->data[i] - '0');
+    }
+    return port <= 65535 ? c + 1 : -1;
 }
 
 /* Spec 017: a program as a `process` scope or a program a run names: a bare name, or a relative or
@@ -138,7 +163,8 @@ int es_add_scope(EffSet *set, long bit, Str *str)
 {
     long n = str->len;
     if (n == 0) return 0;
-    if (bit == EF_SERVE && !serve_address_port(str, 0)) return 0; /* spec 011: "PORT" or "0.0.0.0:PORT" */
+    if (bit == EF_SERVE && serve_address_parse(str, 0) < 0) return 0; /* spec 011: "PORT" or "0.0.0.0:PORT" */
+    if (bit == EF_NET && net_scope_port(str) < 0) return 0; /* spec 039: "HOST" or "HOST:PORT" */
     GC_ROOT(&set);
     GC_ROOT(&str);
     if (bit == EF_PROCESS) { /* spec 017: kept verbatim after process_name */
@@ -193,7 +219,8 @@ static void es_copy_pairs(EffSet *dst, EffSet *src, long bit)
     GC_UNROOT(2);
 }
 
-/* 1 when a scope of set for bit covers str: a byte prefix for directories, equal otherwise. */
+/* 1 when a scope of set for bit covers str: a byte prefix for directories, equal otherwise (and a
+ * `net` host covers its ports). */
 int es_pair_covered(EffSet *set, long bit, Str *str)
 {
     Vec *v = set->scopes;
@@ -206,6 +233,9 @@ int es_pair_covered(EffSet *set, long bit, Str *str)
             if (mem_eq(p->str->data, str->data, p->str->len)) return 1;
         } else if (str_eq(p->str, str)) {
             return 1;
+        } else if (bit == EF_NET && str->len > p->str->len && str->data[p->str->len] == ':' &&
+                   mem_eq(p->str->data, str->data, p->str->len) && !net_scope_port(p->str)) {
+            return 1; /* spec 039: a bare host covers that host with any port */
         }
     }
     return 0;
@@ -270,6 +300,21 @@ EffSet *es_union(EffSet *a, EffSet *b)
         if ((b->mask & (unsigned long)bit) && !es_scoped(b, bit)) continue; /* b has it unscoped */
         es_copy_pairs(u, a, bit);
         es_copy_pairs(u, b, bit);
+        if (bit != EF_NET) continue;
+        Vec *all = u->scopes; /* spec 039: a host makes its ports redundant ("h", "h:1" is "h") */
+        GC_ROOT(&all);
+        u->scopes = 0;
+        for (long i = 0; all && i < all->n; i++) {
+            EffScope *p = vec_get(all, i);
+            int covered = 0;
+            for (long k = 0; p->bit == bit && k < all->n && !covered; k++) {
+                EffScope *q = vec_get(all, k);
+                covered = q->bit == bit && q->str->len < p->str->len && p->str->data[q->str->len] == ':' &&
+                          mem_eq(q->str->data, p->str->data, q->str->len) && !net_scope_port(q->str);
+            }
+            if (!covered) es_put_pair(u, p->bit, p->str);
+        }
+        GC_UNROOT(1);
     }
     /* kept even where the mask has the bit: a builtin use makes every declared scope of it count as
      * needed (es_unused) */

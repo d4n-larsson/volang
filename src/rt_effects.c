@@ -264,6 +264,38 @@ void rt_check_name(long bit, Str *name)
     if (root && !grant_has_name(root->effects, bit, name)) rt_denied_by(root, bit, name);
 }
 
+/* Spec 039: a connection to host:port needs a `net` scope naming the host, or the host with that port,
+ * in both grants. R0010 names the host, and the port too when the grant has scopes with ports. */
+static int grant_has_net(EffSet *e, Str *both)
+{
+    return !e || !es_scoped(e, EF_NET) || es_pair_covered(e, EF_NET, both);
+}
+
+static int grant_ports(EffSet *e)
+{
+    for (long i = 0; e && e->scopes && i < e->scopes->n; i++) {
+        EffScope *sc = vec_get(e->scopes, i);
+        if (sc->bit == EF_NET && net_scope_port(sc->str) > 0) return 1;
+    }
+    return 0;
+}
+
+void rt_check_net(Str *host, long port)
+{
+    EffSet *eff = rt_frame_effects();
+    Frame *root = rt_root();
+    GC_ROOT(&host);
+    SB *sb = sb_new();
+    sb_str(sb, host);
+    sb_byte(sb, ':');
+    int_to_dec(sb, port);
+    Str *both = sb_finish(sb);
+    int ok = grant_has_net(eff, both), root_ok = !root || grant_has_net(root->effects, both);
+    GC_UNROOT(1);
+    if (!ok) rt_denied(EF_NET, grant_ports(eff) ? both : host);
+    if (!root_ok) rt_denied_by(root, EF_NET, grant_ports(root->effects) ? both : host);
+}
+
 /* Scoped file effects: the resolved path must lie under a resolved scope of both grants. A NUL byte
  * is refused outright (C1: the check would see the whole string, the open only its first part), and
  * so is every scoped access when the start directory is unknown (H2). */

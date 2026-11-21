@@ -115,6 +115,8 @@ EffSet *fx_build_set(Node *uses, Fx *fx)
                 ck_err1("E0506", sc, "\"$1\" is not a valid serve address: write \"PORT\" or \"0.0.0.0:PORT\".", sc->a.s);
             else if (bit == EF_PROCESS)
                 ck_err1("E0506", sc, "\"$1\" is not a valid program: write a name, or a path without `..`.", sc->a.s);
+            else if (bit == EF_NET && sc->a.s->len)
+                ck_err1("E0506", sc, "\"$1\" is not a valid host: write \"HOST\" or \"HOST:PORT\" with a port from 1 to 65535.", sc->a.s);
             else
                 ck_err1("E0506", sc,
                         "\"$1\" is not a valid scope: write a relative directory without `..`, or a non-empty name.",
@@ -282,6 +284,15 @@ void fx_builtin_sql_open(Node *call)
     if (!ck_fx || !ck_fx->direct || call->b.v->n < 2) return;
     Node *mode = vec_get(call->b.v, 1);
     if (mode->kind == N_INT) ck_fx->direct->any |= mode->a.i == 0 ? EF_FREAD | EF_FWRITE : mode->a.i == 1 ? EF_FREAD : 0;
+}
+
+/* spec 039: __tcp(op, a, text): connecting and starting TLS (1, 2, 5) need net; listening, accepting
+ * and closing a listener (3, 4, 8) serve; the effects of using a connection come from its type. */
+void fx_builtin_tcp(Node *call)
+{
+    if (!ck_fx || !ck_fx->direct || call->b.v->n < 1) return;
+    Node *op = vec_get(call->b.v, 0);
+    if (op->kind == N_INT) ck_fx->direct->any |= op->a.i <= 2 || op->a.i == 5 ? EF_NET : op->a.i <= 4 || op->a.i == 8 ? EF_SERVE : 0;
 }
 
 /* Spec 013 (L1): a string literal as the target (path, name, address) of an effect: checked against

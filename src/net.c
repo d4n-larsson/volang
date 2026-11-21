@@ -31,6 +31,7 @@ typedef struct SockAddrIn {
 long net_timeout_next;
 long net_cap_ms;
 long net_capped;
+int net_kind; /* spec 039: why the last net_open failed (NET_*), for std.tcp's typed errors */
 
 /* Waits for events on fd: 1 when ready, 0 after cap_ms (cap_ms < 0: no cap of its own). The run's
  * deadline is the outer bound: past it, the run stops with R0009 at the current call. A request's
@@ -153,7 +154,7 @@ static int resolver(uint8_t *out)
 
 static long net_socket(int type)
 {
-    return vo_syscall3(SYS_socket, AF_INET, type | SOCK_NONBLOCK, 0);
+    return vo_syscall3(SYS_socket, AF_INET, type | SOCK_NONBLOCK | 0x80000 /* SOCK_CLOEXEC */, 0);
 }
 
 static long net_connect(long fd, uint8_t *addr, long port)
@@ -260,11 +261,13 @@ long net_open(Str *host, long port, Variant **err)
     if (!parse_ipv4(host->data, host->len, addr) && !hosts_lookup(host, addr)) {
         int r = dns_lookup(host, addr);
         if (net_capped) {
+            net_kind = NET_TIMED_OUT;
             *err = net_timed_out(host, port);
             GC_UNROOT(1);
             return -1;
         }
         if (r <= 0) {
+            net_kind = NET_NOT_FOUND;
             *err = make_result(1, (long)msg(r == 0 ? "unknown host `$1`" : "cannot resolve `$1`: no answer from a name server",
                                             host, 0, 0));
             GC_UNROOT(1);
@@ -273,6 +276,7 @@ long net_open(Str *host, long port, Variant **err)
     }
     long fd = net_socket(SOCK_STREAM);
     if (fd < 0) {
+        net_kind = NET_OTHER;
         *err = make_err("cannot open a socket");
         GC_UNROOT(1);
         return -1;
@@ -285,6 +289,7 @@ long net_open(Str *host, long port, Variant **err)
     }
     if (c < 0) {
         sys_close((int)fd);
+        net_kind = net_capped ? NET_TIMED_OUT : c == -E_CONNREFUSED ? NET_REFUSED : c == -101 || c == -113 ? NET_UNREACHABLE : NET_OTHER;
         *err = net_capped ? net_timed_out(host, port) : net_err(c == -E_CONNREFUSED ? "connection refused by $1" : "cannot connect to $1", host, port);
         GC_UNROOT(1);
         return -1;

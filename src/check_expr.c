@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 107 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 109 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -47,6 +47,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__json_parse", "__json_write",
     "byte_at", "__http_timeout", "map_err",
     "__sha256", "__hmac_sha256", "__pbkdf2_sha256", "__bytes_same", "__entropy", /* spec 035 */
+    "__tcp", "__tcp_io", /* spec 039 */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -66,6 +67,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [100] = "si>i", /* byte_at */
     [101] = "i>v",  /* __http_timeout */
     [103] = "y>y", [104] = "yy>y", [105] = "yyi>y", [106] = "yy>b", [107] = "i>y", /* spec 035 */
+    [108] = "iis>n", [109] = "iiy>Y", /* spec 039 */
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."
@@ -261,6 +263,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
     if (id == B_FS) fx_builtin_fs(call); /* spec 017: the effect of __fs depends on its operation */
     if (id == B_FSB) fx_builtin_fsb(call); /* spec 021: the same for __fsb */
     if (id == B_SQL_OPEN) fx_builtin_sql_open(call); /* spec 026: by mode */
+    if (id == B_TCP) fx_builtin_tcp(call); /* spec 039: by operation */
     fx_builtin_literal(call, id); /* spec 013 (L1) */
     if (id == B_MAP_ERR) return check_map_err(call); /* spec 032 */
     if ((id >= B_SORT_BY && id <= B_ALL) || id == B_CMAP) return check_hof(call, id); /* sort_by, map, filter, fold, any, all, concurrent_map */

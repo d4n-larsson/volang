@@ -119,3 +119,4 @@ modules:
   std.web Building HTTP APIs: a route table, typed request input, JSON answers, errors mapped in one place, steps around requests, settings, health, and tests without a network.
   std.option a value that may be absent: Option[T] is some(value) or none (spec 032).
   std.crypto Hashes, message signatures, secret random bytes and password storage.
+  std.tcp TCP connections: connect, send, read, TLS, listen and accept, for protocols other than HTTP.

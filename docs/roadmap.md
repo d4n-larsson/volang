@@ -45,6 +45,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [036](../specs/036-vo-mcp/) | `vo mcp`: the toolchain as a Model Context Protocol server on stdin/stdout; ten commands as tools with the commands' own JSON output, the reference as a resource; every call in its own process | **Implemented** ([results](../specs/036-vo-mcp/results.md)) |
 | [037](../specs/037-editor-grammars/) | Editor grammars in `editors/`: TextMate (VS Code, and the format GitHub reads), tree-sitter (Neovim, Helix, Zed), Vim; held to the language by a check over every `.vo` file in the repository | **Implemented** ([results](../specs/037-editor-grammars/results.md)) |
 | [038](../specs/038-vo-lsp/) | `vo lsp`: the toolchain as a language server; diagnostics on unsaved text, quick fixes, hover, definition, references, rename, format, outline, each answer computed by the command it stands for in its own process | **Implemented** ([results](../specs/038-vo-lsp/results.md)) |
+| [039](../specs/039-std-tcp/) | `std.tcp`: TCP connections under the existing `net` and `serve` effects, with ports in `net` scopes (`net("db:5432")`), three reads with time limits, TLS from the first byte or as an upgrade, listen and accept, typed errors, record and replay | **Implemented** ([results](../specs/039-std-tcp/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -435,6 +436,20 @@ program is the nearest `main.vo` above it that imports it. The JSON reader is sh
 - **Not verified by hand:** no editor with a protocol client was available; a scripted editor compares
   every answer with its command.
 
+### 039: TCP connections (implemented)
+
+`std.tcp` hands a program the connection itself, under the effects it already had: `connect` needs `net`,
+`listen` needs `serve`, and no effect was added. A `net` scope can name one port (`net("db:5432")`); a
+bare host still means any port, and `std.http` obeys the port too. A connection is a number into a table
+outside the collected heap, so a value kept after `close` is just "closed", and the effect it was opened
+under is checked on every use. The HTTP client's sockets, name lookup and TLS are shared: the TLS exchange
+was split into open, read, write and close, and `std.http` runs on the same pieces. A recording holds what
+each wait for the peer brought in, so the three reads replay as ordinary code.
+
+- **Not done (on purpose):** UDP, IPv6, TLS for accepted connections, a worker pool for TCP servers,
+  trying every address of a name, rebuilding `std.http` on `std.tcp`.
+- **Found on the way:** strings have no `\r` escape, so a protocol's line end is `chr(13) + "\n"`.
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -443,7 +458,7 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Gap | What is missing | Notes |
 |---|---|---|
 | Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; decides what matters next |
-| TCP and UDP | only HTTP reaches the network | scoped like `net` and `serve` |
+| UDP, IPv6 | TCP over IPv4 only (spec 039) | when a program needs them; IPv6 for the HTTP client and `std.tcp` together |
 | macOS | Linux only (x86-64, ARM64, RISC-V) | the raw-syscall, no-libc design makes this a real port |
 | Downloading packages | packages are local and pinned by hash, never fetched | spec 007 follow-up; HTTPS exists since spec 019 |
 | Debugger | traces, locals in errors and replay, but no stepping | replay makes a deterministic stepper possible |

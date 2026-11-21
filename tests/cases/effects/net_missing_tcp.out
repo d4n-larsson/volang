@@ -1,0 +1,17 @@
+net_missing_tcp.vo:6:4: error[E0501]: `open` does not declare net, which it needs.
+   6 | fn open() {
+     |    ^^^^
+  fix: insert `uses net `
+net_missing_tcp.vo:15:4: error[E0501]: `wait` does not declare serve, which it needs.
+  15 | fn wait() {
+     |    ^^^^
+  fix: insert `uses serve `
+net_missing_tcp.vo:25:4: error[E0501]: `first` does not declare net, which it needs.
+  25 | fn first(c: Conn[uses net]) -> int {
+     |    ^^^^^
+  fix: insert `uses net `
+net_missing_tcp.vo:36:4: error[E0501]: `main` does not declare net, serve, which it needs.
+  36 | fn main() {
+     |    ^^^^
+  fix: insert `uses net, serve `
+4 errors, 0 warnings

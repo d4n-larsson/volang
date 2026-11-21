@@ -1,0 +1,23 @@
+import std.tcp.close_listener;
+import std.tcp.listen;
+
+fn main() uses console, serve("0", "0.0.0.0:0") {
+    match listen("0") {
+        case ok(l) {
+            print(str(l.port > 0));
+            close_listener(l);
+        }
+        case err(_) {
+            print("no listener");
+        }
+    }
+    match listen("0.0.0.0:0") {
+        case ok(l) {
+            print(str(l.port > 0));
+            close_listener(l);
+        }
+        case err(_) {
+            print("no listener");
+        }
+    }
+}

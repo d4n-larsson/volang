@@ -29,6 +29,7 @@
 #define SYS_bind 200
 #define SYS_listen 201
 #define SYS_setsockopt 208
+#define SYS_getsockname 204
 #define SYS_accept4 242
 
 /* spec 013 */

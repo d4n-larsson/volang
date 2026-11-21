@@ -1,0 +1,19 @@
+net_port_bad.vo:1:17: error[E0506]: "h:0" is not a valid host: write "HOST" or "HOST:PORT" with a port from 1 to 65535.
+   1 | fn a() uses net("h:0") {
+     |                 ^^^^^
+net_port_bad.vo:4:17: error[E0506]: "h:65536" is not a valid host: write "HOST" or "HOST:PORT" with a port from 1 to 65535.
+   4 | fn b() uses net("h:65536") {
+     |                 ^^^^^^^^^
+net_port_bad.vo:7:17: error[E0506]: "h:05" is not a valid host: write "HOST" or "HOST:PORT" with a port from 1 to 65535.
+   7 | fn c() uses net("h:05") {
+     |                 ^^^^^^
+net_port_bad.vo:10:17: error[E0506]: "h:x" is not a valid host: write "HOST" or "HOST:PORT" with a port from 1 to 65535.
+  10 | fn d() uses net("h:x") {
+     |                 ^^^^^
+net_port_bad.vo:13:17: error[E0506]: ":80" is not a valid host: write "HOST" or "HOST:PORT" with a port from 1 to 65535.
+  13 | fn e() uses net(":80") {
+     |                 ^^^^^
+net_port_bad.vo:16:17: error[E0506]: "h:1:2" is not a valid host: write "HOST" or "HOST:PORT" with a port from 1 to 65535.
+  16 | fn f() uses net("h:1:2") {
+     |                 ^^^^^^^
+6 errors, 0 warnings
