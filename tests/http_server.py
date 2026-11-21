@@ -47,7 +47,28 @@ def reply(status, headers, body):
     return CRLF.join(head) + CRLF + CRLF + body
 
 
+def archive(path):
+    """Spec 041: package archives for tests/package_fetch.py and the packages step cases, from the
+    directory $VO_ARCHIVES: /archive/NAME, /moved/NAME (one redirect), /hops/N/NAME (N + 1 redirects),
+    /insecure/NAME (a redirect to http://)."""
+    parts = path.strip("/").split("/")
+    if parts[0] == "moved":
+        return reply("302 Found", [("Location", "/archive/" + parts[1]), ("Content-Length", 0)], b"")
+    if parts[0] == "hops":
+        to = f"/hops/{int(parts[1]) - 1}/{parts[2]}" if int(parts[1]) > 0 else "/archive/" + parts[2]
+        return reply("302 Found", [("Location", to), ("Content-Length", 0)], b"")
+    if parts[0] == "insecure":
+        return reply("302 Found", [("Location", "http://127.0.0.1/archive/" + parts[1]), ("Content-Length", 0)], b"")
+    name = os.path.join(os.environ.get("VO_ARCHIVES", ""), os.path.basename(parts[1]))
+    if not os.environ.get("VO_ARCHIVES") or not os.path.isfile(name):
+        return reply("404 Not Found", [("Content-Length", 9)], b"not found")
+    data = open(name, "rb").read()
+    return reply("200 OK", [("Content-Type", "application/gzip"), ("Content-Length", len(data))], data)
+
+
 def route(method, target, headers, body):
+    if method == "GET" and target.split("?")[0].startswith(("/archive/", "/moved/", "/hops/", "/insecure/")):  # spec 041
+        return archive(target.split("?")[0])
     if method == "POST" and target == "/echo-bytes":  # spec 021
         return reply("200 OK", [("Content-Type", "application/octet-stream"), ("Content-Length", len(body))], body)
     if method == "GET" and target.startswith("/hex/"):  # spec 021: any bytes, even not UTF-8

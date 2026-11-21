@@ -1,0 +1,2 @@
+# vo packages: update with `vo package ENTRY NAME DIRECTORY`
+other shared/other sha256:654289eaadf1bdf097a5a853c3cf1fa9d9a1ad5f9849c4a01662c64ac4f89e85 https://example.com/other.tar.gz#src/other

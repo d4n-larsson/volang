@@ -260,7 +260,8 @@ def run_case(case):
                     cmd = [sys.executable, os.path.join(ROOT, "tests", "https_server.py"), "--cert", words[2]]
                     cmd += [os.path.join(work, w) if prev == "--log" else w
                             for prev, w in zip(words[2:], words[3:])]
-                server = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+                # spec 041: /archive/NAME serves the case's own files (package archives)
+                server = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=dict(os.environ, VO_ARCHIVES=work))
                 servers.append(server)
                 port = int(server.stdout.readline().split()[1])
                 continue

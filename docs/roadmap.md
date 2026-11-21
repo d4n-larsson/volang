@@ -47,6 +47,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [038](../specs/038-vo-lsp/) | `vo lsp`: the toolchain as a language server; diagnostics on unsaved text, quick fixes, hover, definition, references, rename, format, outline, each answer computed by the command it stands for in its own process | **Implemented** ([results](../specs/038-vo-lsp/results.md)) |
 | [039](../specs/039-std-tcp/) | `std.tcp`: TCP connections under the existing `net` and `serve` effects, with ports in `net` scopes (`net("db:5432")`), three reads with time limits, TLS from the first byte or as an upgrade, listen and accept, typed errors, record and replay | **Implemented** ([results](../specs/039-std-tcp/results.md)) |
 | [040](../specs/040-streaming/) | Streaming: `std.fs.each_line` and `each_chunk`, `std.http.send_stream`, `std.process.run_lines` hand a program one piece at a time through a function it passes; memory does not grow with the source; no new type | **Implemented** ([results](../specs/040-streaming/results.md)) |
+| [041](../specs/041-package-download/) | Downloading packages: `vo package ENTRY NAME URL` fetches a tar or tar.gz archive over HTTPS, unpacks its `.vo` files, pins them by content and prints the effects the package declares; `--restore` on a fresh clone; hostile archives refused whole | **Implemented** ([results](../specs/041-package-download/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -463,6 +464,19 @@ program or test left behind.
 - **Not done (on purpose):** handles or iterators, `defer`, streaming upload, a child's output as bytes,
   streaming JSON or SQLite rows, an incremental hash (so a large file cannot be hashed in vo yet).
 
+### 041: downloading packages (implemented)
+
+`vo package ENTRY NAME URL` puts a fetch step in front of the pin spec 007 already had: the archive is
+downloaded with the HTTPS client, inflated by a small gzip reader written for this, read as tar in
+memory, and refused as a whole for a link, a device or a path that leaves the package. Its `.vo` files
+go to a staging directory that is pinned and swapped in by renames, the manifest is written last, and
+its line records the URL. `--restore` fetches missing packages again and accepts each only at its pin.
+The command prints the effects the package's exported functions declare, read from the same records
+`vo doc` prints, and what an update gains or loses.
+
+- **Not done (on purpose):** git itself, zip, a registry, versions, fetching a package's dependencies,
+  credentials, proxies, signatures.
+
 ## Planned after 017
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
@@ -473,7 +487,7 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; decides what matters next |
 | UDP, IPv6 | TCP over IPv4 only (spec 039) | when a program needs them; IPv6 for the HTTP client and `std.tcp` together |
 | macOS | Linux only (x86-64, ARM64, RISC-V) | the raw-syscall, no-libc design makes this a real port |
-| Downloading packages | packages are local and pinned by hash, never fetched | spec 007 follow-up; HTTPS exists since spec 019 |
+| A registry, versions | packages are fetched by URL and pinned by hash (spec 041); nothing resolves versions or dependencies | when there are enough packages to need it |
 | Debugger | traces, locals in errors and replay, but no stepping | replay makes a deterministic stepper possible |
 | Tuples | no tuple type | map keys done in spec 033; tuples declined for now: a record groups values and is a key |
 | `old()` in `ensures` | contracts cannot compare with values from before the call | spec 005 follow-up |

@@ -1,0 +1,27 @@
+vo package main.vo money shared/money
+vo package main.vo other shared/other
+cp vo.packages plain.packages
+vo run main.vo
+cp with_url.packages vo.packages
+vo run main.vo
+vo package main.vo money shared/money
+cp vo.packages after_local.packages
+vo package --remove main.vo money
+cp vo.packages after_remove.packages
+keep after_local.packages after_remove.packages
+cp bad1.packages vo.packages
+vo check main.vo
+cp bad2.packages vo.packages
+vo check main.vo
+cp bad3.packages vo.packages
+vo check main.vo
+cp plain.packages vo.packages
+vo package --dir x main.vo money shared/money
+vo package --ca-file test-ca.pem main.vo money shared/money
+vo package --restore main.vo money
+vo package --restore --remove main.vo
+vo package main.vo money http://example.com/money.tar.gz
+vo package main.vo money https://user:secret@example.com/money.tar.gz
+vo package main.vo money https://example.com/money.tar.gz#../up
+vo check --dir x main.vo
+vo run --restore main.vo

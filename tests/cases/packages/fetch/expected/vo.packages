@@ -1,0 +1,2 @@
+# vo packages: update with `vo package ENTRY NAME DIRECTORY`
+money vendor/money sha256:ea21445f436a35734b5c63805d34cd663ff288df3c7fa32061215a04b6f37ad2 https://127.0.0.1:{port}/archive/money.tar.gz

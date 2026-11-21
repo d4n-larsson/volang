@@ -27,6 +27,7 @@ long opt_timeout = 10;
 long opt_mem_stats;
 long opt_workers; /* spec 028: vo run --workers N (0: as declared) */
 long opt_remove; /* spec 007: vo package --remove */
+static void ca_files_load(void);
 long opt_filter; /* Str * */
 long opt_check;
 long opt_update;
@@ -302,6 +303,11 @@ int vo_main(long argc, char **argv, char **env)
             opt_max_mutants = v;
         } else if (cstr_eq(a, "--remove")) { /* spec 007: vo package */
             opt_remove = 1;
+        } else if (cstr_eq(a, "--restore")) { /* spec 041: vo package */
+            opt_restore = 1;
+        } else if (cstr_eq(a, "--dir")) {
+            if (i >= argc || !*argv[i]) usage_error(str_from_cstr("`--dir` needs a directory."));
+            opt_pkg_dir = argv[i++];
         } else if (cstr_eq(a, "--workers")) { /* spec 028 */
             if (i >= argc || option_number(argv[i++], &v) || v < 1 || v > 64)
                 usage_error(str_from_cstr("`--workers` needs a whole number from 1 to 64."));
@@ -330,7 +336,9 @@ int vo_main(long argc, char **argv, char **env)
     case CMD_EDIT: return cmd_edit();
     case CMD_REPLAY: return cmd_replay();
     case CMD_DOC: return cmd_doc();
-    case CMD_PACKAGE: return cmd_package();
+    case CMD_PACKAGE:
+        ca_files_load(); /* spec 041: for a URL or --restore */
+        return cmd_package();
     case CMD_VERSION:
         out_cstr(1, opt_json ? "{\"v\":1,\"kind\":\"version\",\"version\":\"0.1.0\",\"schema\":1}\n"
                              : (char *)vo_version_text);
@@ -401,7 +409,8 @@ void opt_spec006_check(void)
         if (opt_specs) only_with("--spec", "test");
         if (opt_max_mutants) only_with("--max-mutants", "test");
     }
-    if (opt_ca_files && cmd != CMD_RUN && cmd != CMD_TEST) only_with("--ca-file", "run` or `test"); /* spec 019 */
+    if (opt_ca_files && cmd != CMD_RUN && cmd != CMD_TEST && cmd != CMD_PACKAGE) only_with("--ca-file", "run`, `test` or `package"); /* spec 019, 041 */
+    if ((opt_restore || opt_pkg_dir) && cmd != CMD_PACKAGE) only_with(opt_restore ? "--restore" : "--dir", "package");
     if (opt_list + opt_coverage + opt_mutate > 1)
         usage_error(str_from_cstr("`--list`, `--coverage` and `--mutate` cannot be combined: use one at a time."));
     if (opt_max_mutants && !opt_mutate) usage_error(str_from_cstr("`--max-mutants` needs `--mutate`."));

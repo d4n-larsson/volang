@@ -17,6 +17,11 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
   obeys ported scopes too. `serve` scopes accept port `0` (a free port, for `std.tcp.listen`).
 - Streaming: `std.fs.each_line` and `each_chunk`, `std.http.send_stream` and `std.process.run_lines` read
   files, response bodies and a program's output one piece at a time, in memory that does not grow.
+- `vo package ENTRY NAME URL` fetches a package (a `.tar.gz` or `.tar` archive over HTTPS), pins it by content
+  and prints the effects it declares; `vo package --restore ENTRY` fetches missing packages again at their
+  pinned hashes. A manifest line may end with the URL: toolchains before this change reject such lines.
+  The `package` JSON record gains `url`, `effects`, `gained`, `lost`, `note`, and two values of `change`,
+  `restored` and `present`. New code E0706.
 - Editor grammars in `editors/`: VS Code (TextMate), Neovim, Helix and Zed (tree-sitter), Vim.
 - Fixed: `vo impact --diff -` and `vo test --diff -` read a pipe (`git diff | vo impact main.vo --diff -`);
   before, standard input had to be a regular file.

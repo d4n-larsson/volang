@@ -55,7 +55,7 @@ the fields and kinds it does not know. Fields marked "optional" below are left o
 | `replay` | `replay` (stderr) | `program`, `changed` |
 | `response_changed` | `replay` of a server (stderr) | `request`, `recorded_status`, `status`, `recorded_body`, `body` |
 | `doc` | `doc` | `module`, `name`, `item`, `signature`, `description`, optional `example`, and per item kind `tparams`, `params`, `returns`, `effects`, `fields`, `cases` |
-| `package` | `package` | `name`, `change`, `directory`, optional `hash` and `old_hash` |
+| `package` | `package` | `name`, `change`, `directory`, optional `hash` and `old_hash`; for a fetched package `url`, `effects`, and on an update `gained` and `lost`; `note` when its effects could not be read |
 | `explain` | `explain` | `code`, `name`, `fixable`, `text` |
 | `reference` | `reference` | `text` |
 | `version` | `version` | `version`, `schema` |
@@ -247,7 +247,7 @@ From [vo doc](doc.md), one per item. `item` is `fn`, `record`, `variant`, `built
 
 ### package
 
-From [vo package](package.md). `change` is `added`, `updated` (with `old_hash`), `unchanged` or `removed`.
+From [vo package](package.md). `change` is `added`, `updated` (with `old_hash`), `unchanged` or `removed`, and from `--restore` `restored` or `present` (two values added with package download: a consumer that switches on `change` should expect them).
 
 ```json
 {"v":1,"kind":"package","name":"money","change":"unchanged","directory":"vendor/money","hash":"sha256:1e5b240df8daf715941d8af2629ab6404c7f9d1d369e493f0e9eb2d01fc162c3"}

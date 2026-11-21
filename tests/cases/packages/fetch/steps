@@ -1,0 +1,17 @@
+server https a.test
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/archive/money.tar.gz
+vo check main.vo
+vo run main.vo
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/moved/money.tar.gz
+keep vo.packages
+vo package --json --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/archive/money.tar.gz#rates
+vo package --ca-file test-ca.pem main.vo other https://127.0.0.1:{port}/archive/none.tar.gz
+vo package --json --ca-file test-ca.pem main.vo other https://127.0.0.1:{port}/archive/none.tar.gz
+vo package --ca-file test-ca.pem main.vo bad https://127.0.0.1:{port}/archive/link.tar.gz
+vo package main.vo money https://127.0.0.1:{port}/archive/money.tar.gz
+rm packages/money/live.vo
+vo package --ca-file test-ca.pem --restore main.vo
+rm vo.packages
+vo package --ca-file test-ca.pem --dir vendor/money main.vo money https://127.0.0.1:{port}/archive/money.tar.gz
+vo package --ca-file test-ca.pem --restore main.vo
+vo explain E0706

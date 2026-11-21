@@ -2552,6 +2552,23 @@ extern void rt_check_net(Str *host, long port);
 extern Variant *rt_tcp(long op, long a, Str *text);
 extern Variant *rt_tcp_io(long op, long id, Str *data);
 extern Event *rp_peek(long kind, Str *name);
+/* spec 041: fetching and unpacking a package archive (fetch.c, inflate.c, untar.c) */
+typedef struct TarFile {
+    Str *path;  /* relative, checked */
+    char *data; /* in the archive's buffer */
+    long n;
+} TarFile;
+extern char *pk_map(long n);
+extern void pk_unmap(char *p, long n);
+extern int gzip_is(char *in, long n);
+extern int gzip_unpack(char *in, long n, char **out, long *out_n, long *cap, long limit, char **why);
+extern Vec *untar(char *buf, long n, char **why);
+extern Vec *untar_select(Vec *files, Str *inner);
+extern char *path_unsafe(char *p, long n);
+extern Str *fetch_url(Str *url, Str **why);
+extern long opt_restore;
+extern Vec *opt_ca_files;
+extern char *opt_pkg_dir;
 /* spec 040 */
 extern Variant *io_fs_block(Str *path, long offset, long size);
 extern Variant *io_fs_lines(Str *path, long offset);

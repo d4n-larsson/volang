@@ -77,7 +77,7 @@ scripts() { # one per line, with arguments
     text|random|collections) echo doc_conformance.py ;;
     http) echo https_interop.py ;;
     front) printf '%s\n' apply_fixes.py catalog.py fmt_corpus.py "fuzz.py --iterations 50 --seed 1" ;;
-    packages) echo packages_check.py ;;
+    packages) printf '%s\n' packages_check.py catalog.py ref_examples.py package_fetch.py ;;
     docs) printf '%s\n' ref_examples.py site_examples.py doc_conformance.py catalog.py ;;
     esac
 }
@@ -123,7 +123,7 @@ area_of() {
     src/query.c|src/edit.c) echo query ;;
     src/testrun.c|src/rt_test.c|src/mutate.c|src/prop.c) echo testing ;;
     src/task.c) echo tasks ;;
-    src/packages.c|src/sha256.c) echo packages ;;
+    src/packages.c|src/sha256.c|src/fetch.c|src/inflate.c|src/untar.c|tests/package_fetch.py) echo packages ;;
     src/doc.c|docs/*|site/*|tools/site.py|tools/embed.py) echo docs ;;
     tests/cases/*) rel=${1#tests/cases/}; d=${rel%%/*}; echo "dir:$d" ;;
     specs/*|README.md|.specify/*|sesi-linter-issues.md|examples/*|bench*/*|.claude/*) echo "" ;;

@@ -3864,6 +3864,31 @@ export fn cents(n: int) -> str {
 cash shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f52bc74c951
 ```
 
+## E0706 package_fetch_failed
+
+A package could not be fetched, or its archive was refused.
+
+Fixable: no
+
+`vo package ENTRY NAME URL` downloads an archive over HTTPS, unpacks its `.vo` files and pins them. It fails with this code, and changes nothing, when the download fails (the connection, the certificate, a status other than 200, more than five redirects or one to `http://`, more than 16 MiB, more than 60 seconds) or when the archive is not acceptable: damaged or cut short, not a tar archive, holding a link, a device or a path that leaves the package (`..`, an absolute path), or over a limit (64 MiB unpacked, 16 MiB per file, 10,000 entries). The message says which. Nothing of a refused archive is written, and `vo check`, `vo run`, `vo test` and `vo build` never fetch anything.
+
+### Example
+
+```text
+$ vo package main.vo money https://example.com/money-1.2.0.tar.gz
+error[E0706]: Cannot fetch package money from https://example.com/money-1.2.0.tar.gz: the server answered 404.
+```
+
+### Fixed
+
+```text
+$ vo package main.vo money https://example.com/archive/money-1.2.0.tar.gz
+added money packages/money sha256:1e5b240df8daf715941d8af2629ab6404c7f9d1d369e493f0e9eb2d01fc162c5 from https://example.com/archive/money-1.2.0.tar.gz
+  effects: none
+```
+
+Check the URL in a browser: it must download a `.tar.gz` (or `.tar`) archive directly. For a repository on a forge, use the archive link of a tag or commit, not of a branch, so that the pinned content does not change.
+
 ## W0701 effectful_logic
 
 A function with effects has 15 or more statements that use no effect: its logic belongs in pure functions.

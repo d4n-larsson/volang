@@ -1,0 +1,90 @@
+$ vo package main.vo money shared/money
+added money shared/money sha256:0e9d2276b99db4fe1f54e3b6ac20266ee55749dcc178f38ddb2f53feaea55e16
+--- stderr
+--- exit 0
+$ vo package main.vo other shared/other
+added other shared/other sha256:654289eaadf1bdf097a5a853c3cf1fa9d9a1ad5f9849c4a01662c64ac4f89e85
+--- stderr
+--- exit 0
+$ vo run main.vo
+5
+--- stderr
+--- exit 0
+$ vo run main.vo
+5
+--- stderr
+--- exit 0
+$ vo package main.vo money shared/money
+unchanged money
+--- stderr
+--- exit 0
+$ vo package --remove main.vo money
+removed money
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
+   1 | import money.format.cents;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+vo.packages:1:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 lowercase hex digits), optionally followed by the https:// URL it was fetched from.
+   1 | money shared/money sha256:0e9d2276b99db4fe1f54e3b6ac20266ee55749dcc178f38ddb2f53feaea55e16 http://example.com/money.tar.gz
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2 errors, 0 warnings
+--- stderr
+--- exit 65
+$ vo check main.vo
+main.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
+   1 | import money.format.cents;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+vo.packages:1:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 lowercase hex digits), optionally followed by the https:// URL it was fetched from.
+   1 | money shared/money sha256:0e9d2276b99db4fe1f54e3b6ac20266ee55749dcc178f38ddb2f53feaea55e16 https://example.com/money.tar.gz extra
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2 errors, 0 warnings
+--- stderr
+--- exit 65
+$ vo check main.vo
+main.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
+   1 | import money.format.cents;
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+vo.packages:1:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 lowercase hex digits), optionally followed by the https:// URL it was fetched from.
+   1 | money shared/money sha256:0e9d2276b99db4fe1f54e3b6ac20266ee55749dcc178f38ddb2f53feaea55e16 ftp
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2 errors, 0 warnings
+--- stderr
+--- exit 65
+$ vo package --dir x main.vo money shared/money
+error[T0001]: `--dir` goes with a URL: `vo package --dir DIRECTORY ENTRY NAME URL`.
+--- stderr
+--- exit 64
+$ vo package --ca-file test-ca.pem main.vo money shared/money
+error[T0001]: `--ca-file` goes with a URL or `--restore`: the other forms fetch nothing.
+--- stderr
+--- exit 64
+$ vo package --restore main.vo money
+error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, or --restore ENTRY.
+--- stderr
+--- exit 64
+$ vo package --restore --remove main.vo
+error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, or --restore ENTRY.
+--- stderr
+--- exit 64
+$ vo package main.vo money http://example.com/money.tar.gz
+error[T0001]: A package is fetched from an https:// URL only.
+--- stderr
+--- exit 64
+$ vo package main.vo money https://user:secret@example.com/money.tar.gz
+error[T0001]: A URL with a user name or password is not fetched.
+--- stderr
+--- exit 64
+$ vo package main.vo money https://example.com/money.tar.gz#../up
+error[T0001]: The `#PATH` of a package URL is a relative folder inside the archive, such as `#src/money`.
+--- stderr
+--- exit 64
+$ vo check --dir x main.vo
+error[T0001]: `--dir` only works with `package`.
+--- stderr
+--- exit 64
+$ vo run --restore main.vo
+--- stderr
+error[T0001]: `--restore` only works with `package`.
+--- exit 64

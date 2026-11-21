@@ -264,6 +264,39 @@ money vendor/money sha256:2770bcbd0abbd4df166ce893ff9d8844bdd671aec325c8ec2620b8
 `vo doc NAME.module` documents a package's exported items as it does the standard library's.
 `vo package --remove ENTRY NAME` removes the line.
 
+### Getting a package
+
+A package someone else published is fetched with the same command, with a URL where the directory was:
+
+```text
+$ vo package main.vo money https://codeberg.org/example/money/archive/v1.2.0.tar.gz
+added money packages/money sha256:1e5b...62c5 from https://codeberg.org/example/money/archive/v1.2.0.tar.gz
+  effects: none
+```
+
+The URL is an archive (`.tar.gz` or `.tar`) served over HTTPS, which every forge offers for a tag or
+a commit. vo downloads it, takes its `.vo` files (a folder that wraps everything, such as
+`money-1.2.0/`, is dropped; `URL#src/money` takes one folder inside), writes them to `packages/NAME`
+next to `vo.packages` (or `--dir DIRECTORY`), and pins them exactly as it pins a local directory. The
+URL is kept as a fourth word of the manifest line.
+
+- **The hash is what is trusted, not the URL.** After the fetch, the package is a directory with a
+  pinned hash like any other. `vo check`, `vo run`, `vo test` and `vo build` never download anything.
+- **The output shows what the package can do**: the effects its exported functions declare, with
+  scopes. A package for formatting money that lists `net("...")` is worth a second look before you
+  import it. An update shows what the new version `gains` and `loses`.
+- **An archive is refused as a whole** if it holds a link, a device, or a path that would leave the
+  package ([E0706](../errors/E0706.md)); a failed fetch changes nothing.
+- **`vo package --restore main.vo`** fetches every listed package whose directory is missing, and
+  accepts each only if it hashes to its pin. Keep `vo.packages` in version control; whether you also
+  commit `packages/` is your choice.
+- A package directory you edited is never replaced by a fetch: pin your change with the local form,
+  or remove the directory.
+- Use the archive link of a tag or commit. A branch's archive changes, and `--restore` then refuses it
+  ([E0701](../errors/E0701.md)).
+- There are no versions, no registry and no fetching of a package's own dependencies: a package that
+  imports another shows as an unresolved import, and you add that one too.
+
 ### The hash
 
 The hash covers every `.vo` file under the package's directory: their paths, lengths and contents. Any

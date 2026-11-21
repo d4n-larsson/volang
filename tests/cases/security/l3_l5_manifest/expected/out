@@ -2,7 +2,7 @@ $ vo check sub/main.vo
 sub/main.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
    1 | import money.format.cents;
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-sub/vo.packages:1:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 lowercase hex digits).
+sub/vo.packages:1:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 lowercase hex digits), optionally followed by the https:// URL it was fetched from.
    1 | money ../shared/money\x00/etc sha256:0000000000000000000000000000000000000000000000000000000000000000
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 2 errors, 0 warnings

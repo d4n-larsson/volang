@@ -11,8 +11,9 @@ typedef struct Pkg {
     long state; /* 0 not checked yet, 1 verified, 2 failed (reported) */
     long start; /* the line's span in the manifest */
     long end;
+    Str *url; /* spec 041: where it was fetched from (with its #PATH), or 0 */
 } Pkg;
-CHECK_SIZE(Pkg, 80);
+CHECK_SIZE(Pkg, 88);
 
 #define NO_PACKAGE ((void *)-1)
 #define M_MISSING "Package $1: the directory $2 is missing or has no .vo files."
@@ -112,9 +113,12 @@ static void pkg_parse_line(long file, char *text, char *line, char *le)
     char *hash = pkg_token(dir_end, le); /* sha256:HEX */
     char *hash_end = pkg_tok_end;
     if (hash_end - hash != 71) goto bad;
-    if (pkg_token(hash_end, le) != le) goto bad; /* nothing after it */
+    char *url = pkg_token(hash_end, le); /* spec 041: optionally the URL it was fetched from */
+    char *url_end = url == le ? le : pkg_tok_end;
+    if (url != le && (url_end - url < 9 || !mem_eq(url, "https://", 8) || pkg_token(url_end, le) != le)) goto bad;
     if (!doc_starts(hash, "sha256:")) goto bad;
     Pkg *e = alloc(sizeof(Pkg));
+    e->url = url == le ? 0 : str_new(url, url_end - url);
     if (!pkg_hex_decode(hash + 7, e->pin)) goto bad;
     e->name = str_new(name, name_end - name);
     if (pkg_find(e->name)) { /* a second entry of the name: E0704 */
@@ -131,7 +135,7 @@ static void pkg_parse_line(long file, char *text, char *line, char *le)
     return;
 bad:
     m = str_from_cstr("Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 "
-                      "lowercase hex digits).");
+                      "lowercase hex digits), optionally followed by the https:// URL it was fetched from.");
 report:
     diag_add(code, SEV_ERROR, (int)file, line - text, le - text, m);
 }
@@ -475,6 +479,10 @@ void pkg_write(void)
         sb_str(sb, e->raw);
         sb_byte(sb, ' ');
         sb_str(sb, pkg_hash_text(e->pin));
+        if (e->url) {
+            sb_byte(sb, ' ');
+            sb_str(sb, e->url);
+        }
         sb_byte(sb, '\n');
     }
     SB *p = sb_new();
@@ -535,15 +543,492 @@ void pkg_fail(char *code, Str *message)
     vo_exit(EXIT_CHECK);
 }
 
+/* ---- spec 041: packages from a URL ----
+ * `vo package ENTRY NAME URL` fetches an archive (fetch.c), unpacks it in memory (inflate.c, untar.c)
+ * and only then writes its `.vo` files to a staging directory beside the target; the staging
+ * directory is pinned like any other and swapped in by renames, and the manifest is written last, so a
+ * failure at any point leaves the project as it was. `--restore` does the same for entries whose
+ * directory is missing and accepts the result only at its pinned hash. Nothing else in the toolchain
+ * fetches anything. */
+
+#define UNPACK_MAX (64L << 20)
+
+long opt_restore;  /* vo package --restore ENTRY */
+char *opt_pkg_dir; /* vo package --dir DIRECTORY */
+
+typedef struct Dirent64 {
+    uint64_t ino;
+    int64_t off;
+    uint16_t reclen;
+    uint8_t type;
+    char name[1];
+} Dirent64;
+
+static int is_dir(Str *path)
+{
+    long fd = sys_open(path->data, O_DIRECTORY | O_NOFOLLOW);
+    if (fd >= 0) sys_close((int)fd);
+    return fd >= 0;
+}
+
+/* Creates path and its missing parents. */
+static void mkdir_p(Str *path)
+{
+    Str *p = str_new(path->data, path->len); /* a copy to cut at each `/` */
+    for (long i = 1; i <= p->len; i++) {
+        if (i < p->len && p->data[i] != '/') continue;
+        char keep = p->data[i];
+        p->data[i] = 0;
+        vo_syscall3(SYS_mkdirat, AT_FDCWD, (long)p->data, 0755);
+        p->data[i] = keep;
+    }
+}
+
+/* Removes a directory tree this command made or is replacing; links are removed, never followed. */
+static void rm_tree(Str *path)
+{
+    long fd = sys_open(path->data, O_DIRECTORY | O_NOFOLLOW);
+    if (fd >= 0) {
+        char buf[4096];
+        long n;
+        while ((n = sys_getdents64((int)fd, buf, sizeof buf)) > 0) {
+            for (long at = 0; at < n;) {
+                Dirent64 *d = (Dirent64 *)(buf + at);
+                at += d->reclen;
+                if (d->name[0] == '.' && (!d->name[1] || (d->name[1] == '.' && !d->name[2]))) continue;
+                Str *child = path_join(path, str_from_cstr(d->name));
+                if (vo_syscall3(SYS_unlinkat, fd, (long)d->name, 0) < 0) rm_tree(child);
+            }
+        }
+        sys_close((int)fd);
+    }
+    vo_syscall3(SYS_unlinkat, AT_FDCWD, (long)path->data, 0x200 /* AT_REMOVEDIR */);
+}
+
+/* Fetches url (with its optional #PATH) and writes the package's `.vo` files under staging. 0 when
+ * done; -1 with *why for a failed download or a refused archive (E0706); -2 with *why when the
+ * archive holds no `.vo` file where one was asked for (E0702). Nothing is written before the whole
+ * archive was read and accepted. */
+static int pkg_stage(Str *url, Str *staging, Str **why)
+{
+    long hash = 0;
+    while (hash < url->len && url->data[hash] != '#') hash++;
+    Str *inner = hash < url->len ? str_new(url->data + hash + 1, url->len - hash - 1) : 0;
+    Str *body = fetch_url(str_new(url->data, hash), why);
+    if (!body) return -1;
+    char *buf = body->data, *mapped = 0, *bad = 0;
+    long n = body->len, cap = 0;
+    if (gzip_is(buf, n)) {
+        if (gzip_unpack(body->data, body->len, &mapped, &n, &cap, UNPACK_MAX, &bad)) {
+            *why = str_from_cstr(bad);
+            return -1;
+        }
+        buf = mapped;
+    } else if (n > UNPACK_MAX) {
+        *why = str_from_cstr("it unpacks to more than 64 MiB");
+        return -1;
+    }
+    int r = 0;
+    Vec *all = untar(buf, n, &bad);
+    Vec *files = all ? untar_select(all, inner) : 0;
+    if (!all) {
+        *why = str_from_cstr(bad);
+        r = -1;
+    } else if (!files->n) {
+        *why = inner ? msg("the archive has no .vo files under `$1`", inner, 0, 0) : str_from_cstr("the archive has no .vo files");
+        r = -2;
+    }
+    if (!r) mkdir_p(staging);
+    for (long i = 0; !r && i < files->n; i++) {
+        TarFile *f = vec_get(files, i);
+        Str *path = path_join(staging, f->path);
+        long cut = path->len;
+        while (cut && path->data[cut - 1] != '/') cut--;
+        mkdir_p(str_new(path->data, cut - 1));
+        long fd = vo_syscall4(SYS_openat, AT_FDCWD, (long)path->data, O_WRCREAT | O_NOFOLLOW | O_CLOEXEC, 0644);
+        if (fd < 0) {
+            *why = msg("cannot write `$1`", path, 0, 0);
+            r = -1;
+            break;
+        }
+        write_all((int)fd, f->data, f->n);
+        sys_close((int)fd);
+    }
+    pk_unmap(mapped, cap);
+    return r;
+}
+
+/* ---- what a package declares (research R7) ---- */
+
+static const char *const effect_order[] = {"console", "input",  "file.read", "file.write", "file.delete", "net",
+                                           "clock",   "random", "env",       "serve",      "process",     "entropy", 0};
+
+/* The place of an effect text (`net("a")`) in the canonical order, or -1 for an effect parameter. */
+static long effect_rank(Str *e)
+{
+    long n = 0;
+    while (n < e->len && e->data[n] != '(') n++;
+    for (long i = 0; effect_order[i]; i++)
+        if (cstr_len((char *)effect_order[i]) == n && mem_eq(e->data, (char *)effect_order[i], n)) return i;
+    return -1;
+}
+
+/* What `vo doc MODULE --json` prints, from a child (a package that does not check ends the child, not
+ * this command); *status gets its exit status. */
+static Str *doc_capture(Str *module, int *status)
+{
+    int fds[2];
+    *status = 1;
+    if (sys_pipe(fds) < 0) return str_from_cstr("");
+    long pid = sys_fork();
+    if (pid == 0) {
+        sys_close(fds[0]);
+        sys_dup_to(fds[1], 1);
+        sys_dup_to(fds[1], 2);
+        long dir = sys_open(pkg_dir->len ? pkg_dir->data : "/", O_DIRECTORY);
+        if (dir >= 0) vo_syscall1(SYS_fchdir, dir); /* the manifest's directory, wherever vo was started */
+        static char *arg[1];
+        arg[0] = module->data;
+        pos_args = (long)arg;
+        pos_n = 1;
+        opt_json = 1;
+        report_fd = 1;
+        vo_exit(cmd_doc());
+    }
+    sys_close(fds[1]);
+    SB *sb = sb_new();
+    char buf[4096];
+    long n;
+    while ((n = sys_read(fds[0], buf, sizeof buf)) > 0 || n == -4 /* EINTR */)
+        if (n > 0) sb_bytes(sb, buf, n);
+    sys_close(fds[0]);
+    int st = 0;
+    if (pid > 0) sys_wait(pid, &st);
+    *status = pid > 0 && !(st & 0x7f) ? (st >> 8) & 0xff : 1;
+    return sb_finish(sb);
+}
+
+/* The union of the effects the package's exported functions declare, as texts in canonical order;
+ * 0 with *note (the first error) when the package cannot be read for them. */
+static Vec *pkg_effects(Pkg *e, Str **note)
+{
+    Vec *out = vec_new();
+    Vec *modules = pkg_doc_modules(e);
+    *note = 0;
+    for (long m = 0; m < modules->n; m++) {
+        int status;
+        Str *text = doc_capture(vec_get(modules, m), &status);
+        for (long at = 0; at < text->len;) {
+            long end = at;
+            while (end < text->len && text->data[end] != '\n') end++;
+            Str *line = str_new(text->data + at, end - at); /* NUL-terminated: the reader's form */
+            at = end + 1;
+            if (!line->len || line->data[0] != '{' || !js_skip(line->data, 0)) continue;
+            char *kind = js_get(line->data, "kind");
+            if (kind && !js_is(kind, "doc", 3)) { /* a diagnostic or a toolchain error: the first one is the note */
+                char *message = js_get(line->data, "message");
+                if (message && !js_is(kind, "summary", 7) && !*note) {
+                    Str *msg_text = str_new(line->data, line->len); /* room for the unescaped text */
+                    msg_text->len = js_unescape(message, msg_text->data);
+                    *note = msg_text;
+                }
+                continue;
+            }
+            char *eff = js_get(line->data, "effects");
+            if (!eff || *eff != '[') continue;
+            for (char *p = js_ws(eff + 1); *p == '"'; p = js_ws(p)) {
+                Str *one = str_new(line->data, line->len);
+                one->len = js_unescape(p, one->data);
+                p = js_ws(js_skip(p, 0));
+                if (*p == ',') p++;
+                long rank = effect_rank(one), k = 0;
+                if (rank < 0) continue; /* an effect parameter: the caller's, not the package's */
+                for (; k < out->n; k++) { /* insert in order, once */
+                    Str *have = vec_get(out, k);
+                    long hr = effect_rank(have);
+                    if (hr > rank || (hr == rank && str_cmp(have, one) >= 0)) break;
+                }
+                if (k < out->n && str_eq(vec_get(out, k), one)) continue;
+                vec_push(out, one);
+                for (long j = out->n - 1; j > k; j--) out->data[j] = out->data[j - 1];
+                out->data[k].p = one;
+            }
+        }
+        if (status && !*note) *note = str_from_cstr("its documentation could not be produced");
+        if (status) return 0;
+    }
+    return out;
+}
+
+/* The members of a that are not in b. */
+static Vec *set_minus(Vec *a, Vec *b)
+{
+    Vec *out = vec_new();
+    for (long i = 0; a && i < a->n; i++) {
+        int found = 0;
+        for (long k = 0; b && k < b->n && !found; k++) found = str_eq(vec_get(a, i), vec_get(b, k));
+        if (!found) vec_push(out, vec_get(a, i));
+    }
+    return out;
+}
+
+static void list_text(SB *sb, char *label, Vec *v)
+{
+    sb_cstr(sb, label);
+    for (long i = 0; i < v->n; i++) {
+        if (i) sb_cstr(sb, ", ");
+        sb_str(sb, vec_get(v, i));
+    }
+    if (!v->n) sb_cstr(sb, "none");
+    sb_byte(sb, '\n');
+}
+
+static void list_json(SB *sb, char *key, Vec *v)
+{
+    sb_cstr(sb, ",\"");
+    sb_cstr(sb, key);
+    sb_cstr(sb, "\":[");
+    for (long i = 0; i < v->n; i++) {
+        if (i) sb_byte(sb, ',');
+        json_str_into(sb, vec_get(v, i));
+    }
+    sb_byte(sb, ']');
+}
+
+/* The report of a fetched package: the local form's line or record, with where it came from, what it
+ * declares, and on an update what that gained and lost. */
+static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before, Vec *now, Str *note)
+{
+    SB *sb = sb_new();
+    Vec *gained = before && now ? set_minus(now, before) : 0, *lost = before && now ? set_minus(before, now) : 0;
+    if (opt_json) {
+        sb_cstr(sb, "{\"v\":1,\"kind\":\"package\",\"name\":");
+        json_str_into(sb, e->name);
+        sb_cstr(sb, ",\"change\":\"");
+        sb_cstr(sb, change);
+        sb_cstr(sb, "\",\"directory\":");
+        json_str_into(sb, e->raw);
+        sb_cstr(sb, ",\"hash\":\"");
+        sb_str(sb, pkg_hash_text(e->pin));
+        sb_byte(sb, '"');
+        if (old_hash) {
+            sb_cstr(sb, ",\"old_hash\":\"");
+            sb_str(sb, old_hash);
+            sb_byte(sb, '"');
+        }
+        if (e->url) {
+            sb_cstr(sb, ",\"url\":");
+            json_str_into(sb, e->url);
+        }
+        if (now) list_json(sb, "effects", now);
+        if (gained) list_json(sb, "gained", gained);
+        if (lost) list_json(sb, "lost", lost);
+        if (note) {
+            sb_cstr(sb, ",\"note\":");
+            json_str_into(sb, note);
+        }
+        sb_cstr(sb, "}\n");
+    } else {
+        if (cstr_eq(change, "added")) {
+            sb_cstr(sb, "added ");
+            sb_str(sb, e->name);
+            sb_byte(sb, ' ');
+            sb_str(sb, e->raw);
+            sb_byte(sb, ' ');
+            sb_str(sb, pkg_hash_text(e->pin));
+            sb_cstr(sb, " from ");
+            sb_str(sb, e->url);
+        } else if (cstr_eq(change, "updated")) {
+            sb_cstr(sb, "updated ");
+            sb_str(sb, e->name);
+            sb_cstr(sb, ": ");
+            sb_str(sb, old_hash);
+            sb_cstr(sb, " -> ");
+            sb_str(sb, pkg_hash_text(e->pin));
+        } else {
+            sb_cstr(sb, change);
+            sb_byte(sb, ' ');
+            sb_str(sb, e->name);
+        }
+        sb_byte(sb, '\n');
+        if (now) list_text(sb, "  effects: ", now);
+        if (note) {
+            sb_cstr(sb, "  effects: could not be read (");
+            sb_str(sb, note);
+            sb_cstr(sb, ")\n");
+        }
+        if (gained && gained->n) list_text(sb, "  gains: ", gained);
+        if (lost && lost->n) list_text(sb, "  loses: ", lost);
+    }
+    out_bytes(1, sb->ptr, sb->len);
+}
+
+static Str *with_pid(Str *path, char *tag)
+{
+    SB *sb = sb_new();
+    sb_str(sb, path);
+    sb_cstr(sb, tag);
+    int_to_dec(sb, sys_getpid());
+    return sb_finish(sb);
+}
+
+/* 1 when the entry's directory is there and still hashes to its pin. */
+static int pkg_intact(Pkg *e)
+{
+    char now[32];
+    return pkg_hash(e->dir, now, 0) == 0 && mem_eq(now, e->pin, 32);
+}
+
+/* `vo package ENTRY NAME URL`: fetch, unpack, pin, record the URL. */
+static int pkg_add_url(char *entry_arg, Str *name, Str *url)
+{
+    long at = 8, hash = 0;
+    while (hash < url->len && url->data[hash] != '#') hash++;
+    for (; at < hash && url->data[at] != '/'; at++)
+        if (url->data[at] == '@') usage_error(str_from_cstr("A URL with a user name or password is not fetched."));
+    if (hash < url->len) { /* #PATH: a folder inside the archive */
+        char *bad = path_unsafe(url->data + hash + 1, url->len - hash - 1);
+        if (bad || url->data[url->len - 1] == '/')
+            usage_error(str_from_cstr("The `#PATH` of a package URL is a relative folder inside the archive, such as `#src/money`."));
+    }
+    Pkg *e = pkg_find(name);
+    SB *sb = sb_new();
+    if (opt_pkg_dir) {
+        sb_cstr(sb, opt_pkg_dir);
+        while (sb->len > 1 && sb->ptr[sb->len - 1] == '/') sb->len--;
+    } else {
+        sb_str(sb, pkg_dir);
+        sb_cstr(sb, "/packages/");
+        sb_str(sb, name);
+    }
+    Str *target = sb_finish(sb);
+    int there = is_dir(target);
+    Vec *before = 0;
+    Str *note = 0;
+    if (there) {
+        Str *real = rt_resolve(target), *own = e ? rt_resolve(e->dir) : 0;
+        if (!e || !real || !own || !str_eq(real, own))
+            pkg_fail("E0706", msg("The directory `$1` exists and is not package $2's: remove it, or choose another with `--dir`.",
+                                  target, name, 0));
+        if (!pkg_intact(e))
+            pkg_fail("E0701", msg("Package $1 was changed since it was pinned, and fetching would replace it: pin your "
+                                  "changes with `vo package $2 $1 $3`, or remove the directory.",
+                                  name, str_from_cstr(entry_arg), target));
+        before = pkg_effects(e, &note);
+    }
+    Str *staging = with_pid(target, ".new-"), *old = with_pid(target, ".old-"), *why = 0;
+    int r = pkg_stage(url, staging, &why);
+    long h = r ? 0 : pkg_hash(staging, pkg_hash_buf, 0);
+    if (r || h < 0) {
+        rm_tree(staging);
+        if (r == -1) pkg_fail("E0706", msg("Cannot fetch package $1 from $2: $3.", name, url, why));
+        pkg_fail("E0702", msg("Package $1: $2.", name, r ? why : str_from_cstr("the archive's .vo files cannot be read back"), 0));
+    }
+    if (there && mem_eq(e->pin, pkg_hash_buf, 32)) { /* the same content: nothing to replace */
+        rm_tree(staging);
+        if (!e->url || !str_eq(e->url, url)) {
+            e->url = url;
+            pkg_write();
+        }
+        pkg_report("unchanged", e, 0);
+        return 0;
+    }
+    if (there && sys_rename(target->data, old->data) < 0)
+        pkg_fail("E0706", msg("Cannot replace the directory `$1`.", target, 0, 0));
+    if (sys_rename(staging->data, target->data) < 0) {
+        if (there) sys_rename(old->data, target->data);
+        rm_tree(staging);
+        pkg_fail("E0706", msg("Cannot create the directory `$1`.", target, 0, 0));
+    }
+    Str *abs = rt_resolve(target);
+    Str *old_hash = e ? pkg_hash_text(e->pin) : 0;
+    if (!e) {
+        e = alloc(sizeof(Pkg));
+        e->name = name;
+        vec_push(pkg_entries, e);
+    }
+    e->dir = abs;
+    e->raw = pkg_rel_dir(pkg_dir, abs);
+    e->url = url;
+    e->state = 0;
+    mem_copy(e->pin, pkg_hash_buf, 32);
+    pkg_write();
+    if (there) rm_tree(old);
+    note = 0;
+    Vec *now = pkg_effects(e, &note);
+    pkg_report_fetched(old_hash ? "updated" : "added", e, old_hash, old_hash ? before : 0, now, note);
+    return 0;
+}
+
+/* `vo package --restore ENTRY`: every entry with a URL whose directory is missing is fetched again
+ * and accepted only at its pinned hash. The manifest is never written. */
+static int pkg_restore(void)
+{
+    int failed = 0;
+    pkg_sort();
+    for (long i = 0; i < pkg_entries->n; i++) {
+        Pkg *e = vec_get(pkg_entries, i);
+        char now[32];
+        long h = pkg_hash(e->dir, now, 0);
+        char *code = 0;
+        Str *m = 0;
+        if (h == 0 && mem_eq(now, e->pin, 32)) {
+            pkg_report_fetched("present", e, 0, 0, 0, 0);
+            continue;
+        }
+        if (h == 0 || is_dir(e->dir)) { /* there, and not what was pinned: not ours to replace */
+            code = h == 0 ? "E0701" : "E0702";
+            m = h == 0 ? msg("Package $1 changed: the manifest pins $2, its files hash to $3.", e->name, pkg_hash_text(e->pin),
+                             pkg_hash_text(now))
+                       : msg(h == -2 ? M_UNREADABLE : M_MISSING, e->name, e->raw, 0);
+        } else if (!e->url) {
+            code = "E0702";
+            m = msg("Package $1: the directory $2 is missing, and the manifest has no URL to fetch it from.", e->name, e->raw, 0);
+        } else {
+            Str *staging = with_pid(e->dir, ".new-"), *why = 0;
+            int r = pkg_stage(e->url, staging, &why);
+            long sh = r ? -1 : pkg_hash(staging, now, 0);
+            if (r == -1) {
+                code = "E0706";
+                m = msg("Cannot fetch package $1 from $2: $3.", e->name, e->url, why);
+            } else if (r || sh < 0) {
+                code = "E0702";
+                m = msg("Package $1: $2.", e->name, r ? why : str_from_cstr("the archive's .vo files cannot be read back"), 0);
+            } else if (!mem_eq(now, e->pin, 32)) {
+                code = "E0701";
+                m = msg("Package $1: what $2 serves now hashes to $3, not to the pinned hash: the content at the URL "
+                        "changed. Nothing was written.",
+                        e->name, e->url, pkg_hash_text(now));
+            } else if (sys_rename(staging->data, e->dir->data) < 0) {
+                code = "E0706";
+                m = msg("Cannot create the directory `$1`.", e->raw, 0, 0);
+            }
+            if (code) rm_tree(staging);
+            else pkg_report_fetched("restored", e, 0, 0, 0, 0);
+        }
+        if (code) {
+            toolchain_error((int)opt_json, (int)report_fd, code, m, 0);
+            failed = 1;
+        }
+    }
+    return failed ? EXIT_CHECK : 0;
+}
+
 /* `vo package [--json] ENTRY NAME DIRECTORY` and `vo package --remove ENTRY NAME`. */
 int cmd_package(void)
 {
-    if (pos_n != 3 - opt_remove) /* ENTRY NAME [DIRECTORY] */
-        usage_error(str_from_cstr("`package` takes ENTRY NAME DIRECTORY, or --remove ENTRY NAME."));
     char **args = (char **)pos_args;
-    if (!pkg_name_ok(args[1], cstr_len(args[1])))
+    int by_url = !opt_remove && !opt_restore && pos_n == 3 && doc_starts(args[2], "https://");
+    if (opt_remove + opt_restore > 1 || pos_n != (opt_restore ? 1 : 3 - opt_remove)) /* ENTRY [NAME [DIRECTORY | URL]] */
+        usage_error(str_from_cstr("`package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, or --restore ENTRY."));
+    if (!opt_remove && !opt_restore && doc_starts(args[2], "http://"))
+        usage_error(str_from_cstr("A package is fetched from an https:// URL only."));
+    if (opt_pkg_dir && !by_url) usage_error(str_from_cstr("`--dir` goes with a URL: `vo package --dir DIRECTORY ENTRY NAME URL`."));
+    if (opt_ca_files && !by_url && !opt_restore)
+        usage_error(str_from_cstr("`--ca-file` goes with a URL or `--restore`: the other forms fetch nothing."));
+    if (!opt_restore && !pkg_name_ok(args[1], cstr_len(args[1])))
         usage_error_arg("A package name is an identifier other than std: `$1` is not.", args[1]);
-    Str *name = str_from_cstr(args[1]);
+    Str *name = opt_restore ? 0 : str_from_cstr(args[1]);
     Str *entry = str_from_cstr(args[0]); /* ENTRY's directory: its path up to the last "/" */
     long k = entry->len;
     while (k && entry->data[k - 1] != '/') k--;
@@ -554,6 +1039,8 @@ int cmd_package(void)
         diag_emit_all((int)opt_json, (int)report_fd);
         vo_exit(EXIT_CHECK);
     }
+    if (opt_restore) return pkg_restore();
+    if (by_url) return pkg_add_url(args[0], name, str_from_cstr(args[2]));
     Pkg *e = pkg_find(name); /* the entry, or 0 */
     if (opt_remove) {
         if (!e) usage_error_arg("No package `$1` is listed in the manifest.", args[1]);
@@ -584,10 +1071,15 @@ int cmd_package(void)
         return 0;
     }
     if (mem_eq(e->pin, pkg_hash_buf, 32) && str_eq(e->raw, raw)) { /* unchanged: same hash and directory */
+        if (e->url) { /* spec 041: pinned by hand now, so no longer "from" anywhere */
+            e->url = 0;
+            pkg_write();
+        }
         pkg_report("unchanged", e, 0);
         return 0;
     }
     Str *old = pkg_hash_text(e->pin); /* updated */
+    e->url = 0;
     e->raw = raw;
     e->dir = abs;
     mem_copy(e->pin, pkg_hash_buf, 32);

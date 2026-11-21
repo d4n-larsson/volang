@@ -1172,7 +1172,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 - `std.process.run(program, args)` runs a program with no shell (arguments are passed as they are), no input and an empty environment, waits for it and returns `Output { code, stdout, stderr }`; `run_with` adds input text and `NAME=value` variables. A non-zero exit is `ok`; killed by signal n, `code` is 128 + n. `--timeout` covers the program and everything it starts. A started program is not confined: `process("git")` grants whatever `git` can do.
 - Large inputs come in pieces: `each_line(path, f)`, `each_chunk`, `send_stream` and `run_lines` call `f` per line or chunk; `f` returns `ok(true)` to go on, `ok(false)` to stop.
 - File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.
-- Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
+- Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` (or an `https://` archive URL, unpacked into `packages/NAME`; `--restore ENTRY` fetches missing ones again) adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
 
 ```vo
 import std.json.int_field;
@@ -1309,7 +1309,7 @@ vo impact    [--json] ENTRY --diff FILE
 vo edit      [--json] [--dry-run] rename|add-field ENTRY ...
 vo replay    [--json] [--trace FILE] [--timeout SEC] [--max-memory MiB] [--mem-stats] RECORDING
 vo doc       [--json] [ENTRY] [NAME]
-vo package   [--json] ENTRY NAME DIRECTORY | --remove ENTRY NAME
+vo package   [--json] ENTRY NAME DIRECTORY|URL | --remove ENTRY NAME | --restore ENTRY
 vo mcp
 vo lsp
 ```
