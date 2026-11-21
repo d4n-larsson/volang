@@ -9,8 +9,9 @@ ratios, so a machine whose speed drifts during the check slows both of a round a
 at least 80% of the hand-written throughput. The cost is a fixed 5 to 8 microseconds per request, so the
 ratio depends on how fast the machine serves a request at all: 87% to 92% on the development machine (10,000
 requests a second), 84% on a GitHub runner (40,000). The bound was 90% until November 2026; it is there
-to catch routing that got slower, not to compare machines. Skipped with a message without ab. Part of
-`make gate`."""
+to catch routing that got slower, not to compare machines. Skipped with a message without ab, and on
+CI (the variable `CI` is set): two runs on GitHub's runners gave 84% and 69% for the same code path. Part
+of `make gate` on a developer's machine."""
 import os
 import re
 import shutil
@@ -105,6 +106,9 @@ def rate(program):
 def main():
     if not shutil.which("ab"):
         print("web_speed: skipped (no ab)")
+        return 0
+    if os.environ.get("CI"):  # a shared runner: 84% in one run and 69% in the next, where an idle machine is steady
+        print("web_speed: skipped on CI (a throughput ratio on a shared machine; run it locally)")
         return 0
     hands, webs = [], []
     for r in range(9):
