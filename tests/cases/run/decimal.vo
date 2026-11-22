@@ -1,0 +1,224 @@
+import std.decimal.Decimal;
+import std.decimal.Rounding;
+import std.decimal.absolute;
+import std.decimal.add;
+import std.decimal.allocate;
+import std.decimal.compare;
+import std.decimal.decimal;
+import std.decimal.decimal_text;
+import std.decimal.div;
+import std.decimal.equal;
+import std.decimal.from_int;
+import std.decimal.grouped_text;
+import std.decimal.is_negative;
+import std.decimal.is_zero;
+import std.decimal.mul;
+import std.decimal.negate;
+import std.decimal.normalize;
+import std.decimal.parse_decimal;
+import std.decimal.round_to;
+import std.decimal.split_evenly;
+import std.decimal.sub;
+import std.decimal.to_float;
+import std.decimal.to_int;
+import std.decimal.total;
+
+fn d(s: str) -> Decimal {
+    match parse_decimal(s) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return decimal(0, 0);
+        }
+    }
+}
+
+fn parsed(s: str) -> str {
+    match parse_decimal(s) {
+        case ok(v) {
+            return "[" + s + "] " + str(v.units) + " at " + str(v.places) + " is " + decimal_text(v);
+        }
+        case err(m) {
+            return "[" + s + "] error: " + m;
+        }
+    }
+}
+
+fn modes(x: Decimal, places: int) -> str {
+    let all = [
+        Rounding.half_even,
+        Rounding.half_up,
+        Rounding.down,
+        Rounding.up,
+        Rounding.floor,
+        Rounding.ceiling
+    ];
+    let out = new list[str];
+    for m in all {
+        push(out, decimal_text(round_to(x, places, m)));
+    }
+    return decimal_text(x) + " -> " + join(out, " ");
+}
+
+fn listed(r: result[list[Decimal]]) -> str {
+    match r {
+        case ok(parts) {
+            return join(map(parts, decimal_text), " ") + " = " + decimal_text(total(parts));
+        }
+        case err(m) {
+            return "error: " + m;
+        }
+    }
+}
+
+fn whole(x: Decimal) -> str {
+    match to_int(x) {
+        case ok(n) {
+            return str(n);
+        }
+        case err(m) {
+            return "error: " + m;
+        }
+    }
+}
+
+fn main() uses console {
+    print("-- text");
+    for s in [
+        "12.50",
+        "0",
+        "-0.00",
+        "-0.05",
+        "007.50",
+        "9223372036854775807",
+        "-9223372036854775808",
+        "0.000000000000000001"
+    ] {
+        print(parsed(s));
+    }
+    for s in [
+        "",
+        "abc",
+        "1.2.3",
+        "1e3",
+        ".5",
+        "5.",
+        " 1",
+        "+1",
+        "1,000",
+        "-",
+        "0.0000000000000000001",
+        "9223372036854775808"
+    ] {
+        print(parsed(s));
+    }
+    print(
+        grouped_text(d("-1234567.80")) + " " + grouped_text(d("999.5")) + " " + grouped_text(d("1000")) + " " + grouped_text(d(
+            "-0.05"
+        ))
+    );
+    print("-- sums");
+    print(
+        decimal_text(add(d("1.5"), d("2.25"))) + " " + decimal_text(sub(d("1.5"), d("2.25"))) + " " + decimal_text(sub(
+            d("10"),
+            d("0.001")
+        ))
+    );
+    print(
+        decimal_text(total([d("0.10"), d("0.20"), d("0.3")])) + " " + decimal_text(total(
+            new list[Decimal]
+        ))
+    );
+    print(
+        decimal_text(negate(d("1.50"))) + " " + decimal_text(absolute(d("-1.50"))) + " " + decimal_text(from_int(
+            -7
+        ))
+    );
+    print(decimal_text(add(d("-0.3"), d("922337203685477581"))));
+    print("-- products and rounding");
+    print(decimal_text(mul(d("19.99"), d("0.25"))));
+    print(modes(d("4.9975"), 2));
+    print(modes(d("0.125"), 2));
+    print(modes(d("-0.125"), 2));
+    print(modes(d("0.121"), 2));
+    print(modes(d("-0.121"), 2));
+    print(modes(d("1.5"), 3));
+    print(modes(d("2.5"), 0));
+    print("-- division");
+    print(
+        decimal_text(div(d("10"), d("3"), 2, Rounding.half_even)) + " " + decimal_text(div(
+            d("2"),
+            d("3"),
+            2,
+            Rounding.half_even
+        ))
+    );
+    print(decimal_text(div(d("1.000000000000000000"), d("3"), 18, Rounding.half_even)));
+    print(
+        decimal_text(div(d("-1"), d("8"), 2, Rounding.half_even)) + " " + decimal_text(div(
+            d("-1"),
+            d("8"),
+            2,
+            Rounding.floor
+        ))
+    );
+    print(
+        decimal_text(div(d("0.000000000000000005"), d("1"), 17, Rounding.half_even)) + " " + decimal_text(div(
+            d("100.00"),
+            d("0.07"),
+            0,
+            Rounding.up
+        ))
+    );
+    print(
+        decimal_text(div(d("-9223372036854775808"), d("1"), 0, Rounding.down)) + " " + decimal_text(div(
+            d("1"),
+            d("-9223372036854775808"),
+            18,
+            Rounding.half_even
+        ))
+    );
+    print("-- comparing");
+    print(
+        str(compare(d("1.5"), d("1.50"))) + " " + str(compare(d("1.49"), d("1.5"))) + " " + str(compare(d("-0.5"), d("0.5"))) + " " + str(compare(
+            d("9000000000000000000"),
+            d("0.000000000000000001")
+        ))
+    );
+    print(
+        str(equal(d("1.5"), d("1.50"))) + " " + str(d("1.5") == d("1.50")) + " " + str(normalize(d("1.50")) == d("1.5")) + " " + decimal_text(normalize(d("0.00"))) + " " + decimal_text(normalize(
+            d("1200")
+        ))
+    );
+    print(
+        str(is_zero(d("0.00"))) + " " + str(is_negative(d("-0.01"))) + " " + str(is_negative(d(
+            "0.00"
+        )))
+    );
+    let seen = new map[Decimal, int];
+    for s in ["1.5", "1.50", "1.500", "2"] {
+        let k = normalize(d(s));
+        set seen[k] = get_or(seen, k, 0) + 1;
+    }
+    print(str(len(seen)) + " " + str(seen[d("1.5")]));
+    print("-- converting");
+    print(whole(d("12.00")) + "; " + whole(d("12.50")) + "; " + whole(d("-3")));
+    print(
+        str(to_float(d("12.50"))) + " " + str(to_float(d("0.1"))) + " " + str(to_float(d(
+            "9223372036854775.807"
+        )))
+    );
+    print("-- splitting");
+    print(listed(split_evenly(d("100.00"), 3)));
+    print(listed(split_evenly(d("-100.00"), 3)));
+    print(listed(split_evenly(d("0.02"), 5)));
+    print(listed(split_evenly(d("1.00"), 0)));
+    print(listed(allocate(d("100.00"), [1, 1, 2])));
+    print(listed(allocate(d("0.05"), [3, 7])));
+    print(listed(allocate(d("0.05"), [0, 3, 7])));
+    print(listed(allocate(d("1.00"), new list[int])));
+    print(listed(allocate(d("1.00"), [1, -1])));
+    print(listed(allocate(d("1.00"), [0, 0])));
+    print(listed(allocate(d("1.00"), [2147483647, 1])));
+}

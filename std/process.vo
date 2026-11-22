@@ -45,7 +45,7 @@ export fn run_with(program: str, args: list[str], input: str, env: list[str]) ->
     return decode(try __run(argv, input, env));
 }
 
-# What a finished program returned, its output as bytes (spec 021): the exit code, standard output and standard error.
+# What a finished program returned, its output as bytes: the exit code, standard output and standard error.
 #     new BytesOutput { code: 0, stdout: from_text(""), stderr: from_text("") }.code is 0
 export record BytesOutput {
     # The exit code; 128 + n when the program was killed by signal n.

@@ -1,0 +1,39 @@
+import std.decimal.Decimal;
+import std.decimal.Rounding;
+import std.decimal.add;
+import std.decimal.compare;
+import std.decimal.decimal;
+import std.decimal.equal;
+import std.decimal.is_negative;
+import std.decimal.round_to;
+import std.decimal.split_evenly;
+import std.decimal.total;
+
+fn with_fee(amount: Decimal, fee: Decimal) -> Decimal
+    requires not is_negative(fee)
+    ensures compare(ret, amount) >= 0 {
+    return add(amount, fee);
+}
+
+fn main() uses console {
+    print(str(with_fee(decimal(1000, 2), decimal(25, 2)).units));
+}
+
+prop "a split loses nothing" (units: int, n: int) {
+    assume(n >= 1 and n <= 20);
+    let amount = decimal(units, 2);
+    match split_evenly(amount, n) {
+        case ok(parts) {
+            expect(equal(total(parts), amount));
+            expect(len(parts) == n);
+        }
+        case err(m) {
+            expect_eq(m, "");
+        }
+    }
+}
+
+prop "rounding to more places changes nothing" (units: int) {
+    assume(units > -1000000000 and units < 1000000000);
+    expect(equal(round_to(decimal(units, 2), 5, Rounding.down), decimal(units, 2)));
+}

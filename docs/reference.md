@@ -1156,6 +1156,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 | std.fs | `info`, `list_dir`, `walk`, `read_bytes`, `each_line`, `each_chunk` (file.read); `append_file`, `write_bytes`, `append_bytes`, `make_dir` (file.write); `delete`, `rename` (file.delete) |
 | std.process | `run`, `run_with` (and `run_bytes`, `run_with_bytes`): run a program to its end, no shell (process); `run_lines` |
 | std.bytes | `from_text`, `to_text`, `from_ints`, `to_ints`, hex, base64, `read_stdin`, `write_stdout` |
+| std.decimal | exact amounts: `parse_decimal`, `add`, `mul`, `div`, `round_to` (a `Rounding` is always stated), `decimal_text`, `split_evenly`, ... |
 | std.bits | `bit_and`, `bit_or`, `bit_xor`, `bit_not`, `shift_left`, `shift_right`, `shift_right_logical`, `rotate_left`, `wrapping_add`, `wrapping_mul`, `parse_hex`, ... on the 64-bit form of an `int` |
 | std.math | `sqrt`, `pow`, `exp`, `log`, trigonometry, `pi`; `floor`, `ceil`, `round` to `int` (correctly rounded; out of domain is R0007) |
 | std.regex | `regex("...")` (checked by `vo check`), `parse_regex`, `is_match`, `first_match`, `all_matches`, `replace_all` (`$1`), `split_on`: linear time |

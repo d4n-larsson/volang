@@ -1,3 +1,3 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"ae21911ecd37ce6e","seed":1,"clock_ms":null,"args":["{port}","/chunked"]}
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"13d331a68870ecce","seed":1,"clock_ms":null,"args":["{port}","/chunked"]}
 {"v":1,"kind":"http","host":"localhost","port":{port},"request":"GET /chunked","result":"ok","value":"HTTP/1.1 200 OK\u000d\u000aContent-Type: text/plain\u000d\u000aTransfer-Encoding: chunked\u000d\u000a\u000d\u000a5;ext=1\u000d\u000ahello\u000d\u000a7\u000d\u000a, chunk\u000d\u000aA\u000d\u000aed world!\u000a\u000d\u000a0\u000d\u000a\u000d\u000a"}
 {"v":1,"kind":"end","status":0}

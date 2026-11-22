@@ -1,0 +1,7 @@
+std/decimal.vo:317:37: runtime error[R0002]: Division by zero.
+ 317 |         return new Decimal { units: a.units / b.units, places: places };
+     |                                     ^^^^^^^^^^^^^^^^^
+trace:
+  at div (std/decimal.vo:317:37)
+      a: Decimal = new Decimal { units: 100, places: 2 }, b: Decimal = new Decimal { units: 0, places: 2 }, places: int = 2, mode: Rounding = Rounding.half_even
+  at main (decimal_div_zero.vo:7:24)

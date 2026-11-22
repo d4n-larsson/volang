@@ -98,7 +98,7 @@ fn parse_url(url: str) -> result[Url] {
     return ok(new Url { tls: tls, host: lower(host), port: port, target: target });
 }
 
-# A response whose body is bytes (spec 021): the status code, the headers in their order, and the body.
+# A response whose body is bytes: the status code, the headers in their order, and the body.
 #     new BytesResponse { status: 200, headers: new list[Header], body: from_text("") }.status is 200
 export record BytesResponse {
     # The HTTP status code, such as 200 or 404.
@@ -433,7 +433,7 @@ export fn serve[E: effects](address: str, handle: fn(Request) -> Response uses E
     return serve_loop(address, answer);
 }
 
-# A request whose body is bytes (spec 021): method, path, query, headers in their order, and body.
+# A request whose body is bytes: method, path, query, headers in their order, and body.
 #     new BytesRequest { method: "GET", path: "/", query: "", headers: new list[Header], body: from_text("") }.path is "/"
 export record BytesRequest {
     # The method, such as GET or POST.

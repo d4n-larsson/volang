@@ -3,8 +3,8 @@
 virtual environment (it needs PyYAML, a dependency of MkDocs).
 
   tools/site.py            build/site-src: the hand-written pages (site/docs) plus the pages generated from
-                           the toolchain's sources (reference, error catalog, standard library, examples,
-                           security, roadmap, specs), and build/mkdocs.gen.yml with the navigation and version
+                           the toolchain's sources (reference, error catalog, standard library, examples),
+                           and build/mkdocs.gen.yml with the navigation and version
   tools/site.py --agents   after `mkdocs build`: a Markdown copy of every page, llms.txt and llms-full.txt in
                            build/site (specs/015-docs-site/contracts/agents.md)
 
@@ -36,9 +36,9 @@ TOOLS = ["check", "run", "test", "build", "fmt", "effects", "explain", "doc", "r
          "replay", "package", "mcp", "lsp", "editors", "version", "json-output", "exit-statuses"]
 
 # repository file -> generated page (site-src path), for rewriting links between sources
+# (the site is language documentation only: the roadmap, the specs and the security reviews stay in the repository)
 PAGES = {"docs/reference.md": "reference/index.md", "docs/errors.md": "errors/index.md",
-         "docs/security.md": "security/index.md", "docs/security-review-1.md": "security/review-1.md",
-         "docs/roadmap.md": "roadmap.md", "examples/README.md": "examples/index.md"}
+         "examples/README.md": "examples/index.md"}
 
 
 def run(args, **kw):
@@ -191,24 +191,6 @@ def examples():
     return nav
 
 
-def copied():
-    for source, page in (("docs/security.md", "security/index.md"), ("docs/security-review-1.md", "security/review-1.md"),
-                         ("docs/roadmap.md", "roadmap.md")):
-        write(page, rewrite_links(open(os.path.join(ROOT, source), encoding="utf-8").read(), source, page), source)
-    rows = []
-    for d in sorted(os.listdir(os.path.join(ROOT, "specs"))):
-        spec = os.path.join(ROOT, "specs", d, "spec.md")
-        if not re.match(r"\d{3}-", d) or not os.path.exists(spec):
-            continue
-        title = re.sub(r"^# (Feature Specification: )?", "", open(spec, encoding="utf-8").readline().strip())
-        results = os.path.exists(os.path.join(ROOT, "specs", d, "results.md"))
-        rows.append(f"| {d[:3]} | [{title}]({REPO}/tree/main/specs/{d}) | "
-                    + (f"[results]({REPO}/blob/main/specs/{d}/results.md)" if results else "") + " |")
-    write("specs.md", "# Specifications\n\nEvery feature of vo was specified, planned and built through a spec in "
-          "`specs/` (spec, plan, tasks, results); the [roadmap](roadmap.md) says what each delivered and what "
-          "comes next.\n\n| Spec | Title | Results |\n|---|---|---|\n" + "\n".join(rows) + "\n")
-
-
 # ---- assembly ----
 
 def assemble():
@@ -219,7 +201,6 @@ def assemble():
     version = run([VO, "version"]).strip()
     commit = run(["git", "rev-parse", "--short", "HEAD"]).strip()
     ref_nav, err_nav, std_nav, ex_nav = reference(), errors(), stdlib(), examples()
-    copied()
 
     def present(prefix, names):
         return [f"{prefix}/{n}.md" for n in names if os.path.exists(os.path.join(SRC, prefix, n + ".md"))]
@@ -230,9 +211,7 @@ def assemble():
            {"Toolchain": present("tools", TOOLS)},
            {"Reference": ref_nav + err_nav},
            {"Standard library": std_nav},
-           {"Examples": ex_nav},
-           {"Project": [{"Security model": "security/index.md"}, {"Security review 1": "security/review-1.md"},
-                        {"Roadmap": "roadmap.md"}, {"Specifications": "specs.md"}]}]
+           {"Examples": ex_nav}]
     nav = [n for n in nav if list(n.values())[0]]
     cfg = yaml.safe_load(open(os.path.join(ROOT, "site", "mkdocs.yml"), encoding="utf-8"))
     cfg["nav"] = nav

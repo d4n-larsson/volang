@@ -1,0 +1,536 @@
+# std.decimal: Exact decimal numbers: amounts of money and other quantities with decimal places.
+# Part of the vo standard library (spec 044). Import items one by one: `import std.decimal.NAME;`.
+# A Decimal is a whole number of units and a number of decimal places (0 to 18): 12.50 is 1250 units
+# at 2 places. Every function is pure and exact: nothing is rounded unless a Rounding is passed, and a
+# result that does not fit 64 bits of units or 18 places stops the program with R0001, as int
+# arithmetic does. A Decimal whose places are outside 0 to 18 is refused with R0012.
+# `==` compares units and places, so 1.5 and 1.50 differ: compare values with `equal` or `compare`,
+# and use `normalize` for map keys. In JSON and databases, store `decimal_text(d)`.
+
+const int_min = 0x8000000000000000;
+const most_parts = 2147483647;
+
+# An exact decimal number: units / 10^places.
+#     decimal(1250, 2) == new Decimal { units: 1250, places: 2 } is true
+#     decimal(15, 1) == decimal(150, 2) is false
+export record Decimal {
+    # The value times 10^places.
+    units: int;
+    # The number of decimal places, 0 to 18.
+    places: int;
+}
+
+# How a result that does not fit the places asked for is rounded.
+#     decimal_text(round_to(decimal(125, 3), 2, Rounding.half_even)) is "0.12"
+#     decimal_text(round_to(decimal(125, 3), 2, Rounding.half_up)) is "0.13"
+export variant Rounding {
+    # To the nearest; a tie goes to the even digit (banker's rounding).
+    half_even;
+    # To the nearest; a tie goes away from zero.
+    half_up;
+    # Toward zero (truncation).
+    down;
+    # Away from zero.
+    up;
+    # Toward negative infinity.
+    floor;
+    # Toward positive infinity.
+    ceiling;
+}
+
+fn places_0_to_18(n: int) -> bool {
+    return n >= 0 and n <= 18;
+}
+
+fn pow10(n: int) -> int {
+    var p = 1;
+    for _ in 0..n {
+        set p = p * 10;
+    }
+    return p;
+}
+
+fn overflow() -> int {
+    let most = 0x7FFFFFFFFFFFFFFF;
+    return most + 1;
+}
+
+fn below_zero(x: int) -> int {
+    if x > 0 {
+        return 0 - x;
+    }
+    return x;
+}
+
+# The decimal with these units and places.
+#     decimal_text(decimal(1250, 2)) is "12.50"
+#     decimal_text(decimal(-5, 3)) is "-0.005"
+export fn decimal(units: int, places: int) -> Decimal
+    requires places_0_to_18(places) {
+    return new Decimal { units: units, places: places };
+}
+
+# A whole number as a decimal with no places.
+#     decimal_text(from_int(12)) is "12"
+export fn from_int(n: int) -> Decimal {
+    return new Decimal { units: n, places: 0 };
+}
+
+# Reads a decimal: an optional `-`, digits, and optionally `.` with 1 to 18 digits. The places written
+# are the places kept. No `+`, exponent, spaces or separators.
+#     parse_decimal("12.50") == ok(decimal(1250, 2)) is true
+#     parse_decimal("-0.05") == ok(decimal(-5, 2)) is true
+#     parse_decimal("1e3") == err("invalid decimal: 1e3") is true
+export fn parse_decimal(s: str) -> result[Decimal] {
+    let n = len(s);
+    var i = 0;
+    var negative = false;
+    if n > 0 and byte_at(s, 0) == 45 {
+        set negative = true;
+        set i = 1;
+    }
+    var value = 0;
+    var whole = 0;
+    var places = 0;
+    var point = false;
+    while i < n {
+        let c = byte_at(s, i);
+        if c == 46 and not point and whole > 0 {
+            set point = true;
+        } else if c >= 48 and c <= 57 {
+            let d = c - 48;
+            if value < (int_min + d) / 10 {
+                return err("invalid decimal: " + s);
+            }
+            set value = value * 10 - d;
+            if point {
+                set places = places + 1;
+            } else {
+                set whole = whole + 1;
+            }
+        } else {
+            return err("invalid decimal: " + s);
+        }
+        set i = i + 1;
+    }
+    if whole == 0 or (point and places == 0) or places > 18 or (value == int_min and not negative) {
+        return err("invalid decimal: " + s);
+    }
+    if negative {
+        return ok(new Decimal { units: value, places: places });
+    }
+    return ok(new Decimal { units: 0 - value, places: places });
+}
+
+# The text of a decimal, with exactly its places; `parse_decimal` reads it back.
+#     decimal_text(decimal(1250, 2)) is "12.50"
+#     decimal_text(decimal(-5, 2)) is "-0.05"
+#     decimal_text(decimal(7, 0)) is "7"
+export fn decimal_text(d: Decimal) -> str
+    requires places_0_to_18(d.places) {
+    var digits = str(d.units);
+    var sign = "";
+    if d.units < 0 {
+        set sign = "-";
+        set digits = slice(digits, 1, len(digits));
+    }
+    if d.places == 0 {
+        return sign + digits;
+    }
+    while len(digits) <= d.places {
+        set digits = "0" + digits;
+    }
+    let cut = len(digits) - d.places;
+    return sign + slice(digits, 0, cut) + "." + slice(digits, cut, len(digits));
+}
+
+# The text of a decimal with `,` between groups of three digits of the whole part.
+#     grouped_text(decimal(-123456780, 2)) is "-1,234,567.80"
+#     grouped_text(decimal(99950, 2)) is "999.50"
+export fn grouped_text(d: Decimal) -> str
+    requires places_0_to_18(d.places) {
+    let text = decimal_text(d);
+    var start = 0;
+    if d.units < 0 {
+        set start = 1;
+    }
+    var end = len(text);
+    if d.places > 0 {
+        set end = end - d.places - 1;
+    }
+    var out = slice(text, 0, start);
+    var i = start;
+    while i < end {
+        if i > start and (end - i) % 3 == 0 {
+            set out = out + ",";
+        }
+        set out = out + slice(text, i, i + 1);
+        set i = i + 1;
+    }
+    return out + slice(text, end, len(text));
+}
+
+fn scaled_sum(h: int, r: int, p: int) -> int {
+    # h * p + r without overflow unless the result does not fit: h and r are first given the same sign.
+    if h > 0 and r < 0 {
+        return (h - 1) * p + (r + p);
+    }
+    if h < 0 and r > 0 {
+        return (h + 1) * p + (r - p);
+    }
+    return h * p + r;
+}
+
+# The exact sum, with the larger number of places.
+#     decimal_text(add(decimal(15, 1), decimal(225, 2))) is "3.75"
+export fn add(a: Decimal, b: Decimal) -> Decimal
+    requires places_0_to_18(a.places)
+    requires places_0_to_18(b.places) {
+    if a.places == b.places {
+        return new Decimal { units: a.units + b.units, places: a.places };
+    }
+    if a.places > b.places {
+        let p = pow10(a.places - b.places);
+        return new Decimal {
+            units: scaled_sum(a.units / p + b.units, a.units % p, p),
+            places: a.places
+        };
+    }
+    let p = pow10(b.places - a.places);
+    return new Decimal {
+        units: scaled_sum(b.units / p + a.units, b.units % p, p),
+        places: b.places
+    };
+}
+
+# The exact difference, with the larger number of places.
+#     decimal_text(sub(decimal(10, 0), decimal(25, 2))) is "9.75"
+export fn sub(a: Decimal, b: Decimal) -> Decimal
+    requires places_0_to_18(a.places)
+    requires places_0_to_18(b.places) {
+    if a.places == b.places {
+        return new Decimal { units: a.units - b.units, places: a.places };
+    }
+    if a.places > b.places {
+        let p = pow10(a.places - b.places);
+        return new Decimal {
+            units: scaled_sum(a.units / p - b.units, a.units % p, p),
+            places: a.places
+        };
+    }
+    let p = pow10(b.places - a.places);
+    return new Decimal {
+        units: scaled_sum(a.units - b.units / p, 0 - b.units % p, p),
+        places: b.places
+    };
+}
+
+# The exact product; its places are the sum of the places (R0001 above 18: round an operand first).
+#     decimal_text(mul(decimal(1999, 2), decimal(25, 2))) is "4.9975"
+export fn mul(a: Decimal, b: Decimal) -> Decimal
+    requires places_0_to_18(a.places)
+    requires places_0_to_18(b.places) {
+    if a.places + b.places > 18 {
+        return new Decimal { units: overflow(), places: 18 };
+    }
+    return new Decimal { units: a.units * b.units, places: a.places + b.places };
+}
+
+# The decimal with the opposite sign.
+#     decimal_text(negate(decimal(150, 2))) is "-1.50"
+export fn negate(d: Decimal) -> Decimal
+    requires places_0_to_18(d.places) {
+    return new Decimal { units: 0 - d.units, places: d.places };
+}
+
+# The decimal without its sign.
+#     decimal_text(absolute(decimal(-150, 2))) is "1.50"
+export fn absolute(d: Decimal) -> Decimal
+    requires places_0_to_18(d.places) {
+    return new Decimal { units: abs(d.units), places: d.places };
+}
+
+# The exact sum of a list, added in order; 0 with no places when it is empty.
+#     decimal_text(total([decimal(150, 2), decimal(25, 1)])) is "4.00"
+#     decimal_text(total([])) is "0"
+export fn total(ds: list[Decimal]) -> Decimal {
+    var sum = new Decimal { units: 0, places: 0 };
+    for d in ds {
+        set sum = add(sum, d);
+    }
+    return sum;
+}
+
+fn steps_away(mode: Rounding, exact: bool, half: int, odd: bool, negative: bool) -> bool {
+    # Whether the exact result, with this remainder, is stepped away from zero.
+    # half: -1, 0 or 1 for a remainder below, at or above half of the last place.
+    if exact {
+        return false;
+    }
+    match mode {
+        case half_even {
+            return half > 0 or (half == 0 and odd);
+        }
+        case half_up {
+            return half >= 0;
+        }
+        case down {
+            return false;
+        }
+        case up {
+            return true;
+        }
+        case floor {
+            return negative;
+        }
+        case ceiling {
+            return not negative;
+        }
+    }
+}
+
+fn add_mod(x: int, y: int, nb: int) -> int {
+    # x + y for remainders of a division by nb (all three at or below zero), less nb when it reaches nb.
+    if x <= nb - y {
+        return x - nb + y;
+    }
+    return x + y;
+}
+
+fn carries(x: int, y: int, nb: int) -> int {
+    # Whether add_mod(x, y, nb) took nb off.
+    if x <= nb - y {
+        return 1;
+    }
+    return 0;
+}
+
+# The quotient a / b rounded to a number of places by the stated rule. A zero divisor is R0002.
+#     decimal_text(div(from_int(10), from_int(3), 2, Rounding.half_even)) is "3.33"
+#     decimal_text(div(from_int(2), from_int(3), 2, Rounding.half_even)) is "0.67"
+#     decimal_text(div(decimal(-1, 0), from_int(8), 2, Rounding.floor)) is "-0.13"
+export fn div(a: Decimal, b: Decimal, places: int, mode: Rounding) -> Decimal
+    requires places_0_to_18(a.places)
+    requires places_0_to_18(b.places)
+    requires places_0_to_18(places) {
+    if b.units == 0 {
+        return new Decimal { units: a.units / b.units, places: places };
+    }
+    # Long division on magnitudes held as numbers at or below zero (the most negative int has no
+    # positive counterpart): na / nb, then one digit per place, never forming a 128-bit value.
+    let negative = (a.units < 0) != (b.units < 0);
+    var na = below_zero(a.units);
+    let nb = below_zero(b.units);
+    let k = places + b.places - a.places;
+    var sticky = 0;
+    var sticky_of = 1;
+    if k < 0 {
+        set sticky_of = pow10(0 - k);
+        set sticky = na % sticky_of;
+        set na = na / sticky_of;
+    }
+    var nq = 0;
+    if nb == int_min {
+        if na == int_min {
+            set nq = -1;
+        }
+    } else {
+        set nq = na / (0 - nb);
+    }
+    var nr = 0;
+    if nb < -1 {
+        set nr = na % nb;
+    }
+    for _ in 0..k {
+        var digit = 0;
+        if nb >= -922337203685477580 {
+            set digit = nr * 10 / nb;
+            set nr = nr * 10 % nb;
+        } else {
+            let r2 = add_mod(nr, nr, nb);
+            let r4 = add_mod(r2, r2, nb);
+            let r8 = add_mod(r4, r4, nb);
+            set digit = 5 * carries(nr, nr, nb) + 2 * carries(r2, r2, nb) + carries(r4, r4, nb) + carries(r8, r2, nb);
+            set nr = add_mod(r8, r2, nb);
+        }
+        set nq = nq * 10 - digit;
+    }
+    # The remainder against half of the divisor: nr against nb - nr, and the sticky part when the
+    # two are one apart.
+    let rest = nb - nr;
+    var half = -1;
+    if nr < rest {
+        set half = 1;
+    } else if nr == rest {
+        if sticky == 0 {
+            set half = 0;
+        } else {
+            set half = 1;
+        }
+    } else if nr == rest + 1 {
+        if sticky * 2 < 0 - sticky_of {
+            set half = 1;
+        } else if sticky * 2 == 0 - sticky_of {
+            set half = 0;
+        }
+    }
+    if steps_away(mode, nr == 0 and sticky == 0, half, nq % 2 != 0, negative) {
+        set nq = nq - 1;
+    }
+    if negative {
+        return new Decimal { units: nq, places: places };
+    }
+    return new Decimal { units: 0 - nq, places: places };
+}
+
+# The decimal at exactly this number of places, rounded by the stated rule; exact when places are
+# added.
+#     decimal_text(round_to(decimal(49975, 4), 2, Rounding.half_even)) is "5.00"
+#     decimal_text(round_to(decimal(-125, 3), 2, Rounding.half_up)) is "-0.13"
+#     decimal_text(round_to(decimal(15, 1), 3, Rounding.down)) is "1.500"
+export fn round_to(d: Decimal, places: int, mode: Rounding) -> Decimal
+    requires places_0_to_18(d.places)
+    requires places_0_to_18(places) {
+    return div(d, new Decimal { units: 1, places: 0 }, places, mode);
+}
+
+# -1, 0 or 1 as a is below, equal to or above b by value, whatever their places.
+#     compare(decimal(15, 1), decimal(150, 2)) is 0
+#     compare(decimal(149, 2), decimal(15, 1)) is -1
+export fn compare(a: Decimal, b: Decimal) -> int
+    requires places_0_to_18(a.places)
+    requires places_0_to_18(b.places) {
+    let pa = pow10(a.places);
+    let pb = pow10(b.places);
+    var x = a.units / pa;
+    var y = b.units / pb;
+    if x == y {
+        set x = a.units % pa * pow10(18 - a.places);
+        set y = b.units % pb * pow10(18 - b.places);
+    }
+    if x < y {
+        return -1;
+    }
+    if x > y {
+        return 1;
+    }
+    return 0;
+}
+
+# Whether two decimals have the same value: 1.5 equals 1.50 (`==` says they differ).
+#     equal(decimal(15, 1), decimal(150, 2)) is true
+export fn equal(a: Decimal, b: Decimal) -> bool
+    requires places_0_to_18(a.places)
+    requires places_0_to_18(b.places) {
+    return compare(a, b) == 0;
+}
+
+# Whether the value is zero.
+#     is_zero(decimal(0, 2)) is true
+export fn is_zero(d: Decimal) -> bool {
+    return d.units == 0;
+}
+
+# Whether the value is below zero.
+#     is_negative(decimal(-1, 2)) is true
+export fn is_negative(d: Decimal) -> bool {
+    return d.units < 0;
+}
+
+# The same value with the fewest places: one form per value, for `==` and map keys.
+#     normalize(decimal(150, 2)) == decimal(15, 1) is true
+#     normalize(decimal(0, 2)) == from_int(0) is true
+export fn normalize(d: Decimal) -> Decimal
+    requires places_0_to_18(d.places) {
+    var units = d.units;
+    var places = d.places;
+    while places > 0 and units % 10 == 0 {
+        set units = units / 10;
+        set places = places - 1;
+    }
+    return new Decimal { units: units, places: places };
+}
+
+# The value as an int when it is whole; an error otherwise (round first to drop a fraction).
+#     to_int(decimal(1200, 2)) == ok(12) is true
+#     to_int(decimal(1250, 2)) == err("not a whole number: 12.50") is true
+export fn to_int(d: Decimal) -> result[int]
+    requires places_0_to_18(d.places) {
+    let p = pow10(d.places);
+    if d.units % p != 0 {
+        return err("not a whole number: " + decimal_text(d));
+    }
+    return ok(d.units / p);
+}
+
+# The nearest float: approximate, for display or statistics, not for amounts.
+#     to_float(decimal(1250, 2)) is 12.5
+export fn to_float(d: Decimal) -> float
+    requires places_0_to_18(d.places) {
+    return __text_float(decimal_text(d));
+}
+
+# Splits an amount into n parts that sum to it exactly: the left-over units go to the first parts,
+# one each. An error when n is below 1.
+#     split_evenly(decimal(10000, 2), 3) == ok([decimal(3334, 2), decimal(3333, 2), decimal(3333, 2)]) is true
+export fn split_evenly(d: Decimal, n: int) -> result[list[Decimal]]
+    requires places_0_to_18(d.places) {
+    if n < 1 or n > most_parts {
+        return err("cannot split into " + str(n) + " parts");
+    }
+    let nu = below_zero(d.units);
+    let share = nu / n;
+    let more = 0 - nu % n;
+    let out = new list[Decimal];
+    for i in 0..n {
+        var part = share;
+        if i < more {
+            set part = part - 1;
+        }
+        if d.units > 0 {
+            set part = 0 - part;
+        }
+        push(out, new Decimal { units: part, places: d.places });
+    }
+    return ok(out);
+}
+
+# Splits an amount by ratios into parts that sum to it exactly: each part gets the whole units of
+# its share, and the left-over units go to the first parts with a ratio, one each. An error when
+# there is no ratio, one is negative, or they sum to 0 or to more than 2147483647.
+#     allocate(decimal(10000, 2), [1, 1, 2]) == ok([decimal(2500, 2), decimal(2500, 2), decimal(5000, 2)]) is true
+#     allocate(decimal(5, 2), [3, 7]) == ok([decimal(2, 2), decimal(3, 2)]) is true
+export fn allocate(d: Decimal, ratios: list[int]) -> result[list[Decimal]]
+    requires places_0_to_18(d.places) {
+    var sum = 0;
+    for r in ratios {
+        if r < 0 or r > most_parts or sum + r > most_parts {
+            return err("invalid ratios: each must be 0 or more, and their sum at most 2147483647");
+        }
+        set sum = sum + r;
+    }
+    if sum == 0 {
+        return err("invalid ratios: their sum is 0");
+    }
+    let nu = below_zero(d.units);
+    let shares = new list[int];
+    var left = nu;
+    for r in ratios {
+        let share = nu / sum * r + nu % sum * r / sum;
+        push(shares, share);
+        set left = left - share;
+    }
+    let out = new list[Decimal];
+    for i in 0..len(ratios) {
+        var part = shares[i];
+        if left < 0 and ratios[i] > 0 {
+            set part = part - 1;
+            set left = left + 1;
+        }
+        if d.units > 0 {
+            set part = 0 - part;
+        }
+        push(out, new Decimal { units: part, places: d.places });
+    }
+    return ok(out);
+}

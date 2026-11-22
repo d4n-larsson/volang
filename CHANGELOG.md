@@ -6,6 +6,10 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- `std.decimal`: exact decimal numbers for money and other amounts. A `Decimal` is units and places (0 to 18);
+  `parse_decimal`, `decimal_text`, `grouped_text`, exact `add`, `sub`, `mul` and `total`, `div` and `round_to`
+  with a stated `Rounding`, `compare`, `equal`, `normalize`, `to_int`, `to_float`, and `split_evenly` and
+  `allocate`, whose parts sum to the amount. A result that does not fit stops with R0001.
 - `std.bits`: `bit_and`, `bit_or`, `bit_xor`, `bit_not`, `shift_left`, `shift_right`, `shift_right_logical`,
   `rotate_left`, `rotate_right`, `wrapping_add`, `wrapping_sub`, `wrapping_mul`, `parse_hex`, `parse_binary`,
   on the 64-bit form of an `int`. No new operators: `&`, `|`, `^`, `~`, `<<` and `>>` now name the module.

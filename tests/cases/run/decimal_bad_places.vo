@@ -1,0 +1,9 @@
+import std.decimal.Decimal;
+import std.decimal.add;
+import std.decimal.decimal;
+import std.decimal.decimal_text;
+
+fn main() uses console {
+    let odd = new Decimal { units: 1, places: 19 };
+    print(decimal_text(add(odd, decimal(1, 0))));
+}

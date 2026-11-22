@@ -1,0 +1,62 @@
+-- text
+[12.50] 1250 at 2 is 12.50
+[0] 0 at 0 is 0
+[-0.00] 0 at 2 is 0.00
+[-0.05] -5 at 2 is -0.05
+[007.50] 750 at 2 is 7.50
+[9223372036854775807] 9223372036854775807 at 0 is 9223372036854775807
+[-9223372036854775808] -9223372036854775808 at 0 is -9223372036854775808
+[0.000000000000000001] 1 at 18 is 0.000000000000000001
+[] error: invalid decimal: 
+[abc] error: invalid decimal: abc
+[1.2.3] error: invalid decimal: 1.2.3
+[1e3] error: invalid decimal: 1e3
+[.5] error: invalid decimal: .5
+[5.] error: invalid decimal: 5.
+[ 1] error: invalid decimal:  1
+[+1] error: invalid decimal: +1
+[1,000] error: invalid decimal: 1,000
+[-] error: invalid decimal: -
+[0.0000000000000000001] error: invalid decimal: 0.0000000000000000001
+[9223372036854775808] error: invalid decimal: 9223372036854775808
+-1,234,567.80 999.5 1,000 -0.05
+-- sums
+3.75 -0.75 9.999
+0.60 0
+-1.50 1.50 -7
+922337203685477580.7
+-- products and rounding
+4.9975
+4.9975 -> 5.00 5.00 4.99 5.00 4.99 5.00
+0.125 -> 0.12 0.13 0.12 0.13 0.12 0.13
+-0.125 -> -0.12 -0.13 -0.12 -0.13 -0.13 -0.12
+0.121 -> 0.12 0.12 0.12 0.13 0.12 0.13
+-0.121 -> -0.12 -0.12 -0.12 -0.13 -0.13 -0.12
+1.5 -> 1.500 1.500 1.500 1.500 1.500 1.500
+2.5 -> 2 3 2 3 2 3
+-- division
+3.33 0.67
+0.333333333333333333
+-0.12 -0.13
+0.00000000000000000 1429
+-9223372036854775808 0.000000000000000000
+-- comparing
+0 -1 -1 1
+true false true 0 1200
+true true false
+2 3
+-- converting
+12; error: not a whole number: 12.50; -3
+12.5 0.1 9223372036854776.0
+-- splitting
+33.34 33.33 33.33 = 100.00
+-33.34 -33.33 -33.33 = -100.00
+0.01 0.01 0.00 0.00 0.00 = 0.02
+error: cannot split into 0 parts
+25.00 25.00 50.00 = 100.00
+0.02 0.03 = 0.05
+0.00 0.02 0.03 = 0.05
+error: invalid ratios: their sum is 0
+error: invalid ratios: each must be 0 or more, and their sum at most 2147483647
+error: invalid ratios: their sum is 0
+error: invalid ratios: each must be 0 or more, and their sum at most 2147483647

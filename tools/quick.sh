@@ -32,6 +32,7 @@ cases() {
     tcp) echo "tcp effects effect_sets http https replay serve tasks doc" ;; # spec 039
     stream) echo "fs fs_steps process process_steps http replay tcp doc" ;; # spec 040
     bits) echo "lex fmt run check const doc" ;; # spec 043
+    decimal) echo "run check doc" ;; # spec 044
     bytes) echo "bytes bytes_steps run doc" ;;
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
@@ -73,6 +74,7 @@ scripts() { # one per line, with arguments
     tcp) printf '%s\n' catalog.py ref_examples.py doc_conformance.py tcp.py ;; # spec 039
     stream) printf '%s\n' catalog.py ref_examples.py doc_conformance.py stream.py ;; # spec 040
     bits) printf '%s\n' catalog.py ref_examples.py doc_conformance.py bits.py ;; # spec 043
+    decimal) printf '%s\n' ref_examples.py doc_conformance.py decimals.py ;; # spec 044
     bytes) echo doc_conformance.py ;;
     float) printf '%s\n' math_vectors.py json_corpus.py json_stream.py ref_examples.py doc_conformance.py ;;
     json) printf '%s\n' json_corpus.py json_stream.py doc_conformance.py ;;
@@ -110,6 +112,7 @@ area_of() {
     src/lsp.c|src/jsonrpc.c|tests/lsp.py) echo lsp ;; # spec 038
     src/tcp.c|src/tls.c|src/net.c|std/tcp.vo|tests/tcp.py|tests/tcp_server.py) echo tcp ;; # spec 039
     std/bits.vo|tests/bits.py|tests/bits/*) echo bits ;; # spec 043
+    std/decimal.vo|tests/decimals.py) echo decimal ;; # spec 044
     src/fs.c|src/process.c|std/fs.vo|std/process.vo|tests/stream.py) echo stream fs ;; # spec 040
     editors/*|tests/grammars.py|site/pygments_vo/pygments_vo.py) echo grammars ;; # spec 037
     src/check_effects.c|src/fmt.c|tests/effect_sets_*.py) echo effects ;; # spec 030
@@ -164,7 +167,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits decimal)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done

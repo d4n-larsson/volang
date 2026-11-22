@@ -1,4 +1,4 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"d5944842b5e4d736","seed":1,"clock_ms":null,"args":[]}
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"dd8523a876d9f5fb","seed":1,"clock_ms":null,"args":[]}
 {"v":1,"kind":"info","path":"work/a.txt","result":"ok","value":"f5"}
 {"v":1,"kind":"append_file","path":"work/log.txt","result":"ok"}
 {"v":1,"kind":"make_dir","path":"work/sub","result":"ok"}

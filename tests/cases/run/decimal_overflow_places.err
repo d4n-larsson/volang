@@ -1,0 +1,10 @@
+std/decimal.vo:55:12: runtime error[R0001]: Integer overflow.
+  55 |     return most + 1;
+     |            ^^^^^^^^
+trace:
+  at overflow (std/decimal.vo:55:12)
+      most: int = 9223372036854775807
+  at mul (std/decimal.vo:234:37)
+      a: Decimal = new Decimal { units: 1, places: 10 }, b: Decimal = new Decimal { units: 1, places: 10 }
+  at main (decimal_overflow_places.vo:7:24)
+      small: Decimal = new Decimal { units: 1, places: 10 }

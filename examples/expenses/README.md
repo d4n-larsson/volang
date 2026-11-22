@@ -52,14 +52,16 @@ Each test names the requirements it proves with `@spec("FR-...")` on the line ab
   makes `render` read a file, the checker first asks every caller to declare it (E0501, with a fix), and
   then `vo check` fails with E0504, "`render` gains file.read("data/")", naming the call that brought it
   in, until `vo effects --update` records the change for a reviewer to approve.
-- **The standard library.** `std.json` reads the data, `std.time` validates the dates, `std.text` pads the
-  table. `vo doc std.text` lists what else is there.
+- **The standard library.** `std.json` reads the data, `std.time` validates the dates, `std.decimal`
+  carries the amounts, `std.text` pads the table. `vo doc std.text` lists what else is there.
 - **Errors as values.** Bad input (an invalid date, a negative amount, a missing field) is an `err`
   passed up with `try`; `main` returning `err` exits with status 1 and prints the message.
 - **Tests next to the code.** The tests and the property live in `report.vo`, beside the functions they
   test: `vo run` ignores them, and `vo test main.vo` runs them with the rest of the program. The property checks that grouping never loses money,
   whatever the amounts.
-- **A contract.** `money` declares `requires cents >= 0`, checked on every call.
+- **A contract.** `amount_of` declares `requires cents >= 0`, checked on every call.
+- **Exact amounts.** Amounts are `std.decimal` values (1290.50 is 129050 units at 2 places), so sums and
+  the printed text are exact and nothing is formatted by hand.
 
 ## Files
 

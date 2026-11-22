@@ -1,0 +1,8 @@
+import std.decimal.decimal;
+import std.decimal.decimal_text;
+import std.decimal.mul;
+
+fn main() uses console {
+    let big = decimal(5000000000, 2);
+    print(decimal_text(mul(big, big)));
+}

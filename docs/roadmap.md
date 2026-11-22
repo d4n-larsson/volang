@@ -50,6 +50,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [041](../specs/041-package-download/) | Downloading packages: `vo package ENTRY NAME URL` fetches a tar or tar.gz archive over HTTPS, unpacks its `.vo` files, pins them by content and prints the effects the package declares; `--restore` on a fresh clone; hostile archives refused whole | **Implemented** ([results](../specs/041-package-download/results.md)) |
 | [042](../specs/042-strings/) | Strings: raw strings between backticks, the escapes `\\r` and `\\u{HEX}`, `for c in s`, `upper`/`lower` for Latin, Greek and Cyrillic, exponent float literals, `std.text.char_count` and `equal_fold` | **Implemented** ([results](../specs/042-strings/results.md)) |
 | [043](../specs/043-bits/) | Bits: `std.bits` (and, or, xor, not, shifts, rotations, wrapping arithmetic, `parse_hex`, `parse_binary`) and hex and binary integer literals | **Implemented** ([results](../specs/043-bits/results.md)) |
+| [044](../specs/044-decimal/) | Decimal: `std.decimal`, exact decimal numbers (units and places) with stated rounding, text, comparison and allocation, written in vo | **Implemented** ([results](../specs/044-decimal/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -506,6 +507,17 @@ CRC-32 and FNV-1a over 1 MiB take well under a tenth of a second, so no instruct
   bits (`popcount`, leading zeros), bit operations on `bytes`.
 
 ## Planned after 017
+
+### 044: decimal (implemented)
+
+Money needs numbers that hold 0.10 exactly. `std.decimal` is a library type over `int`: a `Decimal` is
+a count of units and a number of places (0 to 18), and the whole module is written in vo, with no new
+builtin (100,000 invoice lines take 80 ms). Sums and products are exact; `div` and `round_to` always
+take a `Rounding`; a result that does not fit stops with R0001, and only then: division is long
+division on the remainder, so no 128-bit value is ever formed. The places are kept (1.50 prints as
+1.50), which means `==` tells 1.5 from 1.50: `equal`, `compare` and `normalize` go by value.
+`split_evenly` and `allocate` give parts that sum to the amount. No decimal literal and no `+` on
+decimals: functions only. Every operation is checked against Python's `decimal` on 10,000 random cases.
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
 it is next; anything that reaches the outside world gets an effect, scopes, and record and replay.

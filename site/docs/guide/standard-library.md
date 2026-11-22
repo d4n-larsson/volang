@@ -53,7 +53,7 @@ fn pick[T](xs: list[T]) -> result[T] uses random
 With `--json`, each item is a `doc` record with `signature`, `params`, `returns`, `effects`,
 `description` and `example`. The same pages are on this site: [std.json](../std/json.md),
 [std.time](../std/time.md), [std.text](../std/text.md), [std.random](../std/random.md),
-[std.http](../std/http.md), [std.tcp](../std/tcp.md), [std.bits](../std/bits.md) and [std.collections](../std/collections.md).
+[std.http](../std/http.md), [std.tcp](../std/tcp.md), [std.bits](../std/bits.md), [std.decimal](../std/decimal.md) and [std.collections](../std/collections.md).
 
 ## Effects of library functions
 
@@ -729,6 +729,85 @@ true false
 
 For a 32-bit algorithm, keep values in 0 to 4294967295 by masking after each step:
 `bit_and(a + b, 0xFFFFFFFF)`. Details: [std.bits](../std/bits.md).
+
+## std.decimal: exact amounts
+
+A `float` cannot hold 0.10, so money and other quantities with decimal places are `Decimal` values: a
+whole number of units and a number of places (0 to 18). 12.50 is 1250 units at 2 places. Nothing is
+rounded unless you say how, and a result that does not fit stops the program with
+[R0001](../errors/R0001.md), as `int` arithmetic does.
+
+| Functions | Result |
+|---|---|
+| `parse_decimal(s)` | a `result[Decimal]` from `"12.50"`; the places written are kept |
+| `decimal(units, places)`, `from_int(n)` | a decimal from numbers |
+| `decimal_text(d)`, `grouped_text(d)` | `"1290.50"`, `"1,290.50"` |
+| `add(a, b)`, `sub(a, b)`, `total(list)` | exact, with the larger number of places |
+| `mul(a, b)` | exact; the places add up |
+| `div(a, b, places, mode)`, `round_to(d, places, mode)` | rounded to `places` by a `Rounding` |
+| `compare(a, b)`, `equal(a, b)`, `is_zero(d)`, `is_negative(d)` | by value: 1.5 equals 1.50 |
+| `normalize(d)` | the same value with the fewest places |
+| `to_int(d)`, `to_float(d)` | a `result[int]` when whole; the nearest float |
+| `split_evenly(d, n)`, `allocate(d, ratios)` | parts that sum to `d` exactly |
+| `negate(d)`, `absolute(d)` | the sign |
+
+There is no default rounding: `div` and `round_to` take a `Rounding` (`half_even`, `half_up`, `down`,
+`up`, `floor`, `ceiling`), so the rule is in the source where a reviewer reads it. An invoice line with
+25% VAT, and the total split three ways without losing a cent:
+
+```vo
+import std.decimal.Rounding;
+import std.decimal.add;
+import std.decimal.decimal_text;
+import std.decimal.grouped_text;
+import std.decimal.mul;
+import std.decimal.parse_decimal;
+import std.decimal.round_to;
+import std.decimal.split_evenly;
+
+fn main() -> result[void] uses console {
+    let net = try parse_decimal("1999.90");
+    let vat = round_to(mul(net, try parse_decimal("0.25")), 2, Rounding.half_even);
+    let gross = add(net, vat);
+    print(decimal_text(vat) + " " + grouped_text(gross));
+    for part in try split_evenly(gross, 3) {
+        print(decimal_text(part));
+    }
+    return ok();
+}
+```
+
+```output
+499.98 2,499.88
+833.30
+833.29
+833.29
+```
+
+The places are part of a decimal: 1.50 prints as `1.50`. So `==`, which compares records field by
+field, tells 1.5 from 1.50. Compare values with `equal` or `compare`, and `normalize` a decimal before
+using it as a map key:
+
+```vo
+import std.decimal.decimal;
+import std.decimal.equal;
+import std.decimal.normalize;
+
+fn main() uses console {
+    let a = decimal(15, 1);
+    let b = decimal(150, 2);
+    print(str(a == b) + " " + str(equal(a, b)) + " " + str(normalize(a) == normalize(b)));
+}
+```
+
+```output
+false true true
+```
+
+In JSON, a database or a file, store a decimal as its text (`decimal_text(d)`, read back with
+`parse_decimal`), not as a JSON number or a float: the text keeps every digit and the places. When all
+amounts have the same places, an integer column of units works too (`decimal(cents, 2)`). Details:
+[std.decimal](../std/decimal.md).
 
 ## std.math
 

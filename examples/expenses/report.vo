@@ -1,5 +1,10 @@
 # Expenses and the report built from them. Everything here is pure: no `uses`, so these functions
 # cannot print, read files or touch the network, and their tests need no setup.
+import std.decimal.Decimal;
+import std.decimal.add;
+import std.decimal.decimal;
+import std.decimal.decimal_text;
+import std.decimal.total;
 import std.json.Json;
 import std.json.as_array;
 import std.json.int_field;
@@ -13,13 +18,13 @@ import std.time.parse_time;
 export record Expense {
     date: str;
     category: str;
-    cents: int;
+    amount: Decimal;
     note: str;
 }
 
 export record Total {
     name: str;
-    cents: int;
+    amount: Decimal;
 }
 
 # A date that does not parse, and why.
@@ -28,7 +33,7 @@ export record DateProblem {
     reason: str;
 }
 
-# How reading the expenses can fail: callers can tell a bad date from a negative amount (spec 032).
+# How reading the expenses can fail: callers can tell a bad date from a negative amount.
 export variant ExpenseError {
     # The JSON is not an array of objects with the four fields; the message says where.
     shape(str);
@@ -76,43 +81,37 @@ export fn expenses_from(doc: Json) -> result[list[Expense], ExpenseError] {
         push(out, new Expense {
             date: date,
             category: try map_err(text_field(item, "category"), shape_error),
-            cents: cents,
+            amount: amount_of(cents),
             note: try map_err(text_field(item, "note"), shape_error)
         });
     }
     return ok(out);
 }
 
-# Cents as units and two decimals: 129050 is "1290.50".
-export fn money(cents: int) -> str
+# An amount read as whole cents: 129050 is 1290.50, exactly.
+export fn amount_of(cents: int) -> Decimal
     requires cents >= 0 {
-    let c = cents % 100;
-    if c < 10 {
-        return str(cents / 100) + ".0" + str(c);
-    }
-    return str(cents / 100) + "." + str(c);
+    return decimal(cents, 2);
 }
 
 # The sum of the amounts for each key, in the order the keys first appear.
 export fn totals(xs: list[Expense], key: fn(Expense) -> str) -> list[Total] {
-    let sums = new map[str, int];
+    let sums = new map[str, Decimal];
     for e in xs {
         let k = key(e);
-        set sums[k] = get_or(sums, k, 0) + e.cents;
+        set sums[k] = add(get_or(sums, k, decimal(0, 2)), e.amount);
     }
     let out = new list[Total];
     for k in keys(sums) {
-        push(out, new Total { name: k, cents: sums[k] });
+        push(out, new Total { name: k, amount: sums[k] });
     }
     return out;
 }
 
-export fn sum(xs: list[Total]) -> int {
-    var s = 0;
-    for t in xs {
-        set s = s + t.cents;
-    }
-    return s;
+export fn sum(xs: list[Total]) -> Decimal {
+    return add(decimal(0, 2), total(map(xs, fn(t: Total) -> Decimal {
+        return t.amount;
+    })));
 }
 
 # A titled table: one row per total, names padded to the widest, amounts right-aligned.
@@ -126,9 +125,9 @@ fn table(title: str, rows: list[Total]) -> str {
     var out = align_left(title, w) + "  " + align_right("amount", 10) + "\n";
     set out = out + repeat("-", w + 12) + "\n";
     for t in rows {
-        set out = out + align_left(t.name, w) + "  " + align_right(money(t.cents), 10) + "\n";
+        set out = out + align_left(t.name, w) + "  " + align_right(decimal_text(t.amount), 10) + "\n";
     }
-    return out + align_left("total", w) + "  " + align_right(money(sum(rows)), 10) + "\n";
+    return out + align_left("total", w) + "  " + align_right(decimal_text(sum(rows)), 10) + "\n";
 }
 
 # The whole report: by category (largest first) and by month (in date order).
@@ -137,7 +136,7 @@ export fn render(xs: list[Expense]) -> str {
         return e.category;
     });
     sort_by(by_category, fn(t: Total) -> int {
-        return 0 - t.cents;
+        return 0 - t.amount.units;
     });
     let by_month = totals(xs, fn(e: Expense) -> str {
         return slice(e.date, 0, 7);
@@ -149,14 +148,19 @@ export fn render(xs: list[Expense]) -> str {
 }
 
 fn expense(category: str, cents: int) -> Expense {
-    return new Expense { date: "2026-01-01", category: category, cents: cents, note: "" };
+    return new Expense {
+        date: "2026-01-01",
+        category: category,
+        amount: amount_of(cents),
+        note: ""
+    };
 }
 
 @spec("FR-001")
-test "money pads the cents" {
-    expect_eq(money(0), "0.00");
-    expect_eq(money(5), "0.05");
-    expect_eq(money(129050), "1290.50");
+test "amounts print with two decimals" {
+    expect_eq(decimal_text(amount_of(0)), "0.00");
+    expect_eq(decimal_text(amount_of(5)), "0.05");
+    expect_eq(decimal_text(amount_of(129050)), "1290.50");
 }
 
 @spec("FR-002")
@@ -165,7 +169,10 @@ test "totals keep the first-seen order" {
     let t = totals(xs, fn(e: Expense) -> str {
         return e.category;
     });
-    expect_eq(t, [new Total { name: "b", cents: 4 }, new Total { name: "a", cents: 2 }]);
+    expect_eq(t, [
+        new Total { name: "b", amount: amount_of(4) },
+        new Total { name: "a", amount: amount_of(2) }
+    ]);
 }
 
 @spec("FR-004")
@@ -197,7 +204,7 @@ prop "totals add up to the sum of the expenses" (amounts: list[int]) {
     }
     expect_eq(sum(totals(xs, fn(e: Expense) -> str {
         return e.category;
-    })), expected);
+    })), amount_of(expected));
 }
 
 @spec("FR-005")

@@ -194,7 +194,7 @@ export record Problem {
     detail: str;
 }
 
-# An operation that fails with its own error type X, made into one routes take: `ok` is answered as it is, `err(x)` with the problem answer(x) gives (spec 032).
+# An operation that fails with its own error type X, made into one routes take: `ok` is answered as it is, `err(x)` with the problem answer(x) gives.
 #     on_get("/n", typed(fn(n: int, input: NoInput) -> result[Response, int] { return err(7); }, fn(x: int) -> Problem { return new Problem { status: 404, detail: str(x) }; })).pattern is "/n"
 export fn typed[C, I: json, X, E: effects](
     op: fn(C, I) -> result[Response, X] uses E,

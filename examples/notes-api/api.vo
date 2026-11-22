@@ -1,6 +1,6 @@
 # The HTTP API: the route table, each operation's input (checked by std.web before it runs) and its answer.
 # The operations fail with a NoteError, which note_problem answers with a status: one function, so
-# every way to fail has its status (spec 032); bad input becomes 400 or 422.
+# every way to fail has its status; bad input becomes 400 or 422.
 import notes.Note;
 import notes.NoteError;
 import notes.add_note;
