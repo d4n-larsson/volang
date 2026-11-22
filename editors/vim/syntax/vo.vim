@@ -22,6 +22,7 @@ syn match voTypeName /\<\u\w*/
 syn match voFunction /\(\<fn\s\+\)\@<=\l\w*/
 syn match voFloat /\<\d\+\(\.\d\+\([eE][+-]\=\d\+\)\=\|[eE][+-]\=\d\+\)\>/
 syn match voNumber /\<\d\+\>/
+syn match voNumber /\<0x\x\+\>\|\<0b[01]\+\>/
 syn match voAnnotation /@\l\w*/
 
 syn match voEscape /\\\([ntr"\\]\|u{\x\{1,6}}\)/ contained

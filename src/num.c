@@ -492,3 +492,22 @@ Str *fmt_piece(long value, long kind, long spec)
     for (long i = left; i < pad; i++) *w++ = ' ';
     return str_new(out, w - out);
 }
+
+/* The value of an integer literal's text (spec 043): decimal as dec_to_int; `0x` with 1 to 16 hex digits
+ * or `0b` with 1 to 64 binary digits as a 64-bit pattern (0xFFFFFFFFFFFFFFFF is -1). 0 = ok, 1 = too
+ * large, 2 = malformed. */
+int int_literal_value(char *p, long n, long *out)
+{
+    if (n < 2 || p[0] != '0' || (p[1] != 'x' && p[1] != 'b')) return dec_to_int(p, n, out);
+    int width = p[1] == 'x' ? 4 : 1;
+    if (n == 2) return 2;
+    if ((n - 2) * width > 64) return 1;
+    unsigned long m = 0;
+    for (long i = 2; i < n; i++) {
+        int c = p[i], d = c >= '0' && c <= '9' ? c - '0' : (c | 32) >= 'a' && (c | 32) <= 'f' ? (c | 32) - 'a' + 10 : 99;
+        if (d >= 1 << width) return 2;
+        m = m << width | (unsigned long)d;
+    }
+    *out = (long)m;
+    return 0;
+}

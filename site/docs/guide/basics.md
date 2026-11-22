@@ -40,8 +40,9 @@ strings (`"hello"`). Their types are `int`, `float`, `bool` and `str`, described
 
 Literals are strict, so that every value has one spelling:
 
-- Integers are plain decimal digits: no `_` separators, hexadecimal, octal or suffixes. A negative number
-  is unary `-` applied to a literal.
+- Integers are decimal digits, or `0x` and hex digits (`0xFF`), or `0b` and binary digits (`0b1010`): no
+  `_` separators, octal or suffixes. A hex or binary literal is a 64-bit pattern, so `0xFFFFFFFFFFFFFFFF`
+  is `-1`; `vo fmt` writes hex digits in upper case. A negative number is unary `-` applied to a literal.
 - Floats need digits on both sides of the `.`: `1.0` and `0.5`, never `1.` or `.5`. An exponent is
   allowed: `1e9`, `1.5e-3`.
 - Strings use double quotes and stay on one line. The escapes are `\n`, `\t`, `\r`, `\\`, `\"` and
@@ -364,7 +365,8 @@ There are no labels: to leave two nested loops at once, move them into a functio
 - `==` compares by value, including lists, maps, records and variants: two lists are equal when their
   elements are. Functions cannot be compared.
 - Strings compare by bytes with `<`, so `"Zebra" < "apple"` (uppercase letters come first in UTF-8).
-- There is no ternary operator, no `+=` or `++`, no bitwise operators and no `**`.
+- There is no ternary operator, no `+=` or `++`, no `**`, and no bitwise operators: `&`, `|`, `^`, `~`,
+  `<<` and `>>` are the functions of [`std.bits`](standard-library.md#stdbits-the-bits-of-an-int).
 
 ```vo
 fn main() uses console {

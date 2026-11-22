@@ -66,4 +66,5 @@
 {"v":1,"kind":"doc","module":"std.option","name":"std.option","item":"module","signature":"std.option","description":"a value that may be absent: Option[T] is some(value) or none (spec 032)."}
 {"v":1,"kind":"doc","module":"std.crypto","name":"std.crypto","item":"module","signature":"std.crypto","description":"Hashes, message signatures, secret random bytes and password storage."}
 {"v":1,"kind":"doc","module":"std.tcp","name":"std.tcp","item":"module","signature":"std.tcp","description":"TCP connections: connect, send, read, TLS, listen and accept, for protocols other than HTTP."}
+{"v":1,"kind":"doc","module":"std.bits","name":"std.bits","item":"module","signature":"std.bits","description":"The bits of an int: and, or, xor, shifts, rotations, arithmetic that wraps, hex and binary text."}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":57}

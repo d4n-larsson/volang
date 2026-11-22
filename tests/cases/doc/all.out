@@ -120,3 +120,4 @@ modules:
   std.option a value that may be absent: Option[T] is some(value) or none (spec 032).
   std.crypto Hashes, message signatures, secret random bytes and password storage.
   std.tcp TCP connections: connect, send, read, TLS, listen and accept, for protocols other than HTTP.
+  std.bits The bits of an int: and, or, xor, shifts, rotations, arithmetic that wraps, hex and binary text.

@@ -1,0 +1,20 @@
+record Level {
+    @range(0x0, 0xFF)
+    value: int;
+}
+
+const mask = 0xFF;
+const high = 0x8000000000000000;
+
+fn main() uses console {
+    print(str(0xFF) + " " + str(0xff) + " " + str(0x0) + " " + str(0b1010));
+    print(str(0x7FFFFFFFFFFFFFFF));
+    print(str(0x8000000000000000));
+    print(str(0xFFFFFFFFFFFFFFFF));
+    print(str(0b1111111111111111111111111111111111111111111111111111111111111111));
+    print(str(-0xFF) + " " + str(0x1e3) + " " + str(mask) + " " + str(high));
+    for i in 0x0..0b11 {
+        print(str(i));
+    }
+    print(str(new Level { value: 0x10 }.value));
+}

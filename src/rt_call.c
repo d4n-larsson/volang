@@ -22,9 +22,9 @@ enum {
     BU_JSON_PARSE, BU_JSON_WRITE, BU_BYTE_AT, BU_HTTP_TIMEOUT, BU_MAP_ERR,
     BU_SHA256, BU_HMAC_SHA256, BU_PBKDF2, BU_BYTES_SAME, BU_ENTROPY,
     BU_TCP, BU_TCP_IO,
-    BU_FS_BLOCK, BU_FS_LINES, BU_PROC_START, BU_PROC
+    BU_FS_BLOCK, BU_FS_LINES, BU_PROC_START, BU_PROC, BU_BITS
 };
-_Static_assert(BU_PROC == B_LAST && BU_TCP_IO == B_TCP_IO && BU_ENTROPY == B_ENTROPY && BU_SHA256 == B_SHA256 && BU_MAP_ERR == B_MAP_ERR && BU_HTTP_TIMEOUT == B_HTTP_TIMEOUT && BU_BYTE_AT == B_BYTE_AT && BU_JSON_WRITE == B_JSON_WRITE && BU_JSON_TEXT == B_JSON_TEXT && BU_JSON_FIELDS == B_JSON_FIELDS && BU_FROM_JSON == B_FROM_JSON && BU_TO_JSON == B_TO_JSON && BU_SERVE_WORKERS == B_SERVE_WORKERS && BU_SQL_PREPARE == B_SQL_PREPARE && BU_SQL_OPEN == B_SQL_OPEN && BU_RE_REPL == B_RE_REPL && BU_RE == B_RE && BU_RE_COMPILE == B_RE_COMPILE && BU_FMT_PIECE == B_FMT_PIECE && BU_FORMAT == B_FORMAT && BU_SLEEP == B_SLEEP && BU_RAW_TEXT == B_RAW_TEXT && BU_RUN_BYTES == B_RUN_BYTES && BU_FSB == B_FSB && BU_BYTES_OF_TEXT == B_BYTES_FIRST && BU_STDIN_BYTES == B_STDIN_BYTES && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
+_Static_assert(BU_BITS == B_LAST && BU_PROC == B_PROC && BU_TCP_IO == B_TCP_IO && BU_ENTROPY == B_ENTROPY && BU_SHA256 == B_SHA256 && BU_MAP_ERR == B_MAP_ERR && BU_HTTP_TIMEOUT == B_HTTP_TIMEOUT && BU_BYTE_AT == B_BYTE_AT && BU_JSON_WRITE == B_JSON_WRITE && BU_JSON_TEXT == B_JSON_TEXT && BU_JSON_FIELDS == B_JSON_FIELDS && BU_FROM_JSON == B_FROM_JSON && BU_TO_JSON == B_TO_JSON && BU_SERVE_WORKERS == B_SERVE_WORKERS && BU_SQL_PREPARE == B_SQL_PREPARE && BU_SQL_OPEN == B_SQL_OPEN && BU_RE_REPL == B_RE_REPL && BU_RE == B_RE && BU_RE_COMPILE == B_RE_COMPILE && BU_FMT_PIECE == B_FMT_PIECE && BU_FORMAT == B_FORMAT && BU_SLEEP == B_SLEEP && BU_RAW_TEXT == B_RAW_TEXT && BU_RUN_BYTES == B_RUN_BYTES && BU_FSB == B_FSB && BU_BYTES_OF_TEXT == B_BYTES_FIRST && BU_STDIN_BYTES == B_STDIN_BYTES && BU_MATH == B_MATH && BU_MATH_INT == B_MATH_INT && BU_HTTPS == B_HTTPS && BU_RUN == B_RUN && BU_FS == B_FS && BU_COLL == B_COLL, "the builtin ids end at B_LAST");
 _Static_assert(BU_TODO == B_TODO && BU_REQ_FAIL == B_REQ_FAIL && BU_SORT_BY == B_SORT_BY, "builtin ids");
 
 /* The static type of the call's first argument. */
@@ -152,6 +152,7 @@ long builtin_call(Node *call, long a0, long a1, long a2)
     case BU_FS_LINES: return (long)io_fs_lines((Str *)a0, a1);
     case BU_PROC_START: return (long)io_proc_start((List *)a0, (Str *)a1, (List *)a2);
     case BU_PROC: return (long)io_proc(a0, a1);
+    case BU_BITS: return bits_op(a0, a1, a2, call); /* spec 043: std.bits */
     case BU_BYTES_OF_TEXT: return a0; /* spec 021: the same object; UTF-8 is already bytes */
     case BU_TEXT_OF_BYTES: return (long)bytes_to_text((Str *)a0);
     case BU_BYTES_OF_INTS: return (long)bytes_from_ints((List *)a0, call);

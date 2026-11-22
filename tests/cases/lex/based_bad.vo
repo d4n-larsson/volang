@@ -1,0 +1,14 @@
+fn main() uses console {
+    let a = 0x;
+    let b = 0b;
+    let c = 0xg;
+    let d = 0x12345678901234567;
+    let e = 0b10000000000000000000000000000000000000000000000000000000000000000;
+    let f = 0XFF;
+    let g = 0B1;
+    let h = 0xFFg;
+    let i = 0b102;
+    let j = 0x-1;
+    let k = 1_000;
+    print(str(a + b + c + d + e + f + g + h + i + j + k));
+}

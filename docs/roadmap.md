@@ -49,6 +49,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [040](../specs/040-streaming/) | Streaming: `std.fs.each_line` and `each_chunk`, `std.http.send_stream`, `std.process.run_lines` hand a program one piece at a time through a function it passes; memory does not grow with the source; no new type | **Implemented** ([results](../specs/040-streaming/results.md)) |
 | [041](../specs/041-package-download/) | Downloading packages: `vo package ENTRY NAME URL` fetches a tar or tar.gz archive over HTTPS, unpacks its `.vo` files, pins them by content and prints the effects the package declares; `--restore` on a fresh clone; hostile archives refused whole | **Implemented** ([results](../specs/041-package-download/results.md)) |
 | [042](../specs/042-strings/) | Strings: raw strings between backticks, the escapes `\\r` and `\\u{HEX}`, `for c in s`, `upper`/`lower` for Latin, Greek and Cyrillic, exponent float literals, `std.text.char_count` and `equal_fold` | **Implemented** ([results](../specs/042-strings/results.md)) |
+| [043](../specs/043-bits/) | Bits: `std.bits` (and, or, xor, not, shifts, rotations, wrapping arithmetic, `parse_hex`, `parse_binary`) and hex and binary integer literals | **Implemented** ([results](../specs/043-bits/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -490,6 +491,19 @@ exponent.
 
 - **Not done (on purpose):** interpolation, a character type, full case mapping (`ß`), normalization,
   hex and binary integer literals (with the bitwise operations of the review's item 5).
+
+### 043: bits (implemented)
+
+Checksums, hashes and binary formats need the bits of an integer. They come as functions in `std.bits`,
+over one primitive, not as operators: the language keeps its eight precedence levels, and `&`, `|`, `^`,
+`~`, `<<` and `>>` are errors that name the module. Shifts and rotations take a count of 0 to 63 (R0007
+otherwise); `wrapping_add`, `wrapping_sub` and `wrapping_mul` keep the low 64 bits where the operators
+stop with R0001. Integer literals gain `0x` and `0b` forms, each a 64-bit pattern, a second notation
+recorded as a justified deviation: the formatter keeps the base a constant was written in. A table-driven
+CRC-32 and FNV-1a over 1 MiB take well under a tenth of a second, so no instruction was added.
+
+- **Not done (on purpose):** operators, `_` separators, octal, sized integer types (`u32`), counting
+  bits (`popcount`, leading zeros), bit operations on `bytes`.
 
 ## Planned after 017
 

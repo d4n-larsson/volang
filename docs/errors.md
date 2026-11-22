@@ -6,9 +6,9 @@ Every diagnostic, runtime error and toolchain error has a code. `vo explain CODE
 
 A character that is not part of vo syntax, or a comment that does not stand on its own line.
 
-Fixable: yes
+Fixable: sometimes
 
-The lexer found a character that no token can start with, such as `$` or `@`, or a `#` comment after code on the same line. Comments must be whole lines. The fix deletes the character or the trailing comment; move the comment to its own line if you want to keep it.
+The lexer found a character that no token can start with, such as `$` or `@`, or a `#` comment after code on the same line. Comments must be whole lines. The fix deletes the character or the trailing comment; move the comment to its own line if you want to keep it. The bit operators of other languages (`&`, `|`, `^`, `~`, `<<`, `>>`) are reported without a fix: import the functions of `std.bits` (`bit_and`, `shift_left`, ...).
 
 ### Example
 
@@ -102,11 +102,11 @@ fn main() uses console {
 
 ## E0105 number_out_of_range
 
-A number literal is out of range or malformed: an integer above 2^63-1, a float with more than 17 significant digits or too large, an exponent without digits, or letters after the number.
+A number literal is out of range or malformed: an integer above 2^63-1, a hex or binary literal without digits or with more than 64 bits, an upper-case `0X` or `0B`, a float with more than 17 significant digits or too large, an exponent without digits, or letters after the number.
 
-Fixable: no
+Fixable: sometimes
 
-Integer literals must fit in a signed 64-bit integer (at most 9223372036854775807). Float literals may have at most 17 significant digits (a `float` holds no more), an optional exponent with digits (`1e9`, `1.5e-3`), and a value below about 1.8e308. A number has no suffix: `10px` and `2em` are errors.
+Integer literals must fit in a signed 64-bit integer (at most 9223372036854775807). Float literals may have at most 17 significant digits (a `float` holds no more), an optional exponent with digits (`1e9`, `1.5e-3`), and a value below about 1.8e308. A hex literal is `0x` and 1 to 16 hex digits, a binary literal `0b` and 1 to 64 digits, each a 64-bit pattern (`0xFFFFFFFFFFFFFFFF` is -1); the prefix is lower case (the fix lowers `0X` and `0B`). A number has no suffix and no `_` separators: `10px`, `2em` and `1_000` are errors.
 
 ### Example
 

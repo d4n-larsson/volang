@@ -1,0 +1,48 @@
+# CRC-32 (the zlib one) of each hex line of inputs.txt; with an argument, of big.bin, with its time.
+import std.bits.bit_and;
+import std.bits.bit_xor;
+import std.bits.shift_right_logical;
+import std.bytes.from_hex;
+import std.fs.each_line;
+import std.fs.read_bytes;
+
+fn make_table() -> list[int] {
+    let table = new list[int];
+    for i in 0..256 {
+        var c = i;
+        for _ in 0..8 {
+            if bit_and(c, 1) == 1 {
+                set c = bit_xor(0xEDB88320, shift_right_logical(c, 1));
+            } else {
+                set c = shift_right_logical(c, 1);
+            }
+        }
+        push(table, c);
+    }
+    return table;
+}
+
+fn crc32(table: list[int], data: bytes) -> int {
+    var c = 0xFFFFFFFF;
+    for i in 0..len(data) {
+        set c = bit_xor(table[bit_and(bit_xor(c, data[i]), 0xFF)], shift_right_logical(c, 8));
+    }
+    return bit_xor(c, 0xFFFFFFFF);
+}
+
+fn main() -> result[void] uses console, file.read("./"), clock {
+    let table = make_table();
+    if len(args()) > 0 {
+        let data = try read_bytes("big.bin");
+        let start = now_ms();
+        let sum = crc32(table, data);
+        print(str(sum) + " " + str(now_ms() - start));
+        return ok();
+    }
+    try each_line("inputs.txt", fn(line: str) -> result[bool] {
+        let data = try from_hex(line);
+        print(str(crc32(table, data)));
+        return ok(true);
+    });
+    return ok();
+}

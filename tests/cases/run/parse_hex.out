@@ -1,0 +1,20 @@
+hex ff -> 255
+hex FF -> 255
+hex 0 -> 0
+hex 7fffffffffffffff -> 9223372036854775807
+hex 8000000000000000 -> -9223372036854775808
+hex FFFFFFFFFFFFFFFF -> -1
+hex 00000000000000001 -> invalid hex: 00000000000000001
+hex  -> invalid hex: 
+hex -1 -> invalid hex: -1
+hex 0xff -> invalid hex: 0xff
+hex fg -> invalid hex: fg
+hex  ff -> invalid hex:  ff
+binary 1010 -> 10
+binary 0 -> 0
+binary 1111111111111111111111111111111111111111111111111111111111111111 -> -1
+binary 11111111111111111111111111111111111111111111111111111111111111111 -> invalid binary: 11111111111111111111111111111111111111111111111111111111111111111
+binary  -> invalid binary: 
+binary -1 -> invalid binary: -1
+binary 0b1 -> invalid binary: 0b1
+binary 102 -> invalid binary: 102

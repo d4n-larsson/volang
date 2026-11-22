@@ -315,6 +315,10 @@
     "numbers": {
       "patterns": [
         {
+          "match": "\\b0(?:x[0-9A-Fa-f]+|b[01]+)",
+          "name": "constant.numeric.integer.vo"
+        },
+        {
           "match": "\\b[0-9]+(?:\\.[0-9]+(?:[eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)",
           "name": "constant.numeric.float.vo"
         },

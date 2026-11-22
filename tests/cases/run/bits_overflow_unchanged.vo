@@ -1,0 +1,7 @@
+import std.bits.wrapping_add;
+
+fn main() uses console {
+    let most = 9223372036854775807;
+    print(str(wrapping_add(most, 1)));
+    print(str(most + 1));
+}

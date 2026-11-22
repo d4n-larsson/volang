@@ -66,8 +66,8 @@ fn main() uses console {
 ```
 
 The same holds for `-x`, `abs(x)` and `x / -1` when `x` is the smallest `int`. A literal larger than the
-maximum is a check error, [E0105](../errors/E0105.md); the smallest `int` can only be written as an
-expression, `-9223372036854775807 - 1`. Integer division truncates toward zero, and division by zero is
+maximum is a check error, [E0105](../errors/E0105.md); the smallest `int` is written as an
+expression, `-9223372036854775807 - 1`, or as its bits, `0x8000000000000000`. Integer division truncates toward zero, and division by zero is
 [R0002](../errors/R0002.md) (see [Basics](basics.md#expressions-and-operators)).
 
 ## float

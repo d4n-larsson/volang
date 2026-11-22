@@ -1,0 +1,16 @@
+import std.bits.bit_and;
+import std.bits.shift_left;
+
+fn is_power_of_two(n: int) -> bool
+    requires bit_and(n, 0) == 0 {
+    return n > 0 and bit_and(n, n - 1) == 0;
+}
+
+fn main() uses console {
+    print(str(is_power_of_two(64)));
+}
+
+prop "a power of two has one bit" (n: int) {
+    assume(n >= 0 and n < 63);
+    expect(is_power_of_two(shift_left(1, n)));
+}

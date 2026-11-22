@@ -1,0 +1,39 @@
+import std.bits.bit_and;
+import std.bits.bit_not;
+import std.bits.bit_or;
+import std.bits.bit_xor;
+import std.bits.rotate_left;
+import std.bits.rotate_right;
+import std.bits.shift_left;
+import std.bits.shift_right;
+import std.bits.shift_right_logical;
+import std.bits.wrapping_add;
+import std.bits.wrapping_mul;
+import std.bits.wrapping_sub;
+
+fn pairs(a: int, b: int) uses console {
+    print(format("{} {}: and {} or {} xor {}", a, b, bit_and(a, b), bit_or(a, b), bit_xor(a, b)));
+    print(format("  add {} sub {} mul {}", wrapping_add(a, b), wrapping_sub(a, b), wrapping_mul(a, b)));
+}
+
+fn counts(a: int, n: int) uses console {
+    print(format("{} by {}: left {} right {} logical {}", a, n, shift_left(a, n), shift_right(a, n), shift_right_logical(a, n)));
+    print(format("  rotate left {} right {}", rotate_left(a, n), rotate_right(a, n)));
+}
+
+fn main() uses console {
+    let low = -9223372036854775807 - 1;
+    let values = [0, 1, -1, 9223372036854775807, low];
+    for a in values {
+        print(format("not {} is {}", a, bit_not(a)));
+        for b in values {
+            pairs(a, b);
+        }
+        for n in [0, 1, 63] {
+            counts(a, n);
+        }
+    }
+    print(str(bit_and(12, 10)) + " " + str(bit_or(12, 10)) + " " + str(bit_xor(12, 10)) + " " + str(bit_not(0)));
+    print(str(shift_left(1, 63)) + " " + str(shift_right(-8, 1)) + " " + str(shift_right_logical(-1, 60)));
+    print(str(rotate_left(1, 63)) + " " + str(wrapping_add(9223372036854775807, 1)));
+}

@@ -6,6 +6,11 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- `std.bits`: `bit_and`, `bit_or`, `bit_xor`, `bit_not`, `shift_left`, `shift_right`, `shift_right_logical`,
+  `rotate_left`, `rotate_right`, `wrapping_add`, `wrapping_sub`, `wrapping_mul`, `parse_hex`, `parse_binary`,
+  on the 64-bit form of an `int`. No new operators: `&`, `|`, `^`, `~`, `<<` and `>>` now name the module.
+- Integer literals in hex and binary: `0xFF`, `0b1010`, each a 64-bit pattern (`0xFFFFFFFFFFFFFFFF` is -1).
+  `vo fmt` keeps the base and writes hex digits in upper case.
 - **Breaking:** `upper` and `lower` now map Latin, Greek and Cyrillic letters, not only ASCII: `upper("åäö")`
   is `"ÅÄÖ"`. A program that upper- or lower-cased such text prints something else. Letters whose mapping
   is several characters (`ß`) stay as they are.

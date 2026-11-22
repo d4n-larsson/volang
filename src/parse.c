@@ -559,7 +559,7 @@ static Node *parse_primary(void)
     case T_INT: { /* int literal (range errors were reported by the lexer) */
         n = p_node(N_INT);
         Token *t = p_next();
-        dec_to_int(p_text + t->start, (long)t->end - (long)t->start, &n->a.i);
+        int_literal_value(p_text + t->start, (long)t->end - (long)t->start, &n->a.i);
         break;
     }
     case T_FLOAT: {

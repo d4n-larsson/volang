@@ -35,6 +35,7 @@ class VoLexer(RegexLexer):
             (words(TYPES, suffix=r"\b"), Keyword.Type),
             (words(BUILTINS, prefix=r"\b", suffix=r"(?=\s*\()"), Name.Builtin),
             (r"\b[A-Z]\w*", Name.Class),
+            (r"\b0(x[0-9a-fA-F]+|b[01]+)\b", Number.Integer),
             (r"\b\d+(\.\d+([eE][+-]?\d+)?|[eE][+-]?\d+)\b", Number.Float),
             (r"\b\d+\b", Number.Integer),
             (r"(fn)(\s+)([a-z_]\w*)", bygroups(Keyword, Whitespace, Name.Function)),

@@ -1,0 +1,6 @@
+bits_overflow_unchanged.vo:6:15: runtime error[R0001]: Integer overflow.
+   6 |     print(str(most + 1));
+     |               ^^^^^^^^
+trace:
+  at main (bits_overflow_unchanged.vo:6:15)
+      most: int = 9223372036854775807

@@ -427,9 +427,21 @@ static void fm_expr(Node *n, long ctx)
         if (n->b.v && n->b.v->n && !fm_wrapped(n)) fm_group(n, st);
         break;
     }
-    case N_INT:
-        int_to_dec(fm_sb, n->a.i);
+    case N_INT: {
+        /* spec 043: a 0x or 0b literal keeps its base and digits; prefix lower case, hex letters upper */
+        char *src = file_get((int)n->file)->text;
+        long i = n->start + 2;
+        int based = n->end > i && src[n->start] == '0' && ((src[n->start + 1] | 32) == 'x' || (src[n->start + 1] | 32) == 'b');
+        for (; based && i < n->end; i++) based = is_hex_digit(src[i]); /* (a folded expression is not a literal) */
+        if (!based) {
+            int_to_dec(fm_sb, n->a.i);
+            break;
+        }
+        fm_b('0');
+        fm_b(src[n->start + 1] | 32);
+        for (i = n->start + 2; i < n->end; i++) fm_b(src[i] >= 'a' ? src[i] - 32 : src[i]);
         break;
+    }
     case N_FLOAT: {
         /* spec 042: a literal with an exponent keeps it (lower case, no `+`); others are rewritten */
         char *src = file_get((int)n->file)->text;

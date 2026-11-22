@@ -43,6 +43,11 @@ static Str *lx_slice(long start, long end)
     return str_new(lx_text + start, end - start);
 }
 
+int is_hex_digit(int c)
+{
+    return (c >= '0' && c <= '9') || ((c | 32) >= 'a' && (c | 32) <= 'f');
+}
+
 int is_word_char(int c)
 {
     return c == '_' || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
@@ -346,6 +351,34 @@ Token *lex(int file)
             }
             continue;
         }
+        if (c == '0' && start + 1 < len && ((text[start + 1] | 32) == 'x' || (text[start + 1] | 32) == 'b')) {
+            /* spec 043: 0x and 0b integers, a 64-bit pattern. (0x1e3 is hex: this rule comes first.) */
+            int hex = (text[start + 1] | 32) == 'x';
+            pos = start + 2;
+            while (pos < len && (hex ? is_hex_digit(text[pos]) : text[pos] == '0' || text[pos] == '1')) pos++;
+            long digits = pos - (start + 2);
+            if (text[start + 1] < 'a') { /* 0X, 0B: one spelling */
+                Diag *d = lx_err("E0105", start, pos, msg("Write the prefix in lower case: `$1`.", str_from_cstr(hex ? "0x" : "0b"), 0, 0));
+                diag_add_fix(d, (int)lx_file, start + 1, start + 2, str_from_cstr(hex ? "x" : "b"));
+            }
+            if (!digits) {
+                while (pos < len && is_word_char((unsigned char)text[pos])) pos++; /* 0xg: the letters go with it */
+                lx_err("E0105", start, pos,
+                       str_from_cstr(hex ? "A `0x` literal needs hex digits after it, like `0xFF`."
+                                         : "A `0b` literal needs binary digits after it, like `0b1010`."));
+            } else if (digits > (hex ? 16 : 64)) {
+                lx_err("E0105", start, pos,
+                       str_from_cstr(hex ? "A hex literal has at most 16 digits (64 bits)." : "A binary literal has at most 64 digits."));
+            } else {
+                lx_number_suffix(start, pos);
+            }
+            lx_push(T_INT, start, start + 2 + digits);
+            if (lx_skip_to) {
+                pos = lx_skip_to;
+                lx_skip_to = 0;
+            }
+            continue;
+        }
         if (c >= '0' && c <= '9') { /* number */
             while (pos < len && text[pos] >= '0' && text[pos] <= '9') pos++;
             int is_float = 0;
@@ -394,7 +427,7 @@ Token *lex(int file)
                 lx_number_suffix(start, pos);
                 lx_push(T_INT, start, pos);
                 long value;
-                if (dec_to_int(text + start, pos - start, &value))
+                if (int_literal_value(text + start, pos - start, &value))
                     lx_err("E0105", start, pos, str_from_cstr("Integer literal is larger than 9223372036854775807."));
             }
             if (lx_skip_to) { /* resume after a skipped suffix (1e3) */
@@ -449,10 +482,12 @@ Token *lex(int file)
         case '<':
             kind = T_LT;
             if (c2 == '=') kind = T_LE, tlen = 2;
+            if (c2 == '<') kind = 0; /* spec 043: `<<` is reported as one habit, below */
             break;
         case '>':
             kind = T_GT;
             if (c2 == '=') kind = T_GE, tlen = 2;
+            if (c2 == '>') kind = 0;
             break;
         case '!':
             if (c2 == '=') {
@@ -492,6 +527,14 @@ Token *lex(int file)
         if (kind) {
             lx_push(kind, pos, pos + tlen);
             pos += tlen;
+            continue;
+        }
+        if (c == '&' || c == '|' || c == '^' || c == '~' || c == '<' || c == '>') { /* spec 043: bit operators */
+            long end = pos + (c == '<' || c == '>' ? 2 : 1);
+            lx_err("E0101", pos, end,
+                   msg("vo has no `$1` operator: for bits, use `std.bits` (`bit_and`, `shift_left`, ...).", lx_slice(pos, end), 0, 0));
+            lx_push(c == '~' ? T_MINUS : T_PLUS, pos, end); /* one error: the parser reads on as if it were arithmetic */
+            pos = end;
             continue;
         }
         /* anything else: E0101 with a removal fix */

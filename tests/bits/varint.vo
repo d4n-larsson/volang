@@ -1,0 +1,36 @@
+# The LEB128 integers in each hex line of inputs.txt, as 64-bit patterns.
+import std.bits.bit_and;
+import std.bits.bit_or;
+import std.bits.shift_left;
+import std.bytes.from_hex;
+import std.fs.each_line;
+
+fn decode(data: bytes) -> list[int] {
+    let out = new list[int];
+    var value = 0;
+    var shift = 0;
+    for i in 0..len(data) {
+        let b = data[i];
+        set value = bit_or(value, shift_left(bit_and(b, 0x7F), shift));
+        if b < 0x80 {
+            push(out, value);
+            set value = 0;
+            set shift = 0;
+        } else {
+            set shift = shift + 7;
+        }
+    }
+    return out;
+}
+
+fn text(n: int) -> str {
+    return str(n);
+}
+
+fn main() -> result[void] uses console, file.read("./") {
+    try each_line("inputs.txt", fn(line: str) -> result[bool] {
+        print(join(map(decode(try from_hex(line)), text), " "));
+        return ok(true);
+    });
+    return ok();
+}

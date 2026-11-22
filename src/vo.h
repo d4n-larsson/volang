@@ -427,7 +427,8 @@
 #define B_FS_LINES (111) /* __fs_lines(path, offset) -> result[list[str]] (typed loosely) */
 #define B_PROC_START (112) /* __proc_start(argv, input, env) -> result[int]: a followed child */
 #define B_PROC (113) /* __proc(op, id) -> result[str]: 1 next line, 2 finish, 3 stop */
-#define B_LAST (113) /* the last builtin id with a btab entry */
+#define B_BITS (114) /* spec 043: __bits(op, a, b) -> int, std.bits's one primitive */
+#define B_LAST (114) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -1954,6 +1955,7 @@ extern void run_test_body(Node *test);
 
 /* src/lex.c */
 extern int is_word_char(int c);
+extern int is_hex_digit(int c);
 extern int keyword_kind(char *p, long n);
 extern Token *lex(int file);
 
@@ -2067,6 +2069,7 @@ extern Variant *io_http_exchange(Str *host, long port, Str *request);
 extern void int_to_dec(SB *sb, long v);
 extern Str *int_to_str(long v);
 extern int dec_to_int(char *p, long n, long *out);
+extern int int_literal_value(char *p, long n, long *out); /* spec 043: decimal, 0x, 0b */
 extern long scale10(long bits, long k);
 extern long text_to_float(char *p, long n);
 extern int float_parse(char *p, long n, long *out);
@@ -2075,6 +2078,7 @@ extern Str *float_to_str(long bits);
 extern long exact_digits(unsigned long bits, long n, char *out); /* stdprim.c: n digits, exactly rounded */
 extern long math_call(long op, long x, long y, Node *node); /* spec 020: src/math.c */
 extern long math_int(long op, long x, Node *node);
+extern long bits_op(long op, long a, long b, Node *node); /* spec 043 */
 extern Node *std_user_call(Node *node); /* math.c: the call in user code above std/ frames */
 /* spec 021: src/bytes.c */
 extern Variant *bytes_to_text(Str *b);

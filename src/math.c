@@ -108,3 +108,31 @@ long math_int(long op, long xb, Node *node)
     raise_math(tmpl[op], xb, 0, 0, node);
     return 0;
 }
+
+/* std.bits's primitive (spec 043): __bits(op, a, b) on the 64-bit two's complement form of an int.
+ * All of it is unsigned arithmetic, so nothing here is undefined or implementation-defined in C: no
+ * signed shift, no signed overflow, no shift by 64. A count outside 0 to 63 is R0007 at the user's call. */
+long bits_op(long op, long a, long b, Node *node)
+{
+    unsigned long x = (unsigned long)a, y = (unsigned long)b, r;
+    if (op >= 5 && op <= 9 && y > 63)
+        rt_raise("R0007", msg("A shift count must be 0 to 63, got $1.", int_to_str(b), 0, 0), std_user_call(node));
+    switch (op) {
+    case 1: r = x & y; break;
+    case 2: r = x | y; break;
+    case 3: r = x ^ y; break;
+    case 4: r = ~x; break;
+    case 5: r = x << y; break;
+    case 6: r = x >> y; /* arithmetic: the sign bit fills the top */
+        if (a < 0 && y) r |= ~0UL << (64 - y);
+        break;
+    case 7: r = x >> y; break;
+    case 8: r = y ? x << y | x >> (64 - y) : x; break;
+    case 9: r = y ? x >> y | x << (64 - y) : x; break;
+    case 10: r = x + y; break;
+    case 11: r = x - y; break;
+    case 12: r = x * y; break;
+    default: rt_raise_c("R0007", "Unknown bits operation.", node); return 0;
+    }
+    return (long)r;
+}

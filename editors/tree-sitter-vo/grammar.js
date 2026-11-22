@@ -299,7 +299,7 @@ module.exports = grammar({
     // ---- tokens ----
 
     boolean: _ => choice('true', 'false'),
-    integer: _ => /[0-9]+/,
+    integer: _ => /0x[0-9a-fA-F]+|0b[01]+|[0-9]+/,
     float: _ => /[0-9]+(\.[0-9]+([eE][+-]?[0-9]+)?|[eE][+-]?[0-9]+)/,
     // a quoted string on one line, or a raw string between backticks (any text, any lines)
     string: $ => choice(

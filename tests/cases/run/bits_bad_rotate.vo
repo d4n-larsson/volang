@@ -1,0 +1,10 @@
+import std.bits.rotate_left;
+
+fn moved(value: int, count: int) -> int {
+    return rotate_left(value, count);
+}
+
+fn main() uses console {
+    print(str(moved(1, 63)));
+    print(str(moved(1, 64)));
+}

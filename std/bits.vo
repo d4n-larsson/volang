@@ -1,0 +1,122 @@
+# std.bits: The bits of an int: and, or, xor, shifts, rotations, arithmetic that wraps, hex and binary text.
+# Part of the vo standard library (spec 043). Import items one by one: `import std.bits.NAME;`.
+# Every function works on the 64-bit two's complement form of an int (-1 is 64 one bits) and is pure.
+# A shift or rotation count outside 0 to 63 stops the program with R0007 at the call; nothing else
+# fails. For 32-bit algorithms, keep values in 0 to 4294967295 with `bit_and(x, 0xFFFFFFFF)`.
+
+# The bits set in both a and b.
+#     bit_and(12, 10) is 8
+export fn bit_and(a: int, b: int) -> int {
+    return __bits(1, a, b);
+}
+
+# The bits set in a, in b or in both.
+#     bit_or(12, 10) is 14
+export fn bit_or(a: int, b: int) -> int {
+    return __bits(2, a, b);
+}
+
+# The bits set in exactly one of a and b.
+#     bit_xor(12, 10) is 6
+export fn bit_xor(a: int, b: int) -> int {
+    return __bits(3, a, b);
+}
+
+# Every bit of a flipped.
+#     bit_not(0) is -1
+export fn bit_not(a: int) -> int {
+    return __bits(4, a, 0);
+}
+
+# a moved n bits up: zeros enter at the bottom, bits leaving the top are dropped (no overflow
+# error). R0007 unless n is 0 to 63.
+#     shift_left(1, 63) is -9223372036854775808
+export fn shift_left(a: int, n: int) -> int {
+    return __bits(5, a, n);
+}
+
+# a moved n bits down, the sign bit repeated at the top: a negative int stays negative.
+# R0007 unless n is 0 to 63.
+#     shift_right(-8, 1) is -4
+export fn shift_right(a: int, n: int) -> int {
+    return __bits(6, a, n);
+}
+
+# a moved n bits down, zeros entering at the top. R0007 unless n is 0 to 63.
+#     shift_right_logical(-1, 60) is 15
+export fn shift_right_logical(a: int, n: int) -> int {
+    return __bits(7, a, n);
+}
+
+# a moved n bits up, the bits leaving the top entering at the bottom. R0007 unless n is 0 to 63.
+#     rotate_left(1, 63) is -9223372036854775808
+export fn rotate_left(a: int, n: int) -> int {
+    return __bits(8, a, n);
+}
+
+# a moved n bits down, the bits leaving the bottom entering at the top. R0007 unless n is 0 to 63.
+#     rotate_right(1, 1) is -9223372036854775808
+export fn rotate_right(a: int, n: int) -> int {
+    return __bits(9, a, n);
+}
+
+# a + b, keeping the low 64 bits where `+` stops with R0001.
+#     wrapping_add(9223372036854775807, 1) is -9223372036854775808
+export fn wrapping_add(a: int, b: int) -> int {
+    return __bits(10, a, b);
+}
+
+# a - b, keeping the low 64 bits where `-` stops with R0001.
+#     wrapping_sub(0x8000000000000000, 1) is 9223372036854775807
+export fn wrapping_sub(a: int, b: int) -> int {
+    return __bits(11, a, b);
+}
+
+# a * b, keeping the low 64 bits where `*` stops with R0001.
+#     wrapping_mul(4294967296, 4294967296) is 0
+export fn wrapping_mul(a: int, b: int) -> int {
+    return __bits(12, a, b);
+}
+
+# The int whose bits the 1 to 16 hex digits of s spell (either letter case), as a 64-bit pattern;
+# no sign, no `0x` prefix; `err("invalid hex: ...")` otherwise.
+#     parse_hex("ff") == ok(255) is true
+#     parse_hex("FFFFFFFFFFFFFFFF") == ok(-1) is true
+export fn parse_hex(s: str) -> result[int] {
+    return parse_digits(s, 4, 16, "hex");
+}
+
+# The int whose bits the 1 to 64 binary digits of s spell, as a 64-bit pattern; no sign, no `0b`
+# prefix; `err("invalid binary: ...")` otherwise.
+#     parse_binary("1010") == ok(10) is true
+export fn parse_binary(s: str) -> result[int] {
+    return parse_digits(s, 1, 64, "binary");
+}
+
+fn digit_value(c: int) -> int {
+    if c >= 48 and c <= 57 {
+        return c - 48;
+    }
+    if c >= 65 and c <= 70 {
+        return c - 55;
+    }
+    if c >= 97 and c <= 102 {
+        return c - 87;
+    }
+    return 99;
+}
+
+fn parse_digits(s: str, width: int, most: int, what: str) -> result[int] {
+    if len(s) < 1 or len(s) > most {
+        return err("invalid " + what + ": " + s);
+    }
+    var value = 0;
+    for i in 0..len(s) {
+        let d = digit_value(byte_at(s, i));
+        if d >= __bits(5, 1, width) {
+            return err("invalid " + what + ": " + s);
+        }
+        set value = __bits(2, __bits(5, value, width), d);
+    }
+    return ok(value);
+}

@@ -1,0 +1,10 @@
+fn main() uses console {
+    let a = 6 & 3;
+    let b = 6 | 3;
+    let c = 6 ^ 3;
+    let d = ~6;
+    let e = 6 << 3;
+    let f = 6 >> 3;
+    print(str(a + b + c + d + e + f));
+    print(str(a < 1 && b > 1 || c < < d));
+}

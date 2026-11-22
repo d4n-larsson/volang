@@ -53,7 +53,7 @@ fn pick[T](xs: list[T]) -> result[T] uses random
 With `--json`, each item is a `doc` record with `signature`, `params`, `returns`, `effects`,
 `description` and `example`. The same pages are on this site: [std.json](../std/json.md),
 [std.time](../std/time.md), [std.text](../std/text.md), [std.random](../std/random.md),
-[std.http](../std/http.md), [std.tcp](../std/tcp.md) and [std.collections](../std/collections.md).
+[std.http](../std/http.md), [std.tcp](../std/tcp.md), [std.bits](../std/bits.md) and [std.collections](../std/collections.md).
 
 ## Effects of library functions
 
@@ -657,6 +657,78 @@ fn main() uses console, net(redis) {
 - **Tasks.** A listener or connection opened before `concurrent_map` is open in every task, so a test
   can listen on port `0` and run both ends as two tasks. Use each connection from one task at a time.
 - **Not there yet:** UDP, IPv6, TLS for accepted connections, and a pool of workers per connection.
+
+## std.bits: the bits of an int
+
+Checksums, hashes, binary formats and flag sets work on the bits of an integer. vo has no operators
+for that: the functions of `std.bits` do it, on the 64-bit two's complement form of an `int`.
+
+| Functions | Result |
+|---|---|
+| `bit_and(a, b)`, `bit_or(a, b)`, `bit_xor(a, b)`, `bit_not(a)` | bit by bit |
+| `shift_left(a, n)` | zeros enter at the bottom; never an overflow error |
+| `shift_right(a, n)` | the sign bit is repeated: a negative number stays negative |
+| `shift_right_logical(a, n)` | zeros enter at the top |
+| `rotate_left(a, n)`, `rotate_right(a, n)` | bits leaving one end enter at the other |
+| `wrapping_add`, `wrapping_sub`, `wrapping_mul` | the low 64 bits, where `+`, `-` and `*` stop with R0001 |
+| `parse_hex(s)`, `parse_binary(s)` | a `result[int]` from digits alone: no sign, no prefix |
+
+A count `n` outside 0 to 63 is [R0007](../errors/R0007.md); nothing else fails, and every function is
+pure. Constants are written in the base they are thought in: `0xFF`, `0b1010`. A hash that relies on
+arithmetic wrapping around, here 64-bit FNV-1a:
+
+```vo
+import std.bits.bit_and;
+import std.bits.bit_xor;
+import std.bits.shift_right_logical;
+import std.bits.wrapping_mul;
+import std.bytes.from_text;
+
+fn fnv1a(data: bytes) -> int {
+    var h = 0xCBF29CE484222325;
+    for i in 0..len(data) {
+        set h = wrapping_mul(bit_xor(h, data[i]), 0x100000001B3);
+    }
+    return h;
+}
+
+fn main() uses console {
+    print(format("{:x}", shift_right_logical(fnv1a(from_text("hello")), 32)));
+    print(str(bit_and(0b1100, 0b1010)));
+}
+```
+
+```output
+a430d846
+8
+```
+
+A set of flags in one `int`:
+
+```vo
+import std.bits.bit_and;
+import std.bits.bit_not;
+import std.bits.bit_or;
+
+const can_read = 0b001;
+const can_write = 0b010;
+const can_delete = 0b100;
+
+fn main() uses console {
+    var rights = bit_or(can_read, can_write);
+    print(str(bit_and(rights, can_write) != 0) + " " + str(bit_and(rights, can_delete) != 0));
+    set rights = bit_and(rights, bit_not(can_write));
+    print(format("{:b}", rights));
+}
+```
+
+```output
+true false
+1
+```
+
+For a 32-bit algorithm, keep values in 0 to 4294967295 by masking after each step:
+`bit_and(a + b, 0xFFFFFFFF)`. Details: [std.bits](../std/bits.md).
 
 ## std.math
 
