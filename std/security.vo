@@ -253,8 +253,7 @@ fn covers(pattern: list[str], segs: list[str], loosely: bool) -> bool {
     if len(pattern) > len(segs) {
         return false;
     }
-    for i in 0..len(pattern) {
-        let p = pattern[i];
+    for i, p in pattern {
         let s = segs[i];
         if is_var(p) {
             if s == "" {
@@ -296,8 +295,7 @@ export fn secure[C, E: effects](p: Policy[C, E]) -> Step[C, E] {
             var at = -1;
             var credential = "";
             var authorization_read = false;
-            for i in 0..len(p.ways) {
-                let w = p.ways[i];
+            for i, w in p.ways {
                 match header_of(r, w.header) {
                     case ok(v) {
                         if w.scheme == "" or (len(v) > len(w.scheme) and (find(v, w.scheme) == 0 or find(v, lower(w.scheme)) == 0)) {
@@ -900,8 +898,7 @@ export fn review[C, E: effects](app: App[C, E], p: Policy[C, E]) -> list[str] {
         } else {
             set used[at] = true;
         }
-        for i in 0..len(p.rules) {
-            let r = p.rules[i];
+        for i, r in p.rules {
             if (at < 0 or i < at) and method_fits(r, rt.method) and covers(segments(r.path), rt.segments, true) {
                 set used[i] = true;
                 push(partly, "rule " + str(i + 1) + " (" + r.path + ") decides for only some requests of " + name);

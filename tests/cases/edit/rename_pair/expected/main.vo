@@ -1,0 +1,19 @@
+# A for with two variables: both are locals that tools can find, type and rename.
+fn total(prices: map[str, int]) -> int {
+    var sum = 0;
+    for name, cost in prices {
+        if name != "" {
+            set sum = sum + cost;
+        }
+    }
+    return sum;
+}
+
+fn main() uses console {
+    let prices = new map[str, int];
+    set prices["tea"] = 3;
+    for at, word in ["a", "b"] {
+        print(format("{} {}", at, word));
+    }
+    print(str(total(prices)));
+}

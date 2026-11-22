@@ -334,7 +334,8 @@ Type *check_hof(Node *call, long id)
         if (key->kind == TY_RECORD && !ty_ordered(key))
             order_error(key, call->b.v->data[1].n, 0);
         else if (key->kind != TY_INT && key->kind != TY_FLOAT && key->kind != TY_STR && key->kind != TY_BYTES &&
-                 key->kind != TY_RECORD)
+                 key->kind != TY_RECORD &&
+                 !(key->kind == TY_PARAM && key->b.i == TPC_ORDERED)) /* spec 046: an `ordered` type parameter */
             ck_err1("E0313", call->b.v->data[1].n, "`$1` is not ordered: a sort key must be `int`, `float` or `str`.",
                     ty_name(key));
         return t_void;

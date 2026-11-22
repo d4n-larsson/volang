@@ -1,0 +1,23 @@
+# The body of a two-variable loop that never runs is reported, as any loop body.
+fn total(prices: map[str, int]) -> int {
+    var sum = 0;
+    for _, price in prices {
+        set sum = sum + price;
+    }
+    return sum;
+}
+
+fn longest(words: list[str]) -> int {
+    var best = -1;
+    for i, w in words {
+        if best < 0 or len(w) > len(words[best]) {
+            set best = i;
+        }
+    }
+    return best;
+}
+
+test "an empty map, two words" {
+    expect_eq(total(new map[str, int]), 0);
+    expect_eq(longest(["a", "bb"]), 1);
+}

@@ -730,9 +730,16 @@ static void fm_stmt_once(Node *s, long level)
             fm_name(s->a.n);
         else
             fm_c("_");
+        if (s->flags & NF_PAIR) { /* spec 046 */
+            fm_c(", ");
+            if (s->c.n)
+                fm_name(s->c.n);
+            else
+                fm_c("_");
+        }
         fm_c(" in ");
         fm_expr(s->b.n, 0);
-        if (s->c.n) {
+        if (FOR_END(s)) {
             fm_c("..");
             fm_expr(s->c.n, 0);
         }

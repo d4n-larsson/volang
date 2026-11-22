@@ -1,0 +1,117 @@
+# std.lists: Small operations on lists: membership, reversing, sorting from largest to smallest, the smallest and largest element by a key, sums and groups.
+# Part of the vo standard library. Import items one by one: `import std.lists.NAME;`.
+# Only sort_by_desc changes its argument (as the builtins sort and sort_by do); the others return
+# new values. Functions that take a key function have that function's effects.
+
+# Whether some element of xs equals x.
+#     contains(["a", "b"], "b") is true
+#     contains(new list[int], 1) is false
+export fn contains[T](xs: list[T], x: T) -> bool {
+    return index_of(xs, x) >= 0;
+}
+
+# The index of the first element of xs that equals x, or -1 (as find on text).
+#     index_of(["a", "b", "a"], "a") is 0
+#     index_of(["a", "b"], "c") is -1
+export fn index_of[T](xs: list[T], x: T) -> int {
+    for i, y in xs {
+        if y == x {
+            return i;
+        }
+    }
+    return -1;
+}
+
+# A new list with the elements of xs from last to first.
+#     reversed([1, 2, 3])[0] is 3
+export fn reversed[T](xs: list[T]) -> list[T] {
+    let out = new list[T];
+    var i = len(xs);
+    while i > 0 {
+        set i = i - 1;
+        push(out, xs[i]);
+    }
+    return out;
+}
+
+fn reverse_in_place[T](xs: list[T]) {
+    var a = 0;
+    var b = len(xs) - 1;
+    while a < b {
+        let t = xs[a];
+        set xs[a] = xs[b];
+        set xs[b] = t;
+        set a = a + 1;
+        set b = b - 1;
+    }
+}
+
+# Sorts xs in place from the largest key to the smallest; elements with equal keys keep their order (sort_by, the builtin, sorts from smallest to largest).
+#     let words = ["fig", "pear", "kiwi"]; sort_by_desc(words, fn(w: str) -> int { return len(w); }); join(words, " ") is "pear kiwi fig"
+export fn sort_by_desc[T, C: ordered, E: effects](xs: list[T], key: fn(T) -> C uses E) uses E {
+    # A stable ascending sort of the reversed list, reversed, is a stable descending sort.
+    reverse_in_place(xs);
+    sort_by(xs, key);
+    reverse_in_place(xs);
+}
+
+# The first element of xs with the smallest key, or err("empty list").
+#     min_by(["pear", "fig", "kiwi"], fn(w: str) -> int { return len(w); }) == ok("fig") is true
+export fn min_by[T, C: ordered, E: effects](xs: list[T], key: fn(T) -> C uses E) -> result[T] uses E {
+    if len(xs) == 0 {
+        return err("empty list");
+    }
+    var best = xs[0];
+    var best_key = key(best);
+    for i in 1..len(xs) {
+        let k = key(xs[i]);
+        if k < best_key {
+            set best = xs[i];
+            set best_key = k;
+        }
+    }
+    return ok(best);
+}
+
+# The first element of xs with the largest key, or err("empty list").
+#     max_by(["pear", "fig", "kiwi"], fn(w: str) -> int { return len(w); }) == ok("pear") is true
+export fn max_by[T, C: ordered, E: effects](xs: list[T], key: fn(T) -> C uses E) -> result[T] uses E {
+    if len(xs) == 0 {
+        return err("empty list");
+    }
+    var best = xs[0];
+    var best_key = key(best);
+    for i in 1..len(xs) {
+        let k = key(xs[i]);
+        if k > best_key {
+            set best = xs[i];
+            set best_key = k;
+        }
+    }
+    return ok(best);
+}
+
+# The sum of xs; 0 for an empty list. A sum that does not fit an int stops with R0001, as `+` does.
+#     sum([1, 2, 3]) is 6
+#     sum(new list[int]) is 0
+export fn sum(xs: list[int]) -> int {
+    var total = 0;
+    for x in xs {
+        set total = total + x;
+    }
+    return total;
+}
+
+# The elements of xs by key: a map from each key to the list of its elements in the order of xs, the keys in the order they first appear.
+#     len(group_by(["pear", "fig", "kiwi"], fn(w: str) -> int { return len(w); })[4]) is 2
+export fn group_by[T, K: key, E: effects](xs: list[T], key: fn(T) -> K uses E) -> map[K, list[T]] uses E {
+    let groups = new map[K, list[T]];
+    for x in xs {
+        let k = key(x);
+        if not has(groups, k) {
+            set groups[k] = new list[T];
+        }
+        push(groups[k], x);
+    }
+    return groups;
+}

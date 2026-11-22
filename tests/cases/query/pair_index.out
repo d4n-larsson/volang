@@ -1,0 +1,2 @@
+{"v":1,"kind":"type_at","file":"pairs/main.vo","start":{"line":16,"col":31},"end":{"line":16,"col":32},"text":"i","type":"int","name":"i","declaration":{"file":"pairs/main.vo","start":{"line":15,"col":9},"end":{"line":15,"col":10}}}
+{"v":1,"kind":"summary","command":"query","errors":0,"warnings":0,"truncated":0,"files":1,"results":1}

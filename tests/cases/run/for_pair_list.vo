@@ -1,0 +1,100 @@
+# for i, x in xs: the index and the element. The loop runs once per index the list had when it began,
+# with the element that is there at its turn; a deque: the elements it had.
+import std.collections.push_front;
+
+record Point {
+    x: int;
+    y: int;
+}
+
+fn drop(xs: list[str]) {
+    match pop(xs) {
+        case ok(_) {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn first_long(words: list[str]) -> int {
+    for i, w in words {
+        if len(w) > 3 {
+            return i;
+        }
+    }
+    return -1;
+}
+
+fn main() uses console {
+    let lines = ["alpha", "beta", "gamma"];
+    for i, line in lines {
+        print(format("{}. {}", i + 1, line));
+    }
+    for i, _ in lines {
+        print(str(i));
+    }
+    for _, line in lines {
+        print(line);
+    }
+    var rounds = 0;
+    for _, _ in lines {
+        set rounds = rounds + 1;
+    }
+    print(format("rounds {}", rounds));
+    for _, _ in new list[int] {
+        print("never");
+    }
+    # Pushed elements are not visited.
+    let grow = ["a", "b"];
+    for i, x in grow {
+        push(grow, x + x);
+        print(format("{} {}", i, x));
+    }
+    print(join(grow, " "));
+    # A shorter list ends the loop.
+    let shrink = ["a", "b", "c", "d"];
+    for i, x in shrink {
+        drop(shrink);
+        print(format("{} {}", i, x));
+    }
+    print(join(shrink, " "));
+    # A later element changed in the body is seen as changed.
+    let change = ["a", "b", "c"];
+    for i, x in change {
+        if i == 0 {
+            set change[2] = "C";
+        }
+        print(format("{} {}", i, x));
+    }
+    # break, continue, return.
+    for i, x in ["a", "b", "c", "d"] {
+        if i == 1 {
+            continue;
+        }
+        if x == "d" {
+            break;
+        }
+        print(format("{} {}", i, x));
+    }
+    print(str(first_long(["a", "bb", "cccc", "dddd"])));
+    print(str(first_long(["a"])));
+    # Nested, and records.
+    let points = [new Point { x: 1, y: 2 }, new Point { x: 3, y: 4 }];
+    for i, p in points {
+        for j, q in points {
+            print(format("{}{} {}", i, j, p.x * q.y));
+        }
+        set p.x = 0;
+    }
+    print(str(points[0].x + points[1].x));
+    # A deque: the position from the front, over the elements it had.
+    let d = new deque[str];
+    push(d, "b");
+    push(d, "c");
+    push_front(d, "a");
+    for i, x in d {
+        push(d, x + "!");
+        print(format("{} {}", i, x));
+    }
+    print(str(len(d)));
+}

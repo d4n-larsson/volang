@@ -1,0 +1,5 @@
+vo edit rename main.vo main.vo:4:15 cost
+vo edit rename main.vo main.vo:15:9 at
+vo check main.vo
+vo run main.vo
+keep main.vo

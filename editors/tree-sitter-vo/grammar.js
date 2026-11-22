@@ -219,6 +219,7 @@ module.exports = grammar({
     for_statement: $ => seq(
       'for',
       field('name', choice($.identifier, '_')),
+      optional(seq(',', field('second', choice($.identifier, '_')))),
       'in',
       field('value', $._expression),
       optional(seq('..', field('end', $._expression))),

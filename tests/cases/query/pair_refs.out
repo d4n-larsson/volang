@@ -1,0 +1,3 @@
+pairs/main.vo:4:15 declaration in total: for name, price in prices {
+pairs/main.vo:6:29 use in total: set sum = sum + price;
+2 references

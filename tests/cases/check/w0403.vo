@@ -1,0 +1,28 @@
+# W0403: a loop that reads the entry first thing is the two-variable loop written out.
+fn total(prices: map[str, int]) -> int {
+    var sum = 0;
+    for name in keys(prices) {
+        let price = prices[name];
+        if name != "" {
+            set sum = sum + price;
+        }
+    }
+    return sum;
+}
+
+fn main() uses console {
+    let words = ["a", "b"];
+    for i in 0..len(words) {
+        let word = words[i];
+        print(format("{} {}", i, word));
+    }
+    let sorted = new ordered_map[int, str];
+    set sorted[1] = "one";
+    for k in keys(sorted) {
+        let v = sorted[k];
+        print(format("{} {}", k, v));
+    }
+    let prices = new map[str, int];
+    set prices["tea"] = 3;
+    print(str(total(prices)));
+}

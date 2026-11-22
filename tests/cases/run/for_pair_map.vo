@@ -1,0 +1,141 @@
+# for k, v in m: the keys the map had when the loop began, in its order; each is visited if the map
+# has it at its turn, with the value it has then.
+record Cell {
+    row: int;
+    col: int;
+}
+
+fn show(label: str, m: map[str, int]) uses console {
+    var line = label + ":";
+    for k, v in m {
+        set line = line + format(" {}={}", k, v);
+    }
+    print(line);
+}
+
+fn letters() -> map[str, int] {
+    let m = new map[str, int];
+    for i, k in ["a", "b", "c", "d"] {
+        set m[k] = i + 1;
+    }
+    return m;
+}
+
+fn find_value(m: map[str, int], wanted: int) -> str
+    requires wanted > 0
+{
+    for k, v in m {
+        if v == wanted {
+            return k;
+        }
+    }
+    return "";
+}
+
+fn main() uses console {
+    let counts = new map[str, int];
+    for w in split("b a b c b a", " ") {
+        set counts[w] = get_or(counts, w, 0) + 1;
+    }
+    for word, n in counts {
+        print(format("{}: {}", word, n));
+    }
+    for _, n in counts {
+        print(str(n));
+    }
+    for word, _ in counts {
+        print(word);
+    }
+    var entries = 0;
+    for _, _ in counts {
+        set entries = entries + 1;
+    }
+    print(format("entries {}", entries));
+    for k, v in new map[str, int] {
+        print(k + str(v));
+    }
+    # An ordered map: keys ascending.
+    let sorted = new ordered_map[int, str];
+    set sorted[30] = "thirty";
+    set sorted[10] = "ten";
+    set sorted[20] = "twenty";
+    for k, v in sorted {
+        if k == 10 {
+            remove(sorted, 20);
+            set sorted[5] = "five";
+        }
+        print(format("{} {}", k, v));
+    }
+    # Updating values: every entry once, the value as it is at the visit.
+    let m1 = letters();
+    for k, v in m1 {
+        set m1[k] = v * 10;
+        if k == "a" {
+            set m1["c"] = 300;
+        }
+        print(format("{} {}", k, v));
+    }
+    show("updated", m1);
+    # Removing: the current key, an earlier one, a later one (skipped).
+    let m2 = letters();
+    for k, v in m2 {
+        if k == "b" {
+            remove(m2, "b");
+            remove(m2, "a");
+            remove(m2, "c");
+        }
+        print(format("{} {}", k, v));
+    }
+    show("removed", m2);
+    # Adding: new keys are not visited.
+    let m3 = letters();
+    for k, v in m3 {
+        set m3[k + k] = v;
+    }
+    show("added", m3);
+    # Removed and put back: the current key is not visited again; a later one is visited, once, with its new value.
+    let m4 = letters();
+    for k, v in m4 {
+        if k == "a" {
+            remove(m4, "a");
+            set m4["a"] = 100;
+            remove(m4, "c");
+            set m4["c"] = 300;
+        }
+        print(format("{} {}", k, v));
+    }
+    show("put back", m4);
+    # Record values are the records themselves; record keys.
+    let cells = new map[Cell, Cell];
+    set cells[new Cell { row: 1, col: 2 }] = new Cell { row: 3, col: 4 };
+    for at, to in cells {
+        set to.row = at.row + at.col;
+    }
+    for at, to in cells {
+        print(format("{},{} -> {},{}", at.row, at.col, to.row, to.col));
+    }
+    # Nested over the same map; break and continue.
+    let m5 = letters();
+    for k, v in m5 {
+        if k == "b" {
+            continue;
+        }
+        if k == "d" {
+            break;
+        }
+        for k2, v2 in m5 {
+            if v2 > v {
+                print(k + k2);
+            }
+        }
+    }
+    print(find_value(letters(), 3) + find_value(letters(), 9) + ".");
+}
+
+test "a loop over a map in a test" {
+    var total = 0;
+    for _, v in letters() {
+        set total = total + v;
+    }
+    expect_eq(total, 10);
+}

@@ -50,6 +50,11 @@ fn total[K: key](items: list[Item], rate: float) -> result[int, str] uses consol
 #       ^ keyword
 #                          ^ property
     }
+    for i, it in items {
+#   ^ keyword.repeat
+#             ^ keyword.repeat
+        set sum = sum + i + it.price;
+    }
     if rate > 1.5 and not true {
 #   ^ keyword.conditional
 #             ^ number.float

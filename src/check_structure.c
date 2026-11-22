@@ -160,7 +160,7 @@ static int own_effect(Node *st, Count *c)
     case N_MATCH:
     case N_RETURN:
     case N_EXPR_STMT: return expr_effect(st->a.n, c);
-    case N_FOR: return expr_effect(st->b.n, c) | expr_effect(st->c.n, c);
+    case N_FOR: return expr_effect(st->b.n, c) | expr_effect(FOR_END(st), c);
     default: return 0;
     }
 }
@@ -423,8 +423,9 @@ static void norm(SB *sb, Node *n, Vec *names)
     case N_FOR:
         norm_word(sb, "for", 0);
         norm_local(sb, nm(n->a.n), names);
+        if (n->flags & NF_PAIR) norm_local(sb, nm(n->c.n), names); /* spec 046 */
         norm(sb, n->b.n, names);
-        norm(sb, n->c.n, names);
+        norm(sb, FOR_END(n), names);
         norm(sb, n->d.n, names);
         return;
     case N_MATCH:
@@ -912,7 +913,7 @@ static void calls_of(Node *n, Vec *files, long *calls)
         return;
     case N_FOR:
         calls_of(n->b.n, files, calls);
-        calls_of(n->c.n, files, calls);
+        calls_of(FOR_END(n), files, calls);
         calls_of(n->d.n, files, calls);
         return;
     case N_MATCH:

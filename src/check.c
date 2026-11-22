@@ -601,12 +601,82 @@ static void check_set(Node *st)
     expect_type(st->b.n, pt, vt);
 }
 
+/* Spec 046: e names a `let` or a parameter (a variable the body cannot make name something else). */
+static int fixed_local(Node *e)
+{
+    if (!e || e->kind != N_IDENT || !e->b.p) return 0;
+    Sym *s = (Sym *)e->b.p;
+    return s->kind == SYM_LOCAL && !(s->flags & SYF_MUT);
+}
+
+static int same_ident(Node *e, Str *name)
+{
+    return e && e->kind == N_IDENT && str_eq(e->a.s, name);
+}
+
+/* W0403: `for k in keys(m) { let v = m[k];` and `for i in 0..len(xs) { let x = xs[i];`, with m or xs
+ * a `let` or a parameter, are the two-variable loop written out; the fix writes that loop. (A loop
+ * with two variables visits what the collection had when the loop began, as these do.) */
+static void for_reads_entry(Node *st)
+{
+    if ((st->flags & NF_PAIR) || !st->a.n || !st->d.n || !st->d.n->a.v || st->d.n->a.v->n == 0) return;
+    Node *coll = 0; /* the map or list */
+    Node *head = st->b.n;
+    if (!st->c.n) { /* for K in keys(M) */
+        if (head->kind != N_CALL || head->d.i != BI_KEYS || !head->b.v || head->b.v->n != 1) return;
+        coll = head->b.v->data[0].n;
+        if (!coll->type || (coll->type->kind != TY_MAP && coll->type->kind != TY_OMAP)) return;
+    } else { /* for I in 0..len(XS) */
+        Node *end = st->c.n;
+        if (head->kind != N_INT || head->a.i != 0 || (head->flags & NF_CONST)) return;
+        if (end->kind != N_CALL || end->d.i != BI_LEN || !end->b.v || end->b.v->n != 1) return;
+        coll = end->b.v->data[0].n;
+        if (!coll->type || coll->type->kind != TY_LIST) return;
+    }
+    if (!fixed_local(coll)) return;
+    Node *let = st->d.n->a.v->data[0].n; /* the body's first statement, with no comment before it */
+    if (let->kind != N_LET || (let->flags & NF_MUT) || !let->a.n || let->b.n) return;
+    Node *read = let->c.n;
+    if (!read || read->kind != N_INDEX || (read->flags & NF_PAREN)) return;
+    if (!same_ident(read->a.n, coll->a.s) || !same_ident(read->b.n, st->a.n->a.s)) return;
+    SB *sb = sb_new();
+    sb_cstr(sb, "for ");
+    sb_str(sb, st->a.n->a.s);
+    sb_cstr(sb, ", ");
+    sb_str(sb, let->a.n->a.s);
+    sb_cstr(sb, " in ");
+    sb_str(sb, coll->a.s);
+    Str *form = sb_finish(sb);
+    Diag *d = ck_warn("W0403", st->a.n,
+                      msg(st->c.n ? "This loop reads `$1[$2]` first thing: `$3` gives the index and the element together."
+                                  : "This loop reads `$1[$2]` first thing: `$3` gives the key and the value together.",
+                          coll->a.s, st->a.n->a.s, form));
+    diag_add_fix(d, (int)st->file, st->start, let->end, str_concat(form, str_from_cstr(" {")));
+}
+
 static void check_for(Node *st)
 {
     Sym *saved = ck_scope;
     Type *it = check_expr(st->b.n, 0);
     Type *elem;
-    if (st->c.n) { /* range: both bounds int */
+    Type *first = 0; /* spec 046: the first variable of `for k, v in m` (key) or `for i, x in xs` (index) */
+    if (st->flags & NF_PAIR) {
+        if (ty_is(it, TY_MAP) || ty_is(it, TY_OMAP)) {
+            first = it->a.t;
+            elem = it->b.t;
+        } else if (ty_is(it, TY_LIST) || ty_is(it, TY_DEQUE)) {
+            first = t_int;
+            elem = it->a.t;
+        } else {
+            first = elem = t_error;
+            if (!ty_bad(it)) {
+                Diag *d = ck_err1("E0301", st->b.n, "A `for` with two variables goes over a map (key, value), a list or a "
+                                                    "deque (index, element), found `$1`.", ty_name(it));
+                if (st->a.n && st->c.n && (ty_is(it, TY_STR) || ty_is(it, TY_OSET) || ty_is(it, TY_PQUEUE)))
+                    diag_add_fix(d, (int)st->file, st->a.n->start, st->c.n->start, str_from_cstr("")); /* one variable */
+            }
+        }
+    } else if (st->c.n) { /* range: both bounds int */
         expect_type(st->b.n, t_int, it);
         Type *hi = check_expr(st->c.n, t_int);
         expect_type(st->c.n, t_int, hi);
@@ -625,10 +695,14 @@ static void check_for(Node *st)
             ck_err1("E0301", st->b.n, "`for ... in` needs a list, a `str` or a range `a..b`, found `$1`.", ty_name(it));
     }
     if (st->a.n) {
-        Sym *s = new_local(st->a.n, elem, 0);
+        Sym *s = new_local(st->a.n, first ? first : elem, 0);
         st->e.i = s->slot;
     } else {
         st->e.i = ck_locals++; /* `for _ in`: a slot for the counter, no name */
+    }
+    if (st->flags & NF_PAIR) { /* the second variable: the next slot, named or not */
+        if (st->c.n) new_local(st->c.n, elem, 0);
+        else ck_locals++;
     }
     ck_loops++;
     long broke = ck_broke;
@@ -636,6 +710,7 @@ static void check_for(Node *st)
     ck_broke = broke;
     ck_loops--;
     scope_leave(saved);
+    for_reads_entry(st);
 }
 
 static void check_return(Node *st)

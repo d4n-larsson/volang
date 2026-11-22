@@ -1,0 +1,22 @@
+$ vo edit rename main.vo main.vo:4:15 cost
+main.vo:4:15 price -> cost
+main.vo:6:29 price -> cost
+renamed price to cost: 2 changes in 1 file
+--- stderr
+--- exit 0
+$ vo edit rename main.vo main.vo:15:9 at
+main.vo:15:9 i -> at
+main.vo:16:31 i -> at
+renamed i to at: 2 changes in 1 file
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+0 a
+1 b
+3
+--- stderr
+--- exit 0

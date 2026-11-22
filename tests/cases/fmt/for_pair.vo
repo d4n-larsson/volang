@@ -1,0 +1,17 @@
+# The two-variable for keeps one spacing.
+fn main() uses console {
+    let m = new map[str, int];
+    let xs = [1, 2];
+    for k,v in m {
+        print(k + str(v));
+    }
+    for _ ,  v in m {
+        print(str(v));
+    }
+    for i , _ in xs {
+        print(str(i));
+    }
+    for   _,_   in xs {
+        print("x");
+    }
+}

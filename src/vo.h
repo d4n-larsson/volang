@@ -268,7 +268,7 @@
 #define N_SET (16) /* A place, B expr */
 #define N_IF (17) /* A cond, B then block, C else block|if|0 */
 #define N_WHILE (18) /* A cond, B body */
-#define N_FOR (19) /* A name node, B expr|range start, C range end|0, D body, E slot */
+#define N_FOR (19) /* A name node, B expr|range start, C range end|0, D body, E slot; NF_PAIR (spec 046): C the second name|0 (`_`), slots E and E+1 */
 #define N_MATCH (20) /* A scrutinee, B arms vec */
 #define N_ARM (21) /* A case name node, B binding name node|0, C body, D case index, E binding slot (-1 none) */
 #define N_RETURN (22) /* A expr|0 */
@@ -365,6 +365,8 @@
 #define NF_EXPECT_NEG (2048) /* spec 018: ... of `not (comparison)` */
 #define NF_MUT_SKIP (4096)   /* spec 018: a `not` that a mutant child compiles as its operand alone */
 #define NF_CONST (8192) /* spec 031: a literal the checker worked out (a constant's use: N_B its N_CONST) */
+#define NF_PAIR (16384) /* spec 046: N_FOR with two variables (`for k, v in m`) */
+#define FOR_END(st) (((st)->flags & NF_PAIR) ? (Node *)0 : (st)->c.n) /* the range end of a `for a..b` */
 #define NF_PAREN (256) /* expression written in parentheses (vo fmt keeps them around `and` in `or`) */
 
 /* builtin ids used outside check_expr.c (all ids: check_expr.c builtin_names) */
@@ -690,7 +692,8 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define OPC_JOIN (92) /* a = the c strings in the slots from b on, joined (format's pieces) */
 #define OPC_FOR_STR (93) /* spec 042: text b, byte offset b+8: at the end: pc = c; else a = that character, offset past it */
 #define OPC_FOR_STR_STEP (94) /* text back-edge: at the end fall through; else step, a = the character, pc = c */
-#define OPC_COUNT (95)
+#define OPC_FOR_VALUE (95) /* spec 046: a = the value of the key (map) or the element at the index (list) in slot a-8 of b; gone: pc = c */
+#define OPC_COUNT (96)
 /* generic call-site record (permanent): rt_targs and rt_es_subst results for the last caller */
 #define GS_DECL (0) /* the callee */
 #define GS_VALID (8) /* 1 once filled */
@@ -700,6 +703,7 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define GS_EFF (40) /* rt_es_subst(eff0, callee, targs), or 0 */
 #define GS_SIZE (48)
 #define BI_LEN (16) /* builtin ids (check_expr.c builtin_names) */
+#define BI_KEYS (28)
 #define BI_PUSH (23)
 #define BI_HAS (26)
 #define BI_EXPECT (29) /* spec 018 */

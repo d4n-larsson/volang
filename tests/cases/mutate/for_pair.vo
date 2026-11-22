@@ -1,0 +1,18 @@
+# Mutants inside the body of a two-variable loop are made and judged as in any loop.
+fn total(prices: map[str, int]) -> int {
+    var sum = 0;
+    for name, price in prices {
+        if name != "skip" {
+            set sum = sum + price;
+        }
+    }
+    return sum;
+}
+
+test "the prices are added, one is skipped" {
+    let prices = new map[str, int];
+    set prices["tea"] = 3;
+    set prices["skip"] = 100;
+    set prices["bun"] = 2;
+    expect_eq(total(prices), 5);
+}

@@ -933,14 +933,37 @@ static Node *parse_stmt(void)
     case T_FOR: /* for x in expr [.. expr] block */
         n = p_node(N_FOR);
         p_next();
+        long first = p_tok()->start, second = 0;
         if (p_kind() == T_UNDERSCORE) { /* `for _ in a..b` repeats without naming the counter */
             n->flags |= NF_DISCARD;
             p_next();
         } else {
             n->a.n = p_name();
         }
+        if (p_accept(T_COMMA)) { /* spec 046: `for k, v in m`: the second name in N_C (0 for `_`) */
+            n->flags |= NF_PAIR;
+            second = p_tok()->start;
+            if (p_kind() == T_UNDERSCORE) p_next();
+            else n->c.n = p_name();
+        }
         p_expect(T_IN);
         n->b.n = parse_expr();
+        if (p_kind() == T_DOTDOT && (n->flags & NF_PAIR) && !p_failed()) {
+            /* a range has no second part: reported here, then read as the one-variable loop over the range */
+            Diag *d = diag_add("E0301", SEV_ERROR, (int)cur_file, first, p_tok()->end,
+                               str_from_cstr("A `for` with two variables goes over a map (key, value), a list or a deque "
+                                             "(index, element), not over a range `a..b`."));
+            diag_add_fix(d, (int)cur_file, first, second, str_from_cstr(""));
+            n->flags &= (uint16_t)~NF_PAIR;
+            if (n->c.n) { /* the range's counter is the name that stays */
+                n->a.n = n->c.n;
+                n->flags &= (uint16_t)~NF_DISCARD;
+            } else {
+                n->a.n = 0;
+                n->flags |= NF_DISCARD;
+            }
+            n->c.n = 0;
+        }
         if (p_accept(T_DOTDOT)) n->c.n = parse_expr();
         n->d.n = parse_block();
         goto finish;

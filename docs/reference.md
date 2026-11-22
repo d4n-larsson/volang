@@ -367,7 +367,7 @@ Simple statements (`let`, `var`, `set`, `return`, `break`, `continue`, calls, `t
 | assignment | `set name = expr;`, `set p.field = expr;`, `set xs[i] = expr;`, `set m[k] = expr;` |
 | discard a value | `let _ = expr;` (not for `result` values: E0404) |
 | condition | `if c { } else if c { } else { }` |
-| loops | `while c { }`, `for x in list { }`, `for c in text { }`, `for i in a..b { }`, `for _ in 0..n { }` |
+| loops | `while c { }`, `for x in list { }`, `for i, x in list { }`, `for k, v in map { }`, `for c in text { }`, `for i in a..b { }`, `for _ in 0..n { }` |
 | match | `match e { case name(binding) { } case other { } }` |
 | leave | `return;`, `return expr;`, `break;`, `continue;` |
 | call | `f(args);` (only if `f` returns nothing; see below) |
@@ -379,7 +379,7 @@ Details:
 - A name cannot be declared again inside a nested block while it is visible (shadowing, E0203). Sibling blocks may reuse names. A local never read is W0201.
 - A call statement must not drop a value: `len(s);` alone is E0405 (write `let _ = len(s);` or use the value), and ignoring a `result` is E0404.
 - `if` and `while` conditions must be `bool` (E0301). Parentheses around a condition are optional.
-- `for x in xs` visits list elements, `for c in s` the characters of a `str`. `for i in a..b` visits the ints `a, a+1, ..., b-1` (empty when `a >= b`). `for _ in 0..n` repeats n times without a counter. `..` exists only in `for`. Loop over a map with `for k in keys(m)`. No C-style `for (;;)`, `do`, `loop` or `until`.
+- `for x in xs` visits list elements, `for c in s` the characters of a `str`. `for i in a..b` visits the ints `a, a+1, ..., b-1` (empty when `a >= b`). `for _ in 0..n` repeats n times without a counter. `..` exists only in `for`. `for k, v in m` visits a map's keys with their values, `for i, x in xs` a list's indexes with their elements (`_` for either): what was there when the loop began; additions are not visited, removed entries are skipped. No C-style `for (;;)`, `do`, `loop` or `until`.
 - `break` and `continue` apply to the innermost `while` or `for` (E0407 outside a loop), also from inside a `match` arm.
 - `match` works on variant and `result` values only, not on `int` or `str` (use `if`/`else if`). Each case must appear exactly once (E0401 if one is missing, whose fix inserts it; E0402 if repeated). No default arm. Bind a case's value with `case name(v)`, ignore it with `case name(_)`, and write a case without a value as `case name`.
 
@@ -827,8 +827,8 @@ fn main() uses console {
         }
     }
     remove(counts, "c");
-    for k in keys(counts) {
-        print(k + "=" + str(counts[k]));
+    for k, n in counts {
+        print(k + "=" + str(n));
     }
     print(str(len(counts)));
 }
@@ -1165,7 +1165,8 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 | std.tcp | TCP connections as `bytes`: `connect`, `connect_tls`, `start_tls` (net), `listen`, `accept` (serve); `send`, `read`, `read_exact`, `read_until`, `close` on a `Conn[E]` (need `E`); every wait takes a time limit; errors are `TcpError` |
 | std.option | `Option[T]` (`some`, `none`) for absence, `or_else`, `is_some`, `to_result` |
 | std.web | APIs over `serve_workers`: `web_app`, `on_get`/`on_post`/`on_put`/`on_patch`/`on_delete`, `json_reply(status, v)`, `created`, `no_content`, `serve_app`, `handle_request`, steps, `load_settings`, `health_route` |
-| std.security | access control for `std.web`: `policy(rules, ways, now)`, `rule(path, Access.signed_in)`, `secure` (the step), ways `tokens`, `basic`, `header_key`; `require_user`, `require_role`; `decide`, `describe`, `review` |
+| std.security | access control for `std.web`: `policy(rules, ways, now)`, `rule(path, Access.signed_in)`, `secure` (the step), ways `tokens`, `basic`; `require_user`; `decide`, `review` |
+| std.lists | `contains`, `index_of`, `reversed`, `sort_by_desc(xs, key)`, `min_by`, `max_by`, `sum`, `group_by` |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
 - `https://` URLs are verified: the server's certificate must lead to an authority in the machine's trust store (or a file given with `--ca-file`), be valid now and name the host; otherwise `get`/`post` return an `err` saying why (`vo doc std.http.get` lists them). Nothing turns verification off. TLS 1.3 and 1.2 only; `--clock-ms` does not affect certificate dates. A recording keeps requests and responses, never keys; replay needs no network.

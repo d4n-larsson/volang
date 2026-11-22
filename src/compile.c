@@ -493,7 +493,25 @@ static void cfor(Node *st)
     long it = c_new_temp(); /* counter | list */
     c_new_temp();           /* end | index (it + 8) */
     long op;
-    if (st->c.n) { /* range: start, then end, each once */
+    long value = -1; /* spec 046: the OPC_FOR_VALUE of a two-variable loop */
+    int pair = (st->flags & NF_PAIR) != 0;
+    int pair_map = pair && (st->b.n->type->kind == TY_MAP || st->b.n->type->kind == TY_OMAP);
+    long coll = pair ? c_new_temp() : 0; /* the map, or the list a range loop indexes */
+    if (pair) {
+        c_mov(coll, cexpr(st->b.n, coll), st);
+        if (pair_map) {
+            /* ponytail: the keys the loop began with, 8 bytes an entry while it runs (as `for k in keys(m)`);
+               sequence numbers in MapEntry and a search after a compaction would walk the map in place */
+            c_emit(OPC_SNAPSHOT, it, coll, 0, st);
+            c_emit(OPC_LOADK, it + 8, 0, 0, st);
+            op = OPC_FOR_LIST;
+        } else { /* a list (a deque: its elements now): one round per index it has at the start */
+            if (st->b.n->type->kind == TY_DEQUE) c_emit(OPC_SNAPSHOT, coll, coll, 0, st);
+            c_emit(OPC_LOADK, it, 0, 0, st);
+            c_emit(OPC_LEN, it + 8, coll, 0, st);
+            op = OPC_FOR_RANGE;
+        }
+    } else if (st->c.n) { /* range: start, then end, each once */
         c_mov(it, cexpr(st->b.n, it), st);
         c_mov(it + 8, cexpr(st->c.n, it + 8), st);
         op = OPC_FOR_RANGE;
@@ -506,13 +524,18 @@ static void cfor(Node *st)
     long head = c_emit(op, st->e.i * 8, it, 0, st); /* the first test (its exit target comes later) */
     vec_push(c_fix, (void *)head);
     long body = c_here();
+    if (pair) {
+        value = c_emit(OPC_FOR_VALUE, (st->e.i + 1) * 8, coll, 0, st);
+        vec_push(c_fix, (void *)value);
+    }
     c_cover(st->d.n, COV_LOOP); /* spec 018 */
     cblock(st->d.n);
     long cont = c_here(); /* continue: the back-edge (step, test, next value, jump) */
-    long step = c_emit(st->c.n ? OPC_FOR_STEP : op == OPC_FOR_STR ? OPC_FOR_STR_STEP : OPC_FOR_LIST_STEP, st->e.i * 8, it, body, st);
+    long step = c_emit(op == OPC_FOR_RANGE ? OPC_FOR_STEP : op == OPC_FOR_STR ? OPC_FOR_STR_STEP : OPC_FOR_LIST_STEP, st->e.i * 8, it, body, st);
     vec_push(c_fix, (void *)step);
     long exit = c_here();
     c_target(head, exit);
+    if (pair) c_target(value, pair_map ? cont : exit);
     c_loop_leave(cont, exit, outer_brk, outer_cont);
 }
 

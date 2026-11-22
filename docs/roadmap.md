@@ -52,6 +52,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [043](../specs/043-bits/) | Bits: `std.bits` (and, or, xor, not, shifts, rotations, wrapping arithmetic, `parse_hex`, `parse_binary`) and hex and binary integer literals | **Implemented** ([results](../specs/043-bits/results.md)) |
 | [044](../specs/044-decimal/) | Decimal: `std.decimal`, exact decimal numbers (units and places) with stated rounding, text, comparison and allocation, written in vo | **Implemented** ([results](../specs/044-decimal/results.md)) |
 | [045](../specs/045-security/) | Security: `std.security`, access control for `std.web` applications in the manner of Spring Security: one table of rules, tokens, Basic and keys, the user in operations, and a review of the table; written in vo | **Implemented** ([results](../specs/045-security/results.md)) |
+| [046](../specs/046-iteration/) | Iteration: `for k, v in m` and `for i, x in xs`, W0403 with a fix for the loops they replace, `std.lists` | **Implemented** ([results](../specs/046-iteration/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -531,6 +532,17 @@ rules that never apply. Signing in is stateless: signed tokens (JWT, HMAC-SHA256
 route, HTTP Basic, or a key checked by the application; sessions and cookies wait for a store that
 worker processes can share. The module is written in vo and has no effects of its own: a token check
 adds about 20 microseconds to a request.
+
+### 046: iteration (implemented)
+
+A `for` had one variable, so a map was looped as `for k in keys(m)` with `m[k]` in the body and a list
+with positions as `for i in 0..len(xs)` with `xs[i]`. A `for` now takes two: `for k, v in m` and
+`for i, x in xs`. Such a loop visits what the collection had when the loop began (a map: the keys it
+had, each visited if it is still there, with its value at that moment; a list: one round per index it
+had), which is what the written-out loops did, so warning W0403 can rewrite them with a fix and one
+form remains. The review's `for i in 0..n by 2` was left out: no loop in the library or the examples
+steps by other than 1. `std.lists` adds the small list functions, written in vo; for its descending
+sort the builtin `sort_by` learned to take a key of an `ordered` type parameter.
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
 it is next; anything that reaches the outside world gets an effect, scopes, and record and replay.

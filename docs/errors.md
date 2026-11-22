@@ -1421,7 +1421,7 @@ A type that cannot be ordered is used where an order is needed.
 
 Fixable: no
 
-Sorting, `min`, `max`, `<`, `<=`, `>`, `>=`, a `sort_by` key, an `ordered` type parameter and the keys of the ordered collections need an order: `int`, `float`, `str`, or a record whose fields all have one (compared field by field, in declaration order). Lists, maps, variants and functions have no order, so a record with such a field has none either; the message names that field. Sort by one of the ordered fields instead, or give the collection a comparison function.
+Sorting, `min`, `max`, `<`, `<=`, `>`, `>=`, a `sort_by` key, an `ordered` type parameter and the keys of the ordered collections need an order: `int`, `float`, `str`, or a record whose fields all have one (compared field by field, in declaration order). Lists, maps, variants and functions have no order, so a record with such a field has none either; the message names that field. Sort by one of the ordered fields instead, or give the collection a comparison function. In a generic function, a `sort_by` key may have the type of a type parameter declared `ordered` (`C: ordered`); one without that constraint has no order.
 
 ### Example
 
@@ -3312,6 +3312,39 @@ fn main() uses console {
         case err(e) {
             print(e);
         }
+    }
+}
+```
+
+## W0403 for_reads_entry
+
+A loop reads the entry of its collection first thing, where a loop with two variables gives both.
+
+Fixable: yes
+
+`for k, v in m` gives each key of a map with its value, and `for i, x in xs` each index of a list with its element. A loop over `keys(m)` that begins with `let v = m[k];`, or over `0..len(xs)` that begins with `let x = xs[i];`, is that loop written out, so the fix rewrites it. Both forms visit what the collection had when the loop began. The warning is given only when the map or list is a `let` or a parameter and the read is the first statement.
+
+### Example
+
+```vo
+fn main() uses console {
+    let prices = new map[str, int];
+    set prices["tea"] = 3;
+    for name in keys(prices) {
+        let price = prices[name];
+        print(format("{}: {}", name, price));
+    }
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let prices = new map[str, int];
+    set prices["tea"] = 3;
+    for name, price in prices {
+        print(format("{}: {}", name, price));
     }
 }
 ```

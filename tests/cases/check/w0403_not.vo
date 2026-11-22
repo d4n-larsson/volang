@@ -1,0 +1,105 @@
+# No W0403: the loop is not exactly the two-variable loop written out, or the rewrite could change it.
+record Box {
+    items: list[str];
+    index: map[str, int];
+}
+
+fn names() -> map[str, int] {
+    return new map[str, int];
+}
+
+@allow("W0701", "one case per loop")
+@allow("W0703", "one case per loop")
+fn main() uses console {
+    let m = new map[str, int];
+    let other = new map[str, int];
+    let xs = ["a", "b"];
+    let s = new ordered_set[int];
+    let box = new Box { items: xs, index: m };
+    var changing = new map[str, int];
+    var list_var = ["c"];
+    # No read first.
+    for k in keys(m) {
+        print(k);
+    }
+    # Something else first.
+    for k in keys(m) {
+        print(k);
+        let v = m[k];
+        print(str(v));
+    }
+    # A comment first: the fix would remove it.
+    for k in keys(m) {
+        # the value
+        let v = m[k];
+        print(k + str(v));
+    }
+    # Another map, another index, a type annotation, a var.
+    for k in keys(m) {
+        let v = other[k];
+        print(k + str(v));
+    }
+    for k in keys(m) {
+        let v = m["a"];
+        print(k + str(v));
+    }
+    for k in keys(m) {
+        let v: int = m[k];
+        print(k + str(v));
+    }
+    for k in keys(m) {
+        var v = m[k];
+        set v = v + 1;
+        print(k + str(v));
+    }
+    # The map is a var, a field, a call.
+    for k in keys(changing) {
+        let v = changing[k];
+        set changing = other;
+        print(k + str(v));
+    }
+    for k in keys(box.index) {
+        let v = box.index[k];
+        print(k + str(v));
+    }
+    for k in keys(names()) {
+        let v = names()[k];
+        print(k + str(v));
+    }
+    # A set has no values.
+    for k in s {
+        print(str(k));
+    }
+    # Index loops that are not the whole list from 0.
+    for i in 1..len(xs) {
+        let x = xs[i];
+        print(x);
+    }
+    for i in 0..len(xs) - 1 {
+        let x = xs[i];
+        print(x);
+    }
+    for i in 0..2 {
+        let x = xs[i];
+        print(x);
+    }
+    for i in 0..len(xs) {
+        let x = xs[i + 0];
+        print(x);
+    }
+    for i in 0..len(list_var) {
+        let x = list_var[i];
+        set list_var = xs;
+        print(x);
+    }
+    for i in 0..len(box.items) {
+        let x = box.items[i];
+        print(x);
+    }
+    # A text is not a list.
+    let text = "abc";
+    for i in 0..len(text) {
+        let b = byte_at(text, i);
+        print(str(b));
+    }
+}

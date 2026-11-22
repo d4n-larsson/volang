@@ -279,8 +279,8 @@ fn main() uses console {
     for fruit in fruits {
         print(fruit);
     }
-    for i in 0..len(fruits) {
-        print(str(i) + ": " + fruits[i]);
+    for i, fruit in fruits {
+        print(str(i) + ": " + fruit);
     }
     var stars = "";
     for _ in 0..3 {
@@ -312,8 +312,9 @@ l is 1 byte(s)
 Looping over a `str` gives each character (a Unicode code point) as a one-character string, without
 building the list `chars(s)` would.
 
-The `..` range exists only in `for`; it is not a value you can store. To loop over a map, loop over its
-keys with `for k in keys(m)` (see [Lists and maps](lists-and-maps.md)).
+The `..` range exists only in `for`; it is not a value you can store. With two variables a `for` gives
+a list's indexes with its elements (`for i, x in xs`) or a map's keys with its values
+(`for k, v in m`); see [Lists and maps](lists-and-maps.md#iteration).
 
 ### break and continue
 
@@ -324,11 +325,11 @@ inside a `match` arm within the loop. Outside a loop they are [E0407](../errors/
 fn main() uses console {
     var found = -1;
     let xs = [4, 7, 10, 13, 16];
-    for i in 0..len(xs) {
-        if xs[i] % 2 == 0 {
+    for i, x in xs {
+        if x % 2 == 0 {
             continue;
         }
-        if xs[i] > 10 {
+        if x > 10 {
             set found = i;
             break;
         }

@@ -6,6 +6,7 @@
 (parameter name: (identifier) @local.definition.parameter)
 (let_statement name: (identifier) @local.definition.var)
 (for_statement name: (identifier) @local.definition.var)
+(for_statement second: (identifier) @local.definition.var)
 (match_arm binding: (identifier) @local.definition.var)
 (const_definition name: (identifier) @local.definition.constant)
 

@@ -185,6 +185,7 @@ long vm_run(void *start)
         &&op_index_bytes, /* spec 021 */
         &&op_append, &&op_join,
         &&op_for_str, &&op_for_str_step, /* spec 042 */
+        &&op_for_value, /* spec 046 */
     };
     if (!start) {
         for (int i = 0; i < OPC_COUNT; i++) vm_ops[i] = vm_ops_trace[i] = ops[i];
@@ -359,6 +360,25 @@ op_for_range:
     tick(pc->node);
     STORE(SL(pc->b));
     /* for over a list: the list at b, the index at b+8; the length and data are read every time */
+    /* spec 046: the second variable of a two-variable loop, first in its body. The first variable
+       (slot a-8) is a key of the map in b, or an index into the list in b; a key the map no longer
+       has is skipped (c: the back-edge), an index past the end ends the loop (c: the exit). */
+op_for_value: {
+    long kind = pc->node->b.n->type->kind;
+    x = SL(pc->a - 8);
+    cur_node = (long)pc->node;
+    if (kind == TY_MAP) {
+        long e = map_find((Map *)SL(pc->b), x, pc->node->b.n->type->a.t);
+        if (e < 0) JUMP;
+        STORE(((Map *)SL(pc->b))->entries[e].val.i);
+    }
+    if (kind == TY_OMAP) {
+        if (!coll_has((Coll *)SL(pc->b), x)) JUMP;
+        STORE(coll_index((Coll *)SL(pc->b), x, pc->node));
+    }
+    if (x >= ((List *)SL(pc->b))->len) JUMP;
+    STORE(((List *)SL(pc->b))->data[x].i);
+}
 op_for_list:
     if (SL(pc->b + 8) >= ((List *)SL(pc->b))->len) JUMP;
     tick(pc->node);
@@ -507,6 +527,8 @@ op_set_index_coll:
     NEXT;
 op_snapshot:
     cur_node = (long)pc->node;
+    if (pc->node->kind == N_FOR && pc->node->b.n->type->kind == TY_MAP) /* spec 046: `for k, v in m`: its keys now */
+        STORE((long)map_keys((Map *)SL(pc->b)));
     STORE((long)coll_snapshot((Coll *)SL(pc->b)));
 op_new_coll: /* the concrete collection type orders it */
     cur_node = (long)pc->node;
@@ -1075,6 +1097,15 @@ static void fl_stmt(Vec *vec, Node *stmt, long off)
     case N_FOR: { /* the variable, inside the body */
         if (!fl_contains(stmt->d.n, off)) return;
         Type *t = t_int; /* a range: int */
+        if (stmt->flags & NF_PAIR) { /* spec 046: key and value, or index and element */
+            Type *ct = stmt->b.n->type;
+            int is_map = ct && (ct->kind == TY_MAP || ct->kind == TY_OMAP);
+            if (!ct || !(is_map || ct->kind == TY_LIST || ct->kind == TY_DEQUE)) return;
+            fl_add(vec, stmt->a.n ? stmt->a.n->a.s : 0, is_map ? ct->a.t : t_int, stmt->e.i);
+            fl_add(vec, stmt->c.n ? stmt->c.n->a.s : 0, is_map ? ct->b.t : ct->a.t, stmt->e.i + 1);
+            fl_block(vec, stmt->d.n, off);
+            return;
+        }
         if (!stmt->c.n) { /* a list: its element type */
             Type *lt = stmt->b.n->type;
             t = lt && (lt->kind == TY_LIST || TY_IS_COLL(lt->kind)) ? lt->a.t : 0; /* spec 014: collections too */

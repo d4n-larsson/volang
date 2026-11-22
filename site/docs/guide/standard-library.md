@@ -53,7 +53,7 @@ fn pick[T](xs: list[T]) -> result[T] uses random
 With `--json`, each item is a `doc` record with `signature`, `params`, `returns`, `effects`,
 `description` and `example`. The same pages are on this site: [std.json](../std/json.md),
 [std.time](../std/time.md), [std.text](../std/text.md), [std.random](../std/random.md),
-[std.http](../std/http.md), [std.tcp](../std/tcp.md), [std.bits](../std/bits.md), [std.decimal](../std/decimal.md) and [std.collections](../std/collections.md).
+[std.http](../std/http.md), [std.tcp](../std/tcp.md), [std.bits](../std/bits.md), [std.decimal](../std/decimal.md), [std.lists](../std/lists.md) and [std.collections](../std/collections.md).
 
 ## Effects of library functions
 
@@ -808,6 +808,59 @@ In JSON, a database or a file, store a decimal as its text (`decimal_text(d)`, r
 `parse_decimal`), not as a JSON number or a float: the text keeps every digit and the places. When all
 amounts have the same places, an integer column of units works too (`decimal(cents, 2)`). Details:
 [std.decimal](../std/decimal.md).
+
+## std.lists: small operations on lists
+
+The loops everybody writes, once: `contains(xs, x)` and `index_of(xs, x)` (-1 when absent),
+`reversed(xs)` (a new list), `sort_by_desc(xs, key)` (in place, largest key first; equal keys keep
+their order), `min_by(xs, key)` and `max_by(xs, key)` (the first element with the smallest or largest
+key; an error for an empty list), `sum(xs)` for a list of `int`, and `group_by(xs, key)`, a map from
+each key to the list of its elements.
+
+```vo
+import std.lists.contains;
+import std.lists.group_by;
+import std.lists.max_by;
+import std.lists.sort_by_desc;
+import std.lists.sum;
+
+fn main() uses console {
+    let words = split("pear fig kiwi apple fig plum", " ");
+    print(format("{} {}", contains(words, "kiwi"), sum(map(words, fn(w: str) -> int { return len(w); }))));
+    for size, group in group_by(words, fn(w: str) -> int { return len(w); }) {
+        print(format("{} letters: {}", size, join(group, " ")));
+    }
+    sort_by_desc(words, fn(w: str) -> int { return len(w); });
+    for i, w in words {
+        print(format("{}. {}", i + 1, w));
+    }
+    match max_by(words, fn(w: str) -> str { return w; }) {
+        case ok(w) {
+            print("last in the alphabet: " + w);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
+```
+
+```output
+true 23
+4 letters: pear kiwi plum
+3 letters: fig fig
+5 letters: apple
+1. apple
+2. pear
+3. kiwi
+4. plum
+5. fig
+6. fig
+last in the alphabet: plum
+```
+
+The builtin `sort_by` sorts from smallest to largest; negating a number key reverses it, but a text
+key cannot be negated, which is what `sort_by_desc` is for.
 
 ## std.math
 

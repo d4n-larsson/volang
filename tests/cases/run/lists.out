@@ -1,0 +1,23 @@
+true false false
+1 -1 -1
+1
+apple fig kiwi fig pear | pear fig kiwi fig apple | 0
+apple pear kiwi fig fig
+pear kiwi fig fig apple
+apple pear kiwi fig fig
+Lund
+only0
+fig apple
+a kiwi
+error: empty list, error: empty list
+6 0 0
+4: pear kiwi
+3: fig fig
+5: apple
+4 letters: 2
+3 letters: 2
+5 letters: 1
+0
+key of a
+key of bb
+bb

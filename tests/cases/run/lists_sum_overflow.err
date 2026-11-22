@@ -1,0 +1,7 @@
+std/lists.vo:100:21: runtime error[R0001]: Integer overflow.
+ 100 |         set total = total + x;
+     |                     ^^^^^^^^^
+trace:
+  at sum (std/lists.vo:100:21)
+      xs: list[int] = [9223372036854775807, 1], total: int = 9223372036854775807, x: int = 1
+  at main (lists_sum_overflow.vo:5:15)

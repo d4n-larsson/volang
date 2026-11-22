@@ -275,8 +275,8 @@ fn parse_line(n: int, line: str) -> result[int] {
 
 fn total(lines: list[str]) -> result[int] {
     var sum = 0;
-    for i in 0..len(lines) {
-        set sum = sum + try parse_line(i + 1, lines[i]);
+    for i, line in lines {
+        set sum = sum + try parse_line(i + 1, line);
     }
     return ok(sum);
 }

@@ -1,0 +1,5 @@
+PASS an empty map, two words (0ms)
+not run: for_pair.vo:4:28 loop in total
+not run: for_pair.vo:13:9 if_false in longest
+coverage: 2 of 2 functions, 2 of 4 branches
+1 passed, 0 failed

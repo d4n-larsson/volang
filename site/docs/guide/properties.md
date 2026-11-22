@@ -165,8 +165,8 @@ prop "every word is counted once" (words: list[str]) {
     assume(len(words) > 0);
     let counts = word_counts(join(words, " "));
     var total = 0;
-    for k in keys(counts) {
-        set total = total + counts[k];
+    for _, n in counts {
+        set total = total + n;
     }
     expect_eq(total, len(words));
 }

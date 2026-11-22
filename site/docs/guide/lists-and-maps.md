@@ -213,8 +213,8 @@ fn main() uses console {
     print(str(has(counts, "c")) + " " + str(get_or(counts, "z", 0)) + " " + str(has(counts, "z")));
     remove(counts, "c");
     remove(counts, "not there");
-    for k in keys(counts) {
-        print(k + "=" + str(counts[k]));
+    for k, n in counts {
+        print(k + "=" + str(n));
     }
 }
 ```
@@ -265,8 +265,8 @@ fn main() uses console {
     remove(m, 1);
     set m[1] = "A";
     let parts = new list[str];
-    for k in keys(m) {
-        push(parts, str(k) + m[k]);
+    for k, v in m {
+        push(parts, str(k) + v);
     }
     print(join(parts, " "));
 }
@@ -297,8 +297,8 @@ fn main() uses console {
         }
         push(groups[key], n);
     }
-    for k in keys(groups) {
-        print(k + ": " + str(len(groups[k])));
+    for k, group in groups {
+        print(k + ": " + str(len(group)));
     }
 }
 ```
@@ -346,22 +346,36 @@ A generic function that keys a map by its type parameter declares it `K: key`:
 
 ## Iteration
 
-`for x in xs` visits the elements of a list in order. A map is not iterable itself: loop over its keys
-with `for k in keys(m)`, and read each value with `m[k]`. To count, use a range, `for i in 0..len(xs)`.
+`for x in xs` visits the elements of a list in order. With two variables a `for` gives the position
+too: `for i, x in xs` is each index with its element, and `for k, v in m` each key of a map with its
+value, in the map's order. Write `_` for the one you do not need (`for _, v in m`).
+
+A loop with two variables visits what was there when it began:
+
+- over a list, it runs once for each index the list had, with the element that is there at its turn.
+  Elements pushed in the body are not visited, and a list that has become shorter ends the loop.
+  (`for x in xs`, with one variable, follows the list instead: it also visits what the body pushes.)
+- over a map, it goes through the keys the map had and visits each one the map still has at its
+  turn, with the value it has then. A key removed in the body is skipped; a key added in the body is
+  not visited. Changing values while looping is fine.
+
+The loops this replaces, `for k in keys(m)` followed by `let v = m[k];` and `for i in 0..len(xs)`
+followed by `let x = xs[i];`, still work; [W0403](../errors/W0403.md) points them to the shorter form
+and its fix rewrites them. A range is still the way to count without a list.
 
 ```vo
 fn main() uses console {
     let names = ["ana", "bo", "cy"];
-    for i in 0..len(names) {
-        print(str(i) + ": " + names[i]);
+    for i, name in names {
+        print(str(i) + ": " + name);
     }
     let scores = new map[str, int];
     set scores["ana"] = 3;
     set scores["bo"] = 5;
     var best = "";
-    for k in keys(scores) {
-        if best == "" or scores[k] > scores[best] {
-            set best = k;
+    for name, score in scores {
+        if best == "" or score > scores[best] {
+            set best = name;
         }
     }
     print(best);

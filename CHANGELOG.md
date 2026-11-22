@@ -6,6 +6,13 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- `for` with two variables: `for k, v in m` gives a map's keys with their values, `for i, x in xs` a list's
+  (or deque's) indexes with their elements; `_` for either. Such a loop visits what was there when it
+  began: entries added in the body are not visited, removed ones are skipped. New warning W0403 with a
+  fix for the loops this replaces (`for k in keys(m)` then `let v = m[k];`, and `for i in 0..len(xs)`
+  then `let x = xs[i];`).
+- `std.lists`: `contains`, `index_of`, `reversed`, `sort_by_desc`, `min_by`, `max_by`, `sum`, `group_by`.
+- `sort_by` accepts a key whose type is an `ordered` type parameter, so generic functions can sort.
 - `std.security`: access control for `std.web` applications. A policy is one table of rules (who may call
   which method and path: anyone, signed-in users, users with a role, nobody), and `secure(policy)` enforces
   it: a request no rule matches is refused, 401 without credentials and 403 with. Ways of signing in:

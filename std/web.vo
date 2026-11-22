@@ -24,6 +24,7 @@ import std.json.as_object;
 import std.json.parse_json;
 import std.json.to_json;
 import std.json.write_json;
+import std.lists.contains;
 
 # An application: its routes, the steps around every request, and error kinds beside the defaults.
 #     len(new App[int] { routes: new list[Route[int]], steps: new list[Step[int]], errors: new list[ErrorStatus] }.routes) is 0
@@ -263,11 +264,10 @@ fn dispatch[C, E: effects](app: App[C, E], ctx: C, r: Request) -> Response uses 
     var best = -1;
     var best_vars = new map[str, str];
     var allowed = new list[str];
-    for i in 0..len(app.routes) {
-        let rt = app.routes[i];
+    for i, rt in app.routes {
         match match_path(rt.segments, segs) {
             case ok(vars) {
-                if not has_item(allowed, rt.method) {
+                if not contains(allowed, rt.method) {
                     push(allowed, rt.method);
                 }
                 if rt.method == method and (best < 0 or more_specific(rt.segments, app.routes[best].segments)) {
@@ -282,7 +282,7 @@ fn dispatch[C, E: effects](app: App[C, E], ctx: C, r: Request) -> Response uses 
     if len(allowed) == 0 {
         return problem(404, "no route for " + r.path, new list[Json]);
     }
-    if has_item(allowed, "GET") {
+    if contains(allowed, "GET") {
         push(allowed, "HEAD");
     }
     let allow = join(allowed, ", ");
@@ -316,23 +316,13 @@ fn if_head(method: str) -> str {
     return method;
 }
 
-fn has_item(xs: list[str], x: str) -> bool {
-    for y in xs {
-        if y == x {
-            return true;
-        }
-    }
-    return false;
-}
-
 fn match_path(pattern: list[str], segs: list[str]) -> result[map[str, str]] {
     # The path variables when segs match the pattern's segments.
     let vars = new map[str, str];
     if len(pattern) != len(segs) {
         return err("length");
     }
-    for i in 0..len(pattern) {
-        let p = pattern[i];
+    for i, p in pattern {
         let s = segs[i];
         if s == "" and p != "" {
             return err("empty");
@@ -620,8 +610,7 @@ export fn serve_app[C, E: effects, F: effects](
 
 fn check_routes[C, E: effects](routes: list[Route[C, E]]) -> result[void] {
     # The checks vo check makes on route tables written in one list, for tables built otherwise.
-    for i in 0..len(routes) {
-        let a = routes[i];
+    for i, a in routes {
         if len(a.pattern) == 0 or slice(a.pattern, 0, 1) != "/" {
             return err("route `" + a.pattern + "` does not start with /");
         }
@@ -831,7 +820,7 @@ export fn cors[C, E: effects](origins: list[str]) -> Step[C, E] {
             var origin = "";
             match header_of(r, "Origin") {
                 case ok(o) {
-                    if has_item(origins, o) {
+                    if contains(origins, o) {
                         set origin = o;
                     }
                 }

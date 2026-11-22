@@ -1,0 +1,13 @@
+# A range has no second part, and a comma needs a second name.
+fn main() uses console {
+    let xs = [1, 2];
+    for i, x in 0..3 {
+        print(str(x));
+    }
+    for _, x in 0..3 {
+        print(str(x));
+    }
+    for i, in xs {
+        print("no second name");
+    }
+}
