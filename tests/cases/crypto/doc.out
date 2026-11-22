@@ -10,3 +10,5 @@ fn hash_password(password: str) -> str uses entropy
     A text to store instead of the password: the method, its cost, a fresh salt and the derived key (PBKDF2-HMAC-SHA256). Two calls give different texts; check a password with verify_password.
 fn verify_password(password: str, stored: str) -> bool
     Whether password is the one stored was made from. False for a text hash_password did not make (and for a cost above 10000000), never an error.
+fn password_outdated(stored: str) -> bool
+    Whether stored is a hash made with a lower cost than hash_password uses now: after a successful verify_password, store hash_password(password) in its place. False for a text that is not a hash.

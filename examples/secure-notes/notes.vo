@@ -1,0 +1,320 @@
+# The secure notes service: who may call what is the one table in rules(); the operations get the
+# signed-in user from the identity the policy step passes on.
+import std.bytes.from_text;
+import std.http.Request;
+import std.http.Response;
+import std.json.parse_json;
+import std.json.text_field;
+import std.option.Option;
+import std.security.Access;
+import std.security.Account;
+import std.security.Policy;
+import std.security.Rule;
+import std.security.User;
+import std.security.Way;
+import std.security.as_user;
+import std.security.decide;
+import std.security.describe;
+import std.security.has_role;
+import std.security.policy;
+import std.security.require_user;
+import std.security.review;
+import std.security.rule;
+import std.security.rule_for;
+import std.security.safe_headers;
+import std.security.secure;
+import std.security.sign_in_route;
+import std.security.test_users;
+import std.security.tokens;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.NoInput;
+import std.web.created;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.no_content;
+import std.web.on_delete;
+import std.web.on_get;
+import std.web.on_post;
+import std.web.request;
+import std.web.with_header;
+
+# Who may call what. A route no rule mentions is refused.
+export fn rules() -> list[Rule] {
+    return [
+        rule("/health", Access.anyone),
+        rule_for(["POST"], "/sign-in", Access.anyone),
+        rule("/admin", Access.any_role(["admin"])),
+        rule("/notes", Access.signed_in)
+    ];
+}
+
+export record Note {
+    id: int;
+    owner: str;
+    text: str;
+}
+
+# What every operation gets: the notes (in memory) and the accounts.
+export record Store {
+    notes: list[Note];
+    next_id: int;
+    accounts: list[Account];
+}
+
+# A store with two accounts: ada (password "correct horse", an admin) and bo ("battery staple").
+export fn new_store() -> Store {
+    return new Store {
+        notes: new list[Note],
+        next_id: 1,
+        accounts: [
+            new Account {
+                name: "ada",
+                password_hash: "pbkdf2-sha256$600000$vsqYPqmCMPYqyL8onNauTg==$2HblZhpsfIQY/Iuv8jPWxyKt+RnxbxDJ1+vQ+GZrvgI=",
+                roles: ["admin"],
+                enabled: true
+            },
+            new Account {
+                name: "bo",
+                password_hash: "pbkdf2-sha256$600000$JHYIxSZdk6ODb4GRlgJqEw==$2UN9Xlv7xIMaLnA3Akcy0IgjR+84+WrizeRpof9gzzo=",
+                roles: new list[str],
+                enabled: true
+            }
+        ]
+    };
+}
+
+fn find_account(store: Store, name: str) -> result[Option[Account]] {
+    for a in store.accounts {
+        if a.name == name {
+            return ok(Option.some(a));
+        }
+    }
+    return ok(Option.none);
+}
+
+record Caller {
+    @header("X-Identity")
+    @default("")
+    identity: str;
+}
+
+record NewNote {
+    @size(1, 200)
+    text: str;
+}
+
+record Add {
+    body: NewNote;
+    @header("X-Identity")
+    @default("")
+    identity: str;
+}
+
+record ById {
+    id: int;
+    @header("X-Identity")
+    @default("")
+    identity: str;
+}
+
+fn alive(store: Store, input: NoInput) -> result[Response] {
+    return ok(json_reply(200, "up"));
+}
+
+fn my_notes(store: Store, input: Caller) -> result[Response] {
+    let user = try require_user(input.identity);
+    let mine = new list[Note];
+    for n in store.notes {
+        if n.owner == user.name {
+            push(mine, n);
+        }
+    }
+    return ok(json_reply(200, mine));
+}
+
+fn add(store: Store, input: Add) -> result[Response] {
+    let user = try require_user(input.identity);
+    let note = new Note { id: store.next_id, owner: user.name, text: input.body.text };
+    set store.next_id = store.next_id + 1;
+    push(store.notes, note);
+    return ok(created("/notes/" + str(note.id), note));
+}
+
+fn erase(store: Store, input: ById) -> result[Response] {
+    let user = try require_user(input.identity);
+    let kept = new list[Note];
+    var found = false;
+    for n in store.notes {
+        if n.id != input.id {
+            push(kept, n);
+        } else if n.owner == user.name or has_role(user, "admin") {
+            set found = true;
+        } else {
+            return err("forbidden: not your note");
+        }
+    }
+    if not found {
+        return err("not_found: no note " + str(input.id));
+    }
+    set store.notes = kept;
+    return ok(no_content());
+}
+
+fn users(store: Store, input: NoInput) -> result[Response] {
+    let names = new list[str];
+    for a in store.accounts {
+        push(names, a.name);
+    }
+    return ok(json_reply(200, names));
+}
+
+# The policy: the rules, and tokens signed with key (32 bytes or more) as the way of signing in.
+# more_ways is empty when serving and [test_users()] in tests; now is the clock.
+export fn notes_policy[E: effects](key: bytes, more_ways: list[Way[Store, E]], now: fn() -> int uses E) -> Policy[Store, E] {
+    let ways: list[Way[Store, E]] = [tokens([key])];
+    for w in more_ways {
+        push(ways, w);
+    }
+    return policy(rules(), ways, now);
+}
+
+# The application: its routes, and the policy step in front of all of them.
+export fn notes_app[E: effects](key: bytes, more_ways: list[Way[Store, E]], now: fn() -> int uses E) -> App[Store, E] {
+    let p = notes_policy(key, more_ways, now);
+    return new App {
+        routes: [
+            on_get("/health", alive),
+            sign_in_route("/sign-in", p, find_account, key, 3600),
+            on_get("/notes", my_notes),
+            on_post("/notes", add),
+            on_delete("/notes/{id}", erase),
+            on_get("/admin/users", users)
+        ],
+        steps: [safe_headers(0), secure(p)],
+        errors: new list[ErrorStatus]
+    };
+}
+
+# ---- tests: every request goes through the application, without a network ----
+
+fn test_app() -> App[Store] {
+    let more: list[Way[Store]] = [test_users()];
+    return notes_app(from_text("a test key of thirty-two bytes!!"), more, fn() -> int { return 0; });
+}
+
+fn ada() -> User {
+    return new User { name: "ada", roles: ["admin"] };
+}
+
+fn bo() -> User {
+    return new User { name: "bo", roles: new list[str] };
+}
+
+fn call(store: Store, user: User, method: str, path: str, body: str) -> Response {
+    return handle_request(test_app(), store, as_user(request(method, path, body), user));
+}
+
+test "the review of the policy that is served finds nothing" {
+    let none = new list[Way[Store]];
+    let served = notes_app(from_text("a test key of thirty-two bytes!!"), none, fn() -> int { return 0; });
+    let p = notes_policy(from_text("a test key of thirty-two bytes!!"), none, fn() -> int { return 0; });
+    expect_eq(review(served, p), new list[str]);
+}
+
+test "who may call what" {
+    let none = new list[Way[Store]];
+    let served = notes_app(from_text("a test key of thirty-two bytes!!"), none, fn() -> int { return 0; });
+    expect_eq(describe(served, rules()), join([
+        "GET /health: anyone",
+        "POST /sign-in: anyone",
+        "GET /notes: signed in",
+        "POST /notes: signed in",
+        "DELETE /notes/{id}: signed in",
+        "GET /admin/users: roles admin"
+    ], "\n"));
+}
+
+test "every route answers each caller as the rules decide" {
+    let requests = [
+        request("GET", "/health", ""),
+        request("POST", "/sign-in", `{"name": "x", "password": "y"}`),
+        request("GET", "/notes", ""),
+        request("POST", "/notes", `{"text": "a"}`),
+        request("DELETE", "/notes/1", ""),
+        request("GET", "/admin/users", ""),
+        request("GET", "/nothing/here", "")
+    ];
+    for r in requests {
+        let wrong = handle_request(test_app(), new_store(), with_header(r, "Authorization", "Bearer not.a.token"));
+        expect_eq(wrong.status, 401);
+        let callers: list[Option[User]] = [Option.none, Option.some(bo()), Option.some(ada())];
+        for c in callers {
+            var sent = r;
+            match c {
+                case some(user) {
+                    set sent = as_user(r, user);
+                }
+                case none {
+                }
+            }
+            let status = handle_request(test_app(), new_store(), sent).status;
+            match decide(rules(), r.method, r.path, c) {
+                case allowed {
+                    # The operation ran: its own answer (the sign-in refuses x, there is no note 1).
+                    expect(status == 200 or status == 201 or status == 404 or (r.path == "/sign-in" and status == 401));
+                }
+                case sign_in_needed {
+                    expect_eq(status, 401);
+                }
+                case forbidden {
+                    expect_eq(status, 403);
+                }
+            }
+        }
+    }
+}
+
+test "a user sees and deletes only their own notes; an admin deletes any" {
+    let store = new_store();
+    expect_eq(call(store, bo(), "POST", "/notes", `{"text": "buy bread"}`).status, 201);
+    expect_eq(call(store, ada(), "POST", "/notes", `{"text": "review the policy"}`).status, 201);
+    expect_eq(call(store, bo(), "GET", "/notes", "").body, `[{"id":1,"owner":"bo","text":"buy bread"}]`);
+    expect_eq(call(store, bo(), "DELETE", "/notes/2", "").status, 403);
+    expect_eq(call(store, ada(), "DELETE", "/notes/1", "").status, 204);
+    expect_eq(call(store, bo(), "GET", "/notes", "").body, "[]");
+    expect_eq(call(store, ada(), "DELETE", "/notes/9", "").status, 404);
+}
+
+test "a password is exchanged for a token, and the token signs in" {
+    let store = new_store();
+    let wrong = handle_request(test_app(), store, request("POST", "/sign-in", `{"name": "bo", "password": "guess"}`));
+    expect_eq(wrong.status, 401);
+    let answer = handle_request(test_app(), store, request("POST", "/sign-in", `{"name": "bo", "password": "battery staple"}`));
+    expect_eq(answer.status, 200);
+    var token = "";
+    match parse_json(answer.body) {
+        case ok(j) {
+            match text_field(j, "token") {
+                case ok(t) {
+                    set token = t;
+                }
+                case err(_) {
+                }
+            }
+        }
+        case err(_) {
+        }
+    }
+    let signed = with_header(request("POST", "/notes", `{"text": "mine"}`), "Authorization", "Bearer " + token);
+    expect_eq(handle_request(test_app(), store, signed).body, `{"id":1,"owner":"bo","text":"mine"}`);
+    let admin = with_header(request("GET", "/admin/users", ""), "Authorization", "Bearer " + token);
+    expect_eq(handle_request(test_app(), store, admin).status, 403);
+}
+
+test "answers carry the safe headers" {
+    let r = handle_request(test_app(), new_store(), request("GET", "/notes", ""));
+    expect_eq(r.status, 401);
+    expect_eq(r.headers[1].value, "Bearer");
+    expect_eq(r.headers[2].name, "X-Content-Type-Options");
+}

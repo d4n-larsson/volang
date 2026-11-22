@@ -1,0 +1,965 @@
+# std.security: Access control for std.web applications: rules saying who may call what, signing in with passwords, tokens or keys, and the user in operations.
+# Part of the vo standard library. Import items one by one: `import std.security.NAME;`.
+# A policy is a value: `policy(rules, ways, now)`. `secure(policy)` is the step that enforces it: the
+# first rule matching a request's method and path decides, and a request no rule matches is refused
+# (401 without credentials, 403 with). A rule's path is a prefix of whole segments: "/admin" covers
+# "/admin" and "/admin/users/{id}", not "/administrator".
+# The step passes the user on in the request header X-Identity, which clients cannot set. An
+# operation declares `@header("X-Identity") @default("") identity: str;` in its input and calls
+# current_user(identity), require_user(identity) or require_role(identity, roles).
+# `decide` is the same decision as a pure function; `describe` and `review` apply it to an
+# application's routes. Tests sign in with `test_users()` in the policy and `as_user(request, user)`.
+import std.bytes.from_base64;
+import std.bytes.from_text;
+import std.bytes.to_base64;
+import std.bytes.to_text;
+import std.crypto.hmac_sha256;
+import std.crypto.password_outdated;
+import std.crypto.same_bytes;
+import std.crypto.verify_password;
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.json.Json;
+import std.json.field;
+import std.json.from_json;
+import std.json.int_field;
+import std.json.parse_json;
+import std.json.text_field;
+import std.json.to_json;
+import std.json.write_json;
+import std.option.Option;
+import std.web.App;
+import std.web.Route;
+import std.web.Step;
+import std.web.json_reply;
+import std.web.problem_reply;
+import std.web.with_header;
+
+const unknown_account_hash = "pbkdf2-sha256$600000$uhjvqUkG1yFEktgBPBuNqQ==$PVcPDIHXJlHQvQJz+SpALHXX1vtSUabWC+FjltYm6RA=";
+const test_header = "X-Test-User";
+
+# A signed-in caller: what an operation gets from current_user, require_user and require_role.
+#     new User { name: "ada", roles: ["admin"] }.name is "ada"
+export record User {
+    # The name the caller signed in with.
+    name: str;
+    # The caller's roles, compared exactly; may be empty.
+    roles: list[str];
+}
+
+# What the application knows about a name whose password is to be checked (see basic, sign_in_route).
+#     new Account { name: "ada", password_hash: "", roles: new list[str], enabled: true }.enabled is true
+export record Account {
+    # The name.
+    name: str;
+    # What std.crypto.hash_password made from the password.
+    password_hash: str;
+    # The roles the user gets.
+    roles: list[str];
+    # false refuses the account as if the password were wrong.
+    enabled: bool;
+}
+
+# Who may make the requests a rule matches.
+#     Access.anyone == Access.anyone is true
+export variant Access {
+    # Everybody, signed in or not.
+    anyone;
+    # Every signed-in user.
+    signed_in;
+    # Signed-in users with at least one of these roles.
+    any_role(list[str]);
+    # Nobody.
+    nobody;
+}
+
+# One line of a policy: requests with one of the methods (all when empty) whose path starts with the segments of path.
+#     rule("/admin", Access.nobody).path is "/admin"
+export record Rule {
+    # GET, POST, ...; empty for every method. HEAD counts as GET.
+    methods: list[str];
+    # Segments, each a literal or a {variable} standing for any one segment: "/notes/{id}/tags". "/" is every path.
+    path: str;
+    # Who may make these requests.
+    access: Access;
+}
+
+# What a policy says about one request.
+#     Decision.allowed == Decision.forbidden is false
+export variant Decision {
+    # The operation may run.
+    allowed;
+    # Nobody is signed in and the rule needs a user: 401.
+    sign_in_needed;
+    # The user is known and may not: 403.
+    forbidden;
+}
+
+# A way of signing in: where the credential is in a request and the function that turns it into a user. Made by basic, tokens, header_key and test_users.
+#     header_key("X-Api-Key", fn(n: int, key: str) -> result[User] { return err("unauthorized: unknown key"); }).header is "X-Api-Key"
+export record Way[C, E: effects] {
+    # The name of the way, for the review.
+    name: str;
+    # The request header that holds the credential.
+    header: str;
+    # What the header's value starts with ("Basic ", "Bearer "), or "" when the value is the credential.
+    scheme: str;
+    # The user of a credential, given the context, the credential and the time in milliseconds; err("unauthorized: REASON") refuses it (401), any other error is a failure (500).
+    check: fn(C, str, int) -> result[User] uses E;
+}
+
+# Who may call what: the rules, the accepted ways of signing in, the clock, and a function told of refusals.
+#     len(policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }).rules) is 0
+export record Policy[C, E: effects] {
+    # Tried in order; the first that matches the method and the path decides. No match: refused.
+    rules: list[Rule];
+    # The ways of signing in the step accepts. A request with credentials for two of them is refused.
+    ways: list[Way[C, E]];
+    # The time in milliseconds (std.web.clock_ms), for token expiry and events.
+    now: fn() -> int uses E;
+    # Called for each security event; it never gets a password, a key or a token.
+    on_event: fn(C, Event) uses E;
+}
+
+# Something for a security log.
+#     new Event { kind: "refused", reason: "expired", name: "", method: "GET", path: "/notes", at_ms: 0 }.kind is "refused"
+export record Event {
+    # "signed_in" (the sign-in route gave a token), "refused" (a credential was not accepted), "forbidden" (a user was not allowed), "outdated_hash" (a password was right and its stored hash is weaker than hash_password makes now).
+    kind: str;
+    # Why, such as "expired" or "wrong password for ada"; never shown to the caller.
+    reason: str;
+    # The user's name when the module knows it, else "".
+    name: str;
+    # The request's method.
+    method: str;
+    # The request's path.
+    path: str;
+    # The time from the policy's clock.
+    at_ms: int;
+}
+
+# ---- the policy ----
+
+# A rule for every method.
+#     len(rule("/notes", Access.signed_in).methods) is 0
+export fn rule(path: str, access: Access) -> Rule
+    requires find(path, "/") == 0
+{
+    return new Rule { methods: new list[str], path: path, access: access };
+}
+
+# A rule for these methods only.
+#     rule_for(["GET"], "/notes", Access.anyone).methods[0] is "GET"
+export fn rule_for(methods: list[str], path: str, access: Access) -> Rule
+    requires find(path, "/") == 0
+{
+    return new Rule { methods: methods, path: path, access: access };
+}
+
+# A policy that tells nobody of its events (for those, write `new Policy { ..., on_event: f }`).
+#     len(policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }).ways) is 0
+export fn policy[C, E: effects](
+    rules: list[Rule],
+    ways: list[Way[C, E]],
+    now: fn() -> int uses E
+) -> Policy[C, E] {
+    return new Policy {
+        rules: rules,
+        ways: ways,
+        now: now,
+        on_event: fn(ctx: C, e: Event) {
+        }
+    };
+}
+
+# What the rules say about a request by caller (Option.none: nobody is signed in). Pure: the step made by secure answers exactly this.
+#     decide([rule("/admin", Access.any_role(["admin"]))], "GET", "/admin/users", Option.none) == Decision.sign_in_needed is true
+#     decide([rule("/admin", Access.any_role(["admin"]))], "GET", "/admin/users", Option.some(new User { name: "bo", roles: ["user"] })) == Decision.forbidden is true
+#     decide([rule("/admin", Access.any_role(["admin"]))], "GET", "/administrator", Option.some(new User { name: "ada", roles: ["admin"] })) == Decision.forbidden is true
+#     decide([rule_for(["GET"], "/notes/{id}", Access.anyone)], "HEAD", "/notes/7", Option.none) == Decision.allowed is true
+export fn decide(rules: list[Rule], method: str, path: str, caller: Option[User]) -> Decision {
+    let at = deciding(rules, method, path);
+    var access = Access.nobody;
+    if at >= 0 {
+        set access = rules[at].access;
+    }
+    match caller {
+        case none {
+            match access {
+                case anyone {
+                    return Decision.allowed;
+                }
+                case signed_in {
+                    return Decision.sign_in_needed;
+                }
+                case any_role(_) {
+                    return Decision.sign_in_needed;
+                }
+                case nobody {
+                    return Decision.sign_in_needed;
+                }
+            }
+        }
+        case some(user) {
+            match access {
+                case anyone {
+                    return Decision.allowed;
+                }
+                case signed_in {
+                    return Decision.allowed;
+                }
+                case any_role(roles) {
+                    for r in roles {
+                        if has_role(user, r) {
+                            return Decision.allowed;
+                        }
+                    }
+                    return Decision.forbidden;
+                }
+                case nobody {
+                    return Decision.forbidden;
+                }
+            }
+        }
+    }
+}
+
+fn deciding(rules: list[Rule], method: str, path: str) -> int {
+    # The index of the first rule that matches, or -1.
+    let segs = segments(path);
+    for i in 0..len(rules) {
+        if method_fits(rules[i], method) and covers(segments(rules[i].path), segs, false) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+fn segments(path: str) -> list[str] {
+    if len(path) < 2 {
+        return new list[str];
+    }
+    return split(slice(path, 1, len(path)), "/");
+}
+
+fn is_var(seg: str) -> bool {
+    return len(seg) > 2 and find(seg, "{") == 0;
+}
+
+fn covers(pattern: list[str], segs: list[str], loosely: bool) -> bool {
+    # Whether segs start with the pattern's segments. Loosely: a literal of the pattern also fits a
+    # variable in segs (a route pattern), which is how a rule can decide for some requests of a route.
+    if len(pattern) > len(segs) {
+        return false;
+    }
+    for i in 0..len(pattern) {
+        let p = pattern[i];
+        let s = segs[i];
+        if is_var(p) {
+            if s == "" {
+                return false;
+            }
+        } else if p != s and not (loosely and is_var(s)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn method_fits(r: Rule, method: str) -> bool {
+    if len(r.methods) == 0 {
+        return true;
+    }
+    for m in r.methods {
+        if as_get(m) == as_get(method) {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn as_get(method: str) -> str {
+    if method == "HEAD" {
+        return "GET";
+    }
+    return method;
+}
+
+# The step that enforces a policy on every request: put it in App.steps (after cors, so that preflight requests are answered). Allowed requests go on with the user in X-Identity; the others are answered 401 (with WWW-Authenticate) or 403 in the problem format, and their operations do not run.
+#     secure(policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; })).prefix is "/"
+export fn secure[C, E: effects](p: Policy[C, E]) -> Step[C, E] {
+    return new Step {
+        prefix: "/",
+        run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+            var found = 0;
+            var at = -1;
+            var credential = "";
+            var authorization_read = false;
+            for i in 0..len(p.ways) {
+                let w = p.ways[i];
+                match header_of(r, w.header) {
+                    case ok(v) {
+                        if w.scheme == "" or (len(v) > len(w.scheme) and (find(v, w.scheme) == 0 or find(v, lower(w.scheme)) == 0)) {
+                            set found = found + 1;
+                            set at = i;
+                            set credential = slice(v, len(w.scheme), len(v));
+                            if lower(w.header) == "authorization" {
+                                set authorization_read = true;
+                            }
+                        }
+                    }
+                    case err(_) {
+                    }
+                }
+            }
+            var other_scheme = false;
+            match header_of(r, "Authorization") {
+                case ok(_) {
+                    set other_scheme = not authorization_read;
+                }
+                case err(_) {
+                }
+            }
+            if found > 1 {
+                return refuse(p, ctx, r, "more than one credential");
+            }
+            if other_scheme {
+                return refuse(p, ctx, r, "no accepted way for this Authorization header");
+            }
+            if found == 0 {
+                match decide(p.rules, r.method, r.path, Option.none) {
+                    case allowed {
+                        return next(r);
+                    }
+                    case sign_in_needed {
+                        return challenge(p, "sign in");
+                    }
+                    case forbidden {
+                        return challenge(p, "sign in");
+                    }
+                }
+            }
+            let now = p.now();
+            match p.ways[at].check(ctx, credential, now) {
+                case ok(user) {
+                    match decide(p.rules, r.method, r.path, Option.some(user)) {
+                        case allowed {
+                            return next(with_header(r, "X-Identity", user_json(user)));
+                        }
+                        case sign_in_needed {
+                            return challenge(p, "sign in");
+                        }
+                        case forbidden {
+                            p.on_event(ctx, new Event {
+                                kind: "forbidden",
+                                reason: "no rule allows it",
+                                name: user.name,
+                                method: r.method,
+                                path: r.path,
+                                at_ms: now
+                            });
+                            return problem_reply(403, "not allowed");
+                        }
+                    }
+                }
+                case err(e) {
+                    if find(e, "unauthorized: ") == 0 {
+                        p.on_event(ctx, new Event {
+                            kind: "refused",
+                            reason: slice(e, 14, len(e)),
+                            name: "",
+                            method: r.method,
+                            path: r.path,
+                            at_ms: now
+                        });
+                        return challenge(p, "invalid credentials");
+                    }
+                    return problem_reply(500, "");
+                }
+            }
+        }
+    };
+}
+
+fn refuse[C, E: effects](p: Policy[C, E], ctx: C, r: Request, reason: str) -> Response uses E {
+    p.on_event(ctx, new Event {
+        kind: "refused",
+        reason: reason,
+        name: "",
+        method: r.method,
+        path: r.path,
+        at_ms: p.now()
+    });
+    return challenge(p, "invalid credentials");
+}
+
+fn challenge[C, E: effects](p: Policy[C, E], detail: str) -> Response {
+    let resp = problem_reply(401, detail);
+    for w in p.ways {
+        if w.scheme == "Basic " {
+            push(resp.headers, new Header { name: "WWW-Authenticate", value: "Basic realm=\"api\"" });
+        } else if w.scheme != "" {
+            push(resp.headers, new Header { name: "WWW-Authenticate", value: trim(w.scheme) });
+        }
+    }
+    return resp;
+}
+
+fn header_of(r: Request, name: str) -> result[str] {
+    for h in r.headers {
+        if lower(h.name) == lower(name) {
+            return ok(h.value);
+        }
+    }
+    return err("no header");
+}
+
+fn user_json(user: User) -> str {
+    match write_json(to_json(user)) {
+        case ok(t) {
+            return t;
+        }
+        case err(_) {
+            return "";
+        }
+    }
+}
+
+# ---- ways of signing in ----
+
+# A way of signing in with a credential in the header named header (such as "X-Api-Key"), checked by the application: check gives the user, or err("unauthorized: REASON").
+#     header_key("X-Api-Key", fn(n: int, key: str) -> result[User] { return err("unauthorized: unknown key"); }).scheme is ""
+export fn header_key[C, E: effects](
+    header: str,
+    check: fn(C, str) -> result[User] uses E
+) -> Way[C, E] {
+    return new Way {
+        name: header,
+        header: header,
+        scheme: "",
+        check: fn(ctx: C, credential: str, now_ms: int) -> result[User] {
+            return check(ctx, credential);
+        }
+    };
+}
+
+# The way of signing in for tests: a request made with as_user is handled as that user, without credentials. Only an application whose policy lists it has it, and review reports it.
+#     handle_request(new App[int] { routes: new list[Route[int]], steps: [secure(policy([rule("/", Access.signed_in)], [test_users()], fn() -> int { return 0; }))], errors: new list[ErrorStatus] }, 0, as_user(request("GET", "/", ""), new User { name: "ada", roles: new list[str] })).status is 404
+export fn test_users[C, E: effects]() -> Way[C, E] {
+    return new Way {
+        name: "test_users",
+        header: test_header,
+        scheme: "",
+        check: fn(ctx: C, credential: str, now_ms: int) -> result[User] {
+            match parse_json(credential) {
+                case ok(j) {
+                    let parsed: result[User] = from_json(j);
+                    match parsed {
+                        case ok(user) {
+                            return ok(user);
+                        }
+                        case err(_) {
+                            return err("unauthorized: not a user");
+                        }
+                    }
+                }
+                case err(_) {
+                    return err("unauthorized: not a user");
+                }
+            }
+        }
+    };
+}
+
+# The request as made by user, for an application whose policy accepts test_users().
+#     len(as_user(new Request { method: "GET", path: "/", query: "", headers: new list[Header], body: "" }, new User { name: "ada", roles: ["admin"] }).headers) is 1
+export fn as_user(r: Request, user: User) -> Request {
+    return with_header(r, test_header, user_json(user));
+}
+
+# HTTP Basic: the name and password of every request are checked against the account find gives for the name (Option.none: no such name). Each request costs one password check, which is slow on purpose: for anything called often, use sign_in_route and tokens.
+#     basic(fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }).scheme is "Basic "
+export fn basic[C, E: effects](find_account: fn(C, str) -> result[Option[Account]] uses E) -> Way[C, E] {
+    return new Way {
+        name: "basic",
+        header: "Authorization",
+        scheme: "Basic ",
+        check: fn(ctx: C, credential: str, now_ms: int) -> result[User] {
+            var pair = "";
+            match from_base64(trim(credential)) {
+                case ok(b) {
+                    match to_text(b) {
+                        case ok(t) {
+                            set pair = t;
+                        }
+                        case err(_) {
+                        }
+                    }
+                }
+                case err(_) {
+                }
+            }
+            let colon = find(pair, ":");
+            if colon < 1 {
+                return err("unauthorized: malformed Basic credentials");
+            }
+            let name = slice(pair, 0, colon);
+            let o = try checked(ctx, find_account, name, slice(pair, colon + 1, len(pair)));
+            if o.reason != "" {
+                return err("unauthorized: " + o.reason + " for " + name);
+            }
+            return ok(o.user);
+        }
+    };
+}
+
+record Outcome {
+    reason: str;
+    user: User;
+    outdated: bool;
+}
+
+fn checked[C, E: effects](
+    ctx: C,
+    find_account: fn(C, str) -> result[Option[Account]] uses E,
+    name: str,
+    password: str
+) -> result[Outcome] uses E {
+    # The same password work whether or not the name exists; reason "" when the password is right
+    # and the account enabled.
+    var hash = unknown_account_hash;
+    var reason = "unknown name";
+    var user = new User { name: name, roles: new list[str] };
+    var enabled = false;
+    match try find_account(ctx, name) {
+        case some(a) {
+            set hash = a.password_hash;
+            set reason = "wrong password";
+            set user = new User { name: a.name, roles: a.roles };
+            set enabled = a.enabled;
+        }
+        case none {
+        }
+    }
+    if verify_password(password, hash) and reason != "unknown name" {
+        if enabled {
+            set reason = "";
+        } else {
+            set reason = "disabled account";
+        }
+    }
+    return ok(new Outcome { reason: reason, user: user, outdated: password_outdated(hash) });
+}
+
+# The user of a name and password, for a sign-in operation of the application's own: the account find gives is checked with std.crypto.verify_password. An unknown name, a wrong password and a disabled account give the same err("unauthorized: invalid credentials") after the same work; an error of find is passed on.
+#     password_user(0, fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.some(new Account { name: "ada", password_hash: "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=", roles: ["admin"], enabled: true })); }, "ada", "passwd") == ok(new User { name: "ada", roles: ["admin"] }) is true
+export fn password_user[C, E: effects](
+    ctx: C,
+    find_account: fn(C, str) -> result[Option[Account]] uses E,
+    name: str,
+    password: str
+) -> result[User] uses E {
+    let o = try checked(ctx, find_account, name, password);
+    if o.reason != "" {
+        return err("unauthorized: invalid credentials");
+    }
+    return ok(o.user);
+}
+
+# ---- tokens ----
+
+fn key_fits(key: bytes) -> bool {
+    return len(key) >= 32;
+}
+
+fn keys_fit(keys: list[bytes]) -> bool {
+    for k in keys {
+        if not key_fits(k) {
+            return false;
+        }
+    }
+    return len(keys) > 0;
+}
+
+fn base64url(b: bytes) -> str {
+    return join(split(join(split(join(split(to_base64(b), "="), ""), "+"), "-"), "/"), "_");
+}
+
+fn from_base64url(s: str) -> result[bytes] {
+    if find(s, "+") >= 0 or find(s, "/") >= 0 or find(s, "=") >= 0 {
+        return err("not base64url");
+    }
+    var t = join(split(join(split(s, "-"), "+"), "_"), "/");
+    while len(t) % 4 != 0 {
+        set t = t + "=";
+    }
+    let b = try from_base64(t);
+    if base64url(b) != s {
+        return err("not canonical");
+    }
+    return ok(b);
+}
+
+# A signed token (a JWT, HMAC-SHA256) saying who user is until lifetime_s seconds after now_ms: claims sub (the name), roles, iat and exp. The key (32 bytes or more, R0012 otherwise) is a secret of the application, such as std.crypto.random_bytes(32) kept in its settings.
+#     issue_token(from_text("0123456789abcdef0123456789abcdef"), new User { name: "ada", roles: ["admin"] }, 900000, 600) == ok("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZGEiLCJyb2xlcyI6WyJhZG1pbiJdLCJpYXQiOjkwMCwiZXhwIjoxNTAwfQ.vwNTJ6snKKuxPLAgS1RJgLNS5ZtHENgAGJRR5ws8dAQ") is true
+export fn issue_token(key: bytes, user: User, now_ms: int, lifetime_s: int) -> result[str]
+    requires key_fits(key)
+    requires lifetime_s > 0
+{
+    let claims = new map[str, Json];
+    set claims["sub"] = Json.text(user.name);
+    set claims["roles"] = to_json(user.roles);
+    set claims["iat"] = Json.integer(now_ms / 1000);
+    set claims["exp"] = Json.integer(now_ms / 1000 + lifetime_s);
+    let signed = base64url(from_text("{\"alg\":\"HS256\",\"typ\":\"JWT\"}")) + "." + base64url(from_text(try write_json(Json.object(claims))));
+    return ok(signed + "." + base64url(hmac_sha256(key, from_text(signed))));
+}
+
+# The user of a token at now_ms, or err("unauthorized: REASON"): "not a token", "signature" (signed by none of the keys), "signing method" (anything but HS256), "content" (sub, roles or exp missing or of the wrong type), "expired", "not yet valid" (an nbf claim in the future). Claims the module does not know are ignored.
+#     check_token([from_text("0123456789abcdef0123456789abcdef")], 0, "a.b") == err("unauthorized: not a token") is true
+export fn check_token(keys: list[bytes], now_ms: int, token: str) -> result[User] {
+    let parts = split(token, ".");
+    if len(parts) != 3 {
+        return err("unauthorized: not a token");
+    }
+    match from_base64url(parts[2]) {
+        case err(_) {
+            return err("unauthorized: signature");
+        }
+        case ok(signature) {
+            let signed = from_text(parts[0] + "." + parts[1]);
+            var good = false;
+            for k in keys {
+                if same_bytes(signature, hmac_sha256(k, signed)) {
+                    set good = true;
+                }
+            }
+            if not good {
+                return err("unauthorized: signature");
+            }
+        }
+    }
+    match token_alg(parts[0]) {
+        case ok(alg) {
+            if alg != "HS256" {
+                return err("unauthorized: signing method");
+            }
+        }
+        case err(_) {
+            return err("unauthorized: signing method");
+        }
+    }
+    match token_user(parts[1], now_ms / 1000) {
+        case ok(user) {
+            return ok(user);
+        }
+        case err(e) {
+            if e == "expired" or e == "not yet valid" {
+                return err("unauthorized: " + e);
+            }
+            return err("unauthorized: content");
+        }
+    }
+}
+
+fn token_alg(part: str) -> result[str] {
+    return text_field(try parse_json(try to_text(try from_base64url(part))), "alg");
+}
+
+fn token_user(part: str, now_s: int) -> result[User] {
+    let c = try parse_json(try to_text(try from_base64url(part)));
+    let name = try text_field(c, "sub");
+    let roles: list[str] = try from_json(try field(c, "roles"));
+    let exp = try int_field(c, "exp");
+    if name == "" {
+        return err("no name");
+    }
+    match field(c, "nbf") {
+        case ok(_) {
+            if try int_field(c, "nbf") > now_s {
+                return err("not yet valid");
+            }
+        }
+        case err(_) {
+        }
+    }
+    if exp <= now_s {
+        return err("expired");
+    }
+    return ok(new User { name: name, roles: roles });
+}
+
+# Signing in with `Authorization: Bearer TOKEN`, a token of issue_token (or any JWT of that form) signed with one of the keys: list a new key first and keep the old one while its tokens live. Keys are 32 bytes or more (R0012 otherwise).
+#     handle_request(new App[int] { routes: new list[Route[int]], steps: [secure(policy([rule("/", Access.signed_in)], [tokens([from_text("0123456789abcdef0123456789abcdef")])], fn() -> int { return 0; }))], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).headers[1].value is "Bearer"
+export fn tokens[C, E: effects](keys: list[bytes]) -> Way[C, E]
+    requires keys_fit(keys)
+{
+    return new Way {
+        name: "tokens",
+        header: "Authorization",
+        scheme: "Bearer ",
+        check: fn(ctx: C, credential: str, now_ms: int) -> result[User] {
+            return check_token(keys, now_ms, trim(credential));
+        }
+    };
+}
+
+record SignedIn {
+    token: str;
+    expires: int;
+}
+
+# A POST route that exchanges `{"name": ..., "password": ...}` for `{"token": ..., "expires": SECONDS}`: the password is checked as password_user does, the token is issue_token's with this key and lifetime. The policy p gives the clock and is told of the events; it needs a rule that opens the route to anyone.
+#     sign_in_route("/sign-in", policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }), fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, from_text("0123456789abcdef0123456789abcdef"), 600).method is "POST"
+export fn sign_in_route[C, E: effects](
+    pattern: str,
+    p: Policy[C, E],
+    find_account: fn(C, str) -> result[Option[Account]] uses E,
+    key: bytes,
+    lifetime_s: int
+) -> Route[C, E]
+    requires key_fits(key)
+    requires lifetime_s > 0
+{
+    let run = fn(ctx: C, r: Request, vars: map[str, str]) -> result[Response] {
+        var name = "";
+        var password = "";
+        match parse_json(r.body) {
+            case ok(j) {
+                match text_field(j, "name") {
+                    case ok(t) {
+                        set name = t;
+                    }
+                    case err(_) {
+                        return err("bad_request: the body must be {\"name\": ..., \"password\": ...}");
+                    }
+                }
+                match text_field(j, "password") {
+                    case ok(t) {
+                        set password = t;
+                    }
+                    case err(_) {
+                        return err("bad_request: the body must be {\"name\": ..., \"password\": ...}");
+                    }
+                }
+            }
+            case err(_) {
+                return err("bad_request: the body must be {\"name\": ..., \"password\": ...}");
+            }
+        }
+        let now = p.now();
+        let o = try checked(ctx, find_account, name, password);
+        if o.reason != "" {
+            p.on_event(ctx, new Event {
+                kind: "refused",
+                reason: o.reason,
+                name: name,
+                method: r.method,
+                path: r.path,
+                at_ms: now
+            });
+            return err("unauthorized: invalid credentials");
+        }
+        if o.outdated {
+            p.on_event(ctx, new Event {
+                kind: "outdated_hash",
+                reason: "the stored hash is weaker than hash_password makes now",
+                name: o.user.name,
+                method: r.method,
+                path: r.path,
+                at_ms: now
+            });
+        }
+        let token = try issue_token(key, o.user, now, lifetime_s);
+        p.on_event(ctx, new Event {
+            kind: "signed_in",
+            reason: "",
+            name: o.user.name,
+            method: r.method,
+            path: r.path,
+            at_ms: now
+        });
+        return ok(json_reply(200, new SignedIn { token: token, expires: now / 1000 + lifetime_s }));
+    };
+    return new Route { method: "POST", pattern: pattern, segments: segments(pattern), run: run };
+}
+
+# ---- in operations ----
+
+# The user the step passed on in X-Identity (the input field `@header("X-Identity") @default("") identity: str;`), or Option.none when nobody is signed in. A bare name, as std.web.bearer_auth passes on, is a user without roles.
+#     is_some(current_user("")) is false
+#     or_else(current_user("{\"name\":\"ada\",\"roles\":[\"admin\"]}"), new User { name: "", roles: new list[str] }).roles[0] is "admin"
+#     or_else(current_user("ada"), new User { name: "", roles: new list[str] }).name is "ada"
+export fn current_user(identity: str) -> Option[User] {
+    if identity == "" {
+        return Option.none;
+    }
+    match parse_json(identity) {
+        case ok(j) {
+            let parsed: result[User] = from_json(j);
+            match parsed {
+                case ok(user) {
+                    return Option.some(user);
+                }
+                case err(_) {
+                }
+            }
+        }
+        case err(_) {
+        }
+    }
+    return Option.some(new User { name: identity, roles: new list[str] });
+}
+
+# The signed-in user, or err("unauthorized: sign in"), which std.web answers 401: `let user = try require_user(input.identity);`.
+#     require_user("") == err("unauthorized: sign in") is true
+export fn require_user(identity: str) -> result[User] {
+    match current_user(identity) {
+        case some(user) {
+            return ok(user);
+        }
+        case none {
+            return err("unauthorized: sign in");
+        }
+    }
+}
+
+# The signed-in user when they have at least one of the roles; else err("forbidden: not allowed"), which std.web answers 403 (401 when nobody is signed in).
+#     require_role("{\"name\":\"bo\",\"roles\":[\"user\"]}", ["admin"]) == err("forbidden: not allowed") is true
+export fn require_role(identity: str, roles: list[str]) -> result[User] {
+    let user = try require_user(identity);
+    for r in roles {
+        if has_role(user, r) {
+            return ok(user);
+        }
+    }
+    return err("forbidden: not allowed");
+}
+
+# Whether the user has the role (compared exactly).
+#     has_role(new User { name: "ada", roles: ["admin"] }, "admin") is true
+#     has_role(new User { name: "ada", roles: ["admin"] }, "Admin") is false
+export fn has_role(user: User, role: str) -> bool {
+    for r in user.roles {
+        if r == role {
+            return true;
+        }
+    }
+    return false;
+}
+
+# ---- review ----
+
+fn who(access: Access) -> str {
+    match access {
+        case anyone {
+            return "anyone";
+        }
+        case signed_in {
+            return "signed in";
+        }
+        case any_role(roles) {
+            return "roles " + join(roles, ", ");
+        }
+        case nobody {
+            return "nobody";
+        }
+    }
+}
+
+# Who may call each route of the application under these rules: one line `METHOD PATTERN: WHO` per route, in the application's order. Keep it in a test, so that a change of access shows in a diff.
+#     describe(web_app(new list[Route[int]]), new list[Rule]) is ""
+export fn describe[C, E: effects](app: App[C, E], rules: list[Rule]) -> str {
+    let lines = new list[str];
+    for rt in app.routes {
+        let at = deciding(rules, rt.method, rt.pattern);
+        var w = "nobody (no rule)";
+        if at >= 0 {
+            set w = who(rules[at].access);
+        }
+        push(lines, rt.method + " " + rt.pattern + ": " + w);
+    }
+    return join(lines, "\n");
+}
+
+# What a reviewer should look at, one line each: routes no rule matches (refused: meant or forgotten?), rules that decide for no route (misspelt, or hidden behind an earlier rule), rules that decide for only some requests of a route, rules that need a user when no way of signing in is accepted, and test_users in the policy. Empty when there is nothing.
+#     review(web_app(new list[Route[int]]), policy([rule("/x", Access.anyone)], new list[Way[int]], fn() -> int { return 0; }))[0] is "rule 1 (/x) decides for no route"
+export fn review[C, E: effects](app: App[C, E], p: Policy[C, E]) -> list[str] {
+    let found = new list[str];
+    let partly = new list[str];
+    let used = new list[bool];
+    for _ in p.rules {
+        push(used, false);
+    }
+    for rt in app.routes {
+        let name = rt.method + " " + rt.pattern;
+        let at = deciding(p.rules, rt.method, rt.pattern);
+        if at < 0 {
+            push(found, "no rule for " + name);
+        } else {
+            set used[at] = true;
+        }
+        for i in 0..len(p.rules) {
+            let r = p.rules[i];
+            if (at < 0 or i < at) and method_fits(r, rt.method) and covers(segments(r.path), rt.segments, true) {
+                set used[i] = true;
+                push(partly, "rule " + str(i + 1) + " (" + r.path + ") decides for only some requests of " + name);
+            }
+        }
+    }
+    for i in 0..len(p.rules) {
+        if not used[i] {
+            push(found, "rule " + str(i + 1) + " (" + p.rules[i].path + ") decides for no route");
+        }
+    }
+    for line in partly {
+        push(found, line);
+    }
+    if len(p.ways) == 0 {
+        for i in 0..len(p.rules) {
+            if who(p.rules[i].access) != "anyone" and who(p.rules[i].access) != "nobody" {
+                push(found, "rule " + str(i + 1) + " (" + p.rules[i].path + ") needs a user, and no way of signing in is accepted");
+            }
+        }
+    }
+    for w in p.ways {
+        if w.header == test_header {
+            push(found, "test_users is accepted");
+        }
+    }
+    return found;
+}
+
+# ---- headers ----
+
+# A step that gives every answer the headers a security scan asks for, unless the answer already has them: X-Content-Type-Options: nosniff, X-Frame-Options: DENY, Referrer-Policy: no-referrer, Cache-Control: no-store, and Strict-Transport-Security for hsts_seconds when that is above 0 (use it only when every client reaches the application over HTTPS). Put it first in App.steps so that refusals get them too.
+#     handle_request(new App[int] { routes: new list[Route[int]], steps: [safe_headers(0)], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).headers[1].value is "nosniff"
+export fn safe_headers[C, E: effects](hsts_seconds: int) -> Step[C, E] {
+    return new Step {
+        prefix: "/",
+        run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+            let resp = next(r);
+            let names = [
+                "X-Content-Type-Options",
+                "X-Frame-Options",
+                "Referrer-Policy",
+                "Cache-Control",
+                "Strict-Transport-Security"
+            ];
+            let values = ["nosniff", "DENY", "no-referrer", "no-store", "max-age=" + str(hsts_seconds)];
+            for i in 0..len(names) {
+                var has = i == 4 and hsts_seconds <= 0;
+                for h in resp.headers {
+                    if lower(h.name) == lower(names[i]) {
+                        set has = true;
+                    }
+                }
+                if not has {
+                    push(resp.headers, new Header { name: names[i], value: values[i] });
+                }
+            }
+            return resp;
+        }
+    };
+}

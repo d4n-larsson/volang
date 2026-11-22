@@ -1,0 +1,8 @@
+an answer -> 200 [X-Content-Type-Options: nosniff] [X-Frame-Options: DENY] [Referrer-Policy: no-referrer] [Cache-Control: no-store]
+the operation's own Cache-Control -> 200 [cache-control: max-age=60] [X-Content-Type-Options: nosniff] [X-Frame-Options: DENY] [Referrer-Policy: no-referrer]
+a refusal -> 401 [X-Content-Type-Options: nosniff] [X-Frame-Options: DENY] [Referrer-Policy: no-referrer] [Cache-Control: no-store]
+no route -> 404 [X-Content-Type-Options: nosniff] [X-Frame-Options: DENY] [Referrer-Policy: no-referrer] [Cache-Control: no-store]
+with transport security -> 200 [X-Content-Type-Options: nosniff] [X-Frame-Options: DENY] [Referrer-Policy: no-referrer] [Cache-Control: no-store] [Strict-Transport-Security: max-age=31536000]
+the policy first -> 401
+preflight, cors before the policy -> 204 [Access-Control-Allow-Origin: https://app.example] [Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS] [Access-Control-Allow-Headers: Content-Type, Authorization] [Access-Control-Max-Age: 600] [Vary: Origin]
+preflight, cors after the policy -> 401

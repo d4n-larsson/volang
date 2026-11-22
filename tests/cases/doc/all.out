@@ -122,3 +122,4 @@ modules:
   std.tcp TCP connections: connect, send, read, TLS, listen and accept, for protocols other than HTTP.
   std.bits The bits of an int: and, or, xor, shifts, rotations, arithmetic that wraps, hex and binary text.
   std.decimal Exact decimal numbers: amounts of money and other quantities with decimal places.
+  std.security Access control for std.web applications: rules saying who may call what, signing in with passwords, tokens or keys, and the user in operations.

@@ -125,6 +125,9 @@ class Values:
             return f"fn({ps}) {{ }}"
         m = re.fullmatch(r"(\w+)\[(.*)\]", t)  # spec 026: a generic record (Database[E]): inferred arguments
         if m and m.group(1) in self.types:
+            # spec 045: a generic type with its arguments given (Option[User]): they name its parameters
+            names = [x.split(":")[0].strip() for x in self.types[m.group(1)].get("tparams", [])]
+            tv = {**tv, **{n: self.inst(a, tv) for n, a in zip(names, split_top(m.group(2))) if n != a.strip()}}
             t = m.group(1)
         d = self.types[t]
         if d["item"] == "record":
@@ -316,6 +319,10 @@ def main():
             # spec 021: an example in another module may make its bytes with std.bytes functions
             extra = [f"std.bytes.{r2['name']}" for r2 in items.get("std.bytes", [])
                      if module != "std.bytes" and re.search(r"\b" + r2["name"] + r"\(", ex)]
+            # spec 045: std.security is used with std.web's and std.option's functions
+            if module == "std.security":
+                extra += [f"{m2}.{r2['name']}" for m2 in ("std.web", "std.option") for r2 in items.get(m2, [])
+                          if r2["item"] == "fn" and re.search(r"\b" + r2["name"] + r"\(", ex)]
             # spec 029: an example may name another module's types (std.web's use std.http's Request, Response)
             extra += [q for n, q in TYPE_PATHS.items()
                       if q not in every and q not in extra and n[0].isupper() and re.search(rf"\b{n}\b", ex)]

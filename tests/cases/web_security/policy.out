@@ -1,0 +1,112 @@
+GET /health nobody -> 200 "ran"
+  decide: allowed
+GET /health bo -> 200 "ran"
+  decide: allowed
+GET /health eve -> 200 "ran"
+  decide: allowed
+GET /health ada -> 200 "ran"
+  decide: allowed
+GET /notes nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+  decide: sign in
+GET /notes bo -> 200 "ran"
+  decide: allowed
+GET /notes eve -> 200 "ran"
+  decide: allowed
+GET /notes ada -> 200 "ran"
+  decide: allowed
+HEAD /notes nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+  decide: sign in
+HEAD /notes bo -> 200 
+  decide: allowed
+HEAD /notes eve -> 200 
+  decide: allowed
+HEAD /notes ada -> 200 
+  decide: allowed
+POST /notes nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+  decide: sign in
+POST /notes bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+POST /notes eve -> 200 "ran"
+  decide: allowed
+POST /notes ada -> 200 "ran"
+  decide: allowed
+DELETE /notes/7 nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+  decide: sign in
+DELETE /notes/7 bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+DELETE /notes/7 eve -> 200 "ran"
+  decide: allowed
+DELETE /notes/7 ada -> 200 "ran"
+  decide: allowed
+GET /admin/users nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+  decide: sign in
+GET /admin/users bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /admin/users eve -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /admin/users ada -> 200 "ran"
+  decide: allowed
+GET /administrator nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+  decide: sign in
+GET /administrator bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /administrator eve -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /administrator ada -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /closed nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+  decide: sign in
+GET /closed bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /closed eve -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /closed ada -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /reports nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+  decide: sign in
+GET /reports bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /reports eve -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /reports ada -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /nowhere nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+  decide: sign in
+GET /nowhere bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /nowhere eve -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+GET /nowhere ada -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+OPTIONS /notes nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+  decide: sign in
+OPTIONS /notes bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+OPTIONS /notes eve -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+OPTIONS /notes ada -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+  decide: forbidden
+key -> 200 "ran"
+wrong key on a guarded route -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+wrong key on the open route -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+the check fails -> 500 {"type":"about:blank","title":"Internal Server Error","status":500}
+two ways at once -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+another scheme -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+not a user -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+no rules, nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+no rules, admin -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+/admin/../health nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+/admin/../health bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+/admin/../health router -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for /admin/../health"}
+//admin nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+//admin bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+//admin router -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for //admin"}
+/admin%2Fusers nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+/admin%2Fusers bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+/admin%2Fusers router -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for /admin%2Fusers"}
+/admin/users/ nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+/admin/users/ bo -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+/admin/users/ router -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for /admin/users/"}
+/notes/ nobody -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+/notes/ bo -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for /notes/"}
+/notes/ router -> 404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for /notes/"}

@@ -1,0 +1,65 @@
+# safe_headers (std.security, story 5): the headers a security scan asks for on every answer, the
+# operation's own values kept; and the order of steps with cors and the policy.
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.security.Access;
+import std.security.Way;
+import std.security.policy;
+import std.security.rule;
+import std.security.safe_headers;
+import std.security.secure;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.NoInput;
+import std.web.Route;
+import std.web.Step;
+import std.web.cors;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.on_get;
+import std.web.request;
+import std.web.with_header;
+
+fn ran(n: int, input: NoInput) -> result[Response] {
+    return ok(json_reply(200, "ran"));
+}
+
+fn cached(n: int, input: NoInput) -> result[Response] {
+    let resp = json_reply(200, "cached");
+    push(resp.headers, new Header { name: "cache-control", value: "max-age=60" });
+    return ok(resp);
+}
+
+fn app(steps: list[Step[int]]) -> App[int] {
+    let routes: list[Route[int]] = [on_get("/open", ran), on_get("/open/cached", cached), on_get("/notes", ran)];
+    return new App { routes: routes, steps: steps, errors: new list[ErrorStatus] };
+}
+
+fn guard() -> Step[int] {
+    return secure(policy([rule("/open", Access.anyone), rule("/", Access.signed_in)], new list[Way[int]], fn() -> int { return 0; }));
+}
+
+fn show(label: str, a: App[int], r: Request) uses console {
+    let resp = handle_request(a, 0, r);
+    var hs = "";
+    for h in resp.headers {
+        if h.name != "Content-Type" {
+            set hs = hs + " [" + h.name + ": " + h.value + "]";
+        }
+    }
+    print(label + " -> " + str(resp.status) + hs);
+}
+
+fn main() uses console {
+    let a = app([safe_headers(0), guard()]);
+    show("an answer", a, request("GET", "/open", ""));
+    show("the operation's own Cache-Control", a, request("GET", "/open/cached", ""));
+    show("a refusal", a, request("GET", "/notes", ""));
+    show("no route", a, request("GET", "/open/nothing", ""));
+    show("with transport security", app([safe_headers(31536000), guard()]), request("GET", "/open", ""));
+    show("the policy first", app([guard(), safe_headers(0)]), request("GET", "/notes", ""));
+    let preflight = with_header(with_header(request("OPTIONS", "/notes", ""), "Origin", "https://app.example"), "Access-Control-Request-Method", "GET");
+    show("preflight, cors before the policy", app([cors(["https://app.example"]), guard()]), preflight);
+    show("preflight, cors after the policy", app([guard(), cors(["https://app.example"])]), preflight);
+}

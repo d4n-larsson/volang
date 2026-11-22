@@ -1,0 +1,86 @@
+# Reviewing a policy without a server (std.security, story 4): describe gives who may call each
+# route; review lists routes without a rule, rules that decide for no route or for only some requests
+# of one, rules nobody can satisfy, and the way of signing in meant for tests.
+import std.bytes.from_text;
+import std.http.Response;
+import std.security.Access;
+import std.security.Rule;
+import std.security.Way;
+import std.security.describe;
+import std.security.policy;
+import std.security.review;
+import std.security.rule;
+import std.security.rule_for;
+import std.security.test_users;
+import std.security.tokens;
+import std.web.App;
+import std.web.NoInput;
+import std.web.Route;
+import std.web.json_reply;
+import std.web.on_delete;
+import std.web.on_get;
+import std.web.on_post;
+import std.web.web_app;
+
+record Id {
+    id: str;
+}
+
+fn ran(n: int, input: NoInput) -> result[Response] {
+    return ok(json_reply(200, "ran"));
+}
+
+fn one(n: int, input: Id) -> result[Response] {
+    return ok(json_reply(200, input.id));
+}
+
+fn app() -> App[int] {
+    let routes: list[Route[int]] = [
+        on_get("/health", ran),
+        on_get("/notes", ran),
+        on_post("/notes", ran),
+        on_get("/notes/{id}", one),
+        on_delete("/notes/{id}", one),
+        on_get("/admin/users", ran),
+        on_get("/reports", ran)
+    ];
+    return web_app(routes);
+}
+
+fn show(label: str, rules: list[Rule], ways: list[Way[int]]) uses console {
+    print(label + ":");
+    print(describe(app(), rules));
+    let found = review(app(), policy(rules, ways, fn() -> int { return 0; }));
+    if len(found) == 0 {
+        print("  nothing to review");
+    }
+    for f in found {
+        print("  " + f);
+    }
+}
+
+fn main() uses console {
+    let real: list[Way[int]] = [tokens([from_text("0123456789abcdef0123456789abcdef")])];
+    let clean = [
+        rule("/health", Access.anyone),
+        rule_for(["GET"], "/notes", Access.signed_in),
+        rule("/notes", Access.any_role(["editor", "admin"])),
+        rule("/admin", Access.any_role(["admin"])),
+        rule("/reports", Access.nobody)
+    ];
+    show("clean", clean, real);
+    # A misspelt path, a route without a rule (/reports; /admin/users falls to the last rule), a rule
+    # hidden behind an earlier one, and the way for tests.
+    let faulty = [
+        rule("/health", Access.anyone),
+        rule("/notes", Access.signed_in),
+        rule_for(["DELETE"], "/notes/{id}", Access.any_role(["admin"])),
+        rule("/admn", Access.any_role(["admin"])),
+        rule("/admin", Access.signed_in)
+    ];
+    show("faulty", faulty, [tokens([from_text("0123456789abcdef0123456789abcdef")]), test_users()]);
+    # A literal where the route has a variable: /notes/new is some requests of GET /notes/{id}.
+    show("partial", [rule("/notes/new", Access.anyone), rule("/", Access.signed_in)], real);
+    show("no way of signing in", clean, new list[Way[int]]);
+    show("no rules", new list[Rule], real);
+}

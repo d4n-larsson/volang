@@ -87,3 +87,22 @@ export fn verify_password(password: str, stored: str) -> bool {
         }
     }
 }
+
+# Whether stored is a hash made with a lower cost than hash_password uses now: after a successful
+# verify_password, store hash_password(password) in its place. False for a text that is not a hash.
+#     password_outdated("pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=") is true
+#     password_outdated("not a hash") is false
+export fn password_outdated(stored: str) -> bool {
+    let parts = split(stored, "$");
+    if len(parts) != 4 or parts[0] != method {
+        return false;
+    }
+    match parse_int(parts[1]) {
+        case ok(n) {
+            return n >= 1 and n < cost and str(n) == parts[1];
+        }
+        case err(_) {
+            return false;
+        }
+    }
+}

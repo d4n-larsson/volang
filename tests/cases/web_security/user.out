@@ -1,0 +1,18 @@
+the user -> 200 {"name":"ada","roles":["admin"]}
+no roles -> 200 {"name":"bo","roles":[]}
+open, nobody -> 200 "nobody"
+open, a user -> 200 {"name":"bo","roles":[]}
+open, require_user -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+open, require_role without a user -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+require_role without the role -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}
+require_role with one of them -> 200 "ada"
+forged X-Identity, nobody -> 200 "nobody"
+forged X-Identity, guarded -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+forged X-Identity, bo -> 200 {"name":"bo","roles":[]}
+forged X-Test-User, not accepted -> 200 "nobody"
+forged X-Test-User, guarded -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+owner removes -> 200 "removed"
+another user -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not your note"}
+admin removes -> 200 "removed"
+bearer_auth -> 200 {"name":"svc","roles":[]}
+bearer_auth, require_role -> 403 {"type":"about:blank","title":"Forbidden","status":403,"detail":"not allowed"}

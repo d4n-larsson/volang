@@ -1,0 +1,181 @@
+# Signing in (std.security, story 2): HTTP Basic against the application's accounts, signed tokens,
+# the sign-in route, and the security events. Unknown name, wrong password and disabled account get
+# the same answer. No password, key or token appears in an event.
+import std.bytes.from_text;
+import std.bytes.to_base64;
+import std.crypto.password_outdated;
+import std.http.Request;
+import std.http.Response;
+import std.json.parse_json;
+import std.json.text_field;
+import std.option.Option;
+import std.security.Access;
+import std.security.Account;
+import std.security.Event;
+import std.security.Policy;
+import std.security.User;
+import std.security.basic;
+import std.security.check_token;
+import std.security.issue_token;
+import std.security.password_user;
+import std.security.rule;
+import std.security.secure;
+import std.security.sign_in_route;
+import std.security.tokens;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.NoInput;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.on_get;
+import std.web.request;
+import std.web.with_header;
+
+const weak = "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=";
+const strong = "pbkdf2-sha256$600000$UzaawpluQd/9+wjqxK7k5g==$T77DFP1a//H/wGSMrDAzacBRzngTQcTM4Nma4jsUNWw=";
+
+fn find_account(n: int, name: str) -> result[Option[Account]] {
+    if name == "ada" {
+        return ok(Option.some(new Account { name: "ada", password_hash: weak, roles: ["admin"], enabled: true }));
+    }
+    if name == "old" {
+        return ok(Option.some(new Account { name: "old", password_hash: weak, roles: new list[str], enabled: false }));
+    }
+    if name == "col" {
+        return ok(Option.some(new Account { name: "col", password_hash: strong, roles: new list[str], enabled: true }));
+    }
+    if name == "boom" {
+        return err("the database is down");
+    }
+    return ok(Option.none);
+}
+
+fn key() -> bytes {
+    return from_text("0123456789abcdef0123456789abcdef");
+}
+
+fn old_key() -> bytes {
+    return from_text("fedcba9876543210fedcba9876543210");
+}
+
+fn log(n: int, e: Event) uses console {
+    print(format("  event {} [{}] name={} {} {} at {}", e.kind, e.reason, e.name, e.method, e.path, e.at_ms));
+}
+
+record Caller {
+    @header("X-Identity")
+    @default("")
+    identity: str;
+}
+
+fn whoami(n: int, input: Caller) -> result[Response] {
+    return ok(json_reply(200, input.identity));
+}
+
+fn ran(n: int, input: NoInput) -> result[Response] {
+    return ok(json_reply(200, "ran"));
+}
+
+fn the_policy(now_ms: int) -> Policy[int, uses console] {
+    return new Policy {
+        rules: [rule("/sign-in", Access.anyone), rule("/open", Access.anyone), rule("/", Access.signed_in)],
+        ways: [basic(find_account), tokens([key(), old_key()])],
+        now: fn() -> int { return now_ms; },
+        on_event: log
+    };
+}
+
+fn app(now_ms: int) -> App[int, uses console] {
+    let p = the_policy(now_ms);
+    return new App {
+        routes: [on_get("/me", whoami), on_get("/open", ran), sign_in_route("/sign-in", p, find_account, key(), 600)],
+        steps: [secure(p)],
+        errors: new list[ErrorStatus]
+    };
+}
+
+fn show(label: str, a: App[int, uses console], r: Request) -> str uses console {
+    let resp = handle_request(a, 0, r);
+    var hs = "";
+    for h in resp.headers {
+        if h.name != "Content-Type" {
+            set hs = hs + " [" + h.name + ": " + h.value + "]";
+        }
+    }
+    print(label + " -> " + str(resp.status) + hs + " " + resp.body);
+    return resp.body;
+}
+
+fn with_basic(r: Request, pair: str) -> Request {
+    return with_header(r, "Authorization", "Basic " + to_base64(from_text(pair)));
+}
+
+fn with_token(r: Request, token: str) -> Request {
+    return with_header(r, "Authorization", "Bearer " + token);
+}
+
+fn token_of(body: str) -> str {
+    match parse_json(body) {
+        case ok(j) {
+            match text_field(j, "token") {
+                case ok(t) {
+                    return t;
+                }
+                case err(_) {
+                }
+            }
+        }
+        case err(_) {
+        }
+    }
+    return "";
+}
+
+fn main() uses console {
+    let a = app(1000000);
+    let me = request("GET", "/me", "");
+    let _ = show("nobody", a, me);
+    let _ = show("basic", a, with_basic(me, "ada:passwd"));
+    let wrong = show("basic, wrong password", a, with_basic(me, "ada:nope"));
+    let unknown = show("basic, unknown name", a, with_basic(me, "eve:passwd"));
+    let disabled = show("basic, disabled", a, with_basic(me, "old:passwd"));
+    print(format("the three answers are the same: {}", wrong == unknown and unknown == disabled));
+    let _ = show("basic, a password with a colon", a, with_basic(me, "col:pa:ss"));
+    let _ = show("basic, lower-case scheme", a, with_header(me, "Authorization", "basic " + to_base64(from_text("ada:passwd"))));
+    let _ = show("basic, not base64", a, with_header(me, "Authorization", "Basic !!!"));
+    let _ = show("basic, no colon", a, with_basic(me, "ada"));
+    let _ = show("basic, empty name", a, with_basic(me, ":passwd"));
+    let _ = show("basic, wrong on the open route", a, with_basic(request("GET", "/open", ""), "ada:nope"));
+    let _ = show("basic, the lookup fails", a, with_basic(me, "boom:x"));
+    let _ = show("only the scheme", a, with_header(me, "Authorization", "Bearer "));
+
+    let token = token_of(show("sign in", a, request("POST", "/sign-in", "{\"name\":\"ada\",\"password\":\"passwd\"}")));
+    let _ = show("sign in, wrong password", a, request("POST", "/sign-in", "{\"name\":\"ada\",\"password\":\"nope\"}"));
+    let _ = show("sign in, disabled", a, request("POST", "/sign-in", "{\"name\":\"old\",\"password\":\"passwd\"}"));
+    let _ = show("sign in, unknown name", a, request("POST", "/sign-in", "{\"name\":\"eve\",\"password\":\"passwd\"}"));
+    let _ = show("sign in, no password", a, request("POST", "/sign-in", "{\"name\":\"ada\"}"));
+    let _ = show("sign in, not JSON", a, request("POST", "/sign-in", "ada"));
+    let _ = show("sign in, the lookup fails", a, request("POST", "/sign-in", "{\"name\":\"boom\",\"password\":\"x\"}"));
+    let _ = show("sign in with an expired token along", app(1600000), with_token(request("POST", "/sign-in", "{\"name\":\"ada\",\"password\":\"passwd\"}"), token));
+
+    let _ = show("token", a, with_token(me, token));
+    let _ = show("token, one second before expiry", app(1599999), with_token(me, token));
+    let _ = show("token, at expiry", app(1600000), with_token(me, token));
+    let _ = show("token, damaged", a, with_token(me, token + "A"));
+    let _ = show("token, not a token", a, with_token(me, "abc"));
+    let user = new User { name: "bo", roles: ["user"] };
+    match issue_token(old_key(), user, 1000000, 60) {
+        case ok(t) {
+            let _ = show("token of the old key", a, with_token(me, t));
+            print(format("another key refuses it: {}", check_token([key()], 1000000, t) == err("unauthorized: signature")));
+            print(format("check_token: {}", check_token([old_key()], 1000000, t) == ok(user)));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    print(format("password_user: {}", password_user(0, find_account, "ada", "passwd") == ok(new User { name: "ada", roles: ["admin"] })));
+    print(format("password_user, wrong: {}", password_user(0, find_account, "ada", "nope") == err("unauthorized: invalid credentials")));
+    print(format("password_user, the lookup fails: {}", password_user(0, find_account, "boom", "x") == err("the database is down")));
+    print(format("outdated: weak {}, strong {}, not a hash {}", password_outdated(weak), password_outdated(strong), password_outdated("x")));
+}

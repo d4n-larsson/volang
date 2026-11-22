@@ -1,0 +1,126 @@
+# The user in the operation (std.security, story 3): current_user, require_user, require_role and
+# has_role on the identity the step passes on; nothing a client sends in its place is believed.
+import std.http.Request;
+import std.http.Response;
+import std.option.Option;
+import std.security.Access;
+import std.security.User;
+import std.security.Way;
+import std.security.as_user;
+import std.security.current_user;
+import std.security.has_role;
+import std.security.policy;
+import std.security.require_role;
+import std.security.require_user;
+import std.security.rule;
+import std.security.secure;
+import std.security.test_users;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.Route;
+import std.web.Step;
+import std.web.bearer_auth;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.on_delete;
+import std.web.on_get;
+import std.web.request;
+import std.web.with_header;
+
+record Caller {
+    @header("X-Identity")
+    @default("")
+    identity: str;
+}
+
+record Remove {
+    owner: str;
+    @header("X-Identity")
+    @default("")
+    identity: str;
+}
+
+fn whoami(n: int, input: Caller) -> result[Response] {
+    match current_user(input.identity) {
+        case some(user) {
+            return ok(json_reply(200, user));
+        }
+        case none {
+            return ok(json_reply(200, "nobody"));
+        }
+    }
+}
+
+fn mine(n: int, input: Caller) -> result[Response] {
+    let user = try require_user(input.identity);
+    return ok(json_reply(200, user.name));
+}
+
+fn audit(n: int, input: Caller) -> result[Response] {
+    let user = try require_role(input.identity, ["auditor", "admin"]);
+    return ok(json_reply(200, user.name));
+}
+
+fn delete_note(n: int, input: Remove) -> result[Response] {
+    let user = try require_user(input.identity);
+    if input.owner != user.name and not has_role(user, "admin") {
+        return err("forbidden: not your note");
+    }
+    return ok(json_reply(200, "removed"));
+}
+
+fn routes() -> list[Route[int]] {
+    return [
+        on_get("/open/whoami", whoami),
+        on_get("/open/mine", mine),
+        on_get("/open/audit", audit),
+        on_get("/whoami", whoami),
+        on_delete("/notes/{owner}", delete_note)
+    ];
+}
+
+fn app(ways: list[Way[int]]) -> App[int] {
+    let rules = [rule("/open", Access.anyone), rule("/", Access.signed_in)];
+    return new App {
+        routes: routes(),
+        steps: [secure(policy(rules, ways, fn() -> int { return 0; }))],
+        errors: new list[ErrorStatus]
+    };
+}
+
+fn token_name(n: int, token: str) -> result[str] {
+    return ok("svc");
+}
+
+fn show(label: str, a: App[int], r: Request) uses console {
+    let resp = handle_request(a, 0, r);
+    print(label + " -> " + str(resp.status) + " " + resp.body);
+}
+
+fn main() uses console {
+    let a = app([test_users()]);
+    let ada = new User { name: "ada", roles: ["admin"] };
+    let bo = new User { name: "bo", roles: new list[str] };
+    let forged = "{\"name\":\"root\",\"roles\":[\"admin\"]}";
+    show("the user", a, as_user(request("GET", "/whoami", ""), ada));
+    show("no roles", a, as_user(request("GET", "/whoami", ""), bo));
+    show("open, nobody", a, request("GET", "/open/whoami", ""));
+    show("open, a user", a, as_user(request("GET", "/open/whoami", ""), bo));
+    show("open, require_user", a, request("GET", "/open/mine", ""));
+    show("open, require_role without a user", a, request("GET", "/open/audit", ""));
+    show("require_role without the role", a, as_user(request("GET", "/open/audit", ""), bo));
+    show("require_role with one of them", a, as_user(request("GET", "/open/audit", ""), ada));
+    show("forged X-Identity, nobody", a, with_header(request("GET", "/open/whoami", ""), "X-Identity", forged));
+    show("forged X-Identity, guarded", a, with_header(request("GET", "/whoami", ""), "X-Identity", forged));
+    show("forged X-Identity, bo", a, with_header(as_user(request("GET", "/whoami", ""), bo), "x-identity", forged));
+    show("forged X-Test-User, not accepted", app(new list[Way[int]]), with_header(request("GET", "/open/whoami", ""), "X-Test-User", forged));
+    show("forged X-Test-User, guarded", app(new list[Way[int]]), with_header(request("GET", "/whoami", ""), "X-Test-User", forged));
+    show("owner removes", a, as_user(request("DELETE", "/notes/bo", ""), bo));
+    show("another user", a, as_user(request("DELETE", "/notes/ada", ""), bo));
+    show("admin removes", a, as_user(request("DELETE", "/notes/bo", ""), ada));
+    # The identity std.web.bearer_auth passes on is a bare name: a user without roles.
+    let steps: list[Step[int]] = [bearer_auth("/", token_name)];
+    let plain = new App { routes: routes(), steps: steps, errors: new list[ErrorStatus] };
+    show("bearer_auth", plain, with_header(request("GET", "/whoami", ""), "Authorization", "Bearer t"));
+    show("bearer_auth, require_role", plain, with_header(request("GET", "/open/audit", ""), "Authorization", "Bearer t"));
+}

@@ -51,6 +51,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [042](../specs/042-strings/) | Strings: raw strings between backticks, the escapes `\\r` and `\\u{HEX}`, `for c in s`, `upper`/`lower` for Latin, Greek and Cyrillic, exponent float literals, `std.text.char_count` and `equal_fold` | **Implemented** ([results](../specs/042-strings/results.md)) |
 | [043](../specs/043-bits/) | Bits: `std.bits` (and, or, xor, not, shifts, rotations, wrapping arithmetic, `parse_hex`, `parse_binary`) and hex and binary integer literals | **Implemented** ([results](../specs/043-bits/results.md)) |
 | [044](../specs/044-decimal/) | Decimal: `std.decimal`, exact decimal numbers (units and places) with stated rounding, text, comparison and allocation, written in vo | **Implemented** ([results](../specs/044-decimal/results.md)) |
+| [045](../specs/045-security/) | Security: `std.security`, access control for `std.web` applications in the manner of Spring Security: one table of rules, tokens, Basic and keys, the user in operations, and a review of the table; written in vo | **Implemented** ([results](../specs/045-security/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -518,6 +519,18 @@ division on the remainder, so no 128-bit value is ever formed. The places are ke
 1.50), which means `==` tells 1.5 from 1.50: `equal`, `compare` and `normalize` go by value.
 `split_evenly` and `allocate` give parts that sum to the amount. No decimal literal and no `+` on
 decimals: functions only. Every operation is checked against Python's `decimal` on 10,000 random cases.
+
+### 045: security (implemented)
+
+Access control was the part of a `std.web` service still written by hand: a route added without a
+guard was open, and nothing said so. `std.security` borrows Spring Security's model (everything is
+refused unless a rule allows it, the rules are one table, ways of signing in plug into it) and adds
+what a value-oriented language can: the table is plain data, `decide` is the step's decision as a pure
+function, `describe` prints who may call each route, and `review` finds routes without a rule and
+rules that never apply. Signing in is stateless: signed tokens (JWT, HMAC-SHA256) with a sign-in
+route, HTTP Basic, or a key checked by the application; sessions and cookies wait for a store that
+worker processes can share. The module is written in vo and has no effects of its own: a token check
+adds about 20 microseconds to a request.
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
 it is next; anything that reaches the outside world gets an effect, scopes, and record and replay.

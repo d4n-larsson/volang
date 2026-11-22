@@ -1,0 +1,57 @@
+clean:
+GET /health: anyone
+GET /notes: signed in
+POST /notes: roles editor, admin
+GET /notes/{id}: signed in
+DELETE /notes/{id}: roles editor, admin
+GET /admin/users: roles admin
+GET /reports: nobody
+  nothing to review
+faulty:
+GET /health: anyone
+GET /notes: signed in
+POST /notes: signed in
+GET /notes/{id}: signed in
+DELETE /notes/{id}: signed in
+GET /admin/users: signed in
+GET /reports: nobody (no rule)
+  no rule for GET /reports
+  rule 3 (/notes/{id}) decides for no route
+  rule 4 (/admn) decides for no route
+  test_users is accepted
+partial:
+GET /health: signed in
+GET /notes: signed in
+POST /notes: signed in
+GET /notes/{id}: signed in
+DELETE /notes/{id}: signed in
+GET /admin/users: signed in
+GET /reports: signed in
+  rule 1 (/notes/new) decides for only some requests of GET /notes/{id}
+  rule 1 (/notes/new) decides for only some requests of DELETE /notes/{id}
+no way of signing in:
+GET /health: anyone
+GET /notes: signed in
+POST /notes: roles editor, admin
+GET /notes/{id}: signed in
+DELETE /notes/{id}: roles editor, admin
+GET /admin/users: roles admin
+GET /reports: nobody
+  rule 2 (/notes) needs a user, and no way of signing in is accepted
+  rule 3 (/notes) needs a user, and no way of signing in is accepted
+  rule 4 (/admin) needs a user, and no way of signing in is accepted
+no rules:
+GET /health: nobody (no rule)
+GET /notes: nobody (no rule)
+POST /notes: nobody (no rule)
+GET /notes/{id}: nobody (no rule)
+DELETE /notes/{id}: nobody (no rule)
+GET /admin/users: nobody (no rule)
+GET /reports: nobody (no rule)
+  no rule for GET /health
+  no rule for GET /notes
+  no rule for POST /notes
+  no rule for GET /notes/{id}
+  no rule for DELETE /notes/{id}
+  no rule for GET /admin/users
+  no rule for GET /reports

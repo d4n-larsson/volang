@@ -1,0 +1,51 @@
+nobody -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+basic -> 200 "{\"name\":\"ada\",\"roles\":[\"admin\"]}"
+  event refused [wrong password for ada] name= GET /me at 1000000
+basic, wrong password -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+  event refused [unknown name for eve] name= GET /me at 1000000
+basic, unknown name -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+  event refused [disabled account for old] name= GET /me at 1000000
+basic, disabled -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+the three answers are the same: true
+basic, a password with a colon -> 200 "{\"name\":\"col\",\"roles\":[]}"
+basic, lower-case scheme -> 200 "{\"name\":\"ada\",\"roles\":[\"admin\"]}"
+  event refused [malformed Basic credentials] name= GET /me at 1000000
+basic, not base64 -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+  event refused [malformed Basic credentials] name= GET /me at 1000000
+basic, no colon -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+  event refused [malformed Basic credentials] name= GET /me at 1000000
+basic, empty name -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+  event refused [wrong password for ada] name= GET /open at 1000000
+basic, wrong on the open route -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+basic, the lookup fails -> 500 {"type":"about:blank","title":"Internal Server Error","status":500}
+  event refused [no accepted way for this Authorization header] name= GET /me at 1000000
+only the scheme -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+  event outdated_hash [the stored hash is weaker than hash_password makes now] name=ada POST /sign-in at 1000000
+  event signed_in [] name=ada POST /sign-in at 1000000
+sign in -> 200 {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZGEiLCJyb2xlcyI6WyJhZG1pbiJdLCJpYXQiOjEwMDAsImV4cCI6MTYwMH0.9tbgK1iQJUg5bAYpmxm0WXU_qAmgU-KV0f3il3slJvU","expires":1600}
+  event refused [wrong password] name=ada POST /sign-in at 1000000
+sign in, wrong password -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+  event refused [disabled account] name=old POST /sign-in at 1000000
+sign in, disabled -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+  event refused [unknown name] name=eve POST /sign-in at 1000000
+sign in, unknown name -> 401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+sign in, no password -> 400 {"type":"about:blank","title":"Bad Request","status":400,"detail":"the body must be {\"name\": ..., \"password\": ...}"}
+sign in, not JSON -> 400 {"type":"about:blank","title":"Bad Request","status":400,"detail":"the body must be {\"name\": ..., \"password\": ...}"}
+sign in, the lookup fails -> 500 [Vo-Error: the database is down] {"type":"about:blank","title":"Internal Server Error","status":500}
+  event refused [expired] name= POST /sign-in at 1600000
+sign in with an expired token along -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+token -> 200 "{\"name\":\"ada\",\"roles\":[\"admin\"]}"
+token, one second before expiry -> 200 "{\"name\":\"ada\",\"roles\":[\"admin\"]}"
+  event refused [expired] name= GET /me at 1600000
+token, at expiry -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+  event refused [signature] name= GET /me at 1000000
+token, damaged -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+  event refused [not a token] name= GET /me at 1000000
+token, not a token -> 401 [WWW-Authenticate: Basic realm="api"] [WWW-Authenticate: Bearer] {"type":"about:blank","title":"Unauthorized","status":401,"detail":"invalid credentials"}
+token of the old key -> 200 "{\"name\":\"bo\",\"roles\":[\"user\"]}"
+another key refuses it: true
+check_token: true
+password_user: true
+password_user, wrong: true
+password_user, the lookup fails: true
+outdated: weak true, strong false, not a hash false

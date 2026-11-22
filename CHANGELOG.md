@@ -6,6 +6,14 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- `std.security`: access control for `std.web` applications. A policy is one table of rules (who may call
+  which method and path: anyone, signed-in users, users with a role, nobody), and `secure(policy)` enforces
+  it: a request no rule matches is refused, 401 without credentials and 403 with. Ways of signing in:
+  signed tokens (JWT, HMAC-SHA256) with a ready sign-in route, HTTP Basic, and keys checked by the
+  application. Operations get the user with `require_user`, `require_role` and `current_user`. `decide` is
+  the decision as a pure function; `describe` and `review` apply it to an application's routes.
+  `safe_headers` adds the usual response headers. Also new: `std.web.problem_reply` and
+  `std.crypto.password_outdated`.
 - `std.decimal`: exact decimal numbers for money and other amounts. A `Decimal` is units and places (0 to 18);
   `parse_decimal`, `decimal_text`, `grouped_text`, exact `add`, `sub`, `mul` and `total`, `div` and `round_to`
   with a stated `Rounding`, `compare`, `equal`, `normalize`, `to_int`, `to_float`, and `split_evenly` and
