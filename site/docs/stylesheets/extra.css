@@ -72,10 +72,22 @@
   --md-code-hl-generic-color: #a8b0c1;
 }
 
-/* ---- Typography and spacing. Fonts are the reader's own (nothing is loaded: FR-015). ---- */
+/* ---- Typography and spacing. Text and code use the reader's own fonts; headings use Google Sans
+   Code (SIL Open Font License, assets/fonts/GoogleSansCode-OFL.txt), served with the site, since
+   nothing is loaded from another site (FR-015). ---- */
+@font-face {
+  font-family: "Google Sans Code";
+  src: url("../assets/fonts/GoogleSansCode.ttf") format("truetype");
+  font-weight: 300 800;
+  font-style: normal;
+  font-display: swap;
+}
 :root {
   --md-text-font: system-ui, "Segoe UI", Roboto;
   --md-code-font: ui-monospace, "Cascadia Code", "JetBrains Mono";
+}
+.md-typeset h1, .md-typeset h2, .md-typeset h3, .md-typeset h4, .md-typeset h5, .md-typeset h6 {
+  font-family: "Google Sans Code", var(--md-text-font-family);
 }
 .md-typeset { font-size: 0.82rem; line-height: 1.7; }
 .md-typeset h1 { margin-bottom: 0.6em; font-weight: 700; letter-spacing: -0.02em; color: var(--md-default-fg-color); }
