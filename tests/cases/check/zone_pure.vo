@@ -1,0 +1,53 @@
+import std.time.Zone;
+import std.time.fixed_zone;
+import std.time.format_in;
+import std.time.from_local;
+import std.time.in_zone;
+import std.time.load_zone;
+import std.time.offset_at;
+import std.time.parse_time;
+
+fn east_of_utc(z: Zone, ms: int) -> bool
+    requires len(z.name) > 0
+    ensures ret == (offset_at(z, ms) > 0) {
+    return offset_at(z, ms) > 0;
+}
+
+fn main() uses console {
+    print(str(east_of_utc(fixed_zone(60), 0)));
+}
+
+prop "the text of an instant in a zone reads back" (ms: int, minutes: int) {
+    assume(ms > -30000000000000 and ms < 100000000000000);
+    assume(minutes > -1440 and minutes < 1440);
+    expect_eq(parse_time(format_in(fixed_zone(minutes), ms)), ok(ms));
+}
+
+prop "a time shown in Stockholm is that instant, or one of two" (ms: int) {
+    assume(ms > -30000000000000 and ms < 100000000000000);
+    match load_zone("Europe/Stockholm") {
+        case ok(z) {
+            match from_local(z, in_zone(z, ms)) {
+                case ok(back) {
+                    expect_eq(back, ms);
+                }
+                case err(e) {
+                    match e {
+                        case invalid(m) {
+                            expect_eq(m, "");
+                        }
+                        case skipped(c) {
+                            expect_eq(c, ms);
+                        }
+                        case repeated(r) {
+                            expect(r.first == ms or r.second == ms);
+                        }
+                    }
+                }
+            }
+        }
+        case err(m) {
+            expect_eq(m, "");
+        }
+    }
+}

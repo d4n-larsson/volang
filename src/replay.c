@@ -35,7 +35,8 @@ static const char *const ev_names[] = {0,         "read_line", "read_all",    "r
                                        "entropy", /* spec 035 */
                                        "tcp_open", "tcp_tls", "tcp_recv", "tcp_send", "tcp_listen", "tcp_accept", /* spec 039 */
                                        "file_block", "proc_line", "proc_end", /* spec 040 */
-                                       "worker"}; /* spec 047 */
+                                       "worker", /* spec 047 */
+                                       "local_tz"}; /* spec 048 */
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static Str *run_desc(Str *program, Str *joined);
 static const char hexd[] = "0123456789abcdef";
@@ -411,6 +412,19 @@ void *io_write_file(Str *path, Str *text)
     }
     GC_UNROOT(2);
     return r;
+}
+
+/* Spec 048: local_zone. What the machine said is recorded; replay returns it and reads no setting. */
+Str *io_local_tz(void)
+{
+    if (rcd_mode == 2) return rp_take(EVK_LOCAL_TZ, 0)->value.p;
+    Str *b = rt_local_tz();
+    if (rcd_mode) {
+        GC_ROOT(&b);
+        rcd_event(EVK_LOCAL_TZ, 0, -1, b, 0);
+        GC_UNROOT(1);
+    }
+    return b;
 }
 
 /* Spec 035: random_bytes. The bytes drawn are recorded; replay returns them (R0014 for another count). */
@@ -1022,7 +1036,7 @@ void rp_read(char *text, long len)
 void rp_check_event(Event *e)
 {
     if (e->kind == EVK_SETUP || e->kind == EVK_SETUP_END || e->kind == EVK_WORKER_ENDED) return; /* spec 028: markers */
-    if (e->kind == EVK_ENTROPY) { /* spec 035: the bytes */
+    if (e->kind == EVK_ENTROPY || e->kind == EVK_LOCAL_TZ) { /* spec 035, 048: the bytes */
         if (rf_isint || !e->value.p) rp_bad();
         return;
     }

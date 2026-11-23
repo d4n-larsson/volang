@@ -51,7 +51,7 @@
 {"v":1,"kind":"doc","module":"builtins","name":"expect","item":"builtin","signature":"(cond: bool)","description":"only inside `test` (E0410)"}
 {"v":1,"kind":"doc","module":"builtins","name":"expect_eq","item":"builtin","signature":"(actual: T, expected: T)","description":"only inside `test` (E0410); reports both values"}
 {"v":1,"kind":"doc","module":"std.json","name":"std.json","item":"module","signature":"std.json","description":"JSON values: parse, write, and read fields and elements."}
-{"v":1,"kind":"doc","module":"std.time","name":"std.time","item":"module","signature":"std.time","description":"UTC calendar time, ISO 8601 text and durations in milliseconds."}
+{"v":1,"kind":"doc","module":"std.time","name":"std.time","item":"module","signature":"std.time","description":"Calendar time in UTC and in time zones, ISO 8601 text and durations in milliseconds."}
 {"v":1,"kind":"doc","module":"std.text","name":"std.text","item":"module","signature":"std.text","description":"Text helpers: search, replace, repeat, pad, lines and words."}
 {"v":1,"kind":"doc","module":"std.random","name":"std.random","item":"module","signature":"std.random","description":"Random floats, picks and shuffles (fixed by --seed; not for secrets: std.crypto.random_bytes)."}
 {"v":1,"kind":"doc","module":"std.http","name":"std.http","item":"module","signature":"std.http","description":"HTTP and HTTPS requests (needs net), and serving plain HTTP requests (needs serve)."}

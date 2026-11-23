@@ -1,0 +1,21 @@
+Europe/Stockholm 2026-07-01T12:00:00Z: 2026-07-01T14:00:00+02:00 CEST weekday 3 offset 7200 s, reads back
+Europe/Stockholm 2026-12-01T12:00:00Z: 2026-12-01T13:00:00+01:00 CET weekday 2 offset 3600 s, reads back
+Europe/Stockholm 2026-03-29T00:59:59.999Z: 2026-03-29T01:59:59.999+01:00 CET weekday 7 offset 3600 s, reads back
+Europe/Stockholm 2026-03-29T01:00:00Z: 2026-03-29T03:00:00+02:00 CEST weekday 7 offset 7200 s, reads back
+Europe/Stockholm 2026-10-25T00:59:59Z: 2026-10-25T02:59:59+02:00 CEST weekday 7 offset 7200 s, reads back
+Europe/Stockholm 2026-10-25T01:00:00Z: 2026-10-25T02:00:00+01:00 CET weekday 7 offset 3600 s, reads back
+Europe/Stockholm 2090-07-01T12:00:00Z: 2090-07-01T14:00:00+02:00 CEST weekday 6 offset 7200 s, reads back
+Europe/Stockholm 2090-12-01T12:00:00Z: 2090-12-01T13:00:00+01:00 CET weekday 5 offset 3600 s, reads back
+Europe/Stockholm 1700-01-01T00:00:00Z: 1700-01-01T00:53:28+00:53:28 LMT weekday 5 offset 3208 s, reads back
+Europe/Stockholm 0001-01-02T00:00:00Z: 0001-01-02T00:53:28+00:53:28 LMT weekday 2 offset 3208 s, reads back
+Europe/Stockholm 9999-12-30T23:59:59Z: 9999-12-31T00:59:59+01:00 CET weekday 5 offset 3600 s, reads back
+Asia/Kolkata 2026-01-01T00:00:00Z: 2026-01-01T05:30:00+05:30 IST weekday 4 offset 19800 s, reads back
+Asia/Kathmandu 2026-01-01T00:00:00Z: 2026-01-01T05:45:00+05:45 +0545 weekday 4 offset 20700 s, reads back
+Europe/London 2026-01-01T00:00:00Z: 2026-01-01T00:00:00+00:00 GMT weekday 4 offset 0 s, reads back
+America/New_York 2026-07-04T16:00:00Z: 2026-07-04T12:00:00-04:00 EDT weekday 6 offset -14400 s, reads back
+Australia/Sydney 2026-01-01T00:00:00Z: 2026-01-01T11:00:00+11:00 AEDT weekday 4 offset 39600 s, reads back
+Australia/Sydney 2060-07-01T00:00:00Z: 2060-07-01T10:00:00+10:00 AEST weekday 4 offset 36000 s, reads back
+Etc/GMT+5 2026-01-01T00:00:00Z: 2025-12-31T19:00:00-05:00 -05 weekday 3 offset -18000 s, reads back
+UTC 1969-12-31T23:59:59.5Z: 1969-12-31T23:59:59.500+00:00 UTC weekday 3 offset 0 s, reads back
+1767222392000
+true

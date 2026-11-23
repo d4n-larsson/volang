@@ -1,8 +1,10 @@
-# std.time: UTC calendar time, ISO 8601 text and durations in milliseconds.
-# Part of the vo standard library (spec 007). Import items one by one: `import std.time.NAME;`.
-# Times are milliseconds since 1970-01-01T00:00:00Z; calendar fields are UTC (proleptic Gregorian).
+# std.time: Calendar time in UTC and in time zones, ISO 8601 text and durations in milliseconds.
+# Part of the vo standard library (spec 007; zones: spec 048). Import items one by one: `import std.time.NAME;`.
+# Times are milliseconds since 1970-01-01T00:00:00Z. from_ms, to_ms and format_time are UTC (proleptic
+# Gregorian); in_zone, from_local and format_in are the same in a Zone. The tz database is built into vo:
+# load_zone needs no effect and gives the same answer on every machine.
 
-# A UTC calendar time; weekday is 1 for Monday through 7 for Sunday.
+# A calendar time, in UTC or in a zone (the record does not say which); weekday is 1 for Monday through 7 for Sunday.
 #     from_ms(0).weekday is 4
 export record DateTime {
     # The year, such as 2026.
@@ -23,6 +25,7 @@ export record DateTime {
     weekday: int;
 }
 
+@allow("W0702", "one module per import path: std.time is one file")
 fn floor_div(a: int, b: int) -> int {
     let q = a / b;
     if a % b != 0 and (a < 0) != (b < 0) {
@@ -152,12 +155,15 @@ fn pad(n: int, width: int) -> str {
 # ISO 8601 text of a time in UTC, with milliseconds only when they are not 0.
 #     format_time(0) is "1970-01-01T00:00:00Z"
 export fn format_time(ms: int) -> str {
-    let d = from_ms(ms);
+    return calendar_text(from_ms(ms)) + "Z";
+}
+
+fn calendar_text(d: DateTime) -> str {
     var s = pad(d.year, 4) + "-" + pad(d.month, 2) + "-" + pad(d.day, 2) + "T" + pad(d.hour, 2) + ":" + pad(d.minute, 2) + ":" + pad(d.second, 2);
     if d.ms != 0 {
         set s = s + "." + pad(d.ms, 3);
     }
-    return s + "Z";
+    return s;
 }
 
 fn digits_at(s: str, a: int, b: int) -> result[int] {
@@ -180,7 +186,7 @@ fn expect_char(s: str, i: int, c: str) -> result[void] {
     return ok();
 }
 
-# The time of ISO 8601 text: YYYY-MM-DD, or YYYY-MM-DDTHH:MM:SS[.fff] with Z or +HH:MM / -HH:MM.
+# The time of ISO 8601 text: YYYY-MM-DD, or YYYY-MM-DDTHH:MM:SS[.fff] with Z or +HH:MM / -HH:MM (and +HH:MM:SS, which format_in writes for offsets with seconds).
 #     parse_time("1970-01-01T00:00:01Z") == ok(1000) is true
 export fn parse_time(s: str) -> result[int] {
     let y = try digits_at(s, 0, 4);
@@ -227,14 +233,19 @@ export fn parse_time(s: str) -> result[int] {
     if i < len(s) and slice(s, i, i + 1) == "Z" and i + 1 == len(s) {
         return ok(local);
     }
-    if i + 6 == len(s) and (slice(s, i, i + 1) == "+" or slice(s, i, i + 1) == "-") {
+    if (i + 6 == len(s) or i + 9 == len(s)) and (slice(s, i, i + 1) == "+" or slice(s, i, i + 1) == "-") {
         let oh = try digits_at(s, i + 1, i + 3);
         try expect_char(s, i + 3, ":");
         let om = try digits_at(s, i + 4, i + 6);
-        if oh > 23 or om > 59 {
+        var os = 0;
+        if i + 9 == len(s) {
+            try expect_char(s, i + 6, ":");
+            set os = try digits_at(s, i + 7, i + 9);
+        }
+        if oh > 23 or om > 59 or os > 59 {
             return err("offset out of range");
         }
-        let offset = oh * 3600000 + om * 60000;
+        let offset = oh * 3600000 + om * 60000 + os * 1000;
         if slice(s, i, i + 1) == "+" {
             return ok(local - offset);
         }
@@ -277,4 +288,702 @@ export fn now() -> int uses clock {
 #     let a = now(); sleep(500); now() - a is 501
 export fn sleep(ms: int) uses clock {
     __sleep(ms);
+}
+
+# ---- time zones (spec 048) ----
+# Inside a zone everything is in seconds, as in the tz database; the exported functions take and give
+# milliseconds.
+
+# A day of the year in a zone's rule, with a time of day. For zone data, not for programs.
+#     new RuleDay { kind: 0, month: 3, week: 5, day: 0, seconds: 7200 }.week is 5
+export record RuleDay {
+    # 0: weekday `day` (0 is Sunday) of week `week` (5 is the last) of `month`; 1: day 1 to 365, 29 February not counted; 2: day 0 to 365.
+    kind: int;
+    # The month, 1 to 12 (kind 0).
+    month: int;
+    # The week of the month, 1 to 5 (kind 0).
+    week: int;
+    # The weekday (kind 0) or the day of the year (kinds 1 and 2).
+    day: int;
+    # The time of day in seconds; may be negative or more than a day.
+    seconds: int;
+}
+
+# What holds in a zone after its last listed change: the rule line of its data (`CET-1CEST,M3.5.0,M10.5.0/3`), read. For zone data, not for programs.
+#     new ZoneRule { std_offset: 3600, std_name: "CET", dst_offset: 3600, dst_name: "", has_dst: false, start: new RuleDay { kind: 2, month: 0, week: 0, day: 0, seconds: 0 }, end: new RuleDay { kind: 2, month: 0, week: 0, day: 0, seconds: 0 } }.std_name is "CET"
+export record ZoneRule {
+    # Seconds east of UTC in standard time.
+    std_offset: int;
+    # The abbreviation of standard time.
+    std_name: str;
+    # Seconds east of UTC in summer time.
+    dst_offset: int;
+    # The abbreviation of summer time.
+    dst_name: str;
+    # Whether the zone has summer time; when false only the standard fields count.
+    has_dst: bool;
+    # When summer time starts, read in standard time.
+    start: RuleDay;
+    # When summer time ends, read in summer time.
+    end: RuleDay;
+}
+
+# A time zone: for every instant, an offset from UTC and an abbreviation. Make one with load_zone, fixed_zone, zone_from_bytes or local_zone; only `name` is for programs to read. A zone is plain data: it can be kept, compared and sent to a worker.
+#     fixed_zone(60).name is "+01:00"
+export record Zone {
+    # The name the zone was made with, such as "Europe/Stockholm".
+    name: str;
+    # The instants of the listed changes in seconds since 1970, ascending.
+    starts: list[int];
+    # Seconds east of UTC: offsets[0] before the first change, offsets[i + 1] from starts[i].
+    offsets: list[int];
+    # The abbreviation for each item of offsets.
+    names: list[str];
+    # No rule or one: what holds from the last listed change on.
+    rules: list[ZoneRule];
+}
+
+# The two instants at which a zone shows the same calendar time, when its clocks go back.
+#     new Repeated { first: 0, second: 3600000 }.second is 3600000
+export record Repeated {
+    # The earlier instant.
+    first: int;
+    # The later instant.
+    second: int;
+}
+
+# Why a calendar time is not exactly one instant in a zone.
+#     from_local(fixed_zone(0), from_ms(5)) == ok(5) is true
+export variant LocalError {
+    # The fields are not a calendar time; the message is the one to_ms gives.
+    invalid(str);
+    # The zone's clocks jump over this time; the value is the instant of the jump.
+    skipped(int);
+    # The zone's clocks show this time twice.
+    repeated(Repeated);
+}
+
+fn be32(b: bytes, i: int) -> int {
+    return b[i] * 16777216 + b[i + 1] * 65536 + b[i + 2] * 256 + b[i + 3];
+}
+
+fn be32s(b: bytes, i: int) -> int {
+    let v = be32(b, i);
+    if v >= 2147483648 {
+        return v - 4294967296;
+    }
+    return v;
+}
+
+fn is_digit(s: str, i: int) -> bool {
+    return i < len(s) and byte_at(s, i) >= 48 and byte_at(s, i) <= 57;
+}
+
+fn digits_end(s: str, i: int) -> int {
+    var j = i;
+    while is_digit(s, j) {
+        set j = j + 1;
+    }
+    return j;
+}
+
+fn rule_name_end(s: str, i: int) -> result[int] {
+    # The index after a zone abbreviation at i in a rule line: <...> or three or more letters.
+    if i < len(s) and byte_at(s, i) == 60 {
+        let close = find(slice(s, i, len(s)), ">");
+        if close < 2 or not abbreviation_ok(slice(s, i, i + close)) {
+            return err("the rule line has a bad name");
+        }
+        return ok(i + close + 1);
+    }
+    var j = i;
+    while j < len(s) and ((byte_at(s, j) >= 65 and byte_at(s, j) <= 90) or (byte_at(s, j) >= 97 and byte_at(s, j) <= 122)) {
+        set j = j + 1;
+    }
+    if j - i < 3 {
+        return err("the rule line has a bad name");
+    }
+    return ok(j);
+}
+
+fn abbreviation_ok(s: str) -> bool {
+    # Whether an abbreviation is printable ASCII with no space: nothing a damaged file could use to
+    # break a line of output.
+    var i = 0;
+    while i < len(s) {
+        if byte_at(s, i) < 33 or byte_at(s, i) > 126 {
+            return false;
+        }
+        set i = i + 1;
+    }
+    return true;
+}
+
+fn rule_bare_name(s: str) -> str {
+    if byte_at(s, 0) == 60 {
+        return slice(s, 1, len(s) - 1);
+    }
+    return s;
+}
+
+record Scan {
+    value: int;
+    next: int;
+}
+
+fn scan_rule_time(s: str, i: int, max_hours: int) -> result[Scan] {
+    # [+-]h[h[h]][:mm[:ss]] at i, in seconds.
+    var j = i;
+    var sign = 1;
+    if j < len(s) and (byte_at(s, j) == 43 or byte_at(s, j) == 45) {
+        if byte_at(s, j) == 45 {
+            set sign = -1;
+        }
+        set j = j + 1;
+    }
+    var total = 0;
+    var unit = 3600;
+    var limit = max_hours;
+    while true {
+        let e = digits_end(s, j);
+        if e == j or e - j > 3 {
+            return err("the rule line has a bad time");
+        }
+        let v = try parse_int(slice(s, j, e));
+        if v > limit {
+            return err("the rule line has a bad time");
+        }
+        set total = total + v * unit;
+        set j = e;
+        if unit == 1 or j >= len(s) or byte_at(s, j) != 58 {
+            break;
+        }
+        set j = j + 1;
+        set unit = unit / 60;
+        set limit = 59;
+    }
+    return ok(new Scan { value: sign * total, next: j });
+}
+
+fn scan_rule_number(s: str, i: int, lo: int, hi: int) -> result[Scan] {
+    let e = digits_end(s, i);
+    if e == i or e - i > 3 {
+        return err("the rule line has a bad date");
+    }
+    let v = try parse_int(slice(s, i, e));
+    if v < lo or v > hi {
+        return err("the rule line has a bad date");
+    }
+    return ok(new Scan { value: v, next: e });
+}
+
+fn rule_byte(s: str, i: int, c: int) -> result[int] {
+    if i >= len(s) or byte_at(s, i) != c {
+        return err("the rule line has a bad date");
+    }
+    return ok(i + 1);
+}
+
+record DayScan {
+    day: RuleDay;
+    next: int;
+}
+
+fn scan_rule_day(s: str, i: int) -> result[DayScan] {
+    # ,Mm.w.d[/time] or ,Jn[/time] or ,n[/time] at i.
+    var j = try rule_byte(s, i, 44);
+    var kind = 2;
+    var month = 0;
+    var week = 0;
+    var day = 0;
+    if j < len(s) and byte_at(s, j) == 77 {
+        set kind = 0;
+        let m = try scan_rule_number(s, j + 1, 1, 12);
+        let w = try scan_rule_number(s, try rule_byte(s, m.next, 46), 1, 5);
+        let d = try scan_rule_number(s, try rule_byte(s, w.next, 46), 0, 6);
+        set month = m.value;
+        set week = w.value;
+        set day = d.value;
+        set j = d.next;
+    } else if j < len(s) and byte_at(s, j) == 74 {
+        set kind = 1;
+        let d = try scan_rule_number(s, j + 1, 1, 365);
+        set day = d.value;
+        set j = d.next;
+    } else {
+        let d = try scan_rule_number(s, j, 0, 365);
+        set day = d.value;
+        set j = d.next;
+    }
+    var at_seconds = 7200;
+    if j < len(s) and byte_at(s, j) == 47 {
+        let t = try scan_rule_time(s, j + 1, 167);
+        set at_seconds = t.value;
+        set j = t.next;
+    }
+    return ok(new DayScan {
+        day: new RuleDay { kind: kind, month: month, week: week, day: day, seconds: at_seconds },
+        next: j
+    });
+}
+
+fn parse_rule(s: str) -> result[ZoneRule] {
+    # A rule line such as CET-1CEST,M3.5.0,M10.5.0/3. Its offsets are written west-positive.
+    let none = new RuleDay { kind: 2, month: 0, week: 0, day: 0, seconds: 0 };
+    let a = try rule_name_end(s, 0);
+    let off = try scan_rule_time(s, a, 24);
+    let std_name = rule_bare_name(slice(s, 0, a));
+    if off.next == len(s) {
+        return ok(new ZoneRule {
+            std_offset: 0 - off.value,
+            std_name: std_name,
+            dst_offset: 0 - off.value,
+            dst_name: "",
+            has_dst: false,
+            start: none,
+            end: none
+        });
+    }
+    let b = try rule_name_end(s, off.next);
+    let dst_name = rule_bare_name(slice(s, off.next, b));
+    var dst_offset = 3600 - off.value;
+    var j = b;
+    if j < len(s) and byte_at(s, j) != 44 {
+        let d = try scan_rule_time(s, j, 24);
+        set dst_offset = 0 - d.value;
+        set j = d.next;
+    }
+    let start = try scan_rule_day(s, j);
+    let end = try scan_rule_day(s, start.next);
+    if end.next != len(s) {
+        return err("the rule line has text after its dates");
+    }
+    return ok(new ZoneRule {
+        std_offset: 0 - off.value,
+        std_name: std_name,
+        dst_offset: dst_offset,
+        dst_name: dst_name,
+        has_dst: true,
+        start: start.day,
+        end: end.day
+    });
+}
+
+fn rule_instant(d: RuleDay, year: int) -> int {
+    # Seconds from 1970 to a rule day's time in a year, read as if UTC.
+    var day_count = days_from_civil(year, 1, 1) + d.day;
+    if d.kind == 0 {
+        let first = days_from_civil(year, d.month, 1);
+        let weekday = first + 4 - floor_div(first + 4, 7) * 7;
+        var dom = 1 + (d.day - weekday + 7) % 7 + 7 * (d.week - 1);
+        if dom > days_in_month(year, d.month) {
+            set dom = dom - 7;
+        }
+        set day_count = first + dom - 1;
+    } else if d.kind == 1 {
+        set day_count = day_count - 1;
+        if is_leap(year) and d.day >= 60 {
+            set day_count = day_count + 1;
+        }
+    }
+    return day_count * 86400 + d.seconds;
+}
+
+fn rule_is_dst(r: ZoneRule, t: int) -> bool {
+    if not r.has_dst {
+        return false;
+    }
+    let year = from_ms(t * 1000).year;
+    let s = rule_instant(r.start, year) - r.std_offset;
+    let e = rule_instant(r.end, year) - r.dst_offset;
+    if s < e {
+        return s <= t and t < e;
+    }
+    return not (e <= t and t < s);
+}
+
+record TimeTypes {
+    offsets: list[int];
+    names: list[str];
+}
+
+fn read_time_types(
+    b: bytes,
+    at_types: int,
+    types: int,
+    at_abbr: int,
+    abbr_bytes: int
+) -> result[TimeTypes] {
+    let type_offsets = new list[int];
+    let type_names = new list[str];
+    var k = 0;
+    while k < types {
+        let p = at_types + k * 6;
+        let off = be32s(b, p);
+        let ai = b[p + 5];
+        if off < -93600 or off > 93600 or ai >= abbr_bytes {
+            return err("a time type is out of range");
+        }
+        var e = at_abbr + ai;
+        while e < at_abbr + abbr_bytes and b[e] != 0 {
+            set e = e + 1;
+        }
+        if e == at_abbr + abbr_bytes {
+            return err("an abbreviation is not ended");
+        }
+        match __text_of_bytes(slice(b, at_abbr + ai, e)) {
+            case ok(s) {
+                if not abbreviation_ok(s) {
+                    return err("an abbreviation is not printable ASCII");
+                }
+                push(type_names, s);
+            }
+            case err(_) {
+                return err("an abbreviation is not text");
+            }
+        }
+        push(type_offsets, off);
+        set k = k + 1;
+    }
+    return ok(new TimeTypes { offsets: type_offsets, names: type_names });
+}
+
+fn read_zone(name: str, b: bytes) -> result[Zone] {
+    if len(b) < 44 or b[0] != 84 or b[1] != 90 or b[2] != 105 or b[3] != 102 {
+        return err("not a TZif file");
+    }
+    if b[4] < 50 {
+        return err("TZif version 1 is not supported");
+    }
+    # The version 1 block is skipped by its counts; every count is below 2^32, so nothing overflows.
+    let h = 44 + be32(b, 32) * 5 + be32(b, 36) * 6 + be32(b, 40) + be32(b, 28) * 4 + be32(b, 24) + be32(b, 20);
+    if len(b) < h + 44 or b[h] != 84 or b[h + 1] != 90 or b[h + 2] != 105 or b[h + 3] != 102 {
+        return err("the file is cut short");
+    }
+    let isut = be32(b, h + 20);
+    let isstd = be32(b, h + 24);
+    let leaps = be32(b, h + 28);
+    let times = be32(b, h + 32);
+    let types = be32(b, h + 36);
+    let abbr_bytes = be32(b, h + 40);
+    if leaps != 0 {
+        return err("files with leap seconds are not supported");
+    }
+    if types < 1 or types > 256 or times > 100000 or abbr_bytes > 2000 or isut > 256 or isstd > 256 {
+        return err("a count is out of range");
+    }
+    let at_times = h + 44;
+    let at_idx = at_times + times * 8;
+    let at_types = at_idx + times;
+    let at_abbr = at_types + types * 6;
+    let at_foot = at_abbr + abbr_bytes + isstd + isut;
+    if len(b) < at_foot + 2 or b[at_foot] != 10 or b[len(b) - 1] != 10 {
+        return err("the file is cut short");
+    }
+    let found = try read_time_types(b, at_types, types, at_abbr, abbr_bytes);
+    let type_offsets = found.offsets;
+    let type_names = found.names;
+    var k = 0;
+    let starts = new list[int];
+    let offsets = [type_offsets[0]];
+    let names = [type_names[0]];
+    set k = 0;
+    while k < times {
+        let t = be32s(b, at_times + k * 8) * 4294967296 + be32(b, at_times + k * 8 + 4);
+        let ty = b[at_idx + k];
+        if ty >= types or (k > 0 and t <= starts[k - 1]) or t < -4611686018427387904 or t > 4611686018427387904 {
+            return err("the changes are out of order or range");
+        }
+        push(starts, t);
+        push(offsets, type_offsets[ty]);
+        push(names, type_names[ty]);
+        set k = k + 1;
+    }
+    let rules = new list[ZoneRule];
+    if len(b) > at_foot + 2 {
+        match __text_of_bytes(slice(b, at_foot + 1, len(b) - 1)) {
+            case ok(s) {
+                push(rules, try parse_rule(s));
+            }
+            case err(_) {
+                return err("the rule line is not text");
+            }
+        }
+    }
+    return ok(new Zone {
+        name: name,
+        starts: starts,
+        offsets: offsets,
+        names: names,
+        rules: rules
+    });
+}
+
+# The zone that a compiled zone file (TZif, version 2 or later, as in /usr/share/zoneinfo) describes, for a program that ships its own zone data; the name is the caller's. Anything else is err("invalid zone data: REASON"), including version 1 files and files with leap seconds; no input stops the program.
+#     zone_from_bytes("x", from_text("")) == err("invalid zone data: not a TZif file") is true
+export fn zone_from_bytes(name: str, data: bytes) -> result[Zone] {
+    match read_zone(name, data) {
+        case ok(z) {
+            return ok(z);
+        }
+        case err(e) {
+            return err("invalid zone data: " + e);
+        }
+    }
+}
+
+# The zone of this exact name ("Europe/Stockholm", "UTC") from the tz database built into vo: no effect, the same on every machine. Old names such as "US/Eastern" work. An unknown name is err("unknown time zone: NAME").
+#     load_zone("Europe/Atlantis") == err("unknown time zone: Europe/Atlantis") is true
+#     load_zone("Asia/Tokyo") == load_zone("Japan") is false
+export fn load_zone(name: str) -> result[Zone] {
+    match __tz(1, name) {
+        case ok(data) {
+            return zone_from_bytes(name, data);
+        }
+        case err(_) {
+            return err("unknown time zone: " + name);
+        }
+    }
+}
+
+fn tz_index() -> list[str] {
+    match __tz(2, "") {
+        case ok(b) {
+            match __text_of_bytes(b) {
+                case ok(s) {
+                    return split(trim(s), "\n");
+                }
+                case err(_) {
+                    return ["VOTZ1 none 0"];
+                }
+            }
+        }
+        case err(_) {
+            return ["VOTZ1 none 0"];
+        }
+    }
+}
+
+# Every name load_zone accepts, sorted.
+#     zone_names()[0] is "Africa/Abidjan"
+export fn zone_names() -> list[str] {
+    let lines = tz_index();
+    let out = new list[str];
+    var i = 1;
+    while i < len(lines) {
+        push(out, slice(lines[i], 0, find(lines[i], " ")));
+        set i = i + 1;
+    }
+    return out;
+}
+
+# The release of the tz database built into vo, such as "2026f" (also shown by `vo version`). Zone rules change a few times a year: when the data is too old, give zone_from_bytes a newer file.
+#     len(tzdata_version()) >= 5 is true
+export fn tzdata_version() -> str {
+    return split(tz_index()[0], " ")[1];
+}
+
+fn offset_text(east: int) -> str {
+    var sign = "+";
+    if east < 0 {
+        set sign = "-";
+    }
+    let a = abs(east);
+    var s = sign + pad(a / 3600, 2) + ":" + pad(a / 60 % 60, 2);
+    if a % 60 != 0 {
+        set s = s + ":" + pad(a % 60, 2);
+    }
+    return s;
+}
+
+fn minutes_within_a_day(east: int) -> bool {
+    return east > -1440 and east < 1440;
+}
+
+# The zone that is always `east` minutes east of UTC (-1439 to 1439), named by its offset.
+#     fixed_zone(330).name is "+05:30"
+#     format_in(fixed_zone(-300), 0) is "1969-12-31T19:00:00-05:00"
+export fn fixed_zone(east: int) -> Zone
+    requires minutes_within_a_day(east) {
+    let text = offset_text(east * 60);
+    return new Zone {
+        name: text,
+        starts: new list[int],
+        offsets: [east * 60],
+        names: [text],
+        rules: new list[ZoneRule]
+    };
+}
+
+fn utc_zone() -> Zone {
+    return new Zone {
+        name: "UTC",
+        starts: new list[int],
+        offsets: [0],
+        names: ["UTC"],
+        rules: new list[ZoneRule]
+    };
+}
+
+fn zone_of_setting(b: bytes) -> result[Zone] {
+    var cut = 0;
+    while cut < len(b) and b[cut] != 10 {
+        set cut = cut + 1;
+    }
+    if cut >= len(b) {
+        return err("no setting");
+    }
+    return zone_from_bytes(try __text_of_bytes(slice(b, 0, cut)), slice(b, cut + 1, len(b)));
+}
+
+# The zone of this machine (needs clock): the one the TZ variable names when it is a name load_zone accepts, otherwise the machine's /etc/localtime, otherwise UTC; never an error. With a fixed clock (--clock-ms, every vo test) it is UTC; vo replay gives what was recorded.
+#     local_zone().name is "UTC"
+export fn local_zone() -> Zone uses clock {
+    match zone_of_setting(__local_tz()) {
+        case ok(z) {
+            return z;
+        }
+        case err(_) {
+            return utc_zone();
+        }
+    }
+}
+
+fn zone_segment(z: Zone, t: int) -> int {
+    # The number of listed changes at or before t (seconds).
+    var lo = 0;
+    var hi = len(z.starts);
+    while lo < hi {
+        let mid = (lo + hi) / 2;
+        if z.starts[mid] <= t {
+            set lo = mid + 1;
+        } else {
+            set hi = mid;
+        }
+    }
+    return lo;
+}
+
+fn offset_seconds(z: Zone, t: int) -> int {
+    let i = zone_segment(z, t);
+    if i == len(z.starts) and len(z.rules) == 1 {
+        if rule_is_dst(z.rules[0], t) {
+            return z.rules[0].dst_offset;
+        }
+        return z.rules[0].std_offset;
+    }
+    return z.offsets[i];
+}
+
+# The zone's offset from UTC at an instant, in milliseconds, east positive.
+#     offset_at(fixed_zone(90), 0) is 5400000
+export fn offset_at(z: Zone, ms: int) -> int {
+    return offset_seconds(z, floor_div(ms, 1000)) * 1000;
+}
+
+# The zone's abbreviation at an instant, as the tz database has it: "CET", "CEST", "+0530".
+#     abbreviation_at(fixed_zone(60), 0) is "+01:00"
+export fn abbreviation_at(z: Zone, ms: int) -> str {
+    let t = floor_div(ms, 1000);
+    let i = zone_segment(z, t);
+    if i == len(z.starts) and len(z.rules) == 1 {
+        if rule_is_dst(z.rules[0], t) {
+            return z.rules[0].dst_name;
+        }
+        return z.rules[0].std_name;
+    }
+    return z.names[i];
+}
+
+# The calendar time a clock in the zone shows at an instant.
+#     in_zone(fixed_zone(120), 0).hour is 2
+export fn in_zone(z: Zone, ms: int) -> DateTime {
+    return from_ms(ms + offset_at(z, ms));
+}
+
+# ISO 8601 text of an instant as the zone shows it, with the zone's offset: +HH:MM or -HH:MM (+00:00, never Z; with :SS where the offset has seconds). parse_time reads it back to the same instant.
+#     format_in(fixed_zone(120), 0) is "1970-01-01T02:00:00+02:00"
+export fn format_in(z: Zone, ms: int) -> str {
+    return calendar_text(in_zone(z, ms)) + offset_text(offset_at(z, ms) / 1000);
+}
+
+fn changes_between(z: Zone, a: int, b: int) -> list[int] {
+    # The instants in a to b (seconds, both excluded) at which the zone's offset may change: the listed
+    # changes, and after them the rule's two changes and the first second of each year.
+    let out = new list[int];
+    var i = zone_segment(z, a);
+    while i < len(z.starts) and z.starts[i] < b {
+        push(out, z.starts[i]);
+        set i = i + 1;
+    }
+    if len(z.rules) == 1 and z.rules[0].has_dst and i == len(z.starts) {
+        let r = z.rules[0];
+        var last = a;
+        if len(z.starts) > 0 {
+            set last = max(a, z.starts[len(z.starts) - 1]);
+        }
+        var year = from_ms(a * 1000).year;
+        let rule_changes = new list[int];
+        while year <= from_ms(b * 1000).year {
+            push(rule_changes, days_from_civil(year, 1, 1) * 86400);
+            push(rule_changes, rule_instant(r.start, year) - r.std_offset);
+            push(rule_changes, rule_instant(r.end, year) - r.dst_offset);
+            set year = year + 1;
+        }
+        sort(rule_changes);
+        for c in rule_changes {
+            if c > last and c < b {
+                push(out, c);
+            }
+        }
+    }
+    return out;
+}
+
+# The instant at which the zone shows the calendar time d (weekday is ignored), when there is exactly one. Otherwise an error that says why and never picks: invalid (not a calendar time), skipped (the clocks jump over d; with the instant of the jump) or repeated (the clocks show d twice; with both instants).
+#     from_local(fixed_zone(60), from_ms(3600000)) == ok(0) is true
+export fn from_local(z: Zone, d: DateTime) -> result[int, LocalError] {
+    var local = 0;
+    match to_ms(d) {
+        case ok(v) {
+            set local = (v - d.ms) / 1000;
+        }
+        case err(e) {
+            return err(LocalError.invalid(e));
+        }
+    }
+    # ponytail: a fixed window above the largest offset (26 hours); exact for every change in the
+    # data, and at most two answers are reported (three would need two changes back within it).
+    let changes = changes_between(z, local - 100000, local + 100000);
+    let found = new list[int];
+    var i = -1;
+    while i < len(changes) {
+        var o = offset_seconds(z, local - 100000);
+        if i >= 0 {
+            set o = offset_seconds(z, changes[i]);
+        }
+        let t = local - o;
+        if offset_seconds(z, t) == o and (len(found) == 0 or found[len(found) - 1] != t) {
+            push(found, t);
+        }
+        set i = i + 1;
+    }
+    sort(found);
+    if len(found) == 1 {
+        return ok(found[0] * 1000 + d.ms);
+    }
+    if len(found) > 1 {
+        return err(
+            LocalError.repeated(new Repeated {
+                first: found[0] * 1000 + d.ms,
+                second: found[1] * 1000 + d.ms
+            })
+        );
+    }
+    for c in changes {
+        if local - offset_seconds(z, c - 1) >= c and local - offset_seconds(z, c) < c {
+            return err(LocalError.skipped(c * 1000));
+        }
+    }
+    return err(LocalError.skipped((local - offset_seconds(z, local)) * 1000));
 }

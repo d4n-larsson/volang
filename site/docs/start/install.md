@@ -46,6 +46,7 @@ bin/vo version
 
 ```text
 vo 0.1.0 schema 1
+tzdata 2026f
 ```
 
 `make` builds `build/vo` for the machine you are on. `bin/vo` is a small script that runs that binary;

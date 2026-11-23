@@ -15,7 +15,7 @@ the grant of `vo test` is each test's `uses` clause. A grant names effects and, 
 | file.read, file.write | read or write files; list directories, look at paths, append, create directories (`std.fs`) | directories, relative to where the program starts |
 | file.delete | delete files, links and empty directories; rename (it removes the old name) | directories, like `file.write` |
 | net | HTTP requests | host names |
-| clock, random | the time, random numbers | — |
+| clock, random | the time and the machine's time zone setting (`std.time.local_zone` reads the `TZ` variable and `/etc/localtime`, and nothing else of the environment or the file system); random numbers | — |
 | env | environment variables | variable names |
 | serve | answer HTTP requests | an address (`"8000"`: this machine; `"0.0.0.0:8000"`: the network) |
 | process | start a named program and wait for it (`std.process`) | programs: a name found through `PATH`, or a path; required (E0512) |

@@ -1,0 +1,5 @@
+zone_fixed_bad.vo:4:11: runtime error[R0012]: Precondition `minutes_within_a_day(east)` of `fixed_zone` does not hold.
+   4 |     print(fixed_zone(1440).name);
+     |           ^^^^^^^^^^^^^^^^
+trace:
+  at main (zone_fixed_bad.vo:4:11)

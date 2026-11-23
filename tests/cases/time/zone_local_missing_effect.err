@@ -1,0 +1,9 @@
+zone_local_missing_effect.vo:3:4: error[E0501]: `zone_name` does not declare clock, which it needs.
+   3 | fn zone_name() -> str {
+     |    ^^^^^^^^^
+  fix: insert `uses clock `
+zone_local_missing_effect.vo:7:4: error[E0501]: `main` does not declare clock, which it needs.
+   7 | fn main() uses console {
+     |    ^^^^
+  fix: replace with `uses console, clock `
+2 errors, 0 warnings

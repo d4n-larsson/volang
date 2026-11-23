@@ -6,6 +6,15 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- Time zones in `std.time`. The IANA tz database (release 2026f) is built into `vo`, so
+  `load_zone("Europe/Stockholm")` needs no effect and no file on the machine and answers the same
+  everywhere. `in_zone`, `offset_at`, `abbreviation_at` and `format_in` show an instant in a zone;
+  `from_local` turns a local calendar time into an instant and returns an error value, never a guess,
+  for a time the zone's clocks skip or show twice; `fixed_zone(minutes)`; `zone_from_bytes` for a
+  program that ships newer zone data; `local_zone()` (needs `clock`) is the machine's zone, from `TZ`
+  or `/etc/localtime`, UTC with a fixed clock. `parse_time` also reads offsets with seconds
+  (`+00:53:28`). `vo version` prints a second line, `tzdata 2026f`, and its JSON record has a `tzdata`
+  field. The binary is 460 KB larger.
 - `std.workers`: processes that run beside the program and exchange typed messages with it.
   `start_worker(f)` returns at once with a handle; `tell` and `receive` on the program's side,
   `next_message` and `emit` in the worker; `receive_first` waits on several workers; `stop_worker` ends

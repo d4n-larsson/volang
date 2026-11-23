@@ -1,0 +1,47 @@
+# An instant as a zone shows it: fields, offset, abbreviation, ISO text that parse_time reads back.
+import std.time.Zone;
+import std.time.abbreviation_at;
+import std.time.format_in;
+import std.time.in_zone;
+import std.time.load_zone;
+import std.time.offset_at;
+import std.time.parse_time;
+
+fn show(z: Zone, text: str) -> result[void] uses console {
+    let ms = try parse_time(text);
+    let d = in_zone(z, ms);
+    var back = "reads back";
+    if parse_time(format_in(z, ms)) != ok(ms) {
+        set back = "DOES NOT READ BACK";
+    }
+    print(format("{} {}: {} {} weekday {} offset {} s, {}", z.name, text, format_in(z, ms), abbreviation_at(z, ms), d.weekday, offset_at(z, ms) / 1000, back));
+    return ok();
+}
+
+fn main() -> result[void] uses console {
+    let stockholm = try load_zone("Europe/Stockholm");
+    try show(stockholm, "2026-07-01T12:00:00Z");
+    try show(stockholm, "2026-12-01T12:00:00Z");
+    # The second before a change, and the change itself.
+    try show(stockholm, "2026-03-29T00:59:59.999Z");
+    try show(stockholm, "2026-03-29T01:00:00Z");
+    try show(stockholm, "2026-10-25T00:59:59Z");
+    try show(stockholm, "2026-10-25T01:00:00Z");
+    # After the listed changes: the zone's rule. Before them: local mean time, with seconds.
+    try show(stockholm, "2090-07-01T12:00:00Z");
+    try show(stockholm, "2090-12-01T12:00:00Z");
+    try show(stockholm, "1700-01-01T00:00:00Z");
+    try show(stockholm, "0001-01-02T00:00:00Z");
+    try show(stockholm, "9999-12-30T23:59:59Z");
+    try show(try load_zone("Asia/Kolkata"), "2026-01-01T00:00:00Z");
+    try show(try load_zone("Asia/Kathmandu"), "2026-01-01T00:00:00Z");
+    try show(try load_zone("Europe/London"), "2026-01-01T00:00:00Z");
+    try show(try load_zone("America/New_York"), "2026-07-04T16:00:00Z");
+    try show(try load_zone("Australia/Sydney"), "2026-01-01T00:00:00Z");
+    try show(try load_zone("Australia/Sydney"), "2060-07-01T00:00:00Z");
+    try show(try load_zone("Etc/GMT+5"), "2026-01-01T00:00:00Z");
+    try show(try load_zone("UTC"), "1969-12-31T23:59:59.5Z");
+    print(str(try parse_time("2026-01-01T00:00:00+00:53:28")));
+    print(str(parse_time("2026-01-01T00:00:00+00:53:60") == err("offset out of range")));
+    return ok();
+}

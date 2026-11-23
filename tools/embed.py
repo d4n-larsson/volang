@@ -3,7 +3,8 @@
 
   embed.py build/embedded.c docs/reference.md docs/errors.md std/json.vo std/time.vo ...
 
-Writes ref_md and errors_md (each NUL-terminated, with ref_md_len and errors_md_len), and the std
+Writes ref_md and errors_md (each NUL-terminated, with ref_md_len and errors_md_len), a .bin argument as tz_blob
+and tz_blob_len (spec 048: third_party/tzdata/zones.bin), and the std
 library: one NUL-terminated array per file and std_files, a table of {path, text, length} ending
 with a zero entry, in the order given (the order `vo doc` and std_lookup see).
 """
@@ -11,10 +12,10 @@ import os
 import sys
 
 
-def array(name, data):
+def array(name, data, ctype="char"):
     data = data + b"\0"
     rows = [", ".join(str(b) for b in data[i:i + 24]) for i in range(0, len(data), 24)]
-    return f"const char {name}[{len(data)}] = {{\n    " + ",\n    ".join(rows) + "\n};\n"
+    return f"const {ctype} {name}[{len(data)}] = {{\n    " + ",\n    ".join(rows) + "\n};\n"
 
 
 def main():
@@ -27,6 +28,11 @@ def main():
         parts.append(f"const long {name}_len = {len(data)};\n")
     table = []
     for path in stds:
+        if path.endswith(".bin"):  # spec 048: the packed tz database
+            data = open(path, "rb").read()
+            parts.append(array("tz_blob", data, "unsigned char"))
+            parts.append(f"const long tz_blob_len = {len(data)};\n")
+            continue
         data = open(path, "rb").read()
         sym = "std_" + os.path.splitext(os.path.basename(path))[0]
         parts.append(f"static {array(sym, data)}")

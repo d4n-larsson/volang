@@ -36,6 +36,7 @@ cases() {
     web_security) echo "web_security web doc crypto" ;; # spec 045
     iteration) echo "run check fmt doc" ;; # spec 046
     workers) echo "workers tasks test doc" ;; # spec 047
+    zones) echo "time sleep_steps run check effects replay cli doc" ;; # spec 048
     bytes) echo "bytes bytes_steps run doc" ;;
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
@@ -81,6 +82,7 @@ scripts() { # one per line, with arguments
     web_security) printf '%s\n' ref_examples.py doc_conformance.py web_security.py ;; # spec 045
     iteration) printf '%s\n' ref_examples.py doc_conformance.py catalog.py apply_fixes.py iteration.py ;; # spec 046
     workers) printf '%s\n' ref_examples.py doc_conformance.py catalog.py workers.py ;; # spec 047
+    zones) printf '%s\n' ref_examples.py doc_conformance.py time_check.py zones.py ;; # spec 048
     bytes) echo doc_conformance.py ;;
     float) printf '%s\n' math_vectors.py json_corpus.py json_stream.py ref_examples.py doc_conformance.py ;;
     json) printf '%s\n' json_corpus.py json_stream.py doc_conformance.py ;;
@@ -129,7 +131,8 @@ area_of() {
     src/bytes.c|std/bytes.vo|tests/bytes/*|tests/bytes_*.py|tests/process_helpers/allbytes) echo bytes ;;
     std/json.vo) echo json ;;
     std/text.vo|src/text.c) echo text ;;
-    std/time.vo|tests/sleep_check.py) echo time ;;
+    std/time.vo|src/tz.c|tests/zones.py|third_party/tzdata/*|tools/vendor_tzdata.sh) echo zones ;; # spec 048
+    tests/sleep_check.py) echo time ;;
     std/random.vo) echo random ;;
     std/collections.vo|src/rt_coll.c) echo collections ;;
     third_party/shim/*) echo "math http" ;; # both vendored libraries
@@ -176,7 +179,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits decimal web_security iteration workers)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits decimal web_security iteration workers zones)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done

@@ -45,6 +45,9 @@ before writing code.
   every exported function (`python3 tests/doc_conformance.py`).
 - Third-party code is vendored under `third_party/` with a permissive license, a pinned version and a
   checksum; see the constitution before proposing more.
+- The time zone data in `third_party/tzdata/` is updated before every release:
+  `tools/vendor_tzdata.sh VERSION SHA512` with the newest release on <https://www.iana.org/time-zones>,
+  then `make test`.
 
 ## License
 

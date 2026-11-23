@@ -51,7 +51,7 @@ fi
 mkdir -p "$dir"
 chmod 755 "$tmp/$file"
 mv "$tmp/$file" "$dir/vo"
-echo "installed $("$dir/vo" version) to $dir/vo"
+echo "installed $("$dir/vo" version | head -n 1) to $dir/vo"
 case ":$PATH:" in
     *":$dir:"*) ;;
     *) echo "add $dir to your PATH to run it as \`vo\`" ;;

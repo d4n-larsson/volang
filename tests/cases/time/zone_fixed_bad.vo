@@ -1,0 +1,5 @@
+import std.time.fixed_zone;
+
+fn main() uses console {
+    print(fixed_zone(1440).name);
+}

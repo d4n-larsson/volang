@@ -1,0 +1,85 @@
+# A calendar time in a zone as an instant: once, skipped, repeated, or not a time.
+import std.time.DateTime;
+import std.time.LocalError;
+import std.time.Zone;
+import std.time.format_in;
+import std.time.format_time;
+import std.time.from_local;
+import std.time.in_zone;
+import std.time.load_zone;
+
+fn at(year: int, month: int, day: int, hour: int, minute: int) -> DateTime {
+    return new DateTime { year: year, month: month, day: day, hour: hour, minute: minute, second: 0, ms: 0, weekday: 0 };
+}
+
+fn show(z: Zone, d: DateTime) uses console {
+    let head = format("{} {}-{:02}-{:02} {:02}:{:02}: ", z.name, d.year, d.month, d.day, d.hour, d.minute);
+    match from_local(z, d) {
+        case ok(ms) {
+            var law = "";
+            if in_zone(z, ms) != from_local_fields(d, in_zone(z, ms).weekday) {
+                set law = " BUT in_zone DISAGREES";
+            }
+            print(head + "once, " + format_in(z, ms) + law);
+        }
+        case err(e) {
+            match e {
+                case invalid(m) {
+                    print(head + "invalid, " + m);
+                }
+                case skipped(change) {
+                    print(head + "skipped, the clocks change at " + format_time(change) + " to " + format_in(z, change));
+                }
+                case repeated(r) {
+                    print(head + "repeated, " + format_in(z, r.first) + " and " + format_in(z, r.second));
+                }
+            }
+        }
+    }
+}
+
+fn from_local_fields(d: DateTime, weekday: int) -> DateTime {
+    return new DateTime { year: d.year, month: d.month, day: d.day, hour: d.hour, minute: d.minute, second: d.second, ms: d.ms, weekday: weekday };
+}
+
+fn main() -> result[void] uses console {
+    let stockholm = try load_zone("Europe/Stockholm");
+    show(stockholm, at(2026, 3, 29, 9, 0));
+    show(stockholm, at(2026, 3, 29, 1, 59));
+    show(stockholm, at(2026, 3, 29, 2, 0));
+    show(stockholm, at(2026, 3, 29, 2, 30));
+    show(stockholm, at(2026, 3, 29, 3, 0));
+    show(stockholm, at(2026, 10, 25, 1, 59));
+    show(stockholm, at(2026, 10, 25, 2, 0));
+    show(stockholm, at(2026, 10, 25, 2, 30));
+    show(stockholm, at(2026, 10, 25, 3, 0));
+    # After the listed changes: the rule.
+    show(stockholm, at(2090, 3, 26, 2, 30));
+    show(stockholm, at(2090, 10, 29, 2, 30));
+    show(stockholm, at(2026, 13, 1, 0, 0));
+    show(stockholm, at(2026, 2, 30, 0, 0));
+    show(stockholm, at(2026, 1, 1, 24, 0));
+    # South of the equator the year starts in summer time.
+    let sydney = try load_zone("Australia/Sydney");
+    show(sydney, at(2026, 1, 1, 12, 0));
+    show(sydney, at(2026, 4, 5, 2, 30));
+    show(sydney, at(2026, 10, 4, 2, 30));
+    # Samoa skipped a whole day when it crossed the date line.
+    let apia = try load_zone("Pacific/Apia");
+    show(apia, at(2011, 12, 29, 23, 59));
+    show(apia, at(2011, 12, 30, 12, 0));
+    show(apia, at(2011, 12, 31, 0, 0));
+    # A repeated time at a change of standard offset, with no summer time involved.
+    let caracas = try load_zone("America/Caracas");
+    show(caracas, at(2007, 12, 9, 2, 45));
+    # Milliseconds are kept.
+    match from_local(stockholm, new DateTime { year: 2026, month: 7, day: 1, hour: 14, minute: 0, second: 0, ms: 123, weekday: 0 }) {
+        case ok(ms) {
+            print(format_time(ms));
+        }
+        case err(_) {
+            print("not once");
+        }
+    }
+    return ok();
+}

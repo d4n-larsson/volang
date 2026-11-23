@@ -261,7 +261,7 @@ From [vo explain](explain.md), [vo reference](reference.md) and [vo version](ver
 ```json
 {"v":1,"kind":"explain","code":"T0004","name":"unknown_target","fixable":false,"text":"## T0004 unknown_target\n\nA query or edit names something that is not in the program.\n\n..."}
 {"v":1,"kind":"reference","text":"# vo-lang Reference\n\n..."}
-{"v":1,"kind":"version","version":"0.1.0","schema":1}
+{"v":1,"kind":"version","version":"0.1.0","schema":1,"tzdata":"2026f"}
 ```
 
 (`text` shortened here.)

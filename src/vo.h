@@ -431,7 +431,9 @@
 #define B_PROC (113) /* __proc(op, id) -> result[str]: 1 next line, 2 finish, 3 stop */
 #define B_BITS (114) /* spec 043: __bits(op, a, b) -> int, std.bits's one primitive */
 #define B_WORKER (115) /* spec 047: __worker(op, a, b), std.workers only (src/workers.c) */
-#define B_LAST (115) /* the last builtin id with a btab entry */
+#define B_TZ (116) /* spec 048: __tz(op, name) -> result[bytes], std.time only (src/tz.c) */
+#define B_LOCAL_TZ (117) /* __local_tz() -> bytes, clock */
+#define B_LAST (117) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -787,7 +789,8 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define EVK_PROC_LINE (31) /* a line of a followed child, or how its output ended */
 #define EVK_PROC_END (32) /* its exit status and standard error */
 #define EVK_WORKER (33) /* spec 047: what an operation on a worker gave the program (name: the operation) */
-#define EVK_LAST (33)
+#define EVK_LOCAL_TZ (34) /* spec 048: the bytes local_zone was given */
+#define EVK_LAST (34)
 #define EVK_WORKER_ENDED (22) /* spec 028: the request's worker ended without answering (its response is 500) */
 #define EVR_OK (0)
 #define EVR_ERR (1)
@@ -1335,6 +1338,8 @@ extern const long ref_md_len;
 extern const char errors_md[];
 extern const long errors_md_len;
 extern const StdFile std_files[];
+extern const unsigned char tz_blob[]; /* spec 048: third_party/tzdata/zones.bin (contracts/timezones.md) */
+extern const long tz_blob_len;
 
 extern Str *process_name(Str *s); /* effects.c, spec 017 */
 extern const unsigned short builtin_effects[B_LAST + 1]; /* check_effects.c: effect bit per builtin id */
@@ -2404,6 +2409,10 @@ extern Str *crypto_hmac(Str *key, Str *msg);
 extern Str *crypto_pbkdf2(Str *pw, Str *salt, long iterations, Node *call);
 extern Str *rt_entropy(long n, Node *call);
 extern Str *io_entropy(long n, Node *call);
+extern Variant *rt_tz(long op, Str *name); /* tz.c, spec 048 */
+extern Str *rt_local_tz(void);
+extern void tz_version(char buf[32]);
+extern Str *io_local_tz(void);
 extern void sha256_init(void);
 extern void sha256_update(char *p, long n);
 extern void sha256_final(char *out);

@@ -12,10 +12,10 @@ true
 true
 --- stderr
 note: the program differs from the recorded one (recorded main.vo)
-std/time.vo:273:12: runtime error[R0014]: The program reads the clock, but the recording has no more inputs: replay the program that was recorded, or record this one.
- 273 |     return now_ms();
+std/time.vo:284:12: runtime error[R0014]: The program reads the clock, but the recording has no more inputs: replay the program that was recorded, or record this one.
+ 284 |     return now_ms();
      |            ^^^^^^^^
 trace:
-  at now (std/time.vo:273:12)
+  at now (std/time.vo:284:12)
   at main (main.vo:9:15)
 --- exit 70

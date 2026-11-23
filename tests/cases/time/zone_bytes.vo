@@ -1,0 +1,32 @@
+# Zones from the built-in tz database: no changes, a rule, an alias, and names that are not there.
+import std.time.Zone;
+import std.time.load_zone;
+import std.time.tzdata_version;
+import std.time.zone_names;
+
+fn show(name: str) uses console {
+    match load_zone(name) {
+        case ok(z) {
+            print(format("{}: {} changes, offsets {} to {}, {} rule", z.name, len(z.starts), z.offsets[0], z.offsets[len(z.offsets) - 1], len(z.rules)));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
+
+fn main() uses console {
+    show("UTC");
+    show("Etc/GMT+5");
+    show("Europe/Stockholm");
+    show("Europe/Berlin");
+    show("US/Eastern");
+    show("Europe/Atlantis");
+    show("");
+    show("../etc/passwd");
+    show("europe/stockholm");
+    show("Europe/Stockholm ");
+    print(str(load_zone("Europe/Oslo") == load_zone("Europe/Oslo")));
+    let names = zone_names();
+    print(format("{} names, {} to {}, data {}", len(names), names[0], names[len(names) - 1], tzdata_version()));
+}

@@ -339,10 +339,16 @@ int vo_main(long argc, char **argv, char **env)
     case CMD_PACKAGE:
         ca_files_load(); /* spec 041: for a URL or --restore */
         return cmd_package();
-    case CMD_VERSION:
-        out_cstr(1, opt_json ? "{\"v\":1,\"kind\":\"version\",\"version\":\"0.1.0\",\"schema\":1}\n"
+    case CMD_VERSION: { /* spec 048: and the release of the embedded tz database */
+        char tz[32];
+        tz_version(tz);
+        out_cstr(1, opt_json ? "{\"v\":1,\"kind\":\"version\",\"version\":\"0.1.0\",\"schema\":1,\"tzdata\":\""
                              : (char *)vo_version_text);
+        if (!opt_json) out_cstr(1, "tzdata ");
+        out_cstr(1, tz);
+        out_cstr(1, opt_json ? "\"}\n" : "\n");
         return 0;
+    }
     case CMD_BUILD: return cmd_build(opt_output, opt_base);
     case CMD_CHECK: return cmd_check();
     case CMD_EXPLAIN: return cmd_explain();

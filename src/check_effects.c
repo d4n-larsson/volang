@@ -33,6 +33,7 @@ const unsigned short builtin_effects[B_LAST + 1] = {
     [B_SLEEP] = EF_CLOCK, /* spec 022 */
     [B_SERVE_WORKERS] = EF_SERVE, /* spec 028 */
     [B_ENTROPY] = EF_ENTROPY, /* spec 035 */
+    [B_LOCAL_TZ] = EF_CLOCK, /* spec 048 */
     [B_FS_BLOCK] = EF_FREAD, [B_FS_LINES] = EF_FREAD, [B_PROC_START] = EF_PROCESS, /* spec 040 */
     [B_RUN] = EF_PROCESS, /* spec 017; __fs's effect depends on the operation: checked in src/fs.c */
 };

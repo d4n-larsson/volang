@@ -62,10 +62,11 @@ error[T0001]: `--seed` and `--clock-ms` need a whole number.
 --- exit 64
 $ app app --vo-version
 vo 0.1.0 schema 1
+tzdata 2026f
 --- stderr
 --- exit 0
 $ app app --vo-version --vo-json
-{"v":1,"kind":"version","version":"0.1.0","schema":1}
+{"v":1,"kind":"version","version":"0.1.0","schema":1,"tzdata":"2026f"}
 --- stderr
 --- exit 0
 $ app app --vo-check

@@ -160,9 +160,9 @@ now     2026-02-28T00:00:00Z
 ```
 
 `now` needs `clock`, and returns the real time unless the run fixes it with `--clock-ms N`, as here; in
-`vo test` it starts at 0 (see [Determinism](determinism.md)). Everything else in the module is pure.
+`vo test` it starts at 0 (see [Determinism](determinism.md)). `sleep` and `local_zone` need it too;
+everything else in the module is pure.
 Details: [std.time](../std/time.md).
-
 
 `sleep(ms)` waits (needs `clock`): for retries, polling and rate limits. With the real clock it really
 waits, without using the processor, and never past `--timeout` ([R0009](../errors/R0009.md)). With a fixed clock, as in every
@@ -188,6 +188,117 @@ fn main() uses console, clock {
 $ vo run --clock-ms 0 main.vo
 waited 351 ms
 ```
+
+### Time zones
+
+A date for a person needs a zone. `load_zone("Europe/Stockholm")` gives a `Zone` from the tz database
+that is built into `vo`: it needs no effect and no file on the machine, so the same program prints the
+same local time everywhere, in a test and in a container that holds nothing but the program. Names are
+exact; an unknown one is an error value, and `zone_names()` lists them all. `fixed_zone(minutes)` is a
+zone that is always that far east of UTC.
+
+`in_zone(z, ms)` is the calendar time a clock in the zone shows, `offset_at` and `abbreviation_at` give
+the offset and its name (`CEST`), and `format_in` writes ISO 8601 text with the offset, which
+`parse_time` reads back to the same instant.
+
+The other direction is input: a person typed a local date and time. `from_local(z, d)` returns the
+instant only when there is exactly one. Twice a year there is not: when the clocks go forward an hour
+of local time does not exist (`skipped`, with the instant of the change), and when they go back an hour
+happens twice (`repeated`, with both instants). The error type makes the program say what it does
+then; nothing is picked silently.
+
+```vo
+import std.time.DateTime;
+import std.time.LocalError;
+import std.time.Zone;
+import std.time.abbreviation_at;
+import std.time.format_in;
+import std.time.from_local;
+import std.time.in_zone;
+import std.time.load_zone;
+import std.time.parse_time;
+
+fn booking(z: Zone, month: int, day: int, hour: int, minute: int) -> str {
+    let d = new DateTime {
+        year: 2026,
+        month: month,
+        day: day,
+        hour: hour,
+        minute: minute,
+        second: 0,
+        ms: 0,
+        weekday: 0
+    };
+    match from_local(z, d) {
+        case ok(ms) {
+            return "booked for " + format_in(z, ms);
+        }
+        case err(e) {
+            match e {
+                case invalid(reason) {
+                    return "not a time: " + reason;
+                }
+                case skipped(change) {
+                    return "no such time: the clocks go forward to " + format_in(z, change);
+                }
+                case repeated(r) {
+                    return "twice that night: " + format_in(z, r.first) + " or " + format_in(z, r.second);
+                }
+            }
+        }
+    }
+}
+
+fn main() -> result[void] uses console {
+    let z = try load_zone("Europe/Stockholm");
+    let sent = try parse_time("2026-07-01T12:00:00Z");
+    let d = in_zone(z, sent);
+    print(format("sent {}:{:02} {} on {} July", d.hour, d.minute, abbreviation_at(z, sent), d.day));
+    print(format_in(z, sent));
+    print(booking(z, 3, 30, 9, 0));
+    print(booking(z, 3, 29, 2, 30));
+    print(booking(z, 10, 25, 2, 30));
+    return ok();
+}
+```
+
+```console
+$ vo run main.vo
+sent 14:00 CEST on 1 July
+2026-07-01T14:00:00+02:00
+booked for 2026-03-30T09:00:00+02:00
+no such time: the clocks go forward to 2026-03-29T03:00:00+02:00
+twice that night: 2026-10-25T02:30:00+02:00 or 2026-10-25T02:30:00+01:00
+```
+
+`local_zone()` is the zone of the machine the program runs on, for tools that print times for whoever
+runs them. It needs `clock`: it reads the `TZ` variable (when that is a name `load_zone` accepts) and
+otherwise the machine's `/etc/localtime`, and gives UTC when neither says anything. With a fixed clock,
+as here and in every `vo test`, it is UTC, and `vo replay` gives the zone that was recorded.
+
+```vo
+import std.time.format_in;
+import std.time.local_zone;
+import std.time.now;
+import std.time.tzdata_version;
+
+fn main() uses console, clock {
+    let z = local_zone();
+    print("it is " + format_in(z, now()) + " in " + z.name);
+    print("zone data: " + tzdata_version());
+}
+```
+
+```console
+$ vo run --clock-ms 1772236800000 main.vo
+it is 2026-02-28T00:00:00+00:00 in UTC
+zone data: 2026f
+```
+
+Zone rules change a few times a year, when a government moves its summer time. The data inside `vo` is
+the release that `tzdata_version()` and `vo version` name, and a newer `vo` brings a newer release. A
+program that cannot wait reads a compiled zone file of its own (the format of `/usr/share/zoneinfo`)
+with `std.fs.read_bytes` and passes it to `zone_from_bytes(name, data)`.
 
 ## std.text
 

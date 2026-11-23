@@ -1,0 +1,9 @@
+import std.time.local_zone;
+
+fn zone_name() -> str {
+    return local_zone().name;
+}
+
+fn main() uses console {
+    print(zone_name());
+}

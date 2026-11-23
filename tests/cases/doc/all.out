@@ -105,7 +105,7 @@ expect_eq (actual: T, expected: T)
     only inside `test` (E0410); reports both values
 modules:
   std.json JSON values: parse, write, and read fields and elements.
-  std.time UTC calendar time, ISO 8601 text and durations in milliseconds.
+  std.time Calendar time in UTC and in time zones, ISO 8601 text and durations in milliseconds.
   std.text Text helpers: search, replace, repeat, pad, lines and words.
   std.random Random floats, picks and shuffles (fixed by --seed; not for secrets: std.crypto.random_bytes).
   std.http HTTP and HTTPS requests (needs net), and serving plain HTTP requests (needs serve).

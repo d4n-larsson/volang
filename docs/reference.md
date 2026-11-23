@@ -299,7 +299,7 @@ test "loads fixtures" uses file.read("fixtures/") { ... }
 | file.read, file.write | `read_file`, `write_file`; `std.fs` |
 | file.delete | `std.fs.delete` and `rename` |
 | net | `std.http` (`get`, `post`), `std.tcp.connect` |
-| clock | `now_ms`, `std.time.sleep` |
+| clock | `now_ms`, `std.time.sleep`, `local_zone` |
 | random | `random_int` (seeded: not for secrets) |
 | env | `env` |
 | serve | `std.http.serve` (answering HTTP requests), `std.tcp.listen` |
@@ -1143,12 +1143,12 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 
 ## Standard library and packages
 
-`import std.MODULE.NAME;` imports one item of the standard library, which is written in vo and built into `vo`. The reference does not list its items: `vo doc` prints every module and builtin, `vo doc std.json` one module, and `vo doc std.json.parse_json` one item with its exact signature, effects and an example (`--json` gives records).
+`import std.MODULE.NAME;` imports one item of the standard library (written in vo, built into `vo`). Its items are not listed here: `vo doc` prints every module and builtin, `vo doc std.json` one module, and `vo doc std.json.parse_json` one item with its signature, effects and an example (`--json` gives records).
 
 | Module | Contents |
 |---|---|
 | std.json | `Json` values: `parse_json`, `write_json`, `write_json_pretty`, field readers; `to_json(v)`, `from_json(j)` for any `T: json` (records as objects, cases as `"name"` or `{"name": value}`, strict: every problem as `path: reason`) |
-| std.time | UTC calendar times, ISO 8601 text, durations, `now` (clock) |
+| std.time | calendar times in UTC and zones (`load_zone`, `in_zone`), ISO 8601 text, durations, `now` (clock) |
 | std.text | `replace`, `contains`, `pad_left`, `lines`, `words`, `char_count`, `equal_fold`, ... |
 | std.random | `unit`, `pick`, `shuffle` (random) |
 | std.http | HTTP and HTTPS: `get`, `post`, `send(method, url, headers, body, timeout_ms)` (net); `serve` and `serve_workers` (serve, HTTP only); `*_bytes` forms of each for `bytes` bodies; `send_stream` |
@@ -1172,9 +1172,9 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
 - `https://` URLs are verified: the server's certificate must lead to an authority in the machine's trust store (or a file given with `--ca-file`), be valid now and name the host; otherwise `get`/`post` return an `err` saying why (`vo doc std.http.get` lists them). Nothing turns verification off. TLS 1.3 and 1.2 only; `--clock-ms` does not affect certificate dates. A recording keeps requests and responses, never keys; replay needs no network.
 - `std.http.serve(address, handle)` reads many requests at once and calls `handle(request) -> Response` for one at a time, in the order they arrive complete, until Ctrl-C or SIGTERM, then returns `ok()`. The caller declares `serve` with that address and the handler's effects. A handler that stops with a runtime error answers 500 (the report goes to stderr) and the server goes on; `--timeout` limits each handler call, not the server.
-- `serve_workers(address, workers, setup, handle)` handles up to `workers` requests at once (1 to 64; `vo run --workers N` overrides it): each worker is a separate process that runs `setup() -> result[S]` once (open the database there) and then `handle(state, request)` for one request at a time. Nothing in memory is shared between requests: keep state in a database and change it in a `transaction`, never by reading, changing and writing back a file. A dead worker is replaced; replay runs the requests one at a time.
+- `serve_workers(address, workers, setup, handle)` handles up to `workers` requests at once (1 to 64; `vo run --workers N` overrides it): each worker is a process that runs `setup() -> result[S]` once (open the database there) and then `handle(state, request)` for one request at a time. Nothing in memory is shared between requests: keep state in a database and change it in a `transaction`, never by reading, changing and writing back a file. A dead worker is replaced; replay runs the requests one at a time.
 - `std.web`: an app is `web_app([on_get("/notes/{id}", show), ...])` (or `new App { routes: ..., steps: ..., errors: ... }` with steps and error kinds); an operation is `fn(ctx: C, input: I) -> result[Response]`, `I` a record whose fields take the path variable of their name, the JSON body (field `body`), a header (`@header("Name")`) or the query parameter of their name, checked with the field annotations before it runs (else a 400/415/422 problem naming each field). `err("not_found: detail")` answers 404 (also `bad_request`, `unauthorized`, `forbidden`, `conflict`, `gone`, `unprocessable`, and `App.errors`); other errors 500. An operation with a typed error is wrapped, `typed(op, answer)`, `answer` mapping each error to a `Problem { status, detail }`. Patterns are checked literals (E0330, E0331). `serve_app(address, workers, setup, app)` serves it; tests call `handle_request(app, ctx, request(method, path, body))`. Answers: `ok(json_reply(200, note))`, `created("/notes/7", note)`, `no_content()`. JSON bodies need `Content-Type: application/json`.
-- `std.process.run(program, args)` runs a program with no shell (arguments are passed as they are), no input and an empty environment, waits for it and returns `Output { code, stdout, stderr }`; `run_with` adds input text and `NAME=value` variables. A non-zero exit is `ok`; killed by signal n, `code` is 128 + n. `--timeout` covers the program and everything it starts. A started program is not confined: `process("git")` grants whatever `git` can do.
+- `std.process.run(program, args)` runs a program with no shell (arguments passed as they are), no input and an empty environment, waits for it and returns `Output { code, stdout, stderr }`; `run_with` adds input text and `NAME=value` variables. A non-zero exit is `ok`; killed by signal n, `code` is 128 + n. `--timeout` covers the program and everything it starts. A started program is not confined: `process("git")` grants whatever `git` can do.
 - Large inputs come in pieces: `each_line(path, f)`, `each_chunk`, `send_stream` and `run_lines` call `f` per piece; `f` returns `ok(true)` to go on, `ok(false)` to stop.
 - File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.
 - Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` (or an `https://` archive URL, unpacked into `packages/NAME`; `--restore ENTRY` fetches missing ones again) adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
@@ -1325,12 +1325,12 @@ vo lsp
 - `run` checks first and runs only without errors. Arguments after `--` reach the program through `args()`.
 - `build` checks like `check` (with the effects record) and writes one executable holding the program: `./app ARG...` runs as `vo run FILE -- ARG...`, with no source tree. Its `vo run` options are `--vo-NAME` (`--vo-seed 3`, `--vo-record FILE`); it has no default timeout; `--vo-effects` prints what `main` declares; `--vo-replay FILE` replays. `--base` takes another architecture's `vo`.
 - `--timeout SEC` is in whole seconds, default 10; `0` disables it. For `test` it applies to each test.
-- Memory: unreachable values are reclaimed automatically. The limit applies to live data (512 MiB by default; `--max-memory MiB`, 1 to 65536); holding more is R0006. `--mem-stats` reports the peak live size, the total allocated and the number of collections after the run or each test, without its tasks (on stderr for `run`; a `memory` record with `--json`).
-- `fmt` rewrites files in canonical form; `fmt --check` changes nothing and lists the non-canonical files.
+- Memory: unreachable values are reclaimed. The limit applies to live data (512 MiB by default; `--max-memory MiB`, 1 to 65536); holding more is R0006. `--mem-stats` reports the peak live size, the total allocated and the number of collections after the run or each test, without its tasks (on stderr for `run`; a `memory` record with `--json`).
+- `fmt` rewrites files in canonical form; `fmt --check` only lists the non-canonical files.
 - `explain CODE` prints the catalog entry for any `E`, `W`, `R` or `T` code, with an example and its fix.
 - `mcp` serves the Model Context Protocol on stdin/stdout for agent hosts: `check`, `run`, `test`, `fmt`, `effects`, `explain`, `doc`, `query`, `impact` and `edit` as tools with the same JSON output, and this document as `vo://reference`.
 - `lsp` serves the Language Server Protocol on stdin/stdout for editors: diagnostics on unsaved text, their fixes, hover, definition, references, rename and formatting, each computed by the command above.
-- `reference` prints this document. `version` prints `vo <semver> schema 1`.
+- `reference` prints this document. `version` prints `vo <semver> schema 1` and `tzdata <release>`.
 - `--json` works with every command and switches reports to JSON lines (see Machine-readable output).
 - `run` writes its own reports (diagnostics, runtime errors) to stderr, so the program's stdout stays clean. Every other command reports on stdout.
 

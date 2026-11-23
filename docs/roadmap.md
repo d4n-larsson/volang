@@ -54,6 +54,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [045](../specs/045-security/) | Security: `std.security`, access control for `std.web` applications in the manner of Spring Security: one table of rules, tokens, Basic and keys, the user in operations, and a review of the table; written in vo | **Implemented** ([results](../specs/045-security/results.md)) |
 | [046](../specs/046-iteration/) | Iteration: `for k, v in m` and `for i, x in xs`, W0403 with a fix for the loops they replace, `std.lists` | **Implemented** ([results](../specs/046-iteration/results.md)) |
 | [047](../specs/047-workers/) | Workers: `std.workers`, processes that run beside the program and exchange typed messages; a time limit for one call; failures as values; deterministic output; replay without workers | **Implemented** ([results](../specs/047-workers/results.md)) |
+| [048](../specs/048-timezones/) | Time zones: the tz database built into `vo`, zones in `std.time` (`load_zone`, `in_zone`, `from_local`, `format_in`), the machine's zone under `clock` | **Implemented** ([results](../specs/048-timezones/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -559,6 +560,20 @@ the same bytes on every run; time limits, the first of several and a stop are wh
 a recording holds what the program got from its workers, so a replay starts none. Workers are started
 by the program's own process only, not in a task or a serving worker. Protocols on top (server-sent
 events, WebSockets) are separate work: a worker reads the connection with `std.http` or `std.tcp`.
+
+### 048: time zones (implemented)
+
+`std.time` was UTC only. The IANA tz database is now built into the binary (compiled once when it is
+vendored, 424 KB), so a zone by name is a pure value: no effect, no `/usr/share/zoneinfo`, the same
+answer in a test, in a container with nothing but the program, and on three architectures. Reading the
+system's files was declined because an effect scope cannot be an absolute directory, so a program
+would have needed every file to print a date. The zone code is vo: the reader of compiled zone files,
+the rule that holds after the listed changes, and the conversions. `from_local` does not pick when a
+local time is skipped or repeated: the error says which, with the instants. `local_zone` is the one
+function that reads the machine (`TZ`, `/etc/localtime`), under `clock`, recorded for replay and UTC
+with a fixed clock. The data is as old as the toolchain: `vo version` names the release, every release
+of vo takes the newest, and `zone_from_bytes` reads a file a program brings itself. Month and weekday
+names, locale formats and calendar arithmetic ("a month later") are not part of it.
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
 it is next; anything that reaches the outside world gets an effect, scopes, and record and replay.
