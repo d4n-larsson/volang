@@ -85,10 +85,17 @@ emulators that are missing.
 
 ## Editor support
 
-An IntelliJ plugin, [volang-intellij-plugin](https://github.com/d4n-larsson/volang-intellij-plugin),
-highlights `.vo` files, `vo.effects` and `vo.packages`, toggles `#` comments, matches brackets and jumps
+The repository's `editors/` directory has grammars for VS Code, Neovim, Helix, Zed and Vim, and the VS Code
+grammar also loads in JetBrains editors and Sublime Text. VS Code, Neovim and Helix can start the
+toolchain as a language server for diagnostics, quick fixes, hover, go to definition, references, rename
+and formatting. [Editors](../tools/editors.md) has the steps for each.
+
+For IntelliJ there is also a plugin, [volang-intellij-plugin](https://github.com/d4n-larsson/volang-intellij-plugin):
+it highlights `.vo` files, `vo.effects` and `vo.packages`, toggles `#` comments, matches brackets and jumps
 to declarations across imports. It is built from source with Gradle; its README explains how to install
-it. For other editors, `vo fmt` keeps the layout canonical, so plain-text editing works well.
+it.
+
+In any other editor, `vo fmt` keeps the layout canonical, so plain-text editing works well.
 
 ## Next
 
