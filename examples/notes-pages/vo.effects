@@ -1,0 +1,27 @@
+# vo effects record: update with `vo effects --update`
+main.vo:main uses console, file.read("data/"), file.write("data/"), serve("8080")
+notes.vo:add_note uses D
+notes.vo:all_notes uses D
+notes.vo:db_error pure
+notes.vo:find_note uses D
+notes.vo:mark_done uses D
+notes.vo:note_of pure
+notes.vo:prepare uses D
+notes.vo:remove_note uses D
+pages.vo:add uses D
+pages.vo:app_js uses D
+pages.vo:back_to_list pure
+pages.vo:done uses D
+pages.vo:form_post pure
+pages.vo:item pure
+pages.vo:list_body pure
+pages.vo:list_page uses D
+pages.vo:memory pure
+pages.vo:open_pages uses file.read("data/"), file.write("data/")
+pages.vo:page pure
+pages.vo:pages_app pure
+pages.vo:test "an empty or missing text is refused" pure
+pages.vo:test "done answers the note's new markup to the script, the list to a form" pure
+pages.vo:test "the add form adds a note and goes back to the list" pure
+pages.vo:test "the list page shows the notes, escaped, in the layout" pure
+pages.vo:test "the script is served by the app, as the page's security policy requires" pure

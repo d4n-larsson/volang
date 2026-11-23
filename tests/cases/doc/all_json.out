@@ -71,4 +71,5 @@
 {"v":1,"kind":"doc","module":"std.security","name":"std.security","item":"module","signature":"std.security","description":"Access control for std.web applications: rules saying who may call what, signing in with passwords, tokens or keys, and the user in operations."}
 {"v":1,"kind":"doc","module":"std.lists","name":"std.lists","item":"module","signature":"std.lists","description":"Small operations on lists: membership, reversing, sorting from largest to smallest, the smallest and largest element by a key, sums and groups."}
 {"v":1,"kind":"doc","module":"std.workers","name":"std.workers","item":"module","signature":"std.workers","description":"Processes that run beside the program and exchange messages with it."}
+{"v":1,"kind":"doc","module":"std.html","name":"std.html","item":"module","signature":"std.html","description":"HTML pages from templates, every value escaped for the place it goes."}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":57}

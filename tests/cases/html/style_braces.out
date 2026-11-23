@@ -1,0 +1,1 @@
+<style>p { color: red; } a { x }</style><script>if (a) { go(); }</script><p>ok</p>

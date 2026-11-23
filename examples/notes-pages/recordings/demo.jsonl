@@ -1,0 +1,37 @@
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"4b1c6a65cdb7497f","seed":30643706887448,"clock_ms":null,"args":[]}
+{"v":1,"kind":"listen","address":"8080","result":"ok","value":5}
+{"v":1,"kind":"setup","worker":0}
+{"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
+{"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)","params":[],"result":"ok","changed":0,"last_id":0}
+{"v":1,"kind":"setup_end"}
+{"v":1,"kind":"setup","worker":2}
+{"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
+{"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)","params":[],"result":"ok","changed":0,"last_id":0}
+{"v":1,"kind":"setup_end"}
+{"v":1,"kind":"setup","worker":3}
+{"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
+{"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)","params":[],"result":"ok","changed":0,"last_id":0}
+{"v":1,"kind":"setup_end"}
+{"v":1,"kind":"setup","worker":1}
+{"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
+{"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)","params":[],"result":"ok","changed":0,"last_id":0}
+{"v":1,"kind":"setup_end"}
+{"v":1,"kind":"request","value":"POST /notes HTTP/1.1\u000d\u000aHost: localhost:8080\u000d\u000aContent-Type: application/x-www-form-urlencoded\u000d\u000aContent-Length: 21\u000d\u000a\u000d\u000atext=water+the+plants"}
+{"v":1,"kind":"sql","op":"query","db":0,"sql":"insert into notes (text) values (?) returning id","params":[{"text":"water the plants"}],"result":"ok","columns":["id"],"rows":[[{"int":1}]]}
+{"v":1,"kind":"response","value":"HTTP/1.1 303 See Other\u000d\u000aLocation: /notes\u000d\u000aContent-Length: 0\u000d\u000aConnection: close\u000d\u000a\u000d\u000a"}
+{"v":1,"kind":"request","value":"POST /notes HTTP/1.1\u000d\u000aHost: localhost:8080\u000d\u000aContent-Type: application/x-www-form-urlencoded\u000d\u000aContent-Length: 35\u000d\u000a\u000d\u000atext=%3Cb%3Ebold%3C%2Fb%3E+%26+more"}
+{"v":1,"kind":"sql","op":"query","db":0,"sql":"insert into notes (text) values (?) returning id","params":[{"text":"<b>bold</b> & more"}],"result":"ok","columns":["id"],"rows":[[{"int":2}]]}
+{"v":1,"kind":"response","value":"HTTP/1.1 303 See Other\u000d\u000aLocation: /notes\u000d\u000aContent-Length: 0\u000d\u000aConnection: close\u000d\u000a\u000d\u000a"}
+{"v":1,"kind":"request","value":"GET /notes HTTP/1.1\u000d\u000aHost: localhost:8080\u000d\u000a\u000d\u000a"}
+{"v":1,"kind":"sql","op":"query","db":0,"sql":"select id, text, done from notes order by id","params":[],"result":"ok","columns":["id","text","done"],"rows":[[{"int":1},{"text":"water the plants"},{"int":0}],[{"int":2},{"text":"<b>bold</b> & more"},{"int":0}]]}
+{"v":1,"kind":"response","value":"HTTP/1.1 200 OK\u000d\u000aContent-Type: text/html; charset=utf-8\u000d\u000aX-Content-Type-Options: nosniff\u000d\u000aContent-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'\u000d\u000aContent-Length: 797\u000d\u000aConnection: close\u000d\u000a\u000d\u000a<!DOCTYPE html>\u000a<html lang=\"en\">\u000a<head>\u000a<meta charset=\"utf-8\">\u000a<title>Notes</title>\u000a<style>\u000abody { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }\u000ali { margin: 0.4rem 0; }\u000ali.done { color: gray; text-decoration: line-through; }\u000aform { display: inline; }\u000a</style>\u000a<script src=\"/app.js\" defer></script>\u000a</head>\u000a<body>\u000a<h1>Notes</h1>\u000a<ul><li id=\"note-1\">water the plants <form method=\"post\" action=\"/notes/1/done\"><button data-swap=\"/notes/1/done\">done</button></form></li><li id=\"note-2\">&lt;b&gt;bold&lt;/b&gt; &amp; more <form method=\"post\" action=\"/notes/2/done\"><button data-swap=\"/notes/2/done\">done</button></form></li></ul>\u000a<form method=\"post\" action=\"/notes\"><input name=\"text\" maxlength=\"200\" required> <button>add</button></form>\u000a</body>\u000a</html>"}
+{"v":1,"kind":"request","value":"POST /notes/1/done HTTP/1.1\u000d\u000aHost: localhost:8080\u000d\u000aContent-Type: application/x-www-form-urlencoded\u000d\u000aX-Swap: 1\u000d\u000aContent-Length: 0\u000d\u000a\u000d\u000a"}
+{"v":1,"kind":"sql","op":"query","db":0,"sql":"select id, text, done from notes where id = ?","params":[{"int":1}],"result":"ok","columns":["id","text","done"],"rows":[[{"int":1},{"text":"water the plants"},{"int":0}]]}
+{"v":1,"kind":"sql","op":"exec","db":0,"sql":"update notes set done = 1 where id = ?","params":[{"int":1}],"result":"ok","changed":1,"last_id":0}
+{"v":1,"kind":"sql","op":"query","db":0,"sql":"select id, text, done from notes where id = ?","params":[{"int":1}],"result":"ok","columns":["id","text","done"],"rows":[[{"int":1},{"text":"water the plants"},{"int":1}]]}
+{"v":1,"kind":"response","value":"HTTP/1.1 200 OK\u000d\u000aContent-Type: text/html; charset=utf-8\u000d\u000aX-Content-Type-Options: nosniff\u000d\u000aContent-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'\u000d\u000aContent-Length: 50\u000d\u000aConnection: close\u000d\u000a\u000d\u000a<li id=\"note-1\" class=\"done\">water the plants</li>"}
+{"v":1,"kind":"request","value":"POST /notes HTTP/1.1\u000d\u000aHost: localhost:8080\u000d\u000aContent-Type: application/x-www-form-urlencoded\u000d\u000aContent-Length: 5\u000d\u000a\u000d\u000atext="}
+{"v":1,"kind":"response","value":"HTTP/1.1 422 Unprocessable Content\u000d\u000aContent-Type: application/problem+json\u000d\u000aContent-Length: 134\u000d\u000aConnection: close\u000d\u000a\u000d\u000a{\"type\":\"about:blank\",\"title\":\"Unprocessable Content\",\"status\":422,\"errors\":[{\"field\":\"text\",\"reason\":\"at least 1 character, got 0\"}]}"}
+{"v":1,"kind":"request","value":"GET /app.js HTTP/1.1\u000d\u000aHost: localhost:8080\u000d\u000a\u000d\u000a"}
+{"v":1,"kind":"response","value":"HTTP/1.1 200 OK\u000d\u000aContent-Type: text/javascript; charset=utf-8\u000d\u000aContent-Length: 337\u000d\u000aConnection: close\u000d\u000a\u000d\u000adocument.addEventListener(\"click\", async (event) => {\u000a  const button = event.target.closest(\"button[data-swap]\");\u000a  if (!button) return;\u000a  event.preventDefault();\u000a  const answer = await fetch(button.dataset.swap, { method: \"POST\", headers: { \"X-Swap\": \"1\" } });\u000a  if (answer.ok) button.closest(\"li\").outerHTML = await answer.text();\u000a});\u000a"}
+{"v":1,"kind":"end","status":0}

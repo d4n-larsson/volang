@@ -31,7 +31,7 @@ SITE = "https://d4n-larsson.github.io/volang/"
 START = ["install", "first-program", "tests-and-effects"]
 GUIDE = ["basics", "types", "records-and-variants", "functions", "generics", "results-and-errors", "lists-and-maps",
          "collections", "effects", "tests", "properties", "contracts", "holes", "modules-and-packages",
-         "standard-library", "files-and-processes", "concurrency", "workers", "apis", "postgres", "determinism", "structure"]
+         "standard-library", "files-and-processes", "concurrency", "workers", "apis", "pages", "postgres", "determinism", "structure"]
 TOOLS = ["check", "run", "test", "build", "fmt", "effects", "explain", "doc", "reference", "query", "impact", "edit",
          "replay", "package", "mcp", "lsp", "editors", "version", "json-output", "exit-statuses"]
 

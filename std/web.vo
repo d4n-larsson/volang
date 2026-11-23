@@ -15,6 +15,9 @@ import std.bytes.from_text;
 import std.bytes.to_text;
 import std.fs.Info;
 import std.fs.info;
+import std.html.Html;
+import std.html.html_text;
+import std.html.no_html;
 import std.http.Header;
 import std.http.Request;
 import std.http.Response;
@@ -429,11 +432,18 @@ fn bind[I: json](r: Request, vars: map[str, str]) -> result[I] {
         set headers[h.name] = Json.text(h.value);
     }
     set parts["headers"] = Json.object(headers);
+    if r.body != "" and form_type(r) {
+        let names: list[str] = __json_fields(new list[I]);
+        try form_into(r.body, names, parts);
+        return __from_json(Json.object(parts), 6);
+    }
     if r.body != "" {
         match header_of(r, "Content-Type") {
             case ok(ct) {
                 if not json_type(Json.text(ct)) {
-                    return err("U\tbody\tthe body must be application/json");
+                    return err(
+                        "U\tbody\tthe body must be application/json or application/x-www-form-urlencoded"
+                    );
                 }
             }
             case err(_) {
@@ -478,7 +488,69 @@ fn json_type(j: Json) -> bool {
     }
 }
 
-fn query_values(query: str) -> result[map[str, Json]] {
+fn form_type(r: Request) -> bool {
+    # spec 051: whether the body is an HTML form (application/x-www-form-urlencoded)
+    match header_of(r, "Content-Type") {
+        case ok(ct) {
+            return lower(trim(split(ct, ";")[0])) == "application/x-www-form-urlencoded";
+        }
+        case err(_) {
+            return false;
+        }
+    }
+}
+
+fn form_into(body: str, fields: list[str], parts: map[str, Json]) -> result[void] {
+    # spec 051: an HTML form's fields go with the query's (a name in both is given twice), after
+    # checking that each is a field of the input; the request form is marked so a missing bool is false
+    if contains(fields, "body") {
+        return err(
+            "U\tbody\tthe input has a `body` field, which a form cannot fill: send application/json"
+        );
+    }
+    let form = try pairs_of(body);
+    let query = try as_object(parts["query"]);
+    var unknown = new list[str];
+    for k in keys(form) {
+        if not contains(fields, k) {
+            push(unknown, "S\t" + k + "\tnot a field of the input");
+            continue;
+        }
+        var all = form[k];
+        if has(query, k) {
+            match query[k] {
+                case array(xs) {
+                    let both = slice(xs, 0, len(xs));
+                    for x in all {
+                        push(both, x);
+                    }
+                    set all = both;
+                }
+                case null {
+                }
+                case boolean(_) {
+                }
+                case integer(_) {
+                }
+                case number(_) {
+                }
+                case text(_) {
+                }
+                case object(_) {
+                }
+            }
+        }
+        set query[k] = Json.array(all);
+    }
+    if len(unknown) > 0 {
+        return err(join(unknown, "\n"));
+    }
+    set parts["query"] = Json.object(query);
+    set parts["form"] = Json.boolean(true);
+    return ok();
+}
+
+fn pairs_of(query: str) -> result[map[str, list[Json]]] {
     let out = new map[str, list[Json]];
     if query != "" {
         for pair in split(query, "&") {
@@ -499,6 +571,11 @@ fn query_values(query: str) -> result[map[str, Json]] {
             push(out[key], Json.text(try percent_decoded(v)));
         }
     }
+    return ok(out);
+}
+
+fn query_values(query: str) -> result[map[str, Json]] {
+    let out = try pairs_of(query);
     let res = new map[str, Json];
     for k in keys(out) {
         set res[k] = Json.array(out[k]);
@@ -558,6 +635,25 @@ fn problem(status: int, detail: str, errors: list[Json]) -> Response {
         status: status,
         headers: [new Header { name: "Content-Type", value: "application/problem+json" }],
         body: body
+    };
+}
+
+# Spec 051: a page (or a piece of one, for a page to swap in) as the answer, with the headers of an HTML
+# answer: its type, no sniffing, and a content security policy that allows scripts only from the site
+# itself and forbids framing (inline styles keep working).
+#     html_reply(200, no_html()).headers[0].value is "text/html; charset=utf-8"
+export fn html_reply(status: int, page: Html) -> Response {
+    return new Response {
+        status: status,
+        headers: [
+            new Header { name: "Content-Type", value: "text/html; charset=utf-8" },
+            new Header { name: "X-Content-Type-Options", value: "nosniff" },
+            new Header {
+                name: "Content-Security-Policy",
+                value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
+            }
+        ],
+        body: html_text(page)
     };
 }
 

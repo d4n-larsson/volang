@@ -1,0 +1,11 @@
+import std.html.Html;
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    let fake = new Html { text: "<script>alert(1)</script>" };
+    let real = html("<p>{}</p>", "x");
+    print(real.text);
+    set real.text = "<script>alert(1)</script>";
+    print(html_text(fake));
+}

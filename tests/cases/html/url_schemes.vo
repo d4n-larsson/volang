@@ -1,0 +1,35 @@
+import std.html.Html;
+import std.html.html;
+import std.html.html_text;
+
+fn link(url: str) -> str {
+    return html_text(html(`<a href="{}">x</a>`, url));
+}
+
+fn main() uses console {
+    print(html_text(html(
+        `<a href="/notes/{}?q={}">x</a><a href="mailto:{}">m</a>`,
+        "7\"><script>",
+        "a&b",
+        "x@y.z"
+    )));
+    for u in [
+        "javascript:alert(1)",
+        "JaVaScRiPt:alert(1)",
+        " javascript:alert(1)",
+        "\tjavascript:x",
+        "data:text/html,x",
+        "vbscript:x",
+        "ftp://x",
+        "/notes/1",
+        "?q=1&r=2",
+        "#top",
+        "https://x.org/a?b=1&c=\"2\"",
+        "mailto:a@b.c",
+        "HTTP://X",
+        "notes:1/x",
+        "a/b:c"
+    ] {
+        print(link(u));
+    }
+}

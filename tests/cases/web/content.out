@@ -1,6 +1,6 @@
 /ping -> 200 "pong"
 /ping -> 400 {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"body","reason":"this operation takes no body"}]}
 /echo -> 200 "hi"
-/echo -> 415 {"type":"about:blank","title":"Unsupported Media Type","status":415,"errors":[{"field":"body","reason":"the body must be application/json"}]}
+/echo -> 415 {"type":"about:blank","title":"Unsupported Media Type","status":415,"errors":[{"field":"body","reason":"the body must be application/json or application/x-www-form-urlencoded"}]}
 /echo -> 200 "hi"
 direct: "pong"

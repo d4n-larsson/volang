@@ -1,0 +1,15 @@
+# Notes as web pages: HTML from std.html templates, forms read by std.web, the notes kept in data/notes.db.
+#   vo run main.vo        serve on http://localhost:8080 with 4 workers until Ctrl-C
+#   vo test main.vo       every page and form through the app, a database in memory
+# The grant is `serve("8080")` (this machine only) and data/ for reading and writing.
+import pages.Storage;
+import pages.open_pages;
+import pages.pages_app;
+import std.web.serve_app;
+
+fn main() -> result[void] uses console, serve("8080"), Storage {
+    print("notes on http://localhost:8080/notes (Ctrl-C stops)");
+    try serve_app("8080", 4, open_pages, pages_app());
+    print("stopped");
+    return ok();
+}

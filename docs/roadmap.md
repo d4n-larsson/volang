@@ -590,6 +590,19 @@ non-ASCII passwords. Found on the way: `vo test` keeps a test's connections open
 property that connects per case holds up to 100 connections (the example's test helper ends the
 earlier ones).
 
+### 051: web pages (implemented)
+
+`std.html`: a page is an HTML string literal or constant with `format`'s `{}` holes, checked by `vo
+check` (tags nest and close; a hole is text, a quoted attribute or a URL, never in a script, style,
+event handler, name, comment or unquoted value) and filled with values escaped for their place; a URL
+whose scheme could be chosen by a value is checked when it is inserted. Pages are composed from `Html`
+values, which only templates make; there is no template language. `std.web` answers pages with
+`html_reply` (with a content security policy) and reads HTML forms into the same input records as JSON.
+The new reference text was paid for by shortening the module rows. Chosen against: a template language,
+template files, an escape hatch for raw markup. Not done: cookies, sessions and sign-in forms with
+cross-site protection (the next step for a full web app), static files, file uploads, showing form errors
+on the page without the operation's help.
+
 ### 050: scoped effects through package functions (implemented)
 
 Found while planning the PostgreSQL package (spec 049): a function that is given its target (a

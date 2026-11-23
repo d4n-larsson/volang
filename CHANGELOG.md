@@ -6,6 +6,14 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- Web pages: `std.html`. `html(template, values...)` takes an HTML string literal or constant with `{}`
+  holes and returns `Html`; `vo check` checks that its tags nest and close and that every hole is in text,
+  a quoted attribute or a URL (new codes E0335 to E0340), and every value is escaped for its place (a URL
+  that could run script becomes `#`). `Html` values go into holes as they are, so pages are composed from
+  smaller templates; `new Html` is refused. `std.web` gains `html_reply(status, page)` and reads HTML form
+  bodies (`application/x-www-form-urlencoded`) into input records like query parameters; a 415 now names
+  both encodings. New example `examples/notes-pages`. The reference stays under 15,000 tokens: the module
+  rows were shortened to make room.
 - A PostgreSQL client, the `postgres` package (`packages/postgres` in the repository; add it with
   `vo package`). Its items have the names, parameters, results and error texts of `std.sqlite`
   (`sql`, `exec`, `query`, `transaction`, the getters), with `?` parameters on both, so a program moves

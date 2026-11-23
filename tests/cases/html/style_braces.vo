@@ -1,0 +1,9 @@
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    print(html_text(html(
+        "<style>p { color: red; } a {{ x }}</style><script>if (a) { go(); }</script><p>{}</p>",
+        "ok"
+    )));
+}

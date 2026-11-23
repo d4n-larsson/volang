@@ -41,7 +41,7 @@ Ordered by how many programs each gap blocks.
 | Logging | `print`/`eprint` | structured lines with levels and fields, to stderr, with the clock effect only when timestamps are on |
 | Paths | string concatenation | `std.path`: join, parent, name, extension, clean. Cheap and prevents `a//b` and `..` mistakes before the run-time check does |
 | Text | ASCII case mapping, byte lengths | see [language.md](language.md#4-strings) |
-| Templates | none | `std.web` returns JSON; an HTML template with escaping by default would make it a full web stack |
+| Templates | `std.html` (spec 051) | done: HTML templates checked by `vo check` and escaped by place, `html_reply`, HTML forms in `std.web`; cookies and sessions are next |
 | Postgres | the `postgres` package (spec 049) | done as a package in vo on `std.tcp`, with `std.sqlite`'s names so a program moves between them; `sql("...")` is checked when it runs, not by `vo check` |
 | Process control | run to completion, no input stream | interactive children and signals, after streaming |
 

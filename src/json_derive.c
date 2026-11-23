@@ -9,7 +9,9 @@
  * mode bit 4: std.web's request form (research R7): j is {"path": {name: text}, "query": {name: [text]},
  * "headers": {lower-case name: text}, "body": any (when there is one)} and the record's fields take a
  * path variable of their name, the body (`body`), a header (`@header`) or the query parameter of their
- * name; unknown query parameters and headers are ignored. */
+ * name; unknown query parameters and headers are ignored. Spec 051: with "form" in j, the fields of an
+ * HTML form came with the query's (std.web's bind), and a `bool` field is false when absent, true for
+ * `on`. */
 #include "vo.h"
 
 enum { J_NULL, J_BOOL, J_INT, J_NUM, J_TEXT, J_ARRAY, J_OBJECT }; /* std.json's Json cases, in order */
@@ -747,6 +749,7 @@ static long web_record(long j, Type *t, int *ok)
     Record *rec = alloc_obj(OBJ_RECORD, n * 8);
     GC_ROOT(&rec);
     long path = obj_get(j, "path"), query = obj_get(j, "query"), headers = obj_get(j, "headers"), body = obj_get(j, "body");
+    int form = obj_get(j, "form") != 0; /* spec 051: an HTML form's fields came with the query's */
     GC_ROOT(&path);
     GC_ROOT(&query);
     GC_ROOT(&headers);
@@ -784,8 +787,13 @@ static long web_record(long j, Type *t, int *ok)
             } else if (!h) { /* query values */
                 long vals = obj_get_str(query, name);
                 List *vs = vals ? ((Variant *)vals)->pay.p : 0;
-                if (!vs || !vs->len) {
+                if ((!vs || !vs->len) && form && ft->kind == TY_BOOL) {
+                    v = 0; /* spec 051: an unchecked checkbox sends nothing: false */
+                } else if (!vs || !vs->len) {
                     given = 0;
+                } else if (form && ft->kind == TY_BOOL && vs->len == 1 &&
+                           str_eq_cstr(((Variant *)vs->data[0].p)->pay.s, "on")) {
+                    v = 1; /* a checked checkbox sends `on` */
                 } else if (ft->kind == TY_LIST) {
                     List *out = list_new(vs->len);
                     GC_ROOT(&out);

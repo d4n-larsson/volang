@@ -1,0 +1,16 @@
+201 text/html; charset=utf-8 <li data-p="2">buy milk! 1.5 false</li>
+Content-Type: text/html; charset=utf-8
+X-Content-Type-Options: nosniff
+Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'
+201 text/html; charset=utf-8 <li data-p="1">a 0.0 true</li>
+201 text/html; charset=utf-8 <li data-p="1">&lt;b&gt; 0.0 true</li>
+400 application/problem+json {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"priority","reason":"expected integer, got \"x\""}]}
+422 application/problem+json {"type":"about:blank","title":"Unprocessable Content","status":422,"errors":[{"field":"text","reason":"at least 1 character, got 0"}]}
+400 application/problem+json {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"extra","reason":"not a field of the input"}]}
+400 application/problem+json {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"text","reason":"given more than once"}]}
+400 application/problem+json {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"priority","reason":"given more than once"}]}
+400 application/problem+json {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"done","reason":"expected true or false, got \"maybe\""}]}
+415 application/problem+json {"type":"about:blank","title":"Unsupported Media Type","status":415,"errors":[{"field":"body","reason":"the body must be application/json or application/x-www-form-urlencoded"}]}
+415 application/problem+json {"type":"about:blank","title":"Unsupported Media Type","status":415,"errors":[{"field":"body","reason":"the body must be application/json or application/x-www-form-urlencoded"}]}
+415 application/problem+json {"type":"about:blank","title":"Unsupported Media Type","status":415,"errors":[{"field":"body","reason":"the input has a `body` field, which a form cannot fill: send application/json"}]}
+200 text/html; charset=utf-8 <p>&lt;script&gt;</p>

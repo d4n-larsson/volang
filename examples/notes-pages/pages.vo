@@ -1,0 +1,249 @@
+# The pages: templates for the layout, the list and one note, the routes that answer them, and the
+# forms that change the notes. Every value goes into a template hole, escaped for its place.
+import notes.Note;
+import notes.NoteError;
+import notes.add_note;
+import notes.all_notes;
+import notes.mark_done;
+import notes.prepare;
+import std.html.Html;
+import std.html.html;
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.sqlite.Database;
+import std.sqlite.open;
+import std.sqlite.open_memory;
+import std.text.contains;
+import std.web.App;
+import std.web.NoInput;
+import std.web.handle_request;
+import std.web.html_reply;
+import std.web.on_get;
+import std.web.on_post;
+import std.web.request;
+import std.web.web_app;
+import std.web.with_header;
+
+const data_dir = "data/";
+
+export effects Storage = file.read(data_dir), file.write(data_dir);
+
+# Each worker's context: its connection to the notes database.
+export record Pages[D: effects] {
+    db: Database[D];
+}
+
+record NewNote {
+    @size(1, 200)
+    text: str;
+}
+
+# A note to mark done. The page's script sends `X-Swap: 1` and gets the note's new markup back; a
+# browser without the script posts the form and is sent back to the list.
+record Done {
+    id: int;
+    @header("X-Swap")
+    @default("")
+    swap: str;
+}
+
+const layout = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{}</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+li { margin: 0.4rem 0; }
+li.done { color: gray; text-decoration: line-through; }
+form { display: inline; }
+</style>
+<script src="/app.js" defer></script>
+</head>
+<body>
+<h1>{}</h1>
+{}
+</body>
+</html>`;
+
+# Without the script, the done button posts its form; with it, the note's markup is swapped in place.
+const script = `document.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-swap]");
+  if (!button) return;
+  event.preventDefault();
+  const answer = await fetch(button.dataset.swap, { method: "POST", headers: { "X-Swap": "1" } });
+  if (answer.ok) button.closest("li").outerHTML = await answer.text();
+});
+`;
+
+# A whole page in the layout.
+fn page(title: str, content: Html) -> Html {
+    return html(layout, title, title, content);
+}
+
+# One note: the same markup in the list and alone, when the script swaps it in.
+fn item(n: Note) -> Html {
+    if n.done {
+        return html(`<li id="note-{}" class="done">{}</li>`, n.id, n.text);
+    }
+    return html(
+        `<li id="note-{}">{} <form method="post" action="/notes/{}/done"><button data-swap="/notes/{}/done">done</button></form></li>`,
+        n.id,
+        n.text,
+        n.id,
+        n.id
+    );
+}
+
+fn list_body(notes: list[Note]) -> Html {
+    let items = new list[Html];
+    for n in notes {
+        push(items, item(n));
+    }
+    return html(`<ul>{}</ul>
+<form method="post" action="/notes"><input name="text" maxlength="200" required> <button>add</button></form>`, items);
+}
+
+fn back_to_list() -> Response {
+    return new Response {
+        status: 303,
+        headers: [new Header { name: "Location", value: "/notes" }],
+        body: ""
+    };
+}
+
+# GET /notes, POST /notes (the add form), POST /notes/{id}/done, GET /app.js.
+export fn pages_app[D: effects]() -> App[Pages[D], uses D] {
+    let listing: fn(Pages[D], NoInput) -> result[Response] uses D = list_page;
+    let adding: fn(Pages[D], NewNote) -> result[Response] uses D = add;
+    let finishing: fn(Pages[D], Done) -> result[Response] uses D = done;
+    let scripting: fn(Pages[D], NoInput) -> result[Response] uses D = app_js;
+    return web_app([
+        on_get("/notes", listing),
+        on_post("/notes", adding),
+        on_post("/notes/{id}/done", finishing),
+        on_get("/app.js", scripting)
+    ]);
+}
+
+# serve_app's setup: data/notes.db, with its table the first time.
+export fn open_pages() -> result[Pages[uses Storage]] uses Storage {
+    let db = try open(data_dir + "notes.db");
+    try prepare(db);
+    return ok(new Pages { db: db });
+}
+
+fn list_page[D: effects](app: Pages[D], input: NoInput) -> result[Response] uses D {
+    return ok(html_reply(200, page("Notes", list_body(try all_notes(app.db)))));
+}
+
+fn add[D: effects](app: Pages[D], input: NewNote) -> result[Response] uses D {
+    let text = trim(input.text);
+    if text == "" {
+        return err("unprocessable: the text is only spaces");
+    }
+    let _ = try add_note(app.db, text);
+    return ok(back_to_list());
+}
+
+fn done[D: effects](app: Pages[D], input: Done) -> result[Response] uses D {
+    match mark_done(app.db, input.id) {
+        case ok(note) {
+            if input.swap != "" {
+                return ok(html_reply(200, item(note)));
+            }
+            return ok(back_to_list());
+        }
+        case err(e) {
+            match e {
+                case not_found(id) {
+                    return err("not_found: no note " + str(id));
+                }
+                case blank {
+                    return err("unprocessable: the text is only spaces");
+                }
+                case database(m) {
+                    return err(m);
+                }
+            }
+        }
+    }
+}
+
+fn app_js[D: effects](app: Pages[D], input: NoInput) -> result[Response] uses D {
+    return ok(new Response {
+        status: 200,
+        headers: [new Header { name: "Content-Type", value: "text/javascript; charset=utf-8" }],
+        body: script
+    });
+}
+
+fn memory() -> Pages {
+    let db = open_memory();
+    match prepare(db) {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+    return new Pages { db: db };
+}
+
+fn form_post(p: Pages, path: str, body: str) -> Response {
+    let r = request("POST", path, "");
+    return handle_request(pages_app(), p, new Request {
+        method: r.method,
+        path: r.path,
+        query: r.query,
+        headers: [new Header { name: "Content-Type", value: "application/x-www-form-urlencoded" }],
+        body: body
+    });
+}
+
+test "the list page shows the notes, escaped, in the layout" {
+    let p = memory();
+    let _ = form_post(p, "/notes", "text=water+the+plants");
+    let _ = form_post(p, "/notes", "text=%3Cscript%3Ealert(1)%3C%2Fscript%3E");
+    let r = handle_request(pages_app(), p, request("GET", "/notes", ""));
+    expect_eq(r.status, 200);
+    expect(contains(r.body, `<li id="note-1">water the plants <form`));
+    expect(contains(r.body, "&lt;script&gt;alert(1)&lt;/script&gt;"));
+    expect(not contains(r.body, "<script>alert"));
+}
+
+test "the add form adds a note and goes back to the list" {
+    let p = memory();
+    let r = form_post(p, "/notes", "text=buy+bread");
+    expect_eq(r.status, 303);
+    expect_eq(r.headers[0].value, "/notes");
+    expect_eq(all_notes(p.db), ok([new Note { id: 1, text: "buy bread", done: false }]));
+}
+
+test "an empty or missing text is refused" {
+    let p = memory();
+    expect_eq(form_post(p, "/notes", "text=").status, 422);
+    expect_eq(form_post(p, "/notes", "text=+++").status, 422);
+    expect_eq(form_post(p, "/notes", "title=x").status, 400);
+}
+
+test "done answers the note's new markup to the script, the list to a form" {
+    let p = memory();
+    let _ = form_post(p, "/notes", "text=call+home");
+    let swap = handle_request(pages_app(), p, with_header(
+        request("POST", "/notes/1/done", ""),
+        "X-Swap",
+        "1"
+    ));
+    expect_eq(swap.body, `<li id="note-1" class="done">call home</li>`);
+    expect(contains(handle_request(pages_app(), p, request("GET", "/notes", "")).body, swap.body));
+    let _ = form_post(p, "/notes", "text=two");
+    expect_eq(form_post(p, "/notes/2/done", "").status, 303);
+    expect_eq(form_post(p, "/notes/9/done", "").status, 404);
+}
+
+test "the script is served by the app, as the page's security policy requires" {
+    let r = handle_request(pages_app(), memory(), request("GET", "/app.js", ""));
+    expect_eq(r.status, 200);
+    expect(contains(r.body, "X-Swap"));
+}

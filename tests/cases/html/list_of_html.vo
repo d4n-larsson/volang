@@ -1,0 +1,12 @@
+import std.html.Html;
+import std.html.html;
+import std.html.html_text;
+
+fn item(text: str) -> Html {
+    return html("<li>{}</li>", text);
+}
+
+fn main() uses console {
+    print(html_text(html("<ul>{}</ul>", [item("<1>"), item("2")])));
+    print(html_text(html("<ul>{}</ul>", new list[Html])));
+}

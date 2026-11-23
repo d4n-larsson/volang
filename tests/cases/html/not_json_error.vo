@@ -1,0 +1,13 @@
+import std.html.Html;
+import std.html.html;
+import std.html.html_text;
+import std.json.to_json;
+
+record Page {
+    title: str;
+    body: Html;
+}
+
+fn main() {
+    let _ = to_json(new Page { title: "t", body: html("<p>x</p>") });
+}

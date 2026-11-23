@@ -1,0 +1,11 @@
+import std.html.Html;
+import std.html.html;
+import std.html.html_text;
+
+record Note {
+    text: str;
+}
+
+fn main() uses console {
+    print(html_text(html("<p>{}</p>", new Note { text: "x" })));
+}

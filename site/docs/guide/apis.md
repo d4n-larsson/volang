@@ -331,4 +331,4 @@ check and there are no roles.
 `serve_app("8080", 4, open_db, app)` serves the application with four worker processes, each with the
 context `open_db` returns (a database connection per worker). Tests call `handle_request(app, ctx,
 request(method, path, body))` with an in-memory database: the same steps, routes and checks, no port.
-The [notes-api](../examples/notes-api.md) example is a complete API with SQLite.
+The [notes-api](../examples/notes-api.md) example is a complete API with SQLite. To answer web pages and read HTML forms, see [Web pages](pages.md).

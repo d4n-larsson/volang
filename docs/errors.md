@@ -2136,6 +2136,193 @@ fn main() uses console {
 }
 ```
 
+## E0335 html_template_not_literal
+
+The template of `html` is not a string literal or a constant.
+
+Fixable: no
+
+`vo check` reads the template to find where each value goes and to check that it is HTML whose tags nest, so the template must be written in the program. To build a page from parts, make each part with its own `html(...)` and pass it into a hole of the page's template; to choose between two parts, use `if` in vo.
+
+### Example
+
+```vo
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    let tag = "b";
+    print(html_text(html("<" + tag + ">{}</" + tag + ">", "hi")));
+}
+```
+
+### Fixed
+
+```vo
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    print(html_text(html("<b>{}</b>", "hi")));
+}
+```
+
+## E0336 html_template_hole
+
+A hole of an `html` template is not `{}`, a brace is not doubled, or the number of holes and values differ.
+
+Fixable: no
+
+Each `{}` takes the next value after the template, in order; a hole has nothing inside (no index, name or options: format a number with `format` before inserting it). A brace that is part of the page is written `{{` or `}}`, except inside `<script>` and `<style>`, where braces are the script's or style sheet's own.
+
+### Example
+
+```vo
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    print(html_text(html("<p>{name} has {}</p>", "Ada", 3)));
+}
+```
+
+### Fixed
+
+```vo
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    print(html_text(html("<p>{} has {}</p>", "Ada", 3)));
+}
+```
+
+## E0337 html_unbalanced
+
+The tags of an `html` template do not nest, an element is left open, or a void element has an end tag.
+
+Fixable: no
+
+Every element a template opens must be closed in the same template, innermost first, also those whose end tags HTML lets a page leave out (`li`, `p`, `td`): a template is then always a balanced piece that can go into another's hole. Void elements (`br`, `img`, `input`, `meta`, `link`, `hr`, ...) have no end tag, and `<div/>` does not close a `div`. `<!DOCTYPE html>` can only start a template.
+
+### Example
+
+```vo
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    print(html_text(html("<ul><li>{}</ul>", "milk")));
+}
+```
+
+### Fixed
+
+```vo
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    print(html_text(html("<ul><li>{}</li></ul>", "milk")));
+}
+```
+
+## E0338 html_unsafe_hole
+
+A hole of an `html` template is in a place where no escaping can make a value safe.
+
+Fixable: sometimes
+
+A value may be text, a quoted attribute value, or the whole quoted value of a URL attribute (`href`, `src`, `action`, ...). It may not go inside `<script>` or `<style>`, into an `on...` or `style` attribute, a tag or attribute name, a comment, an unquoted attribute value, or a place in a URL attribute where it could choose the scheme (`{}/x`): a URL is either the whole value, checked when inserted, or starts in the template (`/notes/{}`). Pass data to a script through a quoted `data-...` attribute instead. For an unquoted attribute value, the fix adds the quotes.
+
+### Example
+
+```vo
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    let id = "n7";
+    print(html_text(html("<button onclick=\"open('{}')\">open</button>", id)));
+}
+```
+
+### Fixed
+
+```vo
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    let id = "n7";
+    print(html_text(html("<button data-note=\"{}\">open</button>", id)));
+}
+```
+
+## E0339 html_markup_in_attribute
+
+A value of an `html` template does not fit its hole: markup in an attribute, or a URL that is not text.
+
+Fixable: no
+
+An `Html` value or a `list[Html]` goes only where text goes; an attribute holds text. A URL attribute (`href`, `src`, ...) takes a `str`: build the URL as text first, for example `"/notes/" + str(id)`.
+
+### Example
+
+```vo
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    let id = 7;
+    print(html_text(html("<a href=\"{}\">note</a>", id)));
+}
+```
+
+### Fixed
+
+```vo
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    let id = 7;
+    print(html_text(html("<a href=\"{}\">note</a>", "/notes/" + str(id))));
+}
+```
+
+## E0340 html_opaque
+
+An `Html` value is built with `new`, or its field is read or set, outside `std.html`.
+
+Fixable: no
+
+`Html` is markup that came from a checked template, which is what makes it safe to insert as it is. Make one with `html(...)` (or `no_html()` for nothing) and read its text with `html_text`.
+
+### Example
+
+```vo
+import std.html.Html;
+import std.html.html_text;
+
+fn main() uses console {
+    let page = new Html { text: "<b>hi</b>" };
+    print(html_text(page));
+}
+```
+
+### Fixed
+
+```vo
+import std.html.html;
+import std.html.html_text;
+
+fn main() uses console {
+    let page = html("<b>{}</b>", "hi");
+    print(html_text(page));
+}
+```
+
 ## E0401 non_exhaustive_match
 
 A `match` does not handle every case.
