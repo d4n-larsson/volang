@@ -1,22 +1,21 @@
 <!--
 Sync Impact Report
-- Version change: 1.4.1 → 1.5.0
-- Bump rationale: MINOR. The vendored-code rule admits one more kind of license: code its authors
-  dedicated to the public domain with no conditions (SQLite, for the planned std.sqlite module).
-  This widens which dependencies may be vendored, so it is more than a clarification; no principle
-  or rule is removed or redefined, and every other vendoring rule (pinned version, checksums, kept
-  files, unmodified files with patches, freestanding and instrumented builds, security releases)
-  applies unchanged.
+- Version change: 1.5.0 → 1.6.0
+- Bump rationale: MINOR. A new principle, VI (Backend Network Services), states the product's target
+  and adds one question to every plan's Constitution Check. No principle or rule is removed or
+  redefined; the target was decided with the user on 2026-11-23 and first applied in spec 053
+  (HTML rendering removed from the core).
 - Modified principles: none
-- Modified sections: Implementation Constraints (vendored code: licenses)
-- Added sections: none
+- Added principles: VI. Backend Network Services
+- Modified sections: none
 - Removed sections: none
-- Templates reviewed (read-only, not modified): plan-template.md, spec-template.md,
-  tasks-template.md, all compatible.
-- Follow-up TODOs: none. Plans re-evaluated: specs/019-https (Mbed TLS, Apache-2.0) and
-  specs/020-math (CORE-MATH, MIT) are unaffected.
-- Earlier amendments: 1.4.0 → 1.4.1 (pinning to a commit when no releases exist), 1.3.0 → 1.4.0
-  (rules for vendored third-party code).
+- Templates reviewed (read-only, not modified): plan-template.md (its Constitution Check is filled
+  from this file's principles, so new plans list VI), spec-template.md, tasks-template.md; all
+  compatible.
+- Follow-up TODOs: none. Plans in progress: none (specs 049 to 053 are implemented; 053 already
+  follows VI). The README and docs/roadmap.md state the same target.
+- Earlier amendments: 1.4.1 → 1.5.0 (public-domain vendored code), 1.4.0 → 1.4.1 (pinning to a
+  commit when no releases exist), 1.3.0 → 1.4.0 (rules for vendored third-party code).
 -->
 
 # vo-lang Constitution
@@ -96,6 +95,24 @@ cheapest complete specification and also exercise the implementation beneath the
 
 Rationale: every feature costs reference tokens, which every agent pays for on every task, and
 costs toolchain code, which is expensive to write and to change.
+
+### VI. Backend Network Services
+
+vo is for backend network services written by AI coding agents and reviewed by people: APIs,
+integrations, workers and services behind a frontend. The standard library and the toolchain serve
+that target.
+
+- Every spec MUST answer, in its plan's Constitution Check, how it makes an agent-written network
+  service easier to write, review or operate. A feature that answers none of the three does not
+  enter the core; it may be a package.
+- Rendering user interfaces (HTML pages and templates, client-side scripts, graphical windows) is
+  out of scope for the core: pages belong to the frontend in front of a service. HTTP itself
+  (requests, responses, form bodies, cookies, sessions) is in scope.
+- Open gaps in `docs/roadmap.md` are ordered by the question above.
+
+Rationale: checked effects, scopes, review records and record/replay pay off most where a program
+holds credentials and talks to other systems; a clear target keeps the language small and tells
+agents and reviewers what vo is for. Decided 2026-11-23 (spec 053).
 
 ## Implementation Constraints
 
@@ -177,4 +194,4 @@ other document, this constitution wins until it is amended.
 - **Compliance**: Every `/speckit-plan` runs the Constitution Check gate, and every change is
   reviewed against the quality gates above before it is considered complete.
 
-**Version**: 1.5.0 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-19
+**Version**: 1.6.0 | **Ratified**: 2026-11-13 | **Last Amended**: 2026-11-23
