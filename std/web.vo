@@ -12,6 +12,7 @@
 # error to a Problem: one function with a match, so the checker sees every case has a status.
 import std.bytes.from_hex;
 import std.bytes.from_text;
+import std.bytes.to_ints;
 import std.bytes.to_text;
 import std.fs.Info;
 import std.fs.info;
@@ -28,6 +29,7 @@ import std.json.parse_json;
 import std.json.to_json;
 import std.json.write_json;
 import std.lists.contains;
+import std.option.Option;
 
 # An application: its routes, the steps around every request, and error kinds beside the defaults.
 #     len(new App[int] { routes: new list[Route[int]], steps: new list[Step[int]], errors: new list[ErrorStatus] }.routes) is 0
@@ -655,6 +657,115 @@ export fn html_reply(status: int, page: Html) -> Response {
         ],
         body: html_text(page)
     };
+}
+
+# ---- cookies ----
+
+# A cookie to set with with_cookie (spec 052). cookie(name, value) gives the safe flags; change one with `set c.FIELD = ...;` where the cookie is made, so the change is in sight.
+#     cookie("a", "1").same_site is "Lax"
+export record Cookie {
+    # A token: letters, digits and !#$%&'*+-.^_`|~.
+    name: str;
+    # Visible ASCII without space, double quote, comma, semicolon or backslash.
+    value: str;
+    # Seconds the browser keeps it; -1 until it closes; 0 removes the cookie.
+    max_age_s: int;
+    # true: scripts in the page cannot read it.
+    http_only: bool;
+    # true: sent over HTTPS only (and to http://localhost by most browsers).
+    secure: bool;
+    # "Lax" (not sent with other sites' posts), "Strict" or "None" (needs secure).
+    same_site: str;
+    # The paths it is sent with: "/" is the whole application.
+    path: str;
+}
+
+# A cookie with the safe flags: HttpOnly, Secure, SameSite=Lax, Path=/, kept until the browser closes.
+#     cookie("theme", "dark").http_only is true
+export fn cookie(name: str, value: str) -> Cookie {
+    return new Cookie {
+        name: name,
+        value: value,
+        max_age_s: -1,
+        http_only: true,
+        secure: true,
+        same_site: "Lax",
+        path: "/"
+    };
+}
+
+# The answer with c's Set-Cookie header, or err("bad_cookie: REASON") for a cookie a browser would not keep as written: a name that is not a token, a value with other bytes, an unknown same_site, None without secure, a __Host- name without secure or path "/".
+#     with_cookie(no_content(), cookie("a", "1")) == ok(new Response { status: 204, headers: [new Header { name: "Set-Cookie", value: "a=1; Path=/; Secure; HttpOnly; SameSite=Lax" }], body: "" }) is true
+export fn with_cookie(resp: Response, c: Cookie) -> result[Response] {
+    if c.name == "" or not all_bytes(c.name, token_byte) {
+        return err("bad_cookie: the name must be a token");
+    }
+    if not all_bytes(c.value, cookie_byte) {
+        return err("bad_cookie: the value has a byte a cookie cannot hold");
+    }
+    if find(c.path, "/") != 0 or find(c.path, ";") >= 0 or not all_bytes(c.path, visible_byte) {
+        return err("bad_cookie: the path must start with / and have no ; or control character");
+    }
+    if c.same_site != "Lax" and c.same_site != "Strict" and c.same_site != "None" {
+        return err("bad_cookie: same_site is Lax, Strict or None");
+    }
+    if c.same_site == "None" and not c.secure {
+        return err("bad_cookie: same_site None needs secure");
+    }
+    if find(c.name, "__Host-") == 0 and (not c.secure or c.path != "/") {
+        return err("bad_cookie: a __Host- cookie needs secure and path /");
+    }
+    var text = c.name + "=" + c.value + "; Path=" + c.path;
+    if c.max_age_s >= 0 {
+        set text = text + "; Max-Age=" + str(c.max_age_s);
+    }
+    if c.secure {
+        set text = text + "; Secure";
+    }
+    if c.http_only {
+        set text = text + "; HttpOnly";
+    }
+    push(resp.headers, new Header { name: "Set-Cookie", value: text + "; SameSite=" + c.same_site });
+    return ok(resp);
+}
+
+# The value of the cookie called name in the text of a Cookie header (bind it with `@header("Cookie") @default("") cookies: str;`), without surrounding double quotes; the first when it is there twice.
+#     read_cookie("a=1; b=two", "b") == Option.some("two") is true
+export fn read_cookie(header: str, name: str) -> Option[str] {
+    for part in split(header, ";") {
+        let pair = trim(part);
+        let at = find(pair, "=");
+        if at > 0 and slice(pair, 0, at) == name {
+            let v = slice(pair, at + 1, len(pair));
+            if len(v) >= 2 and find(v, "\"") == 0 and slice(v, len(v) - 1, len(v)) == "\"" {
+                return Option.some(slice(v, 1, len(v) - 1));
+            }
+            return Option.some(v);
+        }
+    }
+    return Option.none;
+}
+
+fn all_bytes(s: str, ok_byte: fn(int) -> bool) -> bool {
+    for b in to_ints(from_text(s)) {
+        if not ok_byte(b) {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn token_byte(b: int) -> bool {
+    # Visible ASCII but the separators "(),/:;<=>?@[\]{}.
+    return visible_byte(b) and not contains([34, 40, 41, 44, 47, 58, 59, 60, 61, 62, 63, 64, 91, 92, 93, 123, 125], b);
+}
+
+fn cookie_byte(b: int) -> bool {
+    return b == 33 or (b >= 35 and b <= 43) or (b >= 45 and b <= 58) or (b >= 60 and b <= 91) or (b >= 93 and b <= 126);
+}
+
+fn visible_byte(b: int) -> bool {
+    return b >= 33 and b <= 126;
 }
 
 # An answer in the problem format (RFC 9457) the application's errors use: the status, its title and a detail ("" for none).

@@ -23,6 +23,10 @@ fn third(t: Two[uses console, int]) -> int {
     return t.v;
 }
 
+fn named_type(t: Two[uses console, Conn]) -> int {
+    return 1;
+}
+
 fn fourth(x: Conn[uses net]) -> int {
     return x.id;
 }

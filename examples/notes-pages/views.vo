@@ -1,0 +1,83 @@
+# The templates: the layout, the sign-in page, the list and one note. Every value goes into a template
+# hole, escaped for its place; the pages are composed by passing Html values into holes.
+import notes.Note;
+import std.html.Html;
+import std.html.html;
+import std.html.no_html;
+
+const layout = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{}</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
+li { margin: 0.4rem 0; }
+li.done { color: gray; text-decoration: line-through; }
+form { display: inline; }
+label { display: block; margin: 0.5rem 0; }
+</style>
+<script src="/app.js" defer></script>
+</head>
+<body>
+{}
+<h1>{}</h1>
+{}
+</body>
+</html>`;
+
+# Without the script, the done button posts its form; with it, the note's markup is swapped in place.
+export const script = `document.addEventListener("click", async (event) => {
+  const button = event.target.closest("button[data-swap]");
+  if (!button) return;
+  event.preventDefault();
+  const answer = await fetch(button.dataset.swap, { method: "POST", headers: { "X-Swap": "1" } });
+  if (answer.ok) button.closest("li").outerHTML = await answer.text();
+});
+`;
+
+# A whole page in the layout; top is the line above the title (the user and the sign-out button).
+export fn page(title: str, top: Html, content: Html) -> Html {
+    return html(layout, title, top, title, content);
+}
+
+# The sign-in page: std.security shows it with "" or why signing in failed, and the path to go back to.
+export fn sign_in_page(message: str, next: str) -> Html {
+    return page("Sign in", no_html(), html(`<p>{}</p>
+<form method="post" action="/sign-in">
+<input type="hidden" name="next" value="{}">
+<label>Name <input name="name" autocomplete="username" required></label>
+<label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+<button>sign in</button>
+</form>`, message, next));
+}
+
+export fn signed_in_as(name: str) -> Html {
+    return html(
+        `<p>{} <form method="post" action="/sign-out"><button>sign out</button></form></p>`,
+        name
+    );
+}
+
+# One note: the same markup in the list and alone, when the script swaps it in.
+export fn item(n: Note) -> Html {
+    if n.done {
+        return html(`<li id="note-{}" class="done">{}</li>`, n.id, n.text);
+    }
+    return html(
+        `<li id="note-{}">{} <form method="post" action="/notes/{}/done"><button data-swap="/notes/{}/done">done</button></form></li>`,
+        n.id,
+        n.text,
+        n.id,
+        n.id
+    );
+}
+
+export fn list_body(notes: list[Note]) -> Html {
+    let items = new list[Html];
+    for n in notes {
+        push(items, item(n));
+    }
+    return html(`<ul>{}</ul>
+<form method="post" action="/notes"><input name="text" maxlength="200" required> <button>add</button></form>`, items);
+}

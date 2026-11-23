@@ -1,0 +1,13 @@
+[/notes] -> [/notes]
+[/notes?x=1&y=2] -> [/notes?x=1&y=2]
+[/] -> [/]
+[//evil.example] -> [/]
+[/\evil.example] -> [/]
+[/	/evil.example] -> [/]
+[https://evil.example] -> [/]
+[evil] -> [/]
+[] -> [/]
+[/a\b] -> [/]
+[/a
+b] -> [/]
+[/%2F%2Fevil] -> [/%2F%2Fevil]

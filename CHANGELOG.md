@@ -6,6 +6,20 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- Sessions and sign-in forms. `std.security` signs people in with a form and a session cookie:
+  `browser(b)` is a way of signing in listed in the policy beside `tokens` and `basic`, and
+  `browser_routes(b, p)` adds the sign-in page, the sign-in form and sign-out. The application keeps the
+  sessions (the `Browser` record takes its functions), and stores only a hash of each cookie's value.
+  The cookie is `HttpOnly`, `Secure` and `SameSite=Lax`; a cookie-signed request that changes something
+  must come from the application's own origin, or it is refused with 403; a page that needs a user is
+  sent to the sign-in page, while APIs still get 401. `std.web` gains cookies: `cookie`, `with_cookie`,
+  `read_cookie`. `Way` has two new fields, `sign_in_page` and `origin` (`""` for the existing ways): a
+  `Way` written with `new` needs them. `review` reports browser sign-in. The notes-pages example has
+  users. A recording of a signed-in application holds the passwords and cookies it received.
+- Fixed: in a type's effect argument, an effect parameter or a named effect set can now follow the
+  effects written out (`Job[uses clock, D]`, `Db[uses clock, Storage]`), as in a function header.
+  Before, only the other order parsed, and `vo fmt`, which writes that order, made such a program fail
+  to check (E0327). A type written after the effects is still E0327.
 - Web pages: `std.html`. `html(template, values...)` takes an HTML string literal or constant with `{}`
   holes and returns `Html`; `vo check` checks that its tags nest and close and that every hole is in text,
   a quoted attribute or a URL (new codes E0335 to E0340), and every value is escaped for its place (a URL

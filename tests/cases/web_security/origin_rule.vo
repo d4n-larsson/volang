@@ -1,0 +1,30 @@
+# The same-origin rule of std.security (spec 052, research R5): safe methods pass; else Sec-Fetch-Site
+# decides when sent; else Origin must name the application (the Host header, or the origin the
+# application set); a request that says nothing is refused. "" stands for a header not sent.
+import std.security.same_origin;
+
+fn row(method: str, site: str, origin: str, host: str, setting: str) uses console {
+    print(method + " site=[" + site + "] origin=[" + origin + "] host=[" + host + "] setting=[" + setting + "]: " + str(same_origin(method, site, origin, host, setting)));
+}
+
+fn main() uses console {
+    row("GET", "cross-site", "https://evil.example", "notes.example", "");
+    row("HEAD", "", "", "", "");
+    row("OPTIONS", "cross-site", "", "", "");
+    row("POST", "same-origin", "", "", "");
+    row("POST", "none", "", "", "");
+    row("POST", "same-site", "", "notes.example", "");
+    row("POST", "cross-site", "https://notes.example", "notes.example", "");
+    row("POST", "", "https://notes.example", "notes.example", "");
+    row("POST", "", "http://localhost:8080", "localhost:8080", "");
+    row("POST", "", "http://localhost:9090", "localhost:8080", "");
+    row("POST", "", "https://evil.example", "notes.example", "");
+    row("POST", "", "https://NOTES.example", "notes.example", "");
+    row("POST", "", "null", "notes.example", "");
+    row("POST", "", "https://notes.example", "", "");
+    row("POST", "", "", "notes.example", "");
+    row("PUT", "", "", "", "");
+    row("DELETE", "", "https://notes.example", "127.0.0.1:8080", "https://notes.example");
+    row("PATCH", "", "http://notes.example", "127.0.0.1:8080", "https://notes.example");
+    row("POST", "", "https://127.0.0.1:8080", "127.0.0.1:8080", "https://notes.example");
+}

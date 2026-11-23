@@ -3,7 +3,7 @@
 standard library, what its outputs must never contain, and its costs.
 
   web_security.py                 every group (part of `make test`)
-  web_security.py --group NAME    one group: tokens, timing, speed
+  web_security.py --group NAME    one group: tokens, timing, speed, cookies, origin
 
 tokens  1,000 tokens issued by the module verify here, 1,000 issued here are accepted there with the
         same name and roles (SC-002); 10,000 damaged tokens are all refused (SC-003); validly signed
@@ -13,13 +13,22 @@ timing  Basic: refusing an unknown name takes as long as refusing a wrong passwo
         10% (SC-004); skipped on CI and under emulation
 speed   a token-authenticated request costs at most 100 microseconds more than an unguarded one
         (SC-005); reported everywhere, checked on x86-64 outside CI
+cookies spec 052: read_cookie on 10,000 generated Cookie headers against Python's http.cookies where
+        the header is well formed and against a model of the contract where it is not
+origin  spec 052: same_origin on every combination of method, Sec-Fetch-Site, Origin, Host and the
+        origin setting from small sets, against a model of the contract
+
+Spec 052 also extends tokens (the browser case prints no password, cookie value or session key outside
+the answers that set the cookie: SC-008) and timing (the sign-in form, SC-006).
 """
 import base64
 import hashlib
 import hmac
+import http.cookies
 import json
 import os
 import random
+import re
 import statistics
 import subprocess
 import sys
@@ -182,6 +191,103 @@ fn main() -> result[void] uses console, clock {
     }
     print(format("{} {} {}", t1 - t0, now_ms() - t1, bad));
     return ok();
+}
+"""
+
+COOKIES = """import std.bytes.from_hex;
+import std.bytes.to_text;
+import std.fs.each_line;
+import std.web.read_cookie;
+
+fn answer(line: str) -> result[str] {
+    let f = split(line, " ");
+    match read_cookie(try to_text(try from_hex(f[0])), try to_text(try from_hex(f[1]))) {
+        case some(v) {
+            return ok("some " + v);
+        }
+        case none {
+            return ok("none");
+        }
+    }
+}
+
+fn main() -> result[void] uses console, file.read("./") {
+    try each_line("cases.txt", fn(line: str) -> result[bool] {
+        print(try answer(line));
+        return ok(true);
+    });
+    return ok();
+}
+"""
+
+ORIGIN = """import std.fs.each_line;
+import std.security.same_origin;
+
+fn main() -> result[void] uses console, file.read("./") {
+    try each_line("cases.txt", fn(line: str) -> result[bool] {
+        let f = split(line, "|");
+        print(str(same_origin(f[0], f[1], f[2], f[3], f[4])));
+        return ok(true);
+    });
+    return ok();
+}
+"""
+
+FORM_TIMING = """import std.bytes.from_text;
+import std.html.Html;
+import std.html.no_html;
+import std.http.Header;
+import std.http.Response;
+import std.option.Option;
+import std.security.Access;
+import std.security.Account;
+import std.security.Browser;
+import std.security.Session;
+import std.security.browser;
+import std.security.browser_routes;
+import std.security.policy;
+import std.security.rule;
+import std.security.secure;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.clock_ms;
+import std.web.handle_request;
+import std.web.request;
+
+fn find_account(n: int, name: str) -> result[Option[Account]] {
+    if name == "col" {
+        return ok(Option.some(new Account { name: "col", password_hash: "pbkdf2-sha256$600000$UzaawpluQd/9+wjqxK7k5g==$T77DFP1a//H/wGSMrDAzacBRzngTQcTM4Nma4jsUNWw=", roles: new list[str], enabled: true }));
+    }
+    return ok(Option.none);
+}
+
+fn main() uses console, clock {
+    let b = new Browser[int, uses clock] {
+        find_account: find_account,
+        keep: fn(n: int, s: Session) -> result[void] { return ok(); },
+        find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); },
+        end: fn(n: int, key: str) -> result[void] { return ok(); },
+        random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); },
+        page: fn(message: str, next: str) -> Html { return no_html(); },
+        sign_in: "/sign-in",
+        sign_out: "/sign-out",
+        lifetime_s: 3600,
+        origin: ""
+    };
+    let p = policy([rule("/", Access.anyone)], [browser(b)], clock_ms);
+    let app = new App { routes: browser_routes(b, p), steps: [secure(p)], errors: new list[ErrorStatus] };
+    for _ in 0..7 {
+        for pair in ["col:wrong", "eve:wrong"] {
+            let f = split(pair, ":");
+            let r = request("POST", "/sign-in", "");
+            set r.body = "name=" + f[0] + "&password=" + f[1];
+            push(r.headers, new Header { name: "Content-Type", value: "application/x-www-form-urlencoded" });
+            push(r.headers, new Header { name: "Sec-Fetch-Site", value: "same-origin" });
+            let t0 = now_ms();
+            let resp = handle_request(app, 0, r);
+            print(format("{} {} {} {}", pair, now_ms() - t0, resp.status, resp.body));
+        }
+    }
 }
 """
 
@@ -360,13 +466,23 @@ def group_tokens(d):
         case("secrets/no password, key or token in an event or another answer (FR-019)", not found, str(found))
         case("secrets/events were printed", rest.count("  event ") >= 10, str(rest.count("  event ")))
 
+    # Spec 052 SC-008: the browser case. Cookie values appear only in the answers that set them.
+    r = subprocess.run([VO, "run", os.path.join(ROOT, "tests", "cases", "web_security", "browser.vo")],
+                       capture_output=True, text=True, timeout=600 * SLOW)
+    values = sorted(set(re.findall(r"__Host-session=([0-9a-f]+);", r.stdout)))
+    case("secrets/the browser case runs and sets session cookies", r.returncode == 0 and len(values) >= 3,
+         f"exit {r.returncode}, {len(values)} values {r.stderr[:300]}")
+    rest = re.sub(r"Set-Cookie=[^\n]*", "", r.stdout)
+    secrets = ["passwd", "nope"] + values + [hashlib.sha256(v.encode()).hexdigest() for v in values]
+    found = [x for x in secrets if x in rest]
+    case("secrets/no password, cookie value or session key outside Set-Cookie (SC-008)", not found, str(found))
+    case("secrets/the browser case printed its events", rest.count("event: ") >= 8, str(rest.count("event: ")))
 
-def group_timing(d):
-    if SLOW != 1 or os.environ.get("CI"):
-        print("web_security: timing skipped (CI or emulation)")
-        return
+
+def measure(d, name, program, what):
+    """Medians of refusing a wrong password and an unknown name in program; True when within 10%."""
     with open(os.path.join(d, "main.vo"), "w") as f:
-        f.write(TIMING)
+        f.write(program)
     # A loaded machine spreads the samples (one run here gave 498 to 868 ms for the same work), so the
     # measurement is repeated up to three times; a real difference (no password work for an unknown
     # name) fails all three.
@@ -374,18 +490,26 @@ def group_timing(d):
         r = subprocess.run([VO, "run", "main.vo"], cwd=d, capture_output=True, text=True, timeout=300)
         rows = [line.split(" ", 3) for line in r.stdout.split("\n")[:-1]]
         if r.returncode != 0 or len(rows) != 14:
-            case("timing/the program runs", False, f"exit {r.returncode} {r.stderr[:300]}")
+            case(f"timing/{name}: the program runs", False, f"exit {r.returncode} {r.stderr[:300]}")
             return
         known = [int(x[1]) for x in rows if x[0] == "col:wrong"]
         unknown = [int(x[1]) for x in rows if x[0] == "eve:wrong"]
         mk, mu = statistics.median(known), statistics.median(unknown)
-        print(f"web_security: refusing a wrong password {mk} ms (samples {min(known)}-{max(known)}), "
+        print(f"web_security: {name}: refusing a wrong password {mk} ms (samples {min(known)}-{max(known)}), "
               f"an unknown name {mu} ms (samples {min(unknown)}-{max(unknown)})")
         if abs(mk - mu) <= 0.1 * max(mk, mu):
             break
-    case("timing/unknown name within 10% of wrong password (SC-004)", abs(mk - mu) <= 0.1 * max(mk, mu), f"{mk} against {mu}")
-    case("timing/the password work is done", mu >= 20, f"{mu} ms")
-    case("timing/the answers are identical", len({(x[2], x[3]) for x in rows}) == 1 and rows[0][2] == "401", str(rows[:2]))
+    case(f"timing/{name}: unknown name within 10% of wrong password ({what})", abs(mk - mu) <= 0.1 * max(mk, mu), f"{mk} against {mu}")
+    case(f"timing/{name}: the password work is done", mu >= 20, f"{mu} ms")
+    case(f"timing/{name}: the answers are identical", len({(x[2], x[3]) for x in rows}) == 1 and rows[0][2] == "401", str(rows[:2]))
+
+
+def group_timing(d):
+    if SLOW != 1 or os.environ.get("CI"):
+        print("web_security: timing skipped (CI or emulation)")
+        return
+    measure(d, "Basic", TIMING, "SC-004")
+    measure(d, "sign-in form", FORM_TIMING, "spec 052 SC-006")
 
 
 def group_speed(d):
@@ -405,7 +529,117 @@ def group_speed(d):
         case("speed/at most 100 microseconds added per request (SC-005)", best <= 100, f"{best}")
 
 
-GROUPS = {"tokens": group_tokens, "timing": group_timing, "speed": group_speed}
+def cookie_strings(rng):
+    """(header, name, well formed) triples: half from valid names and values, half with junk."""
+    token = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'*+-.^_`|~"
+    octets = token + "()/:<=>?@[]{}"
+    junk = octets + ' ;,="\\t'
+    out = []
+    for i in range(10000):
+        names = [("".join(rng.choice(token) for _ in range(rng.randint(1, 8)))) for _ in range(rng.randint(0, 5))]
+        if i % 2 == 0:
+            pairs = []
+            seen = set()
+            for n in names:
+                if n.lower() in seen:
+                    continue
+                seen.add(n.lower())
+                pairs.append(n + "=" + "".join(rng.choice(octets) for _ in range(rng.randint(0, 10))))
+            header = "; ".join(pairs)
+            out.append((header, rng.choice(names) if names and rng.random() < 0.8 else "zz", True))
+        else:
+            parts = [rng.choice([n + "=" + "".join(rng.choice(junk) for _ in range(rng.randint(0, 8))), n, "", " " * rng.randint(1, 3),
+                                 n + "=\"" + "".join(rng.choice(octets) for _ in range(rng.randint(0, 5))) + "\""])
+                     for n in names]
+            out.append((rng.choice([";", "; ", " ;"]).join(parts), rng.choice(names) if names else "a", False))
+    return out
+
+
+def cookie_model(header, name):
+    for part in header.split(";"):
+        pair = part.strip(" \t")
+        at = pair.find("=")
+        if at > 0 and pair[:at] == name:
+            v = pair[at + 1:]
+            if len(v) >= 2 and v[0] == '"' and v[-1] == '"':
+                return v[1:-1]
+            return v
+    return None
+
+
+def group_cookies(d):
+    rng = random.Random(52)
+    rows = cookie_strings(rng)
+    with open(os.path.join(d, "main.vo"), "w") as f:
+        f.write(COOKIES)
+    with open(os.path.join(d, "cases.txt"), "w") as f:
+        f.write("".join(f"{h.encode().hex()} {n.encode().hex()}\n" for h, n, _ in rows))
+    r = subprocess.run([VO, "run", "--timeout", str(300 * SLOW), "main.vo"], cwd=d, capture_output=True, text=True, timeout=600 * SLOW)
+    out = r.stdout.split("\n")[:-1]
+    if r.returncode != 0 or len(out) != len(rows):
+        case("cookies/the driver runs", False, f"exit {r.returncode}, {len(out)} lines for {len(rows)}: {r.stderr[:400]}")
+        return
+    model_wrong, lib_wrong, lib_checked = [], [], 0
+    for (h, n, well), got in zip(rows, out):
+        want = cookie_model(h, n)
+        want_text = "none" if want is None else "some " + want
+        if got != want_text:
+            model_wrong.append(f"{h!r} {n!r}: {got!r} want {want_text!r}")
+        if well:
+            c = http.cookies.SimpleCookie()
+            try:
+                c.load(h)
+            except http.cookies.CookieError:
+                continue
+            if len(c) != h.count("=") or (h and len(c) == 0):
+                continue  # Python's parser stopped at something it does not accept
+            lib_checked += 1
+            lib = "some " + c[n].value if n in c else "none"
+            if got != lib:
+                lib_wrong.append(f"{h!r} {n!r}: {got!r}, http.cookies {lib!r}")
+    case(f"cookies/{len(rows)} headers read as the contract says", not model_wrong, f"{len(model_wrong)}: {model_wrong[:3]}")
+    case(f"cookies/{lib_checked} well-formed headers read as Python's http.cookies reads them", not lib_wrong and lib_checked >= 2000,
+         f"{len(lib_wrong)}: {lib_wrong[:3]}")
+
+
+def origin_model(method, site, origin, host, setting):
+    if method in ("GET", "HEAD", "OPTIONS"):
+        return True
+    if site:
+        return site in ("same-origin", "none")
+    if not origin or origin == "null":
+        return False
+    if setting:
+        return origin.lower() == setting.lower()
+    if "://" not in origin or not host:
+        return False
+    return origin.split("://", 1)[1].lower() == host.lower()
+
+
+def group_origin(d):
+    import itertools
+    combos = list(itertools.product(
+        ["GET", "HEAD", "OPTIONS", "POST", "PUT", "PATCH", "DELETE"],
+        ["", "same-origin", "same-site", "cross-site", "none", "SAME-ORIGIN"],
+        ["", "null", "http://a.example", "http://a.example:8080", "https://a.example", "http://b.example", "HTTP://A.EXAMPLE", "a.example"],
+        ["", "a.example", "a.example:8080", "b.example", "A.example"],
+        ["", "https://a.example", "http://a.example:8080"]))
+    with open(os.path.join(d, "main.vo"), "w") as f:
+        f.write(ORIGIN)
+    with open(os.path.join(d, "cases.txt"), "w") as f:
+        f.write("".join("|".join(c) + "\n" for c in combos))
+    r = subprocess.run([VO, "run", "--timeout", str(300 * SLOW), "main.vo"], cwd=d, capture_output=True, text=True, timeout=600 * SLOW)
+    out = r.stdout.split("\n")[:-1]
+    if r.returncode != 0 or len(out) != len(combos):
+        case("origin/the driver runs", False, f"exit {r.returncode}, {len(out)} lines for {len(combos)}: {r.stderr[:400]}")
+        return
+    wrong = [f"{c}: {got}" for c, got in zip(combos, out) if got != str(origin_model(*c)).lower()]
+    allowed = sum(1 for got in out if got == "true")
+    case(f"origin/{len(combos)} combinations decided as the contract says ({allowed} allowed)", not wrong, f"{len(wrong)}: {wrong[:3]}")
+
+
+GROUPS = {"tokens": group_tokens, "timing": group_timing, "speed": group_speed, "cookies": group_cookies,
+          "origin": group_origin}
 
 
 def main():

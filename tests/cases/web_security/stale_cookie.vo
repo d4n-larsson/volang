@@ -1,0 +1,218 @@
+# A cookie that no longer signs anybody in (spec 052, story 1): its session expired, was ended, or its
+# account is gone or disabled. It counts as no cookie: public pages, the sign-in page among them, still
+# answer, pages that need a user send the browser to sign in, and every answer removes the cookie.
+import std.bytes.from_ints;
+import std.bytes.from_text;
+import std.bytes.to_hex;
+import std.crypto.sha256;
+import std.html.Html;
+import std.html.html;
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.option.Option;
+import std.security.Access;
+import std.security.Account;
+import std.security.Browser;
+import std.security.Event;
+import std.security.Policy;
+import std.security.Session;
+import std.security.browser;
+import std.security.browser_routes;
+import std.security.require_user;
+import std.security.rule;
+import std.security.secure;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.Route;
+import std.web.json_reply;
+import std.web.handle_request;
+import std.web.on_get;
+import std.web.read_cookie;
+import std.web.request;
+
+const weak = "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=";
+
+record Store {
+    sessions: map[str, Session];
+    events: list[str];
+    now: int;
+    drawn: int;
+}
+
+record Who {
+    @header("X-Identity")
+    @default("")
+    identity: str;
+}
+
+fn find_account(st: Store, name: str) -> result[Option[Account]] {
+    if name == "ada" {
+        return ok(Option.some(new Account { name: "ada", password_hash: weak, roles: ["admin"], enabled: true }));
+    }
+    if name == "old" {
+        return ok(Option.some(new Account { name: "old", password_hash: weak, roles: new list[str], enabled: false }));
+    }
+    if name == "bo" {
+        return ok(Option.some(new Account { name: "bo", password_hash: weak, roles: new list[str], enabled: true }));
+    }
+    return ok(Option.none);
+}
+
+fn sign_in_page(message: str, next: str) -> Html {
+    return html(`<p>{}</p><form method="post" action="/sign-in"><input name="next" type="hidden" value="{}"></form>`, message, next);
+}
+
+fn the_browser(st: Store) -> Browser[Store] {
+    return new Browser {
+        find_account: find_account,
+        keep: fn(s: Store, x: Session) -> result[void] {
+            set s.sessions[x.key] = x;
+            return ok();
+        },
+        find: fn(s: Store, key: str) -> result[Option[Session]] {
+            if has(s.sessions, key) {
+                return ok(Option.some(s.sessions[key]));
+            }
+            return ok(Option.none);
+        },
+        end: fn(s: Store, key: str) -> result[void] {
+            remove(s.sessions, key);
+            return ok();
+        },
+        random: fn(n: int) -> bytes {
+            set st.drawn = st.drawn + 1;
+            let xs = new list[int];
+            for i in 0..n {
+                push(xs, (st.drawn * 16 + i) % 256);
+            }
+            return from_ints(xs);
+        },
+        page: sign_in_page,
+        sign_in: "/sign-in",
+        sign_out: "/sign-out",
+        lifetime_s: 3600,
+        origin: ""
+    };
+}
+
+fn notes(st: Store, input: Who) -> result[Response] {
+    let user = try require_user(input.identity);
+    return ok(json_reply(200, "notes of " + user.name));
+}
+
+fn app(st: Store) -> App[Store] {
+    let b = the_browser(st);
+    let p = new Policy {
+        rules: [
+            rule("/sign-in", Access.anyone),
+            rule("/sign-out", Access.anyone),
+            rule("/notes", Access.signed_in),
+            rule("/api", Access.signed_in)
+        ],
+        ways: [browser(b)],
+        now: fn() -> int {
+            return st.now;
+        },
+        on_event: fn(s: Store, e: Event) {
+            push(s.events, e.kind + " " + e.name + " (" + e.reason + ")");
+        }
+    };
+    let routes = browser_routes(b, p);
+    push(routes, on_get("/notes", notes));
+    push(routes, on_get("/api/notes", notes));
+    return new App { routes: routes, steps: [secure(p)], errors: new list[ErrorStatus] };
+}
+
+fn send(st: Store, r: Request, headers: list[Header]) -> Response {
+    for h in headers {
+        push(r.headers, h);
+    }
+    return handle_request(app(st), st, r);
+}
+
+fn form(body: str, cookie: str) -> list[Header] {
+    let hs = [
+        new Header { name: "Content-Type", value: "application/x-www-form-urlencoded" },
+        new Header { name: "Sec-Fetch-Site", value: "same-origin" }
+    ];
+    if cookie != "" {
+        push(hs, new Header { name: "Cookie", value: "__Host-session=" + cookie });
+    }
+    return hs;
+}
+
+fn page_of(cookie: str) -> list[Header] {
+    let hs = [new Header { name: "Accept", value: "text/html,application/xhtml+xml" }];
+    if cookie != "" {
+        push(hs, new Header { name: "Cookie", value: "__Host-session=" + cookie });
+    }
+    return hs;
+}
+
+fn header(r: Response, name: str) -> str {
+    for h in r.headers {
+        if h.name == name {
+            return h.value;
+        }
+    }
+    return "-";
+}
+
+fn show(what: str, r: Response) uses console {
+    print(what + ": " + str(r.status) + " Location=" + header(r, "Location") + " Set-Cookie=" + header(r, "Set-Cookie"));
+    if r.body != "" {
+        print("  " + r.body);
+    }
+}
+
+fn post(path: str, body: str) -> Request {
+    let r = request("POST", path, "");
+    set r.body = body;
+    return r;
+}
+
+fn cookie_of(r: Response) -> str {
+    let set_cookie = header(r, "Set-Cookie");
+    match read_cookie(set_cookie, "__Host-session") {
+        case some(v) {
+            return v;
+        }
+        case none {
+            return "";
+        }
+    }
+}
+
+fn signed_in(st: Store, name: str) -> str {
+    return cookie_of(send(st, post("/sign-in", "name=" + name + "&password=passwd"), form("", "")));
+}
+
+fn key_of(value: str) -> str {
+    return to_hex(sha256(from_text(value)));
+}
+
+fn main() uses console {
+    let st = new Store { sessions: new map[str, Session], events: new list[str], now: 1000000, drawn: 0 };
+    let expiring = signed_in(st, "ada");
+    set st.now = st.now + 3600 * 1000;
+    let ended = signed_in(st, "ada");
+    let orphan = signed_in(st, "bo");
+    let disabled = signed_in(st, "bo");
+    remove(st.sessions, key_of(ended));
+    set st.sessions[key_of(orphan)].name = "gone";
+    set st.sessions[key_of(disabled)].name = "old";
+    let kept = len(st.sessions);
+    set st.events = new list[str];
+    show("expired, on the sign-in page", send(st, request("GET", "/sign-in", ""), page_of(expiring)));
+    print("the expired session is ended: " + str(len(st.sessions) == kept - 1));
+    show("expired again, on a page", send(st, request("GET", "/notes", ""), page_of(expiring)));
+    show("ended, on a page", send(st, request("GET", "/notes", ""), page_of(ended)));
+    show("ended, on the api", send(st, request("GET", "/api/notes", ""), [new Header { name: "Cookie", value: "__Host-session=" + ended }]));
+    show("account gone", send(st, request("GET", "/notes", ""), page_of(orphan)));
+    show("account disabled", send(st, request("GET", "/notes", ""), page_of(disabled)));
+    show("not a session", send(st, request("GET", "/notes", ""), page_of("ffff")));
+    for e in st.events {
+        print("event: " + e);
+    }
+}

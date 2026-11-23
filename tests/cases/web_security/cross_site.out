@@ -1,0 +1,35 @@
+cross-site: 403 Location=- Set-Cookie=-
+  {"type":"about:blank","title":"Forbidden","status":403,"detail":"cross-site request"}
+same-site: 403 Location=- Set-Cookie=-
+  {"type":"about:blank","title":"Forbidden","status":403,"detail":"cross-site request"}
+same-origin: 200 Location=- Set-Cookie=-
+  "done"
+Origin of another site: 403 Location=- Set-Cookie=-
+  {"type":"about:blank","title":"Forbidden","status":403,"detail":"cross-site request"}
+Origin of another port: 403 Location=- Set-Cookie=-
+  {"type":"about:blank","title":"Forbidden","status":403,"detail":"cross-site request"}
+Origin of the Host: 200 Location=- Set-Cookie=-
+  "done"
+neither header: 403 Location=- Set-Cookie=-
+  {"type":"about:blank","title":"Forbidden","status":403,"detail":"cross-site request"}
+a read from another site: 200 Location=- Set-Cookie=-
+  "notes of ada"
+a token from anywhere: 200 Location=- Set-Cookie=-
+  "done"
+sign-in form from another site: 403 Location=- Set-Cookie=-
+  {"type":"about:blank","title":"Forbidden","status":403,"detail":"cross-site request"}
+sign-in form with neither header: 403 Location=- Set-Cookie=-
+  {"type":"about:blank","title":"Forbidden","status":403,"detail":"cross-site request"}
+behind a proxy, the public origin: 200 Location=- Set-Cookie=-
+  "done"
+behind a proxy, the inner origin: 403 Location=- Set-Cookie=-
+  {"type":"about:blank","title":"Forbidden","status":403,"detail":"cross-site request"}
+operations run: ada 3, ada 6, svc 8, ada 9
+event: refused ada (cross-site)
+event: refused ada (cross-site)
+event: refused ada (cross-site)
+event: refused ada (cross-site)
+event: refused ada (cross-site)
+event: refused  (cross-site)
+event: refused  (cross-site)
+event: refused ada (cross-site)

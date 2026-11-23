@@ -1,5 +1,5 @@
 # vo effects record: update with `vo effects --update`
-main.vo:main uses console, file.read("data/"), file.write("data/"), serve("8080")
+main.vo:main uses console, input, file.read("data/"), file.write("data/"), clock, serve("8080"), entropy
 notes.vo:add_note uses D
 notes.vo:all_notes uses D
 notes.vo:db_error pure
@@ -11,17 +11,32 @@ notes.vo:remove_note uses D
 pages.vo:add uses D
 pages.vo:app_js uses D
 pages.vo:back_to_list pure
+pages.vo:call uses clock, entropy
 pages.vo:done uses D
-pages.vo:form_post pure
-pages.vo:item pure
-pages.vo:list_body pure
+pages.vo:header pure
 pages.vo:list_page uses D
 pages.vo:memory pure
+pages.vo:notes_browser pure
+pages.vo:notes_policy pure
 pages.vo:open_pages uses file.read("data/"), file.write("data/")
-pages.vo:page pure
 pages.vo:pages_app pure
-pages.vo:test "an empty or missing text is refused" pure
-pages.vo:test "done answers the note's new markup to the script, the list to a form" pure
-pages.vo:test "the add form adds a note and goes back to the list" pure
-pages.vo:test "the list page shows the notes, escaped, in the layout" pure
-pages.vo:test "the script is served by the app, as the page's security policy requires" pure
+pages.vo:sign_in uses clock, entropy
+pages.vo:test "a form another site posts is refused before it changes anything" uses clock, entropy
+pages.vo:test "a user sees and changes only their own notes" uses clock, entropy
+pages.vo:test "a visitor signs in on the sign-in page and comes back to the notes" uses clock, entropy
+pages.vo:test "done answers the note's new markup to the script, the list to a form" uses clock, entropy
+pages.vo:test "notes are added through the form, shown escaped, and empty ones refused" uses clock, entropy
+pages.vo:test "signing out ends the session, and a copy of the cookie signs nobody in" uses clock, entropy
+pages.vo:test "the script is served to anyone, and the policy's review lists only the browser way" uses clock, entropy
+pages.vo:with_users uses D
+users.vo:account uses D
+users.vo:add_user uses D
+users.vo:end_session uses D
+users.vo:find_session uses D
+users.vo:keep_session uses D
+users.vo:prepare_users uses D
+views.vo:item pure
+views.vo:list_body pure
+views.vo:page pure
+views.vo:sign_in_page pure
+views.vo:signed_in_as pure

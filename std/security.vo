@@ -11,12 +11,16 @@
 # application's routes. Tests sign in with `test_users()` in the policy and `as_user(request, user)`.
 import std.bytes.from_base64;
 import std.bytes.from_text;
+import std.bytes.to_hex;
+import std.bytes.to_ints;
 import std.bytes.to_base64;
 import std.bytes.to_text;
 import std.crypto.hmac_sha256;
 import std.crypto.password_outdated;
 import std.crypto.same_bytes;
+import std.crypto.sha256;
 import std.crypto.verify_password;
+import std.html.Html;
 import std.http.Header;
 import std.http.Request;
 import std.http.Response;
@@ -30,10 +34,17 @@ import std.json.to_json;
 import std.json.write_json;
 import std.option.Option;
 import std.web.App;
+import std.web.Cookie;
 import std.web.Route;
 import std.web.Step;
+import std.web.cookie;
+import std.web.html_reply;
 import std.web.json_reply;
+import std.web.on_get;
+import std.web.on_post;
 import std.web.problem_reply;
+import std.web.read_cookie;
+import std.web.with_cookie;
 import std.web.with_header;
 
 const unknown_account_hash = "pbkdf2-sha256$600000$uhjvqUkG1yFEktgBPBuNqQ==$PVcPDIHXJlHQvQJz+SpALHXX1vtSUabWC+FjltYm6RA=";
@@ -103,10 +114,14 @@ export record Way[C, E: effects] {
     name: str;
     # The request header that holds the credential.
     header: str;
-    # What the header's value starts with ("Basic ", "Bearer "), or "" when the value is the credential.
+    # What the header's value starts with ("Basic ", "Bearer "), or "" when the value is the credential; for the header Cookie, the name of the cookie.
     scheme: str;
     # The user of a credential, given the context, the credential and the time in milliseconds; err("unauthorized: REASON") refuses it (401), any other error is a failure (500).
     check: fn(C, str, int) -> result[User] uses E;
+    # Where a page that needs a user sends the browser ("" for ways that do not sign in browsers).
+    sign_in_page: str;
+    # The origin state-changing requests signed in this way must come from: "" for the Host they name; only browser ways check it.
+    origin: str;
 }
 
 # Who may call what: the rules, the accepted ways of signing in, the clock, and a function told of refusals.
@@ -125,9 +140,9 @@ export record Policy[C, E: effects] {
 # Something for a security log.
 #     new Event { kind: "refused", reason: "expired", name: "", method: "GET", path: "/notes", at_ms: 0 }.kind is "refused"
 export record Event {
-    # "signed_in" (the sign-in route gave a token), "refused" (a credential was not accepted), "forbidden" (a user was not allowed), "outdated_hash" (a password was right and its stored hash is weaker than hash_password makes now).
+    # "signed_in" (a sign-in route gave a token or a session), "signed_out" (a browser signed out), "refused" (a credential was not accepted), "forbidden" (a user was not allowed), "outdated_hash" (a password was right and its stored hash is weaker than hash_password makes now).
     kind: str;
-    # Why, such as "expired" or "wrong password for ada"; never shown to the caller.
+    # Why, such as "expired", "wrong password for ada", "unknown session", "cross-site"; never shown to the caller.
     reason: str;
     # The user's name when the module knows it, else "".
     name: str;
@@ -298,7 +313,17 @@ export fn secure[C, E: effects](p: Policy[C, E]) -> Step[C, E] {
             for i, w in p.ways {
                 match header_of(r, w.header) {
                     case ok(v) {
-                        if w.scheme == "" or (len(v) > len(w.scheme) and (find(v, w.scheme) == 0 or find(v, lower(w.scheme)) == 0)) {
+                        if lower(w.header) == "cookie" {
+                            match read_cookie(v, w.scheme) {
+                                case some(value) {
+                                    set found = found + 1;
+                                    set at = i;
+                                    set credential = value;
+                                }
+                                case none {
+                                }
+                            }
+                        } else if w.scheme == "" or (len(v) > len(w.scheme) and (find(v, w.scheme) == 0 or find(v, lower(w.scheme)) == 0)) {
                             set found = found + 1;
                             set at = i;
                             set credential = slice(v, len(w.scheme), len(v));
@@ -326,21 +351,24 @@ export fn secure[C, E: effects](p: Policy[C, E]) -> Step[C, E] {
                 return refuse(p, ctx, r, "no accepted way for this Authorization header");
             }
             if found == 0 {
-                match decide(p.rules, r.method, r.path, Option.none) {
-                    case allowed {
-                        return next(r);
-                    }
-                    case sign_in_needed {
-                        return challenge(p, "sign in");
-                    }
-                    case forbidden {
-                        return challenge(p, "sign in");
-                    }
-                }
+                return as_nobody(p, r, next);
             }
             let now = p.now();
-            match p.ways[at].check(ctx, credential, now) {
+            let way = p.ways[at];
+            match way.check(ctx, credential, now) {
                 case ok(user) {
+                    if way.sign_in_page != "" and not same_origin(r.method, text_of(r, "Sec-Fetch-Site"), text_of(r, "Origin"), text_of(r, "Host"), way.origin) {
+                        # Only a browser sends the cookie by itself, so only its requests need to say where they come from.
+                        p.on_event(ctx, new Event {
+                            kind: "refused",
+                            reason: "cross-site",
+                            name: user.name,
+                            method: r.method,
+                            path: r.path,
+                            at_ms: now
+                        });
+                        return problem_reply(403, "cross-site request");
+                    }
                     match decide(p.rules, r.method, r.path, Option.some(user)) {
                         case allowed {
                             return next(with_header(r, "X-Identity", user_json(user)));
@@ -371,6 +399,10 @@ export fn secure[C, E: effects](p: Policy[C, E]) -> Step[C, E] {
                             path: r.path,
                             at_ms: now
                         });
+                        if way.sign_in_page != "" {
+                            # A browser's old cookie is no cookie: public pages and the sign-in page still answer.
+                            return without_session(way, as_nobody(p, r, next));
+                        }
                         return challenge(p, "invalid credentials");
                     }
                     return problem_reply(500, "");
@@ -378,6 +410,71 @@ export fn secure[C, E: effects](p: Policy[C, E]) -> Step[C, E] {
             }
         }
     };
+}
+
+fn as_nobody[C, E: effects](p: Policy[C, E], r: Request, next: fn(Request) -> Response uses E) -> Response uses E {
+    match decide(p.rules, r.method, r.path, Option.none) {
+        case allowed {
+            return next(r);
+        }
+        case sign_in_needed {
+            return sign_in_first(p, r);
+        }
+        case forbidden {
+            return sign_in_first(p, r);
+        }
+    }
+}
+
+fn sign_in_first[C, E: effects](p: Policy[C, E], r: Request) -> Response {
+    # A page a person asked for goes to the sign-in page and comes back after; a program gets 401.
+    var page = false;
+    match header_of(r, "Accept") {
+        case ok(v) {
+            set page = (r.method == "GET" or r.method == "HEAD") and find(v, "text/html") >= 0;
+        }
+        case err(_) {
+        }
+    }
+    for w in p.ways {
+        if page and w.sign_in_page != "" {
+            var back = r.path;
+            if r.query != "" {
+                set back = back + "?" + r.query;
+            }
+            return see_other(w.sign_in_page + "?next=" + query_escape(back));
+        }
+    }
+    return challenge(p, "sign in");
+}
+
+fn without_session[C, E: effects](w: Way[C, E], resp: Response) -> Response {
+    let c = session_cookie(w.origin, "");
+    set c.max_age_s = 0;
+    match with_cookie(resp, c) {
+        case ok(r) {
+            return r;
+        }
+        case err(_) {
+            return resp;
+        }
+    }
+}
+
+fn query_escape(s: str) -> str {
+    # Percent-encoding of everything but letters, digits and -._~ (RFC 3986 unreserved).
+    let hex = "0123456789ABCDEF";
+    var out = "";
+    for c in s {
+        if (c >= "0" and c <= "9") or (c >= "A" and c <= "Z") or (c >= "a" and c <= "z") or c == "-" or c == "." or c == "_" or c == "~" {
+            set out = out + c;
+        } else {
+            for b in to_ints(from_text(c)) {
+                set out = out + "%" + slice(hex, b / 16, b / 16 + 1) + slice(hex, b % 16, b % 16 + 1);
+            }
+        }
+    }
+    return out;
 }
 
 fn refuse[C, E: effects](p: Policy[C, E], ctx: C, r: Request, reason: str) -> Response uses E {
@@ -402,6 +499,17 @@ fn challenge[C, E: effects](p: Policy[C, E], detail: str) -> Response {
         }
     }
     return resp;
+}
+
+fn text_of(r: Request, name: str) -> str {
+    match header_of(r, name) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return "";
+        }
+    }
 }
 
 fn header_of(r: Request, name: str) -> result[str] {
@@ -438,7 +546,9 @@ export fn header_key[C, E: effects](
         scheme: "",
         check: fn(ctx: C, credential: str, now_ms: int) -> result[User] {
             return check(ctx, credential);
-        }
+        },
+        sign_in_page: "",
+        origin: ""
     };
 }
 
@@ -466,7 +576,9 @@ export fn test_users[C, E: effects]() -> Way[C, E] {
                     return err("unauthorized: not a user");
                 }
             }
-        }
+        },
+        sign_in_page: "",
+        origin: ""
     };
 }
 
@@ -508,7 +620,9 @@ export fn basic[C, E: effects](find_account: fn(C, str) -> result[Option[Account
                 return err("unauthorized: " + o.reason + " for " + name);
             }
             return ok(o.user);
-        }
+        },
+        sign_in_page: "",
+        origin: ""
     };
 }
 
@@ -699,7 +813,9 @@ export fn tokens[C, E: effects](keys: list[bytes]) -> Way[C, E]
         scheme: "Bearer ",
         check: fn(ctx: C, credential: str, now_ms: int) -> result[User] {
             return check_token(keys, now_ms, trim(credential));
-        }
+        },
+        sign_in_page: "",
+        origin: ""
     };
 }
 
@@ -781,6 +897,274 @@ export fn sign_in_route[C, E: effects](
         return ok(json_reply(200, new SignedIn { token: token, expires: now / 1000 + lifetime_s }));
     };
     return new Route { method: "POST", pattern: pattern, segments: segments(pattern), run: run };
+}
+
+# ---- browsers ----
+
+# Whether a request comes from the application's own pages (spec 052): GET, HEAD and OPTIONS always; otherwise Sec-Fetch-Site must be same-origin or none when the browser sends it, else Origin must name the application: the origin setting when it is not "", else the host the request was sent to (host, the Host header). A request that says neither is refused. "" stands for a header that was not sent.
+#     same_origin("POST", "", "https://evil.example", "notes.example", "") is false
+#     same_origin("POST", "", "http://localhost:8080", "localhost:8080", "") is true
+export fn same_origin(method: str, fetch_site: str, origin: str, host: str, setting: str) -> bool {
+    if method == "GET" or method == "HEAD" or method == "OPTIONS" {
+        return true;
+    }
+    if fetch_site != "" {
+        return fetch_site == "same-origin" or fetch_site == "none";
+    }
+    if origin == "" or origin == "null" {
+        return false;
+    }
+    if setting != "" {
+        return lower(origin) == lower(setting);
+    }
+    let at = find(origin, "://");
+    return at > 0 and host != "" and lower(slice(origin, at + 3, len(origin))) == lower(host);
+}
+
+# path when it is a path of this application, else "/": where a browser may be sent after signing in. A path starts with one "/" and has no "\\" or control character (browsers read "//x" and "/\\x" as another site).
+#     local_path("/notes?x=1") is "/notes?x=1"
+#     local_path("//evil.example") is "/"
+export fn local_path(path: str) -> str {
+    if find(path, "/") != 0 or find(path, "//") == 0 or find(path, "\\") >= 0 {
+        return "/";
+    }
+    for c in path {
+        if c < " " or c == "\u{7f}" {
+            return "/";
+        }
+    }
+    return path;
+}
+
+# A browser's session as the application keeps it (spec 052): made at sign-in, found on every request, ended at sign-out or when found expired.
+#     new Session { key: "", name: "ada", expires_ms: 0 }.name is "ada"
+export record Session {
+    # The SHA-256 of the cookie's value, in hex: what to look the session up by. The value itself is never kept.
+    key: str;
+    # The account's name.
+    name: str;
+    # When it ends, by the policy's clock.
+    expires_ms: int;
+}
+
+# Signing in browsers with a session cookie: the application's functions over its context (accounts as for basic and sign_in_route; sessions kept, found by key and ended in its own storage), the sign-in page, the paths, the lifetime and the origin. browser(b) is the way for the policy and browser_routes(b, p) the routes.
+#     len(browser_routes(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, page: fn(message: str, next: str) -> Html { return no_html(); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_s: 3600, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }))) is 3
+export record Browser[C, E: effects] {
+    # The account of a name, as for basic and sign_in_route; looked up again on every request.
+    find_account: fn(C, str) -> result[Option[Account]] uses E;
+    # Keeps a new session.
+    keep: fn(C, Session) -> result[void] uses E;
+    # The session of a key, or Option.none.
+    find: fn(C, str) -> result[Option[Session]] uses E;
+    # Ends the session of a key (a key with no session is ok).
+    end: fn(C, str) -> result[void] uses E;
+    # n random bytes: std.crypto.random_bytes.
+    random: fn(int) -> bytes uses E;
+    # The sign-in page, given a message ("" or why signing in failed) and the path to go back to: a form posting name, password and next to sign_in.
+    page: fn(str, str) -> Html;
+    # The path of the sign-in page and form, such as "/sign-in".
+    sign_in: str;
+    # The path that signs out, such as "/sign-out".
+    sign_out: str;
+    # Seconds a session lasts from signing in.
+    lifetime_s: int;
+    # "" for the host each request names, or the origin browsers see, such as "https://notes.example", when a proxy is in front. An origin starting with http:// sends the cookie over plain HTTP too.
+    origin: str;
+}
+
+# The way of signing in browsers by their session cookie, for the policy's ways. Its name says the paths, the lifetime and the origin, for the review.
+#     browser(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, page: fn(message: str, next: str) -> Html { return no_html(); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_s: 3600, origin: "" }).name is "browser (sign-in /sign-in, sign-out /sign-out, 3600 s, origin from Host)"
+export fn browser[C, E: effects](b: Browser[C, E]) -> Way[C, E]
+    requires browser_fits(b)
+{
+    var from = "from Host";
+    if b.origin != "" {
+        set from = b.origin;
+    }
+    return new Way {
+        name: "browser (sign-in " + b.sign_in + ", sign-out " + b.sign_out + ", " + str(b.lifetime_s) + " s, origin " + from + ")",
+        header: "Cookie",
+        scheme: cookie_name(b.origin),
+        check: fn(ctx: C, credential: str, now_ms: int) -> result[User] {
+            return session_user(b, ctx, credential, now_ms);
+        },
+        sign_in_page: b.sign_in,
+        origin: b.origin
+    };
+}
+
+fn browser_fits[C, E: effects](b: Browser[C, E]) -> bool {
+    let at = find(b.origin, "://");
+    let origin_fits = b.origin == "" or (at > 0 and find(slice(b.origin, at + 3, len(b.origin)), "/") < 0);
+    let paths_fit = find(b.sign_in, "/") == 0 and find(b.sign_out, "/") == 0 and find(b.sign_in + b.sign_out, "{") < 0;
+    return paths_fit and b.lifetime_s > 0 and origin_fits;
+}
+
+fn plain(origin: str) -> bool {
+    return find(origin, "http://") == 0;
+}
+
+fn cookie_name(origin: str) -> str {
+    # __Host- makes browsers refuse the cookie unless it is Secure, for the whole site, with no Domain.
+    if plain(origin) {
+        return "session";
+    }
+    return "__Host-session";
+}
+
+fn session_key(value: str) -> str {
+    return to_hex(sha256(from_text(value)));
+}
+
+fn session_user[C, E: effects](b: Browser[C, E], ctx: C, value: str, now_ms: int) -> result[User] uses E {
+    let key = session_key(value);
+    match try b.find(ctx, key) {
+        case none {
+            return err("unauthorized: unknown session");
+        }
+        case some(s) {
+            if s.expires_ms <= now_ms {
+                try b.end(ctx, key);
+                return err("unauthorized: expired");
+            }
+            match try b.find_account(ctx, s.name) {
+                case none {
+                    return err("unauthorized: unknown account");
+                }
+                case some(a) {
+                    if not a.enabled {
+                        return err("unauthorized: disabled account");
+                    }
+                    return ok(new User { name: a.name, roles: a.roles });
+                }
+            }
+        }
+    }
+}
+
+record SignInQuery {
+    @default("")
+    next: str;
+}
+
+record SignInForm {
+    @size(1, 200)
+    name: str;
+    @size(1, 1000)
+    password: str;
+    @default("")
+    next: str;
+    @header("Origin")
+    @default("")
+    origin: str;
+    @header("Sec-Fetch-Site")
+    @default("")
+    fetch_site: str;
+    @header("Host")
+    @default("")
+    host: str;
+    @header("Cookie")
+    @default("")
+    cookies: str;
+}
+
+record SignOutForm {
+    @header("Cookie")
+    @default("")
+    cookies: str;
+}
+
+# The routes of signing in browsers, to add to the application's: GET sign_in (the page), POST sign_in (the form: a new session and its cookie, then 303 to the page the browser came from; the page again with a message when the name or password is wrong), POST sign_out (ends the session, removes the cookie, 303 to the sign-in page). The policy gives the clock and is told of the events; its rules must let anyone reach both paths.
+#     browser_routes(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, page: fn(message: str, next: str) -> Html { return no_html(); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_s: 3600, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }))[1].method is "POST"
+export fn browser_routes[C, E: effects](b: Browser[C, E], p: Policy[C, E]) -> list[Route[C, E]]
+    requires browser_fits(b)
+{
+    let show: fn(C, SignInQuery) -> result[Response] uses E = fn(ctx: C, q: SignInQuery) -> result[Response] {
+        return ok(html_reply(200, b.page("", local_path(q.next))));
+    };
+    let take: fn(C, SignInForm) -> result[Response] uses E = fn(ctx: C, f: SignInForm) -> result[Response] {
+        return sign_in_form(b, p, ctx, f);
+    };
+    let leave: fn(C, SignOutForm) -> result[Response] uses E = fn(ctx: C, f: SignOutForm) -> result[Response] {
+        return sign_out_form(b, p, ctx, f);
+    };
+    # Bound as any operation's input (form, headers, limits), then moved to the application's paths.
+    return [at_path(on_get("/", show), b.sign_in), at_path(on_post("/", take), b.sign_in), at_path(on_post("/", leave), b.sign_out)];
+}
+
+fn at_path[C, E: effects](rt: Route[C, E], path: str) -> Route[C, E] {
+    return new Route { method: rt.method, pattern: path, segments: segments(path), run: rt.run };
+}
+
+fn sign_in_form[C, E: effects](b: Browser[C, E], p: Policy[C, E], ctx: C, f: SignInForm) -> result[Response] uses E {
+    let next = local_path(f.next);
+    let now = p.now();
+    if not same_origin("POST", f.fetch_site, f.origin, f.host, b.origin) {
+        p.on_event(ctx, browser_event("refused", "cross-site", "", b.sign_in, now));
+        return ok(problem_reply(403, "cross-site request"));
+    }
+    let o = try checked(ctx, b.find_account, f.name, f.password);
+    if o.reason != "" {
+        p.on_event(ctx, browser_event("refused", o.reason, f.name, b.sign_in, now));
+        return ok(html_reply(401, b.page("The name or the password is wrong.", next)));
+    }
+    if o.outdated {
+        p.on_event(ctx, browser_event("outdated_hash", "the stored hash is weaker than hash_password makes now", o.user.name, b.sign_in, now));
+    }
+    match read_cookie(f.cookies, cookie_name(b.origin)) {
+        case some(old) {
+            # A new value at every sign-in: a value someone set in the browser before never becomes a session.
+            try b.end(ctx, session_key(old));
+        }
+        case none {
+        }
+    }
+    let raw = b.random(16);
+    if len(raw) != 16 {
+        return err("the browser's random function gave " + str(len(raw)) + " bytes, not 16");
+    }
+    let value = to_hex(raw);
+    # ponytail: a fixed lifetime from signing in; renewing on use would cost a write per request.
+    try b.keep(ctx, new Session { key: session_key(value), name: o.user.name, expires_ms: now + b.lifetime_s * 1000 });
+    p.on_event(ctx, browser_event("signed_in", "", o.user.name, b.sign_in, now));
+    let c = session_cookie(b.origin, value);
+    set c.max_age_s = b.lifetime_s;
+    return with_cookie(see_other(next), c);
+}
+
+fn sign_out_form[C, E: effects](b: Browser[C, E], p: Policy[C, E], ctx: C, f: SignOutForm) -> result[Response] uses E {
+    match read_cookie(f.cookies, cookie_name(b.origin)) {
+        case some(value) {
+            let key = session_key(value);
+            match try b.find(ctx, key) {
+                case some(s) {
+                    try b.end(ctx, key);
+                    p.on_event(ctx, browser_event("signed_out", "", s.name, b.sign_out, p.now()));
+                }
+                case none {
+                }
+            }
+        }
+        case none {
+        }
+    }
+    let gone = session_cookie(b.origin, "");
+    set gone.max_age_s = 0;
+    return with_cookie(see_other(b.sign_in), gone);
+}
+
+fn session_cookie(origin: str, value: str) -> Cookie {
+    let c = cookie(cookie_name(origin), value);
+    set c.secure = not plain(origin);
+    return c;
+}
+
+fn browser_event(kind: str, reason: str, name: str, path: str, now: int) -> Event {
+    return new Event { kind: kind, reason: reason, name: name, method: "POST", path: path, at_ms: now };
+}
+
+fn see_other(location: str) -> Response {
+    return new Response { status: 303, headers: [new Header { name: "Location", value: location }], body: "" };
 }
 
 # ---- in operations ----
@@ -881,7 +1265,7 @@ export fn describe[C, E: effects](app: App[C, E], rules: list[Rule]) -> str {
     return join(lines, "\n");
 }
 
-# What a reviewer should look at, one line each: routes no rule matches (refused: meant or forgotten?), rules that decide for no route (misspelt, or hidden behind an earlier rule), rules that decide for only some requests of a route, rules that need a user when no way of signing in is accepted, and test_users in the policy. Empty when there is nothing.
+# What a reviewer should look at, one line each: routes no rule matches (refused: meant or forgotten?), rules that decide for no route (misspelt, or hidden behind an earlier rule), rules that decide for only some requests of a route, rules that need a user when no way of signing in is accepted, test_users in the policy, and browser sign-in (its settings, a sign-in page nobody can reach, a cookie over plain HTTP). Empty when there is nothing.
 #     review(web_app(new list[Route[int]]), policy([rule("/x", Access.anyone)], new list[Way[int]], fn() -> int { return 0; }))[0] is "rule 1 (/x) decides for no route"
 export fn review[C, E: effects](app: App[C, E], p: Policy[C, E]) -> list[str] {
     let found = new list[str];
@@ -923,6 +1307,22 @@ export fn review[C, E: effects](app: App[C, E], p: Policy[C, E]) -> list[str] {
     for w in p.ways {
         if w.header == test_header {
             push(found, "test_users is accepted");
+        }
+        if w.sign_in_page != "" {
+            push(found, "browsers sign in: " + w.name);
+            match decide(p.rules, "GET", w.sign_in_page, Option.none) {
+                case allowed {
+                }
+                case sign_in_needed {
+                    push(found, "the sign-in page " + w.sign_in_page + " needs a user, so nobody could sign in");
+                }
+                case forbidden {
+                    push(found, "the sign-in page " + w.sign_in_page + " needs a user, so nobody could sign in");
+                }
+            }
+            if find(w.origin, "http://") == 0 {
+                push(found, "the session cookie is sent over plain HTTP (origin " + w.origin + ")");
+            }
         }
     }
     return found;

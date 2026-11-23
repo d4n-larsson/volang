@@ -1,0 +1,13 @@
+from another site: 403 Location=- Set-Cookie=-
+  {"type":"about:blank","title":"Forbidden","status":403,"detail":"cross-site request"}
+sessions: 1
+sign out: 303 Location=/sign-in Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+sessions: 0
+the copied cookie, on a page: 303 Location=/sign-in?next=%2Fnotes Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+the copied cookie, on the api: 401 Location=- Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+  {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+sign out without a session: 303 Location=/sign-in Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+event: refused ada (cross-site)
+event: signed_out ada ()
+event: refused  (unknown session)
+event: refused  (unknown session)

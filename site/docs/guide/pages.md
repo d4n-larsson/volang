@@ -3,7 +3,8 @@
 `std.web` answers JSON for programs; `std.html` answers HTML for people. A page is a template: HTML with
 `{}` holes, checked by `vo check` and filled with values that are escaped for the place they go, so a
 value can never become markup. Pages are built from smaller templates, HTML forms are read into the
-same input records as JSON, and a route can answer a piece of a page for the page to swap in.
+same input records as JSON, a route can answer a piece of a page for the page to swap in, and people
+sign in with a form and a session cookie.
 
 ## Templates
 
@@ -132,10 +133,76 @@ are the same markup. The script must be served by the app (a route answering its
 inline. The [notes-pages](../examples/notes-pages.md) example does this in a few lines, and keeps a
 plain form under the button so the page works without the script.
 
+## Signing in
+
+People sign in through a form and stay signed in with a cookie. In `std.security` that is one more way
+of signing in beside tokens and Basic: `browser(b)`, listed in the policy, with the same rules and the
+same `require_user` in operations. The application says in one `Browser` record how it keeps accounts
+and sessions (functions over its context, usually its database), which page asks for the password, the
+two paths and how long a session lasts; `browser_routes(b, p)` adds the sign-in page, the sign-in form
+and sign-out to its routes.
+
+```text
+fn notes_browser[D: effects]() -> Browser[Pages[D], uses D, clock, entropy] {
+    return new Browser {
+        find_account: fn(app: Pages[D], name: str) -> result[Option[Account]] { return account(app.db, name); },
+        keep: fn(app: Pages[D], s: Session) -> result[void] { return keep_session(app.db, s); },
+        find: fn(app: Pages[D], key: str) -> result[Option[Session]] { return find_session(app.db, key); },
+        end: fn(app: Pages[D], key: str) -> result[void] { return end_session(app.db, key); },
+        random: random_bytes,
+        page: sign_in_page,                  # fn(message: str, next: str) -> Html
+        sign_in: "/sign-in",
+        sign_out: "/sign-out",
+        lifetime_s: 8 * 3600,
+        origin: ""
+    };
+}
+
+let p = policy([rule("/sign-in", Access.anyone), rule("/sign-out", Access.anyone), rule("/", Access.signed_in)],
+               [browser(notes_browser())], clock_ms);
+let routes = browser_routes(notes_browser(), p);    # then the application's own routes; steps: [secure(p)]
+```
+
+The sign-in page is the application's template: a form posting `name`, `password` and the hidden
+`next` it is given to the sign-in path. A sign-out button is a form posting to the sign-out path. The
+[notes-pages](../examples/notes-pages.md) example keeps accounts and sessions in its SQLite database,
+in two tables and five short functions.
+
+What the library does, so the application does not:
+
+- **The cookie** is `__Host-session`, `HttpOnly` (scripts cannot read it), `Secure` (HTTPS only, and
+  `http://localhost` in Chrome and Firefox) and `SameSite=Lax`. Its value is 16 random bytes made at
+  each sign-in; storage gets only its SHA-256, so a copy of the database signs nobody in.
+- **Pages and APIs**: a `GET` for a page (one that accepts HTML) that needs a user is sent to the
+  sign-in page with the path to return to; the same request from a program still gets 401. The return
+  path is followed only when it is a path of the application.
+- **Other sites' forms**: a request signed in by the cookie that changes something (any method but
+  `GET`, `HEAD`, `OPTIONS`), and every post of the sign-in form, must come from the application's own
+  pages (the browser's `Sec-Fetch-Site`, else `Origin`, compared with the host the request names), or
+  it is refused with 403 before the operation runs. Nothing goes into forms for this. Behind a proxy,
+  set `origin` to the address people use, such as `"https://notes.example"`.
+- **Ending sessions**: sign-out ends the session in storage, so a copied cookie stops working at once;
+  a session also ends when its lifetime is over, and the account is looked up on every request, so
+  removing it signs its sessions out.
+- **Events**: signing in, refusals (with reasons such as `wrong password`, `expired`, `cross-site`) and
+  signing out go to the policy's `on_event`, never with a password or a cookie value. Nothing limits
+  repeated guessing; count the `refused` events by name to slow or lock an account.
+
+`review` names the browser way with its settings, and reports a sign-in page that the rules close and
+an `origin` starting with `http://` (Safari keeps `Secure` cookies only over HTTPS, so developing there
+needs `origin: "http://localhost:8080"`). A recording of a signed-in application holds the passwords
+typed and the cookies: keep it as secret as the database.
+
+Cookies of the application's own go through `std.web`: `read_cookie(header, name)` on a field
+`@header("Cookie") @default("") cookies: str;`, and `with_cookie(answer, cookie(name, value))`, which
+sets the same safe flags; change one with `set c.http_only = false;` where the cookie is made.
+
 ## Testing pages
 
 Pages are values, so tests check them without a browser: call the app with `handle_request` and look
-at the status and the body.
+at the status and the body. To test signed-in pages, sign in through the form with `handle_request`,
+take the cookie from the answer's `Set-Cookie` with `read_cookie`, and send it (with
+`Sec-Fetch-Site: same-origin` for posts) in the next requests, as the example's tests do.
 
 ```vo-test
 import std.html.html;

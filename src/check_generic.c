@@ -277,6 +277,8 @@ Type *ty_argn_error(Node *node, Str *name, long want, long got)
 
 /* `Name` or `Name[args]` for a record or variant: its type (an instance when generic), checking
  * the number of arguments (E0312) and `ordered` parameters (E0313). */
+static int effects_named(Node *uses);
+
 Type *resolve_instance(Node *node, Node *decl, int kind, Vec *arg_nodes)
 {
     Vec *tparams = ty_tparams_of(decl);
@@ -290,7 +292,7 @@ Type *resolve_instance(Node *node, Node *decl, int kind, Vec *arg_nodes)
         Node *an = vec_get(arg_nodes, i);
         if (an->kind != N_USES) continue;
         if (!eff_last) return effect_arg_error(an, decl, 1);
-        if (i != na - 1) return effect_arg_error(an, decl, 2);
+        if (i != na - 1 || !effects_named(an)) return effect_arg_error(an, decl, 2);
         if (an->b.i) return effect_arg_error(an, decl, 3);
     }
     /* the effect argument: `uses ...`, an effect parameter's name (`Conn[E]`, na == np), or left out */
@@ -349,6 +351,22 @@ Type *scoped_effect_arg_error(Node *an, EffSet *es)
                          fixed, 0, 0));
     diag_add_fix(d, (int)an->file, an->start, an->end, fixed);
     return t_error;
+}
+
+/* Spec 052: whether every capitalized name in an effect argument is an effect parameter or set in scope.
+ * The parser reads a type name after written effects as an effect (`Job[uses clock, D]`), so a type
+ * written after the effects (`Two[uses console, Note]`) is caught here as effects not written last. */
+static int effects_named(Node *uses)
+{
+    for (long i = 0; i < uses->a.v->n; i++) {
+        Node *e = vec_get(uses->a.v, i);
+        if (!e->c.n) continue;
+        int found = 0;
+        for (Sym *sy = ck_scope; sy && !found; sy = sy->next)
+            found = str_eq(sy->name, e->d.s) && (sy->kind == SYM_EFFECTS || (sy->kind == SYM_TPARAM && sy->type->b.i == TPC_EFFECTS));
+        if (!found && i) return 0;
+    }
+    return 1;
 }
 
 /* Spec 026, E0327: an effect argument where the type has no effect parameter (why 1), not last (2), or

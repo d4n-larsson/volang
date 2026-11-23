@@ -1,0 +1,5 @@
+no cookie: 200 "no preference" Set-Cookie=-
+with the cookie: 200 "show_done is 1" Set-Cookie=-
+set it: 200 "saved" Set-Cookie=show_done=1; Path=/; Secure; HttpOnly; SameSite=Lax
+remove it: 200 "saved" Set-Cookie=show_done=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+a value a cookie cannot hold: 500 {"type":"about:blank","title":"Internal Server Error","status":500} Set-Cookie=-

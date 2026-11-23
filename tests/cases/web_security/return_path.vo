@@ -1,0 +1,9 @@
+# Where a browser goes after signing in (spec 052, research R7): only a path of the application
+# itself; anything a browser could read as another site becomes "/".
+import std.security.local_path;
+
+fn main() uses console {
+    for p in ["/notes", "/notes?x=1&y=2", "/", "//evil.example", "/\\evil.example", "/\t/evil.example", "https://evil.example", "evil", "", "/a\\b", "/a\nb", "/%2F%2Fevil"] {
+        print("[" + p + "] -> [" + local_path(p) + "]");
+    }
+}

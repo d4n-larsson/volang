@@ -55,6 +55,10 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [046](../specs/046-iteration/) | Iteration: `for k, v in m` and `for i, x in xs`, W0403 with a fix for the loops they replace, `std.lists` | **Implemented** ([results](../specs/046-iteration/results.md)) |
 | [047](../specs/047-workers/) | Workers: `std.workers`, processes that run beside the program and exchange typed messages; a time limit for one call; failures as values; deterministic output; replay without workers | **Implemented** ([results](../specs/047-workers/results.md)) |
 | [048](../specs/048-timezones/) | Time zones: the tz database built into `vo`, zones in `std.time` (`load_zone`, `in_zone`, `from_local`, `format_in`), the machine's zone under `clock` | **Implemented** ([results](../specs/048-timezones/results.md)) |
+| [049](../specs/049-postgres-package/) | The `postgres` package: a PostgreSQL client in vo on `std.tcp` and `std.crypto`, with `std.sqlite`'s names, results and errors; TLS, SCRAM-SHA-256, time limits | **Implemented** ([results](../specs/049-postgres-package/results.md)) |
+| [050](../specs/050-scoped-package-effects/) | Scoped effects through functions given their target (helpers, package `connect`): callable under scopes, every target checked against each scoped declaration on the call path | **Implemented** ([results](../specs/050-scoped-package-effects/results.md)) |
+| [051](../specs/051-html-templates/) | Web pages: `std.html` templates with `{}` holes checked by `vo check` and values escaped for their place; `html_reply`; HTML forms bound like query parameters | **Implemented** ([results](../specs/051-html-templates/results.md)) |
+| [052](../specs/052-sessions-sign-in/) | Sessions and sign-in forms: cookies in `std.web`; `std.security`'s `browser` way and routes, sessions kept by the application, cross-site posts refused, pages sent to sign-in | **Implemented** ([results](../specs/052-sessions-sign-in/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -590,19 +594,6 @@ non-ASCII passwords. Found on the way: `vo test` keeps a test's connections open
 property that connects per case holds up to 100 connections (the example's test helper ends the
 earlier ones).
 
-### 051: web pages (implemented)
-
-`std.html`: a page is an HTML string literal or constant with `format`'s `{}` holes, checked by `vo
-check` (tags nest and close; a hole is text, a quoted attribute or a URL, never in a script, style,
-event handler, name, comment or unquoted value) and filled with values escaped for their place; a URL
-whose scheme could be chosen by a value is checked when it is inserted. Pages are composed from `Html`
-values, which only templates make; there is no template language. `std.web` answers pages with
-`html_reply` (with a content security policy) and reads HTML forms into the same input records as JSON.
-The new reference text was paid for by shortening the module rows. Chosen against: a template language,
-template files, an escape hatch for raw markup. Not done: cookies, sessions and sign-in forms with
-cross-site protection (the next step for a full web app), static files, file uploads, showing form errors
-on the page without the operation's help.
-
 ### 050: scoped effects through package functions (implemented)
 
 Found while planning the PostgreSQL package (spec 049): a function that is given its target (a
@@ -615,6 +606,38 @@ the root's. The checker's other reports are unchanged, and it no longer offers "
 a fix. No syntax, code or reference tokens were added. Not done: comparing literal hosts with `net`
 scopes at check time (only file, `env` and `process` literals are), and naming the parameter that is
 the target so that literals at a helper's call sites could be checked.
+
+### 051: web pages (implemented)
+
+`std.html`: a page is an HTML string literal or constant with `format`'s `{}` holes, checked by `vo
+check` (tags nest and close; a hole is text, a quoted attribute or a URL, never in a script, style,
+event handler, name, comment or unquoted value) and filled with values escaped for their place; a URL
+whose scheme could be chosen by a value is checked when it is inserted. Pages are composed from `Html`
+values, which only templates make; there is no template language. `std.web` answers pages with
+`html_reply` (with a content security policy) and reads HTML forms into the same input records as JSON.
+The new reference text was paid for by shortening the module rows. Chosen against: a template language,
+template files, an escape hatch for raw markup. Not done: cookies, sessions and sign-in forms with
+cross-site protection (done in spec 052), static files, file uploads, showing form errors
+on the page without the operation's help.
+
+### 052: sessions and sign-in forms (implemented)
+
+People sign in to a `std.web` application through an HTML form and stay signed in with a cookie:
+`std.security`'s `browser(b)` is one more way of signing in in the policy, under the same rules and
+with the same `require_user`, and `browser_routes(b, p)` adds the sign-in page, the form and sign-out.
+Sessions are kept by the application (functions over its context, as `find_account`), which stores
+only the SHA-256 of the cookie's 16 random bytes; sign-out and removed accounts take effect at once.
+The cookie is `__Host-`, `HttpOnly`, `Secure`, `SameSite=Lax`; a state-changing request signed in by it
+must come from the application's own origin (`Sec-Fetch-Site`, else `Origin`), with nothing put into
+forms; a page that needs a user is sent to the sign-in page and back, an API still gets 401. `std.web`
+gains `Cookie`, `cookie`, `with_cookie`, `read_cookie`; `Way` gains `sign_in_page` and `origin`. The
+toolchain did not change. Decided with the user: sessions stored rather than signed cookies (sign-out
+must end them), and recordings kept as they are (they hold sign-in passwords and cookies, and are
+documented as secrets). Not done: sliding expiry, rate limiting (events make it possible), sign-in with
+other providers, sign-up and password reset, multi-factor sign-in. Found on the way: a type's effect argument
+parsed only with effect parameters and sets first, while `vo fmt` writes them last (fixed); the checker
+does not infer an effect parameter from a mixed effect argument (`Job[uses clock, D]` passed where
+`Job[uses D, clock]` is expected in another generic function): not fixed.
 
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
 it is next; anything that reaches the outside world gets an effect, scopes, and record and replay.

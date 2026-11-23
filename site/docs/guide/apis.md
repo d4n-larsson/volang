@@ -196,6 +196,9 @@ is refused. A rule's path is a prefix of whole segments: `/admin` covers `/admin
 `/administrator`. A refused request is answered 401 when nobody is signed in and 403 when the user is
 known and may not, and its operation does not run.
 
+Programs sign in with tokens, keys or Basic credentials (below); people in a browser sign in with a
+form and a session cookie, the `browser` way of [Web pages](pages.md#signing-in), under the same rules.
+
 ```vo
 import std.http.Response;
 import std.security.Access;

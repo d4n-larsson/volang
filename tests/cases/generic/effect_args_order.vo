@@ -1,0 +1,30 @@
+# The effects of a type argument in any order (spec 052, found while writing its example): an effect
+# parameter or a named set may come before or after the effects written out, as in a header, so the
+# order `vo fmt` writes (effects, then sets and parameters) checks.
+effects Talk = console;
+
+record Job[E: effects] {
+    run: fn() -> int uses E;
+}
+
+fn both[D: effects](j: Job[uses clock, D]) -> int uses clock, D {
+    return j.run();
+}
+
+fn named(j: Job[uses clock, Talk]) -> int uses clock, Talk {
+    return j.run();
+}
+
+fn first[D: effects](j: Job[uses D, clock]) -> int uses D, clock {
+    return j.run();
+}
+
+fn main() uses console, clock {
+    let j = new Job[uses clock, Talk] {
+        run: fn() -> int {
+            print("ran");
+            return now_ms() * 0 + 7;
+        }
+    };
+    print(str(named(j)));
+}

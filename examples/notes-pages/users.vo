@@ -1,0 +1,89 @@
+# Accounts and sessions in SQLite, for std.security's browser way. A session row holds the hash of the
+# cookie's value (std.security makes it), never the value, so a copy of the database signs nobody in.
+import std.option.Option;
+import std.security.Account;
+import std.security.Session;
+import std.sqlite.Database;
+import std.sqlite.Value;
+import std.sqlite.exec;
+import std.sqlite.get_int;
+import std.sqlite.get_str;
+import std.sqlite.query;
+import std.sqlite.sql;
+
+export fn prepare_users[D: effects](db: Database[D]) -> result[void] uses D {
+    let _ = try exec(
+        db,
+        sql(
+            "create table if not exists users (name text primary key, password_hash text not null)"
+        ),
+        new list[Value]
+    );
+    let _ = try exec(
+        db,
+        sql(
+            "create table if not exists sessions (key text primary key, name text not null, expires_ms integer not null)"
+        ),
+        new list[Value]
+    );
+    return ok();
+}
+
+# Adds an account, or changes its password: hash is std.crypto.hash_password's text.
+export fn add_user[D: effects](db: Database[D], name: str, hash: str) -> result[void] uses D {
+    let _ = try exec(
+        db,
+        sql(
+            "insert into users (name, password_hash) values (?, ?) on conflict (name) do update set password_hash = excluded.password_hash"
+        ),
+        [Value.text(name), Value.text(hash)]
+    );
+    return ok();
+}
+
+export fn account[D: effects](db: Database[D], name: str) -> result[Option[Account]] uses D {
+    let rows = try query(db, sql("select name, password_hash from users where name = ?"), [
+        Value.text(name)
+    ]);
+    if len(rows) == 0 {
+        return ok(Option.none);
+    }
+    return ok(
+        Option.some(new Account {
+            name: try get_str(rows[0], "name"),
+            password_hash: try get_str(rows[0], "password_hash"),
+            roles: new list[str],
+            enabled: true
+        })
+    );
+}
+
+export fn keep_session[D: effects](db: Database[D], s: Session) -> result[void] uses D {
+    let _ = try exec(db, sql("insert into sessions (key, name, expires_ms) values (?, ?, ?)"), [
+        Value.text(s.key),
+        Value.text(s.name),
+        Value.integer(s.expires_ms)
+    ]);
+    return ok();
+}
+
+export fn find_session[D: effects](db: Database[D], key: str) -> result[Option[Session]] uses D {
+    let rows = try query(db, sql("select key, name, expires_ms from sessions where key = ?"), [
+        Value.text(key)
+    ]);
+    if len(rows) == 0 {
+        return ok(Option.none);
+    }
+    return ok(
+        Option.some(new Session {
+            key: key,
+            name: try get_str(rows[0], "name"),
+            expires_ms: try get_int(rows[0], "expires_ms")
+        })
+    );
+}
+
+export fn end_session[D: effects](db: Database[D], key: str) -> result[void] uses D {
+    let _ = try exec(db, sql("delete from sessions where key = ?"), [Value.text(key)]);
+    return ok();
+}

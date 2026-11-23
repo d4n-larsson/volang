@@ -1,0 +1,11 @@
+clean:
+  browsers sign in: browser (sign-in /sign-in, sign-out /sign-out, 1800 s, origin from Host)
+behind a proxy:
+  browsers sign in: browser (sign-in /sign-in, sign-out /sign-out, 1800 s, origin https://notes.example)
+sign-in page needs a user:
+  browsers sign in: browser (sign-in /sign-in, sign-out /sign-out, 1800 s, origin from Host)
+  the sign-in page /sign-in needs a user, so nobody could sign in
+plain HTTP, and test_users:
+  browsers sign in: browser (sign-in /sign-in, sign-out /sign-out, 1800 s, origin http://localhost:8080)
+  the session cookie is sent over plain HTTP (origin http://localhost:8080)
+  test_users is accepted

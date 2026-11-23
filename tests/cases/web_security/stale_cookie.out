@@ -1,0 +1,17 @@
+expired, on the sign-in page: 200 Location=- Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+  <p></p><form method="post" action="/sign-in"><input name="next" type="hidden" value="/"></form>
+the expired session is ended: true
+expired again, on a page: 303 Location=/sign-in?next=%2Fnotes Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+ended, on a page: 303 Location=/sign-in?next=%2Fnotes Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+ended, on the api: 401 Location=- Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+  {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+account gone: 303 Location=/sign-in?next=%2Fnotes Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+account disabled: 303 Location=/sign-in?next=%2Fnotes Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+not a session: 303 Location=/sign-in?next=%2Fnotes Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+event: refused  (expired)
+event: refused  (unknown session)
+event: refused  (unknown session)
+event: refused  (unknown session)
+event: refused  (unknown account)
+event: refused  (disabled account)
+event: refused  (unknown session)

@@ -1,4 +1,5 @@
-# Notes in SQLite: every function takes the database, so the tests use one in memory and the server a file.
+# Notes in SQLite, each belonging to the user who wrote it: every function takes the database and the
+# owner's name, so one user never reads or changes another's notes.
 import std.sqlite.Database;
 import std.sqlite.Row;
 import std.sqlite.Value;
@@ -18,24 +19,26 @@ export fn prepare[D: effects](db: Database[D]) -> result[void] uses D {
     let _ = try exec(
         db,
         sql(
-            "create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)"
+            "create table if not exists notes (id integer primary key, owner text not null, text text not null, done integer not null default 0)"
         ),
         new list[Value]
     );
     return ok();
 }
 
-export fn all_notes[D: effects](db: Database[D]) -> result[list[Note]] uses D {
+export fn all_notes[D: effects](db: Database[D], owner: str) -> result[list[Note]] uses D {
     let out = new list[Note];
-    for row in try query(db, sql("select id, text, done from notes order by id"), new list[Value]) {
+    for row in try query(db, sql("select id, text, done from notes where owner = ? order by id"), [
+        Value.text(owner)
+    ]) {
         push(out, try note_of(row));
     }
     return ok(out);
 }
 
-# How the notes can fail: the API answers each with its own status (api.vo, note_problem).
+# How the notes can fail.
 export variant NoteError {
-    # No note has this id.
+    # The owner has no note with this id.
     not_found(int);
     # A note's text is only spaces.
     blank;
@@ -48,10 +51,14 @@ export fn db_error(message: str) -> NoteError {
     return NoteError.database(message);
 }
 
-# The note with this id, or err(NoteError.not_found(id)).
-export fn find_note[D: effects](db: Database[D], id: int) -> result[Note, NoteError] uses D {
+# The owner's note with this id, or err(NoteError.not_found(id)).
+export fn find_note[D: effects](db: Database[D], owner: str, id: int) -> result[Note, NoteError]
+    uses D {
     let rows = try map_err(
-        query(db, sql("select id, text, done from notes where id = ?"), [Value.integer(id)]),
+        query(db, sql("select id, text, done from notes where id = ? and owner = ?"), [
+            Value.integer(id),
+            Value.text(owner)
+        ]),
         db_error
     );
     if len(rows) == 0 {
@@ -61,24 +68,27 @@ export fn find_note[D: effects](db: Database[D], id: int) -> result[Note, NoteEr
 }
 
 # A new note; `returning id` gives its id (the same statement works on PostgreSQL).
-export fn add_note[D: effects](db: Database[D], text: str) -> result[Note] uses D {
-    let rows = try query(db, sql("insert into notes (text) values (?) returning id"), [
+export fn add_note[D: effects](db: Database[D], owner: str, text: str) -> result[Note] uses D {
+    let rows = try query(db, sql("insert into notes (owner, text) values (?, ?) returning id"), [
+        Value.text(owner),
         Value.text(text)
     ]);
     return ok(new Note { id: try get_int(rows[0], "id"), text: text, done: false });
 }
 
-export fn mark_done[D: effects](db: Database[D], id: int) -> result[Note, NoteError] uses D {
-    let _ = try find_note(db, id);
+export fn mark_done[D: effects](db: Database[D], owner: str, id: int) -> result[Note, NoteError]
+    uses D {
+    let _ = try find_note(db, owner, id);
     let _ = try map_err(
         exec(db, sql("update notes set done = 1 where id = ?"), [Value.integer(id)]),
         db_error
     );
-    return find_note(db, id);
+    return find_note(db, owner, id);
 }
 
-export fn remove_note[D: effects](db: Database[D], id: int) -> result[void, NoteError] uses D {
-    let _ = try find_note(db, id);
+export fn remove_note[D: effects](db: Database[D], owner: str, id: int) -> result[void, NoteError]
+    uses D {
+    let _ = try find_note(db, owner, id);
     let _ = try map_err(
         exec(db, sql("delete from notes where id = ?"), [Value.integer(id)]),
         db_error

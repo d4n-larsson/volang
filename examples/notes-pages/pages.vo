@@ -1,29 +1,54 @@
-# The pages: templates for the layout, the list and one note, the routes that answer them, and the
-# forms that change the notes. Every value goes into a template hole, escaped for its place.
+# The pages: the routes that answer them, the forms that change the notes, and who may see them: each
+# person signs in with a form and sees only their own notes. The templates are in views.vo.
 import notes.Note;
 import notes.NoteError;
 import notes.add_note;
 import notes.all_notes;
 import notes.mark_done;
 import notes.prepare;
-import std.html.Html;
-import std.html.html;
+import std.crypto.random_bytes;
 import std.http.Header;
-import std.http.Request;
 import std.http.Response;
+import std.option.Option;
+import std.option.or_else;
+import std.security.Access;
+import std.security.Account;
+import std.security.Browser;
+import std.security.Policy;
+import std.security.Session;
+import std.security.browser;
+import std.security.browser_routes;
+import std.security.policy;
+import std.security.require_user;
+import std.security.review;
+import std.security.rule;
+import std.security.secure;
 import std.sqlite.Database;
 import std.sqlite.open;
 import std.sqlite.open_memory;
 import std.text.contains;
 import std.web.App;
+import std.web.ErrorStatus;
 import std.web.NoInput;
+import std.web.clock_ms;
 import std.web.handle_request;
 import std.web.html_reply;
 import std.web.on_get;
 import std.web.on_post;
+import std.web.read_cookie;
 import std.web.request;
-import std.web.web_app;
-import std.web.with_header;
+import users.account;
+import users.add_user;
+import users.end_session;
+import users.find_session;
+import users.keep_session;
+import users.prepare_users;
+import views.item;
+import views.list_body;
+import views.page;
+import views.script;
+import views.sign_in_page;
+import views.signed_in_as;
 
 const data_dir = "data/";
 
@@ -34,9 +59,19 @@ export record Pages[D: effects] {
     db: Database[D];
 }
 
+# Every operation's input names the signed-in user: the policy's step passes it on in X-Identity.
+record Who {
+    @header("X-Identity")
+    @default("")
+    identity: str;
+}
+
 record NewNote {
     @size(1, 200)
     text: str;
+    @header("X-Identity")
+    @default("")
+    identity: str;
 }
 
 # A note to mark done. The page's script sends `X-Swap: 1` and gets the note's new markup back; a
@@ -46,63 +81,9 @@ record Done {
     @header("X-Swap")
     @default("")
     swap: str;
-}
-
-const layout = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<title>{}</title>
-<style>
-body { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem; }
-li { margin: 0.4rem 0; }
-li.done { color: gray; text-decoration: line-through; }
-form { display: inline; }
-</style>
-<script src="/app.js" defer></script>
-</head>
-<body>
-<h1>{}</h1>
-{}
-</body>
-</html>`;
-
-# Without the script, the done button posts its form; with it, the note's markup is swapped in place.
-const script = `document.addEventListener("click", async (event) => {
-  const button = event.target.closest("button[data-swap]");
-  if (!button) return;
-  event.preventDefault();
-  const answer = await fetch(button.dataset.swap, { method: "POST", headers: { "X-Swap": "1" } });
-  if (answer.ok) button.closest("li").outerHTML = await answer.text();
-});
-`;
-
-# A whole page in the layout.
-fn page(title: str, content: Html) -> Html {
-    return html(layout, title, title, content);
-}
-
-# One note: the same markup in the list and alone, when the script swaps it in.
-fn item(n: Note) -> Html {
-    if n.done {
-        return html(`<li id="note-{}" class="done">{}</li>`, n.id, n.text);
-    }
-    return html(
-        `<li id="note-{}">{} <form method="post" action="/notes/{}/done"><button data-swap="/notes/{}/done">done</button></form></li>`,
-        n.id,
-        n.text,
-        n.id,
-        n.id
-    );
-}
-
-fn list_body(notes: list[Note]) -> Html {
-    let items = new list[Html];
-    for n in notes {
-        push(items, item(n));
-    }
-    return html(`<ul>{}</ul>
-<form method="post" action="/notes"><input name="text" maxlength="200" required> <button>add</button></form>`, items);
+    @header("X-Identity")
+    @default("")
+    identity: str;
 }
 
 fn back_to_list() -> Response {
@@ -113,42 +94,76 @@ fn back_to_list() -> Response {
     };
 }
 
-# GET /notes, POST /notes (the add form), POST /notes/{id}/done, GET /app.js.
-export fn pages_app[D: effects]() -> App[Pages[D], uses D] {
-    let listing: fn(Pages[D], NoInput) -> result[Response] uses D = list_page;
-    let adding: fn(Pages[D], NewNote) -> result[Response] uses D = add;
-    let finishing: fn(Pages[D], Done) -> result[Response] uses D = done;
-    let scripting: fn(Pages[D], NoInput) -> result[Response] uses D = app_js;
-    return web_app([
-        on_get("/notes", listing),
-        on_post("/notes", adding),
-        on_post("/notes/{id}/done", finishing),
-        on_get("/app.js", scripting)
-    ]);
+# Signing in browsers: accounts and sessions in the notes database, sessions for eight hours.
+fn notes_browser[D: effects]() -> Browser[Pages[D], uses clock, entropy, D] {
+    return new Browser { find_account: fn(app: Pages[D], name: str) -> result[Option[Account]] {
+        return account(app.db, name);
+    }, keep: fn(app: Pages[D], s: Session) -> result[void] {
+        return keep_session(app.db, s);
+    }, find: fn(app: Pages[D], key: str) -> result[Option[Session]] {
+        return find_session(app.db, key);
+    }, end: fn(app: Pages[D], key: str) -> result[void] {
+        return end_session(app.db, key);
+    }, random: random_bytes, page: sign_in_page, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_s: 8 * 3600, origin: "" };
 }
 
-# serve_app's setup: data/notes.db, with its table the first time.
+# Who may see what: signing in, out and the script are open; everything else needs a user.
+export fn notes_policy[D: effects]() -> Policy[Pages[D], uses clock, entropy, D] {
+    return policy(
+        [
+            rule("/sign-in", Access.anyone),
+            rule("/sign-out", Access.anyone),
+            rule("/app.js", Access.anyone),
+            rule("/", Access.signed_in)
+        ],
+        [browser(notes_browser())],
+        clock_ms
+    );
+}
+
+# GET /notes, POST /notes (the add form), POST /notes/{id}/done, GET /app.js, and signing in and out.
+export fn pages_app[D: effects]() -> App[Pages[D], uses clock, entropy, D] {
+    let p: Policy[Pages[D], uses clock, entropy, D] = notes_policy();
+    let listing: fn(Pages[D], Who) -> result[Response] uses clock, entropy, D = list_page;
+    let adding: fn(Pages[D], NewNote) -> result[Response] uses clock, entropy, D = add;
+    let finishing: fn(Pages[D], Done) -> result[Response] uses clock, entropy, D = done;
+    let scripting: fn(Pages[D], NoInput) -> result[Response] uses clock, entropy, D = app_js;
+    let routes = browser_routes(notes_browser(), p);
+    push(routes, on_get("/notes", listing));
+    push(routes, on_post("/notes", adding));
+    push(routes, on_post("/notes/{id}/done", finishing));
+    push(routes, on_get("/app.js", scripting));
+    return new App { routes: routes, steps: [secure(p)], errors: new list[ErrorStatus] };
+}
+
+# serve_app's setup: data/notes.db, with its tables the first time.
 export fn open_pages() -> result[Pages[uses Storage]] uses Storage {
     let db = try open(data_dir + "notes.db");
     try prepare(db);
+    try prepare_users(db);
     return ok(new Pages { db: db });
 }
 
-fn list_page[D: effects](app: Pages[D], input: NoInput) -> result[Response] uses D {
-    return ok(html_reply(200, page("Notes", list_body(try all_notes(app.db)))));
+fn list_page[D: effects](app: Pages[D], input: Who) -> result[Response] uses D {
+    let user = try require_user(input.identity);
+    return ok(html_reply(200, page("Notes", signed_in_as(user.name), list_body(
+        try all_notes(app.db, user.name)
+    ))));
 }
 
 fn add[D: effects](app: Pages[D], input: NewNote) -> result[Response] uses D {
+    let user = try require_user(input.identity);
     let text = trim(input.text);
     if text == "" {
         return err("unprocessable: the text is only spaces");
     }
-    let _ = try add_note(app.db, text);
+    let _ = try add_note(app.db, user.name, text);
     return ok(back_to_list());
 }
 
 fn done[D: effects](app: Pages[D], input: Done) -> result[Response] uses D {
-    match mark_done(app.db, input.id) {
+    let user = try require_user(input.identity);
+    match mark_done(app.db, user.name, input.id) {
         case ok(note) {
             if input.swap != "" {
                 return ok(html_reply(200, item(note)));
@@ -179,9 +194,13 @@ fn app_js[D: effects](app: Pages[D], input: NoInput) -> result[Response] uses D 
     });
 }
 
+# ---- tests: the whole app through handle_request, a database in memory ----
+
+const test_hash = "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=";
+
 fn memory() -> Pages {
     let db = open_memory();
-    match prepare(db) {
+    match with_users(db) {
         case ok() {
         }
         case err(_) {
@@ -190,60 +209,135 @@ fn memory() -> Pages {
     return new Pages { db: db };
 }
 
-fn form_post(p: Pages, path: str, body: str) -> Response {
-    let r = request("POST", path, "");
-    return handle_request(pages_app(), p, new Request {
-        method: r.method,
-        path: r.path,
-        query: r.query,
-        headers: [new Header { name: "Content-Type", value: "application/x-www-form-urlencoded" }],
-        body: body
+fn with_users[D: effects](db: Database[D]) -> result[void] uses D {
+    try prepare(db);
+    try prepare_users(db);
+    try add_user(db, "ada", test_hash);
+    return add_user(db, "bo", test_hash);
+}
+
+# A request as the browser sends it from the app's own page: form body, Accept, Sec-Fetch-Site, cookie.
+fn call(p: Pages, method: str, path: str, body: str, cookie: str) -> Response uses clock, entropy {
+    let r = request(method, path, "");
+    set r.body = body;
+    push(r.headers, new Header { name: "Accept", value: "text/html" });
+    push(r.headers, new Header { name: "Sec-Fetch-Site", value: "same-origin" });
+    push(r.headers, new Header {
+        name: "Content-Type",
+        value: "application/x-www-form-urlencoded"
     });
+    if cookie != "" {
+        push(r.headers, new Header { name: "Cookie", value: "__Host-session=" + cookie });
+    }
+    return handle_request(pages_app(), p, r);
 }
 
-test "the list page shows the notes, escaped, in the layout" {
-    let p = memory();
-    let _ = form_post(p, "/notes", "text=water+the+plants");
-    let _ = form_post(p, "/notes", "text=%3Cscript%3Ealert(1)%3C%2Fscript%3E");
-    let r = handle_request(pages_app(), p, request("GET", "/notes", ""));
-    expect_eq(r.status, 200);
-    expect(contains(r.body, `<li id="note-1">water the plants <form`));
-    expect(contains(r.body, "&lt;script&gt;alert(1)&lt;/script&gt;"));
-    expect(not contains(r.body, "<script>alert"));
+fn header(r: Response, name: str) -> str {
+    for h in r.headers {
+        if h.name == name {
+            return h.value;
+        }
+    }
+    return "";
 }
 
-test "the add form adds a note and goes back to the list" {
-    let p = memory();
-    let r = form_post(p, "/notes", "text=buy+bread");
-    expect_eq(r.status, 303);
-    expect_eq(r.headers[0].value, "/notes");
-    expect_eq(all_notes(p.db), ok([new Note { id: 1, text: "buy bread", done: false }]));
+fn sign_in(p: Pages, name: str) -> str uses clock, entropy {
+    let r = call(p, "POST", "/sign-in", "name=" + name + "&password=passwd&next=%2Fnotes", "");
+    return or_else(read_cookie(header(r, "Set-Cookie"), "__Host-session"), "");
 }
 
-test "an empty or missing text is refused" {
+test "a visitor signs in on the sign-in page and comes back to the notes" uses clock, entropy {
     let p = memory();
-    expect_eq(form_post(p, "/notes", "text=").status, 422);
-    expect_eq(form_post(p, "/notes", "text=+++").status, 422);
-    expect_eq(form_post(p, "/notes", "title=x").status, 400);
-}
-
-test "done answers the note's new markup to the script, the list to a form" {
-    let p = memory();
-    let _ = form_post(p, "/notes", "text=call+home");
-    let swap = handle_request(pages_app(), p, with_header(
-        request("POST", "/notes/1/done", ""),
-        "X-Swap",
-        "1"
+    let first = call(p, "GET", "/notes", "", "");
+    expect_eq(first.status, 303);
+    expect_eq(header(first, "Location"), "/sign-in?next=%2Fnotes");
+    expect(contains(
+        call(p, "GET", "/sign-in?next=%2Fnotes", "", "").body,
+        `name="next" value="/notes"`
     ));
-    expect_eq(swap.body, `<li id="note-1" class="done">call home</li>`);
-    expect(contains(handle_request(pages_app(), p, request("GET", "/notes", "")).body, swap.body));
-    let _ = form_post(p, "/notes", "text=two");
-    expect_eq(form_post(p, "/notes/2/done", "").status, 303);
-    expect_eq(form_post(p, "/notes/9/done", "").status, 404);
+    let wrong = call(p, "POST", "/sign-in", "name=ada&password=nope&next=%2Fnotes", "");
+    expect_eq(wrong.status, 401);
+    expect(contains(wrong.body, "The name or the password is wrong."));
+    let notes = call(p, "GET", "/notes", "", sign_in(p, "ada"));
+    expect_eq(notes.status, 200);
+    expect(contains(notes.body, "<p>ada <form"));
 }
 
-test "the script is served by the app, as the page's security policy requires" {
-    let r = handle_request(pages_app(), memory(), request("GET", "/app.js", ""));
+test "notes are added through the form, shown escaped, and empty ones refused" uses clock, entropy {
+    let p = memory();
+    let c = sign_in(p, "ada");
+    expect_eq(header(call(p, "POST", "/notes", "text=water+the+plants", c), "Location"), "/notes");
+    let _ = call(p, "POST", "/notes", "text=%3Cscript%3Ealert(1)%3C%2Fscript%3E", c);
+    let body = call(p, "GET", "/notes", "", c).body;
+    expect(contains(body, `<li id="note-1">water the plants <form`));
+    expect(contains(body, "&lt;script&gt;alert(1)&lt;/script&gt;"));
+    expect(not contains(body, "<script>alert"));
+    expect_eq(call(p, "POST", "/notes", "text=+++", c).status, 422);
+    expect_eq(call(p, "POST", "/notes", "title=x", c).status, 400);
+}
+
+test "done answers the note's new markup to the script, the list to a form" uses clock, entropy {
+    let p = memory();
+    let c = sign_in(p, "ada");
+    let _ = call(p, "POST", "/notes", "text=call+home", c);
+    let _ = call(p, "POST", "/notes", "text=two", c);
+    let r = request("POST", "/notes/1/done", "");
+    for h in [
+        ["Sec-Fetch-Site", "same-origin"],
+        ["X-Swap", "1"],
+        ["Cookie", "__Host-session=" + c]
+    ] {
+        push(r.headers, new Header { name: h[0], value: h[1] });
+    }
+    let swap = handle_request(pages_app(), p, r);
+    expect_eq(swap.body, `<li id="note-1" class="done">call home</li>`);
+    expect(contains(call(p, "GET", "/notes", "", c).body, swap.body));
+    expect_eq(call(p, "POST", "/notes/2/done", "", c).status, 303);
+    expect_eq(call(p, "POST", "/notes/9/done", "", c).status, 404);
+}
+
+test "a user sees and changes only their own notes" uses clock, entropy {
+    let p = memory();
+    let ada = sign_in(p, "ada");
+    let bo = sign_in(p, "bo");
+    let _ = call(p, "POST", "/notes", "text=ada%27s+note", ada);
+    expect(not contains(call(p, "GET", "/notes", "", bo).body, "note-1"));
+    expect_eq(call(p, "POST", "/notes/1/done", "", bo).status, 404);
+    expect(contains(call(p, "GET", "/notes", "", ada).body, `<li id="note-1">ada&#39;s note`));
+}
+
+test "signing out ends the session, and a copy of the cookie signs nobody in" uses clock, entropy {
+    let p = memory();
+    let c = sign_in(p, "ada");
+    let out = call(p, "POST", "/sign-out", "", c);
+    expect_eq(header(out, "Location"), "/sign-in");
+    expect(contains(header(out, "Set-Cookie"), "Max-Age=0"));
+    expect_eq(header(call(p, "GET", "/notes", "", c), "Location"), "/sign-in?next=%2Fnotes");
+}
+
+test "a form another site posts is refused before it changes anything" uses clock, entropy {
+    let p = memory();
+    let c = sign_in(p, "ada");
+    let r = request("POST", "/notes", "");
+    set r.body = "text=from+elsewhere";
+    for h in [
+        ["Sec-Fetch-Site", "cross-site"],
+        ["Content-Type", "application/x-www-form-urlencoded"],
+        ["Cookie", "__Host-session=" + c]
+    ] {
+        push(r.headers, new Header { name: h[0], value: h[1] });
+    }
+    expect_eq(handle_request(pages_app(), p, r).status, 403);
+    expect(not contains(call(p, "GET", "/notes", "", c).body, "elsewhere"));
+}
+
+test "the script is served to anyone, and the policy's review lists only the browser way"
+    uses clock, entropy {
+    let p = memory();
+    let r = handle_request(pages_app(), p, request("GET", "/app.js", ""));
     expect_eq(r.status, 200);
     expect(contains(r.body, "X-Swap"));
+    expect_eq(review(pages_app(), notes_policy()), [
+        "browsers sign in: browser (sign-in /sign-in, sign-out /sign-out, 28800 s, origin from Host)"
+    ]);
 }

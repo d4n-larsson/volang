@@ -1205,7 +1205,10 @@ static Vec *parse_type_args(void)
                 Node *e = parse_effect();
                 if (!e) break;
                 vec_push(u->a.v, e);
-                if (p_kind() != T_COMMA || p_kind_at(1) != T_IDENT) break; /* the next is a type: E0327 */
+                /* spec 052: an effect parameter or a named set (a type name) may follow written effects, as in a
+                 * header and as `vo fmt` orders them; anything else after the comma is a type: E0327 */
+                int k1 = p_kind_at(1), k2 = p_kind_at(2);
+                if (p_kind() != T_COMMA || (k1 != T_IDENT && !(k1 == T_TYPE_IDENT && (k2 == T_COMMA || k2 == T_RBRACKET)))) break;
                 p_next();
             }
             vec_push(v, p_finish(u, start));

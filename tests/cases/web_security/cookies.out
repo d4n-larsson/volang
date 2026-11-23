@@ -1,0 +1,28 @@
+Set-Cookie: a=1; Path=/; Secure; HttpOnly; SameSite=Lax
+Set-Cookie: a=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+Set-Cookie: pref=dark; Path=/; Max-Age=600; Secure; HttpOnly; SameSite=Strict
+Set-Cookie: theme=x; Path=/app; SameSite=Lax
+bad_cookie: the name must be a token
+bad_cookie: the name must be a token
+bad_cookie: the name must be a token
+bad_cookie: the value has a byte a cookie cannot hold
+bad_cookie: the value has a byte a cookie cannot hold
+bad_cookie: the value has a byte a cookie cannot hold
+bad_cookie: the value has a byte a cookie cannot hold
+bad_cookie: the value has a byte a cookie cannot hold
+bad_cookie: the value has a byte a cookie cannot hold
+bad_cookie: same_site is Lax, Strict or None
+bad_cookie: same_site None needs secure
+bad_cookie: a __Host- cookie needs secure and path /
+bad_cookie: a __Host- cookie needs secure and path /
+bad_cookie: the path must start with / and have no ; or control character
+Set-Cookie: __Host-session=0123abcd; Path=/; Secure; HttpOnly; SameSite=Lax
+b in [a=1; b=two]: [two]
+a in [a=1;b=two]: [1]
+b in [b="q"]: [q]
+a in [a=1; a=2]: [1]
+a in [junk; a=3]: [3]
+a in []: none
+a in [ab=1; a=2]: [2]
+a in [a=]: []
+a in [x=1]: none

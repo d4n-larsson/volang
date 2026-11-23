@@ -145,11 +145,35 @@ Each property is a claim the review must try to break; each break is a finding.
   to the runner's terminal.
 - **Recordings contain the inputs**: file contents, variables and HTTP traffic a program read are in its
   recording, and so are the bytes `std.crypto.random_bytes` returned (tokens, keys, salts); recordings
-  are as sensitive as those inputs.
+  are as sensitive as those inputs. A server's recording keeps each request as it arrived: the
+  passwords of sign-in forms and `Authorization` headers, and the session cookies of signed-in
+  browsers (spec 052, decided to keep replay exact). Keep it like the application's database.
 - **A target that is a value is checked when it is used** (spec 050): a function with scopes may call
   a helper or a package function that is given its target; a target outside the scopes stops the
   program at that operation (R0010), not at `vo check`. Literal targets passed to the file, `env` and
   `process` functions are checked before the program runs; literal hosts are not.
+- **Browser sessions** (spec 052): `std.security`'s browser way signs a browser in with a session
+  cookie. What it answers for each threat, and what it leaves to the application:
+  - *a stolen cookie*: `HttpOnly` keeps it from scripts, `Secure` and the `__Host-` name keep it off
+    plain HTTP and sibling subdomains, a session lasts a fixed lifetime, and sign-out ends it in the
+    application's storage, so a copy stops working at once; a session is not bound to an address or a
+    device;
+  - *session fixation*: a session value is made only by a successful sign-in, from 16 random bytes,
+    and an older session of the same browser is ended;
+  - *cross-site request forgery*: a request signed in by the cookie with a method other than `GET`,
+    `HEAD`, `OPTIONS`, and every post of the sign-in form, must say it comes from the application's own
+    origin (`Sec-Fetch-Site`, else `Origin`), or it is refused with 403 before the operation runs;
+    `SameSite=Lax` is a second layer. A `GET` route that changes something is not protected: changes
+    are posts;
+  - *scripts reading the cookie*: `HttpOnly`, and `std.html`'s escaping and content security policy
+    against the scripting itself;
+  - *open redirect*: the page to return to after signing in is followed only when it is a path of the
+    application (`local_path`);
+  - *the timing of the name lookup*: an unknown name costs the same password check as a wrong
+    password;
+  - *a copy of the session storage*: it holds the SHA-256 of each session value, never the value;
+  - *guessing*: 128 random bits per session; *brute force* is not limited: every refusal is a security
+    event with the name, which an application can count to slow or lock an account.
 - **The grant is only as good as its review**: a broad grant (`file.read("./")`, an unscoped `net`) is
   honored as written.
 

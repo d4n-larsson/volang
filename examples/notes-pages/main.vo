@@ -1,13 +1,28 @@
-# Notes as web pages: HTML from std.html templates, forms read by std.web, the notes kept in data/notes.db.
-#   vo run main.vo        serve on http://localhost:8080 with 4 workers until Ctrl-C
-#   vo test main.vo       every page and form through the app, a database in memory
+# Notes as web pages with users: HTML from std.html templates, forms read by std.web, signing in with
+# std.security's browser way, the notes and the sessions kept in data/notes.db.
+#   vo run main.vo -- add-user NAME   add an account (or change its password), read from standard input
+#   vo run main.vo                    serve on http://localhost:8080 with 4 workers until Ctrl-C
+#   vo test main.vo                   every page and form through the app, a database in memory
 # The grant is `serve("8080")` (this machine only) and data/ for reading and writing.
 import pages.Storage;
 import pages.open_pages;
 import pages.pages_app;
+import std.crypto.hash_password;
 import std.web.serve_app;
+import users.add_user;
 
-fn main() -> result[void] uses console, serve("8080"), Storage {
+fn main() -> result[void] uses console, input, clock, serve("8080"), entropy, Storage {
+    let a = args();
+    if len(a) == 2 and a[0] == "add-user" {
+        let password = try read_line();
+        if len(password) < 8 {
+            return err("the password needs 8 characters or more");
+        }
+        let app = try open_pages();
+        try add_user(app.db, a[1], hash_password(password));
+        print("added " + a[1]);
+        return ok();
+    }
     print("notes on http://localhost:8080/notes (Ctrl-C stops)");
     try serve_app("8080", 4, open_pages, pages_app());
     print("stopped");
