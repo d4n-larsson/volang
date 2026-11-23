@@ -16,9 +16,6 @@ import std.bytes.to_ints;
 import std.bytes.to_text;
 import std.fs.Info;
 import std.fs.info;
-import std.html.Html;
-import std.html.html_text;
-import std.html.no_html;
 import std.http.Header;
 import std.http.Request;
 import std.http.Response;
@@ -637,25 +634,6 @@ fn problem(status: int, detail: str, errors: list[Json]) -> Response {
         status: status,
         headers: [new Header { name: "Content-Type", value: "application/problem+json" }],
         body: body
-    };
-}
-
-# Spec 051: a page (or a piece of one, for a page to swap in) as the answer, with the headers of an HTML
-# answer: its type, no sniffing, and a content security policy that allows scripts only from the site
-# itself and forbids framing (inline styles keep working).
-#     html_reply(200, no_html()).headers[0].value is "text/html; charset=utf-8"
-export fn html_reply(status: int, page: Html) -> Response {
-    return new Response {
-        status: status,
-        headers: [
-            new Header { name: "Content-Type", value: "text/html; charset=utf-8" },
-            new Header { name: "X-Content-Type-Options", value: "nosniff" },
-            new Header {
-                name: "Content-Security-Policy",
-                value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'"
-            }
-        ],
-        body: html_text(page)
     };
 }
 

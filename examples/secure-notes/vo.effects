@@ -6,13 +6,16 @@ notes.vo:alive pure
 notes.vo:bo pure
 notes.vo:call pure
 notes.vo:erase pure
-notes.vo:find_account pure
+notes.vo:fixed_random pure
+notes.vo:from_browser pure
+notes.vo:header pure
 notes.vo:my_notes pure
-notes.vo:new_store pure
 notes.vo:notes_app pure
 notes.vo:notes_policy pure
 notes.vo:rules pure
+notes.vo:test "a browser signs in with the form, keeps notes with the cookie, and signs out" pure
 notes.vo:test "a password is exchanged for a token, and the token signs in" pure
+notes.vo:test "a token and a session cookie reach the same operations under the same rules" pure
 notes.vo:test "a user sees and deletes only their own notes; an admin deletes any" pure
 notes.vo:test "answers carry the safe headers" pure
 notes.vo:test "every route answers each caller as the rules decide" pure
@@ -20,3 +23,6 @@ notes.vo:test "the review of the policy that is served finds nothing" pure
 notes.vo:test "who may call what" pure
 notes.vo:test_app pure
 notes.vo:users pure
+store.vo:browsers pure
+store.vo:find_account pure
+store.vo:new_store pure

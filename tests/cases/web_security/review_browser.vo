@@ -1,8 +1,6 @@
 # Reviewing browser sign-in (spec 052, story 5): review names the browser way with its paths, lifetime
 # and origin, a sign-in page nobody could reach, and a cookie sent over plain HTTP.
 import std.bytes.from_text;
-import std.html.Html;
-import std.html.no_html;
 import std.http.Response;
 import std.option.Option;
 import std.security.Access;
@@ -43,9 +41,6 @@ fn the_browser(origin: str) -> Browser[int] {
         },
         random: fn(k: int) -> bytes {
             return from_text("0123456789abcdef");
-        },
-        page: fn(message: str, next: str) -> Html {
-            return no_html();
         },
         sign_in: "/sign-in",
         sign_out: "/sign-out",

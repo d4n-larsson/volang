@@ -1,5 +1,5 @@
-expired, on the sign-in page: 200 Location=- Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
-  <p></p><form method="post" action="/sign-in"><input name="next" type="hidden" value="/"></form>
+expired, on a public route: 200 Location=- Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
+  "up"
 the expired session is ended: true
 expired again, on a page: 303 Location=/sign-in?next=%2Fnotes Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
 ended, on a page: 303 Location=/sign-in?next=%2Fnotes Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax

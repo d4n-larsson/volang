@@ -780,45 +780,6 @@ static long cformat(Node *node, long dst, long mark)
     return dst;
 }
 
-/* spec 051: html(template, values...) as format is lowered (the pieces joined, each hole through the
- * piece builtin with its place and kind in e.i), then wrapped as an `Html` record (its one field). */
-static long chtml(Node *node, long dst, long mark)
-{
-    Vec *pieces = node->e.v;
-    long base = c_temp, top = base + pieces->n * 8;
-    for (long i = 0; i < pieces->n; i++) c_new_temp();
-    for (long i = 0; i < pieces->n; i++) {
-        FmtPiece *pc = pieces->data[i].p;
-        Node *k = alloc(NODE_SIZE);
-        *k = *node;
-        k->flags = 0;
-        long slot = base + i * 8;
-        if (pc->text) {
-            k->kind = N_STR;
-            k->a.s = pc->text;
-            c_mov(slot, cexpr(k, slot), node);
-        } else {
-            k->d.i = B_HTML_PIECE;
-            k->e.i = pc->spec;
-            k->b.v = vec_new();
-            vec_push(k->b.v, node->b.v->data[pc->arg + 1].p);
-            c_mov(slot, cbuiltin(k, slot, top), node);
-        }
-        c_temp = top;
-    }
-    long text = top; /* (the slot after the pieces) */
-    c_temp = top;
-    c_new_temp();
-    c_emit(OPC_JOIN, text, base, pieces->n, node);
-    long rec = c_new_temp();
-    c_emit(OPC_NEW_RECORD, rec, 0, 1, node);
-    c_emit(OPC_SET_FIELD, rec, text, R_FIELDS, node);
-    c_temp = mark;
-    dst = c_dst(dst);
-    c_mov(dst, rec, node);
-    return dst;
-}
-
 /* spec 018 (research R5): `expect(cond)` by the shape of cond. A comparison passes its operands to
  * the check (NF_EXPECT_OPS on the call), `not` of a comparison inverts it (NF_EXPECT_NEG), and
  * `expect(a and b)` becomes `expect(a)` then `expect(b)`: the same short-circuit order. */
@@ -1044,7 +1005,6 @@ long cexpr(Node *node, long dst)
         Vec *args = node->b.v;
         if (id == BI_EXPECT) return cexpect(node, dst, mark); /* spec 018 */
         if (id == B_FORMAT) return cformat(node, dst, mark); /* spec 024 */
-        if (id == B_HTML) return chtml(node, dst, mark);     /* spec 051 */
         if (id == BI_LEN) return cunary_op(node, dst, mark, OPC_LEN, args->data[0].n, 0); /* len(x) */
         if (id == B_BYTE_AT) /* byte_at(s, i): a str has a bytes value's layout */
             return cpair_op(node, dst, mark, OPC_INDEX_BYTES, args->data[0].n, args->data[1].n);

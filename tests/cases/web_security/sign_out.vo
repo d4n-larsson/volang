@@ -2,8 +2,6 @@
 # sent to the sign-in page; a copy of the cookie taken before signs nobody in. Signing out from another
 # site is refused; signing out with no session only redirects.
 import std.bytes.from_ints;
-import std.html.Html;
-import std.html.html;
 import std.http.Header;
 import std.http.Request;
 import std.http.Response;
@@ -57,10 +55,6 @@ fn find_account(st: Store, name: str) -> result[Option[Account]] {
     return ok(Option.none);
 }
 
-fn sign_in_page(message: str, next: str) -> Html {
-    return html(`<p>{}</p><form method="post" action="/sign-in"><input name="next" type="hidden" value="{}"></form>`, message, next);
-}
-
 fn the_browser(st: Store) -> Browser[Store] {
     return new Browser {
         find_account: find_account,
@@ -86,7 +80,6 @@ fn the_browser(st: Store) -> Browser[Store] {
             }
             return from_ints(xs);
         },
-        page: sign_in_page,
         sign_in: "/sign-in",
         sign_out: "/sign-out",
         lifetime_s: 3600,

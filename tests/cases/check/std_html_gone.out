@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0205","name":"import_not_found","severity":"error","file":"std_html_gone.vo","start":{"line":3,"col":1},"end":{"line":3,"col":22},"text":"import std.html.html;","message":"Cannot find `std/html.vo` for this import.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

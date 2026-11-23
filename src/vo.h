@@ -433,9 +433,7 @@
 #define B_WORKER (115) /* spec 047: __worker(op, a, b), std.workers only (src/workers.c) */
 #define B_TZ (116) /* spec 048: __tz(op, name) -> result[bytes], std.time only (src/tz.c) */
 #define B_LOCAL_TZ (117) /* __local_tz() -> bytes, clock */
-#define B_HTML (118) /* spec 051: a checked call of std.html.html (src/check_html.c), lowered by the compiler */
-#define B_HTML_PIECE (119) /* spec 051: one hole of it: its value as markup (e.i: place * 8 + kind) */
-#define B_LAST (119) /* the last builtin id with a btab entry */
+#define B_LAST (117) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -1500,11 +1498,6 @@ typedef struct FmtPiece {
 #define FS_PREC(s) ((s) >> 16 & 127)
 #define FS_RADIX(s) ((s) >> 23 & 3)
 extern Type *check_format_call(Node *call);
-extern Type *check_html_call(Node *call); /* spec 051: src/check_html.c */
-extern int is_html_call(Node *call);
-extern int ty_is_html(Type *t);
-extern int in_html_module(Node *at);
-extern Str *html_piece(long value, long spec);
 extern long lit_decode(Node *lit, char **buf, long **offs);
 extern long str_lit_decode(char *src, long s, long e, char *out, long *offs); /* spec 042 */
 extern void check_regex_call(Node *call); /* src/check_regex.c (spec 025) */

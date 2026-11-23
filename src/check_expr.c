@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 119 /* names up to here (50, 51, 83, 118 and 119 are internal and unnamed) */
+#define B_COUNT 117 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -52,7 +52,6 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__bits", /* spec 043 */
     "__worker", /* spec 047 */
     "__tz", "__local_tz", /* spec 048 */
-    0, 0, /* spec 051: html (a std.html call the checker marks) and its pieces: internal, unnamed */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -553,7 +552,6 @@ Type *check_call(Node *call, Type *expected)
                 Fx *cfx = item_fx(s->decl);
                 if (cfx && cfx->ensures) ck_test_checks++;
             }
-            if (is_html_call(call)) return check_html_call(call); /* spec 051: src/check_html.c */
             if (ty_tparams_of(call->c.n)) { /* inference */
                 Type *gt = check_generic_call(call, call->c.n, expected);
                 if (file_get((int)call->c.n->file)->std) {
@@ -736,18 +734,12 @@ Type *check_place(Node *node, void *unused)
     return check_expr(node, 0);
 }
 
-#define M_HTML_OPAQUE "`Html` is made only by templates, so it is always safe to insert: use `html(...)`, and `html_text(h)` for its text."
-
 Type *check_field(Node *node)
 {
     Type *t = check_expr(node->a.n, 0);
     if (ty_bad(t)) return t_error;
     Node *fname = node->b.n; /* field name node */
     if (!fname) return t_error;
-    if (ty_is_html(t) && !in_html_module(node)) { /* spec 051: an Html value is only made by templates */
-        ck_err("E0340", fname, str_from_cstr(M_HTML_OPAQUE));
-        return t_error;
-    }
     if (ty_is(t, TY_RECORD)) {
         long idx = member_index(t->decl.n->b.v, fname->a.s);
         if (idx >= 0) {
@@ -1073,8 +1065,6 @@ Type *check_new_record(Node *node, Type *expected)
         for (long i = 0; i < inits->n; i++) check_expr(((Node *)vec_get(inits, i))->b.n, 0);
         return t_error;
     }
-    if (ty_is_html(decl_type(decl)) && !in_html_module(node)) /* spec 051 */
-        ck_err("E0340", node, str_from_cstr(M_HTML_OPAQUE));
     q_note((long)decl, -2, node, RR_USE); /* (record, -2) marks a literal (vo edit add-field) */
     Vec *tparams = ty_tparams_of(decl);
     Type **vts = alloc((inits->n + 1) * 8); /* field values already checked (inference), else 0 */

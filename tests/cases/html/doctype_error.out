@@ -1,2 +1,0 @@
-{"v":1,"kind":"diagnostic","code":"E0337","name":"html_unbalanced","severity":"error","file":"doctype_error.vo","start":{"line":6,"col":35},"end":{"line":6,"col":50},"text":"<!DOCTYPE html>","message":"`<!DOCTYPE html>` can only start the template.","fixes":[],"related":[]}
-{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

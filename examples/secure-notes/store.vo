@@ -1,0 +1,79 @@
+# What the secure notes service keeps, in memory by one worker: the notes, the accounts, and the
+# browsers' sessions, with the functions std.security's browser way uses to reach them.
+import std.option.Option;
+import std.security.Account;
+import std.security.Browser;
+import std.security.Session;
+
+export record Note {
+    id: int;
+    owner: str;
+    text: str;
+}
+
+# What every operation gets: the notes, the accounts and the browsers' sessions (in memory, one worker).
+export record Store {
+    notes: list[Note];
+    next_id: int;
+    accounts: list[Account];
+    sessions: map[str, Session];
+}
+
+# A store with two accounts: ada (password "correct horse", an admin) and bo ("battery staple").
+export fn new_store() -> Store {
+    return new Store {
+        notes: new list[Note],
+        next_id: 1,
+        sessions: new map[str, Session],
+        accounts: [
+            new Account {
+                name: "ada",
+                password_hash: "pbkdf2-sha256$600000$vsqYPqmCMPYqyL8onNauTg==$2HblZhpsfIQY/Iuv8jPWxyKt+RnxbxDJ1+vQ+GZrvgI=",
+                roles: ["admin"],
+                enabled: true
+            },
+            new Account {
+                name: "bo",
+                password_hash: "pbkdf2-sha256$600000$JHYIxSZdk6ODb4GRlgJqEw==$2UN9Xlv7xIMaLnA3Akcy0IgjR+84+WrizeRpof9gzzo=",
+                roles: new list[str],
+                enabled: true
+            }
+        ]
+    };
+}
+
+export fn find_account(store: Store, name: str) -> result[Option[Account]] {
+    for a in store.accounts {
+        if a.name == name {
+            return ok(Option.some(a));
+        }
+    }
+    return ok(Option.none);
+}
+
+# Browsers: the frontend serves its sign-in page at /sign-in and posts the form there; sessions live
+# in the store for eight hours; random gives the session values (std.crypto.random_bytes).
+export fn browsers[E: effects](random: fn(int) -> bytes uses E) -> Browser[Store, E] {
+    return new Browser {
+        find_account: find_account,
+        keep: fn(store: Store, s: Session) -> result[void] {
+            set store.sessions[s.key] = s;
+            return ok();
+        },
+        find: fn(store: Store, key: str) -> result[Option[Session]] {
+            if has(store.sessions, key) {
+                return ok(Option.some(store.sessions[key]));
+            }
+            return ok(Option.none);
+        },
+        end: fn(store: Store, key: str) -> result[void] {
+            remove(store.sessions, key);
+            return ok();
+        },
+        random: random,
+        sign_in: "/sign-in",
+        sign_out: "/sign-out",
+        lifetime_s: 8 * 3600,
+        origin: ""
+    };
+}

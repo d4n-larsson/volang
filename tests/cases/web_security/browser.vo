@@ -1,11 +1,10 @@
-# Signing in a browser (spec 052, story 1): a page that needs a user sends the browser to the sign-in
-# page, the form signs in and sets the session cookie, the cookie signs the next requests in as the
-# same user operations get from tokens, a wrong password shows the page again, an API still answers
-# 401, and signing in again ends the old session. Sessions are kept in the context, as an
+# Signing in a browser (spec 052, story 1; spec 053: no page): a page that needs a user sends the
+# browser to the sign-in page the frontend serves, the form signs in and sets the session cookie, the
+# cookie signs the next requests in as the same user operations get from tokens, a failed form sends
+# the browser back to the sign-in page with failed=1, an API still answers 401, and signing in again
+# ends the old session. Sessions are kept in the context, as an
 # application keeps them in its database.
 import std.bytes.from_ints;
-import std.html.Html;
-import std.html.html;
 import std.http.Header;
 import std.http.Request;
 import std.http.Response;
@@ -59,10 +58,6 @@ fn find_account(st: Store, name: str) -> result[Option[Account]] {
     return ok(Option.none);
 }
 
-fn sign_in_page(message: str, next: str) -> Html {
-    return html(`<p>{}</p><form method="post" action="/sign-in"><input name="next" type="hidden" value="{}"></form>`, message, next);
-}
-
 fn the_browser(st: Store) -> Browser[Store] {
     return new Browser {
         find_account: find_account,
@@ -88,7 +83,6 @@ fn the_browser(st: Store) -> Browser[Store] {
             }
             return from_ints(xs);
         },
-        page: sign_in_page,
         sign_in: "/sign-in",
         sign_out: "/sign-out",
         lifetime_s: 3600,
@@ -188,9 +182,9 @@ fn main() uses console {
     let st = new Store { sessions: new map[str, Session], events: new list[str], now: 1000000, drawn: 0 };
     show("page, no session", send(st, request("GET", "/notes", ""), page_of("")));
     show("page with a query", send(st, request("GET", "/notes?sort=new&x=a b", ""), page_of("")));
-    show("sign-in page", send(st, request("GET", "/sign-in?next=/notes", ""), page_of("")));
-    show("sign-in page, foreign next", send(st, request("GET", "/sign-in?next=//evil.example", ""), page_of("")));
-    show("api, no credential", send(st, request("GET", "/api/notes", ""), new list[Header]));
+    let api = send(st, request("GET", "/api/notes", ""), new list[Header]);
+    show("api, no credential", api);
+    print("  WWW-Authenticate=" + header(api, "WWW-Authenticate"));
     let signed = send(st, post("/sign-in", "name=ada&password=passwd&next=%2Fnotes"), form("", ""));
     show("sign in", signed);
     let c = cookie_of(signed);
@@ -201,6 +195,7 @@ fn main() uses console {
     show("unknown name", send(st, post("/sign-in", "name=nobody&password=passwd&next=%2Fnotes"), form("", "")));
     show("disabled account", send(st, post("/sign-in", "name=old&password=passwd&next=%2Fnotes"), form("", "")));
     show("foreign next", send(st, post("/sign-in", "name=ada&password=passwd&next=%2F%2Fevil.example"), form("", "")));
+    show("failed, foreign next", send(st, post("/sign-in", "name=ada&password=nope&next=%2F%2Fevil.example"), form("", "")));
     let again = send(st, post("/sign-in", "name=ada&password=passwd&next=%2Fnotes"), form("", c));
     show("sign in again", again);
     show("the old cookie", send(st, request("GET", "/notes", ""), page_of(c)));

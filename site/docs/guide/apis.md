@@ -197,7 +197,7 @@ is refused. A rule's path is a prefix of whole segments: `/admin` covers `/admin
 known and may not, and its operation does not run.
 
 Programs sign in with tokens, keys or Basic credentials (below); people in a browser sign in with a
-form and a session cookie, the `browser` way of [Web pages](pages.md#signing-in), under the same rules.
+form and a session cookie, the `browser` way (Signing in browsers, below), under the same rules.
 
 ```vo
 import std.http.Response;
@@ -329,9 +329,64 @@ service with these tests.
 `bearer_auth` and `api_key_auth` (above) remain the short form when one prefix is guarded by one
 check and there are no roles.
 
+### Signing in browsers
+
+A service behind a frontend signs people in with the frontend's form and a session cookie. In
+`std.security` that is one more way of signing in beside tokens and Basic: `browser(b)`, listed in the
+policy, with the same rules and the same `require_user` in operations. The service serves no pages:
+the frontend shows its sign-in page at the sign-in path and posts `name`, `password` and `next` there.
+The application says in one `Browser` record how it keeps accounts and sessions (functions over its
+context), the two paths and how long a session lasts; `browser_routes(b, p)` adds the two routes.
+
+```text
+fn browsers[E: effects](random: fn(int) -> bytes uses E) -> Browser[Store, E] {
+    return new Browser {
+        find_account: find_account,
+        keep: fn(store: Store, s: Session) -> result[void] { set store.sessions[s.key] = s; return ok(); },
+        find: fn(store: Store, key: str) -> result[Option[Session]] { ... },
+        end: fn(store: Store, key: str) -> result[void] { remove(store.sessions, key); return ok(); },
+        random: random,                     # std.crypto.random_bytes
+        sign_in: "/sign-in",
+        sign_out: "/sign-out",
+        lifetime_s: 8 * 3600,
+        origin: ""
+    };
+}
+```
+
+- **Signing in**: a right name and password answer 303 to `next` with the session cookie; a wrong one
+  answers 303 to `/sign-in?failed=1&next=...` with no cookie, the same for an unknown name or a
+  disabled account and after the same password work, so the frontend's page says one message and the
+  address tells nothing. A script posts the same form encoding (`URLSearchParams`) and sees where it is
+  sent. Programs keep the token route (`sign_in_route`).
+- **The cookie** is `__Host-session`, `HttpOnly`, `Secure` (HTTPS only, and `http://localhost` in
+  Chrome and Firefox) and `SameSite=Lax`. Its value is 16 random bytes made at each sign-in; storage
+  gets only its SHA-256, so a copy of the database signs nobody in.
+- **Pages and APIs**: a browser `GET` that accepts HTML and needs a user is sent to the sign-in path
+  with the path to return to; the same request from a program still gets 401. The return path is
+  followed only when it is a path of the application.
+- **Other sites' forms**: a request signed in by the cookie that changes something (any method but
+  `GET`, `HEAD`, `OPTIONS`), and every post of the sign-in form, must come from the application's own
+  pages (the browser's `Sec-Fetch-Site`, else `Origin`, compared with the host the request names), or
+  it is refused with 403 before the operation runs. Behind a proxy, set `origin` to the address people
+  use, such as `"https://notes.example"`.
+- **Ending sessions**: sign-out ends the session in storage, so a copied cookie stops working at once;
+  a session also ends when its lifetime is over, and the account is looked up on every request.
+- **Events**: signing in, refusals (`wrong password`, `expired`, `cross-site`, ...) and signing out go to
+  the policy's `on_event`, never with a password or a cookie value. Nothing limits repeated guessing;
+  count the `refused` events by name to slow or lock an account.
+
+`review` names the browser way with its settings, and reports a sign-in path the rules close to posts
+and an `origin` starting with `http://` (Safari keeps `Secure` cookies only over HTTPS, so developing
+there needs `origin: "http://localhost:8080"`). A recording of a signed-in service holds the passwords
+posted and the cookies: keep it as secret as the database. Cookies of the application's own go through
+`std.web`: `read_cookie(header, name)` on a field `@header("Cookie") @default("") cookies: str;`, and
+`with_cookie(answer, cookie(name, value))`, with the same safe flags. The
+[secure-notes](../examples/secure-notes.md) example signs in programs and browsers under one table.
+
 ## Serving and testing
 
 `serve_app("8080", 4, open_db, app)` serves the application with four worker processes, each with the
 context `open_db` returns (a database connection per worker). Tests call `handle_request(app, ctx,
 request(method, path, body))` with an in-memory database: the same steps, routes and checks, no port.
-The [notes-api](../examples/notes-api.md) example is a complete API with SQLite. To answer web pages and read HTML forms, see [Web pages](pages.md).
+The [notes-api](../examples/notes-api.md) example is a complete API with SQLite. Operations read HTML form bodies (`application/x-www-form-urlencoded`) as they read query parameters; the pages themselves are the frontend's.

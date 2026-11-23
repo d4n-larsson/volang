@@ -1,8 +1,0 @@
-import std.html.Html;
-import std.html.html;
-import std.html.html_text;
-
-fn main() uses console {
-    let v = `" onmouseover="alert(1)' <b> & x`;
-    print(html_text(html(`<a title="{}" class='c {}'>t</a>`, v, v)));
-}

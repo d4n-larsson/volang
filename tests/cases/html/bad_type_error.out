@@ -1,2 +1,0 @@
-{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"bad_type_error.vo","start":{"line":10,"col":39},"end":{"line":10,"col":61},"text":"new Note { text: \"x\" }","message":"Expected `str`, `int`, `float`, `bool`, `Html` or `list[Html]`, found `Note`.","fixes":[],"related":[]}
-{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

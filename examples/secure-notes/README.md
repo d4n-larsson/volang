@@ -27,7 +27,9 @@ It prints as:
 
 ```text
 GET /health: anyone
+POST /token: anyone
 POST /sign-in: anyone
+POST /sign-out: anyone
 GET /notes: signed in
 POST /notes: signed in
 DELETE /notes/{id}: signed in
@@ -46,7 +48,7 @@ with `battery staple`):
 $ J='Content-Type: application/json'
 $ curl localhost:8080/notes                                                   # 401, WWW-Authenticate: Bearer
 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
-$ curl -H "$J" -d '{"name": "bo", "password": "battery staple"}' localhost:8080/sign-in
+$ curl -H "$J" -d '{"name": "bo", "password": "battery staple"}' localhost:8080/token
 {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...","expires":1795262400}
 $ T=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 $ curl -H "$J" -H "Authorization: Bearer $T" -d '{"text": "buy bread"}' localhost:8080/notes
@@ -78,12 +80,29 @@ there.
 
 ### The policy is built once
 
-`notes_policy` builds it, for the step and for the sign-in route.
+`notes_policy` builds it, for the step and for the token route.
 
 <!-- code: notes.vo fn notes_policy -->
 
+### Browsers sign in with a session cookie
+
+Programs exchange a password for a token at `/token`. Browsers sign in with the form of a frontend:
+this service serves no pages. The frontend shows its sign-in page at `/sign-in` and posts `name`,
+`password` and `next` there; the answer is a 303 back to `next` with a session cookie, or to
+`/sign-in?failed=1&next=...` when the name or password is wrong. `/sign-out` ends the session. Both
+are `browser_routes`, and `browser(...)` is the second way of signing in in the same policy, so a
+cookie reaches the same operations under the same rules as a token. `browsers` in `store.vo` says
+where the sessions are kept (in the store, as the notes) and for how long:
+
+<!-- code: store.vo fn browsers -->
+
+The library does the rest: the cookie is `HttpOnly`, `Secure` and `SameSite=Lax` and its value is new
+at every sign-in (the store keeps only its hash), a cookie-signed request that changes something must
+come from the service's own origin (else 403), and a browser asking for a page that needs a user is
+sent to `/sign-in`. The APIs guide, under "Access control", lists the threats and their answers.
+
 ### What it leaves out
 
-Notes are kept in memory by one worker, and the key that signs the tokens is made at start, so a
-restart forgets the notes and signs everybody out. A real service keeps both in its storage and
+Notes and sessions are kept in memory by one worker (`store.vo`), and the key that signs the tokens
+is made at start, so a restart forgets the notes and signs everybody out. A real service keeps both in its storage and
 settings (see [notes-api](../notes-api/) for SQLite).

@@ -2,7 +2,7 @@
 
 # vo
 
-vo is a small, statically typed programming language designed for AI coding agents, and for the people who review what those agents write. The whole toolchain is freestanding C: lexer, parser, type checker, formatter, test runner, bytecode compiler, virtual machine and garbage collector, about 23,000 lines with no libc and three vendored libraries (Mbed TLS for HTTPS, CORE-MATH for math, SQLite for databases), plus under 200 lines of assembly per platform. It builds natively on Linux x86-64, ARM64 and RISC-V 64, with byte-identical behavior on all three.
+vo is a small, statically typed programming language for backend network services (APIs, integrations, services behind a frontend) written by AI coding agents and reviewed by people. Every function declares what it may reach, such as files, hosts, the environment or other programs, so a reviewer sees in a diff when an agent's change lets a service do more; every request a service handled can be recorded and replayed. Rendering pages is left to the frontend. The whole toolchain is freestanding C: lexer, parser, type checker, formatter, test runner, bytecode compiler, virtual machine and garbage collector, about 23,000 lines with no libc and three vendored libraries (Mbed TLS for HTTPS, CORE-MATH for math, SQLite for databases), plus under 200 lines of assembly per platform. It builds natively on Linux x86-64, ARM64 and RISC-V 64, with byte-identical behavior on all three.
 
 ```vo
 record Person {

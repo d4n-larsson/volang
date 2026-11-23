@@ -1,2 +1,0 @@
-{"v":1,"kind":"diagnostic","code":"E0328","name":"not_json","severity":"error","file":"not_json_error.vo","start":{"line":12,"col":13},"end":{"line":12,"col":69},"text":"to_json(new Page { title: \"t\", body: html(\"<p>x</p>\") })","message":"`Page` cannot be converted to JSON: `body` is `Html`: markup cannot be read from or written as JSON.","fixes":[],"related":[]}
-{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

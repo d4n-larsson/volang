@@ -4,22 +4,22 @@ steps.vo:50:12: runtime error[R0003]: Index 5 is out of bounds for length 1.
 trace:
   at anonymous function (steps.vo:50:12)
       n: int = 0, r: Request = new Request { method: "GET", path: "/boom", query: "", headers: [new Header { name: "X-Who", value: "ada" }], body: "" }, next: fn(Request) -> Response = <fn(Request) -> Response>, xs: list[int] = [1]
-  at chain (std/web.vo:254:12)
+  at chain (std/web.vo:251:12)
       app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/hello", segments: ["hello"], run: <fn(int, Request, map[str, str]) -> result[Response]> }, new Route[int] { method: "GET", pattern: "..., ctx: int = 0, i: int = 4, r: Request = new Request { method: "GET", path: "/boom", query: "", headers: [new Header { name: "X-Who", value: "ada" }], body: "" }, s: Step[int] = new Step[int] { prefix: "/boom", run: <fn(int, Request, fn(Request) -> Response) -> Response> }
-  at anonymous function (std/web.vo:255:16)
+  at anonymous function (std/web.vo:252:16)
       next: Request = new Request { method: "GET", path: "/boom", query: "", headers: [new Header { name: "X-Who", value: "ada" }], body: "" }, app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/hello", segments: ["hello"], run: <fn(int, Request, map[str, str]) -> result[Response]> }, new Route[int] { method: "GET", pattern: "..., ctx: int = 0, i: int = 3
   at anonymous function (steps.vo:43:16)
       n: int = 0, r: Request = new Request { method: "GET", path: "/boom", query: "", headers: [], body: "" }, next: fn(Request) -> Response = <fn(Request) -> Response>
-  at chain (std/web.vo:254:12)
+  at chain (std/web.vo:251:12)
       app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/hello", segments: ["hello"], run: <fn(int, Request, map[str, str]) -> result[Response]> }, new Route[int] { method: "GET", pattern: "..., ctx: int = 0, i: int = 3, r: Request = new Request { method: "GET", path: "/boom", query: "", headers: [], body: "" }, s: Step[int] = new Step[int] { prefix: "/", run: <fn(int, Request, fn(Request) -> Response) -> Response> }
-  at chain (std/web.vo:252:16)
+  at chain (std/web.vo:249:16)
       app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/hello", segments: ["hello"], run: <fn(int, Request, map[str, str]) -> result[Response]> }, new Route[int] { method: "GET", pattern: "..., ctx: int = 0, i: int = 2, r: Request = new Request { method: "GET", path: "/boom", query: "", headers: [], body: "" }, s: Step[int] = new Step[int] { prefix: "/admin", run: <fn(int, Request, fn(Request) -> Response) -> Response> }
-  at anonymous function (std/web.vo:255:16)
+  at anonymous function (std/web.vo:252:16)
       next: Request = new Request { method: "GET", path: "/boom", query: "", headers: [], body: "" }, app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/hello", segments: ["hello"], run: <fn(int, Request, map[str, str]) -> result[Response]> }, new Route[int] { method: "GET", pattern: "..., ctx: int = 0, i: int = 1
   at anonymous function (steps.vo:29:20)
       n: int = 0, r: Request = new Request { method: "GET", path: "/boom", query: "", headers: [], body: "" }, next: fn(Request) -> Response = <fn(Request) -> Response>, name: str = "inner"
-  at chain (std/web.vo:254:12)
+  at chain (std/web.vo:251:12)
       app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/hello", segments: ["hello"], run: <fn(int, Request, map[str, str]) -> result[Response]> }, new Route[int] { method: "GET", pattern: "..., ctx: int = 0, i: int = 1, r: Request = new Request { method: "GET", path: "/boom", query: "", headers: [], body: "" }, s: Step[int] = new Step[int] { prefix: "/", run: <fn(int, Request, fn(Request) -> Response) -> Response> }
-  at anonymous function (std/web.vo:255:16)
+  at anonymous function (std/web.vo:252:16)
       next: Request = new Request { method: "GET", path: "/boom", query: "", headers: [], body: "" }, app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/hello", segments: ["hello"], run: <fn(int, Request, map[str, str]) -> result[Response]> }, new Route[int] { method: "GET", pattern: "..., ctx: int = 0, i: int = 0
   ... more frames omitted

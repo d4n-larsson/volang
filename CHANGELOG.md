@@ -6,28 +6,29 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
-- Sessions and sign-in forms. `std.security` signs people in with a form and a session cookie:
-  `browser(b)` is a way of signing in listed in the policy beside `tokens` and `basic`, and
-  `browser_routes(b, p)` adds the sign-in page, the sign-in form and sign-out. The application keeps the
-  sessions (the `Browser` record takes its functions), and stores only a hash of each cookie's value.
-  The cookie is `HttpOnly`, `Secure` and `SameSite=Lax`; a cookie-signed request that changes something
-  must come from the application's own origin, or it is refused with 403; a page that needs a user is
-  sent to the sign-in page, while APIs still get 401. `std.web` gains cookies: `cookie`, `with_cookie`,
-  `read_cookie`. `Way` has two new fields, `sign_in_page` and `origin` (`""` for the existing ways): a
-  `Way` written with `new` needs them. `review` reports browser sign-in. The notes-pages example has
-  users. A recording of a signed-in application holds the passwords and cookies it received.
+- vo's target is written down: backend network services written by agents and reviewed by people. vo
+  renders no HTML; pages belong to the frontend in front of a service. The catalog holds E0335 to E0340
+  as retired codes (from HTML templates that were built and removed before any release): no version
+  reports them.
+- Sessions and sign-in for browsers. `std.security` signs people in through a frontend's form and a
+  session cookie: `browser(b)` is a way of signing in listed in the policy beside `tokens` and `basic`,
+  and `browser_routes(b, p)` adds sign-in and sign-out. The frontend serves the sign-in page and posts
+  `name`, `password` and `next`; the answer is 303 to `next` with the cookie, or 303 back to the sign-in
+  path with `failed=1`. The application keeps the sessions (the `Browser` record takes its functions)
+  and stores only a hash of each cookie's value. The cookie is `HttpOnly`, `Secure` and `SameSite=Lax`;
+  a cookie-signed request that changes something must come from the application's own origin, or it is
+  refused with 403; a browser asking for a page that needs a user is sent to the sign-in path, while
+  APIs still get 401. `std.web` gains cookies: `cookie`, `with_cookie`, `read_cookie`. `Way` has two new
+  fields, `sign_in_page` and `origin` (`""` for the existing ways): a `Way` written with `new` needs them.
+  `review` reports browser sign-in. The secure-notes example signs in programs with tokens (now at
+  `POST /token`) and browsers with sessions. A recording of a signed-in application holds the passwords
+  and cookies it received.
 - Fixed: in a type's effect argument, an effect parameter or a named effect set can now follow the
   effects written out (`Job[uses clock, D]`, `Db[uses clock, Storage]`), as in a function header.
   Before, only the other order parsed, and `vo fmt`, which writes that order, made such a program fail
   to check (E0327). A type written after the effects is still E0327.
-- Web pages: `std.html`. `html(template, values...)` takes an HTML string literal or constant with `{}`
-  holes and returns `Html`; `vo check` checks that its tags nest and close and that every hole is in text,
-  a quoted attribute or a URL (new codes E0335 to E0340), and every value is escaped for its place (a URL
-  that could run script becomes `#`). `Html` values go into holes as they are, so pages are composed from
-  smaller templates; `new Html` is refused. `std.web` gains `html_reply(status, page)` and reads HTML form
-  bodies (`application/x-www-form-urlencoded`) into input records like query parameters; a 415 now names
-  both encodings. New example `examples/notes-pages`. The reference stays under 15,000 tokens: the module
-  rows were shortened to make room.
+- HTML form bodies: `std.web` reads `application/x-www-form-urlencoded` bodies into input records like
+  query parameters (a missing `bool` is `false`, `on` is `true`); a 415 now names both encodings.
 - A PostgreSQL client, the `postgres` package (`packages/postgres` in the repository; add it with
   `vo package`). Its items have the names, parameters, results and error texts of `std.sqlite`
   (`sql`, `exec`, `query`, `transaction`, the getters), with `?` parameters on both, so a program moves

@@ -57,8 +57,9 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [048](../specs/048-timezones/) | Time zones: the tz database built into `vo`, zones in `std.time` (`load_zone`, `in_zone`, `from_local`, `format_in`), the machine's zone under `clock` | **Implemented** ([results](../specs/048-timezones/results.md)) |
 | [049](../specs/049-postgres-package/) | The `postgres` package: a PostgreSQL client in vo on `std.tcp` and `std.crypto`, with `std.sqlite`'s names, results and errors; TLS, SCRAM-SHA-256, time limits | **Implemented** ([results](../specs/049-postgres-package/results.md)) |
 | [050](../specs/050-scoped-package-effects/) | Scoped effects through functions given their target (helpers, package `connect`): callable under scopes, every target checked against each scoped declaration on the call path | **Implemented** ([results](../specs/050-scoped-package-effects/results.md)) |
-| [051](../specs/051-html-templates/) | Web pages: `std.html` templates with `{}` holes checked by `vo check` and values escaped for their place; `html_reply`; HTML forms bound like query parameters | **Implemented** ([results](../specs/051-html-templates/results.md)) |
-| [052](../specs/052-sessions-sign-in/) | Sessions and sign-in forms: cookies in `std.web`; `std.security`'s `browser` way and routes, sessions kept by the application, cross-site posts refused, pages sent to sign-in | **Implemented** ([results](../specs/052-sessions-sign-in/results.md)) |
+| [051](../specs/051-html-templates/) | Web pages: `std.html` templates checked by `vo check`; `html_reply`; HTML forms bound like query parameters | **Removed** by [053](../specs/053-remove-html/) except form binding: vo renders no HTML |
+| [052](../specs/052-sessions-sign-in/) | Sessions and sign-in forms: cookies in `std.web`; `std.security`'s `browser` way and routes, sessions kept by the application, cross-site posts refused, pages sent to sign-in | **Implemented**, page parts removed by 053 ([results](../specs/052-sessions-sign-in/results.md)) |
+| [053](../specs/053-remove-html/) | Remove HTML rendering from the core: vo targets backend network services; `std.html`, its checker and `html_reply` removed, E0335–E0340 retired; browser sign-in without a page | **Implemented** ([results](../specs/053-remove-html/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -607,7 +608,10 @@ a fix. No syntax, code or reference tokens were added. Not done: comparing liter
 scopes at check time (only file, `env` and `process` literals are), and naming the parameter that is
 the target so that literals at a helper's call sites could be checked.
 
-### 051: web pages (implemented)
+### 051: web pages (removed by 053)
+
+**Removed by spec 053 (2026-11-23)**: vo targets backend network services; pages are the frontend's.
+Form-body binding stays. What follows is the record of what was built.
 
 `std.html`: a page is an HTML string literal or constant with `format`'s `{}` holes, checked by `vo
 check` (tags nest and close; a hole is text, a quoted attribute or a URL, never in a script, style,
@@ -620,7 +624,10 @@ template files, an escape hatch for raw markup. Not done: cookies, sessions and 
 cross-site protection (done in spec 052), static files, file uploads, showing form errors
 on the page without the operation's help.
 
-### 052: sessions and sign-in forms (implemented)
+### 052: sessions and sign-in forms (implemented; page parts removed by 053)
+
+Since spec 053 the library serves no sign-in page: the sign-in route answers a failed form with 303 to
+`SIGN_IN?failed=1&next=...`, and the frontend shows the page. The rest stands as written.
 
 People sign in to a `std.web` application through an HTML form and stay signed in with a cookie:
 `std.security`'s `browser(b)` is one more way of signing in in the policy, under the same rules and
@@ -639,25 +646,40 @@ parsed only with effect parameters and sets first, while `vo fmt` writes them la
 does not infer an effect parameter from a mixed effect argument (`Job[uses clock, D]` passed where
 `Job[uses D, clock]` is expected in another generic function): not fixed.
 
-The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
-it is next; anything that reaches the outside world gets an effect, scopes, and record and replay.
+### 053: no HTML rendering in the core (implemented)
+
+Decided with the user: vo is for backend network services written by agents and reviewed by people;
+rendering pages is the frontend's job. `std.html` (spec 051), its C template checker, its two builtins
+and `std.web`'s `html_reply` are removed, with their cases, the "Web pages" guide and the notes-pages
+example; form-body binding stays. E0335–E0340 are the first retired codes: they stay in the catalog,
+marked retired, and the catalog check fails if the toolchain names one again. Browser sign-in (spec
+052) keeps everything but the page; it moved into the secure-notes example beside tokens. Found on the
+way: the 401 challenge offered the session cookie's name as an authentication scheme (fixed). Chosen
+against: an HTML package now (later, as a builder API, if a service needs it).
+
+The open gaps, ordered by the question vo's target sets (decided 2026-11-23, spec 053): **does it make
+an agent-written network service easier to write, review or operate?** Each becomes a spec when it is
+next; anything that reaches the outside world gets an effect, scopes, and record and replay.
 
 | Gap | What is missing | Notes |
 |---|---|---|
-| Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; decides what matters next |
+| Recorded tests | a test that uses HTTP, files, programs or the environment depends on the machine and the network | spec 018 follow-up, decided: `vo test --record DIR` saves one recording per test, `vo test --replay DIR` runs offline on them; replaces mock objects |
+| Events | clients and servers for server-sent events and WebSockets | the model is there since spec 047: a worker reads the connection and sends each event on; the protocols are not |
+| Operating a service | structured logs, metrics, readiness beyond `health_route` and `log_requests` | what an operator needs to run an agent's service |
+| Schema migrations | a database's tables change by hand | for `std.sqlite` and the `postgres` package alike |
+| Serving over HTTPS | `std.http.serve` answers plain HTTP only; a public server needs a proxy in front | spec 019 follow-up: certificate and key under the program's grants |
+| Rate limiting | refusals are events (spec 045, 052), nothing slows a caller | sign-in first |
+| Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; service-shaped tasks first |
+| Workers in tasks and servers | `start_worker` and `with_deadline` only in the program's own process (spec 047) | a table of workers per process |
+| Confined child programs | a program started under `process` runs with the user's full rights | opt-in confinement to the grant (Landlock); spec 017 follow-up |
 | UDP, IPv6 | TCP over IPv4 only (spec 039) | when a program needs them; IPv6 for the HTTP client and `std.tcp` together |
-| macOS | Linux only (x86-64, ARM64, RISC-V) | the raw-syscall, no-libc design makes this a real port |
 | A registry, versions | packages are fetched by URL and pinned by hash (spec 041); nothing resolves versions or dependencies | when there are enough packages to need it |
 | Debugger | traces, locals in errors and replay, but no stepping | replay makes a deterministic stepper possible |
-| Tuples | no tuple type | map keys done in spec 033; tuples declined for now: a record groups values and is a key |
 | `old()` in `ensures` | contracts cannot compare with values from before the call | spec 005 follow-up |
-| Confined child programs | a program started under `process` runs with the user's full rights | opt-in confinement to the grant (Landlock); spec 017 follow-up |
-| Serving over HTTPS | `std.http.serve` answers plain HTTP only; a public server needs a proxy in front | spec 019 follow-up: certificate and key under the program's grants |
-| Recorded tests | a test that uses HTTP, files, programs or the environment depends on the machine and the network | spec 018 follow-up, decided: `vo test --record DIR` saves one recording per test, `vo test --replay DIR` runs offline on them; replaces mock objects |
-| Events | clients for server-sent events and WebSockets | the model is there since spec 047: a worker reads the connection and sends each event on; the protocols are not |
-| Workers in tasks and servers | `start_worker` and `with_deadline` only in the program's own process (spec 047) | a table of workers per process |
+| Tuples | no tuple type | map keys done in spec 033; tuples declined for now: a record groups values and is a key |
+| macOS | Linux only (x86-64, ARM64, RISC-V) | the raw-syscall, no-libc design makes this a real port |
 
-User-defined interfaces and compiling to machine code stay out of scope (below).
+User-defined interfaces, compiling to machine code and rendering pages stay out of scope (below).
 
 ## Benchmarks (ongoing)
 
@@ -693,3 +715,4 @@ The next specs start from C. The qemu-only effects (the pinned page offsets) are
 
 - Compiling to machine code: vo runs bytecode (004), and native code waits until that becomes the bottleneck for agent-sized programs.
 - User-defined interfaces or traits: generics with `ordered` and effect parameters cover the cases seen so far.
+- Rendering pages (decided 2026-11-23, spec 053): vo is for backend services; templates, client scripts and static files belong to the frontend in front of them.

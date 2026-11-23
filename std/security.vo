@@ -20,7 +20,6 @@ import std.crypto.password_outdated;
 import std.crypto.same_bytes;
 import std.crypto.sha256;
 import std.crypto.verify_password;
-import std.html.Html;
 import std.http.Header;
 import std.http.Request;
 import std.http.Response;
@@ -38,7 +37,6 @@ import std.web.Cookie;
 import std.web.Route;
 import std.web.Step;
 import std.web.cookie;
-import std.web.html_reply;
 import std.web.json_reply;
 import std.web.on_get;
 import std.web.on_post;
@@ -494,7 +492,8 @@ fn challenge[C, E: effects](p: Policy[C, E], detail: str) -> Response {
     for w in p.ways {
         if w.scheme == "Basic " {
             push(resp.headers, new Header { name: "WWW-Authenticate", value: "Basic realm=\"api\"" });
-        } else if w.scheme != "" {
+        } else if w.scheme != "" and lower(w.header) != "cookie" {
+            # A cookie is no authentication scheme: browsers are sent to sign in, not challenged.
             push(resp.headers, new Header { name: "WWW-Authenticate", value: trim(w.scheme) });
         }
     }
@@ -947,8 +946,8 @@ export record Session {
     expires_ms: int;
 }
 
-# Signing in browsers with a session cookie: the application's functions over its context (accounts as for basic and sign_in_route; sessions kept, found by key and ended in its own storage), the sign-in page, the paths, the lifetime and the origin. browser(b) is the way for the policy and browser_routes(b, p) the routes.
-#     len(browser_routes(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, page: fn(message: str, next: str) -> Html { return no_html(); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_s: 3600, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }))) is 3
+# Signing in browsers with a session cookie: the application's functions over its context (accounts as for basic and sign_in_route; sessions kept, found by key and ended in its own storage), the paths, the lifetime and the origin. The frontend serves the sign-in page. browser(b) is the way for the policy and browser_routes(b, p) the routes.
+#     len(browser_routes(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_s: 3600, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }))) is 2
 export record Browser[C, E: effects] {
     # The account of a name, as for basic and sign_in_route; looked up again on every request.
     find_account: fn(C, str) -> result[Option[Account]] uses E;
@@ -960,9 +959,7 @@ export record Browser[C, E: effects] {
     end: fn(C, str) -> result[void] uses E;
     # n random bytes: std.crypto.random_bytes.
     random: fn(int) -> bytes uses E;
-    # The sign-in page, given a message ("" or why signing in failed) and the path to go back to: a form posting name, password and next to sign_in.
-    page: fn(str, str) -> Html;
-    # The path of the sign-in page and form, such as "/sign-in".
+    # The path of the sign-in page (served by the frontend) and of the form it posts, such as "/sign-in".
     sign_in: str;
     # The path that signs out, such as "/sign-out".
     sign_out: str;
@@ -973,7 +970,7 @@ export record Browser[C, E: effects] {
 }
 
 # The way of signing in browsers by their session cookie, for the policy's ways. Its name says the paths, the lifetime and the origin, for the review.
-#     browser(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, page: fn(message: str, next: str) -> Html { return no_html(); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_s: 3600, origin: "" }).name is "browser (sign-in /sign-in, sign-out /sign-out, 3600 s, origin from Host)"
+#     browser(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_s: 3600, origin: "" }).name is "browser (sign-in /sign-in, sign-out /sign-out, 3600 s, origin from Host)"
 export fn browser[C, E: effects](b: Browser[C, E]) -> Way[C, E]
     requires browser_fits(b)
 {
@@ -1042,11 +1039,6 @@ fn session_user[C, E: effects](b: Browser[C, E], ctx: C, value: str, now_ms: int
     }
 }
 
-record SignInQuery {
-    @default("")
-    next: str;
-}
-
 record SignInForm {
     @size(1, 200)
     name: str;
@@ -1074,14 +1066,11 @@ record SignOutForm {
     cookies: str;
 }
 
-# The routes of signing in browsers, to add to the application's: GET sign_in (the page), POST sign_in (the form: a new session and its cookie, then 303 to the page the browser came from; the page again with a message when the name or password is wrong), POST sign_out (ends the session, removes the cookie, 303 to the sign-in page). The policy gives the clock and is told of the events; its rules must let anyone reach both paths.
-#     browser_routes(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, page: fn(message: str, next: str) -> Html { return no_html(); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_s: 3600, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }))[1].method is "POST"
+# The routes of signing in browsers, to add to the application's: POST sign_in takes the form fields name, password and next, makes a new session and its cookie and answers 303 to next, or 303 to sign_in?failed=1&next=... when the name or password is wrong (the frontend's page says so; a script posting the same form sees where it was sent); POST sign_out ends the session, removes the cookie and answers 303 to sign_in. The frontend serves the sign-in page itself. The policy gives the clock and is told of the events; its rules must let anyone reach both paths.
+#     browser_routes(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_s: 3600, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }))[1].pattern is "/sign-out"
 export fn browser_routes[C, E: effects](b: Browser[C, E], p: Policy[C, E]) -> list[Route[C, E]]
     requires browser_fits(b)
 {
-    let show: fn(C, SignInQuery) -> result[Response] uses E = fn(ctx: C, q: SignInQuery) -> result[Response] {
-        return ok(html_reply(200, b.page("", local_path(q.next))));
-    };
     let take: fn(C, SignInForm) -> result[Response] uses E = fn(ctx: C, f: SignInForm) -> result[Response] {
         return sign_in_form(b, p, ctx, f);
     };
@@ -1089,7 +1078,7 @@ export fn browser_routes[C, E: effects](b: Browser[C, E], p: Policy[C, E]) -> li
         return sign_out_form(b, p, ctx, f);
     };
     # Bound as any operation's input (form, headers, limits), then moved to the application's paths.
-    return [at_path(on_get("/", show), b.sign_in), at_path(on_post("/", take), b.sign_in), at_path(on_post("/", leave), b.sign_out)];
+    return [at_path(on_post("/", take), b.sign_in), at_path(on_post("/", leave), b.sign_out)];
 }
 
 fn at_path[C, E: effects](rt: Route[C, E], path: str) -> Route[C, E] {
@@ -1106,7 +1095,8 @@ fn sign_in_form[C, E: effects](b: Browser[C, E], p: Policy[C, E], ctx: C, f: Sig
     let o = try checked(ctx, b.find_account, f.name, f.password);
     if o.reason != "" {
         p.on_event(ctx, browser_event("refused", o.reason, f.name, b.sign_in, now));
-        return ok(html_reply(401, b.page("The name or the password is wrong.", next)));
+        # No reason in the address: the frontend says the same for every failure.
+        return ok(see_other(b.sign_in + "?failed=1&next=" + query_escape(next)));
     }
     if o.outdated {
         p.on_event(ctx, browser_event("outdated_hash", "the stored hash is weaker than hash_password makes now", o.user.name, b.sign_in, now));
@@ -1265,7 +1255,7 @@ export fn describe[C, E: effects](app: App[C, E], rules: list[Rule]) -> str {
     return join(lines, "\n");
 }
 
-# What a reviewer should look at, one line each: routes no rule matches (refused: meant or forgotten?), rules that decide for no route (misspelt, or hidden behind an earlier rule), rules that decide for only some requests of a route, rules that need a user when no way of signing in is accepted, test_users in the policy, and browser sign-in (its settings, a sign-in page nobody can reach, a cookie over plain HTTP). Empty when there is nothing.
+# What a reviewer should look at, one line each: routes no rule matches (refused: meant or forgotten?), rules that decide for no route (misspelt, or hidden behind an earlier rule), rules that decide for only some requests of a route, rules that need a user when no way of signing in is accepted, test_users in the policy, and browser sign-in (its settings, a sign-in path nobody can post to, a cookie over plain HTTP). Empty when there is nothing.
 #     review(web_app(new list[Route[int]]), policy([rule("/x", Access.anyone)], new list[Way[int]], fn() -> int { return 0; }))[0] is "rule 1 (/x) decides for no route"
 export fn review[C, E: effects](app: App[C, E], p: Policy[C, E]) -> list[str] {
     let found = new list[str];
@@ -1310,14 +1300,14 @@ export fn review[C, E: effects](app: App[C, E], p: Policy[C, E]) -> list[str] {
         }
         if w.sign_in_page != "" {
             push(found, "browsers sign in: " + w.name);
-            match decide(p.rules, "GET", w.sign_in_page, Option.none) {
+            match decide(p.rules, "POST", w.sign_in_page, Option.none) {
                 case allowed {
                 }
                 case sign_in_needed {
-                    push(found, "the sign-in page " + w.sign_in_page + " needs a user, so nobody could sign in");
+                    push(found, "posting to the sign-in path " + w.sign_in_page + " needs a user, so nobody could sign in");
                 }
                 case forbidden {
-                    push(found, "the sign-in page " + w.sign_in_page + " needs a user, so nobody could sign in");
+                    push(found, "posting to the sign-in path " + w.sign_in_page + " needs a user, so nobody could sign in");
                 }
             }
             if find(w.origin, "http://") == 0 {

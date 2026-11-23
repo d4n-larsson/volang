@@ -111,7 +111,6 @@ static Str *json_why(Type *t, Str *path, long depth)
         return json_why(t->b.t, msg("$1[]", path, 0, 0), depth + 1);
     case TY_RECORD:
     case TY_VARIANT: {
-        if (ty_is_html(t)) return json_part(path, "is `Html`: markup cannot be read from or written as JSON$1", str_from_cstr(""));
         for (long i = 0; i < json_seen->n; i++)
             if (vec_get(json_seen, i) == t) return 0; /* (each instance once: recursive types end) */
         vec_push(json_seen, t);

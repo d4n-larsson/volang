@@ -1,12 +1,10 @@
-# Spec 051: pages and HTML forms. html_reply answers a page with its headers; a form body binds the
-# input record's fields by name as the query string does: text to the field's type, field limits, a
-# missing bool is false and `on` is true (a checkbox), unknown and repeated fields refused.
-import std.html.html;
+# Spec 051: HTML form bodies (kept when spec 053 removed std.html). A form body binds the input
+# record's fields by name as the query string does: text to the field's type, field limits, a missing
+# bool is false and `on` is true (a checkbox), unknown and repeated fields refused.
 import std.http.Header;
 import std.http.Request;
 import std.http.Response;
 import std.web.handle_request;
-import std.web.html_reply;
 import std.web.json_reply;
 import std.web.on_get;
 import std.web.on_post;
@@ -30,17 +28,11 @@ record WithBody {
 }
 
 fn add(n: int, input: NewNote) -> result[Response] {
-    return ok(html_reply(201, html(
-        "<li data-p=\"{}\">{} {} {}</li>",
-        input.priority,
-        input.text,
-        input.weight,
-        input.done
-    )));
+    return ok(json_reply(201, format("{} {} {} {}", input.priority, input.text, input.weight, input.done)));
 }
 
 fn search(n: int, input: Search) -> result[Response] {
-    return ok(html_reply(200, html("<p>{}</p>", input.q)));
+    return ok(json_reply(200, input.q));
 }
 
 fn raw(n: int, input: WithBody) -> result[Response] {
@@ -71,11 +63,7 @@ fn show(r: Response) uses console {
 fn main() uses console {
     let app = web_app([on_post("/notes", add), on_get("/search", search), on_post("/raw", raw)]);
     let f = "application/x-www-form-urlencoded";
-    let page = handle_request(app, 0, form("/notes", "text=buy+milk%21&priority=2&weight=1.5", f));
-    show(page);
-    for h in page.headers {
-        print(h.name + ": " + h.value);
-    }
+    show(handle_request(app, 0, form("/notes", "text=buy+milk%21&priority=2&weight=1.5", f)));
     show(handle_request(app, 0, form("/notes", "text=a&priority=1&weight=0&done=on", f)));
     show(handle_request(app, 0, form("/notes", "done=true&text=%3Cb%3E&priority=1&weight=0", f)));
     show(handle_request(app, 0, form("/notes", "text=a&priority=x&weight=0", f)));

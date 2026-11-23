@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-23
 
-**Status**: Implemented ([results](results.md))
+**Status**: Removed by [spec 053](../053-remove-html/spec.md) (2026-11-23), except form-body binding
 
 **Input**: User description: "Specify the HTML templates feature." From the review
 (docs/review-2026-11/ecosystem.md, Standard library, "Templates": "`std.web` returns JSON; an HTML

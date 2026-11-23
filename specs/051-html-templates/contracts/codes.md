@@ -8,3 +8,5 @@
 | E0338 | `html_unsafe_hole` | 65 | sometimes | a hole inside `<script>`/`<style>`, an `on...` or `style` attribute, a tag or attribute name, a comment, an unquoted attribute value (fix: quote it), or a place in a URL attribute where the value could choose the scheme (`{}/x`, `java{}`) |
 | E0339 | `html_markup_in_attribute` | 65 | no | an `Html` or `list[Html]` value in an attribute or URL hole; a value other than `str` in a URL hole |
 | E0340 | `html_opaque` | 65 | no | `new Html`, or reading or setting a field of an `Html` value, outside `std.html` |
+
+Retired by [spec 053](../../053-remove-html/spec.md) (2026-11-23): `std.html` was removed from the core.

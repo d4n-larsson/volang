@@ -1,5 +1,9 @@
 # Results: Sessions and Sign-In Forms
 
+**Since spec 053**: the page parts are removed (`Browser.page`, the GET sign-in route, the notes-pages
+example; failures answer 303 to `SIGN_IN?failed=1&next=...`). The figures below are those of 052 as
+built; 053's results give the threat check again.
+
 `make test` passes (exit 0). The instrumented build passes `tests/cases/web_security`, `web` and
 `generic` (58 cases), the example's 7 tests and its replay. The toolchain changed in one place, a parser
 fix found on the way (below); everything else is standard-library vo.

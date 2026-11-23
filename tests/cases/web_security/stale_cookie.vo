@@ -1,12 +1,10 @@
 # A cookie that no longer signs anybody in (spec 052, story 1): its session expired, was ended, or its
-# account is gone or disabled. It counts as no cookie: public pages, the sign-in page among them, still
-# answer, pages that need a user send the browser to sign in, and every answer removes the cookie.
+# account is gone or disabled. It counts as no cookie: public routes still answer, pages that need a
+# user send the browser to sign in, and every answer removes the cookie.
 import std.bytes.from_ints;
 import std.bytes.from_text;
 import std.bytes.to_hex;
 import std.crypto.sha256;
-import std.html.Html;
-import std.html.html;
 import std.http.Header;
 import std.http.Request;
 import std.http.Response;
@@ -23,6 +21,7 @@ import std.security.require_user;
 import std.security.rule;
 import std.security.secure;
 import std.web.App;
+import std.web.NoInput;
 import std.web.ErrorStatus;
 import std.web.Route;
 import std.web.json_reply;
@@ -59,10 +58,6 @@ fn find_account(st: Store, name: str) -> result[Option[Account]] {
     return ok(Option.none);
 }
 
-fn sign_in_page(message: str, next: str) -> Html {
-    return html(`<p>{}</p><form method="post" action="/sign-in"><input name="next" type="hidden" value="{}"></form>`, message, next);
-}
-
 fn the_browser(st: Store) -> Browser[Store] {
     return new Browser {
         find_account: find_account,
@@ -88,12 +83,15 @@ fn the_browser(st: Store) -> Browser[Store] {
             }
             return from_ints(xs);
         },
-        page: sign_in_page,
         sign_in: "/sign-in",
         sign_out: "/sign-out",
         lifetime_s: 3600,
         origin: ""
     };
+}
+
+fn health(st: Store, input: NoInput) -> result[Response] {
+    return ok(json_reply(200, "up"));
 }
 
 fn notes(st: Store, input: Who) -> result[Response] {
@@ -107,6 +105,7 @@ fn app(st: Store) -> App[Store] {
         rules: [
             rule("/sign-in", Access.anyone),
             rule("/sign-out", Access.anyone),
+            rule("/health", Access.anyone),
             rule("/notes", Access.signed_in),
             rule("/api", Access.signed_in)
         ],
@@ -120,6 +119,7 @@ fn app(st: Store) -> App[Store] {
     };
     let routes = browser_routes(b, p);
     push(routes, on_get("/notes", notes));
+    push(routes, on_get("/health", health));
     push(routes, on_get("/api/notes", notes));
     return new App { routes: routes, steps: [secure(p)], errors: new list[ErrorStatus] };
 }
@@ -204,7 +204,7 @@ fn main() uses console {
     set st.sessions[key_of(disabled)].name = "old";
     let kept = len(st.sessions);
     set st.events = new list[str];
-    show("expired, on the sign-in page", send(st, request("GET", "/sign-in", ""), page_of(expiring)));
+    show("expired, on a public route", send(st, request("GET", "/health", ""), page_of(expiring)));
     print("the expired session is ended: " + str(len(st.sessions) == kept - 1));
     show("expired again, on a page", send(st, request("GET", "/notes", ""), page_of(expiring)));
     show("ended, on a page", send(st, request("GET", "/notes", ""), page_of(ended)));

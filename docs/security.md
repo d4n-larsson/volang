@@ -165,8 +165,8 @@ Each property is a claim the review must try to break; each break is a finding.
     origin (`Sec-Fetch-Site`, else `Origin`), or it is refused with 403 before the operation runs;
     `SameSite=Lax` is a second layer. A `GET` route that changes something is not protected: changes
     are posts;
-  - *scripts reading the cookie*: `HttpOnly`, and `std.html`'s escaping and content security policy
-    against the scripting itself;
+  - *scripts reading the cookie*: `HttpOnly` (keeping scripts off the frontend's pages is the
+    frontend's part);
   - *open redirect*: the page to return to after signing in is followed only when it is a path of the
     application (`local_path`);
   - *the timing of the name lookup*: an unknown name costs the same password check as a wrong

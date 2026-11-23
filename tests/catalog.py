@@ -6,7 +6,10 @@
 - every E, W, R and T code (except T0003) appears in an expected output under tests/cases/
   (including the expected/ files of step cases)
 - headings and Fixable lines match contracts/error-codes.md
+- a retired code (a `Retired:` line, spec 053) needs no Example, Fixed or golden case, and must not
+  appear as "CODE" in src/*.c or std/*.vo: the toolchain can never report it again
 """
+import glob
 import json
 import os
 import re
@@ -132,7 +135,15 @@ def main():
     for code in have:
         if code not in want:
             problems.append(f"{code}: in docs/errors.md but not in the contract")
+    retired = {code for code, _, body in secs if re.search(r"^Retired: ", body, re.M)}
+    sources = "".join(open(f, encoding="utf-8").read() for f in glob.glob(os.path.join(ROOT, "src", "*.c"))
+                      + glob.glob(os.path.join(ROOT, "std", "*.vo")))
+    for code in sorted(retired):
+        if f'"{code}"' in sources:
+            problems.append(f"{code}: retired, but the toolchain still names it in its source")
     for code, name, body in secs:
+        if code in retired:
+            continue
         ex, fixed = part(body, "Example"), part(body, "Fixed")
         if "TODO" in ex or "TODO" in fixed or not ex.strip() or not fixed.strip():
             problems.append(f"{code}: Example or Fixed is not written")
@@ -169,7 +180,7 @@ def main():
                     problems.append(f"{code}: the Fixed version exits {rc} ({[r.get('code') for r in recs]})")
     seen = golden_codes()
     for code in want:
-        if code == "T0003":
+        if code == "T0003" or code in retired:
             continue
         if code not in seen:
             problems.append(f"{code}: no golden case under tests/cases/ produces it")

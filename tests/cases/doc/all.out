@@ -125,4 +125,3 @@ modules:
   std.security Access control for std.web applications: rules saying who may call what, signing in with passwords, tokens or keys, and the user in operations.
   std.lists Small operations on lists: membership, reversing, sorting from largest to smallest, the smallest and largest element by a key, sums and groups.
   std.workers Processes that run beside the program and exchange messages with it.
-  std.html HTML pages from templates, every value escaped for the place it goes.

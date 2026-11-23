@@ -1,24 +1,19 @@
 page, no session: 303 Location=/sign-in?next=%2Fnotes Set-Cookie=-
 page with a query: 303 Location=/sign-in?next=%2Fnotes%3Fsort%3Dnew%26x%3Da%20b Set-Cookie=-
-sign-in page: 200 Location=- Set-Cookie=-
-  <p></p><form method="post" action="/sign-in"><input name="next" type="hidden" value="/notes"></form>
-sign-in page, foreign next: 200 Location=- Set-Cookie=-
-  <p></p><form method="post" action="/sign-in"><input name="next" type="hidden" value="/"></form>
 api, no credential: 401 Location=- Set-Cookie=-
   {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
+  WWW-Authenticate=-
 sign in: 303 Location=/notes Set-Cookie=__Host-session=101112131415161718191a1b1c1d1e1f; Path=/; Max-Age=3600; Secure; HttpOnly; SameSite=Lax
 stored keys: 1, the value is not a key: true
 page with the cookie: 200 Location=- Set-Cookie=-
   "notes of ada"
 api with the cookie: 200 Location=- Set-Cookie=-
   "notes of ada"
-wrong password: 401 Location=- Set-Cookie=-
-  <p>The name or the password is wrong.</p><form method="post" action="/sign-in"><input name="next" type="hidden" value="/notes"></form>
-unknown name: 401 Location=- Set-Cookie=-
-  <p>The name or the password is wrong.</p><form method="post" action="/sign-in"><input name="next" type="hidden" value="/notes"></form>
-disabled account: 401 Location=- Set-Cookie=-
-  <p>The name or the password is wrong.</p><form method="post" action="/sign-in"><input name="next" type="hidden" value="/notes"></form>
+wrong password: 303 Location=/sign-in?failed=1&next=%2Fnotes Set-Cookie=-
+unknown name: 303 Location=/sign-in?failed=1&next=%2Fnotes Set-Cookie=-
+disabled account: 303 Location=/sign-in?failed=1&next=%2Fnotes Set-Cookie=-
 foreign next: 303 Location=/ Set-Cookie=__Host-session=202122232425262728292a2b2c2d2e2f; Path=/; Max-Age=3600; Secure; HttpOnly; SameSite=Lax
+failed, foreign next: 303 Location=/sign-in?failed=1&next=%2F Set-Cookie=-
 sign in again: 303 Location=/notes Set-Cookie=__Host-session=303132333435363738393a3b3c3d3e3f; Path=/; Max-Age=3600; Secure; HttpOnly; SameSite=Lax
 the old cookie: 303 Location=/sign-in?next=%2Fnotes Set-Cookie=__Host-session=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=Lax
 the new cookie: 200 Location=- Set-Cookie=-
@@ -31,6 +26,7 @@ event: refused nobody (unknown name)
 event: refused old (disabled account)
 event: outdated_hash ada (the stored hash is weaker than hash_password makes now)
 event: signed_in ada ()
+event: refused ada (wrong password)
 event: outdated_hash ada (the stored hash is weaker than hash_password makes now)
 event: signed_in ada ()
 event: refused  (unknown session)

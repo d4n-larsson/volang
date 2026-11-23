@@ -32,7 +32,7 @@ BUILTIN_EFFECTS = {"print": "console", "write": "console", "eprint": "console",
                    "write_file": "file.write", "now_ms": "clock", "random_int": "random",
                    "env": "env"}
 TEST_ONLY = {"expect", "expect_eq"}
-TYPE_PATHS = {"from_text": "std.bytes.from_text", "no_html": "std.html.no_html"}  # record/variant name -> its import path (spec 021: bytes values; spec 051: Html values)
+TYPE_PATHS = {"from_text": "std.bytes.from_text"}  # record/variant name -> its import path (spec 021: bytes values)
 WRONG = [('"a"', "str"), ("1", "int"), ("true", "bool")]
 # spec 014: the built-in collections are created with `new ordered_map[K, V]` etc.
 COLLECTIONS = {"ordered_map", "ordered_set", "priority_queue", "deque"}
@@ -108,8 +108,6 @@ class Values:
             return '"a"'
         if t == "bytes":  # spec 021: no literal
             return 'from_text("a")'
-        if t == "Html":  # spec 051: made only by templates (E0340 for `new Html`)
-            return "no_html()"
         m = re.fullmatch(r"(\w+)\[(.*)\]", t)
         if m and m.group(1) in COLLECTIONS:
             return f"new {self.inst(t, tv)}"
@@ -333,7 +331,7 @@ def main():
                           if r2["item"] == "fn" and re.search(r"\b" + r2["name"] + r"\(", ex)]
             # spec 029: an example may name another module's types (std.web's use std.http's Request, Response)
             extra += [q for n, q in TYPE_PATHS.items()
-                      if q not in every and q not in extra and (n[0].isupper() or n == "no_html") and re.search(rf"\b{n}\b", ex)]
+                      if q not in every and q not in extra and n[0].isupper() and re.search(rf"\b{n}\b", ex)]
             src = "".join(f"import {i};\n" for i in every + extra) + \
                 f"\nfn main() uses {', '.join(map(scoped, eff))} {{\n    {setup}print({show});\n}}\n"
             code, out, err = run(src)

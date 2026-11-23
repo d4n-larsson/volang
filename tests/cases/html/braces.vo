@@ -1,7 +1,0 @@
-import std.html.Html;
-import std.html.html;
-import std.html.html_text;
-
-fn main() uses console {
-    print(html_text(html("<p>{{ {} }}</p>", "{x}")));
-}

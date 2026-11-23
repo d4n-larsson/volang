@@ -234,8 +234,6 @@ fn main() -> result[void] uses console, file.read("./") {
 """
 
 FORM_TIMING = """import std.bytes.from_text;
-import std.html.Html;
-import std.html.no_html;
 import std.http.Header;
 import std.http.Response;
 import std.option.Option;
@@ -268,7 +266,6 @@ fn main() uses console, clock {
         find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); },
         end: fn(n: int, key: str) -> result[void] { return ok(); },
         random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); },
-        page: fn(message: str, next: str) -> Html { return no_html(); },
         sign_in: "/sign-in",
         sign_out: "/sign-out",
         lifetime_s: 3600,
@@ -479,7 +476,7 @@ def group_tokens(d):
     case("secrets/the browser case printed its events", rest.count("event: ") >= 8, str(rest.count("event: ")))
 
 
-def measure(d, name, program, what):
+def measure(d, name, program, what, status):
     """Medians of refusing a wrong password and an unknown name in program; True when within 10%."""
     with open(os.path.join(d, "main.vo"), "w") as f:
         f.write(program)
@@ -501,15 +498,15 @@ def measure(d, name, program, what):
             break
     case(f"timing/{name}: unknown name within 10% of wrong password ({what})", abs(mk - mu) <= 0.1 * max(mk, mu), f"{mk} against {mu}")
     case(f"timing/{name}: the password work is done", mu >= 20, f"{mu} ms")
-    case(f"timing/{name}: the answers are identical", len({(x[2], x[3]) for x in rows}) == 1 and rows[0][2] == "401", str(rows[:2]))
+    case(f"timing/{name}: the answers are identical", len({(x[2], x[3]) for x in rows}) == 1 and rows[0][2] == status, str(rows[:2]))
 
 
 def group_timing(d):
     if SLOW != 1 or os.environ.get("CI"):
         print("web_security: timing skipped (CI or emulation)")
         return
-    measure(d, "Basic", TIMING, "SC-004")
-    measure(d, "sign-in form", FORM_TIMING, "spec 052 SC-006")
+    measure(d, "Basic", TIMING, "SC-004", "401")
+    measure(d, "sign-in form", FORM_TIMING, "spec 052 SC-006", "303")
 
 
 def group_speed(d):

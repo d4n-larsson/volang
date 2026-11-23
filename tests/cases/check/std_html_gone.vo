@@ -1,0 +1,6 @@
+# std.html was removed by spec 053 (vo renders no HTML): importing it is an import of a module that
+# does not exist, with no special case.
+import std.html.html;
+
+fn main() {
+}
