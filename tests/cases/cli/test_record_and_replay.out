@@ -1,0 +1,1 @@
+error[T0001]: `--record` and `--replay` cannot be combined: record, then replay.

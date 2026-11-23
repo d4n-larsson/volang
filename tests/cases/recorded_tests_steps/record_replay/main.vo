@@ -1,0 +1,46 @@
+# Spec 054: tests recorded against a local HTTP server, then replayed with the server gone. The port
+# comes from the variable PORT, which the recording holds like any other input.
+import std.http.get;
+import std.http.post;
+
+fn base() -> str uses env {
+    match env("PORT") {
+        case ok(p) {
+            return "http://127.0.0.1:" + p;
+        }
+        case err(_) {
+            return "http://127.0.0.1:1";
+        }
+    }
+}
+
+fn main() {
+}
+
+test "gets a page" uses env, net {
+    match get(base() + "/plain") {
+        case ok(r) {
+            expect_eq(r.body, "hello from vo\n");
+        }
+        case err(e) {
+            expect_eq(e, "");
+        }
+    }
+}
+
+test "posts json" uses env, net {
+    match post(base() + "/echo", "application/json", `{"amount": 10}`) {
+        case ok(r) {
+            expect_eq(r.status, 200);
+            expect(len(r.body) > 0);
+        }
+        case err(e) {
+            expect_eq(e, "");
+        }
+    }
+}
+
+test "reads a file and a variable" uses env, file.read("data/") {
+    expect_eq(read_file("data/in.txt"), ok("hello from a file\n"));
+    expect_eq(env("GREETING"), ok("hej"));
+}

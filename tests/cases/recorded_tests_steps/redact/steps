@@ -1,0 +1,5 @@
+server http
+env PORT={port} API_SECRET=v-789 vo test --record rec --redact X-Api-Key --redact api_key --redact API_SECRET main.vo
+keep rec/main/calls_an_API_with_credentials.jsonl
+stop-server
+vo test --replay rec main.vo

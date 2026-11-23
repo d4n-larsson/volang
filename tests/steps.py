@@ -74,6 +74,7 @@ def mask(b, port=None, vport=None):
     # spec 034: the size of a built executable follows the toolchain's, which differs by platform
     b = re.sub(rb"(?m)^(built .*, )\d+ bytes$", rb"\g<1>0 bytes", b)
     b = re.sub(rb'("kind":"build".*"bytes":)\d+', rb"\g<1>0", b)
+    b = re.sub(rb"\((\d+)ms, (recorded|replayed)\)", rb"(0ms, \2)", b)  # spec 054
     return re.sub(rb"([ (])\d+ms\)", rb"\g<1>0ms)", b)
 
 

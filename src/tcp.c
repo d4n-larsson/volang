@@ -308,6 +308,12 @@ static Variant *send_all(Entry *e, Str *data)
 {
     Str *name = label_of(e);
     if (rcd_mode == 2) {
+        if (rt_testing()) { /* spec 054: a test's recording holds every send, compared with what is sent now */
+            Event *ev = rp_take(EVK_TCP_SEND, name);
+            if (ev->result != EVR_OK) return make_result(1, (long)ev->value.s);
+            if (!str_eq(ev->value.s, data)) rp_mismatch_sent(name, 0);
+            return make_result(0, (long)str_new("", 0));
+        }
         Event *ev = rp_peek(EVK_TCP_SEND, name);
         return ev ? make_result(1, (long)ev->value.s) : make_result(0, (long)str_new("", 0));
     }
@@ -342,6 +348,7 @@ static Variant *send_all(Entry *e, Str *data)
         }
     }
     if (r) note(EVK_TCP_SEND, name, r, 0);
+    else if (rt_testing()) note(EVK_TCP_SEND, name, 0, data); /* spec 054: the bytes, for review and replay */
     GC_UNROOT(2);
     return r ? r : make_result(0, (long)str_new("", 0));
 }

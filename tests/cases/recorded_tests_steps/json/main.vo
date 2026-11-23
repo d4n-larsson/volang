@@ -1,0 +1,11 @@
+# Spec 054: --json says how each test ran; a recording whose test no longer exists is listed.
+fn main() {
+}
+
+test "reads a variable" uses env {
+    expect_eq(env("A"), ok("1"));
+}
+
+test "adds" {
+    expect_eq(1 + 2, 3);
+}

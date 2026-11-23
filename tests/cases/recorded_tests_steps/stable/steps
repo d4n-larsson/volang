@@ -1,0 +1,5 @@
+server http
+env PORT={port} GREETING=hej vo test --record rec main.vo
+cp rec/main/posts_json.jsonl first.jsonl
+env PORT={port} GREETING=hej vo test --record rec main.vo
+keep first.jsonl rec/main/posts_json.jsonl

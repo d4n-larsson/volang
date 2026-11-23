@@ -1,0 +1,10 @@
+$ env PORT={port} API_SECRET=v-789 vo test --record rec --redact X-Api-Key --redact api_key --redact API_SECRET main.vo
+PASS calls an API with credentials (0ms, recorded)
+1 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test --replay rec main.vo
+PASS calls an API with credentials (0ms, replayed)
+1 passed, 0 failed
+--- stderr
+--- exit 0

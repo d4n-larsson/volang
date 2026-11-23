@@ -1,0 +1,71 @@
+# The converter's one route. The rate comes from a function in the context, so the tests here give it a
+# fixed rate and need no network; rates.vo's recorded test covers the real service.
+import std.http.Response;
+import std.math.round;
+import std.web.App;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.on_get;
+import std.web.request;
+import std.web.web_app;
+
+# What every request gets: where rates come from.
+export record Rates[E: effects] {
+    rate: fn(str, str) -> result[float] uses E;
+}
+
+record Ask {
+    amount: float;
+    @pattern("[A-Z]{3}")
+    from: str;
+    @pattern("[A-Z]{3}")
+    to: str;
+}
+
+record Answer {
+    amount: float;
+    currency: str;
+    rate: float;
+}
+
+fn convert[E: effects](ctx: Rates[E], ask: Ask) -> result[Response] uses E {
+    let rate = try ctx.rate(ask.from, ask.to);
+    let cents = round(ask.amount * rate * 100.0);
+    return ok(json_reply(200, new Answer {
+        amount: float(cents) / 100.0,
+        currency: ask.to,
+        rate: rate
+    }));
+}
+
+# GET /convert?amount=&from=&to=.
+export fn converter[E: effects]() -> App[Rates[E], E] {
+    let op: fn(Rates[E], Ask) -> result[Response] uses E = convert;
+    return web_app([on_get("/convert", op)]);
+}
+
+fn fixed(from: str, to: str) -> result[float] {
+    if from == "EUR" and to == "SEK" {
+        return ok(11.25);
+    }
+    return err("no rate for " + from + " to " + to);
+}
+
+test "converts an amount at the rate" {
+    let r = handle_request(converter(), new Rates { rate: fixed }, request(
+        "GET",
+        "/convert?amount=100&from=EUR&to=SEK",
+        ""
+    ));
+    expect_eq(r.status, 200);
+    expect_eq(r.body, `{"amount":1125.0,"currency":"SEK","rate":11.25}`);
+}
+
+test "refuses a currency that is not three capital letters" {
+    let r = handle_request(converter(), new Rates { rate: fixed }, request(
+        "GET",
+        "/convert?amount=1&from=eur&to=SEK",
+        ""
+    ));
+    expect_eq(r.status, 422);
+}

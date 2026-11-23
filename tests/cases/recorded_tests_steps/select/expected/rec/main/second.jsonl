@@ -1,0 +1,3 @@
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"e32b277982e76cac","seed":1,"clock_ms":0,"test":"main.vo::second","redact":[]}
+{"v":1,"kind":"env","name":"Y","result":"ok","value":"dos"}
+{"v":1,"kind":"end","status":1}

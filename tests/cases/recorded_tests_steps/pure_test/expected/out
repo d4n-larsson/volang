@@ -1,0 +1,24 @@
+$ env NAME=ada vo test --record rec main.vo
+PASS adds (0ms)
+PASS reads a variable (0ms, recorded)
+2 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test --replay rec main.vo
+PASS adds (0ms)
+PASS reads a variable (0ms, replayed)
+2 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test --record rec main.vo
+PASS adds (0ms)
+PASS reads a variable (0ms)
+2 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test --replay rec main.vo
+PASS adds (0ms)
+PASS reads a variable (0ms)
+2 passed, 0 failed
+--- stderr
+--- exit 0

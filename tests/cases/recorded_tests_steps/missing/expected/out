@@ -1,0 +1,21 @@
+$ vo test --replay rec main.vo
+ERROR calls a service (0ms)
+  std/http.vo:169:12: runtime error[R0014]: The test makes an HTTP request `GET /plain` to `127.0.0.1:9`, but it has no recording in `rec`: record it with `vo test --record rec --test 'main.vo::calls a service'`.
+    at exchange_raw (std/http.vo:169:12)
+        method: str = "GET", url: str = "http://127.0.0.1:9/plain", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "127.0.0.1", port: 9, target: "/plain" }, request: str = "GET /plain HTTP/1.1\r\nHost: 127.0.0.1:9\r\nConnection: close\r\nUser-Agent: vo\r\n\r\n"
+    at exchange (std/http.vo:120:19)
+        method: str = "GET", url: str = "http://127.0.0.1:9/plain", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, hint: str = "get_bytes"
+    at get (std/http.vo:290:12)
+        url: str = "http://127.0.0.1:9/plain"
+    at fetch (main.vo:9:11)
+    at test "calls a service" (main.vo:20:16)
+PASS adds (0ms)
+1 passed, 0 failed, 1 errored
+--- stderr
+--- exit 1
+$ vo test main.vo
+PASS calls a service (0ms)
+PASS adds (0ms)
+2 passed, 0 failed
+--- stderr
+--- exit 0

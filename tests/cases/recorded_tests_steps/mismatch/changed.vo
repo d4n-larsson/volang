@@ -1,0 +1,59 @@
+# Spec 054: a replayed test that asks for something its recording does not have next fails with R0014,
+# naming what it asked for and what the recording has; the other tests still run.
+import std.http.Response;
+import std.http.get;
+import std.http.post;
+
+fn base() -> str uses env {
+    match env("PORT") {
+        case ok(p) {
+            return "http://127.0.0.1:" + p;
+        }
+        case err(_) {
+            return "http://127.0.0.1:1";
+        }
+    }
+}
+
+fn body_of(r: result[Response]) -> str {
+    match r {
+        case ok(x) {
+            return x.body;
+        }
+        case err(e) {
+            return e;
+        }
+    }
+}
+
+fn main() {
+}
+
+test "url" uses env, net {
+    expect(len(body_of(get(base() + "/json"))) > 0);
+}
+
+test "method" uses env, net {
+    expect(len(body_of(post(base() + "/inspect", "text/plain", ""))) > 0);
+}
+
+test "body" uses env, net {
+    expect(len(body_of(post(base() + "/echo", "text/plain", "two"))) > 0);
+}
+
+test "file" uses file.read("data/") {
+    expect_eq(read_file("data/b.txt"), ok("b\n"));
+}
+
+test "variable" uses env {
+    expect_eq(env("USER_NAME"), ok("ada"));
+}
+
+test "more requests" uses env, net {
+    expect(len(body_of(get(base() + "/plain"))) > 0);
+    expect(len(body_of(get(base() + "/json"))) > 0);
+}
+
+test "unchanged" uses env, net {
+    expect(len(body_of(get(base() + "/json"))) > 0);
+}

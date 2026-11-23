@@ -1,0 +1,6 @@
+env NAME=ada vo test --record rec main.vo
+keep rec/main/reads_a_variable.jsonl
+vo test --replay rec main.vo
+cp pure.vo main.vo
+vo test --record rec main.vo
+vo test --replay rec main.vo

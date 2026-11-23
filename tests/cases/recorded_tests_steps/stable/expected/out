@@ -1,0 +1,14 @@
+$ env PORT={port} GREETING=hej vo test --record rec main.vo
+PASS gets a page (0ms, recorded)
+PASS posts json (0ms, recorded)
+PASS reads a file and a variable (0ms, recorded)
+3 passed, 0 failed
+--- stderr
+--- exit 0
+$ env PORT={port} GREETING=hej vo test --record rec main.vo
+PASS gets a page (0ms, recorded)
+PASS posts json (0ms, recorded)
+PASS reads a file and a variable (0ms, recorded)
+3 passed, 0 failed
+--- stderr
+--- exit 0

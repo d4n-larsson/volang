@@ -1,0 +1,36 @@
+# Spec 054: coverage and mutation testing run on replayed tests, with the server gone. A mutant that
+# changes the request fails its test with R0014, which counts as caught.
+import std.http.get;
+
+fn base() -> str uses env {
+    match env("PORT") {
+        case ok(p) {
+            return "http://127.0.0.1:" + p;
+        }
+        case err(_) {
+            return "http://127.0.0.1:1";
+        }
+    }
+}
+
+# The greeting the service gives, or "" when it cannot be reached.
+fn greeting() -> str uses env, net {
+    match get(base() + "/plain") {
+        case ok(r) {
+            if r.status == 200 {
+                return r.body;
+            }
+            return "";
+        }
+        case err(_) {
+            return "";
+        }
+    }
+}
+
+fn main() {
+}
+
+test "the service greets" uses env, net {
+    expect_eq(greeting(), "hello from vo\n");
+}

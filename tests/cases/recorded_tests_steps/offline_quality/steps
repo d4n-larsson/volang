@@ -1,0 +1,5 @@
+server http
+env PORT={port} vo test --record rec main.vo
+stop-server
+vo test --replay rec --coverage main.vo
+vo test --replay rec --mutate main.vo

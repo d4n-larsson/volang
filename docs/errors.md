@@ -4722,7 +4722,7 @@ During `vo replay`, the program asked for an input that is not the next one in t
 
 Fixable: no
 
-`vo replay` feeds the program exactly the inputs of the recorded run, in order: lines of stdin, files, environment variables, the clock. A program changed since the recording that asks for something else at some point (another file, another variable, more lines than were read) cannot be replayed past that point. The message names what the program asked for and what the recording holds. Replay the original program, or record the changed one again.
+`vo replay` feeds the program exactly the inputs of the recorded run, in order: lines of stdin, files, environment variables, the clock. A program changed since the recording that asks for something else at some point (another file, another variable, more lines than were read) cannot be replayed past that point. The message names what the program asked for and what the recording holds. Replay the original program, or record the changed one again. In `vo test --replay DIR` (spec 054) it fails only the test that asked, also when the test sends another HTTP body or other bytes over TCP, or has no recording; the message gives the command that records that test again.
 
 ### Example
 

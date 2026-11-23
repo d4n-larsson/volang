@@ -8,6 +8,7 @@ connection; the server closes after each reply (std.http sends Connection: close
 
 Routes:
   GET  /plain           200, Content-Length, "hello from vo\\n"
+  GET  /cookie          200 with Set-Cookie and X-Api-Key headers (spec 054: redaction)
   GET  /json            200, application/json
   GET  /chunked         200, Transfer-Encoding: chunked, three chunks with an extension
   GET  /close           200, no length: the body ends when the connection closes
@@ -90,6 +91,9 @@ def route(method, target, headers, body):
     if target == "/plain":
         b = b"hello from vo\n"
         return reply("200 OK", [("Content-Type", "text/plain"), ("Content-Length", len(b))], b)
+    if target.split("?")[0] == "/cookie":  # spec 054: a session cookie and an API key header in the answer
+        b = b"signed in\n"
+        return reply("200 OK", [("Set-Cookie", "s=c-000; HttpOnly"), ("X-Api-Key", "k-answer"), ("Content-Length", len(b))], b)
     if target == "/json":
         b = b'{"name": "vo", "tags": ["small", "typed"], "version": 7}'
         return reply("200 OK", [("Content-Type", "application/json"), ("Content-Length", len(b))], b)

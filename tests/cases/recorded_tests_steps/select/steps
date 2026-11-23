@@ -1,0 +1,4 @@
+env X=one Y=two vo test --record rec main.vo
+env X=uno Y=dos vo test --record rec --test main.vo::second main.vo
+keep rec/main/first.jsonl rec/main/second.jsonl
+vo test --replay rec main.vo

@@ -1,0 +1,21 @@
+$ env PORT={port} vo test --record rec main.vo
+PASS the service greets (0ms, recorded)
+1 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test --replay rec --coverage main.vo
+PASS the service greets (0ms, replayed)
+not run: main.vo:10:9 case in base
+not run: main.vo:20:13 if_false in greeting
+not run: main.vo:25:9 case in greeting
+not run: main.vo:31:1 function main
+coverage: 2 of 3 functions, 3 of 6 branches
+1 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test --replay rec --mutate main.vo
+PASS the service greets (0ms, replayed)
+mutation: 2 changes, 2 caught, 0 survived, 0 not tried
+1 passed, 0 failed
+--- stderr
+--- exit 0

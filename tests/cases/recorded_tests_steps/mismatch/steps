@@ -1,0 +1,5 @@
+server http
+env PORT={port} NAME=ada USER_NAME=ada vo test --record rec main.vo
+stop-server
+cp changed.vo main.vo
+vo test --replay rec main.vo

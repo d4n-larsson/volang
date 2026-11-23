@@ -318,6 +318,41 @@ is in `output`, so every line of the stream is JSON. Here is
 `code` and `trace`. All record kinds are described in [Machine-readable
 output](../reference/machine-readable-output.md).
 
+## Tests of code that calls other services
+
+A test of a function that calls an HTTP API, a database over TCP or another program needs those
+services on every run, and their answers change. Record the test once and replay it afterwards:
+
+```text
+vo test --record recordings/tests main.vo     # runs against the real services, saves what each test received
+vo test --replay recordings/tests main.vo     # runs every test on its recording: offline, the same every time
+```
+
+Each test that received anything from outside gets one file, `recordings/tests/FILE/NAME.jsonl` (FILE
+without `.vo`, spaces in the name as `_`): readable JSON lines with each request the test sent (its line, headers and
+body) and the answer it got, so a reviewer sees what the code depends on. A test that needs nothing
+outside gets no file and runs as always. Plain `vo test` runs live and reads no recording.
+
+When the code changes what it asks for (another URL, method, body, file or variable, or more requests),
+the replayed test fails with [R0014](../errors/R0014.md), naming the request it made and the one recorded
+next, and the other tests run on. Record that one test again with `--test`:
+
+```text
+vo test --record recordings/tests --test 'rates.vo::the service gives a rate' main.vo
+```
+
+Under `--replay`, a test that reaches outside and has no recording fails the same way instead of going
+to the network. Recorded inputs a test no longer uses, and a program changed since recording, are notes
+on the test's line. Files under the directory that name no test are listed after the summary.
+
+Recordings are meant to be committed, so credentials are left out: the values of `Authorization`,
+`Proxy-Authorization`, `Cookie` and `Set-Cookie` are written as `[redacted]`, and so are the headers,
+query parameters and environment variables named with `--redact NAME`. Replay matches everything else.
+A secret in a request body or a URL path is not found: use test credentials for recording.
+
+`--coverage` and `--mutate` work with `--replay`, so mutation testing of code that calls services runs
+offline. The [rates](../examples/rates.md) example records its call to a public exchange-rate API.
+
 ## Tracing tests to requirements
 
 `@spec("ID", ...)` on the line right above a test names the requirements that test proves. An ID is

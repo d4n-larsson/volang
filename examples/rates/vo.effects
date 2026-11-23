@@ -1,0 +1,12 @@
+# vo effects record: update with `vo effects --update`
+convert.vo:convert uses E
+convert.vo:converter pure
+convert.vo:fixed pure
+convert.vo:test "converts an amount at the rate" pure
+convert.vo:test "refuses a currency that is not three capital letters" pure
+main.vo:main uses console, net("api.frankfurter.dev"), serve("8080")
+rates.vo:fetch_rate uses net("api.frankfurter.dev")
+rates.vo:parse_rate pure
+rates.vo:rate_url pure
+rates.vo:test "a rate is read from the service's answer" pure
+rates.vo:test "the service gives a positive rate from EUR to SEK" uses net("api.frankfurter.dev")

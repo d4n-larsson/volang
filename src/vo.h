@@ -756,7 +756,7 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define EV_BYTES (32) /* 1 when the value was written with "bytes":true */
 #define EV_PORT (40) /* spec 007: http events */
 #define EV_REQUEST (48) /* spec 009: http events: "METHOD TARGET", or 0 in older recordings */
-#define EV_SIZE (64)
+#define EV_SIZE (72)
 #define EVK_READ_LINE (1)
 #define EVK_READ_ALL (2)
 #define EVK_READ_FILE (3)
@@ -1286,6 +1286,7 @@ typedef struct Event {
     long port;
     Str *request;
     long tls; /* spec 019: an http event over HTTPS ("scheme":"https") */
+    Str *sent; /* spec 054: a test's http event: the request's headers and body as sent (redacted) */
 } Event;
 CHECK_OFFSET(Event, kind, EV_KIND);
 CHECK_OFFSET(Event, name, EV_NAME);
@@ -2019,6 +2020,17 @@ extern long opt_dry_run;
 extern long opt_trace;
 extern long opt_trace_limit;
 extern long opt_record;
+extern long opt_replay_dir; /* spec 054 */
+extern void rt_begin(Node *test);
+extern void rt_end(long failed, long timed_out);
+extern long rt_testing(void);
+extern Vec *rt_unused(void);
+extern void rp_mismatch_sent(Str *name, int http);
+extern long rt_redacted(Str *name, int header);
+extern Str *rt_mode;
+extern Vec *rt_notes;
+extern void mkdir_p(Str *path);
+extern Vec *opt_redact;
 extern long path_list;
 extern long path_n;
 extern int cstr_eq(char *a, char *b);

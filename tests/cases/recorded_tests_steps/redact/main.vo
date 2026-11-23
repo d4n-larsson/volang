@@ -1,0 +1,47 @@
+# Spec 054: credentials stay out of a test's recording. Authorization, Proxy-Authorization, Cookie and
+# Set-Cookie are always redacted; --redact names more headers, query parameters and variables. The
+# replay (without --redact: the recording lists the names) passes.
+import std.http.Header;
+import std.http.send;
+
+fn base() -> str uses env {
+    match env("PORT") {
+        case ok(p) {
+            return "http://127.0.0.1:" + p;
+        }
+        case err(_) {
+            return "http://127.0.0.1:1";
+        }
+    }
+}
+
+fn key() -> str uses env {
+    match env("API_SECRET") {
+        case ok(k) {
+            return k;
+        }
+        case err(_) {
+            return "";
+        }
+    }
+}
+
+fn main() {
+}
+
+test "calls an API with credentials" uses env, net {
+    let headers = [
+        new Header { name: "Authorization", value: "Bearer secret-token" },
+        new Header { name: "X-Api-Key", value: key() },
+        new Header { name: "Cookie", value: "s=c-111" }
+    ];
+    match send("GET", base() + "/cookie?api_key=q-456&page=2", headers, "", 2000) {
+        case ok(r) {
+            expect_eq(r.status, 200);
+            expect_eq(r.body, "signed in\n");
+        }
+        case err(e) {
+            expect_eq(e, "");
+        }
+    }
+}

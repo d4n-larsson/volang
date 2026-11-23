@@ -42,7 +42,9 @@ long opt_diff; /* char *: --diff FILE (impact) */
 long opt_dry_run;
 long opt_trace;            /* char *: --trace FILE */
 long opt_trace_limit;      /* 0: not given (default 100000) */
-long opt_record;           /* char *: --record FILE (run) */
+long opt_record;           /* char *: --record FILE (run), --record DIR (test, spec 054) */
+long opt_replay_dir;       /* char *: --replay DIR (test, spec 054) */
+Vec *opt_redact;           /* spec 054: --redact NAME (Str *), repeatable; 0: none */
 /* spec 018 options of `vo test` (contracts/cli.md) */
 long opt_list;             /* --list */
 long opt_coverage;         /* --coverage */
@@ -323,7 +325,7 @@ int vo_main(long argc, char **argv, char **env)
             if (used < 0)
                 usage_error_arg("Unknown option `$1`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, "
                                 "--seed N, --clock-ms N, --max-memory MiB, --mem-stats, --trace FILE, --trace-limit N, "
-                                "--record FILE, --diff FILE, --dry-run, --list, --test ID, --spec ID, --coverage, "
+                                "--record FILE|DIR, --replay DIR, --redact NAME, --diff FILE, --dry-run, --list, --test ID, --spec ID, --coverage, "
                                 "--mutate, --max-mutants N, --ca-file FILE, --workers N.",
                                 a);
             i += (int)used;
@@ -375,7 +377,14 @@ long opt_spec006(char *flag, char *next)
         file_opt = &opt_trace;
     else if (cstr_eq(flag, "--record"))
         file_opt = &opt_record;
-    else if (!cstr_eq(flag, "--trace-limit"))
+    else if (cstr_eq(flag, "--replay")) /* spec 054 */
+        file_opt = &opt_replay_dir;
+    else if (cstr_eq(flag, "--redact")) { /* spec 054 */
+        if (!next || !*next) usage_error_arg("`$1` needs a name.", flag);
+        if (!opt_redact) opt_redact = vec_new();
+        vec_push(opt_redact, str_from_cstr(next));
+        return 1;
+    } else if (!cstr_eq(flag, "--trace-limit"))
         return -1;
     if (file_opt) { /* FILE: any non-empty word */
         if (!next || !*next) usage_error_arg("`$1` needs a file name.", flag);
@@ -422,7 +431,12 @@ void opt_spec006_check(void)
     if (opt_max_mutants && !opt_mutate) usage_error(str_from_cstr("`--max-mutants` needs `--mutate`."));
     if (!opt_max_mutants) opt_max_mutants = 500;
     if (opt_dry_run && cmd != CMD_EDIT) only_with("--dry-run", "edit");
-    if (opt_record && cmd != CMD_RUN) only_with("--record", "run");
+    if (opt_record && cmd != CMD_RUN && cmd != CMD_TEST) only_with("--record", "run` or `test");
+    if (opt_replay_dir && cmd != CMD_TEST) only_with("--replay", "test"); /* spec 054 */
+    if (opt_replay_dir && opt_record)
+        usage_error(str_from_cstr("`--record` and `--replay` cannot be combined: record, then replay."));
+    if (opt_redact && !(cmd == CMD_TEST && opt_record))
+        usage_error(str_from_cstr("`--redact` needs `vo test --record DIR`."));
     if (opt_workers && cmd != CMD_RUN) only_with("--workers", "run"); /* spec 028 */
     if (opt_trace && cmd != CMD_RUN && cmd != CMD_TEST && cmd != CMD_REPLAY)
         only_with("--trace", "run`, `test` or `replay");
@@ -456,7 +470,7 @@ void outputs_start(long is_test)
 {
     out_paths_check();
     trace_start(is_test);
-    rcd_start();
+    if (!is_test) rcd_start(); /* spec 054: a test run records per test (testrun.c) */
 }
 
 int not_implemented(void)

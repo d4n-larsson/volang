@@ -6,6 +6,15 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- Recorded tests. `vo test --record DIR` runs the tests against the real outside world and saves, for
+  each test that received anything (HTTP and HTTPS answers, TCP exchanges, files, environment variables,
+  other programs), one readable file `DIR/FILE/NAME.jsonl` with the requests it sent and what it got.
+  `vo test --replay DIR` runs each test on its file with no outside access, the same every time. A test
+  that asks for something its recording lacks (another URL, method, body, file, variable, more requests,
+  or no recording at all) fails with R0014 naming both, and the other tests run on; `--test` re-records
+  one test. Credentials are written as `[redacted]`: `Authorization`, `Proxy-Authorization`, `Cookie`,
+  `Set-Cookie`, and headers, query parameters and variables named with `--redact NAME`. Plain `vo test`
+  is unchanged. `--coverage` and `--mutate` work on replayed tests. New example `examples/rates`.
 - vo's target is written down: backend network services written by agents and reviewed by people. vo
   renders no HTML; pages belong to the frontend in front of a service. The catalog holds E0335 to E0340
   as retired codes (from HTML templates that were built and removed before any release): no version

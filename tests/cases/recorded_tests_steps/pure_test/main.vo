@@ -1,0 +1,12 @@
+# Spec 054: a test that receives nothing from outside gets no recording and runs as always; when a test
+# stops reaching outside, recording it again removes its file.
+fn main() {
+}
+
+test "adds" {
+    expect_eq(1 + 1, 2);
+}
+
+test "reads a variable" uses env {
+    expect_eq(env("NAME"), ok("ada"));
+}

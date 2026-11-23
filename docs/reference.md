@@ -1282,6 +1282,7 @@ renamed area to rect_area: 2 changes in 1 file (dry run, nothing written)
 - `vo run --trace FILE` (and `vo test`) writes JSON lines: `call` (function, call site, depth, `args` by name) and `return` (value) for every vo function, `error` when a runtime error ends it, `test` before each test, `task` (`index`) before each task's records, and `end` (`records`, `omitted`, `status`). Values are shortened to 200 bytes. After `--trace-limit N` records (default 100000) the rest are only counted.
 - A runtime error lists, under each frame, its parameters and the locals declared before the failing statement: `i: int = 3` (in JSON, `locals` of each `trace` entry). Timeouts show no values: they depend on the machine's speed.
 - `vo run --record FILE` saves everything the program receives: arguments, stdin, environment variables, file reads, results of file writes, HTTP responses and requests, the clock, the seed and the bytes of `random_bytes`. `vo replay FILE` runs the current program on exactly that, reading and writing nothing outside: the same program gives the same output and exit status (unless it timed out). A changed program is run with a note; one that asks for a different input (another file, variable or HTTP request: host, port, method or path) stops with R0014. A server gets the recorded requests again, opens no port, and each response that changed is a note. A recording holds the file contents and variables the program read.
+- `vo test --record DIR` records each test that receives anything from outside into `DIR/FILE/NAME.jsonl` (`FILE` without `.vo`; also the bodies and headers it sends); `vo test --replay DIR` runs each test on its file, offline. A test asking for an input its recording lacks is that test's R0014. `Authorization`, `Cookie` and `Set-Cookie` values, and headers, query parameters and variables named by `--redact`, are recorded as `[redacted]`.
 
 ```vo
 fn last(xs: list[int]) -> int {
@@ -1303,7 +1304,7 @@ fn main() uses console {
 vo check     [--json] PATH...
 vo run       [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--ca-file FILE] [--workers N] FILE [-- ARG...]
 vo build     [--json] [-o OUTPUT] [--base TOOLCHAIN] FILE
-vo test      [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--filter TEXT] [--test ID] [--spec ID] [--diff FILE] [--ca-file FILE] [--list | --coverage | --mutate [--max-mutants N]] PATH...
+vo test      [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--filter TEXT] [--test ID] [--spec ID] [--diff FILE] [--ca-file FILE] [--record DIR [--redact NAME] | --replay DIR] [--list | --coverage | --mutate [--max-mutants N]] PATH...
 vo fmt       [--json] [--check] PATH...
 vo effects   [--json] [--update] FILE
 vo explain   [--json] CODE

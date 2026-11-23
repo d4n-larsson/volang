@@ -147,7 +147,7 @@ Each property is a claim the review must try to break; each break is a finding.
   recording, and so are the bytes `std.crypto.random_bytes` returned (tokens, keys, salts); recordings
   are as sensitive as those inputs. A server's recording keeps each request as it arrived: the
   passwords of sign-in forms and `Authorization` headers, and the session cookies of signed-in
-  browsers (spec 052, decided to keep replay exact). Keep it like the application's database.
+  browsers (spec 052, decided to keep replay exact). Keep it like the application's database. Test recordings (`vo test --record`, spec 054) are meant to be committed: they write the values of `Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie` and of headers, query parameters and variables named with `--redact` as `[redacted]`; a secret in a body or a URL path is kept, so recording uses test credentials.
 - **A target that is a value is checked when it is used** (spec 050): a function with scopes may call
   a helper or a package function that is given its target; a target outside the scopes stops the
   program at that operation (R0010), not at `vo check`. Literal targets passed to the file, `env` and

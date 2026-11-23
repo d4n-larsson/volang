@@ -1,0 +1,11 @@
+# Spec 054: --record with a selection records only the selected tests; the others' files are untouched.
+fn main() {
+}
+
+test "first" uses env {
+    expect_eq(env("X"), ok("one"));
+}
+
+test "second" uses env {
+    expect_eq(env("Y"), ok("two"));
+}

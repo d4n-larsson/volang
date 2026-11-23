@@ -1,0 +1,25 @@
+# Spec 054: under --replay a test that reaches outside and has no recording fails with R0014 and makes no
+# connection; a test that needs nothing outside passes; plain `vo test` runs live even when recordings exist.
+import std.http.get;
+
+fn main() {
+}
+
+fn fetch() -> str uses net {
+    match get("http://127.0.0.1:9/plain") {
+        case ok(r) {
+            return r.body;
+        }
+        case err(e) {
+            return "live: " + e;
+        }
+    }
+}
+
+test "calls a service" uses net {
+    expect(len(fetch()) > 0);
+}
+
+test "adds" {
+    expect_eq(1 + 2, 3);
+}

@@ -1,0 +1,8 @@
+# Spec 054: a replayed test that no longer asks for every recorded input passes with a note, and so does
+# one whose program changed since recording; --json carries the notes.
+fn main() {
+}
+
+test "reads two variables" uses env {
+    expect_eq(env("A"), ok("1"));
+}

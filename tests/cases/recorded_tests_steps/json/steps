@@ -1,0 +1,5 @@
+env A=1 vo test --record rec --json main.vo
+write rec/main/an_old_test.jsonl {}\n
+vo test --replay rec --json main.vo
+vo test --replay rec main.vo
+vo test --json main.vo

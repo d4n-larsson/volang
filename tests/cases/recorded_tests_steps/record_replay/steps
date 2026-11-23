@@ -1,0 +1,7 @@
+server http
+env PORT={port} GREETING=hej vo test --record rec main.vo
+keep rec/main/gets_a_page.jsonl rec/main/posts_json.jsonl rec/main/reads_a_file_and_a_variable.jsonl
+stop-server
+vo test --replay rec main.vo
+vo test --replay rec main.vo
+vo test --replay rec --json main.vo

@@ -571,8 +571,8 @@ static int is_dir(Str *path)
     return fd >= 0;
 }
 
-/* Creates path and its missing parents. */
-static void mkdir_p(Str *path)
+/* Creates path and its missing parents (also spec 054's test recordings). */
+void mkdir_p(Str *path)
 {
     Str *p = str_new(path->data, path->len); /* a copy to cut at each `/` */
     for (long i = 1; i <= p->len; i++) {

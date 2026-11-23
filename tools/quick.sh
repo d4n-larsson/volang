@@ -34,6 +34,7 @@ cases() {
     bits) echo "lex fmt run check const doc" ;; # spec 043
     decimal) echo "run check doc" ;; # spec 044
     web_security) echo "web_security web doc crypto" ;; # spec 045
+    recorded) echo "recorded_tests_steps replay test_steps test" ;; # spec 054
     iteration) echo "run check fmt doc" ;; # spec 046
     workers) echo "workers tasks test doc" ;; # spec 047
     zones) echo "time sleep_steps run check effects replay cli doc" ;; # spec 048
@@ -82,6 +83,7 @@ scripts() { # one per line, with arguments
     bits) printf '%s\n' catalog.py ref_examples.py doc_conformance.py bits.py ;; # spec 043
     decimal) printf '%s\n' ref_examples.py doc_conformance.py decimals.py ;; # spec 044
     web_security) printf '%s\n' ref_examples.py doc_conformance.py web_security.py ;; # spec 045
+    recorded) printf '%s\n' catalog.py ref_examples.py "recorded_tests.py --quick" ;; # spec 054
     iteration) printf '%s\n' ref_examples.py doc_conformance.py catalog.py apply_fixes.py iteration.py ;; # spec 046
     workers) printf '%s\n' ref_examples.py doc_conformance.py catalog.py workers.py ;; # spec 047
     zones) printf '%s\n' ref_examples.py doc_conformance.py time_check.py zones.py ;; # spec 048
@@ -129,6 +131,7 @@ area_of() {
     std/decimal.vo|tests/decimals.py) echo decimal ;; # spec 044
     src/fs.c|src/process.c|std/fs.vo|std/process.vo|tests/stream.py) echo stream fs ;; # spec 040
     editors/*|tests/grammars.py|site/pygments_vo/pygments_vo.py) echo grammars ;; # spec 037
+    src/replay.c|src/testrun.c|tests/recorded_tests.py) echo recorded ;; # spec 054
     src/check_effects.c|src/fmt.c|tests/effect_sets_*.py) echo effects ;; # spec 030
     src/num.c|src/stdprim.c) echo float ;;
     src/bytes.c|std/bytes.vo|tests/bytes/*|tests/bytes_*.py|tests/process_helpers/allbytes) echo bytes ;;
@@ -182,7 +185,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits decimal web_security iteration workers zones postgres)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits decimal web_security iteration workers zones postgres recorded)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done

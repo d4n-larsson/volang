@@ -60,6 +60,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [051](../specs/051-html-templates/) | Web pages: `std.html` templates checked by `vo check`; `html_reply`; HTML forms bound like query parameters | **Removed** by [053](../specs/053-remove-html/) except form binding: vo renders no HTML |
 | [052](../specs/052-sessions-sign-in/) | Sessions and sign-in forms: cookies in `std.web`; `std.security`'s `browser` way and routes, sessions kept by the application, cross-site posts refused, pages sent to sign-in | **Implemented**, page parts removed by 053 ([results](../specs/052-sessions-sign-in/results.md)) |
 | [053](../specs/053-remove-html/) | Remove HTML rendering from the core: vo targets backend network services; `std.html`, its checker and `html_reply` removed, E0335–E0340 retired; browser sign-in without a page | **Implemented** ([results](../specs/053-remove-html/results.md)) |
+| [054](../specs/054-recorded-tests/) | Recorded tests: `vo test --record DIR` saves what each test receives from outside (HTTP with its sent body, TCP both ways, files, variables, programs), `--replay DIR` runs each test on its file offline; mismatches fail that test (R0014); credentials redacted | **Implemented** ([results](../specs/054-recorded-tests/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -657,13 +658,26 @@ marked retired, and the catalog check fails if the toolchain names one again. Br
 way: the 401 challenge offered the session cookie's name as an authentication scheme (fixed). Chosen
 against: an HTML package now (later, as a builder API, if a service needs it).
 
+### 054: recorded tests (implemented)
+
+Tests of code that calls other services run once against them with `vo test --record DIR` and
+afterwards offline with `vo test --replay DIR`: one readable file per test, written by the recording
+code of `vo run --record` around each test (the runner already isolates tests). Test recordings also
+keep the headers and body of each HTTP request and the bytes of each TCP send, and replay compares the
+body and the bytes, so a changed request fails that test with R0014, naming it and the recorded one;
+a missing recording fails the same way without reaching outside. Notes for unused recorded inputs and
+a changed program; recordings no test uses are listed. Credentials (`Authorization`,
+`Proxy-Authorization`, `Cookie`, `Set-Cookie`, and names given with `--redact`) are written as
+`[redacted]`. Decided with the user: plain `vo test` stays live; redaction at record time. New example
+`examples/rates` records a call to a public HTTPS API. Not done: secrets in bodies or paths (not
+detected), recording a test that serves, expiry.
+
 The open gaps, ordered by the question vo's target sets (decided 2026-11-23, spec 053): **does it make
 an agent-written network service easier to write, review or operate?** Each becomes a spec when it is
 next; anything that reaches the outside world gets an effect, scopes, and record and replay.
 
 | Gap | What is missing | Notes |
 |---|---|---|
-| Recorded tests | a test that uses HTTP, files, programs or the environment depends on the machine and the network | spec 018 follow-up, decided: `vo test --record DIR` saves one recording per test, `vo test --replay DIR` runs offline on them; replaces mock objects |
 | Events | clients and servers for server-sent events and WebSockets | the model is there since spec 047: a worker reads the connection and sends each event on; the protocols are not |
 | Operating a service | structured logs, metrics, readiness beyond `health_route` and `log_requests` | what an operator needs to run an agent's service |
 | Schema migrations | a database's tables change by hand | for `std.sqlite` and the `postgres` package alike |

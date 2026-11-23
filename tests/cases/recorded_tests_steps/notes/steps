@@ -1,0 +1,5 @@
+env A=1 B=2 vo test --record rec main.vo
+vo test --replay rec main.vo
+cp fewer.vo main.vo
+vo test --replay rec main.vo
+vo test --replay rec --json main.vo

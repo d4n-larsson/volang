@@ -1,0 +1,25 @@
+$ env A=1 vo test --record rec --json main.vo
+{"v":1,"kind":"test","id":"main.vo::reads a variable","name":"reads a variable","status":"pass","file":"main.vo","start":{"line":5,"col":1},"uses":"env","ms":0,"recording":"recorded"}
+{"v":1,"kind":"test","id":"main.vo::adds","name":"adds","status":"pass","file":"main.vo","start":{"line":9,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":2,"failed":0,"errored":0,"timed_out":0,"selected":2,"unused_recordings":[]}
+--- stderr
+--- exit 0
+$ vo test --replay rec --json main.vo
+{"v":1,"kind":"test","id":"main.vo::reads a variable","name":"reads a variable","status":"pass","file":"main.vo","start":{"line":5,"col":1},"uses":"env","ms":0,"recording":"replayed"}
+{"v":1,"kind":"test","id":"main.vo::adds","name":"adds","status":"pass","file":"main.vo","start":{"line":9,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":2,"failed":0,"errored":0,"timed_out":0,"selected":2,"unused_recordings":["main/an_old_test.jsonl"]}
+--- stderr
+--- exit 0
+$ vo test --replay rec main.vo
+PASS reads a variable (0ms, replayed)
+PASS adds (0ms)
+2 passed, 0 failed
+recordings with no test: main/an_old_test.jsonl
+--- stderr
+--- exit 0
+$ vo test --json main.vo
+{"v":1,"kind":"test","id":"main.vo::reads a variable","name":"reads a variable","status":"fail","file":"main.vo","start":{"line":5,"col":1},"uses":"env","ms":0,"cause":"check_failed","failure":{"file":"main.vo","start":{"line":6,"col":5},"end":{"line":6,"col":33},"message":"`expect_eq` failed: the values differ.","expected":"ok(\"1\")","actual":"err(\"not set\")"}}
+{"v":1,"kind":"test","id":"main.vo::adds","name":"adds","status":"pass","file":"main.vo","start":{"line":9,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":1,"failed":1,"errored":0,"timed_out":0,"selected":2}
+--- stderr
+--- exit 1

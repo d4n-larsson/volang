@@ -14,6 +14,7 @@ static void *rcd_fb;          /* the recording (FBuf), or 0 */
 static long rcd_failed;       /* it could not be created (T0009 at exit) */
 static Str *rcd_request; /* spec 009: the request line of the http event being written */
 static int rcd_tls;      /* spec 019: ... and whether it went over HTTPS */
+static Str *rcd_sent;    /* spec 054: ... and, in a test's recording, its headers and body */
 static long rcd_pending_kind; /* a read/write being checked: written as `denied` if R0010 ends the run */
 static Str *rcd_to;           /* spec 017: rename's new path, written as "to" */
 static List *rcd_args;        /* spec 017: a run's argv, written as "args" (without the program) */
@@ -22,6 +23,7 @@ static Vec *rp_events;        /* replay: Event records */
 static long rp_next;          /* replay: index of the next event */
 static Str *rp_program;       /* replay: header fields */
 static Str *rp_fprint;
+static long rcd_written;       /* spec 054: events written since the recording started */
 static long rp_seed;
 static long rp_clock = -1;
 static Vec *rp_args; /* strs */
@@ -39,6 +41,10 @@ static const char *const ev_names[] = {0,         "read_line", "read_all",    "r
                                        "local_tz"}; /* spec 048 */
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static Str *run_desc(Str *program, Str *joined);
+static Str *rt_id;     /* spec 054: the replayed test's FILE::NAME (0 outside tests) */
+static long rt_missing;
+static Str *rp_has(Event *e);
+static Str *rt_record_cmd(void);
 static const char hexd[] = "0123456789abcdef";
 
 /* What the program asked for (d_) and what the recording has (n_), by event kind. */
@@ -183,6 +189,7 @@ void rw_str(char *p, long n, long bytes)
  * value: a str, or 0 (then int_value is written when kind is now_ms). */
 void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
 {
+    rcd_written++; /* spec 054: a test that wrote none keeps no recording */
     long bytes = value && !rw_valid_utf8(value->data, value->len);
     rw(J_HEAD);
     rw((char *)ev_names[kind]);
@@ -221,6 +228,10 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
             if (rcd_request) {
                 rw(",\"request\":");
                 rw_str(rcd_request->data, rcd_request->len, 0);
+            }
+            if (rcd_sent) { /* spec 054: a test's request headers and body, for review and replay */
+                rw(",\"sent\":");
+                rw_str(rcd_sent->data, rcd_sent->len, !rw_valid_utf8(rcd_sent->data, rcd_sent->len));
             }
         }
     } else {
@@ -454,7 +465,10 @@ void *io_env(Str *name)
         r = rp_result(rp_take(EVK_ENV, name));
     } else {
         r = rt_env(name);
-        rcd_result(EVK_ENV, name, r);
+        if (rt_testing() && rt_redacted(name, 0) && !((Variant *)r)->tag) /* spec 054: the value is not kept */
+            rcd_event(EVK_ENV, name, EVR_OK, str_from_cstr("[redacted]"), 0);
+        else
+            rcd_result(EVK_ENV, name, r);
     }
     GC_UNROOT(1);
     return r;
@@ -489,6 +503,124 @@ static Str *request_line(Str *request)
     return str_new(request->data, end);
 }
 
+/* ---- spec 054: redaction in test recordings (research R4) ---- */
+
+static Vec *rt_redact;   /* the names to redact: --redact when recording, the header's list when replaying */
+static long rt_redacted_n(char *p, long len, int header);
+
+/* Whether name is redacted: a header (case-insensitive; also the fixed ones) or a query parameter or
+ * variable (exact). */
+long rt_redacted(Str *name, int header)
+{
+    return rt_redacted_n(name->data, name->len, header);
+}
+
+/* rt_redacted on bytes (nothing allocated). */
+static long rt_redacted_n(char *p, long len, int header)
+{
+    static const char *const fixed[] = {"authorization", "proxy-authorization", "cookie", "set-cookie", 0};
+    if (header)
+        for (int i = 0; fixed[i]; i++) {
+            long n = cstr_len((char *)fixed[i]);
+            if (len != n) continue;
+            long k = 0;
+            while (k < n && (p[k] | 32) == fixed[i][k]) k++;
+            if (k == n) return 1;
+        }
+    for (long i = 0; rt_redact && i < rt_redact->n; i++) {
+        Str *r = vec_get(rt_redact, i);
+        if (r->len != len) continue;
+        long k = 0;
+        while (k < r->len && (header ? (r->data[k] | 32) == (p[k] | 32) : r->data[k] == p[k])) k++;
+        if (k == r->len) return 1;
+    }
+    return 0;
+}
+
+/* What follows the request line: the headers and the body. */
+static Str *request_rest(Str *request)
+{
+    long i = 0;
+    while (i < request->len && request->data[i] != '\n') i++;
+    return i < request->len ? str_new(request->data + i + 1, request->len - i - 1) : str_new("", 0);
+}
+
+/* The body after the blank line of a head (all of text when there is none). */
+static Str *body_after_head(Str *text)
+{
+    for (long i = 0; i + 3 < text->len; i++)
+        if (mem_eq(text->data + i, "\r\n\r\n", 4)) return str_new(text->data + i + 4, text->len - i - 4);
+    return text;
+}
+
+/* text with the value of every redacted header replaced by [redacted]; answer: text is a response (its
+ * status line is kept as it is). */
+static Str *rt_redact_head(Str *text, int answer)
+{
+    SB *sb = sb_new();
+    GC_ROOT(&text);
+    GC_ROOT(&sb);
+    long i = 0;
+    if (answer) { /* the status line */
+        while (i < text->len && text->data[i] != '\n') i++;
+        if (i < text->len) i++;
+        sb_bytes(sb, text->data, i);
+    }
+    while (i < text->len) {
+        long e = i;
+        while (e < text->len && text->data[e] != '\n') e++;
+        long n = e - i - (e > i && text->data[e - 1] == '\r');
+        if (n == 0) { /* the blank line: the body follows as it is */
+            sb_bytes(sb, text->data + i, text->len - i);
+            break;
+        }
+        long colon = i;
+        while (colon < i + n && text->data[colon] != ':') colon++;
+        if (colon < i + n && rt_redacted_n(text->data + i, colon - i, 1)) {
+            sb_bytes(sb, text->data + i, colon - i);
+            sb_cstr(sb, ": [redacted]");
+            sb_bytes(sb, text->data + i + n, e - i - n); /* the \r */
+        } else {
+            sb_bytes(sb, text->data + i, e - i);
+        }
+        if (e < text->len) sb_byte(sb, '\n');
+        i = e + 1;
+    }
+    Str *out = sb_finish(sb);
+    GC_UNROOT(2);
+    return out;
+}
+
+/* The request line with the value of every redacted query parameter replaced by [redacted]. */
+static Str *rt_redact_line(Str *line)
+{
+    long q = 0;
+    while (q < line->len && line->data[q] != '?') q++;
+    if (q == line->len || !rt_redact) return line;
+    SB *sb = sb_new();
+    GC_ROOT(&line);
+    GC_ROOT(&sb);
+    sb_bytes(sb, line->data, q + 1);
+    long i = q + 1;
+    while (i < line->len) {
+        long e = i;
+        while (e < line->len && line->data[e] != '&' && line->data[e] != ' ') e++;
+        long eq = i;
+        while (eq < e && line->data[eq] != '=') eq++;
+        if (eq < e && rt_redacted_n(line->data + i, eq - i, 0)) {
+            sb_bytes(sb, line->data + i, eq - i + 1);
+            sb_cstr(sb, "[redacted]");
+        } else {
+            sb_bytes(sb, line->data + i, e - i);
+        }
+        if (e < line->len) sb_byte(sb, line->data[e]);
+        i = e + 1;
+    }
+    Str *out = sb_finish(sb);
+    GC_UNROOT(2);
+    return out;
+}
+
 /* Spec 007 (research R11): the host check (R0010) in every mode, then the exchange; replay returns
  * the recorded response without the network, and refuses another host or port (R0014). */
 static Variant *io_exchange(Str *host, long port, Str *request, int tls);
@@ -512,6 +644,12 @@ static Variant *io_exchange(Str *host, long port, Str *request, int tls)
     rt_check_net(host, port); /* spec 039: the host, or the host with this port */
     Str *line = request_line(request);
     GC_ROOT(&line);
+    Str *sent = 0; /* spec 054: in a test, the headers and body after the line, redacted */
+    GC_ROOT(&sent);
+    if (rt_testing()) {
+        line = rt_redact_line(line);
+        sent = rt_redact_head(request_rest(request), 0);
+    }
     long own_ms = net_timeout_next; /* std.http's send: this request's own timeout (a replay has no waits) */
     net_timeout_next = 0;
     net_capped = 0;
@@ -522,6 +660,8 @@ static Variant *io_exchange(Str *host, long port, Str *request, int tls)
         if (e->kind != EVK_HTTP || !str_eq(e->name, host) || e->port != port || e->tls != tls ||
             (e->request && !str_eq(e->request, line))) /* older recordings: host and port only */
             rp_mismatch(EVK_HTTP, asked, e);
+        if (sent && e->sent && !str_eq(body_after_head(e->sent), body_after_head(sent)))
+            rp_mismatch_sent(asked, 1); /* spec 054: the same request with another body */
         r = rp_result(e);
     } else {
         net_cap_ms = own_ms > 0 ? sys_clock_ms() + own_ms : 0;
@@ -530,9 +670,12 @@ static Variant *io_exchange(Str *host, long port, Str *request, int tls)
         if (rcd_mode) {
             rcd_request = line;
             rcd_tls = tls;
-            rcd_event(EVK_HTTP, host, (long)(uint32_t)r->tag, r->pay.s, port);
+            rcd_sent = sent;
+            Str *answer = sent && !r->tag ? rt_redact_head(r->pay.s, 1) : r->pay.s; /* spec 054: Set-Cookie, named */
+            rcd_event(EVK_HTTP, host, (long)(uint32_t)r->tag, answer, port);
             rcd_request = 0;
             rcd_tls = 0;
+            rcd_sent = 0;
         }
     }
     if (!r->tag) { /* spec 013 (R4): the raw response (as recorded) is framed here, by the server's rules */
@@ -554,7 +697,7 @@ static Variant *io_exchange(Str *host, long port, Str *request, int tls)
         }
         GC_UNROOT(3);
     }
-    GC_UNROOT(3);
+    GC_UNROOT(4);
     return r;
 }
 
@@ -607,6 +750,19 @@ void rp_mismatch(long kind, Str *name, Event *event)
     Str *asked = rp_describe((char *)d_table[kind], name);
     Str *m;
     GC_ROOT(&asked);
+    if (rt_id) { /* spec 054: a replayed test; only this test fails */
+        Str *cmd = rt_record_cmd();
+        GC_ROOT(&cmd);
+        if (rt_missing)
+            m = msg("The test $1, but it has no recording in `$2`: record it with `$3`.", asked,
+                    str_from_cstr((char *)opt_replay_dir), cmd);
+        else if (event)
+            m = msg("The test $1, but its recording has $2 next: re-record it with `$3`.", asked, rp_has(event), cmd);
+        else
+            m = msg("The test $1, but its recording has no more inputs: re-record it with `$2`.", asked, cmd, 0);
+        GC_UNROOT(2);
+        rt_raise("R0014", m, (void *)cur_node);
+    }
     if (event) {
         Str *has = rp_describe((char *)n_table[event->kind],
                                event->kind == EVK_HTTP ? http_desc(event->name, event->port, event->request, event->tls)
@@ -754,16 +910,18 @@ static Str *rf_scheme;    /* spec 019: "https" on an HTTPS http event */
 static Str *rf_op;        /* spec 026: an sql event's operation and statement */
 static Str *rf_sql;
 static Str *rf_line; /* ... and its whole line */
+static Str *rf_sent;   /* spec 054: a test's http event: what was sent after the request line */
+static Vec *rf_redact; /* spec 054: the header's redacted names */
 
 static const char *const rk_keys[] = {"kind",   "program", "fingerprint", "seed", "clock_ms", "args",    "path",
                                       "name",   "result",  "value",       "status", "host",     "port",    "request",
-                                      "address", "to", "scheme", "op", "sql", "offset", 0};
+                                      "address", "to", "scheme", "op", "sql", "offset", "sent", "test", "redact", 0};
 static long rf_args_line; /* spec 017: this line had "args" (a run event's arguments) */
 
 /* Where each string-valued key is stored (rk_keys order; 0: not a string). */
 static Str **const rf_slots[] = {&rf_kind, &rf_program, &rf_fprint, 0, 0, 0, &rf_name, &rf_name, &rf_result,
                                  &rf_value, 0, &rf_name, 0, &rf_request, &rf_name, &rf_request, &rf_scheme,
-                                 &rf_op, &rf_sql, 0};
+                                 &rf_op, &rf_sql, 0, &rf_sent, 0, 0};
 
 /* T0008 invalid_recording, exit 64. */
 void rp_bad(void)
@@ -886,6 +1044,7 @@ void rp_line(char *p, char *end)
     rf_sql = 0;
     rf_program = 0;
     rf_args_line = 0;
+    rf_sent = 0;
     p = rp_ws(p, end);
     if (p >= end || *p != '{') rp_bad();
     p++;
@@ -900,7 +1059,7 @@ void rp_line(char *p, char *end)
             Str *s;
             p = rp_string(p, end, &s);
             if (field >= 0 && rf_slots[field]) *rf_slots[field] = s;
-        } else if ((*p == '[' && field != 5) || *p == '{') {
+        } else if ((*p == '[' && field != 5 && field != 22) || *p == '{') {
             p = rp_skip(p, end);
         } else if (*p == '[') { /* an array of strings (args) */
             p++;
@@ -920,6 +1079,7 @@ void rp_line(char *p, char *end)
                 rf_args = v;
                 rf_args_line = 1;
             }
+            if (field == 22) rf_redact = v; /* spec 054 */
         } else if (*p == 't') { /* true (spec 013, L6: the literals exactly) */
             if (end - p < 4 || !mem_eq(p, "true", 4)) rp_bad();
             p += 4;
@@ -1012,6 +1172,7 @@ void rp_read(char *text, long len)
                 e->port = rf_port;
                 e->request = rf_request;
                 e->tls = rf_scheme && str_eq_cstr(rf_scheme, "https");
+                e->sent = rf_sent; /* spec 054 */
                 if (kind == EVK_SQL) { /* spec 026: the statement, path or operation, and the whole line */
                     e->name = rf_sql ? rf_sql : rf_name ? rf_name : rf_op;
                     e->request = rf_line;
@@ -1344,4 +1505,276 @@ long rp_position(void)
 void rp_set_position(long next)
 {
     if (rcd_mode == 2) rp_next = next;
+}
+
+/* ---- spec 054: one recording per test (research R1, R5; contracts/cli.md) ----
+ * `vo test --record DIR` records each test into DIR/<file>/<name>.jsonl, `vo test --replay DIR` feeds each
+ * test its own file. The runner calls rt_begin after the test's heap is fresh and rt_end after its body;
+ * everything here lives on that heap or in globals (which the collector scans). */
+Str *rt_mode;          /* "recorded", "replayed" or 0 (live): the current test's word for its report */
+Vec *rt_notes;         /* Str: the current test's notes (unused recorded inputs, a changed program) */
+static Str *rt_path;   /* the current test's recording file */
+static Str *rt_tmp;    /* ... and the file being written (renamed to rt_path when the test ends) */
+static FBuf *rt_fb;    /* one buffer for every test's recording */
+
+/* The path of a test's recording: DIR/<file relative to the entry's directory>/<name>.jsonl, the name with
+ * letters, digits, - and . kept, a space as _, every other byte as %XX. */
+static Str *rt_file_of(Node *test)
+{
+    static const char hx[] = "0123456789ABCDEF";
+    char *dir = (char *)(opt_record ? opt_record : opt_replay_dir);
+    char *entry = ((char **)pos_args)[0];
+    long cut = 0; /* the entry's directory, left out of the file's path */
+    for (long i = 0; entry[i]; i++)
+        if (entry[i] == '/') cut = i + 1;
+    Str *file = file_get((int)test->file)->path;
+    if (cut > file->len || !mem_eq(file->data, entry, cut)) cut = 0;
+    SB *sb = sb_new();
+    sb_cstr(sb, dir);
+    if (sb->len && sb->ptr[sb->len - 1] != '/') sb_byte(sb, '/');
+    long flen = file->len - cut; /* the file's path without `.vo`: no folder looks like a source file */
+    if (flen > 3 && mem_eq(file->data + file->len - 3, ".vo", 3)) flen -= 3;
+    sb_bytes(sb, file->data + cut, flen);
+    sb_byte(sb, '/');
+    Str *name = test->a.s;
+    for (long i = 0; i < name->len; i++) {
+        unsigned char c = (unsigned char)name->data[i];
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-' || c == '.') {
+            sb_byte(sb, (char)c);
+        } else if (c == ' ') {
+            sb_byte(sb, '_');
+        } else {
+            sb_byte(sb, '%');
+            sb_byte(sb, hx[c >> 4]);
+            sb_byte(sb, hx[c & 15]);
+        }
+    }
+    sb_cstr(sb, ".jsonl");
+    return sb_finish(sb);
+}
+
+static Str *rt_id_of(Node *test)
+{
+    SB *sb = sb_new();
+    sb_str(sb, file_get((int)test->file)->path);
+    sb_cstr(sb, "::");
+    sb_str(sb, test->a.s);
+    return sb_finish(sb);
+}
+
+/* Before a test's body: start its recording, or load it. */
+void rt_begin(Node *test)
+{
+    rt_mode = 0;
+    rt_notes = 0;
+    if (!opt_record && !opt_replay_dir) return;
+    rt_path = rt_file_of(test);
+    rt_id = rt_id_of(test);
+    rt_notes = vec_new();
+    if (opt_record) {
+        /* written beside DIR's files and moved into the test's folder (made then) only when the test
+           received something, so a test that did not leaves no folder behind */
+        mkdir_p(str_from_cstr((char *)opt_record));
+        SB *tb = sb_new();
+        sb_cstr(tb, (char *)opt_record);
+        sb_cstr(tb, "/.recording.tmp");
+        rt_tmp = sb_finish(tb);
+        if (!rt_fb) {
+            rt_fb = fbuf_open(rt_tmp->data);
+        } else {
+            rt_fb->fd = sys_open(rt_tmp->data, O_WRCREAT);
+            rt_fb->len = 0;
+            rt_fb->err = rt_fb->fd < 0;
+        }
+        rcd_fb = rt_fb && rt_fb->fd >= 0 ? rt_fb : 0;
+        if (!rcd_fb) rcd_failed = 1;
+        rcd_mode = 1;
+        rw("{\"v\":1,\"kind\":\"recording\",\"program\":");
+        char *program = ((char **)pos_args)[0];
+        rw_str(program, cstr_len(program), 0);
+        rw(",\"fingerprint\":\"");
+        rw_hex64(rp_fingerprint());
+        rw("\",\"seed\":");
+        rw_dec(opt_seed_set ? opt_seed : 1);
+        rw(",\"clock_ms\":");
+        rw_dec(opt_clock_set ? opt_clock : 0);
+        rw(",\"test\":");
+        rw_str(rt_id->data, rt_id->len, 0);
+        rw(",\"redact\":[");
+        for (long i = 0; opt_redact && i < opt_redact->n; i++) {
+            Str *n = vec_get(opt_redact, i);
+            if (i) rw(",");
+            rw_str(n->data, n->len, 0);
+        }
+        rw("]}\n");
+        rcd_written = 0;
+        rt_redact = opt_redact;
+        rt_mode = str_from_cstr("recorded");
+        return;
+    }
+    char *text; /* --replay */
+    long len = read_whole_file(rt_path->data, &text);
+    rt_missing = len < 0;
+    rp_saw_end = 0;
+    rp_next = 0;
+    if (rt_missing) {
+        rp_events = vec_new();
+        rp_fprint = 0;
+    } else {
+        rf_redact = 0;
+        rp_read(text, len);
+    }
+    rt_redact = rt_missing ? 0 : rf_redact;
+    rcd_mode = 2;
+    rt_mode = str_from_cstr("replayed");
+}
+
+/* What the recording has in event e, for messages: "an HTTP request GET /x to h:80", "the file `a`", ... */
+static Str *rp_has(Event *e)
+{
+    return rp_describe((char *)n_table[e->kind], e->kind == EVK_HTTP  ? http_desc(e->name, e->port, e->request, e->tls)
+                                                 : e->kind == EVK_RUN ? run_desc(e->name, e->request)
+                                                                      : e->name);
+}
+
+/* The command that records the current test again. */
+static Str *rt_record_cmd(void)
+{
+    SB *sb = sb_new();
+    sb_cstr(sb, "vo test --record ");
+    sb_cstr(sb, (char *)opt_replay_dir);
+    sb_cstr(sb, " --test '");
+    sb_str(sb, rt_id);
+    sb_byte(sb, '\'');
+    return sb_finish(sb);
+}
+
+/* After a test's body, however it ended: failed when it did not pass; timed_out keeps an older
+ * recording (what it received is cut short). Replay adds the test's notes. */
+void rt_end(long failed, long timed_out)
+{
+    if (rcd_mode == 1 && rt_tmp) {
+        if (rcd_pending_kind) {
+            rcd_event_raw(rcd_pending_kind, rcd_pending_path, EVR_DENIED, 0, 0);
+            rcd_pending_kind = 0;
+        }
+        long wrote = rcd_written;
+        if (rcd_fb && wrote && !timed_out) {
+            rw(J_HEAD);
+            rw("end");
+            rw("\",\"status\":");
+            rw_dec(failed ? 1 : 0);
+            rw(J_CLOSE);
+            fbuf_flush(rcd_fb);
+        }
+        long err = !rcd_fb || rt_fb->err;
+        if (rt_fb && rt_fb->fd >= 0) sys_close((int)rt_fb->fd);
+        if (rt_fb) rt_fb->fd = -1;
+        rcd_mode = 0;
+        rcd_fb = 0;
+        if (!wrote) rt_mode = 0; /* nothing from outside: it ran as always */
+        if (timed_out || err || !wrote) sys_unlink(rt_tmp->data);
+        if (!timed_out && !err && !wrote) sys_unlink(rt_path->data); /* nothing received: no recording */
+        if (!timed_out && !err && wrote) {
+            long slash = rt_path->len;
+            while (slash > 0 && rt_path->data[slash - 1] != '/') slash--;
+            if (slash > 1) mkdir_p(str_new(rt_path->data, slash - 1));
+            sys_rename(rt_tmp->data, rt_path->data);
+        }
+        if (err && wrote) out_unwritable(rt_path->data);
+    } else if (rcd_mode == 2 && rt_id) {
+        rcd_mode = 0;
+        if (rt_missing) rt_mode = 0; /* no recording, and it asked for nothing: it ran as always */
+        if (!rt_missing && rp_next < rp_events->n) { /* FR-007: inputs the test no longer asked for */
+            SB *sb = sb_new();
+            int_to_dec(sb, rp_events->n - rp_next);
+            Str *count = sb_finish(sb);
+            Str *first = rp_has(vec_get(rp_events, rp_next));
+            vec_push(rt_notes, msg(rp_events->n - rp_next == 1 ? "$1 recorded input was not used: $2"
+                                                                : "$1 recorded inputs were not used, the first: $2",
+                                   count, first, 0));
+        }
+        if (!rt_missing && !opt_mutate && rp_fprint) { /* FR-008 */
+            unsigned long h = (unsigned long)rp_fingerprint();
+            SB *sb = sb_new();
+            for (int shift = 60; shift >= 0; shift -= 4) sb_byte(sb, hexd[(h >> shift) & 15]);
+            if (!str_eq(sb_finish(sb), rp_fprint)) vec_push(rt_notes, str_from_cstr("the program changed since this test was recorded"));
+        }
+    }
+    rt_tmp = 0;
+    rt_id = 0;
+    rp_events = 0;
+    rt_redact = 0;
+}
+
+/* Whether the running recording or replay is a test's (sends and request bodies are kept and compared). */
+long rt_testing(void)
+{
+    return rt_id != 0;
+}
+
+/* R0014 in a replayed test: it sent other bytes to name (a connection), or an HTTP request (name: its description) with
+ * another body, than recorded. */
+void rp_mismatch_sent(Str *name, int http)
+{
+    Str *cmd = rt_record_cmd();
+    GC_ROOT(&cmd);
+    Str *m = http ? msg("The test makes an HTTP request $1 with another body than its recording has: re-record it with `$2`.", name, cmd, 0)
+                  : msg("The test sends other bytes to `$1` than its recording has: re-record it with `$2`.", name, cmd, 0);
+    GC_UNROOT(1);
+    rt_raise("R0014", m, (void *)cur_node);
+}
+
+/* FR-015: the recordings under DIR, in the folders of the program's files, that name none of their tests
+ * (paths relative to DIR). 0 without --record or --replay. */
+Vec *rt_unused(void)
+{
+    if (!opt_record && !opt_replay_dir) return 0;
+    char *dir = (char *)(opt_record ? opt_record : opt_replay_dir);
+    long dlen = cstr_len(dir);
+    Vec *out = vec_new();
+    GC_ROOT(&out);
+    char *buf = alloc(32768);
+    for (long f = 0; f < file_count; f++) {
+        Vec *items = file_get((int)f)->ast ? file_get((int)f)->ast->a.v : 0;
+        Vec *want = vec_new(); /* the recording paths of this file's tests */
+        GC_ROOT(&want);
+        Str *folder = 0;
+        for (long i = 0; items && i < items->n; i++) {
+            Node *t = vec_get(items, i);
+            if (t->kind != N_TEST) continue;
+            Str *pth = rt_file_of(t);
+            vec_push(want, pth);
+            if (!folder) {
+                long cut = pth->len;
+                while (cut > 0 && pth->data[cut - 1] != '/') cut--;
+                folder = str_new(pth->data, cut ? cut - 1 : 0);
+            }
+        }
+        long fd = folder ? sys_open(folder->data, O_DIRECTORY) : -1;
+        for (long got; fd >= 0 && (got = sys_getdents64((int)fd, buf, 32768)) > 0;) {
+            for (long off = 0; off < got;) {
+                char *ent = buf + off; /* linux_dirent64: name at 19, reclen at 16 */
+                off += *(uint16_t *)(ent + 16);
+                char *name = ent + 19;
+                long n = cstr_len(name);
+                if (n < 7 || !mem_eq(name + n - 6, ".jsonl", 6)) continue;
+                SB *sb = sb_new();
+                sb_str(sb, folder);
+                sb_byte(sb, '/');
+                sb_cstr(sb, name);
+                Str *full = sb_finish(sb);
+                long used = 0;
+                for (long k = 0; k < want->n && !used; k++) used = str_eq(vec_get(want, k), full);
+                if (!used) {
+                    long skip = dlen + (dir[dlen - 1] == '/' ? 0 : 1);
+                    vec_push(out, str_new(full->data + skip, full->len - skip));
+                }
+            }
+        }
+        if (fd >= 0) sys_close((int)fd);
+        GC_UNROOT(1);
+    }
+    GC_UNROOT(1);
+    return out;
 }

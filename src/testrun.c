@@ -449,6 +449,19 @@ void report_test(Node *test, int status, long ms)
         }
         sb_cstr(sb, ",\"ms\":");
         int_to_dec(sb, ms);
+        if (rt_mode) { /* spec 054: recorded or replayed (absent: live) */
+            sb_cstr(sb, ",\"recording\":\"");
+            sb_str(sb, rt_mode);
+            sb_byte(sb, '"');
+        }
+        if (rt_notes && rt_notes->n) {
+            sb_cstr(sb, ",\"notes\":[");
+            for (long k = 0; k < rt_notes->n; k++) {
+                if (k) sb_byte(sb, ',');
+                json_str_into(sb, vec_get(rt_notes, k));
+            }
+            sb_byte(sb, ']');
+        }
         if (test->flags & NF_PROP) prop_json(sb, test, status);
         sp_report(sb, status); /* spec 012 */
         if (status) { /* spec 018 */
@@ -519,9 +532,19 @@ void report_test(Node *test, int status, long ms)
         sb_cstr(sb, " (");
         if (test->flags & NF_PROP) prop_cases_text(sb);
         int_to_dec(sb, ms);
-        sb_cstr(sb, "ms)");
+        sb_cstr(sb, "ms");
+        if (rt_mode) { /* spec 054: recorded or replayed */
+            sb_cstr(sb, ", ");
+            sb_str(sb, rt_mode);
+        }
+        sb_byte(sb, ')');
         sp_report(sb, status); /* spec 012: the IDs of a test that does not pass */
         sb_byte(sb, '\n');
+        for (long k = 0; rt_notes && k < rt_notes->n; k++) { /* spec 054 */
+            sb_cstr(sb, "  note: ");
+            sb_str(sb, vec_get(rt_notes, k));
+            sb_byte(sb, '\n');
+        }
         if (status && at) {
             sb_cstr(sb, "  ");
             human_loc(sb, (int)at->file, at->start);
@@ -620,6 +643,7 @@ long run_one_test(Node *test_in, long index_in)
         rt_err_node = 0;
         rt_err_in_test = 0;
         pr_starved = 0; /* (a property sets it again; a test after a starved property must not see it) */
+        rt_begin(test); /* spec 054: its recording, started or loaded */
         volatile long start = sys_clock_ms();
         deadline_ms = 0; /* a deadline per test */
         if (opt_timeout) deadline_ms = opt_timeout * 1000 + start;
@@ -647,6 +671,7 @@ long run_one_test(Node *test_in, long index_in)
         cap_on = 0;
         interp_reset();
         if (status == ST_ERROR && rt_err_code == (long)r0009) status = ST_TIMEOUT; /* R0009 is a timeout */
+        rt_end(status != ST_PASS, status == ST_TIMEOUT); /* spec 054 */
         return status;
     }
 }
@@ -687,6 +712,8 @@ void run_file_tests(int file)
         tf_op_text[0] = tf_op_text[1] = tf_op_val[0] = tf_op_val[1] = 0;
         rt_err_msg = 0;
         rt_err_extra = 0;
+        rt_mode = 0; /* spec 054 */
+        rt_notes = 0;
         ret_val = 0;
         pr_args = 0;
         pr_best = 0;
@@ -787,6 +814,8 @@ void test_summary(long files)
         out_bytes(1, sb->ptr, sb->len);
         sb->len = 0;
     }
+    Vec *unused = rt_unused(); /* spec 054: recordings that name no test of the program */
+    GC_ROOT(&unused);
     if (opt_json) { /* JSON: the common summary plus the test counts */
         sb_cstr(sb, ",\"passed\":");
         int_to_dec(sb, t_passed);
@@ -798,14 +827,22 @@ void test_summary(long files)
         int_to_dec(sb, t_timed_out);
         sb_cstr(sb, ",\"selected\":"); /* spec 018 */
         int_to_dec(sb, t_selected);
-        GC_UNROOT(1);
+        if (unused) {
+            sb_cstr(sb, ",\"unused_recordings\":[");
+            for (long k = 0; k < unused->n; k++) {
+                if (k) sb_byte(sb, ',');
+                json_str_into(sb, vec_get(unused, k));
+            }
+            sb_byte(sb, ']');
+        }
+        GC_UNROOT(2);
         summary_emit(1, 1, "test", files, sb_finish(sb));
         return;
     }
     if (!t_selected && (opt_tests || opt_specs || sel_diff || opt_filter)) { /* spec 018: an empty selection */
         sb_cstr(sb, "0 tests selected\n");
         out_bytes(1, sb->ptr, sb->len);
-        GC_UNROOT(1);
+        GC_UNROOT(2);
         return;
     }
     int_to_dec(sb, t_passed); /* human: "2 passed, 1 failed[, 1 errored][, 1 timed out]" */
@@ -823,6 +860,14 @@ void test_summary(long files)
         sb_cstr(sb, " timed out");
     }
     sb_byte(sb, '\n');
+    if (unused && unused->n) { /* spec 054 */
+        sb_cstr(sb, "recordings with no test: ");
+        for (long k = 0; k < unused->n; k++) {
+            if (k) sb_cstr(sb, ", ");
+            sb_str(sb, vec_get(unused, k));
+        }
+        sb_byte(sb, '\n');
+    }
     out_bytes(1, sb->ptr, sb->len);
-    GC_UNROOT(1);
+    GC_UNROOT(2);
 }
