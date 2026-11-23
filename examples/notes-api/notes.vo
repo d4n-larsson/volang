@@ -60,9 +60,12 @@ export fn find_note[D: effects](db: Database[D], id: int) -> result[Note, NoteEr
     return map_err(note_of(rows[0]), db_error);
 }
 
+# A new note; `returning id` gives its id (the same statement works on PostgreSQL).
 export fn add_note[D: effects](db: Database[D], text: str) -> result[Note] uses D {
-    let c = try exec(db, sql("insert into notes (text) values (?)"), [Value.text(text)]);
-    return ok(new Note { id: c.last_id, text: text, done: false });
+    let rows = try query(db, sql("insert into notes (text) values (?) returning id"), [
+        Value.text(text)
+    ]);
+    return ok(new Note { id: try get_int(rows[0], "id"), text: text, done: false });
 }
 
 export fn mark_done[D: effects](db: Database[D], id: int) -> result[Note, NoteError] uses D {

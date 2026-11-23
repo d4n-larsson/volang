@@ -575,6 +575,21 @@ with a fixed clock. The data is as old as the toolchain: `vo version` names the 
 of vo takes the newest, and `zone_from_bytes` reads a file a program brings itself. Month and weekday
 names, locale formats and calendar arithmetic ("a month later") are not part of it.
 
+### 049: a PostgreSQL package (implemented)
+
+`packages/postgres`, a client written in vo on `std.tcp` and `std.crypto`, added with `vo package`; the
+toolchain did not change (it needed spec 050 first). It has the names, parameters, results and error
+texts of `std.sqlite`, so a program moves between the two by changing its imports, the code that opens
+the database, its effects and the SQL the two spell differently; the notes API example exists in both
+forms and a test fails on any other difference. `?` parameters on both (the package numbers them),
+TLS by default with the server verified, SCRAM-SHA-256 with the server's proof checked, every wait
+under a time limit, failures named like `std.sqlite`'s plus `connection`, `timeout`, `tls`, `auth`
+and `protocol`. Not done: check-time SQL checking for PostgreSQL (`vo check` knows only `std.sqlite`'s
+`sql`), connection pools, `LISTEN`/`NOTIFY`, `COPY`, cancelling a running statement, SASLprep of
+non-ASCII passwords. Found on the way: `vo test` keeps a test's connections open until it ends, so a
+property that connects per case holds up to 100 connections (the example's test helper ends the
+earlier ones).
+
 ### 050: scoped effects through package functions (implemented)
 
 Found while planning the PostgreSQL package (spec 049): a function that is given its target (a

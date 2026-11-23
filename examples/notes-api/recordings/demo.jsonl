@@ -1,5 +1,9 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"bb21a58ae496e765","seed":113601272936294,"clock_ms":null,"args":[]}
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"eac03ee8c942ac6f","seed":25713054896924,"clock_ms":null,"args":[]}
 {"v":1,"kind":"listen","address":"8080","result":"ok","value":5}
+{"v":1,"kind":"setup","worker":2}
+{"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
+{"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)","params":[],"result":"ok","changed":0,"last_id":0}
+{"v":1,"kind":"setup_end"}
 {"v":1,"kind":"setup","worker":0}
 {"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
 {"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)","params":[],"result":"ok","changed":0,"last_id":0}
@@ -12,15 +16,11 @@
 {"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
 {"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)","params":[],"result":"ok","changed":0,"last_id":0}
 {"v":1,"kind":"setup_end"}
-{"v":1,"kind":"setup","worker":2}
-{"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}
-{"v":1,"kind":"sql","op":"exec","db":0,"sql":"create table if not exists notes (id integer primary key, text text not null, done integer not null default 0)","params":[],"result":"ok","changed":0,"last_id":0}
-{"v":1,"kind":"setup_end"}
 {"v":1,"kind":"request","value":"POST /notes HTTP/1.1\u000d\u000aHost: localhost:8080\u000d\u000aUser-Agent: curl/8.5.0\u000d\u000aAccept: */*\u000d\u000aContent-Type: application/json\u000d\u000aContent-Length: 28\u000d\u000a\u000d\u000a{\"text\": \"water the plants\"}"}
-{"v":1,"kind":"sql","op":"exec","db":0,"sql":"insert into notes (text) values (?)","params":[{"text":"water the plants"}],"result":"ok","changed":1,"last_id":1}
+{"v":1,"kind":"sql","op":"query","db":0,"sql":"insert into notes (text) values (?) returning id","params":[{"text":"water the plants"}],"result":"ok","columns":["id"],"rows":[[{"int":1}]]}
 {"v":1,"kind":"response","value":"HTTP/1.1 201 Created\u000d\u000aContent-Type: application/json\u000d\u000aLocation: /notes/1\u000d\u000aContent-Length: 47\u000d\u000aConnection: close\u000d\u000a\u000d\u000a{\"id\":1,\"text\":\"water the plants\",\"done\":false}"}
 {"v":1,"kind":"request","value":"POST /notes HTTP/1.1\u000d\u000aHost: localhost:8080\u000d\u000aUser-Agent: curl/8.5.0\u000d\u000aAccept: */*\u000d\u000aContent-Type: application/json\u000d\u000aContent-Length: 21\u000d\u000a\u000d\u000a{\"text\": \"buy bread\"}"}
-{"v":1,"kind":"sql","op":"exec","db":0,"sql":"insert into notes (text) values (?)","params":[{"text":"buy bread"}],"result":"ok","changed":1,"last_id":2}
+{"v":1,"kind":"sql","op":"query","db":0,"sql":"insert into notes (text) values (?) returning id","params":[{"text":"buy bread"}],"result":"ok","columns":["id"],"rows":[[{"int":2}]]}
 {"v":1,"kind":"response","value":"HTTP/1.1 201 Created\u000d\u000aContent-Type: application/json\u000d\u000aLocation: /notes/2\u000d\u000aContent-Length: 40\u000d\u000aConnection: close\u000d\u000a\u000d\u000a{\"id\":2,\"text\":\"buy bread\",\"done\":false}"}
 {"v":1,"kind":"request","value":"GET /notes HTTP/1.1\u000d\u000aHost: localhost:8080\u000d\u000aUser-Agent: curl/8.5.0\u000d\u000aAccept: */*\u000d\u000a\u000d\u000a"}
 {"v":1,"kind":"sql","op":"query","db":0,"sql":"select id, text, done from notes order by id","params":[],"result":"ok","columns":["id","text","done"],"rows":[[{"int":1},{"text":"water the plants"},{"int":0}],[{"int":2},{"text":"buy bread"},{"int":0}]]}

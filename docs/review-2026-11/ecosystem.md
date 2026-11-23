@@ -42,7 +42,7 @@ Ordered by how many programs each gap blocks.
 | Paths | string concatenation | `std.path`: join, parent, name, extension, clean. Cheap and prevents `a//b` and `..` mistakes before the run-time check does |
 | Text | ASCII case mapping, byte lengths | see [language.md](language.md#4-strings) |
 | Templates | none | `std.web` returns JSON; an HTML template with escaping by default would make it a full web stack |
-| Postgres | none | after TCP. SQLite covers one machine; anything deployed with more than one needs a server database. `sql("...")` checking already exists to reuse. |
+| Postgres | the `postgres` package (spec 049) | done as a package in vo on `std.tcp`, with `std.sqlite`'s names so a program moves between them; `sql("...")` is checked when it runs, not by `vo check` |
 | Process control | run to completion, no input stream | interactive children and signals, after streaming |
 
 `std.math` gaps (`log2`, `log10`, `hypot`, hyperbolic functions) are noted in the roadmap as "when a

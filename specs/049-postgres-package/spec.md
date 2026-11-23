@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-23
 
-**Status**: Draft (planned 2026-11-23; its prerequisite, spec 050, is implemented)
+**Status**: Implemented ([results](results.md); SC-008 tested on PostgreSQL 17 only)
 
 **Input**: User description: "PostgreSQL client as a first-party vo package (not in std), written in vo
 on std.tcp and std.crypto: no toolchain changes, no C, nothing added to the language reference. Follow-up

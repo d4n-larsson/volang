@@ -1,0 +1,145 @@
+# postgres.link: the connection under the protocol: opening it (with TLS unless told otherwise),
+# sending bytes and receiving one message at a time, each wait under a time limit, and std.tcp's
+# failures as this package's failure names. Not part of the package's API: import postgres.client.
+import postgres.wire.read32;
+import postgres.wire.tls_request;
+import std.bytes.from_ints;
+import std.tcp.Conn;
+import std.tcp.TcpError;
+import std.tcp.close;
+import std.tcp.connect;
+import std.tcp.describe;
+import std.tcp.read_exact;
+import std.tcp.send;
+import std.tcp.start_tls;
+import std.text.starts_with;
+
+# One message from the server: its type byte and its body.
+#     new Message { kind: 90, body: from_ints([73]) }.kind is 90
+export record Message {
+    # The type byte ('Z' is 90).
+    kind: int;
+    # The body, without the type and the length.
+    body: bytes;
+}
+
+# A std.tcp failure as this package words it: `timeout:`, `tls:`, `connection:` or `protocol:`.
+#     failed(TcpError.refused) is "connection: the connection was refused"
+export fn failed(e: TcpError) -> str {
+    match e {
+        case timed_out {
+            return "timeout: the server did not answer within the time limit";
+        }
+        case tls(reason) {
+            return "tls: " + reason;
+        }
+        case too_large {
+            return "protocol: " + describe(e);
+        }
+        case invalid(_) {
+            return "protocol: " + describe(e);
+        }
+        case refused {
+            return "connection: " + describe(e);
+        }
+        case closed {
+            return "connection: " + describe(e);
+        }
+        case not_found {
+            return "connection: " + describe(e);
+        }
+        case unreachable {
+            return "connection: " + describe(e);
+        }
+        case in_use {
+            return "connection: " + describe(e);
+        }
+        case too_many {
+            return "connection: " + describe(e);
+        }
+        case other(_) {
+            return "connection: " + describe(e);
+        }
+    }
+}
+
+# Opens the connection. Unless plain_text, asks the server for TLS before anything else and verifies
+# it for host; a server without TLS is an err and nothing more is sent.
+#     dial("", 5432, true, 1000) == err("protocol: an argument is out of range: the host is empty or longer than 253 bytes") is true
+export fn dial(host: str, port: int, plain_text: bool, ms: int) -> result[Conn[uses net]] uses net {
+    let c = try map_err(connect(host, port, ms), failed);
+    if plain_text {
+        return ok(c);
+    }
+    match secure(c, host, ms) {
+        case ok() {
+            return ok(c);
+        }
+        case err(e) {
+            close(c);
+            return err(e);
+        }
+    }
+}
+
+fn secure(c: Conn[uses net], host: str, ms: int) -> result[void] uses net {
+    try map_err(send(c, tls_request(), ms), failed);
+    let answer = try map_err(read_exact(c, 1, ms), failed);
+    if answer[0] == 78 {
+        return err("tls: the server does not offer TLS");
+    }
+    if answer[0] != 83 {
+        return err("protocol: the server's answer to the TLS request is not S or N");
+    }
+    return map_err(start_tls(c, host, ms), failed);
+}
+
+# Sends data within ms.
+#     deliver(new Conn { id: 0, peer: "" }, from_ints([1]), 1000) == err("connection: the connection is closed") is true
+export fn deliver[E: effects](c: Conn[E], data: bytes, ms: int) -> result[void] uses E {
+    return map_err(send(c, data, ms), failed);
+}
+
+# The next message, each wait within ms. A length under 4 or over 1 GiB is `protocol:`.
+#     receive(new Conn { id: 0, peer: "" }, 1000) == err("connection: the connection is closed") is true
+export fn receive[E: effects](c: Conn[E], ms: int) -> result[Message] uses E {
+    let head = try map_err(read_exact(c, 5, ms), failed);
+    let size = try read32(head, 1) - 4;
+    if size < 0 or size > 1073741824 {
+        return err("protocol: a message has an impossible length");
+    }
+    var body = from_ints(new list[int]);
+    var left = size;
+    while left > 0 {
+        let part = try map_err(read_exact(c, min(left, 16777216), ms), failed);
+        set body = body + part;
+        set left = left - len(part);
+    }
+    return ok(new Message { kind: head[0], body: body });
+}
+
+# Closes the connection.
+#     let c = new Conn { id: 0, peer: "" }; hang_up(c); 1 is 1
+export fn hang_up[E: effects](c: Conn[E]) uses E {
+    close(c);
+}
+
+# Whether an err text is of a kind after which the connection cannot be used.
+#     ends_connection("timeout: the server did not answer within the time limit") is true
+export fn ends_connection(e: str) -> bool {
+    return starts_with(e, "timeout:") or starts_with(e, "connection:") or starts_with(e, "protocol:") or starts_with(e, "tls:") or starts_with(e, "auth:");
+}
+
+test "std.tcp failures by name" {
+    expect_eq(
+        failed(TcpError.timed_out),
+        "timeout: the server did not answer within the time limit"
+    );
+    expect_eq(
+        failed(TcpError.tls("the certificate has expired")),
+        "tls: the certificate has expired"
+    );
+    expect_eq(failed(TcpError.closed), "connection: " + describe(TcpError.closed));
+    expect_eq(failed(TcpError.not_found), "connection: " + describe(TcpError.not_found));
+    expect_eq(failed(TcpError.too_large), "protocol: " + describe(TcpError.too_large));
+}

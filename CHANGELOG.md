@@ -6,6 +6,15 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- A PostgreSQL client, the `postgres` package (`packages/postgres` in the repository; add it with
+  `vo package`). Its items have the names, parameters, results and error texts of `std.sqlite`
+  (`sql`, `exec`, `query`, `transaction`, the getters), with `?` parameters on both, so a program moves
+  between the two by changing its imports, the code that opens the database, its effects and the SQL
+  the two spell differently. `connect(options)` needs `net` with the server in its scopes and
+  `entropy`; the connection uses TLS unless `plain_text` is set, signs in with SCRAM-SHA-256, and has a
+  time limit on every wait. `get_time` reads dates and timestamps as milliseconds since 1970 UTC.
+- The notes API example adds a note with `insert ... returning id` (the form that works on both
+  databases) instead of `last_id`.
 - Scopes work through functions that are given their target. A function that declares `net`,
   `file.read`, `file.write`, `file.delete`, `env` or `serve` without scopes (a helper, a package's
   `connect(host, ...)`) can now be called from a function that declares the effect with scopes; before,

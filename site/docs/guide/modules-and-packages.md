@@ -335,4 +335,4 @@ A package function that is given its target (a client's `connect(host, ...)`, a 
 the file it is handed) declares the effect without scopes: `uses net`. Your program still declares
 `net("db.internal:5432")`, and that scope applies to everything the package does on your behalf: a
 host outside it stops the program with [R0010](../errors/R0010.md). See
-[Functions that are given their target](effects.md#functions-that-are-given-their-target).
+[Functions that are given their target](effects.md#functions-that-are-given-their-target). The [PostgreSQL](postgres.md) package is such a package.

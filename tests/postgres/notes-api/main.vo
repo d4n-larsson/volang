@@ -1,0 +1,16 @@
+# A notes service: a JSON API over plain HTTP built with std.web, the notes kept in PostgreSQL.
+#   vo run main.vo                                serve on http://localhost:8080 with 4 workers until Ctrl-C
+#   vo run --record r.jsonl main.vo               ... and save every request, database call and response
+#   vo replay r.jsonl                             answer the saved requests again: no port, no files
+# The grant is `serve("8080")` (this machine only) and the database server.
+import api.Storage;
+import api.notes_app;
+import api.open_notes;
+import std.web.serve_app;
+
+fn main() -> result[void] uses console, serve("8080"), Storage {
+    print("notes on http://localhost:8080/notes (Ctrl-C stops)");
+    try serve_app("8080", 4, open_notes, notes_app());
+    print("stopped");
+    return ok();
+}
