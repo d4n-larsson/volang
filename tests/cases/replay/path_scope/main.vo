@@ -1,0 +1,21 @@
+fn load(path: str) -> str uses file.read {
+    match read_file(path) {
+        case ok(t) {
+            return "read " + t;
+        }
+        case err(e) {
+            return e;
+        }
+    }
+}
+
+fn only_a(path: str) -> str uses file.read("a/") {
+    return load(path);
+}
+
+# Spec 050: replay checks the same call path, with no file system.
+fn main() uses console, file.read("a/", "b/") {
+    print(only_a("a/x.txt"));
+    print(load("b/x.txt"));
+    print(only_a("b/x.txt"));
+}

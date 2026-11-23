@@ -1,0 +1,13 @@
+std/tcp.vo:147:26: runtime error[R0010]: net("127.0.0.1:2") is not allowed: `sync` declares net("127.0.0.1:1").
+ 147 |     let id = try map_err(__tcp(1, port, host), fail);
+     |                          ^^^^^^^^^^^^^^^^^^^^
+trace:
+  at connect (std/tcp.vo:147:26)
+      host: str = "127.0.0.1", port: int = 2, timeout_ms: int = 1000
+  at dial (path_scope_middle.vo:10:12)
+      host: str = "127.0.0.1", port: int = 2
+  at try_port (path_scope_middle.vo:14:11)
+      port: int = 2
+  at sync (path_scope_middle.vo:27:12)
+      port: int = 2
+  at main (path_scope_middle.vo:33:11)

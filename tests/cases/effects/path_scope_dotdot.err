@@ -1,0 +1,7 @@
+path_scope_dotdot.vo:2:11: runtime error[R0010]: file.read("data/../secret.txt") is not allowed: `main` declares console, file.read("data/").
+   2 |     match read_file(path) {
+     |           ^^^^^^^^^^^^^^^
+trace:
+  at load (path_scope_dotdot.vo:2:11)
+      path: str = "data/../secret.txt"
+  at main (path_scope_dotdot.vo:14:11)

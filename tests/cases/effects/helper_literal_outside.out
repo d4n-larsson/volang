@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0503","name":"scope_too_narrow","severity":"error","file":"helper_literal_outside.vo","start":{"line":9,"col":22},"end":{"line":9,"col":34},"text":"\"secret.txt\"","message":"`secret` declares too narrow a scope: it needs file.read(\"secret.txt\").","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

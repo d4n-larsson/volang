@@ -2635,7 +2635,7 @@ A function declares an effect with scopes that do not cover what a callee declar
 
 Fixable: yes
 
-A scoped declaration such as `file.write("out/")` covers callees that write under `out/`; `env("HOME")` covers callees that read `HOME`. A callee that declares more needs a wider caller. The fix widens the caller's scopes to include the callee's; the related note points at the callee's declaration.
+A scoped declaration such as `file.write("out/")` covers callees that write under `out/`; `env("HOME")` covers callees that read `HOME`. A callee that declares other scopes needs a wider caller. A callee that declares the effect without scopes (a function that is given its path, host or name) needs none: the caller's scopes apply to it when the program runs (R0010). The fix adds the callee's scopes to the caller's; the related note points at the callee's declaration.
 
 ### Example
 
@@ -4525,7 +4525,7 @@ The program tried to use an effect, path or variable outside the declaration of 
 
 Fixable: no
 
-File paths and environment names are values, so scopes are also checked when the program runs: the path is resolved (`..`, absolute paths and symbolic links included) and must lie under a declared directory, and an env name must be one of the declared names. Two declarations apply: the running function's, and the root's (`main`'s, or the running test's or property's), so no callee can widen what the root declared. A path containing a NUL byte is always refused. The report names the target, the allowed scopes and the function whose declaration refused it. (A literal target outside the scopes is already E0503 at `vo check`.)
+File paths and environment names are values, so scopes are also checked when the program runs: the path is resolved (`..`, absolute paths and symbolic links included) and must lie under a declared directory, and an env name must be one of the declared names. Every declaration on the call path that has scopes for the effect applies, from the running function out to the root (`main`, or the running test or property): a function that declares the effect without scopes is held to its callers' scopes, so no callee can widen what its callers or the root declared. A path containing a NUL byte is always refused. The report names the target, the allowed scopes and the function whose declaration refused it (the one nearest the operation when several do). (A literal target outside the scopes is already E0503 at `vo check`.)
 
 ### Example
 

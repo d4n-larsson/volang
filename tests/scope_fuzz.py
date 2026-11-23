@@ -4,7 +4,8 @@
 Builds a tree with an allowed directory `in/`, a secret outside it, and symlinks that point out
 of and inside `in/`. Each iteration reads one random path in a program granted
 `file.read("in/")`; it must be refused with R0010 exactly when the path's real location lies
-outside `in/`. The same is done for env names against `env("A_OK")`. Spec 013 (L1): the same path
+outside `in/`. The same is done for env names against `env("A_OK")`. Spec 050: every other read and
+lookup goes through a helper function that declares the effect without scopes. Spec 013 (L1): the same path
 as a literal must be E0503 at `vo check` exactly when it lies outside.
 """
 import argparse
@@ -63,8 +64,10 @@ def main():
             counts["inside" if inside else "outside"] += 1
             body = ('        case ok(t) {\n            print("read");\n        }\n'
                     '        case err(e) {\n            print("err");\n        }\n    }\n}\n')
-            src = ('fn main() uses console, file.read("in/") {\n'
-                   f'    let p = {vo_str(path)};\n    match read_file(p) {{\n' + body)
+            # spec 050: every other read goes through a helper without scopes: `main`'s still apply
+            helper = 'fn load(p: str) -> result[str] uses file.read {\n    return read_file(p);\n}\n\n' if i % 2 else ''
+            src = (helper + 'fn main() uses console, file.read("in/") {\n'
+                   f'    let p = {vo_str(path)};\n    match {"load" if i % 2 else "read_file"}(p) {{\n' + body)
             code, err = run(src, tmp)
             denied = "R0010" in err
             if denied == inside or (not denied and code != 0):
@@ -83,9 +86,10 @@ def main():
             split = rng.randint(0, len(name))
             # the name comes from a call, so only the run-time check can see it (spec 031: a constant
             # expression such as "A_N" + "O" is checked by `vo check`, E0503)
-            src = (f'fn part() -> str {{\n    return {vo_str(name[split:])};\n}}\n\n'
+            helper = 'fn lookup(n: str) -> result[str] uses env {\n    return env(n);\n}\n\n' if i % 2 else ''
+            src = (helper + f'fn part() -> str {{\n    return {vo_str(name[split:])};\n}}\n\n'
                    'fn main() uses console, env("A_OK") {\n'
-                   f'    match env({vo_str(name[:split])} + part()) {{\n'
+                   f'    match {"lookup" if i % 2 else "env"}({vo_str(name[:split])} + part()) {{\n'
                    '        case ok(_) {\n            print("set");\n        }\n'
                    '        case err(e) {\n            print(e);\n        }\n    }\n}\n')
             code, err = run(src, tmp, env)

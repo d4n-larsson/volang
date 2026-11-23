@@ -6,6 +6,14 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- Scopes work through functions that are given their target. A function that declares `net`,
+  `file.read`, `file.write`, `file.delete`, `env` or `serve` without scopes (a helper, a package's
+  `connect(host, ...)`) can now be called from a function that declares the effect with scopes; before,
+  that was E0503 and the fix was to drop the caller's scopes. Such a function has no limit of its own:
+  when the program runs, a target is checked against every scoped declaration on the call path
+  (R0010), so `main`'s scopes and those of every function in between still hold. In `main` and in
+  tests an effect without scopes means every target, as before. Programs that checked before check
+  the same way.
 - Time zones in `std.time`. The IANA tz database (release 2026f) is built into `vo`, so
   `load_zone("Europe/Stockholm")` needs no effect and no file on the machine and answers the same
   everywhere. `in_zone`, `offset_at`, `abbreviation_at` and `format_in` show an instant in a zone;

@@ -1,0 +1,15 @@
+# Spec 050: a lookup that is given the name, under a caller that declares one name.
+fn lookup(name: str) -> bool uses env {
+    match env(name) {
+        case ok(_) {
+            return true;
+        }
+        case err(_) {
+            return false;
+        }
+    }
+}
+
+fn main() uses console, env("VO_050_UNSET") {
+    print(str(lookup("VO_050_UNSET")));
+}

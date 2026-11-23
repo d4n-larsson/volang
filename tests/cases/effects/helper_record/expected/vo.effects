@@ -1,0 +1,3 @@
+# vo effects record: update with `vo effects --update`
+main.vo:load uses file.read
+main.vo:main uses console, file.read("data/")

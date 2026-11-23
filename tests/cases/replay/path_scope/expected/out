@@ -1,0 +1,28 @@
+$ vo run --record r.jsonl main.vo
+read in-a
+read in-b
+--- stderr
+main.vo:2:11: runtime error[R0010]: file.read("b/x.txt") is not allowed: `only_a` declares file.read("a/").
+   2 |     match read_file(path) {
+     |           ^^^^^^^^^^^^^^^
+trace:
+  at load (main.vo:2:11)
+      path: str = "b/x.txt"
+  at only_a (main.vo:13:12)
+      path: str = "b/x.txt"
+  at main (main.vo:20:11)
+--- exit 70
+$ vo replay r.jsonl
+read in-a
+read in-b
+--- stderr
+main.vo:2:11: runtime error[R0010]: file.read("b/x.txt") is not allowed: `only_a` declares file.read("a/").
+   2 |     match read_file(path) {
+     |           ^^^^^^^^^^^^^^^
+trace:
+  at load (main.vo:2:11)
+      path: str = "b/x.txt"
+  at only_a (main.vo:13:12)
+      path: str = "b/x.txt"
+  at main (main.vo:20:11)
+--- exit 70

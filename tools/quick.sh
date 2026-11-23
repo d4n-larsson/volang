@@ -20,7 +20,7 @@ cases() {
     structure) echo "structure test test_steps check" ;;
     serve_workers) echo "serve serve_concurrent serve_workers_steps replay" ;;
     web) echo "json_derive annotations web web_steps generic json" ;;
-    effects) echo "effect_sets effects fmt" ;;
+    effects) echo "effect_sets effects fmt tasks security packages" ;; # spec 050: scopes along the call path
     const) echo "const check effects effect_sets fmt query annotations format regex sqlite web doc" ;; # spec 031
     typed_errors) echo "typed_errors check generic prop tasks test run web doc" ;; # spec 032
     map_keys) echo "map_keys check bytes generic prop tasks test fmt doc" ;; # spec 033
@@ -66,7 +66,7 @@ scripts() { # one per line, with arguments
     serve_workers) printf '%s\n' doc_conformance.py "serve_workers.py --quick" ;;
     web) printf '%s\n' doc_conformance.py "web_fuzz.py --quick" ;;
     text) printf '%s\n' doc_conformance.py catalog.py ref_examples.py strings.py ;; # spec 042
-    effects) printf '%s\n' fmt_corpus.py catalog.py effect_sets_records.py ;;
+    effects) printf '%s\n' fmt_corpus.py catalog.py effect_sets_records.py apply_fixes.py "scope_paths.py --count 300 --seed 1" "scope_fuzz.py --iterations 300 --seed 1" ;; # spec 050
     const) printf '%s\n' apply_fixes.py catalog.py fmt_corpus.py ref_examples.py const_equiv.py ;; # spec 031
     typed_errors) printf '%s\n' catalog.py apply_fixes.py ref_examples.py doc_conformance.py ;; # spec 032
     map_keys) printf '%s\n' catalog.py apply_fixes.py ref_examples.py doc_conformance.py ;; # spec 033

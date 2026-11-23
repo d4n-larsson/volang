@@ -1,0 +1,9 @@
+value_scoped_read.vo:13:12: runtime error[R0010]: file.read("other/x.txt") is not allowed: `main` declares console, file.read("data/").
+  13 |     return read_file(path);
+     |            ^^^^^^^^^^^^^^^
+trace:
+  at load (value_scoped_read.vo:13:12)
+      path: str = "other/x.txt"
+  at first (value_scoped_read.vo:2:11)
+      r: fn(str) -> result[str] uses file.read = <fn(str) -> result[str] uses file.read>, path: str = "other/x.txt"
+  at main (value_scoped_read.vo:18:11)

@@ -1,0 +1,6 @@
+mkdir data
+write data/x.txt x
+write secret.txt secret
+symlink x.txt data/inside
+symlink ../secret.txt data/out
+vo run main.vo

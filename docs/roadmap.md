@@ -575,6 +575,19 @@ with a fixed clock. The data is as old as the toolchain: `vo version` names the 
 of vo takes the newest, and `zone_from_bytes` reads a file a program brings itself. Month and weekday
 names, locale formats and calendar arithmetic ("a month later") are not part of it.
 
+### 050: scoped effects through package functions (implemented)
+
+Found while planning the PostgreSQL package (spec 049): a function that is given its target (a
+package's `connect(host, ...)`, a helper that reads the file it is handed) could only declare the
+plain effect, and then every caller up to `main` had to as well, so a program using such a function
+lost its scopes. Now an effect declared without scopes by a function other than `main` or a test
+means "within my callers' scopes": a scoped caller may call it, and when the program runs a target
+is checked against every scoped declaration on the call path, not only the running function's and
+the root's. The checker's other reports are unchanged, and it no longer offers "drop your scopes" as
+a fix. No syntax, code or reference tokens were added. Not done: comparing literal hosts with `net`
+scopes at check time (only file, `env` and `process` literals are), and naming the parameter that is
+the target so that literals at a helper's call sites could be checked.
+
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
 it is next; anything that reaches the outside world gets an effect, scopes, and record and replay.
 

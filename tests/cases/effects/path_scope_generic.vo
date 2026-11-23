@@ -1,0 +1,24 @@
+fn load(path: str) -> str uses file.read {
+    match read_file(path) {
+        case ok(_) {
+            return "read";
+        }
+        case err(_) {
+            return "allowed";
+        }
+    }
+}
+
+fn via[E: effects](f: fn(str) -> str uses E, path: str) -> str uses E {
+    return f(path);
+}
+
+# Through a function with an effect parameter.
+fn only_a(path: str) -> str uses file.read("a/") {
+    return via(load, path);
+}
+
+fn main() uses console, file.read("a/", "b/") {
+    print(only_a("a/x.txt"));
+    print(only_a("b/x.txt"));
+}

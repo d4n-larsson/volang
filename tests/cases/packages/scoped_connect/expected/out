@@ -1,0 +1,26 @@
+$ vo package main.vo pg shared/pg
+added pg shared/pg sha256:f64a8b849247e2c5b8a4e16d7edd9907568a7be471aa7b40819ba1f8d3ff5161
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effects with `vo effects --update`.
+   1 | import pg.client.Options;
+     | ^
+0 errors, 1 warning
+--- stderr
+--- exit 0
+$ vo run main.vo
+the connection was refused
+--- stderr
+std/tcp.vo:147:26: runtime error[R0010]: net("127.0.0.1:2") is not allowed: `main` declares console, net("127.0.0.1:1"), entropy.
+ 147 |     let id = try map_err(__tcp(1, port, host), fail);
+     |                          ^^^^^^^^^^^^^^^^^^^^
+trace:
+  at connect (std/tcp.vo:147:26)
+      host: str = "127.0.0.1", port: int = 2, timeout_ms: int = 1000
+  at open (shared/pg/client.vo:14:12)
+      o: Options = new Options { host: "127.0.0.1", port: 2 }
+  at try_port (main.vo:7:11)
+      port: int = 2
+  at main (main.vo:20:11)
+--- exit 70

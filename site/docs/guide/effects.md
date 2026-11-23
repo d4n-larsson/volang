@@ -89,7 +89,8 @@ An effect without a scope is not narrowed: `file.read` may read any file the pro
 
 A directory scope covers the directories under it: `file.read("data/")` covers a callee that declares
 `file.read("data/2026/")`. A caller's scopes must cover its callees' scopes, so the scope in `main`'s
-clause is the widest the program can use.
+clause is the widest the program can use. A callee that declares the effect without scopes needs
+none: see [Functions that are given their target](#functions-that-are-given-their-target).
 
 ```vo
 fn load_notes(name: str) -> result[str] uses file.read("data/notes/") {
@@ -311,14 +312,43 @@ trace:
   at main (main.vo:6:9)
 ```
 
-Two declarations apply to every access:
+Every declaration on the call path that has scopes for the effect applies to an access:
 
 - the declaration of the **running function**, the one that calls `write_file` (here `save`);
+- the declarations of the **functions that called it**, each of them;
 - the **root grant**: `main`'s clause in `vo run`, or the running test's clause in `vo test`.
 
-The target must be inside both. Since every caller's scopes cover its callees', the root grant is the
-outer limit of the whole program: no function deep in the call chain can reach further than `main`
-declared.
+The target must be inside all of them. The root grant is the outer limit of the whole program: no
+function deep in the call chain can reach further than `main` declared, and no function reaches
+further than a caller of its own declared.
+
+### Functions that are given their target
+
+A function that opens the file, host or variable it is given cannot name its scope when it is
+written: a helper, or a package's `connect(host, ...)`. It declares the effect without scopes, and
+then has no limit of its own: the scopes of its callers apply. The program keeps its scopes in `main`
+and in any function that wants a narrower limit.
+
+```vo
+fn load(path: str) -> result[str] uses file.read {
+    return read_file(path);
+}
+
+fn main() -> result[void] uses console, file.read("data/") {
+    let secret = try load("../secret.txt");
+    print(secret);
+    return ok();
+}
+```
+
+```error R0010
+```
+
+```text
+main.vo:2:12: runtime error[R0010]: file.read("../secret.txt") is not allowed: `main` declares console, file.read("data/").
+```
+
+In `main` and in a test, an effect without scopes still means every target: nothing calls them.
 
 [R0010](../errors/R0010.md) is a runtime error, not a `result`: it means the program tried something its declarations do
 not allow, which is a bug or an attack, not a condition to handle. A file that is inside the scope but

@@ -1,0 +1,21 @@
+# A literal target is still compared with the scopes when the program is checked (E0503), also beside
+# a helper without scopes.
+fn load(path: str) -> result[str] uses file.read {
+    return read_file(path);
+}
+
+fn secret() -> result[str] uses file.read("data/") {
+    let _ = try load("data/x.txt");
+    return read_file("secret.txt");
+}
+
+fn main() uses console, file.read("data/") {
+    match secret() {
+        case ok(_) {
+            print("read");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

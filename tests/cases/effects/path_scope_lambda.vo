@@ -1,0 +1,23 @@
+fn load(path: str) -> str uses file.read {
+    match read_file(path) {
+        case ok(_) {
+            return "read";
+        }
+        case err(_) {
+            return "allowed";
+        }
+    }
+}
+
+# Through an anonymous function made in the scoped function.
+fn only_a(path: str) -> str uses file.read("a/") {
+    let read = fn(p: str) -> str {
+        return load(p);
+    };
+    return read(path);
+}
+
+fn main() uses console, file.read("a/", "b/") {
+    print(only_a("a/x.txt"));
+    print(only_a("b/x.txt"));
+}

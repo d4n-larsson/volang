@@ -1,0 +1,15 @@
+# Spec 050: a reader that is given its path, under a caller that declares a directory.
+fn load(path: str) -> result[str] uses file.read {
+    return read_file(path);
+}
+
+fn main() uses console, file.read("data/") {
+    match load("data/none.txt") {
+        case ok(_) {
+            print("read");
+        }
+        case err(_) {
+            print("allowed, and there is no such file");
+        }
+    }
+}

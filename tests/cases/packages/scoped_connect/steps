@@ -1,0 +1,3 @@
+vo package main.vo pg shared/pg
+vo check main.vo
+vo run main.vo

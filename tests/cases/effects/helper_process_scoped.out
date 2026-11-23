@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0512","name":"process_unscoped","severity":"error","file":"helper_process_scoped.vo","start":{"line":4,"col":44},"end":{"line":4,"col":51},"text":"process","message":"`process` needs the programs it may run: write `process(\"NAME\")`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

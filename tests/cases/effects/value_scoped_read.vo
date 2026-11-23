@@ -1,0 +1,19 @@
+fn first[N: effects](r: fn(str) -> result[str] uses N, path: str) -> str uses N {
+    match r(path) {
+        case ok(_) {
+            return "read";
+        }
+        case err(_) {
+            return "allowed";
+        }
+    }
+}
+
+fn load(path: str) -> result[str] uses file.read {
+    return read_file(path);
+}
+
+fn main() uses console, file.read("data/") {
+    print(first(load, "data/x.txt"));
+    print(first(load, "other/x.txt"));
+}

@@ -1,0 +1,10 @@
+import std.process.run;
+
+# `process` always names its programs (E0512): a function cannot ask to run whatever it is given.
+fn start(program: str) -> result[int] uses process {
+    let r = try run(program, new list[str]);
+    return ok(r.code);
+}
+
+fn main() {
+}

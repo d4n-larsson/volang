@@ -1,0 +1,26 @@
+$ vo effects --update main.vo
++ main.vo:load: file.read("data/")
++ main.vo:main: console, file.read("data/")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:1:4: error[E0504]: `load` gains file.read; approve with `vo effects --update`.
+   1 | fn load(path: str) -> result[str] uses file.read {
+     |    ^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo effects main.vo
+main uses console, file.read("data/")
+
+main.vo:load uses file.read
+main.vo:main uses console, file.read("data/")
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo effects --update main.vo
++ main.vo:load: file.read
+0 errors, 0 warnings
+--- stderr
+--- exit 0

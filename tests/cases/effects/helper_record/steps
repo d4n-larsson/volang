@@ -1,0 +1,6 @@
+vo effects --update main.vo
+cp helper.vo main.vo
+vo check main.vo
+vo effects main.vo
+vo effects --update main.vo
+keep vo.effects

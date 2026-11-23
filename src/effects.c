@@ -327,6 +327,28 @@ EffSet *es_union(EffSet *a, EffSet *b)
     return u;
 }
 
+/* Spec 050: a callee's declaration as what its caller must cover. An effect that takes scopes and is
+ * declared without any (file.read, file.write, file.delete, net, env, serve; process always has
+ * scopes, E0512) limits nothing itself: the callers' scopes apply, checked along the call path when
+ * the program runs (rt_effects.c). So the caller needs the effect "in any scope" (ES_ANY), as for a
+ * builtin or standard-library call. Scoped effects and the others are kept as declared. */
+#define EF_TARGETED (EF_FREAD | EF_FWRITE | EF_FDELETE | EF_NET | EF_ENV | EF_SERVE)
+EffSet *es_requirement(EffSet *set)
+{
+    if (!set) return set;
+    unsigned long open = 0;
+    for (long bit = 1; bit <= EF_ALL; bit <<= 1)
+        if ((set->mask & (unsigned long)bit & EF_TARGETED) && !es_scoped(set, bit)) open |= (unsigned long)bit;
+    if (!open) return set;
+    GC_ROOT(&set);
+    EffSet *r = es_new((long)(set->mask & ~open));
+    r->scopes = set->scopes;
+    r->evars = set->evars;
+    r->any = set->any | open;
+    GC_UNROOT(1);
+    return r;
+}
+
 /* The part of requirement r that declaration d does not cover. A bit in the result's mask with no
  * pairs means "needed unscoped"; pairs are the scopes d does not cover. */
 EffSet *es_missing(EffSet *d, EffSet *r)

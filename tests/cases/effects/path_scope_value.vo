@@ -1,0 +1,24 @@
+fn load(path: str) -> str uses file.read {
+    match read_file(path) {
+        case ok(_) {
+            return "read";
+        }
+        case err(_) {
+            return "allowed";
+        }
+    }
+}
+
+fn apply(f: fn(str) -> str uses file.read, path: str) -> str uses file.read {
+    return f(path);
+}
+
+# The helper travels as a function value and is called beneath `only_a`.
+fn only_a(path: str) -> str uses file.read("a/") {
+    return apply(load, path);
+}
+
+fn main() uses console, file.read("a/", "b/") {
+    print(only_a("a/x.txt"));
+    print(only_a("b/x.txt"));
+}

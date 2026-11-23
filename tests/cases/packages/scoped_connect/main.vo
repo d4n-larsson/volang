@@ -1,0 +1,21 @@
+import pg.client.Options;
+import pg.client.open;
+import std.tcp.close;
+import std.tcp.describe;
+
+fn try_port(port: int) -> str uses net, entropy {
+    match open(new Options { host: "127.0.0.1", port: port }) {
+        case ok(c) {
+            close(c);
+            return "open";
+        }
+        case err(e) {
+            return describe(e);
+        }
+    }
+}
+
+fn main() uses console, net("127.0.0.1:1"), entropy {
+    print(try_port(1));
+    print(try_port(2));
+}

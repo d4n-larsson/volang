@@ -1,0 +1,9 @@
+path_scope_middle_file.vo:2:11: runtime error[R0010]: file.read("b/x.txt") is not allowed: `only_a` declares file.read("a/").
+   2 |     match read_file(path) {
+     |           ^^^^^^^^^^^^^^^
+trace:
+  at load (path_scope_middle_file.vo:2:11)
+      path: str = "b/x.txt"
+  at only_a (path_scope_middle_file.vo:14:12)
+      path: str = "b/x.txt"
+  at main (path_scope_middle_file.vo:20:11)

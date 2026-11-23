@@ -1,0 +1,15 @@
+import std.crypto.random_bytes;
+import std.tcp.Conn;
+import std.tcp.TcpError;
+import std.tcp.connect;
+
+# Where to connect.
+export record Options {
+    host: str;
+    port: int;
+}
+
+# Spec 050: a package's connect is given its host; the program's scopes apply.
+export fn open(o: Options) -> result[Conn[uses net], TcpError] uses net, entropy {
+    return connect(o.host, o.port, 999 + len(random_bytes(1)));
+}

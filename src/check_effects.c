@@ -242,12 +242,13 @@ Fx *fx_swap(Fx *fx)
     return old;
 }
 
-/* A call through a function value needs the effects of its type. */
+/* A call through a function value needs the effects of its type (spec 050: one without scopes, in
+ * any scope). */
 void fx_value_call(EffSet *effects)
 {
     if (!ck_fx || !effects) return;
     Fx *fx = ck_fx;
-    fx->direct = es_union(fx->direct, effects);
+    fx->direct = es_union(fx->direct, es_requirement(effects));
 }
 
 void fx_end(void)
@@ -454,7 +455,9 @@ void fx_file_end(Vec *items)
             Fx *caller = e->caller;
             if (!caller->required) continue;
             EffSet *need = callee->required ? callee->required : callee->direct ? callee->direct : callee->declared;
-            EffSet *r = es_union(caller->required, es_union(callee->declared, need));
+            /* spec 050: a callee's effect without scopes is needed in any scope; what it needs
+               itself (its callees' scopes) still reaches this caller */
+            EffSet *r = es_union(caller->required, es_union(es_requirement(callee->declared), es_requirement(need)));
             if (es_equal(r, caller->required)) continue;
             caller->required = r;
             changed = 1;
@@ -682,7 +685,7 @@ void fx_related(Diag *d, Fx *fx)
         }
         if (seen) continue;
         Fx *cf = item_fx(callee);
-        if (!cf || !cf->uses || !cf->declared || es_covers(fx->declared, cf->declared)) continue;
+        if (!cf || !cf->uses || !cf->declared || es_covers(fx->declared, es_requirement(cf->declared))) continue;
         Str *rendered = fx_render(cf->declared);
         Str *m = msg("`$1` declares $2 here.", fx_item_name(callee), rendered, 0);
         Node *u = cf->uses;

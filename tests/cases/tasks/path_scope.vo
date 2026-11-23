@@ -1,0 +1,20 @@
+fn load(path: str) -> str uses file.read {
+    match read_file(path) {
+        case ok(_) {
+            return "read";
+        }
+        case err(_) {
+            return "allowed";
+        }
+    }
+}
+
+# Spec 050: a task runs beneath the function that started it.
+fn only_a(paths: list[str]) -> list[str] uses file.read("a/") {
+    return concurrent_map(paths, 2, load);
+}
+
+fn main() uses console, file.read("a/", "b/") {
+    print(only_a(["a/x.txt"])[0]);
+    print(only_a(["a/y.txt", "b/x.txt"])[0]);
+}

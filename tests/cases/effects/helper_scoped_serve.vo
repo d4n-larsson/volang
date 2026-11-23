@@ -1,0 +1,21 @@
+import std.tcp.Listener;
+import std.tcp.TcpError;
+import std.tcp.close_listener;
+import std.tcp.listen;
+
+# Spec 050: a function that listens where it is told, under a caller that declares the address.
+fn open(address: str) -> result[Listener, TcpError] uses serve {
+    return listen(address);
+}
+
+fn main() uses console, serve("0") {
+    match open("0") {
+        case ok(l) {
+            close_listener(l);
+            print("listening");
+        }
+        case err(_) {
+            print("not listening");
+        }
+    }
+}

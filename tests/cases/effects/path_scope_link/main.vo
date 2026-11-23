@@ -1,0 +1,17 @@
+fn load(path: str) -> str uses file.read {
+    match read_file(path) {
+        case ok(t) {
+            return "read " + t;
+        }
+        case err(e) {
+            return e;
+        }
+    }
+}
+
+# Spec 050: a link that leaves the caller's directory is refused through a helper too (R0010).
+fn main() uses console, file.read("data/") {
+    print(load("data/x.txt"));
+    print(load("data/inside"));
+    print(load("data/out"));
+}

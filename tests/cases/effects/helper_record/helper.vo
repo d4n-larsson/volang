@@ -1,0 +1,14 @@
+fn load(path: str) -> result[str] uses file.read {
+    return read_file(path);
+}
+
+fn main() uses console, file.read("data/") {
+    match load("data/x.txt") {
+        case ok(_) {
+            print("read");
+        }
+        case err(_) {
+            print("allowed");
+        }
+    }
+}

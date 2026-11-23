@@ -1,0 +1,20 @@
+fn load(path: str) -> result[str] uses file.read {
+    return read_file(path);
+}
+
+fn first(r: fn(str) -> result[str] uses file.read("data/"), path: str) -> result[str]
+    uses file.read("data/") {
+    return r(path);
+}
+
+# A function type written with scopes takes only values within them (E0502), as before.
+fn main() uses console, file.read("data/") {
+    match first(load, "data/x.txt") {
+        case ok(_) {
+            print("read");
+        }
+        case err(_) {
+            print("allowed");
+        }
+    }
+}

@@ -1856,6 +1856,7 @@ extern int es_has_evar(EffSet *set, void *param);
 extern void es_add_evar(EffSet *set, void *param);
 extern long es_evar_count(EffSet *set);
 extern EffSet *es_union(EffSet *a, EffSet *b);
+extern EffSet *es_requirement(EffSet *set);
 extern EffSet *es_missing(EffSet *d, EffSet *r);
 extern int es_is_empty(EffSet *set);
 extern int es_covers(EffSet *d, EffSet *r);

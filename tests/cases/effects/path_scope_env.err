@@ -1,0 +1,7 @@
+path_scope_env.vo:2:11: runtime error[R0010]: env("PATH") is not allowed: `main` declares console, env("VO_050_UNSET").
+   2 |     match env(name) {
+     |           ^^^^^^^^^
+trace:
+  at lookup (path_scope_env.vo:2:11)
+      name: str = "PATH"
+  at main (path_scope_env.vo:14:15)

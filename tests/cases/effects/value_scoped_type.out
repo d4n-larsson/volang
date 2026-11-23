@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0502","name":"function_value_effects","severity":"error","file":"value_scoped_type.vo","start":{"line":12,"col":17},"end":{"line":12,"col":21},"text":"load","message":"This function uses file.read, which `fn(str) -> result[str] uses file.read(\"data/\")` does not allow.","fixes":[{"file":"value_scoped_type.vo","start":{"line":5,"col":36},"end":{"line":5,"col":59},"replacement":"uses file.read"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

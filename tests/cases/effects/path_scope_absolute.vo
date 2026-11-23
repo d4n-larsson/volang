@@ -1,0 +1,14 @@
+fn load(path: str) -> str uses file.read {
+    match read_file(path) {
+        case ok(_) {
+            return "read";
+        }
+        case err(_) {
+            return "allowed";
+        }
+    }
+}
+
+fn main() uses console, file.read("data/") {
+    print(load("/etc/hostname"));
+}

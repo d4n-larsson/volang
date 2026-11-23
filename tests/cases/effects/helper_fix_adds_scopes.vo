@@ -1,0 +1,14 @@
+fn save(path: str) -> result[void] uses file.write {
+    return write_file(path, "x");
+}
+
+fn save_out() -> result[void] uses file.write("out/") {
+    return write_file("out/a.txt", "x");
+}
+
+# The fix adds the missing scope; it never widens to the plain effect.
+fn main() -> result[void] uses file.write("tmp/") {
+    try save("tmp/a.txt");
+    try save_out();
+    return ok();
+}

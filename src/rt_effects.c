@@ -211,7 +211,11 @@ EffSet *rt_frame_effects(void)
 
 /* ---- spec 013 (R1): every effect is checked against the running frame's grant and the root grant
  * (main's clause; a test's or property's), so no callee's own declaration, effect parameter or
- * static gap reaches outside what a person reviewed. ---- */
+ * static gap reaches outside what a person reviewed.
+ * Spec 050: a target (path, host, name, address) is checked against every grant on the call path
+ * that scopes its effect, not only those two: a function that declares the effect without scopes
+ * (a helper or a package function that is given its target) has no limit of its own, so the scopes
+ * of the functions that called it apply, each of them. ---- */
 
 static Frame *rt_root(void)
 {
@@ -223,9 +227,25 @@ static int grant_has_bit(EffSet *e, long bit)
     return e && ((e->mask | e->any) & (unsigned long)bit); /* any-scope bits count too */
 }
 
-static int grant_has_name(EffSet *e, long bit, Str *name)
+/* The next frame outwards from `after` (0: from the running frame) whose grant scopes bit, skipping a
+ * frame that holds the same set as the frame below it (library and anonymous functions, recursion);
+ * after the chain, the root frame when the chain did not reach it. 0 at the end.
+ * ponytail: linear in the call depth for each scoped operation (calls and unscoped effects cost
+ * nothing); if deep recursion around file or network operations shows up in a profile, give frames a
+ * link to the nearest caller with a different scoped set. */
+static Frame *path_scoped(Frame *after, long bit)
 {
-    return !e || !es_scoped(e, bit) || es_has_pair(e, bit, name);
+    Frame *f = after ? after->parent : (Frame *)cur_frame;
+    Frame *last = after;
+    EffSet *prev = after ? after->effects : 0;
+    for (; f; last = f, f = f->parent) {
+        if (f->effects == prev) continue;
+        prev = f->effects;
+        if (prev && es_scoped(prev, bit)) return f;
+    }
+    Frame *root = rt_root();
+    if (root && last != root && root->effects && es_scoped(root->effects, bit)) return root;
+    return 0;
 }
 
 /* 1 when the resolved path lies under one of e's scopes for bit (or bit is unscoped in e). */
@@ -242,6 +262,7 @@ static int grant_has_path(EffSet *e, long bit, Str *resolved)
 }
 
 static void rt_denied_by(Frame *f, long bit, Str *target);
+static Frame *grant_frame(Frame *f);
 
 /* R0010 when builtin id's effect is not declared by the running function or test, or by the root. */
 void rt_check_bit(long id)
@@ -257,20 +278,17 @@ void rt_check_effect(long bit)
     if (root && !grant_has_bit(root->effects, bit)) rt_denied_by(root, bit, 0);
 }
 
-/* Scoped env (or net, serve) effects: name must be one of the declared names, in both grants. */
+/* Scoped env (or serve, process) effects: name must be one of the declared names, in every grant on
+ * the call path that scopes the effect. */
 void rt_check_name(long bit, Str *name)
 {
-    if (!grant_has_name(rt_frame_effects(), bit, name)) rt_denied(bit, name);
-    Frame *root = rt_root();
-    if (root && !grant_has_name(root->effects, bit, name)) rt_denied_by(root, bit, name);
+    for (Frame *f = path_scoped(0, bit); f; f = path_scoped(f, bit))
+        if (!es_has_pair(f->effects, bit, name)) rt_denied_by(grant_frame(f), bit, name);
 }
 
 /* Spec 039: a connection to host:port needs a `net` scope naming the host, or the host with that port,
- * in both grants. R0010 names the host, and the port too when the grant has scopes with ports. */
-static int grant_has_net(EffSet *e, Str *both)
-{
-    return !e || !es_scoped(e, EF_NET) || es_pair_covered(e, EF_NET, both);
-}
+ * in every grant on the call path that scopes `net`. R0010 names the host, and the port too when the
+ * grant has scopes with ports. */
 
 static int grant_ports(EffSet *e)
 {
@@ -283,28 +301,26 @@ static int grant_ports(EffSet *e)
 
 void rt_check_net(Str *host, long port)
 {
-    EffSet *eff = rt_frame_effects();
-    Frame *root = rt_root();
     GC_ROOT(&host);
     SB *sb = sb_new();
     sb_str(sb, host);
     sb_byte(sb, ':');
     int_to_dec(sb, port);
     Str *both = sb_finish(sb);
-    int ok = grant_has_net(eff, both), root_ok = !root || grant_has_net(root->effects, both);
     GC_UNROOT(1);
-    if (!ok) rt_denied(EF_NET, grant_ports(eff) ? both : host);
-    if (!root_ok) rt_denied_by(root, EF_NET, grant_ports(root->effects) ? both : host);
+    for (Frame *f = path_scoped(0, EF_NET); f; f = path_scoped(f, EF_NET))
+        if (!es_pair_covered(f->effects, EF_NET, both))
+            rt_denied_by(grant_frame(f), EF_NET, grant_ports(f->effects) ? both : host);
 }
 
-/* Scoped file effects: the resolved path must lie under a resolved scope of both grants. A NUL byte
+/* Scoped file effects: the resolved path must lie under a resolved scope of every grant on the call
+ * path that scopes the effect. A NUL byte
  * is refused outright (C1: the check would see the whole string, the open only its first part), and
  * so is every scoped access when the start directory is unknown (H2). */
 void rt_check_path(long bit, Str *path)
 {
-    EffSet *eff = rt_frame_effects();
-    Frame *root = rt_root();
-    int scoped = (eff && es_scoped(eff, bit)) || (root && root->effects && es_scoped(root->effects, bit));
+    Frame *first = path_scoped(0, bit); /* (one walk: the loop below goes on from it) */
+    int scoped = first != 0;
     int nul = 0;
     for (long i = 0; i < path->len; i++) nul |= path->data[i] == 0;
     if (nul || (scoped && !rt_start_cwd_known())) rt_denied(bit, path);
@@ -312,19 +328,18 @@ void rt_check_path(long bit, Str *path)
     GC_ROOT(&path);
     Str *resolved = rt_resolve_for(bit, path);
     GC_ROOT(&resolved);
-    int ok = resolved && grant_has_path(eff, bit, resolved);
-    int root_ok = resolved && (!root || grant_has_path(root->effects, bit, resolved));
+    Frame *refused = 0;
+    for (Frame *f = first; f && !refused; f = path_scoped(f, bit))
+        if (!resolved || !grant_has_path(f->effects, bit, resolved)) refused = f;
     GC_UNROOT(2);
-    if (!ok) rt_denied(bit, path);
-    if (!root_ok) rt_denied_by(root, bit, path);
+    if (refused) rt_denied_by(grant_frame(refused), bit, path);
 }
 
-/* Spec 017: 1 when either grant scopes bit (operations then walk beneath the scopes, never following links). */
+/* Spec 017: 1 when a grant on the call path scopes bit (operations then walk beneath the scopes, never
+ * following links). */
 int rt_bit_scoped(long bit)
 {
-    EffSet *eff = rt_frame_effects();
-    Frame *root = rt_root();
-    return (eff && es_scoped(eff, bit)) || (root && root->effects && es_scoped(root->effects, bit));
+    return path_scoped(0, bit) != 0;
 }
 
 /* Spec 017: 1 when rt_check_path(bit, path) would pass (without raising). */
@@ -337,9 +352,9 @@ int rt_path_allowed(long bit, Str *path)
     GC_ROOT(&path);
     Str *resolved = rt_resolve_for(bit, path);
     GC_ROOT(&resolved);
-    Frame *root = rt_root();
-    int ok = resolved && grant_has_path(rt_frame_effects(), bit, resolved) &&
-             (!root || grant_has_path(root->effects, bit, resolved));
+    int ok = resolved != 0;
+    for (Frame *f = path_scoped(0, bit); f && ok; f = path_scoped(f, bit))
+        ok = grant_has_path(f->effects, bit, resolved);
     GC_UNROOT(2);
     return ok;
 }
@@ -578,15 +593,20 @@ static void rt_denied_by(Frame *gf, long bit, Str *target)
  * from the deepest granted scope directory as rt_open_file does; with strict, the scope directory
  * itself is refused (R0010: delete and rename never remove a scope). Unscoped: the path's directory,
  * opened from the start directory. A negative errno on failure. */
+static long open_parent(long bit, Str *path, Str **name, int strict, Frame *first);
+
 long rt_open_parent(long bit, Str *path, Str **name, int strict)
+{
+    return open_parent(bit, path, name, strict, path_scoped(0, bit));
+}
+
+/* (first: the nearest frame whose grant scopes bit, or 0: the caller's one walk of the call path) */
+static long open_parent(long bit, Str *path, Str **name, int strict, Frame *first)
 {
     rt_start_cwd();
     long base = start_fd >= 0 ? start_fd : AT_FDCWD;
-    EffSet *grants[2] = {rt_frame_effects(), rt_root() ? rt_root()->effects : 0};
-    int scoped = 0;
-    for (int g = 0; g < 2; g++) scoped |= grants[g] && es_scoped(grants[g], bit);
     GC_ROOT(&path);
-    if (!scoped) {
+    if (!first) {
         long cut = path->len;
         while (cut > 0 && path->data[cut - 1] == '/') cut--; /* "a/b/" names b */
         long slash = cut;
@@ -601,11 +621,9 @@ long rt_open_parent(long bit, Str *path, Str **name, int strict)
     Str *scope = 0, *dir = 0; /* the deepest granted scope holding the path, and its resolved form */
     GC_ROOT(&scope);
     GC_ROOT(&dir);
-    for (int g = 0; resolved && g < 2; g++) {
-        EffSet *e = grants[g];
-        if (!e || !e->scopes) continue;
-        for (long i = 0; i < e->scopes->n; i++) {
-            EffScope *sc = vec_get(e->scopes, i);
+    for (Frame *f = resolved ? first : 0; f; f = path_scoped(f, bit)) {
+        for (long i = 0; i < f->effects->scopes->n; i++) {
+            EffScope *sc = vec_get(f->effects->scopes, i);
             if (sc->bit != bit) continue;
             Str *d = rt_resolve(sc->str);
             if (d && path_under(resolved, d) && (!dir || d->len > dir->len)) {
@@ -648,13 +666,11 @@ long rt_open_file(long bit, Str *path, long flags)
 {
     rt_start_cwd();
     long base = start_fd >= 0 ? start_fd : AT_FDCWD;
-    EffSet *grants[2] = {rt_frame_effects(), rt_root() ? rt_root()->effects : 0};
-    int scoped = 0;
-    for (int g = 0; g < 2; g++) scoped |= grants[g] && es_scoped(grants[g], bit);
-    if (!scoped) return vo_syscall4(SYS_openat, base, (long)path->data, flags | O_CLOEXEC, 0644);
+    Frame *first = path_scoped(0, bit);
+    if (!first) return vo_syscall4(SYS_openat, base, (long)path->data, flags | O_CLOEXEC, 0644);
     Str *name = 0;
     GC_ROOT(&name);
-    long parent = rt_open_parent(bit, path, &name, 0);
+    long parent = open_parent(bit, path, &name, 0, first);
     long r = parent;
     if (parent >= 0) {
         r = vo_syscall4(SYS_openat, parent, (long)name->data, flags | O_NOFOLLOW | O_CLOEXEC, 0644);

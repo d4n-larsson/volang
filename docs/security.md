@@ -54,9 +54,12 @@ Each property is a claim the review must try to break; each break is a finding.
 - **S1 Static containment.** A program whose code needs an effect, or a scope, outside its grant does
   not check (E0501, E0503) and is not run. No construct (function values, generics with effect
   parameters, anonymous functions, imports, packages, contracts, properties) hides an effect from the
-  checker.
+  checker. A function that declares a scoped effect without scopes (one that is given its target) may
+  be called under a scoped declaration: the checker then knows the effect and not the target, which S2
+  checks (spec 050).
 - **S2 Run-time containment.** Every effectful operation checks its target at run time (R0010) against
-  the running grant and the root grant (`main`'s, or the test's or property's clause): file paths after
+  every declaration on the call path that has scopes for the effect, from the running function to the
+  root grant (`main`'s, or the test's or property's clause): file paths after
   resolving `.`, `..`, absolute paths and symbolic links; host names; variable names; serve addresses.
   This holds inside library functions, anonymous functions and packages, which run with their caller's
   grant, and during replay (lexically: replay never looks at the file system). A scoped file is opened
@@ -143,6 +146,10 @@ Each property is a claim the review must try to break; each break is a finding.
 - **Recordings contain the inputs**: file contents, variables and HTTP traffic a program read are in its
   recording, and so are the bytes `std.crypto.random_bytes` returned (tokens, keys, salts); recordings
   are as sensitive as those inputs.
+- **A target that is a value is checked when it is used** (spec 050): a function with scopes may call
+  a helper or a package function that is given its target; a target outside the scopes stops the
+  program at that operation (R0010), not at `vo check`. Literal targets passed to the file, `env` and
+  `process` functions are checked before the program runs; literal hosts are not.
 - **The grant is only as good as its review**: a broad grant (`file.read("./")`, an unscoped `net`) is
   honored as written.
 

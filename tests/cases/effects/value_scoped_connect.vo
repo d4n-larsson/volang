@@ -1,0 +1,24 @@
+import std.tcp.Conn;
+import std.tcp.TcpError;
+import std.tcp.close;
+import std.tcp.connect;
+import std.tcp.describe;
+
+fn attempt[N: effects](
+    d: fn(str, int, int) -> result[Conn[uses net], TcpError] uses N,
+    port: int
+) -> str uses N {
+    match d("127.0.0.1", port, 1000) {
+        case ok(_) {
+            return "open";
+        }
+        case err(e) {
+            return describe(e);
+        }
+    }
+}
+
+# Spec 050: a library function as a value, under a scoped grant.
+fn main() uses console, net("127.0.0.1:1") {
+    print(attempt(connect, 1));
+}

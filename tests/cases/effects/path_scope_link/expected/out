@@ -1,0 +1,12 @@
+$ vo run main.vo
+read x
+read x
+--- stderr
+main.vo:2:11: runtime error[R0010]: file.read("data/out") is not allowed: `main` declares console, file.read("data/").
+   2 |     match read_file(path) {
+     |           ^^^^^^^^^^^^^^^
+trace:
+  at load (main.vo:2:11)
+      path: str = "data/out"
+  at main (main.vo:16:11)
+--- exit 70

@@ -1,0 +1,8 @@
+mkdir a
+mkdir b
+write a/x.txt in-a
+write b/x.txt in-b
+vo run --record r.jsonl main.vo
+rm a/x.txt
+rm b/x.txt
+vo replay r.jsonl
