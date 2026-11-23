@@ -65,7 +65,13 @@ markdown_extensions:
   - tables
   - pymdownx.highlight:
       use_pygments: true
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true # language-output, language-console: styled in extra.css
   - pymdownx.superfences
+  - pymdownx.blocks.tab: # `/// tab | Title` ... `///`: fences stay at the line start, so examples are still checked
+      alternate_style: true
+  - pymdownx.blocks.html # `/// html | div.grid.cards`: the home page's cards
 
 extra:
   generator: false

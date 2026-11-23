@@ -4,11 +4,20 @@ A small JSON service built with `std.web`: list, add, read, complete and delete 
 database `data/notes.db`. It answers on port 8080 of this machine, up to four requests at once, until
 Ctrl-C.
 
+![The notes API. Requests reach notes_app(), the routes with their inputs and problems, in two ways:
+from serve_app on port 8080 with four workers, and from handle_request in the tests, with no network.
+notes_app() calls notes.vo, which is written for any database (Notes[D]): the SQLite file data/notes.db
+that each worker opens, or a new database in memory in each test.](diagram.svg)
+
+## Run it
+
 ```sh
 cd examples/notes-api
 ../../bin/vo run main.vo        # serve on http://localhost:8080 (Ctrl-C stops it, exit status 0)
 ../../bin/vo test main.vo       # six tests and a property: every request through the app, a database in memory
 ```
+
+## Try it
 
 In another terminal (`std.web` takes JSON bodies with `Content-Type: application/json`, as Spring does;
 `curl -d` alone sends a form, answered 415):
@@ -45,6 +54,57 @@ $ curl localhost:8080/health
 Every failure is an RFC 9457 problem (`application/problem+json`) with the status, a `detail` or the
 `errors` of each field.
 
+## How it works
+
+### The whole API is a value
+
+`notes_app()` in `api.vo` is the whole API as a value: a route table (`on_get("/notes/{id}", show)`,
+...), the input of each operation as a record (`NoteId { id: int }` from the path,
+`NewNote { body: NoteText }` from the JSON body, with `@size(1, 200)` on the text), and a health route.
+Routing, 404/405, reading and checking the input, JSON answers and problem bodies come from `std.web`;
+there is no code for them here.
+
+<!-- code: api.vo fn notes_app -->
+
+### Every way to fail has a status
+
+The operations fail with a `NoteError` (`not_found(id)`, `blank`, `database(message)`), and one
+function, `note_problem`, gives each case its status, so the checker sees that every way to fail has
+one; `typed(op, note_problem)` makes each operation one the routes take.
+
+<!-- code: api.vo fn note_problem -->
+
+### Workers and a database
+
+`main` calls `serve_app("8080", 4, open_notes, notes_app())`: four worker processes, each opening the
+database once (`open_notes`). Notes live in SQLite, so requests answered at once never lose each
+other's changes.
+
+<!-- code: main.vo fn main -->
+
+### Tests without a network
+
+The tests send requests to `notes_app()` with `handle_request` and an in-memory database; the
+operations and `notes.vo` are generic over the database's effects (`Notes[D]`), so the same code runs
+on the file in `main` and in memory in the tests.
+
+<!-- code: api.vo test "POST /notes adds a note with the next id" -->
+
+### Effects are the service's permissions
+
+`main` declares `serve("8080")` (this machine only; the network would need `serve("0.0.0.0:8080")`) and
+`Storage`, the effect set `api.vo` names once: `file.read("data/")` and `file.write("data/")`, which
+`open_notes` needs. `vo.effects` lists those effects written out; it shows that only `open_notes`
+touches files and that the operations use only the database they are given.
+
+<!-- code: api.vo fn open_notes -->
+
+### Record and replay
+
+`recordings/demo.jsonl` is the session above: each worker's setup, then every request with its database
+calls and its response. `../../bin/vo replay recordings/demo.jsonl` answers the same requests again, one
+at a time, without opening a port or touching `data/`.
+
 ## Requirements
 
 | ID | Requirement |
@@ -60,28 +120,6 @@ Each test names the requirements it proves with `@spec("FR-...")` on the line ab
 
 `vo query specs main.vo` lists FR-001 to FR-006; comparing the query's IDs with this table is how a
 reviewer, or a tool, finds requirements without a test.
-
-## What it shows
-
-- **`std.web`**: `notes_app()` in `api.vo` is the whole API as a value: a route table
-  (`on_get("/notes/{id}", show)`, ...), the input of each operation as a record (`NoteId { id: int }`
-  from the path, `NewNote { body: NoteText }` from the JSON body, with `@size(1, 200)` on the text), and a
-  health route. Routing, 404/405, reading and checking the input, JSON answers and problem bodies come
-  from `std.web`; there is no code for them here. The operations fail with a `NoteError` (`not_found(id)`, `blank`, `database(message)`), and one function, `note_problem`, gives each case its status, so the checker sees that every way to fail has one; `typed(op, note_problem)` makes each operation one the routes take.
-- **Workers and a database**: `main` calls `serve_app("8080", 4, open_notes, notes_app())`: four worker
-  processes, each opening the database once (`open_notes`). Notes live in SQLite, so requests answered
-  at once never lose each other's changes.
-- **Tests without a network**: the tests send requests to `notes_app()` with `handle_request` and an
-  in-memory database; the operations and `notes.vo` are generic over the database's effects
-  (`Notes[D]`), so the same code runs on the file in `main` and in memory in the tests.
-- **Effects as the service's permissions.** `main` declares `serve("8080")` (this machine only; the
-  network would need `serve("0.0.0.0:8080")`) and `Storage`, the effect set `api.vo` names once:
-  `file.read("data/")` and `file.write("data/")`, which `open_notes` needs. `vo.effects` lists those
-  effects written out; it shows that only `open_notes` touches files and that the operations use only the
-  database they are given.
-- **Record and replay.** `recordings/demo.jsonl` is the session above: each worker's setup, then every
-  request with its database calls and its response. `../../bin/vo replay recordings/demo.jsonl` answers
-  the same requests again, one at a time, without opening a port or touching `data/`.
 
 ## Files
 

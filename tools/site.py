@@ -82,6 +82,11 @@ def rewrite_links(text, source, page):
         if repo_path in PAGES:
             rel = os.path.relpath(PAGES[repo_path], os.path.dirname(page) or ".").replace(os.sep, "/")
             return f"[{label}]({rel}{'#' + anchor if anchor else ''})"
+        if repo_path.endswith(".svg") and os.path.exists(os.path.join(ROOT, repo_path)):  # a diagram: on the site
+            asset = "assets/" + repo_path.replace("/", "-")
+            os.makedirs(os.path.join(SRC, "assets"), exist_ok=True)
+            shutil.copy(os.path.join(ROOT, repo_path), os.path.join(SRC, asset))
+            return f"[{label}]({os.path.relpath(asset, os.path.dirname(page) or '.').replace(os.sep, '/')})"
         if re.match(r"examples/[\w-]+$", repo_path):
             rel = os.path.relpath(repo_path + ".md", os.path.dirname(page) or ".").replace(os.sep, "/")
             return f"[{label}]({rel})"
@@ -171,6 +176,31 @@ def stdlib():
     return nav
 
 
+def code_block(file, first, lines):
+    """Lines of an example's file as a block titled with the file and numbered as in the file."""
+    lang = "vo" if file.endswith(".vo") else "text"
+    return f'```{lang} title="{file}" linenums="{first}"\n' + "\n".join(lines) + "\n```\n"
+
+
+def excerpt(example, spec):
+    """A README's `<!-- code: FILE -->` (the file) or `<!-- code: FILE ITEM -->` (one item, named as its
+    declaration starts: `fn main`, `record Job`, `test "name"`, with the comment above it), read from the
+    example's source, so a walkthrough never shows code the program does not have."""
+    file, _, item = spec.partition(" ")
+    lines = open(os.path.join(ROOT, "examples", example, file), encoding="utf-8").read().splitlines()
+    if not item:
+        return code_block(file, 1, lines)
+    starts = [k for k, l in enumerate(lines) if re.match(r"(export )?" + re.escape(item) + r"(\W|$)", l)]
+    if len(starts) != 1:
+        sys.exit(f"site: examples/{example}/README.md shows `{item}` of {file}: {len(starts)} such items")
+    a = b = starts[0]
+    while a > 0 and lines[a - 1].startswith(("#", "@")):
+        a -= 1
+    while lines[b] != "}" and not (b == starts[0] and lines[b].endswith(";")):  # vo fmt: an item ends at `}` in column 1
+        b += 1
+    return code_block(file, a + 1, lines[a:b + 1])
+
+
 def examples():
     nav = [{"Overview": "examples/index.md"}]
     readme = open(os.path.join(ROOT, "examples", "README.md"), encoding="utf-8").read()
@@ -181,11 +211,14 @@ def examples():
             continue
         page = f"examples/{name}.md"
         text = rewrite_links(open(os.path.join(d, "README.md"), encoding="utf-8").read(), f"examples/{name}/README.md", page)
-        src = [f for f in sorted(os.listdir(d)) if f.endswith(".vo")]
-        text += "\n## Source\n\nThe program as it is in the repository ([examples/" + name + "](" + REPO + "/tree/main/examples/" \
-            + name + "); `make test` checks and tests it).\n"
+        text = re.sub(r"^<!-- code: (.+?) -->\n", lambda m: excerpt(name, m.group(1)), text, flags=re.M)
+        src = sorted((os.path.relpath(os.path.join(r, f), d).replace(os.sep, "/") for r, _, fs in os.walk(d) for f in fs
+                      if f.endswith(".vo") or f == "vo.effects"), key=lambda f: (f.count("/"), f != "main.vo", f))
+        text += "\n## Source\n\nEvery file of the program as it is in the repository ([examples/" + name + "](" + REPO \
+            + "/tree/main/examples/" + name + "); `make test` checks and tests it).\n"
         for f in src:
-            text += f"\n### {f}\n\n```vo\n" + open(os.path.join(d, f), encoding="utf-8").read() + "```\n"
+            text += f"\n/// tab | {f}\n\n" + code_block(f, 1, open(os.path.join(d, f), encoding="utf-8").read().splitlines()) \
+                .replace(f' title="{f}"', "") + "\n///\n"
         write(page, text, f"examples/{name}/README.md")
         nav.append({name: page})
     return nav

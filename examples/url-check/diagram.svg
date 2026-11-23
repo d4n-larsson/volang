@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 734 236" role="img" aria-label="Two URLs that take 500 and 400 milliseconds: 900 in turn, 500 at the same time">
+  <!-- One dark panel in Nord colors, so the same file reads in the light and the dark scheme. -->
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#88c0d0"/>
+    </marker>
+    <style>
+      .n { fill: #434c5e; stroke: #88c0d0; stroke-width: 1.5; }
+      .w { stroke: #ebcb8b; stroke-dasharray: 5 4; }
+      .f { fill: none; stroke: #88c0d0; stroke-width: 1.5; stroke-dasharray: 5 4; }
+      .b { fill: #5e81ac; }
+      .t { font: 700 15px ui-monospace, SFMono-Regular, Consolas, Menlo, monospace; fill: #eceff4; text-anchor: middle; }
+      .s { font: 12.5px system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #d8dee9; text-anchor: middle; }
+      .a { text-anchor: start; }
+      .l { fill: none; stroke: #88c0d0; stroke-width: 1.5; marker-end: url(#a); }
+      .k { marker-start: url(#a); }
+      .d { fill: none; stroke: #88c0d0; stroke-width: 1.5; }
+    </style>
+  </defs>
+  <rect width="734" height="236" rx="10" fill="#3b4252"/>
+  <text class="t a" x="20" y="38">map</text>
+  <text class="s a" x="20" y="56">sequential.vo</text>
+  <rect class="b" x="170" y="26" width="290" height="34" rx="4"/>
+  <text class="s" x="315" y="48">first URL, 500 ms</text>
+  <rect class="b" x="462" y="26" width="230" height="34" rx="4"/>
+  <text class="s" x="577" y="48">second URL, 400 ms</text>
+  <text class="t a" x="20" y="118">concurrent_map</text>
+  <text class="s a" x="20" y="136">main.vo</text>
+  <rect class="b" x="170" y="88" width="290" height="34" rx="4"/>
+  <text class="s" x="315" y="110">first URL, 500 ms</text>
+  <rect class="b" x="170" y="126" width="232" height="34" rx="4"/>
+  <text class="s" x="286" y="148">second URL, 400 ms</text>
+  <path class="l" d="M170 184H712"/>
+  <path class="d" d="M170 178V190"/>
+  <text class="s" x="170" y="206">0</text>
+  <path class="d" d="M460 178V190"/>
+  <text class="s" x="460" y="206">500 ms</text>
+  <path class="d" d="M692 178V190"/>
+  <text class="s" x="692" y="206">900 ms</text>
+  <path class="f" d="M460 20V178"/>
+  <path class="f" d="M692 20V178"/>
+  <text class="s" x="367" y="226">either way, the results come back in the order of the URLs</text>
+</svg>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 734 276" role="img" aria-label="The expense report: effects in main.vo around the pure report.vo">
+  <!-- One dark panel in Nord colors, so the same file reads in the light and the dark scheme. -->
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#88c0d0"/>
+    </marker>
+    <style>
+      .n { fill: #434c5e; stroke: #88c0d0; stroke-width: 1.5; }
+      .w { stroke: #ebcb8b; stroke-dasharray: 5 4; }
+      .f { fill: none; stroke: #88c0d0; stroke-width: 1.5; stroke-dasharray: 5 4; }
+      .b { fill: #5e81ac; }
+      .t { font: 700 15px ui-monospace, SFMono-Regular, Consolas, Menlo, monospace; fill: #eceff4; text-anchor: middle; }
+      .s { font: 12.5px system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #d8dee9; text-anchor: middle; }
+      .a { text-anchor: start; }
+      .l { fill: none; stroke: #88c0d0; stroke-width: 1.5; marker-end: url(#a); }
+      .k { marker-start: url(#a); }
+      .d { fill: none; stroke: #88c0d0; stroke-width: 1.5; }
+    </style>
+  </defs>
+  <rect width="734" height="276" rx="10" fill="#3b4252"/>
+  <rect class="n" x="16" y="103" width="120" height="60" rx="8"/>
+  <text class="t" x="76" y="130">data/</text>
+  <text class="s" x="76" y="149">expenses.json</text>
+  <rect class="f" x="256" y="16" width="210" height="218" rx="10"/>
+  <text class="s" x="361" y="38">report.vo: pure</text>
+  <rect class="n" x="272" y="50" width="178" height="46" rx="8"/>
+  <text class="t" x="361" y="70">expenses_from</text>
+  <text class="s" x="361" y="89">JSON to records</text>
+  <rect class="n" x="272" y="112" width="178" height="46" rx="8"/>
+  <text class="t" x="361" y="132">totals</text>
+  <text class="s" x="361" y="151">by category, by month</text>
+  <rect class="n" x="272" y="174" width="178" height="46" rx="8"/>
+  <text class="t" x="361" y="194">render</text>
+  <text class="s" x="361" y="213">the table</text>
+  <path class="l" d="M361 96V110"/>
+  <path class="l" d="M361 158V172"/>
+  <path class="l" d="M136 133H254"/>
+  <text class="s" x="196" y="125">file.read("data/")</text>
+  <rect class="n" x="586" y="55" width="132" height="56" rx="8"/>
+  <text class="t" x="652" y="80">console</text>
+  <text class="s" x="652" y="99">the report</text>
+  <rect class="n" x="586" y="147" width="132" height="56" rx="8"/>
+  <text class="t" x="652" y="172">out/</text>
+  <text class="s" x="652" y="191">report.txt</text>
+  <path class="l" d="M466 83H584"/>
+  <text class="s" x="526" y="75">console</text>
+  <path class="l" d="M466 175H584"/>
+  <text class="s" x="526" y="167">file.write("out/")</text>
+  <text class="s" x="367" y="260">main.vo declares the three effects; nothing in report.vo can reach a file</text>
+</svg>

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 734 270" role="img" aria-label="The notes API: the same application behind four workers and in the tests">
+  <!-- One dark panel in Nord colors, so the same file reads in the light and the dark scheme. -->
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#88c0d0"/>
+    </marker>
+    <style>
+      .n { fill: #434c5e; stroke: #88c0d0; stroke-width: 1.5; }
+      .w { stroke: #ebcb8b; stroke-dasharray: 5 4; }
+      .f { fill: none; stroke: #88c0d0; stroke-width: 1.5; stroke-dasharray: 5 4; }
+      .b { fill: #5e81ac; }
+      .t { font: 700 15px ui-monospace, SFMono-Regular, Consolas, Menlo, monospace; fill: #eceff4; text-anchor: middle; }
+      .s { font: 12.5px system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #d8dee9; text-anchor: middle; }
+      .a { text-anchor: start; }
+      .l { fill: none; stroke: #88c0d0; stroke-width: 1.5; marker-end: url(#a); }
+      .k { marker-start: url(#a); }
+      .d { fill: none; stroke: #88c0d0; stroke-width: 1.5; }
+    </style>
+  </defs>
+  <rect width="734" height="270" rx="10" fill="#3b4252"/>
+  <rect class="n" x="20" y="20" width="170" height="50" rx="8"/>
+  <text class="t" x="105" y="42">serve_app</text>
+  <text class="s" x="105" y="61">port 8080, 4 workers</text>
+  <rect class="n" x="20" y="200" width="170" height="50" rx="8"/>
+  <text class="t" x="105" y="222">handle_request</text>
+  <text class="s" x="105" y="241">the tests, no network</text>
+  <rect class="n" x="250" y="107" width="200" height="56" rx="8"/>
+  <text class="t" x="350" y="132">notes_app()</text>
+  <text class="s" x="350" y="151">routes, inputs, problems</text>
+  <rect class="n" x="500" y="107" width="214" height="56" rx="8"/>
+  <text class="t" x="607" y="132">notes.vo</text>
+  <text class="s" x="607" y="151">Notes[D]: any database</text>
+  <rect class="n" x="500" y="20" width="214" height="50" rx="8"/>
+  <text class="t" x="607" y="42">data/notes.db</text>
+  <text class="s" x="607" y="61">SQLite, opened by each worker</text>
+  <rect class="n" x="500" y="200" width="214" height="50" rx="8"/>
+  <text class="t" x="607" y="222">in memory</text>
+  <text class="s" x="607" y="241">a new database per test</text>
+  <path class="l" d="M190 45H220V125H248"/>
+  <path class="l" d="M190 225H220V145H248"/>
+  <path class="l" d="M450 135H498"/>
+  <path class="l" d="M607 107V72"/>
+  <path class="l" d="M607 163V198"/>
+</svg>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 734 240" role="img" aria-label="The status board, its service, and a recording that stands in for the network">
+  <!-- One dark panel in Nord colors, so the same file reads in the light and the dark scheme. -->
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#88c0d0"/>
+    </marker>
+    <style>
+      .n { fill: #434c5e; stroke: #88c0d0; stroke-width: 1.5; }
+      .w { stroke: #ebcb8b; stroke-dasharray: 5 4; }
+      .f { fill: none; stroke: #88c0d0; stroke-width: 1.5; stroke-dasharray: 5 4; }
+      .b { fill: #5e81ac; }
+      .t { font: 700 15px ui-monospace, SFMono-Regular, Consolas, Menlo, monospace; fill: #eceff4; text-anchor: middle; }
+      .s { font: 12.5px system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #d8dee9; text-anchor: middle; }
+      .a { text-anchor: start; }
+      .l { fill: none; stroke: #88c0d0; stroke-width: 1.5; marker-end: url(#a); }
+      .k { marker-start: url(#a); }
+      .d { fill: none; stroke: #88c0d0; stroke-width: 1.5; }
+    </style>
+  </defs>
+  <rect width="734" height="240" rx="10" fill="#3b4252"/>
+  <rect class="n" x="20" y="40" width="200" height="64" rx="8"/>
+  <text class="t" x="120" y="69">main.vo</text>
+  <text class="s" x="120" y="88">fetch uses net("localhost")</text>
+  <rect class="n" x="500" y="40" width="214" height="64" rx="8"/>
+  <text class="t" x="607" y="69">service/main.vo</text>
+  <text class="s" x="607" y="88">serve("8000")</text>
+  <path class="l" d="M220 60H498"/>
+  <text class="s" x="359" y="52">GET /status.json, /incidents.json</text>
+  <path class="l" d="M500 86H222"/>
+  <text class="s" x="300" y="80">JSON</text>
+  <rect class="n" x="500" y="160" width="214" height="56" rx="8"/>
+  <text class="t" x="607" y="185">site/</text>
+  <text class="s" x="607" y="204">file.read("site/")</text>
+  <path class="l" d="M607 104V158"/>
+  <rect class="n" x="255" y="160" width="224" height="56" rx="8"/>
+  <text class="t" x="367" y="185">recordings/*.jsonl</text>
+  <text class="s" x="367" y="204">every response received</text>
+  <path class="l" d="M367 86V158"/>
+  <text class="s a" x="376" y="128">vo run --record</text>
+  <path class="l" d="M255 188H120V106"/>
+  <text class="s" x="187" y="208">vo replay: no network</text>
+</svg>

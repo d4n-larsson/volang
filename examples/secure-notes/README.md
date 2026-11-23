@@ -4,13 +4,26 @@ A JSON service whose access rules are one table, built with `std.security` on `s
 ask for its health and sign in, signed-in users keep notes of their own, and an admin lists the users
 and may delete any note. A route the table does not mention is refused.
 
+![Secure notes. Every request, with or without a token, passes rules(), which has one line per route.
+A request with no valid token on a route that needs one is answered 401 Unauthorized; a signed-in
+caller the rule does not allow is answered 403 Forbidden; otherwise the operation runs with the
+caller's identity.](diagram.svg)
+
+## Run it
+
 ```sh
 cd examples/secure-notes
 ../../bin/vo run main.vo        # serve on http://localhost:8080 (Ctrl-C stops it)
 ../../bin/vo test main.vo       # six tests: every route as nobody, a user and an admin; no network
 ```
 
+## The rules
+
 The table is `rules()` in `notes.vo`:
+
+<!-- code: notes.vo fn rules -->
+
+It prints as:
 
 ```text
 GET /health: anyone
@@ -23,6 +36,8 @@ GET /admin/users: roles admin
 
 That text is what `describe` prints, and a test compares it, so a change of access shows in a diff.
 Another test asks `review` for routes without a rule and rules that never apply, and expects none.
+
+## Try it
 
 In another terminal (the accounts are `ada`, an admin, with the password `correct horse`, and `bo`
 with `battery staple`):
@@ -42,14 +57,33 @@ $ curl -H 'X-Identity: {"name":"ada","roles":["admin"]}' localhost:8080/admin/us
 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"sign in"}
 ```
 
-What to look at:
+## How it works
 
-- **The operations do not parse headers.** Each declares the field `identity` and calls
-  `require_user`; "only the owner or an admin deletes a note" is an `if` in `erase`.
-- **Tests sign in without passwords.** The test application adds `test_users()` to the ways of signing
-  in, and `as_user(request, user)` makes a request as that user. The served application does not list
-  it, so the header it uses means nothing there.
-- **The policy is built once**, by `notes_policy`, for the step and for the sign-in route.
-- Notes are kept in memory by one worker, and the key that signs the tokens is made at start, so a
-  restart forgets the notes and signs everybody out. A real service keeps both in its storage and
-  settings (see [notes-api](../notes-api/) for SQLite).
+### The operations do not parse headers
+
+Each declares the field `identity` and calls `require_user`; "only the owner or an admin deletes a
+note" is an `if` in `erase`.
+
+<!-- code: notes.vo fn erase -->
+
+### Tests sign in without passwords
+
+The test application adds `test_users()` to the ways of signing in, and `as_user(request, user)` makes a
+request as that user. The served application does not list it, so the header it uses means nothing
+there.
+
+<!-- code: notes.vo fn test_app -->
+<!-- code: notes.vo fn call -->
+<!-- code: notes.vo test "who may call what" -->
+
+### The policy is built once
+
+`notes_policy` builds it, for the step and for the sign-in route.
+
+<!-- code: notes.vo fn notes_policy -->
+
+### What it leaves out
+
+Notes are kept in memory by one worker, and the key that signs the tokens is made at start, so a
+restart forgets the notes and signs everybody out. A real service keeps both in its storage and
+settings (see [notes-api](../notes-api/) for SQLite).

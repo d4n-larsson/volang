@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 734 318" role="img" aria-label="The vo toolchain">
+  <!-- The home page's diagram. One dark panel in Nord colors, so the same file reads in the light and the dark scheme. -->
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#88c0d0"/>
+    </marker>
+    <style>
+      .n { fill: #434c5e; stroke: #88c0d0; stroke-width: 1.5; }
+      .t { font: 700 15px ui-monospace, SFMono-Regular, Consolas, Menlo, monospace; fill: #eceff4; text-anchor: middle; }
+      .s { font: 12.5px system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #d8dee9; text-anchor: middle; }
+      .l { fill: none; stroke: #88c0d0; stroke-width: 1.5; marker-end: url(#a); }
+    </style>
+  </defs>
+  <rect width="734" height="318" rx="10" fill="#3b4252"/>
+
+  <rect class="n" x="24" y="92" width="180" height="76" rx="8"/>
+  <text class="t" x="114" y="125">.vo files</text>
+  <text class="s" x="114" y="147">from an agent or a person</text>
+
+  <rect class="n" x="260" y="92" width="200" height="76" rx="8"/>
+  <text class="t" x="360" y="125">vo check</text>
+  <text class="s" x="360" y="147">syntax, names, types, effects</text>
+
+  <rect class="n" x="260" y="250" width="200" height="50" rx="8" stroke-dasharray="5 4"/>
+  <text class="t" x="360" y="272">vo.effects</text>
+  <text class="s" x="360" y="290">the effects a reviewer approved</text>
+
+  <rect class="n" x="510" y="24" width="200" height="60" rx="8"/>
+  <text class="t" x="610" y="50">vo test</text>
+  <text class="s" x="610" y="70">runs tests and properties</text>
+
+  <rect class="n" x="510" y="100" width="200" height="60" rx="8"/>
+  <text class="t" x="610" y="126">vo run</text>
+  <text class="s" x="610" y="146">runs main within its effects</text>
+
+  <rect class="n" x="510" y="176" width="200" height="60" rx="8"/>
+  <text class="t" x="610" y="202">vo build</text>
+  <text class="s" x="610" y="222">writes one executable file</text>
+
+  <path class="l" d="M204 130H258"/>
+  <path class="l" d="M320 168V200H114V170"/>
+  <text class="s" x="217" y="220">diagnostics with their fixes</text>
+  <path class="l" d="M400 250V170"/>
+  <path class="l" d="M460 130H508"/>
+  <path class="l" d="M485 130V54H508"/>
+  <path class="l" d="M485 130V206H508"/>
+</svg>

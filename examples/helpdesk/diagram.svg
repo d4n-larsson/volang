@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 734 230" role="img" aria-label="Two of the help desk's collections: a priority queue of tickets and an ordered map of shifts">
+  <!-- One dark panel in Nord colors, so the same file reads in the light and the dark scheme. -->
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#88c0d0"/>
+    </marker>
+    <style>
+      .n { fill: #434c5e; stroke: #88c0d0; stroke-width: 1.5; }
+      .w { stroke: #ebcb8b; stroke-dasharray: 5 4; }
+      .f { fill: none; stroke: #88c0d0; stroke-width: 1.5; stroke-dasharray: 5 4; }
+      .b { fill: #5e81ac; }
+      .t { font: 700 15px ui-monospace, SFMono-Regular, Consolas, Menlo, monospace; fill: #eceff4; text-anchor: middle; }
+      .s { font: 12.5px system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; fill: #d8dee9; text-anchor: middle; }
+      .a { text-anchor: start; }
+      .l { fill: none; stroke: #88c0d0; stroke-width: 1.5; marker-end: url(#a); }
+      .k { marker-start: url(#a); }
+      .d { fill: none; stroke: #88c0d0; stroke-width: 1.5; }
+    </style>
+  </defs>
+  <rect width="734" height="230" rx="10" fill="#3b4252"/>
+  <text class="t" x="175" y="36">priority_queue[Ticket]</text>
+  <rect class="n" x="24" y="54" width="302" height="34" rx="8"/>
+  <text class="t" x="175" y="76"></text>
+  <text class="s" x="175" y="76">sev 1 · minute 7 · email down for everyone</text>
+  <rect class="n" x="24" y="96" width="302" height="34" rx="8"/>
+  <text class="t" x="175" y="118"></text>
+  <text class="s" x="175" y="118">sev 1 · minute 12 · VPN refuses logins</text>
+  <rect class="n" x="24" y="138" width="302" height="34" rx="8"/>
+  <text class="t" x="175" y="160"></text>
+  <text class="s" x="175" y="160">sev 2 · minute 5 · printer out of toner</text>
+  <text class="s" x="175" y="200">pop gives the smallest ticket:</text>
+  <text class="s" x="175" y="217">by severity, then minute, then title</text>
+  <text class="t" x="550" y="36">ordered_map[int, str]</text>
+  <path class="d" d="M400 110H700"/>
+  <path d="M510 110H598" stroke="#a3be8c" stroke-width="6" fill="none"/>
+  <path class="d" d="M400 102V118"/>
+  <text class="s" x="400" y="138">0</text>
+  <text class="s" x="400" y="155">alice</text>
+  <path class="d" d="M510 102V118"/>
+  <text class="s" x="510" y="138">10</text>
+  <text class="s" x="510" y="155">bob</text>
+  <path class="d" d="M598 102V118"/>
+  <text class="s" x="598" y="138">18</text>
+  <text class="s" x="598" y="155">carol</text>
+  <path class="d" d="M675 102V118"/>
+  <text class="s" x="675" y="138">25</text>
+  <text class="s" x="675" y="155">dave</text>
+  <circle cx="532" cy="110" r="5" fill="#ebcb8b"/>
+  <text class="s" x="532" y="92">a ticket at minute 12</text>
+  <text class="s" x="550" y="200">key_at_or_below(12) is 10:</text>
+  <text class="s" x="550" y="217">bob was on call</text>
+</svg>

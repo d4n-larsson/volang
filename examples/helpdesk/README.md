@@ -2,15 +2,14 @@
 
 Reads tickets from `data/tickets.txt` and on-call shifts from `data/oncall.txt`, and prints the order
 the tickets are handled in (most urgent first), who was on call when each ticket came in, who was never
-paged, and the last three tickets handled. It shows the built-in collections:
+paged, and the last three tickets handled. It shows the built-in collections.
 
-- **`priority_queue[Ticket]`**: `Ticket` is a record of ordered fields (`severity`, `minute`, `title`),
-  so it is ordered field by field and the queue needs no comparison function.
-- **`ordered_map[int, str]`**: shifts keyed by their start; `key_at_or_below` finds the shift that
-  covers a minute.
-- **`ordered_set[str]`**: the people paged and everyone on the rota, in name order; `difference` gives
-  who was never paged.
-- **`deque[str]`**: the last three tickets handled (`push` at the back, `pop_front` when it is full).
+![Two of the collections. A priority_queue of Ticket records gives the smallest ticket first, compared
+by severity, then minute, then title. An ordered_map from the minute a shift starts to the person on
+call holds 0 alice, 10 bob, 18 carol and 25 dave; for a ticket at minute 12, key_at_or_below(12) is 10,
+so bob was on call.](diagram.svg)
+
+## Run it
 
 ```sh
 cd examples/helpdesk
@@ -31,6 +30,35 @@ paged: alice, bob, carol
 never paged: dave
 last 3 handled: laptop battery swollen; new monitor request; password reset
 ```
+
+## How it works
+
+### A queue that needs no comparison function: `priority_queue[Ticket]`
+
+`Ticket` is a record of ordered fields (`severity`, `minute`, `title`), so it is ordered field by field
+and the queue needs no comparison function.
+
+<!-- code: helpdesk.vo record Ticket -->
+<!-- code: helpdesk.vo fn triage -->
+
+### Who was on call: `ordered_map[int, str]`
+
+The shifts are keyed by the minute they start; `key_at_or_below` finds the shift that covers a minute.
+
+<!-- code: helpdesk.vo fn on_call -->
+
+### Who was never paged: `ordered_set[str]`
+
+The people paged and everyone on the rota are sets in name order; `difference` gives who was never
+paged.
+
+<!-- code: helpdesk.vo fn report -->
+
+### The last three handled: `deque[str]`
+
+`push` adds at the back, and `pop_front` drops the oldest when the history is full.
+
+<!-- code: helpdesk.vo fn remember -->
 
 ## Requirements
 

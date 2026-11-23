@@ -3,6 +3,13 @@
 Reads a list of expenses from `data/expenses.json`, prints totals by category (largest first) and by
 month, and saves the same report to `out/report.txt`.
 
+![The expense report. main.vo reads data/expenses.json with the effect file.read("data/") and hands the
+text to report.vo, which is pure: expenses_from turns the JSON into records, totals groups them by
+category and by month, render makes the table. main.vo prints the result (console) and writes it to
+out/report.txt (file.write("out/")).](diagram.svg)
+
+## Run it
+
 ```sh
 cd examples/expenses
 ../../bin/vo run main.vo        # the report
@@ -30,6 +37,53 @@ month        amount
 total        552.89
 ```
 
+## How it works
+
+### Effects are the program's permissions
+
+`main` declares `uses console, file.read("data/"), file.write("out/")`: it may read only under `data/`
+and write only under `out/`, checked at run time (R0010 otherwise). Everything in `report.vo` is pure,
+so it cannot touch files or the network, and its tests need no setup.
+
+<!-- code: main.vo fn main -->
+
+### A record a reviewer can read
+
+`vo.effects` lists every function and test with its effects. If an edit makes `render` read a file, the
+checker first asks every caller to declare it (E0501, with a fix), and then `vo check` fails with E0504,
+"`render` gains file.read("data/")", naming the call that brought it in, until `vo effects --update`
+records the change for a reviewer to approve.
+
+<!-- code: vo.effects -->
+
+### Errors are values
+
+Bad input (an invalid date, a negative amount, a missing field) is an `err` passed up with `try`; `main`
+returning `err` exits with status 1 and prints the message.
+
+<!-- code: report.vo fn expenses_from -->
+
+### Tests next to the code
+
+The tests and the property live in `report.vo`, beside the functions they test: `vo run` ignores them,
+and `vo test main.vo` runs them with the rest of the program. The property checks that grouping never
+loses money, whatever the amounts.
+
+<!-- code: report.vo prop "totals add up to the sum of the expenses" -->
+
+### A contract and exact amounts
+
+`amount_of` declares `requires cents >= 0`, checked on every call. Amounts are `std.decimal` values
+(1290.50 is 129050 units at 2 places), so sums and the printed text are exact and nothing is formatted
+by hand.
+
+<!-- code: report.vo fn amount_of -->
+
+### The standard library
+
+`std.json` reads the data, `std.time` validates the dates, `std.decimal` carries the amounts, `std.text`
+pads the table. `vo doc std.text` lists what else is there.
+
 ## Requirements
 
 | ID | Requirement |
@@ -41,27 +95,6 @@ total        552.89
 | FR-005 | With no expenses, the report says so. |
 
 Each test names the requirements it proves with `@spec("FR-...")` on the line above it; `vo query specs main.vo` lists them, and `vo test` ends with a line per requirement.
-
-## What it shows
-
-- **Effects as the program's permissions.** `main` declares `uses console, file.read("data/"),
-  file.write("out/")`: it may read only under `data/` and write only under `out/`, checked at run time
-  (R0010 otherwise). Everything in `report.vo` is pure, so it cannot touch files or the network, and its
-  tests need no setup.
-- **A reviewable record.** `vo.effects` lists every function and test with its effects. If an edit
-  makes `render` read a file, the checker first asks every caller to declare it (E0501, with a fix), and
-  then `vo check` fails with E0504, "`render` gains file.read("data/")", naming the call that brought it
-  in, until `vo effects --update` records the change for a reviewer to approve.
-- **The standard library.** `std.json` reads the data, `std.time` validates the dates, `std.decimal`
-  carries the amounts, `std.text` pads the table. `vo doc std.text` lists what else is there.
-- **Errors as values.** Bad input (an invalid date, a negative amount, a missing field) is an `err`
-  passed up with `try`; `main` returning `err` exits with status 1 and prints the message.
-- **Tests next to the code.** The tests and the property live in `report.vo`, beside the functions they
-  test: `vo run` ignores them, and `vo test main.vo` runs them with the rest of the program. The property checks that grouping never loses money,
-  whatever the amounts.
-- **A contract.** `amount_of` declares `requires cents >= 0`, checked on every call.
-- **Exact amounts.** Amounts are `std.decimal` values (1290.50 is 129050 units at 2 places), so sums and
-  the printed text are exact and nothing is formatted by hand.
 
 ## Files
 
