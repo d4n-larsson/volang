@@ -1,0 +1,31 @@
+# Spec 047: a worker's trace records follow a `worker` record with its number.
+import std.workers.Link;
+import std.workers.Wait;
+import std.workers.emit;
+import std.workers.receive;
+import std.workers.start_worker;
+
+fn twice(n: int) -> int {
+    return n * 2;
+}
+
+fn body(link: Link[int, int]) {
+    match emit(link, twice(4)) {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn main() uses console {
+    match start_worker(body) {
+        case ok(w) {
+            print(str(receive(w, Wait.forever) == ok(8)));
+            print(str(receive(w, Wait.forever) == ok(8)));
+        }
+        case err(_) {
+            print("no worker");
+        }
+    }
+}

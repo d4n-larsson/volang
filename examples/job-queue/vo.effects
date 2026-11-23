@@ -1,0 +1,15 @@
+# vo effects record: update with `vo effects --update`
+jobs.vo:primes_below pure
+jobs.vo:run pure
+jobs.vo:test "a job gives its id back with its count" pure
+jobs.vo:test "primes are counted" pure
+jobs.vo:test "the wait is the time to the nearest deadline" pure
+jobs.vo:wait_until_due pure
+main.vo:hand_out uses clock
+main.vo:listen uses console, clock
+main.vo:main uses console, clock
+main.vo:replace pure
+main.vo:run_queue uses console, clock
+main.vo:seat pure
+main.vo:serve_jobs pure
+main.vo:settle pure

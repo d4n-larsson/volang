@@ -66,6 +66,7 @@ static void worker_run(Worker *w, int *p, long listener, long parent) NORETURN;
 static void worker_run(Worker *w, int *p, long listener, long parent)
 {
     sys_die_with_parent(parent);
+    workers_forget(); /* spec 047: the program's workers are not this process's */
     sv_child_close(listener);
     for (int i = 0; i < WORKER_MAX; i++) { /* the other workers' pipes */
         Worker *o = &sw[i];

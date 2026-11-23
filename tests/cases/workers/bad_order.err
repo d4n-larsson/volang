@@ -1,0 +1,8 @@
+std/workers.vo:82:12: runtime error[R0015]: A worker's message cannot hold a collection with its own order: send its items (`keys`) instead.
+  82 |     return __worker(2, w.id, message);
+     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at tell (std/workers.vo:82:12)
+      w: Worker[Box, int] = new Worker[Box, int] { id: 64 }, message: Box = new Box { items: ordered_set{1} }
+  at main (bad_order.vo:92:24)
+      s: ordered_set[int] = ordered_set{1}, w: Worker[Box, int] = new Worker[Box, int] { id: 64 }

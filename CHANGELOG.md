@@ -6,6 +6,15 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- `std.workers`: processes that run beside the program and exchange typed messages with it.
+  `start_worker(f)` returns at once with a handle; `tell` and `receive` on the program's side,
+  `next_message` and `emit` in the worker; `receive_first` waits on several workers; `stop_worker` ends
+  one whatever it is doing; `with_deadline(ms, f)` gives one call a time limit. A worker's runtime error
+  is a value (`failed`), not the program's end; one nobody received is reported when the program ends,
+  with exit status 70. No worker outlives the program. What a worker prints is written by the program
+  in order with the worker's messages, so the output is the same on every run; recordings hold what the
+  program got from its workers, and a replay starts none. At most 64 workers, 16 MiB a message.
+- `sleep` writes out what was printed before it waits.
 - `for` with two variables: `for k, v in m` gives a map's keys with their values, `for i, x in xs` a list's
   (or deque's) indexes with their elements; `_` for either. Such a loop visits what was there when it
   began: entries added in the body are not visited, removed ones are skipped. New warning W0403 with a

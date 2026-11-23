@@ -1,0 +1,13 @@
+concurrent_map in a worker: ok 30
+failed: std/workers.vo:66:45: runtime error[R0007]: Workers are started by the program itself: not in a worker, a task or a serving worker.
+  66 |     let started: result[int, WorkerError] = __worker(1, body);
+     |                                             ^^^^^^^^^^^^^^^^^
+trace:
+  at start_worker (std/workers.vo:66:45)
+      body: fn(Link[int, int]) = <fn(Link[int, int])>
+  at starts (nested.vo:91:11)
+      link: Link[int, int] = new Link[int, int] { id: 0 }
+  at start_worker (std/workers.vo:66:45)
+      body: fn(Link[int, int]) = <fn(Link[int, int])>
+  at main (nested.vo:104:23)
+      m: Worker[int, int] = new Worker[int, int] { id: 64 }

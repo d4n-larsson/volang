@@ -1,0 +1,16 @@
+# Spec 047: a worker's effects are declared by the function that starts it, as for any function it calls.
+import std.workers.Link;
+import std.workers.start_worker;
+
+fn noisy(link: Link[int, int]) uses console {
+    print("hi");
+}
+
+fn main() {
+    match start_worker(noisy) {
+        case ok(_) {
+        }
+        case err(_) {
+        }
+    }
+}

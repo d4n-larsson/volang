@@ -1,0 +1,56 @@
+$ vo run --record r.jsonl main.vo
+worker: read twelve chars
+ok 12
+ok 42
+ended
+first: ended
+silent worker: started
+timeout
+first: timeout
+ended
+failing worker: one line
+0: failed
+the last worker's failure is not received
+silent worker: started
+timeout
+failing worker: one line
+--- stderr
+worker: told 41
+main.vo:81:16: runtime error[R0002]: Division by zero.
+  81 |     give(link, 1 / zero);
+     |                ^^^^^^^^
+trace:
+  at fails (main.vo:81:16)
+      link: Link[int, int] = new Link[int, int] { id: 0 }, zero: int = 0
+  at start_worker (std/workers.vo:66:45)
+      body: fn(Link[int, int]) uses console = <fn(Link[int, int]) uses console>
+  at main (main.vo:153:11)
+--- exit 70
+$ vo replay r.jsonl
+worker: read twelve chars
+ok 12
+ok 42
+ended
+first: ended
+silent worker: started
+timeout
+first: timeout
+ended
+failing worker: one line
+0: failed
+the last worker's failure is not received
+silent worker: started
+timeout
+failing worker: one line
+--- stderr
+worker: told 41
+main.vo:81:16: runtime error[R0002]: Division by zero.
+  81 |     give(link, 1 / zero);
+     |                ^^^^^^^^
+trace:
+  at fails (main.vo:81:16)
+      link: Link[int, int] = new Link[int, int] { id: 0 }, zero: int = 0
+  at start_worker (std/workers.vo:66:45)
+      body: fn(Link[int, int]) uses console = <fn(Link[int, int]) uses console>
+  at main (main.vo:153:11)
+--- exit 70

@@ -1,0 +1,6 @@
+second worker: one line
+program: ok 1
+second worker: after its message
+program: ended
+program: done, sent
+first worker: before the error

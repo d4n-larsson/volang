@@ -1,0 +1,20 @@
+0: ok 10 (0)
+0: ok 11 (1)
+0: ended (2)
+1: failed: first.vo:89:16: runtime error[R0002]: Division by zero.
+  89 |     give(link, 1 / zero);
+     |                ^^^^^^^^
+trace:
+  at fails (first.vo:89:16)
+      link: Link[int, int] = new Link[int, int] { id: 0 }, zero: int = 0
+  at start_worker (std/workers.vo:66:45)
+      body: fn(Link[int, int]) = <fn(Link[int, int])>
+  at main (first.vo:113:61) (3)
+2: ok 30 (4)
+2: ok 31 (5)
+2: ended (6)
+none: ended (7)
+none: ended (8)
+none: timeout
+none: timeout
+none: ended

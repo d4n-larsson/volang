@@ -1,0 +1,22 @@
+in order: 1000
+after stop: ended, ended
+the worker's list: ok 4; the program's: 3
+sent
+the worker's list: ok 4; the program's: 5
+worker: before 1
+program: ok 1
+worker: before 2
+program: ok 2
+worker: before 3
+program: ok 3
+a tell before the end is received: sent
+worker: after the last
+program: ended
+program: ended
+a tell after it: ended
+no wait: timeout
+50 ms: timeout
+sent
+true false false
+false true false
+false false true

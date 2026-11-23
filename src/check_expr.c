@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 114 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 115 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -50,6 +50,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__tcp", "__tcp_io", /* spec 039 */
     "__fs_block", "__fs_lines", "__proc_start", "__proc", /* spec 040 */
     "__bits", /* spec 043 */
+    "__worker", /* spec 047 */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -318,12 +319,17 @@ Type *check_builtin(Node *call, long id, Type *expected)
     }
     if (id == B_FORMAT) return check_format_call(call); /* spec 024: src/check_format.c */
     if (builtin_sigs[id]) return check_sig_builtin(call, (char *)builtin_sigs[id]);
-    if (id == B_COLL) { /* spec 014: __coll(OP, ...): OP an int literal; the result takes the expected type.
+    if (id == B_COLL || id == B_WORKER) { /* spec 047: __worker likewise (std.workers only); spec 014: __coll(OP, ...): OP an int literal; the result takes the expected type.
                            ponytail: typed loosely (std.collections only, whose wrappers declare the
                            public types); typed primitives if the library grows */
         Vec *args = call->b.v;
         if (!args->n || ((Node *)vec_get(args, 0))->kind != N_INT) return infer_error(call, expected);
-        for (long i = 0; i < args->n; i++) check_arg(call, i, 0);
+        for (long i = 0; i < args->n; i++) {
+            Type *at = check_arg(call, i, 0);
+            /* spec 047: __worker(1, body) runs body (in a process of its own): its effects are the caller's */
+            if (id == B_WORKER && i == 1 && ((Node *)vec_get(args, 0))->a.i == 1 && at && at->kind == TY_FUNC)
+                fx_value_call(at->decl.p);
+        }
         return expected ? expected : t_void;
     }
     if (id == B_SQL_EXEC || id == B_SQL_QUERY) { /* spec 026: (id, text, params: list[Value]); the result

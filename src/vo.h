@@ -430,7 +430,8 @@
 #define B_PROC_START (112) /* __proc_start(argv, input, env) -> result[int]: a followed child */
 #define B_PROC (113) /* __proc(op, id) -> result[str]: 1 next line, 2 finish, 3 stop */
 #define B_BITS (114) /* spec 043: __bits(op, a, b) -> int, std.bits's one primitive */
-#define B_LAST (114) /* the last builtin id with a btab entry */
+#define B_WORKER (115) /* spec 047: __worker(op, a, b), std.workers only (src/workers.c) */
+#define B_LAST (115) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -785,7 +786,8 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define EVK_FILE_BLOCK (30) /* spec 040: a block of a file at an offset (the port field) */
 #define EVK_PROC_LINE (31) /* a line of a followed child, or how its output ended */
 #define EVK_PROC_END (32) /* its exit status and standard error */
-#define EVK_LAST (32)
+#define EVK_WORKER (33) /* spec 047: what an operation on a worker gave the program (name: the operation) */
+#define EVK_LAST (33)
 #define EVK_WORKER_ENDED (22) /* spec 028: the request's worker ended without answering (its response is 500) */
 #define EVR_OK (0)
 #define EVR_ERR (1)
@@ -2490,6 +2492,18 @@ extern void tr_task_child(void);
 extern long tr_task_end(void);
 extern void tr_flush(void);
 extern void tr_task_record(long index);
+/* spec 047: workers (src/workers.c) */
+extern long worker_self; /* 1 in a worker's own process */
+extern long worker_op(Node *call, long a0, long a1, long a2);
+extern void worker_out(int fd, char *p, long n);
+extern void worker_fail(char *code, Node *node, Str *message, char *report, long n) NORETURN;
+extern void worker_exit(long status) NORETURN;
+extern long workers_shutdown(long status);
+extern void workers_end(long raise);
+extern void workers_forget(void);
+extern void task_encode(SB *sb, long value, Type *t, Node *call);
+extern long task_decode(char *p, long n, Type *t);
+extern void tr_worker_take(long number, char *p, long n);
 extern void tr_take(char *p, long n, long omitted);
 extern void rcd_task_child(void);
 extern void rcd_task_end(void);

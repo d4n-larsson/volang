@@ -35,6 +35,7 @@ cases() {
     decimal) echo "run check doc" ;; # spec 044
     web_security) echo "web_security web doc crypto" ;; # spec 045
     iteration) echo "run check fmt doc" ;; # spec 046
+    workers) echo "workers tasks test doc" ;; # spec 047
     bytes) echo "bytes bytes_steps run doc" ;;
     float) echo "math json run text doc" ;;
     json) echo "json doc" ;;
@@ -79,6 +80,7 @@ scripts() { # one per line, with arguments
     decimal) printf '%s\n' ref_examples.py doc_conformance.py decimals.py ;; # spec 044
     web_security) printf '%s\n' ref_examples.py doc_conformance.py web_security.py ;; # spec 045
     iteration) printf '%s\n' ref_examples.py doc_conformance.py catalog.py apply_fixes.py iteration.py ;; # spec 046
+    workers) printf '%s\n' ref_examples.py doc_conformance.py catalog.py workers.py ;; # spec 047
     bytes) echo doc_conformance.py ;;
     float) printf '%s\n' math_vectors.py json_corpus.py json_stream.py ref_examples.py doc_conformance.py ;;
     json) printf '%s\n' json_corpus.py json_stream.py doc_conformance.py ;;
@@ -118,6 +120,7 @@ area_of() {
     src/lsp.c|src/jsonrpc.c|tests/lsp.py) echo lsp ;; # spec 038
     src/tcp.c|src/tls.c|src/net.c|std/tcp.vo|tests/tcp.py|tests/tcp_server.py) echo tcp ;; # spec 039
     std/bits.vo|tests/bits.py|tests/bits/*) echo bits ;; # spec 043
+    src/workers.c|std/workers.vo|tests/workers.py) echo workers ;; # spec 047
     std/decimal.vo|tests/decimals.py) echo decimal ;; # spec 044
     src/fs.c|src/process.c|std/fs.vo|std/process.vo|tests/stream.py) echo stream fs ;; # spec 040
     editors/*|tests/grammars.py|site/pygments_vo/pygments_vo.py) echo grammars ;; # spec 037
@@ -173,7 +176,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits decimal web_security iteration)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits decimal web_security iteration workers)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done

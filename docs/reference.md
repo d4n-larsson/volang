@@ -1157,7 +1157,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 | std.process | `run`, `run_with` (and `run_bytes`, `run_with_bytes`): run a program to its end, no shell (process); `run_lines` |
 | std.bytes | `from_text`, `to_text`, `from_ints`, `to_ints`, hex, base64, `read_stdin`, `write_stdout` |
 | std.decimal | exact amounts: `parse_decimal`, `add`, `mul`, `div`, `round_to` (a `Rounding` is always stated), `decimal_text`, `split_evenly`, ... |
-| std.bits | `bit_and`, `bit_or`, `bit_xor`, `bit_not`, `shift_left`, `shift_right`, `shift_right_logical`, `rotate_left`, `wrapping_add`, `wrapping_mul`, `parse_hex`, ... on the 64-bit form of an `int` |
+| std.bits | `bit_and`, `bit_or`, `bit_xor`, `bit_not`, `shift_left`, `shift_right`, `parse_hex`, ... on the 64-bit form of an `int` |
 | std.math | `sqrt`, `pow`, `exp`, `log`, trigonometry, `pi`; `floor`, `ceil`, `round` to `int` (correctly rounded; out of domain is R0007) |
 | std.regex | `regex("...")` (checked by `vo check`), `parse_regex`, `is_match`, `first_match`, `all_matches`, `replace_all` (`$1`), `split_on`: linear time |
 | std.sqlite | `open` → `Database[uses file.read, file.write]`, `open_readonly` → `Database[uses file.read]`, `open_memory` → `Database`; `exec`, `query` (need the database's effects) with `sql("...")` (checked) and `?` parameters (`Value`); `transaction`; `get_int`, `get_str`, ... |
@@ -1167,6 +1167,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 | std.web | APIs over `serve_workers`: `web_app`, `on_get`/`on_post`/`on_put`/`on_patch`/`on_delete`, `json_reply(status, v)`, `created`, `no_content`, `serve_app`, `handle_request`, steps, `load_settings`, `health_route` |
 | std.security | access control for `std.web`: `policy(rules, ways, now)`, `rule(path, Access.signed_in)`, `secure` (the step), ways `tokens`, `basic`; `require_user`; `decide`, `review` |
 | std.lists | `contains`, `index_of`, `reversed`, `sort_by_desc(xs, key)`, `min_by`, `max_by`, `sum`, `group_by` |
+| std.workers | processes beside the program: `start_worker(f)`, `tell`, `receive(w, Wait.forever)`, `receive_first`, `stop_worker`, `with_deadline(ms, f)`; in one: `next_message`, `emit` |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
 - `https://` URLs are verified: the server's certificate must lead to an authority in the machine's trust store (or a file given with `--ca-file`), be valid now and name the host; otherwise `get`/`post` return an `err` saying why (`vo doc std.http.get` lists them). Nothing turns verification off. TLS 1.3 and 1.2 only; `--clock-ms` does not affect certificate dates. A recording keeps requests and responses, never keys; replay needs no network.

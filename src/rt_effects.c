@@ -170,6 +170,7 @@ void rt_sleep(long ms, Node *node)
         clock_next += ms;
         return;
     }
+    out_flush(); /* spec 047: what was printed is seen before the wait, not after it */
     long now = sys_clock_ms();
     long target = ms > 9223372036854775807L - now ? 9223372036854775807L : now + ms;
     while (now < target) {

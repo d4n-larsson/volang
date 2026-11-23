@@ -2,7 +2,9 @@
 
 A program that fetches ten URLs one after another waits for each answer in turn. `concurrent_map`
 waits for all of them at once: it reads like `map`, and the whole call takes about as long as the
-slowest answer. It is meant for waiting (HTTP requests), not for splitting up computation.
+slowest answer. It is meant for waiting (HTTP requests), not for splitting up computation. For work
+the program does not wait for, a time limit for one call, or computing on several cores, see
+[Workers](workers.md).
 
 ## Running tasks
 

@@ -1,10 +1,12 @@
 ## R0015 task_result_order
 
-A task returned a collection created with its own comparison function.
+A task returned a collection created with its own comparison function, or a worker's message holds one or a function.
 
 Fixable: no
 
 Each task of `concurrent_map` sends its result back to the caller as data. An `ordered_map`, `ordered_set` or `priority_queue` made with `ordered_map_by`, `ordered_set_by` or `priority_queue_by` carries its comparison function, which cannot come back (a result type with a function in it is E0314, but this function is not part of the type). The same happens when a type parameter of the result stands for a function type. Return the items instead (`keys`, or a list), and build the collection after the call.
+
+The messages of a worker (`std.workers`) cross between processes in the same way: `start_worker` stops with this error when a message type holds a function, and `tell` or `emit` when a message holds a collection with its own comparison function.
 
 ### Example
 

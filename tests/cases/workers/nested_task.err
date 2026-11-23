@@ -1,0 +1,9 @@
+std/workers.vo:66:45: runtime error[R0007]: Workers are started by the program itself: not in a worker, a task or a serving worker.
+  66 |     let started: result[int, WorkerError] = __worker(1, body);
+     |                                             ^^^^^^^^^^^^^^^^^
+trace:
+  at start_worker (std/workers.vo:66:45)
+      body: fn(Link[int, int]) = <fn(Link[int, int])>
+  at starts (nested_task.vo:82:11)
+      n: int = 1
+  at main (nested_task.vo:93:13)

@@ -39,6 +39,7 @@ void rt_print(int fd, Str *s, int newline)
 int stdin_fill(Node *node)
 {
     if (in_eof) return 0;
+    if (worker_self) rt_raise_c("R0007", "A worker cannot read standard input: the program reads it and sends what the worker needs.", node); /* spec 047 */
     out_flush();
     long deadline = deadline_ms;
     long wait = -1;

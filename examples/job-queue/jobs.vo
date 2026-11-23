@@ -1,0 +1,64 @@
+# The work of the job queue and the arithmetic of its deadlines: pure functions, tested without a
+# worker.
+
+# One piece of work: count the primes below limit.
+export record Job {
+    id: int;
+    limit: int;
+}
+
+# A finished job.
+export record Done {
+    id: int;
+    primes: int;
+}
+
+# How many primes are below limit.
+export fn primes_below(limit: int) -> int {
+    var count = 0;
+    for n in 2..limit {
+        var prime = true;
+        var d = 2;
+        while prime and d * d <= n {
+            set prime = n % d != 0;
+            set d = d + 1;
+        }
+        if prime {
+            set count = count + 1;
+        }
+    }
+    return count;
+}
+
+export fn run(job: Job) -> Done {
+    return new Done { id: job.id, primes: primes_below(job.limit) };
+}
+
+# How long the queue may wait for an answer at time now: until the nearest of the deadlines of the
+# jobs in hand (a deadline of 0 means no job), and not at all when one has passed.
+export fn wait_until_due(dues: list[int], now: int) -> int {
+    var wait = -1;
+    for due in dues {
+        if due > 0 and (wait < 0 or due - now < wait) {
+            set wait = max(due - now, 0);
+        }
+    }
+    return max(wait, 0);
+}
+
+test "primes are counted" {
+    expect_eq(primes_below(2), 0);
+    expect_eq(primes_below(3), 1);
+    expect_eq(primes_below(30), 10);
+    expect_eq(primes_below(1000), 168);
+}
+
+test "a job gives its id back with its count" {
+    expect_eq(run(new Job { id: 7, limit: 100 }), new Done { id: 7, primes: 25 });
+}
+
+test "the wait is the time to the nearest deadline" {
+    expect_eq(wait_until_due([0, 1500, 1200], 1000), 200);
+    expect_eq(wait_until_due([900, 1500, 0], 1000), 0);
+    expect_eq(wait_until_due([0, 0, 0], 1000), 0);
+}

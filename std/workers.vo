@@ -1,0 +1,142 @@
+# std.workers: Processes that run beside the program and exchange messages with it.
+# Part of the vo standard library. Import items one by one: `import std.workers.NAME;`.
+# A worker runs one function in a process of its own, on a copy of everything the function was given or
+# captured: nothing it changes is seen by the program, and the reverse. The two exchange messages of
+# declared types (`In`: what the worker takes; `Out`: what it gives), copied from one to the other.
+# What a worker prints is written by the program, just before the next message it receives from that
+# worker, or when the worker is stopped or the program ends: the same output on every run.
+# A worker's runtime error does not stop the program: `receive` gives it as `failed`. Every worker is
+# ended when the program ends; a failure no `receive` returned is then reported, with exit status 70.
+# At most 64 workers at a time; a message is at most 16 MiB. Workers are started by the program's own
+# process: `start_worker` in a worker, a `concurrent_map` task or a serving worker stops with R0007.
+
+# A worker, as the program holds it. Made by `start_worker`.
+#     let w: Worker[int, str] = new Worker { id: 0 }; receive(w, Wait.forever) == err(WorkerError.ended) is true
+export record Worker[In, Out] {
+    # Which worker; not for the program to read or set.
+    id: int;
+}
+
+# The program, as a worker's function holds it. Given to the function by `start_worker`.
+#     let l: Link[int, str] = new Link { id: 0 }; l.id is 0
+export record Link[In, Out] {
+    # Not for the function to read or set.
+    id: int;
+}
+
+# How long to wait for a message.
+#     Wait.at_most(50) == Wait.forever is false
+export variant Wait {
+    # Until one arrives.
+    forever;
+    # At most this many milliseconds; 0 asks without waiting. A negative number stops with R0007.
+    at_most(int);
+}
+
+# Why an operation on a worker gave no value.
+#     WorkerError.failed("exit status 3") == WorkerError.ended is false
+export variant WorkerError {
+    # No message within the time limit.
+    timeout;
+    # The worker's function returned, it called `exit(0)`, or it was stopped.
+    ended;
+    # The worker stopped with a runtime error (the error as it would have been printed), called `exit` with another status ("exit status 3"), or was ended from outside ("signal 9").
+    failed(str);
+    # More than 64 MiB arrived from the worker while the program waited to send to it; the worker was stopped.
+    full;
+    # The message is over 16 MiB.
+    too_large;
+    # 64 workers are running.
+    too_many;
+}
+
+# A message from one of several workers.
+#     let a: Arrival[int] = new Arrival { index: 0, message: ok(7) }; a.message == ok(7) is true
+export record Arrival[Out] {
+    # The worker's position in the list given to `receive_first`.
+    index: int;
+    # Its message, or how it ended.
+    message: result[Out, WorkerError];
+}
+
+# Starts a worker that runs body, and returns at once. body works on a copy of the program's values.
+# `err(too_many)` when 64 are running. R0015 if a message type holds a function.
+#     let r: result[Worker[int, int], WorkerError] = start_worker(fn(link: Link[int, int]) { let m = next_message(link, Wait.at_most(0)); }); r != err(WorkerError.too_many) is true
+export fn start_worker[In, Out, E: effects](body: fn(Link[In, Out]) uses E) -> result[Worker[In, Out], WorkerError] uses E {
+    let started: result[int, WorkerError] = __worker(1, body);
+    match started {
+        case ok(id) {
+            return ok(new Worker { id: id });
+        }
+        case err(e) {
+            return err(e);
+        }
+    }
+}
+
+# Sends message to the worker. `err(ended)` only once the worker's end has been received or it was
+# stopped: before that the message is accepted, and dropped if the worker is gone, so the answer never
+# depends on timing. `err(too_large)` over 16 MiB; `err(full)` see `WorkerError`.
+#     let w: Worker[int, str] = new Worker { id: 0 }; tell(w, 21) == err(WorkerError.ended) is true
+export fn tell[In, Out](w: Worker[In, Out], message: In) -> result[void, WorkerError] {
+    return __worker(2, w.id, message);
+}
+
+# The worker's next message, in the order it emitted them; what it printed before the message is
+# written first. After its last message: `err(ended)`, or `err(failed(text))` once, then `err(ended)`.
+# `err(timeout)` when nothing arrived within the limit.
+#     let w: Worker[int, str] = new Worker { id: 0 }; receive(w, Wait.forever) == err(WorkerError.ended) is true
+export fn receive[In, Out](w: Worker[In, Out], wait: Wait) -> result[Out, WorkerError] {
+    return __worker(3, w.id, wait);
+}
+
+# The first message from any of the workers; when several have one waiting, the earliest in the list.
+# A worker's end or failure is given once, as the arrival's message; the worker is then skipped.
+# `err(ended)` when every worker of the list has been reported; `err(timeout)` when the limit passes.
+#     let w: Worker[int, str] = new Worker { id: 0 }; receive_first([w], Wait.forever) == err(WorkerError.ended) is true
+export fn receive_first[In, Out](ws: list[Worker[In, Out]], wait: Wait) -> result[Arrival[Out], WorkerError] {
+    return __worker(4, ws, wait);
+}
+
+# Ends the worker, whatever it is doing, and returns when its process is gone. What it had printed is
+# written; its messages not yet received are dropped. What it changed outside the program stays as it
+# was at that moment (a file keeps what was written; an open SQLite transaction is rolled back).
+# On a worker that has ended: nothing.
+#     let w: Worker[int, str] = new Worker { id: 0 }; stop_worker(w); tell(w, 1) == err(WorkerError.ended) is true
+export fn stop_worker[In, Out](w: Worker[In, Out]) {
+    __worker(5, w.id);
+}
+
+# Runs f in a worker of its own for at most ms milliseconds: its result, `err(timeout)` with the
+# worker stopped, or `err(failed(text))` if it stopped with a runtime error. f works on a copy of the
+# program's values: what it changes there is not seen by the caller. `err(too_many)` when 64 workers
+# are running; `err(ended)` if f called `exit(0)` or its result is over 16 MiB.
+#     with_deadline(1000, fn() -> int { return 6 * 7; }) == ok(42) is true
+export fn with_deadline[T, E: effects](ms: int, f: fn() -> T uses E) -> result[T, WorkerError] uses E {
+    let w: Worker[int, T] = try start_worker(fn(link: Link[int, T]) {
+        match emit(link, f()) {
+            case ok() {
+            }
+            case err(_) {
+            }
+        }
+    });
+    let r = receive(w, Wait.at_most(ms));
+    stop_worker(w);
+    return r;
+}
+
+# In a worker: the program's next message for it, or `err(timeout)`. A worker never sees the program
+# end: it is ended with it.
+#     let r: result[Worker[int, int], WorkerError] = start_worker(fn(link: Link[int, int]) { let m = next_message(link, Wait.at_most(100)); }); r != err(WorkerError.too_many) is true
+export fn next_message[In, Out](link: Link[In, Out], wait: Wait) -> result[In, WorkerError] {
+    let r: result[In, WorkerError] = __worker(6, wait);
+    return r;
+}
+
+# In a worker: sends message to the program. Waits while the program is not receiving and 1 MiB is on
+# its way. `err(too_large)` over 16 MiB.
+#     let r: result[Worker[int, list[int]], WorkerError] = start_worker(fn(link: Link[int, list[int]]) { let sent = emit(link, [1, 2]); }); r != err(WorkerError.too_many) is true
+export fn emit[In, Out](link: Link[In, Out], message: Out) -> result[void, WorkerError] {
+    return __worker(7, message);
+}

@@ -825,6 +825,21 @@ void tr_task_record(long index)
     GC_UNROOT(1);
 }
 
+/* Spec 047: a worker's records, after a `worker` record with its number. */
+void tr_worker_take(long number, char *p, long n)
+{
+    if (tr_on && tr_room()) {
+        SB *sb = sb_new();
+        GC_ROOT(&sb);
+        sb_cstr(sb, "{\"v\":1,\"kind\":\"worker\",\"index\":");
+        int_to_dec(sb, number);
+        sb_cstr(sb, "}\n");
+        tr_emit(sb);
+        GC_UNROOT(1);
+    }
+    tr_take(p, n, 0);
+}
+
 /* In the parent: a task's records (whole lines), counted against --trace-limit in merged order. */
 void tr_take(char *p, long n, long omitted)
 {

@@ -30,6 +30,8 @@ void vo_exit(int code)
 {
     proc_sweep(); /* spec 040: no followed child outlives the program (or the task) that started it */
     if (task_depth) task_exit(code); /* spec 016: a task's end of the program is the parent's to do */
+    if (worker_self) worker_exit(code); /* spec 047: a worker's end is a message to the program */
+    code = (int)workers_shutdown(code); /* no worker outlives the program; a failure nobody received is reported */
     sql_close_since(0); /* spec 026: every database closed (an open transaction rolls back) */
     code = (int)exit_hooks(code); /* spec 006: completes the trace and the recording; may change the status */
     if (lsp_finish) code = lsp_finish(code); /* spec 038: turns the captured output into the answer */
@@ -206,12 +208,19 @@ SB *out_capture;                              /* output for descriptors 1 and 2 
 long (*read_overlay)(char *path, char **out); /* a file's text from the editor: its length, or < 0 */
 int (*lsp_finish)(int code);                  /* called when the command ends; gives the exit status */
 
+/* Spec 047: a worker's output goes to the program in order with its messages (src/workers.c). */
+static void out_put(int fd, char *p, long n)
+{
+    if (worker_self) worker_out(fd, p, n);
+    else write_all(fd, p, n);
+}
+
 void out_flush(void)
 {
     for (int i = 0; i < 2; i++) {
         long n = out_len[i];
         out_len[i] = 0;
-        write_all(i + 1, out_buf[i], n);
+        out_put(i + 1, out_buf[i], n);
     }
 }
 
@@ -230,7 +239,7 @@ void out_bytes(int fd, char *p, long n)
     if (*len + n > OUT_CAP) {
         out_flush();
         if (n >= OUT_CAP) {
-            write_all(fd, p, n);
+            out_put(fd, p, n);
             return;
         }
     }

@@ -634,11 +634,13 @@ long run_one_test(Node *test_in, long index_in)
             if (!status) {
                 rt_effects_start(1); /* every test starts from seed and clock defaults */
                 run_test_body(test);
+                workers_end(1); /* spec 047: a worker's failure the test did not receive fails it */
                 status = ST_PASS;
             }
             sql_close_since(sql_mark); /* closed however it ended: the next test's heap starts empty */
         }
         proc_sweep(); /* spec 040: a child a failed test was following */
+        workers_end(0); /* spec 047: no worker outlives its test */
         gc_mark_on_raise = 0;
         recover_point = 0;
         deadline_ms = 0;

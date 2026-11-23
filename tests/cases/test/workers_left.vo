@@ -1,0 +1,81 @@
+# Spec 047: workers are ended with their test; a failure the test did not receive fails it, at the
+# place in the worker where it happened; one it did receive does not.
+import std.workers.Link;
+import std.workers.Wait;
+import std.workers.Worker;
+import std.workers.WorkerError;
+import std.workers.emit;
+import std.workers.next_message;
+import std.workers.receive;
+import std.workers.start_worker;
+
+fn waits(link: Link[int, int]) {
+    match next_message(link, Wait.forever) {
+        case ok(_) {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn fails(link: Link[int, int]) {
+    let zero = len(chars(""));
+    match emit(link, 1 / zero) {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn leaves(link: Link[int, int]) {
+    exit(3);
+}
+
+# What the worker gives within ms milliseconds; -1 when it gives no number.
+fn answer(r: result[Worker[int, int], WorkerError], ms: int) -> int {
+    match r {
+        case ok(w) {
+            match receive(w, Wait.at_most(ms)) {
+                case ok(n) {
+                    return n;
+                }
+                case err(_) {
+                    return -1;
+                }
+            }
+        }
+        case err(_) {
+            return -2;
+        }
+    }
+}
+
+test "two workers left running" {
+    expect(start_worker(waits) != err(WorkerError.too_many));
+    expect(start_worker(waits) != err(WorkerError.too_many));
+}
+
+test "a failure nobody received" {
+    expect(start_worker(fails) != err(WorkerError.too_many));
+    expect_eq(answer(start_worker(waits), 300), -1);
+}
+
+test "a failure the test received" {
+    expect_eq(answer(start_worker(fails), 5000), -1);
+}
+
+test "an exit nobody received" {
+    expect(start_worker(leaves) != err(WorkerError.too_many));
+    expect_eq(answer(start_worker(waits), 300), -1);
+}
+
+test "the next test starts with no worker" {
+    var started = 0;
+    for i in 0..70 {
+        if start_worker(waits) != err(WorkerError.too_many) {
+            set started = started + i - i + 1;
+        }
+    }
+    expect_eq(started, 64);
+}

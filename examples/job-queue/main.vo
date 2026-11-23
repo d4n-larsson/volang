@@ -1,0 +1,167 @@
+# Job queue: three workers take jobs from the program, each job has 300 ms, and the answers are
+# handled as they arrive.
+#   vo run main.vo        seven jobs; the fourth is too large for its time and is given up
+#   vo test main.vo       the work and the deadlines, without a worker
+import jobs.Done;
+import jobs.Job;
+import jobs.run;
+import jobs.wait_until_due;
+import std.workers.Link;
+import std.workers.Wait;
+import std.workers.Worker;
+import std.workers.WorkerError;
+import std.workers.emit;
+import std.workers.next_message;
+import std.workers.receive_first;
+import std.workers.start_worker;
+import std.workers.stop_worker;
+import std.workers.tell;
+
+const patience_ms = 300;
+
+# A worker and the job it has in hand (job -1 and due 0: none).
+record Seat {
+    worker: Worker[Job, Done];
+    job: int;
+    due: int;
+}
+
+# The queue: its workers, the jobs, how many were handed out, are in hand and were given up.
+record Queue {
+    seats: list[Seat];
+    todo: list[Job];
+    next: int;
+    in_hand: int;
+    given_up: int;
+}
+
+# What every worker runs: take a job, send its answer, until the program stops it.
+fn serve_jobs(link: Link[Job, Done]) {
+    while true {
+        match next_message(link, Wait.forever) {
+            case ok(job) {
+                match emit(link, run(job)) {
+                    case ok() {
+                    }
+                    case err(_) {
+                        return;
+                    }
+                }
+            }
+            case err(_) {
+                return;
+            }
+        }
+    }
+}
+
+fn seat() -> result[Seat, WorkerError] {
+    let w = try start_worker(serve_jobs);
+    return ok(new Seat { worker: w, job: -1, due: 0 });
+}
+
+# Every free seat gets the next job, with its deadline.
+fn hand_out(q: Queue) uses clock {
+    for s in q.seats {
+        if s.job < 0 and q.next < len(q.todo) {
+            let job = q.todo[q.next];
+            if tell(s.worker, job) == ok() {
+                set s.job = job.id;
+                set s.due = now_ms() + patience_ms;
+                set q.in_hand = q.in_hand + 1;
+            } else {
+                set q.given_up = q.given_up + 1;
+            }
+            set q.next = q.next + 1;
+        }
+    }
+}
+
+# The seat's job is over; gave_up: without an answer.
+fn settle(q: Queue, s: Seat, gave_up: bool) {
+    set s.job = -1;
+    set s.due = 0;
+    set q.in_hand = q.in_hand - 1;
+    if gave_up {
+        set q.given_up = q.given_up + 1;
+    }
+}
+
+# The seat's worker is ended, whatever it is doing, and a new one takes its place.
+fn replace(q: Queue, s: Seat) -> result[void, WorkerError] {
+    stop_worker(s.worker);
+    set s.worker = try start_worker(serve_jobs);
+    settle(q, s, true);
+    return ok();
+}
+
+# Waits for the first answer, no longer than until the nearest deadline; then the jobs past their
+# deadline are given up.
+fn listen(q: Queue) -> result[void, WorkerError] uses console, clock {
+    let workers = map(q.seats, fn(s: Seat) -> Worker[Job, Done] {
+        return s.worker;
+    });
+    let dues = map(q.seats, fn(s: Seat) -> int {
+        return s.due;
+    });
+    match receive_first(workers, Wait.at_most(wait_until_due(dues, now_ms()))) {
+        case ok(arrival) {
+            let s = q.seats[arrival.index];
+            match arrival.message {
+                case ok(done) {
+                    print("job " + str(done.id) + ": " + str(done.primes) + " primes");
+                    settle(q, s, false);
+                }
+                case err(_) {
+                    print("job " + str(s.job) + ": its worker failed");
+                    try replace(q, s);
+                }
+            }
+        }
+        case err(_) {
+            for s in q.seats {
+                if s.job >= 0 and now_ms() >= s.due {
+                    print("job " + str(s.job) + ": given up after " + str(patience_ms) + " ms");
+                    try replace(q, s);
+                }
+            }
+        }
+    }
+    return ok();
+}
+
+# Runs every job; how many were given up.
+fn run_queue(todo: list[Job]) -> result[int, WorkerError] uses console, clock {
+    let q = new Queue {
+        seats: [try seat(), try seat(), try seat()],
+        todo: todo,
+        next: 0,
+        in_hand: 0,
+        given_up: 0
+    };
+    while q.next < len(q.todo) or q.in_hand > 0 {
+        hand_out(q);
+        try listen(q);
+    }
+    return ok(q.given_up);
+}
+
+fn main() uses console, clock {
+    let limits = [20000, 60000, 30000, 400000000, 90000, 10000, 50000];
+    let todo = new list[Job];
+    for i, limit in limits {
+        push(todo, new Job { id: i + 1, limit: limit });
+    }
+    match run_queue(todo) {
+        case ok(given_up) {
+            print(str(len(todo) - given_up) + " done, " + str(given_up) + " given up");
+            if given_up > 0 {
+                exit(2);
+            }
+        }
+        case err(_) {
+            print("no worker could be started");
+            exit(1);
+        }
+    }
+}

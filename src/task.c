@@ -71,7 +71,7 @@ static void group_stop(Group *g, long above)
 static void task_internal(Group *g, char *what) NORETURN;
 static void task_internal(Group *g, char *what)
 {
-    group_stop(g, -1);
+    if (g) group_stop(g, -1); /* (0: a worker's message, spec 047) */
     out_flush();
     toolchain_error((int)opt_json, 2, "T0003", str_from_cstr(what), 0);
     vo_exit(EXIT_INTERNAL);
@@ -117,6 +117,15 @@ static int is_ref(Type *t)
 static Map *enc_seen; /* in the child: object address -> index (the parent's table, R4) */
 static long enc_count;
 static Node *enc_call;
+static int enc_msg; /* spec 047: a worker's message is being encoded (the wording of R0015) */
+
+/* R0015 at the call, in the words of what is being sent. */
+static void enc_refuse(char *task, char *message)
+{
+    int m = enc_msg;
+    enc_msg = 0;
+    rt_raise_c("R0015", m ? message : task, enc_call);
+}
 
 /* Appends value of type t (concrete) to sb. */
 static void enc_value(SB *sb, long value, Type *t)
@@ -127,7 +136,7 @@ static void enc_value(SB *sb, long value, Type *t)
     if (t->kind == TY_VOID) return;
     if (!is_ref(t)) {
         if (t->kind != TY_INT && t->kind != TY_FLOAT && t->kind != TY_BOOL)
-            rt_raise_c("R0015", "A task's result cannot hold a function.", enc_call); /* (E0314 prevents it) */
+            enc_refuse("A task's result cannot hold a function.", "A worker's message cannot hold a function."); /* (E0314 prevents it) */
         put_word(sb, value);
         return;
     }
@@ -174,8 +183,8 @@ static void enc_value(SB *sb, long value, Type *t)
     default: { /* the collections: their items in order, rebuilt with the built-in order */
         Coll *c = (Coll *)value;
         if (c->cmp)
-            rt_raise_c("R0015", "A task cannot return a collection with its own order: return its items (`keys`) instead.",
-                       enc_call);
+            enc_refuse("A task cannot return a collection with its own order: return its items (`keys`) instead.",
+                       "A worker's message cannot hold a collection with its own order: send its items (`keys`) instead.");
         GC_ROOT(&c);
         List *xs = coll_snapshot(c);
         GC_ROOT(&xs);
@@ -313,6 +322,34 @@ static long dec_value(Reader *r, Type *t)
     }
 }
 
+/* Spec 047: a worker's message in the transfer form. Appends value of type t to sb. */
+void task_encode(SB *sb, long value, Type *t, Node *call)
+{
+    GC_ROOT(&sb);
+    GC_ROOT(&value);
+    enc_call = call;
+    enc_msg = 1;
+    enc_seen = map_new(); /* (a global: a root) */
+    enc_count = 0;
+    enc_value(sb, value, t);
+    enc_seen = 0;
+    enc_msg = 0;
+    GC_UNROOT(2);
+}
+
+/* The value of type t that task_encode wrote at p. */
+long task_decode(char *p, long n, Type *t)
+{
+    Reader r = {p, n, 0, 0};
+    List *saved = dec_objs;
+    GC_ROOT(&saved);
+    dec_objs = list_new(8); /* (a global: a root) */
+    long v = dec_value(&r, t);
+    dec_objs = saved;
+    GC_UNROOT(1);
+    return v;
+}
+
 /* ---- messages (data-model.md "Control messages") ---- */
 
 /* In a task: sends one message (kind, length, payload) to the parent. */
@@ -407,6 +444,7 @@ static void child_run(Group *g, int *pipes, long pos, List *xs, Closure *fn, Nod
 static void child_run(Group *g, int *pipes, long pos, List *xs, Closure *fn, Node *call, long parent)
 {
     sys_die_with_parent(parent);
+    workers_forget(); /* spec 047: the program's workers are not this process's */
     for (int i = 0; i < TASK_MAX; i++) slot_close(&g->slots[i]); /* the other tasks' pipes */
     sys_dup_to(pipes[1], 1);
     sys_dup_to(pipes[3], 2);

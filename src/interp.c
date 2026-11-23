@@ -203,6 +203,7 @@ void rt_raise(char *code, Str *message, Node *node)
         report_json(sb, code, message, node);
     else
         report_human(sb, code, message, node);
+    if (worker_self) worker_fail(code, node, message, sb->ptr, sb->len); /* spec 047: a worker's error is a value in the program */
     out_bytes(2, sb->ptr, sb->len);
     int status = (code[4] == '9' && code[3] == '0') ? EXIT_TIMEOUT : EXIT_RUNTIME; /* R0009 -> 124 */
     gc_report(2, "run", 0); /* --mem-stats: the run ends here */

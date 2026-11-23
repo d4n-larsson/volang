@@ -1,0 +1,111 @@
+# Spec 047: a time limit for one call, and stopping a worker whatever it does.
+import std.workers.Link;
+import std.workers.Wait;
+import std.workers.Worker;
+import std.workers.WorkerError;
+import std.workers.emit;
+import std.workers.next_message;
+import std.workers.receive;
+import std.workers.start_worker;
+import std.workers.stop_worker;
+import std.workers.tell;
+import std.workers.with_deadline;
+import std.time.sleep;
+
+fn why(e: WorkerError) -> str {
+    match e {
+        case timeout {
+            return "timeout";
+        }
+        case ended {
+            return "ended";
+        }
+        case failed(text) {
+            return "failed: " + text;
+        }
+        case full {
+            return "full";
+        }
+        case too_large {
+            return "too_large";
+        }
+        case too_many {
+            return "too_many";
+        }
+    }
+}
+
+fn show(r: result[int, WorkerError]) -> str {
+    match r {
+        case ok(n) {
+            return "ok " + str(n);
+        }
+        case err(e) {
+            return why(e);
+        }
+    }
+}
+
+fn sent(r: result[void, WorkerError]) -> str {
+    match r {
+        case ok() {
+            return "sent";
+        }
+        case err(e) {
+            return why(e);
+        }
+    }
+}
+
+fn give(link: Link[int, int], n: int) {
+    match emit(link, n) {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+    match r {
+        case ok(w) {
+            return w;
+        }
+        case err(e) {
+            todo("no worker: " + why(e));
+        }
+    }
+}
+
+fn spin() -> int {
+    var n = 0;
+    while true {
+        set n = n + 1;
+    }
+    return n;
+}
+
+fn loops(link: Link[int, int]) {
+    while true {
+    }
+}
+
+fn sleeps(link: Link[int, int]) uses clock {
+    sleep(60000);
+}
+
+fn main() uses console, clock {
+    let numbers = [1, 2, 3];
+    print("in time: " + show(with_deadline(5000, fn() -> int { push(numbers, 4); return len(numbers); })));
+    print("the program's list: " + str(len(numbers)));
+    print("never returns: " + show(with_deadline(100, spin)));
+    print("fails: " + show(with_deadline(5000, fn() -> int { return 1 / (len(numbers) - 3); })));
+
+    let a = worker_of(start_worker(loops));
+    stop_worker(a);
+    print("stopped while computing: " + show(receive(a, Wait.forever)) + ", " + sent(tell(a, 1)));
+    stop_worker(a);
+    let b = worker_of(start_worker(sleeps));
+    stop_worker(b);
+    print("stopped while sleeping: " + show(receive(b, Wait.forever)));
+}

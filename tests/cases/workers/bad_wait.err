@@ -1,0 +1,8 @@
+std/workers.vo:90:12: runtime error[R0007]: The time limit -1 is negative.
+  90 |     return __worker(3, w.id, wait);
+     |            ^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at receive (std/workers.vo:90:12)
+      w: Worker[int, int] = new Worker[int, int] { id: 64 }, wait: Wait = Wait.at_most(-1)
+  at main (bad_wait.vo:83:16)
+      w: Worker[int, int] = new Worker[int, int] { id: 64 }

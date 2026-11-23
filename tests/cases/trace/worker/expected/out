@@ -1,0 +1,5 @@
+$ vo run --trace t.jsonl main.vo
+true
+false
+--- stderr
+--- exit 0

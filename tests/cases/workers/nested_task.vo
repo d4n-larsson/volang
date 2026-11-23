@@ -1,0 +1,95 @@
+# Spec 047: start_worker in a concurrent_map task is R0007.
+import std.workers.Link;
+import std.workers.Wait;
+import std.workers.Worker;
+import std.workers.WorkerError;
+import std.workers.emit;
+import std.workers.next_message;
+import std.workers.receive;
+import std.workers.start_worker;
+import std.workers.stop_worker;
+import std.workers.tell;
+
+fn why(e: WorkerError) -> str {
+    match e {
+        case timeout {
+            return "timeout";
+        }
+        case ended {
+            return "ended";
+        }
+        case failed(text) {
+            return "failed: " + text;
+        }
+        case full {
+            return "full";
+        }
+        case too_large {
+            return "too_large";
+        }
+        case too_many {
+            return "too_many";
+        }
+    }
+}
+
+fn show(r: result[int, WorkerError]) -> str {
+    match r {
+        case ok(n) {
+            return "ok " + str(n);
+        }
+        case err(e) {
+            return why(e);
+        }
+    }
+}
+
+fn sent(r: result[void, WorkerError]) -> str {
+    match r {
+        case ok() {
+            return "sent";
+        }
+        case err(e) {
+            return why(e);
+        }
+    }
+}
+
+fn give(link: Link[int, int], n: int) {
+    match emit(link, n) {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+    match r {
+        case ok(w) {
+            return w;
+        }
+        case err(e) {
+            todo("no worker: " + why(e));
+        }
+    }
+}
+
+fn inner(link: Link[int, int]) {
+}
+
+fn starts(n: int) -> int {
+    match start_worker(inner) {
+        case ok(_) {
+            return n;
+        }
+        case err(_) {
+            return -n;
+        }
+    }
+}
+
+fn main() uses console {
+    let r = concurrent_map([1, 2], 2, starts);
+    print(str(r[0]));
+}

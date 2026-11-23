@@ -173,6 +173,9 @@ replayed with a full trace of every call.
 
 `vo test --trace FILE` writes the same, with a `test` record before each test.
 
+The calls of a `concurrent_map` task follow a `task` record with the task's index; those of a
+[worker](workers.md) follow a `worker` record with its number.
+
 ```vo
 fn fib(n: int) -> int {
     if n < 2 {

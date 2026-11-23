@@ -138,7 +138,7 @@ cm-noasm:
 $(BUILD)/vo_c.o: CFLAGS += -fno-tree-loop-distribute-patterns
 
 # Spec 008 research R8: the reference, the catalog and the standard library, embedded as C arrays.
-STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo std/fs.vo std/process.vo std/math.vo std/bytes.vo std/regex.vo std/sqlite.vo std/web.vo std/option.vo std/crypto.vo std/tcp.vo std/bits.vo std/decimal.vo std/security.vo std/lists.vo
+STD_FILES := std/json.vo std/time.vo std/text.vo std/random.vo std/http.vo std/collections.vo std/fs.vo std/process.vo std/math.vo std/bytes.vo std/regex.vo std/sqlite.vo std/web.vo std/option.vo std/crypto.vo std/tcp.vo std/bits.vo std/decimal.vo std/security.vo std/lists.vo std/workers.vo
 $(BUILD)/embedded.c: docs/reference.md docs/errors.md $(STD_FILES) tools/embed.py | $(BUILD)
 	python3 tools/embed.py $@ docs/reference.md docs/errors.md $(STD_FILES)
 $(BUILD)/embedded.o: $(BUILD)/embedded.c $(HEADERS)
@@ -233,7 +233,7 @@ test: all
 	  steps.py json_stream.py https_interop.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1" \
 	  math_vectors.py "bytes_fuzz.py --count 2000 --runs 200" "format_diff.py --quick" "regex_diff.py --quick" \
 	  "regex_fuzz.py --count 20000" "sqlite_scope.py --quick" "sqlite_fuzz.py --count 1000" sqlite_corpus.py structure_corpus.py "serve_workers.py --quick" "web_fuzz.py --quick" effect_sets_records.py \
-	  "const_equiv.py --count 300" const_records.py build_examples.py crypto_vectors.py mcp.py grammars.py lsp.py tcp.py stream.py package_fetch.py strings.py bits.py decimals.py web_security.py iteration.py; do \
+	  "const_equiv.py --count 300" const_records.py build_examples.py crypto_vectors.py mcp.py grammars.py lsp.py tcp.py stream.py package_fetch.py strings.py bits.py decimals.py web_security.py iteration.py workers.py; do \
 	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
 	  else echo "== skip $$f (not created yet)"; fi; done
 	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \

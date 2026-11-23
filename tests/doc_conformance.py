@@ -89,7 +89,8 @@ class Values:
                 t = re.sub(rf",\s*(uses )?{x}\b", "", t)
                 t = re.sub(rf"\[(uses )?{x}\]", "", t)
                 t = re.sub(rf"\s*\buses {x}\b", "", t)
-        return re.sub(r"\b[A-Z]\b", lambda m: tv.get(m.group(0), m.group(0)), t)
+        # spec 047: a type parameter may be a word (In, Out)
+        return re.sub(r"\b[A-Z]\w*\b", lambda m: tv.get(m.group(0), m.group(0)), t)
 
     def value(self, t, tv):
         t = t.strip()
@@ -128,6 +129,11 @@ class Values:
             # spec 045: a generic type with its arguments given (Option[User]): they name its parameters
             names = [x.split(":")[0].strip() for x in self.types[m.group(1)].get("tparams", [])]
             tv = {**tv, **{n: self.inst(a, tv) for n, a in zip(names, split_top(m.group(2))) if n != a.strip()}}
+            d = self.types[m.group(1)]
+            # spec 047: parameters no field mentions (Worker[In, Out]) cannot be inferred: they are written out
+            if d["item"] == "record" and names and not any(re.search(rf"\b{n}\b", f["type"]) for n in names for f in d["fields"]):
+                fs = ", ".join(f'{f["name"]}: {self.value(f["type"], tv)}' for f in d["fields"])
+                return f"new {self.inst(t, tv)} {{ {fs} }}"
             t = m.group(1)
         d = self.types[t]
         if d["item"] == "record":
@@ -227,14 +233,14 @@ def main():
         if label.startswith("std.web.on_"):  # spec 029: the pattern is a checked literal
             args[0] = '"/x"'
         # spec 014: a type parameter only the result mentions comes from a declared type
-        free = [x for x in re.findall(r"\b[A-Z]\b", ret or "") if not any(re.search(rf"\b{x}\b", t) for _, t in params)]
+        free = [x for x in re.findall(r"\b[A-Z]\w*\b", ret or "") if x in tvars and not any(re.search(rf"\b{x}\b", t) for _, t in params)]
         annot = vals.inst(ret, tv) if free and not void else None
         ok, out = check(program(imports, effects, f"{name}({', '.join(args)})", void, test_only, annot))
         calls += 1
         if not ok:
             failures.append(f"{label}: the documented call is rejected\n{out}")
         for i, (pname, t) in enumerate(params):
-            others = {x for j, (_, u) in enumerate(params) if j != i for x in re.findall(r"\b[A-Z]\b", u)}
+            others = {x for j, (_, u) in enumerate(params) if j != i for x in re.findall(r"\b[A-Z]\w*\b", u) if x in tvars}
             over = [ps[i][1] for ps in rows if len(ps) == len(params) and ps != params]
             w = vals.wrong(t, tv, tvars, others, over)
             if w is not None:

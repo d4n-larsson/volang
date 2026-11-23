@@ -1,0 +1,7 @@
+std/workers.vo:66:45: runtime error[R0015]: A worker's messages cannot hold a function: `fn(int) -> int`.
+  66 |     let started: result[int, WorkerError] = __worker(1, body);
+     |                                             ^^^^^^^^^^^^^^^^^
+trace:
+  at start_worker (std/workers.vo:66:45)
+      body: fn(Link[int, fn(int) -> int]) = <fn(Link[int, fn(int) -> int])>
+  at main (bad_type.vo:83:11)

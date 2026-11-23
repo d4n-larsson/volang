@@ -34,7 +34,8 @@ static const char *const ev_names[] = {0,         "read_line", "read_all",    "r
                                        "setup",   "setup_end", "worker_ended", /* spec 028 */
                                        "entropy", /* spec 035 */
                                        "tcp_open", "tcp_tls", "tcp_recv", "tcp_send", "tcp_listen", "tcp_accept", /* spec 039 */
-                                       "file_block", "proc_line", "proc_end"}; /* spec 040 */
+                                       "file_block", "proc_line", "proc_end", /* spec 040 */
+                                       "worker"}; /* spec 047 */
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static Str *run_desc(Str *program, Str *joined);
 static const char hexd[] = "0123456789abcdef";
@@ -72,7 +73,8 @@ static const char *const d_table[] = {0,
                                       "accepts a connection on `$1`",
                                       "reads a piece of the file `$1` (another piece than recorded, or none recorded)",
                                       "waits for a line from `$1`",
-                                      "ends `$1`"};
+                                      "ends `$1`",
+                                      "talks to a worker (`$1`)"};
 static const char *const n_table[] = {0,
                                       "a line of stdin",
                                       "the rest of stdin",
@@ -105,7 +107,8 @@ static const char *const n_table[] = {0,
                                       "a connection accepted on `$1`",
                                       "a piece of the file `$1`",
                                       "a line from `$1`",
-                                      "the end of `$1`"};
+                                      "the end of `$1`",
+                                      "a worker's answer to `$1`"};
 
 #define J_HEAD "{\"v\":1,\"kind\":\""
 #define J_CLOSE "}\n"
@@ -186,6 +189,7 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
         rw(kind == EVK_ENV                ? "\",\"name\":"
            : kind == EVK_HTTP           ? "\",\"host\":"
            : kind == EVK_SERVE_LISTEN   ? "\",\"address\":"
+           : kind == EVK_WORKER         ? "\",\"name\":" /* spec 047 */
            : kind == EVK_RUN            ? "\",\"program\":"
            : kind >= EVK_PROC_LINE      ? "\",\"program\":"
            : kind == EVK_FILE_BLOCK     ? "\",\"path\":"
@@ -1040,6 +1044,10 @@ void rp_check_event(Event *e)
         return;
     }
     if (rf_isint) rp_bad(); /* everything else: no integer value */
+    if (e->kind == EVK_WORKER) { /* spec 047: the operation, and the frames it passed */
+        if (!e->name || !e->value.p) rp_bad();
+        return;
+    }
     if (e->kind >= EVK_INFO) { /* spec 017: path or program, a result, `to` and `args`, and the value */
         if (!e->name || e->result < 0) rp_bad();
         if (e->result == EVR_DENIED) return;

@@ -1,0 +1,91 @@
+# Spec 047: each worker has its own random sequence, fixed by --seed and its number among the workers.
+import std.workers.Link;
+import std.workers.Wait;
+import std.workers.Worker;
+import std.workers.WorkerError;
+import std.workers.emit;
+import std.workers.next_message;
+import std.workers.receive;
+import std.workers.start_worker;
+import std.workers.stop_worker;
+import std.workers.tell;
+
+fn why(e: WorkerError) -> str {
+    match e {
+        case timeout {
+            return "timeout";
+        }
+        case ended {
+            return "ended";
+        }
+        case failed(text) {
+            return "failed: " + text;
+        }
+        case full {
+            return "full";
+        }
+        case too_large {
+            return "too_large";
+        }
+        case too_many {
+            return "too_many";
+        }
+    }
+}
+
+fn show(r: result[int, WorkerError]) -> str {
+    match r {
+        case ok(n) {
+            return "ok " + str(n);
+        }
+        case err(e) {
+            return why(e);
+        }
+    }
+}
+
+fn sent(r: result[void, WorkerError]) -> str {
+    match r {
+        case ok() {
+            return "sent";
+        }
+        case err(e) {
+            return why(e);
+        }
+    }
+}
+
+fn give(link: Link[int, int], n: int) {
+    match emit(link, n) {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+    match r {
+        case ok(w) {
+            return w;
+        }
+        case err(e) {
+            todo("no worker: " + why(e));
+        }
+    }
+}
+
+fn dice(link: Link[int, int]) uses random {
+    for i in 0..3 {
+        give(link, random_int(0, 1000000) + i - i);
+    }
+}
+
+fn main() uses console, random {
+    let a = worker_of(start_worker(dice));
+    let b = worker_of(start_worker(dice));
+    print("the program: " + str(random_int(0, 1000000)));
+    for i in 0..3 {
+        print(show(receive(a, Wait.forever)) + " | " + show(receive(b, Wait.forever)) + " (" + str(i) + ")");
+    }
+}

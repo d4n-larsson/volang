@@ -1,0 +1,66 @@
+# Spec 047: --max-memory applies to each worker separately; a worker that exceeds it fails with R0006.
+import std.workers.Link;
+import std.workers.Wait;
+import std.workers.WorkerError;
+import std.workers.emit;
+import std.workers.receive;
+import std.workers.start_worker;
+
+fn grows(link: Link[int, int]) {
+    let held = new list[str];
+    var piece = "0123456789abcdef";
+    while len(piece) < 1000000 {
+        set piece = piece + piece;
+    }
+    for i in 0..64 {
+        push(held, piece + str(i));
+    }
+    match emit(link, len(held)) {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn memory(e: WorkerError) -> bool {
+    match e {
+        case failed(text) {
+            return find(text, "R0006") >= 0;
+        }
+        case timeout {
+            return false;
+        }
+        case ended {
+            return false;
+        }
+        case full {
+            return false;
+        }
+        case too_large {
+            return false;
+        }
+        case too_many {
+            return false;
+        }
+    }
+}
+
+fn main() uses console {
+    match start_worker(grows) {
+        case ok(w) {
+            match receive(w, Wait.forever) {
+                case ok(n) {
+                    print("the worker held " + str(n));
+                }
+                case err(e) {
+                    print("out of memory: " + str(memory(e)));
+                }
+            }
+            print("the program goes on");
+        }
+        case err(_) {
+            print("no worker");
+        }
+    }
+}

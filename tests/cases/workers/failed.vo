@@ -1,0 +1,112 @@
+# Spec 047: a worker's runtime error or exit is a value in the program, after the messages it sent.
+import std.workers.Link;
+import std.workers.Wait;
+import std.workers.Worker;
+import std.workers.WorkerError;
+import std.workers.emit;
+import std.workers.next_message;
+import std.workers.receive;
+import std.workers.start_worker;
+import std.workers.stop_worker;
+import std.workers.tell;
+
+fn why(e: WorkerError) -> str {
+    match e {
+        case timeout {
+            return "timeout";
+        }
+        case ended {
+            return "ended";
+        }
+        case failed(text) {
+            return "failed: " + text;
+        }
+        case full {
+            return "full";
+        }
+        case too_large {
+            return "too_large";
+        }
+        case too_many {
+            return "too_many";
+        }
+    }
+}
+
+fn show(r: result[int, WorkerError]) -> str {
+    match r {
+        case ok(n) {
+            return "ok " + str(n);
+        }
+        case err(e) {
+            return why(e);
+        }
+    }
+}
+
+fn sent(r: result[void, WorkerError]) -> str {
+    match r {
+        case ok() {
+            return "sent";
+        }
+        case err(e) {
+            return why(e);
+        }
+    }
+}
+
+fn give(link: Link[int, int], n: int) {
+    match emit(link, n) {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+    match r {
+        case ok(w) {
+            return w;
+        }
+        case err(e) {
+            todo("no worker: " + why(e));
+        }
+    }
+}
+
+fn two_then_zero(link: Link[int, int]) uses console {
+    give(link, 1);
+    give(link, 2);
+    print("worker: about to divide");
+    let zero = len(chars(""));
+    give(link, 10 / zero);
+}
+
+fn leaves(link: Link[int, int]) {
+    match next_message(link, Wait.forever) {
+        case ok(n) {
+            exit(n);
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn main() uses console {
+    let w = worker_of(start_worker(two_then_zero));
+    print(show(receive(w, Wait.forever)));
+    print(show(receive(w, Wait.forever)));
+    print("a tell before the failure is received: " + sent(tell(w, 0)));
+    print(show(receive(w, Wait.forever)));
+    print("the program goes on");
+    print("a tell after it: " + sent(tell(w, 0)));
+    print(show(receive(w, Wait.forever)));
+
+    let zero = worker_of(start_worker(leaves));
+    print(sent(tell(zero, 0)));
+    print("exit(0): " + show(receive(zero, Wait.forever)));
+    let three = worker_of(start_worker(leaves));
+    print(sent(tell(three, 3)));
+    print("exit(3): " + show(receive(three, Wait.forever)));
+}

@@ -1,0 +1,9 @@
+unasked.vo:81:16: runtime error[R0002]: Division by zero.
+  81 |     give(link, 1 / zero);
+     |                ^^^^^^^^
+trace:
+  at fails (unasked.vo:81:16)
+      link: Link[int, int] = new Link[int, int] { id: 0 }, zero: int = 0
+  at start_worker (std/workers.vo:66:45)
+      body: fn(Link[int, int]) uses console = <fn(Link[int, int]) uses console>
+  at main (unasked.vo:91:23)

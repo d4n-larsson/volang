@@ -53,7 +53,7 @@ fn pick[T](xs: list[T]) -> result[T] uses random
 With `--json`, each item is a `doc` record with `signature`, `params`, `returns`, `effects`,
 `description` and `example`. The same pages are on this site: [std.json](../std/json.md),
 [std.time](../std/time.md), [std.text](../std/text.md), [std.random](../std/random.md),
-[std.http](../std/http.md), [std.tcp](../std/tcp.md), [std.bits](../std/bits.md), [std.decimal](../std/decimal.md), [std.lists](../std/lists.md) and [std.collections](../std/collections.md).
+[std.http](../std/http.md), [std.tcp](../std/tcp.md), [std.bits](../std/bits.md), [std.decimal](../std/decimal.md), [std.lists](../std/lists.md), [std.workers](../std/workers.md) and [std.collections](../std/collections.md).
 
 ## Effects of library functions
 
@@ -861,6 +861,12 @@ last in the alphabet: plum
 
 The builtin `sort_by` sorts from smallest to largest; negating a number key reverses it, but a text
 key cannot be negated, which is what `sort_by_desc` is for.
+
+## std.workers: processes beside the program
+
+`start_worker` runs a function in a process of its own and returns at once; the program and the
+worker exchange typed messages with `tell`, `receive`, `next_message` and `emit`. `with_deadline`
+gives one call a time limit. The chapter [Workers](workers.md) shows them.
 
 ## std.math
 

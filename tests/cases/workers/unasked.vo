@@ -1,0 +1,96 @@
+# Spec 047: a failure no receive returned is reported when the program ends, with status 70; what the workers printed comes out in the order they were started.
+import std.workers.Link;
+import std.workers.Wait;
+import std.workers.Worker;
+import std.workers.WorkerError;
+import std.workers.emit;
+import std.workers.next_message;
+import std.workers.receive;
+import std.workers.start_worker;
+import std.workers.stop_worker;
+import std.workers.tell;
+
+fn why(e: WorkerError) -> str {
+    match e {
+        case timeout {
+            return "timeout";
+        }
+        case ended {
+            return "ended";
+        }
+        case failed(text) {
+            return "failed: " + text;
+        }
+        case full {
+            return "full";
+        }
+        case too_large {
+            return "too_large";
+        }
+        case too_many {
+            return "too_many";
+        }
+    }
+}
+
+fn show(r: result[int, WorkerError]) -> str {
+    match r {
+        case ok(n) {
+            return "ok " + str(n);
+        }
+        case err(e) {
+            return why(e);
+        }
+    }
+}
+
+fn sent(r: result[void, WorkerError]) -> str {
+    match r {
+        case ok() {
+            return "sent";
+        }
+        case err(e) {
+            return why(e);
+        }
+    }
+}
+
+fn give(link: Link[int, int], n: int) {
+    match emit(link, n) {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+    match r {
+        case ok(w) {
+            return w;
+        }
+        case err(e) {
+            todo("no worker: " + why(e));
+        }
+    }
+}
+
+fn fails(link: Link[int, int]) uses console {
+    print("first worker: before the error");
+    let zero = len(chars(""));
+    give(link, 1 / zero);
+}
+
+fn talks(link: Link[int, int]) uses console {
+    print("second worker: one line");
+    give(link, 1);
+    print("second worker: after its message");
+}
+
+fn main() uses console {
+    let a = worker_of(start_worker(fails));
+    let b = worker_of(start_worker(talks));
+    print("program: " + show(receive(b, Wait.forever)));
+    print("program: " + show(receive(b, Wait.forever)));
+    print("program: done, " + sent(tell(a, 1)));
+}

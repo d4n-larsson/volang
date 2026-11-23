@@ -53,6 +53,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [044](../specs/044-decimal/) | Decimal: `std.decimal`, exact decimal numbers (units and places) with stated rounding, text, comparison and allocation, written in vo | **Implemented** ([results](../specs/044-decimal/results.md)) |
 | [045](../specs/045-security/) | Security: `std.security`, access control for `std.web` applications in the manner of Spring Security: one table of rules, tokens, Basic and keys, the user in operations, and a review of the table; written in vo | **Implemented** ([results](../specs/045-security/results.md)) |
 | [046](../specs/046-iteration/) | Iteration: `for k, v in m` and `for i, x in xs`, W0403 with a fix for the loops they replace, `std.lists` | **Implemented** ([results](../specs/046-iteration/results.md)) |
+| [047](../specs/047-workers/) | Workers: `std.workers`, processes that run beside the program and exchange typed messages; a time limit for one call; failures as values; deterministic output; replay without workers | **Implemented** ([results](../specs/047-workers/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -544,6 +545,21 @@ form remains. The review's `for i in 0..n by 2` was left out: no loop in the lib
 steps by other than 1. `std.lists` adds the small list functions, written in vo; for its descending
 sort the builtin `sort_by` learned to take a key of an `ordered` type parameter.
 
+### 047: workers (implemented)
+
+`concurrent_map` and `serve_workers` start work, wait for it and return. A worker (`std.workers`) is
+the same mechanism, a copy of the program in a process of its own, without the waiting:
+`start_worker(f)` returns a typed handle, and the two sides exchange messages (`tell` and `receive`,
+`next_message` and `emit`). That gives a program work that lasts beside it, a time limit for one call
+(`with_deadline`), a wait on several sources (`receive_first`), work that can be stopped
+(`stop_worker`) and computation on several cores. A worker's runtime error is a value where the
+program receives; no worker outlives the program. A worker's output travels with its messages and is
+written by the program when it receives past it, so a program whose receives name their worker prints
+the same bytes on every run; time limits, the first of several and a stop are where timing enters, and
+a recording holds what the program got from its workers, so a replay starts none. Workers are started
+by the program's own process only, not in a task or a serving worker. Protocols on top (server-sent
+events, WebSockets) are separate work: a worker reads the connection with `std.http` or `std.tcp`.
+
 The gaps found after spec 016, roughly in order of how many programs they block. Each becomes a spec when
 it is next; anything that reaches the outside world gets an effect, scopes, and record and replay.
 
@@ -559,7 +575,8 @@ it is next; anything that reaches the outside world gets an effect, scopes, and 
 | Confined child programs | a program started under `process` runs with the user's full rights | opt-in confinement to the grant (Landlock); spec 017 follow-up |
 | Serving over HTTPS | `std.http.serve` answers plain HTTP only; a public server needs a proxy in front | spec 019 follow-up: certificate and key under the program's grants |
 | Recorded tests | a test that uses HTTP, files, programs or the environment depends on the machine and the network | spec 018 follow-up, decided: `vo test --record DIR` saves one recording per test, `vo test --replay DIR` runs offline on them; replaces mock objects |
-| Events | investigate if we should support events | |
+| Events | clients for server-sent events and WebSockets | the model is there since spec 047: a worker reads the connection and sends each event on; the protocols are not |
+| Workers in tasks and servers | `start_worker` and `with_deadline` only in the program's own process (spec 047) | a table of workers per process |
 
 User-defined interfaces and compiling to machine code stay out of scope (below).
 

@@ -736,7 +736,7 @@ static long cbuiltin(Node *node, long dst, long mark)
 {
     long slots[3] = {0, 0, 0};
     Vec *args = node->b.v;
-    long skip = node->d.i == B_COLL; /* spec 014: __coll's OP literal is read from the node at run time */
+    long skip = node->d.i == B_COLL || node->d.i == B_WORKER; /* spec 014, 047: the OP literal is read from the node at run time */
     long n = args->n - skip > 3 ? 3 : args->n - skip; /* builtins take at most three */
     for (long i = 0; i < n; i++) slots[i] = cexpr(vec_get(args, i + skip), -1);
     c_temp = mark; /* the arguments are read by the call itself */
