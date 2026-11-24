@@ -5,7 +5,7 @@ fn main() uses console {
         set hay = hay + hay;
     }
     var needle = "aaaaaaaaaaaaaaaa";
-    for i in 0..7 {
+    for i in 0..9 {
         set needle = needle + needle;
     }
     print(str(find(hay, needle + "b")));

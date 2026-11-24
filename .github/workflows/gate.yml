@@ -30,8 +30,11 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install the cross compilers and qemu
+        # the Ubuntu mirrors sometimes stall (one run hung here for three hours): time out and retry
+        timeout-minutes: 15
         run: |
-          sudo apt-get update -q
+          echo 'Acquire::Retries "5"; Acquire::http::Timeout "30"; Acquire::https::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/99retry
+          for i in 1 2 3; do timeout 240 sudo apt-get update -q && break; sleep 10; done
           sudo apt-get install -y -q gcc binutils-riscv64-linux-gnu gcc-riscv64-linux-gnu gcc-aarch64-linux-gnu qemu-user vim
       - name: Permit user namespaces
         # tests/cases/https_steps/no_trust_store hides the machine's trust store in a user and mount
