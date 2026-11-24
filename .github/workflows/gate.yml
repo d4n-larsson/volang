@@ -29,13 +29,30 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # The Ubuntu mirror is sometimes very slow (95 MB took 15 minutes) or stalls (one run hung for
+      # three hours), so the downloaded packages are cached and apt times out and retries.
+      - name: Restore the downloaded packages
+        id: debs
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/apt-archives
+          key: apt-archives-${{ hashFiles('.github/workflows/gate.yml') }}
+          restore-keys: apt-archives-
       - name: Install the cross compilers and qemu
-        # the Ubuntu mirrors sometimes stall (one run hung here for three hours): time out and retry
-        timeout-minutes: 15
+        timeout-minutes: 40
         run: |
           echo 'Acquire::Retries "5"; Acquire::http::Timeout "30"; Acquire::https::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/99retry
           for i in 1 2 3; do timeout 240 sudo apt-get update -q && break; sleep 10; done
-          sudo apt-get install -y -q gcc binutils-riscv64-linux-gnu gcc-riscv64-linux-gnu gcc-aarch64-linux-gnu qemu-user vim
+          mkdir -p ~/apt-archives/partial
+          sudo apt-get install -y -q -o Dir::Cache::Archives="$HOME/apt-archives" gcc binutils-riscv64-linux-gnu gcc-riscv64-linux-gnu gcc-aarch64-linux-gnu qemu-user vim
+          sudo rm -rf ~/apt-archives/lock ~/apt-archives/partial
+          sudo chown -R "$(id -u)" ~/apt-archives
+      - name: Keep the downloaded packages
+        if: steps.debs.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ~/apt-archives
+          key: apt-archives-${{ hashFiles('.github/workflows/gate.yml') }}
       - name: Permit user namespaces
         # tests/cases/https_steps/no_trust_store hides the machine's trust store in a user and mount
         # namespace; Ubuntu 24.04 restricts those by default (the case is skipped where it cannot run)
