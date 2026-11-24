@@ -1,0 +1,5 @@
+# HELP jobs_total Jobs run.
+# TYPE jobs_total counter
+jobs_total{queue="mail",outcome="failed"} 1
+jobs_total{queue="mail",outcome="ok"} 5
+jobs_total{queue="reports",outcome="ok"} 0

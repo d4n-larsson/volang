@@ -71,6 +71,7 @@ def mask(b, port=None, vport=None):
     if vport:
         b = re.sub(rb"(?<![0-9a-fA-F])" + str(vport).encode() + rb"(?![0-9a-fA-F])", b"{vport}", b)
     b = re.sub(rb'"ms":\d+', b'"ms":0', b)
+    b = re.sub(rb'"time":"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z"', b'"time":"{time}"', b)  # spec 055: log records
     # spec 034: the size of a built executable follows the toolchain's, which differs by platform
     b = re.sub(rb"(?m)^(built .*, )\d+ bytes$", rb"\g<1>0 bytes", b)
     b = re.sub(rb'("kind":"build".*"bytes":)\d+', rb"\g<1>0", b)

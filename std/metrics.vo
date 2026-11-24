@@ -1,0 +1,92 @@
+# std.metrics: Counters, gauges and histograms an operator reads in the text exposition format 0.0.4 (Prometheus).
+# Part of the vo standard library (spec 055). Import items one by one: `import std.metrics.NAME;`.
+# A metric is a plain value (counter, gauge, histogram); add, set_to and observe change its series (one per tuple
+# of label values) in one registry per program, shared by serve_workers' worker processes, so any worker's
+# metrics_text shows the totals. A name has one kind, help and label list for the whole program, values match
+# the labels, and a counter never goes down (R0016 otherwise). At most 2,048 series: more are not kept and are
+# counted in vo_metrics_dropped_series_total. Under `vo test` each test starts with no metrics.
+
+# A metric: what it is called, what it counts, its kind and labels (and a histogram's buckets).
+#     counter("jobs_total", "Jobs run.", ["queue"]).kind is "counter"
+export record Metric {
+    # Letters, digits, `_` and `:`, not starting with a digit (E0341).
+    name: str;
+    # One line saying what it measures.
+    help: str;
+    # counter, gauge or histogram.
+    kind: str;
+    # The label names, each letters, digits and `_`, not starting with `__`.
+    labels: list[str];
+    # A histogram's upper bounds, increasing (+Inf is added); empty for the others.
+    buckets: list[float];
+}
+
+# A counter: a whole number that only goes up (requests answered, notes created).
+#     counter("notes_created_total", "Notes created.", new list[str]).name is "notes_created_total"
+export fn counter(name: str, help: str, labels: list[str]) -> Metric {
+    return new Metric { name: name, help: help, kind: "counter", labels: labels, buckets: new list[float] };
+}
+
+# A gauge: a whole number that goes up and down (requests in flight, items queued).
+#     gauge("queue_length", "Items waiting.", new list[str]).kind is "gauge"
+export fn gauge(name: str, help: str, labels: list[str]) -> Metric {
+    return new Metric { name: name, help: help, kind: "gauge", labels: labels, buckets: new list[float] };
+}
+
+# A histogram: observations counted in buckets (cumulative in the text), with their sum and count.
+#     len(histogram("job_seconds", "Job time.", new list[str], [0.1, 1.0]).buckets) is 2
+export fn histogram(name: str, help: str, labels: list[str], buckets: list[float]) -> Metric {
+    return new Metric { name: name, help: help, kind: "histogram", labels: labels, buckets: buckets };
+}
+
+# Adds n to the series of these label values (a counter: n >= 0; a gauge: any n).
+#     let m = counter("doc_total", "Doc.", new list[str]); add(m, new list[str], 2); find(metrics_text(new list[Metric]), "doc_total 2") >= 0 is true
+export fn add(m: Metric, values: list[str], n: int) uses log {
+    let _ = __metric(1, key(m, values), float(n));
+}
+
+# Sets a gauge's series of these label values to n.
+#     let m = gauge("doc_level", "Doc.", new list[str]); set_to(m, new list[str], 7); find(metrics_text(new list[Metric]), "doc_level 7") >= 0 is true
+export fn set_to(m: Metric, values: list[str], n: int) uses log {
+    let _ = __metric(2, key(m, values), float(n));
+}
+
+# Counts x in a histogram's series of these label values.
+#     let m = histogram("doc_seconds", "Doc.", new list[str], [1.0]); observe(m, new list[str], 0.5); find(metrics_text(new list[Metric]), "doc_seconds_count 1") >= 0 is true
+export fn observe(m: Metric, values: list[str], x: float) uses log {
+    let _ = __metric(3, key(m, values), x);
+}
+
+# The registry in the text exposition format 0.0.4, sorted by name then label values; the metrics listed here show (with 0 when they have no labels) before their first update.
+#     find(metrics_text([counter("doc_listed_total", "Listed.", new list[str])]), "# TYPE doc_listed_total counter\ndoc_listed_total 0\n") >= 0 is true
+export fn metrics_text(metrics: list[Metric]) -> str uses log {
+    let defs = new list[str];
+    for m in metrics {
+        push(defs, definition(m));
+    }
+    return __metric(4, join(defs, chr(29)), 0.0);
+}
+
+fn definition(m: Metric) -> str {
+    var kind = "1";
+    if m.kind == "gauge" {
+        set kind = "2";
+    } else if m.kind == "histogram" {
+        set kind = "3";
+    }
+    let bounds = new list[str];
+    for b in m.buckets {
+        push(bounds, str(b));
+    }
+    let us = chr(31);
+    return kind + us + m.name + us + m.help + us + join(m.labels, chr(30)) + us + join(bounds, chr(30));
+}
+
+fn key(m: Metric, values: list[str]) -> str {
+    # each value after byte 30, so [""] and no values differ
+    var k = definition(m) + chr(31);
+    for v in values {
+        set k = k + chr(30) + v;
+    }
+    return k;
+}

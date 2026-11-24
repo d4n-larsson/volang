@@ -1,0 +1,16 @@
+# Spec 055 US3: a gauge goes up and down (add with any amount) and is set (set_to).
+import std.metrics.Metric;
+import std.metrics.add;
+import std.metrics.gauge;
+import std.metrics.metrics_text;
+import std.metrics.set_to;
+
+fn main() uses log, console {
+    let queued = gauge("queue_length", "Items waiting.", new list[str]);
+    add(queued, new list[str], 5);
+    add(queued, new list[str], -2);
+    let temp = gauge("room_temperature", "Degrees.", ["room"]);
+    set_to(temp, ["hall"], 21);
+    set_to(temp, ["hall"], -3);
+    write(metrics_text(new list[Metric]));
+}

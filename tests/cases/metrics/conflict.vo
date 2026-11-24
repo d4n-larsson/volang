@@ -1,0 +1,10 @@
+# Spec 055 US3 (R0016): one name with another kind stops the program; so do a wrong number of label values
+# and a negative amount for a counter (conflict_values, conflict_negative).
+import std.metrics.add;
+import std.metrics.counter;
+import std.metrics.gauge;
+
+fn main() uses log {
+    add(counter("jobs_total", "Jobs.", new list[str]), new list[str], 1);
+    add(gauge("jobs_total", "Jobs.", new list[str]), new list[str], 1);
+}

@@ -657,6 +657,8 @@ long run_one_test(Node *test_in, long index_in)
             status = jmp_save(jb);
             if (!status) {
                 rt_effects_start(1); /* every test starts from seed and clock defaults */
+                rt_log_reset(); /* spec 055: and with no records, request id or metrics */
+                rt_metrics_reset();
                 run_test_body(test);
                 workers_end(1); /* spec 047: a worker's failure the test did not receive fails it */
                 status = ST_PASS;

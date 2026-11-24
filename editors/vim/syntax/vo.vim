@@ -31,7 +31,7 @@ syn region voString start=/"/ skip=/\\\\\|\\"/ end=/"\|$/ oneline contains=voEsc
 syn region voString start=/`/ end=/`/
 
 " the effects after `uses`, on its line
-syn match voEffect /\<\(console\|input\|file\.read\|file\.write\|file\.delete\|net\|clock\|random\|env\|serve\|process\|entropy\)\>/ contained
+syn match voEffect /\<\(console\|input\|file\.read\|file\.write\|file\.delete\|net\|clock\|random\|env\|serve\|process\|entropy\|log\)\>/ contained
 syn region voUses matchgroup=voKeyword start=/\<uses\>/ end=/\ze[{;=\])]\|$/ oneline contains=voEffect,voString,voTypeName,voNumber
 
 syn match voComment /#.*$/ contains=@Spell

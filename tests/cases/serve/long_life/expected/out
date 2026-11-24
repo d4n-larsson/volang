@@ -17,4 +17,5 @@ fine
 $ signal INT
 stopped
 --- stderr
+{"time":"{time}","level":"info","message":"stopped","drain_s":30,"drained":0,"cut_off":0}
 --- exit 0

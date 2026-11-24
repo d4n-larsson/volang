@@ -1,0 +1,20 @@
+# Spec 055 US2: redact_logs adds words that make a name secret-like (here ssn, matching user_ssn).
+import std.log.field;
+import std.log.log_info;
+import std.log.logged;
+import std.log.redact_logs;
+
+test "more words" uses log {
+    log_info("before", [field("user_ssn", "123")]);
+    redact_logs(["ssn"]);
+    log_info("after", [field("user_ssn", "123"), field("lessons", 4)]);
+    expect_eq(logged(), [
+        `{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"before","user_ssn":"123"}`,
+        `{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"after","user_ssn":"[redacted]","lessons":4}`
+    ]);
+}
+
+test "the words last for the test" uses log {
+    log_info("x", [field("user_ssn", "123")]);
+    expect_eq(logged(), [`{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"x","user_ssn":"123"}`]);
+}

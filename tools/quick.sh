@@ -35,6 +35,7 @@ cases() {
     decimal) echo "run check doc" ;; # spec 044
     web_security) echo "web_security web doc crypto" ;; # spec 045
     recorded) echo "recorded_tests_steps replay test_steps test" ;; # spec 054
+    ops) echo "log metrics web check effects effect_sets replay serve_workers_steps doc" ;; # spec 055
     iteration) echo "run check fmt doc" ;; # spec 046
     workers) echo "workers tasks test doc" ;; # spec 047
     zones) echo "time sleep_steps run check effects replay cli doc" ;; # spec 048
@@ -84,6 +85,7 @@ scripts() { # one per line, with arguments
     decimal) printf '%s\n' ref_examples.py doc_conformance.py decimals.py ;; # spec 044
     web_security) printf '%s\n' ref_examples.py doc_conformance.py web_security.py ;; # spec 045
     recorded) printf '%s\n' catalog.py ref_examples.py "recorded_tests.py --quick" ;; # spec 054
+    ops) printf '%s\n' catalog.py apply_fixes.py doc_conformance.py "operations.py --quick" ;; # spec 055
     iteration) printf '%s\n' ref_examples.py doc_conformance.py catalog.py apply_fixes.py iteration.py ;; # spec 046
     workers) printf '%s\n' ref_examples.py doc_conformance.py catalog.py workers.py ;; # spec 047
     zones) printf '%s\n' ref_examples.py doc_conformance.py time_check.py zones.py ;; # spec 048
@@ -116,6 +118,7 @@ area_of() {
     src/check_structure.c|tests/structure_*.py|tests/structure_seeds/*) echo structure ;; # spec 027
     src/serve.c|src/serve_workers.c|std/http.vo|tests/serve_workers*.py) echo serve_workers ;; # spec 028
     std/security.vo|tests/web_security.py) echo web_security ;; # spec 045
+    src/rt_log.c|src/rt_metrics.c|src/check_ops.c|std/log.vo|std/metrics.vo|tests/operations.py) echo ops ;; # spec 055
     std/lists.vo|tests/iteration.py) echo iteration ;; # spec 046
     src/json_derive.c|src/check_web.c|std/web.vo|std/json.vo|tests/web_*.py) echo web ;; # spec 029
     src/check_const.c|tests/const_*.py) echo const ;; # spec 031

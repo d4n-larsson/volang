@@ -1,0 +1,45 @@
+# Spec 055 US3: request_metrics counts requests by method, route pattern and status class, times them (1 ms
+# each under a fixed clock: two clock reads) and counts those in flight: a scrape of /metrics counts itself.
+# metrics_route lists the service's own metrics, shown before their first update.
+import std.http.Response;
+import std.metrics.add;
+import std.metrics.counter;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.NoInput;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.metrics_route;
+import std.web.on_get;
+import std.web.on_post;
+import std.web.request;
+import std.web.request_metrics;
+
+record NoteId {
+    id: int;
+}
+
+fn read_note(n: int, input: NoteId) -> result[Response] {
+    return ok(json_reply(200, input.id));
+}
+
+fn create(n: int, input: NoInput) -> result[Response] uses log {
+    add(counter("notes_created_total", "Notes created.", new list[str]), new list[str], 1);
+    return ok(json_reply(201, "made"));
+}
+
+fn main() uses log, clock, console {
+    let created = counter("notes_created_total", "Notes created.", new list[str]);
+    let app = new App[int, uses log, clock] {
+        routes: [on_get("/notes/{id}", read_note), on_post("/notes", create), metrics_route([created])],
+        steps: [request_metrics()],
+        errors: new list[ErrorStatus]
+    };
+    for path in ["/notes/1", "/notes/2", "/missing"] {
+        let _ = handle_request(app, 0, request("GET", path, ""));
+    }
+    let _ = handle_request(app, 0, request("POST", "/notes", ""));
+    let scrape = handle_request(app, 0, request("GET", "/metrics", ""));
+    print(str(scrape.status) + " " + scrape.headers[0].name + ": " + scrape.headers[0].value);
+    write(scrape.body);
+}

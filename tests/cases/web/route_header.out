@@ -1,0 +1,3 @@
+/notes/7 -> 200 [Content-Type: application/json] [X-Step-Saw: /notes/{id}]
+/missing -> 404 [Content-Type: application/problem+json] [X-Step-Saw: none]
+POST /notes/7 -> 405 3 headers

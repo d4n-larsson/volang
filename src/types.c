@@ -60,12 +60,37 @@ Type *ty_func_of(Node *fn)
 
 /* 0: fits; 1: different parameters or return type; 2: the value has effects the type does not
  * allow. */
+/* Spec 055: the same type, where function types (also nested) may write their effects in either form: as
+ * declared (`fn() uses console`: mask) or as a type's effect argument gives them (`Step[C, uses console]`'s
+ * `next`: needed in any scope). Without scopes the two mean the same for a value's type. */
+static int es_same_loose(EffSet *a, EffSet *b)
+{
+    if (es_equal(a, b)) return 1;
+    if (vec_len(a->scopes) || vec_len(b->scopes) || (a->mask | a->any) != (b->mask | b->any)) return 0;
+    long n = es_evar_count(a);
+    if (es_evar_count(b) != n) return 0;
+    for (long i = 0; i < n; i++)
+        if (!es_has_evar(b, vec_get(a->evars, i))) return 0;
+    return 1;
+}
+
+static int same_type_loose(Type *a, Type *b)
+{
+    if (a == b) return 1;
+    if (a->kind != TY_FUNC || b->kind != TY_FUNC || a->a.v->n != b->a.v->n) return 0;
+    for (long i = 0; i < a->a.v->n; i++)
+        if (!same_type_loose(vec_get(a->a.v, i), vec_get(b->a.v, i))) return 0;
+    return same_type_loose(a->b.t, b->b.t) && es_same_loose(a->decl.es, b->decl.es);
+}
+
 int ty_func_fits(Type *value, Type *expected)
 {
     if (value == expected) return 0;
     if (value->kind != TY_FUNC || expected->kind != TY_FUNC) return 1;
-    if (value->b.t != expected->b.t) return 1;
-    if (!same_types(value->a.v, expected->a.v)) return 1;
+    if (!same_type_loose(value->b.t, expected->b.t)) return 1;
+    if (value->a.v->n != expected->a.v->n) return 1;
+    for (long i = 0; i < value->a.v->n; i++)
+        if (!same_type_loose(vec_get(value->a.v, i), vec_get(expected->a.v, i))) return 1;
     return es_covers(expected->decl.es, value->decl.es) ? 0 : 2;
 }
 
@@ -362,6 +387,22 @@ int ty_unify(Type *pattern, Type *t, Node *owner, Type **bindings)
                 Type **slot = &bindings[ev->a.i];
                 if (!*slot) *slot = t;
                 return *slot == t;
+            }
+        }
+        /* spec 055 (research R9): `uses W, E` (a step with its own effects) against a set S that has W:
+           E is S without W. When S lacks some of W the types do not match (reported by the caller). */
+        EffSet *s = t->decl.es;
+        unsigned long w = p->mask | p->any;
+        if (es_evar_count(p) == 1 && w && !vec_len(p->scopes) && !vec_len(s->scopes) && ((s->mask | s->any) & w) == w) {
+            Type *ev = vec_get(p->evars, 0);
+            if (ev->decl.n == owner && !es_has_evar(s, ev)) {
+                EffSet *rest = es_new((long)(s->mask & ~w));
+                rest->any = s->any & ~w;
+                rest->evars = s->evars;
+                Type *r = ty_make(TY_EFFSET, 0, 0, rest);
+                Type **slot = &bindings[ev->a.i];
+                if (!*slot) *slot = r;
+                return *slot == r;
             }
         }
         return 0; /* (equal interned sets matched above) */

@@ -661,7 +661,7 @@ static int pkg_stage(Str *url, Str *staging, Str **why)
 /* ---- what a package declares (research R7) ---- */
 
 static const char *const effect_order[] = {"console", "input",  "file.read", "file.write", "file.delete", "net",
-                                           "clock",   "random", "env",       "serve",      "process",     "entropy", 0};
+                                           "clock",   "random", "env",       "serve",      "process",     "entropy", "log", 0};
 
 /* The place of an effect text (`net("a")`) in the canonical order, or -1 for an effect parameter. */
 static long effect_rank(Str *e)

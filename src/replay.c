@@ -704,7 +704,7 @@ static Variant *io_exchange(Str *host, long port, Str *request, int tls)
 long io_now_ms(void)
 {
     if (!rcd_mode) return rt_now_ms();
-    if (rcd_mode == 2) return rp_take(EVK_NOW_MS, 0)->value.i;
+    if (rcd_mode == 2) return clock_stamp = rp_take(EVK_NOW_MS, 0)->value.i; /* spec 055: the stamp of later log records */
     long v = rt_now_ms();
     rcd_event(EVK_NOW_MS, 0, -1, 0, v);
     return v;

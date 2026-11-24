@@ -1346,8 +1346,8 @@ static int allow_args_ok(Node *a)
     }
     Node *code = vec_get(args, 0), *reason = vec_get(args, 1);
     Str *c = code->a.s;
-    if (c->len != 5 || !mem_eq(c->data, "W070", 4) || c->data[4] < '1' || c->data[4] > '5') {
-        ck_err1("E0121", code, "`$1` is not a structure warning: `@allow` accepts W0701 to W0705.", c);
+    if ((c->len != 5 || !mem_eq(c->data, "W070", 4) || c->data[4] < '1' || c->data[4] > '5') && !str_eq_cstr(c, "W0506")) {
+        ck_err1("E0121", code, "`$1` cannot be allowed: `@allow` accepts W0701 to W0705 and W0506.", c);
         return 0;
     }
     if (!reason->a.s->len) {

@@ -1,0 +1,13 @@
+# Spec 055 US3: a histogram's buckets are cumulative, then +Inf, the sum and the count.
+import std.metrics.Metric;
+import std.metrics.histogram;
+import std.metrics.metrics_text;
+import std.metrics.observe;
+
+fn main() uses log, console {
+    let h = histogram("job_seconds", "Time per job.", new list[str], [0.1, 1.0]);
+    for x in [0.05, 0.5, 5.0] {
+        observe(h, new list[str], x);
+    }
+    write(metrics_text(new list[Metric]));
+}

@@ -71,4 +71,6 @@
 {"v":1,"kind":"doc","module":"std.security","name":"std.security","item":"module","signature":"std.security","description":"Access control for std.web applications: rules saying who may call what, signing in with passwords, tokens or keys, and the user in operations."}
 {"v":1,"kind":"doc","module":"std.lists","name":"std.lists","item":"module","signature":"std.lists","description":"Small operations on lists: membership, reversing, sorting from largest to smallest, the smallest and largest element by a key, sums and groups."}
 {"v":1,"kind":"doc","module":"std.workers","name":"std.workers","item":"module","signature":"std.workers","description":"Processes that run beside the program and exchange messages with it."}
+{"v":1,"kind":"doc","module":"std.log","name":"std.log","item":"module","signature":"std.log","description":"Log records: one JSON object per line on stderr, with time, level, message, the request's id and fields."}
+{"v":1,"kind":"doc","module":"std.metrics","name":"std.metrics","item":"module","signature":"std.metrics","description":"Counters, gauges and histograms an operator reads in the text exposition format 0.0.4 (Prometheus)."}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":57}

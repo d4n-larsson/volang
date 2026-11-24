@@ -61,6 +61,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [052](../specs/052-sessions-sign-in/) | Sessions and sign-in forms: cookies in `std.web`; `std.security`'s `browser` way and routes, sessions kept by the application, cross-site posts refused, pages sent to sign-in | **Implemented**, page parts removed by 053 ([results](../specs/052-sessions-sign-in/results.md)) |
 | [053](../specs/053-remove-html/) | Remove HTML rendering from the core: vo targets backend network services; `std.html`, its checker and `html_reply` removed, E0335–E0340 retired; browser sign-in without a page | **Implemented** ([results](../specs/053-remove-html/results.md)) |
 | [054](../specs/054-recorded-tests/) | Recorded tests: `vo test --record DIR` saves what each test receives from outside (HTTP with its sent body, TCP both ways, files, variables, programs), `--replay DIR` runs each test on its file offline; mismatches fail that test (R0014); credentials redacted | **Implemented** ([results](../specs/054-recorded-tests/results.md)) |
+| [055](../specs/055-service-operations/) | Operating a service: a `log` effect; `std.log` (JSON records with the request's id, secrets redacted by name, W0506), `std.metrics` (counters, gauges, histograms shared by worker processes, `/metrics` in the Prometheus text format), request steps, `/health/live` and `/health/ready`, `--drain` | **Implemented** ([results](../specs/055-service-operations/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -672,6 +673,18 @@ a changed program; recordings no test uses are listed. Credentials (`Authorizati
 `examples/rates` records a call to a public HTTPS API. Not done: secrets in bodies or paths (not
 detected), recording a test that serves, expiry.
 
+### 055: operating a service (implemented)
+
+A new effect `log` covers log records and metrics, outputs to the operator. `std.log` writes one JSON
+record per line on stderr (time, level, message, the request's id, fields); names that look like secrets
+are written `[redacted]` at any depth, and W0506 points at a field whose value is a secret-named variable.
+`std.metrics` keeps counters, gauges and histograms in a registry shared by `serve_workers`' processes;
+`metrics_route` answers the text format 0.0.4. `request_logs` and `request_metrics` are steps that carry
+their own effects (`Step[C, uses log, clock, E]`): the checker now infers `E` as the app's effects without
+them. `health_routes` answers liveness and readiness apart; `--drain` bounds the graceful stop, which ends
+with a `stopped` record. Decided with the user: a new effect rather than `console`; secrets by name. Not
+done: secrets under other names (not detected), per-worker metrics without the shared registry, tracing.
+
 The open gaps, ordered by the question vo's target sets (decided 2026-11-23, spec 053): **does it make
 an agent-written network service easier to write, review or operate?** Each becomes a spec when it is
 next; anything that reaches the outside world gets an effect, scopes, and record and replay.
@@ -679,7 +692,6 @@ next; anything that reaches the outside world gets an effect, scopes, and record
 | Gap | What is missing | Notes |
 |---|---|---|
 | Events | clients and servers for server-sent events and WebSockets | the model is there since spec 047: a worker reads the connection and sends each event on; the protocols are not |
-| Operating a service | structured logs, metrics, readiness beyond `health_route` and `log_requests` | what an operator needs to run an agent's service |
 | Schema migrations | a database's tables change by hand | for `std.sqlite` and the `postgres` package alike |
 | Serving over HTTPS | `std.http.serve` answers plain HTTP only; a public server needs a proxy in front | spec 019 follow-up: certificate and key under the program's grants |
 | Rate limiting | refusals are events (spec 045, 052), nothing slows a caller | sign-in first |

@@ -14,7 +14,7 @@ that each worker opens, or a new database in memory in each test.](diagram.svg)
 ```sh
 cd examples/notes-api
 ../../bin/vo run main.vo        # serve on http://localhost:8080 (Ctrl-C stops it, exit status 0)
-../../bin/vo test main.vo       # six tests and a property: every request through the app, a database in memory
+../../bin/vo test main.vo       # nine tests and a property: every request through the app, a database in memory
 ```
 
 ## Try it
@@ -48,11 +48,35 @@ $ curl localhost:8080/health
 | `GET /notes/ID` | 200 with the note; 404 when there is none |
 | `POST /notes/ID/done` | 200 with the note, now done |
 | `DELETE /notes/ID` | 204 |
-| `GET /health` | 200 `{"status":"up"}`, or 503 naming the failing check |
+| `GET /health`, `GET /health/ready` | 200 `{"status":"up"}`, or 503 naming the failing check |
+| `GET /health/live` | 200 `{"status":"up"}` while the process answers (no check runs) |
+| `GET /metrics` | the metrics in the Prometheus text format |
 | anything else | 404 or 405 |
 
 Every failure is an RFC 9457 problem (`application/problem+json`) with the status, a `detail` or the
 `errors` of each field.
+
+## Operate it
+
+Each request gets an id (`X-Request-Id`, kept when the client sends one) and one log record on stderr, a
+line of JSON; records written while it is answered, such as `note created`, carry the same id:
+
+```text
+{"time":"2026-11-24T19:05:43.221Z","level":"info","message":"note created","request_id":"21983af349ee109f","id":2}
+{"time":"2026-11-24T19:05:43.221Z","level":"info","message":"request","request_id":"21983af349ee109f","method":"POST","route":"/notes","status":201,"ms":8}
+```
+
+- `GET /metrics` answers the request counts and durations by route pattern (`/notes/{id}`, not each
+  path), the requests in flight and `notes_created_total`, totalled over the four workers.
+- `GET /health/live` and `GET /health/ready` are for an orchestrator: restart when live fails, send no
+  traffic while ready fails (the database check).
+- `--log-level warn` writes only warnings and errors (default `info`; probes of `/health/...` and
+  `/metrics` are `debug`).
+- On SIGTERM the service stops accepting, answers what it has read for up to `--drain` seconds (default
+  30) and ends with a `stopped` record saying how many requests were drained and cut off.
+
+The steps and routes are a few lines of `notes_app`: `request_ids(random_id)`, `request_logs()`,
+`request_metrics()`, `metrics_route([notes_created()])` and `health_routes(database)`.
 
 ## How it works
 
@@ -115,10 +139,13 @@ at a time, without opening a port or touching `data/`.
 | FR-004 | A note can be read, marked done and deleted. |
 | FR-005 | Unknown notes and paths are 404; other methods on a resource are 405. |
 | FR-006 | The notes are kept in `data/notes.db` between requests, and requests answered at once lose no change. |
+| FR-007 | Each request is logged with its id, and a created note is logged with the same id. |
+| FR-010 | `/metrics` counts requests by route pattern and the notes created. |
+| FR-015 | `/health/live` and `/health/ready` answer apart from `/health`. |
 
 Each test names the requirements it proves with `@spec("FR-...")` on the line above it; `vo query specs main.vo` lists them, and `vo test` ends with a line per requirement.
 
-`vo query specs main.vo` lists FR-001 to FR-006; comparing the query's IDs with this table is how a
+`vo query specs main.vo` lists FR-001 to FR-007, FR-010 and FR-015; comparing the query's IDs with this table is how a
 reviewer, or a tool, finds requirements without a test.
 
 ## Files

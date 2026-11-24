@@ -34,6 +34,7 @@ static long sw_n;
 static Closure *sw_setup, *sw_answer; /* the functions the workers call */
 static Node *sw_call;
 static long sw_state; /* in a worker: the setup's result */
+static long sw_answered; /* spec 055: responses relayed (the stop record's count of those drained) */
 
 static Str *sw_500(void)
 {
@@ -346,6 +347,7 @@ static int sw_messages(Worker *w, long index, Str **failure, long *status)
             stop = 1;
             break;
         case TW_RESPONSE: {
+            sw_answered++;
             sw_output(w);
             Str *text = str_new(p + 1, len - 1);
             GC_ROOT(&text);
@@ -404,6 +406,7 @@ Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call)
     sw_call = call;
     rt_seed_mark();
     if (rcd_mode == 2) return sw_replay();
+    rt_metrics_share(call); /* spec 055: workers forked from here on share one metrics registry */
     sw_n = workers;
     sw_written = 0;
     sw_pipe_signals(1);
@@ -413,7 +416,8 @@ Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call)
             return sw_finish(listener, 1, str_from_cstr("cannot start a worker (the system refused a process)"));
         }
     int starting = 1; /* until every first worker is ready */
-    int stopping = 0, hard = 0; /* hard: a second signal */
+    int stopping = 0, hard = 0, signalled = 0; /* hard: a second signal */
+    long drain_end = 0, answered_before = 0, cut = 0; /* spec 055 */
     long number = 0; /* the next request's arrival number */
     Str *failure = 0;
     GC_ROOT(&failure);
@@ -444,6 +448,34 @@ Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call)
             }
             busy += w->state == W_BUSY;
         }
+        if (signalled && !drain_end) { /* spec 055: the drain is bounded by --drain seconds */
+            drain_end = sys_clock_ms() + opt_drain * 1000;
+            sv_wake_at = drain_end;
+            answered_before = sw_answered;
+        }
+        if (drain_end && sys_clock_ms() >= drain_end && (busy || sv_pending())) { /* the limit: cut off */
+            for (long i = 0; i < sw_n; i++) {
+                Worker *w = &sw[i];
+                if (w->state != W_BUSY) continue;
+                int st;
+                sys_kill(w->pid);
+                sys_wait(w->pid, &st);
+                sw_output(w);
+                char *line = "{\"v\":1,\"kind\":\"worker_ended\"}\n{\"v\":1,\"kind\":\"response\",\"value\":\"HTTP/1.1 503 Service Unavailable\\r\\n"
+                             "Content-Length: 0\\r\\nConnection: close\\r\\n\\r\\n\"}\n";
+                sb_cstr(w->events, line);
+                if (rcd_mode == 1) sw_hold(w->number, w->events);
+                sv_reply_to(w->conn, str_from_cstr("HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"));
+                sw_close(&w->req);
+                sw_close(&w->ctl);
+                sw_close(&w->out);
+                sw_close(&w->err);
+                w->state = W_NONE;
+                cut++;
+            }
+            cut += sv_refuse_ready();
+            break;
+        }
         if (stopping && !busy && !sv_pending()) break;
         long n = 0;
         for (long i = 0; i < sw_n; i++) {
@@ -461,9 +493,10 @@ Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call)
         if (sv_round(listener, !stopping, ex, n)) {
             if (stopping) { /* a second signal: stop at once */
                 hard = 1;
+                for (long i = 0; i < sw_n; i++) cut += sw[i].state == W_BUSY;
                 break;
             }
-            stopping = 1;
+            stopping = signalled = 1;
             sv_drop_partial();
         }
         for (long k = 0; k < n; k++)
@@ -522,7 +555,9 @@ Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call)
             }
         }
     }
-    Variant *r = sw_finish(listener, hard, failure);
+    Variant *r = sw_finish(listener, hard || cut, failure);
+    if (signalled) sv_stopped(sw_answered - answered_before, cut);
+    sv_wake_at = 0;
     GC_UNROOT(1);
     return r;
 }

@@ -308,8 +308,8 @@ static void conn_reply(Conn *c, Str *text)
 static void conn_refuse(Conn *c, long status)
 {
     static const char *const lines[] = {"400 Bad Request", "408 Request Timeout", "413 Content Too Large",
-                                        "431 Request Header Fields Too Large"};
-    const char *line = lines[status == 408 ? 1 : status == 413 ? 2 : status == 431 ? 3 : 0];
+                                        "431 Request Header Fields Too Large", "503 Service Unavailable"};
+    const char *line = lines[status == 408 ? 1 : status == 413 ? 2 : status == 431 ? 3 : status == 503 ? 4 : 0];
     SB *sb = sb_new();
     sb_cstr(sb, "HTTP/1.1 ");
     sb_cstr(sb, (char *)line);
@@ -435,6 +435,10 @@ int sv_round(long listener, int accepting, SvPoll *extra, long nextra)
         p[np].revents = 0;
         who[np++] = 0;
     }
+    if (sv_wake_at) { /* spec 055: the drain's end */
+        long left = sv_wake_at > now ? sv_wake_at - now : 0;
+        if (wait < 0 || left < wait) wait = left;
+    }
     long ts[2] = {wait / 1000, wait % 1000 * 1000000};
     long n = vo_syscall5(SYS_ppoll, (long)p, np, wait < 0 ? 0 : (long)ts, 0, 8);
     if (n <= 0) return 0;
@@ -473,6 +477,40 @@ int sv_round(long listener, int accepting, SvPoll *extra, long nextra)
 void sv_reply_to(long conn, Str *text)
 {
     if (conn >= 0 && conn < CONN_MAX && sv_conns[conn].state == C_HANDLING) conn_reply(&sv_conns[conn], text);
+}
+
+/* Spec 055: the drain. sv_wake_at: when sv_round must return at the latest (0: no limit). */
+long sv_wake_at;
+
+/* Requests read but not yet handled are answered 503 (the drain's limit passed); how many. */
+long sv_refuse_ready(void)
+{
+    long n = 0;
+    for (int i = 0; i < CONN_MAX; i++)
+        if (sv_conns[i].state == C_READY) {
+            conn_refuse(&sv_conns[i], 503);
+            n++;
+        }
+    return n;
+}
+
+/* The record a stopped server writes (research R11): the limit in force, requests answered while draining,
+ * requests cut off at the limit (level warn when any). */
+void sv_stopped(long drained, long cut)
+{
+    sv_wake_at = 0;
+    SB *sb = sb_new();
+    GC_ROOT(&sb);
+    sb_cstr(sb, "\"drain_s\":");
+    sb_str(sb, int_to_str(opt_drain));
+    sb_cstr(sb, ",\"drained\":");
+    sb_str(sb, int_to_str(drained));
+    sb_cstr(sb, ",\"cut_off\":");
+    sb_str(sb, int_to_str(cut));
+    Str *fields = sb_finish(sb);
+    GC_ROOT(&fields);
+    rt_log_write(cut ? 2 : 1, str_from_cstr("\"stopped\""), fields);
+    GC_UNROOT(2);
 }
 
 /* Requests still to answer: complete, being handled, or being written. */
@@ -539,19 +577,42 @@ Variant *rt_serve_next(long listener)
         noted = 1;
         sv_note(str_from_cstr("--workers has no effect: this program serves one request at a time (serve_workers runs several)"));
     }
+    static long drain_end, drained; /* spec 055: after the first signal, requests already read are answered
+                                       until --drain seconds pass (checked between requests) */
+    long cut = 0;
     for (;;) {
+        if (!drain_end && sys_wait_fd(sv_sig, POLLIN, 0) > 0) { /* a stop signal during the last handler */
+            char info[128]; /* struct signalfd_siginfo */
+            vo_syscall3(SYS_read, sv_sig, (long)info, sizeof info);
+            drain_end = sys_clock_ms() + opt_drain * 1000;
+            sv_wake_at = drain_end;
+            sv_drop_partial();
+            continue;
+        }
+        if (drain_end && sys_clock_ms() >= drain_end) {
+            cut = sv_refuse_ready();
+            break;
+        }
         Str *req;
         long i = sv_take_ready(&req);
         if (i >= 0) {
             sv_conn = i;
+            drained += drain_end != 0;
             return make_result(0, (long)req);
         }
-        if (sv_round(listener, 1, 0, 0)) {
-            conns_stop();
-            sv_stop(listener);
-            return make_result(0, (long)str_from_cstr(""));
+        if (drain_end && !sv_pending()) break;
+        if (sv_round(listener, !drain_end, 0, 0)) {
+            if (drain_end) break; /* a second signal: stop at once */
+            drain_end = sys_clock_ms() + opt_drain * 1000;
+            sv_wake_at = drain_end;
+            sv_drop_partial();
         }
     }
+    conns_stop();
+    sv_stop(listener);
+    sv_stopped(drained, cut);
+    drain_end = drained = 0;
+    return make_result(0, (long)str_from_cstr(""));
 }
 
 /* __http_part(message, 0|1): the head (without its blank line) or the body of a framed message, cut

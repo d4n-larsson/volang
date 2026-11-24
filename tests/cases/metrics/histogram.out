@@ -1,0 +1,7 @@
+# HELP job_seconds Time per job.
+# TYPE job_seconds histogram
+job_seconds_bucket{le="0.1"} 1
+job_seconds_bucket{le="1"} 2
+job_seconds_bucket{le="+Inf"} 3
+job_seconds_sum 5.55
+job_seconds_count 3

@@ -26,6 +26,18 @@ import std.json.parse_json;
 import std.json.to_json;
 import std.json.write_json;
 import std.lists.contains;
+import std.log.Field;
+import std.log.field;
+import std.log.log_debug;
+import std.log.log_error;
+import std.log.log_info;
+import std.metrics.Metric;
+import std.metrics.add;
+import std.metrics.counter;
+import std.metrics.gauge;
+import std.metrics.histogram;
+import std.metrics.metrics_text;
+import std.metrics.observe;
 import std.option.Option;
 
 # An application: its routes, the steps around every request, and error kinds beside the defaults.
@@ -232,7 +244,7 @@ export fn handle_request[C, E: effects](app: App[C, E], ctx: C, r: Request) -> R
     };
     match __serve_call(all, without_header(r, "X-Identity")) {
         case ok(resp) {
-            return resp;
+            return without_route(resp);
         }
         case err(_) {
             return problem(500, "", new list[Json]);
@@ -304,7 +316,11 @@ fn dispatch[C, E: effects](app: App[C, E], ctx: C, r: Request) -> Response uses 
         push(resp.headers, new Header { name: "Allow", value: allow });
         return resp;
     }
-    let resp = answer_of(app, app.routes[best].run(ctx, r, best_vars));
+    let answered = answer_of(app, app.routes[best].run(ctx, r, best_vars));
+    # spec 055: steps see the pattern that answered (Vo-Route; serve_app does not send it)
+    let headers = slice(answered.headers, 0, len(answered.headers));
+    push(headers, new Header { name: "Vo-Route", value: app.routes[best].pattern });
+    let resp = new Response { status: answered.status, headers: headers, body: answered.body };
     if r.method == "HEAD" {
         return new Response { status: resp.status, headers: resp.headers, body: "" };
     }
@@ -823,6 +839,26 @@ fn same_shape(a: list[str], b: list[str]) -> bool {
     return true;
 }
 
+fn without_route(r: Response) -> Response {
+    # spec 055: Vo-Route is for the steps only (request_logs, request_metrics), not for handle_request's caller
+    var found = false;
+    for h in r.headers {
+        if h.name == "Vo-Route" {
+            set found = true;
+        }
+    }
+    if not found {
+        return r;
+    }
+    let headers = new list[Header];
+    for h in r.headers {
+        if h.name != "Vo-Route" {
+            push(headers, h);
+        }
+    }
+    return new Response { status: r.status, headers: headers, body: r.body };
+}
+
 fn without_vo_error(r: Response) -> Response {
     let headers = new list[Header];
     for h in r.headers {
@@ -898,25 +934,42 @@ export fn load_settings[T: json](file: str, prefix: str) -> result[T] uses file.
 #     handle_request(new App[int] { routes: [health_route(new list[HealthCheck[int]])], steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/health", "")).body is "{\"status\":\"up\"}"
 export fn health_route[C, E: effects](checks: list[HealthCheck[C, E]]) -> Route[C, E] {
     return on_get("/health", fn(ctx: C, input: NoInput) -> result[Response] {
-        let failed = new map[str, Json];
-        for c in checks {
-            match c.check(ctx) {
-                case ok() {
-                }
-                case err(e) {
-                    set failed[c.name] = Json.text(e);
-                }
+        return health_answer(ctx, checks);
+    });
+}
+
+# Routes for an orchestrator: GET /health/live (200 {"status":"up"}, running no check: the process answers) and GET /health/ready (as health_route: 503 naming the checks that fail).
+#     handle_request(new App[int] { routes: health_routes(new list[HealthCheck[int]]), steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/health/live", "")).status is 200
+export fn health_routes[C, E: effects](checks: list[HealthCheck[C, E]]) -> list[Route[C, E]] {
+    return [
+        on_get("/health/live", fn(ctx: C, input: NoInput) -> result[Response] {
+            return health_answer(ctx, new list[HealthCheck[C, E]]);
+        }),
+        on_get("/health/ready", fn(ctx: C, input: NoInput) -> result[Response] {
+            return health_answer(ctx, checks);
+        })
+    ];
+}
+
+fn health_answer[C, E: effects](ctx: C, checks: list[HealthCheck[C, E]]) -> result[Response] uses E {
+    let failed = new map[str, Json];
+    for c in checks {
+        match c.check(ctx) {
+            case ok() {
+            }
+            case err(e) {
+                set failed[c.name] = Json.text(e);
             }
         }
-        let m = new map[str, Json];
-        if len(failed) == 0 {
-            set m["status"] = Json.text("up");
-            return ok(json_reply(200, Json.object(m)));
-        }
-        set m["status"] = Json.text("down");
-        set m["checks"] = Json.object(failed);
-        return ok(json_reply(503, Json.object(m)));
-    });
+    }
+    let m = new map[str, Json];
+    if len(failed) == 0 {
+        set m["status"] = Json.text("up");
+        return ok(json_reply(200, Json.object(m)));
+    }
+    set m["status"] = Json.text("down");
+    set m["checks"] = Json.object(failed);
+    return ok(json_reply(503, Json.object(m)));
 }
 
 # A GET /info route answering {"name": name, "version": version}.
@@ -982,6 +1035,103 @@ export fn log_requests[C, E: effects](now: fn() -> int uses E, log: fn(str) uses
             return resp;
         }
     };
+}
+
+# A step writing one log record per request (message "request": method, route pattern or "unmatched", status, ms, an unmapped error's text) at level error from 500, debug for /health/... and /metrics answered 200, else info; records written while it answers carry the request's X-Request-Id (put request_ids before it).
+#     let s: Step[int, uses log, clock] = request_logs(); s.prefix is "/"
+export fn request_logs[C, E: effects]() -> Step[C, uses log, clock, E] {
+    return new Step {
+        prefix: "/",
+        run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses log, clock, E) -> Response {
+            match header_of(r, "X-Request-Id") {
+                case ok(id) {
+                    let _ = __log(4, id, "");
+                }
+                case err(_) {
+                }
+            }
+            let start = now_ms();
+            let resp = next(r);
+            let ms = now_ms() - start;
+            let pattern = route_of(resp);
+            let fields = [
+                field("method", r.method),
+                field("route", pattern),
+                field("status", resp.status),
+                field("ms", ms)
+            ];
+            match header_of_response(resp, "Vo-Error") {
+                case ok(e) {
+                    push(fields, field("error", e));
+                }
+                case err(_) {
+                }
+            }
+            if resp.status >= 500 {
+                log_error("request", fields);
+            } else if resp.status == 200 and (under(r.path, "/health") and r.path != "/health" or r.path == "/metrics") {
+                log_debug("request", fields);
+            } else {
+                log_info("request", fields);
+            }
+            let _ = __log(4, "", "");
+            return resp;
+        }
+    };
+}
+
+# A step counting requests in metrics: http_requests_total{method,route,status} (status 2xx to 5xx; route the pattern or "unmatched"; methods other than GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS as "other"), http_request_duration_seconds{method,route} and http_requests_in_flight (a scrape counts itself).
+#     let s: Step[int, uses log, clock] = request_metrics(); s.prefix is "/"
+export fn request_metrics[C, E: effects]() -> Step[C, uses log, clock, E] {
+    return new Step {
+        prefix: "/",
+        run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses log, clock, E) -> Response {
+            let flight = gauge("http_requests_in_flight", "Requests being answered.", new list[str]);
+            add(flight, new list[str], 1);
+            let start = now_ms();
+            let resp = next(r);
+            let ms = now_ms() - start;
+            add(flight, new list[str], -1);
+            var method = "other";
+            if contains(["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], r.method) {
+                set method = r.method;
+            }
+            let pattern = route_of(resp);
+            let total = counter("http_requests_total", "Requests answered.", ["method", "route", "status"]);
+            add(total, [method, pattern, str(resp.status / 100) + "xx"], 1);
+            let seconds = histogram(
+                "http_request_duration_seconds",
+                "Time to answer a request, in seconds.",
+                ["method", "route"],
+                [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0]
+            );
+            observe(seconds, [method, pattern], float(ms) / 1000.0);
+            return resp;
+        }
+    };
+}
+
+# A GET /metrics route answering the registry in the text format 0.0.4 (text/plain; version=0.0.4); the listed metrics show before their first update.
+#     let r: Route[int, uses log] = metrics_route(new list[Metric]); r.pattern is "/metrics"
+export fn metrics_route[C, E: effects](metrics: list[Metric]) -> Route[C, uses log, E] {
+    return on_get("/metrics", fn(ctx: C, input: NoInput) -> result[Response] {
+        return ok(new Response {
+            status: 200,
+            headers: [new Header { name: "Content-Type", value: "text/plain; version=0.0.4" }],
+            body: metrics_text(metrics)
+        });
+    });
+}
+
+fn route_of(resp: Response) -> str {
+    match header_of_response(resp, "Vo-Route") {
+        case ok(p) {
+            return p;
+        }
+        case err(_) {
+            return "unmatched";
+        }
+    }
 }
 
 # The clock in milliseconds, for log_requests.

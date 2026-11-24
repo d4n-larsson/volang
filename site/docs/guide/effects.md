@@ -70,6 +70,7 @@ order: console, input, file.read, file.write, net, clock, random, env, serve.
 | `serve` | `std.http.serve` (answering HTTP requests); `std.tcp.listen` | addresses |
 | `process` | `std.process.run`, `run_with` (running other programs) | programs |
 | `entropy` | `std.crypto.random_bytes`, `hash_password` (the system's random source, for secrets) | |
+| `log` | `std.log` records and `std.metrics` updates (outputs to the operator) | |
 
 Everything else is pure: arithmetic, strings, lists and maps, the collections, `std.json`,
 `std.text`, in-memory databases (`std.sqlite.open_memory`). Program arguments (`args()`) and `exit` need no effect.

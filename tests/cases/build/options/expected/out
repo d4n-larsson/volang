@@ -46,11 +46,11 @@ args:
 --- exit 0
 $ app app --vo-bogus
 --- stderr
-error[T0001]: Unknown option `--vo-bogus`. Options: --vo-effects, --vo-version, --vo-replay FILE, --vo-record FILE, --vo-seed N, --vo-clock-ms N, --vo-timeout SEC, --vo-max-memory MiB, --vo-mem-stats, --vo-trace FILE, --vo-trace-limit N, --vo-ca-file FILE, --vo-workers N, --vo-json. Every other argument goes to the program.
+error[T0001]: Unknown option `--vo-bogus`. Options: --vo-effects, --vo-version, --vo-replay FILE, --vo-record FILE, --vo-seed N, --vo-clock-ms N, --vo-timeout SEC, --vo-max-memory MiB, --vo-mem-stats, --vo-trace FILE, --vo-trace-limit N, --vo-ca-file FILE, --vo-workers N, --vo-log-level LEVEL, --vo-drain SEC, --vo-json. Every other argument goes to the program.
 --- exit 64
 $ app app --vo-json --vo-bogus
 --- stderr
-{"v":1,"kind":"toolchain_error","code":"T0001","name":"usage_error","message":"Unknown option `--vo-bogus`. Options: --vo-effects, --vo-version, --vo-replay FILE, --vo-record FILE, --vo-seed N, --vo-clock-ms N, --vo-timeout SEC, --vo-max-memory MiB, --vo-mem-stats, --vo-trace FILE, --vo-trace-limit N, --vo-ca-file FILE, --vo-workers N, --vo-json. Every other argument goes to the program."}
+{"v":1,"kind":"toolchain_error","code":"T0001","name":"usage_error","message":"Unknown option `--vo-bogus`. Options: --vo-effects, --vo-version, --vo-replay FILE, --vo-record FILE, --vo-seed N, --vo-clock-ms N, --vo-timeout SEC, --vo-max-memory MiB, --vo-mem-stats, --vo-trace FILE, --vo-trace-limit N, --vo-ca-file FILE, --vo-workers N, --vo-log-level LEVEL, --vo-drain SEC, --vo-json. Every other argument goes to the program."}
 --- exit 64
 $ app app --vo-seed
 --- stderr
@@ -71,5 +71,5 @@ $ app app --vo-version --vo-json
 --- exit 0
 $ app app --vo-check
 --- stderr
-error[T0001]: Unknown option `--vo-check`. Options: --vo-effects, --vo-version, --vo-replay FILE, --vo-record FILE, --vo-seed N, --vo-clock-ms N, --vo-timeout SEC, --vo-max-memory MiB, --vo-mem-stats, --vo-trace FILE, --vo-trace-limit N, --vo-ca-file FILE, --vo-workers N, --vo-json. Every other argument goes to the program.
+error[T0001]: Unknown option `--vo-check`. Options: --vo-effects, --vo-version, --vo-replay FILE, --vo-record FILE, --vo-seed N, --vo-clock-ms N, --vo-timeout SEC, --vo-max-memory MiB, --vo-mem-stats, --vo-trace FILE, --vo-trace-limit N, --vo-ca-file FILE, --vo-workers N, --vo-log-level LEVEL, --vo-drain SEC, --vo-json. Every other argument goes to the program.
 --- exit 64

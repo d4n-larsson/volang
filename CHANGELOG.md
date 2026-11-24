@@ -6,6 +6,20 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- Operating a service. A new effect `log` covers writing log records and metrics. `std.log` writes one
+  JSON record per line on stderr: `log_info("note created", [field("id", 7)])` gives time, level,
+  message, the id of the request being answered and the fields; `vo run --log-level LEVEL` sets the
+  lowest level; under `vo test`, `logged()` returns the test's records. Fields, nested members and
+  headers whose names look like secrets (password, token, key, authorization, cookie, session, ...) are
+  written `[redacted]`, and W0506 warns when a log field's value is a secret-named variable (its fix
+  removes the field). `std.metrics` has counters, gauges and histograms, shared by `serve_workers`'
+  worker processes (E0341 for bad literal names, R0016 for conflicting uses). `std.web` gains the steps
+  `request_logs()` and `request_metrics()` (by route pattern, never by path), `metrics_route` (`GET
+  /metrics`, Prometheus text format) and `health_routes` (`/health/live`, `/health/ready`). `vo run
+  --drain SECONDS` (default 30) bounds the graceful stop: requests still running are answered 503 and
+  the server ends with a `stopped` record; plain `serve` now also answers the requests it has read before
+  stopping. A generic step carrying its own effects (`Step[C, uses log, clock, E]`) placed in an app now
+  infers `E`. `@allow` also accepts W0506. `examples/notes-api` uses all of it.
 - Recorded tests. `vo test --record DIR` runs the tests against the real outside world and saves, for
   each test that received anything (HTTP and HTTPS answers, TCP exchanges, files, environment variables,
   other programs), one readable file `DIR/FILE/NAME.jsonl` with the requests it sent and what it got.

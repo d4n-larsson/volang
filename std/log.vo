@@ -1,0 +1,162 @@
+# std.log: Log records: one JSON object per line on stderr, with time, level, message, the request's id and fields.
+# Part of the vo standard library (spec 055). Import items one by one: `import std.log.NAME;`.
+# A record is `{"time":"2026-11-24T06:14:19.181Z","level":"info","message":"...","request_id":"...",FIELDS}`,
+# written whole with one write. `request_id` is there while web's request_logs step answers a request. A field
+# named time, level, message or request_id is written as field_NAME. A field, an object member at any depth, or
+# the value of a {"name", "value"} object (a header) whose name is secret-like (its words, split at _ - . and
+# case changes, include password, passwd, secret, token, key, authorization, cookie, session, or a word given to
+# redact_logs) is written "[redacted]"; a string over 4,096 bytes is cut and ends with "…[cut]".
+# `vo run --log-level LEVEL` sets the lowest level written (default info). Under `vo test` every record is
+# kept: logged() gives the records of the current test, and its time is the test clock.
+import std.json.Json;
+import std.json.as_text;
+import std.json.to_json;
+import std.json.write_json;
+
+# One field of a record: a name and a JSON value. Made by field.
+#     new Field { name: "port", value: Json.integer(8080) }.name is "port"
+export record Field {
+    # The key in the record.
+    name: str;
+    # The value.
+    value: Json;
+}
+
+# A field of a record, from any value with a JSON form (numbers stay numbers).
+#     field("port", 8080).name is "port"
+export fn field[T: json](name: str, value: T) -> Field {
+    return new Field { name: name, value: to_json(value) };
+}
+
+# Writes a record at level debug.
+#     let n = 0; log_debug("cache miss", [field("keys", 3)]); len(logged()) is 0
+export fn log_debug(message: str, fields: list[Field]) uses log {
+    put(0, message, fields);
+}
+
+# Writes a record at level info.
+#     let n = 0; log_info("started", [field("port", 8080)]); len(logged()) is 0
+export fn log_info(message: str, fields: list[Field]) uses log {
+    put(1, message, fields);
+}
+
+# Writes a record at level warn.
+#     let n = 0; log_warn("slow query", [field("ms", 900)]); len(logged()) is 0
+export fn log_warn(message: str, fields: list[Field]) uses log {
+    put(2, message, fields);
+}
+
+# Writes a record at level error.
+#     let n = 0; log_error("database down", new list[Field]); len(logged()) is 0
+export fn log_error(message: str, fields: list[Field]) uses log {
+    put(3, message, fields);
+}
+
+# The records written so far in this test, as JSON text, one per record; outside vo test, none.
+#     len(logged()) >= 0 is true
+export fn logged() -> list[str] uses log {
+    let kept = __log(5, "", "");
+    if kept == "" {
+        return new list[str];
+    }
+    return split(slice(kept, 0, len(kept) - 1), "\n");
+}
+
+# More words that make a name secret-like, for the rest of this process (this test, under vo test).
+#     let n = 0; redact_logs(["ssn"]); len(logged()) is 0
+export fn redact_logs(words: list[str]) uses log {
+    for w in words {
+        let _ = __log(6, w, "");
+    }
+}
+
+fn put(level: int, message: str, fields: list[Field]) uses log {
+    let parts = new list[str];
+    for f in fields {
+        var name = f.name;
+        if name == "time" or name == "level" or name == "message" or name == "request_id" {
+            set name = "field_" + name;
+        }
+        push(parts, text(Json.text(name)) + ":" + text(clean(name, f.value)));
+    }
+    let _ = __log(level, text(Json.text(message)), join(parts, ","));
+}
+
+fn text(j: Json) -> str {
+    match write_json(j) {
+        case ok(t) {
+            return t;
+        }
+        case err(_) {
+            return "null";
+        }
+    }
+}
+
+fn secret(name: str) -> bool uses log {
+    return __log(7, name, "") == "1";
+}
+
+fn clean(name: str, v: Json) -> Json uses log {
+    # the value written for a field or member of this name: redacted, cut, or with its members cleaned
+    if secret(name) {
+        return Json.text("[redacted]");
+    }
+    match v {
+        case text(s) {
+            return Json.text(cut(s));
+        }
+        case array(xs) {
+            let out = new list[Json];
+            for x in xs {
+                push(out, clean("", x));
+            }
+            return Json.array(out);
+        }
+        case object(m) {
+            # a header: {"name": N, "value": V}
+            var hidden = false;
+            if has(m, "name") and has(m, "value") {
+                match as_text(m["name"]) {
+                    case ok(n) {
+                        set hidden = secret(n);
+                    }
+                    case err(_) {
+                    }
+                }
+            }
+            let out = new map[str, Json];
+            for k in keys(m) {
+                if hidden and k == "value" {
+                    set out[k] = Json.text("[redacted]");
+                } else {
+                    set out[k] = clean(k, m[k]);
+                }
+            }
+            return Json.object(out);
+        }
+        case null {
+            return v;
+        }
+        case boolean(_) {
+            return v;
+        }
+        case integer(_) {
+            return v;
+        }
+        case number(_) {
+            return v;
+        }
+    }
+}
+
+fn cut(s: str) -> str {
+    if len(s) <= 4096 {
+        return s;
+    }
+    var n = 4096;
+    while n > 0 and byte_at(s, n) >= 128 and byte_at(s, n) < 192 {
+        set n = n - 1;
+    }
+    return slice(s, 0, n) + "…[cut]";
+}

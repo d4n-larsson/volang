@@ -1,0 +1,1 @@
+error[T0001]: `--log-level` takes debug, info, warn or error.

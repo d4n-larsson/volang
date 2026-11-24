@@ -1,0 +1,7 @@
+import std.log.Field;
+import std.log.log_info;
+
+fn main() uses console, log {
+    print("hi");
+    log_info("hi", new list[Field]);
+}

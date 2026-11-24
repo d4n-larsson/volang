@@ -1,0 +1,19 @@
+# Spec 055 (FR-008): log_requests still writes its text line, byte for byte as before.
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.Route;
+import std.web.handle_request;
+import std.web.log_requests;
+import std.web.request;
+
+test "the text line" {
+    let lines = new list[str];
+    let app = new App[int] {
+        routes: new list[Route[int]],
+        steps: [log_requests(fn() -> int { return 0; }, fn(line: str) { push(lines, line); })],
+        errors: new list[ErrorStatus]
+    };
+    let resp = handle_request(app, 0, request("GET", "/x", ""));
+    expect_eq(resp.status, 404);
+    expect_eq(lines, ["GET /x 404 0ms"]);
+}

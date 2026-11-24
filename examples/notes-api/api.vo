@@ -14,6 +14,12 @@ import std.http.Response;
 import std.json.int_field;
 import std.json.parse_json;
 import std.json.text_field;
+import std.log.field;
+import std.log.log_info;
+import std.log.logged;
+import std.metrics.Metric;
+import std.metrics.add;
+import std.metrics.counter;
 import std.sqlite.Database;
 import std.sqlite.Value;
 import std.sqlite.open;
@@ -21,20 +27,28 @@ import std.sqlite.open_memory;
 import std.sqlite.query;
 import std.sqlite.sql;
 import std.web.App;
+import std.web.ErrorStatus;
 import std.web.HealthCheck;
 import std.web.NoInput;
 import std.web.Problem;
+import std.web.Route;
 import std.web.created;
 import std.web.handle_request;
 import std.web.health_route;
+import std.web.health_routes;
 import std.web.json_reply;
+import std.web.metrics_route;
 import std.web.no_content;
 import std.web.on_delete;
 import std.web.on_get;
 import std.web.on_post;
+import std.web.random_id;
 import std.web.request;
+import std.web.request_ids;
+import std.web.request_logs;
+import std.web.request_metrics;
 import std.web.typed;
-import std.web.web_app;
+import std.web.with_header;
 
 # Where the notes are kept: the database in data/, read and written.
 const data_dir = "data/";
@@ -59,23 +73,40 @@ record NoteId {
     id: int;
 }
 
-# GET /notes, POST /notes, GET /notes/ID, POST /notes/ID/done, DELETE /notes/ID, GET /health.
+# GET /notes, POST /notes, GET /notes/ID, POST /notes/ID/done, DELETE /notes/ID, GET /health, /health/live,
+# /health/ready and /metrics; each request gets an id, a log record and its metrics.
 # Each operation is typed(op, note_problem); the types are written out because the operations are
 # generic in the database's effects, which inference does not follow through two generic calls.
-export fn notes_app[D: effects]() -> App[Notes[D], uses D] {
+export fn notes_app[D: effects]() -> App[Notes[D], uses clock, random, log, D] {
     let listing: fn(Notes[D], NoInput) -> result[Response] uses D = typed(list_notes, note_problem);
-    let adding: fn(Notes[D], NewNote) -> result[Response] uses D = typed(create, note_problem);
+    let adding: fn(Notes[D], NewNote) -> result[Response] uses log, D = typed(create, note_problem);
     let showing: fn(Notes[D], NoteId) -> result[Response] uses D = typed(show, note_problem);
     let finishing: fn(Notes[D], NoteId) -> result[Response] uses D = typed(done, note_problem);
     let erasing: fn(Notes[D], NoteId) -> result[Response] uses D = typed(erase, note_problem);
-    return web_app([
+    let database: list[HealthCheck[Notes[D], uses clock, random, log, D]] = [
+        new HealthCheck { name: "database", check: alive }
+    ];
+    let routes: list[Route[Notes[D], uses clock, random, log, D]] = [
         on_get("/notes", listing),
         on_post("/notes", adding),
         on_get("/notes/{id}", showing),
         on_post("/notes/{id}/done", finishing),
         on_delete("/notes/{id}", erasing),
-        health_route([new HealthCheck { name: "database", check: alive }])
-    ]);
+        health_route(database),
+        metrics_route([notes_created()])
+    ];
+    for r in health_routes(database) {
+        push(routes, r);
+    }
+    return new App {
+        routes: routes,
+        steps: [request_ids(random_id), request_logs(), request_metrics()],
+        errors: new list[ErrorStatus]
+    };
+}
+
+fn notes_created() -> Metric {
+    return counter("notes_created_total", "Notes created.", new list[str]);
 }
 
 # serve_app's setup: data/notes.db, with its table the first time.
@@ -104,12 +135,14 @@ fn list_notes[D: effects](app: Notes[D], input: NoInput) -> result[Response, Not
     return ok(json_reply(200, try map_err(all_notes(app.db), db_error)));
 }
 
-fn create[D: effects](app: Notes[D], input: NewNote) -> result[Response, NoteError] uses D {
+fn create[D: effects](app: Notes[D], input: NewNote) -> result[Response, NoteError] uses log, D {
     let text = trim(input.body.text);
     if text == "" {
         return err(NoteError.blank);
     }
     let note = try map_err(add_note(app.db, text), db_error);
+    add(notes_created(), new list[str], 1);
+    log_info("note created", [field("id", note.id)]);
     return ok(created("/notes/" + str(note.id), note));
 }
 
@@ -142,12 +175,12 @@ fn memory() -> Notes {
     return new Notes { db: db };
 }
 
-fn call(n: Notes, method: str, path: str, body: str) -> Response {
+fn call(n: Notes, method: str, path: str, body: str) -> Response uses clock, random, log {
     return handle_request(notes_app(), n, request(method, path, body));
 }
 
 @spec("FR-001")
-test "GET /notes lists the notes as JSON" {
+test "GET /notes lists the notes as JSON" uses clock, random, log {
     let n = memory();
     let _ = call(n, "POST", "/notes", `{"text": "water the plants"}`);
     let r = call(n, "GET", "/notes", "");
@@ -156,7 +189,7 @@ test "GET /notes lists the notes as JSON" {
 }
 
 @spec("FR-002")
-test "POST /notes adds a note with the next id" {
+test "POST /notes adds a note with the next id" uses clock, random, log {
     let n = memory();
     let _ = call(n, "POST", "/notes", `{"text": "a"}`);
     let r = call(n, "POST", "/notes", `{"text": " buy bread "}`);
@@ -166,7 +199,7 @@ test "POST /notes adds a note with the next id" {
 }
 
 @spec("FR-003")
-test "a missing, empty or too long text is refused with the reason" {
+test "a missing, empty or too long text is refused with the reason" uses clock, random, log {
     let n = memory();
     expect_eq(call(n, "POST", "/notes", "{}").status, 400);
     expect_eq(call(n, "POST", "/notes", `{"text": "   "}`).status, 422);
@@ -182,7 +215,7 @@ test "a missing, empty or too long text is refused with the reason" {
 }
 
 @spec("FR-004")
-test "one note: read, mark done, delete" {
+test "one note: read, mark done, delete" uses clock, random, log {
     let n = memory();
     let _ = call(n, "POST", "/notes", `{"text": "call home"}`);
     expect_eq(call(n, "GET", "/notes/1", "").body, `{"id":1,"text":"call home","done":false}`);
@@ -199,7 +232,7 @@ test "one note: read, mark done, delete" {
 }
 
 @spec("FR-005")
-test "unknown notes and paths are 404, other methods 405" {
+test "unknown notes and paths are 404, other methods 405" uses clock, random, log {
     let n = memory();
     expect_eq(call(n, "GET", "/notes/9", "").status, 404);
     expect_eq(call(n, "GET", "/notes/x", "").status, 400);
@@ -208,7 +241,7 @@ test "unknown notes and paths are 404, other methods 405" {
 }
 
 @spec("FR-006")
-test "the notes are kept in the database between requests" {
+test "the notes are kept in the database between requests" uses clock, random, log {
     let n = memory();
     let _ = call(n, "POST", "/notes", `{"text": "one"}`);
     let _ = call(n, "POST", "/notes", `{"text": "two"}`);
@@ -216,6 +249,40 @@ test "the notes are kept in the database between requests" {
         new Note { id: 1, text: "one", done: false },
         new Note { id: 2, text: "two", done: false }
     ]));
+}
+
+@spec("FR-007")
+test "a created note is logged with its request's id, beside the request's own record"
+    uses clock, random, log {
+    let n = memory();
+    let r = handle_request(notes_app(), n, with_header(
+        request("POST", "/notes", `{"text": "a"}`),
+        "X-Request-Id",
+        "id-7"
+    ));
+    expect_eq(r.status, 201);
+    expect_eq(logged(), [
+        `{"time":"1970-01-01T00:00:00.001Z","level":"info","message":"note created","request_id":"id-7","id":1}`,
+        `{"time":"1970-01-01T00:00:00.003Z","level":"info","message":"request","request_id":"id-7","method":"POST","route":"/notes","status":201,"ms":3}`
+    ]);
+}
+
+@spec("FR-010")
+test "/metrics counts created notes and requests by route" uses clock, random, log {
+    let n = memory();
+    let _ = call(n, "POST", "/notes", `{"text": "a"}`);
+    let _ = call(n, "GET", "/notes/1", "");
+    let text = call(n, "GET", "/metrics", "").body;
+    expect(find(text, "notes_created_total 1\n") >= 0);
+    expect(find(text, `http_requests_total{method="GET",route="/notes/{id}",status="2xx"} 1`) >= 0);
+}
+
+@spec("FR-015")
+test "live and ready answer apart from /health" uses clock, random, log {
+    let n = memory();
+    expect_eq(call(n, "GET", "/health/live", "").body, `{"status":"up"}`);
+    expect_eq(call(n, "GET", "/health/ready", "").body, `{"status":"up"}`);
+    expect_eq(call(n, "GET", "/health", "").status, 200);
 }
 
 @spec("FR-002")

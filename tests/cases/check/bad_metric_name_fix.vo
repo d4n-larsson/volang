@@ -1,0 +1,11 @@
+# Spec 055 US3: E0341's fix turns each disallowed character into `_`.
+import std.metrics.Metric;
+import std.metrics.counter;
+
+fn requests() -> Metric {
+    return counter("http-requests.total", "Requests.", new list[str]);
+}
+
+fn main() {
+    let _ = requests();
+}

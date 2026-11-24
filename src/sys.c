@@ -304,6 +304,21 @@ void *map_shared(long size)
     return (void *)r;
 }
 
+/* spec 055: zeroed memory, shared with children forked later or private; 0 when the system refuses (the caller
+ * raises R0006). */
+void *map_shared_try(long size, int shared)
+{
+    long r = vo_syscall6(SYS_mmap, 0, size, 3, shared ? 0x4021 /* MAP_SHARED | MAP_ANONYMOUS | MAP_NORESERVE */
+                                                        : 0x4022 /* MAP_PRIVATE | ... */, -1, 0);
+    return r < 0 && r > -4096 ? 0 : (void *)r;
+}
+
+/* spec 055: whether process pid still exists (kill with signal 0). */
+int sys_alive(long pid)
+{
+    return vo_syscall2(SYS_kill, pid, 0) != -3 /* ESRCH */;
+}
+
 void *map_fixed(long addr, long size, long flags)
 {
     long r = vo_syscall6(SYS_mmap, addr, size, 3 /* PROT_READ | PROT_WRITE */,
@@ -440,9 +455,13 @@ void fbuf_write(void *fbp, char *p, long n)
  * the child's pid in the parent, 0 in the child, < 0 on failure. The pointer arguments are all 0, so
  * x86-64's order (flags, stack, ptid, ctid, tls) and ARM64/RISC-V's (flags, stack, ptid, tls, ctid)
  * agree. */
+long sys_pid_cache; /* spec 055: this process's id once asked (rt_metrics.c), cleared in a forked child */
+
 long sys_fork(void)
 {
-    return vo_syscall5(SYS_clone, SIGCHLD, 0, 0, 0, 0);
+    long r = vo_syscall5(SYS_clone, SIGCHLD, 0, 0, 0, 0);
+    if (r == 0) sys_pid_cache = 0;
+    return r;
 }
 
 /* A pipe (fds[0] reads, fds[1] writes), closed on exec; 0 or < 0. */

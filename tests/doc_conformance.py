@@ -321,7 +321,7 @@ def main():
                 show, want = f"str({expr})", value
             eff = sorted(set(["console"] + [e for e in r.get("effects", []) if not re.fullmatch(r"[A-Z]", e)]),
                          key=["console", "input", "file.read", "file.write", "file.delete", "net", "clock", "random",
-                              "env", "serve", "process", "entropy"].index)  # effect parameters (E) are not effects to declare
+                              "env", "serve", "process", "entropy", "log"].index)  # effect parameters (E) are not effects to declare
             # spec 021: an example in another module may make its bytes with std.bytes functions
             extra = [f"std.bytes.{r2['name']}" for r2 in items.get("std.bytes", [])
                      if module != "std.bytes" and re.search(r"\b" + r2["name"] + r"\(", ex)]

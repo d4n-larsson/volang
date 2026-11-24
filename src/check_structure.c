@@ -51,15 +51,22 @@ static Node *first_decl(int file)
 
 /* Emits warning code at [start, end) of file, unless an `@allow` on decl accepts it; returns the diagnostic
  * (for related locations) or 0. */
-static Diag *st_report(char *code, Node *decl, int file, long start, long end, Str *message)
+/* 1 when an `@allow` on decl accepts warning code (counted once as accepted); spec 055: also W0506. */
+int allow_takes(char *code, Node *decl)
 {
     for (long i = 0; allows && i < allows->n; i++) {
         Allow *a = vec_get(allows, i);
         if (a->decl != decl || !str_eq_cstr(((Node *)vec_get(a->ann->b.v, 0))->a.s, code)) continue;
         if (!a->used) diag_accepted++;
         a->used = 1;
-        return 0;
+        return 1;
     }
+    return 0;
+}
+
+static Diag *st_report(char *code, Node *decl, int file, long start, long end, Str *message)
+{
+    if (allow_takes(code, decl)) return 0;
     return diag_add(code, SEV_WARNING, file, start, end, message);
 }
 

@@ -1,0 +1,5 @@
+PASS a record per call, fields in order (0ms)
+PASS every level is kept in a test (0ms)
+PASS each test starts with no records (0ms)
+PASS the stamp follows the test clock (0ms)
+4 passed, 0 failed

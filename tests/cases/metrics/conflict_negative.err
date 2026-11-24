@@ -1,0 +1,7 @@
+conflict_negative.vo:6:5: runtime error[R0016]: The metric `jobs_total` is a counter: it never goes down.
+   6 |     add(counter("jobs_total", "Jobs.", new list[str]), new list[str], -1);
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at add (conflict_negative.vo:6:5)
+      m: Metric = new Metric { name: "jobs_total", help: "Jobs.", kind: "counter", labels: [], buckets: [] }, values: list[str] = [], n: int = -1
+  at main (conflict_negative.vo:6:5)

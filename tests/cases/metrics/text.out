@@ -1,0 +1,13 @@
+# HELP a_total First metric.
+# TYPE a_total counter
+a_total{path="/x"} 4
+# HELP b_total Second \\ metric\nhelp.
+# TYPE b_total counter
+b_total{path="/a \"quoted\""} 1
+b_total{path="/back\\slash\nline"} 1
+b_total{path="/z"} 1
+# HELP c_listed_total Not updated yet.
+# TYPE c_listed_total counter
+c_listed_total 0
+# HELP d_labelled_total Labels, no updates.
+# TYPE d_labelled_total counter

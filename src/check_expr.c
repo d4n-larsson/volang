@@ -23,7 +23,7 @@
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 117 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 119 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -52,6 +52,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__bits", /* spec 043 */
     "__worker", /* spec 047 */
     "__tz", "__local_tz", /* spec 048 */
+    "__log", "__metric", /* spec 055 */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -75,6 +76,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [110] = "sii>Y", [112] = "SsS>n", [113] = "ii>r", /* spec 040; 111 typed loosely */
     [114] = "iii>i", /* spec 043 */
     [116] = "is>Y", [117] = ">y", /* spec 048 */
+    [118] = "iss>s", [119] = "isf>s", /* spec 055 */
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."
@@ -570,6 +572,7 @@ Type *check_call(Node *call, Type *expected)
                 if (file_get((int)call->c.n->file)->std) {
                     check_regex_call(call);  /* spec 025 */
                     check_sqlite_call(call); /* spec 026 */
+                    check_ops_call(call);    /* spec 055: log_*, counter, gauge, histogram */
                 }
             }
             return call->c.n->type;

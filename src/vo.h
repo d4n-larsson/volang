@@ -342,7 +342,8 @@
 #define EF_SERVE (512) /* spec 011 */
 #define EF_PROCESS (1024) /* spec 017 */
 #define EF_ENTROPY (2048) /* spec 035: the system's random source */
-#define EF_ALL (4095)
+#define EF_LOG (4096) /* spec 055: log records and metrics */
+#define EF_ALL (8191)
 #define ES_MASK (0) /* u64 bits */
 #define ES_SCOPES (8) /* vec of scope pairs (ESC_*) sorted by (bit, bytes) | 0 */
 #define ES_EVARS (16) /* vec of effect-variable N_TPARAM nodes | 0 */
@@ -433,7 +434,9 @@
 #define B_WORKER (115) /* spec 047: __worker(op, a, b), std.workers only (src/workers.c) */
 #define B_TZ (116) /* spec 048: __tz(op, name) -> result[bytes], std.time only (src/tz.c) */
 #define B_LOCAL_TZ (117) /* __local_tz() -> bytes, clock */
-#define B_LAST (117) /* the last builtin id with a btab entry */
+#define B_LOG (118) /* spec 055: __log(op, a, b) -> str, std.log only (src/rt_log.c) */
+#define B_METRIC (119) /* spec 055: __metric(op, key, x) -> str, std.metrics only (src/rt_metrics.c) */
+#define B_LAST (119) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -1746,6 +1749,19 @@ extern Variant *rt_serve_call(void *fn, long request, Node *call);
 extern Variant *rt_serve_call_n(void *fn, long *vals, long n, Node *call);
 extern Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call);
 extern long sv_listener, opt_workers;
+extern long opt_log_level, opt_drain; /* spec 055 */
+extern long sv_wake_at;
+extern long sv_refuse_ready(void);
+extern void sv_stopped(long drained, long cut);
+/* src/rt_log.c, src/rt_metrics.c (spec 055) */
+extern long clock_stamp;
+extern int secret_like(char *p, long n, int extra);
+extern void rt_log_write(long level, Str *message, Str *fields);
+extern void rt_log_reset(void);
+extern Str *rt_log(long op, Str *a, Str *b);
+extern Str *rt_metric(long op, Str *key, long xbits, Node *call);
+extern void rt_metrics_reset(void);
+extern void rt_metrics_share(Node *call);
 extern void sv_note(Str *m);
 extern int rp_skip_setups(void);
 extern long utf8_chars(Str *s);                 /* spec 029: check_annot.c */
@@ -1761,6 +1777,8 @@ extern Variant *json_write(long j, long pretty, Node *call);
 extern Str *str_one(int c);
 extern Str *json_text(long v, Node *call);
 extern void check_web_call(Node *call);      /* check_web.c */
+extern void check_ops_call(Node *call);      /* check_ops.c, spec 055 */
+extern int allow_takes(char *code, Node *decl); /* check_structure.c */
 extern void check_web_routes(Node *list);
 extern Vec *web_inputs;
 extern void check_web_headers(Vec *files);
@@ -2498,6 +2516,9 @@ extern long sys_wait(long pid, int *status);
 extern void sys_kill(long pid);
 extern void sys_die_with_parent(long parent);
 extern long sys_getpid(void);
+extern void *map_shared_try(long size, int shared); /* spec 055 */
+extern long sys_pid_cache;
+extern int sys_alive(long pid);
 /* spec 016: tasks (src/task.c) */
 extern long task_depth;
 extern long task_ctl;

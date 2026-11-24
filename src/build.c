@@ -123,7 +123,7 @@ static const struct {
     char *name;
     int value;
 } app_opts[] = {{"seed", 1},  {"clock-ms", 1},    {"timeout", 1}, {"max-memory", 1}, {"mem-stats", 0}, {"trace", 1},
-                {"trace-limit", 1}, {"record", 1}, {"ca-file", 1}, {"workers", 1},    {"json", 0},      {0, 0}};
+                {"trace-limit", 1}, {"record", 1}, {"ca-file", 1}, {"workers", 1},    {"json", 0},      {"log-level", 1}, {"drain", 1}, {0, 0}};
 
 static void app_usage(char *tmpl, char *arg)
 {
@@ -170,7 +170,7 @@ char **app_start(long *argc, char **argv)
         if (!app_opts[k].name)
             app_usage("Unknown option `$1`. Options: --vo-effects, --vo-version, --vo-replay FILE, --vo-record FILE, "
                       "--vo-seed N, --vo-clock-ms N, --vo-timeout SEC, --vo-max-memory MiB, --vo-mem-stats, "
-                      "--vo-trace FILE, --vo-trace-limit N, --vo-ca-file FILE, --vo-workers N, --vo-json. Every "
+                      "--vo-trace FILE, --vo-trace-limit N, --vo-ca-file FILE, --vo-workers N, --vo-log-level LEVEL, --vo-drain SEC, --vo-json. Every "
                       "other argument goes to the program.",
                       a);
         SB *sb = sb_new(); /* "--NAME" */

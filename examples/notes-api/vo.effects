@@ -1,24 +1,30 @@
 # vo effects record: update with `vo effects --update`
 api.vo:alive uses D
-api.vo:call pure
-api.vo:create uses D
+api.vo:call uses clock, random, log
+api.vo:create uses log, D
 api.vo:done uses D
 api.vo:erase uses D
 api.vo:list_notes uses D
 api.vo:memory pure
+api.vo:note_problem pure
 api.vo:notes_app pure
+api.vo:notes_created pure
 api.vo:open_notes uses file.read("data/"), file.write("data/")
 api.vo:prop "added notes get distinct ids" pure
 api.vo:show uses D
-api.vo:test "GET /notes lists the notes as JSON" pure
-api.vo:test "POST /notes adds a note with the next id" pure
-api.vo:test "a missing, empty or too long text is refused with the reason" pure
-api.vo:test "one note: read, mark done, delete" pure
-api.vo:test "the notes are kept in the database between requests" pure
-api.vo:test "unknown notes and paths are 404, other methods 405" pure
-main.vo:main uses console, file.read("data/"), file.write("data/"), serve("8080")
+api.vo:test "/metrics counts created notes and requests by route" uses clock, random, log
+api.vo:test "GET /notes lists the notes as JSON" uses clock, random, log
+api.vo:test "POST /notes adds a note with the next id" uses clock, random, log
+api.vo:test "a created note is logged with its request's id, beside the request's own record" uses clock, random, log
+api.vo:test "a missing, empty or too long text is refused with the reason" uses clock, random, log
+api.vo:test "live and ready answer apart from /health" uses clock, random, log
+api.vo:test "one note: read, mark done, delete" uses clock, random, log
+api.vo:test "the notes are kept in the database between requests" uses clock, random, log
+api.vo:test "unknown notes and paths are 404, other methods 405" uses clock, random, log
+main.vo:main uses console, file.read("data/"), file.write("data/"), clock, random, serve("8080"), log
 notes.vo:add_note uses D
 notes.vo:all_notes uses D
+notes.vo:db_error pure
 notes.vo:find_note uses D
 notes.vo:mark_done uses D
 notes.vo:note_of pure

@@ -1,0 +1,6 @@
+# HELP queue_length Items waiting.
+# TYPE queue_length gauge
+queue_length 3
+# HELP room_temperature Degrees.
+# TYPE room_temperature gauge
+room_temperature{room="hall"} -3

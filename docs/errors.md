@@ -293,7 +293,7 @@ An annotation name is not one vo knows.
 
 Fixable: yes
 
-Annotations come from a closed set: `@spec`, which links a `test` or `prop` to requirement IDs, and `@allow`, which accepts a structure warning on a `fn`, `test` or `prop`. The fix replaces a misspelled name (within two letters) with the closer of the two.
+Annotations come from a closed set: `@spec`, which links a `test` or `prop` to requirement IDs, and `@allow`, which accepts a structure warning (or W0506) on a `fn`, `test` or `prop`. The fix replaces a misspelled name (within two letters) with the closer of the two.
 
 ### Example
 
@@ -456,7 +456,7 @@ An `@allow` annotation does not have a structure warning code and a reason.
 
 Fixable: no
 
-`@allow("W0703", "why it stays")` accepts one structure warning (W0701 to W0705) on the function, test or property right below it. The reason is required: it tells the next reader why the code stays as it is. Other warnings and errors cannot be allowed: fix them.
+`@allow("W0703", "why it stays")` accepts one structure warning (W0701 to W0705) or W0506 on the function, test or property right below it. The reason is required: it tells the next reader why the code stays as it is. Other warnings and errors cannot be allowed: fix them.
 
 ### Example
 
@@ -2190,6 +2190,44 @@ Fixable: no
 Retired: 2026-11-23, spec 053. `std.html` was removed from the core: vo is for backend services and
 renders no HTML. No version of vo reports this code, and no other code will use it.
 
+## E0341 bad_metric_name
+
+A literal metric or label name is not one the metrics text format allows, or a label is repeated.
+
+Fixable: sometimes
+
+A metric name (the first argument of `counter`, `gauge` or `histogram`) is letters, digits, `_` and `:`, not starting with a digit; a label name is letters, digits and `_`, not starting with a digit, and not starting with `__` (reserved for the scraper); each label is named once. The error points at the first character that breaks the rule. The fix replaces each character the rule does not allow with `_`, the format's own convention. A label starting with `__` or a repeated label has no fix: the right name is the author's choice. Names that are not literals are checked when the program runs.
+
+### Example
+
+```vo
+import std.metrics.Metric;
+import std.metrics.counter;
+
+fn requests() -> Metric {
+    return counter("http-requests", "Requests answered.", new list[str]);
+}
+
+fn main() {
+    let _ = requests();
+}
+```
+
+### Fixed
+
+```vo
+import std.metrics.Metric;
+import std.metrics.counter;
+
+fn requests() -> Metric {
+    return counter("http_requests", "Requests answered.", new list[str]);
+}
+
+fn main() {
+    let _ = requests();
+}
+```
+
 ## E0401 non_exhaustive_match
 
 A `match` does not handle every case.
@@ -3592,6 +3630,44 @@ fn main() uses console, Storage {
 }
 ```
 
+## W0506 secret_logged
+
+A log record's field takes its value from a name that looks like a secret.
+
+Fixable: yes
+
+`field(NAME, VALUE)` in a `log_debug`, `log_info`, `log_warn` or `log_error` call, where VALUE is a variable, parameter or field access whose last name is secret-like: one of its words (split at `_`) is password, passwd, secret, token, key, authorization, cookie or session. The runtime writes such a field's value as `[redacted]` only when the field's own name is secret-like too, so the value can reach the log under another name; the fix removes the field. Values computed from a secret (`hash(pw)`) are not followed. `@allow("W0506", "reason")` accepts a name that is not a secret.
+
+### Example
+
+```vo
+import std.log.field;
+import std.log.log_info;
+
+fn login(user: str, password: str) uses log {
+    log_info("login", [field("user", user), field("pw", password)]);
+}
+
+fn main() uses log {
+    login("ada", "hunter2");
+}
+```
+
+### Fixed
+
+```vo
+import std.log.field;
+import std.log.log_info;
+
+fn login(user: str, password: str) uses log {
+    log_info("login", [field("user", user)]);
+}
+
+fn main() uses log {
+    login("ada", "hunter2");
+}
+```
+
 ## W0601 hole
 
 A `todo(...)` hole marks code that is not written yet.
@@ -4785,6 +4861,40 @@ fn main() uses console {
         }
     }
     print(str(len(s)));
+}
+```
+
+## R0016 metric_conflict
+
+A metric was used in a way that contradicts its first use.
+
+Fixable: no
+
+A metric's name has one kind, help text and label list for the whole program, and every worker process shares it: a second use of the name as another kind, with another help text or other labels is this error. So is giving a series fewer or more label values than the metric has labels, and adding a negative amount to a counter, which only goes up (use a gauge for a value that goes down). Define each metric once, in one function or constant place, and use that value everywhere.
+
+### Example
+
+```vo
+import std.metrics.add;
+import std.metrics.counter;
+import std.metrics.gauge;
+
+fn main() uses log {
+    add(counter("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
+    add(gauge("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
+}
+```
+
+### Fixed
+
+```vo
+import std.metrics.add;
+import std.metrics.counter;
+import std.metrics.gauge;
+
+fn main() uses log {
+    add(counter("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
+    add(gauge("jobs_running", "Jobs running.", new list[str]), new list[str], 1);
 }
 ```
 

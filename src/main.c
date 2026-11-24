@@ -26,6 +26,9 @@ long opt_json;
 long opt_timeout = 10;
 long opt_mem_stats;
 long opt_workers; /* spec 028: vo run --workers N (0: as declared) */
+long opt_log_level = 1; /* spec 055: --log-level: 0 debug, 1 info, 2 warn, 3 error */
+long opt_drain = 30;     /* spec 055: --drain SECONDS */
+static long opt_ops_given; /* --log-level or --drain written (only with run) */
 long opt_remove; /* spec 007: vo package --remove */
 static void ca_files_load(void);
 long opt_filter; /* Str * */
@@ -314,6 +317,19 @@ int vo_main(long argc, char **argv, char **env)
             if (i >= argc || option_number(argv[i++], &v) || v < 1 || v > 64)
                 usage_error(str_from_cstr("`--workers` needs a whole number from 1 to 64."));
             opt_workers = v;
+        } else if (cstr_eq(a, "--log-level")) { /* spec 055 */
+            static char *const levels[] = {"debug", "info", "warn", "error", 0};
+            long k = 0;
+            while (i < argc && levels[k] && !cstr_eq(argv[i], levels[k])) k++;
+            if (i >= argc || !levels[k]) usage_error(str_from_cstr("`--log-level` takes debug, info, warn or error."));
+            i++;
+            opt_log_level = k;
+            opt_ops_given = (long)a;
+        } else if (cstr_eq(a, "--drain")) {
+            if (i >= argc || option_number(argv[i++], &v) || v < 0 || v > 3600)
+                usage_error(str_from_cstr("`--drain` needs a whole number of seconds from 0 to 3600."));
+            opt_drain = v;
+            opt_ops_given = (long)a;
         } else if (cstr_eq(a, "--mem-stats")) {
             opt_mem_stats = 1;
         } else if (cstr_eq(a, "--max-memory")) {
@@ -326,7 +342,7 @@ int vo_main(long argc, char **argv, char **env)
                 usage_error_arg("Unknown option `$1`. Options: --json, --timeout SEC, --filter TEXT, --check, --update, "
                                 "--seed N, --clock-ms N, --max-memory MiB, --mem-stats, --trace FILE, --trace-limit N, "
                                 "--record FILE|DIR, --replay DIR, --redact NAME, --diff FILE, --dry-run, --list, --test ID, --spec ID, --coverage, "
-                                "--mutate, --max-mutants N, --ca-file FILE, --workers N.",
+                                "--mutate, --max-mutants N, --ca-file FILE, --workers N, --log-level LEVEL, --drain SEC.",
                                 a);
             i += (int)used;
         }
@@ -438,6 +454,7 @@ void opt_spec006_check(void)
     if (opt_redact && !(cmd == CMD_TEST && opt_record))
         usage_error(str_from_cstr("`--redact` needs `vo test --record DIR`."));
     if (opt_workers && cmd != CMD_RUN) only_with("--workers", "run"); /* spec 028 */
+    if (opt_ops_given && cmd != CMD_RUN) only_with((char *)opt_ops_given, "run"); /* spec 055 */
     if (opt_trace && cmd != CMD_RUN && cmd != CMD_TEST && cmd != CMD_REPLAY)
         only_with("--trace", "run`, `test` or `replay");
     if (opt_trace_limit && !opt_trace) usage_error(str_from_cstr("`--trace-limit` needs `--trace FILE`."));

@@ -1,0 +1,3 @@
+PASS first (0ms)
+PASS second sees its own count (0ms)
+2 passed, 0 failed

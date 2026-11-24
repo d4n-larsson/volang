@@ -1,0 +1,7 @@
+# Spec 055 US3 (R0016): label values must match the labels.
+import std.metrics.add;
+import std.metrics.counter;
+
+fn main() uses log {
+    add(counter("jobs_total", "Jobs.", ["queue"]), ["mail", "extra"], 1);
+}

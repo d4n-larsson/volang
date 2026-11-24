@@ -1,0 +1,6 @@
+ready 503 {"status":"down","checks":{"database":"cannot read data/notes.db"}}
+live 200 {"status":"up"}
+checks run: 1
+ready 200 {"status":"up"}
+live 200 {"status":"up"}
+health 503 {"status":"down","checks":{"database":"cannot read data/notes.db"}}

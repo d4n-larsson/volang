@@ -8,7 +8,7 @@ import api.notes_app;
 import api.open_notes;
 import std.web.serve_app;
 
-fn main() -> result[void] uses console, serve("8080"), Storage {
+fn main() -> result[void] uses console, clock, random, serve("8080"), log, Storage {
     print("notes on http://localhost:8080/notes (Ctrl-C stops)");
     try serve_app("8080", 4, open_notes, notes_app());
     print("stopped");

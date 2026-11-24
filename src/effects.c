@@ -11,7 +11,7 @@
 #include "vo.h"
 
 static const char *const es_names[] = {"console", "input",  "file.read", "file.write", "file.delete", "net",
-                                       "clock",   "random", "env",       "serve",      "process",     "entropy", 0};
+                                       "clock",   "random", "env",       "serve",      "process",     "entropy", "log", 0};
 
 EffSet *es_new(long mask)
 {

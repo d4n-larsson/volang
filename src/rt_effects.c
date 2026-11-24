@@ -47,6 +47,7 @@ void rt_effects_start(int is_test)
         clock_next = 0;
         clock_fixed = 1;
     }
+    clock_stamp = clock_next; /* spec 055: log record stamps */
     long seed;
     if (opt_seed_set)
         seed = opt_seed;
@@ -185,7 +186,7 @@ void rt_sleep(long ms, Node *node)
 
 long rt_now_ms(void)
 {
-    if (clock_fixed) return clock_next++;
+    if (clock_fixed) return clock_stamp = clock_next++;
     return sys_clock_real_ms(); /* spec 007: wall-clock time, as documented (deadlines stay monotonic) */
 }
 
