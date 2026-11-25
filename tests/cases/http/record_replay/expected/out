@@ -19,15 +19,15 @@ hello, chunked world!
 $ vo replay r.jsonl
 --- stderr
 note: the program differs from the recorded one (recorded main.vo)
-std/http.vo:169:12: runtime error[R0014]: The program makes an HTTP request `GET /chunked` to `127.0.0.1:{port}`, but the recording has an HTTP request `GET /chunked` to `localhost:{port}` next: replay the program that was recorded, or record this one.
- 169 |     return __http_exchange(u.host, u.port, request);
+std/http.vo:174:12: runtime error[R0014]: The program makes an HTTP request `GET /chunked` to `127.0.0.1:{port}`, but the recording has an HTTP request `GET /chunked` to `localhost:{port}` next: replay the program that was recorded, or record this one.
+ 174 |     return __http_exchange(u.host, u.port, request);
      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange_raw (std/http.vo:169:12)
+  at exchange_raw (std/http.vo:174:12)
       method: str = "GET", url: str = "http://127.0.0.1:{port}/chunked", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "127.0.0.1", port: {port}, target: "/chunked" }, request: str = "GET /chunked HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\nUser-Agent: vo\r\n\r\n"
-  at exchange (std/http.vo:120:19)
+  at exchange (std/http.vo:121:19)
       method: str = "GET", url: str = "http://127.0.0.1:{port}/chunked", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, hint: str = "get_bytes"
-  at get (std/http.vo:290:12)
+  at get (std/http.vo:295:12)
       url: str = "http://127.0.0.1:{port}/chunked"
   at main (main.vo:23:10)
       a: list[str] = ["{port}", "/chunked"]

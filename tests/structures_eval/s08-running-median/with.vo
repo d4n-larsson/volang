@@ -1,6 +1,7 @@
 import std.collections.peek;
 import std.collections.priority_queue_by;
 import std.text.words;
+import std.option.to_result;
 
 fn main() -> result[void] uses console, input {
     let xs = words(read_all());
@@ -12,7 +13,7 @@ fn main() -> result[void] uses console, input {
     var checksum = 0;
     for i in 1..len(xs) {
         let x = try parse_int(xs[i]);
-        if len(low) == 0 or x <= try peek(low) {
+        if len(low) == 0 or x <= try to_result(peek(low), "empty") {
             push(low, x);
         } else {
             push(high, x);
@@ -22,7 +23,7 @@ fn main() -> result[void] uses console, input {
         } else if len(high) > len(low) {
             push(low, try pop(high));
         }
-        let median = try peek(low);
+        let median = try to_result(peek(low), "empty");
         set checksum = (checksum + i * (median + 1000000000)) % 1000000007;
         if i <= 50 or i % 1000 == 0 {
             print(str(i) + " " + str(median));

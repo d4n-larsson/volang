@@ -1,14 +1,14 @@
 # Spec 055 US3: a counter's series, one per tuple of label values, in the text format.
 import std.metrics.Metric;
-import std.metrics.add;
+import std.metrics.add_to;
 import std.metrics.counter;
 import std.metrics.metrics_text;
 
 fn main() uses log, console {
     let jobs = counter("jobs_total", "Jobs run.", ["queue", "outcome"]);
-    add(jobs, ["mail", "ok"], 2);
-    add(jobs, ["mail", "failed"], 1);
-    add(jobs, ["mail", "ok"], 3);
-    add(jobs, ["reports", "ok"], 0);
+    add_to(jobs, ["mail", "ok"], 2);
+    add_to(jobs, ["mail", "failed"], 1);
+    add_to(jobs, ["mail", "ok"], 3);
+    add_to(jobs, ["reports", "ok"], 0);
     write(metrics_text(new list[Metric]));
 }

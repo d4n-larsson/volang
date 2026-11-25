@@ -7,6 +7,7 @@ import std.collections.first;
 import std.collections.intersection;
 import std.collections.last;
 import std.collections.union;
+import std.option.to_result;
 
 fn of(xs: list[str]) -> ordered_set[str] {
     let s = new ordered_set[str];
@@ -29,8 +30,8 @@ fn main() uses console {
     let a = of(["pear", "apple", "fig", "apple", "kiwi"]);
     let b = of(["fig", "plum", "apple"]);
     print(text(a) + " len " + str(len(a)));
-    print("first " + get_or_none(first(a)) + ", last " + get_or_none(last(a)));
-    print("at or above g: " + get_or_none(at_or_above(a, "g")) + ", at or below g: " + get_or_none(at_or_below(a, "g")) + ", above z: " + get_or_none(at_or_above(a, "z")));
+    print("first " + get_or_none(to_result(first(a), "empty")) + ", last " + get_or_none(to_result(last(a), "empty")));
+    print("at or above g: " + get_or_none(to_result(at_or_above(a, "g"), "none")) + ", at or below g: " + get_or_none(to_result(at_or_below(a, "g"), "none")) + ", above z: " + get_or_none(to_result(at_or_above(a, "z"), "none")));
     print("between b and p: " + join(between(a, "b", "p"), " "));
     print("union " + text(union(a, b)) + ", intersection " + text(intersection(a, b)) + ", difference " + text(difference(a, b)));
     let c = copy_set(a);

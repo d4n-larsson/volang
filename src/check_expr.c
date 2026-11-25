@@ -2,6 +2,8 @@
  * ported from src/check_expr.s, spec 008). */
 #include "vo.h"
 
+static int is_ok_or_err(Node *n); /* spec 056 */
+
 #define B_EXIT 9
 #define B_STR 11
 #define B_INT 12
@@ -187,7 +189,7 @@ int check_argc(Node *call, long want)
     Str *name = call_name(call);
     Str *w = int_to_str(want);
     Str *g = int_to_str(got);
-    ck_err("E0302", call, msg("`$1` takes $2 argument(s), got $3.", name, w, g));
+    ck_err("E0302", call, msg("`$1` takes $2 argument(s), found $3.", name, w, g));
     check_args_untyped(call);
     return 0;
 }
@@ -242,8 +244,8 @@ static Node *arg0(Node *call)
  * an order report E0313 naming the field (and count as handled). */
 static int is_ordered_type(Type *t, Node *at)
 {
-    if (t->kind == TY_INT || t->kind == TY_FLOAT || t->kind == TY_STR || t->kind == TY_BYTES) return 1;
-    if (t->kind != TY_RECORD) return 0;
+    if (t->kind == TY_INT || t->kind == TY_FLOAT || t->kind == TY_STR || t->kind == TY_BYTES || t->kind == TY_BOOL) return 1;
+    if (t->kind != TY_RECORD && t->kind != TY_VARIANT) return 0; /* spec 056: variants of ordered payloads */
     if (!ty_ordered(t)) order_error(t, at, 0);
     return 1;
 }
@@ -440,7 +442,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
             if (!ty_bad(t)) {
                 int ok = t->kind == TY_LIST && /* a list of an `ordered` type parameter (E0311 otherwise) */
                          (is_ordered_type(t->a.t, arg0(call)) || ck_param_order(t->a.t, arg0(call)));
-                if (!ok) err_one_of(arg0(call), "a list of `int`, `float` or `str`", t);
+                if (!ok) err_one_of(arg0(call), "a list of an ordered type (`int`, `float`, `str`, `bool`, ...)", t);
             }
         }
         return t_void;
@@ -465,7 +467,11 @@ Type *check_builtin(Node *call, long id, Type *expected)
     }
     case B_EXPECT_EQ: /* expect_eq(T, T): the first argument's type is the expected type of the second */
         if (check_argc(call, 2)) {
+            Node *other = vec_get(call->b.v, 1); /* spec 056: `expect_eq(first(s), ok(1))` reads first(s) as a result */
+            Node *saved = ck_result_ctx;
+            if (is_ok_or_err(other)) ck_result_ctx = vec_get(call->b.v, 0);
             Type *t = check_arg(call, 0, 0);
+            ck_result_ctx = saved;
             check_arg(call, 1, ty_bad(t) ? 0 : t);
             if (!ty_bad(t) && ty_holds_func(t)) /* compared as == compares */
                 ck_err1("E0308", call, "`expect_eq` cannot compare `$1`: it holds a function, and functions cannot be compared.", ty_name(t));
@@ -499,7 +505,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
         Type *t = check_arg(call, 0, 0);
         if (ty_bad(t)) return t_error;
         if (!is_ordered_type(t, arg0(call)) && !ck_param_order(t, arg0(call))) /* an `ordered` type parameter */
-            return err_one_of(arg0(call), "`int`, `float` or `str`", t);
+            return err_one_of(arg0(call), "an ordered type (`int`, `float`, `str`, `bool`, ...)", t);
         check_arg(call, 1, t);
         return t;
     }
@@ -538,17 +544,28 @@ Type *map_arg(Node *call)
     return 0;
 }
 
+static Type *check_call_inner(Node *call, Type *expected);
+
+/* spec 056: a lookup that now gives an Option, read as a result: E0214 (libchange.c). */
 Type *check_call(Node *call, Type *expected)
+{
+    return libchange_option_type(call, check_call_inner(call, expected), expected);
+}
+
+static Type *check_call_inner(Node *call, Type *expected)
 {
     Str *name = call->a.n->a.s;
     Sym *s = scope_find(name);
+    if (s && (s->flags & SYF_SHADOW)) s = 0; /* spec 056: `len(xs)` beside a local `len` (E0203) is the builtin */
     if (s) {
         if (is_placeholder(s)) { /* already reported as undefined */
             check_args_untyped(call);
             return t_error;
         }
         if (s->kind == SYM_FN) { /* user function */
+            ck_use_call = call;
             rename_use(s, call->a.n);
+            ck_use_call = 0;
             q_note_sym(s, call->a.n, RR_CALL); /* spec 006 reference log */
             call->c.n = s->decl;
             fx_call(call, s->decl);
@@ -564,7 +581,9 @@ Type *check_call(Node *call, Type *expected)
                 }
                 return gt;
             }
-            if (check_argc(call, call->c.n->b.v->n)) {
+            if (libchange_swap_call(call)) { /* spec 056: the text first (E0214 for the old order) */
+                check_regex_call(call);
+            } else if (check_argc(call, call->c.n->b.v->n)) {
                 for (long i = 0; i < call->c.n->b.v->n; i++) {
                     Node *p = vec_get(call->c.n->b.v, i);
                     ck_exp_tnode = p->b.n; /* the parameter's type as written (E0502 fixes) */
@@ -747,6 +766,8 @@ Type *check_field(Node *node)
     if (!fname) return t_error;
     if (ty_is(t, TY_RECORD)) {
         long idx = member_index(t->decl.n->b.v, fname->a.s);
+        if (idx < 0) /* spec 056: a renamed std field (E0214) */
+            idx = libchange_field(t->decl.n, fname, node, node == ck_set_place ? ck_set_value : 0);
         if (idx >= 0) {
             node->c.i = idx;
             q_note((long)t->decl.p, idx, fname, RR_USE); /* spec 006 reference log: (record, field) */
@@ -872,6 +893,12 @@ static int needs_expected(Node *e)
     return 0;
 }
 
+/* spec 056: `ok(...)` or `err(...)` written (a value a lookup's old result was compared with). */
+static int is_ok_or_err(Node *n)
+{
+    return n && n->kind == N_CALL && n->a.n && (str_eq_cstr(n->a.n->a.s, "ok") || str_eq_cstr(n->a.n->a.s, "err"));
+}
+
 Type *check_binary(Node *node)
 {
     long op = node->c.i; /* operator token */
@@ -888,7 +915,10 @@ Type *check_binary(Node *node)
         ok_from_value = 0;
         l = check_expr(node->a.n, r);
     } else {
+        Node *saved = ck_result_ctx; /* spec 056: `first(s) == ok(1)` reads first(s) as a result */
+        if ((op == T_EQ || op == T_NE) && is_ok_or_err(node->b.n)) ck_result_ctx = node->a.n;
         l = check_expr(node->a.n, 0);
+        ck_result_ctx = saved;
         r = check_expr(node->b.n, l);
     }
     if (ty_bad(l) || ty_bad(r)) return t_error;
@@ -917,7 +947,7 @@ Type *check_binary(Node *node)
         }
         return t_bool;
     }
-    if (op >= T_LT && op <= T_GE) { /* ordering: int, float, str */
+    if (op >= T_LT && op <= T_GE) { /* ordering: int, float, str, bytes, bool, records, variants */
         long base;
         if (k == TY_INT) {
             base = OP_LT_INT;
@@ -928,7 +958,8 @@ Type *check_binary(Node *node)
         } else if (k == TY_PARAM) { /* an `ordered` type parameter (E0311 otherwise) */
             ck_param_order(l, node);
             base = OP_LT_PARAM;
-        } else if (k == TY_RECORD) { /* spec 014: field by field (E0313 naming the field otherwise) */
+        } else if (k == TY_RECORD || k == TY_VARIANT || k == TY_BOOL) { /* spec 014: field by field (E0313 naming
+                                                                           the field otherwise); spec 056: bool, variants */
             if (!ty_ordered(l)) order_error(l, node, 0);
             base = OP_LT_PARAM; /* the generic comparison at run time */
         } else {
@@ -975,6 +1006,10 @@ Type *check_unary(Node *node)
     if (ty_bad(t)) return t_error;
     if (t->kind == TY_INT) {
         node->d.i = OP_NEG_INT;
+        Node *lit = node->a.n;
+        if (lit->kind == N_INT && lit->a.i == (-9223372036854775807L - 1) && !(lit->flags & NF_CONST)) /* spec 056 */
+            ck_err("E0105", node, msg("`$1` is already the smallest int (-9223372036854775808), and its negation "
+                                      "overflows: write `$1`.", src_text(lit), 0, 0));
         return t;
     }
     if (t->kind == TY_FLOAT) {
@@ -990,7 +1025,10 @@ Type *check_try(Node *node, Type *expected)
         ck_err("E0406", node, str_from_cstr("`try` can only be used in a function that returns a `result`."));
     /* spec 029: `let s: Settings = try load_settings(...)`: the call's result type comes from where it is used */
     Type *want = expected && !ty_bad(expected) && needs_expected(node->a.n) ? ty_result(expected) : 0;
+    Node *saved = ck_result_ctx; /* spec 056: `try first_key(m)` reads the call as a result */
+    ck_result_ctx = node->a.n;
     Type *t = check_expr(node->a.n, want);
+    ck_result_ctx = saved;
     if (ty_bad(t)) return t_error;
     if (ty_is(t, TY_RESULT)) {
         if (ty_is(ck_ret, TY_RESULT) && err_type(t) != err_type(ck_ret) && !ty_bad(err_type(t)) &&
@@ -1010,14 +1048,11 @@ Type *check_try(Node *node, Type *expected)
 Type *check_list(Node *node, Type *expected)
 {
     Type *elem = ty_is(expected, TY_LIST) ? expected->a.t : 0; /* expected element type */
-    if (!node->a.v->n) { /* [] is never allowed; with a known type the fix is `new list[T]` */
-        Diag *d = ck_err("E0306", node, str_from_cstr("An empty list needs a type: write `new list[T]`."));
-        if (!elem) return t_error;
-        SB *sb = sb_new();
-        sb_cstr(sb, "new ");
-        ty_name_into(sb, expected);
-        diag_add_fix(d, (int)node->file, node->start, node->end, sb_finish(sb));
-        return expected; /* the annotation still gives the list its type */
+    if (!node->a.v->n) { /* spec 056: [] takes its type from the context, as ok(1) does; without one, E0306 */
+        if (elem) return expected;
+        ck_err("E0306", node, str_from_cstr("An empty list needs a type: write `new list[T]`, or give it one "
+                                            "from the context (`let xs: list[int] = [];`)."));
+        return t_error;
     }
     Type *et = check_expr(vec_get(node->a.v, 0), elem); /* element type */
     for (long i = 1; i < node->a.v->n; i++) {
@@ -1102,6 +1137,7 @@ Type *check_new_record(Node *node, Type *expected)
     for (long i = 0; i < inits->n; i++) {
         Node *init = vec_get(inits, i); /* N_FINIT */
         long idx = member_index(decl->b.v, init->a.n->a.s);
+        if (idx < 0) idx = libchange_field(decl, init->a.n, init, init->b.n); /* spec 056: a renamed std field */
         if (idx < 0) { /* unknown field: check the value anyway */
             check_expr(init->b.n, 0);
             init->c.i = -1;
@@ -1151,6 +1187,7 @@ Type *check_vcase(Node *node, Type *expected)
     Node *cn = node->b.n; /* case name node */
     if (!cn) return vcase_bad(node);
     long idx = member_index(decl->b.v, cn->a.s);
+    if (idx < 0) idx = libchange_case(decl, cn); /* spec 056: a renamed std case (E0214) */
     node->e.i = idx;
     if (idx < 0) {
         ck_err("E0201", cn, msg(M_NO_CASE, cn->a.s, decl->a.n->a.s, 0));
@@ -1158,6 +1195,11 @@ Type *check_vcase(Node *node, Type *expected)
     }
     q_note((long)decl, idx, cn, RR_USE); /* spec 006 reference log: (variant, case) */
     Node *pt = member_at(decl->b.v, idx)->b.n; /* payload type node, or 0 */
+    if ((node->flags & NF_EMPTY_ARM) && !pt) { /* spec 056: `Shape.empty()` */
+        Diag *d = ck_err("E0411", node, msg("`$1.$2` has no value: write `$1.$2`, without `()`.", decl->a.n->a.s,
+                                            cn->a.s, 0));
+        diag_add_fix(d, (int)node->file, cn->end, node->end, str_from_cstr(""));
+    }
     /* a generic variant (a missing or extra payload is reported below) */
     if (ty_tparams_of(decl) && !node->c.n == !pt) return vcase_generic(node, decl, pt, expected);
     if (pt) {

@@ -1,4 +1,4 @@
-std/text.vo:72:13: runtime error[R0007]: `ord` needs exactly one character, got "ab".
+std/text.vo:72:13: runtime error[R0007]: `ord` needs exactly one character, found "ab".
   72 |     let _ = ord(fill);
      |             ^^^^^^^^^
 trace:

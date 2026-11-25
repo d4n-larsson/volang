@@ -110,7 +110,7 @@ Str *crypto_hmac(Str *key, Str *msg)
 Str *crypto_pbkdf2(Str *pw, Str *salt, long iterations, Node *call)
 {
     if (iterations < 1 || iterations > 10000000)
-        rt_raise("R0007", msg("A password hash needs 1 to 10000000 iterations, got $1.", int_to_str(iterations), 0, 0),
+        rt_raise("R0007", msg("A password hash needs 1 to 10000000 iterations, found $1.", int_to_str(iterations), 0, 0),
                  std_user_call(call));
     char d[32];
     GC_ROOT(&pw); /* (POLL may collect) */

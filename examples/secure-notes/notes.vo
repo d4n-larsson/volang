@@ -142,11 +142,11 @@ fn users(store: Store, input: NoInput) -> result[Response] {
 # browsers. more_ways is empty when serving and [test_users()] in tests; now is the clock.
 export fn notes_policy[E: effects](
     key: bytes,
-    more_ways: list[Way[Store, E]],
+    more_ways: list[Way[Store, uses E]],
     now: fn() -> int uses E,
     random: fn(int) -> bytes uses E
-) -> Policy[Store, E] {
-    let ways: list[Way[Store, E]] = [tokens([key]), browser(browsers(random))];
+) -> Policy[Store, uses E] {
+    let ways: list[Way[Store, uses E]] = [tokens([key]), browser(browsers(random))];
     for w in more_ways {
         push(ways, w);
     }
@@ -156,12 +156,12 @@ export fn notes_policy[E: effects](
 # The application: its routes, and the policy step in front of all of them.
 export fn notes_app[E: effects](
     key: bytes,
-    more_ways: list[Way[Store, E]],
+    more_ways: list[Way[Store, uses E]],
     now: fn() -> int uses E,
     random: fn(int) -> bytes uses E
-) -> App[Store, E] {
+) -> App[Store, uses E] {
     let p = notes_policy(key, more_ways, now, random);
-    let routes: list[Route[Store, E]] = [
+    let routes: list[Route[Store, uses E]] = [
         on_get("/health", alive),
         sign_in_route("/token", p, find_account, key, 3600)
     ];

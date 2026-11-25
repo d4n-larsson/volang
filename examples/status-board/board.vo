@@ -3,8 +3,8 @@
 import std.json.Json;
 import std.json.as_array;
 import std.json.bool_field;
-import std.json.field;
 import std.json.int_field;
+import std.json.member;
 import std.json.parse_json;
 import std.json.text_field;
 import std.text.align_left;
@@ -25,7 +25,7 @@ export record Incident {
 # The services in /status.json: {"checked": ..., "services": [{"name", "up", "latency_ms"}, ...]}.
 export fn services_from(doc: Json) -> result[list[Service]] {
     let out = new list[Service];
-    for s in try as_array(try field(doc, "services")) {
+    for s in try as_array(try member(doc, "services")) {
         push(out, new Service {
             name: try text_field(s, "name"),
             up: try bool_field(s, "up"),

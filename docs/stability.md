@@ -1,6 +1,6 @@
 # What a version of vo promises
 
-vo is at version 0.1.0 with output schema 1 (`vo version`). This page says what may change, what may
+vo is at version 0.2.0 with output schema 1 (`vo version`). This page says what may change, what may
 not, and how a program is carried over when something does.
 
 ## Versions
@@ -28,8 +28,10 @@ From 1.0, breaking changes need a new major version.
 
 - **The language and the standard library.** A breaking change comes with a diagnostic that explains
   it and, wherever one correction exists, a mechanical fix, so `vo check --json` and applying the fixes
-  migrates a program. This has been done once (declared effects, from the first language version to the
-  second), and that migration is kept as a test of every later toolchain.
+  migrates a program. This has been done twice: declared effects, from the first language version to the
+  second, and the consistency pass of 0.2.0 (library names, lookups giving an `Option`, durations in
+  milliseconds, builtins no local may shadow; E0214 names each library change and its fix). Both
+  migrations are kept as tests of every later toolchain.
 - **Messages.** The text of diagnostics and reports may be reworded; their codes, spans and fixes are
   the interface.
 - **Files the toolchain writes.** `vo.effects` and `vo.packages` are rewritten by `vo effects --update`

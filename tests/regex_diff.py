@@ -2,7 +2,7 @@
 """Spec 025 SC-001: std.regex against Python's re (research R8).
 
 Generates random patterns over the supported syntax and random texts, runs `all_matches`, `split_on`
-and `replace_all` in vo programs of 2,000 pairs, and compares with Python's re.finditer (ASCII
+and `replace_matches` in vo programs of 2,000 pairs, and compares with Python's re.finditer (ASCII
 classes; `$` outside multiline written `\\Z` for Python; `(?<name>` written `(?P<name>`). Offsets are
 compared in bytes. Excluded: `\\B` on an empty text (Python before 3.14 never matches it there).
 
@@ -145,12 +145,12 @@ PRELUDE = """import std.regex.regex;
 import std.regex.Regex;
 import std.regex.all_matches;
 import std.regex.split_on;
-import std.regex.replace_all;
+import std.regex.replace_matches;
 
 fn show(k: int, re: Regex, s: str) uses console {
     print("#@#" + str(k));
     var one = new list[str];
-    for m in all_matches(re, s) {
+    for m in all_matches(s, re) {
         var gs = new list[str];
         for i in 0..len(m.groups) {
             if m.took_part[i] {
@@ -162,8 +162,8 @@ fn show(k: int, re: Regex, s: str) uses console {
         push(one, str(m.start) + ":" + str(m.end) + ":" + join(gs, ","));
     }
     print(join(one, ";"));
-    print(join(split_on(re, s), "|"));
-    print(replace_all(re, s, "<$0>"));
+    print(join(split_on(s, re), "|"));
+    print(replace_matches(s, re, "<$0>"));
 }
 
 fn main() uses console {

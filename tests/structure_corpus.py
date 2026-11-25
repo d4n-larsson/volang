@@ -19,7 +19,7 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
-STD = ["json.parse_json", "time.now", "text.lines", "random.unit", "http.get", "collections.first", "fs.info",
+STD = ["json.parse_json", "time.sleep", "text.lines", "random.unit", "http.get", "collections.first", "fs.info",
        "process.run", "math.sqrt", "bytes.from_text", "regex.regex", "sqlite.open_memory"]
 
 

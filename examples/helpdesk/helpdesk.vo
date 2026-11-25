@@ -81,10 +81,10 @@ export fn parse_shifts(text: str) -> result[ordered_map[int, str]] {
 # The person on call at a minute.
 export fn on_call(shifts: ordered_map[int, str], minute: int) -> result[str] {
     match key_at_or_below(shifts, minute) {
-        case ok(start) {
+        case some(start) {
             return ok(shifts[start]);
         }
-        case err(_) {
+        case none {
             return err("nobody is on call at minute " + str(minute));
         }
     }

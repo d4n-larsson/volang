@@ -29,45 +29,45 @@ fn num(s: str) -> int {
 
 fn run(words: list[str], staff: map[str, Employee]) -> list[str] {
     let cmd = words[0];
-    let args = slice(words, 1, len(words));
+    let args_value = slice(words, 1, len(words));
     if cmd == "employee" {
-        if len(args) != 4 {
+        if len(args_value) != 4 {
             return ["error: bad command"];
         }
-        if args[2] != "hourly" and args[2] != "salaried" or not is_number(args[3]) {
+        if args_value[2] != "hourly" and args_value[2] != "salaried" or not is_number(args_value[3]) {
             return ["error: bad command"];
         }
-        return [add_employee(staff, args[0], args[1], args[2], num(args[3]))];
+        return [add_employee(staff, args_value[0], args_value[1], args_value[2], num(args_value[3]))];
     }
     if cmd == "hours" {
-        if len(args) != 2 or not is_number(args[1]) {
+        if len(args_value) != 2 or not is_number(args_value[1]) {
             return ["error: bad command"];
         }
-        return [log_hours(staff, args[0], num(args[1]))];
+        return [log_hours(staff, args_value[0], num(args_value[1]))];
     }
     if cmd == "rate" {
-        if len(args) != 2 or not is_number(args[1]) {
+        if len(args_value) != 2 or not is_number(args_value[1]) {
             return ["error: bad command"];
         }
-        return [set_rate(staff, args[0], num(args[1]))];
+        return [set_rate(staff, args_value[0], num(args_value[1]))];
     }
     if cmd == "deduct" {
-        if len(args) != 3 or not is_number(args[1]) {
+        if len(args_value) != 3 or not is_number(args_value[1]) {
             return ["error: bad command"];
         }
-        return [add_deduction(staff, args[0], num(args[1]), args[2])];
+        return [add_deduction(staff, args_value[0], num(args_value[1]), args_value[2])];
     }
     if cmd == "payslip" {
-        if len(args) != 1 {
+        if len(args_value) != 1 {
             return ["error: bad command"];
         }
-        if not has(staff, args[0]) {
-            return ["error: unknown employee " + args[0]];
+        if not has(staff, args_value[0]) {
+            return ["error: unknown employee " + args_value[0]];
         }
-        return payslip(staff[args[0]]);
+        return payslip(staff[args_value[0]]);
     }
     if cmd == "summary" {
-        if len(args) != 0 {
+        if len(args_value) != 0 {
             return ["error: bad command"];
         }
         return summary(staff);

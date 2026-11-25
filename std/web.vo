@@ -25,14 +25,14 @@ import std.json.as_object;
 import std.json.parse_json;
 import std.json.to_json;
 import std.json.write_json;
-import std.lists.contains;
+import std.lists.has_item;
 import std.log.Field;
 import std.log.field;
 import std.log.log_debug;
 import std.log.log_error;
 import std.log.log_info;
 import std.metrics.Metric;
-import std.metrics.add;
+import std.metrics.add_to;
 import std.metrics.counter;
 import std.metrics.gauge;
 import std.metrics.histogram;
@@ -44,17 +44,17 @@ import std.option.Option;
 #     len(new App[int] { routes: new list[Route[int]], steps: new list[Step[int]], errors: new list[ErrorStatus] }.routes) is 0
 export record App[C, E: effects] {
     # The operations, health and info routes; made with on_get, on_post, on_put, on_patch, on_delete, health_route, info_route.
-    routes: list[Route[C, E]];
+    routes: list[Route[C, uses E]];
     # Run around each request whose path starts with their prefix, in this order.
-    steps: list[Step[C, E]];
+    steps: list[Step[C, uses E]];
     # `kind: detail` errors answered with a status, beside (or instead of) the defaults.
     errors: list[ErrorStatus];
 }
 
 # An application of these routes, with no steps and only the default error kinds.
 #     len(web_app(new list[Route[int]]).steps) is 0
-export fn web_app[C, E: effects](routes: list[Route[C, E]]) -> App[C, E] {
-    return new App { routes: routes, steps: new list[Step[C, E]], errors: new list[ErrorStatus] };
+export fn web_app[C, E: effects](routes: list[Route[C, uses E]]) -> App[C, uses E] {
+    return new App { routes: routes, steps: new list[Step[C, uses E]], errors: new list[ErrorStatus] };
 }
 
 # One route: a method, a path pattern and what answers it (made by on_get and the others).
@@ -110,7 +110,7 @@ export record HealthCheck[C, E: effects] {
 export fn on_get[C, I: json, E: effects](
     pattern: str,
     op: fn(C, I) -> result[Response] uses E
-) -> Route[C, E] {
+) -> Route[C, uses E] {
     return route("GET", pattern, op);
 }
 
@@ -119,7 +119,7 @@ export fn on_get[C, I: json, E: effects](
 export fn on_post[C, I: json, E: effects](
     pattern: str,
     op: fn(C, I) -> result[Response] uses E
-) -> Route[C, E] {
+) -> Route[C, uses E] {
     return route("POST", pattern, op);
 }
 
@@ -128,7 +128,7 @@ export fn on_post[C, I: json, E: effects](
 export fn on_put[C, I: json, E: effects](
     pattern: str,
     op: fn(C, I) -> result[Response] uses E
-) -> Route[C, E] {
+) -> Route[C, uses E] {
     return route("PUT", pattern, op);
 }
 
@@ -137,7 +137,7 @@ export fn on_put[C, I: json, E: effects](
 export fn on_patch[C, I: json, E: effects](
     pattern: str,
     op: fn(C, I) -> result[Response] uses E
-) -> Route[C, E] {
+) -> Route[C, uses E] {
     return route("PATCH", pattern, op);
 }
 
@@ -146,7 +146,7 @@ export fn on_patch[C, I: json, E: effects](
 export fn on_delete[C, I: json, E: effects](
     pattern: str,
     op: fn(C, I) -> result[Response] uses E
-) -> Route[C, E] {
+) -> Route[C, uses E] {
     return route("DELETE", pattern, op);
 }
 
@@ -154,7 +154,7 @@ fn route[C, I: json, E: effects](
     method: str,
     pattern: str,
     op: fn(C, I) -> result[Response] uses E
-) -> Route[C, E] {
+) -> Route[C, uses E] {
     let run = fn(ctx: C, r: Request, vars: map[str, str]) -> result[Response] {
         let bound: result[I] = bind(r, vars);
         match bound {
@@ -238,11 +238,11 @@ export fn error_status(kind: str, status: int) -> ErrorStatus {
 
 # The application's answer to one request (steps, routing, input, the operation, errors): what serve_app sends, and what tests check.
 #     handle_request(new App[int] { routes: new list[Route[int]], steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).status is 404
-export fn handle_request[C, E: effects](app: App[C, E], ctx: C, r: Request) -> Response uses E {
-    let all = fn(req: Request) -> Response {
+export fn handle_request[C, E: effects](app: App[C, uses E], ctx: C, r: Request) -> Response uses E {
+    let whole = fn(req: Request) -> Response {
         return chain(app, ctx, 0, req);
     };
-    match __serve_call(all, without_header(r, "X-Identity")) {
+    match __serve_call(whole, without_header(r, "X-Identity")) {
         case ok(resp) {
             return without_route(resp);
         }
@@ -252,7 +252,7 @@ export fn handle_request[C, E: effects](app: App[C, E], ctx: C, r: Request) -> R
     }
 }
 
-fn chain[C, E: effects](app: App[C, E], ctx: C, i: int, r: Request) -> Response uses E {
+fn chain[C, E: effects](app: App[C, uses E], ctx: C, i: int, r: Request) -> Response uses E {
     if i == len(app.steps) {
         return dispatch(app, ctx, r);
     }
@@ -272,7 +272,7 @@ fn under(path: str, prefix: str) -> bool {
     return path == prefix or (len(path) > len(prefix) and slice(path, 0, len(prefix)) == prefix and slice(path, len(prefix), len(prefix) + 1) == "/");
 }
 
-fn dispatch[C, E: effects](app: App[C, E], ctx: C, r: Request) -> Response uses E {
+fn dispatch[C, E: effects](app: App[C, uses E], ctx: C, r: Request) -> Response uses E {
     let segs = split(slice(r.path, 1, len(r.path)), "/");
     let method = if_head(r.method);
     var best = -1;
@@ -281,7 +281,7 @@ fn dispatch[C, E: effects](app: App[C, E], ctx: C, r: Request) -> Response uses 
     for i, rt in app.routes {
         match match_path(rt.segments, segs) {
             case ok(vars) {
-                if not contains(allowed, rt.method) {
+                if not has_item(allowed, rt.method) {
                     push(allowed, rt.method);
                 }
                 if rt.method == method and (best < 0 or more_specific(rt.segments, app.routes[best].segments)) {
@@ -296,7 +296,7 @@ fn dispatch[C, E: effects](app: App[C, E], ctx: C, r: Request) -> Response uses 
     if len(allowed) == 0 {
         return problem(404, "no route for " + r.path, new list[Json]);
     }
-    if contains(allowed, "GET") {
+    if has_item(allowed, "GET") {
         push(allowed, "HEAD");
     }
     let allow = join(allowed, ", ");
@@ -390,7 +390,7 @@ fn percent_decoded(s: str) -> result[str] {
     return to_text(out);
 }
 
-fn answer_of[C, E: effects](app: App[C, E], answered: result[Response]) -> Response {
+fn answer_of[C, E: effects](app: App[C, uses E], answered: result[Response]) -> Response {
     match answered {
         case ok(resp) {
             return resp;
@@ -469,7 +469,7 @@ fn bind[I: json](r: Request, vars: map[str, str]) -> result[I] {
                 set parts["body"] = j;
             }
             case err(e) {
-                return err("S\tbody\tnot JSON: " + e);
+                return err("S\tbody\t" + e);
             }
         }
     }
@@ -518,7 +518,7 @@ fn form_type(r: Request) -> bool {
 fn form_into(body: str, fields: list[str], parts: map[str, Json]) -> result[void] {
     # spec 051: an HTML form's fields go with the query's (a name in both is given twice), after
     # checking that each is a field of the input; the request form is marked so a missing bool is false
-    if contains(fields, "body") {
+    if has_item(fields, "body") {
         return err(
             "U\tbody\tthe input has a `body` field, which a form cannot fill: send application/json"
         );
@@ -527,19 +527,19 @@ fn form_into(body: str, fields: list[str], parts: map[str, Json]) -> result[void
     let query = try as_object(parts["query"]);
     var unknown = new list[str];
     for k in keys(form) {
-        if not contains(fields, k) {
+        if not has_item(fields, k) {
             push(unknown, "S\t" + k + "\tnot a field of the input");
             continue;
         }
-        var all = form[k];
+        var whole = form[k];
         if has(query, k) {
             match query[k] {
                 case array(xs) {
                     let both = slice(xs, 0, len(xs));
-                    for x in all {
+                    for x in whole {
                         push(both, x);
                     }
-                    set all = both;
+                    set whole = both;
                 }
                 case null {
                 }
@@ -555,7 +555,7 @@ fn form_into(body: str, fields: list[str], parts: map[str, Json]) -> result[void
                 }
             }
         }
-        set query[k] = Json.array(all);
+        set query[k] = Json.array(whole);
     }
     if len(unknown) > 0 {
         return err(join(unknown, "\n"));
@@ -662,8 +662,8 @@ export record Cookie {
     name: str;
     # Visible ASCII without space, double quote, comma, semicolon or backslash.
     value: str;
-    # Seconds the browser keeps it; -1 until it closes; 0 removes the cookie.
-    max_age_s: int;
+    # Milliseconds the browser keeps it, sent as whole seconds; -1 until it closes; 0 removes the cookie.
+    max_age_ms: int;
     # true: scripts in the page cannot read it.
     http_only: bool;
     # true: sent over HTTPS only (and to http://localhost by most browsers).
@@ -680,7 +680,7 @@ export fn cookie(name: str, value: str) -> Cookie {
     return new Cookie {
         name: name,
         value: value,
-        max_age_s: -1,
+        max_age_ms: -1,
         http_only: true,
         secure: true,
         same_site: "Lax",
@@ -710,8 +710,8 @@ export fn with_cookie(resp: Response, c: Cookie) -> result[Response] {
         return err("bad_cookie: a __Host- cookie needs secure and path /");
     }
     var text = c.name + "=" + c.value + "; Path=" + c.path;
-    if c.max_age_s >= 0 {
-        set text = text + "; Max-Age=" + str(c.max_age_s);
+    if c.max_age_ms >= 0 {
+        set text = text + "; Max-Age=" + str(c.max_age_ms / 1000);
     }
     if c.secure {
         set text = text + "; Secure";
@@ -751,7 +751,7 @@ fn all_bytes(s: str, ok_byte: fn(int) -> bool) -> bool {
 
 fn token_byte(b: int) -> bool {
     # Visible ASCII but the separators "(),/:;<=>?@[\]{}.
-    return visible_byte(b) and not contains([34, 40, 41, 44, 47, 58, 59, 60, 61, 62, 63, 64, 91, 92, 93, 123, 125], b);
+    return visible_byte(b) and not has_item([34, 40, 41, 44, 47, 58, 59, 60, 61, 62, 63, 64, 91, 92, 93, 123, 125], b);
 }
 
 fn cookie_byte(b: int) -> bool {
@@ -801,7 +801,7 @@ export fn serve_app[C, E: effects, F: effects](
     address: str,
     workers: int,
     setup: fn() -> result[C] uses F,
-    app: App[C, E]
+    app: App[C, uses E]
 ) -> result[void] uses serve, E, F {
     try check_routes(app.routes);
     return serve_workers(address, workers, setup, fn(ctx: C, r: Request) -> Response {
@@ -809,7 +809,7 @@ export fn serve_app[C, E: effects, F: effects](
     });
 }
 
-fn check_routes[C, E: effects](routes: list[Route[C, E]]) -> result[void] {
+fn check_routes[C, E: effects](routes: list[Route[C, uses E]]) -> result[void] {
     # The checks vo check makes on route tables written in one list, for tables built otherwise.
     for i, a in routes {
         if len(a.pattern) == 0 or slice(a.pattern, 0, 1) != "/" {
@@ -932,7 +932,7 @@ export fn load_settings[T: json](file: str, prefix: str) -> result[T] uses file.
 
 # A GET /health route: 200 {"status":"up"} when every check gives ok(), else 503 {"status":"down","checks":{name: reason}}.
 #     handle_request(new App[int] { routes: [health_route(new list[HealthCheck[int]])], steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/health", "")).body is "{\"status\":\"up\"}"
-export fn health_route[C, E: effects](checks: list[HealthCheck[C, E]]) -> Route[C, E] {
+export fn health_route[C, E: effects](checks: list[HealthCheck[C, uses E]]) -> Route[C, uses E] {
     return on_get("/health", fn(ctx: C, input: NoInput) -> result[Response] {
         return health_answer(ctx, checks);
     });
@@ -940,10 +940,10 @@ export fn health_route[C, E: effects](checks: list[HealthCheck[C, E]]) -> Route[
 
 # Routes for an orchestrator: GET /health/live (200 {"status":"up"}, running no check: the process answers) and GET /health/ready (as health_route: 503 naming the checks that fail).
 #     handle_request(new App[int] { routes: health_routes(new list[HealthCheck[int]]), steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/health/live", "")).status is 200
-export fn health_routes[C, E: effects](checks: list[HealthCheck[C, E]]) -> list[Route[C, E]] {
+export fn health_routes[C, E: effects](checks: list[HealthCheck[C, uses E]]) -> list[Route[C, uses E]] {
     return [
         on_get("/health/live", fn(ctx: C, input: NoInput) -> result[Response] {
-            return health_answer(ctx, new list[HealthCheck[C, E]]);
+            return health_answer(ctx, new list[HealthCheck[C, uses E]]);
         }),
         on_get("/health/ready", fn(ctx: C, input: NoInput) -> result[Response] {
             return health_answer(ctx, checks);
@@ -951,7 +951,7 @@ export fn health_routes[C, E: effects](checks: list[HealthCheck[C, E]]) -> list[
     ];
 }
 
-fn health_answer[C, E: effects](ctx: C, checks: list[HealthCheck[C, E]]) -> result[Response] uses E {
+fn health_answer[C, E: effects](ctx: C, checks: list[HealthCheck[C, uses E]]) -> result[Response] uses E {
     let failed = new map[str, Json];
     for c in checks {
         match c.check(ctx) {
@@ -974,7 +974,7 @@ fn health_answer[C, E: effects](ctx: C, checks: list[HealthCheck[C, E]]) -> resu
 
 # A GET /info route answering {"name": name, "version": version}.
 #     handle_request(new App[int] { routes: [info_route("notes", "1.0")], steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/info", "")).body is "{\"name\":\"notes\",\"version\":\"1.0\"}"
-export fn info_route[C, E: effects](name: str, version: str) -> Route[C, E] {
+export fn info_route[C, E: effects](name: str, version: str) -> Route[C, uses E] {
     return on_get("/info", fn(ctx: C, input: NoInput) -> result[Response] {
         let m = new map[str, Json];
         set m["name"] = Json.text(name);
@@ -987,7 +987,7 @@ export fn info_route[C, E: effects](name: str, version: str) -> Route[C, E] {
 
 # A step that gives every response an X-Request-Id: the request's own, or one from new_id (random_id), also passed on to operations as the request's header.
 #     handle_request(new App[int] { routes: new list[Route[int]], steps: [request_ids(fn() -> str { return "id-1"; })], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).headers[1].value is "id-1"
-export fn request_ids[C, E: effects](new_id: fn() -> str uses E) -> Step[C, E] {
+export fn request_ids[C, E: effects](new_id: fn() -> str uses E) -> Step[C, uses E] {
     return new Step {
         prefix: "/",
         run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
@@ -1015,9 +1015,9 @@ export fn random_id() -> str uses random {
     return format("{:08x}{:08x}", random_int(0, 4294967295), random_int(0, 4294967295));
 }
 
-# A step that writes one line per request with log: method, path, status and milliseconds (from now), and an unmapped error's text.
+# A step that writes one line per request with log: method, path, status and milliseconds (from now, such as `fn() -> int { return now_ms(); }`), and an unmapped error's text. For structured lines (std.log), use request_logs.
 #     handle_request(new App[int] { routes: new list[Route[int]], steps: [log_requests(fn() -> int { return 0; }, fn(line: str) { })], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).status is 404
-export fn log_requests[C, E: effects](now: fn() -> int uses E, log: fn(str) uses E) -> Step[C, E] {
+export fn log_requests[C, E: effects](now: fn() -> int uses E, log: fn(str) uses E) -> Step[C, uses E] {
     return new Step {
         prefix: "/",
         run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
@@ -1087,18 +1087,18 @@ export fn request_metrics[C, E: effects]() -> Step[C, uses log, clock, E] {
         prefix: "/",
         run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses log, clock, E) -> Response {
             let flight = gauge("http_requests_in_flight", "Requests being answered.", new list[str]);
-            add(flight, new list[str], 1);
+            add_to(flight, new list[str], 1);
             let start = now_ms();
             let resp = next(r);
             let ms = now_ms() - start;
-            add(flight, new list[str], -1);
+            add_to(flight, new list[str], -1);
             var method = "other";
-            if contains(["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], r.method) {
+            if has_item(["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], r.method) {
                 set method = r.method;
             }
             let pattern = route_of(resp);
             let total = counter("http_requests_total", "Requests answered.", ["method", "route", "status"]);
-            add(total, [method, pattern, str(resp.status / 100) + "xx"], 1);
+            add_to(total, [method, pattern, str(resp.status / 100) + "xx"], 1);
             let seconds = histogram(
                 "http_request_duration_seconds",
                 "Time to answer a request, in seconds.",
@@ -1134,9 +1134,8 @@ fn route_of(resp: Response) -> str {
     }
 }
 
-# The clock in milliseconds, for log_requests.
-#     clock_ms() >= 0 is true
-export fn clock_ms() -> int uses clock {
+fn clock_ms() -> int uses clock {
+    # Removed in vo 0.2.0 (E0214: write `now_ms()`); kept for the migration.
     return now_ms();
 }
 
@@ -1148,14 +1147,14 @@ export fn to_stderr(line: str) uses console {
 
 # A step answering CORS for the listed origins: preflight OPTIONS requests (204 with the allowed methods and headers) and the Access-Control-Allow-Origin header on answers.
 #     handle_request(new App[int] { routes: new list[Route[int]], steps: [cors(["https://app.example"])], errors: new list[ErrorStatus] }, 0, with_header(request("GET", "/", ""), "Origin", "https://app.example")).headers[1].value is "https://app.example"
-export fn cors[C, E: effects](origins: list[str]) -> Step[C, E] {
+export fn cors[C, E: effects](origins: list[str]) -> Step[C, uses E] {
     return new Step {
         prefix: "/",
         run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
             var origin = "";
             match header_of(r, "Origin") {
                 case ok(o) {
-                    if contains(origins, o) {
+                    if has_item(origins, o) {
                         set origin = o;
                     }
                 }
@@ -1211,7 +1210,7 @@ export fn cors[C, E: effects](origins: list[str]) -> Step[C, E] {
 export fn bearer_auth[C, E: effects](
     prefix: str,
     check: fn(C, str) -> result[str] uses E
-) -> Step[C, E] {
+) -> Step[C, uses E] {
     return auth_step(prefix, "Authorization", "Bearer ", check);
 }
 
@@ -1221,7 +1220,7 @@ export fn api_key_auth[C, E: effects](
     prefix: str,
     header: str,
     check: fn(C, str) -> result[str] uses E
-) -> Step[C, E] {
+) -> Step[C, uses E] {
     return auth_step(prefix, header, "", check);
 }
 
@@ -1230,7 +1229,7 @@ fn auth_step[C, E: effects](
     header: str,
     scheme: str,
     check: fn(C, str) -> result[str] uses E
-) -> Step[C, E] {
+) -> Step[C, uses E] {
     return new Step {
         prefix: "/",
         run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {

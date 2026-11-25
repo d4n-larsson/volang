@@ -1,5 +1,4 @@
-# E0311 on a parameter that already has a bound (here key): no fix, since a parameter takes one bound and
-# `[K: key: ordered]` would not parse.
+# Spec 056: a parameter bounded `key` is ordered (every key type is), so it can be sorted.
 fn sorted_keys[K: key](m: map[K, int]) -> list[K] {
     let ks = keys(m);
     sort(ks);

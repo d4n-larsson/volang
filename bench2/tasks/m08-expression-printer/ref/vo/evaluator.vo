@@ -81,23 +81,23 @@ fn power(a: int, b: int) -> result[int] {
     return ok(r);
 }
 
-export fn evaluate(e: Expr, env: map[str, int]) -> result[int] {
+export fn evaluate(e: Expr, env_value: map[str, int]) -> result[int] {
     match e {
         case num(d) {
             return literal(d);
         }
         case name(n) {
-            if not has(env, n) {
+            if not has(env_value, n) {
                 return err("undefined " + n);
             }
-            return ok(env[n]);
+            return ok(env_value[n]);
         }
         case neg(x) {
-            return sub(0, try evaluate(x, env));
+            return sub(0, try evaluate(x, env_value));
         }
         case bin(op) {
-            let a = try evaluate(op.left, env);
-            let b = try evaluate(op.right, env);
+            let a = try evaluate(op.left, env_value);
+            let b = try evaluate(op.right, env_value);
             if op.op == "+" {
                 return add(a, b);
             }

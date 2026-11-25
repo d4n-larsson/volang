@@ -23,23 +23,23 @@ $ vo package --json --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}
 --- stderr
 --- exit 0
 $ vo package --ca-file test-ca.pem main.vo other https://127.0.0.1:{port}/archive/none.tar.gz
-error[E0706]: Cannot fetch package other from https://127.0.0.1:{port}/archive/none.tar.gz: the server answered 404.
+error[E0706]: Cannot fetch package `other` from https://127.0.0.1:{port}/archive/none.tar.gz: the server answered 404.
 --- stderr
 --- exit 65
 $ vo package --json --ca-file test-ca.pem main.vo other https://127.0.0.1:{port}/archive/none.tar.gz
-{"v":1,"kind":"toolchain_error","code":"E0706","name":"package_fetch_failed","message":"Cannot fetch package other from https://127.0.0.1:{port}/archive/none.tar.gz: the server answered 404."}
+{"v":1,"kind":"toolchain_error","code":"E0706","name":"package_fetch_failed","message":"Cannot fetch package `other` from https://127.0.0.1:{port}/archive/none.tar.gz: the server answered 404."}
 --- stderr
 --- exit 65
 $ vo package --ca-file test-ca.pem main.vo bad https://127.0.0.1:{port}/archive/link.tar.gz
-error[E0706]: Cannot fetch package bad from https://127.0.0.1:{port}/archive/link.tar.gz: it has a link (only files and directories are accepted).
+error[E0706]: Cannot fetch package `bad` from https://127.0.0.1:{port}/archive/link.tar.gz: it has a link (only files and directories are accepted).
 --- stderr
 --- exit 65
 $ vo package main.vo money https://127.0.0.1:{port}/archive/money.tar.gz
-error[E0706]: Cannot fetch package money from https://127.0.0.1:{port}/archive/money.tar.gz: the certificate of 127.0.0.1:{port} is not trusted.
+error[E0706]: Cannot fetch package `money` from https://127.0.0.1:{port}/archive/money.tar.gz: the certificate of 127.0.0.1:{port} is not trusted.
 --- stderr
 --- exit 65
 $ vo package --ca-file test-ca.pem --restore main.vo
-error[E0702]: Package money: the directory packages/money is missing or has no .vo files.
+error[E0702]: Package `money`: the directory `packages/money` is missing or has no .vo files.
 --- stderr
 --- exit 65
 $ vo package --ca-file test-ca.pem --dir vendor/money main.vo money https://127.0.0.1:{port}/archive/money.tar.gz

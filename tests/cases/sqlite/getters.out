@@ -1,6 +1,6 @@
 7 2.5 hé 2
-i is integer, not real | f is real, not integer | s is text, not integer | b is blob, not text
+ok | f is real, not integer | s is text, not integer | b is blob, not text
 n is null, not integer | true false
 bad is blob, not text | 1 | 3
-no column nope | ambiguous column d: name each column with AS
+no column `nope` | ambiguous column `d`: name each column with AS
 3

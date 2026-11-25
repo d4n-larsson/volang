@@ -1,6 +1,6 @@
 import std.http.get;
 import std.json.as_array;
-import std.json.field;
+import std.json.member;
 import std.json.parse_json;
 import std.json.text_field;
 
@@ -13,7 +13,7 @@ fn main() -> result[void] uses console, net("localhost") {
     let r1 = try get(base + "/json");
     let doc = try parse_json(r1.body);
     let name = try text_field(doc, "name");
-    let tags = try as_array(try field(doc, "tags"));
+    let tags = try as_array(try member(doc, "tags"));
     print("name: " + name);
     print("tags: " + str(len(tags)));
     let r2 = try get(base + "/status/404");

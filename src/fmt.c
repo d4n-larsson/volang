@@ -187,14 +187,36 @@ static void fm_lambda(Node *f)
     fm_level = level; /* a later anonymous function in the same statement */
 }
 
-/* `[int, str]` (nothing for 0). */
+static Vec *fm_tparams_now; /* the type parameters of the item being formatted */
+static Vec *fm_items_now;   /* the file's items */
+
+/* Spec 056: whether a type argument names effects: an effect parameter of the item, or a set of the file.
+ * ponytail: an imported set is not seen (it stays as written); the checker accepts both forms. */
+static int fm_names_effects(Node *t)
+{
+    if (!t || t->kind != N_TYPE_NODE || t->a.i != TY_NAMED || t->c.v || !t->b.n) return 0;
+    Str *name = t->b.n->a.s;
+    for (long i = 0; fm_tparams_now && i < fm_tparams_now->n; i++) {
+        Node *tp = vec_get(fm_tparams_now, i);
+        if (tp->b.i == TPC_EFFECTS && str_eq(tp->a.n->a.s, name)) return 1;
+    }
+    for (long i = 0; fm_items_now && i < fm_items_now->n; i++) {
+        Node *it = vec_get(fm_items_now, i);
+        if (it->kind == N_EFFECTS && str_eq(it->a.n->a.s, name)) return 1;
+    }
+    return 0;
+}
+
+/* `[int, str]` (nothing for 0); an effect argument with `uses` (spec 056: `Db[D]` is `Db[uses D]`). */
 static void fm_type_args(Vec *types)
 {
     if (!types) return;
     fm_b('[');
     for (long i = 0; i < types->n; i++) {
         if (i) fm_c(", ");
-        fm_type(vec_get(types, i));
+        Node *t = vec_get(types, i);
+        if (i == types->n - 1 && fm_names_effects(t)) fm_c("uses ");
+        fm_type(t);
     }
     fm_b(']');
 }
@@ -904,6 +926,7 @@ static void fm_item(Node *item)
         break;
     case N_FN: {
         Fx *fx = item->a.n ? item->a.n->b.fx : 0;
+        fm_tparams_now = fx ? fx->tparams : 0;
         long hs = fm_sb->len, tail = fx && (fx->requires_ || fx->ensures) ? 0 : 2; /* ` {` */
         for (int wrap = 0; wrap < 2; wrap++) { /* spec 030: long headers (research R7) */
             fm_sb->len = hs;
@@ -941,6 +964,7 @@ static void fm_item(Node *item)
         fm_c(item->kind == N_RECORD ? "record " : "variant ");
         fm_name(item->a.n);
         fm_tparams(item->c.v); /* [T, ...] */
+        fm_tparams_now = item->c.v;
         fm_c(" {\n");
         fm_members(item->b.v, item->kind == N_RECORD);
         fm_c("}");
@@ -1011,6 +1035,8 @@ Str *fmt_file(int file)
     fm_wrap = vec_new();
     fm_groups = vec_new();
     fm_operand = 0;
+    fm_items_now = items;
+    fm_tparams_now = 0;
     Vec *order = vec_new();
     long first = 0; /* leading comments */
     while (first < items->n && ((Node *)vec_get(items, first))->kind == N_COMMENT)

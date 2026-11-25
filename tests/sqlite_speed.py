@@ -37,7 +37,7 @@ fn main() -> result[void] uses console, file.read, file.write {
 READ = """import std.sqlite.open_readonly;
 import std.sqlite.sql;
 import std.sqlite.query;
-import std.sqlite.get_str;
+import std.sqlite.text_column;
 import std.sqlite.Value;
 
 fn main() -> result[void] uses console, file.read {
@@ -45,7 +45,7 @@ fn main() -> result[void] uses console, file.read {
     let rows = try query(db, sql("select id, name, score from t order by id"), new list[Value]);
     var total = 0;
     for row in rows {
-        set total = total + len(try get_str(row, "name"));
+        set total = total + len(try text_column(row, "name"));
     }
     print(str(len(rows)) + " " + str(total));
     return ok();

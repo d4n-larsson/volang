@@ -136,7 +136,7 @@ fn other(kind: int, body: bytes, s: SignIn) -> result[bool] {
 # of SCRAM.
 #     sign_in(new Conn { id: 0, peer: "" }, "u", "d", "", 1000, "x") == err("connection: the connection is closed") is true
 export fn sign_in[E: effects](
-    c: Conn[E],
+    c: Conn[uses E],
     user: str,
     database: str,
     password: str,

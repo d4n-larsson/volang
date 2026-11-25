@@ -2,6 +2,10 @@
 
 Every diagnostic, runtime error and toolchain error has a code. `vo explain CODE` prints its section.
 
+Messages follow one style (`tests/message_style.py` checks it): code, names and paths are in backticks;
+a test is `` `test "NAME"` ``, a package `` `NAME` ``; what was there is "found" (not "got"); a range is
+"A to B". The code, the span and the fixes are the interface; a message's wording may change.
+
 ## E0101 invalid_character
 
 A character that is not part of vo syntax, or a comment that does not stand on its own line.
@@ -102,11 +106,11 @@ fn main() uses console {
 
 ## E0105 number_out_of_range
 
-A number literal is out of range or malformed: an integer above 2^63-1, a hex or binary literal without digits or with more than 64 bits, an upper-case `0X` or `0B`, a float with more than 17 significant digits or too large, an exponent without digits, or letters after the number.
+A number literal is out of range or malformed: an integer above 2^63-1, a hex or binary literal without digits or with more than 64 bits, an upper-case `0X` or `0B`, a float with more than 17 significant digits or too large, an exponent without digits, letters after the number, a second spelling (`1E9`, `1e+9`, `007`), a float that rounds to zero (`1e-400`), or `-0x8000000000000000` (its negation overflows).
 
 Fixable: sometimes
 
-Integer literals must fit in a signed 64-bit integer (at most 9223372036854775807). Float literals may have at most 17 significant digits (a `float` holds no more), an optional exponent with digits (`1e9`, `1.5e-3`), and a value below about 1.8e308. A hex literal is `0x` and 1 to 16 hex digits, a binary literal `0b` and 1 to 64 digits, each a 64-bit pattern (`0xFFFFFFFFFFFFFFFF` is -1); the prefix is lower case (the fix lowers `0X` and `0B`). A number has no suffix and no `_` separators: `10px`, `2em` and `1_000` are errors.
+Integer literals must fit in a signed 64-bit integer (at most 9223372036854775807). Float literals may have at most 17 significant digits (a `float` holds no more), an optional exponent with digits (`1e9`, `1.5e-3`), and a value below about 1.8e308. A hex literal is `0x` and 1 to 16 hex digits, a binary literal `0b` and 1 to 64 digits, each a 64-bit pattern (`0xFFFFFFFFFFFFFFFF` is -1); the prefix is lower case (the fix lowers `0X` and `0B`). A number has no suffix, no `_` separators and no leading zeros: `10px`, `2em`, `1_000` and `007` are errors. The exponent is a lower-case `e` without `+` (the fix writes `1e9` for `1E9` and `1e+9`, and `7` for `007`). A float that is not zero but rounds to zero is an error, as one too large is: write `0.0`.
 
 ### Example
 
@@ -391,11 +395,11 @@ test "doubles" {
 
 ## E0119 repeated_annotation
 
-An item has more than one `@spec`.
+An annotation is repeated: more than one `@spec` on an item, the same code in two `@allow`s, or a field annotation given twice.
 
 Fixable: yes
 
-Each `test` or `prop` has one `@spec` with all its IDs. The fix merges them into one.
+Each `test` or `prop` has one `@spec` with all its IDs: the fix merges them into one. A repeated `@allow` or field annotation (`@size`, `@range`, ...) is removed by the fix: keep the one you mean.
 
 ### Example
 
@@ -580,9 +584,9 @@ fn main() uses console {
 
 A local name reuses a name that is already visible; vo does not allow shadowing.
 
-Fixable: no
+Fixable: sometimes
 
-A local declaration (`let`, `var`, a `for` variable or a `case` binding) reuses a name that is already in scope. The diagnostic's `related` location points at the outer definition. Give the inner one a different name, or use `set` on a `var` if you meant to change the outer one.
+A local declaration (`let`, `var`, a parameter, a `for` variable or a `case` binding) reuses a name that is already in scope. The diagnostic's `related` location points at the outer definition. Give the inner one a different name, or use `set` on a `var` if you meant to change the outer one. A builtin's name (`len`, `min`, `lower`, ...) is not available for a local either (since vo 0.2.0): the fix renames the local to `NAME_value`, and each use reports the same rename.
 
 ### Example
 
@@ -1017,6 +1021,40 @@ fn main() uses console {
 }
 ```
 
+## E0214 library_changed
+
+A standard library item was renamed, removed or changed in vo 0.2.0.
+
+Fixable: sometimes
+
+Before 1.0 a minor version may change the library, and every change comes with this error and, where one
+correction keeps the program's behavior, its fix (`docs/stability.md`). The import of a renamed item and
+each use of the old name are reported; the fix gives the new name, and the file keeps checking as if the
+new name were written. A removed item's fix writes its replacement (`now_ms()` for `std.time.now`). A
+lookup that now returns an `Option` is wrapped back into the old `result` (`to_result(CALL, "none")`), and
+a function that now takes the text first gets its arguments swapped. Apply the fixes of `vo check --json`
+to migrate a program; the changelog lists every change.
+
+### Example
+
+```vo
+import std.lists.contains;
+
+fn main() uses console {
+    print(str(contains([1, 2], 2)));
+}
+```
+
+### Fixed
+
+```vo
+import std.lists.has_item;
+
+fn main() uses console {
+    print(str(has_item([1, 2], 2)));
+}
+```
+
 ## E0301 type_mismatch
 
 An expression has a different type than the one required.
@@ -1175,17 +1213,17 @@ fn main() uses console {
 
 ## E0306 empty_list_literal
 
-An empty list literal `[]` has no element type.
+An empty list literal `[]` has no type to take from its context.
 
-Fixable: sometimes
+Fixable: no
 
-`[]` is not valid because an empty literal has no element type. Create an empty list with `new list[T]`; the fix does this when the type is known from an annotation.
+`[]` takes its type from the context: an annotation, a parameter, a return type or a field (since vo 0.2.0). With none, write `new list[T]`.
 
 ### Example
 
 ```vo
 fn main() uses console {
-    let xs: list[int] = [];
+    let xs = [];
     print(str(len(xs)));
 }
 ```
@@ -1347,7 +1385,7 @@ A generic function compares or sorts values of a type parameter that is not `ord
 
 Fixable: yes
 
-Only `==` and `!=` work on every type. `<`, `<=`, `>`, `>=`, `min`, `max` and `sort` need a type parameter declared `ordered` (it can then be `int`, `float` or `str`). The error points into the generic function; the fix adds `: ordered`.
+Only `==` and `!=` work on every type. `<`, `<=`, `>`, `>=`, `min`, `max` and `sort` need a type parameter declared `ordered` (it can then be any ordered type: `int`, `float`, `str`, `bool`, `bytes`, and records and variants of ordered parts). A `key` type parameter is ordered too. The error points into the generic function; the fix adds `: ordered`.
 
 ### Example
 
@@ -1691,7 +1729,7 @@ fn main() -> result[void] uses console {
 
 ## E0322 regex_replacement_invalid
 
-The replacement text of `replace_all` refers to a group in a way vo does not accept.
+The replacement text of `replace_matches` refers to a group in a way vo does not accept.
 
 Fixable: sometimes
 
@@ -1701,10 +1739,10 @@ In a replacement, `$1` or `${1}` is group 1, `${name}` a named group and `$$` a 
 
 ```vo
 import std.regex.regex;
-import std.regex.replace_all;
+import std.regex.replace_matches;
 
 fn main() uses console {
-    print(replace_all(regex("(\\w+)@(\\w+)"), "al@vo", "\\2 at \\1"));
+    print(replace_matches("al@vo", regex("(\\w+)@(\\w+)"), "\\2 at \\1"));
 }
 ```
 
@@ -1712,10 +1750,10 @@ fn main() uses console {
 
 ```vo
 import std.regex.regex;
-import std.regex.replace_all;
+import std.regex.replace_matches;
 
 fn main() uses console {
-    print(replace_all(regex("(\\w+)@(\\w+)"), "al@vo", "$2 at $1"));
+    print(replace_matches("al@vo", regex("(\\w+)@(\\w+)"), "$2 at $1"));
 }
 ```
 
@@ -1919,11 +1957,11 @@ fn convert[T: json](v: T) -> Json {
 
 ## E0329 bad_field_annotation
 
-A record field's annotation is unknown, repeated, misplaced or does not fit the field.
+A record field's annotation is unknown, misplaced or does not fit the field.
 
 Fixable: sometimes
 
-Annotations on the lines above a record field limit what `from_json` (and std.web) accepts for it: `@size(min, max)` for a `str` (characters), list or map; `@range(min, max)` for an `int` or `float`, with literals of the field's type; `@pattern("re")` for a `str`; `@default(v)` for a scalar, an enum-like variant (`Priority.normal`) or a list (`[]` only), which makes the field optional and must keep the field's other limits; `@header("Name")` for a scalar field of a std.web input record. Each at most once per field; a variant case takes none, and an annotation must have a field below it. A misspelled name gets the nearest one as a fix, a whole number in a `float` range gets `.0`. A field of another type (a record) cannot have a default: make it a list of at most one item to make it optional.
+Annotations on the lines above a record field limit what `from_json` (and std.web) accepts for it: `@size(min, max)` for a `str` (characters), list or map; `@range(min, max)` for an `int` or `float`, with literals of the field's type; `@pattern("re")` for a `str`; `@default(v)` for a scalar, an enum-like variant (`Priority.normal`) or a list (`[]` only), which makes the field optional and must keep the field's other limits; `@header("Name")` for a scalar field of a std.web input record. Each at most once per field (a repeat is E0119); a variant case takes none, and an annotation must have a field below it. A misspelled name gets the nearest one as a fix, a whole number in a `float` range gets `.0`. A field of another type (a record) cannot have a default: make it a list of at most one item to make it optional.
 
 ### Example
 
@@ -2559,11 +2597,11 @@ fn main() uses console {
 
 ## E0411 empty_case_parens
 
-`case NAME()` on anything but the success of a `result[void]`.
+`case NAME()` on anything but the success of a `result[void]`, or `Type.case()` for a case without a value.
 
 Fixable: yes
 
-Empty parentheses in a `case` mean "the success of a `result[void]`", which `ok()` builds and `case ok()` matches. A case that carries a value binds it with `case NAME(v)` or ignores it with `case NAME(_)`; a variant case without a value is written `case NAME`. The fix writes the matching form.
+Empty parentheses in a `case` mean "the success of a `result[void]`", which `ok()` builds and `case ok()` matches. A case that carries a value binds it with `case NAME(v)` or ignores it with `case NAME(_)`; a variant case without a value is written `case NAME`, and built with `Type.case` (`Shape.empty`, not `Shape.empty()`). The fix writes the matching form.
 
 ### Example
 
@@ -4874,26 +4912,26 @@ A metric's name has one kind, help text and label list for the whole program, an
 ### Example
 
 ```vo
-import std.metrics.add;
+import std.metrics.add_to;
 import std.metrics.counter;
 import std.metrics.gauge;
 
 fn main() uses log {
-    add(counter("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
-    add(gauge("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
+    add_to(counter("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
+    add_to(gauge("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.metrics.add;
+import std.metrics.add_to;
 import std.metrics.counter;
 import std.metrics.gauge;
 
 fn main() uses log {
-    add(counter("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
-    add(gauge("jobs_running", "Jobs running.", new list[str]), new list[str], 1);
+    add_to(counter("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
+    add_to(gauge("jobs_running", "Jobs running.", new list[str]), new list[str], 1);
 }
 ```
 

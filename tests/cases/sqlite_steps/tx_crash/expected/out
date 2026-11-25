@@ -12,7 +12,7 @@ trace:
       db: Database = new Database { id: 63 }, st: Statement = new Statement { text: "insert into t values (3)" }, params: list[Value] = []
   at anonymous function (crash.vo:13:21)
       db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }
-  at transaction (std/sqlite.vo:161:11)
+  at transaction (std/sqlite.vo:167:11)
       db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }, f: fn() -> result[int] uses file.read, file.write = <fn() -> result[int] uses file.read, file.write>
   at main (crash.vo:11:13)
       db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }

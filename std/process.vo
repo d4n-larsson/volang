@@ -28,21 +28,21 @@ fn decode(text: str) -> result[Output] {
     });
 }
 
-# Runs program with args (no shell: each argument is passed as it is), no input and an empty environment, and waits for it to end (needs process).
+# Runs program with arguments (no shell: each argument is passed as it is), no input and an empty environment, and waits for it to end (needs process).
 #     run("no-such-program.vo-doc", new list[str]) == err("not found") is true
-export fn run(program: str, args: list[str]) -> result[Output] uses process {
-    return run_with(program, args, "", new list[str]);
+export fn run(program: str, arguments: list[str]) -> result[Output] uses process {
+    return run_with(program, arguments, "", new list[str]);
 }
 
-# Runs program like run, with input as its standard input and env ("NAME=value" entries) as its environment (needs process).
+# Runs program like run, with input as its standard input and vars ("NAME=value" entries) as its environment (needs process).
 #     run_with("no-such-program.vo-doc", new list[str], "", ["A=1"]) == err("not found") is true
-export fn run_with(program: str, args: list[str], input: str, env: list[str]) -> result[Output]
+export fn run_with(program: str, arguments: list[str], input: str, vars: list[str]) -> result[Output]
     uses process {
     let argv = [program];
-    for a in args {
+    for a in arguments {
         push(argv, a);
     }
-    return decode(try __run(argv, input, env));
+    return decode(try __run(argv, input, vars));
 }
 
 # What a finished program returned, its output as bytes: the exit code, standard output and standard error.
@@ -87,23 +87,23 @@ fn decode_bytes(raw: bytes) -> result[BytesOutput] {
 
 # Runs program like run, and returns its output as bytes, whatever it is (needs process); run needs UTF-8 output.
 #     run_bytes("no-such-program.vo-doc", new list[str]) == err("not found") is true
-export fn run_bytes(program: str, args: list[str]) -> result[BytesOutput] uses process {
-    return run_with_bytes(program, args, __bytes_of_text(""), new list[str]);
+export fn run_bytes(program: str, arguments: list[str]) -> result[BytesOutput] uses process {
+    return run_with_bytes(program, arguments, __bytes_of_text(""), new list[str]);
 }
 
 # Runs program like run_with, with input as bytes, and returns its output as bytes (needs process).
 #     run_with_bytes("no-such-program.vo-doc", new list[str], from_text(""), ["A=1"]) == err("not found") is true
 export fn run_with_bytes(
     program: str,
-    args: list[str],
+    arguments: list[str],
     input: bytes,
-    env: list[str]
+    vars: list[str]
 ) -> result[BytesOutput] uses process {
     let argv = [program];
-    for a in args {
+    for a in arguments {
         push(argv, a);
     }
-    return decode_bytes(try __run_bytes(argv, input, env));
+    return decode_bytes(try __run_bytes(argv, input, vars));
 }
 
 fn ended(text: str) -> result[Output] {
@@ -127,16 +127,16 @@ fn stop(id: int) -> result[Output] {
 #     run_lines("no-such-program.vo-doc", new list[str], "", new list[str], fn(line: str) -> result[bool] { return ok(true); }) == err("not found") is true
 export fn run_lines[E: effects](
     program: str,
-    args: list[str],
+    arguments: list[str],
     input: str,
-    env: list[str],
+    vars: list[str],
     f: fn(str) -> result[bool] uses E
 ) -> result[Output] uses process, E {
     let argv = [program];
-    for a in args {
+    for a in arguments {
         push(argv, a);
     }
-    let id = try __proc_start(argv, input, env);
+    let id = try __proc_start(argv, input, vars);
     var count = 0;
     while true {
         match __proc(1, id) {

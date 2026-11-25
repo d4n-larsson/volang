@@ -65,7 +65,7 @@ import std.time.sleep;
 
 fn why(e: WorkerError) -> str {
     match e {
-        case timeout {
+        case timed_out {
             return "timeout";
         }
         case ended {
@@ -225,7 +225,7 @@ fn main() uses console {
         set at = at + 100;
     }
     for w in ws {
-        if receive(w, Wait.at_most(0)) != err(WorkerError.timeout) {
+        if receive(w, Wait.at_most(0)) != err(WorkerError.timed_out) {
             set bad = bad + 1;
         }
     }
@@ -635,7 +635,7 @@ fn main() uses console, clock, net {
     var slowest = 0;
     for i in 0..100 {
         let t = now_ms();
-        if with_deadline(100, spin) == err(WorkerError.timeout) {
+        if with_deadline(100, spin) == err(WorkerError.timed_out) {
             set timeouts = timeouts + 1;
         }
         set slowest = max(slowest, now_ms() - t);

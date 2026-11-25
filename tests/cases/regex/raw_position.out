@@ -1,7 +1,7 @@
 raw_position.vo:7:2: error[E0319]: The group is not closed: add `)`.
-   7 | b(c`), "x")));
+   7 | b(c`))));
      |  ^
-raw_position.vo:8:40: error[E0319]: The group is not closed: add `)`.
-   8 |     print(str(is_match(regex("\u{e5}\\d(x"), "x")));
-     |                                        ^
+raw_position.vo:8:45: error[E0319]: The group is not closed: add `)`.
+   8 |     print(str(is_match("x", regex("\u{e5}\\d(x"))));
+     |                                             ^
 2 errors, 0 warnings

@@ -12,7 +12,7 @@ import std.workers.tell;
 
 fn why(e: WorkerError) -> str {
     match e {
-        case timeout {
+        case timed_out {
             return "timeout";
         }
         case ended {

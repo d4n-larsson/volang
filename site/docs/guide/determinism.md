@@ -29,10 +29,10 @@ The rules are in [Traces and replay](../reference/traces-and-replay.md) and
 `now_ms()` (with `uses clock`) returns the wall-clock time in milliseconds since 1970. By default each
 run of `vo run` uses a new seed and the real clock. Two options fix them:
 
-- `--seed N` fixes every random choice: `random_int`, and `std.random`'s `unit`, `pick` and `shuffle`.
+- `--seed N` fixes every random choice: `random_int`, and `std.random`'s `unit`, `pick` and `shuffled`.
   The same program with the same seed makes the same choices.
 - `--clock-ms N` makes the clock start at `N` and advance by exactly 1 on each reading: `now_ms`
-  returns `N`, then `N+1`, then `N+2`, and `std.time.now` reads the same clock.
+  returns `N`, then `N+1`, then `N+2`, and every `std.time` function reads the same clock.
 
 ```vo
 import std.time.format_time;
@@ -82,7 +82,7 @@ there, what a server answered, cannot be fixed by an option. `vo run --record FI
 the program runs, and `vo replay FILE` runs the program again on exactly what was saved:
 
 ```vo
-import std.random.shuffle;
+import std.random.shuffled;
 
 # Draw the prize winner among the names given on the command line.
 fn main() -> result[void] uses console, random {
@@ -90,7 +90,7 @@ fn main() -> result[void] uses console, random {
     if len(names) == 0 {
         return err("usage: vo run main.vo -- NAME...");
     }
-    let order = shuffle(names);
+    let order = shuffled(names);
     print("first prize: " + order[0]);
     print("ticket: " + str(random_int(1000, 9999)));
     return ok();

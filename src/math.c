@@ -28,14 +28,14 @@ enum { M_PI_OP, M_SQRT, M_EXP, M_LOG, M_SIN, M_COS, M_TAN, M_ASIN, M_ACOS, M_ATA
 
 /* R0007's message for a NaN result from arguments that are not NaN, by op. */
 static char *const domain_msg[] = {
-    [M_SQRT] = "`sqrt` needs an argument of at least 0.0, got $1.",
-    [M_LOG] = "`log` needs an argument greater than 0.0, got $1.",
-    [M_SIN] = "`sin` needs a finite argument, got $1.",
-    [M_COS] = "`cos` needs a finite argument, got $1.",
-    [M_TAN] = "`tan` needs a finite argument, got $1.",
-    [M_ASIN] = "`asin` needs an argument from -1.0 to 1.0, got $1.",
-    [M_ACOS] = "`acos` needs an argument from -1.0 to 1.0, got $1.",
-    [M_POW] = "`pow` needs a non-negative base or an integer exponent, got $1 and $2.",
+    [M_SQRT] = "`sqrt` needs an argument of at least 0.0, found $1.",
+    [M_LOG] = "`log` needs an argument greater than 0.0, found $1.",
+    [M_SIN] = "`sin` needs a finite argument, found $1.",
+    [M_COS] = "`cos` needs a finite argument, found $1.",
+    [M_TAN] = "`tan` needs a finite argument, found $1.",
+    [M_ASIN] = "`asin` needs an argument from -1.0 to 1.0, found $1.",
+    [M_ACOS] = "`acos` needs an argument from -1.0 to 1.0, found $1.",
+    [M_POW] = "`pow` needs a non-negative base or an integer exponent, found $1 and $2.",
 };
 
 static long bits_of(double d)
@@ -91,7 +91,7 @@ long math_call(long op, long xb, long yb, Node *node)
     /* The two poles, where IEEE gives an infinity instead of NaN. */
     if (op == M_LOG && x == 0.0) raise_math(domain_msg[M_LOG], xb, 0, 0, node);
     if (op == M_POW && x == 0.0 && y < 0.0)
-        raise_math("`pow` of $1 needs an exponent of at least 0.0, got $2.", xb, yb, 1, node);
+        raise_math("`pow` of $1 needs an exponent of at least 0.0, found $2.", xb, yb, 1, node);
     return bits_of(r);
 }
 
@@ -99,9 +99,9 @@ long math_call(long op, long xb, long yb, Node *node)
  * result outside the int range. Rounded as a double first (exact), then checked, then converted. */
 long math_int(long op, long xb, Node *node)
 {
-    static char *const tmpl[] = {0, "`floor` needs a finite value within the int range, got $1.",
-                                 "`ceil` needs a finite value within the int range, got $1.",
-                                 "`round` needs a finite value within the int range, got $1."};
+    static char *const tmpl[] = {0, "`floor` needs a finite value within the int range, found $1.",
+                                 "`ceil` needs a finite value within the int range, found $1.",
+                                 "`round` needs a finite value within the int range, found $1."};
     double x = double_of(xb);
     double r = op == 1 ? floor(x) : op == 2 ? ceil(x) : round(x);
     if (r == r && r >= -9223372036854775808.0 && r < 9223372036854775808.0) return (long)r;
@@ -116,7 +116,7 @@ long bits_op(long op, long a, long b, Node *node)
 {
     unsigned long x = (unsigned long)a, y = (unsigned long)b, r;
     if (op >= 5 && op <= 9 && y > 63)
-        rt_raise("R0007", msg("A shift count must be 0 to 63, got $1.", int_to_str(b), 0, 0), std_user_call(node));
+        rt_raise("R0007", msg("A shift count must be 0 to 63, found $1.", int_to_str(b), 0, 0), std_user_call(node));
     switch (op) {
     case 1: r = x & y; break;
     case 2: r = x | y; break;

@@ -1,4 +1,4 @@
 shop/io.vo:14:11 declaration: export fn load(lines: list[str]) -> list[int] {
 shop/main.vo:2:11 import: import io.load;
-shop/main.vo:17:15 call in main: let all = load(["1", "2"]);
+shop/main.vo:17:21 call in main: let all_value = load(["1", "2"]);
 3 references

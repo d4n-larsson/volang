@@ -57,7 +57,7 @@ With `--json`, each item is a `doc` record with `signature`, `params`, `returns`
 
 ## Effects of library functions
 
-Most library functions are pure. The ones that are not say so in their signature: `now` uses `clock`,
+Most library functions are pure. The ones that are not say so in their signature: `sleep` uses `clock`,
 `pick` uses `random`, `get` uses `net`. Their effects work like those of builtins:
 
 - the function that calls one declares the effect, with any scope it likes
@@ -70,18 +70,29 @@ Most library functions are pure. The ones that are not say so in their signature
 A generic library function that takes a function, such as `serve`, has the effects of the function you
 pass it, as with [generics](generics.md) and effect parameters.
 
+## Names
+
+Each library name means one thing across the modules, so two imports never clash and an agent can guess
+a name from another module's. Some pairs stay apart on purpose. vo has no overloading, so a function
+that works on several types has a name per type: `std.collections` has `first` (sets), `first_key`
+(maps), `front` (deques) and `peek` (queues), and `between` beside `keys_between`; `std.decimal` has
+`total` and `absolute` where lists have `sum` and the builtin `abs`. `std.web`'s `with_cookie` returns a
+`result` because it checks the cookie a browser would refuse; `with_header` checks nothing and returns
+the answer. A function that reads a value from text is `parse_KIND`, and its error is
+`invalid KIND: TEXT`; a function that decodes an encoding into bytes is `from_KIND` (`from_hex`).
+
 ## std.json
 
 JSON text as a `Json` variant: `null`, `boolean(bool)`, `integer(int)`, `number(float)`, `text(str)`,
 `array(list[Json])` and `object(map[str, Json])`. `parse_json` reads text, `write_json` and
 `write_json_pretty` write it. To read a document, use `match` on the variant, or the readers, which
 return a `result` so that `try` passes a missing or mistyped field up as an error that names it:
-`field`, `at`, `as_text`, `as_int`, `as_array`, `text_field`, `int_field` and others.
+`member`, `at`, `as_text`, `as_int`, `as_array`, `text_field`, `int_field` and others.
 
 ```vo
 import std.json.Json;
 import std.json.as_array;
-import std.json.field;
+import std.json.member;
 import std.json.int_field;
 import std.json.parse_json;
 import std.json.text_field;
@@ -93,7 +104,7 @@ fn main() -> result[void] uses console {
     );
     let counts = new map[str, Json];
     var total = 0;
-    for line in try as_array(try field(doc, "lines")) {
+    for line in try as_array(try member(doc, "lines")) {
         let qty = try int_field(line, "qty");
         set counts[try text_field(line, "sku")] = Json.integer(qty);
         set total = total + qty;
@@ -118,7 +129,7 @@ fn main() -> result[void] uses console {
   "scone": 1,
   "total": 3
 }
-error: line 1, column 11: expected a value, found `}`
+error: invalid json at line 1, column 11: expected a value, found `}`
 ```
 
 Object members keep their order, both when reading and when writing. A number that fits an `int` is
@@ -130,15 +141,14 @@ neither. Details: [std.json](../std/json.md).
 Times are `int` milliseconds since 1970-01-01 UTC, which makes arithmetic plain addition: `days`,
 `hours`, `minutes` and `seconds` turn a count into milliseconds. `parse_time` reads ISO 8601 text
 (a date, or a date and time with `Z` or an offset) and `format_time` writes it in UTC. `from_ms` gives a
-`DateTime` record with the calendar fields and the weekday, `to_ms` and `date` go back. `now` reads the
-clock.
+`DateTime` record with the calendar fields and the weekday, `to_ms` and `date` go back. The builtin `now_ms()` reads
+the clock.
 
 ```vo
 import std.time.days;
 import std.time.format_time;
 import std.time.from_ms;
 import std.time.hours;
-import std.time.now;
 import std.time.parse_time;
 
 fn main() -> result[void] uses console, clock {
@@ -147,7 +157,7 @@ fn main() -> result[void] uses console, clock {
     let due = ordered + days(3) + hours(2);
     print("ordered " + format_time(ordered));
     print("due     " + format_time(due) + " (" + names[from_ms(due).weekday - 1] + ")");
-    print("now     " + format_time(now()));
+    print("now     " + format_time(now_ms()));
     return ok();
 }
 ```
@@ -159,7 +169,7 @@ due     2026-03-02T17:30:00Z (Mon)
 now     2026-02-28T00:00:00Z
 ```
 
-`now` needs `clock`, and returns the real time unless the run fixes it with `--clock-ms N`, as here; in
+`now_ms()` needs `clock`, and returns the real time unless the run fixes it with `--clock-ms N`, as here; in
 `vo test` it starts at 0 (see [Determinism](determinism.md)). `sleep` and `local_zone` need it too;
 everything else in the module is pure.
 Details: [std.time](../std/time.md).
@@ -170,17 +180,16 @@ waits, without using the processor, and never past `--timeout` ([R0009](../error
 instantly and exactly; `vo replay` does not wait either.
 
 ```vo
-import std.time.now;
 import std.time.sleep;
 
 fn main() uses console, clock {
-    let start = now();
+    let start = now_ms();
     var pause = 50;
     for _ in 0..3 {
         sleep(pause);
         set pause = pause * 2;
     }
-    print("waited " + str(now() - start) + " ms");
+    print("waited " + str(now_ms() - start) + " ms");
 }
 ```
 
@@ -194,7 +203,7 @@ waited 351 ms
 A date for a person needs a zone. `load_zone("Europe/Stockholm")` gives a `Zone` from the tz database
 that is built into `vo`: it needs no effect and no file on the machine, so the same program prints the
 same local time everywhere, in a test and in a container that holds nothing but the program. Names are
-exact; an unknown one is an error value, and `zone_names()` lists them all. `fixed_zone(minutes)` is a
+exact; an unknown one is an error value, and `zone_names()` lists them all. `offset_zone(ms)` is a
 zone that is always that far east of UTC.
 
 `in_zone(z, ms)` is the calendar time a clock in the zone shows, `offset_at` and `abbreviation_at` give
@@ -279,12 +288,11 @@ as here and in every `vo test`, it is UTC, and `vo replay` gives the zone that w
 ```vo
 import std.time.format_in;
 import std.time.local_zone;
-import std.time.now;
 import std.time.tzdata_version;
 
 fn main() uses console, clock {
     let z = local_zone();
-    print("it is " + format_in(z, now()) + " in " + z.name);
+    print("it is " + format_in(z, now_ms()) + " in " + z.name);
     print("zone data: " + tzdata_version());
 }
 ```
@@ -351,17 +359,17 @@ any run of spaces, tabs and newlines, so it ignores the double space after `/hom
 
 ## std.random
 
-`unit` (a float in [0, 1)), `pick` (a random element) and `shuffle` (a shuffled copy). With the builtin
+`unit` (a float in [0, 1)), `pick` (a random element) and `shuffled` (a shuffled copy). With the builtin
 `random_int`, they all need `random`, and they all follow the run's seed: the same `--seed N` gives the
 same choices.
 
 ```vo
 import std.random.pick;
-import std.random.shuffle;
+import std.random.shuffled;
 
 fn main() -> result[void] uses console, random {
     let people = ["ana", "bo", "cy", "di"];
-    print("order: " + join(shuffle(people), ", "));
+    print("order: " + join(shuffled(people), ", "));
     print("on call: " + try pick(people));
     print("die: " + str(random_int(1, 6)));
     return ok();
@@ -376,23 +384,24 @@ die: 2
 ```
 
 Without `--seed`, `vo run` picks a seed of its own, so the output changes from run to run. `pick`
-returns a `result` because an empty list has nothing to pick; `shuffle` leaves its argument unchanged.
+returns a `result` because an empty list has nothing to pick; `shuffled` leaves its argument unchanged.
 Details: [std.random](../std/random.md).
 
 ## std.http
 
 HTTP and HTTPS. `get` and `post` send a request and return a `Response` with the status, the
-headers in order and the body; `header` reads a header without regard to case. They need `net`, scoped
+headers in order and the body; `response_header` reads a header without regard to case (`none` when it is missing). They need `net`, scoped
 to the hosts the program may reach.
 
 ```vo
 import std.http.get;
-import std.http.header;
+import std.http.response_header;
+import std.option.or_else;
 
 # Print the status and content type of the local status page.
 fn main() -> result[void] uses console, net("localhost") {
     let r = try get("http://localhost:8000/status");
-    print(str(r.status) + " " + try header(r, "content-type"));
+    print(str(r.status) + " " + or_else(response_header(r, "content-type"), ""));
     print(r.body);
     return ok();
 }
@@ -681,7 +690,7 @@ Details: [std.crypto](../std/crypto.md).
 ## std.tcp: connections
 
 `std.tcp` gives a program the connection itself, for protocols that are not HTTP: a database, a cache,
-mail, a queue. `connect` opens one, `send` writes `bytes`, and three reads take them back: `read` (what
+mail, a queue. `connect` opens one, `write_all` writes `bytes`, and three reads take them back: `read` (what
 has arrived, up to a size), `read_exact` (exactly so many) and `read_until` (through a delimiter, such
 as a line end). `connect_tls` does the same over TLS, verified exactly as an `https://` URL is, and
 `start_tls` upgrades an open connection, as SMTP and PostgreSQL ask for. `listen` and `accept` are the
@@ -694,12 +703,12 @@ import std.bytes.from_text;
 import std.bytes.to_text;
 import std.tcp.Conn;
 import std.tcp.TcpError;
-import std.tcp.close;
+import std.tcp.close_conn;
 import std.tcp.connect;
-import std.tcp.describe;
+import std.tcp.tcp_error_text;
 import std.tcp.read_exact;
 import std.tcp.read_until;
-import std.tcp.send;
+import std.tcp.write_all;
 
 const redis = "127.0.0.1:6379";
 const crlf = "\r\n";
@@ -714,7 +723,7 @@ fn command[E: effects](c: Conn[E], words: list[str]) -> result[str, TcpError] us
     for w in words {
         set request = request + "$" + str(len(w)) + crlf + w + crlf;
     }
-    try send(c, from_text(request), 1000);
+    try write_all(c, from_text(request), 1000);
     let head = trim(try map_err(to_text(try read_until(c, from_text(crlf), 1000)), other));
     if slice(head, 0, 1) != "$" {
         return ok(slice(head, 1, len(head)));
@@ -731,7 +740,7 @@ fn session() -> result[void, TcpError] uses console, net(redis) {
     print(try command(c, ["PING"]));
     print(try command(c, ["SET", "drink", "tea"]));
     print(try command(c, ["GET", "drink"]));
-    close(c);
+    close_conn(c);
     return ok();
 }
 
@@ -740,7 +749,7 @@ fn main() uses console, net(redis) {
         case ok() {
         }
         case err(e) {
-            print(describe(e));
+            print(tcp_error_text(e));
         }
     }
 }
@@ -755,11 +764,12 @@ fn main() uses console, net(redis) {
 - **A connection carries its effect.** `connect` returns a `Conn[uses net]` and `accept` a
   `Conn[uses serve]`; a function that takes any connection is generic, `fn ask[E: effects](c: Conn[E])
   uses E`, like `command` above.
-- **Every wait has a time limit**, in milliseconds (1 to 600000), given at the call. After a read that
-  timed out the connection is still usable and no byte is lost; after a `send` that timed out, close it.
+- **Every wait has a time limit**, in milliseconds (0 to 600000; 0 is the longest, 600000), given at the
+  call. After a read that timed out the connection is still usable and no byte is lost; after a
+  `write_all` that timed out, close it.
 - **Errors are a variant**, `TcpError`: `refused`, `timed_out`, `closed`, `not_found`, `unreachable`,
-  `tls(reason)`, `in_use`, `too_large`, `too_many`, `invalid(what)` and `other(reason)`. `describe`
-  turns one into a sentence. Using a closed connection is `closed`, never a stopped program.
+  `tls(reason)`, `in_use`, `too_large`, `too_many`, `invalid(what)` and `other(reason)`.
+  `tcp_error_text` turns one into a sentence. Using a closed connection is `closed`, never a stopped program.
 - **Limits.** One read returns at most 16 MiB (`too_large` when that much arrived without the
   delimiter; the bytes stay readable), and 256 connections and listeners can be open at once.
 - **Recording.** `vo run --record` saves how each connection opened and everything it received;
@@ -922,14 +932,14 @@ amounts have the same places, an integer column of units works too (`decimal(cen
 
 ## std.lists: small operations on lists
 
-The loops everybody writes, once: `contains(xs, x)` and `index_of(xs, x)` (-1 when absent),
+The loops everybody writes, once: `has_item(xs, x)` and `index_of(xs, x)` (-1 when absent),
 `reversed(xs)` (a new list), `sort_by_desc(xs, key)` (in place, largest key first; equal keys keep
 their order), `min_by(xs, key)` and `max_by(xs, key)` (the first element with the smallest or largest
 key; an error for an empty list), `sum(xs)` for a list of `int`, and `group_by(xs, key)`, a map from
 each key to the list of its elements.
 
 ```vo
-import std.lists.contains;
+import std.lists.has_item;
 import std.lists.group_by;
 import std.lists.max_by;
 import std.lists.sort_by_desc;
@@ -937,7 +947,7 @@ import std.lists.sum;
 
 fn main() uses console {
     let words = split("pear fig kiwi apple fig plum", " ");
-    print(format("{} {}", contains(words, "kiwi"), sum(map(words, fn(w: str) -> int { return len(w); }))));
+    print(format("{} {}", has_item(words, "kiwi"), sum(map(words, fn(w: str) -> int { return len(w); }))));
     for size, group in group_by(words, fn(w: str) -> int { return len(w); }) {
         print(format("{} letters: {}", size, join(group, " ")));
     }
@@ -1021,7 +1031,7 @@ fn main() uses console {
 ## std.collections
 
 The builtin collections `ordered_map`, `ordered_set`, `priority_queue` and `deque` support `len`, `has`,
-`push`, `pop`, indexing and `for` directly. This module has the rest: the first and last keys, the
+`push`, `pop`, indexing and `for` directly. This module has the rest, a lookup that may find nothing giving an `Option`: the first and last keys, the
 neighbors of a key (`key_at_or_below`, `key_after`, ...), ranges (`keys_between`, `between`), set algebra
 (`union`, `intersection`, `difference`), the front of a deque (`push_front`, `pop_front`, `front`),
 `peek` for a queue, copies, and constructors with your own order (`ordered_map_by(cmp)` and the like).
@@ -1030,6 +1040,7 @@ neighbors of a key (`key_at_or_below`, `key_after`, ...), ranges (`keys_between`
 import std.collections.difference;
 import std.collections.key_at_or_below;
 import std.collections.union;
+import std.option.or_else;
 
 fn names(s: ordered_set[str]) -> str {
     let out = new list[str];
@@ -1045,7 +1056,7 @@ fn main() -> result[void] uses console {
     set shifts[0] = "ana";
     set shifts[480] = "bo";
     set shifts[960] = "cy";
-    let start = try key_at_or_below(shifts, 615);
+    let start = or_else(key_at_or_below(shifts, 615), 0);
     print("at 10:15: " + shifts[start]);
     let week1 = new ordered_set[str];
     let week2 = new ordered_set[str];
@@ -1083,21 +1094,21 @@ is a vo string, so its backslashes are doubled: the pattern `\d+` is written `"\
 import std.regex.regex;
 import std.regex.is_match;
 import std.regex.first_match;
-import std.regex.replace_all;
+import std.regex.replace_matches;
 
 fn main() uses console {
     let id = regex(`^[A-Z]{3}-\d{4}$`);
-    print(str(is_match(id, "ABC-1234")) + " " + str(is_match(id, "ABC-12")));
+    print(str(is_match("ABC-1234", id)) + " " + str(is_match("ABC-12", id)));
     let log = regex(`(\d{4})-(\d{2})-(\d{2}) (?<level>ERROR|WARN)`);
-    match first_match(log, "2026-11-19 ERROR disk full") {
-        case ok(m) {
+    match first_match("2026-11-19 ERROR disk full", log) {
+        case some(m) {
             print(m.groups[1] + " " + m.named["level"] + " at byte " + str(m.start));
         }
-        case err(e) {
-            print(e);
+        case none {
+            print("no match");
         }
     }
-    print(replace_all(regex(`(\d{2})/(\d{2})/(\d{4})`), "due 19/11/2026", "$3-$2-$1"));
+    print(replace_matches("due 19/11/2026", regex(`(\d{2})/(\d{2})/(\d{4})`), "$3-$2-$1"));
 }
 ```
 
@@ -1124,8 +1135,8 @@ instead.
 ```vo
 import std.sqlite.Value;
 import std.sqlite.exec;
-import std.sqlite.get_int;
-import std.sqlite.get_str;
+import std.sqlite.int_column;
+import std.sqlite.text_column;
 import std.sqlite.open_memory;
 import std.sqlite.query;
 import std.sqlite.sql;
@@ -1153,7 +1164,7 @@ fn main() -> result[void] uses console {
     for row in try query(db, sql("select name, age from people where age > ? order by name"), [
         Value.integer(30)
     ]) {
-        print(try get_str(row, "name") + " " + str(try get_int(row, "age")));
+        print(try text_column(row, "name") + " " + str(try int_column(row, "age")));
     }
     match exec(db, sql("insert into people(age) values (?)"), [Value.integer(1)]) {
         case ok(_) {

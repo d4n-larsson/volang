@@ -1,0 +1,30 @@
+# Spec 056 (E0214): `WorkerError.timeout` was renamed `timed_out`; a match arm or a value naming the old case
+# gets the new name as the fix.
+import std.workers.WorkerError;
+
+fn reason(e: WorkerError) -> str {
+    match e {
+        case timeout {
+            return "too slow";
+        }
+        case ended {
+            return "ended";
+        }
+        case failed(t) {
+            return t;
+        }
+        case full {
+            return "full";
+        }
+        case too_large {
+            return "too large";
+        }
+        case too_many {
+            return "too many";
+        }
+    }
+}
+
+fn main() uses console {
+    print(reason(WorkerError.timeout));
+}

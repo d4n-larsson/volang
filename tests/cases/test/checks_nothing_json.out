@@ -1,2 +1,2 @@
-{"v":1,"kind":"diagnostic","code":"W0602","name":"test_checks_nothing","severity":"warning","file":"checks_nothing_json.vo","start":{"line":6,"col":1},"end":{"line":6,"col":5},"text":"test","message":"Test `prints only` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"W0602","name":"test_checks_nothing","severity":"warning","file":"checks_nothing_json.vo","start":{"line":6,"col":1},"end":{"line":6,"col":5},"text":"test","message":"`test \"prints only\"` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.","fixes":[],"related":[]}
 {"v":1,"kind":"summary","command":"check","errors":0,"warnings":1,"truncated":0,"files":1}

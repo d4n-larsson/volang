@@ -7,7 +7,7 @@ import std.time.zone_names;
 fn show(name: str) uses console {
     match load_zone(name) {
         case ok(z) {
-            print(format("{}: {} changes, offsets {} to {}, {} rule", z.name, len(z.starts), z.offsets[0], z.offsets[len(z.offsets) - 1], len(z.rules)));
+            print(format("{}: {} changes, offsets {} to {}, {} rule", z.name, len(z.starts_s), z.offsets_s[0], z.offsets_s[len(z.offsets_s) - 1], len(z.rules)));
         }
         case err(e) {
             print(e);

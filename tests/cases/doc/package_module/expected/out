@@ -38,7 +38,7 @@ fn pad_left(s: str, width: int, fill: str) -> str
 --- stderr
 --- exit 0
 $ vo doc money.format
-vo.packages:2:1: error[E0701]: Package money changed: the manifest pins sha256:db27bffed6b9c5496b1cc132e27c8e4f54a90d7997715591426219bb6d9ad56e, its files hash to sha256:ee46257d21001605f283f5225f6b1b1dc60a00e0dfed6d1b1f28fdd97661319d. Review the change, then run `vo package vo.packages money shared/money`.
+vo.packages:2:1: error[E0701]: Package `money` changed: the manifest pins sha256:db27bffed6b9c5496b1cc132e27c8e4f54a90d7997715591426219bb6d9ad56e, its files hash to sha256:ee46257d21001605f283f5225f6b1b1dc60a00e0dfed6d1b1f28fdd97661319d. Review the change, then run `vo package vo.packages money shared/money`.
    2 | money shared/money sha256:db27bffed6b9c5496b1cc132e27c8e4f54a90d7997715591426219bb6d9ad56e
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 1 error, 0 warnings

@@ -1,0 +1,20 @@
+# Spec 056 (FR-016): every exported error variant has a text function with one sentence per case.
+import std.tcp.TcpError;
+import std.tcp.tcp_error_text;
+import std.workers.WorkerError;
+import std.workers.worker_error_text;
+import std.time.LocalError;
+import std.time.Repeated;
+import std.time.local_error_text;
+
+fn main() uses console {
+    print(tcp_error_text(TcpError.timed_out));
+    print(tcp_error_text(TcpError.invalid("the time limit must be 0 to 600000 ms")));
+    for e in [WorkerError.timed_out, WorkerError.ended, WorkerError.failed("exit status 3"), WorkerError.full,
+              WorkerError.too_large, WorkerError.too_many] {
+        print(worker_error_text(e));
+    }
+    print(local_error_text(LocalError.invalid("month 13")));
+    print(local_error_text(LocalError.skipped(1711846800000)));
+    print(local_error_text(LocalError.repeated(new Repeated { first: 1729990800000, second: 1729994400000 })));
+}

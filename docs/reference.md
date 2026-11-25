@@ -29,8 +29,8 @@ hello vo, count = 3
 - **Comments** are whole lines whose first non-blank character is `#`. A `#` after code is E0101. No block comments.
 - **Names**: functions, variables, parameters, record fields and variant cases are `snake_case` (`[a-z][a-z0-9_]*`). Records, variants and effect sets are `PascalCase` (`[A-Z][A-Za-z0-9]*`). Other spellings are E0207, whose fix is the converted name.
 - `_` alone is the discard name: `let _ = ...;`, a `case` binding such as `case err(_)`, and a `for` variable (`for _ in 0..n`). It is not allowed as a parameter.
-- **Integers**: `0`, `42`, `1000000`; `0xFF` and `0b1010` are 64-bit patterns (`0xFFFFFFFFFFFFFFFF` is `-1`). No `_` separators, octal or suffixes. Negative numbers use unary `-`: `-5`. The maximum is 9223372036854775807 (larger literals are E0105).
-- **Floats**: `1.0`, `0.5`, `1e9`, `1.5e-3`. Both sides of `.` are required (`1.` and `.5` are invalid); at most 17 significant digits.
+- **Integers**: `0`, `42`, `1000000`; `0xFF` and `0b1010` are 64-bit patterns (`0xFFFFFFFFFFFFFFFF` is `-1`). No `_` separators, leading zeros or suffixes. Negative numbers use unary `-`: `-5`. The maximum is 9223372036854775807 (larger literals are E0105).
+- **Floats**: `1.0`, `0.5`, `1e9`, `1.5e-3` (not `1E9`, `1e+9`). Both sides of `.` are required (`1.` and `.5` are invalid); at most 17 significant digits.
 - **Strings**: `"..."` on one line, with the escapes `\n`, `\t`, `\r`, `\\`, `\"` and `\u{HEX}` (any other is E0103). A raw string, `` `...` ``, is its text as written (no escapes, any lines, no backtick), only for text with a backslash, a `"` or a line break (W0102). No single quotes, character type or interpolation: use `format` or `+`.
 - **Booleans**: `true`, `false`.
 - **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void uses prop requires ensures export bytes`; `const` and `effects` only where they start an item.
@@ -451,7 +451,7 @@ Precedence, from tightest to loosest:
 - Logic uses words: `and`, `or`, `not`. `&&`, `||` and `!` do not exist. Operands must be `bool`.
 - Both operands of `+ - * /` must have the same type, `int` or `float`. `int + float` is E0301: convert one side with `float(i)` or `int(f)`. `%` is `int` only.
 - `int` division truncates toward zero: `7 / 2` is `3`, `-7 / 2` is `-3`, `-7 % 3` is `-1`. Dividing an `int` by zero is R0002. Overflow, including `-9223372036854775807 - 2`, is R0001. `float` arithmetic follows IEEE: `1.0 / 0.0` is `inf`, `0.0 / 0.0` is `nan`.
-- `<`, `<=`, `>`, `>=` compare two values of one ordered type: `int`, `float`, `str` and `bytes` (byte order), and records whose fields are all ordered (field by field, in declaration order). Not `bool` or variants.
+- `<`, `<=`, `>`, `>=` compare two values of one ordered type: `int`, `float`, `str` and `bytes` (byte order), `bool` (`false < true`), and records and variants of ordered parts (in declaration order: the fields, or the case, then its payload).
 - `==` and `!=` compare structurally: lists, maps, records, variants and results are equal when their contents are equal (`nan != nan`, also inside). Not functions, nor values holding one (E0308).
 - `x.field` reads a record field. Strings cannot be indexed (`s[0]` is E0308): use `slice`, `for c in s` or `byte_at`. No methods: write `len(xs)`, not `xs.len()`.
 - There is no ternary `a ? b : c`, no `+=`, no `++`, no `**` and no bitwise operators (`&`, `<<`: use `std.bits`).
@@ -773,7 +773,7 @@ fn main() {
 
 ## Lists and maps
 
-**Lists**: `[1, 2, 3]` builds a list from at least one element of one type. An empty list needs its type: `new list[int]` (`[]` is E0306). `xs[i]` reads (0-based; out of range is R0003), `set xs[i] = v;` replaces an existing element, `push(xs, v)` appends, `pop(xs)` removes the last element and returns a `result`. `len(xs)` is the length. `slice(xs, a, b)` returns a new list with elements `a` to `b - 1`. `sort(xs)` sorts a list of `int`, `float` or `str` in place.
+**Lists**: `[1, 2, 3]` builds a list from at least one element of one type. An empty list is `new list[int]`, or `[]` where the context gives the type (E0306 otherwise). `xs[i]` reads (0-based; out of range is R0003), `set xs[i] = v;` replaces an existing element, `push(xs, v)` appends, `pop(xs)` removes the last element and returns a `result`. `len(xs)` is the length. `slice(xs, a, b)` returns a new list with elements `a` to `b - 1`. `sort(xs)` sorts a list of `int`, `float` or `str` in place.
 
 **Maps**: no map literal: create with `new map[str, int]`. A record key (`map[Cell, str]`) replaces a key glued together from text. `set m[k] = v;` inserts or updates. `m[k]` reads, stopping with R0004 if the key is missing: check `has(m, k)` first. `remove(m, k)` deletes. `keys(m)` lists keys in insertion order; updating an existing key keeps its position. `len(m)` counts entries.
 
@@ -844,7 +844,7 @@ a=1
 
 ```vo
 fn main() uses console {
-    let xs: list[int] = [];
+    let xs = [];
     print(str(len(xs)));
 }
 ```
@@ -1148,36 +1148,37 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 
 | Module | Contents |
 |---|---|
-| std.json | `Json` values: `parse_json`, `write_json`, `write_json_pretty`, field readers; `to_json(v)`, `from_json(j)` for any `T: json` (records as objects, cases as `"name"` or `{"name": value}`, strict: every problem as `path: reason`) |
-| std.time | calendar times in UTC and zones (`load_zone`, `in_zone`), ISO 8601 text, durations, `now` (clock) |
+| std.json | `Json` values: `parse_json`, `write_json`, `write_json_pretty`, field readers; `to_json(v)`, `from_json(j)` for any `T: json` (strict: every problem as `path: reason`) |
+| std.time | calendar times in UTC and zones (`load_zone`, `in_zone`), ISO 8601 text, durations (ms), `sleep` (clock) |
 | std.text | `replace`, `contains`, `pad_left`, `lines`, `words`, `char_count`, ... |
-| std.random | `unit`, `pick`, `shuffle` (random) |
+| std.random | `unit`, `pick`, `shuffled` (random) |
 | std.http | HTTP(S) clients `get`, `post`, `send`, `send_stream` (net); servers `serve`, `serve_workers` (serve, HTTP only); `*_bytes` forms |
-| std.collections | neighbors and ranges of the ordered collections, set algebra, deque fronts, `_by(cmp)` orders |
+| std.collections | neighbors (an `Option`) and ranges of the ordered collections, set algebra, deque fronts, `_by(cmp)` orders |
 | std.fs | `info`, `list_dir`, `walk`, `read_bytes`, `each_line` (file.read); `append_file`, `write_bytes`, `make_dir` (file.write); `delete`, `rename` (file.delete) |
 | std.process | `run`, `run_with`, `run_lines` (and `_bytes` forms): a program run to its end, no shell (process) |
 | std.bytes | text, ints, hex and base64 to and from `bytes`; `read_stdin`, `write_stdout` |
 | std.decimal | exact amounts: `parse_decimal`, arithmetic, `round_to` (a `Rounding` is always stated), `split_evenly`, ... |
 | std.bits | `bit_and`, `shift_left`, `parse_hex`, ... on the 64-bit form of an `int` |
 | std.math | `sqrt`, `pow`, `exp`, `log`, trigonometry; `floor`, `ceil`, `round` to `int` (out of domain is R0007) |
-| std.regex | `regex("...")` (checked by `vo check`), `parse_regex`, matching, `replace_all` (`$1`), `split_on`: linear time |
-| std.sqlite | `open`, `open_readonly`, `open_memory` give a `Database[E]` with the file effects used (none in memory); `exec`, `query` (need `E`) with `sql("...")` (checked) and `?` parameters; `transaction`; getters |
+| std.regex | `regex("...")` (checked by `vo check`), `parse_regex`, matching, `replace_matches` (`$1`), `split_on`: linear time |
+| std.sqlite | `open`, `open_readonly`, `open_memory` give a `Database[E]` with the file effects used (none in memory); `exec`, `query` (need `E`) with `sql("...")` (checked) and `?` parameters; `transaction`; `int_column` and other readers |
 | std.crypto | `sha256`, `hmac_sha256`, `same_bytes` (constant time); `random_bytes(n)`, `hash_password` (entropy); `verify_password` |
-| std.tcp | TCP as `bytes`: `connect`, `connect_tls`, `start_tls` (net), `listen`, `accept` (serve); `send`, `read`, `read_until`, `close` on a `Conn[E]` (need `E`); a time limit on every wait; `TcpError` |
+| std.tcp | TCP as `bytes`: `connect`, `connect_tls`, `start_tls` (net), `listen`, `accept` (serve); `write_all`, `read`, `read_until`, `close_conn` on a `Conn[E]` (need `E`); `timeout_ms` 0 to 600000 on every wait (0: the most); `TcpError` |
 | std.option | `Option[T]` (`some`, `none`) for absence, `or_else`, `is_some`, `to_result` |
 | std.web | APIs over `serve_workers`: `web_app`, `on_get` (and other methods), `serve_app`, steps (`request_logs`, `request_metrics`), `metrics_route`, `health_routes`, `load_settings` |
 | std.log | JSON log records (`log`): `log_info(message, [field(name, v)])`, `log_warn`, `logged()` in tests; secret-like names redacted |
-| std.metrics | `counter`, `gauge`, `histogram`; `add`, `set_to`, `observe` (`log`); `metrics_text` |
-| std.security | access control for `std.web`: `policy(rules, ways, now)`, `rule(path, Access.signed_in)`, `secure`, ways `tokens`, `basic`, `browser(b)` (session cookie; `browser_routes(b, p)` signs in and out); `require_user` |
-| std.lists | `contains`, `index_of`, `reversed`, `sort_by_desc`, `min_by`, `sum`, `group_by`, ... |
+| std.metrics | `counter`, `gauge`, `histogram`; `add_to`, `set_to`, `observe` (`log`); `metrics_text` |
+| std.security | access control for `std.web`: `policy(rules, ways, now)`, `rule(path, Access.signed_in)`, `secure`, ways `tokens`, `basic`, `browser(b)` (session cookie); `require_user` |
+| std.lists | `has_item`, `index_of`, `reversed`, `sort_by_desc`, `min_by`, `sum`, `group_by`, ... |
 | std.workers | processes beside the program: `start_worker(f)`, `tell`, `receive(w, Wait.forever)`, `receive_first`, `stop_worker`, `with_deadline(ms, f)`; inside: `next_message`, `emit` |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
 - `https://` URLs are verified: the server's certificate must lead to an authority in the machine's trust store (or a file given with `--ca-file`), be valid and name the host, else an `err`. Nothing turns verification off. TLS 1.3 and 1.2 only. Replay needs no network.
 - `std.http.serve(address, handle)` calls `handle(request) -> Response` for one request at a time, in the order they arrive complete, until Ctrl-C or SIGTERM, then returns `ok()`. The caller declares `serve` with that address and the handler's effects. A handler's runtime error answers 500 and the server goes on; `--timeout` limits each handler call, not the server.
 - `serve_workers(address, workers, setup, handle)` handles up to `workers` requests at once (1 to 64; `vo run --workers N` overrides it): each worker is a process that runs `setup() -> result[S]` once (open the database there) and then `handle(state, request)` for one request at a time. Requests share no memory: keep state in a database.
-- `std.web`: an app is `web_app([on_get("/notes/{id}", show), ...])` (or a `new App` with steps and error kinds); an operation is `fn(ctx: C, input: I) -> result[Response]`, `I` a record whose fields take the path variable of their name, the JSON body (field `body`), a header (`@header("Name")`) or the query parameter of their name, checked by its annotations (else a 400/415/422 problem). `err("not_found: detail")` answers 404 (also `bad_request`, `unauthorized`, `forbidden`, `conflict`, `gone`, `unprocessable`, and `App.errors`); other errors 500. An operation with a typed error is wrapped, `typed(op, answer)`, `answer` mapping each error to a `Problem { status, detail }`. Patterns are checked literals (E0330, E0331). `serve_app(address, workers, setup, app)` serves it; tests call `handle_request(app, ctx, request(method, path, body))`. Answers: `ok(json_reply(200, note))`, `created("/notes/7", note)`, `no_content()`. Bodies are JSON or an HTML form, whose fields bind like query parameters. Cookies: `read_cookie(header, name)`, `with_cookie(resp, cookie(name, value))` (HttpOnly, Secure, SameSite=Lax unless changed). Under `browser`, a cookie-signed change must come from the app's own origin (else 403). Recordings of signed-in apps hold passwords and cookies.
+- `std.web`: an app is `web_app([on_get("/notes/{id}", show), ...])` (or a `new App` with steps and error kinds); an operation is `fn(ctx: C, input: I) -> result[Response]`, `I` a record whose fields take the path variable of their name, the JSON body (field `body`), a header (`@header("Name")`) or the query parameter of their name, checked by its annotations (else a 400/415/422 problem). `err("not_found: detail")` answers 404 (also `bad_request`, `unauthorized`, `forbidden`, `conflict`, `gone`, `unprocessable`, and `App.errors`); other errors 500. An operation with a typed error is wrapped, `typed(op, answer)`, `answer` mapping each error to a `Problem { status, detail }`. Patterns are checked literals (E0330, E0331). `serve_app(address, workers, setup, app)` serves it; tests call `handle_request(app, ctx, request(method, path, body))`. Answers: `ok(json_reply(200, note))`, `created("/notes/7", note)`, `no_content()`. Bodies are JSON or an HTML form, whose fields bind like query parameters. Cookies: `read_cookie(header, name)`, `with_cookie(resp, cookie(name, value))` (HttpOnly, Secure, SameSite=Lax unless changed).
 - `std.process.run(program, args)` runs a program with no shell, no input and an empty environment and returns `Output { code, stdout, stderr }`; `run_with` adds input text and `NAME=value` variables. A non-zero exit is `ok`; killed by signal n, `code` is 128 + n. `--timeout` covers the program and everything it starts. A started program is not confined: `process("git")` grants whatever `git` can do.
+- `parse_X` reads text, `from_X` decodes (`from_hex`); a failure is `err("invalid X: ...")`.
 - Large inputs come in pieces: `each_line(path, f)`, `each_chunk`, `send_stream` and `run_lines` call `f` per piece; `f` returns `ok(true)` to go on, `ok(false)` to stop.
 - File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...; reading one: `"cannot read PATH"`); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.
 - Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` (or an `https://` archive URL; `--restore ENTRY` fetches missing ones) adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
@@ -1407,7 +1408,7 @@ Other kinds: `toolchain_error` (`code`, `name`, `message`, optional `path` and `
 
 ## Error codes
 
-Every diagnostic, runtime error and toolchain error has a stable code, and `vo explain CODE` prints what it means, an example and the fix. Ranges: E01xx syntax, E02xx names and imports, E03xx types, E04xx control flow, `match` and results, E05xx effects, E06xx holes, tests and contracts, E07xx packages, Wxxxx warnings (they never fail a command; W07xx: structure), R00xx runtime errors (exit status 70; R0009 timeout is 124) and T00xx toolchain errors. When a diagnostic has no fix, read `vo explain` before changing code.
+Every diagnostic, runtime error and toolchain error has a stable code, and `vo explain CODE` prints what it means, an example and the fix. Ranges: E01xx syntax, E02xx names, imports and library changes (E0214), E03xx types, E04xx control flow, `match` and results, E05xx effects, E06xx holes, tests and contracts, E07xx packages, Wxxxx warnings (they never fail a command; W07xx: structure), R00xx runtime errors (exit status 70; R0009 timeout is 124) and T00xx toolchain errors. When a diagnostic has no fix, read `vo explain` before changing code.
 
 ```vo
 fn main() uses console {

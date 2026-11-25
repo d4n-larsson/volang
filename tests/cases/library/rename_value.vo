@@ -1,0 +1,8 @@
+# Spec 056 (E0214): a renamed std function passed as a value gets the same fix.
+import std.tcp.TcpError;
+import std.tcp.describe;
+
+fn main() uses console {
+    let texts = map([TcpError.refused, TcpError.closed], describe);
+    print(join(texts, "; "));
+}

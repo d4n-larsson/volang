@@ -131,10 +131,10 @@ fn listen(q: Queue) -> result[void, WorkerError] uses console, clock {
 }
 
 # Runs every job; how many were given up.
-fn run_queue(todo: list[Job]) -> result[int, WorkerError] uses console, clock {
+fn run_queue(todo_value: list[Job]) -> result[int, WorkerError] uses console, clock {
     let q = new Queue {
         seats: [try seat(), try seat(), try seat()],
-        todo: todo,
+        todo: todo_value,
         next: 0,
         in_hand: 0,
         given_up: 0
@@ -148,13 +148,13 @@ fn run_queue(todo: list[Job]) -> result[int, WorkerError] uses console, clock {
 
 fn main() uses console, clock {
     let limits = [20000, 60000, 30000, 400000000, 90000, 10000, 50000];
-    let todo = new list[Job];
+    let todo_value = new list[Job];
     for i, limit in limits {
-        push(todo, new Job { id: i + 1, limit: limit });
+        push(todo_value, new Job { id: i + 1, limit: limit });
     }
-    match run_queue(todo) {
+    match run_queue(todo_value) {
         case ok(given_up) {
-            print(str(len(todo) - given_up) + " done, " + str(given_up) + " given up");
+            print(str(len(todo_value) - given_up) + " done, " + str(given_up) + " given up");
             if given_up > 0 {
                 exit(2);
             }

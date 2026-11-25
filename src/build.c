@@ -17,7 +17,7 @@
 #define PKG_ROOT "/vo-app" /* stands for the manifest's directory, so a build does not depend on where it ran */
 
 static const char magic[16] = "VO-PROGRAM-v1";
-const char vo_version_text[] = "vo 0.1.0 schema 1\n";
+const char vo_version_text[] = "vo 0.2.0 schema 1\n";
 
 long ld_app;
 Str *app_entry;
@@ -254,7 +254,13 @@ int cmd_build(char *output, char *base)
 
     char *base_text; /* the toolchain the executable is made from */
     long base_len = read_whole_file(base ? base : "/proc/self/exe", &base_text);
-    if (base_len < 0) build_refuse("Cannot read the base toolchain `$1`.", base ? base : "/proc/self/exe");
+    if (base_len < 0) { /* spec 056: an unreadable input is T0002, as every one is (exit 66) */
+        Str *bp = str_from_cstr(base ? base : "/proc/self/exe");
+        toolchain_error((int)opt_json, (int)report_fd, "T0002", msg("Cannot read the base toolchain `$1`.", bp, 0, 0), bp);
+        diag_errors++;
+        if (opt_json) summary_emit(1, (int)report_fd, cmd_name(), file_count, 0);
+        vo_exit(EXIT_NOINPUT);
+    }
     if (base) {
         if (base_len < TRAILER || !mem_eq(base_text, "\177ELF", 4))
             build_refuse("`$1` is not a vo toolchain: `--base` takes the `vo` binary of another architecture.", base);

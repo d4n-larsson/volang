@@ -30,45 +30,45 @@ fn num(s: str) -> int {
 
 fn run(words: list[str], book: Book) -> list[str] {
     let cmd = words[0];
-    let args = slice(words, 1, len(words));
+    let args_value = slice(words, 1, len(words));
     let bad = ["error: bad command"];
     if cmd == "assignment" {
-        if len(args) != 3 or not is_number(args[1]) or not is_number(args[2]) {
+        if len(args_value) != 3 or not is_number(args_value[1]) or not is_number(args_value[2]) {
             return bad;
         }
-        let weight = num(args[1]);
-        let max_points = num(args[2]);
+        let weight = num(args_value[1]);
+        let max_points = num(args_value[2]);
         if weight < 1 or weight > 100 or max_points < 1 {
             return bad;
         }
-        return [add_assignment(book, args[0], weight, max_points)];
+        return [add_assignment(book, args_value[0], weight, max_points)];
     }
     if cmd == "enroll" {
-        if len(args) != 1 {
+        if len(args_value) != 1 {
             return bad;
         }
-        return [enroll(book, args[0])];
+        return [enroll(book, args_value[0])];
     }
     if cmd == "score" {
-        if len(args) != 3 or not is_number(args[2]) {
+        if len(args_value) != 3 or not is_number(args_value[2]) {
             return bad;
         }
-        return [set_score(book, args[0], args[1], num(args[2]))];
+        return [set_score(book, args_value[0], args_value[1], num(args_value[2]))];
     }
     if cmd == "card" {
-        if len(args) != 1 {
+        if len(args_value) != 1 {
             return bad;
         }
-        return card(book, args[0]);
+        return card(book, args_value[0]);
     }
     if cmd == "stats" {
-        if len(args) != 1 {
+        if len(args_value) != 1 {
             return bad;
         }
-        return assignment_stats(book, args[0]);
+        return assignment_stats(book, args_value[0]);
     }
     if cmd == "report" {
-        if len(args) != 0 {
+        if len(args_value) != 0 {
             return bad;
         }
         return class_report(book);

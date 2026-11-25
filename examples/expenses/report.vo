@@ -182,7 +182,7 @@ test "a bad date is an error, not a crash" {
             expect_eq(expenses_from(doc), err(
                 ExpenseError.bad_date(new DateProblem {
                     date: "2026-02-30",
-                    reason: "day 30 is not in that month"
+                    reason: "invalid time: 2026-02-30; day 30 is not in that month"
                 })
             ));
         }

@@ -1,5 +1,5 @@
-at byte 0: Pattern is longer than 10000 bytes.
-at byte 0: Pattern is too large (more than 20000 instructions after repetitions).
-at byte 200: Groups nested more than 200 deep.
+invalid regex at byte 0: Pattern is longer than 10000 bytes.
+invalid regex at byte 0: Pattern is too large (more than 20000 instructions after repetitions).
+invalid regex at byte 200: Groups nested more than 200 deep.
 ok
 ok

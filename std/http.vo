@@ -6,13 +6,14 @@
 
 import std.tcp.Conn;
 import std.tcp.TcpError;
-import std.tcp.close;
+import std.tcp.close_conn;
 import std.tcp.connect;
 import std.tcp.connect_tls;
-import std.tcp.describe;
+import std.tcp.tcp_error_text;
 import std.tcp.read;
 import std.tcp.read_exact;
 import std.tcp.read_until;
+import std.option.Option;
 
 # One response header, as received.
 #     new Header { name: "a", value: "b" }.name is "a"
@@ -159,10 +160,14 @@ fn exchange_raw(
 ) -> result[str] uses net {
     let u = try parse_url(url);
     let request = try request_text(method, u, headers, body);
-    if timeout_ms < 0 {
-        return err("bad timeout: " + str(timeout_ms) + " ms");
+    if timeout_ms < 0 or timeout_ms > 600000 {
+        return err("invalid: the time limit must be 0 to 600000 ms");
     }
-    __http_timeout(timeout_ms);
+    if timeout_ms == 0 {
+        __http_timeout(600000);
+    } else {
+        __http_timeout(timeout_ms);
+    }
     if u.tls {
         return __https_exchange(u.host, u.port, request);
     }
@@ -341,7 +346,7 @@ fn exchange_bytes(
     });
 }
 
-# Sends a request with any method (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, ...), the headers given (in their order, after Host, Connection and User-Agent; a `User-Agent` given replaces `vo`) and a body, to an http:// or https:// URL (needs net). `timeout_ms` bounds the whole request: when it passes, the result is err("the request to HOST:PORT timed out"); 0 leaves only the run's `--timeout`. A header that could break the request (a line break, `Host`, `Content-Length`) is an err before anything is sent.
+# Sends a request with any method (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`, ...), the headers given (in their order, after Host, Connection and User-Agent; a `User-Agent` given replaces `vo`) and a body, to an http:// or https:// URL (needs net). `timeout_ms` bounds the whole request: when it passes, the result is err("the request to HOST:PORT timed out"); 0 to 600000, 0 meaning 600000. A header that could break the request (a line break, `Host`, `Content-Length`) is an err before anything is sent.
 #     send("PUT", "ftp://x/", new list[Header], "", 0) == err("not an http:// or https:// URL: ftp://x/") is true
 export fn send(
     method: str,
@@ -365,15 +370,15 @@ export fn send_bytes(
     return exchange_bytes(method, url, headers, body, timeout_ms);
 }
 
-# The value of the first header with this name, compared without case.
-#     header(new Response { status: 200, headers: [new Header { name: "Content-Type", value: "text/plain" }], body: "" }, "content-type") == ok("text/plain") is true
-export fn header(r: Response, name: str) -> result[str] {
+# The value of the first response header with this name, compared without case; `none` when there is none.
+#     response_header(new Response { status: 200, headers: [new Header { name: "Content-Type", value: "text/plain" }], body: "" }, "content-type") == Option.some("text/plain") is true
+export fn response_header(r: Response, name: str) -> Option[str] {
     for h in r.headers {
         if lower(h.name) == lower(name) {
-            return ok(h.value);
+            return Option.some(h.value);
         }
     }
-    return err("no header `" + name + "`");
+    return Option.none;
 }
 
 # A request a server received: method, path, query (after `?`), headers in their order, and body.
@@ -391,15 +396,15 @@ export record Request {
     body: str;
 }
 
-# The value of the first request header with this name, compared without case.
-#     request_header(new Request { method: "GET", path: "/", query: "", headers: [new Header { name: "Host", value: "x" }], body: "" }, "host") == ok("x") is true
-export fn request_header(r: Request, name: str) -> result[str] {
+# The value of the first request header with this name, compared without case; `none` when there is none.
+#     request_header(new Request { method: "GET", path: "/", query: "", headers: [new Header { name: "Host", value: "x" }], body: "" }, "host") == Option.some("x") is true
+export fn request_header(r: Request, name: str) -> Option[str] {
     for h in r.headers {
         if lower(h.name) == lower(name) {
-            return ok(h.value);
+            return Option.some(h.value);
         }
     }
-    return err("no header `" + name + "`");
+    return Option.none;
 }
 
 # Answers HTTP requests on address ("8000": this machine, "0.0.0.0:8000": the network) with handle's responses until stopped; many requests are read at once, and handle is called for one at a time.
@@ -683,8 +688,8 @@ fn answer_text[E: effects](raw: str, handle: fn(Request) -> Response uses E) -> 
 }
 
 # Serves requests like serve_workers, with request and response bodies as bytes, whatever they are (needs serve).
-#     serve_bytes_workers("0", 2, fn() -> result[int] { return ok(0); }, fn(n: int, r: BytesRequest) -> BytesResponse { return new BytesResponse { status: 200, headers: new list[Header], body: r.body }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
-export fn serve_bytes_workers[S, E: effects, F: effects](
+#     serve_workers_bytes("0", 2, fn() -> result[int] { return ok(0); }, fn(n: int, r: BytesRequest) -> BytesResponse { return new BytesResponse { status: 200, headers: new list[Header], body: r.body }; }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
+export fn serve_workers_bytes[S, E: effects, F: effects](
     address: str,
     workers: int,
     setup: fn() -> result[S] uses F,
@@ -727,7 +732,7 @@ fn body_error(e: TcpError) -> str {
     if e == TcpError.closed {
         return "the response ended early";
     }
-    return describe(e);
+    return tcp_error_text(e);
 }
 
 fn stream_send(c: Conn[uses net], text: str, wait: int) -> result[void] {
@@ -846,7 +851,7 @@ fn stream_to_close[E: effects](
                 if e == TcpError.closed {
                     return ok();
                 }
-                return err(describe(e));
+                return err(tcp_error_text(e));
             }
         }
     }
@@ -884,18 +889,18 @@ fn stream_body[E: effects](
     if head.status == 204 or head.status == 304 {
         return ok(head);
     }
-    match header(head, "Transfer-Encoding") {
-        case ok(coding) {
+    match response_header(head, "Transfer-Encoding") {
+        case some(coding) {
             if find(lower(coding), "chunked") >= 0 {
                 try stream_chunked(c, head, wait, f);
                 return ok(head);
             }
         }
-        case err(_) {
+        case none {
         }
     }
-    match header(head, "Content-Length") {
-        case ok(text) {
+    match response_header(head, "Content-Length") {
+        case some(text) {
             match parse_int(text) {
                 case ok(size) {
                     if size < 0 {
@@ -908,7 +913,7 @@ fn stream_body[E: effects](
                 }
             }
         }
-        case err(_) {
+        case none {
             try stream_to_close(c, head, wait, f);
         }
     }
@@ -918,7 +923,7 @@ fn stream_body[E: effects](
 # Sends a request like send and calls f with the response's status and headers (a Response with an
 # empty body) and each piece of the body (1 to 65536 bytes) as it arrives, for bodies of any size
 # (needs net and f's effects). f answers ok(true) to go on, ok(false) to stop, or an error, which
-# send_stream returns. The result is the status and headers. `timeout_ms` (1 to 600000; 0 means
+# send_stream returns. The result is the status and headers. `timeout_ms` (0 to 600000; 0 means
 # 600000) bounds each wait for the server, not the whole transfer. Redirects are not followed.
 #     send_stream("GET", "ftp://x/", new list[Header], "", 0, fn(head: Response, piece: bytes) -> result[bool] { return ok(true); }) == err("not an http:// or https:// URL: ftp://x/") is true
 export fn send_stream[E: effects](
@@ -932,7 +937,7 @@ export fn send_stream[E: effects](
     let u = try parse_url(url);
     let request = try request_text(method, u, headers, body);
     if timeout_ms < 0 or timeout_ms > 600000 {
-        return err("bad timeout: " + str(timeout_ms) + " ms");
+        return err("invalid: the time limit must be 0 to 600000 ms");
     }
     var wait = timeout_ms;
     if wait == 0 {
@@ -942,8 +947,8 @@ export fn send_stream[E: effects](
     if u.tls {
         set dialed = connect_tls(u.host, u.port, wait);
     }
-    let c = try map_err(dialed, describe);
+    let c = try map_err(dialed, tcp_error_text);
     let done = stream_body(c, request, wait, f);
-    close(c);
+    close_conn(c);
     return done;
 }

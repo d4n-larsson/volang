@@ -76,7 +76,7 @@ def program(r, use_consts):
         "",
         "fn main() uses console {",
         f"    print(format({str_lit(template)}, compute(), {str_lit(word)}));",
-        f"    print(str(is_match(regex({str_lit(pattern)}), {str_lit(word)})));",
+        f"    print(str(is_match({str_lit(word)}, regex({str_lit(pattern)}))));",
         f"    print(str(new Item {{ name: {str_lit(word)} }}.name == {str_lit(word)}));",
         "}",
     ]

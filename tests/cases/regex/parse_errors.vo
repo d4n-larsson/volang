@@ -13,5 +13,5 @@ fn main() uses console {
             }
         }
     }
-    print(str(is_match(new Regex { pattern: "(" }, "x")));
+    print(str(is_match("x", new Regex { pattern: "(" })));
 }

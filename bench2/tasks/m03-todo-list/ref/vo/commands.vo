@@ -13,8 +13,8 @@ fn is_prio(p: str) -> bool {
     return p == "1" or p == "2" or p == "3" or p == "4" or p == "5";
 }
 
-fn cmd(name: str, args: list[str]) -> Command {
-    return new Command { name: name, args: args };
+fn cmd(name: str, args_value: list[str]) -> Command {
+    return new Command { name: name, args: args_value };
 }
 
 export fn parse(line: str) -> result[Command] {

@@ -11,6 +11,6 @@ washer 7
 --- exit 0
 $ vo run write_ro.vo
 readonly: attempt to write a readonly database
-error: unable to open database file
+unable to open database file
 --- stderr
 --- exit 0

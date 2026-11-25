@@ -14,7 +14,7 @@ const create = "CREATE TABLE notes (id INTEGER PRIMARY KEY, text TEXT)";
 fn main() -> result[void] uses console {
     print(format(row, "tea", 3));
     print(
-        str(is_match(regex(code_pattern), "ab1")) + " " + str(is_match(regex(code_pattern), "1ab"))
+        str(is_match("ab1", regex(code_pattern))) + " " + str(is_match("1ab", regex(code_pattern)))
     );
     let db = open_memory();
     let _ = try exec(db, sql(create), new list[Value]);

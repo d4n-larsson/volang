@@ -1,0 +1,40 @@
+# Spec 056 (FR-005): a lookup that finds nothing gives `none`; one that finds something `some(value)`.
+import std.collections.after;
+import std.collections.first;
+import std.collections.first_key;
+import std.collections.key_after;
+import std.collections.peek;
+import std.http.Header;
+import std.http.Request;
+import std.http.request_header;
+import std.option.Option;
+import std.regex.first_match;
+import std.regex.regex;
+
+fn show(o: Option[int]) -> str {
+    match o {
+        case some(v) {
+            return "some(" + str(v) + ")";
+        }
+        case none {
+            return "none";
+        }
+    }
+}
+
+fn main() uses console {
+    let m = new ordered_map[int, str];
+    print(show(first_key(m)) + " " + show(key_after(m, 1)));
+    set m[10] = "a";
+    set m[20] = "b";
+    print(show(first_key(m)) + " " + show(key_after(m, 10)) + " " + show(key_after(m, 20)));
+    let s = new ordered_set[int];
+    print(show(first(s)));
+    push(s, 3);
+    print(show(first(s)) + " " + show(after(s, 3)));
+    let q = new priority_queue[int];
+    print(show(peek(q)));
+    let r = new Request { method: "GET", path: "/", query: "", headers: [new Header { name: "Host", value: "x" }], body: "" };
+    print(str(request_header(r, "host") == Option.some("x")) + " " + str(request_header(r, "Cookie") == Option.none));
+    print(str(first_match("aaa", regex("b+")) == Option.none));
+}

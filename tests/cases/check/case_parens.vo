@@ -1,0 +1,32 @@
+# Spec 056 (FR-020): a case without a value is written without `()`; `()` is E0411 with a fix removing it.
+import std.option.Option;
+
+variant Shape {
+    circle(float);
+    empty;
+}
+
+fn area(s: Shape) -> float {
+    match s {
+        case circle(r) {
+            return 3.0 * r * r;
+        }
+        case empty {
+            return 0.0;
+        }
+    }
+}
+
+fn main() uses console {
+    print(str(area(Shape.empty())));
+    let r: result[void] = ok();
+    print(str(r == ok()));
+}
+
+fn nothing() -> Option[int] {
+    return Option.none();
+}
+
+fn circle() -> Shape {
+    return Shape.circle();
+}

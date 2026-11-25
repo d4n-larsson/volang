@@ -261,9 +261,26 @@ void bind_imports(int file)
         }
         long target = imp->d.i - 1;
         Node *nn = imp->b.n; /* name node */
-        Sym *s = file_get((int)target)->scope; /* search the target's own top-level items */
+        FileRec *tf = file_get((int)target);
+        const LibChange *change = 0; /* spec 056: a changed std item: E0214, bound to what replaces it */
+        Str *want = nn->a.s;
+        if (tf->std) {
+            change = libchange_find(str_new(tf->path->data + 4, tf->path->len - 7), nn->a.s);
+            if (!libchange_binds(change)) change = 0;
+            if (change && libchange_new_name(change)) want = libchange_new_name(change);
+        }
+        Sym *s = tf->scope; /* search the target's own top-level items */
         for (; s; s = s->next)
-            if (s->decl && s->decl->file == target && s->kind != SYM_LOCAL && str_eq(s->name, nn->a.s)) break;
+            if (s->decl && s->decl->file == target && s->kind != SYM_LOCAL && str_eq(s->name, want)) break;
+        if (change && s) {
+            libchange_import(nn, 0, change);
+            if (scope_find(nn->a.s)) continue; /* (both the old and the new name imported: one report) */
+            Sym *b = sym_new(nn->a.s, s->kind, s->decl, s->type, nn);
+            b->flags |= SYF_LIBCHANGE;
+            b->change = change;
+            scope_add(b);
+            continue;
+        }
         if (!s) { /* no such item: E0205 naming the file */
             ck_err("E0205", nn, msg("`$1` has no item `$2`.", file_get((int)target)->path, nn->a.s, 0));
             bind_placeholder(nn);

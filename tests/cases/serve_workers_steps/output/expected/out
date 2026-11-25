@@ -35,13 +35,13 @@ main.vo:16:81: runtime error[R0002]: Division by zero.
 trace:
   at handle (main.vo:16:81)
       zero: int = 0, r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
-  at anonymous function (std/http.vo:654:20)
+  at anonymous function (std/http.vo:659:20)
       r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>, state: int = 0
-  at answer_text (std/http.vo:672:54)
+  at answer_text (std/http.vo:677:54)
       raw: str = "GET /crash HTTP/1.1\r\nHost: localhost\r\n\r\n", handle: fn(Request) -> Response uses console, clock = <fn(Request) -> Response uses console, clock>, req: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
-  at anonymous function (std/http.vo:653:16)
+  at anonymous function (std/http.vo:658:16)
       state: int = 0, raw: str = "GET /crash HTTP/1.1\r\nHost: localhost\r\n\r\n", handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>
-  at serve_workers (std/http.vo:652:12)
+  at serve_workers (std/http.vo:657:12)
       address: str = "{vport}", workers: int = 2, setup: fn() -> result[int] = <fn() -> result[int]>, handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>
   at main (main.vo:30:9)
 {"time":"{time}","level":"info","message":"stopped","drain_s":30,"drained":0,"cut_off":0}

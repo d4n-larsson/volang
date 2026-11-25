@@ -586,7 +586,7 @@ static long take_messages(Group *g, SB *ctl, Type *elem, long index)
 List *task_map(List *xs, long limit, Closure *fn, Node *call)
 {
     if (limit < 1 || limit > TASK_MAX)
-        rt_raise("R0007", msg("The task limit $1 is outside 1-64.", int_to_str(limit), 0, 0), call);
+        rt_raise("R0007", msg("The task limit $1 is outside 1 to 64.", int_to_str(limit), 0, 0), call);
     /* ponytail: inside a task (and in replay) tasks run one at a time; a jobserver pipe inherited by
        the tasks if nested concurrency is ever needed (research R7, R10) */
     if (task_depth > task_top_depth || rcd_mode == 2) limit = 1;

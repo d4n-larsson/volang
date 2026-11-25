@@ -1,11 +1,10 @@
 # Spec 022 US3: a recorded run that slept 2 s replays at once with the same output.
-import std.time.now;
 import std.time.sleep;
 
 fn main() uses console, clock {
-    let a = now();
+    let a = now_ms();
     for _ in 0..4 {
         sleep(500);
     }
-    print("slept at least 2 s: " + str(now() - a >= 2000));
+    print("slept at least 2 s: " + str(now_ms() - a >= 2000));
 }

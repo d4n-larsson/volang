@@ -46,7 +46,7 @@ fn parsed(s: str) -> str {
 }
 
 fn modes(x: Decimal, places: int) -> str {
-    let all = [
+    let all_value = [
         Rounding.half_even,
         Rounding.half_up,
         Rounding.down,
@@ -55,7 +55,7 @@ fn modes(x: Decimal, places: int) -> str {
         Rounding.ceiling
     ];
     let out = new list[str];
-    for m in all {
+    for m in all_value {
         push(out, decimal_text(round_to(x, places, m)));
     }
     return decimal_text(x) + " -> " + join(out, " ");

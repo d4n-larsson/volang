@@ -209,6 +209,8 @@ These pairs cannot be imported together (E0202 "already defined"):
 Logging a JSON field, or a list check beside a text check, needs a workaround. Either rename one side of
 each pair or add `import ... as`.
 
+**Fixed (spec 056):** one side of each pair renamed (`has_item`, `member`, `close_conn`, `tcp_error_text`, `add_to`, `value_column` and the typed readers, `write_all`), through E0214. **Declined:** `import ... as` (decided with the user).
+
 ### 3.2 "Nothing found" is reported three ways
 
 `std/option.vo:3-4` says to use `Option` when "nothing there" is a normal answer. In practice:
@@ -220,11 +222,15 @@ each pair or add `import ... as`.
 "Empty" is worded two ways: `pop` and the collections say `err("empty")`; `lists.min_by`/`max_by` and
 `random.pick` say `err("empty list")`.
 
+**Fixed (spec 056):** the lookups that may find nothing return `Option` (`http.response_header`, `request_header`, `regex.first_match`, the collections' first/last and neighbour functions), with E0214's fix wrapping old uses in `to_result`. **Declined:** `lists.index_of` keeps `-1` like the builtin `find`; taking an element (`pop`) stays a `result`. **Deferred:** the wording `"empty"` vs `"empty list"` (an error value a program may compare; no diagnostic could migrate it).
+
 ### 3.3 Builtins can be shadowed, your own names cannot
 
 `fn len` at top level is E0202, and a local named like a constant, your own function or an imported std
 function is E0203. But `let len = 7;`, `let print = 1;` and a parameter named `keys` are accepted; later
 calls then fail with "`len` is not a function" (E0303).
+
+**Fixed (spec 056):** a local or parameter named like a builtin is E0203, with a fix renaming it to `NAME_value` (`check/shadow_builtin`).
 
 ### 3.4 Expected types and type arguments
 
@@ -233,10 +239,14 @@ calls then fail with "`len` is not a function" (E0303).
 - Explicit type arguments work only after `new` (`new Pair[B, A] {...}`): `Tree[int].leaf` and
   `mk[int]()` are E0110.
 
+**Fixed (spec 056):** `[]` takes its type from the context (`run/empty_list_context`); with none it is E0306. **Deferred:** explicit type arguments on calls and variant cases (`mk[int]()`): new syntax.
+
 ### 3.5 Effect arguments have two spellings
 
 `Db[D]` and `Db[uses D]` both check, and `vo fmt` keeps both. A named effect set must be written with
 `uses`, though: `Db[Out]` with `effects Out = console;` is E0327.
+
+**Fixed (spec 056):** `Db[Out]` with a named set checks, and `vo fmt` writes every effect argument it can identify with `uses` (`fmt/effect_arg_uses`, `effect_sets/named_set_arg`).
 
 ### 3.6 Cases without a value
 
@@ -246,11 +256,15 @@ handled unevenly:
 - `case empty()` is E0411 with a fix;
 - `case ok` is only W0402.
 
+**Fixed (spec 056):** `S.empty()` is E0411 with a fix removing `()` (`check/case_parens`). **Declined:** `case ok` on a `result[void]` stays W0402 (it matches correctly; the warning's fix gives the one spelling).
+
 ### 3.7 Numeric literals
 
 - `0X1F` is E0105, but `1E9`, `1e+9` and `00012` are accepted (and rewritten by `vo fmt`).
 - `1e400` is E0105, but `1e-400` silently becomes `0.0`.
 - `-9223372036854775808` is E0105, but `-0x8000000000000000` checks and fails at run time with R0001.
+
+**Fixed (spec 056):** `1E9`, `1e+9` and `00012` are E0105 with a fix; `1e-400` and `-0x8000000000000000` are E0105 (`lex/number_spellings`).
 
 ### 3.8 Timeouts
 
@@ -260,6 +274,8 @@ handled unevenly:
 - workers: a `Wait` variant, but `with_deadline(ms, f)` takes milliseconds.
 
 The timeout case is `TcpError.timed_out` but `WorkerError.timeout`.
+
+**Fixed (spec 056):** every `timeout_ms` takes 0 to 600,000, 0 meaning 600,000 (`http.send`'s 0 included: listed in the changelog); `WorkerError.timeout` is `timed_out` through E0214. **Declined:** `with_deadline` keeps milliseconds (it bounds a computation, not a wait) and clamps its range.
 
 ### 3.9 Library naming
 
@@ -286,11 +302,15 @@ The timeout case is `TcpError.timed_out` but `WorkerError.timeout`.
 - **Error text.** Only `TcpError` has a `describe`; `WorkerError` and `time.LocalError` have no text
   form.
 
+**Fixed (spec 056):** sqlite's readers are `value_column`, `int_column`, `float_column` (converting an integer), `text_column`, `bytes_column`, with ``no column `NAME` ``; parse errors are `invalid KIND: TEXT; DETAIL` or `invalid KIND at POSITION: DETAIL`; `random.shuffle` is `shuffled`; `serve_bytes_workers` is `serve_workers_bytes`; `http.header` is `response_header`; `worker_error_text` and `local_error_text` are new. **Declined** (the guide's "Names" says why): collections' per-type names and `decimal.total`/`absolute` (no overloading; `abs` is a builtin), `with_cookie`'s `result` (it validates), `from_` for decoding beside `parse_` for reading. **Deferred:** the text-output names (`write_json`, `format_time`, `decimal_text`, `to_hex`, `metrics_text`), which do not clash.
+
 ### 3.10 Argument order
 
 Text and the builtins take the string first: `find(s, sub)`, `split(s, sep)`, `text.replace(s, old,
 new)`. Regex takes the pattern first: `is_match(re, s)`, `replace_all(re, s, r)`, `split_on(re, s)`.
 `text.replace` already replaces every occurrence, yet regex calls it `replace_all`.
+
+**Fixed (spec 056):** regex takes the text first, with a fix swapping the arguments; `replace_all` is `replace_matches` (`replace` would clash with `std.text`).
 
 ### 3.11 Duplicates
 
@@ -300,21 +320,29 @@ new)`. Regex takes the pattern first: `is_match(re, s)`, `replace_all(re, s, r)`
   `header_key` return `result[User]`. Both put the identity in `X-Identity`, so `current_user` accepts
   both forms.
 
+**Fixed (spec 056):** `time.now` and `web.clock_ms` are removed through E0214 (the fix writes `now_ms()`). **Declined:** `web.log_requests` stays (text lines for a program without `log`), its doc points at `request_logs`. **Deferred:** `web.bearer_auth`/`api_key_auth` beside the `std.security` ways, until a spec deprecates one (no mechanical fix exists).
+
 ### 3.12 Units
 
 - Time zone offsets: `fixed_zone(east)` takes minutes, `offset_at` returns milliseconds, and the `Zone`
   fields are seconds.
 - Name suffixes: `timeout_ms`, `at_ms`, `lifetime_s`, `max_age_s` and `hsts_seconds`.
 
+**Fixed (spec 056):** `fixed_zone` is `offset_zone` in milliseconds, `Cookie.max_age_ms` and `Browser.lifetime_ms` replace their `_s` fields, and the tz records' fields end in `_s`, all through E0214 with converting fixes. **Declined:** positional parameters keep seconds (`issue_token`'s `lifetime_s`, `safe_headers`' `hsts_s`, renamed from `hsts_seconds`): a changed unit there could not be reported.
+
 ### 3.13 Effects of closing a resource
 
 `sqlite.close` declares no effect, `tcp.close uses E`, `close_listener uses serve`, and
 `workers.stop_worker` none.
 
+**Fixed (spec 056):** `tcp.close_conn` and `close_listener` need no effect.
+
 ### 3.14 sqlite's error prefix
 
 sqlite errors start with `error: ` (`sqlite.vo:59,67`), so `try open(...)` in `main` prints
 `error: error: unable to open database file`. No other module prefixes its messages.
+
+**Fixed (spec 056):** a plain sqlite error has no prefix (`sqlite/open_fails`); the kinds (`constraint:`, `busy:`, ...) stay.
 
 ### 3.15 Message style
 
@@ -334,6 +362,8 @@ sqlite errors start with `error: ` (`sqlite.vo:59,67`), so `try open(...)` in `m
   one; a repeated `@allow` is reported only as two W0706.
 - **File codes:** "Cannot read the base toolchain" is T0001 (exit 64), while every other unreadable input
   is T0002 (exit 66).
+
+**Fixed (spec 056):** tests are `` `test "NAME"` ``, packages `` `NAME` ``, "found" for "got", ranges "A to B" (checked by `tests/message_style.py`); a repeated annotation is E0119 with a fix for every annotation; an unreadable `--base` is T0002. **Deferred:** the inference wordings, R0007's mid-sentence capital (the regex engine's sentences are shared with E0319) and E0110's mixed fields: rewording only, no code or fix changes.
 
 ## Checked and consistent
 

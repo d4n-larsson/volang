@@ -1,10 +1,10 @@
-import std.tcp.close;
+import std.tcp.close_conn;
 import std.tcp.connect;
 
 fn main() uses net("db.internal:5432") {
     match connect("db.internal", 5432, 1000) {
         case ok(c) {
-            close(c);
+            close_conn(c);
         }
         case err(_) {
         }

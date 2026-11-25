@@ -62,6 +62,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [053](../specs/053-remove-html/) | Remove HTML rendering from the core: vo targets backend network services; `std.html`, its checker and `html_reply` removed, E0335–E0340 retired; browser sign-in without a page | **Implemented** ([results](../specs/053-remove-html/results.md)) |
 | [054](../specs/054-recorded-tests/) | Recorded tests: `vo test --record DIR` saves what each test receives from outside (HTTP with its sent body, TCP both ways, files, variables, programs), `--replay DIR` runs each test on its file offline; mismatches fail that test (R0014); credentials redacted | **Implemented** ([results](../specs/054-recorded-tests/results.md)) |
 | [055](../specs/055-service-operations/) | Operating a service: a `log` effect; `std.log` (JSON records with the request's id, secrets redacted by name, W0506), `std.metrics` (counters, gauges, histograms shared by worker processes, `/metrics` in the Prometheus text format), request steps, `/health/live` and `/health/ready`, `--drain` | **Implemented** ([results](../specs/055-service-operations/results.md)) |
+| [056](../specs/056-consistency-pass/) | Consistency pass (vo 0.2.0): std names that clashed renamed, lookups give an `Option`, regex takes the text first, durations in ms, one time-limit rule, one parse error format; no local shadows a builtin; `bool` and variants ordered; `[]` from context; one spelling per literal; one message style. E0214 names each library change with its fix | **Implemented** ([results](../specs/056-consistency-pass/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -684,6 +685,19 @@ their own effects (`Step[C, uses log, clock, E]`): the checker now infers `E` as
 them. `health_routes` answers liveness and readiness apart; `--drain` bounds the graceful stop, which ends
 with a `stopped` record. Decided with the user: a new effect rather than `console`; secrets by name. Not
 done: secrets under other names (not detected), per-worker metrics without the shared registry, tracing.
+
+### 056: consistency pass (implemented)
+
+The language's and the library's inconsistencies from the audit of 2026-11-25
+([`docs/review-2026-11/inconsistencies.md`](review-2026-11/inconsistencies.md), section 3), fixed before
+1.0 as breaking changes of vo 0.2.0, each with a diagnostic and a fix so applying `vo check`'s fixes
+migrates a program. One code, E0214 `library_changed`, comes from one table of library changes (renames,
+removals, lookups now giving an `Option`, swapped arguments, renamed fields and cases, unit changes with
+the factor its fix applies). Decided with the user: rename one side of each clash (no import aliases);
+lookups return `Option`; locals may not shadow builtins; `bool` and variants are ordered. Kept apart on
+purpose, with the reason in the guide: per-type names in `std.collections`, `decimal.total` and
+`absolute`, `with_cookie`'s result. Deferred: `web.bearer_auth`/`api_key_auth` beside the
+`std.security` ways (no mechanical fix), explicit type arguments on calls (new syntax).
 
 The open gaps, ordered by the question vo's target sets (decided 2026-11-23, spec 053): **does it make
 an agent-written network service easier to write, review or operate?** Each becomes a spec when it is

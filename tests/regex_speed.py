@@ -38,7 +38,7 @@ import std.text.repeat;
 
 fn main() uses console {{
     let text = repeat({vo_str(unit)}, {n // len(unit)}) + {vo_str(last)};
-    print(str(is_match(regex({vo_str(pattern)}), text)));
+    print(str(is_match(text, regex({vo_str(pattern)}))));
 }}
 """
 
@@ -51,7 +51,7 @@ import std.bytes.to_text;
 fn main() -> result[void] uses console, file.read("logs/") {{
     let text = try to_text(try read_bytes("logs/app.log"));
     let re = regex("(\\\\d{{4}})-(\\\\d{{2}})-(\\\\d{{2}}) \\\\S+ (ERROR|WARN)");
-    print(str(len(all_matches(re, text))));
+    print(str(len(all_matches(text, re))));
     return ok();
 }}
 """

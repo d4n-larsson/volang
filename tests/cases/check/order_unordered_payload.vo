@@ -1,0 +1,10 @@
+# Spec 056: a variant is ordered only when every payload is: one carrying a map cannot be sorted (E0313).
+variant Box {
+    empty;
+    full(map[str, int]);
+}
+
+fn main() {
+    let bs = [Box.empty];
+    sort(bs);
+}

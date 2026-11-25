@@ -7,7 +7,7 @@ $ vo package --json main.vo money shared/money
 --- stderr
 --- exit 0
 $ vo check --json main.vo
-{"v":1,"kind":"diagnostic","code":"E0701","name":"package_changed","severity":"error","file":"main.vo","start":{"line":1,"col":1},"end":{"line":1,"col":27},"text":"import money.format.cents;","message":"Package money changed: the manifest pins sha256:6514bb0e84aa66348d21ff1c32a37024df993558a975bfa61e70b1ade0687a46, its files hash to sha256:0e9d2276b99db4fe1f54e3b6ac20266ee55749dcc178f38ddb2f53feaea55e16. Review the change, then run `vo package main.vo money shared/money`.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0701","name":"package_changed","severity":"error","file":"main.vo","start":{"line":1,"col":1},"end":{"line":1,"col":27},"text":"import money.format.cents;","message":"Package `money` changed: the manifest pins sha256:6514bb0e84aa66348d21ff1c32a37024df993558a975bfa61e70b1ade0687a46, its files hash to sha256:0e9d2276b99db4fe1f54e3b6ac20266ee55749dcc178f38ddb2f53feaea55e16. Review the change, then run `vo package main.vo money shared/money`.","fixes":[],"related":[]}
 {"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}
 --- stderr
 --- exit 65

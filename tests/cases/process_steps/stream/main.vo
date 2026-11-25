@@ -9,15 +9,15 @@ record Seen {
 fn follow(
     what: str,
     program: str,
-    args: list[str],
+    args_value: list[str],
     input: str,
-    env: list[str],
+    env_value: list[str],
     stop_at: str,
     fail_at: str
 )
     uses console, process("bin/bad_utf8", "bin/cat_in", "bin/close_out", "bin/env_dump", "bin/flood", "bin/missing", "bin/slow_lines", "bin/to_stderr") {
     let seen = new Seen { lines: new list[str] };
-    let r = run_lines(program, args, input, env, fn(line: str) -> result[bool] {
+    let r = run_lines(program, args_value, input, env_value, fn(line: str) -> result[bool] {
         if line == fail_at {
             return err("the function failed at " + line);
         }

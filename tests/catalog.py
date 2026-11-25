@@ -100,7 +100,7 @@ def contract():
         else:
             fixable = "yes"
         out[code] = (name, fixable)
-    for spec in ("005-holes-props-contracts", "006-query-edit-trace", "007-stdlib-packages", "009-small-fixes", "010-export-visibility", "012-spec-annotations", "013-security-fixes", "014-complex-data-structures", "016-concurrency", "017-filesystem-processes", "018-agent-testing", "019-https", "024-string-formatting", "025-regular-expressions", "026-sqlite", "027-structure-standards", "029-web-package", "030-readable-signatures", "031-constants", "032-typed-errors", "033-map-keys", "034-vo-build", "041-package-download", "042-strings", "043-bits", "046-iteration", "051-html-templates", "055-service-operations"):
+    for spec in ("005-holes-props-contracts", "006-query-edit-trace", "007-stdlib-packages", "009-small-fixes", "010-export-visibility", "012-spec-annotations", "013-security-fixes", "014-complex-data-structures", "016-concurrency", "017-filesystem-processes", "018-agent-testing", "019-https", "024-string-formatting", "025-regular-expressions", "026-sqlite", "027-structure-standards", "029-web-package", "030-readable-signatures", "031-constants", "032-typed-errors", "033-map-keys", "034-vo-build", "041-package-download", "042-strings", "043-bits", "046-iteration", "051-html-templates", "055-service-operations", "056-consistency-pass"):
         codes = os.path.join(ROOT, "specs", spec, "contracts", "codes.md")
         for code, name, fix in re.findall(r"^\| ([EWRT]\d{4}) \| `(\w+)` \| [^|]* \| ([^|]*) \|",
                                           open(codes, encoding="utf-8").read(), re.M):

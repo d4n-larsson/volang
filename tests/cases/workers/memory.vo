@@ -28,7 +28,7 @@ fn memory(e: WorkerError) -> bool {
         case failed(text) {
             return find(text, "R0006") >= 0;
         }
-        case timeout {
+        case timed_out {
             return false;
         }
         case ended {

@@ -1,0 +1,76 @@
+# Spec 056 (FR-007): bool and variants are ordered: false < true; cases in declaration order, then by
+# payload. Every key type is ordered, so a generic function bounded `key` can sort a map's keys.
+variant Level {
+    low;
+    mid;
+    high;
+}
+
+variant Shape {
+    dot;
+    circle(float);
+    square(float);
+}
+
+fn sorted_keys[K: key](m: map[K, int]) -> list[K] {
+    let ks = keys(m);
+    sort(ks);
+    return ks;
+}
+
+fn level_name(l: Level) -> str {
+    match l {
+        case low {
+            return "low";
+        }
+        case mid {
+            return "mid";
+        }
+        case high {
+            return "high";
+        }
+    }
+}
+
+fn shape_name(s: Shape) -> str {
+    match s {
+        case dot {
+            return "dot";
+        }
+        case circle(r) {
+            return "circle(" + str(r) + ")";
+        }
+        case square(a) {
+            return "square(" + str(a) + ")";
+        }
+    }
+}
+
+fn main() uses console {
+    let bs = [true, false, true];
+    sort(bs);
+    print(join(map(bs, fn(b: bool) -> str { return str(b); }), " "));
+    let ls = [Level.high, Level.low, Level.mid];
+    sort(ls);
+    print(join(map(ls, level_name), " ") + " " + str(Level.low < Level.high) + " " + level_name(max(Level.mid, Level.low)) + " " + level_name(min(Level.mid, Level.high)));
+    let ss = [Shape.square(0.5), Shape.circle(2.0), Shape.dot, Shape.circle(1.0)];
+    sort(ss);
+    print(join(map(ss, shape_name), " "));
+    let set_of = new ordered_set[Level];
+    push(set_of, Level.mid);
+    push(set_of, Level.high);
+    push(set_of, Level.low);
+    var names = new list[str];
+    for l in set_of {
+        push(names, level_name(l));
+    }
+    print(join(names, " "));
+    let flags = new map[bool, int];
+    set flags[true] = 1;
+    set flags[false] = 0;
+    print(join(map(sorted_keys(flags), fn(b: bool) -> str { return str(b); }), " "));
+    let words = new map[str, int];
+    set words["pear"] = 1;
+    set words["apple"] = 2;
+    print(join(sorted_keys(words), " "));
+}

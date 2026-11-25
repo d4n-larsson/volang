@@ -1,5 +1,5 @@
 const mask = 0xff;
 
 fn main() uses console {
-    print(str(0x00ff) + str(0b0011) + str(0xAbCdEf) + str(0010) + str(255) + str(-0x1f) + str(mask));
+    print(str(0x00ff) + str(0b0011) + str(0xAbCdEf) + str(10) + str(255) + str(-0x1f) + str(mask));
 }

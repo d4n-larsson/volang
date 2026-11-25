@@ -138,5 +138,5 @@ void rt_exit(long code, Node *node)
         vo_exit((int)code);
         return;
     }
-    rt_raise("R0008", msg("Exit status $1 is outside 0-63.", int_to_str(code), 0, 0), node);
+    rt_raise("R0008", msg("Exit status $1 is outside 0 to 63.", int_to_str(code), 0, 0), node);
 }

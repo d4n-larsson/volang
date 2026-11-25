@@ -405,7 +405,7 @@ def check_shutdown():
 COUNTER = HEAD + """import std.sqlite.Database;
 import std.sqlite.Value;
 import std.sqlite.exec;
-import std.sqlite.get_int;
+import std.sqlite.int_column;
 import std.sqlite.open;
 import std.sqlite.query;
 import std.sqlite.sql;
@@ -420,7 +420,7 @@ fn setup() -> result[Database[uses file.read, file.write]] uses file.read("data/
 fn handle(db: Database[uses file.read, file.write], r: Request) -> Response uses file.read("data/"), file.write("data/") {
     let next = transaction(db, fn() -> result[int] {
         let rows = try query(db, sql("select n from counter"), new list[Value]);
-        let n = try get_int(rows[0], "n") + 1;
+        let n = try int_column(rows[0], "n") + 1;
         let _ = try exec(db, sql("update counter set n = ?"), [Value.integer(n)]);
         return ok(n);
     });

@@ -1,0 +1,7 @@
+# Spec 056 (FR-017): a failed open returned with `try` from main prints the reason once, with no `error: ` prefix.
+import std.sqlite.open;
+
+fn main() -> result[void] uses file.read("."), file.write(".") {
+    let _ = try open("no-such-dir/x.db");
+    return ok();
+}

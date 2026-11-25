@@ -7,6 +7,6 @@ record Holder {
     plain: Conn;
 }
 
-fn ping[E: effects](c: Conn[E]) -> int uses E {
+fn ping[E: effects](c: Conn[uses E]) -> int uses E {
     return c.id;
 }

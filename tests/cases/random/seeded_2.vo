@@ -1,6 +1,6 @@
 # std.random under a fixed seed: the same seed gives the same values.
 import std.random.pick;
-import std.random.shuffle;
+import std.random.shuffled;
 import std.random.unit;
 
 fn show(xs: list[int]) -> str {
@@ -25,7 +25,7 @@ fn main() uses console, random {
             print(e);
         }
     }
-    print(show(shuffle(xs)));
+    print(show(shuffled(xs)));
     print(show(xs));
     let empty = new list[str];
     match pick(empty) {
@@ -36,5 +36,5 @@ fn main() uses console, random {
             print("empty: " + e);
         }
     }
-    print(str(len(shuffle(empty))));
+    print(str(len(shuffled(empty))));
 }

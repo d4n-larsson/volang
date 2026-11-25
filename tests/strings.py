@@ -161,12 +161,12 @@ def group_exponents(d):
         cut = rnd.randint(0, len(digits))
         mant = digits if cut in (0, len(digits)) or rnd.random() < 0.3 else digits[:cut] + "." + digits[cut:]
         exp = rnd.choice([rnd.randint(-330, 300), rnd.randint(-30, 30), rnd.randint(-5, 5)])
-        text = mant + rnd.choice("eE") + rnd.choice(["", "+", "-"] if exp >= 0 else ["-"]) + str(abs(exp))
+        text = mant + "e" + ("" if exp >= 0 else "-") + str(abs(exp))  # spec 056: one spelling (no `E`, no `+`)
         try:
             value = float(text)
         except ValueError:
             continue
-        if value == float("inf"):
+        if value == float("inf") or (value == 0.0 and digits != "0"):  # spec 056: rounding to zero is E0105
             continue
         lits.append(text)
     # str(x) is the shortest text that reads back as x, so float(str(x)) == float(literal) is exact

@@ -19,15 +19,15 @@ hello from vo
 $ vo replay r.jsonl
 --- stderr
 note: the program differs from the recorded one (recorded main.vo)
-std/http.vo:169:12: runtime error[R0014]: The program makes an HTTP request `POST /plain` to `localhost:{port}`, but the recording has an HTTP request `GET /plain` to `localhost:{port}` next: replay the program that was recorded, or record this one.
- 169 |     return __http_exchange(u.host, u.port, request);
+std/http.vo:174:12: runtime error[R0014]: The program makes an HTTP request `POST /plain` to `localhost:{port}`, but the recording has an HTTP request `GET /plain` to `localhost:{port}` next: replay the program that was recorded, or record this one.
+ 174 |     return __http_exchange(u.host, u.port, request);
      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange_raw (std/http.vo:169:12)
+  at exchange_raw (std/http.vo:174:12)
       method: str = "POST", url: str = "http://localhost:{port}/plain", headers: list[Header] = [new Header { name: "Content-Type", value: "text/plain" }], body: str = "x", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "localhost", port: {port}, target: "/plain" }, request: str = "POST /plain HTTP/1.1\r\nHost: localhost:{port}\r\nConnection: close\r\nUser-Agent: vo\r\nContent-Type: text/plain\r\nContent-Length: 1\r\n\r\nx"
-  at exchange (std/http.vo:120:19)
+  at exchange (std/http.vo:121:19)
       method: str = "POST", url: str = "http://localhost:{port}/plain", headers: list[Header] = [new Header { name: "Content-Type", value: "text/plain" }], body: str = "x", timeout_ms: int = 0, hint: str = "post_bytes"
-  at post (std/http.vo:296:12)
+  at post (std/http.vo:301:12)
       url: str = "http://localhost:{port}/plain", content_type: str = "text/plain", body: str = "x"
   at main (main.vo:23:10)
       a: list[str] = ["{port}", "/plain"]

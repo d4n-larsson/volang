@@ -32,57 +32,57 @@ fn num(s: str) -> int {
 
 fn run(words: list[str], garage: Garage) -> list[str] {
     let cmd = words[0];
-    let args = slice(words, 1, len(words));
+    let args_value = slice(words, 1, len(words));
     let bad = ["error: bad command"];
     if cmd == "level" {
-        if len(args) != 2 or not is_number(args[0]) or not is_number(args[1]) {
+        if len(args_value) != 2 or not is_number(args_value[0]) or not is_number(args_value[1]) {
             return bad;
         }
-        let number = num(args[0]);
-        let spots = num(args[1]);
+        let number = num(args_value[0]);
+        let spots = num(args_value[1]);
         if number < 1 or spots < 1 or spots > 99 {
             return bad;
         }
         return [open_level(garage, number, spots)];
     }
     if cmd == "enter" {
-        if len(args) != 2 or not is_number(args[1]) {
+        if len(args_value) != 2 or not is_number(args_value[1]) {
             return bad;
         }
-        return [park(garage, args[0], num(args[1]))];
+        return [park(garage, args_value[0], num(args_value[1]))];
     }
     if cmd == "exit" {
-        if len(args) != 2 or not is_number(args[1]) {
+        if len(args_value) != 2 or not is_number(args_value[1]) {
             return bad;
         }
-        return [exit_vehicle(garage, args[0], num(args[1]))];
+        return [exit_vehicle(garage, args_value[0], num(args_value[1]))];
     }
     if cmd == "quote" {
-        if len(args) != 2 or not is_number(args[1]) {
+        if len(args_value) != 2 or not is_number(args_value[1]) {
             return bad;
         }
-        return [quote(garage, args[0], num(args[1]))];
+        return [quote(garage, args_value[0], num(args_value[1]))];
     }
     if cmd == "occupancy" {
-        if len(args) != 0 {
+        if len(args_value) != 0 {
             return bad;
         }
         return occupancy(garage);
     }
     if cmd == "parked" {
-        if len(args) != 0 {
+        if len(args_value) != 0 {
             return bad;
         }
         return parked(garage);
     }
     if cmd == "report" {
-        if len(args) != 1 or not is_number(args[0]) {
+        if len(args_value) != 1 or not is_number(args_value[0]) {
             return bad;
         }
-        return report(garage, num(args[0]));
+        return report(garage, num(args_value[0]));
     }
     if cmd == "rates" {
-        if len(args) != 0 {
+        if len(args_value) != 0 {
             return bad;
         }
         return rates();

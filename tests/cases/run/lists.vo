@@ -1,6 +1,6 @@
 # std.lists: membership, reversing, sorting from largest to smallest, smallest and largest by a key,
 # sums and groups.
-import std.lists.contains;
+import std.lists.has_item;
 import std.lists.group_by;
 import std.lists.index_of;
 import std.lists.max_by;
@@ -37,7 +37,7 @@ fn noisy(w: str) -> int uses console {
 fn main() uses console {
     let words = ["pear", "fig", "kiwi", "fig", "apple"];
     let none = new list[str];
-    print(format("{} {} {}", contains(words, "fig"), contains(words, "plum"), contains(none, "fig")));
+    print(format("{} {} {}", has_item(words, "fig"), has_item(words, "plum"), has_item(none, "fig")));
     print(format("{} {} {}", index_of(words, "fig"), index_of(words, "plum"), index_of(none, "fig")));
     let cities = [new City { name: "Lund", people: 95000 }, new City { name: "Umea", people: 91000 }];
     print(str(index_of(cities, new City { name: "Umea", people: 91000 })));

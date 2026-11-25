@@ -1,7 +1,7 @@
-not hex at position 1
-odd number of hex digits
-not base64 at position 4
-base64 length is not a multiple of 4
-not base64 at position 2
-not base64 at position 2
+invalid hex: 0g; not hex at position 1
+invalid hex: abc; odd number of hex digits
+invalid base64: Zm9v!; not base64 at position 4
+invalid base64: Zm9; length is not a multiple of 4
+invalid base64: Zg=a; not base64 at position 2
+invalid base64: Zm 9v; not base64 at position 2
 ok 66

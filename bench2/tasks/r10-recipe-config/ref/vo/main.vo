@@ -38,51 +38,51 @@ fn is_count(s: str) -> bool {
 
 fn run(words: list[str], recipes: map[str, Recipe], cfg: Config) -> list[str] {
     let cmd = words[0];
-    let args = slice(words, 1, len(words));
+    let args_value = slice(words, 1, len(words));
     if cmd == "recipe" {
-        if len(args) < 5 or (len(args) - 2) % 3 != 0 or not is_count(args[1]) {
+        if len(args_value) < 5 or (len(args_value) - 2) % 3 != 0 or not is_count(args_value[1]) {
             return ["error: bad command"];
         }
         let ingredients = new list[Ingredient];
         var i = 2;
-        while i < len(args) {
-            if not is_count(args[i + 1]) {
+        while i < len(args_value) {
+            if not is_count(args_value[i + 1]) {
                 return ["error: bad command"];
             }
-            push(ingredients, new Ingredient { item: args[i], qty: num(args[i + 1]), unit: args[i + 2] });
+            push(ingredients, new Ingredient { item: args_value[i], qty: num(args_value[i + 1]), unit: args_value[i + 2] });
             set i = i + 3;
         }
-        return [add_recipe(recipes, args[0], num(args[1]), ingredients)];
+        return [add_recipe(recipes, args_value[0], num(args_value[1]), ingredients)];
     }
     if cmd == "show" {
-        if len(args) != 1 {
+        if len(args_value) != 1 {
             return ["error: bad command"];
         }
-        if not has(recipes, args[0]) {
-            return ["error: unknown recipe " + args[0]];
+        if not has(recipes, args_value[0]) {
+            return ["error: unknown recipe " + args_value[0]];
         }
-        return show_lines(recipes[args[0]], cfg);
+        return show_lines(recipes[args_value[0]], cfg);
     }
     if cmd == "scale" {
-        if len(args) != 2 or not is_count(args[1]) {
+        if len(args_value) != 2 or not is_count(args_value[1]) {
             return ["error: bad command"];
         }
-        if not has(recipes, args[0]) {
-            return ["error: unknown recipe " + args[0]];
+        if not has(recipes, args_value[0]) {
+            return ["error: unknown recipe " + args_value[0]];
         }
-        return scale_lines(recipes[args[0]], num(args[1]), cfg);
+        return scale_lines(recipes[args_value[0]], num(args_value[1]), cfg);
     }
     if cmd == "shop" {
-        if len(args) < 2 or len(args) % 2 != 0 {
+        if len(args_value) < 2 or len(args_value) % 2 != 0 {
             return ["error: bad command"];
         }
         let orders = new list[Order];
         var i = 0;
-        while i < len(args) {
-            if not is_count(args[i + 1]) {
+        while i < len(args_value) {
+            if not is_count(args_value[i + 1]) {
                 return ["error: bad command"];
             }
-            push(orders, new Order { name: args[i], wanted: num(args[i + 1]) });
+            push(orders, new Order { name: args_value[i], wanted: num(args_value[i + 1]) });
             set i = i + 2;
         }
         for o in orders {
@@ -93,7 +93,7 @@ fn run(words: list[str], recipes: map[str, Recipe], cfg: Config) -> list[str] {
         return shopping_list(recipes, orders, cfg);
     }
     if cmd == "list" {
-        if len(args) != 0 {
+        if len(args_value) != 0 {
             return ["error: bad command"];
         }
         return list_lines(recipes);

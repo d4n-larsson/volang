@@ -25,25 +25,25 @@ fn arity() -> map[str, int] {
 
 fn run(words: list[str], player: Player, world: map[str, Room]) -> list[str] {
     let verb = words[0];
-    let args = slice(words, 1, len(words));
+    let args_value = slice(words, 1, len(words));
     let counts = arity();
     if not has(counts, verb) {
         return ["unknown command " + verb];
     }
-    if len(args) != counts[verb] {
+    if len(args_value) != counts[verb] {
         return ["what?"];
     }
     if verb == "look" {
         return do_look(player, world);
     }
     if verb == "go" {
-        return do_go(player, world, args[0]);
+        return do_go(player, world, args_value[0]);
     }
     if verb == "take" {
-        return do_take(player, world, args[0]);
+        return do_take(player, world, args_value[0]);
     }
     if verb == "drop" {
-        return do_drop(player, world, args[0]);
+        return do_drop(player, world, args_value[0]);
     }
     if verb == "inventory" {
         return do_inventory(player);

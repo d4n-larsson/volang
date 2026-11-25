@@ -1,8 +1,7 @@
-# Calling std.time.now needs the clock effect, like the now_ms builtin.
-import std.time.now;
+# Calling now_ms needs the clock effect.
 
 fn stamp() -> int {
-    return now();
+    return now_ms();
 }
 
 fn main() uses console {

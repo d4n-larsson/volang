@@ -1,6 +1,6 @@
 fn main() {
     let a = 1.50;
     let b = "tab\there \"quoted\" back\\slash";
-    let c = 007;
+    let c = 7;
     print(str(a) + b + str(c));
 }

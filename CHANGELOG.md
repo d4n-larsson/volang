@@ -4,7 +4,78 @@ What changed in each released version of vo, for people and agents who use it. T
 decision is in [`specs/`](specs/) and summarized in [`docs/roadmap.md`](docs/roadmap.md); what a version
 may and may not change is in [`docs/stability.md`](docs/stability.md).
 
-## Unreleased
+## 0.2.0
+
+Breaking changes first. Every one comes with a diagnostic and, where one correction exists, a fix:
+`vo check --json` and applying the first fix of each diagnostic (up to three rounds) migrates a program.
+Every example, the postgres package and the v1 corpus migrate this way (`tests/migrate_056.py`,
+`tests/migrate.py`).
+
+- **Library changes (E0214 `library_changed`).** An import or use of a changed std item reports E0214
+  and still checks, with a fix giving the new form:
+  - renamed so that no two modules share a name: `lists.contains` → `has_item`, `json.field` →
+    `member`, `tcp.close` → `close_conn`, `tcp.send` → `write_all`, `tcp.describe` → `tcp_error_text`,
+    `metrics.add` → `add_to`, `sqlite.get`, `get_int`, `get_float`, `get_str`, `get_bytes` →
+    `value_column`, `int_column`, `float_column`, `text_column`, `bytes_column`, `http.header` →
+    `response_header`, `regex.replace_all` → `replace_matches`, `http.serve_bytes_workers` →
+    `serve_workers_bytes`, `random.shuffle` → `shuffled`;
+  - lookups that may find nothing return an `Option` (`some(value)` or `none`): `http.response_header`
+    and `request_header`, `regex.first_match`, and in `std.collections` `first_key`, `last_key`,
+    `key_at_or_above`, `key_at_or_below`, `key_after`, `key_before`, `first`, `last`, `at_or_above`,
+    `at_or_below`, `after`, `before`, `peek`, `front` and `back`. Where the old `result` is still read
+    (`try`, a `match` on `ok`/`err`, a comparison), the fix wraps the call in `to_result(CALL, "OLD
+    ERROR")`, which keeps the program's behavior;
+  - `std.regex` takes the text first: `is_match(s, re)`, `first_match`, `all_matches`, `split_on`,
+    `replace_matches(s, re, replacement)`; the fix swaps the arguments;
+  - `WorkerError.timeout` → `timed_out`, the one name for an expired time limit;
+  - removed duplicates of the builtin `now_ms()`: `web.clock_ms` and `time.now` (the fix writes
+    `now_ms()`, or `fn() -> int { return now_ms(); }` for a function value);
+  - durations in milliseconds: `time.fixed_zone(minutes)` → `offset_zone(ms)`, `web.Cookie.max_age_s`
+    → `max_age_ms` (sent as whole seconds), `security.Browser.lifetime_s` → `lifetime_ms`; the fix
+    converts a literal (`fixed_zone(330)` → `offset_zone(19800000)`), multiplies another value, and
+    reads a field as `(c.max_age_ms / 1000)`. The tz records' fields say their unit: `Zone.starts_s`,
+    `offsets_s`, `ZoneRule.std_offset_s`, `dst_offset_s`, `RuleDay.time_s`.
+- **A local may not take a builtin's name** (E0203, as the program's own functions): a `let`, `var`,
+  parameter, loop or `case` variable named `len`, `min`, `lower`, ... The fix renames it to
+  `NAME_value`, at its declaration and each use.
+- **Literals have one spelling** (E0105 with a fix): `1E9` and `1e+9` are `1e9`, `007` is `7`. A float
+  literal that rounds to zero (`1e-400`) is an error, as one too large is, and so is
+  `-0x8000000000000000` (the negation overflows).
+- **Error texts** (values a program may compare; no diagnostic, so check comparisons with these):
+  - parsing is `invalid KIND: TEXT; DETAIL`, a document `invalid KIND at POSITION: DETAIL`:
+    `parse_time` (`invalid time: 2026-13-01; month 13 is outside 1-12`), `bytes.from_hex` and
+    `from_base64` (`invalid hex: abc; odd number of hex digits`), `parse_json` and everything reading
+    JSON through it (`invalid json at line 1, column 7: ...`), `parse_regex` (`invalid regex at byte 0:
+    ...`), `parse_sql` (`invalid sql: ...`); std.web's body reason drops its `not JSON: `;
+  - sqlite drops the `error: ` prefix of a plain error (`unable to open database file`); `constraint:`,
+    `busy:`, `readonly:` and the other kinds stay;
+  - sqlite's `no column `NAME`` and `ambiguous column `NAME`` have backticks, and `float_column` converts
+    an INTEGER;
+  - std.time's `local_error_text`, std.workers' `worker_error_text` (new) and std.tcp's
+    `tcp_error_text` give a sentence per case.
+- **Time limits:** every `timeout_ms` takes 0 to 600,000; 0 means the longest, 600,000 (10 minutes).
+  `http.send` and `send_bytes` took 0 as "only the run's `--timeout`": an HTTP request under
+  `--timeout 0` is now bounded at 10 minutes. Other values are `err("invalid: the time limit must be 0
+  to 600000 ms")`; `with_deadline` clamps instead.
+- **Releasing a resource needs no effect**: `tcp.close_conn` and `close_listener`, like `sqlite.close`.
+- **The postgres package** follows std.sqlite: its readers are `value_column`, `int_column`,
+  `float_column` (converting an integer), `text_column`, `bytes_column` and `time_column`. The package
+  is not in the E0214 table: its users rename by hand.
+
+Additions:
+
+- `bool` and variants are ordered: `false < true`; a variant by case in declaration order, then by
+  payload. So every `key` type is ordered, a generic `K: key` can be sorted, and an enum-like variant
+  can key an `ordered_map`.
+- `[]` takes its type from the context (an annotation, a parameter, a return type, a field), as `ok(1)`
+  does; with none it is E0306.
+- A named effect set is accepted as an effect argument (`Db[Storage]`); `vo fmt` writes every effect
+  argument with `uses` (`Db[uses D]`, `Db[uses Storage]`).
+- `Shape.empty()` is E0411 with a fix removing `()`. A repeated `@allow` code or field annotation is
+  E0119 with a fix removing the repeat (it was E0329 or W0706). An unreadable `vo build --base` is T0002
+  (exit 66).
+- Messages follow one style: backticks for code, names and paths, `` `test "NAME"` ``, "found" (not
+  "got"), ranges "A to B".
 
 - Operating a service. A new effect `log` covers writing log records and metrics. `std.log` writes one
   JSON record per line on stderr: `log_info("note created", [field("id", 7)])` gives time, level,

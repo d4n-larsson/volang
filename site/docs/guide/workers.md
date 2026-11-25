@@ -125,7 +125,7 @@ fn describe(r: result[int, WorkerError]) -> str {
                 case ended {
                     return "ended";
                 }
-                case timeout {
+                case timed_out {
                     return "timeout";
                 }
                 case full {
@@ -178,7 +178,7 @@ which is dropped if the worker is gone.
 
 ## A time limit for one call
 
-`with_deadline(ms, f)` runs `f` in a worker of its own and gives its result, or `err(timeout)` when the
+`with_deadline(ms, f)` runs `f` in a worker of its own and gives its result, or `err(timed_out)` when the
 time has passed; the work is then stopped.
 
 ```vo
@@ -196,7 +196,7 @@ fn slow() -> int {
 
 fn main() uses console {
     print(str(with_deadline(1000, fn() -> int { return 6 * 7; }) == ok(42)));
-    print(str(with_deadline(100, slow) == err(WorkerError.timeout)));
+    print(str(with_deadline(100, slow) == err(WorkerError.timed_out)));
 }
 ```
 
@@ -278,7 +278,7 @@ fn main() uses console {
 ```
 
 When several workers have a message waiting, the earliest in the list is chosen. With a time limit
-(`Wait.at_most(ms)`), `err(timeout)` means nothing arrived in time: that is how a program gives each
+(`Wait.at_most(ms)`), `err(timed_out)` means nothing arrived in time: that is how a program gives each
 job a deadline while the other workers go on (the
 [job-queue example](https://github.com/d4n-larsson/volang/tree/main/examples/job-queue) does).
 

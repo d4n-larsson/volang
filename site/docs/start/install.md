@@ -13,7 +13,7 @@ one for your machine, checks it against the list and writes it to `~/.local/bin/
 
 ```console
 $ curl -fsSL https://raw.githubusercontent.com/d4n-larsson/volang/main/tools/install.sh | sh
-installed vo 0.1.0 schema 1 to /home/you/.local/bin/vo
+installed vo 0.2.0 schema 1 to /home/you/.local/bin/vo
 ```
 
 `VO_INSTALL_DIR` chooses another directory and `VO_VERSION` (for example `v0.1.0`) another release. To
@@ -45,7 +45,7 @@ bin/vo version
 ```
 
 ```text
-vo 0.1.0 schema 1
+vo 0.2.0 schema 1
 tzdata 2026f
 ```
 

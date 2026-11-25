@@ -1,0 +1,27 @@
+# Spec 056 (FR-006): a parameter, local, `for` variable or case binding named like a builtin is E0203, with a
+# fix renaming it (and each use) to NAME_value; `len(...)` beside it is still the builtin.
+import std.option.Option;
+
+fn total(keys: list[str]) -> int {
+    let len = 0;
+    var n = len;
+    for min in keys {
+        set n = n + len(min);
+    }
+    return n + len(keys);
+}
+
+fn value_of(o: Option[int]) -> int {
+    match o {
+        case some(abs) {
+            return abs;
+        }
+        case none {
+            return 0;
+        }
+    }
+}
+
+fn main() uses console {
+    print(str(total(["ab", "c"])) + " " + str(value_of(Option.some(2))));
+}

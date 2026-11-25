@@ -1,0 +1,21 @@
+# Spec 056 (FR-021): a named set is accepted as an effect argument, as an effect parameter is
+# (`Db[Storage]` is `Db[uses Storage]`; vo fmt writes the second).
+effects Storage = file.read("data/"), file.write("data/");
+
+record Db[E: effects] {
+    id: int;
+}
+
+fn open_db(n: int) -> Db[Storage] {
+    return new Db[uses Storage] { id: n };
+}
+
+fn same(a: Db[Storage], b: Db[uses Storage]) -> bool {
+    return a.id == b.id;
+}
+
+fn main() uses console, Storage {
+    let a = open_db(1);
+    let b: Db[uses file.read, file.write] = a;
+    print(str(same(a, b)));
+}

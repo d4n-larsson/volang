@@ -1,5 +1,6 @@
 import std.collections.first_key;
 import std.collections.last_key;
+import std.option.to_result;
 
 # Spec 014 US1/AC4: 100,000 keys inserted in ascending order (the worst case for an unbalanced tree).
 fn main() uses console {
@@ -14,5 +15,5 @@ fn main() uses console {
     for i in 0..50000 {
         remove(m, i * 2);
     }
-    print(str(len(m)) + " " + str(sum) + " " + str(first_key(m) == ok(1)) + " " + str(last_key(m) == ok(99999)));
+    print(str(len(m)) + " " + str(sum) + " " + str(to_result(first_key(m), "empty") == ok(1)) + " " + str(to_result(last_key(m), "empty") == ok(99999)));
 }

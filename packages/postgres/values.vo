@@ -156,6 +156,24 @@ export fn time_of(s: str) -> result[int] {
     return ok(ms + try time_part(s));
 }
 
+# The index of a column by name; err for an unknown name or one that two columns have (client's readers).
+#     column_index(["a", "b"], "b") == ok(1) is true
+export fn column_index(columns: list[str], column: str) -> result[int] {
+    var found = -1;
+    for i in 0..len(columns) {
+        if columns[i] == column {
+            if found >= 0 {
+                return err("ambiguous column `" + column + "`: name each column with AS");
+            }
+            set found = i;
+        }
+    }
+    if found < 0 {
+        return err("no column `" + column + "`");
+    }
+    return ok(found);
+}
+
 test "types to kinds" {
     expect_eq(kind_of(20), Kind.integer);
     expect_eq(kind_of(21), Kind.integer);

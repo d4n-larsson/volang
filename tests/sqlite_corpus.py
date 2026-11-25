@@ -167,9 +167,9 @@ fn run(db: Database, text: str) -> str {
 
 fn main() uses console {
     let db = open_memory();
-    let all = [STATEMENTS];
-    for i in 0..len(all) {
-        print(str(i) + " " + run(db, all[i]));
+    let statements = [STATEMENTS];
+    for i in 0..len(statements) {
+        print(str(i) + " " + run(db, statements[i]));
     }
 }
 """

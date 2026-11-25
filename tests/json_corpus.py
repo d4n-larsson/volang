@@ -31,7 +31,8 @@ def main():
         if code != 0 or out != want:
             failures.append(f"{os.path.basename(f)}: want {want!r}, got {out!r} (exit {code}) {err}")
     for f in invalid:
-        want = "error: " + open(f[:-5] + ".expected").read().strip() + ": "
+        at = open(f[:-5] + ".expected").read().strip()  # a position; "not UTF-8 ..." fails before parsing
+        want = ("error: invalid json at " if at.startswith("line ") else "error: ") + at + ": "
         code, out, err = run(open(f, "rb").read())
         if code != 0 or not out.startswith(want):
             failures.append(f"{os.path.basename(f)} (invalid): want {want!r}..., got {out!r} (exit {code}) {err}")

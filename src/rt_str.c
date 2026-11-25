@@ -253,7 +253,8 @@ long rt_minmax(long a, long b, int kind, int want_max)
         b_less = y.d < x.d;
     } else if (kind == TY_STR) {
         b_less = str_cmp((Str *)b, (Str *)a) < 0;
-    } else if (kind == TY_RECORD) { /* spec 014 */
+    } else if (kind == TY_RECORD || kind == TY_VARIANT || kind == TY_BYTES) { /* spec 014; spec 056: variants (and
+                                                                                 bytes, byte by byte, not by address) */
         b_less = elem_less(b, a, kind);
     } else {
         b_less = b < a;
@@ -350,7 +351,7 @@ long rt_ord(Str *s, Node *node)
     GC_ROOT(&sb);
     render_str_lit(sb, s);
     GC_UNROOT(2);
-    rt_raise("R0007", msg("`ord` needs exactly one character, got $1.", sb_finish(sb), 0, 0), node);
+    rt_raise("R0007", msg("`ord` needs exactly one character, found $1.", sb_finish(sb), 0, 0), node);
     return 0;
 }
 
@@ -365,7 +366,7 @@ long rt_byte_at(Str *s, long i, Node *node)
 Str *rt_chr(long cp, Node *node)
 {
     if (cp < 0 || cp > 0x10FFFF || (cp >= 0xD800 && cp <= 0xDFFF)) {
-        rt_raise("R0007", msg("`chr` needs a Unicode code point, got $1.", int_to_str(cp), 0, 0), node);
+        rt_raise("R0007", msg("`chr` needs a Unicode code point, found $1.", int_to_str(cp), 0, 0), node);
         return 0;
     }
     char buf[4];

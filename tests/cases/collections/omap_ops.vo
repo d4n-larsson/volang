@@ -4,6 +4,7 @@ import std.collections.key_at_or_above;
 import std.collections.key_at_or_below;
 import std.collections.keys_between;
 import std.collections.last_key;
+import std.option.to_result;
 
 fn show(r: result[int]) -> str {
     match r {
@@ -23,15 +24,15 @@ fn ints(xs: list[int]) -> str {
 # Spec 014 US1: every ordered_map operation, empty cases included.
 fn main() uses console {
     let m = new ordered_map[int, str];
-    print("empty: " + show(first_key(m)) + " " + show(last_key(m)) + " " + show(key_at_or_above(m, 1)));
+    print("empty: " + show(to_result(first_key(m), "empty")) + " " + show(to_result(last_key(m), "empty")) + " " + show(to_result(key_at_or_above(m, 1), "none")));
     for k in [50, 10, 40, 20, 30] {
         set m[k] = "v" + str(k);
     }
     set m[20] = "twenty";
     print("len " + str(len(m)) + ", keys " + ints(keys(m)) + ", m[20] " + m[20]);
-    print("first " + show(first_key(m)) + ", last " + show(last_key(m)));
-    print("at or above 25: " + show(key_at_or_above(m, 25)) + ", 30: " + show(key_at_or_above(m, 30)) + ", 51: " + show(key_at_or_above(m, 51)));
-    print("at or below 25: " + show(key_at_or_below(m, 25)) + ", 10: " + show(key_at_or_below(m, 10)) + ", 9: " + show(key_at_or_below(m, 9)));
+    print("first " + show(to_result(first_key(m), "empty")) + ", last " + show(to_result(last_key(m), "empty")));
+    print("at or above 25: " + show(to_result(key_at_or_above(m, 25), "none")) + ", 30: " + show(to_result(key_at_or_above(m, 30), "none")) + ", 51: " + show(to_result(key_at_or_above(m, 51), "none")));
+    print("at or below 25: " + show(to_result(key_at_or_below(m, 25), "none")) + ", 10: " + show(to_result(key_at_or_below(m, 10), "none")) + ", 9: " + show(to_result(key_at_or_below(m, 9), "none")));
     print("between 15 and 40: " + ints(keys_between(m, 15, 40)) + ", 41..49: [" + ints(keys_between(m, 41, 49)) + "]");
     print("has 40 " + str(has(m, 40)) + ", has 41 " + str(has(m, 41)) + ", get_or 41 " + get_or(m, 41, "none"));
     let c = copy_map(m);

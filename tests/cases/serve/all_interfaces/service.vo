@@ -3,6 +3,7 @@ import std.http.Request;
 import std.http.Response;
 import std.http.request_header;
 import std.http.serve;
+import std.option.to_result;
 
 fn text(status: int, body: str) -> Response {
     return new Response { status: status, headers: [new Header { name: "Content-Type", value: "text/plain" }], body: body };
@@ -18,7 +19,7 @@ fn handle(r: Request) -> Response {
             set h = h + x.name + "=" + x.value + ";";
         }
         var ct = "none";
-        match request_header(r, "content-type") {
+        match to_result(request_header(r, "content-type"), "no header `" + "content-type" + "`") {
             case ok(v) {
                 set ct = v;
             }

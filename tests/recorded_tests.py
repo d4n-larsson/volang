@@ -64,10 +64,10 @@ class Peer:
 
 TCP_PROGRAM = """import std.bytes.from_text;
 import std.bytes.to_text;
-import std.tcp.close;
+import std.tcp.close_conn;
 import std.tcp.connect;
 import std.tcp.read;
-import std.tcp.send;
+import std.tcp.write_all;
 
 fn port() -> int uses env {
     match env("PORT") {
@@ -89,7 +89,7 @@ fn port() -> int uses env {
 fn echo(text: str) -> str uses env, net {
     match connect("127.0.0.1", port(), 2000) {
         case ok(c) {
-            match send(c, from_text(text), 2000) {
+            match write_all(c, from_text(text), 2000) {
                 case ok() {
                 }
                 case err(_) {
@@ -98,7 +98,7 @@ fn echo(text: str) -> str uses env, net {
             }
             match read(c, 100, 2000) {
                 case ok(b) {
-                    close(c);
+                    close_conn(c);
                     match to_text(b) {
                         case ok(t) {
                             return t;

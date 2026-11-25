@@ -381,6 +381,12 @@ Token *lex(int file)
         }
         if (c >= '0' && c <= '9') { /* number */
             while (pos < len && text[pos] >= '0' && text[pos] <= '9') pos++;
+            if (c == '0' && pos - start > 1) { /* spec 056: 00012, 007.5: one spelling, without leading zeros */
+                long z = start;
+                while (z + 1 < pos && text[z] == '0') z++;
+                Diag *d = lx_err("E0105", start, pos, str_from_cstr("Write the number without leading zeros."));
+                diag_add_fix(d, (int)lx_file, start, z, str_from_cstr(""));
+            }
             int is_float = 0;
             if (pos + 1 < len && text[pos] == '.' && text[pos + 1] >= '0' && text[pos + 1] <= '9') {
                 is_float = 1;
@@ -394,6 +400,16 @@ Token *lex(int file)
                 if (k < len && text[k] >= '0' && text[k] <= '9') {
                     while (k < len && text[k] >= '0' && text[k] <= '9') k++;
                     is_float = 1;
+                    if (text[pos] == 'E' || text[pos + 1] == '+') { /* spec 056: 1E9, 1e+9: one spelling, 1e9 */
+                        SB *sb = sb_new();
+                        sb_byte(sb, 'e');
+                        long from = pos + 1 + (text[pos + 1] == '+');
+                        sb_bytes(sb, text + from, k - from);
+                        Str *exp = sb_finish(sb);
+                        Diag *d = lx_err("E0105", start, k, msg("Write `$1$2`: the exponent is a lower-case `e`, without `+`.",
+                                                                lx_slice(start, pos), exp, 0));
+                        diag_add_fix(d, (int)lx_file, pos, k, exp);
+                    }
                     pos = k;
                 } else if (k >= len || !is_word_char((unsigned char)text[k])) { /* 1e, 1e+: an exponent without digits */
                     is_float = 1;
@@ -423,6 +439,9 @@ Token *lex(int file)
                     lx_err("E0105", start, pos, str_from_cstr("Float literal has more than 17 significant digits."));
                 else if (!bad_exp && ((unsigned long)text_to_float(text + start, pos - start) << 1) == (2047UL << 53))
                     lx_err("E0105", start, pos, str_from_cstr("Float literal is larger than the largest float (about 1.8e308)."));
+                else if (!bad_exp && through > 0 && text_to_float(text + start, pos - start) == 0) /* spec 056 */
+                    lx_err("E0105", start, pos, str_from_cstr("Float literal is smaller than the smallest float above "
+                                                              "zero (about 4.9e-324): write `0.0`."));
             } else {
                 lx_number_suffix(start, pos);
                 lx_push(T_INT, start, pos);

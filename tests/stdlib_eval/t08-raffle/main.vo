@@ -1,5 +1,5 @@
 import std.random.pick;
-import std.random.shuffle;
+import std.random.shuffled;
 
 fn read_n() -> int {
     let a = args();
@@ -27,7 +27,7 @@ fn main() uses console, random {
     for i in 1..n + 1 {
         push(xs, i);
     }
-    let shuffled = shuffle(xs);
+    let shuffled = shuffled(xs);
     print(join(map(shuffled, fn(x: int) -> str {
         return str(x);
     }), " "));

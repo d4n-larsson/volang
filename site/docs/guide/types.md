@@ -45,8 +45,7 @@ An annotation never converts: it is a check that the initializer has that type. 
 is simpler).
 
 Annotations are needed where the initializer alone does not say enough: an empty list
-(`let xs: list[int] = new list[int];` or simply `new list[int]`, since `[]` is
-[E0306](../errors/E0306.md)), a result built with `ok(...)` ([E0307](../errors/E0307.md)) and a typed hole
+(`let xs: list[int] = [];`, or `new list[int]`; a bare `[]` is [E0306](../errors/E0306.md)), a result built with `ok(...)` ([E0307](../errors/E0307.md)) and a typed hole
 (`todo`). Function parameters and return types are always written.
 
 ## int

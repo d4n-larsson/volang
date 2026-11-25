@@ -27,17 +27,17 @@ fn brackets() -> list[Bracket] {
 
 fn income_tax(gross: int) -> int {
     var total_bp = 0;
-    var lower = 0;
+    var lower_value = 0;
     for b in brackets() {
-        if gross <= lower {
+        if gross <= lower_value {
             break;
         }
         var top = gross;
         if b.upper >= 0 and gross > b.upper {
             set top = b.upper;
         }
-        set total_bp = total_bp + (top - lower) * b.bp;
-        set lower = b.upper;
+        set total_bp = total_bp + (top - lower_value) * b.bp;
+        set lower_value = b.upper;
     }
     return total_bp / 10000;
 }

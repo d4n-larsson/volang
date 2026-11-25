@@ -42,7 +42,7 @@ fn shown(n: int, input: Prefs) -> result[Response] {
 fn choose(n: int, input: Choice) -> result[Response] {
     let c = cookie("show_done", input.show_done);
     if input.show_done == "" {
-        set c.max_age_s = 0;
+        set c.max_age_ms = 0;
     }
     return with_cookie(json_reply(200, "saved"), c);
 }

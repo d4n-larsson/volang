@@ -53,7 +53,7 @@ export fn find_account(store: Store, name: str) -> result[Option[Account]] {
 
 # Browsers: the frontend serves its sign-in page at /sign-in and posts the form there; sessions live
 # in the store for eight hours; random gives the session values (std.crypto.random_bytes).
-export fn browsers[E: effects](random: fn(int) -> bytes uses E) -> Browser[Store, E] {
+export fn browsers[E: effects](random: fn(int) -> bytes uses E) -> Browser[Store, uses E] {
     return new Browser {
         find_account: find_account,
         keep: fn(store: Store, s: Session) -> result[void] {
@@ -73,7 +73,7 @@ export fn browsers[E: effects](random: fn(int) -> bytes uses E) -> Browser[Store
         random: random,
         sign_in: "/sign-in",
         sign_out: "/sign-out",
-        lifetime_s: 8 * 3600,
+        lifetime_ms: 8 * 3600 * 1000,
         origin: ""
     };
 }

@@ -107,12 +107,12 @@ def main():
             cases.append(("attach database ? as o%d" % i, p, "R0010"))
             cases.append(("vacuum into ?", p.replace(".db", "_v.db") if "link" not in p else p, "R0010"))
         refused = ["journal_mode = WAL", "temp_store_directory", "data_store_directory"]
-        cases += [("pragma journal_mode=wal", None, "err PRAGMA journal_mode = WAL is not available in vo"),
+        cases += [("pragma journal_mode=wal", None, "err invalid sql: PRAGMA journal_mode = WAL is not available in vo"),
                   ("pragma temp_store_directory='/tmp'", None,
-                   "err PRAGMA temp_store_directory is not available in vo"),
+                   "err invalid sql: PRAGMA temp_store_directory is not available in vo"),
                   ("pragma data_store_directory='/tmp'", None,
-                   "err PRAGMA data_store_directory is not available in vo"),
-                  ("select load_extension('x')", None, "err error: no such function: load_extension")]
+                   "err invalid sql: PRAGMA data_store_directory is not available in vo"),
+                  ("select load_extension('x')", None, "err no such function: load_extension")]
         for mode in ("memory", "off", "truncate", "delete"):
             cases.append(("pragma journal_mode=%s" % mode, None, "ok"))
         assert len(refused) == 3

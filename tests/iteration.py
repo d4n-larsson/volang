@@ -283,7 +283,7 @@ import std.json.from_json;
 import std.json.parse_json;
 import std.json.to_json;
 import std.json.write_json;
-import std.lists.contains;
+import std.lists.has_item;
 import std.lists.group_by;
 import std.lists.index_of;
 import std.lists.max_by;
@@ -329,7 +329,7 @@ fn answer(f: list[str]) -> result[str] {
     var out = "";
     if f[0] == "contains" {
         let x: str = try from_json(try parse_json(f[2]));
-        set out = format("{} {}", contains(xs, x), index_of(xs, x));
+        set out = format("{} {}", has_item(xs, x), index_of(xs, x));
     } else if f[0] == "reversed" {
         set out = try text(reversed(xs));
     } else if f[0] == "desc" {

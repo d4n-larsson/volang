@@ -81,8 +81,8 @@ fn main() uses console {
     let b = a;
     bump(a);
     bump(b);
-    let all = [a, b];
-    set all[0].hits = 10;
+    let both = [a, b];
+    set both[0].hits = 10;
     print(str(a.hits) + " " + str(b.hits));
     let fresh = new Counter { hits: a.hits };
     bump(fresh);

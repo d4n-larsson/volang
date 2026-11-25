@@ -9,11 +9,11 @@ fn to_ints(b: bytes) -> list[int]
 fn to_hex(b: bytes) -> str
     Two lowercase hex digits per byte.
 fn from_hex(s: str) -> result[bytes]
-    Bytes from hex digits (either case); err("not hex at position N") or err("odd number of hex digits").
+    Bytes from hex digits (either case); err("invalid hex: S; not hex at position N") or err("invalid hex: S; odd number of hex digits").
 fn to_base64(b: bytes) -> str
     Base64 (RFC 4648, standard alphabet, padded).
 fn from_base64(s: str) -> result[bytes]
-    Bytes from padded standard base64; err("not base64 at position N") or err("base64 length is not a multiple of 4").
+    Bytes from padded standard base64; err("invalid base64: S; not base64 at position N") or err("invalid base64: S; length is not a multiple of 4").
 fn read_stdin() -> bytes uses input
     All of standard input, as bytes (any bytes; read_all and read_line need UTF-8).
 fn write_stdout(b: bytes) uses console

@@ -58,22 +58,22 @@ with `std.sqlite`: `fn save[D: effects](db: Database[D], ...) uses D`.
 
 ## Statements and values
 
-`sql`, `parse_sql`, `exec`, `query`, `transaction`, `close` and the getters `get`, `get_int`,
-`get_float`, `get_str`, `get_bytes`, `is_null` are those of [`std.sqlite`](standard-library.md), with
+`sql`, `parse_sql`, `exec`, `query`, `transaction`, `close` and the readers `value_column`, `int_column`,
+`float_column`, `text_column`, `bytes_column`, `is_null` are those of [`std.sqlite`](standard-library.md), with
 the same parameters, results and error texts. Parameters are `?` in order, as in SQLite; the package
 numbers them for the server. `??` is a literal `?` (PostgreSQL's `jsonb` operators), and `$1` is
 refused. Values travel only as parameters: no function puts a value into the SQL text.
 
 | PostgreSQL column | Value | Read with |
 |---|---|---|
-| `smallint`, `integer`, `bigint` | `integer` | `get_int` |
-| `boolean` | `integer` 0 or 1 (as SQLite stores it) | `get_int` |
-| `real`, `double precision` | `real`; `NaN` and the infinities are `text` | `get_float` |
-| `bytea` | `blob` | `get_bytes` |
-| `text`, `varchar`, `char` | `text` | `get_str` |
-| `numeric` | `text`, never a float | `get_str`, then `std.decimal.parse_decimal` |
-| `timestamptz`, `timestamp`, `date` | `text`, in UTC | `get_time` (milliseconds since 1970 UTC), or `get_str` |
-| anything else (`uuid`, `jsonb`, arrays, ...) | `text`, the server's text form | `get_str` |
+| `smallint`, `integer`, `bigint` | `integer` | `int_column` |
+| `boolean` | `integer` 0 or 1 (as SQLite stores it) | `int_column` |
+| `real`, `double precision` | `real`; `NaN` and the infinities are `text` | `float_column` |
+| `bytea` | `blob` | `bytes_column` |
+| `text`, `varchar`, `char` | `text` | `text_column` |
+| `numeric` | `text`, never a float | `text_column`, then `std.decimal.parse_decimal` |
+| `timestamptz`, `timestamp`, `date` | `text`, in UTC | `time_column` (milliseconds since 1970 UTC), or `text_column` |
+| anything else (`uuid`, `jsonb`, arrays, ...) | `text`, the server's text form | `text_column` |
 | `NULL` | `null` | `is_null` |
 
 Every session is set to UTF-8, UTC and ISO dates when it connects, so no result depends on the
@@ -118,7 +118,7 @@ that differ:
 | the id of a new row | `last_id` of `exec`, or `returning id` | `insert ... returning id`, run with `query` (`last_id` is always 0); use `returning` on both |
 | insert or update | `insert ... on conflict (k) do update set ...` | the same |
 | booleans | `integer` 0 or 1 | `boolean`, read as 0 or 1 |
-| dates and times | text you write (`std.time.format_time`) | `timestamptz`, read with `get_time` |
+| dates and times | text you write (`std.time.format_time`) | `timestamptz`, read with `time_column` |
 | the clock and randomness in SQL | refused: pass the value as a parameter | `now()`, `random()` run on the server (and are recorded) |
 | text comparison | `like` ignores ASCII case | `like` is exact; `ilike` ignores case |
 | column types | any value in any column | the declared type is enforced |

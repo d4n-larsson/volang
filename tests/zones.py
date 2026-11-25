@@ -41,7 +41,7 @@ DRIVER = """import std.fs.read_bytes;
 import std.time.DateTime;
 import std.time.Zone;
 import std.time.abbreviation_at;
-import std.time.fixed_zone;
+import std.time.offset_zone;
 import std.time.format_in;
 import std.time.from_local;
 import std.time.in_zone;
@@ -83,7 +83,7 @@ fn instant_answer(z: Zone, ms: int) -> str {
 }
 
 fn main() -> result[void] uses console, file.read {
-    var z = fixed_zone(0);
+    var z = offset_zone(0);
     for line in split(try read_file("cases.txt"), "\\n") {
         let p = split(line, " ");
         if p[0] == "Z" {
@@ -103,7 +103,7 @@ fn main() -> result[void] uses console, file.read {
                     print("B ok");
                 }
                 case err(e) {
-                    set z = fixed_zone(0);
+                    set z = offset_zone(0);
                     print("B " + e);
                 }
             }
@@ -129,14 +129,14 @@ fn main() uses console, clock {
 }
 """
 
-SPEED = """import std.time.fixed_zone;
+SPEED = """import std.time.offset_zone;
 import std.time.in_zone;
 import std.time.load_zone;
 import std.time.zone_names;
 
 fn main() -> result[void] uses console, clock {
     let t0 = now_ms();
-    var z = fixed_zone(0);
+    var z = offset_zone(0);
     for name in zone_names() {
         set z = try load_zone(name);
     }

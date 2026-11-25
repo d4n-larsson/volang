@@ -8,13 +8,13 @@ inside 1234
 --- exit 0
 $ vo run main.vo
 --- stderr
-main.vo:1:1: error[E0702]: Package money: the directory vendor/money has a directory that cannot be read, or a link leading outside it.
+main.vo:1:1: error[E0702]: Package `money`: the directory `vendor/money` has a directory that cannot be read, or a link leading outside it.
    1 | import money.format.cents;
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^
 1 error, 0 warnings
 --- exit 65
 $ vo package main.vo money vendor/money
-error[E0702]: Package money: the directory vendor/money has a directory that cannot be read, or a link leading outside it.
+error[E0702]: Package `money`: the directory `vendor/money` has a directory that cannot be read, or a link leading outside it.
 --- stderr
 --- exit 65
 $ vo package main.vo money vendor/money
@@ -23,7 +23,7 @@ updated money: sha256:1415dbaee683c9e432fbd05ff50e0849446e8736ecea3b296d1d1e00be
 --- exit 0
 $ vo run main.vo
 --- stderr
-main.vo:1:1: error[E0702]: Package money: the directory vendor/money has a directory that cannot be read, or a link leading outside it.
+main.vo:1:1: error[E0702]: Package `money`: the directory `vendor/money` has a directory that cannot be read, or a link leading outside it.
    1 | import money.format.cents;
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^
 1 error, 0 warnings

@@ -1,3 +1,3 @@
-shop/main.vo:20:5 call in main: print(p.first + " " + str(p.second) + " " + label(items[0]) + " " + str(len(all) + len(sums)));
+shop/main.vo:20:5 call in main: print(p.first + " " + str(p.second) + " " + label(items[0]) + " " + str(len(all_value) + len(sums)));
 shop/main.vo:21:5 call in main: print(describe(Event.added(items[1])) + " " + describe(Event.cleared) + " " + str(total(items)));
 2 references

@@ -3,14 +3,14 @@ import std.sqlite.sql;
 import std.sqlite.exec;
 import std.sqlite.query;
 import std.sqlite.transaction;
-import std.sqlite.get_int;
+import std.sqlite.int_column;
 import std.sqlite.Database;
 import std.sqlite.Value;
 
 fn count(db: Database) -> int {
     match query(db, sql("select count(*) as n from t"), new list[Value]) {
         case ok(rows) {
-            match get_int(rows[0], "n") {
+            match int_column(rows[0], "n") {
                 case ok(n) {
                     return n;
                 }

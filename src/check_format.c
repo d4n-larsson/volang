@@ -418,7 +418,7 @@ static Type *format_call(Node *call)
 {
     Vec *args = call->b.v;
     if (args->n == 0) {
-        ck_err("E0302", call, str_from_cstr("`format` takes a template and the values for its placeholders, got no arguments."));
+        ck_err("E0302", call, str_from_cstr("`format` takes a template and the values for its placeholders, found no arguments."));
         return t_str;
     }
     long nargs = args->n - 1;

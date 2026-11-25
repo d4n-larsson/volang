@@ -1,4 +1,4 @@
-ord_error.vo:2:15: runtime error[R0007]: `ord` needs exactly one character, got "ab".
+ord_error.vo:2:15: runtime error[R0007]: `ord` needs exactly one character, found "ab".
    2 |     print(str(ord("ab")));
      |               ^^^^^^^^^
 trace:

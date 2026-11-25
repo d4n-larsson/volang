@@ -2,6 +2,7 @@
 # Part of the vo standard library (spec 025). Import items one by one: `import std.regex.NAME;`.
 # Write a pattern as a raw string, between backticks, where a backslash is itself: regex(`\d+`). Every operation
 # searches anywhere in the text; ^ and $ anchor. \d \w \s \b and (?i) are ASCII; offsets are bytes.
+import std.option.Option;
 
 # A compiled pattern: make one with regex("...") or parse_regex(s), and reuse it.
 #     regex("a+").pattern is "a+"
@@ -28,21 +29,27 @@ export record Match {
 }
 
 # The pattern as a Regex. The pattern must be a string literal: vo check checks it (E0319, E0320, E0321).
-#     is_match(regex("^[a-z]+$"), "abc") is true
+#     is_match("abc", regex("^[a-z]+$")) is true
 export fn regex(pattern: str) -> Regex {
     return new Regex { pattern: pattern };
 }
 
-# The pattern as a Regex, for a pattern built at run time; err("at byte N: ...") when it is not valid.
-#     parse_regex("a(") == err("at byte 1: The group is not closed: add `)`.") is true
+# The pattern as a Regex, for a pattern built at run time; err("invalid regex at byte N: ...") when it is not valid.
+#     parse_regex("a(") == err("invalid regex at byte 1: The group is not closed: add `)`.") is true
 export fn parse_regex(pattern: str) -> result[Regex] {
-    let _ = try __re_compile(pattern);
+    match __re_compile(pattern) {
+        case ok(_) {
+        }
+        case err(e) {
+            return err("invalid regex " + e);
+        }
+    }
     return ok(new Regex { pattern: pattern });
 }
 
 # Whether the pattern matches anywhere in s.
-#     is_match(regex(`\d`), "a1") is true
-export fn is_match(re: Regex, s: str) -> bool {
+#     is_match("a1", regex(`\d`)) is true
+export fn is_match(s: str, re: Regex) -> bool {
     return len(__re(1, re.pattern, s)) > 0;
 }
 
@@ -87,19 +94,19 @@ fn build_match(s: str, offs: list[int], base: int, names: list[str]) -> Match {
     };
 }
 
-# The leftmost match in s, with its groups; err("no match") when there is none.
-#     first_match(regex("b+"), "abbc") == ok(new Match { text: "bb", start: 1, end: 3, groups: ["bb"], took_part: [true], named: new map[str, str] }) is true
-export fn first_match(re: Regex, s: str) -> result[Match] {
+# The leftmost match in s, with its groups; `none` when there is none.
+#     first_match("abbc", regex("b+")) == Option.some(new Match { text: "bb", start: 1, end: 3, groups: ["bb"], took_part: [true], named: new map[str, str] }) is true
+export fn first_match(s: str, re: Regex) -> Option[Match] {
     let offs = __re(2, re.pattern, s);
     if len(offs) == 0 {
-        return err("no match");
+        return Option.none;
     }
-    return ok(build_match(s, offs, 0, group_names(re)));
+    return Option.some(build_match(s, offs, 0, group_names(re)));
 }
 
 # Every match in s, left to right, without overlapping (an empty match may follow a non-empty one, as in Python).
-#     len(all_matches(regex(`\d+`), "1 22 333")) is 3
-export fn all_matches(re: Regex, s: str) -> list[Match] {
+#     len(all_matches("1 22 333", regex(`\d+`))) is 3
+export fn all_matches(s: str, re: Regex) -> list[Match] {
     let offs = __re(3, re.pattern, s);
     let names = group_names(re);
     let per = 2 * (len(names) + 1);
@@ -111,8 +118,8 @@ export fn all_matches(re: Regex, s: str) -> list[Match] {
 }
 
 # s with every match replaced: $1 or ${1} is group 1, ${name} a named group, $$ a dollar sign (anything else after $ is R0007).
-#     replace_all(regex(`(\d+)-(\d+)`), "10-20", "$2-$1") is "20-10"
-export fn replace_all(re: Regex, s: str, replacement: str) -> str {
+#     replace_matches("10-20", regex(`(\d+)-(\d+)`), "$2-$1") is "20-10"
+export fn replace_matches(s: str, re: Regex, replacement: str) -> str {
     let parts = __re_repl(re.pattern, replacement);
     let offs = __re(3, re.pattern, s);
     let per = 2 * (len(group_names(re)) + 1);
@@ -136,8 +143,8 @@ export fn replace_all(re: Regex, s: str, replacement: str) -> str {
 }
 
 # The parts of s between matches (n matches give n + 1 parts), as Python's re.split.
-#     split_on(regex(`\s*,\s*`), "a , b,c") == ["a", "b", "c"] is true
-export fn split_on(re: Regex, s: str) -> list[str] {
+#     split_on("a , b,c", regex(`\s*,\s*`)) == ["a", "b", "c"] is true
+export fn split_on(s: str, re: Regex) -> list[str] {
     let offs = __re(3, re.pattern, s);
     let per = 2 * (len(group_names(re)) + 1);
     var out = new list[str];

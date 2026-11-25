@@ -1,0 +1,120 @@
+{
+ "examples/expenses": {
+  "test": {
+   "code": 0,
+   "out": "PASS amounts print with two decimals (0ms)\nPASS totals keep the first-seen order (0ms)\nPASS a bad date is an error, not a crash (0ms)\nPASS totals add up to the sum of the expenses (N cases, 0ms)\nPASS an empty report (0ms)\nspec FR-001: 1 test, all passing\nspec FR-002: 1 test, all passing\nspec FR-003: 1 test, all passing\nspec FR-004: 1 test, all passing\nspec FR-005: 1 test, all passing\n5 passed, 0 failed\n"
+  }
+ },
+ "examples/helpdesk": {
+  "test": {
+   "code": 0,
+   "out": "PASS the most urgent ticket first, then the earliest (0ms)\nPASS on call: the shift that started last at or before the minute (0ms)\nPASS the history keeps the last three (0ms)\nPASS a malformed line is an error that shows the line (0ms)\nPASS triage is the sorted order (N cases, 0ms)\nspec FR-001: 2 tests, all passing\nspec FR-002: 1 test, all passing\nspec FR-003: 1 test, all passing\nspec FR-004: 1 test, all passing\n5 passed, 0 failed\n"
+  }
+ },
+ "examples/job-queue": {
+  "replay demo.jsonl": {
+   "code": 2,
+   "out": "job 1: 2262 primes\njob 3: 3245 primes\njob 2: 6057 primes\njob 6: 1229 primes\njob 7: 5133 primes\njob 5: 8713 primes\njob 4: given up after 300 ms\n6 done, 1 given up\n"
+  },
+  "test": {
+   "code": 0,
+   "out": "PASS primes are counted (0ms)\nPASS a job gives its id back with its count (0ms)\nPASS the wait is the time to the nearest deadline (0ms)\n3 passed, 0 failed\n"
+  }
+ },
+ "examples/notes-api": {
+  "replay demo.jsonl": {
+   "code": 0,
+   "out": "notes on http://localhost:8080/notes (Ctrl-C stops)\nstopped\n"
+  },
+  "test": {
+   "code": 0,
+   "out": "PASS GET /notes lists the notes as JSON (0ms)\nPASS POST /notes adds a note with the next id (0ms)\nPASS a missing, empty or too long text is refused with the reason (0ms)\nPASS one note: read, mark done, delete (0ms)\nPASS unknown notes and paths are 404, other methods 405 (0ms)\nPASS the notes are kept in the database between requests (0ms)\nPASS a created note is logged with its request's id, beside the request's own record (0ms)\nPASS /metrics counts created notes and requests by route (0ms)\nPASS live and ready answer apart from /health (0ms)\nPASS added notes get distinct ids (N cases, 0ms)\nspec FR-001: 1 test, all passing\nspec FR-002: 2 tests, all passing\nspec FR-003: 1 test, all passing\nspec FR-004: 1 test, all passing\nspec FR-005: 1 test, all passing\nspec FR-006: 1 test, all passing\nspec FR-007: 1 test, all passing\nspec FR-010: 1 test, all passing\nspec FR-015: 1 test, all passing\n10 passed, 0 failed\n"
+  }
+ },
+ "examples/rates": {
+  "test": {
+   "code": 0,
+   "out": "PASS converts an amount at the rate (0ms)\nPASS refuses a currency that is not three capital letters (0ms)\nPASS a rate is read from the service's answer (0ms)\nPASS the service gives a positive rate from EUR to SEK (1ms, replayed)\n  note: the program changed since this test was recorded\n4 passed, 0 failed\n"
+  }
+ },
+ "examples/release-check": {
+  "replay demo.jsonl": {
+   "code": 1,
+   "out": "FAIL committed: M Makefile\nPASS whitespace: nothing found\nPASS last commit: b40631a spec 016: concurrency\nnot ready: 1 of 3 checks failed\n"
+  },
+  "test": {
+   "code": 0,
+   "out": "PASS a clean checkout is ready (0ms)\nPASS a failed check says how many (0ms)\nPASS the first line (0ms)\n3 passed, 0 failed\n"
+  }
+ },
+ "examples/secure-notes": {
+  "test": {
+   "code": 0,
+   "out": "PASS the review of the policy that is served finds nothing (0ms)\nPASS who may call what (0ms)\nPASS every route answers each caller as the rules decide (0ms)\nPASS a user sees and deletes only their own notes; an admin deletes any (0ms)\nPASS a password is exchanged for a token, and the token signs in (0ms)\nPASS answers carry the safe headers (0ms)\nPASS a browser signs in with the form, keeps notes with the cookie, and signs out (0ms)\nPASS a token and a session cookie reach the same operations under the same rules (0ms)\n8 passed, 0 failed\n"
+  }
+ },
+ "examples/status-board": {
+  "replay demo.jsonl": {
+   "code": 2,
+   "out": "4 of 5 services up\n\n  DOWN  search\n  up    api        42 ms\n  up    billing   260 ms\n  up    mail       75 ms\n  up    web       118 ms\n\nslowest: billing (260 ms)\n\nopen incidents:\n  search: index rebuild stalled\n  billing: slow invoice export\n"
+  },
+  "test": {
+   "code": 0,
+   "out": "PASS services are read from /status.json (0ms)\nPASS a missing field is an error naming it (0ms)\nPASS down services come first and the slowest up one is named (0ms)\nPASS all up, no incidents (0ms)\nspec FR-001: 1 test, all passing\nspec FR-002: 1 test, all passing\nspec FR-003: 1 test, all passing\nspec FR-004: 1 test, all passing\nspec FR-005: 1 test, all passing\nspec FR-006: 1 test, all passing\n4 passed, 0 failed\n"
+  }
+ },
+ "examples/status-board/service": {
+  "replay demo.jsonl": {
+   "code": 0,
+   "out": "serving site/ on http://localhost:8000 (Ctrl-C stops)\nstopped\n"
+  },
+  "test": {
+   "code": 0,
+   "out": "PASS the two pages are JSON from site/ (0ms)\nPASS anything else is 404, other methods 405 (0ms)\nspec SV-001: 1 test, all passing\nspec SV-002: 1 test, all passing\n2 passed, 0 failed\n"
+  }
+ },
+ "examples/url-check": {
+  "replay demo.jsonl": {
+   "code": 2,
+   "out": "up    http://localhost:44503/plain (HTTP 200)\nDOWN  http://localhost:44503/status/500 (HTTP 500)\nup    http://localhost:44503/delay/500 (HTTP 200)\nup    http://localhost:44503/delay/400 (HTTP 200)\n3 of 4 up\n"
+  },
+  "test": {
+   "code": 0,
+   "out": "PASS a line per result (0ms)\nPASS results come back in the order of the URLs (0ms)\n2 passed, 0 failed\n"
+  }
+ },
+ "packages/postgres": {
+  "test client.vo": {
+   "code": 0,
+   "out": "PASS numbers (0ms)\nPASS the TLS request and the startup message (0ms)\nPASS a statement is five messages (0ms)\nPASS reading an error, columns, a row and a tag (0ms)\nPASS failure names (0ms)\nPASS std.tcp failures by name (0ms)\nPASS parameters are numbered in order (0ms)\nPASS ?? is a literal ? (0ms)\nPASS no parameters inside strings, names, comments and dollar quotes (0ms)\nPASS numbered parameters are refused (0ms)\nPASS one statement (0ms)\nPASS text that ends early (0ms)\nPASS a position in the sent text is found in the written text (0ms)\nPASS types to kinds (0ms)\nPASS bytea (0ms)\nPASS dates and times (0ms)\nPASS the exchange of RFC 7677 (0ms)\nPASS what the server may not send (0ms)\nPASS sign-in methods other than SCRAM are refused (0ms)\nPASS ok before the server's proof is refused (0ms)\nPASS ready only after signing in (0ms)\n21 passed, 0 failed\n"
+  },
+  "test exchange.vo": {
+   "code": 0,
+   "out": "PASS numbers (0ms)\nPASS the TLS request and the startup message (0ms)\nPASS a statement is five messages (0ms)\nPASS reading an error, columns, a row and a tag (0ms)\nPASS failure names (0ms)\nPASS std.tcp failures by name (0ms)\nPASS parameters are numbered in order (0ms)\nPASS ?? is a literal ? (0ms)\nPASS no parameters inside strings, names, comments and dollar quotes (0ms)\nPASS numbered parameters are refused (0ms)\nPASS one statement (0ms)\nPASS text that ends early (0ms)\nPASS a position in the sent text is found in the written text (0ms)\nPASS types to kinds (0ms)\nPASS bytea (0ms)\nPASS dates and times (0ms)\n16 passed, 0 failed\n"
+  },
+  "test link.vo": {
+   "code": 0,
+   "out": "PASS std.tcp failures by name (0ms)\nPASS numbers (0ms)\nPASS the TLS request and the startup message (0ms)\nPASS a statement is five messages (0ms)\nPASS reading an error, columns, a row and a tag (0ms)\nPASS failure names (0ms)\n6 passed, 0 failed\n"
+  },
+  "test scram.vo": {
+   "code": 0,
+   "out": "PASS the exchange of RFC 7677 (0ms)\nPASS what the server may not send (0ms)\n2 passed, 0 failed\n"
+  },
+  "test signin.vo": {
+   "code": 0,
+   "out": "PASS sign-in methods other than SCRAM are refused (0ms)\nPASS ok before the server's proof is refused (0ms)\nPASS ready only after signing in (0ms)\nPASS numbers (0ms)\nPASS the TLS request and the startup message (0ms)\nPASS a statement is five messages (0ms)\nPASS reading an error, columns, a row and a tag (0ms)\nPASS failure names (0ms)\nPASS std.tcp failures by name (0ms)\nPASS the exchange of RFC 7677 (0ms)\nPASS what the server may not send (0ms)\n11 passed, 0 failed\n"
+  },
+  "test statement.vo": {
+   "code": 0,
+   "out": "PASS parameters are numbered in order (0ms)\nPASS ?? is a literal ? (0ms)\nPASS no parameters inside strings, names, comments and dollar quotes (0ms)\nPASS numbered parameters are refused (0ms)\nPASS one statement (0ms)\nPASS text that ends early (0ms)\nPASS a position in the sent text is found in the written text (0ms)\n7 passed, 0 failed\n"
+  },
+  "test values.vo": {
+   "code": 0,
+   "out": "PASS types to kinds (0ms)\nPASS bytea (0ms)\nPASS dates and times (0ms)\n3 passed, 0 failed\n"
+  },
+  "test wire.vo": {
+   "code": 0,
+   "out": "PASS numbers (0ms)\nPASS the TLS request and the startup message (0ms)\nPASS a statement is five messages (0ms)\nPASS reading an error, columns, a row and a tag (0ms)\nPASS failure names (0ms)\n5 passed, 0 failed\n"
+  }
+ }
+}

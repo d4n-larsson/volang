@@ -104,7 +104,7 @@ Type *elem_record_type;
 /* a < b for sortable element kinds (int, float, str; records field by field). */
 int elem_less(long a, long b, int kind)
 {
-    if (kind == TY_RECORD) return value_cmp(a, b, elem_record_type) < 0;
+    if (kind == TY_RECORD || kind == TY_VARIANT) return value_cmp(a, b, elem_record_type) < 0; /* spec 056: variants */
     if (kind == TY_FLOAT) {
         Bits x = {.i = a}, y = {.i = b};
         return x.d < y.d;

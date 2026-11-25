@@ -1,8 +1,9 @@
 import std.regex.regex;
 import std.regex.first_match;
+import std.option.to_result;
 
 fn main() uses console {
-    match first_match(regex("\\d"), "no digits here") {
+    match to_result(first_match("no digits here", regex("\\d")), "no match") {
         case ok(m) {
             print("found " + m.text);
         }

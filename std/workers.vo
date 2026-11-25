@@ -37,7 +37,7 @@ export variant Wait {
 #     WorkerError.failed("exit status 3") == WorkerError.ended is false
 export variant WorkerError {
     # No message within the time limit.
-    timeout;
+    timed_out;
     # The worker's function returned, it called `exit(0)`, or it was stopped.
     ended;
     # The worker stopped with a runtime error (the error as it would have been printed), called `exit` with another status ("exit status 3"), or was ended from outside ("signal 9").
@@ -84,7 +84,7 @@ export fn tell[In, Out](w: Worker[In, Out], message: In) -> result[void, WorkerE
 
 # The worker's next message, in the order it emitted them; what it printed before the message is
 # written first. After its last message: `err(ended)`, or `err(failed(text))` once, then `err(ended)`.
-# `err(timeout)` when nothing arrived within the limit.
+# `err(timed_out)` when nothing arrived within the limit.
 #     let w: Worker[int, str] = new Worker { id: 0 }; receive(w, Wait.forever) == err(WorkerError.ended) is true
 export fn receive[In, Out](w: Worker[In, Out], wait: Wait) -> result[Out, WorkerError] {
     return __worker(3, w.id, wait);
@@ -92,7 +92,7 @@ export fn receive[In, Out](w: Worker[In, Out], wait: Wait) -> result[Out, Worker
 
 # The first message from any of the workers; when several have one waiting, the earliest in the list.
 # A worker's end or failure is given once, as the arrival's message; the worker is then skipped.
-# `err(ended)` when every worker of the list has been reported; `err(timeout)` when the limit passes.
+# `err(ended)` when every worker of the list has been reported; `err(timed_out)` when the limit passes.
 #     let w: Worker[int, str] = new Worker { id: 0 }; receive_first([w], Wait.forever) == err(WorkerError.ended) is true
 export fn receive_first[In, Out](ws: list[Worker[In, Out]], wait: Wait) -> result[Arrival[Out], WorkerError] {
     return __worker(4, ws, wait);
@@ -107,7 +107,7 @@ export fn stop_worker[In, Out](w: Worker[In, Out]) {
     __worker(5, w.id);
 }
 
-# Runs f in a worker of its own for at most ms milliseconds: its result, `err(timeout)` with the
+# Runs f in a worker of its own for at most ms milliseconds (0 to 600000; 0 means 600000): its result, `err(timed_out)` with the
 # worker stopped, or `err(failed(text))` if it stopped with a runtime error. f works on a copy of the
 # program's values: what it changes there is not seen by the caller. `err(too_many)` when 64 workers
 # are running; `err(ended)` if f called `exit(0)` or its result is over 16 MiB.
@@ -121,12 +121,12 @@ export fn with_deadline[T, E: effects](ms: int, f: fn() -> T uses E) -> result[T
             }
         }
     });
-    let r = receive(w, Wait.at_most(ms));
+    let r = receive(w, Wait.at_most(limit_ms(ms)));
     stop_worker(w);
     return r;
 }
 
-# In a worker: the program's next message for it, or `err(timeout)`. A worker never sees the program
+# In a worker: the program's next message for it, or `err(timed_out)`. A worker never sees the program
 # end: it is ended with it.
 #     let r: result[Worker[int, int], WorkerError] = start_worker(fn(link: Link[int, int]) { let m = next_message(link, Wait.at_most(100)); }); r != err(WorkerError.too_many) is true
 export fn next_message[In, Out](link: Link[In, Out], wait: Wait) -> result[In, WorkerError] {
@@ -139,4 +139,37 @@ export fn next_message[In, Out](link: Link[In, Out], wait: Wait) -> result[In, W
 #     let r: result[Worker[int, list[int]], WorkerError] = start_worker(fn(link: Link[int, list[int]]) { let sent = emit(link, [1, 2]); }); r != err(WorkerError.too_many) is true
 export fn emit[In, Out](link: Link[In, Out], message: Out) -> result[void, WorkerError] {
     return __worker(7, message);
+}
+
+fn limit_ms(ms: int) -> int {
+    # spec 056: every time limit is 0 to 600000 ms, 0 meaning the longest
+    if ms == 0 {
+        return 600000;
+    }
+    return min(max(ms, 1), 600000);
+}
+
+# A sentence saying what e means.
+#     worker_error_text(WorkerError.failed("exit status 3")) is "the worker failed: exit status 3"
+export fn worker_error_text(e: WorkerError) -> str {
+    match e {
+        case timed_out {
+            return "no message came within the time limit";
+        }
+        case ended {
+            return "the worker has ended";
+        }
+        case failed(why) {
+            return "the worker failed: " + why;
+        }
+        case full {
+            return "more than 64 MiB from the worker was waiting; the worker was stopped";
+        }
+        case too_large {
+            return "the message is over 16 MiB";
+        }
+        case too_many {
+            return "64 workers are running";
+        }
+    }
 }

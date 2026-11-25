@@ -1,7 +1,7 @@
 # Spec 055 US3 (R0016): a counter never goes down.
-import std.metrics.add;
+import std.metrics.add_to;
 import std.metrics.counter;
 
 fn main() uses log {
-    add(counter("jobs_total", "Jobs.", new list[str]), new list[str], -1);
+    add_to(counter("jobs_total", "Jobs.", new list[str]), new list[str], -1);
 }

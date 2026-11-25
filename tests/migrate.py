@@ -5,7 +5,7 @@ Default: for every entry in tests/migrate/v1/MANIFEST (the frozen v1 corpus), co
 require that only migration diagnostics appear (E0501, W0402 since spec 009, plus W0504 for multi-file
 programs) besides
 those v1 already reported, apply
-the first fix of every diagnostic once, then require a clean check, canonical formatting
+the first fix of every diagnostic (up to three rounds, spec 056), then require a clean check, canonical formatting
 (`fmt --check`, for files v1 already accepted as canonical), and byte-identical stdout and exit status against the recorded v1 run.
 
 --write PATH...: apply the first fix of every E0501 once to the given files in place (used to
@@ -26,6 +26,8 @@ MIGRATION = {"E0501", "W0504", "W0402"}  # spec 009: `case ok` / `case ok(_)` on
 # spec 018: advice about the corpus tests themselves (literal checks, tests that check nothing), not about
 # the migration
 MIGRATION |= {"W0602", "W0603"}
+# spec 056: a library change (E0214), a local named like a builtin (E0203), each with a fix
+MIGRATION |= {"E0214", "E0203", "E0105"}  # E0105: a number's spelling (`007`, `1E9`)
 # Intended behavior changes since v1, with the spec that made them: (stdout, exit status) expected now.
 CHANGED = {
     "run-oom_small/oom_small.vo": (b"58888890\n", 0),  # spec 003: memory is reclaimed, so it finishes
@@ -40,7 +42,7 @@ CHANGED = {
                                             b"PASS after the error (0ms)\n1 passed, 0 failed, 1 errored\n", 1),
     # spec 018: W0602/W0603 on the corpus tests, `expect` operands, the first difference of `expect_eq`
     'test-filter/filter.vo': (b'filter.vo:6:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n   6 |     expect(false);\n     |     ^^^^^^^^^^^^^\nfilter.vo:10:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  10 |     expect(true);\n     |     ^^^^^^^^^^^^\nPASS parse numbers (0ms)\nFAIL format numbers (0ms)\n  filter.vo:6:5: `expect` failed: the condition is false.\nPASS parse words (0ms)\n2 passed, 1 failed\n', 1),
-    'test-infinite/infinite.vo': (b'infinite.vo:1:1: warning[W0602]: Test `loops forever` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.\n   1 | test "loops forever" {\n     | ^^^^\ninfinite.vo:7:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n   7 |     expect(true);\n     |     ^^^^^^^^^^^^\nTIMEOUT loops forever (0ms)\n  infinite.vo:2:5: runtime error[R0009]: Time limit of 10 s exceeded.\nPASS still runs (0ms)\n1 passed, 0 failed, 1 timed out\n', 1),
+    'test-infinite/infinite.vo': (b'infinite.vo:1:1: warning[W0602]: `test \"loops forever\"` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.\n   1 | test "loops forever" {\n     | ^^^^\ninfinite.vo:7:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n   7 |     expect(true);\n     |     ^^^^^^^^^^^^\nTIMEOUT loops forever (0ms)\n  infinite.vo:2:5: runtime error[R0009]: Time limit of 10 s exceeded.\nPASS still runs (0ms)\n1 passed, 0 failed, 1 timed out\n', 1),
     'test-values/values.vo': (b'values.vo:12:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  12 |     expect_eq("abc", "abd");\n     |     ^^^^^^^^^^^^^^^^^^^^^^^\nvalues.vo:16:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  16 |     expect_eq([1, 2], [1, 3]);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^\nvalues.vo:20:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  20 |     expect_eq(new Point { x: 1, y: 2 }, new Point { x: 1, y: 3 });\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nvalues.vo:24:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  24 |     expect_eq(Shape.circle(1.0), Shape.empty);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFAIL strings (0ms)\n  values.vo:12:5: `expect_eq` failed: the values differ.\n    expected: "abd"\n    actual:   "abc"\nFAIL lists (0ms)\n  values.vo:16:5: `expect_eq` failed: the values differ.\n    expected: [1, 3]\n    actual:   [1, 2]\n    first difference at [1]: expected 3, actual 2\nFAIL records (0ms)\n  values.vo:20:5: `expect_eq` failed: the values differ.\n    expected: new Point { x: 1, y: 3 }\n    actual:   new Point { x: 1, y: 2 }\n    first difference at .y: expected 3, actual 2\nFAIL variants (0ms)\n  values.vo:24:5: `expect_eq` failed: the values differ.\n    expected: Shape.empty\n    actual:   Shape.circle(1.0)\n0 passed, 4 failed\n', 1),
 }
 
@@ -144,10 +146,14 @@ def verify():
             if other:
                 problems.append(f"{rel}: non-migration diagnostics {other}")
                 continue
-            apply_first_fixes(entry, diags)
-            after = [d for d in diagnostics(entry) if d["severity"] == "error" and d["code"] not in NOW_CHECKED.get(rel, set())]
+            for _ in range(3):  # spec 056: a fix can reveal the next one (a renamed item, then its new type)
+                apply_first_fixes(entry, diags)
+                diags = diagnostics(entry)
+                after = [d for d in diags if d["severity"] == "error" and d["code"] not in NOW_CHECKED.get(rel, set())]
+                if not after:
+                    break
             if after:
-                problems.append(f"{rel}: still {len(after)} error(s) after one round: "
+                problems.append(f"{rel}: still {len(after)} error(s) after three rounds: "
                                 f"{[d['code'] + ' ' + d['message'] for d in after][:3]}")
                 continue
             files = [os.path.join(d, n) for d, _, ns in os.walk(os.path.dirname(entry)) for n in ns

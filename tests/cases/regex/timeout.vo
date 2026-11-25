@@ -7,5 +7,5 @@ fn main() uses console {
         set text = text + text;
     }
     print(str(len(text)));
-    print(str(is_match(regex("(a|aa)*c"), text)));
+    print(str(is_match(text, regex("(a|aa)*c"))));
 }

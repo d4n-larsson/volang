@@ -1,4 +1,4 @@
-random_bad_range.vo:2:15: runtime error[R0007]: `random_int` needs lo <= hi, got 5 and 1.
+random_bad_range.vo:2:15: runtime error[R0007]: `random_int` needs lo <= hi, found 5 and 1.
    2 |     print(str(random_int(5, 1)));
      |               ^^^^^^^^^^^^^^^^
 trace:

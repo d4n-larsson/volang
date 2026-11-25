@@ -13,7 +13,7 @@ import std.collections.ordered_set_by;
 
 fn why(e: WorkerError) -> str {
     match e {
-        case timeout {
+        case timed_out {
             return "timeout";
         }
         case ended {

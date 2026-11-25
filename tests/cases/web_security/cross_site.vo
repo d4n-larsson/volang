@@ -91,7 +91,7 @@ fn the_browser(st: Store) -> Browser[Store] {
         },
         sign_in: "/sign-in",
         sign_out: "/sign-out",
-        lifetime_s: 3600,
+        lifetime_ms: 3600000,
         origin: st.origin
     };
 }

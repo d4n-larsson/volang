@@ -182,8 +182,9 @@ static void check_field_annots(Node *field, Type *ft)
         }
         for (long j = 0; j < i; j++) {
             Node *p = vec_get(v, j);
-            if (p->a.n && str_eq(p->a.n->a.s, name)) {
-                bad(a, "`@$1` is given twice for this field.", name);
+            if (p->a.n && str_eq(p->a.n->a.s, name)) { /* spec 056: a repeat is E0119, as for @spec */
+                Diag *d = ck_err("E0119", a, msg("`@$1` is given twice for this field: keep one.", name, 0, 0));
+                fix_remove_line(d, a);
                 goto next;
             }
         }

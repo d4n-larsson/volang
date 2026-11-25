@@ -2,7 +2,7 @@
 # each under a fixed clock: two clock reads) and counts those in flight: a scrape of /metrics counts itself.
 # metrics_route lists the service's own metrics, shown before their first update.
 import std.http.Response;
-import std.metrics.add;
+import std.metrics.add_to;
 import std.metrics.counter;
 import std.web.App;
 import std.web.ErrorStatus;
@@ -24,7 +24,7 @@ fn read_note(n: int, input: NoteId) -> result[Response] {
 }
 
 fn create(n: int, input: NoInput) -> result[Response] uses log {
-    add(counter("notes_created_total", "Notes created.", new list[str]), new list[str], 1);
+    add_to(counter("notes_created_total", "Notes created.", new list[str]), new list[str], 1);
     return ok(json_reply(201, "made"));
 }
 

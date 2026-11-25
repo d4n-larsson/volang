@@ -40,8 +40,8 @@ export fn histogram(name: str, help: str, labels: list[str], buckets: list[float
 }
 
 # Adds n to the series of these label values (a counter: n >= 0; a gauge: any n).
-#     let m = counter("doc_total", "Doc.", new list[str]); add(m, new list[str], 2); find(metrics_text(new list[Metric]), "doc_total 2") >= 0 is true
-export fn add(m: Metric, values: list[str], n: int) uses log {
+#     let m = counter("doc_total", "Doc.", new list[str]); add_to(m, new list[str], 2); find(metrics_text(new list[Metric]), "doc_total 2") >= 0 is true
+export fn add_to(m: Metric, values: list[str], n: int) uses log {
     let _ = __metric(1, key(m, values), float(n));
 }
 

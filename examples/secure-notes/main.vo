@@ -6,7 +6,6 @@
 import notes.notes_app;
 import std.crypto.random_bytes;
 import std.security.Way;
-import std.web.clock_ms;
 import std.web.serve_app;
 import store.Store;
 import store.new_store;
@@ -17,7 +16,9 @@ fn main() -> result[void] uses console, clock, serve("8080"), entropy {
     print("secure notes on http://localhost:8080 (Ctrl-C stops)");
     try serve_app("8080", 1, fn() -> result[Store] {
         return ok(new_store());
-    }, notes_app(key, no_more, clock_ms, random_bytes));
+    }, notes_app(key, no_more, fn() -> int {
+        return now_ms();
+    }, random_bytes));
     print("stopped");
     return ok();
 }

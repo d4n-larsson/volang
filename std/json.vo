@@ -21,10 +21,19 @@ export variant Json {
     object(map[str, Json]);
 }
 
-# Parses JSON text (RFC 8259); an error gives its line and column.
+# Parses JSON text (RFC 8259); err("invalid json at line L, column C: DETAIL") when it is not valid.
 #     parse_json("[1, true]") == ok(Json.array([Json.integer(1), Json.boolean(true)])) is true
+#     parse_json("[1,") == err("invalid json at line 1, column 4: expected a value, found the end") is true
 export fn parse_json(s: str) -> result[Json] {
-    return __json_parse(s);
+    let parsed: result[Json] = __json_parse(s);
+    match parsed {
+        case ok(j) {
+            return ok(j);
+        }
+        case err(e) {
+            return err("invalid json at " + e);
+        }
+    }
 }
 
 # Writes compact JSON; a NaN or infinite number is an error.
@@ -40,8 +49,8 @@ export fn write_json_pretty(j: Json) -> result[str] {
 }
 
 # The value of an object's field.
-#     field(Json.null, "a") == err("not an object") is true
-export fn field(j: Json, key: str) -> result[Json] {
+#     member(Json.null, "a") == err("not an object") is true
+export fn member(j: Json, key: str) -> result[Json] {
     match j {
         case object(m) {
             if has(m, key) {
@@ -251,7 +260,7 @@ export fn as_object(j: Json) -> result[map[str, Json]] {
 # A field read as text; errors name the field.
 #     text_field(Json.null, "name") == err("not an object") is true
 export fn text_field(j: Json, key: str) -> result[str] {
-    let v = try field(j, key);
+    let v = try member(j, key);
     match as_text(v) {
         case ok(s) {
             return ok(s);
@@ -265,7 +274,7 @@ export fn text_field(j: Json, key: str) -> result[str] {
 # A field read as an integer; errors name the field.
 #     int_field(Json.null, "age") == err("not an object") is true
 export fn int_field(j: Json, key: str) -> result[int] {
-    let v = try field(j, key);
+    let v = try member(j, key);
     match as_int(v) {
         case ok(n) {
             return ok(n);
@@ -279,7 +288,7 @@ export fn int_field(j: Json, key: str) -> result[int] {
 # A field read as a float (integer or number); errors name the field.
 #     float_field(Json.null, "price") == err("not an object") is true
 export fn float_field(j: Json, key: str) -> result[float] {
-    let v = try field(j, key);
+    let v = try member(j, key);
     match as_float(v) {
         case ok(f) {
             return ok(f);
@@ -293,7 +302,7 @@ export fn float_field(j: Json, key: str) -> result[float] {
 # A field read as true or false; errors name the field.
 #     bool_field(Json.null, "on") == err("not an object") is true
 export fn bool_field(j: Json, key: str) -> result[bool] {
-    let v = try field(j, key);
+    let v = try member(j, key);
     match as_bool(v) {
         case ok(b) {
             return ok(b);

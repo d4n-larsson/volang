@@ -28,7 +28,7 @@ record Answer {
     rate: float;
 }
 
-fn convert[E: effects](ctx: Rates[E], ask: Ask) -> result[Response] uses E {
+fn convert[E: effects](ctx: Rates[uses E], ask: Ask) -> result[Response] uses E {
     let rate = try ctx.rate(ask.from, ask.to);
     let cents = round(ask.amount * rate * 100.0);
     return ok(json_reply(200, new Answer {
@@ -39,8 +39,8 @@ fn convert[E: effects](ctx: Rates[E], ask: Ask) -> result[Response] uses E {
 }
 
 # GET /convert?amount=&from=&to=.
-export fn converter[E: effects]() -> App[Rates[E], E] {
-    let op: fn(Rates[E], Ask) -> result[Response] uses E = convert;
+export fn converter[E: effects]() -> App[Rates[uses E], uses E] {
+    let op: fn(Rates[uses E], Ask) -> result[Response] uses E = convert;
     return web_app([on_get("/convert", op)]);
 }
 

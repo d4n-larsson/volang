@@ -16,8 +16,8 @@ typedef struct Pkg {
 CHECK_SIZE(Pkg, 88);
 
 #define NO_PACKAGE ((void *)-1)
-#define M_MISSING "Package $1: the directory $2 is missing or has no .vo files."
-#define M_UNREADABLE "Package $1: the directory $2 has a directory that cannot be read, or a link leading outside it."
+#define M_MISSING "Package `$1`: the directory `$2` is missing or has no .vo files."
+#define M_UNREADABLE "Package `$1`: the directory `$2` has a directory that cannot be read, or a link leading outside it."
 #define MANIFEST "/vo.packages"
 
 static long pkg_searched; /* 1 once the manifest was looked for */
@@ -122,7 +122,7 @@ static void pkg_parse_line(long file, char *text, char *line, char *le)
     if (!pkg_hex_decode(hash + 7, e->pin)) goto bad;
     e->name = str_new(name, name_end - name);
     if (pkg_find(e->name)) { /* a second entry of the name: E0704 */
-        m = msg("Package $1 is listed twice.", e->name, 0, 0);
+        m = msg("Package `$1` is listed twice.", e->name, 0, 0);
         code = "E0704";
         goto report;
     }
@@ -289,7 +289,7 @@ long pkg_verify(void *entry, Node *node)
     } else { /* E0701 with both hashes */
         Str *pinned = pkg_hash_text(e->pin);
         Str *now = pkg_hash_text(pkg_hash_buf);
-        Str *changed = msg("Package $1 changed: the manifest pins $2, its files hash to $3.", e->name, pinned, now);
+        Str *changed = msg("Package `$1` changed: the manifest pins $2, its files hash to $3.", e->name, pinned, now);
         SB *sb = sb_new(); /* the command that pins the package again: ENTRY NAME DIRECTORY */
         sb_str(sb, file_get(0)->path);
         sb_byte(sb, ' ');
@@ -908,10 +908,10 @@ static int pkg_add_url(char *entry_arg, Str *name, Str *url)
     if (there) {
         Str *real = rt_resolve(target), *own = e ? rt_resolve(e->dir) : 0;
         if (!e || !real || !own || !str_eq(real, own))
-            pkg_fail("E0706", msg("The directory `$1` exists and is not package $2's: remove it, or choose another with `--dir`.",
+            pkg_fail("E0706", msg("The directory `$1` exists and is not package `$2`'s: remove it, or choose another with `--dir`.",
                                   target, name, 0));
         if (!pkg_intact(e))
-            pkg_fail("E0701", msg("Package $1 was changed since it was pinned, and fetching would replace it: pin your "
+            pkg_fail("E0701", msg("Package `$1` was changed since it was pinned, and fetching would replace it: pin your "
                                   "changes with `vo package $2 $1 $3`, or remove the directory.",
                                   name, str_from_cstr(entry_arg), target));
         before = pkg_effects(e, &note);
@@ -921,8 +921,8 @@ static int pkg_add_url(char *entry_arg, Str *name, Str *url)
     long h = r ? 0 : pkg_hash(staging, pkg_hash_buf, 0);
     if (r || h < 0) {
         rm_tree(staging);
-        if (r == -1) pkg_fail("E0706", msg("Cannot fetch package $1 from $2: $3.", name, url, why));
-        pkg_fail("E0702", msg("Package $1: $2.", name, r ? why : str_from_cstr("the archive's .vo files cannot be read back"), 0));
+        if (r == -1) pkg_fail("E0706", msg("Cannot fetch package `$1` from $2: $3.", name, url, why));
+        pkg_fail("E0702", msg("Package `$1`: $2.", name, r ? why : str_from_cstr("the archive's .vo files cannot be read back"), 0));
     }
     if (there && mem_eq(e->pin, pkg_hash_buf, 32)) { /* the same content: nothing to replace */
         rm_tree(staging);
@@ -978,25 +978,25 @@ static int pkg_restore(void)
         }
         if (h == 0 || is_dir(e->dir)) { /* there, and not what was pinned: not ours to replace */
             code = h == 0 ? "E0701" : "E0702";
-            m = h == 0 ? msg("Package $1 changed: the manifest pins $2, its files hash to $3.", e->name, pkg_hash_text(e->pin),
+            m = h == 0 ? msg("Package `$1` changed: the manifest pins $2, its files hash to $3.", e->name, pkg_hash_text(e->pin),
                              pkg_hash_text(now))
                        : msg(h == -2 ? M_UNREADABLE : M_MISSING, e->name, e->raw, 0);
         } else if (!e->url) {
             code = "E0702";
-            m = msg("Package $1: the directory $2 is missing, and the manifest has no URL to fetch it from.", e->name, e->raw, 0);
+            m = msg("Package `$1`: the directory `$2` is missing, and the manifest has no URL to fetch it from.", e->name, e->raw, 0);
         } else {
             Str *staging = with_pid(e->dir, ".new-"), *why = 0;
             int r = pkg_stage(e->url, staging, &why);
             long sh = r ? -1 : pkg_hash(staging, now, 0);
             if (r == -1) {
                 code = "E0706";
-                m = msg("Cannot fetch package $1 from $2: $3.", e->name, e->url, why);
+                m = msg("Cannot fetch package `$1` from $2: $3.", e->name, e->url, why);
             } else if (r || sh < 0) {
                 code = "E0702";
-                m = msg("Package $1: $2.", e->name, r ? why : str_from_cstr("the archive's .vo files cannot be read back"), 0);
+                m = msg("Package `$1`: $2.", e->name, r ? why : str_from_cstr("the archive's .vo files cannot be read back"), 0);
             } else if (!mem_eq(now, e->pin, 32)) {
                 code = "E0701";
-                m = msg("Package $1: what $2 serves now hashes to $3, not to the pinned hash: the content at the URL "
+                m = msg("Package `$1`: what $2 serves now hashes to $3, not to the pinned hash: the content at the URL "
                         "changed. Nothing was written.",
                         e->name, e->url, pkg_hash_text(now));
             } else if (sys_rename(staging->data, e->dir->data) < 0) {

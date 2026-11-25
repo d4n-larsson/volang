@@ -32,9 +32,9 @@ MODULES = ["statement", "wire", "values", "scram", "link", "signin", "exchange",
 failures = []
 cases = 0
 
-ITEMS = ["Changes", "Database", "Options", "Row", "Statement", "Value", "close", "connect", "exec", "get",
-         "get_bytes", "get_float", "get_int", "get_str", "get_time", "is_null", "parse_sql", "query", "sql",
-         "transaction"]
+ITEMS = ["Changes", "Database", "Options", "Row", "Statement", "Value", "bytes_column", "close", "connect",
+         "exec", "float_column", "int_column", "is_null", "parse_sql", "query", "sql", "text_column", "time_column",
+         "transaction", "value_column"]
 PRELUDE = "".join(f"import postgres.client.{n};\n" for n in ITEMS) + """import std.bytes.from_ints;
 import std.bytes.to_hex;
 
@@ -237,12 +237,12 @@ QUERY = """    print(did(exec(db, sql("drop table if exists vo_notes"), none()))
     print(rows(query(db, sql("select ?::text as a, 'x ?? y' as b, '?' as c"), [Value.text("p")])));
     match query(db, sql("select id, body, done, null::int as missing from vo_notes where id = ?"), [Value.integer(1)]) {
         case ok(rs) {
-            print(str(get_int(rs[0], "id") == ok(1)) + " " + str(get_str(rs[0], "body") == ok("one")));
-            print(str(get_int(rs[0], "body") == err("body is text, not integer")));
-            print(str(get_str(rs[0], "id") == err("id is integer, not text")));
+            print(str(int_column(rs[0], "id") == ok(1)) + " " + str(text_column(rs[0], "body") == ok("one")));
+            print(str(int_column(rs[0], "body") == err("body is text, not integer")));
+            print(str(text_column(rs[0], "id") == err("id is integer, not text")));
             print(str(is_null(rs[0], "missing") == ok(true)) + " " + str(is_null(rs[0], "id") == ok(false)));
-            print(str(get_int(rs[0], "missing") == err("missing is null, not integer")));
-            print(str(get_int(rs[0], "nope") == err("no column nope")));
+            print(str(int_column(rs[0], "missing") == err("missing is null, not integer")));
+            print(str(int_column(rs[0], "nope") == err("no column `nope`")));
         }
         case err(e) {
             print(e);
@@ -282,10 +282,10 @@ TYPES = """    print(rows(query(db, sql("select 1::smallint as a, 2::integer as 
     print(rows(query(db, sql("select ?::timestamptz as a, ?::int as b"), [Value.text("2026-11-23T10:00:00.500Z"), Value.text("12")])));
     print(rows(query(db, sql("select ?::int as a"), [Value.text("abc")])));
     print(rows(query(db, sql("select ?::text as a"), [Value.text("a" + chr(0) + "b")])));
-    match query(db, sql("select '2026-11-23 10:00:00.123456+00'::timestamptz as a, '1970-01-02'::date as b, now() as c, 1.5::double precision as d"), none()) {
+    match query(db, sql("select '2026-11-23 10:00:00.123456+00'::timestamptz as a, '1970-01-02'::date as b, now_ms() as c, 1.5::double precision as d"), none()) {
         case ok(rs) {
-            print(str(get_time(rs[0], "a") == ok(1795428000123)) + " " + str(get_time(rs[0], "b") == ok(86400000)));
-            match get_time(rs[0], "c") {
+            print(str(time_column(rs[0], "a") == ok(1795428000123)) + " " + str(time_column(rs[0], "b") == ok(86400000)));
+            match time_column(rs[0], "c") {
                 case ok(ms) {
                     print(str(ms > 1700000000000));
                 }
@@ -293,7 +293,7 @@ TYPES = """    print(rows(query(db, sql("select 1::smallint as a, 2::integer as 
                     print(e);
                 }
             }
-            print(str(get_float(rs[0], "d") == ok(1.5)) + " " + str(get_time(rs[0], "d") == err("d is real, not a date or time")));
+            print(str(float_column(rs[0], "d") == ok(1.5)) + " " + str(time_column(rs[0], "d") == err("d is real, not a date or time")));
         }
         case err(e) {
             print(e);
@@ -350,7 +350,7 @@ HOSTILE = """    print(did(exec(db, sql("drop table if exists vo_hostile"), none
         }
         match query(db, sql("select s from vo_hostile where n = ? and s = ?"), [Value.integer(n), Value.text(s)]) {
             case ok(rs) {
-                if len(rs) != 1 or get_str(rs[0], "s") != ok(s) {
+                if len(rs) != 1 or text_column(rs[0], "s") != ok(s) {
                     set bad = bad + 1;
                 }
             }
@@ -675,8 +675,8 @@ test "a query against the test server" uses net("127.0.0.1:{q.port}"), entropy {
 
 # ---------------------------------------------------------------- parity with std.sqlite (SC-003), docs
 
-SHARED = ["Statement", "Value", "Row", "Changes", "sql", "parse_sql", "exec", "query", "transaction", "get", "get_int",
-          "get_float", "get_str", "get_bytes", "is_null"]
+SHARED = ["Statement", "Value", "Row", "Changes", "sql", "parse_sql", "exec", "query", "transaction", "value_column", "int_column",
+          "float_column", "text_column", "bytes_column", "is_null"]
 
 
 def signatures(d, module):
@@ -844,17 +844,16 @@ import postgres.client.query;
 import postgres.client.sql;
 import postgres.client.transaction;
 import postgres.client.Options;
-import std.time.now;
 
 fn main() -> result[void] uses console, clock, net("{HOST}:{P}"), entropy {
     let o = new Options { host: "{HOST}", port: {P}, database: "{DB}", user: "{USER}", password: "{PW}", plain_text: true, connect_ms: 10000, statement_ms: 120000 };
-    let t0 = now();
+    let t0 = now_ms();
     let db = try connect(o);
-    let t1 = now();
+    let t1 = now_ms();
     let none = new list[Value];
     let _ = try exec(db, sql("drop table if exists vo_speed"), none);
     let _ = try exec(db, sql("create table vo_speed (a int, b text, c double precision, d bigint, e text)"), none);
-    let t2 = now();
+    let t2 = now_ms();
     let _ = try transaction(db, fn() -> result[int] {
         for i in 0..10000 {
             let _ = try exec(db, sql("insert into vo_speed values (?, ?, ?, ?, ?)"),
@@ -862,9 +861,9 @@ fn main() -> result[void] uses console, clock, net("{HOST}:{P}"), entropy {
         }
         return ok(0);
     });
-    let t3 = now();
+    let t3 = now_ms();
     let rows = try query(db, sql("select i as a, 'row ' || i as b, 1.5::double precision as c, i * 1000 as d, null::text as e from generate_series(1, 100000) as i"), none);
-    let t4 = now();
+    let t4 = now_ms();
     let _ = try exec(db, sql("drop table vo_speed"), none);
     close(db);
     print(str(t1 - t0) + " " + str(t3 - t2) + " " + str(t4 - t3) + " " + str(len(rows)));

@@ -4,7 +4,7 @@ import lexer.tokenize;
 import printer.show;
 
 fn main() uses console, input {
-    let env = new map[str, int];
+    let env_value = new map[str, int];
     for line in split(read_all(), "\n") {
         if len(join(split(line, " "), "")) == 0 {
             continue;
@@ -17,10 +17,10 @@ fn main() uses console, input {
                         if st.name != "" {
                             set text = st.name + " = " + text;
                         }
-                        match evaluate(st.expr, env) {
+                        match evaluate(st.expr, env_value) {
                             case ok(v) {
                                 if st.name != "" {
-                                    set env[st.name] = v;
+                                    set env_value[st.name] = v;
                                 }
                                 print(text + " => " + str(v));
                             }

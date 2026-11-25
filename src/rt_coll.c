@@ -39,7 +39,8 @@ static void coll_check_change(Coll *c)
                        (Node *)cur_node);
 }
 
-/* -1, 0 or 1: a against b in the built-in order of t (int, float, str; records field by field). */
+/* -1, 0 or 1: a against b in the built-in order of t (int, float, str, bytes, bool; records field by field;
+ * variants by case, then payload). */
 long value_cmp(long a, long b, Type *t)
 {
     t = rt_concrete(t);
@@ -54,7 +55,14 @@ long value_cmp(long a, long b, Type *t)
         return r < 0 ? -1 : r > 0;
     }
     case TY_RECORD: return record_cmp(a, b, t);
-    default: return a < b ? -1 : a > b;
+    case TY_VARIANT: { /* spec 056: by case (declaration order), then the payload */
+        long ta = (long)(uint32_t)((Variant *)a)->tag, tb = (long)(uint32_t)((Variant *)b)->tag;
+        if (ta != tb) return ta < tb ? -1 : 1;
+        Node *pt = member_at(t->decl.n->b.v, ta)->b.n; /* payload type node */
+        if (!pt) return 0;
+        return value_cmp(((Variant *)a)->pay.i, ((Variant *)b)->pay.i, field_type_in(t, pt->type));
+    }
+    default: return a < b ? -1 : a > b; /* int, bool */
     }
 }
 

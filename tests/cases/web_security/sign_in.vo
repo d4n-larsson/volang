@@ -76,17 +76,17 @@ fn ran(n: int, input: NoInput) -> result[Response] {
     return ok(json_reply(200, "ran"));
 }
 
-fn the_policy(now_ms: int) -> Policy[int, uses console] {
+fn the_policy(now_ms_value: int) -> Policy[int, uses console] {
     return new Policy {
         rules: [rule("/sign-in", Access.anyone), rule("/open", Access.anyone), rule("/", Access.signed_in)],
         ways: [basic(find_account), tokens([key(), old_key()])],
-        now: fn() -> int { return now_ms; },
+        now: fn() -> int { return now_ms_value; },
         on_event: log
     };
 }
 
-fn app(now_ms: int) -> App[int, uses console] {
-    let p = the_policy(now_ms);
+fn app(now_ms_value: int) -> App[int, uses console] {
+    let p = the_policy(now_ms_value);
     return new App {
         routes: [on_get("/me", whoami), on_get("/open", ran), sign_in_route("/sign-in", p, find_account, key(), 600)],
         steps: [secure(p)],

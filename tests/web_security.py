@@ -96,7 +96,6 @@ import std.web.App;
 import std.web.ErrorStatus;
 import std.web.NoInput;
 import std.web.Route;
-import std.web.clock_ms;
 import std.web.handle_request;
 import std.web.json_reply;
 import std.web.on_get;
@@ -117,7 +116,7 @@ fn ran(n: int, input: NoInput) -> result[Response] {
 fn main() uses console, clock {
     let routes: list[Route[int, uses clock]] = [on_get("/me", ran)];
     let ways: list[Way[int, uses clock]] = [basic(find_account)];
-    let app = new App { routes: routes, steps: [secure(policy([rule("/", Access.signed_in)], ways, clock_ms))], errors: new list[ErrorStatus] };
+    let app = new App { routes: routes, steps: [secure(policy([rule("/", Access.signed_in)], ways, fn() -> int { return now_ms(); }))], errors: new list[ErrorStatus] };
     for _ in 0..7 {
         for pair in ["col:wrong", "eve:wrong"] {
             let t0 = now_ms();
@@ -143,7 +142,6 @@ import std.web.App;
 import std.web.ErrorStatus;
 import std.web.Route;
 import std.web.Step;
-import std.web.clock_ms;
 import std.web.handle_request;
 import std.web.json_reply;
 import std.web.on_get;
@@ -173,7 +171,7 @@ fn main() -> result[void] uses console, clock {
     let ways: list[Way[int, uses clock]] = [tokens([key])];
     let rules = [rule("/health", Access.anyone), rule("/admin", Access.any_role(["admin"])), rule("/", Access.signed_in)];
     let plain = new App { routes: routes, steps: new list[Step[int, uses clock]], errors: new list[ErrorStatus] };
-    let app = new App { routes: routes, steps: [secure(policy(rules, ways, clock_ms))], errors: new list[ErrorStatus] };
+    let app = new App { routes: routes, steps: [secure(policy(rules, ways, fn() -> int { return now_ms(); }))], errors: new list[ErrorStatus] };
     let token = try issue_token(key, new User { name: "ada", roles: ["admin", "user"] }, now_ms(), 3600);
     let r = with_header(request("GET", "/me", ""), "Authorization", "Bearer " + token);
     var bad = 0;
@@ -248,7 +246,6 @@ import std.security.rule;
 import std.security.secure;
 import std.web.App;
 import std.web.ErrorStatus;
-import std.web.clock_ms;
 import std.web.handle_request;
 import std.web.request;
 
@@ -268,10 +265,10 @@ fn main() uses console, clock {
         random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); },
         sign_in: "/sign-in",
         sign_out: "/sign-out",
-        lifetime_s: 3600,
+        lifetime_ms: 3600000,
         origin: ""
     };
-    let p = policy([rule("/", Access.anyone)], [browser(b)], clock_ms);
+    let p = policy([rule("/", Access.anyone)], [browser(b)], fn() -> int { return now_ms(); });
     let app = new App { routes: browser_routes(b, p), steps: [secure(p)], errors: new list[ErrorStatus] };
     for _ in 0..7 {
         for pair in ["col:wrong", "eve:wrong"] {

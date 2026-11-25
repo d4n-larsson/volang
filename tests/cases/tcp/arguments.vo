@@ -2,16 +2,16 @@ import std.bytes.from_text;
 import std.tcp.Conn;
 import std.tcp.TcpError;
 import std.tcp.accept;
-import std.tcp.close;
+import std.tcp.close_conn;
 import std.tcp.close_listener;
 import std.tcp.connect;
 import std.tcp.connect_tls;
-import std.tcp.describe;
+import std.tcp.tcp_error_text;
 import std.tcp.listen;
 import std.tcp.read;
 import std.tcp.read_exact;
 import std.tcp.read_until;
-import std.tcp.send;
+import std.tcp.write_all;
 import std.tcp.start_tls;
 
 fn opened(r: result[Conn[uses net], TcpError]) -> str {
@@ -20,7 +20,7 @@ fn opened(r: result[Conn[uses net], TcpError]) -> str {
             return "ok";
         }
         case err(e) {
-            return describe(e);
+            return tcp_error_text(e);
         }
     }
 }
@@ -31,7 +31,7 @@ fn got(r: result[bytes, TcpError]) -> str {
             return "ok " + str(len(b));
         }
         case err(e) {
-            return describe(e);
+            return tcp_error_text(e);
         }
     }
 }
@@ -42,7 +42,7 @@ fn done(r: result[void, TcpError]) -> str {
             return "ok";
         }
         case err(e) {
-            return describe(e);
+            return tcp_error_text(e);
         }
     }
 }
@@ -52,7 +52,7 @@ fn done(r: result[void, TcpError]) -> str {
 fn main() uses console, net("127.0.0.1"), serve("0") {
     print(opened(connect("127.0.0.1", 0, 1000)));
     print(opened(connect("127.0.0.1", 65536, 1000)));
-    print(opened(connect("127.0.0.1", 80, 0)));
+    print(opened(connect("127.0.0.1", 80, -1)));
     print(opened(connect("127.0.0.1", 80, 600001)));
     print(opened(connect("", 80, 1000)));
     print(opened(connect("http://127.0.0.1", 80, 1000)));
@@ -65,26 +65,26 @@ fn main() uses console, net("127.0.0.1"), serve("0") {
     print(got(read(c, 10, 1000)));
     print(got(read_exact(c, 10, 1000)));
     print(got(read_until(c, from_text("\n"), 1000)));
-    print(done(send(c, from_text("x"), 1000)));
+    print(done(write_all(c, from_text("x"), 1000)));
     print(done(start_tls(c, "nowhere", 1000)));
-    close(c);
-    close(c);
+    close_conn(c);
+    close_conn(c);
     match listen("nine thousand") {
         case ok(_) {
             print("ok");
         }
         case err(e) {
-            print(describe(e));
+            print(tcp_error_text(e));
         }
     }
     match listen("0") {
         case ok(l) {
-            match accept(l, 0) {
+            match accept(l, -1) {
                 case ok(_) {
                     print("ok");
                 }
                 case err(e) {
-                    print(describe(e));
+                    print(tcp_error_text(e));
                 }
             }
             let empty = from_text("");
@@ -95,13 +95,13 @@ fn main() uses console, net("127.0.0.1"), serve("0") {
                     print("ok");
                 }
                 case err(e) {
-                    print(describe(e));
+                    print(tcp_error_text(e));
                 }
             }
             print(str(len(empty)));
         }
         case err(e) {
-            print(describe(e));
+            print(tcp_error_text(e));
         }
     }
     for e in [
@@ -117,6 +117,6 @@ fn main() uses console, net("127.0.0.1"), serve("0") {
         TcpError.invalid("what"),
         TcpError.other("why")
     ] {
-        print(describe(e));
+        print(tcp_error_text(e));
     }
 }

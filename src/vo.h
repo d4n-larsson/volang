@@ -550,7 +550,7 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define SY_RENAME (64) /* convention-conforming name (str) when the declared name breaks it, else 0 */
 #define SY_EFFECTS (72) /* functions: declared effect set */
 #define SY_DEPTH (72) /* locals: lambda nesting depth at definition */
-#define SYM_SIZE (80)
+#define SYM_SIZE (88)
 #define SYM_FN (1)
 #define SYM_RECORD (2)
 #define SYM_VARIANT (3)
@@ -561,6 +561,8 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define CS_BAD (3)      /* spec 031: an N_CONST in error (N_D; the other states are in check_const.c) */
 #define SYF_MUT (1)
 #define SYF_USED (2)
+#define SYF_LIBCHANGE (4) /* spec 056: bound by an import of a changed std item (Sym.change) */
+#define SYF_SHADOW (8) /* spec 056: a local named like a builtin (E0203; Sym.rename is its new name) */
 
 /* ---- runtime objects ---- */
 /* list: header | len | cap | data (slot[cap]) */
@@ -1080,6 +1082,7 @@ struct Sym {
     Node *node;
     Str *rename;
     W effects; /* functions: declared effect set; locals: lambda depth (SY_DEPTH) */
+    const void *change; /* spec 056: the LibChange row of an import of a changed std item, or 0 */
 };
 CHECK_OFFSET(Sym, name, SY_NAME);
 CHECK_OFFSET(Sym, kind, SY_KIND);
@@ -1780,6 +1783,21 @@ extern void check_web_call(Node *call);      /* check_web.c */
 extern void check_ops_call(Node *call);      /* check_ops.c, spec 055 */
 extern int ty_holds_func(Type *t);         /* check_generic.c */
 extern int allow_takes(char *code, Node *decl); /* check_structure.c */
+/* src/libchange.c (spec 056) */
+typedef struct LibChange LibChange;
+extern const LibChange *libchange_find(Str *module, Str *old);
+extern Str *libchange_new_name(const LibChange *c);
+extern void libchange_import(Node *name_node, Str *module, const LibChange *c);
+extern void libchange_use(Sym *sym, Node *node, Node *call);
+extern int libchange_binds(const LibChange *c);
+extern Type *libchange_option_type(Node *call, Type *t, Type *expected);
+extern Node *ck_result_ctx;
+extern long libchange_case(Node *decl, Node *case_name);
+extern void fix_remove_line(Diag *d, Node *a);
+extern long libchange_field(Node *decl, Node *name, Node *whole, Node *value);
+extern Node *ck_set_place, *ck_set_value;
+extern int libchange_swap_call(Node *call);
+extern Node *ck_use_call; /* check.c */
 extern void check_web_routes(Node *list);
 extern Vec *web_inputs;
 extern void check_web_headers(Vec *files);

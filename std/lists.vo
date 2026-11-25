@@ -4,9 +4,9 @@
 # new values. Functions that take a key function have that function's effects.
 
 # Whether some element of xs equals x.
-#     contains(["a", "b"], "b") is true
-#     contains(new list[int], 1) is false
-export fn contains[T](xs: list[T], x: T) -> bool {
+#     has_item(["a", "b"], "b") is true
+#     has_item(new list[int], 1) is false
+export fn has_item[T](xs: list[T], x: T) -> bool {
     return index_of(xs, x) >= 0;
 }
 

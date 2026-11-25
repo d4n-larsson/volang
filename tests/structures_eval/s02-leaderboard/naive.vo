@@ -10,13 +10,13 @@ fn main() -> result[void] uses console, input {
         if w[0] == "score" {
             set totals[w[1]] = get_or(totals, w[1], 0) + try parse_int(w[2]);
         } else if w[0] == "top" {
-            let all = new list[Entry];
+            let all_value = new list[Entry];
             for name in keys(totals) {
-                push(all, new Entry { neg: -totals[name], name: name });
+                push(all_value, new Entry { neg: -totals[name], name: name });
             }
-            sort(all);
+            sort(all_value);
             let shown = new list[str];
-            for e in slice(all, 0, min(len(all), try parse_int(w[1]))) {
+            for e in slice(all_value, 0, min(len(all_value), try parse_int(w[1]))) {
                 push(shown, e.name + ":" + str(-e.neg));
             }
             if len(shown) == 0 {

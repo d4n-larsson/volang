@@ -1,9 +1,10 @@
 import std.regex.regex;
 import std.regex.first_match;
+import std.option.to_result;
 
 fn main() uses console {
     let s = "é日本 x42 ü";
-    match first_match(regex("x(\\d+)"), s) {
+    match to_result(first_match(s, regex("x(\\d+)")), "no match") {
         case ok(m) {
             print(str(m.start) + " " + str(m.end) + " " + m.groups[1] + " " + slice(s, m.start, m.end));
         }
@@ -11,7 +12,7 @@ fn main() uses console {
             print(e);
         }
     }
-    match first_match(regex("本.x"), s) {
+    match to_result(first_match(s, regex("本.x")), "no match") {
         case ok(m) {
             print(str(m.start) + " " + str(m.end) + " " + m.text);
         }

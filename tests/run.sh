@@ -46,7 +46,7 @@ run_once() {
         cmd=$(sed -e "s|{dir}|$dir|g" -e "s|{}|$file|g" "$base.cmd")
     else
         case $(area "$base") in
-            lex|parse|check) cmd="check --json $file" ;;
+            lex|parse|check|library) cmd="check --json $file" ;;
             run|multi|effects|func|generic) cmd="run $file" ;;
             test) cmd="test --json $file" ;;
             fmt) cmd=FMT ;;

@@ -52,15 +52,15 @@ fn add(n: int, input: NewNote) -> result[Response] {
 }
 
 fn listing(n: int, input: Listing) -> result[Response] {
-    var sort = "newest";
+    var sort_value = "newest";
     match input.sort {
         case newest {
         }
         case oldest {
-            set sort = "oldest";
+            set sort_value = "oldest";
         }
     }
-    return ok(json_reply(200, input.board + " limit " + str(input.limit) + " done " + str(input.done) + " " + sort + " tags " + join(input.tag, ",")));
+    return ok(json_reply(200, input.board + " limit " + str(input.limit) + " done " + str(input.done) + " " + sort_value + " tags " + join(input.tag, ",")));
 }
 
 fn routes() -> list[Route[int]] {

@@ -1,11 +1,11 @@
 import std.sqlite.open_memory;
 import std.sqlite.sql;
 import std.sqlite.query;
-import std.sqlite.get;
-import std.sqlite.get_int;
-import std.sqlite.get_float;
-import std.sqlite.get_str;
-import std.sqlite.get_bytes;
+import std.sqlite.value_column;
+import std.sqlite.int_column;
+import std.sqlite.float_column;
+import std.sqlite.text_column;
+import std.sqlite.bytes_column;
 import std.sqlite.is_null;
 import std.sqlite.Row;
 import std.sqlite.Value;
@@ -25,12 +25,12 @@ fn main() -> result[void] uses console {
     let db = open_memory();
     let rows = try query(db, sql("select 7 as i, 2.5 as f, 'hé' as s, x'ff00' as b, null as n, cast(x'ff' as text) as bad, 1 as d, 2 as d"), new list[Value]);
     let row = rows[0];
-    print(str(try get_int(row, "i")) + " " + str(try get_float(row, "f")) + " " + try get_str(row, "s") + " " + str(len(try get_bytes(row, "b"))));
-    print(show(get_float(row, "i")) + " | " + show(get_int(row, "f")) + " | " + show(get_int(row, "s")) + " | " + show(get_str(row, "b")));
-    print(show(get_int(row, "n")) + " | " + str(try is_null(row, "n")) + " " + str(try is_null(row, "i")));
-    print(show(get_str(row, "bad")) + " | " + str(len(try get_bytes(row, "bad"))) + " | " + str(len(try get_bytes(row, "s"))));
-    print(show(get(row, "nope")) + " | " + show(get_int(row, "d")));
+    print(str(try int_column(row, "i")) + " " + str(try float_column(row, "f")) + " " + try text_column(row, "s") + " " + str(len(try bytes_column(row, "b"))));
+    print(show(float_column(row, "i")) + " | " + show(int_column(row, "f")) + " | " + show(int_column(row, "s")) + " | " + show(text_column(row, "b")));
+    print(show(int_column(row, "n")) + " | " + str(try is_null(row, "n")) + " " + str(try is_null(row, "i")));
+    print(show(text_column(row, "bad")) + " | " + str(len(try bytes_column(row, "bad"))) + " | " + str(len(try bytes_column(row, "s"))));
+    print(show(value_column(row, "nope")) + " | " + show(int_column(row, "d")));
     let named = try query(db, sql("select 1 as a, 2 as b"), new list[Value]);
-    print(str(try get_int(named[0], "a") + try get_int(named[0], "b")));
+    print(str(try int_column(named[0], "a") + try int_column(named[0], "b")));
     return ok();
 }

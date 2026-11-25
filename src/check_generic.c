@@ -52,13 +52,27 @@ static int ty_ordered_d(Type *t, long depth)
     case TY_STR:
     case TY_BYTES: /* spec 021: byte by byte */
     case TY_ERROR: return 1;
-    case TY_PARAM: return t->b.i == TPC_ORDERED;
+    case TY_BOOL: return 1; /* spec 056: false < true */
+    case TY_PARAM: return t->b.i == TPC_ORDERED || t->b.i == TPC_KEY; /* spec 056: every key type is ordered */
     case TY_RECORD: return depth < 32 && !unordered_field(t, depth); /* spec 014: records of ordered fields */
+    case TY_VARIANT: { /* spec 056: by case (declaration order), then the payload */
+        if (depth >= 32) return 0;
+        Node *decl = t->decl.n;
+        Vec *tps = ty_tparams_of(decl);
+        for (long i = 0; i < decl->b.v->n; i++) {
+            Node *m = vec_get(decl->b.v, i);
+            if (m->kind == N_COMMENT || !m->b.n || !m->b.n->type) continue; /* (a case without a value) */
+            Type *mt = tps && tps->n && t->b.v ? ty_subst(m->b.n->type, decl, t->b.v) : m->b.n->type;
+            if (!ty_ordered_d(mt, depth + 1)) return 0;
+        }
+        return 1;
+    }
     default: return 0;
     }
 }
 
-/* int, float, str, a record of ordered fields, an `ordered` type parameter, or an error type. */
+/* int, float, str, bytes, bool, a record of ordered fields, a variant of ordered payloads, an `ordered` or
+ * `key` type parameter, or an error type. */
 int ty_ordered(Type *t)
 {
     return ty_ordered_d(t, 0);
@@ -78,7 +92,19 @@ void order_error(Type *t, Node *node, char *needed_by)
         ck_err("E0313", node, msg("`$1` is not ordered: its field $2 has no order.", ty_name(t), sb_finish(sb), 0));
         return;
     }
-    ck_err("E0313", node, msg(needed_by, ty_name(t), 0, 0));
+    if (t->kind == TY_VARIANT) { /* spec 056: the first case whose payload has no order */
+        Node *decl = t->decl.n;
+        Vec *tps = ty_tparams_of(decl);
+        for (long i = 0; i < decl->b.v->n; i++) {
+            Node *m = vec_get(decl->b.v, i);
+            if (m->kind == N_COMMENT || !m->b.n || !m->b.n->type) continue;
+            Type *mt = tps && tps->n && t->b.v ? ty_subst(m->b.n->type, decl, t->b.v) : m->b.n->type;
+            if (ty_ordered(mt)) continue;
+            ck_err("E0313", node, msg("`$1` is not ordered: its case `$2` holds `$3`, which has no order.", ty_name(t), m->a.n->a.s, ty_name(mt)));
+            return;
+        }
+    }
+    ck_err("E0313", node, msg(needed_by ? needed_by : "`$1` has no order.", ty_name(t), 0, 0));
 }
 
 /* E0313 when an `ordered` type parameter gets a type without an order. 1 = fine. */
@@ -270,7 +296,7 @@ Type *ty_argn_error(Node *node, Str *name, long want, long got)
 {
     Str *g = int_to_str(got);
     Str *w = int_to_str(want);
-    ck_err("E0312", node, msg("`$1` takes $2 type argument(s), got $3.", name, w, g));
+    ck_err("E0312", node, msg("`$1` takes $2 type argument(s), found $3.", name, w, g));
     return t_error;
 }
 
@@ -318,8 +344,16 @@ Type *resolve_instance(Node *node, Node *decl, int kind, Vec *arg_nodes)
         } else {
             Node *tp = vec_get(tparams, i);
             Sym *set = an->kind == N_TYPE_NODE && an->a.i == TY_NAMED && an->b.n ? scope_find(an->b.n->a.s) : 0;
-            if (tp->b.i == TPC_EFFECTS && set && set->kind == SYM_EFFECTS) /* `Store[Storage]`: `uses` left out */
-                return effect_arg_error(an, decl, 3);
+            if (tp->b.i == TPC_EFFECTS && set && set->kind == SYM_EFFECTS) { /* spec 056: `Store[Storage]` is */
+                EffSet *es = es_union(es_new(0), fx_set_of(set->decl, an));  /* `Store[uses Storage]` (vo fmt) */
+                q_note_sym(set, an->b.n, RR_USE);
+                for (long k = 0; es->scopes && k < es->scopes->n; k++) es->any |= (unsigned long)((EffScope *)vec_get(es->scopes, k))->bit;
+                es->scopes = 0;
+                es->any |= es->mask;
+                es->mask = 0;
+                vec_push(args, ty_make(TY_EFFSET, 0, 0, es));
+                continue;
+            }
             t = resolve_type(an);
             int eff_param = t->kind == TY_PARAM && t->b.i == TPC_EFFECTS;
             if (tp->b.i == TPC_EFFECTS && !eff_param && !ty_bad(t)) return effect_arg_error(an, decl, 3);
@@ -656,10 +690,10 @@ Type *vcase_generic(Node *node, Node *decl, Node *payload_type_node, Type *expec
 int ck_param_order(Type *t, Node *node)
 {
     if (t->kind != TY_PARAM) return 0;
-    if (t->b.i == TPC_ORDERED) return 1;
-    if (t->b.i != TPC_NONE) { /* a parameter takes one bound: `: ordered` added after `: key` would not parse */
-        ck_err("E0311", node, msg("`$1` is declared `$2`, which has no order; a type parameter takes one bound, so it cannot also be `ordered`.",
-                                  ty_param_name(t), str_from_cstr(t->b.i == TPC_KEY ? "key" : "json"), 0));
+    if (t->b.i == TPC_ORDERED || t->b.i == TPC_KEY) return 1; /* spec 056: every key type is ordered */
+    if (t->b.i != TPC_NONE) { /* a parameter takes one bound: `: ordered` added after `: json` would not parse */
+        ck_err("E0311", node, msg("`$1` is declared `json`, which has no order; a type parameter takes one bound, so it cannot also be `ordered`.",
+                                  ty_param_name(t), 0, 0));
         return 2;
     }
     Diag *d = ck_err1("E0311", node,

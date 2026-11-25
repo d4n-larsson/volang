@@ -1,5 +1,7 @@
 # std.collections: Operations on the built-in ordered_map, ordered_set, priority_queue and deque.
 # Part of the vo standard library (spec 014). Import items one by one: `import std.collections.NAME;`.
+# A lookup (first_key, key_after, first, peek, front, ...) gives an Option: `none` when there is nothing there.
+import std.option.Option;
 
 # An empty ordered map ordered by cmp: negative puts a before b, zero means the same key, positive after.
 #     let m: ordered_map[int, str] = ordered_map_by(fn(a: int, b: int) -> int { return b - a; }); set m[1] = "x"; set m[2] = "y"; keys(m) == [2, 1] is true
@@ -8,7 +10,7 @@ export fn ordered_map_by[K, V](cmp: fn(K, K) -> int) -> ordered_map[K, V] {
 }
 
 # An empty ordered set ordered by cmp.
-#     let s: ordered_set[str] = ordered_set_by(fn(a: str, b: str) -> int { return len(a) - len(b); }); push(s, "ccc"); push(s, "a"); first(s) == ok("a") is true
+#     let s: ordered_set[str] = ordered_set_by(fn(a: str, b: str) -> int { return len(a) - len(b); }); push(s, "ccc"); push(s, "a"); first(s) == Option.some("a") is true
 export fn ordered_set_by[T](cmp: fn(T, T) -> int) -> ordered_set[T] {
     return __coll(2, cmp);
 }
@@ -19,40 +21,46 @@ export fn priority_queue_by[T](cmp: fn(T, T) -> int) -> priority_queue[T] {
     return __coll(2, cmp);
 }
 
-# The smallest key; `err("empty")` for an empty map.
-#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; first_key(m) == ok(10) is true
-export fn first_key[K, V](m: ordered_map[K, V]) -> result[K] {
-    return __coll(3, m);
+# The smallest key; `none` for an empty map.
+#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; first_key(m) == Option.some(10) is true
+export fn first_key[K, V](m: ordered_map[K, V]) -> Option[K] {
+    let r: result[K] = __coll(3, m);
+    return found(r);
 }
 
-# The largest key; `err("empty")` for an empty map.
-#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; last_key(m) == ok(30) is true
-export fn last_key[K, V](m: ordered_map[K, V]) -> result[K] {
-    return __coll(4, m);
+# The largest key; `none` for an empty map.
+#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; last_key(m) == Option.some(30) is true
+export fn last_key[K, V](m: ordered_map[K, V]) -> Option[K] {
+    let r: result[K] = __coll(4, m);
+    return found(r);
 }
 
-# The smallest key at or above k; `err("none")` when there is none.
-#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; key_at_or_above(m, 15) == ok(20) is true
-export fn key_at_or_above[K, V](m: ordered_map[K, V], k: K) -> result[K] {
-    return __coll(5, m, k);
+# The smallest key at or above k; `none` when there is none.
+#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; key_at_or_above(m, 15) == Option.some(20) is true
+export fn key_at_or_above[K, V](m: ordered_map[K, V], k: K) -> Option[K] {
+    let r: result[K] = __coll(5, m, k);
+    return found(r);
 }
 
-# The largest key at or below k; `err("none")` when there is none.
-#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; key_at_or_below(m, 15) == ok(10) is true
-export fn key_at_or_below[K, V](m: ordered_map[K, V], k: K) -> result[K] {
-    return __coll(6, m, k);
+# The largest key at or below k; `none` when there is none.
+#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; key_at_or_below(m, 15) == Option.some(10) is true
+export fn key_at_or_below[K, V](m: ordered_map[K, V], k: K) -> Option[K] {
+    let r: result[K] = __coll(6, m, k);
+    return found(r);
 }
 
-# The smallest key strictly above k; `err("none")` when there is none (walk keys in order without a loop's copy).
-#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; key_after(m, 20) == ok(30) is true
-export fn key_after[K, V](m: ordered_map[K, V], k: K) -> result[K] {
-    return __coll(17, m, k);
+# The smallest key strictly above k; `none` when there is none (walk keys in order without a loop's copy).
+#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; key_after(m, 20) == Option.some(30) is true
+export fn key_after[K, V](m: ordered_map[K, V], k: K) -> Option[K] {
+    let r: result[K] = __coll(17, m, k);
+    return found(r);
 }
 
-# The largest key strictly below k; `err("none")` when there is none.
-#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; key_before(m, 20) == ok(10) is true
-export fn key_before[K, V](m: ordered_map[K, V], k: K) -> result[K] {
-    return __coll(18, m, k);
+# The largest key strictly below k; `none` when there is none.
+#     let m = new ordered_map[int, str]; set m[30] = "c"; set m[10] = "a"; set m[20] = "b"; key_before(m, 20) == Option.some(10) is true
+export fn key_before[K, V](m: ordered_map[K, V], k: K) -> Option[K] {
+    let r: result[K] = __coll(18, m, k);
+    return found(r);
 }
 
 # The keys from lo to hi (both included), ascending; their values by `m[k]`.
@@ -67,40 +75,46 @@ export fn copy_map[K, V](m: ordered_map[K, V]) -> ordered_map[K, V] {
     return __coll(16, m);
 }
 
-# The smallest element; `err("empty")` for an empty set.
-#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); first(s) == ok(10) is true
-export fn first[T](s: ordered_set[T]) -> result[T] {
-    return __coll(3, s);
+# The smallest element; `none` for an empty set.
+#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); first(s) == Option.some(10) is true
+export fn first[T](s: ordered_set[T]) -> Option[T] {
+    let r: result[T] = __coll(3, s);
+    return found(r);
 }
 
-# The largest element; `err("empty")` for an empty set.
-#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); last(s) == ok(30) is true
-export fn last[T](s: ordered_set[T]) -> result[T] {
-    return __coll(4, s);
+# The largest element; `none` for an empty set.
+#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); last(s) == Option.some(30) is true
+export fn last[T](s: ordered_set[T]) -> Option[T] {
+    let r: result[T] = __coll(4, s);
+    return found(r);
 }
 
-# The smallest element at or above x; `err("none")` when there is none.
-#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); at_or_above(s, 25) == ok(30) is true
-export fn at_or_above[T](s: ordered_set[T], x: T) -> result[T] {
-    return __coll(5, s, x);
+# The smallest element at or above x; `none` when there is none.
+#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); at_or_above(s, 25) == Option.some(30) is true
+export fn at_or_above[T](s: ordered_set[T], x: T) -> Option[T] {
+    let r: result[T] = __coll(5, s, x);
+    return found(r);
 }
 
-# The largest element at or below x; `err("none")` when there is none.
-#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); at_or_below(s, 25) == ok(20) is true
-export fn at_or_below[T](s: ordered_set[T], x: T) -> result[T] {
-    return __coll(6, s, x);
+# The largest element at or below x; `none` when there is none.
+#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); at_or_below(s, 25) == Option.some(20) is true
+export fn at_or_below[T](s: ordered_set[T], x: T) -> Option[T] {
+    let r: result[T] = __coll(6, s, x);
+    return found(r);
 }
 
-# The smallest element strictly above x; `err("none")` when there is none (walk in order without a loop's copy).
-#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); after(s, 10) == ok(20) is true
-export fn after[T](s: ordered_set[T], x: T) -> result[T] {
-    return __coll(17, s, x);
+# The smallest element strictly above x; `none` when there is none (walk in order without a loop's copy).
+#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); after(s, 10) == Option.some(20) is true
+export fn after[T](s: ordered_set[T], x: T) -> Option[T] {
+    let r: result[T] = __coll(17, s, x);
+    return found(r);
 }
 
-# The largest element strictly below x; `err("none")` when there is none.
-#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); before(s, 30) == ok(20) is true
-export fn before[T](s: ordered_set[T], x: T) -> result[T] {
-    return __coll(18, s, x);
+# The largest element strictly below x; `none` when there is none.
+#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); before(s, 30) == Option.some(20) is true
+export fn before[T](s: ordered_set[T], x: T) -> Option[T] {
+    let r: result[T] = __coll(18, s, x);
+    return found(r);
 }
 
 # The elements from lo to hi (both included), ascending.
@@ -116,7 +130,7 @@ export fn union[T](a: ordered_set[T], b: ordered_set[T]) -> ordered_set[T] {
 }
 
 # A new set with the elements in both a and b, ordered like a.
-#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); let t = new ordered_set[int]; push(t, 20); push(t, 40); first(intersection(s, t)) == ok(20) is true
+#     let s = new ordered_set[int]; push(s, 30); push(s, 10); push(s, 20); let t = new ordered_set[int]; push(t, 20); push(t, 40); first(intersection(s, t)) == Option.some(20) is true
 export fn intersection[T](a: ordered_set[T], b: ordered_set[T]) -> ordered_set[T] {
     return __coll(9, a, b);
 }
@@ -133,44 +147,58 @@ export fn copy_set[T](s: ordered_set[T]) -> ordered_set[T] {
     return __coll(16, s);
 }
 
-# The item `pop` would give next, without removing it; `err("empty")` for an empty queue.
-#     let q = new priority_queue[int]; push(q, 5); push(q, 1); push(q, 3); peek(q) == ok(1) is true
-export fn peek[T](q: priority_queue[T]) -> result[T] {
-    return __coll(11, q);
+# The item `pop` would give next, without removing it; `none` for an empty queue.
+#     let q = new priority_queue[int]; push(q, 5); push(q, 1); push(q, 3); peek(q) == Option.some(1) is true
+export fn peek[T](q: priority_queue[T]) -> Option[T] {
+    let r: result[T] = __coll(11, q);
+    return found(r);
 }
 
 # An independent queue with the same items and order.
-#     let q = new priority_queue[int]; push(q, 5); push(q, 1); push(q, 3); let c = copy_queue(q); push(c, 0); peek(q) == ok(1) is true
+#     let q = new priority_queue[int]; push(q, 5); push(q, 1); push(q, 3); let c = copy_queue(q); push(c, 0); peek(q) == Option.some(1) is true
 export fn copy_queue[T](q: priority_queue[T]) -> priority_queue[T] {
     return __coll(16, q);
 }
 
 # Adds x at the front.
-#     let d = new deque[int]; push(d, 1); push(d, 2); push_front(d, 0); front(d) == ok(0) is true
+#     let d = new deque[int]; push(d, 1); push(d, 2); push_front(d, 0); front(d) == Option.some(0) is true
 export fn push_front[T](d: deque[T], x: T) {
     __coll(12, d, x);
 }
 
-# Removes and returns the front element; `err("empty")` for an empty deque.
+# Removes and returns the front element; `none` for an empty deque.
 #     let d = new deque[int]; push(d, 1); push(d, 2); pop_front(d) == ok(1) is true
 export fn pop_front[T](d: deque[T]) -> result[T] {
     return __coll(13, d);
 }
 
-# The front element; `err("empty")` for an empty deque.
-#     let d = new deque[int]; push(d, 1); push(d, 2); front(d) == ok(1) is true
-export fn front[T](d: deque[T]) -> result[T] {
-    return __coll(14, d);
+# The front element; `none` for an empty deque.
+#     let d = new deque[int]; push(d, 1); push(d, 2); front(d) == Option.some(1) is true
+export fn front[T](d: deque[T]) -> Option[T] {
+    let r: result[T] = __coll(14, d);
+    return found(r);
 }
 
-# The back element; `err("empty")` for an empty deque.
-#     let d = new deque[int]; push(d, 1); push(d, 2); back(d) == ok(2) is true
-export fn back[T](d: deque[T]) -> result[T] {
-    return __coll(15, d);
+# The back element; `none` for an empty deque.
+#     let d = new deque[int]; push(d, 1); push(d, 2); back(d) == Option.some(2) is true
+export fn back[T](d: deque[T]) -> Option[T] {
+    let r: result[T] = __coll(15, d);
+    return found(r);
 }
 
 # An independent deque with the same elements.
 #     let d = new deque[int]; push(d, 1); push(d, 2); let c = copy_deque(d); push(c, 3); len(d) is 2
 export fn copy_deque[T](d: deque[T]) -> deque[T] {
     return __coll(16, d);
+}
+
+fn found[T](r: result[T]) -> Option[T] {
+    match r {
+        case ok(v) {
+            return Option.some(v);
+        }
+        case err(_) {
+            return Option.none;
+        }
+    }
 }

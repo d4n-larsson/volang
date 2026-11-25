@@ -624,6 +624,11 @@ static Node *parse_primary(void)
         p_expect(T_DOT);
         n->b.n = p_name();
         if (!p_failed() && p_accept(T_LPAREN)) {
+            if (p_kind() == T_RPAREN) { /* spec 056: `Shape.empty()`, E0411 from the checker */
+                n->flags |= NF_EMPTY_ARM;
+                p_next();
+                break;
+            }
             n->c.n = parse_expr();
             p_expect(T_RPAREN);
         }

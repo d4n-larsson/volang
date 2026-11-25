@@ -63,7 +63,7 @@ Type *check_lambda(Node *node)
         if (!p->a.n) continue;
         Sym *s = new_local(p->a.n, p->type, 0);
         p->e.i = s->slot;
-        s->flags = SYF_USED;
+        s->flags |= SYF_USED;
     }
     node->type = node->c.n ? resolve_type(node->c.n) : t_void; /* the return type (none: void) */
     ck_ret = node->type;

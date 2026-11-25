@@ -18,8 +18,8 @@ export fn pick[T](xs: list[T]) -> result[T] uses random {
 }
 
 # A shuffled copy of xs (Fisher-Yates); xs is unchanged.
-#     len(shuffle([1, 2, 3])) is 3
-export fn shuffle[T](xs: list[T]) -> list[T] uses random {
+#     len(shuffled([1, 2, 3])) is 3
+export fn shuffled[T](xs: list[T]) -> list[T] uses random {
     let out = slice(xs, 0, len(xs));
     var i = len(out) - 1;
     while i > 0 {

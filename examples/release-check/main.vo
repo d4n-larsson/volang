@@ -43,8 +43,8 @@ fn report(checks: list[Check]) -> list[str] {
 }
 
 # Runs git with args; passes when git exits 0 and, with want_empty, prints nothing.
-fn git(name: str, args: list[str], want_empty: bool) -> Check uses process("git") {
-    match run("git", args) {
+fn git(name: str, args_value: list[str], want_empty: bool) -> Check uses process("git") {
+    match run("git", args_value) {
         case ok(out) {
             let text = trim(out.stdout);
             if out.code != 0 {

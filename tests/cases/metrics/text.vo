@@ -1,16 +1,16 @@
 # Spec 055 US3: label values with `"`, `\` and a line break are escaped; series are sorted by name, then by
 # label values; a listed metric without labels and updates shows 0; help text is escaped.
 import std.metrics.Metric;
-import std.metrics.add;
+import std.metrics.add_to;
 import std.metrics.counter;
 import std.metrics.metrics_text;
 
 fn main() uses log, console {
     let b = counter("b_total", "Second \\ metric\nhelp.", ["path"]);
-    add(b, ["/z"], 1);
-    add(b, ["/a \"quoted\""], 1);
-    add(b, ["/back\\slash\nline"], 1);
+    add_to(b, ["/z"], 1);
+    add_to(b, ["/a \"quoted\""], 1);
+    add_to(b, ["/back\\slash\nline"], 1);
     let a = counter("a_total", "First metric.", ["path"]);
-    add(a, ["/x"], 4);
+    add_to(a, ["/x"], 4);
     write(metrics_text([counter("c_listed_total", "Not updated yet.", new list[str]), counter("d_labelled_total", "Labels, no updates.", ["x"])]));
 }

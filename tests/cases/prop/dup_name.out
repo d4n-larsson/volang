@@ -1,7 +1,7 @@
 dup_name.vo:2:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.
    2 |     expect(true);
      |     ^^^^^^^^^^^^
-dup_name.vo:5:1: error[E0202]: A test named "same" already exists.
+dup_name.vo:5:1: error[E0202]: `test "same"` already exists.
    5 | prop "same" (n: int) {
      | ^^^^^^^^^^^^^^^^^^^^^^
 dup_name.vo:6:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.

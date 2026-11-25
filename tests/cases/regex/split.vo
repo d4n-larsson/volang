@@ -2,8 +2,8 @@ import std.regex.regex;
 import std.regex.split_on;
 
 fn main() uses console {
-    print(join(split_on(regex("\\s*,\\s*"), "a , b,c"), "|"));
-    print(join(split_on(regex(";"), "no separator"), "|"));
-    print(join(split_on(regex(","), ",a,b,"), "|"));
-    print(str(len(split_on(regex(","), ""))));
+    print(join(split_on("a , b,c", regex("\\s*,\\s*")), "|"));
+    print(join(split_on("no separator", regex(";")), "|"));
+    print(join(split_on(",a,b,", regex(",")), "|"));
+    print(str(len(split_on("", regex(",")))));
 }

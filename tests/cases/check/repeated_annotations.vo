@@ -1,0 +1,21 @@
+# Spec 056 (FR-022): a repeated annotation is E0119 for every annotation, with a fix removing the repeat.
+record Note {
+    @size(1, 80)
+    @size(1, 200)
+    title: str;
+}
+
+@allow("W0701", "a long function, on purpose")
+@allow("W0701", "again")
+fn long_one() -> int {
+    return 1;
+}
+
+@spec("FR-001")
+@spec("FR-002")
+test "one" {
+    expect(long_one() == 1);
+}
+
+fn main() {
+}

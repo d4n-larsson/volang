@@ -3,7 +3,7 @@
 # err and a runtime error answered 500 with no detail.
 import std.http.Header;
 import std.http.Response;
-import std.http.header;
+import std.http.response_header;
 import std.web.App;
 import std.web.ErrorStatus;
 import std.web.Route;

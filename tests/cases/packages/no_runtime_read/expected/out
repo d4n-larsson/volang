@@ -11,7 +11,7 @@ main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effec
 --- exit 0
 $ vo run main.vo
 --- stderr
-main.vo:1:1: error[E0702]: Package money: the directory shared/money is missing or has no .vo files.
+main.vo:1:1: error[E0702]: Package `money`: the directory `shared/money` is missing or has no .vo files.
    1 | import money.format.cents;
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^
 1 error, 0 warnings

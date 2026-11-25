@@ -6,12 +6,12 @@ import postgres.wire.tls_request;
 import std.bytes.from_ints;
 import std.tcp.Conn;
 import std.tcp.TcpError;
-import std.tcp.close;
+import std.tcp.close_conn;
 import std.tcp.connect;
-import std.tcp.describe;
 import std.tcp.read_exact;
-import std.tcp.send;
 import std.tcp.start_tls;
+import std.tcp.tcp_error_text;
+import std.tcp.write_all;
 import std.text.starts_with;
 
 # One message from the server: its type byte and its body.
@@ -34,31 +34,31 @@ export fn failed(e: TcpError) -> str {
             return "tls: " + reason;
         }
         case too_large {
-            return "protocol: " + describe(e);
+            return "protocol: " + tcp_error_text(e);
         }
         case invalid(_) {
-            return "protocol: " + describe(e);
+            return "protocol: " + tcp_error_text(e);
         }
         case refused {
-            return "connection: " + describe(e);
+            return "connection: " + tcp_error_text(e);
         }
         case closed {
-            return "connection: " + describe(e);
+            return "connection: " + tcp_error_text(e);
         }
         case not_found {
-            return "connection: " + describe(e);
+            return "connection: " + tcp_error_text(e);
         }
         case unreachable {
-            return "connection: " + describe(e);
+            return "connection: " + tcp_error_text(e);
         }
         case in_use {
-            return "connection: " + describe(e);
+            return "connection: " + tcp_error_text(e);
         }
         case too_many {
-            return "connection: " + describe(e);
+            return "connection: " + tcp_error_text(e);
         }
         case other(_) {
-            return "connection: " + describe(e);
+            return "connection: " + tcp_error_text(e);
         }
     }
 }
@@ -76,14 +76,14 @@ export fn dial(host: str, port: int, plain_text: bool, ms: int) -> result[Conn[u
             return ok(c);
         }
         case err(e) {
-            close(c);
+            close_conn(c);
             return err(e);
         }
     }
 }
 
 fn secure(c: Conn[uses net], host: str, ms: int) -> result[void] uses net {
-    try map_err(send(c, tls_request(), ms), failed);
+    try map_err(write_all(c, tls_request(), ms), failed);
     let answer = try map_err(read_exact(c, 1, ms), failed);
     if answer[0] == 78 {
         return err("tls: the server does not offer TLS");
@@ -96,13 +96,13 @@ fn secure(c: Conn[uses net], host: str, ms: int) -> result[void] uses net {
 
 # Sends data within ms.
 #     deliver(new Conn { id: 0, peer: "" }, from_ints([1]), 1000) == err("connection: the connection is closed") is true
-export fn deliver[E: effects](c: Conn[E], data: bytes, ms: int) -> result[void] uses E {
-    return map_err(send(c, data, ms), failed);
+export fn deliver[E: effects](c: Conn[uses E], data: bytes, ms: int) -> result[void] uses E {
+    return map_err(write_all(c, data, ms), failed);
 }
 
 # The next message, each wait within ms. A length under 4 or over 1 GiB is `protocol:`.
 #     receive(new Conn { id: 0, peer: "" }, 1000) == err("connection: the connection is closed") is true
-export fn receive[E: effects](c: Conn[E], ms: int) -> result[Message] uses E {
+export fn receive[E: effects](c: Conn[uses E], ms: int) -> result[Message] uses E {
     let head = try map_err(read_exact(c, 5, ms), failed);
     let size = try read32(head, 1) - 4;
     if size < 0 or size > 1073741824 {
@@ -120,8 +120,8 @@ export fn receive[E: effects](c: Conn[E], ms: int) -> result[Message] uses E {
 
 # Closes the connection.
 #     let c = new Conn { id: 0, peer: "" }; hang_up(c); 1 is 1
-export fn hang_up[E: effects](c: Conn[E]) uses E {
-    close(c);
+export fn hang_up[E: effects](c: Conn[uses E]) uses E {
+    close_conn(c);
 }
 
 # Whether an err text is of a kind after which the connection cannot be used.
@@ -139,7 +139,7 @@ test "std.tcp failures by name" {
         failed(TcpError.tls("the certificate has expired")),
         "tls: the certificate has expired"
     );
-    expect_eq(failed(TcpError.closed), "connection: " + describe(TcpError.closed));
-    expect_eq(failed(TcpError.not_found), "connection: " + describe(TcpError.not_found));
-    expect_eq(failed(TcpError.too_large), "protocol: " + describe(TcpError.too_large));
+    expect_eq(failed(TcpError.closed), "connection: " + tcp_error_text(TcpError.closed));
+    expect_eq(failed(TcpError.not_found), "connection: " + tcp_error_text(TcpError.not_found));
+    expect_eq(failed(TcpError.too_large), "protocol: " + tcp_error_text(TcpError.too_large));
 }

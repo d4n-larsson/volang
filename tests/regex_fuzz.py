@@ -24,8 +24,8 @@ import std.regex.all_matches;
 fn try_one(p: str, s: str) -> int {
     match parse_regex(p) {
         case ok(re) {
-            if is_match(re, s) {
-                return 1 + len(all_matches(re, s));
+            if is_match(s, re) {
+                return 1 + len(all_matches(s, re));
             }
             return 1;
         }

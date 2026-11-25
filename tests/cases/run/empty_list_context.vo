@@ -1,0 +1,29 @@
+# Spec 056 (FR-018): `[]` takes its type from the context, as `ok(1)` does.
+record Basket {
+    owner: str;
+    items: list[str];
+}
+
+fn total(xs: list[int]) -> int {
+    var sum = 0;
+    for x in xs {
+        set sum = sum + x;
+    }
+    return sum;
+}
+
+fn none_yet() -> list[int] {
+    return [];
+}
+
+fn main() uses console {
+    let names: list[str] = [];
+    var later: list[float] = [];
+    push(later, 1.5);
+    let b = new Basket { owner: "ana", items: [] };
+    push(b.items, "tea");
+    print(str(total([])) + " " + str(len(names)) + " " + str(len(later)) + " " + str(len(none_yet())));
+    print(b.owner + ": " + join(b.items, ", "));
+    let grid: list[list[int]] = [[], [1, 2], []];
+    print(str(len(grid[0])) + " " + str(len(grid[1])));
+}

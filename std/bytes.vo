@@ -33,10 +33,23 @@ export fn to_hex(b: bytes) -> str {
     return __bytes_hex(b);
 }
 
-# Bytes from hex digits (either case); err("not hex at position N") or err("odd number of hex digits").
+# Bytes from hex digits (either case); err("invalid hex: S; not hex at position N") or err("invalid hex: S; odd number of hex digits").
 #     from_hex("6869") == ok(from_text("hi")) is true
+#     from_hex("abc") == err("invalid hex: abc; odd number of hex digits") is true
 export fn from_hex(s: str) -> result[bytes] {
-    return __bytes_unhex(s);
+    return invalid(__bytes_unhex(s), "hex", s);
+}
+
+fn invalid(r: result[bytes], kind: str, s: str) -> result[bytes] {
+    # ponytail: the whole input is in the message, as parse_int's; cap it if huge inputs show up in logs.
+    match r {
+        case ok(b) {
+            return ok(b);
+        }
+        case err(e) {
+            return err("invalid " + kind + ": " + s + "; " + e);
+        }
+    }
 }
 
 # Base64 (RFC 4648, standard alphabet, padded).
@@ -45,10 +58,11 @@ export fn to_base64(b: bytes) -> str {
     return __bytes_b64(b);
 }
 
-# Bytes from padded standard base64; err("not base64 at position N") or err("base64 length is not a multiple of 4").
+# Bytes from padded standard base64; err("invalid base64: S; not base64 at position N") or err("invalid base64: S; length is not a multiple of 4").
 #     from_base64("Zm9vYmFy") == ok(from_text("foobar")) is true
+#     from_base64("a") == err("invalid base64: a; length is not a multiple of 4") is true
 export fn from_base64(s: str) -> result[bytes] {
-    return __bytes_unb64(s);
+    return invalid(__bytes_unb64(s), "base64", s);
 }
 
 # All of standard input, as bytes (any bytes; read_all and read_line need UTF-8).

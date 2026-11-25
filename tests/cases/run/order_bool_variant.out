@@ -1,0 +1,6 @@
+false true true
+low mid high true mid mid
+dot circle(1.0) circle(2.0) square(0.5)
+low mid high
+false true
+apple pear

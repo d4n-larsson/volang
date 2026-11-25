@@ -1,6 +1,7 @@
 import std.regex.regex;
 import std.regex.first_match;
 import std.regex.Match;
+import std.option.to_result;
 
 fn show(r: result[Match]) uses console {
     match r {
@@ -15,7 +16,7 @@ fn show(r: result[Match]) uses console {
 
 fn main() uses console {
     let re = regex("(a)?b");
-    show(first_match(re, "b"));
-    show(first_match(re, "ab"));
-    show(first_match(regex("(x)|(y)"), "y"));
+    show(to_result(first_match("b", re), "no match"));
+    show(to_result(first_match("ab", re), "no match"));
+    show(to_result(first_match("y", regex("(x)|(y)")), "no match"));
 }

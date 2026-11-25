@@ -2,7 +2,7 @@ $ vo edit rename main.vo add_item total
 main.vo:4:16: error[E0202]: `total` is already defined.
    4 | import catalog.total;
      |                ^^^^^
-main.vo:41:35: error[E0302]: `total` takes 4 argument(s), got 1.
+main.vo:41:35: error[E0302]: `total` takes 4 argument(s), found 1.
   41 |     print("add_item total " + str(total(items)) + " " + str(count) + " " + str(b.price) + " " + p.second);
      |                                   ^^^^^^^^^^^^
 main.vo:41:35: error[E0301]: Expected `int`, `float` or `bool`, found `void`.
@@ -12,7 +12,7 @@ main.vo:45:1: error[E0501]: `test "totals"` does not declare console, which it n
   45 | test "totals" {
      | ^^^^
   note: catalog.vo:11:72: `total` declares console here.
-main.vo:47:15: error[E0302]: `total` takes 4 argument(s), got 1.
+main.vo:47:15: error[E0302]: `total` takes 4 argument(s), found 1.
   47 |     expect_eq(total(items), 0);
      |               ^^^^^^^^^^^^
 main.vo:47:29: error[E0301]: Expected `void`, found `int`.

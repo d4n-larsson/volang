@@ -1,0 +1,8 @@
+# Spec 056 (E0214): the old and the new name imported together: the old import is reported, and there is no
+# E0202.
+import std.lists.contains;
+import std.lists.has_item;
+
+fn main() uses console {
+    print(str(has_item([1], 1)) + str(contains([1], 2)));
+}

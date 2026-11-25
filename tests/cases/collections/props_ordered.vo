@@ -2,6 +2,7 @@ import std.collections.after;
 import std.collections.before;
 import std.collections.first;
 import std.collections.key_at_or_above;
+import std.option.to_result;
 
 # Spec 014 SC-001: the ordered map and set against list models, over generated operation sequences
 # (a non-negative op inserts op % 64, a negative one removes (-1 - op) % 64).
@@ -38,7 +39,7 @@ prop "neighbors agree with a scan" (xs: list[int], probe: int) {
             push(best, k);
         }
     }
-    match key_at_or_above(m, probe) {
+    match to_result(key_at_or_above(m, probe), "none") {
         case ok(k) {
             expect_eq([k], best);
         }
@@ -67,7 +68,7 @@ prop "a set iterates sorted and distinct" (xs: list[str]) {
     }
     expect_eq(out, model);
     if len(model) > 0 {
-        expect_eq(first(s), ok(model[0]));
+        expect_eq(to_result(first(s), "empty"), ok(model[0]));
     }
 }
 
@@ -100,7 +101,7 @@ prop "after and before agree with a scan" (xs: list[int], probe: int) {
             set below = [x];
         }
     }
-    match after(s, probe) {
+    match to_result(after(s, probe), "none") {
         case ok(x) {
             expect_eq([x], above);
         }
@@ -108,7 +109,7 @@ prop "after and before agree with a scan" (xs: list[int], probe: int) {
             expect_eq(len(above), 0);
         }
     }
-    match before(s, probe) {
+    match to_result(before(s, probe), "none") {
         case ok(x) {
             expect_eq([x], below);
         }

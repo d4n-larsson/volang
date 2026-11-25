@@ -3,7 +3,7 @@
 # number in a path is 400 naming the variable.
 import std.http.Request;
 import std.http.Response;
-import std.http.header;
+import std.http.response_header;
 import std.web.App;
 import std.web.ErrorStatus;
 import std.web.NoInput;
@@ -16,6 +16,7 @@ import std.web.on_delete;
 import std.web.on_get;
 import std.web.on_post;
 import std.web.request;
+import std.option.to_result;
 
 record Shop {
     name: str;
@@ -61,7 +62,7 @@ fn routes() -> list[Route[Shop]] {
 fn show(app: App[Shop], method: str, path: str) uses console {
     let r = handle_request(app, new Shop { name: "corner" }, request(method, path, ""));
     var allow = "";
-    match header(r, "Allow") {
+    match to_result(response_header(r, "Allow"), "no header `" + "Allow" + "`") {
         case ok(a) {
             set allow = " Allow: " + a;
         }

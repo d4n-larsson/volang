@@ -1,0 +1,32 @@
+# Spec 056 (FR-008): every time limit is 0 to 600000 ms, 0 meaning the longest; another value is refused with
+# the same text in every module.
+import std.http.Header;
+import std.http.send;
+import std.tcp.Conn;
+import std.tcp.TcpError;
+import std.tcp.connect;
+import std.tcp.tcp_error_text;
+
+fn opened(r: result[Conn[uses net], TcpError]) -> str {
+    match r {
+        case ok(_) {
+            return "open";
+        }
+        case err(e) {
+            return tcp_error_text(e);
+        }
+    }
+}
+
+fn main() uses console, net("127.0.0.1") {
+    print(opened(connect("127.0.0.1", 1, 0)));
+    print(opened(connect("127.0.0.1", 1, 700000)));
+    match send("GET", "http://127.0.0.1:1/", new list[Header], "", 700000) {
+        case ok(_) {
+            print("sent");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

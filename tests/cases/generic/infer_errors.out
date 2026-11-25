@@ -13,7 +13,7 @@ infer_errors.vo:17:13: error[E0310]: Cannot infer `T` for `Tagged`: give the var
 infer_errors.vo:18:9: warning[W0201]: `wrong` is never used.
   18 |     let wrong = new Box[int, str] { items: new list[int] };
      |         ^^^^^
-infer_errors.vo:18:17: error[E0312]: `Box` takes 1 type argument(s), got 2.
+infer_errors.vo:18:17: error[E0312]: `Box` takes 1 type argument(s), found 2.
   18 |     let wrong = new Box[int, str] { items: new list[int] };
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 3 errors, 3 warnings

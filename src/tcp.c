@@ -146,7 +146,7 @@ static int limit_start(void)
 
 static Variant *bad_limit(void)
 {
-    return fail("invalid", "the time limit must be 1 to 600000 ms");
+    return fail("invalid", "the time limit must be 0 to 600000 ms");
 }
 
 /* Records an outcome under the entry's label (ok: the value; err: the error text), and returns r. */
@@ -591,7 +591,7 @@ static Variant *tcp_accept(long id)
 /* __tcp(op, a, text) -> result[int] */
 Variant *rt_tcp(long op, long a, Str *text)
 {
-    tcp_ms = net_timeout_next;
+    tcp_ms = net_timeout_next ? net_timeout_next : MS_MAX; /* spec 056: 0 is the longest limit, as everywhere */
     net_timeout_next = 0;
     switch (op) {
     case OP_CONNECT: return tcp_connect(text, a, 0);
@@ -621,7 +621,7 @@ Variant *rt_tcp_io(long op, long id, Str *data)
 {
     long n = op >> 3;
     op &= 7;
-    tcp_ms = net_timeout_next;
+    tcp_ms = net_timeout_next ? net_timeout_next : MS_MAX; /* spec 056: 0 is the longest limit, as everywhere */
     net_timeout_next = 0;
     Entry *e = entry_of(id, K_CONN);
     if (!e) return closed();

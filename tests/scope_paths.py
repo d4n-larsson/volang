@@ -62,7 +62,7 @@ def generate(rng):
     value = str(target + 1) if kind == "net" else '"%sx.txt"' % FILE[target]
     out = []
     if kind == "net":
-        out += ["import std.tcp.close;", "import std.tcp.connect;", "import std.tcp.describe;", ""]
+        out += ["import std.tcp.close_conn;", "import std.tcp.connect;", "import std.tcp.tcp_error_text;", ""]
     out += ["fn via[E: effects](g: fn(%s) -> str uses E, p: %s) -> str uses E {" % (ptype, ptype),
             "    return g(p);", "}", ""]
     last = names[-1]
@@ -70,8 +70,8 @@ def generate(rng):
     out.append("fn %s(p: %s) -> str uses %s {" % (last, ptype, clause(effect, scopes[-1])))
     if kind == "net":
         out += ['    match connect("127.0.0.1", %s, 1000) {' % arg,
-                "        case ok(c) {", "            close(c);", '            return "open " + str(p);', "        }",
-                "        case err(e) {", '            return describe(e) + " " + str(p);', "        }", "    }"]
+                "        case ok(c) {", "            close_conn(c);", '            return "open " + str(p);', "        }",
+                "        case err(e) {", '            return tcp_error_text(e) + " " + str(p);', "        }", "    }"]
     else:
         out += ["    match read_file(%s) {" % arg,
                 "        case ok(t) {", '            return "read " + t + p;', "        }",

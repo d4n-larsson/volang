@@ -37,10 +37,10 @@ fn read(header: str, name: str) uses console {
 fn main() uses console {
     show(cookie("a", "1"));
     let gone = cookie("a", "");
-    set gone.max_age_s = 0;
+    set gone.max_age_ms = 0;
     show(gone);
     let kept = cookie("pref", "dark");
-    set kept.max_age_s = 600;
+    set kept.max_age_ms = 600000;
     set kept.same_site = "Strict";
     show(kept);
     let open = cookie("theme", "x");

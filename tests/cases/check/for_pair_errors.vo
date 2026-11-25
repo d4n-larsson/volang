@@ -21,7 +21,7 @@ fn main() uses console {
     for x, x in xs {
         print(str(x));
     }
-    for len, x in xs {
+    for len_value, x in xs {
         print(str(x));
     }
     for i, x in xs {

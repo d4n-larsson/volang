@@ -1,0 +1,28 @@
+# Spec 056 (FR-009): durations in milliseconds. Each old form reports E0214 with a fix in the new unit.
+import std.time.fixed_zone;
+import std.time.Zone;
+import std.web.Cookie;
+import std.web.cookie;
+
+fn east(z: Zone) -> int {
+    return z.offsets[0];
+}
+
+fn main() {
+    let z = fixed_zone(330);
+    let minutes = 60;
+    let w = fixed_zone(minutes);
+    let c = new Cookie {
+        name: "a",
+        value: "1",
+        max_age_s: 3600,
+        http_only: true,
+        secure: true,
+        same_site: "Lax",
+        path: "/"
+    };
+    let d = cookie("b", "2");
+    set d.max_age_s = minutes * 60;
+    let kept = c.max_age_s + d.max_age_s;
+    let _ = east(z) + east(w) + kept;
+}

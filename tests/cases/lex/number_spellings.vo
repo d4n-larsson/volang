@@ -1,0 +1,13 @@
+# Spec 056 (FR-020): one spelling for each number, as for `0X1F`. Each line here is E0105.
+fn main() uses console {
+    let a = 1E9;
+    let b = 1e+9;
+    let c = 2.5E-3;
+    let d = 00012;
+    let e = 007.5;
+    let f = 1e-400;
+    let g = -0x8000000000000000;
+    let h = 5e-324;
+    let i = 0x8000000000000000;
+    print(str(a + b + c + e + f + h) + " " + str(d + g + i));
+}

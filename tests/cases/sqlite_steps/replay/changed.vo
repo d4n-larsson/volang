@@ -4,7 +4,7 @@ import std.sqlite.sql;
 import std.sqlite.exec;
 import std.sqlite.query;
 import std.sqlite.transaction;
-import std.sqlite.get_str;
+import std.sqlite.text_column;
 import std.sqlite.Value;
 import std.bytes.from_ints;
 
@@ -20,7 +20,7 @@ fn main() -> result[void] uses console, file.read("data/"), file.write("data/") 
     print(str(n == ok(1)));
     print(str(exec(db, sql("insert into nope values (1)"), new list[Value]) == ok(c)));
     for row in try query(db, sql("select name, f, b, z from t order by id desc"), new list[Value]) {
-        print(try get_str(row, "name") + " " + str(len(row.values)));
+        print(try text_column(row, "name") + " " + str(len(row.values)));
     }
     return ok();
 }

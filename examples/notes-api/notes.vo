@@ -3,10 +3,10 @@ import std.sqlite.Database;
 import std.sqlite.Row;
 import std.sqlite.Value;
 import std.sqlite.exec;
-import std.sqlite.get_int;
-import std.sqlite.get_str;
+import std.sqlite.int_column;
 import std.sqlite.query;
 import std.sqlite.sql;
+import std.sqlite.text_column;
 
 export record Note {
     id: int;
@@ -14,7 +14,7 @@ export record Note {
     done: bool;
 }
 
-export fn prepare[D: effects](db: Database[D]) -> result[void] uses D {
+export fn prepare[D: effects](db: Database[uses D]) -> result[void] uses D {
     let _ = try exec(
         db,
         sql(
@@ -25,7 +25,7 @@ export fn prepare[D: effects](db: Database[D]) -> result[void] uses D {
     return ok();
 }
 
-export fn all_notes[D: effects](db: Database[D]) -> result[list[Note]] uses D {
+export fn all_notes[D: effects](db: Database[uses D]) -> result[list[Note]] uses D {
     let out = new list[Note];
     for row in try query(db, sql("select id, text, done from notes order by id"), new list[Value]) {
         push(out, try note_of(row));
@@ -49,7 +49,7 @@ export fn db_error(message: str) -> NoteError {
 }
 
 # The note with this id, or err(NoteError.not_found(id)).
-export fn find_note[D: effects](db: Database[D], id: int) -> result[Note, NoteError] uses D {
+export fn find_note[D: effects](db: Database[uses D], id: int) -> result[Note, NoteError] uses D {
     let rows = try map_err(
         query(db, sql("select id, text, done from notes where id = ?"), [Value.integer(id)]),
         db_error
@@ -61,14 +61,14 @@ export fn find_note[D: effects](db: Database[D], id: int) -> result[Note, NoteEr
 }
 
 # A new note; `returning id` gives its id (the same statement works on PostgreSQL).
-export fn add_note[D: effects](db: Database[D], text: str) -> result[Note] uses D {
+export fn add_note[D: effects](db: Database[uses D], text: str) -> result[Note] uses D {
     let rows = try query(db, sql("insert into notes (text) values (?) returning id"), [
         Value.text(text)
     ]);
-    return ok(new Note { id: try get_int(rows[0], "id"), text: text, done: false });
+    return ok(new Note { id: try int_column(rows[0], "id"), text: text, done: false });
 }
 
-export fn mark_done[D: effects](db: Database[D], id: int) -> result[Note, NoteError] uses D {
+export fn mark_done[D: effects](db: Database[uses D], id: int) -> result[Note, NoteError] uses D {
     let _ = try find_note(db, id);
     let _ = try map_err(
         exec(db, sql("update notes set done = 1 where id = ?"), [Value.integer(id)]),
@@ -77,7 +77,7 @@ export fn mark_done[D: effects](db: Database[D], id: int) -> result[Note, NoteEr
     return find_note(db, id);
 }
 
-export fn remove_note[D: effects](db: Database[D], id: int) -> result[void, NoteError] uses D {
+export fn remove_note[D: effects](db: Database[uses D], id: int) -> result[void, NoteError] uses D {
     let _ = try find_note(db, id);
     let _ = try map_err(
         exec(db, sql("delete from notes where id = ?"), [Value.integer(id)]),
@@ -88,8 +88,8 @@ export fn remove_note[D: effects](db: Database[D], id: int) -> result[void, Note
 
 fn note_of(row: Row) -> result[Note] {
     return ok(new Note {
-        id: try get_int(row, "id"),
-        text: try get_str(row, "text"),
-        done: try get_int(row, "done") == 1
+        id: try int_column(row, "id"),
+        text: try text_column(row, "text"),
+        done: try int_column(row, "done") == 1
     });
 }

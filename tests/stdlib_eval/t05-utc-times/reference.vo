@@ -5,7 +5,7 @@ import std.time.parse_time;
 fn main() uses console, input {
     var lo = 0;
     var hi = 0;
-    var any = false;
+    var any_value = false;
     for line in split(read_all(), "\n") {
         if line == "" {
             continue;
@@ -13,20 +13,20 @@ fn main() uses console, input {
         match parse_time(line) {
             case ok(t) {
                 print(format_time(t));
-                if not any or t < lo {
+                if not any_value or t < lo {
                     set lo = t;
                 }
-                if not any or t > hi {
+                if not any_value or t > hi {
                     set hi = t;
                 }
-                set any = true;
+                set any_value = true;
             }
             case err(_) {
                 print("bad: " + line);
             }
         }
     }
-    if any {
+    if any_value {
         print("span: " + str((hi - lo) / minutes(1)) + " minutes");
     }
 }

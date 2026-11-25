@@ -7,9 +7,9 @@ error[T0001]: `notes.txt` is not a vo toolchain: `--base` takes the `vo` binary 
 --- stderr
 --- exit 64
 $ vo build main.vo -o x --base missing
-error[T0001]: Cannot read the base toolchain `missing`.
+error[T0002]: Cannot read the base toolchain `missing`.
 --- stderr
---- exit 64
+--- exit 66
 $ vo build main.vo -o x --base app
 error[T0001]: `app` is a built program, not a toolchain: `--base` takes a `vo` binary.
 --- stderr

@@ -4,9 +4,9 @@ import std.regex.is_match;
 
 fn main() uses console {
     let id = regex("^[A-Z]{3}-\\d{4}$");
-    print(str(is_match(id, "ABC-1234")) + " " + str(is_match(id, "ABC-12345")) + " " + str(is_match(id, "abc-1234")));
-    print(str(is_match(regex("a|b"), "xbx")) + " " + str(is_match(regex("colou?r"), "color")));
-    print(str(is_match(regex("^$"), "")) + " " + str(is_match(regex("é."), "aéz")) + " " + str(is_match(regex("x"), "")));
+    print(str(is_match("ABC-1234", id)) + " " + str(is_match("ABC-12345", id)) + " " + str(is_match("abc-1234", id)));
+    print(str(is_match("xbx", regex("a|b"))) + " " + str(is_match("color", regex("colou?r"))));
+    print(str(is_match("", regex("^$"))) + " " + str(is_match("aéz", regex("é."))) + " " + str(is_match("", regex("x"))));
     match parse_regex("(") {
         case ok(r) {
             print("ok " + r.pattern);

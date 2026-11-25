@@ -42,6 +42,6 @@ fn main() -> result[void] uses console {
     try show(try load_zone("Etc/GMT+5"), "2026-01-01T00:00:00Z");
     try show(try load_zone("UTC"), "1969-12-31T23:59:59.5Z");
     print(str(try parse_time("2026-01-01T00:00:00+00:53:28")));
-    print(str(parse_time("2026-01-01T00:00:00+00:53:60") == err("offset out of range")));
+    print(str(parse_time("2026-01-01T00:00:00+00:53:60") == err("invalid time: 2026-01-01T00:00:00+00:53:60; offset out of range")));
     return ok();
 }

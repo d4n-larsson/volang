@@ -1,7 +1,7 @@
 parse_errors.vo:16:15: runtime error[R0007]: Invalid pattern at byte 0: The group is not closed: add `)`.
-  16 |     print(str(is_match(new Regex { pattern: "(" }, "x")));
+  16 |     print(str(is_match("x", new Regex { pattern: "(" })));
      |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at is_match (parse_errors.vo:16:15)
-      re: Regex = new Regex { pattern: "(" }, s: str = "x"
+      s: str = "x", re: Regex = new Regex { pattern: "(" }
   at main (parse_errors.vo:16:15)

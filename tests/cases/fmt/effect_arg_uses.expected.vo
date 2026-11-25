@@ -1,0 +1,20 @@
+# Spec 056 (FR-021): an effect argument is written `uses ...`; vo fmt adds it to `Db[D]` and `Db[Storage]`.
+effects Storage = file.read, file.write;
+
+record Db[E: effects] {
+    id: int;
+}
+
+record Pair[T, E: effects] {
+    db: Db[uses E];
+    value: T;
+}
+
+fn open_db[D: effects](n: int) -> Db[uses D] {
+    return new Db[uses D] { id: n };
+}
+
+fn use_db(db: Db[uses Storage]) -> int {
+    let p: Pair[int, uses Storage] = new Pair[int, uses Storage] { db: db, value: 1 };
+    return db.id + p.value;
+}

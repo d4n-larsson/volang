@@ -1,8 +1,8 @@
 import std.tcp.Conn;
 import std.tcp.TcpError;
-import std.tcp.close;
+import std.tcp.close_conn;
 import std.tcp.connect;
-import std.tcp.describe;
+import std.tcp.tcp_error_text;
 
 fn attempt[N: effects](
     d: fn(str, int, int) -> result[Conn[uses net], TcpError] uses N,
@@ -13,7 +13,7 @@ fn attempt[N: effects](
             return "open";
         }
         case err(e) {
-            return describe(e);
+            return tcp_error_text(e);
         }
     }
 }

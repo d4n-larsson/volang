@@ -180,7 +180,7 @@ fn main() uses console {
 
 ## Steps, settings and health
 
-Steps run around requests in list order: `request_ids(random_id)`, `log_requests(clock_ms, to_stderr)`,
+Steps run around requests in list order: `request_ids(random_id)`, `log_requests(fn() -> int { return now_ms(); }, to_stderr)`,
 `cors(origins)`, `bearer_auth(prefix, check)` and `api_key_auth(prefix, header, check)` (the checked
 identity reaches operations as the header `X-Identity`), or your own `Step`. The ready steps take their
 effects as functions, so the application's type names them all: an app with `log_requests` declares
@@ -309,7 +309,7 @@ password and a disabled account get the same answer after the same work.
 - Put `cors` before `secure` in `App.steps`, so that preflight requests (which carry no credentials)
   are answered; put `safe_headers(0)` first, so that refusals also get `X-Content-Type-Options`,
   `X-Frame-Options`, `Referrer-Policy` and `Cache-Control: no-store`.
-- `new Policy { rules: ..., ways: ..., now: clock_ms, on_event: log }` names a function that is told of
+- `new Policy { rules: ..., ways: ..., now: fn() -> int { return now_ms(); }, on_event: log }` names a function that is told of
   every refused credential, forbidden request and sign-in (an `Event`: kind, reason, name, method,
   path, time), never with a password, a key or a token in it.
 - A password hash made with a lower cost than `hash_password` uses now is reported as the event
@@ -348,7 +348,7 @@ fn browsers[E: effects](random: fn(int) -> bytes uses E) -> Browser[Store, E] {
         random: random,                     # std.crypto.random_bytes
         sign_in: "/sign-in",
         sign_out: "/sign-out",
-        lifetime_s: 8 * 3600,
+        lifetime_ms: 8 * 3600 * 1000,
         origin: ""
     };
 }

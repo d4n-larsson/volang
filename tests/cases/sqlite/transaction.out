@@ -1,5 +1,5 @@
 commit: true, rows 2
 rolled back: err constraint: UNIQUE constraint failed: t.x, rows 2
 own err: err changed my mind, rows 2
-nested: err error: a transaction is already open, rows 2
+nested: err a transaction is already open, rows 2
 after: ok 1, rows 3

@@ -3,7 +3,7 @@ POST /boards/home/notes {"tags": ["a", 2]} -> 400 {"type":"about:blank","title":
 POST /boards/home/notes {"text": ""} -> 422 {"type":"about:blank","title":"Unprocessable Content","status":422,"errors":[{"field":"text","reason":"at least 1 character, got 0"}]}
 POST /boards/home/notes {"text": "x", "tags": ["a", "b", "c"], "color": "red"} -> 400 {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"tags","reason":"at most 2 items, got 3"},{"field":"color","reason":"unknown field"}]}
 POST /boards/home/notes {"text": 5} -> 400 {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"text","reason":"expected string, got number"}]}
-POST /boards/home/notes not json -> 400 {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"body","reason":"not JSON: line 1, column 1: expected `null`"}]}
+POST /boards/home/notes not json -> 400 {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"body","reason":"invalid json at line 1, column 1: expected `null`"}]}
 POST /boards/home/notes  -> 400 {"type":"about:blank","title":"Bad Request","status":400,"errors":[{"field":"body","reason":"missing"}]}
 GET /boards/home/notes  -> 200 "home limit 10 done false newest tags "
 GET /boards/home/notes?limit=3&done=true&sort=oldest&tag=a&tag=b&utm=x  -> 200 "home limit 3 done true oldest tags a,b"

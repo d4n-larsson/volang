@@ -64,7 +64,7 @@ order: console, input, file.read, file.write, net, clock, random, env, serve.
 | `file.write` | `write_file`; `std.fs.append_file`, `make_dir`; `std.sqlite.open` (with `file.read`) and using its database | directories |
 | `file.delete` | `std.fs.delete`, `rename` (see [Files and processes](files-and-processes.md)) | directories |
 | `net` | `std.http.get`, `std.http.post`; `std.tcp.connect` | hosts, or a host and port (`"db.internal:5432"`) |
-| `clock` | `now_ms` (and `std.time.now`), `std.time.sleep`, `std.time.local_zone` | |
+| `clock` | `now_ms`, `std.time.sleep`, `std.time.local_zone` | |
 | `random` | `random_int` (and `std.random`) | |
 | `env` | `env` (environment variables) | variable names |
 | `serve` | `std.http.serve` (answering HTTP requests); `std.tcp.listen` | addresses |

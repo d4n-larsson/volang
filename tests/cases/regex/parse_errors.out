@@ -1,10 +1,10 @@
-at byte 0: The group is not closed: add `)`.
-at byte 1: Unmatched `)`: write `\)` for the character.
-at byte 0: The class is not closed: add `]`.
-at byte 0: `*` has nothing to repeat.
-at byte 1: Range `z-a` is reversed.
-at byte 1: Repetition `{3,1}` has its minimum above its maximum.
-at byte 0: Lookahead is not supported: vo patterns run in linear time. Match more and check the rest in code.
-at byte 3: Backreferences are not supported: vo patterns run in linear time. Capture both parts and compare them in code.
-at byte 0: Named groups are written `(?<name>...)`.
-at byte 0: Unicode classes are not supported; vo's `\w` and `\d` are ASCII. List the characters in a class.
+invalid regex at byte 0: The group is not closed: add `)`.
+invalid regex at byte 1: Unmatched `)`: write `\)` for the character.
+invalid regex at byte 0: The class is not closed: add `]`.
+invalid regex at byte 0: `*` has nothing to repeat.
+invalid regex at byte 1: Range `z-a` is reversed.
+invalid regex at byte 1: Repetition `{3,1}` has its minimum above its maximum.
+invalid regex at byte 0: Lookahead is not supported: vo patterns run in linear time. Match more and check the rest in code.
+invalid regex at byte 3: Backreferences are not supported: vo patterns run in linear time. Capture both parts and compare them in code.
+invalid regex at byte 0: Named groups are written `(?<name>...)`.
+invalid regex at byte 0: Unicode classes are not supported; vo's `\w` and `\d` are ASCII. List the characters in a class.

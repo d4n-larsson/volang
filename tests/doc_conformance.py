@@ -295,6 +295,11 @@ def main():
                 failures.append(f"std/{os.path.basename(path)}:{i + 1}: `{inside}.{line.strip().rstrip(';')}` "
                                 "has no comment (hover shows none)")
 
+    # spec 056 (FR-005): a lookup that finds nothing gives an Option, never err("none")
+    for path in sorted(glob.glob(os.path.join(ROOT, "std", "*.vo"))):
+        for i, line in enumerate(open(path).read().split("\n")):
+            if 'err("none")' in line:
+                failures.append(f"std/{os.path.basename(path)}:{i + 1}: err(\"none\"): a lookup gives an Option")
     examples = 0
     for module, rs in items.items():
         every = [f"{module}.{r['name']}" for r in rs]

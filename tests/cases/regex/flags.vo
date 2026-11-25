@@ -4,13 +4,13 @@ import std.regex.all_matches;
 
 fn main() uses console {
     let e = regex("(?i)error");
-    print(str(is_match(e, "Error")) + " " + str(is_match(e, "ERROR")) + " " + str(is_match(regex("error"), "Error")));
-    for m in all_matches(regex("(?m)^\\d+$"), "12\nab\n345") {
+    print(str(is_match("Error", e)) + " " + str(is_match("ERROR", e)) + " " + str(is_match("Error", regex("error"))));
+    for m in all_matches("12\nab\n345", regex("(?m)^\\d+$")) {
         print(m.text);
     }
-    print(str(is_match(regex("(?s)a.b"), "a\nb")) + " " + str(is_match(regex("a.b"), "a\nb")));
+    print(str(is_match("a\nb", regex("(?s)a.b"))) + " " + str(is_match("a\nb", regex("a.b"))));
     let scoped = regex("a(?i:b)c");
-    print(str(is_match(scoped, "aBc")) + " " + str(is_match(scoped, "ABC")));
-    print(str(is_match(regex("(?i)é"), "É")) + " " + str(is_match(regex("x$"), "x\n")) + " " + str(is_match(regex("(?m)x$"), "x\n")));
-    print(str(is_match(regex("(?i)a(?-i)b"), "Ab")) + " " + str(is_match(regex("(?i)a(?-i)b"), "AB")));
+    print(str(is_match("aBc", scoped)) + " " + str(is_match("ABC", scoped)));
+    print(str(is_match("É", regex("(?i)é"))) + " " + str(is_match("x\n", regex("x$"))) + " " + str(is_match("x\n", regex("(?m)x$"))));
+    print(str(is_match("Ab", regex("(?i)a(?-i)b"))) + " " + str(is_match("AB", regex("(?i)a(?-i)b"))));
 }

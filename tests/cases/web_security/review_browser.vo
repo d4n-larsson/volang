@@ -44,7 +44,7 @@ fn the_browser(origin: str) -> Browser[int] {
         },
         sign_in: "/sign-in",
         sign_out: "/sign-out",
-        lifetime_s: 1800,
+        lifetime_ms: 1800000,
         origin: origin
     };
 }

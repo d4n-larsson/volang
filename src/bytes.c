@@ -143,7 +143,7 @@ Variant *bytes_from_base64(Str *s)
     if (n >= 2 && s->data[n - 2] == '=') pad++;
     for (long i = 0; i < n - pad; i++)
         if (b64_val(s->data[i]) < 0) return err_at("not base64 at position $1", i);
-    if (n % 4) return make_result(1, (long)str_from_cstr("base64 length is not a multiple of 4"));
+    if (n % 4) return make_result(1, (long)str_from_cstr("length is not a multiple of 4"));
     GC_ROOT(&s);
     Str *b = bytes_alloc(n / 4 * 3 - pad);
     long o = 0;

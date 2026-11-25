@@ -145,11 +145,14 @@ static Str *err_text(sqlite3 *db, int rc)
                  : p == SQLITE_READONLY                     ? "readonly"
                  : p == SQLITE_CORRUPT || p == SQLITE_NOTADB ? "corrupt"
                  : p == SQLITE_NOMEM || p == SQLITE_FULL    ? "nomem"
-                                                            : "error";
+                                                            : "";
     const char *m = auth_msg ? auth_msg : db ? sqlite3_errmsg(db) : sqlite3_errstr(rc); /* a refusal: vo's text */
     SB *sb = sb_new();
-    sb_cstr(sb, kind);
-    sb_cstr(sb, ": ");
+    /* spec 056: the kind names a class a program matches on; a plain error has no prefix */
+    if (*kind) {
+        sb_cstr(sb, kind);
+        sb_cstr(sb, ": ");
+    }
     sb_cstr(sb, (char *)m);
     return sb_finish(sb);
 }
@@ -416,15 +419,15 @@ Variant *sql_prim_open(Str *path, long mode, Node *call)
         GC_UNROOT(1);
         if (mode == 2) /* open_memory returns a Database, not a result */
             rt_raise("R0007", str_from_cstr("Too many open databases (64): close some."), std_user_call(call));
-        return err_result(str_from_cstr("error: too many open databases (64)"));
+        return err_result(str_from_cstr("too many open databases (64)"));
     }
     if (mode != 2) {
         int nul = path->len == 0;
         for (long i = 0; i < path->len; i++) nul |= path->data[i] == 0;
         if (nul || (path->len == 8 && mem_eq(path->data, ":memory:", 8))) {
             GC_UNROOT(1);
-            return err_result(str_from_cstr(nul ? "error: a database path must be a non-empty text without NUL bytes"
-                                                : "error: use open_memory() for an in-memory database"));
+            return err_result(str_from_cstr(nul ? "a database path must be a non-empty text without NUL bytes"
+                                                : "use open_memory() for an in-memory database"));
         }
         cur_node = (long)std_user_call(call);
         rt_check_path(EF_FREAD, path); /* outside SQLite: R0010 directly */
@@ -522,7 +525,7 @@ static Str *bind(sqlite3_stmt *st, List *params)
 {
     int want = sqlite3_bind_parameter_count(st);
     if (want != params->len)
-        return msg("error: the statement has $1 parameter(s) and the list has $2", int_to_str(want),
+        return msg("the statement has $1 parameter(s) and the list has $2", int_to_str(want),
                    int_to_str(params->len), 0);
     for (long i = 0; i < params->len; i++) {
         Variant *v = params->data[i].p;
@@ -566,7 +569,7 @@ static Variant *value_of(sqlite3_stmt *st, int col)
 
 static Str *one_statement_msg(void)
 {
-    return str_from_cstr("error: One statement per `sql(...)`: split it into one call per statement.");
+    return str_from_cstr("One statement per `sql(...)`: split it into one call per statement.");
 }
 
 /* The SQLite part of __sql_exec. */
@@ -578,7 +581,7 @@ static Variant *exec_db(Slot *s, Str *text, List *params, Node *call)
     sqlite3_stmt *st = prepare(s, text, &rc, call);
     Variant *res;
     if (!st) {
-        res = err_result(rc == -1 ? one_statement_msg() : rc == -2 ? str_from_cstr("error: " M_NOW) : err_text(s->db, rc));
+        res = err_result(rc == -1 ? one_statement_msg() : rc == -2 ? str_from_cstr(M_NOW) : err_text(s->db, rc));
     } else {
         Str *e = bind(st, params);
         if (e) {
@@ -614,7 +617,7 @@ static Variant *query_db(Slot *s, Str *text, List *params, Node *call)
     sqlite3_stmt *st = prepare(s, text, &rc, call);
     Variant *res = 0;
     if (!st) {
-        res = err_result(rc == -1 ? one_statement_msg() : rc == -2 ? str_from_cstr("error: " M_NOW) : err_text(s->db, rc));
+        res = err_result(rc == -1 ? one_statement_msg() : rc == -2 ? str_from_cstr(M_NOW) : err_text(s->db, rc));
         GC_UNROOT(2);
         return res;
     }
@@ -655,7 +658,7 @@ static Variant *query_db(Slot *s, Str *text, List *params, Node *call)
 /* The SQLite part of __sql_tx. */
 static Variant *tx_db(Slot *s, long op, Node *call)
 {
-    if (op == 1 && s->in_tx) return err_result(str_from_cstr("error: a transaction is already open"));
+    if (op == 1 && s->in_tx) return err_result(str_from_cstr("a transaction is already open"));
     /* spec 028: a writable database's transaction takes the write lock at once, waiting in the busy
        handler: a deferred one that reads, then writes, fails with busy at once when another process
        (a serve_workers worker) holds it */

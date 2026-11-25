@@ -58,7 +58,7 @@ keep them out of fields. `redact_logs` hides values in log records written by th
 
 ## Metrics
 
-`counter`, `gauge` and `histogram` describe a metric (a name, a help line, label names); `add`, `set_to`
+`counter`, `gauge` and `histogram` describe a metric (a name, a help line, label names); `add_to`, `set_to`
 and `observe` change its series, one per tuple of label values. A name has one kind, help and label list
 for the whole program (R0016 otherwise), and literal names are checked against the format's rules
 (E0341). The registry is shared by `serve_workers`' worker processes, so any worker's answer shows the

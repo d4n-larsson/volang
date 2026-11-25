@@ -2,14 +2,14 @@
 import std.sqlite.open_readonly;
 import std.sqlite.sql;
 import std.sqlite.query;
-import std.sqlite.get_str;
-import std.sqlite.get_int;
+import std.sqlite.text_column;
+import std.sqlite.int_column;
 import std.sqlite.Value;
 
 fn main() -> result[void] uses console, file.read("data/") {
     let db = try open_readonly("data/inventory.db");
     for row in try query(db, sql("select name, qty from items where qty < ? order by name"), [Value.integer(10)]) {
-        print(try get_str(row, "name") + " " + str(try get_int(row, "qty")));
+        print(try text_column(row, "name") + " " + str(try int_column(row, "qty")));
     }
     return ok();
 }

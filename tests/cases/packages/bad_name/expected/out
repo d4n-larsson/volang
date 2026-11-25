@@ -7,7 +7,7 @@ error[T0001]: A package name is an identifier other than std: `9lives` is not.
 --- stderr
 --- exit 64
 $ vo package main.vo money nowhere
-error[E0702]: Package money: the directory nowhere is missing or has no .vo files.
+error[E0702]: Package `money`: the directory `nowhere` is missing or has no .vo files.
 --- stderr
 --- exit 65
 $ vo package main.vo money

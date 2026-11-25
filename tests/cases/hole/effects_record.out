@@ -8,7 +8,7 @@ effects_record.vo:2:5: warning[W0601]: Hole: `"print the report"` needs a value 
    2 |     todo("print the report");
      |     ^^^^^^^^^^^^^^^^^^^^^^^^
     in scope: n: int
-effects_record.vo:9:1: warning[W0602]: Test `reports` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.
+effects_record.vo:9:1: warning[W0602]: `test "reports"` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.
    9 | test "reports" uses console {
      | ^^^^
 0 errors, 2 warnings

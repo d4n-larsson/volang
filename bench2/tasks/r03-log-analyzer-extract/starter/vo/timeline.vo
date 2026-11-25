@@ -136,9 +136,9 @@ export fn busiest(lines: list[str]) -> list[str] {
     return ["busiest hour " + label + " with " + str(per_hour[best]) + " entries"];
 }
 
-export fn in_range(lines: list[str], args: list[str]) -> list[str] {
-    let lo = to_seconds(args[0], args[1]);
-    let hi = to_seconds(args[2], args[3]);
+export fn in_range(lines: list[str], args_value: list[str]) -> list[str] {
+    let lo = to_seconds(args_value[0], args_value[1]);
+    let hi = to_seconds(args_value[2], args_value[3]);
     if lo < 0 or hi < 0 {
         return ["error: bad time"];
     }

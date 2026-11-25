@@ -4,7 +4,7 @@ import std.http.Response;
 import std.sqlite.Database;
 import std.sqlite.Value;
 import std.sqlite.exec;
-import std.sqlite.get_str;
+import std.sqlite.text_column;
 import std.sqlite.open;
 import std.sqlite.query;
 import std.sqlite.sql;
@@ -53,7 +53,7 @@ fn show(app: Notes, input: NoteId) -> result[Response] uses file.read("data/"), 
     if len(rows) == 0 {
         return err("not_found: no note " + str(input.id));
     }
-    return ok(json_reply(200, try get_str(rows[0], "text")));
+    return ok(json_reply(200, try text_column(rows[0], "text")));
 }
 
 fn db_alive(app: Notes) -> result[void] uses file.read("data/"), file.write("data/") {

@@ -1,8 +1,8 @@
 import std.tcp.Conn;
 import std.tcp.TcpError;
-import std.tcp.close;
+import std.tcp.close_conn;
 import std.tcp.connect;
-import std.tcp.describe;
+import std.tcp.tcp_error_text;
 
 record Options {
     host: str;
@@ -17,11 +17,11 @@ fn open(o: Options) -> result[Conn[uses net], TcpError] uses net {
 fn main() uses console, net("127.0.0.1:1") {
     match open(new Options { host: "127." + "0.0.1", port: 1 }) {
         case ok(c) {
-            close(c);
+            close_conn(c);
             print("open");
         }
         case err(e) {
-            print(describe(e));
+            print(tcp_error_text(e));
         }
     }
 }

@@ -325,7 +325,7 @@ op_cmp_param: {
         kind = frame->targs->data[t->a.i].t->kind; /* rt_concrete's bare-parameter case, inline */
     else
         kind = rt_concrete(t)->kind;
-    if (kind == TY_RECORD) { /* spec 014: field by field */
+    if (kind == TY_RECORD || kind == TY_VARIANT) { /* spec 014: field by field; spec 056: by case, then payload */
         long rc = value_cmp(SL(pc->b), SL(pc->c.i), rt_concrete(t));
         long which = pc->node->d.i - OP_LT_PARAM; /* <, <=, >, >= */
         STORE(which == 0 ? rc < 0 : which == 1 ? rc <= 0 : which == 2 ? rc > 0 : rc >= 0);

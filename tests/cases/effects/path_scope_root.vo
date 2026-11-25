@@ -1,8 +1,8 @@
 import std.tcp.Conn;
 import std.tcp.TcpError;
-import std.tcp.close;
+import std.tcp.close_conn;
 import std.tcp.connect;
-import std.tcp.describe;
+import std.tcp.tcp_error_text;
 
 # Spec 050: a function that is given its target declares the effect without scopes; its callers'
 # scopes apply.
@@ -13,11 +13,11 @@ fn dial(host: str, port: int) -> result[Conn[uses net], TcpError] uses net {
 fn try_port(port: int) -> str uses net {
     match dial("127.0.0.1", port) {
         case ok(c) {
-            close(c);
+            close_conn(c);
             return "open";
         }
         case err(e) {
-            return describe(e);
+            return tcp_error_text(e);
         }
     }
 }

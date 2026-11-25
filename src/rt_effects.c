@@ -73,7 +73,7 @@ static unsigned long ent_next(void)
 Str *rt_entropy(long n, Node *call)
 {
     if (n < 0 || n > 65536)
-        rt_raise("R0007", msg("`random_bytes` needs a count from 0 to 65536, got $1.", int_to_str(n), 0, 0),
+        rt_raise("R0007", msg("`random_bytes` needs a count from 0 to 65536, found $1.", int_to_str(n), 0, 0),
                  std_user_call(call));
     Str *b = str_new("", 0);
     if (n) {
@@ -144,7 +144,7 @@ long rt_random_int(long lo, long hi)
         GC_ROOT(&a);
         Str *b = int_to_str(hi);
         GC_UNROOT(1);
-        rt_raise("R0007", msg("`random_int` needs lo <= hi, got $1 and $2.", a, b, 0), (void *)cur_node);
+        rt_raise("R0007", msg("`random_int` needs lo <= hi, found $1 and $2.", a, b, 0), (void *)cur_node);
     }
     unsigned long span = (unsigned long)hi - (unsigned long)lo + 1; /* 0: the whole 64-bit range */
     unsigned long threshold = span ? (0UL - span) % span : 0;    /* (2^64 - span) mod span */
@@ -163,7 +163,7 @@ long rt_random_int(long lo, long hi)
  * the user's call). Nothing is recorded: a sleep receives no data. */
 void rt_sleep(long ms, Node *node)
 {
-    if (ms < 0) rt_raise("R0007", msg("`sleep` needs a duration of at least 0 ms, got $1.", int_to_str(ms), 0, 0),
+    if (ms < 0) rt_raise("R0007", msg("`sleep` needs a duration of at least 0 ms, found $1.", int_to_str(ms), 0, 0),
                          std_user_call(node));
     if (rcd_mode == 2) return;
     if (clock_fixed) {

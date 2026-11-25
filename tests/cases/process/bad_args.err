@@ -1,10 +1,10 @@
 std/process.vo:45:23: runtime error[R0007]: An argument cannot hold a NUL byte.
-  45 |     return decode(try __run(argv, input, env));
-     |                       ^^^^^^^^^^^^^^^^^^^^^^^
+  45 |     return decode(try __run(argv, input, vars));
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at run_with (std/process.vo:45:23)
-      program: str = "true", args: list[str] = ["a\u{0}b"], input: str = "", env: list[str] = [], argv: list[str] = ["true", "a\u{0}b"]
+      program: str = "true", arguments: list[str] = ["a\u{0}b"], input: str = "", vars: list[str] = [], argv: list[str] = ["true", "a\u{0}b"]
   at run (std/process.vo:34:12)
-      program: str = "true", args: list[str] = ["a\u{0}b"]
+      program: str = "true", arguments: list[str] = ["a\u{0}b"]
   at main (bad_args.vo:8:27)
       a: str = "nul"

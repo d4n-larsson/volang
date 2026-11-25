@@ -18,7 +18,7 @@ import std.log.field;
 import std.log.log_info;
 import std.log.logged;
 import std.metrics.Metric;
-import std.metrics.add;
+import std.metrics.add_to;
 import std.metrics.counter;
 import std.sqlite.Database;
 import std.sqlite.Value;
@@ -57,7 +57,7 @@ export effects Storage = file.read(data_dir), file.write(data_dir);
 
 # Each worker's context: its connection to the notes database.
 export record Notes[D: effects] {
-    db: Database[D];
+    db: Database[uses D];
 }
 
 record NoteText {
@@ -77,16 +77,22 @@ record NoteId {
 # /health/ready and /metrics; each request gets an id, a log record and its metrics.
 # Each operation is typed(op, note_problem); the types are written out because the operations are
 # generic in the database's effects, which inference does not follow through two generic calls.
-export fn notes_app[D: effects]() -> App[Notes[D], uses clock, random, log, D] {
-    let listing: fn(Notes[D], NoInput) -> result[Response] uses D = typed(list_notes, note_problem);
-    let adding: fn(Notes[D], NewNote) -> result[Response] uses log, D = typed(create, note_problem);
-    let showing: fn(Notes[D], NoteId) -> result[Response] uses D = typed(show, note_problem);
-    let finishing: fn(Notes[D], NoteId) -> result[Response] uses D = typed(done, note_problem);
-    let erasing: fn(Notes[D], NoteId) -> result[Response] uses D = typed(erase, note_problem);
-    let database: list[HealthCheck[Notes[D], uses clock, random, log, D]] = [
+export fn notes_app[D: effects]() -> App[Notes[uses D], uses clock, random, log, D] {
+    let listing: fn(Notes[uses D], NoInput) -> result[Response] uses D = typed(
+        list_notes,
+        note_problem
+    );
+    let adding: fn(Notes[uses D], NewNote) -> result[Response] uses log, D = typed(
+        create,
+        note_problem
+    );
+    let showing: fn(Notes[uses D], NoteId) -> result[Response] uses D = typed(show, note_problem);
+    let finishing: fn(Notes[uses D], NoteId) -> result[Response] uses D = typed(done, note_problem);
+    let erasing: fn(Notes[uses D], NoteId) -> result[Response] uses D = typed(erase, note_problem);
+    let database: list[HealthCheck[Notes[uses D], uses clock, random, log, D]] = [
         new HealthCheck { name: "database", check: alive }
     ];
-    let routes: list[Route[Notes[D], uses clock, random, log, D]] = [
+    let routes: list[Route[Notes[uses D], uses clock, random, log, D]] = [
         on_get("/notes", listing),
         on_post("/notes", adding),
         on_get("/notes/{id}", showing),
@@ -131,35 +137,37 @@ fn note_problem(e: NoteError) -> Problem {
     }
 }
 
-fn list_notes[D: effects](app: Notes[D], input: NoInput) -> result[Response, NoteError] uses D {
+fn list_notes[D: effects](app: Notes[uses D], input: NoInput) -> result[Response, NoteError]
+    uses D {
     return ok(json_reply(200, try map_err(all_notes(app.db), db_error)));
 }
 
-fn create[D: effects](app: Notes[D], input: NewNote) -> result[Response, NoteError] uses log, D {
+fn create[D: effects](app: Notes[uses D], input: NewNote) -> result[Response, NoteError]
+    uses log, D {
     let text = trim(input.body.text);
     if text == "" {
         return err(NoteError.blank);
     }
     let note = try map_err(add_note(app.db, text), db_error);
-    add(notes_created(), new list[str], 1);
+    add_to(notes_created(), new list[str], 1);
     log_info("note created", [field("id", note.id)]);
     return ok(created("/notes/" + str(note.id), note));
 }
 
-fn show[D: effects](app: Notes[D], input: NoteId) -> result[Response, NoteError] uses D {
+fn show[D: effects](app: Notes[uses D], input: NoteId) -> result[Response, NoteError] uses D {
     return ok(json_reply(200, try find_note(app.db, input.id)));
 }
 
-fn done[D: effects](app: Notes[D], input: NoteId) -> result[Response, NoteError] uses D {
+fn done[D: effects](app: Notes[uses D], input: NoteId) -> result[Response, NoteError] uses D {
     return ok(json_reply(200, try mark_done(app.db, input.id)));
 }
 
-fn erase[D: effects](app: Notes[D], input: NoteId) -> result[Response, NoteError] uses D {
+fn erase[D: effects](app: Notes[uses D], input: NoteId) -> result[Response, NoteError] uses D {
     try remove_note(app.db, input.id);
     return ok(no_content());
 }
 
-fn alive[D: effects](app: Notes[D]) -> result[void] uses D {
+fn alive[D: effects](app: Notes[uses D]) -> result[void] uses D {
     let _ = try query(app.db, sql("select 1"), new list[Value]);
     return ok();
 }

@@ -31,16 +31,16 @@ import std.tcp.Conn;
 import std.tcp.Listener;
 import std.tcp.TcpError;
 import std.tcp.accept;
-import std.tcp.close;
+import std.tcp.close_conn;
 import std.tcp.close_listener;
 import std.tcp.connect;
 import std.tcp.connect_tls;
-import std.tcp.describe;
+import std.tcp.tcp_error_text;
 import std.tcp.listen;
 import std.tcp.read;
 import std.tcp.read_exact;
 import std.tcp.read_until;
-import std.tcp.send;
+import std.tcp.write_all;
 import std.tcp.start_tls;
 
 fn text(b: bytes) -> str {
@@ -60,7 +60,7 @@ fn show(r: result[bytes, TcpError]) -> str {
             return "ok " + str(len(b)) + " " + text(b);
         }
         case err(e) {
-            return "err " + describe(e);
+            return "err " + tcp_error_text(e);
         }
     }
 }
@@ -71,7 +71,7 @@ fn did(r: result[void, TcpError]) -> str {
             return "ok";
         }
         case err(e) {
-            return "err " + describe(e);
+            return "err " + tcp_error_text(e);
         }
     }
 }
@@ -82,7 +82,7 @@ fn opened[E: effects](r: result[Conn[E], TcpError]) -> str {
             return "ok";
         }
         case err(e) {
-            return "err " + describe(e);
+            return "err " + tcp_error_text(e);
         }
     }
 }
@@ -100,33 +100,33 @@ fn main() uses console, net("127.0.0.1:{P}") {
             talk(c);
         }
         case err(e) {
-            print("connect: " + describe(e));
+            print("connect: " + tcp_error_text(e));
         }
     }
 }
 """
 
-BASIC = """    print(did(send(c, from_text("one\\n"), 2000)));
+BASIC = """    print(did(write_all(c, from_text("one\\n"), 2000)));
     print(show(read_until(c, from_text("\\n"), 2000)));
-    print(did(send(c, from_text("abcdef"), 2000)));
+    print(did(write_all(c, from_text("abcdef"), 2000)));
     print(show(read_exact(c, 3, 2000)));
     print(show(read(c, 100, 2000)));
-    print(did(send(c, from_text("x--y--z"), 2000)));
+    print(did(write_all(c, from_text("x--y--z"), 2000)));
     print(show(read_until(c, from_text("--"), 2000)));
     print(show(read_until(c, from_text("--"), 2000)));
     print(show(read(c, 10, 2000)));
     print(str(c.peer == "127.0.0.1:{P}"));
-    close(c);
-    print(did(send(c, from_text("late"), 2000)));
+    close_conn(c);
+    print(did(write_all(c, from_text("late"), 2000)));
     print(show(read(c, 10, 2000)));
-    close(c);"""
+    close_conn(c);"""
 BASIC_OUT = ["ok", "ok 4 one", "ok", "ok 3 abc", "ok 3 def", "ok", "ok 3 x--", "ok 3 y--", "ok 1 z", "true",
              "err the connection is closed", "err the connection is closed"]
 
 THOUSAND = """    var bad = 0;
     for i in 0..1000 {
         let m = from_text("message " + str(i) + "\\n");
-        match send(c, m, 2000) {
+        match write_all(c, m, 2000) {
             case ok() {
             }
             case err(_) {
@@ -149,36 +149,36 @@ THOUSAND = """    var bad = 0;
         push(xs, k);
     }
     let every = from_ints(xs);
-    print(did(send(c, every, 2000)));
+    print(did(write_all(c, every, 2000)));
     match read_exact(c, 256, 2000) {
         case ok(b) {
             print(str(b == every));
         }
         case err(e) {
-            print(describe(e));
+            print(tcp_error_text(e));
         }
     }
     print(str(bad));
-    close(c);"""
+    close_conn(c);"""
 
 SILENT = """    print(show(read(c, 10, {WAIT})));
     print(show(read_until(c, from_text("\\n"), {WAIT})));
-    print(did(send(c, from_text("still here"), 2000)));
-    close(c);"""
+    print(did(write_all(c, from_text("still here"), 2000)));
+    close_conn(c);"""
 SILENT_OUT = ["err the time limit passed", "err the time limit passed", "ok"]
 
 HALF = """    print(show(read_until(c, from_text("\\n"), 2000)));
     print(show(read_exact(c, 10, 2000)));
     print(show(read(c, 10, 2000)));
     print(show(read(c, 10, 2000)));
-    print(did(send(c, from_text("x"), 2000)));
-    close(c);"""
+    print(did(write_all(c, from_text("x"), 2000)));
+    close_conn(c);"""
 HALF_OUT = ["err the connection is closed", "err the connection is closed", "ok 3 par", "err the connection is closed",
             "err the connection is closed"]
 
-RESET = """    print(did(send(c, from_text("a"), 2000)));
+RESET = """    print(did(write_all(c, from_text("a"), 2000)));
     print(show(read(c, 10, 2000)));
-    print(did(send(c, from_text("b"), 2000)));
+    print(did(write_all(c, from_text("b"), 2000)));
     print("still running");"""
 RESET_OUT = ["ok", "err the connection is closed", "err the connection is closed", "still running"]
 
@@ -187,7 +187,7 @@ BURST = """    match read_until(c, from_text("\\n"), 20000) {
             print("ok " + str(len(b)));
         }
         case err(e) {
-            print(describe(e));
+            print(tcp_error_text(e));
         }
     }
     match read(c, 100, 2000) {
@@ -195,10 +195,10 @@ BURST = """    match read_until(c, from_text("\\n"), 20000) {
             print("still " + str(len(b)));
         }
         case err(e) {
-            print(describe(e));
+            print(tcp_error_text(e));
         }
     }
-    close(c);"""
+    close_conn(c);"""
 
 MANY = """    var conns: list[Conn[uses net]] = [c];
     for i in 1..256 {
@@ -207,35 +207,35 @@ MANY = """    var conns: list[Conn[uses net]] = [c];
                 push(conns, more);
             }
             case err(e) {
-                print("early: " + describe(e));
+                print("early: " + tcp_error_text(e));
             }
         }
     }
     print(str(len(conns)));
     print(opened(connect("127.0.0.1", {P}, 5000)));
-    close(conns[0]);
+    close_conn(conns[0]);
     print(opened(connect("127.0.0.1", {P}, 5000)));
-    print(did(send(conns[255], from_text("last\\n"), 2000)));
+    print(did(write_all(conns[255], from_text("last\\n"), 2000)));
     print(show(read_until(conns[255], from_text("\\n"), 2000)));"""
 
-TLS_TALK = """    print(did(send(c, from_text("secret word\\n"), 3000)));
+TLS_TALK = """    print(did(write_all(c, from_text("secret word\\n"), 3000)));
     print(show(read_until(c, from_text("\\n"), 3000)));
     print(did(start_tls(c, "127.0.0.1", 3000)));
-    close(c);"""
+    close_conn(c);"""
 TLS_OUT = ["ok", "ok 12 secret word", "err invalid: the connection is already TLS"]
 
 STARTTLS = """    print(show(read_until(c, from_text("\\n"), 3000)));
-    print(did(send(c, from_text("STARTTLS\\n"), 3000)));
+    print(did(write_all(c, from_text("STARTTLS\\n"), 3000)));
     print(show(read_until(c, from_text("\\n"), 3000)));
     print(did(start_tls(c, "127.0.0.1", {MS})));
-    print(did(send(c, from_text("hidden word\\n"), 3000)));
+    print(did(write_all(c, from_text("hidden word\\n"), 3000)));
     print(show(read_until(c, from_text("\\n"), 3000)));
-    close(c);"""
+    close_conn(c);"""
 
 UNREAD = """    print(show(read_exact(c, 1, 3000)));
     print(did(start_tls(c, "127.0.0.1", 3000)));
     print(show(read_until(c, from_text("\\n"), 3000)));
-    close(c);"""
+    close_conn(c);"""
 
 SERVER_VO = PRELUDE + """
 fn echo[E: effects](c: Conn[E]) uses E {
@@ -243,7 +243,7 @@ fn echo[E: effects](c: Conn[E]) uses E {
     while open {
         match read_until(c, from_text("\\n"), 5000) {
             case ok(line) {
-                match send(c, line, 5000) {
+                match write_all(c, line, 5000) {
                     case ok() {
                     }
                     case err(_) {
@@ -256,7 +256,7 @@ fn echo[E: effects](c: Conn[E]) uses E {
             }
         }
     }
-    close(c);
+    close_conn(c);
 }
 
 fn main() uses console, serve("{P}") {
@@ -270,14 +270,14 @@ fn main() uses console, serve("{P}") {
                         echo(c);
                     }
                     case err(e) {
-                        print("accept: " + describe(e));
+                        print("accept: " + tcp_error_text(e));
                     }
                 }
             }
             close_listener(l);
         }
         case err(e) {
-            print("listen: " + describe(e));
+            print("listen: " + tcp_error_text(e));
         }
     }
 }
@@ -290,17 +290,17 @@ fn serve_one(l: Listener) -> str uses serve("0") {
             let line = read_until(c, from_text("\\n"), 5000);
             match line {
                 case ok(b) {
-                    let sent = send(c, b, 5000);
-                    close(c);
+                    let sent = write_all(c, b, 5000);
+                    close_conn(c);
                     return "served " + text(b) + " " + did(sent);
                 }
                 case err(e) {
-                    return "server read: " + describe(e);
+                    return "server read: " + tcp_error_text(e);
                 }
             }
         }
         case err(e) {
-            return "accept: " + describe(e);
+            return "accept: " + tcp_error_text(e);
         }
     }
 }
@@ -308,13 +308,13 @@ fn serve_one(l: Listener) -> str uses serve("0") {
 fn ask(port: int) -> str uses net("127.0.0.1") {
     match connect("127.0.0.1", port, 5000) {
         case ok(c) {
-            let sent = send(c, from_text("ping\\n"), 5000);
+            let sent = write_all(c, from_text("ping\\n"), 5000);
             let back = read_until(c, from_text("\\n"), 5000);
-            close(c);
+            close_conn(c);
             return "asked " + did(sent) + ", got " + show(back);
         }
         case err(e) {
-            return "connect: " + describe(e);
+            return "connect: " + tcp_error_text(e);
         }
     }
 }
@@ -332,7 +332,7 @@ fn both() -> list[str] uses net("127.0.0.1"), serve("0") {
             return out;
         }
         case err(e) {
-            return ["listen: " + describe(e)];
+            return ["listen: " + tcp_error_text(e)];
         }
     }
 }
@@ -414,7 +414,7 @@ def group_client(d):
         lines("client/basic", (code, out), (0, BASIC_OUT))
         code, out, err = run(d, client(THOUSAND, e.port))
         lines("client/thousand messages and every byte value (SC-001)", (code, out), (0, ["ok", "true", "0"]))
-    code, out, err = run(d, client("    close(c);", free_port()))
+    code, out, err = run(d, client("    close_conn(c);", free_port()))
     lines("client/refused", (code, out), (0, ["connect: the connection was refused"]))
     with Peer("silent") as s:
         code, out, err = run(d, client(SILENT, s.port, WAIT=200 * SLOW))
@@ -425,7 +425,7 @@ def group_client(d):
     with Peer("reset") as r:
         code, out, err = run(d, client(RESET, r.port))
         lines("client/peer resets", (code, out), (0, RESET_OUT))
-    src = client("    close(c);", 80).replace('("127.0.0.1", 80,', '("no-such-host.invalid", 80,')
+    src = client("    close_conn(c);", 80).replace('("127.0.0.1", 80,', '("no-such-host.invalid", 80,')
     src = src.replace('net("127.0.0.1:80")', 'net("no-such-host.invalid")').replace("{MS}", "8000")
     code, out, err = run(d, src)
     # with a name server: not found; without one (a sandbox), the lookup gives up the same way
@@ -486,7 +486,7 @@ fn main() uses console, net("127.0.0.1:{e.port}") {{
         code, out, err = run(d, src)
         lines("scopes/a bare host allows any port", (code, out), (0, BASIC_OUT))
         forged = """    print(sneak(c.id));
-    close(c);
+    close_conn(c);
 }
 
 fn sneak(id: int) -> str {
@@ -512,7 +512,7 @@ def group_tls(d):
     why = {"other-name": "is for another host", "expired": "has expired", "rogue": "is not trusted"}
     for cert, reason in why.items():
         with Peer("tls", cert) as t:
-            code, out, err = run(d, client("    close(c);", t.port, "connect_tls", 5000 * SLOW), extra=ca)
+            code, out, err = run(d, client("    close_conn(c);", t.port, "connect_tls", 5000 * SLOW), extra=ca)
             lines(f"tls/{cert}", (code, out), (0, [f"connect: TLS failed: the certificate of 127.0.0.1:{t.port} {reason}"]))
         with Peer("starttls", cert) as t:
             code, out, err = run(d, client(STARTTLS, t.port, ms=5000 * SLOW), extra=ca)
@@ -523,7 +523,7 @@ def group_tls(d):
         lines("tls/no upgrade over unread bytes", (code, out),
               (0, ["ok 1 h", "err invalid: bytes received before TLS are waiting to be read", "ok 5 ello"]))
     with Peer("silent") as s:
-        code, out, err = run(d, client("    close(c);", s.port, "connect_tls", 300 * SLOW), extra=ca)
+        code, out, err = run(d, client("    close_conn(c);", s.port, "connect_tls", 300 * SLOW), extra=ca)
         lines("tls/handshake time limit", (code, out), (0, ["connect: the time limit passed"]))
 
 
@@ -616,9 +616,9 @@ def group_replay(d):
     replayed(d, "upgrade", client(STARTTLS, t.port, ms=5000 * SLOW), t,
              ["ok 10 220 ready", "ok", "ok 7 220 go", "ok", "ok", "ok 12 hidden word"], extra=["--ca-file", CA])
     t = Peer("tls", "expired")
-    replayed(d, "a failed handshake", client("    close(c);", t.port, "connect_tls", 5000 * SLOW), t,
+    replayed(d, "a failed handshake", client("    close_conn(c);", t.port, "connect_tls", 5000 * SLOW), t,
              [f"connect: TLS failed: the certificate of 127.0.0.1:{t.port} has expired"], extra=["--ca-file", CA])
-    replayed(d, "refused", client("    close(c);", free_port()), None, ["connect: the connection was refused"])
+    replayed(d, "refused", client("    close_conn(c);", free_port()), None, ["connect: the connection was refused"])
     # a server: recorded with two clients, replayed with none and no port opened
     code, out, replies = serve_run(d, ["run", "--timeout", str(60 * SLOW), "--record", "server.rec"])
     want = ["true", "127.0.0.1:", "127.0.0.1:"]
@@ -661,23 +661,23 @@ def group_docs(d):
 TIME_TRIPS = """    let m = from_text("{HUNDRED}");
     let start = now_ms();
     for i in 0..2000 {
-        match send(c, m, 2000) {
+        match write_all(c, m, 2000) {
             case ok() {
             }
             case err(e) {
-                print(describe(e));
+                print(tcp_error_text(e));
             }
         }
         match read_exact(c, 100, 2000) {
             case ok(_) {
             }
             case err(e) {
-                print(describe(e));
+                print(tcp_error_text(e));
             }
         }
     }
     print(str(now_ms() - start));
-    close(c);"""
+    close_conn(c);"""
 TIME_BLOB = """    let start = now_ms();
     var total = 0;
     while total < 16777216 {
@@ -686,13 +686,13 @@ TIME_BLOB = """    let start = now_ms();
                 set total = total + len(b);
             }
             case err(e) {
-                print(describe(e));
+                print(tcp_error_text(e));
                 set total = 16777216;
             }
         }
     }
     print(str(now_ms() - start));
-    close(c);"""
+    close_conn(c);"""
 
 
 def timing(d):

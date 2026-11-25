@@ -2,9 +2,10 @@ bad.vo:3:6: error[E0329]: `@sise` is not a field annotation: use @size, @range, 
    3 |     @sise(1, 2)
      |      ^^^^
   fix: replace with `size`
-bad.vo:6:5: error[E0329]: `@size` is given twice for this field.
+bad.vo:6:5: error[E0119]: `@size` is given twice for this field: keep one.
    6 |     @size(1, 3)
      |     ^^^^^^^^^^^
+  fix: remove `    @size(1, 3)\n`
 bad.vo:8:5: error[E0329]: `@size` limits a `str`, list or map; this field is `int`.
    8 |     @size(1, 2)
      |     ^^^^^^^^^^^

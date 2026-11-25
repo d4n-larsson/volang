@@ -17,8 +17,9 @@ The rules are in the [Lists and maps](../reference/lists-and-maps.md) and
 
 ## Lists
 
-A list literal is `[a, b, c]`: at least one element, all of one type. An empty list has no element to
-take a type from, so it is written `new list[int]`; `[]` is [E0306](../errors/E0306.md).
+A list literal is `[a, b, c]`, all of one type. An empty list is `new list[int]`, or `[]` where the
+context says the type: `let xs: list[int] = [];`, an argument for a `list[int]` parameter, a return
+value or a field. A `[]` with nothing to take a type from is [E0306](../errors/E0306.md).
 
 ```vo
 fn main() uses console {
@@ -401,7 +402,7 @@ Changing a collection while looping over it needs care:
 
 | Code | Meaning |
 |---|---|
-| [E0306](../errors/E0306.md) | `[]` has no element type: write `new list[T]` |
+| [E0306](../errors/E0306.md) | `[]` has no type to take from the context: write `new list[T]` |
 | [E0309](../errors/E0309.md) | a map key type contains a `float`, a collection, a function or a `result` |
 | [E0313](../errors/E0313.md) | `sort` or a `sort_by` key on a type without an order |
 | [R0003](../errors/R0003.md) | an index or `slice` bound outside the list |

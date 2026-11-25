@@ -1,0 +1,11 @@
+# Spec 056 (E0214): an import of a renamed std item, and each use of the old name, report the change with
+# the new name as the fix; the file keeps checking (no E0205 or E0201 after it).
+import std.lists.contains;
+
+fn known(names: list[str], name: str) -> bool {
+    return contains(names, lower(name));
+}
+
+fn main() uses console {
+    print(str(known(["ada"], "Ada")) + " " + str(contains(["x"], "y")));
+}

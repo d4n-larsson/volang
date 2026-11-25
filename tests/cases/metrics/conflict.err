@@ -1,7 +1,7 @@
 conflict.vo:9:5: runtime error[R0016]: The metric `jobs_total` is already used as another kind of metric.
-   9 |     add(gauge("jobs_total", "Jobs.", new list[str]), new list[str], 1);
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   9 |     add_to(gauge("jobs_total", "Jobs.", new list[str]), new list[str], 1);
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at add (conflict.vo:9:5)
+  at add_to (conflict.vo:9:5)
       m: Metric = new Metric { name: "jobs_total", help: "Jobs.", kind: "gauge", labels: [], buckets: [] }, values: list[str] = [], n: int = 1
   at main (conflict.vo:9:5)

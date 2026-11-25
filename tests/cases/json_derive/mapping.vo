@@ -53,10 +53,10 @@ fn main() uses console {
     let m = new map[str, Level];
     set m["b"] = Level.high;
     set m["a"] = Level.low;
-    let all = new All { i: -7, f: 2.5, b: true, s: "h\"i", raw: from_text("vo!"), xs: [1, 2], m: m, shapes: [Shape.circle(1.5), Shape.square(new Size { w: 2, h: 3 }), Shape.empty], pair: new Pair { first: "p", second: [false] } };
-    show(to_json(all));
-    let back: result[All] = from_json(to_json(all));
-    print(str(back == ok(all)));
+    let all_value = new All { i: -7, f: 2.5, b: true, s: "h\"i", raw: from_text("vo!"), xs: [1, 2], m: m, shapes: [Shape.circle(1.5), Shape.square(new Size { w: 2, h: 3 }), Shape.empty], pair: new Pair { first: "p", second: [false] } };
+    show(to_json(all_value));
+    let back: result[All] = from_json(to_json(all_value));
+    print(str(back == ok(all_value)));
     show(to_json(Level.high));
     show(to_json(0.0 / 0.0 + 1.0));
     show(to_json(new map[str, int]));

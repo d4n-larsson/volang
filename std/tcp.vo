@@ -4,13 +4,13 @@
 # `net("db.internal:5432")`); listening needs `serve` with the address. A connection's type names the
 # effect it was opened under, and using it needs that effect: `fn ask[E: effects](c: Conn[E]) uses E`.
 # Everything is `bytes` (std.bytes.from_text, to_text). Every call that can wait takes a time limit in
-# milliseconds, 1 to 600000. One read returns at most 16 MiB; 256 connections and listeners can be open.
+# milliseconds, 0 to 600000 (0 means 600000). One read returns at most 16 MiB; 256 connections and listeners can be open.
 # A recording (`vo run --record`) holds what was received, and `vo replay` opens no connection.
 # With concurrent_map, a connection or listener opened before it is open in every task: use each
 # connection from one task at a time.
 
-# Why a call failed. `describe` gives a sentence for a person.
-#     describe(TcpError.refused) is "the connection was refused"
+# Why a call failed. `tcp_error_text` gives a sentence for a person.
+#     tcp_error_text(TcpError.refused) is "the connection was refused"
 export variant TcpError {
     # Nothing listens on that port.
     refused;
@@ -56,8 +56,8 @@ export record Listener {
 }
 
 # A sentence saying what e means.
-#     describe(TcpError.tls("the certificate of db:5432 has expired")) is "TLS failed: the certificate of db:5432 has expired"
-export fn describe(e: TcpError) -> str {
+#     tcp_error_text(TcpError.tls("the certificate of db:5432 has expired")) is "TLS failed: the certificate of db:5432 has expired"
+export fn tcp_error_text(e: TcpError) -> str {
     match e {
         case refused {
             return "the connection was refused";
@@ -168,21 +168,21 @@ export fn start_tls(c: Conn[uses net], host: str, timeout_ms: int) -> result[voi
     return ok();
 }
 
-# 1 to max bytes (max: 1 to 16777216), as soon as any have arrived or within timeout_ms. After the
+# 1 to limit bytes (limit: 1 to 16777216), as soon as any have arrived or within timeout_ms. After the
 # peer closed and everything was read: err(closed).
 #     read(new Conn { id: 0, peer: "" }, 100, 1000) == err(TcpError.closed) is true
-export fn read[E: effects](c: Conn[E], max: int, timeout_ms: int) -> result[bytes, TcpError]
+export fn read[E: effects](c: Conn[uses E], limit: int, timeout_ms: int) -> result[bytes, TcpError]
     uses E {
-    if max < 1 or max > 16777216 {
+    if limit < 1 or limit > 16777216 {
         return err(TcpError.invalid("the size must be 1 to 16777216 bytes"));
     }
     __http_timeout(timeout_ms);
-    return map_err(__tcp_io(1 + 8 * max, c.id, no_bytes()), fail);
+    return map_err(__tcp_io(1 + 8 * limit, c.id, no_bytes()), fail);
 }
 
 # Exactly n bytes (1 to 16777216), or an error; on timed_out the bytes that came stay for the next read.
 #     read_exact(new Conn { id: 0, peer: "" }, 0, 1000) == err(TcpError.invalid("the size must be 1 to 16777216 bytes")) is true
-export fn read_exact[E: effects](c: Conn[E], n: int, timeout_ms: int) -> result[bytes, TcpError]
+export fn read_exact[E: effects](c: Conn[uses E], n: int, timeout_ms: int) -> result[bytes, TcpError]
     uses E {
     if n < 1 or n > 16777216 {
         return err(TcpError.invalid("the size must be 1 to 16777216 bytes"));
@@ -195,7 +195,7 @@ export fn read_exact[E: effects](c: Conn[E], n: int, timeout_ms: int) -> result[
 # 16 MiB hold none; the bytes stay readable.
 #     read_until(new Conn { id: 0, peer: "" }, from_text("\n"), 1000) == err(TcpError.closed) is true
 export fn read_until[E: effects](
-    c: Conn[E],
+    c: Conn[uses E],
     delimiter: bytes,
     timeout_ms: int
 ) -> result[bytes, TcpError] uses E {
@@ -205,17 +205,17 @@ export fn read_until[E: effects](
 
 # Sends all of data within timeout_ms, or returns an error (after timed_out, part may have been sent:
 # close the connection).
-#     send(new Conn { id: 0, peer: "" }, from_text("PING\n"), 1000) == err(TcpError.closed) is true
-export fn send[E: effects](c: Conn[E], data: bytes, timeout_ms: int) -> result[void, TcpError]
+#     write_all(new Conn { id: 0, peer: "" }, from_text("PING\n"), 1000) == err(TcpError.closed) is true
+export fn write_all[E: effects](c: Conn[uses E], data: bytes, timeout_ms: int) -> result[void, TcpError]
     uses E {
     __http_timeout(timeout_ms);
     let _ = try map_err(__tcp_io(4, c.id, data), fail);
     return ok();
 }
 
-# Ends the connection; every later use returns err(closed). Harmless to repeat.
-#     let c = new Conn { id: 0, peer: "" }; close(c); 1 is 1
-export fn close[E: effects](c: Conn[E]) uses E {
+# Ends the connection; every later use returns err(closed). Harmless to repeat; needs no effect.
+#     let c = new Conn { id: 0, peer: "" }; close_conn(c); 1 is 1
+export fn close_conn[E: effects](c: Conn[uses E]) {
     match __tcp(6, c.id, "") {
         case ok(_) {
         }
@@ -249,9 +249,9 @@ export fn accept(l: Listener, timeout_ms: int) -> result[Conn[uses serve], TcpEr
     }
 }
 
-# Stops listening; accept then returns err(closed). Harmless to repeat.
+# Stops listening; accept then returns err(closed). Harmless to repeat; needs no effect.
 #     let l = new Listener { id: 0, port: 0 }; close_listener(l); 1 is 1
-export fn close_listener(l: Listener) uses serve {
+export fn close_listener(l: Listener) {
     match __tcp(8, l.id, "") {
         case ok(_) {
         }

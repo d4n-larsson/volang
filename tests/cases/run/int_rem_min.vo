@@ -1,14 +1,14 @@
 # Remainder and division at the minimum integer (spec 008 T060, R13): MIN % -1 is 0 on every platform,
 # although the hardware traps (x86-64) or returns MIN (RISC-V, ARM64) for the matching division.
 fn main() uses console {
-    let min = -9223372036854775807 - 1;
-    print(str(min % -1));
-    print(str(min % 1));
-    print(str(min % min));
-    print(str(min % 7));
-    print(str(min / 1));
-    print(str(min / min));
-    print(str(min / 7));
-    print(str(7 % min));
-    print(str(min % 0));
+    let min_value = -9223372036854775807 - 1;
+    print(str(min_value % -1));
+    print(str(min_value % 1));
+    print(str(min_value % min_value));
+    print(str(min_value % 7));
+    print(str(min_value / 1));
+    print(str(min_value / min_value));
+    print(str(min_value / 7));
+    print(str(7 % min_value));
+    print(str(min_value % 0));
 }

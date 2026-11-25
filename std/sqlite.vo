@@ -56,7 +56,7 @@ export record Changes {
 }
 
 # Opens the database file at path for reading and writing, creating it if missing (needs file.read and file.write).
-#     open("no-such-dir/x.db") == err("error: unable to open database file") is true
+#     open("no-such-dir/x.db") == err("unable to open database file") is true
 export fn open(path: str) -> result[Database[uses file.read, file.write]]
     uses file.read, file.write {
     let id = try __sql_open(path, 0);
@@ -64,7 +64,7 @@ export fn open(path: str) -> result[Database[uses file.read, file.write]]
 }
 
 # Opens the database file at path for reading only (needs file.read); changing statements return err("readonly: ...").
-#     open_readonly("no-such-file.db") == err("error: unable to open database file") is true
+#     open_readonly("no-such-file.db") == err("unable to open database file") is true
 export fn open_readonly(path: str) -> result[Database[uses file.read]] uses file.read {
     let id = try __sql_open(path, 1);
     return ok(new Database[uses file.read] { id: id });
@@ -85,7 +85,7 @@ export fn open_memory() -> Database {
 
 # Ends the connection; using the database afterwards stops the program (R0007).
 #     let db = open_memory(); close(db); 1 is 1
-export fn close[E: effects](db: Database[E]) {
+export fn close[E: effects](db: Database[uses E]) {
     __sql_close(db.id);
 }
 
@@ -95,16 +95,22 @@ export fn sql(text: str) -> Statement {
     return new Statement { text: text };
 }
 
-# The statement for SQL built at run time: err on a syntax error, more than one statement, or named parameters.
-#     parse_sql("selec 1") == err(`near "selec": syntax error`) is true
+# The statement for SQL built at run time: err("invalid sql: DETAIL") on a syntax error, more than one statement, or named parameters.
+#     parse_sql("selec 1") == err(`invalid sql: near "selec": syntax error`) is true
 export fn parse_sql(text: str) -> result[Statement] {
-    let _ = try __sql_prepare(text);
+    match __sql_prepare(text) {
+        case ok(_) {
+        }
+        case err(e) {
+            return err("invalid sql: " + e);
+        }
+    }
     return ok(new Statement { text: text });
 }
 
 # Runs a statement that changes data or the schema, with its ? parameters in order (needs the database's effects).
 #     exec(open_memory(), sql("create table t(x)"), new list[Value]) == ok(new Changes { changed: 0, last_id: 0 }) is true
-export fn exec[E: effects](db: Database[E], st: Statement, params: list[Value]) -> result[Changes]
+export fn exec[E: effects](db: Database[uses E], st: Statement, params: list[Value]) -> result[Changes]
     uses E {
     let raw: result[list[int]] = __sql_exec(db.id, st.text, params);
     let r = try raw;
@@ -134,19 +140,19 @@ fn text_of(v: Value) -> str {
 # Runs a statement that returns rows, with its ? parameters in order: every row (needs the database's effects).
 #     query(open_memory(), sql("select 1 as x"), new list[Value]) == ok([new Row { columns: ["x"], values: [Value.integer(1)] }]) is true
 export fn query[E: effects](
-    db: Database[E],
+    db: Database[uses E],
     st: Statement,
     params: list[Value]
 ) -> result[list[Row]] uses E {
     let raw: result[list[list[Value]]] = __sql_query(db.id, st.text, params);
-    let all = try raw;
+    let table = try raw;
     var names = new list[str];
-    for v in all[0] {
+    for v in table[0] {
         push(names, text_of(v));
     }
     var rows = new list[Row];
-    for i in 1..len(all) {
-        push(rows, new Row { columns: names, values: all[i] });
+    for i in 1..len(table) {
+        push(rows, new Row { columns: names, values: table[i] });
     }
     return ok(rows);
 }
@@ -154,7 +160,7 @@ export fn query[E: effects](
 # Runs f inside a transaction: committed when f returns ok, rolled back when it returns err (which is returned).
 #     transaction(open_memory(), fn() -> result[int] { return ok(5); }) == ok(5) is true
 export fn transaction[T, E: effects, F: effects](
-    db: Database[E],
+    db: Database[uses E],
     f: fn() -> result[T] uses F
 ) -> result[T] uses E, F {
     try __sql_tx(db.id, 1);
@@ -200,27 +206,27 @@ fn index_of(row: Row, column: str) -> result[int] {
     for i in 0..len(row.columns) {
         if row.columns[i] == column {
             if found >= 0 {
-                return err("ambiguous column " + column + ": name each column with AS");
+                return err("ambiguous column `" + column + "`: name each column with AS");
             }
             set found = i;
         }
     }
     if found < 0 {
-        return err("no column " + column);
+        return err("no column `" + column + "`");
     }
     return ok(found);
 }
 
 # The value of a column by name; err for an unknown name or one that two columns have.
-#     get(new Row { columns: ["x"], values: [Value.null] }, "y") == err("no column y") is true
-export fn get(row: Row, column: str) -> result[Value] {
+#     value_column(new Row { columns: ["x"], values: [Value.null] }, "y") == err("no column `y`") is true
+export fn value_column(row: Row, column: str) -> result[Value] {
     return ok(row.values[try index_of(row, column)]);
 }
 
 # A column's value as an int; err unless it is an INTEGER.
-#     get_int(new Row { columns: ["x"], values: [Value.integer(7)] }, "x") == ok(7) is true
-export fn get_int(row: Row, column: str) -> result[int] {
-    let v = try get(row, column);
+#     int_column(new Row { columns: ["x"], values: [Value.integer(7)] }, "x") == ok(7) is true
+export fn int_column(row: Row, column: str) -> result[int] {
+    let v = try value_column(row, column);
     match v {
         case integer(i) {
             return ok(i);
@@ -237,15 +243,16 @@ export fn get_int(row: Row, column: str) -> result[int] {
     return err(column + " is " + kind_of(v) + ", not integer");
 }
 
-# A column's value as a float; err unless it is a REAL (an INTEGER is not converted).
-#     get_float(new Row { columns: ["x"], values: [Value.integer(7)] }, "x") == err("x is integer, not real") is true
-export fn get_float(row: Row, column: str) -> result[float] {
-    let v = try get(row, column);
+# A column's value as a float: a REAL, or an INTEGER converted; err for any other value.
+#     float_column(new Row { columns: ["x"], values: [Value.integer(7)] }, "x") == ok(7.0) is true
+export fn float_column(row: Row, column: str) -> result[float] {
+    let v = try value_column(row, column);
     match v {
         case real(f) {
             return ok(f);
         }
-        case integer(_) {
+        case integer(i) {
+            return ok(float(i));
         }
         case text(_) {
         }
@@ -257,10 +264,10 @@ export fn get_float(row: Row, column: str) -> result[float] {
     return err(column + " is " + kind_of(v) + ", not real");
 }
 
-# A column's value as text; err unless it is valid UTF-8 TEXT (read other text with get_bytes).
-#     get_str(new Row { columns: ["x"], values: [Value.text("hi")] }, "x") == ok("hi") is true
-export fn get_str(row: Row, column: str) -> result[str] {
-    let v = try get(row, column);
+# A column's value as text; err unless it is valid UTF-8 TEXT (read other text with bytes_column).
+#     text_column(new Row { columns: ["x"], values: [Value.text("hi")] }, "x") == ok("hi") is true
+export fn text_column(row: Row, column: str) -> result[str] {
+    let v = try value_column(row, column);
     match v {
         case text(s) {
             return ok(s);
@@ -278,9 +285,9 @@ export fn get_str(row: Row, column: str) -> result[str] {
 }
 
 # A column's value as bytes: a BLOB, or TEXT as its UTF-8 bytes.
-#     get_bytes(new Row { columns: ["x"], values: [Value.null] }, "x") == err("x is null, not blob") is true
-export fn get_bytes(row: Row, column: str) -> result[bytes] {
-    let v = try get(row, column);
+#     bytes_column(new Row { columns: ["x"], values: [Value.null] }, "x") == err("x is null, not blob") is true
+export fn bytes_column(row: Row, column: str) -> result[bytes] {
+    let v = try value_column(row, column);
     match v {
         case blob(b) {
             return ok(b);
@@ -301,7 +308,7 @@ export fn get_bytes(row: Row, column: str) -> result[bytes] {
 # Whether a column's value is NULL.
 #     is_null(new Row { columns: ["x"], values: [Value.null] }, "x") == ok(true) is true
 export fn is_null(row: Row, column: str) -> result[bool] {
-    let v = try get(row, column);
+    let v = try value_column(row, column);
     match v {
         case null {
             return ok(true);

@@ -6,7 +6,7 @@ geom.vo:area pure
 main.vo:main uses console
 main.vo:test "area" pure
 main.vo:test "prints" uses console
-main.vo:11:1: warning[W0602]: Test `prints` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.
+main.vo:11:1: warning[W0602]: `test "prints"` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.
   11 | test "prints" uses console {
      | ^^^^
 0 errors, 1 warning

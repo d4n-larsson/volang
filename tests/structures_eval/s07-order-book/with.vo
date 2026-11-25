@@ -1,6 +1,7 @@
 import std.collections.first_key;
 import std.collections.last_key;
 import std.text.words;
+import std.option.to_result;
 
 fn show(best: result[int]) -> str {
     match best {
@@ -29,9 +30,9 @@ fn main() -> result[void] uses console, input {
                 set other = asks;
             }
             while qty > 0 and len(other) > 0 {
-                var p = try last_key(other);
+                var p = try to_result(last_key(other), "empty");
                 if buy {
-                    set p = try first_key(other);
+                    set p = try to_result(first_key(other), "empty");
                 }
                 if (buy and p > price) or (not buy and p < price) {
                     break;
@@ -52,7 +53,7 @@ fn main() -> result[void] uses console, input {
                 }
                 set own[price] = get_or(own, price, 0) + qty;
             }
-            print(str(traded) + " " + str(cost) + " " + show(last_key(bids)) + " " + show(first_key(asks)));
+            print(str(traded) + " " + str(cost) + " " + show(to_result(last_key(bids), "empty")) + " " + show(to_result(first_key(asks), "empty")));
         }
     }
     return ok();

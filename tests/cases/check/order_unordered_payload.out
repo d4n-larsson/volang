@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0313","name":"not_ordered","severity":"error","file":"order_unordered_payload.vo","start":{"line":9,"col":10},"end":{"line":9,"col":12},"text":"bs","message":"`Box` is not ordered: its case `full` holds `map[str, int]`, which has no order.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

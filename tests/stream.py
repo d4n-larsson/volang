@@ -84,7 +84,7 @@ fn main() uses console, file.read("./") {
 DOWNLOAD = """import std.fs.append_bytes;
 import std.http.Header;
 import std.http.Response;
-import std.http.header;
+import std.http.response_header;
 import std.http.send_stream;
 
 record Seen {
@@ -105,11 +105,11 @@ fn main() uses console, file.write("./"), net("127.0.0.1:PORT") {
     match r {
         case ok(head) {
             var mark = "";
-            match header(head, "x-test") {
-                case ok(v) {
+            match response_header(head, "x-test") {
+                case some(v) {
                     set mark = v;
                 }
-                case err(_) {
+                case none {
                 }
             }
             print(str(head.status) + " " + mark + " " + str(seen.total) + " " + str(seen.largest <= 65536) + " " + str(seen.pieces));

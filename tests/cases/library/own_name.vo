@@ -1,0 +1,13 @@
+# Spec 056: a program's own function named like a renamed std item is untouched (rows match std items only).
+fn contains(xs: list[int], x: int) -> bool {
+    for y in xs {
+        if y == x {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn main() uses console {
+    print(str(contains([1, 2], 2)));
+}

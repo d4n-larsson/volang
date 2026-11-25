@@ -1,0 +1,9 @@
+# Spec 056 (FR-018): with nothing to give `[]` its type, it is still E0306.
+fn first[T](xs: list[T]) -> int {
+    return len(xs);
+}
+
+fn main() {
+    let xs = [];
+    let n = first([]);
+}

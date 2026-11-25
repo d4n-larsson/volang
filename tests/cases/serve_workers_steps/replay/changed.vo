@@ -7,7 +7,7 @@ import std.http.serve_workers;
 import std.sqlite.Database;
 import std.sqlite.Value;
 import std.sqlite.exec;
-import std.sqlite.get_int;
+import std.sqlite.int_column;
 import std.sqlite.open;
 import std.sqlite.query;
 import std.sqlite.sql;
@@ -26,7 +26,7 @@ fn handle(db: Database[uses file.read, file.write], r: Request) -> Response uses
     if r.path == "/count" {
         match query(db, sql("select count(*) as n from items"), new list[Value]) {
             case ok(rows) {
-                match get_int(rows[0], "n") {
+                match int_column(rows[0], "n") {
                     case ok(n) {
                         return respond(200, str(n));
                     }

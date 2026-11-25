@@ -23,12 +23,12 @@ fn main() uses console {
         ))
     );
     var x = 0.1;
-    var all = true;
+    var all_value = true;
     for _ in 0..200 {
         set x = x * 1.37 + 0.011;
-        set all = all and back(x) and back(1.0 / x) and back(0.0 - x);
+        set all_value = all_value and back(x) and back(1.0 / x) and back(0.0 - x);
     }
-    print(str(all) + " " + str(x));
+    print(str(all_value) + " " + str(x));
     var tiny = 1.0;
     for _ in 0..1074 {
         set tiny = tiny / 2.0;

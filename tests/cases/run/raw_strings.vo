@@ -14,7 +14,7 @@ fn main() uses console {
  where title = "x" // nor this: fn let if`;
     print(sql);
     print(str(sql == "select id\n  from notes  # not a comment\n where title = \"x\" // nor this: fn let if"));
-    print(str(is_match(regex(`^\d{3}-\d{4}$`), "555-1234")) + " " + str(is_match(regex(digits), "abc")));
+    print(str(is_match("555-1234", regex(`^\d{3}-\d{4}$`))) + " " + str(is_match("abc", regex(digits))));
     print(format(`{} said "{}"`, "she", "hi"));
     print("[" + `` + "]" + str(len(`
 `)));

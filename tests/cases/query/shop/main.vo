@@ -14,10 +14,10 @@ fn main() uses console {
     let name = "local";
     let first = parse_line(" 42 ");
     let items = [new Item { name: "pen", price: 3 }, new Item { name: name, price: 4 }];
-    let all = load(["1", "2"]);
+    let all_value = load(["1", "2"]);
     let sums = summary(["5"]);
     let p = swap(new Pair[int, str] { first: first, second: parse_line_text });
-    print(p.first + " " + str(p.second) + " " + label(items[0]) + " " + str(len(all) + len(sums)));
+    print(p.first + " " + str(p.second) + " " + label(items[0]) + " " + str(len(all_value) + len(sums)));
     print(describe(Event.added(items[1])) + " " + describe(Event.cleared) + " " + str(total(items)));
 }
 

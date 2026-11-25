@@ -1,5 +1,5 @@
 {"v":1,"kind":"capabilities","entry":"main","file":"main.vo","uses":"console"}
 {"v":1,"kind":"capabilities","entry":"test \"area\"","file":"main.vo","uses":""}
 {"v":1,"kind":"capabilities","entry":"test \"prints\"","file":"main.vo","uses":"console"}
-{"v":1,"kind":"diagnostic","code":"W0602","name":"test_checks_nothing","severity":"warning","file":"main.vo","start":{"line":11,"col":1},"end":{"line":11,"col":5},"text":"test","message":"Test `prints` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"W0602","name":"test_checks_nothing","severity":"warning","file":"main.vo","start":{"line":11,"col":1},"end":{"line":11,"col":5},"text":"test","message":"`test \"prints\"` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a runtime error.","fixes":[],"related":[]}
 {"v":1,"kind":"summary","command":"effects","errors":0,"warnings":1,"truncated":0,"files":1}

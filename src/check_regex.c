@@ -1,6 +1,6 @@
 /* Checker, spec 025: calls of std.regex with literal patterns and replacements (research R5).
  * `regex(LITERAL)`: the pattern is compiled by the engine's parser (src/regex.c) and every error is
- * E0319 or E0320 at the source bytes it names; any other argument is E0321. `replace_all(re, s,
+ * E0319 or E0320 at the source bytes it names; any other argument is E0321. `replace_matches(s, re,
  * LITERAL)`: the replacement's `$` references are E0322, checked against the pattern's groups when
  * `re` is `regex(LITERAL)` or a `let` bound to one; Python's `\1` and `\g<name>` get fixes. */
 #include "vo.h"
@@ -106,7 +106,7 @@ static void check_replacement(Node *call)
     if (habit) return;
     long ngroups = -1;
     Str *names = 0;
-    Node *plit = pattern_literal(vec_get(call->b.v, 0));
+    Node *plit = pattern_literal(vec_get(call->b.v, 1)); /* spec 056: the pattern is the second argument */
     if (plit) {
         char *p;
         long *po;
@@ -125,6 +125,6 @@ void check_regex_call(Node *call)
     Node *decl = call->c.n;
     if (is_regex_fn(decl, "regex") && call->b.v->n == 1)
         check_pattern(call);
-    else if (is_regex_fn(decl, "replace_all") && call->b.v->n == 3)
+    else if (is_regex_fn(decl, "replace_matches") && call->b.v->n == 3)
         check_replacement(call);
 }

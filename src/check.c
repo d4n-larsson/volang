@@ -487,6 +487,14 @@ Sym *new_local(Node *name_node, Type *type, int mutable_)
     Sym *s = sym_new(name_node->a.s, SYM_LOCAL, 0, type, name_node);
     s->flags = mutable_ ? SYF_MUT : 0;
     s->rename = naming_rename(name_node, 0);
+    if (!prev && builtin_id(name_node->a.s)) { /* spec 056: a builtin is never hidden */
+        Str *free = msg("$1_value", name_node->a.s, 0, 0);
+        for (long k = 2; scope_find(free); k++) free = msg("$1_value$2", name_node->a.s, int_to_str(k), 0);
+        Diag *d = ck_err1("E0203", name_node, "`$1` is a builtin: give the local another name.", name_node->a.s);
+        diag_add_fix(d, (int)name_node->file, name_node->start, name_node->end, free);
+        s->flags |= SYF_SHADOW;
+        s->rename = free;
+    }
     s->slot = ck_locals++;
     s->effects.i = ck_depth; /* SY_DEPTH */
     scope_add(s);
@@ -570,6 +578,8 @@ static void check_let(Node *st)
     s->decl = st;
 }
 
+Node *ck_set_place, *ck_set_value;
+
 static void check_set(Node *st)
 {
     Node *place = st->a.n;
@@ -590,7 +600,9 @@ static void check_set(Node *st)
             if (is_let) diag_add_fix(d, (int)decl->file, decl->start, decl->start + 3, str_from_cstr("var"));
         }
     }
+    ck_set_place = place, ck_set_value = st->b.n; /* spec 056: a renamed field's fix converts the value */
     Type *pt = check_place(place, 0);
+    ck_set_place = ck_set_value = 0;
     if (place->kind == N_INDEX && place->a.n->type && ty_is(place->a.n->type, TY_BYTES)) { /* spec 021 */
         ck_err("E0308", place, str_from_cstr("`bytes` cannot be changed: build new bytes with `slice`, `+` or "
                                              "`std.bytes.from_ints`."));
@@ -817,7 +829,14 @@ void check_cond(Node *expr)
 
 void check_match(Node *match)
 {
+    Node *saved = ck_result_ctx; /* spec 056: arms `ok`/`err` read a lookup's call as the result it gave before */
+    for (long i = 0; i < match->b.v->n; i++) {
+        Node *arm = vec_get(match->b.v, i);
+        if (arm->kind == N_ARM && arm->a.n && (str_eq_cstr(arm->a.n->a.s, "ok") || str_eq_cstr(arm->a.n->a.s, "err")))
+            ck_result_ctx = match->a.n;
+    }
     Type *st = check_expr(match->a.n, 0); /* scrutinee type */
+    ck_result_ctx = saved;
     long ncases = 0;
     if (ty_is(st, TY_RESULT)) {
         ncases = 2;
@@ -940,6 +959,7 @@ void check_arm(Node *arm, Type *scrutinee, long *seen)
     if (!silent && arm->a.n) {
         Node *cn = arm->a.n;
         long idx = case_index(scrutinee, cn->a.s);
+        if (idx < 0 && scrutinee->kind == TY_VARIANT) idx = libchange_case(scrutinee->decl.n, cn); /* spec 056 */
         if (idx < 0) { /* unknown case */
             Str *tn = ty_name(scrutinee);
             Diag *d = ck_err("E0201", cn, msg("`$1` is not a case of `$2`.", cn->a.s, tn, 0));
@@ -970,7 +990,7 @@ void check_arm(Node *arm, Type *scrutinee, long *seen)
     }
     if (silent && arm->b.n) {
         Sym *s = new_local(arm->b.n, t_error, 0);
-        s->flags = SYF_USED;
+        s->flags |= SYF_USED;
     }
     check_block(arm->c.n);
     scope_leave(saved);
@@ -1111,7 +1131,7 @@ static void check_clauses(Node *fn)
         ret->end = first->end;
         ret->a.s = str_from_cstr("ret");
         Sym *s = new_local(ret, ck_ret, 0);
-        s->flags = SYF_USED;
+        s->flags |= SYF_USED;
         fx->retslot = s->slot;
     }
     check_clause_vec(ensures, fx);
@@ -1133,7 +1153,7 @@ void check_fn(Node *fn)
         Node *p = vec_get(params, i);
         Sym *s = new_local(p->a.n, p->type, 0);
         p->e.i = s->slot;
-        s->flags = SYF_USED; /* parameters are never reported as unused */
+        s->flags |= SYF_USED; /* parameters are never reported as unused */
     }
     check_clauses(fn);
     if (fn->d.n) {
@@ -1177,12 +1197,12 @@ void check_test(Node *test)
             }
             Sym *s = new_local(p->a.n, p->type, 0);
             p->e.i = s->slot;
-            s->flags = SYF_USED; /* parameters are never reported as unused */
+            s->flags |= SYF_USED; /* parameters are never reported as unused */
         }
     }
     if (test->b.n) check_block(test->b.n);
     if (!ck_test_checks && !ck_test_holes) { /* spec 018: W0602 at the `test` / `prop` keyword */
-        Str *m = msg("Test `$1` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a "
+        Str *m = msg("`test \"$1\"` checks nothing: it has no `expect` or `expect_eq`, so it can only fail by a "
                      "runtime error.", test->a.s, 0, 0);
         diag_add("W0602", SEV_WARNING, (int)test->file, test->start, test->start + 4, m);
     }
@@ -1201,7 +1221,7 @@ void check_tests_unique(Vec *items)
         for (long j = 0; j < i; j++) {
             Node *o = vec_get(items, j);
             if (o->kind != N_TEST || !o->a.s || !t->a.s || !str_eq(o->a.s, t->a.s)) continue;
-            ck_err1("E0202", t, "A test named \"$1\" already exists.", t->a.s);
+            ck_err1("E0202", t, "`test \"$1\"` already exists.", t->a.s);
             break;
         }
     }
@@ -1409,6 +1429,18 @@ static void check_annotations(Vec *items)
             Node *a = vec_get(items, k);
             if (a->c.i < 0) continue; /* an unknown name (E0116) */
             if (str_eq_cstr(a->a.n->a.s, "allow")) {
+                int again = 0; /* spec 056: the same code allowed twice on one item is E0119 */
+                for (long m = i; m < k && a->b.v->n; m++) {
+                    Node *p = vec_get(items, m);
+                    again |= p->c.i >= 0 && str_eq_cstr(p->a.n->a.s, "allow") && p->b.v->n &&
+                             str_eq(((Node *)vec_get(p->b.v, 0))->a.s, ((Node *)vec_get(a->b.v, 0))->a.s);
+                }
+                if (again) {
+                    Diag *d = ck_err1("E0119", a, "`@allow(\"$1\", ...)` is given twice for this item: keep one.",
+                                      ((Node *)vec_get(a->b.v, 0))->a.s);
+                    fix_remove_line(d, a);
+                    continue;
+                }
                 if (target->kind != N_FN && target->kind != N_TEST)
                     ck_err("E0117", a, str_from_cstr("`@allow` goes on a `fn`, `test` or `prop`, on the line right above it."));
                 else if (a->c.i)
@@ -1425,6 +1457,17 @@ static void check_annotations(Vec *items)
         }
         i = j;
     }
+}
+
+/* Spec 056: a fix removing the line of an annotation, with its newline. */
+void fix_remove_line(Diag *d, Node *a)
+{
+    FileRec *f = file_get((int)a->file);
+    long from = a->start, to = a->end;
+    while (from > 0 && f->text[from - 1] != '\n') from--;
+    while (to < f->len && f->text[to] != '\n') to++;
+    if (to < f->len) to++;
+    diag_add_fix(d, (int)a->file, from, to, str_from_cstr(""));
 }
 
 void check_items(int file, int mode)
@@ -1497,9 +1540,17 @@ Str *naming_rename(Node *name_node, int upper)
 }
 
 /* At a use of a symbol whose declaration breaks the naming convention: E0207 with the rename. */
+Node *ck_use_call; /* spec 056: set by check_call while the callee's name is looked at */
+
 void rename_use(Sym *sym, Node *node)
 {
+    if (sym->change) libchange_use(sym, node, ck_use_call);
     if (!sym->rename) return;
+    if (sym->flags & SYF_SHADOW) { /* spec 056 */
+        Diag *d = ck_err("E0203", node, msg("`$1` is a builtin: rename the local to `$2` here too.", sym->name, sym->rename, 0));
+        diag_add_fix(d, (int)node->file, node->start, node->end, sym->rename);
+        return;
+    }
     Diag *d = ck_err("E0207", node,
                      msg("`$1` breaks the naming convention: rename it to `$2` here too.", sym->name, sym->rename, 0));
     diag_add_fix(d, (int)node->file, node->start, node->end, sym->rename);

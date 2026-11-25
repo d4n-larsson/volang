@@ -2,9 +2,9 @@ import std.regex.regex;
 import std.regex.all_matches;
 
 fn main() uses console {
-    for m in all_matches(regex("#\\w+"), "#vo is #fast, #vo") {
+    for m in all_matches("#vo is #fast, #vo", regex("#\\w+")) {
         print(m.text + " " + str(m.start) + " " + str(m.end));
     }
-    print(str(len(all_matches(regex("\\d+"), "1 22 333 x"))));
-    print(str(len(all_matches(regex("\\d+"), "none"))));
+    print(str(len(all_matches("1 22 333 x", regex("\\d+")))));
+    print(str(len(all_matches("none", regex("\\d+")))));
 }

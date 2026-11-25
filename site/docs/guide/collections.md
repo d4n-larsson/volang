@@ -60,6 +60,7 @@ record of ordered fields ([E0313](../errors/E0313.md) otherwise).
 import std.collections.first_key;
 import std.collections.key_at_or_below;
 import std.collections.keys_between;
+import std.option.or_else;
 
 fn main() -> result[void] uses console {
     let on_call = new ordered_map[int, str];
@@ -70,9 +71,9 @@ fn main() -> result[void] uses console {
     print(join(map(keys(on_call), fn(k: int) -> str {
         return str(k);
     }), " "));
-    let start = try key_at_or_below(on_call, 1415);
+    let start = or_else(key_at_or_below(on_call, 1415), 0);
     print("14:15 goes to " + on_call[start]);
-    print("first shift starts at " + str(try first_key(on_call)));
+    print("first shift starts at " + str(or_else(first_key(on_call), 0)));
     for k in keys_between(on_call, 800, 1400) {
         print(str(k) + " " + on_call[k]);
     }
@@ -90,9 +91,9 @@ first shift starts at 0
 
 | Function | Result |
 |---|---|
-| [`first_key(m)`](../std/collections.md#first_key), [`last_key(m)`](../std/collections.md#last_key) | the smallest or largest key; `err("empty")` |
+| [`first_key(m)`](../std/collections.md#first_key), [`last_key(m)`](../std/collections.md#last_key) | the smallest or largest key; `none` for an empty map |
 | [`key_at_or_above(m, k)`](../std/collections.md#key_at_or_above), [`key_at_or_below(m, k)`](../std/collections.md#key_at_or_below) | the nearest key on that side, `k` itself included; `err("none")` |
-| [`key_after(m, k)`](../std/collections.md#key_after), [`key_before(m, k)`](../std/collections.md#key_before) | the nearest key strictly above or below `k`; `err("none")` |
+| [`key_after(m, k)`](../std/collections.md#key_after), [`key_before(m, k)`](../std/collections.md#key_before) | the nearest key strictly above or below `k`; `none` when there is none |
 | [`keys_between(m, lo, hi)`](../std/collections.md#keys_between) | the keys from `lo` to `hi`, both included, ascending |
 | [`copy_map(m)`](../std/collections.md#copy_map) | an independent map with the same entries and order |
 
@@ -112,6 +113,7 @@ import std.collections.after;
 import std.collections.difference;
 import std.collections.first;
 import std.collections.union;
+import std.option.or_else;
 
 fn show(s: ordered_set[str]) -> str {
     let parts = new list[str];
@@ -132,7 +134,7 @@ fn main() -> result[void] uses console {
     }
     print(show(paged) + " (" + str(len(paged)) + ")");
     print("never paged: " + show(difference(rota, paged)));
-    print("first: " + try first(rota) + ", after bo: " + try after(rota, "bo"));
+    print("first: " + or_else(first(rota), "nobody") + ", after bo: " + or_else(after(rota, "bo"), "nobody"));
     let extra = new ordered_set[str];
     push(extra, "eve");
     print(show(union(rota, extra)) + " " + str(has(rota, "eve")));
@@ -149,7 +151,7 @@ ana,bo,cy,dave,eve false
 
 | Function | Result |
 |---|---|
-| [`first(s)`](../std/collections.md#first), [`last(s)`](../std/collections.md#last) | the smallest or largest element; `err("empty")` |
+| [`first(s)`](../std/collections.md#first), [`last(s)`](../std/collections.md#last) | the smallest or largest element; `none` for an empty set |
 | [`at_or_above(s, x)`](../std/collections.md#at_or_above), [`at_or_below(s, x)`](../std/collections.md#at_or_below) | the nearest element on that side, `x` itself included; `err("none")` |
 | [`after(s, x)`](../std/collections.md#after), [`before(s, x)`](../std/collections.md#before) | the nearest element strictly above or below `x`; `err("none")` |
 | [`between(s, lo, hi)`](../std/collections.md#between) | the elements from `lo` to `hi`, both included, ascending |
@@ -182,7 +184,13 @@ fn main() -> result[void] uses console {
     push(q, new Ticket { severity: 1, minute: 12, title: "VPN refuses logins" });
     push(q, new Ticket { severity: 1, minute: 7, title: "email down" });
     push(q, new Ticket { severity: 3, minute: 1, title: "new monitor" });
-    print("next: " + (try peek(q)).title);
+    match peek(q) {
+        case some(t) {
+            print("next: " + t.title);
+        }
+        case none {
+        }
+    }
     while len(q) > 0 {
         let t = try pop(q);
         print(str(t.severity) + " " + str(t.minute) + " " + t.title);
@@ -213,7 +221,7 @@ position from the front ([R0003](../errors/R0003.md) outside the deque), and `fo
 |---|---|
 | [`push_front(d, x)`](../std/collections.md#push_front) | adds `x` at the front |
 | [`pop_front(d)`](../std/collections.md#pop_front) | removes and returns the front element; `err("empty")` |
-| [`front(d)`](../std/collections.md#front), [`back(d)`](../std/collections.md#back) | the element at that end, not removed; `err("empty")` |
+| [`front(d)`](../std/collections.md#front), [`back(d)`](../std/collections.md#back) | the element at that end, not removed; `none` for an empty deque |
 | [`copy_deque(d)`](../std/collections.md#copy_deque) | an independent deque with the same elements |
 
 Keeping only the last three items is `push` at the back and `pop_front` when it is full:
@@ -221,6 +229,7 @@ Keeping only the last three items is `push` at the back and `pop_front` when it 
 ```vo
 import std.collections.front;
 import std.collections.pop_front;
+import std.option.or_else;
 
 fn main() -> result[void] uses console {
     let recent = new deque[str];
@@ -235,7 +244,7 @@ fn main() -> result[void] uses console {
         push(parts, p);
     }
     print(
-        join(parts, " > ") + " (oldest " + try front(recent) + ", newest " + recent[len(recent) - 1] + ")"
+        join(parts, " > ") + " (oldest " + or_else(front(recent), "") + ", newest " + recent[len(recent) - 1] + ")"
     );
     return ok();
 }
@@ -339,13 +348,14 @@ order, not comparison functions. A comparison function must be pure, since its t
 
 A record of ordered fields can be a key of an `ordered_map`, an element of an `ordered_set` or an item
 of a `priority_queue` without a comparison function. It is ordered field by field, in declaration
-order: the first field that differs decides. A record with a field that has no order (a list, a map, a
-variant, a `bool`) is [E0313](../errors/E0313.md), and the message names that field:
+order: the first field that differs decides (`false` comes before `true`, and a variant's cases come in
+declaration order). A record with a field that has no order (a list, a map, a function) is
+[E0313](../errors/E0313.md), and the message names that field:
 
 ```vo
 record Task {
     title: str;
-    done: bool;
+    tags: list[str];
 }
 
 fn main() uses console {
@@ -447,12 +457,12 @@ fn main() uses console {
     var shown = 0;
     while shown < 2 {
         match cur {
-            case ok(x) {
+            case some(x) {
                 print(str(x));
                 set cur = after(s, x);
                 set shown = shown + 1;
             }
-            case err(_) {
+            case none {
                 break;
             }
         }

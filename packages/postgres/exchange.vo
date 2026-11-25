@@ -70,7 +70,7 @@ export fn take(m: Message, r: Rewritten, a: Answer) -> result[bool] {
 # Sends one statement with its parameters and reads its whole answer, each wait within ms.
 #     round_trip(new Conn { id: 0, peer: "" }, new Rewritten { text: "", count: 0, made: [""], written: [""] }, new list[Field], 1000) == err("connection: the connection is closed") is true
 export fn round_trip[E: effects](
-    c: Conn[E],
+    c: Conn[uses E],
     r: Rewritten,
     fields: list[Field],
     ms: int

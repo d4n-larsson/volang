@@ -18,6 +18,7 @@ import postgres.statement.rewrite;
 import postgres.values.Kind;
 import postgres.values.blob_of;
 import postgres.values.blob_text;
+import postgres.values.column_index;
 import postgres.values.time_of;
 import postgres.wire.Field;
 import postgres.wire.terminate;
@@ -55,7 +56,7 @@ export record Options {
 #     new Database { conn: new Conn { id: 0, peer: "" }, statement_ms: 1, in_transaction: false, failed: false, closed: true }.closed is true
 export record Database[E: effects] {
     # The connection.
-    conn: Conn[E];
+    conn: Conn[uses E];
     # The time limit for each wait of a statement.
     statement_ms: int;
     # Whether transaction is running its function.
@@ -122,7 +123,7 @@ export fn parse_sql(text: str) -> result[Statement] {
     return ok(new Statement { text: text });
 }
 
-fn shut[E: effects](db: Database[E]) uses E {
+fn shut[E: effects](db: Database[uses E]) uses E {
     if not db.closed {
         set db.closed = true;
         hang_up(db.conn);
@@ -163,7 +164,7 @@ export fn connect(o: Options) -> result[Database[uses net]] uses net, entropy {
 # Tells the server goodbye and ends the connection; using the database afterwards returns
 # err("connection: closed"). Harmless to repeat.
 #     let db = new Database { conn: new Conn { id: 0, peer: "" }, statement_ms: 1, in_transaction: false, failed: false, closed: true }; close(db); db.closed is true
-export fn close[E: effects](db: Database[E]) uses E {
+export fn close[E: effects](db: Database[uses E]) uses E {
     if db.closed {
         return;
     }
@@ -255,7 +256,8 @@ fn value_of(kind: Kind, f: Field) -> result[Value] {
     }
 }
 
-fn run[E: effects](db: Database[E], st: Statement, params: list[Value]) -> result[Answer] uses E {
+fn run[E: effects](db: Database[uses E], st: Statement, params: list[Value]) -> result[Answer]
+    uses E {
     if db.closed {
         return err("connection: closed");
     }
@@ -289,8 +291,11 @@ fn run[E: effects](db: Database[E], st: Statement, params: list[Value]) -> resul
 # Runs a statement that changes data or the schema, with its ? parameters in order (needs the
 # database's effects).
 #     exec(new Database { conn: new Conn { id: 0, peer: "" }, statement_ms: 1, in_transaction: false, failed: false, closed: true }, sql("create table t(x int)"), new list[Value]) == err("connection: closed") is true
-export fn exec[E: effects](db: Database[E], st: Statement, params: list[Value]) -> result[Changes]
-    uses E {
+export fn exec[E: effects](
+    db: Database[uses E],
+    st: Statement,
+    params: list[Value]
+) -> result[Changes] uses E {
     let o = try run(db, st, params);
     return ok(new Changes { changed: o.changed, last_id: 0 });
 }
@@ -299,7 +304,7 @@ export fn exec[E: effects](db: Database[E], st: Statement, params: list[Value]) 
 # database's effects).
 #     query(new Database { conn: new Conn { id: 0, peer: "" }, statement_ms: 1, in_transaction: false, failed: false, closed: true }, sql("select ?"), new list[Value]) == err("connection: closed") is true
 export fn query[E: effects](
-    db: Database[E],
+    db: Database[uses E],
     st: Statement,
     params: list[Value]
 ) -> result[list[Row]] uses E {
@@ -315,7 +320,7 @@ export fn query[E: effects](
     return ok(rows);
 }
 
-fn roll_back[E: effects](db: Database[E]) uses E {
+fn roll_back[E: effects](db: Database[uses E]) uses E {
     match run(db, sql("rollback"), new list[Value]) {
         case ok(_) {
         }
@@ -328,7 +333,7 @@ fn roll_back[E: effects](db: Database[E]) uses E {
 # returned). A transaction inside another is an err, and so is one in which a statement failed.
 #     transaction(new Database { conn: new Conn { id: 0, peer: "" }, statement_ms: 1, in_transaction: false, failed: false, closed: true }, fn() -> result[int] { return ok(5); }) == err("connection: closed") is true
 export fn transaction[T, E: effects, F: effects](
-    db: Database[E],
+    db: Database[uses E],
     f: fn() -> result[T] uses F
 ) -> result[T] uses E, F {
     if db.in_transaction {
@@ -384,32 +389,16 @@ fn kind_name(v: Value) -> str {
     }
 }
 
-fn index_of(row: Row, column: str) -> result[int] {
-    var found = -1;
-    for i in 0..len(row.columns) {
-        if row.columns[i] == column {
-            if found >= 0 {
-                return err("ambiguous column " + column + ": name each column with AS");
-            }
-            set found = i;
-        }
-    }
-    if found < 0 {
-        return err("no column " + column);
-    }
-    return ok(found);
-}
-
 # The value of a column by name; err for an unknown name or one that two columns have.
-#     get(new Row { columns: ["x"], values: [Value.null] }, "y") == err("no column y") is true
-export fn get(row: Row, column: str) -> result[Value] {
-    return ok(row.values[try index_of(row, column)]);
+#     value_column(new Row { columns: ["x"], values: [Value.null] }, "y") == err("no column `y`") is true
+export fn value_column(row: Row, column: str) -> result[Value] {
+    return ok(row.values[try column_index(row.columns, column)]);
 }
 
 # A column's value as an int; err unless it is an integer (a boolean is 0 or 1).
-#     get_int(new Row { columns: ["x"], values: [Value.integer(7)] }, "x") == ok(7) is true
-export fn get_int(row: Row, column: str) -> result[int] {
-    let v = try get(row, column);
+#     int_column(new Row { columns: ["x"], values: [Value.integer(7)] }, "x") == ok(7) is true
+export fn int_column(row: Row, column: str) -> result[int] {
+    let v = try value_column(row, column);
     match v {
         case integer(i) {
             return ok(i);
@@ -426,16 +415,16 @@ export fn get_int(row: Row, column: str) -> result[int] {
     return err(column + " is " + kind_name(v) + ", not integer");
 }
 
-# A column's value as a float; err unless it is a real (an integer is not converted; NaN and the
-# infinities are text).
-#     get_float(new Row { columns: ["x"], values: [Value.integer(7)] }, "x") == err("x is integer, not real") is true
-export fn get_float(row: Row, column: str) -> result[float] {
-    let v = try get(row, column);
+# A column's value as a float: a real, or an integer converted (NaN and the infinities are text).
+#     float_column(new Row { columns: ["x"], values: [Value.integer(7)] }, "x") == ok(7.0) is true
+export fn float_column(row: Row, column: str) -> result[float] {
+    let v = try value_column(row, column);
     match v {
         case real(f) {
             return ok(f);
         }
-        case integer(_) {
+        case integer(i) {
+            return ok(float(i));
         }
         case text(_) {
         }
@@ -448,9 +437,9 @@ export fn get_float(row: Row, column: str) -> result[float] {
 }
 
 # A column's value as text; err unless it is text.
-#     get_str(new Row { columns: ["x"], values: [Value.text("hi")] }, "x") == ok("hi") is true
-export fn get_str(row: Row, column: str) -> result[str] {
-    let v = try get(row, column);
+#     text_column(new Row { columns: ["x"], values: [Value.text("hi")] }, "x") == ok("hi") is true
+export fn text_column(row: Row, column: str) -> result[str] {
+    let v = try value_column(row, column);
     match v {
         case text(s) {
             return ok(s);
@@ -468,9 +457,9 @@ export fn get_str(row: Row, column: str) -> result[str] {
 }
 
 # A column's value as bytes: a blob, or text as its UTF-8 bytes.
-#     get_bytes(new Row { columns: ["x"], values: [Value.null] }, "x") == err("x is null, not blob") is true
-export fn get_bytes(row: Row, column: str) -> result[bytes] {
-    let v = try get(row, column);
+#     bytes_column(new Row { columns: ["x"], values: [Value.null] }, "x") == err("x is null, not blob") is true
+export fn bytes_column(row: Row, column: str) -> result[bytes] {
+    let v = try value_column(row, column);
     match v {
         case blob(b) {
             return ok(b);
@@ -491,15 +480,15 @@ export fn get_bytes(row: Row, column: str) -> result[bytes] {
 # Whether a column's value is NULL.
 #     is_null(new Row { columns: ["x"], values: [Value.null] }, "x") == ok(true) is true
 export fn is_null(row: Row, column: str) -> result[bool] {
-    return ok(try get(row, column) == Value.null);
+    return ok(try value_column(row, column) == Value.null);
 }
 
 # A date or timestamp column as milliseconds since 1970 UTC: a timestamp with time zone, a timestamp
 # (taken as UTC) or a date (its midnight UTC). Microseconds beyond the millisecond are dropped.
-#     get_time(new Row { columns: ["at"], values: [Value.text("1970-01-01 00:00:01+00")] }, "at") == ok(1000) is true
-export fn get_time(row: Row, column: str) -> result[int] {
-    let v = try get(row, column);
-    match get_str(row, column) {
+#     time_column(new Row { columns: ["at"], values: [Value.text("1970-01-01 00:00:01+00")] }, "at") == ok(1000) is true
+export fn time_column(row: Row, column: str) -> result[int] {
+    let v = try value_column(row, column);
+    match text_column(row, column) {
         case ok(s) {
             return map_err(time_of(s), fn(reason: str) -> str {
                 return column + " is " + reason + ": " + s;

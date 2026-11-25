@@ -1,5 +1,6 @@
 import std.collections.copy_queue;
 import std.collections.peek;
+import std.option.to_result;
 
 fn show(r: result[int]) -> str {
     match r {
@@ -15,7 +16,7 @@ fn show(r: result[int]) -> str {
 # Spec 014 US2: pops in order, empty gives err, `for` in pop order without removing, copies, equality.
 fn main() uses console {
     let q = new priority_queue[int];
-    print("empty: " + show(pop(q)) + " " + show(peek(q)));
+    print("empty: " + show(pop(q)) + " " + show(to_result(peek(q), "empty")));
     for x in [5, 1, 3, 1, 9] {
         push(q, x);
     }
@@ -23,7 +24,7 @@ fn main() uses console {
     for x in q {
         push(seen, str(x));
     }
-    print("for: " + join(seen, " ") + ", len still " + str(len(q)) + ", peek " + show(peek(q)));
+    print("for: " + join(seen, " ") + ", len still " + str(len(q)) + ", peek " + show(to_result(peek(q), "empty")));
     let c = copy_queue(q);
     var out = new list[str];
     while len(q) > 0 {

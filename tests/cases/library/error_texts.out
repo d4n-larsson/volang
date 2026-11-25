@@ -1,0 +1,11 @@
+the time limit passed
+invalid: the time limit must be 0 to 600000 ms
+no message came within the time limit
+the worker has ended
+the worker failed: exit status 3
+more than 64 MiB from the worker was waiting; the worker was stopped
+the message is over 16 MiB
+64 workers are running
+not a calendar time: month 13
+the clocks jump over this time, at 2024-03-31T01:00:00Z
+the clocks show this time twice, at 2024-10-27T01:00:00Z and 2024-10-27T02:00:00Z
