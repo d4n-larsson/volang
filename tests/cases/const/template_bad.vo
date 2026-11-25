@@ -1,6 +1,6 @@
 # A problem inside a constant's value is reported at its use, with the value.
-import std.regex.regex;
-import std.sqlite.sql;
+import std.regex;
+import std.sqlite;
 
 const row = "{} of {}";
 const pattern = "[a-z";
@@ -8,8 +8,8 @@ const query = "SELECT * FROM notes WHERE id = :id";
 
 fn main() uses console {
     print(format(row, 1));
-    let _ = regex(pattern);
-    let _ = sql(query);
+    let _ = regex.regex(pattern);
+    let _ = sqlite.sql(query);
     let t = "{}";
     print(format(t, 1));
 }

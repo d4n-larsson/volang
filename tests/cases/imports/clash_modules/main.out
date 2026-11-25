@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0202","name":"duplicate_definition","severity":"error","file":"main.vo","start":{"line":3,"col":10},"end":{"line":3,"col":14},"text":"util","message":"`util` is already a module of this file (`a/util.vo`).","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

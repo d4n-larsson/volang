@@ -1,0 +1,7 @@
+# A module used without its import: E0204 with the fix adding it (std module, or a file beside this one).
+fn main() -> result[void] uses console {
+    let j = try json.parse_json("1");
+    print(notes.add("x"));
+    print(str(j == j));
+    return ok();
+}

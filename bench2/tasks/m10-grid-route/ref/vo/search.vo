@@ -1,6 +1,4 @@
-import grid.Grid;
-import grid.at;
-import grid.cost;
+import grid;
 
 export record Leg {
     cost: int;
@@ -13,7 +11,7 @@ record Move {
     cell: int;
 }
 
-fn neighbors(g: Grid, cell: int) -> list[Move] {
+fn neighbors(g: grid.Grid, cell: int) -> list[Move] {
     let r = cell / g.width;
     let c = cell % g.width;
     let out = new list[Move];
@@ -30,11 +28,11 @@ fn neighbors(g: Grid, cell: int) -> list[Move] {
         push(out, new Move { name: "L", cell: cell - 1 });
     }
     return filter(out, fn(m: Move) -> bool {
-        return at(g, m.cell) != "#";
+        return grid.at(g, m.cell) != "#";
     });
 }
 
-fn dist_to(g: Grid, goal: int) -> list[int] {
+fn dist_to(g: grid.Grid, goal: int) -> list[int] {
     let dist = new list[int];
     for _ in 0..g.height * g.width {
         push(dist, -1);
@@ -46,7 +44,7 @@ fn dist_to(g: Grid, goal: int) -> list[int] {
         let bucket = buckets[d];
         for cell in bucket {
             if dist[cell] == d {
-                let step = d + cost(at(g, cell));
+                let step = d + grid.cost(grid.at(g, cell));
                 for m in neighbors(g, cell) {
                     if dist[m.cell] < 0 or step < dist[m.cell] {
                         set dist[m.cell] = step;
@@ -63,7 +61,7 @@ fn dist_to(g: Grid, goal: int) -> list[int] {
     return dist;
 }
 
-export fn leg(g: Grid, a: int, b: int) -> result[Leg] {
+export fn leg(g: grid.Grid, a: int, b: int) -> result[Leg] {
     let dist = dist_to(g, b);
     if dist[a] < 0 {
         return err("no route");
@@ -73,7 +71,7 @@ export fn leg(g: Grid, a: int, b: int) -> result[Leg] {
     while cur != b {
         let here = dist[cur];
         let next = filter(neighbors(g, cur), fn(m: Move) -> bool {
-            return dist[m.cell] >= 0 and cost(at(g, m.cell)) + dist[m.cell] == here;
+            return dist[m.cell] >= 0 and grid.cost(grid.at(g, m.cell)) + dist[m.cell] == here;
         })[0];
         push(l.moves, next.name);
         push(l.cells, next.cell);

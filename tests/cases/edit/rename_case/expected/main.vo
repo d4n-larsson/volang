@@ -1,7 +1,4 @@
-import catalog.Item;
-import catalog.Box;
-import catalog.add_item;
-import catalog.total;
+import catalog;
 
 variant Event {
     created(str);
@@ -32,17 +29,17 @@ fn first_of[T](xs: list[T], d: T) -> T {
 }
 
 fn main() uses console {
-    let items = new list[Item];
-    add_item(items, "a1", "pen", 3);
-    add_item(items, "b2", "ink", 4);
+    let items = new list[catalog.Item];
+    catalog.add_item(items, "a1", "pen", 3);
+    catalog.add_item(items, "b2", "ink", 4);
     let count = len(items);
-    let b = new Box { price: 9 };
+    let b = new catalog.Box { price: 9 };
     let p = new Pair[int, str] { first: count, second: "x" };
-    print("add_item total " + str(total(items)) + " " + str(count) + " " + str(b.price) + " " + p.second);
+    print("add_item total " + str(catalog.total(items)) + " " + str(count) + " " + str(b.price) + " " + p.second);
     print(describe(Event.created("x")) + " " + describe(Event.cleared) + " " + str(first_of([1, 2], 0)));
 }
 
 test "totals" {
-    let items = new list[Item];
-    expect_eq(total(items), 0);
+    let items = new list[catalog.Item];
+    expect_eq(catalog.total(items), 0);
 }

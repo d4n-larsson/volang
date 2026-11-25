@@ -187,11 +187,34 @@ def scoped(effect):
     return PROCESS_SCOPE if effect == "process" else effect
 
 
+def module_form(paths, *texts):
+    """Spec 058: the module imports for item paths (`std.json.parse_json`), and the texts with each of
+    those items written with its module's name (`json.parse_json`), outside string literals and field
+    names (`name: value`)."""
+    mods, heads = {}, []
+    for p in paths:
+        mod_path, n = p.rsplit(".", 1)
+        mods[n] = mod_path.rsplit(".", 1)[1]
+        if mod_path not in heads:
+            heads.append(mod_path)
+
+    def qualify(t):
+        out = []
+        for part in re.split(r'("(?:[^"\\]|\\.)*"|`[^`]*`)', t or ""):
+            if part[:1] in ('"', '`'):
+                out.append(part)
+                continue
+            out.append(re.sub(r"(?<![\w.])([A-Za-z_]\w*)\b(?!\s*:(?!:))",
+                              lambda m: f"{mods[m.group(1)]}.{m.group(1)}" if m.group(1) in mods else m.group(1), part))
+        return "".join(out)
+    return "".join(f"import {h};\n" for h in heads), [qualify(t) if t is not None else None for t in texts]
+
+
 def program(imports, effects, call, void, test_only, ret=None):
     text = call + " " + (ret or "")
     imports = list(imports) + [q for n, q in TYPE_PATHS.items()
                                if q not in imports and re.search(rf"\b{n}\b", text)]
-    head = "".join(f"import {i};\n" for i in imports)
+    head, (call, ret) = module_form(imports, call, ret)
     uses = f" uses {', '.join(map(scoped, effects))}" if effects else ""
     stmt = f"{call};" if void else f"let r{': ' + ret if ret else ''} = {call};"
     if test_only:
@@ -337,8 +360,8 @@ def main():
             # spec 029: an example may name another module's types (std.web's use std.http's Request, Response)
             extra += [q for n, q in TYPE_PATHS.items()
                       if q not in every and q not in extra and n[0].isupper() and re.search(rf"\b{n}\b", ex)]
-            src = "".join(f"import {i};\n" for i in every + extra) + \
-                f"\nfn main() uses {', '.join(map(scoped, eff))} {{\n    {setup}print({show});\n}}\n"
+            head, (setup, show) = module_form(every + extra, setup, show)
+            src = head + f"\nfn main() uses {', '.join(map(scoped, eff))} {{\n    {setup}print({show});\n}}\n"
             code, out, err = run(src)
             if code != 0 or out != want + "\n":
                 failures.append(f"{label}: example `{ex}` printed {out!r} (exit {code})\n{err}")

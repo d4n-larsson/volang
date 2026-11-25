@@ -1,8 +1,7 @@
 # POST sends the body (multi-byte text included) with its content type.
-import std.http.Response;
-import std.http.post;
+import std.http;
 
-fn show(r: result[Response]) uses console {
+fn show(r: result[http.Response]) uses console {
     match r {
         case ok(resp) {
             print("status " + str(resp.status));
@@ -19,5 +18,5 @@ fn show(r: result[Response]) uses console {
 }
 
 fn main() uses console, net("localhost") {
-    show(post("http://localhost:" + args()[0] + "/echo", "text/plain; charset=utf-8", "héllo\nwörld"));
+    show(http.post("http://localhost:" + args()[0] + "/echo", "text/plain; charset=utf-8", "héllo\nwörld"));
 }

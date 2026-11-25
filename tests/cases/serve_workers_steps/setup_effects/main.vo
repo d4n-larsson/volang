@@ -1,15 +1,12 @@
 # The setup's effects are checked like any other: a read outside main's grant stops the program (R0010).
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve_workers;
+import std.http;
 
-fn handle(text: str, r: Request) -> Response {
-    return new Response { status: 200, headers: new list[Header], body: text };
+fn handle(text: str, r: http.Request) -> http.Response {
+    return new http.Response { status: 200, headers: new list[http.Header], body: text };
 }
 
 fn main() -> result[void] uses file.read("data/"), serve("{vport}") {
     let path = args()[0];
-    try serve_workers("{vport}", 2, fn() -> result[str] { return read_file(path); }, handle);
+    try http.serve_workers("{vport}", 2, fn() -> result[str] { return read_file(path); }, handle);
     return ok();
 }

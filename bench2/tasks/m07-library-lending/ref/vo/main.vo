@@ -1,21 +1,20 @@
-import commands.parse;
-import library.new_library;
-import library.run;
-import report.report;
+import commands;
+import library;
+import report;
 
 fn main() uses console, input {
-    let lib = new_library();
+    let lib = library.new_library();
     let out = new list[str];
     var last = 0;
     let lines = split(read_all(), "\n");
     for i in 0..len(lines) {
-        match parse(lines[i]) {
+        match commands.parse(lines[i]) {
             case ok(c) {
                 if c.day >= 0 and c.day < last {
                     push(out, "line " + str(i + 1) + ": invalid");
                 } else if c.day >= 0 {
                     set last = c.day;
-                    run(lib, c, out);
+                    library.run(lib, c, out);
                 }
             }
             case err(_) {
@@ -26,7 +25,7 @@ fn main() uses console, input {
     for s in out {
         print(s);
     }
-    for s in report(lib) {
+    for s in report.report(lib) {
         print(s);
     }
 }

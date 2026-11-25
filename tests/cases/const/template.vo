@@ -1,11 +1,7 @@
 # A format template, a regex pattern and an SQL statement may be constants: they are checked as if
 # their values were written there.
-import std.regex.is_match;
-import std.regex.regex;
-import std.sqlite.Value;
-import std.sqlite.exec;
-import std.sqlite.open_memory;
-import std.sqlite.sql;
+import std.regex;
+import std.sqlite;
 
 const row = "{:<6}|{:>4}";
 const code_pattern = "^[a-z]+" + "[0-9]$";
@@ -14,10 +10,10 @@ const create = "CREATE TABLE notes (id INTEGER PRIMARY KEY, text TEXT)";
 fn main() -> result[void] uses console {
     print(format(row, "tea", 3));
     print(
-        str(is_match("ab1", regex(code_pattern))) + " " + str(is_match("1ab", regex(code_pattern)))
+        str(regex.is_match("ab1", regex.regex(code_pattern))) + " " + str(regex.is_match("1ab", regex.regex(code_pattern)))
     );
-    let db = open_memory();
-    let _ = try exec(db, sql(create), new list[Value]);
+    let db = sqlite.open_memory();
+    let _ = try sqlite.exec(db, sqlite.sql(create), new list[sqlite.Value]);
     print("table made");
     return ok();
 }

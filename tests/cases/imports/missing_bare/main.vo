@@ -1,0 +1,5 @@
+# A bare name declared in a file beside this one: E0204 with the fix `import helpers;` (then E0201
+# qualifies the use).
+fn main() uses console {
+    print(helper());
+}

@@ -1,15 +1,12 @@
-import model.RoomType;
-import model.Booking;
-import rooms.first_full_day;
-import billing.stay_discount;
-import billing.money;
-import billing.refund_for;
+import billing;
+import model;
+import rooms;
 
-export fn held_nights(b: Booking) -> int {
+export fn held_nights(b: model.Booking) -> int {
     return b.held_until - b.start;
 }
 
-export fn book(types: map[str, RoomType], bookings: map[str, Booking], booking_id: str, type_name: str, guest: str, start: int, end: int) -> str {
+export fn book(types: map[str, model.RoomType], bookings: map[str, model.Booking], booking_id: str, type_name: str, guest: str, start: int, end: int) -> str {
     if has(bookings, booking_id) {
         return "error: booking " + booking_id + " exists";
     }
@@ -19,19 +16,19 @@ export fn book(types: map[str, RoomType], bookings: map[str, Booking], booking_i
     if start >= end {
         return "error: bad dates";
     }
-    let full = first_full_day(types, bookings, type_name, start, end);
+    let full = rooms.first_full_day(types, bookings, type_name, start, end);
     if full >= 0 {
         return "error: no " + type_name + " room free on day " + str(full);
     }
     let rate = types[type_name].rate;
     let subtotal = (end - start) * rate;
-    let discount = stay_discount(end - start, subtotal);
-    let b = new Booking { booking_id: booking_id, type_name: type_name, guest: guest, start: start, end: end, rate: rate, subtotal: subtotal, discount: discount, total: subtotal - discount, held_until: end, cancelled: false, cancel_day: 0, refund: 0 };
+    let discount = billing.stay_discount(end - start, subtotal);
+    let b = new model.Booking { booking_id: booking_id, type_name: type_name, guest: guest, start: start, end: end, rate: rate, subtotal: subtotal, discount: discount, total: subtotal - discount, held_until: end, cancelled: false, cancel_day: 0, refund: 0 };
     set bookings[booking_id] = b;
-    return "booked " + booking_id + ": " + type_name + " " + str(b.end - b.start) + " nights, total " + money(b.total);
+    return "booked " + booking_id + ": " + type_name + " " + str(b.end - b.start) + " nights, total " + billing.money(b.total);
 }
 
-export fn cancel(bookings: map[str, Booking], booking_id: str, day: int) -> str {
+export fn cancel(bookings: map[str, model.Booking], booking_id: str, day: int) -> str {
     if not has(bookings, booking_id) {
         return "error: unknown booking " + booking_id;
     }
@@ -42,9 +39,9 @@ export fn cancel(bookings: map[str, Booking], booking_id: str, day: int) -> str 
     if day >= b.end {
         return "error: booking " + booking_id + " already ended";
     }
-    set b.refund = refund_for(b, day);
+    set b.refund = billing.refund_for(b, day);
     set b.cancelled = true;
     set b.cancel_day = day;
     set b.held_until = max(b.start, day);
-    return "cancelled " + booking_id + ": refund " + money(b.refund);
+    return "cancelled " + booking_id + ": refund " + billing.money(b.refund);
 }

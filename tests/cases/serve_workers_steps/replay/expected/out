@@ -44,16 +44,16 @@ same stdout: yes
 $ vo replay r.jsonl
 --- stderr
 note: the program differs from the recorded one (recorded main.vo)
-main.vo:16:18: runtime error[R0014]: The program makes the database call `data/other.db`, but the recording has the database call `data/app.db` next: replay the program that was recorded, or record this one.
-  16 |     let db = try open("data/other.db");
-     |                  ^^^^^^^^^^^^^^^^^^^^^
+main.vo:7:18: runtime error[R0014]: The program makes the database call `data/other.db`, but the recording has the database call `data/app.db` next: replay the program that was recorded, or record this one.
+   7 |     let db = try sqlite.open("data/other.db");
+     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at open (main.vo:16:18)
+  at open (main.vo:7:18)
       path: str = "data/other.db"
-  at setup (main.vo:16:18)
-  at serve_workers (std/http.vo:657:12)
+  at setup (main.vo:7:18)
+  at serve_workers (std/http.vo:649:12)
       address: str = "{vport}", workers: int = 2, setup: fn() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") = <fn() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/")>, handle: fn(Database[uses file.read, file.write], Request) -> Response uses file.read("data/"), file.write("data/"), random = <fn(Database[uses file.read, file.write], Request) -> Response uses file.read("data/"), file.write("data/"), random>
-  at main (main.vo:55:9)
+  at main (main.vo:46:9)
 --- exit 70
 $ vo replay --workers 2 r.jsonl
 --- stderr

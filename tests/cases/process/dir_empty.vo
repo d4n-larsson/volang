@@ -1,7 +1,7 @@
 # Spec 057 (US2): an empty working directory is R0007, as an empty path is in std.fs.
-import std.process.run_with;
+import std.process;
 
 fn main() -> result[void] uses console, file.read, process("true") {
-    print(str((try run_with("true", [], "", [], "")).code));
+    print(str((try process.run_with("true", [], "", [], "")).code));
     return ok();
 }

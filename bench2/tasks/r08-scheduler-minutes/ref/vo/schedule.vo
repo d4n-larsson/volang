@@ -1,5 +1,4 @@
-import clock.duration;
-import clock.span;
+import clock;
 
 # start and end are minutes since midnight.
 export record Event {
@@ -45,7 +44,7 @@ export fn add_event(events: map[str, Event], event_id: str, room: str, start: in
         }
     }
     set events[event_id] = new Event { event_id: event_id, room: room, start: start, end: end };
-    return "added " + event_id + " in " + room + " " + span(start, end);
+    return "added " + event_id + " in " + room + " " + clock.span(start, end);
 }
 
 export fn remove_event(events: map[str, Event], event_id: str) -> str {
@@ -76,12 +75,12 @@ export fn free_slots(events: map[str, Event], room: str, lo: int, hi: int, min_l
         if e.start >= hi {
             break;
         }
-        if e.start > cursor and duration(cursor, e.start) >= min_len {
+        if e.start > cursor and clock.duration(cursor, e.start) >= min_len {
             push(slots, new Slot { start: cursor, end: e.start });
         }
         set cursor = max(cursor, e.end);
     }
-    if cursor < hi and duration(cursor, hi) >= min_len {
+    if cursor < hi and clock.duration(cursor, hi) >= min_len {
         push(slots, new Slot { start: cursor, end: hi });
     }
     return slots;
@@ -89,6 +88,6 @@ export fn free_slots(events: map[str, Event], room: str, lo: int, hi: int, min_l
 
 export fn booked_minutes(evs: list[Event]) -> int {
     return fold(evs, 0, fn(acc: int, e: Event) -> int {
-        return acc + duration(e.start, e.end);
+        return acc + clock.duration(e.start, e.end);
     });
 }

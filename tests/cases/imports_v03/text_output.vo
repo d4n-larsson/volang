@@ -1,0 +1,17 @@
+# The text form of E0215: the long fix is summarized as the lines it rewrites.
+import std.json.Json;
+import std.json.parse_json;
+import std.text.repeat;
+
+fn read(text: str) -> result[Json] {
+    return parse_json(text);
+}
+
+fn main() -> result[void] uses console {
+    let j = try read("1");
+    print(str(j == Json.integer(1)));
+    let parse = parse_json;
+    let _ = parse;
+    print(repeat("ab", 2));
+    return ok();
+}

@@ -35,7 +35,7 @@ run of `vo run` uses a new seed and the real clock. Two options fix them:
   returns `N`, then `N+1`, then `N+2`, and every `std.time` function reads the same clock.
 
 ```vo
-import std.time.format_time;
+import std.time;
 
 # Simulate a queue of support calls: each caller waits a random number of minutes.
 fn main() uses console, clock, random {
@@ -48,7 +48,7 @@ fn main() uses console, clock, random {
     }
     print("average " + str(total / 3) + " min");
     print(
-        "started " + format_time(start) + ", next reading " + str(now_ms() - start) + " ms later"
+        "started " + time.format_time(start) + ", next reading " + str(now_ms() - start) + " ms later"
     );
 }
 ```
@@ -82,7 +82,7 @@ there, what a server answered, cannot be fixed by an option. `vo run --record FI
 the program runs, and `vo replay FILE` runs the program again on exactly what was saved:
 
 ```vo
-import std.random.shuffled;
+import std.random;
 
 # Draw the prize winner among the names given on the command line.
 fn main() -> result[void] uses console, random {
@@ -90,7 +90,7 @@ fn main() -> result[void] uses console, random {
     if len(names) == 0 {
         return err("usage: vo run main.vo -- NAME...");
     }
-    let order = shuffled(names);
+    let order = random.shuffled(names);
     print("first prize: " + order[0]);
     print("ticket: " + str(random_int(1000, 9999)));
     return ok();

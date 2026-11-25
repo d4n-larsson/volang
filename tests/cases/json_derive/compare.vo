@@ -1,9 +1,8 @@
 # A generic call whose type parameter only its result names takes its type from the other side of `==`,
 # and `ok(v)` there takes its type from v.
-import std.json.Json;
-import std.json.from_json;
+import std.json;
 
 fn main() uses console {
-    print(str(from_json(Json.integer(3)) == ok(3)));
-    print(str(from_json(Json.text("x")) != ok("y")));
+    print(str(json.from_json(json.Json.integer(3)) == ok(3)));
+    print(str(json.from_json(json.Json.text("x")) != ok("y")));
 }

@@ -1,4 +1,4 @@
-import std.text.words;
+import std.text;
 
 # A binary min-heap of ints at index 0.
 fn heap_push(h: list[int], x: int) {
@@ -77,7 +77,7 @@ fn main() -> result[void] uses console, input {
     let bids = new Side { levels: new map[int, int], heap: new list[int], sign: -1 };
     let asks = new Side { levels: new map[int, int], heap: new list[int], sign: 1 };
     for line in split(read_all(), "\n") {
-        let w = words(line);
+        let w = text.words(line);
         if len(w) == 3 {
             let buy = w[0] == "buy";
             let price = try parse_int(w[1]);

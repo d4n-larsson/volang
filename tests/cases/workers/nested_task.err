@@ -4,6 +4,6 @@ std/workers.vo:66:45: runtime error[R0007]: Workers are started by the program i
 trace:
   at start_worker (std/workers.vo:66:45)
       body: fn(Link[int, int]) = <fn(Link[int, int])>
-  at starts (nested_task.vo:82:11)
+  at starts (nested_task.vo:73:11)
       n: int = 1
-  at main (nested_task.vo:93:13)
+  at main (nested_task.vo:84:13)

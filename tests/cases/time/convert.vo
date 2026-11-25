@@ -1,14 +1,10 @@
 # from_ms and to_ms across the epoch, leap days, century years and the ends of the range.
-import std.time.DateTime;
-import std.time.date;
-import std.time.format_time;
-import std.time.from_ms;
-import std.time.to_ms;
+import std.time;
 
 fn show(ms: int) uses console {
-    let d = from_ms(ms);
-    print(format_time(ms) + " weekday " + str(d.weekday) + " " + str(d.year) + "/" + str(d.month) + "/" + str(d.day));
-    match to_ms(d) {
+    let d = time.from_ms(ms);
+    print(time.format_time(ms) + " weekday " + str(d.weekday) + " " + str(d.year) + "/" + str(d.month) + "/" + str(d.day));
+    match time.to_ms(d) {
         case ok(back) {
             if back != ms {
                 print("  round trip differs: " + str(back));
@@ -21,7 +17,7 @@ fn show(ms: int) uses console {
 }
 
 fn day(y: int, m: int, d: int) uses console {
-    match date(y, m, d) {
+    match time.date(y, m, d) {
         case ok(ms) {
             show(ms);
         }
@@ -52,8 +48,8 @@ fn main() uses console {
     show(-62135596800000);
     show(253402300799999);
     show(-86400000);
-    let bad = new DateTime { year: 2026, month: 13, day: 1, hour: 0, minute: 0, second: 0, ms: 0, weekday: 1 };
-    match to_ms(bad) {
+    let bad = new time.DateTime { year: 2026, month: 13, day: 1, hour: 0, minute: 0, second: 0, ms: 0, weekday: 1 };
+    match time.to_ms(bad) {
         case ok(v) {
             print(str(v));
         }
@@ -61,8 +57,8 @@ fn main() uses console {
             print("month 13: " + e);
         }
     }
-    let late = new DateTime { year: 2026, month: 1, day: 1, hour: 24, minute: 0, second: 0, ms: 0, weekday: 1 };
-    match to_ms(late) {
+    let late = new time.DateTime { year: 2026, month: 1, day: 1, hour: 24, minute: 0, second: 0, ms: 0, weekday: 1 };
+    match time.to_ms(late) {
         case ok(v) {
             print(str(v));
         }

@@ -1,7 +1,6 @@
 # Spec 022 US1: retry with pauses that double (50, 100, 200 ms) against a service that keeps failing.
-import std.http.Response;
-import std.http.get;
-import std.time.sleep;
+import std.http;
+import std.time;
 
 fn main() uses console, clock, net("127.0.0.1") {
     let start = now_ms();
@@ -9,7 +8,7 @@ fn main() uses console, clock, net("127.0.0.1") {
     var tries = 0;
     while tries < 4 {
         set tries = tries + 1;
-        match get(args()[0]) {
+        match http.get(args()[0]) {
             case ok(r) {
                 print("try " + str(tries) + ": status " + str(r.status));
                 if r.status == 200 {
@@ -21,7 +20,7 @@ fn main() uses console, clock, net("127.0.0.1") {
             }
         }
         if tries < 4 {
-            sleep(pause);
+            time.sleep(pause);
             set pause = pause * 2;
         }
     }

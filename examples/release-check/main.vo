@@ -1,10 +1,8 @@
 # release-check: is this checkout ready to release? Runs three git checks (no shell, only git may run),
 # prints a report and writes it to out/report.txt, replacing the previous one. Exit status 1 when a
 # check fails.
-import std.fs.append_file;
-import std.fs.delete;
-import std.fs.make_dir;
-import std.process.run;
+import std.fs;
+import std.process;
 
 # One check: what it is, whether it passed, and what it found.
 record Check {
@@ -44,7 +42,7 @@ fn report(checks: list[Check]) -> list[str] {
 
 # Runs git with args; passes when git exits 0 and, with want_empty, prints nothing.
 fn git(name: str, args_value: list[str], want_empty: bool) -> Check uses process("git") {
-    match run("git", args_value) {
+    match process.run("git", args_value) {
         case ok(out) {
             let text = trim(out.stdout);
             if out.code != 0 {
@@ -78,17 +76,17 @@ fn main() -> result[void] uses console, file.write(out_dir), file.delete(out_dir
         git("whitespace", ["diff", "--check", "HEAD"], true),
         git("last commit", ["log", "-1", "--format=%h %s"], false)
     ];
-    match delete(report_file) {
+    match fs.delete(report_file) {
         case ok() {
         }
         case err(_) {
         }
     }
-    try make_dir("out");
+    try fs.make_dir("out");
     let lines = report(checks);
     for line in lines {
         print(line);
-        try append_file(report_file, line + "\n");
+        try fs.append_file(report_file, line + "\n");
     }
     if lines[len(lines) - 1] != "ready to release" {
         exit(1);

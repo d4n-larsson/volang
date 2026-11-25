@@ -1,8 +1,8 @@
 # Spec 019 US3: tasks inherit the trusted authorities of --ca-file (three HTTPS gets at once).
-import std.http.get;
+import std.http;
 
 fn fetch(path: str) -> str uses net("127.0.0.1") {
-    match get("https://127.0.0.1:" + args()[0] + path) {
+    match http.get("https://127.0.0.1:" + args()[0] + path) {
         case ok(r) {
             return str(r.status) + " " + path;
         }

@@ -1,12 +1,7 @@
 # Spec 047: --max-memory applies to each worker separately; a worker that exceeds it fails with R0006.
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.WorkerError;
-import std.workers.emit;
-import std.workers.receive;
-import std.workers.start_worker;
+import std.workers;
 
-fn grows(link: Link[int, int]) {
+fn grows(link: workers.Link[int, int]) {
     let held = new list[str];
     var piece = "0123456789abcdef";
     while len(piece) < 1000000 {
@@ -15,7 +10,7 @@ fn grows(link: Link[int, int]) {
     for i in 0..64 {
         push(held, piece + str(i));
     }
-    match emit(link, len(held)) {
+    match workers.emit(link, len(held)) {
         case ok() {
         }
         case err(_) {
@@ -23,7 +18,7 @@ fn grows(link: Link[int, int]) {
     }
 }
 
-fn memory(e: WorkerError) -> bool {
+fn memory(e: workers.WorkerError) -> bool {
     match e {
         case failed(text) {
             return find(text, "R0006") >= 0;
@@ -47,9 +42,9 @@ fn memory(e: WorkerError) -> bool {
 }
 
 fn main() uses console {
-    match start_worker(grows) {
+    match workers.start_worker(grows) {
         case ok(w) {
-            match receive(w, Wait.forever) {
+            match workers.receive(w, workers.Wait.forever) {
                 case ok(n) {
                     print("the worker held " + str(n));
                 }

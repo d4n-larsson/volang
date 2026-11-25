@@ -1,13 +1,12 @@
 # Spec 033: bytes and bool keys.
-import std.bytes.from_ints;
-import std.bytes.from_text;
+import std.bytes;
 
 fn main() uses console {
     let b = new map[bytes, int];
-    set b[from_text("ab")] = 1;
-    set b[from_ints([97, 98])] = 2;
-    set b[from_ints([0, 255])] = 3;
-    print(str(len(b)) + " " + str(b[from_text("ab")]) + " " + str(has(b, from_ints([255, 0]))));
+    set b[bytes.from_text("ab")] = 1;
+    set b[bytes.from_ints([97, 98])] = 2;
+    set b[bytes.from_ints([0, 255])] = 3;
+    print(str(len(b)) + " " + str(b[bytes.from_text("ab")]) + " " + str(has(b, bytes.from_ints([255, 0]))));
     let flags = new map[bool, str];
     set flags[1 < 2] = "yes";
     set flags[false] = "no";

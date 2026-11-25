@@ -22,24 +22,21 @@ import sys
 import tempfile
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from migrate_058 import module_form  # noqa: E402  spec 058: programs assembled from fragments
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")  # runs $VO_BIN (default build/vo) natively or under qemu
 
-IMPORTS = """import std.bytes.from_hex;
-import std.bytes.from_text;
-import std.bytes.to_hex;
-import std.crypto.hash_password;
-import std.crypto.hmac_sha256;
-import std.crypto.random_bytes;
-import std.crypto.sha256;
-import std.crypto.verify_password;
+IMPORTS = """import std.bytes;
+import std.crypto;
 """
 
 
 def run(body, uses="console", timeout=300):
     src = IMPORTS + f"\nfn main() -> result[void] uses {uses} {{\n{body}\n    return ok();\n}}\n"
     with tempfile.TemporaryDirectory() as d:
-        open(os.path.join(d, "m.vo"), "w").write(src)
+        open(os.path.join(d, "m.vo"), "w").write(module_form(src))
         t = time.perf_counter()
         r = subprocess.run([VO, "run", "--timeout", "0", "m.vo"], cwd=d, capture_output=True, text=True, timeout=timeout)
         took = time.perf_counter() - t

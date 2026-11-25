@@ -1,6 +1,6 @@
 # Spec 057 (research R6): a function that also reads a path it is given, or uses a file function whose
 # path is not checked as a literal, keeps E0501's unscoped fix: its needs are not all known paths.
-import std.fs.read_bytes;
+import std.fs;
 
 fn load(name: str) -> result[str] uses console {
     print(try read_file("data/a.txt"));
@@ -9,7 +9,7 @@ fn load(name: str) -> result[str] uses console {
 
 fn raw() -> result[int] {
     print(try read_file("data/a.txt"));
-    return ok(len(try read_bytes("data/b.bin")));
+    return ok(len(try fs.read_bytes("data/b.bin")));
 }
 
 fn main() -> result[void] uses console {

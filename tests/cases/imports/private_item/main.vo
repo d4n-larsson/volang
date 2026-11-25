@@ -1,0 +1,10 @@
+# A private item used through its module: E0209 with the fix adding `export` (none for std).
+import notes;
+import std.lists;
+
+fn main() uses console {
+    print(notes.helper("x"));
+    let xs = [1, 2];
+    lists.reverse_in_place(xs);
+    print(notes.add("y"));
+}

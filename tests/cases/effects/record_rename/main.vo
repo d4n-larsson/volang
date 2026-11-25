@@ -1,5 +1,5 @@
-import helper.say_hello;
+import helper;
 
 fn main() uses console {
-    say_hello("vo");
+    helper.say_hello("vo");
 }

@@ -1,49 +1,26 @@
 # The policy step (std.security, story 1): the first matching rule decides, a request no rule matches
 # is refused, 401 without credentials and 403 with, wrong credentials are 401 everywhere, and decide
 # gives the same answers as a pure function. The application has no effects.
-import std.http.Request;
-import std.http.Response;
-import std.option.Option;
-import std.security.Access;
-import std.security.Decision;
-import std.security.Rule;
-import std.security.User;
-import std.security.Way;
-import std.security.as_user;
-import std.security.decide;
-import std.security.header_key;
-import std.security.policy;
-import std.security.rule;
-import std.security.rule_for;
-import std.security.secure;
-import std.security.test_users;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.NoInput;
-import std.web.Route;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_delete;
-import std.web.on_get;
-import std.web.on_post;
-import std.web.request;
-import std.web.with_header;
+import std.http;
+import std.option;
+import std.security;
+import std.web;
 
-fn ran(n: int, input: NoInput) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn ran(n: int, input: web.NoInput) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
 record Id {
     id: int;
 }
 
-fn removed(n: int, input: Id) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn removed(n: int, input: Id) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
-fn key_user(n: int, key: str) -> result[User] {
+fn key_user(n: int, key: str) -> result[security.User] {
     if key == "k1" {
-        return ok(new User { name: "svc", roles: new list[str] });
+        return ok(new security.User { name: "svc", roles: new list[str] });
     }
     if key == "boom" {
         return err("the database is down");
@@ -51,39 +28,39 @@ fn key_user(n: int, key: str) -> result[User] {
     return err("unauthorized: unknown key");
 }
 
-fn rules() -> list[Rule] {
+fn rules() -> list[security.Rule] {
     return [
-        rule("/health", Access.anyone),
-        rule_for(["GET"], "/notes", Access.signed_in),
-        rule_for(["POST", "DELETE"], "/notes", Access.any_role(["editor", "admin"])),
-        rule("/admin", Access.any_role(["admin"])),
-        rule("/closed", Access.nobody)
+        security.rule("/health", security.Access.anyone),
+        security.rule_for(["GET"], "/notes", security.Access.signed_in),
+        security.rule_for(["POST", "DELETE"], "/notes", security.Access.any_role(["editor", "admin"])),
+        security.rule("/admin", security.Access.any_role(["admin"])),
+        security.rule("/closed", security.Access.nobody)
     ];
 }
 
-fn routes() -> list[Route[int]] {
+fn routes() -> list[web.Route[int]] {
     return [
-        on_get("/health", ran),
-        on_get("/notes", ran),
-        on_post("/notes", ran),
-        on_delete("/notes/{id}", removed),
-        on_get("/admin/users", ran),
-        on_get("/closed", ran),
-        on_get("/reports", ran)
+        web.on_get("/health", ran),
+        web.on_get("/notes", ran),
+        web.on_post("/notes", ran),
+        web.on_delete("/notes/{id}", removed),
+        web.on_get("/admin/users", ran),
+        web.on_get("/closed", ran),
+        web.on_get("/reports", ran)
     ];
 }
 
-fn app(rs: list[Rule]) -> App[int] {
-    let ways: list[Way[int]] = [test_users(), header_key("X-Api-Key", key_user)];
-    return new App {
+fn app(rs: list[security.Rule]) -> web.App[int] {
+    let ways: list[security.Way[int]] = [security.test_users(), security.header_key("X-Api-Key", key_user)];
+    return new web.App {
         routes: routes(),
-        steps: [secure(policy(rs, ways, fn() -> int { return 0; }))],
-        errors: new list[ErrorStatus]
+        steps: [security.secure(security.policy(rs, ways, fn() -> int { return 0; }))],
+        errors: new list[web.ErrorStatus]
     };
 }
 
-fn show(label: str, a: App[int], r: Request) uses console {
-    let resp = handle_request(a, 0, r);
+fn show(label: str, a: web.App[int], r: http.Request) uses console {
+    let resp = web.handle_request(a, 0, r);
     var hs = "";
     for h in resp.headers {
         if h.name != "Content-Type" {
@@ -93,7 +70,7 @@ fn show(label: str, a: App[int], r: Request) uses console {
     print(label + " -> " + str(resp.status) + hs + " " + resp.body);
 }
 
-fn decision(d: Decision) -> str {
+fn decision(d: security.Decision) -> str {
     match d {
         case allowed {
             return "allowed";
@@ -109,46 +86,46 @@ fn decision(d: Decision) -> str {
 
 fn main() uses console {
     let a = app(rules());
-    let user = new User { name: "bo", roles: ["user"] };
-    let editor = new User { name: "eve", roles: ["editor"] };
-    let admin = new User { name: "ada", roles: ["admin"] };
+    let user = new security.User { name: "bo", roles: ["user"] };
+    let editor = new security.User { name: "eve", roles: ["editor"] };
+    let admin = new security.User { name: "ada", roles: ["admin"] };
     let callers = [user, editor, admin];
     let requests = [
-        request("GET", "/health", ""),
-        request("GET", "/notes", ""),
-        request("HEAD", "/notes", ""),
-        request("POST", "/notes", ""),
-        request("DELETE", "/notes/7", ""),
-        request("GET", "/admin/users", ""),
-        request("GET", "/administrator", ""),
-        request("GET", "/closed", ""),
-        request("GET", "/reports", ""),
-        request("GET", "/nowhere", ""),
-        request("OPTIONS", "/notes", "")
+        web.request("GET", "/health", ""),
+        web.request("GET", "/notes", ""),
+        web.request("HEAD", "/notes", ""),
+        web.request("POST", "/notes", ""),
+        web.request("DELETE", "/notes/7", ""),
+        web.request("GET", "/admin/users", ""),
+        web.request("GET", "/administrator", ""),
+        web.request("GET", "/closed", ""),
+        web.request("GET", "/reports", ""),
+        web.request("GET", "/nowhere", ""),
+        web.request("OPTIONS", "/notes", "")
     ];
     for r in requests {
         let what = r.method + " " + r.path;
         show(what + " nobody", a, r);
-        print("  decide: " + decision(decide(rules(), r.method, r.path, Option.none)));
+        print("  decide: " + decision(security.decide(rules(), r.method, r.path, option.Option.none)));
         for c in callers {
-            show(what + " " + c.name, a, as_user(r, c));
-            print("  decide: " + decision(decide(rules(), r.method, r.path, Option.some(c))));
+            show(what + " " + c.name, a, security.as_user(r, c));
+            print("  decide: " + decision(security.decide(rules(), r.method, r.path, option.Option.some(c))));
         }
     }
-    show("key", a, with_header(request("GET", "/notes", ""), "X-Api-Key", "k1"));
-    show("wrong key on a guarded route", a, with_header(request("GET", "/notes", ""), "X-Api-Key", "k2"));
-    show("wrong key on the open route", a, with_header(request("GET", "/health", ""), "X-Api-Key", "k2"));
-    show("the check fails", a, with_header(request("GET", "/notes", ""), "X-Api-Key", "boom"));
-    show("two ways at once", a, with_header(as_user(request("GET", "/notes", ""), admin), "X-Api-Key", "k1"));
-    show("another scheme", a, with_header(request("GET", "/health", ""), "Authorization", "Digest x"));
-    show("not a user", a, with_header(request("GET", "/notes", ""), "X-Test-User", "ada"));
-    show("no rules, nobody", app(new list[Rule]), request("GET", "/health", ""));
-    show("no rules, admin", app(new list[Rule]), as_user(request("GET", "/health", ""), admin));
+    show("key", a, web.with_header(web.request("GET", "/notes", ""), "X-Api-Key", "k1"));
+    show("wrong key on a guarded route", a, web.with_header(web.request("GET", "/notes", ""), "X-Api-Key", "k2"));
+    show("wrong key on the open route", a, web.with_header(web.request("GET", "/health", ""), "X-Api-Key", "k2"));
+    show("the check fails", a, web.with_header(web.request("GET", "/notes", ""), "X-Api-Key", "boom"));
+    show("two ways at once", a, web.with_header(security.as_user(web.request("GET", "/notes", ""), admin), "X-Api-Key", "k1"));
+    show("another scheme", a, web.with_header(web.request("GET", "/health", ""), "Authorization", "Digest x"));
+    show("not a user", a, web.with_header(web.request("GET", "/notes", ""), "X-Test-User", "ada"));
+    show("no rules, nobody", app(new list[security.Rule]), web.request("GET", "/health", ""));
+    show("no rules, admin", app(new list[security.Rule]), security.as_user(web.request("GET", "/health", ""), admin));
     # A rule and the router see the same segments: with everything allowed, the router's answer.
-    let open = app([rule("/", Access.anyone)]);
+    let open = app([security.rule("/", security.Access.anyone)]);
     for path in ["/admin/../health", "//admin", "/admin%2Fusers", "/admin/users/", "/notes/"] {
-        show(path + " nobody", a, request("GET", path, ""));
-        show(path + " bo", a, as_user(request("GET", path, ""), user));
-        show(path + " router", open, request("GET", path, ""));
+        show(path + " nobody", a, web.request("GET", path, ""));
+        show(path + " bo", a, security.as_user(web.request("GET", path, ""), user));
+        show(path + " router", open, web.request("GET", path, ""));
     }
 }

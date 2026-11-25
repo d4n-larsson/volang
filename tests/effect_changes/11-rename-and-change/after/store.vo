@@ -1,8 +1,8 @@
-import report.render;
+import report;
 
 export fn persist_total(n: int) -> result[void] uses console, file.write("out/") {
     print("saving");
-    return write_file("out/total.txt", render(n));
+    return write_file("out/total.txt", report.render(n));
 }
 
 fn checksum(s: str) -> int {

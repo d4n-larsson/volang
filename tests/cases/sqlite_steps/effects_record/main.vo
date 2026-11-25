@@ -1,30 +1,23 @@
 # The effects record lists the file effects of every function that uses a file database, the
 # in-memory one adds none.
-import std.sqlite.open;
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.exec;
-import std.sqlite.query;
-import std.sqlite.Database;
-import std.sqlite.Row;
-import std.sqlite.Value;
+import std.sqlite;
 
-fn add(db: Database[uses file.read, file.write], name: str) -> result[void] uses file.read, file.write {
-    let _ = try exec(db, sql("insert into people(name) values (?)"), [Value.text(name)]);
+fn add(db: sqlite.Database[uses file.read, file.write], name: str) -> result[void] uses file.read, file.write {
+    let _ = try sqlite.exec(db, sqlite.sql("insert into people(name) values (?)"), [sqlite.Value.text(name)]);
     return ok();
 }
 
-fn names(db: Database[uses file.read, file.write]) -> result[list[Row]] uses file.read, file.write {
-    return query(db, sql("select name from people"), new list[Value]);
+fn names(db: sqlite.Database[uses file.read, file.write]) -> result[list[sqlite.Row]] uses file.read, file.write {
+    return sqlite.query(db, sqlite.sql("select name from people"), new list[sqlite.Value]);
 }
 
-fn scratch() -> result[list[Row]] {
-    return query(open_memory(), sql("select 1 as x"), new list[Value]);
+fn scratch() -> result[list[sqlite.Row]] {
+    return sqlite.query(sqlite.open_memory(), sqlite.sql("select 1 as x"), new list[sqlite.Value]);
 }
 
 fn main() -> result[void] uses console, file.read, file.write {
-    let db = try open("people.db");
-    let _ = try exec(db, sql("create table if not exists people(name text)"), new list[Value]);
+    let db = try sqlite.open("people.db");
+    let _ = try sqlite.exec(db, sqlite.sql("create table if not exists people(name text)"), new list[sqlite.Value]);
     try add(db, "Ada");
     print(str(len(try names(db))) + " " + str(len(try scratch())));
     return ok();

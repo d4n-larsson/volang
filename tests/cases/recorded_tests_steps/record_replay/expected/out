@@ -20,9 +20,9 @@ PASS reads a file and a variable (0ms, replayed)
 --- stderr
 --- exit 0
 $ vo test --replay rec --json main.vo
-{"v":1,"kind":"test","id":"main.vo::gets a page","name":"gets a page","status":"pass","file":"main.vo","start":{"line":20,"col":1},"uses":"net, env","ms":0,"recording":"replayed"}
-{"v":1,"kind":"test","id":"main.vo::posts json","name":"posts json","status":"pass","file":"main.vo","start":{"line":31,"col":1},"uses":"net, env","ms":0,"recording":"replayed"}
-{"v":1,"kind":"test","id":"main.vo::reads a file and a variable","name":"reads a file and a variable","status":"pass","file":"main.vo","start":{"line":43,"col":1},"uses":"file.read(\"data/\"), env","ms":0,"recording":"replayed"}
+{"v":1,"kind":"test","id":"main.vo::gets a page","name":"gets a page","status":"pass","file":"main.vo","start":{"line":19,"col":1},"uses":"net, env","ms":0,"recording":"replayed"}
+{"v":1,"kind":"test","id":"main.vo::posts json","name":"posts json","status":"pass","file":"main.vo","start":{"line":30,"col":1},"uses":"net, env","ms":0,"recording":"replayed"}
+{"v":1,"kind":"test","id":"main.vo::reads a file and a variable","name":"reads a file and a variable","status":"pass","file":"main.vo","start":{"line":42,"col":1},"uses":"file.read(\"data/\"), env","ms":0,"recording":"replayed"}
 {"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":3,"failed":0,"errored":0,"timed_out":0,"selected":3,"unused_recordings":[]}
 --- stderr
 --- exit 0

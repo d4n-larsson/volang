@@ -1,9 +1,8 @@
 # Spec 057 (US1): a directory is resolved like a file path: a link to a directory, and "..", lead where
 # they point.
-import std.process.Output;
-import std.process.run_with;
+import std.process;
 
-fn show(what: str, r: result[Output]) uses console {
+fn show(what: str, r: result[process.Output]) uses console {
     match r {
         case ok(out) {
             write(what + ": " + out.stdout);
@@ -15,6 +14,6 @@ fn show(what: str, r: result[Output]) uses console {
 }
 
 fn main() uses console, file.read("./"), process("bin/cat_file") {
-    show("linked/", run_with("bin/cat_file", ["a.txt"], "", [], "linked/"));
-    show("work/../work/", run_with("bin/cat_file", ["a.txt"], "", [], "work/../work/"));
+    show("linked/", process.run_with("bin/cat_file", ["a.txt"], "", [], "linked/"));
+    show("work/../work/", process.run_with("bin/cat_file", ["a.txt"], "", [], "work/../work/"));
 }

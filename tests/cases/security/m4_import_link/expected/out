@@ -1,7 +1,7 @@
 $ vo check repo/main.vo
-repo/main.vo:1:1: error[E0211]: `repo/leak.vo` leads outside this program's directory through a symbolic link: an import must stay inside it (or inside a listed package).
-   1 | import leak.thing;
-     | ^^^^^^^^^^^^^^^^^^
+repo/main.vo:2:1: error[E0211]: `repo/leak.vo` leads outside this program's directory through a symbolic link: an import must stay inside it (or inside a listed package).
+   2 | import leak;
+     | ^^^^^^^^^^^^
 1 error, 0 warnings
 --- stderr
 --- exit 65

@@ -47,8 +47,8 @@ The builtins you know from lists and maps work on the collections where they mak
 | `for x in c` | (loop over `keys(m)`) | ascending | in `pop` order | front to back |
 | `==`, `!=` | same contents in the same order | same | same | same |
 
-Emptiness is `len(c) == 0`. Everything else is a function in `std.collections`, imported one item at
-a time: `import std.collections.key_at_or_below;`. All of them are pure.
+Emptiness is `len(c) == 0`. Everything else is a function in `std.collections`: `import std.collections;`,
+then `collections.key_at_or_below(...)`. All of them are pure.
 
 ## `ordered_map[K, V]`: keys in sorted order
 
@@ -57,10 +57,8 @@ finds a key's neighbors without a scan. The key type must be ordered: `int`, `fl
 record of ordered fields ([E0313](../errors/E0313.md) otherwise).
 
 ```vo
-import std.collections.first_key;
-import std.collections.key_at_or_below;
-import std.collections.keys_between;
-import std.option.or_else;
+import std.collections;
+import std.option;
 
 fn main() -> result[void] uses console {
     let on_call = new ordered_map[int, str];
@@ -71,10 +69,10 @@ fn main() -> result[void] uses console {
     print(join(map(keys(on_call), fn(k: int) -> str {
         return str(k);
     }), " "));
-    let start = or_else(key_at_or_below(on_call, 1415), 0);
+    let start = option.or_else(collections.key_at_or_below(on_call, 1415), 0);
     print("14:15 goes to " + on_call[start]);
-    print("first shift starts at " + str(or_else(first_key(on_call), 0)));
-    for k in keys_between(on_call, 800, 1400) {
+    print("first shift starts at " + str(option.or_else(collections.first_key(on_call), 0)));
+    for k in collections.keys_between(on_call, 800, 1400) {
         print(str(k) + " " + on_call[k]);
     }
     return ok();
@@ -109,11 +107,8 @@ there changes nothing), `has` tests membership, `remove` deletes, and `for` visi
 order.
 
 ```vo
-import std.collections.after;
-import std.collections.difference;
-import std.collections.first;
-import std.collections.union;
-import std.option.or_else;
+import std.collections;
+import std.option;
 
 fn show(s: ordered_set[str]) -> str {
     let parts = new list[str];
@@ -133,11 +128,11 @@ fn main() -> result[void] uses console {
         push(paged, name);
     }
     print(show(paged) + " (" + str(len(paged)) + ")");
-    print("never paged: " + show(difference(rota, paged)));
-    print("first: " + or_else(first(rota), "nobody") + ", after bo: " + or_else(after(rota, "bo"), "nobody"));
+    print("never paged: " + show(collections.difference(rota, paged)));
+    print("first: " + option.or_else(collections.first(rota), "nobody") + ", after bo: " + option.or_else(collections.after(rota, "bo"), "nobody"));
     let extra = new ordered_set[str];
     push(extra, "eve");
-    print(show(union(rota, extra)) + " " + str(has(rota, "eve")));
+    print(show(collections.union(rota, extra)) + " " + str(has(rota, "eve")));
     return ok();
 }
 ```
@@ -170,7 +165,7 @@ A record of ordered fields is ordered field by field, in declaration order, so t
 declaration is the priority rule. Here severity decides first, then the minute the ticket arrived:
 
 ```vo
-import std.collections.peek;
+import std.collections;
 
 record Ticket {
     severity: int;
@@ -184,7 +179,7 @@ fn main() -> result[void] uses console {
     push(q, new Ticket { severity: 1, minute: 12, title: "VPN refuses logins" });
     push(q, new Ticket { severity: 1, minute: 7, title: "email down" });
     push(q, new Ticket { severity: 3, minute: 1, title: "new monitor" });
-    match peek(q) {
+    match collections.peek(q) {
         case some(t) {
             print("next: " + t.title);
         }
@@ -227,16 +222,15 @@ position from the front ([R0003](../errors/R0003.md) outside the deque), and `fo
 Keeping only the last three items is `push` at the back and `pop_front` when it is full:
 
 ```vo
-import std.collections.front;
-import std.collections.pop_front;
-import std.option.or_else;
+import std.collections;
+import std.option;
 
 fn main() -> result[void] uses console {
     let recent = new deque[str];
     for page in ["home", "docs", "guide", "errors", "std"] {
         push(recent, page);
         if len(recent) > 3 {
-            let _ = try pop_front(recent);
+            let _ = try collections.pop_front(recent);
         }
     }
     let parts = new list[str];
@@ -244,7 +238,7 @@ fn main() -> result[void] uses console {
         push(parts, p);
     }
     print(
-        join(parts, " > ") + " (oldest " + or_else(front(recent), "") + ", newest " + recent[len(recent) - 1] + ")"
+        join(parts, " > ") + " (oldest " + option.or_else(collections.front(recent), "") + ", newest " + recent[len(recent) - 1] + ")"
     );
     return ok();
 }
@@ -277,14 +271,14 @@ values far apart, and the overflow is a runtime error ([R0001](../errors/R0001.m
 order:
 
 ```vo
-import std.collections.ordered_set_by;
+import std.collections;
 
 fn by_value(a: int, b: int) -> int {
     return a - b;
 }
 
 fn main() uses console {
-    let s = ordered_set_by(by_value);
+    let s = collections.ordered_set_by(by_value);
     push(s, 9223372036854775807);
     push(s, -2);
     print(str(len(s)));
@@ -298,7 +292,7 @@ A safe comparison returns -1, 0 or 1. This queue gives the largest amount first,
 order among equal amounts (the ties keep push order):
 
 ```vo
-import std.collections.priority_queue_by;
+import std.collections;
 
 record Order {
     id: str;
@@ -316,7 +310,7 @@ fn larger_first(a: Order, b: Order) -> int {
 }
 
 fn main() -> result[void] uses console {
-    let q = priority_queue_by(larger_first);
+    let q = collections.priority_queue_by(larger_first);
     push(q, new Order { id: "a", amount: 30 });
     push(q, new Order { id: "b", amount: 9223372036854775807 });
     push(q, new Order { id: "c", amount: 30 });
@@ -419,7 +413,7 @@ then loops over the copy. The loop body can change the collection freely (push, 
 affecting the loop, and the copy is made in full even if the loop stops early with `break`.
 
 ```vo
-import std.collections.copy_set;
+import std.collections;
 
 fn main() uses console {
     let s = new ordered_set[int];
@@ -430,7 +424,7 @@ fn main() uses console {
         remove(s, x);
     }
     let parts = new list[str];
-    for x in copy_set(s) {
+    for x in collections.copy_set(s) {
         push(parts, str(x));
     }
     print(join(parts, " "));
@@ -445,21 +439,20 @@ For a large collection where you only need a few elements, walk it without a cop
 time, with `after` (sets) or `key_after` (maps):
 
 ```vo
-import std.collections.first;
-import std.collections.after;
+import std.collections;
 
 fn main() uses console {
     let s = new ordered_set[int];
     for x in [40, 10, 30, 20] {
         push(s, x);
     }
-    var cur = first(s);
+    var cur = collections.first(s);
     var shown = 0;
     while shown < 2 {
         match cur {
             case some(x) {
                 print(str(x));
-                set cur = after(s, x);
+                set cur = collections.after(s, x);
                 set shown = shown + 1;
             }
             case none {

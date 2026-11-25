@@ -1,12 +1,10 @@
-import std.json.parse_json;
-import std.json.write_json;
-import std.json.write_json_pretty;
+import std.json;
 
 fn main() uses console, input {
     let text = read_all();
-    match parse_json(text) {
+    match json.parse_json(text) {
         case ok(doc) {
-            match write_json(doc) {
+            match json.write_json(doc) {
                 case ok(compact) {
                     print(compact);
                 }
@@ -15,7 +13,7 @@ fn main() uses console, input {
                     exit(1);
                 }
             }
-            match write_json_pretty(doc) {
+            match json.write_json_pretty(doc) {
                 case ok(pretty) {
                     print(pretty);
                 }

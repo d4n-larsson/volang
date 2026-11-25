@@ -38,7 +38,7 @@ or `module`), `signature`, `description` and, when there is one, `example`. Func
 with `"command":"doc"` and `items` ends the output:
 
 ```json
-{"v":1,"kind":"doc","module":"std.text","name":"pad_left","item":"fn","signature":"fn pad_left(s: str, width: int, fill: str) -> str","tparams":[],"params":[{"name":"s","type":"str"},{"name":"width","type":"int"},{"name":"fill","type":"str"}],"returns":"str","effects":[],"description":"s padded on the left with fill (one character) to width characters.","example":"pad_left(\"7\", 3, \"0\") is \"007\""}
+{"v":1,"kind":"doc","module":"std.text","name":"pad_left","item":"fn","signature":"fn pad_left(s: str, width: int, fill: str) -> str","tparams":[],"params":[{"name":"s","type":"str"},{"name":"width","type":"int"},{"name":"fill","type":"str"}],"returns":"str","effects":[],"description":"s padded on the left with fill (one character) to width characters.","example":"pad_left(\"7\", 3, \"0\") is \"007\"","use":"text.pad_left"}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":1}
 ```
 
@@ -58,10 +58,10 @@ An unknown name is [T0010](../errors/T0010.md), with the closest name when there
 Looking up one function before using it:
 
 ```vo
-import std.text.pad_left;
+import std.text;
 
 fn main() uses console {
-    print(pad_left("7", 3, "0"));
+    print(text.pad_left("7", 3, "0"));
 }
 ```
 
@@ -69,9 +69,10 @@ fn main() uses console {
 $ vo doc std.text.pad_left
 fn pad_left(s: str, width: int, fill: str) -> str
     s padded on the left with fill (one character) to width characters.
+    use: import std.text; then text.pad_left
     example: pad_left("7", 3, "0") is "007"
 $ vo doc --json std.text.pad_left
-{"v":1,"kind":"doc","module":"std.text","name":"pad_left","item":"fn","signature":"fn pad_left(s: str, width: int, fill: str) -> str","tparams":[],"params":[{"name":"s","type":"str"},{"name":"width","type":"int"},{"name":"fill","type":"str"}],"returns":"str","effects":[],"description":"s padded on the left with fill (one character) to width characters.","example":"pad_left(\"7\", 3, \"0\") is \"007\""}
+{"v":1,"kind":"doc","module":"std.text","name":"pad_left","item":"fn","signature":"fn pad_left(s: str, width: int, fill: str) -> str","tparams":[],"params":[{"name":"s","type":"str"},{"name":"width","type":"int"},{"name":"fill","type":"str"}],"returns":"str","effects":[],"description":"s padded on the left with fill (one character) to width characters.","example":"pad_left(\"7\", 3, \"0\") is \"007\"","use":"text.pad_left"}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":1}
 $ vo doc print
 print (s: str)

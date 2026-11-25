@@ -1,18 +1,15 @@
 # Spec 055 US3: E0341 at a literal metric or label name the text format does not allow (at the first bad
 # character), at a label starting with `__` and at a repeated label; valid and non-literal names are fine.
-import std.metrics.Metric;
-import std.metrics.counter;
-import std.metrics.gauge;
-import std.metrics.histogram;
+import std.metrics;
 
-fn all_metrics(name: str) -> list[Metric] {
+fn all_metrics(name: str) -> list[metrics.Metric] {
     return [
-        counter("http-requests", "Requests.", new list[str]),
-        gauge("queue_length", "Items.", ["__x"]),
-        histogram("job_seconds", "Time.", ["queue", "queue"], [1.0]),
-        counter("2xx_total", "Bad start.", ["ok-label"]),
-        counter("app:jobs_total", "Fine.", ["queue", "outcome"]),
-        counter(name, "Not a literal.", [name])
+        metrics.counter("http-requests", "Requests.", new list[str]),
+        metrics.gauge("queue_length", "Items.", ["__x"]),
+        metrics.histogram("job_seconds", "Time.", ["queue", "queue"], [1.0]),
+        metrics.counter("2xx_total", "Bad start.", ["ok-label"]),
+        metrics.counter("app:jobs_total", "Fine.", ["queue", "outcome"]),
+        metrics.counter(name, "Not a literal.", [name])
     ];
 }
 

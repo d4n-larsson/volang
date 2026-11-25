@@ -1,7 +1,5 @@
-import catalog.Item;
-import catalog.sorted_items;
-import orders.Order;
-import orders.units;
+import catalog;
+import orders;
 
 export fn money(cents: int) -> str {
     var frac = str(cents % 100);
@@ -11,15 +9,15 @@ export fn money(cents: int) -> str {
     return str(cents / 100) + "." + frac;
 }
 
-export fn placed_line(order: Order) -> str {
-    var text = "order " + order.order_id + " placed: " + str(units(order)) + " units, total " + money(order.total);
+export fn placed_line(order: orders.Order) -> str {
+    var text = "order " + order.order_id + " placed: " + str(orders.units(order)) + " units, total " + money(order.total);
     if order.discount > 0 {
         set text = text + " (discount " + money(order.discount) + ")";
     }
     return text;
 }
 
-export fn show_order(order: Order) -> list[str] {
+export fn show_order(order: orders.Order) -> list[str] {
     var status = "active";
     if order.cancelled {
         set status = "cancelled";
@@ -32,15 +30,15 @@ export fn show_order(order: Order) -> list[str] {
     return out;
 }
 
-export fn full_report(catalog: map[str, Item], orders: map[str, Order]) -> list[str] {
+export fn full_report(catalog_value: map[str, catalog.Item], orders_value: map[str, orders.Order]) -> list[str] {
     let out = new list[str];
-    for item in sorted_items(catalog) {
+    for item in catalog.sorted_items(catalog_value) {
         push(out, "item " + item.sku + " " + item.name + " price " + money(item.price) + " stock " + str(item.stock) + " sold " + str(item.sold));
     }
     var revenue = 0;
     var active = 0;
-    for order_id in keys(orders) {
-        let order = orders[order_id];
+    for order_id in keys(orders_value) {
+        let order = orders_value[order_id];
         if not order.cancelled {
             set revenue = revenue + order.total;
             set active = active + 1;

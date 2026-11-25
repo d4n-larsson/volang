@@ -1,14 +1,14 @@
 # Spec 021 US1: read a PNG as bytes; its signature and its size (big-endian at bytes 16 and 20).
-import std.fs.read_bytes;
-import std.bytes.from_ints;
+import std.bytes;
+import std.fs;
 
 fn be32(b: bytes, at: int) -> int {
     return ((b[at] * 256 + b[at + 1]) * 256 + b[at + 2]) * 256 + b[at + 3];
 }
 
 fn main() -> result[void] uses console, file.read {
-    let b = try read_bytes(args()[0]);
+    let b = try fs.read_bytes(args()[0]);
     print(str(b[0]) + " " + str(b[1]) + " " + str(b[2]) + " " + str(b[3]));
-    print(str(slice(b, 0, 8) == from_ints([137, 80, 78, 71, 13, 10, 26, 10])) + " " + str(be32(b, 16)) + " " + str(be32(b, 20)));
+    print(str(slice(b, 0, 8) == bytes.from_ints([137, 80, 78, 71, 13, 10, 26, 10])) + " " + str(be32(b, 16)) + " " + str(be32(b, 20)));
     return ok();
 }

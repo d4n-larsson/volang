@@ -1,14 +1,9 @@
 # Fixed offsets: one offset for every instant, never skipped or repeated.
-import std.time.abbreviation_at;
-import std.time.offset_zone;
-import std.time.format_in;
-import std.time.from_local;
-import std.time.from_ms;
-import std.time.offset_at;
+import std.time;
 
 fn main() uses console {
     for minutes in [0, 330, -300, 1439, -1439, 1] {
-        let z = offset_zone(minutes * 60000);
-        print(format("{} {} {} {} {}", z.name, abbreviation_at(z, 0), offset_at(z, 0), format_in(z, 86400000), from_local(z, from_ms(86400000)) == ok(86400000 - minutes * 60000)));
+        let z = time.offset_zone(minutes * 60000);
+        print(format("{} {} {} {} {}", z.name, time.abbreviation_at(z, 0), time.offset_at(z, 0), time.format_in(z, 86400000), time.from_local(z, time.from_ms(86400000)) == ok(86400000 - minutes * 60000)));
     }
 }

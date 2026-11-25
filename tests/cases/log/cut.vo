@@ -1,23 +1,20 @@
 # Spec 055 US1: a string over 4,096 bytes is cut and ends with …[cut]; a field named like a fixed key (time,
 # level, message, request_id) is written field_NAME.
-import std.json.parse_json;
-import std.json.text_field;
-import std.log.field;
-import std.log.log_info;
-import std.log.logged;
+import std.json;
+import std.log;
 
 test "long values are cut" uses log {
     var long = "";
     for _ in 0..5000 {
         set long = long + "a";
     }
-    log_info("big", [field("body", long), field("message", "mine"), field("level", 9)]);
-    let r = logged()[0];
-    match parse_json(r) {
+    log.log_info("big", [log.field("body", long), log.field("message", "mine"), log.field("level", 9)]);
+    let r = log.logged()[0];
+    match json.parse_json(r) {
         case ok(j) {
-            expect_eq(text_field(j, "body"), ok(slice(long, 0, 4096) + "…[cut]"));
-            expect_eq(text_field(j, "field_message"), ok("mine"));
-            expect_eq(text_field(j, "message"), ok("big"));
+            expect_eq(json.text_field(j, "body"), ok(slice(long, 0, 4096) + "…[cut]"));
+            expect_eq(json.text_field(j, "field_message"), ok("mine"));
+            expect_eq(json.text_field(j, "message"), ok("big"));
         }
         case err(e) {
             expect_eq(e, "");

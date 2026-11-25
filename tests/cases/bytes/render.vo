@@ -1,12 +1,12 @@
 # Spec 021: bytes in a runtime error's locals render as <N bytes: hex>, truncated after 32 bytes.
-import std.bytes.from_ints;
+import std.bytes;
 
 fn main() uses console {
-    let short = from_ints([1, 2, 3]);
+    let short = bytes.from_ints([1, 2, 3]);
     var xs = new list[int];
     for i in 0..40 {
         push(xs, i);
     }
-    let long = from_ints(xs);
+    let long = bytes.from_ints(xs);
     print(str(short[0] + long[0]) + str(1 / 0));
 }

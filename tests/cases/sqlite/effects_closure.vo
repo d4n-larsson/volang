@@ -1,15 +1,10 @@
 # A file database captured by an anonymous function passed to map: the anonymous function and the
 # function around it have no uses, so the query is E0501.
-import std.sqlite.open;
-import std.sqlite.sql;
-import std.sqlite.query;
-import std.sqlite.Database;
-import std.sqlite.Row;
-import std.sqlite.Value;
+import std.sqlite;
 
-fn counts(db: Database[uses file.read, file.write], tables: list[str]) -> list[int] {
+fn counts(db: sqlite.Database[uses file.read, file.write], tables: list[str]) -> list[int] {
     return map(tables, fn(t: str) -> int {
-        match query(db, sql("select name from people"), new list[Value]) {
+        match sqlite.query(db, sqlite.sql("select name from people"), new list[sqlite.Value]) {
             case ok(rows) {
                 return len(rows);
             }
@@ -21,7 +16,7 @@ fn counts(db: Database[uses file.read, file.write], tables: list[str]) -> list[i
 }
 
 fn main() -> result[void] uses console, file.read, file.write {
-    let db = try open("people.db");
+    let db = try sqlite.open("people.db");
     print(str(counts(db, ["people"])[0]));
     return ok();
 }

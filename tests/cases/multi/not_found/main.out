@@ -1,3 +1,3 @@
-{"v":1,"kind":"diagnostic","code":"E0205","name":"import_not_found","severity":"error","file":"main.vo","start":{"line":1,"col":1},"end":{"line":1,"col":19},"text":"import nope.thing;","message":"Cannot find `nope.vo` for this import.","fixes":[],"related":[]}
-{"v":1,"kind":"diagnostic","code":"E0205","name":"import_not_found","severity":"error","file":"main.vo","start":{"line":2,"col":14},"end":{"line":2,"col":21},"text":"missing","message":"`geom2.vo` has no item `missing`.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0205","name":"import_not_found","severity":"error","file":"main.vo","start":{"line":2,"col":1},"end":{"line":2,"col":19},"text":"import nope.thing;","message":"Cannot find `nope/thing.vo` for this import.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0201","name":"undefined_name","severity":"error","file":"main.vo","start":{"line":5,"col":11},"end":{"line":5,"col":24},"text":"geom2.missing","message":"`geom2.vo` has no item `missing`.","fixes":[],"related":[]}
 {"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

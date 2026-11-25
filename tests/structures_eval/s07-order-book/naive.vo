@@ -1,4 +1,4 @@
-import std.text.words;
+import std.text;
 
 # The best price of a side: the highest when highest is true, else the lowest; -1 when empty.
 fn best(book: map[int, int], highest: bool) -> int {
@@ -22,7 +22,7 @@ fn main() -> result[void] uses console, input {
     let bids = new map[int, int];
     let asks = new map[int, int];
     for line in split(read_all(), "\n") {
-        let w = words(line);
+        let w = text.words(line);
         if len(w) == 3 {
             let buy = w[0] == "buy";
             let price = try parse_int(w[1]);

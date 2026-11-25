@@ -1,9 +1,8 @@
 # Spec 021 US5: property tests generate bytes; a failure shrinks toward shorter, smaller values.
-import std.bytes.from_hex;
-import std.bytes.to_hex;
+import std.bytes;
 
 prop "hex round trip" (b: bytes) {
-    expect(from_hex(to_hex(b)) == ok(b));
+    expect(bytes.from_hex(bytes.to_hex(b)) == ok(b));
 }
 
 prop "short" (b: bytes) {

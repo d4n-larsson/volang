@@ -1,0 +1,8 @@
+# A builtin written with a module name: E0201 with the fix removing the module name.
+import std.lists;
+
+fn main() uses console {
+    let xs = [1, 2, 3];
+    print(str(lists.len(xs)));
+    print(str(lists.has_item(xs, 2)));
+}

@@ -1,9 +1,7 @@
 # Spec 019: the same program, but asking for each URL over https://. GET each URL given as an argument (POST URL BODY with `post`), and print the response.
-import std.http.Response;
-import std.http.get;
-import std.http.post;
+import std.http;
 
-fn show(r: result[Response]) uses console {
+fn show(r: result[http.Response]) uses console {
     match r {
         case ok(resp) {
             print("status " + str(resp.status));
@@ -22,10 +20,10 @@ fn show(r: result[Response]) uses console {
 fn main() uses console, net("127.0.0.1") {
     let a = args();
     if len(a) == 3 and a[0] == "post" {
-        show(post(a[1], "text/plain", a[2]));
+        show(http.post(a[1], "text/plain", a[2]));
         return;
     }
     for url in a {
-        show(get("https" + slice(url, 4, len(url))));
+        show(http.get("https" + slice(url, 4, len(url))));
     }
 }

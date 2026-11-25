@@ -1,5 +1,4 @@
-import std.regex.regex;
-import std.regex.is_match;
+import std.regex;
 
 fn main() uses console {
     var text = "a";
@@ -7,5 +6,5 @@ fn main() uses console {
         set text = text + text;
     }
     print(str(len(text)));
-    print(str(is_match(text, regex("(a|aa)*c"))));
+    print(str(regex.is_match(text, regex.regex("(a|aa)*c"))));
 }

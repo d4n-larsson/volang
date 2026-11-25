@@ -1,12 +1,9 @@
 # Spec 017 (US2): rename moves a file; an existing target is an error and nothing changes.
-import std.fs.Entry;
-import std.fs.Info;
-import std.fs.list_dir;
-import std.fs.rename;
+import std.fs;
 
 # Prints every entry below dir, depth first, with its kind.
 fn tree(dir: str, indent: str) uses console, file.read("work/") {
-    match list_dir(dir) {
+    match fs.list_dir(dir) {
         case ok(entries) {
             for e in entries {
                 match e.info {
@@ -45,10 +42,10 @@ fn said(what: str, r: result[void]) uses console {
 }
 
 fn main() uses console, file.read("work/"), file.write("work/"), file.delete("work/") {
-    said("inbox/a.txt to done/a.txt", rename("work/inbox/a.txt", "work/done/a.txt"));
-    said("onto an existing name", rename("work/inbox/b.txt", "work/done/b.txt"));
-    said("a missing file", rename("work/inbox/none.txt", "work/done/none.txt"));
-    said("a directory", rename("work/inbox", "work/old_inbox"));
+    said("inbox/a.txt to done/a.txt", fs.rename("work/inbox/a.txt", "work/done/a.txt"));
+    said("onto an existing name", fs.rename("work/inbox/b.txt", "work/done/b.txt"));
+    said("a missing file", fs.rename("work/inbox/none.txt", "work/done/none.txt"));
+    said("a directory", fs.rename("work/inbox", "work/old_inbox"));
     tree("work", "");
-    said("the scope itself", rename("work", "work/x"));
+    said("the scope itself", fs.rename("work", "work/x"));
 }

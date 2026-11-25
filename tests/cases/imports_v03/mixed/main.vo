@@ -1,0 +1,19 @@
+# The 0.3 form from a file beside this one, a file in a directory and std, with one module import
+# already written the new way.
+import helpers.prefix;
+import helpers.show;
+import lib.notes.Note;
+import lib.notes.make;
+import std.lists;
+import std.text.repeat;
+
+fn first(ns: list[Note]) -> str {
+    return ns[0].text;
+}
+
+fn main() uses console {
+    let ns = [make("a"), new Note { text: "b" }];
+    print(show(first(ns)));
+    print(prefix + repeat("-", 3));
+    print(str(lists.has_item([1, 2], 2)));
+}

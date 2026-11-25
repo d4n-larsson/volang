@@ -1,8 +1,8 @@
 # Calling std.http.get needs net, like a builtin (E0501 with the fix).
-import std.http.get;
+import std.http;
 
 fn fetch(url: str) -> bool {
-    match get(url) {
+    match http.get(url) {
         case ok(_) {
             return true;
         }

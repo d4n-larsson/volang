@@ -1,34 +1,28 @@
 # One function for every database: generic over the database's effects, so it takes the file database
 # under a scoped grant and an in-memory one in tests. `Database[D]` and `Database[uses D]` are the same.
-import std.sqlite.open;
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.exec;
-import std.sqlite.query;
-import std.sqlite.Database;
-import std.sqlite.Value;
+import std.sqlite;
 
-fn setup[D: effects](db: Database[D]) -> result[int] uses D {
-    let c = try exec(db, sql("create table if not exists t(x)"), new list[Value]);
+fn setup[D: effects](db: sqlite.Database[D]) -> result[int] uses D {
+    let c = try sqlite.exec(db, sqlite.sql("create table if not exists t(x)"), new list[sqlite.Value]);
     return ok(c.changed);
 }
 
-fn count[D: effects](db: Database[uses D]) -> result[int] uses D {
-    let _ = try exec(db, sql("insert into t values (1)"), new list[Value]);
-    return ok(len(try query(db, sql("select x from t"), new list[Value])));
+fn count[D: effects](db: sqlite.Database[uses D]) -> result[int] uses D {
+    let _ = try sqlite.exec(db, sqlite.sql("insert into t values (1)"), new list[sqlite.Value]);
+    return ok(len(try sqlite.query(db, sqlite.sql("select x from t"), new list[sqlite.Value])));
 }
 
 fn main() -> result[void] uses console, file.read("data/", "imports/"), file.write("data/") {
-    let file = try open("data/app.db");
+    let file = try sqlite.open("data/app.db");
     let _ = try setup(file);
-    let memory = open_memory();
+    let memory = sqlite.open_memory();
     let _ = try setup(memory);
     print(str(try count(file)) + " " + str(try count(memory)));
     return ok();
 }
 
 test "an in-memory database needs no effect" {
-    let db = open_memory();
+    let db = sqlite.open_memory();
     expect(setup(db) == ok(0));
     expect(count(db) == ok(1));
 }

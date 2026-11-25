@@ -1,25 +1,18 @@
-import clock.is_digits;
-import clock.num;
-import clock.parse_time;
-import schedule.Event;
-import schedule.add_event;
-import schedule.remove_event;
-import report.agenda_lines;
-import report.who_line;
-import report.free_lines;
-import report.summary_lines;
+import clock;
+import report;
+import schedule;
 
 # The first word that is not a valid time, or "" when all are valid.
 fn bad_time(words: list[str]) -> str {
     for w in words {
-        if parse_time(w) < 0 {
+        if clock.parse_time(w) < 0 {
             return w;
         }
     }
     return "";
 }
 
-fn run(words: list[str], events: map[str, Event]) -> list[str] {
+fn run(words: list[str], events: map[str, schedule.Event]) -> list[str] {
     let cmd = words[0];
     let args_value = slice(words, 1, len(words));
     if cmd == "add" {
@@ -30,56 +23,56 @@ fn run(words: list[str], events: map[str, Event]) -> list[str] {
         if bad != "" {
             return ["error: bad time " + bad];
         }
-        return [add_event(events, args_value[0], args_value[1], parse_time(args_value[2]), parse_time(args_value[3]))];
+        return [schedule.add_event(events, args_value[0], args_value[1], clock.parse_time(args_value[2]), clock.parse_time(args_value[3]))];
     }
     if cmd == "remove" {
         if len(args_value) != 1 {
             return ["error: bad command"];
         }
-        return [remove_event(events, args_value[0])];
+        return [schedule.remove_event(events, args_value[0])];
     }
     if cmd == "agenda" {
         if len(args_value) != 1 {
             return ["error: bad command"];
         }
-        return agenda_lines(events, args_value[0]);
+        return report.agenda_lines(events, args_value[0]);
     }
     if cmd == "who" {
         if len(args_value) != 2 {
             return ["error: bad command"];
         }
-        let t = parse_time(args_value[1]);
+        let t = clock.parse_time(args_value[1]);
         if t < 0 {
             return ["error: bad time " + args_value[1]];
         }
-        return [who_line(events, args_value[0], t)];
+        return [report.who_line(events, args_value[0], t)];
     }
     if cmd == "free" {
-        if len(args_value) != 4 or not is_digits(args_value[3]) or num(args_value[3]) == 0 {
+        if len(args_value) != 4 or not clock.is_digits(args_value[3]) or clock.num(args_value[3]) == 0 {
             return ["error: bad command"];
         }
         let bad = bad_time(slice(args_value, 1, 3));
         if bad != "" {
             return ["error: bad time " + bad];
         }
-        let lo = parse_time(args_value[1]);
-        let hi = parse_time(args_value[2]);
+        let lo = clock.parse_time(args_value[1]);
+        let hi = clock.parse_time(args_value[2]);
         if lo >= hi {
             return ["error: empty interval"];
         }
-        return free_lines(events, args_value[0], lo, hi, num(args_value[3]));
+        return report.free_lines(events, args_value[0], lo, hi, clock.num(args_value[3]));
     }
     if cmd == "summary" {
         if len(args_value) != 0 {
             return ["error: bad command"];
         }
-        return summary_lines(events);
+        return report.summary_lines(events);
     }
     return ["error: unknown command " + cmd];
 }
 
 fn main() uses console, input {
-    let events = new map[str, Event];
+    let events = new map[str, schedule.Event];
     for line in split(read_all(), "\n") {
         let words = filter(split(line, " "), fn(w: str) -> bool {
             return w != "";

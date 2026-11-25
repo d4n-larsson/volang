@@ -1,10 +1,10 @@
 # The same-origin rule of std.security (spec 052, research R5): safe methods pass; else Sec-Fetch-Site
 # decides when sent; else Origin must name the application (the Host header, or the origin the
 # application set); a request that says nothing is refused. "" stands for a header not sent.
-import std.security.same_origin;
+import std.security;
 
 fn row(method: str, site: str, origin: str, host: str, setting: str) uses console {
-    print(method + " site=[" + site + "] origin=[" + origin + "] host=[" + host + "] setting=[" + setting + "]: " + str(same_origin(method, site, origin, host, setting)));
+    print(method + " site=[" + site + "] origin=[" + origin + "] host=[" + host + "] setting=[" + setting + "]: " + str(security.same_origin(method, site, origin, host, setting)));
 }
 
 fn main() uses console {

@@ -1,13 +1,10 @@
-import std.json.parse_json;
-import std.json.write_json;
-import std.json.as_int;
-import std.json.as_float;
+import std.json;
 
 fn main() -> result[void] uses console {
     for s in ["3", "-0", "3.0", "1e3", "0.1", "9223372036854775807", "9223372036854775808", "0.30000000000000004", "-1.5e-10"] {
-        let j = try parse_json(s);
+        let j = try json.parse_json(s);
         var kind = "";
-        match as_int(j) {
+        match json.as_int(j) {
             case ok(i) {
                 set kind = "integer " + str(i);
             }
@@ -15,7 +12,7 @@ fn main() -> result[void] uses console {
                 set kind = "number (as_int: " + e + ")";
             }
         }
-        print(s + ": " + kind + ", written " + try write_json(j) + ", as_float " + str(try as_float(j)));
+        print(s + ": " + kind + ", written " + try json.write_json(j) + ", as_float " + str(try json.as_float(j)));
     }
     return ok();
 }

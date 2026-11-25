@@ -1,15 +1,14 @@
 # Spec 017 (US4): a function that only wrote and now deletes fails the check: it gains file.delete.
-import std.fs.append_file;
-import std.fs.delete;
+import std.fs;
 
 fn log(line: str) -> result[void] uses file.write("logs/"), file.delete("logs/") {
-    match delete("logs/old.txt") {
+    match fs.delete("logs/old.txt") {
         case ok() {
         }
         case err(_) {
         }
     }
-    try append_file("logs/run.txt", line + "\n");
+    try fs.append_file("logs/run.txt", line + "\n");
     return ok();
 }
 

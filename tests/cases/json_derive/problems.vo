@@ -1,8 +1,6 @@
 # from_json's problems (spec 029): every reason with its path, all collected, in document order, then
 # the missing fields.
-import std.json.Json;
-import std.json.from_json;
-import std.json.parse_json;
+import std.json;
 
 variant Level {
     low;
@@ -38,9 +36,9 @@ record Doc {
 }
 
 fn report(text: str) uses console {
-    match parse_json(text) {
+    match json.parse_json(text) {
         case ok(j) {
-            let d: result[Doc] = from_json(j);
+            let d: result[Doc] = json.from_json(j);
             match d {
                 case ok(_) {
                     print("ok");

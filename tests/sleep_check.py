@@ -13,10 +13,10 @@ import os, resource, signal, statistics, subprocess, sys, tempfile, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.environ.get("VO_BIN", os.path.join(ROOT, "build", "vo"))
-SLEEPY = """import std.time.sleep;
+SLEEPY = """import std.time;
 
 fn main() uses console, clock {{
-    sleep({ms});
+    time.sleep({ms});
     print("done");
 }}
 """

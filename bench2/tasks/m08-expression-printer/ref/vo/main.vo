@@ -1,7 +1,7 @@
-import evaluator.evaluate;
-import exprparser.parse_line;
-import lexer.tokenize;
-import printer.show;
+import evaluator;
+import exprparser;
+import lexer;
+import printer;
 
 fn main() uses console, input {
     let env_value = new map[str, int];
@@ -9,15 +9,15 @@ fn main() uses console, input {
         if len(join(split(line, " "), "")) == 0 {
             continue;
         }
-        match tokenize(line) {
+        match lexer.tokenize(line) {
             case ok(toks) {
-                match parse_line(toks) {
+                match exprparser.parse_line(toks) {
                     case ok(st) {
-                        var text = show(st.expr);
+                        var text = printer.show(st.expr);
                         if st.name != "" {
                             set text = st.name + " = " + text;
                         }
-                        match evaluate(st.expr, env_value) {
+                        match evaluator.evaluate(st.expr, env_value) {
                             case ok(v) {
                                 if st.name != "" {
                                     set env_value[st.name] = v;

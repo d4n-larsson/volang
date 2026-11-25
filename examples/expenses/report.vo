@@ -1,30 +1,20 @@
 # Expenses and the report built from them. Everything here is pure: no `uses`, so these functions
 # cannot print, read files or touch the network, and their tests need no setup.
-import std.decimal.Decimal;
-import std.decimal.add;
-import std.decimal.decimal;
-import std.decimal.decimal_text;
-import std.decimal.total;
-import std.json.Json;
-import std.json.as_array;
-import std.json.int_field;
-import std.json.parse_json;
-import std.json.text_field;
-import std.text.align_left;
-import std.text.align_right;
-import std.text.repeat;
-import std.time.parse_time;
+import std.decimal;
+import std.json;
+import std.text;
+import std.time;
 
 export record Expense {
     date: str;
     category: str;
-    amount: Decimal;
+    amount: decimal.Decimal;
     note: str;
 }
 
 export record Total {
     name: str;
-    amount: Decimal;
+    amount: decimal.Decimal;
 }
 
 # A date that does not parse, and why.
@@ -63,43 +53,43 @@ fn shape_error(message: str) -> ExpenseError {
 }
 
 # The expenses in a parsed JSON array of objects with date, category, cents and note.
-export fn expenses_from(doc: Json) -> result[list[Expense], ExpenseError] {
+export fn expenses_from(doc: json.Json) -> result[list[Expense], ExpenseError] {
     let out = new list[Expense];
-    for item in try map_err(as_array(doc), shape_error) {
-        let date = try map_err(text_field(item, "date"), shape_error);
-        match parse_time(date) {
+    for item in try map_err(json.as_array(doc), shape_error) {
+        let date = try map_err(json.text_field(item, "date"), shape_error);
+        match time.parse_time(date) {
             case ok(_) {
             }
             case err(e) {
                 return err(ExpenseError.bad_date(new DateProblem { date: date, reason: e }));
             }
         }
-        let cents = try map_err(int_field(item, "cents"), shape_error);
+        let cents = try map_err(json.int_field(item, "cents"), shape_error);
         if cents < 0 {
             return err(ExpenseError.negative(date));
         }
         push(out, new Expense {
             date: date,
-            category: try map_err(text_field(item, "category"), shape_error),
+            category: try map_err(json.text_field(item, "category"), shape_error),
             amount: amount_of(cents),
-            note: try map_err(text_field(item, "note"), shape_error)
+            note: try map_err(json.text_field(item, "note"), shape_error)
         });
     }
     return ok(out);
 }
 
 # An amount read as whole cents: 129050 is 1290.50, exactly.
-export fn amount_of(cents: int) -> Decimal
+export fn amount_of(cents: int) -> decimal.Decimal
     requires cents >= 0 {
-    return decimal(cents, 2);
+    return decimal.decimal(cents, 2);
 }
 
 # The sum of the amounts for each key, in the order the keys first appear.
 export fn totals(xs: list[Expense], key: fn(Expense) -> str) -> list[Total] {
-    let sums = new map[str, Decimal];
+    let sums = new map[str, decimal.Decimal];
     for e in xs {
         let k = key(e);
-        set sums[k] = add(get_or(sums, k, decimal(0, 2)), e.amount);
+        set sums[k] = decimal.add(get_or(sums, k, decimal.decimal(0, 2)), e.amount);
     }
     let out = new list[Total];
     for k in keys(sums) {
@@ -108,10 +98,13 @@ export fn totals(xs: list[Expense], key: fn(Expense) -> str) -> list[Total] {
     return out;
 }
 
-export fn sum(xs: list[Total]) -> Decimal {
-    return add(decimal(0, 2), total(map(xs, fn(t: Total) -> Decimal {
-        return t.amount;
-    })));
+export fn sum(xs: list[Total]) -> decimal.Decimal {
+    return decimal.add(decimal.decimal(0, 2), decimal.total(map(
+        xs,
+        fn(t: Total) -> decimal.Decimal {
+            return t.amount;
+        }
+    )));
 }
 
 # A titled table: one row per total, names padded to the widest, amounts right-aligned.
@@ -122,12 +115,12 @@ fn table(title: str, rows: list[Total]) -> str {
             set w = len(chars(t.name));
         }
     }
-    var out = align_left(title, w) + "  " + align_right("amount", 10) + "\n";
-    set out = out + repeat("-", w + 12) + "\n";
+    var out = text.align_left(title, w) + "  " + text.align_right("amount", 10) + "\n";
+    set out = out + text.repeat("-", w + 12) + "\n";
     for t in rows {
-        set out = out + align_left(t.name, w) + "  " + align_right(decimal_text(t.amount), 10) + "\n";
+        set out = out + text.align_left(t.name, w) + "  " + text.align_right(decimal.decimal_text(t.amount), 10) + "\n";
     }
-    return out + align_left("total", w) + "  " + align_right(decimal_text(sum(rows)), 10) + "\n";
+    return out + text.align_left("total", w) + "  " + text.align_right(decimal.decimal_text(sum(rows)), 10) + "\n";
 }
 
 # The whole report: by category (largest first) and by month (in date order).
@@ -158,9 +151,9 @@ fn expense(category: str, cents: int) -> Expense {
 
 @spec("FR-001")
 test "amounts print with two decimals" {
-    expect_eq(decimal_text(amount_of(0)), "0.00");
-    expect_eq(decimal_text(amount_of(5)), "0.05");
-    expect_eq(decimal_text(amount_of(129050)), "1290.50");
+    expect_eq(decimal.decimal_text(amount_of(0)), "0.00");
+    expect_eq(decimal.decimal_text(amount_of(5)), "0.05");
+    expect_eq(decimal.decimal_text(amount_of(129050)), "1290.50");
 }
 
 @spec("FR-002")
@@ -177,7 +170,7 @@ test "totals keep the first-seen order" {
 
 @spec("FR-004")
 test "a bad date is an error, not a crash" {
-    match parse_json(`[{"date": "2026-02-30", "category": "x", "cents": 1, "note": ""}]`) {
+    match json.parse_json(`[{"date": "2026-02-30", "category": "x", "cents": 1, "note": ""}]`) {
         case ok(doc) {
             expect_eq(expenses_from(doc), err(
                 ExpenseError.bad_date(new DateProblem {

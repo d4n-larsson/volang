@@ -1,9 +1,8 @@
-import geom.Point;
-import geom.area;
-import text.util.shout;
+import geom;
+import text.util;
 
 fn main() uses console {
-    let p = new Point { x: 3, y: 4 };
-    print(str(area(p)));
-    print(shout("done"));
+    let p = new geom.Point { x: 3, y: 4 };
+    print(str(geom.area(p)));
+    print(util.shout("done"));
 }

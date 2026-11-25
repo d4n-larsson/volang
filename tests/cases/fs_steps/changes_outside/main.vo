@@ -1,8 +1,5 @@
 # Spec 017 (US2): every change outside the scope stops with R0010 and changes nothing.
-import std.fs.append_file;
-import std.fs.delete;
-import std.fs.make_dir;
-import std.fs.rename;
+import std.fs;
 
 fn said(what: str, r: result[void]) uses console {
     match r {
@@ -18,19 +15,19 @@ fn said(what: str, r: result[void]) uses console {
 fn try_it(what: str) uses console, file.write("work/"), file.delete("work/") {
     let up = "work/../";
     if what == "append" {
-        said(what, append_file(up + "keep.txt", "x"));
+        said(what, fs.append_file(up + "keep.txt", "x"));
     }
     if what == "make_dir" {
-        said(what, make_dir(up + "made"));
+        said(what, fs.make_dir(up + "made"));
     }
     if what == "delete" {
-        said(what, delete(up + "keep.txt"));
+        said(what, fs.delete(up + "keep.txt"));
     }
     if what == "rename_from" {
-        said(what, rename(up + "keep.txt", "work/stolen.txt"));
+        said(what, fs.rename(up + "keep.txt", "work/stolen.txt"));
     }
     if what == "rename_to" {
-        said(what, rename("work/a.txt", up + "escaped.txt"));
+        said(what, fs.rename("work/a.txt", up + "escaped.txt"));
     }
 }
 

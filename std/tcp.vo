@@ -1,5 +1,5 @@
 # std.tcp: TCP connections: connect, send, read, TLS, listen and accept, for protocols other than HTTP.
-# Part of the vo standard library (spec 039). Import items one by one: `import std.tcp.NAME;`.
+# Part of the vo standard library (spec 039). Import the module, `import std.tcp;`, and write its items as `tcp.NAME`.
 # Connecting needs `net` with the host in its scopes (`net("db.internal")`, or one port of it:
 # `net("db.internal:5432")`); listening needs `serve` with the address. A connection's type names the
 # effect it was opened under, and using it needs that effect: `fn ask[E: effects](c: Conn[E]) uses E`.

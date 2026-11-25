@@ -1,14 +1,14 @@
-import store.save_total;
-import report.render;
-import util.clamp;
+import report;
+import store;
+import util;
 
 fn main() -> result[void] uses console {
-    let total = clamp(42, 0, 100);
-    print(render(total));
-    try save_total(total);
+    let total = util.clamp(42, 0, 100);
+    print(report.render(total));
+    try store.save_total(total);
     return ok();
 }
 
 test "clamps" {
-    expect_eq(clamp(500, 0, 100), 100);
+    expect_eq(util.clamp(500, 0, 100), 100);
 }

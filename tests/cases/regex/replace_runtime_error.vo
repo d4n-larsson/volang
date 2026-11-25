@@ -1,7 +1,6 @@
-import std.regex.regex;
-import std.regex.replace_matches;
+import std.regex;
 
 fn main() uses console {
     let template = "$" + "9";
-    print(replace_matches("a", regex("(a)"), template));
+    print(regex.replace_matches("a", regex.regex("(a)"), template));
 }

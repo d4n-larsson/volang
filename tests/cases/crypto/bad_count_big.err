@@ -1,6 +1,6 @@
 bad_count_big.vo:4:19: runtime error[R0007]: `random_bytes` needs a count from 0 to 65536, found 65537.
-   4 |     print(str(len(random_bytes(65537))));
-     |                   ^^^^^^^^^^^^^^^^^^^
+   4 |     print(str(len(crypto.random_bytes(65537))));
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at random_bytes (bad_count_big.vo:4:19)
       n: int = 65537

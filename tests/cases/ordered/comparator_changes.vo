@@ -1,9 +1,9 @@
-import std.collections.ordered_set_by;
+import std.collections;
 
 # Spec 014 (research R6): a comparison function may change other collections, never the one it orders.
 fn main() uses console {
     let other = new ordered_set[int];
-    let s: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int {
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int {
         push(other, a);
         return a - b;
     });
@@ -11,7 +11,7 @@ fn main() uses console {
     push(s, 2);
     print("another collection changed: " + str(len(other)));
     let holder = new list[ordered_set[int]];
-    let own: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int {
+    let own: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int {
         if len(holder) > 0 {
             push(holder[0], 99);
         }

@@ -1,5 +1,5 @@
 # std.decimal: Exact decimal numbers: amounts of money and other quantities with decimal places.
-# Part of the vo standard library (spec 044). Import items one by one: `import std.decimal.NAME;`.
+# Part of the vo standard library (spec 044). Import the module, `import std.decimal;`, and write its items as `decimal.NAME`.
 # A Decimal is a whole number of units and a number of decimal places (0 to 18): 12.50 is 1250 units
 # at 2 places. Every function is pure and exact: nothing is rounded unless a Rounding is passed, and a
 # result that does not fit 64 bits of units or 18 places stops the program with R0001, as int

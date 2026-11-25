@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"W0203","name":"unused_import","severity":"warning","file":"unused.vo","start":{"line":3,"col":1},"end":{"line":3,"col":17},"text":"import std.json;","message":"`std.json` is imported but not used.","fixes":[{"file":"unused.vo","start":{"line":3,"col":1},"end":{"line":4,"col":1},"replacement":""}],"related":[]}
+{"v":1,"kind":"diagnostic","code":"W0203","name":"unused_import","severity":"warning","file":"unused.vo","start":{"line":4,"col":1},"end":{"line":4,"col":18},"text":"import std.lists;","message":"`std.lists` is imported but not used.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":0,"warnings":2,"truncated":0,"files":1}

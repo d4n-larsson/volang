@@ -1,4 +1,4 @@
-import std.text.words;
+import std.text;
 
 record Entry {
     word: str;
@@ -23,9 +23,9 @@ fn strip(w: str) -> str {
 }
 
 fn main() uses console, input {
-    let text = read_all();
+    let text_value = read_all();
     let counts = new map[str, int];
-    for w in words(text) {
+    for w in text.words(text_value) {
         let s = strip(lower(w));
         if len(s) == 0 {
             continue;

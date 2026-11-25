@@ -1,0 +1,7 @@
+export record Note {
+    text: str;
+}
+
+export fn make(text: str) -> Note {
+    return new Note { text: text };
+}

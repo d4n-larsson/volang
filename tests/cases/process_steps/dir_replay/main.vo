@@ -1,8 +1,8 @@
 # Spec 057 (US4): a run's working directory is recorded ("dir"); replay gives the recorded output and
 # starts nothing (work/a.txt is gone by then).
-import std.process.run_with;
+import std.process;
 
 fn main() -> result[void] uses console, file.read("./"), process("bin/cat_file") {
-    write((try run_with("bin/cat_file", ["a.txt"], "", [], "work/")).stdout);
+    write((try process.run_with("bin/cat_file", ["a.txt"], "", [], "work/")).stdout);
     return ok();
 }

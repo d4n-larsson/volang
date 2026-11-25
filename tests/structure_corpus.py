@@ -66,7 +66,8 @@ def seeds():
     s["W0702"] = [
         {"main.vo": helpers(134) + main1},
         {"main.vo": "# comments do not count\n\n" + helpers(130) + "fn extra() -> int {\n" + lets(12) + "    return v11;\n}\n\n" + main1},
-        {"main.vo": "import parts.p1;\n\n" + helpers(134) + main1, "parts.vo": "export fn p1() -> int {\n    return 1;\n}\n"},
+        {"main.vo": "import parts;\n\n" + helpers(134) + main1.replace("s1(0)", "s1(parts.p1())"),
+         "parts.vo": "export fn p1() -> int {\n    return 1;\n}\n"},
         {"main.vo": main1.replace("s1(0)", "big(1)") + "\nfn big(x: int) -> int {\n    var t = x;\n"
          + "".join(f"    set t = s{i}(t);\n" for i in range(1, 136)) + "    return t;\n}\n\n" + helpers(140)},
         {"main.vo": helpers(132) + main1 + "\ntest \"one\" {\n    expect_eq(s1(1), 2);\n}\n"},
@@ -92,7 +93,7 @@ def seeds():
     s["W0704"] = [
         {"main.vo": f"fn a(base: int) -> int {{\n{dup}}}\n\nfn b(amount: int) -> int {{\n{dup2}}}\n\n"
          "fn main() uses console {\n    print(str(a(1) + b(2)));\n}\n"},
-        {"main.vo": f"import other.b;\n\nfn a(base: int) -> int {{\n{dup}}}\n\nfn main() uses console {{\n    print(str(a(1) + b(2)));\n}}\n",
+        {"main.vo": f"import other;\n\nfn a(base: int) -> int {{\n{dup}}}\n\nfn main() uses console {{\n    print(str(a(1) + other.b(2)));\n}}\n",
          "other.vo": f"export fn b(amount: int) -> int {{\n{dup2}}}\n"},
         {"main.vo": f"fn a(base: int) -> int {{\n{dup}}}\n\nfn b(base: int) -> int {{\n    if base > 0 {{\n"
          + "".join("    " + l + "\n" for l in dup.rstrip("\n").split("\n")) + "    }\n    return 0;\n}\n\n"
@@ -106,15 +107,15 @@ def seeds():
          "fn main() uses console {\n    print(str(run_a(shout) + run_b(quiet)));\n}\n"},
     ]
     money = "export fn cents(n: int) -> int {\n    return n * 100;\n}\n\nexport fn units(c: int) -> int {\n    return c / 100;\n}\n"
-    imp = "import money.cents;\nimport money.units;\n\nfn main() uses console {\n    print(str(units(cents(2))));\n}\n\n"
+    imp = "import money;\n\nfn main() uses console {\n    print(str(money.units(money.cents(2))));\n}\n\n"
     s["W0705"] = [
-        {"main.vo": imp + 'test "cents" {\n    expect_eq(cents(3), 300);\n}\n', "money.vo": money},
-        {"main.vo": imp + 'test "round trip" {\n    expect_eq(units(cents(3)), 3);\n}\n', "money.vo": money},
-        {"main.vo": imp + 'prop "round trip" (x: int) {\n    assume(x > 0 and x < 1000);\n    expect_eq(units(cents(x)), x);\n}\n',
+        {"main.vo": imp + 'test "cents" {\n    expect_eq(money.cents(3), 300);\n}\n', "money.vo": money},
+        {"main.vo": imp + 'test "round trip" {\n    expect_eq(money.units(money.cents(3)), 3);\n}\n', "money.vo": money},
+        {"main.vo": imp + 'prop "round trip" (x: int) {\n    assume(x > 0 and x < 1000);\n    expect_eq(money.units(money.cents(x)), x);\n}\n',
          "money.vo": money},
-        {"main.vo": imp + 'test "in a loop" {\n    for i in 0..3 {\n        expect_eq(units(cents(i)), i);\n    }\n}\n',
+        {"main.vo": imp + 'test "in a loop" {\n    for i in 0..3 {\n        expect_eq(money.units(money.cents(i)), i);\n    }\n}\n',
          "money.vo": money},
-        {"main.vo": imp + 'test "through a function value" {\n    let f = fn(x: int) -> int {\n        return cents(x);\n    };\n'
+        {"main.vo": imp + 'test "through a function value" {\n    let f = fn(x: int) -> int {\n        return money.cents(x);\n    };\n'
          '    expect_eq(f(1), 100);\n}\n', "money.vo": money},
     ]
     return s
@@ -124,7 +125,7 @@ def clean():
     """Well-structured programs that no rule may report (with the examples, at least 10)."""
     money = "export fn cents(units: int) -> int {\n    return units * 100;\n}\n\ntest \"cents\" {\n    expect_eq(cents(3), 300);\n}\n"
     return [
-        {"main.vo": "import money.cents;\n\nfn main() uses console {\n    print(str(cents(2)));\n}\n", "money.vo": money},
+        {"main.vo": "import money;\n\nfn main() uses console {\n    print(str(money.cents(2)));\n}\n", "money.vo": money},
         {"main.vo": "fn total(xs: list[int]) -> int {\n    var t = 0;\n    for x in xs {\n        set t = t + x;\n    }\n"
          "    return t;\n}\n\nfn main() uses console {\n    print(str(total([1, 2, 3])));\n}\n\ntest \"total\" {\n"
          "    expect_eq(total([1, 2]), 3);\n}\n"},

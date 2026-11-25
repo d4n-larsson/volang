@@ -20,19 +20,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from serve_workers import Server  # noqa: E402
 
-PROGRAM = """import std.http.Response;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.NoInput;
-import std.web.Route;
-import std.web.Step;
-import std.web.json_reply;
-import std.web.on_delete;
-import std.web.on_get;
-import std.web.on_patch;
-import std.web.on_post;
-import std.web.on_put;
-import std.web.serve_app;
+PROGRAM = """import std.http;
+import std.web;
 
 variant Level {
     low;
@@ -89,40 +78,40 @@ record Slug {
     slug: str;
 }
 
-fn ran(n: int, input: NoInput) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn ran(n: int, input: web.NoInput) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
-fn ran_id(n: int, input: ItemId) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn ran_id(n: int, input: ItemId) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
-fn ran_new(n: int, input: NewItem) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn ran_new(n: int, input: NewItem) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
-fn ran_change(n: int, input: Change) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn ran_change(n: int, input: Change) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
-fn ran_list(n: int, input: Listing) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn ran_list(n: int, input: Listing) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
-fn ran_scale(n: int, input: Scale) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn ran_scale(n: int, input: Scale) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
-fn ran_slug(n: int, input: Slug) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn ran_slug(n: int, input: Slug) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
-fn routes() -> list[Route[int]] {
-    return [on_get("/items", ran_list), on_post("/items", ran_new), on_get("/items/{id}", ran_id), on_put("/items/{id}", ran_change), on_patch("/items/{id}/scale", ran_scale), on_delete("/items/{id}", ran_id), on_get("/tags/{slug}", ran_slug), on_get("/ping", ran), on_post("/ping", ran), on_get("/items/{id}/scale", ran_id)];
+fn routes() -> list[web.Route[int]] {
+    return [web.on_get("/items", ran_list), web.on_post("/items", ran_new), web.on_get("/items/{id}", ran_id), web.on_put("/items/{id}", ran_change), web.on_patch("/items/{id}/scale", ran_scale), web.on_delete("/items/{id}", ran_id), web.on_get("/tags/{slug}", ran_slug), web.on_get("/ping", ran), web.on_post("/ping", ran), web.on_get("/items/{id}/scale", ran_id)];
 }
 
 fn main() -> result[void] uses serve("PORT") {
-    return serve_app("PORT", 4, fn() -> result[int] { return ok(0); }, new App { routes: routes(), steps: new list[Step[int]], errors: new list[ErrorStatus] });
+    return web.serve_app("PORT", 4, fn() -> result[int] { return ok(0); }, new web.App { routes: routes(), steps: new list[web.Step[int]], errors: new list[web.ErrorStatus] });
 }
 """
 

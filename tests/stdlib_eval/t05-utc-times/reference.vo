@@ -1,6 +1,4 @@
-import std.time.format_time;
-import std.time.minutes;
-import std.time.parse_time;
+import std.time;
 
 fn main() uses console, input {
     var lo = 0;
@@ -10,9 +8,9 @@ fn main() uses console, input {
         if line == "" {
             continue;
         }
-        match parse_time(line) {
+        match time.parse_time(line) {
             case ok(t) {
-                print(format_time(t));
+                print(time.format_time(t));
                 if not any_value or t < lo {
                     set lo = t;
                 }
@@ -27,6 +25,6 @@ fn main() uses console, input {
         }
     }
     if any_value {
-        print("span: " + str((hi - lo) / minutes(1)) + " minutes");
+        print("span: " + str((hi - lo) / time.minutes(1)) + " minutes");
     }
 }

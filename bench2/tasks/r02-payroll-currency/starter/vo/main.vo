@@ -1,10 +1,5 @@
-import staff.Employee;
-import staff.add_employee;
-import staff.log_hours;
-import staff.set_rate;
-import staff.add_deduction;
-import report.payslip;
-import report.summary;
+import report;
+import staff;
 
 fn is_number(s: str) -> bool {
     if len(s) == 0 {
@@ -27,7 +22,7 @@ fn num(s: str) -> int {
     }
 }
 
-fn run(words: list[str], staff: map[str, Employee]) -> list[str] {
+fn run(words: list[str], staff_value: map[str, staff.Employee]) -> list[str] {
     let cmd = words[0];
     let args_value = slice(words, 1, len(words));
     if cmd == "employee" {
@@ -37,46 +32,46 @@ fn run(words: list[str], staff: map[str, Employee]) -> list[str] {
         if args_value[2] != "hourly" and args_value[2] != "salaried" or not is_number(args_value[3]) {
             return ["error: bad command"];
         }
-        return [add_employee(staff, args_value[0], args_value[1], args_value[2], num(args_value[3]))];
+        return [staff.add_employee(staff_value, args_value[0], args_value[1], args_value[2], num(args_value[3]))];
     }
     if cmd == "hours" {
         if len(args_value) != 2 or not is_number(args_value[1]) {
             return ["error: bad command"];
         }
-        return [log_hours(staff, args_value[0], num(args_value[1]))];
+        return [staff.log_hours(staff_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "rate" {
         if len(args_value) != 2 or not is_number(args_value[1]) {
             return ["error: bad command"];
         }
-        return [set_rate(staff, args_value[0], num(args_value[1]))];
+        return [staff.set_rate(staff_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "deduct" {
         if len(args_value) != 3 or not is_number(args_value[1]) {
             return ["error: bad command"];
         }
-        return [add_deduction(staff, args_value[0], num(args_value[1]), args_value[2])];
+        return [staff.add_deduction(staff_value, args_value[0], num(args_value[1]), args_value[2])];
     }
     if cmd == "payslip" {
         if len(args_value) != 1 {
             return ["error: bad command"];
         }
-        if not has(staff, args_value[0]) {
+        if not has(staff_value, args_value[0]) {
             return ["error: unknown employee " + args_value[0]];
         }
-        return payslip(staff[args_value[0]]);
+        return report.payslip(staff_value[args_value[0]]);
     }
     if cmd == "summary" {
         if len(args_value) != 0 {
             return ["error: bad command"];
         }
-        return summary(staff);
+        return report.summary(staff_value);
     }
     return ["error: unknown command " + cmd];
 }
 
 fn main() uses console, input {
-    let staff = new map[str, Employee];
+    let staff_value = new map[str, staff.Employee];
     for line in split(read_all(), "\n") {
         let words = filter(split(line, " "), fn(w: str) -> bool {
             return w != "";
@@ -84,7 +79,7 @@ fn main() uses console, input {
         if len(words) == 0 {
             continue;
         }
-        for out in run(words, staff) {
+        for out in run(words, staff_value) {
             print(out);
         }
     }

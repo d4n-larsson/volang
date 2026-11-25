@@ -1,10 +1,9 @@
-import std.regex.regex;
-import std.regex.all_matches;
+import std.regex;
 
 fn main() uses console {
-    for m in all_matches("#vo is #fast, #vo", regex("#\\w+")) {
+    for m in regex.all_matches("#vo is #fast, #vo", regex.regex("#\\w+")) {
         print(m.text + " " + str(m.start) + " " + str(m.end));
     }
-    print(str(len(all_matches("1 22 333 x", regex("\\d+")))));
-    print(str(len(all_matches("none", regex("\\d+")))));
+    print(str(len(regex.all_matches("1 22 333 x", regex.regex("\\d+")))));
+    print(str(len(regex.all_matches("none", regex.regex("\\d+")))));
 }

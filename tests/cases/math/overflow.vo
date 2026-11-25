@@ -1,8 +1,7 @@
 # Spec 020: overflow gives inf and underflow 0.0, as float arithmetic does; not errors.
-import std.math.exp;
-import std.math.pow;
+import std.math;
 
 fn main() uses console {
-    print(str(exp(1000.0)) + " " + str(exp(-1000.0)) + " " + str(pow(10.0, 400.0)) + " " + str(pow(-10.0, 401.0)));
-    print(str(exp(-1.0 / 0.0)) + " " + str(pow(2.0, -1100.0)));
+    print(str(math.exp(1000.0)) + " " + str(math.exp(-1000.0)) + " " + str(math.pow(10.0, 400.0)) + " " + str(math.pow(-10.0, 401.0)));
+    print(str(math.exp(-1.0 / 0.0)) + " " + str(math.pow(2.0, -1100.0)));
 }

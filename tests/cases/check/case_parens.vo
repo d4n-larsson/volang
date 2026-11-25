@@ -1,5 +1,5 @@
 # Spec 056 (FR-020): a case without a value is written without `()`; `()` is E0411 with a fix removing it.
-import std.option.Option;
+import std.option;
 
 variant Shape {
     circle(float);
@@ -23,8 +23,8 @@ fn main() uses console {
     print(str(r == ok()));
 }
 
-fn nothing() -> Option[int] {
-    return Option.none();
+fn nothing() -> option.Option[int] {
+    return option.Option.none();
 }
 
 fn circle() -> Shape {

@@ -1,7 +1,6 @@
 # header() finds the first header with a name, ignoring case; a missing one is err.
-import std.http.get;
-import std.http.response_header;
-import std.option.to_result;
+import std.http;
+import std.option;
 
 fn show(r: result[str]) uses console {
     match r {
@@ -15,12 +14,12 @@ fn show(r: result[str]) uses console {
 }
 
 fn main() -> result[void] uses console, net("localhost") {
-    let resp = try get("http://localhost:" + args()[0] + "/headers");
-    show(to_result(response_header(resp, "x-multi"), "no header `" + "x-multi" + "`"));
-    show(to_result(response_header(resp, "X-MULTI"), "no header `" + "X-MULTI" + "`"));
-    show(to_result(response_header(resp, "content-type"), "no header `" + "content-type" + "`"));
-    show(to_result(response_header(resp, "x-spaces"), "no header `" + "x-spaces" + "`"));
-    show(to_result(response_header(resp, "x-missing"), "no header `" + "x-missing" + "`"));
+    let resp = try http.get("http://localhost:" + args()[0] + "/headers");
+    show(option.to_result(http.response_header(resp, "x-multi"), "no header `" + "x-multi" + "`"));
+    show(option.to_result(http.response_header(resp, "X-MULTI"), "no header `" + "X-MULTI" + "`"));
+    show(option.to_result(http.response_header(resp, "content-type"), "no header `" + "content-type" + "`"));
+    show(option.to_result(http.response_header(resp, "x-spaces"), "no header `" + "x-spaces" + "`"));
+    show(option.to_result(http.response_header(resp, "x-missing"), "no header `" + "x-missing" + "`"));
     print(str(len(resp.headers)) + " headers");
     return ok();
 }

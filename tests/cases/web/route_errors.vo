@@ -1,11 +1,7 @@
 # Route patterns are checked by vo check (E0330), and routes of one table that match the same paths are
 # E0331.
-import std.http.Response;
-import std.web.NoInput;
-import std.web.Route;
-import std.web.no_content;
-import std.web.on_get;
-import std.web.on_post;
+import std.http;
+import std.web;
 
 record NoteId {
     id: int;
@@ -15,26 +11,26 @@ record Tags {
     id: list[int];
 }
 
-fn op(n: int, input: NoInput) -> result[Response] {
-    return ok(no_content());
+fn op(n: int, input: web.NoInput) -> result[http.Response] {
+    return ok(web.no_content());
 }
 
-fn by_id(n: int, input: NoteId) -> result[Response] {
-    return ok(no_content());
+fn by_id(n: int, input: NoteId) -> result[http.Response] {
+    return ok(web.no_content());
 }
 
-fn tags(n: int, input: Tags) -> result[Response] {
-    return ok(no_content());
+fn tags(n: int, input: Tags) -> result[http.Response] {
+    return ok(web.no_content());
 }
 
 fn pattern() -> str {
     return "/x";
 }
 
-fn bad() -> list[Route[int]] {
-    return [on_get(pattern(), op), on_get("notes", op), on_get("/notes/", op), on_get("/notes//x", op), on_get("/notes/{id", by_id), on_get("/a b", op), on_get("/notes/{id}/{id}", by_id), on_get("/notes/{name}", by_id), on_get("/tags/{id}", tags)];
+fn bad() -> list[web.Route[int]] {
+    return [web.on_get(pattern(), op), web.on_get("notes", op), web.on_get("/notes/", op), web.on_get("/notes//x", op), web.on_get("/notes/{id", by_id), web.on_get("/a b", op), web.on_get("/notes/{id}/{id}", by_id), web.on_get("/notes/{name}", by_id), web.on_get("/tags/{id}", tags)];
 }
 
-fn clash() -> list[Route[int]] {
-    return [on_get("/notes/{id}", by_id), on_post("/notes/{id}", by_id), on_get("/notes/latest", op), on_get("/notes/{id}", by_id)];
+fn clash() -> list[web.Route[int]] {
+    return [web.on_get("/notes/{id}", by_id), web.on_post("/notes/{id}", by_id), web.on_get("/notes/latest", op), web.on_get("/notes/{id}", by_id)];
 }

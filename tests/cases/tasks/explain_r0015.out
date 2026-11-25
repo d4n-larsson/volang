@@ -11,10 +11,10 @@ The messages of a worker (`std.workers`) cross between processes in the same way
 ### Example
 
 ```vo
-import std.collections.ordered_set_by;
+import std.collections;
 
 fn backwards(n: int) -> ordered_set[int] {
-    let s: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
     push(s, n);
     push(s, n + 1);
     return s;
@@ -29,7 +29,7 @@ fn main() uses console {
 ### Fixed
 
 ```vo
-import std.collections.ordered_set_by;
+import std.collections;
 
 fn items(n: int) -> list[int] {
     return [n, n + 1];
@@ -37,7 +37,7 @@ fn items(n: int) -> list[int] {
 
 fn main() uses console {
     let lists = concurrent_map([1, 2], 2, items);
-    let s: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
     for xs in lists {
         for x in xs {
             push(s, x);

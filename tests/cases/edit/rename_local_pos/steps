@@ -1,4 +1,4 @@
-vo edit rename main.vo main.vo:38:9 item_count
+vo edit rename main.vo main.vo:35:9 item_count
 vo check main.vo
 vo run main.vo
 keep catalog.vo main.vo vo.effects

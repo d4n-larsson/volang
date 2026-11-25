@@ -1,19 +1,18 @@
 $ vo query refs main.vo Storage
 store.vo:1:16 declaration: export effects Storage = file.read("data/"), file.write("data/");
-main.vo:1:14 import: import store.Storage;
-main.vo:4:24 use: effects App = console, Storage;
+main.vo:3:24 use: effects App = console, store.Storage;
 store.vo:3:48 use in save: export fn save(text: str) -> result[void] uses Storage {
-4 references
+3 references
 --- stderr
 --- exit 0
 $ vo query refs main.vo App
-main.vo:4:9 declaration: effects App = console, Storage;
-main.vo:6:16 use in main: fn main() uses App {
+main.vo:3:9 declaration: effects App = console, store.Storage;
+main.vo:5:16 use in main: fn main() uses App {
 2 references
 --- stderr
 --- exit 0
-$ vo query type-at --json main.vo main.vo:6:16
-{"v":1,"kind":"type_at","file":"main.vo","start":{"line":6,"col":16},"end":{"line":6,"col":19},"text":"App","type":"?","name":"App","declaration":{"file":"main.vo","start":{"line":4,"col":9},"end":{"line":4,"col":12}},"doc":{"module":"main","name":"App","item":"effects","signature":"effects App = console, Storage (console, file.read(\"data/\"), file.write(\"data/\"))","tparams":[],"effects":["console","file.read(\"data/\")","file.write(\"data/\")"]}}
+$ vo query type-at --json main.vo main.vo:5:16
+{"v":1,"kind":"type_at","file":"main.vo","start":{"line":5,"col":16},"end":{"line":5,"col":19},"text":"App","type":"?","name":"App","declaration":{"file":"main.vo","start":{"line":3,"col":9},"end":{"line":3,"col":12}},"doc":{"module":"main","name":"App","item":"effects","signature":"effects App = console, store.Storage (console, file.read(\"data/\"), file.write(\"data/\"))","tparams":[],"effects":["console","file.read(\"data/\")","file.write(\"data/\")"]}}
 {"v":1,"kind":"summary","command":"query","errors":0,"warnings":0,"truncated":0,"files":2,"results":1}
 --- stderr
 --- exit 0

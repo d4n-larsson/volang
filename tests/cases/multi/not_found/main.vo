@@ -1,6 +1,6 @@
+import geom2;
 import nope.thing;
-import geom2.missing;
 
 fn main() uses console {
-    print("x");
+    print(geom2.missing());
 }

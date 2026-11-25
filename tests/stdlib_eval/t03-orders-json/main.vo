@@ -1,5 +1,4 @@
-import std.json.Json;
-import std.json.write_json;
+import std.json;
 
 fn bad(n: int) uses console {
     print("bad line " + str(n));
@@ -7,7 +6,7 @@ fn bad(n: int) uses console {
 }
 
 fn main() -> result[void] uses console, input {
-    let items = new list[Json];
+    let items = new list[json.Json];
     var total = 0;
     var n = 0;
     while true {
@@ -28,11 +27,11 @@ fn main() -> result[void] uses console, input {
                             case ok(unit) {
                                 let line_total = qty * unit;
                                 set total = total + line_total;
-                                let obj = new map[str, Json];
-                                set obj["name"] = Json.text(parts[0]);
-                                set obj["quantity"] = Json.integer(qty);
-                                set obj["total_cents"] = Json.integer(line_total);
-                                push(items, Json.object(obj));
+                                let obj = new map[str, json.Json];
+                                set obj["name"] = json.Json.text(parts[0]);
+                                set obj["quantity"] = json.Json.integer(qty);
+                                set obj["total_cents"] = json.Json.integer(line_total);
+                                push(items, json.Json.object(obj));
                             }
                             case err(_) {
                                 bad(n);
@@ -51,9 +50,9 @@ fn main() -> result[void] uses console, input {
             }
         }
     }
-    let top = new map[str, Json];
-    set top["items"] = Json.array(items);
-    set top["total_cents"] = Json.integer(total);
-    print(try write_json(Json.object(top)));
+    let top = new map[str, json.Json];
+    set top["items"] = json.Json.array(items);
+    set top["total_cents"] = json.Json.integer(total);
+    print(try json.write_json(json.Json.object(top)));
     return ok();
 }

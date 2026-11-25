@@ -1,7 +1,7 @@
-import std.text.words;
+import std.text;
 
 fn main() -> result[void] uses console, input {
-    let xs = words(read_all());
+    let xs = text.words(read_all());
     let sorted = new list[int];
     var checksum = 0;
     for i in 1..len(xs) {

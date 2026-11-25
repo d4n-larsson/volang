@@ -1,6 +1,6 @@
-import a.f;
-import b.g;
+import a;
+import b;
 
 fn main() uses console {
-    print(str(f() + g()));
+    print(str(a.f() + b.g()));
 }

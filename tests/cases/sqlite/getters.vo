@@ -1,14 +1,4 @@
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.query;
-import std.sqlite.value_column;
-import std.sqlite.int_column;
-import std.sqlite.float_column;
-import std.sqlite.text_column;
-import std.sqlite.bytes_column;
-import std.sqlite.is_null;
-import std.sqlite.Row;
-import std.sqlite.Value;
+import std.sqlite;
 
 fn show[T](r: result[T]) -> str {
     match r {
@@ -22,15 +12,15 @@ fn show[T](r: result[T]) -> str {
 }
 
 fn main() -> result[void] uses console {
-    let db = open_memory();
-    let rows = try query(db, sql("select 7 as i, 2.5 as f, 'hé' as s, x'ff00' as b, null as n, cast(x'ff' as text) as bad, 1 as d, 2 as d"), new list[Value]);
+    let db = sqlite.open_memory();
+    let rows = try sqlite.query(db, sqlite.sql("select 7 as i, 2.5 as f, 'hé' as s, x'ff00' as b, null as n, cast(x'ff' as text) as bad, 1 as d, 2 as d"), new list[sqlite.Value]);
     let row = rows[0];
-    print(str(try int_column(row, "i")) + " " + str(try float_column(row, "f")) + " " + try text_column(row, "s") + " " + str(len(try bytes_column(row, "b"))));
-    print(show(float_column(row, "i")) + " | " + show(int_column(row, "f")) + " | " + show(int_column(row, "s")) + " | " + show(text_column(row, "b")));
-    print(show(int_column(row, "n")) + " | " + str(try is_null(row, "n")) + " " + str(try is_null(row, "i")));
-    print(show(text_column(row, "bad")) + " | " + str(len(try bytes_column(row, "bad"))) + " | " + str(len(try bytes_column(row, "s"))));
-    print(show(value_column(row, "nope")) + " | " + show(int_column(row, "d")));
-    let named = try query(db, sql("select 1 as a, 2 as b"), new list[Value]);
-    print(str(try int_column(named[0], "a") + try int_column(named[0], "b")));
+    print(str(try sqlite.int_column(row, "i")) + " " + str(try sqlite.float_column(row, "f")) + " " + try sqlite.text_column(row, "s") + " " + str(len(try sqlite.bytes_column(row, "b"))));
+    print(show(sqlite.float_column(row, "i")) + " | " + show(sqlite.int_column(row, "f")) + " | " + show(sqlite.int_column(row, "s")) + " | " + show(sqlite.text_column(row, "b")));
+    print(show(sqlite.int_column(row, "n")) + " | " + str(try sqlite.is_null(row, "n")) + " " + str(try sqlite.is_null(row, "i")));
+    print(show(sqlite.text_column(row, "bad")) + " | " + str(len(try sqlite.bytes_column(row, "bad"))) + " | " + str(len(try sqlite.bytes_column(row, "s"))));
+    print(show(sqlite.value_column(row, "nope")) + " | " + show(sqlite.int_column(row, "d")));
+    let named = try sqlite.query(db, sqlite.sql("select 1 as a, 2 as b"), new list[sqlite.Value]);
+    print(str(try sqlite.int_column(named[0], "a") + try sqlite.int_column(named[0], "b")));
     return ok();
 }

@@ -1,34 +1,26 @@
 # Spec 055 (research R9): the app's effects lack the step's own (console): the mismatch names it.
-import std.http.Request;
-import std.http.Response;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.NoInput;
-import std.web.Step;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.request;
+import std.http;
+import std.web;
 
-fn tag[C, E: effects]() -> Step[C, uses console, E] {
-    return new Step {
+fn tag[C, E: effects]() -> web.Step[C, uses console, E] {
+    return new web.Step {
         prefix: "/",
-        run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses console, E) -> Response {
+        run: fn(ctx: C, r: http.Request, next: fn(http.Request) -> http.Response uses console, E) -> http.Response {
             eprint("tag " + r.path);
             return next(r);
         }
     };
 }
 
-fn now(n: int, input: NoInput) -> result[Response] uses clock {
-    return ok(json_reply(200, now_ms()));
+fn now(n: int, input: web.NoInput) -> result[http.Response] uses clock {
+    return ok(web.json_reply(200, now_ms()));
 }
 
 fn main() uses console, clock {
-    let app = new App[int, uses clock] {
-        routes: [on_get("/now", now)],
+    let app = new web.App[int, uses clock] {
+        routes: [web.on_get("/now", now)],
         steps: [tag()],
-        errors: new list[ErrorStatus]
+        errors: new list[web.ErrorStatus]
     };
-    print(str(handle_request(app, 0, request("GET", "/now", "")).status));
+    print(str(web.handle_request(app, 0, web.request("GET", "/now", "")).status));
 }

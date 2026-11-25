@@ -1,8 +1,8 @@
-import std.fs.read_bytes;
+import std.fs;
 
 fn main() -> result[void] uses console, file.read {
-    let a = try read_bytes("one");
-    let b = try read_bytes("sub/two");
+    let a = try fs.read_bytes("one");
+    let b = try fs.read_bytes("sub/two");
     print(str(a == b) + " " + str(len(a) > 1000000));
     return ok();
 }

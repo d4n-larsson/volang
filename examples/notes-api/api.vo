@@ -1,54 +1,13 @@
 # The HTTP API: the route table, each operation's input (checked by std.web before it runs) and its answer.
 # The operations fail with a NoteError, which note_problem answers with a status: one function, so
 # every way to fail has its status; bad input becomes 400 or 422.
-import notes.Note;
-import notes.NoteError;
-import notes.add_note;
-import notes.all_notes;
-import notes.db_error;
-import notes.find_note;
-import notes.mark_done;
-import notes.prepare;
-import notes.remove_note;
-import std.http.Response;
-import std.json.int_field;
-import std.json.parse_json;
-import std.json.text_field;
-import std.log.field;
-import std.log.log_info;
-import std.log.logged;
-import std.metrics.Metric;
-import std.metrics.add_to;
-import std.metrics.counter;
-import std.sqlite.Database;
-import std.sqlite.Value;
-import std.sqlite.open;
-import std.sqlite.open_memory;
-import std.sqlite.query;
-import std.sqlite.sql;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.HealthCheck;
-import std.web.NoInput;
-import std.web.Problem;
-import std.web.Route;
-import std.web.created;
-import std.web.handle_request;
-import std.web.health_route;
-import std.web.health_routes;
-import std.web.json_reply;
-import std.web.metrics_route;
-import std.web.no_content;
-import std.web.on_delete;
-import std.web.on_get;
-import std.web.on_post;
-import std.web.random_id;
-import std.web.request;
-import std.web.request_ids;
-import std.web.request_logs;
-import std.web.request_metrics;
-import std.web.typed;
-import std.web.with_header;
+import notes;
+import std.http;
+import std.json;
+import std.log;
+import std.metrics;
+import std.sqlite;
+import std.web;
 
 # Where the notes are kept: the database in data/, read and written.
 const data_dir = "data/";
@@ -57,7 +16,7 @@ export effects Storage = file.read(data_dir), file.write(data_dir);
 
 # Each worker's context: its connection to the notes database.
 export record Notes[D: effects] {
-    db: Database[uses D];
+    db: sqlite.Database[uses D];
 }
 
 record NoteText {
@@ -77,104 +36,118 @@ record NoteId {
 # /health/ready and /metrics; each request gets an id, a log record and its metrics.
 # Each operation is typed(op, note_problem); the types are written out because the operations are
 # generic in the database's effects, which inference does not follow through two generic calls.
-export fn notes_app[D: effects]() -> App[Notes[uses D], uses clock, random, log, D] {
-    let listing: fn(Notes[uses D], NoInput) -> result[Response] uses D = typed(
+export fn notes_app[D: effects]() -> web.App[Notes[uses D], uses clock, random, log, D] {
+    let listing: fn(Notes[uses D], web.NoInput) -> result[http.Response] uses D = web.typed(
         list_notes,
         note_problem
     );
-    let adding: fn(Notes[uses D], NewNote) -> result[Response] uses log, D = typed(
+    let adding: fn(Notes[uses D], NewNote) -> result[http.Response] uses log, D = web.typed(
         create,
         note_problem
     );
-    let showing: fn(Notes[uses D], NoteId) -> result[Response] uses D = typed(show, note_problem);
-    let finishing: fn(Notes[uses D], NoteId) -> result[Response] uses D = typed(done, note_problem);
-    let erasing: fn(Notes[uses D], NoteId) -> result[Response] uses D = typed(erase, note_problem);
-    let database: list[HealthCheck[Notes[uses D], uses clock, random, log, D]] = [
-        new HealthCheck { name: "database", check: alive }
+    let showing: fn(Notes[uses D], NoteId) -> result[http.Response] uses D = web.typed(
+        show,
+        note_problem
+    );
+    let finishing: fn(Notes[uses D], NoteId) -> result[http.Response] uses D = web.typed(
+        done,
+        note_problem
+    );
+    let erasing: fn(Notes[uses D], NoteId) -> result[http.Response] uses D = web.typed(
+        erase,
+        note_problem
+    );
+    let database: list[web.HealthCheck[Notes[uses D], uses clock, random, log, D]] = [
+        new web.HealthCheck { name: "database", check: alive }
     ];
-    let routes: list[Route[Notes[uses D], uses clock, random, log, D]] = [
-        on_get("/notes", listing),
-        on_post("/notes", adding),
-        on_get("/notes/{id}", showing),
-        on_post("/notes/{id}/done", finishing),
-        on_delete("/notes/{id}", erasing),
-        health_route(database),
-        metrics_route([notes_created()])
+    let routes: list[web.Route[Notes[uses D], uses clock, random, log, D]] = [
+        web.on_get("/notes", listing),
+        web.on_post("/notes", adding),
+        web.on_get("/notes/{id}", showing),
+        web.on_post("/notes/{id}/done", finishing),
+        web.on_delete("/notes/{id}", erasing),
+        web.health_route(database),
+        web.metrics_route([notes_created()])
     ];
-    for r in health_routes(database) {
+    for r in web.health_routes(database) {
         push(routes, r);
     }
-    return new App {
+    return new web.App {
         routes: routes,
-        steps: [request_ids(random_id), request_logs(), request_metrics()],
-        errors: new list[ErrorStatus]
+        steps: [web.request_ids(web.random_id), web.request_logs(), web.request_metrics()],
+        errors: new list[web.ErrorStatus]
     };
 }
 
-fn notes_created() -> Metric {
-    return counter("notes_created_total", "Notes created.", new list[str]);
+fn notes_created() -> metrics.Metric {
+    return metrics.counter("notes_created_total", "Notes created.", new list[str]);
 }
 
 # serve_app's setup: data/notes.db, with its table the first time.
 export fn open_notes() -> result[Notes[uses Storage]] uses Storage {
-    let db = try open(data_dir + "notes.db");
-    try prepare(db);
+    let db = try sqlite.open(data_dir + "notes.db");
+    try notes.prepare(db);
     return ok(new Notes { db: db });
 }
 
 # The status and detail of each way the notes can fail (a database failure is 500, with no detail).
-fn note_problem(e: NoteError) -> Problem {
+fn note_problem(e: notes.NoteError) -> web.Problem {
     match e {
         case not_found(id) {
-            return new Problem { status: 404, detail: "no note " + str(id) };
+            return new web.Problem { status: 404, detail: "no note " + str(id) };
         }
         case blank {
-            return new Problem { status: 422, detail: "the text is only spaces" };
+            return new web.Problem { status: 422, detail: "the text is only spaces" };
         }
         case database(_) {
-            return new Problem { status: 500, detail: "" };
+            return new web.Problem { status: 500, detail: "" };
         }
     }
 }
 
-fn list_notes[D: effects](app: Notes[uses D], input: NoInput) -> result[Response, NoteError]
-    uses D {
-    return ok(json_reply(200, try map_err(all_notes(app.db), db_error)));
+fn list_notes[D: effects](
+    app: Notes[uses D],
+    input: web.NoInput
+) -> result[http.Response, notes.NoteError] uses D {
+    return ok(web.json_reply(200, try map_err(notes.all_notes(app.db), notes.db_error)));
 }
 
-fn create[D: effects](app: Notes[uses D], input: NewNote) -> result[Response, NoteError]
+fn create[D: effects](app: Notes[uses D], input: NewNote) -> result[http.Response, notes.NoteError]
     uses log, D {
     let text = trim(input.body.text);
     if text == "" {
-        return err(NoteError.blank);
+        return err(notes.NoteError.blank);
     }
-    let note = try map_err(add_note(app.db, text), db_error);
-    add_to(notes_created(), new list[str], 1);
-    log_info("note created", [field("id", note.id)]);
-    return ok(created("/notes/" + str(note.id), note));
+    let note = try map_err(notes.add_note(app.db, text), notes.db_error);
+    metrics.add_to(notes_created(), new list[str], 1);
+    log.log_info("note created", [log.field("id", note.id)]);
+    return ok(web.created("/notes/" + str(note.id), note));
 }
 
-fn show[D: effects](app: Notes[uses D], input: NoteId) -> result[Response, NoteError] uses D {
-    return ok(json_reply(200, try find_note(app.db, input.id)));
+fn show[D: effects](app: Notes[uses D], input: NoteId) -> result[http.Response, notes.NoteError]
+    uses D {
+    return ok(web.json_reply(200, try notes.find_note(app.db, input.id)));
 }
 
-fn done[D: effects](app: Notes[uses D], input: NoteId) -> result[Response, NoteError] uses D {
-    return ok(json_reply(200, try mark_done(app.db, input.id)));
+fn done[D: effects](app: Notes[uses D], input: NoteId) -> result[http.Response, notes.NoteError]
+    uses D {
+    return ok(web.json_reply(200, try notes.mark_done(app.db, input.id)));
 }
 
-fn erase[D: effects](app: Notes[uses D], input: NoteId) -> result[Response, NoteError] uses D {
-    try remove_note(app.db, input.id);
-    return ok(no_content());
+fn erase[D: effects](app: Notes[uses D], input: NoteId) -> result[http.Response, notes.NoteError]
+    uses D {
+    try notes.remove_note(app.db, input.id);
+    return ok(web.no_content());
 }
 
 fn alive[D: effects](app: Notes[uses D]) -> result[void] uses D {
-    let _ = try query(app.db, sql("select 1"), new list[Value]);
+    let _ = try sqlite.query(app.db, sqlite.sql("select 1"), new list[sqlite.Value]);
     return ok();
 }
 
 fn memory() -> Notes {
-    let db = open_memory();
-    match prepare(db) {
+    let db = sqlite.open_memory();
+    match notes.prepare(db) {
         case ok() {
         }
         case err(_) {
@@ -183,8 +156,8 @@ fn memory() -> Notes {
     return new Notes { db: db };
 }
 
-fn call(n: Notes, method: str, path: str, body: str) -> Response uses clock, random, log {
-    return handle_request(notes_app(), n, request(method, path, body));
+fn call(n: Notes, method: str, path: str, body: str) -> http.Response uses clock, random, log {
+    return web.handle_request(notes_app(), n, web.request(method, path, body));
 }
 
 @spec("FR-001")
@@ -212,9 +185,9 @@ test "a missing, empty or too long text is refused with the reason" uses clock, 
     expect_eq(call(n, "POST", "/notes", "{}").status, 400);
     expect_eq(call(n, "POST", "/notes", `{"text": "   "}`).status, 422);
     expect_eq(call(n, "POST", "/notes", "not json").status, 400);
-    match parse_json(call(n, "POST", "/notes", `{"txt": "typo"}`).body) {
+    match json.parse_json(call(n, "POST", "/notes", `{"txt": "typo"}`).body) {
         case ok(j) {
-            expect_eq(int_field(j, "status"), ok(400));
+            expect_eq(json.int_field(j, "status"), ok(400));
         }
         case err(e) {
             expect_eq(e, "");
@@ -227,9 +200,9 @@ test "one note: read, mark done, delete" uses clock, random, log {
     let n = memory();
     let _ = call(n, "POST", "/notes", `{"text": "call home"}`);
     expect_eq(call(n, "GET", "/notes/1", "").body, `{"id":1,"text":"call home","done":false}`);
-    match parse_json(call(n, "POST", "/notes/1/done", "").body) {
+    match json.parse_json(call(n, "POST", "/notes/1/done", "").body) {
         case ok(j) {
-            expect_eq(text_field(j, "text"), ok("call home"));
+            expect_eq(json.text_field(j, "text"), ok("call home"));
         }
         case err(e) {
             expect_eq(e, "");
@@ -253,9 +226,9 @@ test "the notes are kept in the database between requests" uses clock, random, l
     let n = memory();
     let _ = call(n, "POST", "/notes", `{"text": "one"}`);
     let _ = call(n, "POST", "/notes", `{"text": "two"}`);
-    expect_eq(all_notes(n.db), ok([
-        new Note { id: 1, text: "one", done: false },
-        new Note { id: 2, text: "two", done: false }
+    expect_eq(notes.all_notes(n.db), ok([
+        new notes.Note { id: 1, text: "one", done: false },
+        new notes.Note { id: 2, text: "two", done: false }
     ]));
 }
 
@@ -263,13 +236,13 @@ test "the notes are kept in the database between requests" uses clock, random, l
 test "a created note is logged with its request's id, beside the request's own record"
     uses clock, random, log {
     let n = memory();
-    let r = handle_request(notes_app(), n, with_header(
-        request("POST", "/notes", `{"text": "a"}`),
+    let r = web.handle_request(notes_app(), n, web.with_header(
+        web.request("POST", "/notes", `{"text": "a"}`),
         "X-Request-Id",
         "id-7"
     ));
     expect_eq(r.status, 201);
-    expect_eq(logged(), [
+    expect_eq(log.logged(), [
         `{"time":"1970-01-01T00:00:00.001Z","level":"info","message":"note created","request_id":"id-7","id":1}`,
         `{"time":"1970-01-01T00:00:00.003Z","level":"info","message":"request","request_id":"id-7","method":"POST","route":"/notes","status":201,"ms":3}`
     ]);
@@ -298,7 +271,7 @@ prop "added notes get distinct ids" (texts: list[str]) {
     let n = memory();
     let ids = new map[int, bool];
     for t in texts {
-        match add_note(n.db, t) {
+        match notes.add_note(n.db, t) {
             case ok(note) {
                 expect(not has(ids, note.id));
                 set ids[note.id] = true;

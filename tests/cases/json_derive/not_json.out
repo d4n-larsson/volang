@@ -1,41 +1,41 @@
-not_json.vo:25:12: error[E0328]: `T` cannot be converted to JSON: it is the type parameter `T`, which needs `: json`.
-  25 |     return to_json(v);
-     |            ^^^^^^^^^^
+not_json.vo:23:12: error[E0328]: `T` cannot be converted to JSON: it is the type parameter `T`, which needs `: json`.
+  23 |     return json.to_json(v);
+     |            ^^^^^^^^^^^^^^^
   fix: insert `: json`
-not_json.vo:29:9: warning[W0201]: `a` is never used.
-  29 |     let a = to_json(new Wrapper { items: [new Handler { name: "a", on_save: twice }] });
+not_json.vo:27:9: warning[W0201]: `a` is never used.
+  27 |     let a = json.to_json(new Wrapper { items: [new Handler { name: "a", on_save: twice }] });
      |         ^
-not_json.vo:29:13: error[E0328]: `Wrapper` cannot be converted to JSON: `items[].on_save` is a function.
-  29 |     let a = to_json(new Wrapper { items: [new Handler { name: "a", on_save: twice }] });
-     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-not_json.vo:31:9: warning[W0201]: `b` is never used.
-  31 |     let b = to_json(by_id);
+not_json.vo:27:13: error[E0328]: `Wrapper` cannot be converted to JSON: `items[].on_save` is a function.
+  27 |     let a = json.to_json(new Wrapper { items: [new Handler { name: "a", on_save: twice }] });
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+not_json.vo:29:9: warning[W0201]: `b` is never used.
+  29 |     let b = json.to_json(by_id);
      |         ^
-not_json.vo:31:13: error[E0328]: `map[int, str]` cannot be converted to JSON: it is a map with `int` keys (JSON keys are text).
-  31 |     let b = to_json(by_id);
-     |             ^^^^^^^^^^^^^^
-not_json.vo:32:9: warning[W0201]: `c` is never used.
-  32 |     let c = to_json(new ordered_map[str, int]);
+not_json.vo:29:13: error[E0328]: `map[int, str]` cannot be converted to JSON: it is a map with `int` keys (JSON keys are text).
+  29 |     let b = json.to_json(by_id);
+     |             ^^^^^^^^^^^^^^^^^^^
+not_json.vo:30:9: warning[W0201]: `c` is never used.
+  30 |     let c = json.to_json(new ordered_map[str, int]);
      |         ^
-not_json.vo:32:13: error[E0328]: `ordered_map[str, int]` cannot be converted to JSON: it is `ordered_map[str, int]`, which has no JSON form.
-  32 |     let c = to_json(new ordered_map[str, int]);
-     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-not_json.vo:33:9: warning[W0201]: `d` is never used.
-  33 |     let d = to_json(parse_int("1"));
-     |         ^
-not_json.vo:33:13: error[E0328]: `result[int]` cannot be converted to JSON: it is a result.
-  33 |     let d = to_json(parse_int("1"));
-     |             ^^^^^^^^^^^^^^^^^^^^^^^
-not_json.vo:34:9: warning[W0201]: `e` is never used.
-  34 |     let e = to_json(new Conn { db: open_memory() });
-     |         ^
-not_json.vo:34:13: error[E0328]: `Conn` cannot be converted to JSON: `db` is `Database`, which has effects.
-  34 |     let e = to_json(new Conn { db: open_memory() });
+not_json.vo:30:13: error[E0328]: `ordered_map[str, int]` cannot be converted to JSON: it is `ordered_map[str, int]`, which has no JSON form.
+  30 |     let c = json.to_json(new ordered_map[str, int]);
      |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-not_json.vo:35:9: warning[W0201]: `f` is never used.
-  35 |     let f = to_json(twice);
+not_json.vo:31:9: warning[W0201]: `d` is never used.
+  31 |     let d = json.to_json(parse_int("1"));
      |         ^
-not_json.vo:35:13: error[E0328]: `fn(int) -> int` cannot be converted to JSON: it is a function.
-  35 |     let f = to_json(twice);
-     |             ^^^^^^^^^^^^^^
+not_json.vo:31:13: error[E0328]: `result[int]` cannot be converted to JSON: it is a result.
+  31 |     let d = json.to_json(parse_int("1"));
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+not_json.vo:32:9: warning[W0201]: `e` is never used.
+  32 |     let e = json.to_json(new Conn { db: sqlite.open_memory() });
+     |         ^
+not_json.vo:32:13: error[E0328]: `Conn` cannot be converted to JSON: `db` is `sqlite.Database`, which has effects.
+  32 |     let e = json.to_json(new Conn { db: sqlite.open_memory() });
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+not_json.vo:33:9: warning[W0201]: `f` is never used.
+  33 |     let f = json.to_json(twice);
+     |         ^
+not_json.vo:33:13: error[E0328]: `fn(int) -> int` cannot be converted to JSON: it is a function.
+  33 |     let f = json.to_json(twice);
+     |             ^^^^^^^^^^^^^^^^^^^
 7 errors, 6 warnings

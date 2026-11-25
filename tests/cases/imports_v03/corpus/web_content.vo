@@ -1,0 +1,52 @@
+# A body that is not JSON is 415; a body sent to an operation that takes none is 400; operations
+# without input take NoInput, which a test can also build itself.
+import std.http.Header;
+import std.http.Request;
+import std.http.Response;
+import std.web.App;
+import std.web.ErrorStatus;
+import std.web.NoInput;
+import std.web.Route;
+import std.web.Step;
+import std.web.handle_request;
+import std.web.json_reply;
+import std.web.on_post;
+import std.web.request;
+
+record Text {
+    body: str;
+}
+
+fn ping(n: int, input: NoInput) -> result[Response] {
+    return ok(json_reply(200, "pong"));
+}
+
+fn echo(n: int, input: Text) -> result[Response] {
+    return ok(json_reply(200, input.body));
+}
+
+fn routes() -> list[Route[int]] {
+    return [on_post("/ping", ping), on_post("/echo", echo)];
+}
+
+fn show(app: App[int], r: Request) uses console {
+    let resp = handle_request(app, 0, r);
+    print(r.path + " -> " + str(resp.status) + " " + resp.body);
+}
+
+fn main() uses console {
+    let app = new App { routes: routes(), steps: new list[Step[int]], errors: new list[ErrorStatus] };
+    show(app, request("POST", "/ping", ""));
+    show(app, request("POST", "/ping", "{}"));
+    show(app, request("POST", "/echo", "\"hi\""));
+    show(app, new Request { method: "POST", path: "/echo", query: "", headers: [new Header { name: "Content-Type", value: "text/plain" }], body: "hi" });
+    show(app, new Request { method: "POST", path: "/echo", query: "", headers: [new Header { name: "content-type", value: "application/json; charset=utf-8" }], body: "\"hi\"" });
+    match ping(0, new NoInput {}) {
+        case ok(r) {
+            print("direct: " + r.body);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

@@ -1,10 +1,10 @@
-import util.num.inc;
+import util.num;
 
 fn main() uses console {
-    print(str(inc(1)));
+    print(str(num.inc(1)));
 }
 
 @spec("FR-010")
 test "uses the package" {
-    expect_eq(inc(2), 3);
+    expect_eq(num.inc(2), 3);
 }

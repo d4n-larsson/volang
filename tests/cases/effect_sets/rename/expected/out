@@ -5,11 +5,10 @@ $ vo effects --update main.vo
 --- stderr
 --- exit 0
 $ vo edit rename main.vo Storage Files
-main.vo:1:14 Storage -> Files
-main.vo:4:24 Storage -> Files
+main.vo:3:30 Storage -> Files
 store.vo:1:16 Storage -> Files
 store.vo:3:48 Storage -> Files
-renamed Storage to Files: 4 changes in 2 files
+renamed Storage to Files: 3 changes in 2 files
 --- stderr
 --- exit 0
 $ vo check main.vo

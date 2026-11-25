@@ -1,5 +1,5 @@
-main.vo:1:15: error[E0209]: `money` is not exported by `report.vo`.
-   1 | import report.money;
-     |               ^^^^^
+main.vo:5:11: error[E0209]: `money` is not exported by `report.vo`.
+   5 |     print(report.money(5));
+     |           ^^^^^^^^^^^^
   fix: insert `export `
 1 error, 0 warnings

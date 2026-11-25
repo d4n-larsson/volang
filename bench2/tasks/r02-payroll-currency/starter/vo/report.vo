@@ -1,34 +1,33 @@
-import money.format_money;
-import pay.compute_pay;
-import staff.Employee;
-import staff.sorted_staff;
+import money;
+import pay;
+import staff;
 
-export fn payslip(emp: Employee) -> list[str] {
-    let p = compute_pay(emp);
+export fn payslip(emp: staff.Employee) -> list[str] {
+    let p = pay.compute_pay(emp);
     let out = ["payslip " + emp.emp_id + " " + emp.name + " (" + emp.kind + ")"];
     if emp.kind == "hourly" {
-        push(out, "  regular " + str(p.regular_hours) + "h " + format_money(p.regular));
+        push(out, "  regular " + str(p.regular_hours) + "h " + money.format_money(p.regular));
         if p.overtime_hours > 0 {
-            push(out, "  overtime " + str(p.overtime_hours) + "h " + format_money(p.overtime));
+            push(out, "  overtime " + str(p.overtime_hours) + "h " + money.format_money(p.overtime));
         }
     } else {
-        push(out, "  salary " + format_money(p.regular));
+        push(out, "  salary " + money.format_money(p.regular));
     }
-    push(out, "  gross " + format_money(p.gross));
-    push(out, "  tax " + format_money(p.tax));
+    push(out, "  gross " + money.format_money(p.gross));
+    push(out, "  tax " + money.format_money(p.tax));
     for d in emp.deductions {
-        push(out, "  deduction " + d.label + " " + format_money(d.amount));
+        push(out, "  deduction " + d.label + " " + money.format_money(d.amount));
     }
-    push(out, "  net " + format_money(p.net));
+    push(out, "  net " + money.format_money(p.net));
     return out;
 }
 
 fn total_line(gross: int, tax: int, deductions: int, net: int) -> str {
-    return "total gross " + format_money(gross) + " tax " + format_money(tax) + " deductions " + format_money(deductions) + " net " + format_money(net);
+    return "total gross " + money.format_money(gross) + " tax " + money.format_money(tax) + " deductions " + money.format_money(deductions) + " net " + money.format_money(net);
 }
 
-export fn summary(staff: map[str, Employee]) -> list[str] {
-    let emps = sorted_staff(staff);
+export fn summary(staff_value: map[str, staff.Employee]) -> list[str] {
+    let emps = staff.sorted_staff(staff_value);
     if len(emps) == 0 {
         return ["summary: no employees"];
     }
@@ -38,8 +37,8 @@ export fn summary(staff: map[str, Employee]) -> list[str] {
     var deductions = 0;
     var net = 0;
     for emp in emps {
-        let p = compute_pay(emp);
-        push(out, "  " + emp.emp_id + " " + emp.name + " gross " + format_money(p.gross) + " net " + format_money(p.net));
+        let p = pay.compute_pay(emp);
+        push(out, "  " + emp.emp_id + " " + emp.name + " gross " + money.format_money(p.gross) + " net " + money.format_money(p.net));
         set gross = gross + p.gross;
         set tax = tax + p.tax;
         set deductions = deductions + p.deductions;

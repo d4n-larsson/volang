@@ -1,6 +1,6 @@
 changed subtotal (shop/cart.vo:3)
 affected checkout via subtotal (shop/cart.vo:11)
-affected main via checkout (shop/main.vo:5)
-test "checkout total" via checkout (shop/main.vo:10)
-prop "subtotal grows" via checkout (shop/main.vo:18)
+affected main via checkout (shop/main.vo:4)
+test "checkout total" via checkout (shop/main.vo:9)
+prop "subtotal grows" via checkout (shop/main.vo:17)
 1 changed, 0 added, 0 removed, 2 affected, 2 tests

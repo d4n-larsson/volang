@@ -83,13 +83,8 @@ def vo_str(s):
     return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-PROGRAM = """import std.sqlite.open_memory;
-import std.sqlite.parse_sql;
-import std.sqlite.query;
-import std.sqlite.Row;
-import std.sqlite.Value;
-import std.bytes.to_hex;
-import std.bytes.from_text;
+PROGRAM = """import std.sqlite;
+import std.bytes;
 
 # A float exactly: its sign, 53-bit significand and binary exponent (scaling by 2 is exact).
 fn exact(f: float) -> str {
@@ -120,7 +115,7 @@ fn exact(f: float) -> str {
     return sign + str(int(x * float(4503599627370496))) + "p" + str(e);
 }
 
-fn show(v: Value) -> str {
+fn show(v: sqlite.Value) -> str {
     match v {
         case integer(i) {
             return "i:" + str(i);
@@ -129,10 +124,10 @@ fn show(v: Value) -> str {
             return "r:" + exact(f);
         }
         case text(s) {
-            return "t:" + to_hex(from_text(s));
+            return "t:" + bytes.to_hex(bytes.from_text(s));
         }
         case blob(b) {
-            return "b:" + to_hex(b);
+            return "b:" + bytes.to_hex(b);
         }
         case null {
             return "n";
@@ -140,10 +135,10 @@ fn show(v: Value) -> str {
     }
 }
 
-fn run(db: Database, text: str) -> str {
-    match parse_sql(text) {
+fn run(db: sqlite.Database, text: str) -> str {
+    match sqlite.parse_sql(text) {
         case ok(st) {
-            match query(db, st, new list[Value]) {
+            match sqlite.query(db, st, new list[sqlite.Value]) {
                 case ok(rows) {
                     var out = "";
                     for row in rows {
@@ -166,7 +161,7 @@ fn run(db: Database, text: str) -> str {
 }
 
 fn main() uses console {
-    let db = open_memory();
+    let db = sqlite.open_memory();
     let statements = [STATEMENTS];
     for i in 0..len(statements) {
         print(str(i) + " " + run(db, statements[i]));
@@ -177,7 +172,7 @@ fn main() uses console {
 
 def program(stmts):
     src = PROGRAM.replace("STATEMENTS", ",\n        ".join(vo_str(s) for s in stmts))
-    return src.replace("import std.sqlite.Row;", "import std.sqlite.Row;\nimport std.sqlite.Database;")
+    return src
 
 
 def run_vo(path, binary=None):

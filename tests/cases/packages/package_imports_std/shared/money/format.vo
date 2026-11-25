@@ -1,5 +1,5 @@
-import std.text.pad_left;
+import std.text;
 
 export fn cents(n: int) -> str {
-    return str(n / 100) + "." + pad_left(str(n % 100), 2, "0");
+    return str(n / 100) + "." + text.pad_left(str(n % 100), 2, "0");
 }

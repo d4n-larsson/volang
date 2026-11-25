@@ -1,0 +1,5 @@
+# An import that names no file: `std` alone.
+import std;
+
+fn main() {
+}

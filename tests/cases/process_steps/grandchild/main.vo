@@ -1,9 +1,7 @@
 # Spec 017 (US3): a background child holding stdout does not keep the run open; it is stopped.
-import std.process.Output;
-import std.process.run;
-import std.process.run_with;
+import std.process;
 
-fn show(what: str, r: result[Output]) uses console {
+fn show(what: str, r: result[process.Output]) uses console {
     match r {
         case ok(out) {
             print(what + ": code " + str(out.code));
@@ -19,5 +17,5 @@ fn show(what: str, r: result[Output]) uses console {
 }
 
 fn main() uses console, process("bin/grandchild") {
-    show("grandchild", run("bin/grandchild", new list[str]));
+    show("grandchild", process.run("bin/grandchild", new list[str]));
 }

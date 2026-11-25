@@ -1,13 +1,12 @@
-import std.fs.delete;
-import std.fs.make_dir;
+import std.fs;
 
 # Spec 050: a function that deletes what it is given, under a caller that declares a directory.
 fn discard(path: str) -> result[void] uses file.delete {
-    return delete(path);
+    return fs.delete(path);
 }
 
 fn main() -> result[void] uses console, file.write("tmp/"), file.delete("tmp/") {
-    try make_dir("tmp");
+    try fs.make_dir("tmp");
     try write_file("tmp/a.txt", "x");
     try discard("tmp/a.txt");
     print("deleted");

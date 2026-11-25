@@ -1,0 +1,34 @@
+# ISO 8601 formatting and parsing: Z, offsets, date only, fractions, and malformed text.
+import std.time.format_time;
+import std.time.parse_time;
+
+fn try_parse(s: str) uses console {
+    match parse_time(s) {
+        case ok(ms) {
+            print("\"" + s + "\" -> " + str(ms) + " = " + format_time(ms));
+        }
+        case err(e) {
+            print("\"" + s + "\": " + e);
+        }
+    }
+}
+
+fn main() uses console {
+    print(format_time(1763112600000));
+    print(format_time(1763112600123));
+    print(format_time(1763112600005));
+    try_parse("2025-11-14T09:30:00Z");
+    try_parse("2025-11-14T09:30:00.123Z");
+    try_parse("2025-11-14T09:30:00+02:00");
+    try_parse("2025-11-14T09:30:00-05:30");
+    try_parse("2025-11-14");
+    try_parse("1969-12-31T23:59:59.999Z");
+    try_parse("0001-01-01T00:00:00Z");
+    try_parse("2025-13-01T00:00:00Z");
+    try_parse("2025-02-29");
+    try_parse("2025-11-14T25:00:00Z");
+    try_parse("2025-11-14T09:30:00");
+    try_parse("2025-11-14 09:30:00Z");
+    try_parse("abc");
+    try_parse("");
+}

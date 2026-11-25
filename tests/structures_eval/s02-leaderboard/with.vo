@@ -1,5 +1,5 @@
-import std.collections.first;
-import std.option.to_result;
+import std.collections;
+import std.option;
 
 # Ordered field by field: the highest total first, then the name.
 record Entry {
@@ -21,7 +21,7 @@ fn main() -> result[void] uses console, input {
             let k = try parse_int(w[1]);
             let best = new list[Entry];
             while len(best) < k and len(board) > 0 {
-                let e = try to_result(first(board), "empty");
+                let e = try option.to_result(collections.first(board), "empty");
                 remove(board, e);
                 push(best, e);
             }

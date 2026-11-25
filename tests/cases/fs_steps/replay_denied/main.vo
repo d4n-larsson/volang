@@ -1,9 +1,9 @@
 # Spec 017 (US5): a recorded R0010 (a delete outside the scope) repeats in replay.
-import std.fs.delete;
+import std.fs;
 
 fn main() -> result[void] uses console, file.delete("work/") {
     let up = "work/../";
-    try delete(up + "keep.txt");
+    try fs.delete(up + "keep.txt");
     print("deleted");
     return ok();
 }

@@ -29,6 +29,8 @@ module.exports = grammar({
     [$.uses_clause],
     // `Db[uses file.read, T]`: after the comma, a named effect or the next type argument
     [$._argument_uses],
+    // spec 058: `json.Json` (a module's type) or `json.parse` (a value's field): the token after the `.`
+    [$._expression, $.qualified_type],
   ],
 
   rules: {
@@ -73,7 +75,7 @@ module.exports = grammar({
     uses_clause: $ => seq('uses', commaSep1($.effect)),
     effect: $ => choice(
       seq(field('name', $.effect_name), optional(field('scope', $.arguments))),
-      field('parameter', $.type_identifier),
+      field('parameter', choice($.type_identifier, $.qualified_type)),
     ),
     effect_name: $ => seq($.identifier, optional(seq('.', $.identifier))),
 
@@ -152,7 +154,9 @@ module.exports = grammar({
       $.parenthesized_type,
     ),
     primitive_type: _ => choice('int', 'float', 'bool', 'str', 'bytes'),
-    named_type: $ => seq(field('name', $.type_identifier), optional(field('arguments', $.type_arguments))),
+    named_type: $ => seq(field('name', choice($.type_identifier, $.qualified_type)), optional(field('arguments', $.type_arguments))),
+    // spec 058: a type, effect set or variant of an imported module (`bytes` is also the module std.bytes)
+    qualified_type: $ => seq(field('module', choice($.identifier, alias('bytes', $.identifier))), '.', field('name', $.type_identifier)),
     // `[T, uses console, file.read]`: after the first effect only named effects continue the list
     // (without `uses` the toolchain reads the effects too, and reports E0327 with the fix)
     type_arguments: $ => seq('[', commaSep1(choice($._type, alias($._argument_uses, $.uses_clause))), ']'),
@@ -265,7 +269,7 @@ module.exports = grammar({
       field('arguments', $.arguments),
     )),
     arguments: $ => seq('(', commaSep($._expression), ')'),
-    variant_value: $ => prec(PREC.postfix + 1, seq(field('type', $.type_identifier), '.', field('case', $.identifier))),
+    variant_value: $ => prec(PREC.postfix + 1, seq(field('type', choice($.type_identifier, $.qualified_type)), '.', field('case', $.identifier))),
     parenthesized_expression: $ => seq('(', $._expression, ')'),
     list_literal: $ => seq('[', commaSep($._expression), ']'),
     new_expression: $ => seq('new', choice(
@@ -295,7 +299,7 @@ module.exports = grammar({
       prec.left(PREC.sum, seq($._expression, choice('+', '-'), $._expression)),
       prec.left(PREC.product, seq($._expression, choice('*', '/', '%'), $._expression)),
     ),
-    field_expression: $ => prec(PREC.postfix, seq(field('value', $._expression), '.', field('field', $.identifier))),
+    field_expression: $ => prec(PREC.postfix, seq(field('value', choice($._expression, alias('bytes', $.identifier))), '.', field('field', $.identifier))),
     index_expression: $ => prec(PREC.postfix, seq(field('value', $._expression), '[', field('index', $._expression), ']')),
 
     // ---- tokens ----

@@ -13,11 +13,12 @@ const mib: int = 1048576
 --- stderr
 --- exit 0
 $ vo doc --json units.sizes.kib
-{"v":1,"kind":"doc","module":"units.sizes","name":"kib","item":"const","signature":"const kib: int = 1024","tparams":[],"description":"Sizes shared by every program that pins this package."}
+{"v":1,"kind":"doc","module":"units.sizes","name":"kib","item":"const","signature":"const kib: int = 1024","tparams":[],"description":"Sizes shared by every program that pins this package.","use":"sizes.kib"}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":1}
 --- stderr
 --- exit 0
 $ vo doc main.vo mib
 const mib: int = 1048576
+    use: import units.sizes; then sizes.mib
 --- stderr
 --- exit 0

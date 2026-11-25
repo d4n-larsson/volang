@@ -1,15 +1,6 @@
-import catalog.Product;
-import catalog.add_product;
-import catalog.restock_product;
-import catalog.set_product_price;
-import orders.Line;
-import orders.Order;
-import orders.place_order;
-import orders.cancel_order;
-import report.money;
-import report.placed_line;
-import report.show_order;
-import report.full_report;
+import catalog;
+import orders;
+import report;
 
 fn is_number(s: str) -> bool {
     if len(s) == 0 {
@@ -32,43 +23,43 @@ fn num(s: str) -> int {
     }
 }
 
-fn run(words: list[str], catalog: map[str, Product], orders: map[str, Order]) -> list[str] {
+fn run(words: list[str], catalog_value: map[str, catalog.Product], orders_value: map[str, orders.Order]) -> list[str] {
     let cmd = words[0];
     let args_value = slice(words, 1, len(words));
     if cmd == "add-product" {
         if len(args_value) != 4 or not is_number(args_value[2]) or not is_number(args_value[3]) {
             return ["error: bad command"];
         }
-        return [add_product(catalog, args_value[0], args_value[1], num(args_value[2]), num(args_value[3]))];
+        return [catalog.add_product(catalog_value, args_value[0], args_value[1], num(args_value[2]), num(args_value[3]))];
     }
     if cmd == "restock" {
         if len(args_value) != 2 or not is_number(args_value[1]) {
             return ["error: bad command"];
         }
-        return [restock_product(catalog, args_value[0], num(args_value[1]))];
+        return [catalog.restock_product(catalog_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "price" {
         if len(args_value) != 2 or not is_number(args_value[1]) {
             return ["error: bad command"];
         }
-        return [set_product_price(catalog, args_value[0], num(args_value[1]), money)];
+        return [catalog.set_product_price(catalog_value, args_value[0], num(args_value[1]), report.money)];
     }
     if cmd == "order" {
         if len(args_value) < 3 or len(args_value) % 2 != 1 {
             return ["error: bad command"];
         }
-        let pairs = new list[Line];
+        let pairs = new list[orders.Line];
         var i = 1;
         while i < len(args_value) {
             if not is_number(args_value[i + 1]) or num(args_value[i + 1]) == 0 {
                 return ["error: bad command"];
             }
-            push(pairs, new Line { sku: args_value[i], qty: num(args_value[i + 1]), price: 0 });
+            push(pairs, new orders.Line { sku: args_value[i], qty: num(args_value[i + 1]), price: 0 });
             set i = i + 2;
         }
-        match place_order(catalog, orders, args_value[0], pairs) {
+        match orders.place_order(catalog_value, orders_value, args_value[0], pairs) {
             case ok(order) {
-                return [placed_line(order)];
+                return [report.placed_line(order)];
             }
             case err(e) {
                 return [e];
@@ -79,29 +70,29 @@ fn run(words: list[str], catalog: map[str, Product], orders: map[str, Order]) ->
         if len(args_value) != 1 {
             return ["error: bad command"];
         }
-        return [cancel_order(catalog, orders, args_value[0])];
+        return [orders.cancel_order(catalog_value, orders_value, args_value[0])];
     }
     if cmd == "show" {
         if len(args_value) != 1 {
             return ["error: bad command"];
         }
-        if not has(orders, args_value[0]) {
+        if not has(orders_value, args_value[0]) {
             return ["error: unknown order " + args_value[0]];
         }
-        return show_order(orders[args_value[0]]);
+        return report.show_order(orders_value[args_value[0]]);
     }
     if cmd == "report" {
         if len(args_value) != 0 {
             return ["error: bad command"];
         }
-        return full_report(catalog, orders);
+        return report.full_report(catalog_value, orders_value);
     }
     return ["error: unknown command " + cmd];
 }
 
 fn main() uses console, input {
-    let catalog = new map[str, Product];
-    let orders = new map[str, Order];
+    let catalog_value = new map[str, catalog.Product];
+    let orders_value = new map[str, orders.Order];
     for line in split(read_all(), "\n") {
         let words = filter(split(line, " "), fn(w: str) -> bool {
             return w != "";
@@ -109,7 +100,7 @@ fn main() uses console, input {
         if len(words) == 0 {
             continue;
         }
-        for out in run(words, catalog, orders) {
+        for out in run(words, catalog_value, orders_value) {
             print(out);
         }
     }

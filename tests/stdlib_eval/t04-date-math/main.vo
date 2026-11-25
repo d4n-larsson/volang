@@ -1,8 +1,5 @@
-import std.text.pad_left;
-import std.time.date;
-import std.time.days;
-import std.time.days_in_month;
-import std.time.from_ms;
+import std.text;
+import std.time;
 
 fn weekday_name(w: int) -> str {
     let names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -35,14 +32,14 @@ fn parse_date(s: str) -> result[int] {
     if m < 1 or m > 12 or d < 1 {
         return err("bad date");
     }
-    if d > days_in_month(y, m) {
+    if d > time.days_in_month(y, m) {
         return err("bad date");
     }
-    return date(y, m, d);
+    return time.date(y, m, d);
 }
 
 fn two(n: int) -> str {
-    return pad_left(str(n), 2, "0");
+    return text.pad_left(str(n), 2, "0");
 }
 
 fn compute(a: list[str]) -> result[list[str]] {
@@ -54,10 +51,10 @@ fn compute(a: list[str]) -> result[list[str]] {
     if n > 100000000 or n < -100000000 {
         return err("out of range");
     }
-    let t = from_ms(start + days(n));
-    let shown = pad_left(str(t.year), 4, "0") + "-" + two(t.month) + "-" + two(t.day);
+    let t = time.from_ms(start + time.days(n));
+    let shown = text.pad_left(str(t.year), 4, "0") + "-" + two(t.month) + "-" + two(t.day);
     let line1 = a[0] + " + " + a[1] + " days = " + shown + " (" + weekday_name(t.weekday) + ")";
-    let line2 = "days in that month: " + str(days_in_month(t.year, t.month));
+    let line2 = "days in that month: " + str(time.days_in_month(t.year, t.month));
     return ok([line1, line2]);
 }
 

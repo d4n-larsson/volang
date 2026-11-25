@@ -32,7 +32,7 @@ CHANGED = {
     "examples/expenses: test": ("T027", [
         ("PASS a bad date is an error, not a crash (0ms)\n",
          "FAIL a bad date is an error, not a crash (0ms) [FR-004]\n"
-         "  report.vo:182:13: `expect_eq` failed: the values differ.\n"
+         "  report.vo:172:13: `expect_eq` failed: the values differ.\n"  # spec 058: 10 import lines fewer
          '    expected: err(ExpenseError.bad_date(new DateProblem { date: "2026-02-30", reason: "day 30 is not in '
          'that month" }))\n'
          '    actual:   err(ExpenseError.bad_date(new DateProblem { date: "2026-02-30", reason: "invalid time: '

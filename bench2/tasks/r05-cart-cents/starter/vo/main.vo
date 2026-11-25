@@ -1,16 +1,7 @@
-import shop.Shop;
-import shop.new_shop;
-import cart.add_product;
-import cart.set_price;
-import cart.add_to_cart;
-import cart.remove_from_cart;
-import cart.show_cart;
-import pricing.set_promo;
-import pricing.set_bulk;
-import pricing.define_coupon;
-import pricing.use_coupon;
-import checkout.checkout;
-import checkout.report;
+import cart;
+import checkout;
+import pricing;
+import shop;
 
 fn is_number(s: str) -> bool {
     if len(s) == 0 {
@@ -41,7 +32,7 @@ fn percent(s: str) -> bool {
     return positive(s) and num(s) <= 100;
 }
 
-fn run(words: list[str], shop: Shop) -> list[str] {
+fn run(words: list[str], shop_value: shop.Shop) -> list[str] {
     let cmd = words[0];
     let args_value = slice(words, 1, len(words));
     let bad = ["error: bad command"];
@@ -49,73 +40,73 @@ fn run(words: list[str], shop: Shop) -> list[str] {
         if len(args_value) != 3 or not is_number(args_value[2]) {
             return bad;
         }
-        return [add_product(shop, args_value[0], args_value[1], num(args_value[2]))];
+        return [cart.add_product(shop_value, args_value[0], args_value[1], num(args_value[2]))];
     }
     if cmd == "price" {
         if len(args_value) != 2 or not is_number(args_value[1]) {
             return bad;
         }
-        return [set_price(shop, args_value[0], num(args_value[1]))];
+        return [cart.set_price(shop_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "add" {
         if len(args_value) != 2 or not positive(args_value[1]) {
             return bad;
         }
-        return [add_to_cart(shop, args_value[0], num(args_value[1]))];
+        return [cart.add_to_cart(shop_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "remove" {
         if len(args_value) != 2 or not positive(args_value[1]) {
             return bad;
         }
-        return [remove_from_cart(shop, args_value[0], num(args_value[1]))];
+        return [cart.remove_from_cart(shop_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "promo" {
         if len(args_value) != 2 or not positive(args_value[1]) {
             return bad;
         }
-        return [set_promo(shop, args_value[0], num(args_value[1]))];
+        return [pricing.set_promo(shop_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "bulk" {
         if len(args_value) != 3 or not positive(args_value[1]) or not percent(args_value[2]) {
             return bad;
         }
-        return [set_bulk(shop, args_value[0], num(args_value[1]), num(args_value[2]))];
+        return [pricing.set_bulk(shop_value, args_value[0], num(args_value[1]), num(args_value[2]))];
     }
     if cmd == "coupon" {
         if len(args_value) != 2 or not percent(args_value[1]) {
             return bad;
         }
-        return [define_coupon(shop, args_value[0], num(args_value[1]))];
+        return [pricing.define_coupon(shop_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "use" {
         if len(args_value) != 1 {
             return bad;
         }
-        return [use_coupon(shop, args_value[0])];
+        return [pricing.use_coupon(shop_value, args_value[0])];
     }
     if cmd == "cart" {
         if len(args_value) != 0 {
             return bad;
         }
-        return show_cart(shop);
+        return cart.show_cart(shop_value);
     }
     if cmd == "checkout" {
         if len(args_value) != 0 {
             return bad;
         }
-        return checkout(shop);
+        return checkout.checkout(shop_value);
     }
     if cmd == "report" {
         if len(args_value) != 0 {
             return bad;
         }
-        return report(shop);
+        return checkout.report(shop_value);
     }
     return ["error: unknown command " + cmd];
 }
 
 fn main() uses console, input {
-    let shop = new_shop();
+    let shop_value = shop.new_shop();
     for line in split(read_all(), "\n") {
         let words = filter(split(line, " "), fn(w: str) -> bool {
             return w != "";
@@ -123,7 +114,7 @@ fn main() uses console, input {
         if len(words) == 0 {
             continue;
         }
-        for out in run(words, shop) {
+        for out in run(words, shop_value) {
             print(out);
         }
     }

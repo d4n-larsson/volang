@@ -1,4 +1,4 @@
-main.vo:4:4: error[E0504]: `main` gains net("db.internal"); approve with `vo effects --update`.
-   4 | fn main() uses net("db.internal") {
+main.vo:3:4: error[E0504]: `main` gains net("db.internal"); approve with `vo effects --update`.
+   3 | fn main() uses net("db.internal") {
      |    ^^^^
 1 error, 0 warnings

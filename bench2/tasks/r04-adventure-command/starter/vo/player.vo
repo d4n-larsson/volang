@@ -1,7 +1,4 @@
-import world.Room;
-import world.start_room;
-import world.visit_points;
-import world.item_value;
+import world;
 
 export record Player {
     room: str;
@@ -13,13 +10,13 @@ export record Player {
 
 export fn new_player() -> Player {
     let visited = new map[str, bool];
-    set visited[start_room()] = true;
-    return new Player { room: start_room(), inventory: new list[str], score: 0, moves: 0, visited: visited };
+    set visited[world.start_room()] = true;
+    return new Player { room: world.start_room(), inventory: new list[str], score: 0, moves: 0, visited: visited };
 }
 
 # Moves through an exit of the current room; false if there is none.
-export fn move(player: Player, world: map[str, Room], direction: str) -> bool {
-    let room = world[player.room];
+export fn move(player: Player, world_value: map[str, world.Room], direction: str) -> bool {
+    let room = world_value[player.room];
     if not has(room.exits, direction) {
         return false;
     }
@@ -27,7 +24,7 @@ export fn move(player: Player, world: map[str, Room], direction: str) -> bool {
     set player.moves = player.moves + 1;
     if not has(player.visited, player.room) {
         set player.visited[player.room] = true;
-        set player.score = player.score + visit_points();
+        set player.score = player.score + world.visit_points();
     }
     return true;
 }
@@ -39,8 +36,8 @@ fn contains(xs: list[str], x: str) -> bool {
 }
 
 # Moves an item from the current room to the inventory; returns the points earned, or -1.
-export fn pick_up(player: Player, world: map[str, Room], item: str) -> int {
-    let room = world[player.room];
+export fn pick_up(player: Player, world_value: map[str, world.Room], item: str) -> int {
+    let room = world_value[player.room];
     if not contains(room.items, item) {
         return -1;
     }
@@ -48,7 +45,7 @@ export fn pick_up(player: Player, world: map[str, Room], item: str) -> int {
         return x != item;
     });
     push(player.inventory, item);
-    let points = item_value(item);
+    let points = world.item_value(item);
     set player.score = player.score + points;
     return points;
 }

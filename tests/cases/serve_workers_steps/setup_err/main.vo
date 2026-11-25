@@ -1,20 +1,17 @@
 # A setup returning err: the server stops starting (no request is served) and serve_workers returns it.
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve_workers;
+import std.http;
 
 fn setup() -> result[int] uses console {
     print("setting up");
     return err("no database");
 }
 
-fn handle(n: int, r: Request) -> Response {
-    return new Response { status: 200, headers: new list[Header], body: r.path };
+fn handle(n: int, r: http.Request) -> http.Response {
+    return new http.Response { status: 200, headers: new list[http.Header], body: r.path };
 }
 
 fn main() -> result[void] uses console, serve("{vport}") {
-    try serve_workers("{vport}", 2, setup, handle);
+    try http.serve_workers("{vport}", 2, setup, handle);
     print("not reached");
     return ok();
 }

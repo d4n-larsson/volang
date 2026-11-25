@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0205","name":"import_not_found","severity":"error","file":"bad_path.vo","start":{"line":2,"col":1},"end":{"line":2,"col":12},"text":"import std;","message":"An import names a file: `import std.json;`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

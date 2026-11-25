@@ -1,13 +1,9 @@
 # Spec 057 (US1): each run form starts the program in the directory it is given; "./" is the start
 # directory. bin/cat_file is found under the start directory while it runs in work/ (FR-004).
-import std.bytes.from_text;
-import std.bytes.to_text;
-import std.process.Output;
-import std.process.run_lines;
-import std.process.run_with;
-import std.process.run_with_bytes;
+import std.bytes;
+import std.process;
 
-fn show(what: str, r: result[Output]) uses console {
+fn show(what: str, r: result[process.Output]) uses console {
     match r {
         case ok(out) {
             write(what + ": " + out.stdout);
@@ -19,11 +15,11 @@ fn show(what: str, r: result[Output]) uses console {
 }
 
 fn main() -> result[void] uses console, file.read("./"), process("bin/cat_file") {
-    show("run_with work/", run_with("bin/cat_file", ["a.txt"], "", [], "work/"));
-    show("run_with ./", run_with("bin/cat_file", ["a.txt"], "", [], "./"));
-    let b = try run_with_bytes("bin/cat_file", ["a.txt"], from_text(""), [], "work/");
-    write("run_with_bytes work/: " + try to_text(b.stdout));
-    let l = try run_lines(
+    show("run_with work/", process.run_with("bin/cat_file", ["a.txt"], "", [], "work/"));
+    show("run_with ./", process.run_with("bin/cat_file", ["a.txt"], "", [], "./"));
+    let b = try process.run_with_bytes("bin/cat_file", ["a.txt"], bytes.from_text(""), [], "work/");
+    write("run_with_bytes work/: " + try bytes.to_text(b.stdout));
+    let l = try process.run_lines(
         "bin/cat_file",
         ["a.txt"],
         "",

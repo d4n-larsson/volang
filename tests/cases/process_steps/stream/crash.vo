@@ -1,9 +1,9 @@
-import std.process.run_lines;
+import std.process;
 
 # A runtime error inside the function ends the program; the child must not be left running.
 fn main() uses console, file.read("./"), process("bin/slow_lines") {
     let empty = new list[int];
-    match run_lines(
+    match process.run_lines(
         "bin/slow_lines",
         ["1000", "0.05", "0"],
         "",

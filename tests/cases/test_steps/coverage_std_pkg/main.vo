@@ -1,12 +1,12 @@
 # Spec 018 US3: coverage counts only the program's own files, not the standard library or packages.
-import money.format.cents;
-import std.text.pad_left;
+import money.format;
+import std.text;
 
 fn label(n: int) -> str {
     if n < 0 {
-        return "minus " + cents(0 - n);
+        return "minus " + format.cents(0 - n);
     }
-    return pad_left(cents(n), 8, " ");
+    return text.pad_left(format.cents(n), 8, " ");
 }
 
 test "label" {

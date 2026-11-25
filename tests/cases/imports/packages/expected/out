@@ -1,0 +1,16 @@
+$ vo package main.vo pkg shared/pkg
+added pkg shared/pkg sha256:7792a471bc7939abedd45e307024eb0c7a05a1a9a2fbf308b687a5a51027aed9
+--- stderr
+--- exit 0
+$ vo run main.vo
+deliver x
+ok
+--- stderr
+--- exit 0
+$ vo effects --update main.vo
++ @pkg/client.vo:send: console
++ @pkg/link.vo:deliver: console
++ main.vo:main: console
+0 errors, 0 warnings
+--- stderr
+--- exit 0

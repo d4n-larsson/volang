@@ -1,9 +1,8 @@
 # URLs that do not parse are refused before anything is sent (spec 019: https:// is now supported,
 # so its forms here are malformed ones).
-import std.http.Response;
-import std.http.get;
+import std.http;
 
-fn show(r: result[Response]) uses console {
+fn show(r: result[http.Response]) uses console {
     match r {
         case ok(resp) {
             print("status " + str(resp.status));
@@ -20,12 +19,12 @@ fn show(r: result[Response]) uses console {
 }
 
 fn main() uses console, net("localhost", "x") {
-    show(get("https://"));
-    show(get("HTTPS://user@x/"));
-    show(get("ftp://localhost/"));
-    show(get("http://"));
-    show(get("http://x:99999/"));
-    show(get("http://x:abc/"));
-    show(get("http://user@x/"));
-    show(get("localhost/plain"));
+    show(http.get("https://"));
+    show(http.get("HTTPS://user@x/"));
+    show(http.get("ftp://localhost/"));
+    show(http.get("http://"));
+    show(http.get("http://x:99999/"));
+    show(http.get("http://x:abc/"));
+    show(http.get("http://user@x/"));
+    show(http.get("localhost/plain"));
 }

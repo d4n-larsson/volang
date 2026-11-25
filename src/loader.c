@@ -6,6 +6,7 @@
 #define FS_LOADING 1
 #define FS_LOADED 2
 #define FS_CHECKED 3
+static Vec *mm_names, *mm_diags; /* spec 058: modules reported missing (E0204), and their reports */
 #define NO_PACKAGE ((void *)-1) /* pkg_import_path: a package that failed its check */
 
 static Vec *ld_order; /* files in dependency order (dependencies first) */
@@ -37,11 +38,12 @@ long file_find(Str *path)
     return -1;
 }
 
-/* The imported file relative to the importer's directory: "a/b.vo" for `import a.b.name;`. */
+/* The imported file relative to the importer's directory: "a/b.vo" for `import a.b;` (spec 058), and for
+ * the 0.3 form `import a.b.name;` (marked by load_imports: N_C 1) the file without its last segment. */
 Str *import_rel(Node *import)
 {
     SB *sb = sb_new();
-    for (long i = 0; i < import->a.v->n - 1; i++) {
+    for (long i = 0; i < import->a.v->n - (import->c.i ? 1 : 0); i++) {
         if (i) sb_byte(sb, '/');
         sb_str(sb, vec_get(import->a.v, i));
     }
@@ -127,6 +129,27 @@ long load_file(Str *path)
     return id;
 }
 
+/* Spec 058: whether an import's file exists (embedded std file, cached package file, or on the disk),
+ * without loading it. */
+static int import_exists(Str *path)
+{
+    if (file_find(path) >= 0) return 1;
+    if (path->len >= 4 && !memcmp(path->data, "std/", 4)) {
+        for (const StdFile *sf = std_files; sf->path; sf++)
+            if (str_eq_cstr(path, (char *)sf->path)) return 1;
+        return 0;
+    }
+    if (ld_app) return 0;
+    char *text;
+    long len = pkg_cached(path, &text);
+    if (len >= 0) return 1;
+    if (len == -2) return 0;
+    long fd = sys_open(path->data, O_RDONLY);
+    if (fd < 0) return 0;
+    sys_close((int)fd);
+    return 1;
+}
+
 /* E0206 at the import that closes a cycle; the message and notes follow the chain. */
 void report_cycle(Node *import, long target)
 {
@@ -162,13 +185,35 @@ void load_imports(int file)
         Node *imp = vec_get(items, i);
         if (imp->kind != N_IMPORT) continue;
         imp->d.i = 0;
-        if (imp->a.v->n < 2) {
-            ck_err("E0205", imp, str_from_cstr("An import needs a file and a name: `import file.name;`."));
+        imp->c.i = 0;
+        long nseg = imp->a.v->n;
+        if (!nseg || !imp->b.n) continue; /* `import ;`: the parser reported it */
+        Str *last = vec_get(imp->a.v, nseg - 1);
+        int is_std = str_eq_cstr(vec_get(imp->a.v, 0), "std");
+        if (nseg == 1 && is_std) {
+            ck_err("E0205", imp, str_from_cstr("An import names a file: `import std.json;`."));
             continue;
         }
+        /* spec 058 (research R3): `import a.b.c;` is the module a/b/c.vo; the 0.3 form names an item of
+         * a/b.vo: a capitalized last segment, or no a/b/c.vo while a/b.vo exists */
+        int old_ok = nseg >= (is_std || pkg_is_name(vec_get(imp->a.v, 0), f) ? 3 : 2);
+        if (old_ok && last->len && last->data[0] >= 'A' && last->data[0] <= 'Z') imp->c.i = 1;
+        if (is_std && nseg >= 3) imp->c.i = 1; /* std modules are flat: std.a.b names the item b of std/a.vo */
         Str *rel = import_rel(imp);
         Str *path = import_path(imp, rel, f); /* spec 007: std/ and package roots */
         if ((void *)path == NO_PACKAGE) continue; /* E0701/E0702, reported */
+        if (!imp->c.i && old_ok && path && !import_exists(path)) {
+            imp->c.i = 1; /* a/b/c.vo -> a/b.vo (derived, so a package is resolved and verified once) */
+            Str *rel1 = import_rel(imp);
+            long cut = last->len + 4; /* "/c.vo" */
+            Str *path1 = path->len > cut ? str_join2_c(str_new(path->data, path->len - cut), ".vo") : 0;
+            if (path1 && import_exists(path1)) {
+                rel = rel1;
+                path = path1;
+            } else {
+                imp->c.i = 0; /* neither: report the module's file */
+            }
+        }
         if (!str_eq_cstr(vec_get(imp->a.v, 0), "std") && !inside_tree(path)) { /* (std is embedded) */
             ck_err("E0211", imp,
                    msg("`$1` leads outside this program's directory through a symbolic link: an import must "
@@ -248,6 +293,261 @@ static void check_exported(Node *nn, Node *decl, long target)
     export_needed("E0209", nn, decl, m);
 }
 
+/* ---- spec 058: E0215, the 0.3 form `import a.b.item;`, and its fix (research R6) ---- */
+
+/* 1 when a program file (not std, not a package) has 0.3 imports: checking it keeps the reference log. */
+int file_has_old_imports(int file)
+{
+    FileRec *f = file_get(file);
+    if (f->std || !f->ast) return 0;
+    Str *real = rt_resolve(f->path); /* a package's file is one, however the path that reached it reads */
+    if (pkg_relpath(f->path) || (real && pkg_relpath(real))) return 0;
+    Vec *items = f->ast->a.v;
+    for (long i = 0; i < items->n; i++) {
+        Node *imp = vec_get(items, i);
+        if (imp->kind == N_IMPORT && imp->c.i && imp->d.i && imp->b.n) return 1;
+    }
+    return 0;
+}
+
+/* The text of an import's module: `std.json` for `import std.json.parse_json;` (0.3) or `import std.json;`. */
+static Str *module_text(Node *imp)
+{
+    SB *sb = sb_new();
+    long n = imp->a.v->n - (imp->c.i ? 1 : 0);
+    for (long i = 0; i < n; i++) {
+        if (i) sb_byte(sb, '.');
+        sb_str(sb, vec_get(imp->a.v, i));
+    }
+    return sb_finish(sb);
+}
+
+typedef struct MigEdit {
+    long start, end;
+    Str *text;
+} MigEdit;
+
+static void mig_edit(Vec *edits, long start, long end, Str *text)
+{
+    for (long i = 0; i < edits->n; i++) {
+        MigEdit *e = vec_get(edits, i);
+        if (e->start == start && e->end == end) return; /* the same node logged twice */
+    }
+    MigEdit *e = alloc(sizeof(MigEdit));
+    e->start = start;
+    e->end = end;
+    e->text = text;
+    vec_push(edits, e);
+}
+
+/* After a file with 0.3 imports was checked with the reference log on (entries from log_start): E0215 at
+ * its first such import, with one fix from the first import to the last changed use: the imports become
+ * one per module (sorted as `vo fmt` sorts them), each use of an item they bound is written `m.name`, and
+ * each local named like a module the fix introduces is renamed `NAME_value`. When an import names a std
+ * item changed in vo 0.2 (E0214), the E0214 fixes go first: E0215 then has no fix in this round. */
+void migrate_imports(int file, long log_start)
+{
+    FileRec *f = file_get(file);
+    Vec *items = f->ast->a.v;
+    Vec *imports = vec_new();
+    Node *first_old = 0;
+    int changed = 0;
+    Vec *decls = vec_new(), *quals = vec_new(); /* item declarations bound by 0.3 imports -> `m.name` */
+    Vec *mods = vec_new();                      /* module names the fix introduces */
+    for (long i = 0; i < items->n; i++) {
+        Node *imp = vec_get(items, i);
+        if (imp->kind != N_IMPORT) continue;
+        vec_push(imports, imp);
+        if (!imp->c.i || !imp->d.i || !imp->b.n) continue;
+        if (!first_old) first_old = imp;
+        long target = imp->d.i - 1;
+        FileRec *tf = file_get((int)target);
+        Str *name = imp->b.n->a.s;
+        if (tf->std && libchange_binds(libchange_find(str_new(tf->path->data + 4, tf->path->len - 7), name))) changed = 1;
+        Str *m = vec_get(imp->a.v, imp->a.v->n - 2);
+        vec_push(mods, m);
+        for (Sym *s = tf->scope; s; s = s->next)
+            if (s->decl && s->decl->file == target && s->kind != SYM_LOCAL && s->kind != SYM_MODULE && str_eq(s->name, name)) {
+                vec_push(decls, s->decl);
+                vec_push(quals, msg("$1.$2", m, name, 0));
+                break;
+            }
+    }
+    if (!first_old) return;
+    Node *nn = first_old->b.n;
+    Diag *d = ck_err("E0215", first_old, msg("Imports name a module, not an item: `import $1;`, then `$2.$3`.",
+                                             module_text(first_old), vec_get(first_old->a.v, first_old->a.v->n - 2),
+                                             nn->a.s));
+    if (changed) return;
+    Vec *edits = vec_new();
+    /* locals and parameters named like an introduced module: their declaring name nodes and new names */
+    Vec *lkeys = vec_new(), *lnames = vec_new();
+    for (long i = log_start; q_log && i < q_log->n; i++) {
+        RefLog *r = vec_get(q_log, i);
+        if (r->role != RR_DECL || (long)r->node->file != file || r->key_a.i != (long)r->node) continue;
+        for (long k = 0; k < mods->n; k++) {
+            if (!str_eq(r->node->a.s, vec_get(mods, k))) continue;
+            Str *fresh = msg("$1_value", r->node->a.s, 0, 0);
+            for (long j = 2;; j++) { /* not a name the file already declares */
+                int taken = 0;
+                for (long q = log_start; q < q_log->n && !taken; q++) {
+                    RefLog *o = vec_get(q_log, q);
+                    if (o->role == RR_DECL && (long)o->node->file == file && o->node->a.s && str_eq(o->node->a.s, fresh)) taken = 1;
+                }
+                if (!taken) break;
+                fresh = msg("$1_value$2", r->node->a.s, int_to_str(j), 0);
+            }
+            vec_push(lkeys, r->node);
+            vec_push(lnames, fresh);
+            break;
+        }
+    }
+    for (long i = log_start; q_log && i < q_log->n; i++) {
+        RefLog *r = vec_get(q_log, i);
+        Node *n = r->node;
+        if ((long)n->file != file || r->role == RR_IMPORT) continue;
+        for (long k = 0; k < lkeys->n; k++)
+            if (r->key_a.i == (long)vec_get(lkeys, k)) mig_edit(edits, n->start, n->end, vec_get(lnames, k));
+        if (r->role == RR_DECL || r->key_b.i != -1) continue;
+        for (long k = 0; k < decls->n; k++) {
+            if (r->key_a.i != (long)vec_get(decls, k)) continue;
+            Str *q = vec_get(quals, k);
+            long dot = str_dot(q); /* only where the bare name is written */
+            if (n->end - n->start == q->len - dot - 1 && !memcmp(f->text + n->start, q->data + dot + 1, (size_t)(q->len - dot - 1)))
+                mig_edit(edits, n->start, n->end, q);
+        }
+    }
+    /* the imports: one block in place of the first, the other lines removed */
+    Vec *texts = vec_new();
+    for (long i = 0; i < imports->n; i++) {
+        Node *imp = vec_get(imports, i);
+        Str *t = module_text(imp);
+        int dup = 0;
+        for (long k = 0; k < texts->n; k++) dup |= str_eq(vec_get(texts, k), t);
+        if (dup) continue;
+        long j = texts->n; /* insertion sort, as vo fmt orders imports */
+        vec_push(texts, t);
+        while (j > 0 && str_cmp(vec_get(texts, j - 1), t) > 0) {
+            texts->data[j] = texts->data[j - 1];
+            j--;
+        }
+        texts->data[j].s = t;
+    }
+    SB *block = sb_new();
+    for (long k = 0; k < texts->n; k++) {
+        if (k) sb_byte(block, '\n');
+        sb_cstr(block, "import ");
+        sb_str(block, vec_get(texts, k));
+        sb_byte(block, ';');
+    }
+    Node *head = vec_get(imports, 0);
+    mig_edit(edits, head->start, head->end, sb_finish(block));
+    for (long i = 1; i < imports->n; i++) {
+        Node *imp = vec_get(imports, i);
+        long s = imp->start, e = imp->end;
+        while (s > 0 && f->text[s - 1] != '\n') s--; /* the whole line */
+        if (e < f->len && f->text[e] == '\n') e++;
+        mig_edit(edits, s, e, str_from_cstr(""));
+    }
+    for (long i = 1; i < edits->n; i++) { /* by position */
+        MigEdit *e = vec_get(edits, i);
+        long j = i - 1;
+        while (j >= 0 && ((MigEdit *)vec_get(edits, j))->start > e->start) {
+            edits->data[j + 1] = edits->data[j];
+            j--;
+        }
+        edits->data[j + 1].p = e;
+    }
+    long from = head->start, to = from;
+    SB *sb = sb_new();
+    for (long i = 0; i < edits->n; i++) {
+        MigEdit *e = vec_get(edits, i);
+        if (e->start < to) continue; /* overlapping: the earlier one wins */
+        sb_bytes(sb, f->text + to, e->start - to);
+        sb_str(sb, e->text);
+        to = e->end;
+    }
+    diag_add_fix(d, file, from, to, sb_finish(sb));
+}
+
+/* Spec 058: W0203 for a module import the file never uses (the parser counted the uses in N_E), with the
+ * fix removing the line. */
+void imports_report_unused(Vec *items)
+{
+    for (long i = 0; i < items->n; i++) {
+        Node *imp = vec_get(items, i);
+        if (imp->kind != N_IMPORT || imp->c.i || !imp->d.i || imp->e.i || !imp->b.n) continue;
+        Diag *d = ck_warn("W0203", imp, msg("`$1` is imported but not used.", module_label(imp->d.i - 1), 0, 0));
+        FileRec *f = file_get((int)imp->file);
+        long end = imp->end;
+        if (end < f->len && f->text[end] == '\n') end++;
+        diag_add_fix(d, (int)imp->file, imp->start, end, str_from_cstr(""));
+    }
+}
+
+/* Spec 058: the declaration of a private top-level item `name` of the file, or 0. */
+Node *module_private_item(long target, Str *name)
+{
+    for (Sym *s = file_get((int)target)->scope; s; s = s->next)
+        if (s->decl && s->decl->file == target && s->kind != SYM_LOCAL && s->kind != SYM_MODULE &&
+            !(s->decl->flags & NF_EXPORT) && str_eq(s->name, name))
+            return s->decl;
+    return 0;
+}
+
+/* Spec 058: E0209 for `m.name` naming a private item (the fix adds `export`, as for an import). */
+void private_item_used(Node *at, Str *name, Node *decl, long target)
+{
+    Node nn = *at;
+    nn.a.s = name;
+    check_exported(&nn, decl, target);
+}
+
+/* Spec 058 (research R2): binds the module name (SYM_MODULE) and every exported top-level item of the
+ * target as `m.name`; E0202 when the name is already a module or an item of this file. */
+static void bind_module(Node *imp, Node *nn, long target)
+{
+    imp->e.i++; /* any report below stands for W0203 too */
+    Sym *prev = scope_find(nn->a.s);
+    if (prev && !is_placeholder(prev)) {
+        if (prev->kind == SYM_MODULE && prev->slot == target) { /* the same import again: remove it */
+            Diag *d = ck_err1("E0202", nn, "`$1` is already imported.", nn->a.s);
+            FileRec *f = file_get((int)imp->file);
+            long end = imp->end;
+            if (end < f->len && f->text[end] == '\n') end++;
+            diag_add_fix(d, (int)imp->file, imp->start, end, str_from_cstr(""));
+        } else if (prev->kind == SYM_MODULE) {
+            ck_err("E0202", nn, msg("`$1` is already a module of this file (`$2`).", nn->a.s,
+                                    file_get((int)prev->slot)->path, 0));
+        } else {
+            ck_err1("E0202", nn, "`$1` is already defined.", nn->a.s);
+        }
+        return;
+    }
+    if (file_defines((int)imp->file, nn->a.s)) { /* an item of this file has the module's name: the item wins */
+        ck_err("E0202", nn, msg("`$1` is also an item of this file: rename the item or the module's file.", nn->a.s, 0, 0));
+        return;
+    }
+    imp->e.i--;
+    Sym *ms = sym_new(nn->a.s, SYM_MODULE, 0, 0, nn);
+    ms->slot = target;
+    ms->decl = imp; /* (after sym_new: the reference log keeps no declaration for a module) */
+    scope_add(ms);
+    FileRec *tf = file_get((int)target);
+    long qc = q_collect; /* the items' bindings are not references (the import names the module) */
+    q_collect = 0;
+    for (Sym *s = tf->scope; s; s = s->next) {
+        if (!s->decl || s->decl->file != target || s->kind == SYM_LOCAL || s->kind == SYM_MODULE) continue;
+        if (!(s->decl->flags & NF_EXPORT)) continue; /* a private item: E0209 at its use (report_undefined) */
+        SB *sb = sb_new();
+        sb_str(sb, nn->a.s);
+        sb_byte(sb, '.');
+        sb_str(sb, s->name);
+        scope_add(sym_new(sb_finish(sb), s->kind, s->decl, s->type, nn));
+    }
+    q_collect = qc;
+}
+
 /* Adds each imported item (a top-level fn, record or variant of the target file) to the scope. */
 void bind_imports(int file)
 {
@@ -262,6 +562,10 @@ void bind_imports(int file)
         long target = imp->d.i - 1;
         Node *nn = imp->b.n; /* name node */
         FileRec *tf = file_get((int)target);
+        if (!imp->c.i) { /* spec 058: a module: its name, and each exported item under `m.name` */
+            bind_module(imp, nn, target);
+            continue;
+        }
         const LibChange *change = 0; /* spec 056: a changed std item: E0214, bound to what replaces it */
         Str *want = nn->a.s;
         if (tf->std) {
@@ -317,6 +621,7 @@ void check_program(int file, int mode)
     ld_order = vec_new();
     ld_stack = vec_new();
     ex_decls = vec_new();
+    mm_names = 0;
     ex_diags = vec_new();
     ld_tree = rt_resolve(f->dir);
     load_imports(file);
@@ -330,6 +635,7 @@ void check_program(int file, int mode)
         check_items(id, id == file ? mode : 0);
     }
     check_web_headers(ld_order);
+    ty_name_file = -1; /* spec 058: later reports (runtime frames, docs) print declared names */
 }
 
 /* A silent symbol for a name whose import failed (later uses are not reported). */
@@ -390,12 +696,44 @@ long path_defines(Str *path, Str *name)
 /* "a/b.vo" + name -> "a.b.name". */
 Str *import_text_for(Str *rel, Str *name)
 {
+    (void)name; /* spec 058: the module, not the item */
     SB *sb = sb_new();
     long n = rel->len - 3; /* without ".vo" */
     for (long i = 0; i < n; i++) sb_byte(sb, rel->data[i] == '/' ? '.' : (unsigned char)rel->data[i]);
-    sb_byte(sb, '.');
-    sb_str(sb, name);
     return sb_finish(sb);
+}
+
+/* Spec 058: E0204 for a module name `m` used without its import, when exactly one module can be meant:
+ * `std.m`, or `m.vo` beside the file. The fix (on the first report only; later ones are notes on it, so
+ * applying every first fix adds the line once) inserts the import. Returns 1 when reported. */
+int missing_module_import(Str *m, Node *at)
+{
+    Str *stdp = msg("std/$1.vo", m, 0, 0);
+    int in_std = 0;
+    for (const StdFile *sf = std_files; sf->path; sf++)
+        if (str_eq_cstr(stdp, (char *)sf->path)) in_std = 1;
+    FileRec *f = file_get((int)at->file);
+    int beside = !ld_app && import_exists(str_join2(f->dir, msg("$1.vo", m, 0, 0)));
+    if (!in_std && !beside) return 0;
+    if (!mm_names) {
+        mm_names = vec_new();
+        mm_diags = vec_new();
+    }
+    for (long i = 0; i < mm_names->n; i++)
+        if (str_eq(vec_get(mm_names, i), m) && ((Diag *)vec_get(mm_diags, i))->file == at->file) {
+            diag_add_related(vec_get(mm_diags, i), (int)at->file, at->start, at->end, str_from_cstr("Also used here."));
+            return 1;
+        }
+    Str *path = in_std && beside ? 0 : in_std ? msg("std.$1", m, 0, 0) : m;
+    Diag *d = path ? ck_err("E0204", at, msg("`$1` is not imported: add `import $2;`.", m, path, 0))
+                   : ck_err("E0204", at, msg("`$1` is not imported: it may be `std.$1` or `$1.vo`.", m, 0, 0));
+    if (path) {
+        long pos = import_insert_at((int)at->file);
+        diag_add_fix(d, (int)at->file, pos, pos, msg("import $1;\n", path, 0, 0));
+    }
+    vec_push(mm_names, m);
+    vec_push(mm_diags, d);
+    return 1;
 }
 
 /* Searches the *.vo files below dir (ending in '/' or empty; rel is the same directory relative to

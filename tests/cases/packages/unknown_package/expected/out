@@ -1,7 +1,7 @@
 $ vo check main.vo
 main.vo:1:1: error[E0205]: Cannot find `cash/format.vo` for this import.
-   1 | import cash.format.cents;
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^
+   1 | import cash.format;
+     | ^^^^^^^^^^^^^^^^^^^
 1 error, 0 warnings
 --- stderr
 --- exit 65

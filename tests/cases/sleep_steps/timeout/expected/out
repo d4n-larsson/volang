@@ -1,8 +1,8 @@
 $ vo run --timeout 1 main.vo
 --- stderr
 main.vo:5:5: runtime error[R0009]: Time limit of 1 s exceeded.
-   5 |     sleep(60000);
-     |     ^^^^^^^^^^^^
+   5 |     time.sleep(60000);
+     |     ^^^^^^^^^^^^^^^^^
 trace:
   at sleep (main.vo:5:5)
   at main (main.vo:5:5)

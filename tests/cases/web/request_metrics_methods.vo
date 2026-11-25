@@ -1,16 +1,10 @@
 # Spec 055 US3: a method outside GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS is counted as "other".
-import std.metrics.Metric;
-import std.metrics.metrics_text;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.Route;
-import std.web.handle_request;
-import std.web.request;
-import std.web.request_metrics;
+import std.metrics;
+import std.web;
 
 fn main() uses log, clock, console {
-    let app = new App[int, uses log, clock] { routes: new list[Route[int, uses log, clock]], steps: [request_metrics()], errors: new list[ErrorStatus] };
-    let _ = handle_request(app, 0, request("PROPFIND", "/x", ""));
-    let text = metrics_text(new list[Metric]);
+    let app = new web.App[int, uses log, clock] { routes: new list[web.Route[int, uses log, clock]], steps: [web.request_metrics()], errors: new list[web.ErrorStatus] };
+    let _ = web.handle_request(app, 0, web.request("PROPFIND", "/x", ""));
+    let text = metrics.metrics_text(new list[metrics.Metric]);
     print(slice(text, find(text, "http_requests_total{"), len(text)));
 }

@@ -1,6 +1,6 @@
 # The standard library
 
-The standard library is six modules written in vo and built into the toolchain, for JSON, time, text, randomness, HTTP and HTTPS, and the ordered collections, imported one item at a time with `import std.MODULE.NAME;`.
+The standard library is six modules written in vo and built into the toolchain, for JSON, time, text, randomness, HTTP and HTTPS, and the ordered collections, imported a module at a time with `import std.MODULE;`, each item then written `MODULE.NAME`.
 
 ## How the library works
 
@@ -10,11 +10,12 @@ The library is small on purpose. Common operations on strings, lists and maps ar
 and writing JSON, dates and times, text formatting, random choices, HTTP and HTTPS, and the neighbors and
 ranges of the ordered collections.
 
-Library items are imported like items of your own files, one name per line:
+Library modules are imported like your own files, one module per line, and their items are written with
+the module's name (`json.parse_json`, `text.pad_left`):
 
 ```text
-import std.json.parse_json;
-import std.text.pad_left;
+import std.json;
+import std.text;
 ```
 
 Nothing has to be installed: the modules are compiled into `vo`. They are ordinary vo code, so their
@@ -32,10 +33,10 @@ it always matches the toolchain you have:
 - `vo doc std.text.pad_left` prints one item: its exact signature, its effects and an example.
 
 ```vo
-import std.text.pad_left;
+import std.text;
 
 fn main() uses console {
-    print(pad_left("7", 3, "0"));
+    print(text.pad_left("7", 3, "0"));
 }
 ```
 
@@ -43,10 +44,12 @@ fn main() uses console {
 $ vo doc std.text.pad_left
 fn pad_left(s: str, width: int, fill: str) -> str
     s padded on the left with fill (one character) to width characters.
+    use: import std.text; then text.pad_left
     example: pad_left("7", 3, "0") is "007"
 $ vo doc std.random.pick
 fn pick[T](xs: list[T]) -> result[T] uses random
     A random element of xs; an empty list is an error.
+    use: import std.random; then random.pick
     example: pick([7]) == ok(7) is true
 ```
 
@@ -90,28 +93,22 @@ return a `result` so that `try` passes a missing or mistyped field up as an erro
 `member`, `at`, `as_text`, `as_int`, `as_array`, `text_field`, `int_field` and others.
 
 ```vo
-import std.json.Json;
-import std.json.as_array;
-import std.json.member;
-import std.json.int_field;
-import std.json.parse_json;
-import std.json.text_field;
-import std.json.write_json_pretty;
+import std.json;
 
 fn main() -> result[void] uses console {
-    let doc = try parse_json(
+    let doc = try json.parse_json(
         `{"order": 1042, "lines": [{"sku": "tea", "qty": 2}, {"sku": "scone", "qty": 1}]}`
     );
-    let counts = new map[str, Json];
+    let counts = new map[str, json.Json];
     var total = 0;
-    for line in try as_array(try member(doc, "lines")) {
-        let qty = try int_field(line, "qty");
-        set counts[try text_field(line, "sku")] = Json.integer(qty);
+    for line in try json.as_array(try json.member(doc, "lines")) {
+        let qty = try json.int_field(line, "qty");
+        set counts[try json.text_field(line, "sku")] = json.Json.integer(qty);
         set total = total + qty;
     }
-    set counts["total"] = Json.integer(total);
-    print(try write_json_pretty(Json.object(counts)));
-    match parse_json(`{"order": }`) {
+    set counts["total"] = json.Json.integer(total);
+    print(try json.write_json_pretty(json.Json.object(counts)));
+    match json.parse_json(`{"order": }`) {
         case ok(_) {
             print("parsed");
         }
@@ -145,19 +142,15 @@ Times are `int` milliseconds since 1970-01-01 UTC, which makes arithmetic plain 
 the clock.
 
 ```vo
-import std.time.days;
-import std.time.format_time;
-import std.time.from_ms;
-import std.time.hours;
-import std.time.parse_time;
+import std.time;
 
 fn main() -> result[void] uses console, clock {
     let names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    let ordered = try parse_time("2026-02-27T16:30:00+01:00");
-    let due = ordered + days(3) + hours(2);
-    print("ordered " + format_time(ordered));
-    print("due     " + format_time(due) + " (" + names[from_ms(due).weekday - 1] + ")");
-    print("now     " + format_time(now_ms()));
+    let ordered = try time.parse_time("2026-02-27T16:30:00+01:00");
+    let due = ordered + time.days(3) + time.hours(2);
+    print("ordered " + time.format_time(ordered));
+    print("due     " + time.format_time(due) + " (" + names[time.from_ms(due).weekday - 1] + ")");
+    print("now     " + time.format_time(now_ms()));
     return ok();
 }
 ```
@@ -180,13 +173,13 @@ waits, without using the processor, and never past `--timeout` ([R0009](../error
 instantly and exactly; `vo replay` does not wait either.
 
 ```vo
-import std.time.sleep;
+import std.time;
 
 fn main() uses console, clock {
     let start = now_ms();
     var pause = 50;
     for _ in 0..3 {
-        sleep(pause);
+        time.sleep(pause);
         set pause = pause * 2;
     }
     print("waited " + str(now_ms() - start) + " ms");
@@ -217,18 +210,10 @@ happens twice (`repeated`, with both instants). The error type makes the program
 then; nothing is picked silently.
 
 ```vo
-import std.time.DateTime;
-import std.time.LocalError;
-import std.time.Zone;
-import std.time.abbreviation_at;
-import std.time.format_in;
-import std.time.from_local;
-import std.time.in_zone;
-import std.time.load_zone;
-import std.time.parse_time;
+import std.time;
 
-fn booking(z: Zone, month: int, day: int, hour: int, minute: int) -> str {
-    let d = new DateTime {
+fn booking(z: time.Zone, month: int, day: int, hour: int, minute: int) -> str {
+    let d = new time.DateTime {
         year: 2026,
         month: month,
         day: day,
@@ -238,9 +223,9 @@ fn booking(z: Zone, month: int, day: int, hour: int, minute: int) -> str {
         ms: 0,
         weekday: 0
     };
-    match from_local(z, d) {
+    match time.from_local(z, d) {
         case ok(ms) {
-            return "booked for " + format_in(z, ms);
+            return "booked for " + time.format_in(z, ms);
         }
         case err(e) {
             match e {
@@ -248,10 +233,10 @@ fn booking(z: Zone, month: int, day: int, hour: int, minute: int) -> str {
                     return "not a time: " + reason;
                 }
                 case skipped(change) {
-                    return "no such time: the clocks go forward to " + format_in(z, change);
+                    return "no such time: the clocks go forward to " + time.format_in(z, change);
                 }
                 case repeated(r) {
-                    return "twice that night: " + format_in(z, r.first) + " or " + format_in(z, r.second);
+                    return "twice that night: " + time.format_in(z, r.first) + " or " + time.format_in(z, r.second);
                 }
             }
         }
@@ -259,11 +244,11 @@ fn booking(z: Zone, month: int, day: int, hour: int, minute: int) -> str {
 }
 
 fn main() -> result[void] uses console {
-    let z = try load_zone("Europe/Stockholm");
-    let sent = try parse_time("2026-07-01T12:00:00Z");
-    let d = in_zone(z, sent);
-    print(format("sent {}:{:02} {} on {} July", d.hour, d.minute, abbreviation_at(z, sent), d.day));
-    print(format_in(z, sent));
+    let z = try time.load_zone("Europe/Stockholm");
+    let sent = try time.parse_time("2026-07-01T12:00:00Z");
+    let d = time.in_zone(z, sent);
+    print(format("sent {}:{:02} {} on {} July", d.hour, d.minute, time.abbreviation_at(z, sent), d.day));
+    print(time.format_in(z, sent));
     print(booking(z, 3, 30, 9, 0));
     print(booking(z, 3, 29, 2, 30));
     print(booking(z, 10, 25, 2, 30));
@@ -286,14 +271,12 @@ otherwise the machine's `/etc/localtime`, and gives UTC when neither says anythi
 as here and in every `vo test`, it is UTC, and `vo replay` gives the zone that was recorded.
 
 ```vo
-import std.time.format_in;
-import std.time.local_zone;
-import std.time.tzdata_version;
+import std.time;
 
 fn main() uses console, clock {
-    let z = local_zone();
-    print("it is " + format_in(z, now_ms()) + " in " + z.name);
-    print("zone data: " + tzdata_version());
+    let z = time.local_zone();
+    print("it is " + time.format_in(z, now_ms()) + " in " + z.name);
+    print("zone data: " + time.tzdata_version());
 }
 ```
 
@@ -316,27 +299,20 @@ splitting input. Widths count characters, not bytes, so a column of names with a
 The `format` builtin pads the same way in one call: `format("{:<18}{:>6}", page, visits)`.
 
 ```vo
-import std.text.align_left;
-import std.text.align_right;
-import std.text.contains;
-import std.text.lines;
-import std.text.repeat;
-import std.text.replace;
-import std.text.starts_with;
-import std.text.words;
+import std.text;
 
 fn main() uses console {
     let log = "# visits per page\n/home  120\n/about 7\n\n/blog/first-post 46\n";
-    print(align_left("page", 18) + align_right("visits", 6));
-    print(repeat("-", 24));
-    for line in lines(log) {
-        let ws = words(line);
-        if len(ws) != 2 or starts_with(line, "#") {
+    print(text.align_left("page", 18) + text.align_right("visits", 6));
+    print(text.repeat("-", 24));
+    for line in text.lines(log) {
+        let ws = text.words(line);
+        if len(ws) != 2 or text.starts_with(line, "#") {
             continue;
         }
-        print(align_left(replace(ws[0], "-", " "), 18) + align_right(ws[1], 6));
+        print(text.align_left(text.replace(ws[0], "-", " "), 18) + text.align_right(ws[1], 6));
     }
-    print(str(contains(log, "/blog")));
+    print(str(text.contains(log, "/blog")));
 }
 ```
 
@@ -364,13 +340,12 @@ any run of spaces, tabs and newlines, so it ignores the double space after `/hom
 same choices.
 
 ```vo
-import std.random.pick;
-import std.random.shuffled;
+import std.random;
 
 fn main() -> result[void] uses console, random {
     let people = ["ana", "bo", "cy", "di"];
-    print("order: " + join(shuffled(people), ", "));
-    print("on call: " + try pick(people));
+    print("order: " + join(random.shuffled(people), ", "));
+    print("on call: " + try random.pick(people));
     print("die: " + str(random_int(1, 6)));
     return ok();
 }
@@ -394,14 +369,13 @@ headers in order and the body; `response_header` reads a header without regard t
 to the hosts the program may reach.
 
 ```vo
-import std.http.get;
-import std.http.response_header;
-import std.option.or_else;
+import std.http;
+import std.option;
 
 # Print the status and content type of the local status page.
 fn main() -> result[void] uses console, net("localhost") {
-    let r = try get("http://localhost:8000/status");
-    print(str(r.status) + " " + or_else(response_header(r, "content-type"), ""));
+    let r = try http.get("http://localhost:8000/status");
+    print(str(r.status) + " " + option.or_else(http.response_header(r, "content-type"), ""));
     print(r.body);
     return ok();
 }
@@ -424,17 +398,15 @@ applies). When the timeout passes, the result is `err("the request to HOST:PORT 
 program goes on.
 
 ```vo
-import std.http.Header;
-import std.http.Response;
-import std.http.send;
+import std.http;
 
 # Replace one note on an API that wants a token, waiting at most 5 seconds.
-fn put_note(token: str, id: int, json: str) -> result[Response] uses net("api.example.com") {
+fn put_note(token: str, id: int, json: str) -> result[http.Response] uses net("api.example.com") {
     let headers = [
-        new Header { name: "Authorization", value: "Bearer " + token },
-        new Header { name: "Content-Type", value: "application/json" }
+        new http.Header { name: "Authorization", value: "Bearer " + token },
+        new http.Header { name: "Content-Type", value: "application/json" }
     ];
-    return send("PUT", "https://api.example.com/notes/" + str(id), headers, json, 5000);
+    return http.send("PUT", "https://api.example.com/notes/" + str(id), headers, json, 5000);
 }
 
 fn main() uses console {
@@ -478,20 +450,17 @@ declares `serve` with the address (`"8000"` for this machine only, `"0.0.0.0:800
 and the handler's effects:
 
 ```vo
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve;
+import std.http;
 
-fn answer(req: Request) -> Response {
+fn answer(req: http.Request) -> http.Response {
     if req.path == "/health" {
-        return new Response { status: 200, headers: new list[Header], body: "ok\n" };
+        return new http.Response { status: 200, headers: new list[http.Header], body: "ok\n" };
     }
-    return new Response { status: 404, headers: new list[Header], body: "not found\n" };
+    return new http.Response { status: 404, headers: new list[http.Header], body: "not found\n" };
 }
 
 fn main() -> result[void] uses serve("8000") {
-    try serve("8000", answer);
+    try http.serve("8000", answer);
     return ok();
 }
 ```
@@ -516,44 +485,36 @@ in a database and change it inside a `transaction`; reading a file, changing it 
 loses updates when two requests do it at once.
 
 ```vo
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve_workers;
-import std.sqlite.Database;
-import std.sqlite.Value;
-import std.sqlite.exec;
-import std.sqlite.open;
-import std.sqlite.sql;
-import std.sqlite.transaction;
+import std.http;
+import std.sqlite;
 
-fn open_db() -> result[Database[uses file.read, file.write]]
+fn open_db() -> result[sqlite.Database[uses file.read, file.write]]
     uses file.read("data/"), file.write("data/") {
-    return open("data/app.db");
+    return sqlite.open("data/app.db");
 }
 
-fn hit(db: Database[uses file.read, file.write], req: Request) -> Response
+fn hit(db: sqlite.Database[uses file.read, file.write], req: http.Request) -> http.Response
     uses file.read("data/"), file.write("data/") {
-    let saved = transaction(db, fn() -> result[int] {
-        let c = try exec(db, sql("insert into hits (path) values (?)"), [Value.text(req.path)]);
+    let saved = sqlite.transaction(db, fn() -> result[int] {
+        let c = try sqlite.exec(db, sqlite.sql("insert into hits (path) values (?)"), [sqlite.Value.text(req.path)]);
         return ok(c.last_id);
     });
     match saved {
         case ok(id) {
-            return new Response {
+            return new http.Response {
                 status: 200,
-                headers: new list[Header],
+                headers: new list[http.Header],
                 body: "hit " + str(id) + "\n"
             };
         }
         case err(e) {
-            return new Response { status: 500, headers: new list[Header], body: e + "\n" };
+            return new http.Response { status: 500, headers: new list[http.Header], body: e + "\n" };
         }
     }
 }
 
 fn main() -> result[void] uses file.read("data/"), file.write("data/"), serve("8000") {
-    return serve_workers("8000", 4, open_db, hit);
+    return http.serve_workers("8000", 4, open_db, hit);
 }
 ```
 
@@ -584,16 +545,12 @@ literal; make values with `std.bytes`, or read them (`std.fs.read_bytes`, `std.b
 `==` and `<` work on it; `bytes` and `str` never mix without a conversion.
 
 ```vo
-import std.bytes.from_text;
-import std.bytes.from_ints;
-import std.bytes.to_hex;
-import std.bytes.to_base64;
-import std.bytes.to_text;
+import std.bytes;
 
 fn main() uses console {
-    let b = from_text("hé") + from_ints([0, 255]);
-    print(str(len(b)) + " " + str(b[0]) + " " + to_hex(b) + " " + to_base64(b));
-    match to_text(b) {
+    let b = bytes.from_text("hé") + bytes.from_ints([0, 255]);
+    print(str(len(b)) + " " + str(b[0]) + " " + bytes.to_hex(b) + " " + bytes.to_base64(b));
+    match bytes.to_text(b) {
         case ok(s) {
             print(s);
         }
@@ -629,20 +586,17 @@ where they differ, `random_bytes` draws secrets from the operating system, and `
 A webhook is checked by computing the signature again and comparing in constant time:
 
 ```vo
-import std.bytes.from_text;
-import std.bytes.to_hex;
-import std.crypto.hmac_sha256;
-import std.crypto.same_bytes;
-import std.crypto.sha256;
+import std.bytes;
+import std.crypto;
 
 fn signed_by(secret: str, body: bytes, signature: bytes) -> bool {
-    return same_bytes(hmac_sha256(from_text(secret), body), signature);
+    return crypto.same_bytes(crypto.hmac_sha256(bytes.from_text(secret), body), signature);
 }
 
 fn main() uses console {
-    let body = from_text(`{"event":"paid"}`);
-    let signature = hmac_sha256(from_text("whsec_1"), body);
-    print(to_hex(sha256(from_text("abc"))));
+    let body = bytes.from_text(`{"event":"paid"}`);
+    let signature = crypto.hmac_sha256(bytes.from_text("whsec_1"), body);
+    print(bytes.to_hex(crypto.sha256(bytes.from_text("abc"))));
     print(str(signed_by("whsec_1", body, signature)) + " " + str(signed_by("whsec_2", body, signature)));
 }
 ```
@@ -657,17 +611,15 @@ function that only declares `random` cannot. `random_int` follows the seed and i
 shuffles; a session token, an API key or a reset code is `random_bytes`:
 
 ```vo
-import std.bytes.to_hex;
-import std.crypto.hash_password;
-import std.crypto.random_bytes;
-import std.crypto.verify_password;
+import std.bytes;
+import std.crypto;
 
 fn main() uses console, entropy {
-    let token = to_hex(random_bytes(16));
+    let token = bytes.to_hex(crypto.random_bytes(16));
     print(str(len(token)));
-    let stored = hash_password("correct horse");
+    let stored = crypto.hash_password("correct horse");
     print(slice(stored, 0, 21));
-    print(str(verify_password("correct horse", stored)) + " " + str(verify_password("wrong", stored)));
+    print(str(crypto.verify_password("correct horse", stored)) + " " + str(crypto.verify_password("wrong", stored)));
 }
 ```
 
@@ -699,32 +651,24 @@ server side.
 A client for three Redis commands:
 
 ```vo
-import std.bytes.from_text;
-import std.bytes.to_text;
-import std.tcp.Conn;
-import std.tcp.TcpError;
-import std.tcp.close_conn;
-import std.tcp.connect;
-import std.tcp.tcp_error_text;
-import std.tcp.read_exact;
-import std.tcp.read_until;
-import std.tcp.write_all;
+import std.bytes;
+import std.tcp;
 
 const redis = "127.0.0.1:6379";
 const crlf = "\r\n";
 
-fn other(message: str) -> TcpError {
-    return TcpError.other(message);
+fn other(message: str) -> tcp.TcpError {
+    return tcp.TcpError.other(message);
 }
 
 # Sends one command as an array of bulk strings and returns the reply's text.
-fn command[E: effects](c: Conn[E], words: list[str]) -> result[str, TcpError] uses E {
+fn command[E: effects](c: tcp.Conn[E], words: list[str]) -> result[str, tcp.TcpError] uses E {
     var request = "*" + str(len(words)) + crlf;
     for w in words {
         set request = request + "$" + str(len(w)) + crlf + w + crlf;
     }
-    try write_all(c, from_text(request), 1000);
-    let head = trim(try map_err(to_text(try read_until(c, from_text(crlf), 1000)), other));
+    try tcp.write_all(c, bytes.from_text(request), 1000);
+    let head = trim(try map_err(bytes.to_text(try tcp.read_until(c, bytes.from_text(crlf), 1000)), other));
     if slice(head, 0, 1) != "$" {
         return ok(slice(head, 1, len(head)));
     }
@@ -732,15 +676,15 @@ fn command[E: effects](c: Conn[E], words: list[str]) -> result[str, TcpError] us
     if size < 0 {
         return ok("(nil)");
     }
-    return ok(trim(try map_err(to_text(try read_exact(c, size + 2, 1000)), other)));
+    return ok(trim(try map_err(bytes.to_text(try tcp.read_exact(c, size + 2, 1000)), other)));
 }
 
-fn session() -> result[void, TcpError] uses console, net(redis) {
-    let c = try connect("127.0.0.1", 6379, 1000);
+fn session() -> result[void, tcp.TcpError] uses console, net(redis) {
+    let c = try tcp.connect("127.0.0.1", 6379, 1000);
     print(try command(c, ["PING"]));
     print(try command(c, ["SET", "drink", "tea"]));
     print(try command(c, ["GET", "drink"]));
-    close_conn(c);
+    tcp.close_conn(c);
     return ok();
 }
 
@@ -749,7 +693,7 @@ fn main() uses console, net(redis) {
         case ok() {
         }
         case err(e) {
-            print(tcp_error_text(e));
+            print(tcp.tcp_error_text(e));
         }
     }
 }
@@ -799,23 +743,20 @@ pure. Constants are written in the base they are thought in: `0xFF`, `0b1010`. A
 arithmetic wrapping around, here 64-bit FNV-1a:
 
 ```vo
-import std.bits.bit_and;
-import std.bits.bit_xor;
-import std.bits.shift_right_logical;
-import std.bits.wrapping_mul;
-import std.bytes.from_text;
+import std.bits;
+import std.bytes;
 
 fn fnv1a(data: bytes) -> int {
     var h = 0xCBF29CE484222325;
     for i in 0..len(data) {
-        set h = wrapping_mul(bit_xor(h, data[i]), 0x100000001B3);
+        set h = bits.wrapping_mul(bits.bit_xor(h, data[i]), 0x100000001B3);
     }
     return h;
 }
 
 fn main() uses console {
-    print(format("{:x}", shift_right_logical(fnv1a(from_text("hello")), 32)));
-    print(str(bit_and(0b1100, 0b1010)));
+    print(format("{:x}", bits.shift_right_logical(fnv1a(bytes.from_text("hello")), 32)));
+    print(str(bits.bit_and(0b1100, 0b1010)));
 }
 ```
 
@@ -827,18 +768,16 @@ a430d846
 A set of flags in one `int`:
 
 ```vo
-import std.bits.bit_and;
-import std.bits.bit_not;
-import std.bits.bit_or;
+import std.bits;
 
 const can_read = 0b001;
 const can_write = 0b010;
 const can_delete = 0b100;
 
 fn main() uses console {
-    var rights = bit_or(can_read, can_write);
-    print(str(bit_and(rights, can_write) != 0) + " " + str(bit_and(rights, can_delete) != 0));
-    set rights = bit_and(rights, bit_not(can_write));
+    var rights = bits.bit_or(can_read, can_write);
+    print(str(bits.bit_and(rights, can_write) != 0) + " " + str(bits.bit_and(rights, can_delete) != 0));
+    set rights = bits.bit_and(rights, bits.bit_not(can_write));
     print(format("{:b}", rights));
 }
 ```
@@ -877,22 +816,15 @@ There is no default rounding: `div` and `round_to` take a `Rounding` (`half_even
 25% VAT, and the total split three ways without losing a cent:
 
 ```vo
-import std.decimal.Rounding;
-import std.decimal.add;
-import std.decimal.decimal_text;
-import std.decimal.grouped_text;
-import std.decimal.mul;
-import std.decimal.parse_decimal;
-import std.decimal.round_to;
-import std.decimal.split_evenly;
+import std.decimal;
 
 fn main() -> result[void] uses console {
-    let net = try parse_decimal("1999.90");
-    let vat = round_to(mul(net, try parse_decimal("0.25")), 2, Rounding.half_even);
-    let gross = add(net, vat);
-    print(decimal_text(vat) + " " + grouped_text(gross));
-    for part in try split_evenly(gross, 3) {
-        print(decimal_text(part));
+    let net = try decimal.parse_decimal("1999.90");
+    let vat = decimal.round_to(decimal.mul(net, try decimal.parse_decimal("0.25")), 2, decimal.Rounding.half_even);
+    let gross = decimal.add(net, vat);
+    print(decimal.decimal_text(vat) + " " + decimal.grouped_text(gross));
+    for part in try decimal.split_evenly(gross, 3) {
+        print(decimal.decimal_text(part));
     }
     return ok();
 }
@@ -910,14 +842,12 @@ field, tells 1.5 from 1.50. Compare values with `equal` or `compare`, and `norma
 using it as a map key:
 
 ```vo
-import std.decimal.decimal;
-import std.decimal.equal;
-import std.decimal.normalize;
+import std.decimal;
 
 fn main() uses console {
-    let a = decimal(15, 1);
-    let b = decimal(150, 2);
-    print(str(a == b) + " " + str(equal(a, b)) + " " + str(normalize(a) == normalize(b)));
+    let a = decimal.decimal(15, 1);
+    let b = decimal.decimal(150, 2);
+    print(str(a == b) + " " + str(decimal.equal(a, b)) + " " + str(decimal.normalize(a) == decimal.normalize(b)));
 }
 ```
 
@@ -939,23 +869,19 @@ key; an error for an empty list), `sum(xs)` for a list of `int`, and `group_by(x
 each key to the list of its elements.
 
 ```vo
-import std.lists.has_item;
-import std.lists.group_by;
-import std.lists.max_by;
-import std.lists.sort_by_desc;
-import std.lists.sum;
+import std.lists;
 
 fn main() uses console {
     let words = split("pear fig kiwi apple fig plum", " ");
-    print(format("{} {}", has_item(words, "kiwi"), sum(map(words, fn(w: str) -> int { return len(w); }))));
-    for size, group in group_by(words, fn(w: str) -> int { return len(w); }) {
+    print(format("{} {}", lists.has_item(words, "kiwi"), lists.sum(map(words, fn(w: str) -> int { return len(w); }))));
+    for size, group in lists.group_by(words, fn(w: str) -> int { return len(w); }) {
         print(format("{} letters: {}", size, join(group, " ")));
     }
-    sort_by_desc(words, fn(w: str) -> int { return len(w); });
+    lists.sort_by_desc(words, fn(w: str) -> int { return len(w); });
     for i, w in words {
         print(format("{}. {}", i + 1, w));
     }
-    match max_by(words, fn(w: str) -> str { return w; }) {
+    match lists.max_by(words, fn(w: str) -> str { return w; }) {
         case ok(w) {
             print("last in the alphabet: " + w);
         }
@@ -1001,11 +927,10 @@ Square roots, powers, logarithms, trigonometry, `pi()`, and `floor`, `ceil` and 
 Import each function like any other library item:
 
 ```vo
-import std.math.sqrt;
-import std.math.round;
+import std.math;
 
 fn main() uses console {
-    print(str(sqrt(2.0)) + " " + str(round(-2.5)));
+    print(str(math.sqrt(2.0)) + " " + str(math.round(-2.5)));
 }
 ```
 
@@ -1037,10 +962,8 @@ neighbors of a key (`key_at_or_below`, `key_after`, ...), ranges (`keys_between`
 `peek` for a queue, copies, and constructors with your own order (`ordered_map_by(cmp)` and the like).
 
 ```vo
-import std.collections.difference;
-import std.collections.key_at_or_below;
-import std.collections.union;
-import std.option.or_else;
+import std.collections;
+import std.option;
 
 fn names(s: ordered_set[str]) -> str {
     let out = new list[str];
@@ -1056,7 +979,7 @@ fn main() -> result[void] uses console {
     set shifts[0] = "ana";
     set shifts[480] = "bo";
     set shifts[960] = "cy";
-    let start = or_else(key_at_or_below(shifts, 615), 0);
+    let start = option.or_else(collections.key_at_or_below(shifts, 615), 0);
     print("at 10:15: " + shifts[start]);
     let week1 = new ordered_set[str];
     let week2 = new ordered_set[str];
@@ -1066,8 +989,8 @@ fn main() -> result[void] uses console {
     for name in ["di", "ana"] {
         push(week2, name);
     }
-    print("either week: " + names(union(week1, week2)));
-    print("first week only: " + names(difference(week1, week2)));
+    print("either week: " + names(collections.union(week1, week2)));
+    print("first week only: " + names(collections.difference(week1, week2)));
     return ok();
 }
 ```
@@ -1091,16 +1014,13 @@ hang the program; lookaround and backreferences, which need backtracking, are no
 is a vo string, so its backslashes are doubled: the pattern `\d+` is written `"\\d+"`.
 
 ```vo
-import std.regex.regex;
-import std.regex.is_match;
-import std.regex.first_match;
-import std.regex.replace_matches;
+import std.regex;
 
 fn main() uses console {
-    let id = regex(`^[A-Z]{3}-\d{4}$`);
-    print(str(is_match("ABC-1234", id)) + " " + str(is_match("ABC-12", id)));
-    let log = regex(`(\d{4})-(\d{2})-(\d{2}) (?<level>ERROR|WARN)`);
-    match first_match("2026-11-19 ERROR disk full", log) {
+    let id = regex.regex(`^[A-Z]{3}-\d{4}$`);
+    print(str(regex.is_match("ABC-1234", id)) + " " + str(regex.is_match("ABC-12", id)));
+    let log = regex.regex(`(\d{4})-(\d{2})-(\d{2}) (?<level>ERROR|WARN)`);
+    match regex.first_match("2026-11-19 ERROR disk full", log) {
         case some(m) {
             print(m.groups[1] + " " + m.named["level"] + " at byte " + str(m.start));
         }
@@ -1108,7 +1028,7 @@ fn main() uses console {
             print("no match");
         }
     }
-    print(replace_matches("due 19/11/2026", regex(`(\d{2})/(\d{2})/(\d{4})`), "$3-$2-$1"));
+    print(regex.replace_matches("due 19/11/2026", regex.regex(`(\d{2})/(\d{2})/(\d{4})`), "$3-$2-$1"));
 }
 ```
 
@@ -1133,40 +1053,33 @@ list of `Value`, so a value can never become SQL. For SQL built at run time, `pa
 instead.
 
 ```vo
-import std.sqlite.Value;
-import std.sqlite.exec;
-import std.sqlite.int_column;
-import std.sqlite.text_column;
-import std.sqlite.open_memory;
-import std.sqlite.query;
-import std.sqlite.sql;
-import std.sqlite.transaction;
+import std.sqlite;
 
 fn main() -> result[void] uses console {
-    let db = open_memory();
-    let _ = try exec(
+    let db = sqlite.open_memory();
+    let _ = try sqlite.exec(
         db,
-        sql("create table people(id integer primary key, name text not null, age integer)"),
-        new list[Value]
+        sqlite.sql("create table people(id integer primary key, name text not null, age integer)"),
+        new list[sqlite.Value]
     );
-    let added = try transaction(db, fn() -> result[int] {
-        let a = try exec(db, sql("insert into people(name, age) values (?, ?)"), [
-            Value.text("Ada"),
-            Value.integer(36)
+    let added = try sqlite.transaction(db, fn() -> result[int] {
+        let a = try sqlite.exec(db, sqlite.sql("insert into people(name, age) values (?, ?)"), [
+            sqlite.Value.text("Ada"),
+            sqlite.Value.integer(36)
         ]);
-        let _ = try exec(db, sql("insert into people(name, age) values (?, ?)"), [
-            Value.text("Alan"),
-            Value.integer(41)
+        let _ = try sqlite.exec(db, sqlite.sql("insert into people(name, age) values (?, ?)"), [
+            sqlite.Value.text("Alan"),
+            sqlite.Value.integer(41)
         ]);
         return ok(a.last_id);
     });
     print("first id " + str(added));
-    for row in try query(db, sql("select name, age from people where age > ? order by name"), [
-        Value.integer(30)
+    for row in try sqlite.query(db, sqlite.sql("select name, age from people where age > ? order by name"), [
+        sqlite.Value.integer(30)
     ]) {
-        print(try text_column(row, "name") + " " + str(try int_column(row, "age")));
+        print(try sqlite.text_column(row, "name") + " " + str(try sqlite.int_column(row, "age")));
     }
-    match exec(db, sql("insert into people(age) values (?)"), [Value.integer(1)]) {
+    match sqlite.exec(db, sqlite.sql("insert into people(age) values (?)"), [sqlite.Value.integer(1)]) {
         case ok(_) {
             print("added");
         }

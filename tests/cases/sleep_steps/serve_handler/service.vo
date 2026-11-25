@@ -1,17 +1,14 @@
 # Spec 022 US5: a serve handler that sleeps answers after the pause; SIGTERM stops the server.
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve;
-import std.time.sleep;
+import std.http;
+import std.time;
 
-fn handle(r: Request) -> Response uses clock {
-    sleep(100);
-    return new Response { status: 200, headers: new list[Header], body: "rested\n" };
+fn handle(r: http.Request) -> http.Response uses clock {
+    time.sleep(100);
+    return new http.Response { status: 200, headers: new list[http.Header], body: "rested\n" };
 }
 
 fn main() -> result[void] uses console, clock, serve("{vport}") {
-    try serve("{vport}", handle);
+    try http.serve("{vport}", handle);
     print("stopped");
     return ok();
 }

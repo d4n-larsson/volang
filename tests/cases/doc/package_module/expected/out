@@ -12,6 +12,7 @@ record Amount { cents: int; currency: str; }
 $ vo doc money.format.cents
 fn cents(n: int) -> str
     Formats an amount in cents as units and two decimals.
+    use: import money.format; then format.cents
     example: cents(1234) is "12.34"
 --- stderr
 --- exit 0
@@ -24,6 +25,7 @@ $ vo doc --json money.format
 $ vo doc money.rates.eur.to_eur
 fn to_eur(usd_cents: int) -> int
     Converts an amount in US cents to euro cents at a fixed rate.
+    use: import money.rates.eur; then eur.to_eur
     example: to_eur(100) is 92
 --- stderr
 --- exit 0
@@ -34,6 +36,7 @@ error[T0010]: Nothing is documented as `money.formt`; `vo doc` lists the builtin
 $ vo doc std.text.pad_left
 fn pad_left(s: str, width: int, fill: str) -> str
     s padded on the left with fill (one character) to width characters.
+    use: import std.text; then text.pad_left
     example: pad_left("7", 3, "0") is "007"
 --- stderr
 --- exit 0

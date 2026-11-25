@@ -1,9 +1,9 @@
-import b.from_b;
+import b;
 
 export fn from_a() -> int {
     return 1;
 }
 
 fn main() uses console {
-    print(str(from_b()));
+    print(str(b.from_b()));
 }

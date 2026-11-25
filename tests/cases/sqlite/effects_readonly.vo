@@ -1,13 +1,12 @@
 # A read-only database where a read-write one is expected: E0301 names both types.
-import std.sqlite.open_readonly;
-import std.sqlite.Database;
+import std.sqlite;
 
-fn keep(db: Database[uses file.read, file.write]) -> int {
+fn keep(db: sqlite.Database[uses file.read, file.write]) -> int {
     return db.id;
 }
 
 fn main() -> result[void] uses console, file.read {
-    let db = try open_readonly("people.db");
+    let db = try sqlite.open_readonly("people.db");
     print(str(keep(db)));
     return ok();
 }

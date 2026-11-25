@@ -1,5 +1,4 @@
-import std.time.format_time;
-import std.time.parse_time;
+import std.time;
 
 fn parse_line(t: str) -> result[int] {
     let cs = chars(t);
@@ -9,7 +8,7 @@ fn parse_line(t: str) -> result[int] {
     if cs[10] != "T" {
         return err("no time part");
     }
-    return parse_time(t);
+    return time.parse_time(t);
 }
 
 fn main() uses console, input {
@@ -25,7 +24,7 @@ fn main() uses console, input {
                 }
                 match parse_line(t) {
                     case ok(ms) {
-                        print(format_time(ms));
+                        print(time.format_time(ms));
                         if count == 0 {
                             set earliest = ms;
                             set latest = ms;

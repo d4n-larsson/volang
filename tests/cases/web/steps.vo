@@ -1,18 +1,8 @@
 # Steps around requests (spec 029 US5): in list order on the way in, reverse on the way out; one may
 # answer early (later steps and the operation do not run); prefixes scope them; a step may change the
 # request and the response; a step's runtime error is a 500 problem.
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.NoInput;
-import std.web.Route;
-import std.web.Step;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.request;
+import std.http;
+import std.web;
 
 record Who {
     @header("X-Who")
@@ -20,32 +10,32 @@ record Who {
     who: str;
 }
 
-fn hello(n: int, input: Who) -> result[Response] {
-    return ok(json_reply(200, "hello " + input.who));
+fn hello(n: int, input: Who) -> result[http.Response] {
+    return ok(web.json_reply(200, "hello " + input.who));
 }
 
-fn tagged(name: str) -> Step[int] {
-    return new Step { prefix: "/", run: fn(n: int, r: Request, next: fn(Request) -> Response) -> Response {
+fn tagged(name: str) -> web.Step[int] {
+    return new web.Step { prefix: "/", run: fn(n: int, r: http.Request, next: fn(http.Request) -> http.Response) -> http.Response {
         let resp = next(r);
-        push(resp.headers, new Header { name: "X-Trail", value: name });
+        push(resp.headers, new http.Header { name: "X-Trail", value: name });
         return resp;
     } };
 }
 
-fn stop_admin() -> Step[int] {
-    return new Step { prefix: "/admin", run: fn(n: int, r: Request, next: fn(Request) -> Response) -> Response {
-        return new Response { status: 403, headers: new list[Header], body: "stopped" };
+fn stop_admin() -> web.Step[int] {
+    return new web.Step { prefix: "/admin", run: fn(n: int, r: http.Request, next: fn(http.Request) -> http.Response) -> http.Response {
+        return new http.Response { status: 403, headers: new list[http.Header], body: "stopped" };
     } };
 }
 
-fn name_it() -> Step[int] {
-    return new Step { prefix: "/", run: fn(n: int, r: Request, next: fn(Request) -> Response) -> Response {
-        return next(new Request { method: r.method, path: r.path, query: r.query, headers: [new Header { name: "X-Who", value: "ada" }], body: r.body });
+fn name_it() -> web.Step[int] {
+    return new web.Step { prefix: "/", run: fn(n: int, r: http.Request, next: fn(http.Request) -> http.Response) -> http.Response {
+        return next(new http.Request { method: r.method, path: r.path, query: r.query, headers: [new http.Header { name: "X-Who", value: "ada" }], body: r.body });
     } };
 }
 
-fn crash() -> Step[int] {
-    return new Step { prefix: "/boom", run: fn(n: int, r: Request, next: fn(Request) -> Response) -> Response {
+fn crash() -> web.Step[int] {
+    return new web.Step { prefix: "/boom", run: fn(n: int, r: http.Request, next: fn(http.Request) -> http.Response) -> http.Response {
         let xs = [1];
         if xs[len(r.path)] == 1 {
             return next(r);
@@ -55,10 +45,10 @@ fn crash() -> Step[int] {
 }
 
 fn main() uses console {
-    let routes: list[Route[int]] = [on_get("/hello", hello), on_get("/admin/stats", hello), on_get("/boom", hello)];
-    let app = new App { routes: routes, steps: [tagged("outer"), tagged("inner"), stop_admin(), name_it(), crash()], errors: new list[ErrorStatus] };
+    let routes: list[web.Route[int]] = [web.on_get("/hello", hello), web.on_get("/admin/stats", hello), web.on_get("/boom", hello)];
+    let app = new web.App { routes: routes, steps: [tagged("outer"), tagged("inner"), stop_admin(), name_it(), crash()], errors: new list[web.ErrorStatus] };
     for path in ["/hello", "/admin/stats", "/administrator", "/boom"] {
-        let r = handle_request(app, 0, request("GET", path, ""));
+        let r = web.handle_request(app, 0, web.request("GET", path, ""));
         var trail = "";
         for h in r.headers {
             if h.name == "X-Trail" {

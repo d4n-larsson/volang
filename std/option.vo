@@ -1,5 +1,5 @@
 # std.option: a value that may be absent: Option[T] is some(value) or none.
-# Part of the vo standard library. Import items one by one: `import std.option.NAME;`.
+# Part of the vo standard library. Import the module, `import std.option;`, and write its items as `option.NAME`.
 # Use it when "nothing there" is a normal answer (a lookup that finds nothing); use a result when
 # something went wrong.
 

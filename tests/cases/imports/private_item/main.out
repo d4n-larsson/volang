@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0209","name":"not_exported","severity":"error","file":"main.vo","start":{"line":6,"col":11},"end":{"line":6,"col":23},"text":"notes.helper","message":"`helper` is not exported by `notes.vo`.","fixes":[{"file":"notes.vo","start":{"line":5,"col":1},"end":{"line":5,"col":1},"replacement":"export "}],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0209","name":"not_exported","severity":"error","file":"main.vo","start":{"line":8,"col":5},"end":{"line":8,"col":27},"text":"lists.reverse_in_place","message":"`reverse_in_place` is internal to `std.lists`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

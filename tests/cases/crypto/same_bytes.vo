@@ -1,10 +1,10 @@
-import std.bytes.from_text;
-import std.crypto.same_bytes;
+import std.bytes;
+import std.crypto;
 
 fn main() uses console {
-    print(str(same_bytes(from_text("secret-token"), from_text("secret-token"))));
-    print(str(same_bytes(from_text("secret-token"), from_text("Xecret-token"))));
-    print(str(same_bytes(from_text("secret-token"), from_text("secret-tokeX"))));
-    print(str(same_bytes(from_text("secret-token"), from_text("secret-toke"))));
-    print(str(same_bytes(from_text(""), from_text(""))));
+    print(str(crypto.same_bytes(bytes.from_text("secret-token"), bytes.from_text("secret-token"))));
+    print(str(crypto.same_bytes(bytes.from_text("secret-token"), bytes.from_text("Xecret-token"))));
+    print(str(crypto.same_bytes(bytes.from_text("secret-token"), bytes.from_text("secret-tokeX"))));
+    print(str(crypto.same_bytes(bytes.from_text("secret-token"), bytes.from_text("secret-toke"))));
+    print(str(crypto.same_bytes(bytes.from_text(""), bytes.from_text(""))));
 }

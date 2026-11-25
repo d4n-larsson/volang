@@ -1,5 +1,5 @@
 zone_fixed_bad.vo:4:11: runtime error[R0012]: Precondition `offset_within_a_day(east_ms)` of `offset_zone` does not hold.
-   4 |     print(offset_zone(86400000).name);
-     |           ^^^^^^^^^^^^^^^^^^^^^
+   4 |     print(time.offset_zone(86400000).name);
+     |           ^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at main (zone_fixed_bad.vo:4:11)

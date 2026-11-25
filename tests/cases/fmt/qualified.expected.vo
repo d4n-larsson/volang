@@ -1,0 +1,15 @@
+import geometry;
+import std.json;
+import std.text;
+
+fn main() -> result[void] uses console {
+    let j = try json.parse_json(
+        "{\"name\": \"a very long name that pushes the call past the width of a line\"}"
+    );
+    print(
+        text.pad_left(try json.text_field(j, "name"), 100, ".") + text.repeat("-", 3) + str(geometry.dist2(
+            new geometry.Point { x: 1, y: 2 }
+        ))
+    );
+    return ok();
+}

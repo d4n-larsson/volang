@@ -1,4 +1,4 @@
-import catalog.Product;
+import catalog;
 
 export record Line {
     sku: str;
@@ -35,23 +35,23 @@ fn requested_by_sku(pairs: list[Line]) -> map[str, int] {
 }
 
 # `pairs` holds the requested lines (price 0); the order gets copies with the current prices.
-export fn place_order(catalog: map[str, Product], orders: map[str, Order], order_id: str, pairs: list[Line]) -> result[Order] {
+export fn place_order(catalog_value: map[str, catalog.Product], orders: map[str, Order], order_id: str, pairs: list[Line]) -> result[Order] {
     if has(orders, order_id) {
         return err("error: order " + order_id + " exists");
     }
     let wanted = requested_by_sku(pairs);
     for sku in keys(wanted) {
-        if not has(catalog, sku) {
+        if not has(catalog_value, sku) {
             return err("error: unknown product " + sku);
         }
-        if wanted[sku] > catalog[sku].stock {
+        if wanted[sku] > catalog_value[sku].stock {
             return err("error: not enough stock for product " + sku);
         }
     }
     let lines = new list[Line];
     var subtotal = 0;
     for p in pairs {
-        let product = catalog[p.sku];
+        let product = catalog_value[p.sku];
         set product.stock = product.stock - p.qty;
         set product.sold = product.sold + p.qty;
         push(lines, new Line { sku: p.sku, qty: p.qty, price: product.price });
@@ -66,7 +66,7 @@ export fn place_order(catalog: map[str, Product], orders: map[str, Order], order
     return ok(order);
 }
 
-export fn cancel_order(catalog: map[str, Product], orders: map[str, Order], order_id: str) -> str {
+export fn cancel_order(catalog_value: map[str, catalog.Product], orders: map[str, Order], order_id: str) -> str {
     if not has(orders, order_id) {
         return "error: unknown order " + order_id;
     }
@@ -75,7 +75,7 @@ export fn cancel_order(catalog: map[str, Product], orders: map[str, Order], orde
         return "error: order " + order_id + " already cancelled";
     }
     for line in order.lines {
-        let product = catalog[line.sku];
+        let product = catalog_value[line.sku];
         set product.stock = product.stock + line.qty;
         set product.sold = product.sold - line.qty;
     }

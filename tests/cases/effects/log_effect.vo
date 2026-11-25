@@ -1,9 +1,8 @@
 # Spec 055: writing a log record needs the `log` effect; the fix adds it.
-import std.log.field;
-import std.log.log_info;
+import std.log;
 
 fn started(port: int) {
-    log_info("started", [field("port", port)]);
+    log.log_info("started", [log.field("port", port)]);
 }
 
 fn main() uses log {

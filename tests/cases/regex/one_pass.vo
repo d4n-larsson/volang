@@ -1,10 +1,10 @@
-import std.regex.regex;
+import std.regex;
 
 fn main() uses console {
-    let a = regex("(a");
-    let b = regex("(?=b)");
-    let c = regex("[q");
-    let d = regex("+");
+    let a = regex.regex("(a");
+    let b = regex.regex("(?=b)");
+    let c = regex.regex("[q");
+    let d = regex.regex("+");
     let n: int = "x";
     print(a.pattern + b.pattern + c.pattern + d.pattern + str(n));
 }

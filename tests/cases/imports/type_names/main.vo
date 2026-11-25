@@ -1,0 +1,19 @@
+# Types of another module in messages are written as this file would write them: `json.Json` through
+# `import std.json;`, `std.json.Json` for a type the file reaches only through another module.
+import helpers;
+import std.json;
+
+fn wrap(j: json.Json) -> list[json.Json] {
+    return [j];
+}
+
+fn main() uses console {
+    let j = json.Json.null;
+    let s: str = j;
+    let t: str = helpers.make();
+    let u: str = helpers.box();
+    print(s);
+    print(t);
+    print(u);
+    print(str(len(wrap(j))));
+}

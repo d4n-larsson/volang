@@ -27,34 +27,23 @@ M = (1 << 64) - 1
 failures = []
 cases = 0
 
-OPS = """import std.bits.bit_and;
-import std.bits.bit_not;
-import std.bits.bit_or;
-import std.bits.bit_xor;
-import std.bits.rotate_left;
-import std.bits.rotate_right;
-import std.bits.shift_left;
-import std.bits.shift_right;
-import std.bits.shift_right_logical;
-import std.bits.wrapping_add;
-import std.bits.wrapping_mul;
-import std.bits.wrapping_sub;
-import std.fs.each_line;
+OPS = """import std.bits;
+import std.fs;
 
 fn row(a: int, b: int, n: int) -> list[int] {
     return [
-        bit_and(a, b),
-        bit_or(a, b),
-        bit_xor(a, b),
-        bit_not(a),
-        shift_left(a, n),
-        shift_right(a, n),
-        shift_right_logical(a, n),
-        rotate_left(a, n),
-        rotate_right(a, n),
-        wrapping_add(a, b),
-        wrapping_sub(a, b),
-        wrapping_mul(a, b)
+        bits.bit_and(a, b),
+        bits.bit_or(a, b),
+        bits.bit_xor(a, b),
+        bits.bit_not(a),
+        bits.shift_left(a, n),
+        bits.shift_right(a, n),
+        bits.shift_right_logical(a, n),
+        bits.rotate_left(a, n),
+        bits.rotate_right(a, n),
+        bits.wrapping_add(a, b),
+        bits.wrapping_sub(a, b),
+        bits.wrapping_mul(a, b)
     ];
 }
 
@@ -63,7 +52,7 @@ fn text(n: int) -> str {
 }
 
 fn main() -> result[void] uses console, file.read("./") {
-    try each_line("pairs.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("pairs.txt", fn(line: str) -> result[bool] {
         let p = split(line, " ");
         print(join(map(row(try parse_int(p[0]), try parse_int(p[1]), try parse_int(p[2])), text), " "));
         return ok(true);

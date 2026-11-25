@@ -1,12 +1,10 @@
-import std.collections.back;
-import std.collections.front;
-import std.collections.pop_front;
-import std.text.words;
-import std.option.to_result;
+import std.collections;
+import std.option;
+import std.text;
 
 fn main() -> result[void] uses console, input {
     let xs = new list[int];
-    for word in words(read_all()) {
+    for word in text.words(read_all()) {
         push(xs, try parse_int(word));
     }
     let k = xs[1];
@@ -14,15 +12,15 @@ fn main() -> result[void] uses console, input {
     # Indices of the window whose numbers decrease from front to back: the front is the maximum.
     let window = new deque[int];
     for i in 0..len(nums) {
-        while len(window) > 0 and nums[try to_result(back(window), "empty")] <= nums[i] {
+        while len(window) > 0 and nums[try option.to_result(collections.back(window), "empty")] <= nums[i] {
             let _ = try pop(window);
         }
         push(window, i);
-        if try to_result(front(window), "empty") <= i - k {
-            let _ = try pop_front(window);
+        if try option.to_result(collections.front(window), "empty") <= i - k {
+            let _ = try collections.pop_front(window);
         }
         if i >= k - 1 {
-            print(str(nums[try to_result(front(window), "empty")]));
+            print(str(nums[try option.to_result(collections.front(window), "empty")]));
         }
     }
     return ok();

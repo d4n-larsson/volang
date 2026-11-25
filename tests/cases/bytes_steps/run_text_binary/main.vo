@@ -1,9 +1,8 @@
 # Spec 021 US3: run (text) still refuses binary output, and names run_bytes.
-import std.process.Output;
-import std.process.run;
+import std.process;
 
 fn main() uses console, process("bin/allbytes") {
-    match run("bin/allbytes", new list[str]) {
+    match process.run("bin/allbytes", new list[str]) {
         case ok(out) {
             print("ok " + str(out.code));
         }

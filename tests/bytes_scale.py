@@ -21,31 +21,28 @@ FILE_TEXT = """fn main() -> result[void] uses console, file.read("./"), file.wri
     return ok();
 }
 """
-FILE_BYTES = """import std.fs.read_bytes;
-import std.fs.write_bytes;
+FILE_BYTES = """import std.fs;
 
 fn main() -> result[void] uses console, file.read("./"), file.write("./") {
-    let b = try read_bytes("big.txt");
-    try write_bytes("out.bin", slice(b, 0, len(b) / 2));
+    let b = try fs.read_bytes("big.txt");
+    try fs.write_bytes("out.bin", slice(b, 0, len(b) / 2));
     print(str(len(b)));
     return ok();
 }
 """
-CODEC = """import std.fs.read_bytes;
-import std.bytes.to_hex;
-import std.bytes.to_base64;
+CODEC = """import std.fs;
+import std.bytes;
 
 fn main() -> result[void] uses console, file.read("./") {{
-    let b = try read_bytes("big.txt");
+    let b = try fs.read_bytes("big.txt");
     print(str(len({expr})));
     return ok();
 }}
 """
-GET = """import std.http.{rec};
-import std.http.{fn};
+GET = """import std.http;
 
 fn main() -> result[void] uses console, net("127.0.0.1") {{
-    let r = try {fn}(args()[0]);
+    let r = try http.{fn}(args()[0]);
     print(str(len(r.body)));
     return ok();
 }}
@@ -77,7 +74,7 @@ def main():
             fails.append("bytes file path over 2x text")
         read = median_s(d, "r.vo", CODEC.format(expr="b"))
         for fn in ("to_hex", "to_base64"):
-            t = median_s(d, fn + ".vo", CODEC.format(expr=f"{fn}(b)")) - read
+            t = median_s(d, fn + ".vo", CODEC.format(expr=f"bytes.{fn}(b)")) - read
             print(f"bytes_scale: {fn} of 100 MB: {t:.2f} s (limit 1 s)")
             if t >= 1.0:
                 fails.append(f"{fn} took {t:.2f} s")

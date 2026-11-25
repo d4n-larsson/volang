@@ -5,7 +5,7 @@ added money packages/money sha256:ea21445f436a35734b5c63805d34cd663ff288df3c7fa3
 --- exit 0
 $ vo check main.vo
 main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effects with `vo effects --update`.
-   1 | import money.format.cents;
+   1 | import money.format;
      | ^
 0 errors, 1 warning
 --- stderr

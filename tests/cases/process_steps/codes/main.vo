@@ -1,9 +1,7 @@
 # Spec 017 (US3): a non-zero exit is ok with its code; killed by signal n, the code is 128 + n.
-import std.process.Output;
-import std.process.run;
-import std.process.run_with;
+import std.process;
 
-fn show(what: str, r: result[Output]) uses console {
+fn show(what: str, r: result[process.Output]) uses console {
     match r {
         case ok(out) {
             print(what + ": code " + str(out.code));
@@ -19,9 +17,9 @@ fn show(what: str, r: result[Output]) uses console {
 }
 
 fn main() uses console, process("bin/exit_with", "bin/kill_self") {
-    show("exit 0", run("bin/exit_with", ["0"]));
-    show("exit 3", run("bin/exit_with", ["3"]));
-    show("exit 255", run("bin/exit_with", ["255"]));
-    show("TERM", run("bin/kill_self", ["TERM"]));
-    show("KILL", run("bin/kill_self", ["KILL"]));
+    show("exit 0", process.run("bin/exit_with", ["0"]));
+    show("exit 3", process.run("bin/exit_with", ["3"]));
+    show("exit 255", process.run("bin/exit_with", ["255"]));
+    show("TERM", process.run("bin/kill_self", ["TERM"]));
+    show("KILL", process.run("bin/kill_self", ["KILL"]));
 }

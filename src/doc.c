@@ -336,9 +336,19 @@ void doc_print_item(Str *module, Node *item, Str *desc, Str *example, long full)
     SB *sb = sb_new();
     SB *sig = sb_new(); /* the signature on its own */
     doc_signature(sig, item);
+    Str *use = 0; /* spec 058: how a program writes the item: `json.parse_json` after `import std.json;` */
+    if (full && module && item->a.n && (item->flags & NF_EXPORT)) {
+        long last = module->len;
+        while (last > 0 && module->data[last - 1] != '.') last--;
+        use = msg("$1.$2", str_new(module->data + last, module->len - last), item->a.n->a.s, 0);
+    }
     if (opt_json) {
         sb_cstr(sb, "{\"v\":1,\"kind\":\"doc\",");
         doc_item_fields(sb, module, item, desc, example);
+        if (use) {
+            sb_cstr(sb, ",\"use\":");
+            json_str_into(sb, use);
+        }
         sb_cstr(sb, J_CLOSE);
     } else {
         sb_bytes(sb, sig->ptr, sig->len);
@@ -346,6 +356,13 @@ void doc_print_item(Str *module, Node *item, Str *desc, Str *example, long full)
         if (desc && desc->len) { /* none for an exported package item without a doc comment */
             sb_cstr(sb, "    ");
             sb_str(sb, desc);
+            sb_byte(sb, '\n');
+        }
+        if (use) {
+            sb_cstr(sb, "    use: import ");
+            sb_str(sb, module);
+            sb_cstr(sb, "; then ");
+            sb_str(sb, use);
             sb_byte(sb, '\n');
         }
         if (full && example) {
@@ -848,9 +865,11 @@ static Str *doc_module_of(long file)
 {
     FileRec *f = file_get((int)file);
     Str *p = f->path;
+    Str *pkg = f->std ? 0 : pkg_relpath(p); /* spec 058: "@units/sizes.vo" is the module units.sizes */
+    if (pkg) p = str_new(pkg->data + 1, pkg->len - 1);
     long from = 0, to = p->len;
     if (to > 3 && mem_eq(p->data + to - 3, ".vo", 3)) to -= 3;
-    if (!f->std && doc_entry_file >= 0) { /* strip the entry's directory */
+    if (!f->std && !pkg && doc_entry_file >= 0) { /* strip the entry's directory */
         Str *e = file_get((int)doc_entry_file)->path;
         long slash = e->len;
         while (slash > 0 && e->data[slash - 1] != '/') slash--;
@@ -859,6 +878,18 @@ static Str *doc_module_of(long file)
     SB *sb = sb_new();
     for (long i = from; i < to; i++) sb_byte(sb, p->data[i] == '/' ? '.' : p->data[i]);
     return sb_finish(sb);
+}
+
+/* Spec 058: a module's name as `vo doc` writes it (std.json, geo) and its description (the first comment
+ * line of its file, without a leading `NAME:`), for hover on a module name. */
+Str *doc_module_name(long file)
+{
+    return doc_module_of(file);
+}
+
+Str *doc_module_line(long file)
+{
+    return doc_package_description(file, doc_module_of(file));
 }
 
 /* Writes the fields of the doc record of what (key_a, key_b) of the reference log names (an item, a

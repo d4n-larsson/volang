@@ -1,11 +1,11 @@
 # Spec 033: an instance of a generic variant is a key when its type arguments are.
-import std.option.Option;
+import std.option;
 
 fn main() uses console {
-    let m = new map[Option[int], str];
-    set m[Option.some(1)] = "one";
-    set m[Option.none] = "none";
-    set m[Option.some(2)] = "two";
-    set m[Option.some(1)] = "uno";
-    print(str(len(m)) + " " + m[Option.some(1)] + " " + m[Option.none]);
+    let m = new map[option.Option[int], str];
+    set m[option.Option.some(1)] = "one";
+    set m[option.Option.none] = "none";
+    set m[option.Option.some(2)] = "two";
+    set m[option.Option.some(1)] = "uno";
+    print(str(len(m)) + " " + m[option.Option.some(1)] + " " + m[option.Option.none]);
 }

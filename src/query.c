@@ -329,6 +329,9 @@ void q_resolve(char *target, long *keys)
         if (!r) q_fail(msg("Nothing to look up at `$1`: point at a name.", str_from_cstr(target), 0, 0));
         ka = r->key_a.i;
         kb = r->key_b.i;
+    } else if (target[0] >= 'a' && target[0] <= 'z' && cstr_index(target, '.') > 0) {
+        q_resolve_qualified(target, keys); /* spec 058: module.name, module.Type.member */
+        return;
     } else {
         long dot = cstr_index(target, '.');
         if (dot >= 0) { /* Name.member */
@@ -362,6 +365,61 @@ void q_resolve(char *target, long *keys)
     }
     keys[0] = ka;
     keys[1] = kb;
+}
+
+/* Spec 058: a declaration of the module's file by name and kind mask, or 0. */
+static Node *q_item_in_file(long file, Str *name, long kinds)
+{
+    Vec *items = file_get((int)file)->ast->a.v;
+    for (long i = 0; i < items->n; i++) {
+        Node *it = vec_get(items, i);
+        if (!((1L << it->kind) & kinds) || !it->a.n || !str_eq(it->a.n->a.s, name)) continue;
+        return it;
+    }
+    return 0;
+}
+
+/* Spec 058 (research R8): `module.name` or `module.Type.member`, the module being a name an import of
+ * the program binds (`notes` for `import notes;`). Two files bound under one name: T0005. */
+void q_resolve_qualified(char *target, long *keys)
+{
+    long dot = cstr_index(target, '.');
+    Str *mod = str_new(target, dot);
+    char *rest = target + dot + 1;
+    long found = -1;
+    Vec *files = vec_new();
+    Vec *order = ld_files();
+    for (long i = 0; order && i < order->n; i++) {
+        FileRec *f = file_get((int)(long)vec_get(order, i));
+        for (Sym *s = f->scope; s; s = s->next)
+            if (s->kind == SYM_MODULE && str_eq(s->name, mod) && s->slot != found) {
+                int seen = 0;
+                for (long k = 0; k < files->n; k++) seen |= (long)vec_get(files, k) == s->slot;
+                if (!seen) vec_push(files, (void *)s->slot);
+                found = s->slot;
+            }
+    }
+    if (!files->n) q_unknown("No module named `$1` is imported in this program.", mod, 0);
+    if (files->n > 1) {
+        Vec *decls = vec_new();
+        for (long k = 0; k < files->n; k++) vec_push(decls, file_get((int)(long)vec_get(files, k))->ast);
+        q_ambiguous(mod, decls);
+    }
+    long dot2 = cstr_index(rest, '.');
+    if (dot2 < 0) {
+        Node *d = q_item_in_file(found, str_from_cstr(rest), QK_ITEMS);
+        if (!d) q_unknown("No item `$1` in this program.", str_from_cstr(target), 0);
+        keys[0] = (long)d;
+        keys[1] = -1;
+        return;
+    }
+    Str *type_name = str_new(rest, dot2);
+    Node *d = q_item_in_file(found, type_name, QK_TYPES);
+    if (!d) q_unknown("No record or variant named `$1` in this program.", str_new(target, dot + 1 + dot2), 0);
+    long idx = member_index(d->b.v, str_from_cstr(rest + dot2 + 1));
+    if (idx < 0) q_unknown("No field or case `$1` in this program.", str_from_cstr(target), 0);
+    keys[0] = (long)d;
+    keys[1] = idx;
 }
 
 /* Index of the first c in s, or -1. */
@@ -1130,8 +1188,75 @@ RefLog *q_decl_of(long key_a, long key_b)
 }
 
 /* `vo query type-at`: the innermost name or expression at the position and its type (research R4). */
+/* Spec 058 (research R8): `vo query type-at` on a module name (in its import, or before the `.` of a
+ * qualified name) answers with the module: its name, file and first comment line. 1 when it answered. */
+static int q_module_at(long file, long off)
+{
+    FileRec *fr = file_get((int)file);
+    long start = -1, end = -1, target = -1;
+    Vec *items = fr->ast ? fr->ast->a.v : 0;
+    for (long i = 0; items && i < items->n && start < 0; i++) { /* the module name of an import */
+        Node *imp = vec_get(items, i);
+        if (imp->kind != N_IMPORT || imp->c.i || !imp->d.i || !imp->b.n) continue;
+        if (off >= (long)imp->b.n->start && off < (long)imp->b.n->end) {
+            start = imp->b.n->start;
+            end = imp->b.n->end;
+            target = imp->d.i - 1;
+        }
+    }
+    RefLog *r = start < 0 ? q_entry_at(file, off) : 0;
+    if (r) { /* the module part of `m.name` */
+        Node *n = r->node;
+        long dot = -1;
+        for (long k = n->start; k < (long)n->end && dot < 0; k++)
+            if (fr->text[k] == '.') dot = k;
+        if (dot < 0 || off >= dot) return 0;
+        Str *m = str_new(fr->text + n->start, dot - n->start);
+        for (Sym *s = fr->scope; s && target < 0; s = s->next)
+            if (s->kind == SYM_MODULE && str_eq(s->name, m)) target = s->slot;
+        start = n->start;
+        end = dot;
+    }
+    if (target < 0) return 0;
+    Str *mod = doc_module_name(target), *line = doc_module_line(target);
+    SB *sb = sb_new();
+    if (opt_json) {
+        sb_cstr(sb, "{\"v\":1,\"kind\":\"type_at\",\"file\":");
+        json_span(sb, (int)file, start, end);
+        sb_cstr(sb, ",\"text\":");
+        json_src_text(sb, (int)file, start, end);
+        sb_cstr(sb, ",\"type\":\"module\",\"name\":");
+        json_src_text(sb, (int)file, start, end);
+        sb_cstr(sb, ",\"declaration\":{\"file\":");
+        json_span(sb, (int)target, 0, 0);
+        sb_cstr(sb, "},\"doc\":{\"module\":");
+        json_str_into(sb, mod);
+        sb_cstr(sb, ",\"item\":\"module\",\"description\":");
+        json_str_into(sb, line);
+        sb_cstr(sb, "}" J_CLOSE);
+    } else {
+        human_loc(sb, (int)file, start);
+        sb_byte(sb, ' ');
+        sb_bytes(sb, fr->text + start, end - start);
+        sb_cstr(sb, ": module ");
+        sb_str(sb, mod);
+        sb_cstr(sb, " (declared at ");
+        human_loc(sb, (int)target, 0);
+        sb_cstr(sb, ")\n");
+        if (line->len) {
+            sb_cstr(sb, "    ");
+            sb_str(sb, line);
+            sb_byte(sb, '\n');
+        }
+    }
+    q_out(sb);
+    return 1;
+}
+
 int q_type_at(long file, long off)
 {
+    ty_name_file = file; /* spec 058: types as this file writes them (`list[pricing.Item]`) */
+    if (q_module_at(file, off)) return q_finish(1, 0, 0);
     RefLog *name = q_entry_at(file, off); /* a name there, or 0 */
     Node *expr = q_expr_at(file, off);    /* an expression there, or 0 */
     RefLog *decl = 0;                     /* the declaration entry */

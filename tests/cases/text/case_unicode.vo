@@ -1,5 +1,4 @@
-import std.text.char_count;
-import std.text.equal_fold;
+import std.text;
 
 # Spec 042: upper and lower map Latin, Greek and Cyrillic letters; one code point to one code point.
 fn main() uses console {
@@ -7,6 +6,6 @@ fn main() uses console {
     print(upper("σοφία") + " " + lower("ΑΘΗΝΑ") + " " + upper("москва") + " " + lower("КИЇВ"));
     print(upper("straße ŉ") + " " + upper("ıi") + " " + lower("İ") + " " + upper("ÿ") + " " + upper("µ"));
     print(upper("abc 日本 հայ 123") + " " + lower("ABC 日本 ՀԱՅ 123"));
-    print(str(equal_fold("STRASSE", "strasse")) + " " + str(equal_fold("Ångström", "ÅNGSTRÖM")) + " " + str(equal_fold("a", "b")));
-    print(str(char_count("")) + " " + str(char_count("abc")) + " " + str(char_count("håll€😀")) + " " + str(len("håll€😀")));
+    print(str(text.equal_fold("STRASSE", "strasse")) + " " + str(text.equal_fold("Ångström", "ÅNGSTRÖM")) + " " + str(text.equal_fold("a", "b")));
+    print(str(text.char_count("")) + " " + str(text.char_count("abc")) + " " + str(text.char_count("håll€😀")) + " " + str(len("håll€😀")));
 }

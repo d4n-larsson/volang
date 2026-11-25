@@ -1,8 +1,8 @@
 # Spec 017: `info` reports a missing path as a value, not an error.
-import std.fs.info;
+import std.fs;
 
 fn main() -> result[void] uses console, file.read("./") {
-    match try info("none.txt") {
+    match try fs.info("none.txt") {
         case missing {
             print("missing");
         }

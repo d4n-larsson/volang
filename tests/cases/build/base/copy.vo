@@ -1,8 +1,7 @@
-import std.fs.read_bytes;
-import std.fs.write_bytes;
+import std.fs;
 
 # Copies the running toolchain's own file.
 fn main() -> result[void] uses file.read, file.write {
-    try write_bytes("toolchain-copy", try read_bytes("/proc/self/exe"));
+    try fs.write_bytes("toolchain-copy", try fs.read_bytes("/proc/self/exe"));
     return ok();
 }

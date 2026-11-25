@@ -1,16 +1,7 @@
 # Spec 047: workers are started by the program itself: R0007 in a worker; concurrent_map works inside one.
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.Worker;
-import std.workers.WorkerError;
-import std.workers.emit;
-import std.workers.next_message;
-import std.workers.receive;
-import std.workers.start_worker;
-import std.workers.stop_worker;
-import std.workers.tell;
+import std.workers;
 
-fn why(e: WorkerError) -> str {
+fn why(e: workers.WorkerError) -> str {
     match e {
         case timed_out {
             return "timeout";
@@ -33,7 +24,7 @@ fn why(e: WorkerError) -> str {
     }
 }
 
-fn show(r: result[int, WorkerError]) -> str {
+fn show(r: result[int, workers.WorkerError]) -> str {
     match r {
         case ok(n) {
             return "ok " + str(n);
@@ -44,7 +35,7 @@ fn show(r: result[int, WorkerError]) -> str {
     }
 }
 
-fn sent(r: result[void, WorkerError]) -> str {
+fn sent(r: result[void, workers.WorkerError]) -> str {
     match r {
         case ok() {
             return "sent";
@@ -55,8 +46,8 @@ fn sent(r: result[void, WorkerError]) -> str {
     }
 }
 
-fn give(link: Link[int, int], n: int) {
-    match emit(link, n) {
+fn give(link: workers.Link[int, int], n: int) {
+    match workers.emit(link, n) {
         case ok() {
         }
         case err(_) {
@@ -64,7 +55,7 @@ fn give(link: Link[int, int], n: int) {
     }
 }
 
-fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+fn worker_of(r: result[workers.Worker[int, int], workers.WorkerError]) -> workers.Worker[int, int] {
     match r {
         case ok(w) {
             return w;
@@ -79,16 +70,16 @@ fn square(n: int) -> int {
     return n * n;
 }
 
-fn maps(link: Link[int, int]) {
+fn maps(link: workers.Link[int, int]) {
     let squares = concurrent_map([1, 2, 3, 4], 2, square);
     give(link, squares[0] + squares[1] + squares[2] + squares[3]);
 }
 
-fn inner(link: Link[int, int]) {
+fn inner(link: workers.Link[int, int]) {
 }
 
-fn starts(link: Link[int, int]) {
-    match start_worker(inner) {
+fn starts(link: workers.Link[int, int]) {
+    match workers.start_worker(inner) {
         case ok(_) {
             give(link, 1);
         }
@@ -99,8 +90,8 @@ fn starts(link: Link[int, int]) {
 }
 
 fn main() uses console {
-    let m = worker_of(start_worker(maps));
-    print("concurrent_map in a worker: " + show(receive(m, Wait.forever)));
-    let s = worker_of(start_worker(starts));
-    print(show(receive(s, Wait.forever)));
+    let m = worker_of(workers.start_worker(maps));
+    print("concurrent_map in a worker: " + show(workers.receive(m, workers.Wait.forever)));
+    let s = worker_of(workers.start_worker(starts));
+    print(show(workers.receive(s, workers.Wait.forever)));
 }

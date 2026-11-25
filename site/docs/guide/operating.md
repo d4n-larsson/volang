@@ -13,13 +13,11 @@ being answered, then the fields in the order given. Field values keep their JSON
 numbers:
 
 ```vo-test
-import std.log.field;
-import std.log.log_info;
-import std.log.logged;
+import std.log;
 
 test "a record" uses log {
-    log_info("started", [field("port", 8080), field("ready", true)]);
-    expect_eq(logged(), [`{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"started","port":8080,"ready":true}`]);
+    log.log_info("started", [log.field("port", 8080), log.field("ready", true)]);
+    expect_eq(log.logged(), [`{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"started","port":8080,"ready":true}`]);
 }
 ```
 

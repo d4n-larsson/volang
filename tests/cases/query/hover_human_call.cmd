@@ -1,1 +1,1 @@
-query type-at {dir}/hover/main.vo {dir}/hover/main.vo:14:18
+query type-at {dir}/hover/main.vo {dir}/hover/main.vo:10:27

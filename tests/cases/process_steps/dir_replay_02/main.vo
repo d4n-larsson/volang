@@ -1,11 +1,10 @@
 # Spec 057 (US4): r02.jsonl was recorded by vo 0.2.0 from this program's 0.2 form,
 # run_with("bin/cat_file", ["a.txt"], "", []). The migrated form replays it unchanged, and records a run in
 # "./" exactly as 0.2 did: no "dir" field (compare expected/r.jsonl with r02.jsonl).
-import std.process.Output;
-import std.process.run_with;
+import std.process;
 
 fn main() -> result[void] uses console, file.read("./"), process("bin/cat_file") {
-    let out = try run_with("bin/cat_file", ["a.txt"], "", [], "./");
+    let out = try process.run_with("bin/cat_file", ["a.txt"], "", [], "./");
     write(out.stdout);
     return ok();
 }

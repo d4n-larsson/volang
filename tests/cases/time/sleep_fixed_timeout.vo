@@ -1,8 +1,8 @@
 # Spec 022 US4: with a fixed clock a sleep longer than --timeout takes no time, so no R0009.
-import std.time.sleep;
+import std.time;
 
 fn main() uses console, clock {
     let a = now_ms();
-    sleep(60000);
+    time.sleep(60000);
     print(str(now_ms() - a));
 }

@@ -18,10 +18,10 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.environ.get("VO_BIN", os.path.join(ROOT, "bin", "vo"))
 
-FETCH = """import std.http.get;
+FETCH = """import std.http;
 
 fn fetch(i: int) -> str uses net("127.0.0.1") {
-    match get("http://127.0.0.1:PORT/delay/1000") {
+    match http.get("http://127.0.0.1:PORT/delay/1000") {
         case ok(r) {
             return str(i) + " " + str(r.status);
         }

@@ -1,5 +1,5 @@
 # std.text: Text helpers: search, replace, repeat, pad, lines and words.
-# Part of the vo standard library (spec 007). Import items one by one: `import std.text.NAME;`.
+# Part of the vo standard library (spec 007). Import the module, `import std.text;`, and write its items as `text.NAME`.
 
 # Whether s starts with prefix.
 #     starts_with("report.txt", "rep") is true

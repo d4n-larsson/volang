@@ -1,11 +1,10 @@
 # Spec 021 US2: joining and slicing make new values; the originals stay as they were.
-import std.bytes.from_ints;
-import std.bytes.to_hex;
+import std.bytes;
 
 fn main() uses console {
-    let a = from_ints([1, 2, 3]);
-    let b = from_ints([250]);
+    let a = bytes.from_ints([1, 2, 3]);
+    let b = bytes.from_ints([250]);
     let c = a + b;
     let d = slice(c, 2, 4);
-    print(to_hex(a) + " " + to_hex(b) + " " + to_hex(c) + " " + to_hex(d) + " " + str(len(a)));
+    print(bytes.to_hex(a) + " " + bytes.to_hex(b) + " " + bytes.to_hex(c) + " " + bytes.to_hex(d) + " " + str(len(a)));
 }

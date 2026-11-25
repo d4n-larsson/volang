@@ -1,32 +1,32 @@
-route_errors.vo:35:20: error[E0330]: A route pattern must be a string literal or a constant, so it can be checked.
-  35 |     return [on_get(pattern(), op), on_get("notes", op), on_get("/notes/", op), on_get("/notes//x", op), on_get("/notes/{id", by_id), on_get("/a b", op), on_get("/notes/{id}/{id}", by_id), on_get("/notes/{name}", by_id), on_get("/tags/{id}", tags)];
-     |                    ^^^^^^^^^
-route_errors.vo:35:44: error[E0330]: A route pattern starts with `/`.
-  35 |     return [on_get(pattern(), op), on_get("notes", op), on_get("/notes/", op), on_get("/notes//x", op), on_get("/notes/{id", by_id), on_get("/a b", op), on_get("/notes/{id}/{id}", by_id), on_get("/notes/{name}", by_id), on_get("/tags/{id}", tags)];
-     |                                            ^
-route_errors.vo:35:71: error[E0330]: A route pattern does not end with `/` (except `/` itself).
-  35 |     return [on_get(pattern(), op), on_get("notes", op), on_get("/notes/", op), on_get("/notes//x", op), on_get("/notes/{id", by_id), on_get("/a b", op), on_get("/notes/{id}/{id}", by_id), on_get("/notes/{name}", by_id), on_get("/tags/{id}", tags)];
-     |                                                                       ^
-route_errors.vo:35:95: error[E0330]: An empty segment (`//`) never matches.
-  35 |     return [on_get(pattern(), op), on_get("notes", op), on_get("/notes/", op), on_get("/notes//x", op), on_get("/notes/{id", by_id), on_get("/a b", op), on_get("/notes/{id}/{id}", by_id), on_get("/notes/{name}", by_id), on_get("/tags/{id}", tags)];
-     |                                                                                               ^
-route_errors.vo:35:120: error[E0330]: A variable is written `{name}`, a whole segment.
-  35 |     return [on_get(pattern(), op), on_get("notes", op), on_get("/notes/", op), on_get("/notes//x", op), on_get("/notes/{id", by_id), on_get("/a b", op), on_get("/notes/{id}/{id}", by_id), on_get("/notes/{name}", by_id), on_get("/tags/{id}", tags)];
-     |                                                                                                                        ^^^
-route_errors.vo:35:144: error[E0330]: A literal segment holds letters, digits, `-`, `_`, `.` and `~` only.
-  35 |     return [on_get(pattern(), op), on_get("notes", op), on_get("/notes/", op), on_get("/notes//x", op), on_get("/notes/{id", by_id), on_get("/a b", op), on_get("/notes/{id}/{id}", by_id), on_get("/notes/{name}", by_id), on_get("/tags/{id}", tags)];
-     |                                                                                                                                                ^
-route_errors.vo:35:174: error[E0330]: This variable is already in the pattern.
-  35 |     return [on_get(pattern(), op), on_get("notes", op), on_get("/notes/", op), on_get("/notes//x", op), on_get("/notes/{id", by_id), on_get("/a b", op), on_get("/notes/{id}/{id}", by_id), on_get("/notes/{name}", by_id), on_get("/tags/{id}", tags)];
-     |                                                                                                                                                                              ^^^^
-route_errors.vo:35:204: error[E0330]: The operation's input `NoteId` has no field `name` for this variable.
-  35 |     return [on_get(pattern(), op), on_get("notes", op), on_get("/notes/", op), on_get("/notes//x", op), on_get("/notes/{id", by_id), on_get("/a b", op), on_get("/notes/{id}/{id}", by_id), on_get("/notes/{name}", by_id), on_get("/tags/{id}", tags)];
-     |                                                                                                                                                                                                            ^^^^^^
-route_errors.vo:35:235: error[E0330]: `Tags.id` is a `list[int]`; a path variable gives a `str`, `int`, `float`, `bool` or enum-like case.
-  35 |     return [on_get(pattern(), op), on_get("notes", op), on_get("/notes/", op), on_get("/notes//x", op), on_get("/notes/{id", by_id), on_get("/a b", op), on_get("/notes/{id}/{id}", by_id), on_get("/notes/{name}", by_id), on_get("/tags/{id}", tags)];
-     |                                                                                                                                                                                                                                           ^^^^
-route_errors.vo:39:103: error[E0331]: `GET /notes/{id}` matches the same paths as `GET /notes/{id}`: every request would go to the first; make the patterns differ or remove one.
-  39 |     return [on_get("/notes/{id}", by_id), on_post("/notes/{id}", by_id), on_get("/notes/latest", op), on_get("/notes/{id}", by_id)];
-     |                                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  note: route_errors.vo:39:13: `GET /notes/{id}` is here.
+route_errors.vo:31:24: error[E0330]: A route pattern must be a string literal or a constant, so it can be checked.
+  31 |     return [web.on_get(pattern(), op), web.on_get("notes", op), web.on_get("/notes/", op), web.on_get("/notes//x", op), web.on_get("/notes/{id", by_id), web.on_get("/a b", op), web.on_get("/notes/{id}/{id}", by_id), web.on_get("/notes/{name}", by_id), web.on_get("/tags/{id}", tags)];
+     |                        ^^^^^^^^^
+route_errors.vo:31:52: error[E0330]: A route pattern starts with `/`.
+  31 |     return [web.on_get(pattern(), op), web.on_get("notes", op), web.on_get("/notes/", op), web.on_get("/notes//x", op), web.on_get("/notes/{id", by_id), web.on_get("/a b", op), web.on_get("/notes/{id}/{id}", by_id), web.on_get("/notes/{name}", by_id), web.on_get("/tags/{id}", tags)];
+     |                                                    ^
+route_errors.vo:31:83: error[E0330]: A route pattern does not end with `/` (except `/` itself).
+  31 |     return [web.on_get(pattern(), op), web.on_get("notes", op), web.on_get("/notes/", op), web.on_get("/notes//x", op), web.on_get("/notes/{id", by_id), web.on_get("/a b", op), web.on_get("/notes/{id}/{id}", by_id), web.on_get("/notes/{name}", by_id), web.on_get("/tags/{id}", tags)];
+     |                                                                                   ^
+route_errors.vo:31:111: error[E0330]: An empty segment (`//`) never matches.
+  31 |     return [web.on_get(pattern(), op), web.on_get("notes", op), web.on_get("/notes/", op), web.on_get("/notes//x", op), web.on_get("/notes/{id", by_id), web.on_get("/a b", op), web.on_get("/notes/{id}/{id}", by_id), web.on_get("/notes/{name}", by_id), web.on_get("/tags/{id}", tags)];
+     |                                                                                                               ^
+route_errors.vo:31:140: error[E0330]: A variable is written `{name}`, a whole segment.
+  31 |     return [web.on_get(pattern(), op), web.on_get("notes", op), web.on_get("/notes/", op), web.on_get("/notes//x", op), web.on_get("/notes/{id", by_id), web.on_get("/a b", op), web.on_get("/notes/{id}/{id}", by_id), web.on_get("/notes/{name}", by_id), web.on_get("/tags/{id}", tags)];
+     |                                                                                                                                            ^^^
+route_errors.vo:31:168: error[E0330]: A literal segment holds letters, digits, `-`, `_`, `.` and `~` only.
+  31 |     return [web.on_get(pattern(), op), web.on_get("notes", op), web.on_get("/notes/", op), web.on_get("/notes//x", op), web.on_get("/notes/{id", by_id), web.on_get("/a b", op), web.on_get("/notes/{id}/{id}", by_id), web.on_get("/notes/{name}", by_id), web.on_get("/tags/{id}", tags)];
+     |                                                                                                                                                                        ^
+route_errors.vo:31:202: error[E0330]: This variable is already in the pattern.
+  31 |     return [web.on_get(pattern(), op), web.on_get("notes", op), web.on_get("/notes/", op), web.on_get("/notes//x", op), web.on_get("/notes/{id", by_id), web.on_get("/a b", op), web.on_get("/notes/{id}/{id}", by_id), web.on_get("/notes/{name}", by_id), web.on_get("/tags/{id}", tags)];
+     |                                                                                                                                                                                                          ^^^^
+route_errors.vo:31:236: error[E0330]: The operation's input `NoteId` has no field `name` for this variable.
+  31 |     return [web.on_get(pattern(), op), web.on_get("notes", op), web.on_get("/notes/", op), web.on_get("/notes//x", op), web.on_get("/notes/{id", by_id), web.on_get("/a b", op), web.on_get("/notes/{id}/{id}", by_id), web.on_get("/notes/{name}", by_id), web.on_get("/tags/{id}", tags)];
+     |                                                                                                                                                                                                                                            ^^^^^^
+route_errors.vo:31:271: error[E0330]: `Tags.id` is a `list[int]`; a path variable gives a `str`, `int`, `float`, `bool` or enum-like case.
+  31 |     return [web.on_get(pattern(), op), web.on_get("notes", op), web.on_get("/notes/", op), web.on_get("/notes//x", op), web.on_get("/notes/{id", by_id), web.on_get("/a b", op), web.on_get("/notes/{id}/{id}", by_id), web.on_get("/notes/{name}", by_id), web.on_get("/tags/{id}", tags)];
+     |                                                                                                                                                                                                                                                                               ^^^^
+route_errors.vo:35:115: error[E0331]: `GET /notes/{id}` matches the same paths as `GET /notes/{id}`: every request would go to the first; make the patterns differ or remove one.
+  35 |     return [web.on_get("/notes/{id}", by_id), web.on_post("/notes/{id}", by_id), web.on_get("/notes/latest", op), web.on_get("/notes/{id}", by_id)];
+     |                                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  note: route_errors.vo:35:13: `GET /notes/{id}` is here.
 10 errors, 0 warnings

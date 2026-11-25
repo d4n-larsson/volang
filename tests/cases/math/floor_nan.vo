@@ -1,7 +1,7 @@
 # Spec 020 US2: NaN, an infinity or a result outside the int range is R0007 at the call.
-import std.math.floor;
+import std.math;
 
 fn main() uses console {
     let x = 0.0 / 0.0;
-    print(str(floor(x)));
+    print(str(math.floor(x)));
 }

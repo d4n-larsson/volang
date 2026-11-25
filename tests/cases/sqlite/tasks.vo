@@ -1,13 +1,10 @@
 # A database belongs to the task that opened it: using it inside concurrent_map stops with R0007.
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.query;
-import std.sqlite.Value;
+import std.sqlite;
 
 fn main() uses console {
-    let db = open_memory();
+    let db = sqlite.open_memory();
     let counts = concurrent_map([1, 2], 2, fn(x: int) -> int {
-        match query(db, sql("select 1 as x"), new list[Value]) {
+        match sqlite.query(db, sqlite.sql("select 1 as x"), new list[sqlite.Value]) {
             case ok(rows) {
                 return len(rows) + x;
             }

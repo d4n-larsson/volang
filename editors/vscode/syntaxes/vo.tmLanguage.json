@@ -244,6 +244,11 @@
           ]
         },
         {
+          "comment": "spec 058: a module before its effect set (api.Storage) is a name",
+          "match": "\\b[a-z_][A-Za-z0-9_]*(?=\\.[A-Z])",
+          "name": "variable.other.vo"
+        },
+        {
           "match": "\\b[A-Z][A-Za-z0-9_]*",
           "name": "entity.name.type.vo"
         },
@@ -290,6 +295,11 @@
         {
           "comment": "the module std.bytes in an import path is a name",
           "match": "(?<=\\.)bytes\\b",
+          "name": "variable.other.vo"
+        },
+        {
+          "comment": "spec 058: the module std.bytes before `.` (bytes.from_text) is a name",
+          "match": "\\bbytes(?=\\s*\\.)",
           "name": "variable.other.vo"
         },
         {

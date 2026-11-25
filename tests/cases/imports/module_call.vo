@@ -1,0 +1,6 @@
+# A module called like a function, when it has an item of its own name: E0201 with the fix `regex.regex`.
+import std.regex;
+
+fn main() uses console {
+    print(str(regex.is_match("a", regex("a"))));
+}

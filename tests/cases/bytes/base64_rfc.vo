@@ -1,15 +1,12 @@
 # Spec 021 US4: the RFC 4648 base64 test vectors, both ways.
-import std.bytes.from_text;
-import std.bytes.to_base64;
-import std.bytes.from_base64;
-import std.bytes.to_text;
+import std.bytes;
 
 fn main() uses console {
     for s in ["", "f", "fo", "foo", "foob", "fooba", "foobar"] {
-        let e = to_base64(from_text(s));
-        match from_base64(e) {
+        let e = bytes.to_base64(bytes.from_text(s));
+        match bytes.from_base64(e) {
             case ok(b) {
-                print("[" + s + "] " + e + " " + str(to_text(b) == ok(s)));
+                print("[" + s + "] " + e + " " + str(bytes.to_text(b) == ok(s)));
             }
             case err(m) {
                 print(m);

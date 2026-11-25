@@ -1,28 +1,25 @@
 $ vo edit rename main.vo add_item total
-main.vo:4:16: error[E0202]: `total` is already defined.
-   4 | import catalog.total;
-     |                ^^^^^
-main.vo:42:35: error[E0302]: `total` takes 4 argument(s), found 1.
-  42 |     print("add_item total " + str(total(items)) + " " + str(count) + " " + str(b.price) + " " + p.second);
-     |                                   ^^^^^^^^^^^^
-main.vo:42:35: error[E0301]: Expected `int`, `float` or `bool`, found `void`.
-  42 |     print("add_item total " + str(total(items)) + " " + str(count) + " " + str(b.price) + " " + p.second);
-     |                                   ^^^^^^^^^^^^
-main.vo:46:1: error[E0501]: `test "totals"` does not declare console, which it needs.
-  46 | test "totals" {
+main.vo:39:35: error[E0302]: `catalog.total` takes 4 argument(s), found 1.
+  39 |     print("add_item total " + str(catalog.total(items)) + " " + str(count) + " " + str(b.price) + " " + p.second);
+     |                                   ^^^^^^^^^^^^^^^^^^^^
+main.vo:39:35: error[E0301]: Expected `int`, `float` or `bool`, found `void`.
+  39 |     print("add_item total " + str(catalog.total(items)) + " " + str(count) + " " + str(b.price) + " " + p.second);
+     |                                   ^^^^^^^^^^^^^^^^^^^^
+main.vo:43:1: error[E0501]: `test "totals"` does not declare console, which it needs.
+  43 | test "totals" {
      | ^^^^
   note: catalog.vo:11:72: `total` declares console here.
-main.vo:48:15: error[E0302]: `total` takes 4 argument(s), found 1.
-  48 |     expect_eq(total(items), 0);
-     |               ^^^^^^^^^^^^
-main.vo:48:29: error[E0301]: Expected `void`, found `int`.
-  48 |     expect_eq(total(items), 0);
-     |                             ^
+main.vo:45:15: error[E0302]: `catalog.total` takes 4 argument(s), found 1.
+  45 |     expect_eq(catalog.total(items), 0);
+     |               ^^^^^^^^^^^^^^^^^^^^
+main.vo:45:37: error[E0301]: Expected `void`, found `int`.
+  45 |     expect_eq(catalog.total(items), 0);
+     |                                     ^
   expected `void`, found `int`
 catalog.vo:16:11: error[E0202]: `total` is already defined.
   16 | export fn total(items: list[Item]) -> int {
      |           ^^^^^
   note: catalog.vo:11:11: `total` is first defined here.
-error[T0006]: Renaming `add_item` to `total` would not check (7 new errors): nothing was written.
+error[T0006]: Renaming `add_item` to `total` would not check (6 new errors): nothing was written.
 --- stderr
 --- exit 65

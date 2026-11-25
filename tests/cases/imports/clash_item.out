@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0202","name":"duplicate_definition","severity":"error","file":"clash_item.vo","start":{"line":2,"col":12},"end":{"line":2,"col":16},"text":"json","message":"`json` is also an item of this file: rename the item or the module's file.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

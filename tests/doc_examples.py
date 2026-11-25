@@ -22,8 +22,16 @@ VO = os.path.join(ROOT, "bin", "vo")
 FENCE = re.compile(r"^```([\w-]*)(?: (\S+))?\n(.*?)^```\n", re.M | re.S)
 
 
+# Under emulation (a cross build through qemu) programs run several times slower, and how much slower
+# depends on where hot code lands: 600,000 PBKDF2 rounds of std.crypto's example passed 10 s on RISC-V
+# after an unrelated change moved sha256_compress across a page (spec 058). Runs there get more time.
+EMULATED = any(a in os.environ.get("VO_BIN", "") for a in ("aarch64", "riscv64"))
+
+
 def vo(args, cwd, stdin=None):
-    return subprocess.run([VO] + args, capture_output=True, cwd=cwd, timeout=60,
+    if EMULATED and args and args[0] in ("run", "test") and "--timeout" not in args:
+        args = [args[0], "--timeout", "100"] + args[1:]
+    return subprocess.run([VO] + args, capture_output=True, cwd=cwd, timeout=600 if EMULATED else 60,
                           input=stdin if stdin is not None else b"")
 
 

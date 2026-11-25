@@ -12,47 +12,47 @@ PASS unchanged (0ms, recorded)
 $ vo test --replay rec main.vo
 ERROR url (0ms, replayed)
   note: the program changed since this test was recorded
-  std/http.vo:174:12: runtime error[R0014]: The test makes an HTTP request `GET /json` to `127.0.0.1:{port}`, but its recording has an HTTP request `GET /plain` to `127.0.0.1:{port}` next: re-record it with `vo test --record rec --test 'main.vo::url'`.
-    at exchange_raw (std/http.vo:174:12)
+  std/http.vo:166:12: runtime error[R0014]: The test makes an HTTP request `GET /json` to `127.0.0.1:{port}`, but its recording has an HTTP request `GET /plain` to `127.0.0.1:{port}` next: re-record it with `vo test --record rec --test 'main.vo::url'`.
+    at exchange_raw (std/http.vo:166:12)
         method: str = "GET", url: str = "http://127.0.0.1:{port}/json", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "127.0.0.1", port: {port}, target: "/json" }, request: str = "GET /json HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\nUser-Agent: vo\r\n\r\n"
-    at exchange (std/http.vo:121:19)
+    at exchange (std/http.vo:113:19)
         method: str = "GET", url: str = "http://127.0.0.1:{port}/json", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, hint: str = "get_bytes"
-    at get (std/http.vo:295:12)
+    at get (std/http.vo:287:12)
         url: str = "http://127.0.0.1:{port}/json"
-    at test "url" (main.vo:33:24)
+    at test "url" (main.vo:31:24)
 ERROR method (0ms, replayed)
   note: the program changed since this test was recorded
-  std/http.vo:174:12: runtime error[R0014]: The test makes an HTTP request `POST /inspect` to `127.0.0.1:{port}`, but its recording has an HTTP request `GET /inspect` to `127.0.0.1:{port}` next: re-record it with `vo test --record rec --test 'main.vo::method'`.
-    at exchange_raw (std/http.vo:174:12)
+  std/http.vo:166:12: runtime error[R0014]: The test makes an HTTP request `POST /inspect` to `127.0.0.1:{port}`, but its recording has an HTTP request `GET /inspect` to `127.0.0.1:{port}` next: re-record it with `vo test --record rec --test 'main.vo::method'`.
+    at exchange_raw (std/http.vo:166:12)
         method: str = "POST", url: str = "http://127.0.0.1:{port}/inspect", headers: list[Header] = [new Header { name: "Content-Type", value: "text/plain" }], body: str = "", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "127.0.0.1", port: {port}, target: "/inspect" }, request: str = "POST /inspect HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\nUser-Agent: vo\r\nContent-Type: text/plain\r\nContent-Length: 0\r\n\r\n"
-    at exchange (std/http.vo:121:19)
+    at exchange (std/http.vo:113:19)
         method: str = "POST", url: str = "http://127.0.0.1:{port}/inspect", headers: list[Header] = [new Header { name: "Content-Type", value: "text/plain" }], body: str = "", timeout_ms: int = 0, hint: str = "post_bytes"
-    at post (std/http.vo:301:12)
+    at post (std/http.vo:293:12)
         url: str = "http://127.0.0.1:{port}/inspect", content_type: str = "text/plain", body: str = ""
-    at test "method" (main.vo:37:24)
+    at test "method" (main.vo:35:24)
 ERROR body (0ms, replayed)
   note: the program changed since this test was recorded
-  std/http.vo:174:12: runtime error[R0014]: The test makes an HTTP request `POST /echo` to `127.0.0.1:{port}` with another body than its recording has: re-record it with `vo test --record rec --test 'main.vo::body'`.
-    at exchange_raw (std/http.vo:174:12)
+  std/http.vo:166:12: runtime error[R0014]: The test makes an HTTP request `POST /echo` to `127.0.0.1:{port}` with another body than its recording has: re-record it with `vo test --record rec --test 'main.vo::body'`.
+    at exchange_raw (std/http.vo:166:12)
         method: str = "POST", url: str = "http://127.0.0.1:{port}/echo", headers: list[Header] = [new Header { name: "Content-Type", value: "text/plain" }], body: str = "two", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "127.0.0.1", port: {port}, target: "/echo" }, request: str = "POST /echo HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nConnection: close\r\nUser-Agent: vo\r\nContent-Type: text/plain\r\nContent-Length: 3\r\n\r\ntwo"
-    at exchange (std/http.vo:121:19)
+    at exchange (std/http.vo:113:19)
         method: str = "POST", url: str = "http://127.0.0.1:{port}/echo", headers: list[Header] = [new Header { name: "Content-Type", value: "text/plain" }], body: str = "two", timeout_ms: int = 0, hint: str = "post_bytes"
-    at post (std/http.vo:301:12)
+    at post (std/http.vo:293:12)
         url: str = "http://127.0.0.1:{port}/echo", content_type: str = "text/plain", body: str = "two"
-    at test "body" (main.vo:41:24)
+    at test "body" (main.vo:39:24)
 ERROR file (0ms, replayed)
   note: the program changed since this test was recorded
-  main.vo:45:15: runtime error[R0014]: The test reads the file `data/b.txt`, but its recording has a read of `data/a.txt` next: re-record it with `vo test --record rec --test 'main.vo::file'`.
-    at test "file" (main.vo:45:15)
+  main.vo:43:15: runtime error[R0014]: The test reads the file `data/b.txt`, but its recording has a read of `data/a.txt` next: re-record it with `vo test --record rec --test 'main.vo::file'`.
+    at test "file" (main.vo:43:15)
 ERROR variable (0ms, replayed)
   note: the program changed since this test was recorded
-  main.vo:49:15: runtime error[R0014]: The test reads the variable `USER_NAME`, but its recording has the variable `NAME` next: re-record it with `vo test --record rec --test 'main.vo::variable'`.
-    at test "variable" (main.vo:49:15)
+  main.vo:47:15: runtime error[R0014]: The test reads the variable `USER_NAME`, but its recording has the variable `NAME` next: re-record it with `vo test --record rec --test 'main.vo::variable'`.
+    at test "variable" (main.vo:47:15)
 ERROR more requests (0ms, replayed)
   note: the program changed since this test was recorded
-  main.vo:8:11: runtime error[R0014]: The test reads the variable `PORT`, but its recording has no more inputs: re-record it with `vo test --record rec --test 'main.vo::more requests'`.
-    at base (main.vo:8:11)
-    at test "more requests" (main.vo:54:28)
+  main.vo:6:11: runtime error[R0014]: The test reads the variable `PORT`, but its recording has no more inputs: re-record it with `vo test --record rec --test 'main.vo::more requests'`.
+    at base (main.vo:6:11)
+    at test "more requests" (main.vo:52:33)
 PASS unchanged (0ms, replayed)
   note: the program changed since this test was recorded
 1 passed, 0 failed, 6 errored

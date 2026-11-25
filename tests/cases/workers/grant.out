@@ -1,11 +1,11 @@
 sent
-failed: grant.vo:81:19: runtime error[R0010]: file.read("other/x.txt") is not allowed: `reader` declares file.read("data/").
-  81 |             match read_file(path) {
+failed: grant.vo:72:19: runtime error[R0010]: file.read("other/x.txt") is not allowed: `reader` declares file.read("data/").
+  72 |             match read_file(path) {
      |                   ^^^^^^^^^^^^^^^
 trace:
-  at reader (grant.vo:81:19)
+  at reader (grant.vo:72:19)
       link: Link[str, int] = new Link[str, int] { id: 0 }, path: str = "other/x.txt"
   at start_worker (std/workers.vo:66:45)
       body: fn(Link[str, int]) uses file.read("data/") = <fn(Link[str, int]) uses file.read("data/")>
-  at main (grant.vo:106:11)
+  at main (grant.vo:97:11)
 the program goes on

@@ -1,8 +1,8 @@
-replace_runtime_error.vo:6:11: runtime error[R0007]: The pattern has no group 9.
-   6 |     print(replace_matches("a", regex("(a)"), template));
-     |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+replace_runtime_error.vo:5:11: runtime error[R0007]: The pattern has no group 9.
+   5 |     print(regex.replace_matches("a", regex.regex("(a)"), template));
+     |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at replace_matches (replace_runtime_error.vo:6:11)
+  at replace_matches (replace_runtime_error.vo:5:11)
       s: str = "a", re: Regex = new Regex { pattern: "(a)" }, replacement: str = "$9"
-  at main (replace_runtime_error.vo:6:11)
+  at main (replace_runtime_error.vo:5:11)
       template: str = "$9"

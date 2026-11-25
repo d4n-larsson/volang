@@ -1,9 +1,9 @@
 # Spec 017 (US1): an absolute path outside the scope is R0010 too.
-import std.fs.info;
+import std.fs;
 
 fn main() -> result[void] uses console, file.read("data/") {
     let root = "/";
-    match try info(root + "etc") {
+    match try fs.info(root + "etc") {
         case missing {
             print("missing");
         }

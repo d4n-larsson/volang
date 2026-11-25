@@ -1,10 +1,10 @@
 # Spec 017 (US5): --trace shows each library call with its arguments and result.
-import std.fs.list_dir;
-import std.process.run;
+import std.fs;
+import std.process;
 
 fn main() -> result[void] uses console, file.read("data/"), process("bin/args") {
-    print(str(len(try list_dir("data"))));
-    let out = try run("bin/args", ["t"]);
+    print(str(len(try fs.list_dir("data"))));
+    let out = try process.run("bin/args", ["t"]);
     write(out.stdout);
     return ok();
 }

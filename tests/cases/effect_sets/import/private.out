@@ -1,5 +1,5 @@
-private.vo:1:14: error[E0209]: `Scratch` is not exported by `store.vo`.
-   1 | import store.Scratch;
-     |              ^^^^^^^
+private.vo:3:25: error[E0209]: `Scratch` is not exported by `store.vo`.
+   3 | fn main() uses console, store.Scratch {
+     |                         ^^^^^^^^^^^^^
   fix: insert `export `
 1 error, 0 warnings

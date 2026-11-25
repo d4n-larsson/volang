@@ -48,13 +48,12 @@ def expect(b):
 
 
 OFFSET = re.compile(r"at byte (\d+)")
-SHOW = """import std.bytes.from_text;
-import std.bytes.to_hex;
+SHOW = """import std.bytes;
 
 fn show(r: result[str]) uses console {
     match r {
         case ok(s) {
-            print("ok " + to_hex(from_text(s)));
+            print("ok " + bytes.to_hex(bytes.from_text(s)));
         }
         case err(e) {
             print("err " + e);
@@ -149,14 +148,13 @@ fn main() uses console, input {
         os.makedirs(os.path.join(self.d, "bin"), exist_ok=True)
         shutil.copy(os.path.join(ROOT, "tests", "process_helpers", "cat_file"), os.path.join(self.d, "bin"))
         p = self.program("pr.vo", SHOW + """
-import std.process.Output;
-import std.process.run;
+import std.process;
 
 fn main() -> result[void] uses console, file.read, process("bin/cat_file") {
     let names = try read_file("names.txt");
     for name in split(names, "\\n") {
         if name != "" {
-            match run("bin/cat_file", [name]) {
+            match process.run("bin/cat_file", [name]) {
                 case ok(o) {
                     show(ok(o.stdout));
                 }
@@ -182,14 +180,13 @@ fn main() -> result[void] uses console, file.read, process("bin/cat_file") {
             open(os.path.join(self.d, "urls.txt"), "w").write(
                 "".join(f"http://127.0.0.1:{port}/hex/{b.hex()}\n" for b in inputs))
             p = self.program("ht.vo", SHOW + """
-import std.http.Response;
-import std.http.get;
+import std.http;
 
 fn main() -> result[void] uses console, file.read, net("127.0.0.1") {
     let urls = try read_file("urls.txt");
     for url in split(urls, "\\n") {
         if url != "" {
-            match get(url) {
+            match http.get(url) {
                 case ok(r) {
                     show(ok(r.body));
                 }

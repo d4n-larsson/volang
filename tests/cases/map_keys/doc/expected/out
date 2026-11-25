@@ -10,6 +10,7 @@ fn count[K: key](xs: list[K]) -> map[K, int]
 $ vo doc keys.count.count
 fn count[K: key](xs: list[K]) -> map[K, int]
     How often each value occurs, in the order values first appear.
+    use: import keys.count; then count.count
 --- stderr
 --- exit 0
 $ vo run main.vo

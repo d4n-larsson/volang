@@ -79,8 +79,8 @@ With `--json`:
 
 ```json
 {"v":1,"kind":"ref","target":"tax","role":"call","file":"pricing.vo","start":{"line":14,"col":38},"end":{"line":14,"col":41},"text":"tax","in":"total"}
-{"v":1,"kind":"type_at","file":"main.vo","start":{"line":6,"col":9},"end":{"line":6,"col":14},"text":"items","type":"list[Item]","name":"items","declaration":{"file":"main.vo","start":{"line":6,"col":9},"end":{"line":6,"col":14}}}
-{"v":1,"kind":"spec","id":"FR-001","tests":[{"name":"total adds tax","kind":"test","file":"main.vo","start":{"line":11,"col":1}}]}
+{"v":1,"kind":"type_at","file":"main.vo","start":{"line":5,"col":9},"end":{"line":5,"col":14},"text":"items","type":"list[pricing.Item]","name":"items","declaration":{"file":"main.vo","start":{"line":5,"col":9},"end":{"line":5,"col":14}}}
+{"v":1,"kind":"spec","id":"FR-001","tests":[{"name":"total adds tax","kind":"test","file":"main.vo","start":{"line":10,"col":1}}]}
 {"v":1,"kind":"summary","command":"query","errors":0,"warnings":0,"truncated":0,"files":2,"results":1}
 ```
 
@@ -122,39 +122,38 @@ export fn total(items: list[Item]) -> int {
 
 ```vo
 # file: main.vo
-import pricing.Item;
-import pricing.total;
+import pricing;
 
 fn main() uses console {
-    let items = [new Item { name: "pen", price: 4 }, new Item { name: "book", price: 20 }];
-    print("total " + str(total(items)));
+    let items = [new pricing.Item { name: "pen", price: 4 }, new pricing.Item { name: "book", price: 20 }];
+    print("total " + str(pricing.total(items)));
 }
 
 @spec("FR-001")
 test "total adds tax" {
-    expect_eq(total([new Item { name: "pen", price: 4 }]), 5);
+    expect_eq(pricing.total([new pricing.Item { name: "pen", price: 4 }]), 5);
 }
 ```
 
 ```console
 $ vo query callers main.vo total
-main.vo:7:26 call in main: print("total " + str(total(items)));
-main.vo:12:15 call in test "total adds tax": expect_eq(total([new Item { name: "pen", price: 4 }]), 5);
+main.vo:6:26 call in main: print("total " + str(pricing.total(items)));
+main.vo:11:15 call in test "total adds tax": expect_eq(pricing.total([new pricing.Item { name: "pen", price: 4 }]), 5);
 2 references
 $ vo query refs main.vo Item.price
 pricing.vo:4:5 declaration: price: int;
-main.vo:6:42 use in main: let items = [new Item { name: "pen", price: 4 }, new Item { name: "book", price: 20 }];
-main.vo:6:79 use in main: let items = [new Item { name: "pen", price: 4 }, new Item { name: "book", price: 20 }];
-main.vo:12:46 use in test "total adds tax": expect_eq(total([new Item { name: "pen", price: 4 }]), 5);
+main.vo:5:50 use in main: let items = [new pricing.Item { name: "pen", price: 4 }, new pricing.Item { name: "book", price: 20 }];
+main.vo:5:95 use in main: let items = [new pricing.Item { name: "pen", price: 4 }, new pricing.Item { name: "book", price: 20 }];
+main.vo:11:62 use in test "total adds tax": expect_eq(pricing.total([new pricing.Item { name: "pen", price: 4 }]), 5);
 pricing.vo:14:30 use in total: set sum = sum + item.price + tax(item.price);
 pricing.vo:14:47 use in total: set sum = sum + item.price + tax(item.price);
 6 references
-$ vo query type-at main.vo main.vo:6:9
-main.vo:6:9 items: list[Item] (declared at main.vo:6:9)
-$ vo query type-at main.vo main.vo:7:20
-main.vo:7:11 "total " + str(total(items)): str
+$ vo query type-at main.vo main.vo:5:9
+main.vo:5:9 items: list[pricing.Item] (declared at main.vo:5:9)
+$ vo query type-at main.vo main.vo:6:20
+main.vo:6:11 "total " + str(pricing.total(items)): str
 $ vo query specs main.vo
-FR-001  main.vo:11:1 test "total adds tax"
+FR-001  main.vo:10:1 test "total adds tax"
 1 requirement ID
 $ vo query --json callers main.vo tax
 {"v":1,"kind":"ref","target":"tax","role":"call","file":"pricing.vo","start":{"line":14,"col":38},"end":{"line":14,"col":41},"text":"tax","in":"total"}

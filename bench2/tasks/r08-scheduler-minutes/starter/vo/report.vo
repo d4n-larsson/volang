@@ -1,22 +1,17 @@
-import clock.duration;
-import clock.span;
-import schedule.Event;
-import schedule.room_events;
-import schedule.event_at;
-import schedule.free_slots;
-import schedule.booked_minutes;
+import clock;
+import schedule;
 
-export fn agenda_lines(events: map[str, Event], room: str) -> list[str] {
-    let evs = room_events(events, room);
+export fn agenda_lines(events: map[str, schedule.Event], room: str) -> list[str] {
+    let evs = schedule.room_events(events, room);
     let out = ["agenda " + room + ": " + str(len(evs)) + " events"];
     for e in evs {
-        push(out, "  " + span(e.start, e.end) + " " + e.event_id + " (" + str(duration(e.start, e.end)) + " min)");
+        push(out, "  " + clock.span(e.start, e.end) + " " + e.event_id + " (" + str(clock.duration(e.start, e.end)) + " min)");
     }
     return out;
 }
 
-export fn who_line(events: map[str, Event], room: str, t: str) -> str {
-    match event_at(events, room, t) {
+export fn who_line(events: map[str, schedule.Event], room: str, t: str) -> str {
+    match schedule.event_at(events, room, t) {
         case ok(e) {
             return room + " at " + t + ": " + e.event_id;
         }
@@ -26,10 +21,10 @@ export fn who_line(events: map[str, Event], room: str, t: str) -> str {
     }
 }
 
-export fn free_lines(events: map[str, Event], room: str, lo: str, hi: str, min_len: int) -> list[str] {
-    let out = ["free " + room + " " + span(lo, hi) + ":"];
-    for s in free_slots(events, room, lo, hi, min_len) {
-        push(out, "  " + span(s.start, s.end) + " (" + str(duration(s.start, s.end)) + " min)");
+export fn free_lines(events: map[str, schedule.Event], room: str, lo: str, hi: str, min_len: int) -> list[str] {
+    let out = ["free " + room + " " + clock.span(lo, hi) + ":"];
+    for s in schedule.free_slots(events, room, lo, hi, min_len) {
+        push(out, "  " + clock.span(s.start, s.end) + " (" + str(clock.duration(s.start, s.end)) + " min)");
     }
     if len(out) == 1 {
         push(out, "  none");
@@ -37,7 +32,7 @@ export fn free_lines(events: map[str, Event], room: str, lo: str, hi: str, min_l
     return out;
 }
 
-export fn summary_lines(events: map[str, Event]) -> list[str] {
+export fn summary_lines(events: map[str, schedule.Event]) -> list[str] {
     let rooms = new list[str];
     for k in keys(events) {
         let room = events[k].room;
@@ -51,8 +46,8 @@ export fn summary_lines(events: map[str, Event]) -> list[str] {
     let out = new list[str];
     var total = 0;
     for room in rooms {
-        let evs = room_events(events, room);
-        let booked = booked_minutes(evs);
+        let evs = schedule.room_events(events, room);
+        let booked = schedule.booked_minutes(evs);
         set total = total + booked;
         push(out, room + ": " + str(len(evs)) + " events, " + str(booked) + " min booked, first " + evs[0].start + ", last " + evs[len(evs) - 1].end);
     }

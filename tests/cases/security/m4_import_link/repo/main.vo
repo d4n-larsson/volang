@@ -1,6 +1,6 @@
-import leak.thing;
-import inside.quiet;
+import inside;
+import leak;
 
 fn main() uses console {
-    print(quiet("A"));
+    print(inside.quiet("A"));
 }

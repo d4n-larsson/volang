@@ -4,8 +4,8 @@ std/tcp.vo:147:26: runtime error[R0010]: net("127.0.0.1:2") is not allowed: `mai
 trace:
   at connect (std/tcp.vo:147:26)
       host: str = "127.0.0.1", port: int = 2, timeout_ms: int = 1000
-  at dial (path_scope_root.vo:10:12)
+  at dial (path_scope_root.vo:6:12)
       host: str = "127.0.0.1", port: int = 2
-  at try_port (path_scope_root.vo:14:11)
+  at try_port (path_scope_root.vo:10:11)
       port: int = 2
-  at main (path_scope_root.vo:28:11)
+  at main (path_scope_root.vo:24:11)

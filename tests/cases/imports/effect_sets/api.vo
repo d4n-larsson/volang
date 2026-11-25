@@ -1,0 +1,4 @@
+# Effect sets and constants of another module, used in `uses` and in scopes.
+export const data_dir = "data/";
+
+export effects Storage = file.read(data_dir), file.write(data_dir);

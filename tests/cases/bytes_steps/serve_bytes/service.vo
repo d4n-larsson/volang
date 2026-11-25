@@ -1,19 +1,16 @@
 # Spec 021 US6: a server answering with binary data, and echoing a binary upload.
-import std.http.BytesRequest;
-import std.http.BytesResponse;
-import std.http.Header;
-import std.http.serve_bytes;
-import std.bytes.from_ints;
+import std.bytes;
+import std.http;
 
-fn handle(r: BytesRequest) -> BytesResponse {
+fn handle(r: http.BytesRequest) -> http.BytesResponse {
     if r.method == "POST" {
-        return new BytesResponse { status: 200, headers: new list[Header], body: r.body };
+        return new http.BytesResponse { status: 200, headers: new list[http.Header], body: r.body };
     }
-    return new BytesResponse { status: 200, headers: [new Header { name: "Content-Type", value: "application/octet-stream" }], body: from_ints([0, 1, 254, 255]) };
+    return new http.BytesResponse { status: 200, headers: [new http.Header { name: "Content-Type", value: "application/octet-stream" }], body: bytes.from_ints([0, 1, 254, 255]) };
 }
 
 fn main() -> result[void] uses console, serve("{vport}") {
-    try serve_bytes("{vport}", handle);
+    try http.serve_bytes("{vport}", handle);
     print("stopped");
     return ok();
 }

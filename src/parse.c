@@ -78,6 +78,33 @@ static Token *p_tok(void)
     return &p_toks[p_pos];
 }
 
+/* Spec 058: the module names this file's imports bind (the last segment of each import), known before
+ * the first item because imports come first. `m.n` with `m` among them is one qualified name. */
+static Vec *p_modules;
+static Vec *p_module_imports; /* the N_IMPORT of each, in the same order: N_E counts the uses (W0203) */
+
+/* Whether the token `ahead` positions on is an identifier (or `bytes`, the module std.bytes) that names
+ * a module of this file and is followed by `.` and a name. */
+static int p_at_module_at(long ahead)
+{
+    int k = p_kind_at(ahead);
+    if ((k != T_IDENT && k != T_KBYTES) || p_kind_at(ahead + 1) != T_DOT) return 0;
+    int k2 = p_kind_at(ahead + 2);
+    if (k2 != T_IDENT && k2 != T_TYPE_IDENT) return 0;
+    if (k2 == T_TYPE_IDENT && k == T_IDENT) return 1; /* `m.Type` is never a field (fields are lowercase): a
+                                                         module, imported or not (E0204 from the checker) */
+    Token *t = &p_toks[p_pos];
+    for (long i = 0; i < ahead && t->kind; i++) t++;
+    for (long i = 0; p_modules && i < p_modules->n; i++)
+        if (str_eq_bytes(vec_get(p_modules, i), p_text + t->start, (long)t->end - (long)t->start)) return 1;
+    return 0;
+}
+
+static int p_at_module(void)
+{
+    return p_at_module_at(0);
+}
+
 static int p_kind(void)
 {
     return p_toks[p_pos].kind;
@@ -349,6 +376,28 @@ static Node *p_name(void)
     return n;
 }
 
+/* Spec 058: `m.n` (at p_at_module) as one N_NAME whose text is `m.n` and whose span covers both. */
+static Node *p_qual_name(void)
+{
+    long start = p_start();
+    Node *n = p_node(N_NAME);
+    Token *m = p_next();
+    p_next(); /* `.` */
+    Token *item = p_next();
+    n->a.s = str_new(p_text + m->start, (long)item->end - (long)m->start);
+    for (long i = 0; i < p_modules->n; i++)
+        if (str_eq_bytes(vec_get(p_modules, i), p_text + m->start, (long)m->end - (long)m->start))
+            ((Node *)vec_get(p_module_imports, i))->e.i++;
+    return p_finish(n, start);
+}
+
+/* A type or record name: `Name`, or `m.Name` for a module of this file. */
+static Node *p_type_name(void)
+{
+    if (p_at_module() && p_kind_at(2) == T_TYPE_IDENT) return p_qual_name();
+    return p_name();
+}
+
 /* Spec 042: decodes the string literal at src[s..e) into out (room for e - s bytes): a quoted string
  * with its escapes (\n \t \r \\ \" and \u{HEX}), or a raw string between backticks, whose text is
  * taken as written except that a carriage return directly before a line feed is dropped (a file saved
@@ -434,15 +483,15 @@ static Node *parse_type(void)
     case T_KFLOAT: simple = TY_FLOAT; break;
     case T_KBOOL: simple = TY_BOOL; break;
     case T_KSTR: simple = TY_STR; break;
-    case T_KBYTES: simple = TY_BYTES; break; /* spec 021 */
+    case T_KBYTES: simple = p_at_module() ? 0 : TY_BYTES; break; /* spec 021; spec 058: `bytes.T` */
     default: break;
     }
     if (simple) {
         n->a.i = simple;
         p_next();
-    } else if (k == T_TYPE_IDENT) {
+    } else if (k == T_TYPE_IDENT || (p_at_module() && p_kind_at(2) == T_TYPE_IDENT)) {
         n->a.i = TY_NAMED;
-        n->b.n = p_name();
+        n->b.n = p_type_name();
         n->c.v = parse_type_args();
     } else if (k == T_KLIST) {
         n->a.i = TY_LIST;
@@ -534,7 +583,7 @@ static Vec *parse_args(void)
 /* new Name[args] { field: expr, ... } after `new` (or after the missing-`new` error), with n made. */
 static void parse_record_literal(Node *n)
 {
-    n->a.n = p_name();
+    n->a.n = p_type_name();
     n->d.v = parse_type_args();
     n->b.v = vec_new();
     p_expect(T_LBRACE);
@@ -556,6 +605,42 @@ static Node *parse_primary(void)
     long start = p_start();
     int k = p_kind();
     Node *n;
+    if (p_at_module()) { /* spec 058: m.name, m.name(...), m.Type.case, m.Type { ... } */
+        if (p_kind_at(2) == T_TYPE_IDENT) {
+            if (p_kind_at(3) == T_LBRACE) {
+                p_missing_new(); /* `m.Point { ... }`: records are built with `new` */
+                n = p_node(N_NEW_RECORD);
+                parse_record_literal(n);
+                goto done;
+            }
+            if (p_kind_at(3) == T_DOT) {
+                n = p_node(N_VCASE);
+                n->a.n = p_qual_name();
+                p_expect(T_DOT);
+                n->b.n = p_name();
+                if (!p_failed() && p_accept(T_LPAREN)) {
+                    if (p_kind() == T_RPAREN) {
+                        n->flags |= NF_EMPTY_ARM;
+                        p_next();
+                        goto done;
+                    }
+                    n->c.n = parse_expr();
+                    p_expect(T_RPAREN);
+                }
+                goto done;
+            }
+        }
+        Node *name = p_qual_name();
+        if (p_kind() == T_LPAREN) {
+            n = node_new(N_CALL, name->start, name->end);
+            n->a.n = name;
+            n->b.v = parse_args();
+        } else {
+            n = node_new(N_IDENT, name->start, name->end);
+            n->a.s = name->a.s;
+        }
+        goto done;
+    }
     switch (k) {
     case T_INT: { /* int literal (range errors were reported by the lexer) */
         n = p_node(N_INT);
@@ -671,7 +756,7 @@ static Node *parse_primary(void)
             n->a.n = parse_type();
         } else {
             n = p_node(N_NEW_RECORD);
-            if (p_kind() == T_TYPE_IDENT)
+            if (p_kind() == T_TYPE_IDENT || (p_at_module() && p_kind_at(2) == T_TYPE_IDENT))
                 parse_record_literal(n);
             else
                 p_expect(T_TYPE_IDENT);
@@ -1035,6 +1120,7 @@ static Node *parse_stmt(void)
     case T_KINT:
     case T_KFLOAT:
     case T_TYPE_IDENT: { /* call statement */
+    call_stmt:
         if (p_compound_stmt()) { /* `x += 1;` */
             n = 0;
             goto finish;
@@ -1065,6 +1151,7 @@ static Node *parse_stmt(void)
         parse_fn_kind(N_FN);
         return n;
     default:
+        if (k == T_KBYTES && p_at_module()) goto call_stmt; /* spec 058: `bytes.write_stdout(e);` */
         p_fail_c("a statement", "statement");
         return p_node(N_ERROR);
     }
@@ -1208,7 +1295,8 @@ static Vec *parse_type_args(void)
     do {
         if (p_failed()) return v;
         int written = p_kind() == T_USES;
-        if (written || p_kind() == T_IDENT) { /* effects; T_IDENT: an effect name, `uses` missing */
+        int qual_type = p_at_module() && p_kind_at(2) == T_TYPE_IDENT; /* spec 058: `jobs.Job` is a type */
+        if (written || (p_kind() == T_IDENT && !qual_type)) { /* effects; T_IDENT: an effect name, `uses` missing */
             long start = p_start();
             Node *u = p_node(N_USES);
             u->a.v = vec_new();
@@ -1241,8 +1329,9 @@ static Node *parse_effect(void)
     long start = p_start();
     Node *n = p_node(N_EFFECT);
     int k = p_kind();
-    if (k == T_TYPE_IDENT) { /* effect parameter */
-        n->c.n = p_name();
+    if (k == T_TYPE_IDENT || (p_at_module() && p_kind_at(2) == T_TYPE_IDENT)) { /* effect parameter or set
+                                                                               (spec 058: `m.Set`) */
+        n->c.n = p_type_name();
         n->d.s = n->c.n->a.s;
         return p_finish(n, start);
     }
@@ -1465,6 +1554,12 @@ static Node *parse_item(void)
             vec_push(n->a.v, name->a.s);
             if (!p_accept(T_DOT)) break;
         }
+        /* spec 058: a lowercase last segment may be a module name (an item of the 0.3 form too: harmless,
+         * since nothing is written `item.name`) */
+        if (n->b.n && n->b.n->a.s && n->b.n->a.s->len && n->b.n->a.s->data[0] >= 'a' && n->b.n->a.s->data[0] <= 'z') {
+            vec_push(p_modules, n->b.n->a.s);
+            vec_push(p_module_imports, n);
+        }
         p_end_stmt();
         break;
     case T_IDENT:
@@ -1533,6 +1628,8 @@ Node *parse_file(int file)
     f->ast = n;
     n->a.v = vec_new();
     p_methods = vec_new();
+    p_modules = vec_new();
+    p_module_imports = vec_new();
     while (p_kind()) {
         vec_push(n->a.v, parse_item());
         if (p_failed()) p_sync_item();

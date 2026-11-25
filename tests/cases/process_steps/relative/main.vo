@@ -1,9 +1,7 @@
 # Spec 017 (US3): process("./bin/args") and process("bin/args") both allow run("bin/args") and run("./bin/args").
-import std.process.Output;
-import std.process.run;
-import std.process.run_with;
+import std.process;
 
-fn show(what: str, r: result[Output]) uses console {
+fn show(what: str, r: result[process.Output]) uses console {
     match r {
         case ok(out) {
             print(what + ": code " + str(out.code));
@@ -19,6 +17,6 @@ fn show(what: str, r: result[Output]) uses console {
 }
 
 fn main() uses console, process("bin/args") {
-    show("bin/args", run("bin/args", ["1"]));
-    show("./bin/args", run("./bin/args", ["2"]));
+    show("bin/args", process.run("bin/args", ["1"]));
+    show("./bin/args", process.run("./bin/args", ["2"]));
 }

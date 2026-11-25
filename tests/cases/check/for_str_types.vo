@@ -1,4 +1,4 @@
-import std.bytes.from_text;
+import std.bytes;
 
 fn main() uses console {
     for c in "ab" {
@@ -7,7 +7,7 @@ fn main() uses console {
     for x in 5 {
         print("no");
     }
-    for b in from_text("ab") {
+    for b in bytes.from_text("ab") {
         print("no");
     }
 }

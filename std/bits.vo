@@ -1,5 +1,5 @@
 # std.bits: The bits of an int: and, or, xor, shifts, rotations, arithmetic that wraps, hex and binary text.
-# Part of the vo standard library (spec 043). Import items one by one: `import std.bits.NAME;`.
+# Part of the vo standard library (spec 043). Import the module, `import std.bits;`, and write its items as `bits.NAME`.
 # Every function works on the 64-bit two's complement form of an int (-1 is 64 one bits) and is pure.
 # A shift or rotation count outside 0 to 63 stops the program with R0007 at the call; nothing else
 # fails. For 32-bit algorithms, keep values in 0 to 4294967295 with `bit_and(x, 0xFFFFFFFF)`.

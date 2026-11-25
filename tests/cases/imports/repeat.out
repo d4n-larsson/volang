@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0202","name":"duplicate_definition","severity":"error","file":"repeat.vo","start":{"line":3,"col":12},"end":{"line":3,"col":16},"text":"json","message":"`json` is already imported.","fixes":[{"file":"repeat.vo","start":{"line":3,"col":1},"end":{"line":4,"col":1},"replacement":""}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

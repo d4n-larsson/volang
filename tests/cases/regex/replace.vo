@@ -1,13 +1,12 @@
-import std.regex.regex;
-import std.regex.replace_matches;
+import std.regex;
 
 fn main() uses console {
-    print(replace_matches("a  b\t\tc", regex("\\s+"), " "));
-    print(replace_matches("19/11/2026 and 01/02/2003", regex("(\\d{2})/(\\d{2})/(\\d{4})"), "$3-$2-$1"));
-    print(replace_matches("5 and 7", regex("(\\d+)"), "$$$1"));
-    print(replace_matches("1 2", regex("(\\d)"), "${1}0"));
-    print(replace_matches("hi vo", regex("(?<word>[a-z]+)"), "<${word}>"));
-    print(replace_matches("1234567812345678", regex("^\\d{12}(\\d{4})$"), "************$1"));
-    print(replace_matches("ab", regex("(a)|b"), "[$1]"));
-    print(replace_matches("abc", regex("z"), "-"));
+    print(regex.replace_matches("a  b\t\tc", regex.regex("\\s+"), " "));
+    print(regex.replace_matches("19/11/2026 and 01/02/2003", regex.regex("(\\d{2})/(\\d{2})/(\\d{4})"), "$3-$2-$1"));
+    print(regex.replace_matches("5 and 7", regex.regex("(\\d+)"), "$$$1"));
+    print(regex.replace_matches("1 2", regex.regex("(\\d)"), "${1}0"));
+    print(regex.replace_matches("hi vo", regex.regex("(?<word>[a-z]+)"), "<${word}>"));
+    print(regex.replace_matches("1234567812345678", regex.regex("^\\d{12}(\\d{4})$"), "************$1"));
+    print(regex.replace_matches("ab", regex.regex("(a)|b"), "[$1]"));
+    print(regex.replace_matches("abc", regex.regex("z"), "-"));
 }

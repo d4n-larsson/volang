@@ -1,0 +1,2 @@
+hover/main.vo:10:13 math: module std.math (declared at std/math.vo:1:1)
+    Square roots, powers, logarithms, trigonometry and rounding to int, correctly rounded.

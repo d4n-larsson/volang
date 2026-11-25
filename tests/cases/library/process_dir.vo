@@ -1,15 +1,12 @@
 # Spec 057 (FR-008): the three run forms that gained a working directory, called in their 0.2 form:
 # one E0214 each, with a fix inserting "./" (the start directory) after the variables.
-import std.bytes.from_text;
-import std.process.Output;
-import std.process.run_lines;
-import std.process.run_with;
-import std.process.run_with_bytes;
+import std.bytes;
+import std.process;
 
 fn main() -> result[void] uses console, process("true") {
-    let a = try run_with("true", [], "", []);
-    let b = try run_with_bytes("true", [], from_text(""), []);
-    let c = try run_lines("true", [], "", [], fn(line: str) -> result[bool] {
+    let a = try process.run_with("true", [], "", []);
+    let b = try process.run_with_bytes("true", [], bytes.from_text(""), []);
+    let c = try process.run_lines("true", [], "", [], fn(line: str) -> result[bool] {
         print(line);
         return ok(true);
     });

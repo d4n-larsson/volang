@@ -1,6 +1,6 @@
 bits_bad_shift_logical.vo:4:12: runtime error[R0007]: A shift count must be 0 to 63, found 64.
-   4 |     return shift_right_logical(value, count);
-     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   4 |     return bits.shift_right_logical(value, count);
+     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at shift_right_logical (bits_bad_shift_logical.vo:4:12)
       a: int = 1, n: int = 64

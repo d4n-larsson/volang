@@ -1,17 +1,12 @@
 # A list of file databases: querying an element from a function without uses is E0501.
-import std.sqlite.open;
-import std.sqlite.sql;
-import std.sqlite.query;
-import std.sqlite.Database;
-import std.sqlite.Row;
-import std.sqlite.Value;
+import std.sqlite;
 
-fn first_names(dbs: list[Database[uses file.read, file.write]]) -> result[list[Row]] {
-    return query(dbs[0], sql("select name from people"), new list[Value]);
+fn first_names(dbs: list[sqlite.Database[uses file.read, file.write]]) -> result[list[sqlite.Row]] {
+    return sqlite.query(dbs[0], sqlite.sql("select name from people"), new list[sqlite.Value]);
 }
 
 fn main() -> result[void] uses console, file.read, file.write {
-    let dbs = [try open("people.db")];
+    let dbs = [try sqlite.open("people.db")];
     print(str(len(try first_names(dbs))));
     return ok();
 }

@@ -1,7 +1,7 @@
 # Spec 020: out of domain is R0007 at the call in this file (research R5).
-import std.math.sin;
+import std.math;
 
 fn main() uses console {
     let before = 1.0;
-    print(str(sin(1.0 / 0.0) + before));
+    print(str(math.sin(1.0 / 0.0) + before));
 }

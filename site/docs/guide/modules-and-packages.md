@@ -1,13 +1,13 @@
 # Modules and packages
 
-A vo program can span several files: each file is a module that marks what it shares with `export`, other files bring items in one at a time with `import`, and outside code comes in as packages pinned by a content hash.
+A vo program can span several files: each file is a module that marks what it shares with `export`, other files import the module and write its items with its name (`geometry.dist2`), and outside code comes in as packages pinned by a content hash.
 
 ## Why files and imports work this way
 
 There is no separate module declaration in vo, no package registry and no build file. A file is a module,
-its path is its name, and an import names exactly one item. Reading the top of a file tells you every
-name it uses from elsewhere and where each one lives, and the toolchain can always find the declaration
-of a name without searching.
+its path is its name, and an import names one module. Reading the top of a file tells you every module
+it uses, and every use says which module it comes from (`sqlite.exec`, `web.request`), so a reader and the
+toolchain find the declaration of a name without searching.
 
 Packages, code you did not write, are pinned by a hash of their files. A package cannot change under
 you: if one byte of it changes, the program stops checking until someone reviews the change and pins it
@@ -19,8 +19,8 @@ The rules are in [Programs in several files](../reference/programs-in-several-fi
 
 ## Importing from another file
 
-`import path.name;` makes the item `name` of the file `path.vo` visible. Only items declared with
-`export` can be imported:
+`import path;` makes the items of the file `path.vo` visible as `path.NAME` (the last part of the path
+before the name: `import shop.cart;` gives `cart.total`). Only items declared with `export` can be used:
 
 ```vo
 # file: geometry.vo
@@ -40,13 +40,12 @@ fn square(n: int) -> int {
 
 ```vo
 # file: main.vo
-import geometry.Point;
-import geometry.dist2;
+import geometry;
 
 fn main() uses console {
-    let home = new Point { x: 0, y: 0 };
-    let shop = new Point { x: 3, y: 4 };
-    print(str(dist2(home, shop)));
+    let home = new geometry.Point { x: 0, y: 0 };
+    let shop = new geometry.Point { x: 3, y: 4 };
+    print(str(geometry.dist2(home, shop)));
 }
 ```
 
@@ -57,15 +56,19 @@ fn main() uses console {
 The rules:
 
 - Imports come first in a file, before every item.
-- One `import` per name. There is no `import geometry.*` and no renaming, so two imports of the same name,
-  or an import and a declaration with the same name, are [E0202](../errors/E0202.md).
+- One `import` per module. There is no renaming, so two imports that end in the same name, or a module
+  and a declaration with the same name, are [E0202](../errors/E0202.md); no local may have a module's name
+  ([E0203](../errors/E0203.md), whose fix renames it `NAME_value`).
 - `export` goes before `fn`, `record` or `variant`. Everything else is private to its file: `square` above
   can be used only inside `geometry.vo`.
-- Importing a private item is [E0209](../errors/E0209.md); its fix adds `export` to the declaration.
-- Using a name that another file declares, without importing it, is [E0204](../errors/E0204.md); its fix
-  adds the `import` line.
-- An import of a file that does not exist, or of a name it does not declare, is
-  [E0205](../errors/E0205.md).
+- Using a private item (`geometry.square`) is [E0209](../errors/E0209.md); its fix adds `export` to the
+  declaration.
+- Using a module without importing it is [E0204](../errors/E0204.md); its fix adds the `import` line. An item
+  of an imported module written without the module's name is [E0201](../errors/E0201.md), whose fix adds it.
+- An import of a file that does not exist is [E0205](../errors/E0205.md); a name the module does not declare
+  is [E0201](../errors/E0201.md). A module imported and not used is [W0203](../errors/W0203.md).
+- The 0.3 form, `import geometry.dist2;`, is [E0215](../errors/E0215.md): its fix rewrites the imports and
+  every use in one edit.
 
 Run and test the program through the file that contains `main`: `vo run main.vo`. Only the files it
 imports, directly or through other files, are part of the program.
@@ -89,7 +92,7 @@ export fn with_tax(cents: int, r: Rate) -> int {
 
 ```vo
 # file: main.vo
-import prices.with_tax;
+import prices;
 
 fn main() uses console {
     print("no rate to pass");
@@ -126,15 +129,14 @@ export fn subtotal(items: list[Item]) -> int {
 
 ```vo
 # file: main.vo
-import shop.cart.Item;
-import shop.cart.subtotal;
+import shop.cart;
 
 fn main() uses console {
     let items = [
-        new Item { name: "tea", cents: 450, quantity: 2 },
-        new Item { name: "scone", cents: 305, quantity: 1 }
+        new cart.Item { name: "tea", cents: 450, quantity: 2 },
+        new cart.Item { name: "scone", cents: 305, quantity: 1 }
     ];
-    print("subtotal " + str(subtotal(items)) + " cents");
+    print("subtotal " + str(cart.subtotal(items)) + " cents");
 }
 ```
 
@@ -152,34 +154,34 @@ Imports must point one way. Files that import each other, directly or through ot
 
 ```vo
 # file: orders.vo
-import customers.Customer;
+import customers;
 
 export record Order {
-    customer: Customer;
+    customer: customers.Customer;
     cents: int;
 }
 ```
 
 ```vo
 # file: customers.vo
-import orders.Order;
+import orders;
 
 export record Customer {
     name: str;
 }
 
-export fn last_order(orders: list[Order]) -> int {
-    return orders[len(orders) - 1].cents;
+export fn last_order(orders_value: list[orders.Order]) -> int {
+    return orders_value[len(orders_value) - 1].cents;
 }
 ```
 
 ```vo
 # file: main.vo
-import orders.Order;
-import customers.Customer;
+import customers;
+import orders;
 
 fn main() uses console {
-    let o = new Order { customer: new Customer { name: "ana" }, cents: 900 };
+    let o = new orders.Order { customer: new customers.Customer { name: "ana" }, cents: 900 };
     print(o.customer.name);
 }
 ```
@@ -200,7 +202,7 @@ gained which effect. See [Effects](effects.md).
 ## The standard library
 
 The standard library is imported the same way, with `std` as the first part of the path:
-`import std.text.pad_left;`. It is built into `vo`, needs no installation, and its effects work like
+`import std.text;`, then `text.pad_left(...)`. It is built into `vo`, needs no installation, and its effects work like
 those of builtins: the caller declares them. See [The standard library](standard-library.md).
 
 ## Packages
@@ -237,10 +239,10 @@ fn two_digits(n: int) -> str {
 
 ```vo
 # file: main.vo
-import money.format.money;
+import money.format;
 
 fn main() uses console {
-    print("total " + money(1205));
+    print("total " + format.money(1205));
 }
 ```
 

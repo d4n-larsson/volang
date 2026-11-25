@@ -1,5 +1,5 @@
 # std.math: Square roots, powers, logarithms, trigonometry and rounding to int, correctly rounded.
-# Part of the vo standard library (spec 020). Import items one by one: `import std.math.NAME;`.
+# Part of the vo standard library (spec 020). Import the module, `import std.math;`, and write its items as `math.NAME`.
 # Every float result is correctly rounded (the nearest double, ties to even), so it is the same on
 # every platform. An argument outside a function's domain stops the program with R0007 at the call;
 # a NaN argument gives NaN. Overflow gives inf and underflow 0.0, as float arithmetic does.

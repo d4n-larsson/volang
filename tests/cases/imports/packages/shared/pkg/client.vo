@@ -1,0 +1,6 @@
+# The package's entry file: its own module imported with the package name first.
+import pkg.link;
+
+export fn send(text: str) -> str uses console {
+    return link.deliver(text);
+}

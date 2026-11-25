@@ -1,5 +1,5 @@
-import std.time.offset_zone;
+import std.time;
 
 fn main() uses console {
-    print(offset_zone(86400000).name);
+    print(time.offset_zone(86400000).name);
 }

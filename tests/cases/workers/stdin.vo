@@ -1,16 +1,7 @@
 # Spec 047: a worker that reads standard input fails with R0007; the program still can.
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.Worker;
-import std.workers.WorkerError;
-import std.workers.emit;
-import std.workers.next_message;
-import std.workers.receive;
-import std.workers.start_worker;
-import std.workers.stop_worker;
-import std.workers.tell;
+import std.workers;
 
-fn why(e: WorkerError) -> str {
+fn why(e: workers.WorkerError) -> str {
     match e {
         case timed_out {
             return "timeout";
@@ -33,7 +24,7 @@ fn why(e: WorkerError) -> str {
     }
 }
 
-fn show(r: result[int, WorkerError]) -> str {
+fn show(r: result[int, workers.WorkerError]) -> str {
     match r {
         case ok(n) {
             return "ok " + str(n);
@@ -44,7 +35,7 @@ fn show(r: result[int, WorkerError]) -> str {
     }
 }
 
-fn sent(r: result[void, WorkerError]) -> str {
+fn sent(r: result[void, workers.WorkerError]) -> str {
     match r {
         case ok() {
             return "sent";
@@ -55,8 +46,8 @@ fn sent(r: result[void, WorkerError]) -> str {
     }
 }
 
-fn give(link: Link[int, int], n: int) {
-    match emit(link, n) {
+fn give(link: workers.Link[int, int], n: int) {
+    match workers.emit(link, n) {
         case ok() {
         }
         case err(_) {
@@ -64,7 +55,7 @@ fn give(link: Link[int, int], n: int) {
     }
 }
 
-fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+fn worker_of(r: result[workers.Worker[int, int], workers.WorkerError]) -> workers.Worker[int, int] {
     match r {
         case ok(w) {
             return w;
@@ -75,7 +66,7 @@ fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
     }
 }
 
-fn asker(link: Link[int, int]) uses input {
+fn asker(link: workers.Link[int, int]) uses input {
     match read_line() {
         case ok(line) {
             give(link, len(line));
@@ -87,7 +78,7 @@ fn asker(link: Link[int, int]) uses input {
 }
 
 fn main() uses console, input {
-    let w = worker_of(start_worker(asker));
-    print(show(receive(w, Wait.forever)));
+    let w = worker_of(workers.start_worker(asker));
+    print(show(workers.receive(w, workers.Wait.forever)));
     print(str(read_line() == ok("for the program")));
 }

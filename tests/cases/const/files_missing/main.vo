@@ -1,5 +1,6 @@
-import config.max_size;
+import config;
 
 fn main() uses console {
+    print(str(config.max_size));
     print(str(max_items));
 }

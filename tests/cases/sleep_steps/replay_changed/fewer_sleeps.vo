@@ -1,8 +1,8 @@
 # The same clock readings, different sleeps: replays without R0014.
-import std.time.sleep;
+import std.time;
 
 fn main() uses console, clock {
     let a = now_ms();
-    sleep(10);
+    time.sleep(10);
     print("slept at least 2 s: " + str(now_ms() - a >= 2000));
 }

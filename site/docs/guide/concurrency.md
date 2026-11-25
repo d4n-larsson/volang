@@ -13,11 +13,11 @@ most `limit` tasks at a time (1 to 64; anything else is [R0007](../errors/R0007.
 results in the order of `xs`, whatever order the tasks finish in:
 
 ```vo
-import std.http.get;
+import std.http;
 
 # The HTTP status of each URL, checked at the same time.
 fn status(url: str) -> str uses net("localhost") {
-    match get(url) {
+    match http.get(url) {
         case ok(r) {
             return url + " " + str(r.status);
         }

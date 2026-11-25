@@ -1,8 +1,7 @@
-import store.Files;
-import store.save;
+import store;
 
-effects App = console, Files;
+effects App = console, store.Files;
 
 fn main() uses App {
-    print(str(save("x") == ok()));
+    print(str(store.save("x") == ok()));
 }

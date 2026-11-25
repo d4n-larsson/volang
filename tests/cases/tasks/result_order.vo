@@ -1,7 +1,7 @@
-import std.collections.ordered_map_by;
+import std.collections;
 
 fn backwards(n: int) -> ordered_map[int, str] {
-    let m: ordered_map[int, str] = ordered_map_by(fn(a: int, b: int) -> int { return b - a; });
+    let m: ordered_map[int, str] = collections.ordered_map_by(fn(a: int, b: int) -> int { return b - a; });
     set m[n] = "n";
     set m[n + 1] = "n + 1";
     return m;

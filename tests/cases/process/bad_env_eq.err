@@ -4,5 +4,5 @@ std/process.vo:51:23: runtime error[R0007]: An environment entry must be NAME=va
 trace:
   at run_with (std/process.vo:51:23)
       program: str = "true", arguments: list[str] = [], input: str = "", vars: list[str] = ["HOME"], dir: str = "./"
-  at main (bad_env_eq.vo:16:27)
+  at main (bad_env_eq.vo:15:27)
       a: str = "noeq"

@@ -1,1 +1,1 @@
-shop/main.vo:20:11 p: Pair[str, int] (declared at shop/main.vo:19:9)
+shop/main.vo:13:11 p: model.Pair[str, int] (declared at shop/main.vo:12:9)

@@ -1,4 +1,4 @@
-import parsing.Line;
+import parsing;
 
 export record GradeBook {
     names: list[str];
@@ -22,7 +22,7 @@ fn key(s: str, a: str) -> str {
     return s + " " + a;
 }
 
-export fn apply(g: GradeBook, l: Line) -> bool {
+export fn apply(g: GradeBook, l: parsing.Line) -> bool {
     if l.kind == "assignment" {
         if has(g.weight, l.a) {
             return false;

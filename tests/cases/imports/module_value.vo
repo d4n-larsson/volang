@@ -1,0 +1,7 @@
+# A module name used on its own, as a value: E0201, no fix.
+import std.json;
+
+fn main() uses console {
+    let j = json;
+    print(str(j));
+}

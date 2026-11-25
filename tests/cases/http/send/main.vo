@@ -1,9 +1,7 @@
 # send: any method, the caller's headers, a body, and a timeout of the request's own.
-import std.http.Header;
-import std.http.Response;
-import std.http.send;
+import std.http;
 
-fn show(what: str, r: result[Response]) uses console {
+fn show(what: str, r: result[http.Response]) uses console {
     match r {
         case ok(resp) {
             print(what + ": status " + str(resp.status));
@@ -17,47 +15,47 @@ fn show(what: str, r: result[Response]) uses console {
 
 fn main() uses console, net("localhost") {
     let base = "http://localhost:" + args()[0];
-    let none = new list[Header];
+    let none = new list[http.Header];
     let auth = [
-        new Header { name: "Authorization", value: "Bearer s3cret" },
-        new Header { name: "Accept", value: "application/json" },
-        new Header { name: "User-Agent", value: "ledger/1.0" }
+        new http.Header { name: "Authorization", value: "Bearer s3cret" },
+        new http.Header { name: "Accept", value: "application/json" },
+        new http.Header { name: "User-Agent", value: "ledger/1.0" }
     ];
-    show("get", send("GET", base + "/inspect", auth, "", 0));
-    show("put", send(
+    show("get", http.send("GET", base + "/inspect", auth, "", 0));
+    show("put", http.send(
         "PUT",
         base + "/inspect",
-        [new Header { name: "Content-Type", value: "application/json" }],
+        [new http.Header { name: "Content-Type", value: "application/json" }],
         "{\"n\": 1}",
         0
     ));
-    show("delete", send("DELETE", base + "/inspect", none, "", 5000));
-    show("patch, no body", send("PATCH", base + "/inspect", none, "", 0));
-    show("timeout", send("GET", base + "/slow", none, "", 300));
-    show("after a timeout", send("GET", base + "/plain", none, "", 0));
-    show("line break in a value", send(
+    show("delete", http.send("DELETE", base + "/inspect", none, "", 5000));
+    show("patch, no body", http.send("PATCH", base + "/inspect", none, "", 0));
+    show("timeout", http.send("GET", base + "/slow", none, "", 300));
+    show("after a timeout", http.send("GET", base + "/plain", none, "", 0));
+    show("line break in a value", http.send(
         "GET",
         base + "/inspect",
-        [new Header { name: "X-A", value: "1\nX-B: 2" }],
+        [new http.Header { name: "X-A", value: "1\nX-B: 2" }],
         "",
         0
     ));
-    show("bad name", send(
+    show("bad name", http.send(
         "GET",
         base + "/inspect",
-        [new Header { name: "X A", value: "1" }],
+        [new http.Header { name: "X A", value: "1" }],
         "",
         0
     ));
-    show("reserved", send(
+    show("reserved", http.send(
         "POST",
         base + "/inspect",
-        [new Header { name: "content-length", value: "0" }],
+        [new http.Header { name: "content-length", value: "0" }],
         "abc",
         0
     ));
-    show("method", send("get", base + "/inspect", none, "", 0));
-    show("head", send("HEAD", base + "/inspect", none, "", 0));
-    show("url", send("GET", base + "/inspect HTTP/1.1\nX-B: 2", none, "", 0));
-    show("negative", send("GET", base + "/inspect", none, "", -1));
+    show("method", http.send("get", base + "/inspect", none, "", 0));
+    show("head", http.send("HEAD", base + "/inspect", none, "", 0));
+    show("url", http.send("GET", base + "/inspect HTTP/1.1\nX-B: 2", none, "", 0));
+    show("negative", http.send("GET", base + "/inspect", none, "", -1));
 }

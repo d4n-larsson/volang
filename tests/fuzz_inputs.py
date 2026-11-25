@@ -45,11 +45,11 @@ HTTP_REPLIES = [
     b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5;x=1\r\nhello\r\n7\r\n, chunk\r\n0\r\n\r\n",
     b"HTTP/1.1 302 Found\r\nLocation: /plain\r\nX-A: 1\r\nx-a: 2\r\n\r\nuntil close\n",
 ]
-HTTP_CLIENT = ('import std.http.get;\n\nfn main() uses console, net("127.0.0.1") {\n'
-               '    match get("http://127.0.0.1:" + args()[0] + "/") {\n        case ok(r) {\n'
+HTTP_CLIENT = ('import std.http;\n\nfn main() uses console, net("127.0.0.1") {\n'
+               '    match http.get("http://127.0.0.1:" + args()[0] + "/") {\n        case ok(r) {\n'
                '            print(str(r.status) + " " + str(len(r.headers)) + " " + r.body);\n        }\n'
                '        case err(e) {\n            print(e);\n        }\n    }\n}\n')
-MANIFEST_MAIN = 'import money.format.cents;\n\nfn main() uses console {\n    print(cents(5));\n}\n'
+MANIFEST_MAIN = 'import money.format;\n\nfn main() uses console {\n    print(format.cents(5));\n}\n'
 MANIFEST_PKG = '# money.format: Formats money.\n\n# Cents as text.\n#     cents(5) is "5"\nexport fn cents(n: int) -> str {\n    return str(n);\n}\n'
 
 

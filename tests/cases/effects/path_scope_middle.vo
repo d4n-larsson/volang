@@ -1,23 +1,19 @@
-import std.tcp.Conn;
-import std.tcp.TcpError;
-import std.tcp.close_conn;
-import std.tcp.connect;
-import std.tcp.tcp_error_text;
+import std.tcp;
 
 # Spec 050: a function that is given its target declares the effect without scopes; its callers'
 # scopes apply.
-fn dial(host: str, port: int) -> result[Conn[uses net], TcpError] uses net {
-    return connect(host, port, 1000);
+fn dial(host: str, port: int) -> result[tcp.Conn[uses net], tcp.TcpError] uses net {
+    return tcp.connect(host, port, 1000);
 }
 
 fn try_port(port: int) -> str uses net {
     match dial("127.0.0.1", port) {
         case ok(c) {
-            close_conn(c);
+            tcp.close_conn(c);
             return "open";
         }
         case err(e) {
-            return tcp_error_text(e);
+            return tcp.tcp_error_text(e);
         }
     }
 }

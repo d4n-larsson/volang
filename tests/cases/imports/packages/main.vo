@@ -1,0 +1,6 @@
+# A package module imported as `import pkg.client;` and used as `client.send`.
+import pkg.client;
+
+fn main() uses console {
+    print(client.send("x"));
+}

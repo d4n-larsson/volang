@@ -1,4 +1,4 @@
-import staff.Employee;
+import staff;
 
 export record Pay {
     regular_hours: int;
@@ -42,7 +42,7 @@ fn income_tax(gross: int) -> int {
     return total_bp / 10000;
 }
 
-export fn compute_pay(emp: Employee) -> Pay {
+export fn compute_pay(emp: staff.Employee) -> Pay {
     let p = new Pay { regular_hours: 0, overtime_hours: 0, regular: 0, overtime: 0, gross: 0, tax: 0, deductions: 0, net: 0 };
     if emp.kind == "hourly" {
         set p.regular_hours = min(emp.hours, overtime_after());

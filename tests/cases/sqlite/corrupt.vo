@@ -1,18 +1,10 @@
 # Damaged database files are err("corrupt: ..."), never a crash: a file that is not a database, and
 # a database cut in half.
-import std.sqlite.open;
-import std.sqlite.sql;
-import std.sqlite.exec;
-import std.sqlite.query;
-import std.sqlite.close;
-import std.sqlite.Database;
-import std.sqlite.Row;
-import std.sqlite.Value;
-import std.fs.read_bytes;
-import std.fs.write_bytes;
-import std.bytes.from_ints;
+import std.bytes;
+import std.fs;
+import std.sqlite;
 
-fn show(r: result[list[Row]]) -> str {
+fn show(r: result[list[sqlite.Row]]) -> str {
     match r {
         case ok(rows) {
             return "ok " + str(len(rows));
@@ -30,31 +22,31 @@ fn noise() -> bytes {
         set x = (x * 1103515245 + 12345) % 2147483648;
         push(xs, x % 256);
     }
-    return from_ints(xs);
+    return bytes.from_ints(xs);
 }
 
 fn main() -> result[void] uses console, file.read, file.write {
-    try write_bytes("noise.db", noise());
-    match open("noise.db") {
+    try fs.write_bytes("noise.db", noise());
+    match sqlite.open("noise.db") {
         case ok(db) {
-            print("noise: " + show(query(db, sql("select * from sqlite_schema"), new list[Value])));
+            print("noise: " + show(sqlite.query(db, sqlite.sql("select * from sqlite_schema"), new list[sqlite.Value])));
         }
         case err(e) {
             print("noise: open err " + e);
         }
     }
 
-    let db = try open("whole.db");
-    let _ = try exec(db, sql("create table t(x text)"), new list[Value]);
+    let db = try sqlite.open("whole.db");
+    let _ = try sqlite.exec(db, sqlite.sql("create table t(x text)"), new list[sqlite.Value]);
     for i in 0..400 {
-        let _ = try exec(db, sql("insert into t values (?)"), [Value.text("row number " + str(i) + " with some padding text")]);
+        let _ = try sqlite.exec(db, sqlite.sql("insert into t values (?)"), [sqlite.Value.text("row number " + str(i) + " with some padding text")]);
     }
-    close(db);
-    let whole = try read_bytes("whole.db");
-    try write_bytes("half.db", slice(whole, 0, len(whole) / 2));
-    match open("half.db") {
+    sqlite.close(db);
+    let whole = try fs.read_bytes("whole.db");
+    try fs.write_bytes("half.db", slice(whole, 0, len(whole) / 2));
+    match sqlite.open("half.db") {
         case ok(half) {
-            print("half: " + show(query(half, sql("select count(*) as n, max(x) as m from t"), new list[Value])));
+            print("half: " + show(sqlite.query(half, sqlite.sql("select count(*) as n, max(x) as m from t"), new list[sqlite.Value])));
         }
         case err(e) {
             print("half: open err " + e);

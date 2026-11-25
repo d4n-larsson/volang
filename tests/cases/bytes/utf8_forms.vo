@@ -1,9 +1,8 @@
 # Spec 021: to_text accepts exactly well-formed UTF-8 (Unicode Table 3-7) and names the first bad byte.
-import std.bytes.from_ints;
-import std.bytes.to_text;
+import std.bytes;
 
 fn show(xs: list[int]) uses console {
-    match to_text(from_ints(xs)) {
+    match bytes.to_text(bytes.from_ints(xs)) {
         case ok(s) {
             print("ok " + str(len(s)));
         }

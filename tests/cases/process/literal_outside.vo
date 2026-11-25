@@ -1,14 +1,12 @@
 # Spec 017: a literal program outside the process scopes is E0503 at check time (spec 057: in every run
 # form).
-import std.process.run;
-import std.process.run_bytes;
-import std.process.run_with;
+import std.process;
 
 fn main() -> result[void] uses console, file.read("./"), process("git") {
-    let a = try run("rm", ["-rf", "x"]);
-    let b = try run_with("./git", new list[str], "", new list[str], "./");
-    let c = try run("git", ["status"]);
-    let d = try run_bytes("curl", ["x"]);
+    let a = try process.run("rm", ["-rf", "x"]);
+    let b = try process.run_with("./git", new list[str], "", new list[str], "./");
+    let c = try process.run("git", ["status"]);
+    let d = try process.run_bytes("curl", ["x"]);
     print(a.stdout + b.stdout + c.stdout + str(d.code));
     return ok();
 }

@@ -1,17 +1,15 @@
-import bank.apply;
-import bank.new_bank;
-import parsing.Entry;
-import parsing.show;
+import bank;
+import parsing;
 
-export fn replay(entries: list[Entry]) -> list[str] {
-    let b = new_bank();
+export fn replay(entries: list[parsing.Entry]) -> list[str] {
+    let b = bank.new_bank();
     let out = new list[str];
     let order = slice(entries, 0, len(entries));
-    sort_by(order, fn(e: Entry) -> int {
+    sort_by(order, fn(e: parsing.Entry) -> int {
         return e.time;
     });
     for e in order {
-        match apply(b, e) {
+        match bank.apply(b, e) {
             case ok {
             }
             case err(reason) {
@@ -22,12 +20,12 @@ export fn replay(entries: list[Entry]) -> list[str] {
     let names = keys(b.balance);
     sort(names);
     for a in names {
-        var s = a + " " + show(b.balance[a]);
+        var s = a + " " + parsing.show(b.balance[a]);
         if has(b.closed, a) {
             set s = s + " closed";
         }
         push(out, s);
     }
-    push(out, "fees " + show(b.fees) + " interest " + show(b.interest));
+    push(out, "fees " + parsing.show(b.fees) + " interest " + parsing.show(b.interest));
     return out;
 }

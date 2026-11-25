@@ -1,16 +1,14 @@
-import pg.client.Options;
-import pg.client.open;
-import std.tcp.close_conn;
-import std.tcp.tcp_error_text;
+import pg.client;
+import std.tcp;
 
 fn try_port(port: int) -> str uses net, entropy {
-    match open(new Options { host: "127.0.0.1", port: port }) {
+    match client.open(new client.Options { host: "127.0.0.1", port: port }) {
         case ok(c) {
-            close_conn(c);
+            tcp.close_conn(c);
             return "open";
         }
         case err(e) {
-            return tcp_error_text(e);
+            return tcp.tcp_error_text(e);
         }
     }
 }

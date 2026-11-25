@@ -1,9 +1,7 @@
 # Spec 017 (US3): over 16 MiB of output, or output that is not UTF-8, is an err.
-import std.process.Output;
-import std.process.run;
-import std.process.run_with;
+import std.process;
 
-fn show(what: str, r: result[Output]) uses console {
+fn show(what: str, r: result[process.Output]) uses console {
     match r {
         case ok(out) {
             print(what + ": code " + str(out.code));
@@ -19,6 +17,6 @@ fn show(what: str, r: result[Output]) uses console {
 }
 
 fn main() uses console, process("bin/bad_utf8", "bin/flood") {
-    show("flood", run("bin/flood", new list[str]));
-    show("bad utf-8", run("bin/bad_utf8", new list[str]));
+    show("flood", process.run("bin/flood", new list[str]));
+    show("bad utf-8", process.run("bin/bad_utf8", new list[str]));
 }

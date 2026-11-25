@@ -309,7 +309,7 @@ def group_quiet(base, arch, srv):
     open(os.path.join(arch, "q.tar.gz"), "wb").write(tar_bytes({"a.vo": b"export fn a() -> int {\n    return 1;\n}\n"}))
     d = project(base, "quiet")
     add(d, "q", f"{srv.base}/archive/q.tar.gz")
-    open(os.path.join(d, "main.vo"), "w").write('import q.a.a;\n\nfn main() uses console {\n    print(str(a()));\n}\n\ntest "t" {\n    expect_eq(a(), 1);\n}\n')
+    open(os.path.join(d, "main.vo"), "w").write('import q.a;\n\nfn main() uses console {\n    print(str(a.a()));\n}\n\ntest "t" {\n    expect_eq(a.a(), 1);\n}\n')
     real = os.environ.get("VO_BIN", os.path.join(ROOT, "build", "vo"))
     for present in (True, False):
         if not present:
@@ -360,16 +360,16 @@ def group_restore(base, arch, srv):
 
 PURE = {"a.vo": b"export fn double(n: int) -> int {\n    return n * 2;\n}\n"}
 SCOPED = {
-    "io.vo": b'import std.http.get;\n\nexport effects Storage = file.write("out/");\n\n'
+    "io.vo": b'import std.http;\n\nexport effects Storage = file.write("out/");\n\n'
              b'export fn load(path: str) -> result[str] uses file.read("data/") {\n    return read_file("data/" + path);\n}\n\n'
              b'export fn save(text: str) -> result[void] uses Storage {\n    return write_file("out/x", text);\n}\n\n'
-             b'export fn rate() -> int uses net("api.example.com") {\n    match get("http://api.example.com/") {\n        case ok(r) {\n            return r.status;\n        }\n        case err(_) {\n            return 0;\n        }\n    }\n}\n\n'
+             b'export fn rate() -> int uses net("api.example.com") {\n    match http.get("http://api.example.com/") {\n        case ok(r) {\n            return r.status;\n        }\n        case err(_) {\n            return 0;\n        }\n    }\n}\n\n'
              b'fn hidden() uses console {\n    print("not exported");\n}\n\n'
              b'export fn each[E: effects](f: fn() uses E) uses E {\n    f();\n}\n',
 }
 NEWER = {
-    "io.vo": b'import std.process.run;\n\nexport fn rate() -> int uses net("api.example.com") {\n    return 1;\n}\n\n'
-             b'export fn tag() -> int uses process("git") {\n    match run("git", ["describe"]) {\n        case ok(o) {\n            return o.code;\n        }\n        case err(_) {\n            return 1;\n        }\n    }\n}\n',
+    "io.vo": b'import std.process;\n\nexport fn rate() -> int uses net("api.example.com") {\n    return 1;\n}\n\n'
+             b'export fn tag() -> int uses process("git") {\n    match process.run("git", ["describe"]) {\n        case ok(o) {\n            return o.code;\n        }\n        case err(_) {\n            return 1;\n        }\n    }\n}\n',
 }
 
 

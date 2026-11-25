@@ -4,7 +4,7 @@ added money shared/money sha256:c254bf990e07bee2be247382b90dd9579f7782282060d7db
 --- exit 0
 $ vo check main.vo
 main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effects with `vo effects --update`.
-   1 | import money.format.cents;
+   1 | import money.format;
      | ^
 0 errors, 1 warning
 --- stderr
@@ -12,7 +12,7 @@ main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effec
 $ vo run main.vo
 --- stderr
 main.vo:1:1: error[E0702]: Package `money`: the directory `shared/money` is missing or has no .vo files.
-   1 | import money.format.cents;
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   1 | import money.format;
+     | ^^^^^^^^^^^^^^^^^^^^
 1 error, 0 warnings
 --- exit 65

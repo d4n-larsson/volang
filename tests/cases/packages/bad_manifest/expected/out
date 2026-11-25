@@ -1,7 +1,7 @@
 $ vo check main.vo
 main.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
-   1 | import money.format.cents;
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   1 | import money.format;
+     | ^^^^^^^^^^^^^^^^^^^^
 vo.packages:3:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 lowercase hex digits), optionally followed by the https:// URL it was fetched from.
    3 | money shared/money
      | ^^^^^^^^^^^^^^^^^^

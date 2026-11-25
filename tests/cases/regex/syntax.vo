@@ -1,8 +1,7 @@
-import std.regex.regex;
-import std.regex.Regex;
+import std.regex;
 
-fn patterns() -> list[Regex] {
-    return [regex("(a"), regex("a)"), regex("[abc"), regex("*a"), regex("[z-a]"), regex("a{3,1}"), regex("a{1001}"), regex("x{"), regex("(?<n>a)(?<n>b)"), regex("a**"), regex("\\"), regex("[\\d-z]")];
+fn patterns() -> list[regex.Regex] {
+    return [regex.regex("(a"), regex.regex("a)"), regex.regex("[abc"), regex.regex("*a"), regex.regex("[z-a]"), regex.regex("a{3,1}"), regex.regex("a{1001}"), regex.regex("x{"), regex.regex("(?<n>a)(?<n>b)"), regex.regex("a**"), regex.regex("\\"), regex.regex("[\\d-z]")];
 }
 
 fn main() uses console {

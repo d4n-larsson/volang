@@ -1,0 +1,4 @@
+vo package main.vo pkg shared/pkg
+vo run main.vo
+vo effects --update main.vo
+keep vo.packages vo.effects

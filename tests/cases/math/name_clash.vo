@@ -1,10 +1,12 @@
-# Spec 020: importing std.math.log into a file that defines its own `log` is the existing clash error.
-import std.math.log;
+# Spec 020, spec 058: a file's own `log` and std.math's `log` no longer clash: the library's is written
+# `math.log`.
+import std.math;
 
 fn log(s: str) -> str {
     return s;
 }
 
 fn main() uses console {
-    print("x");
+    print(log("x"));
+    print(str(math.log(1.0)));
 }

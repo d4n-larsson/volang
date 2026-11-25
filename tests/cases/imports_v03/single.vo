@@ -1,0 +1,18 @@
+# The 0.3 form: one import per item. One E0215 at the first import; its fix rewrites the imports and every
+# use as one edit.
+import std.json.Json;
+import std.json.parse_json;
+import std.text.repeat;
+
+fn read(text: str) -> result[Json] {
+    return parse_json(text);
+}
+
+fn main() -> result[void] uses console {
+    let j = try read("1");
+    print(str(j == Json.integer(1)));
+    let parse = parse_json;
+    let _ = parse;
+    print(repeat("ab", 2));
+    return ok();
+}

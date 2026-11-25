@@ -1,21 +1,9 @@
 # Spec 020 US1: correctly rounded values, as str (15 digits) and as exact JSON text (17 digits).
-import std.math.pi;
-import std.math.sqrt;
-import std.math.pow;
-import std.math.exp;
-import std.math.log;
-import std.math.sin;
-import std.math.cos;
-import std.math.tan;
-import std.math.asin;
-import std.math.acos;
-import std.math.atan;
-import std.math.atan2;
-import std.json.Json;
-import std.json.write_json;
+import std.json;
+import std.math;
 
 fn show(x: float) uses console {
-    match write_json(Json.number(x)) {
+    match json.write_json(json.Json.number(x)) {
         case ok(t) {
             print(str(x) + " " + t);
         }
@@ -26,16 +14,16 @@ fn show(x: float) uses console {
 }
 
 fn main() uses console {
-    show(sqrt(2.0));
-    show(pow(1.05, 10.0));
-    show(exp(1.0));
-    show(log(10.0));
-    show(sin(pi() / 6.0));
-    show(cos(1.0));
-    show(tan(1.0));
-    show(asin(0.5));
-    show(acos(0.5));
-    show(atan(1.0));
-    show(atan2(1.0, 1.0));
-    show(pi());
+    show(math.sqrt(2.0));
+    show(math.pow(1.05, 10.0));
+    show(math.exp(1.0));
+    show(math.log(10.0));
+    show(math.sin(math.pi() / 6.0));
+    show(math.cos(1.0));
+    show(math.tan(1.0));
+    show(math.asin(0.5));
+    show(math.acos(0.5));
+    show(math.atan(1.0));
+    show(math.atan2(1.0, 1.0));
+    show(math.pi());
 }

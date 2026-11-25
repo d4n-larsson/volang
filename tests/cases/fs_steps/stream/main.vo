@@ -1,7 +1,5 @@
 # Spec 040: each_line and each_chunk read a file in pieces.
-import std.fs.append_file;
-import std.fs.each_chunk;
-import std.fs.each_line;
+import std.fs;
 
 record Seen {
     lines: list[str];
@@ -25,7 +23,7 @@ fn shown(line: str) -> str {
 
 fn lines_of(path: str, stop_at: str, fail_at: str) uses console, file.read("data/") {
     let seen = new Seen { lines: new list[str], sizes: new list[int] };
-    let done = each_line(path, fn(line: str) -> result[bool] {
+    let done = fs.each_line(path, fn(line: str) -> result[bool] {
         if line == fail_at {
             return err("the function failed at " + line);
         }
@@ -45,7 +43,7 @@ fn lines_of(path: str, stop_at: str, fail_at: str) uses console, file.read("data
 
 fn chunks_of(path: str, size: int) uses console, file.read("data/") {
     let seen = new Seen { lines: new list[str], sizes: new list[int] };
-    let done = each_chunk(path, size, fn(piece: bytes) -> result[bool] {
+    let done = fs.each_chunk(path, size, fn(piece: bytes) -> result[bool] {
         push(seen.sizes, len(piece));
         return ok(true);
     });
@@ -65,8 +63,8 @@ fn chunks_of(path: str, size: int) uses console, file.read("data/") {
 
 fn nested() uses console, file.read("data/") {
     let seen = new Seen { lines: new list[str], sizes: new list[int] };
-    let done = each_line("data/two.txt", fn(outer: str) -> result[bool] {
-        try each_line("data/two.txt", fn(inner: str) -> result[bool] {
+    let done = fs.each_line("data/two.txt", fn(outer: str) -> result[bool] {
+        try fs.each_line("data/two.txt", fn(inner: str) -> result[bool] {
             push(seen.lines, outer + inner);
             return ok(true);
         });
@@ -84,10 +82,10 @@ fn nested() uses console, file.read("data/") {
 
 fn growing() uses console, file.read("data/"), file.write("data/") {
     let seen = new Seen { lines: new list[str], sizes: new list[int] };
-    let done = each_line("data/grow.txt", fn(line: str) -> result[bool] {
+    let done = fs.each_line("data/grow.txt", fn(line: str) -> result[bool] {
         push(seen.lines, line);
         if len(seen.lines) < 4 {
-            try append_file("data/grow.txt", "more\n");
+            try fs.append_file("data/grow.txt", "more\n");
         }
         return ok(true);
     });

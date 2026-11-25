@@ -433,6 +433,16 @@ void diag_human(SB *sb, Diag *d)
         sb_cstr(sb, "`\n");
     }
     for (Fix *f = d->fixes.p; f; f = f->next) {
+        long nl = 0; /* spec 058: a fix over many lines (E0215's) is named by its lines, not printed */
+        for (long i = 0; i < f->text->len; i++) nl += f->text->data[i] == '\n';
+        if (nl > 3) {
+            sb_cstr(sb, "  fix: rewrite lines ");
+            int_to_dec(sb, pos_line((int)f->file, f->start));
+            sb_cstr(sb, " to ");
+            int_to_dec(sb, pos_line((int)f->file, f->end));
+            sb_byte(sb, '\n');
+            continue;
+        }
         if (f->text->len == 0)
             sb_cstr(sb, "  fix: remove `");
         else if (f->start == f->end)

@@ -1,4 +1,4 @@
-main.vo:4:4: warning[W0502]: `main` no longer uses net("db.internal").
-   4 | fn main() uses net("db.internal:5432") {
+main.vo:3:4: warning[W0502]: `main` no longer uses net("db.internal").
+   3 | fn main() uses net("db.internal:5432") {
      |    ^^^^
 0 errors, 1 warning

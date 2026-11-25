@@ -1,14 +1,7 @@
 # Spec 055 US4: /health/ready answers 503 naming a failing check; /health/live answers 200 without running any
 # check; with the check passing both are 200; health_route's /health is unchanged.
-import std.http.Response;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.HealthCheck;
-import std.web.Step;
-import std.web.handle_request;
-import std.web.health_route;
-import std.web.health_routes;
-import std.web.request;
+import std.http;
+import std.web;
 
 record Db {
     up: bool;
@@ -23,20 +16,20 @@ fn database(db: Db) -> result[void] {
     return err("cannot read data/notes.db");
 }
 
-fn show(resp: Response) -> str {
+fn show(resp: http.Response) -> str {
     return str(resp.status) + " " + resp.body;
 }
 
 fn main() uses console {
-    let checks = [new HealthCheck[Db] { name: "database", check: database }];
-    let app = new App[Db] { routes: health_routes(checks), steps: new list[Step[Db]], errors: new list[ErrorStatus] };
+    let checks = [new web.HealthCheck[Db] { name: "database", check: database }];
+    let app = new web.App[Db] { routes: web.health_routes(checks), steps: new list[web.Step[Db]], errors: new list[web.ErrorStatus] };
     let down = new Db { up: false, calls: new list[int] };
-    print("ready " + show(handle_request(app, down, request("GET", "/health/ready", ""))));
-    print("live " + show(handle_request(app, down, request("GET", "/health/live", ""))));
+    print("ready " + show(web.handle_request(app, down, web.request("GET", "/health/ready", ""))));
+    print("live " + show(web.handle_request(app, down, web.request("GET", "/health/live", ""))));
     print("checks run: " + str(len(down.calls)));
     let up = new Db { up: true, calls: new list[int] };
-    print("ready " + show(handle_request(app, up, request("GET", "/health/ready", ""))));
-    print("live " + show(handle_request(app, up, request("GET", "/health/live", ""))));
-    let old = new App[Db] { routes: [health_route(checks)], steps: new list[Step[Db]], errors: new list[ErrorStatus] };
-    print("health " + show(handle_request(old, down, request("GET", "/health", ""))));
+    print("ready " + show(web.handle_request(app, up, web.request("GET", "/health/ready", ""))));
+    print("live " + show(web.handle_request(app, up, web.request("GET", "/health/live", ""))));
+    let old = new web.App[Db] { routes: [web.health_route(checks)], steps: new list[web.Step[Db]], errors: new list[web.ErrorStatus] };
+    print("health " + show(web.handle_request(old, down, web.request("GET", "/health", ""))));
 }

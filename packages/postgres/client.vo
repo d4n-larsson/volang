@@ -7,27 +7,15 @@
 # literal `?`. The connection is encrypted and the server verified unless Options.plain_text is set.
 # Every failure is an err whose first word says what kind it is: constraint, readonly, busy, error
 # (the connection stays usable), auth, tls, timeout, connection, protocol (it is closed).
-import postgres.exchange.Answer;
-import postgres.exchange.round_trip;
-import postgres.link.deliver;
-import postgres.link.dial;
-import postgres.link.ends_connection;
-import postgres.link.hang_up;
-import postgres.signin.sign_in;
-import postgres.statement.rewrite;
-import postgres.values.Kind;
-import postgres.values.blob_of;
-import postgres.values.blob_text;
-import postgres.values.column_index;
-import postgres.values.time_of;
-import postgres.wire.Field;
-import postgres.wire.terminate;
-import std.bytes.from_ints;
-import std.bytes.from_text;
-import std.bytes.to_base64;
-import std.bytes.to_text;
-import std.crypto.random_bytes;
-import std.tcp.Conn;
+import postgres.exchange;
+import postgres.link;
+import postgres.signin;
+import postgres.statement;
+import postgres.values;
+import postgres.wire;
+import std.bytes;
+import std.crypto;
+import std.tcp;
 
 # Where and how to connect. Every field is given; the usual values are port 5432, plain_text false,
 # connect_ms 10000 and statement_ms 30000.
@@ -56,7 +44,7 @@ export record Options {
 #     new Database { conn: new Conn { id: 0, peer: "" }, statement_ms: 1, in_transaction: false, failed: false, closed: true }.closed is true
 export record Database[E: effects] {
     # The connection.
-    conn: Conn[uses E];
+    conn: tcp.Conn[uses E];
     # The time limit for each wait of a statement.
     statement_ms: int;
     # Whether transaction is running its function.
@@ -119,14 +107,14 @@ export fn sql(text: str) -> Statement {
 # (`$1`), or text that ends inside a string or comment. Syntax is the server's to report.
 #     parse_sql("select $1") == err("error: write parameters as ?, not $1") is true
 export fn parse_sql(text: str) -> result[Statement] {
-    let _ = try rewrite(text);
+    let _ = try statement.rewrite(text);
     return ok(new Statement { text: text });
 }
 
 fn shut[E: effects](db: Database[uses E]) uses E {
     if not db.closed {
         set db.closed = true;
-        hang_up(db.conn);
+        link.hang_up(db.conn);
     }
 }
 
@@ -141,8 +129,8 @@ export fn connect(o: Options) -> result[Database[uses net]] uses net, entropy {
     if o.connect_ms < 1 or o.connect_ms > 600000 or o.statement_ms < 1 or o.statement_ms > 600000 {
         return err("error: the time limits must be 1 to 600000 milliseconds");
     }
-    let nonce = to_base64(random_bytes(18));
-    let c = try dial(o.host, o.port, o.plain_text, o.connect_ms);
+    let nonce = bytes.to_base64(crypto.random_bytes(18));
+    let c = try link.dial(o.host, o.port, o.plain_text, o.connect_ms);
     let db = new Database[uses net] {
         conn: c,
         statement_ms: o.statement_ms,
@@ -150,7 +138,7 @@ export fn connect(o: Options) -> result[Database[uses net]] uses net, entropy {
         failed: false,
         closed: false
     };
-    match sign_in(c, o.user, o.database, o.password, o.connect_ms, nonce) {
+    match signin.sign_in(c, o.user, o.database, o.password, o.connect_ms, nonce) {
         case ok() {
             return ok(db);
         }
@@ -168,7 +156,7 @@ export fn close[E: effects](db: Database[uses E]) uses E {
     if db.closed {
         return;
     }
-    match deliver(db.conn, terminate(), db.statement_ms) {
+    match link.deliver(db.conn, wire.terminate(), db.statement_ms) {
         case ok() {
         }
         case err(_) {
@@ -178,28 +166,31 @@ export fn close[E: effects](db: Database[uses E]) uses E {
 }
 
 # The parameters as the server takes them: each value's text form, or null.
-fn fields_of(params: list[Value]) -> result[list[Field]] {
-    var out = new list[Field];
-    let none = from_ints(new list[int]);
+fn fields_of(params: list[Value]) -> result[list[wire.Field]] {
+    var out = new list[wire.Field];
+    let none = bytes.from_ints(new list[int]);
     for p in params {
         match p {
             case integer(i) {
-                push(out, new Field { null: false, data: from_text(str(i)) });
+                push(out, new wire.Field { null: false, data: bytes.from_text(str(i)) });
             }
             case real(f) {
-                push(out, new Field { null: false, data: from_text(str(f)) });
+                push(out, new wire.Field { null: false, data: bytes.from_text(str(f)) });
             }
             case text(s) {
                 if find(s, chr(0)) >= 0 {
                     return err("error: text with a zero byte cannot be stored: pass it as a blob");
                 }
-                push(out, new Field { null: false, data: from_text(s) });
+                push(out, new wire.Field { null: false, data: bytes.from_text(s) });
             }
             case blob(b) {
-                push(out, new Field { null: false, data: from_text(blob_text(b)) });
+                push(out, new wire.Field {
+                    null: false,
+                    data: bytes.from_text(values.blob_text(b))
+                });
             }
             case null {
-                push(out, new Field { null: true, data: none });
+                push(out, new wire.Field { null: true, data: none });
             }
         }
     }
@@ -207,12 +198,12 @@ fn fields_of(params: list[Value]) -> result[list[Field]] {
 }
 
 # A column value of a kind, from its text form.
-fn value_of(kind: Kind, f: Field) -> result[Value] {
+fn value_of(kind: values.Kind, f: wire.Field) -> result[Value] {
     if f.null {
         return ok(Value.null);
     }
     var s = "";
-    match to_text(f.data) {
+    match bytes.to_text(f.data) {
         case ok(t) {
             set s = t;
         }
@@ -248,7 +239,7 @@ fn value_of(kind: Kind, f: Field) -> result[Value] {
             }
         }
         case blob {
-            return ok(Value.blob(try blob_of(s)));
+            return ok(Value.blob(try values.blob_of(s)));
         }
         case text {
             return ok(Value.text(s));
@@ -256,12 +247,15 @@ fn value_of(kind: Kind, f: Field) -> result[Value] {
     }
 }
 
-fn run[E: effects](db: Database[uses E], st: Statement, params: list[Value]) -> result[Answer]
-    uses E {
+fn run[E: effects](
+    db: Database[uses E],
+    st: Statement,
+    params: list[Value]
+) -> result[exchange.Answer] uses E {
     if db.closed {
         return err("connection: closed");
     }
-    let r = try rewrite(st.text);
+    let r = try statement.rewrite(st.text);
     if r.count != len(params) {
         return err(
             "error: the statement has " + str(r.count) + " parameters, and " + str(len(params)) + " values were given"
@@ -271,7 +265,7 @@ fn run[E: effects](db: Database[uses E], st: Statement, params: list[Value]) -> 
         return err("error: a statement takes at most 65535 parameters");
     }
     let fields = try fields_of(params);
-    match round_trip(db.conn, r, fields, db.statement_ms) {
+    match exchange.round_trip(db.conn, r, fields, db.statement_ms) {
         case ok(o) {
             set db.failed = o.failed;
             if o.problem != "" {
@@ -280,7 +274,7 @@ fn run[E: effects](db: Database[uses E], st: Statement, params: list[Value]) -> 
             return ok(o);
         }
         case err(e) {
-            if ends_connection(e) {
+            if link.ends_connection(e) {
                 shut(db);
             }
             return err(e);
@@ -311,11 +305,11 @@ export fn query[E: effects](
     let o = try run(db, st, params);
     var rows = new list[Row];
     for fields in o.rows {
-        var values = new list[Value];
+        var values_value = new list[Value];
         for i in 0..len(fields) {
-            push(values, try value_of(o.kinds[i], fields[i]));
+            push(values_value, try value_of(o.kinds[i], fields[i]));
         }
-        push(rows, new Row { columns: o.names, values: values });
+        push(rows, new Row { columns: o.names, values: values_value });
     }
     return ok(rows);
 }
@@ -355,7 +349,7 @@ export fn transaction[T, E: effects, F: effects](
                     return ok(v);
                 }
                 case err(e) {
-                    if ends_connection(e) {
+                    if link.ends_connection(e) {
                         return err(e + "; whether the transaction was committed is not known");
                     }
                     return err(e);
@@ -392,7 +386,7 @@ fn kind_name(v: Value) -> str {
 # The value of a column by name; err for an unknown name or one that two columns have.
 #     value_column(new Row { columns: ["x"], values: [Value.null] }, "y") == err("no column `y`") is true
 export fn value_column(row: Row, column: str) -> result[Value] {
-    return ok(row.values[try column_index(row.columns, column)]);
+    return ok(row.values[try values.column_index(row.columns, column)]);
 }
 
 # A column's value as an int; err unless it is an integer (a boolean is 0 or 1).
@@ -465,7 +459,7 @@ export fn bytes_column(row: Row, column: str) -> result[bytes] {
             return ok(b);
         }
         case text(s) {
-            return ok(from_text(s));
+            return ok(bytes.from_text(s));
         }
         case integer(_) {
         }
@@ -490,7 +484,7 @@ export fn time_column(row: Row, column: str) -> result[int] {
     let v = try value_column(row, column);
     match text_column(row, column) {
         case ok(s) {
-            return map_err(time_of(s), fn(reason: str) -> str {
+            return map_err(values.time_of(s), fn(reason: str) -> str {
                 return column + " is " + reason + ": " + s;
             });
         }

@@ -1,0 +1,15 @@
+# Modules imported and never used: W0203 with the fix removing the line. A module used only in a type,
+# a scope or a `uses` clause is used.
+import std.json;
+import std.lists;
+import std.sqlite;
+import std.text;
+
+fn first[D: effects](db: sqlite.Database[uses D]) -> int {
+    let _ = db;
+    return 1;
+}
+
+fn main() uses console {
+    print(text.repeat("a", 2));
+}

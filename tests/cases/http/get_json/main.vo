@@ -1,16 +1,11 @@
 # A JSON service: std.http with std.json.
-import std.http.get;
-import std.json.as_text;
-import std.json.at;
-import std.json.member;
-import std.json.int_field;
-import std.json.parse_json;
-import std.json.text_field;
+import std.http;
+import std.json;
 
 fn main() -> result[void] uses console, net("localhost") {
-    let resp = try get("http://localhost:" + args()[0] + "/json");
-    let doc = try parse_json(resp.body);
-    print(try text_field(doc, "name") + " " + str(try int_field(doc, "version")));
-    print(try as_text(try at(try member(doc, "tags"), 1)));
+    let resp = try http.get("http://localhost:" + args()[0] + "/json");
+    let doc = try json.parse_json(resp.body);
+    print(try json.text_field(doc, "name") + " " + str(try json.int_field(doc, "version")));
+    print(try json.as_text(try json.at(try json.member(doc, "tags"), 1)));
     return ok();
 }

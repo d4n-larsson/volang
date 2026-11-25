@@ -16,6 +16,9 @@ import sys
 import tempfile
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from migrate_058 import module_form  # noqa: E402  spec 058: programs assembled from fragments
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 SLOW = 20 if any(a in os.environ.get("VO_BIN", "") for a in ("aarch64", "riscv64")) else 1  # under qemu
@@ -24,27 +27,11 @@ SERVER = os.path.join(ROOT, "tests", "tcp_server.py")
 failures = []
 cases = 0
 
-PRELUDE = """import std.bytes.from_ints;
-import std.bytes.from_text;
-import std.bytes.to_text;
-import std.tcp.Conn;
-import std.tcp.Listener;
-import std.tcp.TcpError;
-import std.tcp.accept;
-import std.tcp.close_conn;
-import std.tcp.close_listener;
-import std.tcp.connect;
-import std.tcp.connect_tls;
-import std.tcp.tcp_error_text;
-import std.tcp.listen;
-import std.tcp.read;
-import std.tcp.read_exact;
-import std.tcp.read_until;
-import std.tcp.write_all;
-import std.tcp.start_tls;
+PRELUDE = """import std.bytes;
+import std.tcp;
 
 fn text(b: bytes) -> str {
-    match to_text(b) {
+    match bytes.to_text(b) {
         case ok(t) {
             return trim(t);
         }
@@ -54,35 +41,35 @@ fn text(b: bytes) -> str {
     }
 }
 
-fn show(r: result[bytes, TcpError]) -> str {
+fn show(r: result[bytes, tcp.TcpError]) -> str {
     match r {
         case ok(b) {
             return "ok " + str(len(b)) + " " + text(b);
         }
         case err(e) {
-            return "err " + tcp_error_text(e);
+            return "err " + tcp.tcp_error_text(e);
         }
     }
 }
 
-fn did(r: result[void, TcpError]) -> str {
+fn did(r: result[void, tcp.TcpError]) -> str {
     match r {
         case ok() {
             return "ok";
         }
         case err(e) {
-            return "err " + tcp_error_text(e);
+            return "err " + tcp.tcp_error_text(e);
         }
     }
 }
 
-fn opened[E: effects](r: result[Conn[E], TcpError]) -> str {
+fn opened[E: effects](r: result[tcp.Conn[E], tcp.TcpError]) -> str {
     match r {
         case ok(_) {
             return "ok";
         }
         case err(e) {
-            return "err " + tcp_error_text(e);
+            return "err " + tcp.tcp_error_text(e);
         }
     }
 }
@@ -404,7 +391,7 @@ def vo(d, words, timeout=60):
 
 def run(d, src, name="p.vo", extra=(), timeout=60):
     with open(os.path.join(d, name), "w") as f:
-        f.write(src)
+        f.write(module_form(src))
     return vo(d, ["run", "--timeout", str(30 * SLOW)] + list(extra) + [name], timeout)
 
 
@@ -461,10 +448,10 @@ def group_scopes(d):
         src = client(BASIC, q).replace(f'net("127.0.0.1:{q}")', f'net("localhost:{q}")')
         code, out, err = run(d, src)
         denied("scopes/another host", code, err, f'net("127.0.0.1:{q}")')
-        src = f"""import std.http.get;
+        src = f"""import std.http;
 
 fn main() uses console, net("127.0.0.1:{e.port}") {{
-    match get("http://127.0.0.1:{q}/") {{
+    match http.get("http://127.0.0.1:{q}/") {{
         case ok(r) {{
             print(str(r.status));
         }}
@@ -551,7 +538,7 @@ def serve_run(d, words, name="server.vo"):
     """Runs the vo echo server with two clients in turn: (exit status, stdout lines, clients' replies)."""
     p = free_port()
     with open(os.path.join(d, name), "w") as f:
-        f.write(SERVER_VO.replace("{P}", str(p)))
+        f.write(module_form(SERVER_VO.replace("{P}", str(p))))
     srv = subprocess.Popen([VO] + words + [name], cwd=d, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     a = converse(p, [b"first", b"second"])
     b = converse(p, [b"third"])
@@ -576,7 +563,7 @@ def group_server(d):
 
 def group_tasks(d):
     with open(os.path.join(d, "both.vo"), "w") as f:
-        f.write(BOTH)
+        f.write(module_form(BOTH))
     code, out, err = vo(d, ["test", "both.vo"])
     case("tasks/a test with both ends", code == 0, f"{code} {out} {err[:300]}")
     code, out, err = vo(d, ["run", "both.vo"])
@@ -626,7 +613,7 @@ def group_replay(d):
     code, out, err = vo(d, ["replay", "server.rec"])
     lines("replay/server", (code, out), (0, want))
     with open(os.path.join(d, "both.vo"), "w") as f:
-        f.write(BOTH)
+        f.write(module_form(BOTH))
     code, out, err = vo(d, ["run", "--record", "both.rec", "both.vo"])
     want = ["served ping ok", "asked ok, got ok 5 ping"]
     lines("replay/tasks: the recorded run", (code, out), (0, want))
@@ -637,7 +624,7 @@ def group_replay(d):
     src = client(BASIC, e.port).replace(f'net("127.0.0.1:{e.port}")', 'net("127.0.0.1")')
     replayed(d, "before a change", src, e, BASIC_OUT, file="c.vo")
     with open(os.path.join(d, "c.vo"), "w") as f:
-        f.write(src.replace(f'("127.0.0.1", {e.port}, 2000)', f'("127.0.0.1", {e.port + 1 if e.port < 65535 else 1024}, 2000)'))
+        f.write(module_form(src.replace(f'("127.0.0.1", {e.port}, 2000)', f'("127.0.0.1", {e.port + 1 if e.port < 65535 else 1024}, 2000)')))
     code, out, err = vo(d, ["replay", "c.vo.rec"])
     case("replay/another port is R0014", code != 0 and "R0014" in err, f"{code} {err[:300]}")
 

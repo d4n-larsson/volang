@@ -1,12 +1,12 @@
 $ vo edit add-field main.vo Pair count: int = 0
-main.vo:14:1 +     count: int;\n
-main.vo:40:59 + , count: 0
+main.vo:11:1 +     count: int;\n
+main.vo:37:59 + , count: 0
 added field count to Pair: 2 changes in 1 file
 --- stderr
 --- exit 0
 $ vo check main.vo
-main.vo:46:1: warning[W0705]: This test calls only functions of `catalog.vo`: move it into `catalog.vo`, next to the code it tests (`vo test` runs it from there).
-  46 | test "totals" {
+main.vo:43:1: warning[W0705]: This test calls only functions of `catalog.vo`: move it into `catalog.vo`, next to the code it tests (`vo test` runs it from there).
+  43 | test "totals" {
      | ^^^^
 0 errors, 1 warning
 --- stderr

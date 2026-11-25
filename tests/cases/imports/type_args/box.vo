@@ -1,0 +1,9 @@
+export record Item {
+    name: str;
+}
+
+export record Box[T] {
+    item: T;
+}
+
+export effects Show = console;

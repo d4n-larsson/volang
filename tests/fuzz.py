@@ -63,7 +63,11 @@ def mutate(data, rng):
                                     b"uses Storage", b"uses console, Storage", b"effects ", b"Storage",
                                     # spec 031: constants
                                     b"\nconst a = ", b"\nconst a: int = 1;\n", b"export const ", b"const A = 1 +;",
-                                    b"\nconst a = a;\n", b"const x = 1;", b"const ", b"max_items"])
+                                    b"\nconst a = a;\n", b"const x = 1;", b"const ", b"max_items",
+                                    # spec 058: module imports and qualified names
+                                    b"\nimport ;\n", b"\nimport a..b;\n", b"\nimport std.json\n", b"\nimport std.json;\n",
+                                    b"\nimport std;\n", b"json.", b"json.1", b"new json. {", b"json.Json.",
+                                    b"uses json.", b"json.Json[", b"json.parse_json(", b"bytes.", b"\nimport std.bytes;\n"])
     return bytes(data)
 
 

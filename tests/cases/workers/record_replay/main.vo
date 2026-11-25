@@ -1,18 +1,8 @@
 # Spec 047: a recording holds what the program got from its workers; the replay starts none and
 # prints and ends as the recorded run did.
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.Worker;
-import std.workers.WorkerError;
-import std.workers.emit;
-import std.workers.next_message;
-import std.workers.receive;
-import std.workers.receive_first;
-import std.workers.start_worker;
-import std.workers.stop_worker;
-import std.workers.tell;
+import std.workers;
 
-fn why(e: WorkerError) -> str {
+fn why(e: workers.WorkerError) -> str {
     match e {
         case timed_out {
             return "timeout";
@@ -35,7 +25,7 @@ fn why(e: WorkerError) -> str {
     }
 }
 
-fn show(r: result[int, WorkerError]) -> str {
+fn show(r: result[int, workers.WorkerError]) -> str {
     match r {
         case ok(n) {
             return "ok " + str(n);
@@ -46,8 +36,8 @@ fn show(r: result[int, WorkerError]) -> str {
     }
 }
 
-fn give(link: Link[int, int], n: int) {
-    match emit(link, n) {
+fn give(link: workers.Link[int, int], n: int) {
+    match workers.emit(link, n) {
         case ok() {
         }
         case err(_) {
@@ -55,7 +45,7 @@ fn give(link: Link[int, int], n: int) {
     }
 }
 
-fn reads(link: Link[int, int]) uses console, file.read {
+fn reads(link: workers.Link[int, int]) uses console, file.read {
     match read_file("data.txt") {
         case ok(text) {
             print("worker: read " + trim(text));
@@ -65,7 +55,7 @@ fn reads(link: Link[int, int]) uses console, file.read {
             print("worker: " + e);
         }
     }
-    match next_message(link, Wait.forever) {
+    match workers.next_message(link, workers.Wait.forever) {
         case ok(n) {
             eprint("worker: told " + str(n));
             give(link, n + 1);
@@ -75,15 +65,15 @@ fn reads(link: Link[int, int]) uses console, file.read {
     }
 }
 
-fn fails(link: Link[int, int]) uses console {
+fn fails(link: workers.Link[int, int]) uses console {
     print("failing worker: one line");
     let zero = len(chars(""));
     give(link, 1 / zero);
 }
 
-fn silent(link: Link[int, int]) uses console {
+fn silent(link: workers.Link[int, int]) uses console {
     print("silent worker: started");
-    match next_message(link, Wait.forever) {
+    match workers.next_message(link, workers.Wait.forever) {
         case ok(_) {
         }
         case err(_) {
@@ -92,19 +82,19 @@ fn silent(link: Link[int, int]) uses console {
 }
 
 fn main() uses console, file.read {
-    match start_worker(reads) {
+    match workers.start_worker(reads) {
         case ok(w) {
-            print(show(receive(w, Wait.forever)));
-            match tell(w, 41) {
+            print(show(workers.receive(w, workers.Wait.forever)));
+            match workers.tell(w, 41) {
                 case ok() {
                 }
                 case err(e) {
                     print(why(e));
                 }
             }
-            print(show(receive(w, Wait.forever)));
-            print(show(receive(w, Wait.forever)));
-            match receive_first([w], Wait.forever) {
+            print(show(workers.receive(w, workers.Wait.forever)));
+            print(show(workers.receive(w, workers.Wait.forever)));
+            match workers.receive_first([w], workers.Wait.forever) {
                 case ok(_) {
                     print("an arrival");
                 }
@@ -117,10 +107,10 @@ fn main() uses console, file.read {
             print(why(e));
         }
     }
-    match start_worker(silent) {
+    match workers.start_worker(silent) {
         case ok(w) {
-            print(show(receive(w, Wait.at_most(200))));
-            match receive_first([w], Wait.at_most(1)) {
+            print(show(workers.receive(w, workers.Wait.at_most(200))));
+            match workers.receive_first([w], workers.Wait.at_most(1)) {
                 case ok(_) {
                     print("an arrival");
                 }
@@ -128,16 +118,16 @@ fn main() uses console, file.read {
                     print("first: " + why(e));
                 }
             }
-            stop_worker(w);
-            print(show(receive(w, Wait.forever)));
+            workers.stop_worker(w);
+            print(show(workers.receive(w, workers.Wait.forever)));
         }
         case err(e) {
             print(why(e));
         }
     }
-    match start_worker(fails) {
+    match workers.start_worker(fails) {
         case ok(w) {
-            match receive_first([w], Wait.forever) {
+            match workers.receive_first([w], workers.Wait.forever) {
                 case ok(a) {
                     print(str(a.index) + ": " + slice(show(a.message), 0, 6));
                 }
@@ -150,7 +140,7 @@ fn main() uses console, file.read {
             print(why(e));
         }
     }
-    match start_worker(fails) {
+    match workers.start_worker(fails) {
         case ok(_) {
             print("the last worker's failure is not received");
         }
@@ -158,9 +148,9 @@ fn main() uses console, file.read {
             print(why(e));
         }
     }
-    match start_worker(silent) {
+    match workers.start_worker(silent) {
         case ok(w) {
-            print(show(receive(w, Wait.at_most(200))));
+            print(show(workers.receive(w, workers.Wait.at_most(200))));
         }
         case err(e) {
             print(why(e));

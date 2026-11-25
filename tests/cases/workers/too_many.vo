@@ -1,16 +1,7 @@
 # Spec 047: at most 64 workers at a time; a stopped or ended one makes room.
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.Worker;
-import std.workers.WorkerError;
-import std.workers.emit;
-import std.workers.next_message;
-import std.workers.receive;
-import std.workers.start_worker;
-import std.workers.stop_worker;
-import std.workers.tell;
+import std.workers;
 
-fn why(e: WorkerError) -> str {
+fn why(e: workers.WorkerError) -> str {
     match e {
         case timed_out {
             return "timeout";
@@ -33,7 +24,7 @@ fn why(e: WorkerError) -> str {
     }
 }
 
-fn show(r: result[int, WorkerError]) -> str {
+fn show(r: result[int, workers.WorkerError]) -> str {
     match r {
         case ok(n) {
             return "ok " + str(n);
@@ -44,7 +35,7 @@ fn show(r: result[int, WorkerError]) -> str {
     }
 }
 
-fn sent(r: result[void, WorkerError]) -> str {
+fn sent(r: result[void, workers.WorkerError]) -> str {
     match r {
         case ok() {
             return "sent";
@@ -55,8 +46,8 @@ fn sent(r: result[void, WorkerError]) -> str {
     }
 }
 
-fn give(link: Link[int, int], n: int) {
-    match emit(link, n) {
+fn give(link: workers.Link[int, int], n: int) {
+    match workers.emit(link, n) {
         case ok() {
         }
         case err(_) {
@@ -64,7 +55,7 @@ fn give(link: Link[int, int], n: int) {
     }
 }
 
-fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+fn worker_of(r: result[workers.Worker[int, int], workers.WorkerError]) -> workers.Worker[int, int] {
     match r {
         case ok(w) {
             return w;
@@ -75,8 +66,8 @@ fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
     }
 }
 
-fn waits(link: Link[int, int]) {
-    match next_message(link, Wait.forever) {
+fn waits(link: workers.Link[int, int]) {
+    match workers.next_message(link, workers.Wait.forever) {
         case ok(n) {
             give(link, n);
         }
@@ -86,11 +77,11 @@ fn waits(link: Link[int, int]) {
 }
 
 fn main() uses console {
-    let ws = new list[Worker[int, int]];
+    let ws = new list[workers.Worker[int, int]];
     for i in 0..64 {
-        push(ws, worker_of(start_worker(waits)));
+        push(ws, worker_of(workers.start_worker(waits)));
     }
-    match start_worker(waits) {
+    match workers.start_worker(waits) {
         case ok(_) {
             print("a 65th started");
         }
@@ -98,19 +89,19 @@ fn main() uses console {
             print("the 65th: " + why(e));
         }
     }
-    stop_worker(ws[10]);
-    match start_worker(waits) {
+    workers.stop_worker(ws[10]);
+    match workers.start_worker(waits) {
         case ok(w) {
             print("after a stop: started");
-            print("the stopped one: " + show(receive(ws[10], Wait.forever)));
-            print(sent(tell(w, 5)) + ", " + show(receive(w, Wait.forever)));
+            print("the stopped one: " + show(workers.receive(ws[10], workers.Wait.forever)));
+            print(sent(workers.tell(w, 5)) + ", " + show(workers.receive(w, workers.Wait.forever)));
         }
         case err(e) {
             print("after a stop: " + why(e));
         }
     }
-    print(sent(tell(ws[20], 7)) + ", " + show(receive(ws[20], Wait.forever)) + ", " + show(receive(ws[20], Wait.forever)));
-    match start_worker(waits) {
+    print(sent(workers.tell(ws[20], 7)) + ", " + show(workers.receive(ws[20], workers.Wait.forever)) + ", " + show(workers.receive(ws[20], workers.Wait.forever)));
+    match workers.start_worker(waits) {
         case ok(_) {
             print("after an end: started");
         }
@@ -118,7 +109,7 @@ fn main() uses console {
             print("after an end: " + why(e));
         }
     }
-    match start_worker(waits) {
+    match workers.start_worker(waits) {
         case ok(_) {
             print("one more started");
         }

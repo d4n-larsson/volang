@@ -1,13 +1,6 @@
-import garage.Garage;
-import garage.new_garage;
-import garage.open_level;
-import garage.park;
-import garage.occupancy;
-import garage.parked;
-import fees.rates;
-import billing.exit_vehicle;
-import billing.quote;
-import billing.report;
+import billing;
+import fees;
+import garage;
 
 fn is_number(s: str) -> bool {
     if len(s) == 0 {
@@ -30,7 +23,7 @@ fn num(s: str) -> int {
     }
 }
 
-fn run(words: list[str], garage: Garage) -> list[str] {
+fn run(words: list[str], garage_value: garage.Garage) -> list[str] {
     let cmd = words[0];
     let args_value = slice(words, 1, len(words));
     let bad = ["error: bad command"];
@@ -43,55 +36,55 @@ fn run(words: list[str], garage: Garage) -> list[str] {
         if number < 1 or spots < 1 or spots > 99 {
             return bad;
         }
-        return [open_level(garage, number, spots)];
+        return [garage.open_level(garage_value, number, spots)];
     }
     if cmd == "enter" {
         if len(args_value) != 2 or not is_number(args_value[1]) {
             return bad;
         }
-        return [park(garage, args_value[0], num(args_value[1]))];
+        return [garage.park(garage_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "exit" {
         if len(args_value) != 2 or not is_number(args_value[1]) {
             return bad;
         }
-        return [exit_vehicle(garage, args_value[0], num(args_value[1]))];
+        return [billing.exit_vehicle(garage_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "quote" {
         if len(args_value) != 2 or not is_number(args_value[1]) {
             return bad;
         }
-        return [quote(garage, args_value[0], num(args_value[1]))];
+        return [billing.quote(garage_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "occupancy" {
         if len(args_value) != 0 {
             return bad;
         }
-        return occupancy(garage);
+        return garage.occupancy(garage_value);
     }
     if cmd == "parked" {
         if len(args_value) != 0 {
             return bad;
         }
-        return parked(garage);
+        return garage.parked(garage_value);
     }
     if cmd == "report" {
         if len(args_value) != 1 or not is_number(args_value[0]) {
             return bad;
         }
-        return report(garage, num(args_value[0]));
+        return billing.report(garage_value, num(args_value[0]));
     }
     if cmd == "rates" {
         if len(args_value) != 0 {
             return bad;
         }
-        return rates();
+        return fees.rates();
     }
     return ["error: unknown command " + cmd];
 }
 
 fn main() uses console, input {
-    let garage = new_garage();
+    let garage_value = garage.new_garage();
     for line in split(read_all(), "\n") {
         let words = filter(split(line, " "), fn(w: str) -> bool {
             return w != "";
@@ -99,7 +92,7 @@ fn main() uses console, input {
         if len(words) == 0 {
             continue;
         }
-        for out in run(words, garage) {
+        for out in run(words, garage_value) {
             print(out);
         }
     }

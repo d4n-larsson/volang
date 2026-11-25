@@ -1,17 +1,14 @@
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.exec;
-import std.sqlite.Value;
+import std.sqlite;
 
 fn main() -> result[void] uses console {
-    let db = open_memory();
-    let none = new list[Value];
-    let _ = try exec(db, sql("create table t(x)"), none);
-    let a = try exec(db, sql("insert into t values (1), (2)"), none);
+    let db = sqlite.open_memory();
+    let none = new list[sqlite.Value];
+    let _ = try sqlite.exec(db, sqlite.sql("create table t(x)"), none);
+    let a = try sqlite.exec(db, sqlite.sql("insert into t values (1), (2)"), none);
     print(str(a.changed) + " " + str(a.last_id));
-    let b = try exec(db, sql("update t set x = x + 1"), none);
+    let b = try sqlite.exec(db, sqlite.sql("update t set x = x + 1"), none);
     print(str(b.changed) + " " + str(b.last_id));
-    let c = try exec(db, sql("delete from t where x = 3"), none);
+    let c = try sqlite.exec(db, sqlite.sql("delete from t where x = 3"), none);
     print(str(c.changed) + " " + str(c.last_id));
     return ok();
 }

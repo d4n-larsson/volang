@@ -5,7 +5,7 @@ std/process.vo:35:23: runtime error[R0009]: Time limit of 1 s exceeded.
      |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at run (std/process.vo:35:23)
-  at main (main.vo:22:19)
+  at main (main.vo:20:19)
 --- exit 124
 $ no-children
 left-over processes: 0

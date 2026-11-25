@@ -19,10 +19,10 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.environ.get("VO_BIN", os.path.join(ROOT, "bin", "vo"))
 CERTS = os.path.join(ROOT, "tests", "tls", "certs")
 CA = os.path.join(CERTS, "test-ca.pem")
-PROGRAM = """import std.http.get;
+PROGRAM = """import std.http;
 
 fn main() uses console, net("127.0.0.1") {
-    match get("https://127.0.0.1:" + args()[0] + "/plain") {
+    match http.get("https://127.0.0.1:" + args()[0] + "/plain") {
         case ok(r) {
             print("status " + str(r.status));
         }

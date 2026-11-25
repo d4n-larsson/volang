@@ -1,11 +1,10 @@
-import std.regex.regex;
-import std.regex.first_match;
-import std.option.to_result;
+import std.option;
+import std.regex;
 
 fn main() uses console {
     let line = "2026-11-19 12:04:55 ERROR disk full (sda1)";
-    let re = regex("(\\d{4})-(\\d{2})-(\\d{2}) \\S+ (?<level>ERROR|WARN)");
-    match to_result(first_match(line, re), "no match") {
+    let re = regex.regex("(\\d{4})-(\\d{2})-(\\d{2}) \\S+ (?<level>ERROR|WARN)");
+    match option.to_result(regex.first_match(line, re), "no match") {
         case ok(m) {
             print(join(m.groups, "|"));
             print(str(m.start) + " " + str(m.end) + " " + str(slice(line, m.start, m.end) == m.text));
@@ -15,7 +14,7 @@ fn main() uses console {
             print(e);
         }
     }
-    match to_result(first_match(line, regex("\\((\\w+)\\)")), "no match") {
+    match option.to_result(regex.first_match(line, regex.regex("\\((\\w+)\\)")), "no match") {
         case ok(m) {
             print(m.groups[1]);
         }

@@ -1,0 +1,9 @@
+# A module item that does not exist: E0201 naming the module, with the closest exported name as the fix.
+import std.json;
+
+fn main() -> result[void] uses console {
+    let a = try json.parse_jsn("1");
+    let b = json.nope;
+    print(str(a == b));
+    return ok();
+}

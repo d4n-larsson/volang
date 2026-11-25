@@ -29,6 +29,9 @@ import tempfile
 import threading
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from migrate_058 import module_form  # noqa: E402  spec 058: programs assembled from fragments
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 QUICK = "--quick" in sys.argv
@@ -262,7 +265,7 @@ def example_copy(port):
     for f in ("main.vo", "vo.effects"):
         p = os.path.join(d, f)
         text = open(p).read().replace("8080", str(port))
-        open(p, "w").write(text)
+        open(p, "w").write(module_form(text))
     return d
 
 
@@ -340,31 +343,21 @@ def group_workers_and_logs(groups):
 
 # ---- secrets ----
 
-SECRETS_APP = """import std.http.Request;
-import std.http.Response;
-import std.json.Json;
-import std.json.parse_json;
-import std.log.Field;
-import std.log.field;
-import std.log.log_info;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.Step;
-import std.web.json_reply;
-import std.web.on_post;
-import std.web.request_logs;
-import std.web.serve_app;
+SECRETS_APP = """import std.http;
+import std.json;
+import std.log;
+import std.web;
 
-fn seen(n: int, r: Request, next: fn(Request) -> Response uses log, clock) -> Response uses log, clock {
-    let fields = [field("headers", r.headers)];
-    match parse_json(r.body) {
+fn seen(n: int, r: http.Request, next: fn(http.Request) -> http.Response uses log, clock) -> http.Response uses log, clock {
+    let fields = [log.field("headers", r.headers)];
+    match json.parse_json(r.body) {
         case ok(j) {
-            push(fields, field("body", j));
+            push(fields, log.field("body", j));
         }
         case err(_) {
         }
     }
-    log_info("received", fields);
+    log.log_info("received", fields);
     return next(r);
 }
 
@@ -377,8 +370,8 @@ record LoginIn {
     body: Login;
 }
 
-fn login(n: int, input: LoginIn) -> result[Response] {
-    return ok(json_reply(200, "welcome"));
+fn login(n: int, input: LoginIn) -> result[http.Response] {
+    return ok(web.json_reply(200, "welcome"));
 }
 
 fn setup() -> result[int] {
@@ -386,12 +379,12 @@ fn setup() -> result[int] {
 }
 
 fn main() -> result[void] uses serve("PORT"), log, clock {
-    let app = new App[int, uses log, clock] {
-        routes: [on_post("/login", login)],
-        steps: [request_logs(), new Step[int, uses log, clock] { prefix: "/", run: seen }],
-        errors: new list[ErrorStatus]
+    let app = new web.App[int, uses log, clock] {
+        routes: [web.on_post("/login", login)],
+        steps: [web.request_logs(), new web.Step[int, uses log, clock] { prefix: "/", run: seen }],
+        errors: new list[web.ErrorStatus]
     };
-    return serve_app("PORT", 2, setup, app);
+    return web.serve_app("PORT", 2, setup, app);
 }
 """
 
@@ -399,7 +392,7 @@ fn main() -> result[void] uses serve("PORT"), log, clock {
 def group_secrets():
     port = free_port()
     d = tempfile.mkdtemp(prefix="vo-ops-")
-    open(os.path.join(d, "main.vo"), "w").write(SECRETS_APP.replace("PORT", str(port)))
+    open(os.path.join(d, "main.vo"), "w").write(module_form(SECRETS_APP.replace("PORT", str(port))))
     p = start(d, ["main.vo"])
     try:
         if not wait_port(port, p):
@@ -426,10 +419,7 @@ def group_secrets():
 
 # ---- drain ----
 
-DRAIN_APP = """import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve_workers;
+DRAIN_APP = """import std.http;
 
 fn busy(ms: int) uses clock {
     let end = now_ms() + ms;
@@ -437,13 +427,13 @@ fn busy(ms: int) uses clock {
     }
 }
 
-fn handle(n: int, r: Request) -> Response uses clock {
+fn handle(n: int, r: http.Request) -> http.Response uses clock {
     if r.path == "/slow" {
         busy(10000);
     } else if r.path == "/fast" {
         busy(1500);
     }
-    return new Response { status: 200, headers: new list[Header], body: r.path };
+    return new http.Response { status: 200, headers: new list[http.Header], body: r.path };
 }
 
 fn setup() -> result[int] {
@@ -451,24 +441,21 @@ fn setup() -> result[int] {
 }
 
 fn main() -> result[void] uses serve("PORT"), clock {
-    return serve_workers("PORT", 2, setup, handle);
+    return http.serve_workers("PORT", 2, setup, handle);
 }
 """
 
-PLAIN_APP = """import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve;
+PLAIN_APP = """import std.http;
 
-fn handle(r: Request) -> Response uses clock {
+fn handle(r: http.Request) -> http.Response uses clock {
     let end = now_ms() + 2000;
     while now_ms() < end {
     }
-    return new Response { status: 200, headers: new list[Header], body: r.path };
+    return new http.Response { status: 200, headers: new list[http.Header], body: r.path };
 }
 
 fn main() -> result[void] uses serve("PORT"), clock {
-    return serve("PORT", handle);
+    return http.serve("PORT", handle);
 }
 """
 
@@ -479,7 +466,7 @@ def drain_case(name, app, args, paths, signals, want_statuses, want_record, with
     gap 0: the requests are sent while the server is stopped (SIGSTOP), so it reads them all in one round."""
     port = free_port()
     d = tempfile.mkdtemp(prefix="vo-ops-")
-    open(os.path.join(d, "main.vo"), "w").write(app.replace("PORT", str(port)))
+    open(os.path.join(d, "main.vo"), "w").write(module_form(app.replace("PORT", str(port))))
     p = start(d, args + ["main.vo"])
     try:
         if not wait_port(port, p):

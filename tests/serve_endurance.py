@@ -24,36 +24,32 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 
-PROGRAM = """import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve;
-import std.json.Json;
-import std.json.write_json;
+PROGRAM = """import std.http;
+import std.json;
 
-fn handle(r: Request) -> Response {
+fn handle(r: http.Request) -> http.Response {
     if r.path == "/fail" {
         let zero = len(r.query) - len(r.query);
-        return new Response { status: 200, headers: new list[Header], body: str(1 / zero) };
+        return new http.Response { status: 200, headers: new list[http.Header], body: str(1 / zero) };
     }
     if r.path != "/count" {
-        return new Response { status: 404, headers: new list[Header], body: "" };
+        return new http.Response { status: 404, headers: new list[http.Header], body: "" };
     }
-    let items = map(split(r.query, ","), fn(s: str) -> Json {
-        return Json.text(s);
+    let items = map(split(r.query, ","), fn(s: str) -> json.Json {
+        return json.Json.text(s);
     });
-    match write_json(Json.array(items)) {
+    match json.write_json(json.Json.array(items)) {
         case ok(text) {
-            return new Response { status: 200, headers: [new Header { name: "Content-Type", value: "application/json" }], body: text };
+            return new http.Response { status: 200, headers: [new http.Header { name: "Content-Type", value: "application/json" }], body: text };
         }
         case err(e) {
-            return new Response { status: 500, headers: new list[Header], body: e };
+            return new http.Response { status: 500, headers: new list[http.Header], body: e };
         }
     }
 }
 
 fn main() -> result[void] uses console, serve("PORT") {
-    try serve("PORT", handle);
+    try http.serve("PORT", handle);
     print("stopped");
     return ok();
 }

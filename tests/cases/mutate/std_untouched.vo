@@ -1,8 +1,8 @@
 # Spec 018 US4: library code is never changed, only the program's own functions.
-import std.text.pad_left;
+import std.text;
 
 fn label(n: int) -> str {
-    return pad_left(str(n), 4, " ");
+    return text.pad_left(str(n), 4, " ");
 }
 
 test "label" {

@@ -1,10 +1,10 @@
-import helper.label;
-import std.crypto.random_bytes;
+import helper;
+import std.crypto;
 
 fn token() -> int uses entropy {
-    return len(random_bytes(16));
+    return len(crypto.random_bytes(16));
 }
 
 fn main() uses console, entropy {
-    print(label() + str(token()));
+    print(helper.label() + str(token()));
 }

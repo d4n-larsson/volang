@@ -62,12 +62,8 @@ class Peer:
         self.p.wait()
 
 
-TCP_PROGRAM = """import std.bytes.from_text;
-import std.bytes.to_text;
-import std.tcp.close_conn;
-import std.tcp.connect;
-import std.tcp.read;
-import std.tcp.write_all;
+TCP_PROGRAM = """import std.bytes;
+import std.tcp;
 
 fn port() -> int uses env {
     match env("PORT") {
@@ -87,19 +83,19 @@ fn port() -> int uses env {
 }
 
 fn echo(text: str) -> str uses env, net {
-    match connect("127.0.0.1", port(), 2000) {
+    match tcp.connect("127.0.0.1", port(), 2000) {
         case ok(c) {
-            match write_all(c, from_text(text), 2000) {
+            match tcp.write_all(c, bytes.from_text(text), 2000) {
                 case ok() {
                 }
                 case err(_) {
                     return "send failed";
                 }
             }
-            match read(c, 100, 2000) {
+            match tcp.read(c, 100, 2000) {
                 case ok(b) {
-                    close_conn(c);
-                    match to_text(b) {
+                    tcp.close_conn(c);
+                    match bytes.to_text(b) {
                         case ok(t) {
                             return t;
                         }
@@ -160,7 +156,7 @@ class Http:
         self.p.wait()
 
 
-HEAD = """import std.http.get;
+HEAD = """import std.http;
 
 fn base() -> str uses env {
     match env("PORT") {
@@ -174,7 +170,7 @@ fn base() -> str uses env {
 }
 
 fn body_at(path: str) -> str uses env, net {
-    match get(base() + path) {
+    match http.get(base() + path) {
         case ok(r) {
             return r.body;
         }
@@ -262,14 +258,14 @@ def group_redact(d):
     secret = lambda: "".join(rng.choice("abcdefghijklmnopqrstuvwxyz0123456789") for _ in range(16))
     vals = {"auth": secret(), "key": secret(), "q": secret(), "env": secret(), "cookie": secret()}
     body = f"""    let headers = [
-        new Header {{ name: "Authorization", value: "Bearer {vals["auth"]}" }},
-        new Header {{ name: "Proxy-Authorization", value: "Basic {vals["auth"]}" }},
-        new Header {{ name: "x-api-key", value: "{vals["key"]}" }},
-        new Header {{ name: "Cookie", value: "s={vals["cookie"]}" }}
+        new http.Header {{ name: "Authorization", value: "Bearer {vals["auth"]}" }},
+        new http.Header {{ name: "Proxy-Authorization", value: "Basic {vals["auth"]}" }},
+        new http.Header {{ name: "x-api-key", value: "{vals["key"]}" }},
+        new http.Header {{ name: "Cookie", value: "s={vals["cookie"]}" }}
     ];
     let secret = env("SERVICE_SECRET");
     expect(secret == ok("{vals["env"]}") or secret == ok("[redacted]"));
-    match send("GET", base() + "/cookie?token={vals["q"]}&page=1", headers, "", 2000) {{
+    match http.send("GET", base() + "/cookie?token={vals["q"]}&page=1", headers, "", 2000) {{
         case ok(r) {{
             expect_eq(r.status, 200);
         }}
@@ -280,7 +276,7 @@ def group_redact(d):
 """
     tests = [("redacts", body)]
     with open(os.path.join(d, "main.vo"), "w") as f:
-        f.write(program(tests).replace("import std.http.get;", "import std.http.Header;\nimport std.http.get;\nimport std.http.send;"))
+        f.write(program(tests))
     srv = Http()
     try:
         code, out = vo(["test", "--record", "rec", "--redact", "X-Api-Key", "--redact", "token", "--redact", "SERVICE_SECRET", "main.vo"], d,

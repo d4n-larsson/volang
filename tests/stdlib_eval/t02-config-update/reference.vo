@@ -1,6 +1,4 @@
-import std.json.Json;
-import std.json.parse_json;
-import std.json.write_json_pretty;
+import std.json;
 
 fn fail(m: str) uses console {
     print("error: " + m);
@@ -14,13 +12,13 @@ fn main() -> result[void] uses console, file.read("./") {
         case ok(t) {
             match parse_int(a[1]) {
                 case ok(port) {
-                    match parse_json(t) {
+                    match json.parse_json(t) {
                         case ok(j) {
                             match j {
                                 case object(m) {
-                                    set m["port"] = Json.integer(port);
-                                    set m["updated"] = Json.boolean(true);
-                                    print(try write_json_pretty(Json.object(m)));
+                                    set m["port"] = json.Json.integer(port);
+                                    set m["updated"] = json.Json.boolean(true);
+                                    print(try json.write_json_pretty(json.Json.object(m)));
                                 }
                                 case null {
                                     fail("not a JSON object");

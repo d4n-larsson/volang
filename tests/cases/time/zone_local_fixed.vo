@@ -1,8 +1,7 @@
 # With a fixed clock the machine's zone is UTC, whatever the machine says.
-import std.time.format_in;
-import std.time.local_zone;
+import std.time;
 
 fn main() uses console, clock {
-    let z = local_zone();
-    print(z.name + " " + format_in(z, now_ms()));
+    let z = time.local_zone();
+    print(z.name + " " + time.format_in(z, now_ms()));
 }

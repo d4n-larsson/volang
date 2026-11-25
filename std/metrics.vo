@@ -1,5 +1,5 @@
 # std.metrics: Counters, gauges and histograms an operator reads in the text exposition format 0.0.4 (Prometheus).
-# Part of the vo standard library (spec 055). Import items one by one: `import std.metrics.NAME;`.
+# Part of the vo standard library (spec 055). Import the module, `import std.metrics;`, and write its items as `metrics.NAME`.
 # A metric is a plain value (counter, gauge, histogram); add, set_to and observe change its series (one per tuple
 # of label values) in one registry per program, shared by serve_workers' worker processes, so any worker's
 # metrics_text shows the totals. A name has one kind, help and label list for the whole program, values match

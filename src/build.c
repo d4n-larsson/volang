@@ -17,7 +17,7 @@
 #define PKG_ROOT "/vo-app" /* stands for the manifest's directory, so a build does not depend on where it ran */
 
 static const char magic[16] = "VO-PROGRAM-v1";
-const char vo_version_text[] = "vo 0.3.0 schema 1\n";
+const char vo_version_text[] = "vo 0.4.0 schema 1\n";
 
 long ld_app;
 Str *app_entry;

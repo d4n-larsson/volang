@@ -1,10 +1,10 @@
-tasks.vo:10:15: runtime error[R0007]: Open the database inside the task.
-  10 |         match query(db, sql("select 1 as x"), new list[Value]) {
-     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tasks.vo:7:15: runtime error[R0007]: Open the database inside the task.
+   7 |         match sqlite.query(db, sqlite.sql("select 1 as x"), new list[sqlite.Value]) {
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at query (tasks.vo:10:15)
+  at query (tasks.vo:7:15)
       db: Database = new Database { id: 0 }, st: Statement = new Statement { text: "select 1 as x" }, params: list[Value] = []
-  at anonymous function (tasks.vo:10:15)
+  at anonymous function (tasks.vo:7:15)
       x: int = 1, db: Database = new Database { id: 0 }
-  at main (tasks.vo:9:18)
+  at main (tasks.vo:6:18)
       db: Database = new Database { id: 0 }

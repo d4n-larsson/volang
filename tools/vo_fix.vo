@@ -1,6 +1,7 @@
 # Applies vo's fixes in place (spec 056): `vo check --json` on each entry program, then the first fix of
-# every diagnostic, once per round, up to 3 rounds while fixes remain. When the only errors left are E0504
-# (an effects record to approve, which has no fix), runs `vo effects --update` for that entry.
+# every diagnostic, once per round, up to 4 rounds while fixes remain (spec 058: E0215 rewrites a file in
+# a round of its own). When the only errors left are E0504 (an effects record to approve, which has no
+# fix), runs `vo effects --update` for that entry.
 #
 #   bin/vo run --timeout 0 tools/vo_fix.vo -- [--only CODE,...] PATH...
 #
@@ -9,24 +10,12 @@
 # passed on, so it must be an absolute path). Prints the codes it fixed and the errors left; exit status 1
 # when errors are left.
 
-import std.fs.Info;
-import std.fs.info;
-import std.fs.walk;
-import std.json.Json;
-import std.json.as_array;
-import std.json.int_field;
-import std.json.member;
-import std.json.parse_json;
-import std.json.text_field;
-import std.lists.has_item;
-import std.lists.sort_by_desc;
-import std.process.Output;
-import std.process.run_with;
-import std.text.ends_with;
-import std.text.lines;
-import std.text.replace;
-import std.text.starts_with;
-import std.workers.with_deadline;
+import std.fs;
+import std.json;
+import std.lists;
+import std.process;
+import std.text;
+import std.workers;
 
 effects Tools = file.read, env("VO_BIN"), process("bin/vo");
 
@@ -36,7 +25,7 @@ record Diag {
     file: str;
     line: int;
     message: str;
-    fix: Json;
+    fix: json.Json;
     has_fix: bool;
 }
 
@@ -71,8 +60,8 @@ fn vo(dir: str, arguments: list[str]) -> result[str] uses Tools {
         case err(_) {
         }
     }
-    match with_deadline(300000, fn() -> result[Output] {
-        return run_with("bin/vo", arguments, "", vars, dir);
+    match workers.with_deadline(300000, fn() -> result[process.Output] {
+        return process.run_with("bin/vo", arguments, "", vars, dir);
     }) {
         case ok(out) {
             return ok((try out).stdout);
@@ -87,25 +76,25 @@ fn vo(dir: str, arguments: list[str]) -> result[str] uses Tools {
 
 fn check(entry: str) -> result[list[Diag]] uses Tools {
     let found = new list[Diag];
-    for l in lines(try vo(dir_of(entry), ["check", "--json", base_of(entry)])) {
-        if not starts_with(l, "{") {
+    for l in text.lines(try vo(dir_of(entry), ["check", "--json", base_of(entry)])) {
+        if not text.starts_with(l, "{") {
             continue;
         }
-        let j = try parse_json(l);
-        if try text_field(j, "kind") != "diagnostic" {
+        let j = try json.parse_json(l);
+        if try json.text_field(j, "kind") != "diagnostic" {
             continue;
         }
-        let fixes = try as_array(try member(j, "fixes"));
-        var fix = Json.null;
+        let fixes = try json.as_array(try json.member(j, "fixes"));
+        var fix = json.Json.null;
         if len(fixes) > 0 {
             set fix = fixes[0];
         }
         push(found, new Diag {
-            code: try text_field(j, "code"),
-            severity: try text_field(j, "severity"),
-            file: try text_field(j, "file"),
-            line: try int_field(try member(j, "start"), "line"),
-            message: try text_field(j, "message"),
+            code: try json.text_field(j, "code"),
+            severity: try json.text_field(j, "severity"),
+            file: try json.text_field(j, "file"),
+            line: try json.int_field(try json.member(j, "start"), "line"),
+            message: try json.text_field(j, "message"),
             fix: fix,
             has_fix: len(fixes) > 0
         });
@@ -114,8 +103,8 @@ fn check(entry: str) -> result[list[Diag]] uses Tools {
 }
 
 # The byte offset of a 1-based line and column (columns count code points).
-fn offset(text: str, line: int, col: int) -> int {
-    let ls = split(text, "\n");
+fn offset(text_value: str, line: int, col: int) -> int {
+    let ls = split(text_value, "\n");
     var off = 0;
     for i in 0..line - 1 {
         set off = off + len(ls[i]) + 1;
@@ -137,12 +126,12 @@ record Span {
 }
 
 # The fix of each diagnostic, by the file it edits.
-fn by_file(diags: list[Diag]) -> result[map[str, list[Json]]] {
-    let files = new map[str, list[Json]];
+fn by_file(diags: list[Diag]) -> result[map[str, list[json.Json]]] {
+    let files = new map[str, list[json.Json]];
     for d in diags {
-        let name = try text_field(d.fix, "file");
+        let name = try json.text_field(d.fix, "file");
         if not has(files, name) {
-            set files[name] = new list[Json];
+            set files[name] = new list[json.Json];
         }
         push(files[name], d.fix);
     }
@@ -150,13 +139,13 @@ fn by_file(diags: list[Diag]) -> result[map[str, list[Json]]] {
 }
 
 # text with the fixes made, later edits first; of overlapping ones the earlier in the list stays.
-fn edited(text: str, fixes: list[Json]) -> result[str] {
+fn edited(text_value: str, fixes: list[json.Json]) -> result[str] {
     let spans = new list[Span];
     for f in fixes {
-        let a = try member(f, "start");
-        let b = try member(f, "end");
-        let s = offset(text, try int_field(a, "line"), try int_field(a, "col"));
-        let e = offset(text, try int_field(b, "line"), try int_field(b, "col"));
+        let a = try json.member(f, "start");
+        let b = try json.member(f, "end");
+        let s = offset(text_value, try json.int_field(a, "line"), try json.int_field(a, "col"));
+        let e = offset(text_value, try json.int_field(b, "line"), try json.int_field(b, "col"));
         var clear = true;
         for sp in spans {
             if not (e <= sp.start or s >= sp.end) {
@@ -164,13 +153,13 @@ fn edited(text: str, fixes: list[Json]) -> result[str] {
             }
         }
         if clear {
-            push(spans, new Span { start: s, end: e, text: try text_field(f, "replacement") });
+            push(spans, new Span { start: s, end: e, text: try json.text_field(f, "replacement") });
         }
     }
-    sort_by_desc(spans, fn(sp: Span) -> int {
+    lists.sort_by_desc(spans, fn(sp: Span) -> int {
         return sp.start;
     });
-    var out = text;
+    var out = text_value;
     for sp in spans {
         set out = slice(out, 0, sp.start) + sp.text + slice(out, sp.end, len(out));
     }
@@ -179,11 +168,11 @@ fn edited(text: str, fixes: list[Json]) -> result[str] {
 
 test "edited counts columns in code points, edits later spans first and skips an overlapping fix" {
     let fix = "{\"file\": \"f\", \"start\": {\"line\": L, \"col\": A}, \"end\": {\"line\": L, \"col\": B}, \"replacement\": \"R\"}";
-    let fixes = new list[Json];
+    let fixes = new list[json.Json];
     for spec in ["2 3 4 X", "1 1 3 ab", "2 2 5 no"] {
         let p = split(spec, " ");
-        match parse_json(replace(
-            replace(replace(replace(fix, "L", p[0]), "A", p[1]), "B", p[2]),
+        match json.parse_json(text.replace(
+            text.replace(text.replace(text.replace(fix, "L", p[0]), "A", p[1]), "B", p[2]),
             "R",
             p[3]
         )) {
@@ -202,7 +191,7 @@ test "edited counts columns in code points, edits later spans first and skips an
 fn apply(dir: str, diags: list[Diag]) -> result[void] uses file.read, file.write {
     for name, fixes in try by_file(diags) {
         var path = name;
-        if not starts_with(name, "/") {
+        if not text.starts_with(name, "/") {
             set path = dir + name;
         }
         try write_file(path, try edited(try read_file(path), fixes));
@@ -211,13 +200,13 @@ fn apply(dir: str, diags: list[Diag]) -> result[void] uses file.read, file.write
 }
 
 fn wanted(code: str, only: list[str]) -> bool {
-    return len(only) == 0 or has_item(only, code);
+    return len(only) == 0 or lists.has_item(only, code);
 }
 
 # Whether every error left is E0504 (an effects record to approve), and there is one.
 fn only_effects(errs: list[str]) -> bool {
     for e in errs {
-        if not starts_with(e, "E0504 ") {
+        if not text.starts_with(e, "E0504 ") {
             return false;
         }
     }
@@ -241,7 +230,7 @@ fn errors(entry: str, only: list[str]) -> result[list[str]] uses Tools {
 # Adds the codes fixed to fixed and the errors left to left; only: the codes whose fixes apply.
 fn fix_entry(entry: str, only: list[str], fixed: ordered_set[str], left: list[str]) -> result[void]
     uses file.read, file.write, Tools {
-    for _ in 0..3 {
+    for _ in 0..4 {
         let with_fix = new list[Diag];
         for d in try check(entry) {
             if d.has_fix and wanted(d.code, only) {
@@ -268,7 +257,7 @@ fn fix_entry(entry: str, only: list[str], fixed: ordered_set[str], left: list[st
 
 # A file is its own entry; a directory's are the main.vo files under it, else every .vo file.
 fn entries(path: str) -> result[list[str]] uses file.read {
-    match try info(path) {
+    match try fs.info(path) {
         case directory {
         }
         case missing {
@@ -283,11 +272,11 @@ fn entries(path: str) -> result[list[str]] uses file.read {
     }
     let mains = new list[str];
     let vo_files = new list[str];
-    for f in try walk(path) {
-        if f == "main.vo" or ends_with(f, "/main.vo") {
+    for f in try fs.walk(path) {
+        if f == "main.vo" or text.ends_with(f, "/main.vo") {
             push(mains, f);
         }
-        if ends_with(f, ".vo") {
+        if text.ends_with(f, ".vo") {
             push(vo_files, f);
         }
     }

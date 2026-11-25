@@ -1,15 +1,15 @@
 $ vo edit rename main.vo Event.added cleared
-main.vo:16:4: error[E0403]: `describe` can reach its end without returning a value.
-  16 | fn describe(e: Event) -> str {
+main.vo:13:4: error[E0403]: `describe` can reach its end without returning a value.
+  13 | fn describe(e: Event) -> str {
      |    ^^^^^^^^
-main.vo:17:5: error[E0401]: This `match` is missing cases: `cleared`.
-  17 |     match e {
+main.vo:14:5: error[E0401]: This `match` is missing cases: `cleared`.
+  14 |     match e {
      |     ^^^^^^^
-main.vo:21:14: error[E0402]: Case `cleared` is handled twice.
-  21 |         case cleared {
+main.vo:18:14: error[E0402]: Case `cleared` is handled twice.
+  18 |         case cleared {
      |              ^^^^^^^
-main.vo:42:55: error[E0302]: `Event.cleared` needs a payload of type `str`.
-  42 |     print(describe(Event.added("x")) + " " + describe(Event.cleared) + " " + str(first_of([1, 2], 0)));
+main.vo:39:55: error[E0302]: `Event.cleared` needs a payload of type `str`.
+  39 |     print(describe(Event.added("x")) + " " + describe(Event.cleared) + " " + str(first_of([1, 2], 0)));
      |                                                       ^^^^^^^^^^^^^
 error[T0006]: Renaming `added` to `cleared` would not check (4 new errors): nothing was written.
 --- stderr

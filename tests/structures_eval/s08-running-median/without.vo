@@ -1,4 +1,4 @@
-import std.text.words;
+import std.text;
 
 # A binary min-heap of ints at index 0.
 fn heap_push(h: list[int], x: int) {
@@ -41,7 +41,7 @@ fn heap_pop(h: list[int]) -> result[int] {
 }
 
 fn main() -> result[void] uses console, input {
-    let xs = words(read_all());
+    let xs = text.words(read_all());
     # low: the smaller half, negated so that its largest is at the top; high: the larger half.
     let low = new list[int];
     let high = new list[int];

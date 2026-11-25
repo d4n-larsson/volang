@@ -1,7 +1,7 @@
-import std.collections.ordered_set_by;
+import std.collections;
 
 fn main() uses console {
-    let s: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int {
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int {
         print("comparing");
         return a - b;
     });

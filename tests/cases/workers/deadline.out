@@ -1,11 +1,11 @@
 in time: ok 4
 the program's list: 3
 never returns: timeout
-fails: failed: deadline.vo:102:69: runtime error[R0002]: Division by zero.
- 102 |     print("fails: " + show(with_deadline(5000, fn() -> int { return 1 / (len(numbers) - 3); })));
-     |                                                                     ^^^^^^^^^^^^^^^^^^^^^^
+fails: failed: deadline.vo:92:77: runtime error[R0002]: Division by zero.
+  92 |     print("fails: " + show(workers.with_deadline(5000, fn() -> int { return 1 / (len(numbers) - 3); })));
+     |                                                                             ^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at anonymous function (deadline.vo:102:69)
+  at anonymous function (deadline.vo:92:77)
       numbers: list[int] = [1, 2, 3]
   at anonymous function (std/workers.vo:117:26)
       link: Link[int, int] = new Link[int, int] { id: 0 }, f: fn() -> int = <fn() -> int>
@@ -13,7 +13,7 @@ trace:
       body: fn(Link[int, int]) = <fn(Link[int, int])>
   at with_deadline (std/workers.vo:116:33)
       ms: int = 5000, f: fn() -> int = <fn() -> int>
-  at main (deadline.vo:102:28)
+  at main (deadline.vo:92:28)
       numbers: list[int] = [1, 2, 3]
 stopped while computing: ended, ended
 stopped while sleeping: ended

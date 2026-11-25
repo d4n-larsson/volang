@@ -1,9 +1,7 @@
 # Exchange rates from a public service (api.frankfurter.dev, no key): what the rate service answers and
 # how to read it. The service's answer is recorded for the test of fetch_rate, which then runs offline.
-import std.http.get;
-import std.json.float_field;
-import std.json.member;
-import std.json.parse_json;
+import std.http;
+import std.json;
 
 const rates_host = "api.frankfurter.dev";
 
@@ -14,12 +12,12 @@ export fn rate_url(from: str, to: str) -> str {
 
 # The rate in the service's answer, such as {"base":"EUR","rates":{"SEK":11.2}}.
 export fn parse_rate(body: str, to: str) -> result[float] {
-    return float_field(try member(try parse_json(body), "rates"), to);
+    return json.float_field(try json.member(try json.parse_json(body), "rates"), to);
 }
 
 # The latest rate from one currency to another, asked of the service.
 export fn fetch_rate(from: str, to: str) -> result[float] uses net(rates_host) {
-    let r = try get(rate_url(from, to));
+    let r = try http.get(rate_url(from, to));
     if r.status != 200 {
         return err("the rate service answered " + str(r.status));
     }

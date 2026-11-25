@@ -1,0 +1,4 @@
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"main.vo","start":{"line":12,"col":18},"end":{"line":12,"col":19},"text":"j","message":"Expected `str`, found `json.Json`.","expected":"str","found":"json.Json","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"main.vo","start":{"line":13,"col":18},"end":{"line":13,"col":32},"text":"helpers.make()","message":"Expected `str`, found `json.Json`.","expected":"str","found":"json.Json","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"main.vo","start":{"line":14,"col":18},"end":{"line":14,"col":31},"text":"helpers.box()","message":"Expected `str`, found `std.time.DateTime`.","expected":"str","found":"std.time.DateTime","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":3,"warnings":0,"truncated":0,"files":1}

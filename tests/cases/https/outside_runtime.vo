@@ -1,9 +1,9 @@
 # Spec 019 US1: an https:// host outside the grant is refused before any connection (R0010).
-import std.http.get;
+import std.http;
 
 fn main() -> result[void] uses console, net("a.test") {
     let host = "other" + ".test";
-    let r = try get("https://" + host + "/x");
+    let r = try http.get("https://" + host + "/x");
     print(r.body);
     return ok();
 }

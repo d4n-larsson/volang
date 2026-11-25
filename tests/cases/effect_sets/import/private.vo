@@ -1,6 +1,5 @@
-import store.Scratch;
-import store.scratch;
+import store;
 
-fn main() uses console, Scratch {
-    print(str(scratch("x") == ok()));
+fn main() uses console, store.Scratch {
+    print(str(store.scratch("x") == ok()));
 }

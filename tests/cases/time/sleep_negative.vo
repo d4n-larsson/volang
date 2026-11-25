@@ -1,8 +1,8 @@
 # Spec 022 US2: a negative duration is R0007 at the call.
-import std.time.sleep;
+import std.time;
 
 fn main() uses console, clock {
     let d = 5 - 10;
-    sleep(d);
+    time.sleep(d);
     print("not reached");
 }

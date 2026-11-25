@@ -1,3 +1,4 @@
 fn dist2(a: Point, b: Point) -> float
     The squared distance between a and b, cheaper than the distance.
+    use: import geo; then geo.dist2
     example: dist2(new Point { x: 0.0, y: 0.0 }, new Point { x: 3.0, y: 4.0 }) is 25.0

@@ -1,6 +1,6 @@
 # The same test next to the code it tests: no warning (and `vo test main.vo` still runs it).
-import money.cents;
+import money;
 
 fn main() uses console {
-    print(str(cents(2)));
+    print(str(money.cents(2)));
 }

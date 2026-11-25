@@ -1,8 +1,8 @@
-import std.fs.each_line;
+import std.fs;
 
 # The function passed prints: its caller must declare console.
 fn show(path: str) uses file.read {
-    match each_line(path, fn(line: str) -> result[bool] {
+    match fs.each_line(path, fn(line: str) -> result[bool] {
         print(line);
         return ok(true);
     }) {

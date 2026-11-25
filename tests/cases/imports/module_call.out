@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0201","name":"undefined_name","severity":"error","file":"module_call.vo","start":{"line":5,"col":35},"end":{"line":5,"col":40},"text":"regex","message":"`regex` is a module: write `regex.regex`.","fixes":[{"file":"module_call.vo","start":{"line":5,"col":35},"end":{"line":5,"col":40},"replacement":"regex.regex"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -1,11 +1,8 @@
-import report.Level;
-import report.Total;
-import report.level;
-import report.total;
+import report;
 
 fn main() uses console {
-    let t = total("food", 250);
-    match level(t) {
+    let t = report.total("food", 250);
+    match report.level(t) {
         case low {
             print("low");
         }
@@ -13,8 +10,8 @@ fn main() uses console {
             print(t.name + " high " + str(c));
         }
     }
-    let u = new Total { name: "rent", cents: 50 };
-    match level(u) {
+    let u = new report.Total { name: "rent", cents: 50 };
+    match report.level(u) {
         case low {
             print(u.name + " low");
         }

@@ -1,7 +1,7 @@
-import std.bits.shift_left;
+import std.bits;
 
 fn moved(value: int, count: int) -> int {
-    return shift_left(value, count);
+    return bits.shift_left(value, count);
 }
 
 fn main() uses console {

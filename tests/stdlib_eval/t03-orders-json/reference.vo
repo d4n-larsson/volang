@@ -1,8 +1,7 @@
-import std.json.Json;
-import std.json.write_json;
+import std.json;
 
 fn main() -> result[void] uses console, input {
-    let items = new list[Json];
+    let items = new list[json.Json];
     var total = 0;
     var n = 0;
     for line in split(read_all(), "\n") {
@@ -19,11 +18,11 @@ fn main() -> result[void] uses console, input {
             case ok(q) {
                 match parse_int(parts[2]) {
                     case ok(c) {
-                        let item = new map[str, Json];
-                        set item["name"] = Json.text(parts[0]);
-                        set item["quantity"] = Json.integer(q);
-                        set item["total_cents"] = Json.integer(q * c);
-                        push(items, Json.object(item));
+                        let item = new map[str, json.Json];
+                        set item["name"] = json.Json.text(parts[0]);
+                        set item["quantity"] = json.Json.integer(q);
+                        set item["total_cents"] = json.Json.integer(q * c);
+                        push(items, json.Json.object(item));
                         set total = total + q * c;
                     }
                     case err(_) {
@@ -38,9 +37,9 @@ fn main() -> result[void] uses console, input {
             }
         }
     }
-    let out = new map[str, Json];
-    set out["items"] = Json.array(items);
-    set out["total_cents"] = Json.integer(total);
-    print(try write_json(Json.object(out)));
+    let out = new map[str, json.Json];
+    set out["items"] = json.Json.array(items);
+    set out["total_cents"] = json.Json.integer(total);
+    print(try json.write_json(json.Json.object(out)));
     return ok();
 }

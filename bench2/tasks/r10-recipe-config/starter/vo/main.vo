@@ -1,11 +1,5 @@
-import recipes.Ingredient;
-import recipes.Recipe;
-import recipes.add_recipe;
-import recipes.show_lines;
-import recipes.list_lines;
-import scaling.Order;
-import scaling.scale_lines;
-import scaling.shopping_list;
+import recipes;
+import scaling;
 
 # Only called on strings of digits.
 fn num(s: str) -> int {
@@ -32,73 +26,73 @@ fn is_count(s: str) -> bool {
     return num(s) > 0;
 }
 
-fn run(words: list[str], recipes: map[str, Recipe]) -> list[str] {
+fn run(words: list[str], recipes_value: map[str, recipes.Recipe]) -> list[str] {
     let cmd = words[0];
     let args_value = slice(words, 1, len(words));
     if cmd == "recipe" {
         if len(args_value) < 5 or (len(args_value) - 2) % 3 != 0 or not is_count(args_value[1]) {
             return ["error: bad command"];
         }
-        let ingredients = new list[Ingredient];
+        let ingredients = new list[recipes.Ingredient];
         var i = 2;
         while i < len(args_value) {
             if not is_count(args_value[i + 1]) {
                 return ["error: bad command"];
             }
-            push(ingredients, new Ingredient { item: args_value[i], qty: num(args_value[i + 1]), unit: args_value[i + 2] });
+            push(ingredients, new recipes.Ingredient { item: args_value[i], qty: num(args_value[i + 1]), unit: args_value[i + 2] });
             set i = i + 3;
         }
-        return [add_recipe(recipes, args_value[0], num(args_value[1]), ingredients)];
+        return [recipes.add_recipe(recipes_value, args_value[0], num(args_value[1]), ingredients)];
     }
     if cmd == "show" {
         if len(args_value) != 1 {
             return ["error: bad command"];
         }
-        if not has(recipes, args_value[0]) {
+        if not has(recipes_value, args_value[0]) {
             return ["error: unknown recipe " + args_value[0]];
         }
-        return show_lines(recipes[args_value[0]]);
+        return recipes.show_lines(recipes_value[args_value[0]]);
     }
     if cmd == "scale" {
         if len(args_value) != 2 or not is_count(args_value[1]) {
             return ["error: bad command"];
         }
-        if not has(recipes, args_value[0]) {
+        if not has(recipes_value, args_value[0]) {
             return ["error: unknown recipe " + args_value[0]];
         }
-        return scale_lines(recipes[args_value[0]], num(args_value[1]));
+        return scaling.scale_lines(recipes_value[args_value[0]], num(args_value[1]));
     }
     if cmd == "shop" {
         if len(args_value) < 2 or len(args_value) % 2 != 0 {
             return ["error: bad command"];
         }
-        let orders = new list[Order];
+        let orders = new list[scaling.Order];
         var i = 0;
         while i < len(args_value) {
             if not is_count(args_value[i + 1]) {
                 return ["error: bad command"];
             }
-            push(orders, new Order { name: args_value[i], wanted: num(args_value[i + 1]) });
+            push(orders, new scaling.Order { name: args_value[i], wanted: num(args_value[i + 1]) });
             set i = i + 2;
         }
         for o in orders {
-            if not has(recipes, o.name) {
+            if not has(recipes_value, o.name) {
                 return ["error: unknown recipe " + o.name];
             }
         }
-        return shopping_list(recipes, orders);
+        return scaling.shopping_list(recipes_value, orders);
     }
     if cmd == "list" {
         if len(args_value) != 0 {
             return ["error: bad command"];
         }
-        return list_lines(recipes);
+        return recipes.list_lines(recipes_value);
     }
     return ["error: unknown command " + cmd];
 }
 
 fn main() uses console, input {
-    let recipes = new map[str, Recipe];
+    let recipes_value = new map[str, recipes.Recipe];
     for line in split(read_all(), "\n") {
         let words = filter(split(line, " "), fn(w: str) -> bool {
             return w != "";
@@ -106,7 +100,7 @@ fn main() uses console, input {
         if len(words) == 0 {
             continue;
         }
-        for out in run(words, recipes) {
+        for out in run(words, recipes_value) {
             print(out);
         }
     }

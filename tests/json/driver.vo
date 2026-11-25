@@ -1,14 +1,12 @@
 # Reads a JSON document on stdin; prints write_json of it and whether it survives
 # parse(write(v)) == v, or `error: ` and the parse error (tests/json_corpus.py). Spec 021: the
 # document is read as bytes, since text that is not UTF-8 never becomes a str.
-import std.json.parse_json;
-import std.json.write_json;
-import std.bytes.read_stdin;
-import std.bytes.to_text;
+import std.bytes;
+import std.json;
 
 fn main() -> result[void] uses console, input {
     var doc = "";
-    match to_text(read_stdin()) {
+    match bytes.to_text(bytes.read_stdin()) {
         case ok(t) {
             set doc = t;
         }
@@ -17,11 +15,11 @@ fn main() -> result[void] uses console, input {
             return ok();
         }
     }
-    match parse_json(doc) {
+    match json.parse_json(doc) {
         case ok(j) {
-            let text = try write_json(j);
+            let text = try json.write_json(j);
             print(text);
-            let again = try parse_json(text);
+            let again = try json.parse_json(text);
             if again != j {
                 print("round trip changed the value");
             }

@@ -1,10 +1,9 @@
 # Spec 017 (US2): the scope directory itself is created when missing, with its parents.
-import std.fs.append_file;
-import std.fs.make_dir;
+import std.fs;
 
 fn main() -> result[void] uses console, file.write("work/") {
-    try make_dir("work/x");
-    try append_file("work/file.txt", "f");
+    try fs.make_dir("work/x");
+    try fs.append_file("work/file.txt", "f");
     print("made");
     return ok();
 }

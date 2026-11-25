@@ -1,7 +1,7 @@
 # postgres.statement: the text of one SQL statement as PostgreSQL wants it. Programs write `?`
 # parameters, as with std.sqlite; the server wants `$1`, `$2`, ... Not part of the package's API:
 # import postgres.client.
-import std.text.char_count;
+import std.text;
 
 # A statement ready to send: its text with numbered parameters, how many it has, and the pieces
 # both texts are made of (so a position the server reports can be found in what the program wrote).
@@ -173,9 +173,9 @@ export fn rewrite(s: str) -> result[Rewritten] {
         if ended {
             return err("error: one statement per sql");
         }
-        let text = try after_text(s, i);
-        if text != i {
-            set i = text;
+        let text_value = try after_text(s, i);
+        if text_value != i {
+            set i = text_value;
             continue;
         }
         let c = byte_at(s, i);
@@ -212,7 +212,7 @@ export fn source_position(r: Rewritten, position: int) -> int {
     var sent = 0;
     var source = 0;
     for i in 0..len(r.made) {
-        let size = char_count(r.made[i]);
+        let size = text.char_count(r.made[i]);
         if position <= sent + size {
             if r.made[i] == r.written[i] {
                 return source + position - sent;
@@ -220,7 +220,7 @@ export fn source_position(r: Rewritten, position: int) -> int {
             return source + 1;
         }
         set sent = sent + size;
-        set source = source + char_count(r.written[i]);
+        set source = source + text.char_count(r.written[i]);
     }
     return source;
 }
@@ -276,8 +276,8 @@ test "text that ends early" {
     expect_eq(text_of("select $a$ abc"), "error: the statement ends inside a dollar-quoted text");
 }
 
-fn position_in(text: str, position: int) -> int {
-    match rewrite(text) {
+fn position_in(text_value: str, position: int) -> int {
+    match rewrite(text_value) {
         case ok(r) {
             return source_position(r, position);
         }

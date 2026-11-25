@@ -1,19 +1,18 @@
-import config.item_limit;
-import config.twice;
+import config;
 
 const out_dir = "out/";
 
 record Note {
-    @size(1, item_limit)
+    @size(1, config.item_limit)
     text: str;
 }
 
 fn add(xs: list[str]) -> bool {
-    return len(xs) >= item_limit;
+    return len(xs) >= config.item_limit;
 }
 
 fn save() -> result[void] uses file.write(out_dir) {
-    return write_file(out_dir + "x", str(twice));
+    return write_file(out_dir + "x", str(config.twice));
 }
 
 fn main() uses console {

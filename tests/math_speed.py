@@ -6,9 +6,7 @@ import os, statistics, subprocess, sys, tempfile, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.environ.get("VO_BIN", os.path.join(ROOT, "build", "vo"))
-PROGRAM = """import std.math.pow;
-import std.math.sin;
-import std.math.log;
+PROGRAM = """import std.math;
 
 fn main() uses console {{
     var s = 0.0;
@@ -39,7 +37,7 @@ def main():
     with tempfile.TemporaryDirectory() as d:
         math_p, loop_p = os.path.join(d, "math.vo"), os.path.join(d, "loop.vo")
         with open(math_p, "w") as f:
-            f.write(PROGRAM.format(body="pow(x, 1.5) + sin(x) + log(x)").replace("s = s +", "set s = s +"))
+            f.write(PROGRAM.format(body="math.pow(x, 1.5) + math.sin(x) + math.log(x)").replace("s = s +", "set s = s +"))
         with open(loop_p, "w") as f:
             f.write(PROGRAM.format(body="x + x + x").replace("s = s +", "set s = s +"))
         m, out = median_ms(math_p)

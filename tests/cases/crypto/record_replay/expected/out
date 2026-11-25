@@ -10,11 +10,11 @@ same stdout: yes
 $ vo replay r.jsonl
 --- stderr
 note: the program differs from the recorded one (recorded main.vo)
-std/crypto.vo:35:12: runtime error[R0014]: The program draws random bytes (another count than recorded, or none recorded), but the recording has a draw of random bytes next: replay the program that was recorded, or record this one.
-  35 |     return __entropy(n);
+std/crypto.vo:33:12: runtime error[R0014]: The program draws random bytes (another count than recorded, or none recorded), but the recording has a draw of random bytes next: replay the program that was recorded, or record this one.
+  33 |     return __entropy(n);
      |            ^^^^^^^^^^^^
 trace:
-  at random_bytes (std/crypto.vo:35:12)
+  at random_bytes (std/crypto.vo:33:12)
       n: int = 8
   at main (main.vo:4:19)
 --- exit 70

@@ -1,10 +1,9 @@
-import parse.Meeting;
-import parse.Query;
-import schedule.shares;
+import parse;
+import schedule;
 
-export fn earliest(ms: list[Meeting], q: Query) -> int {
-    let busy = filter(ms, fn(m: Meeting) -> bool {
-        return m.day == q.day and len(shares(m.people, q.people)) > 0;
+export fn earliest(ms: list[parse.Meeting], q: parse.Query) -> int {
+    let busy = filter(ms, fn(m: parse.Meeting) -> bool {
+        return m.day == q.day and len(schedule.shares(m.people, q.people)) > 0;
     });
     let starts = [480];
     for m in busy {
@@ -13,7 +12,7 @@ export fn earliest(ms: list[Meeting], q: Query) -> int {
     sort(starts);
     for t in starts {
         let e = t + q.minutes;
-        if t >= 480 and e <= 1080 and not any(busy, fn(m: Meeting) -> bool {
+        if t >= 480 and e <= 1080 and not any(busy, fn(m: parse.Meeting) -> bool {
             return m.start < e and t < m.end;
         }) {
             return t;

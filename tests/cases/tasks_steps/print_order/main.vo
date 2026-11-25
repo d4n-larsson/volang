@@ -1,10 +1,10 @@
 # Each task's output appears whole and in input order, whatever order the tasks finish in.
-import std.http.get;
+import std.http;
 
 fn work(job: str) -> int uses console, net("127.0.0.1") {
     let parts = split(job, " ");
     print("task " + parts[1] + " starts");
-    let r = get("http://127.0.0.1:" + parts[0] + "/delay/" + parts[1]);
+    let r = http.get("http://127.0.0.1:" + parts[0] + "/delay/" + parts[1]);
     match r {
         case ok(_) {
             print("task " + parts[1] + " answered");

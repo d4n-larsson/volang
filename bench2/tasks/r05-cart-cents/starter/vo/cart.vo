@@ -1,50 +1,45 @@
-import shop.Shop;
-import shop.Product;
-import shop.Line;
-import shop.has_line;
-import shop.find_line;
-import shop.unknown_product;
+import shop;
 
-export fn add_product(shop: Shop, sku: str, name: str, price: int) -> str {
-    if has(shop.catalog, sku) {
+export fn add_product(shop_value: shop.Shop, sku: str, name: str, price: int) -> str {
+    if has(shop_value.catalog, sku) {
         return "error: product " + sku + " exists";
     }
-    set shop.catalog[sku] = new Product { sku: sku, name: name, price: price, sold: 0, net: 0 };
+    set shop_value.catalog[sku] = new shop.Product { sku: sku, name: name, price: price, sold: 0, net: 0 };
     return "product " + sku + " added";
 }
 
-export fn set_price(shop: Shop, sku: str, price: int) -> str {
-    if not has(shop.catalog, sku) {
-        return unknown_product(sku);
+export fn set_price(shop_value: shop.Shop, sku: str, price: int) -> str {
+    if not has(shop_value.catalog, sku) {
+        return shop.unknown_product(sku);
     }
-    let product = shop.catalog[sku];
+    let product = shop_value.catalog[sku];
     set product.price = price;
     return "product " + sku + " price " + str(price);
 }
 
-export fn add_to_cart(shop: Shop, sku: str, qty: int) -> str {
-    if not has(shop.catalog, sku) {
-        return unknown_product(sku);
+export fn add_to_cart(shop_value: shop.Shop, sku: str, qty: int) -> str {
+    if not has(shop_value.catalog, sku) {
+        return shop.unknown_product(sku);
     }
-    if not has_line(shop, sku) {
-        push(shop.cart, new Line { sku: sku, qty: 0 });
+    if not shop.has_line(shop_value, sku) {
+        push(shop_value.cart, new shop.Line { sku: sku, qty: 0 });
     }
-    let line = find_line(shop, sku);
+    let line = shop.find_line(shop_value, sku);
     set line.qty = line.qty + qty;
     return "cart " + sku + " x" + str(line.qty);
 }
 
-export fn remove_from_cart(shop: Shop, sku: str, qty: int) -> str {
-    if not has_line(shop, sku) {
+export fn remove_from_cart(shop_value: shop.Shop, sku: str, qty: int) -> str {
+    if not shop.has_line(shop_value, sku) {
         return "error: " + sku + " not in cart";
     }
-    let line = find_line(shop, sku);
+    let line = shop.find_line(shop_value, sku);
     if qty > line.qty {
         return "error: only " + str(line.qty) + " " + sku + " in cart";
     }
     set line.qty = line.qty - qty;
     if line.qty == 0 {
-        set shop.cart = filter(shop.cart, fn(x: Line) -> bool {
+        set shop_value.cart = filter(shop_value.cart, fn(x: shop.Line) -> bool {
             return x.sku != sku;
         });
         return "cart " + sku + " removed";
@@ -52,15 +47,15 @@ export fn remove_from_cart(shop: Shop, sku: str, qty: int) -> str {
     return "cart " + sku + " x" + str(line.qty);
 }
 
-export fn show_cart(shop: Shop) -> list[str] {
-    if len(shop.cart) == 0 {
+export fn show_cart(shop_value: shop.Shop) -> list[str] {
+    if len(shop_value.cart) == 0 {
         return ["cart empty"];
     }
     let out = new list[str];
     var units = 0;
     var gross = 0;
-    for line in shop.cart {
-        let price = shop.catalog[line.sku].price;
+    for line in shop_value.cart {
+        let price = shop_value.catalog[line.sku].price;
         push(out, line.sku + " x" + str(line.qty) + " @ " + str(price) + " = " + str(line.qty * price));
         set units = units + line.qty;
         set gross = gross + line.qty * price;

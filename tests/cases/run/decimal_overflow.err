@@ -4,5 +4,5 @@ std/decimal.vo:236:33: runtime error[R0001]: Integer overflow.
 trace:
   at mul (std/decimal.vo:236:33)
       a: Decimal = new Decimal { units: 5000000000, places: 2 }, b: Decimal = new Decimal { units: 5000000000, places: 2 }
-  at main (decimal_overflow.vo:7:24)
+  at main (decimal_overflow.vo:5:32)
       big: Decimal = new Decimal { units: 5000000000, places: 2 }

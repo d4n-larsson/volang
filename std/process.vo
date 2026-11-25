@@ -1,5 +1,5 @@
 # std.process: Running other programs to their end, with no shell (needs process).
-# Part of the vo standard library (spec 017). Import items one by one: `import std.process.NAME;`.
+# Part of the vo standard library (spec 017). Import the module, `import std.process;`, and write its items as `process.NAME`.
 # The program is checked against the caller's process scopes at run time, exactly as written; the working
 # directory of run_with, run_with_bytes and run_lines (spec 057) against its file.read scopes, "./" excepted.
 # A started program is not confined: it can do anything the user running vo can.

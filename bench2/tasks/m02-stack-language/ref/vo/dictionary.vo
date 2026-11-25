@@ -1,7 +1,5 @@
-import machine.is_builtin;
-import machine.is_named_builtin;
-import tokens.is_number;
-import tokens.number;
+import machine;
+import tokens;
 
 export record Item {
     is_num: bool;
@@ -10,21 +8,21 @@ export record Item {
 }
 
 export fn expand(words: map[str, list[Item]], tok: str) -> result[list[Item]] {
-    if is_number(tok) {
-        let v = try number(tok);
+    if tokens.is_number(tok) {
+        let v = try tokens.number(tok);
         return ok([new Item { is_num: true, num: v, word: "" }]);
     }
     if has(words, tok) {
         return ok(words[tok]);
     }
-    if is_builtin(tok) {
+    if machine.is_builtin(tok) {
         return ok([new Item { is_num: false, num: 0, word: tok }]);
     }
     return err("unknown word " + tok);
 }
 
 fn valid_name(name: str) -> bool {
-    if len(name) == 0 or is_named_builtin(name) {
+    if len(name) == 0 or machine.is_named_builtin(name) {
         return false;
     }
     return all(chars(name), fn(c: str) -> bool {

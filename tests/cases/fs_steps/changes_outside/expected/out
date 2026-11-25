@@ -6,9 +6,9 @@ std/fs.vo:118:17: runtime error[R0010]: file.write("work/../keep.txt") is not al
 trace:
   at append_file (std/fs.vo:118:17)
       path: str = "work/../keep.txt", text: str = "x"
-  at try_it (main.vo:21:20)
+  at try_it (main.vo:18:20)
       what: str = "append", up: str = "work/../"
-  at main (main.vo:39:9)
+  at main (main.vo:36:9)
       a: str = "append"
 --- exit 70
 $ vo run main.vo -- make_dir
@@ -19,9 +19,9 @@ std/fs.vo:145:17: runtime error[R0010]: file.write("work/../made") is not allowe
 trace:
   at make_dir (std/fs.vo:145:17)
       path: str = "work/../made"
-  at try_it (main.vo:24:20)
+  at try_it (main.vo:21:20)
       what: str = "make_dir", up: str = "work/../"
-  at main (main.vo:39:9)
+  at main (main.vo:36:9)
       a: str = "make_dir"
 --- exit 70
 $ vo run main.vo -- delete
@@ -32,9 +32,9 @@ std/fs.vo:152:17: runtime error[R0010]: file.delete("work/../keep.txt") is not a
 trace:
   at delete (std/fs.vo:152:17)
       path: str = "work/../keep.txt"
-  at try_it (main.vo:27:20)
+  at try_it (main.vo:24:20)
       what: str = "delete", up: str = "work/../"
-  at main (main.vo:39:9)
+  at main (main.vo:36:9)
       a: str = "delete"
 --- exit 70
 $ vo run main.vo -- rename_from
@@ -45,9 +45,9 @@ std/fs.vo:159:17: runtime error[R0010]: file.delete("work/../keep.txt") is not a
 trace:
   at rename (std/fs.vo:159:17)
       from: str = "work/../keep.txt", to: str = "work/stolen.txt"
-  at try_it (main.vo:30:20)
+  at try_it (main.vo:27:20)
       what: str = "rename_from", up: str = "work/../"
-  at main (main.vo:39:9)
+  at main (main.vo:36:9)
       a: str = "rename_from"
 --- exit 70
 $ vo run main.vo -- rename_to
@@ -58,8 +58,8 @@ std/fs.vo:159:17: runtime error[R0010]: file.write("work/../escaped.txt") is not
 trace:
   at rename (std/fs.vo:159:17)
       from: str = "work/a.txt", to: str = "work/../escaped.txt"
-  at try_it (main.vo:33:20)
+  at try_it (main.vo:30:20)
       what: str = "rename_to", up: str = "work/../"
-  at main (main.vo:39:9)
+  at main (main.vo:36:9)
       a: str = "rename_to"
 --- exit 70

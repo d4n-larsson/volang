@@ -5,9 +5,9 @@ failed: std/workers.vo:66:45: runtime error[R0007]: Workers are started by the p
 trace:
   at start_worker (std/workers.vo:66:45)
       body: fn(Link[int, int]) = <fn(Link[int, int])>
-  at starts (nested.vo:91:11)
+  at starts (nested.vo:82:11)
       link: Link[int, int] = new Link[int, int] { id: 0 }
   at start_worker (std/workers.vo:66:45)
       body: fn(Link[int, int]) = <fn(Link[int, int])>
-  at main (nested.vo:104:23)
+  at main (nested.vo:95:23)
       m: Worker[int, int] = new Worker[int, int] { id: 64 }

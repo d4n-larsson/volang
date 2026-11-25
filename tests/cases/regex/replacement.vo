@@ -1,14 +1,13 @@
-import std.regex.regex;
-import std.regex.replace_matches;
+import std.regex;
 
 fn main() uses console {
     let s = "abc";
-    print(replace_matches(s, regex("(a)"), "\\1"));
-    print(replace_matches(s, regex("(?<x>a)"), "\\g<x>"));
-    print(replace_matches(s, regex("(a)"), "$2"));
-    let re = regex("(a)");
-    print(replace_matches(s, re, "[$2]"));
-    print(replace_matches(s, re, "$x"));
-    print(replace_matches(s, re, "${nope}"));
-    print(replace_matches(s, re, "$1 costs $$5 ${1}0"));
+    print(regex.replace_matches(s, regex.regex("(a)"), "\\1"));
+    print(regex.replace_matches(s, regex.regex("(?<x>a)"), "\\g<x>"));
+    print(regex.replace_matches(s, regex.regex("(a)"), "$2"));
+    let re = regex.regex("(a)");
+    print(regex.replace_matches(s, re, "[$2]"));
+    print(regex.replace_matches(s, re, "$x"));
+    print(regex.replace_matches(s, re, "${nope}"));
+    print(regex.replace_matches(s, re, "$1 costs $$5 ${1}0"));
 }

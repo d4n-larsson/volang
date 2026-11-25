@@ -1,3 +1,4 @@
 record DateTime { year: int; month: int; day: int; hour: int; minute: int; second: int; ms: int; weekday: int; }
     A calendar time, in UTC or in a zone (the record does not say which); weekday is 1 for Monday through 7 for Sunday.
+    use: import std.time; then time.DateTime
     example: from_ms(0).weekday is 4

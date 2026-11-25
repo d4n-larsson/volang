@@ -16,15 +16,15 @@ timeout
 failing worker: one line
 --- stderr
 worker: told 41
-main.vo:81:16: runtime error[R0002]: Division by zero.
-  81 |     give(link, 1 / zero);
+main.vo:71:16: runtime error[R0002]: Division by zero.
+  71 |     give(link, 1 / zero);
      |                ^^^^^^^^
 trace:
-  at fails (main.vo:81:16)
+  at fails (main.vo:71:16)
       link: Link[int, int] = new Link[int, int] { id: 0 }, zero: int = 0
   at start_worker (std/workers.vo:66:45)
       body: fn(Link[int, int]) uses console = <fn(Link[int, int]) uses console>
-  at main (main.vo:153:11)
+  at main (main.vo:143:11)
 --- exit 70
 $ vo replay r.jsonl
 worker: read twelve chars
@@ -44,13 +44,13 @@ timeout
 failing worker: one line
 --- stderr
 worker: told 41
-main.vo:81:16: runtime error[R0002]: Division by zero.
-  81 |     give(link, 1 / zero);
+main.vo:71:16: runtime error[R0002]: Division by zero.
+  71 |     give(link, 1 / zero);
      |                ^^^^^^^^
 trace:
-  at fails (main.vo:81:16)
+  at fails (main.vo:71:16)
       link: Link[int, int] = new Link[int, int] { id: 0 }, zero: int = 0
   at start_worker (std/workers.vo:66:45)
       body: fn(Link[int, int]) uses console = <fn(Link[int, int]) uses console>
-  at main (main.vo:153:11)
+  at main (main.vo:143:11)
 --- exit 70

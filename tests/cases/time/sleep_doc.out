@@ -1,3 +1,4 @@
 fn sleep(ms: int) uses clock
     Waits ms milliseconds (needs clock): really with the real clock, never past --timeout (R0009); with a fixed clock (--clock-ms, every vo test) at once, moving the clock on by ms; at once in vo replay. A negative ms is R0007. In a serve handler, Ctrl-C and SIGTERM take effect when the handler returns.
+    use: import std.time; then time.sleep
     example: let a = now_ms(); sleep(500); now_ms() - a is 501

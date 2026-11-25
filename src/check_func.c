@@ -200,6 +200,12 @@ Type *check_call_value(Node *node, Type *expected)
 Type *check_method_form(Node *node, Type *expected)
 {
     Node *field = node->a.n; /* the N_FIELD callee */
+    Node *obj = field->a.n;
+    if (obj->kind == N_IDENT && !scope_find(obj->a.s) && missing_module_import(obj->a.s, obj)) {
+        for (long i = 0; i < node->b.v->n; i++) check_arg(node, i, 0); /* spec 058: `json.parse_json(...)`
+                                                                           without the import: E0204 */
+        return t_error;
+    }
     diag_mute = 1;           /* a silent look at the object's type */
     Type *ot = check_expr(field->a.n, 0);
     diag_mute = 0;

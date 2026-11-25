@@ -1,8 +1,6 @@
 # Spec 054: a replayed test that asks for something its recording does not have next fails with R0014,
 # naming what it asked for and what the recording has; the other tests still run.
-import std.http.Response;
-import std.http.get;
-import std.http.post;
+import std.http;
 
 fn base() -> str uses env {
     match env("PORT") {
@@ -15,7 +13,7 @@ fn base() -> str uses env {
     }
 }
 
-fn body_of(r: result[Response]) -> str {
+fn body_of(r: result[http.Response]) -> str {
     match r {
         case ok(x) {
             return x.body;
@@ -30,15 +28,15 @@ fn main() {
 }
 
 test "url" uses env, net {
-    expect(len(body_of(get(base() + "/plain"))) > 0);
+    expect(len(body_of(http.get(base() + "/plain"))) > 0);
 }
 
 test "method" uses env, net {
-    expect(len(body_of(get(base() + "/inspect"))) > 0);
+    expect(len(body_of(http.get(base() + "/inspect"))) > 0);
 }
 
 test "body" uses env, net {
-    expect(len(body_of(post(base() + "/echo", "text/plain", "one"))) > 0);
+    expect(len(body_of(http.post(base() + "/echo", "text/plain", "one"))) > 0);
 }
 
 test "file" uses file.read("data/") {
@@ -50,9 +48,9 @@ test "variable" uses env {
 }
 
 test "more requests" uses env, net {
-    expect(len(body_of(get(base() + "/plain"))) > 0);
+    expect(len(body_of(http.get(base() + "/plain"))) > 0);
 }
 
 test "unchanged" uses env, net {
-    expect(len(body_of(get(base() + "/json"))) > 0);
+    expect(len(body_of(http.get(base() + "/json"))) > 0);
 }

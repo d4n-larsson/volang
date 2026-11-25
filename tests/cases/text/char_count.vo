@@ -1,9 +1,8 @@
-import std.text.char_count;
-import std.text.equal_fold;
+import std.text;
 
 fn main() uses console {
     for s in ["", "a", "åäö", "日本語", "😀😀", "a\u{0}b"] {
-        print(str(char_count(s)) + " " + str(len(s)) + " " + str(len(chars(s))));
+        print(str(text.char_count(s)) + " " + str(len(s)) + " " + str(len(chars(s))));
     }
-    print(str(equal_fold("Vo", "vO")) + " " + str(equal_fold("ΑΒΓ", "αβγ")) + " " + str(equal_fold("ß", "SS")));
+    print(str(text.equal_fold("Vo", "vO")) + " " + str(text.equal_fold("ΑΒΓ", "αβγ")) + " " + str(text.equal_fold("ß", "SS")));
 }

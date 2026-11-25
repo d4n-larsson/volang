@@ -1,11 +1,11 @@
 # Spec 017 (US1): walk lists every file below a directory once, sorted, without following links into directories.
-import std.fs.walk;
+import std.fs;
 
 fn main() -> result[void] uses console, file.read("data/") {
-    for p in try walk("data") {
+    for p in try fs.walk("data") {
         print(p);
     }
-    for p in try walk("data/b/") {
+    for p in try fs.walk("data/b/") {
         print(p);
     }
     return ok();

@@ -1,11 +1,10 @@
 # `vo test main.vo` runs the tests of every file the program loads: main.vo's and money.vo's.
-import money.cents;
-import money.format_cents;
+import money;
 
 fn main() uses console {
-    print(format_cents(cents(12)));
+    print(money.format_cents(money.cents(12)));
 }
 
 test "main formats twelve" {
-    expect_eq(format_cents(cents(12)), "12.00");
+    expect_eq(money.format_cents(money.cents(12)), "12.00");
 }

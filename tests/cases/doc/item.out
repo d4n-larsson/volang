@@ -1,3 +1,4 @@
 fn starts_with(s: str, prefix: str) -> bool
     Whether s starts with prefix.
+    use: import std.text; then text.starts_with
     example: starts_with("report.txt", "rep") is true

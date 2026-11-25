@@ -1,5 +1,5 @@
-short_key.vo:7:33: runtime error[R0012]: Precondition `keys_fit(key_list)` of `tokens` does not hold.
-   7 |     let ways: list[Way[int]] = [tokens([from_text("0123456789abcdef0123456789abcde")])];
-     |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+short_key.vo:6:42: runtime error[R0012]: Precondition `keys_fit(key_list)` of `tokens` does not hold.
+   6 |     let ways: list[security.Way[int]] = [security.tokens([bytes.from_text("0123456789abcdef0123456789abcde")])];
+     |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at main (short_key.vo:7:33)
+  at main (short_key.vo:6:42)

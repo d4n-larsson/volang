@@ -1,5 +1,5 @@
-import std.text.starts_with;
+import std.text;
 
 fn main() uses console {
-    print(str(starts_with("abc", "a")));
+    print(str(text.starts_with("abc", "a")));
 }

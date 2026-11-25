@@ -1,13 +1,10 @@
-import std.sqlite.open_memory;
-import std.sqlite.parse_sql;
-import std.sqlite.query;
-import std.sqlite.Value;
+import std.sqlite;
 
 fn main() uses console {
     for text in ["selec 1", "select 1; select 2", "select :a", "select random()", "select datetime('now')", "pragma journal_mode = wal", "select * from no_such_table", "select ? + 1"] {
-        match parse_sql(text) {
+        match sqlite.parse_sql(text) {
             case ok(st) {
-                match query(open_memory(), st, [Value.integer(1)]) {
+                match sqlite.query(sqlite.open_memory(), st, [sqlite.Value.integer(1)]) {
                     case ok(rows) {
                         print(text + " -> " + str(len(rows)) + " row(s)");
                     }

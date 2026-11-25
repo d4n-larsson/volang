@@ -1,0 +1,5 @@
+# A package file imported by the package's other file as `import pkg.link;`.
+export fn deliver(text: str) -> str uses console {
+    print("deliver " + text);
+    return "ok";
+}

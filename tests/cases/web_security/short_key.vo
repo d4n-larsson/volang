@@ -1,9 +1,8 @@
 # A signing key under 32 bytes is refused when the policy is built (std.security): R0012.
-import std.bytes.from_text;
-import std.security.Way;
-import std.security.tokens;
+import std.bytes;
+import std.security;
 
 fn main() uses console {
-    let ways: list[Way[int]] = [tokens([from_text("0123456789abcdef0123456789abcde")])];
+    let ways: list[security.Way[int]] = [security.tokens([bytes.from_text("0123456789abcdef0123456789abcde")])];
     print(str(len(ways)));
 }

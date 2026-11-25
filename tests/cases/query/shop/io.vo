@@ -1,4 +1,4 @@
-import model.Item;
+import model;
 
 export fn parse_line(line: str) -> int {
     match parse_int(trim(line)) {
@@ -19,6 +19,6 @@ export fn load(lines: list[str]) -> list[int] {
     return out;
 }
 
-export fn label(it: Item) -> str {
+export fn label(it: model.Item) -> str {
     return it.name + "=" + str(it.price);
 }

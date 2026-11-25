@@ -1,9 +1,7 @@
 # Spec 017 (US3): a program gets exactly the environment given (none for run).
-import std.process.Output;
-import std.process.run;
-import std.process.run_with;
+import std.process;
 
-fn show(what: str, r: result[Output]) uses console {
+fn show(what: str, r: result[process.Output]) uses console {
     match r {
         case ok(out) {
             print(what + ": code " + str(out.code));
@@ -19,6 +17,6 @@ fn show(what: str, r: result[Output]) uses console {
 }
 
 fn main() uses console, file.read("./"), process("bin/env_dump") {
-    show("run", run("bin/env_dump", new list[str]));
-    show("run_with", run_with("bin/env_dump", new list[str], "", ["B=x y", "A=1", "EMPTY="], "./"));
+    show("run", process.run("bin/env_dump", new list[str]));
+    show("run_with", process.run_with("bin/env_dump", new list[str], "", ["B=x y", "A=1", "EMPTY="], "./"));
 }

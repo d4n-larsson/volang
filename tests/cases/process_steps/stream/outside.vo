@@ -1,9 +1,9 @@
 # A program outside the process scopes is R0010 when the run starts (its name is built at run time:
 # a literal one is E0503 at check time, spec 057).
-import std.process.run_lines;
+import std.process;
 
 fn main() uses console, file.read("./"), process("bin/cat_in") {
-    match run_lines(
+    match process.run_lines(
         join(["bin/", "slow_lines"], ""),
         ["1", "0", "0"],
         "",

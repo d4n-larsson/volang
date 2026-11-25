@@ -1,0 +1,67 @@
+# Qualified names in every position: calls, values, constants, scopes, types, `new`, cases, `uses`.
+import geometry;
+
+fn total(ps: list[geometry.Point]) -> int {
+    return fold(ps, 0, fn(acc: int, p: geometry.Point) -> int {
+        return acc + geometry.dist2(p);
+    });
+}
+
+fn area(s: geometry.Shape) -> float {
+    match s {
+        case circle(r) {
+            return 3.0 * r * r;
+        }
+        case empty {
+            return 0.0;
+        }
+    }
+}
+
+fn first(ps: list[geometry.Point]) -> result[geometry.Point, str] {
+    if len(ps) == 0 {
+        return err("none");
+    }
+    return ok(ps[0]);
+}
+
+fn by_name() -> map[str, geometry.Point] {
+    let m = new map[str, geometry.Point];
+    set m["origin"] = new geometry.Point { x: 0, y: 0 };
+    return m;
+}
+
+fn load() -> str uses geometry.Area {
+    match read_file(geometry.data_dir + "missing.txt") {
+        case ok(text) {
+            return text;
+        }
+        case err(_) {
+            return "no data";
+        }
+    }
+}
+
+fn scoped() -> str uses file.read(geometry.data_dir) {
+    return load();
+}
+
+fn main() uses console, geometry.Area {
+    let ps = [new geometry.Point { x: 3, y: 4 }, new geometry.Point { x: 1, y: 1 }];
+    print(str(total(ps)));
+    let doubled = map([1, 2, 3], geometry.twice);
+    print(str(doubled[2]));
+    print(str(area(geometry.Shape.circle(1.0))));
+    print(str(area(geometry.Shape.empty)));
+    match first(ps) {
+        case ok(p) {
+            print(str(p.x));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    print(str(by_name()["origin"].y));
+    print(geometry.data_dir);
+    print(scoped());
+}

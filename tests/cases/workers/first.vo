@@ -1,18 +1,8 @@
 # Spec 047: the first message from any of several workers; the earliest in the list when several wait.
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.Worker;
-import std.workers.WorkerError;
-import std.workers.emit;
-import std.workers.next_message;
-import std.workers.receive;
-import std.workers.start_worker;
-import std.workers.stop_worker;
-import std.workers.tell;
-import std.workers.receive_first;
-import std.time.sleep;
+import std.time;
+import std.workers;
 
-fn why(e: WorkerError) -> str {
+fn why(e: workers.WorkerError) -> str {
     match e {
         case timed_out {
             return "timeout";
@@ -35,7 +25,7 @@ fn why(e: WorkerError) -> str {
     }
 }
 
-fn show(r: result[int, WorkerError]) -> str {
+fn show(r: result[int, workers.WorkerError]) -> str {
     match r {
         case ok(n) {
             return "ok " + str(n);
@@ -46,7 +36,7 @@ fn show(r: result[int, WorkerError]) -> str {
     }
 }
 
-fn sent(r: result[void, WorkerError]) -> str {
+fn sent(r: result[void, workers.WorkerError]) -> str {
     match r {
         case ok() {
             return "sent";
@@ -57,8 +47,8 @@ fn sent(r: result[void, WorkerError]) -> str {
     }
 }
 
-fn give(link: Link[int, int], n: int) {
-    match emit(link, n) {
+fn give(link: workers.Link[int, int], n: int) {
+    match workers.emit(link, n) {
         case ok() {
         }
         case err(_) {
@@ -66,7 +56,7 @@ fn give(link: Link[int, int], n: int) {
     }
 }
 
-fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+fn worker_of(r: result[workers.Worker[int, int], workers.WorkerError]) -> workers.Worker[int, int] {
     match r {
         case ok(w) {
             return w;
@@ -77,20 +67,20 @@ fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
     }
 }
 
-fn gives(n: int) -> fn(Link[int, int]) {
-    return fn(link: Link[int, int]) {
+fn gives(n: int) -> fn(workers.Link[int, int]) {
+    return fn(link: workers.Link[int, int]) {
         give(link, n);
         give(link, n + 1);
     };
 }
 
-fn fails(link: Link[int, int]) {
+fn fails(link: workers.Link[int, int]) {
     let zero = len(chars(""));
     give(link, 1 / zero);
 }
 
-fn silent(link: Link[int, int]) {
-    match next_message(link, Wait.forever) {
+fn silent(link: workers.Link[int, int]) {
+    match workers.next_message(link, workers.Wait.forever) {
         case ok(_) {
         }
         case err(_) {
@@ -98,8 +88,8 @@ fn silent(link: Link[int, int]) {
     }
 }
 
-fn one(ws: list[Worker[int, int]], wait: Wait) -> str {
-    match receive_first(ws, wait) {
+fn one(ws: list[workers.Worker[int, int]], wait: workers.Wait) -> str {
+    match workers.receive_first(ws, wait) {
         case ok(a) {
             return str(a.index) + ": " + show(a.message);
         }
@@ -110,15 +100,15 @@ fn one(ws: list[Worker[int, int]], wait: Wait) -> str {
 }
 
 fn main() uses console, clock {
-    let ws = [worker_of(start_worker(gives(10))), worker_of(start_worker(fails)), worker_of(start_worker(gives(30)))];
-    sleep(300);
+    let ws = [worker_of(workers.start_worker(gives(10))), worker_of(workers.start_worker(fails)), worker_of(workers.start_worker(gives(30)))];
+    time.sleep(300);
     # all three have finished: the order is the list's
     for i in 0..9 {
-        print(one(ws, Wait.forever) + " (" + str(i) + ")");
+        print(one(ws, workers.Wait.forever) + " (" + str(i) + ")");
     }
-    let quiet = [worker_of(start_worker(silent)), worker_of(start_worker(silent))];
-    print(one(quiet, Wait.at_most(0)));
-    print(one(quiet, Wait.at_most(50)));
-    let none = new list[Worker[int, int]];
-    print(one(none, Wait.forever));
+    let quiet = [worker_of(workers.start_worker(silent)), worker_of(workers.start_worker(silent))];
+    print(one(quiet, workers.Wait.at_most(0)));
+    print(one(quiet, workers.Wait.at_most(50)));
+    let none = new list[workers.Worker[int, int]];
+    print(one(none, workers.Wait.forever));
 }

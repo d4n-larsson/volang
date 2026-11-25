@@ -1,7 +1,7 @@
 PASS hello answers 200 with the query (0ms)
 PASS other paths are 404 (0ms)
 FAIL a wrong expectation fails with the usual report (0ms)
-  handler_test.vo:25:5: `expect_eq` failed: the values differ.
+  handler_test.vo:23:5: `expect_eq` failed: the values differ.
     expected: 404
     actual:   200
 PASS every path but /hello is 404 (100 cases, 0ms)

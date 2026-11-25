@@ -1,15 +1,10 @@
 # Spec 026 (US1): a second program reads it, read-only.
-import std.sqlite.open_readonly;
-import std.sqlite.sql;
-import std.sqlite.query;
-import std.sqlite.text_column;
-import std.sqlite.int_column;
-import std.sqlite.Value;
+import std.sqlite;
 
 fn main() -> result[void] uses console, file.read("data/") {
-    let db = try open_readonly("data/inventory.db");
-    for row in try query(db, sql("select name, qty from items where qty < ? order by name"), [Value.integer(10)]) {
-        print(try text_column(row, "name") + " " + str(try int_column(row, "qty")));
+    let db = try sqlite.open_readonly("data/inventory.db");
+    for row in try sqlite.query(db, sqlite.sql("select name, qty from items where qty < ? order by name"), [sqlite.Value.integer(10)]) {
+        print(try sqlite.text_column(row, "name") + " " + str(try sqlite.int_column(row, "qty")));
     }
     return ok();
 }

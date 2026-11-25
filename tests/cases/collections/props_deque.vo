@@ -1,5 +1,4 @@
-import std.collections.pop_front;
-import std.collections.push_front;
+import std.collections;
 
 # Spec 014 SC-001: a deque against a list model (op % 4: push back, push front, pop back, pop front).
 prop "a deque agrees with a list" (ops: list[int]) {
@@ -11,7 +10,7 @@ prop "a deque agrees with a list" (ops: list[int]) {
             push(d, op);
             push(model, op);
         } else if k == 1 {
-            push_front(d, op);
+            collections.push_front(d, op);
             var front = [op];
             for x in model {
                 push(front, x);
@@ -26,9 +25,9 @@ prop "a deque agrees with a list" (ops: list[int]) {
             }
         } else {
             if len(model) == 0 {
-                expect_eq(pop_front(d), err("empty"));
+                expect_eq(collections.pop_front(d), err("empty"));
             } else {
-                expect_eq(pop_front(d), ok(model[0]));
+                expect_eq(collections.pop_front(d), ok(model[0]));
                 set model = slice(model, 1, len(model));
             }
         }

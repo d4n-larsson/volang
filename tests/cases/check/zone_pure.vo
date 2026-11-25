@@ -1,33 +1,26 @@
-import std.time.Zone;
-import std.time.offset_zone;
-import std.time.format_in;
-import std.time.from_local;
-import std.time.in_zone;
-import std.time.load_zone;
-import std.time.offset_at;
-import std.time.parse_time;
+import std.time;
 
-fn east_of_utc(z: Zone, ms: int) -> bool
+fn east_of_utc(z: time.Zone, ms: int) -> bool
     requires len(z.name) > 0
-    ensures ret == (offset_at(z, ms) > 0) {
-    return offset_at(z, ms) > 0;
+    ensures ret == (time.offset_at(z, ms) > 0) {
+    return time.offset_at(z, ms) > 0;
 }
 
 fn main() uses console {
-    print(str(east_of_utc(offset_zone(3600000), 0)));
+    print(str(east_of_utc(time.offset_zone(3600000), 0)));
 }
 
 prop "the text of an instant in a zone reads back" (ms: int, minutes: int) {
     assume(ms > -30000000000000 and ms < 100000000000000);
     assume(minutes > -1440 and minutes < 1440);
-    expect_eq(parse_time(format_in(offset_zone(minutes * 60000), ms)), ok(ms));
+    expect_eq(time.parse_time(time.format_in(time.offset_zone(minutes * 60000), ms)), ok(ms));
 }
 
 prop "a time shown in Stockholm is that instant, or one of two" (ms: int) {
     assume(ms > -30000000000000 and ms < 100000000000000);
-    match load_zone("Europe/Stockholm") {
+    match time.load_zone("Europe/Stockholm") {
         case ok(z) {
-            match from_local(z, in_zone(z, ms)) {
+            match time.from_local(z, time.in_zone(z, ms)) {
                 case ok(back) {
                     expect_eq(back, ms);
                 }

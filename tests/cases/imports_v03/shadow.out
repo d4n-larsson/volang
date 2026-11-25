@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0215","name":"single_name_import","severity":"error","file":"shadow.vo","start":{"line":2,"col":1},"end":{"line":2,"col":26},"text":"import std.text.pad_left;","message":"Imports name a module, not an item: `import std.text;`, then `text.pad_left`.","fixes":[{"file":"shadow.vo","start":{"line":2,"col":1},"end":{"line":5,"col":25},"replacement":"import std.text;\n\nfn pad(text_value: str) -> str {\n    return text.pad_left(text_value"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

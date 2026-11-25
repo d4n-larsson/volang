@@ -1,6 +1,5 @@
-import commands.money;
-import library.Library;
-import library.Loan;
+import commands;
+import library;
 
 fn listed(xs: list[str]) -> str {
     if len(xs) == 0 {
@@ -9,16 +8,16 @@ fn listed(xs: list[str]) -> str {
     return join(xs, ",");
 }
 
-export fn report(lib: Library) -> list[str] {
+export fn report(lib: library.Library) -> list[str] {
     let out = ["members:"];
     let ms = keys(lib.limit);
     sort(ms);
     for m in ms {
-        let isbns = map(lib.loans[m], fn(l: Loan) -> str {
+        let isbns = map(lib.loans[m], fn(l: library.Loan) -> str {
             return l.isbn;
         });
         sort(isbns);
-        push(out, m + " loans " + listed(isbns) + " owes " + money(lib.owes[m]));
+        push(out, m + " loans " + listed(isbns) + " owes " + commands.money(lib.owes[m]));
     }
     push(out, "books:");
     let bs = keys(lib.copies);

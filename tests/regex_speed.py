@@ -32,26 +32,24 @@ def vo_str(s):
 
 
 def program(pattern, unit, last, n):
-    return f"""import std.regex.regex;
-import std.regex.is_match;
-import std.text.repeat;
+    return f"""import std.regex;
+import std.text;
 
 fn main() uses console {{
-    let text = repeat({vo_str(unit)}, {n // len(unit)}) + {vo_str(last)};
-    print(str(is_match(text, regex({vo_str(pattern)}))));
+    let subject = text.repeat({vo_str(unit)}, {n // len(unit)}) + {vo_str(last)};
+    print(str(regex.is_match(subject, regex.regex({vo_str(pattern)}))));
 }}
 """
 
 
-LOG = """import std.regex.regex;
-import std.regex.all_matches;
-import std.fs.read_bytes;
-import std.bytes.to_text;
+LOG = """import std.regex;
+import std.fs;
+import std.bytes;
 
 fn main() -> result[void] uses console, file.read("logs/") {{
-    let text = try to_text(try read_bytes("logs/app.log"));
-    let re = regex("(\\\\d{{4}})-(\\\\d{{2}})-(\\\\d{{2}}) \\\\S+ (ERROR|WARN)");
-    print(str(len(all_matches(text, re))));
+    let text = try bytes.to_text(try fs.read_bytes("logs/app.log"));
+    let re = regex.regex("(\\\\d{{4}})-(\\\\d{{2}})-(\\\\d{{2}}) \\\\S+ (ERROR|WARN)");
+    print(str(len(regex.all_matches(text, re))));
     return ok();
 }}
 """

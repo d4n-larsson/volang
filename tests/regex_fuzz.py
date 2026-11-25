@@ -17,15 +17,13 @@ VO = os.path.join(ROOT, "bin", "vo")
 ALPHABET = list("()[]{}|*+?.^$\\-,:<>=!#PpkdDwWsSbBnt0123456789aAzZ_ é") + ["(?", "(?<", "(?P<", "{1,", "\\\\", "[^", "日"]
 CHUNK = 5000
 
-PRELUDE = """import std.regex.parse_regex;
-import std.regex.is_match;
-import std.regex.all_matches;
+PRELUDE = """import std.regex;
 
 fn try_one(p: str, s: str) -> int {
-    match parse_regex(p) {
+    match regex.parse_regex(p) {
         case ok(re) {
-            if is_match(s, re) {
-                return 1 + len(all_matches(s, re));
+            if regex.is_match(s, re) {
+                return 1 + len(regex.all_matches(s, re));
             }
             return 1;
         }

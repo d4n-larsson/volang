@@ -1,12 +1,9 @@
 # Spec 017 (US2): appending adds to a file, and creates it when missing.
-import std.fs.Entry;
-import std.fs.Info;
-import std.fs.append_file;
-import std.fs.list_dir;
+import std.fs;
 
 # Prints every entry below dir, depth first, with its kind.
 fn tree(dir: str, indent: str) uses console, file.read("work/") {
-    match list_dir(dir) {
+    match fs.list_dir(dir) {
         case ok(entries) {
             for e in entries {
                 match e.info {
@@ -45,9 +42,9 @@ fn said(what: str, r: result[void]) uses console {
 }
 
 fn main() uses console, file.read("work/"), file.write("work/") {
-    said("append log", append_file("work/log.txt", "one\n"));
-    said("append log", append_file("work/log.txt", "two\n"));
-    said("append new", append_file("work/new.txt", "first\n"));
-    said("append to a directory", append_file("work/sub", "x"));
+    said("append log", fs.append_file("work/log.txt", "one\n"));
+    said("append log", fs.append_file("work/log.txt", "two\n"));
+    said("append new", fs.append_file("work/new.txt", "first\n"));
+    said("append to a directory", fs.append_file("work/sub", "x"));
     tree("work", "");
 }

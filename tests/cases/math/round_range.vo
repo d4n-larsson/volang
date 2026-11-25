@@ -1,7 +1,7 @@
 # Spec 020 US2: NaN, an infinity or a result outside the int range is R0007 at the call.
-import std.math.round;
+import std.math;
 
 fn main() uses console {
     let x = float(9223372036854775807);
-    print(str(round(x)));
+    print(str(math.round(x)));
 }

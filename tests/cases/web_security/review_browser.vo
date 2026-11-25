@@ -1,46 +1,31 @@
 # Reviewing browser sign-in (spec 052, story 5): review names the browser way with its paths, lifetime
 # and origin, a sign-in page nobody could reach, and a cookie sent over plain HTTP.
-import std.bytes.from_text;
-import std.http.Response;
-import std.option.Option;
-import std.security.Access;
-import std.security.Account;
-import std.security.Browser;
-import std.security.Rule;
-import std.security.Session;
-import std.security.Way;
-import std.security.browser;
-import std.security.browser_routes;
-import std.security.policy;
-import std.security.review;
-import std.security.rule;
-import std.security.test_users;
-import std.web.App;
-import std.web.NoInput;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.web_app;
+import std.bytes;
+import std.http;
+import std.option;
+import std.security;
+import std.web;
 
-fn ran(n: int, input: NoInput) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn ran(n: int, input: web.NoInput) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
-fn the_browser(origin: str) -> Browser[int] {
-    return new Browser {
-        find_account: fn(n: int, name: str) -> result[Option[Account]] {
-            return ok(Option.none);
+fn the_browser(origin: str) -> security.Browser[int] {
+    return new security.Browser {
+        find_account: fn(n: int, name: str) -> result[option.Option[security.Account]] {
+            return ok(option.Option.none);
         },
-        keep: fn(n: int, s: Session) -> result[void] {
+        keep: fn(n: int, s: security.Session) -> result[void] {
             return ok();
         },
-        find: fn(n: int, key: str) -> result[Option[Session]] {
-            return ok(Option.none);
+        find: fn(n: int, key: str) -> result[option.Option[security.Session]] {
+            return ok(option.Option.none);
         },
         end: fn(n: int, key: str) -> result[void] {
             return ok();
         },
         random: fn(k: int) -> bytes {
-            return from_text("0123456789abcdef");
+            return bytes.from_text("0123456789abcdef");
         },
         sign_in: "/sign-in",
         sign_out: "/sign-out",
@@ -49,23 +34,23 @@ fn the_browser(origin: str) -> Browser[int] {
     };
 }
 
-fn show(title: str, rules: list[Rule], ways: list[Way[int]], b: Browser[int]) uses console {
-    let routes = browser_routes(b, policy(rules, ways, fn() -> int { return 0; }));
-    push(routes, on_get("/notes", ran));
+fn show(title: str, rules: list[security.Rule], ways: list[security.Way[int]], b: security.Browser[int]) uses console {
+    let routes = security.browser_routes(b, security.policy(rules, ways, fn() -> int { return 0; }));
+    push(routes, web.on_get("/notes", ran));
     print(title + ":");
-    for line in review(web_app(routes), policy(rules, ways, fn() -> int { return 0; })) {
+    for line in security.review(web.web_app(routes), security.policy(rules, ways, fn() -> int { return 0; })) {
         print("  " + line);
     }
 }
 
 fn main() uses console {
-    let open = [rule("/sign-in", Access.anyone), rule("/sign-out", Access.anyone), rule("/", Access.signed_in)];
+    let open = [security.rule("/sign-in", security.Access.anyone), security.rule("/sign-out", security.Access.anyone), security.rule("/", security.Access.signed_in)];
     let b = the_browser("");
-    show("clean", open, [browser(b)], b);
+    show("clean", open, [security.browser(b)], b);
     let proxied = the_browser("https://notes.example");
-    show("behind a proxy", open, [browser(proxied)], proxied);
-    let closed = [rule("/", Access.signed_in)];
-    show("sign-in page needs a user", closed, [browser(b)], b);
+    show("behind a proxy", open, [security.browser(proxied)], proxied);
+    let closed = [security.rule("/", security.Access.signed_in)];
+    show("sign-in page needs a user", closed, [security.browser(b)], b);
     let plain = the_browser("http://localhost:8080");
-    show("plain HTTP, and test_users", open, [browser(plain), test_users()], plain);
+    show("plain HTTP, and test_users", open, [security.browser(plain), security.test_users()], plain);
 }

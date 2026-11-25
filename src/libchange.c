@@ -201,6 +201,15 @@ void libchange_use(Sym *sym, Node *node, Node *call)
     diag_add_fix(d, file, node->start, arg0->end, sb_finish(sb));
 }
 
+/* Spec 058: E0214 at a qualified use `m.old` of a changed std item (module imports bind no old names):
+ * a plain rename gets the fix `m.new`; the other changes name what to write in the message. */
+void libchange_qualified(Node *node, Str *module_name, const LibChange *c)
+{
+    Diag *d = ck_err("E0214", node, message(c));
+    if (c->kind == LC_RENAME && !c->factor)
+        diag_add_fix(d, (int)node->file, node->start, node->end, msg("$1.$2", module_name, str_from_cstr((char *)c->new_), 0));
+}
+
 int libchange_binds(const LibChange *c)
 {
     return c && (c->kind == LC_RENAME || c->kind == LC_REMOVE);

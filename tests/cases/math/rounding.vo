@@ -1,15 +1,13 @@
 # Spec 020 US2: floor, ceil and round to int, exact; round takes halves away from zero.
-import std.math.floor;
-import std.math.ceil;
-import std.math.round;
+import std.math;
 
 fn main() uses console {
     let h = 0.5 - 1.0 / float(18014398509481984);
-    print(str(floor(-2.5)) + " " + str(ceil(-2.5)) + " " + str(round(-2.5)) + " " + str(round(2.5)) + " " + str(round(h)));
-    print(str(floor(3.0)) + " " + str(ceil(3.0)) + " " + str(round(-3.0)) + " " + str(floor(0.0)) + " " + str(ceil(-0.0)) + " " + str(round(-0.4)));
-    print(str(floor(-0.5)) + " " + str(ceil(0.5)) + " " + str(round(0.5)) + " " + str(round(-0.5)) + " " + str(round(1.5)));
+    print(str(math.floor(-2.5)) + " " + str(math.ceil(-2.5)) + " " + str(math.round(-2.5)) + " " + str(math.round(2.5)) + " " + str(math.round(h)));
+    print(str(math.floor(3.0)) + " " + str(math.ceil(3.0)) + " " + str(math.round(-3.0)) + " " + str(math.floor(0.0)) + " " + str(math.ceil(-0.0)) + " " + str(math.round(-0.4)));
+    print(str(math.floor(-0.5)) + " " + str(math.ceil(0.5)) + " " + str(math.round(0.5)) + " " + str(math.round(-0.5)) + " " + str(math.round(1.5)));
     let big = float(4503599627370496) + 1.0;
-    print(str(floor(big)) + " " + str(ceil(big + 0.5)) + " " + str(round(big)));
+    print(str(math.floor(big)) + " " + str(math.ceil(big + 0.5)) + " " + str(math.round(big)));
     let top = float(9223372036854774784);
-    print(str(floor(top)) + " " + str(ceil(-top)) + " " + str(floor(-float(9223372036854775807))));
+    print(str(math.floor(top)) + " " + str(math.ceil(-top)) + " " + str(math.floor(-float(9223372036854775807))));
 }

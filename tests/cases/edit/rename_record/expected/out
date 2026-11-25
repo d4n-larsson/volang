@@ -1,17 +1,16 @@
 $ vo edit rename main.vo Item Product
-main.vo:1:16 Item -> Product
-main.vo:35:26 Item -> Product
-main.vo:46:26 Item -> Product
+main.vo:32:34 Item -> Product
+main.vo:43:34 Item -> Product
 catalog.vo:1:15 Item -> Product
 catalog.vo:11:32 Item -> Product
 catalog.vo:12:21 Item -> Product
 catalog.vo:16:29 Item -> Product
-renamed Item to Product: 7 changes in 2 files
+renamed Item to Product: 6 changes in 2 files
 --- stderr
 --- exit 0
 $ vo check main.vo
-main.vo:45:1: warning[W0705]: This test calls only functions of `catalog.vo`: move it into `catalog.vo`, next to the code it tests (`vo test` runs it from there).
-  45 | test "totals" {
+main.vo:42:1: warning[W0705]: This test calls only functions of `catalog.vo`: move it into `catalog.vo`, next to the code it tests (`vo test` runs it from there).
+  42 | test "totals" {
      | ^^^^
 0 errors, 1 warning
 --- stderr

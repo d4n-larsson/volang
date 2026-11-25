@@ -1,15 +1,8 @@
 # Spec 051: HTML form bodies (kept when spec 053 removed std.html). A form body binds the input
 # record's fields by name as the query string does: text to the field's type, field limits, a missing
 # bool is false and `on` is true (a checkbox), unknown and repeated fields refused.
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.on_post;
-import std.web.request;
-import std.web.web_app;
+import std.http;
+import std.web;
 
 record NewNote {
     @size(1, 20)
@@ -27,30 +20,30 @@ record WithBody {
     body: NewNote;
 }
 
-fn add(n: int, input: NewNote) -> result[Response] {
-    return ok(json_reply(201, format("{} {} {} {}", input.priority, input.text, input.weight, input.done)));
+fn add(n: int, input: NewNote) -> result[http.Response] {
+    return ok(web.json_reply(201, format("{} {} {} {}", input.priority, input.text, input.weight, input.done)));
 }
 
-fn search(n: int, input: Search) -> result[Response] {
-    return ok(json_reply(200, input.q));
+fn search(n: int, input: Search) -> result[http.Response] {
+    return ok(web.json_reply(200, input.q));
 }
 
-fn raw(n: int, input: WithBody) -> result[Response] {
-    return ok(json_reply(200, input.body.text));
+fn raw(n: int, input: WithBody) -> result[http.Response] {
+    return ok(web.json_reply(200, input.body.text));
 }
 
-fn form(path: str, body: str, content_type: str) -> Request {
-    let r = request("POST", path, "");
-    return new Request {
+fn form(path: str, body: str, content_type: str) -> http.Request {
+    let r = web.request("POST", path, "");
+    return new http.Request {
         method: "POST",
         path: r.path,
         query: r.query,
-        headers: [new Header { name: "Content-Type", value: content_type }],
+        headers: [new http.Header { name: "Content-Type", value: content_type }],
         body: body
     };
 }
 
-fn show(r: Response) uses console {
+fn show(r: http.Response) uses console {
     var ct = "";
     for h in r.headers {
         if h.name == "Content-Type" {
@@ -61,23 +54,23 @@ fn show(r: Response) uses console {
 }
 
 fn main() uses console {
-    let app = web_app([on_post("/notes", add), on_get("/search", search), on_post("/raw", raw)]);
+    let app = web.web_app([web.on_post("/notes", add), web.on_get("/search", search), web.on_post("/raw", raw)]);
     let f = "application/x-www-form-urlencoded";
-    show(handle_request(app, 0, form("/notes", "text=buy+milk%21&priority=2&weight=1.5", f)));
-    show(handle_request(app, 0, form("/notes", "text=a&priority=1&weight=0&done=on", f)));
-    show(handle_request(app, 0, form("/notes", "done=true&text=%3Cb%3E&priority=1&weight=0", f)));
-    show(handle_request(app, 0, form("/notes", "text=a&priority=x&weight=0", f)));
-    show(handle_request(app, 0, form("/notes", "text=&priority=1&weight=0", f)));
-    show(handle_request(app, 0, form("/notes", "text=a&priority=1&weight=0&extra=1", f)));
-    show(handle_request(app, 0, form("/notes", "text=a&text=b&priority=1&weight=0", f)));
-    show(handle_request(app, 0, form("/notes?priority=3", "text=a&priority=1&weight=0", f)));
-    show(handle_request(app, 0, form("/notes", "text=a&priority=1&weight=0&done=maybe", f)));
-    show(handle_request(app, 0, form(
+    show(web.handle_request(app, 0, form("/notes", "text=buy+milk%21&priority=2&weight=1.5", f)));
+    show(web.handle_request(app, 0, form("/notes", "text=a&priority=1&weight=0&done=on", f)));
+    show(web.handle_request(app, 0, form("/notes", "done=true&text=%3Cb%3E&priority=1&weight=0", f)));
+    show(web.handle_request(app, 0, form("/notes", "text=a&priority=x&weight=0", f)));
+    show(web.handle_request(app, 0, form("/notes", "text=&priority=1&weight=0", f)));
+    show(web.handle_request(app, 0, form("/notes", "text=a&priority=1&weight=0&extra=1", f)));
+    show(web.handle_request(app, 0, form("/notes", "text=a&text=b&priority=1&weight=0", f)));
+    show(web.handle_request(app, 0, form("/notes?priority=3", "text=a&priority=1&weight=0", f)));
+    show(web.handle_request(app, 0, form("/notes", "text=a&priority=1&weight=0&done=maybe", f)));
+    show(web.handle_request(app, 0, form(
         "/notes",
         "--x\r\ncontent",
         "multipart/form-data; boundary=x"
     )));
-    show(handle_request(app, 0, form("/notes", "text=a", "text/plain")));
-    show(handle_request(app, 0, form("/raw", "text=a", f)));
-    show(handle_request(app, 0, request("GET", "/search?q=%3Cscript%3E", "")));
+    show(web.handle_request(app, 0, form("/notes", "text=a", "text/plain")));
+    show(web.handle_request(app, 0, form("/raw", "text=a", f)));
+    show(web.handle_request(app, 0, web.request("GET", "/search?q=%3Cscript%3E", "")));
 }

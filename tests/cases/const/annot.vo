@@ -1,6 +1,5 @@
 # Field annotations take constants: the limits a program uses elsewhere are written once.
-import std.json.from_json;
-import std.json.parse_json;
+import std.json;
 
 const max_name = 5;
 const max_qty = 3 * 4;
@@ -22,9 +21,9 @@ record Order {
 }
 
 fn show(text: str) uses console {
-    match parse_json(text) {
+    match json.parse_json(text) {
         case ok(j) {
-            let r: result[Order] = from_json(j);
+            let r: result[Order] = json.from_json(j);
             match r {
                 case ok(o) {
                     print("ok " + o.name + " " + str(o.qty) + " " + o.port);

@@ -45,26 +45,21 @@ NOW = 1_700_000_000
 failures = []
 cases = 0
 
-DRIVER = """import std.bytes.from_text;
-import std.fs.each_line;
-import std.json.from_json;
-import std.json.parse_json;
-import std.json.to_json;
-import std.json.write_json;
-import std.security.User;
-import std.security.check_token;
-import std.security.issue_token;
+DRIVER = """import std.bytes;
+import std.fs;
+import std.json;
+import std.security;
 
 fn answer(f: list[str]) -> result[str] {
-    let key = from_text("0123456789abcdef0123456789abcdef");
+    let key = bytes.from_text("0123456789abcdef0123456789abcdef");
     if f[0] == "issue" {
-        let roles: list[str] = try from_json(try parse_json(f[4]));
-        let name: str = try from_json(try parse_json(f[3]));
-        return issue_token(key, new User { name: name, roles: roles }, try parse_int(f[1]), try parse_int(f[2]));
+        let roles: list[str] = try json.from_json(try json.parse_json(f[4]));
+        let name: str = try json.from_json(try json.parse_json(f[3]));
+        return security.issue_token(key, new security.User { name: name, roles: roles }, try parse_int(f[1]), try parse_int(f[2]));
     }
-    match check_token([key], try parse_int(f[1]), f[2]) {
+    match security.check_token([key], try parse_int(f[1]), f[2]) {
         case ok(user) {
-            return ok("ok " + try write_json(to_json(user)));
+            return ok("ok " + try json.write_json(json.to_json(user)));
         }
         case err(e) {
             return ok("err " + e);
@@ -73,7 +68,7 @@ fn answer(f: list[str]) -> result[str] {
 }
 
 fn main() -> result[void] uses console, file.read("./") {
-    try each_line("cases.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("cases.txt", fn(line: str) -> result[bool] {
         print(try answer(split(line, "\\t")));
         return ok(true);
     });
@@ -81,72 +76,41 @@ fn main() -> result[void] uses console, file.read("./") {
 }
 """
 
-TIMING = """import std.bytes.from_text;
-import std.bytes.to_base64;
-import std.option.Option;
-import std.security.Access;
-import std.security.Account;
-import std.security.Way;
-import std.security.basic;
-import std.security.policy;
-import std.security.rule;
-import std.security.secure;
-import std.http.Response;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.NoInput;
-import std.web.Route;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.request;
-import std.web.with_header;
+TIMING = """import std.bytes;
+import std.option;
+import std.security;
+import std.http;
+import std.web;
 
-fn find_account(n: int, name: str) -> result[Option[Account]] {
+fn find_account(n: int, name: str) -> result[option.Option[security.Account]] {
     if name == "col" {
-        return ok(Option.some(new Account { name: "col", password_hash: "pbkdf2-sha256$600000$UzaawpluQd/9+wjqxK7k5g==$T77DFP1a//H/wGSMrDAzacBRzngTQcTM4Nma4jsUNWw=", roles: new list[str], enabled: true }));
+        return ok(option.Option.some(new security.Account { name: "col", password_hash: "pbkdf2-sha256$600000$UzaawpluQd/9+wjqxK7k5g==$T77DFP1a//H/wGSMrDAzacBRzngTQcTM4Nma4jsUNWw=", roles: new list[str], enabled: true }));
     }
-    return ok(Option.none);
+    return ok(option.Option.none);
 }
 
-fn ran(n: int, input: NoInput) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn ran(n: int, input: web.NoInput) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
 fn main() uses console, clock {
-    let routes: list[Route[int, uses clock]] = [on_get("/me", ran)];
-    let ways: list[Way[int, uses clock]] = [basic(find_account)];
-    let app = new App { routes: routes, steps: [secure(policy([rule("/", Access.signed_in)], ways, fn() -> int { return now_ms(); }))], errors: new list[ErrorStatus] };
+    let routes: list[web.Route[int, uses clock]] = [web.on_get("/me", ran)];
+    let ways: list[security.Way[int, uses clock]] = [security.basic(find_account)];
+    let app = new web.App { routes: routes, steps: [security.secure(security.policy([security.rule("/", security.Access.signed_in)], ways, fn() -> int { return now_ms(); }))], errors: new list[web.ErrorStatus] };
     for _ in 0..7 {
         for pair in ["col:wrong", "eve:wrong"] {
             let t0 = now_ms();
-            let resp = handle_request(app, 0, with_header(request("GET", "/me", ""), "Authorization", "Basic " + to_base64(from_text(pair))));
+            let resp = web.handle_request(app, 0, web.with_header(web.request("GET", "/me", ""), "Authorization", "Basic " + bytes.to_base64(bytes.from_text(pair))));
             print(format("{} {} {} {}", pair, now_ms() - t0, resp.status, resp.body));
         }
     }
 }
 """
 
-SPEED = """import std.bytes.from_text;
-import std.http.Response;
-import std.security.Access;
-import std.security.User;
-import std.security.Way;
-import std.security.current_user;
-import std.security.issue_token;
-import std.security.policy;
-import std.security.rule;
-import std.security.secure;
-import std.security.tokens;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.Route;
-import std.web.Step;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.request;
-import std.web.with_header;
+SPEED = """import std.bytes;
+import std.http;
+import std.security;
+import std.web;
 
 record Caller {
     @header("X-Identity")
@@ -154,36 +118,36 @@ record Caller {
     identity: str;
 }
 
-fn me(n: int, input: Caller) -> result[Response] {
-    match current_user(input.identity) {
+fn me(n: int, input: Caller) -> result[http.Response] {
+    match security.current_user(input.identity) {
         case some(user) {
-            return ok(json_reply(200, user.name));
+            return ok(web.json_reply(200, user.name));
         }
         case none {
-            return ok(json_reply(200, "nobody"));
+            return ok(web.json_reply(200, "nobody"));
         }
     }
 }
 
 fn main() -> result[void] uses console, clock {
-    let key = from_text("0123456789abcdef0123456789abcdef");
-    let routes: list[Route[int, uses clock]] = [on_get("/me", me)];
-    let ways: list[Way[int, uses clock]] = [tokens([key])];
-    let rules = [rule("/health", Access.anyone), rule("/admin", Access.any_role(["admin"])), rule("/", Access.signed_in)];
-    let plain = new App { routes: routes, steps: new list[Step[int, uses clock]], errors: new list[ErrorStatus] };
-    let app = new App { routes: routes, steps: [secure(policy(rules, ways, fn() -> int { return now_ms(); }))], errors: new list[ErrorStatus] };
-    let token = try issue_token(key, new User { name: "ada", roles: ["admin", "user"] }, now_ms(), 3600);
-    let r = with_header(request("GET", "/me", ""), "Authorization", "Bearer " + token);
+    let key = bytes.from_text("0123456789abcdef0123456789abcdef");
+    let routes: list[web.Route[int, uses clock]] = [web.on_get("/me", me)];
+    let ways: list[security.Way[int, uses clock]] = [security.tokens([key])];
+    let rules = [security.rule("/health", security.Access.anyone), security.rule("/admin", security.Access.any_role(["admin"])), security.rule("/", security.Access.signed_in)];
+    let plain = new web.App { routes: routes, steps: new list[web.Step[int, uses clock]], errors: new list[web.ErrorStatus] };
+    let app = new web.App { routes: routes, steps: [security.secure(security.policy(rules, ways, fn() -> int { return now_ms(); }))], errors: new list[web.ErrorStatus] };
+    let token = try security.issue_token(key, new security.User { name: "ada", roles: ["admin", "user"] }, now_ms(), 3600);
+    let r = web.with_header(web.request("GET", "/me", ""), "Authorization", "Bearer " + token);
     var bad = 0;
     let t0 = now_ms();
     for _ in 0..10000 {
-        if handle_request(plain, 0, r).status != 200 {
+        if web.handle_request(plain, 0, r).status != 200 {
             set bad = bad + 1;
         }
     }
     let t1 = now_ms();
     for _ in 0..10000 {
-        if handle_request(app, 0, r).body != "\\"ada\\"" {
+        if web.handle_request(app, 0, r).body != "\\"ada\\"" {
             set bad = bad + 1;
         }
     }
@@ -192,14 +156,13 @@ fn main() -> result[void] uses console, clock {
 }
 """
 
-COOKIES = """import std.bytes.from_hex;
-import std.bytes.to_text;
-import std.fs.each_line;
-import std.web.read_cookie;
+COOKIES = """import std.bytes;
+import std.fs;
+import std.web;
 
 fn answer(line: str) -> result[str] {
     let f = split(line, " ");
-    match read_cookie(try to_text(try from_hex(f[0])), try to_text(try from_hex(f[1]))) {
+    match web.read_cookie(try bytes.to_text(try bytes.from_hex(f[0])), try bytes.to_text(try bytes.from_hex(f[1]))) {
         case some(v) {
             return ok("some " + v);
         }
@@ -210,7 +173,7 @@ fn answer(line: str) -> result[str] {
 }
 
 fn main() -> result[void] uses console, file.read("./") {
-    try each_line("cases.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("cases.txt", fn(line: str) -> result[bool] {
         print(try answer(line));
         return ok(true);
     });
@@ -218,67 +181,55 @@ fn main() -> result[void] uses console, file.read("./") {
 }
 """
 
-ORIGIN = """import std.fs.each_line;
-import std.security.same_origin;
+ORIGIN = """import std.fs;
+import std.security;
 
 fn main() -> result[void] uses console, file.read("./") {
-    try each_line("cases.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("cases.txt", fn(line: str) -> result[bool] {
         let f = split(line, "|");
-        print(str(same_origin(f[0], f[1], f[2], f[3], f[4])));
+        print(str(security.same_origin(f[0], f[1], f[2], f[3], f[4])));
         return ok(true);
     });
     return ok();
 }
 """
 
-FORM_TIMING = """import std.bytes.from_text;
-import std.http.Header;
-import std.http.Response;
-import std.option.Option;
-import std.security.Access;
-import std.security.Account;
-import std.security.Browser;
-import std.security.Session;
-import std.security.browser;
-import std.security.browser_routes;
-import std.security.policy;
-import std.security.rule;
-import std.security.secure;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.handle_request;
-import std.web.request;
+FORM_TIMING = """import std.bytes;
+import std.http;
+import std.option;
+import std.security;
+import std.web;
 
-fn find_account(n: int, name: str) -> result[Option[Account]] {
+fn find_account(n: int, name: str) -> result[option.Option[security.Account]] {
     if name == "col" {
-        return ok(Option.some(new Account { name: "col", password_hash: "pbkdf2-sha256$600000$UzaawpluQd/9+wjqxK7k5g==$T77DFP1a//H/wGSMrDAzacBRzngTQcTM4Nma4jsUNWw=", roles: new list[str], enabled: true }));
+        return ok(option.Option.some(new security.Account { name: "col", password_hash: "pbkdf2-sha256$600000$UzaawpluQd/9+wjqxK7k5g==$T77DFP1a//H/wGSMrDAzacBRzngTQcTM4Nma4jsUNWw=", roles: new list[str], enabled: true }));
     }
-    return ok(Option.none);
+    return ok(option.Option.none);
 }
 
 fn main() uses console, clock {
-    let b = new Browser[int, uses clock] {
+    let b = new security.Browser[int, uses clock] {
         find_account: find_account,
-        keep: fn(n: int, s: Session) -> result[void] { return ok(); },
-        find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); },
+        keep: fn(n: int, s: security.Session) -> result[void] { return ok(); },
+        find: fn(n: int, key: str) -> result[option.Option[security.Session]] { return ok(option.Option.none); },
         end: fn(n: int, key: str) -> result[void] { return ok(); },
-        random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); },
+        random: fn(k: int) -> bytes { return bytes.from_text("0123456789abcdef"); },
         sign_in: "/sign-in",
         sign_out: "/sign-out",
         lifetime_ms: 3600000,
         origin: ""
     };
-    let p = policy([rule("/", Access.anyone)], [browser(b)], fn() -> int { return now_ms(); });
-    let app = new App { routes: browser_routes(b, p), steps: [secure(p)], errors: new list[ErrorStatus] };
+    let p = security.policy([security.rule("/", security.Access.anyone)], [security.browser(b)], fn() -> int { return now_ms(); });
+    let app = new web.App { routes: security.browser_routes(b, p), steps: [security.secure(p)], errors: new list[web.ErrorStatus] };
     for _ in 0..7 {
         for pair in ["col:wrong", "eve:wrong"] {
             let f = split(pair, ":");
-            let r = request("POST", "/sign-in", "");
+            let r = web.request("POST", "/sign-in", "");
             set r.body = "name=" + f[0] + "&password=" + f[1];
-            push(r.headers, new Header { name: "Content-Type", value: "application/x-www-form-urlencoded" });
-            push(r.headers, new Header { name: "Sec-Fetch-Site", value: "same-origin" });
+            push(r.headers, new http.Header { name: "Content-Type", value: "application/x-www-form-urlencoded" });
+            push(r.headers, new http.Header { name: "Sec-Fetch-Site", value: "same-origin" });
             let t0 = now_ms();
-            let resp = handle_request(app, 0, r);
+            let resp = web.handle_request(app, 0, r);
             print(format("{} {} {} {}", pair, now_ms() - t0, resp.status, resp.body));
         }
     }

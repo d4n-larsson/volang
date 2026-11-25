@@ -1,5 +1,5 @@
-import helper.area;
+import helper;
 
 fn main() uses console {
-    print(str(area(1, 2)));
+    print(str(helper.area(1, 2)));
 }

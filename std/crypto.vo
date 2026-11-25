@@ -1,10 +1,8 @@
 # std.crypto: Hashes, message signatures, secret random bytes and password storage.
-# Part of the vo standard library (spec 035). Import items one by one: `import std.crypto.NAME;`.
+# Part of the vo standard library (spec 035). Import the module, `import std.crypto;`, and write its items as `crypto.NAME`.
 # Everything works on `bytes`: turn text into bytes with std.bytes.from_text and show results with
 # std.bytes.to_hex or to_base64. Secrets come from random_bytes, never from random_int.
-import std.bytes.from_base64;
-import std.bytes.from_text;
-import std.bytes.to_base64;
+import std.bytes;
 
 # The SHA-256 hash of b: 32 bytes.
 #     to_hex(sha256(from_text("abc"))) is "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
@@ -44,8 +42,8 @@ const max_cost = 10000000;
 #     slice(hash_password("correct horse"), 0, 21) is "pbkdf2-sha256$600000$"
 export fn hash_password(password: str) -> str uses entropy {
     let salt = random_bytes(16);
-    let key = __pbkdf2_sha256(from_text(password), salt, cost);
-    return method + "$" + str(cost) + "$" + to_base64(salt) + "$" + to_base64(key);
+    let key = __pbkdf2_sha256(bytes.from_text(password), salt, cost);
+    return method + "$" + str(cost) + "$" + bytes.to_base64(salt) + "$" + bytes.to_base64(key);
 }
 
 # Whether password is the one stored was made from. False for a text hash_password did not make
@@ -66,12 +64,12 @@ export fn verify_password(password: str, stored: str) -> bool {
             if n < 1 or n > max_cost or str(n) != parts[1] {
                 return false;
             }
-            match from_base64(parts[2]) {
+            match bytes.from_base64(parts[2]) {
                 case err(_) {
                     return false;
                 }
                 case ok(salt) {
-                    match from_base64(parts[3]) {
+                    match bytes.from_base64(parts[3]) {
                         case err(_) {
                             return false;
                         }
@@ -79,7 +77,7 @@ export fn verify_password(password: str, stored: str) -> bool {
                             if len(key) != 32 {
                                 return false;
                             }
-                            return same_bytes(__pbkdf2_sha256(from_text(password), salt, n), key);
+                            return same_bytes(__pbkdf2_sha256(bytes.from_text(password), salt, n), key);
                         }
                     }
                 }

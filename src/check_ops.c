@@ -47,22 +47,8 @@ static void secret_logged(Node *call)
             Node *next = i + 1 < xs->n ? vec_get(xs, i + 1) : 0;
             Node *prev = i ? vec_get(xs, i - 1) : 0;
             diag_add_fix(d, (int)f->file, next ? f->start : prev->end, next ? next->start : f->end, str_from_cstr(""));
-        } else { /* the only field: no fields (an empty list needs its type, Field, imported when it is not:
-                    one edit from the imports to the list, as a fix is one edit) */
-            Sym *s = scope_find(str_from_cstr("Field"));
-            if (s && s->kind == SYM_RECORD) {
-                diag_add_fix(d, (int)list->file, list->start, list->end, str_from_cstr("new list[Field]"));
-            } else if (!s) {
-                FileRec *fr = file_get((int)list->file);
-                long at = import_insert_at((int)list->file);
-                SB *sb = sb_new();
-                GC_ROOT(&sb);
-                sb_cstr(sb, "import std.log.Field;\n");
-                sb_bytes(sb, fr->text + at, list->start - at);
-                sb_cstr(sb, "new list[Field]");
-                diag_add_fix(d, (int)list->file, at, list->end, sb_finish(sb));
-                GC_UNROOT(1);
-            }
+        } else { /* the only field: no fields (`[]` takes its type, list[Field], from the parameter) */
+            diag_add_fix(d, (int)list->file, list->start, list->end, str_from_cstr("[]"));
         }
     }
 }

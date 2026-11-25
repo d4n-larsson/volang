@@ -1,5 +1,5 @@
 # std.json: JSON values: parse, write, and read fields and elements.
-# Part of the vo standard library (spec 007). Import items one by one: `import std.json.NAME;`.
+# Part of the vo standard library (spec 007). Import the module, `import std.json;`, and write its items as `json.NAME`.
 # Parsing and writing are done by the toolchain (src/json_text.c), on the bytes of the text.
 
 # A JSON value: object keys keep their order, integers that fit an int are integer.

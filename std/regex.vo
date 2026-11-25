@@ -1,8 +1,8 @@
 # std.regex: Regular expressions that run in linear time: test, find, replace and split with compiled patterns.
-# Part of the vo standard library (spec 025). Import items one by one: `import std.regex.NAME;`.
+# Part of the vo standard library (spec 025). Import the module, `import std.regex;`, and write its items as `regex.NAME`.
 # Write a pattern as a raw string, between backticks, where a backslash is itself: regex(`\d+`). Every operation
 # searches anywhere in the text; ^ and $ anchor. \d \w \s \b and (?i) are ASCII; offsets are bytes.
-import std.option.Option;
+import std.option;
 
 # A compiled pattern: make one with regex("...") or parse_regex(s), and reuse it.
 #     regex("a+").pattern is "a+"
@@ -96,12 +96,12 @@ fn build_match(s: str, offs: list[int], base: int, names: list[str]) -> Match {
 
 # The leftmost match in s, with its groups; `none` when there is none.
 #     first_match("abbc", regex("b+")) == Option.some(new Match { text: "bb", start: 1, end: 3, groups: ["bb"], took_part: [true], named: new map[str, str] }) is true
-export fn first_match(s: str, re: Regex) -> Option[Match] {
+export fn first_match(s: str, re: Regex) -> option.Option[Match] {
     let offs = __re(2, re.pattern, s);
     if len(offs) == 0 {
-        return Option.none;
+        return option.Option.none;
     }
-    return Option.some(build_match(s, offs, 0, group_names(re)));
+    return option.Option.some(build_match(s, offs, 0, group_names(re)));
 }
 
 # Every match in s, left to right, without overlapping (an empty match may follow a non-empty one, as in Python).

@@ -1,10 +1,10 @@
 $ vo package main.vo pg shared/pg
-added pg shared/pg sha256:f64a8b849247e2c5b8a4e16d7edd9907568a7be471aa7b40819ba1f8d3ff5161
+added pg shared/pg sha256:919cbc59959d2b3618de7c2be42be2d4e75a1b0444144b3e1eaa36ffe1ec08c3
 --- stderr
 --- exit 0
 $ vo check main.vo
 main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effects with `vo effects --update`.
-   1 | import pg.client.Options;
+   1 | import pg.client;
      | ^
 0 errors, 1 warning
 --- stderr
@@ -18,9 +18,9 @@ std/tcp.vo:147:26: runtime error[R0010]: net("127.0.0.1:2") is not allowed: `mai
 trace:
   at connect (std/tcp.vo:147:26)
       host: str = "127.0.0.1", port: int = 2, timeout_ms: int = 1000
-  at open (shared/pg/client.vo:14:12)
+  at open (shared/pg/client.vo:12:12)
       o: Options = new Options { host: "127.0.0.1", port: 2 }
-  at try_port (main.vo:7:11)
+  at try_port (main.vo:5:11)
       port: int = 2
-  at main (main.vo:20:11)
+  at main (main.vo:18:11)
 --- exit 70

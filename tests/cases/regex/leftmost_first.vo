@@ -1,9 +1,7 @@
-import std.regex.regex;
-import std.regex.first_match;
-import std.regex.Match;
-import std.option.to_result;
+import std.option;
+import std.regex;
 
-fn show(r: result[Match]) uses console {
+fn show(r: result[regex.Match]) uses console {
     match r {
         case ok(m) {
             print("[" + join(m.groups, "|") + "] " + str(m.start));
@@ -15,12 +13,12 @@ fn show(r: result[Match]) uses console {
 }
 
 fn main() uses console {
-    show(to_result(first_match("ab", regex("a|ab")), "no match"));
-    show(to_result(first_match("aaa", regex("a*?")), "no match"));
-    show(to_result(first_match("aaa", regex("(a+)(a*)")), "no match"));
-    show(to_result(first_match("aaa", regex("(a+?)(a*)")), "no match"));
-    show(to_result(first_match("aaa", regex("x*")), "no match"));
-    show(to_result(first_match("abcd", regex("(a|ab)(c|bcd)(d*)")), "no match"));
-    show(to_result(first_match("aa", regex("(a|)*")), "no match"));
-    show(to_result(first_match("ab", regex("(?:(a)|b)*")), "no match"));
+    show(option.to_result(regex.first_match("ab", regex.regex("a|ab")), "no match"));
+    show(option.to_result(regex.first_match("aaa", regex.regex("a*?")), "no match"));
+    show(option.to_result(regex.first_match("aaa", regex.regex("(a+)(a*)")), "no match"));
+    show(option.to_result(regex.first_match("aaa", regex.regex("(a+?)(a*)")), "no match"));
+    show(option.to_result(regex.first_match("aaa", regex.regex("x*")), "no match"));
+    show(option.to_result(regex.first_match("abcd", regex.regex("(a|ab)(c|bcd)(d*)")), "no match"));
+    show(option.to_result(regex.first_match("aa", regex.regex("(a|)*")), "no match"));
+    show(option.to_result(regex.first_match("ab", regex.regex("(?:(a)|b)*")), "no match"));
 }

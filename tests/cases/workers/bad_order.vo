@@ -1,17 +1,8 @@
 # Spec 047: a collection with its own order cannot be a message (R0015 where it is sent).
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.Worker;
-import std.workers.WorkerError;
-import std.workers.emit;
-import std.workers.next_message;
-import std.workers.receive;
-import std.workers.start_worker;
-import std.workers.stop_worker;
-import std.workers.tell;
-import std.collections.ordered_set_by;
+import std.collections;
+import std.workers;
 
-fn why(e: WorkerError) -> str {
+fn why(e: workers.WorkerError) -> str {
     match e {
         case timed_out {
             return "timeout";
@@ -34,7 +25,7 @@ fn why(e: WorkerError) -> str {
     }
 }
 
-fn show(r: result[int, WorkerError]) -> str {
+fn show(r: result[int, workers.WorkerError]) -> str {
     match r {
         case ok(n) {
             return "ok " + str(n);
@@ -45,7 +36,7 @@ fn show(r: result[int, WorkerError]) -> str {
     }
 }
 
-fn sent(r: result[void, WorkerError]) -> str {
+fn sent(r: result[void, workers.WorkerError]) -> str {
     match r {
         case ok() {
             return "sent";
@@ -56,8 +47,8 @@ fn sent(r: result[void, WorkerError]) -> str {
     }
 }
 
-fn give(link: Link[int, int], n: int) {
-    match emit(link, n) {
+fn give(link: workers.Link[int, int], n: int) {
+    match workers.emit(link, n) {
         case ok() {
         }
         case err(_) {
@@ -65,7 +56,7 @@ fn give(link: Link[int, int], n: int) {
     }
 }
 
-fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+fn worker_of(r: result[workers.Worker[int, int], workers.WorkerError]) -> workers.Worker[int, int] {
     match r {
         case ok(w) {
             return w;
@@ -80,16 +71,16 @@ record Box {
     items: ordered_set[int];
 }
 
-fn body(link: Link[Box, int]) {
+fn body(link: workers.Link[Box, int]) {
 }
 
 fn main() uses console {
-    let s: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
     push(s, 1);
-    match start_worker(body) {
+    match workers.start_worker(body) {
         case ok(w) {
             print("started");
-            print(sent(tell(w, new Box { items: s })));
+            print(sent(workers.tell(w, new Box { items: s })));
         }
         case err(e) {
             print(why(e));

@@ -1,5 +1,5 @@
-import exprparser.Expr;
-import printer.strip_zeros;
+import exprparser;
+import printer;
 
 fn max_int() -> int {
     return 9223372036854775807;
@@ -10,7 +10,7 @@ fn min_int() -> int {
 }
 
 fn literal(d: str) -> result[int] {
-    let s = strip_zeros(d);
+    let s = printer.strip_zeros(d);
     if len(s) > 19 {
         return err("overflow");
     }
@@ -81,7 +81,7 @@ fn power(a: int, b: int) -> result[int] {
     return ok(r);
 }
 
-export fn evaluate(e: Expr, env_value: map[str, int]) -> result[int] {
+export fn evaluate(e: exprparser.Expr, env_value: map[str, int]) -> result[int] {
     match e {
         case num(d) {
             return literal(d);

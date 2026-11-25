@@ -519,7 +519,7 @@ A name is used but never defined or imported.
 
 Fixable: sometimes
 
-The name is not a local, parameter, top-level item, builtin or import in scope. It is usually a typo or a variable used outside the block that declares it. When a defined name is within two edits of it, the fix replaces it with that name.
+The name is not a local, parameter, top-level item, builtin or import in scope. It is usually a typo or a variable used outside the block that declares it. When a defined name is within two edits of it, the fix replaces it with that name. With module imports (since vo 0.4.0): an item of an imported module used without the module's name (`parse_json` after `import std.json;`) gets the fix `json.parse_json`; `json.nope` names the module that has no such item; a builtin written with a module name (`lists.len`) gets the fix `len`; and a module name used on its own is not a value.
 
 ### Example
 
@@ -543,9 +543,9 @@ fn main() uses console {
 
 Two definitions share the same name.
 
-Fixable: no
+Fixable: sometimes
 
-Each top-level item (function, record, variant, test) and each field, case and parameter needs a unique name, because vo has no overloading. The diagnostic's `related` location points at the first definition. Rename or remove one of them.
+Each top-level item (function, record, variant, test) and each field, case and parameter needs a unique name, because vo has no overloading. The diagnostic's `related` location points at the first definition. Rename or remove one of them. Module names count too (since vo 0.4.0): two imports that end in the same name, or a module named like an item of the file, cannot be told apart (there is no `import ... as`: rename a file); the same import written twice gets the fix that removes the second.
 
 ### Example
 
@@ -586,7 +586,7 @@ A local name reuses a name that is already visible; vo does not allow shadowing.
 
 Fixable: sometimes
 
-A local declaration (`let`, `var`, a parameter, a `for` variable or a `case` binding) reuses a name that is already in scope. The diagnostic's `related` location points at the outer definition. Give the inner one a different name, or use `set` on a `var` if you meant to change the outer one. A builtin's name (`len`, `min`, `lower`, ...) is not available for a local either (since vo 0.2.0): the fix renames the local to `NAME_value`, and each use reports the same rename.
+A local declaration (`let`, `var`, a parameter, a `for` variable or a `case` binding) reuses a name that is already in scope. The diagnostic's `related` location points at the outer definition. Give the inner one a different name, or use `set` on a `var` if you meant to change the outer one. A builtin's name (`len`, `min`, `lower`, ...) is not available for a local either (since vo 0.2.0), nor the name of a module the file imports (since vo 0.4.0: `text` with `import std.text;`): the fix renames the local to `NAME_value`, and each use reports the same rename.
 
 ### Example
 
@@ -647,10 +647,10 @@ export fn greet(name: str) -> str {
 
 ```vo
 # file: main.vo
-import helpers.greet;
+import helpers;
 
 fn main() uses console {
-    print(greet("vo"));
+    print(helpers.greet("vo"));
 }
 ```
 
@@ -691,10 +691,10 @@ export fn greet(name: str) -> str {
 
 ```vo
 # file: main.vo
-import helpers.greet;
+import helpers;
 
 fn main() uses console {
-    print(greet("vo"));
+    print(helpers.greet("vo"));
 }
 ```
 
@@ -710,19 +710,19 @@ Files cannot import each other in a cycle, directly or through other files. The 
 
 ```vo
 # file: main.vo
-import a.one;
+import a;
 
 fn main() uses console {
-    print(one());
+    print(a.one());
 }
 ```
 
 ```vo
 # file: a.vo
-import b.two;
+import b;
 
 export fn one() -> str {
-    return "one " + two();
+    return "one " + b.two();
 }
 
 export fn base() -> str {
@@ -732,10 +732,10 @@ export fn base() -> str {
 
 ```vo
 # file: b.vo
-import a.base;
+import a;
 
 export fn two() -> str {
-    return "two " + base();
+    return "two " + a.base();
 }
 ```
 
@@ -743,19 +743,19 @@ export fn two() -> str {
 
 ```vo
 # file: main.vo
-import a.one;
+import a;
 
 fn main() uses console {
-    print(one());
+    print(a.one());
 }
 ```
 
 ```vo
 # file: a.vo
-import b.two;
+import b;
 
 export fn one() -> str {
-    return "one " + two();
+    return "one " + b.two();
 }
 ```
 
@@ -847,10 +847,10 @@ fn greet(name: str) -> str {
 
 ```vo
 # file: main.vo
-import helpers.greet;
+import helpers;
 
 fn main() uses console {
-    print(greet("vo"));
+    print(helpers.greet("vo"));
 }
 ```
 
@@ -865,10 +865,10 @@ export fn greet(name: str) -> str {
 
 ```vo
 # file: main.vo
-import helpers.greet;
+import helpers;
 
 fn main() uses console {
-    print(greet("vo"));
+    print(helpers.greet("vo"));
 }
 ```
 
@@ -896,10 +896,10 @@ export fn area(s: Size) -> int {
 
 ```vo
 # file: main.vo
-import shapes.area;
+import shapes;
 
 fn main() uses console {
-    print("ready");
+    print(str(shapes.area(new shapes.Size { w: 2, h: 3 })));
 }
 ```
 
@@ -919,10 +919,10 @@ export fn area(s: Size) -> int {
 
 ```vo
 # file: main.vo
-import shapes.area;
+import shapes;
 
 fn main() uses console {
-    print("ready");
+    print(str(shapes.area(new shapes.Size { w: 2, h: 3 })));
 }
 ```
 
@@ -1028,9 +1028,9 @@ A standard library item was renamed, removed or changed in vo 0.2.0 or 0.3.0.
 Fixable: sometimes
 
 Before 1.0 a minor version may change the library, and every change comes with this error and, where one
-correction keeps the program's behavior, its fix (`docs/stability.md`). The import of a renamed item and
-each use of the old name are reported; the fix gives the new name, and the file keeps checking as if the
-new name were written. A removed item's fix writes its replacement (`now_ms()` for `std.time.now`). A
+correction keeps the program's behavior, its fix (`docs/stability.md`). Each use of an old name (`lists.contains`) is reported; the fix gives the new name
+(`lists.has_item`), and an import of a changed item in the 0.3 form is reported too and keeps checking as
+if the new name were written. A removed item's fix writes its replacement (`now_ms()` for `std.time.now`). A
 lookup that now returns an `Option` is wrapped back into the old `result` (`to_result(CALL, "none")`), and
 a function that now takes the text first gets its arguments swapped. A function that gained an argument
 gets it inserted with the value that keeps the old behavior (`"./"`, the start directory, for the working
@@ -1040,20 +1040,48 @@ directory of `std.process.run_with`, `run_with_bytes` and `run_lines` in 0.3.0).
 ### Example
 
 ```vo
-import std.lists.contains;
+import std.lists;
 
 fn main() uses console {
-    print(str(contains([1, 2], 2)));
+    print(str(lists.contains([1, 2], 2)));
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.lists.has_item;
+import std.lists;
 
 fn main() uses console {
-    print(str(has_item([1, 2], 2)));
+    print(str(lists.has_item([1, 2], 2)));
+}
+```
+
+## E0215 single_name_import
+
+An import names one item, the form before vo 0.4.0.
+
+Fixable: yes
+
+An import names a module, and its items are used with the module's name: `import std.json;`, then `json.parse_json` and `json.Json`. The form `import std.json.parse_json;` was replaced in vo 0.4.0. The diagnostic appears once per file, at its first such import; the fix rewrites the file from its first import to the last use it changes, as one edit: the imports become one per module, every use of an item they bound is written with the module's name, and a local named like one of those modules is renamed `NAME_value`. When an import names a std item changed in vo 0.2.0 (E0214), apply the E0214 fixes first; this diagnostic has its fix in the next check.
+
+### Example
+
+```vo
+import std.text.repeat;
+
+fn main() uses console {
+    print(repeat("ab", 2));
+}
+```
+
+### Fixed
+
+```vo
+import std.text;
+
+fn main() uses console {
+    print(text.repeat("ab", 2));
 }
 ```
 
@@ -1652,20 +1680,20 @@ The diagnostic points at the part of the pattern that is wrong: a group or class
 ### Example
 
 ```vo
-import std.regex.regex;
+import std.regex;
 
 fn main() uses console {
-    print(regex("(\\d+").pattern);
+    print(regex.regex("(\\d+").pattern);
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.regex.regex;
+import std.regex;
 
 fn main() uses console {
-    print(regex("(\\d+)").pattern);
+    print(regex.regex("(\\d+)").pattern);
 }
 ```
 
@@ -1680,20 +1708,20 @@ Every vo pattern runs in time linear in the text, so features that need backtrac
 ### Example
 
 ```vo
-import std.regex.regex;
+import std.regex;
 
 fn main() uses console {
-    print(regex("(?P<year>\\d{4})").pattern);
+    print(regex.regex("(?P<year>\\d{4})").pattern);
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.regex.regex;
+import std.regex;
 
 fn main() uses console {
-    print(regex("(?<year>\\d{4})").pattern);
+    print(regex.regex("(?<year>\\d{4})").pattern);
 }
 ```
 
@@ -1708,22 +1736,22 @@ Fixable: no
 ### Example
 
 ```vo
-import std.regex.regex;
+import std.regex;
 
 fn main() uses console {
     let digits = "\\d+";
-    print(regex(digits).pattern);
+    print(regex.regex(digits).pattern);
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.regex.parse_regex;
+import std.regex;
 
 fn main() -> result[void] uses console {
     let digits = "\\d+";
-    let re = try parse_regex(digits);
+    let re = try regex.parse_regex(digits);
     print(re.pattern);
     return ok();
 }
@@ -1740,22 +1768,20 @@ In a replacement, `$1` or `${1}` is group 1, `${name}` a named group and `$$` a 
 ### Example
 
 ```vo
-import std.regex.regex;
-import std.regex.replace_matches;
+import std.regex;
 
 fn main() uses console {
-    print(replace_matches("al@vo", regex("(\\w+)@(\\w+)"), "\\2 at \\1"));
+    print(regex.replace_matches("al@vo", regex.regex("(\\w+)@(\\w+)"), "\\2 at \\1"));
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.regex.regex;
-import std.regex.replace_matches;
+import std.regex;
 
 fn main() uses console {
-    print(replace_matches("al@vo", regex("(\\w+)@(\\w+)"), "$2 at $1"));
+    print(regex.replace_matches("al@vo", regex.regex("(\\w+)@(\\w+)"), "$2 at $1"));
 }
 ```
 
@@ -1770,20 +1796,20 @@ Fixable: no
 ### Example
 
 ```vo
-import std.sqlite.sql;
+import std.sqlite;
 
 fn main() uses console {
-    print(sql("selec name from items").text);
+    print(sqlite.sql("selec name from items").text);
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.sqlite.sql;
+import std.sqlite;
 
 fn main() uses console {
-    print(sql("select name from items").text);
+    print(sqlite.sql("select name from items").text);
 }
 ```
 
@@ -1798,14 +1824,11 @@ A statement is written as a literal, and values go in as `?` parameters, never i
 ### Example
 
 ```vo
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.query;
-import std.sqlite.Value;
+import std.sqlite;
 
 fn main() -> result[void] uses console {
     let name = "al";
-    let rows = try query(open_memory(), sql("select '" + name + "' as n"), new list[Value]);
+    let rows = try sqlite.query(sqlite.open_memory(), sqlite.sql("select '" + name + "' as n"), new list[sqlite.Value]);
     print(str(len(rows)));
     return ok();
 }
@@ -1814,14 +1837,11 @@ fn main() -> result[void] uses console {
 ### Fixed
 
 ```vo
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.query;
-import std.sqlite.Value;
+import std.sqlite;
 
 fn main() -> result[void] uses console {
     let name = "al";
-    let rows = try query(open_memory(), sql("select ? as n"), [Value.text(name)]);
+    let rows = try sqlite.query(sqlite.open_memory(), sqlite.sql("select ? as n"), [sqlite.Value.text(name)]);
     print(str(len(rows)));
     return ok();
 }
@@ -1838,20 +1858,20 @@ Parameters are `?`, filled from the list in order: `:name`, `@name`, `$name` and
 ### Example
 
 ```vo
-import std.sqlite.sql;
+import std.sqlite;
 
 fn main() uses console {
-    print(sql("select * from items where id = :id").text);
+    print(sqlite.sql("select * from items where id = :id").text);
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.sqlite.sql;
+import std.sqlite;
 
 fn main() uses console {
-    print(sql("select * from items where id = ?").text);
+    print(sqlite.sql("select * from items where id = ?").text);
 }
 ```
 
@@ -1866,10 +1886,10 @@ An in-memory database needs no file and no effect: open it with `open_memory()`,
 ### Example
 
 ```vo
-import std.sqlite.open;
+import std.sqlite;
 
 fn main() -> result[void] uses console, file.read, file.write {
-    let db = try open(":memory:");
+    let db = try sqlite.open(":memory:");
     print(str(db.id));
     return ok();
 }
@@ -1878,10 +1898,10 @@ fn main() -> result[void] uses console, file.read, file.write {
 ### Fixed
 
 ```vo
-import std.sqlite.open_memory;
+import std.sqlite;
 
 fn main() -> result[void] uses console {
-    let db = open_memory();
+    let db = sqlite.open_memory();
     print(str(db.id));
     return ok();
 }
@@ -1938,22 +1958,20 @@ Fixable: sometimes
 ### Example
 
 ```vo
-import std.json.Json;
-import std.json.to_json;
+import std.json;
 
-fn convert[T](v: T) -> Json {
-    return to_json(v);
+fn convert[T](v: T) -> json.Json {
+    return json.to_json(v);
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.json.Json;
-import std.json.to_json;
+import std.json;
 
-fn convert[T: json](v: T) -> Json {
-    return to_json(v);
+fn convert[T: json](v: T) -> json.Json {
+    return json.to_json(v);
 }
 ```
 
@@ -1994,42 +2012,38 @@ A route pattern is a string literal (so it can be checked): `/`, then segments s
 ### Example
 
 ```vo
-import std.http.Response;
-import std.web.Route;
-import std.web.no_content;
-import std.web.on_get;
+import std.http;
+import std.web;
 
 record NoteId {
     id: int;
 }
 
-fn show(n: int, input: NoteId) -> result[Response] {
-    return ok(no_content());
+fn show(n: int, input: NoteId) -> result[http.Response] {
+    return ok(web.no_content());
 }
 
-fn routes() -> list[Route[int]] {
-    return [on_get("/notes/{note}", show)];
+fn routes() -> list[web.Route[int]] {
+    return [web.on_get("/notes/{note}", show)];
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.http.Response;
-import std.web.Route;
-import std.web.no_content;
-import std.web.on_get;
+import std.http;
+import std.web;
 
 record NoteId {
     id: int;
 }
 
-fn show(n: int, input: NoteId) -> result[Response] {
-    return ok(no_content());
+fn show(n: int, input: NoteId) -> result[http.Response] {
+    return ok(web.no_content());
 }
 
-fn routes() -> list[Route[int]] {
-    return [on_get("/notes/{id}", show)];
+fn routes() -> list[web.Route[int]] {
+    return [web.on_get("/notes/{id}", show)];
 }
 ```
 
@@ -2044,36 +2058,30 @@ A request goes to the route whose pattern matches; where two patterns differ, a 
 ### Example
 
 ```vo
-import std.http.Response;
-import std.web.NoInput;
-import std.web.Route;
-import std.web.no_content;
-import std.web.on_get;
+import std.http;
+import std.web;
 
-fn a(n: int, input: NoInput) -> result[Response] {
-    return ok(no_content());
+fn a(n: int, input: web.NoInput) -> result[http.Response] {
+    return ok(web.no_content());
 }
 
-fn routes() -> list[Route[int]] {
-    return [on_get("/notes", a), on_get("/notes", a)];
+fn routes() -> list[web.Route[int]] {
+    return [web.on_get("/notes", a), web.on_get("/notes", a)];
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.http.Response;
-import std.web.NoInput;
-import std.web.Route;
-import std.web.no_content;
-import std.web.on_get;
+import std.http;
+import std.web;
 
-fn a(n: int, input: NoInput) -> result[Response] {
-    return ok(no_content());
+fn a(n: int, input: web.NoInput) -> result[http.Response] {
+    return ok(web.no_content());
 }
 
-fn routes() -> list[Route[int]] {
-    return [on_get("/notes", a), on_get("/notes/all", a)];
+fn routes() -> list[web.Route[int]] {
+    return [web.on_get("/notes", a), web.on_get("/notes/all", a)];
 }
 ```
 
@@ -2241,11 +2249,10 @@ A metric name (the first argument of `counter`, `gauge` or `histogram`) is lette
 ### Example
 
 ```vo
-import std.metrics.Metric;
-import std.metrics.counter;
+import std.metrics;
 
-fn requests() -> Metric {
-    return counter("http-requests", "Requests answered.", new list[str]);
+fn requests() -> metrics.Metric {
+    return metrics.counter("http-requests", "Requests answered.", new list[str]);
 }
 
 fn main() {
@@ -2256,11 +2263,10 @@ fn main() {
 ### Fixed
 
 ```vo
-import std.metrics.Metric;
-import std.metrics.counter;
+import std.metrics;
 
-fn requests() -> Metric {
-    return counter("http_requests", "Requests answered.", new list[str]);
+fn requests() -> metrics.Metric {
+    return metrics.counter("http_requests", "Requests answered.", new list[str]);
 }
 
 fn main() {
@@ -3086,10 +3092,10 @@ A `process` grant without scopes would allow running every program on the machin
 ### Example
 
 ```vo
-import std.process.run;
+import std.process;
 
 fn main() -> result[void] uses console, process {
-    let out = try run("git", ["--version"]);
+    let out = try process.run("git", ["--version"]);
     print(out.stdout);
     return ok();
 }
@@ -3098,10 +3104,10 @@ fn main() -> result[void] uses console, process {
 ### Fixed
 
 ```vo
-import std.process.run;
+import std.process;
 
 fn main() -> result[void] uses console, process("git") {
-    let out = try run("git", ["--version"]);
+    let out = try process.run("git", ["--version"]);
     print(out.stdout);
     return ok();
 }
@@ -3369,6 +3375,35 @@ fn main() uses console {
 }
 ```
 
+## W0203 unused_import
+
+A module is imported but nothing of it is used.
+
+Fixable: yes
+
+No name of the file is written with the module's name (`json.parse_json`, `json.Json`, an effect set or a constant of it), so the import is left over from an edit; the fix removes the line. The list of imports then says which modules a file reaches (since vo 0.4.0).
+
+### Example
+
+```vo
+import std.json;
+import std.text;
+
+fn main() uses console {
+    print(text.repeat("ab", 2));
+}
+```
+
+### Fixed
+
+```vo
+import std.text;
+
+fn main() uses console {
+    print(text.repeat("ab", 2));
+}
+```
+
 ## W0401 unreachable_code
 
 A statement can never run.
@@ -3610,10 +3645,10 @@ export fn area(w: int, h: int) -> int {
 
 ```vo
 # file: main.vo
-import geom.area;
+import geom;
 
 fn main() uses console {
-    print(str(area(2, 3)));
+    print(str(geom.area(2, 3)));
 }
 ```
 
@@ -3628,10 +3663,10 @@ export fn area(w: int, h: int) -> int {
 
 ```vo
 # file: main.vo
-import geom.area;
+import geom;
 
 fn main() uses console {
-    print(str(area(2, 3)));
+    print(str(geom.area(2, 3)));
 }
 ```
 
@@ -3681,11 +3716,10 @@ Fixable: yes
 ### Example
 
 ```vo
-import std.log.field;
-import std.log.log_info;
+import std.log;
 
 fn login(user: str, password: str) uses log {
-    log_info("login", [field("user", user), field("pw", password)]);
+    log.log_info("login", [log.field("user", user), log.field("pw", password)]);
 }
 
 fn main() uses log {
@@ -3696,11 +3730,10 @@ fn main() uses log {
 ### Fixed
 
 ```vo
-import std.log.field;
-import std.log.log_info;
+import std.log;
 
 fn login(user: str, password: str) uses log {
-    log_info("login", [field("user", user)]);
+    log.log_info("login", [log.field("user", user)]);
 }
 
 fn main() uses log {
@@ -3833,10 +3866,10 @@ Fixable: no
 ### Example
 
 ```vo
-import money.format.cents;
+import money.format;
 
 fn main() uses console {
-    print(cents(1234));
+    print(format.cents(1234));
 }
 ```
 
@@ -3855,10 +3888,10 @@ money shared/money sha256:000000000000000000000000000000000000000000000000000000
 ### Fixed
 
 ```vo
-import money.format.cents;
+import money.format;
 
 fn main() uses console {
-    print(cents(1234));
+    print(format.cents(1234));
 }
 ```
 
@@ -3885,10 +3918,10 @@ Each line of `vo.packages` names a directory, relative to the manifest. When a c
 ### Example
 
 ```vo
-import money.format.cents;
+import money.format;
 
 fn main() uses console {
-    print(cents(1234));
+    print(format.cents(1234));
 }
 ```
 
@@ -3900,10 +3933,10 @@ money shared/money sha256:000000000000000000000000000000000000000000000000000000
 ### Fixed
 
 ```vo
-import money.format.cents;
+import money.format;
 
 fn main() uses console {
-    print(cents(1234));
+    print(format.cents(1234));
 }
 ```
 
@@ -3930,10 +3963,10 @@ Each line of `vo.packages` is a package name (an identifier other than `std`), i
 ### Example
 
 ```vo
-import money.format.cents;
+import money.format;
 
 fn main() uses console {
-    print(cents(1234));
+    print(format.cents(1234));
 }
 ```
 
@@ -3952,10 +3985,10 @@ money shared/money
 ### Fixed
 
 ```vo
-import money.format.cents;
+import money.format;
 
 fn main() uses console {
-    print(cents(1234));
+    print(format.cents(1234));
 }
 ```
 
@@ -3982,10 +4015,10 @@ Every name in `vo.packages` must be unique, so that an import names exactly one 
 ### Example
 
 ```vo
-import money.format.cents;
+import money.format;
 
 fn main() uses console {
-    print(cents(1234));
+    print(format.cents(1234));
 }
 ```
 
@@ -4005,10 +4038,10 @@ money shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f
 ### Fixed
 
 ```vo
-import money.format.cents;
+import money.format;
 
 fn main() uses console {
-    print(cents(1234));
+    print(format.cents(1234));
 }
 ```
 
@@ -4030,15 +4063,15 @@ A package name is also a directory next to the importing file.
 
 Fixable: no
 
-`import money.format.cents;` could mean the local file `money/format.vo` or the package `money`. Rather than pick one silently, vo reports the clash. Rename the local directory, or list the package under another name.
+`import money.format;` could mean the local file `money/format.vo` or the package `money`. Rather than pick one silently, vo reports the clash. Rename the local directory, or list the package under another name.
 
 ### Example
 
 ```vo
-import money.format.cents;
+import money.format;
 
 fn main() uses console {
-    print(cents(1234));
+    print(format.cents(1234));
 }
 ```
 
@@ -4064,10 +4097,10 @@ money shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f
 ### Fixed
 
 ```vo
-import cash.format.cents;
+import cash.format;
 
 fn main() uses console {
-    print(cents(1234));
+    print(format.cents(1234));
 }
 ```
 
@@ -4188,7 +4221,7 @@ A file has more than 400 code lines: split it into modules, one concept each.
 
 Fixable: no
 
-A module (a file) holds one concept: the money arithmetic, the parser, the report. Code lines are lines that are neither blank nor only a comment. A file past 400 of them does several jobs; split it and import what each part needs (`import money.cents;`). When a file must stay whole (one module per import path), `@allow("W0702", "reason")` on its first function, test or property accepts it.
+A module (a file) holds one concept: the money arithmetic, the parser, the report. Code lines are lines that are neither blank nor only a comment. A file past 400 of them does several jobs; split it and import what each part needs (`import money;`, then `money.cents`). When a file must stay whole (one module per import path), `@allow("W0702", "reason")` on its first function, test or property accepts it.
 
 ### Example
 
@@ -4216,10 +4249,10 @@ export fn helper_N() -> int { return 1; }
 ```
 
 ```vo
-import helpers_a.helper_1;
+import helpers_a;
 
 fn main() uses console {
-    print(str(helper_1()));
+    print(str(helpers_a.helper_1()));
 }
 ```
 
@@ -4347,14 +4380,14 @@ export fn cents(units: int) -> int {
 ```
 
 ```vo
-import money.cents;
+import money;
 
 fn main() uses console {
-    print(str(cents(2)));
+    print(str(money.cents(2)));
 }
 
 test "cents of units" {
-    expect_eq(cents(3), 300);
+    expect_eq(money.cents(3), 300);
 }
 ```
 
@@ -4372,10 +4405,10 @@ test "cents of units" {
 ```
 
 ```vo
-import money.cents;
+import money;
 
 fn main() uses console {
-    print(str(cents(2)));
+    print(str(money.cents(2)));
 }
 ```
 
@@ -4867,10 +4900,10 @@ The messages of a worker (`std.workers`) cross between processes in the same way
 ### Example
 
 ```vo
-import std.collections.ordered_set_by;
+import std.collections;
 
 fn backwards(n: int) -> ordered_set[int] {
-    let s: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
     push(s, n);
     push(s, n + 1);
     return s;
@@ -4885,7 +4918,7 @@ fn main() uses console {
 ### Fixed
 
 ```vo
-import std.collections.ordered_set_by;
+import std.collections;
 
 fn items(n: int) -> list[int] {
     return [n, n + 1];
@@ -4893,7 +4926,7 @@ fn items(n: int) -> list[int] {
 
 fn main() uses console {
     let lists = concurrent_map([1, 2], 2, items);
-    let s: ordered_set[int] = ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
     for xs in lists {
         for x in xs {
             push(s, x);
@@ -4914,26 +4947,22 @@ A metric's name has one kind, help text and label list for the whole program, an
 ### Example
 
 ```vo
-import std.metrics.add_to;
-import std.metrics.counter;
-import std.metrics.gauge;
+import std.metrics;
 
 fn main() uses log {
-    add_to(counter("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
-    add_to(gauge("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
+    metrics.add_to(metrics.counter("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
+    metrics.add_to(metrics.gauge("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
 }
 ```
 
 ### Fixed
 
 ```vo
-import std.metrics.add_to;
-import std.metrics.counter;
-import std.metrics.gauge;
+import std.metrics;
 
 fn main() uses log {
-    add_to(counter("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
-    add_to(gauge("jobs_running", "Jobs running.", new list[str]), new list[str], 1);
+    metrics.add_to(metrics.counter("jobs_total", "Jobs run.", new list[str]), new list[str], 1);
+    metrics.add_to(metrics.gauge("jobs_running", "Jobs running.", new list[str]), new list[str], 1);
 }
 ```
 

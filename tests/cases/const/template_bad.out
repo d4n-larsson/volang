@@ -1,12 +1,12 @@
 template_bad.vo:10:18: error[E0316]: The template has 2 placeholder(s) and 1 argument(s) follow it (`row` is "{} of {}").
   10 |     print(format(row, 1));
      |                  ^^^
-template_bad.vo:11:19: error[E0319]: The class is not closed: add `]` (`pattern` is "[a-z").
-  11 |     let _ = regex(pattern);
-     |                   ^^^^^^^
-template_bad.vo:12:17: error[E0325]: Parameters are `?`, taken from the list in order; `:id` is a second spelling (`query` is "SELECT * FROM notes WHERE id = :id").
-  12 |     let _ = sql(query);
-     |                 ^^^^^
+template_bad.vo:11:25: error[E0319]: The class is not closed: add `]` (`pattern` is "[a-z").
+  11 |     let _ = regex.regex(pattern);
+     |                         ^^^^^^^
+template_bad.vo:12:24: error[E0325]: Parameters are `?`, taken from the list in order; `:id` is a second spelling (`query` is "SELECT * FROM notes WHERE id = :id").
+  12 |     let _ = sqlite.sql(query);
+     |                        ^^^^^
 template_bad.vo:14:18: error[E0315]: The template of `format` must be a string literal or a constant, so its placeholders can be checked.
   14 |     print(format(t, 1));
      |                  ^

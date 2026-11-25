@@ -1,19 +1,18 @@
 # A value nested far deeper than any real document: a problem from from_json, never a crash.
-import std.json.Json;
-import std.json.from_json;
+import std.json;
 
 record Node {
     kids: list[Node];
 }
 
 fn main() uses console {
-    var j = Json.array(new list[Json]);
+    var j = json.Json.array(new list[json.Json]);
     for i in 0..10000 {
-        let m = new map[str, Json];
-        set m["kids"] = Json.array([j]);
-        set j = Json.object(m);
+        let m = new map[str, json.Json];
+        set m["kids"] = json.Json.array([j]);
+        set j = json.Json.object(m);
     }
-    let r: result[Node] = from_json(j);
+    let r: result[Node] = json.from_json(j);
     match r {
         case ok(_) {
             print("ok");
@@ -22,6 +21,6 @@ fn main() uses console {
             print(slice(e, len(e) - 40, len(e)));
         }
     }
-    let shallow: result[Node] = from_json(Json.object(new map[str, Json]));
+    let shallow: result[Node] = json.from_json(json.Json.object(new map[str, json.Json]));
     print(str(shallow == err("kids: missing")));
 }

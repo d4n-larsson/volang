@@ -1,5 +1,5 @@
-import config.internal;
+import config;
 
 fn main() uses console {
-    print(str(internal));
+    print(str(config.internal));
 }

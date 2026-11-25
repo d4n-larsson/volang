@@ -1,4 +1,4 @@
-import config.Config;
+import config;
 
 export fn is_unit(u: str) -> bool {
     return u == "g" or u == "ml" or u == "pcs";
@@ -44,7 +44,7 @@ fn kitchen_ml(q: int) -> str {
 }
 
 # Quantity for output: 1000 g or more as kg; ml as l (metric) or kitchen measures.
-export fn format_qty(q: int, unit: str, cfg: Config) -> str {
+export fn format_qty(q: int, unit: str, cfg: config.Config) -> str {
     if unit == "g" and q >= 1000 {
         return decimal(q, "kg");
     }

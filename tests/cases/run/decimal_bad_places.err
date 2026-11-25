@@ -1,6 +1,6 @@
-decimal_bad_places.vo:8:24: runtime error[R0012]: Precondition `places_0_to_18(a.places)` of `add` does not hold.
-   8 |     print(decimal_text(add(odd, decimal(1, 0))));
-     |                        ^^^^^^^^^^^^^^^^^^^^^^^
+decimal_bad_places.vo:5:32: runtime error[R0012]: Precondition `places_0_to_18(a.places)` of `add` does not hold.
+   5 |     print(decimal.decimal_text(decimal.add(odd, decimal.decimal(1, 0))));
+     |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at main (decimal_bad_places.vo:8:24)
+  at main (decimal_bad_places.vo:5:32)
       odd: Decimal = new Decimal { units: 1, places: 19 }

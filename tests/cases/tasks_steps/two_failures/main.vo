@@ -1,9 +1,9 @@
 # Tasks 1 and 3 fail; task 3 fails first in time, but task 1 is reported, every run.
-import std.http.get;
+import std.http;
 
 fn work(job: str) -> int uses net("127.0.0.1") {
     let parts = split(job, " ");
-    match get("http://127.0.0.1:" + parts[0] + "/delay/" + parts[2]) {
+    match http.get("http://127.0.0.1:" + parts[0] + "/delay/" + parts[2]) {
         case ok(_) {
         }
         case err(_) {

@@ -1,5 +1,5 @@
 # std.lists: Small operations on lists: membership, reversing, sorting from largest to smallest, the smallest and largest element by a key, sums and groups.
-# Part of the vo standard library. Import items one by one: `import std.lists.NAME;`.
+# Part of the vo standard library. Import the module, `import std.lists;`, and write its items as `lists.NAME`.
 # Only sort_by_desc changes its argument (as the builtins sort and sort_by do); the others return
 # new values. Functions that take a key function have that function's effects.
 

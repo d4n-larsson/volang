@@ -1,8 +1,7 @@
 # The changed program: POST instead of GET, to the same path.
-import std.http.Response;
-import std.http.post;
+import std.http;
 
-fn show(r: result[Response]) uses console {
+fn show(r: result[http.Response]) uses console {
     match r {
         case ok(resp) {
             print("status " + str(resp.status));
@@ -20,5 +19,5 @@ fn show(r: result[Response]) uses console {
 
 fn main() uses console, net("localhost") {
     let a = args();
-    show(post("http://localhost:" + a[0] + a[1], "text/plain", "x"));
+    show(http.post("http://localhost:" + a[0] + a[1], "text/plain", "x"));
 }

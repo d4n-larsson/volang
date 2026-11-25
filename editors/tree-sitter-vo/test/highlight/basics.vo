@@ -1,7 +1,7 @@
 # A comment stands on its own line.
 # <- comment
 
-import std.json.parse_json;
+import std.json;
 # <- keyword
 #      ^ module
 

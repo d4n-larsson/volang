@@ -14,21 +14,15 @@ The functions are in `std.workers`.
 takes texts and gives texts.
 
 ```vo
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.emit;
-import std.workers.next_message;
-import std.workers.receive;
-import std.workers.start_worker;
-import std.workers.tell;
+import std.workers;
 
 # Runs in a process of its own: takes texts, gives them back in capitals.
-fn shout(link: Link[str, str]) uses console {
+fn shout(link: workers.Link[str, str]) uses console {
     while true {
-        match next_message(link, Wait.forever) {
+        match workers.next_message(link, workers.Wait.forever) {
             case ok(text) {
                 print("worker: got " + text);
-                if emit(link, upper(text) + "!") != ok() {
+                if workers.emit(link, upper(text) + "!") != ok() {
                     return;
                 }
             }
@@ -40,11 +34,11 @@ fn shout(link: Link[str, str]) uses console {
 }
 
 fn main() uses console {
-    match start_worker(shout) {
+    match workers.start_worker(shout) {
         case ok(w) {
             for word in ["one", "two"] {
-                if tell(w, word) == ok() {
-                    match receive(w, Wait.forever) {
+                if workers.tell(w, word) == ok() {
+                    match workers.receive(w, workers.Wait.forever) {
                         case ok(answer) {
                             print("program: " + answer);
                         }
@@ -97,22 +91,17 @@ receives: after the messages the worker sent before failing comes `err(failed(te
 as it would have been printed (below, [R0002](../errors/R0002.md)).
 
 ```vo
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.WorkerError;
-import std.workers.emit;
-import std.workers.receive;
-import std.workers.start_worker;
+import std.workers;
 
-fn divides(link: Link[int, int]) {
+fn divides(link: workers.Link[int, int]) {
     for d in [2, 1, 0] {
-        if emit(link, 10 / d) != ok() {
+        if workers.emit(link, 10 / d) != ok() {
             return;
         }
     }
 }
 
-fn describe(r: result[int, WorkerError]) -> str {
+fn describe(r: result[int, workers.WorkerError]) -> str {
     match r {
         case ok(n) {
             return str(n);
@@ -143,10 +132,10 @@ fn describe(r: result[int, WorkerError]) -> str {
 }
 
 fn main() uses console {
-    match start_worker(divides) {
+    match workers.start_worker(divides) {
         case ok(w) {
             for i in 0..4 {
-                print(str(i) + ": " + describe(receive(w, Wait.forever)));
+                print(str(i) + ": " + describe(workers.receive(w, workers.Wait.forever)));
             }
             print("the program goes on");
         }
@@ -182,8 +171,7 @@ which is dropped if the worker is gone.
 time has passed; the work is then stopped.
 
 ```vo
-import std.workers.WorkerError;
-import std.workers.with_deadline;
+import std.workers;
 
 # Minutes of work.
 fn slow() -> int {
@@ -195,8 +183,8 @@ fn slow() -> int {
 }
 
 fn main() uses console {
-    print(str(with_deadline(1000, fn() -> int { return 6 * 7; }) == ok(42)));
-    print(str(with_deadline(100, slow) == err(WorkerError.timed_out)));
+    print(str(workers.with_deadline(1000, fn() -> int { return 6 * 7; }) == ok(42)));
+    print(str(workers.with_deadline(100, slow) == err(workers.WorkerError.timed_out)));
 }
 ```
 
@@ -220,17 +208,12 @@ failure arrives once, as its message, and the worker is skipped from then on; `e
 worker of the list has been reported.
 
 ```vo
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.Worker;
-import std.workers.emit;
-import std.workers.receive_first;
-import std.workers.start_worker;
+import std.workers;
 
-fn counts_to(n: int) -> fn(Link[int, int]) {
-    return fn(link: Link[int, int]) {
+fn counts_to(n: int) -> fn(workers.Link[int, int]) {
+    return fn(link: workers.Link[int, int]) {
         for i in 1..n + 1 {
-            if emit(link, i) != ok() {
+            if workers.emit(link, i) != ok() {
                 return;
             }
         }
@@ -238,9 +221,9 @@ fn counts_to(n: int) -> fn(Link[int, int]) {
 }
 
 fn main() uses console {
-    let ws = new list[Worker[int, int]];
+    let ws = new list[workers.Worker[int, int]];
     for n in [3, 5, 2] {
-        match start_worker(counts_to(n)) {
+        match workers.start_worker(counts_to(n)) {
             case ok(w) {
                 push(ws, w);
             }
@@ -253,7 +236,7 @@ fn main() uses console {
     var total = 0;
     var open = true;
     while open {
-        match receive_first(ws, Wait.forever) {
+        match workers.receive_first(ws, workers.Wait.forever) {
             case ok(arrival) {
                 match arrival.message {
                     case ok(n) {
@@ -288,29 +271,22 @@ Workers that stay alive make computation on several cores pay: each is started o
 back and forth is a small description of the work and a small result.
 
 ```vo
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.Worker;
-import std.workers.emit;
-import std.workers.next_message;
-import std.workers.receive;
-import std.workers.start_worker;
-import std.workers.tell;
+import std.workers;
 
 record Range {
     lo: int;
     hi: int;
 }
 
-fn sum_of_squares(link: Link[Range, int]) {
+fn sum_of_squares(link: workers.Link[Range, int]) {
     while true {
-        match next_message(link, Wait.forever) {
+        match workers.next_message(link, workers.Wait.forever) {
             case ok(r) {
                 var total = 0;
                 for i in r.lo..r.hi {
                     set total = total + i * i;
                 }
-                if emit(link, total) != ok() {
+                if workers.emit(link, total) != ok() {
                     return;
                 }
             }
@@ -322,11 +298,11 @@ fn sum_of_squares(link: Link[Range, int]) {
 }
 
 fn main() uses console {
-    let pool = new list[Worker[Range, int]];
+    let pool = new list[workers.Worker[Range, int]];
     for i in 0..4 {
-        match start_worker(sum_of_squares) {
+        match workers.start_worker(sum_of_squares) {
             case ok(w) {
-                if tell(w, new Range { lo: i * 250, hi: (i + 1) * 250 }) == ok() {
+                if workers.tell(w, new Range { lo: i * 250, hi: (i + 1) * 250 }) == ok() {
                     push(pool, w);
                 }
             }
@@ -337,7 +313,7 @@ fn main() uses console {
     }
     var total = 0;
     for w in pool {
-        match receive(w, Wait.forever) {
+        match workers.receive(w, workers.Wait.forever) {
             case ok(part) {
                 set total = total + part;
             }

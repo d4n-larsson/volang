@@ -1,5 +1,5 @@
-effects_rest_missing.vo:30:16: error[E0301]: Expected `list[Step[int, uses clock]]`, found `list[Step[int, uses console]]`.
-  30 |         steps: [tag()],
+effects_rest_missing.vo:22:16: error[E0301]: Expected `list[web.Step[int, uses clock]]`, found `list[web.Step[int, uses console]]`.
+  22 |         steps: [tag()],
      |                ^^^^^^^
-  expected `list[Step[int, uses clock]]`, found `list[Step[int, uses console]]`
+  expected `list[web.Step[int, uses clock]]`, found `list[web.Step[int, uses console]]`
 1 error, 0 warnings

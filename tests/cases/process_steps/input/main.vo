@@ -1,9 +1,7 @@
 # Spec 017 (US3): run_with gives the program its input; run gives none (end of input at once).
-import std.process.Output;
-import std.process.run;
-import std.process.run_with;
+import std.process;
 
-fn show(what: str, r: result[Output]) uses console {
+fn show(what: str, r: result[process.Output]) uses console {
     match r {
         case ok(out) {
             print(what + ": code " + str(out.code));
@@ -19,12 +17,12 @@ fn show(what: str, r: result[Output]) uses console {
 }
 
 fn main() uses console, file.read("./"), process("bin/cat_in") {
-    show("with input", run_with(
+    show("with input", process.run_with(
         "bin/cat_in",
         new list[str],
         "line one\nline two\n",
         new list[str],
         "./"
     ));
-    show("without", run("bin/cat_in", new list[str]));
+    show("without", process.run("bin/cat_in", new list[str]));
 }

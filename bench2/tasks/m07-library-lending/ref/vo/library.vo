@@ -1,5 +1,4 @@
-import commands.Command;
-import commands.money;
+import commands;
 
 export record Loan {
     isbn: str;
@@ -37,7 +36,7 @@ fn has_loan(lib: Library, m: str, isbn: str) -> bool {
 
 fn refusal(lib: Library, m: str, isbn: str) -> result[void] {
     if lib.owes[m] > 500 {
-        return err(m + " blocked: owes " + money(lib.owes[m]));
+        return err(m + " blocked: owes " + commands.money(lib.owes[m]));
     }
     if has_loan(lib, m, isbn) {
         return err(m + " already has " + isbn);
@@ -70,7 +69,7 @@ fn serve(lib: Library, isbn: str, day: int, out: list[str]) {
     }
 }
 
-fn add_book(lib: Library, c: Command, out: list[str]) {
+fn add_book(lib: Library, c: commands.Command, out: list[str]) {
     if not has(lib.copies, c.a) {
         set lib.copies[c.a] = 0;
         set lib.shelf[c.a] = 0;
@@ -82,7 +81,7 @@ fn add_book(lib: Library, c: Command, out: list[str]) {
     serve(lib, c.a, c.day, out);
 }
 
-fn add_member(lib: Library, c: Command, out: list[str]) {
+fn add_member(lib: Library, c: commands.Command, out: list[str]) {
     if has(lib.limit, c.a) {
         push(out, "error: member " + c.a + " exists");
         return;
@@ -93,16 +92,16 @@ fn add_member(lib: Library, c: Command, out: list[str]) {
     push(out, "member " + c.a + " joined");
 }
 
-fn pay(lib: Library, c: Command) -> result[str] {
+fn pay(lib: Library, c: commands.Command) -> result[str] {
     try unknown(lib, c.a, "", false);
     if c.n > lib.owes[c.a] {
-        return err("error: " + c.a + " owes only " + money(lib.owes[c.a]));
+        return err("error: " + c.a + " owes only " + commands.money(lib.owes[c.a]));
     }
     set lib.owes[c.a] = lib.owes[c.a] - c.n;
-    return ok(c.a + " pays " + money(c.n) + ", owes " + money(lib.owes[c.a]));
+    return ok(c.a + " pays " + commands.money(c.n) + ", owes " + commands.money(lib.owes[c.a]));
 }
 
-fn borrow(lib: Library, c: Command) -> result[str] {
+fn borrow(lib: Library, c: commands.Command) -> result[str] {
     try unknown(lib, c.a, c.b, true);
     try refusal(lib, c.a, c.b);
     if lib.shelf[c.b] == 0 {
@@ -119,7 +118,7 @@ fn borrow(lib: Library, c: Command) -> result[str] {
     return ok(c.a + " borrows " + c.b + " (due " + str(c.day + 14) + ")");
 }
 
-fn give_back(lib: Library, c: Command) -> result[str] {
+fn give_back(lib: Library, c: commands.Command) -> result[str] {
     try unknown(lib, c.a, c.b, true);
     if not has_loan(lib, c.a, c.b) {
         return err("error: " + c.a + " does not have " + c.b);
@@ -136,12 +135,12 @@ fn give_back(lib: Library, c: Command) -> result[str] {
     if late > 0 {
         let fine = min(late * 25, 1000);
         set lib.owes[c.a] = lib.owes[c.a] + fine;
-        return ok(c.a + " returns " + c.b + " late " + str(late) + " days, fine " + money(fine));
+        return ok(c.a + " returns " + c.b + " late " + str(late) + " days, fine " + commands.money(fine));
     }
     return ok(c.a + " returns " + c.b);
 }
 
-export fn run(lib: Library, c: Command, out: list[str]) {
+export fn run(lib: Library, c: commands.Command, out: list[str]) {
     if c.name == "book" {
         add_book(lib, c, out);
         return;

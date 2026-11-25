@@ -78,10 +78,10 @@ export fn label(n: int) -> str uses clock {
 
 ```vo
 # file: main.vo
-import lib.label;
+import lib;
 
 fn main() uses console, clock {
-    print(label(1));
+    print(lib.label(1));
 }
 ```
 

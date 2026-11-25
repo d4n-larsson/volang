@@ -1,19 +1,15 @@
 # Cookies in std.web (spec 052): the Set-Cookie text of with_cookie with the safe defaults and with
 # each changed, every refusal, and read_cookie on the forms a Cookie header takes.
-import std.http.Header;
-import std.http.Response;
-import std.option.Option;
-import std.web.Cookie;
-import std.web.cookie;
-import std.web.read_cookie;
-import std.web.with_cookie;
+import std.http;
+import std.option;
+import std.web;
 
-fn empty() -> Response {
-    return new Response { status: 200, headers: new list[Header], body: "" };
+fn empty() -> http.Response {
+    return new http.Response { status: 200, headers: new list[http.Header], body: "" };
 }
 
-fn show(c: Cookie) uses console {
-    match with_cookie(empty(), c) {
+fn show(c: web.Cookie) uses console {
+    match web.with_cookie(empty(), c) {
         case ok(r) {
             print(r.headers[0].name + ": " + r.headers[0].value);
         }
@@ -24,7 +20,7 @@ fn show(c: Cookie) uses console {
 }
 
 fn read(header: str, name: str) uses console {
-    match read_cookie(header, name) {
+    match web.read_cookie(header, name) {
         case some(v) {
             print(name + " in [" + header + "]: [" + v + "]");
         }
@@ -35,45 +31,45 @@ fn read(header: str, name: str) uses console {
 }
 
 fn main() uses console {
-    show(cookie("a", "1"));
-    let gone = cookie("a", "");
+    show(web.cookie("a", "1"));
+    let gone = web.cookie("a", "");
     set gone.max_age_ms = 0;
     show(gone);
-    let kept = cookie("pref", "dark");
+    let kept = web.cookie("pref", "dark");
     set kept.max_age_ms = 600000;
     set kept.same_site = "Strict";
     show(kept);
-    let open = cookie("theme", "x");
+    let open = web.cookie("theme", "x");
     set open.http_only = false;
     set open.secure = false;
     set open.path = "/app";
     show(open);
-    show(cookie("", "1"));
-    show(cookie("a b", "1"));
-    show(cookie("a=", "1"));
-    show(cookie("a", "two words"));
-    show(cookie("a", "x;y"));
-    show(cookie("a", "\"q\""));
-    show(cookie("a", "x,y"));
-    show(cookie("a", "x\\y"));
-    show(cookie("a", "x\ty"));
-    let lax = cookie("a", "1");
+    show(web.cookie("", "1"));
+    show(web.cookie("a b", "1"));
+    show(web.cookie("a=", "1"));
+    show(web.cookie("a", "two words"));
+    show(web.cookie("a", "x;y"));
+    show(web.cookie("a", "\"q\""));
+    show(web.cookie("a", "x,y"));
+    show(web.cookie("a", "x\\y"));
+    show(web.cookie("a", "x\ty"));
+    let lax = web.cookie("a", "1");
     set lax.same_site = "lax";
     show(lax);
-    let none_plain = cookie("a", "1");
+    let none_plain = web.cookie("a", "1");
     set none_plain.same_site = "None";
     set none_plain.secure = false;
     show(none_plain);
-    let host_plain = cookie("__Host-s", "1");
+    let host_plain = web.cookie("__Host-s", "1");
     set host_plain.secure = false;
     show(host_plain);
-    let host_path = cookie("__Host-s", "1");
+    let host_path = web.cookie("__Host-s", "1");
     set host_path.path = "/a";
     show(host_path);
-    let bad_path = cookie("a", "1");
+    let bad_path = web.cookie("a", "1");
     set bad_path.path = "a";
     show(bad_path);
-    show(cookie("__Host-session", "0123abcd"));
+    show(web.cookie("__Host-session", "0123abcd"));
     read("a=1; b=two", "b");
     read("a=1;b=two", "a");
     read("b=\"q\"", "b");

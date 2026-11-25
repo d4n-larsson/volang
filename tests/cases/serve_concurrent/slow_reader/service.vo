@@ -1,8 +1,5 @@
 # A counter kept between requests: handler calls are one at a time, so every number is given once.
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve;
+import std.http;
 
 record Count {
     n: int;
@@ -11,16 +8,16 @@ record Count {
 fn main() -> result[void] uses console, serve("{vport}") {
     let count = new Count { n: 0 };
     print("serving");
-    try serve("{vport}", fn(r: Request) -> Response {
+    try http.serve("{vport}", fn(r: http.Request) -> http.Response {
         if r.path == "/big" {
             var body = "0123456789abcdef";
             for i in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] {
                 set body = body + body;
             }
-            return new Response { status: 200, headers: new list[Header], body: body };
+            return new http.Response { status: 200, headers: new list[http.Header], body: body };
         }
         set count.n = count.n + 1;
-        return new Response { status: 200, headers: new list[Header], body: str(count.n) };
+        return new http.Response { status: 200, headers: new list[http.Header], body: str(count.n) };
     });
     print("stopped after " + str(count.n));
     return ok();

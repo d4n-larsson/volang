@@ -2,18 +2,16 @@
 # the whole grant: this program can read only under data/ and write only under out/.
 # `vo run main.vo` runs main; `vo test main.vo` runs the tests and the property in report.vo, next to
 # the code they test.
-import report.describe;
-import report.expenses_from;
-import report.render;
-import std.json.parse_json;
+import report;
+import std.json;
 
 # Where the expenses are read from, and where the report goes: the grant and the paths in one place.
 const data_dir = "data/";
 const out_dir = "out/";
 
 fn main() -> result[void] uses console, file.read(data_dir), file.write(out_dir) {
-    let doc = try parse_json(try read_file(data_dir + "expenses.json"));
-    let text = render(try map_err(expenses_from(doc), describe));
+    let doc = try json.parse_json(try read_file(data_dir + "expenses.json"));
+    let text = report.render(try map_err(report.expenses_from(doc), report.describe));
     write(text);
     try write_file(out_dir + "report.txt", text);
     return ok();

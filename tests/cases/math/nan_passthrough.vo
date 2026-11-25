@@ -1,19 +1,9 @@
 # Spec 020: a NaN argument is not out of domain; it gives NaN (pow(nan, 0.0) and pow(1.0, nan) are 1.0).
-import std.math.sqrt;
-import std.math.exp;
-import std.math.log;
-import std.math.sin;
-import std.math.cos;
-import std.math.tan;
-import std.math.asin;
-import std.math.acos;
-import std.math.atan;
-import std.math.atan2;
-import std.math.pow;
+import std.math;
 
 fn main() uses console {
     let n = 0.0 / 0.0;
-    print(str(sqrt(n)) + " " + str(exp(n)) + " " + str(log(n)) + " " + str(sin(n)) + " " + str(cos(n)) + " " + str(tan(n)));
-    print(str(asin(n)) + " " + str(acos(n)) + " " + str(atan(n)) + " " + str(atan2(n, 1.0)) + " " + str(pow(n, 2.0)));
-    print(str(pow(n, 0.0)) + " " + str(pow(1.0, n)));
+    print(str(math.sqrt(n)) + " " + str(math.exp(n)) + " " + str(math.log(n)) + " " + str(math.sin(n)) + " " + str(math.cos(n)) + " " + str(math.tan(n)));
+    print(str(math.asin(n)) + " " + str(math.acos(n)) + " " + str(math.atan(n)) + " " + str(math.atan2(n, 1.0)) + " " + str(math.pow(n, 2.0)));
+    print(str(math.pow(n, 0.0)) + " " + str(math.pow(1.0, n)));
 }

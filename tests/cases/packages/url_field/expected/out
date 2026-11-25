@@ -24,8 +24,8 @@ removed money
 --- exit 0
 $ vo check main.vo
 main.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
-   1 | import money.format.cents;
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   1 | import money.format;
+     | ^^^^^^^^^^^^^^^^^^^^
 vo.packages:1:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 lowercase hex digits), optionally followed by the https:// URL it was fetched from.
    1 | money shared/money sha256:0e9d2276b99db4fe1f54e3b6ac20266ee55749dcc178f38ddb2f53feaea55e16 http://example.com/money.tar.gz
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -34,8 +34,8 @@ vo.packages:1:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (N
 --- exit 65
 $ vo check main.vo
 main.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
-   1 | import money.format.cents;
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   1 | import money.format;
+     | ^^^^^^^^^^^^^^^^^^^^
 vo.packages:1:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 lowercase hex digits), optionally followed by the https:// URL it was fetched from.
    1 | money shared/money sha256:0e9d2276b99db4fe1f54e3b6ac20266ee55749dcc178f38ddb2f53feaea55e16 https://example.com/money.tar.gz extra
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -44,8 +44,8 @@ vo.packages:1:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (N
 --- exit 65
 $ vo check main.vo
 main.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
-   1 | import money.format.cents;
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   1 | import money.format;
+     | ^^^^^^^^^^^^^^^^^^^^
 vo.packages:1:1: error[E0703]: Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 lowercase hex digits), optionally followed by the https:// URL it was fetched from.
    1 | money shared/money sha256:0e9d2276b99db4fe1f54e3b6ac20266ee55749dcc178f38ddb2f53feaea55e16 ftp
      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

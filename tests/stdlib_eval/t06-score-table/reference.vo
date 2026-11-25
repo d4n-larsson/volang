@@ -1,6 +1,4 @@
-import std.text.pad_left;
-import std.text.pad_right;
-import std.text.repeat;
+import std.text;
 
 record Row {
     name: str;
@@ -23,8 +21,8 @@ fn main() -> result[void] uses console, input {
     sort_by(rows, fn(r: Row) -> int {
         return 0 - r.score;
     });
-    print(pad_right("Name", w, " ") + " | Score");
-    print(repeat("-", w + 1) + "+" + repeat("-", 6));
+    print(text.pad_right("Name", w, " ") + " | Score");
+    print(text.repeat("-", w + 1) + "+" + text.repeat("-", 6));
     var i = 0;
     while i < len(rows) {
         var j = i;
@@ -35,7 +33,7 @@ fn main() -> result[void] uses console, input {
         }
         sort(group);
         for n in group {
-            print(pad_right(n, w, " ") + " | " + pad_left(str(rows[i].score), 5, " "));
+            print(text.pad_right(n, w, " ") + " | " + text.pad_left(str(rows[i].score), 5, " "));
         }
         set i = j;
     }

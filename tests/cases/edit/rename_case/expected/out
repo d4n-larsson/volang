@@ -1,13 +1,13 @@
 $ vo edit rename main.vo Event.added created
-main.vo:7:5 added -> created
-main.vo:18:14 added -> created
-main.vo:42:26 added -> created
+main.vo:4:5 added -> created
+main.vo:15:14 added -> created
+main.vo:39:26 added -> created
 renamed added to created: 3 changes in 1 file
 --- stderr
 --- exit 0
 $ vo check main.vo
-main.vo:45:1: warning[W0705]: This test calls only functions of `catalog.vo`: move it into `catalog.vo`, next to the code it tests (`vo test` runs it from there).
-  45 | test "totals" {
+main.vo:42:1: warning[W0705]: This test calls only functions of `catalog.vo`: move it into `catalog.vo`, next to the code it tests (`vo test` runs it from there).
+  42 | test "totals" {
      | ^^^^
 0 errors, 1 warning
 --- stderr

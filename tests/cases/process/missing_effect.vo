@@ -1,8 +1,8 @@
 # Spec 017: running a program needs process (E0501).
-import std.process.run;
+import std.process;
 
 fn main() -> result[void] uses console {
-    let out = try run("true", new list[str]);
+    let out = try process.run("true", new list[str]);
     print(str(out.code));
     return ok();
 }

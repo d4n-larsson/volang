@@ -1,12 +1,12 @@
-$ vo edit rename main.vo main.vo:38:9 items
-main.vo:38:9: error[E0203]: `items` is already defined in an outer scope.
-  38 |     let count = len(items);
+$ vo edit rename main.vo main.vo:35:9 items
+main.vo:35:9: error[E0203]: `items` is already defined in an outer scope.
+  35 |     let count = len(items);
      |         ^^^^^
-  note: main.vo:35:9: `items` is defined here.
-main.vo:41:41: error[E0301]: Expected `list[Item]`, found `int`.
-  41 |     print("add_item total " + str(total(items)) + " " + str(count) + " " + str(b.price) + " " + p.second);
-     |                                         ^^^^^
-  expected `list[Item]`, found `int`
+  note: main.vo:32:9: `items` is defined here.
+main.vo:38:49: error[E0301]: Expected `list[catalog.Item]`, found `int`.
+  38 |     print("add_item total " + str(catalog.total(items)) + " " + str(count) + " " + str(b.price) + " " + p.second);
+     |                                                 ^^^^^
+  expected `list[catalog.Item]`, found `int`
 error[T0006]: Renaming `count` to `items` would not check (2 new errors): nothing was written.
 --- stderr
 --- exit 65

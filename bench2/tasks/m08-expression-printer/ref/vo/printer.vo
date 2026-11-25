@@ -1,4 +1,4 @@
-import exprparser.Expr;
+import exprparser;
 
 fn op_level(op: str) -> int {
     if op == "+" or op == "-" {
@@ -10,7 +10,7 @@ fn op_level(op: str) -> int {
     return 2;
 }
 
-fn level(e: Expr) -> int {
+fn level(e: exprparser.Expr) -> int {
     match e {
         case num(_) {
             return 5;
@@ -27,7 +27,7 @@ fn level(e: Expr) -> int {
     }
 }
 
-fn wrap(e: Expr, needed: bool) -> str {
+fn wrap(e: exprparser.Expr, needed: bool) -> str {
     if needed {
         return "(" + show(e) + ")";
     }
@@ -42,7 +42,7 @@ export fn strip_zeros(d: str) -> str {
     return slice(d, i, len(d));
 }
 
-export fn show(e: Expr) -> str {
+export fn show(e: exprparser.Expr) -> str {
     match e {
         case num(d) {
             return strip_zeros(d);

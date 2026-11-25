@@ -13,19 +13,15 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 
-INSERT = """import std.sqlite.open;
-import std.sqlite.sql;
-import std.sqlite.exec;
-import std.sqlite.transaction;
-import std.sqlite.Value;
+INSERT = """import std.sqlite;
 
 fn main() -> result[void] uses console, file.read, file.write {
-    let db = try open("speed.db");
-    let _ = try exec(db, sql("create table t(id integer primary key, name text, score real)"), new list[Value]);
-    let n = try transaction(db, fn() -> result[int] {
+    let db = try sqlite.open("speed.db");
+    let _ = try sqlite.exec(db, sqlite.sql("create table t(id integer primary key, name text, score real)"), new list[sqlite.Value]);
+    let n = try sqlite.transaction(db, fn() -> result[int] {
         for i in 0..100000 {
-            let _ = try exec(db, sql("insert into t(name, score) values (?, ?)"),
-                             [Value.text("name " + str(i)), Value.real(float(i) / 7.0)]);
+            let _ = try sqlite.exec(db, sqlite.sql("insert into t(name, score) values (?, ?)"),
+                             [sqlite.Value.text("name " + str(i)), sqlite.Value.real(float(i) / 7.0)]);
         }
         return ok(100000);
     });
@@ -34,18 +30,14 @@ fn main() -> result[void] uses console, file.read, file.write {
 }
 """
 
-READ = """import std.sqlite.open_readonly;
-import std.sqlite.sql;
-import std.sqlite.query;
-import std.sqlite.text_column;
-import std.sqlite.Value;
+READ = """import std.sqlite;
 
 fn main() -> result[void] uses console, file.read {
-    let db = try open_readonly("speed.db");
-    let rows = try query(db, sql("select id, name, score from t order by id"), new list[Value]);
+    let db = try sqlite.open_readonly("speed.db");
+    let rows = try sqlite.query(db, sqlite.sql("select id, name, score from t order by id"), new list[sqlite.Value]);
     var total = 0;
     for row in rows {
-        set total = total + len(try text_column(row, "name"));
+        set total = total + len(try sqlite.text_column(row, "name"));
     }
     print(str(len(rows)) + " " + str(total));
     return ok();

@@ -1,48 +1,35 @@
-import std.bytes.from_text;
-import std.tcp.Conn;
-import std.tcp.TcpError;
-import std.tcp.accept;
-import std.tcp.close_conn;
-import std.tcp.close_listener;
-import std.tcp.connect;
-import std.tcp.connect_tls;
-import std.tcp.tcp_error_text;
-import std.tcp.listen;
-import std.tcp.read;
-import std.tcp.read_exact;
-import std.tcp.read_until;
-import std.tcp.write_all;
-import std.tcp.start_tls;
+import std.bytes;
+import std.tcp;
 
-fn opened(r: result[Conn[uses net], TcpError]) -> str {
+fn opened(r: result[tcp.Conn[uses net], tcp.TcpError]) -> str {
     match r {
         case ok(_) {
             return "ok";
         }
         case err(e) {
-            return tcp_error_text(e);
+            return tcp.tcp_error_text(e);
         }
     }
 }
 
-fn got(r: result[bytes, TcpError]) -> str {
+fn got(r: result[bytes, tcp.TcpError]) -> str {
     match r {
         case ok(b) {
             return "ok " + str(len(b));
         }
         case err(e) {
-            return tcp_error_text(e);
+            return tcp.tcp_error_text(e);
         }
     }
 }
 
-fn done(r: result[void, TcpError]) -> str {
+fn done(r: result[void, tcp.TcpError]) -> str {
     match r {
         case ok() {
             return "ok";
         }
         case err(e) {
-            return tcp_error_text(e);
+            return tcp.tcp_error_text(e);
         }
     }
 }
@@ -50,73 +37,73 @@ fn done(r: result[void, TcpError]) -> str {
 # Every argument out of range is an error value before anything is opened; a connection that is not
 # open is "closed" for every operation.
 fn main() uses console, net("127.0.0.1"), serve("0") {
-    print(opened(connect("127.0.0.1", 0, 1000)));
-    print(opened(connect("127.0.0.1", 65536, 1000)));
-    print(opened(connect("127.0.0.1", 80, -1)));
-    print(opened(connect("127.0.0.1", 80, 600001)));
-    print(opened(connect("", 80, 1000)));
-    print(opened(connect("http://127.0.0.1", 80, 1000)));
-    print(opened(connect("127.0.0.1:80", 80, 1000)));
-    print(opened(connect_tls("127.0.0.1", 0, 1000)));
-    let c = new Conn[uses net] { id: 0, peer: "nowhere:1" };
-    print(got(read(c, 0, 1000)));
-    print(got(read(c, 16777217, 1000)));
-    print(got(read_exact(c, 0, 1000)));
-    print(got(read(c, 10, 1000)));
-    print(got(read_exact(c, 10, 1000)));
-    print(got(read_until(c, from_text("\n"), 1000)));
-    print(done(write_all(c, from_text("x"), 1000)));
-    print(done(start_tls(c, "nowhere", 1000)));
-    close_conn(c);
-    close_conn(c);
-    match listen("nine thousand") {
+    print(opened(tcp.connect("127.0.0.1", 0, 1000)));
+    print(opened(tcp.connect("127.0.0.1", 65536, 1000)));
+    print(opened(tcp.connect("127.0.0.1", 80, -1)));
+    print(opened(tcp.connect("127.0.0.1", 80, 600001)));
+    print(opened(tcp.connect("", 80, 1000)));
+    print(opened(tcp.connect("http://127.0.0.1", 80, 1000)));
+    print(opened(tcp.connect("127.0.0.1:80", 80, 1000)));
+    print(opened(tcp.connect_tls("127.0.0.1", 0, 1000)));
+    let c = new tcp.Conn[uses net] { id: 0, peer: "nowhere:1" };
+    print(got(tcp.read(c, 0, 1000)));
+    print(got(tcp.read(c, 16777217, 1000)));
+    print(got(tcp.read_exact(c, 0, 1000)));
+    print(got(tcp.read(c, 10, 1000)));
+    print(got(tcp.read_exact(c, 10, 1000)));
+    print(got(tcp.read_until(c, bytes.from_text("\n"), 1000)));
+    print(done(tcp.write_all(c, bytes.from_text("x"), 1000)));
+    print(done(tcp.start_tls(c, "nowhere", 1000)));
+    tcp.close_conn(c);
+    tcp.close_conn(c);
+    match tcp.listen("nine thousand") {
         case ok(_) {
             print("ok");
         }
         case err(e) {
-            print(tcp_error_text(e));
+            print(tcp.tcp_error_text(e));
         }
     }
-    match listen("0") {
+    match tcp.listen("0") {
         case ok(l) {
-            match accept(l, -1) {
+            match tcp.accept(l, -1) {
                 case ok(_) {
                     print("ok");
                 }
                 case err(e) {
-                    print(tcp_error_text(e));
+                    print(tcp.tcp_error_text(e));
                 }
             }
-            let empty = from_text("");
-            close_listener(l);
-            close_listener(l);
-            match accept(l, 100) {
+            let empty = bytes.from_text("");
+            tcp.close_listener(l);
+            tcp.close_listener(l);
+            match tcp.accept(l, 100) {
                 case ok(_) {
                     print("ok");
                 }
                 case err(e) {
-                    print(tcp_error_text(e));
+                    print(tcp.tcp_error_text(e));
                 }
             }
             print(str(len(empty)));
         }
         case err(e) {
-            print(tcp_error_text(e));
+            print(tcp.tcp_error_text(e));
         }
     }
     for e in [
-        TcpError.refused,
-        TcpError.timed_out,
-        TcpError.closed,
-        TcpError.not_found,
-        TcpError.unreachable,
-        TcpError.tls("why"),
-        TcpError.in_use,
-        TcpError.too_large,
-        TcpError.too_many,
-        TcpError.invalid("what"),
-        TcpError.other("why")
+        tcp.TcpError.refused,
+        tcp.TcpError.timed_out,
+        tcp.TcpError.closed,
+        tcp.TcpError.not_found,
+        tcp.TcpError.unreachable,
+        tcp.TcpError.tls("why"),
+        tcp.TcpError.in_use,
+        tcp.TcpError.too_large,
+        tcp.TcpError.too_many,
+        tcp.TcpError.invalid("what"),
+        tcp.TcpError.other("why")
     ] {
-        print(tcp_error_text(e));
+        print(tcp.tcp_error_text(e));
     }
 }

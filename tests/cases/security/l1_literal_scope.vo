@@ -1,7 +1,4 @@
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve;
+import std.http;
 
 # Spec 013 (L1): a literal target outside the declared scopes is E0503 at `vo check`.
 fn load() -> result[str] uses file.read("data/") {
@@ -20,8 +17,8 @@ fn inside() -> result[str] uses file.read("data/") {
     return read_file("./data/x.txt");
 }
 
-fn handle(r: Request) -> Response {
-    return new Response { status: 200, headers: new list[Header], body: r.path };
+fn handle(r: http.Request) -> http.Response {
+    return new http.Response { status: 200, headers: new list[http.Header], body: r.path };
 }
 
 fn main() -> result[void] uses file.read("data/"), file.write("out/"), env("PATH"), serve("8000") {
@@ -29,6 +26,6 @@ fn main() -> result[void] uses file.read("data/"), file.write("out/"), env("PATH
     try save();
     let _ = try home();
     let _ = try inside();
-    try serve("8001", handle);
+    try http.serve("8001", handle);
     return ok();
 }

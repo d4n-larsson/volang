@@ -1,22 +1,8 @@
 # An application's own cookies (spec 052, story 4): an operation reads one from the Cookie header it
 # binds, sets one with the safe flags, removes it, and a value a cookie cannot hold is an error.
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.option.Option;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.NoInput;
-import std.web.cookie;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.on_post;
-import std.web.read_cookie;
-import std.web.request;
-import std.web.web_app;
-import std.web.with_cookie;
-import std.web.with_header;
+import std.http;
+import std.option;
+import std.web;
 
 record Prefs {
     @header("Cookie")
@@ -28,30 +14,30 @@ record Choice {
     show_done: str;
 }
 
-fn shown(n: int, input: Prefs) -> result[Response] {
-    match read_cookie(input.cookies, "show_done") {
+fn shown(n: int, input: Prefs) -> result[http.Response] {
+    match web.read_cookie(input.cookies, "show_done") {
         case some(v) {
-            return ok(json_reply(200, "show_done is " + v));
+            return ok(web.json_reply(200, "show_done is " + v));
         }
         case none {
-            return ok(json_reply(200, "no preference"));
+            return ok(web.json_reply(200, "no preference"));
         }
     }
 }
 
-fn choose(n: int, input: Choice) -> result[Response] {
-    let c = cookie("show_done", input.show_done);
+fn choose(n: int, input: Choice) -> result[http.Response] {
+    let c = web.cookie("show_done", input.show_done);
     if input.show_done == "" {
         set c.max_age_ms = 0;
     }
-    return with_cookie(json_reply(200, "saved"), c);
+    return web.with_cookie(web.json_reply(200, "saved"), c);
 }
 
-fn app() -> App[int] {
-    return web_app([on_get("/prefs", shown), on_post("/prefs", choose)]);
+fn app() -> web.App[int] {
+    return web.web_app([web.on_get("/prefs", shown), web.on_post("/prefs", choose)]);
 }
 
-fn show(what: str, r: Response) uses console {
+fn show(what: str, r: http.Response) uses console {
     var cookie_header = "-";
     for h in r.headers {
         if h.name == "Set-Cookie" {
@@ -61,16 +47,16 @@ fn show(what: str, r: Response) uses console {
     print(what + ": " + str(r.status) + " " + r.body + " Set-Cookie=" + cookie_header);
 }
 
-fn form(body: str) -> Request {
-    let r = with_header(request("POST", "/prefs", ""), "Content-Type", "application/x-www-form-urlencoded");
+fn form(body: str) -> http.Request {
+    let r = web.with_header(web.request("POST", "/prefs", ""), "Content-Type", "application/x-www-form-urlencoded");
     set r.body = body;
     return r;
 }
 
 fn main() uses console {
-    show("no cookie", handle_request(app(), 0, request("GET", "/prefs", "")));
-    show("with the cookie", handle_request(app(), 0, with_header(request("GET", "/prefs", ""), "Cookie", "theme=dark; show_done=1")));
-    show("set it", handle_request(app(), 0, form("show_done=1")));
-    show("remove it", handle_request(app(), 0, form("show_done=")));
-    show("a value a cookie cannot hold", handle_request(app(), 0, form("show_done=a+b")));
+    show("no cookie", web.handle_request(app(), 0, web.request("GET", "/prefs", "")));
+    show("with the cookie", web.handle_request(app(), 0, web.with_header(web.request("GET", "/prefs", ""), "Cookie", "theme=dark; show_done=1")));
+    show("set it", web.handle_request(app(), 0, form("show_done=1")));
+    show("remove it", web.handle_request(app(), 0, form("show_done=")));
+    show("a value a cookie cannot hold", web.handle_request(app(), 0, form("show_done=a+b")));
 }

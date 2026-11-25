@@ -1,4 +1,4 @@
-import parse.Meeting;
+import parse;
 
 export fn shares(a: list[str], b: list[str]) -> list[str] {
     let out = filter(a, fn(p: str) -> bool {
@@ -10,11 +10,11 @@ export fn shares(a: list[str], b: list[str]) -> list[str] {
     return out;
 }
 
-fn overlaps(a: Meeting, b: Meeting) -> bool {
+fn overlaps(a: parse.Meeting, b: parse.Meeting) -> bool {
     return a.day == b.day and a.start < b.end and b.start < a.end;
 }
 
-export fn conflicts(ms: list[Meeting]) -> list[str] {
+export fn conflicts(ms: list[parse.Meeting]) -> list[str] {
     let out = new list[str];
     for i in 0..len(ms) {
         for j in i + 1..len(ms) {
@@ -37,7 +37,7 @@ export fn conflicts(ms: list[Meeting]) -> list[str] {
     return out;
 }
 
-export fn room_minutes(ms: list[Meeting]) -> list[str] {
+export fn room_minutes(ms: list[parse.Meeting]) -> list[str] {
     let rooms = new map[str, bool];
     for m in ms {
         set rooms[m.room] = true;
@@ -48,10 +48,10 @@ export fn room_minutes(ms: list[Meeting]) -> list[str] {
     for room in names {
         var total = 0;
         for day in ["Mon", "Tue", "Wed", "Thu", "Fri"] {
-            let spans = filter(ms, fn(m: Meeting) -> bool {
+            let spans = filter(ms, fn(m: parse.Meeting) -> bool {
                 return m.room == room and m.day == day;
             });
-            sort_by(spans, fn(m: Meeting) -> int {
+            sort_by(spans, fn(m: parse.Meeting) -> int {
                 return m.start;
             });
             var cur_s = -1;

@@ -1,32 +1,23 @@
 # Recorded with two workers, replayed in one process: the same responses (database results, random
 # values per request) with the database gone.
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve_workers;
-import std.sqlite.Database;
-import std.sqlite.Value;
-import std.sqlite.exec;
-import std.sqlite.int_column;
-import std.sqlite.open;
-import std.sqlite.query;
-import std.sqlite.sql;
+import std.http;
+import std.sqlite;
 
-fn setup() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
-    let db = try open("data/app.db");
-    let _ = try exec(db, sql("create table if not exists items (id integer primary key, tag integer)"), new list[Value]);
+fn setup() -> result[sqlite.Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
+    let db = try sqlite.open("data/app.db");
+    let _ = try sqlite.exec(db, sqlite.sql("create table if not exists items (id integer primary key, tag integer)"), new list[sqlite.Value]);
     return ok(db);
 }
 
-fn respond(status: int, body: str) -> Response {
-    return new Response { status: status, headers: new list[Header], body: body };
+fn respond(status: int, body: str) -> http.Response {
+    return new http.Response { status: status, headers: new list[http.Header], body: body };
 }
 
-fn handle(db: Database[uses file.read, file.write], r: Request) -> Response uses random, file.read("data/"), file.write("data/") {
+fn handle(db: sqlite.Database[uses file.read, file.write], r: http.Request) -> http.Response uses random, file.read("data/"), file.write("data/") {
     if r.path == "/count" {
-        match query(db, sql("select count(*) as n from items"), new list[Value]) {
+        match sqlite.query(db, sqlite.sql("select count(*) as n from items"), new list[sqlite.Value]) {
             case ok(rows) {
-                match int_column(rows[0], "n") {
+                match sqlite.int_column(rows[0], "n") {
                     case ok(n) {
                         return respond(200, str(n));
                     }
@@ -41,7 +32,7 @@ fn handle(db: Database[uses file.read, file.write], r: Request) -> Response uses
         }
     }
     let tag = random_int(0, 1000000);
-    match exec(db, sql("insert into items (tag) values (?)"), [Value.integer(tag)]) {
+    match sqlite.exec(db, sqlite.sql("insert into items (tag) values (?)"), [sqlite.Value.integer(tag)]) {
         case ok(c) {
             return respond(200, str(tag));
         }
@@ -52,6 +43,6 @@ fn handle(db: Database[uses file.read, file.write], r: Request) -> Response uses
 }
 
 fn main() -> result[void] uses console, random, file.read("data/"), file.write("data/"), serve("{vport}") {
-    try serve_workers("{vport}", 2, setup, handle);
+    try http.serve_workers("{vport}", 2, setup, handle);
     return ok();
 }

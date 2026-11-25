@@ -1,5 +1,5 @@
-import keys.count.count;
+import keys.count;
 
 fn main() uses console {
-    print(str(len(count(["a", "b", "a"]))));
+    print(str(len(count.count(["a", "b", "a"]))));
 }

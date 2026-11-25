@@ -14,17 +14,13 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.environ.get("VO_BIN", os.path.join(ROOT, "bin", "vo"))
 
-PROGRAM = """import std.sqlite.open;
-import std.sqlite.parse_sql;
-import std.sqlite.exec;
-import std.sqlite.Changes;
-import std.sqlite.Value;
+PROGRAM = """import std.sqlite;
 
 fn main() -> result[void] uses console, file.read("data/"), file.write("data/") {
-    let db = try open("data/main.db");
-    match parse_sql(STMT) {
+    let db = try sqlite.open("data/main.db");
+    match sqlite.parse_sql(STMT) {
         case ok(st) {
-            report(exec(db, st, PARAMS));
+            report(sqlite.exec(db, st, PARAMS));
         }
         case err(e) {
             print("err " + e);
@@ -33,7 +29,7 @@ fn main() -> result[void] uses console, file.read("data/"), file.write("data/") 
     return ok();
 }
 
-fn report(r: result[Changes]) uses console {
+fn report(r: result[sqlite.Changes]) uses console {
     match r {
         case ok(_) {
             print("ok");
@@ -51,14 +47,14 @@ def vo_str(s):
 
 
 def run(tmp, stmt, path=None):
-    params = "[Value.text(%s)]" % vo_str(path) if path is not None else "new list[Value]"
+    params = "[sqlite.Value.text(%s)]" % vo_str(path) if path is not None else "new list[sqlite.Value]"
     src = PROGRAM.replace("STMT", vo_str(stmt)).replace("PARAMS", params)
     with open(os.path.join(tmp, "prog.vo"), "w") as f:
         f.write(src)
     r = subprocess.run([VO, "run", "prog.vo"], cwd=tmp, capture_output=True, timeout=60)
     out = r.stdout.decode("utf-8", "replace").strip()
     err = r.stderr.decode("utf-8", "replace")
-    if r.returncode == 70 and "R0010" in err and "prog.vo:11:" in err:
+    if r.returncode == 70 and "R0010" in err and "prog.vo:7:" in err:  # spec 058: the exec line (one import)
         return "R0010"
     if r.returncode == 0:
         return out

@@ -1,15 +1,12 @@
-import std.regex.regex;
-import std.regex.replace_matches;
-import std.regex.all_matches;
-import std.regex.split_on;
+import std.regex;
 
 fn main() uses console {
-    print(replace_matches("abxd", regex("x*"), "-"));
-    for m in all_matches("aé", regex("")) {
+    print(regex.replace_matches("abxd", regex.regex("x*"), "-"));
+    for m in regex.all_matches("aé", regex.regex("")) {
         print(str(m.start));
     }
-    print(join(split_on("axb", regex("x*")), "|"));
-    for m in all_matches("a", regex("|a")) {
+    print(join(regex.split_on("axb", regex.regex("x*")), "|"));
+    for m in regex.all_matches("a", regex.regex("|a")) {
         print(str(m.start) + "-" + str(m.end));
     }
 }

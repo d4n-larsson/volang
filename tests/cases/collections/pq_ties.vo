@@ -1,4 +1,4 @@
-import std.collections.priority_queue_by;
+import std.collections;
 
 record Job {
     name: str;
@@ -7,7 +7,7 @@ record Job {
 
 # Spec 014 US2/AC2: equal priorities leave in the order they were pushed.
 fn main() uses console {
-    let q: priority_queue[Job] = priority_queue_by(fn(a: Job, b: Job) -> int { return a.priority - b.priority; });
+    let q: priority_queue[Job] = collections.priority_queue_by(fn(a: Job, b: Job) -> int { return a.priority - b.priority; });
     for j in [new Job { name: "a", priority: 2 }, new Job { name: "b", priority: 1 }, new Job { name: "c", priority: 2 }, new Job { name: "d", priority: 1 }, new Job { name: "e", priority: 2 }] {
         push(q, j);
     }

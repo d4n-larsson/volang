@@ -1,20 +1,17 @@
 # Two workers, each running the setup once: every request gets the setup's value with its path.
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve_workers;
+import std.http;
 
 fn setup() -> result[str] {
     return ok("ready");
 }
 
-fn handle(state: str, r: Request) -> Response {
-    return new Response { status: 200, headers: new list[Header], body: state + " " + r.path };
+fn handle(state: str, r: http.Request) -> http.Response {
+    return new http.Response { status: 200, headers: new list[http.Header], body: state + " " + r.path };
 }
 
 fn main() -> result[void] uses console, serve("{vport}") {
     print("serving");
-    try serve_workers("{vport}", 2, setup, handle);
+    try http.serve_workers("{vport}", 2, setup, handle);
     print("stopped");
     return ok();
 }

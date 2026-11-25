@@ -1,10 +1,7 @@
-import std.tcp.Conn;
-import std.tcp.connect;
-import std.tcp.listen;
-import std.tcp.read;
+import std.tcp;
 
 fn open() {
-    match connect("db.internal", 5432, 1000) {
+    match tcp.connect("db.internal", 5432, 1000) {
         case ok(_) {
         }
         case err(_) {
@@ -13,7 +10,7 @@ fn open() {
 }
 
 fn wait() {
-    match listen("9000") {
+    match tcp.listen("9000") {
         case ok(_) {
         }
         case err(_) {
@@ -22,8 +19,8 @@ fn wait() {
 }
 
 # Using a connection needs its effect.
-fn first(c: Conn[uses net]) -> int {
-    match read(c, 1, 1000) {
+fn first(c: tcp.Conn[uses net]) -> int {
+    match tcp.read(c, 1, 1000) {
         case ok(b) {
             return b[0];
         }

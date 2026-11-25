@@ -1,13 +1,6 @@
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.exec;
-import std.sqlite.query;
-import std.sqlite.int_column;
-import std.sqlite.Database;
-import std.sqlite.Value;
-import std.sqlite.Changes;
+import std.sqlite;
 
-fn ran(r: result[Changes]) -> bool {
+fn ran(r: result[sqlite.Changes]) -> bool {
     match r {
         case ok(_) {
             return true;
@@ -18,10 +11,10 @@ fn ran(r: result[Changes]) -> bool {
     }
 }
 
-fn count(db: Database) -> int {
-    match query(db, sql("select count(*) as n from t"), new list[Value]) {
+fn count(db: sqlite.Database) -> int {
+    match sqlite.query(db, sqlite.sql("select count(*) as n from t"), new list[sqlite.Value]) {
         case ok(rows) {
-            match int_column(rows[0], "n") {
+            match sqlite.int_column(rows[0], "n") {
                 case ok(n) {
                     return n;
                 }
@@ -37,36 +30,36 @@ fn count(db: Database) -> int {
 }
 
 test "first test sees its own rows" {
-    let db = open_memory();
-    expect(ran(exec(db, sql("create table t(x)"), new list[Value])));
-    expect(ran(exec(db, sql("insert into t values (?), (?)"), [Value.integer(1), Value.integer(2)])));
+    let db = sqlite.open_memory();
+    expect(ran(sqlite.exec(db, sqlite.sql("create table t(x)"), new list[sqlite.Value])));
+    expect(ran(sqlite.exec(db, sqlite.sql("insert into t values (?), (?)"), [sqlite.Value.integer(1), sqlite.Value.integer(2)])));
     expect_eq(count(db), 2);
 }
 
 test "second test starts empty" {
-    let db = open_memory();
-    expect(ran(exec(db, sql("create table t(x)"), new list[Value])));
-    expect(ran(exec(db, sql("insert into t values (?)"), [Value.integer(3)])));
+    let db = sqlite.open_memory();
+    expect(ran(sqlite.exec(db, sqlite.sql("create table t(x)"), new list[sqlite.Value])));
+    expect(ran(sqlite.exec(db, sqlite.sql("insert into t values (?)"), [sqlite.Value.integer(3)])));
     expect_eq(count(db), 1);
 }
 
 test "stops mid-way with the database open" {
-    let db = open_memory();
-    expect(ran(exec(db, sql("create table t(x)"), new list[Value])));
+    let db = sqlite.open_memory();
+    expect(ran(sqlite.exec(db, sqlite.sql("create table t(x)"), new list[sqlite.Value])));
     let none = new list[int];
     expect_eq(none[0], 0);
 }
 
 test "passes after the error" {
-    let db = open_memory();
-    expect(ran(exec(db, sql("create table t(x)"), new list[Value])));
+    let db = sqlite.open_memory();
+    expect(ran(sqlite.exec(db, sqlite.sql("create table t(x)"), new list[sqlite.Value])));
     expect_eq(count(db), 0);
 }
 
 prop "every case has its own database" (n: int) {
-    let db = open_memory();
+    let db = sqlite.open_memory();
     expect(db.id >= 0);
-    expect(ran(exec(db, sql("create table t(x)"), new list[Value])));
-    expect(ran(exec(db, sql("insert into t values (?)"), [Value.integer(n)])));
+    expect(ran(sqlite.exec(db, sqlite.sql("create table t(x)"), new list[sqlite.Value])));
+    expect(ran(sqlite.exec(db, sqlite.sql("insert into t values (?)"), [sqlite.Value.integer(n)])));
     expect_eq(count(db), 1);
 }

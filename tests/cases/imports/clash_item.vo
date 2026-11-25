@@ -1,0 +1,10 @@
+# A module named like an item of the file: E0202.
+import std.json;
+
+fn json() -> int {
+    return 1;
+}
+
+fn main() uses console {
+    print(str(json()));
+}

@@ -16,10 +16,11 @@ fn save_loud(text: str) -> result[void] uses Logged (console, file.read("data/")
 $ vo doc store.store.Storage
 effects Storage = file.read("data/"), file.write("data/")
     Where notes are kept.
+    use: import store.store; then store.Storage
 --- stderr
 --- exit 0
 $ vo doc --json store.store.save_loud
-{"v":1,"kind":"doc","module":"store.store","name":"save_loud","item":"fn","signature":"fn save_loud(text: str) -> result[void] uses Logged (console, file.read(\"data/\"), file.write(\"data/\"))","tparams":[],"params":[{"name":"text","type":"str"}],"returns":"result[void]","effects":["console","file.read(\"data/\")","file.write(\"data/\")"],"description":"Saves a note and says so."}
+{"v":1,"kind":"doc","module":"store.store","name":"save_loud","item":"fn","signature":"fn save_loud(text: str) -> result[void] uses Logged (console, file.read(\"data/\"), file.write(\"data/\"))","tparams":[],"params":[{"name":"text","type":"str"}],"returns":"result[void]","effects":["console","file.read(\"data/\")","file.write(\"data/\")"],"description":"Saves a note and says so.","use":"store.save_loud"}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":1}
 --- stderr
 --- exit 0

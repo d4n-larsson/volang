@@ -1,5 +1,5 @@
 # Spec 033: only map[str, V] is JSON; a record-keyed map is still E0328.
-import std.json.to_json;
+import std.json;
 
 record Point {
     x: int;
@@ -8,6 +8,6 @@ record Point {
 
 fn main() uses console {
     let m = new map[Point, int];
-    let j = to_json(m);
+    let j = json.to_json(m);
     print("not reached");
 }

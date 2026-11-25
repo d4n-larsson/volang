@@ -1,8 +1,7 @@
 # A dotted IPv4 host needs no name lookup.
-import std.http.Response;
-import std.http.get;
+import std.http;
 
-fn show(r: result[Response]) uses console {
+fn show(r: result[http.Response]) uses console {
     match r {
         case ok(resp) {
             print("status " + str(resp.status));
@@ -20,5 +19,5 @@ fn show(r: result[Response]) uses console {
 
 fn main() uses console, net("127.0.0.1") {
     let a = args();
-    show(get("http://127.0.0.1:" + a[0] + "/plain"));
+    show(http.get("http://127.0.0.1:" + a[0] + "/plain"));
 }

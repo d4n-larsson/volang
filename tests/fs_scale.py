@@ -19,28 +19,27 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.environ.get("VO_BIN", os.path.join(ROOT, "bin", "vo"))
 
-LIST = """import std.fs.list_dir;
+LIST = """import std.fs;
 
 fn main() -> result[void] uses console, file.read("big/") {
-    let entries = try list_dir("big");
+    let entries = try fs.list_dir("big");
     print(str(len(entries)) + " " + entries[0].name + " " + entries[len(entries) - 1].name);
     return ok();
 }
 """
 
-WALK = """import std.fs.make_dir;
-import std.fs.walk;
+WALK = """import std.fs;
 
 fn main() -> result[void] uses console, file.read("tree/"), file.write("out/") {
     var total = 0;
     var lines = 0;
-    let files = try walk("tree");
+    let files = try fs.walk("tree");
     for f in files {
         let text = try read_file(f);
         set total = total + len(text);
         set lines = lines + len(split(text, "\\n")) - 1;
     }
-    try make_dir("out");
+    try fs.make_dir("out");
     let summary = str(len(files)) + " files, " + str(lines) + " lines, " + str(total) + " bytes, first " + files[0] + ", last " + files[len(files) - 1];
     try write_file("out/summary.txt", summary + "\\n");
     print(summary);
@@ -48,13 +47,13 @@ fn main() -> result[void] uses console, file.read("tree/"), file.write("out/") {
 }
 """
 
-RUNS = """import std.process.run;
+RUNS = """import std.process;
 
 fn main() -> result[void] uses console, process("true") {
     var i = 0;
     var failed = 0;
     while i < COUNT {
-        let out = try run("true", new list[str]);
+        let out = try process.run("true", new list[str]);
         if out.code != 0 {
             set failed = failed + 1;
         }
@@ -65,8 +64,8 @@ fn main() -> result[void] uses console, process("true") {
 }
 """
 
-LEAK = """import std.fs.list_dir;
-import std.process.run;
+LEAK = """import std.fs;
+import std.process;
 
 fn wait() uses console, input {
     print("waiting");
@@ -82,8 +81,8 @@ fn main() -> result[void] uses console, input, file.read("big/"), process("true"
     wait();
     var round = 0;
     while round < 20 {
-        let _ = try list_dir("big");
-        let _ = try run("true", new list[str]);
+        let _ = try fs.list_dir("big");
+        let _ = try process.run("true", new list[str]);
         set round = round + 1;
     }
     wait();

@@ -1,0 +1,16 @@
+# Qualified types as type arguments (a lowercase name first, which is not an effect there), and a
+# qualified effect set after `uses` in a type.
+import box;
+
+record Shelf {
+    boxes: list[box.Box[box.Item]];
+    show: fn(box.Item) uses box.Show;
+}
+
+fn main() uses console {
+    let b = new box.Box[box.Item] { item: new box.Item { name: "a" } };
+    let s = new Shelf { boxes: [b], show: fn(i: box.Item) {
+        print(i.name);
+    } };
+    s.show(s.boxes[0].item);
+}

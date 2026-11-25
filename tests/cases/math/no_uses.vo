@@ -1,23 +1,9 @@
 # Spec 020 SC-005: math is pure; a function with no `uses` may call every std.math function.
-import std.math.pi;
-import std.math.sqrt;
-import std.math.pow;
-import std.math.exp;
-import std.math.log;
-import std.math.sin;
-import std.math.cos;
-import std.math.tan;
-import std.math.asin;
-import std.math.acos;
-import std.math.atan;
-import std.math.atan2;
-import std.math.floor;
-import std.math.ceil;
-import std.math.round;
+import std.math;
 
 fn everything(x: float) -> float {
-    let a = sqrt(x) + pow(x, 2.0) + exp(x) + log(x) + sin(x) + cos(x) + tan(x) + asin(x) + acos(x) + atan(x) + atan2(x, 1.0) + pi();
-    return a + float(floor(x) + ceil(x) + round(x));
+    let a = math.sqrt(x) + math.pow(x, 2.0) + math.exp(x) + math.log(x) + math.sin(x) + math.cos(x) + math.tan(x) + math.asin(x) + math.acos(x) + math.atan(x) + math.atan2(x, 1.0) + math.pi();
+    return a + float(math.floor(x) + math.ceil(x) + math.round(x));
 }
 
 fn main() uses console {

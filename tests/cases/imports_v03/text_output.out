@@ -1,0 +1,5 @@
+text_output.vo:2:1: error[E0215]: Imports name a module, not an item: `import std.json;`, then `json.Json`.
+   2 | import std.json.Json;
+     | ^^^^^^^^^^^^^^^^^^^^^
+  fix: rewrite lines 2 to 15
+1 error, 0 warnings

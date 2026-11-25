@@ -1,5 +1,5 @@
-import std.crypto.random_bytes;
+import std.crypto;
 
 fn main() uses console, entropy {
-    print(str(len(random_bytes(65537))));
+    print(str(len(crypto.random_bytes(65537))));
 }

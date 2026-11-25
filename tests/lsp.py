@@ -27,16 +27,14 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 SLOW = 20 if any(a in os.environ.get("VO_BIN", "") for a in ("aarch64", "riscv64")) else 1  # under qemu
 
-MAIN = '''import lib.shapes.area;
-import lib.shapes.Shape;
-import lib.shapes.describe;
+MAIN = '''import lib.shapes;
 
 # Prints a few areas.
 fn main() uses console {
     let label = "área 𝄞";
-    let a = area(2, 3);
+    let a = shapes.area(2, 3);
     print(label + ": " + str(a));
-    print(describe(Shape.square(2)));
+    print(shapes.describe(shapes.Shape.square(2)));
 }
 '''
 SHAPES = '''# A shape with its size.
@@ -80,8 +78,8 @@ test "area of a rectangle" {
 ALONE = 'fn main() uses console, file.write {\n    print("alone");\n    let _ = write_file("ran.txt", "x");\n}\n'
 FILES = {"main.vo": MAIN, "lib/shapes.vo": SHAPES, "alone.vo": ALONE}
 # main.vo with: a type error after non-ASCII text (fixable), an unused local (a warning), a missing `;`
-BROKEN = MAIN.replace('let a = area(2, 3);', 'let a = area(2, 3);\n    let extra = "é𝄞" + 1;\n    let unused = 4;\n    print("x")')
-UGLY = MAIN.replace("    let a = area(2, 3);", "  let a=area( 2,3 );")
+BROKEN = MAIN.replace('let a = shapes.area(2, 3);', 'let a = shapes.area(2, 3);\n    let extra = "é𝄞" + 1;\n    let unused = 4;\n    print("x")')
+UGLY = MAIN.replace("    let a = shapes.area(2, 3);", "  let a=shapes.area( 2,3 );")
 
 fails = []
 
@@ -462,7 +460,8 @@ def reading(work):
             if rnd != "as saved":
                 e.set("main.vo", "# moved down\n\n" + MAIN.replace("fn main", "\nfn main"))
                 e.diagnostics("main.vo")
-            spots = [("main.vo", "area(2", 0, 1), ("main.vo", "describe(Shape", 0, 2), ("main.vo", "Shape.square", 0, 1),
+            spots = [("main.vo", "area(2", 0, 1), ("main.vo", "describe(shapes", 0, 2), ("main.vo", "Shape.square", 0, 1),
+                     ("main.vo", "shapes.area", 0, 1), ("main.vo", "import lib.shapes", 0, 13),  # spec 058: a module name
                      ("main.vo", "square(2)", 0, 1), ("main.vo", "label +", 0, 1), ("main.vo", "print(label", 0, 1),
                      ("main.vo", "str(a)", 0, 1), ("main.vo", "a)", 0, 0), ("main.vo", "# ", 0, 0), ("main.vo", "\n\n", 0, 1),
                      ("lib/shapes.vo", "w * h", 0, 0), ("lib/shapes.vo", "circle(r)", 0, 1), ("lib/shapes.vo", "h: int;", 0, 0)]

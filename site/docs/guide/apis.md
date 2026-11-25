@@ -11,15 +11,8 @@ An operation takes the application's context (here a shop's name, in a real API 
 input, and returns a `Response` or an error:
 
 ```vo
-import std.http.Response;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.Route;
-import std.web.Step;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.request;
+import std.http;
+import std.web;
 
 record Shop {
     name: str;
@@ -34,25 +27,25 @@ record Item {
     name: str;
 }
 
-fn show(shop: Shop, input: ItemId) -> result[Response] {
+fn show(shop: Shop, input: ItemId) -> result[http.Response] {
     if input.id > 3 {
         return err("not_found: no item " + str(input.id));
     }
-    return ok(json_reply(200, new Item { id: input.id, name: shop.name + " item" }));
+    return ok(web.json_reply(200, new Item { id: input.id, name: shop.name + " item" }));
 }
 
-fn routes() -> list[Route[Shop]] {
-    return [on_get("/items/{id}", show)];
+fn routes() -> list[web.Route[Shop]] {
+    return [web.on_get("/items/{id}", show)];
 }
 
 fn main() uses console {
-    let app = new App {
+    let app = new web.App {
         routes: routes(),
-        steps: new list[Step[Shop]],
-        errors: new list[ErrorStatus]
+        steps: new list[web.Step[Shop]],
+        errors: new list[web.ErrorStatus]
     };
     for path in ["/items/2", "/items/9", "/items/x", "/users"] {
-        let r = handle_request(app, new Shop { name: "corner" }, request("GET", path, ""));
+        let r = web.handle_request(app, new Shop { name: "corner" }, web.request("GET", path, ""));
         print(str(r.status) + " " + r.body);
     }
 }
@@ -79,15 +72,8 @@ or make it optional (`@default`). Input that does not fit never reaches the oper
 be any record, list or variant:
 
 ```vo
-import std.http.Response;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.Route;
-import std.web.Step;
-import std.web.created;
-import std.web.handle_request;
-import std.web.on_post;
-import std.web.request;
+import std.http;
+import std.web;
 
 record NewItem {
     @size(1, 30)
@@ -101,15 +87,15 @@ record AddItem {
     body: NewItem;
 }
 
-fn add(n: int, input: AddItem) -> result[Response] {
-    return ok(created("/items/7", input.body));
+fn add(n: int, input: AddItem) -> result[http.Response] {
+    return ok(web.created("/items/7", input.body));
 }
 
 fn main() uses console {
-    let routes: list[Route[int]] = [on_post("/items", add)];
-    let app = new App { routes: routes, steps: new list[Step[int]], errors: new list[ErrorStatus] };
+    let routes: list[web.Route[int]] = [web.on_post("/items", add)];
+    let app = new web.App { routes: routes, steps: new list[web.Step[int]], errors: new list[web.ErrorStatus] };
     for body in [`{"name": "cup"}`, `{"name": "", "count": 5000}`, `{"nam": "cup"}`] {
-        let r = handle_request(app, 0, request("POST", "/items", body));
+        let r = web.handle_request(app, 0, web.request("POST", "/items", body));
         print(str(r.status) + " " + r.body);
     }
 }
@@ -135,14 +121,8 @@ maps each error to a `Problem { status, detail }`. Because `answer` is one funct
 checker sees that every way to fail has a status:
 
 ```vo
-import std.http.Response;
-import std.web.Problem;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.request;
-import std.web.typed;
-import std.web.web_app;
+import std.http;
+import std.web;
 
 variant NoteError {
     not_found(int);
@@ -152,24 +132,24 @@ record ById {
     id: int;
 }
 
-fn note_problem(e: NoteError) -> Problem {
+fn note_problem(e: NoteError) -> web.Problem {
     match e {
         case not_found(id) {
-            return new Problem { status: 404, detail: "no note " + str(id) };
+            return new web.Problem { status: 404, detail: "no note " + str(id) };
         }
     }
 }
 
-fn show(ctx: int, input: ById) -> result[Response, NoteError] {
+fn show(ctx: int, input: ById) -> result[http.Response, NoteError] {
     if input.id == 1 {
-        return ok(json_reply(200, "first"));
+        return ok(web.json_reply(200, "first"));
     }
     return err(NoteError.not_found(input.id));
 }
 
 fn main() uses console {
-    let app = web_app([on_get("/notes/{id}", typed(show, note_problem))]);
-    let r = handle_request(app, 0, request("GET", "/notes/5", ""));
+    let app = web.web_app([web.on_get("/notes/{id}", web.typed(show, note_problem))]);
+    let r = web.handle_request(app, 0, web.request("GET", "/notes/5", ""));
     print(str(r.status) + " " + r.body);
 }
 ```
@@ -200,28 +180,9 @@ Programs sign in with tokens, keys or Basic credentials (below); people in a bro
 form and a session cookie, the `browser` way (Signing in browsers, below), under the same rules.
 
 ```vo
-import std.http.Response;
-import std.security.Access;
-import std.security.Rule;
-import std.security.User;
-import std.security.Way;
-import std.security.as_user;
-import std.security.describe;
-import std.security.policy;
-import std.security.require_user;
-import std.security.review;
-import std.security.rule;
-import std.security.rule_for;
-import std.security.secure;
-import std.security.test_users;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.NoInput;
-import std.web.Route;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.request;
+import std.http;
+import std.security;
+import std.web;
 
 record Caller {
     @header("X-Identity")
@@ -229,37 +190,37 @@ record Caller {
     identity: str;
 }
 
-fn up(n: int, input: NoInput) -> result[Response] {
-    return ok(json_reply(200, "up"));
+fn up(n: int, input: web.NoInput) -> result[http.Response] {
+    return ok(web.json_reply(200, "up"));
 }
 
-fn hello(n: int, input: Caller) -> result[Response] {
-    let user = try require_user(input.identity);
-    return ok(json_reply(200, "hello " + user.name));
+fn hello(n: int, input: Caller) -> result[http.Response] {
+    let user = try security.require_user(input.identity);
+    return ok(web.json_reply(200, "hello " + user.name));
 }
 
-fn rules() -> list[Rule] {
+fn rules() -> list[security.Rule] {
     return [
-        rule("/health", Access.anyone),
-        rule_for(["GET"], "/notes", Access.signed_in),
-        rule("/admin", Access.any_role(["admin"]))
+        security.rule("/health", security.Access.anyone),
+        security.rule_for(["GET"], "/notes", security.Access.signed_in),
+        security.rule("/admin", security.Access.any_role(["admin"]))
     ];
 }
 
 fn main() uses console {
-    let routes: list[Route[int]] = [on_get("/health", up), on_get("/notes", hello), on_get("/admin/users", hello), on_get("/reports", hello)];
-    let ways: list[Way[int]] = [test_users()];
-    let p = policy(rules(), ways, fn() -> int { return 0; });
-    let app = new App { routes: routes, steps: [secure(p)], errors: new list[ErrorStatus] };
-    let bo = new User { name: "bo", roles: ["user"] };
+    let routes: list[web.Route[int]] = [web.on_get("/health", up), web.on_get("/notes", hello), web.on_get("/admin/users", hello), web.on_get("/reports", hello)];
+    let ways: list[security.Way[int]] = [security.test_users()];
+    let p = security.policy(rules(), ways, fn() -> int { return 0; });
+    let app = new web.App { routes: routes, steps: [security.secure(p)], errors: new list[web.ErrorStatus] };
+    let bo = new security.User { name: "bo", roles: ["user"] };
     for rt in routes {
-        let r = request("GET", rt.pattern, "");
-        let nobody = handle_request(app, 0, r).status;
-        let as_bo = handle_request(app, 0, as_user(r, bo));
+        let r = web.request("GET", rt.pattern, "");
+        let nobody = web.handle_request(app, 0, r).status;
+        let as_bo = web.handle_request(app, 0, security.as_user(r, bo));
         print(format("{}: nobody {}, bo {}", rt.pattern, nobody, as_bo.status));
     }
-    print(describe(app, rules()));
-    for finding in review(app, p) {
+    print(security.describe(app, rules()));
+    for finding in security.review(app, p) {
         print("review: " + finding);
     }
 }

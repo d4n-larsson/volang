@@ -1,5 +1,4 @@
-import std.json.Json;
-import std.json.write_json;
+import std.json;
 
 record Line {
     item: str;
@@ -9,19 +8,19 @@ record Line {
 
 fn main() -> result[void] uses console {
     let lines = [new Line { item: "tea \"green\"", count: 2, price: 3.5 }, new Line { item: "café", count: 1, price: 0.1 }];
-    let rows = new list[Json];
+    let rows = new list[json.Json];
     var total = 0.0;
     for l in lines {
-        let m = new map[str, Json];
-        set m["item"] = Json.text(l.item);
-        set m["count"] = Json.integer(l.count);
-        set m["price"] = Json.number(l.price);
-        push(rows, Json.object(m));
+        let m = new map[str, json.Json];
+        set m["item"] = json.Json.text(l.item);
+        set m["count"] = json.Json.integer(l.count);
+        set m["price"] = json.Json.number(l.price);
+        push(rows, json.Json.object(m));
         set total = total + float(l.count) * l.price;
     }
-    let report = new map[str, Json];
-    set report["lines"] = Json.array(rows);
-    set report["total"] = Json.number(total);
-    print(try write_json(Json.object(report)));
+    let report = new map[str, json.Json];
+    set report["lines"] = json.Json.array(rows);
+    set report["total"] = json.Json.number(total);
+    print(try json.write_json(json.Json.object(report)));
     return ok();
 }

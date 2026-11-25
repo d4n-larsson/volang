@@ -1,19 +1,8 @@
 # The whole API tested without a network (spec 029 US4): requests sent to the application value, JSON
 # answers read field by field; the same request gives the same answer; the tests need no `serve`.
-import std.http.Response;
-import std.json.Json;
-import std.json.int_field;
-import std.json.parse_json;
-import std.json.text_field;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.Route;
-import std.web.Step;
-import std.web.created;
-import std.web.handle_request;
-import std.web.on_post;
-import std.web.request;
-import std.web.with_header;
+import std.http;
+import std.json;
+import std.web;
 
 record Greeting {
     @size(1, 10)
@@ -32,49 +21,49 @@ record Reply {
     text: str;
 }
 
-fn hello(n: int, input: Hello) -> result[Response] {
+fn hello(n: int, input: Hello) -> result[http.Response] {
     var word = "hello";
     if input.lang == "sv" {
         set word = "hej";
     }
-    return ok(created("/greetings/" + str(n), new Reply { id: n, text: word + " " + input.body.name }));
+    return ok(web.created("/greetings/" + str(n), new Reply { id: n, text: word + " " + input.body.name }));
 }
 
-fn app() -> App[int] {
-    return new App { routes: [on_post("/greetings", hello)], steps: new list[Step[int]], errors: new list[ErrorStatus] };
+fn app() -> web.App[int] {
+    return new web.App { routes: [web.on_post("/greetings", hello)], steps: new list[web.Step[int]], errors: new list[web.ErrorStatus] };
 }
 
-fn body(r: Response) -> Json {
-    match parse_json(r.body) {
+fn body(r: http.Response) -> json.Json {
+    match json.parse_json(r.body) {
         case ok(j) {
             return j;
         }
         case err(_) {
-            return Json.null;
+            return json.Json.null;
         }
     }
 }
 
 test "a greeting is created with its id and text" {
-    let r = handle_request(app(), 7, request("POST", "/greetings", "{\"name\": \"ada\"}"));
+    let r = web.handle_request(app(), 7, web.request("POST", "/greetings", "{\"name\": \"ada\"}"));
     expect_eq(r.status, 201);
-    expect_eq(int_field(body(r), "id"), ok(7));
-    expect_eq(text_field(body(r), "text"), ok("hello ada"));
+    expect_eq(json.int_field(body(r), "id"), ok(7));
+    expect_eq(json.text_field(body(r), "text"), ok("hello ada"));
 }
 
 test "the language comes from a header" {
-    let r = handle_request(app(), 1, with_header(request("POST", "/greetings", "{\"name\": \"bo\"}"), "Accept-Language", "sv"));
-    expect_eq(text_field(body(r), "text"), ok("hej bo"));
+    let r = web.handle_request(app(), 1, web.with_header(web.request("POST", "/greetings", "{\"name\": \"bo\"}"), "Accept-Language", "sv"));
+    expect_eq(json.text_field(body(r), "text"), ok("hej bo"));
 }
 
 test "a long name is 422 naming the field" {
-    let r = handle_request(app(), 1, request("POST", "/greetings", "{\"name\": \"abcdefghijk\"}"));
+    let r = web.handle_request(app(), 1, web.request("POST", "/greetings", "{\"name\": \"abcdefghijk\"}"));
     expect_eq(r.status, 422);
     expect_eq(r.body, "{\"type\":\"about:blank\",\"title\":\"Unprocessable Content\",\"status\":422,\"errors\":[{\"field\":\"name\",\"reason\":\"at most 10 characters, got 11\"}]}");
 }
 
 test "the same request gives the same answer" {
-    let a = handle_request(app(), 3, request("POST", "/greetings", "{\"name\": \"cy\"}"));
-    let b = handle_request(app(), 3, request("POST", "/greetings", "{\"name\": \"cy\"}"));
+    let a = web.handle_request(app(), 3, web.request("POST", "/greetings", "{\"name\": \"cy\"}"));
+    let b = web.handle_request(app(), 3, web.request("POST", "/greetings", "{\"name\": \"cy\"}"));
     expect_eq(a, b);
 }

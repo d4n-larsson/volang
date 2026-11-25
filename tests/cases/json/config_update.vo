@@ -1,15 +1,12 @@
-import std.json.Json;
-import std.json.parse_json;
-import std.json.as_object;
-import std.json.write_json_pretty;
+import std.json;
 
 fn main() -> result[void] uses console {
     let text = "{\"name\": \"svc\", \"port\": 8080, \"debug\": false, \"hosts\": [\"a\", \"b\"], \"limits\": {}}";
-    let doc = try parse_json(text);
-    let m = try as_object(doc);
-    set m["port"] = Json.integer(9090);
-    set m["debug"] = Json.boolean(true);
-    set m["added"] = Json.null;
-    print(try write_json_pretty(doc));
+    let doc = try json.parse_json(text);
+    let m = try json.as_object(doc);
+    set m["port"] = json.Json.integer(9090);
+    set m["debug"] = json.Json.boolean(true);
+    set m["added"] = json.Json.null;
+    print(try json.write_json_pretty(doc));
     return ok();
 }

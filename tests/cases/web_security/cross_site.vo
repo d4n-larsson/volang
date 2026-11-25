@@ -3,41 +3,17 @@
 # or the origin the application set); it is refused with 403 before the operation runs otherwise. Reads,
 # and requests signed in with a token, are not checked. Posting the sign-in form from elsewhere is
 # refused too.
-import std.bytes.from_ints;
-import std.bytes.from_text;
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.option.Option;
-import std.security.Access;
-import std.security.Account;
-import std.security.Browser;
-import std.security.Event;
-import std.security.Policy;
-import std.security.Session;
-import std.security.User;
-import std.security.browser;
-import std.security.browser_routes;
-import std.security.require_user;
-import std.security.rule;
-import std.security.issue_token;
-import std.security.secure;
-import std.security.tokens;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.Route;
-import std.web.json_reply;
-import std.web.handle_request;
-import std.web.on_get;
-import std.web.on_post;
-import std.web.read_cookie;
-import std.web.request;
+import std.bytes;
+import std.http;
+import std.option;
+import std.security;
+import std.web;
 
 const weak = "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=";
 const strong = "pbkdf2-sha256$600000$UzaawpluQd/9+wjqxK7k5g==$T77DFP1a//H/wGSMrDAzacBRzngTQcTM4Nma4jsUNWw=";
 
 record Store {
-    sessions: map[str, Session];
+    sessions: map[str, security.Session];
     events: list[str];
     now: int;
     drawn: int;
@@ -51,31 +27,31 @@ record Who {
     identity: str;
 }
 
-fn find_account(st: Store, name: str) -> result[Option[Account]] {
+fn find_account(st: Store, name: str) -> result[option.Option[security.Account]] {
     if name == "ada" {
-        return ok(Option.some(new Account { name: "ada", password_hash: weak, roles: ["admin"], enabled: true }));
+        return ok(option.Option.some(new security.Account { name: "ada", password_hash: weak, roles: ["admin"], enabled: true }));
     }
     if name == "old" {
-        return ok(Option.some(new Account { name: "old", password_hash: weak, roles: new list[str], enabled: false }));
+        return ok(option.Option.some(new security.Account { name: "old", password_hash: weak, roles: new list[str], enabled: false }));
     }
     if name == "col" {
-        return ok(Option.some(new Account { name: "col", password_hash: strong, roles: new list[str], enabled: true }));
+        return ok(option.Option.some(new security.Account { name: "col", password_hash: strong, roles: new list[str], enabled: true }));
     }
-    return ok(Option.none);
+    return ok(option.Option.none);
 }
 
-fn the_browser(st: Store) -> Browser[Store] {
-    return new Browser {
+fn the_browser(st: Store) -> security.Browser[Store] {
+    return new security.Browser {
         find_account: find_account,
-        keep: fn(s: Store, x: Session) -> result[void] {
+        keep: fn(s: Store, x: security.Session) -> result[void] {
             set s.sessions[x.key] = x;
             return ok();
         },
-        find: fn(s: Store, key: str) -> result[Option[Session]] {
+        find: fn(s: Store, key: str) -> result[option.Option[security.Session]] {
             if has(s.sessions, key) {
-                return ok(Option.some(s.sessions[key]));
+                return ok(option.Option.some(s.sessions[key]));
             }
-            return ok(Option.none);
+            return ok(option.Option.none);
         },
         end: fn(s: Store, key: str) -> result[void] {
             remove(s.sessions, key);
@@ -87,7 +63,7 @@ fn the_browser(st: Store) -> Browser[Store] {
             for i in 0..n {
                 push(xs, (st.drawn * 16 + i) % 256);
             }
-            return from_ints(xs);
+            return bytes.from_ints(xs);
         },
         sign_in: "/sign-in",
         sign_out: "/sign-out",
@@ -103,72 +79,72 @@ record Done {
     identity: str;
 }
 
-fn done(st: Store, input: Done) -> result[Response] {
-    let user = try require_user(input.identity);
+fn done(st: Store, input: Done) -> result[http.Response] {
+    let user = try security.require_user(input.identity);
     push(st.done, user.name + " " + str(input.id));
-    return ok(json_reply(200, "done"));
+    return ok(web.json_reply(200, "done"));
 }
 
 fn signing_key() -> bytes {
-    return from_text("0123456789abcdef0123456789abcdef");
+    return bytes.from_text("0123456789abcdef0123456789abcdef");
 }
 
-fn notes(st: Store, input: Who) -> result[Response] {
-    let user = try require_user(input.identity);
-    return ok(json_reply(200, "notes of " + user.name));
+fn notes(st: Store, input: Who) -> result[http.Response] {
+    let user = try security.require_user(input.identity);
+    return ok(web.json_reply(200, "notes of " + user.name));
 }
 
-fn app(st: Store) -> App[Store] {
+fn app(st: Store) -> web.App[Store] {
     let b = the_browser(st);
-    let p = new Policy {
+    let p = new security.Policy {
         rules: [
-            rule("/sign-in", Access.anyone),
-            rule("/sign-out", Access.anyone),
-            rule("/notes", Access.signed_in),
-            rule("/api", Access.signed_in)
+            security.rule("/sign-in", security.Access.anyone),
+            security.rule("/sign-out", security.Access.anyone),
+            security.rule("/notes", security.Access.signed_in),
+            security.rule("/api", security.Access.signed_in)
         ],
-        ways: [browser(b), tokens([signing_key()])],
+        ways: [security.browser(b), security.tokens([signing_key()])],
         now: fn() -> int {
             return st.now;
         },
-        on_event: fn(s: Store, e: Event) {
+        on_event: fn(s: Store, e: security.Event) {
             push(s.events, e.kind + " " + e.name + " (" + e.reason + ")");
         }
     };
-    let routes = browser_routes(b, p);
-    push(routes, on_get("/notes", notes));
-    push(routes, on_get("/api/notes", notes));
-    push(routes, on_post("/notes/{id}/done", done));
-    return new App { routes: routes, steps: [secure(p)], errors: new list[ErrorStatus] };
+    let routes = security.browser_routes(b, p);
+    push(routes, web.on_get("/notes", notes));
+    push(routes, web.on_get("/api/notes", notes));
+    push(routes, web.on_post("/notes/{id}/done", done));
+    return new web.App { routes: routes, steps: [security.secure(p)], errors: new list[web.ErrorStatus] };
 }
 
-fn send(st: Store, r: Request, headers: list[Header]) -> Response {
+fn send(st: Store, r: http.Request, headers: list[http.Header]) -> http.Response {
     for h in headers {
         push(r.headers, h);
     }
-    return handle_request(app(st), st, r);
+    return web.handle_request(app(st), st, r);
 }
 
-fn form(body: str, cookie: str) -> list[Header] {
+fn form(body: str, cookie: str) -> list[http.Header] {
     let hs = [
-        new Header { name: "Content-Type", value: "application/x-www-form-urlencoded" },
-        new Header { name: "Sec-Fetch-Site", value: "same-origin" }
+        new http.Header { name: "Content-Type", value: "application/x-www-form-urlencoded" },
+        new http.Header { name: "Sec-Fetch-Site", value: "same-origin" }
     ];
     if cookie != "" {
-        push(hs, new Header { name: "Cookie", value: "__Host-session=" + cookie });
+        push(hs, new http.Header { name: "Cookie", value: "__Host-session=" + cookie });
     }
     return hs;
 }
 
-fn page_of(cookie: str) -> list[Header] {
-    let hs = [new Header { name: "Accept", value: "text/html,application/xhtml+xml" }];
+fn page_of(cookie: str) -> list[http.Header] {
+    let hs = [new http.Header { name: "Accept", value: "text/html,application/xhtml+xml" }];
     if cookie != "" {
-        push(hs, new Header { name: "Cookie", value: "__Host-session=" + cookie });
+        push(hs, new http.Header { name: "Cookie", value: "__Host-session=" + cookie });
     }
     return hs;
 }
 
-fn header(r: Response, name: str) -> str {
+fn header(r: http.Response, name: str) -> str {
     for h in r.headers {
         if h.name == name {
             return h.value;
@@ -177,22 +153,22 @@ fn header(r: Response, name: str) -> str {
     return "-";
 }
 
-fn show(what: str, r: Response) uses console {
+fn show(what: str, r: http.Response) uses console {
     print(what + ": " + str(r.status) + " Location=" + header(r, "Location") + " Set-Cookie=" + header(r, "Set-Cookie"));
     if r.body != "" {
         print("  " + r.body);
     }
 }
 
-fn post(path: str, body: str) -> Request {
-    let r = request("POST", path, "");
+fn post(path: str, body: str) -> http.Request {
+    let r = web.request("POST", path, "");
     set r.body = body;
     return r;
 }
 
-fn cookie_of(r: Response) -> str {
+fn cookie_of(r: http.Response) -> str {
     let set_cookie = header(r, "Set-Cookie");
-    match read_cookie(set_cookie, "__Host-session") {
+    match web.read_cookie(set_cookie, "__Host-session") {
         case some(v) {
             return v;
         }
@@ -202,43 +178,43 @@ fn cookie_of(r: Response) -> str {
     }
 }
 
-fn with(cookie: str, name: str, value: str) -> list[Header] {
-    let hs = [new Header { name: "Cookie", value: "__Host-session=" + cookie }];
+fn with(cookie: str, name: str, value: str) -> list[http.Header] {
+    let hs = [new http.Header { name: "Cookie", value: "__Host-session=" + cookie }];
     if name != "" {
-        push(hs, new Header { name: name, value: value });
+        push(hs, new http.Header { name: name, value: value });
     }
     return hs;
 }
 
 fn main() uses console {
-    let st = new Store { sessions: new map[str, Session], events: new list[str], now: 1000000, drawn: 0, done: new list[str], origin: "" };
+    let st = new Store { sessions: new map[str, security.Session], events: new list[str], now: 1000000, drawn: 0, done: new list[str], origin: "" };
     let c = cookie_of(send(st, post("/sign-in", "name=ada&password=passwd"), form("", "")));
     set st.events = new list[str];
-    show("cross-site", send(st, request("POST", "/notes/1/done", ""), with(c, "Sec-Fetch-Site", "cross-site")));
-    show("same-site", send(st, request("POST", "/notes/2/done", ""), with(c, "Sec-Fetch-Site", "same-site")));
-    show("same-origin", send(st, request("POST", "/notes/3/done", ""), with(c, "Sec-Fetch-Site", "same-origin")));
+    show("cross-site", send(st, web.request("POST", "/notes/1/done", ""), with(c, "Sec-Fetch-Site", "cross-site")));
+    show("same-site", send(st, web.request("POST", "/notes/2/done", ""), with(c, "Sec-Fetch-Site", "same-site")));
+    show("same-origin", send(st, web.request("POST", "/notes/3/done", ""), with(c, "Sec-Fetch-Site", "same-origin")));
     let other = with(c, "Origin", "https://evil.example");
-    push(other, new Header { name: "Host", value: "notes.example" });
-    show("Origin of another site", send(st, request("POST", "/notes/4/done", ""), other));
+    push(other, new http.Header { name: "Host", value: "notes.example" });
+    show("Origin of another site", send(st, web.request("POST", "/notes/4/done", ""), other));
     let port = with(c, "Origin", "http://notes.example:9090");
-    push(port, new Header { name: "Host", value: "notes.example:8080" });
-    show("Origin of another port", send(st, request("POST", "/notes/5/done", ""), port));
+    push(port, new http.Header { name: "Host", value: "notes.example:8080" });
+    show("Origin of another port", send(st, web.request("POST", "/notes/5/done", ""), port));
     let same = with(c, "Origin", "http://notes.example:8080");
-    push(same, new Header { name: "Host", value: "notes.example:8080" });
-    show("Origin of the Host", send(st, request("POST", "/notes/6/done", ""), same));
-    show("neither header", send(st, request("POST", "/notes/7/done", ""), with(c, "", "")));
-    show("a read from another site", send(st, request("GET", "/notes", ""), with(c, "Sec-Fetch-Site", "cross-site")));
-    let token = "Bearer " + or_empty(issue_token(signing_key(), new User { name: "svc", roles: new list[str] }, st.now, 600));
-    show("a token from anywhere", send(st, request("POST", "/notes/8/done", ""), [new Header { name: "Authorization", value: token }, new Header { name: "Sec-Fetch-Site", value: "cross-site" }]));
-    show("sign-in form from another site", send(st, post("/sign-in", "name=ada&password=passwd"), [new Header { name: "Content-Type", value: "application/x-www-form-urlencoded" }, new Header { name: "Sec-Fetch-Site", value: "cross-site" }]));
-    show("sign-in form with neither header", send(st, post("/sign-in", "name=ada&password=passwd"), [new Header { name: "Content-Type", value: "application/x-www-form-urlencoded" }]));
+    push(same, new http.Header { name: "Host", value: "notes.example:8080" });
+    show("Origin of the Host", send(st, web.request("POST", "/notes/6/done", ""), same));
+    show("neither header", send(st, web.request("POST", "/notes/7/done", ""), with(c, "", "")));
+    show("a read from another site", send(st, web.request("GET", "/notes", ""), with(c, "Sec-Fetch-Site", "cross-site")));
+    let token = "Bearer " + or_empty(security.issue_token(signing_key(), new security.User { name: "svc", roles: new list[str] }, st.now, 600));
+    show("a token from anywhere", send(st, web.request("POST", "/notes/8/done", ""), [new http.Header { name: "Authorization", value: token }, new http.Header { name: "Sec-Fetch-Site", value: "cross-site" }]));
+    show("sign-in form from another site", send(st, post("/sign-in", "name=ada&password=passwd"), [new http.Header { name: "Content-Type", value: "application/x-www-form-urlencoded" }, new http.Header { name: "Sec-Fetch-Site", value: "cross-site" }]));
+    show("sign-in form with neither header", send(st, post("/sign-in", "name=ada&password=passwd"), [new http.Header { name: "Content-Type", value: "application/x-www-form-urlencoded" }]));
     set st.origin = "https://notes.example";
     let proxied = with(c, "Origin", "https://notes.example");
-    push(proxied, new Header { name: "Host", value: "127.0.0.1:8080" });
-    show("behind a proxy, the public origin", send(st, request("POST", "/notes/9/done", ""), proxied));
+    push(proxied, new http.Header { name: "Host", value: "127.0.0.1:8080" });
+    show("behind a proxy, the public origin", send(st, web.request("POST", "/notes/9/done", ""), proxied));
     let inner = with(c, "Origin", "http://127.0.0.1:8080");
-    push(inner, new Header { name: "Host", value: "127.0.0.1:8080" });
-    show("behind a proxy, the inner origin", send(st, request("POST", "/notes/10/done", ""), inner));
+    push(inner, new http.Header { name: "Host", value: "127.0.0.1:8080" });
+    show("behind a proxy, the inner origin", send(st, web.request("POST", "/notes/10/done", ""), inner));
     print("operations run: " + join(st.done, ", "));
     for e in st.events {
         print("event: " + e);

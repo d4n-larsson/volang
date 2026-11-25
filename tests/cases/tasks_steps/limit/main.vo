@@ -1,8 +1,8 @@
 # At most `limit` requests are outstanding at once (the test server counts them).
-import std.http.get;
+import std.http;
 
 fn fetch(url: str) -> str uses net("127.0.0.1") {
-    match get(url) {
+    match http.get(url) {
         case ok(r) {
             return trim(r.body);
         }

@@ -1,13 +1,9 @@
 # Spec 055 US1: `--log-level warn` writes only warn and error records (stderr, one line each).
-import std.log.Field;
-import std.log.log_debug;
-import std.log.log_error;
-import std.log.log_info;
-import std.log.log_warn;
+import std.log;
 
 fn main() uses log {
-    log_debug("d", new list[Field]);
-    log_info("i", new list[Field]);
-    log_warn("w", new list[Field]);
-    log_error("e", new list[Field]);
+    log.log_debug("d", new list[log.Field]);
+    log.log_info("i", new list[log.Field]);
+    log.log_warn("w", new list[log.Field]);
+    log.log_error("e", new list[log.Field]);
 }

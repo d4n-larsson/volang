@@ -37,23 +37,11 @@ failures = []
 cases = 0
 
 # One line per query; `Z name` and `B path` choose the zone for the lines after them.
-DRIVER = """import std.fs.read_bytes;
-import std.time.DateTime;
-import std.time.Zone;
-import std.time.abbreviation_at;
-import std.time.offset_zone;
-import std.time.format_in;
-import std.time.from_local;
-import std.time.in_zone;
-import std.time.load_zone;
-import std.time.offset_at;
-import std.time.parse_time;
-import std.time.tzdata_version;
-import std.time.zone_from_bytes;
-import std.time.zone_names;
+DRIVER = """import std.fs;
+import std.time;
 
-fn local_answer(z: Zone, d: DateTime) -> str {
-    match from_local(z, d) {
+fn local_answer(z: time.Zone, d: time.DateTime) -> str {
+    match time.from_local(z, d) {
         case ok(ms) {
             return "once " + str(ms);
         }
@@ -73,21 +61,21 @@ fn local_answer(z: Zone, d: DateTime) -> str {
     }
 }
 
-fn instant_answer(z: Zone, ms: int) -> str {
-    let d = in_zone(z, ms);
+fn instant_answer(z: time.Zone, ms: int) -> str {
+    let d = time.in_zone(z, ms);
     var back = "bad";
-    if parse_time(format_in(z, ms)) == ok(ms) {
+    if time.parse_time(time.format_in(z, ms)) == ok(ms) {
         set back = "back";
     }
-    return format("{} {} {} {} {} {} {} {} {} {}", offset_at(z, ms), abbreviation_at(z, ms), d.year, d.month, d.day, d.hour, d.minute, d.second, d.weekday, back);
+    return format("{} {} {} {} {} {} {} {} {} {}", time.offset_at(z, ms), time.abbreviation_at(z, ms), d.year, d.month, d.day, d.hour, d.minute, d.second, d.weekday, back);
 }
 
 fn main() -> result[void] uses console, file.read {
-    var z = offset_zone(0);
+    var z = time.offset_zone(0);
     for line in split(try read_file("cases.txt"), "\\n") {
         let p = split(line, " ");
         if p[0] == "Z" {
-            match load_zone(slice(line, 2, len(line))) {
+            match time.load_zone(slice(line, 2, len(line))) {
                 case ok(v) {
                     set z = v;
                     print("Z ok " + v.name);
@@ -97,55 +85,51 @@ fn main() -> result[void] uses console, file.read {
                 }
             }
         } else if p[0] == "B" {
-            match zone_from_bytes(p[1], try read_bytes(p[1])) {
+            match time.zone_from_bytes(p[1], try fs.read_bytes(p[1])) {
                 case ok(v) {
                     set z = v;
                     print("B ok");
                 }
                 case err(e) {
-                    set z = offset_zone(0);
+                    set z = time.offset_zone(0);
                     print("B " + e);
                 }
             }
         } else if p[0] == "I" {
             print(instant_answer(z, try parse_int(p[1])));
         } else if p[0] == "L" {
-            print(local_answer(z, new DateTime { year: try parse_int(p[1]), month: try parse_int(p[2]), day: try parse_int(p[3]), hour: try parse_int(p[4]), minute: try parse_int(p[5]), second: try parse_int(p[6]), ms: try parse_int(p[7]), weekday: 0 }));
+            print(local_answer(z, new time.DateTime { year: try parse_int(p[1]), month: try parse_int(p[2]), day: try parse_int(p[3]), hour: try parse_int(p[4]), minute: try parse_int(p[5]), second: try parse_int(p[6]), ms: try parse_int(p[7]), weekday: 0 }));
         } else if p[0] == "N" {
-            print(join(zone_names(), " "));
-            print(tzdata_version());
+            print(join(time.zone_names(), " "));
+            print(time.tzdata_version());
         }
     }
     return ok();
 }
 """
 
-LOCAL = """import std.time.format_in;
-import std.time.local_zone;
+LOCAL = """import std.time;
 
 fn main() uses console, clock {
-    let z = local_zone();
-    print(z.name + " " + format_in(z, 1782907200000));
+    let z = time.local_zone();
+    print(z.name + " " + time.format_in(z, 1782907200000));
 }
 """
 
-SPEED = """import std.time.offset_zone;
-import std.time.in_zone;
-import std.time.load_zone;
-import std.time.zone_names;
+SPEED = """import std.time;
 
 fn main() -> result[void] uses console, clock {
     let t0 = now_ms();
-    var z = offset_zone(0);
-    for name in zone_names() {
-        set z = try load_zone(name);
+    var z = time.offset_zone(0);
+    for name in time.zone_names() {
+        set z = try time.load_zone(name);
     }
     let t1 = now_ms();
-    set z = try load_zone("Europe/Stockholm");
+    set z = try time.load_zone("Europe/Stockholm");
     var sum = 0;
     var i = 0;
     while i < 100000 {
-        set sum = sum + in_zone(z, 1700000000000 + i * 3600000).hour;
+        set sum = sum + time.in_zone(z, 1700000000000 + i * 3600000).hour;
         set i = i + 1;
     }
     print(format("{} {} {}", t1 - t0, now_ms() - t1, sum));

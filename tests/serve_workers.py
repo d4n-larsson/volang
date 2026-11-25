@@ -18,14 +18,13 @@ import tempfile
 import threading
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from migrate_058 import module_form  # noqa: E402  spec 058: programs assembled from fragments
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 
-HEAD = """import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve;
-import std.http.serve_workers;
+HEAD = """import std.http;
 """
 
 
@@ -78,7 +77,7 @@ class Server:
         self.dir = tempfile.TemporaryDirectory(prefix="vo-sw-")
         self.port = free_port()
         with open(os.path.join(self.dir.name, "main.vo"), "w") as f:
-            f.write(program.replace("PORT", str(self.port)))
+            f.write(module_form(program.replace("PORT", str(self.port))))
         for name, text in (files or {}).items():
             path = os.path.join(self.dir.name, name)
             os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -184,7 +183,7 @@ def check_smoke():
     return problems
 
 
-SLOW = HEAD + """import std.time.sleep;
+SLOW = HEAD + """import std.time;
 
 fn setup() -> result[int] {
     return ok(0);
@@ -192,7 +191,7 @@ fn setup() -> result[int] {
 
 fn route(r: Request) -> Response uses clock {
     if r.path == "/slow" {
-        sleep(2000);
+        time.sleep(2000);
     }
     return new Response { status: 200, headers: new list[Header], body: r.path };
 }
@@ -234,7 +233,7 @@ def check_slow_vs_fast():
     return problems
 
 
-FAILING = HEAD + """import std.time.sleep;
+FAILING = HEAD + """import std.time;
 
 fn setup() -> result[int] {
     return ok(0);
@@ -245,7 +244,7 @@ fn handle(zero: int, r: Request) -> Response uses clock {
         return new Response { status: 200, headers: new list[Header], body: str(1 / zero) };
     }
     if r.path == "/hang" {
-        sleep(10000);
+        time.sleep(10000);
     }
     if r.path == "/mem" {
         var s = "x";
@@ -254,7 +253,7 @@ fn handle(zero: int, r: Request) -> Response uses clock {
         }
     }
     if r.path == "/block" {
-        sleep(3000);
+        time.sleep(3000);
     }
     return new Response { status: 200, headers: new list[Header], body: r.path };
 }
@@ -324,7 +323,7 @@ def check_isolation():
     return problems
 
 
-SLEEPER = HEAD + """import std.time.sleep;
+SLEEPER = HEAD + """import std.time;
 
 fn setup() -> result[int] {
     return ok(0);
@@ -333,7 +332,7 @@ fn setup() -> result[int] {
 fn handle(n: int, r: Request) -> Response uses clock {
     match parse_int(slice(r.path, 1, len(r.path))) {
         case ok(ms) {
-            sleep(ms);
+            time.sleep(ms);
         }
         case err(_) {
         }
@@ -402,26 +401,19 @@ def check_shutdown():
     return problems
 
 
-COUNTER = HEAD + """import std.sqlite.Database;
-import std.sqlite.Value;
-import std.sqlite.exec;
-import std.sqlite.int_column;
-import std.sqlite.open;
-import std.sqlite.query;
-import std.sqlite.sql;
-import std.sqlite.transaction;
+COUNTER = HEAD + """import std.sqlite;
 
-fn setup() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
-    let db = try open("data/count.db");
-    let _ = try exec(db, sql("insert into opens default values"), new list[Value]);
+fn setup() -> result[sqlite.Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") {
+    let db = try sqlite.open("data/count.db");
+    let _ = try sqlite.exec(db, sqlite.sql("insert into opens default values"), new list[sqlite.Value]);
     return ok(db);
 }
 
-fn handle(db: Database[uses file.read, file.write], r: Request) -> Response uses file.read("data/"), file.write("data/") {
-    let next = transaction(db, fn() -> result[int] {
-        let rows = try query(db, sql("select n from counter"), new list[Value]);
-        let n = try int_column(rows[0], "n") + 1;
-        let _ = try exec(db, sql("update counter set n = ?"), [Value.integer(n)]);
+fn handle(db: sqlite.Database[uses file.read, file.write], r: Request) -> Response uses file.read("data/"), file.write("data/") {
+    let next = sqlite.transaction(db, fn() -> result[int] {
+        let rows = try sqlite.query(db, sqlite.sql("select n from counter"), new list[sqlite.Value]);
+        let n = try sqlite.int_column(rows[0], "n") + 1;
+        let _ = try sqlite.exec(db, sqlite.sql("update counter set n = ?"), [sqlite.Value.integer(n)]);
         return ok(n);
     });
     match next {
@@ -435,10 +427,10 @@ fn handle(db: Database[uses file.read, file.write], r: Request) -> Response uses
 }
 
 fn main() -> result[void] uses file.read("data/"), file.write("data/"), serve("PORT") {
-    let db = try open("data/count.db");
-    let _ = try exec(db, sql("create table counter (n integer)"), new list[Value]);
-    let _ = try exec(db, sql("insert into counter values (0)"), new list[Value]);
-    let _ = try exec(db, sql("create table opens (id integer primary key)"), new list[Value]);
+    let db = try sqlite.open("data/count.db");
+    let _ = try sqlite.exec(db, sqlite.sql("create table counter (n integer)"), new list[sqlite.Value]);
+    let _ = try sqlite.exec(db, sqlite.sql("insert into counter values (0)"), new list[sqlite.Value]);
+    let _ = try sqlite.exec(db, sqlite.sql("create table opens (id integer primary key)"), new list[sqlite.Value]);
     return serve_workers("PORT", 4, setup, handle);
 }
 """
@@ -466,7 +458,7 @@ def check_counter():
     return problems
 
 
-FRAGILE = HEAD + """import std.time.sleep;
+FRAGILE = HEAD + """import std.time;
 
 fn setup() -> result[int] uses file.read("data/") {
     match read_file("data/broken") {
@@ -481,7 +473,7 @@ fn setup() -> result[int] uses file.read("data/") {
 
 fn handle(n: int, r: Request) -> Response uses clock {
     if r.path == "/block" {
-        sleep(3000);
+        time.sleep(3000);
     }
     return new Response { status: 200, headers: new list[Header], body: r.path };
 }
@@ -601,7 +593,7 @@ def check_killed_replay():
     return problems
 
 
-TASKS = HEAD + """import std.time.sleep;
+TASKS = HEAD + """import std.time;
 
 fn setup() -> result[int] {
     return ok(300);
@@ -609,7 +601,7 @@ fn setup() -> result[int] {
 
 fn handle(ms: int, r: Request) -> Response uses console, clock, random {
     let parts = concurrent_map([1, 2, 3, 4], 4, fn(i: int) -> str {
-        sleep(ms);
+        time.sleep(ms);
         print("task " + str(i));
         return str(i * random_int(1, 1000));
     });

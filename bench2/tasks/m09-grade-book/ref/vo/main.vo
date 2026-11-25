@@ -1,15 +1,14 @@
-import gradebook.apply;
-import gradebook.new_book;
-import parsing.parse;
-import report.report;
+import gradebook;
+import parsing;
+import report;
 
 fn main() uses console, input {
-    let g = new_book();
+    let g = gradebook.new_book();
     let lines = split(read_all(), "\n");
     for i in 0..len(lines) {
-        match parse(lines[i]) {
+        match parsing.parse(lines[i]) {
             case ok(l) {
-                if l.kind != "blank" and not apply(g, l) {
+                if l.kind != "blank" and not gradebook.apply(g, l) {
                     print("invalid line " + str(i + 1));
                 }
             }
@@ -18,7 +17,7 @@ fn main() uses console, input {
             }
         }
     }
-    for s in report(g) {
+    for s in report.report(g) {
         print(s);
     }
 }

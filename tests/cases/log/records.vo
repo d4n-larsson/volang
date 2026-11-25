@@ -1,37 +1,31 @@
 # Spec 055 US1: a record is one JSON line: time (the test clock), level, message, then the fields in order;
 # numbers and booleans stay unquoted. Under vo test, logged() gives the records of the current test.
-import std.log.Field;
-import std.log.field;
-import std.log.log_debug;
-import std.log.log_error;
-import std.log.log_info;
-import std.log.log_warn;
-import std.log.logged;
+import std.log;
 
 test "a record per call, fields in order" uses log {
-    log_info("started", [field("port", 8080), field("name", "notes"), field("ok", true), field("ratio", 0.5)]);
-    expect_eq(logged(), [`{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"started","port":8080,"name":"notes","ok":true,"ratio":0.5}`]);
+    log.log_info("started", [log.field("port", 8080), log.field("name", "notes"), log.field("ok", true), log.field("ratio", 0.5)]);
+    expect_eq(log.logged(), [`{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"started","port":8080,"name":"notes","ok":true,"ratio":0.5}`]);
 }
 
 test "every level is kept in a test" uses log {
-    log_debug("d", [field("n", 1)]);
-    log_info("i", [field("n", 2)]);
-    log_warn("w", [field("n", 3)]);
-    log_error("e", [field("n", 4)]);
+    log.log_debug("d", [log.field("n", 1)]);
+    log.log_info("i", [log.field("n", 2)]);
+    log.log_warn("w", [log.field("n", 3)]);
+    log.log_error("e", [log.field("n", 4)]);
     let levels = new list[str];
-    for r in logged() {
+    for r in log.logged() {
         push(levels, slice(r, find(r, "level") + 8, find(r, "\",\"message")));
     }
     expect_eq(levels, ["debug", "info", "warn", "error"]);
 }
 
 test "each test starts with no records" uses log {
-    expect_eq(len(logged()), 0);
+    expect_eq(len(log.logged()), 0);
 }
 
 test "the stamp follows the test clock" uses log, clock {
     let t = now_ms() + now_ms() + now_ms();
-    log_info("later", new list[Field]);
+    log.log_info("later", new list[log.Field]);
     expect_eq(t, 3);
-    expect_eq(logged(), [`{"time":"1970-01-01T00:00:00.002Z","level":"info","message":"later"}`]);
+    expect_eq(log.logged(), [`{"time":"1970-01-01T00:00:00.002Z","level":"info","message":"later"}`]);
 }

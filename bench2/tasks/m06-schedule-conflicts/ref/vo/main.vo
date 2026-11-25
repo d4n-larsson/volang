@@ -1,18 +1,14 @@
-import freeslot.earliest;
-import parse.Meeting;
-import parse.Query;
-import parse.clock;
-import parse.parse;
-import schedule.conflicts;
-import schedule.room_minutes;
+import freeslot;
+import parse;
+import schedule;
 
 fn main() uses console, input {
     let lines = split(read_all(), "\n");
-    let meetings = new list[Meeting];
-    let queries = new list[Query];
+    let meetings = new list[parse.Meeting];
+    let queries = new list[parse.Query];
     let ids = new map[str, bool];
     for i in 0..len(lines) {
-        match parse(lines[i], i + 1) {
+        match parse.parse(lines[i], i + 1) {
             case ok(l) {
                 if l.kind == "meeting" {
                     if has(ids, l.meeting.id) {
@@ -30,21 +26,21 @@ fn main() uses console, input {
             }
         }
     }
-    let c = conflicts(meetings);
+    let c = schedule.conflicts(meetings);
     print("conflicts: " + str(len(c)));
     for s in c {
         print(s);
     }
     print("rooms:");
-    for s in room_minutes(meetings) {
+    for s in schedule.room_minutes(meetings) {
         print(s);
     }
     for q in queries {
-        let t = earliest(meetings, q);
+        let t = freeslot.earliest(meetings, q);
         if t < 0 {
             print("free line " + str(q.line) + ": none");
         } else {
-            print("free line " + str(q.line) + ": " + clock(t));
+            print("free line " + str(q.line) + ": " + parse.clock(t));
         }
     }
 }

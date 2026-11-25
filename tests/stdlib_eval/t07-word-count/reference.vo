@@ -1,4 +1,4 @@
-import std.text.words;
+import std.text;
 
 fn trim_punct(w: str) -> str {
     let cs = chars(w);
@@ -16,7 +16,7 @@ fn trim_punct(w: str) -> str {
 
 fn main() uses console, input {
     let counts = new map[str, int];
-    for raw in words(read_all()) {
+    for raw in text.words(read_all()) {
         let w = trim_punct(lower(raw));
         if w == "" {
             continue;

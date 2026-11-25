@@ -1,5 +1,5 @@
 # Spec 021 US5: a failing expect_eq on bytes names the first differing byte and shows hex from there.
-import std.bytes.from_ints;
+import std.bytes;
 
 fn make(n: int, at: int, v: int) -> bytes {
     var xs = new list[int];
@@ -7,7 +7,7 @@ fn make(n: int, at: int, v: int) -> bytes {
         push(xs, i % 200);
     }
     set xs[at] = v;
-    return from_ints(xs);
+    return bytes.from_ints(xs);
 }
 
 test "same" {
@@ -19,5 +19,5 @@ test "differ" {
 }
 
 test "shorter" {
-    expect_eq(from_ints([1, 2]), from_ints([1, 2, 3]));
+    expect_eq(bytes.from_ints([1, 2]), bytes.from_ints([1, 2, 3]));
 }

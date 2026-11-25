@@ -1,12 +1,9 @@
 # Spec 017 (US2): make_dir creates missing parents; an existing directory is fine.
-import std.fs.Entry;
-import std.fs.Info;
-import std.fs.list_dir;
-import std.fs.make_dir;
+import std.fs;
 
 # Prints every entry below dir, depth first, with its kind.
 fn tree(dir: str, indent: str) uses console, file.read("work/") {
-    match list_dir(dir) {
+    match fs.list_dir(dir) {
         case ok(entries) {
             for e in entries {
                 match e.info {
@@ -45,10 +42,10 @@ fn said(what: str, r: result[void]) uses console {
 }
 
 fn main() uses console, file.read("work/"), file.write("work/") {
-    said("make work/2026-11/reports", make_dir("work/2026-11/reports"));
-    said("again", make_dir("work/2026-11/reports/"));
-    said("make work", make_dir("work"));
-    said("a file in the way", make_dir("work/file.txt/sub"));
-    said("a file there", make_dir("work/file.txt"));
+    said("make work/2026-11/reports", fs.make_dir("work/2026-11/reports"));
+    said("again", fs.make_dir("work/2026-11/reports/"));
+    said("make work", fs.make_dir("work"));
+    said("a file in the way", fs.make_dir("work/file.txt/sub"));
+    said("a file there", fs.make_dir("work/file.txt"));
     tree("work", "");
 }

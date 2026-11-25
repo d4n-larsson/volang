@@ -1,10 +1,8 @@
 # Spec 055 US2: inside a field's value, at any depth, a secret-like member is redacted, and so is the value of
 # a {name, value} object (a header) with a secret-like name: Authorization, Cookie and Proxy-Authorization are
 # hidden, Accept is kept.
-import std.http.Header;
-import std.log.field;
-import std.log.log_info;
-import std.log.logged;
+import std.http;
+import std.log;
 
 record Login {
     user: str;
@@ -18,11 +16,11 @@ record Auth {
 
 test "headers and nested members" uses log {
     let headers = [
-        new Header { name: "Authorization", value: "Bearer abc" },
-        new Header { name: "Cookie", value: "sid=1" },
-        new Header { name: "Proxy-Authorization", value: "Basic xyz" },
-        new Header { name: "Accept", value: "application/json" }
+        new http.Header { name: "Authorization", value: "Bearer abc" },
+        new http.Header { name: "Cookie", value: "sid=1" },
+        new http.Header { name: "Proxy-Authorization", value: "Basic xyz" },
+        new http.Header { name: "Accept", value: "application/json" }
     ];
-    log_info("in", [field("headers", headers), field("login", new Login { user: "ada", auth: new Auth { token: "t-1", scheme: "bearer" } })]);
-    expect_eq(logged(), [`{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"in","headers":[{"name":"Authorization","value":"[redacted]"},{"name":"Cookie","value":"[redacted]"},{"name":"Proxy-Authorization","value":"[redacted]"},{"name":"Accept","value":"application/json"}],"login":{"user":"ada","auth":{"token":"[redacted]","scheme":"bearer"}}}`]);
+    log.log_info("in", [log.field("headers", headers), log.field("login", new Login { user: "ada", auth: new Auth { token: "t-1", scheme: "bearer" } })]);
+    expect_eq(log.logged(), [`{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"in","headers":[{"name":"Authorization","value":"[redacted]"},{"name":"Cookie","value":"[redacted]"},{"name":"Proxy-Authorization","value":"[redacted]"},{"name":"Accept","value":"application/json"}],"login":{"user":"ada","auth":{"token":"[redacted]","scheme":"bearer"}}}`]);
 }

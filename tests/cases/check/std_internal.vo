@@ -1,6 +1,12 @@
-import std.http.exchange;
-import std.json.parse_json;
-import std.time.floor_div;
+# A private item of a std module used through the module: E0209 naming the module, with no fix (the
+# library cannot be changed); a public item of the same module next to it checks.
+import std.http;
+import std.json;
+import std.time;
 
-fn main() {
+fn main() uses console {
+    let _ = http.exchange;
+    print(str(time.floor_div(7, 2)));
+    let j = json.parse_json("1");
+    print(str(j == ok(json.Json.integer(1))));
 }

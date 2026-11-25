@@ -1,14 +1,11 @@
 # Spec 026 (US1): a file database is created, filled and kept.
-import std.sqlite.open;
-import std.sqlite.sql;
-import std.sqlite.exec;
-import std.sqlite.Value;
+import std.sqlite;
 
 fn main() -> result[void] uses console, file.read("data/"), file.write("data/") {
-    let db = try open("data/inventory.db");
-    let _ = try exec(db, sql("create table items(name text primary key, qty integer not null)"), new list[Value]);
+    let db = try sqlite.open("data/inventory.db");
+    let _ = try sqlite.exec(db, sqlite.sql("create table items(name text primary key, qty integer not null)"), new list[sqlite.Value]);
     for item in [["bolt", "3"], ["nut", "40"], ["washer", "7"]] {
-        let c = try exec(db, sql("insert into items values (?, ?)"), [Value.text(item[0]), Value.integer(try parse_int(item[1]))]);
+        let c = try sqlite.exec(db, sqlite.sql("insert into items values (?, ?)"), [sqlite.Value.text(item[0]), sqlite.Value.integer(try parse_int(item[1]))]);
         print(item[0] + " " + str(c.changed) + " " + str(c.last_id));
     }
     return ok();

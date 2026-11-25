@@ -1,5 +1,5 @@
 # A test declares a set like any clause: it is that test's grant.
-import std.fs.make_dir;
+import std.fs;
 
 effects Storage = file.read("data/"), file.write("data/");
 
@@ -8,6 +8,6 @@ fn save(text: str) -> result[void] uses Storage {
 }
 
 test "saving in data/ works" uses Storage {
-    expect(make_dir("data") == ok());
+    expect(fs.make_dir("data") == ok());
     expect(save("x") == ok());
 }

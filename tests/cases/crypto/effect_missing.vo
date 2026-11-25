@@ -1,7 +1,7 @@
-import std.crypto.random_bytes;
+import std.crypto;
 
 fn token() -> int uses random {
-    return len(random_bytes(16));
+    return len(crypto.random_bytes(16));
 }
 
 fn main() uses console, random {

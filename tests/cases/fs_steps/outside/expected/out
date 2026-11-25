@@ -8,9 +8,9 @@ std/fs.vo:59:20: runtime error[R0010]: file.read("data/../") is not allowed: `li
 trace:
   at list_dir (std/fs.vo:59:20)
       path: str = "data/../"
-  at listing (main.vo:33:11)
+  at listing (main.vo:30:11)
       path: str = "data/../"
-  at main (main.vo:60:5)
+  at main (main.vo:57:5)
       up: str = "data/../"
 --- exit 70
 $ vo run abs.vo

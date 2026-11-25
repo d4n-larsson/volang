@@ -1,20 +1,18 @@
 # Spec 055 US2: a field whose name is secret-like (its words, split at _ - . and case changes, include
 # password, passwd, secret, token, key, authorization, cookie or session) is written "[redacted]"; author
 # (not authorization) and keyboard (the word is keyboard) are not secret-like.
-import std.log.field;
-import std.log.log_info;
-import std.log.logged;
+import std.log;
 
 test "secret-like names" uses log {
-    log_info("login", [
-        field("password", "hunter2"),
-        field("api_key", "k-123"),
-        field("reset_token", "t-456"),
-        field("sessionId", "s-789"),
-        field("Set-Cookie", "c=1"),
-        field("db.passwd", "p"),
-        field("author", "ada"),
-        field("keyboard", "qwerty")
+    log.log_info("login", [
+        log.field("password", "hunter2"),
+        log.field("api_key", "k-123"),
+        log.field("reset_token", "t-456"),
+        log.field("sessionId", "s-789"),
+        log.field("Set-Cookie", "c=1"),
+        log.field("db.passwd", "p"),
+        log.field("author", "ada"),
+        log.field("keyboard", "qwerty")
     ]);
-    expect_eq(logged(), [`{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"login","password":"[redacted]","api_key":"[redacted]","reset_token":"[redacted]","sessionId":"[redacted]","Set-Cookie":"[redacted]","db.passwd":"[redacted]","author":"ada","keyboard":"qwerty"}`]);
+    expect_eq(log.logged(), [`{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"login","password":"[redacted]","api_key":"[redacted]","reset_token":"[redacted]","sessionId":"[redacted]","Set-Cookie":"[redacted]","db.passwd":"[redacted]","author":"ada","keyboard":"qwerty"}`]);
 }

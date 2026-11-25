@@ -1,64 +1,42 @@
 # Signing in (std.security, story 2): HTTP Basic against the application's accounts, signed tokens,
 # the sign-in route, and the security events. Unknown name, wrong password and disabled account get
 # the same answer. No password, key or token appears in an event.
-import std.bytes.from_text;
-import std.bytes.to_base64;
-import std.crypto.password_outdated;
-import std.http.Request;
-import std.http.Response;
-import std.json.parse_json;
-import std.json.text_field;
-import std.option.Option;
-import std.security.Access;
-import std.security.Account;
-import std.security.Event;
-import std.security.Policy;
-import std.security.User;
-import std.security.basic;
-import std.security.check_token;
-import std.security.issue_token;
-import std.security.password_user;
-import std.security.rule;
-import std.security.secure;
-import std.security.sign_in_route;
-import std.security.tokens;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.NoInput;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.request;
-import std.web.with_header;
+import std.bytes;
+import std.crypto;
+import std.http;
+import std.json;
+import std.option;
+import std.security;
+import std.web;
 
 const weak = "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=";
 const strong = "pbkdf2-sha256$600000$UzaawpluQd/9+wjqxK7k5g==$T77DFP1a//H/wGSMrDAzacBRzngTQcTM4Nma4jsUNWw=";
 
-fn find_account(n: int, name: str) -> result[Option[Account]] {
+fn find_account(n: int, name: str) -> result[option.Option[security.Account]] {
     if name == "ada" {
-        return ok(Option.some(new Account { name: "ada", password_hash: weak, roles: ["admin"], enabled: true }));
+        return ok(option.Option.some(new security.Account { name: "ada", password_hash: weak, roles: ["admin"], enabled: true }));
     }
     if name == "old" {
-        return ok(Option.some(new Account { name: "old", password_hash: weak, roles: new list[str], enabled: false }));
+        return ok(option.Option.some(new security.Account { name: "old", password_hash: weak, roles: new list[str], enabled: false }));
     }
     if name == "col" {
-        return ok(Option.some(new Account { name: "col", password_hash: strong, roles: new list[str], enabled: true }));
+        return ok(option.Option.some(new security.Account { name: "col", password_hash: strong, roles: new list[str], enabled: true }));
     }
     if name == "boom" {
         return err("the database is down");
     }
-    return ok(Option.none);
+    return ok(option.Option.none);
 }
 
 fn key() -> bytes {
-    return from_text("0123456789abcdef0123456789abcdef");
+    return bytes.from_text("0123456789abcdef0123456789abcdef");
 }
 
 fn old_key() -> bytes {
-    return from_text("fedcba9876543210fedcba9876543210");
+    return bytes.from_text("fedcba9876543210fedcba9876543210");
 }
 
-fn log(n: int, e: Event) uses console {
+fn log(n: int, e: security.Event) uses console {
     print(format("  event {} [{}] name={} {} {} at {}", e.kind, e.reason, e.name, e.method, e.path, e.at_ms));
 }
 
@@ -68,34 +46,34 @@ record Caller {
     identity: str;
 }
 
-fn whoami(n: int, input: Caller) -> result[Response] {
-    return ok(json_reply(200, input.identity));
+fn whoami(n: int, input: Caller) -> result[http.Response] {
+    return ok(web.json_reply(200, input.identity));
 }
 
-fn ran(n: int, input: NoInput) -> result[Response] {
-    return ok(json_reply(200, "ran"));
+fn ran(n: int, input: web.NoInput) -> result[http.Response] {
+    return ok(web.json_reply(200, "ran"));
 }
 
-fn the_policy(now_ms_value: int) -> Policy[int, uses console] {
-    return new Policy {
-        rules: [rule("/sign-in", Access.anyone), rule("/open", Access.anyone), rule("/", Access.signed_in)],
-        ways: [basic(find_account), tokens([key(), old_key()])],
+fn the_policy(now_ms_value: int) -> security.Policy[int, uses console] {
+    return new security.Policy {
+        rules: [security.rule("/sign-in", security.Access.anyone), security.rule("/open", security.Access.anyone), security.rule("/", security.Access.signed_in)],
+        ways: [security.basic(find_account), security.tokens([key(), old_key()])],
         now: fn() -> int { return now_ms_value; },
         on_event: log
     };
 }
 
-fn app(now_ms_value: int) -> App[int, uses console] {
+fn app(now_ms_value: int) -> web.App[int, uses console] {
     let p = the_policy(now_ms_value);
-    return new App {
-        routes: [on_get("/me", whoami), on_get("/open", ran), sign_in_route("/sign-in", p, find_account, key(), 600)],
-        steps: [secure(p)],
-        errors: new list[ErrorStatus]
+    return new web.App {
+        routes: [web.on_get("/me", whoami), web.on_get("/open", ran), security.sign_in_route("/sign-in", p, find_account, key(), 600)],
+        steps: [security.secure(p)],
+        errors: new list[web.ErrorStatus]
     };
 }
 
-fn show(label: str, a: App[int, uses console], r: Request) -> str uses console {
-    let resp = handle_request(a, 0, r);
+fn show(label: str, a: web.App[int, uses console], r: http.Request) -> str uses console {
+    let resp = web.handle_request(a, 0, r);
     var hs = "";
     for h in resp.headers {
         if h.name != "Content-Type" {
@@ -106,18 +84,18 @@ fn show(label: str, a: App[int, uses console], r: Request) -> str uses console {
     return resp.body;
 }
 
-fn with_basic(r: Request, pair: str) -> Request {
-    return with_header(r, "Authorization", "Basic " + to_base64(from_text(pair)));
+fn with_basic(r: http.Request, pair: str) -> http.Request {
+    return web.with_header(r, "Authorization", "Basic " + bytes.to_base64(bytes.from_text(pair)));
 }
 
-fn with_token(r: Request, token: str) -> Request {
-    return with_header(r, "Authorization", "Bearer " + token);
+fn with_token(r: http.Request, token: str) -> http.Request {
+    return web.with_header(r, "Authorization", "Bearer " + token);
 }
 
 fn token_of(body: str) -> str {
-    match parse_json(body) {
+    match json.parse_json(body) {
         case ok(j) {
-            match text_field(j, "token") {
+            match json.text_field(j, "token") {
                 case ok(t) {
                     return t;
                 }
@@ -133,7 +111,7 @@ fn token_of(body: str) -> str {
 
 fn main() uses console {
     let a = app(1000000);
-    let me = request("GET", "/me", "");
+    let me = web.request("GET", "/me", "");
     let _ = show("nobody", a, me);
     let _ = show("basic", a, with_basic(me, "ada:passwd"));
     let wrong = show("basic, wrong password", a, with_basic(me, "ada:nope"));
@@ -141,41 +119,41 @@ fn main() uses console {
     let disabled = show("basic, disabled", a, with_basic(me, "old:passwd"));
     print(format("the three answers are the same: {}", wrong == unknown and unknown == disabled));
     let _ = show("basic, a password with a colon", a, with_basic(me, "col:pa:ss"));
-    let _ = show("basic, lower-case scheme", a, with_header(me, "Authorization", "basic " + to_base64(from_text("ada:passwd"))));
-    let _ = show("basic, not base64", a, with_header(me, "Authorization", "Basic !!!"));
+    let _ = show("basic, lower-case scheme", a, web.with_header(me, "Authorization", "basic " + bytes.to_base64(bytes.from_text("ada:passwd"))));
+    let _ = show("basic, not base64", a, web.with_header(me, "Authorization", "Basic !!!"));
     let _ = show("basic, no colon", a, with_basic(me, "ada"));
     let _ = show("basic, empty name", a, with_basic(me, ":passwd"));
-    let _ = show("basic, wrong on the open route", a, with_basic(request("GET", "/open", ""), "ada:nope"));
+    let _ = show("basic, wrong on the open route", a, with_basic(web.request("GET", "/open", ""), "ada:nope"));
     let _ = show("basic, the lookup fails", a, with_basic(me, "boom:x"));
-    let _ = show("only the scheme", a, with_header(me, "Authorization", "Bearer "));
+    let _ = show("only the scheme", a, web.with_header(me, "Authorization", "Bearer "));
 
-    let token = token_of(show("sign in", a, request("POST", "/sign-in", "{\"name\":\"ada\",\"password\":\"passwd\"}")));
-    let _ = show("sign in, wrong password", a, request("POST", "/sign-in", "{\"name\":\"ada\",\"password\":\"nope\"}"));
-    let _ = show("sign in, disabled", a, request("POST", "/sign-in", "{\"name\":\"old\",\"password\":\"passwd\"}"));
-    let _ = show("sign in, unknown name", a, request("POST", "/sign-in", "{\"name\":\"eve\",\"password\":\"passwd\"}"));
-    let _ = show("sign in, no password", a, request("POST", "/sign-in", "{\"name\":\"ada\"}"));
-    let _ = show("sign in, not JSON", a, request("POST", "/sign-in", "ada"));
-    let _ = show("sign in, the lookup fails", a, request("POST", "/sign-in", "{\"name\":\"boom\",\"password\":\"x\"}"));
-    let _ = show("sign in with an expired token along", app(1600000), with_token(request("POST", "/sign-in", "{\"name\":\"ada\",\"password\":\"passwd\"}"), token));
+    let token = token_of(show("sign in", a, web.request("POST", "/sign-in", "{\"name\":\"ada\",\"password\":\"passwd\"}")));
+    let _ = show("sign in, wrong password", a, web.request("POST", "/sign-in", "{\"name\":\"ada\",\"password\":\"nope\"}"));
+    let _ = show("sign in, disabled", a, web.request("POST", "/sign-in", "{\"name\":\"old\",\"password\":\"passwd\"}"));
+    let _ = show("sign in, unknown name", a, web.request("POST", "/sign-in", "{\"name\":\"eve\",\"password\":\"passwd\"}"));
+    let _ = show("sign in, no password", a, web.request("POST", "/sign-in", "{\"name\":\"ada\"}"));
+    let _ = show("sign in, not JSON", a, web.request("POST", "/sign-in", "ada"));
+    let _ = show("sign in, the lookup fails", a, web.request("POST", "/sign-in", "{\"name\":\"boom\",\"password\":\"x\"}"));
+    let _ = show("sign in with an expired token along", app(1600000), with_token(web.request("POST", "/sign-in", "{\"name\":\"ada\",\"password\":\"passwd\"}"), token));
 
     let _ = show("token", a, with_token(me, token));
     let _ = show("token, one second before expiry", app(1599999), with_token(me, token));
     let _ = show("token, at expiry", app(1600000), with_token(me, token));
     let _ = show("token, damaged", a, with_token(me, token + "A"));
     let _ = show("token, not a token", a, with_token(me, "abc"));
-    let user = new User { name: "bo", roles: ["user"] };
-    match issue_token(old_key(), user, 1000000, 60) {
+    let user = new security.User { name: "bo", roles: ["user"] };
+    match security.issue_token(old_key(), user, 1000000, 60) {
         case ok(t) {
             let _ = show("token of the old key", a, with_token(me, t));
-            print(format("another key refuses it: {}", check_token([key()], 1000000, t) == err("unauthorized: signature")));
-            print(format("check_token: {}", check_token([old_key()], 1000000, t) == ok(user)));
+            print(format("another key refuses it: {}", security.check_token([key()], 1000000, t) == err("unauthorized: signature")));
+            print(format("check_token: {}", security.check_token([old_key()], 1000000, t) == ok(user)));
         }
         case err(e) {
             print(e);
         }
     }
-    print(format("password_user: {}", password_user(0, find_account, "ada", "passwd") == ok(new User { name: "ada", roles: ["admin"] })));
-    print(format("password_user, wrong: {}", password_user(0, find_account, "ada", "nope") == err("unauthorized: invalid credentials")));
-    print(format("password_user, the lookup fails: {}", password_user(0, find_account, "boom", "x") == err("the database is down")));
-    print(format("outdated: weak {}, strong {}, not a hash {}", password_outdated(weak), password_outdated(strong), password_outdated("x")));
+    print(format("password_user: {}", security.password_user(0, find_account, "ada", "passwd") == ok(new security.User { name: "ada", roles: ["admin"] })));
+    print(format("password_user, wrong: {}", security.password_user(0, find_account, "ada", "nope") == err("unauthorized: invalid credentials")));
+    print(format("password_user, the lookup fails: {}", security.password_user(0, find_account, "boom", "x") == err("the database is down")));
+    print(format("outdated: weak {}, strong {}, not a hash {}", crypto.password_outdated(weak), crypto.password_outdated(strong), crypto.password_outdated("x")));
 }

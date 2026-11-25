@@ -1,5 +1,4 @@
-import units.is_unit;
-import units.format_qty;
+import units;
 
 export record Ingredient {
     item: str;
@@ -15,7 +14,7 @@ export record Recipe {
 
 export fn add_recipe(recipes: map[str, Recipe], name: str, servings: int, ingredients: list[Ingredient]) -> str {
     for ing in ingredients {
-        if not is_unit(ing.unit) {
+        if not units.is_unit(ing.unit) {
             return "error: bad unit " + ing.unit;
         }
     }
@@ -34,7 +33,7 @@ export fn add_recipe(recipes: map[str, Recipe], name: str, servings: int, ingred
 }
 
 export fn ingredient_line(item: str, qty: int, unit: str) -> str {
-    return "  " + item + " " + format_qty(qty, unit);
+    return "  " + item + " " + units.format_qty(qty, unit);
 }
 
 export fn show_lines(recipe: Recipe) -> list[str] {

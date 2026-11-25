@@ -5,7 +5,7 @@ Default: for every entry in tests/migrate/v1/MANIFEST (the frozen v1 corpus), co
 require that only migration diagnostics appear (E0501, W0402 since spec 009, plus W0504 for multi-file
 programs) besides
 those v1 already reported, apply
-the first fix of every diagnostic (up to three rounds, spec 056), then require a clean check, canonical formatting
+the first fix of every diagnostic (up to four rounds, specs 056 and 058), then require a clean check, canonical formatting
 (`fmt --check`, for files v1 already accepted as canonical), and byte-identical stdout and exit status against the recorded v1 run.
 
 --write PATH...: apply the first fix of every E0501 once to the given files in place (used to
@@ -28,6 +28,8 @@ MIGRATION = {"E0501", "W0504", "W0402"}  # spec 009: `case ok` / `case ok(_)` on
 MIGRATION |= {"W0602", "W0603"}
 # spec 056: a library change (E0214), a local named like a builtin (E0203), each with a fix
 MIGRATION |= {"E0214", "E0203", "E0105"}  # E0105: a number's spelling (`007`, `1E9`)
+# spec 058: the 0.3 form of an import (E0215), rewritten in a round of its own
+MIGRATION |= {"E0215"}
 # Intended behavior changes since v1, with the spec that made them: (stdout, exit status) expected now.
 CHANGED = {
     "run-oom_small/oom_small.vo": (b"58888890\n", 0),  # spec 003: memory is reclaimed, so it finishes
@@ -146,14 +148,14 @@ def verify():
             if other:
                 problems.append(f"{rel}: non-migration diagnostics {other}")
                 continue
-            for _ in range(3):  # spec 056: a fix can reveal the next one (a renamed item, then its new type)
+            for _ in range(4):  # spec 056: a fix can reveal the next one (a renamed item, then its new type); 058: E0215
                 apply_first_fixes(entry, diags)
                 diags = diagnostics(entry)
                 after = [d for d in diags if d["severity"] == "error" and d["code"] not in NOW_CHECKED.get(rel, set())]
                 if not after:
                     break
             if after:
-                problems.append(f"{rel}: still {len(after)} error(s) after three rounds: "
+                problems.append(f"{rel}: still {len(after)} error(s) after four rounds: "
                                 f"{[d['code'] + ' ' + d['message'] for d in after][:3]}")
                 continue
             files = [os.path.join(d, n) for d, _, ns in os.walk(os.path.dirname(entry)) for n in ns

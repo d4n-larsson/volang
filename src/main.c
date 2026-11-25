@@ -375,7 +375,7 @@ int vo_main(long argc, char **argv, char **env)
     case CMD_VERSION: { /* spec 048: and the release of the embedded tz database */
         char tz[32];
         tz_version(tz);
-        out_cstr(1, opt_json ? "{\"v\":1,\"kind\":\"version\",\"version\":\"0.3.0\",\"schema\":1,\"tzdata\":\""
+        out_cstr(1, opt_json ? "{\"v\":1,\"kind\":\"version\",\"version\":\"0.4.0\",\"schema\":1,\"tzdata\":\""
                              : (char *)vo_version_text);
         if (!opt_json) out_cstr(1, "tzdata ");
         out_cstr(1, tz);

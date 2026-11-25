@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0201","name":"undefined_name","severity":"error","file":"module_value.vo","start":{"line":5,"col":13},"end":{"line":5,"col":17},"text":"json","message":"`json` is a module: use one of its items, `json.NAME`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -1,20 +1,18 @@
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
+import std.http;
 
-fn handle(r: Request) -> Response {
+fn handle(r: http.Request) -> http.Response {
     if r.method == "GET" and r.path == "/hello" {
-        return new Response { status: 200, headers: new list[Header], body: "hello " + r.query };
+        return new http.Response { status: 200, headers: new list[http.Header], body: "hello " + r.query };
     }
-    return new Response { status: 404, headers: new list[Header], body: "" };
+    return new http.Response { status: 404, headers: new list[http.Header], body: "" };
 }
 
-fn get(path: str, query: str) -> Request {
-    return new Request { method: "GET", path: path, query: query, headers: new list[Header], body: "" };
+fn get(path: str, query: str) -> http.Request {
+    return new http.Request { method: "GET", path: path, query: query, headers: new list[http.Header], body: "" };
 }
 
 test "hello answers 200 with the query" {
-    expect_eq(handle(get("/hello", "x=1")), new Response { status: 200, headers: new list[Header], body: "hello x=1" });
+    expect_eq(handle(get("/hello", "x=1")), new http.Response { status: 200, headers: new list[http.Header], body: "hello x=1" });
 }
 
 test "other paths are 404" {

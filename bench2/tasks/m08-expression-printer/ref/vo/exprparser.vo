@@ -1,4 +1,4 @@
-import lexer.Token;
+import lexer;
 
 export variant Expr {
     num(str);
@@ -14,7 +14,7 @@ export record Bin {
 }
 
 record Parser {
-    toks: list[Token];
+    toks: list[lexer.Token];
     pos: int;
 }
 
@@ -92,7 +92,7 @@ fn atom(p: Parser) -> result[Expr] {
     return err("syntax");
 }
 
-export fn parse_line(toks: list[Token]) -> result[Statement] {
+export fn parse_line(toks: list[lexer.Token]) -> result[Statement] {
     var name = "";
     var rest = toks;
     if len(toks) >= 2 and toks[0].kind == "name" and toks[1].kind == "op" and toks[1].text == "=" {

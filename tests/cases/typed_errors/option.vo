@@ -1,20 +1,17 @@
 # std.option: absence is a value, matched like any variant, and turned into a typed error when needed.
-import std.option.Option;
-import std.option.is_some;
-import std.option.or_else;
-import std.option.to_result;
+import std.option;
 
 variant LoadError {
     missing(int);
 }
 
-fn lookup(ids: list[int], id: int) -> Option[int] {
+fn lookup(ids: list[int], id: int) -> option.Option[int] {
     for x in ids {
         if x == id {
-            return Option.some(x * 10);
+            return option.Option.some(x * 10);
         }
     }
-    return Option.none;
+    return option.Option.none;
 }
 
 fn main() uses console {
@@ -27,6 +24,6 @@ fn main() uses console {
             print("none");
         }
     }
-    print(str(or_else(lookup(ids, 9), -1)) + " " + str(is_some(lookup(ids, 3))));
-    print(str(to_result(lookup(ids, 9), LoadError.missing(9)) == err(LoadError.missing(9))));
+    print(str(option.or_else(lookup(ids, 9), -1)) + " " + str(option.is_some(lookup(ids, 3))));
+    print(str(option.to_result(lookup(ids, 9), LoadError.missing(9)) == err(LoadError.missing(9))));
 }

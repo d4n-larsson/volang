@@ -1,10 +1,7 @@
 # Spec 017 (US1): links have the kind of their target inside the scope, otherwise other.
-import std.fs.Entry;
-import std.fs.Info;
-import std.fs.info;
-import std.fs.list_dir;
+import std.fs;
 
-fn kind(i: Info) -> str {
+fn kind(i: fs.Info) -> str {
     match i {
         case missing {
             return "missing";
@@ -21,7 +18,7 @@ fn kind(i: Info) -> str {
     }
 }
 
-fn show(e: Entry) uses console {
+fn show(e: fs.Entry) uses console {
     var link = "";
     if e.link {
         set link = " (link)";
@@ -30,7 +27,7 @@ fn show(e: Entry) uses console {
 }
 
 fn listing(path: str) uses console, file.read("data/") {
-    match list_dir(path) {
+    match fs.list_dir(path) {
         case ok(entries) {
             print(path + ":");
             for e in entries {
@@ -44,7 +41,7 @@ fn listing(path: str) uses console, file.read("data/") {
 }
 
 fn look(path: str) uses console, file.read("data/") {
-    match info(path) {
+    match fs.info(path) {
         case ok(i) {
             print(path + " is " + kind(i));
         }

@@ -1,0 +1,22 @@
+# Items of every kind, used from main.vo through `import geometry;`.
+export record Point {
+    x: int;
+    y: int;
+}
+
+export variant Shape {
+    circle(float);
+    empty;
+}
+
+export const data_dir = "data/";
+
+export effects Area = file.read("data/");
+
+export fn dist2(p: Point) -> int {
+    return p.x * p.x + p.y * p.y;
+}
+
+export fn twice(x: int) -> int {
+    return x * 2;
+}

@@ -1,22 +1,9 @@
 # Routes from a table (spec 029 US1): each request reaches its operation with its path variables;
 # 404 for an unknown path, 405 with Allow for another method, a literal beats a variable, a malformed
 # number in a path is 400 naming the variable.
-import std.http.Request;
-import std.http.Response;
-import std.http.response_header;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.NoInput;
-import std.web.Route;
-import std.web.Step;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.no_content;
-import std.web.on_delete;
-import std.web.on_get;
-import std.web.on_post;
-import std.web.request;
-import std.option.to_result;
+import std.http;
+import std.option;
+import std.web;
 
 record Shop {
     name: str;
@@ -31,38 +18,38 @@ record Pair {
     slot: int;
 }
 
-fn list_notes(shop: Shop, input: NoInput) -> result[Response] {
-    return ok(json_reply(200, [shop.name, "notes"]));
+fn list_notes(shop: Shop, input: web.NoInput) -> result[http.Response] {
+    return ok(web.json_reply(200, [shop.name, "notes"]));
 }
 
-fn add_note(shop: Shop, input: NoInput) -> result[Response] {
-    return ok(no_content());
+fn add_note(shop: Shop, input: web.NoInput) -> result[http.Response] {
+    return ok(web.no_content());
 }
 
-fn show_note(shop: Shop, input: NoteId) -> result[Response] {
-    return ok(json_reply(200, input.id * 10));
+fn show_note(shop: Shop, input: NoteId) -> result[http.Response] {
+    return ok(web.json_reply(200, input.id * 10));
 }
 
-fn latest(shop: Shop, input: NoInput) -> result[Response] {
-    return ok(json_reply(200, "latest"));
+fn latest(shop: Shop, input: web.NoInput) -> result[http.Response] {
+    return ok(web.json_reply(200, "latest"));
 }
 
-fn remove_note(shop: Shop, input: NoteId) -> result[Response] {
-    return ok(no_content());
+fn remove_note(shop: Shop, input: NoteId) -> result[http.Response] {
+    return ok(web.no_content());
 }
 
-fn slot(shop: Shop, input: Pair) -> result[Response] {
-    return ok(json_reply(200, input.shelf + "/" + str(input.slot)));
+fn slot(shop: Shop, input: Pair) -> result[http.Response] {
+    return ok(web.json_reply(200, input.shelf + "/" + str(input.slot)));
 }
 
-fn routes() -> list[Route[Shop]] {
-    return [on_get("/notes", list_notes), on_post("/notes", add_note), on_get("/notes/{id}", show_note), on_get("/notes/latest", latest), on_delete("/notes/{id}", remove_note), on_get("/shelves/{shelf}/slots/{slot}", slot)];
+fn routes() -> list[web.Route[Shop]] {
+    return [web.on_get("/notes", list_notes), web.on_post("/notes", add_note), web.on_get("/notes/{id}", show_note), web.on_get("/notes/latest", latest), web.on_delete("/notes/{id}", remove_note), web.on_get("/shelves/{shelf}/slots/{slot}", slot)];
 }
 
-fn show(app: App[Shop], method: str, path: str) uses console {
-    let r = handle_request(app, new Shop { name: "corner" }, request(method, path, ""));
+fn show(app: web.App[Shop], method: str, path: str) uses console {
+    let r = web.handle_request(app, new Shop { name: "corner" }, web.request(method, path, ""));
     var allow = "";
-    match to_result(response_header(r, "Allow"), "no header `" + "Allow" + "`") {
+    match option.to_result(http.response_header(r, "Allow"), "no header `" + "Allow" + "`") {
         case ok(a) {
             set allow = " Allow: " + a;
         }
@@ -73,7 +60,7 @@ fn show(app: App[Shop], method: str, path: str) uses console {
 }
 
 fn main() uses console {
-    let app = new App { routes: routes(), steps: new list[Step[Shop]], errors: new list[ErrorStatus] };
+    let app = new web.App { routes: routes(), steps: new list[web.Step[Shop]], errors: new list[web.ErrorStatus] };
     show(app, "GET", "/notes");
     show(app, "POST", "/notes");
     show(app, "GET", "/notes/7");

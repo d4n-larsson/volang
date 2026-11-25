@@ -42,7 +42,7 @@ CASE = """fn main() uses console {
 }
 """
 
-LOOP = """import std.fs.each_line;
+LOOP = """import std.fs;
 
 record Seen {
     lines: int;
@@ -63,7 +63,7 @@ fn same(s: str) -> bool {
 
 fn main() uses console, file.read("./") {
     let seen = new Seen { lines: 0, bad: 0 };
-    let done = each_line("texts.txt", fn(line: str) -> result[bool] {
+    let done = fs.each_line("texts.txt", fn(line: str) -> result[bool] {
         set seen.lines = seen.lines + 1;
         if not same(line) {
             set seen.bad = seen.bad + 1;

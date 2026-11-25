@@ -140,7 +140,11 @@ void ed_rename(char *target, char *new_name)
         ed_refuse_arg("`$1` cannot be a new name: it must be a name that is not a keyword or a builtin.", name);
     for (long i = 0; i < refs->n; i++) { /* a change at every reference (each node spans the name) */
         Node *n = ((RefLog *)vec_get(refs, i))->node;
-        ed_add(n->file, n->start, n->end, name);
+        long start = n->start; /* spec 058: `notes.add`: the item part only */
+        char *text = file_get((int)n->file)->text;
+        for (long k = n->start; k < (long)n->end; k++)
+            if (text[k] == '.') start = k + 1;
+        ed_add(n->file, start, n->end, name);
     }
     if (is_fn) ed_effects_line(item, old, name); /* a function's line in vo.effects */
     ed_summary = msg("renamed `$1` to `$2`", old, name, 0);

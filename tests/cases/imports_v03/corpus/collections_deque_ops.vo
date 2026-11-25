@@ -1,0 +1,47 @@
+import std.collections.back;
+import std.collections.copy_deque;
+import std.collections.front;
+import std.collections.pop_front;
+import std.collections.push_front;
+import std.option.to_result;
+
+fn show(r: result[int]) -> str {
+    match r {
+        case ok(x) {
+            return str(x);
+        }
+        case err(e) {
+            return "err(" + e + ")";
+        }
+    }
+}
+
+fn text(d: deque[int]) -> str {
+    var out = new list[str];
+    for x in d {
+        push(out, str(x));
+    }
+    return join(out, " ");
+}
+
+# Spec 014 US3: both ends, positions, growth past the first buffer, empty results, copies.
+fn main() uses console {
+    let d = new deque[int];
+    print("empty: " + show(pop(d)) + " " + show(pop_front(d)) + " " + show(to_result(front(d), "empty")) + " " + show(to_result(back(d), "empty")));
+    push(d, 1);
+    push(d, 2);
+    push_front(d, 0);
+    print(text(d) + "; d[0] " + str(d[0]) + ", d[2] " + str(d[2]) + ", front " + show(to_result(front(d), "empty")) + ", back " + show(to_result(back(d), "empty")));
+    set d[1] = 10;
+    for i in 0..20 {
+        push_front(d, 100 + i);
+        push(d, 200 + i);
+    }
+    print("len " + str(len(d)) + ", front " + show(to_result(front(d), "empty")) + ", back " + show(to_result(back(d), "empty")) + ", d[20] " + str(d[20]) + ", d[21] " + str(d[21]));
+    let c = copy_deque(d);
+    var popped = new list[str];
+    for i in 0..3 {
+        push(popped, show(pop_front(d)) + "/" + show(pop(d)));
+    }
+    print(join(popped, " ") + "; len " + str(len(d)) + ", copy len " + str(len(c)) + ", " + str(c == copy_deque(c)));
+}

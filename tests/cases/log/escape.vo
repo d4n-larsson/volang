@@ -1,20 +1,17 @@
 # Spec 055 US1: a value with quotes, backslashes, line breaks, a control byte and non-ASCII text is written as
 # one line of valid JSON that reads back as the same text.
-import std.json.parse_json;
-import std.json.text_field;
-import std.log.field;
-import std.log.log_info;
-import std.log.logged;
+import std.json;
+import std.log;
 
 test "one line of valid JSON" uses log {
     let v = "say \"hi\" \\ then\nnext\tline " + chr(1) + " é ✓";
-    log_info("odd \"text\"\n", [field("v", v)]);
-    let r = logged()[0];
+    log.log_info("odd \"text\"\n", [log.field("v", v)]);
+    let r = log.logged()[0];
     expect_eq(find(r, "\n"), -1);
-    match parse_json(r) {
+    match json.parse_json(r) {
         case ok(j) {
-            expect_eq(text_field(j, "v"), ok(v));
-            expect_eq(text_field(j, "message"), ok("odd \"text\"\n"));
+            expect_eq(json.text_field(j, "v"), ok(v));
+            expect_eq(json.text_field(j, "message"), ok("odd \"text\"\n"));
         }
         case err(e) {
             expect_eq(e, "");

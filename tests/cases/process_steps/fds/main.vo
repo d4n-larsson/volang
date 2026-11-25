@@ -1,9 +1,7 @@
 # Spec 017 (US3): no descriptor of the vo program reaches the child, also from a task.
-import std.process.Output;
-import std.process.run;
-import std.process.run_with;
+import std.process;
 
-fn show(what: str, r: result[Output]) uses console {
+fn show(what: str, r: result[process.Output]) uses console {
     match r {
         case ok(out) {
             print(what + ": code " + str(out.code));
@@ -19,7 +17,7 @@ fn show(what: str, r: result[Output]) uses console {
 }
 
 fn fds(n: int) -> str uses process("bin/fds") {
-    match run("bin/fds", new list[str]) {
+    match process.run("bin/fds", new list[str]) {
         case ok(out) {
             return "task " + str(n) + ": [" + out.stdout + "]";
         }
@@ -30,7 +28,7 @@ fn fds(n: int) -> str uses process("bin/fds") {
 }
 
 fn main() uses console, process("bin/fds") {
-    show("main", run("bin/fds", new list[str]));
+    show("main", process.run("bin/fds", new list[str]));
     for line in concurrent_map([1, 2], 2, fds) {
         print(line);
     }

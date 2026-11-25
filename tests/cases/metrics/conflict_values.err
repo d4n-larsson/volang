@@ -1,7 +1,7 @@
-conflict_values.vo:6:5: runtime error[R0016]: The metric `jobs_total` takes one value for each of its labels.
-   6 |     add_to(counter("jobs_total", "Jobs.", ["queue"]), ["mail", "extra"], 1);
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+conflict_values.vo:5:5: runtime error[R0016]: The metric `jobs_total` takes one value for each of its labels.
+   5 |     metrics.add_to(metrics.counter("jobs_total", "Jobs.", ["queue"]), ["mail", "extra"], 1);
+     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at add_to (conflict_values.vo:6:5)
+  at add_to (conflict_values.vo:5:5)
       m: Metric = new Metric { name: "jobs_total", help: "Jobs.", kind: "counter", labels: ["queue"], buckets: [] }, values: list[str] = ["mail", "extra"], n: int = 1
-  at main (conflict_values.vo:6:5)
+  at main (conflict_values.vo:5:5)

@@ -1,5 +1,5 @@
 # A copy in another file of the program is reported too; "first" is program order (imported files first).
-import prices.cost;
+import prices;
 
 fn price(base: int) -> int {
     let tax = base * 25 / 100;
@@ -13,5 +13,5 @@ fn price(base: int) -> int {
 }
 
 fn main() uses console {
-    print(str(price(100) + cost(100)));
+    print(str(price(100) + prices.cost(100)));
 }

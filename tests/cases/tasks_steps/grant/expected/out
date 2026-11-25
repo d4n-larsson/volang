@@ -1,14 +1,14 @@
 $ vo run main.vo -- {port}
 --- stderr
-std/http.vo:174:12: runtime error[R0010]: net("example.com") is not allowed: `fetch` declares net("127.0.0.1").
- 174 |     return __http_exchange(u.host, u.port, request);
+std/http.vo:166:12: runtime error[R0010]: net("example.com") is not allowed: `fetch` declares net("127.0.0.1").
+ 166 |     return __http_exchange(u.host, u.port, request);
      |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
-  at exchange_raw (std/http.vo:174:12)
+  at exchange_raw (std/http.vo:166:12)
       method: str = "GET", url: str = "http://example.com/", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, u: Url = new Url { tls: false, host: "example.com", port: 80, target: "/" }, request: str = "GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\nUser-Agent: vo\r\n\r\n"
-  at exchange (std/http.vo:121:19)
+  at exchange (std/http.vo:113:19)
       method: str = "GET", url: str = "http://example.com/", headers: list[Header] = [], body: str = "", timeout_ms: int = 0, hint: str = "get_bytes"
-  at get (std/http.vo:295:12)
+  at get (std/http.vo:287:12)
       url: str = "http://example.com/"
   at fetch (main.vo:5:11)
       url: str = "http://example.com/"
@@ -17,5 +17,5 @@ trace:
 --- exit 70
 $ vo run --json main.vo -- {port}
 --- stderr
-{"v":1,"kind":"runtime_error","code":"R0010","name":"capability_denied","message":"net(\"example.com\") is not allowed: `fetch` declares net(\"127.0.0.1\").","file":"std/http.vo","start":{"line":174,"col":12},"end":{"line":174,"col":52},"effect":"net","target":"example.com","allowed":["127.0.0.1"],"declared_by":"fetch","trace":[{"function":"exchange_raw","file":"std/http.vo","start":{"line":174,"col":12},"locals":[{"name":"method","type":"str","value":"\"GET\""},{"name":"url","type":"str","value":"\"http://example.com/\""},{"name":"headers","type":"list[Header]","value":"[]"},{"name":"body","type":"str","value":"\"\""},{"name":"timeout_ms","type":"int","value":"0"},{"name":"u","type":"Url","value":"new Url { tls: false, host: \"example.com\", port: 80, target: \"/\" }"},{"name":"request","type":"str","value":"\"GET / HTTP/1.1\\r\\nHost: example.com\\r\\nConnection: close\\r\\nUser-Agent: vo\\r\\n\\r\\n\""}]},{"function":"exchange","file":"std/http.vo","start":{"line":121,"col":19},"locals":[{"name":"method","type":"str","value":"\"GET\""},{"name":"url","type":"str","value":"\"http://example.com/\""},{"name":"headers","type":"list[Header]","value":"[]"},{"name":"body","type":"str","value":"\"\""},{"name":"timeout_ms","type":"int","value":"0"},{"name":"hint","type":"str","value":"\"get_bytes\""}]},{"function":"get","file":"std/http.vo","start":{"line":295,"col":12},"locals":[{"name":"url","type":"str","value":"\"http://example.com/\""}]},{"function":"fetch","file":"main.vo","start":{"line":5,"col":11},"locals":[{"name":"url","type":"str","value":"\"http://example.com/\""}]},{"function":"main","file":"main.vo","start":{"line":18,"col":14},"locals":[{"name":"port","type":"str","value":"\"{port}\""},{"name":"urls","type":"list[str]","value":"[\"http://127.0.0.1:{port}/plain\", \"http://example.com/\", \"http://127.0.0.1:{port}/plain\"]"}]}]}
+{"v":1,"kind":"runtime_error","code":"R0010","name":"capability_denied","message":"net(\"example.com\") is not allowed: `fetch` declares net(\"127.0.0.1\").","file":"std/http.vo","start":{"line":166,"col":12},"end":{"line":166,"col":52},"effect":"net","target":"example.com","allowed":["127.0.0.1"],"declared_by":"fetch","trace":[{"function":"exchange_raw","file":"std/http.vo","start":{"line":166,"col":12},"locals":[{"name":"method","type":"str","value":"\"GET\""},{"name":"url","type":"str","value":"\"http://example.com/\""},{"name":"headers","type":"list[Header]","value":"[]"},{"name":"body","type":"str","value":"\"\""},{"name":"timeout_ms","type":"int","value":"0"},{"name":"u","type":"Url","value":"new Url { tls: false, host: \"example.com\", port: 80, target: \"/\" }"},{"name":"request","type":"str","value":"\"GET / HTTP/1.1\\r\\nHost: example.com\\r\\nConnection: close\\r\\nUser-Agent: vo\\r\\n\\r\\n\""}]},{"function":"exchange","file":"std/http.vo","start":{"line":113,"col":19},"locals":[{"name":"method","type":"str","value":"\"GET\""},{"name":"url","type":"str","value":"\"http://example.com/\""},{"name":"headers","type":"list[Header]","value":"[]"},{"name":"body","type":"str","value":"\"\""},{"name":"timeout_ms","type":"int","value":"0"},{"name":"hint","type":"str","value":"\"get_bytes\""}]},{"function":"get","file":"std/http.vo","start":{"line":287,"col":12},"locals":[{"name":"url","type":"str","value":"\"http://example.com/\""}]},{"function":"fetch","file":"main.vo","start":{"line":5,"col":11},"locals":[{"name":"url","type":"str","value":"\"http://example.com/\""}]},{"function":"main","file":"main.vo","start":{"line":18,"col":14},"locals":[{"name":"port","type":"str","value":"\"{port}\""},{"name":"urls","type":"list[str]","value":"[\"http://127.0.0.1:{port}/plain\", \"http://example.com/\", \"http://127.0.0.1:{port}/plain\"]"}]}]}
 --- exit 70

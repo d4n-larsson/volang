@@ -1,11 +1,5 @@
-import book.Book;
-import book.new_book;
-import book.add_assignment;
-import book.enroll;
-import book.set_score;
-import grading.assignment_stats;
-import grading.card;
-import grading.class_report;
+import book;
+import grading;
 
 fn is_number(s: str) -> bool {
     if len(s) == 0 {
@@ -28,7 +22,7 @@ fn num(s: str) -> int {
     }
 }
 
-fn run(words: list[str], book: Book) -> list[str] {
+fn run(words: list[str], book_value: book.Book) -> list[str] {
     let cmd = words[0];
     let args_value = slice(words, 1, len(words));
     let bad = ["error: bad command"];
@@ -41,43 +35,43 @@ fn run(words: list[str], book: Book) -> list[str] {
         if weight < 1 or weight > 100 or max_points < 1 {
             return bad;
         }
-        return [add_assignment(book, args_value[0], weight, max_points)];
+        return [book.add_assignment(book_value, args_value[0], weight, max_points)];
     }
     if cmd == "enroll" {
         if len(args_value) != 1 {
             return bad;
         }
-        return [enroll(book, args_value[0])];
+        return [book.enroll(book_value, args_value[0])];
     }
     if cmd == "score" {
         if len(args_value) != 3 or not is_number(args_value[2]) {
             return bad;
         }
-        return [set_score(book, args_value[0], args_value[1], num(args_value[2]))];
+        return [book.set_score(book_value, args_value[0], args_value[1], num(args_value[2]))];
     }
     if cmd == "card" {
         if len(args_value) != 1 {
             return bad;
         }
-        return card(book, args_value[0]);
+        return grading.card(book_value, args_value[0]);
     }
     if cmd == "stats" {
         if len(args_value) != 1 {
             return bad;
         }
-        return assignment_stats(book, args_value[0]);
+        return grading.assignment_stats(book_value, args_value[0]);
     }
     if cmd == "report" {
         if len(args_value) != 0 {
             return bad;
         }
-        return class_report(book);
+        return grading.class_report(book_value);
     }
     return ["error: unknown command " + cmd];
 }
 
 fn main() uses console, input {
-    let book = new_book();
+    let book_value = book.new_book();
     for line in split(read_all(), "\n") {
         let words = filter(split(line, " "), fn(w: str) -> bool {
             return w != "";
@@ -85,7 +79,7 @@ fn main() uses console, input {
         if len(words) == 0 {
             continue;
         }
-        for out in run(words, book) {
+        for out in run(words, book_value) {
             print(out);
         }
     }

@@ -1,33 +1,13 @@
 # Reference solution of bench/web (std.web): validates the acceptance suite.
-import std.http.Response;
-import std.sqlite.Database;
-import std.sqlite.Row;
-import std.sqlite.Value;
-import std.sqlite.exec;
-import std.sqlite.get_int;
-import std.sqlite.get_str;
-import std.sqlite.open;
-import std.sqlite.query;
-import std.sqlite.sql;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.NoInput;
-import std.web.Route;
-import std.web.Step;
-import std.web.created;
-import std.web.json_reply;
-import std.web.no_content;
-import std.web.on_delete;
-import std.web.on_get;
-import std.web.on_post;
-import std.web.on_put;
-import std.web.serve_app;
+import std.http;
+import std.sqlite;
+import std.web;
 
 # The inventory database in data/, read and written by every operation.
 effects Storage = file.read("data/"), file.write("data/");
 
 record Store {
-    db: Database[uses Storage];
+    db: sqlite.Database[uses Storage];
 }
 
 record Item {
@@ -103,29 +83,29 @@ record Filter {
 }
 
 fn open_store() -> result[Store] uses Storage {
-    let db = try open("data/inventory.db");
-    let _ = try exec(
+    let db = try sqlite.open("data/inventory.db");
+    let _ = try sqlite.exec(
         db,
-        sql(
+        sqlite.sql(
             "create table if not exists items (id integer primary key, sku text not null unique, name text not null, quantity integer not null)"
         ),
-        new list[Value]
+        new list[sqlite.Value]
     );
     return ok(new Store { db: db });
 }
 
-fn item_of(row: Row) -> result[Item] {
+fn item_of(row: sqlite.Row) -> result[Item] {
     return ok(new Item {
-        id: try get_int(row, "id"),
-        sku: try get_str(row, "sku"),
-        name: try get_str(row, "name"),
-        quantity: try get_int(row, "quantity")
+        id: try sqlite.int_column(row, "id"),
+        sku: try sqlite.text_column(row, "sku"),
+        name: try sqlite.text_column(row, "name"),
+        quantity: try sqlite.int_column(row, "quantity")
     });
 }
 
 fn find_item(s: Store, id: int) -> result[Item] uses Storage {
-    let rows = try query(s.db, sql("select id, sku, name, quantity from items where id = ?"), [
-        Value.integer(id)
+    let rows = try sqlite.query(s.db, sqlite.sql("select id, sku, name, quantity from items where id = ?"), [
+        sqlite.Value.integer(id)
     ]);
     if len(rows) == 0 {
         return err("not_found: no item " + str(id));
@@ -140,27 +120,27 @@ fn unique(e: str) -> str {
     return e;
 }
 
-fn list_items(s: Store, input: Filter) -> result[Response] uses Storage {
+fn list_items(s: Store, input: Filter) -> result[http.Response] uses Storage {
     let out = new list[Item];
-    for row in try query(
+    for row in try sqlite.query(
         s.db,
-        sql("select id, sku, name, quantity from items where quantity >= ? order by id"),
-        [Value.integer(input.min_quantity)]
+        sqlite.sql("select id, sku, name, quantity from items where quantity >= ? order by id"),
+        [sqlite.Value.integer(input.min_quantity)]
     ) {
         push(out, try item_of(row));
     }
-    return ok(json_reply(200, out));
+    return ok(web.json_reply(200, out));
 }
 
-fn add(s: Store, input: NewItem) -> result[Response] uses Storage {
+fn add(s: Store, input: NewItem) -> result[http.Response] uses Storage {
     let f = input.body;
-    match exec(s.db, sql("insert into items (sku, name, quantity) values (?, ?, ?)"), [
-        Value.text(f.sku),
-        Value.text(f.name),
-        Value.integer(f.quantity)
+    match sqlite.exec(s.db, sqlite.sql("insert into items (sku, name, quantity) values (?, ?, ?)"), [
+        sqlite.Value.text(f.sku),
+        sqlite.Value.text(f.name),
+        sqlite.Value.integer(f.quantity)
     ]) {
         case ok(c) {
-            return ok(created("/items/" + str(c.last_id), new Item {
+            return ok(web.created("/items/" + str(c.last_id), new Item {
                 id: c.last_id,
                 sku: f.sku,
                 name: f.name,
@@ -173,21 +153,21 @@ fn add(s: Store, input: NewItem) -> result[Response] uses Storage {
     }
 }
 
-fn show(s: Store, input: ItemId) -> result[Response] uses Storage {
-    return ok(json_reply(200, try find_item(s, input.id)));
+fn show(s: Store, input: ItemId) -> result[http.Response] uses Storage {
+    return ok(web.json_reply(200, try find_item(s, input.id)));
 }
 
-fn change(s: Store, input: Change) -> result[Response] uses Storage {
+fn change(s: Store, input: Change) -> result[http.Response] uses Storage {
     let _ = try find_item(s, input.id);
     let f = input.body;
-    match exec(s.db, sql("update items set sku = ?, name = ?, quantity = ? where id = ?"), [
-        Value.text(f.sku),
-        Value.text(f.name),
-        Value.integer(f.quantity),
-        Value.integer(input.id)
+    match sqlite.exec(s.db, sqlite.sql("update items set sku = ?, name = ?, quantity = ? where id = ?"), [
+        sqlite.Value.text(f.sku),
+        sqlite.Value.text(f.name),
+        sqlite.Value.integer(f.quantity),
+        sqlite.Value.integer(input.id)
     ]) {
         case ok(_) {
-            return ok(json_reply(200, new Item {
+            return ok(web.json_reply(200, new Item {
                 id: input.id,
                 sku: f.sku,
                 name: f.name,
@@ -200,33 +180,33 @@ fn change(s: Store, input: Change) -> result[Response] uses Storage {
     }
 }
 
-fn remove_item(s: Store, input: ItemId) -> result[Response] uses Storage {
+fn remove_item(s: Store, input: ItemId) -> result[http.Response] uses Storage {
     let _ = try find_item(s, input.id);
-    let _ = try exec(s.db, sql("delete from items where id = ?"), [Value.integer(input.id)]);
-    return ok(no_content());
+    let _ = try sqlite.exec(s.db, sqlite.sql("delete from items where id = ?"), [sqlite.Value.integer(input.id)]);
+    return ok(web.no_content());
 }
 
-fn by_sku(s: Store, input: BySku) -> result[Response] uses Storage {
-    let rows = try query(s.db, sql("select id, sku, name, quantity from items where sku = ?"), [
-        Value.text(input.sku)
+fn by_sku(s: Store, input: BySku) -> result[http.Response] uses Storage {
+    let rows = try sqlite.query(s.db, sqlite.sql("select id, sku, name, quantity from items where sku = ?"), [
+        sqlite.Value.text(input.sku)
     ]);
     if len(rows) == 0 {
         return err("not_found: no item with sku " + input.sku);
     }
-    return ok(json_reply(200, try item_of(rows[0])));
+    return ok(web.json_reply(200, try item_of(rows[0])));
 }
 
-fn adjust(s: Store, input: Adjust) -> result[Response] uses Storage {
+fn adjust(s: Store, input: Adjust) -> result[http.Response] uses Storage {
     let item = try find_item(s, input.id);
     let quantity = item.quantity + input.body.delta;
     if quantity < 0 or quantity > 10000 {
         return err("unprocessable: the quantity would be " + str(quantity));
     }
-    let _ = try exec(s.db, sql("update items set quantity = ? where id = ?"), [
-        Value.integer(quantity),
-        Value.integer(input.id)
+    let _ = try sqlite.exec(s.db, sqlite.sql("update items set quantity = ? where id = ?"), [
+        sqlite.Value.integer(quantity),
+        sqlite.Value.integer(input.id)
     ]);
-    return ok(json_reply(200, new Item {
+    return ok(web.json_reply(200, new Item {
         id: item.id,
         sku: item.sku,
         name: item.name,
@@ -234,18 +214,18 @@ fn adjust(s: Store, input: Adjust) -> result[Response] uses Storage {
     }));
 }
 
-fn count(s: Store, input: NoInput) -> result[Response] uses Storage {
-    let rows = try query(s.db, sql("select count(*) as n from items"), new list[Value]);
-    return ok(json_reply(200, new Count { count: try get_int(rows[0], "n") }));
+fn count(s: Store, input: web.NoInput) -> result[http.Response] uses Storage {
+    let rows = try sqlite.query(s.db, sqlite.sql("select count(*) as n from items"), new list[sqlite.Value]);
+    return ok(web.json_reply(200, new Count { count: try sqlite.int_column(rows[0], "n") }));
 }
 
-fn rename_item(s: Store, input: Rename) -> result[Response] uses Storage {
+fn rename_item(s: Store, input: Rename) -> result[http.Response] uses Storage {
     let item = try find_item(s, input.id);
-    let _ = try exec(s.db, sql("update items set name = ? where id = ?"), [
-        Value.text(input.body.name),
-        Value.integer(input.id)
+    let _ = try sqlite.exec(s.db, sqlite.sql("update items set name = ? where id = ?"), [
+        sqlite.Value.text(input.body.name),
+        sqlite.Value.integer(input.id)
     ]);
-    return ok(json_reply(200, new Item {
+    return ok(web.json_reply(200, new Item {
         id: item.id,
         sku: item.sku,
         name: input.body.name,
@@ -253,32 +233,32 @@ fn rename_item(s: Store, input: Rename) -> result[Response] uses Storage {
     }));
 }
 
-fn delete_many(s: Store, input: BulkDelete) -> result[Response] uses Storage {
+fn delete_many(s: Store, input: BulkDelete) -> result[http.Response] uses Storage {
     for id in input.body.ids {
-        let _ = try exec(s.db, sql("delete from items where id = ?"), [Value.integer(id)]);
+        let _ = try sqlite.exec(s.db, sqlite.sql("delete from items where id = ?"), [sqlite.Value.integer(id)]);
     }
-    return ok(no_content());
+    return ok(web.no_content());
 }
 
-fn routes() -> list[Route[Store, uses Storage]] {
+fn routes() -> list[web.Route[Store, uses Storage]] {
     return [
-        on_get("/items", list_items),
-        on_post("/items", add),
-        on_get("/items/{id}", show),
-        on_put("/items/{id}", change),
-        on_delete("/items/{id}", remove_item),
-        on_get("/skus/{sku}", by_sku),
-        on_post("/items/{id}/adjust", adjust),
-        on_get("/stats/count", count),
-        on_post("/items/{id}/rename", rename_item),
-        on_post("/bulk/delete", delete_many)
+        web.on_get("/items", list_items),
+        web.on_post("/items", add),
+        web.on_get("/items/{id}", show),
+        web.on_put("/items/{id}", change),
+        web.on_delete("/items/{id}", remove_item),
+        web.on_get("/skus/{sku}", by_sku),
+        web.on_post("/items/{id}/adjust", adjust),
+        web.on_get("/stats/count", count),
+        web.on_post("/items/{id}/rename", rename_item),
+        web.on_post("/bulk/delete", delete_many)
     ];
 }
 
 fn main() -> result[void] uses serve("8765"), Storage {
-    return serve_app("8765", 2, open_store, new App {
+    return web.serve_app("8765", 2, open_store, new web.App {
         routes: routes(),
-        steps: new list[Step[Store, uses Storage]],
-        errors: new list[ErrorStatus]
+        steps: new list[web.Step[Store, uses Storage]],
+        errors: new list[web.ErrorStatus]
     });
 }

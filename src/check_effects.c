@@ -259,6 +259,10 @@ void fx_render_written(SB *sb, Node *uses)
 void fx_unknown_effect(Node *eff)
 {
     Str *name = eff->d.s;
+    if (eff->c.n && str_dot(name) >= 0) { /* spec 058: `store.Scratch`: a module's missing or private item */
+        report_undefined(name, eff->c.n);
+        return;
+    }
     if (eff->c.n) { /* spec 030: a capitalized name; the fix is the nearest effect parameter or set */
         Diag *d = ck_err1("E0509", eff, "`$1` is neither an effect parameter nor an effect set in scope.", name);
         Str *best = 0;

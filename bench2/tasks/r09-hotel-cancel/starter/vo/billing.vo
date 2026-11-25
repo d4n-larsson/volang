@@ -1,4 +1,4 @@
-import model.Booking;
+import model;
 
 fn long_stay_nights() -> int {
     return 7;
@@ -23,7 +23,7 @@ export fn stay_discount(nights: int, subtotal: int) -> int {
     return 0;
 }
 
-export fn invoice_lines(b: Booking) -> list[str] {
+export fn invoice_lines(b: model.Booking) -> list[str] {
     let nights = b.end - b.start;
     let out = ["invoice " + b.booking_id + " for " + b.guest];
     push(out, "  " + b.type_name + " " + str(nights) + " nights x " + money(b.rate) + " = " + money(b.subtotal));

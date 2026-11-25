@@ -1,5 +1,5 @@
-import lib.half;
+import lib;
 
 fn main() uses console {
-    print(str(half(4)));
+    print(str(lib.half(4)));
 }

@@ -1,2 +1,2 @@
-{"v":1,"kind":"doc","module":"geo","name":"Point","item":"record","signature":"record Point { x: float; y: float; }","tparams":[],"fields":[{"name":"x","type":"float"},{"name":"y","type":"float"}],"description":"A point in the plane."}
+{"v":1,"kind":"doc","module":"geo","name":"Point","item":"record","signature":"record Point { x: float; y: float; }","tparams":[],"fields":[{"name":"x","type":"float"},{"name":"y","type":"float"}],"description":"A point in the plane.","use":"geo.Point"}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":1}

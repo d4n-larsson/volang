@@ -1,8 +1,8 @@
 # Spec 022 US2: with a fixed clock, sleep does not wait; the next reading is ms later.
-import std.time.sleep;
+import std.time;
 
 fn main() uses console, clock {
     print(str(now_ms()));
-    sleep(500);
+    time.sleep(500);
     print(str(now_ms()));
 }

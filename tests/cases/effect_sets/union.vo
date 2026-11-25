@@ -1,5 +1,5 @@
 # A clause names effects and sets together; sets include other sets.
-import std.fs.make_dir;
+import std.fs;
 
 effects Timing = clock;
 effects Chance = random, Timing;
@@ -14,7 +14,7 @@ fn record_stamp() -> result[void] uses Chance, Storage {
 }
 
 fn main() -> result[void] uses console, Chance, Storage {
-    try make_dir("data");
+    try fs.make_dir("data");
     match record_stamp() {
         case ok() {
             print(str(stamp()));

@@ -1,8 +1,4 @@
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.exec;
-import std.sqlite.query;
-import std.sqlite.Value;
+import std.sqlite;
 
 fn show[T](r: result[T]) -> str {
     match r {
@@ -16,16 +12,16 @@ fn show[T](r: result[T]) -> str {
 }
 
 fn main() -> result[void] uses console {
-    let db = open_memory();
-    let none = new list[Value];
-    let _ = try exec(db, sql("create table items(name text unique, qty integer)"), none);
-    let _ = try exec(db, sql("create table parts(item text references items(name))"), none);
-    print(show(exec(db, sql("insert into items values ('bolt', 1)"), none)));
-    print(show(exec(db, sql("insert into items values ('bolt', 2)"), none)));
-    print(show(query(db, sql("select * from itemz"), none)));
-    print(show(exec(db, sql("insert into parts values ('gear')"), none)));
-    print(show(query(db, sql("select \"nme\" from items"), none)));
-    print(show(exec(db, sql("insert into items(name) values (?)"), [Value.text("x"), Value.integer(1)])));
-    print(show(exec(db, sql("update items set qty = qty + 1"), none)));
+    let db = sqlite.open_memory();
+    let none = new list[sqlite.Value];
+    let _ = try sqlite.exec(db, sqlite.sql("create table items(name text unique, qty integer)"), none);
+    let _ = try sqlite.exec(db, sqlite.sql("create table parts(item text references items(name))"), none);
+    print(show(sqlite.exec(db, sqlite.sql("insert into items values ('bolt', 1)"), none)));
+    print(show(sqlite.exec(db, sqlite.sql("insert into items values ('bolt', 2)"), none)));
+    print(show(sqlite.query(db, sqlite.sql("select * from itemz"), none)));
+    print(show(sqlite.exec(db, sqlite.sql("insert into parts values ('gear')"), none)));
+    print(show(sqlite.query(db, sqlite.sql("select \"nme\" from items"), none)));
+    print(show(sqlite.exec(db, sqlite.sql("insert into items(name) values (?)"), [sqlite.Value.text("x"), sqlite.Value.integer(1)])));
+    print(show(sqlite.exec(db, sqlite.sql("update items set qty = qty + 1"), none)));
     return ok();
 }

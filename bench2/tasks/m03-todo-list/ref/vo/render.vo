@@ -1,8 +1,6 @@
-import store.Store;
-import store.Task;
-import store.all_tasks;
+import store;
 
-fn task_line(t: Task, mark_done: bool) -> str {
+fn task_line(t: store.Task, mark_done: bool) -> str {
     let tags = slice(t.tags, 0, len(t.tags));
     sort(tags);
     var s = "#" + str(t.id) + " P" + str(t.prio) + " " + t.text;
@@ -15,26 +13,26 @@ fn task_line(t: Task, mark_done: bool) -> str {
     return s;
 }
 
-export fn listing(s: Store, which: str) -> list[str] {
+export fn listing(s: store.Store, which: str) -> list[str] {
     let out = new list[str];
-    var ts = all_tasks(s);
+    var ts = store.all_tasks(s);
     if which == "" {
-        set ts = filter(ts, fn(t: Task) -> bool {
+        set ts = filter(ts, fn(t: store.Task) -> bool {
             return not t.done;
         });
-        sort_by(ts, fn(t: Task) -> int {
+        sort_by(ts, fn(t: store.Task) -> int {
             return t.prio;
         });
     } else if which == "done" {
-        set ts = filter(ts, fn(t: Task) -> bool {
+        set ts = filter(ts, fn(t: store.Task) -> bool {
             return t.done;
         });
-        sort_by(ts, fn(t: Task) -> int {
+        sort_by(ts, fn(t: store.Task) -> int {
             return t.done_seq;
         });
     } else {
         let tag = slice(which, 1, len(which));
-        set ts = filter(ts, fn(t: Task) -> bool {
+        set ts = filter(ts, fn(t: store.Task) -> bool {
             return any(t.tags, fn(g: str) -> bool {
                 return g == tag;
             });
@@ -49,9 +47,9 @@ export fn listing(s: Store, which: str) -> list[str] {
     return out;
 }
 
-export fn stats(s: Store) -> str {
-    let ts = all_tasks(s);
-    let done = len(filter(ts, fn(t: Task) -> bool {
+export fn stats(s: store.Store) -> str {
+    let ts = store.all_tasks(s);
+    let done = len(filter(ts, fn(t: store.Task) -> bool {
         return t.done;
     }));
     return "open " + str(len(ts) - done) + " done " + str(done);

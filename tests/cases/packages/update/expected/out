@@ -4,8 +4,8 @@ added money shared/money sha256:c254bf990e07bee2be247382b90dd9579f7782282060d7db
 --- exit 0
 $ vo check main.vo
 main.vo:1:1: error[E0701]: Package `money` changed: the manifest pins sha256:c254bf990e07bee2be247382b90dd9579f7782282060d7db081802ab349d730a, its files hash to sha256:1b664fcaac0f69e818732cc0e4dd3a546f078db201cee0cb03d529b7ad51a2e4. Review the change, then run `vo package main.vo money shared/money`.
-   1 | import money.format.cents;
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   1 | import money.format;
+     | ^^^^^^^^^^^^^^^^^^^^
 1 error, 0 warnings
 --- stderr
 --- exit 65

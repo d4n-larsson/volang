@@ -1,18 +1,14 @@
 # Reads data/tickets.txt and data/oncall.txt and prints the triage order, who was on call for each
 # ticket, who was never paged, and the last tickets handled. `vo run main.vo` runs main; `vo test
 # main.vo` runs the tests and the property in helpdesk.vo, next to the code they test.
-import helpdesk.handle;
-import helpdesk.parse_shifts;
-import helpdesk.parse_tickets;
-import helpdesk.report;
-import helpdesk.triage;
+import helpdesk;
 
 # Where the tickets and the on-call shifts are read from: the program's whole file grant.
 const data_dir = "data/";
 
 fn main() -> result[void] uses console, file.read(data_dir) {
-    let tickets = try parse_tickets(try read_file(data_dir + "tickets.txt"));
-    let shifts = try parse_shifts(try read_file(data_dir + "oncall.txt"));
-    write(report(try handle(tickets, shifts), shifts));
+    let tickets = try helpdesk.parse_tickets(try read_file(data_dir + "tickets.txt"));
+    let shifts = try helpdesk.parse_shifts(try read_file(data_dir + "oncall.txt"));
+    write(helpdesk.report(try helpdesk.handle(tickets, shifts), shifts));
     return ok();
 }

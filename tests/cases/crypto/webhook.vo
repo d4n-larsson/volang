@@ -1,20 +1,17 @@
 # Spec 035: checking a signed webhook body.
-import std.bytes.from_hex;
-import std.bytes.from_text;
-import std.bytes.to_hex;
-import std.crypto.hmac_sha256;
-import std.crypto.same_bytes;
+import std.bytes;
+import std.crypto;
 
 fn signed_by(secret: str, body: bytes, signature: bytes) -> bool {
-    return same_bytes(hmac_sha256(from_text(secret), body), signature);
+    return crypto.same_bytes(crypto.hmac_sha256(bytes.from_text(secret), body), signature);
 }
 
 fn main() -> result[void] uses console {
-    let body = from_text("{\"event\":\"paid\",\"amount\":1200}");
-    let header = to_hex(hmac_sha256(from_text("whsec_1"), body));
-    let signature = try from_hex(header);
+    let body = bytes.from_text("{\"event\":\"paid\",\"amount\":1200}");
+    let header = bytes.to_hex(crypto.hmac_sha256(bytes.from_text("whsec_1"), body));
+    let signature = try bytes.from_hex(header);
     print(str(signed_by("whsec_1", body, signature)));
-    print(str(signed_by("whsec_1", from_text("{\"event\":\"paid\",\"amount\":9900}"), signature)));
+    print(str(signed_by("whsec_1", bytes.from_text("{\"event\":\"paid\",\"amount\":9900}"), signature)));
     print(str(signed_by("whsec_2", body, signature)));
     return ok();
 }

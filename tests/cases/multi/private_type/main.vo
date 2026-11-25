@@ -1,7 +1,7 @@
-import http.parse;
+import http;
 
 fn main() uses console {
-    match parse("a") {
+    match http.parse("a") {
         case ok(u) {
             print(u.host);
         }

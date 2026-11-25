@@ -1,10 +1,10 @@
 # Spec 057 (US2): a literal working directory outside the declared file.read scopes is E0503 at check
 # time; "./" is always allowed.
-import std.process.run_with;
+import std.process;
 
 fn main() -> result[void] uses console, file.read("work/"), process("true") {
-    print(str((try run_with("true", [], "", [], "./")).code));
-    print(str((try run_with("true", [], "", [], "work/sub/")).code));
-    print(str((try run_with("true", [], "", [], "other/")).code));
+    print(str((try process.run_with("true", [], "", [], "./")).code));
+    print(str((try process.run_with("true", [], "", [], "work/sub/")).code));
+    print(str((try process.run_with("true", [], "", [], "other/")).code));
     return ok();
 }

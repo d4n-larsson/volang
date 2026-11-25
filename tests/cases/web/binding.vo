@@ -1,17 +1,8 @@
 # Typed input (spec 029 US2): fields take the path variable of their name, the JSON body (`body`), a
 # header (`@header`) or the query parameter of their name; bad input never reaches the operation and is
 # answered 400 (malformed) or 422 (only limits broken), naming every problem.
-import std.http.Response;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.Route;
-import std.web.Step;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.on_post;
-import std.web.request;
-import std.web.with_header;
+import std.http;
+import std.web;
 
 variant Sort {
     newest;
@@ -47,11 +38,11 @@ record Listing {
     tag: list[str];
 }
 
-fn add(n: int, input: NewNote) -> result[Response] {
-    return ok(json_reply(200, input.board + ": " + input.body.text + " by " + input.author + " #" + str(len(input.body.tags))));
+fn add(n: int, input: NewNote) -> result[http.Response] {
+    return ok(web.json_reply(200, input.board + ": " + input.body.text + " by " + input.author + " #" + str(len(input.body.tags))));
 }
 
-fn listing(n: int, input: Listing) -> result[Response] {
+fn listing(n: int, input: Listing) -> result[http.Response] {
     var sort_value = "newest";
     match input.sort {
         case newest {
@@ -60,20 +51,20 @@ fn listing(n: int, input: Listing) -> result[Response] {
             set sort_value = "oldest";
         }
     }
-    return ok(json_reply(200, input.board + " limit " + str(input.limit) + " done " + str(input.done) + " " + sort_value + " tags " + join(input.tag, ",")));
+    return ok(web.json_reply(200, input.board + " limit " + str(input.limit) + " done " + str(input.done) + " " + sort_value + " tags " + join(input.tag, ",")));
 }
 
-fn routes() -> list[Route[int]] {
-    return [on_post("/boards/{board}/notes", add), on_get("/boards/{board}/notes", listing)];
+fn routes() -> list[web.Route[int]] {
+    return [web.on_post("/boards/{board}/notes", add), web.on_get("/boards/{board}/notes", listing)];
 }
 
-fn show(app: App[int], method: str, path: str, body: str) uses console {
-    let r = handle_request(app, 0, with_header(request(method, path, body), "X-Author", "ada"));
+fn show(app: web.App[int], method: str, path: str, body: str) uses console {
+    let r = web.handle_request(app, 0, web.with_header(web.request(method, path, body), "X-Author", "ada"));
     print(method + " " + path + " " + body + " -> " + str(r.status) + " " + r.body);
 }
 
 fn main() uses console {
-    let app = new App { routes: routes(), steps: new list[Step[int]], errors: new list[ErrorStatus] };
+    let app = new web.App { routes: routes(), steps: new list[web.Step[int]], errors: new list[web.ErrorStatus] };
     show(app, "POST", "/boards/home/notes", "{\"text\": \"milk\", \"tags\": [\"shop\"]}");
     show(app, "POST", "/boards/home/notes", "{\"tags\": [\"a\", 2]}");
     show(app, "POST", "/boards/home/notes", "{\"text\": \"\"}");

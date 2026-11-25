@@ -9,10 +9,10 @@ A `process` grant without scopes would allow running every program on the machin
 ### Example
 
 ```vo
-import std.process.run;
+import std.process;
 
 fn main() -> result[void] uses console, process {
-    let out = try run("git", ["--version"]);
+    let out = try process.run("git", ["--version"]);
     print(out.stdout);
     return ok();
 }
@@ -21,10 +21,10 @@ fn main() -> result[void] uses console, process {
 ### Fixed
 
 ```vo
-import std.process.run;
+import std.process;
 
 fn main() -> result[void] uses console, process("git") {
-    let out = try run("git", ["--version"]);
+    let out = try process.run("git", ["--version"]);
     print(out.stdout);
     return ok();
 }

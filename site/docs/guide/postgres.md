@@ -17,16 +17,15 @@ vo package main.vo postgres path/to/volang/packages/postgres
 ```
 
 The output lists what the package can do: `net` (it connects to the server) and `entropy` (it draws
-the random part of signing in). Import its items one by one from `postgres.client`.
+the random part of signing in). Import `postgres.client` and write its items as `client.NAME`.
 
 ## Connecting
 
 ```text
-import postgres.client.Options;
-import postgres.client.connect;
+import postgres.client;
 
 fn main() -> result[void] uses console, net("db.internal:5432"), entropy {
-    let db = try connect(new Options {
+    let db = try client.connect(new client.Options {
         host: "db.internal",
         port: 5432,
         database: "app",

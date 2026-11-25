@@ -1,6 +1,6 @@
-import stats.spread;
-import util.clamp;
+import stats;
+import util;
 
 fn main() uses console {
-    print(str(spread(3, 1) + clamp(-4)));
+    print(str(stats.spread(3, 1) + util.clamp(-4)));
 }

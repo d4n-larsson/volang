@@ -1,14 +1,14 @@
-$ vo edit rename main.vo main.vo:27:13 Elem
-main.vo:27:13 T -> Elem
-main.vo:27:25 T -> Elem
-main.vo:27:32 T -> Elem
-main.vo:27:38 T -> Elem
+$ vo edit rename main.vo main.vo:24:13 Elem
+main.vo:24:13 T -> Elem
+main.vo:24:25 T -> Elem
+main.vo:24:32 T -> Elem
+main.vo:24:38 T -> Elem
 renamed T to Elem: 4 changes in 1 file
 --- stderr
 --- exit 0
 $ vo check main.vo
-main.vo:45:1: warning[W0705]: This test calls only functions of `catalog.vo`: move it into `catalog.vo`, next to the code it tests (`vo test` runs it from there).
-  45 | test "totals" {
+main.vo:42:1: warning[W0705]: This test calls only functions of `catalog.vo`: move it into `catalog.vo`, next to the code it tests (`vo test` runs it from there).
+  42 | test "totals" {
      | ^^^^
 0 errors, 1 warning
 --- stderr

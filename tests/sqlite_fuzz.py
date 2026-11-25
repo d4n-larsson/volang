@@ -87,32 +87,24 @@ def vo_str(s):
 def value(rng):
     k = rng.randrange(6)
     if k == 0:
-        return "Value.integer(%s)" % rng.choice(["0", "1", "-1", "9223372036854775807", "-9223372036854775807 - 1",
+        return "sqlite.Value.integer(%s)" % rng.choice(["0", "1", "-1", "9223372036854775807", "-9223372036854775807 - 1",
                                                  str(rng.randint(-1000, 1000))])
     if k == 1:
-        return "Value.real(%s)" % rng.choice(["0.5", "-2.25", "1000000.0", "0.0"])
+        return "sqlite.Value.real(%s)" % rng.choice(["0.5", "-2.25", "1000000.0", "0.0"])
     if k == 2:
-        return "Value.text(%s)" % vo_str(rng.choice(["", "x", "{\"a\": 1}", "ÅäÖ", "%", "' or 1=1 --"]))
+        return "sqlite.Value.text(%s)" % vo_str(rng.choice(["", "x", "{\"a\": 1}", "ÅäÖ", "%", "' or 1=1 --"]))
     if k == 3:
-        return "Value.blob(from_ints([%s]))" % ", ".join(str(rng.randrange(256)) for _ in range(rng.randint(1, 4)))
-    return "Value.null"
+        return "sqlite.Value.blob(bytes.from_ints([%s]))" % ", ".join(str(rng.randrange(256)) for _ in range(rng.randint(1, 4)))
+    return "sqlite.Value.null"
 
 
-HEAD = """import std.sqlite.open_memory;
-import std.sqlite.open_readonly;
-import std.sqlite.parse_sql;
-import std.sqlite.query;
-import std.sqlite.exec;
-import std.sqlite.sql;
-import std.sqlite.close;
-import std.sqlite.Database;
-import std.sqlite.Value;
-import std.bytes.from_ints;
+HEAD = """import std.sqlite;
+import std.bytes;
 
-fn one(db: Database, text: str, params: list[Value]) -> int {
-    match parse_sql(text) {
+fn one(db: sqlite.Database, text: str, params: list[sqlite.Value]) -> int {
+    match sqlite.parse_sql(text) {
         case ok(st) {
-            match query(db, st, params) {
+            match sqlite.query(db, st, params) {
                 case ok(_) {
                     return 1;
                 }
@@ -130,8 +122,8 @@ fn one(db: Database, text: str, params: list[Value]) -> int {
 
 STATEMENTS = HEAD + """
 fn main() uses console {
-    let db = open_memory();
-    let _ = one(db, "create table t(a integer primary key, b text, c real, d blob)", new list[Value]);
+    let db = sqlite.open_memory();
+    let _ = one(db, "create table t(a integer primary key, b text, c real, d blob)", new list[sqlite.Value]);
     var counts = [0, 0, 0, 0];
 CALLS    print(str(counts[1]) + " ok, " + str(counts[2]) + " err, " + str(counts[3]) + " parse err");
 }
@@ -139,7 +131,7 @@ CALLS    print(str(counts[1]) + " ok, " + str(counts[2]) + " err, " + str(counts
 
 FILES = HEAD + """
 fn probe(path: str) -> int uses file.read("dbs/") {
-    match open_readonly(path) {
+    match sqlite.open_readonly(path) {
         case ok(db) {
             var n = 0;
             for text in ["select * from sqlite_schema", "select count(*), sum(length(b)) from t",
@@ -147,7 +139,7 @@ fn probe(path: str) -> int uses file.read("dbs/") {
                          "select b from t where b > 'm' order by b desc"] {
                 set n = n + one_ro(db, text);
             }
-            close(db);
+            sqlite.close(db);
             return n;
         }
         case err(_) {
@@ -156,10 +148,10 @@ fn probe(path: str) -> int uses file.read("dbs/") {
     }
 }
 
-fn one_ro(db: Database[uses file.read], text: str) -> int uses file.read("dbs/") {
-    match parse_sql(text) {
+fn one_ro(db: sqlite.Database[uses file.read], text: str) -> int uses file.read("dbs/") {
+    match sqlite.parse_sql(text) {
         case ok(st) {
-            match query(db, st, new list[Value]) {
+            match sqlite.query(db, st, new list[sqlite.Value]) {
                 case ok(_) {
                     return 1;
                 }
@@ -220,7 +212,7 @@ def main():
             calls = []
             for _ in range(n):
                 params = [value(rng) for _ in range(rng.randint(0, 4))]
-                plist = "[" + ", ".join(params) + "]" if params else "new list[Value]"
+                plist = "[" + ", ".join(params) + "]" if params else "new list[sqlite.Value]"
                 calls.append("    let r%d = one(db, %s, %s);\n    set counts[r%d] = counts[r%d] + 1;\n" %
                              (len(calls), vo_str(statement(rng)), plist, len(calls), len(calls)))
             path = os.path.join(tmp, "s%d.vo" % done)

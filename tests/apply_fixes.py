@@ -91,7 +91,7 @@ def json_cases(dirs):
 def main():
     failures = []
     tried = resolved = 0
-    for base, recs in json_cases(["check", "parse", "effects", "func", "generic", "format", "regex", "lex", "sqlite", "structure", "map_keys", "library"]):
+    for base, recs in json_cases(["check", "parse", "effects", "func", "generic", "format", "regex", "lex", "sqlite", "structure", "map_keys", "library", "imports", "imports_v03"]):
         for rec in recs:
             if rec.get("kind") != "diagnostic" or not rec.get("fixes"):
                 continue
@@ -133,7 +133,7 @@ def main():
                 shutil.rmtree(tmp, ignore_errors=True)
     fixable = fixable_codes()
     total = with_fix = fx_total = fx_with = st_total = st_with = 0
-    for base, recs in json_cases(["lex", "parse", "check", "multi", "library"]):
+    for base, recs in json_cases(["lex", "parse", "check", "multi", "library", "imports", "imports_v03"]):
         if os.path.basename(base) in STRESS:
             continue
         for rec in recs:

@@ -12,13 +12,9 @@ what it is; `info(path)` says what is at one path. A missing path is a value (`I
 error. Both need `file.read`, with a scope covering the path:
 
 ```vo
-import std.fs.Info;
-import std.fs.append_file;
-import std.fs.info;
-import std.fs.list_dir;
-import std.fs.make_dir;
+import std.fs;
 
-fn describe(i: Info) -> str {
+fn describe(i: fs.Info) -> str {
     match i {
         case missing {
             return "missing";
@@ -36,13 +32,13 @@ fn describe(i: Info) -> str {
 }
 
 fn main() -> result[void] uses console, file.read("notes/"), file.write("notes/") {
-    try make_dir("notes/old");
-    try append_file("notes/b.txt", "second\n");
-    try append_file("notes/a.txt", "first\n");
-    for e in try list_dir("notes") {
+    try fs.make_dir("notes/old");
+    try fs.append_file("notes/b.txt", "second\n");
+    try fs.append_file("notes/a.txt", "first\n");
+    for e in try fs.list_dir("notes") {
         print(e.name + ": " + describe(e.info));
     }
-    print("notes/c.txt: " + describe(try info("notes/c.txt")));
+    print("notes/c.txt: " + describe(try fs.info("notes/c.txt")));
     return ok();
 }
 ```
@@ -75,16 +71,13 @@ itself: with `file.delete("tmp/")` everything inside `tmp/` can go, `tmp/` stays
 recursive delete; a program that must clear a tree walks it.
 
 ```vo
-import std.fs.append_file;
-import std.fs.delete;
-import std.fs.make_dir;
-import std.fs.rename;
+import std.fs;
 
 fn main() -> result[void] uses console, file.write("tmp/"), file.delete("tmp/") {
-    try make_dir("tmp");
-    try append_file("tmp/draft.txt", "text\n");
-    try rename("tmp/draft.txt", "tmp/final.txt");
-    match rename("tmp/missing.txt", "tmp/final.txt") {
+    try fs.make_dir("tmp");
+    try fs.append_file("tmp/draft.txt", "text\n");
+    try fs.rename("tmp/draft.txt", "tmp/final.txt");
+    match fs.rename("tmp/missing.txt", "tmp/final.txt") {
         case ok() {
             print("renamed");
         }
@@ -92,7 +85,7 @@ fn main() -> result[void] uses console, file.write("tmp/"), file.delete("tmp/") 
             print("rename: " + e);
         }
     }
-    try delete("tmp/final.txt");
+    try fs.delete("tmp/final.txt");
     print("done");
     return ok();
 }
@@ -118,10 +111,10 @@ shell: each argument reaches the program exactly as written, so spaces,
 quotes, `;` and `$(...)` mean nothing special.
 
 ```vo
-import std.process.run;
+import std.process;
 
 fn main() -> result[void] uses console, process("echo") {
-    let out = try run("echo", ["one two", "$(not run)"]);
+    let out = try process.run("echo", ["one two", "$(not run)"]);
     write(out.stdout);
     print("exit " + str(out.code));
     return ok();
@@ -158,8 +151,7 @@ Nothing is left open when the call returns, and memory does not grow with the si
 pieces of `size` bytes. What the function wants to keep goes into a record or list it captures:
 
 ```vo
-import std.fs.each_chunk;
-import std.fs.each_line;
+import std.fs;
 
 record Count {
     lines: int;
@@ -170,7 +162,7 @@ record Count {
 fn main() -> result[void] uses console, file.read("./"), file.write("./") {
     try write_file("app.log", "start\nerror: disk full\nretry\nerror: disk full\nstop\n");
     let count = new Count { lines: 0, errors: 0, size: 0 };
-    try each_line("app.log", fn(line: str) -> result[bool] {
+    try fs.each_line("app.log", fn(line: str) -> result[bool] {
         set count.lines = count.lines + 1;
         if find(line, "error") == 0 {
             set count.errors = count.errors + 1;
@@ -178,7 +170,7 @@ fn main() -> result[void] uses console, file.read("./"), file.write("./") {
         return ok(count.errors < 2);
     });
     print(str(count.errors) + " errors in the first " + str(count.lines) + " lines");
-    try each_chunk("app.log", 16, fn(piece: bytes) -> result[bool] {
+    try fs.each_chunk("app.log", 16, fn(piece: bytes) -> result[bool] {
         set count.size = count.size + len(piece);
         return ok(true);
     });
@@ -197,11 +189,11 @@ each line of its standard output as soon as the program has written it, so a lon
 progress and can be stopped at its first error:
 
 ```vo
-import std.process.run_lines;
+import std.process;
 
 fn main() -> result[void] uses console, file.read("./"), process("sh") {
     let script = "echo compiling; echo linking; sleep 5; echo done";
-    let out = try run_lines("sh", ["-c", script], "", new list[str], "./", fn(line: str) -> result[bool] {
+    let out = try process.run_lines("sh", ["-c", script], "", new list[str], "./", fn(line: str) -> result[bool] {
         print("> " + line);
         return ok(line != "linking");
     });
@@ -220,17 +212,15 @@ exit 137
 and headers with each piece of the body, at most 64 KiB at a time, with no limit on the whole:
 
 ```vo
-import std.fs.append_bytes;
-import std.http.Header;
-import std.http.Response;
-import std.http.send_stream;
+import std.fs;
+import std.http;
 
 fn main() -> result[void] uses console, file.write("downloads/"), net("example.com") {
-    let head = try send_stream("GET", "https://example.com/big.tar", new list[Header], "", 30000, fn(head: Response, piece: bytes) -> result[bool] {
+    let head = try http.send_stream("GET", "https://example.com/big.tar", new list[http.Header], "", 30000, fn(head: http.Response, piece: bytes) -> result[bool] {
         if head.status != 200 {
             return ok(false);
         }
-        try append_bytes("downloads/big.tar", piece);
+        try fs.append_bytes("downloads/big.tar", piece);
         return ok(true);
     });
     print("status " + str(head.status));

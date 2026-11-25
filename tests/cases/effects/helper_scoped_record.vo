@@ -1,8 +1,4 @@
-import std.tcp.Conn;
-import std.tcp.TcpError;
-import std.tcp.close_conn;
-import std.tcp.connect;
-import std.tcp.tcp_error_text;
+import std.tcp;
 
 record Options {
     host: str;
@@ -10,18 +6,18 @@ record Options {
 }
 
 # Spec 050: the target arrives in a record field (the shape of a database client's connect).
-fn open(o: Options) -> result[Conn[uses net], TcpError] uses net {
-    return connect(o.host, o.port, 1000);
+fn open(o: Options) -> result[tcp.Conn[uses net], tcp.TcpError] uses net {
+    return tcp.connect(o.host, o.port, 1000);
 }
 
 fn main() uses console, net("127.0.0.1:1") {
     match open(new Options { host: "127." + "0.0.1", port: 1 }) {
         case ok(c) {
-            close_conn(c);
+            tcp.close_conn(c);
             print("open");
         }
         case err(e) {
-            print(tcp_error_text(e));
+            print(tcp.tcp_error_text(e));
         }
     }
 }

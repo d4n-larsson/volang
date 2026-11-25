@@ -1,2 +1,2 @@
-{"v":1,"kind":"diagnostic","code":"E0302","name":"wrong_argument_count","severity":"error","file":"decimal_no_mode.vo","start":{"line":6,"col":24},"end":{"line":6,"col":52},"text":"round_to(decimal(125, 3), 2)","message":"`round_to` takes 3 argument(s), found 2.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0302","name":"wrong_argument_count","severity":"error","file":"decimal_no_mode.vo","start":{"line":4,"col":32},"end":{"line":4,"col":76},"text":"decimal.round_to(decimal.decimal(125, 3), 2)","message":"`decimal.round_to` takes 3 argument(s), found 2.","fixes":[],"related":[]}
 {"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

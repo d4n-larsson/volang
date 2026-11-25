@@ -1,7 +1,7 @@
-import report.save_report;
+import report;
 
 fn main() -> result[void] uses console, file.write("out/") {
     print("saving");
-    try save_report(3);
+    try report.save_report(3);
     return ok();
 }

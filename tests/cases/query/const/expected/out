@@ -1,21 +1,20 @@
 $ vo query refs main.vo max_items
 config.vo:2:14 declaration: export const max_items = 100;
-main.vo:1:15 import: import config.max_items;
-main.vo:7:14 use: @size(1, max_items)
-main.vo:12:23 use in add: return len(xs) >= max_items;
+main.vo:6:14 use: @size(1, config.max_items)
+main.vo:11:23 use in add: return len(xs) >= config.max_items;
 config.vo:3:22 use: export const twice = max_items * 2;
-5 references
+4 references
 --- stderr
 --- exit 0
 $ vo query refs main.vo out_dir
-main.vo:4:7 declaration: const out_dir = "out/";
-main.vo:15:43 use in save: fn save() -> result[void] uses file.write(out_dir) {
-main.vo:16:23 use in save: return write_file(out_dir + "x", str(twice));
+main.vo:3:7 declaration: const out_dir = "out/";
+main.vo:14:43 use in save: fn save() -> result[void] uses file.write(out_dir) {
+main.vo:15:23 use in save: return write_file(out_dir + "x", str(config.twice));
 3 references
 --- stderr
 --- exit 0
-$ vo query type-at main.vo main.vo:12:26
-main.vo:12:23 max_items: int = 100 (declared at config.vo:2:14)
+$ vo query type-at main.vo main.vo:11:33
+main.vo:11:23 config.max_items: int = 100 (declared at config.vo:2:14)
     const max_items: int = 100
     The most notes a list may hold.
 --- stderr
@@ -26,8 +25,8 @@ config.vo:2:14 max_items: int = 100 (declared at config.vo:2:14)
     The most notes a list may hold.
 --- stderr
 --- exit 0
-$ vo query type-at --json main.vo main.vo:16:24
-{"v":1,"kind":"type_at","file":"main.vo","start":{"line":16,"col":23},"end":{"line":16,"col":30},"text":"out_dir","type":"str","value":"\"out/\"","name":"out_dir","declaration":{"file":"main.vo","start":{"line":4,"col":7},"end":{"line":4,"col":14}},"doc":{"module":"main","name":"out_dir","item":"const","signature":"const out_dir: str = \"out/\"","tparams":[]}}
+$ vo query type-at --json main.vo main.vo:15:24
+{"v":1,"kind":"type_at","file":"main.vo","start":{"line":15,"col":23},"end":{"line":15,"col":30},"text":"out_dir","type":"str","value":"\"out/\"","name":"out_dir","declaration":{"file":"main.vo","start":{"line":3,"col":7},"end":{"line":3,"col":14}},"doc":{"module":"main","name":"out_dir","item":"const","signature":"const out_dir: str = \"out/\"","tparams":[]}}
 {"v":1,"kind":"summary","command":"query","errors":0,"warnings":0,"truncated":0,"files":2,"results":1}
 --- stderr
 --- exit 0
@@ -36,32 +35,28 @@ error[T0004]: `max_items` is not a function; `callers` takes a function or built
 --- stderr
 --- exit 64
 $ vo edit rename --dry-run main.vo max_items twice
-main.vo:2:15: error[E0202]: `twice` is already defined.
-   2 | import config.twice;
-     |               ^^^^^
 config.vo:3:14: error[E0202]: `twice` is already defined.
    3 | export const twice = max_items * 2;
      |              ^^^^^
   note: config.vo:2:14: `twice` is first defined here.
-error[T0006]: Renaming `max_items` to `twice` would not check (2 new errors): nothing was written.
+error[T0006]: Renaming `max_items` to `twice` would not check (1 new error): nothing was written.
 --- stderr
 --- exit 65
 $ vo impact main.vo --diff change.diff
 changed max_items (config.vo:2)
 affected twice via max_items (config.vo:3)
-affected add via max_items (main.vo:11)
-affected save via twice (main.vo:15)
-affected main via add (main.vo:19)
+affected add via max_items (main.vo:10)
+affected save via twice (main.vo:14)
+affected main via add (main.vo:18)
 1 changed, 0 added, 0 removed, 4 affected, 0 tests
 --- stderr
 --- exit 0
 $ vo edit rename main.vo max_items item_limit
-main.vo:1:15 max_items -> item_limit
-main.vo:7:14 max_items -> item_limit
-main.vo:12:23 max_items -> item_limit
+main.vo:6:21 max_items -> item_limit
+main.vo:11:30 max_items -> item_limit
 config.vo:2:14 max_items -> item_limit
 config.vo:3:22 max_items -> item_limit
-renamed max_items to item_limit: 5 changes in 2 files
+renamed max_items to item_limit: 4 changes in 2 files
 --- stderr
 --- exit 0
 $ vo run main.vo

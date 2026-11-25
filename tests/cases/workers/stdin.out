@@ -1,10 +1,10 @@
-failed: stdin.vo:79:11: runtime error[R0007]: A worker cannot read standard input: the program reads it and sends what the worker needs.
-  79 |     match read_line() {
+failed: stdin.vo:70:11: runtime error[R0007]: A worker cannot read standard input: the program reads it and sends what the worker needs.
+  70 |     match read_line() {
      |           ^^^^^^^^^^^
 trace:
-  at asker (stdin.vo:79:11)
+  at asker (stdin.vo:70:11)
       link: Link[int, int] = new Link[int, int] { id: 0 }
   at start_worker (std/workers.vo:66:45)
       body: fn(Link[int, int]) uses input = <fn(Link[int, int]) uses input>
-  at main (stdin.vo:90:23)
+  at main (stdin.vo:81:23)
 true

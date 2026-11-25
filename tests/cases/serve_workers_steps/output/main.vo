@@ -1,19 +1,16 @@
 # Two workers, two requests printing three lines each with pauses between them: each request's lines
 # appear together (written when its response is sent); a handler's runtime error report appears whole.
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve_workers;
-import std.time.sleep;
+import std.http;
+import std.time;
 
 fn setup() -> result[int] {
     return ok(0);
 }
 
-fn handle(zero: int, r: Request) -> Response uses console, clock {
+fn handle(zero: int, r: http.Request) -> http.Response uses console, clock {
     if r.path == "/crash" {
         eprint("before the crash");
-        return new Response { status: 200, headers: new list[Header], body: str(1 / zero) };
+        return new http.Response { status: 200, headers: new list[http.Header], body: str(1 / zero) };
     }
     var pause = 150;
     if r.path == "/a" {
@@ -21,13 +18,13 @@ fn handle(zero: int, r: Request) -> Response uses console, clock {
     }
     for i in 1..4 {
         print(r.path + " line " + str(i));
-        sleep(pause);
+        time.sleep(pause);
     }
-    return new Response { status: 200, headers: new list[Header], body: r.path };
+    return new http.Response { status: 200, headers: new list[http.Header], body: r.path };
 }
 
 fn main() -> result[void] uses console, clock, serve("{vport}") {
-    try serve_workers("{vport}", 2, setup, handle);
+    try http.serve_workers("{vport}", 2, setup, handle);
     print("stopped");
     return ok();
 }

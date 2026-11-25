@@ -1,12 +1,10 @@
 # Spec 021 US2: appending bytes creates the file, then adds to it.
-import std.bytes.from_ints;
-import std.fs.append_bytes;
-import std.fs.read_bytes;
-import std.bytes.to_hex;
+import std.bytes;
+import std.fs;
 
 fn main() -> result[void] uses console, file.read("./"), file.write("./") {
-    try append_bytes("log.bin", from_ints([0, 255]));
-    try append_bytes("log.bin", from_ints([10]));
-    print(to_hex(try read_bytes("log.bin")));
+    try fs.append_bytes("log.bin", bytes.from_ints([0, 255]));
+    try fs.append_bytes("log.bin", bytes.from_ints([10]));
+    print(bytes.to_hex(try fs.read_bytes("log.bin")));
     return ok();
 }

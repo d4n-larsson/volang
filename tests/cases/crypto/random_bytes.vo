@@ -1,17 +1,17 @@
 # Spec 035: in a test, random_bytes gives the same bytes on every run (from the test's seed).
-import std.bytes.to_hex;
-import std.crypto.random_bytes;
+import std.bytes;
+import std.crypto;
 
 test "lengths" uses entropy {
-    expect_eq(len(random_bytes(0)), 0);
-    expect_eq(len(random_bytes(1)), 1);
-    expect_eq(len(random_bytes(16)), 16);
-    expect_eq(len(random_bytes(65536)), 65536);
+    expect_eq(len(crypto.random_bytes(0)), 0);
+    expect_eq(len(crypto.random_bytes(1)), 1);
+    expect_eq(len(crypto.random_bytes(16)), 16);
+    expect_eq(len(crypto.random_bytes(65536)), 65536);
 }
 
 test "two draws differ, and are the same on every run" uses entropy {
-    let a = to_hex(random_bytes(16));
-    let b = to_hex(random_bytes(16));
+    let a = bytes.to_hex(crypto.random_bytes(16));
+    let b = bytes.to_hex(crypto.random_bytes(16));
     expect(a != b);
     expect_eq(a + " " + b, "94dddb7ef409a97455d2df39afa96b98 287650cecbbf7d087616f69a4cd32206");
 }
@@ -22,10 +22,10 @@ test "random_int is not shifted by drawing bytes" uses random {
 }
 
 test "random_int after a draw" uses random, entropy {
-    expect_eq(len(random_bytes(8)), 8);
+    expect_eq(len(crypto.random_bytes(8)), 8);
     expect_eq(random_int(1, 1000000), 684233);
 }
 
 prop "a property draws the same bytes on every run" (n: int) uses entropy {
-    expect(len(random_bytes(4)) == 4);
+    expect(len(crypto.random_bytes(4)) == 4);
 }

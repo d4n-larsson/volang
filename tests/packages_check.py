@@ -20,11 +20,11 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")  # runs $VO_BIN natively or under qemu
 
-MAIN = """import money.format.cents;
-import money.util.round.half_up;
+MAIN = """import money.format;
+import money.util.round;
 
 fn main() uses console {
-    print(cents(half_up(1234)));
+    print(format.cents(round.half_up(1234)));
 }
 """
 FORMAT = """# Formats amounts of money.

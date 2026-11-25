@@ -1,11 +1,10 @@
 # str gives the shortest text that reads back as the same float (15 to 17 significant digits): the
 # text Python's repr gives, and the one write_json writes. It used to round to 15 digits.
-import std.json.parse_json;
-import std.json.as_float;
+import std.json;
 
 fn num(s: str) -> result[float] {
-    let j = try parse_json(s);
-    return as_float(j);
+    let j = try json.parse_json(s);
+    return json.as_float(j);
 }
 
 fn main() uses console {

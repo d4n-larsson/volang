@@ -1,25 +1,21 @@
 # Spec 056 (E0214): a lookup that now gives an Option, used as the result it gave before (match on ok/err,
 # try, comparison with ok(...), an expected result type), gets a fix wrapping the call in to_result.
-import std.collections.first;
-import std.collections.key_after;
-import std.http.Header;
-import std.http.Response;
-import std.http.request_header;
-import std.http.Request;
+import std.collections;
+import std.http;
 
 fn next_key(m: ordered_map[int, str], k: int) -> result[int] {
-    let n = try key_after(m, k);
+    let n = try collections.key_after(m, k);
     return ok(n);
 }
 
-fn host(r: Request) -> result[str] {
-    return request_header(r, "Host");
+fn host(r: http.Request) -> result[str] {
+    return http.request_header(r, "Host");
 }
 
 fn main() uses console {
     let s = new ordered_set[int];
     push(s, 3);
-    match first(s) {
+    match collections.first(s) {
         case ok(v) {
             print(str(v));
         }
@@ -27,8 +23,8 @@ fn main() uses console {
             print(e);
         }
     }
-    print(str(first(s) == ok(3)));
+    print(str(collections.first(s) == ok(3)));
     let m = new ordered_map[int, str];
     print(str(next_key(m, 1) == err("none")));
-    print(str(host(new Request { method: "GET", path: "/", query: "", headers: new list[Header], body: "" }) == err("none")));
+    print(str(host(new http.Request { method: "GET", path: "/", query: "", headers: new list[http.Header], body: "" }) == err("none")));
 }

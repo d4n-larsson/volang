@@ -1,0 +1,10 @@
+# A parameter named like the module the fix introduces is renamed in the same edit.
+import std.text.pad_left;
+
+fn pad(text: str) -> str {
+    return pad_left(text, 4, ".");
+}
+
+fn main() uses console {
+    print(pad("ab"));
+}

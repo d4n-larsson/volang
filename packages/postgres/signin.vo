@@ -1,22 +1,11 @@
 # postgres.signin: the startup message and signing in, up to the server's first "ready". The
 # decisions are pure (answer); sign_in only sends and receives. Not part of the package's API: import
 # postgres.client.
-import postgres.link.deliver;
-import postgres.link.receive;
-import postgres.scram.client_final;
-import postgres.scram.first_bare;
-import postgres.scram.verify;
-import postgres.wire.auth_kind;
-import postgres.wire.auth_mechanisms;
-import postgres.wire.failure;
-import postgres.wire.failure_text;
-import postgres.wire.sasl_initial;
-import postgres.wire.sasl_response;
-import postgres.wire.startup;
-import std.bytes.from_ints;
-import std.bytes.from_text;
-import std.bytes.to_text;
-import std.tcp.Conn;
+import postgres.link;
+import postgres.scram;
+import postgres.wire;
+import std.bytes;
+import std.tcp;
 
 # Where signing in stands, and what it needs next.
 #     new SignIn { stage: 0, password: "", bare: "n=,r=x", expected: from_ints(new list[int]) }.stage is 0
@@ -51,7 +40,7 @@ fn asked_for(kind: int) -> str {
 }
 
 fn body_text(body: bytes, from: int) -> result[str] {
-    match to_text(slice(body, from, len(body))) {
+    match bytes.to_text(slice(body, from, len(body))) {
         case ok(s) {
             return ok(s);
         }
@@ -62,11 +51,11 @@ fn body_text(body: bytes, from: int) -> result[str] {
 }
 
 fn nothing() -> bytes {
-    return from_ints(new list[int]);
+    return bytes.from_ints(new list[int]);
 }
 
 fn offers_scram(body: bytes) -> result[bool] {
-    for m in try auth_mechanisms(body) {
+    for m in try wire.auth_mechanisms(body) {
         if m == "SCRAM-SHA-256" {
             return ok(true);
         }
@@ -78,7 +67,7 @@ fn offers_scram(body: bytes) -> result[bool] {
 # server asks for something else or does not prove that it knows the password.
 #     answer(new SignIn { stage: 0, password: "", bare: "n=,r=x", expected: from_ints(new list[int]) }, from_ints([0, 0, 0, 5, 1, 2, 3, 4])) == err("auth: the server asked for an MD5 password; only SCRAM-SHA-256 is supported") is true
 export fn answer(s: SignIn, body: bytes) -> result[bytes] {
-    let kind = try auth_kind(body);
+    let kind = try wire.auth_kind(body);
     if kind == 0 {
         if s.stage != 0 and s.stage != 3 {
             return err("auth: the server did not prove that it knows the password");
@@ -91,16 +80,16 @@ export fn answer(s: SignIn, body: bytes) -> result[bytes] {
             return err("auth: the server does not offer SCRAM-SHA-256");
         }
         set s.stage = 1;
-        return ok(sasl_initial("SCRAM-SHA-256", from_text("n,," + s.bare)));
+        return ok(wire.sasl_initial("SCRAM-SHA-256", bytes.from_text("n,," + s.bare)));
     }
     if kind == 11 and s.stage == 1 {
-        let final = try client_final(s.password, s.bare, try body_text(body, 4));
+        let final = try scram.client_final(s.password, s.bare, try body_text(body, 4));
         set s.expected = final.server_signature;
         set s.stage = 2;
-        return ok(sasl_response(from_text(final.message)));
+        return ok(wire.sasl_response(bytes.from_text(final.message)));
     }
     if kind == 12 and s.stage == 2 {
-        if not verify(try body_text(body, 4), s.expected) {
+        if not scram.verify(try body_text(body, 4), s.expected) {
             return err("auth: the server did not prove that it knows the password");
         }
         set s.stage = 3;
@@ -118,7 +107,7 @@ export fn answer(s: SignIn, body: bytes) -> result[bytes] {
 # go to answer; this handles the others.
 fn other(kind: int, body: bytes, s: SignIn) -> result[bool] {
     if kind == 69 {
-        return err(failure_text(try failure(body), 0));
+        return err(wire.failure_text(try wire.failure(body), 0));
     }
     if kind == 90 {
         if s.stage != 4 {
@@ -136,27 +125,27 @@ fn other(kind: int, body: bytes, s: SignIn) -> result[bool] {
 # of SCRAM.
 #     sign_in(new Conn { id: 0, peer: "" }, "u", "d", "", 1000, "x") == err("connection: the connection is closed") is true
 export fn sign_in[E: effects](
-    c: Conn[uses E],
+    c: tcp.Conn[uses E],
     user: str,
     database: str,
     password: str,
     ms: int,
     nonce: str
 ) -> result[void] uses E {
-    try deliver(c, startup(user, database), ms);
+    try link.deliver(c, wire.startup(user, database), ms);
     let s = new SignIn {
         stage: 0,
         password: password,
-        bare: first_bare(nonce),
+        bare: scram.first_bare(nonce),
         expected: nothing()
     };
     var ready = false;
     while not ready {
-        let m = try receive(c, ms);
+        let m = try link.receive(c, ms);
         if m.kind == 82 {
             let reply = try answer(s, m.body);
             if len(reply) > 0 {
-                try deliver(c, reply, ms);
+                try link.deliver(c, reply, ms);
             }
         } else {
             set ready = try other(m.kind, m.body, s);
@@ -167,30 +156,30 @@ export fn sign_in[E: effects](
 
 test "sign-in methods other than SCRAM are refused" {
     let s = new SignIn { stage: 0, password: "p", bare: "n=,r=x", expected: nothing() };
-    expect_eq(answer(s, from_ints([0, 0, 0, 3])), err(
+    expect_eq(answer(s, bytes.from_ints([0, 0, 0, 3])), err(
         "auth: the server asked for a clear-text password; only SCRAM-SHA-256 is supported"
     ));
-    expect_eq(answer(s, from_ints([0, 0, 0, 10, 80, 76, 65, 73, 78, 0, 0])), err(
+    expect_eq(answer(s, bytes.from_ints([0, 0, 0, 10, 80, 76, 65, 73, 78, 0, 0])), err(
         "auth: the server does not offer SCRAM-SHA-256"
     ));
 }
 
 test "ok before the server's proof is refused" {
     let s = new SignIn { stage: 2, password: "p", bare: "n=,r=x", expected: nothing() };
-    expect_eq(answer(s, from_ints([0, 0, 0, 0])), err(
+    expect_eq(answer(s, bytes.from_ints([0, 0, 0, 0])), err(
         "auth: the server did not prove that it knows the password"
     ));
     let none = new SignIn { stage: 0, password: "", bare: "n=,r=x", expected: nothing() };
-    expect_eq(answer(none, from_ints([0, 0, 0, 0])), ok(nothing()));
+    expect_eq(answer(none, bytes.from_ints([0, 0, 0, 0])), ok(nothing()));
     expect_eq(none.stage, 4);
-    expect_eq(answer(none, from_ints([0, 0, 0, 12, 118, 61])), err(
+    expect_eq(answer(none, bytes.from_ints([0, 0, 0, 12, 118, 61])), err(
         "protocol: a sign-in message came out of order"
     ));
 }
 
 test "ready only after signing in" {
     let s = new SignIn { stage: 1, password: "p", bare: "n=,r=x", expected: nothing() };
-    expect_eq(other(90, from_ints([73]), s), err(
+    expect_eq(other(90, bytes.from_ints([73]), s), err(
         "protocol: the server is ready before signing in ended"
     ));
     expect_eq(other(83, nothing(), s), ok(false));

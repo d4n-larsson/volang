@@ -1,7 +1,4 @@
-import std.json.Json;
-import std.json.as_object;
-import std.json.parse_json;
-import std.json.write_json_pretty;
+import std.json;
 
 fn fail(msg: str) uses console {
     print("error: " + msg);
@@ -25,10 +22,10 @@ fn main() uses console, file.read("./") {
             return;
         }
     }
-    var obj = new map[str, Json];
-    match parse_json(text) {
+    var obj = new map[str, json.Json];
+    match json.parse_json(text) {
         case ok(j) {
-            match as_object(j) {
+            match json.as_object(j) {
                 case ok(o) {
                     set obj = o;
                 }
@@ -53,9 +50,9 @@ fn main() uses console, file.read("./") {
             return;
         }
     }
-    set obj["port"] = Json.integer(port);
-    set obj["updated"] = Json.boolean(true);
-    match write_json_pretty(Json.object(obj)) {
+    set obj["port"] = json.Json.integer(port);
+    set obj["updated"] = json.Json.boolean(true);
+    match json.write_json_pretty(json.Json.object(obj)) {
         case ok(out) {
             print(out);
         }

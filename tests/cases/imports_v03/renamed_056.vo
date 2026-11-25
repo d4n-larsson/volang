@@ -1,0 +1,9 @@
+# A 0.3 import of an item renamed in vo 0.2.0: the E0214 fixes go first (E0215 has no fix in this
+# round); after them, E0215's fix writes the new name with its module.
+import std.lists.contains;
+import std.text.repeat;
+
+fn main() uses console {
+    print(str(contains([1, 2], 2)));
+    print(repeat("x", 2));
+}

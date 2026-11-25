@@ -278,22 +278,12 @@ def group_loops(d):
 
 # ---- lists ----
 
-LISTS_DRIVER = """import std.fs.each_line;
-import std.json.from_json;
-import std.json.parse_json;
-import std.json.to_json;
-import std.json.write_json;
-import std.lists.has_item;
-import std.lists.group_by;
-import std.lists.index_of;
-import std.lists.max_by;
-import std.lists.min_by;
-import std.lists.reversed;
-import std.lists.sort_by_desc;
-import std.lists.sum;
+LISTS_DRIVER = """import std.fs;
+import std.json;
+import std.lists;
 
 fn text(xs: list[str]) -> result[str] {
-    return write_json(to_json(xs));
+    return json.write_json(json.to_json(xs));
 }
 
 fn first_or(r: result[str]) -> str {
@@ -321,31 +311,31 @@ fn half(w: str) -> float {
 
 fn answer(f: list[str]) -> result[str] {
     if f[0] == "sum" {
-        let ns: list[int] = try from_json(try parse_json(f[1]));
-        return ok(str(sum(ns)));
+        let ns: list[int] = try json.from_json(try json.parse_json(f[1]));
+        return ok(str(lists.sum(ns)));
     }
-    let xs: list[str] = try from_json(try parse_json(f[1]));
+    let xs: list[str] = try json.from_json(try json.parse_json(f[1]));
     let before = try text(xs);
     var out = "";
     if f[0] == "contains" {
-        let x: str = try from_json(try parse_json(f[2]));
-        set out = format("{} {}", has_item(xs, x), index_of(xs, x));
+        let x: str = try json.from_json(try json.parse_json(f[2]));
+        set out = format("{} {}", lists.has_item(xs, x), lists.index_of(xs, x));
     } else if f[0] == "reversed" {
-        set out = try text(reversed(xs));
+        set out = try text(lists.reversed(xs));
     } else if f[0] == "desc" {
-        let ys = reversed(reversed(xs));
+        let ys = lists.reversed(lists.reversed(xs));
         if f[2] == "size" {
-            sort_by_desc(ys, size);
+            lists.sort_by_desc(ys, size);
         } else if f[2] == "itself" {
-            sort_by_desc(ys, itself);
+            lists.sort_by_desc(ys, itself);
         } else {
-            sort_by_desc(ys, half);
+            lists.sort_by_desc(ys, half);
         }
         set out = try text(ys);
     } else if f[0] == "minmax" {
-        set out = first_or(min_by(xs, size)) + " " + first_or(max_by(xs, itself));
+        set out = first_or(lists.min_by(xs, size)) + " " + first_or(lists.max_by(xs, itself));
     } else {
-        let groups = group_by(xs, size);
+        let groups = lists.group_by(xs, size);
         for k, g in groups {
             set out = out + str(k) + ":" + try text(g) + ";";
         }
@@ -357,7 +347,7 @@ fn answer(f: list[str]) -> result[str] {
 }
 
 fn main() -> result[void] uses console, file.read("./") {
-    try each_line("cases.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("cases.txt", fn(line: str) -> result[bool] {
         print(try answer(split(line, "\\t")));
         return ok(true);
     });

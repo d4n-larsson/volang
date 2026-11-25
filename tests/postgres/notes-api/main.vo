@@ -3,14 +3,12 @@
 #   vo run --record r.jsonl main.vo               ... and save every request, database call and response
 #   vo replay r.jsonl                             answer the saved requests again: no port, no files
 # The grant is `serve("8080")` (this machine only) and the database server.
-import api.Storage;
-import api.notes_app;
-import api.open_notes;
-import std.web.serve_app;
+import api;
+import std.web;
 
-fn main() -> result[void] uses console, serve("8080"), Storage {
+fn main() -> result[void] uses console, serve("8080"), api.Storage {
     print("notes on http://localhost:8080/notes (Ctrl-C stops)");
-    try serve_app("8080", 4, open_notes, notes_app());
+    try web.serve_app("8080", 4, api.open_notes, api.notes_app());
     print("stopped");
     return ok();
 }

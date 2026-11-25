@@ -1,5 +1,5 @@
 # std.security: Access control for std.web applications: rules saying who may call what, signing in with passwords, tokens or keys, and the user in operations.
-# Part of the vo standard library. Import items one by one: `import std.security.NAME;`.
+# Part of the vo standard library. Import the module, `import std.security;`, and write its items as `security.NAME`.
 # A policy is a value: `policy(rules, ways, now)`. `secure(policy)` is the step that enforces it: the
 # first rule matching a request's method and path decides, and a request no rule matches is refused
 # (401 without credentials, 403 with). A rule's path is a prefix of whole segments: "/admin" covers
@@ -9,41 +9,12 @@
 # current_user(identity), require_user(identity) or require_role(identity, roles).
 # `decide` is the same decision as a pure function; `describe` and `review` apply it to an
 # application's routes. Tests sign in with `test_users()` in the policy and `as_user(request, user)`.
-import std.bytes.from_base64;
-import std.bytes.from_text;
-import std.bytes.to_hex;
-import std.bytes.to_ints;
-import std.bytes.to_base64;
-import std.bytes.to_text;
-import std.crypto.hmac_sha256;
-import std.crypto.password_outdated;
-import std.crypto.same_bytes;
-import std.crypto.sha256;
-import std.crypto.verify_password;
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.json.Json;
-import std.json.member;
-import std.json.from_json;
-import std.json.int_field;
-import std.json.parse_json;
-import std.json.text_field;
-import std.json.to_json;
-import std.json.write_json;
-import std.option.Option;
-import std.web.App;
-import std.web.Cookie;
-import std.web.Route;
-import std.web.Step;
-import std.web.cookie;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.on_post;
-import std.web.problem_reply;
-import std.web.read_cookie;
-import std.web.with_cookie;
-import std.web.with_header;
+import std.bytes;
+import std.crypto;
+import std.http;
+import std.json;
+import std.option;
+import std.web;
 
 const unknown_account_hash = "pbkdf2-sha256$600000$uhjvqUkG1yFEktgBPBuNqQ==$PVcPDIHXJlHQvQJz+SpALHXX1vtSUabWC+FjltYm6RA=";
 const test_header = "X-Test-User";
@@ -191,7 +162,7 @@ export fn policy[C, E: effects](
 #     decide([rule("/admin", Access.any_role(["admin"]))], "GET", "/admin/users", Option.some(new User { name: "bo", roles: ["user"] })) == Decision.forbidden is true
 #     decide([rule("/admin", Access.any_role(["admin"]))], "GET", "/administrator", Option.some(new User { name: "ada", roles: ["admin"] })) == Decision.forbidden is true
 #     decide([rule_for(["GET"], "/notes/{id}", Access.anyone)], "HEAD", "/notes/7", Option.none) == Decision.allowed is true
-export fn decide(rules: list[Rule], method: str, path: str, caller: Option[User]) -> Decision {
+export fn decide(rules: list[Rule], method: str, path: str, caller: option.Option[User]) -> Decision {
     let at = deciding(rules, method, path);
     var access = Access.nobody;
     if at >= 0 {
@@ -300,10 +271,10 @@ fn as_get(method: str) -> str {
 
 # The step that enforces a policy on every request: put it in App.steps (after cors, so that preflight requests are answered). Allowed requests go on with the user in X-Identity; the others are answered 401 (with WWW-Authenticate) or 403 in the problem format, and their operations do not run.
 #     secure(policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; })).prefix is "/"
-export fn secure[C, E: effects](p: Policy[C, uses E]) -> Step[C, uses E] {
-    return new Step {
+export fn secure[C, E: effects](p: Policy[C, uses E]) -> web.Step[C, uses E] {
+    return new web.Step {
         prefix: "/",
-        run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+        run: fn(ctx: C, r: http.Request, next: fn(http.Request) -> http.Response uses E) -> http.Response {
             var found = 0;
             var at = -1;
             var credential = "";
@@ -312,7 +283,7 @@ export fn secure[C, E: effects](p: Policy[C, uses E]) -> Step[C, uses E] {
                 match header_of(r, w.header) {
                     case ok(v) {
                         if lower(w.header) == "cookie" {
-                            match read_cookie(v, w.scheme) {
+                            match web.read_cookie(v, w.scheme) {
                                 case some(value) {
                                     set found = found + 1;
                                     set at = i;
@@ -365,11 +336,11 @@ export fn secure[C, E: effects](p: Policy[C, uses E]) -> Step[C, uses E] {
                             path: r.path,
                             at_ms: now
                         });
-                        return problem_reply(403, "cross-site request");
+                        return web.problem_reply(403, "cross-site request");
                     }
-                    match decide(p.rules, r.method, r.path, Option.some(user)) {
+                    match decide(p.rules, r.method, r.path, option.Option.some(user)) {
                         case allowed {
-                            return next(with_header(r, "X-Identity", user_json(user)));
+                            return next(web.with_header(r, "X-Identity", user_json(user)));
                         }
                         case sign_in_needed {
                             return challenge(p, "sign in");
@@ -383,7 +354,7 @@ export fn secure[C, E: effects](p: Policy[C, uses E]) -> Step[C, uses E] {
                                 path: r.path,
                                 at_ms: now
                             });
-                            return problem_reply(403, "not allowed");
+                            return web.problem_reply(403, "not allowed");
                         }
                     }
                 }
@@ -403,15 +374,15 @@ export fn secure[C, E: effects](p: Policy[C, uses E]) -> Step[C, uses E] {
                         }
                         return challenge(p, "invalid credentials");
                     }
-                    return problem_reply(500, "");
+                    return web.problem_reply(500, "");
                 }
             }
         }
     };
 }
 
-fn as_nobody[C, E: effects](p: Policy[C, uses E], r: Request, next: fn(Request) -> Response uses E) -> Response uses E {
-    match decide(p.rules, r.method, r.path, Option.none) {
+fn as_nobody[C, E: effects](p: Policy[C, uses E], r: http.Request, next: fn(http.Request) -> http.Response uses E) -> http.Response uses E {
+    match decide(p.rules, r.method, r.path, option.Option.none) {
         case allowed {
             return next(r);
         }
@@ -424,7 +395,7 @@ fn as_nobody[C, E: effects](p: Policy[C, uses E], r: Request, next: fn(Request) 
     }
 }
 
-fn sign_in_first[C, E: effects](p: Policy[C, uses E], r: Request) -> Response {
+fn sign_in_first[C, E: effects](p: Policy[C, uses E], r: http.Request) -> http.Response {
     # A page a person asked for goes to the sign-in page and comes back after; a program gets 401.
     var page = false;
     match header_of(r, "Accept") {
@@ -446,10 +417,10 @@ fn sign_in_first[C, E: effects](p: Policy[C, uses E], r: Request) -> Response {
     return challenge(p, "sign in");
 }
 
-fn without_session[C, E: effects](w: Way[C, uses E], resp: Response) -> Response {
+fn without_session[C, E: effects](w: Way[C, uses E], resp: http.Response) -> http.Response {
     let c = session_cookie(w.origin, "");
     set c.max_age_ms = 0;
-    match with_cookie(resp, c) {
+    match web.with_cookie(resp, c) {
         case ok(r) {
             return r;
         }
@@ -467,7 +438,7 @@ fn query_escape(s: str) -> str {
         if (c >= "0" and c <= "9") or (c >= "A" and c <= "Z") or (c >= "a" and c <= "z") or c == "-" or c == "." or c == "_" or c == "~" {
             set out = out + c;
         } else {
-            for b in to_ints(from_text(c)) {
+            for b in bytes.to_ints(bytes.from_text(c)) {
                 set out = out + "%" + slice(hex, b / 16, b / 16 + 1) + slice(hex, b % 16, b % 16 + 1);
             }
         }
@@ -475,7 +446,7 @@ fn query_escape(s: str) -> str {
     return out;
 }
 
-fn refuse[C, E: effects](p: Policy[C, uses E], ctx: C, r: Request, reason: str) -> Response uses E {
+fn refuse[C, E: effects](p: Policy[C, uses E], ctx: C, r: http.Request, reason: str) -> http.Response uses E {
     p.on_event(ctx, new Event {
         kind: "refused",
         reason: reason,
@@ -487,20 +458,20 @@ fn refuse[C, E: effects](p: Policy[C, uses E], ctx: C, r: Request, reason: str) 
     return challenge(p, "invalid credentials");
 }
 
-fn challenge[C, E: effects](p: Policy[C, uses E], detail: str) -> Response {
-    let resp = problem_reply(401, detail);
+fn challenge[C, E: effects](p: Policy[C, uses E], detail: str) -> http.Response {
+    let resp = web.problem_reply(401, detail);
     for w in p.ways {
         if w.scheme == "Basic " {
-            push(resp.headers, new Header { name: "WWW-Authenticate", value: "Basic realm=\"api\"" });
+            push(resp.headers, new http.Header { name: "WWW-Authenticate", value: "Basic realm=\"api\"" });
         } else if w.scheme != "" and lower(w.header) != "cookie" {
             # A cookie is no authentication scheme: browsers are sent to sign in, not challenged.
-            push(resp.headers, new Header { name: "WWW-Authenticate", value: trim(w.scheme) });
+            push(resp.headers, new http.Header { name: "WWW-Authenticate", value: trim(w.scheme) });
         }
     }
     return resp;
 }
 
-fn text_of(r: Request, name: str) -> str {
+fn text_of(r: http.Request, name: str) -> str {
     match header_of(r, name) {
         case ok(v) {
             return v;
@@ -511,7 +482,7 @@ fn text_of(r: Request, name: str) -> str {
     }
 }
 
-fn header_of(r: Request, name: str) -> result[str] {
+fn header_of(r: http.Request, name: str) -> result[str] {
     for h in r.headers {
         if lower(h.name) == lower(name) {
             return ok(h.value);
@@ -521,7 +492,7 @@ fn header_of(r: Request, name: str) -> result[str] {
 }
 
 fn user_json(user: User) -> str {
-    match write_json(to_json(user)) {
+    match json.write_json(json.to_json(user)) {
         case ok(t) {
             return t;
         }
@@ -559,9 +530,9 @@ export fn test_users[C, E: effects]() -> Way[C, uses E] {
         header: test_header,
         scheme: "",
         check: fn(ctx: C, credential: str, now: int) -> result[User] {
-            match parse_json(credential) {
+            match json.parse_json(credential) {
                 case ok(j) {
-                    let parsed: result[User] = from_json(j);
+                    let parsed: result[User] = json.from_json(j);
                     match parsed {
                         case ok(user) {
                             return ok(user);
@@ -583,22 +554,22 @@ export fn test_users[C, E: effects]() -> Way[C, uses E] {
 
 # The request as made by user, for an application whose policy accepts test_users().
 #     len(as_user(new Request { method: "GET", path: "/", query: "", headers: new list[Header], body: "" }, new User { name: "ada", roles: ["admin"] }).headers) is 1
-export fn as_user(r: Request, user: User) -> Request {
-    return with_header(r, test_header, user_json(user));
+export fn as_user(r: http.Request, user: User) -> http.Request {
+    return web.with_header(r, test_header, user_json(user));
 }
 
 # HTTP Basic: the name and password of every request are checked against the account find gives for the name (Option.none: no such name). Each request costs one password check, which is slow on purpose: for anything called often, use sign_in_route and tokens.
 #     basic(fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }).scheme is "Basic "
-export fn basic[C, E: effects](find_account: fn(C, str) -> result[Option[Account]] uses E) -> Way[C, uses E] {
+export fn basic[C, E: effects](find_account: fn(C, str) -> result[option.Option[Account]] uses E) -> Way[C, uses E] {
     return new Way {
         name: "basic",
         header: "Authorization",
         scheme: "Basic ",
         check: fn(ctx: C, credential: str, now: int) -> result[User] {
             var pair = "";
-            match from_base64(trim(credential)) {
+            match bytes.from_base64(trim(credential)) {
                 case ok(b) {
-                    match to_text(b) {
+                    match bytes.to_text(b) {
                         case ok(t) {
                             set pair = t;
                         }
@@ -633,7 +604,7 @@ record Outcome {
 
 fn checked[C, E: effects](
     ctx: C,
-    find_account: fn(C, str) -> result[Option[Account]] uses E,
+    find_account: fn(C, str) -> result[option.Option[Account]] uses E,
     name: str,
     password: str
 ) -> result[Outcome] uses E {
@@ -653,21 +624,21 @@ fn checked[C, E: effects](
         case none {
         }
     }
-    if verify_password(password, hash) and reason != "unknown name" {
+    if crypto.verify_password(password, hash) and reason != "unknown name" {
         if enabled {
             set reason = "";
         } else {
             set reason = "disabled account";
         }
     }
-    return ok(new Outcome { reason: reason, user: user, outdated: password_outdated(hash) });
+    return ok(new Outcome { reason: reason, user: user, outdated: crypto.password_outdated(hash) });
 }
 
 # The user of a name and password, for a sign-in operation of the application's own: the account find gives is checked with std.crypto.verify_password. An unknown name, a wrong password and a disabled account give the same err("unauthorized: invalid credentials") after the same work; an error of find is passed on.
 #     password_user(0, fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.some(new Account { name: "ada", password_hash: "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=", roles: ["admin"], enabled: true })); }, "ada", "passwd") == ok(new User { name: "ada", roles: ["admin"] }) is true
 export fn password_user[C, E: effects](
     ctx: C,
-    find_account: fn(C, str) -> result[Option[Account]] uses E,
+    find_account: fn(C, str) -> result[option.Option[Account]] uses E,
     name: str,
     password: str
 ) -> result[User] uses E {
@@ -694,7 +665,7 @@ fn keys_fit(key_list: list[bytes]) -> bool {
 }
 
 fn base64url(b: bytes) -> str {
-    return join(split(join(split(join(split(to_base64(b), "="), ""), "+"), "-"), "/"), "_");
+    return join(split(join(split(join(split(bytes.to_base64(b), "="), ""), "+"), "-"), "/"), "_");
 }
 
 fn from_base64url(s: str) -> result[bytes] {
@@ -705,7 +676,7 @@ fn from_base64url(s: str) -> result[bytes] {
     while len(t) % 4 != 0 {
         set t = t + "=";
     }
-    let b = try from_base64(t);
+    let b = try bytes.from_base64(t);
     if base64url(b) != s {
         return err("not canonical");
     }
@@ -718,13 +689,13 @@ export fn issue_token(key: bytes, user: User, now: int, lifetime_s: int) -> resu
     requires key_fits(key)
     requires lifetime_s > 0
 {
-    let claims = new map[str, Json];
-    set claims["sub"] = Json.text(user.name);
-    set claims["roles"] = to_json(user.roles);
-    set claims["iat"] = Json.integer(now / 1000);
-    set claims["exp"] = Json.integer(now / 1000 + lifetime_s);
-    let signed = base64url(from_text("{\"alg\":\"HS256\",\"typ\":\"JWT\"}")) + "." + base64url(from_text(try write_json(Json.object(claims))));
-    return ok(signed + "." + base64url(hmac_sha256(key, from_text(signed))));
+    let claims = new map[str, json.Json];
+    set claims["sub"] = json.Json.text(user.name);
+    set claims["roles"] = json.to_json(user.roles);
+    set claims["iat"] = json.Json.integer(now / 1000);
+    set claims["exp"] = json.Json.integer(now / 1000 + lifetime_s);
+    let signed = base64url(bytes.from_text("{\"alg\":\"HS256\",\"typ\":\"JWT\"}")) + "." + base64url(bytes.from_text(try json.write_json(json.Json.object(claims))));
+    return ok(signed + "." + base64url(crypto.hmac_sha256(key, bytes.from_text(signed))));
 }
 
 # The user of a token at now (ms), or err("unauthorized: REASON"): "not a token", "signature" (signed by none of the keys), "signing method" (anything but HS256), "content" (sub, roles or exp missing or of the wrong type), "expired", "not yet valid" (an nbf claim in the future). Claims the module does not know are ignored.
@@ -739,10 +710,10 @@ export fn check_token(key_list: list[bytes], now: int, token: str) -> result[Use
             return err("unauthorized: signature");
         }
         case ok(signature) {
-            let signed = from_text(parts[0] + "." + parts[1]);
+            let signed = bytes.from_text(parts[0] + "." + parts[1]);
             var good = false;
             for k in key_list {
-                if same_bytes(signature, hmac_sha256(k, signed)) {
+                if crypto.same_bytes(signature, crypto.hmac_sha256(k, signed)) {
                     set good = true;
                 }
             }
@@ -775,20 +746,20 @@ export fn check_token(key_list: list[bytes], now: int, token: str) -> result[Use
 }
 
 fn token_alg(part: str) -> result[str] {
-    return text_field(try parse_json(try to_text(try from_base64url(part))), "alg");
+    return json.text_field(try json.parse_json(try bytes.to_text(try from_base64url(part))), "alg");
 }
 
 fn token_user(part: str, now_s: int) -> result[User] {
-    let c = try parse_json(try to_text(try from_base64url(part)));
-    let name = try text_field(c, "sub");
-    let roles: list[str] = try from_json(try member(c, "roles"));
-    let exp = try int_field(c, "exp");
+    let c = try json.parse_json(try bytes.to_text(try from_base64url(part)));
+    let name = try json.text_field(c, "sub");
+    let roles: list[str] = try json.from_json(try json.member(c, "roles"));
+    let exp = try json.int_field(c, "exp");
     if name == "" {
         return err("no name");
     }
-    match member(c, "nbf") {
+    match json.member(c, "nbf") {
         case ok(_) {
-            if try int_field(c, "nbf") > now_s {
+            if try json.int_field(c, "nbf") > now_s {
                 return err("not yet valid");
             }
         }
@@ -828,19 +799,19 @@ record SignedIn {
 export fn sign_in_route[C, E: effects](
     pattern: str,
     p: Policy[C, uses E],
-    find_account: fn(C, str) -> result[Option[Account]] uses E,
+    find_account: fn(C, str) -> result[option.Option[Account]] uses E,
     key: bytes,
     lifetime_s: int
-) -> Route[C, uses E]
+) -> web.Route[C, uses E]
     requires key_fits(key)
     requires lifetime_s > 0
 {
-    let run = fn(ctx: C, r: Request, vars: map[str, str]) -> result[Response] {
+    let run = fn(ctx: C, r: http.Request, vars: map[str, str]) -> result[http.Response] {
         var name = "";
         var password = "";
-        match parse_json(r.body) {
+        match json.parse_json(r.body) {
             case ok(j) {
-                match text_field(j, "name") {
+                match json.text_field(j, "name") {
                     case ok(t) {
                         set name = t;
                     }
@@ -848,7 +819,7 @@ export fn sign_in_route[C, E: effects](
                         return err("bad_request: the body must be {\"name\": ..., \"password\": ...}");
                     }
                 }
-                match text_field(j, "password") {
+                match json.text_field(j, "password") {
                     case ok(t) {
                         set password = t;
                     }
@@ -893,9 +864,9 @@ export fn sign_in_route[C, E: effects](
             path: r.path,
             at_ms: now
         });
-        return ok(json_reply(200, new SignedIn { token: token, expires: now / 1000 + lifetime_s }));
+        return ok(web.json_reply(200, new SignedIn { token: token, expires: now / 1000 + lifetime_s }));
     };
-    return new Route { method: "POST", pattern: pattern, segments: segments(pattern), run: run };
+    return new web.Route { method: "POST", pattern: pattern, segments: segments(pattern), run: run };
 }
 
 # ---- browsers ----
@@ -950,11 +921,11 @@ export record Session {
 #     len(browser_routes(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_ms: 3600000, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }))) is 2
 export record Browser[C, E: effects] {
     # The account of a name, as for basic and sign_in_route; looked up again on every request.
-    find_account: fn(C, str) -> result[Option[Account]] uses E;
+    find_account: fn(C, str) -> result[option.Option[Account]] uses E;
     # Keeps a new session.
     keep: fn(C, Session) -> result[void] uses E;
     # The session of a key, or Option.none.
-    find: fn(C, str) -> result[Option[Session]] uses E;
+    find: fn(C, str) -> result[option.Option[Session]] uses E;
     # Ends the session of a key (a key with no session is ok).
     end: fn(C, str) -> result[void] uses E;
     # n random bytes: std.crypto.random_bytes.
@@ -1010,7 +981,7 @@ fn cookie_name(origin: str) -> str {
 }
 
 fn session_key(value: str) -> str {
-    return to_hex(sha256(from_text(value)));
+    return bytes.to_hex(crypto.sha256(bytes.from_text(value)));
 }
 
 fn session_user[C, E: effects](b: Browser[C, uses E], ctx: C, value: str, now: int) -> result[User] uses E {
@@ -1068,29 +1039,29 @@ record SignOutForm {
 
 # The routes of signing in browsers, to add to the application's: POST sign_in takes the form fields name, password and next, makes a new session and its cookie and answers 303 to next, or 303 to sign_in?failed=1&next=... when the name or password is wrong (the frontend's page says so; a script posting the same form sees where it was sent); POST sign_out ends the session, removes the cookie and answers 303 to sign_in. The frontend serves the sign-in page itself. The policy gives the clock and is told of the events; its rules must let anyone reach both paths.
 #     browser_routes(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_ms: 3600000, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }))[1].pattern is "/sign-out"
-export fn browser_routes[C, E: effects](b: Browser[C, uses E], p: Policy[C, uses E]) -> list[Route[C, uses E]]
+export fn browser_routes[C, E: effects](b: Browser[C, uses E], p: Policy[C, uses E]) -> list[web.Route[C, uses E]]
     requires browser_fits(b)
 {
-    let take: fn(C, SignInForm) -> result[Response] uses E = fn(ctx: C, f: SignInForm) -> result[Response] {
+    let take: fn(C, SignInForm) -> result[http.Response] uses E = fn(ctx: C, f: SignInForm) -> result[http.Response] {
         return sign_in_form(b, p, ctx, f);
     };
-    let leave: fn(C, SignOutForm) -> result[Response] uses E = fn(ctx: C, f: SignOutForm) -> result[Response] {
+    let leave: fn(C, SignOutForm) -> result[http.Response] uses E = fn(ctx: C, f: SignOutForm) -> result[http.Response] {
         return sign_out_form(b, p, ctx, f);
     };
     # Bound as any operation's input (form, headers, limits), then moved to the application's paths.
-    return [at_path(on_post("/", take), b.sign_in), at_path(on_post("/", leave), b.sign_out)];
+    return [at_path(web.on_post("/", take), b.sign_in), at_path(web.on_post("/", leave), b.sign_out)];
 }
 
-fn at_path[C, E: effects](rt: Route[C, uses E], path: str) -> Route[C, uses E] {
-    return new Route { method: rt.method, pattern: path, segments: segments(path), run: rt.run };
+fn at_path[C, E: effects](rt: web.Route[C, uses E], path: str) -> web.Route[C, uses E] {
+    return new web.Route { method: rt.method, pattern: path, segments: segments(path), run: rt.run };
 }
 
-fn sign_in_form[C, E: effects](b: Browser[C, uses E], p: Policy[C, uses E], ctx: C, f: SignInForm) -> result[Response] uses E {
+fn sign_in_form[C, E: effects](b: Browser[C, uses E], p: Policy[C, uses E], ctx: C, f: SignInForm) -> result[http.Response] uses E {
     let next = local_path(f.next);
     let now = p.now();
     if not same_origin("POST", f.fetch_site, f.origin, f.host, b.origin) {
         p.on_event(ctx, browser_event("refused", "cross-site", "", b.sign_in, now));
-        return ok(problem_reply(403, "cross-site request"));
+        return ok(web.problem_reply(403, "cross-site request"));
     }
     let o = try checked(ctx, b.find_account, f.name, f.password);
     if o.reason != "" {
@@ -1101,7 +1072,7 @@ fn sign_in_form[C, E: effects](b: Browser[C, uses E], p: Policy[C, uses E], ctx:
     if o.outdated {
         p.on_event(ctx, browser_event("outdated_hash", "the stored hash is weaker than hash_password makes now", o.user.name, b.sign_in, now));
     }
-    match read_cookie(f.cookies, cookie_name(b.origin)) {
+    match web.read_cookie(f.cookies, cookie_name(b.origin)) {
         case some(old) {
             # A new value at every sign-in: a value someone set in the browser before never becomes a session.
             try b.end(ctx, session_key(old));
@@ -1113,17 +1084,17 @@ fn sign_in_form[C, E: effects](b: Browser[C, uses E], p: Policy[C, uses E], ctx:
     if len(raw) != 16 {
         return err("the browser's random function gave " + str(len(raw)) + " bytes, not 16");
     }
-    let value = to_hex(raw);
+    let value = bytes.to_hex(raw);
     # ponytail: a fixed lifetime from signing in; renewing on use would cost a write per request.
     try b.keep(ctx, new Session { key: session_key(value), name: o.user.name, expires_ms: now + b.lifetime_ms });
     p.on_event(ctx, browser_event("signed_in", "", o.user.name, b.sign_in, now));
     let c = session_cookie(b.origin, value);
     set c.max_age_ms = b.lifetime_ms;
-    return with_cookie(see_other(next), c);
+    return web.with_cookie(see_other(next), c);
 }
 
-fn sign_out_form[C, E: effects](b: Browser[C, uses E], p: Policy[C, uses E], ctx: C, f: SignOutForm) -> result[Response] uses E {
-    match read_cookie(f.cookies, cookie_name(b.origin)) {
+fn sign_out_form[C, E: effects](b: Browser[C, uses E], p: Policy[C, uses E], ctx: C, f: SignOutForm) -> result[http.Response] uses E {
+    match web.read_cookie(f.cookies, cookie_name(b.origin)) {
         case some(value) {
             let key = session_key(value);
             match try b.find(ctx, key) {
@@ -1140,11 +1111,11 @@ fn sign_out_form[C, E: effects](b: Browser[C, uses E], p: Policy[C, uses E], ctx
     }
     let gone = session_cookie(b.origin, "");
     set gone.max_age_ms = 0;
-    return with_cookie(see_other(b.sign_in), gone);
+    return web.with_cookie(see_other(b.sign_in), gone);
 }
 
-fn session_cookie(origin: str, value: str) -> Cookie {
-    let c = cookie(cookie_name(origin), value);
+fn session_cookie(origin: str, value: str) -> web.Cookie {
+    let c = web.cookie(cookie_name(origin), value);
     set c.secure = not plain(origin);
     return c;
 }
@@ -1153,8 +1124,8 @@ fn browser_event(kind: str, reason: str, name: str, path: str, now: int) -> Even
     return new Event { kind: kind, reason: reason, name: name, method: "POST", path: path, at_ms: now };
 }
 
-fn see_other(location: str) -> Response {
-    return new Response { status: 303, headers: [new Header { name: "Location", value: location }], body: "" };
+fn see_other(location: str) -> http.Response {
+    return new http.Response { status: 303, headers: [new http.Header { name: "Location", value: location }], body: "" };
 }
 
 # ---- in operations ----
@@ -1163,16 +1134,16 @@ fn see_other(location: str) -> Response {
 #     is_some(current_user("")) is false
 #     or_else(current_user("{\"name\":\"ada\",\"roles\":[\"admin\"]}"), new User { name: "", roles: new list[str] }).roles[0] is "admin"
 #     or_else(current_user("ada"), new User { name: "", roles: new list[str] }).name is "ada"
-export fn current_user(identity: str) -> Option[User] {
+export fn current_user(identity: str) -> option.Option[User] {
     if identity == "" {
-        return Option.none;
+        return option.Option.none;
     }
-    match parse_json(identity) {
+    match json.parse_json(identity) {
         case ok(j) {
-            let parsed: result[User] = from_json(j);
+            let parsed: result[User] = json.from_json(j);
             match parsed {
                 case ok(user) {
-                    return Option.some(user);
+                    return option.Option.some(user);
                 }
                 case err(_) {
                 }
@@ -1181,7 +1152,7 @@ export fn current_user(identity: str) -> Option[User] {
         case err(_) {
         }
     }
-    return Option.some(new User { name: identity, roles: new list[str] });
+    return option.Option.some(new User { name: identity, roles: new list[str] });
 }
 
 # The signed-in user, or err("unauthorized: sign in"), which std.web answers 401: `let user = try require_user(input.identity);`.
@@ -1242,7 +1213,7 @@ fn who(access: Access) -> str {
 
 # Who may call each route of the application under these rules: one line `METHOD PATTERN: WHO` per route, in the application's order. Keep it in a test, so that a change of access shows in a diff.
 #     describe(web_app(new list[Route[int]]), new list[Rule]) is ""
-export fn describe[C, E: effects](app: App[C, uses E], rules: list[Rule]) -> str {
+export fn describe[C, E: effects](app: web.App[C, uses E], rules: list[Rule]) -> str {
     let lines = new list[str];
     for rt in app.routes {
         let at = deciding(rules, rt.method, rt.pattern);
@@ -1257,7 +1228,7 @@ export fn describe[C, E: effects](app: App[C, uses E], rules: list[Rule]) -> str
 
 # What a reviewer should look at, one line each: routes no rule matches (refused: meant or forgotten?), rules that decide for no route (misspelt, or hidden behind an earlier rule), rules that decide for only some requests of a route, rules that need a user when no way of signing in is accepted, test_users in the policy, and browser sign-in (its settings, a sign-in path nobody can post to, a cookie over plain HTTP). Empty when there is nothing.
 #     review(web_app(new list[Route[int]]), policy([rule("/x", Access.anyone)], new list[Way[int]], fn() -> int { return 0; }))[0] is "rule 1 (/x) decides for no route"
-export fn review[C, E: effects](app: App[C, uses E], p: Policy[C, uses E]) -> list[str] {
+export fn review[C, E: effects](app: web.App[C, uses E], p: Policy[C, uses E]) -> list[str] {
     let found = new list[str];
     let partly = new list[str];
     let used = new list[bool];
@@ -1300,7 +1271,7 @@ export fn review[C, E: effects](app: App[C, uses E], p: Policy[C, uses E]) -> li
         }
         if w.sign_in_page != "" {
             push(found, "browsers sign in: " + w.name);
-            match decide(p.rules, "POST", w.sign_in_page, Option.none) {
+            match decide(p.rules, "POST", w.sign_in_page, option.Option.none) {
                 case allowed {
                 }
                 case sign_in_needed {
@@ -1322,10 +1293,10 @@ export fn review[C, E: effects](app: App[C, uses E], p: Policy[C, uses E]) -> li
 
 # A step that gives every answer the headers a security scan asks for, unless the answer already has them: X-Content-Type-Options: nosniff, X-Frame-Options: DENY, Referrer-Policy: no-referrer, Cache-Control: no-store, and Strict-Transport-Security for hsts_s when that is above 0 (use it only when every client reaches the application over HTTPS). Put it first in App.steps so that refusals get them too.
 #     handle_request(new App[int] { routes: new list[Route[int]], steps: [safe_headers(0)], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).headers[1].value is "nosniff"
-export fn safe_headers[C, E: effects](hsts_s: int) -> Step[C, uses E] {
-    return new Step {
+export fn safe_headers[C, E: effects](hsts_s: int) -> web.Step[C, uses E] {
+    return new web.Step {
         prefix: "/",
-        run: fn(ctx: C, r: Request, next: fn(Request) -> Response uses E) -> Response {
+        run: fn(ctx: C, r: http.Request, next: fn(http.Request) -> http.Response uses E) -> http.Response {
             let resp = next(r);
             let names = [
                 "X-Content-Type-Options",
@@ -1343,7 +1314,7 @@ export fn safe_headers[C, E: effects](hsts_s: int) -> Step[C, uses E] {
                     }
                 }
                 if not present {
-                    push(resp.headers, new Header { name: names[i], value: values[i] });
+                    push(resp.headers, new http.Header { name: names[i], value: values[i] });
                 }
             }
             return resp;

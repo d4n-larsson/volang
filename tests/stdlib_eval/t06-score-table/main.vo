@@ -1,4 +1,4 @@
-import std.text.repeat;
+import std.text;
 
 record Entry {
     name: str;
@@ -56,7 +56,7 @@ fn main() -> result[void] uses console, input {
         set w = max(w, len(chars(e.name)));
     }
     print(pad_right_to("Name", w) + " | Score");
-    print(repeat("-", w + 1) + "+" + repeat("-", 6));
+    print(text.repeat("-", w + 1) + "+" + text.repeat("-", 6));
     for e in entries {
         print(pad_right_to(e.name, w) + " | " + pad_left_to(str(e.score), 5));
     }

@@ -1,8 +1,8 @@
 # Spec 017: a program that is nowhere on PATH is err("not found").
-import std.process.run;
+import std.process;
 
 fn main() uses console, process("no-such-program-vo") {
-    match run("no-such-program-vo", ["x"]) {
+    match process.run("no-such-program-vo", ["x"]) {
         case ok(out) {
             print("ran: " + str(out.code));
         }

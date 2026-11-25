@@ -29,6 +29,9 @@ import tempfile
 import threading
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from migrate_058 import module_form  # noqa: E402  spec 058: programs assembled from fragments
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 EMULATED = any(a in os.environ.get("VO_BIN", "") for a in ("aarch64", "riscv64"))
@@ -48,22 +51,10 @@ def case(name, ok, detail=""):
 
 
 PRELUDE = """
-import std.workers.Arrival;
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.Worker;
-import std.workers.WorkerError;
-import std.workers.emit;
-import std.workers.next_message;
-import std.workers.receive;
-import std.workers.receive_first;
-import std.workers.start_worker;
-import std.workers.stop_worker;
-import std.workers.tell;
-import std.workers.with_deadline;
-import std.time.sleep;
+import std.workers;
+import std.time;
 
-fn why(e: WorkerError) -> str {
+fn why(e: workers.WorkerError) -> str {
     match e {
         case timed_out {
             return "timeout";
@@ -86,7 +77,7 @@ fn why(e: WorkerError) -> str {
     }
 }
 
-fn sent(r: result[void, WorkerError]) -> str {
+fn sent(r: result[void, workers.WorkerError]) -> str {
     match r {
         case ok() {
             return "sent";
@@ -119,7 +110,7 @@ fn text_of(r: result[str]) -> str {
     }
 }
 
-fn int_of(r: result[int, WorkerError]) -> int {
+fn int_of(r: result[int, workers.WorkerError]) -> int {
     match r {
         case ok(n) {
             return n;
@@ -130,8 +121,8 @@ fn int_of(r: result[int, WorkerError]) -> int {
     }
 }
 
-fn give[In, Out](link: Link[In, Out], message: Out) {
-    match emit(link, message) {
+fn give[In, Out](link: workers.Link[In, Out], message: Out) {
+    match workers.emit(link, message) {
         case ok() {
         }
         case err(_) {
@@ -139,7 +130,7 @@ fn give[In, Out](link: Link[In, Out], message: Out) {
     }
 }
 
-fn started[In, Out](r: result[Worker[In, Out], WorkerError]) -> Worker[In, Out] {
+fn started[In, Out](r: result[workers.Worker[In, Out], workers.WorkerError]) -> workers.Worker[In, Out] {
     match r {
         case ok(w) {
             return w;
@@ -155,7 +146,7 @@ fn started[In, Out](r: result[Worker[In, Out], WorkerError]) -> Worker[In, Out] 
 def run(d, source, args=(), flags=(), timeout=60, env=None, stdin=None):
     """Runs a program in directory d; (stdout, stderr, status)."""
     with open(os.path.join(d, "main.vo"), "w") as f:
-        f.write(PRELUDE + source)
+        f.write(module_form(PRELUDE + source))
     cmd = [VO, "run", "--timeout", str(timeout * SLOW), *flags, "main.vo", *(["--", *args] if args else [])]
     r = subprocess.run(cmd, cwd=d, capture_output=True, text=True, timeout=(timeout + 30) * SLOW,
                        env={**os.environ, **(env or {})}, input=stdin)
@@ -273,19 +264,17 @@ fn main() uses console, clock {
 """
 
 LINES = """
-import std.tcp.connect;
-import std.tcp.read_until;
-import std.bytes.from_text;
-import std.bytes.to_text;
+import std.tcp;
+import std.bytes;
 
 fn forward(port: int) -> fn(Link[int, str]) uses net {
     return fn(link: Link[int, str]) {
-        match connect("127.0.0.1", port, 5000) {
+        match tcp.connect("127.0.0.1", port, 5000) {
             case ok(c) {
                 while true {
-                    match read_until(c, from_text("\\n"), 60000) {
+                    match tcp.read_until(c, bytes.from_text("\\n"), 60000) {
                         case ok(line) {
-                            give(link, trim(text_of(to_text(line))));
+                            give(link, trim(text_of(bytes.to_text(line))));
                         }
                         case err(_) {
                             return;
@@ -468,8 +457,7 @@ def group_exchange():
 # ---- leaks ----
 
 LEAKS = """
-import std.tcp.connect;
-import std.tcp.read;
+import std.tcp;
 
 fn computes(link: Link[int, int]) {
     var n = 0;
@@ -484,9 +472,9 @@ fn sleeps(link: Link[int, int]) uses clock {
 
 fn hangs(port: int) -> fn(Link[int, int]) uses net {
     return fn(link: Link[int, int]) {
-        match connect("127.0.0.1", port, 5000) {
+        match tcp.connect("127.0.0.1", port, 5000) {
             case ok(c) {
-                match read(c, 100, 600000) {
+                match tcp.read(c, 100, 600000) {
                     case ok(_) {
                     }
                     case err(_) {
@@ -542,7 +530,7 @@ def group_leaks():
     ways = {"return": 0, "exit": 3, "error": 70, "timeout": 124, "SIGTERM": -signal.SIGTERM, "SIGKILL": -signal.SIGKILL}
     with tempfile.TemporaryDirectory(dir=os.path.join(ROOT, "build")) as d:
         with open(os.path.join(d, "main.vo"), "w") as f:
-            f.write(PRELUDE + LEAKS)
+            f.write(module_form(PRELUDE + LEAKS))
         for way, status in ways.items():
             mark = f"{os.getpid()}-{way}"
             how = way if way in ("return", "exit", "error") else "wait"
@@ -584,8 +572,7 @@ def group_leaks():
 # ---- deadline ----
 
 DEADLINE = """
-import std.tcp.connect;
-import std.tcp.read;
+import std.tcp;
 
 fn spin() -> int {
     var n = 0;
@@ -608,9 +595,9 @@ fn sleeps(link: Link[int, int]) uses clock {
 
 fn hangs(port: int) -> fn(Link[int, int]) uses net {
     return fn(link: Link[int, int]) {
-        match connect("127.0.0.1", port, 5000) {
+        match tcp.connect("127.0.0.1", port, 5000) {
             case ok(c) {
-                match read(c, 100, 600000) {
+                match tcp.read(c, 100, 600000) {
                     case ok(_) {
                     }
                     case err(_) {
@@ -656,7 +643,7 @@ def group_deadline():
     mark = f"{os.getpid()}-deadline"
     with tempfile.TemporaryDirectory(dir=os.path.join(ROOT, "build")) as d:
         with open(os.path.join(d, "main.vo"), "w") as f:
-            f.write(PRELUDE + DEADLINE)
+            f.write(module_form(PRELUDE + DEADLINE))
         p = subprocess.Popen([VO, "run", "--timeout", str(300 * SLOW), "main.vo", "--", str(hold.getsockname()[1])], cwd=d,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env={**os.environ, MARK: mark})
         first = p.stdout.readline().split()
@@ -916,7 +903,7 @@ def group_replay():
     same_runs = 1000 if not EMULATED else 20
     with tempfile.TemporaryDirectory(dir=os.path.join(ROOT, "build")) as d:
         with open(os.path.join(d, "main.vo"), "w") as f:
-            f.write(PRELUDE + RACE)
+            f.write(module_form(PRELUDE + RACE))
         differ, outputs = [], set()
         for i in range(recordings):
             r = subprocess.run([VO, "run", "--timeout", str(60 * SLOW), "--record", "r.jsonl", "main.vo"], cwd=d,
@@ -931,7 +918,7 @@ def group_replay():
             case("replay/the-race-is-real", len(outputs) > 1, "every run printed the same: the program does not race")
 
         with open(os.path.join(d, "main.vo"), "w") as f:
-            f.write(PRELUDE + NAMED)
+            f.write(module_form(PRELUDE + NAMED))
         seen = set()
         batch = 20 if not EMULATED else 4
         for start in range(0, same_runs, batch):

@@ -12,15 +12,12 @@
  export fn discount(cents: int, percent: int) -> int {
 --- old/cart.vo
 +++ cart.vo
-@@ -1,10 +1,9 @@
- import pricing.tax;
--import pricing.rounding;
- 
+@@ -3,7 +3,7 @@
  fn subtotal(prices: list[int]) -> int {
      var sum = 0;
      for p in prices {
--        set sum = sum + p + rounding(tax(p));
-+        set sum = sum + p + tax(p);
+-        set sum = sum + p + pricing.rounding(pricing.tax(p));
++        set sum = sum + p + pricing.tax(p);
      }
      return sum;
  }

@@ -17,10 +17,10 @@ import time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.environ.get("VO_BIN", os.path.join(ROOT, "bin", "vo"))
 CA = os.path.join(ROOT, "tests", "tls", "certs", "test-ca.pem")
-PROGRAM = """import std.http.get;
+PROGRAM = """import std.http;
 
 fn main() -> result[void] uses console, net("127.0.0.1") {
-    let r = try get(args()[0]);
+    let r = try http.get(args()[0]);
     print(str(r.status) + " " + str(len(r.body)));
     return ok();
 }

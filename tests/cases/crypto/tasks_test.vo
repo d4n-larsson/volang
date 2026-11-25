@@ -1,8 +1,8 @@
-import std.bytes.to_hex;
-import std.crypto.random_bytes;
+import std.bytes;
+import std.crypto;
 
 fn draw(n: int) -> str uses entropy {
-    return to_hex(random_bytes(n));
+    return bytes.to_hex(crypto.random_bytes(n));
 }
 
 test "tasks in a test draw different, reproducible bytes" uses entropy {

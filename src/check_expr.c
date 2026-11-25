@@ -610,6 +610,16 @@ static Type *check_call_inner(Node *call, Type *expected)
             return check_call_value(call, expected);
         }
         s->flags |= SYF_USED; /* calling a local still uses it; a local, record or variant is not callable */
+        if (s->kind == SYM_MODULE) { /* spec 058: `regex(...)` after `import std.regex;` means `regex.regex` */
+            s->decl->e.i++;
+            Str *q = msg("$1.$1", name, 0, 0);
+            Sym *item = scope_find(q);
+            Diag *d = item ? ck_err("E0201", call->a.n, msg("`$1` is a module: write `$2`.", name, q, 0))
+                           : ck_err1("E0201", call->a.n, "`$1` is a module: use one of its items, `$1.NAME`.", name);
+            if (item) diag_add_fix(d, (int)call->a.n->file, call->a.n->start, call->a.n->end, q);
+            check_args_untyped(call);
+            return t_error;
+        }
         ck_err1("E0303", call->a.n, "`$1` is not a function.", name);
         check_args_untyped(call);
         return t_error;
@@ -629,6 +639,17 @@ static Type *check_call_inner(Node *call, Type *expected)
  * placeholder (type error) so later uses of the name are not reported again. */
 void report_undefined(Str *name, Node *node)
 {
+    if (module_undefined(name, node)) return; /* spec 058 */
+    long dot = str_dot(name); /* spec 058: `m.x` or `m` followed by `.`, with m a module not imported: E0204 */
+    FileRec *nf = file_get((int)node->file);
+    Str *mod = dot >= 0 ? str_new(name->data, dot) : node->end < nf->len && nf->text[node->end] == '.' ? name : 0;
+    if (mod && missing_module_import(mod, node)) {
+        Sym *s = sym_new(name, SYM_LOCAL, 0, t_error, 0);
+        s->flags = SYF_USED;
+        s->slot = -1;
+        scope_add(s);
+        return;
+    }
     Diag *d = ck_err1("E0201", node, "`$1` is not defined.", name);
     if (str_eq_cstr(name, "ok")) { /* `return ok;`: ok and err are called like functions */
         d->msg = str_from_cstr("`ok` is called like a function: `ok()` or `ok(value)`.");
@@ -739,6 +760,11 @@ Type *check_ident_as(Node *node, Type *expected)
             node->flags |= NF_FNVAL;
             node->d.n = s->decl;
             return fn_value_instance(node, s->decl, ty_func_of(s->decl), expected);
+        }
+        if (s->kind == SYM_MODULE) { /* spec 058 */
+            s->decl->e.i++; /* a mistaken use is still a use (no W0203) */
+            ck_err1("E0201", node, "`$1` is a module: use one of its items, `$1.NAME`.", node->a.s);
+            return t_error;
         }
         ck_err1("E0301", node, "`$1` is not a value.", node->a.s);
         return t_error;
@@ -1278,7 +1304,7 @@ void suggest_import(Diag *d, Str *name, Node *node)
     Str *path = find_import((int)node->file, name); /* "a.b.name" */
     if (!path) return;
     d->code = "E0204";
-    d->msg = msg("`$1` is defined in another file but not imported: add `import $2;`.", name, path, 0);
+    d->msg = msg("`$1` is defined in another file but not imported: add `import $2;` and write `$2.$1`.", name, path, 0);
     SB *sb = sb_new();
     sb_cstr(sb, "import ");
     sb_str(sb, path);
@@ -1292,8 +1318,113 @@ void suggest_import(Diag *d, Str *name, Node *node)
  * name, a function (not main) at a call site, otherwise a local value. */
 int sym_fits(Sym *sym, Node *node)
 {
-    int c = (unsigned char)node->a.s->data[0]; /* N_NAME and N_IDENT both keep the name in A */
+    Str *name = node->a.s; /* N_NAME and N_IDENT both keep the name in A */
+    long dot = str_dot(name);
+    int c = (unsigned char)name->data[dot + 1];
+    if (dot >= 0) { /* spec 058: `m.name`: the items of that module (functions and constants as values) */
+        if (str_dot(sym->name) != dot || memcmp(sym->name->data, name->data, (size_t)dot + 1)) return 0;
+        if (c >= 'A' && c <= 'Z') return sym->kind == SYM_RECORD || sym->kind == SYM_VARIANT;
+        return sym->kind == SYM_FN || (node->kind != N_NAME && sym->kind == SYM_CONST);
+    }
     if (c >= 'A' && c <= 'Z') return sym->kind == SYM_RECORD || sym->kind == SYM_VARIANT;
     if (node->kind == N_NAME) return sym->kind == SYM_FN && !str_eq_cstr(sym->name, "main");
     return sym->kind == SYM_LOCAL;
+}
+
+/* Spec 058: the module symbol of this name (a local of the same name, E0203, does not hide it), or 0. */
+Sym *module_find(Str *name)
+{
+    for (Sym *s = ck_scope; s; s = s->next)
+        if (s->kind == SYM_MODULE && str_eq(s->name, name)) return s;
+    return 0;
+}
+
+/* Spec 058: the offset of the `.` in a qualified name `m.name`, or -1. */
+long str_dot(Str *s)
+{
+    for (long i = 0; i < s->len; i++)
+        if (s->data[i] == '.') return i;
+    return -1;
+}
+
+/* Spec 058: "std.json", "@pkg/a/b.vo" or "notes.vo": how a module's file is named in messages. */
+Str *module_label(long target)
+{
+    FileRec *f = file_get((int)target);
+    if (f->std) return msg("std.$1", str_new(f->path->data + 4, f->path->len - 7), 0, 0);
+    Str *pkg = pkg_relpath(f->path);
+    if (pkg) return pkg;
+    long cut = f->path->len;
+    while (cut > 0 && f->path->data[cut - 1] != '/') cut--;
+    return str_new(f->path->data + cut, f->path->len - cut);
+}
+
+/* Spec 058 (research R5): the E0201 cases of module names, reported here and returning 1, or 0 for an
+ * ordinary undefined name:
+ * - `m.name` with `m` a module: a builtin written qualified, a private item (E0209), or a missing item;
+ * - a bare name that exactly one imported module exports: the qualify fix, and later uses resolve to the
+ *   item through a symbol that reports again with the same fix (SYF_QUALIFY, see rename_use). */
+int module_undefined(Str *name, Node *node)
+{
+    long dot = str_dot(name);
+    if (dot >= 0) {
+        Sym *ms = module_find(str_new(name->data, dot));
+        Sym *pre = ms ? 0 : scope_find(str_new(name->data, dot));
+        if (!ms && pre && is_placeholder(pre)) { /* the module's import failed (reported there): silent */
+            Sym *s = sym_new(name, SYM_LOCAL, 0, t_error, 0);
+            s->flags = SYF_USED;
+            s->slot = -1;
+            scope_add(s);
+            return 1;
+        }
+        if (!ms) return 0;
+        Str *item = str_new(name->data + dot + 1, name->len - dot - 1);
+        Diag *d;
+        FileRec *mf = file_get((int)ms->slot);
+        const LibChange *c = mf->std ? libchange_find(str_new(mf->path->data + 4, mf->path->len - 7), item) : 0;
+        if (c) { /* a name changed in vo 0.2 (E0214): reported at each use, nothing bound */
+            libchange_qualified(node, ms->name, c);
+            return 1;
+        }
+        if (builtin_id(item)) {
+            d = ck_err1("E0201", node, "`$1` is a builtin: write `$1`.", item);
+            diag_add_fix(d, (int)node->file, node->start, node->end, item);
+        } else {
+            Node *decl = module_private_item(ms->slot, item);
+            if (decl) {
+                private_item_used(node, item, decl, ms->slot);
+            } else {
+                d = ck_err("E0201", node, msg("`$1` has no item `$2`.", module_label(ms->slot), item, 0));
+                suggest_name(d, name, node);
+            }
+        }
+        Sym *s = sym_new(name, SYM_LOCAL, 0, t_error, 0); /* a silent placeholder, as below */
+        s->flags = SYF_USED;
+        s->slot = -1;
+        scope_add(s);
+        return 1;
+    }
+    Sym *found = 0;
+    long n = 0;
+    for (Sym *s = ck_scope; s; s = s->next) {
+        if (s->kind == SYM_MODULE || s->kind == SYM_LOCAL || !s->decl) continue;
+        long sd = str_dot(s->name);
+        if (sd < 0 || s->name->len - sd - 1 != name->len || memcmp(s->name->data + sd + 1, name->data, (size_t)name->len))
+            continue;
+        if (found && found->decl == s->decl) continue;
+        found = s;
+        n++;
+    }
+    if (n != 1) return 0;
+    long fd = str_dot(found->name);
+    Str *mod = str_new(found->name->data, fd);
+    Sym *ms = module_find(mod);
+    if (ms) ms->decl->e.i++; /* the use is meant for the module (no W0203) */
+    Diag *d = ck_err("E0201", node, msg("`$1` is in `$2`: write `$3`.", name, ms ? module_label(ms->slot) : mod, found->name));
+    diag_add_fix(d, (int)node->file, node->start, node->end, found->name);
+    Sym *alias = sym_new(name, found->kind, found->decl, found->type, node);
+    alias->flags |= SYF_QUALIFY;
+    alias->rename = found->name;
+    scope_add(alias);
+    return 1;
 }

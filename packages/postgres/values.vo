@@ -1,10 +1,8 @@
 # postgres.values: how PostgreSQL's types and text forms map to the five kinds of value a program
 # sees. Not part of the package's API: import postgres.client.
-import std.bytes.from_hex;
-import std.bytes.from_ints;
-import std.bytes.to_hex;
-import std.text.starts_with;
-import std.time.date;
+import std.bytes;
+import std.text;
+import std.time;
 
 # The kind of value a column of a given type is read as.
 #     kind_of(23) == Kind.integer is true
@@ -41,11 +39,11 @@ export fn kind_of(type_id: int) -> Kind {
 
 # The bytes of a bytea value in the server's hex form.
 #     blob_of(`\x00ff`) == from_hex("00ff") is true
-export fn blob_of(text: str) -> result[bytes] {
-    if not starts_with(text, `\x`) {
+export fn blob_of(text_value: str) -> result[bytes] {
+    if not text.starts_with(text_value, `\x`) {
         return err("protocol: a bytea value is not in hex form");
     }
-    match from_hex(slice(text, 2, len(text))) {
+    match bytes.from_hex(slice(text_value, 2, len(text_value))) {
         case ok(b) {
             return ok(b);
         }
@@ -58,7 +56,7 @@ export fn blob_of(text: str) -> result[bytes] {
 # Bytes as the text the server reads a bytea from.
 #     blob_text(from_ints([0, 255])) is `\x00ff`
 export fn blob_text(b: bytes) -> str {
-    return `\x` + to_hex(b);
+    return `\x` + bytes.to_hex(b);
 }
 
 fn number(s: str, a: int, b: int) -> result[int] {
@@ -139,7 +137,7 @@ export fn time_of(s: str) -> result[int] {
     let month = try number(s, 5, 7);
     let day = try number(s, 8, 10);
     var ms = 0;
-    match date(year, month, day) {
+    match time.date(year, month, day) {
         case ok(d) {
             set ms = d;
         }
@@ -189,11 +187,11 @@ test "types to kinds" {
 }
 
 test "bytea" {
-    expect_eq(blob_of(`\x`), from_hex(""));
-    expect_eq(blob_of(`\x00ff10`), from_hex("00ff10"));
+    expect_eq(blob_of(`\x`), bytes.from_hex(""));
+    expect_eq(blob_of(`\x00ff10`), bytes.from_hex("00ff10"));
     expect_eq(blob_of("00ff"), err("protocol: a bytea value is not in hex form"));
     expect_eq(blob_of(`\xzz`), err("protocol: a bytea value is not in hex form"));
-    expect_eq(blob_text(from_ints([0, 255, 16])), `\x00ff10`);
+    expect_eq(blob_text(bytes.from_ints([0, 255, 16])), `\x00ff10`);
 }
 
 test "dates and times" {

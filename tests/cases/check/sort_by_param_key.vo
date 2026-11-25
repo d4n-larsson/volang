@@ -1,6 +1,6 @@
 # sort_by takes a key of an ordered type parameter, not of an unconstrained one; group_by needs a key
 # that can be a map key.
-import std.lists.group_by;
+import std.lists;
 
 fn sorted_by[T, C: ordered](xs: list[T], key: fn(T) -> C) {
     sort_by(xs, key);
@@ -14,6 +14,6 @@ fn main() uses console {
     let words = ["pear", "fig"];
     sorted_by(words, fn(w: str) -> int { return len(w); });
     sorted_any(words, fn(w: str) -> int { return len(w); });
-    let groups = group_by(words, fn(w: str) -> list[str] { return [w]; });
+    let groups = lists.group_by(words, fn(w: str) -> list[str] { return [w]; });
     print(str(len(groups)));
 }

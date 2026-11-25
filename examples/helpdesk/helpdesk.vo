@@ -1,12 +1,7 @@
 # Help-desk triage with the built-in collections: a priority queue of tickets, an ordered map of
 # on-call shifts, an ordered set of people, and a deque of the last tickets handled.
-import std.collections.difference;
-import std.collections.key_at_or_below;
-import std.collections.pop_front;
-import std.text.align_left;
-import std.text.align_right;
-import std.text.lines;
-import std.text.words;
+import std.collections;
+import std.text;
 
 # A record whose fields are all ordered is itself ordered, field by field: the most urgent
 # severity first, then the earlier ticket, then the title. No comparison function is needed.
@@ -22,22 +17,22 @@ export record Handled {
     on_call: str;
 }
 
-fn number(text: str, what: str, line: str) -> result[int] {
-    match parse_int(text) {
+fn number(text_value: str, what: str, line: str) -> result[int] {
+    match parse_int(text_value) {
         case ok(n) {
             return ok(n);
         }
         case err(_) {
-            return err("bad " + what + " `" + text + "` in line `" + line + "`");
+            return err("bad " + what + " `" + text_value + "` in line `" + line + "`");
         }
     }
 }
 
 # Meaningful lines of a data file: blank lines and `#` comments are skipped.
-fn data_lines(text: str) -> list[list[str]] {
+fn data_lines(text_value: str) -> list[list[str]] {
     var out = new list[list[str]];
-    for line in lines(text) {
-        let ws = words(line);
+    for line in text.lines(text_value) {
+        let ws = text.words(line);
         if len(ws) == 0 or slice(ws[0], 0, 1) == "#" {
             continue;
         }
@@ -47,9 +42,9 @@ fn data_lines(text: str) -> list[list[str]] {
 }
 
 # `MINUTE SEVERITY TITLE...` per line.
-export fn parse_tickets(text: str) -> result[list[Ticket]] {
+export fn parse_tickets(text_value: str) -> result[list[Ticket]] {
     var out = new list[Ticket];
-    for ws in data_lines(text) {
+    for ws in data_lines(text_value) {
         let line = join(ws, " ");
         if len(ws) < 3 {
             return err("a ticket needs a minute, a severity and a title: `" + line + "`");
@@ -66,9 +61,9 @@ export fn parse_tickets(text: str) -> result[list[Ticket]] {
 }
 
 # `MINUTE NAME` per line: shifts keyed by their start, kept in order.
-export fn parse_shifts(text: str) -> result[ordered_map[int, str]] {
+export fn parse_shifts(text_value: str) -> result[ordered_map[int, str]] {
     let shifts = new ordered_map[int, str];
-    for ws in data_lines(text) {
+    for ws in data_lines(text_value) {
         let line = join(ws, " ");
         if len(ws) != 2 {
             return err("a shift needs a minute and a name: `" + line + "`");
@@ -80,7 +75,7 @@ export fn parse_shifts(text: str) -> result[ordered_map[int, str]] {
 
 # The person on call at a minute.
 export fn on_call(shifts: ordered_map[int, str], minute: int) -> result[str] {
-    match key_at_or_below(shifts, minute) {
+    match collections.key_at_or_below(shifts, minute) {
         case some(start) {
             return ok(shifts[start]);
         }
@@ -107,7 +102,7 @@ export fn triage(tickets: list[Ticket]) -> list[Ticket] {
 export fn remember(history: deque[str], title: str, keep: int) {
     push(history, title);
     while len(history) > keep {
-        match pop_front(history) {
+        match collections.pop_front(history) {
             case ok(_) {
             }
             case err(_) {
@@ -126,8 +121,8 @@ export fn handle(tickets: list[Ticket], shifts: ordered_map[int, str]) -> result
 
 fn line_of(h: Handled) -> str {
     let t = h.ticket;
-    let when = "minute " + align_right(str(t.minute), 2);
-    return "  sev " + str(t.severity) + "  " + when + "  " + align_left(t.title, 26) + "on call: " + h.on_call;
+    let when = "minute " + text.align_right(str(t.minute), 2);
+    return "  sev " + str(t.severity) + "  " + when + "  " + text.align_left(t.title, 26) + "on call: " + h.on_call;
 }
 
 fn names(s: ordered_set[str]) -> str {
@@ -156,7 +151,7 @@ export fn report(handled: list[Handled], shifts: ordered_map[int, str]) -> str {
         push(last, title);
     }
     push(out, "paged: " + names(paged));
-    push(out, "never paged: " + names(difference(everyone, paged)));
+    push(out, "never paged: " + names(collections.difference(everyone, paged)));
     push(out, "last " + str(len(last)) + " handled: " + join(last, "; "));
     return join(out, "\n") + "\n";
 }

@@ -1,8 +1,8 @@
 # A function that calls std.random.pick must declare random (E0501, with the fix).
-import std.random.pick;
+import std.random;
 
 fn first(xs: list[int]) -> int {
-    match pick(xs) {
+    match random.pick(xs) {
         case ok(x) {
             return x;
         }

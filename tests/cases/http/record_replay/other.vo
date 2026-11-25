@@ -1,8 +1,7 @@
 # The same request to 127.0.0.1 instead of localhost: replay must refuse it (R0014).
-import std.http.Response;
-import std.http.get;
+import std.http;
 
-fn show(r: result[Response]) uses console {
+fn show(r: result[http.Response]) uses console {
     match r {
         case ok(resp) {
             print("status " + str(resp.status));
@@ -20,5 +19,5 @@ fn show(r: result[Response]) uses console {
 
 fn main() uses console, net("127.0.0.1", "localhost") {
     let a = args();
-    show(get("http://127.0.0.1:" + a[0] + a[1]));
+    show(http.get("http://127.0.0.1:" + a[0] + a[1]));
 }

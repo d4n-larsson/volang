@@ -1,19 +1,11 @@
 # std.http: HTTP and HTTPS requests (needs net), and serving plain HTTP requests (needs serve).
-# Part of the vo standard library (spec 007, serving spec 011, https spec 019). Import items one by one: `import std.http.NAME;`.
+# Part of the vo standard library (spec 007, serving spec 011, https spec 019). Import the module, `import std.http;`, and write its items as `http.NAME`.
 # The host is checked against the caller's net scope at run time, the address against its serve scope.
 # ponytail: one request per connection (Connection: close), redirects returned, not followed; a
 # server answers one request at a time.
 
-import std.tcp.Conn;
-import std.tcp.TcpError;
-import std.tcp.close_conn;
-import std.tcp.connect;
-import std.tcp.connect_tls;
-import std.tcp.tcp_error_text;
-import std.tcp.read;
-import std.tcp.read_exact;
-import std.tcp.read_until;
-import std.option.Option;
+import std.option;
+import std.tcp;
 
 # One response header, as received.
 #     new Header { name: "a", value: "b" }.name is "a"
@@ -372,13 +364,13 @@ export fn send_bytes(
 
 # The value of the first response header with this name, compared without case; `none` when there is none.
 #     response_header(new Response { status: 200, headers: [new Header { name: "Content-Type", value: "text/plain" }], body: "" }, "content-type") == Option.some("text/plain") is true
-export fn response_header(r: Response, name: str) -> Option[str] {
+export fn response_header(r: Response, name: str) -> option.Option[str] {
     for h in r.headers {
         if lower(h.name) == lower(name) {
-            return Option.some(h.value);
+            return option.Option.some(h.value);
         }
     }
-    return Option.none;
+    return option.Option.none;
 }
 
 # A request a server received: method, path, query (after `?`), headers in their order, and body.
@@ -398,13 +390,13 @@ export record Request {
 
 # The value of the first request header with this name, compared without case; `none` when there is none.
 #     request_header(new Request { method: "GET", path: "/", query: "", headers: [new Header { name: "Host", value: "x" }], body: "" }, "host") == Option.some("x") is true
-export fn request_header(r: Request, name: str) -> Option[str] {
+export fn request_header(r: Request, name: str) -> option.Option[str] {
     for h in r.headers {
         if lower(h.name) == lower(name) {
-            return Option.some(h.value);
+            return option.Option.some(h.value);
         }
     }
-    return Option.none;
+    return option.Option.none;
 }
 
 # Answers HTTP requests on address ("8000": this machine, "0.0.0.0:8000": the network) with handle's responses until stopped; many requests are read at once, and handle is called for one at a time.
@@ -728,14 +720,14 @@ fn answer_bytes[E: effects](raw: str, handle: fn(BytesRequest) -> BytesResponse 
     }
 }
 
-fn body_error(e: TcpError) -> str {
-    if e == TcpError.closed {
+fn body_error(e: tcp.TcpError) -> str {
+    if e == tcp.TcpError.closed {
         return "the response ended early";
     }
-    return tcp_error_text(e);
+    return tcp.tcp_error_text(e);
 }
 
-fn stream_send(c: Conn[uses net], text: str, wait: int) -> result[void] {
+fn stream_send(c: tcp.Conn[uses net], text: str, wait: int) -> result[void] {
     # std.tcp's send (this module has a send of its own): all of text, within wait ms.
     __http_timeout(wait);
     match __tcp_io(4, c.id, __bytes_of_text(text)) {
@@ -748,9 +740,9 @@ fn stream_send(c: Conn[uses net], text: str, wait: int) -> result[void] {
     }
 }
 
-fn stream_line(c: Conn[uses net], wait: int) -> result[str] uses net {
+fn stream_line(c: tcp.Conn[uses net], wait: int) -> result[str] uses net {
     # One line of the framing (a chunk size, a trailer), without its line end.
-    let raw = try map_err(read_until(c, __bytes_of_text(crlf()), wait), body_error);
+    let raw = try map_err(tcp.read_until(c, __bytes_of_text(crlf()), wait), body_error);
     if len(raw) > 1024 {
         return err("malformed response: a chunk size line is too long");
     }
@@ -794,7 +786,7 @@ fn chunk_size(line: str) -> result[int] {
 }
 
 fn stream_sized[E: effects](
-    c: Conn[uses net],
+    c: tcp.Conn[uses net],
     head: Response,
     size: int,
     wait: int,
@@ -803,7 +795,7 @@ fn stream_sized[E: effects](
     # size bytes of body in pieces of at most 64 KiB; false when f stopped the stream.
     var left = size;
     while left > 0 {
-        let piece = try map_err(read(c, min(left, 65536), wait), body_error);
+        let piece = try map_err(tcp.read(c, min(left, 65536), wait), body_error);
         set left = left - len(piece);
         if not try f(head, piece) {
             return ok(false);
@@ -813,7 +805,7 @@ fn stream_sized[E: effects](
 }
 
 fn stream_chunked[E: effects](
-    c: Conn[uses net],
+    c: tcp.Conn[uses net],
     head: Response,
     wait: int,
     f: fn(Response, bytes) -> result[bool] uses E
@@ -828,39 +820,39 @@ fn stream_chunked[E: effects](
         if not try stream_sized(c, head, size, wait, f) {
             return ok();
         }
-        if try map_err(read_exact(c, 2, wait), body_error) != __bytes_of_text(crlf()) {
+        if try map_err(tcp.read_exact(c, 2, wait), body_error) != __bytes_of_text(crlf()) {
             return err("malformed response: a chunk without its line end");
         }
     }
 }
 
 fn stream_to_close[E: effects](
-    c: Conn[uses net],
+    c: tcp.Conn[uses net],
     head: Response,
     wait: int,
     f: fn(Response, bytes) -> result[bool] uses E
 ) -> result[void] uses net, E {
     while true {
-        match read(c, 65536, wait) {
+        match tcp.read(c, 65536, wait) {
             case ok(piece) {
                 if not try f(head, piece) {
                     return ok();
                 }
             }
             case err(e) {
-                if e == TcpError.closed {
+                if e == tcp.TcpError.closed {
                     return ok();
                 }
-                return err(tcp_error_text(e));
+                return err(tcp.tcp_error_text(e));
             }
         }
     }
 }
 
-fn stream_head(c: Conn[uses net], wait: int) -> result[Response] uses net {
+fn stream_head(c: tcp.Conn[uses net], wait: int) -> result[Response] uses net {
     # The status and headers of the response (after any 1xx responses), with an empty body.
     while true {
-        let raw = try map_err(read_until(c, __bytes_of_text(crlf() + crlf()), wait), body_error);
+        let raw = try map_err(tcp.read_until(c, __bytes_of_text(crlf() + crlf()), wait), body_error);
         if len(raw) > 65536 {
             return err("the response head is larger than 64 KiB");
         }
@@ -879,7 +871,7 @@ fn stream_head(c: Conn[uses net], wait: int) -> result[Response] uses net {
 }
 
 fn stream_body[E: effects](
-    c: Conn[uses net],
+    c: tcp.Conn[uses net],
     request: str,
     wait: int,
     f: fn(Response, bytes) -> result[bool] uses E
@@ -943,12 +935,12 @@ export fn send_stream[E: effects](
     if wait == 0 {
         set wait = 600000;
     }
-    var dialed = connect(u.host, u.port, wait);
+    var dialed = tcp.connect(u.host, u.port, wait);
     if u.tls {
-        set dialed = connect_tls(u.host, u.port, wait);
+        set dialed = tcp.connect_tls(u.host, u.port, wait);
     }
-    let c = try map_err(dialed, tcp_error_text);
+    let c = try map_err(dialed, tcp.tcp_error_text);
     let done = stream_body(c, request, wait, f);
-    close_conn(c);
+    tcp.close_conn(c);
     return done;
 }

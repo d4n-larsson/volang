@@ -1,14 +1,12 @@
-import model.RoomType;
-import model.Booking;
-import rooms.first_full_day;
-import billing.stay_discount;
-import billing.money;
+import billing;
+import model;
+import rooms;
 
-export fn nights(b: Booking) -> int {
+export fn nights(b: model.Booking) -> int {
     return b.end - b.start;
 }
 
-export fn book(types: map[str, RoomType], bookings: map[str, Booking], booking_id: str, type_name: str, guest: str, start: int, end: int) -> str {
+export fn book(types: map[str, model.RoomType], bookings: map[str, model.Booking], booking_id: str, type_name: str, guest: str, start: int, end: int) -> str {
     if has(bookings, booking_id) {
         return "error: booking " + booking_id + " exists";
     }
@@ -18,14 +16,14 @@ export fn book(types: map[str, RoomType], bookings: map[str, Booking], booking_i
     if start >= end {
         return "error: bad dates";
     }
-    let full = first_full_day(types, bookings, type_name, start, end);
+    let full = rooms.first_full_day(types, bookings, type_name, start, end);
     if full >= 0 {
         return "error: no " + type_name + " room free on day " + str(full);
     }
     let rate = types[type_name].rate;
     let subtotal = (end - start) * rate;
-    let discount = stay_discount(end - start, subtotal);
-    let b = new Booking { booking_id: booking_id, type_name: type_name, guest: guest, start: start, end: end, rate: rate, subtotal: subtotal, discount: discount, total: subtotal - discount };
+    let discount = billing.stay_discount(end - start, subtotal);
+    let b = new model.Booking { booking_id: booking_id, type_name: type_name, guest: guest, start: start, end: end, rate: rate, subtotal: subtotal, discount: discount, total: subtotal - discount };
     set bookings[booking_id] = b;
-    return "booked " + booking_id + ": " + type_name + " " + str(nights(b)) + " nights, total " + money(b.total);
+    return "booked " + booking_id + ": " + type_name + " " + str(nights(b)) + " nights, total " + billing.money(b.total);
 }

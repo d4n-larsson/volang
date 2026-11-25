@@ -1,10 +1,6 @@
-import dictionary.Item;
-import dictionary.define;
-import dictionary.expand;
-import machine.clear_stack;
-import machine.run_builtin;
-import machine.show;
-import tokens.tokens;
+import dictionary;
+import machine;
+import tokens;
 
 fn find_end(toks: list[str], from: int) -> int {
     for j in from..len(toks) {
@@ -15,8 +11,8 @@ fn find_end(toks: list[str], from: int) -> int {
     return -1;
 }
 
-fn run_line(line: str, stack: list[int], words: map[str, list[Item]], out: list[str]) -> result[void] {
-    let toks = tokens(line);
+fn run_line(line: str, stack: list[int], words: map[str, list[dictionary.Item]], out: list[str]) -> result[void] {
+    let toks = tokens.tokens(line);
     var i = 0;
     while i < len(toks) {
         let t = toks[i];
@@ -25,15 +21,15 @@ fn run_line(line: str, stack: list[int], words: map[str, list[Item]], out: list[
             if i + 1 >= len(toks) or end < 0 {
                 return err("unfinished definition");
             }
-            try define(words, toks[i + 1], slice(toks, i + 2, end));
+            try dictionary.define(words, toks[i + 1], slice(toks, i + 2, end));
             set i = end + 1;
             continue;
         }
-        for it in try expand(words, t) {
+        for it in try dictionary.expand(words, t) {
             if it.is_num {
                 push(stack, it.num);
             } else {
-                try run_builtin(stack, it.word, out);
+                try machine.run_builtin(stack, it.word, out);
             }
         }
         set i = i + 1;
@@ -43,7 +39,7 @@ fn run_line(line: str, stack: list[int], words: map[str, list[Item]], out: list[
 
 fn main() uses console, input {
     let stack = new list[int];
-    let words = new map[str, list[Item]];
+    let words = new map[str, list[dictionary.Item]];
     let out = new list[str];
     for line in split(read_all(), "\n") {
         match run_line(line, stack, words, out) {
@@ -51,11 +47,11 @@ fn main() uses console, input {
             }
             case err(e) {
                 push(out, "error: " + e);
-                clear_stack(stack);
+                machine.clear_stack(stack);
             }
         }
     }
-    push(out, show(stack));
+    push(out, machine.show(stack));
     for s in out {
         print(s);
     }

@@ -1,6 +1,4 @@
-import book.Book;
-import book.Student;
-import book.unknown_assignment;
+import book;
 
 # num / den rounded half up (num >= 0, den > 0).
 export fn rounded_div(num: int, den: int) -> int {
@@ -18,11 +16,11 @@ export fn percent_tenths(points: int, max_points: int) -> int {
 }
 
 # The student's weighted average in tenths of a percent, or err without scores.
-export fn weighted_average(book: Book, student: Student) -> result[int] {
+export fn weighted_average(book_value: book.Book, student: book.Student) -> result[int] {
     var total = 0;
     var weight = 0;
-    for name in keys(book.assignments) {
-        let a = book.assignments[name];
+    for name in keys(book_value.assignments) {
+        let a = book_value.assignments[name];
         if has(student.scores, name) {
             set total = total + a.weight * percent_tenths(student.scores[name], a.max_points);
             set weight = weight + a.weight;
@@ -34,13 +32,13 @@ export fn weighted_average(book: Book, student: Student) -> result[int] {
     return ok(rounded_div(total, weight));
 }
 
-export fn assignment_stats(book: Book, name: str) -> list[str] {
-    if not has(book.assignments, name) {
-        return [unknown_assignment(name)];
+export fn assignment_stats(book_value: book.Book, name: str) -> list[str] {
+    if not has(book_value.assignments, name) {
+        return [book.unknown_assignment(name)];
     }
     let points = new list[int];
-    for s in keys(book.students) {
-        let student = book.students[s];
+    for s in keys(book_value.students) {
+        let student = book_value.students[s];
         if has(student.scores, name) {
             push(points, student.scores[name]);
         }

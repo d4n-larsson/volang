@@ -1,8 +1,8 @@
 # --timeout covers the tasks: one waits forever, the program stops with R0009, no task is left.
-import std.http.get;
+import std.http;
 
 fn work(url: str) -> str uses net("127.0.0.1") {
-    match get(url) {
+    match http.get(url) {
         case ok(r) {
             return str(r.status);
         }

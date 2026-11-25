@@ -1,28 +1,24 @@
 # std.json's own Json converts as itself (any JSON passes through), also inside records and recursive
 # types.
-import std.json.Json;
-import std.json.from_json;
-import std.json.parse_json;
-import std.json.to_json;
-import std.json.write_json;
+import std.json;
 
 record Event {
     kind: str;
-    data: Json;
+    data: json.Json;
     children: list[Event];
 }
 
 fn main() -> result[void] uses console {
-    let raw = try parse_json("{\"kind\": \"a\", \"data\": {\"x\": [1, null]}, \"children\": [{\"kind\": \"b\", \"data\": 3, \"children\": []}]}");
-    let e: result[Event] = from_json(raw);
+    let raw = try json.parse_json("{\"kind\": \"a\", \"data\": {\"x\": [1, null]}, \"children\": [{\"kind\": \"b\", \"data\": 3, \"children\": []}]}");
+    let e: result[Event] = json.from_json(raw);
     match e {
         case ok(v) {
-            print(try write_json(to_json(v)));
+            print(try json.write_json(json.to_json(v)));
         }
         case err(m) {
             print(m);
         }
     }
-    print(try write_json(to_json(Json.text("as is"))));
+    print(try json.write_json(json.to_json(json.Json.text("as is"))));
     return ok();
 }

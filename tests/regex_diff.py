@@ -141,16 +141,12 @@ def _expected(py, s):
     return ";".join(one) + "\n" + "|".join(parts) + "\n" + repl
 
 
-PRELUDE = """import std.regex.regex;
-import std.regex.Regex;
-import std.regex.all_matches;
-import std.regex.split_on;
-import std.regex.replace_matches;
+PRELUDE = """import std.regex;
 
-fn show(k: int, re: Regex, s: str) uses console {
+fn show(k: int, re: regex.Regex, s: str) uses console {
     print("#@#" + str(k));
     var one = new list[str];
-    for m in all_matches(s, re) {
+    for m in regex.all_matches(s, re) {
         var gs = new list[str];
         for i in 0..len(m.groups) {
             if m.took_part[i] {
@@ -162,8 +158,8 @@ fn show(k: int, re: Regex, s: str) uses console {
         push(one, str(m.start) + ":" + str(m.end) + ":" + join(gs, ","));
     }
     print(join(one, ";"));
-    print(join(split_on(s, re), "|"));
-    print(replace_matches(s, re, "<$0>"));
+    print(join(regex.split_on(s, re), "|"));
+    print(regex.replace_matches(s, re, "<$0>"));
 }
 
 fn main() uses console {
@@ -220,7 +216,7 @@ def main():
             with open(path, "w") as f:
                 f.write(PRELUDE)
                 for i, (v, _, s, _) in enumerate(part):
-                    f.write(f"    show({c0 + i}, regex({vo_str(v)}), {vo_str(s)});\n")
+                    f.write(f"    show({c0 + i}, regex.regex({vo_str(v)}), {vo_str(s)});\n")
                 f.write("}\n")
             out = run(dict(os.environ), path)
             got = chunks(out)

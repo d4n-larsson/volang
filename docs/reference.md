@@ -281,7 +281,7 @@ out/report.txt 6
 
 ### Tests and imports
 
-`test "name" { ... }` declares a test (see Tests). `import path.name;` makes an item from another file visible (see Programs in several files).
+`test "name" { ... }` declares a test (see Tests). `import path;` makes another file's items visible as `module.name` (see Programs in several files).
 
 ## Effects
 
@@ -1110,7 +1110,7 @@ PASS sorting twice changes nothing (100 cases, 0ms)
 
 ## Programs in several files
 
-`import a.b.name;` loads the file `a/b.vo`, relative to the importing file's directory, and makes its top-level item `name` (a function, record, variant, constant or effect set) visible. Only items declared with `export` (`export fn`, `export record`, `export variant`) can be imported; the others are private, and importing one is E0209, whose fix adds `export`. An exported function, record or variant cannot use a private type of its file (E0210). Write one `import` per name. Imports come before all items. Paths cannot contain `..`, and import cycles are E0206. A sibling file's name used without its import is E0204, whose fix adds the `import`. Run the program through the file containing `main`: `vo run main.vo`.
+`import a.b;` loads the file `a/b.vo`, relative to the importing file's directory, and binds its module name `b`: its top-level items (functions, records, variants, constants, effect sets) are written `b.name`, `b.Point`, `b.Shape.circle(1.0)`, `uses b.Storage`. Only items declared with `export` can be used; the others are private (E0209, whose fix adds `export`). An exported function, record or variant cannot use a private type of its file (E0210). Write one `import` per module, before all items; no local may have a module's name (E0203). Paths cannot contain `..`, and import cycles are E0206. A module used without its import is E0204, whose fix adds it. Run the program through the file containing `main`: `vo run main.vo`.
 
 ```vo
 # file: geometry.vo
@@ -1126,11 +1126,10 @@ export fn dist2(p: Point) -> int {
 
 ```vo
 # file: main.vo
-import geometry.Point;
-import geometry.dist2;
+import geometry;
 
 fn main() uses console {
-    print(str(dist2(new Point { x: 3, y: 4 })));
+    print(str(geometry.dist2(new geometry.Point { x: 3, y: 4 })));
 }
 ```
 
@@ -1144,7 +1143,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 
 ## Standard library and packages
 
-`import std.MODULE.NAME;` imports one item of the standard library (written in vo, built into `vo`). Its items are not listed here: `vo doc` prints every module and builtin, `vo doc std.json` one module, and `vo doc std.json.parse_json` one item with its signature, effects and an example (`--json` gives records).
+`import std.MODULE;` imports a module of the standard library (written in vo, built into `vo`), its items written `MODULE.NAME`. Its items are not listed here: `vo doc` prints every module and builtin, `vo doc std.json` one module, and `vo doc std.json.parse_json` one item with its signature, effects and an example (`--json` gives records).
 
 | Module | Contents |
 |---|---|
@@ -1181,16 +1180,15 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 - `parse_X` reads text, `from_X` decodes (`from_hex`); a failure is `err("invalid X: ...")`.
 - Large inputs come in pieces: `each_line(path, f)`, `each_chunk`, `send_stream` and `run_lines` call `f` per piece; `f` returns `ok(true)` to go on, `ok(false)` to stop.
 - File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...; reading one: `"cannot read PATH"`); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.
-- Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` (or an `https://` archive URL; `--restore ENTRY` fetches missing ones) adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
+- Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` (or an `https://` archive URL; `--restore ENTRY` fetches missing ones) adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
 
 ```vo
-import std.json.int_field;
-import std.json.parse_json;
-import std.text.pad_left;
+import std.json;
+import std.text;
 
 fn main() -> result[void] uses console {
-    let doc = try parse_json("{\"count\": 7}");
-    print(pad_left(str(try int_field(doc, "count")), 3, "0"));
+    let doc = try json.parse_json("{\"count\": 7}");
+    print(text.pad_left(str(try json.int_field(doc, "count")), 3, "0"));
     return ok();
 }
 ```
@@ -1200,11 +1198,11 @@ fn main() -> result[void] uses console {
 ```
 
 ```vo
-import std.fs.info;
-import std.process.run;
+import std.fs;
+import std.process;
 
 fn main() -> result[void] uses console, file.read("./"), process("echo") {
-    match try info("no-such-file.txt") {
+    match try fs.info("no-such-file.txt") {
         case missing {
             print("missing");
         }
@@ -1218,7 +1216,7 @@ fn main() -> result[void] uses console, file.read("./"), process("echo") {
             print("other");
         }
     }
-    let out = try run("echo", ["a b", "$HOME"]);
+    let out = try process.run("echo", ["a b", "$HOME"]);
     write(out.stdout);
     print(str(out.code));
     return ok();

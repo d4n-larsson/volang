@@ -362,11 +362,11 @@ effects work like a builtin's: the caller declares them, with any scope, and the
 caller's grant. So `uses net("localhost")` limits `std.http.get` to that host:
 
 ```vo
-import std.http.get;
+import std.http;
 
 fn main() -> result[void] uses console, net("localhost") {
     let host = "example" + ".com";
-    let page = try get("http://" + host + "/");
+    let page = try http.get("http://" + host + "/");
     print(page.body);
     return ok();
 }
@@ -431,11 +431,10 @@ export fn save(name: str, text: str) -> result[void] uses file.write("out/") {
 
 ```vo
 # file: main.vo
-import report.render;
-import report.save;
+import report;
 
 fn main() -> result[void] uses console, file.write("out/") {
-    try save("summary.txt", render(["3 open", "1 closed"]));
+    try report.save("summary.txt", report.render(["3 open", "1 closed"]));
     print("saved out/summary.txt");
     return ok();
 }

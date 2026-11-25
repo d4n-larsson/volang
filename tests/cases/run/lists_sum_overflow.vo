@@ -1,6 +1,6 @@
 # sum of a list of ints stops when the sum does not fit, as + does.
-import std.lists.sum;
+import std.lists;
 
 fn main() uses console {
-    print(str(sum([9223372036854775807, 1])));
+    print(str(lists.sum([9223372036854775807, 1])));
 }

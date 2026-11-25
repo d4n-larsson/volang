@@ -83,8 +83,8 @@ test "fails" {
     }
 }
 ''',
-    "raw.vo": "import std.bytes.from_ints;\nimport std.bytes.write_stdout;\n\n"
-              "fn main() uses console {\n    write_stdout(from_ints([104, 255, 254, 105]));\n}\n",
+    "raw.vo": "import std.bytes;\n\n"
+              "fn main() uses console {\n    bytes.write_stdout(bytes.from_ints([104, 255, 254, 105]));\n}\n",
 }
 EDITED_TOTAL = FILES["main.vo"].replace("set sum = sum + it.price;", "set sum = sum + it.price + 0;")
 # the diff describes a change already made: from an older text to the file as it is

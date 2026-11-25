@@ -1,16 +1,9 @@
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.exec;
-import std.sqlite.query;
-import std.sqlite.transaction;
-import std.sqlite.int_column;
-import std.sqlite.Database;
-import std.sqlite.Value;
+import std.sqlite;
 
-fn count(db: Database) -> int {
-    match query(db, sql("select count(*) as n from t"), new list[Value]) {
+fn count(db: sqlite.Database) -> int {
+    match sqlite.query(db, sqlite.sql("select count(*) as n from t"), new list[sqlite.Value]) {
         case ok(rows) {
-            match int_column(rows[0], "n") {
+            match sqlite.int_column(rows[0], "n") {
                 case ok(n) {
                     return n;
                 }
@@ -37,39 +30,39 @@ fn show(r: result[int]) -> str {
 }
 
 fn main() -> result[void] uses console {
-    let db = open_memory();
-    let _ = try exec(db, sql("create table t(x integer unique)"), new list[Value]);
+    let db = sqlite.open_memory();
+    let _ = try sqlite.exec(db, sqlite.sql("create table t(x integer unique)"), new list[sqlite.Value]);
 
-    let committed = transaction(db, fn() -> result[int] {
-        let a = try exec(db, sql("insert into t values (?)"), [Value.integer(1)]);
-        let b = try exec(db, sql("insert into t values (?)"), [Value.integer(2)]);
+    let committed = sqlite.transaction(db, fn() -> result[int] {
+        let a = try sqlite.exec(db, sqlite.sql("insert into t values (?)"), [sqlite.Value.integer(1)]);
+        let b = try sqlite.exec(db, sqlite.sql("insert into t values (?)"), [sqlite.Value.integer(2)]);
         return ok(a.changed + b.changed);
     });
     print("commit: " + str(committed == ok(2)) + ", rows " + str(count(db)));
 
-    let failed = transaction(db, fn() -> result[int] {
-        let _ = try exec(db, sql("insert into t values (?)"), [Value.integer(3)]);
-        let _ = try exec(db, sql("insert into t values (?)"), [Value.integer(1)]);
+    let failed = sqlite.transaction(db, fn() -> result[int] {
+        let _ = try sqlite.exec(db, sqlite.sql("insert into t values (?)"), [sqlite.Value.integer(3)]);
+        let _ = try sqlite.exec(db, sqlite.sql("insert into t values (?)"), [sqlite.Value.integer(1)]);
         return ok(0);
     });
     print("rolled back: " + show(failed) + ", rows " + str(count(db)));
 
-    let mine = transaction(db, fn() -> result[int] {
-        let _ = try exec(db, sql("insert into t values (?)"), [Value.integer(4)]);
+    let mine = sqlite.transaction(db, fn() -> result[int] {
+        let _ = try sqlite.exec(db, sqlite.sql("insert into t values (?)"), [sqlite.Value.integer(4)]);
         return err("changed my mind");
     });
     print("own err: " + show(mine) + ", rows " + str(count(db)));
 
-    let nested = transaction(db, fn() -> result[int] {
-        let _ = try exec(db, sql("insert into t values (?)"), [Value.integer(5)]);
-        return transaction(db, fn() -> result[int] {
+    let nested = sqlite.transaction(db, fn() -> result[int] {
+        let _ = try sqlite.exec(db, sqlite.sql("insert into t values (?)"), [sqlite.Value.integer(5)]);
+        return sqlite.transaction(db, fn() -> result[int] {
             return ok(1);
         });
     });
     print("nested: " + show(nested) + ", rows " + str(count(db)));
 
-    let after = transaction(db, fn() -> result[int] {
-        let _ = try exec(db, sql("insert into t values (?)"), [Value.integer(6)]);
+    let after = sqlite.transaction(db, fn() -> result[int] {
+        let _ = try sqlite.exec(db, sqlite.sql("insert into t values (?)"), [sqlite.Value.integer(6)]);
         return ok(1);
     });
     print("after: " + show(after) + ", rows " + str(count(db)));

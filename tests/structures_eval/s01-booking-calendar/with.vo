@@ -1,6 +1,5 @@
-import std.collections.key_at_or_above;
-import std.collections.key_at_or_below;
-import std.option.to_result;
+import std.collections;
+import std.option;
 
 record Booking {
     start: int;
@@ -10,7 +9,7 @@ record Booking {
 
 # The booking that covers time t.
 fn covering(cal: ordered_map[int, Booking], t: int) -> result[Booking] {
-    let k = try to_result(key_at_or_below(cal, t), "none");
+    let k = try option.to_result(collections.key_at_or_below(cal, t), "none");
     if cal[k].end > t {
         return ok(cal[k]);
     }
@@ -31,7 +30,7 @@ fn main() -> result[void] uses console, input {
                 case err(_) {
                 }
             }
-            match to_result(key_at_or_above(cal, b.start), "none") {
+            match option.to_result(collections.key_at_or_above(cal, b.start), "none") {
                 case ok(k) {
                     set free = free and k >= b.end;
                 }
@@ -54,7 +53,7 @@ fn main() -> result[void] uses console, input {
                 }
             }
         } else if w[0] == "next" {
-            match to_result(key_at_or_above(cal, try parse_int(w[1])), "none") {
+            match option.to_result(collections.key_at_or_above(cal, try parse_int(w[1])), "none") {
                 case ok(k) {
                     print(cal[k].name + " " + str(k) + " " + str(cal[k].end));
                 }

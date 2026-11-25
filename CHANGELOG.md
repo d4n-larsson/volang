@@ -4,6 +4,41 @@ What changed in each released version of vo, for people and agents who use it. T
 decision is in [`specs/`](specs/) and summarized in [`docs/roadmap.md`](docs/roadmap.md); what a version
 may and may not change is in [`docs/stability.md`](docs/stability.md).
 
+## 0.4.0
+
+Breaking change first. Applying the first fix of each diagnostic of `vo check --json` (up to four rounds,
+`tools/vo_fix.vo`) migrates a program: every example, the standard library, the postgres package and the
+golden cases migrated this way (`tests/migrate_058.py`).
+
+- **Module imports (spec 058).** An import names a module, and its items are written with the module's
+  name: `import std.json;`, then `json.parse_json(text)`, `json.Json`, `new geometry.Point { ... }`,
+  `json.Json.number(1.0)`, `uses api.Storage`, `file.read(api.data_dir)`. `import a.b;` loads `a/b.vo`
+  (`std.b`, a package's `b.vo`) and binds `b`; `import notes;` loads `notes.vo` beside the file. Builtins and
+  the file's own items stay unqualified. The 0.3 form `import std.json.parse_json;` reports **E0215** once
+  per file, whose fix rewrites the imports and every use as one edit (text output: `fix: rewrite lines A
+  to B`); a library or package file in the 0.3 form still checks. An import of a std item renamed in 0.2
+  gets its E0214 fixes first, then E0215's in the next round.
+- **No local is named like an imported module.** `let text = ...;` beside `import std.text;` is E0203; the
+  fix renames it `text_value` (and E0215's fix does that too).
+
+Added:
+
+- **W0203 unused_import**: a module imported and not used, with the fix removing the line.
+- E0201 for a module item written bare (`parse_json` after `import std.json;`, fix `json.parse_json`), a
+  missing item (`` `std.json` has no item `nope` ``, with the closest name), a module used as a value, and
+  a builtin written with a module (`lists.len`, fix `len`); E0204 for a module used without its import
+  (fix `import std.json;`); E0202 for two imports of one module name or a module named like an item; E0214
+  at a qualified use of a 0.2 name (`lists.contains`, fix `lists.has_item`).
+- Types in messages, fixes and `vo query type-at` are written as the file writes them: `json.Json`, or
+  `std.time.DateTime` for a type the file reaches only through another module.
+- `vo query` and `vo edit` take `module.name` and `module.Type.member`; renaming renames the item part of
+  each `notes.add`.
+
+Changed:
+
+- W0506's fix for the only field of a log record is `[]` (it inserted `new list[Field]` and an import).
+- An import that finds no file names the module's file: `Cannot find `money/format.vo``.
+
 ## 0.3.0
 
 Breaking changes first. Applying the first fix of each diagnostic of `vo check --json` (up to three

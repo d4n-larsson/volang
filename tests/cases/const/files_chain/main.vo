@@ -1,7 +1,7 @@
-import mid.pair;
+import mid;
 
-const quad = pair * 2;
+const quad = mid.pair * 2;
 
 fn main() uses console {
-    print(str(pair) + " " + str(quad));
+    print(str(mid.pair) + " " + str(quad));
 }

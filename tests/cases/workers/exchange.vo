@@ -1,19 +1,7 @@
 # Spec 047, story 1: a worker beside the program; messages in order, each once; copies; the end.
-import std.workers.Arrival;
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.Worker;
-import std.workers.WorkerError;
-import std.workers.emit;
-import std.workers.next_message;
-import std.workers.receive;
-import std.workers.receive_first;
-import std.workers.start_worker;
-import std.workers.stop_worker;
-import std.workers.tell;
-import std.workers.with_deadline;
+import std.workers;
 
-fn why(e: WorkerError) -> str {
+fn why(e: workers.WorkerError) -> str {
     match e {
         case timed_out {
             return "timeout";
@@ -36,7 +24,7 @@ fn why(e: WorkerError) -> str {
     }
 }
 
-fn show(r: result[int, WorkerError]) -> str {
+fn show(r: result[int, workers.WorkerError]) -> str {
     match r {
         case ok(n) {
             return "ok " + str(n);
@@ -47,7 +35,7 @@ fn show(r: result[int, WorkerError]) -> str {
     }
 }
 
-fn sent(r: result[void, WorkerError]) -> str {
+fn sent(r: result[void, workers.WorkerError]) -> str {
     match r {
         case ok() {
             return "sent";
@@ -69,11 +57,11 @@ variant Answer {
     skipped;
 }
 
-fn doubler(link: Link[int, int]) {
+fn doubler(link: workers.Link[int, int]) {
     while true {
-        match next_message(link, Wait.forever) {
+        match workers.next_message(link, workers.Wait.forever) {
             case ok(n) {
-                match emit(link, n * 2) {
+                match workers.emit(link, n * 2) {
                     case ok() {
                     }
                     case err(_) {
@@ -88,10 +76,10 @@ fn doubler(link: Link[int, int]) {
     }
 }
 
-fn three(link: Link[int, int]) uses console {
+fn three(link: workers.Link[int, int]) uses console {
     for i in 1..4 {
         print("worker: before " + str(i));
-        match emit(link, i) {
+        match workers.emit(link, i) {
             case ok() {
             }
             case err(_) {
@@ -101,8 +89,8 @@ fn three(link: Link[int, int]) uses console {
     print("worker: after the last");
 }
 
-fn silent(link: Link[int, int]) {
-    match next_message(link, Wait.forever) {
+fn silent(link: workers.Link[int, int]) {
+    match workers.next_message(link, workers.Wait.forever) {
         case ok(_) {
         }
         case err(_) {
@@ -110,7 +98,7 @@ fn silent(link: Link[int, int]) {
     }
 }
 
-fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+fn worker_of(r: result[workers.Worker[int, int], workers.WorkerError]) -> workers.Worker[int, int] {
     match r {
         case ok(w) {
             return w;
@@ -123,9 +111,9 @@ fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
 
 fn main() uses console {
     # 1,000 numbers out, 1,000 doubles back, in order
-    let d = worker_of(start_worker(doubler));
+    let d = worker_of(workers.start_worker(doubler));
     for i in 0..1000 {
-        match tell(d, i) {
+        match workers.tell(d, i) {
             case ok() {
             }
             case err(e) {
@@ -135,28 +123,28 @@ fn main() uses console {
     }
     var in_order = 0;
     for i in 0..1000 {
-        if receive(d, Wait.forever) == ok(i * 2) {
+        if workers.receive(d, workers.Wait.forever) == ok(i * 2) {
             set in_order = in_order + 1;
         }
     }
     print("in order: " + str(in_order));
-    stop_worker(d);
-    stop_worker(d);
-    print("after stop: " + show(receive(d, Wait.forever)) + ", " + sent(tell(d, 1)));
+    workers.stop_worker(d);
+    workers.stop_worker(d);
+    print("after stop: " + show(workers.receive(d, workers.Wait.forever)) + ", " + sent(workers.tell(d, 1)));
 
     # copies: what the worker changes is its own, and the reverse
     let shared = [1, 2, 3];
-    let c = worker_of(start_worker(fn(link: Link[int, int]) {
+    let c = worker_of(workers.start_worker(fn(link: workers.Link[int, int]) {
         push(shared, 4);
-        match emit(link, len(shared)) {
+        match workers.emit(link, len(shared)) {
             case ok() {
             }
             case err(_) {
             }
         }
-        match next_message(link, Wait.forever) {
+        match workers.next_message(link, workers.Wait.forever) {
             case ok(_) {
-                match emit(link, len(shared)) {
+                match workers.emit(link, len(shared)) {
                     case ok() {
                     }
                     case err(_) {
@@ -167,46 +155,46 @@ fn main() uses console {
             }
         }
     }));
-    print("the worker's list: " + show(receive(c, Wait.forever)) + "; the program's: " + str(len(shared)));
+    print("the worker's list: " + show(workers.receive(c, workers.Wait.forever)) + "; the program's: " + str(len(shared)));
     push(shared, 5);
     push(shared, 6);
-    print(sent(tell(c, 0)));
-    print("the worker's list: " + show(receive(c, Wait.forever)) + "; the program's: " + str(len(shared)));
+    print(sent(workers.tell(c, 0)));
+    print("the worker's list: " + show(workers.receive(c, workers.Wait.forever)) + "; the program's: " + str(len(shared)));
 
     # three messages, printed lines in order with them, then the end, twice
-    let t = worker_of(start_worker(three));
+    let t = worker_of(workers.start_worker(three));
     for i in 0..3 {
-        print("program: " + show(receive(t, Wait.forever)));
+        print("program: " + show(workers.receive(t, workers.Wait.forever)));
     }
-    print("a tell before the end is received: " + sent(tell(t, 9)));
-    print("program: " + show(receive(t, Wait.forever)));
-    print("program: " + show(receive(t, Wait.forever)));
-    print("a tell after it: " + sent(tell(t, 9)));
+    print("a tell before the end is received: " + sent(workers.tell(t, 9)));
+    print("program: " + show(workers.receive(t, workers.Wait.forever)));
+    print("program: " + show(workers.receive(t, workers.Wait.forever)));
+    print("a tell after it: " + sent(workers.tell(t, 9)));
 
     # time limits on a worker that never emits
-    let s = worker_of(start_worker(silent));
-    print("no wait: " + show(receive(s, Wait.at_most(0))));
-    print("50 ms: " + show(receive(s, Wait.at_most(50))));
-    stop_worker(s);
+    let s = worker_of(workers.start_worker(silent));
+    print("no wait: " + show(workers.receive(s, workers.Wait.at_most(0))));
+    print("50 ms: " + show(workers.receive(s, workers.Wait.at_most(50))));
+    workers.stop_worker(s);
 
     # records, lists, maps, variants and results as messages
-    let j = start_worker(fn(link: Link[Job, result[Answer]]) {
-        match next_message(link, Wait.forever) {
+    let j = workers.start_worker(fn(link: workers.Link[Job, result[Answer]]) {
+        match workers.next_message(link, workers.Wait.forever) {
             case ok(job) {
                 set job.counts["seen"] = len(job.words);
-                match emit(link, ok(Answer.done(job))) {
+                match workers.emit(link, ok(Answer.done(job))) {
                     case ok() {
                     }
                     case err(_) {
                     }
                 }
-                match emit(link, ok(Answer.skipped)) {
+                match workers.emit(link, ok(Answer.skipped)) {
                     case ok() {
                     }
                     case err(_) {
                     }
                 }
-                match emit(link, err("no more")) {
+                match workers.emit(link, err("no more")) {
                     case ok() {
                     }
                     case err(_) {
@@ -221,12 +209,12 @@ fn main() uses console {
         case ok(w) {
             let counts = new map[str, int];
             set counts["x"] = 1;
-            print(sent(tell(w, new Job { id: 7, words: ["a", "b"], counts: counts })));
+            print(sent(workers.tell(w, new Job { id: 7, words: ["a", "b"], counts: counts })));
             let after = new map[str, int];
             set after["x"] = 1;
             set after["seen"] = 2;
             for i in 0..3 {
-                match receive(w, Wait.forever) {
+                match workers.receive(w, workers.Wait.forever) {
                     case ok(answer) {
                         print(str(answer == ok(Answer.done(new Job { id: 7, words: ["a", "b"], counts: after })))
                             + " " + str(answer == ok(Answer.skipped)) + " " + str(answer == err("no more")));

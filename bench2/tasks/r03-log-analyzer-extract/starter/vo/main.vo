@@ -1,34 +1,30 @@
-import counts.stats;
-import counts.levels;
-import counts.errors;
-import timeline.busiest;
-import timeline.in_range;
-import timeline.span;
-import search.grep;
+import counts;
+import search;
+import timeline;
 
 fn run(words: list[str], logs: list[str]) -> list[str] {
     let cmd = words[0];
     let args_value = slice(words, 1, len(words));
     if cmd == "stats" and len(args_value) == 0 {
-        return stats(logs);
+        return counts.stats(logs);
     }
     if cmd == "levels" and len(args_value) == 0 {
-        return levels(logs);
+        return counts.levels(logs);
     }
     if cmd == "errors" and len(args_value) == 0 {
-        return errors(logs);
+        return counts.errors(logs);
     }
     if cmd == "busiest" and len(args_value) == 0 {
-        return busiest(logs);
+        return timeline.busiest(logs);
     }
     if cmd == "range" and len(args_value) == 4 {
-        return in_range(logs, args_value);
+        return timeline.in_range(logs, args_value);
     }
     if cmd == "span" and len(args_value) == 0 {
-        return span(logs);
+        return timeline.span(logs);
     }
     if cmd == "grep" and len(args_value) == 1 {
-        return grep(logs, args_value[0]);
+        return search.grep(logs, args_value[0]);
     }
     let known = ["stats", "levels", "errors", "busiest", "range", "span", "grep"];
     if any(known, fn(k: str) -> bool {

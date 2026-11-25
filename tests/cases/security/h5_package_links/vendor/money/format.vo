@@ -1,5 +1,5 @@
-import lib.impl.fmt;
+import lib.impl;
 
 export fn cents(n: int) -> str {
-    return fmt(n);
+    return impl.fmt(n);
 }

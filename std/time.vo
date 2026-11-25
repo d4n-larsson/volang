@@ -1,5 +1,5 @@
 # std.time: Calendar time in UTC and in time zones, ISO 8601 text and durations in milliseconds.
-# Part of the vo standard library (spec 007; zones: spec 048). Import items one by one: `import std.time.NAME;`.
+# Part of the vo standard library (spec 007; zones: spec 048). Import the module, `import std.time;`, and write its items as `time.NAME`.
 # Times are milliseconds since 1970-01-01T00:00:00Z. from_ms, to_ms and format_time are UTC (proleptic
 # Gregorian); in_zone, from_local and format_in are the same in a Zone. The tz database is built into vo:
 # load_zone needs no effect and gives the same answer on every machine.

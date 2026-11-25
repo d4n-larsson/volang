@@ -1,5 +1,5 @@
 # std.workers: Processes that run beside the program and exchange messages with it.
-# Part of the vo standard library. Import items one by one: `import std.workers.NAME;`.
+# Part of the vo standard library. Import the module, `import std.workers;`, and write its items as `workers.NAME`.
 # A worker runs one function in a process of its own, on a copy of everything the function was given or
 # captured: nothing it changes is seen by the program, and the reverse. The two exchange messages of
 # declared types (`In`: what the worker takes; `Out`: what it gives), copied from one to the other.

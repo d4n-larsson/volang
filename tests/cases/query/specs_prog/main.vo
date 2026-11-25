@@ -1,11 +1,11 @@
-import more.triple;
+import more;
 
 fn double(x: int) -> int {
     return x * 2;
 }
 
 fn main() uses console {
-    print(str(double(triple(1))));
+    print(str(double(more.triple(1))));
 }
 
 @spec("FR-001", "US1/AC1")

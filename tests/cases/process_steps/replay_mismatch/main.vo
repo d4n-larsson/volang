@@ -1,11 +1,11 @@
 # Spec 017 (US5): replaying a program that now runs other arguments, or lists another directory, is R0014.
-import std.fs.list_dir;
-import std.process.run;
+import std.fs;
+import std.process;
 
 fn main() -> result[void] uses console, file.read("./"), process("bin/args") {
     let first = args()[0];
-    let out = try run("bin/args", [first]);
+    let out = try process.run("bin/args", [first]);
     write(out.stdout);
-    print(str(len(try list_dir(first))));
+    print(str(len(try fs.list_dir(first))));
     return ok();
 }

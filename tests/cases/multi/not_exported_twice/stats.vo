@@ -1,5 +1,5 @@
-import util.clamp;
+import util;
 
 export fn spread(a: int, b: int) -> int {
-    return clamp(b - a);
+    return util.clamp(b - a);
 }

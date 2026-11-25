@@ -4,5 +4,5 @@ std/process.vo:35:23: runtime error[R0007]: An argument cannot hold a NUL byte.
 trace:
   at run (std/process.vo:35:23)
       program: str = "true", arguments: list[str] = ["a\u{0}b"]
-  at main (bad_args.vo:8:27)
+  at main (bad_args.vo:7:27)
       a: str = "nul"

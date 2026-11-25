@@ -1,5 +1,5 @@
 # std.fs: Directories and file information (needs file.read), and file changes (needs file.write, file.delete).
-# Part of the vo standard library (spec 017). Import items one by one: `import std.fs.NAME;`.
+# Part of the vo standard library (spec 017). Import the module, `import std.fs;`, and write its items as `fs.NAME`.
 # Every path is checked against the caller's scopes at run time, and each operation stays beneath them.
 # ponytail: names that are not UTF-8 are left out of listings (no bytes type yet).
 

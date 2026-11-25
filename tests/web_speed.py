@@ -24,14 +24,8 @@ from serve_workers import Server  # noqa: E402
 
 N = 20
 
-WEB = """import std.http.Response;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.Route;
-import std.web.Step;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.serve_app;
+WEB = """import std.http;
+import std.web;
 
 record Key {
     id: int;
@@ -52,16 +46,13 @@ fn main() -> result[void] uses serve("PORT") {
 }
 """
 
-HAND = """import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve_workers;
+HAND = """import std.http;
 
-fn answer(status: int, body: str) -> Response {
-    return new Response { status: status, headers: [new Header { name: "Content-Type", value: "application/json" }], body: body };
+fn answer(status: int, body: str) -> http.Response {
+    return new http.Response { status: status, headers: [new http.Header { name: "Content-Type", value: "application/json" }], body: body };
 }
 
-fn handle(n: int, r: Request) -> Response {
+fn handle(n: int, r: http.Request) -> http.Response {
     let parts = split(r.path, "/");
     if len(parts) != 4 or parts[2] != "items" {
         return answer(404, "{\\"status\\":404}");

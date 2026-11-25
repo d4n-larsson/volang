@@ -1,0 +1,7 @@
+export fn add(text: str) -> str {
+    return helper(text);
+}
+
+fn helper(text: str) -> str {
+    return "note: " + text;
+}

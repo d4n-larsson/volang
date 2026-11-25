@@ -1,15 +1,12 @@
 # Spec 055 US3: under vo test each test starts with no metrics.
-import std.metrics.Metric;
-import std.metrics.add_to;
-import std.metrics.counter;
-import std.metrics.metrics_text;
+import std.metrics;
 
 test "first" uses log {
-    add_to(counter("runs_total", "Runs.", new list[str]), new list[str], 1);
-    expect(find(metrics_text(new list[Metric]), "runs_total 1\n") >= 0);
+    metrics.add_to(metrics.counter("runs_total", "Runs.", new list[str]), new list[str], 1);
+    expect(find(metrics.metrics_text(new list[metrics.Metric]), "runs_total 1\n") >= 0);
 }
 
 test "second sees its own count" uses log {
-    add_to(counter("runs_total", "Runs.", new list[str]), new list[str], 1);
-    expect(find(metrics_text(new list[Metric]), "runs_total 1\n") >= 0);
+    metrics.add_to(metrics.counter("runs_total", "Runs.", new list[str]), new list[str], 1);
+    expect(find(metrics.metrics_text(new list[metrics.Metric]), "runs_total 1\n") >= 0);
 }

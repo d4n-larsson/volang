@@ -1,5 +1,5 @@
 # std.bytes: Conversions of binary data with text, integers, hex and base64, and standard input and output as bytes.
-# Part of the vo standard library (spec 021). Import items one by one: `import std.bytes.NAME;`.
+# Part of the vo standard library (spec 021). Import the module, `import std.bytes;`, and write its items as `bytes.NAME`.
 # `bytes` is an immutable sequence of integers 0 to 255: len, b[i], slice, + and comparisons work on it.
 # There is no bytes literal; make values with these functions or read them (std.fs.read_bytes, ...).
 

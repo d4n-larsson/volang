@@ -1,8 +1,7 @@
-import std.time.days;
-import std.time.format_time;
+import std.time;
 
 fn main() uses console, clock {
     let t = now_ms();
-    print(format_time(t));
-    print(slice(format_time(t + days(30)), 0, 10));
+    print(time.format_time(t));
+    print(slice(time.format_time(t + time.days(30)), 0, 10));
 }

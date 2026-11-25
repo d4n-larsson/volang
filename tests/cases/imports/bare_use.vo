@@ -1,0 +1,16 @@
+# An item of an imported module used without its module name: E0201 with the fix adding it, for a call,
+# a function value, a type and a variant case.
+import std.json;
+
+fn read(text: str) -> result[Json] {
+    return parse_json(text);
+}
+
+fn main() -> result[void] uses console {
+    let j = try read("1");
+    let parse = parse_json;
+    let k = Json.integer(2);
+    print(str(j == k));
+    let _ = parse;
+    return ok();
+}

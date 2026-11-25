@@ -1,0 +1,10 @@
+import std.json;
+import std.time;
+
+export fn make() -> json.Json {
+    return json.Json.integer(1);
+}
+
+export fn box() -> time.DateTime {
+    return time.from_ms(0);
+}

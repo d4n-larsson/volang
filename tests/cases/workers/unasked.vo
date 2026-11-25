@@ -1,16 +1,7 @@
 # Spec 047: a failure no receive returned is reported when the program ends, with status 70; what the workers printed comes out in the order they were started.
-import std.workers.Link;
-import std.workers.Wait;
-import std.workers.Worker;
-import std.workers.WorkerError;
-import std.workers.emit;
-import std.workers.next_message;
-import std.workers.receive;
-import std.workers.start_worker;
-import std.workers.stop_worker;
-import std.workers.tell;
+import std.workers;
 
-fn why(e: WorkerError) -> str {
+fn why(e: workers.WorkerError) -> str {
     match e {
         case timed_out {
             return "timeout";
@@ -33,7 +24,7 @@ fn why(e: WorkerError) -> str {
     }
 }
 
-fn show(r: result[int, WorkerError]) -> str {
+fn show(r: result[int, workers.WorkerError]) -> str {
     match r {
         case ok(n) {
             return "ok " + str(n);
@@ -44,7 +35,7 @@ fn show(r: result[int, WorkerError]) -> str {
     }
 }
 
-fn sent(r: result[void, WorkerError]) -> str {
+fn sent(r: result[void, workers.WorkerError]) -> str {
     match r {
         case ok() {
             return "sent";
@@ -55,8 +46,8 @@ fn sent(r: result[void, WorkerError]) -> str {
     }
 }
 
-fn give(link: Link[int, int], n: int) {
-    match emit(link, n) {
+fn give(link: workers.Link[int, int], n: int) {
+    match workers.emit(link, n) {
         case ok() {
         }
         case err(_) {
@@ -64,7 +55,7 @@ fn give(link: Link[int, int], n: int) {
     }
 }
 
-fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
+fn worker_of(r: result[workers.Worker[int, int], workers.WorkerError]) -> workers.Worker[int, int] {
     match r {
         case ok(w) {
             return w;
@@ -75,22 +66,22 @@ fn worker_of(r: result[Worker[int, int], WorkerError]) -> Worker[int, int] {
     }
 }
 
-fn fails(link: Link[int, int]) uses console {
+fn fails(link: workers.Link[int, int]) uses console {
     print("first worker: before the error");
     let zero = len(chars(""));
     give(link, 1 / zero);
 }
 
-fn talks(link: Link[int, int]) uses console {
+fn talks(link: workers.Link[int, int]) uses console {
     print("second worker: one line");
     give(link, 1);
     print("second worker: after its message");
 }
 
 fn main() uses console {
-    let a = worker_of(start_worker(fails));
-    let b = worker_of(start_worker(talks));
-    print("program: " + show(receive(b, Wait.forever)));
-    print("program: " + show(receive(b, Wait.forever)));
-    print("program: done, " + sent(tell(a, 1)));
+    let a = worker_of(workers.start_worker(fails));
+    let b = worker_of(workers.start_worker(talks));
+    print("program: " + show(workers.receive(b, workers.Wait.forever)));
+    print("program: " + show(workers.receive(b, workers.Wait.forever)));
+    print("program: done, " + sent(workers.tell(a, 1)));
 }

@@ -1,9 +1,9 @@
 # Spec 019 US1: https:// URLs are accepted in any case, other schemes and user parts are refused,
 # all before any connection.
-import std.http.get;
+import std.http;
 
 fn show(url: str) uses console, net("a.test") {
-    match get(url) {
+    match http.get(url) {
         case ok(r) {
             print(url + ": " + str(r.status));
         }

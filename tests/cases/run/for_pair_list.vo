@@ -1,6 +1,6 @@
 # for i, x in xs: the index and the element. The loop runs once per index the list had when it began,
 # with the element that is there at its turn; a deque: the elements it had.
-import std.collections.push_front;
+import std.collections;
 
 record Point {
     x: int;
@@ -91,7 +91,7 @@ fn main() uses console {
     let d = new deque[str];
     push(d, "b");
     push(d, "c");
-    push_front(d, "a");
+    collections.push_front(d, "a");
     for i, x in d {
         push(d, x + "!");
         print(format("{} {}", i, x));

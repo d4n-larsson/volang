@@ -1,26 +1,17 @@
 # Spec 055: steps see the pattern of the route that answered (Vo-Route) on the response; handle_request's
 # caller does not, nor does a client of serve_app.
-import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.Route;
-import std.web.Step;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.request;
+import std.http;
+import std.web;
 
 record NoteId {
     id: int;
 }
 
-fn note(n: int, input: NoteId) -> result[Response] {
-    return ok(json_reply(200, "a note"));
+fn note(n: int, input: NoteId) -> result[http.Response] {
+    return ok(web.json_reply(200, "a note"));
 }
 
-fn seen(n: int, r: Request, next: fn(Request) -> Response) -> Response {
+fn seen(n: int, r: http.Request, next: fn(http.Request) -> http.Response) -> http.Response {
     let resp = next(r);
     var route = "none";
     for h in resp.headers {
@@ -28,24 +19,24 @@ fn seen(n: int, r: Request, next: fn(Request) -> Response) -> Response {
             set route = h.value;
         }
     }
-    push(resp.headers, new Header { name: "X-Step-Saw", value: route });
+    push(resp.headers, new http.Header { name: "X-Step-Saw", value: route });
     return resp;
 }
 
 fn main() uses console {
-    let app = new App[int] {
-        routes: [on_get("/notes/{id}", note)],
-        steps: [new Step[int] { prefix: "/", run: seen }],
-        errors: new list[ErrorStatus]
+    let app = new web.App[int] {
+        routes: [web.on_get("/notes/{id}", note)],
+        steps: [new web.Step[int] { prefix: "/", run: seen }],
+        errors: new list[web.ErrorStatus]
     };
     for path in ["/notes/7", "/missing"] {
-        let resp = handle_request(app, 0, request("GET", path, ""));
+        let resp = web.handle_request(app, 0, web.request("GET", path, ""));
         let names = new list[str];
         for h in resp.headers {
             push(names, h.name + ": " + h.value);
         }
         print(path + " -> " + str(resp.status) + " [" + join(names, "] [") + "]");
     }
-    let resp = handle_request(app, 0, request("POST", "/notes/7", ""));
+    let resp = web.handle_request(app, 0, web.request("POST", "/notes/7", ""));
     print("POST /notes/7 -> " + str(resp.status) + " " + str(len(resp.headers)) + " headers");
 }

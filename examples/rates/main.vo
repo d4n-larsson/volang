@@ -4,15 +4,14 @@
 #   vo test main.vo                                  every test, the rate test against the real service
 #   vo test --replay recordings/tests main.vo        the same offline, on the recorded answer
 #   vo test --record recordings/tests main.vo        ask the service again and save its answer
-import convert.Rates;
-import convert.converter;
-import rates.fetch_rate;
-import std.web.serve_app;
+import convert;
+import rates;
+import std.web;
 
 fn main() -> result[void] uses console, net("api.frankfurter.dev"), serve("8080") {
     print("rates on http://localhost:8080/convert?amount=100&from=EUR&to=SEK (Ctrl-C stops)");
-    try serve_app("8080", 2, fn() -> result[Rates[uses net]] {
-        return ok(new Rates { rate: fetch_rate });
-    }, converter());
+    try web.serve_app("8080", 2, fn() -> result[convert.Rates[uses net]] {
+        return ok(new convert.Rates { rate: rates.fetch_rate });
+    }, convert.converter());
     return ok();
 }

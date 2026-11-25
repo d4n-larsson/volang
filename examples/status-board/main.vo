@@ -4,21 +4,17 @@
 #   vo run --record r.jsonl main.vo -- PORT       ... and save every response
 #   vo replay r.jsonl                             run again from the saved responses, no network
 # The grant is `net("localhost")`: any other host is refused at run time (R0010).
-import board.down_count;
-import board.incidents_from;
-import board.render;
-import board.services_from;
-import std.http.get;
-import std.json.Json;
-import std.json.parse_json;
+import board;
+import std.http;
+import std.json;
 
 # GET base + path, which must answer 200 with JSON.
-fn fetch(base: str, path: str) -> result[Json] uses net("localhost") {
-    let r = try get(base + path);
+fn fetch(base: str, path: str) -> result[json.Json] uses net("localhost") {
+    let r = try http.get(base + path);
     if r.status != 200 {
         return err(path + ": HTTP " + str(r.status));
     }
-    return parse_json(r.body);
+    return json.parse_json(r.body);
 }
 
 fn main() -> result[void] uses console, net("localhost") {
@@ -27,10 +23,10 @@ fn main() -> result[void] uses console, net("localhost") {
         set port = args()[0];
     }
     let base = "http://localhost:" + port;
-    let services = try services_from(try fetch(base, "/status.json"));
-    let incidents = try incidents_from(try fetch(base, "/incidents.json"));
-    write(render(services, incidents));
-    if down_count(services) > 0 {
+    let services = try board.services_from(try fetch(base, "/status.json"));
+    let incidents = try board.incidents_from(try fetch(base, "/incidents.json"));
+    write(board.render(services, incidents));
+    if board.down_count(services) > 0 {
         exit(2);
     }
     return ok();

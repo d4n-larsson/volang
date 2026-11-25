@@ -1,0 +1,27 @@
+# Locals named like a module of the file: E0203, the fix renaming each to `text_value` (`text_value2` when
+# that is taken), at the declaration and at every use.
+import std.text;
+
+fn clean(text: str) -> str {
+    return text.pad_left(text, 3, ".");
+}
+
+fn twice(raw: str) -> str {
+    let text_value = raw;
+    let text = text_value + raw;
+    return text;
+}
+
+fn each(xs: list[str]) -> int {
+    var n = 0;
+    for text in xs {
+        set n = n + len(text);
+    }
+    return n;
+}
+
+fn main() uses console {
+    print(clean(" a "));
+    print(twice("b"));
+    print(str(each(["c"])));
+}

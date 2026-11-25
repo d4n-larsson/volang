@@ -1,4 +1,4 @@
-import tokens.limit;
+import tokens;
 
 fn arity(w: str) -> int {
     if w == "+" or w == "-" or w == "*" or w == "/" or w == "%" or w == "swap" or w == "over" {
@@ -30,7 +30,7 @@ export fn show(stack: list[int]) -> str {
 }
 
 fn checked(v: int) -> result[int] {
-    if v > limit() or v < -limit() {
+    if v > tokens.limit() or v < -tokens.limit() {
         return err("overflow");
     }
     return ok(v);
@@ -55,7 +55,7 @@ fn arith(w: str, a: int, b: int) -> result[int] {
         return checked(a - b);
     }
     if w == "*" {
-        if a != 0 and abs(b) > limit() / abs(a) {
+        if a != 0 and abs(b) > tokens.limit() / abs(a) {
             return err("overflow");
         }
         return ok(a * b);

@@ -1,13 +1,6 @@
 # Health and info routes (spec 029 US7): 200 {"status":"up"} when every check passes, 503 naming the
 # failing ones; info gives the name and version.
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.HealthCheck;
-import std.web.Step;
-import std.web.handle_request;
-import std.web.health_route;
-import std.web.info_route;
-import std.web.request;
+import std.web;
 
 record Deps {
     db_up: bool;
@@ -29,11 +22,11 @@ fn queue(d: Deps) -> result[void] {
 }
 
 fn main() uses console {
-    let app = new App { routes: [health_route([new HealthCheck { name: "database", check: db }, new HealthCheck { name: "queue", check: queue }]), info_route("notes", "2.1.0")], steps: new list[Step[Deps]], errors: new list[ErrorStatus] };
+    let app = new web.App { routes: [web.health_route([new web.HealthCheck { name: "database", check: db }, new web.HealthCheck { name: "queue", check: queue }]), web.info_route("notes", "2.1.0")], steps: new list[web.Step[Deps]], errors: new list[web.ErrorStatus] };
     for d in [new Deps { db_up: true, queue_up: true }, new Deps { db_up: false, queue_up: true }, new Deps { db_up: false, queue_up: false }] {
-        let r = handle_request(app, d, request("GET", "/health", ""));
+        let r = web.handle_request(app, d, web.request("GET", "/health", ""));
         print(str(r.status) + " " + r.body);
     }
-    let i = handle_request(app, new Deps { db_up: true, queue_up: true }, request("GET", "/info", ""));
+    let i = web.handle_request(app, new Deps { db_up: true, queue_up: true }, web.request("GET", "/info", ""));
     print(str(i.status) + " " + i.body);
 }

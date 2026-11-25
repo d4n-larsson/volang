@@ -32,7 +32,7 @@ def prog(imports, expr, n=N):
 PAIRS = [
     ("two values", prog("", 'format("{} {}", i, i + 1)'), prog("", 'str(i) + " " + str(i + 1)')),
     ("a column", prog("", 'format("{:>10}", i)'),
-     prog("import std.text.align_right;\n\n", "align_right(str(i), 10)")),
+     prog("import std.text;\n\n", "text.align_right(str(i), 10)")),
 ]
 RECORD = [("two decimals", prog("", 'format("{:.2f}", float(i) / 7.0)', N_RECORD))]
 

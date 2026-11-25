@@ -1,12 +1,10 @@
-import std.json.parse_json;
-import std.json.write_json;
-import std.json.write_json_pretty;
+import std.json;
 
 fn main() -> result[void] uses console, input {
-    match parse_json(read_all()) {
+    match json.parse_json(read_all()) {
         case ok(j) {
-            print(try write_json(j));
-            print(try write_json_pretty(j));
+            print(try json.write_json(j));
+            print(try json.write_json_pretty(j));
         }
         case err(e) {
             print("invalid: " + e);

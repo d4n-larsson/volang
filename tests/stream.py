@@ -29,7 +29,7 @@ FLOOD = 10 if SMALL else 200  # MiB printed by a child
 failures = []
 cases = 0
 
-SUM = """import std.fs.each_line;
+SUM = """import std.fs;
 
 record Total {
     sum: int;
@@ -38,7 +38,7 @@ record Total {
 
 fn main() uses console, file.read("./") {
     let total = new Total { sum: 0, lines: 0 };
-    let done = each_line("NAME", fn(line: str) -> result[bool] {
+    let done = fs.each_line("NAME", fn(line: str) -> result[bool] {
         set total.sum = total.sum + try parse_int(line);
         set total.lines = total.lines + 1;
         return ok(true);
@@ -54,7 +54,7 @@ fn main() uses console, file.read("./") {
 }
 """
 
-CHUNKS = """import std.fs.each_chunk;
+CHUNKS = """import std.fs;
 
 record Total {
     count: int;
@@ -64,7 +64,7 @@ record Total {
 
 fn main() uses console, file.read("./") {
     let total = new Total { count: 0, edges: 0, pieces: 0 };
-    let done = each_chunk("NAME", 1048576, fn(piece: bytes) -> result[bool] {
+    let done = fs.each_chunk("NAME", 1048576, fn(piece: bytes) -> result[bool] {
         set total.count = total.count + len(piece);
         set total.edges = total.edges + piece[0] + piece[len(piece) - 1];
         set total.pieces = total.pieces + 1;
@@ -81,11 +81,8 @@ fn main() uses console, file.read("./") {
 }
 """
 
-DOWNLOAD = """import std.fs.append_bytes;
-import std.http.Header;
-import std.http.Response;
-import std.http.response_header;
-import std.http.send_stream;
+DOWNLOAD = """import std.fs;
+import std.http;
 
 record Seen {
     total: int;
@@ -95,8 +92,8 @@ record Seen {
 
 fn main() uses console, file.write("./"), net("127.0.0.1:PORT") {
     let seen = new Seen { total: 0, largest: 0, pieces: 0 };
-    let r = send_stream("METHOD", "SCHEME://127.0.0.1:PORTPATH", [new Header { name: "X-Asked", value: "yes" }], "BODY", WAIT, fn(head: Response, piece: bytes) -> result[bool] {
-        try append_bytes("out.bin", piece);
+    let r = http.send_stream("METHOD", "SCHEME://127.0.0.1:PORTPATH", [new http.Header { name: "X-Asked", value: "yes" }], "BODY", WAIT, fn(head: http.Response, piece: bytes) -> result[bool] {
+        try fs.append_bytes("out.bin", piece);
         set seen.total = seen.total + len(piece);
         set seen.largest = max(seen.largest, len(piece));
         set seen.pieces = seen.pieces + 1;
@@ -105,7 +102,7 @@ fn main() uses console, file.write("./"), net("127.0.0.1:PORT") {
     match r {
         case ok(head) {
             var mark = "";
-            match response_header(head, "x-test") {
+            match http.response_header(head, "x-test") {
                 case some(v) {
                     set mark = v;
                 }
@@ -121,7 +118,7 @@ fn main() uses console, file.write("./"), net("127.0.0.1:PORT") {
 }
 """
 
-FOLLOW = """import std.process.run_lines;
+FOLLOW = """import std.process;
 
 record Seen {
     n: int;
@@ -131,7 +128,7 @@ record Seen {
 
 fn main() uses console, file.read("./"), clock, process("python3") {
     let seen = new Seen { n: 0, worst: 0, pid: "" };
-    let r = run_lines("python3", ["child.py", "MODE"], "", new list[str], "./", fn(line: str) -> result[bool] {
+    let r = process.run_lines("python3", ["child.py", "MODE"], "", new list[str], "./", fn(line: str) -> result[bool] {
         set seen.n = seen.n + 1;
         if seen.n == 1 {
             set seen.pid = line;
@@ -171,10 +168,10 @@ elif mode == "flood":
         sys.stdout.write(line)
 """
 
-FAILING_TEST = """import std.process.run_lines;
+FAILING_TEST = """import std.process;
 
 test "a failed check inside the function" uses console, file.read("./"), process("python3") {
-    let r = run_lines("python3", ["child.py", "forever"], "", new list[str], "./", fn(line: str) -> result[bool] {
+    let r = process.run_lines("python3", ["child.py", "forever"], "", new list[str], "./", fn(line: str) -> result[bool] {
         print(line);
         expect(len(line) > 100);
         return ok(true);

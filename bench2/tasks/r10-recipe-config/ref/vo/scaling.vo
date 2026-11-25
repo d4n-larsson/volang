@@ -1,6 +1,5 @@
-import recipes.Recipe;
-import recipes.ingredient_line;
-import config.Config;
+import config;
+import recipes;
 
 export record Order {
     name: str;
@@ -24,19 +23,19 @@ fn scale_qty(qty: int, servings: int, wanted: int, rounding: str) -> int {
     return q;
 }
 
-export fn scale_lines(recipe: Recipe, wanted: int, cfg: Config) -> list[str] {
+export fn scale_lines(recipe: recipes.Recipe, wanted: int, cfg: config.Config) -> list[str] {
     let out = [recipe.name + " for " + str(wanted) + ":"];
     for ing in recipe.ingredients {
-        push(out, ingredient_line(ing.item, scale_qty(ing.qty, recipe.servings, wanted, cfg.rounding), ing.unit, cfg));
+        push(out, recipes.ingredient_line(ing.item, scale_qty(ing.qty, recipe.servings, wanted, cfg.rounding), ing.unit, cfg));
     }
     return out;
 }
 
 # Sums the scaled quantities per item and unit.
-export fn shopping_list(recipes: map[str, Recipe], orders: list[Order], cfg: Config) -> list[str] {
+export fn shopping_list(recipes_value: map[str, recipes.Recipe], orders: list[Order], cfg: config.Config) -> list[str] {
     let totals = new map[str, int];
     for o in orders {
-        let r = recipes[o.name];
+        let r = recipes_value[o.name];
         for ing in r.ingredients {
             let key = ing.item + " " + ing.unit;
             let q = scale_qty(ing.qty, r.servings, o.wanted, cfg.rounding);
@@ -52,7 +51,7 @@ export fn shopping_list(recipes: map[str, Recipe], orders: list[Order], cfg: Con
     sort(sorted_keys);
     for key in sorted_keys {
         let parts = split(key, " ");
-        push(out, ingredient_line(parts[0], totals[key], parts[1], cfg));
+        push(out, recipes.ingredient_line(parts[0], totals[key], parts[1], cfg));
     }
     return out;
 }

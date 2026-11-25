@@ -1,7 +1,4 @@
-import shop.Shop;
-import shop.Line;
-import shop.Bulk;
-import shop.unknown_product;
+import shop;
 
 # One cart line with its discounts worked out.
 export record Priced {
@@ -16,45 +13,45 @@ export record Priced {
     net: int;
 }
 
-export fn set_promo(shop: Shop, sku: str, buy: int) -> str {
-    if not has(shop.catalog, sku) {
-        return unknown_product(sku);
+export fn set_promo(shop_value: shop.Shop, sku: str, buy: int) -> str {
+    if not has(shop_value.catalog, sku) {
+        return shop.unknown_product(sku);
     }
-    set shop.promos[sku] = buy;
+    set shop_value.promos[sku] = buy;
     return "promo " + sku + ": buy " + str(buy) + " get 1 free";
 }
 
-export fn set_bulk(shop: Shop, sku: str, min_qty: int, pct: int) -> str {
-    if not has(shop.catalog, sku) {
-        return unknown_product(sku);
+export fn set_bulk(shop_value: shop.Shop, sku: str, min_qty: int, pct: int) -> str {
+    if not has(shop_value.catalog, sku) {
+        return shop.unknown_product(sku);
     }
-    set shop.bulks[sku] = new Bulk { min_qty: min_qty, pct: pct };
+    set shop_value.bulks[sku] = new shop.Bulk { min_qty: min_qty, pct: pct };
     return "bulk " + sku + ": " + str(min_qty) + " or more " + str(pct) + "% off";
 }
 
-export fn define_coupon(shop: Shop, code: str, pct: int) -> str {
-    set shop.coupons[code] = pct;
+export fn define_coupon(shop_value: shop.Shop, code: str, pct: int) -> str {
+    set shop_value.coupons[code] = pct;
     return "coupon " + code + ": " + str(pct) + "% off";
 }
 
-export fn use_coupon(shop: Shop, code: str) -> str {
-    if not has(shop.coupons, code) {
+export fn use_coupon(shop_value: shop.Shop, code: str) -> str {
+    if not has(shop_value.coupons, code) {
         return "error: unknown coupon " + code;
     }
-    set shop.active = code;
+    set shop_value.active = code;
     return "coupon " + code + " active";
 }
 
-export fn price_line(shop: Shop, line: Line) -> Priced {
-    let price = shop.catalog[line.sku].price;
+export fn price_line(shop_value: shop.Shop, line: shop.Line) -> Priced {
+    let price = shop_value.catalog[line.sku].price;
     let p = new Priced { sku: line.sku, qty: line.qty, price: price, gross: line.qty * price, free_qty: 0, free_amount: 0, bulk_pct: 0, bulk_amount: 0, net: 0 };
-    if has(shop.promos, line.sku) {
-        set p.free_qty = line.qty / (shop.promos[line.sku] + 1);
+    if has(shop_value.promos, line.sku) {
+        set p.free_qty = line.qty / (shop_value.promos[line.sku] + 1);
         set p.free_amount = p.free_qty * p.price;
     }
     let base = p.gross - p.free_amount;
-    if has(shop.bulks, line.sku) and line.qty >= shop.bulks[line.sku].min_qty {
-        set p.bulk_pct = shop.bulks[line.sku].pct;
+    if has(shop_value.bulks, line.sku) and line.qty >= shop_value.bulks[line.sku].min_qty {
+        set p.bulk_pct = shop_value.bulks[line.sku].pct;
         set p.bulk_amount = base * p.bulk_pct / 100;
     }
     set p.net = base - p.bulk_amount;
@@ -62,9 +59,9 @@ export fn price_line(shop: Shop, line: Line) -> Priced {
 }
 
 # The active coupon's discount on subtotal (0 without a coupon).
-export fn coupon_discount(shop: Shop, subtotal: int) -> int {
-    if shop.active == "" {
+export fn coupon_discount(shop_value: shop.Shop, subtotal: int) -> int {
+    if shop_value.active == "" {
         return 0;
     }
-    return subtotal * shop.coupons[shop.active] / 100;
+    return subtotal * shop_value.coupons[shop_value.active] / 100;
 }

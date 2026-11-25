@@ -181,6 +181,7 @@ void ty_name_into(SB *sb, Type *t)
         break;
     case TY_RECORD:
     case TY_VARIANT:
+        ty_module_prefix(sb, t->decl.n); /* spec 058: `json.Json` where the file writes that */
         sb_str(sb, t->decl.n->a.n->a.s);
         if (t->b.v) ty_args_into(sb, t->b.v); /* an instance: Name[args] */
         return;
@@ -193,6 +194,37 @@ void ty_name_into(SB *sb, Type *t)
     default: sb_cstr(sb, "<error>"); return;
     }
     sb_byte(sb, ']');
+}
+
+/* Spec 058 (research R7): the file whose source a type name is printed for (messages, fixes, hover), or -1.
+ * A record or variant of another file is written as that file writes it: `m.Name` through a module
+ * import, `Name` through a 0.3 import of the item, `std.m.Name` for a std type it does not import. */
+long ty_name_file = -1;
+
+void ty_module_prefix(SB *sb, Node *decl)
+{
+    long cur = ty_name_file;
+    if (cur < 0 || !decl || decl->file == cur || cur >= file_count) return;
+    FileRec *f = file_get((int)cur);
+    if (!f->ast) return;
+    Vec *items = f->ast->a.v;
+    for (long i = 0; i < items->n; i++) {
+        Node *imp = vec_get(items, i);
+        if (imp->kind != N_IMPORT || !imp->d.i || imp->d.i - 1 != decl->file || !imp->b.n) continue;
+        if (imp->c.i) {
+            if (str_eq(imp->b.n->a.s, decl->a.n->a.s)) return; /* the 0.3 form binds the bare name */
+            continue;
+        }
+        sb_str(sb, imp->b.n->a.s);
+        sb_byte(sb, '.');
+        return;
+    }
+    FileRec *df = file_get((int)decl->file);
+    if (df->std) {
+        sb_cstr(sb, "std.");
+        sb_bytes(sb, df->path->data + 4, df->path->len - 7);
+        sb_byte(sb, '.');
+    }
 }
 
 Str *ty_name(Type *t)
@@ -476,6 +508,8 @@ Sym *new_local(Node *name_node, Type *type, int mutable_)
 {
     check_naming(name_node, 0);
     Sym *prev = scope_find(name_node->a.s);
+    Sym *mod = prev && prev->kind == SYM_MODULE ? prev : 0; /* spec 058: renamed like a builtin's shadow */
+    if (mod) prev = 0;
     if (prev && !is_placeholder(prev)) {
         Diag *d = ck_err1("E0203", name_node, "`$1` is already defined in an outer scope.", name_node->a.s);
         if (prev->node) {
@@ -487,10 +521,12 @@ Sym *new_local(Node *name_node, Type *type, int mutable_)
     Sym *s = sym_new(name_node->a.s, SYM_LOCAL, 0, type, name_node);
     s->flags = mutable_ ? SYF_MUT : 0;
     s->rename = naming_rename(name_node, 0);
-    if (!prev && builtin_id(name_node->a.s)) { /* spec 056: a builtin is never hidden */
+    if (!prev && (mod || builtin_id(name_node->a.s))) { /* spec 056: a builtin is never hidden; spec 058: nor a module */
         Str *free = msg("$1_value", name_node->a.s, 0, 0);
         for (long k = 2; scope_find(free); k++) free = msg("$1_value$2", name_node->a.s, int_to_str(k), 0);
-        Diag *d = ck_err1("E0203", name_node, "`$1` is a builtin: give the local another name.", name_node->a.s);
+        Diag *d = mod ? ck_err("E0203", name_node, msg("`$1` is the module `$2` in this file: name the local differently.",
+                                                       name_node->a.s, module_label(mod->slot), 0))
+                      : ck_err1("E0203", name_node, "`$1` is a builtin: give the local another name.", name_node->a.s);
         diag_add_fix(d, (int)name_node->file, name_node->start, name_node->end, free);
         s->flags |= SYF_SHADOW;
         s->rename = free;
@@ -1474,6 +1510,10 @@ void check_items(int file, int mode)
 {
     ck_mode = mode;
     FileRec *f = file_get(file);
+    ty_name_file = file; /* spec 058 */
+    int mig = file_has_old_imports(file), mig_own = mig && !q_collect; /* spec 058: E0215 needs the log */
+    long mig_log = q_log ? q_log->n : 0, mig_exprs = q_exprs ? q_exprs->n : 0;
+    if (mig_own) q_collect = 1;
     ck_scope = f->scope;
     scope_top_begin();
     bind_imports(file); /* imported items first (dependencies are already checked) */
@@ -1501,6 +1541,13 @@ void check_items(int file, int mode)
     ck_item_set(0);
     fx_file_end(items);
     const_report_unused(items); /* spec 031: W0202 */
+    imports_report_unused(items); /* spec 058: W0203 */
+    if (mig) migrate_imports(file, mig_log);
+    if (mig_own) { /* the log was only for the fix */
+        q_collect = 0;
+        if (q_log) q_log->n = mig_log;
+        if (q_exprs) q_exprs->n = mig_exprs;
+    }
     if (ck_mode == 1) check_main(file, find_main(items));
     else if (find_main(items)) check_main(file, find_main(items)); /* E0409 under every command; only run and
                                                                        build need a main (E0408) */
@@ -1546,8 +1593,19 @@ void rename_use(Sym *sym, Node *node)
 {
     if (sym->change) libchange_use(sym, node, ck_use_call);
     if (!sym->rename) return;
-    if (sym->flags & SYF_SHADOW) { /* spec 056 */
-        Diag *d = ck_err("E0203", node, msg("`$1` is a builtin: rename the local to `$2` here too.", sym->name, sym->rename, 0));
+    if (sym->flags & SYF_QUALIFY) { /* spec 058: E0201 again at each later use, with the same fix */
+        long dot = str_dot(sym->rename);
+        Sym *ms = module_find(str_new(sym->rename->data, dot));
+        Diag *d = ck_err("E0201", node, msg("`$1` is in `$2`: write `$3`.", sym->name,
+                                            ms ? module_label(ms->slot) : str_new(sym->rename->data, dot), sym->rename));
+        diag_add_fix(d, (int)node->file, node->start, node->end, sym->rename);
+        return;
+    }
+    if (sym->flags & SYF_SHADOW) { /* spec 056; spec 058: a module name */
+        Sym *ms = module_find(sym->name);
+        Diag *d = ms ? ck_err("E0203", node, msg("`$1` is the module `$2` in this file: rename the local to `$3` here too.",
+                                                 sym->name, module_label(ms->slot), sym->rename))
+                     : ck_err("E0203", node, msg("`$1` is a builtin: rename the local to `$2` here too.", sym->name, sym->rename, 0));
         diag_add_fix(d, (int)node->file, node->start, node->end, sym->rename);
         return;
     }

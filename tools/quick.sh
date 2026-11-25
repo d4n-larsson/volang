@@ -37,6 +37,7 @@ cases() {
     recorded) echo "recorded_tests_steps replay test_steps test" ;; # spec 054
     ops) echo "log metrics web check effects effect_sets replay serve_workers_steps doc" ;; # spec 055
     consistency) echo "library check generic run fmt lex effects doc" ;; # spec 056
+    imports) echo "imports imports_v03 multi packages library check parse fmt query edit doc effect_sets" ;; # spec 058
     iteration) echo "run check fmt doc" ;; # spec 046
     workers) echo "workers tasks test doc" ;; # spec 047
     zones) echo "time sleep_steps run check effects replay cli doc" ;; # spec 048
@@ -88,6 +89,7 @@ scripts() { # one per line, with arguments
     recorded) printf '%s\n' catalog.py ref_examples.py "recorded_tests.py --quick" ;; # spec 054
     ops) printf '%s\n' catalog.py apply_fixes.py doc_conformance.py "operations.py --quick" ;; # spec 055
     consistency) printf '%s\n' catalog.py apply_fixes.py std_names.py libchange_rows.py message_style.py "migrate_056.py --quick" ;; # spec 056
+    imports) printf '%s\n' apply_fixes.py catalog.py ref_examples.py fmt_corpus.py "migrate_058.py --quick" ;; # spec 058
     iteration) printf '%s\n' ref_examples.py doc_conformance.py catalog.py apply_fixes.py iteration.py ;; # spec 046
     workers) printf '%s\n' ref_examples.py doc_conformance.py catalog.py workers.py ;; # spec 047
     zones) printf '%s\n' ref_examples.py doc_conformance.py time_check.py zones.py ;; # spec 048
@@ -125,6 +127,7 @@ area_of() {
     std/lists.vo|tests/iteration.py) echo iteration ;; # spec 046
     src/json_derive.c|src/check_web.c|std/web.vo|std/json.vo|tests/web_*.py) echo web ;; # spec 029
     src/check_const.c|tests/const_*.py) echo const ;; # spec 031
+    src/loader.c|tests/migrate_058.py) echo imports front ;; # spec 058
     src/rt_map.c|tests/map_keys_bench.py) echo map_keys ;; # spec 033
     src/build.c|tests/build_examples.py) echo build ;; # spec 034
     src/crypto.c|src/sha256.c|std/crypto.vo|tests/crypto_vectors.py) echo crypto ;; # spec 035
@@ -191,7 +194,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits decimal web_security iteration workers zones postgres recorded)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: imports math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits decimal web_security iteration workers zones postgres recorded)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done

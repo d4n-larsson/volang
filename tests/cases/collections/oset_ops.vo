@@ -1,13 +1,5 @@
-import std.collections.at_or_above;
-import std.collections.at_or_below;
-import std.collections.between;
-import std.collections.copy_set;
-import std.collections.difference;
-import std.collections.first;
-import std.collections.intersection;
-import std.collections.last;
-import std.collections.union;
-import std.option.to_result;
+import std.collections;
+import std.option;
 
 fn of(xs: list[str]) -> ordered_set[str] {
     let s = new ordered_set[str];
@@ -30,11 +22,11 @@ fn main() uses console {
     let a = of(["pear", "apple", "fig", "apple", "kiwi"]);
     let b = of(["fig", "plum", "apple"]);
     print(text(a) + " len " + str(len(a)));
-    print("first " + get_or_none(to_result(first(a), "empty")) + ", last " + get_or_none(to_result(last(a), "empty")));
-    print("at or above g: " + get_or_none(to_result(at_or_above(a, "g"), "none")) + ", at or below g: " + get_or_none(to_result(at_or_below(a, "g"), "none")) + ", above z: " + get_or_none(to_result(at_or_above(a, "z"), "none")));
-    print("between b and p: " + join(between(a, "b", "p"), " "));
-    print("union " + text(union(a, b)) + ", intersection " + text(intersection(a, b)) + ", difference " + text(difference(a, b)));
-    let c = copy_set(a);
+    print("first " + get_or_none(option.to_result(collections.first(a), "empty")) + ", last " + get_or_none(option.to_result(collections.last(a), "empty")));
+    print("at or above g: " + get_or_none(option.to_result(collections.at_or_above(a, "g"), "none")) + ", at or below g: " + get_or_none(option.to_result(collections.at_or_below(a, "g"), "none")) + ", above z: " + get_or_none(option.to_result(collections.at_or_above(a, "z"), "none")));
+    print("between b and p: " + join(collections.between(a, "b", "p"), " "));
+    print("union " + text(collections.union(a, b)) + ", intersection " + text(collections.intersection(a, b)) + ", difference " + text(collections.difference(a, b)));
+    let c = collections.copy_set(a);
     for x in a {
         remove(a, x);
         push(a, x + "!");

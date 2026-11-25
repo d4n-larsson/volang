@@ -1,11 +1,9 @@
-import std.text.pad_left;
-import std.time.days;
-import std.time.format_time;
-import std.time.from_ms;
+import std.text;
+import std.time;
 
 fn main() uses console, clock {
     let t = now_ms();
-    print(format_time(t));
-    let d = from_ms(t + days(30));
-    print(pad_left(str(d.year), 4, "0") + "-" + pad_left(str(d.month), 2, "0") + "-" + pad_left(str(d.day), 2, "0"));
+    print(time.format_time(t));
+    let d = time.from_ms(t + time.days(30));
+    print(text.pad_left(str(d.year), 4, "0") + "-" + text.pad_left(str(d.month), 2, "0") + "-" + text.pad_left(str(d.day), 2, "0"));
 }

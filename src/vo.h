@@ -252,7 +252,8 @@
 /* node kinds (fields in comments) */
 #define N_ERROR (1)
 #define N_FILE_NODE (2) /* A items vec */
-#define N_IMPORT (3) /* A segments vec (str), B name node (last segment), D target file id + 1 */
+#define N_IMPORT (3) /* A segments vec (str), B name node (last segment), C 1 for the 0.3 form naming an item
+                        (spec 058), D target file id + 1, E uses of the module in the file (set by the parser) */
 #define N_FN (4) /* A name, B params vec, C return type node|0, D body, E local count */
 #define N_PARAM (5) /* A name, B type node, E slot */
 #define N_RECORD (6) /* A name, B fields vec */
@@ -558,11 +559,13 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define SYM_TPARAM (5) /* a type parameter: SY_TYPE is its TY_PARAM */
 #define SYM_EFFECTS (6) /* spec 030: an effect set (SY_DECL its N_EFFECTS) */
 #define SYM_CONST (7)   /* spec 031: a constant (SY_DECL its N_CONST; its type is the declaration's) */
+#define SYM_MODULE (8)  /* spec 058: a module name bound by `import a.b;` (SY_SLOT its file id, SY_NODE the import's last segment) */
 #define CS_BAD (3)      /* spec 031: an N_CONST in error (N_D; the other states are in check_const.c) */
 #define SYF_MUT (1)
 #define SYF_USED (2)
 #define SYF_LIBCHANGE (4) /* spec 056: bound by an import of a changed std item (Sym.change) */
 #define SYF_SHADOW (8) /* spec 056: a local named like a builtin (E0203; Sym.rename is its new name) */
+#define SYF_QUALIFY (16) /* spec 058: a module item used without its module name (E0201; Sym.rename is `m.name`) */
 
 /* ---- runtime objects ---- */
 /* list: header | len | cap | data (slot[cap]) */
@@ -1398,6 +1401,10 @@ extern Type *err_type(Type *result);
 extern int ty_has_func(Type *t);
 extern void ty_name_into(SB *sb, Type *t);
 extern Str *ty_name(Type *t);
+extern Str *doc_module_name(long file);
+extern Str *doc_module_line(long file);
+extern long ty_name_file;
+extern void ty_module_prefix(SB *sb, Node *decl);
 extern int ty_is(Type *t, long kind);
 extern int ty_bad(Type *t);
 extern Diag *ck_err(char *code, Node *node, Str *message);
@@ -1554,6 +1561,16 @@ extern Type *list_arg(Node *call);
 extern Type *map_arg(Node *call);
 extern Type *check_call(Node *call, Type *expected);
 extern void report_undefined(Str *name, Node *node);
+extern int module_undefined(Str *name, Node *node);
+extern Sym *module_find(Str *name);
+extern int missing_module_import(Str *m, Node *at);
+extern void imports_report_unused(Vec *items);
+extern int file_has_old_imports(int file);
+extern void migrate_imports(int file, long log_start);
+extern long str_dot(Str *s);
+extern Str *module_label(long target);
+extern Node *module_private_item(long target, Str *name);
+extern void private_item_used(Node *at, Str *name, Node *decl, long target);
 extern int is_placeholder(Sym *sym);
 extern int suggest_name(Diag *d, Str *name, Node *node);
 extern Type *check_ident(Node *node);
@@ -1791,6 +1808,7 @@ extern Str *libchange_new_name(const LibChange *c);
 extern void libchange_import(Node *name_node, Str *module, const LibChange *c);
 extern void libchange_use(Sym *sym, Node *node, Node *call);
 extern int libchange_binds(const LibChange *c);
+extern void libchange_qualified(Node *node, Str *module_name, const LibChange *c);
 extern Type *libchange_option_type(Node *call, Type *t, Type *expected);
 extern Node *ck_result_ctx;
 extern long libchange_case(Node *decl, Node *case_name);
@@ -2172,6 +2190,7 @@ extern long pkg_hash(Str *dir, char *out, int keep);
 extern Str *pkg_hash_text(char *hash);
 extern long pkg_verify(void *entry, Node *node);
 extern void *pkg_import_path(Node *import, FileRec *importer);
+extern int pkg_is_name(Str *name, FileRec *importer);
 extern Str *pkg_relpath(Str *path);
 extern void *pkg_for_doc(Str *name);
 extern Str *pkg_entry_name(void *entry);
@@ -2215,6 +2234,8 @@ extern void prop_text(SB *sb, Node *test, int status);
 
 /* src/query.c */
 extern long q_collect;
+extern Vec *q_log;
+extern Vec *q_exprs;
 extern Vec * q_log;
 extern Node * ck_item;
 extern Vec * q_exprs;
@@ -2237,6 +2258,7 @@ extern void q_ambiguous(Str *name, Vec *decls);
 extern Str *q_suggest(Str *name, long kinds, Vec *members);
 extern void q_unknown(char *tmpl, Str *name, Str *suggestion);
 extern void q_resolve(char *target, long *keys);
+extern void q_resolve_qualified(char *target, long *keys);
 extern long cstr_index(char *s, int c);
 extern Vec *q_matches(long key_a, long key_b, long calls_only);
 extern int q_same_key(long a1, long a2, long b1, long b2);

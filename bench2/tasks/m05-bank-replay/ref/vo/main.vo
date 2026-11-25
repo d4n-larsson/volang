@@ -1,12 +1,11 @@
-import parsing.Entry;
-import parsing.parse;
-import replay.replay;
+import parsing;
+import replay;
 
 fn main() uses console, input {
     let lines = split(read_all(), "\n");
-    let entries = new list[Entry];
+    let entries = new list[parsing.Entry];
     for i in 0..len(lines) {
-        match parse(lines[i], i + 1) {
+        match parsing.parse(lines[i], i + 1) {
             case ok(e) {
                 if e.time >= 0 {
                     push(entries, e);
@@ -17,7 +16,7 @@ fn main() uses console, input {
             }
         }
     }
-    for l in replay(entries) {
+    for l in replay.replay(entries) {
         print(l);
     }
 }

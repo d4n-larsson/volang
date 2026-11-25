@@ -22,6 +22,9 @@ import sys
 import tempfile
 import time
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from migrate_058 import text_migrate  # noqa: E402  spec 058: the programs below are written per item, then put in the module form
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 SLOW = 20 if any(a in os.environ.get("VO_BIN", "") for a in ("aarch64", "riscv64")) else 1  # under qemu
@@ -35,8 +38,7 @@ cases = 0
 ITEMS = ["Changes", "Database", "Options", "Row", "Statement", "Value", "bytes_column", "close", "connect",
          "exec", "float_column", "int_column", "is_null", "parse_sql", "query", "sql", "text_column", "time_column",
          "transaction", "value_column"]
-PRELUDE = "".join(f"import postgres.client.{n};\n" for n in ITEMS) + """import std.bytes.from_ints;
-import std.bytes.to_hex;
+PRELUDE = "".join(f"import postgres.client.{n};\n" for n in ITEMS) + """import std.bytes;
 
 fn options(port: int, password: str, plain: bool, ms: int) -> Options {
     return new Options {
@@ -63,7 +65,7 @@ fn shown(v: Value) -> str {
             return "text " + s;
         }
         case blob(b) {
-            return "blob " + to_hex(b);
+            return "blob " + bytes.to_hex(b);
         }
         case null {
             return "null";
@@ -186,7 +188,7 @@ def vo(d, words, timeout=120):
 
 def run(d, src, name="p.vo", extra=(), timeout=120):
     with open(os.path.join(d, name), "w") as f:
-        f.write(src)
+        f.write(text_migrate(src)[0])
     return vo(d, ["run", "--timeout", str(60 * SLOW)] + list(extra) + [name], timeout)
 
 
@@ -511,7 +513,7 @@ def group_connect(d):
         src = program(ONE, Target(port=p.port)).replace("fn work[D: effects](db: Database[D]) uses console, D {",
                                                         "fn work(db: Database[uses net]) uses console {")
         with open(os.path.join(d, "e.vo"), "w") as f:
-            f.write(src)
+            f.write(text_migrate(src)[0])
         code, out, err = vo(d, ["check", "e.vo"])
         case("connect/using a database needs its effect (E0501)", code == 65 and any("E0501" in l and "net" in l for l in out),
              f"{code} {out[:3]}")
@@ -663,7 +665,7 @@ test "a query against the test server" uses net("127.0.0.1:{q.port}"), entropy {
 }}
 """
     with open(os.path.join(d, "t.vo"), "w") as f:
-        f.write(test)
+        f.write(text_migrate(test)[0])
     code, out, err = vo(d, ["test", "t.vo"])
     case("replay/vo test against a server", code == 0 and "PASS a query against the test server" in " ".join(out)
          and out[-1].endswith(" 0 failed"), f"{code} {out[-3:]} {err[:200]}")
@@ -749,7 +751,7 @@ def group_docs(d):
         tests.append(f'test "example of {name}"{grant} {{\n{body}    expect_eq({expr}, {value});\n}}\n')
     imports = "".join(f"import postgres.client.{n};\n" for n in ITEMS) + "import std.tcp.Conn;\n"
     with open(os.path.join(d, "examples.vo"), "w") as f:
-        f.write(imports + "\nfn main() {\n}\n\n" + "\n".join(tests))
+        f.write(text_migrate(imports + "\nfn main() {\n}\n\n" + "\n".join(tests))[0])
     code, out, err = vo(d, ["test", "examples.vo"])
     failed = [l for l in out if l.startswith("FAIL") and "example of" in l]
     passed = [l for l in out if l.startswith("PASS") and "example of" in l]
@@ -836,36 +838,29 @@ def group_move(d):
     case("move/the SQLite form still passes them", code == 0, f"{code} {out[-1:]}")
 
 
-TIMING = """import postgres.client.Value;
-import postgres.client.close;
-import postgres.client.connect;
-import postgres.client.exec;
-import postgres.client.query;
-import postgres.client.sql;
-import postgres.client.transaction;
-import postgres.client.Options;
+TIMING = """import postgres.client;
 
 fn main() -> result[void] uses console, clock, net("{HOST}:{P}"), entropy {
-    let o = new Options { host: "{HOST}", port: {P}, database: "{DB}", user: "{USER}", password: "{PW}", plain_text: true, connect_ms: 10000, statement_ms: 120000 };
+    let o = new client.Options { host: "{HOST}", port: {P}, database: "{DB}", user: "{USER}", password: "{PW}", plain_text: true, connect_ms: 10000, statement_ms: 120000 };
     let t0 = now_ms();
-    let db = try connect(o);
+    let db = try client.connect(o);
     let t1 = now_ms();
-    let none = new list[Value];
-    let _ = try exec(db, sql("drop table if exists vo_speed"), none);
-    let _ = try exec(db, sql("create table vo_speed (a int, b text, c double precision, d bigint, e text)"), none);
+    let none = new list[client.Value];
+    let _ = try client.exec(db, client.sql("drop table if exists vo_speed"), none);
+    let _ = try client.exec(db, client.sql("create table vo_speed (a int, b text, c double precision, d bigint, e text)"), none);
     let t2 = now_ms();
-    let _ = try transaction(db, fn() -> result[int] {
+    let _ = try client.transaction(db, fn() -> result[int] {
         for i in 0..10000 {
-            let _ = try exec(db, sql("insert into vo_speed values (?, ?, ?, ?, ?)"),
-                [Value.integer(i), Value.text("row " + str(i)), Value.real(1.5), Value.integer(i * 1000), Value.null]);
+            let _ = try client.exec(db, client.sql("insert into vo_speed values (?, ?, ?, ?, ?)"),
+                [client.Value.integer(i), client.Value.text("row " + str(i)), client.Value.real(1.5), client.Value.integer(i * 1000), client.Value.null]);
         }
         return ok(0);
     });
     let t3 = now_ms();
-    let rows = try query(db, sql("select i as a, 'row ' || i as b, 1.5::double precision as c, i * 1000 as d, null::text as e from generate_series(1, 100000) as i"), none);
+    let rows = try client.query(db, client.sql("select i as a, 'row ' || i as b, 1.5::double precision as c, i * 1000 as d, null::text as e from generate_series(1, 100000) as i"), none);
     let t4 = now_ms();
-    let _ = try exec(db, sql("drop table vo_speed"), none);
-    close(db);
+    let _ = try client.exec(db, client.sql("drop table vo_speed"), none);
+    client.close(db);
     print(str(t1 - t0) + " " + str(t3 - t2) + " " + str(t4 - t3) + " " + str(len(rows)));
     return ok();
 }

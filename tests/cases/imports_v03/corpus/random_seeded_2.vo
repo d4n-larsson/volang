@@ -1,0 +1,40 @@
+# std.random under a fixed seed: the same seed gives the same values.
+import std.random.pick;
+import std.random.shuffled;
+import std.random.unit;
+
+fn show(xs: list[int]) -> str {
+    var out = "";
+    for x in xs {
+        set out = out + str(x) + " ";
+    }
+    return out;
+}
+
+fn main() uses console, random {
+    print(str(unit()));
+    print(str(unit()));
+    let u = unit();
+    print(str(u >= 0.0 and u < 1.0));
+    let xs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    match pick(xs) {
+        case ok(x) {
+            print("picked " + str(x));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    print(show(shuffled(xs)));
+    print(show(xs));
+    let empty = new list[str];
+    match pick(empty) {
+        case ok(x) {
+            print(x);
+        }
+        case err(e) {
+            print("empty: " + e);
+        }
+    }
+    print(str(len(shuffled(empty))));
+}

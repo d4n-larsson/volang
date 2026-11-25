@@ -1,22 +1,19 @@
-import model.RoomType;
-import model.Booking;
-import rooms.sorted_types;
-import rooms.occupied;
-import rooms.min_free;
-import bookings.nights;
-import billing.money;
+import billing;
+import bookings;
+import model;
+import rooms;
 
-export fn avail_line(types: map[str, RoomType], bookings: map[str, Booking], type_name: str, start: int, end: int) -> str {
-    let free = min_free(types, bookings, type_name, start, end);
+export fn avail_line(types: map[str, model.RoomType], bookings_value: map[str, model.Booking], type_name: str, start: int, end: int) -> str {
+    let free = rooms.min_free(types, bookings_value, type_name, start, end);
     return "avail " + type_name + " " + str(start) + "-" + str(end) + ": " + str(free) + " of " + str(types[type_name].count) + " free";
 }
 
-export fn occupancy_lines(types: map[str, RoomType], bookings: map[str, Booking], day: int) -> list[str] {
+export fn occupancy_lines(types: map[str, model.RoomType], bookings_value: map[str, model.Booking], day: int) -> list[str] {
     var used = 0;
     var total = 0;
     let rows = new list[str];
-    for t in sorted_types(types) {
-        let n = occupied(bookings, t.name, day);
+    for t in rooms.sorted_types(types) {
+        let n = rooms.occupied(bookings_value, t.name, day);
         set used = used + n;
         set total = total + t.count;
         push(rows, "  " + t.name + " " + str(n) + "/" + str(t.count));
@@ -28,24 +25,24 @@ export fn occupancy_lines(types: map[str, RoomType], bookings: map[str, Booking]
     return out;
 }
 
-export fn report_lines(types: map[str, RoomType], bookings: map[str, Booking]) -> list[str] {
+export fn report_lines(types: map[str, model.RoomType], bookings_value: map[str, model.Booking]) -> list[str] {
     let out = new list[str];
     var revenue = 0;
-    for t in sorted_types(types) {
+    for t in rooms.sorted_types(types) {
         var count = 0;
         var held = 0;
         var earned = 0;
-        for k in keys(bookings) {
-            let b = bookings[k];
+        for k in keys(bookings_value) {
+            let b = bookings_value[k];
             if b.type_name == t.name {
                 set count = count + 1;
-                set held = held + nights(b);
+                set held = held + bookings.nights(b);
                 set earned = earned + b.total;
             }
         }
         set revenue = revenue + earned;
-        push(out, t.name + ": " + str(count) + " bookings, " + str(held) + " nights, revenue " + money(earned));
+        push(out, t.name + ": " + str(count) + " bookings, " + str(held) + " nights, revenue " + billing.money(earned));
     }
-    push(out, "total revenue " + money(revenue));
+    push(out, "total revenue " + billing.money(revenue));
     return out;
 }

@@ -1,25 +1,17 @@
 # SHA-256 of each hex line of inputs.txt, written with std.bits and compared with std.crypto's.
-import std.bits.bit_and;
-import std.bits.bit_not;
-import std.bits.bit_or;
-import std.bits.bit_xor;
-import std.bits.shift_left;
-import std.bits.shift_right_logical;
-import std.bytes.from_hex;
-import std.bytes.from_ints;
-import std.bytes.to_hex;
-import std.bytes.to_ints;
-import std.crypto.sha256;
-import std.fs.each_line;
+import std.bits;
+import std.bytes;
+import std.crypto;
+import std.fs;
 
 const word = 0xFFFFFFFF;
 
 fn rotr(x: int, n: int) -> int {
-    return bit_or(shift_right_logical(x, n), bit_and(shift_left(x, 32 - n), word));
+    return bits.bit_or(bits.shift_right_logical(x, n), bits.bit_and(bits.shift_left(x, 32 - n), word));
 }
 
 fn xor3(a: int, b: int, c: int) -> int {
-    return bit_xor(bit_xor(a, b), c);
+    return bits.bit_xor(bits.bit_xor(a, b), c);
 }
 
 fn round_constants() -> list[int] {
@@ -92,14 +84,14 @@ fn round_constants() -> list[int] {
 }
 
 fn padded(data: bytes) -> list[int] {
-    let m = to_ints(data);
+    let m = bytes.to_ints(data);
     push(m, 0x80);
     while len(m) % 64 != 56 {
         push(m, 0);
     }
     let bit_count = len(data) * 8;
     for i in 0..8 {
-        push(m, bit_and(shift_right_logical(bit_count, 56 - 8 * i), 0xFF));
+        push(m, bits.bit_and(bits.shift_right_logical(bit_count, 56 - 8 * i), 0xFF));
     }
     return m;
 }
@@ -108,15 +100,15 @@ fn schedule(m: list[int], at: int) -> list[int] {
     let w = new list[int];
     for i in 0..16 {
         let p = at + 4 * i;
-        push(w, bit_or(bit_or(shift_left(m[p], 24), shift_left(m[p + 1], 16)), bit_or(
-            shift_left(m[p + 2], 8),
+        push(w, bits.bit_or(bits.bit_or(bits.shift_left(m[p], 24), bits.shift_left(m[p + 1], 16)), bits.bit_or(
+            bits.shift_left(m[p + 2], 8),
             m[p + 3]
         )));
     }
     for i in 16..64 {
-        let s0 = xor3(rotr(w[i - 15], 7), rotr(w[i - 15], 18), shift_right_logical(w[i - 15], 3));
-        let s1 = xor3(rotr(w[i - 2], 17), rotr(w[i - 2], 19), shift_right_logical(w[i - 2], 10));
-        push(w, bit_and(w[i - 16] + s0 + w[i - 7] + s1, word));
+        let s0 = xor3(rotr(w[i - 15], 7), rotr(w[i - 15], 18), bits.shift_right_logical(w[i - 15], 3));
+        let s1 = xor3(rotr(w[i - 2], 17), rotr(w[i - 2], 19), bits.shift_right_logical(w[i - 2], 10));
+        push(w, bits.bit_and(w[i - 16] + s0 + w[i - 7] + s1, word));
     }
     return w;
 }
@@ -125,21 +117,21 @@ fn compress(h: list[int], w: list[int], k: list[int]) {
     let v = slice(h, 0, 8);
     for i in 0..64 {
         let s1 = xor3(rotr(v[4], 6), rotr(v[4], 11), rotr(v[4], 25));
-        let ch = bit_xor(bit_and(v[4], v[5]), bit_and(bit_and(bit_not(v[4]), word), v[6]));
+        let ch = bits.bit_xor(bits.bit_and(v[4], v[5]), bits.bit_and(bits.bit_and(bits.bit_not(v[4]), word), v[6]));
         let t1 = v[7] + s1 + ch + k[i] + w[i];
         let s0 = xor3(rotr(v[0], 2), rotr(v[0], 13), rotr(v[0], 22));
-        let maj = xor3(bit_and(v[0], v[1]), bit_and(v[0], v[2]), bit_and(v[1], v[2]));
+        let maj = xor3(bits.bit_and(v[0], v[1]), bits.bit_and(v[0], v[2]), bits.bit_and(v[1], v[2]));
         set v[7] = v[6];
         set v[6] = v[5];
         set v[5] = v[4];
-        set v[4] = bit_and(v[3] + t1, word);
+        set v[4] = bits.bit_and(v[3] + t1, word);
         set v[3] = v[2];
         set v[2] = v[1];
         set v[1] = v[0];
-        set v[0] = bit_and(t1 + s0 + maj, word);
+        set v[0] = bits.bit_and(t1 + s0 + maj, word);
     }
     for i in 0..8 {
-        set h[i] = bit_and(h[i] + v[i], word);
+        set h[i] = bits.bit_and(h[i] + v[i], word);
     }
 }
 
@@ -164,20 +156,20 @@ fn digest(data: bytes) -> bytes {
     let out = new list[int];
     for x in h {
         for i in 0..4 {
-            push(out, bit_and(shift_right_logical(x, 24 - 8 * i), 0xFF));
+            push(out, bits.bit_and(bits.shift_right_logical(x, 24 - 8 * i), 0xFF));
         }
     }
-    return from_ints(out);
+    return bytes.from_ints(out);
 }
 
 fn main() -> result[void] uses console, file.read("./") {
-    try each_line("inputs.txt", fn(line: str) -> result[bool] {
-        let data = try from_hex(line);
+    try fs.each_line("inputs.txt", fn(line: str) -> result[bool] {
+        let data = try bytes.from_hex(line);
         let mine = digest(data);
-        if mine == sha256(data) {
-            print(to_hex(mine));
+        if mine == crypto.sha256(data) {
+            print(bytes.to_hex(mine));
         } else {
-            print("differs from std.crypto: " + to_hex(mine));
+            print("differs from std.crypto: " + bytes.to_hex(mine));
         }
         return ok(true);
     });

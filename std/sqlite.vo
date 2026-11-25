@@ -1,5 +1,5 @@
 # std.sqlite: SQLite databases in files (file.read, file.write) or in memory (no effect), with checked statements and ? parameters.
-# Part of the vo standard library (spec 026). Import items one by one: `import std.sqlite.NAME;`.
+# Part of the vo standard library (spec 026). Import the module, `import std.sqlite;`, and write its items as `sqlite.NAME`.
 # A database's type names the effects it was opened with, and using it needs them: open gives a
 # Database[uses file.read, file.write], open_readonly a Database[uses file.read], open_memory a Database.
 # Code for any database (a file in main, open_memory in tests) is generic over its effects:

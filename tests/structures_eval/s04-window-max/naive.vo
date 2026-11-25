@@ -1,8 +1,8 @@
-import std.text.words;
+import std.text;
 
 fn main() -> result[void] uses console, input {
     let xs = new list[int];
-    for word in words(read_all()) {
+    for word in text.words(read_all()) {
         push(xs, try parse_int(word));
     }
     let k = xs[1];

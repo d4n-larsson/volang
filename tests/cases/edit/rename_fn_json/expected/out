@@ -1,9 +1,8 @@
 $ vo edit rename --json main.vo add_item add_product
-{"v":1,"kind":"edit","file":"main.vo","start":{"line":3,"col":16},"end":{"line":3,"col":24},"text":"add_item","replacement":"add_product"}
-{"v":1,"kind":"edit","file":"main.vo","start":{"line":36,"col":5},"end":{"line":36,"col":13},"text":"add_item","replacement":"add_product"}
-{"v":1,"kind":"edit","file":"main.vo","start":{"line":37,"col":5},"end":{"line":37,"col":13},"text":"add_item","replacement":"add_product"}
+{"v":1,"kind":"edit","file":"main.vo","start":{"line":33,"col":13},"end":{"line":33,"col":21},"text":"add_item","replacement":"add_product"}
+{"v":1,"kind":"edit","file":"main.vo","start":{"line":34,"col":13},"end":{"line":34,"col":21},"text":"add_item","replacement":"add_product"}
 {"v":1,"kind":"edit","file":"catalog.vo","start":{"line":11,"col":11},"end":{"line":11,"col":19},"text":"add_item","replacement":"add_product"}
 {"v":1,"kind":"edit","file":"vo.effects","start":{"line":2,"col":12},"end":{"line":2,"col":20},"text":"add_item","replacement":"add_product"}
-{"v":1,"kind":"summary","command":"edit","errors":0,"warnings":0,"truncated":0,"files":2,"changes":5,"changed":3,"written":true}
+{"v":1,"kind":"summary","command":"edit","errors":0,"warnings":0,"truncated":0,"files":2,"changes":4,"changed":3,"written":true}
 --- stderr
 --- exit 0

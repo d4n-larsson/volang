@@ -1,0 +1,9 @@
+# The same module imported twice: E0202 with the fix removing the second line.
+import std.json;
+import std.json;
+
+fn main() -> result[void] uses console {
+    let j = try json.parse_json("1");
+    print(str(j == json.Json.integer(1)));
+    return ok();
+}

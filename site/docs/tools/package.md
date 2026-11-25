@@ -133,10 +133,10 @@ fn two_digits(n: int) -> str {
 
 ```vo
 # file: main.vo
-import money.format.cents;
+import money.format;
 
 fn main() uses console {
-    print(cents(1205));
+    print(format.cents(1205));
 }
 ```
 
@@ -154,8 +154,8 @@ $ vo package --remove main.vo money
 removed money
 $ vo check main.vo
 main.vo:2:1: error[E0205]: Cannot find `money/format.vo` for this import.
-   2 | import money.format.cents;
-     | ^^^^^^^^^^^^^^^^^^^^^^^^^^
+   2 | import money.format;
+     | ^^^^^^^^^^^^^^^^^^^^
 1 error, 0 warnings
 ```
 

@@ -1,14 +1,8 @@
-import model.RoomType;
-import model.Booking;
-import rooms.add_type;
-import rooms.set_rate;
-import bookings.book;
-import bookings.cancel;
-import billing.money;
-import billing.invoice_lines;
-import report.avail_line;
-import report.occupancy_lines;
-import report.report_lines;
+import billing;
+import bookings;
+import model;
+import report;
+import rooms;
 
 fn is_number(s: str) -> bool {
     if len(s) == 0 {
@@ -31,32 +25,32 @@ fn num(s: str) -> int {
     }
 }
 
-fn run(words: list[str], types: map[str, RoomType], bookings: map[str, Booking]) -> list[str] {
+fn run(words: list[str], types: map[str, model.RoomType], bookings_value: map[str, model.Booking]) -> list[str] {
     let cmd = words[0];
     let args_value = slice(words, 1, len(words));
     if cmd == "type" {
         if len(args_value) != 3 or not is_number(args_value[1]) or not is_number(args_value[2]) {
             return ["error: bad command"];
         }
-        return [add_type(types, args_value[0], num(args_value[1]), num(args_value[2]))];
+        return [rooms.add_type(types, args_value[0], num(args_value[1]), num(args_value[2]))];
     }
     if cmd == "rate" {
         if len(args_value) != 2 or not is_number(args_value[1]) {
             return ["error: bad command"];
         }
-        return [set_rate(types, args_value[0], num(args_value[1]), money)];
+        return [rooms.set_rate(types, args_value[0], num(args_value[1]), billing.money)];
     }
     if cmd == "book" {
         if len(args_value) != 5 or not is_number(args_value[3]) or not is_number(args_value[4]) {
             return ["error: bad command"];
         }
-        return [book(types, bookings, args_value[0], args_value[1], args_value[2], num(args_value[3]), num(args_value[4]))];
+        return [bookings.book(types, bookings_value, args_value[0], args_value[1], args_value[2], num(args_value[3]), num(args_value[4]))];
     }
     if cmd == "cancel" {
         if len(args_value) != 2 or not is_number(args_value[1]) {
             return ["error: bad command"];
         }
-        return [cancel(bookings, args_value[0], num(args_value[1]))];
+        return [bookings.cancel(bookings_value, args_value[0], num(args_value[1]))];
     }
     if cmd == "avail" {
         if len(args_value) != 3 or not is_number(args_value[1]) or not is_number(args_value[2]) {
@@ -68,35 +62,35 @@ fn run(words: list[str], types: map[str, RoomType], bookings: map[str, Booking])
         if num(args_value[1]) >= num(args_value[2]) {
             return ["error: bad dates"];
         }
-        return [avail_line(types, bookings, args_value[0], num(args_value[1]), num(args_value[2]))];
+        return [report.avail_line(types, bookings_value, args_value[0], num(args_value[1]), num(args_value[2]))];
     }
     if cmd == "occupancy" {
         if len(args_value) != 1 or not is_number(args_value[0]) {
             return ["error: bad command"];
         }
-        return occupancy_lines(types, bookings, num(args_value[0]));
+        return report.occupancy_lines(types, bookings_value, num(args_value[0]));
     }
     if cmd == "invoice" {
         if len(args_value) != 1 {
             return ["error: bad command"];
         }
-        if not has(bookings, args_value[0]) {
+        if not has(bookings_value, args_value[0]) {
             return ["error: unknown booking " + args_value[0]];
         }
-        return invoice_lines(bookings[args_value[0]]);
+        return billing.invoice_lines(bookings_value[args_value[0]]);
     }
     if cmd == "report" {
         if len(args_value) != 0 {
             return ["error: bad command"];
         }
-        return report_lines(types, bookings);
+        return report.report_lines(types, bookings_value);
     }
     return ["error: unknown command " + cmd];
 }
 
 fn main() uses console, input {
-    let types = new map[str, RoomType];
-    let bookings = new map[str, Booking];
+    let types = new map[str, model.RoomType];
+    let bookings_value = new map[str, model.Booking];
     for line in split(read_all(), "\n") {
         let words = filter(split(line, " "), fn(w: str) -> bool {
             return w != "";
@@ -104,7 +98,7 @@ fn main() uses console, input {
         if len(words) == 0 {
             continue;
         }
-        for out in run(words, types, bookings) {
+        for out in run(words, types, bookings_value) {
             print(out);
         }
     }

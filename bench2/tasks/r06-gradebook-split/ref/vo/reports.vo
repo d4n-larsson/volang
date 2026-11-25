@@ -1,36 +1,31 @@
-import book.Book;
-import book.unknown_student;
-import stats.rounded_div;
-import stats.tenths;
-import stats.percent_tenths;
-import stats.weighted_average;
-import letters.letter_order;
-import letters.letter;
+import book;
+import letters;
+import stats;
 
 record Graded {
     avg: int;
     name: str;
 }
 
-export fn card(book: Book, name: str) -> list[str] {
-    if not has(book.students, name) {
-        return [unknown_student(name)];
+export fn card(book_value: book.Book, name: str) -> list[str] {
+    if not has(book_value.students, name) {
+        return [book.unknown_student(name)];
     }
-    let student = book.students[name];
+    let student = book_value.students[name];
     let out = new list[str];
-    match weighted_average(book, student) {
+    match stats.weighted_average(book_value, student) {
         case ok(avg) {
-            push(out, name + " average " + tenths(avg) + " " + letter(avg));
+            push(out, name + " average " + stats.tenths(avg) + " " + letters.letter(avg));
         }
         case err(_) {
             push(out, name + " no scores");
         }
     }
-    for a in keys(book.assignments) {
-        let max_points = book.assignments[a].max_points;
+    for a in keys(book_value.assignments) {
+        let max_points = book_value.assignments[a].max_points;
         if has(student.scores, a) {
             let p = student.scores[a];
-            push(out, "  " + a + " " + str(p) + "/" + str(max_points) + " " + tenths(percent_tenths(p, max_points)));
+            push(out, "  " + a + " " + str(p) + "/" + str(max_points) + " " + stats.tenths(stats.percent_tenths(p, max_points)));
         } else {
             push(out, "  " + a + " missing");
         }
@@ -39,10 +34,10 @@ export fn card(book: Book, name: str) -> list[str] {
 }
 
 # Every student with scores and their average, in enrollment order.
-fn graded_students(book: Book) -> list[Graded] {
+fn graded_students(book_value: book.Book) -> list[Graded] {
     let graded = new list[Graded];
-    for s in keys(book.students) {
-        match weighted_average(book, book.students[s]) {
+    for s in keys(book_value.students) {
+        match stats.weighted_average(book_value, book_value.students[s]) {
             case ok(avg) {
                 push(graded, new Graded { avg: avg, name: s });
             }
@@ -53,11 +48,11 @@ fn graded_students(book: Book) -> list[Graded] {
     return graded;
 }
 
-export fn class_report(book: Book) -> list[str] {
+export fn class_report(book_value: book.Book) -> list[str] {
     let graded = new list[Graded];
     let ungraded = new list[str];
-    for s in keys(book.students) {
-        match weighted_average(book, book.students[s]) {
+    for s in keys(book_value.students) {
+        match stats.weighted_average(book_value, book_value.students[s]) {
             case ok(avg) {
                 push(graded, new Graded { avg: avg, name: s });
             }
@@ -78,7 +73,7 @@ export fn class_report(book: Book) -> list[str] {
         let higher = filter(graded, fn(other: Graded) -> bool {
             return other.avg > g.avg;
         });
-        push(out, str(1 + len(higher)) + ". " + g.name + " " + tenths(g.avg) + " " + letter(g.avg));
+        push(out, str(1 + len(higher)) + ". " + g.name + " " + stats.tenths(g.avg) + " " + letters.letter(g.avg));
         set total = total + g.avg;
     }
     sort(ungraded);
@@ -86,17 +81,17 @@ export fn class_report(book: Book) -> list[str] {
         push(out, "-. " + name + " no scores");
     }
     if len(graded) > 0 {
-        push(out, "class average " + tenths(rounded_div(total, len(graded))));
+        push(out, "class average " + stats.tenths(stats.rounded_div(total, len(graded))));
     } else {
         push(out, "class average none");
     }
     return out;
 }
 
-export fn distribution(book: Book) -> list[str] {
+export fn distribution(book_value: book.Book) -> list[str] {
     let by_letter = new map[str, list[str]];
-    for g in graded_students(book) {
-        let grade = letter(g.avg);
+    for g in graded_students(book_value) {
+        let grade = letters.letter(g.avg);
         if not has(by_letter, grade) {
             set by_letter[grade] = new list[str];
         }
@@ -106,7 +101,7 @@ export fn distribution(book: Book) -> list[str] {
         return ["no grades"];
     }
     let out = new list[str];
-    for grade in letter_order() {
+    for grade in letters.letter_order() {
         if has(by_letter, grade) {
             let names = by_letter[grade];
             sort(names);

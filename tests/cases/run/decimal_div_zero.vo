@@ -1,8 +1,5 @@
-import std.decimal.Rounding;
-import std.decimal.decimal;
-import std.decimal.decimal_text;
-import std.decimal.div;
+import std.decimal;
 
 fn main() uses console {
-    print(decimal_text(div(decimal(100, 2), decimal(0, 2), 2, Rounding.half_even)));
+    print(decimal.decimal_text(decimal.div(decimal.decimal(100, 2), decimal.decimal(0, 2), 2, decimal.Rounding.half_even)));
 }

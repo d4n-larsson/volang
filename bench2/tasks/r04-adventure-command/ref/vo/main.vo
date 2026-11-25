@@ -1,14 +1,6 @@
-import world.Room;
-import world.make_world;
-import player.Player;
-import player.new_player;
-import commands.do_look;
-import commands.do_go;
-import commands.do_take;
-import commands.do_drop;
-import commands.do_inventory;
-import commands.do_score;
-import commands.do_quit;
+import commands;
+import player;
+import world;
 
 # Number of words after the verb that each command takes.
 fn arity() -> map[str, int] {
@@ -23,7 +15,7 @@ fn arity() -> map[str, int] {
     return a;
 }
 
-fn run(words: list[str], player: Player, world: map[str, Room]) -> list[str] {
+fn run(words: list[str], player_value: player.Player, world_value: map[str, world.Room]) -> list[str] {
     let verb = words[0];
     let args_value = slice(words, 1, len(words));
     let counts = arity();
@@ -34,29 +26,29 @@ fn run(words: list[str], player: Player, world: map[str, Room]) -> list[str] {
         return ["what?"];
     }
     if verb == "look" {
-        return do_look(player, world);
+        return commands.do_look(player_value, world_value);
     }
     if verb == "go" {
-        return do_go(player, world, args_value[0]);
+        return commands.do_go(player_value, world_value, args_value[0]);
     }
     if verb == "take" {
-        return do_take(player, world, args_value[0]);
+        return commands.do_take(player_value, world_value, args_value[0]);
     }
     if verb == "drop" {
-        return do_drop(player, world, args_value[0]);
+        return commands.do_drop(player_value, world_value, args_value[0]);
     }
     if verb == "inventory" {
-        return do_inventory(player);
+        return commands.do_inventory(player_value);
     }
     if verb == "score" {
-        return do_score(player);
+        return commands.do_score(player_value);
     }
-    return do_quit(player);
+    return commands.do_quit(player_value);
 }
 
 fn main() uses console, input {
-    let world = make_world();
-    let player = new_player();
+    let world_value = world.make_world();
+    let player_value = player.new_player();
     for line in split(read_all(), "\n") {
         let words = filter(split(line, " "), fn(w: str) -> bool {
             return w != "";
@@ -64,7 +56,7 @@ fn main() uses console, input {
         if len(words) == 0 {
             continue;
         }
-        for out in run(words, player, world) {
+        for out in run(words, player_value, world_value) {
             print(out);
         }
         if words[0] == "quit" and len(words) == 1 {

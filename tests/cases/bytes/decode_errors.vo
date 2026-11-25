@@ -1,12 +1,10 @@
 # Spec 021 US4: decoding names the first invalid position, and never returns a partial value.
-import std.bytes.from_hex;
-import std.bytes.from_base64;
-import std.bytes.to_hex;
+import std.bytes;
 
 fn show(r: result[bytes]) uses console {
     match r {
         case ok(b) {
-            print("ok " + to_hex(b));
+            print("ok " + bytes.to_hex(b));
         }
         case err(e) {
             print(e);
@@ -15,11 +13,11 @@ fn show(r: result[bytes]) uses console {
 }
 
 fn main() uses console {
-    show(from_hex("0g"));
-    show(from_hex("abc"));
-    show(from_base64("Zm9v!"));
-    show(from_base64("Zm9"));
-    show(from_base64("Zg=a"));
-    show(from_base64("Zm 9v"));
-    show(from_base64("Zg=="));
+    show(bytes.from_hex("0g"));
+    show(bytes.from_hex("abc"));
+    show(bytes.from_base64("Zm9v!"));
+    show(bytes.from_base64("Zm9"));
+    show(bytes.from_base64("Zg=a"));
+    show(bytes.from_base64("Zm 9v"));
+    show(bytes.from_base64("Zg=="));
 }

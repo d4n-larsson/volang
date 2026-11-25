@@ -1,8 +1,8 @@
 # Spec 021 US1: read_bytes needs file.read with a scope that covers the path (R0010 otherwise).
-import std.fs.read_bytes;
+import std.fs;
 
 fn main() uses console, file.read("only-here/") {
-    match read_bytes("/etc/hostname") {
+    match fs.read_bytes("/etc/hostname") {
         case ok(b) {
             print("ok");
         }

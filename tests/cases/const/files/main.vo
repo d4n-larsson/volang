@@ -1,7 +1,5 @@
-import config.internal_twice;
-import config.max_items;
-import config.max_total;
+import config;
 
 fn main() uses console {
-    print(str(max_items) + " " + str(max_total) + " " + str(internal_twice()));
+    print(str(config.max_items) + " " + str(config.max_total) + " " + str(config.internal_twice()));
 }

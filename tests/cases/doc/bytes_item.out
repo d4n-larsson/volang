@@ -1,3 +1,4 @@
 fn from_base64(s: str) -> result[bytes]
     Bytes from padded standard base64; err("invalid base64: S; not base64 at position N") or err("invalid base64: S; length is not a multiple of 4").
+    use: import std.bytes; then bytes.from_base64
     example: from_base64("Zm9vYmFy") == ok(from_text("foobar")) is true

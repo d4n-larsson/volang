@@ -6,7 +6,7 @@ PASS two decimals (0ms)
 --- stderr
 --- exit 0
 $ vo test --list main.vo
-main.vo::main formats twelve (test, main.vo:9:1)
+main.vo::main formats twelve (test, main.vo:8:1)
 money.vo::cents of units (test, money.vo:17:1)
 money.vo::two decimals (test, money.vo:21:1)
 3 tests

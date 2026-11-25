@@ -1,6 +1,8 @@
-import a.limit;
-import b.limit;
+# Spec 031, spec 058: constants of the same name in two files are told apart by their modules.
+import a;
+import b;
 
 fn main() uses console {
-    print(str(limit));
+    print(str(a.limit));
+    print(str(b.limit));
 }

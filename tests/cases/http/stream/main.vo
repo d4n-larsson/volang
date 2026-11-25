@@ -1,7 +1,5 @@
 # Spec 040: send_stream delivers a response body in pieces. Arguments: PORT PATH [stop].
-import std.http.Header;
-import std.http.Response;
-import std.http.send_stream;
+import std.http;
 
 record Seen {
     total: int;
@@ -12,13 +10,13 @@ record Seen {
 fn main() uses console, net("localhost") {
     let a = args();
     let seen = new Seen { total: 0, largest: 0, status: 0 };
-    let r = send_stream(
+    let r = http.send_stream(
         "GET",
         "http://localhost:" + a[0] + a[1],
-        new list[Header],
+        new list[http.Header],
         "",
         2000,
-        fn(head: Response, piece: bytes) -> result[bool] {
+        fn(head: http.Response, piece: bytes) -> result[bool] {
             set seen.status = head.status;
             set seen.total = seen.total + len(piece);
             set seen.largest = max(seen.largest, len(piece));

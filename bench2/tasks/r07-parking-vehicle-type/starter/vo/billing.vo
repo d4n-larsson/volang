@@ -1,33 +1,28 @@
-import garage.Garage;
-import garage.Vehicle;
-import garage.level_numbers;
-import garage.spot_name;
-import garage.unpark;
-import fees.money;
-import fees.fee;
+import fees;
+import garage;
 
 # The parked vehicle, or the error for `time`.
-fn find_parked(garage: Garage, plate: str, time: int) -> result[Vehicle] {
-    if not has(garage.vehicles, plate) {
+fn find_parked(garage_value: garage.Garage, plate: str, time: int) -> result[garage.Vehicle] {
+    if not has(garage_value.vehicles, plate) {
         return err("error: " + plate + " not parked");
     }
-    let vehicle = garage.vehicles[plate];
+    let vehicle = garage_value.vehicles[plate];
     if time < vehicle.since {
         return err("error: time before entry");
     }
     return ok(vehicle);
 }
 
-export fn exit_vehicle(garage: Garage, plate: str, time: int) -> str {
-    match find_parked(garage, plate, time) {
+export fn exit_vehicle(garage_value: garage.Garage, plate: str, time: int) -> str {
+    match find_parked(garage_value, plate, time) {
         case ok(vehicle) {
             let minutes = time - vehicle.since;
-            let amount = fee(minutes);
-            let level = garage.levels[vehicle.level];
+            let amount = fees.fee(minutes);
+            let level = garage_value.levels[vehicle.level];
             set level.exits = level.exits + 1;
             set level.revenue = level.revenue + amount;
-            unpark(garage, vehicle);
-            return plate + " left " + spot_name(vehicle) + " after " + str(minutes) + " min, fee " + money(amount);
+            garage.unpark(garage_value, vehicle);
+            return plate + " left " + garage.spot_name(vehicle) + " after " + str(minutes) + " min, fee " + fees.money(amount);
         }
         case err(e) {
             return e;
@@ -35,11 +30,11 @@ export fn exit_vehicle(garage: Garage, plate: str, time: int) -> str {
     }
 }
 
-export fn quote(garage: Garage, plate: str, time: int) -> str {
-    match find_parked(garage, plate, time) {
+export fn quote(garage_value: garage.Garage, plate: str, time: int) -> str {
+    match find_parked(garage_value, plate, time) {
         case ok(vehicle) {
             let minutes = time - vehicle.since;
-            return plate + " owes " + money(fee(minutes)) + " after " + str(minutes) + " min";
+            return plate + " owes " + fees.money(fees.fee(minutes)) + " after " + str(minutes) + " min";
         }
         case err(e) {
             return e;
@@ -48,30 +43,30 @@ export fn quote(garage: Garage, plate: str, time: int) -> str {
 }
 
 # What the vehicles on level `number` would owe if they all left at `time`.
-fn pending(garage: Garage, number: int, time: int) -> int {
+fn pending(garage_value: garage.Garage, number: int, time: int) -> int {
     var total = 0;
-    for plate in keys(garage.vehicles) {
-        let vehicle = garage.vehicles[plate];
+    for plate in keys(garage_value.vehicles) {
+        let vehicle = garage_value.vehicles[plate];
         if vehicle.level == number and vehicle.since <= time {
-            set total = total + fee(time - vehicle.since);
+            set total = total + fees.fee(time - vehicle.since);
         }
     }
     return total;
 }
 
-export fn report(garage: Garage, time: int) -> list[str] {
+export fn report(garage_value: garage.Garage, time: int) -> list[str] {
     let out = new list[str];
     var exits = 0;
     var revenue = 0;
     var owed = 0;
-    for number in level_numbers(garage) {
-        let level = garage.levels[number];
-        let p = pending(garage, number, time);
-        push(out, "level " + str(number) + ": exits " + str(level.exits) + " revenue " + money(level.revenue) + " pending " + money(p));
+    for number in garage.level_numbers(garage_value) {
+        let level = garage_value.levels[number];
+        let p = pending(garage_value, number, time);
+        push(out, "level " + str(number) + ": exits " + str(level.exits) + " revenue " + fees.money(level.revenue) + " pending " + fees.money(p));
         set exits = exits + level.exits;
         set revenue = revenue + level.revenue;
         set owed = owed + p;
     }
-    push(out, "total exits " + str(exits) + " revenue " + money(revenue) + " pending " + money(owed));
+    push(out, "total exits " + str(exits) + " revenue " + fees.money(revenue) + " pending " + fees.money(owed));
     return out;
 }

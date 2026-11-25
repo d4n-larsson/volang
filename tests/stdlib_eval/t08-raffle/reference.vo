@@ -1,5 +1,4 @@
-import std.random.pick;
-import std.random.shuffled;
+import std.random;
 
 fn main() -> result[void] uses console, random {
     match parse_int(args()[0]) {
@@ -12,13 +11,13 @@ fn main() -> result[void] uses console, random {
             for i in 1..n + 1 {
                 push(xs, i);
             }
-            let s = shuffled(xs);
+            let s = random.shuffled(xs);
             let parts = new list[str];
             for x in s {
                 push(parts, str(x));
             }
             print(join(parts, " "));
-            print("winner: " + str(try pick(s)));
+            print("winner: " + str(try random.pick(s)));
         }
         case err(_) {
             print("bad N");

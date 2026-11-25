@@ -1,11 +1,7 @@
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.exec;
-import std.sqlite.query;
-import std.sqlite.Value;
-import std.bytes.from_text;
+import std.bytes;
+import std.sqlite;
 
-fn show(v: Value) -> str {
+fn show(v: sqlite.Value) -> str {
     match v {
         case integer(i) {
             return "integer " + str(i);
@@ -26,14 +22,14 @@ fn show(v: Value) -> str {
 }
 
 fn main() -> result[void] uses console {
-    let db = open_memory();
-    let _ = try exec(db, sql("create table t(n integer, f real, s text, b blob, z)"), new list[Value]);
-    let c = try exec(db, sql("insert into t values (?, ?, ?, ?, ?)"), [Value.integer(1), Value.real(1.5), Value.text("a"), Value.blob(from_text("xy")), Value.null]);
+    let db = sqlite.open_memory();
+    let _ = try sqlite.exec(db, sqlite.sql("create table t(n integer, f real, s text, b blob, z)"), new list[sqlite.Value]);
+    let c = try sqlite.exec(db, sqlite.sql("insert into t values (?, ?, ?, ?, ?)"), [sqlite.Value.integer(1), sqlite.Value.real(1.5), sqlite.Value.text("a"), sqlite.Value.blob(bytes.from_text("xy")), sqlite.Value.null]);
     print(str(c.changed) + " " + str(c.last_id));
-    let _ = try exec(db, sql("insert into t values (?, ?, ?, ?, ?)"), [Value.integer(2), Value.real(-0.25), Value.text("é"), Value.blob(from_text("")), Value.integer(9)]);
-    let c3 = try exec(db, sql("insert into t values (3, 3.0, 'c', x'00ff', null)"), new list[Value]);
+    let _ = try sqlite.exec(db, sqlite.sql("insert into t values (?, ?, ?, ?, ?)"), [sqlite.Value.integer(2), sqlite.Value.real(-0.25), sqlite.Value.text("é"), sqlite.Value.blob(bytes.from_text("")), sqlite.Value.integer(9)]);
+    let c3 = try sqlite.exec(db, sqlite.sql("insert into t values (3, 3.0, 'c', x'00ff', null)"), new list[sqlite.Value]);
     print(str(c3.last_id));
-    for row in try query(db, sql("select n, f, s, b, z from t order by n desc"), new list[Value]) {
+    for row in try sqlite.query(db, sqlite.sql("select n, f, s, b, z from t order by n desc"), new list[sqlite.Value]) {
         var parts = new list[str];
         for v in row.values {
             push(parts, show(v));

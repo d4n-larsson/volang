@@ -1,11 +1,10 @@
-import std.tcp.close_conn;
-import std.tcp.connect;
+import std.tcp;
 
 # A scope with a port is covered by the same scope, and by the bare host.
 fn ask() uses net("db.internal:5432") {
-    match connect("db.internal", 5432, 1000) {
+    match tcp.connect("db.internal", 5432, 1000) {
         case ok(c) {
-            close_conn(c);
+            tcp.close_conn(c);
         }
         case err(_) {
         }

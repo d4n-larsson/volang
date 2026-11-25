@@ -1,10 +1,8 @@
-import std.regex.parse_regex;
-import std.regex.is_match;
-import std.regex.Regex;
+import std.regex;
 
 fn main() uses console {
     for p in ["(a", "a)", "[abc", "*a", "[z-a]", "a{3,1}", "(?=x)", "(a)\\1", "(?P<y>a)", "\\p{L}"] {
-        match parse_regex(p) {
+        match regex.parse_regex(p) {
             case ok(r) {
                 print("ok " + r.pattern);
             }
@@ -13,5 +11,5 @@ fn main() uses console {
             }
         }
     }
-    print(str(is_match("x", new Regex { pattern: "(" })));
+    print(str(regex.is_match("x", new regex.Regex { pattern: "(" })));
 }

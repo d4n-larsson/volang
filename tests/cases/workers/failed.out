@@ -2,15 +2,15 @@ ok 1
 ok 2
 a tell before the failure is received: sent
 worker: about to divide
-failed: failed.vo:83:16: runtime error[R0002]: Division by zero.
-  83 |     give(link, 10 / zero);
+failed: failed.vo:74:16: runtime error[R0002]: Division by zero.
+  74 |     give(link, 10 / zero);
      |                ^^^^^^^^^
 trace:
-  at two_then_zero (failed.vo:83:16)
+  at two_then_zero (failed.vo:74:16)
       link: Link[int, int] = new Link[int, int] { id: 0 }, zero: int = 0
   at start_worker (std/workers.vo:66:45)
       body: fn(Link[int, int]) uses console = <fn(Link[int, int]) uses console>
-  at main (failed.vo:97:23)
+  at main (failed.vo:88:23)
 the program goes on
 a tell after it: ended
 ended

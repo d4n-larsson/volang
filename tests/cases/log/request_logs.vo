@@ -2,49 +2,38 @@
 # ms from two clock reads: 1 under the test clock) and the request's id goes into every record written while
 # it is answered, also the operation's own; none after. 500 is level error with the error's text; a probe of
 # /health/ready answered 200 is level debug.
-import std.http.Response;
-import std.log.Field;
-import std.log.field;
-import std.log.log_info;
-import std.log.logged;
-import std.web.App;
-import std.web.ErrorStatus;
-import std.web.NoInput;
-import std.web.handle_request;
-import std.web.json_reply;
-import std.web.on_get;
-import std.web.request;
-import std.web.request_ids;
-import std.web.request_logs;
+import std.http;
+import std.log;
+import std.web;
 
 record NoteId {
     id: int;
 }
 
-fn read_note(n: int, input: NoteId) -> result[Response] uses log {
-    log_info("note read", [field("id", input.id)]);
-    return ok(json_reply(200, input.id));
+fn read_note(n: int, input: NoteId) -> result[http.Response] uses log {
+    log.log_info("note read", [log.field("id", input.id)]);
+    return ok(web.json_reply(200, input.id));
 }
 
-fn broken(n: int, input: NoInput) -> result[Response] {
+fn broken(n: int, input: web.NoInput) -> result[http.Response] {
     return err("boom");
 }
 
-fn ready(n: int, input: NoInput) -> result[Response] {
-    return ok(json_reply(200, "ready"));
+fn ready(n: int, input: web.NoInput) -> result[http.Response] {
+    return ok(web.json_reply(200, "ready"));
 }
 
 test "records for each request" uses log, clock {
-    let app = new App[int, uses log, clock] {
-        routes: [on_get("/notes/{id}", read_note), on_get("/broken", broken), on_get("/health/ready", ready)],
-        steps: [request_ids(fn() -> str { return "id-1"; }), request_logs()],
-        errors: new list[ErrorStatus]
+    let app = new web.App[int, uses log, clock] {
+        routes: [web.on_get("/notes/{id}", read_note), web.on_get("/broken", broken), web.on_get("/health/ready", ready)],
+        steps: [web.request_ids(fn() -> str { return "id-1"; }), web.request_logs()],
+        errors: new list[web.ErrorStatus]
     };
     for path in ["/notes/7", "/missing", "/broken", "/health/ready"] {
-        let _ = handle_request(app, 0, request("GET", path, ""));
+        let _ = web.handle_request(app, 0, web.request("GET", path, ""));
     }
-    log_info("after", new list[Field]);
-    expect_eq(logged(), [
+    log.log_info("after", new list[log.Field]);
+    expect_eq(log.logged(), [
         `{"time":"1970-01-01T00:00:00.000Z","level":"info","message":"note read","request_id":"id-1","id":7}`,
         `{"time":"1970-01-01T00:00:00.001Z","level":"info","message":"request","request_id":"id-1","method":"GET","route":"/notes/{id}","status":200,"ms":1}`,
         `{"time":"1970-01-01T00:00:00.003Z","level":"info","message":"request","request_id":"id-1","method":"GET","route":"unmatched","status":404,"ms":1}`,

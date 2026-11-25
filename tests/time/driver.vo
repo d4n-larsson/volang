@@ -1,9 +1,6 @@
 # tests/time_check.py's driver: for each line of stdin (milliseconds since the epoch), prints the
 # calendar fields from from_ms, format_time, parse_time of that text and to_ms of the fields.
-import std.time.format_time;
-import std.time.from_ms;
-import std.time.parse_time;
-import std.time.to_ms;
+import std.time;
 
 fn back(r: result[int]) -> str {
     match r {
@@ -22,9 +19,9 @@ fn main() -> result[void] uses console, input {
             continue;
         }
         let ms = try parse_int(line);
-        let d = from_ms(ms);
-        let text = format_time(ms);
-        print(str(d.year) + " " + str(d.month) + " " + str(d.day) + " " + str(d.hour) + " " + str(d.minute) + " " + str(d.second) + " " + str(d.ms) + " " + str(d.weekday) + " " + text + " " + back(parse_time(text)) + " " + back(to_ms(d)));
+        let d = time.from_ms(ms);
+        let text = time.format_time(ms);
+        print(str(d.year) + " " + str(d.month) + " " + str(d.day) + " " + str(d.hour) + " " + str(d.minute) + " " + str(d.second) + " " + str(d.ms) + " " + str(d.weekday) + " " + text + " " + back(time.parse_time(text)) + " " + back(time.to_ms(d)));
     }
     return ok();
 }

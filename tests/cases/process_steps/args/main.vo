@@ -1,9 +1,7 @@
 # Spec 017 (US3): arguments reach the program unchanged: there is no shell.
-import std.process.Output;
-import std.process.run;
-import std.process.run_with;
+import std.process;
 
-fn show(what: str, r: result[Output]) uses console {
+fn show(what: str, r: result[process.Output]) uses console {
     match r {
         case ok(out) {
             print(what + ": code " + str(out.code));
@@ -19,7 +17,7 @@ fn show(what: str, r: result[Output]) uses console {
 }
 
 fn main() uses console, file.read("./"), process("bin/args") {
-    show("args", run("bin/args", [
+    show("args", process.run("bin/args", [
         "a b",
         "'quoted'",
         "\"double\"",
@@ -29,6 +27,6 @@ fn main() uses console, file.read("./"), process("bin/args") {
         "",
         "héllo"
     ]));
-    show("none", run("bin/args", new list[str]));
-    show("with", run_with("bin/args", ["one"], "", new list[str], "./"));
+    show("none", process.run("bin/args", new list[str]));
+    show("with", process.run_with("bin/args", ["one"], "", new list[str], "./"));
 }

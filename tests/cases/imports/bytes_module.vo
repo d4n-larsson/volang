@@ -1,0 +1,12 @@
+# `bytes` is a keyword and the module std.bytes: `bytes.NAME` is the module's item, in an expression, a
+# type and a statement; `bytes` alone is the type.
+import std.bytes;
+
+fn twice(b: bytes) -> bytes {
+    return bytes.from_text(bytes.to_hex(b));
+}
+
+fn main() uses console {
+    bytes.write_stdout(twice(bytes.from_text("ab")));
+    print("");
+}

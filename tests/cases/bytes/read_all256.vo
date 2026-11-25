@@ -1,8 +1,8 @@
 # Spec 021 US1: every byte value reads back as itself.
-import std.fs.read_bytes;
+import std.fs;
 
 fn main() -> result[void] uses console, file.read {
-    let b = try read_bytes(args()[0]);
+    let b = try fs.read_bytes(args()[0]);
     var same = 0;
     for i in 0..len(b) {
         if b[i] == i {

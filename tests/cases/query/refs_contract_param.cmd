@@ -1,1 +1,1 @@
-query refs {dir}/shop/main.vo {dir}/shop/report.vo:23:17
+query refs {dir}/shop/main.vo {dir}/shop/report.vo:22:17

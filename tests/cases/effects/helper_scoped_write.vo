@@ -1,4 +1,4 @@
-import std.fs.make_dir;
+import std.fs;
 
 # Spec 050: a writer that is given its path, under a caller that declares a directory.
 fn save(path: str, text: str) -> result[void] uses file.write {
@@ -6,7 +6,7 @@ fn save(path: str, text: str) -> result[void] uses file.write {
 }
 
 fn main() -> result[void] uses console, file.read("out/"), file.write("out/") {
-    try make_dir("out");
+    try fs.make_dir("out");
     try save("out/a.txt", "saved");
     print(try read_file("out/a.txt"));
     return ok();

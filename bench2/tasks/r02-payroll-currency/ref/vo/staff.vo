@@ -1,4 +1,4 @@
-import money.format_money;
+import money;
 
 export record Deduction {
     label: str;
@@ -18,9 +18,9 @@ export record Employee {
 
 fn pay_text(emp: Employee) -> str {
     if emp.kind == "hourly" {
-        return "hourly " + format_money(emp.amount, emp.currency) + "/h";
+        return "hourly " + money.format_money(emp.amount, emp.currency) + "/h";
     }
-    return "salaried " + format_money(emp.amount, emp.currency);
+    return "salaried " + money.format_money(emp.amount, emp.currency);
 }
 
 export fn add_employee(staff: map[str, Employee], emp_id: str, name: str, kind: str, amount: int, currency: str) -> str {
@@ -51,9 +51,9 @@ export fn set_rate(staff: map[str, Employee], emp_id: str, amount: int) -> str {
     let emp = staff[emp_id];
     set emp.amount = amount;
     if emp.kind == "hourly" {
-        return emp_id + " rate " + format_money(amount, emp.currency) + "/h";
+        return emp_id + " rate " + money.format_money(amount, emp.currency) + "/h";
     }
-    return emp_id + " salary " + format_money(amount, emp.currency);
+    return emp_id + " salary " + money.format_money(amount, emp.currency);
 }
 
 export fn add_deduction(staff: map[str, Employee], emp_id: str, amount: int, label: str) -> str {
@@ -62,7 +62,7 @@ export fn add_deduction(staff: map[str, Employee], emp_id: str, amount: int, lab
     }
     let emp = staff[emp_id];
     push(emp.deductions, new Deduction { label: label, amount: amount });
-    return emp_id + " deduction " + label + " " + format_money(amount, emp.currency);
+    return emp_id + " deduction " + label + " " + money.format_money(amount, emp.currency);
 }
 
 export fn sorted_staff(staff: map[str, Employee]) -> list[Employee] {

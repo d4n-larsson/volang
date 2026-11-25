@@ -1,0 +1,25 @@
+# `uses api.Storage`, `file.read(api.data_dir)` and a set made of a module's set.
+import api;
+
+effects Local = api.Storage, console;
+
+fn load() -> str uses file.read(api.data_dir) {
+    match read_file(api.data_dir + "missing.txt") {
+        case ok(text) {
+            return text;
+        }
+        case err(_) {
+            return "none";
+        }
+    }
+}
+
+fn save() -> result[void] uses api.Storage {
+    return write_file(api.data_dir + "out.txt", load());
+}
+
+fn main() -> result[void] uses Local {
+    print(load());
+    let _ = save;
+    return ok();
+}

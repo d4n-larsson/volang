@@ -1,7 +1,7 @@
-import std.fs.each_line;
+import std.fs;
 
 fn main() uses console, file.read("data/") {
-    match each_line("other/x.txt", fn(line: str) -> result[bool] {
+    match fs.each_line("other/x.txt", fn(line: str) -> result[bool] {
         return ok(true);
     }) {
         case ok() {

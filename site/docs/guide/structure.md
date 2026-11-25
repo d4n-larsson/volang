@@ -116,12 +116,11 @@ test "money" {
 
 ```vo
 # file: main.vo
-import report.money;
-import report.report;
+import report;
 
 fn main() uses console {
-    let r = report([1250, 830, 4999, 120], 2000);
-    print("total: " + money(r.total));
+    let r = report.report([1250, 830, 4999, 120], 2000);
+    print("total: " + report.money(r.total));
     print(
         "average: " + str(r.average) + ", largest: " + str(r.largest) + ", over the limit: " + str(r.over)
     );

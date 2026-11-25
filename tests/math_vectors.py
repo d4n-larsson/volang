@@ -14,11 +14,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
 VECTORS = os.path.join(ROOT, "tests", "math", "vectors.txt.gz")
 
-PROGRAM = """import std.math.{fn};
-import std.json.Json;
-import std.json.parse_json;
-import std.json.write_json;
-import std.json.as_float;
+PROGRAM = """import std.math;
+import std.json;
 
 fn num(s: str) -> result[float] {{
     if s == "nan" {{
@@ -30,15 +27,15 @@ fn num(s: str) -> result[float] {{
     if s == "-inf" {{
         return ok(-1.0 / 0.0);
     }}
-    let j = try parse_json(s);
-    return as_float(j);
+    let j = try json.parse_json(s);
+    return json.as_float(j);
 }}
 
 fn show(r: float) -> str {{
     if r != r or r - r != 0.0 {{
         return str(r);
     }}
-    match write_json(Json.number(r)) {{
+    match json.write_json(json.Json.number(r)) {{
         case ok(t) {{
             return t;
         }}
@@ -65,10 +62,10 @@ fn main() uses console, input {{
     }}
 }}
 """
-CALL1 = "print(show({fn}(x)));"
+CALL1 = "print(show(math.{fn}(x)));"
 CALL2 = """match num(p[1]) {{
                     case ok(y) {{
-                        print(show({fn}(x, y)));
+                        print(show(math.{fn}(x, y)));
                     }}
                     case err(e) {{
                         print("error: " + e);

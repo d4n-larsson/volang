@@ -1,6 +1,5 @@
-import money.format.cents;
-import money.format.pad2;
+import money.format;
 
 fn main() uses console {
-    print(cents(5) + pad2(1));
+    print(format.cents(5) + format.pad2(1));
 }

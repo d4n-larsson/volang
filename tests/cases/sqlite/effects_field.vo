@@ -1,21 +1,16 @@
 # A record field holding a file database: reaching it from a function without uses is E0501.
-import std.sqlite.open;
-import std.sqlite.sql;
-import std.sqlite.query;
-import std.sqlite.Database;
-import std.sqlite.Row;
-import std.sqlite.Value;
+import std.sqlite;
 
 record Store {
-    db: Database[uses file.read, file.write];
+    db: sqlite.Database[uses file.read, file.write];
 }
 
-fn names(s: Store) -> result[list[Row]] {
-    return query(s.db, sql("select name from people"), new list[Value]);
+fn names(s: Store) -> result[list[sqlite.Row]] {
+    return sqlite.query(s.db, sqlite.sql("select name from people"), new list[sqlite.Value]);
 }
 
 fn main() -> result[void] uses console, file.read, file.write {
-    let s = new Store { db: try open("people.db") };
+    let s = new Store { db: try sqlite.open("people.db") };
     print(str(len(try names(s))));
     return ok();
 }

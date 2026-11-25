@@ -37,50 +37,33 @@ pydecimal.getcontext().prec = 80
 failures = []
 cases = 0
 
-DRIVER = """import std.decimal.Decimal;
-import std.decimal.Rounding;
-import std.decimal.add;
-import std.decimal.allocate;
-import std.decimal.compare;
-import std.decimal.decimal;
-import std.decimal.decimal_text;
-import std.decimal.div;
-import std.decimal.equal;
-import std.decimal.grouped_text;
-import std.decimal.mul;
-import std.decimal.normalize;
-import std.decimal.parse_decimal;
-import std.decimal.round_to;
-import std.decimal.split_evenly;
-import std.decimal.sub;
-import std.decimal.to_float;
-import std.decimal.to_int;
-import std.fs.each_line;
+DRIVER = """import std.decimal;
+import std.fs;
 
-fn mode(s: str) -> Rounding {
+fn mode(s: str) -> decimal.Rounding {
     if s == "half_even" {
-        return Rounding.half_even;
+        return decimal.Rounding.half_even;
     }
     if s == "half_up" {
-        return Rounding.half_up;
+        return decimal.Rounding.half_up;
     }
     if s == "down" {
-        return Rounding.down;
+        return decimal.Rounding.down;
     }
     if s == "up" {
-        return Rounding.up;
+        return decimal.Rounding.up;
     }
     if s == "floor" {
-        return Rounding.floor;
+        return decimal.Rounding.floor;
     }
-    return Rounding.ceiling;
+    return decimal.Rounding.ceiling;
 }
 
-fn show(d: Decimal) -> str {
+fn show(d: decimal.Decimal) -> str {
     return str(d.units) + " " + str(d.places);
 }
 
-fn parts(r: result[list[Decimal]]) -> str {
+fn parts(r: result[list[decimal.Decimal]]) -> str {
     match r {
         case ok(ds) {
             return join(map(ds, show), ",");
@@ -104,7 +87,7 @@ fn ratios(s: str) -> result[list[int]] {
 fn answer(p: list[str]) -> result[str] {
     let op = p[0];
     if op == "parse" {
-        match parse_decimal(p[1]) {
+        match decimal.parse_decimal(p[1]) {
             case ok(d) {
                 return ok(show(d));
             }
@@ -113,15 +96,15 @@ fn answer(p: list[str]) -> result[str] {
             }
         }
     }
-    let a = decimal(try parse_int(p[1]), try parse_int(p[2]));
+    let a = decimal.decimal(try parse_int(p[1]), try parse_int(p[2]));
     if op == "text" {
-        return ok(decimal_text(a) + " " + grouped_text(a));
+        return ok(decimal.decimal_text(a) + " " + decimal.grouped_text(a));
     }
     if op == "norm" {
-        return ok(show(normalize(a)));
+        return ok(show(decimal.normalize(a)));
     }
     if op == "toint" {
-        match to_int(a) {
+        match decimal.to_int(a) {
             case ok(n) {
                 return ok(str(n));
             }
@@ -131,35 +114,35 @@ fn answer(p: list[str]) -> result[str] {
         }
     }
     if op == "tofloat" {
-        return ok(str(to_float(a)));
+        return ok(str(decimal.to_float(a)));
     }
     if op == "round" {
-        return ok(show(round_to(a, try parse_int(p[3]), mode(p[4]))));
+        return ok(show(decimal.round_to(a, try parse_int(p[3]), mode(p[4]))));
     }
     if op == "split" {
-        return ok(parts(split_evenly(a, try parse_int(p[3]))));
+        return ok(parts(decimal.split_evenly(a, try parse_int(p[3]))));
     }
     if op == "alloc" {
-        return ok(parts(allocate(a, try ratios(p[3]))));
+        return ok(parts(decimal.allocate(a, try ratios(p[3]))));
     }
-    let b = decimal(try parse_int(p[3]), try parse_int(p[4]));
+    let b = decimal.decimal(try parse_int(p[3]), try parse_int(p[4]));
     if op == "add" {
-        return ok(show(add(a, b)));
+        return ok(show(decimal.add(a, b)));
     }
     if op == "sub" {
-        return ok(show(sub(a, b)));
+        return ok(show(decimal.sub(a, b)));
     }
     if op == "mul" {
-        return ok(show(mul(a, b)));
+        return ok(show(decimal.mul(a, b)));
     }
     if op == "cmp" {
-        return ok(str(compare(a, b)) + " " + str(equal(a, b)));
+        return ok(str(decimal.compare(a, b)) + " " + str(decimal.equal(a, b)));
     }
-    return ok(show(div(a, b, try parse_int(p[5]), mode(p[6]))));
+    return ok(show(decimal.div(a, b, try parse_int(p[5]), mode(p[6]))));
 }
 
 fn main() -> result[void] uses console, file.read("./") {
-    try each_line("cases.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("cases.txt", fn(line: str) -> result[bool] {
         print(try answer(split(line, " ")));
         return ok(true);
     });
@@ -167,24 +150,18 @@ fn main() -> result[void] uses console, file.read("./") {
 }
 """
 
-INVOICE = """import std.decimal.Rounding;
-import std.decimal.add;
-import std.decimal.decimal;
-import std.decimal.decimal_text;
-import std.decimal.from_int;
-import std.decimal.mul;
-import std.decimal.round_to;
+INVOICE = """import std.decimal;
 
 fn main() uses console, clock {
     let start = now_ms();
-    var sum = decimal(0, 2);
-    let vat = decimal(25, 2);
+    var sum = decimal.decimal(0, 2);
+    let vat = decimal.decimal(25, 2);
     for i in 0..100000 {
-        let net = mul(decimal(1999 + i % 500, 2), from_int(1 + i % 7));
-        let tax = round_to(mul(net, vat), 2, Rounding.half_even);
-        set sum = add(sum, add(net, tax));
+        let net = decimal.mul(decimal.decimal(1999 + i % 500, 2), decimal.from_int(1 + i % 7));
+        let tax = decimal.round_to(decimal.mul(net, vat), 2, decimal.Rounding.half_even);
+        set sum = decimal.add(sum, decimal.add(net, tax));
     }
-    print(decimal_text(sum) + " " + str(now_ms() - start));
+    print(decimal.decimal_text(sum) + " " + str(now_ms() - start));
 }
 """
 

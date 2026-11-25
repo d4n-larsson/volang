@@ -1,6 +1,4 @@
-import ledger.Ledger;
-import ledger.stock;
-import ledger.value;
+import ledger;
 
 fn money(c: int) -> str {
     var sign = "";
@@ -15,15 +13,15 @@ fn money(c: int) -> str {
     return sign + str(a / 100) + "." + cents;
 }
 
-export fn report(l: Ledger) -> list[str] {
+export fn report(l: ledger.Ledger) -> list[str] {
     let out = ["REPORT"];
     let skus = keys(l.lots);
     sort(skus);
     var total = 0;
     for sku in skus {
-        let v = value(l, sku);
+        let v = ledger.value(l, sku);
         set total = total + v;
-        push(out, sku + " " + str(stock(l, sku)) + " " + money(v));
+        push(out, sku + " " + str(ledger.stock(l, sku)) + " " + money(v));
     }
     let profit = l.revenue - l.cogs - l.loss;
     push(out, "revenue " + money(l.revenue) + " cogs " + money(l.cogs) + " loss " + money(l.loss) + " profit " + money(profit) + " stock " + money(total));

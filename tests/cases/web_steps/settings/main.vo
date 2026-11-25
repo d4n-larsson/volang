@@ -1,6 +1,6 @@
 # Typed settings (spec 029 US6): a JSON file, then environment variables NOTES_FIELD instead; defaults
 # from @default; every missing or malformed setting in one err (exit 1).
-import std.web.load_settings;
+import std.web;
 
 record Settings {
     @range(1, 65535)
@@ -13,7 +13,7 @@ record Settings {
 }
 
 fn main() -> result[void] uses console, env("NOTES_MAX_NOTES", "NOTES_MODE", "NOTES_PORT"), file.read("./") {
-    let s: Settings = try load_settings("settings.json", "notes");
+    let s: Settings = try web.load_settings("settings.json", "notes");
     print("port " + str(s.port) + ", max " + str(s.max_notes) + ", mode " + s.mode);
     return ok();
 }

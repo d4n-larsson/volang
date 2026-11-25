@@ -1,12 +1,10 @@
 # Spec 021 US6: a binary request body, echoed back unchanged.
-import std.http.BytesResponse;
-import std.http.post_bytes;
-import std.bytes.from_ints;
-import std.bytes.to_hex;
+import std.bytes;
+import std.http;
 
 fn main() -> result[void] uses console, net("127.0.0.1") {
-    let body = from_ints([0, 255, 10, 13, 128, 0, 1]);
-    let r = try post_bytes(args()[0], "application/octet-stream", body);
-    print(str(r.status) + " " + to_hex(r.body) + " " + str(r.body == body));
+    let body = bytes.from_ints([0, 255, 10, 13, 128, 0, 1]);
+    let r = try http.post_bytes(args()[0], "application/octet-stream", body);
+    print(str(r.status) + " " + bytes.to_hex(r.body) + " " + str(r.body == body));
     return ok();
 }

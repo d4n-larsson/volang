@@ -1,0 +1,10 @@
+# Spec 058: a name changed in vo 0.2.0 written with its module: E0214 at each use; a plain rename gets the
+# fix `lists.has_item`, other changes name what to write.
+import std.lists;
+import std.metrics;
+
+fn main() uses console {
+    print(str(lists.contains([1, 2], 2)));
+    print(str(lists.contains([1], 3)));
+    let _ = metrics.add;
+}

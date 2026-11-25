@@ -3,22 +3,21 @@
 #   vo test main.vo       every route for every kind of caller, without a network
 # Notes are kept in memory by one worker, to keep the example about access control. The key that signs
 # the tokens is made at start, so a restart signs everybody out.
-import notes.notes_app;
-import std.crypto.random_bytes;
-import std.security.Way;
-import std.web.serve_app;
-import store.Store;
-import store.new_store;
+import notes;
+import std.crypto;
+import std.security;
+import std.web;
+import store;
 
 fn main() -> result[void] uses console, clock, serve("8080"), entropy {
-    let key = random_bytes(32);
-    let no_more = new list[Way[Store, uses clock, entropy]];
+    let key = crypto.random_bytes(32);
+    let no_more = new list[security.Way[store.Store, uses clock, entropy]];
     print("secure notes on http://localhost:8080 (Ctrl-C stops)");
-    try serve_app("8080", 1, fn() -> result[Store] {
-        return ok(new_store());
-    }, notes_app(key, no_more, fn() -> int {
+    try web.serve_app("8080", 1, fn() -> result[store.Store] {
+        return ok(store.new_store());
+    }, notes.notes_app(key, no_more, fn() -> int {
         return now_ms();
-    }, random_bytes));
+    }, crypto.random_bytes));
     print("stopped");
     return ok();
 }

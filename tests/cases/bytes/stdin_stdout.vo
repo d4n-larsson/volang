@@ -1,8 +1,7 @@
 # Spec 021 US4: all of stdin as bytes, written back to stdout unchanged (stdin.in holds every byte value).
-import std.bytes.read_stdin;
-import std.bytes.write_stdout;
+import std.bytes;
 
 fn main() uses console, input {
-    let b = read_stdin();
-    write_stdout(b);
+    let b = bytes.read_stdin();
+    bytes.write_stdout(b);
 }

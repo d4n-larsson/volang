@@ -1,10 +1,9 @@
 # Spec 021 US3: a program's binary output, received as bytes.
-import std.process.BytesOutput;
-import std.process.run_bytes;
-import std.bytes.to_hex;
+import std.bytes;
+import std.process;
 
 fn main() -> result[void] uses console, process("bin/allbytes") {
-    let out = try run_bytes("bin/allbytes", new list[str]);
+    let out = try process.run_bytes("bin/allbytes", new list[str]);
     var ok_out = 0;
     var ok_err = 0;
     for i in 0..256 {
@@ -16,6 +15,6 @@ fn main() -> result[void] uses console, process("bin/allbytes") {
         }
     }
     print(str(out.code) + " " + str(len(out.stdout)) + " " + str(ok_out) + " " + str(len(out.stderr)) + " " + str(ok_err));
-    print(to_hex(slice(out.stdout, 0, 4)) + " " + to_hex(slice(out.stdout, 252, 256)));
+    print(bytes.to_hex(slice(out.stdout, 0, 4)) + " " + bytes.to_hex(slice(out.stdout, 252, 256)));
     return ok();
 }

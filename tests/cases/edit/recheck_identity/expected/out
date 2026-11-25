@@ -1,24 +1,22 @@
 $ vo edit rename main.vo add_item add_product
-main.vo:3:16 add_item -> add_product
-main.vo:36:5 add_item -> add_product
-main.vo:37:5 add_item -> add_product
+main.vo:33:13 add_item -> add_product
+main.vo:34:13 add_item -> add_product
 catalog.vo:11:11 add_item -> add_product
 vo.effects:2:12 add_item -> add_product
-renamed add_item to add_product: 5 changes in 3 files
+renamed add_item to add_product: 4 changes in 3 files
 --- stderr
 --- exit 0
 $ vo edit rename main.vo add_product add_item
-main.vo:3:16 add_product -> add_item
-main.vo:36:5 add_product -> add_item
-main.vo:37:5 add_product -> add_item
+main.vo:33:13 add_product -> add_item
+main.vo:34:13 add_product -> add_item
 catalog.vo:11:11 add_product -> add_item
 vo.effects:2:12 add_product -> add_item
-renamed add_product to add_item: 5 changes in 3 files
+renamed add_product to add_item: 4 changes in 3 files
 --- stderr
 --- exit 0
 $ vo check main.vo
-main.vo:45:1: warning[W0705]: This test calls only functions of `catalog.vo`: move it into `catalog.vo`, next to the code it tests (`vo test` runs it from there).
-  45 | test "totals" {
+main.vo:42:1: warning[W0705]: This test calls only functions of `catalog.vo`: move it into `catalog.vo`, next to the code it tests (`vo test` runs it from there).
+  42 | test "totals" {
      | ^^^^
 0 errors, 1 warning
 --- stderr

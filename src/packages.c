@@ -315,10 +315,11 @@ void *pkg_import_path(Node *import, FileRec *importer)
     Str *start = rt_resolve(importer->dir); /* the manifest: from the first importer (the entry) up */
     if (!start) start = rt_start_cwd();
     pkg_load(start);
-    Vec *segs = import->a.v; /* NAME.a.b.item: at least three segments */
-    if (segs->n < 3) return 0;
+    Vec *segs = import->a.v; /* NAME.a.b (spec 058), or the 0.3 NAME.a.b.item (N_C 1) */
+    long keep = segs->n - (import->c.i ? 1 : 0);
     Pkg *e = pkg_find(vec_get(segs, 0));
     if (!e) return 0;
+    if (keep < 2) return 0; /* the package name alone: E0205 from the loader */
     SB *sb = sb_new(); /* E0705: NAME is also a directory next to the importer */
     sb_str(sb, importer->dir);
     sb_str(sb, e->name);
@@ -332,13 +333,22 @@ void *pkg_import_path(Node *import, FileRec *importer)
     if (!pkg_verify(e, import)) return NO_PACKAGE;
     SB *path = sb_new(); /* DIRECTORY/a/b.vo */
     sb_str(path, e->dir);
-    for (long i = 1; i < import->a.v->n - 1; i++) {
+    for (long i = 1; i < keep; i++) {
         Str *seg = vec_get(import->a.v, i);
         sb_byte(path, '/');
         sb_str(path, seg);
     }
     sb_cstr(path, ".vo");
     return sb_finish(path);
+}
+
+/* Spec 058: whether NAME is a listed package for files under the importer's manifest. */
+int pkg_is_name(Str *name, FileRec *importer)
+{
+    Str *start = rt_resolve(importer->dir);
+    if (!start) start = rt_start_cwd();
+    pkg_load(start);
+    return pkg_find(name) != 0;
 }
 
 /* "@NAME/relative/path.vo" when the resolved path lies in a listed package, else 0. */

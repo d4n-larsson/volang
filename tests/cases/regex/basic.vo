@@ -1,13 +1,11 @@
-import std.regex.regex;
-import std.regex.parse_regex;
-import std.regex.is_match;
+import std.regex;
 
 fn main() uses console {
-    let id = regex("^[A-Z]{3}-\\d{4}$");
-    print(str(is_match("ABC-1234", id)) + " " + str(is_match("ABC-12345", id)) + " " + str(is_match("abc-1234", id)));
-    print(str(is_match("xbx", regex("a|b"))) + " " + str(is_match("color", regex("colou?r"))));
-    print(str(is_match("", regex("^$"))) + " " + str(is_match("aéz", regex("é."))) + " " + str(is_match("", regex("x"))));
-    match parse_regex("(") {
+    let id = regex.regex("^[A-Z]{3}-\\d{4}$");
+    print(str(regex.is_match("ABC-1234", id)) + " " + str(regex.is_match("ABC-12345", id)) + " " + str(regex.is_match("abc-1234", id)));
+    print(str(regex.is_match("xbx", regex.regex("a|b"))) + " " + str(regex.is_match("color", regex.regex("colou?r"))));
+    print(str(regex.is_match("", regex.regex("^$"))) + " " + str(regex.is_match("aéz", regex.regex("é."))) + " " + str(regex.is_match("", regex.regex("x"))));
+    match regex.parse_regex("(") {
         case ok(r) {
             print("ok " + r.pattern);
         }
@@ -15,7 +13,7 @@ fn main() uses console {
             print(e);
         }
     }
-    match parse_regex("a+") {
+    match regex.parse_regex("a+") {
         case ok(r) {
             print("ok " + r.pattern);
         }

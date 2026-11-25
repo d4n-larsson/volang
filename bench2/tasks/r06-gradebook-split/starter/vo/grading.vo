@@ -1,7 +1,4 @@
-import book.Book;
-import book.Student;
-import book.unknown_student;
-import book.unknown_assignment;
+import book;
 
 record Graded {
     avg: int;
@@ -24,11 +21,11 @@ fn percent_tenths(points: int, max_points: int) -> int {
 }
 
 # The student's weighted average in tenths of a percent, or err without scores.
-fn weighted_average(book: Book, student: Student) -> result[int] {
+fn weighted_average(book_value: book.Book, student: book.Student) -> result[int] {
     var total = 0;
     var weight = 0;
-    for name in keys(book.assignments) {
-        let a = book.assignments[name];
+    for name in keys(book_value.assignments) {
+        let a = book_value.assignments[name];
         if has(student.scores, name) {
             set total = total + a.weight * percent_tenths(student.scores[name], a.max_points);
             set weight = weight + a.weight;
@@ -57,13 +54,13 @@ fn letter(avg: int) -> str {
     return "F";
 }
 
-export fn assignment_stats(book: Book, name: str) -> list[str] {
-    if not has(book.assignments, name) {
-        return [unknown_assignment(name)];
+export fn assignment_stats(book_value: book.Book, name: str) -> list[str] {
+    if not has(book_value.assignments, name) {
+        return [book.unknown_assignment(name)];
     }
     let points = new list[int];
-    for s in keys(book.students) {
-        let student = book.students[s];
+    for s in keys(book_value.students) {
+        let student = book_value.students[s];
         if has(student.scores, name) {
             push(points, student.scores[name]);
         }
@@ -83,13 +80,13 @@ export fn assignment_stats(book: Book, name: str) -> list[str] {
     return [name + " count " + str(len(points)) + " min " + str(low) + " max " + str(high) + " mean " + tenths(mean)];
 }
 
-export fn card(book: Book, name: str) -> list[str] {
-    if not has(book.students, name) {
-        return [unknown_student(name)];
+export fn card(book_value: book.Book, name: str) -> list[str] {
+    if not has(book_value.students, name) {
+        return [book.unknown_student(name)];
     }
-    let student = book.students[name];
+    let student = book_value.students[name];
     let out = new list[str];
-    match weighted_average(book, student) {
+    match weighted_average(book_value, student) {
         case ok(avg) {
             push(out, name + " average " + tenths(avg) + " " + letter(avg));
         }
@@ -97,8 +94,8 @@ export fn card(book: Book, name: str) -> list[str] {
             push(out, name + " no scores");
         }
     }
-    for a in keys(book.assignments) {
-        let max_points = book.assignments[a].max_points;
+    for a in keys(book_value.assignments) {
+        let max_points = book_value.assignments[a].max_points;
         if has(student.scores, a) {
             let p = student.scores[a];
             push(out, "  " + a + " " + str(p) + "/" + str(max_points) + " " + tenths(percent_tenths(p, max_points)));
@@ -109,11 +106,11 @@ export fn card(book: Book, name: str) -> list[str] {
     return out;
 }
 
-export fn class_report(book: Book) -> list[str] {
+export fn class_report(book_value: book.Book) -> list[str] {
     let graded = new list[Graded];
     let ungraded = new list[str];
-    for s in keys(book.students) {
-        match weighted_average(book, book.students[s]) {
+    for s in keys(book_value.students) {
+        match weighted_average(book_value, book_value.students[s]) {
             case ok(avg) {
                 push(graded, new Graded { avg: avg, name: s });
             }

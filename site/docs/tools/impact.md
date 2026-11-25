@@ -36,7 +36,7 @@ changed tax (pricing.vo:7)
 added helper (main.vo:1)
 removed old_helper
 affected total via tax (pricing.vo:11)
-test "total adds tax" via total (main.vo:11)
+test "total adds tax" via total (main.vo:10)
 ignored notes.txt
 1 changed, 1 added, 1 removed, 1 affected, 1 test
 ```
@@ -90,17 +90,16 @@ export fn total(items: list[Item]) -> int {
 
 ```vo
 # file: main.vo
-import pricing.Item;
-import pricing.total;
+import pricing;
 
 fn main() uses console {
-    let items = [new Item { name: "pen", price: 4 }, new Item { name: "book", price: 20 }];
-    print("total " + str(total(items)));
+    let items = [new pricing.Item { name: "pen", price: 4 }, new pricing.Item { name: "book", price: 20 }];
+    print("total " + str(pricing.total(items)));
 }
 
 @spec("FR-001")
 test "total adds tax" {
-    expect_eq(total([new Item { name: "pen", price: 4 }]), 5);
+    expect_eq(pricing.total([new pricing.Item { name: "pen", price: 4 }]), 5);
 }
 ```
 
@@ -121,14 +120,14 @@ and the change, as `git diff -U1 > change.diff` wrote it (text before the first 
 $ vo impact main.vo --diff change.diff
 changed tax (pricing.vo:7)
 affected total via tax (pricing.vo:11)
-affected main via total (main.vo:5)
-test "total adds tax" via total (main.vo:11)
+affected main via total (main.vo:4)
+test "total adds tax" via total (main.vo:10)
 1 changed, 0 added, 0 removed, 2 affected, 1 test
 $ vo impact --json main.vo --diff change.diff
 {"v":1,"kind":"impact","name":"tax","role":"changed","file":"pricing.vo","start":{"line":7,"col":1}}
 {"v":1,"kind":"impact","name":"total","role":"affected","file":"pricing.vo","start":{"line":11,"col":1},"via":"tax"}
-{"v":1,"kind":"impact","name":"main","role":"affected","file":"main.vo","start":{"line":5,"col":1},"via":"total"}
-{"v":1,"kind":"impact","name":"test \"total adds tax\"","role":"test","file":"main.vo","start":{"line":11,"col":1},"via":"total"}
+{"v":1,"kind":"impact","name":"main","role":"affected","file":"main.vo","start":{"line":4,"col":1},"via":"total"}
+{"v":1,"kind":"impact","name":"test \"total adds tax\"","role":"test","file":"main.vo","start":{"line":10,"col":1},"via":"total"}
 {"v":1,"kind":"summary","command":"impact","errors":0,"warnings":0,"truncated":0,"files":2,"changed":1,"added":0,"removed":0,"affected":2,"tests":1}
 ```
 

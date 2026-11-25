@@ -1,5 +1,5 @@
 # std.log: Log records: one JSON object per line on stderr, with time, level, message, the request's id and fields.
-# Part of the vo standard library (spec 055). Import items one by one: `import std.log.NAME;`.
+# Part of the vo standard library (spec 055). Import the module, `import std.log;`, and write its items as `log.NAME`.
 # A record is `{"time":"2026-11-24T06:14:19.181Z","level":"info","message":"...","request_id":"...",FIELDS}`,
 # written whole with one write. `request_id` is there while web's request_logs step answers a request. A field
 # named time, level, message or request_id is written as field_NAME. A field, an object member at any depth, or
@@ -8,10 +8,7 @@
 # redact_logs) is written "[redacted]"; a string over 4,096 bytes is cut and ends with "…[cut]".
 # `vo run --log-level LEVEL` sets the lowest level written (default info). Under `vo test` every record is
 # kept: logged() gives the records of the current test, and its time is the test clock.
-import std.json.Json;
-import std.json.as_text;
-import std.json.to_json;
-import std.json.write_json;
+import std.json;
 
 # One field of a record: a name and a JSON value. Made by field.
 #     new Field { name: "port", value: Json.integer(8080) }.name is "port"
@@ -19,13 +16,13 @@ export record Field {
     # The key in the record.
     name: str;
     # The value.
-    value: Json;
+    value: json.Json;
 }
 
 # A field of a record, from any value with a JSON form (numbers stay numbers).
 #     field("port", 8080).name is "port"
 export fn field[T: json](name: str, value: T) -> Field {
-    return new Field { name: name, value: to_json(value) };
+    return new Field { name: name, value: json.to_json(value) };
 }
 
 # Writes a record at level debug.
@@ -77,13 +74,13 @@ fn put(level: int, message: str, fields: list[Field]) uses log {
         if name == "time" or name == "level" or name == "message" or name == "request_id" {
             set name = "field_" + name;
         }
-        push(parts, text(Json.text(name)) + ":" + text(clean(name, f.value)));
+        push(parts, text(json.Json.text(name)) + ":" + text(clean(name, f.value)));
     }
-    let _ = __log(level, text(Json.text(message)), join(parts, ","));
+    let _ = __log(level, text(json.Json.text(message)), join(parts, ","));
 }
 
-fn text(j: Json) -> str {
-    match write_json(j) {
+fn text(j: json.Json) -> str {
+    match json.write_json(j) {
         case ok(t) {
             return t;
         }
@@ -97,27 +94,27 @@ fn secret(name: str) -> bool uses log {
     return __log(7, name, "") == "1";
 }
 
-fn clean(name: str, v: Json) -> Json uses log {
+fn clean(name: str, v: json.Json) -> json.Json uses log {
     # the value written for a field or member of this name: redacted, cut, or with its members cleaned
     if secret(name) {
-        return Json.text("[redacted]");
+        return json.Json.text("[redacted]");
     }
     match v {
         case text(s) {
-            return Json.text(cut(s));
+            return json.Json.text(cut(s));
         }
         case array(xs) {
-            let out = new list[Json];
+            let out = new list[json.Json];
             for x in xs {
                 push(out, clean("", x));
             }
-            return Json.array(out);
+            return json.Json.array(out);
         }
         case object(m) {
             # a header: {"name": N, "value": V}
             var hidden = false;
             if has(m, "name") and has(m, "value") {
-                match as_text(m["name"]) {
+                match json.as_text(m["name"]) {
                     case ok(n) {
                         set hidden = secret(n);
                     }
@@ -125,15 +122,15 @@ fn clean(name: str, v: Json) -> Json uses log {
                     }
                 }
             }
-            let out = new map[str, Json];
+            let out = new map[str, json.Json];
             for k in keys(m) {
                 if hidden and k == "value" {
-                    set out[k] = Json.text("[redacted]");
+                    set out[k] = json.Json.text("[redacted]");
                 } else {
                     set out[k] = clean(k, m[k]);
                 }
             }
-            return Json.object(out);
+            return json.Json.object(out);
         }
         case null {
             return v;

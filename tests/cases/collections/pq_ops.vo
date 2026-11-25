@@ -1,6 +1,5 @@
-import std.collections.copy_queue;
-import std.collections.peek;
-import std.option.to_result;
+import std.collections;
+import std.option;
 
 fn show(r: result[int]) -> str {
     match r {
@@ -16,7 +15,7 @@ fn show(r: result[int]) -> str {
 # Spec 014 US2: pops in order, empty gives err, `for` in pop order without removing, copies, equality.
 fn main() uses console {
     let q = new priority_queue[int];
-    print("empty: " + show(pop(q)) + " " + show(to_result(peek(q), "empty")));
+    print("empty: " + show(pop(q)) + " " + show(option.to_result(collections.peek(q), "empty")));
     for x in [5, 1, 3, 1, 9] {
         push(q, x);
     }
@@ -24,12 +23,12 @@ fn main() uses console {
     for x in q {
         push(seen, str(x));
     }
-    print("for: " + join(seen, " ") + ", len still " + str(len(q)) + ", peek " + show(to_result(peek(q), "empty")));
-    let c = copy_queue(q);
+    print("for: " + join(seen, " ") + ", len still " + str(len(q)) + ", peek " + show(option.to_result(collections.peek(q), "empty")));
+    let c = collections.copy_queue(q);
     var out = new list[str];
     while len(q) > 0 {
         push(out, show(pop(q)));
     }
     print("pops: " + join(out, " ") + ", copy len " + str(len(c)));
-    print(str(c == copy_queue(c)) + " " + str(q == c));
+    print(str(c == collections.copy_queue(c)) + " " + str(q == c));
 }

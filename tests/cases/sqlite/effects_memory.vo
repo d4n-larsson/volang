@@ -1,30 +1,25 @@
 # The same shapes with in-memory databases: no effect, no diagnostic.
-import std.sqlite.open_memory;
-import std.sqlite.sql;
-import std.sqlite.query;
-import std.sqlite.Database;
-import std.sqlite.Row;
-import std.sqlite.Value;
+import std.sqlite;
 
 record Store {
-    db: Database;
+    db: sqlite.Database;
 }
 
-fn param(db: Database) -> result[list[Row]] {
-    return query(db, sql("select 1 as x"), new list[Value]);
+fn param(db: sqlite.Database) -> result[list[sqlite.Row]] {
+    return sqlite.query(db, sqlite.sql("select 1 as x"), new list[sqlite.Value]);
 }
 
-fn field(s: Store) -> result[list[Row]] {
-    return query(s.db, sql("select 1 as x"), new list[Value]);
+fn field(s: Store) -> result[list[sqlite.Row]] {
+    return sqlite.query(s.db, sqlite.sql("select 1 as x"), new list[sqlite.Value]);
 }
 
-fn element(dbs: list[Database]) -> result[list[Row]] {
-    return query(dbs[0], sql("select 1 as x"), new list[Value]);
+fn element(dbs: list[sqlite.Database]) -> result[list[sqlite.Row]] {
+    return sqlite.query(dbs[0], sqlite.sql("select 1 as x"), new list[sqlite.Value]);
 }
 
-fn captured(db: Database, xs: list[int]) -> list[int] {
+fn captured(db: sqlite.Database, xs: list[int]) -> list[int] {
     return map(xs, fn(x: int) -> int {
-        match query(db, sql("select 1 as x"), new list[Value]) {
+        match sqlite.query(db, sqlite.sql("select 1 as x"), new list[sqlite.Value]) {
             case ok(rows) {
                 return len(rows) + x;
             }
@@ -35,12 +30,12 @@ fn captured(db: Database, xs: list[int]) -> list[int] {
     });
 }
 
-fn returned() -> result[list[Row]] {
-    return query(open_memory(), sql("select 1 as x"), new list[Value]);
+fn returned() -> result[list[sqlite.Row]] {
+    return sqlite.query(sqlite.open_memory(), sqlite.sql("select 1 as x"), new list[sqlite.Value]);
 }
 
 fn main() -> result[void] uses console {
-    let db = open_memory();
+    let db = sqlite.open_memory();
     let a = len(try param(db)) + len(try field(new Store { db: db })) + len(try element([db]));
     print(str(a + captured(db, [1])[0] + len(try returned())));
     return ok();

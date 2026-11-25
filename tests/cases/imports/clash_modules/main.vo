@@ -1,0 +1,7 @@
+# Two imports binding one module name: E0202 naming the first file; no fix (rename a file).
+import a.util;
+import b.util;
+
+fn main() uses console {
+    print(str(util.one()));
+}

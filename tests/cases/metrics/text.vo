@@ -1,16 +1,13 @@
 # Spec 055 US3: label values with `"`, `\` and a line break are escaped; series are sorted by name, then by
 # label values; a listed metric without labels and updates shows 0; help text is escaped.
-import std.metrics.Metric;
-import std.metrics.add_to;
-import std.metrics.counter;
-import std.metrics.metrics_text;
+import std.metrics;
 
 fn main() uses log, console {
-    let b = counter("b_total", "Second \\ metric\nhelp.", ["path"]);
-    add_to(b, ["/z"], 1);
-    add_to(b, ["/a \"quoted\""], 1);
-    add_to(b, ["/back\\slash\nline"], 1);
-    let a = counter("a_total", "First metric.", ["path"]);
-    add_to(a, ["/x"], 4);
-    write(metrics_text([counter("c_listed_total", "Not updated yet.", new list[str]), counter("d_labelled_total", "Labels, no updates.", ["x"])]));
+    let b = metrics.counter("b_total", "Second \\ metric\nhelp.", ["path"]);
+    metrics.add_to(b, ["/z"], 1);
+    metrics.add_to(b, ["/a \"quoted\""], 1);
+    metrics.add_to(b, ["/back\\slash\nline"], 1);
+    let a = metrics.counter("a_total", "First metric.", ["path"]);
+    metrics.add_to(a, ["/x"], 4);
+    write(metrics.metrics_text([metrics.counter("c_listed_total", "Not updated yet.", new list[str]), metrics.counter("d_labelled_total", "Labels, no updates.", ["x"])]));
 }

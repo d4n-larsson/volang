@@ -1,14 +1,14 @@
 {"v":1,"kind":"call","depth":1,"function":"main","args":[]}
-{"v":1,"kind":"call","depth":2,"function":"start_worker","file":"main.vo","start":{"line":22,"col":11},"args":[{"name":"body","value":"<fn(Link[int, int])>"}]}
+{"v":1,"kind":"call","depth":2,"function":"start_worker","file":"main.vo","start":{"line":18,"col":11},"args":[{"name":"body","value":"<fn(Link[int, int])>"}]}
 {"v":1,"kind":"return","depth":2,"function":"start_worker","value":"ok(new Worker[int, int] { id: 64 })"}
-{"v":1,"kind":"call","depth":2,"function":"receive","file":"main.vo","start":{"line":24,"col":23},"args":[{"name":"w","value":"new Worker[int, int] { id: 64 }"},{"name":"wait","value":"Wait.forever"}]}
+{"v":1,"kind":"call","depth":2,"function":"receive","file":"main.vo","start":{"line":20,"col":23},"args":[{"name":"w","value":"new Worker[int, int] { id: 64 }"},{"name":"wait","value":"Wait.forever"}]}
 {"v":1,"kind":"worker","index":0}
 {"v":1,"kind":"call","depth":3,"function":"body","file":"std/workers.vo","start":{"line":66,"col":45},"args":[{"name":"link","value":"new Link[int, int] { id: 0 }"}]}
-{"v":1,"kind":"call","depth":4,"function":"twice","file":"main.vo","start":{"line":13,"col":22},"args":[{"name":"n","value":"4"}]}
+{"v":1,"kind":"call","depth":4,"function":"twice","file":"main.vo","start":{"line":9,"col":30},"args":[{"name":"n","value":"4"}]}
 {"v":1,"kind":"return","depth":4,"function":"twice","value":"8"}
-{"v":1,"kind":"call","depth":4,"function":"emit","file":"main.vo","start":{"line":13,"col":11},"args":[{"name":"link","value":"new Link[int, int] { id: 0 }"},{"name":"message","value":"8"}]}
+{"v":1,"kind":"call","depth":4,"function":"emit","file":"main.vo","start":{"line":9,"col":11},"args":[{"name":"link","value":"new Link[int, int] { id: 0 }"},{"name":"message","value":"8"}]}
 {"v":1,"kind":"return","depth":2,"function":"receive","value":"ok(8)"}
-{"v":1,"kind":"call","depth":2,"function":"receive","file":"main.vo","start":{"line":25,"col":23},"args":[{"name":"w","value":"new Worker[int, int] { id: 64 }"},{"name":"wait","value":"Wait.forever"}]}
+{"v":1,"kind":"call","depth":2,"function":"receive","file":"main.vo","start":{"line":21,"col":23},"args":[{"name":"w","value":"new Worker[int, int] { id: 64 }"},{"name":"wait","value":"Wait.forever"}]}
 {"v":1,"kind":"worker","index":0}
 {"v":1,"kind":"return","depth":4,"function":"emit","value":"ok()"}
 {"v":1,"kind":"return","depth":3,"function":"body"}
