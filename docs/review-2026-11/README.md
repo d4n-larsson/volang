@@ -8,6 +8,7 @@ would take to compete with mainstream languages.
 | [optimizations.md](optimizations.md) | Performance of what exists: measurements, the defects found, and fixes in order |
 | [language.md](language.md) | Language features that are missing, with sketches in vo's style |
 | [ecosystem.md](ecosystem.md) | Standard library, tooling, platforms, distribution and project basics |
+| [inconsistencies.md](inconsistencies.md) | Audit of 2026-11-25 (after spec 055): inconsistencies in the language, library, diagnostics and command line |
 
 ## How it was done
 
