@@ -1,6 +1,7 @@
 # std.process: Running other programs to their end, with no shell (needs process).
 # Part of the vo standard library (spec 017). Import items one by one: `import std.process.NAME;`.
-# The program is checked against the caller's process scopes at run time, exactly as written.
+# The program is checked against the caller's process scopes at run time, exactly as written; the working
+# directory of run_with, run_with_bytes and run_lines (spec 057) against its file.read scopes, "./" excepted.
 # A started program is not confined: it can do anything the user running vo can.
 
 # What a finished program returned: its exit code (128 + n when killed by signal n), its standard output and its standard error.
@@ -31,18 +32,23 @@ fn decode(text: str) -> result[Output] {
 # Runs program with arguments (no shell: each argument is passed as it is), no input and an empty environment, and waits for it to end (needs process).
 #     run("no-such-program.vo-doc", new list[str]) == err("not found") is true
 export fn run(program: str, arguments: list[str]) -> result[Output] uses process {
-    return run_with(program, arguments, "", new list[str]);
+    return decode(try __run(dir_argv("./", program, arguments), "", new list[str]));
 }
 
-# Runs program like run, with input as its standard input and vars ("NAME=value" entries) as its environment (needs process).
-#     run_with("no-such-program.vo-doc", new list[str], "", ["A=1"]) == err("not found") is true
-export fn run_with(program: str, arguments: list[str], input: str, vars: list[str]) -> result[Output]
-    uses process {
-    let argv = [program];
+fn dir_argv(dir: str, program: str, arguments: list[str]) -> list[str] {
+    # Spec 057: what the run builtins take first: the working directory, the program, its arguments.
+    let argv = [dir, program];
     for a in arguments {
         push(argv, a);
     }
-    return decode(try __run(argv, input, vars));
+    return argv;
+}
+
+# Runs program like run, with input as its standard input, vars ("NAME=value" entries) as its environment, and dir as its working directory (needs process and file.read). "./" is the start directory, where run starts programs; another directory must lie inside the caller's file.read scopes, and is err("directory not found"), err("not a directory") or err("directory not accessible") when the program cannot start there. A program path with "/" is still found from the start directory.
+#     run_with("no-such-program.vo-doc", new list[str], "", ["A=1"], "./") == err("not found") is true
+export fn run_with(program: str, arguments: list[str], input: str, vars: list[str], dir: str)
+    -> result[Output] uses process, file.read {
+    return decode(try __run(dir_argv(dir, program, arguments), input, vars));
 }
 
 # What a finished program returned, its output as bytes: the exit code, standard output and standard error.
@@ -88,22 +94,19 @@ fn decode_bytes(raw: bytes) -> result[BytesOutput] {
 # Runs program like run, and returns its output as bytes, whatever it is (needs process); run needs UTF-8 output.
 #     run_bytes("no-such-program.vo-doc", new list[str]) == err("not found") is true
 export fn run_bytes(program: str, arguments: list[str]) -> result[BytesOutput] uses process {
-    return run_with_bytes(program, arguments, __bytes_of_text(""), new list[str]);
+    return decode_bytes(try __run_bytes(dir_argv("./", program, arguments), __bytes_of_text(""), new list[str]));
 }
 
-# Runs program like run_with, with input as bytes, and returns its output as bytes (needs process).
-#     run_with_bytes("no-such-program.vo-doc", new list[str], from_text(""), ["A=1"]) == err("not found") is true
+# Runs program like run_with, in the working directory dir, with input as bytes, and returns its output as bytes (needs process and file.read).
+#     run_with_bytes("no-such-program.vo-doc", new list[str], from_text(""), ["A=1"], "./") == err("not found") is true
 export fn run_with_bytes(
     program: str,
     arguments: list[str],
     input: bytes,
-    vars: list[str]
-) -> result[BytesOutput] uses process {
-    let argv = [program];
-    for a in arguments {
-        push(argv, a);
-    }
-    return decode_bytes(try __run_bytes(argv, input, vars));
+    vars: list[str],
+    dir: str
+) -> result[BytesOutput] uses process, file.read {
+    return decode_bytes(try __run_bytes(dir_argv(dir, program, arguments), input, vars));
 }
 
 fn ended(text: str) -> result[Output] {
@@ -119,24 +122,21 @@ fn stop(id: int) -> result[Output] {
     return ended(try __proc(3, id));
 }
 
-# Runs program like run_with and calls f with each line of its standard output (without the line end)
-# as soon as the program has written it (needs process and f's effects). f answers ok(true) to go on,
+# Runs program like run_with (in the working directory dir) and calls f with each line of its standard output (without the line end)
+# as soon as the program has written it (needs process, file.read and f's effects). f answers ok(true) to go on,
 # ok(false) to stop, or an error, which run_lines returns; stopping kills the program (code 137, unless it had just ended). When
 # the output ends, run_lines waits for the program and returns its code and standard error (stdout is
 # empty). Memory does not grow with the output. There is no time limit per line.
-#     run_lines("no-such-program.vo-doc", new list[str], "", new list[str], fn(line: str) -> result[bool] { return ok(true); }) == err("not found") is true
+#     run_lines("no-such-program.vo-doc", new list[str], "", new list[str], "./", fn(line: str) -> result[bool] { return ok(true); }) == err("not found") is true
 export fn run_lines[E: effects](
     program: str,
     arguments: list[str],
     input: str,
     vars: list[str],
+    dir: str,
     f: fn(str) -> result[bool] uses E
-) -> result[Output] uses process, E {
-    let argv = [program];
-    for a in arguments {
-        push(argv, a);
-    }
-    let id = try __proc_start(argv, input, vars);
+) -> result[Output] uses process, file.read, E {
+    let id = try __proc_start(dir_argv(dir, program, arguments), input, vars);
     var count = 0;
     while true {
         match __proc(1, id) {

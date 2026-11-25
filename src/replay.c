@@ -40,7 +40,7 @@ static const char *const ev_names[] = {0,         "read_line", "read_all",    "r
                                        "worker", /* spec 047 */
                                        "local_tz"}; /* spec 048 */
 static const char *const ev_results[] = {"ok", "err", "denied"};
-static Str *run_desc(Str *program, Str *joined);
+static Str *run_desc(Str *program, Str *joined, Str *dir);
 static Str *rt_id;     /* spec 054: the replayed test's FILE::NAME (0 outside tests) */
 static long rt_missing;
 static Str *rp_has(Event *e);
@@ -216,6 +216,10 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
                 rw_str(a->data, a->len, !rw_valid_utf8(a->data, a->len));
             }
             rw("]");
+        }
+        if (kind == EVK_RUN && rcd_to) { /* spec 057: the working directory, unless "./" */
+            rw(",\"dir\":");
+            rw_str(rcd_to->data, rcd_to->len, 0);
         }
         if (kind == EVK_FILE_BLOCK) { /* spec 040: where the block starts */
             rw(",\"offset\":");
@@ -766,7 +770,7 @@ void rp_mismatch(long kind, Str *name, Event *event)
     if (event) {
         Str *has = rp_describe((char *)n_table[event->kind],
                                event->kind == EVK_HTTP ? http_desc(event->name, event->port, event->request, event->tls)
-                               : event->kind == EVK_RUN ? run_desc(event->name, event->request)
+                               : event->kind == EVK_RUN ? run_desc(event->name, event->request, event->dir)
                                                         : event->name);
         m = msg("The program $1, but the recording has $2 next: replay the program that was recorded, or record this "
                 "one.",
@@ -836,8 +840,8 @@ static Str *join_args(Vec *v)
     return join_strs(v->data, 0, v->n);
 }
 
-/* "program arg arg" for R0014's texts (a joined argument str: NUL bytes as spaces). */
-static Str *run_desc(Str *program, Str *joined)
+/* "program arg arg" (spec 057: and " in DIR" when not "./") for R0014's texts (a joined argument str: NUL bytes as spaces). */
+static Str *run_desc(Str *program, Str *joined, Str *dir)
 {
     SB *sb = sb_new();
     GC_ROOT(&sb);
@@ -845,6 +849,10 @@ static Str *run_desc(Str *program, Str *joined)
     for (long i = 0; joined && i < joined->len; i++) {
         if (!i) sb_byte(sb, ' ');
         sb_byte(sb, joined->data[i] ? joined->data[i] : ' ');
+    }
+    if (dir) { /* spec 057 */
+        sb_cstr(sb, " in ");
+        sb_str(sb, dir);
     }
     GC_UNROOT(1);
     return sb_finish(sb);
@@ -878,12 +886,13 @@ Variant *io_replay(long kind, Str *name, Str *to, List *argv)
     GC_ROOT(&to);
     Str *extra = kind == EVK_RUN ? join_strs(argv->data, 1, argv->len) : to;
     GC_ROOT(&extra);
-    Str *asked = kind == EVK_RUN ? run_desc(name, extra) : name;
+    Str *asked = kind == EVK_RUN ? run_desc(name, extra, to) : name;
     GC_ROOT(&asked);
     if (rp_next >= rp_events->n) rp_mismatch(kind, asked, 0);
     Event *e = vec_get(rp_events, rp_next++);
     if (e->kind != kind || !e->name || !str_eq(e->name, name) ||
-        (e->result != EVR_DENIED && extra && (!e->request || !str_eq(e->request, extra))))
+        (e->result != EVR_DENIED && extra && (!e->request || !str_eq(e->request, extra))) ||
+        (kind == EVK_RUN && (!e->dir != !to || (to && !str_eq(e->dir, to))))) /* spec 057: the directory */
         rp_mismatch(kind, asked, e);
     if (e->result == EVR_DENIED) rp_mismatch(kind, asked, e); /* allowed now: the program or its grant changed */
     GC_UNROOT(4);
@@ -911,17 +920,18 @@ static Str *rf_op;        /* spec 026: an sql event's operation and statement */
 static Str *rf_sql;
 static Str *rf_line; /* ... and its whole line */
 static Str *rf_sent;   /* spec 054: a test's http event: what was sent after the request line */
+static Str *rf_dir;    /* spec 057: a run event's working directory */
 static Vec *rf_redact; /* spec 054: the header's redacted names */
 
 static const char *const rk_keys[] = {"kind",   "program", "fingerprint", "seed", "clock_ms", "args",    "path",
                                       "name",   "result",  "value",       "status", "host",     "port",    "request",
-                                      "address", "to", "scheme", "op", "sql", "offset", "sent", "test", "redact", 0};
+                                      "address", "to", "scheme", "op", "sql", "offset", "sent", "test", "redact", "dir", 0};
 static long rf_args_line; /* spec 017: this line had "args" (a run event's arguments) */
 
 /* Where each string-valued key is stored (rk_keys order; 0: not a string). */
 static Str **const rf_slots[] = {&rf_kind, &rf_program, &rf_fprint, 0, 0, 0, &rf_name, &rf_name, &rf_result,
                                  &rf_value, 0, &rf_name, 0, &rf_request, &rf_name, &rf_request, &rf_scheme,
-                                 &rf_op, &rf_sql, 0, &rf_sent, 0, 0};
+                                 &rf_op, &rf_sql, 0, &rf_sent, 0, 0, &rf_dir};
 
 /* T0008 invalid_recording, exit 64. */
 void rp_bad(void)
@@ -1045,6 +1055,7 @@ void rp_line(char *p, char *end)
     rf_program = 0;
     rf_args_line = 0;
     rf_sent = 0;
+    rf_dir = 0;
     p = rp_ws(p, end);
     if (p >= end || *p != '{') rp_bad();
     p++;
@@ -1181,6 +1192,7 @@ void rp_read(char *text, long len)
                 if (kind == EVK_RUN) { /* spec 017: the program, and the arguments joined by NUL bytes */
                     e->name = rf_program;
                     e->request = rf_args_line ? join_args(rf_args) : 0;
+                    e->dir = rf_dir; /* spec 057 */
                 }
                 rp_check_event(e); /* the fields its kind needs (T0008 otherwise) */
                 vec_push(rp_events, e);
@@ -1633,7 +1645,7 @@ void rt_begin(Node *test)
 static Str *rp_has(Event *e)
 {
     return rp_describe((char *)n_table[e->kind], e->kind == EVK_HTTP  ? http_desc(e->name, e->port, e->request, e->tls)
-                                                 : e->kind == EVK_RUN ? run_desc(e->name, e->request)
+                                                 : e->kind == EVK_RUN ? run_desc(e->name, e->request, e->dir)
                                                                       : e->name);
 }
 

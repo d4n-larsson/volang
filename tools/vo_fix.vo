@@ -1,0 +1,334 @@
+# Applies vo's fixes in place (spec 056): `vo check --json` on each entry program, then the first fix of
+# every diagnostic, once per round, up to 3 rounds while fixes remain. When the only errors left are E0504
+# (an effects record to approve, which has no fix), runs `vo effects --update` for that entry.
+#
+#   bin/vo run --timeout 0 tools/vo_fix.vo -- [--only CODE,...] PATH...
+#
+# PATH is a .vo entry, or a directory (each `main.vo` under it, else each .vo file); --only: apply only
+# those codes' fixes. Run it from the repository root (it runs bin/vo in each entry's directory; VO_BIN is
+# passed on, so it must be an absolute path). Prints the codes it fixed and the errors left; exit status 1
+# when errors are left.
+
+import std.fs.Info;
+import std.fs.info;
+import std.fs.walk;
+import std.json.Json;
+import std.json.as_array;
+import std.json.int_field;
+import std.json.member;
+import std.json.parse_json;
+import std.json.text_field;
+import std.lists.has_item;
+import std.lists.sort_by_desc;
+import std.process.Output;
+import std.process.run_with;
+import std.text.ends_with;
+import std.text.lines;
+import std.text.replace;
+import std.text.starts_with;
+import std.workers.with_deadline;
+
+effects Tools = file.read, env("VO_BIN"), process("bin/vo");
+
+record Diag {
+    code: str;
+    severity: str;
+    file: str;
+    line: int;
+    message: str;
+    fix: Json;
+    has_fix: bool;
+}
+
+# The directory of a path ("./" when it has none) and its last component: vo runs in the entry's
+# directory on its base name, so diagnostics name files relative to the entry.
+fn dir_of(path: str) -> str {
+    let parts = split(path, "/");
+    if len(parts) == 1 {
+        return "./";
+    }
+    return join(slice(parts, 0, len(parts) - 1), "/") + "/";
+}
+
+fn base_of(path: str) -> str {
+    let parts = split(path, "/");
+    return parts[len(parts) - 1];
+}
+
+test "dir_of and base_of" {
+    expect_eq(dir_of("main.vo"), "./");
+    expect_eq(dir_of("a/b/main.vo"), "a/b/");
+    expect_eq(dir_of("/tmp/x.vo"), "/tmp/");
+    expect_eq(base_of("a/b/main.vo"), "main.vo");
+}
+
+fn vo(dir: str, arguments: list[str]) -> result[str] uses Tools {
+    let vars = new list[str];
+    match env("VO_BIN") {
+        case ok(v) {
+            push(vars, "VO_BIN=" + v);
+        }
+        case err(_) {
+        }
+    }
+    match with_deadline(300000, fn() -> result[Output] {
+        return run_with("bin/vo", arguments, "", vars, dir);
+    }) {
+        case ok(out) {
+            return ok((try out).stdout);
+        }
+        case err(_) {
+            return err(
+                "bin/vo " + join(arguments, " ") + ": did not finish (over 300 seconds, or the worker failed)"
+            );
+        }
+    }
+}
+
+fn check(entry: str) -> result[list[Diag]] uses Tools {
+    let found = new list[Diag];
+    for l in lines(try vo(dir_of(entry), ["check", "--json", base_of(entry)])) {
+        if not starts_with(l, "{") {
+            continue;
+        }
+        let j = try parse_json(l);
+        if try text_field(j, "kind") != "diagnostic" {
+            continue;
+        }
+        let fixes = try as_array(try member(j, "fixes"));
+        var fix = Json.null;
+        if len(fixes) > 0 {
+            set fix = fixes[0];
+        }
+        push(found, new Diag {
+            code: try text_field(j, "code"),
+            severity: try text_field(j, "severity"),
+            file: try text_field(j, "file"),
+            line: try int_field(try member(j, "start"), "line"),
+            message: try text_field(j, "message"),
+            fix: fix,
+            has_fix: len(fixes) > 0
+        });
+    }
+    return ok(found);
+}
+
+# The byte offset of a 1-based line and column (columns count code points).
+fn offset(text: str, line: int, col: int) -> int {
+    let ls = split(text, "\n");
+    var off = 0;
+    for i in 0..line - 1 {
+        set off = off + len(ls[i]) + 1;
+    }
+    if line - 1 >= len(ls) {
+        return off;
+    }
+    let cs = chars(ls[line - 1]);
+    for i in 0..min(col - 1, len(cs)) {
+        set off = off + len(cs[i]);
+    }
+    return off;
+}
+
+record Span {
+    start: int;
+    end: int;
+    text: str;
+}
+
+# The fix of each diagnostic, by the file it edits.
+fn by_file(diags: list[Diag]) -> result[map[str, list[Json]]] {
+    let files = new map[str, list[Json]];
+    for d in diags {
+        let name = try text_field(d.fix, "file");
+        if not has(files, name) {
+            set files[name] = new list[Json];
+        }
+        push(files[name], d.fix);
+    }
+    return ok(files);
+}
+
+# text with the fixes made, later edits first; of overlapping ones the earlier in the list stays.
+fn edited(text: str, fixes: list[Json]) -> result[str] {
+    let spans = new list[Span];
+    for f in fixes {
+        let a = try member(f, "start");
+        let b = try member(f, "end");
+        let s = offset(text, try int_field(a, "line"), try int_field(a, "col"));
+        let e = offset(text, try int_field(b, "line"), try int_field(b, "col"));
+        var clear = true;
+        for sp in spans {
+            if not (e <= sp.start or s >= sp.end) {
+                set clear = false;
+            }
+        }
+        if clear {
+            push(spans, new Span { start: s, end: e, text: try text_field(f, "replacement") });
+        }
+    }
+    sort_by_desc(spans, fn(sp: Span) -> int {
+        return sp.start;
+    });
+    var out = text;
+    for sp in spans {
+        set out = slice(out, 0, sp.start) + sp.text + slice(out, sp.end, len(out));
+    }
+    return ok(out);
+}
+
+test "edited counts columns in code points, edits later spans first and skips an overlapping fix" {
+    let fix = "{\"file\": \"f\", \"start\": {\"line\": L, \"col\": A}, \"end\": {\"line\": L, \"col\": B}, \"replacement\": \"R\"}";
+    let fixes = new list[Json];
+    for spec in ["2 3 4 X", "1 1 3 ab", "2 2 5 no"] {
+        let p = split(spec, " ");
+        match parse_json(replace(
+            replace(replace(replace(fix, "L", p[0]), "A", p[1]), "B", p[2]),
+            "R",
+            p[3]
+        )) {
+            case ok(j) {
+                push(fixes, j);
+            }
+            case err(e) {
+                expect_eq(e, "");
+            }
+        }
+    }
+    expect_eq(edited("éé\nxé—y\n", fixes), ok("ab\nxéXy\n"));
+}
+
+# (the fixes name files relative to dir, where vo ran)
+fn apply(dir: str, diags: list[Diag]) -> result[void] uses file.read, file.write {
+    for name, fixes in try by_file(diags) {
+        var path = name;
+        if not starts_with(name, "/") {
+            set path = dir + name;
+        }
+        try write_file(path, try edited(try read_file(path), fixes));
+    }
+    return ok();
+}
+
+fn wanted(code: str, only: list[str]) -> bool {
+    return len(only) == 0 or has_item(only, code);
+}
+
+# Whether every error left is E0504 (an effects record to approve), and there is one.
+fn only_effects(errs: list[str]) -> bool {
+    for e in errs {
+        if not starts_with(e, "E0504 ") {
+            return false;
+        }
+    }
+    return len(errs) > 0;
+}
+
+fn describe(d: Diag) -> str {
+    return d.code + " " + d.file + ":" + str(d.line) + " " + d.message;
+}
+
+fn errors(entry: str, only: list[str]) -> result[list[str]] uses Tools {
+    let left = new list[str];
+    for d in try check(entry) {
+        if d.severity == "error" and wanted(d.code, only) {
+            push(left, describe(d));
+        }
+    }
+    return ok(left);
+}
+
+# Adds the codes fixed to fixed and the errors left to left; only: the codes whose fixes apply.
+fn fix_entry(entry: str, only: list[str], fixed: ordered_set[str], left: list[str]) -> result[void]
+    uses file.read, file.write, Tools {
+    for _ in 0..3 {
+        let with_fix = new list[Diag];
+        for d in try check(entry) {
+            if d.has_fix and wanted(d.code, only) {
+                push(with_fix, d);
+                push(fixed, d.code);
+            }
+        }
+        if len(with_fix) == 0 {
+            break;
+        }
+        try apply(dir_of(entry), with_fix);
+    }
+    var errs = try errors(entry, only);
+    if len(only) == 0 and only_effects(errs) {
+        let _ = try vo(dir_of(entry), ["effects", "--update", base_of(entry)]);
+        push(fixed, "E0504");
+        set errs = try errors(entry, only);
+    }
+    for e in errs {
+        push(left, e);
+    }
+    return ok();
+}
+
+# A file is its own entry; a directory's are the main.vo files under it, else every .vo file.
+fn entries(path: str) -> result[list[str]] uses file.read {
+    match try info(path) {
+        case directory {
+        }
+        case missing {
+            return ok([path]);
+        }
+        case file(_) {
+            return ok([path]);
+        }
+        case other {
+            return ok([path]);
+        }
+    }
+    let mains = new list[str];
+    let vo_files = new list[str];
+    for f in try walk(path) {
+        if f == "main.vo" or ends_with(f, "/main.vo") {
+            push(mains, f);
+        }
+        if ends_with(f, ".vo") {
+            push(vo_files, f);
+        }
+    }
+    if len(mains) > 0 {
+        return ok(mains);
+    }
+    return ok(vo_files);
+}
+
+fn summary(fixed: ordered_set[str], left: list[str]) -> str {
+    let names = new list[str];
+    for c in fixed {
+        push(names, c);
+    }
+    var out = "fixed: nothing";
+    if len(names) > 0 {
+        set out = "fixed: " + join(names, ", ");
+    }
+    for l in left {
+        set out = out + "\nleft: " + l;
+    }
+    return out;
+}
+
+fn main() -> result[void] uses console, file.read, file.write, Tools {
+    var paths = args();
+    var only = new list[str];
+    if len(paths) >= 2 and paths[0] == "--only" {
+        set only = split(paths[1], ",");
+        set paths = slice(paths, 2, len(paths));
+    }
+    let fixed = new ordered_set[str];
+    let left = new list[str];
+    for p in paths {
+        for e in try entries(p) {
+            try fix_entry(e, only, fixed, left);
+        }
+    }
+    print(summary(fixed, left));
+    if len(left) > 0 {
+        exit(1);
+    }
+    return ok();
+}

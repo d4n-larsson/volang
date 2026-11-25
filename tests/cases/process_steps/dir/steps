@@ -1,0 +1,5 @@
+helpers
+mkdir work
+write work/a.txt in work\n
+write a.txt in start\n
+vo run main.vo

@@ -1,0 +1,8 @@
+$ vo run main.vo
+run_with work/: in work
+run_with ./: in start
+run_with_bytes work/: in work
+run_lines work/: in work
+run_lines code 0
+--- stderr
+--- exit 0

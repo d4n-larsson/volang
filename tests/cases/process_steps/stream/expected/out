@@ -12,25 +12,25 @@ missing:  -> err not found
 --- exit 0
 $ vo run outside.vo
 --- stderr
-std/process.vo:139:18: runtime error[R0010]: process("bin/slow_lines") is not allowed: `main` declares console, process("bin/cat_in").
- 139 |     let id = try __proc_start(argv, input, vars);
-     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+std/process.vo:139:18: runtime error[R0010]: process("bin/slow_lines") is not allowed: `main` declares console, file.read("./"), process("bin/cat_in").
+ 139 |     let id = try __proc_start(dir_argv(dir, program, arguments), input, vars);
+     |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at run_lines (std/process.vo:139:18)
-      program: str = "bin/slow_lines", arguments: list[str] = ["1", "0", "0"], input: str = "", vars: list[str] = [], f: fn(str) -> result[bool] = <fn(str) -> result[bool]>, argv: list[str] = ["bin/slow_lines", "1", "0", "0"]
-  at main (outside.vo:4:11)
+      program: str = "bin/slow_lines", arguments: list[str] = ["1", "0", "0"], input: str = "", vars: list[str] = [], dir: str = "./", f: fn(str) -> result[bool] = <fn(str) -> result[bool]>
+  at main (outside.vo:6:11)
 --- exit 70
 $ vo run crash.vo
 line 1
 --- stderr
-crash.vo:13:23: runtime error[R0003]: Index 0 is out of bounds for length 0.
-  13 |             return ok(empty[0] == 0);
+crash.vo:14:23: runtime error[R0003]: Index 0 is out of bounds for length 0.
+  14 |             return ok(empty[0] == 0);
      |                       ^^^^^^^^
 trace:
-  at anonymous function (crash.vo:13:23)
+  at anonymous function (crash.vo:14:23)
       line: str = "line 1", empty: list[int] = []
   at run_lines (std/process.vo:145:38)
-      program: str = "bin/slow_lines", arguments: list[str] = ["1000", "0.05", "0"], input: str = "", vars: list[str] = [], f: fn(str) -> result[bool] uses console = <fn(str) -> result[bool] uses console>, argv: list[str] = ["bin/slow_lines", "1000", "0.05", "0"], id: int = 0, count: int = 1, line: str = "line 1"
+      program: str = "bin/slow_lines", arguments: list[str] = ["1000", "0.05", "0"], input: str = "", vars: list[str] = [], dir: str = "./", f: fn(str) -> result[bool] uses console = <fn(str) -> result[bool] uses console>, id: int = 0, count: int = 1, line: str = "line 1"
   at main (crash.vo:6:11)
       empty: list[int] = []
 --- exit 70

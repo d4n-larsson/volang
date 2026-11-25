@@ -1,0 +1,5 @@
+$ vo run main.vo
+linked/: in work
+work/../work/: in work
+--- stderr
+--- exit 0

@@ -1,0 +1,7 @@
+helpers
+mkdir work
+write work/a.txt hi\n
+vo run --seed 1 --record r.jsonl main.vo
+keep r.jsonl
+rm work/a.txt
+vo replay r.jsonl

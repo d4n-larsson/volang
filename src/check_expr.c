@@ -291,6 +291,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
     if (id == B_FSB) fx_builtin_fsb(call); /* spec 021: the same for __fsb */
     if (id == B_SQL_OPEN) fx_builtin_sql_open(call); /* spec 026: by mode */
     if (id == B_TCP) fx_builtin_tcp(call); /* spec 039: by operation */
+    if (id == B_RUN || id == B_RUN_BYTES || id == B_PROC_START) fx_builtin_run(call); /* spec 057: by directory */
     fx_builtin_literal(call, id); /* spec 013 (L1) */
     if (id == B_MAP_ERR) return check_map_err(call); /* spec 032 */
     if ((id >= B_SORT_BY && id <= B_ALL) || id == B_CMAP) return check_hof(call, id); /* sort_by, map, filter, fold, any, all, concurrent_map */
@@ -568,6 +569,7 @@ static Type *check_call_inner(Node *call, Type *expected)
             ck_use_call = 0;
             q_note_sym(s, call->a.n, RR_CALL); /* spec 006 reference log */
             call->c.n = s->decl;
+            libchange_arg_call(call); /* spec 057: an argument added since (E0214, inserted) */
             fx_call(call, s->decl);
             if (ck_in_test) { /* spec 018: a function with `ensures` checks its results (W0602) */
                 Fx *cfx = item_fx(s->decl);

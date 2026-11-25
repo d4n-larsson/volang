@@ -1,0 +1,5 @@
+helpers
+mkdir work
+mkdir other
+write other/a.txt secret\n
+vo run main.vo

@@ -68,7 +68,7 @@ order: console, input, file.read, file.write, net, clock, random, env, serve.
 | `random` | `random_int` (and `std.random`) | |
 | `env` | `env` (environment variables) | variable names |
 | `serve` | `std.http.serve` (answering HTTP requests); `std.tcp.listen` | addresses |
-| `process` | `std.process.run`, `run_with` (running other programs) | programs |
+| `process` | `std.process` (running other programs) | programs |
 | `entropy` | `std.crypto.random_bytes`, `hash_password` (the system's random source, for secrets) | |
 | `log` | `std.log` records and `std.metrics` updates (outputs to the operator) | |
 

@@ -22,6 +22,63 @@ typedef struct Edge {
 } Edge;
 CHECK_SIZE(Edge, 24);
 
+/* Spec 057 (research R6): for each function and test of the file, the scopes its file effects were
+ * needed in for literal paths (a file's directory, a directory as written), and the file effects it
+ * needed otherwise (a path known only at run time, a callee declaring the effect unscoped, a library
+ * function that is no literal target). E0501's fix scopes an effect needed only for literal paths. */
+#define EF_FILES (EF_FREAD | EF_FWRITE | EF_FDELETE)
+typedef struct Own {
+    Fx *fx;
+    EffSet *scopes;
+    unsigned long other;
+} Own;
+static Vec *ck_own;
+
+static Own *own_find(Fx *fx)
+{
+    for (long i = 0; ck_own && i < ck_own->n; i++) {
+        Own *o = vec_get(ck_own, i);
+        if (o->fx == fx) return o;
+    }
+    return 0;
+}
+
+static Own *own_of(Fx *fx)
+{
+    Own *o = own_find(fx);
+    if (o) return o;
+    if (!ck_own) ck_own = vec_new();
+    o = alloc(sizeof(Own));
+    o->fx = fx;
+    o->scopes = es_new(0);
+    vec_push(ck_own, o);
+    return o;
+}
+
+/* The current function needs these file effects for something other than a literal path. */
+static void own_other(unsigned long bits)
+{
+    if (ck_fx && (bits & EF_FILES)) own_of(ck_fx)->other |= bits & EF_FILES;
+}
+
+/* The current function needs bit for the path arg: its scope when arg is a literal a scope can name. */
+static void own_literal(Node *arg, long bit, int file_target)
+{
+    if (!ck_fx) return;
+    Own *o = own_of(ck_fx);
+    if (arg->kind != N_STR) {
+        o->other |= (unsigned long)bit;
+        return;
+    }
+    Str *scope = arg->a.s;
+    if (file_target) { /* its directory: "data/a.txt" is "data/", "a.txt" is "./" */
+        long slash = scope->len;
+        while (slash > 0 && scope->data[slash - 1] != '/') slash--;
+        scope = slash ? str_new(scope->data, slash) : str_from_cstr("./");
+    }
+    if (!es_add_scope(o->scopes, bit, scope)) o->other |= (unsigned long)bit; /* absolute or "..": unscoped */
+}
+
 /* Effect bit per builtin id (check_expr.c builtin_names); 0 = pure. */
 const unsigned short builtin_effects[B_LAST + 1] = {
     [1] = EF_CONSOLE, [2] = EF_CONSOLE, [3] = EF_CONSOLE, [4] = EF_INPUT, [5] = EF_INPUT,
@@ -262,6 +319,7 @@ void fx_builtin(long id)
 {
     if (!ck_fx || !ck_fx->direct) return;
     ck_fx->direct->any |= builtin_effects[id];
+    if (id != 6 && id != 7) own_other(builtin_effects[id]); /* spec 057: read_file, write_file: by path */
 }
 
 /* Spec 017: the effect bits of __fs operation op (1-6), or 0. */
@@ -277,6 +335,7 @@ void fx_builtin_fs(Node *call)
     if (!ck_fx || !ck_fx->direct || call->b.v->n < 1) return;
     Node *op = vec_get(call->b.v, 0);
     if (op->kind == N_INT) ck_fx->direct->any |= (unsigned long)fs_op_effects(op->a.i);
+    if (op->kind == N_INT) own_other((unsigned long)fs_op_effects(op->a.i));
 }
 
 /* spec 021: __fsb(op, ...): 1 reads (file.read), 2 and 3 write (file.write). */
@@ -285,6 +344,7 @@ void fx_builtin_fsb(Node *call)
     if (!ck_fx || !ck_fx->direct || call->b.v->n < 1) return;
     Node *op = vec_get(call->b.v, 0);
     if (op->kind == N_INT) ck_fx->direct->any |= op->a.i == 1 ? EF_FREAD : EF_FWRITE;
+    if (op->kind == N_INT) own_other(op->a.i == 1 ? EF_FREAD : EF_FWRITE);
 }
 
 /* spec 026: __sql_open(path, mode): 0 read-write (file.read, file.write), 1 read-only (file.read), 2 in
@@ -294,6 +354,25 @@ void fx_builtin_sql_open(Node *call)
     if (!ck_fx || !ck_fx->direct || call->b.v->n < 2) return;
     Node *mode = vec_get(call->b.v, 1);
     if (mode->kind == N_INT) ck_fx->direct->any |= mode->a.i == 0 ? EF_FREAD | EF_FWRITE : mode->a.i == 1 ? EF_FREAD : 0;
+    own_other(EF_FREAD | EF_FWRITE);
+}
+
+/* Spec 057: "./" as a run's working directory: the start directory, allowed without a scope. */
+static int start_dir_literal(Node *arg)
+{
+    return arg->kind == N_STR && str_eq_cstr(arg->a.s, "./");
+}
+
+/* Spec 057: __run, __run_bytes and __proc_start take [dir, program, args...] (std.process builds it with
+ * dir_argv(dir, ...)): the working directory needs file.read, unless it is the literal "./" (run and
+ * run_bytes, which start in the start directory). */
+void fx_builtin_run(Node *call)
+{
+    if (!ck_fx || !ck_fx->direct || call->b.v->n < 1) return;
+    Node *argv = vec_get(call->b.v, 0);
+    Node *dir = argv->kind == N_CALL && argv->b.v && argv->b.v->n > 0 ? vec_get(argv->b.v, 0) : 0;
+    if (!dir || !start_dir_literal(dir)) ck_fx->direct->any |= EF_FREAD;
+    if (!dir || !start_dir_literal(dir)) own_other(EF_FREAD);
 }
 
 /* spec 039: __tcp(op, a, text): connecting and starting TLS (1, 2, 5) need net; listening, accepting
@@ -325,30 +404,70 @@ static void fx_literal(Node *call, long bit)
     fx_literal_at(call, 0, bit);
 }
 
-/* Spec 017: the library functions whose arguments are effect targets: (module file, name, index, bit). */
+/* Spec 057: what a file target names: a file, a directory, or a run's working directory ("./" is always
+ * allowed there, as for run). */
+enum { TG_FILE, TG_DIR, TG_RUN_DIR };
+
+/* Spec 017: the library functions whose arguments are effect targets: (module file, name, index, bit,
+ * kind). */
 static const struct {
     const char *file, *name;
     long index, bit;
+    int kind;
 } std_targets[] = {
-    {"std/fs.vo", "info", 0, EF_FREAD},          {"std/fs.vo", "list_dir", 0, EF_FREAD},
-    {"std/fs.vo", "walk", 0, EF_FREAD},          {"std/fs.vo", "append_file", 0, EF_FWRITE},
-    {"std/fs.vo", "make_dir", 0, EF_FWRITE},     {"std/fs.vo", "delete", 0, EF_FDELETE},
-    {"std/fs.vo", "rename", 0, EF_FDELETE},      {"std/fs.vo", "rename", 1, EF_FWRITE},
-    {"std/process.vo", "run", 0, EF_PROCESS},    {"std/process.vo", "run_with", 0, EF_PROCESS},
+    {"std/fs.vo", "info", 0, EF_FREAD, TG_FILE},
+    {"std/fs.vo", "list_dir", 0, EF_FREAD, TG_DIR},
+    {"std/fs.vo", "walk", 0, EF_FREAD, TG_DIR},
+    {"std/fs.vo", "append_file", 0, EF_FWRITE, TG_FILE},
+    {"std/fs.vo", "make_dir", 0, EF_FWRITE, TG_DIR},
+    {"std/fs.vo", "delete", 0, EF_FDELETE, TG_FILE},
+    {"std/fs.vo", "rename", 0, EF_FDELETE, TG_FILE},
+    {"std/fs.vo", "rename", 1, EF_FWRITE, TG_FILE},
+    {"std/process.vo", "run", 0, EF_PROCESS, TG_FILE},
+    {"std/process.vo", "run_with", 0, EF_PROCESS, TG_FILE},
+    {"std/process.vo", "run_bytes", 0, EF_PROCESS, TG_FILE},      /* spec 057 */
+    {"std/process.vo", "run_with_bytes", 0, EF_PROCESS, TG_FILE}, /* spec 057 */
+    {"std/process.vo", "run_lines", 0, EF_PROCESS, TG_FILE},      /* spec 057 */
+    {"std/process.vo", "run_with", 4, EF_FREAD, TG_RUN_DIR},      /* spec 057: the working directory */
+    {"std/process.vo", "run_with_bytes", 4, EF_FREAD, TG_RUN_DIR},
+    {"std/process.vo", "run_lines", 4, EF_FREAD, TG_RUN_DIR},
 };
+
+/* Spec 057: the file effects of a call of a std function: by the literal targets of its rows, else other. */
+static void own_std_call(Node *call, Node *decl, unsigned long mask)
+{
+    Str *path = file_get((int)decl->file)->path;
+    for (long bit = 1; bit <= EF_ALL; bit <<= 1) {
+        if (!(mask & (unsigned long)bit & EF_FILES)) continue;
+        int found = 0;
+        for (unsigned long i = 0; i < sizeof std_targets / sizeof std_targets[0]; i++)
+            if (std_targets[i].bit == bit && call->b.v->n > std_targets[i].index &&
+                str_eq_cstr(path, (char *)std_targets[i].file) && str_eq_cstr(decl->a.n->a.s, (char *)std_targets[i].name)) {
+                own_literal(vec_get(call->b.v, std_targets[i].index), bit, std_targets[i].kind == TG_FILE);
+                found = 1;
+            }
+        if (!found) own_other((unsigned long)bit);
+    }
+}
 
 static void fx_std_literals(Node *call, Node *decl)
 {
     Str *path = file_get((int)decl->file)->path;
-    for (unsigned long i = 0; i < sizeof std_targets / sizeof std_targets[0]; i++)
-        if (str_eq_cstr(path, (char *)std_targets[i].file) && str_eq_cstr(decl->a.n->a.s, (char *)std_targets[i].name))
-            fx_literal_at(call, std_targets[i].index, std_targets[i].bit);
+    for (unsigned long i = 0; i < sizeof std_targets / sizeof std_targets[0]; i++) {
+        if (!str_eq_cstr(path, (char *)std_targets[i].file) || !str_eq_cstr(decl->a.n->a.s, (char *)std_targets[i].name))
+            continue;
+        if (std_targets[i].kind == TG_RUN_DIR && call->b.v->n > std_targets[i].index &&
+            start_dir_literal(vec_get(call->b.v, std_targets[i].index)))
+            continue;
+        fx_literal_at(call, std_targets[i].index, std_targets[i].bit);
+    }
 }
 
 /* The literal targets of builtins: read_file, write_file, env. */
 void fx_builtin_literal(Node *call, long id)
 {
     if (id == 6 || id == 7 || id == 40) fx_literal(call, builtin_effects[id]);
+    if ((id == 6 || id == 7) && call->b.v->n > 0) own_literal(vec_get(call->b.v, 0), builtin_effects[id], 1);
 }
 
 /* E0503 on each literal target outside the scopes its function declares for that effect. */
@@ -403,6 +522,7 @@ void fx_call(Node *call, Node *decl)
         if (str_eq_cstr(decl->a.n->a.s, "serve")) fx_literal(call, EF_SERVE); /* std.http.serve's address */
         fx_std_literals(call, decl);                                             /* spec 017 */
         ck_fx->direct->any |= callee->declared->mask; /* its effects, needed in any scope */
+        own_std_call(call, decl, callee->declared->mask);                         /* spec 057 */
         return;
     }
     if (!callee) return;
@@ -435,7 +555,78 @@ Vec *fx_edges(void)
 void fx_file_begin(void)
 {
     ck_lits = 0;
+    ck_own = 0; /* spec 057 */
     ck_edges = vec_new();
+}
+
+/* Spec 057: what each call of a user function brings to its caller's literal scopes: the callee's
+ * declared scopes of a file effect, or, where it declares none, what it needs itself; an effect it
+ * declares unscoped, or one needed by a callee of another file that declares none, counts as other. */
+static void own_propagate(void)
+{
+    int changed;
+    do {
+        changed = 0;
+        for (long i = 0; ck_edges && i < ck_edges->n; i++) {
+            Edge *e = vec_get(ck_edges, i);
+            Fx *callee = item_fx(e->callee);
+            if (!callee || !callee->declared) continue;
+            Own *to = own_of(e->caller), *from = own_find(callee);
+            unsigned long other = to->other;
+            EffSet *scopes = to->scopes;
+            for (long bit = 1; bit <= EF_ALL; bit <<= 1) {
+                if (!(bit & EF_FILES)) continue;
+                EffSet *src = 0;
+                if (callee->declared->mask & (unsigned long)bit) {
+                    if (es_scoped(callee->declared, bit)) src = callee->declared;
+                    else other |= (unsigned long)bit;
+                } else if (from) {
+                    other |= from->other & (unsigned long)bit;
+                    src = from->scopes;
+                } else if (callee->required && ((callee->required->mask | callee->required->any) & (unsigned long)bit)) {
+                    other |= (unsigned long)bit;
+                }
+                if (src && es_scoped(src, bit)) {
+                    EffSet *only = es_new(0);
+                    for (long k = 0; k < src->scopes->n; k++) {
+                        EffScope *sc = vec_get(src->scopes, k);
+                        if (sc->bit == bit) es_put_pair(only, bit, sc->str);
+                    }
+                    scopes = es_union(scopes, only);
+                }
+            }
+            if (other != to->other || !es_equal(scopes, to->scopes)) {
+                to->other = other;
+                to->scopes = scopes;
+                changed = 1;
+            }
+        }
+    } while (changed);
+}
+
+/* Spec 057 (R6): what E0501's fix declares: the declaration and the requirement, with each lacking file
+ * effect needed only for literal paths scoped to them instead of unscoped. */
+static EffSet *fix_set(Fx *fx)
+{
+    EffSet *set = es_union(fx->declared, fx->required);
+    Own *o = own_find(fx);
+    for (long bit = 1; o && bit <= EF_ALL; bit <<= 1) {
+        if (!(bit & EF_FILES) || (fx->declared->mask & (unsigned long)bit) || (o->other & (unsigned long)bit)) continue;
+        if (!((set->mask | set->any) & (unsigned long)bit) || es_scoped(set, bit) || !es_scoped(o->scopes, bit)) continue;
+        EffSet *scoped = es_new((long)(set->mask & ~(unsigned long)bit));
+        for (long k = 0; set->scopes && k < set->scopes->n; k++) {
+            EffScope *sc = vec_get(set->scopes, k);
+            if (sc->bit != bit) es_put_pair(scoped, sc->bit, sc->str);
+        }
+        for (long k = 0; k < o->scopes->scopes->n; k++) {
+            EffScope *sc = vec_get(o->scopes->scopes, k);
+            if (sc->bit == bit) es_put_pair(scoped, bit, sc->str);
+        }
+        scoped->evars = set->evars;
+        scoped->any = set->any & ~(unsigned long)bit;
+        set = scoped;
+    }
+    return set;
 }
 
 /* The requirement fixpoint for this file's functions and tests, then their effect diagnostics. */
@@ -464,6 +655,7 @@ void fx_file_end(Vec *items)
             changed = 1;
         }
     } while (changed);
+    own_propagate(); /* spec 057 */
     for (long i = 0; i < items->n; i++) fx_report(vec_get(items, i)); /* report */
     fx_report_literals(items);
     for (long i = 0; i < items->n; i++) { /* spec 030: W0505, a private set nothing names */
@@ -632,7 +824,7 @@ void fx_report(Node *item)
         if (sets)
             fx_fix_text(d, item, es_union(written, missing), names);
         else
-            fx_fix_clause(d, item, es_union(fx->declared, fx->required));
+            fx_fix_clause(d, item, lacks ? fix_set(fx) : es_union(fx->declared, fx->required)); /* spec 057 */
         fx_related(d, fx);
         return;
     }

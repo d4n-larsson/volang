@@ -1,0 +1,27 @@
+# Spec 057 (research R6): when every need for a file effect comes from literal paths, E0501's fix scopes
+# it to them: a file's directory, a directory as written. Nothing here is allowed to read anything else.
+import std.fs.list_dir;
+import std.process.run_with;
+
+fn report() -> result[void] uses console {
+    print(try read_file("data/a.txt"));
+    print(str(len(try list_dir("logs/"))));
+    return ok();
+}
+
+fn here() -> result[void] uses console {
+    print(try read_file("a.txt"));
+    return ok();
+}
+
+fn tool() -> result[void] uses console, process("bin/x") {
+    print((try run_with("bin/x", [], "", [], "./")).stdout);
+    return ok();
+}
+
+fn main() -> result[void] uses console {
+    try report();
+    try here();
+    try tool();
+    return ok();
+}

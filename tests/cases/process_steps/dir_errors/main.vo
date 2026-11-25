@@ -1,0 +1,21 @@
+# Spec 057 (US2): a directory that is missing, is a file, or cannot be entered is an err with its own
+# text, and nothing starts (bin/cat_file would print the file).
+import std.process.Output;
+import std.process.run_with;
+
+fn show(what: str, r: result[Output]) uses console {
+    match r {
+        case ok(out) {
+            write(what + ": ran: " + out.stdout);
+        }
+        case err(e) {
+            print(what + ": err " + e);
+        }
+    }
+}
+
+fn main() uses console, file.read("./"), process("bin/cat_file") {
+    show("missing/", run_with("bin/cat_file", ["file.txt"], "", [], "missing/"));
+    show("file.txt", run_with("bin/cat_file", ["file.txt"], "", [], "file.txt"));
+    show("locked/", run_with("bin/cat_file", ["file.txt"], "", [], "locked/"));
+}

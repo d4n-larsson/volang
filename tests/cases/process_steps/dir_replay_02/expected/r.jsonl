@@ -1,0 +1,3 @@
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"831b1cf76ef05956","seed":1,"clock_ms":null,"args":[]}
+{"v":1,"kind":"run","program":"bin/cat_file","args":["a.txt"],"result":"ok","value":"0\u000a6\u000ahello\u000a"}
+{"v":1,"kind":"end","status":0}

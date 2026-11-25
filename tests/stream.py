@@ -129,9 +129,9 @@ record Seen {
     pid: str;
 }
 
-fn main() uses console, clock, process("python3") {
+fn main() uses console, file.read("./"), clock, process("python3") {
     let seen = new Seen { n: 0, worst: 0, pid: "" };
-    let r = run_lines("python3", ["child.py", "MODE"], "", new list[str], fn(line: str) -> result[bool] {
+    let r = run_lines("python3", ["child.py", "MODE"], "", new list[str], "./", fn(line: str) -> result[bool] {
         set seen.n = seen.n + 1;
         if seen.n == 1 {
             set seen.pid = line;
@@ -173,8 +173,8 @@ elif mode == "flood":
 
 FAILING_TEST = """import std.process.run_lines;
 
-test "a failed check inside the function" uses console, process("python3") {
-    let r = run_lines("python3", ["child.py", "forever"], "", new list[str], fn(line: str) -> result[bool] {
+test "a failed check inside the function" uses console, file.read("./"), process("python3") {
+    let r = run_lines("python3", ["child.py", "forever"], "", new list[str], "./", fn(line: str) -> result[bool] {
         print(line);
         expect(len(line) > 100);
         return ok(true);

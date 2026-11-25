@@ -5,7 +5,7 @@
  * use then reports E0214 with the fix of its kind. Rows match std items only. */
 #include "vo.h"
 
-enum { LC_RENAME = 1, LC_REMOVE, LC_SWAP, LC_OPTION, LC_FIELD, LC_CASE };
+enum { LC_RENAME = 1, LC_REMOVE, LC_SWAP, LC_OPTION, LC_FIELD, LC_CASE, LC_ARG };
 
 struct LibChange {
     const char *module; /* std file stem: "lists" */
@@ -68,6 +68,14 @@ static const LibChange rows[] = {
     {"time", "fixed_zone", LC_RENAME, "offset_zone", 0, 0, 60000},
     {"web", "Cookie.max_age_s", LC_FIELD, "max_age_ms", 0, 0, 1000},
     {"security", "Browser.lifetime_s", LC_FIELD, "lifetime_ms", 0, 0, 1000},
+    /* spec 057: a working directory after the variables; "./" keeps the old behavior (arg: the
+       inserted text in `call`, the note in `value`, its index in `factor`) */
+    {"process", "run_with", LC_ARG, "a working directory after the variables", "\"./\"",
+     "`\"./\"` is the start directory", 4},
+    {"process", "run_with_bytes", LC_ARG, "a working directory after the variables", "\"./\"",
+     "`\"./\"` is the start directory", 4},
+    {"process", "run_lines", LC_ARG, "a working directory after the variables", "\"./\"",
+     "`\"./\"` is the start directory", 4},
     {"time", "Zone.starts", LC_FIELD, "starts_s", 0, 0, 0},
     {"time", "Zone.offsets", LC_FIELD, "offsets_s", 0, 0, 0},
     {"time", "ZoneRule.std_offset", LC_FIELD, "std_offset_s", 0, 0, 0},
@@ -118,6 +126,8 @@ static Str *message(const LibChange *c)
     case LC_SWAP: return msg("`$1` takes the text first since vo 0.2.0.", q, 0, 0);
     case LC_OPTION: return msg("`$1` returns an `Option` since vo 0.2.0: `some(value)` or `none`.", q, 0, 0);
     case LC_CASE: return msg("`$1` was renamed `$2` in vo 0.2.0.", q, str_from_cstr((char *)c->new_), 0);
+    case LC_ARG: /* spec 057 */
+        return msg("`$1` takes $2 since vo 0.3.0: $3.", q, str_from_cstr((char *)c->new_), str_from_cstr((char *)c->value));
     case LC_FIELD:
         if (c->factor) return msg("`$1` was renamed `$2` in vo 0.2.0, and holds milliseconds.", q, str_from_cstr((char *)c->new_), 0);
         return msg("`$1` was renamed `$2` in vo 0.2.0.", q, str_from_cstr((char *)c->new_), 0);
@@ -341,4 +351,32 @@ long libchange_field(Node *decl, Node *name, Node *whole, Node *value)
     }
     GC_UNROOT(1);
     return idx;
+}
+
+/* Spec 057: a call of a std function that gained an argument (LC_ARG), written with one argument fewer:
+ * E0214 with a fix inserting it after argument factor - 1, and the argument is inserted into the call so
+ * it checks as written with it (the inserted value keeps the old behavior). Before fx_call, which reads
+ * the arguments' literal targets. */
+void libchange_arg_call(Node *call)
+{
+    Node *decl = call->c.n;
+    const LibChange *c = row_of_decl(decl, LC_ARG);
+    if (!c || !call->b.v || call->b.v->n != decl->b.v->n - 1 || call->b.v->n < c->factor) return;
+    Node *before = vec_get(call->b.v, c->factor - 1);
+    Diag *d = ck_err("E0214", call->a.n, message(c));
+    SB *sb = sb_new();
+    GC_ROOT(&sb);
+    sb_cstr(sb, ", ");
+    sb_cstr(sb, (char *)c->call);
+    diag_add_fix(d, (int)call->file, before->end, before->end, sb_finish(sb));
+    GC_UNROOT(1);
+    long n = cstr_len((char *)c->call);
+    Node *arg = node_new(N_STR, before->end, before->end); /* the literal's value: `call` without its quotes */
+    arg->file = call->file;
+    GC_ROOT(&arg);
+    arg->a.s = str_new((char *)c->call + 1, n - 2);
+    vec_push(call->b.v, arg);
+    GC_UNROOT(1);
+    for (long i = call->b.v->n - 1; i > c->factor; i--) call->b.v->data[i] = call->b.v->data[i - 1];
+    call->b.v->data[c->factor].p = arg;
 }

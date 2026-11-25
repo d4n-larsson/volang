@@ -1,0 +1,15 @@
+$ vo run --seed 1 --record r.jsonl main.vo
+hi
+--- stderr
+--- exit 0
+$ vo replay r.jsonl
+--- stderr
+note: the program differs from the recorded one (recorded main.vo)
+std/process.vo:51:23: runtime error[R0014]: The program runs `bin/cat_file a.txt in other/`, but the recording has a run of `bin/cat_file a.txt in work/` next: replay the program that was recorded, or record this one.
+  51 |     return decode(try __run(dir_argv(dir, program, arguments), input, vars));
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at run_with (std/process.vo:51:23)
+      program: str = "bin/cat_file", arguments: list[str] = ["a.txt"], input: str = "", vars: list[str] = [], dir: str = "other/"
+  at main (main.vo:5:16)
+--- exit 70

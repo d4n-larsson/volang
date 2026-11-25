@@ -15,9 +15,9 @@ fn follow(
     stop_at: str,
     fail_at: str
 )
-    uses console, process("bin/bad_utf8", "bin/cat_in", "bin/close_out", "bin/env_dump", "bin/flood", "bin/missing", "bin/slow_lines", "bin/to_stderr") {
+    uses console, file.read("./"), process("bin/bad_utf8", "bin/cat_in", "bin/close_out", "bin/env_dump", "bin/flood", "bin/missing", "bin/slow_lines", "bin/to_stderr") {
     let seen = new Seen { lines: new list[str] };
-    let r = run_lines(program, args_value, input, env_value, fn(line: str) -> result[bool] {
+    let r = run_lines(program, args_value, input, env_value, "./", fn(line: str) -> result[bool] {
         if line == fail_at {
             return err("the function failed at " + line);
         }
@@ -41,7 +41,7 @@ fn follow(
 }
 
 fn main()
-    uses console, process("bin/bad_utf8", "bin/cat_in", "bin/close_out", "bin/env_dump", "bin/flood", "bin/missing", "bin/slow_lines", "bin/to_stderr") {
+    uses console, file.read("./"), process("bin/bad_utf8", "bin/cat_in", "bin/close_out", "bin/env_dump", "bin/flood", "bin/missing", "bin/slow_lines", "bin/to_stderr") {
     let none = new list[str];
     follow("lines", "bin/slow_lines", ["3", "0", "4"], "", none, "-", "-");
     follow("stop", "bin/slow_lines", ["1000", "0.01", "0"], "", none, "line 2", "-");

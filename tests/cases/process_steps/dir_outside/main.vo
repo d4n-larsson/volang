@@ -1,0 +1,10 @@
+# Spec 057 (US2): a directory outside the caller's file.read scopes is R0010, and nothing starts. The
+# directory is built at run time, so only the run's check sees it; "./" is always allowed.
+import std.process.run_with;
+
+fn main() -> result[void] uses console, file.read("work/"), process("bin/cat_file") {
+    print("code " + str((try run_with("bin/cat_file", [], "", [], "./")).code));
+    let dir = join(["oth", "er/"], "");
+    print((try run_with("bin/cat_file", ["a.txt"], "", [], dir)).stdout);
+    return ok();
+}

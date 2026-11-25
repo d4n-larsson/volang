@@ -1,0 +1,20 @@
+# Spec 057 (US1): a directory is resolved like a file path: a link to a directory, and "..", lead where
+# they point.
+import std.process.Output;
+import std.process.run_with;
+
+fn show(what: str, r: result[Output]) uses console {
+    match r {
+        case ok(out) {
+            write(what + ": " + out.stdout);
+        }
+        case err(e) {
+            print(what + ": err " + e);
+        }
+    }
+}
+
+fn main() uses console, file.read("./"), process("bin/cat_file") {
+    show("linked/", run_with("bin/cat_file", ["a.txt"], "", [], "linked/"));
+    show("work/../work/", run_with("bin/cat_file", ["a.txt"], "", [], "work/../work/"));
+}

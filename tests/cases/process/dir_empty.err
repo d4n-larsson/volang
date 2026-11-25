@@ -1,0 +1,7 @@
+std/process.vo:51:23: runtime error[R0007]: A directory must be a non-empty path without NUL bytes.
+  51 |     return decode(try __run(dir_argv(dir, program, arguments), input, vars));
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at run_with (std/process.vo:51:23)
+      program: str = "true", arguments: list[str] = [], input: str = "", vars: list[str] = [], dir: str = ""
+  at main (dir_empty.vo:5:20)

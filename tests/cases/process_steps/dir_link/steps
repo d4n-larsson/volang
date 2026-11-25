@@ -1,0 +1,5 @@
+helpers
+mkdir work
+write work/a.txt in work\n
+symlink work linked
+vo run main.vo

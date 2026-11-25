@@ -29,6 +29,7 @@
 #define WNOHANG 1
 #define E_AGAIN 11
 #define E_NOENT 2
+#define E_NOTDIR 20
 #define E_ACCES 13
 #define E_INTR 4
 #define STATX_TYPE 0x1
@@ -125,8 +126,65 @@ static int drain(int *fd, SB *sb, int *over)
 }
 
 /* The child after fork: never returns. */
-static void child(int in, int out, int err, int ex, char *path, char **argv, char **envv, long parent)
+/* Spec 057: "./", the start directory: always allowed (as for run), nothing opened, not recorded. */
+static int start_dir(Str *dir)
 {
+    return dir->len == 2 && dir->data[0] == '.' && dir->data[1] == '/';
+}
+
+/* Spec 057 (R1, R3): the checked working directory opened for the child's fchdir, without following
+ * links where a scope limits it (as std.fs reaches a checked path); -1 for the start directory. On
+ * failure, a negative value and *bad the result. */
+static long open_dir(Str *dir, Variant **bad)
+{
+    if (start_dir(dir)) return -1;
+    Str *name = 0;
+    GC_ROOT(&dir);
+    GC_ROOT(&name);
+    long fd = rt_open_parent(EF_FREAD, dir, &name, 0);
+    if (fd >= 0 && !(name->len == 1 && name->data[0] == '.')) {
+        long flags = O_PATH | O_DIRECTORY | O_CLOEXEC | (rt_bit_scoped(EF_FREAD) ? O_NOFOLLOW : 0);
+        long sub = vo_syscall4(SYS_openat, fd, (long)name->data, flags, 0);
+        sys_close((int)fd);
+        fd = sub;
+    }
+    GC_UNROOT(2);
+    if (fd < 0)
+        *bad = make_err(fd == -E_NOENT    ? "directory not found"
+                        : fd == -E_NOTDIR ? "not a directory"
+                                          : "directory not accessible");
+    return fd;
+}
+
+/* Spec 057 (R2): the file to execute, after the child entered dir: a relative path with "/" is the start
+ * directory's file, as without a directory. 0 when the start directory is unknown. */
+static Str *exec_path(Str *path, long dir_fd)
+{
+    if (dir_fd < 0 || path->data[0] == '/') return path;
+    if (!rt_start_cwd_known()) return 0;
+    GC_ROOT(&path);
+    SB *sb = sb_new();
+    GC_ROOT(&sb);
+    sb_str(sb, rt_start_cwd());
+    sb_byte(sb, '/');
+    sb_str(sb, path);
+    GC_UNROOT(2);
+    return sb_finish(sb);
+}
+
+/* Spec 057: a child's fchdir failure, sent on the error pipe above any errno of execve. */
+#define DIR_FAILED 1000
+
+static void child(int in, int out, int err, int ex, char *path, char **argv, char **envv, long parent, int dir)
+{
+    if (dir >= 0) { /* spec 057: first, before 0 to 2 are replaced (dir may be one of them) */
+        long r = vo_syscall1(SYS_fchdir, dir);
+        if (r < 0) {
+            int code = DIR_FAILED + (int)-r;
+            sys_write(ex, &code, sizeof code);
+            vo_syscall1(SYS_exit_group, 127);
+        }
+    }
     if (ex < 3) { /* keep the error pipe above the descriptors closed below */
         int moved = (int)vo_syscall3(SYS_fcntl, ex, 1030 /* F_DUPFD_CLOEXEC */, 3);
         if (moved >= 0) ex = moved;
@@ -155,8 +213,8 @@ static void child(int in, int out, int err, int ex, char *path, char **argv, cha
     for (;;) {}
 }
 
-/* Runs a checked program; the result text or err. */
-static Variant *rt_run(List *argv, Str *input, List *env, int raw)
+/* Runs a checked program, in the directory dir_fd when it is not -1 (spec 057); the result text or err. */
+static Variant *rt_run(List *argv, Str *input, List *env, int raw, long dir_fd)
 {
     Str *program = (Str *)argv->data[0].p;
     GC_ROOT(&argv);
@@ -164,6 +222,7 @@ static Variant *rt_run(List *argv, Str *input, List *env, int raw)
     GC_ROOT(&env);
     Str *path = resolve_program(program);
     GC_ROOT(&path);
+    if (path) path = exec_path(path, dir_fd);
     if (!path) {
         GC_UNROOT(4);
         return make_result(1, (long)str_from_cstr("not found"));
@@ -191,7 +250,7 @@ static Variant *rt_run(List *argv, Str *input, List *env, int raw)
     int sig = (int)vo_syscall4(SYS_signalfd4, -1, (long)&chld, 8, O_NONBLOCK | O_CLOEXEC);
     long parent = sys_getpid();
     long pid = sys_fork();
-    if (pid == 0) child(pin[0], pout[1], perr[1], pex[1], path->data, av, ev, parent);
+    if (pid == 0) child(pin[0], pout[1], perr[1], pex[1], path->data, av, ev, parent, (int)dir_fd);
     close_fd(&pin[0]), close_fd(&pout[1]), close_fd(&perr[1]), close_fd(&pex[1]);
     int failed = 0; /* the errno of a failed exec */
     if (pid > 0) {
@@ -267,6 +326,8 @@ static Variant *rt_run(List *argv, Str *input, List *env, int raw)
     Variant *res;
     if (pid < 0) {
         res = make_result(1, (long)msg("cannot run: error $1", int_to_str(-pid), 0, 0));
+    } else if (failed >= DIR_FAILED) { /* spec 057: the child could not enter the directory */
+        res = make_result(1, (long)str_from_cstr("directory not accessible"));
     } else if (failed == E_NOENT) {
         res = make_result(1, (long)str_from_cstr("not found"));
     } else if (failed == E_ACCES) {
@@ -302,8 +363,8 @@ static Variant *rt_run(List *argv, Str *input, List *env, int raw)
 }
 
 /* The argument checks (R0007) and the program against both grants (R0010) for a run of argv with
- * env: the program as given. */
-static Str *run_check(List *argv, List *env)
+ * env: the program as given. Spec 057: then dir against the file.read grant (R0010), unless "./". */
+static Str *run_check(List *argv, List *env, Str *dir)
 {
     if (!argv->len) raise_arg("A program to run is needed.");
     Str *program = (Str *)argv->data[0].p;
@@ -317,30 +378,47 @@ static Str *run_check(List *argv, List *env)
         if (eq == 0 || eq == v->len || has_nul(v))
             raise_arg("An environment entry must be NAME=value with a non-empty NAME and no NUL byte.");
     }
+    if (!dir->len || has_nul(dir)) raise_arg("A directory must be a non-empty path without NUL bytes.");
     Str *name = process_name(program);
     io_pend(EVK_RUN, program);
     rt_check_name(EF_PROCESS, name ? name : program);
+    if (!start_dir(dir)) rt_check_path(EF_FREAD, dir);
     return program;
 }
 
-/* Checks the arguments (R0007) and the program against both grants (R0010), then runs it. raw (spec
- * 021, run_bytes): the output is returned as it is, not checked as UTF-8. */
-Variant *io_run(List *argv, Str *input, List *env, int raw)
+/* Spec 057 (R4): the builtins' first argument is [dir, program, args...]: dir, and the run's argv. */
+static List *split_dir(List *all, Str **dir)
 {
-    GC_ROOT(&argv);
+    if (!all->len) raise_arg("A program to run is needed.");
+    *dir = (Str *)all->data[0].p;
+    return list_slice(all, 1, all->len, (Node *)cur_node);
+}
+
+/* Checks the arguments (R0007) and the program against both grants (R0010), then runs it. raw (spec
+ * 021, run_bytes): the output is returned as it is, not checked as UTF-8. Spec 057: all is
+ * [dir, program, args...]; the run is recorded with dir unless it is "./". */
+Variant *io_run(List *all, Str *input, List *env, int raw)
+{
+    Str *dir = 0;
     GC_ROOT(&input);
     GC_ROOT(&env);
-    Str *program = run_check(argv, env);
+    GC_ROOT(&dir);
+    List *argv = split_dir(all, &dir);
+    GC_ROOT(&argv);
+    Str *program = run_check(argv, env, dir);
     GC_ROOT(&program);
-    Variant *r;
+    Str *to = start_dir(dir) ? 0 : dir;
+    Variant *r = 0;
+    GC_ROOT(&r);
     if (rcd_mode == 2) {
-        r = io_replay(EVK_RUN, program, 0, argv); /* nothing starts */
+        r = io_replay(EVK_RUN, program, to, argv); /* nothing starts */
     } else {
-        r = rt_run(argv, input, env, raw);
-        io_record(EVK_RUN, program, 0, argv, r);
+        long fd = open_dir(dir, &r);
+        if (fd >= 0 || start_dir(dir)) r = rt_run(argv, input, env, raw, fd);
+        if (fd >= 0) sys_close((int)fd);
+        io_record(EVK_RUN, program, to, argv, r);
     }
-    GC_UNROOT(1);
-    GC_UNROOT(3);
+    GC_UNROOT(6);
     return r;
 }
 
@@ -488,14 +566,20 @@ static void proc_pump(Proc *p, int out, long tick)
     }
 }
 
-/* __proc_start(argv, input, env) -> result[int] */
-Variant *io_proc_start(List *argv, Str *input, List *env)
+/* __proc_start([dir, program, args...], input, env) -> result[int] (spec 057: dir as for io_run) */
+Variant *io_proc_start(List *all, Str *input, List *env)
 {
-    GC_ROOT(&argv);
+    Str *dir = 0;
     GC_ROOT(&input);
     GC_ROOT(&env);
-    Str *program = run_check(argv, env);
+    GC_ROOT(&dir);
+    List *argv = split_dir(all, &dir);
+    GC_ROOT(&argv);
+    Str *program = run_check(argv, env, dir);
     GC_ROOT(&program);
+    Str *to = start_dir(dir) ? 0 : dir;
+    GC_ROOT(&to);
+    long fd = -1;
     Variant *r = 0;
     GC_ROOT(&r);
     Proc *p = 0;
@@ -504,16 +588,19 @@ Variant *io_proc_start(List *argv, Str *input, List *env)
     Str *path = 0;
     GC_ROOT(&path);
     if (rcd_mode == 2) {
-        r = io_replay(EVK_RUN, program, 0, argv);
+        r = io_replay(EVK_RUN, program, to, argv);
         if (r->tag == 0 && !p) r = make_err("too many programs are being followed");
     } else if (!p) {
         r = make_err("too many programs are being followed");
-    } else if (!(path = resolve_program(program))) {
+    } else if ((fd = open_dir(dir, &r)) < 0 && !start_dir(dir)) {
+        /* r: the directory's error */
+    } else if (!(path = resolve_program(program)) || !(path = exec_path(path, fd))) {
         r = make_err("not found");
     }
     if (r && (r->tag || !p)) {
-        if (rcd_mode != 2) io_record(EVK_RUN, program, 0, argv, r);
-        GC_UNROOT(6);
+        if (fd >= 0) sys_close((int)fd);
+        if (rcd_mode != 2) io_record(EVK_RUN, program, to, argv, r);
+        GC_UNROOT(8);
         return r;
     }
     *p = (Proc){0};
@@ -522,7 +609,7 @@ Variant *io_proc_start(List *argv, Str *input, List *env)
     mem_copy(p->name, program->data, n);
     if (rcd_mode == 2) { /* nothing starts: the lines come from the recording */
         p->used = 1;
-        GC_UNROOT(6);
+        GC_UNROOT(8);
         return make_result(0, p - procs);
     }
     char **av = alloc_bytes((argv->len + 1) * 8);
@@ -542,7 +629,7 @@ Variant *io_proc_start(List *argv, Str *input, List *env)
     } else { /* (as rt_run starts its child) */
         long parent = sys_getpid();
         pid = sys_fork();
-        if (pid == 0) child(pin[0], pout[1], perr[1], pex[1], path->data, av, ev, parent);
+        if (pid == 0) child(pin[0], pout[1], perr[1], pex[1], path->data, av, ev, parent, (int)fd);
         close_fd(&pin[0]), close_fd(&pout[1]), close_fd(&perr[1]), close_fd(&pex[1]);
         if (pid > 0) {
             int code = 0;
@@ -557,16 +644,18 @@ Variant *io_proc_start(List *argv, Str *input, List *env)
             int status = 0;
             if (pid > 0) sys_wait(pid, &status);
             close_fd(&pin[1]), close_fd(&pout[0]), close_fd(&perr[0]);
-            r = pid < 0             ? make_result(1, (long)msg("cannot run: error $1", int_to_str(-pid), 0, 0))
+            r = pid < 0                 ? make_result(1, (long)msg("cannot run: error $1", int_to_str(-pid), 0, 0))
+                : failed >= DIR_FAILED  ? make_err("directory not accessible") /* spec 057 */
                 : failed == E_NOENT ? make_err("not found")
                 : failed == E_ACCES ? make_err("permission denied")
                                     : make_result(1, (long)msg("cannot run: error $1", int_to_str(failed), 0, 0));
         }
     }
+    if (fd >= 0) sys_close((int)fd);
     if (r) {
         mbuf_free(&p->input);
-        io_record(EVK_RUN, program, 0, argv, r);
-        GC_UNROOT(8);
+        io_record(EVK_RUN, program, to, argv, r);
+        GC_UNROOT(10);
         return r;
     }
     set_flags(pin[1], O_NONBLOCK);
@@ -580,8 +669,8 @@ Variant *io_proc_start(List *argv, Str *input, List *env)
     p->input.len = input->len;
     if (!input->len) close_fd(&p->in);
     r = make_result(0, (long)str_new("", 0));
-    io_record(EVK_RUN, program, 0, argv, r);
-    GC_UNROOT(8);
+    io_record(EVK_RUN, program, to, argv, r);
+    GC_UNROOT(10);
     return make_result(0, p - procs);
 }
 

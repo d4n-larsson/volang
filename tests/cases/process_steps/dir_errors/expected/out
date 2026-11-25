@@ -1,0 +1,6 @@
+$ vo run main.vo
+missing/: err directory not found
+file.txt: err not a directory
+locked/: err directory not accessible
+--- stderr
+--- exit 0

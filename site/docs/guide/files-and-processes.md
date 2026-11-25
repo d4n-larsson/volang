@@ -109,8 +109,12 @@ stays beneath the scope directory: a symbolic link that another process swaps in
 ## Running programs
 
 `run(program, args)` starts a program, waits for it to end, and returns its exit code and output.
-`run_with(program, args, input, env)` also gives it text on standard input and environment variables
-(`"NAME=value"`). There is no shell: each argument reaches the program exactly as written, so spaces,
+`run_with(program, args, input, env, dir)` also gives it text on standard input, environment variables
+(`"NAME=value"`) and a working directory: `"./"` is the directory vo started in (where `run` starts
+programs); any other directory must lie inside your `file.read` scopes, and is `err("directory not
+found")`, `err("not a directory")` or `err("directory not accessible")` when the program cannot start
+there. A program written with a `/` (`"tools/gen"`) is still found from the start directory. There is no
+shell: each argument reaches the program exactly as written, so spaces,
 quotes, `;` and `$(...)` mean nothing special.
 
 ```vo
@@ -188,16 +192,16 @@ fn main() -> result[void] uses console, file.read("./"), file.write("./") {
 51 bytes
 ```
 
-`run_lines(program, args, input, env, f)` runs a program like `run_with` and calls the function with
+`run_lines(program, args, input, env, dir, f)` runs a program like `run_with` and calls the function with
 each line of its standard output as soon as the program has written it, so a long build shows its
 progress and can be stopped at its first error:
 
 ```vo
 import std.process.run_lines;
 
-fn main() -> result[void] uses console, process("sh") {
+fn main() -> result[void] uses console, file.read("./"), process("sh") {
     let script = "echo compiling; echo linking; sleep 5; echo done";
-    let out = try run_lines("sh", ["-c", script], "", new list[str], fn(line: str) -> result[bool] {
+    let out = try run_lines("sh", ["-c", script], "", new list[str], "./", fn(line: str) -> result[bool] {
         print("> " + line);
         return ok(line != "linking");
     });

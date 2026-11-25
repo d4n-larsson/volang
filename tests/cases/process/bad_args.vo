@@ -2,18 +2,18 @@
 import std.process.run;
 import std.process.run_with;
 
-fn main() -> result[void] uses console, process("true") {
+fn main() -> result[void] uses console, file.read("./"), process("true") {
     for a in args() {
         if a == "nul" {
             let out = try run("true", ["a" + chr(0) + "b"]);
             print(str(out.code));
         }
         if a == "noname" {
-            let out = try run_with("true", new list[str], "", ["=x"]);
+            let out = try run_with("true", new list[str], "", ["=x"], "./");
             print(str(out.code));
         }
         if a == "noeq" {
-            let out = try run_with("true", new list[str], "", ["HOME"]);
+            let out = try run_with("true", new list[str], "", ["HOME"], "./");
             print(str(out.code));
         }
     }

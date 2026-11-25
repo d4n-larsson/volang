@@ -1,0 +1,6 @@
+helpers
+write file.txt x\n
+mkdir locked
+chmod 000 locked
+vo run main.vo
+chmod 755 locked

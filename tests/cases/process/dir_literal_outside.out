@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0503","name":"scope_too_narrow","severity":"error","file":"dir_literal_outside.vo","start":{"line":8,"col":49},"end":{"line":8,"col":57},"text":"\"other/\"","message":"`main` declares too narrow a scope: it needs file.read(\"other/\").","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

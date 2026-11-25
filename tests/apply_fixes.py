@@ -58,6 +58,21 @@ def check_json(path):
     return [json.loads(l) for l in p.stdout.decode("utf-8", "replace").splitlines() if l.startswith("{")]
 
 
+def diagnostics(path):
+    return [r for r in check_json(path) if r.get("kind") == "diagnostic"]
+
+
+def vo_fix(paths):
+    """tools/vo_fix.vo on paths (files or directories): (codes fixed, errors left)."""
+    r = subprocess.run([VO, "run", "--timeout", "0", "tools/vo_fix.vo", "--", *map(os.path.abspath, paths)], cwd=ROOT,
+                       capture_output=True, text=True, timeout=1800)
+    out = r.stdout.splitlines()
+    if not out or not out[0].startswith("fixed: ") or r.returncode not in (0, 1):
+        raise RuntimeError(f"tools/vo_fix.vo failed (exit {r.returncode}): {r.stdout}{r.stderr}")
+    fixed = set(out[0][len("fixed: "):].split(", ")) - {"nothing"}
+    return fixed, [l[len("left: "):] for l in out[1:] if l.startswith("left: ")]
+
+
 def json_cases(dirs):
     for d in dirs:
         base_dir = os.path.join(CASES, d)

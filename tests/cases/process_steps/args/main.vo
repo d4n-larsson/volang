@@ -18,8 +18,17 @@ fn show(what: str, r: result[Output]) uses console {
     }
 }
 
-fn main() uses console, process("bin/args") {
-    show("args", run("bin/args", ["a b", "'quoted'", "\"double\"", "x; rm -rf /", "$(echo no)", "*", "", "héllo"]));
+fn main() uses console, file.read("./"), process("bin/args") {
+    show("args", run("bin/args", [
+        "a b",
+        "'quoted'",
+        "\"double\"",
+        "x; rm -rf /",
+        "$(echo no)",
+        "*",
+        "",
+        "héllo"
+    ]));
     show("none", run("bin/args", new list[str]));
-    show("with", run_with("bin/args", ["one"], "", new list[str]));
+    show("with", run_with("bin/args", ["one"], "", new list[str], "./"));
 }

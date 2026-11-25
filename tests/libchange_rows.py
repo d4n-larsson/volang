@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Spec 056 (SC-003): every row of the library change table (src/libchange.c) reports E0214 with its fix.
 For each row, a minimal program using the old form is checked: it must report E0214, and after the first
-fix of every diagnostic (tools/vo_fix.py) it must check clean. Rows of a kind without a template here are
+fix of every diagnostic (tools/vo_fix.vo) it must check clean (spec 057: rows that added an argument too). Rows of a kind without a template here are
 listed as skipped."""
 import os
 import re
@@ -12,10 +12,11 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VO = os.path.join(ROOT, "bin", "vo")
-sys.path.insert(0, os.path.join(ROOT, "tools"))
-import vo_fix  # noqa: E402
+sys.path.insert(0, os.path.join(ROOT, "tests"))
+from apply_fixes import diagnostics, vo_fix  # noqa: E402
 
-ROW = re.compile(r'\{"(\w+)", "([\w.]+)", (LC_\w+), (?:"(\w+)"|0), (?:"([^"]*)"|0), (?:"([^"]*)"|0), (-?\d+)\}')
+_S = r'(?:"((?:[^"\\]|\\.)*)"|0)'  # a C string (escapes allowed) or 0
+ROW = re.compile(r'\{"(\w+)",\s*"([\w.]+)",\s*(LC_\w+),\s*' + _S + r',\s*' + _S + r',\s*' + _S + r',\s*(-?\d+)\}')
 
 
 def rows():
@@ -41,6 +42,13 @@ def program(row):
         tp, ta = ("[C, E: effects]", "[C, E]") if record == "Browser" else ("", "")
         return (f"import std.{module}.{record};\n\n"
                 f"fn f{tp}(x: {record}{ta}) {{\n    let _ = x.{field};\n}}\n\nfn main() {{\n}}\n")
+    if kind == "LC_ARG":  # spec 057: the 0.2 call, one argument fewer
+        args = {"run_with": '"true", [], "", []', "run_with_bytes": '"true", [], from_text(""), []',
+                "run_lines": '"true", [], "", [], fn(line: str) -> result[bool] { return ok(true); }'}[old]
+        imp = "import std.bytes.from_text;\n" if old == "run_with_bytes" else ""
+        return (f"{imp}import std.{module}.{old};\n\n"
+                f"fn main() -> result[void] uses process(\"true\") {{\n    let _ = try {old}({args});\n"
+                f"    return ok();\n}}\n")
     if kind == "LC_CASE":
         variant, case = old.split(".")
         return (f"import std.{module}.{variant};\n\n"
@@ -77,11 +85,11 @@ def main():
         try:
             path = os.path.join(d, "main.vo")
             open(path, "w").write(src)
-            codes = {r["code"] for r in vo_fix.check(path)}
+            codes = {r["code"] for r in diagnostics(path)}
             if "E0214" not in codes:
                 problems.append(f"{label}: no E0214 (got {sorted(codes)})")
                 continue
-            fixed, left = vo_fix.fix_paths([path])
+            fixed, left = vo_fix([path])
             if left:
                 problems.append(f"{label}: not clean after the fix: {left[:2]}")
             checked += 1

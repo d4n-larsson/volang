@@ -3,7 +3,7 @@
 
 For every example (`examples/*/main.vo`, `examples/*/*/main.vo`) and the postgres package, as of commit
 8c8db3e (the last commit before spec 056):
-  - copy it from git, apply the first fix of every diagnostic (tools/vo_fix.py, at most 3 rounds, with
+  - copy it from git, apply the first fix of every diagnostic (tools/vo_fix.vo, at most 3 rounds, with
     `vo effects --update` when only E0504 is left), and require a clean check;
   - run its tests (with `--replay recordings/tests` when it has them) and replay its recordings, and
     compare with the baseline recorded with the toolchain of that commit (tests/migrate_056/baseline.json),
@@ -131,8 +131,8 @@ def record(vo):
 
 
 def verify(quick):
-    sys.path.insert(0, os.path.join(ROOT, "tools"))
-    import vo_fix  # noqa: E402
+    sys.path.insert(0, os.path.join(ROOT, "tests"))
+    from apply_fixes import diagnostics, vo_fix  # noqa: E402
     base = json.load(open(BASELINE))
     problems, used = [], {}
     tmp = tempfile.mkdtemp(prefix="vo-m056-")
@@ -147,12 +147,12 @@ def verify(quick):
             else:  # the package's modules, fixed inside its host project, then the host's copy is the package
                 h = host(VO, where)
                 paths = [os.path.join(h, "pkg", "postgres", f) for f in sorted(os.listdir(where)) if f.endswith(".vo")]
-            rows = sorted({m.group(1) for path in paths for r in vo_fix.check(path) if r["code"] == "E0214"
+            rows = sorted({m.group(1) for path in paths for r in diagnostics(path) if r["code"] == "E0214"
                            for m in [re.match(r"`(std\.[\w.]+)`", r["message"])] if m})
-            fixed, left = vo_fix.fix_paths(paths)
+            fixed, left = vo_fix(paths)
             if kind == "package":  # the fixes changed the package: pin it again, then look for errors
                 subprocess.run([VO, "package", "main.vo", "postgres", "pkg/postgres"], cwd=h, capture_output=True)
-                fixed2, left = vo_fix.fix_paths(paths)
+                fixed2, left = vo_fix(paths)
                 fixed |= fixed2
                 shutil.rmtree(where)
                 shutil.copytree(os.path.join(h, "pkg", "postgres"), where)

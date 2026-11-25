@@ -1,0 +1,12 @@
+$ vo run main.vo
+code 0
+--- stderr
+std/process.vo:51:23: runtime error[R0010]: file.read("other/") is not allowed: `main` declares console, file.read("work/"), process("bin/cat_file").
+  51 |     return decode(try __run(dir_argv(dir, program, arguments), input, vars));
+     |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at run_with (std/process.vo:51:23)
+      program: str = "bin/cat_file", arguments: list[str] = ["a.txt"], input: str = "", vars: list[str] = [], dir: str = "other/"
+  at main (main.vo:8:16)
+      dir: str = "other/"
+--- exit 70

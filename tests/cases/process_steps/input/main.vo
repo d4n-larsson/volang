@@ -18,7 +18,13 @@ fn show(what: str, r: result[Output]) uses console {
     }
 }
 
-fn main() uses console, process("bin/cat_in") {
-    show("with input", run_with("bin/cat_in", new list[str], "line one\nline two\n", new list[str]));
+fn main() uses console, file.read("./"), process("bin/cat_in") {
+    show("with input", run_with(
+        "bin/cat_in",
+        new list[str],
+        "line one\nline two\n",
+        new list[str],
+        "./"
+    ));
     show("without", run("bin/cat_in", new list[str]));
 }

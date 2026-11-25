@@ -18,7 +18,7 @@ fn show(what: str, r: result[Output]) uses console {
     }
 }
 
-fn main() uses console, process("bin/env_dump") {
+fn main() uses console, file.read("./"), process("bin/env_dump") {
     show("run", run("bin/env_dump", new list[str]));
-    show("run_with", run_with("bin/env_dump", new list[str], "", ["B=x y", "A=1", "EMPTY="]));
+    show("run_with", run_with("bin/env_dump", new list[str], "", ["B=x y", "A=1", "EMPTY="], "./"));
 }

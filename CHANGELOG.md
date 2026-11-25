@@ -4,6 +4,34 @@ What changed in each released version of vo, for people and agents who use it. T
 decision is in [`specs/`](specs/) and summarized in [`docs/roadmap.md`](docs/roadmap.md); what a version
 may and may not change is in [`docs/stability.md`](docs/stability.md).
 
+## 0.3.0
+
+Breaking changes first. Applying the first fix of each diagnostic of `vo check --json` (up to three
+rounds) migrates a program, with no wider grant than it needs (`tests/libchange_rows.py`).
+
+- **A started program's working directory (spec 057).** `std.process.run_with`, `run_with_bytes` and
+  `run_lines` take a working directory after the variables; `run` and `run_bytes` are unchanged. `"./"`
+  is the start directory (where `run` starts programs) and is always allowed; any other directory must lie
+  inside the caller's `file.read` scopes (E0503 for a literal, R0010 at run time), and the three functions
+  need `file.read`. A program path with `/` is still found from the start directory. A call in the 0.2
+  form reports E0214 with a fix inserting `"./"`, and the function then needs `file.read` (E0501, below).
+- **E0501's fix scopes file effects needed only for literal paths.** The fix declared `file.read`,
+  `file.write` or `file.delete` without scopes; when every need for one comes from literal paths, it now
+  declares those paths' scopes: a file's directory, a directory as written (`read_file("data/a.txt")`
+  gives `file.read("data/")`, `run_with(..., "./")` gives `file.read("./")`). Callers get their callees'
+  scopes. Any other need keeps the unscoped fix. Code, span and message are unchanged.
+- **Literal programs checked in every run form.** A literal program outside the `process` scopes is
+  E0503 at check time for `run_bytes`, `run_with_bytes` and `run_lines` too (it was R0010 at run time).
+
+Added:
+
+- A directory that is missing, not a directory, or cannot be entered is `err("directory not found")`,
+  `err("not a directory")` or `err("directory not accessible")`, and nothing starts. An empty directory
+  is R0007.
+- Recordings hold a run's directory (`"dir"`, absent for `"./"`), and replay requires the same one
+  (R0014). A run in `"./"` is recorded exactly as by 0.2, so 0.2 recordings replay against migrated
+  programs.
+
 ## 0.2.0
 
 Breaking changes first. Every one comes with a diagnostic and, where one correction exists, a fix:

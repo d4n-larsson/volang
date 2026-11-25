@@ -1023,7 +1023,7 @@ fn main() uses console {
 
 ## E0214 library_changed
 
-A standard library item was renamed, removed or changed in vo 0.2.0.
+A standard library item was renamed, removed or changed in vo 0.2.0 or 0.3.0.
 
 Fixable: sometimes
 
@@ -1032,8 +1032,10 @@ correction keeps the program's behavior, its fix (`docs/stability.md`). The impo
 each use of the old name are reported; the fix gives the new name, and the file keeps checking as if the
 new name were written. A removed item's fix writes its replacement (`now_ms()` for `std.time.now`). A
 lookup that now returns an `Option` is wrapped back into the old `result` (`to_result(CALL, "none")`), and
-a function that now takes the text first gets its arguments swapped. Apply the fixes of `vo check --json`
-to migrate a program; the changelog lists every change.
+a function that now takes the text first gets its arguments swapped. A function that gained an argument
+gets it inserted with the value that keeps the old behavior (`"./"`, the start directory, for the working
+directory of `std.process.run_with`, `run_with_bytes` and `run_lines` in 0.3.0). Apply the fixes of
+`vo check --json` to migrate a program; the changelog lists every change.
 
 ### Example
 
@@ -2695,7 +2697,7 @@ A function or test does something its `uses` clause does not declare.
 
 Fixable: yes
 
-Every function and test declares what it may touch: `uses console, file.read, ...`. A function also needs everything its callees declare, so a declaration tells the truth about everything reachable from it. The message lists every missing effect (including those of callees that are missing their own declarations), and the fix rewrites the clause to declare them all.
+Every function and test declares what it may touch: `uses console, file.read, ...`. A function also needs everything its callees declare, so a declaration tells the truth about everything reachable from it. The message lists every missing effect (including those of callees that are missing their own declarations), and the fix rewrites the clause to declare them all. A file effect needed only for literal paths is declared with those paths as scopes (a file's directory, a directory as written: `read_file("data/a.txt")` gives `file.read("data/")`); any other need declares it without scopes.
 
 ### Example
 

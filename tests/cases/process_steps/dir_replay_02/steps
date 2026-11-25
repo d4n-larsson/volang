@@ -1,0 +1,5 @@
+vo replay r02.jsonl
+helpers
+write a.txt hello\n
+vo run --seed 1 --record r.jsonl main.vo
+keep r.jsonl
