@@ -1220,7 +1220,7 @@ Node *find_main(Vec *items)
 void check_main(int file, Node *fn)
 {
     if (!fn) {
-        diag_add("E0408", SEV_ERROR, file, 0, 0, str_from_cstr("`vo run` needs a `fn main()`."));
+        diag_add("E0408", SEV_ERROR, file, 0, 0, str_from_cstr("`vo run` and `vo build` need a `fn main()`."));
         return;
     }
     if (fn->b.v->n == 0) {
@@ -1459,6 +1459,8 @@ void check_items(int file, int mode)
     fx_file_end(items);
     const_report_unused(items); /* spec 031: W0202 */
     if (ck_mode == 1) check_main(file, find_main(items));
+    else if (find_main(items)) check_main(file, find_main(items)); /* E0409 under every command; only run and
+                                                                       build need a main (E0408) */
 }
 
 int has_unknown_arm(Node *match)

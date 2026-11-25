@@ -322,7 +322,8 @@ int values_equal(long a, long b, Type *type)
     POLL(1);
     check_stack((Node *)cur_node); /* spec 013 (H11): deep or cyclic values are R0005, not a crash */
     type = rt_concrete(type); /* type parameters: the running frame's type arguments */
-    if (type->kind != TY_FLOAT && a == b) return 1; /* the same object (NaN is never equal to itself) */
+    if ((type->kind == TY_STR || type->kind == TY_BYTES) && a == b) return 1; /* the same text; other values by
+                                                                                  contents: NaN never equals itself */
     switch (type->kind) {
     case TY_FLOAT: {
         Bits x = {.i = a}, y = {.i = b};
@@ -376,6 +377,9 @@ int values_equal(long a, long b, Type *type)
         if (!t) return 1;
         return values_equal(((Variant *)a)->pay.i, ((Variant *)b)->pay.i, t);
     }
+    case TY_FUNC: /* the checker refuses this; a generic function's T can still be one */
+        rt_raise_c("R0007", "Functions cannot be compared.", (Node *)cur_node);
+        return 0;
     default: return a == b; /* int, bool, void */
     }
 }

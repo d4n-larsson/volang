@@ -51,7 +51,7 @@ module.exports = grammar({
     function_definition: $ => seq(
       optional('export'),
       'fn',
-      field('name', $.identifier),
+      field('name', choice($.identifier, $.type_identifier)), // (capitalized: E0207, with its fix)
       optional(field('type_parameters', $.type_parameters)),
       field('parameters', $.parameters),
       optional(seq('->', field('result', $._type))),
@@ -68,7 +68,7 @@ module.exports = grammar({
     constraint: _ => choice('ordered', 'effects', 'json', 'key'),
 
     parameters: $ => seq('(', commaSep($.parameter), ')'),
-    parameter: $ => seq(field('name', $.identifier), ':', field('type', $._type)),
+    parameter: $ => seq(field('name', choice($.identifier, $.type_identifier)), ':', field('type', $._type)),
 
     uses_clause: $ => seq('uses', commaSep1($.effect)),
     effect: $ => choice(
@@ -131,7 +131,7 @@ module.exports = grammar({
     effects_definition: $ => seq(
       optional('export'),
       'effects',
-      field('name', $.type_identifier),
+      field('name', choice($.type_identifier, $.identifier)), // (lower case: E0207, with its fix)
       '=',
       commaSep1($.effect),
       ';',
@@ -202,7 +202,7 @@ module.exports = grammar({
 
     let_statement: $ => seq(
       choice('let', 'var'),
-      field('name', choice($.identifier, '_')),
+      field('name', choice($.identifier, $.type_identifier, '_')),
       optional(seq(':', field('type', $._type))),
       '=',
       field('value', $._expression),
@@ -241,6 +241,7 @@ module.exports = grammar({
 
     _expression: $ => choice(
       $.identifier,
+      $.type_identifier, // a capitalized variable or function (E0207, with its fix)
       $.integer,
       $.float,
       $.string,
@@ -264,7 +265,7 @@ module.exports = grammar({
       field('arguments', $.arguments),
     )),
     arguments: $ => seq('(', commaSep($._expression), ')'),
-    variant_value: $ => seq(field('type', $.type_identifier), '.', field('case', $.identifier)),
+    variant_value: $ => prec(PREC.postfix + 1, seq(field('type', $.type_identifier), '.', field('case', $.identifier))),
     parenthesized_expression: $ => seq('(', $._expression, ')'),
     list_literal: $ => seq('[', commaSep($._expression), ']'),
     new_expression: $ => seq('new', choice(

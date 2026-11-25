@@ -1,0 +1,19 @@
+# Values that hold a function (a record field, a list's elements) cannot be compared, as functions cannot:
+# E0308 for ==, and for expect_eq.
+record H {
+    f: fn(int) -> int;
+}
+
+fn inc(n: int) -> int {
+    return n + 1;
+}
+
+fn main() uses console {
+    let a = new H { f: inc };
+    print(str(a == a));
+    print(str([inc] == [inc]));
+}
+
+test "fns" {
+    expect_eq(inc, inc);
+}

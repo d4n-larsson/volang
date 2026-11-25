@@ -58,7 +58,7 @@ error[T0001]: `--vo-seed` needs a value.
 --- exit 64
 $ app app --vo-seed x
 --- stderr
-error[T0001]: `--seed` and `--clock-ms` need a whole number.
+error[T0001]: `--vo-seed` and `--vo-clock-ms` need a whole number.
 --- exit 64
 $ app app --vo-version
 vo 0.1.0 schema 1

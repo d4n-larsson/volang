@@ -1,0 +1,8 @@
+eq_by_contents.vo:8:12: runtime error[R0007]: Functions cannot be compared.
+   8 |     return a == b;
+     |            ^^^^^^
+trace:
+  at same (eq_by_contents.vo:8:12)
+      a: fn(int) -> int = <fn(int) -> int>, b: fn(int) -> int = <fn(int) -> int>
+  at main (eq_by_contents.vo:24:15)
+      n: float = nan, xs: list[float] = [nan], p: P = new P { x: nan }, q: P = new P { x: 1.5 }

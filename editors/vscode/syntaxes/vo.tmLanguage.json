@@ -191,7 +191,7 @@
     },
     "effects-definition": {
       "comment": "`effects Name = console, file.read(\"data\");`",
-      "begin": "\\b(effects)(?=\\s+[A-Z])",
+      "begin": "\\b(effects)(?=\\s+([A-Z]|[a-z_][A-Za-z0-9_]*\\s*=))",
       "beginCaptures": {
         "1": {
           "name": "storage.type.effects.vo"

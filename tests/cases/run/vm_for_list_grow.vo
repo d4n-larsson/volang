@@ -1,4 +1,4 @@
-# Spec 004: a `for` over a list re-reads its length on every iteration.
+# A `for` over a list visits the elements there when it began (its length is read once); a shorter list ends it early.
 fn main() uses console {
     let xs = [1, 2, 3];
     for x in xs {

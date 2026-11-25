@@ -2468,11 +2468,11 @@ fn main() uses console {
 
 ## E0408 missing_main
 
-`vo run` needs a `fn main()`.
+`vo run` and `vo build` need a `fn main()`.
 
 Fixable: no
 
-`vo run` starts the program at `fn main()`, and the file has none. `vo check` and `vo test` do not need `main`. Add a `main` function, or use `vo test` if the file only holds tests.
+`vo run` and `vo build` start the program at `fn main()`, and the file has none. `vo check` and `vo test` do not need `main` (but report E0409 for one with the wrong signature). Add a `main` function, or use `vo test` if the file only holds tests.
 
 ### Example
 

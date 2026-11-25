@@ -2,7 +2,7 @@
 
 The language, the standard library, the diagnostics and the command line were audited for
 inconsistencies after spec 055. Every finding was checked against `build/vo` 0.1.0 or the source lines
-cited, and line numbers are those of that day. Nothing here has been fixed yet.
+cited, and line numbers are those of that day. Items marked **Fixed** were fixed afterwards.
 
 - **Bug:** the docs and the toolchain disagree, or a rule is broken.
 - **Doc:** the reference or the catalog is wrong or contradicts itself.
@@ -11,6 +11,8 @@ cited, and line numbers are those of that day. Nothing here has been fixed yet.
 ## 1. Bugs that change what a program does
 
 ### 1.1 Loops do not take a consistent snapshot (bug)
+
+**Fixed:** `for x in list` runs as `for _, x in list` (`run/loop_snapshot`); the reference states the rule per collection kind.
 
 `docs/reference.md:383` says a loop sees "what was there when the loop began; additions are not
 visited". Line 909 says a `for` over a collection "copies it first".
@@ -33,6 +35,8 @@ Source: `src/compile.c`, `cfor` (about lines 489–520):
 
 ### 1.2 `==` is not always by contents (bug)
 
+**Fixed:** only strings and bytes keep the shortcut (`run/eq_by_contents`).
+
 Line 455 says equality is by contents, and that `nan != nan`.
 
 ```vo
@@ -46,6 +50,8 @@ Records behave the same way. The cause is the identity shortcut
 
 ### 1.3 Functions can be compared with `==` after all (bug or design)
 
+**Fixed:** `==`, `!=` and `expect_eq` on a type holding a function are E0308 (`check/eq_holds_function`); a generic function given functions stops with R0007.
+
 Line 513 says functions cannot be compared with `==`, and `id == inc` written directly is E0308. All of
 these are accepted, though:
 - comparing records with a function field;
@@ -58,6 +64,8 @@ The comparison is by identity, so two lambdas with the same code are unequal. Th
 
 ### 1.4 A capitalized name breaks parsing before E0207 can fix it (bug)
 
+**Fixed:** such names parse as names, and a lower-case effect set as a set (`check/naming_uses`). Found on the way: E0509's list of effects lacked `entropy` and `log` (fixed).
+
 Line 30 says a wrongly cased name is E0207, with the converted name as its fix. Once the name is used,
 parsing fails first:
 - `let Total = 3; print(str(Total));` is E0110 "Expected `.`, found `)`";
@@ -68,6 +76,8 @@ parsing fails first:
 E0207 and its fix appear only when the name is never used.
 
 ### 1.5 A generic function cannot sort a map's keys (bug or design)
+
+**Partly fixed:** E0311 no longer offers the fix that does not parse (`generic/order_bounded`). Open: two bounds on a parameter, or ordered `bool` and variants.
 
 `src/parse.c:1162` takes one bound per type parameter, and `key` and `ordered` overlap without nesting:
 `ordered` includes `float`, which is not a key, and `key` includes `bool` and variants, which have no
@@ -80,11 +90,15 @@ E0311's fix inserts `: ordered` and gives `[K: ordered: key]`, which is a parse 
 
 ### 1.6 Float text (bug)
 
+**Fixed in the reference:** plain decimal is deliberate (`str` gives the fewest digits, without an exponent; `nan`, `inf`, `-inf` are not read back); `parse_float` reads an exponent since spec 042.
+
 - `str(1e300)` prints 302 characters, not the "shortest text" that lines 61 and 873 promise.
 - `str(1.0 / 0.0)` is `"inf"`, which `parse_float` rejects.
 - `parse_float("1e9")` succeeds, though line 878 allows only digits and `.`.
 
 ### 1.7 The command line
+
+**Fixed:** all five. The summary goes only with `--json`, also for `run`; options given to the wrong command are T0001; `vo check` reports E0409; E0408 names `vo build` too; a built executable's errors use `--vo-` names. `./app --vo-effects --vo-seed 3` still ignores the seed.
 
 - **Summary lines.** A missing input prints a raw JSON summary in human mode. `vo check nope.vo` prints
   `error[T0002]: ...` and then `{"v":1,"kind":"summary",...}`; so do `query`, `impact`, `edit`, `doc`,

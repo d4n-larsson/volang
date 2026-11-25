@@ -58,7 +58,7 @@ line two
 | Type | Values | Notes |
 |---|---|---|
 | `int` | 64-bit signed | overflow is runtime error R0001 |
-| `float` | 64-bit IEEE | `str` gives the shortest text that reads back as the same value: `str(0.1 + 0.2)` is `"0.30000000000000004"` |
+| `float` | 64-bit IEEE | `str` gives the fewest digits that read back as the same value, without an exponent: `str(0.1 + 0.2)` is `"0.30000000000000004"` |
 | `bool` | `true`, `false` | conditions must be `bool`: no truthiness |
 | `str` | immutable UTF-8 text, always valid | `len` counts bytes; text from files, input, arguments, the environment, programs and HTTP is checked when read (`err`, or R0007 where no `result` is returned) |
 | `bytes` | immutable bytes 0–255 | no literal: `std.bytes`; `len`, `b[i]` (an `int`), `slice`, `+`, `==`, `<`; never mixed with `str` |
@@ -452,7 +452,7 @@ Precedence, from tightest to loosest:
 - Both operands of `+ - * /` must have the same type, `int` or `float`. `int + float` is E0301: convert one side with `float(i)` or `int(f)`. `%` is `int` only.
 - `int` division truncates toward zero: `7 / 2` is `3`, `-7 / 2` is `-3`, `-7 % 3` is `-1`. Dividing an `int` by zero is R0002. Overflow, including `-9223372036854775807 - 2`, is R0001. `float` arithmetic follows IEEE: `1.0 / 0.0` is `inf`, `0.0 / 0.0` is `nan`.
 - `<`, `<=`, `>`, `>=` compare two `int`, two `float` or two `str` (byte order), not `bool`.
-- `==` and `!=` work on every type and compare structurally: lists, maps, records, variants and results are equal when their contents are equal. `nan != nan`.
+- `==` and `!=` compare structurally: lists, maps, records, variants and results are equal when their contents are equal (`nan != nan`, also inside). Not functions, nor values holding one (E0308).
 - `x.field` reads a record field. Strings cannot be indexed (`s[0]` is E0308): use `slice`, `for c in s` or `byte_at`. No methods: write `len(xs)`, not `xs.len()`.
 - There is no ternary `a ? b : c`, no `+=`, no `++`, no `**` and no bitwise operators (`&`, `<<`: use `std.bits`).
 
@@ -510,7 +510,7 @@ fn(int) -> int uses console                 function type (parameter types, retu
 - A named function used without `(...)` is a value: `map(xs, double)`. A generic one takes its type and effect arguments from the function type expected there (`serve_workers("8080", 4, open_db, handle)` with `handle[D: effects](db: Database[D], ...)`; E0310 when nothing fixes them). Builtins are not values: wrap one, `fn(s: str) -> int { return len(s); }`. Anything that evaluates to a function can be called: `f(1)`, `make_adder(1)(2)`, `handlers[0](x)`, `box.on_save(x)` (a record field of function type).
 - Anonymous functions write parameter and return types like named functions. They never write `uses`: their effects come from their body (E0507). A function value fits a function type whose effects cover its own (E0502 otherwise).
 - They capture the `let` bindings and parameters they use, by value, when they are created. Capturing a `var` is E0505; copy it into a `let` first.
-- Function types go anywhere a type can: parameters, return types, `let`, record fields, lists, maps. Functions cannot be compared with `==`.
+- Function types go anywhere a type can: parameters, return types, `let`, record fields, lists, maps.
 - A function returning a function type writes the type's `uses` first: `fn f() -> fn(str) uses console {` declares that the returned function prints. To declare that `f` itself prints and returns a pure function, parenthesize the type: `fn f() -> (fn(str)) uses console {`.
 
 | Builtin | Signature | Notes |
@@ -870,12 +870,12 @@ fn main() uses console {
 | now_ms | `() -> int` | wall-clock milliseconds; with `--clock-ms N`: N, N+1, ... |
 | random_int | `(lo: int, hi: int) -> int` | uniform in `lo..hi` inclusive; R0007 if `lo > hi`; fixed by `--seed N` |
 | env | `(name: str) -> result[str]` | an environment variable; `err("not set")` |
-| str | `(x: int \| float \| bool) -> str` | a float as the shortest text `parse_float` reads back as the same value; `str(1.0)` is `"1.0"` |
+| str | `(x: int \| float \| bool) -> str` | a float as the fewest digits `parse_float` reads back as the same value, without an exponent; `str(1.0)` is `"1.0"`; `nan`, `inf`, `-inf` (not read back) |
 | format | `(template: str, args...) -> str` | `template` a string literal; each `{}` or `{:spec}` takes the next argument (see Types) |
 | int | `(f: float) -> int` | truncates toward zero; R0007 for NaN or out of range |
 | float | `(i: int) -> float` | exact up to 2^53, else the nearest float |
 | parse_int | `(s: str) -> result[int]` | the whole text must be the number: no spaces, no `+` (`trim` first); else `err("invalid int: ...")` |
-| parse_float | `(s: str) -> result[float]` | `-`, digits, optionally `.` and digits, at most 17 significant digits; else `err("invalid float: ...")` |
+| parse_float | `(s: str) -> result[float]` | `-`, digits, optionally `.` and digits and an exponent (`1e9`), at most 17 significant digits; else `err("invalid float: ...")` |
 | len | `(x: str \| list[T] \| map[K, T]) -> int` | for `str`: bytes, not characters |
 | slice | `(s: str, a: int, b: int) -> str` | bytes `a` to `b - 1`; R0003 out of range; R0007 if it splits a UTF-8 character |
 | slice | `(xs: list[T], a: int, b: int) -> list[T]` | a new list; R0003 out of range |
@@ -906,7 +906,7 @@ fn main() uses console {
 
 Indexing is not a builtin but follows the same rules: `xs[i]` (R0003 out of range), `m[k]` (R0004 missing key), `set xs[i] = v;`, `set m[k] = v;`.
 
-Create the collections like maps: `new ordered_map[str, int]`, `new deque[int]`. `len`, `has`, `remove`, `get_or`, `keys`, `push`, `pop`, indexing and `for` work on them: `push` adds to a set or queue (a deque: at the back), `pop` takes a queue's smallest item or a deque's back element. `std.collections` has the rest (`first_key`, `after`, `union`, `push_front`, ...) and `ordered_map_by(cmp)` etc. for another order. A `for` loop over a collection copies it first (all of it, even with `break`). Changing a record while it is a key or set element (here or in a `map`) loses it: remove it, change it, add it again.
+Create the collections like maps: `new ordered_map[str, int]`, `new deque[int]`. `len`, `has`, `remove`, `get_or`, `keys`, `push`, `pop`, indexing and `for` work on them: `push` adds to a set or queue (a deque: at the back), `pop` takes a queue's smallest item or a deque's back element. `std.collections` has the rest (`first_key`, `after`, `union`, `push_front`, ...) and `ordered_map_by(cmp)` etc. for another order. A `for` over a set, deque or queue visits a copy taken first (all of it, even with `break`); over an `ordered_map`, as over a `map`. Changing a record while it is a key or set element (here or in a `map`) loses it: remove it, change it, add it again.
 
 ```vo
 fn main() uses console {
@@ -1176,7 +1176,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 - `https://` URLs are verified: the server's certificate must lead to an authority in the machine's trust store (or a file given with `--ca-file`), be valid and name the host, else an `err`. Nothing turns verification off. TLS 1.3 and 1.2 only. Replay needs no network.
 - `std.http.serve(address, handle)` calls `handle(request) -> Response` for one request at a time, in the order they arrive complete, until Ctrl-C or SIGTERM, then returns `ok()`. The caller declares `serve` with that address and the handler's effects. A handler's runtime error answers 500 and the server goes on; `--timeout` limits each handler call, not the server.
 - `serve_workers(address, workers, setup, handle)` handles up to `workers` requests at once (1 to 64; `vo run --workers N` overrides it): each worker is a process that runs `setup() -> result[S]` once (open the database there) and then `handle(state, request)` for one request at a time. Requests share no memory: keep state in a database.
-- `std.web`: an app is `web_app([on_get("/notes/{id}", show), ...])` (or a `new App` with steps and error kinds); an operation is `fn(ctx: C, input: I) -> result[Response]`, `I` a record whose fields take the path variable of their name, the JSON body (field `body`), a header (`@header("Name")`) or the query parameter of their name, checked by its annotations (else a 400/415/422 problem). `err("not_found: detail")` answers 404 (also `bad_request`, `unauthorized`, `forbidden`, `conflict`, `gone`, `unprocessable`, and `App.errors`); other errors 500. An operation with a typed error is wrapped, `typed(op, answer)`, `answer` mapping each error to a `Problem { status, detail }`. Patterns are checked literals (E0330, E0331). `serve_app(address, workers, setup, app)` serves it; tests call `handle_request(app, ctx, request(method, path, body))`. Answers: `ok(json_reply(200, note))`, `created("/notes/7", note)`, `no_content()`. Bodies are JSON or an HTML form (`application/x-www-form-urlencoded`), whose fields bind like query parameters; a missing form `bool` is `false`, `on` is `true`. Cookies: `read_cookie(header, name)`, `with_cookie(resp, cookie(name, value))` (HttpOnly, Secure, SameSite=Lax unless changed). Under `browser`, a cookie-signed change must come from the app's own origin (else 403). Recordings of signed-in apps hold passwords and cookies.
+- `std.web`: an app is `web_app([on_get("/notes/{id}", show), ...])` (or a `new App` with steps and error kinds); an operation is `fn(ctx: C, input: I) -> result[Response]`, `I` a record whose fields take the path variable of their name, the JSON body (field `body`), a header (`@header("Name")`) or the query parameter of their name, checked by its annotations (else a 400/415/422 problem). `err("not_found: detail")` answers 404 (also `bad_request`, `unauthorized`, `forbidden`, `conflict`, `gone`, `unprocessable`, and `App.errors`); other errors 500. An operation with a typed error is wrapped, `typed(op, answer)`, `answer` mapping each error to a `Problem { status, detail }`. Patterns are checked literals (E0330, E0331). `serve_app(address, workers, setup, app)` serves it; tests call `handle_request(app, ctx, request(method, path, body))`. Answers: `ok(json_reply(200, note))`, `created("/notes/7", note)`, `no_content()`. Bodies are JSON or an HTML form, whose fields bind like query parameters. Cookies: `read_cookie(header, name)`, `with_cookie(resp, cookie(name, value))` (HttpOnly, Secure, SameSite=Lax unless changed). Under `browser`, a cookie-signed change must come from the app's own origin (else 403). Recordings of signed-in apps hold passwords and cookies.
 - `std.process.run(program, args)` runs a program with no shell, no input and an empty environment and returns `Output { code, stdout, stderr }`; `run_with` adds input text and `NAME=value` variables. A non-zero exit is `ok`; killed by signal n, `code` is 128 + n. `--timeout` covers the program and everything it starts. A started program is not confined: `process("git")` grants whatever `git` can do.
 - Large inputs come in pieces: `each_line(path, f)`, `each_chunk`, `send_stream` and `run_lines` call `f` per piece; `f` returns `ok(true)` to go on, `ok(false)` to stop.
 - File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.

@@ -1778,6 +1778,7 @@ extern Str *str_one(int c);
 extern Str *json_text(long v, Node *call);
 extern void check_web_call(Node *call);      /* check_web.c */
 extern void check_ops_call(Node *call);      /* check_ops.c, spec 055 */
+extern int ty_holds_func(Type *t);         /* check_generic.c */
 extern int allow_takes(char *code, Node *decl); /* check_structure.c */
 extern void check_web_routes(Node *list);
 extern Vec *web_inputs;
@@ -2476,6 +2477,7 @@ extern long sys_fchmod(int fd, long mode);
 extern long sys_pread_all(int fd, char *buf, long n, long off);
 /* src/build.c (spec 034) */
 extern const char vo_version_text[];
+extern long app_options; /* build.c: 1 in a built executable */
 extern long ld_app;      /* 1 while a built executable loads its embedded program (no source is read from the disk) */
 extern Str *app_entry;   /* the embedded entry path, or 0 in a toolchain */
 extern long app_manifest; /* the embedded vo.packages' file id, or -1 */

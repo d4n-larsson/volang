@@ -44,6 +44,9 @@ CHANGED = {
     'test-values/values.vo': (b'values.vo:12:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  12 |     expect_eq("abc", "abd");\n     |     ^^^^^^^^^^^^^^^^^^^^^^^\nvalues.vo:16:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  16 |     expect_eq([1, 2], [1, 3]);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^\nvalues.vo:20:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  20 |     expect_eq(new Point { x: 1, y: 2 }, new Point { x: 1, y: 3 });\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nvalues.vo:24:5: warning[W0603]: This check always has the same outcome: it does not depend on the program.\n  24 |     expect_eq(Shape.circle(1.0), Shape.empty);\n     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nFAIL strings (0ms)\n  values.vo:12:5: `expect_eq` failed: the values differ.\n    expected: "abd"\n    actual:   "abc"\nFAIL lists (0ms)\n  values.vo:16:5: `expect_eq` failed: the values differ.\n    expected: [1, 3]\n    actual:   [1, 2]\n    first difference at [1]: expected 3, actual 2\nFAIL records (0ms)\n  values.vo:20:5: `expect_eq` failed: the values differ.\n    expected: new Point { x: 1, y: 3 }\n    actual:   new Point { x: 1, y: 2 }\n    first difference at .y: expected 3, actual 2\nFAIL variants (0ms)\n  values.vo:24:5: `expect_eq` failed: the values differ.\n    expected: Shape.empty\n    actual:   Shape.circle(1.0)\n0 passed, 4 failed\n', 1),
 }
 
+# Codes `vo check` reports now where v1 reported them only at run time (the run still stops the same way).
+NOW_CHECKED = {"check-bad_main/bad_main.vo": {"E0409"}}  # inconsistency audit, 2026-11-25
+
 
 def vo(args, cwd, stdin=b""):
     return subprocess.run([VO] + args, cwd=cwd, input=stdin, capture_output=True, timeout=120)
@@ -136,13 +139,13 @@ def verify():
             entry = os.path.join(tmp, rel)
             base = entry[:-3]
             diags = diagnostics(entry)
-            v1codes = set(open(base + ".v1diags").read().split())
+            v1codes = set(open(base + ".v1diags").read().split()) | NOW_CHECKED.get(rel, set())
             other = sorted({d["code"] for d in diags} - MIGRATION - v1codes)
             if other:
                 problems.append(f"{rel}: non-migration diagnostics {other}")
                 continue
             apply_first_fixes(entry, diags)
-            after = [d for d in diagnostics(entry) if d["severity"] == "error"]
+            after = [d for d in diagnostics(entry) if d["severity"] == "error" and d["code"] not in NOW_CHECKED.get(rel, set())]
             if after:
                 problems.append(f"{rel}: still {len(after)} error(s) after one round: "
                                 f"{[d['code'] + ' ' + d['message'] for d in after][:3]}")

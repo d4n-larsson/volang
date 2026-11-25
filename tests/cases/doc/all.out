@@ -38,7 +38,7 @@ random_int (lo: int, hi: int) -> int
 env (name: str) -> result[str]
     an environment variable; `err("not set")`
 str (x: int | float | bool) -> str
-    a float as the shortest text `parse_float` reads back as the same value; `str(1.0)` is `"1.0"`
+    a float as the fewest digits `parse_float` reads back as the same value, without an exponent; `str(1.0)` is `"1.0"`; `nan`, `inf`, `-inf` (not read back)
 format (template: str, args...) -> str
     `template` a string literal; each `{}` or `{:spec}` takes the next argument (see Types)
 int (f: float) -> int
@@ -48,7 +48,7 @@ float (i: int) -> float
 parse_int (s: str) -> result[int]
     the whole text must be the number: no spaces, no `+` (`trim` first); else `err("invalid int: ...")`
 parse_float (s: str) -> result[float]
-    `-`, digits, optionally `.` and digits, at most 17 significant digits; else `err("invalid float: ...")`
+    `-`, digits, optionally `.` and digits and an exponent (`1e9`), at most 17 significant digits; else `err("invalid float: ...")`
 len (x: str | list[T] | map[K, T]) -> int
     for `str`: bytes, not characters
 slice (s: str, a: int, b: int) -> str

@@ -36,7 +36,7 @@ file: seven
 --- exit 0
 $ app app --vo-replay r.jsonl extra
 --- stderr
-error[T0001]: `replay` takes `--seed`, `--clock-ms` and program arguments from the recording; leave them out.
+error[T0001]: `replay` takes `--vo-seed`, `--vo-clock-ms` and program arguments from the recording; leave them out.
 --- exit 64
 $ app app --vo-replay
 --- stderr

@@ -1,0 +1,76 @@
+# Loops see what was there when they began: a list's one- and two-variable loops alike (additions not
+# visited, a shrinking list ends the loop, changed elements read as they are now); maps and ordered maps
+# their keys at the start with current values; deques and ordered sets a copy taken first.
+fn main() uses console {
+    let a = [1, 2];
+    for x in a {
+        if x < 4 {
+            push(a, x + 2);
+        }
+        write(str(x) + " ");
+    }
+    print("| list1 grow");
+    let b = [1, 2, 3];
+    for x in b {
+        if x == 1 {
+            match pop(b) {
+                case ok(_) {
+                }
+                case err(_) {
+                }
+            }
+        }
+        write(str(x) + " ");
+    }
+    print("| list1 shrink");
+    let c = [1, 2];
+    for _, x in c {
+        set c[1] = 9;
+        write(str(x) + " ");
+    }
+    print("| pair change");
+    let d = [1, 2];
+    for x in d {
+        set d[1] = 9;
+        write(str(x) + " ");
+    }
+    print("| list1 change");
+    let m = new map[str, int];
+    set m["a"] = 1;
+    set m["b"] = 2;
+    for k in keys(m) {
+        set m["b"] = 9;
+        set m["z"] = 5;
+        write(k + " ");
+    }
+    print("| map1");
+    for k, v in m {
+        set m["b"] = 7;
+        write(k + "=" + str(v) + " ");
+    }
+    print("| map pair");
+    let om = new ordered_map[str, int];
+    set om["a"] = 1;
+    set om["b"] = 2;
+    for k, v in om {
+        set om["b"] = 9;
+        write(k + "=" + str(v) + " ");
+    }
+    print("| omap pair");
+    let dq = new deque[int];
+    push(dq, 1);
+    push(dq, 2);
+    for x in dq {
+        push(dq, 3);
+        write(str(x) + " ");
+    }
+    print("| deque1");
+    let os = new ordered_set[int];
+    push(os, 1);
+    push(os, 2);
+    for x in os {
+        remove(os, 2);
+        write(str(x) + " ");
+    }
+    print("| oset1");
+}

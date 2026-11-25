@@ -496,8 +496,13 @@ static void cfor(Node *st)
     long value = -1; /* spec 046: the OPC_FOR_VALUE of a two-variable loop */
     int pair = (st->flags & NF_PAIR) != 0;
     int pair_map = pair && (st->b.n->type->kind == TY_MAP || st->b.n->type->kind == TY_OMAP);
-    long coll = pair ? c_new_temp() : 0; /* the map, or the list a range loop indexes */
-    if (pair) {
+    /* `for x in xs` over a list runs as `for _, x in xs`: one round per index there at the start, ending
+       early when the list shrinks (reference: additions are not visited, removed entries are skipped) */
+    int list1 = !pair && !st->c.n && st->b.n->type->kind == TY_LIST;
+    long coll = pair || list1 ? c_new_temp() : 0; /* the map, or the list a range loop indexes */
+    long hidden = list1 ? c_new_temp() : 0;     /* list1: the index, then the element (hidden + 8) */
+    if (list1) c_new_temp();
+    if (pair || list1) {
         c_mov(coll, cexpr(st->b.n, coll), st);
         if (pair_map) {
             /* ponytail: the keys the loop began with, 8 bytes an entry while it runs (as `for k in keys(m)`);
@@ -521,21 +526,23 @@ static void cfor(Node *st)
         c_emit(OPC_LOADK, it + 8, 0, 0, st);
         op = st->b.n->type->kind == TY_STR ? OPC_FOR_STR : OPC_FOR_LIST; /* spec 042: a text's characters */
     }
-    long head = c_emit(op, st->e.i * 8, it, 0, st); /* the first test (its exit target comes later) */
+    long index_slot = list1 ? hidden : st->e.i * 8;
+    long head = c_emit(op, index_slot, it, 0, st); /* the first test (its exit target comes later) */
     vec_push(c_fix, (void *)head);
     long body = c_here();
-    if (pair) {
-        value = c_emit(OPC_FOR_VALUE, (st->e.i + 1) * 8, coll, 0, st);
+    if (pair || list1) {
+        value = c_emit(OPC_FOR_VALUE, list1 ? hidden + 8 : (st->e.i + 1) * 8, coll, 0, st);
         vec_push(c_fix, (void *)value);
+        if (list1) c_mov(st->e.i * 8, hidden + 8, st);
     }
     c_cover(st->d.n, COV_LOOP); /* spec 018 */
     cblock(st->d.n);
     long cont = c_here(); /* continue: the back-edge (step, test, next value, jump) */
-    long step = c_emit(op == OPC_FOR_RANGE ? OPC_FOR_STEP : op == OPC_FOR_STR ? OPC_FOR_STR_STEP : OPC_FOR_LIST_STEP, st->e.i * 8, it, body, st);
+    long step = c_emit(op == OPC_FOR_RANGE ? OPC_FOR_STEP : op == OPC_FOR_STR ? OPC_FOR_STR_STEP : OPC_FOR_LIST_STEP, index_slot, it, body, st);
     vec_push(c_fix, (void *)step);
     long exit = c_here();
     c_target(head, exit);
-    if (pair) c_target(value, pair_map ? cont : exit);
+    if (pair || list1) c_target(value, pair_map ? cont : exit);
     c_loop_leave(cont, exit, outer_brk, outer_cont);
 }
 

@@ -17,12 +17,12 @@
 {"v":1,"kind":"doc","module":"builtins","name":"now_ms","item":"builtin","signature":"() -> int","description":"wall-clock milliseconds; with `--clock-ms N`: N, N+1, ..."}
 {"v":1,"kind":"doc","module":"builtins","name":"random_int","item":"builtin","signature":"(lo: int, hi: int) -> int","description":"uniform in `lo..hi` inclusive; R0007 if `lo > hi`; fixed by `--seed N`"}
 {"v":1,"kind":"doc","module":"builtins","name":"env","item":"builtin","signature":"(name: str) -> result[str]","description":"an environment variable; `err(\"not set\")`"}
-{"v":1,"kind":"doc","module":"builtins","name":"str","item":"builtin","signature":"(x: int | float | bool) -> str","description":"a float as the shortest text `parse_float` reads back as the same value; `str(1.0)` is `\"1.0\"`"}
+{"v":1,"kind":"doc","module":"builtins","name":"str","item":"builtin","signature":"(x: int | float | bool) -> str","description":"a float as the fewest digits `parse_float` reads back as the same value, without an exponent; `str(1.0)` is `\"1.0\"`; `nan`, `inf`, `-inf` (not read back)"}
 {"v":1,"kind":"doc","module":"builtins","name":"format","item":"builtin","signature":"(template: str, args...) -> str","description":"`template` a string literal; each `{}` or `{:spec}` takes the next argument (see Types)"}
 {"v":1,"kind":"doc","module":"builtins","name":"int","item":"builtin","signature":"(f: float) -> int","description":"truncates toward zero; R0007 for NaN or out of range"}
 {"v":1,"kind":"doc","module":"builtins","name":"float","item":"builtin","signature":"(i: int) -> float","description":"exact up to 2^53, else the nearest float"}
 {"v":1,"kind":"doc","module":"builtins","name":"parse_int","item":"builtin","signature":"(s: str) -> result[int]","description":"the whole text must be the number: no spaces, no `+` (`trim` first); else `err(\"invalid int: ...\")`"}
-{"v":1,"kind":"doc","module":"builtins","name":"parse_float","item":"builtin","signature":"(s: str) -> result[float]","description":"`-`, digits, optionally `.` and digits, at most 17 significant digits; else `err(\"invalid float: ...\")`"}
+{"v":1,"kind":"doc","module":"builtins","name":"parse_float","item":"builtin","signature":"(s: str) -> result[float]","description":"`-`, digits, optionally `.` and digits and an exponent (`1e9`), at most 17 significant digits; else `err(\"invalid float: ...\")`"}
 {"v":1,"kind":"doc","module":"builtins","name":"len","item":"builtin","signature":"(x: str | list[T] | map[K, T]) -> int","description":"for `str`: bytes, not characters"}
 {"v":1,"kind":"doc","module":"builtins","name":"slice","item":"builtin","signature":"(s: str, a: int, b: int) -> str","description":"bytes `a` to `b - 1`; R0003 out of range; R0007 if it splits a UTF-8 character"}
 {"v":1,"kind":"doc","module":"builtins","name":"slice","item":"builtin","signature":"(xs: list[T], a: int, b: int) -> list[T]","description":"a new list; R0003 out of range"}

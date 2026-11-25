@@ -1,0 +1,12 @@
+# A capitalized variable, parameter or function (and a lower-case effect set) is E0207 with its fix, at
+# the declaration and at each use: the line parses as with a correct name.
+effects storage = console;
+
+fn Show(Count: int) uses storage {
+    let Total = Count + 1;
+    print(str(Total));
+}
+
+fn main() uses console {
+    Show(2);
+}

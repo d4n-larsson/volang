@@ -467,6 +467,8 @@ Type *check_builtin(Node *call, long id, Type *expected)
         if (check_argc(call, 2)) {
             Type *t = check_arg(call, 0, 0);
             check_arg(call, 1, ty_bad(t) ? 0 : t);
+            if (!ty_bad(t) && ty_holds_func(t)) /* compared as == compares */
+                ck_err1("E0308", call, "`expect_eq` cannot compare `$1`: it holds a function, and functions cannot be compared.", ty_name(t));
         }
         return t_void;
     case B_OK: { /* ok(v) / ok() */
@@ -909,6 +911,10 @@ Type *check_binary(Node *node)
     if (op == T_EQ || op == T_NE) {
         node->d.i = op == T_EQ ? OP_EQ : OP_NE;
         if (k == TY_VOID || k == TY_FUNC) return op_error(node, l, r); /* functions cannot be compared */
+        if (ty_holds_func(l)) { /* nor what holds one */
+            ck_err("E0308", node, msg("`$1` cannot compare `$2`: it holds a function, and functions cannot be compared.", tok_raw((int)node->c.i), ty_name(l), 0));
+            return t_error;
+        }
         return t_bool;
     }
     if (op >= T_LT && op <= T_GE) { /* ordering: int, float, str */

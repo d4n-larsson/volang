@@ -1,0 +1,11 @@
+# E0311 on a parameter that already has a bound (here key): no fix, since a parameter takes one bound and
+# `[K: key: ordered]` would not parse.
+fn sorted_keys[K: key](m: map[K, int]) -> list[K] {
+    let ks = keys(m);
+    sort(ks);
+    return ks;
+}
+
+fn main() {
+    let _ = sorted_keys(new map[str, int]);
+}

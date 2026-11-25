@@ -201,7 +201,8 @@ static int is_item_kw(int kind)
  * not reserved: elsewhere it is an ordinary identifier). */
 static int p_at_effects(void)
 {
-    if (p_kind() != T_IDENT || p_kind_at(1) != T_TYPE_IDENT) return 0;
+    /* (a lower-case name followed by `=` too: E0207 then reports it, with the fix) */
+    if (p_kind() != T_IDENT || (p_kind_at(1) != T_TYPE_IDENT && !(p_kind_at(1) == T_IDENT && p_kind_at(2) == T_ASSIGN))) return 0;
     Token *t = p_tok();
     return str_eq_bytes(str_from_cstr("effects"), p_text + t->start, (long)t->end - (long)t->start);
 }
@@ -605,6 +606,13 @@ static Node *parse_primary(void)
         break;
     }
     case T_TYPE_IDENT: /* Type.case or Type.case(expr) */
+        if (p_kind_at(1) != T_DOT && p_kind_at(1) != T_LBRACE) { /* a capitalized variable or function: a name
+                                                                    (E0207 at its declaration, with the fix) */
+            if (p_kind_at(1) == T_LPAREN) goto call;
+            n = p_node(N_IDENT);
+            n->a.s = p_tok_str(p_next());
+            break;
+        }
         if (p_kind_at(1) == T_LBRACE) {
             p_missing_new(); /* `Point { ... }`: records are built with `new` */
             n = p_node(N_NEW_RECORD);

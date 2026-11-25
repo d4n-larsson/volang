@@ -118,6 +118,8 @@ static void app_register(char *p, long len)
     ld_app = 1;
 }
 
+long app_options; /* 1 in a built executable */
+
 /* The options of `vo run` a built executable takes as `--vo-NAME`; 1: the option has a value. */
 static const struct {
     char *name;
@@ -142,6 +144,7 @@ char **app_start(long *argc, char **argv)
     char *payload = app_payload(&len);
     if (!payload) return argv;
     app_register(payload, len);
+    app_options = 1; /* usage errors name the options as this executable takes them (`--vo-seed`) */
     long n = *argc;
     char **opts = alloc(n * 16 + 64), **prog = alloc(n * 8 + 8);
     long no = 0, np = 0;

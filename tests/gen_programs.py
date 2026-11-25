@@ -97,6 +97,7 @@ class Gen:
         # scopes: list of dicts name -> (type, mutable)
         self.scopes = [{}]
         self.loop_depth = 0
+        self.iterating = set()  # lists a `for` is visiting: nothing is pushed onto them (see s_for)
         self.depth = 0
         self.lines = []
         self.ind = 1
@@ -333,7 +334,7 @@ class Gen:
         self.declare(n, "list[int]", False)
 
     def s_push(self):
-        ls = self.vars_of("list[int]")
+        ls = [x for x in self.vars_of("list[int]") if x not in self.iterating]
         if not ls:
             return self.s_list()
         xs = self.r.choice(ls)
@@ -410,18 +411,24 @@ class Gen:
 
     def s_for(self):
         i = self.fresh("i")
+        xs = None  # the list visited, when it is one
         if self.r.random() < 0.5 or not self.vars_of("list[int]"):
             self.emit(f"for {i} in {self.r.randrange(0, 3)}..{self.r.randrange(2, 9)} {{")
         else:
             xs = self.r.choice(self.vars_of("list[int]"))
             self.emit(f"for {i} in {xs} {{")
-            if self.r.random() < 0.3:  # a list that grows inside its own loop
-                self.emit(f"    if len({xs}) < 12 {{")
-                self.emit(f"        push({xs}, {i} + 1);")
-                self.emit("    }")
+            # (no list that grows inside its own loop: since the inconsistency audit of 2026-11-25 such a loop
+            # visits only the elements there at its start, which the frozen oracle does not; run/loop_snapshot
+            # and run/vm_for_list_grow cover it. The draw stays, so the other programs stay the same.)
+            self.r.random()
         self.scopes.append({i: ("int", False)})
         self.loop_depth += 1
+        visited = xs if xs and xs not in self.iterating else None
+        if visited:
+            self.iterating.add(visited)
         self.block(self.r.randrange(1, 4))
+        if visited:
+            self.iterating.discard(visited)
         self.loop_depth -= 1
         self.scopes.pop()
         self.emit("}")

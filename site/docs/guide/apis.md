@@ -389,4 +389,4 @@ posted and the cookies: keep it as secret as the database. Cookies of the applic
 `serve_app("8080", 4, open_db, app)` serves the application with four worker processes, each with the
 context `open_db` returns (a database connection per worker). Tests call `handle_request(app, ctx,
 request(method, path, body))` with an in-memory database: the same steps, routes and checks, no port.
-The [notes-api](../examples/notes-api.md) example is a complete API with SQLite. Operations read HTML form bodies (`application/x-www-form-urlencoded`) as they read query parameters; the pages themselves are the frontend's.
+The [notes-api](../examples/notes-api.md) example is a complete API with SQLite. Operations read HTML form bodies (`application/x-www-form-urlencoded`) as they read query parameters (a form leaves out an unchecked box: a missing `bool` is `false`, and `on` is `true`); the pages themselves are the frontend's.

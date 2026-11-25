@@ -1,0 +1,9 @@
+1 2 | list1 grow
+1 2 | list1 shrink
+1 9 | pair change
+1 9 | list1 change
+a b | map1
+a=1 b=7 z=5 | map pair
+a=1 b=9 | omap pair
+1 2 | deque1
+1 2 | oset1

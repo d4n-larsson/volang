@@ -445,6 +445,47 @@ int ty_has_func(Type *t)
     }
 }
 
+static Vec *func_seen; /* the records and variants already looked at (recursive types) */
+
+static int holds_func_d(Type *t, long depth)
+{
+    if (!t || depth > 64) return 0;
+    switch (t->kind) {
+    case TY_FUNC: return 1;
+    case TY_LIST:
+    case TY_RESULT:
+    case TY_MAP:
+    case TY_OMAP:
+    case TY_OSET:
+    case TY_PQUEUE:
+    case TY_DEQUE: return holds_func_d(t->a.t, depth + 1) || (t->b.t && holds_func_d(t->b.t, depth + 1));
+    case TY_RECORD:
+    case TY_VARIANT: {
+        for (long i = 0; i < func_seen->n; i++)
+            if (vec_get(func_seen, i) == t) return 0;
+        vec_push(func_seen, t);
+        Node *decl = t->decl.n;
+        Vec *tps = ty_tparams_of(decl);
+        for (long i = 0; i < decl->b.v->n; i++) {
+            Node *m = vec_get(decl->b.v, i);
+            if (m->kind == N_COMMENT || !m->b.n || !m->b.n->type) continue;
+            Type *mt = tps && tps->n && t->b.v ? ty_subst(m->b.n->type, decl, t->b.v) : m->b.n->type;
+            if (holds_func_d(mt, depth + 1)) return 1;
+        }
+        return 0;
+    }
+    default: return 0;
+    }
+}
+
+/* Spec 055 follow-up: 1 when a value of type t holds a function anywhere (a field, an element, a case's
+ * value): such values cannot be compared, as functions cannot (E0308). */
+int ty_holds_func(Type *t)
+{
+    func_seen = vec_new();
+    return holds_func_d(t, 0);
+}
+
 /* Spec 014 (research R8): 1 when t mentions a type parameter of owner (one not bound yet). */
 int ty_mentions_owner(Type *t, Node *owner)
 {
@@ -616,6 +657,11 @@ int ck_param_order(Type *t, Node *node)
 {
     if (t->kind != TY_PARAM) return 0;
     if (t->b.i == TPC_ORDERED) return 1;
+    if (t->b.i != TPC_NONE) { /* a parameter takes one bound: `: ordered` added after `: key` would not parse */
+        ck_err("E0311", node, msg("`$1` is declared `$2`, which has no order; a type parameter takes one bound, so it cannot also be `ordered`.",
+                                  ty_param_name(t), str_from_cstr(t->b.i == TPC_KEY ? "key" : "json"), 0));
+        return 2;
+    }
     Diag *d = ck_err1("E0311", node,
                       "`$1` has no order: declare it as `$1: ordered` to compare or sort its values.",
                       ty_param_name(t));

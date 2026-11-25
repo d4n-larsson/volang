@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0311","name":"missing_ordered","severity":"error","file":"order_bounded.vo","start":{"line":5,"col":10},"end":{"line":5,"col":12},"text":"ks","message":"`K` is declared `key`, which has no order; a type parameter takes one bound, so it cannot also be `ordered`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

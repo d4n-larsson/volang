@@ -41,6 +41,7 @@
 ; effects: the names in a `uses` clause and in an `effects` definition
 (uses_clause "uses" (effect name: (effect_name) @constant.builtin))
 (effects_definition (effect name: (effect_name) @constant.builtin))
+(effects_definition name: (identifier) @constant.builtin) ; a lower-case set name (E0207)
 
 (annotation "@" @attribute name: (identifier) @attribute)
 

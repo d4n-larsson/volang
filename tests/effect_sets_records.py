@@ -78,7 +78,7 @@ def compare(src_dir, entry, run_args, problems, label):
         for d in (a, b):
             for sub in ("data", "out"):
                 os.makedirs(os.path.join(d, sub), exist_ok=True)
-        ms = lambda r: (r[0], re.sub(r"\(\d+ms\)", "(0ms)", r[1]))
+        ms = lambda r: (r[0], re.sub(r"\b\d+ms\)", "0ms)", r[1]))
         oa, ob = ms(vo(run_args + [entry], a)), ms(vo(run_args + [entry], b))
         if oa != ob:
             problems.append(f"{label}: `vo {' '.join(run_args)}` differs:\n--- original\n{oa[1]}--- with sets\n{ob[1]}")

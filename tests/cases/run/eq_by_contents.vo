@@ -1,0 +1,25 @@
+# Equality is by contents for every value, also one compared with itself: NaN inside a list or a record is
+# never equal, as a lone NaN is not. A generic function given functions stops: they cannot be compared.
+record P {
+    x: float;
+}
+
+fn same[T](a: T, b: T) -> bool {
+    return a == b;
+}
+
+fn inc(n: int) -> int {
+    return n + 1;
+}
+
+fn main() uses console {
+    let n = 0.0 / 0.0;
+    let xs = [n];
+    print(str(xs == xs) + " " + str(xs == slice(xs, 0, 1)));
+    let p = new P { x: n };
+    print(str(p == p));
+    let q = new P { x: 1.5 };
+    print(str(q == q) + " " + str(q == new P { x: 1.5 }));
+    print(str(same(1, 1)));
+    print(str(same(inc, inc)));
+}

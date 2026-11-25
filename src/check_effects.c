@@ -215,7 +215,7 @@ void fx_unknown_effect(Node *eff)
         return;
     }
     Diag *d = ck_err1(
-        "E0509", eff, "`$1` is not an effect: use console, input, file.read, file.write, file.delete, net, clock, random, env, serve or process.",
+        "E0509", eff, "`$1` is not an effect: use console, input, file.read, file.write, file.delete, net, clock, random, env, serve, process, entropy or log.",
         name);
     char *best = 0;
     unsigned long dist = 3;

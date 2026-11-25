@@ -29,6 +29,7 @@ long opt_workers; /* spec 028: vo run --workers N (0: as declared) */
 long opt_log_level = 1; /* spec 055: --log-level: 0 debug, 1 info, 2 warn, 3 error */
 long opt_drain = 30;     /* spec 055: --drain SECONDS */
 static long opt_ops_given; /* --log-level or --drain written (only with run) */
+static char *opt_run_given; /* --timeout, --seed, --clock-ms, --max-memory or --mem-stats written (the last) */
 long opt_remove; /* spec 007: vo package --remove */
 static void ca_files_load(void);
 long opt_filter; /* Str * */
@@ -74,6 +75,18 @@ int cstr_eq(char *a, char *b)
 /* Emits T0001 and exits 64. */
 void usage_error(Str *message)
 {
+    if (app_options) { /* a built executable: `--seed` is its `--vo-seed` */
+        SB *sb = sb_new();
+        for (long i = 0; i < message->len; i++) {
+            sb_byte(sb, message->data[i]);
+            if (message->data[i] == '`' && i + 2 < message->len && message->data[i + 1] == '-' && message->data[i + 2] == '-' &&
+                !(i + 5 < message->len && mem_eq(message->data + i + 3, "vo-", 3))) {
+                sb_cstr(sb, "--vo-");
+                i += 2;
+            }
+        }
+        message = sb_finish(sb);
+    }
     toolchain_error((int)opt_json, (int)report_fd, "T0001", message, 0);
     vo_exit(EXIT_USAGE);
 }
@@ -193,10 +206,8 @@ long load_source(Str *path)
     Str *m = msg("Cannot read `$1`.", path, 0, 0);
     toolchain_error((int)opt_json, (int)report_fd, "T0002", m, path);
     diag_errors++;
-    /* run prints no summary for an unreadable input. The summary is always JSON: main.s passed
-       cmd_name's result where the json flag belongs (kept for identical output; results.md
-       "Deviations" lists it for a fix after the port). */
-    if (opt_cmd != CMD_RUN) summary_emit(1, (int)report_fd, cmd_name(), file_count, 0);
+    if (opt_json) summary_emit(1, (int)report_fd, cmd_name(), file_count, 0); /* as every command stopping
+                                                                                 before it starts (also run) */
     vo_exit(EXIT_NOINPUT);
     return 0;
 }
@@ -278,12 +289,14 @@ int vo_main(long argc, char **argv, char **env)
             if (i >= argc || option_number(argv[i++], &v) || v < 0)
                 usage_error(str_from_cstr("`--timeout` needs a whole number of seconds."));
             opt_timeout = v;
+            opt_run_given = a;
         } else if (cstr_eq(a, "--filter")) {
             if (i >= argc) usage_error(str_from_cstr("`--filter` needs a text to match."));
             opt_filter = (long)str_from_cstr(argv[i++]);
         } else if (cstr_eq(a, "--seed") || cstr_eq(a, "--clock-ms")) {
             long which = cstr_eq(a, "--seed") ? 1 : 2;
             opt_seed_given = 1;
+            opt_run_given = a;
             if (i >= argc || option_number(argv[i++], &v) || v < 0)
                 usage_error(str_from_cstr("`--seed` and `--clock-ms` need a whole number."));
             rt_set_option(which, v);
@@ -332,10 +345,12 @@ int vo_main(long argc, char **argv, char **env)
             opt_ops_given = (long)a;
         } else if (cstr_eq(a, "--mem-stats")) {
             opt_mem_stats = 1;
+            opt_run_given = a;
         } else if (cstr_eq(a, "--max-memory")) {
             if (i >= argc || option_number(argv[i++], &v) || v < 1 || v > 65536)
                 usage_error(str_from_cstr("`--max-memory` needs a whole number of MiB from 1 to 65536."));
             gc_limit = v << 20; /* MiB -> bytes */
+            opt_run_given = a;
         } else { /* spec 006 options */
             long used = opt_spec006(a, i < argc ? argv[i] : 0);
             if (used < 0)
@@ -454,6 +469,11 @@ void opt_spec006_check(void)
     if (opt_redact && !(cmd == CMD_TEST && opt_record))
         usage_error(str_from_cstr("`--redact` needs `vo test --record DIR`."));
     if (opt_workers && cmd != CMD_RUN) only_with("--workers", "run"); /* spec 028 */
+    if (opt_run_given && cmd != CMD_RUN && cmd != CMD_TEST && cmd != CMD_REPLAY) /* (replay refuses a seed below) */
+        only_with(opt_run_given, opt_run_given[2] == 's' || opt_run_given[2] == 'c' ? "run` or `test" : "run`, `test` or `replay");
+    if (opt_filter && cmd != CMD_TEST) only_with("--filter", "test");
+    if (opt_check && cmd != CMD_FMT) only_with("--check", "fmt");
+    if (opt_update && cmd != CMD_EFFECTS) only_with("--update", "effects");
     if (opt_ops_given && cmd != CMD_RUN) only_with((char *)opt_ops_given, "run"); /* spec 055 */
     if (opt_trace && cmd != CMD_RUN && cmd != CMD_TEST && cmd != CMD_REPLAY)
         only_with("--trace", "run`, `test` or `replay");
