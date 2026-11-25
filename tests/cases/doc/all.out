@@ -1,6 +1,6 @@
 builtins:
 sort_by (xs: list[T], key: fn(T) -> C)
-    in place, stable; `C` is `int`, `float` or `str` (E0313)
+    in place, stable; `C` is an ordered type (E0313)
 map (xs: list[T], f: fn(T) -> U) -> list[U]
     `f` of each element, in order
 filter (xs: list[T], f: fn(T) -> bool) -> list[T]
@@ -76,7 +76,7 @@ chr (i: int) -> str
 abs (x: int | float) -> int | float
     same type as `x`
 min, max (a: C, b: C) -> C
-    `C` is `int`, `float` or `str`
+    `C` is an ordered type
 push (xs: list[T], v: T)
     appends
 pop (xs: list[T]) -> result[T]

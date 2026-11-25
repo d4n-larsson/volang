@@ -123,6 +123,23 @@ E0311's fix inserts `: ordered` and gives `[K: ordered: key]`, which is a parse 
 
 ## 2. Docs that disagree with the toolchain
 
+**Fixed** (all but the example `test` record, which still lacks `id`, `uses` and `cause`). Each was
+fixed in the docs to match the toolchain:
+- the exit-status table names every T code;
+- one statement of the ordered types (including `bytes` and records), to which `min`, `max`, `sort_by`
+  and `T: ordered` refer;
+- `const` and `effects` are only reserved where they start an item, and constants and effect sets can be
+  imported;
+- `_` as a `for` variable;
+- what an anonymous function cannot have;
+- `"cannot read PATH"` for reading a file;
+- the catalog: E0111 covers only `{`, the W0501 and W0602 examples, T0001's list, the code ranges,
+  E0506 before E0507;
+- the JSON kinds and summaries, `--json` with `mcp` and `lsp`, and the `doc` and `package` synopses.
+
+To stay under the token budget, the reference's formatting and mutation details moved to
+`site/docs/tools/fmt.md` and the guide.
+
 - **Exit statuses** (`reference.md:1336`). The table says 64 is "usage error (T0001)" and 65 is
   "check errors". But:
   - 64 is also T0004, T0005 and T0007 (`query.c:150`), T0008 (`replay.c:933`), T0010 (`doc.c:725`),

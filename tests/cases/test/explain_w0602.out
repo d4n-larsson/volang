@@ -18,8 +18,7 @@ fn main() uses console {
 }
 
 test "doubles" {
-    let d = double(4);
-    print(str(d));
+    let _ = double(4);
 }
 ```
 

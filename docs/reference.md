@@ -27,13 +27,13 @@ hello vo, count = 3
 
 - Source is UTF-8. Spaces, tabs and newlines only separate tokens; indentation has no meaning.
 - **Comments** are whole lines whose first non-blank character is `#`. A `#` after code is E0101. No block comments.
-- **Names**: functions, variables, parameters, record fields and variant cases are `snake_case` (`[a-z][a-z0-9_]*`). Records and variants are `PascalCase` (`[A-Z][A-Za-z0-9]*`). Other spellings are E0207, whose fix is the converted name.
-- `_` alone is the discard name. It is allowed only as `let _ = ...;` and as a `case` binding such as `case err(_)`. It is not allowed as a `for` variable or a parameter.
+- **Names**: functions, variables, parameters, record fields and variant cases are `snake_case` (`[a-z][a-z0-9_]*`). Records, variants and effect sets are `PascalCase` (`[A-Z][A-Za-z0-9]*`). Other spellings are E0207, whose fix is the converted name.
+- `_` alone is the discard name: `let _ = ...;`, a `case` binding such as `case err(_)`, and a `for` variable (`for _ in 0..n`). It is not allowed as a parameter.
 - **Integers**: `0`, `42`, `1000000`; `0xFF` and `0b1010` are 64-bit patterns (`0xFFFFFFFFFFFFFFFF` is `-1`). No `_` separators, octal or suffixes. Negative numbers use unary `-`: `-5`. The maximum is 9223372036854775807 (larger literals are E0105).
 - **Floats**: `1.0`, `0.5`, `1e9`, `1.5e-3`. Both sides of `.` are required (`1.` and `.5` are invalid); at most 17 significant digits.
 - **Strings**: `"..."` on one line, with the escapes `\n`, `\t`, `\r`, `\\`, `\"` and `\u{HEX}` (any other is E0103). A raw string, `` `...` ``, is its text as written (no escapes, any lines, no backtick), only for text with a backslash, a `"` or a line break (W0102). No single quotes, character type or interpolation: use `format` or `+`.
 - **Booleans**: `true`, `false`.
-- **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void uses prop requires ensures export bytes`.
+- **Keywords** (cannot be used as names): `fn record variant test import let var set if else while for in match case return break continue try new and or not true false int float bool str list map result void uses prop requires ensures export bytes`; `const` and `effects` only where they start an item.
 - No trailing commas anywhere (E0113).
 
 ```vo
@@ -451,7 +451,7 @@ Precedence, from tightest to loosest:
 - Logic uses words: `and`, `or`, `not`. `&&`, `||` and `!` do not exist. Operands must be `bool`.
 - Both operands of `+ - * /` must have the same type, `int` or `float`. `int + float` is E0301: convert one side with `float(i)` or `int(f)`. `%` is `int` only.
 - `int` division truncates toward zero: `7 / 2` is `3`, `-7 / 2` is `-3`, `-7 % 3` is `-1`. Dividing an `int` by zero is R0002. Overflow, including `-9223372036854775807 - 2`, is R0001. `float` arithmetic follows IEEE: `1.0 / 0.0` is `inf`, `0.0 / 0.0` is `nan`.
-- `<`, `<=`, `>`, `>=` compare two `int`, two `float` or two `str` (byte order), not `bool`.
+- `<`, `<=`, `>`, `>=` compare two values of one ordered type: `int`, `float`, `str` and `bytes` (byte order), and records whose fields are all ordered (field by field, in declaration order). Not `bool` or variants.
 - `==` and `!=` compare structurally: lists, maps, records, variants and results are equal when their contents are equal (`nan != nan`, also inside). Not functions, nor values holding one (E0308).
 - `x.field` reads a record field. Strings cannot be indexed (`s[0]` is E0308): use `slice`, `for c in s` or `byte_at`. No methods: write `len(xs)`, not `xs.len()`.
 - There is no ternary `a ? b : c`, no `+=`, no `++`, no `**` and no bitwise operators (`&`, `<<`: use `std.bits`).
@@ -503,7 +503,7 @@ fn main() {
 ## Functions as values
 
 ```text
-fn(x: int) -> int { return x * 2; }        anonymous function (the same syntax as `fn`, without a name)
+fn(x: int) -> int { return x * 2; }        anonymous function (as `fn`, without a name, type parameters, `uses` or contracts)
 fn(int) -> int uses console                 function type (parameter types, return type, effects)
 ```
 
@@ -515,7 +515,7 @@ fn(int) -> int uses console                 function type (parameter types, retu
 
 | Builtin | Signature | Notes |
 |---|---|---|
-| sort_by | `(xs: list[T], key: fn(T) -> C)` | in place, stable; `C` is `int`, `float` or `str` (E0313) |
+| sort_by | `(xs: list[T], key: fn(T) -> C)` | in place, stable; `C` is an ordered type (E0313) |
 | map | `(xs: list[T], f: fn(T) -> U) -> list[U]` | `f` of each element, in order |
 | filter | `(xs: list[T], f: fn(T) -> bool) -> list[T]` | the elements for which `f` is true, in order |
 | fold | `(xs: list[T], init: A, f: fn(A, T) -> A) -> A` | `f(f(init, xs[0]), xs[1])` ..., `init` for an empty list |
@@ -587,7 +587,7 @@ variant Tree[T] { leaf; node(Node[T]); }
 fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E { ... }
 ```
 
-- Type parameters follow the name. A plain `T` supports only `==` and `!=`; `T: ordered` also `<`, `<=`, `>`, `>=`, `min`, `max` and `sort`, and must be `int`, `float`, `str`, or a record whose fields are all ordered, compared field by field in declaration order (E0311, E0313). `T: json` is any type made of scalars, `bytes`, lists, `map[str, V]`, records and variants (E0328 otherwise). `K: key` is a map key type (E0309). `E: effects` is an effect parameter: whatever effects the function passed in has, the caller needs.
+- Type parameters follow the name. A plain `T` supports only `==` and `!=`; `T: ordered` also `<`, `<=`, `>`, `>=`, `min`, `max` and `sort`, and must be an ordered type (Operators; E0311, E0313). `T: json` is any type made of scalars, `bytes`, lists, `map[str, V]`, records and variants (E0328 otherwise). `K: key` is a map key type (E0309). `E: effects` is an effect parameter: whatever effects the function passed in has, the caller needs.
 - Generic types are written with their arguments: `Pair[int, str]` (E0312).
 - Type arguments are never written at calls, and may be left out of `new` and of cases: they come from the arguments or field values, then from the expected type (a parameter, a return type, an annotated variable): `insert(Tree.leaf, 5)`, `new Pair { first: 1, second: "a" }`. Effect arguments come from the expected type first when it has them, so values with fewer effects fit a declared `list[Route[uses file.read]]`; a type's effects allow any scope. When they cannot be inferred, annotate the variable (E0310).
 - Generic code is checked once, where it is written.
@@ -889,7 +889,7 @@ fn main() uses console {
 | ord | `(s: str) -> int` | code point of a one-character string (R0007 otherwise) |
 | chr | `(i: int) -> str` | the one-character string for a code point |
 | abs | `(x: int \| float) -> int \| float` | same type as `x` |
-| min, max | `(a: C, b: C) -> C` | `C` is `int`, `float` or `str` |
+| min, max | `(a: C, b: C) -> C` | `C` is an ordered type |
 | push | `(xs: list[T], v: T)` | appends |
 | pop | `(xs: list[T]) -> result[T]` | removes the last element; `err("empty")` |
 | sort | `(xs: list[C])` | in place, ascending, stable |
@@ -1106,11 +1106,11 @@ PASS sorting twice changes nothing (100 cases, 0ms)
 
 ### Coverage and mutation testing
 
-`vo test --coverage` lists what the selected tests never ran in the program's own files: functions, branches (also an `if` whose condition was never false), `match` cases, loop bodies, then totals. `vo test --mutate` runs the tests (they must pass, T0012), then changes the functions they reach one step at a time (`<` to `<=`, `+` to `-`, `and` to `or`, `true` to `false`, dropping `not`, `n` to `n + 1`) and reruns the tests that reach it. Each change no test notices is a check you are missing: `SURVIVED main.vo:2:12 in is_adult: \`age >= 18\` -> \`age > 18\``. A failing, erroring or much slower test counts as noticing. Survivors are candidates: a change can behave like the original. `--max-mutants N` (default 500) caps the changes, `--diff` limits them to changed functions; neither option changes the exit status. W0602 is a test with no check, W0603 a check that cannot depend on the program.
+`vo test --coverage` lists what the selected tests never ran in the program's own files: functions, branches (also an `if` whose condition was never false), `match` cases, loop bodies, then totals. `vo test --mutate` runs the tests (they must pass, T0012), then changes the functions they reach one step at a time (`<` to `<=`, `+` to `-`, `and` to `or`, `true` to `false`, dropping `not`, `n` to `n + 1`) and reruns the tests that reach it. Each change no test notices (`SURVIVED`) is a check you are probably missing; a failing, erroring or much slower test counts as noticing. `--max-mutants N` (default 500) caps the changes, `--diff` limits them to changed functions; neither option changes the exit status. W0602 is a test with no check, W0603 a check that cannot depend on the program.
 
 ## Programs in several files
 
-`import a.b.name;` loads the file `a/b.vo`, relative to the importing file's directory, and makes its top-level item `name` (a function, record or variant) visible. Only items declared with `export` (`export fn`, `export record`, `export variant`) can be imported; the others are private, and importing one is E0209, whose fix adds `export`. An exported function, record or variant cannot use a private type of its file (E0210). Write one `import` per name. Imports come before all items. Paths cannot contain `..`, and import cycles are E0206. A sibling file's name used without its import is E0204, whose fix adds the `import`. Run the program through the file containing `main`: `vo run main.vo`.
+`import a.b.name;` loads the file `a/b.vo`, relative to the importing file's directory, and makes its top-level item `name` (a function, record, variant, constant or effect set) visible. Only items declared with `export` (`export fn`, `export record`, `export variant`) can be imported; the others are private, and importing one is E0209, whose fix adds `export`. An exported function, record or variant cannot use a private type of its file (E0210). Write one `import` per name. Imports come before all items. Paths cannot contain `..`, and import cycles are E0206. A sibling file's name used without its import is E0204, whose fix adds the `import`. Run the program through the file containing `main`: `vo run main.vo`.
 
 ```vo
 # file: geometry.vo
@@ -1140,7 +1140,7 @@ fn main() uses console {
 
 ### Structure
 
-A program is a thin shell over a pure core: `main` and the other functions with effects gather input, call functions without `uses` and act on their result, so the decisions can be tested with no grant. Write one concept per file, tests next to the code they test, and one function instead of copies (with an effect parameter when copies differ only in effects). `vo check` warns about a function with effects that has 15 or more statements using no effect (W0701), a file over 400 code lines (W0702), a function over 50 statements (W0703), 6 or more statements repeating earlier ones (W0704), and a test calling only another file's functions (W0705). `@allow("W0703", "reason")` on the line above a `fn`, `test` or `prop` accepts one such warning there; an unused one is W0706.
+A program is a thin shell over a pure core: `main` and the other functions with effects gather input, call functions without `uses` and act on their result, so the decisions can be tested with no grant. Write one concept per file, tests next to the code they test, and one function instead of copies (with an effect parameter when copies differ only in effects). `vo check` warns about a function with effects and 15 or more statements using none (W0701), a file over 400 code lines (W0702), a function over 50 statements (W0703), repeated statements (W0704) and a test far from its code (W0705). `@allow("W0703", "reason")` above a `fn`, `test` or `prop` accepts one of these (or W0506) there; an unused one is W0706.
 
 ## Standard library and packages
 
@@ -1179,7 +1179,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 - `std.web`: an app is `web_app([on_get("/notes/{id}", show), ...])` (or a `new App` with steps and error kinds); an operation is `fn(ctx: C, input: I) -> result[Response]`, `I` a record whose fields take the path variable of their name, the JSON body (field `body`), a header (`@header("Name")`) or the query parameter of their name, checked by its annotations (else a 400/415/422 problem). `err("not_found: detail")` answers 404 (also `bad_request`, `unauthorized`, `forbidden`, `conflict`, `gone`, `unprocessable`, and `App.errors`); other errors 500. An operation with a typed error is wrapped, `typed(op, answer)`, `answer` mapping each error to a `Problem { status, detail }`. Patterns are checked literals (E0330, E0331). `serve_app(address, workers, setup, app)` serves it; tests call `handle_request(app, ctx, request(method, path, body))`. Answers: `ok(json_reply(200, note))`, `created("/notes/7", note)`, `no_content()`. Bodies are JSON or an HTML form, whose fields bind like query parameters. Cookies: `read_cookie(header, name)`, `with_cookie(resp, cookie(name, value))` (HttpOnly, Secure, SameSite=Lax unless changed). Under `browser`, a cookie-signed change must come from the app's own origin (else 403). Recordings of signed-in apps hold passwords and cookies.
 - `std.process.run(program, args)` runs a program with no shell, no input and an empty environment and returns `Output { code, stdout, stderr }`; `run_with` adds input text and `NAME=value` variables. A non-zero exit is `ok`; killed by signal n, `code` is 128 + n. `--timeout` covers the program and everything it starts. A started program is not confined: `process("git")` grants whatever `git` can do.
 - Large inputs come in pieces: `each_line(path, f)`, `each_chunk`, `send_stream` and `run_lines` call `f` per piece; `f` returns `ok(true)` to go on, `ok(false)` to stop.
-- File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.
+- File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...; reading one: `"cannot read PATH"`); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.
 - Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b.item;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` (or an `https://` archive URL; `--restore ENTRY` fetches missing ones) adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
 
 ```vo
@@ -1305,7 +1305,7 @@ fn main() uses console {
 
 ```sh
 vo check     [--json] PATH...
-vo run       [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--ca-file FILE] [--workers N] [--log-level L] [--drain SEC] FILE [-- ARG...]
+vo run       [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--ca-file FILE] [--workers N] [--log-level LEVEL] [--drain SEC] FILE [-- ARG...]
 vo build     [--json] [-o OUTPUT] [--base TOOLCHAIN] FILE
 vo test      [--json] [--timeout SEC] [--seed N] [--clock-ms N] [--max-memory MiB] [--mem-stats] [--filter TEXT] [--test ID] [--spec ID] [--diff FILE] [--ca-file FILE] [--record DIR [--redact NAME] | --replay DIR] [--list | --coverage | --mutate [--max-mutants N]] PATH...
 vo fmt       [--json] [--check] PATH...
@@ -1317,8 +1317,8 @@ vo query     [--json] callers|refs|type-at ENTRY TARGET | specs ENTRY
 vo impact    [--json] ENTRY --diff FILE
 vo edit      [--json] [--dry-run] rename|add-field ENTRY ...
 vo replay    [--json] [--trace FILE] [--timeout SEC] [--max-memory MiB] [--mem-stats] RECORDING
-vo doc       [--json] [ENTRY] [NAME]
-vo package   [--json] ENTRY NAME DIRECTORY|URL | --remove ENTRY NAME | --restore ENTRY
+vo doc       [--json] [MODULE | ENTRY NAME]
+vo package   [--json] [--ca-file FILE] [--dir DIR] ENTRY NAME DIRECTORY|URL | --remove ENTRY NAME | --restore ENTRY
 vo mcp
 vo lsp
 ```
@@ -1333,7 +1333,7 @@ vo lsp
 - `fmt` rewrites files in canonical form; `fmt --check` only lists the non-canonical files.
 - `mcp` serves the commands as Model Context Protocol tools (the same JSON; this document as `vo://reference`) and `lsp` the Language Server Protocol (diagnostics, fixes, hover, navigation, rename, formatting), on stdin/stdout.
 - `reference` prints this document. `version` prints `vo <semver> schema 1` and `tzdata <release>`.
-- `--json` works with every command and switches reports to JSON lines (see Machine-readable output).
+- `--json` works with every command but `mcp` and `lsp` and switches reports to JSON lines (see Machine-readable output).
 - `run` writes its own reports (diagnostics, runtime errors) to stderr, so the program's stdout stays clean. Every other command reports on stdout.
 
 Exit statuses:
@@ -1342,16 +1342,16 @@ Exit statuses:
 |---|---|
 | 0 | success (warnings never change the status) |
 | 0–63 | `run`: the code passed to `exit()`; normal end of `main` is 0, `main` returning `err` is 1 |
-| 1 | `test`: a test did not pass; `fmt --check`: a file is not canonical |
-| 64 | usage error (T0001) |
-| 65 | check errors |
-| 66 | input file or directory cannot be read (T0002) |
+| 1 | `test`: a test did not pass (T0012: `--mutate` needs them all to); `fmt --check`: a file is not canonical |
+| 64 | usage error (T0001); a missing or unfit target, test, diff, recording, certificate or name (T0004, T0005, T0007, T0008, T0010, T0011, T0013) |
+| 65 | check errors; an edit that would add one (T0006) |
+| 66 | input file or directory cannot be read (T0002); a damaged built executable (T0014) |
 | 70 | runtime error |
 | 74 | a trace or recording cannot be written (T0009) |
 | 124 | timeout (R0009) |
 | 125 | internal error in vo (T0003) |
 
-Canonical formatting (`vo fmt`): 4-space indent, `{` on the same line, one statement per line, no blank lines inside blocks, one blank line between items (none after a comment unless the source has one: a comment right above an item is its documentation), single spaces around binary operators and after `,` and `:`, and parentheses only where needed, except that an `and` written in parentheses inside an `or` keeps them. A line over 100 characters is broken inside the outermost list, argument list or `new` record that ends it, one item per line with the closing bracket on its own line (a call's last list or record argument keeps its bracket on the call's line: `web_app([`); operands of operators are never broken. A long `fn`, `test` or `prop` header puts `uses ...` on its own line, then if still long its parameters one per line; function types are never broken.
+Canonical formatting (`vo fmt`): 4-space indent, `{` on the same line, one statement per line, no blank lines inside blocks, one blank line between items (a comment right above an item is its documentation), single spaces around binary operators and after `,` and `:`, parentheses only where needed. A line over 100 characters is broken inside the outermost list, argument list or `new` record that ends it, one item per line; a long header puts `uses ...` on its own line.
 
 ```vo-fmt
 fn main() uses console{
@@ -1401,13 +1401,13 @@ With `print(total);` on line 3 instead, `vo check --json main.vo` prints:
 {"v":1,"kind":"test","name":"doubles","status":"fail","file":"main.vo","start":{"line":5,"col":1},"ms":0,"failure":{"file":"main.vo","start":{"line":6,"col":5},"end":{"line":6,"col":28},"message":"`expect_eq` failed: the values differ.","expected":"8","actual":"9"}}
 ```
 
-**summary**: the last record of every `check`, `test` and `fmt`, and of `run` when it stops before the program starts: `{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}`. `test` adds `passed`, `failed`, `errored`, `timed_out`; `fmt` adds `changed`. At most 50 diagnostics are listed; `truncated` counts the rest.
+**summary**: the last record of every command that reads a program (`check`, `test`, `fmt`, `effects`, `query`, ...), of `build` when it fails, and of `run` when it stops before the program starts: `{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}`. `test` adds `passed`, `failed`, `errored`, `timed_out`; `fmt` adds `changed`. At most 50 diagnostics are listed; `truncated` counts the rest.
 
-Other kinds: `toolchain_error` (`code`, `name`, `message`, optional `path` and `related` declarations) for T codes, `ref`, `type_at`, `impact` and `edit` (see Querying and editing programs; `edit` is a fix with the replaced `text`), `replay` (a changed program), `explain` (`code`, `name`, `fixable`, `text`), `reference` (`text`), `version` (`version`, `schema`), `fmt` (`file`, `changed`), and from `test`: `test_entry` (`--list`: `id`, `name`, `test_kind`, `file`, `start`, `end`, `doc`, `uses`, `spec`), `coverage` (`file`, `start`, `end`, `point`, `function`), `coverage_summary`, `mutant` (`file`, `start`, `end`, `function`, `text`, `mutated`, `tests`) and `mutation_summary` (`mutants`, `caught`, `survived`, `not_tried`). The test summary adds `selected` (or `listed`).
+Other kinds: `toolchain_error` (`code`, `name`, `message`, optional `path` and `related` declarations) for T codes, `ref`, `type_at`, `impact` and `edit` (see Querying and editing programs; `edit` is a fix with the replaced `text`), `replay` (a changed program), `explain` (`code`, `name`, `fixable`, `text`), `reference` (`text`), `version` (`version`, `schema`), `fmt` (`file`, `changed`), `capabilities` (`vo effects`: `entry`, `file`, `uses`), `build` (`output`, `files`, `bytes`), and from `test`: `test_entry` (`--list`: `id`, `name`, `test_kind`, `file`, `start`, `end`, `doc`, `uses`, `spec`), `coverage` (`file`, `start`, `end`, `point`, `function`), `coverage_summary`, `mutant` (`file`, `start`, `end`, `function`, `text`, `mutated`, `tests`) and `mutation_summary` (`mutants`, `caught`, `survived`, `not_tried`). The test summary adds `selected` (or `listed`).
 
 ## Error codes
 
-Every diagnostic, runtime error and toolchain error has a stable code, and `vo explain CODE` prints what it means, an example and the fix. Ranges: E01xx syntax (E0101 to E0120), E02xx names and imports, E03xx types, E04xx control flow, `match` and results, Wxxxx warnings (they never fail a command), E07xx packages, R00xx runtime errors (exit status 70; R0009 timeout is 124) and T00xx toolchain errors. When a diagnostic has no fix, read `vo explain` before changing code.
+Every diagnostic, runtime error and toolchain error has a stable code, and `vo explain CODE` prints what it means, an example and the fix. Ranges: E01xx syntax, E02xx names and imports, E03xx types, E04xx control flow, `match` and results, E05xx effects, E06xx holes, tests and contracts, E07xx packages, Wxxxx warnings (they never fail a command; W07xx: structure), R00xx runtime errors (exit status 70; R0009 timeout is 124) and T00xx toolchain errors. When a diagnostic has no fix, read `vo explain` before changing code.
 
 ```vo
 fn main() uses console {

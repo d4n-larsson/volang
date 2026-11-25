@@ -11,10 +11,12 @@ vo fmt [--json] [--check] PATH...
 `PATH` is a `.vo` file or a directory (every `*.vo` file under it, recursively, in sorted order). Only
 the files given are formatted, not the files they import.
 
-The canonical form is described in the reference's [Command line](../reference/command-line.md) section:
+The canonical form (summed up in the reference's [Command line](../reference/command-line.md) section):
 4-space indent, `{` on the same line, one statement per line, no blank lines inside blocks, one blank line
-between items, single spaces around binary operators and after `,` and `:`, parentheses only where needed,
-and effects in canonical order. Comments are kept. A line over 100 characters is broken inside the
+between items (none after a comment unless the source has one: a comment right above an item is its
+documentation), single spaces around binary operators and after `,` and `:`, parentheses only where needed
+(an `and` written in parentheses inside an `or` keeps them), and effects in canonical order. Comments are
+kept. A line over 100 characters is broken inside the
 outermost list, argument list or `new` record that ends it, one item per line; a call's last list or
 record argument keeps its bracket on the call's line, and operands of operators are never broken:
 

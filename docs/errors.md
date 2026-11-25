@@ -156,11 +156,11 @@ fn main() uses console {
 
 ## E0111 unclosed_delimiter
 
-A `(`, `[` or `{` is never closed.
+A `{` is never closed.
 
 Fixable: yes
 
-An opening `(`, `[` or `{` has no matching closer before the end of the file. The diagnostic's `related` location points at the opening delimiter. The fix inserts the closer, but check that it belongs where the fix puts it.
+An opening `{` has no matching `}` before the end of the file. The diagnostic's `related` location points at the opening brace. The fix inserts the `}`, but check that it belongs where the fix puts it. An unclosed `(` or `[` is E0110 instead: the parser expects its closer where the expression ends.
 
 ### Example
 
@@ -2850,36 +2850,6 @@ fn main() uses console {
 }
 ```
 
-## E0507 uses_on_anonymous_fn
-
-An anonymous function has a `uses` clause.
-
-Fixable: yes
-
-Anonymous functions get their effects from their body; only named functions and tests declare them. The fix removes the clause.
-
-### Example
-
-```vo
-fn main() uses console {
-    let f = fn(x: int) uses console {
-        print(str(x));
-    };
-    f(1);
-}
-```
-
-### Fixed
-
-```vo
-fn main() uses console {
-    let f = fn(x: int) {
-        print(str(x));
-    };
-    f(1);
-}
-```
-
 ## E0506 invalid_scope
 
 A scope in a `uses` clause is empty, absolute, or leaves the working directory with `..`.
@@ -2923,6 +2893,36 @@ fn main() uses console, file.read {
             print(e);
         }
     }
+}
+```
+
+## E0507 uses_on_anonymous_fn
+
+An anonymous function has a `uses` clause.
+
+Fixable: yes
+
+Anonymous functions get their effects from their body; only named functions and tests declare them. The fix removes the clause.
+
+### Example
+
+```vo
+fn main() uses console {
+    let f = fn(x: int) uses console {
+        print(str(x));
+    };
+    f(1);
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let f = fn(x: int) {
+        print(str(x));
+    };
+    f(1);
 }
 ```
 
@@ -3452,7 +3452,7 @@ Declarations are the capabilities a function is granted, so unneeded ones are re
 ### Example
 
 ```vo
-fn add(a: int, b: int) -> int uses file.read {
+fn add(a: int, b: int) -> int uses console {
     return a + b;
 }
 
@@ -3720,8 +3720,7 @@ fn main() uses console {
 }
 
 test "doubles" {
-    let d = double(4);
-    print(str(d));
+    let _ = double(4);
 }
 ```
 
@@ -4904,7 +4903,7 @@ The command line is not valid.
 
 Fixable: no
 
-The command, a flag or the number of arguments is not valid (exit status 64). The message lists the valid commands or options. This includes an option given to a command it does not belong to (`--trace` only works with `run`, `test` and `replay`, `--record` only with `run`, `--diff` only with `impact`, `--dry-run` only with `edit`), `--trace-limit` without `--trace`, `--seed`, `--clock-ms` or program arguments with `replay` (they come from the recording), and a trace or recording path that is a source file of the program.
+The command, a flag or the number of arguments is not valid (exit status 64). The message lists the valid commands or options. This includes an option given to a command it does not belong to (`--trace` only works with `run`, `test` and `replay`, `--record` only with `run` and `test`, `--diff` only with `impact` and `test`, `--dry-run` only with `edit`, `--filter` only with `test`), `--trace-limit` without `--trace`, `--seed`, `--clock-ms` or program arguments with `replay` (they come from the recording), and a trace or recording path that is a source file of the program.
 
 ### Example
 

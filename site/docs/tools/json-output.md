@@ -4,7 +4,7 @@ With `--json`, every command reports in JSON lines, one object per line, and tra
 
 ## Rules
 
-- `--json` works with every command, anywhere after the command name (`vo check main.vo --json` too). It
+- `--json` works with every command but `vo mcp` and `vo lsp` (which speak JSON already), anywhere after the command name (`vo check main.vo --json` too). It
   switches `vo`'s own reports to JSON; the program's output is never wrapped.
 - Every record is one line and starts with `{"v":1,"kind":...}`: `v` is the schema version, `kind` says
   which record it is.

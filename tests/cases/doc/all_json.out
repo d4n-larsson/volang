@@ -1,4 +1,4 @@
-{"v":1,"kind":"doc","module":"builtins","name":"sort_by","item":"builtin","signature":"(xs: list[T], key: fn(T) -> C)","description":"in place, stable; `C` is `int`, `float` or `str` (E0313)"}
+{"v":1,"kind":"doc","module":"builtins","name":"sort_by","item":"builtin","signature":"(xs: list[T], key: fn(T) -> C)","description":"in place, stable; `C` is an ordered type (E0313)"}
 {"v":1,"kind":"doc","module":"builtins","name":"map","item":"builtin","signature":"(xs: list[T], f: fn(T) -> U) -> list[U]","description":"`f` of each element, in order"}
 {"v":1,"kind":"doc","module":"builtins","name":"filter","item":"builtin","signature":"(xs: list[T], f: fn(T) -> bool) -> list[T]","description":"the elements for which `f` is true, in order"}
 {"v":1,"kind":"doc","module":"builtins","name":"fold","item":"builtin","signature":"(xs: list[T], init: A, f: fn(A, T) -> A) -> A","description":"`f(f(init, xs[0]), xs[1])` ..., `init` for an empty list"}
@@ -36,7 +36,7 @@
 {"v":1,"kind":"doc","module":"builtins","name":"ord","item":"builtin","signature":"(s: str) -> int","description":"code point of a one-character string (R0007 otherwise)"}
 {"v":1,"kind":"doc","module":"builtins","name":"chr","item":"builtin","signature":"(i: int) -> str","description":"the one-character string for a code point"}
 {"v":1,"kind":"doc","module":"builtins","name":"abs","item":"builtin","signature":"(x: int | float) -> int | float","description":"same type as `x`"}
-{"v":1,"kind":"doc","module":"builtins","name":"min, max","item":"builtin","signature":"(a: C, b: C) -> C","description":"`C` is `int`, `float` or `str`"}
+{"v":1,"kind":"doc","module":"builtins","name":"min, max","item":"builtin","signature":"(a: C, b: C) -> C","description":"`C` is an ordered type"}
 {"v":1,"kind":"doc","module":"builtins","name":"push","item":"builtin","signature":"(xs: list[T], v: T)","description":"appends"}
 {"v":1,"kind":"doc","module":"builtins","name":"pop","item":"builtin","signature":"(xs: list[T]) -> result[T]","description":"removes the last element; `err(\"empty\")`"}
 {"v":1,"kind":"doc","module":"builtins","name":"sort","item":"builtin","signature":"(xs: list[C])","description":"in place, ascending, stable"}
