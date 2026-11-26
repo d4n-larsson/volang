@@ -25,7 +25,11 @@
         "extensions": [
           ".vo"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./icons/vo.svg",
+          "dark": "./icons/vo.svg"
+        }
       }
     ],
     "grammars": [
