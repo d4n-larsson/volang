@@ -94,17 +94,11 @@ same output as the `if` chain it replaces; golden cases cover each new diagnosti
 4. **Given** a `match` on a `float`, `bool`, `bytes`, list, map or record, **When** checked, **Then** an
    error says which types `match` accepts.
 
-### User Story 3 - Old chains point to `match` (Priority: P3)
+### User Story 3 - Old chains point to `match` (dropped)
 
-An `if`/`else if` chain that compares one local or parameter with `==` to three or more distinct
-literals or constants gets a warning whose fix rewrites it as a `match`, as W0403 does for loops
-replaced by spec 046.
-
-**Why this priority**: it keeps one way to dispatch on a value without breaking existing programs; the
-warning never fails a command.
-
-**Independent Test**: the examples and std, after applying the warning's fixes, give identical output
-and test results.
+Dropped on 2026-11-26 (plan research R8): no `if`/`else if` chain in `std/` or `examples/` compares one
+local or parameter with three or more values, so the warning would rewrite nothing; the value `match` is
+the one form for new code.
 
 ### Edge Cases
 
@@ -140,7 +134,8 @@ and test results.
 - **FR-004**: The fields of a case form a type, written `Variant.case`, usable anywhere a type is. It is
   equal, ordered, a map key and JSON-convertible exactly when a record with the same fields would be.
 - **FR-005**: `to_json` and `from_json` encode a case with fields exactly as the same case carrying a
-  record with those fields; `vo` prints it with the same text. A golden case proves both for every std
+  record with those fields; `vo` prints it in its construction syntax (`LoadError.malformed { path: "a",
+  line: 3, reason: "x" }`; amended by plan research R4: the record's name no longer exists). A golden case proves both for every std
   error variant that is migrated.
 - **FR-006**: A case declared with exactly one field is a diagnostic with a fix that rewrites it to the
   one-value form and its constructions and bindings accordingly.
@@ -159,12 +154,9 @@ and test results.
   by the value form; the statement table shows both shapes.
 
 **Chains and migration**
-- **FR-012**: A warning with a fix reports an `if`/`else if` chain whose conditions are all `x == V`
-  (same `x`, a local or parameter of type `int` or `str`, `V` distinct literals or constants) with at
-  least three arms; the fix rewrites it as a value `match`, the final `else` (or an empty one) becoming
-  the `else` arm. The warning respects `@allow`.
+- **FR-012**: Dropped with User Story 3 (plan research R8).
 - **FR-013**: The std library and examples are reviewed: payload records whose only use is one case
-  become fields where the JSON and the exported API are unchanged; the chains of FR-012 are rewritten.
+  become fields where the JSON and the exported API are unchanged.
   The changelog lists every exported type that disappears this way.
 
 **Tools and docs**
@@ -185,8 +177,8 @@ and test results.
 
 - **SC-001**: In `std/` and `examples/`, at least 80% of the records used only as the payload of a single
   case are removed, with byte-identical JSON output and test results.
-- **SC-002**: Every `if`/`else if` chain matching FR-012 in `std/` and `examples/` is rewritten by the
-  warning's fix, with identical output on x86-64, ARM64 and RISC-V.
+- **SC-002**: Dropped with User Story 3; every migrated program gives identical output on x86-64, ARM64
+  and RISC-V (as SC-001 requires).
 - **SC-003**: Every new diagnostic has a golden case and a catalog entry with a broken and a fixed
   example; each fix's result checks clean.
 - **SC-004**: Property tests over a variant with field cases generate, shrink and print those cases,
