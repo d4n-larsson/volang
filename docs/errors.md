@@ -4505,6 +4505,8 @@ Fixable: no
 
 A versioned package carries its own `vo.packages`, the packages it requires, and the program's manifest must list each of them at the required version or a higher one. `vo package` keeps the manifest complete; a merge or a hand edit can leave it incomplete. `vo check`, `vo run`, `vo test` and `vo build` then stop with this code at the line of the package that requires something, and fetch nothing. The fix is one command: `vo package --repair ENTRY` adds what is missing, raises what is too low, and drops packages nothing requires any more (`--dry-run` shows the changes first). An entry without a version (a local directory) for the required name is the author's own choice and is not checked.
 
+`vo package` also reports this code, and changes nothing, when a package it would add has a line without a version in its own manifest (a local directory or an archive): nobody else can fetch that requirement. Only the package's author can fix it, by requiring a versioned source.
+
 ### Example
 
 ```text

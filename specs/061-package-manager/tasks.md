@@ -262,7 +262,7 @@ program runs.
 
 ## Phase 7: User Story 5 - Write a package that others can depend on (P2)
 
-- [ ] T026 [US5] Step case `tests/cases/packages/author/`, failing first: a package folder with its own
+- [X] T026 [US5] Step case `tests/cases/packages/author/`, failing first: a package folder with its own
   `vo.packages` (one versioned requirement) and a `test` item: `vo package --restore lib.vo` then `vo
   test lib.vo` inside it; the same content served as `repos/kit/1.0.0` and added by a program brings
   the requirement. `repos/broken/1.0.0` whose manifest has a version-less line → add fails with E0709
@@ -270,7 +270,7 @@ program runs.
   `release-3` beside `v1.0.0` (a `tags` file in the repo folder, read by `tests/git_server.py`) are
   ignored by add, `--outdated` and E0711's list. A package in a sub-folder with its manifest there
   (`#kit`) is read from that folder.
-- [ ] T027 [US5] `src/pkgselect.c`: the version-less requirement error; confirm the manifest is read
+- [X] T027 [US5] `src/pkgselect.c`: the version-less requirement error; confirm the manifest is read
   from the package root under `#FOLDER`. `tests/git_server.py`: the `tags` file.
 
 ---

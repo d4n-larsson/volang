@@ -1467,6 +1467,10 @@ static void sel_requirements(Sel *s, Str *dir)
         if (problem)
             sel_fail("E0703", msg("Package `$1` $2: line $3 of its `vo.packages` is malformed.", s->name, pkg_ver_text(s->ver),
                                   int_to_str(row + 1)));
+        if (r && !r->versioned) /* a directory or an archive of the author's own: nobody else can fetch it as a version */
+            sel_fail("E0709", msg("Package `$1` $2 cannot be required: `$3` has no source in its manifest (a requirement is "
+                                  "written with `https://HOST/PATH@VERSION`).",
+                                  s->name, pkg_ver_text(s->ver), r->name));
         if (r && r->versioned && !str_eq(r->name, s->name)) {
             Req *q = alloc(sizeof(Req));
             q->name = r->name;

@@ -1,0 +1,5 @@
+import kit.lib;
+
+fn main() uses console {
+    print("[" + lib.label(7) + "]");
+}

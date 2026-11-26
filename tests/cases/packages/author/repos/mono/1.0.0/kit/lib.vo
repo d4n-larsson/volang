@@ -1,0 +1,9 @@
+import pads.pad;
+
+export fn label(n: int) -> str {
+    return pad.left(str(n));
+}
+
+test "label" {
+    expect_eq(label(7), pad.left("7"));
+}

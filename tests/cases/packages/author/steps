@@ -1,0 +1,15 @@
+server git a.test
+write kit/vo.packages pads packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb https://127.0.0.1:{port}/pads@1.0.2\n
+vo test kit/lib.vo
+vo package --ca-file test-ca.pem --restore kit/lib.vo
+vo test kit/lib.vo
+vo package --ca-file test-ca.pem a/main.vo kit https://127.0.0.1:{port}/kit
+vo run a/main.vo
+vo package --ca-file test-ca.pem --outdated a/main.vo
+vo package --ca-file test-ca.pem a/main.vo kit https://127.0.0.1:{port}/kit@1.2.0
+vo package --ca-file test-ca.pem a/main.vo broken https://127.0.0.1:{port}/broken
+vo package --json --ca-file test-ca.pem a/main.vo broken https://127.0.0.1:{port}/broken
+vo check a/main.vo
+vo package --ca-file test-ca.pem b/main.vo sub https://127.0.0.1:{port}/mono#kit
+vo run b/main.vo
+keep a/vo.packages b/vo.packages

@@ -51,6 +51,12 @@ Pending (measured in T035).
   1.6.0 with `pads` raised and `gains: clock`; `--dry-run`; JSON; `--update ENTRY` moves the direct
   packages and leaves the indirect `pads` at 1.0.2 with 2.1.0 released; unknown and version-less names
   are T0001; `@2.0.0` named explicitly is taken).
+- US5 (T026–T027): `tests/cases/packages/author`: a package folder with its own manifest and a test:
+  `vo test` fails with E0702 until `--restore`, then passes; the same content tagged as `kit` 1.0.0 and
+  added by a program brings `pads`; the tags `1.2`, `v1.2.0-rc1`, `release-3` are ignored by add,
+  `--outdated` and E0711's list; a manifest with a version-less line is E0709 from add, nothing
+  written; a package in a sub-folder (`mono#kit`) has its requirements read from that folder's manifest,
+  not the repository root's (which names a package that does not exist).
 
 ## Deviations
 

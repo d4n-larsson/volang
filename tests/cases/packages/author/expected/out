@@ -1,0 +1,61 @@
+$ vo test kit/lib.vo
+kit/lib.vo:1:1: error[E0702]: Package `pads`: the directory `packages/pads` is missing or has no .vo files.
+   1 | import pads.pad;
+     | ^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem --restore kit/lib.vo
+restored pads 1.0.2
+--- stderr
+--- exit 0
+$ vo test kit/lib.vo
+PASS label (0ms)
+1 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem a/main.vo kit https://127.0.0.1:{port}/kit
+added kit 1.0.0 packages/kit sha256:073d98e30e50e1d5d1522d296b2ce9ea6c6fcef7ba6fdcea0454d04e18b9625a from https://127.0.0.1:{port}/kit
+  effects: none
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by kit)
+  effects: none
+--- stderr
+--- exit 0
+$ vo run a/main.vo
+[ 7]
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem --outdated a/main.vo
+all packages are at their newest version
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem a/main.vo kit https://127.0.0.1:{port}/kit@1.2.0
+error[E0711]: https://127.0.0.1:{port}/kit has no version 1.2.0. Nearest: 1.0.0.
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem a/main.vo broken https://127.0.0.1:{port}/broken
+error[E0709]: Package `broken` 1.0.0 cannot be required: `pads` has no source in its manifest (a requirement is written with `https://HOST/PATH@VERSION`).
+--- stderr
+--- exit 65
+$ vo package --json --ca-file test-ca.pem a/main.vo broken https://127.0.0.1:{port}/broken
+{"v":1,"kind":"toolchain_error","code":"E0709","name":"package_requirement","message":"Package `broken` 1.0.0 cannot be required: `pads` has no source in its manifest (a requirement is written with `https://HOST/PATH@VERSION`)."}
+--- stderr
+--- exit 65
+$ vo check a/main.vo
+a/main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effects with `vo effects --update`.
+   1 | import kit.lib;
+     | ^
+0 errors, 1 warning
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem b/main.vo sub https://127.0.0.1:{port}/mono#kit
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by sub)
+  effects: none
+added sub 1.0.0 packages/sub sha256:073d98e30e50e1d5d1522d296b2ce9ea6c6fcef7ba6fdcea0454d04e18b9625a from https://127.0.0.1:{port}/mono#kit
+  effects: none
+--- stderr
+--- exit 0
+$ vo run b/main.vo
+[ 7]
+--- stderr
+--- exit 0
