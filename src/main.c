@@ -326,6 +326,8 @@ int vo_main(long argc, char **argv, char **env)
             opt_unpack_pack = 1;
         } else if (cstr_eq(a, "--restore")) { /* spec 041: vo package */
             opt_restore = 1;
+        } else if (cstr_eq(a, "--repair")) { /* spec 061: vo package */
+            opt_repair = 1;
         } else if (cstr_eq(a, "--dir")) {
             if (i >= argc || !*argv[i]) usage_error(str_from_cstr("`--dir` needs a directory."));
             opt_pkg_dir = argv[i++];
@@ -459,7 +461,7 @@ void opt_spec006_check(void)
         if (opt_max_mutants) only_with("--max-mutants", "test");
     }
     if (opt_ca_files && cmd != CMD_RUN && cmd != CMD_TEST && cmd != CMD_PACKAGE) only_with("--ca-file", "run`, `test` or `package"); /* spec 019, 041 */
-    if ((opt_restore || opt_pkg_dir) && cmd != CMD_PACKAGE) only_with(opt_restore ? "--restore" : "--dir", "package");
+    if ((opt_restore || opt_pkg_dir || opt_repair) && cmd != CMD_PACKAGE) only_with(opt_restore ? "--restore" : opt_repair ? "--repair" : "--dir", "package");
     if (opt_list + opt_coverage + opt_mutate > 1)
         usage_error(str_from_cstr("`--list`, `--coverage` and `--mutate` cannot be combined: use one at a time."));
     if (opt_max_mutants && !opt_mutate) usage_error(str_from_cstr("`--max-mutants` needs `--mutate`."));

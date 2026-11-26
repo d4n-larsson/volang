@@ -37,6 +37,14 @@ Pending (measured in T035).
   2.0.0 (every requirer and version must be in the message), source clashes, cycles of 2 to 5 packages
   (resolve). The generated graphs found one bug in this phase's own check: a package the command asks
   lower than a requirement allows kept the hash of the version asked, and E0710 fired; fixed.
+- US3 (T020–T023): `tests/cases/packages/incomplete` (server stopped: E0709 "does not list it" and "has
+  1.2.0" at `report`'s line from `check`, `run`, `test`, `build`, also as JSON; a version-less `money`
+  entry is not checked) and `repair` (a complete manifest: `unchanged` lines; a merged manifest: the
+  result equals the manifest of adding both packages, compared with `cmp` at acceptance; `--dry-run`
+  writes nothing; a deleted line added back; an `indirect` entry nothing requires removed; a pin that
+  is not the version's content: E0701; option checks). `tests/package_fetch.py` quiet group: `check`,
+  `run`, `test`, `build`, `doc` on a program with versioned packages open no socket, with the manifest
+  complete and with a requirement missing (10 cases, SC-004).
 
 ## Deviations
 
@@ -69,3 +77,11 @@ Pending (measured in T035).
   compared once by hand; the generated graphs do the comparison on every run.
 - A program's own package that a requirement raises is reported with `(required by ...)`, as T017 asks;
   the command's contract listed that only for indirect packages.
+- E0709 names the entry file (`vo package --repair main.vo`), not the word ENTRY: it is the file whose
+  import loaded the manifest.
+- Repair (and add) replace a directory that no manifest entry accounts for when its content is exactly
+  what was fetched for it (a line lost in a merge leaves such a directory); any other content is still
+  E0706.
+- Repair reports a package fetched again at its pin as `restored`; a directory that is present with
+  other content than its pin is E0701 and is not replaced (remove it first).
+- T020's `sed` and `cat` are `write` steps with the manifest text.

@@ -4497,6 +4497,30 @@ added cash 2.0.0 packages/cash sha256:8a1f0c3e5d7b9f2a4c6e8d0b1a3c5e7f9b2d4f6a8c
 
 Only the author of the requiring package can change what its manifest names: use a version of it that names the same source as the program, or use the other source in the program as well.
 
+## E0709 package_requirement
+
+A package requires another package that the manifest does not list, or lists at a lower version.
+
+Fixable: no
+
+A versioned package carries its own `vo.packages`, the packages it requires, and the program's manifest must list each of them at the required version or a higher one. `vo package` keeps the manifest complete; a merge or a hand edit can leave it incomplete. `vo check`, `vo run`, `vo test` and `vo build` then stop with this code at the line of the package that requires something, and fetch nothing. The fix is one command: `vo package --repair ENTRY` adds what is missing, raises what is too low, and drops packages nothing requires any more (`--dry-run` shows the changes first). An entry without a version (a local directory) for the required name is the author's own choice and is not checked.
+
+### Example
+
+```text
+$ vo check main.vo
+vo.packages:3:1: error[E0709]: Package `report` requires `money` 1.4.0; the manifest has 1.2.0: run `vo package --repair main.vo`.
+```
+
+### Fixed
+
+```text
+$ vo package --repair main.vo
+updated money 1.2.0 -> 1.4.0: sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b -> sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by report)
+  effects: none
+unchanged report 2.1.0
+```
+
 ## E0710 package_version_changed
 
 A version of a package no longer has the content that another package pinned.

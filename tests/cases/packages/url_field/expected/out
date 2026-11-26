@@ -57,15 +57,15 @@ error[T0001]: `--dir` goes with a URL: `vo package --dir DIRECTORY ENTRY NAME UR
 --- stderr
 --- exit 64
 $ vo package --ca-file test-ca.pem main.vo money shared/money
-error[T0001]: `--ca-file` goes with a URL or `--restore`: the other forms fetch nothing.
+error[T0001]: `--ca-file` goes with a URL, `--restore` or `--repair`: the other forms fetch nothing.
 --- stderr
 --- exit 64
 $ vo package --restore main.vo money
-error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, or --restore ENTRY.
+error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, --restore ENTRY, or --repair ENTRY.
 --- stderr
 --- exit 64
 $ vo package --restore --remove main.vo
-error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, or --restore ENTRY.
+error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, --restore ENTRY, or --repair ENTRY.
 --- stderr
 --- exit 64
 $ vo package main.vo money http://example.com/money.tar.gz

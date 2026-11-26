@@ -1,0 +1,23 @@
+server git a.test
+vo package --ca-file test-ca.pem a/main.vo report https://127.0.0.1:{port}/report
+vo package --ca-file test-ca.pem a/main.vo ledger https://127.0.0.1:{port}/ledger
+vo package --ca-file test-ca.pem --repair a/main.vo
+vo package --ca-file test-ca.pem b/main.vo ledger https://127.0.0.1:{port}/ledger
+write b/vo.packages # vo packages: update with `vo package ENTRY NAME DIRECTORY`\nledger packages/ledger sha256:8848187fcc64a5c1a73066f98bed76ecfb159d534971d835d239614a9a702343 https://127.0.0.1:{port}/ledger@1.0.0\nmoney packages/money sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b https://127.0.0.1:{port}/money@1.2.0 indirect\npads packages/pads sha256:68b401186cbcde03deabcd9815e26874eb3d78eef8ef5eebea03cfab8d9bd3ae https://127.0.0.1:{port}/pads@1.0.0 indirect\nreport packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 https://127.0.0.1:{port}/report@2.1.0\n
+vo check b/main.vo
+vo package --ca-file test-ca.pem --dry-run --repair b/main.vo
+vo check b/main.vo
+vo package --json --ca-file test-ca.pem --repair b/main.vo
+vo run b/main.vo
+vo package --ca-file test-ca.pem c/main.vo report https://127.0.0.1:{port}/report
+write c/vo.packages # vo packages: update with `vo package ENTRY NAME DIRECTORY`\npads packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb https://127.0.0.1:{port}/pads@1.0.2 indirect\nreport packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 https://127.0.0.1:{port}/report@2.1.0\n
+vo package --ca-file test-ca.pem --repair c/main.vo
+vo run c/main.vo
+write c/vo.packages # vo packages: update with `vo package ENTRY NAME DIRECTORY`\npads packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb https://127.0.0.1:{port}/pads@1.0.2 indirect\n
+vo package --ca-file test-ca.pem --repair c/main.vo
+write e/vo.packages # vo packages: update with `vo package ENTRY NAME DIRECTORY`\nmoney packages/money sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b https://127.0.0.1:{port}/money@1.4.0\n
+vo package --ca-file test-ca.pem --repair e/main.vo
+vo package --repair --remove e/main.vo
+vo package --repair e/main.vo money
+vo check --repair e/main.vo
+keep a/vo.packages b/vo.packages c/vo.packages e/vo.packages

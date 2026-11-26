@@ -32,6 +32,10 @@ static char pkg_hash_buf[32];
 
 /* ---- the manifest ---- */
 
+static Str *pkg_entry;   /* the file whose import made the manifest load: the program's entry, for messages */
+static long pkg_command; /* `vo package` runs: what the manifest lacks is its to repair, not an error */
+static void pkg_requirements(void);
+
 /* Looks for the nearest vo.packages from dir up, once, and parses it (E0703, E0704). */
 void pkg_load(Str *dir)
 {
@@ -49,6 +53,7 @@ void pkg_load(Str *dir)
     }
     pkg_manifest = find_up_dir(dir, MANIFEST, (void **)&pkg_dir);
     if (pkg_manifest >= 0) pkg_parse(pkg_manifest);
+    if (pkg_manifest >= 0 && !pkg_command) pkg_requirements();
 }
 
 static int pkg_space(int c)
@@ -188,6 +193,36 @@ void pkg_parse(long file)
         while (le < end && *le != '\n') le++;
         pkg_parse_line(file, text, line, le);
         line = le + 1;
+    }
+}
+
+/* Spec 061 (research R5): what each versioned package's own manifest (the `vo.packages` in its directory)
+ * requires must be in the program's manifest, at that version or higher: E0709 at the requirer's line.
+ * A program entry without a version for the name is the author's own choice. Nothing is fetched. */
+static void pkg_requirements(void)
+{
+    long n = pkg_entries->n;
+    for (long i = 0; i < n; i++) {
+        Pkg *e = vec_get(pkg_entries, i);
+        char *text;
+        long len = e->versioned ? read_whole_file(path_join(e->dir, str_from_cstr(MANIFEST))->data, &text) : -1;
+        for (char *line = text, *end = text + len; len > 0 && line < end;) {
+            char *le = line;
+            while (le < end && *le != '\n') le++;
+            int problem;
+            Pkg *r = pkg_line(line, le, &problem), *have = r && r->versioned ? pkg_find(r->name) : 0;
+            int low = 0;
+            for (int k = 0; have && have->versioned && k < 3 && !low; k++) {
+                if (have->ver[k] > r->ver[k]) break;
+                low = have->ver[k] < r->ver[k];
+            }
+            if (r && r->versioned && !str_eq(r->name, e->name) && (!have || low))
+                diag_add("E0709", SEV_ERROR, (int)pkg_manifest, e->start, e->end,
+                         msg("Package `$1` requires $2; the manifest $3`.", e->name, msg("`$1` $2", r->name, pkg_ver_text(r->ver), 0),
+                             msg(have ? "has $1: run `vo package --repair $2" : "does not list it: run `vo package --repair $2",
+                                 have ? pkg_ver_text(have->ver) : 0, pkg_entry ? pkg_entry : str_from_cstr("ENTRY"), 0)));
+            line = le + 1;
+        }
     }
 }
 
@@ -352,6 +387,7 @@ void *pkg_import_path(Node *import, FileRec *importer)
 {
     Str *start = rt_resolve(importer->dir); /* the manifest: from the first importer (the entry) up */
     if (!start) start = rt_start_cwd();
+    if (!pkg_searched) pkg_entry = importer->path;
     pkg_load(start);
     Vec *segs = import->a.v; /* NAME.a.b (spec 058), or the 0.3 NAME.a.b.item (N_C 1) */
     long keep = segs->n - (import->c.i ? 1 : 0);
@@ -385,6 +421,7 @@ int pkg_is_name(Str *name, FileRec *importer)
 {
     Str *start = rt_resolve(importer->dir);
     if (!start) start = rt_start_cwd();
+    if (!pkg_searched) pkg_entry = importer->path;
     pkg_load(start);
     return pkg_find(name) != 0;
 }
@@ -618,6 +655,7 @@ void pkg_fail(char *code, Str *message)
 #define UNPACK_MAX (64L << 20)
 
 long opt_restore;  /* vo package --restore ENTRY */
+long opt_repair;   /* vo package --repair ENTRY (spec 061) */
 char *opt_pkg_dir; /* vo package --dir DIRECTORY */
 
 typedef struct Dirent64 {
@@ -1192,10 +1230,12 @@ typedef struct Sel {
     long local;   /* a program entry without a version: it stays as it is */
     long visited; /* its content and requirements are read at this version */
     long added;   /* it had no manifest entry */
+    long restored; /* fetched again as pinned (`--repair` of a missing directory) */
     long changed; /* its directory was (or with --dry-run would be) replaced */
 } Sel;
 
 static Vec *sels;
+static long sel_repair; /* `--repair`: a package not on disk as pinned is fetched, and every package reported */
 
 /* Removes what was staged for s, and the folder made for it when nothing else is in it. */
 static void sel_unstage(Sel *s)
@@ -1452,16 +1492,15 @@ static void sel_visit(Sel *s)
         sel_requirements(s, e->dir);
         return;
     }
-    if (same && !s->named) { /* not on disk as pinned: `--restore`'s to bring back, `vo check`'s to report */
+    if (same && !s->named && !sel_repair) { /* not on disk as pinned: `--restore`'s to bring back, `vo check`'s to report */
         s->unknown = 1;
         return;
     }
+    int foreign = 0; /* a directory is there that no entry accounts for: replaced only by the same content */
     if (is_dir(s->target)) {
         Str *real = rt_resolve(s->target), *own = e ? rt_resolve(e->dir) : 0;
-        if (!e || !real || !own || !str_eq(real, own))
-            sel_fail("E0706", msg("The directory `$1` exists and is not package `$2`'s: remove it, or choose another with `--dir`.",
-                                  s->target, s->name, 0));
-        if (!pkg_intact(e))
+        foreign = !e || !real || !own || !str_eq(real, own);
+        if (!foreign && !pkg_intact(e))
             sel_fail("E0701", msg("Package `$1` was changed since it was pinned, and fetching would replace it: pin your "
                                   "changes with `vo package ENTRY $1 $2`, or remove the directory.",
                                   s->name, e->raw, 0));
@@ -1470,6 +1509,10 @@ static void sel_visit(Sel *s)
     s->staging = staging;
     int r = pkg_stage(s->source, s->ver, staging, &why);
     long h = r ? 0 : pkg_hash(staging, s->pin, 0);
+    char there[32];
+    if (!r && h >= 0 && foreign && (pkg_hash(s->target, there, 0) != 0 || !mem_eq(there, s->pin, 32)))
+        sel_fail("E0706", msg("The directory `$1` exists and is not package `$2`'s: remove it, or choose another with `--dir`.",
+                              s->target, s->name, 0));
     if (s->named && s->own[0] < 0)
         for (int k = 0; k < 3; k++) s->own[k] = s->ver[k]; /* the highest: now known */
     if (r == -3) sel_fail("E0711", msg("$1.", why, 0, 0));
@@ -1597,6 +1640,7 @@ static int sel_apply(void)
         } else {
             s->old_hash = pkg_hash_text(e->pin);
             s->old_ver = e->versioned ? pkg_ver_text(e->ver) : 0;
+            s->restored = e->versioned && !ver_cmp(e->ver, s->ver) && mem_eq(e->pin, s->pin, 32); /* was missing */
         }
         e->dir = s->staging;
         e->url = s->source;
@@ -1660,10 +1704,12 @@ static int sel_apply(void)
     for (long i = 0; i < n; i++) {
         Sel *s = vec_get(sels, i);
         rep_by = s->direct && (s->named || !s->changed) ? 0 : s->by; /* the program's own, raised: by whom */
-        old_ver = s->old_ver;
+        old_ver = s->restored ? 0 : s->old_ver;
         if (!s->reach) {
             rep_by = 0;
             if (s->entry) pkg_report_fetched("removed", s->entry, 0, 0, 0, 0);
+        } else if (s->restored) {
+            pkg_report_fetched("restored", s->entry, 0, 0, 0, 0);
         } else if (s->changed) {
             Vec *before = s->added ? 0 : s->before;
             pkg_report_fetched(s->added ? "added" : "updated", s->entry, s->old_hash, before, s->now, s->note);
@@ -1674,7 +1720,7 @@ static int sel_apply(void)
             rep_at = pkg_ver_text(s->ver);
             pkg_report_fetched("local", s->entry, 0, 0, 0, 0);
             rep_at = 0;
-        } else if (s->named) {
+        } else if (s->named || (sel_repair && !s->local)) {
             pkg_report_fetched("unchanged", s->entry, 0, 0, 0, 0);
         }
     }
@@ -1735,6 +1781,17 @@ static int pkg_add_source(Str *name, Str *source, long *ver)
     s->named = 1;
     s->has_own = 1;
     for (int k = 0; k < 3; k++) s->own[k] = ver[k];
+    sel_run();
+    return sel_apply();
+}
+
+/* `vo package --repair ENTRY`: the selection the manifest's own entries give, made the program's: what is
+ * required and missing is added, what is too low raised, what nothing requires dropped, what is not on
+ * disk fetched as pinned. */
+static int pkg_repair(void)
+{
+    sel_repair = 1;
+    sel_start();
     sel_run();
     return sel_apply();
 }
@@ -1829,18 +1886,20 @@ int cmd_package(void)
 {
     char **args = (char **)pos_args;
     if (opt_unpack_pack) return pkg_unpack_pack();
-    int by_url = !opt_remove && !opt_restore && pos_n == 3 && doc_starts(args[2], "https://");
-    if (opt_remove + opt_restore > 1 || pos_n != (opt_restore ? 1 : 3 - opt_remove)) /* ENTRY [NAME [DIRECTORY | URL]] */
-        usage_error(str_from_cstr("`package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, or --restore ENTRY."));
-    if (!opt_remove && !opt_restore && doc_starts(args[2], "http://"))
+    long whole = opt_restore + opt_repair; /* the forms that take ENTRY alone */
+    int by_url = !opt_remove && !whole && pos_n == 3 && doc_starts(args[2], "https://");
+    if (opt_remove + whole > 1 || pos_n != (whole ? 1 : 3 - opt_remove)) /* ENTRY [NAME [DIRECTORY | URL]] */
+        usage_error(str_from_cstr("`package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, --restore ENTRY, or --repair ENTRY."));
+    if (!opt_remove && !whole && doc_starts(args[2], "http://"))
         usage_error(str_from_cstr("A package is fetched from an https:// URL only."));
-    if (opt_dry_run && !by_url) usage_error(str_from_cstr("`--dry-run` goes with a versioned package, `--update`, `--repair` or `--remove`."));
+    pkg_command = 1;
+    if (opt_dry_run && !by_url && !opt_repair) usage_error(str_from_cstr("`--dry-run` goes with a versioned package, `--update`, `--repair` or `--remove`."));
     if (opt_pkg_dir && !by_url) usage_error(str_from_cstr("`--dir` goes with a URL: `vo package --dir DIRECTORY ENTRY NAME URL`."));
-    if (opt_ca_files && !by_url && !opt_restore)
-        usage_error(str_from_cstr("`--ca-file` goes with a URL or `--restore`: the other forms fetch nothing."));
-    if (!opt_restore && !pkg_name_ok(args[1], cstr_len(args[1])))
+    if (opt_ca_files && !by_url && !whole)
+        usage_error(str_from_cstr("`--ca-file` goes with a URL, `--restore` or `--repair`: the other forms fetch nothing."));
+    if (!whole && !pkg_name_ok(args[1], cstr_len(args[1])))
         usage_error_arg("A package name is an identifier other than std: `$1` is not.", args[1]);
-    Str *name = opt_restore ? 0 : str_from_cstr(args[1]);
+    Str *name = whole ? 0 : str_from_cstr(args[1]);
     Str *entry = str_from_cstr(args[0]); /* ENTRY's directory: its path up to the last "/" */
     long k = entry->len;
     while (k && entry->data[k - 1] != '/') k--;
@@ -1852,6 +1911,7 @@ int cmd_package(void)
         vo_exit(EXIT_CHECK);
     }
     if (opt_restore) return pkg_restore();
+    if (opt_repair) return pkg_repair();
     if (by_url) { /* spec 061 (research R3): a repository unless the path ends as an archive does */
         Str *url = str_from_cstr(args[2]);
         long ver[3] = {-1, 0, 0}, hash = 0, at = url->len;

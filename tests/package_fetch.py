@@ -323,6 +323,30 @@ def group_quiet(base, arch, srv):
             case(f"quiet/vo {words[0]} opens no socket ({'package present' if present else 'package missing: E0702'}) (SC-006)", ok,
                  f"{r.returncode} {calls[:2]} {(r.stdout + r.stderr)[:200]}")
 
+    # spec 061 (SC-004): a program with versioned packages and their requirements, complete and incomplete
+    sys.path.insert(0, os.path.join(ROOT, "tests"))
+    import git_server
+    port, tmp = git_server.start("a.test", os.path.join(ROOT, "tests", "cases", "packages", "graph", "repos"), [])
+    d = project(base, "quiet061")
+    try:
+        code, out, err = vo(d, ["package", "--ca-file", CA, "main.vo", "report", f"https://127.0.0.1:{port}/report"])
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    open(os.path.join(d, "main.vo"), "w").write('import report.table;\n\nfn main() uses console {\n    print(table.title());\n}\n\ntest "t" {\n    expect(true);\n}\n')
+    for complete in (True, False):
+        if not complete:
+            m = os.path.join(d, "vo.packages")
+            text = open(m).read()
+            open(m, "w").write("".join(l for l in text.splitlines(True) if not l.startswith("money ")))
+        for words in (["check", "main.vo"], ["run", "main.vo"], ["test", "main.vo"], ["build", "main.vo", "-o", "app"], ["doc", "report.table"]):
+            trace = os.path.join(d, "trace.txt")
+            r = subprocess.run(["strace", "-f", "-e", "trace=socket,connect", "-o", trace, real] + words, cwd=d, capture_output=True, text=True)
+            calls = [l for l in open(trace).read().splitlines() if "socket(" in l or "connect(" in l]
+            os.remove(trace)
+            ok = code == 0 and not calls and (r.returncode == 0 if complete else words[0] == "doc" or "E0709" in r.stdout + r.stderr)
+            case(f"quiet/vo {words[0]} opens no socket ({'versioned packages' if complete else 'a requirement missing: E0709'}) (spec 061 SC-004)", ok,
+                 f"{code} {r.returncode} {calls[:2]} {(r.stdout + r.stderr)[:200]}")
+
 
 def group_restore(base, arch, srv):
     d = project(base, "restore")

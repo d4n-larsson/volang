@@ -1,0 +1,5 @@
+import report.table;
+
+test "title" {
+    expect_eq(table.title(), "total12,34");
+}

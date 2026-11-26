@@ -1,0 +1,2 @@
+# vo packages: update with `vo package ENTRY NAME DIRECTORY`
+money packages/money sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b https://127.0.0.1:{port}/money@1.4.0

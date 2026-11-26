@@ -24,7 +24,7 @@ CONTRACTS = [os.path.join(ROOT, "specs", "001-vo-lang-core", "contracts", "error
 # Codes whose trigger cannot be shown in a short program: content is checked, execution is not.
 # E0115 needs nesting deep enough to exhaust a 64 MiB stack (golden case: check/nesting.vo).
 # E0104 needs an invalid UTF-8 byte, which a UTF-8 doc block cannot hold (golden case: lex/invalid_utf8.vo).
-NO_SHORT_EXAMPLE = {"E0115", "E0104", "R0014", "E0211", "E0706", "E0707", "E0708", "E0710", "E0711"}  # R0014 needs vo replay, E0211 a link, E0706 a server (step cases)
+NO_SHORT_EXAMPLE = {"E0115", "E0104", "R0014", "E0211", "E0706", "E0707", "E0708", "E0709", "E0710", "E0711"}  # R0014 needs vo replay, E0211 a link, E0706 a server (step cases)
 
 
 def sections():

@@ -216,7 +216,7 @@ program runs.
 
 **Independent test**: delete a required line by hand: `vo check` gives E0709; `--repair` restores it.
 
-- [ ] T020 [US3] Step cases, failing first: `tests/cases/packages/incomplete/`: after adding `report`,
+- [X] T020 [US3] Step cases, failing first: `tests/cases/packages/incomplete/`: after adding `report`,
   the `money` line deleted with `sed` → `vo check main.vo` E0709 at `report`'s line ("does not list
   it", naming `vo package --repair main.vo`), also with `--json`; `money` hand-edited to 1.2.0 (with
   that version's directory and hash) → E0709 "has 1.2.0"; `vo run`, `vo test`, `vo build` refuse the
@@ -225,16 +225,16 @@ program runs.
   requires → `removed`; two branches' manifests merged by `cat` and deduplicated by hand → repair gives
   the manifest that adding both packages gives (`cmp`); `--repair --dry-run` writes nothing; a complete
   manifest → `unchanged` lines, exit 0.
-- [ ] T021 [US3] `src/packages.c` (`pkg_load`, research R5): for each versioned entry with a
+- [X] T021 [US3] `src/packages.c` (`pkg_load`, research R5): for each versioned entry with a
   `vo.packages` in its directory, compare its versioned lines with the program's entries; E0709
   `package_requirement` at the requirer's line (catalog entry, codes row); skipped for a built
   executable (`ld_app`) and when the program's entry for the name has no version (`local`). No network.
-- [ ] T022 [US3] `--repair ENTRY` in `cmd_package`: selection with the manifest's entries as roots
+- [X] T022 [US3] `--repair ENTRY` in `cmd_package`: selection with the manifest's entries as roots
   (research R4 including step 4, the pruning of unreachable `indirect` entries), commit and reports
   as T015; missing directories are fetched, present ones verified. Usage text and option checks in
   `src/main.c` (`--repair` only with `package`; with `--remove`/`--restore`/`--update`/`--outdated`:
   T0001).
-- [ ] T023 [P] [US3] SC-004: `tests/package_fetch.py` gains a check that `vo check`, `run`, `test`,
+- [X] T023 [P] [US3] SC-004: `tests/package_fetch.py` gains a check that `vo check`, `run`, `test`,
   `build` and `doc` on the `graph` project open no socket (`strace -f -e trace=socket,connect` when
   `strace` exists, as the script does for spec 041).
 

@@ -1,0 +1,108 @@
+$ vo package --ca-file test-ca.pem a/main.vo report https://127.0.0.1:{port}/report
+added money 1.4.0 packages/money sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by report)
+  effects: none
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by report, money)
+  effects: none
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+total gains: random
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem a/main.vo ledger https://127.0.0.1:{port}/ledger
+added ledger 1.0.0 packages/ledger sha256:8848187fcc64a5c1a73066f98bed76ecfb159d534971d835d239614a9a702343 from https://127.0.0.1:{port}/ledger
+  effects: none
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem --repair a/main.vo
+unchanged ledger 1.0.0
+unchanged money 1.4.0
+unchanged pads 1.0.2
+unchanged report 2.1.0
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem b/main.vo ledger https://127.0.0.1:{port}/ledger
+added ledger 1.0.0 packages/ledger sha256:8848187fcc64a5c1a73066f98bed76ecfb159d534971d835d239614a9a702343 from https://127.0.0.1:{port}/ledger
+  effects: none
+added money 1.2.0 packages/money sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b (required by ledger)
+  effects: none
+added pads 1.0.0 packages/pads sha256:68b401186cbcde03deabcd9815e26874eb3d78eef8ef5eebea03cfab8d9bd3ae (required by money)
+  effects: none
+--- stderr
+--- exit 0
+$ vo check b/main.vo
+b/main.vo:1:1: error[E0702]: Package `report`: the directory `packages/report` is missing or has no .vo files.
+   1 | import report.table;
+     | ^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem --dry-run --repair b/main.vo
+dry run: nothing written
+unchanged ledger 1.0.0
+updated money 1.2.0 -> 1.4.0: sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b -> sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by ledger, report)
+  effects: none
+updated pads 1.0.0 -> 1.0.2: sha256:68b401186cbcde03deabcd9815e26874eb3d78eef8ef5eebea03cfab8d9bd3ae -> sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by money, report)
+  effects: none
+restored report 2.1.0
+--- stderr
+--- exit 0
+$ vo check b/main.vo
+b/main.vo:1:1: error[E0702]: Package `report`: the directory `packages/report` is missing or has no .vo files.
+   1 | import report.table;
+     | ^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo package --json --ca-file test-ca.pem --repair b/main.vo
+{"v":1,"kind":"package","name":"ledger","change":"unchanged","directory":"packages/ledger","hash":"sha256:8848187fcc64a5c1a73066f98bed76ecfb159d534971d835d239614a9a702343","source":"https://127.0.0.1:{port}/ledger","version":"1.0.0","direct":true}
+{"v":1,"kind":"package","name":"money","change":"updated","directory":"packages/money","hash":"sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b","old_hash":"sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b","source":"https://127.0.0.1:{port}/money","version":"1.4.0","old_version":"1.2.0","direct":false,"required_by":["ledger","report"],"effects":[],"gained":[],"lost":[]}
+{"v":1,"kind":"package","name":"pads","change":"updated","directory":"packages/pads","hash":"sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb","old_hash":"sha256:68b401186cbcde03deabcd9815e26874eb3d78eef8ef5eebea03cfab8d9bd3ae","source":"https://127.0.0.1:{port}/pads","version":"1.0.2","old_version":"1.0.0","direct":false,"required_by":["money","report"],"effects":[],"gained":[],"lost":[]}
+{"v":1,"kind":"package","name":"report","change":"restored","directory":"packages/report","hash":"sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01","source":"https://127.0.0.1:{port}/report","version":"2.1.0","direct":true}
+{"v":1,"kind":"package_total","gained":[],"lost":[]}
+--- stderr
+--- exit 0
+$ vo run b/main.vo
+total 12,34
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem c/main.vo report https://127.0.0.1:{port}/report
+added money 1.4.0 packages/money sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by report)
+  effects: none
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by report, money)
+  effects: none
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+total gains: random
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem --repair c/main.vo
+added money 1.4.0 packages/money sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by report)
+  effects: none
+unchanged pads 1.0.2
+unchanged report 2.1.0
+--- stderr
+--- exit 0
+$ vo run c/main.vo
+total 12,34
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem --repair c/main.vo
+removed pads 1.0.2
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem --repair e/main.vo
+error[E0701]: Package `money`: version 1.4.0 now hashes to sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b, not to the pinned hash: the version was changed after it was pinned. Nothing was written.
+--- stderr
+--- exit 65
+$ vo package --repair --remove e/main.vo
+error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, --restore ENTRY, or --repair ENTRY.
+--- stderr
+--- exit 64
+$ vo package --repair e/main.vo money
+error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, --restore ENTRY, or --repair ENTRY.
+--- stderr
+--- exit 64
+$ vo check --repair e/main.vo
+error[T0001]: `--repair` only works with `package`.
+--- stderr
+--- exit 64

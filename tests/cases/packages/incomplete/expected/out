@@ -1,0 +1,65 @@
+$ vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+added money 1.4.0 packages/money sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by report)
+  effects: none
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by report, money)
+  effects: none
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+total gains: random
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effects with `vo effects --update`.
+   1 | import report.table;
+     | ^
+0 errors, 1 warning
+--- stderr
+--- exit 0
+$ vo check main.vo
+vo.packages:3:1: error[E0709]: Package `report` requires `money` 1.4.0; the manifest does not list it: run `vo package --repair main.vo`.
+   3 | report packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 https://127.0.0.1:{port}/report@2.1.0
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+packages/report/table.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
+   1 | import money.format;
+     | ^^^^^^^^^^^^^^^^^^^^
+2 errors, 0 warnings
+--- stderr
+--- exit 65
+$ vo check --json main.vo
+{"v":1,"kind":"diagnostic","code":"E0709","name":"package_requirement","severity":"error","file":"vo.packages","start":{"line":3,"col":1},"end":{"line":3,"col":132},"text":"report packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 https://127.0.0.1:{port}/report@2.1.0","message":"Package `report` requires `money` 1.4.0; the manifest does not list it: run `vo package --repair main.vo`.","fixes":[],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0205","name":"import_not_found","severity":"error","file":"packages/report/table.vo","start":{"line":1,"col":1},"end":{"line":1,"col":21},"text":"import money.format;","message":"Cannot find `money/format.vo` for this import.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}
+--- stderr
+--- exit 65
+$ vo check main.vo
+vo.packages:4:1: error[E0709]: Package `report` requires `money` 1.4.0; the manifest has 1.2.0: run `vo package --repair main.vo`.
+   4 | report packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 https://127.0.0.1:{port}/report@2.1.0
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo run main.vo
+--- stderr
+vo.packages:4:1: error[E0709]: Package `report` requires `money` 1.4.0; the manifest has 1.2.0: run `vo package --repair main.vo`.
+   4 | report packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 https://127.0.0.1:{port}/report@2.1.0
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- exit 65
+$ vo test main.vo
+vo.packages:4:1: error[E0709]: Package `report` requires `money` 1.4.0; the manifest has 1.2.0: run `vo package --repair main.vo`.
+   4 | report packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 https://127.0.0.1:{port}/report@2.1.0
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo build main.vo
+vo.packages:4:1: error[E0709]: Package `report` requires `money` 1.4.0; the manifest has 1.2.0: run `vo package --repair main.vo`.
+   4 | report packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 https://127.0.0.1:{port}/report@2.1.0
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo run main.vo
+total 12.34
+--- stderr
+--- exit 0
