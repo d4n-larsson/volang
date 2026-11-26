@@ -1,4 +1,5 @@
 # Spec 047: a failure no receive returned is reported when the program ends, with status 70; what the workers printed comes out in the order they were started.
+import std.time;
 import std.workers;
 
 fn why(e: workers.WorkerError) -> str {
@@ -66,7 +67,10 @@ fn worker_of(r: result[workers.Worker[int, int], workers.WorkerError]) -> worker
     }
 }
 
+# Says that it runs before it fails: the program ends every worker still running when it ends itself, so
+# it waits for this message and then gives the worker time for its last two statements (see main).
 fn fails(link: workers.Link[int, int]) uses console {
+    give(link, 0);
     print("first worker: before the error");
     let zero = len(chars(""));
     give(link, 1 / zero);
@@ -78,10 +82,13 @@ fn talks(link: workers.Link[int, int]) uses console {
     print("second worker: after its message");
 }
 
-fn main() uses console {
+fn main() uses console, clock {
     let a = worker_of(workers.start_worker(fails));
+    print("program: " + show(workers.receive(a, workers.Wait.forever)));
     let b = worker_of(workers.start_worker(talks));
     print("program: " + show(workers.receive(b, workers.Wait.forever)));
     print("program: " + show(workers.receive(b, workers.Wait.forever)));
+    # Nothing tells the program that a worker has failed except the receive this case must not make.
+    time.sleep(500);
     print("program: done, " + sent(workers.tell(a, 1)));
 }
