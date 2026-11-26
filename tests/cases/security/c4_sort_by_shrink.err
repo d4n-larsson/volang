@@ -1,6 +1,6 @@
 c4_sort_by_shrink.vo:7:5: runtime error[R0007]: The list changed while `sort_by` computed its keys: do not change it in the key function.
-   7 |     sort_by(xs, fn(x: int) -> int {
-     |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   7 |     sort_by(xs, fn(x) {
+     |     ^^^^^^^^^^^^^^^^^^^
 trace:
   at main (c4_sort_by_shrink.vo:7:5)
       xs: list[int] = [1999, 2000]

@@ -5,9 +5,7 @@ export fn replay(entries: list[parsing.Entry]) -> list[str] {
     let b = bank.new_bank();
     let out = new list[str];
     let order = slice(entries, 0, len(entries));
-    sort_by(order, fn(e: parsing.Entry) -> int {
-        return e.time;
-    });
+    sort_by(order, fn(e) => e.time);
     for e in order {
         match bank.apply(b, e) {
             case ok {

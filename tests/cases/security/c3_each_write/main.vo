@@ -5,7 +5,7 @@ fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
 }
 
 fn main() uses console, file.write("out/") {
-    each(["pwned.txt"], fn(p: str) {
+    each(["pwned.txt"], fn(p) {
         match write_file(p, "x") {
             case ok() {
                 print("wrote " + p);

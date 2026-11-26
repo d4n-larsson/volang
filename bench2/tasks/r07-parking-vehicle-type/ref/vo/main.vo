@@ -6,9 +6,7 @@ fn is_number(s: str) -> bool {
     if len(s) == 0 {
         return false;
     }
-    return all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
 }
 
 # Only called on strings that passed is_number.
@@ -51,9 +49,7 @@ fn run(words: list[str], garage_value: garage.Garage) -> list[str] {
             return bad;
         }
         let kind = vehicle_type(args_value);
-        if not any(fees.vehicle_types(), fn(t: str) -> bool {
-            return t == kind;
-        }) {
+        if not any(fees.vehicle_types(), fn(t) => t == kind) {
             return ["error: unknown vehicle type " + kind];
         }
         return [garage.park(garage_value, args_value[0], num(args_value[1]), kind)];
@@ -100,9 +96,7 @@ fn run(words: list[str], garage_value: garage.Garage) -> list[str] {
 fn main() uses console, input {
     let garage_value = garage.new_garage();
     for line in split(read_all(), "\n") {
-        let words = filter(split(line, " "), fn(w: str) -> bool {
-            return w != "";
-        });
+        let words = filter(split(line, " "), fn(w) => w != "");
         if len(words) == 0 {
             continue;
         }

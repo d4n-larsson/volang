@@ -1,5 +1,5 @@
 export fn render(n: int) -> str uses console {
-    let parts = map([n], fn(x: int) -> str {
+    let parts = map([n], fn(x) {
         print("rendering");
         return str(x);
     });

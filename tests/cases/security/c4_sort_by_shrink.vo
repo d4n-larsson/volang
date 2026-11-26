@@ -4,7 +4,7 @@ fn main() uses console {
     for i in 0..2000 {
         push(xs, 2000 - i);
     }
-    sort_by(xs, fn(x: int) -> int {
+    sort_by(xs, fn(x) {
         while len(xs) > 2 {
             match pop(xs) {
                 case ok(v) {

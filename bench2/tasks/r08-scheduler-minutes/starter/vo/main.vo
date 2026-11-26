@@ -71,9 +71,7 @@ fn run(words: list[str], events: map[str, schedule.Event]) -> list[str] {
 fn main() uses console, input {
     let events = new map[str, schedule.Event];
     for line in split(read_all(), "\n") {
-        let words = filter(split(line, " "), fn(w: str) -> bool {
-            return w != "";
-        });
+        let words = filter(split(line, " "), fn(w) => w != "");
         if len(words) == 0 {
             continue;
         }

@@ -9,9 +9,7 @@ fn each_indexed[T, E: effects](xs: list[T], f: fn(int, T) uses E) uses E {
 }
 
 fn words(line: str) -> list[str] {
-    return filter(split(line, " "), fn(s: str) -> bool {
-        return len(s) > 0;
-    });
+    return filter(split(line, " "), fn(s) => len(s) > 0);
 }
 
 fn main() -> result[void] uses console, input {
@@ -21,15 +19,15 @@ fn main() -> result[void] uses console, input {
         push(scores, try parse_int(t));
     }
     print("names:");
-    each_indexed(names, fn(i: int, name: str) {
+    each_indexed(names, fn(i, name) {
         print(str(i) + " " + name);
     });
     print("scores:");
-    each_indexed(scores, fn(i: int, s: int) {
+    each_indexed(scores, fn(i, s) {
         print(str(i) + " " + str(s));
     });
     let sum = new Sum { total: 0 };
-    each_indexed(scores, fn(i: int, s: int) {
+    each_indexed(scores, fn(i, s) {
         set sum.total = sum.total + s;
     });
     print("total " + str(sum.total));

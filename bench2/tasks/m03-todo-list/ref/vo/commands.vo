@@ -4,9 +4,7 @@ export record Command {
 }
 
 fn is_tag(t: str) -> bool {
-    return len(t) > 0 and all(chars(t), fn(c: str) -> bool {
-        return c >= "a" and c <= "z" or c >= "0" and c <= "9";
-    });
+    return len(t) > 0 and all(chars(t), fn(c) => c >= "a" and c <= "z" or c >= "0" and c <= "9");
 }
 
 fn is_prio(p: str) -> bool {
@@ -18,9 +16,7 @@ fn cmd(name: str, args_value: list[str]) -> Command {
 }
 
 export fn parse(line: str) -> result[Command] {
-    let f = filter(split(line, " "), fn(x: str) -> bool {
-        return x != "";
-    });
+    let f = filter(split(line, " "), fn(x) => x != "");
     let n = len(f);
     if n == 0 {
         return ok(cmd("", new list[str]));

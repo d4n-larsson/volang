@@ -23,14 +23,8 @@ fn main() -> result[void] uses console, input {
             }
         }
     }
-    let passed = map(filter(students, fn(s: Student) -> bool {
-        return s.score >= 50;
-    }), fn(s: Student) -> str {
-        return s.name;
-    });
-    let total = fold(students, 0, fn(acc: int, s: Student) -> int {
-        return acc + s.score;
-    });
+    let passed = map(filter(students, fn(s) => s.score >= 50), fn(s) => s.name);
+    let total = fold(students, 0, fn(acc, s) => acc + s.score);
     print("count " + str(len(students)));
     if len(passed) == 0 {
         print("passed -");
@@ -43,11 +37,7 @@ fn main() -> result[void] uses console, input {
     } else {
         print("average " + str(total / len(students)));
     }
-    print("any_perfect " + yes_no(any(students, fn(s: Student) -> bool {
-        return s.score == 100;
-    })));
-    print("all_passed " + yes_no(all(students, fn(s: Student) -> bool {
-        return s.score >= 50;
-    })));
+    print("any_perfect " + yes_no(any(students, fn(s) => s.score == 100)));
+    print("all_passed " + yes_no(all(students, fn(s) => s.score >= 50)));
     return ok();
 }

@@ -51,8 +51,8 @@ trace:
   at open (main.vo:7:18)
       path: str = "data/other.db"
   at setup (main.vo:7:18)
-  at serve_workers (std/http.vo:649:12)
-      address: str = "{vport}", workers: int = 2, setup: fn() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") = <fn() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/")>, handle: fn(Database[uses file.read, file.write], Request) -> Response uses file.read("data/"), file.write("data/"), random = <fn(Database[uses file.read, file.write], Request) -> Response uses file.read("data/"), file.write("data/"), random>
+  at serve_workers (std/http.vo:650:12)
+      address: str = "{vport}", workers: int = 2, setup: fn() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/") = <fn() -> result[Database[uses file.read, file.write]] uses file.read("data/"), file.write("data/")>, handle: fn(Database[uses file.read, file.write], Request) -> Response uses file.read("data/"), file.write("data/"), random = <fn(Database[uses file.read, file.write], Request) -> Response uses file.read("data/"), file.write("data/"), random>, serve_one: fn(Database[uses file.read, file.write], str) -> str uses file.read("data/"), file.write("data/"), random = <fn(Database[uses file.read, file.write], str) -> str uses file.read("data/"), file.write("data/"), random>
   at main (main.vo:46:9)
 --- exit 70
 $ vo replay --workers 2 r.jsonl

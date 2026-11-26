@@ -19,9 +19,7 @@ fn main() {
     let b = map_err(3, fn(e: str) -> str {
         return e;
     });
-    let c = map_err(map_err(load(), fn(e: LoadError) -> str {
-        return "x";
-    }), shout);
-    let d = map_err(load(), fn(e: LoadError) {
+    let c = map_err(map_err(load(), fn(e) => "x"), shout);
+    let d = map_err(load(), fn(e) {
     });
 }

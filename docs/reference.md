@@ -377,7 +377,7 @@ Simple statements (`let`, `var`, `set`, `return`, `break`, `continue`, calls, `t
 Details:
 
 - `let` cannot be reassigned (E0208, fix: use `var`). `set` only works on a `var`, a record field, a list element or a map entry.
-- A name cannot be declared again inside a nested block while it is visible (shadowing, E0203), and no local may take a builtin's name (`len`, `min`, `keys`, `lower`, ...) or an imported module's name. Sibling blocks may reuse names. A local never read is W0201.
+- A name cannot be declared again inside a nested block while it is visible (shadowing, E0203), and no local may take a builtin's name (`len`, `keys`, ...) or an imported module's name. Sibling blocks may reuse names. A local never read is W0201.
 - A call statement must not drop a value: `len(s);` alone is E0405 (write `let _ = len(s);` or use the value), and ignoring a `result` is E0404.
 - `if` and `while` conditions must be `bool` (E0301). Parentheses around a condition are optional.
 - `for x in xs` visits list elements, `for c in s` the characters of a `str`. `for i in a..b` visits the ints `a, a+1, ..., b-1` (empty when `a >= b`). `for _ in 0..n` repeats n times without a counter. `..` exists only in `for`. `for k, v in m` visits a map's keys with their values, `for i, x in xs` a list's indexes with their elements (`_` for either): what was there when the loop began; additions are not visited, removed entries are skipped. No C-style `for (;;)`, `do`, `loop` or `until`.
@@ -503,12 +503,12 @@ fn main() {
 ## Functions as values
 
 ```text
-fn(x: int) -> int { return x * 2; }        anonymous function (as `fn`, without a name, type parameters, `uses` or contracts)
+fn(x) => x * 2                             anonymous function (names only)
 fn(int) -> int uses console                 function type (parameter types, return type, effects)
 ```
 
-- A named function used without `(...)` is a value: `map(xs, double)`. A generic one takes its type and effect arguments from the function type expected there (`serve_workers("8080", 4, open_db, handle)` with `handle[D: effects](db: Database[D], ...)`; E0310 when nothing fixes them). Builtins are not values: wrap one, `fn(s: str) -> int { return len(s); }`. Anything that evaluates to a function can be called: `f(1)`, `make_adder(1)(2)`, `handlers[0](x)`, `box.on_save(x)` (a record field of function type).
-- Anonymous functions write parameter and return types like named functions. They never write `uses`: their effects come from their body (E0507). A function value fits a function type whose effects cover its own (E0502 otherwise).
+- A named function used without `(...)` is a value: `map(xs, double)`. A generic one takes its type and effect arguments from the function type expected there (`serve_workers("8080", 4, open_db, handle)` with `handle[D: effects](db: Database[D], ...)`; E0310 when nothing fixes them). Builtins are not values: wrap one, `fn(s) => len(s)`. Anything that evaluates to a function can be called: `f(1)`, `make_adder(1)(2)`, `handlers[0](x)`, `box.on_save(x)` (a record field of function type).
+- An anonymous function takes its types from the function type expected where it is: a parameter, a typed `let`, a field, a `return` (written types: E0342; none: E0343). In a call, the other arguments fix the type parameters, then each anonymous function in turn, its return type from its body. A body that only returns is `=> expr` (E0413). Effects come from the body (`uses` is E0507). A function value fits a function type whose effects cover its own (E0502 otherwise).
 - They capture the `let` bindings and parameters they use, by value, when they are created. Capturing a `var` is E0505; copy it into a `let` first.
 - Function types go anywhere a type can: parameters, return types, `let`, record fields, lists, maps.
 - A function returning a function type writes the type's `uses` first: `fn f() -> fn(str) uses console {` declares that the returned function prints. To declare that `f` itself prints and returns a pure function, parenthesize the type: `fn f() -> (fn(str)) uses console {`.
@@ -532,22 +532,14 @@ record Person {
 }
 
 fn make_adder(n: int) -> fn(int) -> int {
-    return fn(x: int) -> int {
-        return x + n;
-    };
+    return fn(x) => x + n;
 }
 
 fn main() uses console {
     let people = [new Person { name: "cy", age: 30 }, new Person { name: "al", age: 25 }];
-    sort_by(people, fn(p: Person) -> int {
-        return p.age;
-    });
-    print(join(map(people, fn(p: Person) -> str {
-        return p.name;
-    }), ","));
-    let total = fold([1, 2, 3], 0, fn(acc: int, x: int) -> int {
-        return acc + x;
-    });
+    sort_by(people, fn(p) => p.age);
+    print(join(map(people, fn(p) => p.name), ","));
+    let total = fold([1, 2, 3], 0, fn(acc, x) => acc + x);
     print(str(make_adder(total)(4)));
 }
 ```
@@ -620,7 +612,7 @@ fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
 fn main() uses console {
     let p = swap(new Pair[int, str] { first: 1, second: "one" });
     print(p.first + " " + str(largest([3, 9, 4], 0)));
-    each(["a", "b"], fn(s: str) {
+    each(["a", "b"], fn(s) {
         print(s);
     });
 }
@@ -725,9 +717,7 @@ fn load(text: str) -> result[int, LoadError] {
     if text == "" {
         return err(LoadError.missing("count"));
     }
-    return map_err(parse_int(text), fn(m: str) -> LoadError {
-        return LoadError.bad_number(text);
-    });
+    return map_err(parse_int(text), fn(m) => LoadError.bad_number(text));
 }
 
 fn describe(e: LoadError) -> str {

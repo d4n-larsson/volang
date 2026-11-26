@@ -46,9 +46,7 @@ fn main() uses console, input {
     let world_value = world.make_world();
     let player_value = player.new_player();
     for line in split(read_all(), "\n") {
-        let words = filter(split(line, " "), fn(w: str) -> bool {
-            return w != "";
-        });
+        let words = filter(split(line, " "), fn(w) => w != "");
         if len(words) == 0 {
             continue;
         }

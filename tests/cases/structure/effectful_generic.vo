@@ -5,9 +5,7 @@ fn apply[E: effects](f: fn() -> int uses E) -> int uses E {
 }
 
 fn main() uses console {
-    let a = apply(fn() -> int {
-        return 1;
-    });
+    let a = apply(fn() => 1);
     let b = a + 1;
     let c = b + 1;
     let d = c + 1;

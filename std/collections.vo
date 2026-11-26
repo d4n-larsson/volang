@@ -4,19 +4,19 @@
 import std.option;
 
 # An empty ordered map ordered by cmp: negative puts a before b, zero means the same key, positive after.
-#     let m: ordered_map[int, str] = ordered_map_by(fn(a: int, b: int) -> int { return b - a; }); set m[1] = "x"; set m[2] = "y"; keys(m) == [2, 1] is true
+#     let m: ordered_map[int, str] = ordered_map_by(fn(a, b) => b - a); set m[1] = "x"; set m[2] = "y"; keys(m) == [2, 1] is true
 export fn ordered_map_by[K, V](cmp: fn(K, K) -> int) -> ordered_map[K, V] {
     return __coll(2, cmp);
 }
 
 # An empty ordered set ordered by cmp.
-#     let s: ordered_set[str] = ordered_set_by(fn(a: str, b: str) -> int { return len(a) - len(b); }); push(s, "ccc"); push(s, "a"); first(s) == Option.some("a") is true
+#     let s: ordered_set[str] = ordered_set_by(fn(a, b) => len(a) - len(b)); push(s, "ccc"); push(s, "a"); first(s) == Option.some("a") is true
 export fn ordered_set_by[T](cmp: fn(T, T) -> int) -> ordered_set[T] {
     return __coll(2, cmp);
 }
 
 # An empty priority queue ordered by cmp: `pop` gives first the item cmp puts first.
-#     let q: priority_queue[int] = priority_queue_by(fn(a: int, b: int) -> int { return b - a; }); push(q, 1); push(q, 9); pop(q) == ok(9) is true
+#     let q: priority_queue[int] = priority_queue_by(fn(a, b) => b - a); push(q, 1); push(q, 9); pop(q) == ok(9) is true
 export fn priority_queue_by[T](cmp: fn(T, T) -> int) -> priority_queue[T] {
     return __coll(2, cmp);
 }

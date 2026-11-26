@@ -325,7 +325,7 @@ fn roll_back[E: effects](db: Database[uses E]) uses E {
 
 # Runs f inside a transaction: committed when f returns ok, rolled back when it returns err (which is
 # returned). A transaction inside another is an err, and so is one in which a statement failed.
-#     transaction(new Database { conn: new Conn { id: 0, peer: "" }, statement_ms: 1, in_transaction: false, failed: false, closed: true }, fn() -> result[int] { return ok(5); }) == err("connection: closed") is true
+#     let f: fn() -> result[int] = fn() => ok(5); transaction(new Database { conn: new Conn { id: 0, peer: "" }, statement_ms: 1, in_transaction: false, failed: false, closed: true }, f) == err("connection: closed") is true
 export fn transaction[T, E: effects, F: effects](
     db: Database[uses E],
     f: fn() -> result[T] uses F
@@ -484,9 +484,7 @@ export fn time_column(row: Row, column: str) -> result[int] {
     let v = try value_column(row, column);
     match text_column(row, column) {
         case ok(s) {
-            return map_err(values.time_of(s), fn(reason: str) -> str {
-                return column + " is " + reason + ": " + s;
-            });
+            return map_err(values.time_of(s), fn(reason) => column + " is " + reason + ": " + s);
         }
         case err(_) {
             return err(column + " is " + kind_name(v) + ", not a date or time");

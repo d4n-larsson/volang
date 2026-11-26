@@ -4,7 +4,5 @@ fn apply[E: effects](x: int, check: fn(int) -> bool uses E) -> int uses E
 }
 
 fn main() uses console {
-    print(str(apply(2, fn(n: int) -> bool {
-        return n > 0;
-    })));
+    print(str(apply(2, fn(n) => n > 0)));
 }

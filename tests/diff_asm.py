@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.join(ROOT, "tests"))
 import float15  # noqa: E402
 import gen_programs  # noqa: E402
 import fuzz  # noqa: E402
+import migrate_059  # noqa: E402
 
 VO = os.path.join(ROOT, "bin", "vo")
 ASM = os.path.join(ROOT, "build-asm", "vo")
@@ -39,11 +40,16 @@ def run(binary, path):
 
 
 def one(seed, new_bin, mode):
-    src = gen_programs.generate(seed, mode)
-    path = os.path.join(WORK, f"p{seed}.vo")
+    src = gen_programs.generate(seed, mode)  # the 0.4 form the release reads; the current build gets it migrated (spec 059)
+    new_src = migrate_059.text_lambdas(src)
+    path, new_path = os.path.join(WORK, f"p{seed}.vo"), os.path.join(WORK, "new", f"p{seed}.vo")
     open(path, "w").write(src)
-    a, b = run(ASM, path), run(new_bin, path)
+    open(new_path, "w").write(new_src)
+    a, b = run(ASM, path), run(new_bin, new_path)
     os.remove(path)
+    os.remove(new_path)
+    if new_src != src:
+        a, b = migrate_059.without_positions(a), migrate_059.without_positions(b)
     if b"error[R0009]" in a[1] or b"error[R0009]" in b[1]:
         return "timeout", seed, src, a, b
     return ("ok" if float15.same(a, b) else "diff"), seed, src, a, b  # the release writes floats to 15 digits
@@ -92,7 +98,7 @@ def main():
         return 1
     host = args.platform in (None, os.uname().machine)  # the host build is build/vo
     new_bin = args.new or os.path.join(ROOT, "build" if host else f"build-{args.platform}", "vo")
-    os.makedirs(WORK, exist_ok=True)
+    os.makedirs(os.path.join(WORK, "new"), exist_ok=True)
     counts = {"ok": 0, "diff": 0, "timeout": 0}
     with cf.ThreadPoolExecutor(os.cpu_count() or 4) as ex:
         futs = [ex.submit(one, s, new_bin, args.mode) for s in range(args.seed, args.seed + args.count)]
@@ -112,7 +118,8 @@ def main():
     if args.mutants:
         # Spec 007: networking is a stub in build-asm/vo (no host check, always err), so sources that
         # use std.http are left out: their difference is the feature, not a porting error.
-        files = [f for f in fuzz.corpus() if b"std.http" not in open(f, "rb").read()]
+        files = [f for f in fuzz.corpus()  # spec 059: the release cannot read the 0.5 form
+                 if b"std.http" not in open(f, "rb").read() and not migrate_059.NEW_FORM.search(open(f, "rb").read())]
         with cf.ThreadPoolExecutor(os.cpu_count() or 4) as ex:
             futs = [ex.submit(mutant, i, args.seed, new_bin, files) for i in range(args.mutants)]
             for f in cf.as_completed(futs):

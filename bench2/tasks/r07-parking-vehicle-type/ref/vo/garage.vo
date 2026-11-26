@@ -50,9 +50,7 @@ export fn park(garage: Garage, plate: str, time: int, kind: str) -> str {
     }
     var numbers = level_numbers(garage);
     if kind == "truck" {
-        set numbers = filter(numbers, fn(n: int) -> bool {
-            return n == 1;
-        });
+        set numbers = filter(numbers, fn(n) => n == 1);
     }
     for number in numbers {
         let level = garage.levels[number];
@@ -82,9 +80,7 @@ export fn occupancy(garage: Garage) -> list[str] {
     var spots_all = 0;
     for number in level_numbers(garage) {
         let level = garage.levels[number];
-        let used = len(filter(level.spots, fn(p: str) -> bool {
-            return p != "";
-        }));
+        let used = len(filter(level.spots, fn(p) => p != ""));
         push(out, "level " + str(number) + ": " + str(used) + "/" + str(len(level.spots)) + " used");
         set used_all = used_all + used;
         set spots_all = spots_all + len(level.spots);

@@ -63,7 +63,7 @@ fn same(s: str) -> bool {
 
 fn main() uses console, file.read("./") {
     let seen = new Seen { lines: 0, bad: 0 };
-    let done = fs.each_line("texts.txt", fn(line: str) -> result[bool] {
+    let done = fs.each_line("texts.txt", fn(line) {
         set seen.lines = seen.lines + 1;
         if not same(line) {
             set seen.bad = seen.bad + 1;

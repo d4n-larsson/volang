@@ -5,8 +5,6 @@ fn main() uses console {
     for i in 0..300 {
         push(xs, i);
     }
-    let ys = map(xs, fn(x: int) -> str {
-        return "v" + str(x * 2) + "-" + str(x);
-    });
+    let ys = map(xs, fn(x) => "v" + str(x * 2) + "-" + str(x));
     print(ys[0] + " " + ys[299] + " " + str(len(ys)));
 }

@@ -61,9 +61,7 @@ fn main() -> result[void] uses console, input, file.read("texts/") {
     }
     let words = keys(counts);
     sort(words);
-    sort_by(words, fn(w: str) -> int {
-        return -counts[w];
-    });
+    sort_by(words, fn(w) => -counts[w]);
     for i in 0..min(n, len(words)) {
         print(words[i] + " " + str(counts[words[i]]));
     }

@@ -8,7 +8,7 @@
 vo version [--json]
 ```
 
-The version is a semantic version (`0.4.0`). The schema version is the `"v"` of every JSON record the
+The version is a semantic version (`0.5.0`). The schema version is the `"v"` of every JSON record the
 toolchain prints; it is 1, and within version 1 fields and record kinds are only ever added, never removed
 or renamed (see [JSON output](json-output.md#versions)).
 
@@ -22,7 +22,7 @@ or renamed (see [JSON output](json-output.md#versions)).
 
 Text: `vo VERSION schema N`, then `tzdata RELEASE`: the release of the time zone database built into
 this `vo` ([time zones](../guide/standard-library.md#time-zones)). JSON:
-`{"v":1,"kind":"version","version":"0.4.0","schema":1,"tzdata":"2026f"}`.
+`{"v":1,"kind":"version","version":"0.5.0","schema":1,"tzdata":"2026f"}`.
 
 ## Exit statuses
 
@@ -41,10 +41,10 @@ fn main() uses console {
 
 ```console
 $ vo version
-vo 0.4.0 schema 1
+vo 0.5.0 schema 1
 tzdata 2026f
 $ vo version --json
-{"v":1,"kind":"version","version":"0.4.0","schema":1,"tzdata":"2026f"}
+{"v":1,"kind":"version","version":"0.5.0","schema":1,"tzdata":"2026f"}
 ```
 
 Include the output of `vo version` when you report a bug, with the command and the input that caused it.

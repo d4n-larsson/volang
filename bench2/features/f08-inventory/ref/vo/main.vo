@@ -29,29 +29,19 @@ fn main() -> result[void] uses console, input {
             }
         }
     }
-    let restock = map(filter(items, fn(it: Item) -> bool {
-        return it.qty < q;
-    }), fn(it: Item) -> str {
-        return it.name;
-    });
+    let restock = map(filter(items, fn(it) => it.qty < q), fn(it) => it.name);
     if len(restock) == 0 {
         print("restock -");
     } else {
         print("restock " + join(restock, " "));
     }
-    print("value " + str(fold(map(items, value), 0, fn(a: int, b: int) -> int {
-        return a + b;
-    })));
-    print("out_of_stock " + yes_no(any(items, fn(it: Item) -> bool {
-        return it.qty == 0;
-    })));
-    print("all_priced " + yes_no(all(items, fn(it: Item) -> bool {
-        return it.price > 0;
-    })));
+    print("value " + str(fold(map(items, value), 0, fn(a, b) => a + b)));
+    print("out_of_stock " + yes_no(any(items, fn(it) => it.qty == 0)));
+    print("all_priced " + yes_no(all(items, fn(it) => it.price > 0)));
     if len(items) == 0 {
         print("most_valuable -");
     } else {
-        let best = fold(items, items[0], fn(acc: Item, it: Item) -> Item {
+        let best = fold(items, items[0], fn(acc, it) {
             if value(it) > value(acc) {
                 return it;
             }

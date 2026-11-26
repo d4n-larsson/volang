@@ -9,9 +9,7 @@ fn main() uses console, file.read("./"), process("bin/cat_in") {
         "",
         new list[str],
         "./",
-        fn(line: str) -> result[bool] {
-            return ok(true);
-        }
+        fn(line) => ok(true)
     ) {
         case ok(out) {
             print(str(out.code));

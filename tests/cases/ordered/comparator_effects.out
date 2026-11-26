@@ -3,6 +3,6 @@ comparator_effects.vo:3:4: warning[W0501]: `main` declares console, which it nev
      |    ^^^^
   fix: remove `uses console `
 comparator_effects.vo:4:58: error[E0502]: This function uses console, which `fn(int, int) -> int` does not allow.
-   4 |     let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int {
-     |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   4 |     let s: ordered_set[int] = collections.ordered_set_by(fn(a, b) {
+     |                                                          ^^^^^^^^^^
 1 error, 1 warning

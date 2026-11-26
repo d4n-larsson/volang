@@ -7,9 +7,7 @@ export record Line {
 }
 
 fn digits(s: str, lo: int, hi: int) -> bool {
-    return len(s) >= lo and len(s) <= hi and all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return len(s) >= lo and len(s) <= hi and all(chars(s), fn(c) => c >= "0" and c <= "9");
 }
 
 fn to_int(s: str) -> int {
@@ -24,9 +22,7 @@ fn to_int(s: str) -> int {
 }
 
 export fn parse(line: str) -> result[Line] {
-    let f = filter(split(line, " "), fn(x: str) -> bool {
-        return x != "";
-    });
+    let f = filter(split(line, " "), fn(x) => x != "");
     if len(f) == 0 {
         return ok(new Line { kind: "blank", a: "", b: "", x: 0, y: 0 });
     }

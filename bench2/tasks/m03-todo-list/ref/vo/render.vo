@@ -17,26 +17,14 @@ export fn listing(s: store.Store, which: str) -> list[str] {
     let out = new list[str];
     var ts = store.all_tasks(s);
     if which == "" {
-        set ts = filter(ts, fn(t: store.Task) -> bool {
-            return not t.done;
-        });
-        sort_by(ts, fn(t: store.Task) -> int {
-            return t.prio;
-        });
+        set ts = filter(ts, fn(t) => not t.done);
+        sort_by(ts, fn(t) => t.prio);
     } else if which == "done" {
-        set ts = filter(ts, fn(t: store.Task) -> bool {
-            return t.done;
-        });
-        sort_by(ts, fn(t: store.Task) -> int {
-            return t.done_seq;
-        });
+        set ts = filter(ts, fn(t) => t.done);
+        sort_by(ts, fn(t) => t.done_seq);
     } else {
         let tag = slice(which, 1, len(which));
-        set ts = filter(ts, fn(t: store.Task) -> bool {
-            return any(t.tags, fn(g: str) -> bool {
-                return g == tag;
-            });
-        });
+        set ts = filter(ts, fn(t) => any(t.tags, fn(g) => g == tag));
     }
     for t in ts {
         push(out, task_line(t, which != "" and which != "done"));
@@ -49,8 +37,6 @@ export fn listing(s: store.Store, which: str) -> list[str] {
 
 export fn stats(s: store.Store) -> str {
     let ts = store.all_tasks(s);
-    let done = len(filter(ts, fn(t: store.Task) -> bool {
-        return t.done;
-    }));
+    let done = len(filter(ts, fn(t) => t.done));
     return "open " + str(len(ts) - done) + " done " + str(done);
 }

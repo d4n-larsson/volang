@@ -43,6 +43,6 @@ trace:
       db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }
   at transaction (std/sqlite.vo:167:11)
       db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }, f: fn() -> result[int] uses file.read, file.write = <fn() -> result[int] uses file.read, file.write>
-  at main (app.vo:10:13)
+  at main (app.vo:10:26)
       db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }, c: Changes = new Changes { changed: 1, last_id: 1 }
 --- exit 70

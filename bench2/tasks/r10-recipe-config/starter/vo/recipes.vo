@@ -50,7 +50,7 @@ export fn list_lines(recipes: map[str, Recipe]) -> list[str] {
     }
     let names = keys(recipes);
     sort(names);
-    return map(names, fn(name: str) -> str {
+    return map(names, fn(name) {
         let r = recipes[name];
         return name + ": " + str(r.servings) + " servings, " + str(len(r.ingredients)) + " ingredients";
     });

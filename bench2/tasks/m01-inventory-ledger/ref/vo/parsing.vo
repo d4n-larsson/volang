@@ -6,18 +6,14 @@ export record Command {
 }
 
 fn fields(line: str) -> list[str] {
-    return filter(split(line, " "), fn(f: str) -> bool {
-        return f != "";
-    });
+    return filter(split(line, " "), fn(f) => f != "");
 }
 
 fn is_number(f: str) -> bool {
     if len(f) < 1 or len(f) > 6 {
         return false;
     }
-    return all(chars(f), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return all(chars(f), fn(c) => c >= "0" and c <= "9");
 }
 
 fn number(f: str) -> int {

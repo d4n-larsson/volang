@@ -32,7 +32,7 @@ CHANGED = {
     "examples/expenses: test": ("T027", [
         ("PASS a bad date is an error, not a crash (0ms)\n",
          "FAIL a bad date is an error, not a crash (0ms) [FR-004]\n"
-         "  report.vo:172:13: `expect_eq` failed: the values differ.\n"  # spec 058: 10 import lines fewer
+         "  report.vo:160:13: `expect_eq` failed: the values differ.\n"  # spec 058: 10 import lines fewer; 059: 12 more
          '    expected: err(ExpenseError.bad_date(new DateProblem { date: "2026-02-30", reason: "day 30 is not in '
          'that month" }))\n'
          '    actual:   err(ExpenseError.bad_date(new DateProblem { date: "2026-02-30", reason: "invalid time: '
@@ -42,6 +42,31 @@ CHANGED = {
         ("spec FR-004: 1 test, all passing", "spec FR-004: 1 test, 1 not passing"),
         ("5 passed, 0 failed", "4 passed, 1 failed")], 1),
 }
+
+
+# Spec 059: anonymous functions the fixes leave alone, edited by hand as in the repository (a named setup
+# function where nothing gives `ok(...)` its type; `=> e` where the return type is generic but e is not):
+# program -> [(file, regex on the fixed text, replacement, text appended to the file)].
+HAND_059 = {
+    "examples/job-queue": [("main.vo", r"fn\(s: Seat\) -> [\w.]*Worker\[[\w.]+, [\w.]+\] \{\s*return s\.worker;\s*\}", "fn(s) => s.worker", "")],
+    "examples/rates": [("main.vo", r"fn\(\) -> result\[convert\.Rates\[uses net\]\] \{\s*return ok\(new convert\.Rates \{ rate: rates\.fetch_rate \}\);\s*\}",
+                        "open_rates", "\nfn open_rates() -> result[convert.Rates[uses net]] {\n"
+                        "    return ok(new convert.Rates { rate: rates.fetch_rate });\n}\n")],
+    "examples/secure-notes": [("main.vo", r"fn\(\) -> result\[store\.Store\] \{\s*return ok\(store\.new_store\(\)\);\s*\}",
+                               "open_store", "\nfn open_store() -> result[store.Store] {\n    return ok(store.new_store());\n}\n")],
+}
+
+
+def hand_059(name, where):
+    """Applies HAND_059's edits of a program; 1 when one applied."""
+    done = 0
+    for f, pattern, new, tail in HAND_059.get(name, []):
+        path = os.path.join(where, f)
+        text, n = re.subn(pattern, new, open(path, encoding="utf-8").read())
+        if n:
+            open(path, "w", encoding="utf-8").write(text + tail)
+            done = 1
+    return done
 
 
 def changed(key, want):
@@ -150,12 +175,17 @@ def verify(quick):
             rows = sorted({m.group(1) for path in paths for r in diagnostics(path) if r["code"] == "E0214"
                            for m in [re.match(r"`(std\.[\w.]+)`", r["message"])] if m})
             fixed, left = vo_fix(paths)
-            if kind == "package":  # the fixes changed the package: pin it again, then look for errors
+            for _ in range(4) if kind == "package" else ():  # the fixes changed the package: pin it again and
                 subprocess.run([VO, "package", "main.vo", "postgres", "pkg/postgres"], cwd=h, capture_output=True)
-                fixed2, left = vo_fix(paths)
+                fixed2, left = vo_fix(paths)                 # fix again (spec 059: E0413 follows E0342)
                 fixed |= fixed2
+                if not fixed2:
+                    break
                 shutil.rmtree(where)
                 shutil.copytree(os.path.join(h, "pkg", "postgres"), where)
+            if hand_059(name, where):
+                fixed2, left = vo_fix(paths)
+                fixed |= fixed2 | {"hand edit (spec 059)"}
             used[name] = sorted(fixed) + ([f"rows {', '.join(rows)}"] if rows else [])
             if left:
                 problems.append(f"{name}: not clean after the fixes: {left[:3]}")

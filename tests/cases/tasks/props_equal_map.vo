@@ -24,29 +24,29 @@ fn tagged(it: Item) -> Item {
 
 prop "ints and limits" (xs: list[int], k: int) {
     assume(k >= 1 and k <= 64);
-    expect_eq(concurrent_map(xs, k, fn(x: int) -> int { return x % 1000 * 3 - 1; }), map(xs, fn(x: int) -> int { return x % 1000 * 3 - 1; }));
+    expect_eq(concurrent_map(xs, k, fn(x) => x % 1000 * 3 - 1), map(xs, fn(x) => x % 1000 * 3 - 1));
 }
 
 prop "strings" (xs: list[str]) {
-    let f = fn(s: str) -> str { return upper(s) + "|" + s; };
+    let f: fn(str) -> str = fn(s) => upper(s) + "|" + s;
     expect_eq(concurrent_map(xs, 4, f), map(xs, f));
 }
 
 prop "results and variants" (xs: list[result[int]], ys: list[Shape]) {
-    let f = fn(r: result[int]) -> result[int] { return r; };
+    let f: fn(result[int]) -> result[int] = fn(r) => r;
     expect_eq(concurrent_map(xs, 3, f), map(xs, f));
-    let g = fn(s: Shape) -> Shape { return s; };
+    let g: fn(Shape) -> Shape = fn(s) => s;
     expect_eq(concurrent_map(ys, 3, g), map(ys, g));
 }
 
 prop "a task's changes stay in the task" (xss: list[list[int]], items: list[Item]) {
-    let before = map(xss, fn(xs: list[int]) -> int { return len(xs); });
+    let before = map(xss, fn(xs) => len(xs));
     let grown = concurrent_map(xss, 8, grow);
-    expect_eq(map(xss, fn(xs: list[int]) -> int { return len(xs); }), before);
-    let names = map(items, fn(it: Item) -> int { return len(it.tags); });
+    expect_eq(map(xss, fn(xs) => len(xs)), before);
+    let names = map(items, fn(it) => len(it.tags));
     let changed = concurrent_map(items, 8, tagged);
-    expect_eq(map(items, fn(it: Item) -> int { return len(it.tags); }), names);
+    expect_eq(map(items, fn(it) => len(it.tags)), names);
     expect_eq(len(grown), len(xss));
     expect_eq(len(changed), len(items));
-    expect_eq(grown, map(map(xss, fn(xs: list[int]) -> list[int] { return slice(xs, 0, len(xs)); }), grow));
+    expect_eq(grown, map(map(xss, fn(xs) => slice(xs, 0, len(xs))), grow));
 }

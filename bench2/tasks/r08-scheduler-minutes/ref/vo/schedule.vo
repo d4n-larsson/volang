@@ -25,9 +25,7 @@ export fn room_events(events: map[str, Event], room: str) -> list[Event] {
             push(evs, events[k]);
         }
     }
-    sort_by(evs, fn(e: Event) -> int {
-        return e.start;
-    });
+    sort_by(evs, fn(e) => e.start);
     return evs;
 }
 
@@ -87,7 +85,5 @@ export fn free_slots(events: map[str, Event], room: str, lo: int, hi: int, min_l
 }
 
 export fn booked_minutes(evs: list[Event]) -> int {
-    return fold(evs, 0, fn(acc: int, e: Event) -> int {
-        return acc + clock.duration(e.start, e.end);
-    });
+    return fold(evs, 0, fn(acc, e) => acc + clock.duration(e.start, e.end));
 }

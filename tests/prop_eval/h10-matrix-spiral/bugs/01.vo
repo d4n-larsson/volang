@@ -1,8 +1,6 @@
 # replaces: main.vo
 fn words(s: str) -> list[str] {
-    return filter(split(s, " "), fn(w: str) -> bool {
-        return len(w) > 0;
-    });
+    return filter(split(s, " "), fn(w) => len(w) > 0);
 }
 
 fn spiral(m: list[list[str]]) -> list[str] {

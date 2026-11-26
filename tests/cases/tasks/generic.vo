@@ -4,13 +4,11 @@ record Pair[A, B] {
 }
 
 fn pair_up[T, U](xs: list[T], f: fn(T) -> U) -> list[Pair[T, U]] {
-    return concurrent_map(xs, 3, fn(x: T) -> Pair[T, U] {
-        return new Pair { first: x, second: f(x) };
-    });
+    return concurrent_map(xs, 3, fn(x) => new Pair { first: x, second: f(x) });
 }
 
 fn main() uses console {
-    for p in pair_up(["a", "bb", "ccc"], fn(s: str) -> int { return len(s); }) {
+    for p in pair_up(["a", "bb", "ccc"], fn(s) => len(s)) {
         print(p.first + "=" + str(p.second));
     }
 }

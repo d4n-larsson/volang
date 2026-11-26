@@ -11,9 +11,7 @@ fn is_digits(s: str) -> bool {
     if len(s) == 0 {
         return false;
     }
-    return all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
 }
 
 # Only called on strings that passed is_digits.
@@ -72,9 +70,7 @@ fn valid_time(word: str) -> bool {
 
 # The level and component of a valid log line.
 fn parse_record(line: str) -> result[Record] {
-    let words = filter(split(line, " "), fn(w: str) -> bool {
-        return w != "";
-    });
+    let words = filter(split(line, " "), fn(w) => w != "");
     if len(words) < 4 {
         return err("short");
     }
@@ -82,9 +78,7 @@ fn parse_record(line: str) -> result[Record] {
         return err("bad stamp");
     }
     let level = words[2];
-    if not any(levels_in_order(), fn(lv: str) -> bool {
-        return lv == level;
-    }) {
+    if not any(levels_in_order(), fn(lv) => lv == level) {
         return err("bad level");
     }
     let comp = words[3];
@@ -121,9 +115,7 @@ export fn levels(lines: list[str]) -> list[str] {
     for rec in records(lines) {
         set counts[rec.level] = counts[rec.level] + 1;
     }
-    return map(levels_in_order(), fn(lv: str) -> str {
-        return lv + " " + str(counts[lv]);
-    });
+    return map(levels_in_order(), fn(lv) => lv + " " + str(counts[lv]));
 }
 
 export fn errors(lines: list[str]) -> list[str] {
@@ -142,10 +134,6 @@ export fn errors(lines: list[str]) -> list[str] {
     }
     let names = keys(per);
     sort(names);
-    sort_by(names, fn(c: str) -> int {
-        return -per[c];
-    });
-    return map(names, fn(c: str) -> str {
-        return c + " " + str(per[c]);
-    });
+    sort_by(names, fn(c) => -per[c]);
+    return map(names, fn(c) => c + " " + str(per[c]));
 }

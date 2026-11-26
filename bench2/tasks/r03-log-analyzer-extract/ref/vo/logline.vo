@@ -15,9 +15,7 @@ fn is_digits(s: str) -> bool {
     if len(s) == 0 {
         return false;
     }
-    return all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
 }
 
 # Only called on strings that passed is_digits.
@@ -83,9 +81,7 @@ export fn to_seconds(date: str, time: str) -> int {
 
 # The entry of a valid log line.
 fn parse_entry(line: str) -> result[Entry] {
-    let words = filter(split(line, " "), fn(w: str) -> bool {
-        return w != "";
-    });
+    let words = filter(split(line, " "), fn(w) => w != "");
     if len(words) < 4 {
         return err("short");
     }
@@ -94,9 +90,7 @@ fn parse_entry(line: str) -> result[Entry] {
         return err("bad stamp");
     }
     let level = words[2];
-    if not any(levels_in_order(), fn(lv: str) -> bool {
-        return lv == level;
-    }) {
+    if not any(levels_in_order(), fn(lv) => lv == level) {
         return err("bad level");
     }
     let comp = words[3];

@@ -27,9 +27,7 @@ fn pairs(xs: list[int], ys: list[int]) -> list[list[int]] {
 }
 
 fn lines_of(ps: list[list[int]], shift: int) -> list[str] {
-    return map(ps, fn(p: list[int]) -> str {
-        return str(p[0] + shift) + " " + str(p[1] + shift);
-    });
+    return map(ps, fn(p) => str(p[0] + shift) + " " + str(p[1] + shift));
 }
 
 fn run(lines: list[str]) -> list[str] {
@@ -62,9 +60,7 @@ fn read_out(out: list[str]) -> result[list[list[int]]] {
 }
 
 fn covers(ps: list[list[int]], x2: int) -> bool {
-    return any(ps, fn(p: list[int]) -> bool {
-        return 2 * min(p[0], p[1]) <= x2 and x2 <= 2 * max(p[0], p[1]);
-    });
+    return any(ps, fn(p) => 2 * min(p[0], p[1]) <= x2 and x2 <= 2 * max(p[0], p[1]));
 }
 
 prop "output is the sorted, disjoint union of the input" (xs: list[int], ys: list[int]) {

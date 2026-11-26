@@ -4,7 +4,7 @@ fn inner[E: effects](n: int, f: fn(int) uses E) uses E {
 
 fn outer[E: effects](n: int, f: fn(int) uses E) uses E {
     inner(n, f);
-    inner(n + 1, fn(x: int) {
+    inner(n + 1, fn(x) {
         f(x);
     });
 }
@@ -17,10 +17,10 @@ fn rec[E: effects](n: int, f: fn(int) uses E) uses E {
 }
 
 fn main() uses console {
-    outer(1, fn(x: int) {
+    outer(1, fn(x) {
         print(str(x));
     });
-    rec(2, fn(x: int) {
+    rec(2, fn(x) {
         print("r" + str(x));
     });
 }

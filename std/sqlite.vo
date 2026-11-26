@@ -158,7 +158,7 @@ export fn query[E: effects](
 }
 
 # Runs f inside a transaction: committed when f returns ok, rolled back when it returns err (which is returned).
-#     transaction(open_memory(), fn() -> result[int] { return ok(5); }) == ok(5) is true
+#     let f: fn() -> result[int] = fn() => ok(5); transaction(open_memory(), f) == ok(5) is true
 export fn transaction[T, E: effects, F: effects](
     db: Database[uses E],
     f: fn() -> result[T] uses F

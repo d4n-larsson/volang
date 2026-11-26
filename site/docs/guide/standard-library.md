@@ -495,7 +495,7 @@ fn open_db() -> result[sqlite.Database[uses file.read, file.write]]
 
 fn hit(db: sqlite.Database[uses file.read, file.write], req: http.Request) -> http.Response
     uses file.read("data/"), file.write("data/") {
-    let saved = sqlite.transaction(db, fn() -> result[int] {
+    let saved: result[int] = sqlite.transaction(db, fn() {
         let c = try sqlite.exec(db, sqlite.sql("insert into hits (path) values (?)"), [sqlite.Value.text(req.path)]);
         return ok(c.last_id);
     });
@@ -873,15 +873,15 @@ import std.lists;
 
 fn main() uses console {
     let words = split("pear fig kiwi apple fig plum", " ");
-    print(format("{} {}", lists.has_item(words, "kiwi"), lists.sum(map(words, fn(w: str) -> int { return len(w); }))));
-    for size, group in lists.group_by(words, fn(w: str) -> int { return len(w); }) {
+    print(format("{} {}", lists.has_item(words, "kiwi"), lists.sum(map(words, fn(w) => len(w)))));
+    for size, group in lists.group_by(words, fn(w) => len(w)) {
         print(format("{} letters: {}", size, join(group, " ")));
     }
-    lists.sort_by_desc(words, fn(w: str) -> int { return len(w); });
+    lists.sort_by_desc(words, fn(w) => len(w));
     for i, w in words {
         print(format("{}. {}", i + 1, w));
     }
-    match lists.max_by(words, fn(w: str) -> str { return w; }) {
+    match lists.max_by(words, fn(w) => w) {
         case ok(w) {
             print("last in the alphabet: " + w);
         }
@@ -1062,7 +1062,7 @@ fn main() -> result[void] uses console {
         sqlite.sql("create table people(id integer primary key, name text not null, age integer)"),
         new list[sqlite.Value]
     );
-    let added = try sqlite.transaction(db, fn() -> result[int] {
+    let added: int = try sqlite.transaction(db, fn() {
         let a = try sqlite.exec(db, sqlite.sql("insert into people(name, age) values (?, ?)"), [
             sqlite.Value.text("Ada"),
             sqlite.Value.integer(36)

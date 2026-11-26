@@ -7,7 +7,7 @@ fn inverse(x: int) -> int {
 
 fn main() -> result[void] uses console, serve("{vport}") {
     print("serving");
-    try http.serve("{vport}", fn(r: http.Request) -> http.Response {
+    try http.serve("{vport}", fn(r) {
         let xs = [1, 2, len(r.query)];
         let ys = concurrent_map(xs, 3, inverse);
         return new http.Response { status: 200, headers: new list[http.Header], body: str(ys[2]) };

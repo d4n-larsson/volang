@@ -13,7 +13,7 @@ fn show(r: result[int]) -> str {
 }
 
 fn ints(xs: list[int]) -> str {
-    return join(map(xs, fn(x: int) -> str { return str(x); }), ",");
+    return join(map(xs, fn(x) => str(x)), ",");
 }
 
 # Spec 014 US1: every ordered_map operation, empty cases included.

@@ -71,9 +71,7 @@ export fn final(g: GradeBook, s: str) -> int {
     for i in 0..n {
         push(order, i);
     }
-    sort_by(order, fn(i: int) -> int {
-        return bp(g, s, g.names[i]);
-    });
+    sort_by(order, fn(i) => bp(g, s, g.names[i]));
     var total = 0;
     var weights = 0;
     for i in slice(order, k, n) {

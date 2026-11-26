@@ -28,9 +28,7 @@ export fn answer(s: str) -> result[str] {
     if len(cs) == 0 {
         return ok("invalid");
     }
-    if all(cs, fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    }) {
+    if all(cs, fn(c) => c >= "0" and c <= "9") {
         let n = try parse_int(s);
         if n < 1 or n > 3999 {
             return ok("out of range");

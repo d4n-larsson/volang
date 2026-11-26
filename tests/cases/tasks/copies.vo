@@ -9,7 +9,7 @@ fn main() uses console {
     let names = new map[str, int];
     let order = new ordered_map[int, str];
     let inputs = [[1], [2, 2], [3, 3, 3]];
-    let sizes = concurrent_map(inputs, 3, fn(xs: list[int]) -> int {
+    let sizes = concurrent_map(inputs, 3, fn(xs) {
         push(xs, 0);
         push(seen, len(xs));
         set total.n = total.n + len(xs);

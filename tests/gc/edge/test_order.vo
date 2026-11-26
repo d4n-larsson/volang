@@ -35,9 +35,7 @@ test "maps fail" {
 test "closures" {
     let fs = new list[fn(int) -> int];
     for i in 0..2000 {
-        push(fs, fn(x: int) -> int {
-            return x + i;
-        });
+        push(fs, fn(x) => x + i);
     }
     expect_eq(fs[1999](1), 2000);
 }

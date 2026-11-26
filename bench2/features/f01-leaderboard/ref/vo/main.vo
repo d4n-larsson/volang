@@ -16,12 +16,8 @@ fn main() -> result[void] uses console, input {
             }
         }
     }
-    sort_by(players, fn(p: Player) -> str {
-        return p.name;
-    });
-    sort_by(players, fn(p: Player) -> int {
-        return -p.score;
-    });
+    sort_by(players, fn(p) => p.name);
+    sort_by(players, fn(p) => -p.score);
     var rank = 0;
     for i in 0..len(players) {
         let p = players[i];

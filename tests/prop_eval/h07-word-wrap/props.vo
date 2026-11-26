@@ -109,9 +109,7 @@ prop "paragraphs are separated by exactly one empty line" (xs: list[int], w: int
             set words = words + no_spaces(l);
         }
     }
-    let empties = filter(out, fn(l: str) -> bool {
-        return l == "";
-    });
+    let empties = filter(out, fn(l) => l == "");
     if paras == 0 {
         expect_eq(len(out), 0);
     } else {

@@ -83,7 +83,7 @@ def seeds():
          + "    expect(v > 0);\n}\n"},
         {"main.vo": helpers(60) + "prop \"long\" (x: int) {\n    assume(x > 0 and x < 1000);\n    var v = x;\n"
          + "".join(f"    set v = s{i}(v);\n" for i in range(1, 50)) + "    expect(v > x);\n}\n"},
-        {"main.vo": helpers(60) + "fn long() -> int {\n    let f = fn(x: int) -> int {\n"
+        {"main.vo": helpers(60) + "fn long() -> int {\n    let f: fn(int) -> int = fn(x) {\n"
          + "".join(f"        let a{i} = s{i}(x);\n" for i in range(1, 50)) + "        return a49;\n    };\n    return f(1);\n}\n\n"
          + main1.replace("s1(0)", "long()")},
     ]
@@ -115,7 +115,7 @@ def seeds():
          "money.vo": money},
         {"main.vo": imp + 'test "in a loop" {\n    for i in 0..3 {\n        expect_eq(money.units(money.cents(i)), i);\n    }\n}\n',
          "money.vo": money},
-        {"main.vo": imp + 'test "through a function value" {\n    let f = fn(x: int) -> int {\n        return money.cents(x);\n    };\n'
+        {"main.vo": imp + 'test "through a function value" {\n    let f: fn(int) -> int = fn(x) => money.cents(x);\n'
          '    expect_eq(f(1), 100);\n}\n', "money.vo": money},
     ]
     return s
@@ -132,7 +132,7 @@ def clean():
         {"main.vo": helpers(100) + "fn main() uses console {\n    print(str(s1(s2(0))));\n}\n"},
         {"main.vo": "fn main() uses console {\n" + lets(14) + "    print(str(v13));\n}\n"},
         {"main.vo": "fn each[E: effects](xs: list[int], f: fn(int) uses E) uses E {\n    for x in xs {\n        f(x);\n    }\n}\n\n"
-         "fn main() uses console {\n    each([1, 2], fn(x: int) {\n        print(str(x));\n    });\n}\n"},
+         "fn main() uses console {\n    each([1, 2], fn(x) {\n        print(str(x));\n    });\n}\n"},
     ]
 
 

@@ -1,0 +1,9 @@
+fn main() uses console {
+    let inc = fn(x: int) -> int {
+        return x + 1;
+    };
+    var shout = fn(s: str) {
+        print(s + "!");
+    };
+    shout(str(inc(1)));
+}

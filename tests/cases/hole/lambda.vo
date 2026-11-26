@@ -1,7 +1,5 @@
 fn main() uses console {
     let scale = 3;
-    let f = fn(x: int) -> int {
-        return todo("x times scale");
-    };
+    let f: fn(int) -> int = fn(x) => todo("x times scale");
     print(str(f(2) + scale));
 }

@@ -200,7 +200,7 @@ fn main() -> result[void] uses clock, serve("PORT") {
     if len(args()) > 0 {
         return serve("PORT", route);
     }
-    return serve_workers("PORT", 4, setup, fn(n: int, r: Request) -> Response { return route(r); });
+    return serve_workers("PORT", 4, setup, fn(n, r) => route(r));
 }
 """
 
@@ -410,7 +410,7 @@ fn setup() -> result[sqlite.Database[uses file.read, file.write]] uses file.read
 }
 
 fn handle(db: sqlite.Database[uses file.read, file.write], r: Request) -> Response uses file.read("data/"), file.write("data/") {
-    let next = sqlite.transaction(db, fn() -> result[int] {
+    let next: result[int] = sqlite.transaction(db, fn() {
         let rows = try sqlite.query(db, sqlite.sql("select n from counter"), new list[sqlite.Value]);
         let n = try sqlite.int_column(rows[0], "n") + 1;
         let _ = try sqlite.exec(db, sqlite.sql("update counter set n = ?"), [sqlite.Value.integer(n)]);
@@ -600,7 +600,7 @@ fn setup() -> result[int] {
 }
 
 fn handle(ms: int, r: Request) -> Response uses console, clock, random {
-    let parts = concurrent_map([1, 2, 3, 4], 4, fn(i: int) -> str {
+    let parts = concurrent_map([1, 2, 3, 4], 4, fn(i) {
         time.sleep(ms);
         print("task " + str(i));
         return str(i * random_int(1, 1000));

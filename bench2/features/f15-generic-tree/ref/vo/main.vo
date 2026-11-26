@@ -78,13 +78,9 @@ fn main() -> result[void] uses console, input {
                     for t in values {
                         push(xs, try parse_int(t));
                     }
-                    print(render(build(xs), fn(x: int) -> str {
-                        return str(x);
-                    }));
+                    print(render(build(xs), fn(x) => str(x)));
                 } else {
-                    print(render(build(values), fn(s: str) -> str {
-                        return s;
-                    }));
+                    print(render(build(values), fn(s) => s));
                 }
             }
             case err(_) {

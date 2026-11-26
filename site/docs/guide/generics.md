@@ -390,7 +390,7 @@ fn each[T](xs: list[T], f: fn(T)) {
 }
 
 fn main() uses console {
-    each([1, 2], fn(n: int) {
+    each([1, 2], fn(n) {
         print(str(n));
     });
 }
@@ -412,14 +412,14 @@ fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
 
 fn doubled(xs: list[int]) -> list[int] {
     let out = new list[int];
-    each(xs, fn(x: int) {
+    each(xs, fn(x) {
         push(out, x * 2);
     });
     return out;
 }
 
 fn main() uses console {
-    each(doubled([1, 2, 3]), fn(n: int) {
+    each(doubled([1, 2, 3]), fn(n) {
         print(str(n));
     });
 }

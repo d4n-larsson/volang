@@ -82,6 +82,7 @@ def parse_builtin_sig(sig):
 class Values:
     def __init__(self, types):
         self.types = types  # record/variant name -> doc record
+        self.fns = []  # spec 059: function arguments as named functions (their types written), declared by program()
 
     def inst(self, t, tv):
         for x, v in tv.items():  # spec 029: an effect parameter (mapped to "") leaves the type: App[C, E] -> App[int]
@@ -120,10 +121,13 @@ class Values:
         m = re.fullmatch(r"fn\((.*?)\)(?: -> (.*?))?(?: uses .*)?", t)  # a pure sample fits `uses E`
         if m:
             ps = ", ".join(f"p{i}: {self.inst(a, tv)}" for i, a in enumerate(split_top(m.group(1))))
+            name = f"probe_fn{len(self.fns)}"  # spec 059: an anonymous function would take its types from the call
             if m.group(2):
                 r = self.inst(m.group(2), tv)
-                return f"fn({ps}) -> {r} {{ return {self.value(r, tv)}; }}"
-            return f"fn({ps}) {{ }}"
+                self.fns.append(f"fn {name}({ps}) -> {r} {{\n    return {self.value(r, tv)};\n}}\n")
+            else:
+                self.fns.append(f"fn {name}({ps}) {{\n}}\n")
+            return name
         m = re.fullmatch(r"(\w+)\[(.*)\]", t)  # spec 026: a generic record (Database[E]): inferred arguments
         if m and m.group(1) in self.types:
             # spec 045: a generic type with its arguments given (Option[User]): they name its parameters
@@ -210,11 +214,12 @@ def module_form(paths, *texts):
     return "".join(f"import {h};\n" for h in heads), [qualify(t) if t is not None else None for t in texts]
 
 
-def program(imports, effects, call, void, test_only, ret=None):
-    text = call + " " + (ret or "")
+def program(imports, effects, call, void, test_only, ret=None, fns=()):
+    text = call + " " + (ret or "") + " ".join(fns)
     imports = list(imports) + [q for n, q in TYPE_PATHS.items()
                                if q not in imports and re.search(rf"\b{n}\b", text)]
-    head, (call, ret) = module_form(imports, call, ret)
+    head, (call, ret, *fns) = module_form(imports, call, ret, *fns)
+    head += "".join("\n" + f for f in fns)
     uses = f" uses {', '.join(map(scoped, effects))}" if effects else ""
     stmt = f"{call};" if void else f"let r{': ' + ret if ret else ''} = {call};"
     if test_only:
@@ -250,6 +255,7 @@ def main():
         nonlocal calls
         tv = {k: "" if v == "effects" else "int" for k, v in tvars.items()}
         void = ret in (None, "void")
+        vals.fns = []
         args = [vals.value(t, tv) for _, t in params]
         if label == "std.sqlite.sql":  # spec 026: the literal is checked SQL
             args = ['"select 1"']
@@ -258,7 +264,7 @@ def main():
         # spec 014: a type parameter only the result mentions comes from a declared type
         free = [x for x in re.findall(r"\b[A-Z]\w*\b", ret or "") if x in tvars and not any(re.search(rf"\b{x}\b", t) for _, t in params)]
         annot = vals.inst(ret, tv) if free and not void else None
-        ok, out = check(program(imports, effects, f"{name}({', '.join(args)})", void, test_only, annot))
+        ok, out = check(program(imports, effects, f"{name}({', '.join(args)})", void, test_only, annot, vals.fns))
         calls += 1
         if not ok:
             failures.append(f"{label}: the documented call is rejected\n{out}")
@@ -268,12 +274,12 @@ def main():
             w = vals.wrong(t, tv, tvars, others, over)
             if w is not None:
                 bad = args[:i] + [w] + args[i + 1:]
-                ok, _ = check(program(imports, effects, f"{name}({', '.join(bad)})", void, test_only, annot))
+                ok, _ = check(program(imports, effects, f"{name}({', '.join(bad)})", void, test_only, annot, vals.fns))
                 calls += 1
                 if ok:
                     failures.append(f"{label}: a wrong type for `{pname}` ({w}) checks")
             fewer = args[:i] + args[i + 1:]
-            ok, _ = check(program(imports, effects, f"{name}({', '.join(fewer)})", void, test_only, annot))
+            ok, _ = check(program(imports, effects, f"{name}({', '.join(fewer)})", void, test_only, annot, vals.fns))
             calls += 1
             if ok:
                 failures.append(f"{label}: a call without `{pname}` checks")

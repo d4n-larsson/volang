@@ -16,9 +16,7 @@ fn swap[A, B](p: Pair[A, B]) -> Pair[B, A] {
 }
 
 fn words(line: str) -> list[str] {
-    return filter(split(line, " "), fn(s: str) -> bool {
-        return len(s) > 0;
-    });
+    return filter(split(line, " "), fn(s) => len(s) > 0);
 }
 
 fn main() -> result[void] uses console, input {
@@ -28,9 +26,7 @@ fn main() -> result[void] uses console, input {
         push(scores, try parse_int(t));
     }
     let pairs = zip(names, scores);
-    sort_by(pairs, fn(p: Pair[str, int]) -> int {
-        return -p.second;
-    });
+    sort_by(pairs, fn(p) => -p.second);
     print("pairs " + str(len(pairs)));
     for p in pairs {
         print(p.first + " " + str(p.second));

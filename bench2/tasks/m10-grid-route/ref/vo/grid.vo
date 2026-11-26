@@ -20,15 +20,11 @@ export fn is_stop(ch: str) -> bool {
 }
 
 export fn parse(text: str) -> result[Grid] {
-    let lines = filter(split(text, "\n"), fn(l: str) -> bool {
-        return l != "";
-    });
+    let lines = filter(split(text, "\n"), fn(l) => l != "");
     if len(lines) == 0 {
         return err("invalid grid");
     }
-    let rows = map(lines, fn(l: str) -> list[str] {
-        return chars(l);
-    });
+    let rows = map(lines, fn(l) => chars(l));
     let w = len(rows[0]);
     let where = new map[str, int];
     for r in 0..len(rows) {

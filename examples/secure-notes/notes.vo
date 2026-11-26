@@ -145,9 +145,7 @@ export fn notes_app[E: effects](
 
 fn test_app() -> web.App[store.Store] {
     let more: list[security.Way[store.Store]] = [security.test_users()];
-    return notes_app(bytes.from_text("a test key of thirty-two bytes!!"), more, fn() -> int {
-        return 0;
-    }, fixed_random);
+    return notes_app(bytes.from_text("a test key of thirty-two bytes!!"), more, fn() => 0, fixed_random);
 }
 
 fn fixed_random(n: int) -> bytes {
@@ -177,12 +175,8 @@ fn call(
 
 test "the review of the policy that is served finds nothing" {
     let none = new list[security.Way[store.Store]];
-    let served = notes_app(bytes.from_text("a test key of thirty-two bytes!!"), none, fn() -> int {
-        return 0;
-    }, fixed_random);
-    let p = notes_policy(bytes.from_text("a test key of thirty-two bytes!!"), none, fn() -> int {
-        return 0;
-    }, fixed_random);
+    let served = notes_app(bytes.from_text("a test key of thirty-two bytes!!"), none, fn() => 0, fixed_random);
+    let p = notes_policy(bytes.from_text("a test key of thirty-two bytes!!"), none, fn() => 0, fixed_random);
     expect_eq(security.review(served, p), [
         "browsers sign in: browser (sign-in /sign-in, sign-out /sign-out, 28800 s, origin from Host)"
     ]);
@@ -190,9 +184,7 @@ test "the review of the policy that is served finds nothing" {
 
 test "who may call what" {
     let none = new list[security.Way[store.Store]];
-    let served = notes_app(bytes.from_text("a test key of thirty-two bytes!!"), none, fn() -> int {
-        return 0;
-    }, fixed_random);
+    let served = notes_app(bytes.from_text("a test key of thirty-two bytes!!"), none, fn() => 0, fixed_random);
     expect_eq(security.describe(served, rules()), join(
         [
             "GET /health: anyone",

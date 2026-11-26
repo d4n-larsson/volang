@@ -48,12 +48,14 @@ def lambdas(text):
         body = min(x for x in (brace, arrow) if x >= 0) if max(brace, arrow) >= 0 else -1
         if body < 0 or "\n" in text[params_end:body] and "uses" not in text[params_end:body]:
             continue
+        if re.search(r"[;,)]", re.sub(r"\[[^\[\]]*\]|\([^()]*\)", "", text[params_end:body])):
+            continue  # a function *type* (it goes on with `,`, `)` or `;`), not a lambda
         header = text[m.start():body].rstrip()
         params = text[m.end():params_end - 1]
         typed = ":" in params or "->" in text[params_end:body]
         if body == arrow:
-            end = text.find(";", body)  # approximate: the arrow body ends the argument or statement
-            single, stop = True, end
+            ends = [x for x in (text.find(";", body), text.find("\n", body)) if x >= 0]
+            single, stop = True, min(ends) if ends else len(text)  # an arrow body: to its line's end at most
         else:
             stop = close(text, body, "{", "}")
             inner = text[body + 1:stop - 1].strip()
@@ -72,7 +74,7 @@ def files(path):
 
 
 def source(path):
-    text = open(path, encoding="utf-8").read()
+    text = open(path, encoding="utf-8", errors="replace").read()
     if path.endswith(".md"):  # only code blocks
         text = "\n".join(re.findall(r"```(?:vo|vo-test)\n(.*?)```", text, re.S))
     return text

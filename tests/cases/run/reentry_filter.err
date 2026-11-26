@@ -1,25 +1,25 @@
 reentry_filter.vo:3:14: runtime error[R0005]: Stack exhausted: the recursion is too deep.
-   3 |     let ys = filter([n], fn(x: int) -> bool { return f(x + 1) > 0; });
-     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   3 |     let ys = filter([n], fn(x) => f(x + 1) > 0);
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at f (reentry_filter.vo:3:14)
       n: int = 182361
-  at anonymous function (reentry_filter.vo:3:54)
+  at anonymous function (reentry_filter.vo:3:35)
       x: int = 182360
   at f (reentry_filter.vo:3:14)
       n: int = 182360
-  at anonymous function (reentry_filter.vo:3:54)
+  at anonymous function (reentry_filter.vo:3:35)
       x: int = 182359
   at f (reentry_filter.vo:3:14)
       n: int = 182359
-  at anonymous function (reentry_filter.vo:3:54)
+  at anonymous function (reentry_filter.vo:3:35)
       x: int = 182358
   at f (reentry_filter.vo:3:14)
       n: int = 182358
-  at anonymous function (reentry_filter.vo:3:54)
+  at anonymous function (reentry_filter.vo:3:35)
       x: int = 182357
   at f (reentry_filter.vo:3:14)
       n: int = 182357
-  at anonymous function (reentry_filter.vo:3:54)
+  at anonymous function (reentry_filter.vo:3:35)
       x: int = 182356
   ... more frames omitted

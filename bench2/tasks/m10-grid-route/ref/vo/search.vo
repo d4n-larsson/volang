@@ -27,9 +27,7 @@ fn neighbors(g: grid.Grid, cell: int) -> list[Move] {
     if c > 0 {
         push(out, new Move { name: "L", cell: cell - 1 });
     }
-    return filter(out, fn(m: Move) -> bool {
-        return grid.at(g, m.cell) != "#";
-    });
+    return filter(out, fn(m) => grid.at(g, m.cell) != "#");
 }
 
 fn dist_to(g: grid.Grid, goal: int) -> list[int] {
@@ -70,9 +68,7 @@ export fn leg(g: grid.Grid, a: int, b: int) -> result[Leg] {
     var cur = a;
     while cur != b {
         let here = dist[cur];
-        let next = filter(neighbors(g, cur), fn(m: Move) -> bool {
-            return dist[m.cell] >= 0 and grid.cost(grid.at(g, m.cell)) + dist[m.cell] == here;
-        })[0];
+        let next = filter(neighbors(g, cur), fn(m) => dist[m.cell] >= 0 and grid.cost(grid.at(g, m.cell)) + dist[m.cell] == here)[0];
         push(l.moves, next.name);
         push(l.cells, next.cell);
         set cur = next.cell;

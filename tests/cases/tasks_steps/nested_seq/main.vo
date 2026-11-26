@@ -15,11 +15,7 @@ fn fetch(url: str) -> str uses net("127.0.0.1") {
 fn main() uses console, net("127.0.0.1") {
     let base = "http://127.0.0.1:" + args()[0];
     let _ = fetch(base + "/peak");
-    let rs = concurrent_map([100, 200], 2, fn(ms: int) -> str {
-        return join(concurrent_map([ms, ms, ms], 3, fn(m: int) -> str {
-            return fetch(base + "/delay/" + str(m));
-        }), ", ");
-    });
+    let rs = concurrent_map([100, 200], 2, fn(ms) => join(concurrent_map([ms, ms, ms], 3, fn(m) => fetch(base + "/delay/" + str(m))), ", "));
     print(rs[0]);
     print(rs[1]);
     print("most at once: " + fetch(base + "/peak"));

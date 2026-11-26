@@ -12,8 +12,8 @@ fn sorted_any[T, C](xs: list[T], key: fn(T) -> C) {
 
 fn main() uses console {
     let words = ["pear", "fig"];
-    sorted_by(words, fn(w: str) -> int { return len(w); });
-    sorted_any(words, fn(w: str) -> int { return len(w); });
-    let groups = lists.group_by(words, fn(w: str) -> list[str] { return [w]; });
+    sorted_by(words, fn(w) => len(w));
+    sorted_any(words, fn(w) => len(w));
+    let groups = lists.group_by(words, fn(w) => [w]);
     print(str(len(groups)));
 }

@@ -18,9 +18,7 @@ fn main() -> result[void] uses console, input {
             set w = len(chars(p[0]));
         }
     }
-    sort_by(rows, fn(r: Row) -> int {
-        return 0 - r.score;
-    });
+    sort_by(rows, fn(r) => 0 - r.score);
     print(text.pad_right("Name", w, " ") + " | Score");
     print(text.repeat("-", w + 1) + "+" + text.repeat("-", 6));
     var i = 0;

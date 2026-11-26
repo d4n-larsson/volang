@@ -26,7 +26,7 @@ fn ready(n: int, input: web.NoInput) -> result[http.Response] {
 test "records for each request" uses log, clock {
     let app = new web.App[int, uses log, clock] {
         routes: [web.on_get("/notes/{id}", read_note), web.on_get("/broken", broken), web.on_get("/health/ready", ready)],
-        steps: [web.request_ids(fn() -> str { return "id-1"; }), web.request_logs()],
+        steps: [web.request_ids(fn() => "id-1"), web.request_logs()],
         errors: new list[web.ErrorStatus]
     };
     for path in ["/notes/7", "/missing", "/broken", "/health/ready"] {

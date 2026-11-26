@@ -99,9 +99,7 @@ prop "carries and borrows run the whole length" (n: int) {
 }
 
 prop "lines with other characters are invalid" (s: str, xs: list[int]) {
-    let bad = filter(chars(s), fn(c: str) -> bool {
-        return c != " " and c != "+" and c != "-" and find("0123456789", c) == -1;
-    });
+    let bad = filter(chars(s), fn(c) => c != " " and c != "+" and c != "-" and find("0123456789", c) == -1);
     # The task's input is ASCII.
     assume(len(bad) > 0 and len(xs) > 0 and len(chars(s)) == len(s));
     expect_eq(answer(s), "invalid");

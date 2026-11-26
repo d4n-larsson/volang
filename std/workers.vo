@@ -61,7 +61,7 @@ export record Arrival[Out] {
 
 # Starts a worker that runs body, and returns at once. body works on a copy of the program's values.
 # `err(too_many)` when 64 are running. R0015 if a message type holds a function.
-#     let r: result[Worker[int, int], WorkerError] = start_worker(fn(link: Link[int, int]) { let m = next_message(link, Wait.at_most(0)); }); r != err(WorkerError.too_many) is true
+#     let r: result[Worker[int, int], WorkerError] = start_worker(fn(link) { let m = next_message(link, Wait.at_most(0)); }); r != err(WorkerError.too_many) is true
 export fn start_worker[In, Out, E: effects](body: fn(Link[In, Out]) uses E) -> result[Worker[In, Out], WorkerError] uses E {
     let started: result[int, WorkerError] = __worker(1, body);
     match started {
@@ -111,16 +111,17 @@ export fn stop_worker[In, Out](w: Worker[In, Out]) {
 # worker stopped, or `err(failed(text))` if it stopped with a runtime error. f works on a copy of the
 # program's values: what it changes there is not seen by the caller. `err(too_many)` when 64 workers
 # are running; `err(ended)` if f called `exit(0)` or its result is over 16 MiB.
-#     with_deadline(1000, fn() -> int { return 6 * 7; }) == ok(42) is true
+#     with_deadline(1000, fn() => 6 * 7) == ok(42) is true
 export fn with_deadline[T, E: effects](ms: int, f: fn() -> T uses E) -> result[T, WorkerError] uses E {
-    let w: Worker[int, T] = try start_worker(fn(link: Link[int, T]) {
+    let body: fn(Link[int, T]) uses E = fn(link) {
         match emit(link, f()) {
             case ok() {
             }
             case err(_) {
             }
         }
-    });
+    };
+    let w: Worker[int, T] = try start_worker(body);
     let r = receive(w, Wait.at_most(limit_ms(ms)));
     stop_worker(w);
     return r;
@@ -128,7 +129,7 @@ export fn with_deadline[T, E: effects](ms: int, f: fn() -> T uses E) -> result[T
 
 # In a worker: the program's next message for it, or `err(timed_out)`. A worker never sees the program
 # end: it is ended with it.
-#     let r: result[Worker[int, int], WorkerError] = start_worker(fn(link: Link[int, int]) { let m = next_message(link, Wait.at_most(100)); }); r != err(WorkerError.too_many) is true
+#     let r: result[Worker[int, int], WorkerError] = start_worker(fn(link) { let m = next_message(link, Wait.at_most(100)); }); r != err(WorkerError.too_many) is true
 export fn next_message[In, Out](link: Link[In, Out], wait: Wait) -> result[In, WorkerError] {
     let r: result[In, WorkerError] = __worker(6, wait);
     return r;
@@ -136,7 +137,7 @@ export fn next_message[In, Out](link: Link[In, Out], wait: Wait) -> result[In, W
 
 # In a worker: sends message to the program. Waits while the program is not receiving and 1 MiB is on
 # its way. `err(too_large)` over 16 MiB.
-#     let r: result[Worker[int, list[int]], WorkerError] = start_worker(fn(link: Link[int, list[int]]) { let sent = emit(link, [1, 2]); }); r != err(WorkerError.too_many) is true
+#     let r: result[Worker[int, list[int]], WorkerError] = start_worker(fn(link) { let sent = emit(link, [1, 2]); }); r != err(WorkerError.too_many) is true
 export fn emit[In, Out](link: Link[In, Out], message: Out) -> result[void, WorkerError] {
     return __worker(7, message);
 }

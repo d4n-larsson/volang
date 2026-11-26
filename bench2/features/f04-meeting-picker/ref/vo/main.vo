@@ -17,12 +17,8 @@ fn main() -> result[void] uses console, input {
             }
         }
     }
-    sort_by(ms, fn(m: Meeting) -> int {
-        return -m.start;
-    });
-    sort_by(ms, fn(m: Meeting) -> int {
-        return m.finish;
-    });
+    sort_by(ms, fn(m) => -m.start);
+    sort_by(ms, fn(m) => m.finish);
     var taken = 0;
     var last = 0;
     for m in ms {

@@ -45,12 +45,8 @@ fn main() -> result[void] uses console, input {
             }
         }
     }
-    sort_by(entries, fn(e: Entry) -> str {
-        return e.name;
-    });
-    sort_by(entries, fn(e: Entry) -> int {
-        return -e.score;
-    });
+    sort_by(entries, fn(e) => e.name);
+    sort_by(entries, fn(e) => -e.score);
     var w = 4;
     for e in entries {
         set w = max(w, len(chars(e.name)));

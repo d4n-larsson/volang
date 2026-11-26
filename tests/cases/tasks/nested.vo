@@ -1,8 +1,6 @@
 # Tasks that start tasks: results as with nested `map`.
 fn row(i: int) -> list[int] {
-    return concurrent_map([1, 2, 3], 8, fn(j: int) -> int {
-        return i * j;
-    });
+    return concurrent_map([1, 2, 3], 8, fn(j) => i * j);
 }
 
 fn main() uses console {

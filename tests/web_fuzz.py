@@ -110,8 +110,12 @@ fn routes() -> list[web.Route[int]] {
     return [web.on_get("/items", ran_list), web.on_post("/items", ran_new), web.on_get("/items/{id}", ran_id), web.on_put("/items/{id}", ran_change), web.on_patch("/items/{id}/scale", ran_scale), web.on_delete("/items/{id}", ran_id), web.on_get("/tags/{slug}", ran_slug), web.on_get("/ping", ran), web.on_post("/ping", ran), web.on_get("/items/{id}/scale", ran_id)];
 }
 
+fn setup() -> result[int] {
+    return ok(0);
+}
+
 fn main() -> result[void] uses serve("PORT") {
-    return web.serve_app("PORT", 4, fn() -> result[int] { return ok(0); }, new web.App { routes: routes(), steps: new list[web.Step[int]], errors: new list[web.ErrorStatus] });
+    return web.serve_app("PORT", 4, setup, new web.App { routes: routes(), steps: new list[web.Step[int]], errors: new list[web.ErrorStatus] });
 }
 """
 

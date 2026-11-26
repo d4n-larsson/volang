@@ -105,9 +105,7 @@ fn signed(neg: bool, mag: str) -> str {
 }
 
 export fn answer(line: str) -> str {
-    let parts = filter(split(line, " "), fn(w: str) -> bool {
-        return len(w) > 0;
-    });
+    let parts = filter(split(line, " "), fn(w) => len(w) > 0);
     if len(parts) != 2 {
         return "invalid";
     }

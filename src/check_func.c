@@ -90,6 +90,68 @@ static void lambda_single_return(Node *node)
     diag_add_fix(d, (int)block->file, block->start, block->end, sb_finish(sb));
 }
 
+/* Spec 059: E0342 on an anonymous function that writes types (0.4 code), after its body is checked. With an
+ * expected function type equal to the written types, the fix removes them; one that differs is today's
+ * mismatch, reported by the caller, and no E0342 this round (FR-005). Without one, as the whole initializer
+ * of an untyped `let`/`var`, the fix moves the types onto the binding; otherwise there is no fix. */
+static void lambda_types_written(Node *node, Type *expected)
+{
+    Vec *params = node->b.v;
+    Node *at = node->c.n;
+    for (long i = params->n - 1; i >= 0; i--)
+        if (((Node *)vec_get(params, i))->b.n) at = ((Node *)vec_get(params, i))->b.n;
+    int fits = 0;
+    if (expected) {
+        if (expected->kind != TY_FUNC || expected->a.v->n != params->n) return;
+        for (long i = 0; i < params->n; i++)
+            if (((Node *)vec_get(params, i))->type != vec_get(expected->a.v, i)) return;
+        Type *r = node->type; /* an open return (t_collect) comes from the body: only a type no body needs context for */
+        if (expected->b.t == t_collect)
+            fits = r->kind == TY_INT || r->kind == TY_FLOAT || r->kind == TY_BOOL || r->kind == TY_STR ||
+                   r->kind == TY_BYTES || r->kind == TY_VOID ||
+                   ((r->kind == TY_RECORD || r->kind == TY_VARIANT) && !(r->b.v && r->b.v->n));
+        else if (expected->b.t != r)
+            return;
+        else
+            fits = 1;
+    }
+    SB *h = sb_new(); /* the untyped header: (a, b) */
+    sb_byte(h, '(');
+    for (long i = 0; i < params->n; i++) {
+        if (i) sb_cstr(h, ", ");
+        sb_str(h, ((Node *)vec_get(params, i))->a.n->a.s);
+    }
+    sb_byte(h, ')');
+    Str *untyped = sb_finish(h);
+    char *text = file_get((int)node->file)->text;
+    long he = node->c.n ? node->c.n->end : node->a.n->end; /* the header: to the return type, or the `)` */
+    if (!node->c.n) /* (a `uses` clause after it is E0507's, not this fix's) */
+        for (long depth = 0; he < node->d.n->start; he++) {
+            depth += text[he] == '(';
+            if (text[he] == ')' && --depth == 0) {
+                he++;
+                break;
+            }
+        }
+    Diag *d = ck_err("E0342", at, msg("An anonymous function takes its types from where it is used: write `fn$1`.",
+                                      untyped, 0, 0));
+    if (fits) {
+        diag_add_fix(d, (int)node->file, node->a.n->end, he, untyped);
+        return;
+    }
+    Node *st = ck_cur_stmt;
+    if (!st || st->kind != N_LET || st->c.n != node || st->b.n || !st->a.n) return;
+    for (long i = 0; i < params->n; i++) /* a type with an error in it is not one to write down */
+        if (ty_bad(((Node *)vec_get(params, i))->type)) return;
+    if (ty_bad(node->type)) return;
+    SB *r = sb_new(); /* `f: fn(int) -> int = fn(x)` */
+    sb_cstr(r, ": ");
+    sb_str(r, ty_name(ty_func_of(node)));
+    sb_cstr(r, " = fn");
+    sb_str(r, untyped);
+    diag_add_fix(d, (int)node->file, st->a.n->end, he, sb_finish(r));
+}
+
 /* Checks an anonymous function; returns its function type. Without written types (spec 059) its
  * parameter and return types come from `expected`; an expected return of t_collect (a call that leaves
  * it open, research R3) or no expected type: the return type comes from the body (R4). */
@@ -143,6 +205,7 @@ Type *check_lambda(Node *node, Type *expected)
             ck_err1("E0403", node->a.n, "`$1` can reach its end without returning a value.", node->a.n->a.s);
     }
     ck_cur_stmt = cx->stmt; /* the statement holding this function (E0505 fixes go before it) */
+    if (written) lambda_types_written(node, expected && !ty_bad(expected) ? expected : 0);
     report_bad_captures(node);
     node->e.i = ck_locals; /* this frame's size; then restore the enclosing context */
     scope_leave(cx->scope);

@@ -155,7 +155,7 @@ test "collections" {
 }
 
 test "void-returning task functions" {
-    let r = concurrent_map([1, 2], 2, fn(i: int) {
+    let r = concurrent_map([1, 2], 2, fn(i) {
         let _ = i;
     });
     expect_eq(len(r), 2);

@@ -86,10 +86,10 @@ fn sleeps(link: workers.Link[int, int]) uses clock {
 
 fn main() uses console, clock {
     let numbers = [1, 2, 3];
-    print("in time: " + show(workers.with_deadline(5000, fn() -> int { push(numbers, 4); return len(numbers); })));
+    print("in time: " + show(workers.with_deadline(5000, fn() { push(numbers, 4); return len(numbers); })));
     print("the program's list: " + str(len(numbers)));
     print("never returns: " + show(workers.with_deadline(100, spin)));
-    print("fails: " + show(workers.with_deadline(5000, fn() -> int { return 1 / (len(numbers) - 3); })));
+    print("fails: " + show(workers.with_deadline(5000, fn() => 1 / (len(numbers) - 3))));
 
     let a = worker_of(workers.start_worker(loops));
     workers.stop_worker(a);

@@ -7,9 +7,7 @@ export record Entry {
 }
 
 fn digits(s: str, lo: int, hi: int) -> bool {
-    return len(s) >= lo and len(s) <= hi and all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return len(s) >= lo and len(s) <= hi and all(chars(s), fn(c) => c >= "0" and c <= "9");
 }
 
 fn to_int(s: str) -> int {
@@ -59,9 +57,7 @@ fn arity(cmd: str) -> int {
 }
 
 export fn parse(line: str, n: int) -> result[Entry] {
-    let f = filter(split(line, " "), fn(x: str) -> bool {
-        return x != "";
-    });
+    let f = filter(split(line, " "), fn(x) => x != "");
     let e = new Entry { line: n, time: -1, cmd: "", names: new list[str], money: 0 };
     if len(f) == 0 {
         return ok(e);

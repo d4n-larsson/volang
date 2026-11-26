@@ -23,7 +23,7 @@ fn shown(line: str) -> str {
 
 fn lines_of(path: str, stop_at: str, fail_at: str) uses console, file.read("data/") {
     let seen = new Seen { lines: new list[str], sizes: new list[int] };
-    let done = fs.each_line(path, fn(line: str) -> result[bool] {
+    let done = fs.each_line(path, fn(line) {
         if line == fail_at {
             return err("the function failed at " + line);
         }
@@ -43,7 +43,7 @@ fn lines_of(path: str, stop_at: str, fail_at: str) uses console, file.read("data
 
 fn chunks_of(path: str, size: int) uses console, file.read("data/") {
     let seen = new Seen { lines: new list[str], sizes: new list[int] };
-    let done = fs.each_chunk(path, size, fn(piece: bytes) -> result[bool] {
+    let done = fs.each_chunk(path, size, fn(piece) {
         push(seen.sizes, len(piece));
         return ok(true);
     });
@@ -63,8 +63,8 @@ fn chunks_of(path: str, size: int) uses console, file.read("data/") {
 
 fn nested() uses console, file.read("data/") {
     let seen = new Seen { lines: new list[str], sizes: new list[int] };
-    let done = fs.each_line("data/two.txt", fn(outer: str) -> result[bool] {
-        try fs.each_line("data/two.txt", fn(inner: str) -> result[bool] {
+    let done = fs.each_line("data/two.txt", fn(outer) {
+        try fs.each_line("data/two.txt", fn(inner) {
             push(seen.lines, outer + inner);
             return ok(true);
         });
@@ -82,7 +82,7 @@ fn nested() uses console, file.read("data/") {
 
 fn growing() uses console, file.read("data/"), file.write("data/") {
     let seen = new Seen { lines: new list[str], sizes: new list[int] };
-    let done = fs.each_line("data/grow.txt", fn(line: str) -> result[bool] {
+    let done = fs.each_line("data/grow.txt", fn(line) {
         push(seen.lines, line);
         if len(seen.lines) < 4 {
             try fs.append_file("data/grow.txt", "more\n");

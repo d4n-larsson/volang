@@ -6,13 +6,13 @@ trace:
       n: int = 0, input: Fail = new Fail { kind: "crash" }
   at anonymous function (std/web.vo:141:24)
       ctx: int = 0, r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [], body: "" }, vars: map[str, str] = {"kind": "crash"}, op: fn(int, Fail) -> result[Response] = <fn(int, Fail) -> result[Response]>, bound: result[Fail] = ok(new Fail { kind: "crash" }), input: Fail = new Fail { kind: "crash" }
-  at dispatch (std/web.vo:298:35)
+  at dispatch (std/web.vo:294:35)
       app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/{kind}", segments: ["{kind}"], run: <fn(int, Request, map[str, str]) -> result[Response]> }], steps: [], errors: [new ErrorStatus { k..., ctx: int = 0, r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [], body: "" }, segs: list[str] = ["crash"], method: str = "GET", best: int = 0, best_vars: map[str, str] = {"kind": "crash"}, allowed: list[str] = ["GET", "HEAD"], allow: str = "GET, HEAD"
-  at chain (std/web.vo:236:16)
+  at chain (std/web.vo:234:16)
       app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/{kind}", segments: ["{kind}"], run: <fn(int, Request, map[str, str]) -> result[Response]> }], steps: [], errors: [new ErrorStatus { k..., ctx: int = 0, i: int = 0, r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [], body: "" }
-  at anonymous function (std/web.vo:222:16)
+  at anonymous function (std/web.vo:221:70)
       req: Request = new Request { method: "GET", path: "/crash", query: "", headers: [], body: "" }, app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/{kind}", segments: ["{kind}"], run: <fn(int, Request, map[str, str]) -> result[Response]> }], steps: [], errors: [new ErrorStatus { k..., ctx: int = 0
-  at handle_request (std/web.vo:224:11)
+  at handle_request (std/web.vo:222:11)
       app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/{kind}", segments: ["{kind}"], run: <fn(int, Request, map[str, str]) -> result[Response]> }], steps: [], errors: [new ErrorStatus { k..., ctx: int = 0, r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [], body: "" }, whole: fn(Request) -> Response = <fn(Request) -> Response>
   at main (errors.vo:48:17)
       app: App[int] = new App[int] { routes: [new Route[int] { method: "GET", pattern: "/{kind}", segments: ["{kind}"], run: <fn(int, Request, map[str, str]) -> result[Response]> }], steps: [], errors: [new ErrorStatus { k..., kind: str = "crash"

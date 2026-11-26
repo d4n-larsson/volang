@@ -40,9 +40,13 @@ record Answer {
     return ok(json_reply(200, new Answer {{ route: {i}, id: input.id }}));
 }}
 """ for i in range(N)) + """
+fn setup() -> result[int] {
+    return ok(0);
+}
+
 fn main() -> result[void] uses serve("PORT") {
     let routes: list[Route[int]] = [""" + ", ".join(f'on_get("/r{i}/items/{{id}}", r{i})' for i in range(N)) + """];
-    return serve_app("PORT", 1, fn() -> result[int] { return ok(0); }, new App { routes: routes, steps: new list[Step[int]], errors: new list[ErrorStatus] });
+    return serve_app("PORT", 1, setup, new App { routes: routes, steps: new list[Step[int]], errors: new list[ErrorStatus] });
 }
 """
 
@@ -75,8 +79,12 @@ fn handle(n: int, r: http.Request) -> http.Response {
     return answer(404, "{\\"status\\":404}");
 }
 
+fn setup() -> result[int] {
+    return ok(0);
+}
+
 fn main() -> result[void] uses serve("PORT") {
-    return serve_workers("PORT", 1, fn() -> result[int] { return ok(0); }, handle);
+    return serve_workers("PORT", 1, setup, handle);
 }
 """
 

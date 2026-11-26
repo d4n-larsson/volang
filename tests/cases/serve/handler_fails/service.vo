@@ -6,9 +6,7 @@ fn handle(r: http.Request) -> http.Response {
         return new http.Response { status: 200, headers: new list[http.Header], body: str(10 / n) };
     }
     if r.path == "/callback" {
-        let xs = map([3, 2, 0], fn(x: int) -> int {
-            return 6 / x;
-        });
+        let xs = map([3, 2, 0], fn(x) => 6 / x);
         return new http.Response { status: 200, headers: new list[http.Header], body: str(len(xs)) };
     }
     if r.path == "/index" {

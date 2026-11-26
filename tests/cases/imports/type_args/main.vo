@@ -9,7 +9,7 @@ record Shelf {
 
 fn main() uses console {
     let b = new box.Box[box.Item] { item: new box.Item { name: "a" } };
-    let s = new Shelf { boxes: [b], show: fn(i: box.Item) {
+    let s = new Shelf { boxes: [b], show: fn(i) {
         print(i.name);
     } };
     s.show(s.boxes[0].item);

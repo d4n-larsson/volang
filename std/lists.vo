@@ -47,7 +47,7 @@ fn reverse_in_place[T](xs: list[T]) {
 }
 
 # Sorts xs in place from the largest key to the smallest; elements with equal keys keep their order (sort_by, the builtin, sorts from smallest to largest).
-#     let words = ["fig", "pear", "kiwi"]; sort_by_desc(words, fn(w: str) -> int { return len(w); }); join(words, " ") is "pear kiwi fig"
+#     let words = ["fig", "pear", "kiwi"]; sort_by_desc(words, fn(w) => len(w)); join(words, " ") is "pear kiwi fig"
 export fn sort_by_desc[T, C: ordered, E: effects](xs: list[T], key: fn(T) -> C uses E) uses E {
     # A stable ascending sort of the reversed list, reversed, is a stable descending sort.
     reverse_in_place(xs);
@@ -56,7 +56,7 @@ export fn sort_by_desc[T, C: ordered, E: effects](xs: list[T], key: fn(T) -> C u
 }
 
 # The first element of xs with the smallest key, or err("empty list").
-#     min_by(["pear", "fig", "kiwi"], fn(w: str) -> int { return len(w); }) == ok("fig") is true
+#     min_by(["pear", "fig", "kiwi"], fn(w) => len(w)) == ok("fig") is true
 export fn min_by[T, C: ordered, E: effects](xs: list[T], key: fn(T) -> C uses E) -> result[T] uses E {
     if len(xs) == 0 {
         return err("empty list");
@@ -74,7 +74,7 @@ export fn min_by[T, C: ordered, E: effects](xs: list[T], key: fn(T) -> C uses E)
 }
 
 # The first element of xs with the largest key, or err("empty list").
-#     max_by(["pear", "fig", "kiwi"], fn(w: str) -> int { return len(w); }) == ok("pear") is true
+#     max_by(["pear", "fig", "kiwi"], fn(w) => len(w)) == ok("pear") is true
 export fn max_by[T, C: ordered, E: effects](xs: list[T], key: fn(T) -> C uses E) -> result[T] uses E {
     if len(xs) == 0 {
         return err("empty list");
@@ -103,7 +103,7 @@ export fn sum(xs: list[int]) -> int {
 }
 
 # The elements of xs by key: a map from each key to the list of its elements in the order of xs, the keys in the order they first appear.
-#     len(group_by(["pear", "fig", "kiwi"], fn(w: str) -> int { return len(w); })[4]) is 2
+#     len(group_by(["pear", "fig", "kiwi"], fn(w) => len(w))[4]) is 2
 export fn group_by[T, K: key, E: effects](xs: list[T], key: fn(T) -> K uses E) -> map[K, list[T]] uses E {
     let groups = new map[K, list[T]];
     for x in xs {

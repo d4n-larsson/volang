@@ -12,21 +12,11 @@ fn ran(n: int, input: web.NoInput) -> result[http.Response] {
 
 fn the_browser(origin: str) -> security.Browser[int] {
     return new security.Browser {
-        find_account: fn(n: int, name: str) -> result[option.Option[security.Account]] {
-            return ok(option.Option.none);
-        },
-        keep: fn(n: int, s: security.Session) -> result[void] {
-            return ok();
-        },
-        find: fn(n: int, key: str) -> result[option.Option[security.Session]] {
-            return ok(option.Option.none);
-        },
-        end: fn(n: int, key: str) -> result[void] {
-            return ok();
-        },
-        random: fn(k: int) -> bytes {
-            return bytes.from_text("0123456789abcdef");
-        },
+        find_account: fn(n, name) => ok(option.Option.none),
+        keep: fn(n, s) => ok(),
+        find: fn(n, key) => ok(option.Option.none),
+        end: fn(n, key) => ok(),
+        random: fn(k) => bytes.from_text("0123456789abcdef"),
         sign_in: "/sign-in",
         sign_out: "/sign-out",
         lifetime_ms: 1800000,
@@ -35,10 +25,10 @@ fn the_browser(origin: str) -> security.Browser[int] {
 }
 
 fn show(title: str, rules: list[security.Rule], ways: list[security.Way[int]], b: security.Browser[int]) uses console {
-    let routes = security.browser_routes(b, security.policy(rules, ways, fn() -> int { return 0; }));
+    let routes = security.browser_routes(b, security.policy(rules, ways, fn() => 0));
     push(routes, web.on_get("/notes", ran));
     print(title + ":");
-    for line in security.review(web.web_app(routes), security.policy(rules, ways, fn() -> int { return 0; })) {
+    for line in security.review(web.web_app(routes), security.policy(rules, ways, fn() => 0)) {
         print("  " + line);
     }
 }

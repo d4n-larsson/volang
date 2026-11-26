@@ -20,9 +20,7 @@ export fn set_rate(types: map[str, model.RoomType], name: str, rate: int, money:
 export fn sorted_types(types: map[str, model.RoomType]) -> list[model.RoomType] {
     let names = keys(types);
     sort(names);
-    return map(names, fn(name: str) -> model.RoomType {
-        return types[name];
-    });
+    return map(names, fn(name) => types[name]);
 }
 
 # How many rooms of the type are taken on the night of `day`.

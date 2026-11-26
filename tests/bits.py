@@ -52,7 +52,7 @@ fn text(n: int) -> str {
 }
 
 fn main() -> result[void] uses console, file.read("./") {
-    try fs.each_line("pairs.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("pairs.txt", fn(line) {
         let p = split(line, " ");
         print(join(map(row(try parse_int(p[0]), try parse_int(p[1]), try parse_int(p[2])), text), " "));
         return ok(true);

@@ -66,9 +66,7 @@ fn main() -> result[void] uses console {
     set on_call[1300] = "bo";
     set on_call[0] = "night desk";
     set on_call[1800] = "cy";
-    print(join(map(keys(on_call), fn(k: int) -> str {
-        return str(k);
-    }), " "));
+    print(join(map(keys(on_call), fn(k) => str(k)), " "));
     let start = option.or_else(collections.key_at_or_below(on_call, 1415), 0);
     print("14:15 goes to " + on_call[start]);
     print("first shift starts at " + str(option.or_else(collections.first_key(on_call), 0)));

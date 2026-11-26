@@ -1,8 +1,6 @@
 fn main() uses console {
     var total = 0;
-    let f = fn() -> int {
-        return total + total;
-    };
+    let f: fn() -> int = fn() => total + total;
     set total = 3;
     print(str(f()));
 }

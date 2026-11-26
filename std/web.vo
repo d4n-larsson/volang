@@ -37,7 +37,7 @@ export fn web_app[C, E: effects](routes: list[Route[C, uses E]]) -> App[C, uses 
 }
 
 # One route: a method, a path pattern and what answers it (made by on_get and the others).
-#     on_get("/x", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "GET"
+#     let op: fn(int, NoInput) -> result[Response] = fn(n, input) => ok(new Response { status: 204, headers: new list[Header], body: "" }); on_get("/x", op).method is "GET"
 export record Route[C, E: effects] {
     # GET, POST, PUT, PATCH or DELETE.
     method: str;
@@ -50,7 +50,7 @@ export record Route[C, E: effects] {
 }
 
 # A step around requests: run(ctx, request, next) answers, calling next(request) for the rest of the chain or not.
-#     new Step[int] { prefix: "/admin", run: fn(n: int, r: Request, next: fn(Request) -> Response) -> Response { return next(r); } }.prefix is "/admin"
+#     new Step[int] { prefix: "/admin", run: fn(n, r, next) => next(r) }.prefix is "/admin"
 export record Step[C, E: effects] {
     # The step runs for requests whose path starts with this ("/" for all).
     prefix: str;
@@ -73,7 +73,7 @@ export record NoInput {
 }
 
 # A check of health: its name and a function giving err(reason) when the part is down.
-#     new HealthCheck[int] { name: "db", check: fn(n: int) -> result[void] { return ok(); } }.name is "db"
+#     new HealthCheck[int] { name: "db", check: fn(n) => ok() }.name is "db"
 export record HealthCheck[C, E: effects] {
     # The name shown under "checks" when it fails.
     name: str;
@@ -84,7 +84,7 @@ export record HealthCheck[C, E: effects] {
 # ---- routes ----
 
 # A GET route: requests for pattern ("/notes/{id}": literal segments and {variables}) are answered by op with the input bound from the request.
-#     on_get("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).pattern is "/notes"
+#     let op: fn(int, NoInput) -> result[Response] = fn(n, input) => ok(new Response { status: 204, headers: new list[Header], body: "" }); on_get("/notes", op).pattern is "/notes"
 @allow("W0702", "one module per import path: std.web is one file")
 export fn on_get[C, I: json, E: effects](
     pattern: str,
@@ -94,7 +94,7 @@ export fn on_get[C, I: json, E: effects](
 }
 
 # A POST route (see on_get).
-#     on_post("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "POST"
+#     let op: fn(int, NoInput) -> result[Response] = fn(n, input) => ok(new Response { status: 204, headers: new list[Header], body: "" }); on_post("/notes", op).method is "POST"
 export fn on_post[C, I: json, E: effects](
     pattern: str,
     op: fn(C, I) -> result[http.Response] uses E
@@ -103,7 +103,7 @@ export fn on_post[C, I: json, E: effects](
 }
 
 # A PUT route (see on_get).
-#     on_put("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "PUT"
+#     let op: fn(int, NoInput) -> result[Response] = fn(n, input) => ok(new Response { status: 204, headers: new list[Header], body: "" }); on_put("/notes", op).method is "PUT"
 export fn on_put[C, I: json, E: effects](
     pattern: str,
     op: fn(C, I) -> result[http.Response] uses E
@@ -112,7 +112,7 @@ export fn on_put[C, I: json, E: effects](
 }
 
 # A PATCH route (see on_get).
-#     on_patch("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "PATCH"
+#     let op: fn(int, NoInput) -> result[Response] = fn(n, input) => ok(new Response { status: 204, headers: new list[Header], body: "" }); on_patch("/notes", op).method is "PATCH"
 export fn on_patch[C, I: json, E: effects](
     pattern: str,
     op: fn(C, I) -> result[http.Response] uses E
@@ -121,7 +121,7 @@ export fn on_patch[C, I: json, E: effects](
 }
 
 # A DELETE route (see on_get).
-#     on_delete("/notes", fn(n: int, input: NoInput) -> result[Response] { return ok(new Response { status: 204, headers: new list[Header], body: "" }); }).method is "DELETE"
+#     let op: fn(int, NoInput) -> result[Response] = fn(n, input) => ok(new Response { status: 204, headers: new list[Header], body: "" }); on_delete("/notes", op).method is "DELETE"
 export fn on_delete[C, I: json, E: effects](
     pattern: str,
     op: fn(C, I) -> result[http.Response] uses E
@@ -134,7 +134,7 @@ fn route[C, I: json, E: effects](
     pattern: str,
     op: fn(C, I) -> result[http.Response] uses E
 ) -> Route[C, uses E] {
-    let run = fn(ctx: C, r: http.Request, vars: map[str, str]) -> result[http.Response] {
+    let run: fn(C, http.Request, map[str, str]) -> result[http.Response] uses E = fn(ctx, r, vars) {
         let bound: result[I] = bind(r, vars);
         match bound {
             case ok(input) {
@@ -189,12 +189,12 @@ export record Problem {
 }
 
 # An operation that fails with its own error type X, made into one routes take: `ok` is answered as it is, `err(x)` with the problem answer(x) gives.
-#     on_get("/n", typed(fn(n: int, input: NoInput) -> result[Response, int] { return err(7); }, fn(x: int) -> Problem { return new Problem { status: 404, detail: str(x) }; })).pattern is "/n"
+#     let op: fn(int, NoInput) -> result[Response, int] = fn(n, input) => err(7); on_get("/n", typed(op, fn(x) => new Problem { status: 404, detail: str(x) })).pattern is "/n"
 export fn typed[C, I: json, X, E: effects](
     op: fn(C, I) -> result[http.Response, X] uses E,
     answer: fn(X) -> Problem
 ) -> fn(C, I) -> result[http.Response] uses E {
-    return fn(ctx: C, input: I) -> result[http.Response] {
+    return fn(ctx, input) {
         match op(ctx, input) {
             case ok(r) {
                 return ok(r);
@@ -218,9 +218,7 @@ export fn error_status(kind: str, status: int) -> ErrorStatus {
 # The application's answer to one request (steps, routing, input, the operation, errors): what serve_app sends, and what tests check.
 #     handle_request(new App[int] { routes: new list[Route[int]], steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).status is 404
 export fn handle_request[C, E: effects](app: App[C, uses E], ctx: C, r: http.Request) -> http.Response uses E {
-    let whole = fn(req: http.Request) -> http.Response {
-        return chain(app, ctx, 0, req);
-    };
+    let whole: fn(http.Request) -> http.Response uses E = fn(req) => chain(app, ctx, 0, req);
     match __serve_call(whole, without_header(r, "X-Identity")) {
         case ok(resp) {
             return without_route(resp);
@@ -239,9 +237,7 @@ fn chain[C, E: effects](app: App[C, uses E], ctx: C, i: int, r: http.Request) ->
     if not under(r.path, s.prefix) {
         return chain(app, ctx, i + 1, r);
     }
-    return s.run(ctx, r, fn(next: http.Request) -> http.Response {
-        return chain(app, ctx, i + 1, next);
-    });
+    return s.run(ctx, r, fn(next) => chain(app, ctx, i + 1, next));
 }
 
 fn under(path: str, prefix: str) -> bool {
@@ -775,7 +771,7 @@ fn title(status: int) -> str {
 # ---- serving, settings, health ----
 
 # Serves app on address with `workers` processes (as serve_workers: setup builds each worker's context once), after checking its route table; each request is answered by handle_request.
-#     serve_app("0", 1, fn() -> result[int] { return ok(0); }, new App[int] { routes: new list[Route[int]], steps: new list[Step[int]], errors: new list[ErrorStatus] }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
+#     let setup: fn() -> result[int] = fn() => ok(0); serve_app("0", 1, setup, new App[int] { routes: new list[Route[int]], steps: new list[Step[int]], errors: new list[ErrorStatus] }) == err("`0` is not a serve address: write \"PORT\" or \"0.0.0.0:PORT\"") is true
 export fn serve_app[C, E: effects, F: effects](
     address: str,
     workers: int,
@@ -783,9 +779,7 @@ export fn serve_app[C, E: effects, F: effects](
     app: App[C, uses E]
 ) -> result[void] uses serve, E, F {
     try check_routes(app.routes);
-    return http.serve_workers(address, workers, setup, fn(ctx: C, r: http.Request) -> http.Response {
-        return without_vo_error(handle_request(app, ctx, r));
-    });
+    return http.serve_workers(address, workers, setup, fn(ctx, r) => without_vo_error(handle_request(app, ctx, r)));
 }
 
 fn check_routes[C, E: effects](routes: list[Route[C, uses E]]) -> result[void] {
@@ -912,22 +906,16 @@ export fn load_settings[T: json](file: str, prefix: str) -> result[T] uses file.
 # A GET /health route: 200 {"status":"up"} when every check gives ok(), else 503 {"status":"down","checks":{name: reason}}.
 #     handle_request(new App[int] { routes: [health_route(new list[HealthCheck[int]])], steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/health", "")).body is "{\"status\":\"up\"}"
 export fn health_route[C, E: effects](checks: list[HealthCheck[C, uses E]]) -> Route[C, uses E] {
-    return on_get("/health", fn(ctx: C, input: NoInput) -> result[http.Response] {
-        return health_answer(ctx, checks);
-    });
+    let op: fn(C, NoInput) -> result[http.Response] uses E = fn(ctx, input) => health_answer(ctx, checks);
+    return on_get("/health", op);
 }
 
 # Routes for an orchestrator: GET /health/live (200 {"status":"up"}, running no check: the process answers) and GET /health/ready (as health_route: 503 naming the checks that fail).
 #     handle_request(new App[int] { routes: health_routes(new list[HealthCheck[int]]), steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/health/live", "")).status is 200
 export fn health_routes[C, E: effects](checks: list[HealthCheck[C, uses E]]) -> list[Route[C, uses E]] {
-    return [
-        on_get("/health/live", fn(ctx: C, input: NoInput) -> result[http.Response] {
-            return health_answer(ctx, new list[HealthCheck[C, uses E]]);
-        }),
-        on_get("/health/ready", fn(ctx: C, input: NoInput) -> result[http.Response] {
-            return health_answer(ctx, checks);
-        })
-    ];
+    let live: fn(C, NoInput) -> result[http.Response] uses E = fn(ctx, input) => health_answer(ctx, new list[HealthCheck[C, uses E]]);
+    let ready: fn(C, NoInput) -> result[http.Response] uses E = fn(ctx, input) => health_answer(ctx, checks);
+    return [on_get("/health/live", live), on_get("/health/ready", ready)];
 }
 
 fn health_answer[C, E: effects](ctx: C, checks: list[HealthCheck[C, uses E]]) -> result[http.Response] uses E {
@@ -954,22 +942,23 @@ fn health_answer[C, E: effects](ctx: C, checks: list[HealthCheck[C, uses E]]) ->
 # A GET /info route answering {"name": name, "version": version}.
 #     handle_request(new App[int] { routes: [info_route("notes", "1.0")], steps: new list[Step[int]], errors: new list[ErrorStatus] }, 0, request("GET", "/info", "")).body is "{\"name\":\"notes\",\"version\":\"1.0\"}"
 export fn info_route[C, E: effects](name: str, version: str) -> Route[C, uses E] {
-    return on_get("/info", fn(ctx: C, input: NoInput) -> result[http.Response] {
+    let op: fn(C, NoInput) -> result[http.Response] = fn(ctx, input) {
         let m = new map[str, json.Json];
         set m["name"] = json.Json.text(name);
         set m["version"] = json.Json.text(version);
         return ok(json_reply(200, json.Json.object(m)));
-    });
+    };
+    return on_get("/info", op);
 }
 
 # ---- steps ----
 
 # A step that gives every response an X-Request-Id: the request's own, or one from new_id (random_id), also passed on to operations as the request's header.
-#     handle_request(new App[int] { routes: new list[Route[int]], steps: [request_ids(fn() -> str { return "id-1"; })], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).headers[1].value is "id-1"
+#     handle_request(new App[int] { routes: new list[Route[int]], steps: [request_ids(fn() => "id-1")], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).headers[1].value is "id-1"
 export fn request_ids[C, E: effects](new_id: fn() -> str uses E) -> Step[C, uses E] {
     return new Step {
         prefix: "/",
-        run: fn(ctx: C, r: http.Request, next: fn(http.Request) -> http.Response uses E) -> http.Response {
+        run: fn(ctx, r, next) {
             var id = "";
             var req = r;
             match header_of(r, "X-Request-Id") {
@@ -995,11 +984,11 @@ export fn random_id() -> str uses random {
 }
 
 # A step that writes one line per request with log: method, path, status and milliseconds (from now, such as `fn() -> int { return now_ms(); }`), and an unmapped error's text. For structured lines (std.log), use request_logs.
-#     handle_request(new App[int] { routes: new list[Route[int]], steps: [log_requests(fn() -> int { return 0; }, fn(line: str) { })], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).status is 404
+#     handle_request(new App[int] { routes: new list[Route[int]], steps: [log_requests(fn() => 0, fn(line) { })], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).status is 404
 export fn log_requests[C, E: effects](now: fn() -> int uses E, log_value: fn(str) uses E) -> Step[C, uses E] {
     return new Step {
         prefix: "/",
-        run: fn(ctx: C, r: http.Request, next: fn(http.Request) -> http.Response uses E) -> http.Response {
+        run: fn(ctx, r, next) {
             let start = now();
             let resp = next(r);
             var line = r.method + " " + r.path + " " + str(resp.status) + " " + str(now() - start) + "ms";
@@ -1093,13 +1082,12 @@ export fn request_metrics[C, E: effects]() -> Step[C, uses log, clock, E] {
 # A GET /metrics route answering the registry in the text format 0.0.4 (text/plain; version=0.0.4); the listed metrics show before their first update.
 #     let r: Route[int, uses log] = metrics_route(new list[Metric]); r.pattern is "/metrics"
 export fn metrics_route[C, E: effects](metrics_value: list[metrics.Metric]) -> Route[C, uses log, E] {
-    return on_get("/metrics", fn(ctx: C, input: NoInput) -> result[http.Response] {
-        return ok(new http.Response {
-            status: 200,
-            headers: [new http.Header { name: "Content-Type", value: "text/plain; version=0.0.4" }],
-            body: metrics.metrics_text(metrics_value)
-        });
+    let op: fn(C, NoInput) -> result[http.Response] uses log = fn(ctx, input) => ok(new http.Response {
+        status: 200,
+        headers: [new http.Header { name: "Content-Type", value: "text/plain; version=0.0.4" }],
+        body: metrics.metrics_text(metrics_value)
     });
+    return on_get("/metrics", op);
 }
 
 fn route_of(resp: http.Response) -> str {
@@ -1119,7 +1107,7 @@ fn clock_ms() -> int uses clock {
 }
 
 # A line on stderr, for log_requests.
-#     handle_request(new App[int, uses console] { routes: new list[Route[int, uses console]], steps: [log_requests(fn() -> int { return 0; }, to_stderr)], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).status is 404
+#     handle_request(new App[int, uses console] { routes: new list[Route[int, uses console]], steps: [log_requests(fn() => 0, to_stderr)], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).status is 404
 export fn to_stderr(line: str) uses console {
     eprint(line);
 }
@@ -1129,7 +1117,7 @@ export fn to_stderr(line: str) uses console {
 export fn cors[C, E: effects](origins: list[str]) -> Step[C, uses E] {
     return new Step {
         prefix: "/",
-        run: fn(ctx: C, r: http.Request, next: fn(http.Request) -> http.Response uses E) -> http.Response {
+        run: fn(ctx, r, next) {
             var origin = "";
             match header_of(r, "Origin") {
                 case ok(o) {
@@ -1185,7 +1173,7 @@ export fn cors[C, E: effects](origins: list[str]) -> Step[C, uses E] {
 }
 
 # A step for requests under prefix: the `Authorization: Bearer TOKEN` given to check, whose ok(identity) is passed on as the request header X-Identity (bind it with @header("X-Identity")); a missing or refused token answers 401. An X-Identity a client sends is always dropped.
-#     bearer_auth("/admin", fn(n: int, token: str) -> result[str] { return ok("ada"); }).prefix is "/"
+#     let check: fn(int, str) -> result[str] = fn(n, token) => ok("ada"); bearer_auth("/admin", check).prefix is "/"
 export fn bearer_auth[C, E: effects](
     prefix: str,
     check: fn(C, str) -> result[str] uses E
@@ -1194,7 +1182,7 @@ export fn bearer_auth[C, E: effects](
 }
 
 # A step like bearer_auth with the key read from the header named header (such as "X-Api-Key").
-#     api_key_auth("/", "X-Api-Key", fn(n: int, key: str) -> result[str] { return ok("svc"); }).prefix is "/"
+#     let check: fn(int, str) -> result[str] = fn(n, key) => ok("svc"); api_key_auth("/", "X-Api-Key", check).prefix is "/"
 export fn api_key_auth[C, E: effects](
     prefix: str,
     header: str,
@@ -1211,7 +1199,7 @@ fn auth_step[C, E: effects](
 ) -> Step[C, uses E] {
     return new Step {
         prefix: "/",
-        run: fn(ctx: C, r: http.Request, next: fn(http.Request) -> http.Response uses E) -> http.Response {
+        run: fn(ctx, r, next) {
             if not under(r.path, prefix) {
                 return next(r);
             }

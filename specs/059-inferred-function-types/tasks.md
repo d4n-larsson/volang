@@ -158,7 +158,7 @@ its own fixes with identical behavior.
 **Independent Test**: quickstart step 3: `old.vo` migrates by `tools/vo_fix.vo` and prints the same
 output; `tests/migrate_059.py` passes over every golden case.
 
-- [ ] T019 [US2] Golden cases first, then E0342 lambda_types_written in `src/check_func.c`
+- [X] T019 [US2] Golden cases first, then E0342 lambda_types_written in `src/check_func.c`
   (contracts/diagnostics.md): `tests/cases/lambda_types/written_remove.vo` (expected type equal: fix
   replaces `(p: Person) -> int` with `(p)`, US2 scenario 1), `written_let.vo` (`let f = fn(x: int) -> int {
   ... };`: one edit from the end of `f` to the end of the header giving `f: fn(int) -> int = fn(x)`, the
@@ -168,31 +168,31 @@ output; `tests/migrate_059.py` passes over every golden case.
   E0342 without a fix). With written types the lambda is still checked as today (types from the source).
   Catalog entry, codes row, `tests/catalog.py`; `python3 tests/apply_fixes.py`. First task allowed to change
   existing expected outputs: only by adding E0342 lines.
-- [ ] T020 [US2] `tools/vo_fix.vo`: E0342 and E0413 (T029) fixes apply in the same round (their spans do
+- [X] T020 [US2] `tools/vo_fix.vo`: E0342 and E0413 (T029) fixes apply in the same round (their spans do
   not touch: header vs body); confirm 4 rounds suffice for `quickstart.md` step 3's `old.vo` and for
   `examples/notes-api`; raise the round limit only if a measured case needs it.
-- [ ] T021 [US2] Migrate `std/` by fixes: `bin/vo run --timeout 0 tools/vo_fix.vo -- std` (with T029's
+- [X] T021 [US2] Migrate `std/` by fixes: `bin/vo run --timeout 0 tools/vo_fix.vo -- std` (with T029's
   E0413 when Phase 5 is done, else a second pass then); then by hand, research R9: the five `on_get`
   handlers in `std/web.vo` (915, 924, 927, 957, 1096) and the two `__serve_workers` callers in
   `std/http.vo` (649, 692) become named private functions; the five untyped-let lambdas (`std/web.vo` 137,
   221; `std/security.vo` 809; `std/http.vo` 406, 454) become named functions where they capture nothing,
   typed bindings otherwise; the six `on_get` doc tests in `std/web.vo` (40, 87, 97, 106, 115, 124) pass
   named functions. `doc_conformance.py` passes; std's own tests and examples unchanged.
-- [ ] T022 [P] [US2] Migrate `packages/postgres/` by fixes and update its pinned hash in every
+- [X] T022 [P] [US2] Migrate `packages/postgres/` by fixes and update its pinned hash in every
   `vo.packages` that names it; `tests/postgres.py` passes.
-- [ ] T023 [P] [US2] Migrate `tools/vo_fix.vo` and the other `.vo` tools under `tools/` by fixes; they run
+- [X] T023 [P] [US2] Migrate `tools/vo_fix.vo` and the other `.vo` tools under `tools/` by fixes; they run
   as before.
-- [ ] T024 [US2] Migrate `examples/` by fixes (`examples/*/main.vo` and their modules); each example's
+- [X] T024 [US2] Migrate `examples/` by fixes (`examples/*/main.vo` and their modules); each example's
   `vo test` and recordings replay unchanged (`make test`'s examples step).
-- [ ] T025 [US2] Migrate `docs/errors.md`'s examples, `site/docs/` guide examples and `README.md` by fixes
+- [X] T025 [US2] Migrate `docs/errors.md`'s examples, `site/docs/` guide examples and `README.md` by fixes
   (through the extracted programs of `tests/site_examples.py` and `tests/catalog.py`); `site_examples.py`
   and `catalog.py` pass. The reference is T034.
-- [ ] T026 [US2] `tests/migrate_059.py` (as `tests/migrate_058.py`, with `--quick`): for every golden case
+- [X] T026 [US2] `tests/migrate_059.py` (as `tests/migrate_058.py`, with `--quick`): for every golden case
   source under `tests/cases/` containing an anonymous function, record its outputs with the 0.4 meaning
   (written types), apply fixes by `vo_fix`, and require identical run output, test results and exit
   status; then write the migrated sources back and regenerate only the expected outputs that contained
   E0342/E0413 lines. Add to `make test` and to the `lambdas` area (T001).
-- [ ] T027 [US2] `make test`: every case passes on migrated sources; `grep` finds no anonymous function with
+- [X] T027 [US2] `make test`: every case passes on migrated sources; `grep` finds no anonymous function with
   a written type in `std/`, `examples/`, `packages/`, `tools/`, `site/docs/`, `docs/errors.md` (SC-001).
 
 **Checkpoint**: the repository is on the new form; 0.4 code reports E0342 with fixes.
@@ -228,22 +228,22 @@ by `vo fmt`.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T032 [P] Editors (research R8): `=>` in `editors/vscode/syntaxes/vo.tmLanguage.json`,
+- [X] T032 [P] Editors (research R8): `=>` in `editors/vscode/syntaxes/vo.tmLanguage.json`,
   `editors/tree-sitter-vo/grammar.js` (regenerate with `make grammars`), `editors/vim/`, and
   `site/pygments_vo/pygments_vo.py`; `python3 tests/grammars.py` and `editors/check.js` pass over every
   migrated file.
-- [ ] T033 [P] `src/lsp.c` / `tests/lsp.py`: hover on an untyped lambda parameter shows its inferred type;
+- [X] T033 [P] `src/lsp.c` / `tests/lsp.py`: hover on an untyped lambda parameter shows its inferred type;
   `lsp.py` passes (no code change expected).
-- [ ] T034 `docs/reference.md` (R12): replace "Anonymous functions write parameter and return types like
+- [X] T034 `docs/reference.md` (R12): replace "Anonymous functions write parameter and return types like
   named functions" with the one-paragraph rule and inference order of contracts/syntax.md; the builtin
   advice (line 510) becomes `fn(s) => len(s)`; the 8 lambdas become untyped, single-return ones `=>`;
   `python3 tests/ref_examples.py`: tokens before and after stated in `results.md`, **no growth** (SC-005).
-- [ ] T035 [P] `site/docs/guide/functions.md`: the rule, the inference order and a migration note;
+- [X] T035 [P] `site/docs/guide/functions.md`: the rule, the inference order and a migration note;
   `docs/stability.md` and `CHANGELOG.md` (0.5.0: the change, its migration with `tools/vo_fix.vo`, the
   three codes); `README.md`'s first example rewritten in the new form (FR-008).
-- [ ] T036 Version 0.5.0 (`src/main.c` version string, `docs/stability.md`, `CHANGELOG.md`); `vo version`
+- [X] T036 Version 0.5.0 (`src/main.c` version string, `docs/stability.md`, `CHANGELOG.md`); `vo version`
   golden case updated.
-- [ ] T037 SC measurements in `results.md`: SC-001 (written types left: 0; share needing a typed binding,
+- [X] T037 SC measurements in `results.md`: SC-001 (written types left: 0; share needing a typed binding,
   target < 5%), SC-003 (header characters −50%, single-return lines −60%), SC-006 (check times within 5%
   of T003's baseline).
 - [ ] T038 `make test` on x86-64, ARM64 and RISC-V (`make test ARCH=aarch64`, `ARCH=riscv64` under qemu):

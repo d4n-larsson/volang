@@ -5,10 +5,10 @@ fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
 }
 
 fn main() uses console {
-    each([1, 2, 3], fn(x: int) {
+    each([1, 2, 3], fn(x) {
         print(str(x * 10));
     });
-    each(["pure"], fn(s: str) {
+    each(["pure"], fn(s) {
         let _ = len(s);
     });
 }

@@ -23,7 +23,7 @@ fn show(name: str) uses console, env("HOME") {
 }
 
 fn main() uses console, env("HOME") {
-    forward(["HOME", "PA" + "TH"], fn(name: str) {
+    forward(["HOME", "PA" + "TH"], fn(name) {
         match env(name) {
             case ok(v) {
                 print(name + " is set (lambda)");

@@ -1,5 +1,5 @@
 fn total(xs: list[int]) -> int {
-    return len(map(xs, fn(x: int) -> int {
+    return len(map(xs, fn(x) {
         print("x");
         return x;
     }));

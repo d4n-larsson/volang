@@ -35,7 +35,5 @@ export fn set_product_price(catalog: map[str, Product], sku: str, price: int, mo
 export fn sorted_products(catalog: map[str, Product]) -> list[Product] {
     let skus = keys(catalog);
     sort(skus);
-    return map(skus, fn(sku: str) -> Product {
-        return catalog[sku];
-    });
+    return map(skus, fn(sku) => catalog[sku]);
 }

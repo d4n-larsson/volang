@@ -9,7 +9,7 @@ fn main() uses console, file.read("./"), process("bin/slow_lines") {
         "",
         new list[str],
         "./",
-        fn(line: str) -> result[bool] {
+        fn(line) {
             print(line);
             return ok(empty[0] == 0);
         }

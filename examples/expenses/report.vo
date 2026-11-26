@@ -101,9 +101,7 @@ export fn totals(xs: list[Expense], key: fn(Expense) -> str) -> list[Total] {
 export fn sum(xs: list[Total]) -> decimal.Decimal {
     return decimal.add(decimal.decimal(0, 2), decimal.total(map(
         xs,
-        fn(t: Total) -> decimal.Decimal {
-            return t.amount;
-        }
+        fn(t) => t.amount
     )));
 }
 
@@ -125,18 +123,10 @@ fn table(title: str, rows: list[Total]) -> str {
 
 # The whole report: by category (largest first) and by month (in date order).
 export fn render(xs: list[Expense]) -> str {
-    let by_category = totals(xs, fn(e: Expense) -> str {
-        return e.category;
-    });
-    sort_by(by_category, fn(t: Total) -> int {
-        return 0 - t.amount.units;
-    });
-    let by_month = totals(xs, fn(e: Expense) -> str {
-        return slice(e.date, 0, 7);
-    });
-    sort_by(by_month, fn(t: Total) -> str {
-        return t.name;
-    });
+    let by_category = totals(xs, fn(e) => e.category);
+    sort_by(by_category, fn(t) => 0 - t.amount.units);
+    let by_month = totals(xs, fn(e) => slice(e.date, 0, 7));
+    sort_by(by_month, fn(t) => t.name);
     return str(len(xs)) + " expenses\n\n" + table("category", by_category) + "\n" + table("month", by_month);
 }
 
@@ -159,9 +149,7 @@ test "amounts print with two decimals" {
 @spec("FR-002")
 test "totals keep the first-seen order" {
     let xs = [expense("b", 1), expense("a", 2), expense("b", 3)];
-    let t = totals(xs, fn(e: Expense) -> str {
-        return e.category;
-    });
+    let t = totals(xs, fn(e) => e.category);
     expect_eq(t, [
         new Total { name: "b", amount: amount_of(4) },
         new Total { name: "a", amount: amount_of(2) }
@@ -195,9 +183,7 @@ prop "totals add up to the sum of the expenses" (amounts: list[int]) {
         push(xs, expense(str(a % 3), a));
         set expected = expected + a;
     }
-    expect_eq(sum(totals(xs, fn(e: Expense) -> str {
-        return e.category;
-    })), amount_of(expected));
+    expect_eq(sum(totals(xs, fn(e) => e.category)), amount_of(expected));
 }
 
 @spec("FR-005")

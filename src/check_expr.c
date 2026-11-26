@@ -1047,12 +1047,23 @@ Type *check_unary(Node *node)
     return op_error(node, t, 0);
 }
 
+/* Spec 059: a call with an untyped anonymous function argument, which takes its types from the call: under
+ * `try`, the call takes its result type from where the `try` is (`let n: int = try transaction(db, fn() ...)`). */
+static int lambda_arg(Node *e)
+{
+    for (long i = 0; e->kind == N_CALL && e->b.v && i < e->b.v->n; i++) {
+        Node *a = vec_get(e->b.v, i);
+        if (a->kind == N_LAMBDA && !lambda_written(a)) return 1;
+    }
+    return 0;
+}
+
 Type *check_try(Node *node, Type *expected)
 {
     if (!ty_is(ck_ret, TY_RESULT))
         ck_err("E0406", node, str_from_cstr("`try` can only be used in a function that returns a `result`."));
     /* spec 029: `let s: Settings = try load_settings(...)`: the call's result type comes from where it is used */
-    Type *want = expected && !ty_bad(expected) && needs_expected(node->a.n) ? ty_result(expected) : 0;
+    Type *want = expected && !ty_bad(expected) && (needs_expected(node->a.n) || lambda_arg(node->a.n)) ? ty_result(expected) : 0;
     Node *saved = ck_result_ctx; /* spec 056: `try first_key(m)` reads the call as a result */
     ck_result_ctx = node->a.n;
     Type *t = check_expr(node->a.n, want);

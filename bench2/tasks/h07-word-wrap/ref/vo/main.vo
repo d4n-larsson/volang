@@ -5,9 +5,7 @@ fn main() -> result[void] uses console, input {
     while true {
         match read_line() {
             case ok(line) {
-                let ws = filter(split(line, " "), fn(w: str) -> bool {
-                    return len(w) > 0;
-                });
+                let ws = filter(split(line, " "), fn(w) => len(w) > 0);
                 if len(ws) > 0 {
                     for w in ws {
                         push(cur, w);

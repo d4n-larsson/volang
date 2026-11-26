@@ -29,9 +29,7 @@ fn main() uses console, input {
     }
     let ks = keys(counts);
     sort(ks);
-    sort_by(ks, fn(k: str) -> int {
-        return 0 - counts[k];
-    });
+    sort_by(ks, fn(k) => 0 - counts[k]);
     var i = 0;
     while i < len(ks) and i < 5 {
         print(ks[i] + ": " + str(counts[ks[i]]));

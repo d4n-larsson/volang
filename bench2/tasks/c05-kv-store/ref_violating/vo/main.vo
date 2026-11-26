@@ -10,9 +10,7 @@ fn is_int(s: str) -> bool {
     if len(digits) == 0 {
         return false;
     }
-    return all(chars(digits), fn(c: str) -> bool {
-        return "0" <= c and c <= "9";
-    });
+    return all(chars(digits), fn(c) => "0" <= c and c <= "9");
 }
 
 fn main() -> result[void] uses console, input, file.read("store/"), file.write("./") {

@@ -42,21 +42,21 @@ fn find_account(st: Store, name: str) -> result[option.Option[security.Account]]
 fn the_browser(st: Store) -> security.Browser[Store] {
     return new security.Browser {
         find_account: find_account,
-        keep: fn(s: Store, x: security.Session) -> result[void] {
+        keep: fn(s, x) {
             set s.sessions[x.key] = x;
             return ok();
         },
-        find: fn(s: Store, key: str) -> result[option.Option[security.Session]] {
+        find: fn(s, key) {
             if has(s.sessions, key) {
                 return ok(option.Option.some(s.sessions[key]));
             }
             return ok(option.Option.none);
         },
-        end: fn(s: Store, key: str) -> result[void] {
+        end: fn(s, key) {
             remove(s.sessions, key);
             return ok();
         },
-        random: fn(n: int) -> bytes {
+        random: fn(n) {
             set st.drawn = st.drawn + 1;
             let xs = new list[int];
             for i in 0..n {
@@ -86,10 +86,8 @@ fn app(st: Store) -> web.App[Store] {
             security.rule("/api", security.Access.signed_in)
         ],
         ways: [security.browser(b)],
-        now: fn() -> int {
-            return st.now;
-        },
-        on_event: fn(s: Store, e: security.Event) {
+        now: fn() => st.now,
+        on_event: fn(s, e) {
             push(s.events, e.kind + " " + e.name + " (" + e.reason + ")");
         }
     };

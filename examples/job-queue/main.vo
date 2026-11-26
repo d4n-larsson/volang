@@ -86,12 +86,8 @@ fn replace(q: Queue, s: Seat) -> result[void, workers.WorkerError] {
 # Waits for the first answer, no longer than until the nearest deadline; then the jobs past their
 # deadline are given up.
 fn listen(q: Queue) -> result[void, workers.WorkerError] uses console, clock {
-    let workers_value = map(q.seats, fn(s: Seat) -> workers.Worker[jobs.Job, jobs.Done] {
-        return s.worker;
-    });
-    let dues = map(q.seats, fn(s: Seat) -> int {
-        return s.due;
-    });
+    let workers_value = map(q.seats, fn(s) => s.worker);
+    let dues = map(q.seats, fn(s) => s.due);
     match workers.receive_first(
         workers_value,
         workers.Wait.at_most(jobs.wait_until_due(dues, now_ms()))

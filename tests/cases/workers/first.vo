@@ -68,7 +68,7 @@ fn worker_of(r: result[workers.Worker[int, int], workers.WorkerError]) -> worker
 }
 
 fn gives(n: int) -> fn(workers.Link[int, int]) {
-    return fn(link: workers.Link[int, int]) {
+    return fn(link) {
         give(link, n);
         give(link, n + 1);
     };

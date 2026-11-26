@@ -134,7 +134,7 @@ fn main() uses console {
 
     # copies: what the worker changes is its own, and the reverse
     let shared = [1, 2, 3];
-    let c = worker_of(workers.start_worker(fn(link: workers.Link[int, int]) {
+    let c = worker_of(workers.start_worker(fn(link) {
         push(shared, 4);
         match workers.emit(link, len(shared)) {
             case ok() {
@@ -178,7 +178,7 @@ fn main() uses console {
     workers.stop_worker(s);
 
     # records, lists, maps, variants and results as messages
-    let j = workers.start_worker(fn(link: workers.Link[Job, result[Answer]]) {
+    let answer_jobs: fn(workers.Link[Job, result[Answer]]) = fn(link) {
         match workers.next_message(link, workers.Wait.forever) {
             case ok(job) {
                 set job.counts["seen"] = len(job.words);
@@ -204,7 +204,8 @@ fn main() uses console {
             case err(_) {
             }
         }
-    });
+    };
+    let j = workers.start_worker(answer_jobs);
     match j {
         case ok(w) {
             let counts = new map[str, int];

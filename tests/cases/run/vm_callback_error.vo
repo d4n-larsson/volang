@@ -3,8 +3,6 @@ fn main() uses console {
     let xs = [3, 1, 2];
     let ys = [0];
     print("before");
-    sort_by(xs, fn(v: int) -> int {
-        return ys[v];
-    });
+    sort_by(xs, fn(v) => ys[v]);
     print("after");
 }

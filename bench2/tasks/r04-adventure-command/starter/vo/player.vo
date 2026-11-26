@@ -30,9 +30,7 @@ export fn move(player: Player, world_value: map[str, world.Room], direction: str
 }
 
 fn contains(xs: list[str], x: str) -> bool {
-    return any(xs, fn(y: str) -> bool {
-        return y == x;
-    });
+    return any(xs, fn(y) => y == x);
 }
 
 # Moves an item from the current room to the inventory; returns the points earned, or -1.
@@ -41,9 +39,7 @@ export fn pick_up(player: Player, world_value: map[str, world.Room], item: str) 
     if not contains(room.items, item) {
         return -1;
     }
-    set room.items = filter(room.items, fn(x: str) -> bool {
-        return x != item;
-    });
+    set room.items = filter(room.items, fn(x) => x != item);
     push(player.inventory, item);
     let points = world.item_value(item);
     set player.score = player.score + points;

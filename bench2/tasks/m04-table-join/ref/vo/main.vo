@@ -9,9 +9,7 @@ record Table {
 }
 
 fn table(lines: list[str]) -> Table {
-    let ls = filter(lines, fn(l: str) -> bool {
-        return l != "";
-    });
+    let ls = filter(lines, fn(l) => l != "");
     var header = new list[str];
     match csvline.parse(ls[0]) {
         case ok(h) {

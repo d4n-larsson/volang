@@ -20,7 +20,7 @@ fn app(steps: list[web.Step[int]]) -> web.App[int] {
 }
 
 fn guard() -> web.Step[int] {
-    return security.secure(security.policy([security.rule("/open", security.Access.anyone), security.rule("/", security.Access.signed_in)], new list[security.Way[int]], fn() -> int { return 0; }));
+    return security.secure(security.policy([security.rule("/open", security.Access.anyone), security.rule("/", security.Access.signed_in)], new list[security.Way[int]], fn() => 0));
 }
 
 fn show(label: str, a: web.App[int], r: http.Request) uses console {

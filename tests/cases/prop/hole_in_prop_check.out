@@ -1,5 +1,5 @@
-hole_in_prop_check.vo:8:27: warning[W0601]: Hole: `"decode the text"` needs a value of type `list[int]`.
-   8 |     let back: list[int] = todo("decode the text");
+hole_in_prop_check.vo:6:27: warning[W0601]: Hole: `"decode the text"` needs a value of type `list[int]`.
+   6 |     let back: list[int] = todo("decode the text");
      |                           ^^^^^^^^^^^^^^^^^^^^^^^
     in scope: xs: list[int]
 0 errors, 1 warning (1 hole)

@@ -8,9 +8,7 @@ fn digits_only(s: str) -> bool {
     if len(s) == 0 {
         return false;
     }
-    return all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
 }
 
 # Only called on strings that passed digits_only.
@@ -76,9 +74,7 @@ fn to_seconds(date: str, time: str) -> int {
 
 # The stamp of a valid log line.
 fn parse_stamp(line: str) -> result[Stamp] {
-    let words = filter(split(line, " "), fn(w: str) -> bool {
-        return w != "";
-    });
+    let words = filter(split(line, " "), fn(w) => w != "");
     if len(words) < 4 {
         return err("short");
     }

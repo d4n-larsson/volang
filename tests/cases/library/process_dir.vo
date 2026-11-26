@@ -6,7 +6,7 @@ import std.process;
 fn main() -> result[void] uses console, process("true") {
     let a = try process.run_with("true", [], "", []);
     let b = try process.run_with_bytes("true", [], bytes.from_text(""), []);
-    let c = try process.run_lines("true", [], "", [], fn(line: str) -> result[bool] {
+    let c = try process.run_lines("true", [], "", [], fn(line) {
         print(line);
         return ok(true);
     });

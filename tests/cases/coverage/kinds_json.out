@@ -1,11 +1,11 @@
-{"v":1,"kind":"test","id":"kinds_json.vo::uses most","name":"uses most","status":"pass","file":"kinds_json.vo","start":{"line":69,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"test","id":"kinds_json.vo::uses most","name":"uses most","status":"pass","file":"kinds_json.vo","start":{"line":65,"col":1},"uses":"","ms":0}
 {"v":1,"kind":"coverage","file":"kinds_json.vo","start":{"line":8,"col":1},"end":{"line":10,"col":2},"point":"function","function":"helper"}
 {"v":1,"kind":"coverage","file":"kinds_json.vo","start":{"line":15,"col":12},"end":{"line":17,"col":6},"point":"else","function":"classify"}
 {"v":1,"kind":"coverage","file":"kinds_json.vo","start":{"line":21,"col":5},"end":{"line":23,"col":6},"point":"if_false","function":"clamp"}
 {"v":1,"kind":"coverage","file":"kinds_json.vo","start":{"line":32,"col":9},"end":{"line":34,"col":10},"point":"case","function":"area"}
 {"v":1,"kind":"coverage","file":"kinds_json.vo","start":{"line":47,"col":17},"end":{"line":49,"col":6},"point":"loop","function":"total"}
-{"v":1,"kind":"coverage","file":"kinds_json.vo","start":{"line":54,"col":20},"end":{"line":56,"col":6},"point":"lambda","function":"twice"}
-{"v":1,"kind":"coverage","file":"kinds_json.vo","start":{"line":60,"col":13},"end":{"line":62,"col":6},"point":"lambda","function":"unused_lambda"}
-{"v":1,"kind":"coverage","file":"kinds_json.vo","start":{"line":63,"col":21},"end":{"line":65,"col":6},"point":"then","function":"unused_lambda"}
+{"v":1,"kind":"coverage","file":"kinds_json.vo","start":{"line":54,"col":20},"end":{"line":54,"col":34},"point":"lambda","function":"twice"}
+{"v":1,"kind":"coverage","file":"kinds_json.vo","start":{"line":58,"col":29},"end":{"line":58,"col":43},"point":"lambda","function":"unused_lambda"}
+{"v":1,"kind":"coverage","file":"kinds_json.vo","start":{"line":59,"col":21},"end":{"line":61,"col":6},"point":"then","function":"unused_lambda"}
 {"v":1,"kind":"coverage_summary","functions":9,"functions_run":6,"branches":11,"branches_run":6}
 {"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":1,"failed":0,"errored":0,"timed_out":0,"selected":1}

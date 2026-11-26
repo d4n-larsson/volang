@@ -11,15 +11,11 @@ record Person {
 }
 
 fn oldest_first(people: list[Person]) {
-    sort_by(people, fn(p: Person) -> int {
-        return 0 - p.age;
-    });
+    sort_by(people, fn(p) => 0 - p.age);
 }
 
 fn save(people: list[Person]) -> result[void] uses file.write("out/") {
-    return write_file("out/people.txt", join(map(people, fn(p: Person) -> str {
-        return p.name;
-    }), "\n"));
+    return write_file("out/people.txt", join(map(people, fn(p) => p.name), "\n"));
 }
 
 fn main() -> result[void] uses console, file.write("out/") {

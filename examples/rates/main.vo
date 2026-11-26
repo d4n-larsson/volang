@@ -10,8 +10,11 @@ import std.web;
 
 fn main() -> result[void] uses console, net("api.frankfurter.dev"), serve("8080") {
     print("rates on http://localhost:8080/convert?amount=100&from=EUR&to=SEK (Ctrl-C stops)");
-    try web.serve_app("8080", 2, fn() -> result[convert.Rates[uses net]] {
-        return ok(new convert.Rates { rate: rates.fetch_rate });
-    }, convert.converter());
+    try web.serve_app("8080", 2, open_rates, convert.converter());
     return ok();
+}
+
+# Each worker's state: the rates fetched over the network.
+fn open_rates() -> result[convert.Rates[uses net]] {
+    return ok(new convert.Rates { rate: rates.fetch_rate });
 }

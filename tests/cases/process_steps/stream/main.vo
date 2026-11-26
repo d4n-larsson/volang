@@ -16,7 +16,7 @@ fn follow(
 )
     uses console, file.read("./"), process("bin/bad_utf8", "bin/cat_in", "bin/close_out", "bin/env_dump", "bin/flood", "bin/missing", "bin/slow_lines", "bin/to_stderr") {
     let seen = new Seen { lines: new list[str] };
-    let r = process.run_lines(program, args_value, input, env_value, "./", fn(line: str) -> result[bool] {
+    let r = process.run_lines(program, args_value, input, env_value, "./", fn(line) {
         if line == fail_at {
             return err("the function failed at " + line);
         }

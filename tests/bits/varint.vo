@@ -26,7 +26,7 @@ fn text(n: int) -> str {
 }
 
 fn main() -> result[void] uses console, file.read("./") {
-    try fs.each_line("inputs.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("inputs.txt", fn(line) {
         print(join(map(decode(try bytes.from_hex(line)), text), " "));
         return ok(true);
     });

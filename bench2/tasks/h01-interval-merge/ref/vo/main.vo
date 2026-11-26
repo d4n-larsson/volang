@@ -40,9 +40,7 @@ fn main() -> result[void] uses console, input {
             }
         }
     }
-    sort_by(spans, fn(s: Span) -> int {
-        return s.lo;
-    });
+    sort_by(spans, fn(s) => s.lo);
     let out = new list[Span];
     for s in spans {
         if len(out) > 0 and s.lo <= out[len(out) - 1].hi {

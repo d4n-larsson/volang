@@ -27,9 +27,7 @@ fn run(words: list[str], logs: list[str]) -> list[str] {
         return search.grep(logs, args_value[0]);
     }
     let known = ["stats", "levels", "errors", "busiest", "range", "span", "grep"];
-    if any(known, fn(k: str) -> bool {
-        return k == cmd;
-    }) {
+    if any(known, fn(k) => k == cmd) {
         return ["error: bad command"];
     }
     return ["error: unknown command " + cmd];
@@ -51,9 +49,7 @@ fn main() uses console, input {
         }
     }
     for line in commands {
-        let words = filter(split(line, " "), fn(w: str) -> bool {
-            return w != "";
-        });
+        let words = filter(split(line, " "), fn(w) => w != "");
         for out in run(words, logs) {
             print(out);
         }

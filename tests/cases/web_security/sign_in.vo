@@ -58,7 +58,7 @@ fn the_policy(now_ms_value: int) -> security.Policy[int, uses console] {
     return new security.Policy {
         rules: [security.rule("/sign-in", security.Access.anyone), security.rule("/open", security.Access.anyone), security.rule("/", security.Access.signed_in)],
         ways: [security.basic(find_account), security.tokens([key(), old_key()])],
-        now: fn() -> int { return now_ms_value; },
+        now: fn() => now_ms_value,
         on_event: log
     };
 }

@@ -65,7 +65,7 @@ record Tally {
 fn main() uses console {
     let tally = new Tally { n: 0 };
     let lists = [[1], [2, 2]];
-    let sizes = concurrent_map(lists, 2, fn(xs: list[int]) -> int {
+    let sizes = concurrent_map(lists, 2, fn(xs) {
         push(xs, 0);
         set tally.n = tally.n + 1;
         return len(xs);

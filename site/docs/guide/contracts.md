@@ -225,9 +225,7 @@ fn score(n: int) -> int
 }
 
 fn main() uses console {
-    print(join(map([1, 5, 10], fn(n: int) -> str {
-        return str(score(n));
-    }), " "));
+    print(join(map([1, 5, 10], fn(n) => str(score(n))), " "));
     let scores = map([3, 12], score);
     print(str(len(scores)));
 }

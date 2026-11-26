@@ -15,7 +15,7 @@ record Job {
 }
 
 fn make(name: str) -> Job {
-    return new Job { name: name, greet: fn(s: str) -> str { return s + "!"; } };
+    return new Job { name: name, greet: fn(s) => s + "!" };
 }
 
 fn main() uses console {

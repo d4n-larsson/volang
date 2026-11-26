@@ -65,13 +65,9 @@ fn main() -> result[void] uses console, input {
                     for t in values {
                         push(xs, try parse_int(t));
                     }
-                    print(describe(xs, fn(x: int) -> str {
-                        return str(x);
-                    }));
+                    print(describe(xs, fn(x) => str(x)));
                 } else {
-                    print(describe(values, fn(s: str) -> str {
-                        return s;
-                    }));
+                    print(describe(values, fn(s) => s));
                 }
             }
             case err(_) {

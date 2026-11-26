@@ -11,7 +11,7 @@ record Counter {
 
 fn make_counter(start: int, step: int) -> Counter {
     let s = new State { start: start, step: step, current: start };
-    return new Counter { next: fn() -> int {
+    return new Counter { next: fn() {
         let v = s.current;
         set s.current = s.current + s.step;
         return v;

@@ -68,7 +68,7 @@ fn answer(f: list[str]) -> result[str] {
 }
 
 fn main() -> result[void] uses console, file.read("./") {
-    try fs.each_line("cases.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("cases.txt", fn(line) {
         print(try answer(split(line, "\\t")));
         return ok(true);
     });
@@ -96,7 +96,7 @@ fn ran(n: int, input: web.NoInput) -> result[http.Response] {
 fn main() uses console, clock {
     let routes: list[web.Route[int, uses clock]] = [web.on_get("/me", ran)];
     let ways: list[security.Way[int, uses clock]] = [security.basic(find_account)];
-    let app = new web.App { routes: routes, steps: [security.secure(security.policy([security.rule("/", security.Access.signed_in)], ways, fn() -> int { return now_ms(); }))], errors: new list[web.ErrorStatus] };
+    let app = new web.App { routes: routes, steps: [security.secure(security.policy([security.rule("/", security.Access.signed_in)], ways, fn() => now_ms()))], errors: new list[web.ErrorStatus] };
     for _ in 0..7 {
         for pair in ["col:wrong", "eve:wrong"] {
             let t0 = now_ms();
@@ -135,7 +135,7 @@ fn main() -> result[void] uses console, clock {
     let ways: list[security.Way[int, uses clock]] = [security.tokens([key])];
     let rules = [security.rule("/health", security.Access.anyone), security.rule("/admin", security.Access.any_role(["admin"])), security.rule("/", security.Access.signed_in)];
     let plain = new web.App { routes: routes, steps: new list[web.Step[int, uses clock]], errors: new list[web.ErrorStatus] };
-    let app = new web.App { routes: routes, steps: [security.secure(security.policy(rules, ways, fn() -> int { return now_ms(); }))], errors: new list[web.ErrorStatus] };
+    let app = new web.App { routes: routes, steps: [security.secure(security.policy(rules, ways, fn() => now_ms()))], errors: new list[web.ErrorStatus] };
     let token = try security.issue_token(key, new security.User { name: "ada", roles: ["admin", "user"] }, now_ms(), 3600);
     let r = web.with_header(web.request("GET", "/me", ""), "Authorization", "Bearer " + token);
     var bad = 0;
@@ -173,7 +173,7 @@ fn answer(line: str) -> result[str] {
 }
 
 fn main() -> result[void] uses console, file.read("./") {
-    try fs.each_line("cases.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("cases.txt", fn(line) {
         print(try answer(line));
         return ok(true);
     });
@@ -185,7 +185,7 @@ ORIGIN = """import std.fs;
 import std.security;
 
 fn main() -> result[void] uses console, file.read("./") {
-    try fs.each_line("cases.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("cases.txt", fn(line) {
         let f = split(line, "|");
         print(str(security.same_origin(f[0], f[1], f[2], f[3], f[4])));
         return ok(true);
@@ -210,16 +210,16 @@ fn find_account(n: int, name: str) -> result[option.Option[security.Account]] {
 fn main() uses console, clock {
     let b = new security.Browser[int, uses clock] {
         find_account: find_account,
-        keep: fn(n: int, s: security.Session) -> result[void] { return ok(); },
-        find: fn(n: int, key: str) -> result[option.Option[security.Session]] { return ok(option.Option.none); },
-        end: fn(n: int, key: str) -> result[void] { return ok(); },
-        random: fn(k: int) -> bytes { return bytes.from_text("0123456789abcdef"); },
+        keep: fn(n, s) => ok(),
+        find: fn(n, key) => ok(option.Option.none),
+        end: fn(n, key) => ok(),
+        random: fn(k) => bytes.from_text("0123456789abcdef"),
         sign_in: "/sign-in",
         sign_out: "/sign-out",
         lifetime_ms: 3600000,
         origin: ""
     };
-    let p = security.policy([security.rule("/", security.Access.anyone)], [security.browser(b)], fn() -> int { return now_ms(); });
+    let p = security.policy([security.rule("/", security.Access.anyone)], [security.browser(b)], fn() => now_ms());
     let app = new web.App { routes: security.browser_routes(b, p), steps: [security.secure(p)], errors: new list[web.ErrorStatus] };
     for _ in 0..7 {
         for pair in ["col:wrong", "eve:wrong"] {

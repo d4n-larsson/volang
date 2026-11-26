@@ -40,12 +40,8 @@ fn main() uses console, input {
     for k in keys(counts) {
         push(entries, new Entry { word: k, count: counts[k] });
     }
-    sort_by(entries, fn(e: Entry) -> str {
-        return e.word;
-    });
-    sort_by(entries, fn(e: Entry) -> int {
-        return -e.count;
-    });
+    sort_by(entries, fn(e) => e.word);
+    sort_by(entries, fn(e) => -e.count);
     let n = min(5, len(entries));
     for i in 0..n {
         print(entries[i].word + ": " + str(entries[i].count));

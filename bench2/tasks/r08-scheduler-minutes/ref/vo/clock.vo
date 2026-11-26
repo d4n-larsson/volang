@@ -2,9 +2,7 @@ export fn is_digits(s: str) -> bool {
     if len(s) == 0 {
         return false;
     }
-    return all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
 }
 
 # Only called on strings that passed is_digits.

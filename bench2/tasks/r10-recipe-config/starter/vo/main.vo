@@ -18,9 +18,7 @@ fn is_count(s: str) -> bool {
     if len(s) == 0 {
         return false;
     }
-    if not all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    }) {
+    if not all(chars(s), fn(c) => c >= "0" and c <= "9") {
         return false;
     }
     return num(s) > 0;
@@ -94,9 +92,7 @@ fn run(words: list[str], recipes_value: map[str, recipes.Recipe]) -> list[str] {
 fn main() uses console, input {
     let recipes_value = new map[str, recipes.Recipe];
     for line in split(read_all(), "\n") {
-        let words = filter(split(line, " "), fn(w: str) -> bool {
-            return w != "";
-        });
+        let words = filter(split(line, " "), fn(w) => w != "");
         if len(words) == 0 {
             continue;
         }

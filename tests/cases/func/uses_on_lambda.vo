@@ -1,5 +1,5 @@
 fn main() uses console {
-    let f = fn(x: int) -> int uses console {
+    let f: fn(int) -> int uses console = fn(x) uses console {
         print("x");
         return x;
     };

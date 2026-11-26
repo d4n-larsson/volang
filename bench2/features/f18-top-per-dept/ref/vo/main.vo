@@ -13,9 +13,7 @@ fn main() -> result[void] uses console, input {
             case ok(line) {
                 let p = split(line, " ");
                 push(emps, new Emp { dept: p[0], name: p[1], salary: try parse_int(p[2]) });
-                if not any(depts, fn(d: str) -> bool {
-                    return d == p[0];
-                }) {
+                if not any(depts, fn(d) => d == p[0]) {
                     push(depts, p[0]);
                 }
             }
@@ -26,21 +24,11 @@ fn main() -> result[void] uses console, input {
     }
     sort(depts);
     for d in depts {
-        let group = filter(emps, fn(e: Emp) -> bool {
-            return e.dept == d;
-        });
-        sort_by(group, fn(e: Emp) -> str {
-            return e.name;
-        });
-        sort_by(group, fn(e: Emp) -> int {
-            return -e.salary;
-        });
-        let total = fold(group, 0, fn(acc: int, e: Emp) -> int {
-            return acc + e.salary;
-        });
-        let top = map(slice(group, 0, min(k, len(group))), fn(e: Emp) -> str {
-            return e.name + ":" + str(e.salary);
-        });
+        let group = filter(emps, fn(e) => e.dept == d);
+        sort_by(group, fn(e) => e.name);
+        sort_by(group, fn(e) => -e.salary);
+        let total = fold(group, 0, fn(acc, e) => acc + e.salary);
+        let top = map(slice(group, 0, min(k, len(group))), fn(e) => e.name + ":" + str(e.salary));
         var shown = "-";
         if len(top) > 0 {
             set shown = join(top, ",");

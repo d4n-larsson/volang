@@ -3,9 +3,7 @@ export fn limit() -> int {
 }
 
 export fn tokens(line: str) -> list[str] {
-    return filter(split(line, " "), fn(t: str) -> bool {
-        return t != "";
-    });
+    return filter(split(line, " "), fn(t) => t != "");
 }
 
 export fn is_number(tok: str) -> bool {
@@ -13,9 +11,7 @@ export fn is_number(tok: str) -> bool {
     if len(tok) > 0 and slice(tok, 0, 1) == "-" {
         set d = slice(tok, 1, len(tok));
     }
-    return len(d) > 0 and all(chars(d), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return len(d) > 0 and all(chars(d), fn(c) => c >= "0" and c <= "9");
 }
 
 export fn number(tok: str) -> result[int] {

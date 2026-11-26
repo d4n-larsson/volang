@@ -1,15 +1,13 @@
 fn main() uses console {
     let xs = [1, 2, 3, 4];
-    let found = any(xs, fn(x: int) -> bool {
+    let found = any(xs, fn(x) {
         print("any checks " + str(x));
         return x > 1;
     });
-    let every = all(xs, fn(x: int) -> bool {
+    let every = all(xs, fn(x) {
         print("all checks " + str(x));
         return x < 3;
     });
     print(str(found) + " " + str(every));
-    print(str(any(new list[int], fn(x: int) -> bool {
-        return true;
-    })));
+    print(str(any(new list[int], fn(x) => true)));
 }

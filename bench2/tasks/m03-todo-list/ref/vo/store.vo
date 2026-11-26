@@ -47,9 +47,7 @@ export fn exists(s: Store, id: str) -> bool {
 }
 
 export fn add_tag(t: Task, tag: str) -> bool {
-    if any(t.tags, fn(g: str) -> bool {
-        return g == tag;
-    }) {
+    if any(t.tags, fn(g) => g == tag) {
         return false;
     }
     push(t.tags, tag);
@@ -63,8 +61,6 @@ export fn all_tasks(s: Store) -> list[Task] {
             push(out, s.tasks[k]);
         }
     }
-    sort_by(out, fn(t: Task) -> int {
-        return t.id;
-    });
+    sort_by(out, fn(t) => t.id);
     return out;
 }

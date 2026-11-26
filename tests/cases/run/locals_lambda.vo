@@ -1,6 +1,6 @@
 fn main() uses console {
     let base = 5;
-    let f = fn(x: int) -> int {
+    let f: fn(int) -> int = fn(x) {
         let y = x - base;
         return 100 / y;
     };

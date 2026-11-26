@@ -84,8 +84,8 @@ def generate(rng):
         if style == "plain":
             out.append("    return %s(p);" % names[i + 1])
         elif style == "lambda":
-            out += ["    let g = fn(q: %s) -> str {" % ptype, "        return %s(q);" % names[i + 1], "    };",
-                    "    return g(p);"]
+            # spec 059: an anonymous function takes its types (and keeps its effects) from via's parameter
+            out.append("    return via(fn(q) => %s(q), p);" % names[i + 1])
         else:
             out.append("    return via(%s, p);" % names[i + 1])
         out += ["}", ""]

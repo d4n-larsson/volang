@@ -3,7 +3,7 @@ import std.sqlite;
 
 fn main() -> result[void] uses console, file.read, file.write {
     let db = try sqlite.open("app.db");
-    let r = sqlite.transaction(db, fn() -> result[int] {
+    let r: result[int] = sqlite.transaction(db, fn() {
         let _ = try sqlite.exec(db, sqlite.sql("insert into t values (2)"), new list[sqlite.Value]);
         let _ = try sqlite.exec(new sqlite.Database { id: 63 }, sqlite.sql("insert into t values (3)"), new list[sqlite.Value]);
         return ok(0);

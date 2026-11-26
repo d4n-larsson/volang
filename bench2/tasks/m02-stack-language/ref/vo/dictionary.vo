@@ -25,9 +25,7 @@ fn valid_name(name: str) -> bool {
     if len(name) == 0 or machine.is_named_builtin(name) {
         return false;
     }
-    return all(chars(name), fn(c: str) -> bool {
-        return c >= "a" and c <= "z";
-    });
+    return all(chars(name), fn(c) => c >= "a" and c <= "z");
 }
 
 export fn define(words: map[str, list[Item]], name: str, body: list[str]) -> result[void] {

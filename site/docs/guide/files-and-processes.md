@@ -162,7 +162,7 @@ record Count {
 fn main() -> result[void] uses console, file.read("./"), file.write("./") {
     try write_file("app.log", "start\nerror: disk full\nretry\nerror: disk full\nstop\n");
     let count = new Count { lines: 0, errors: 0, size: 0 };
-    try fs.each_line("app.log", fn(line: str) -> result[bool] {
+    try fs.each_line("app.log", fn(line) {
         set count.lines = count.lines + 1;
         if find(line, "error") == 0 {
             set count.errors = count.errors + 1;
@@ -170,7 +170,7 @@ fn main() -> result[void] uses console, file.read("./"), file.write("./") {
         return ok(count.errors < 2);
     });
     print(str(count.errors) + " errors in the first " + str(count.lines) + " lines");
-    try fs.each_chunk("app.log", 16, fn(piece: bytes) -> result[bool] {
+    try fs.each_chunk("app.log", 16, fn(piece) {
         set count.size = count.size + len(piece);
         return ok(true);
     });
@@ -193,7 +193,7 @@ import std.process;
 
 fn main() -> result[void] uses console, file.read("./"), process("sh") {
     let script = "echo compiling; echo linking; sleep 5; echo done";
-    let out = try process.run_lines("sh", ["-c", script], "", new list[str], "./", fn(line: str) -> result[bool] {
+    let out = try process.run_lines("sh", ["-c", script], "", new list[str], "./", fn(line) {
         print("> " + line);
         return ok(line != "linking");
     });
@@ -216,7 +216,7 @@ import std.fs;
 import std.http;
 
 fn main() -> result[void] uses console, file.write("downloads/"), net("example.com") {
-    let head = try http.send_stream("GET", "https://example.com/big.tar", new list[http.Header], "", 30000, fn(head: http.Response, piece: bytes) -> result[bool] {
+    let head = try http.send_stream("GET", "https://example.com/big.tar", new list[http.Header], "", 30000, fn(head, piece) {
         if head.status != 200 {
             return ok(false);
         }

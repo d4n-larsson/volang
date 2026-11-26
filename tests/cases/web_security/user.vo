@@ -61,7 +61,7 @@ fn app(ways: list[security.Way[int]]) -> web.App[int] {
     let rules = [security.rule("/open", security.Access.anyone), security.rule("/", security.Access.signed_in)];
     return new web.App {
         routes: routes(),
-        steps: [security.secure(security.policy(rules, ways, fn() -> int { return 0; }))],
+        steps: [security.secure(security.policy(rules, ways, fn() => 0))],
         errors: new list[web.ErrorStatus]
     };
 }

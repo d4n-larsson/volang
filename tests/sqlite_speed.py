@@ -18,13 +18,14 @@ INSERT = """import std.sqlite;
 fn main() -> result[void] uses console, file.read, file.write {
     let db = try sqlite.open("speed.db");
     let _ = try sqlite.exec(db, sqlite.sql("create table t(id integer primary key, name text, score real)"), new list[sqlite.Value]);
-    let n = try sqlite.transaction(db, fn() -> result[int] {
+    let filled: result[int] = sqlite.transaction(db, fn() {
         for i in 0..100000 {
             let _ = try sqlite.exec(db, sqlite.sql("insert into t(name, score) values (?, ?)"),
                              [sqlite.Value.text("name " + str(i)), sqlite.Value.real(float(i) / 7.0)]);
         }
         return ok(100000);
     });
+    let n = try filled;
     print(str(n));
     return ok();
 }

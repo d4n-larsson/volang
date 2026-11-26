@@ -38,9 +38,7 @@ fn parse(lines: list[str]) -> result[list[Span]] {
 
 fn merge(input: list[Span]) -> list[Span] {
     let spans = slice(input, 0, len(input));
-    sort_by(spans, fn(s: Span) -> int {
-        return s.lo;
-    });
+    sort_by(spans, fn(s) => s.lo);
     let out = new list[Span];
     for s in spans {
         if len(out) > 0 and s.lo <= out[len(out) - 1].hi {

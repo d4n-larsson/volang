@@ -4,8 +4,8 @@ path_scope_lambda.vo:2:11: runtime error[R0010]: file.read("b/x.txt") is not all
 trace:
   at load (path_scope_lambda.vo:2:11)
       path: str = "b/x.txt"
-  at anonymous function (path_scope_lambda.vo:15:16)
+  at anonymous function (path_scope_lambda.vo:14:56)
       p: str = "b/x.txt"
-  at only_a (path_scope_lambda.vo:17:12)
+  at only_a (path_scope_lambda.vo:15:12)
       path: str = "b/x.txt", read: fn(str) -> str uses file.read = <fn(str) -> str uses file.read>
-  at main (path_scope_lambda.vo:22:11)
+  at main (path_scope_lambda.vo:20:11)

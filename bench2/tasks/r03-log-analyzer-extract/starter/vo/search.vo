@@ -2,9 +2,7 @@ fn numeric(s: str) -> bool {
     if len(s) == 0 {
         return false;
     }
-    return all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
 }
 
 # Only called on strings that passed numeric.
@@ -56,9 +54,7 @@ fn check_time(word: str) -> bool {
 
 # The words of a valid log line.
 fn split_entry(line: str) -> result[list[str]] {
-    let words = filter(split(line, " "), fn(w: str) -> bool {
-        return w != "";
-    });
+    let words = filter(split(line, " "), fn(w) => w != "");
     if len(words) < 4 or not check_date(words[0]) or not check_time(words[1]) {
         return err("bad stamp");
     }

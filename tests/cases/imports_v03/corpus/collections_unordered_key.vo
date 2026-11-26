@@ -3,7 +3,7 @@ import std.collections.ordered_set_by;
 # Spec 014: the built-in order needs an ordered element type; a comparison function orders anything.
 fn main() uses console {
     let bad = new ordered_set[list[int]];
-    let good = ordered_set_by(fn(a: list[int], b: list[int]) -> int { return len(a) - len(b); });
+    let good: ordered_set[list[int]] = ordered_set_by(fn(a, b) => len(a) - len(b));
     push(good, [1, 2]);
     print(str(len(good)));
 }

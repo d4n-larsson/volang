@@ -309,7 +309,7 @@ fn ask(port: int) -> str uses net("127.0.0.1") {
 fn both() -> list[str] uses net("127.0.0.1"), serve("0") {
     match listen("0") {
         case ok(l) {
-            let out = concurrent_map([0, 1], 2, fn(role: int) -> str {
+            let out = concurrent_map([0, 1], 2, fn(role) {
                 if role == 0 {
                     return serve_one(l);
                 }

@@ -212,7 +212,7 @@ fn summary(p: Progress, code: int, now: int) -> str {
             push(timed, s);
         }
     }
-    let took = fn(s: Step) -> int {
+    let took: fn(Step) -> int = fn(s) {
         if s.ended < 0 {
             return now - s.started;
         }
@@ -327,7 +327,7 @@ fn run_make(target: str, make_args: list[str]) -> result[int]
     for a in make_args {
         push(argv, a);
     }
-    let out = try process.run_lines("sh", argv, "", passed_vars(), "./", fn(text_value: str) -> result[bool] {
+    let out = try process.run_lines("sh", argv, "", passed_vars(), "./", fn(text_value) {
         try fs.append_file(log, text_value + "\n");
         for l in on_line(p, text_value, now_ms()) {
             eprint(l);

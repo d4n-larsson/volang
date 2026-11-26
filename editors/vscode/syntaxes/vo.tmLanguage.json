@@ -345,7 +345,7 @@
     "operators": {
       "patterns": [
         {
-          "match": "->|\\.\\.|==|!=|<=|>=|[-+*/%<>=]",
+          "match": "->|=>|\\.\\.|==|!=|<=|>=|[-+*/%<>=]",
           "name": "keyword.operator.symbol.vo"
         },
         {

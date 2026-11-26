@@ -51,15 +51,11 @@ fn total(xs: list[int]) -> int {
 }
 
 fn twice(xs: list[int]) -> list[int] {
-    return map(xs, fn(x: int) -> int {
-        return x * 2;
-    });
+    return map(xs, fn(x) => x * 2);
 }
 
 fn unused_lambda() -> int {
-    let f = fn(x: int) -> int {
-        return x + 1;
-    };
+    let f: fn(int) -> int = fn(x) => x + 1;
     if len("a") > 5 {
         return f(1);
     }

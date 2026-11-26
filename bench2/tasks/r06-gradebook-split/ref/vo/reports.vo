@@ -61,18 +61,12 @@ export fn class_report(book_value: book.Book) -> list[str] {
             }
         }
     }
-    sort_by(graded, fn(g: Graded) -> str {
-        return g.name;
-    });
-    sort_by(graded, fn(g: Graded) -> int {
-        return -g.avg;
-    });
+    sort_by(graded, fn(g) => g.name);
+    sort_by(graded, fn(g) => -g.avg);
     let out = new list[str];
     var total = 0;
     for g in graded {
-        let higher = filter(graded, fn(other: Graded) -> bool {
-            return other.avg > g.avg;
-        });
+        let higher = filter(graded, fn(other) => other.avg > g.avg);
         push(out, str(1 + len(higher)) + ". " + g.name + " " + stats.tenths(g.avg) + " " + letters.letter(g.avg));
         set total = total + g.avg;
     }

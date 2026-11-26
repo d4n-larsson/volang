@@ -45,6 +45,6 @@
 
 (annotation "@" @attribute name: (identifier) @attribute)
 
-["->" ".." "=" "==" "!=" "<" "<=" ">" ">=" "+" "-" "*" "/" "%"] @operator
+["->" "=>" ".." "=" "==" "!=" "<" "<=" ">" ">=" "+" "-" "*" "/" "%"] @operator
 ["(" ")" "[" "]" "{" "}"] @punctuation.bracket
 ["," ";" ":" "."] @punctuation.delimiter

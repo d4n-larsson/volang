@@ -4,9 +4,7 @@ export fn currencies() -> list[str] {
 }
 
 export fn is_currency(code: str) -> bool {
-    return any(currencies(), fn(c: str) -> bool {
-        return c == code;
-    });
+    return any(currencies(), fn(c) => c == code);
 }
 
 fn two_digits(n: int) -> str {

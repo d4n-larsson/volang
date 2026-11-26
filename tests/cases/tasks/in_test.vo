@@ -10,7 +10,7 @@ test "a task divides by zero" {
 }
 
 test "a task's expect fails" {
-    let ys = concurrent_map([1, 2, 3], 3, fn(x: int) -> int {
+    let ys = concurrent_map([1, 2, 3], 3, fn(x) {
         expect(x != 2);
         return x;
     });

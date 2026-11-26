@@ -14,7 +14,7 @@ trace:
       db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }
   at transaction (std/sqlite.vo:167:11)
       db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }, f: fn() -> result[int] uses file.read, file.write = <fn() -> result[int] uses file.read, file.write>
-  at main (crash.vo:6:13)
+  at main (crash.vo:6:26)
       db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }
 --- exit 70
 $ vo run read.vo

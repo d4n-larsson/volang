@@ -16,9 +16,7 @@ fn add3(a: int, b: int, c: int) -> int {
 fn main() uses console {
     print(str(t("left", 1) + t("right", 2) * t("rightmost", 3)));
     print(str(add3(t("arg1", 1), t("arg2", 2), t("arg3", 3))));
-    let fs = [fn(x: int) -> int {
-        return x * 2;
-    }];
+    let fs: list[fn(int) -> int] = [fn(x) => x * 2];
     print(str(fs[t("callee", 0)](t("call arg", 5))));
     let xs = [10, 20, 30];
     set xs[t("index", 1)] = t("value", 99);

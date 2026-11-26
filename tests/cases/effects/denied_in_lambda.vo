@@ -1,9 +1,7 @@
 # An anonymous function runs with its caller's grant: when its read is denied, R0010 names the
 # function whose `uses` clause was checked (spec 009), not the anonymous function.
 fn load(path: str) -> result[str] uses file.read("data/") {
-    let read = fn(p: str) -> result[str] {
-        return read_file(p);
-    };
+    let read: fn(str) -> result[str] uses file.read = fn(p) => read_file(p);
     return read(path);
 }
 

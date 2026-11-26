@@ -2,9 +2,7 @@
 import geometry;
 
 fn total(ps: list[geometry.Point]) -> int {
-    return fold(ps, 0, fn(acc: int, p: geometry.Point) -> int {
-        return acc + geometry.dist2(p);
-    });
+    return fold(ps, 0, fn(acc, p) => acc + geometry.dist2(p));
 }
 
 fn area(s: geometry.Shape) -> float {

@@ -242,7 +242,7 @@ fn s60(x: int) -> int {
 
 @allow("W0703", "one pipeline, read top to bottom")
 fn long() -> int {
-    let f = fn(x: int) -> int {
+    let f: fn(int) -> int = fn(x) {
         let a = s1(x);
         let b = s2(a);
         return s3(b);

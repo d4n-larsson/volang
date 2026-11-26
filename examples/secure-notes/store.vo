@@ -54,17 +54,17 @@ export fn find_account(store: Store, name: str) -> result[option.Option[security
 export fn browsers[E: effects](random: fn(int) -> bytes uses E) -> security.Browser[Store, uses E] {
     return new security.Browser {
         find_account: find_account,
-        keep: fn(store: Store, s: security.Session) -> result[void] {
+        keep: fn(store, s) {
             set store.sessions[s.key] = s;
             return ok();
         },
-        find: fn(store: Store, key: str) -> result[option.Option[security.Session]] {
+        find: fn(store, key) {
             if has(store.sessions, key) {
                 return ok(option.Option.some(store.sessions[key]));
             }
             return ok(option.Option.none);
         },
-        end: fn(store: Store, key: str) -> result[void] {
+        end: fn(store, key) {
             remove(store.sessions, key);
             return ok();
         },

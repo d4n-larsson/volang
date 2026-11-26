@@ -60,9 +60,10 @@ fn vo(dir: str, arguments: list[str]) -> result[str] uses Tools {
         case err(_) {
         }
     }
-    match workers.with_deadline(300000, fn() -> result[process.Output] {
-        return process.run_with("bin/vo", arguments, "", vars, dir);
-    }) {
+    match workers.with_deadline(
+        300000,
+        fn() => process.run_with("bin/vo", arguments, "", vars, dir)
+    ) {
         case ok(out) {
             return ok((try out).stdout);
         }
@@ -156,9 +157,7 @@ fn edited(text_value: str, fixes: list[json.Json]) -> result[str] {
             push(spans, new Span { start: s, end: e, text: try json.text_field(f, "replacement") });
         }
     }
-    lists.sort_by_desc(spans, fn(sp: Span) -> int {
-        return sp.start;
-    });
+    lists.sort_by_desc(spans, fn(sp) => sp.start);
     var out = text_value;
     for sp in spans {
         set out = slice(out, 0, sp.start) + sp.text + slice(out, sp.end, len(out));

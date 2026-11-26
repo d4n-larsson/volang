@@ -1,25 +1,25 @@
 reentry_all.vo:3:8: runtime error[R0005]: Stack exhausted: the recursion is too deep.
-   3 |     if all([n], fn(x: int) -> bool { return f(x + 1) > 0; }) {
-     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   3 |     if all([n], fn(x) => f(x + 1) > 0) {
+     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at f (reentry_all.vo:3:8)
       n: int = 190650
-  at anonymous function (reentry_all.vo:3:45)
+  at anonymous function (reentry_all.vo:3:26)
       x: int = 190649
   at f (reentry_all.vo:3:8)
       n: int = 190649
-  at anonymous function (reentry_all.vo:3:45)
+  at anonymous function (reentry_all.vo:3:26)
       x: int = 190648
   at f (reentry_all.vo:3:8)
       n: int = 190648
-  at anonymous function (reentry_all.vo:3:45)
+  at anonymous function (reentry_all.vo:3:26)
       x: int = 190647
   at f (reentry_all.vo:3:8)
       n: int = 190647
-  at anonymous function (reentry_all.vo:3:45)
+  at anonymous function (reentry_all.vo:3:26)
       x: int = 190646
   at f (reentry_all.vo:3:8)
       n: int = 190646
-  at anonymous function (reentry_all.vo:3:45)
+  at anonymous function (reentry_all.vo:3:26)
       x: int = 190645
   ... more frames omitted

@@ -33,16 +33,12 @@ export fn new_shop() -> Shop {
 }
 
 export fn has_line(shop: Shop, sku: str) -> bool {
-    return any(shop.cart, fn(line: Line) -> bool {
-        return line.sku == sku;
-    });
+    return any(shop.cart, fn(line) => line.sku == sku);
 }
 
 # Only called when has_line(shop, sku).
 export fn find_line(shop: Shop, sku: str) -> Line {
-    return filter(shop.cart, fn(line: Line) -> bool {
-        return line.sku == sku;
-    })[0];
+    return filter(shop.cart, fn(line) => line.sku == sku)[0];
 }
 
 export fn unknown_product(sku: str) -> str {
@@ -52,7 +48,5 @@ export fn unknown_product(sku: str) -> str {
 export fn sorted_products(shop: Shop) -> list[Product] {
     let skus = keys(shop.catalog);
     sort(skus);
-    return map(skus, fn(sku: str) -> Product {
-        return shop.catalog[sku];
-    });
+    return map(skus, fn(sku) => shop.catalog[sku]);
 }

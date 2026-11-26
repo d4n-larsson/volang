@@ -4,12 +4,10 @@ fn main() uses console {
     for i in 0..60 {
         push(xs, (i * 37) % 61);
     }
-    sort_by(xs, fn(v: int) -> str {
+    sort_by(xs, fn(v) {
         let parts = [str(v % 10), "-", str(v)];
         let key = join(parts, "") + parts[1];
         return key;
     });
-    print(join(map(xs, fn(v: int) -> str {
-        return str(v);
-    }), " "));
+    print(join(map(xs, fn(v) => str(v)), " "));
 }

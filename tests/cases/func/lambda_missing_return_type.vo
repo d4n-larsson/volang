@@ -1,6 +1,4 @@
 fn main() {
-    let f = fn(x: int) {
-        return x * 2;
-    };
+    let f: fn(int) = fn(x) => x * 2;
     f(1);
 }

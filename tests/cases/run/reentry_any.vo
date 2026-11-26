@@ -1,6 +1,6 @@
 # R7: recursion only through any (spec 008): the depth of R0005 is pinned by the trace.
 fn f(n: int) -> int {
-    if any([n], fn(x: int) -> bool { return f(x + 1) > 0; }) {
+    if any([n], fn(x) => f(x + 1) > 0) {
         return 1;
     }
     return 0;

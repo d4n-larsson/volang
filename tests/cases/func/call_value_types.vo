@@ -1,6 +1,4 @@
 fn main() uses console {
-    let f = fn(x: int) -> int {
-        return x;
-    };
+    let f: fn(int) -> int = fn(x) => x;
     print(str(f("a")));
 }

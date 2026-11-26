@@ -127,7 +127,7 @@ fn stop(id: int) -> result[Output] {
 # ok(false) to stop, or an error, which run_lines returns; stopping kills the program (code 137, unless it had just ended). When
 # the output ends, run_lines waits for the program and returns its code and standard error (stdout is
 # empty). Memory does not grow with the output. There is no time limit per line.
-#     run_lines("no-such-program.vo-doc", new list[str], "", new list[str], "./", fn(line: str) -> result[bool] { return ok(true); }) == err("not found") is true
+#     run_lines("no-such-program.vo-doc", new list[str], "", new list[str], "./", fn(line) => ok(true)) == err("not found") is true
 export fn run_lines[E: effects](
     program: str,
     arguments: list[str],

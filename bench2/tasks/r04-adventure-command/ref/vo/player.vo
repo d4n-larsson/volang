@@ -40,9 +40,7 @@ export fn move(player: Player, world_value: map[str, world.Room], direction: str
 }
 
 fn contains(xs: list[str], x: str) -> bool {
-    return any(xs, fn(y: str) -> bool {
-        return y == x;
-    });
+    return any(xs, fn(y) => y == x);
 }
 
 # Moves an item from the current room to the inventory; returns the points earned, not_here() or too_heavy().
@@ -66,15 +64,11 @@ export fn pick_up(player: Player, world_value: map[str, world.Room], item: str) 
 }
 
 fn without(xs: list[str], item: str) -> list[str] {
-    return filter(xs, fn(x: str) -> bool {
-        return x != item;
-    });
+    return filter(xs, fn(x) => x != item);
 }
 
 fn carried_weight(player: Player) -> int {
-    return fold(player.inventory, 0, fn(total: int, i: str) -> int {
-        return total + world.item_weight(i);
-    });
+    return fold(player.inventory, 0, fn(total, i) => total + world.item_weight(i));
 }
 
 # Moves an item from the inventory to the current room; false if it is not carried.

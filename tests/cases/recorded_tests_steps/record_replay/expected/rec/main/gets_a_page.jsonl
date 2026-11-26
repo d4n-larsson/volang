@@ -1,4 +1,4 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"56b4794f153047e1","seed":1,"clock_ms":0,"test":"main.vo::gets a page","redact":[]}
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"78e5d8bc59a1e4cf","seed":1,"clock_ms":0,"test":"main.vo::gets a page","redact":[]}
 {"v":1,"kind":"env","name":"PORT","result":"ok","value":"{port}"}
 {"v":1,"kind":"http","host":"127.0.0.1","port":{port},"request":"GET /plain","sent":"Host: 127.0.0.1:{port}\u000d\u000aConnection: close\u000d\u000aUser-Agent: vo\u000d\u000a\u000d\u000a","result":"ok","value":"HTTP/1.1 200 OK\u000d\u000aContent-Type: text/plain\u000d\u000aContent-Length: 14\u000d\u000a\u000d\u000ahello from vo\u000a"}
 {"v":1,"kind":"end","status":0}

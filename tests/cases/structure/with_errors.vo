@@ -281,7 +281,7 @@ fn s70(x: int) -> int {
 }
 
 fn long() -> int {
-    let f = fn(x: int) -> int {
+    let f: fn(int) -> int = fn(x) {
         let a = s1(x);
         let b = s2(a);
         return s3(b);

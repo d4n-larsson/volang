@@ -5,22 +5,22 @@ record Count {
 fn make_handler(event: str, action: str, text: str) -> fn(str) uses console {
     let prefix = event + ": ";
     if action == "say" {
-        return fn(payload: str) {
+        return fn(payload) {
             print(prefix + text);
         };
     }
     if action == "echo" {
-        return fn(payload: str) {
+        return fn(payload) {
             print(prefix + payload);
         };
     }
     if action == "upper" {
-        return fn(payload: str) {
+        return fn(payload) {
             print(prefix + upper(payload));
         };
     }
     let c = new Count { n: 0 };
-    return fn(payload: str) {
+    return fn(payload) {
         set c.n = c.n + 1;
         print(prefix + str(c.n));
     };

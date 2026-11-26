@@ -40,7 +40,7 @@ class VoLexer(RegexLexer):
             (r"\b\d+\b", Number.Integer),
             (r"(fn)(\s+)([a-z_]\w*)", bygroups(Keyword, Whitespace, Name.Function)),
             (r"[a-z_]\w*", Name),
-            (r"->|\.\.|==|!=|<=|>=|[-+*/%<>=]", Operator),
+            (r"->|=>|\.\.|==|!=|<=|>=|[-+*/%<>=]", Operator),
             (r"[{}()\[\],;:.]", Punctuation),
             (r".", Text),
         ],

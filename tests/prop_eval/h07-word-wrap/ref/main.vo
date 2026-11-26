@@ -1,7 +1,5 @@
 fn words_of(line: str) -> list[str] {
-    return filter(split(line, " "), fn(w: str) -> bool {
-        return len(w) > 0;
-    });
+    return filter(split(line, " "), fn(w) => len(w) > 0);
 }
 
 fn paragraphs(lines: list[str]) -> list[list[str]] {

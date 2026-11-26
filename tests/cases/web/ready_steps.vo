@@ -30,7 +30,7 @@ fn key_ok(n: int, key: str) -> result[str] {
 
 fn app() -> web.App[int, uses console, clock, random] {
     let routes: list[web.Route[int, uses console, clock, random]] = [web.on_get("/me", whoami), web.on_get("/admin/me", whoami), web.on_get("/svc/me", whoami)];
-    return new web.App { routes: routes, steps: [web.request_ids(web.random_id), web.log_requests(fn() -> int { return now_ms(); }, web.to_stderr), web.cors(["https://app.example"]), web.bearer_auth("/admin", token_ok), web.api_key_auth("/svc", "X-Api-Key", key_ok)], errors: new list[web.ErrorStatus] };
+    return new web.App { routes: routes, steps: [web.request_ids(web.random_id), web.log_requests(fn() => now_ms(), web.to_stderr), web.cors(["https://app.example"]), web.bearer_auth("/admin", token_ok), web.api_key_auth("/svc", "X-Api-Key", key_ok)], errors: new list[web.ErrorStatus] };
 }
 
 fn show(label: str, r: http.Request) uses console, clock, random {

@@ -29,9 +29,7 @@ fn unknown(lib: Library, m: str, isbn: str, check_book: bool) -> result[void] {
 }
 
 fn has_loan(lib: Library, m: str, isbn: str) -> bool {
-    return any(lib.loans[m], fn(l: Loan) -> bool {
-        return l.isbn == isbn;
-    });
+    return any(lib.loans[m], fn(l) => l.isbn == isbn);
 }
 
 fn refusal(lib: Library, m: str, isbn: str) -> result[void] {
@@ -106,9 +104,7 @@ fn borrow(lib: Library, c: commands.Command) -> result[str] {
     try refusal(lib, c.a, c.b);
     if lib.shelf[c.b] == 0 {
         let q = lib.queue[c.b];
-        if any(q, fn(x: str) -> bool {
-            return x == c.a;
-        }) {
+        if any(q, fn(x) => x == c.a) {
             return ok(c.a + " already waiting for " + c.b);
         }
         push(q, c.a);
@@ -124,12 +120,8 @@ fn give_back(lib: Library, c: commands.Command) -> result[str] {
         return err("error: " + c.a + " does not have " + c.b);
     }
     let loans = lib.loans[c.a];
-    let loan = filter(loans, fn(l: Loan) -> bool {
-        return l.isbn == c.b;
-    })[0];
-    set lib.loans[c.a] = filter(loans, fn(l: Loan) -> bool {
-        return l.isbn != c.b;
-    });
+    let loan = filter(loans, fn(l) => l.isbn == c.b)[0];
+    set lib.loans[c.a] = filter(loans, fn(l) => l.isbn != c.b);
     set lib.shelf[c.b] = lib.shelf[c.b] + 1;
     let late = c.day - loan.due;
     if late > 0 {

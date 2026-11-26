@@ -67,7 +67,5 @@ export fn add_deduction(staff: map[str, Employee], emp_id: str, amount: int, lab
 export fn sorted_staff(staff: map[str, Employee]) -> list[Employee] {
     let ids = keys(staff);
     sort(ids);
-    return map(ids, fn(emp_id: str) -> Employee {
-        return staff[emp_id];
-    });
+    return map(ids, fn(emp_id) => staff[emp_id]);
 }

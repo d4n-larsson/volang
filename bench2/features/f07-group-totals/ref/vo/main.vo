@@ -23,19 +23,11 @@ fn main() -> result[void] uses console, input {
         }
     }
     for c in cats {
-        let group = filter(rows, fn(r: Row) -> bool {
-            return r.cat == c;
-        });
-        let total = fold(group, 0, fn(acc: int, r: Row) -> int {
-            return acc + r.amount;
-        });
-        let top = fold(group, group[0].amount, fn(acc: int, r: Row) -> int {
-            return max(acc, r.amount);
-        });
+        let group = filter(rows, fn(r) => r.cat == c);
+        let total = fold(group, 0, fn(acc, r) => acc + r.amount);
+        let top = fold(group, group[0].amount, fn(acc, r) => max(acc, r.amount));
         print(c + " count=" + str(len(group)) + " total=" + str(total) + " max=" + str(top));
     }
-    print("grand " + str(fold(rows, 0, fn(acc: int, r: Row) -> int {
-        return acc + r.amount;
-    })));
+    print("grand " + str(fold(rows, 0, fn(acc, r) => acc + r.amount)));
     return ok();
 }

@@ -24,9 +24,7 @@ export fn report(g: gradebook.GradeBook) -> list[str] {
     }
     let order = slice(g.students, 0, len(g.students));
     sort(order);
-    sort_by(order, fn(s: str) -> int {
-        return -finals[s];
-    });
+    sort_by(order, fn(s) => -finals[s]);
     let out = ["students:"];
     for s in order {
         push(out, s + " " + parsing.pct(finals[s]) + " " + letter(finals[s]));
@@ -35,30 +33,22 @@ export fn report(g: gradebook.GradeBook) -> list[str] {
     push(out, "stats:");
     push(out, "count " + str(c));
     if c > 0 {
-        let fs = map(order, fn(s: str) -> int {
-            return finals[s];
-        });
+        let fs = map(order, fn(s) => finals[s]);
         sort(fs);
         var med = fs[c / 2];
         if c % 2 == 0 {
             set med = gradebook.rdiv(fs[c / 2 - 1] + fs[c / 2], 2);
         }
-        let total = fold(fs, 0, fn(acc: int, f: int) -> int {
-            return acc + f;
-        });
+        let total = fold(fs, 0, fn(acc, f) => acc + f);
         let top = fs[c - 1];
-        let best = filter(order, fn(s: str) -> bool {
-            return finals[s] == top;
-        });
+        let best = filter(order, fn(s) => finals[s] == top);
         sort(best);
         push(out, "mean " + parsing.pct(gradebook.rdiv(total, c)));
         push(out, "median " + parsing.pct(med));
         push(out, "top " + parsing.pct(top) + " " + join(best, ","));
         let counts = new list[str];
         for l in ["A", "B", "C", "D", "F"] {
-            let k = len(filter(fs, fn(f: int) -> bool {
-                return letter(f) == l;
-            }));
+            let k = len(filter(fs, fn(f) => letter(f) == l));
             push(counts, l + ":" + str(k));
         }
         push(out, "letters " + join(counts, " "));

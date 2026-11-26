@@ -210,7 +210,7 @@ fn rules() -> list[security.Rule] {
 fn main() uses console {
     let routes: list[web.Route[int]] = [web.on_get("/health", up), web.on_get("/notes", hello), web.on_get("/admin/users", hello), web.on_get("/reports", hello)];
     let ways: list[security.Way[int]] = [security.test_users()];
-    let p = security.policy(rules(), ways, fn() -> int { return 0; });
+    let p = security.policy(rules(), ways, fn() => 0);
     let app = new web.App { routes: routes, steps: [security.secure(p)], errors: new list[web.ErrorStatus] };
     let bo = new security.User { name: "bo", roles: ["user"] };
     for rt in routes {

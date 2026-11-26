@@ -8,7 +8,7 @@ record Task {
 
 # Spec 014 US5: comparison functions: any element type (a record with a list field) and any order.
 fn main() uses console {
-    let q: priority_queue[Task] = collections.priority_queue_by(fn(a: Task, b: Task) -> int { return b.deadline - a.deadline; });
+    let q: priority_queue[Task] = collections.priority_queue_by(fn(a, b) => b.deadline - a.deadline);
     push(q, new Task { name: "soon", deadline: 1, tags: new list[str] });
     push(q, new Task { name: "late", deadline: 9, tags: ["x"] });
     push(q, new Task { name: "mid", deadline: 5, tags: new list[str] });
@@ -17,13 +17,13 @@ fn main() uses console {
         push(order, t.name);
     }
     print("latest first: " + join(order, " "));
-    let m: ordered_map[str, int] = collections.ordered_map_by(fn(a: str, b: str) -> int { return len(b) - len(a); });
+    let m: ordered_map[str, int] = collections.ordered_map_by(fn(a, b) => len(b) - len(a));
     set m["a"] = 1;
     set m["ccc"] = 3;
     set m["bb"] = 2;
     set m["dd"] = 4;
     print("longest first, equal length is the same key: " + join(keys(m), " ") + " bb=" + str(m["bb"]));
-    let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int { return -1; });
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a, b) => -1);
     for i in 0..1000 {
         push(s, i % 7);
     }

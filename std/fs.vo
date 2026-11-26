@@ -164,7 +164,7 @@ export fn rename(from: str, to: str) -> result[void] uses file.write, file.delet
 # with each (needs file.read and f's effects). f answers ok(true) to go on, ok(false) to stop (each_chunk
 # then returns ok()), or an error, which each_chunk returns. Memory does not grow with the file. Only
 # regular files: a pipe is err("not a regular file: read it whole with read_file").
-#     each_chunk("no-such-file.vo-doc", 4096, fn(piece: bytes) -> result[bool] { return ok(true); }) == err("cannot read no-such-file.vo-doc") is true
+#     each_chunk("no-such-file.vo-doc", 4096, fn(piece) => ok(true)) == err("cannot read no-such-file.vo-doc") is true
 export fn each_chunk[E: effects](
     path: str,
     size: int,
@@ -189,7 +189,7 @@ export fn each_chunk[E: effects](
 # Reads a text file of any size line by line, calling f with each line without its line end (\n or
 # \r\n; needs file.read and f's effects). f answers as for each_chunk. A line that is not UTF-8 or is
 # longer than 16 MiB ends the read with err("line N: ..."); the lines before it were delivered.
-#     each_line("no-such-file.vo-doc", fn(line: str) -> result[bool] { return ok(true); }) == err("cannot read no-such-file.vo-doc") is true
+#     each_line("no-such-file.vo-doc", fn(line) => ok(true)) == err("cannot read no-such-file.vo-doc") is true
 export fn each_line[E: effects](path: str, f: fn(str) -> result[bool] uses E) -> result[void]
     uses file.read, E {
     var offset = 0;

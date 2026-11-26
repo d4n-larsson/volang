@@ -35,9 +35,7 @@ export fn render(header: list[str], rows: list[list[str]]) -> list[str] {
         }
         push(widths, w);
     }
-    let out = [line(header, widths), join(map(widths, fn(w: int) -> str {
-        return repeat("-", w);
-    }), "-+-")];
+    let out = [line(header, widths), join(map(widths, fn(w) => repeat("-", w)), "-+-")];
     for r in rows {
         push(out, line(r, widths));
     }

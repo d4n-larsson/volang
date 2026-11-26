@@ -1,11 +1,7 @@
 import parse;
 
 export fn shares(a: list[str], b: list[str]) -> list[str] {
-    let out = filter(a, fn(p: str) -> bool {
-        return any(b, fn(q: str) -> bool {
-            return p == q;
-        });
-    });
+    let out = filter(a, fn(p) => any(b, fn(q) => p == q));
     sort(out);
     return out;
 }
@@ -48,12 +44,8 @@ export fn room_minutes(ms: list[parse.Meeting]) -> list[str] {
     for room in names {
         var total = 0;
         for day in ["Mon", "Tue", "Wed", "Thu", "Fri"] {
-            let spans = filter(ms, fn(m: parse.Meeting) -> bool {
-                return m.room == room and m.day == day;
-            });
-            sort_by(spans, fn(m: parse.Meeting) -> int {
-                return m.start;
-            });
+            let spans = filter(ms, fn(m) => m.room == room and m.day == day);
+            sort_by(spans, fn(m) => m.start);
             var cur_s = -1;
             var cur_e = -1;
             for m in spans {

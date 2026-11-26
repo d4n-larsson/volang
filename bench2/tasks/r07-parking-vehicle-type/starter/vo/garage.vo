@@ -72,9 +72,7 @@ export fn occupancy(garage: Garage) -> list[str] {
     var spots_all = 0;
     for number in level_numbers(garage) {
         let level = garage.levels[number];
-        let used = len(filter(level.spots, fn(p: str) -> bool {
-            return p != "";
-        }));
+        let used = len(filter(level.spots, fn(p) => p != ""));
         push(out, "level " + str(number) + ": " + str(used) + "/" + str(len(level.spots)) + " used");
         set used_all = used_all + used;
         set spots_all = spots_all + len(level.spots);

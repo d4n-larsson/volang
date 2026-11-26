@@ -5,9 +5,7 @@ import std.text;
 fn main() -> result[void] uses console, input {
     let xs = text.words(read_all());
     # low: the smaller half, largest first; high: the larger half, smallest first.
-    let low: priority_queue[int] = collections.priority_queue_by(fn(a: int, b: int) -> int {
-        return b - a;
-    });
+    let low: priority_queue[int] = collections.priority_queue_by(fn(a, b) => b - a);
     let high = new priority_queue[int];
     var checksum = 0;
     for i in 1..len(xs) {

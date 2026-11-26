@@ -4,11 +4,11 @@ record Job {
 }
 
 fn make(name: str) -> Job {
-    return new Job { name: name, on_done: fn(s: str) -> str { return s; } };
+    return new Job { name: name, on_done: fn(s) => s };
 }
 
 fn adders(n: int) -> list[fn(int) -> int] {
-    return [fn(x: int) -> int { return x + n; }];
+    return [fn(x) => x + n];
 }
 
 fn main() uses console {

@@ -36,9 +36,7 @@ export fn summary_lines(events: map[str, schedule.Event]) -> list[str] {
     let rooms = new list[str];
     for k in keys(events) {
         let room = events[k].room;
-        if not any(rooms, fn(r: str) -> bool {
-            return r == room;
-        }) {
+        if not any(rooms, fn(r) => r == room) {
             push(rooms, room);
         }
     }

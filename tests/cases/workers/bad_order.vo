@@ -75,7 +75,7 @@ fn body(link: workers.Link[Box, int]) {
 }
 
 fn main() uses console {
-    let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a, b) => b - a);
     push(s, 1);
     match workers.start_worker(body) {
         case ok(w) {

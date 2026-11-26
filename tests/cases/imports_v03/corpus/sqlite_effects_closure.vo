@@ -8,7 +8,7 @@ import std.sqlite.Row;
 import std.sqlite.Value;
 
 fn counts(db: Database[uses file.read, file.write], tables: list[str]) -> list[int] {
-    return map(tables, fn(t: str) -> int {
+    return map(tables, fn(t) {
         match query(db, sql("select name from people"), new list[Value]) {
             case ok(rows) {
                 return len(rows);

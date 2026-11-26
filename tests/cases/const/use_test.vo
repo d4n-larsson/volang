@@ -12,9 +12,7 @@ const banner = greeting + ", world";
 const rate: float = 0.25;
 
 fn scaled(xs: list[int]) -> list[float] {
-    return map(xs, fn(x: int) -> float {
-        return float(x) * rate;
-    });
+    return map(xs, fn(x) => float(x) * rate);
 }
 
 test "clips at the limit" {

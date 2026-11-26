@@ -27,9 +27,7 @@ fn main() uses console, random {
         push(xs, i);
     }
     let shuffled = random.shuffled(xs);
-    print(join(map(shuffled, fn(x: int) -> str {
-        return str(x);
-    }), " "));
+    print(join(map(shuffled, fn(x) => str(x)), " "));
     match random.pick(shuffled) {
         case ok(w) {
             print("winner: " + str(w));

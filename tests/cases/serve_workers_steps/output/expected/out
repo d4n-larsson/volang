@@ -35,14 +35,14 @@ main.vo:13:91: runtime error[R0002]: Division by zero.
 trace:
   at handle (main.vo:13:91)
       zero: int = 0, r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
-  at anonymous function (std/http.vo:651:20)
+  at anonymous function (std/http.vo:649:91)
       r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>, state: int = 0
-  at answer_text (std/http.vo:669:54)
+  at answer_text (std/http.vo:666:54)
       raw: str = "GET /crash HTTP/1.1\r\nHost: localhost\r\n\r\n", handle: fn(Request) -> Response uses console, clock = <fn(Request) -> Response uses console, clock>, req: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/crash", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
-  at anonymous function (std/http.vo:650:16)
+  at anonymous function (std/http.vo:649:65)
       state: int = 0, raw: str = "GET /crash HTTP/1.1\r\nHost: localhost\r\n\r\n", handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>
-  at serve_workers (std/http.vo:649:12)
-      address: str = "{vport}", workers: int = 2, setup: fn() -> result[int] = <fn() -> result[int]>, handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>
+  at serve_workers (std/http.vo:650:12)
+      address: str = "{vport}", workers: int = 2, setup: fn() -> result[int] = <fn() -> result[int]>, handle: fn(int, Request) -> Response uses console, clock = <fn(int, Request) -> Response uses console, clock>, serve_one: fn(int, str) -> str uses console, clock = <fn(int, str) -> str uses console, clock>
   at main (main.vo:27:9)
 {"time":"{time}","level":"info","message":"stopped","drain_s":30,"drained":0,"cut_off":0}
 --- exit 0

@@ -15,15 +15,9 @@ fn board(text: str) -> result[str] {
             set best[f[0]] = score;
         }
     }
-    let rows = map(keys(best), fn(p: str) -> Row {
-        return new Row { player: p, score: best[p] };
-    });
-    sort_by(rows, fn(r: Row) -> str {
-        return r.player;
-    });
-    sort_by(rows, fn(r: Row) -> int {
-        return -r.score;
-    });
+    let rows = map(keys(best), fn(p) => new Row { player: p, score: best[p] });
+    sort_by(rows, fn(r) => r.player);
+    sort_by(rows, fn(r) => -r.score);
     let out = new list[str];
     var rank = 0;
     for i in 0..len(rows) {

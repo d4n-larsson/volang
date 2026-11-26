@@ -46,9 +46,7 @@ export fn solve(input: str) -> result[str] {
     for i in 0..n {
         push(xs, try parse_int(toks[2 + i]));
     }
-    return ok(join(map(window_max(xs, k), fn(x: int) -> str {
-        return str(x);
-    }), " "));
+    return ok(join(map(window_max(xs, k), fn(x) => str(x)), " "));
 }
 
 fn main() -> result[void] uses console, input {

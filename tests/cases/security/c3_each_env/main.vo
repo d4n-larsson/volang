@@ -5,7 +5,7 @@ fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
 }
 
 fn main() uses console, env("VO_OK") {
-    each(["VO_OK", "VO_SECRET"], fn(n: str) {
+    each(["VO_OK", "VO_SECRET"], fn(n) {
         match env(n) {
             case ok(v) {
                 print(n + "=" + v);

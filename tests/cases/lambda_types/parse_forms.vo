@@ -16,9 +16,7 @@ fn main() uses console {
     };
     let zero: fn(int) -> int = fn(n) => 0;
     let one: fn() -> int = fn() => 1;
-    let old = fn(x: int) -> int {
-        return x - 1;
-    };
+    let old: fn(int) -> int = fn(x) => x - 1;
     print(str(inc(1)) + " " + str(clamp(42)) + " " + str(zero(5)) + " " + str(one()));
     print(str(apply(fn(x) => x * x, 7)) + " " + str(make_doubler()(21)) + " " + str(old(1)));
 }

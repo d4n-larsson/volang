@@ -97,12 +97,8 @@ fn main() uses console {
         new Person { name: "al", team: "dev", age: 41 },
         new Person { name: "bo", team: "ops", age: 25 }
     ];
-    sort_by(people, fn(p: Person) -> int {
-        return p.age;
-    });
-    sort_by(people, fn(p: Person) -> str {
-        return p.team;
-    });
+    sort_by(people, fn(p) => p.age);
+    sort_by(people, fn(p) => p.team);
     for p in people {
         print(p.team + " " + p.name + " " + str(p.age));
     }
@@ -134,21 +130,11 @@ Five builtins take a function and apply it to every element. None of them change
 ```vo
 fn main() uses console {
     let prices = [120, 45, 300, 80];
-    let cheap = filter(prices, fn(p: int) -> bool {
-        return p < 100;
-    });
-    let labels = map(cheap, fn(p: int) -> str {
-        return "$" + str(p);
-    });
-    let total = fold(prices, 0, fn(acc: int, p: int) -> int {
-        return acc + p;
-    });
+    let cheap = filter(prices, fn(p) => p < 100);
+    let labels = map(cheap, fn(p) => "$" + str(p));
+    let total = fold(prices, 0, fn(acc, p) => acc + p);
     print(join(labels, " ") + " total " + str(total));
-    print(str(any(prices, fn(p: int) -> bool {
-        return p > 250;
-    })) + " " + str(all(prices, fn(p: int) -> bool {
-        return p > 50;
-    })));
+    print(str(any(prices, fn(p) => p > 250)) + " " + str(all(prices, fn(p) => p > 50)));
 }
 ```
 

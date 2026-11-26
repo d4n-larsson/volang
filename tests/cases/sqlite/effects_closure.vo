@@ -3,7 +3,7 @@
 import std.sqlite;
 
 fn counts(db: sqlite.Database[uses file.read, file.write], tables: list[str]) -> list[int] {
-    return map(tables, fn(t: str) -> int {
+    return map(tables, fn(t) {
         match sqlite.query(db, sqlite.sql("select name from people"), new list[sqlite.Value]) {
             case ok(rows) {
                 return len(rows);

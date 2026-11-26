@@ -8,7 +8,7 @@ record Count {
 fn main() -> result[void] uses console, serve("{vport}") {
     let count = new Count { n: 0 };
     print("serving");
-    try http.serve("{vport}", fn(r: http.Request) -> http.Response {
+    try http.serve("{vport}", fn(r) {
         if r.path == "/big" {
             var body = "0123456789abcdef";
             for i in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19] {

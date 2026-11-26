@@ -13,9 +13,7 @@ export fn levels(lines: list[str]) -> list[str] {
     for e in logline.entries(lines) {
         set counts[e.level] = counts[e.level] + 1;
     }
-    return map(logline.levels_in_order(), fn(lv: str) -> str {
-        return lv + " " + str(counts[lv]);
-    });
+    return map(logline.levels_in_order(), fn(lv) => lv + " " + str(counts[lv]));
 }
 
 export fn errors(lines: list[str]) -> list[str] {
@@ -34,10 +32,6 @@ export fn errors(lines: list[str]) -> list[str] {
     }
     let names = keys(per);
     sort(names);
-    sort_by(names, fn(c: str) -> int {
-        return -per[c];
-    });
-    return map(names, fn(c: str) -> str {
-        return c + " " + str(per[c]);
-    });
+    sort_by(names, fn(c) => -per[c]);
+    return map(names, fn(c) => c + " " + str(per[c]));
 }

@@ -25,7 +25,7 @@ fn main() -> result[void] uses console, file.read("./"), process("bin/cat_file")
         "",
         [],
         "work/",
-        fn(line: str) -> result[bool] {
+        fn(line) {
             print("run_lines work/: " + line);
             return ok(true);
         }

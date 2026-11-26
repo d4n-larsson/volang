@@ -599,6 +599,7 @@ static Type *lambda_expected_in(Type *known, Node *owner, Node *fnode, Str *what
     for (long i = 0; i < known->a.v->n; i++) {
         Type *open = open_param_in(vec_get(known->a.v, i), owner);
         if (!open) continue;
+        if (lambda_written(fnode)) return 0; /* 0.4 code: its written types stand (E0342 without a fix) */
         ck_err("E0343", fnode->a.n, msg("`$1` of `$2` is known only from this function's parameters: pass a named "
                                         "function, or give a binding its type.", ty_name(open), what, 0));
         return t_error;
@@ -634,7 +635,7 @@ Type *check_generic_call(Node *call, Node *decl, Type *expected)
             Node *an = call->b.v->data[i].n;
             /* spec 059 (R3): an untyped anonymous function with parameters is checked after the others; one
                without parameters needs nothing from them and keeps its place (spec 013's C2 order) */
-            int lambda = an->kind == N_LAMBDA && !lambda_written(an) && an->b.v->n;
+            int lambda = an->kind == N_LAMBDA && an->b.v->n; /* (also 0.4 ones: E0342 compares) */
             if (!pass && i < 63 && ty_has_params(pt) && (needs_context(an) || lambda)) {
                 deferred |= 1L << i;
                 continue;
@@ -652,7 +653,9 @@ Type *check_generic_call(Node *call, Node *decl, Type *expected)
             /* spec 028: a generic function named as a value is instantiated from the parameter's type; its
                effects bind the parameter's effect parameter (checked again below, as function values are) */
             Type *at;
-            if (pass && lambda) { /* spec 059 (R3): the parameter as far as the arguments before made it known */
+            if (!pass && an->kind == N_LAMBDA && !an->b.v->n) { /* spec 059: without parameters, in its place */
+                at = check_expr(an, lambda_expected_in(ty_subst_bindings(pt, decl, b), decl, an, call->a.n->a.s));
+            } else if (pass && lambda) { /* spec 059 (R3): the parameter as far as the arguments before made it known */
                 Type *le = lambda_expected_in(ty_subst_bindings(pt, decl, b), decl, an, call->a.n->a.s);
                 if (le == t_error) /* E0343 named what is open: no E0310 for it as well */
                     for (long k = 0; k < tparams->n; k++)
@@ -720,7 +723,7 @@ Type *vcase_generic(Node *node, Node *decl, Node *payload_type_node, Type *expec
     }
     if (node->c.n && payload_type_node) { /* the payload */
         Node *pv = node->c.n; /* spec 059: an anonymous function gets the payload type as far as it is known */
-        Type *at = check_expr(pv, pv->kind == N_LAMBDA && !lambda_written(pv)
+        Type *at = check_expr(pv, pv->kind == N_LAMBDA
                                       ? lambda_expected_in(ty_subst_bindings(payload_type_node->type, decl, b), decl, pv,
                                                            node->b.n->a.s)
                                       : 0);

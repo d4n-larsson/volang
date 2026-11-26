@@ -86,9 +86,7 @@ fn main() uses console {
     let xs = [1, 2, 3, 4];
     let f = double;
     print(str(f(5)) + " " + str(apply_twice(double, 3)));
-    print(join(map(map(xs, double), fn(x: int) -> str {
-        return str(x);
-    }), " "));
+    print(join(map(map(xs, double), fn(x) => str(x)), " "));
     print(
         str(len(filter(xs, is_even))) + " " + str(any(xs, is_even)) + " " + str(all(xs, is_even))
     );
@@ -126,8 +124,10 @@ Their exact signatures are in [Functions as values](../reference/functions-as-va
 
 ## Anonymous functions
 
-An anonymous function (a lambda) is written like a declaration without a name, with the same parameter
-and return types. It is an expression, so it can be passed directly:
+An anonymous function (a lambda) writes only its parameters' names. Their types, and its return type,
+come from where it is used: the parameter of the function it is passed to, a typed `let`, a record field,
+a typed list, a `return`. A body that only returns a value is written `=> expr`; any other body is a
+block `{ ... }`. It is an expression, so it can be passed directly:
 
 ```vo
 record Task {
@@ -141,16 +141,10 @@ fn main() uses console {
         new Task { title: "fix bug", priority: 1 },
         new Task { title: "lunch", priority: 3 }
     ];
-    sort_by(tasks, fn(t: Task) -> int {
-        return t.priority;
-    });
-    let titles = map(tasks, fn(t: Task) -> str {
-        return t.title;
-    });
+    sort_by(tasks, fn(t) => t.priority);
+    let titles = map(tasks, fn(t) => t.title);
     print(join(titles, ", "));
-    let total = fold(tasks, 0, fn(acc: int, t: Task) -> int {
-        return acc + t.priority;
-    });
+    let total = fold(tasks, 0, fn(acc, t) => acc + t.priority);
     print(str(total));
 }
 ```
@@ -161,6 +155,33 @@ fix bug, write docs, lunch
 ```
 
 To sort from largest to smallest, return a key that reverses the order, such as `0 - t.priority`.
+
+In a call, vo first uses the arguments that are not anonymous functions to fix the type parameters (`T`
+of `map` from the list), then gives each anonymous function, left to right, its parameter types. Where
+the call leaves the return type open (`U` of `map`, the key of `sort_by`), it is the type of the body.
+
+Where nothing gives the types, vo says so ([E0343](../errors/E0343.md)): give the binding a type, or pass
+a named function, whose parameters are written.
+
+```vo
+fn main() uses console {
+    let shout: fn(str) uses console = fn(s) {
+        print(s + "!");
+    };
+    shout("hi");
+}
+```
+
+```output
+hi!
+```
+
+A `std.web` route handler is such a place: its input type appears only in its own parameters, so a
+handler is a named function.
+
+Code written before 0.5 writes the types. [E0342](../errors/E0342.md) reports them, and its fix removes
+them (or moves them onto the `let`); [E0413](../errors/E0413.md) turns a block that only returns a value
+into `=> expr`. `tools/vo_fix.vo` applies both.
 
 An anonymous function never writes `uses`: its effects are whatever its body does
 ([E0507](../errors/E0507.md) if you write a clause). The section on effects below explains where they go.
@@ -173,9 +194,7 @@ a fresh capture on each round:
 
 ```vo
 fn make_adder(n: int) -> fn(int) -> int {
-    return fn(x: int) -> int {
-        return x + n;
-    };
+    return fn(x) => x + n;
 }
 
 fn main() uses console {
@@ -183,13 +202,9 @@ fn main() uses console {
     print(str(add5(1)) + " " + str(make_adder(10)(1)));
     let steps = new list[fn() -> int];
     for i in 0..3 {
-        push(steps, fn() -> int {
-            return i * 10;
-        });
+        push(steps, fn() => i * 10);
     }
-    print(join(map(steps, fn(f: fn() -> int) -> str {
-        return str(f());
-    }), ","));
+    print(join(map(steps, fn(f) => str(f())), ","));
 }
 ```
 
@@ -205,9 +220,7 @@ created, and vo will not make you guess whether the function sees the old value 
 fn main() uses console {
     var count = 0;
     set count = count + 1;
-    let show = fn() -> int {
-        return count;
-    };
+    let show = fn() => count;
     print(str(show()));
 }
 ```
@@ -222,9 +235,7 @@ fn main() uses console {
     var count = 0;
     set count = count + 1;
     let count_now = count;
-    let show = fn() -> int {
-        return count_now;
-    };
+    let show = fn() => count_now;
     set count = 10;
     print(str(show()) + " " + str(count));
 }
@@ -240,7 +251,7 @@ reference to the same value, so changes made to its contents later are visible t
 ```vo
 fn main() uses console {
     let seen = new list[str];
-    let remember = fn(word: str) {
+    let remember: fn(str) = fn(word) {
         push(seen, word);
     };
     remember("a");
@@ -269,7 +280,7 @@ fn apply(f: fn(int) -> int, x: int) -> int {
 }
 
 fn main() uses console {
-    let r = apply(fn(x: int) -> int {
+    let r = apply(fn(x) {
         print("called with " + str(x));
         return x + 1;
     }, 1);
@@ -289,7 +300,7 @@ fn apply(f: fn(int) -> int uses console, x: int) -> int uses console {
 }
 
 fn main() uses console {
-    let r = apply(fn(x: int) -> int {
+    let r = apply(fn(x) {
         print("called with " + str(x));
         return x + 1;
     }, 1);
@@ -316,7 +327,7 @@ record Button {
 }
 
 fn make_logger(prefix: str) -> fn(str) uses console {
-    return fn(msg: str) {
+    return fn(msg) {
         print(prefix + msg);
     };
 }
@@ -349,9 +360,7 @@ returns a pure function, put the returned type in parentheses, so that the `uses
 ```vo
 fn make_counter(start: int) -> (fn() -> int) uses console {
     print("counting from " + str(start));
-    return fn() -> int {
-        return start + 1;
-    };
+    return fn() => start + 1;
 }
 
 fn main() uses console {

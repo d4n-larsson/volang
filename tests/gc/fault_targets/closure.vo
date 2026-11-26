@@ -1,9 +1,7 @@
 # Kept alive only as a closure capture.
 fn make() -> fn() -> str {
     let words = ["cap" + str(1), "tured" + str(2)];
-    return fn() -> str {
-        return join(words, "-");
-    };
+    return fn() => join(words, "-");
 }
 
 fn main() uses console {

@@ -44,7 +44,7 @@ def program(row):
                 f"fn f{tp}(x: {record}{ta}) {{\n    let _ = x.{field};\n}}\n\nfn main() {{\n}}\n")
     if kind == "LC_ARG":  # spec 057: the 0.2 call, one argument fewer
         args = {"run_with": '"true", [], "", []', "run_with_bytes": '"true", [], from_text(""), []',
-                "run_lines": '"true", [], "", [], fn(line: str) -> result[bool] { return ok(true); }'}[old]
+                "run_lines": '"true", [], "", [], fn(line) => ok(true)'}[old]
         imp = "import std.bytes.from_text;\n" if old == "run_with_bytes" else ""
         return (f"{imp}import std.{module}.{old};\n\n"
                 f"fn main() -> result[void] uses process(\"true\") {{\n    let _ = try {old}({args});\n"

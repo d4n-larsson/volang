@@ -16,7 +16,7 @@ fn main() uses console, net("localhost") {
         new list[http.Header],
         "",
         2000,
-        fn(head: http.Response, piece: bytes) -> result[bool] {
+        fn(head, piece) {
             set seen.status = head.status;
             set seen.total = seen.total + len(piece);
             set seen.largest = max(seen.largest, len(piece));

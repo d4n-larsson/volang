@@ -1,6 +1,6 @@
 # What a version of vo promises
 
-vo is at version 0.4.0 with output schema 1 (`vo version`). This page says what may change, what may
+vo is at version 0.5.0 with output schema 1 (`vo version`). This page says what may change, what may
 not, and how a program is carried over when something does.
 
 ## Versions
@@ -28,13 +28,16 @@ From 1.0, breaking changes need a new major version.
 
 - **The language and the standard library.** A breaking change comes with a diagnostic that explains
   it and, wherever one correction exists, a mechanical fix, so `vo check --json` and applying the fixes
-  migrates a program. This has been done four times: declared effects, from the first language version
+  migrates a program. This has been done five times: declared effects, from the first language version
   to the second; the consistency pass of 0.2.0 (library names, lookups giving an `Option`, durations in
   milliseconds, builtins no local may shadow; E0214 names each library change and its fix); the
   working directory of `std.process` in 0.3.0 (E0214 inserts `"./"`, and E0501's fix declares the
-  scopes of literal paths, so no grant widens); and module imports in 0.4.0 (E0215 rewrites a file's
-  imports and uses in one fix). All four migrations are kept as tests of every later toolchain
-  (`tests/migrate.py`, `tests/migrate_056.py`, `tests/libchange_rows.py`, `tests/migrate_058.py`).
+  scopes of literal paths, so no grant widens); module imports in 0.4.0 (E0215 rewrites a file's
+  imports and uses in one fix); and anonymous functions without written types in 0.5.0 (E0342 removes them
+  or moves them onto the binding, E0413 writes `=> expr`; a function nothing gives types to is named or
+  bound with its type by hand). All five migrations are kept as tests of every later toolchain
+  (`tests/migrate.py`, `tests/migrate_056.py`, `tests/libchange_rows.py`, `tests/migrate_058.py`,
+  `tests/migrate_059.py`).
 - **Messages.** The text of diagnostics and reports may be reworded; their codes, spans and fixes are
   the interface.
 - **Files the toolchain writes.** `vo.effects` and `vo.packages` are rewritten by `vo effects --update`

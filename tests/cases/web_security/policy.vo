@@ -54,7 +54,7 @@ fn app(rs: list[security.Rule]) -> web.App[int] {
     let ways: list[security.Way[int]] = [security.test_users(), security.header_key("X-Api-Key", key_user)];
     return new web.App {
         routes: routes(),
-        steps: [security.secure(security.policy(rs, ways, fn() -> int { return 0; }))],
+        steps: [security.secure(security.policy(rs, ways, fn() => 0))],
         errors: new list[web.ErrorStatus]
     };
 }

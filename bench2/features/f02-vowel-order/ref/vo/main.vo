@@ -14,12 +14,8 @@ fn main() uses console, input {
             }
         }
     }
-    sort_by(words, fn(w: str) -> int {
-        return len(w);
-    });
-    sort_by(words, fn(w: str) -> int {
-        return -len(filter(chars(w), is_vowel));
-    });
+    sort_by(words, fn(w) => len(w));
+    sort_by(words, fn(w) => -len(filter(chars(w), is_vowel)));
     for w in words {
         print(w);
     }

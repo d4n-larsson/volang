@@ -49,7 +49,7 @@ fn shape_name(s: Shape) -> str {
 fn main() uses console {
     let bs = [true, false, true];
     sort(bs);
-    print(join(map(bs, fn(b: bool) -> str { return str(b); }), " "));
+    print(join(map(bs, fn(b) => str(b)), " "));
     let ls = [Level.high, Level.low, Level.mid];
     sort(ls);
     print(join(map(ls, level_name), " ") + " " + str(Level.low < Level.high) + " " + level_name(max(Level.mid, Level.low)) + " " + level_name(min(Level.mid, Level.high)));
@@ -68,7 +68,7 @@ fn main() uses console {
     let flags = new map[bool, int];
     set flags[true] = 1;
     set flags[false] = 0;
-    print(join(map(sorted_keys(flags), fn(b: bool) -> str { return str(b); }), " "));
+    print(join(map(sorted_keys(flags), fn(b) => str(b)), " "));
     let words = new map[str, int];
     set words["pear"] = 1;
     set words["apple"] = 2;

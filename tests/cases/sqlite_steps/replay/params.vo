@@ -7,7 +7,7 @@ fn main() -> result[void] uses console, file.read("data/"), file.write("data/") 
     let _ = try sqlite.exec(db, sqlite.sql("create table if not exists t(id integer primary key, name text, f real, b blob, z)"), new list[sqlite.Value]);
     let c = try sqlite.exec(db, sqlite.sql("insert into t(name, f, b, z) values (?, ?, ?, ?)"), [sqlite.Value.text("Ada \"q\" ü"), sqlite.Value.real(0.1), sqlite.Value.blob(bytes.from_ints([0, 255, 10])), sqlite.Value.null]);
     print("inserted " + str(c.changed) + " id " + str(c.last_id));
-    let n = sqlite.transaction(db, fn() -> result[int] {
+    let n: result[int] = sqlite.transaction(db, fn() {
         let x = try sqlite.exec(db, sqlite.sql("insert into t(name) values (?)"), [sqlite.Value.text("Eve")]);
         return ok(x.changed);
     });

@@ -19,9 +19,7 @@ fn is_count(s: str) -> bool {
     if len(s) == 0 {
         return false;
     }
-    if not all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    }) {
+    if not all(chars(s), fn(c) => c >= "0" and c <= "9") {
         return false;
     }
     return num(s) > 0;
@@ -93,9 +91,7 @@ fn run(words: list[str], recipes_value: map[str, recipes.Recipe], cfg: config.Co
 }
 
 fn words_of(line: str) -> list[str] {
-    return filter(split(line, " "), fn(w: str) -> bool {
-        return w != "";
-    });
+    return filter(split(line, " "), fn(w) => w != "");
 }
 
 fn main() uses console, input {

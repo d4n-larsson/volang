@@ -410,22 +410,16 @@ TX = """    print(did(exec(db, sql("drop table if exists vo_stock"), none())));
     print(did(exec(db, sql("insert into vo_stock values ('a', 5), ('b', 5)"), none())));
     match connect({OPTIONS}) {
         case ok(other) {
-            print(shown_int(transaction(db, fn() -> result[int] {
+            print(shown_int(transaction(db, fn() {
                 let r = try both(db, false);
                 print("inside, the other connection sees: " + stock(other));
                 return ok(r);
             })));
             print("after: " + stock(other));
-            print(shown_int(transaction(db, fn() -> result[int] {
-                return both(db, true);
-            })));
+            print(shown_int(transaction(db, fn() => both(db, true))));
             print("after an err: " + stock(other));
-            print(shown_int(transaction(db, fn() -> result[int] {
-                return transaction(db, fn() -> result[int] {
-                    return ok(1);
-                });
-            })));
-            print(shown_int(transaction(db, fn() -> result[int] {
+            print(shown_int(transaction(db, fn() => transaction(db, fn() => ok(1)))));
+            print(shown_int(transaction(db, fn() {
                 print(did(exec(db, sql("insert into vo_stock values ('a', 1)"), none())));
                 print(did(exec(db, sql("update vo_stock set n = 0"), none())));
                 return ok(2);
@@ -458,7 +452,7 @@ TX_OUT = [
 TX_STOP = """    print(did(exec(db, sql("drop table if exists vo_stop"), none())));
     print(did(exec(db, sql("create table vo_stop (n int)"), none())));
     let xs = new list[int];
-    let r = transaction(db, fn() -> result[int] {
+    let r: result[int] = transaction(db, fn() {
         let _ = try exec(db, sql("insert into vo_stop values (1)"), none());
         return ok(xs[3]);
     });
@@ -590,9 +584,8 @@ def group_failures(d):
         case("failures/the server closes in a statement",
              code == 0 and len(out) == 3 and out[1].startswith("connection: ") and out[2] == "connection: closed", f"{code} {out}")
     with Peer("closes-in-commit") as p:
-        body = """    match transaction(db, fn() -> result[int] {
-        return ok(1);
-    }) {
+        body = """    let r: result[int] = transaction(db, fn() => ok(1));
+    match r {
         case ok(_) {
             print("committed");
         }
@@ -849,13 +842,14 @@ fn main() -> result[void] uses console, clock, net("{HOST}:{P}"), entropy {
     let _ = try client.exec(db, client.sql("drop table if exists vo_speed"), none);
     let _ = try client.exec(db, client.sql("create table vo_speed (a int, b text, c double precision, d bigint, e text)"), none);
     let t2 = now_ms();
-    let _ = try client.transaction(db, fn() -> result[int] {
+    let filled: result[int] = client.transaction(db, fn() {
         for i in 0..10000 {
             let _ = try client.exec(db, client.sql("insert into vo_speed values (?, ?, ?, ?, ?)"),
                 [client.Value.integer(i), client.Value.text("row " + str(i)), client.Value.real(1.5), client.Value.integer(i * 1000), client.Value.null]);
         }
         return ok(0);
     });
+    let _ = try filled;
     let t3 = now_ms();
     let rows = try client.query(db, client.sql("select i as a, 'row ' || i as b, 1.5::double precision as c, i * 1000 as d, null::text as e from generate_series(1, 100000) as i"), none);
     let t4 = now_ms();

@@ -38,9 +38,7 @@ fn main() -> result[void] uses console, input {
             }
         }
     }
-    sort_by(tickets, fn(t: Ticket) -> int {
-        return -t.prio;
-    });
+    sort_by(tickets, fn(t) => -t.prio);
     for t in tickets {
         print(t.id + " P" + str(t.prio) + " " + t.title);
     }

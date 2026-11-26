@@ -26,12 +26,8 @@ fn quicksort(xs: list[Ticket]) -> list[Ticket] uses random {
         return xs;
     }
     let pivot = xs[random_int(0, len(xs) - 1)];
-    let lo = filter(xs, fn(t: Ticket) -> bool {
-        return before(t, pivot);
-    });
-    let hi = filter(xs, fn(t: Ticket) -> bool {
-        return before(pivot, t);
-    });
+    let lo = filter(xs, fn(t) => before(t, pivot));
+    let hi = filter(xs, fn(t) => before(pivot, t));
     let out = quicksort(lo);
     push(out, pivot);
     for t in quicksort(hi) {

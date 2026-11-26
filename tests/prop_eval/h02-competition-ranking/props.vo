@@ -59,9 +59,7 @@ fn model(k: int, names: list[int], scores: list[int]) -> list[str] {
             set best[found] = s;
         }
     }
-    let out = map(who, fn(w: str) -> str {
-        return "";
-    });
+    let out = map(who, fn(w) => "");
     for i in 0..len(who) {
         var higher = 0;
         var place = 0;
@@ -77,9 +75,7 @@ fn model(k: int, names: list[int], scores: list[int]) -> list[str] {
             set out[place] = str(higher + 1) + " " + who[i] + " " + str(best[i]);
         }
     }
-    return filter(out, fn(line: str) -> bool {
-        return line != "";
-    });
+    return filter(out, fn(line) => line != "");
 }
 
 prop "the table matches the statement's ranking" (kn: int, names: list[int], scores: list[int]) {

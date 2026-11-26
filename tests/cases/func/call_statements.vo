@@ -1,5 +1,5 @@
 fn make_printer(prefix: str) -> fn(str) uses console {
-    return fn(s: str) {
+    return fn(s) {
         print(prefix + s);
     };
 }
@@ -9,7 +9,7 @@ record Box {
 }
 
 fn main() uses console {
-    let say = fn(s: str) {
+    let say: fn(str) uses console = fn(s) {
         print(s);
     };
     say("hi");

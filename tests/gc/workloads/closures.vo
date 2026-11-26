@@ -5,9 +5,7 @@ record Box {
 }
 
 fn make(b: Box) -> fn(int) -> int {
-    return fn(x: int) -> int {
-        return x + b.tag % 100 + len(b.items) + b.items[1];
-    };
+    return fn(x) => x + b.tag % 100 + len(b.items) + b.items[1];
 }
 
 fn main() uses console {

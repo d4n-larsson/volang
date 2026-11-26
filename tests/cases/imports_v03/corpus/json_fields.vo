@@ -20,19 +20,19 @@ fn show[T](label: str, r: result[T], text: fn(T) -> str) uses console {
 
 fn main() -> result[void] uses console {
     let doc = try parse_json("{\"name\": \"ana\", \"age\": 3, \"score\": 9.5, \"admin\": true, \"tags\": [1]}");
-    show("name", text_field(doc, "name"), fn(s: str) -> str { return s; });
-    show("age", int_field(doc, "age"), fn(i: int) -> str { return str(i); });
-    show("age as float", float_field(doc, "age"), fn(f: float) -> str { return str(f); });
-    show("score", float_field(doc, "score"), fn(f: float) -> str { return str(f); });
-    show("admin", bool_field(doc, "admin"), fn(b: bool) -> str { return str(b); });
-    show("missing", text_field(doc, "email"), fn(s: str) -> str { return s; });
-    show("wrong kind", text_field(doc, "age"), fn(s: str) -> str { return s; });
-    show("score as int", int_field(doc, "score"), fn(i: int) -> str { return str(i); });
-    show("admin as text", text_field(doc, "admin"), fn(s: str) -> str { return s; });
-    show("not an object", text_field(Json.array(new list[Json]), "a"), fn(s: str) -> str { return s; });
+    show("name", text_field(doc, "name"), fn(s) => s);
+    show("age", int_field(doc, "age"), fn(i) => str(i));
+    show("age as float", float_field(doc, "age"), fn(f) => str(f));
+    show("score", float_field(doc, "score"), fn(f) => str(f));
+    show("admin", bool_field(doc, "admin"), fn(b) => str(b));
+    show("missing", text_field(doc, "email"), fn(s) => s);
+    show("wrong kind", text_field(doc, "age"), fn(s) => s);
+    show("score as int", int_field(doc, "score"), fn(i) => str(i));
+    show("admin as text", text_field(doc, "admin"), fn(s) => s);
+    show("not an object", text_field(Json.array(new list[Json]), "a"), fn(s) => s);
     let tags = try member(doc, "tags");
-    show("at 0", at(tags, 0), fn(j: Json) -> str { return "a value"; });
-    show("at 5", at(tags, 5), fn(j: Json) -> str { return "a value"; });
-    show("at on an object", at(doc, 0), fn(j: Json) -> str { return "a value"; });
+    show("at 0", at(tags, 0), fn(j) => "a value");
+    show("at 5", at(tags, 5), fn(j) => "a value");
+    show("at on an object", at(doc, 0), fn(j) => "a value");
     return ok();
 }

@@ -1,25 +1,25 @@
 reentry_map.vo:3:14: runtime error[R0005]: Stack exhausted: the recursion is too deep.
-   3 |     let ys = map([n], fn(x: int) -> int { return f(x + 1); });
-     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   3 |     let ys = map([n], fn(x) => f(x + 1));
+     |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 trace:
   at f (reentry_map.vo:3:14)
       n: int = 190650
-  at anonymous function (reentry_map.vo:3:50)
+  at anonymous function (reentry_map.vo:3:32)
       x: int = 190649
   at f (reentry_map.vo:3:14)
       n: int = 190649
-  at anonymous function (reentry_map.vo:3:50)
+  at anonymous function (reentry_map.vo:3:32)
       x: int = 190648
   at f (reentry_map.vo:3:14)
       n: int = 190648
-  at anonymous function (reentry_map.vo:3:50)
+  at anonymous function (reentry_map.vo:3:32)
       x: int = 190647
   at f (reentry_map.vo:3:14)
       n: int = 190647
-  at anonymous function (reentry_map.vo:3:50)
+  at anonymous function (reentry_map.vo:3:32)
       x: int = 190646
   at f (reentry_map.vo:3:14)
       n: int = 190646
-  at anonymous function (reentry_map.vo:3:50)
+  at anonymous function (reentry_map.vo:3:32)
       x: int = 190645
   ... more frames omitted

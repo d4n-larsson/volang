@@ -4,9 +4,7 @@ record Player {
 }
 
 fn words(s: str) -> list[str] {
-    return filter(split(s, " "), fn(w: str) -> bool {
-        return len(w) > 0;
-    });
+    return filter(split(s, " "), fn(w) => len(w) > 0);
 }
 
 fn main() -> result[void] uses console, input {
@@ -40,9 +38,7 @@ fn main() -> result[void] uses console, input {
             push(players, new Player { name: row[0], score: score });
         }
     }
-    sort_by(players, fn(p: Player) -> int {
-        return -p.score;
-    });
+    sort_by(players, fn(p) => -p.score);
     var rank = 0;
     for i in 0..len(players) {
         let p = players[i];

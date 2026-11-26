@@ -58,10 +58,8 @@ export fn render(services: list[Service], incidents: list[Incident]) -> str {
     for s in services {
         push(rows, s);
     }
-    sort_by(rows, fn(s: Service) -> str {
-        return s.name;
-    });
-    sort_by(rows, fn(s: Service) -> int {
+    sort_by(rows, fn(s) => s.name);
+    sort_by(rows, fn(s) {
         if s.up {
             return 1;
         }

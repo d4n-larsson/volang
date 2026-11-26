@@ -11,9 +11,7 @@ fn main() uses console {
             push(xs, k + i % 7);
         }
         let window = slice(base, i % 10, 990 + i % 10);
-        set total = total + fold(xs, 0, fn(a: int, x: int) -> int {
-            return a + x;
-        }) + window[0] + len(window);
+        set total = total + fold(xs, 0, fn(a, x) => a + x) + window[0] + len(window);
     }
     print(str(total));
 }

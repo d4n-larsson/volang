@@ -7,9 +7,7 @@ record Config {
 fn make_formatter(prefix: str, scale: int) -> fn(int) -> str {
     let cfg = new Config { prefix: prefix + ":", scale: scale };
     let parts = ["a", "b", "c"];
-    return fn(x: int) -> str {
-        return cfg.prefix + str(x * cfg.scale) + join(parts, "");
-    };
+    return fn(x) => cfg.prefix + str(x * cfg.scale) + join(parts, "");
 }
 
 fn main() uses console {

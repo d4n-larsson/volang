@@ -1,7 +1,5 @@
 fn make_adder(n: int) -> fn(int) -> int {
-    return fn(x: int) -> int {
-        return x + n;
-    };
+    return fn(x) => x + n;
 }
 
 fn main() uses console {
@@ -9,10 +7,6 @@ fn main() uses console {
     print(str(add5(10)));
     print(str(make_adder(1)(2)));
     let base = 100;
-    let nested = fn(a: int) -> fn(int) -> int {
-        return fn(b: int) -> int {
-            return base + a + b;
-        };
-    };
+    let nested: fn(int) -> fn(int) -> int = fn(a) => fn(b) => base + a + b;
     print(str(nested(10)(1)));
 }

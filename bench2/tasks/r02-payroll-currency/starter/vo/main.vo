@@ -5,9 +5,7 @@ fn is_number(s: str) -> bool {
     if len(s) == 0 {
         return false;
     }
-    return all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
 }
 
 # Only called on strings that passed is_number.
@@ -73,9 +71,7 @@ fn run(words: list[str], staff_value: map[str, staff.Employee]) -> list[str] {
 fn main() uses console, input {
     let staff_value = new map[str, staff.Employee];
     for line in split(read_all(), "\n") {
-        let words = filter(split(line, " "), fn(w: str) -> bool {
-            return w != "";
-        });
+        let words = filter(split(line, " "), fn(w) => w != "");
         if len(words) == 0 {
             continue;
         }

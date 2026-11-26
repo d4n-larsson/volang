@@ -21,9 +21,7 @@ export record Line {
 }
 
 fn digits(s: str) -> bool {
-    return len(s) > 0 and all(chars(s), fn(c: str) -> bool {
-        return c >= "0" and c <= "9";
-    });
+    return len(s) > 0 and all(chars(s), fn(c) => c >= "0" and c <= "9");
 }
 
 fn to_int(s: str) -> int {
@@ -66,9 +64,7 @@ fn people(s: str) -> result[list[str]] {
 }
 
 export fn parse(line: str, n: int) -> result[Line] {
-    let f = filter(split(line, " "), fn(x: str) -> bool {
-        return x != "";
-    });
+    let f = filter(split(line, " "), fn(x) => x != "");
     let none = new list[str];
     let m = new Meeting { id: "", room: "", day: "", start: 0, end: 0, people: none };
     let q = new Query { line: n, day: "", minutes: 0, people: none };

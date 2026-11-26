@@ -42,12 +42,12 @@ trace:
       address: str = "{vport}", answer: fn(str) -> str = <fn(str) -> str>, listener: int = 4, raw: str = "GET /div HTTP/1.1\r\nHost: localhost\r\n\r\n"
   at serve (std/http.vo:430:12)
       address: str = "{vport}", handle: fn(Request) -> Response = <fn(Request) -> Response>, answer: fn(str) -> str = <fn(str) -> str>
-  at main (service.vo:22:9)
-service.vo:10:20: runtime error[R0002]: Division by zero.
-  10 |             return 6 / x;
-     |                    ^^^^^
+  at main (service.vo:20:9)
+service.vo:9:42: runtime error[R0002]: Division by zero.
+   9 |         let xs = map([3, 2, 0], fn(x) => 6 / x);
+     |                                          ^^^^^
 trace:
-  at anonymous function (service.vo:10:20)
+  at anonymous function (service.vo:9:42)
       x: int = 0
   at handle (service.vo:9:18)
       r: Request = new Request { method: "GET", path: "/callback", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
@@ -57,12 +57,12 @@ trace:
       address: str = "{vport}", answer: fn(str) -> str = <fn(str) -> str>, listener: int = 4, raw: str = "GET /callback HTTP/1.1\r\nHost: localhost\r\n\r\n"
   at serve (std/http.vo:430:12)
       address: str = "{vport}", handle: fn(Request) -> Response = <fn(Request) -> Response>, answer: fn(str) -> str = <fn(str) -> str>
-  at main (service.vo:22:9)
-service.vo:16:91: runtime error[R0003]: Index 6 is out of bounds for length 2.
-  16 |         return new http.Response { status: 200, headers: new list[http.Header], body: str(xs[len(r.path)]) };
+  at main (service.vo:20:9)
+service.vo:14:91: runtime error[R0003]: Index 6 is out of bounds for length 2.
+  14 |         return new http.Response { status: 200, headers: new list[http.Header], body: str(xs[len(r.path)]) };
      |                                                                                           ^^^^^^^^^^^^^^^
 trace:
-  at handle (service.vo:16:91)
+  at handle (service.vo:14:91)
       r: Request = new Request { method: "GET", path: "/index", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, xs: list[int] = [1, 2]
   at anonymous function (std/http.vo:418:58)
       raw: str = "GET /index HTTP/1.1\r\nHost: localhost\r\n\r\n", handle: fn(Request) -> Response = <fn(Request) -> Response>, req: Request = new Request { method: "GET", path: "/index", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/index", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
@@ -70,6 +70,6 @@ trace:
       address: str = "{vport}", answer: fn(str) -> str = <fn(str) -> str>, listener: int = 4, raw: str = "GET /index HTTP/1.1\r\nHost: localhost\r\n\r\n"
   at serve (std/http.vo:430:12)
       address: str = "{vport}", handle: fn(Request) -> Response = <fn(Request) -> Response>, answer: fn(str) -> str = <fn(str) -> str>
-  at main (service.vo:22:9)
+  at main (service.vo:20:9)
 {"time":"{time}","level":"info","message":"stopped","drain_s":30,"drained":0,"cut_off":0}
 --- exit 0

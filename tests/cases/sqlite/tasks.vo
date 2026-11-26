@@ -3,7 +3,7 @@ import std.sqlite;
 
 fn main() uses console {
     let db = sqlite.open_memory();
-    let counts = concurrent_map([1, 2], 2, fn(x: int) -> int {
+    let counts = concurrent_map([1, 2], 2, fn(x) {
         match sqlite.query(db, sqlite.sql("select 1 as x"), new list[sqlite.Value]) {
             case ok(rows) {
                 return len(rows) + x;

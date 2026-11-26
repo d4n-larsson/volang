@@ -1,7 +1,7 @@
 # Creating an anonymous function uses no effect; calling one that prints does. With 14 statements that
 # use no effect, `main` is under the limit (the call `shout("done")` counts as an effect).
 fn main() uses console {
-    let shout = fn(s: str) {
+    let shout: fn(str) uses console = fn(s) {
         print(s);
     };
     let a = 1;

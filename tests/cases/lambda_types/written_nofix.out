@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0342","name":"lambda_types_written","severity":"error","file":"written_nofix.vo","start":{"line":10,"col":24},"end":{"line":10,"col":27},"text":"Box","message":"An anonymous function takes its types from where it is used: write `fn(b)`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

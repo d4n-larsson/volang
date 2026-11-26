@@ -1501,9 +1501,7 @@ record Task {
 
 fn main() uses console {
     let ts = [new Task { name: "b", tags: new list[str] }, new Task { name: "a", tags: new list[str] }];
-    sort_by(ts, fn(t: Task) -> Task {
-        return t;
-    });
+    sort_by(ts, fn(t) => t);
     print(ts[0].name);
 }
 ```
@@ -1518,9 +1516,7 @@ record Task {
 
 fn main() uses console {
     let ts = [new Task { name: "b", tags: new list[str] }, new Task { name: "a", tags: new list[str] }];
-    sort_by(ts, fn(t: Task) -> str {
-        return t.name;
-    });
+    sort_by(ts, fn(t) => t.name);
     print(ts[0].name);
 }
 ```
@@ -1542,7 +1538,7 @@ record Job {
 }
 
 fn make(name: str) -> Job {
-    return new Job { name: name, greet: fn(s: str) -> str { return s + "!"; } };
+    return new Job { name: name, greet: fn(s) => s + "!" };
 }
 
 fn main() uses console {
@@ -2274,6 +2270,34 @@ fn main() {
 }
 ```
 
+## E0342 lambda_types_written
+
+An anonymous function writes its parameter or return types.
+
+Fixable: sometimes
+
+An anonymous function takes its types from where it is used (spec 059): the parameter of the function it is passed to, the type of the binding, field or list it goes into, or the return type it is returned as. It writes its parameters' names only, `fn(p)`, and no `-> T`. Named functions write every type, as before. The fix removes the types when the place gives the same ones; when the function is the whole value of a `let` or `var` without a type, it moves them onto the binding (`let f: fn(int) -> int = fn(x) ...`). A written type that differs from the place's is reported as the mismatch it is (E0301), so a fix never changes what a program means. Where the place cannot give a type (a call whose type parameter appears only in the function's own parameters), there is no fix: pass a named function, or bind the function with its type first.
+
+### Example
+
+```vo
+fn main() uses console {
+    let words = ["pear", "fig"];
+    print(join(map(words, fn(w: str) -> str {
+        return w + "!";
+    }), ","));
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let words = ["pear", "fig"];
+    print(join(map(words, fn(w) => w + "!"), ","));
+}
+```
+
 ## E0343 lambda_type_unknown
 
 An anonymous function has parameters but nothing to take their types from.
@@ -2799,7 +2823,7 @@ fn apply(f: fn(int) -> int, x: int) -> int {
 }
 
 fn main() uses console {
-    print(str(apply(fn(x: int) -> int {
+    print(str(apply(fn(x) {
         print("called");
         return x;
     }, 1)));
@@ -2814,7 +2838,7 @@ fn apply(f: fn(int) -> int uses console, x: int) -> int uses console {
 }
 
 fn main() uses console {
-    print(str(apply(fn(x: int) -> int {
+    print(str(apply(fn(x) {
         print("called");
         return x;
     }, 1)));
@@ -2930,9 +2954,7 @@ Anonymous functions capture the values of the `let` bindings and parameters they
 ```vo
 fn main() uses console {
     var total = 1;
-    let f = fn() -> int {
-        return total;
-    };
+    let f = fn() => total;
     print(str(f()));
 }
 ```
@@ -2943,9 +2965,7 @@ fn main() uses console {
 fn main() uses console {
     var total = 1;
     let total_now = total;
-    let f = fn() -> int {
-        return total_now;
-    };
+    let f = fn() => total_now;
     print(str(f()));
 }
 ```
@@ -3019,7 +3039,7 @@ fn main() uses console {
 
 ```vo
 fn main() uses console {
-    let f = fn(x: int) {
+    let f: fn(int) uses console = fn(x) {
         print(str(x));
     };
     f(1);
@@ -4957,7 +4977,7 @@ The messages of a worker (`std.workers`) cross between processes in the same way
 import std.collections;
 
 fn backwards(n: int) -> ordered_set[int] {
-    let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a, b) => b - a);
     push(s, n);
     push(s, n + 1);
     return s;
@@ -4980,7 +5000,7 @@ fn items(n: int) -> list[int] {
 
 fn main() uses console {
     let lists = concurrent_map([1, 2], 2, items);
-    let s: ordered_set[int] = collections.ordered_set_by(fn(a: int, b: int) -> int { return b - a; });
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a, b) => b - a);
     for xs in lists {
         for x in xs {
             push(s, x);

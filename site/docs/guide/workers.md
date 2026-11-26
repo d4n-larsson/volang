@@ -183,7 +183,7 @@ fn slow() -> int {
 }
 
 fn main() uses console {
-    print(str(workers.with_deadline(1000, fn() -> int { return 6 * 7; }) == ok(42)));
+    print(str(workers.with_deadline(1000, fn() => 6 * 7) == ok(42)));
     print(str(workers.with_deadline(100, slow) == err(workers.WorkerError.timed_out)));
 }
 ```
@@ -211,7 +211,7 @@ worker of the list has been reported.
 import std.workers;
 
 fn counts_to(n: int) -> fn(workers.Link[int, int]) {
-    return fn(link: workers.Link[int, int]) {
+    return fn(link) {
         for i in 1..n + 1 {
             if workers.emit(link, i) != ok() {
                 return;

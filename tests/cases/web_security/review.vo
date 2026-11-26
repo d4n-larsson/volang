@@ -34,7 +34,7 @@ fn app() -> web.App[int] {
 fn show(label: str, rules: list[security.Rule], ways: list[security.Way[int]]) uses console {
     print(label + ":");
     print(security.describe(app(), rules));
-    let found = security.review(app(), security.policy(rules, ways, fn() -> int { return 0; }));
+    let found = security.review(app(), security.policy(rules, ways, fn() => 0));
     if len(found) == 0 {
         print("  nothing to review");
     }

@@ -5,16 +5,10 @@ record Person {
 
 fn main() uses console {
     let people = [new Person { name: "cy", age: 30 }, new Person { name: "al", age: 25 }, new Person { name: "bo", age: 30 }, new Person { name: "di", age: 25 }];
-    sort_by(people, fn(p: Person) -> int {
-        return p.age;
-    });
+    sort_by(people, fn(p) => p.age);
     for p in people {
         print(p.name + " " + str(p.age));
     }
-    sort_by(people, fn(p: Person) -> str {
-        return p.name;
-    });
-    print(join(map(people, fn(p: Person) -> str {
-        return p.name;
-    }), ","));
+    sort_by(people, fn(p) => p.name);
+    print(join(map(people, fn(p) => p.name), ","));
 }

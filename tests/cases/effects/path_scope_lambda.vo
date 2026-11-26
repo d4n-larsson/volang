@@ -11,9 +11,7 @@ fn load(path: str) -> str uses file.read {
 
 # Through an anonymous function made in the scoped function.
 fn only_a(path: str) -> str uses file.read("a/") {
-    let read = fn(p: str) -> str {
-        return load(p);
-    };
+    let read: fn(str) -> str uses file.read = fn(p) => load(p);
     return read(path);
 }
 

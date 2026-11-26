@@ -3,9 +3,7 @@ import main.window_max;
 
 # Keep values inside the task's domain (|x| <= 10^18).
 fn in_domain(xs: list[int]) -> list[int] {
-    return map(xs, fn(x: int) -> int {
-        return x % 1000000000000000000;
-    });
+    return map(xs, fn(x) => x % 1000000000000000000);
 }
 
 # Window size from a generated int: 1 .. len(xs) + 1 (len + 1 means "no window").
@@ -32,9 +30,7 @@ fn expected_output(xs: list[int], k: int) -> str {
     if k > len(xs) {
         return "none";
     }
-    return join(map(naive(xs, k), fn(x: int) -> str {
-        return str(x);
-    }), " ");
+    return join(map(naive(xs, k), fn(x) => str(x)), " ");
 }
 
 prop "window maxima match a rescan of every window" (raw: list[int], kk: int) {
@@ -45,9 +41,7 @@ prop "window maxima match a rescan of every window" (raw: list[int], kk: int) {
 }
 
 prop "ties and small values: maxima match a rescan" (raw: list[int], kk: int) {
-    let xs = map(raw, fn(x: int) -> int {
-        return x % 3;
-    });
+    let xs = map(raw, fn(x) => x % 3);
     let k = size(xs, kk);
     assume(k <= len(xs));
     expect_eq(window_max(xs, k), naive(xs, k));
@@ -61,12 +55,8 @@ prop "n - k + 1 maxima, each one a value of its window and not below any" (raw: 
     expect_eq(len(out), len(xs) - k + 1);
     for i in 0..len(out) {
         let win = slice(xs, i, i + k);
-        expect(any(win, fn(x: int) -> bool {
-            return x == out[i];
-        }));
-        expect(all(win, fn(x: int) -> bool {
-            return x <= out[i];
-        }));
+        expect(any(win, fn(x) => x == out[i]));
+        expect(all(win, fn(x) => x <= out[i]));
     }
 }
 
@@ -74,9 +64,7 @@ prop "k = 1 echoes the input, k = n gives the overall maximum" (raw: list[int]) 
     let xs = in_domain(raw);
     assume(len(xs) > 0);
     expect_eq(window_max(xs, 1), xs);
-    expect_eq(window_max(xs, len(xs)), [fold(xs, xs[0], fn(a: int, x: int) -> int {
-        return max(a, x);
-    })]);
+    expect_eq(window_max(xs, len(xs)), [fold(xs, xs[0], fn(a, x) => max(a, x))]);
 }
 
 prop "whole program on input with ragged whitespace" (raw: list[int], kk: int, gaps: list[int]) {

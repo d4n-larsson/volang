@@ -17,7 +17,7 @@ fn main() -> result[void] uses console, file.read, file.write {
     let a = try sqlite.open("shared.db");
     let b = try sqlite.open("shared.db");
     let _ = try sqlite.exec(a, sqlite.sql("create table t(x)"), new list[sqlite.Value]);
-    let r = sqlite.transaction(a, fn() -> result[int] {
+    let r: result[int] = sqlite.transaction(a, fn() {
         let _ = try sqlite.exec(a, sqlite.sql("insert into t values (1)"), new list[sqlite.Value]);
         print("second while the first writes: " + show(sqlite.exec(b, sqlite.sql("insert into t values (2)"), new list[sqlite.Value])));
         return ok(0);

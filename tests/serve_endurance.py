@@ -35,9 +35,7 @@ fn handle(r: http.Request) -> http.Response {
     if r.path != "/count" {
         return new http.Response { status: 404, headers: new list[http.Header], body: "" };
     }
-    let items = map(split(r.query, ","), fn(s: str) -> json.Json {
-        return json.Json.text(s);
-    });
+    let items = map(split(r.query, ","), fn(s) => json.Json.text(s));
     match json.write_json(json.Json.array(items)) {
         case ok(text) {
             return new http.Response { status: 200, headers: [new http.Header { name: "Content-Type", value: "application/json" }], body: text };

@@ -1,9 +1,5 @@
 fn main() uses console {
-    let fs = [fn(x: int) -> int {
-        return x + 1;
-    }, fn(x: int) -> int {
-        return x * 10;
-    }];
+    let fs: list[fn(int) -> int] = [fn(x) => x + 1, fn(x) => x * 10];
     print(str(fs[1](3)));
     for f in fs {
         print(str(f(2)));

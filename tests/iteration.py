@@ -347,7 +347,7 @@ fn answer(f: list[str]) -> result[str] {
 }
 
 fn main() -> result[void] uses console, file.read("./") {
-    try fs.each_line("cases.txt", fn(line: str) -> result[bool] {
+    try fs.each_line("cases.txt", fn(line) {
         print(try answer(split(line, "\\t")));
         return ok(true);
     });

@@ -77,7 +77,7 @@ export variant Decision {
 }
 
 # A way of signing in: where the credential is in a request and the function that turns it into a user. Made by basic, tokens, header_key and test_users.
-#     header_key("X-Api-Key", fn(n: int, key: str) -> result[User] { return err("unauthorized: unknown key"); }).header is "X-Api-Key"
+#     let check: fn(int, str) -> result[User] = fn(n, key) => err("unauthorized: unknown key"); header_key("X-Api-Key", check).header is "X-Api-Key"
 export record Way[C, E: effects] {
     # The name of the way, for the review.
     name: str;
@@ -94,7 +94,7 @@ export record Way[C, E: effects] {
 }
 
 # Who may call what: the rules, the accepted ways of signing in, the clock, and a function told of refusals.
-#     len(policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }).rules) is 0
+#     len(policy(new list[Rule], new list[Way[int]], fn() => 0).rules) is 0
 export record Policy[C, E: effects] {
     # Tried in order; the first that matches the method and the path decides. No match: refused.
     rules: list[Rule];
@@ -142,7 +142,7 @@ export fn rule_for(methods: list[str], path: str, access: Access) -> Rule
 }
 
 # A policy that tells nobody of its events (for those, write `new Policy { ..., on_event: f }`).
-#     len(policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }).ways) is 0
+#     len(policy(new list[Rule], new list[Way[int]], fn() => 0).ways) is 0
 export fn policy[C, E: effects](
     rules: list[Rule],
     ways: list[Way[C, uses E]],
@@ -152,7 +152,7 @@ export fn policy[C, E: effects](
         rules: rules,
         ways: ways,
         now: now,
-        on_event: fn(ctx: C, e: Event) {
+        on_event: fn(ctx, e) {
         }
     };
 }
@@ -270,11 +270,11 @@ fn as_get(method: str) -> str {
 }
 
 # The step that enforces a policy on every request: put it in App.steps (after cors, so that preflight requests are answered). Allowed requests go on with the user in X-Identity; the others are answered 401 (with WWW-Authenticate) or 403 in the problem format, and their operations do not run.
-#     secure(policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; })).prefix is "/"
+#     secure(policy(new list[Rule], new list[Way[int]], fn() => 0)).prefix is "/"
 export fn secure[C, E: effects](p: Policy[C, uses E]) -> web.Step[C, uses E] {
     return new web.Step {
         prefix: "/",
-        run: fn(ctx: C, r: http.Request, next: fn(http.Request) -> http.Response uses E) -> http.Response {
+        run: fn(ctx, r, next) {
             var found = 0;
             var at = -1;
             var credential = "";
@@ -505,7 +505,7 @@ fn user_json(user: User) -> str {
 # ---- ways of signing in ----
 
 # A way of signing in with a credential in the header named header (such as "X-Api-Key"), checked by the application: check gives the user, or err("unauthorized: REASON").
-#     header_key("X-Api-Key", fn(n: int, key: str) -> result[User] { return err("unauthorized: unknown key"); }).scheme is ""
+#     let check: fn(int, str) -> result[User] = fn(n, key) => err("unauthorized: unknown key"); header_key("X-Api-Key", check).scheme is ""
 export fn header_key[C, E: effects](
     header: str,
     check: fn(C, str) -> result[User] uses E
@@ -514,22 +514,20 @@ export fn header_key[C, E: effects](
         name: header,
         header: header,
         scheme: "",
-        check: fn(ctx: C, credential: str, now: int) -> result[User] {
-            return check(ctx, credential);
-        },
+        check: fn(ctx, credential, now) => check(ctx, credential),
         sign_in_page: "",
         origin: ""
     };
 }
 
 # The way of signing in for tests: a request made with as_user is handled as that user, without credentials. Only an application whose policy lists it has it, and review reports it.
-#     handle_request(new App[int] { routes: new list[Route[int]], steps: [secure(policy([rule("/", Access.signed_in)], [test_users()], fn() -> int { return 0; }))], errors: new list[ErrorStatus] }, 0, as_user(request("GET", "/", ""), new User { name: "ada", roles: new list[str] })).status is 404
+#     handle_request(new App[int] { routes: new list[Route[int]], steps: [secure(policy([rule("/", Access.signed_in)], [test_users()], fn() => 0))], errors: new list[ErrorStatus] }, 0, as_user(request("GET", "/", ""), new User { name: "ada", roles: new list[str] })).status is 404
 export fn test_users[C, E: effects]() -> Way[C, uses E] {
     return new Way {
         name: "test_users",
         header: test_header,
         scheme: "",
-        check: fn(ctx: C, credential: str, now: int) -> result[User] {
+        check: fn(ctx, credential, now) {
             match json.parse_json(credential) {
                 case ok(j) {
                     let parsed: result[User] = json.from_json(j);
@@ -559,13 +557,13 @@ export fn as_user(r: http.Request, user: User) -> http.Request {
 }
 
 # HTTP Basic: the name and password of every request are checked against the account find gives for the name (Option.none: no such name). Each request costs one password check, which is slow on purpose: for anything called often, use sign_in_route and tokens.
-#     basic(fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }).scheme is "Basic "
+#     let lookup: fn(int, str) -> result[Option[Account]] = fn(n, name) => ok(Option.none); basic(lookup).scheme is "Basic "
 export fn basic[C, E: effects](find_account: fn(C, str) -> result[option.Option[Account]] uses E) -> Way[C, uses E] {
     return new Way {
         name: "basic",
         header: "Authorization",
         scheme: "Basic ",
-        check: fn(ctx: C, credential: str, now: int) -> result[User] {
+        check: fn(ctx, credential, now) {
             var pair = "";
             match bytes.from_base64(trim(credential)) {
                 case ok(b) {
@@ -635,7 +633,7 @@ fn checked[C, E: effects](
 }
 
 # The user of a name and password, for a sign-in operation of the application's own: the account find gives is checked with std.crypto.verify_password. An unknown name, a wrong password and a disabled account give the same err("unauthorized: invalid credentials") after the same work; an error of find is passed on.
-#     password_user(0, fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.some(new Account { name: "ada", password_hash: "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=", roles: ["admin"], enabled: true })); }, "ada", "passwd") == ok(new User { name: "ada", roles: ["admin"] }) is true
+#     password_user(0, fn(n, name) => ok(Option.some(new Account { name: "ada", password_hash: "pbkdf2-sha256$1$c2FsdA==$VawEblbjCJ/sFpHCJUS2BflBhSFt3gRl5oudV8INrLw=", roles: ["admin"], enabled: true })), "ada", "passwd") == ok(new User { name: "ada", roles: ["admin"] }) is true
 export fn password_user[C, E: effects](
     ctx: C,
     find_account: fn(C, str) -> result[option.Option[Account]] uses E,
@@ -773,7 +771,7 @@ fn token_user(part: str, now_s: int) -> result[User] {
 }
 
 # Signing in with `Authorization: Bearer TOKEN`, a token of issue_token (or any JWT of that form) signed with one of the keys in key_list: list a new key first and keep the old one while its tokens live. Keys are 32 bytes or more (R0012 otherwise).
-#     handle_request(new App[int] { routes: new list[Route[int]], steps: [secure(policy([rule("/", Access.signed_in)], [tokens([from_text("0123456789abcdef0123456789abcdef")])], fn() -> int { return 0; }))], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).headers[1].value is "Bearer"
+#     handle_request(new App[int] { routes: new list[Route[int]], steps: [secure(policy([rule("/", Access.signed_in)], [tokens([from_text("0123456789abcdef0123456789abcdef")])], fn() => 0))], errors: new list[ErrorStatus] }, 0, request("GET", "/", "")).headers[1].value is "Bearer"
 export fn tokens[C, E: effects](key_list: list[bytes]) -> Way[C, uses E]
     requires keys_fit(key_list)
 {
@@ -781,9 +779,7 @@ export fn tokens[C, E: effects](key_list: list[bytes]) -> Way[C, uses E]
         name: "tokens",
         header: "Authorization",
         scheme: "Bearer ",
-        check: fn(ctx: C, credential: str, now: int) -> result[User] {
-            return check_token(key_list, now, trim(credential));
-        },
+        check: fn(ctx, credential, now) => check_token(key_list, now, trim(credential)),
         sign_in_page: "",
         origin: ""
     };
@@ -795,7 +791,7 @@ record SignedIn {
 }
 
 # A POST route that exchanges `{"name": ..., "password": ...}` for `{"token": ..., "expires": SECONDS}`: the password is checked as password_user does, the token is issue_token's with this key and lifetime. The policy p gives the clock and is told of the events; it needs a rule that opens the route to anyone.
-#     sign_in_route("/sign-in", policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }), fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, from_text("0123456789abcdef0123456789abcdef"), 600).method is "POST"
+#     sign_in_route("/sign-in", policy(new list[Rule], new list[Way[int]], fn() => 0), fn(n, name) => ok(Option.none), from_text("0123456789abcdef0123456789abcdef"), 600).method is "POST"
 export fn sign_in_route[C, E: effects](
     pattern: str,
     p: Policy[C, uses E],
@@ -806,7 +802,7 @@ export fn sign_in_route[C, E: effects](
     requires key_fits(key)
     requires lifetime_s > 0
 {
-    let run = fn(ctx: C, r: http.Request, vars: map[str, str]) -> result[http.Response] {
+    let run: fn(C, http.Request, map[str, str]) -> result[http.Response] uses E = fn(ctx, r, vars) {
         var name = "";
         var password = "";
         match json.parse_json(r.body) {
@@ -918,7 +914,7 @@ export record Session {
 }
 
 # Signing in browsers with a session cookie: the application's functions over its context (accounts as for basic and sign_in_route; sessions kept, found by key and ended in its own storage), the paths, the lifetime and the origin. The frontend serves the sign-in page. browser(b) is the way for the policy and browser_routes(b, p) the routes.
-#     len(browser_routes(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_ms: 3600000, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }))) is 2
+#     len(browser_routes(new Browser[int] { find_account: fn(n, name) => ok(Option.none), keep: fn(n, s) => ok(), find: fn(n, key) => ok(Option.none), end: fn(n, key) => ok(), random: fn(k) => from_text("0123456789abcdef"), sign_in: "/sign-in", sign_out: "/sign-out", lifetime_ms: 3600000, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() => 0))) is 2
 export record Browser[C, E: effects] {
     # The account of a name, as for basic and sign_in_route; looked up again on every request.
     find_account: fn(C, str) -> result[option.Option[Account]] uses E;
@@ -941,7 +937,7 @@ export record Browser[C, E: effects] {
 }
 
 # The way of signing in browsers by their session cookie, for the policy's ways. Its name says the paths, the lifetime and the origin, for the review.
-#     browser(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_ms: 3600000, origin: "" }).name is "browser (sign-in /sign-in, sign-out /sign-out, 3600 s, origin from Host)"
+#     browser(new Browser[int] { find_account: fn(n, name) => ok(Option.none), keep: fn(n, s) => ok(), find: fn(n, key) => ok(Option.none), end: fn(n, key) => ok(), random: fn(k) => from_text("0123456789abcdef"), sign_in: "/sign-in", sign_out: "/sign-out", lifetime_ms: 3600000, origin: "" }).name is "browser (sign-in /sign-in, sign-out /sign-out, 3600 s, origin from Host)"
 export fn browser[C, E: effects](b: Browser[C, uses E]) -> Way[C, uses E]
     requires browser_fits(b)
 {
@@ -953,9 +949,7 @@ export fn browser[C, E: effects](b: Browser[C, uses E]) -> Way[C, uses E]
         name: "browser (sign-in " + b.sign_in + ", sign-out " + b.sign_out + ", " + str(b.lifetime_ms / 1000) + " s, origin " + from + ")",
         header: "Cookie",
         scheme: cookie_name(b.origin),
-        check: fn(ctx: C, credential: str, now: int) -> result[User] {
-            return session_user(b, ctx, credential, now);
-        },
+        check: fn(ctx, credential, now) => session_user(b, ctx, credential, now),
         sign_in_page: b.sign_in,
         origin: b.origin
     };
@@ -1038,16 +1032,12 @@ record SignOutForm {
 }
 
 # The routes of signing in browsers, to add to the application's: POST sign_in takes the form fields name, password and next, makes a new session and its cookie and answers 303 to next, or 303 to sign_in?failed=1&next=... when the name or password is wrong (the frontend's page says so; a script posting the same form sees where it was sent); POST sign_out ends the session, removes the cookie and answers 303 to sign_in. The frontend serves the sign-in page itself. The policy gives the clock and is told of the events; its rules must let anyone reach both paths.
-#     browser_routes(new Browser[int] { find_account: fn(n: int, name: str) -> result[Option[Account]] { return ok(Option.none); }, keep: fn(n: int, s: Session) -> result[void] { return ok(); }, find: fn(n: int, key: str) -> result[Option[Session]] { return ok(Option.none); }, end: fn(n: int, key: str) -> result[void] { return ok(); }, random: fn(k: int) -> bytes { return from_text("0123456789abcdef"); }, sign_in: "/sign-in", sign_out: "/sign-out", lifetime_ms: 3600000, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() -> int { return 0; }))[1].pattern is "/sign-out"
+#     browser_routes(new Browser[int] { find_account: fn(n, name) => ok(Option.none), keep: fn(n, s) => ok(), find: fn(n, key) => ok(Option.none), end: fn(n, key) => ok(), random: fn(k) => from_text("0123456789abcdef"), sign_in: "/sign-in", sign_out: "/sign-out", lifetime_ms: 3600000, origin: "" }, policy(new list[Rule], new list[Way[int]], fn() => 0))[1].pattern is "/sign-out"
 export fn browser_routes[C, E: effects](b: Browser[C, uses E], p: Policy[C, uses E]) -> list[web.Route[C, uses E]]
     requires browser_fits(b)
 {
-    let take: fn(C, SignInForm) -> result[http.Response] uses E = fn(ctx: C, f: SignInForm) -> result[http.Response] {
-        return sign_in_form(b, p, ctx, f);
-    };
-    let leave: fn(C, SignOutForm) -> result[http.Response] uses E = fn(ctx: C, f: SignOutForm) -> result[http.Response] {
-        return sign_out_form(b, p, ctx, f);
-    };
+    let take: fn(C, SignInForm) -> result[http.Response] uses E = fn(ctx, f) => sign_in_form(b, p, ctx, f);
+    let leave: fn(C, SignOutForm) -> result[http.Response] uses E = fn(ctx, f) => sign_out_form(b, p, ctx, f);
     # Bound as any operation's input (form, headers, limits), then moved to the application's paths.
     return [at_path(web.on_post("/", take), b.sign_in), at_path(web.on_post("/", leave), b.sign_out)];
 }
@@ -1227,7 +1217,7 @@ export fn describe[C, E: effects](app: web.App[C, uses E], rules: list[Rule]) ->
 }
 
 # What a reviewer should look at, one line each: routes no rule matches (refused: meant or forgotten?), rules that decide for no route (misspelt, or hidden behind an earlier rule), rules that decide for only some requests of a route, rules that need a user when no way of signing in is accepted, test_users in the policy, and browser sign-in (its settings, a sign-in path nobody can post to, a cookie over plain HTTP). Empty when there is nothing.
-#     review(web_app(new list[Route[int]]), policy([rule("/x", Access.anyone)], new list[Way[int]], fn() -> int { return 0; }))[0] is "rule 1 (/x) decides for no route"
+#     review(web_app(new list[Route[int]]), policy([rule("/x", Access.anyone)], new list[Way[int]], fn() => 0))[0] is "rule 1 (/x) decides for no route"
 export fn review[C, E: effects](app: web.App[C, uses E], p: Policy[C, uses E]) -> list[str] {
     let found = new list[str];
     let partly = new list[str];
@@ -1296,7 +1286,7 @@ export fn review[C, E: effects](app: web.App[C, uses E], p: Policy[C, uses E]) -
 export fn safe_headers[C, E: effects](hsts_s: int) -> web.Step[C, uses E] {
     return new web.Step {
         prefix: "/",
-        run: fn(ctx: C, r: http.Request, next: fn(http.Request) -> http.Response uses E) -> http.Response {
+        run: fn(ctx, r, next) {
             let resp = next(r);
             let names = [
                 "X-Content-Type-Options",

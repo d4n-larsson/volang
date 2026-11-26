@@ -21,9 +21,7 @@ fn statement(name: str, asof: str) -> result[int] uses console, file.read("ledge
                     push(shown, new Entry { date: f[0], amount: try parse_int(f[1]), desc: desc });
                 }
             }
-            sort_by(shown, fn(e: Entry) -> str {
-                return e.date;
-            });
+            sort_by(shown, fn(e) => e.date);
             var balance = 0;
             for e in shown {
                 set balance = balance + e.amount;

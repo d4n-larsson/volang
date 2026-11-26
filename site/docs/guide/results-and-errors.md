@@ -314,9 +314,7 @@ fn parse_line(line: str) -> result[int, LineError] {
     if trim(line) == "" {
         return err(LineError.empty);
     }
-    return map_err(parse_int(trim(line)), fn(m: str) -> LineError {
-        return LineError.not_a_number(line);
-    });
+    return map_err(parse_int(trim(line)), fn(m) => LineError.not_a_number(line));
 }
 
 fn main() uses console {

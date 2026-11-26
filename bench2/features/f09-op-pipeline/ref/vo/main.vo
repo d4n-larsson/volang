@@ -1,13 +1,9 @@
 fn adder(n: int) -> fn(int) -> int {
-    return fn(x: int) -> int {
-        return x + n;
-    };
+    return fn(x) => x + n;
 }
 
 fn multiplier(n: int) -> fn(int) -> int {
-    return fn(x: int) -> int {
-        return x * n;
-    };
+    return fn(x) => x * n;
 }
 
 fn neg(x: int) -> int {
@@ -58,9 +54,7 @@ fn main() -> result[void] uses console, input {
         match read_line() {
             case ok(line) {
                 let x = try parse_int(line);
-                print(str(fold(ops, x, fn(acc: int, f: fn(int) -> int) -> int {
-                    return f(acc);
-                })));
+                print(str(fold(ops, x, fn(acc, f) => f(acc))));
             }
             case err(_) {
                 break;

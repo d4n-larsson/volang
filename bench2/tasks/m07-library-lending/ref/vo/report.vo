@@ -13,9 +13,7 @@ export fn report(lib: library.Library) -> list[str] {
     let ms = keys(lib.limit);
     sort(ms);
     for m in ms {
-        let isbns = map(lib.loans[m], fn(l: library.Loan) -> str {
-            return l.isbn;
-        });
+        let isbns = map(lib.loans[m], fn(l) => l.isbn);
         sort(isbns);
         push(out, m + " loans " + listed(isbns) + " owes " + commands.money(lib.owes[m]));
     }

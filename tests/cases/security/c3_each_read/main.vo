@@ -6,7 +6,7 @@ fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
 }
 
 fn main() uses console, file.read("data/") {
-    each(["data/x", "secret.txt"], fn(p: str) {
+    each(["data/x", "secret.txt"], fn(p) {
         match read_file(p) {
             case ok(s) {
                 print("read " + p + ": " + s);

@@ -226,7 +226,7 @@ fn main() uses console {
 
 DELAYS = """
 fn after(ms: int) -> fn(Link[int, int]) uses clock {
-    return fn(link: Link[int, int]) {
+    return fn(link) {
         sleep(ms);
         give(link, ms);
     };
@@ -268,7 +268,7 @@ import std.tcp;
 import std.bytes;
 
 fn forward(port: int) -> fn(Link[int, str]) uses net {
-    return fn(link: Link[int, str]) {
+    return fn(link) {
         match tcp.connect("127.0.0.1", port, 5000) {
             case ok(c) {
                 while true {
@@ -471,7 +471,7 @@ fn sleeps(link: Link[int, int]) uses clock {
 }
 
 fn hangs(port: int) -> fn(Link[int, int]) uses net {
-    return fn(link: Link[int, int]) {
+    return fn(link) {
         match tcp.connect("127.0.0.1", port, 5000) {
             case ok(c) {
                 match tcp.read(c, 100, 600000) {
@@ -594,7 +594,7 @@ fn sleeps(link: Link[int, int]) uses clock {
 }
 
 fn hangs(port: int) -> fn(Link[int, int]) uses net {
-    return fn(link: Link[int, int]) {
+    return fn(link) {
         match tcp.connect("127.0.0.1", port, 5000) {
             case ok(c) {
                 match tcp.read(c, 100, 600000) {
@@ -814,7 +814,7 @@ def group_speed():
 
 RACE = """
 fn runner(id: int) -> fn(Link[int, int]) uses console, clock, random {
-    return fn(link: Link[int, int]) {
+    return fn(link) {
         for i in 0..5 {
             sleep(random_int(0, 3));
             print("runner " + str(id) + " at " + str(i));
@@ -870,7 +870,7 @@ fn main() uses console, clock, random {
 
 NAMED = """
 fn talker(id: int) -> fn(Link[int, int]) uses console, clock, random {
-    return fn(link: Link[int, int]) {
+    return fn(link) {
         for i in 0..4 {
             sleep(random_int(0, 2));
             print("talker " + str(id) + " says " + str(i));

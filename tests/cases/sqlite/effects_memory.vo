@@ -18,7 +18,7 @@ fn element(dbs: list[sqlite.Database]) -> result[list[sqlite.Row]] {
 }
 
 fn captured(db: sqlite.Database, xs: list[int]) -> list[int] {
-    return map(xs, fn(x: int) -> int {
+    return map(xs, fn(x) {
         match sqlite.query(db, sqlite.sql("select 1 as x"), new list[sqlite.Value]) {
             case ok(rows) {
                 return len(rows) + x;

@@ -19,6 +19,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, "tests"))
 import float15  # noqa: E402
 import gen_programs  # noqa: E402
+import migrate_059  # noqa: E402
 
 VO = os.path.join(ROOT, "bin", "vo")
 WORK = os.path.join(ROOT, "build", "diff-work")
@@ -35,12 +36,17 @@ def run(binary, path, extra_env):
 
 
 def one(seed, new_bin, new_env):
-    src = gen_programs.generate(seed)
-    path = os.path.join(WORK, f"p{seed}.vo")
+    src = gen_programs.generate(seed)  # the 0.4 form the oracle reads; the current build gets it migrated (spec 059)
+    new_src = migrate_059.text_lambdas(src)
+    path, new_path = os.path.join(WORK, f"p{seed}.vo"), os.path.join(WORK, "new", f"p{seed}.vo")
     open(path, "w").write(src)
+    open(new_path, "w").write(new_src)
     a = run(os.path.join(ROOT, "build-oracle", "vo"), path, {})
-    b = run(new_bin, path, new_env)
+    b = run(new_bin, new_path, new_env)
     os.remove(path)
+    os.remove(new_path)
+    if new_src != src:
+        a, b = migrate_059.without_positions(a), migrate_059.without_positions(b)
     if b"error[E" in a[1]:
         return "unchecked", seed, src, a, b
     if b"error[R0009]" in a[1] or b"error[R0009]" in b[1]:
@@ -63,7 +69,7 @@ def main():
         new_bin, new_env = os.path.join(ROOT, "build-stress", "vo"), {"VO_GC_STRESS": "64"}
     else:
         new_bin, new_env = os.environ.get("VO_BIN", os.path.join(ROOT, "build", "vo")), {}
-    os.makedirs(WORK, exist_ok=True)
+    os.makedirs(os.path.join(WORK, "new"), exist_ok=True)
     counts = {"ok": 0, "runtime": 0, "diff": 0, "unchecked": 0, "timeout": 0}
     with cf.ThreadPoolExecutor(os.cpu_count() or 4) as ex:
         futs = [ex.submit(one, s, new_bin, new_env) for s in range(args.seed, args.seed + args.count)]

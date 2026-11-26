@@ -4,6 +4,32 @@ What changed in each released version of vo, for people and agents who use it. T
 decision is in [`specs/`](specs/) and summarized in [`docs/roadmap.md`](docs/roadmap.md); what a version
 may and may not change is in [`docs/stability.md`](docs/stability.md).
 
+## 0.5.0
+
+Breaking change first. Applying the first fix of each diagnostic of `vo check --json` (up to four rounds,
+`tools/vo_fix.vo`) migrates a program, except an anonymous function nothing gives types to (below): every
+example, the standard library, the postgres package, the benchmark solutions and the golden cases
+migrated this way (`tests/migrate_059.py`).
+
+- **Anonymous functions take their types from where they are used (spec 059).** They write parameter
+  names only: `sort_by(people, fn(p) => p.age)`, `fold(xs, 0, fn(acc, x) => acc + x)`,
+  `let shout: fn(str) uses console = fn(s) { print(s); };`. The types come from the function type expected
+  at the position (a parameter, a typed `let` or `var`, `return`, `set`, a field, a typed list, a
+  payload). In a call, the arguments that are not anonymous functions fix the type parameters first, then
+  each anonymous function in turn, its return type from its body where the call leaves it open.
+  `let n: int = try transaction(db, fn() { ... })` gives the function its type through `try`.
+- **`=> expr`** is the one form of a body that only returns a value; a block is used for every other body.
+  `vo fmt` writes it.
+- **E0342 lambda_types_written**: a written parameter or return type; the fix removes them, or moves them
+  onto an untyped `let`/`var` that binds the function. A written type that differs from the expected one
+  is the E0301 it is, so a fix never changes what a program means.
+- **E0343 lambda_type_unknown** (no fix): nothing gives the parameter types, as for `let f = fn(x) => x;`
+  or a call whose type parameter appears only in the function's own parameters. A `std.web` route
+  handler is one: write it as a named function, or bind it with its type.
+- **E0413 lambda_single_return**: a block body that only returns a value; the fix writes `=> expr`.
+- Hover, `vo query type-at`, traces and runtime error reports show the inferred parameter types;
+  `vo query type-at` on a function's, record's or variant's own name gives its type (it gave `?`).
+
 ## 0.4.0
 
 Breaking change first. Applying the first fix of each diagnostic of `vo check --json` (up to four rounds,

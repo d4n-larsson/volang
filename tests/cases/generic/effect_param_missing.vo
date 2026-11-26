@@ -5,7 +5,7 @@ fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
 }
 
 fn main() {
-    each([1], fn(x: int) {
+    each([1], fn(x) {
         print(str(x));
     });
 }

@@ -37,33 +37,33 @@ fn main() uses console {
     print(join(lists.reversed(words), " ") + " | " + join(words, " ") + " | " + str(len(lists.reversed(none))));
     # Largest first; equal keys keep their order.
     let by_length = lists.reversed(lists.reversed(words));
-    lists.sort_by_desc(by_length, fn(w: str) -> int { return len(w); });
+    lists.sort_by_desc(by_length, fn(w) => len(w));
     print(join(by_length, " "));
     let by_text = lists.reversed(lists.reversed(words));
-    lists.sort_by_desc(by_text, fn(w: str) -> str { return w; });
+    lists.sort_by_desc(by_text, fn(w) => w);
     print(join(by_text, " "));
     let by_half = lists.reversed(lists.reversed(words));
-    lists.sort_by_desc(by_half, fn(w: str) -> float { return float(len(w)) / 2.0; });
+    lists.sort_by_desc(by_half, fn(w) => float(len(w)) / 2.0);
     print(join(by_half, " "));
-    lists.sort_by_desc(cities, fn(c: City) -> int { return c.people; });
+    lists.sort_by_desc(cities, fn(c) => c.people);
     print(cities[0].name);
     let one = ["only"];
-    lists.sort_by_desc(one, fn(w: str) -> int { return len(w); });
-    lists.sort_by_desc(none, fn(w: str) -> int { return len(w); });
+    lists.sort_by_desc(one, fn(w) => len(w));
+    lists.sort_by_desc(none, fn(w) => len(w));
     print(join(one, " ") + str(len(none)));
     # The first of the smallest, the first of the largest.
-    print(show(lists.min_by(words, fn(w: str) -> int { return len(w); })) + " " + show(lists.max_by(words, fn(w: str) -> int { return len(w); })));
-    print(show(lists.min_by(["b", "a", "c"], fn(w: str) -> str { return w; })) + " " + show(lists.max_by(["kiwi", "pear"], fn(w: str) -> int { return len(w); })));
-    print(show(lists.min_by(none, fn(w: str) -> int { return len(w); })) + ", " + show(lists.max_by(none, fn(w: str) -> int { return len(w); })));
+    print(show(lists.min_by(words, fn(w) => len(w))) + " " + show(lists.max_by(words, fn(w) => len(w))));
+    print(show(lists.min_by(["b", "a", "c"], fn(w) => w)) + " " + show(lists.max_by(["kiwi", "pear"], fn(w) => len(w))));
+    print(show(lists.min_by(none, fn(w) => len(w))) + ", " + show(lists.max_by(none, fn(w) => len(w))));
     print(format("{} {} {}", lists.sum([1, 2, 3]), lists.sum(new list[int]), lists.sum([-5, 5])));
     # Groups: keys in the order they first appear, elements in list order.
-    for size, group in lists.group_by(words, fn(w: str) -> int { return len(w); }) {
+    for size, group in lists.group_by(words, fn(w) => len(w)) {
         print(format("{}: {}", size, join(group, " ")));
     }
-    for size, group in lists.group_by(words, fn(w: str) -> Size { return new Size { letters: len(w) }; }) {
+    for size, group in lists.group_by(words, fn(w) => new Size { letters: len(w) }) {
         print(format("{} letters: {}", size.letters, len(group)));
     }
-    print(str(len(lists.group_by(none, fn(w: str) -> int { return len(w); }))));
+    print(str(len(lists.group_by(none, fn(w) => len(w)))));
     # A key function's effects are the caller's.
     print(show(lists.max_by(["a", "bb"], noisy)));
 }

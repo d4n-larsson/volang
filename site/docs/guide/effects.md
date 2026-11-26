@@ -267,7 +267,7 @@ fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
 }
 
 fn main() uses console {
-    each(["a", "b"], fn(s: str) {
+    each(["a", "b"], fn(s) {
         print(s);
     });
 }

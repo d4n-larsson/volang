@@ -15,7 +15,7 @@ fn hello(n: int, input: Who) -> result[http.Response] {
 }
 
 fn tagged(name: str) -> web.Step[int] {
-    return new web.Step { prefix: "/", run: fn(n: int, r: http.Request, next: fn(http.Request) -> http.Response) -> http.Response {
+    return new web.Step { prefix: "/", run: fn(n, r, next) {
         let resp = next(r);
         push(resp.headers, new http.Header { name: "X-Trail", value: name });
         return resp;
@@ -23,19 +23,15 @@ fn tagged(name: str) -> web.Step[int] {
 }
 
 fn stop_admin() -> web.Step[int] {
-    return new web.Step { prefix: "/admin", run: fn(n: int, r: http.Request, next: fn(http.Request) -> http.Response) -> http.Response {
-        return new http.Response { status: 403, headers: new list[http.Header], body: "stopped" };
-    } };
+    return new web.Step { prefix: "/admin", run: fn(n, r, next) => new http.Response { status: 403, headers: new list[http.Header], body: "stopped" } };
 }
 
 fn name_it() -> web.Step[int] {
-    return new web.Step { prefix: "/", run: fn(n: int, r: http.Request, next: fn(http.Request) -> http.Response) -> http.Response {
-        return next(new http.Request { method: r.method, path: r.path, query: r.query, headers: [new http.Header { name: "X-Who", value: "ada" }], body: r.body });
-    } };
+    return new web.Step { prefix: "/", run: fn(n, r, next) => next(new http.Request { method: r.method, path: r.path, query: r.query, headers: [new http.Header { name: "X-Who", value: "ada" }], body: r.body }) };
 }
 
 fn crash() -> web.Step[int] {
-    return new web.Step { prefix: "/boom", run: fn(n: int, r: http.Request, next: fn(http.Request) -> http.Response) -> http.Response {
+    return new web.Step { prefix: "/boom", run: fn(n, r, next) {
         let xs = [1];
         if xs[len(r.path)] == 1 {
             return next(r);

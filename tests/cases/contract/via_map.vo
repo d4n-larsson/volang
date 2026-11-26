@@ -9,9 +9,7 @@ fn isqrt(n: int) -> int
 }
 
 fn main() uses console {
-    print(join(map([1, 4], fn(n: int) -> str {
-        return str(n);
-    }), ","));
+    print(join(map([1, 4], fn(n) => str(n)), ","));
     let roots = map([4, -1], isqrt);
     print(str(len(roots)));
 }
