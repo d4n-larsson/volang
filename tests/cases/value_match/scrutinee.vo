@@ -1,0 +1,26 @@
+record Point {
+    x: int;
+}
+
+fn main() uses console {
+    let f = 1.5;
+    match f {
+        case 1 {
+            print("one");
+        }
+        else {
+        }
+    }
+    match true {
+        else {
+        }
+    }
+    match new Point { x: 1 } {
+        else {
+        }
+    }
+    match [1] {
+        else {
+        }
+    }
+}

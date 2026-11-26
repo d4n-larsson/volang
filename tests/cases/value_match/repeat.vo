@@ -1,0 +1,22 @@
+const ok_status = 200;
+
+fn text(status: int) -> str {
+    match status {
+        case 200 {
+            return "ok";
+        }
+        case 200 {
+            return "again";
+        }
+        case ok_status {
+            return "same value";
+        }
+        else {
+            return "other";
+        }
+    }
+}
+
+fn main() uses console {
+    print(text(200));
+}

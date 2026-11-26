@@ -91,7 +91,7 @@ def json_cases(dirs):
 def main():
     failures = []
     tried = resolved = 0
-    for base, recs in json_cases(["check", "parse", "effects", "func", "generic", "format", "regex", "lex", "sqlite", "structure", "map_keys", "library", "imports", "imports_v03", "lambda_types"]):
+    for base, recs in json_cases(["check", "parse", "effects", "func", "generic", "format", "regex", "lex", "sqlite", "structure", "map_keys", "library", "imports", "imports_v03", "lambda_types", "value_match", "case_fields"]):
         for rec in recs:
             if rec.get("kind") != "diagnostic" or not rec.get("fixes"):
                 continue

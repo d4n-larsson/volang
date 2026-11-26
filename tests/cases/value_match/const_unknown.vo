@@ -1,0 +1,14 @@
+fn text(status: int) -> str {
+    match status {
+        case nope {
+            return "?";
+        }
+        else {
+            return "other";
+        }
+    }
+}
+
+fn main() uses console {
+    print(text(1));
+}

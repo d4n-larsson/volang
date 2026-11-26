@@ -2324,6 +2324,43 @@ fn main() uses console {
 }
 ```
 
+## E0345 match_scrutinee
+
+A `match` on a value that is not a variant, a `result`, an `int` or a `str`.
+
+Fixable: no
+
+`match` takes a variant or a `result`, whose cases it lists, or an `int` or a `str`, whose values it lists with an `else` for the rest (spec 060). A `float` is left out on purpose (equal floats are a trap), and a `bool` because `if` says the same in one form; lists, maps and records are compared with `==` in an `if`.
+
+### Example
+
+```vo
+fn main() uses console {
+    let ratio = 0.5;
+    match ratio {
+        case 1 {
+            print("whole");
+        }
+        else {
+            print("part");
+        }
+    }
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let ratio = 0.5;
+    if ratio == 1.0 {
+        print("whole");
+    } else {
+        print("part");
+    }
+}
+```
+
 ## E0401 non_exhaustive_match
 
 A `match` does not handle every case.
@@ -2772,6 +2809,101 @@ fn main() uses console {
 fn main() uses console {
     let words = ["pear", "fig"];
     print(join(map(words, fn(w) => w + "!"), ","));
+}
+```
+
+## E0414 value_match_else
+
+A `match` on an `int` or `str` has no `else` arm.
+
+Fixable: yes
+
+A `match` on an `int` or a `str` lists values, which never cover every one, so it ends with `else { ... }` for the values it does not list (spec 060). The fix inserts an empty `else`; fill it in when the other values need handling.
+
+### Example
+
+```vo
+fn text(status: int) -> str {
+    match status {
+        case 200 {
+            return "ok";
+        }
+    }
+    return "other";
+}
+
+fn main() uses console {
+    print(text(200));
+}
+```
+
+### Fixed
+
+```vo
+fn text(status: int) -> str {
+    match status {
+        case 200 {
+            return "ok";
+        }
+        else {
+        }
+    }
+    return "other";
+}
+
+fn main() uses console {
+    print(text(200));
+}
+```
+
+## E0415 match_else_exhaustive
+
+A `match` on a variant or a `result` has an `else` arm.
+
+Fixable: yes
+
+A `match` on a variant or a `result` lists every case, so the checker can tell when one is added and not handled (E0401); an `else` would hide that (spec 060). The fix removes the `else`.
+
+### Example
+
+```vo
+variant Light {
+    red;
+    green;
+}
+
+fn main() uses console {
+    match Light.red {
+        case red {
+            print("stop");
+        }
+        case green {
+            print("go");
+        }
+        else {
+            print("never");
+        }
+    }
+}
+```
+
+### Fixed
+
+```vo
+variant Light {
+    red;
+    green;
+}
+
+fn main() uses console {
+    match Light.red {
+        case red {
+            print("stop");
+        }
+        case green {
+            print("go");
+        }
+    }
 }
 ```
 

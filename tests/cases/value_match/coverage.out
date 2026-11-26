@@ -1,0 +1,5 @@
+PASS ok (0ms)
+not run: coverage.vo:6:9 case in text
+not run: coverage.vo:9:9 else in text
+coverage: 1 of 1 function, 1 of 3 branches
+1 passed, 0 failed

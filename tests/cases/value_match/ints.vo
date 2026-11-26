@@ -1,0 +1,40 @@
+const limit = 429;
+
+# Every arm and `else` return, so the function needs no `return` after the match.
+fn text(status: int) -> str {
+    match status {
+        case 200 {
+            return "ok";
+        }
+        case 404 {
+            return "not found";
+        }
+        case limit {
+            return "slow down";
+        }
+        case -1 {
+            return "unknown";
+        }
+        case 0x10 {
+            return "sixteen";
+        }
+        else {
+            return "other";
+        }
+    }
+}
+
+fn main() uses console {
+    for s in [200, 404, 429, -1, 16, 500] {
+        print(text(s));
+    }
+    var n = 0;
+    match n + 1 {
+        case 1 {
+            set n = 10;
+        }
+        else {
+        }
+    }
+    print(str(n));
+}

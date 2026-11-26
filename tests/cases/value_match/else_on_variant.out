@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0415","name":"match_else_exhaustive","severity":"error","file":"else_on_variant.vo","start":{"line":14,"col":9},"end":{"line":16,"col":10},"text":"else {\n            print(\"never\");\n        }","message":"A `match` on a variant lists every case: no `else`.","fixes":[{"file":"else_on_variant.vo","start":{"line":14,"col":9},"end":{"line":16,"col":10},"replacement":""}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

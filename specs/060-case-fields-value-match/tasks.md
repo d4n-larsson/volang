@@ -45,15 +45,15 @@ contracts/diagnostics.md, quickstart.md
 
 ## Phase 1: Setup
 
-- [ ] T001 `tools/quick.sh`: a new area `match` (cases `value_match case_fields check parse fmt run query
+- [X] T001 `tools/quick.sh`: a new area `match` (cases `value_match case_fields check parse fmt run query
   edit doc json prop`; scripts `apply_fixes.py`, `catalog.py`, `ref_examples.py`, `fmt_corpus.py`,
   `lsp.py`, `doc_conformance.py`), listed among the known areas in the "unknown area" message;
   `tests/apply_fixes.py` lists `value_match` and `case_fields` among its case folders.
-- [ ] T002 [P] `specs/060-case-fields-value-match/results.md`: SC-001–SC-005 (pending; SC-002 dropped),
+- [X] T002 [P] `specs/060-case-fields-value-match/results.md`: SC-001–SC-005 (pending; SC-002 dropped),
   Verification, Deviations (start with FR-005's printing and US3, research R4 and R8).
-- [ ] T003 [P] `specs/060-case-fields-value-match/contracts/codes.md` in the format of spec 059's (an
+- [X] T003 [P] `specs/060-case-fields-value-match/contracts/codes.md` in the format of spec 059's (an
   empty table, rows added by the tasks that implement codes); `tests/catalog.py` lists spec 060.
-- [ ] T004 [P] Baselines in `results.md`: the reference's word count (11,538), `vo check` times (best of
+- [X] T004 [P] Baselines in `results.md`: the reference's word count (11,538), `vo check` times (best of
   5) of `examples/notes-api/main.vo`, `examples/expenses/main.vo` and the 8,000-item program of
   `tests/perf.sh`; the JSON written for `time.LocalError.repeated(...)` and
   `ExpenseError.bad_date(...)` values (saved to `tests/cases/case_fields/json_baseline.out` for T030).
@@ -62,12 +62,12 @@ contracts/diagnostics.md, quickstart.md
 
 ## Phase 2: Foundational (blocking)
 
-- [ ] T005 Audit, then guard, every place that reads an arm as a name: `src/check.c` (`:882` ok/err
+- [X] T005 Audit, then guard, every place that reads an arm as a name: `src/check.c` (`:882` ok/err
   pre-scan, `:979`, `:1007`), `src/fmt.c:793`, `src/check_structure.c:443-446` (`norm`), the other
   `N_MATCH` walkers (`check_structure.c:167, 202, 438, 604, 926`; `compile.c:378, 433`;
   `vm.c:1133`): each branches on `arm->kind` and the arm's `a.n` kind, so a value arm or `N_ELSE_ARM`
   (T007) is skipped or handled, never read as a `Str*`. `make test`: no change.
-- [ ] T006 [P] `tests/fuzz.py`: noise for the new forms (`case 200 {`, `case -1 {`, `case "a" {`,
+- [X] T006 [P] `tests/fuzz.py`: noise for the new forms (`case 200 {`, `case -1 {`, `case "a" {`,
   `else {`, `case x.y {`, `name { a: int; b: str; }`, `T.c { a: 1, b: 2 }`, `T.c {`, `T.c { a`), well
   formed and broken; `python3 tests/fuzz.py --iterations 200 --seed 1` passes.
 
@@ -81,7 +81,7 @@ and types, compiled with existing opcodes.
 **Independent Test**: quickstart step 2 prints `not found slow down other`; each US2 acceptance scenario
 is a golden case.
 
-- [ ] T007 [US2] Golden cases first, `tests/cases/value_match/`: `ints.vo` (run: literal arms, `-1`,
+- [X] T007 [US2] Golden cases first, `tests/cases/value_match/`: `ints.vo` (run: literal arms, `-1`,
   `0x10`, a constant arm, `else`; a function returning from every arm needs no `return` after it),
   `strs.vo` (run: string arms, a constant, `else`, byte comparison: `"É"` vs `"é"` distinct),
   `no_else.vo` (check: E0414 with its fix, scenario 1), `repeat.vo` (check: `case 200` twice, and a
@@ -89,12 +89,12 @@ is a golden case.
   "200"` on an `int`: E0301, scenario 3), `scrutinee.vo` (check: `match` on a `float`, `bool`, `bytes`,
   list, map and record: E0345, scenario 4), `else_on_variant.vo` (check: E0415 with its fix),
   `const_unknown.vo` (check: an arm name that is no constant of the type: E0201). Fail today.
-- [ ] T008 [US2] `src/parse.c`, `src/vo.h`: `N_ELSE_ARM` (new node kind, documented: C body); in
+- [X] T008 [US2] `src/parse.c`, `src/vo.h`: `N_ELSE_ARM` (new node kind, documented: C body); in
   `parse_stmt`'s match (`parse.c:1068-1103`) an arm is `case` followed by an int literal (with a leading
   `-`), a string literal, or a name (`case name`, `case name(...)`, a constant; a module constant `m.name`
   through the spec 058 qualified-name path), then a block; `else` + block ends the arms; anything after
   `else` is E0110.
-- [ ] T009 [US2] `src/check.c` (`check_match` `:877`, `check_arm` `:1000`, `report_missing_cases`
+- [X] T009 [US2] `src/check.c` (`check_match` `:877`, `check_arm` `:1000`, `report_missing_cases`
   `:1050`): an `int`/`str` scrutinee checks value arms (a literal of the type, or a name resolving to a
   constant of the type through `scope_find`/`const_eval`, else E0201; another type E0301; equal values
   E0402 with today's fix); no `else`: E0414, fix inserting `else {\n}` before the match's `}`; `else` on
@@ -102,14 +102,14 @@ is a golden case.
   E0301 "`match` needs a variant or result value", `check.c:893`; update the golden cases that expect
   it); the match terminates when every arm and `else` do. Catalog entries and codes rows for E0345,
   E0414, E0415.
-- [ ] T010 [US2] `src/compile.c` (`cmatch` `:370-388`): a value match compiles to the scrutinee in a
+- [X] T010 [US2] `src/compile.c` (`cmatch` `:370-388`): a value match compiles to the scrutinee in a
   register, then per arm `OPC_JNE_K` (an int in 32 bits) or `OPC_JNE` (other ints) or `OP_EQ` + `OPC_JF`
   (strings), the body, a jump to the end; `else` last; each arm and `else` a coverage point (`COV_CASE`);
   no new opcode. Accept T007's run cases; `tests/diff_engines.py` unchanged (generated programs do not
   use the new form).
-- [ ] T011 [P] [US2] `src/fmt.c`: value arms (`case 200 {`, `case "a" {`, `case -1 {`, `case limit {`) and
+- [X] T011 [P] [US2] `src/fmt.c`: value arms (`case 200 {`, `case "a" {`, `case -1 {`, `case limit {`) and
   `else {` print in canonical form (contracts/syntax.md); golden case `tests/cases/fmt/value_match.vo`.
-- [ ] T012 [US2] Coverage and mutation: `vo test --coverage` lists an unrun value arm and an unrun `else`
+- [X] T012 [US2] Coverage and mutation: `vo test --coverage` lists an unrun value arm and an unrun `else`
   (golden case `tests/cases/value_match/coverage.cmd`); `--mutate` behaves as for `if` chains (no new
   mutants required; state the outcome in `results.md`).
 

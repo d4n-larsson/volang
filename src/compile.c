@@ -367,15 +367,53 @@ void cblock(Node *block)
     for (long i = 0; i < stmts->n; i++) cstmt(vec_get(stmts, i));
 }
 
-/* match: the scrutinee once, then the arms in source order. */
+/* Spec 060: the jump past a value arm when the scrutinee (int or str, in scrut) differs from its value. */
+static long c_value_arm(Node *arm, long scrut, int is_int)
+{
+    Node *v = arm->a.n;
+    long mark = c_temp;
+    long at;
+    if (is_int && v->kind == N_INT && c_fits32(v->a.i)) {
+        at = c_emit(OPC_JNE_K, scrut, v->a.i, 0, arm);
+        vec_push(c_fix, (void *)at);
+    } else if (is_int) {
+        long r = cexpr(v, -1);
+        at = c_emit(OPC_JNE, scrut, r, 0, arm);
+        vec_push(c_fix, (void *)at);
+    } else {
+        long r = cexpr(v, -1);
+        long eq = c_dst(-1);
+        c_emit(OP_EQ + (OPC_ADD_INT - OP_ADD_INT), eq, scrut, r, arm); /* str: equal bytes, as `==` */
+        at = c_jump(OPC_JF, eq, 0, arm);
+    }
+    c_temp = mark;
+    return at;
+}
+
+/* match: the scrutinee once, then the arms in source order; on an int or str (spec 060) each arm compares
+ * its value, and `else` runs when none matched. */
 static void cmatch(Node *st)
 {
     long scrut = cexpr(st->a.n, -1);
     Vec *ends = vec_new(); /* jumps to the end */
     Vec *arms = st->b.v;
+    int values = st->a.n->type && (st->a.n->type->kind == TY_INT || st->a.n->type->kind == TY_STR);
     for (long i = 0; i < arms->n; i++) {
         Node *arm = vec_get(arms, i);
+        if (arm->kind == N_ELSE_ARM) {
+            c_cover(arm, COV_ELSE);
+            cblock(arm->c.n);
+            continue;
+        }
         if (arm->kind != N_ARM) continue;
+        if (values) {
+            long next = c_value_arm(arm, scrut, st->a.n->type->kind == TY_INT);
+            c_cover(arm, COV_CASE);
+            cblock(arm->c.n);
+            vec_push(ends, (void *)c_jump(OPC_JMP, 0, 0, arm));
+            c_target(next, c_here());
+            continue;
+        }
         long next = c_emit(OPC_JTAG_NE, arm->d.i, scrut, 0, arm); /* not this case: the next arm */
         vec_push(c_fix, (void *)next);
         if (arm->e.i >= 0) c_emit(OPC_PAYLOAD, arm->e.i * 8, scrut, 0, arm); /* the binding */

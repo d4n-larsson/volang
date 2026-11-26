@@ -70,7 +70,11 @@ def mutate(data, rng):
                                     b"uses json.", b"json.Json[", b"json.parse_json(", b"bytes.", b"\nimport std.bytes;\n",
                                     # spec 059: untyped anonymous functions and `=>`
                                     b"=>", b"fn(a,) =>", b"fn(a b)", b"fn(a) =>;", b"fn(a) => {", b"fn(a: ) =>",
-                                    b"fn(x) => x", b"fn(a, b) => a + b", b"fn() =>", b" => "])
+                                    b"fn(x) => x", b"fn(a, b) => a + b", b"fn() =>", b" => ",
+                                    # spec 060: value arms, `else`, case fields
+                                    b"case 200 {", b"case -1 {", b"case \"a\" {", b"else {", b"case x.y {",
+                                    b"else { } case 1 { }", b" { a: int; b: str; }", b"T.c { a: 1, b: 2 }", b"T.c {",
+                                    b"T.c { a"])
     return bytes(data)
 
 

@@ -1,0 +1,14 @@
+fn text(status: int) -> str {
+    match status {
+        case "200" {
+            return "ok";
+        }
+        else {
+            return "other";
+        }
+    }
+}
+
+fn main() uses console {
+    print(text(200));
+}

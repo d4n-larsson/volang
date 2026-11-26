@@ -1,0 +1,18 @@
+variant Light {
+    red;
+    green;
+}
+
+fn main() uses console {
+    match Light.red {
+        case red {
+            print("stop");
+        }
+        case green {
+            print("go");
+        }
+        else {
+            print("never");
+        }
+    }
+}

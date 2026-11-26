@@ -1,0 +1,11 @@
+const limit = 429;
+
+fn text(status: int) -> str {
+    match status { case 200 { return "ok"; } case -1 {return "unknown";}
+        case limit { return "slow down"; }
+    else { return "other"; } }
+}
+
+fn main() uses console {
+    print(text(200));
+}

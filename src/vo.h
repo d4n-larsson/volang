@@ -302,6 +302,7 @@
 #define N_ANNOTATION (53) /* spec 012: `@NAME(STR, ...)`: A name node, B vec of N_STR; an item, before the item it annotates */
 #define N_NEW_COLL (54) /* spec 014: `new ordered_map[K, V]` etc.: A the collection type node */
 #define N_EFFECTS (55) /* spec 030: `effects Name = e, ...;`: A name node, B N_USES of the written effects, C expanded EffSet | 0, D 1 while expanding (cycle check), E 1 once a clause or set names it */
+#define N_ELSE_ARM (57) /* spec 060: `else { ... }`, the last arm of a match on an int or str: C body */
 #define N_CONST (56) /* spec 031: `const name[: type] = expr;`: A name node, B type node|0, C expression (folded to its literal once evaluated), D evaluation state (CS_*) */
 #define N_CALL_VALUE (52) /* A callee expr, B args vec, C how (CV_*), D field index (CV_FIELD) */
 #define TPC_NONE (0)

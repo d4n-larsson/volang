@@ -874,24 +874,101 @@ void check_cond(Node *expr)
     ck_err1("E0301", expr, "A condition must be `bool`, found `$1`.", ty_name(t));
 }
 
+/* Spec 060: the value of a checked arm (a literal, a negated int literal, or a constant turned into its
+ * literal by const_use): 1, with *i or *s set; 0 for anything else. */
+static int arm_value(Node *v, long *i, Str **s)
+{
+    if (v->kind == N_INT) return *i = v->a.i, 1;
+    if (v->kind == N_STR) return *s = v->a.s, 1;
+    if (v->kind == N_UNARY && v->a.n && v->a.n->kind == N_INT) return *i = -v->a.n->a.i, 1;
+    return 0;
+}
+
+/* Spec 060: a match on an int or str: each arm a literal or a constant of the scrutinee's type, distinct
+ * (E0402), and one `else` last (E0414 when missing, with a fix inserting it). */
+static void check_value_match(Node *match, Type *st)
+{
+    Vec *arms = match->b.v;
+    Vec *seen = vec_new(); /* the arms checked so far, with a value */
+    int all_end = 1, has_else = 0;
+    for (long k = 0; k < arms->n; k++) {
+        Node *arm = vec_get(arms, k);
+        Sym *saved = ck_scope;
+        if (arm->kind == N_ELSE_ARM) {
+            has_else = 1;
+            check_block(arm->c.n);
+            scope_leave(saved);
+            if (!terminates(arm->c.n)) all_end = 0;
+            continue;
+        }
+        if (arm->kind != N_ARM) continue;
+        arm->d.i = -1;
+        Node *v = arm->a.n;
+        if (v && v->kind == N_NAME) v->kind = N_IDENT; /* a constant's name: checked as a use of it */
+        if (v) {
+            Type *t = check_expr(v, st);
+            long iv = 0;
+            Str *sv = 0;
+            if (!ty_bad(t) && t != st) {
+                ck_mismatch(v, st, t);
+            } else if (!ty_bad(t) && !arm_value(v, &iv, &sv)) {
+                ck_err1("E0201", v, "A `match` arm is a literal or a constant of type `$1`.", ty_name(st));
+            } else if (!ty_bad(t)) {
+                int repeat = 0;
+                for (long j = 0; j < seen->n && !repeat; j++) {
+                    long jv = 0;
+                    Str *js = 0;
+                    arm_value(((Node *)vec_get(seen, j))->a.n, &jv, &js);
+                    repeat = sv ? (js && str_eq(js, sv)) : (!js && jv == iv);
+                }
+                if (repeat) {
+                    Diag *d = ck_err("E0402", v, str_from_cstr("This value is handled by an earlier arm."));
+                    diag_add_fix(d, (int)arm->file, arm->start, arm->end, str_new(0, 0));
+                } else {
+                    vec_push(seen, arm);
+                }
+            }
+        }
+        if (arm->b.n) ck_err1("E0301", arm->b.n, "An arm of a `match` on `$1` binds nothing.", ty_name(st));
+        check_block(arm->c.n);
+        scope_leave(saved);
+        if (!terminates(arm->c.n)) all_end = 0;
+    }
+    if (!has_else) {
+        Diag *d = diag_add("E0414", SEV_ERROR, (int)match->file, match->start, match->a.n->end,
+                           str_from_cstr("A `match` on an `int` or `str` ends with `else { }`: values not listed go "
+                                         "there."));
+        long at = (long)match->end - 1;
+        diag_add_fix(d, (int)match->file, at, at, str_from_cstr("else {\n}\n"));
+        return;
+    }
+    if (all_end) mark_terminates(match);
+}
+
 void check_match(Node *match)
 {
     Node *saved = ck_result_ctx; /* spec 056: arms `ok`/`err` read a lookup's call as the result it gave before */
     for (long i = 0; i < match->b.v->n; i++) {
         Node *arm = vec_get(match->b.v, i);
-        if (arm->kind == N_ARM && arm->a.n && (str_eq_cstr(arm->a.n->a.s, "ok") || str_eq_cstr(arm->a.n->a.s, "err")))
+        if (arm->kind == N_ARM && arm->a.n && arm->a.n->kind == N_NAME &&
+            (str_eq_cstr(arm->a.n->a.s, "ok") || str_eq_cstr(arm->a.n->a.s, "err")))
             ck_result_ctx = match->a.n;
     }
     Type *st = check_expr(match->a.n, 0); /* scrutinee type */
     ck_result_ctx = saved;
     long ncases = 0;
+    if (ty_is(st, TY_INT) || ty_is(st, TY_STR)) { /* spec 060 */
+        check_value_match(match, st);
+        return;
+    }
     if (ty_is(st, TY_RESULT)) {
         ncases = 2;
     } else if (ty_is(st, TY_VARIANT)) {
         ncases = count_members(st->decl.n->b.v);
     } else { /* not matchable: check arm bodies only */
         if (!ty_bad(st))
-            ck_err1("E0301", match->a.n, "`match` needs a variant or result value, found `$1`.", ty_name(st));
+            ck_err1("E0345", match->a.n,
+                    "`match` takes a variant, a `result`, an `int` or a `str`, found `$1`: use `if`.", ty_name(st));
         st = t_error;
     }
     long *seen = alloc((ncases + 1) * 8);
@@ -899,6 +976,16 @@ void check_match(Node *match)
     int all_end = 1; /* all arms terminate */
     for (long i = 0; i < arms->n; i++) {
         Node *arm = vec_get(arms, i);
+        if (arm->kind == N_ELSE_ARM) { /* spec 060: a variant or result match lists every case instead */
+            if (!ty_bad(st)) {
+                Diag *d = ck_err("E0415", arm, str_from_cstr("A `match` on a variant lists every case: no `else`."));
+                diag_add_fix(d, (int)arm->file, arm->start, arm->end, str_new(0, 0));
+            }
+            Sym *outer = ck_scope;
+            check_block(arm->c.n);
+            scope_leave(outer);
+            continue;
+        }
         if (arm->kind != N_ARM) continue;
         check_arm(arm, st, seen);
         if (!terminates(arm->c.n)) all_end = 0;

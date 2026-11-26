@@ -1065,7 +1065,7 @@ static Node *parse_stmt(void)
         if (p_accept(T_DOTDOT)) n->c.n = parse_expr();
         n->d.n = parse_block();
         goto finish;
-    case T_MATCH: /* match expr { case name[(binding)] block ... } */
+    case T_MATCH: /* match expr { case name[(binding)] block ... [else block] } */
         n = p_node(N_MATCH);
         p_next();
         n->a.n = parse_expr();
@@ -1081,10 +1081,24 @@ static Node *parse_stmt(void)
                 continue;
             }
             long arm_start = p_start();
+            if (a == T_ELSE) { /* spec 060: the last arm; anything after it is E0110 (`}` expected) */
+                Node *e = p_node(N_ELSE_ARM);
+                p_next();
+                e->c.n = parse_block();
+                vec_push(n->b.v, p_finish(e, arm_start));
+                break;
+            }
             Node *arm = p_node(N_ARM);
             arm->e.i = -1;
             p_expect(T_CASE);
-            arm->a.n = p_name();
+            int vk = p_kind();
+            if (vk == T_INT || vk == T_STRING || (vk == T_MINUS && p_kind_at(1) == T_INT)) { /* spec 060: a value */
+                arm->a.n = parse_expr();
+                arm->c.n = parse_block();
+                vec_push(n->b.v, p_finish(arm, arm_start));
+                continue;
+            }
+            arm->a.n = p_at_module() ? p_qual_name() : p_name(); /* a case, or a constant (spec 060: `m.limit`) */
             if (p_accept(T_LPAREN)) {
                 if (p_kind() == T_RPAREN) { /* spec 009: `case ok()` */
                     arm->flags |= NF_EMPTY_ARM;

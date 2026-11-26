@@ -39,6 +39,7 @@ cases() {
     consistency) echo "library check generic run fmt lex effects doc" ;; # spec 056
     imports) echo "imports imports_v03 multi packages library check parse fmt query edit doc effect_sets" ;; # spec 058
     lambdas) echo "lambda_types func generic check parse fmt run query" ;; # spec 059
+    match) echo "value_match case_fields check parse fmt run query edit doc json prop" ;; # spec 060
     iteration) echo "run check fmt doc" ;; # spec 046
     workers) echo "workers tasks test doc" ;; # spec 047
     zones) echo "time sleep_steps run check effects replay cli doc" ;; # spec 048
@@ -92,6 +93,7 @@ scripts() { # one per line, with arguments
     consistency) printf '%s\n' catalog.py apply_fixes.py std_names.py libchange_rows.py message_style.py "migrate_056.py --quick" ;; # spec 056
     imports) printf '%s\n' apply_fixes.py catalog.py ref_examples.py fmt_corpus.py "migrate_058.py --quick" ;; # spec 058
     lambdas) printf '%s\n' apply_fixes.py catalog.py ref_examples.py fmt_corpus.py lsp.py ;; # spec 059 (migrate_059.py --quick: T026)
+    match) printf '%s\n' apply_fixes.py catalog.py ref_examples.py fmt_corpus.py lsp.py doc_conformance.py ;; # spec 060
     iteration) printf '%s\n' ref_examples.py doc_conformance.py catalog.py apply_fixes.py iteration.py ;; # spec 046
     workers) printf '%s\n' ref_examples.py doc_conformance.py catalog.py workers.py ;; # spec 047
     zones) printf '%s\n' ref_examples.py doc_conformance.py time_check.py zones.py ;; # spec 048
@@ -197,7 +199,7 @@ for a in $areas; do
     dir:*) dirs="$dirs ${a#dir:}"; continue ;;
     esac
     c=$(cases "$a")
-    if [ -z "$c" ]; then echo "quick: unknown area $a (known: imports lambdas math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits decimal web_security iteration workers zones postgres recorded)"; exit 2; fi
+    if [ -z "$c" ]; then echo "quick: unknown area $a (known: imports lambdas match math format regex sqlite structure serve_workers web effects const typed_errors map_keys build crypto bytes float json text time random collections http fs front query testing tasks trace packages docs cli tcp stream bits decimal web_security iteration workers zones postgres recorded)"; exit 2; fi
     dirs="$dirs $c"; scr="$scr
 $(scripts "$a")"; tgt="$tgt $(targets "$a")"
 done

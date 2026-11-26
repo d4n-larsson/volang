@@ -1,0 +1,3 @@
+{"v":1,"kind":"diagnostic","code":"E0402","name":"duplicate_case","severity":"error","file":"repeat.vo","start":{"line":8,"col":14},"end":{"line":8,"col":17},"text":"200","message":"This value is handled by an earlier arm.","fixes":[{"file":"repeat.vo","start":{"line":8,"col":9},"end":{"line":10,"col":10},"replacement":""}],"related":[]}
+{"v":1,"kind":"diagnostic","code":"E0402","name":"duplicate_case","severity":"error","file":"repeat.vo","start":{"line":11,"col":14},"end":{"line":11,"col":23},"text":"ok_status","message":"This value is handled by an earlier arm.","fixes":[{"file":"repeat.vo","start":{"line":11,"col":9},"end":{"line":13,"col":10},"replacement":""}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":2,"warnings":0,"truncated":0,"files":1}

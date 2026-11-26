@@ -1,0 +1,17 @@
+fn text(status: int) -> str {
+    match status {
+        case 200 {
+            return "ok";
+        }
+        case 404 {
+            return "not found";
+        }
+        else {
+            return "other";
+        }
+    }
+}
+
+test "ok" {
+    expect_eq(text(200), "ok");
+}

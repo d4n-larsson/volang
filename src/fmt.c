@@ -789,8 +789,17 @@ static void fm_stmt_once(Node *s, long level)
                 fm_b('\n');
                 continue;
             }
+            if (arm->kind == N_ELSE_ARM) { /* spec 060 */
+                fm_c("else ");
+                fm_block(arm->c.n, level + 1);
+                fm_b('\n');
+                continue;
+            }
             fm_c("case ");
-            fm_name(arm->a.n);
+            if (arm->a.n && arm->a.n->kind != N_NAME) /* spec 060: a value */
+                fm_expr(arm->a.n, 0);
+            else
+                fm_name(arm->a.n);
             if (arm->flags & NF_EMPTY_ARM) { /* spec 009 */
                 fm_c("()");
             } else if (arm->flags & NF_DISCARD) {

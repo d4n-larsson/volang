@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0414","name":"value_match_else","severity":"error","file":"no_else.vo","start":{"line":2,"col":5},"end":{"line":2,"col":17},"text":"match status","message":"A `match` on an `int` or `str` ends with `else { }`: values not listed go there.","fixes":[{"file":"no_else.vo","start":{"line":6,"col":5},"end":{"line":6,"col":5},"replacement":"else {\n}\n"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

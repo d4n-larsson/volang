@@ -230,13 +230,18 @@ module.exports = grammar({
       optional(seq('..', field('end', $._expression))),
       field('body', $.block),
     ),
-    match_statement: $ => seq('match', field('value', $._expression), '{', repeat($.match_arm), '}'),
+    match_statement: $ => seq('match', field('value', $._expression), '{', repeat($.match_arm), optional($.else_arm), '}'),
     match_arm: $ => seq(
       'case',
-      field('case', choice($.identifier, $.type_identifier)),
-      optional(seq('(', optional(field('binding', choice($.identifier, '_'))), ')')),
+      choice(
+        seq(field('case', choice($.identifier, $.type_identifier)),
+            optional(seq('(', optional(field('binding', choice($.identifier, '_'))), ')'))),
+        // spec 060: a value of an int or str match: a literal, or a module's constant
+        field('value', choice($.integer, seq('-', $.integer), $.string, seq($.identifier, '.', $.identifier))),
+      ),
       field('body', $.block),
     ),
+    else_arm: $ => seq('else', field('body', $.block)), // spec 060
     return_statement: $ => seq('return', optional($._expression), ';'),
     break_statement: _ => seq('break', ';'),
     continue_statement: _ => seq('continue', ';'),

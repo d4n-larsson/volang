@@ -1,0 +1,24 @@
+const json_type = "application/json";
+
+fn kind(content_type: str) -> str {
+    match content_type {
+        case json_type {
+            return "json";
+        }
+        case "text/plain" {
+            return "text";
+        }
+        case "é" {
+            return "small e";
+        }
+        else {
+            return "bytes";
+        }
+    }
+}
+
+fn main() uses console {
+    for t in ["application/json", "text/plain", "é", "É", ""] {
+        print(kind(t));
+    }
+}

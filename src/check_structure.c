@@ -441,8 +441,17 @@ static void norm(SB *sb, Node *n, Vec *names)
         norm_vec(sb, n->b.v, names);
         return;
     case N_ARM:
-        norm_word(sb, "case ", nm(n->a.n));
+        if (n->a.n && n->a.n->kind != N_NAME) { /* spec 060: a value arm */
+            norm_word(sb, "case", 0);
+            norm(sb, n->a.n, names);
+        } else {
+            norm_word(sb, "case ", nm(n->a.n));
+        }
         if (n->b.n) norm_local(sb, nm(n->b.n), names);
+        norm(sb, n->c.n, names);
+        return;
+    case N_ELSE_ARM: /* spec 060 */
+        norm_word(sb, "else", 0);
         norm(sb, n->c.n, names);
         return;
     case N_RETURN:
