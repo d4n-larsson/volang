@@ -656,6 +656,7 @@ void pkg_fail(char *code, Str *message)
 
 long opt_restore;  /* vo package --restore ENTRY */
 long opt_repair;   /* vo package --repair ENTRY (spec 061) */
+long opt_outdated; /* vo package --outdated ENTRY (spec 061) */
 char *opt_pkg_dir; /* vo package --dir DIRECTORY */
 
 typedef struct Dirent64 {
@@ -1796,6 +1797,81 @@ static int pkg_repair(void)
     return sel_apply();
 }
 
+/* What `source` has above `cur`: bit 1 and `compat`, the highest version that can stand in for it; bit 2
+ * and `major`, the highest version that cannot (a new major; below 1.0.0 a new minor). */
+static int pkg_newer(Str *source, long *cur, long *compat, long *major)
+{
+    long h = 0;
+    while (h < source->len && source->data[h] != '#') h++;
+    Str *repo = str_new(source->data, h), *final = 0, *why = 0;
+    Vec *tags = git_versions(repo, &final, &why); /* ascending */
+    if (!tags) pkg_fail("E0706", msg("Cannot read the versions of $1: $2.", repo, why, 0));
+    int r = 0;
+    for (long i = 0; i < tags->n; i++) {
+        GitTag *t = vec_get(tags, i);
+        if (ver_cmp(t->v, cur) <= 0) continue;
+        int fits = compatible(t->v, cur);
+        r |= fits ? 1 : 2;
+        for (int k = 0; k < 3; k++) (fits ? compat : major)[k] = t->v[k];
+    }
+    return r;
+}
+
+/* `vo package --update ENTRY [NAME]`: NAME, or every package the program asks for itself, at the highest
+ * version compatible with the one it has; then selection as for an add. */
+static int pkg_update(Str *name)
+{
+    sel_start();
+    for (long i = 0; i < sels->n; i++) {
+        Sel *s = vec_get(sels, i);
+        long compat[3], major[3];
+        if (name ? !str_eq(s->name, name) : !s->direct) continue;
+        if (pkg_newer(s->source, s->ver, compat, major) & 1) sel_set(s, compat);
+        s->named = s->has_own = 1;
+        for (int k = 0; k < 3; k++) s->own[k] = s->ver[k];
+    }
+    sel_run();
+    return sel_apply();
+}
+
+/* `vo package --outdated ENTRY`: each versioned package that has something newer. Nothing is written.
+ * ponytail: one request per package; remember the answer per repository when monorepos make that slow. */
+static int pkg_outdated(void)
+{
+    int any = 0;
+    pkg_sort();
+    for (long i = 0; i < pkg_entries->n; i++) {
+        Pkg *e = vec_get(pkg_entries, i);
+        long compat[3], major[3];
+        int r = e->versioned ? pkg_newer(e->url, e->ver, compat, major) : 0;
+        if (!r) continue;
+        any = 1;
+        SB *sb = sb_new();
+        Str *c = r & 1 ? pkg_ver_text(compat) : 0, *m = r & 2 ? pkg_ver_text(major) : 0;
+        if (opt_json) {
+            sb_cstr(sb, "{\"v\":1,\"kind\":\"package\",\"name\":");
+            json_str_into(sb, e->name);
+            sb_cstr(sb, ",\"change\":\"outdated\",\"version\":\"");
+            sb_str(sb, pkg_ver_text(e->ver));
+            sb_cstr(sb, "\",\"compatible\":");
+            if (c) json_str_into(sb, c);
+            else sb_cstr(sb, "null");
+            sb_cstr(sb, ",\"newer_major\":");
+            if (m) json_str_into(sb, m);
+            else sb_cstr(sb, "null");
+            sb_cstr(sb, "}\n");
+        } else {
+            sb_str(sb, msg("$1 $2: ", e->name, pkg_ver_text(e->ver), 0));
+            if (c) sb_str(sb, msg(m ? "$1 available; " : "$1 available", c, 0, 0));
+            if (m) sb_str(sb, msg("$1 is a new major (add it with @$1)", m, 0, 0));
+            sb_byte(sb, '\n');
+        }
+        out_bytes(1, sb->ptr, sb->len);
+    }
+    if (!any && !opt_json) out_cstr(1, "all packages are at their newest version\n");
+    return 0;
+}
+
 /* `vo package --restore ENTRY`: every entry with a URL whose directory is missing is fetched again
  * and accepted only at its pinned hash. The manifest is never written. */
 static int pkg_restore(void)
@@ -1886,17 +1962,18 @@ int cmd_package(void)
 {
     char **args = (char **)pos_args;
     if (opt_unpack_pack) return pkg_unpack_pack();
-    long whole = opt_restore + opt_repair; /* the forms that take ENTRY alone */
-    int by_url = !opt_remove && !whole && pos_n == 3 && doc_starts(args[2], "https://");
-    if (opt_remove + whole > 1 || pos_n != (whole ? 1 : 3 - opt_remove)) /* ENTRY [NAME [DIRECTORY | URL]] */
-        usage_error(str_from_cstr("`package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, --restore ENTRY, or --repair ENTRY."));
-    if (!opt_remove && !whole && doc_starts(args[2], "http://"))
+    long whole = opt_restore + opt_repair + opt_outdated + (opt_update && pos_n == 1); /* the forms that take ENTRY alone */
+    int by_url = pos_n == 3 && doc_starts(args[2], "https://");
+    if (opt_remove + opt_restore + opt_repair + opt_outdated + opt_update > 1 || pos_n != (whole ? 1 : 3 - (opt_remove || opt_update))) /* ENTRY [NAME [DIRECTORY | URL]] */
+        usage_error(str_from_cstr("`package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --update ENTRY [NAME], --outdated ENTRY, --repair ENTRY, "
+                                  "--restore ENTRY, or --remove ENTRY NAME."));
+    if (pos_n == 3 && doc_starts(args[2], "http://"))
         usage_error(str_from_cstr("A package is fetched from an https:// URL only."));
     pkg_command = 1;
-    if (opt_dry_run && !by_url && !opt_repair) usage_error(str_from_cstr("`--dry-run` goes with a versioned package, `--update`, `--repair` or `--remove`."));
+    if (opt_dry_run && !by_url && !opt_repair && !opt_update) usage_error(str_from_cstr("`--dry-run` goes with a versioned package, `--update`, `--repair` or `--remove`."));
     if (opt_pkg_dir && !by_url) usage_error(str_from_cstr("`--dir` goes with a URL: `vo package --dir DIRECTORY ENTRY NAME URL`."));
-    if (opt_ca_files && !by_url && !whole)
-        usage_error(str_from_cstr("`--ca-file` goes with a URL, `--restore` or `--repair`: the other forms fetch nothing."));
+    if (opt_ca_files && !by_url && !whole && !opt_update)
+        usage_error(str_from_cstr("`--ca-file` goes with a URL, `--update`, `--outdated`, `--repair` or `--restore`: the other forms fetch nothing."));
     if (!whole && !pkg_name_ok(args[1], cstr_len(args[1])))
         usage_error_arg("A package name is an identifier other than std: `$1` is not.", args[1]);
     Str *name = whole ? 0 : str_from_cstr(args[1]);
@@ -1912,6 +1989,15 @@ int cmd_package(void)
     }
     if (opt_restore) return pkg_restore();
     if (opt_repair) return pkg_repair();
+    if (opt_outdated) return pkg_outdated();
+    if (opt_update) {
+        Pkg *u = name ? pkg_find(name) : 0;
+        if (name && !u) usage_error_arg("No package `$1` is listed in the manifest.", args[1]);
+        if (name && !u->versioned)
+            usage_error_arg("Package `$1` has no version to update from: pin it again with `vo package ENTRY $1 DIRECTORY`, or add it "
+                            "from its repository with `vo package ENTRY $1 SOURCE`.", args[1]);
+        return pkg_update(name);
+    }
     if (by_url) { /* spec 061 (research R3): a repository unless the path ends as an archive does */
         Str *url = str_from_cstr(args[2]);
         long ver[3] = {-1, 0, 0}, hash = 0, at = url->len;

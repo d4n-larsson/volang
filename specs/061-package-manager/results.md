@@ -45,6 +45,12 @@ Pending (measured in T035).
   is not the version's content: E0701; option checks). `tests/package_fetch.py` quiet group: `check`,
   `run`, `test`, `build`, `doc` on a program with versioned packages open no socket, with the manifest
   complete and with a requirement missing (10 cases, SC-004).
+- US4 (T024–T025): `tests/cases/packages/outdated` (a compatible update and a new major, only a new
+  major, nothing newer omitted, `all packages are at their newest version`, JSON, option checks, E0706
+  with the server stopped, manifest untouched) and `update_versions` (`--update ENTRY money` 1.2.0 →
+  1.6.0 with `pads` raised and `gains: clock`; `--dry-run`; JSON; `--update ENTRY` moves the direct
+  packages and leaves the indirect `pads` at 1.0.2 with 2.1.0 released; unknown and version-less names
+  are T0001; `@2.0.0` named explicitly is taken).
 
 ## Deviations
 
@@ -85,3 +91,9 @@ Pending (measured in T035).
 - Repair reports a package fetched again at its pin as `restored`; a directory that is present with
   other content than its pin is E0701 and is not replaced (remove it first).
 - T020's `sed` and `cat` are `write` steps with the manifest text.
+- `--outdated` asks each package's repository once (T025 said once per distinct source); packages of one
+  repository are asked again (`ponytail:` comment in `pkg_outdated`). Below 1.0.0 a higher minor is
+  listed as "a new major". With `--json` and nothing newer it prints nothing.
+- `--update ENTRY NAME` of an indirect package raises it and leaves it indirect.
+- The update case's new version gains `clock`, not `net("rates.example.com")`: it reuses the `graph`
+  repositories.

@@ -1,0 +1,3 @@
+export fn left(s: str) -> str {
+    return s;
+}

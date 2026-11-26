@@ -328,6 +328,8 @@ int vo_main(long argc, char **argv, char **env)
             opt_restore = 1;
         } else if (cstr_eq(a, "--repair")) { /* spec 061: vo package */
             opt_repair = 1;
+        } else if (cstr_eq(a, "--outdated")) {
+            opt_outdated = 1;
         } else if (cstr_eq(a, "--dir")) {
             if (i >= argc || !*argv[i]) usage_error(str_from_cstr("`--dir` needs a directory."));
             opt_pkg_dir = argv[i++];
@@ -478,7 +480,8 @@ void opt_spec006_check(void)
         only_with(opt_run_given, opt_run_given[2] == 's' || opt_run_given[2] == 'c' ? "run` or `test" : "run`, `test` or `replay");
     if (opt_filter && cmd != CMD_TEST) only_with("--filter", "test");
     if (opt_check && cmd != CMD_FMT) only_with("--check", "fmt");
-    if (opt_update && cmd != CMD_EFFECTS) only_with("--update", "effects");
+    if (opt_update && cmd != CMD_EFFECTS && cmd != CMD_PACKAGE) only_with("--update", "effects` or `package");
+    if (opt_outdated && cmd != CMD_PACKAGE) only_with("--outdated", "package");
     if (opt_ops_given && cmd != CMD_RUN) only_with((char *)opt_ops_given, "run"); /* spec 055 */
     if (opt_trace && cmd != CMD_RUN && cmd != CMD_TEST && cmd != CMD_REPLAY)
         only_with("--trace", "run`, `test` or `replay");

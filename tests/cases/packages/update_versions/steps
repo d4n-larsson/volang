@@ -1,0 +1,17 @@
+server git a.test
+vo package --ca-file test-ca.pem a/main.vo money https://127.0.0.1:{port}/money@1.2.0
+vo package --ca-file test-ca.pem --update --dry-run a/main.vo money
+vo package --json --ca-file test-ca.pem --update a/main.vo money
+vo package --ca-file test-ca.pem --update a/main.vo money
+vo package --ca-file test-ca.pem --update a/main.vo unknown
+vo package a/main.vo loc a/lib
+vo package --ca-file test-ca.pem --update a/main.vo loc
+vo package --ca-file test-ca.pem --update a/main.vo money extra
+vo package --ca-file test-ca.pem a/main.vo money https://127.0.0.1:{port}/money@2.0.0
+vo package --ca-file test-ca.pem b/main.vo money https://127.0.0.1:{port}/money@1.2.0
+vo package --ca-file test-ca.pem b/main.vo report https://127.0.0.1:{port}/report
+vo package --ca-file test-ca.pem b/main.vo ledger https://127.0.0.1:{port}/ledger
+vo package --ca-file test-ca.pem --update b/main.vo pads
+vo package --ca-file test-ca.pem --update b/main.vo
+vo run b/main.vo
+keep a/vo.packages b/vo.packages

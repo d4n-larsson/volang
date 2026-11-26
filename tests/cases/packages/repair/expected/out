@@ -95,11 +95,11 @@ error[E0701]: Package `money`: version 1.4.0 now hashes to sha256:d5118c254b55cb
 --- stderr
 --- exit 65
 $ vo package --repair --remove e/main.vo
-error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, --restore ENTRY, or --repair ENTRY.
+error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --update ENTRY [NAME], --outdated ENTRY, --repair ENTRY, --restore ENTRY, or --remove ENTRY NAME.
 --- stderr
 --- exit 64
 $ vo package --repair e/main.vo money
-error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, --restore ENTRY, or --repair ENTRY.
+error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --update ENTRY [NAME], --outdated ENTRY, --repair ENTRY, --restore ENTRY, or --remove ENTRY NAME.
 --- stderr
 --- exit 64
 $ vo check --repair e/main.vo

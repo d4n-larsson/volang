@@ -1,0 +1,15 @@
+server git a.test
+vo package --ca-file test-ca.pem a/main.vo report https://127.0.0.1:{port}/report
+vo package --ca-file test-ca.pem a/main.vo money https://127.0.0.1:{port}/money@1.2.0
+vo package --ca-file test-ca.pem --outdated a/main.vo
+vo package --json --ca-file test-ca.pem --outdated a/main.vo
+vo package --ca-file test-ca.pem b/main.vo pads https://127.0.0.1:{port}/pads
+vo package b/main.vo loc b
+vo package --ca-file test-ca.pem --outdated b/main.vo
+vo package --json --ca-file test-ca.pem --outdated b/main.vo
+vo package --ca-file test-ca.pem --outdated a/main.vo money
+vo package --ca-file test-ca.pem --outdated --update a/main.vo
+vo check --outdated a/main.vo
+keep a/vo.packages
+stop-server
+vo package --ca-file test-ca.pem --outdated a/main.vo

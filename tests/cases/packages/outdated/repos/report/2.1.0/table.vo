@@ -1,0 +1,9 @@
+import money.format;
+
+export fn title() -> str {
+    return "total" + format.cents(1234);
+}
+
+export fn seed() -> int uses random {
+    return random_int(1, 6);
+}

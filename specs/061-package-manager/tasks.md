@@ -244,7 +244,7 @@ program runs.
 
 ## Phase 6: User Story 4 - See what is newer, and take it (P2)
 
-- [ ] T024 [US4] Step cases, failing first: `tests/cases/packages/outdated/`: the listing of
+- [X] T024 [US4] Step cases, failing first: `tests/cases/packages/outdated/`: the listing of
   contracts/package-command.md for `money` at 1.2.0 (1.6.0 available; 2.0.0 a new major), a package
   with only a new major, one with nothing newer omitted, `all packages are at their newest version`,
   `--json` (`change":"outdated"`, `compatible`, `newer_major`), exit 0; the manifest untouched.
@@ -253,7 +253,7 @@ program runs.
   and leaves an `indirect` one where its requirers ask; `--update --dry-run`; `--update main.vo
   unknown` (T0001); `--update` of a version-less entry (T0001 naming the add forms); `money@2.0.0` named
   explicitly is taken.
-- [ ] T025 [US4] `src/packages.c`: `--outdated` (`git_versions` once per distinct source; highest
+- [X] T025 [US4] `src/packages.c`: `--outdated` (`git_versions` once per distinct source; highest
   compatible and highest newer-major per data-model.md) and `--update ENTRY [NAME]` (the roots' versions
   replaced by the highest compatible ones, then selection, commit and reports as T015); options in
   `src/main.c`.

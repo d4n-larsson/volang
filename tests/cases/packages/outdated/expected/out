@@ -1,0 +1,56 @@
+$ vo package --ca-file test-ca.pem a/main.vo report https://127.0.0.1:{port}/report
+added money 1.4.0 packages/money sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by report)
+  effects: none
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by report, money)
+  effects: none
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+total gains: random
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem a/main.vo money https://127.0.0.1:{port}/money@1.2.0
+unchanged money 1.4.0
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem --outdated a/main.vo
+money 1.4.0: 1.6.0 available; 2.0.0 is a new major (add it with @2.0.0)
+pads 1.0.2: 2.1.0 is a new major (add it with @2.1.0)
+--- stderr
+--- exit 0
+$ vo package --json --ca-file test-ca.pem --outdated a/main.vo
+{"v":1,"kind":"package","name":"money","change":"outdated","version":"1.4.0","compatible":"1.6.0","newer_major":"2.0.0"}
+{"v":1,"kind":"package","name":"pads","change":"outdated","version":"1.0.2","compatible":null,"newer_major":"2.1.0"}
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem b/main.vo pads https://127.0.0.1:{port}/pads
+added pads 2.1.0 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb from https://127.0.0.1:{port}/pads
+  effects: none
+--- stderr
+--- exit 0
+$ vo package b/main.vo loc b
+added loc . sha256:5fa03062976381ab3eee3a3f7e099709870a3645c3adc098a609f81ce95538a0
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem --outdated b/main.vo
+all packages are at their newest version
+--- stderr
+--- exit 0
+$ vo package --json --ca-file test-ca.pem --outdated b/main.vo
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem --outdated a/main.vo money
+error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --update ENTRY [NAME], --outdated ENTRY, --repair ENTRY, --restore ENTRY, or --remove ENTRY NAME.
+--- stderr
+--- exit 64
+$ vo package --ca-file test-ca.pem --outdated --update a/main.vo
+error[T0001]: `package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --update ENTRY [NAME], --outdated ENTRY, --repair ENTRY, --restore ENTRY, or --remove ENTRY NAME.
+--- stderr
+--- exit 64
+$ vo check --outdated a/main.vo
+error[T0001]: `--outdated` only works with `package`.
+--- stderr
+--- exit 64
+$ vo package --ca-file test-ca.pem --outdated a/main.vo
+error[E0706]: Cannot read the versions of https://127.0.0.1:{port}/money: connection refused by 127.0.0.1:{port}.
+--- stderr
+--- exit 65

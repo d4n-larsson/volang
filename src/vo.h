@@ -2708,6 +2708,7 @@ extern Vec *git_versions(Str *repo, Str **final_url, Str **why);
 extern Vec *git_fetch(Str *repo, char *id, Str *folder, Str **why);
 extern long opt_restore;
 extern long opt_repair;
+extern long opt_outdated;
 extern long opt_unpack_pack;
 extern Vec *opt_ca_files;
 extern char *opt_pkg_dir;

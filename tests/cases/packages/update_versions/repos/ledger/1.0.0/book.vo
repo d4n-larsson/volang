@@ -1,0 +1,5 @@
+import money.format;
+
+export fn line() -> str {
+    return "line" + format.cents(99);
+}
