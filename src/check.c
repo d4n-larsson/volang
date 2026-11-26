@@ -184,6 +184,14 @@ void ty_name_into(SB *sb, Type *t)
     case TY_RECORD:
     case TY_VARIANT:
         ty_module_prefix(sb, t->decl.n); /* spec 058: `json.Json` where the file writes that */
+        if (t->b.v && case_record(t->decl.n)) { /* spec 060: `Tree[int].node` */
+            Str *name = t->decl.n->a.n->a.s;
+            long dot = str_find_from(name, str_from_cstr("."), 0);
+            sb_str(sb, str_new(name->data, dot));
+            ty_args_into(sb, t->b.v);
+            sb_str(sb, str_new(name->data + dot, name->len - dot));
+            return;
+        }
         sb_str(sb, t->decl.n->a.n->a.s);
         if (t->b.v) ty_args_into(sb, t->b.v); /* an instance: Name[args] */
         return;
@@ -641,6 +649,10 @@ static void check_set(Node *st)
     ck_set_place = place, ck_set_value = st->b.n; /* spec 056: a renamed field's fix converts the value */
     Type *pt = check_place(place, 0);
     ck_set_place = ck_set_value = 0;
+    if (place->kind == N_FIELD && place->a.n->type && ty_is(place->a.n->type, TY_RECORD) &&
+        case_record(place->a.n->type->decl.n)) /* spec 060 */
+        ck_err1("E0344", place, "The fields of a case are read-only: build a new value, `$1 { ... }`.",
+                place->a.n->type->decl.n->a.n->a.s);
     if (place->kind == N_INDEX && place->a.n->type && ty_is(place->a.n->type, TY_BYTES)) { /* spec 021 */
         ck_err("E0308", place, str_from_cstr("`bytes` cannot be changed: build new bytes with `slice`, `+` or "
                                              "`std.bytes.from_ints`."));
@@ -1157,6 +1169,42 @@ int report_missing_cases(Node *match, Type *type, long *seen, long ncases)
     return 1;
 }
 
+/* Spec 060: decl is a case's hidden record (its name `Variant.case` has a dot, no written record's does). */
+int case_record(Node *decl)
+{
+    return decl && decl->kind == N_RECORD && str_find_from(decl->a.n->a.s, str_from_cstr("."), 0) >= 0;
+}
+
+/* Spec 060: each case with fields has a hidden record (research R1), defined in the file scope under its
+ * name `Variant.case` (no naming check: the name is its variant's and its case's), exported with its
+ * variant so importers bind it as `m.Variant.case`. */
+static void define_hidden_records(Vec *items)
+{
+    for (long i = 0; i < items->n; i++) {
+        Node *it = vec_get(items, i);
+        if (it->kind != N_VARIANT || !it->a.n) continue;
+        for (long j = 0; j < it->b.v->n; j++) {
+            Node *m = vec_get(it->b.v, j);
+            if (m->kind != N_CASE_DECL || !m->c.n) continue;
+            Node *r = m->c.n;
+            if (r->b.v->n == 1) { /* E0216: one value is written `name(T);` */
+                Node *f = vec_get(r->b.v, 0);
+                FileRec *src = file_get((int)m->file);
+                SB *sb = sb_new();
+                sb_str(sb, m->a.n->a.s);
+                sb_byte(sb, '(');
+                sb_str(sb, str_new(src->text + f->b.n->start, (long)f->b.n->end - (long)f->b.n->start));
+                sb_cstr(sb, ");");
+                Str *form = sb_finish(sb);
+                Diag *d = ck_err1("E0216", m->a.n, "A case with one value is written `$1`.", str_new(form->data, form->len - 1));
+                diag_add_fix(d, (int)m->file, m->start, m->end, form);
+            }
+            r->flags |= it->flags & NF_EXPORT;
+            if (!scope_find(r->a.n->a.s)) scope_add(sym_new(r->a.n->a.s, SYM_RECORD, r, 0, r->a.n));
+        }
+    }
+}
+
 /* Adds a top-level fn, record or variant to the file scope (E0202 on duplicates). */
 void define_item(Node *item)
 {
@@ -1439,7 +1487,12 @@ static void check_export_types(Vec *items)
         } else if (it->kind == N_RECORD || it->kind == N_VARIANT) { /* fields or cases; comments are skipped */
             for (long j = 0; j < it->b.v->n; j++) {
                 Node *m = vec_get(it->b.v, j);
-                if (m->kind == N_FIELD_DECL || m->kind == N_CASE_DECL) export_type(m->b.n, it);
+                if (m->kind == N_FIELD_DECL || (m->kind == N_CASE_DECL && !m->c.n)) export_type(m->b.n, it);
+                if (m->kind == N_CASE_DECL && m->c.n) /* spec 060: a case's fields, as the variant's own */
+                    for (long f = 0; f < m->c.n->b.v->n; f++) {
+                        Node *fd = vec_get(m->c.n->b.v, f);
+                        if (fd->kind == N_FIELD_DECL) export_type(fd->b.n, it);
+                    }
             }
         }
     }
@@ -1617,12 +1670,21 @@ void check_items(int file, int mode)
     bind_imports(file); /* imported items first (dependencies are already checked) */
     Vec *items = f->ast->a.v;
     for (long i = 0; i < items->n; i++) define_item(vec_get(items, i));
+    define_hidden_records(items); /* spec 060 */
     scope_top_end();
     f->scope = ck_scope;
     const_check_all(items); /* spec 031: before effect sets and signatures, which may name them */
     fx_expand_sets(items); /* spec 030: before any clause names them */
     Vec *saved_keys = key_checks_begin(); /* spec 033: map keys once every record's fields are known */
-    for (long i = 0; i < items->n; i++) resolve_item(ck_item_set(vec_get(items, i)));
+    for (long i = 0; i < items->n; i++) {
+        Node *it = vec_get(items, i);
+        if (it->kind == N_VARIANT) /* spec 060: its cases' hidden records first, which its cases name */
+            for (long j = 0; j < it->b.v->n; j++) {
+                Node *m = vec_get(it->b.v, j);
+                if (m->kind == N_CASE_DECL && m->c.n) resolve_item(ck_item_set(m->c.n));
+            }
+        resolve_item(ck_item_set(it));
+    }
     ck_item_set(0);
     key_checks_end(saved_keys);
     check_export_types(items);

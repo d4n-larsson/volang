@@ -1,0 +1,12 @@
+variant LoadError {
+    malformed {
+        path: str;
+        line: int;
+    }
+    empty;
+}
+
+fn main() uses console {
+    let e = LoadError.malformed { path: "a.txt" };
+    print(str(e == LoadError.empty));
+}

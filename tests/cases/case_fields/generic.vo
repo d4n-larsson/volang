@@ -1,0 +1,32 @@
+variant Tree[T] {
+    leaf;
+    node {
+        left: Tree[T];
+        value: T;
+        right: Tree[T];
+    }
+}
+
+fn total(t: Tree[int]) -> int {
+    match t {
+        case leaf {
+            return 0;
+        }
+        case node(n) {
+            return total(n.left) + n.value + total(n.right);
+        }
+    }
+}
+
+fn main() uses console {
+    let t: Tree[int] = Tree.node { left: Tree.node { left: Tree.leaf, value: 1, right: Tree.leaf }, value: 2, right: Tree.leaf };
+    print(str(total(t)));
+    let words = Tree.node { left: Tree.leaf, value: "a", right: Tree.leaf };
+    match words {
+        case leaf {
+        }
+        case node(n) {
+            print(n.value);
+        }
+    }
+}

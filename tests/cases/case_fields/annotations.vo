@@ -1,0 +1,26 @@
+import std.json;
+
+variant Command {
+    resize {
+        @range(1, 100)
+        width: int;
+        @size(1, 8)
+        name: str;
+    }
+    stop;
+}
+
+fn main() -> result[void] uses console {
+    let good: result[Command, str] = json.from_json(try json.parse_json("{\"resize\":{\"width\":5,\"name\":\"a\"}}"));
+    print(str(good == ok(Command.resize { width: 5, name: "a" })));
+    let bad: result[Command, str] = json.from_json(try json.parse_json("{\"resize\":{\"width\":500,\"name\":\"a\"}}"));
+    match bad {
+        case ok(_) {
+            print("accepted");
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    return ok();
+}

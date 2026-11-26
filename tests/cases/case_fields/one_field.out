@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0216","name":"one_field_case","severity":"error","file":"one_field.vo","start":{"line":2,"col":5},"end":{"line":2,"col":12},"text":"missing","message":"A case with one value is written `missing(str)`.","fixes":[{"file":"one_field.vo","start":{"line":2,"col":5},"end":{"line":4,"col":6},"replacement":"missing(str);"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -472,6 +472,17 @@ static Str *decode_string(long start, long end)
     return str_new(out, n);
 }
 
+/* Spec 060: `Type.case` after a type name names that case's fields (its hidden record). */
+static Node *p_case_name(Node *name)
+{
+    if (p_failed() || p_kind() != T_DOT || p_kind_at(1) != T_IDENT) return name;
+    p_next();
+    Token *c = p_next();
+    Node *q = node_new(N_NAME, name->start, c->end);
+    q->a.s = str_concat(str_concat(name->a.s, str_from_cstr(".")), str_new(p_text + c->start, (long)c->end - (long)c->start));
+    return q;
+}
+
 static Node *parse_type(void)
 {
     long start = p_start();
@@ -493,6 +504,7 @@ static Node *parse_type(void)
         n->a.i = TY_NAMED;
         n->b.n = p_type_name();
         n->c.v = parse_type_args();
+        n->b.n = p_case_name(n->b.n);
     } else if (k == T_KLIST) {
         n->a.i = TY_LIST;
         p_next();
@@ -580,11 +592,34 @@ static Vec *parse_args(void)
     return v;
 }
 
+static void parse_field_inits(Node *n);
+
 /* new Name[args] { field: expr, ... } after `new` (or after the missing-`new` error), with n made. */
 static void parse_record_literal(Node *n)
 {
     n->a.n = p_type_name();
     n->d.v = parse_type_args();
+    n->a.n = p_case_name(n->a.n); /* `new V.case {`: E0201 in the checker */
+    parse_field_inits(n);
+}
+
+/* Spec 060: after `Type.case` (n an N_VCASE), `{ name: ...` builds the case's fields: an N_NEW_RECORD of its
+ * hidden record (named `Type.case`), marked E = 1 (built without `new`), as n's payload. */
+static void p_case_fields(Node *n)
+{
+    if (p_failed() || p_kind() != T_LBRACE || p_kind_at(1) != T_IDENT || p_kind_at(2) != T_COLON) return;
+    Node *lit = node_new(N_NEW_RECORD, p_start(), p_start());
+    Node *name = node_new(N_NAME, n->a.n->start, n->b.n->end);
+    name->a.s = str_concat(str_concat(n->a.n->a.s, str_from_cstr(".")), n->b.n->a.s);
+    lit->a.n = name;
+    lit->e.i = 1;
+    parse_field_inits(lit);
+    n->c.n = p_finish(lit, lit->start);
+}
+
+/* `{ field: expr, ... }` into n->b.v (a record literal's fields). */
+static void parse_field_inits(Node *n)
+{
     n->b.v = vec_new();
     p_expect(T_LBRACE);
     if (p_failed() || p_accept(T_RBRACE)) return; /* spec 029: `new Name {}` for a record without fields */
@@ -618,7 +653,8 @@ static Node *parse_primary(void)
                 n->a.n = p_qual_name();
                 p_expect(T_DOT);
                 n->b.n = p_name();
-                if (!p_failed() && p_accept(T_LPAREN)) {
+                p_case_fields(n);
+                if (!p_failed() && !n->c.n && p_accept(T_LPAREN)) {
                     if (p_kind() == T_RPAREN) {
                         n->flags |= NF_EMPTY_ARM;
                         p_next();
@@ -708,7 +744,8 @@ static Node *parse_primary(void)
         n->a.n = p_name();
         p_expect(T_DOT);
         n->b.n = p_name();
-        if (!p_failed() && p_accept(T_LPAREN)) {
+        p_case_fields(n);
+        if (!p_failed() && !n->c.n && p_accept(T_LPAREN)) {
             if (p_kind() == T_RPAREN) { /* spec 056: `Shape.empty()`, E0411 from the checker */
                 n->flags |= NF_EMPTY_ARM;
                 p_next();
@@ -1453,6 +1490,10 @@ static Vec *parse_members(int kind)
         if (kind == N_FIELD_DECL) {
             p_expect(T_COLON);
             m->b.n = parse_type();
+        } else if (p_kind() == T_LBRACE) { /* spec 060: a case with fields; its hidden record: parse_item */
+            m->c.v = parse_members(N_FIELD_DECL);
+            vec_push(v, p_finish(m, start));
+            continue;
         } else if (p_accept(T_LPAREN)) {
             m->b.n = parse_type();
             p_expect(T_RPAREN);
@@ -1467,6 +1508,43 @@ static Vec *parse_members(int kind)
     }
     p_expect(T_RBRACE);
     return v;
+}
+
+/* Spec 060: each case with fields (C its fields vec) gets its hidden record: an N_RECORD named
+ * `Variant.case` with those fields and its own copy of the variant's type parameters, kept in C; B becomes a
+ * type node naming it with the variant's parameters as its arguments. */
+static void p_hidden_records(Node *variant)
+{
+    for (long i = 0; i < variant->b.v->n; i++) {
+        Node *m = vec_get(variant->b.v, i);
+        if (m->kind != N_CASE_DECL || !m->c.v) continue;
+        Node *r = node_new(N_RECORD, m->start, m->end);
+        Node *rn = node_new(N_NAME, m->a.n->start, m->a.n->end);
+        rn->a.s = str_concat(str_concat(variant->a.n->a.s, str_from_cstr(".")), m->a.n->a.s);
+        r->a.n = rn;
+        r->b.v = m->c.v;
+        Node *tn = node_new(N_TYPE_NODE, m->a.n->start, m->a.n->end);
+        tn->a.i = TY_NAMED;
+        tn->b.n = rn;
+        Vec *tps = variant->c.v;
+        if (tps && tps->n) {
+            r->c.v = vec_new();
+            tn->c.v = vec_new();
+            for (long j = 0; j < tps->n; j++) {
+                Node *tp = vec_get(tps, j);
+                Node *copy = node_new(N_TPARAM, tp->start, tp->end);
+                copy->a.n = tp->a.n;
+                copy->b.i = tp->b.i;
+                vec_push(r->c.v, copy);
+                Node *arg = node_new(N_TYPE_NODE, tp->start, tp->end);
+                arg->a.i = TY_NAMED;
+                arg->b.n = tp->a.n;
+                vec_push(tn->c.v, arg);
+            }
+        }
+        m->c.n = r;
+        m->b.n = tn;
+    }
 }
 
 static Node *parse_item(void)
@@ -1488,6 +1566,7 @@ static Node *parse_item(void)
         n->a.n = p_name();
         n->c.v = parse_tparams();
         n->b.v = parse_members(k == T_RECORD ? N_FIELD_DECL : N_CASE_DECL);
+        if (k == T_VARIANT) p_hidden_records(n);
         break;
     case T_TEST:
         n = p_node(N_TEST);

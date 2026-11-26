@@ -1,0 +1,6 @@
+FAIL lines are small (60 cases, 0ms)
+  prop.vo:22:5: `expect` failed: `line_of(e) < 50` is false.
+    line_of(e): 50
+    counterexample: e = LoadError.malformed { path: "", line: 50 }
+    shrunk in 70 steps
+0 passed, 1 failed

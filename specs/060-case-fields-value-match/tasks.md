@@ -126,7 +126,7 @@ as a record payload everywhere at run time.
 `{"malformed":{"path":"a.txt","line":3,"reason":"bad number"}}`; US1 acceptance scenarios 1–3 are golden
 cases; the reference's `Shape` example runs without `Size` (T031).
 
-- [ ] T013 [US1] Golden cases first, `tests/cases/case_fields/`: `basic.vo` (run: declaration, literal in
+- [X] T013 [US1] Golden cases first, `tests/cases/case_fields/`: `basic.vo` (run: declaration, literal in
   any order, binding, reads, `format`), `missing_field.vo` (check: E0305), `unknown_field.vo` (check:
   E0304), `read_only.vo` (check: `set m.line = 4;` E0344), `equality_keys_order.vo` (run: `==`, a map key,
   `sort` of a list of values, scenario 3, compared with the same program written with a payload record
@@ -138,31 +138,31 @@ cases; the reference's `Shape` example runs without `Size` (T031).
   LoadError.malformed { ... }` is E0201 naming `LoadError.malformed { ... }`), `block_after_case.vo`
   (run: `if e == T.empty {` followed by a block still parses as today, research R2), `print.vo` (test: a
   failing `expect_eq` on field-case values prints `LoadError.malformed { path: "a", ... }`, research R4).
-- [ ] T014 [US1] `src/parse.c`, `src/vo.h`: in `parse_members(N_CASE_DECL)` (`parse.c:1403-1458`) a case
+- [X] T014 [US1] `src/parse.c`, `src/vo.h`: in `parse_members(N_CASE_DECL)` (`parse.c:1403-1458`) a case
   name followed by `{` parses field declarations with annotations (the record path, `parse.c:1437`
   allowing them); `N_CASE_DECL.c` holds a synthetic `N_RECORD` (name `Variant.case`, the fields, the
   variant's type parameters copied) and `b` a type node naming it; in `parse_primary` (`parse.c:697-716`,
   and the module form `:616-631`) `Type.case` followed by `{` and then a name and `:` parses a field
   literal (an `N_VCASE` whose C is a synthetic `N_NEW_RECORD` spanning the braces); in `parse_type`
   (`parse.c:491-494`) `Type.case` and `Type[args].case`. Golden parse cases pass.
-- [ ] T015 [US1] `src/check.c` (`define_item` `:1073`, `resolve_item_types` `:1119-1131`,
+- [X] T015 [US1] `src/check.c` (`define_item` `:1073`, `resolve_item_types` `:1119-1131`,
   `check_field_annotations` `:1130`, `check_export_types` `:1344-1358`): the hidden records are defined,
   resolved, their annotations checked and their export follows the variant's (no E0210 for them); a
   field case with one field is E0216 (T019).
-- [ ] T016 [US1] `src/check_expr.c` (`check_vcase` `:1229-1278`), `src/check_generic.c` (`vcase_generic`
+- [X] T016 [US1] `src/check_expr.c` (`check_vcase` `:1229-1278`), `src/check_generic.c` (`vcase_generic`
   `:716-743`): a field-case literal goes through `check_new_record` (E0304, E0305, repeated fields,
   generic inference from fields and context, spec 059 lambdas in fields); `check_set` (`check.c:621-651`)
   refuses a field of a hidden record: E0344 (catalog entry, codes row); `new` naming a hidden record:
   E0201 with the message of contracts/diagnostics.md.
-- [ ] T017 [US1] `src/check.c` (`ty_name_into` `:184-188`): a hidden record's type prints
+- [X] T017 [US1] `src/check.c` (`ty_name_into` `:184-188`): a hidden record's type prints
   `LoadError.malformed`, a generic one `Tree[int].node`; hover and `type-at` show it.
-- [ ] T018 [US1] `src/rt_render.c` (`:137-165`): a variant value whose payload is a hidden record prints
+- [X] T018 [US1] `src/rt_render.c` (`:137-165`): a variant value whose payload is a hidden record prints
   `LoadError.malformed { path: "a", line: 3, reason: "x" }`; a hidden record printed alone (a bound value
   in a trace) prints `LoadError.malformed { ... }` too. Accept T013's run and print cases.
-- [ ] T019 [US1] E0216 one_field_case in `src/check.c` (contracts/diagnostics.md): its fix rewrites the
+- [X] T019 [US1] E0216 one_field_case in `src/check.c` (contracts/diagnostics.md): its fix rewrites the
   declaration to `name(T);` (research R5); golden case `tests/cases/case_fields/one_field.vo`; catalog
   entry, codes row; `python3 tests/apply_fixes.py`.
-- [ ] T020 [US1] Property tests (FR-007, SC-004): golden case `tests/cases/case_fields/prop.vo` (a
+- [X] T020 [US1] Property tests (FR-007, SC-004): golden case `tests/cases/case_fields/prop.vo` (a
   `prop` over a variant with a field case fails on one; the counterexample prints in construction syntax,
   shrunk, identical for `--seed 1` twice); no code change expected (`prop.c` reads payload types), fix if
   it fails.

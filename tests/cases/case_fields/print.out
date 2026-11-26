@@ -1,0 +1,6 @@
+FAIL the line (0ms)
+  print.vo:14:5: `expect_eq` failed: the values differ.
+    expected: LoadError.malformed { path: "a.txt", line: 4 }
+    actual:   LoadError.malformed { path: "a.txt", line: 3 }
+    first difference at .malformed.line: expected 4, actual 3
+0 passed, 1 failed

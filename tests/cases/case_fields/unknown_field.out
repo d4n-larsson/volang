@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0304","name":"unknown_field","severity":"error","file":"unknown_field.vo","start":{"line":10,"col":59},"end":{"line":10,"col":62},"text":"col","message":"`LoadError.malformed` has no field `col`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

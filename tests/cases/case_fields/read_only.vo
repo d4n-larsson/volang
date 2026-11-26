@@ -1,0 +1,18 @@
+variant LoadError {
+    malformed {
+        path: str;
+        line: int;
+    }
+    empty;
+}
+
+fn main() uses console {
+    match LoadError.malformed { path: "a.txt", line: 3 } {
+        case malformed(m) {
+            set m.line = 4;
+            print(str(m.line));
+        }
+        case empty {
+        }
+    }
+}

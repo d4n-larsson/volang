@@ -1,0 +1,19 @@
+variant Tree[T] {
+    node {
+        left: Tree[T];
+        value: T;
+    }
+    leaf;
+}
+
+fn main() uses console {
+    let t: Tree[int] = Tree.node { left: Tree.leaf, value: 3 };
+    match t {
+        case node(n) {
+            let x: str = n;
+            print(x);
+        }
+        case leaf {
+        }
+    }
+}

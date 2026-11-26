@@ -1,0 +1,15 @@
+variant LoadError {
+    malformed {
+        path: str;
+        line: int;
+    }
+    empty;
+}
+
+fn at(line: int) -> LoadError {
+    return LoadError.malformed { path: "a.txt", line: line };
+}
+
+test "the line" {
+    expect_eq(at(3), at(4));
+}

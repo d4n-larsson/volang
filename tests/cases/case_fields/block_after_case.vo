@@ -1,0 +1,17 @@
+variant State {
+    empty;
+    full {
+        size: int;
+        name: str;
+    }
+}
+
+fn main() uses console {
+    let s = State.empty;
+    if s == State.empty {
+        print("empty");
+    }
+    if s != State.full { size: 1, name: "x" } {
+        print("not full");
+    }
+}

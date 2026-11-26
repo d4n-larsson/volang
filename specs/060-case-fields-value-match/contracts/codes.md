@@ -5,6 +5,8 @@ New codes, each with a `docs/errors.md` entry (example and fixed version) and go
 
 | Code | Name | Exit | Fixable | Trigger |
 |---|---|---|---|---|
+| E0216 | `one_field_case` | 65 | yes | a case declared with one field; the fix rewrites it to `name(T);` |
+| E0344 | `case_field_set` | 65 | no | `set` on a field of a case's fields |
 | E0345 | `match_scrutinee` | 65 | no | `match` on a value that is not a variant, a `result`, an `int` or a `str` (replaces E0301 there) |
 | E0414 | `value_match_else` | 65 | yes | a `match` on an `int` or `str` without `else`; the fix inserts an empty `else` |
 | E0415 | `match_else_exhaustive` | 65 | yes | `else` on a variant or `result` match; the fix removes it |

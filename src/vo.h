@@ -1591,6 +1591,7 @@ extern Type *check_try(Node *node, Type *expected);
 extern Type *check_list(Node *node, Type *expected);
 extern Node *lookup_decl(Node *name_node, long kind, char *not_kind_msg);
 extern Type *check_new_record(Node *node, Type *expected);
+extern int case_record(Node *decl);
 extern Str *str_new_copy(Str *str);
 extern Type *check_vcase(Node *node, Type *expected);
 extern Type *check_expr(Node *node, Type *expected);

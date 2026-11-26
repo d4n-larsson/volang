@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0344","name":"case_field_set","severity":"error","file":"read_only.vo","start":{"line":12,"col":17},"end":{"line":12,"col":23},"text":"m.line","message":"The fields of a case are read-only: build a new value, `LoadError.malformed { ... }`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

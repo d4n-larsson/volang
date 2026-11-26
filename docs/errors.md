@@ -1085,6 +1085,42 @@ fn main() uses console {
 }
 ```
 
+## E0216 one_field_case
+
+A variant case is declared with one field.
+
+Fixable: yes
+
+A case carries one value as `name(T);` and two or more as fields, `name { a: T; b: U; }`; one form per count. The fix rewrites the declaration to the one-value form. Uses written for the field form (`V.missing { path: p }`, `m.path`) then report their own errors, which name the one-value form.
+
+### Example
+
+```vo
+variant LoadError {
+    missing {
+        path: str;
+    }
+    empty;
+}
+
+fn main() uses console {
+    print("ok");
+}
+```
+
+### Fixed
+
+```vo
+variant LoadError {
+    missing(str);
+    empty;
+}
+
+fn main() uses console {
+    print("ok");
+}
+```
+
 ## E0301 type_mismatch
 
 An expression has a different type than the one required.
@@ -2321,6 +2357,61 @@ fn main() uses console {
 fn main() uses console {
     let inc: fn(int) -> int = fn(x) => x + 1;
     print(str(inc(1)));
+}
+```
+
+## E0344 case_field_set
+
+A `set` changes a field of a case.
+
+Fixable: no
+
+The fields of a case with fields (spec 060) are read-only: the value bound by `case malformed(m)` is the case's own. Build a new value with the changed field, `V.case { f: v, ... }`.
+
+### Example
+
+```vo
+variant LoadError {
+    malformed {
+        path: str;
+        line: int;
+    }
+    empty;
+}
+
+fn main() uses console {
+    match LoadError.malformed { path: "a.txt", line: 3 } {
+        case malformed(m) {
+            set m.line = 4;
+            print(str(m.line));
+        }
+        case empty {
+        }
+    }
+}
+```
+
+### Fixed
+
+```vo
+variant LoadError {
+    malformed {
+        path: str;
+        line: int;
+    }
+    empty;
+}
+
+fn main() uses console {
+    let e = LoadError.malformed { path: "a.txt", line: 3 };
+    match e {
+        case malformed(m) {
+            let next = LoadError.malformed { path: m.path, line: m.line + 1 };
+            print(str(next != e));
+        }
+        case empty {
+        }
+    }
 }
 ```
 

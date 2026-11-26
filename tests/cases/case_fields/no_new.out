@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0201","name":"undefined_name","severity":"error","file":"no_new.vo","start":{"line":10,"col":17},"end":{"line":10,"col":36},"text":"LoadError.malformed","message":"`LoadError.malformed` is a case's fields: build it with `LoadError.malformed { ... }`, without `new`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

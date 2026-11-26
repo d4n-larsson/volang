@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"type_name_generic.vo","start":{"line":13,"col":26},"end":{"line":13,"col":27},"text":"n","message":"Expected `str`, found `Tree[int].node`.","expected":"str","found":"Tree[int].node","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

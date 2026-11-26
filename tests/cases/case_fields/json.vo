@@ -1,0 +1,18 @@
+import std.json;
+
+variant Event {
+    moved {
+        x: int;
+        y: int;
+    }
+    renamed(str);
+}
+
+fn main() -> result[void] uses console {
+    let e = Event.moved { x: 1, y: 2 };
+    let text = try json.write_json(json.to_json(e));
+    print(text);
+    let back: Event = try json.from_json(try json.parse_json(text));
+    print(str(back == e));
+    return ok();
+}

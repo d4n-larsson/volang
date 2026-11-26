@@ -1,0 +1,21 @@
+variant LoadError {
+    malformed {
+        path: str;
+        line: int;
+    }
+    empty;
+}
+
+fn place(m: LoadError.malformed) -> str {
+    return m.path + ":" + str(m.line);
+}
+
+fn main() uses console {
+    match LoadError.malformed { path: "a.txt", line: 3 } {
+        case malformed(m) {
+            print(place(m));
+        }
+        case empty {
+        }
+    }
+}

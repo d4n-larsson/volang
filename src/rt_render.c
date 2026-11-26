@@ -60,6 +60,21 @@ static void render_bytes(SB *sb, Str *b)
     GC_UNROOT(1);
 }
 
+/* ` { f: v, ... }`: a record's fields, type its record type. */
+static void render_fields(SB *sb, Record *r, Type *type)
+{
+    sb_cstr(sb, " { ");
+    for (long i = 0;; i++) {
+        Node *m = member_at(type->decl.n->b.v, i);
+        if (!m) break;
+        if (i) sb_cstr(sb, ", ");
+        sb_str(sb, m->a.n->a.s);
+        sb_cstr(sb, ": ");
+        render_value(sb, r->fields[i].i, field_type_in(type, m->b.n->type));
+    }
+    sb_cstr(sb, " }");
+}
+
 void render_value(SB *sb, long value, Type *type)
 {
     POLL(1);
@@ -134,22 +149,13 @@ void render_value(SB *sb, long value, Type *type)
         GC_UNROOT(3);
         break;
     }
-    case TY_RECORD: { /* new T { f: v, ... } */
+    case TY_RECORD: { /* new T { f: v, ... }; spec 060: a case's fields `V.case { f: v, ... }` */
         Record *r = (Record *)value;
-        sb_cstr(sb, "new ");
+        int fields = case_record(type->decl.n);
+        if (!fields) sb_cstr(sb, "new ");
         sb_str(sb, type->decl.n->a.n->a.s);
-        if (type->b.v) ty_args_into(sb, type->b.v); /* an instance: new Name[args] { ... } */
-        sb_cstr(sb, " { ");
-        for (long i = 0;; i++) {
-            Node *m = member_at(type->decl.n->b.v, i);
-            if (!m) break;
-            if (i) sb_cstr(sb, ", ");
-            sb_str(sb, m->a.n->a.s);
-            sb_cstr(sb, ": ");
-            long field = r->fields[i].i;
-            render_value(sb, field, field_type_in(type, m->b.n->type));
-        }
-        sb_cstr(sb, " }");
+        if (type->b.v && !fields) ty_args_into(sb, type->b.v); /* an instance: new Name[args] { ... } */
+        render_fields(sb, r, type);
         break;
     }
     case TY_VARIANT: { /* T.case or T.case(v) */
@@ -159,6 +165,10 @@ void render_value(SB *sb, long value, Type *type)
         Node *c = member_at(type->decl.n->b.v, (long)(uint32_t)v->tag);
         sb_str(sb, c->a.n->a.s);
         if (!c->b.n) break;
+        if (c->c.n) { /* spec 060: `V.case { f: v, ... }` */
+            render_fields(sb, (Record *)v->pay.i, field_type_in(type, c->b.n->type));
+            break;
+        }
         sb_byte(sb, '(');
         render_value(sb, v->pay.i, field_type_in(type, c->b.n->type));
         sb_byte(sb, ')');

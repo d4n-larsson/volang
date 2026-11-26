@@ -1157,6 +1157,9 @@ Type *check_new_record(Node *node, Type *expected)
         return t_error;
     }
     q_note((long)decl, -2, node, RR_USE); /* (record, -2) marks a literal (vo edit add-field) */
+    if (case_record(decl) && !node->e.i) /* spec 060: `new V.case { ... }` */
+        ck_err1("E0201", node->a.n, "`$1` is a case's fields: build it with `$1 { ... }`, without `new`.",
+                decl->a.n->a.s);
     Vec *tparams = ty_tparams_of(decl);
     Type **vts = alloc((inits->n + 1) * 8); /* field values already checked (inference), else 0 */
     Type *rt;

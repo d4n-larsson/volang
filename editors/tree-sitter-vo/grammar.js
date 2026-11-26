@@ -31,6 +31,8 @@ module.exports = grammar({
     [$._argument_uses],
     // spec 058: `json.Json` (a module's type) or `json.parse` (a value's field): the token after the `.`
     [$._expression, $.qualified_type],
+    // spec 060: `T.case {` starts the case's fields (`{ name:`) or the block after an expression
+    [$.variant_value],
   ],
 
   rules: {
@@ -103,7 +105,10 @@ module.exports = grammar({
       repeat($.case_declaration),
       '}',
     ),
-    case_declaration: $ => seq(field('name', $.identifier), optional(seq('(', field('type', $._type), ')')), ';'),
+    case_declaration: $ => seq(field('name', $.identifier), choice(
+      seq(optional(seq('(', field('type', $._type), ')')), ';'),
+      seq('{', repeat(choice($.field_declaration, $.annotation)), '}'), // spec 060: a case with fields
+    )),
 
     test_definition: $ => seq('test', field('name', $.string), optional($.uses_clause), field('body', $.block)),
     prop_definition: $ => seq(
@@ -155,7 +160,10 @@ module.exports = grammar({
       $.parenthesized_type,
     ),
     primitive_type: _ => choice('int', 'float', 'bool', 'str', 'bytes'),
-    named_type: $ => seq(field('name', choice($.type_identifier, $.qualified_type)), optional(field('arguments', $.type_arguments))),
+    named_type: $ => prec.right(seq(
+      field('name', choice($.type_identifier, $.qualified_type)), optional(field('arguments', $.type_arguments)),
+      optional(seq('.', field('case', $.identifier))), // spec 060: `Tree[int].node`, a case's fields
+    )),
     // spec 058: a type, effect set or variant of an imported module (`bytes` is also the module std.bytes)
     qualified_type: $ => seq(field('module', choice($.identifier, alias('bytes', $.identifier))), '.', field('name', $.type_identifier)),
     // `[T, uses console, file.read]`: after the first effect only named effects continue the list
@@ -275,7 +283,11 @@ module.exports = grammar({
       field('arguments', $.arguments),
     )),
     arguments: $ => seq('(', commaSep($._expression), ')'),
-    variant_value: $ => prec(PREC.postfix + 1, seq(field('type', choice($.type_identifier, $.qualified_type)), '.', field('case', $.identifier))),
+    variant_value: $ => prec(PREC.postfix + 1, seq(
+      field('type', choice($.type_identifier, $.qualified_type)), '.', field('case', $.identifier),
+      optional(field('fields', $.case_fields)), // spec 060: `T.case { f: v }`; `{` then a name and `:`
+    )),
+    case_fields: $ => seq('{', commaSep1($.field_initializer), '}'),
     parenthesized_expression: $ => seq('(', $._expression, ')'),
     list_literal: $ => seq('[', commaSep($._expression), ']'),
     new_expression: $ => seq('new', choice(

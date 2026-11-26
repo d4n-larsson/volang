@@ -1,0 +1,23 @@
+# A property over a variant with a field case: the counterexample prints in construction syntax, shrunk.
+variant LoadError {
+    malformed {
+        path: str;
+        line: int;
+    }
+    empty;
+}
+
+fn line_of(e: LoadError) -> int {
+    match e {
+        case malformed(m) {
+            return m.line;
+        }
+        case empty {
+            return 0;
+        }
+    }
+}
+
+prop "lines are small" (e: LoadError) {
+    expect(line_of(e) < 50);
+}

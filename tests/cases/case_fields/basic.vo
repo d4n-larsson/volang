@@ -1,0 +1,30 @@
+variant LoadError {
+    missing(str);
+    malformed {
+        path: str;
+        line: int;
+        reason: str;
+    }
+    empty;
+}
+
+fn describe(e: LoadError) -> str {
+    match e {
+        case missing(p) {
+            return "no " + p;
+        }
+        case malformed(m) {
+            return format("{}:{}: {}", m.path, m.line, m.reason);
+        }
+        case empty {
+            return "empty";
+        }
+    }
+}
+
+fn main() uses console {
+    let a = LoadError.malformed { reason: "bad number", path: "a.txt", line: 3 };
+    print(describe(a));
+    print(describe(LoadError.missing("b.txt")));
+    print(describe(LoadError.empty));
+}

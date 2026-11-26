@@ -1,0 +1,10 @@
+variant LoadError {
+    missing {
+        path: str;
+    }
+    empty;
+}
+
+fn main() uses console {
+    print("ok");
+}

@@ -38,6 +38,11 @@ Pending.
   makes no mutant of a value arm, as of a variant arm today (arms compile to compare-and-jump, not through
   the expression path that mutation rewrites). The tree-sitter grammar's `match_arm` and `else_arm` were
   extended with US2 (part of T026), since the grammar check parses every `.vo` file of the repository.
+- US1 (T013–T020): field cases parse, check, run, print in construction syntax, compare, key, order,
+  serialize and shrink through the hidden record (`tests/cases/case_fields/`, 18 cases); E0216 and E0344
+  have catalog entries; `new Variant.case { ... }` is E0201 naming the field literal. The tree-sitter
+  grammar's `case_declaration`, `variant_value` (with a declared conflict for `T.case {` then a block)
+  and `named_type` (`Tree[int].node`) were extended with US1 (part of T026), for the same reason.
 
 ## Deviations
 
