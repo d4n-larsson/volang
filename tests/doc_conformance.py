@@ -319,7 +319,7 @@ def main():
                 continue
             if inside and line.startswith("}"):
                 inside = None
-            elif inside and line.strip() and not line.strip().startswith("#") \
+            elif inside and line.strip() not in ("", "}") and not line.strip().startswith("#") \
                     and not lines[i - 1].strip().startswith("#"):
                 failures.append(f"std/{os.path.basename(path)}:{i + 1}: `{inside}.{line.strip().rstrip(';')}` "
                                 "has no comment (hover shows none)")

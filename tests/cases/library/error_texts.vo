@@ -12,5 +12,5 @@ fn main() uses console {
     }
     print(time.local_error_text(time.LocalError.invalid("month 13")));
     print(time.local_error_text(time.LocalError.skipped(1711846800000)));
-    print(time.local_error_text(time.LocalError.repeated(new time.Repeated { first: 1729990800000, second: 1729994400000 })));
+    print(time.local_error_text(time.LocalError.repeated { first: 1729990800000, second: 1729994400000 }));
 }

@@ -17,18 +17,15 @@ export record Total {
     amount: decimal.Decimal;
 }
 
-# A date that does not parse, and why.
-export record DateProblem {
-    date: str;
-    reason: str;
-}
-
 # How reading the expenses can fail: callers can tell a bad date from a negative amount.
 export variant ExpenseError {
     # The JSON is not an array of objects with the four fields; the message says where.
     shape(str);
-    # A date that is not a calendar date.
-    bad_date(DateProblem);
+    # A date that is not a calendar date, and why.
+    bad_date {
+        date: str;
+        reason: str;
+    }
     # An amount below zero, on this date.
     negative(str);
 }
@@ -61,7 +58,7 @@ export fn expenses_from(doc: json.Json) -> result[list[Expense], ExpenseError] {
             case ok(_) {
             }
             case err(e) {
-                return err(ExpenseError.bad_date(new DateProblem { date: date, reason: e }));
+                return err(ExpenseError.bad_date { date: date, reason: e });
             }
         }
         let cents = try map_err(json.int_field(item, "cents"), shape_error);
@@ -99,10 +96,7 @@ export fn totals(xs: list[Expense], key: fn(Expense) -> str) -> list[Total] {
 }
 
 export fn sum(xs: list[Total]) -> decimal.Decimal {
-    return decimal.add(decimal.decimal(0, 2), decimal.total(map(
-        xs,
-        fn(t) => t.amount
-    )));
+    return decimal.add(decimal.decimal(0, 2), decimal.total(map(xs, fn(t) => t.amount)));
 }
 
 # A titled table: one row per total, names padded to the widest, amounts right-aligned.
@@ -161,10 +155,10 @@ test "a bad date is an error, not a crash" {
     match json.parse_json(`[{"date": "2026-02-30", "category": "x", "cents": 1, "note": ""}]`) {
         case ok(doc) {
             expect_eq(expenses_from(doc), err(
-                ExpenseError.bad_date(new DateProblem {
+                ExpenseError.bad_date {
                     date: "2026-02-30",
                     reason: "invalid time: 2026-02-30; day 30 is not in that month"
-                })
+                }
             ));
         }
         case err(e) {

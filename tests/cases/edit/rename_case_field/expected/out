@@ -1,0 +1,15 @@
+$ vo edit rename main.vo LoadError.malformed.line row
+main.vo:4:9 line -> row
+main.vo:12:41 line -> row
+main.vo:21:57 line -> row
+renamed line to row: 3 changes in 1 file
+--- stderr
+--- exit 0
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+a.txt:3
+--- stderr
+--- exit 0

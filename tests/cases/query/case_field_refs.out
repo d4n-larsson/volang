@@ -1,0 +1,4 @@
+fields/main.vo:4:9 declaration: line: int;
+fields/main.vo:12:41 use in describe: return m.path + ":" + str(m.line);
+fields/main.vo:21:57 use in main: print(describe(LoadError.malformed { path: "a.txt", line: 3 }));
+3 references

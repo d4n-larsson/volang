@@ -20,7 +20,9 @@ fn area(s: Shape) -> int {
 fn main() uses console {
     let a = Shape.rect { w: 2, h: 3 };
     let b = Shape.rect { h: 3, w: 2 };
-    print(str(a == b) + " " + str(a == Shape.rect { w: 3, h: 2 }) + " " + str(a < Shape.rect { w: 2, h: 4 }));
+    print(
+        str(a == b) + " " + str(a == Shape.rect { w: 3, h: 2 }) + " " + str(a < Shape.rect { w: 2, h: 4 })
+    );
     let names = new map[Shape, str];
     set names[a] = "six";
     print(names[b]);

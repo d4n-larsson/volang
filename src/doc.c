@@ -131,6 +131,21 @@ void doc_tparams(SB *sb, Node *decl)
 }
 
 /* fn name[T](a: A, b: B) -> R uses E; record Name { f: T; ... }; variant Name { c(T); d; }. */
+/* ` { f: T; ... }`: a record's fields (spec 060: also a case's, from its hidden record). */
+static void doc_fields(SB *sb, Node *record)
+{
+    sb_cstr(sb, " { ");
+    for (long i = 0;; i++) {
+        Node *m = member_at(record->b.v, i);
+        if (!m) break;
+        sb_str(sb, m->a.n->a.s);
+        sb_cstr(sb, ": ");
+        ty_name_into(sb, m->b.n->type);
+        sb_cstr(sb, "; ");
+    }
+    sb_byte(sb, '}');
+}
+
 void doc_signature(SB *sb, Node *item)
 {
     if (item->kind == N_CONST) { /* spec 031: const name: type = value */
@@ -192,20 +207,23 @@ void doc_signature(SB *sb, Node *item)
     sb_cstr(sb, record ? "record " : "variant ");
     sb_str(sb, item->a.n->a.s);
     doc_tparams(sb, item);
+    if (record) {
+        doc_fields(sb, item);
+        return;
+    }
     sb_cstr(sb, " { ");
     for (long i = 0;; i++) {
         Node *m = member_at(item->b.v, i);
         if (!m) break;
         sb_str(sb, m->a.n->a.s);
-        if (m->b.n) { /* the field's or the case's type */
-            if (record) {
-                sb_cstr(sb, ": ");
-                ty_name_into(sb, m->b.n->type);
-            } else {
-                sb_byte(sb, '(');
-                ty_name_into(sb, m->b.n->type);
-                sb_byte(sb, ')');
-            }
+        if (m->c.n) { /* spec 060: a case with fields */
+            doc_fields(sb, m->c.n);
+            sb_byte(sb, ' ');
+            continue;
+        } else if (m->b.n) { /* the case's type */
+            sb_byte(sb, '(');
+            ty_name_into(sb, m->b.n->type);
+            sb_byte(sb, ')');
         }
         sb_byte(sb, ';');
         sb_byte(sb, ' ');
@@ -295,6 +313,17 @@ void doc_json_shape(SB *sb, Node *item)
         if (!m) break;
         if (i) sb_byte(sb, ',');
         doc_json_pair(sb, m->a.n->a.s, m->b.n ? m->b.n->type : 0);
+        if (m->c.n) { /* spec 060: a case with fields, `"fields":[...]` inside its pair */
+            sb->len--;
+            sb_cstr(sb, ",\"fields\":[");
+            for (long j = 0;; j++) {
+                Node *f = member_at(m->c.n->b.v, j);
+                if (!f) break;
+                if (j) sb_byte(sb, ',');
+                doc_json_pair(sb, f->a.n->a.s, f->b.n->type);
+            }
+            sb_cstr(sb, "]}");
+        }
     }
     sb_byte(sb, ']');
 }

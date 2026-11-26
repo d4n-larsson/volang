@@ -5,13 +5,13 @@
  * use then reports E0214 with the fix of its kind. Rows match std items only. */
 #include "vo.h"
 
-enum { LC_RENAME = 1, LC_REMOVE, LC_SWAP, LC_OPTION, LC_FIELD, LC_CASE, LC_ARG };
+enum { LC_RENAME = 1, LC_REMOVE, LC_SWAP, LC_OPTION, LC_FIELD, LC_CASE, LC_ARG, LC_FIELDS };
 
 struct LibChange {
     const char *module; /* std file stem: "lists" */
     const char *old;    /* item, or `Record.field`, or `Variant.case` */
     int kind;
-    const char *new_;   /* the new name (rename, field, case; a swap's new name, if renamed) */
+    const char *new_;   /* the new name (rename, field, case; a swap's new name, if renamed; fields: the case) */
     const char *call;   /* remove: what a call becomes; option: the wrap, `$` the call */
     const char *value;  /* remove: what a value use becomes */
     long factor;        /* rename/field: the first argument or the value is multiplied by this (units) */
@@ -81,6 +81,8 @@ static const LibChange rows[] = {
     {"time", "ZoneRule.std_offset", LC_FIELD, "std_offset_s", 0, 0, 0},
     {"time", "ZoneRule.dst_offset", LC_FIELD, "dst_offset_s", 0, 0, 0},
     {"time", "RuleDay.seconds", LC_FIELD, "time_s", 0, 0, 0},
+    /* spec 060: a record used as one case's payload became that case's fields (message only) */
+    {"time", "Repeated", LC_FIELDS, "LocalError.repeated", 0, 0, 0},
     {0, 0, 0, 0, 0, 0, 0},
 };
 
@@ -100,7 +102,8 @@ static const LibChange *find_kind(Str *module, Str *old, int kind)
 const LibChange *libchange_find(Str *module, Str *old)
 {
     const LibChange *c = find_kind(module, old, LC_RENAME);
-    return c ? c : find_kind(module, old, LC_REMOVE);
+    if (!c) c = find_kind(module, old, LC_REMOVE);
+    return c ? c : find_kind(module, old, LC_FIELDS);
 }
 
 Str *libchange_new_name(const LibChange *c)
@@ -126,6 +129,9 @@ static Str *message(const LibChange *c)
     case LC_SWAP: return msg("`$1` takes the text first since vo 0.2.0.", q, 0, 0);
     case LC_OPTION: return msg("`$1` returns an `Option` since vo 0.2.0: `some(value)` or `none`.", q, 0, 0);
     case LC_CASE: return msg("`$1` was renamed `$2` in vo 0.2.0.", q, str_from_cstr((char *)c->new_), 0);
+    case LC_FIELDS: /* spec 060 */
+        return msg("`$1` became the fields of the case `$2` in vo 0.6.0: write `$2 { ... }`.", q,
+                   str_from_cstr((char *)c->new_), 0);
     case LC_ARG: /* spec 057 */
         return msg("`$1` takes $2 since vo 0.3.0: $3.", q, str_from_cstr((char *)c->new_), str_from_cstr((char *)c->value));
     case LC_FIELD:

@@ -889,6 +889,22 @@ static void sb_symbol(SB *b, FileRec *f, Str *name, long kind, Node *whole, long
     sb_cstr(b, "}");
 }
 
+/* `,"children":[...]`: the fields or cases of v; a case with fields (spec 060) has its fields as children. */
+static void sb_members(SB *b, FileRec *f, Vec *v)
+{
+    long m = 0;
+    sb_cstr(b, ",\"children\":[");
+    for (long k = 0; k < v->n; k++) {
+        Node *mem = vec_get(v, k);
+        if (!mem || (mem->kind != N_FIELD_DECL && mem->kind != N_CASE_DECL) || !mem->a.n) continue;
+        if (m++) sb_byte(b, ',');
+        sb_symbol(b, f, mem->a.n->a.s, mem->kind == N_FIELD_DECL ? 8 : 22, mem, mem->a.n->start, mem->a.n->end);
+        if (mem->kind == N_CASE_DECL && mem->c.n) sb_members(b, f, mem->c.n->b.v);
+        sb_byte(b, '}');
+    }
+    sb_byte(b, ']');
+}
+
 /* The outline: the file's top-level items, records and variants with their members. */
 static void finish_symbols(SB *o)
 {
@@ -922,18 +938,7 @@ static void finish_symbols(SB *o)
                 continue;
             }
             sb_symbol(b, f, name->a.s, kind, it, name->start, name->end);
-            if ((it->kind == N_RECORD || it->kind == N_VARIANT) && it->b.v) {
-                long m = 0;
-                sb_cstr(b, ",\"children\":[");
-                for (long k = 0; k < it->b.v->n; k++) {
-                    Node *mem = vec_get(it->b.v, k);
-                    if (!mem || (mem->kind != N_FIELD_DECL && mem->kind != N_CASE_DECL) || !mem->a.n) continue;
-                    if (m++) sb_byte(b, ',');
-                    sb_symbol(b, f, mem->a.n->a.s, mem->kind == N_FIELD_DECL ? 8 : 22, mem, mem->a.n->start, mem->a.n->end);
-                    sb_byte(b, '}');
-                }
-                sb_byte(b, ']');
-            }
+            if ((it->kind == N_RECORD || it->kind == N_VARIANT) && it->b.v) sb_members(b, f, it->b.v);
         }
         sb_byte(b, '}');
     }

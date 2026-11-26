@@ -122,20 +122,19 @@ true false
 
 ## Variants
 
-A variant is a value that is exactly one of several **cases**. Each case may carry one value, its
-payload, of any type; a case that needs several values carries a record. Build a value with
-`Name.case(value)`, or `Name.case` for a case without a payload:
+A variant is a value that is exactly one of several **cases**. A case carries one value, its payload,
+of any type: `circle(float);`. A case that carries several values declares them as **fields**, like a
+record's: `rect { w: float; h: float; }`. A case may also carry nothing: `point;`. Build a value with
+`Name.case(value)`, `Name.case { field: value, ... }` (every field, no `new`) or `Name.case`:
 
 ```vo
 variant Shape {
     circle(float);
-    rect(Size);
+    rect {
+        w: float;
+        h: float;
+    }
     point;
-}
-
-record Size {
-    w: float;
-    h: float;
 }
 
 fn area(s: Shape) -> float {
@@ -143,8 +142,8 @@ fn area(s: Shape) -> float {
         case circle(r) {
             return 3.14159 * r * r;
         }
-        case rect(size) {
-            return size.w * size.h;
+        case rect(r) {
+            return r.w * r.h;
         }
         case point {
             return 0.0;
@@ -153,7 +152,7 @@ fn area(s: Shape) -> float {
 }
 
 fn main() uses console {
-    let shapes = [Shape.circle(2.0), Shape.rect(new Size { w: 3.0, h: 1.5 }), Shape.point];
+    let shapes = [Shape.circle(2.0), Shape.rect { w: 3.0, h: 1.5 }, Shape.point];
     for s in shapes {
         print(str(area(s)));
     }
@@ -171,19 +170,25 @@ unions, "nullable" values (a `found(Item)` case and a `missing` case) and class 
 subclass per kind of thing. Values of different cases all have the variant's type, so they fit in one
 list, as `shapes` above.
 
+A case's fields are read with `r.w` once `match` binds them, and they cannot be changed: build a new
+value instead ([E0344](../errors/E0344.md)). A case with one field is written with one value,
+`missing(str);` ([E0216](../errors/E0216.md), whose fix rewrites it). Equality, ordering, map keys, JSON
+(`{"rect": {"w": 3.0, "h": 1.5}}`) and test failures treat the fields as they treat a record's, and a
+failing test prints the value as it is written: `Shape.rect { w: 3.0, h: 1.5 }`.
+
 ## match
 
 `match` is how you find out which case a variant holds, and the only way to reach a payload. Each `case`
 names one case of the variant, without the variant's name, and runs its block when the value is that
 case:
 
-- `case circle(r)` binds the payload to a new name, `r`, visible inside that block.
+- `case circle(r)` binds the payload (or a case's fields) to a new name, `r`, visible inside that block.
 - `case circle(_)` matches the case and ignores the payload.
 - `case point` matches a case without a payload. Writing `case point()` is
   [E0411](../errors/E0411.md).
 
-`match` works on variants and on `result` values only. To branch on an `int` or a `str`, use
-`if`/`else if`. `match` is a statement, not an expression: to compute a value, `return` it from each arm
+`match` also takes an `int` or a `str` (see [Matching values](#matching-values) below); any other
+type is [E0345](../errors/E0345.md). `match` is a statement, not an expression: to compute a value, `return` it from each arm
 (as `area` does) or `set` a `var`.
 
 ### Every case, exactly once
@@ -222,6 +227,38 @@ This is the point of having no default arm: when you add a case to a variant, ev
 checking until it handles the new case, and the checker lists each one. In a function that returns a
 value, the missing arm also means a path can reach the end without `return`, so the same mistake reports
 [E0403](../errors/E0403.md) too. Fix the `match`, and both go away.
+
+### Matching values
+
+On an `int` or a `str`, each arm is a literal or a constant, and a final `else` takes every other value.
+The `else` is required ([E0414](../errors/E0414.md), whose fix adds it), and a value listed twice is
+E0402. On a variant, `else` is [E0415](../errors/E0415.md): its cases are all listed instead.
+
+```vo
+const not_found = 404;
+
+fn reason(status: int) -> str {
+    match status {
+        case 200 {
+            return "OK";
+        }
+        case not_found {
+            return "Not Found";
+        }
+        else {
+            return "other";
+        }
+    }
+}
+
+fn main() uses console {
+    print(reason(200) + ", " + reason(404) + ", " + reason(500));
+}
+```
+
+```output
+OK, Not Found, other
+```
 
 ### Matching results
 

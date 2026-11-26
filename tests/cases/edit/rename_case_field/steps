@@ -1,0 +1,4 @@
+vo edit rename main.vo LoadError.malformed.line row
+vo check main.vo
+vo run main.vo
+keep main.vo

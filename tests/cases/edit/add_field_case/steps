@@ -1,0 +1,4 @@
+vo edit add-field main.vo LoadError.malformed reason: str = "x"
+vo check main.vo
+vo run main.vo
+keep main.vo

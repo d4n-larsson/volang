@@ -1,0 +1,6 @@
+import std.time;
+
+fn main() uses console {
+    let e = time.LocalError.repeated(new time.Repeated { first: 0, second: 3600000 });
+    print(time.local_error_text(e));
+}

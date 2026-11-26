@@ -1023,7 +1023,7 @@ fn main() uses console {
 
 ## E0214 library_changed
 
-A standard library item was renamed, removed or changed in vo 0.2.0 or 0.3.0.
+A standard library item was renamed, removed or changed in vo 0.2.0, 0.3.0 or 0.6.0.
 
 Fixable: sometimes
 
@@ -1034,7 +1034,9 @@ if the new name were written. A removed item's fix writes its replacement (`now_
 lookup that now returns an `Option` is wrapped back into the old `result` (`to_result(CALL, "none")`), and
 a function that now takes the text first gets its arguments swapped. A function that gained an argument
 gets it inserted with the value that keeps the old behavior (`"./"`, the start directory, for the working
-directory of `std.process.run_with`, `run_with_bytes` and `run_lines` in 0.3.0). Apply the fixes of
+directory of `std.process.run_with`, `run_with_bytes` and `run_lines` in 0.3.0). A record that became a
+case's fields in 0.6.0 (`std.time.Repeated`, now `LocalError.repeated { first: ..., second: ... }`) has no
+fix: the message names the case to build instead. Apply the fixes of
 `vo check --json` to migrate a program; the changelog lists every change.
 
 ### Example

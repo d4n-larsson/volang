@@ -3,7 +3,7 @@
 vo is a small, statically typed language with one way to write each construct. Do not guess syntax from other languages: check every construct against this page.
 
 1. Write `main.vo`.
-2. Run `vo check --json main.vo`. For each `diagnostic`, apply its first `fixes` entry if it has one; otherwise read `vo explain CODE` (for example `vo explain E0301`).
+2. Run `vo check --json main.vo`. For each `diagnostic`, apply its first `fixes` entry if it has one; otherwise read `vo explain CODE`.
 3. Repeat until the check is clean, then run `vo run main.vo` or `vo test main.vo`.
 
 Two rules cover most syntax: every statement starts with a keyword (`let var set if while for match return break continue try`) or is a function call, and every simple statement ends with `;`.
@@ -215,18 +215,16 @@ fn main() uses console {
 
 ### Variants
 
-A variant is a value that is exactly one of several cases. A case carries at most one value (use a record for several) and ends with `;`. Build a value with `Name.case(value)` or, without a value, `Name.case` (no parentheses). Read it with `match` (see Statements); inside `match`, cases are written without the variant name.
+A variant is a value that is exactly one of several cases. A case carries one value, `name(T);`, several as read-only fields, `name { a: T; b: U; }`, or none, `name;`. Build a value with `Name.case(value)`, `Name.case { a: x, b: y }` or `Name.case`. Read it with `match` (see Statements), naming cases without the variant.
 
 ```vo
 variant Shape {
     circle(float);
-    rect(Size);
+    rect {
+        w: float;
+        h: float;
+    }
     empty;
-}
-
-record Size {
-    w: float;
-    h: float;
 }
 
 fn area(s: Shape) -> float {
@@ -234,8 +232,8 @@ fn area(s: Shape) -> float {
         case circle(r) {
             return 3.0 * r * r;
         }
-        case rect(size) {
-            return size.w * size.h;
+        case rect(r) {
+            return r.w * r.h;
         }
         case empty {
             return 0.0;
@@ -244,7 +242,7 @@ fn area(s: Shape) -> float {
 }
 
 fn main() uses console {
-    let shapes = [Shape.circle(1.0), Shape.rect(new Size { w: 2.0, h: 1.5 }), Shape.empty];
+    let shapes = [Shape.circle(1.0), Shape.rect { w: 2.0, h: 1.5 }, Shape.empty];
     for s in shapes {
         print(str(area(s)));
     }
@@ -357,7 +355,7 @@ util.vo:clamp pure
 
 ## Statements
 
-**First-token rule**: every statement starts with one of `let`, `var`, `set`, `if`, `while`, `for`, `match`, `return`, `break`, `continue`, `try`, or is a call `name(...)`. Anything else, such as `x = 1;`, `x += 1;`, `i++;` or a bare expression, is an error.
+**First-token rule**: every statement starts with a keyword (see the top) or is a call `name(...)`. Anything else, such as `x = 1;`, `x += 1;`, `i++;` or a bare expression, is an error.
 
 Simple statements (`let`, `var`, `set`, `return`, `break`, `continue`, calls, `try`) end with `;`. Statements ending with a block (`if`, `while`, `for`, `match`) take no `;` after `}`. Braces are required, even around one statement.
 
@@ -369,7 +367,7 @@ Simple statements (`let`, `var`, `set`, `return`, `break`, `continue`, calls, `t
 | discard a value | `let _ = expr;` (not for `result` values: E0404) |
 | condition | `if c { } else if c { } else { }` |
 | loops | `while c { }`, `for x in list { }`, `for i, x in list { }`, `for k, v in map { }`, `for c in text { }`, `for i in a..b { }`, `for _ in 0..n { }` |
-| match | `match e { case name(binding) { } case other { } }` |
+| match | `match e { case name(binding) { } case other { } }`, `match n { case 0 { } else { } }` |
 | leave | `return;`, `return expr;`, `break;`, `continue;` |
 | call | `f(args);` (only if `f` returns nothing; see below) |
 | propagate | `try f();` (only if `f` returns `result[void]`) |
@@ -382,7 +380,7 @@ Details:
 - `if` and `while` conditions must be `bool` (E0301). Parentheses around a condition are optional.
 - `for x in xs` visits list elements, `for c in s` the characters of a `str`. `for i in a..b` visits the ints `a, a+1, ..., b-1` (empty when `a >= b`). `for _ in 0..n` repeats n times without a counter. `..` exists only in `for`. `for k, v in m` visits a map's keys with their values, `for i, x in xs` a list's indexes with their elements (`_` for either): what was there when the loop began; additions are not visited, removed entries are skipped. No C-style `for (;;)`, `do`, `loop` or `until`.
 - `break` and `continue` apply to the innermost `while` or `for` (E0407 outside a loop), also from inside a `match` arm.
-- `match` works on variant and `result` values only, not on `int` or `str` (use `if`/`else if`). Each case must appear exactly once (E0401 if one is missing, whose fix inserts it; E0402 if repeated). No default arm. Bind a case's value with `case name(v)`, ignore it with `case name(_)`, and write a case without a value as `case name`.
+- `match` takes a variant or `result`, each case once (E0401 if missing, with a fix; E0402 if repeated), no `else` (E0415); or an `int` or `str`, literal or constant arms once each, then `else` (E0414). Bind a case's value or fields with `case name(v)`, ignore it with `case name(_)`, and write a case without a value as `case name`.
 
 ```vo
 fn main() uses console {

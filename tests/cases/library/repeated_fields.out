@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0214","name":"library_changed","severity":"error","file":"repeated_fields.vo","start":{"line":4,"col":42},"end":{"line":4,"col":55},"text":"time.Repeated","message":"`std.time.Repeated` became the fields of the case `LocalError.repeated` in vo 0.6.0: write `LocalError.repeated { ... }`.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

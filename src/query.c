@@ -133,7 +133,26 @@ void q_members(Node *decl)
         if (!m) return;
         RefLog *r = q_note((long)decl, i, m->a.n, RR_DECL);
         if (r && m->b.n) r->type = m->b.n->type;
+        if (m->kind == N_CASE_DECL && m->c.n) q_members(m->c.n); /* spec 060: a case's fields */
     }
+}
+
+/* keys of `member` of the record or variant d: a field or case, or (spec 060) `case.field`, a field of a
+ * case with fields (keyed by its hidden record). target is the whole text, for messages. */
+static void q_member_keys(Node *d, char *member, char *target, long *keys)
+{
+    long dot = cstr_index(member, '.');
+    Str *name = dot < 0 ? str_from_cstr(member) : str_new(member, dot);
+    long idx = member_index(d->b.v, name);
+    if (idx >= 0 && dot >= 0) { /* Variant.case.field */
+        Node *m = member_at(d->b.v, idx);
+        d = m->kind == N_CASE_DECL ? m->c.n : 0;
+        name = str_from_cstr(member + dot + 1);
+        idx = d ? member_index(d->b.v, name) : -1;
+    }
+    if (idx < 0) q_unknown("No field or case `$1` in this program.", str_from_cstr(target), d ? q_suggest(name, 0, d->b.v) : 0);
+    keys[0] = (long)d;
+    keys[1] = idx;
 }
 
 /* ---- targets (research R2) ---- */
@@ -336,18 +355,12 @@ void q_resolve(char *target, long *keys)
         long dot = cstr_index(target, '.');
         if (dot >= 0) { /* Name.member */
             Str *type_name = str_new(target, dot);
-            Str *member = str_from_cstr(target + dot + 1);
             Node *d = q_item_named(type_name, QK_TYPES);
             if (!d)
                 q_unknown("No record or variant named `$1` in this program.", type_name,
                           q_suggest(type_name, QK_TYPES, 0));
-            long idx = member_index(d->b.v, member);
-            if (idx < 0) {
-                Str *s = q_suggest(member, 0, d->b.v);
-                q_unknown("No field or case `$1` in this program.", str_from_cstr(target), s);
-            }
-            ka = (long)d;
-            kb = idx;
+            q_member_keys(d, target + dot + 1, target, keys);
+            return;
         } else { /* a top-level name, or a builtin */
             Str *name = str_from_cstr(target);
             Node *d = q_item_named(name, QK_ITEMS);
@@ -416,10 +429,7 @@ void q_resolve_qualified(char *target, long *keys)
     Str *type_name = str_new(rest, dot2);
     Node *d = q_item_in_file(found, type_name, QK_TYPES);
     if (!d) q_unknown("No record or variant named `$1` in this program.", str_new(target, dot + 1 + dot2), 0);
-    long idx = member_index(d->b.v, str_from_cstr(rest + dot2 + 1));
-    if (idx < 0) q_unknown("No field or case `$1` in this program.", str_from_cstr(target), 0);
-    keys[0] = (long)d;
-    keys[1] = idx;
+    q_member_keys(d, rest + dot2 + 1, target, keys);
 }
 
 /* Index of the first c in s, or -1. */

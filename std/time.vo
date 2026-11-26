@@ -354,15 +354,6 @@ export record Zone {
     rules: list[ZoneRule];
 }
 
-# The two instants at which a zone shows the same calendar time, when its clocks go back.
-#     new Repeated { first: 0, second: 3600000 }.second is 3600000
-export record Repeated {
-    # The earlier instant.
-    first: int;
-    # The later instant.
-    second: int;
-}
-
 # Why a calendar time is not exactly one instant in a zone.
 #     from_local(offset_zone(0), from_ms(5)) == ok(5) is true
 export variant LocalError {
@@ -371,7 +362,12 @@ export variant LocalError {
     # The zone's clocks jump over this time; the value is the instant of the jump.
     skipped(int);
     # The zone's clocks show this time twice.
-    repeated(Repeated);
+    repeated {
+        # The earlier instant.
+        first: int;
+        # The later instant.
+        second: int;
+    }
 }
 
 fn be32(b: bytes, i: int) -> int {
@@ -986,10 +982,7 @@ export fn from_local(z: Zone, d: DateTime) -> result[int, LocalError] {
     }
     if len(found) > 1 {
         return err(
-            LocalError.repeated(new Repeated {
-                first: found[0] * 1000 + d.ms,
-                second: found[1] * 1000 + d.ms
-            })
+            LocalError.repeated { first: found[0] * 1000 + d.ms, second: found[1] * 1000 + d.ms }
         );
     }
     for c in changes {

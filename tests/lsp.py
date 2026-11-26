@@ -562,6 +562,12 @@ def outline(work):
     got = e.result("textDocument/documentSymbol", "lib/shapes.vo")
     if [s["name"] for s in got][:5] != [w[0] for w in want[:5]]:
         fail("document symbols with a syntax error", f"{[s['name'] for s in got]}")
+    # spec 060: a case with fields lists its fields as children
+    e.set("lib/shapes.vo", "export variant Load {\n    bad {\n        path: str;\n        line: int;\n    }\n    empty;\n}\n")
+    got = e.result("textDocument/documentSymbol", "lib/shapes.vo")
+    tree = [(c["name"], [g["name"] for g in c.get("children", [])]) for c in got[0].get("children", [])]
+    if tree != [("bad", ["path", "line"]), ("empty", [])]:
+        fail("document symbols of a case with fields", f"{tree}")
     e.close()
 
 

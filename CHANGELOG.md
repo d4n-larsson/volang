@@ -4,6 +4,24 @@ What changed in each released version of vo, for people and agents who use it. T
 decision is in [`specs/`](specs/) and summarized in [`docs/roadmap.md`](docs/roadmap.md); what a version
 may and may not change is in [`docs/stability.md`](docs/stability.md).
 
+## 0.6.0
+
+- **Variant cases with fields (spec 060).** A case that carries several values declares them as fields:
+  `malformed { path: str; line: int; }`, built with `LoadError.malformed { path: p, line: 3 }` (no `new`)
+  and read with `case malformed(m)`, then `m.line`. The fields are read-only (**E0344 case_field_set**).
+  Equality, ordering, map keys, JSON (`{"malformed": {...}}`, the format of a record payload), field
+  annotations and property tests work as for records. A value prints as it is written,
+  `LoadError.malformed { path: "a", line: 3 }`. A case with one field is **E0216 one_field_case**; its fix
+  writes `name(T);`. `vo query`/`vo edit` take `Variant.case.field`, and `vo edit add-field` takes
+  `Variant.case`.
+- **`match` on `int` and `str` (spec 060).** Arms are literals or constants, each once (E0402), and a final
+  `else` is required (**E0414 value_match_else**, whose fix adds it). `else` on a variant or `result`
+  match is **E0415 match_else_exhaustive** (fix: remove it); `match` on another type is
+  **E0345 match_scrutinee**.
+- **`std.time.Repeated` removed**: its fields are now those of `time.LocalError.repeated`
+  (`time.LocalError.repeated { first: a, second: b }`); a program naming `time.Repeated` gets E0214 saying
+  so. The JSON of the value is unchanged.
+
 ## 0.5.0
 
 Breaking change first. Applying the first fix of each diagnostic of `vo check --json` (up to four rounds,

@@ -1,0 +1,22 @@
+variant LoadError {
+    malformed {
+        path: str;
+        line: int;
+    }
+    empty;
+}
+
+fn describe(e: LoadError) -> str {
+    match e {
+        case malformed(m) {
+            return m.path + ":" + str(m.line);
+        }
+        case empty {
+            return "empty";
+        }
+    }
+}
+
+fn main() uses console {
+    print(describe(LoadError.malformed { path: "a.txt", line: 3 }));
+}

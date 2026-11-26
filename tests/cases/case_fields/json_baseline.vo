@@ -3,7 +3,7 @@ import std.time;
 
 # Spec 060 (FR-005, T029): the JSON of a case whose payload record became fields is unchanged.
 fn main() -> result[void] uses console {
-    let e = time.LocalError.repeated(new time.Repeated { first: 0, second: 3600000 });
+    let e = time.LocalError.repeated { first: 0, second: 3600000 };
     let text = try json.write_json(json.to_json(e));
     print(text);
     let back: time.LocalError = try json.from_json(try json.parse_json(text));

@@ -561,8 +561,8 @@ static void fm_expr(Node *n, long ctx)
         if (n->a.v->n && !fm_wrapped(n)) fm_group(n, st);
         break;
     }
-    case N_NEW_RECORD: /* new T { f: e, ... } */
-        fm_c("new ");
+    case N_NEW_RECORD: /* new T { f: e, ... }; spec 060: a case's fields `T.case { f: e, ... }` */
+        if (!n->e.i) fm_c("new ");
         fm_name(n->a.n);
         fm_type_args(n->d.v);
         if (!n->b.v->n) { /* spec 029: a record without fields */
@@ -608,6 +608,10 @@ static void fm_expr(Node *n, long ctx)
         fm_b(']');
         break;
     case N_VCASE:
+        if (n->c.n && n->c.n->kind == N_NEW_RECORD && n->c.n->e.i) { /* spec 060: named `T.case` */
+            fm_expr(n->c.n, 0);
+            break;
+        }
         fm_name(n->a.n);
         fm_b('.');
         fm_name(n->b.n);
@@ -843,11 +847,11 @@ static void fm_stmt_once(Node *s, long level)
 }
 
 /* The body lines of a record (name: type;) or variant (name; / name(type);). */
-static void fm_members(Vec *v, int is_record)
+static void fm_members(Vec *v, int is_record, char *ind)
 {
     for (long i = 0; i < v->n; i++) {
         Node *m = vec_get(v, i);
-        fm_c("    ");
+        fm_c(ind);
         if (m->kind == N_COMMENT) {
             fm_source(m);
         } else {
@@ -860,12 +864,18 @@ static void fm_members(Vec *v, int is_record)
                     if (k) fm_c(", ");
                     fm_expr(vec_get(a->b.v, k), 0);
                 }
-                fm_c(")\n    ");
+                fm_c(")\n");
+                fm_c(ind);
             }
             fm_name(m->a.n);
             if (is_record) {
                 fm_c(": ");
                 fm_type(m->b.n);
+            } else if (m->c.n) { /* spec 060: a case with fields */
+                fm_c(" {\n");
+                fm_members(m->c.n->b.v, 1, "        ");
+                fm_c("    }\n");
+                continue;
             } else if (m->b.n) {
                 fm_b('(');
                 fm_type(m->b.n);
@@ -984,7 +994,7 @@ static void fm_item(Node *item)
         fm_tparams(item->c.v); /* [T, ...] */
         fm_tparams_now = item->c.v;
         fm_c(" {\n");
-        fm_members(item->b.v, item->kind == N_RECORD);
+        fm_members(item->b.v, item->kind == N_RECORD, "    ");
         fm_c("}");
         break;
     case N_TEST:

@@ -1,0 +1,15 @@
+$ vo edit add-field main.vo LoadError.malformed reason: str = "x"
+main.vo:21:64: error[E0201]: `x` is not defined.
+  21 |     print(describe(LoadError.malformed { path: "a.txt", line: 3 }));
+     |                                                                ^
+error[T0006]: Adding field `reason` to `LoadError.malformed` would not check (1 new error): nothing was written.
+--- stderr
+--- exit 65
+$ vo check main.vo
+0 errors, 0 warnings
+--- stderr
+--- exit 0
+$ vo run main.vo
+a.txt:3
+--- stderr
+--- exit 0

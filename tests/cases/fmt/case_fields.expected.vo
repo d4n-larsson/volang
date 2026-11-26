@@ -1,0 +1,31 @@
+variant LoadError {
+    malformed {
+        path: str;
+        @size(1, 80)
+        reason: str;
+    }
+    missing(str);
+    # the empty file
+    empty;
+}
+
+fn make(p: str) -> LoadError {
+    return LoadError.malformed {
+        path: p,
+        reason: "a very long reason that does not fit on one line together with the rest"
+    };
+}
+
+fn line(e: LoadError) -> LoadError.malformed {
+    match e {
+        case malformed(m) {
+            return m;
+        }
+        case missing(_) {
+            return LoadError.malformed { path: "", reason: "x" };
+        }
+        case empty {
+            return LoadError.malformed { path: "", reason: "y" };
+        }
+    }
+}

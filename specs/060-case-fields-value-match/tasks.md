@@ -173,45 +173,45 @@ cases; the reference's `Shape` example runs without `Size` (T031).
 
 ## Phase 5: Polish & Cross-Cutting Concerns
 
-- [ ] T021 [P] `src/fmt.c` (`fm_members` `:837-869`, item printer `:970-978`, expressions): field cases
+- [X] T021 [P] `src/fmt.c` (`fm_members` `:837-869`, item printer `:970-978`, expressions): field cases
   print like record fields (annotations included); field-case literals follow the record literal's
   layout; golden case `tests/cases/fmt/case_fields.vo`; `tests/fmt_corpus.py` passes.
-- [ ] T022 [P] `src/doc.c` (`:191-213`, `:292-298`, item loops `:411, 770, 922`): signatures print
+- [X] T022 [P] `src/doc.c` (`:191-213`, `:292-298`, item loops `:411, 770, 922`): signatures print
   `malformed { path: str; line: int; reason: str; }`; hidden records are not listed as items; `vo doc`
   of a std variant with a field case (after T029) shows them; `doc_conformance.py` passes.
-- [ ] T023 `src/query.c` (`q_resolve` `:322-372`, `q_resolve_qualified` `:384-418`, `q_members`
+- [X] T023 `src/query.c` (`q_resolve` `:322-372`, `q_resolve_qualified` `:384-418`, `q_members`
   `:114-136`, `QK_TYPES`, `q_decl_type` `:1259-1267`): TARGET `Variant.case.field` (and
   `m.Variant.case.field`) keyed `(hidden record, field index)`; refs and rename of a case field (golden
   cases `tests/cases/query/case_field_refs.cmd`, `tests/cases/edit/rename_case_field.cmd`).
-- [ ] T024 `src/edit.c` (`ed_add_field` `:302-318`, `ed_field_decl_change` `:213-241`): `vo edit
+- [X] T024 `src/edit.c` (`ed_add_field` `:302-318`, `ed_field_decl_change` `:213-241`): `vo edit
   add-field ENTRY Variant.case FIELD: TYPE = DEFAULT` adds the field to the case and to every literal; the
   new field goes before the closing `}` (also fixing records declared on one line); golden cases.
-- [ ] T025 [P] `src/lsp.c` (`:925-932`): document symbols list a field case's fields as children;
+- [X] T025 [P] `src/lsp.c` (`:925-932`): document symbols list a field case's fields as children;
   `tests/lsp.py` passes.
-- [ ] T026 [P] Editors: tree-sitter (`case_declaration` :106, `match_arm` :234-238, `variant_value` :273,
+- [X] T026 [P] Editors: tree-sitter (`case_declaration` :106, `match_arm` :234-238, `variant_value` :273,
   `qualified_type` :160; `make grammars`), TextMate, Vim, Zed queries (a copy of tree-sitter's),
   `site/pygments_vo`; `python3 tests/grammars.py` passes.
-- [ ] T027 Repository (research R9): `std/time.vo` `LocalError.repeated(Repeated)` becomes a field case
+- [X] T027 Repository (research R9): `std/time.vo` `LocalError.repeated(Repeated)` becomes a field case
   (`Repeated` removed); an E0214 library-change row in `src/libchange.c` for `time.Repeated` with its
   message; `tests/cases/library/error_texts.vo` and `tests/migrate_056.py`'s expected texts follow.
-- [ ] T028 Repository: `examples/expenses/report.vo` `ExpenseError.bad_date(DateProblem)` becomes a
+- [X] T028 Repository: `examples/expenses/report.vo` `ExpenseError.bad_date(DateProblem)` becomes a
   field case (`DateProblem` removed); the example's tests and recordings give the same results (the
   printed failure text changes to construction syntax, R4: update `tests/migrate_056.py`'s CHANGED entry).
-- [ ] T029 SC-001 and FR-005: the JSON of the migrated `repeated` and `bad_date` values equals T004's
+- [X] T029 SC-001 and FR-005: the JSON of the migrated `repeated` and `bad_date` values equals T004's
   baseline (`tests/cases/case_fields/json_baseline.vo` prints them; its `.out` is T004's file).
-- [ ] T030 `make test`.
-- [ ] T031 `docs/reference.md` (R10): the Variants paragraph and example (`rect { w: float; h: float; }`,
+- [X] T030 `make test`.
+- [X] T031 `docs/reference.md` (R10): the Variants paragraph and example (`rect { w: float; h: float; }`,
   `Shape.rect { w: 2.0, h: 1.5 }`, `case rect(r)`, `r.w * r.h`, no `Size`), the `match` table row and the
   details line say both new forms in the words they use now; `python3 tests/ref_examples.py`: words
   before and after stated in `results.md`, at most 11,538; tighten other paragraphs if needed, listed in
   `results.md`.
-- [ ] T032 [P] `site/docs/guide/records-and-variants.md` (case fields), the guide's control-flow page
+- [X] T032 [P] `site/docs/guide/records-and-variants.md` (case fields), the guide's control-flow page
   (value `match`), `docs/stability.md`, `CHANGELOG.md` (0.6.0: both forms, the codes, `time.Repeated`
   removed); `site_examples.py` passes.
-- [ ] T033 Version 0.6.0 (`src/build.c`, `src/main.c`, `tests/cases/cli/version*.out`,
+- [X] T033 Version 0.6.0 (`src/build.c`, `src/main.c`, `tests/cases/cli/version*.out`,
   `tests/cases/build/options/expected/out`, `site/docs/tools/version.md`, `site/docs/start/install.md`,
   `docs/stability.md`); `make site-check`.
-- [ ] T034 SC measurements in `results.md`: SC-001 (2 of 2 payload records removed, JSON identical),
+- [X] T034 SC measurements in `results.md`: SC-001 (2 of 2 payload records removed, JSON identical),
   SC-003 (codes, cases, catalog), SC-004 (prop), SC-005 (reference words), check times (T004's baseline).
 - [ ] T035 `make test` on x86-64, then `make test ARCH=aarch64` and `ARCH=riscv64` under qemu
   (byte-identical); `results.md` complete; `docs/roadmap.md` row for 060.
