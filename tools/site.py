@@ -103,7 +103,7 @@ def demote(text):
 def first_sentence(text):
     for para in re.split(r"\n\s*\n", text):
         para = para.strip()
-        if para and not para.startswith(("#", "```", "|", "-", ">", "<!--")):
+        if para and not para.startswith(("#", "```", "|", "-", ">", "<", "///")):  # (`///` and HTML: the home hero)
             para = re.sub(r"\s+", " ", para)
             m = re.match(r"(.+?[.!?])(\s|$)", para)
             return m.group(1) if m else para
@@ -230,8 +230,14 @@ def assemble():
     shutil.rmtree(SRC, ignore_errors=True)
     shutil.copytree(os.path.join(ROOT, "site", "docs"), SRC)
     os.makedirs(os.path.join(SRC, "assets"), exist_ok=True)
-    shutil.copy(os.path.join(ROOT, "docs", "vo.svg"), os.path.join(SRC, "assets", "vo.svg"))
+    logo = open(os.path.join(ROOT, "docs", "vo.svg"), encoding="utf-8").read()
+    with open(os.path.join(SRC, "assets", "vo.svg"), "w", encoding="utf-8") as f:  # the site's accent: ice blue
+        f.write(logo.replace("#5E81AC", "#88C0D0"))
     version = run([VO, "version"]).strip()
+    semver = version.split()[1]  # `vo 0.5.0 schema 1`
+    home = os.path.join(SRC, "index.md")
+    text = open(home, encoding="utf-8").read().replace("@@VO_VERSION@@", semver)
+    open(home, "w", encoding="utf-8").write(text)
     commit = run(["git", "rev-parse", "--short", "HEAD"]).strip()
     ref_nav, err_nav, std_nav, ex_nav = reference(), errors(), stdlib(), examples()
 

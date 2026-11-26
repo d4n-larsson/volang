@@ -1,10 +1,48 @@
-# vo
+/// html | div.vo-hero
 
-vo is a small, statically typed programming language designed for AI coding agents, and for the people
-who review what those agents write.
+<p class="vo-hero__meta"><span>VO</span><span>@@VO_VERSION@@</span></p>
+<p class="vo-hero__kicker">LANGUAGE / TOOLCHAIN / REFERENCE</p>
+
+//// html | div.vo-hero__grid
+
+///// html | div.vo-hero__text
+
+# A language for programs that are easy to inspect
+
+A small, statically typed language designed for AI coding agents and the people who review what they
+write.
 
 [Get started](start/install.md){ .md-button .md-button--primary }
-[Read the language guide](guide/basics.md){ .md-button }
+[Language guide](guide/basics.md){ .md-button }
+
+/////
+
+///// html | div.vo-hero__code
+
+```vo title="main.vo"
+record Task {
+    title: str;
+    due_ms: int;
+}
+
+# No `uses`: pure, so it cannot touch files, the network or the clock.
+fn overdue(tasks: list[Task], now: int) -> list[Task] {
+    return filter(tasks, fn(t) => t.due_ms < now);
+}
+
+fn main() uses console, clock {
+    let tasks = [new Task { title: "ship 0.5", due_ms: 0 }];
+    for t in overdue(tasks, now_ms()) {
+        print("late: " + t.title);
+    }
+}
+```
+
+/////
+
+////
+
+///
 
 Agents write code in one shot, read the compiler's output and fix what it reports, often with nobody
 watching. vo is built for that loop.

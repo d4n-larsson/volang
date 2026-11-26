@@ -2,7 +2,7 @@
 """Spec 015 (FR-014, FR-015, SC-007), on the built site (make site-check):
 - the pinned colors of site/docs/stylesheets/extra.css (text, links, headings, header, footer, code and its syntax
   colors against their backgrounds) meet
-  WCAG 2.1 AA, 4.5:1, in the light and the dark scheme;
+  WCAG 2.1 AA, 4.5:1, in the site's one dark scheme (and any other scheme block it has);
 - every page's content is in its HTML (its title is there without running scripts);
 - no page or stylesheet loads anything from another site (scripts, stylesheets, fonts, @import)."""
 import glob
@@ -35,6 +35,12 @@ for scheme, body in re.findall(r'\[data-md-color-scheme="(\w+)"\]\s*\{(.*?)\}', 
              ("md-primary-bg-color", "md-primary-fg-color"), ("md-footer-fg-color", "md-footer-bg-color"),
              ("md-code-fg-color", "md-code-bg-color"), ("md-typeset-a-color", "md-code-bg-color"),
              ("vo-h2-color", "md-default-bg-color"), ("vo-h3-color", "md-default-bg-color")]
+    # the design brief's surfaces (docs/volang-design-brief.md): labels, navigation, output panels
+    pairs += [(fg, bg) for fg, bg in [
+        ("vo-muted", "md-default-bg-color"), ("vo-muted", "vo-sidebar"), ("vo-muted", "md-code-bg-color"),
+        ("vo-muted", "vo-output"), ("md-default-fg-color--light", "vo-sidebar"), ("md-typeset-a-color", "vo-sidebar"),
+        ("md-code-fg-color", "vo-output"), ("vo-danger", "vo-output"), ("vo-danger", "md-default-bg-color"),
+        ("vo-success", "md-default-bg-color"), ("vo-warning", "md-default-bg-color")] if fg in v and bg in v]
     pairs += [(k, "md-code-bg-color") for k in v if k.startswith("md-code-hl-")]  # syntax colors
     for fg, bg in pairs:
         r = ratio(v[fg], v[bg])

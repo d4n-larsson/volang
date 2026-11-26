@@ -22,21 +22,10 @@ theme:
   font: false # no external fonts (FR-015)
   logo: assets/vo.svg
   favicon: assets/vo.svg
-  palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: custom # Nord, in stylesheets/extra.css
-      accent: custom
-      toggle:
-        icon: material/weather-night
-        name: Dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
+  palette: # one dark scheme (docs/volang-design-brief.md): Nord in stylesheets/extra.css
+    - scheme: slate
       primary: custom
       accent: custom
-      toggle:
-        icon: material/weather-sunny
-        name: Light mode
   features:
     - navigation.tabs
     - navigation.sections
