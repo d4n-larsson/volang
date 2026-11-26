@@ -1253,6 +1253,19 @@ static int q_module_at(long file, long off)
     return 1;
 }
 
+/* The type of a name the checker gave none, as its uses have it: a function's name is the function as
+ * a value, a record's or variant's name that type, and a case without a value its variant (as
+ * `Shape.dot` is); else 0. */
+static Type *q_decl_type(RefLog *r)
+{
+    Node *d = (Node *)r->key_a.i;
+    if (!d) return 0; /* an unresolved name */
+    if (r->key_b.i == -1 && d->kind == N_FN) return ty_func_of(d);
+    if (r->key_b.i == -1 && (d->kind == N_RECORD || d->kind == N_VARIANT)) return decl_type(d);
+    if (r->key_b.i >= 0 && d->kind == N_VARIANT) return decl_type(d); /* (variant, case) */
+    return 0;
+}
+
 int q_type_at(long file, long off)
 {
     ty_name_file = file; /* spec 058: types as this file writes them (`list[pricing.Item]`) */
@@ -1275,6 +1288,7 @@ int q_type_at(long file, long off)
         if (!t && expr && name->node == expr) t = expr->type;
         if (!t && decl) t = decl->type;
         if (!t && expr) t = expr->type;
+        if (!t) t = q_decl_type(name);
         shown = name->node;
     } else {
         t = expr->type;

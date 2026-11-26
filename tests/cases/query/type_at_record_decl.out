@@ -1,0 +1,3 @@
+hover/geo.vo:2:15 Point: Point (declared at hover/geo.vo:2:15)
+    record Point { x: float; y: float; }
+    A point in the plane.

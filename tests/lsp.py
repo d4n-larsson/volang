@@ -444,7 +444,9 @@ def hover_markdown(rec):
     doc, sig, typ = rec.get("doc") or {}, None, rec.get("type")
     sig = doc.get("signature")
     md = "```vo\n" + (sig if sig else rec.get("text", "") + (": " + typ if typ else "")) + "\n```"
-    if sig and typ and rec.get("text") is not None and typ != sig:
+    decl = rec.get("declaration") or {}
+    at_decl = decl.get("file") == rec.get("file") and decl.get("start") == rec.get("start")  # the signature says it
+    if sig and typ and rec.get("text") is not None and typ != sig and not at_decl:
         md += f"\n\nType: `{typ}`"
     if doc.get("description"):
         md += "\n\n" + doc["description"]

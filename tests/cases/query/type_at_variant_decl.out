@@ -1,0 +1,3 @@
+hover/geo.vo:30:16 Shape: Shape (declared at hover/geo.vo:30:16)
+    variant Shape { circle(float); square(float); }
+    A shape and its size.

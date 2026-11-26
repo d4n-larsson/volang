@@ -667,6 +667,14 @@ static Str *path_in(char *rec)
     return f && *f == '"' && f[1] == '/' ? str_of(f) : 0;
 }
 
+/* The JSON values at a and b are written the same (both present). */
+static int same_raw(char *a, char *b)
+{
+    if (!a || !b) return 0;
+    long n = js_skip(a, 0) - a;
+    return n == js_skip(b, 0) - b && mem_eq(a, b, n);
+}
+
 static void finish_type_at(Vec *recs, SB *o)
 {
     SB *b = answer_begin();
@@ -689,7 +697,8 @@ static void finish_type_at(Vec *recs, SB *o)
             }
         }
         sb_cstr(md, "\n```");
-        if (sig && *sig == '"' && type && *type == '"' && text && *text == '"') { /* a call or a use: its type too */
+        int at_decl = decl && declfile && str_eq(file, declfile) && same_raw(js_get(rec, "start"), js_get(decl, "start"));
+        if (sig && *sig == '"' && type && *type == '"' && text && *text == '"' && !at_decl) { /* a call or a use: its type too */
             Str *t = str_of(type), *s = str_of(sig);
             if (!str_eq(t, s)) {
                 sb_cstr(md, "\n\nType: `");
