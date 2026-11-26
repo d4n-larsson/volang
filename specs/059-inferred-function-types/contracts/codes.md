@@ -6,6 +6,7 @@ New codes (a row is added with the task that implements the code: E0342 in T019,
 | Code | Name | Exit | Fixable | Trigger |
 |---|---|---|---|---|
 | E0343 | `lambda_type_unknown` | 65 | no | an anonymous function with no expected type, or whose parameter type is an open type variable of the call |
+| E0413 | `lambda_single_return` | 65 | yes | an anonymous function whose block body is a single `return expr;` (no comment) in an untyped anonymous function; fix: `=> expr` (also applied by `vo fmt`) |
 
 Codes in new contexts (meaning unchanged):
 

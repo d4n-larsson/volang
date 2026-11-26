@@ -2723,6 +2723,34 @@ fn main() -> result[void] uses console {
 }
 ```
 
+## E0413 lambda_single_return
+
+An anonymous function's body only returns a value, written as a block.
+
+Fixable: yes
+
+A body that is a single `return expr;` has one form: `fn(p) => expr` (spec 059). The block form is kept for every other body, including one that returns nothing and one that holds a comment. The fix replaces the block with `=> expr`, and `vo fmt` does the same.
+
+### Example
+
+```vo
+fn main() uses console {
+    let words = ["pear", "fig"];
+    print(join(map(words, fn(w) {
+        return w + "!";
+    }), ","));
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let words = ["pear", "fig"];
+    print(join(map(words, fn(w) => w + "!"), ","));
+}
+```
+
 ## E0501 missing_effect
 
 A function or test does something its `uses` clause does not declare.

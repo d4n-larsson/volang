@@ -1,0 +1,7 @@
+fn main() uses console {
+    let key: fn(int) -> int = fn(x) {
+        # the identity keeps the order
+        return x;
+    };
+    print(str(key(4)));
+}

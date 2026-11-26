@@ -72,6 +72,24 @@ static void lambda_unknown(Node *node)
                                                  "pass it where a function type is expected."));
 }
 
+/* Spec 059: E0413, an untyped anonymous function whose block body only returns a value (no comment in it,
+ * which is a statement of the block): its one form is `=> expr`, and the fix writes it. 0.4 lambdas get
+ * E0342 first; once their types are gone this applies in the next round of fixes. */
+static void lambda_single_return(Node *node)
+{
+    Node *block = node->d.n;
+    if ((node->flags & NF_ARROW) || block->a.v->n != 1) return;
+    Node *ret = vec_get(block->a.v, 0);
+    if (ret->kind != N_RETURN || !ret->a.n) return;
+    Diag *d = diag_add("E0413", SEV_ERROR, (int)block->file, block->start, block->end,
+                       str_from_cstr("A body that only returns a value is written `=> expr`."));
+    Str *e = src_text(ret->a.n);
+    SB *sb = sb_new();
+    sb_cstr(sb, "=> ");
+    sb_str(sb, e);
+    diag_add_fix(d, (int)block->file, block->start, block->end, sb_finish(sb));
+}
+
 /* Checks an anonymous function; returns its function type. Without written types (spec 059) its
  * parameter and return types come from `expected`; an expected return of t_collect (a call that leaves
  * it open, research R3) or no expected type: the return type comes from the body (R4). */
@@ -117,6 +135,7 @@ Type *check_lambda(Node *node, Type *expected)
         node->type = written ? (node->c.n ? resolve_type(node->c.n) : t_void) : exp->b.t;
     ck_ret = node->type;
     if (node->d.n) {
+        if (!written) lambda_single_return(node);
         check_block(node->d.n);
         if (collect) node->type = ck_ret == t_collect ? t_void : ck_ret; /* no value returned: void */
         long k = node->type->kind; /* E0403, as for named functions */

@@ -207,18 +207,20 @@ by `vo fmt`.
 **Independent Test**: `sort_by(people, fn(p) => p.age);` checks, runs and stays on one line after `vo fmt`;
 `fn(p) { return p.age; }` is E0413 whose fix gives the former.
 
-- [ ] T028 [P] [US3] Golden cases first, `tests/cases/lambda_types/`: `single_return.vo` (check: E0413 with
+- [X] T028 [P] [US3] Golden cases first, `tests/cases/lambda_types/`: `single_return.vo` (check: E0413 with
   its fix, at the block); `single_return_comment.vo` (check: a single `return` with a comment in the block
   is not E0413); `tests/cases/fmt/lambda_single_return.vo` (fmt rewrites `fn(p) { return p.age; }` to
   `fn(p) => p.age`, keeps the commented block).
-- [ ] T029 [US3] E0413 lambda_single_return in `src/check_func.c` (contracts/diagnostics.md): a block body
+- [X] T029 [US3] E0413 lambda_single_return in `src/check_func.c` (contracts/diagnostics.md): a block body
   (not `NF_ARROW`) whose only statement is `return expr;` and that contains no comment; fix: one edit from
   `{` to `}` giving `=> expr` (expression text from the source). Catalog entry, codes row,
   `tests/catalog.py`; `python3 tests/apply_fixes.py`.
-- [ ] T030 [US3] `src/fmt.c` (`fm_lambda`): the same rewrite syntactically (no checker), so `vo fmt` applies
+- [X] T030 [US3] `src/fmt.c` (`fm_lambda`): the same rewrite syntactically (no checker), so `vo fmt` applies
   it (FR-009); `tests/fmt_corpus.py` passes (every corpus file stable under a second `vo fmt`).
-- [ ] T031 [US3] Re-run the migrations of T021–T025 and T026 with E0413 (if Phase 4 ran first): single-return
-  lambdas in the repository become `=> expr`; `make test`.
+- [X] T031 [US3] Re-run the migrations of T021–T025 and T026 with E0413 (if Phase 4 ran first): single-return
+  lambdas in the repository become `=> expr`; `make test`. (No-op: Phase 5 ran first; the migrations run once
+  with both fixes. E0413 and fmt's rewrite apply to untyped lambdas, so 0.4 code gets E0342 first and E0413
+  in the next `vo_fix` round.)
 
 **Checkpoint**: all user stories complete.
 

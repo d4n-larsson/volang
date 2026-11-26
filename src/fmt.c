@@ -184,9 +184,11 @@ static void fm_lambda(Node *f)
     }
     fm_uses(f->a.n->b.fx->uses); /* a `uses` clause (E0507) is kept, so nothing is lost */
     if (f->b.v->n && !wrap) fm_group(f, st);
-    if (f->flags & NF_ARROW) { /* spec 059: `=> expr`, broken inside expr when too long */
+    Vec *body = f->d.n ? f->d.n->a.v : 0; /* spec 059: `=> expr`, also for a block that only returns a value */
+    Node *only = body && body->n == 1 ? vec_get(body, 0) : 0; /* (a comment is a statement: it keeps the block) */
+    if ((f->flags & NF_ARROW) || (!lambda_written(f) && only && only->kind == N_RETURN && only->a.n)) {
         fm_c(" => ");
-        fm_expr(((Node *)vec_get(f->d.n->a.v, 0))->a.n, 0);
+        fm_expr(only->a.n, 0);
         return;
     }
     fm_b(' ');

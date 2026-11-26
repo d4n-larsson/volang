@@ -1,0 +1,12 @@
+record Person {
+    name: str;
+    age: int;
+}
+
+fn main() uses console {
+    let people = [new Person { name: "cy", age: 30 }, new Person { name: "al", age: 25 }];
+    sort_by(people, fn(p) {
+        return p.age;
+    });
+    print(join(map(people, fn(p) { return p.name; }), ","));
+}

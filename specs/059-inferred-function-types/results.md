@@ -56,3 +56,6 @@ Pending.
 - E0343 is not reported for an anonymous function without parameters (`let g = fn() => 41;`): nothing
   is unknown, its return type comes from its body. The spec's "no expected type" edge case is read as
   "parameter types unknown" (T017).
+- E0413 and `vo fmt`'s rewrite to `=> expr` apply to untyped anonymous functions only: a 0.4 lambda gets
+  E0342 first, and E0413 in the next round of fixes once its types are gone. Firing E0413 on 0.4 code would
+  have stopped every existing program with a single-return lambda from checking before the migration.

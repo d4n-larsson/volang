@@ -1,0 +1,13 @@
+fn main() uses console {
+    let key: fn(int) -> int = fn(x) {
+        return x * 2;
+    };
+    let keep: fn(int) -> int = fn(x) {
+        # a comment keeps the block
+        return x;
+    };
+    let old = fn(x: int) -> int {
+        return x;
+    };
+    print(str(key(1) + keep(2) + old(3)));
+}
