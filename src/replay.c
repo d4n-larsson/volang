@@ -1634,7 +1634,9 @@ void rt_begin(Node *test)
         rp_fprint = 0;
     } else {
         rf_redact = 0;
+        GC_ROOT(&text); /* collected memory once tests run (vo replay reads it before the collector starts) */
         rp_read(text, len);
+        GC_UNROOT(1);
     }
     rt_redact = rt_missing ? 0 : rf_redact;
     rcd_mode = 2;
@@ -1747,11 +1749,13 @@ Vec *rt_unused(void)
     Vec *out = vec_new();
     GC_ROOT(&out);
     char *buf = alloc(32768);
+    GC_ROOT(&buf);
     for (long f = 0; f < file_count; f++) {
         Vec *items = file_get((int)f)->ast ? file_get((int)f)->ast->a.v : 0;
         Vec *want = vec_new(); /* the recording paths of this file's tests */
         GC_ROOT(&want);
         Str *folder = 0;
+        GC_ROOT(&folder);
         for (long i = 0; items && i < items->n; i++) {
             Node *t = vec_get(items, i);
             if (t->kind != N_TEST) continue;
@@ -1780,13 +1784,15 @@ Vec *rt_unused(void)
                 for (long k = 0; k < want->n && !used; k++) used = str_eq(vec_get(want, k), full);
                 if (!used) {
                     long skip = dlen + (dir[dlen - 1] == '/' ? 0 : 1);
+                    GC_ROOT(&full);
                     vec_push(out, str_new(full->data + skip, full->len - skip));
+                    GC_UNROOT(1);
                 }
             }
         }
         if (fd >= 0) sys_close((int)fd);
-        GC_UNROOT(1);
+        GC_UNROOT(2);
     }
-    GC_UNROOT(1);
+    GC_UNROOT(2);
     return out;
 }

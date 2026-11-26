@@ -1,7 +1,8 @@
-# The quality gate (`make gate`: lint, the whole test suite, the UB-trap and collector stress suites,
-# generated programs against the frozen reference builds, and the speed checks) on every push to main
-# and every pull request. The gate builds its reference binaries from earlier commits, so the checkout
-# takes the full history. SESI, the assembly linter, is not in this repository: its step is skipped
+# Every push to main and every pull request runs `make lint test` (about 15 minutes). The whole quality
+# gate (`make gate`: also the UB-trap and collector stress suites, generated programs against the frozen
+# reference builds, the determinism repeats and the speed checks, over an hour) runs nightly and on
+# demand. The gate builds its reference binaries from earlier commits, so the checkout takes the full
+# history. SESI, the assembly linter, is not in this repository: its step is skipped
 # here (SESI_SKIP) and stays a local check.
 name: Quality gate
 
@@ -9,13 +10,16 @@ on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    - cron: "0 2 * * *"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: gate-${{ github.ref }}
+  # a push must not cancel the nightly gate on the same branch
+  group: gate-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -66,8 +70,8 @@ jobs:
         working-directory: editors
       - name: Check the tools
         run: make check-tools
-      - name: Run the gate
-        run: make gate SESI_SKIP=1
+      - name: Run the tests (push, pull request) or the whole gate (nightly, on demand)
+        run: make ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && 'gate' || 'lint test' }} SESI_SKIP=1
         env:
           VO_GRAMMARS: require
       - name: Keep the programs the comparisons disagreed on
