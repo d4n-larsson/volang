@@ -1,0 +1,23 @@
+server git a.test
+vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+vo package main.vo loc lib
+stop-server
+vo package --remove main.vo money
+vo package --json --remove main.vo pads
+vo run main.vo
+vo package --remove --dry-run main.vo report
+vo run main.vo
+vo package --remove --dry-run main.vo loc
+vo package --json --remove main.vo report
+vo run main.vo
+vo run packages/money/format.vo
+cp vo.packages after_report.packages
+server git a.test
+vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+vo package --ca-file test-ca.pem main.vo ledger https://127.0.0.1:{port}/ledger
+vo package --remove main.vo report
+vo package --remove main.vo money
+vo package --remove main.vo ledger
+vo package --remove main.vo loc
+vo run lib/one.vo
+keep vo.packages after_report.packages

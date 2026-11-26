@@ -1,0 +1,98 @@
+$ vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+added money 1.4.0 packages/money sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by report)
+  effects: none
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by report, money)
+  effects: none
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+total gains: random
+--- stderr
+--- exit 0
+$ vo package main.vo loc lib
+added loc lib sha256:20bc3df8f47b13a6fba491240c4db20a0d1e734c9a8bf4d82549a136837b4329
+--- stderr
+--- exit 0
+$ vo package --remove main.vo money
+error[E0709]: Package `money` is required by `report`: nothing was removed.
+--- stderr
+--- exit 65
+$ vo package --json --remove main.vo pads
+{"v":1,"kind":"toolchain_error","code":"E0709","name":"package_requirement","message":"Package `pads` is required by `money`, `report`: nothing was removed."}
+--- stderr
+--- exit 65
+$ vo run main.vo
+total 12,34
+--- stderr
+--- exit 0
+$ vo package --remove --dry-run main.vo report
+dry run: nothing written
+removed money 1.4.0
+removed pads 1.0.2
+removed report 2.1.0
+--- stderr
+--- exit 0
+$ vo run main.vo
+total 12,34
+--- stderr
+--- exit 0
+$ vo package --remove --dry-run main.vo loc
+error[T0001]: `--remove --dry-run` goes with a versioned package: removing a directory's entry changes one line.
+--- stderr
+--- exit 64
+$ vo package --json --remove main.vo report
+{"v":1,"kind":"package","name":"money","change":"removed","directory":"packages/money","hash":"sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b","source":"https://127.0.0.1:{port}/money","version":"1.4.0","direct":false}
+{"v":1,"kind":"package","name":"pads","change":"removed","directory":"packages/pads","hash":"sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb","source":"https://127.0.0.1:{port}/pads","version":"1.0.2","direct":false}
+{"v":1,"kind":"package","name":"report","change":"removed","directory":"packages/report","hash":"sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01","source":"https://127.0.0.1:{port}/report","version":"2.1.0","direct":true}
+--- stderr
+--- exit 0
+$ vo run main.vo
+--- stderr
+main.vo:1:1: error[E0205]: Cannot find `report/table.vo` for this import.
+   1 | import report.table;
+     | ^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- exit 65
+$ vo run packages/money/format.vo
+--- stderr
+error[T0002]: Cannot read `packages/money/format.vo`.
+--- exit 66
+$ vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+added money 1.4.0 packages/money sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by report)
+  effects: none
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by report, money)
+  effects: none
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+total gains: random
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem main.vo ledger https://127.0.0.1:{port}/ledger
+added ledger 1.0.0 packages/ledger sha256:8848187fcc64a5c1a73066f98bed76ecfb159d534971d835d239614a9a702343 from https://127.0.0.1:{port}/ledger
+  effects: none
+--- stderr
+--- exit 0
+$ vo package --remove main.vo report
+removed report 2.1.0
+--- stderr
+--- exit 0
+$ vo package --remove main.vo money
+error[E0709]: Package `money` is required by `ledger`: nothing was removed.
+--- stderr
+--- exit 65
+$ vo package --remove main.vo ledger
+removed ledger 1.0.0
+removed money 1.4.0
+removed pads 1.0.2
+--- stderr
+--- exit 0
+$ vo package --remove main.vo loc
+removed loc
+--- stderr
+--- exit 0
+$ vo run lib/one.vo
+--- stderr
+lib/one.vo:1:1: error[E0408]: `vo run` and `vo build` need a `fn main()`.
+   1 | export fn one() -> int {
+     | ^
+1 error, 0 warnings
+--- exit 65

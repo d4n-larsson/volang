@@ -1231,6 +1231,7 @@ typedef struct Sel {
     long local;   /* a program entry without a version: it stays as it is */
     long visited; /* its content and requirements are read at this version */
     long added;   /* it had no manifest entry */
+    long gone;     /* `--remove` names it */
     long restored; /* fetched again as pinned (`--repair` of a missing directory) */
     long changed; /* its directory was (or with --dry-run would be) replaced */
 } Sel;
@@ -1567,7 +1568,7 @@ static void sel_reach(void)
     int unknown = 0;
     for (long i = 0; i < sels->n; i++) {
         Sel *s = vec_get(sels, i);
-        s->reach = s->direct || s->local;
+        s->reach = !s->gone && (s->direct || s->local);
     }
     for (int more = 1; more;) {
         more = 0;
@@ -1584,7 +1585,7 @@ static void sel_reach(void)
             }
         }
     }
-    for (long i = 0; unknown && i < sels->n; i++) ((Sel *)vec_get(sels, i))->reach = 1;
+    for (long i = 0; unknown && i < sels->n; i++) ((Sel *)vec_get(sels, i))->reach = !((Sel *)vec_get(sels, i))->gone;
 }
 
 static Vec *set_union(Vec *a, Vec *b)
@@ -1801,6 +1802,27 @@ static int pkg_repair(void)
     return sel_apply();
 }
 
+/* `vo package --remove ENTRY NAME` for a versioned package: refused while a listed package requires it
+ * (E0709); else it goes, with the indirect packages only it required. Read from disk: nothing is fetched. */
+static int pkg_remove_versioned(Str *name)
+{
+    sel_start();
+    sel_run();
+    SB *sb = sb_new();
+    for (long i = 0; i < sels->n; i++) {
+        Sel *t = vec_get(sels, i);
+        for (long k = 0; k < t->needs->n; k++) {
+            if (!str_eq(((Req *)vec_get(t->needs, k))->name, name)) continue;
+            sb_cstr(sb, sb->len ? ", `" : "`");
+            sb_str(sb, t->name);
+            sb_byte(sb, '`');
+        }
+    }
+    if (sb->len) sel_fail("E0709", msg("Package `$1` is required by $2: nothing was removed.", name, sb_finish(sb), 0));
+    sel_of(name)->gone = 1;
+    return sel_apply();
+}
+
 /* What `source` has above `cur`: bit 1 and `compat`, the highest version that can stand in for it; bit 2
  * and `major`, the highest version that cannot (a new major; below 1.0.0 a new minor). */
 static int pkg_newer(Str *source, long *cur, long *compat, long *major)
@@ -1974,7 +1996,7 @@ int cmd_package(void)
     if (pos_n == 3 && doc_starts(args[2], "http://"))
         usage_error(str_from_cstr("A package is fetched from an https:// URL only."));
     pkg_command = 1;
-    if (opt_dry_run && !by_url && !opt_repair && !opt_update) usage_error(str_from_cstr("`--dry-run` goes with a versioned package, `--update`, `--repair` or `--remove`."));
+    if (opt_dry_run && !by_url && !opt_repair && !opt_update && !opt_remove) usage_error(str_from_cstr("`--dry-run` goes with a versioned package, `--update`, `--repair` or `--remove`."));
     if (opt_pkg_dir && !by_url) usage_error(str_from_cstr("`--dir` goes with a URL: `vo package --dir DIRECTORY ENTRY NAME URL`."));
     if (opt_ca_files && !by_url && !whole && !opt_update)
         usage_error(str_from_cstr("`--ca-file` goes with a URL, `--update`, `--outdated`, `--repair` or `--restore`: the other forms fetch nothing."));
@@ -2029,6 +2051,8 @@ int cmd_package(void)
     Pkg *e = pkg_find(name); /* the entry, or 0 */
     if (opt_remove) {
         if (!e) usage_error_arg("No package `$1` is listed in the manifest.", args[1]);
+        if (e->versioned) return pkg_remove_versioned(name);
+        if (opt_dry_run) usage_error(str_from_cstr("`--remove --dry-run` goes with a versioned package: removing a directory's entry changes one line."));
         Vec *v = pkg_entries; /* take it out (swap with the last; pkg_write sorts) */
         long i = 0;
         while (v->data[i].p != e) i++;

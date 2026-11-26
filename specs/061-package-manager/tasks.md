@@ -277,13 +277,13 @@ program runs.
 
 ## Phase 8: User Story 6 - Remove a package and what only it needed (P3)
 
-- [ ] T028 [US6] Step case `tests/cases/packages/remove_graph/`, failing first: `--remove main.vo
+- [X] T028 [US6] Step case `tests/cases/packages/remove_graph/`, failing first: `--remove main.vo
   report` removes `report`, `money`, `pads` (three `removed` lines, directories gone); `--remove
   main.vo money` while `report` is listed → E0709 ("`money` is required by `report`"), nothing changed;
   with `ledger` also listed, removing `report` keeps `money` and `pads`; `--remove --dry-run`. The
   existing `tests/cases/packages/remove/` (a local directory: the entry goes, the directory stays)
   passes unchanged.
-- [ ] T029 [US6] `src/packages.c` (`cmd_package`, remove branch): requirers from the listed packages'
+- [X] T029 [US6] `src/packages.c` (`cmd_package`, remove branch): requirers from the listed packages'
   manifests on disk; pruning of `indirect` entries no remaining entry reaches; directories under
   `packages/` that were fetched (entries with a source) are removed, hand-pinned ones are left.
 

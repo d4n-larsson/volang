@@ -4507,6 +4507,8 @@ A versioned package carries its own `vo.packages`, the packages it requires, and
 
 `vo package` also reports this code, and changes nothing, when a package it would add has a line without a version in its own manifest (a local directory or an archive): nobody else can fetch that requirement. Only the package's author can fix it, by requiring a versioned source.
 
+`vo package --remove ENTRY NAME` reports it, and removes nothing, while another listed package requires NAME: remove the requiring package, and the packages only it required go with it.
+
 ### Example
 
 ```text

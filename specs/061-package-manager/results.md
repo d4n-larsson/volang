@@ -57,6 +57,11 @@ Pending (measured in T035).
   `--outdated` and E0711's list; a manifest with a version-less line is E0709 from add, nothing
   written; a package in a sub-folder (`mono#kit`) has its requirements read from that folder's manifest,
   not the repository root's (which names a package that does not exist).
+- US6 (T028–T029): `tests/cases/packages/remove_graph` (server stopped: removing `money` or `pads`
+  while `report` requires them is E0709 naming every requirer; `--remove --dry-run`; removing `report`
+  removes `money` and `pads` with their directories; with `ledger` listed, removing `report` keeps
+  them; a local directory's entry goes and its directory stays). The existing `remove` case passes
+  unchanged.
 
 ## Deviations
 
@@ -103,3 +108,4 @@ Pending (measured in T035).
 - `--update ENTRY NAME` of an indirect package raises it and leaves it indirect.
 - The update case's new version gains `clock`, not `net("rates.example.com")`: it reuses the `graph`
   repositories.
+- `--remove --dry-run` of a version-less entry is T0001 (one line changes; nothing to preview).
