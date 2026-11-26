@@ -10,6 +10,7 @@ Multi-file programs are formatted file by file inside a copy of their directory.
 import os
 import shutil
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 import sys
 import tempfile
 
@@ -39,43 +40,52 @@ def run_args(path):
     return ["run", os.path.basename(path)]
 
 
-def main():
+def one(path):
+    """(checked, problems) for one corpus file."""
+    d = os.path.dirname(path)
+    if vo(["check", os.path.basename(path)], d).returncode != 0:
+        return 0, []
     problems = []
-    checked = 0
-    for path in corpus():
-        d = os.path.dirname(path)
-        if vo(["check", os.path.basename(path)], d).returncode != 0:
-            continue
-        checked += 1
-        with tempfile.TemporaryDirectory() as tmp:
-            orig_dir = os.path.join(tmp, "orig")
-            fmt_dir = os.path.join(tmp, "fmt")
+    runs = os.sep + os.path.join("tests", "cases", "run") + os.sep in path  # behavior compared: the whole folder
+    with tempfile.TemporaryDirectory() as tmp:
+        orig_dir = os.path.join(tmp, "orig")
+        fmt_dir = os.path.join(tmp, "fmt")
+        name = os.path.basename(path)
+        if runs:
             shutil.copytree(d, orig_dir)
             shutil.copytree(d, fmt_dir)
-            name = os.path.basename(path)
-            r = vo(["fmt", name], fmt_dir)
-            if r.returncode != 0:
-                problems.append(f"{path}: vo fmt exited {r.returncode}: {r.stdout.decode()[:200]}")
-                continue
-            once = open(os.path.join(fmt_dir, name), "rb").read()
-            vo(["fmt", name], fmt_dir)
-            twice = open(os.path.join(fmt_dir, name), "rb").read()
-            if once != twice:
-                problems.append(f"{path}: formatting is not idempotent")
-            if os.sep + os.path.join("tests", "cases", "run") + os.sep not in path:
-                continue
-            args = run_args(path)
-            if args is None:
-                continue
-            base = path[:-3]
-            stdin = open(base + ".in", "rb").read() if os.path.exists(base + ".in") else b""
-            if os.path.exists(base + ".hold-stdin"):
-                continue
-            a = vo(args, orig_dir, stdin)
-            b = vo(args, fmt_dir, stdin)
-            changed = once != open(path, "rb").read()
-            if (a.returncode, a.stdout) != (b.returncode, b.stdout) or (not changed and a.stderr != b.stderr):
-                problems.append(f"{path}: behavior changed after formatting")
+        else:  # vo fmt reads only the file
+            os.makedirs(fmt_dir)
+            shutil.copy(path, fmt_dir)
+        r = vo(["fmt", name], fmt_dir)
+        if r.returncode != 0:
+            return 1, [f"{path}: vo fmt exited {r.returncode}: {r.stdout.decode()[:200]}"]
+        once = open(os.path.join(fmt_dir, name), "rb").read()
+        vo(["fmt", name], fmt_dir)
+        twice = open(os.path.join(fmt_dir, name), "rb").read()
+        if once != twice:
+            problems.append(f"{path}: formatting is not idempotent")
+        if not runs:
+            return 1, problems
+        args = run_args(path)
+        base = path[:-3]
+        if args is None or os.path.exists(base + ".hold-stdin"):
+            return 1, problems
+        stdin = open(base + ".in", "rb").read() if os.path.exists(base + ".in") else b""
+        a = vo(args, orig_dir, stdin)
+        b = vo(args, fmt_dir, stdin)
+        changed = once != open(path, "rb").read()
+        if (a.returncode, a.stdout) != (b.returncode, b.stdout) or (not changed and a.stderr != b.stderr):
+            problems.append(f"{path}: behavior changed after formatting")
+    return 1, problems
+
+
+def main():
+    jobs = int(os.environ.get("VO_JOBS") or os.cpu_count() or 1)  # files are independent; results stay in order
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        results = list(pool.map(one, corpus()))
+    checked = sum(c for c, _ in results)
+    problems = [p for _, ps in results for p in ps]
     for p in problems:
         print("FAIL", p)
     print(f"fmt_corpus: {checked} files, {len(problems)} problems")

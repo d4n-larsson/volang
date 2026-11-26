@@ -8,6 +8,8 @@
 # (memory reports, timeouts).
 # --accept writes the actual stdout/stderr/exit status of failing non-fmt cases as their
 # expectations (review the diff first: `git diff tests/cases`).
+# Cases run in $VO_JOBS parallel workers (default: the number of cores), each in its own
+# build/tmp.K and build/run-work.K; VO_JOBS=1 runs them one at a time, in order.
 root=$(cd "$(dirname "$0")/.." && pwd)
 vo="$root/bin/vo"
 repeat=1
@@ -131,12 +133,36 @@ cases=$(for p in "$@"; do
     if [ -d "$p" ]; then find "$p" -type d -exec test -f '{}/steps' \; -prune -o \( -name '*.vo' -o -name '*.cmd' \) -print ; else echo "$p"; fi
 done | sed -E 's/\.(vo|cmd)$//' | sort -u)
 
-for base in $cases; do
+runnable=$(for base in $cases; do
     case $base in *.expected) continue ;; esac
     if [ -f "$base.vo" ]; then
         [ -f "$base.cmd" ] || [ -f "$base.out" ] || [ -f "$base.err" ] || [ -f "$base.code" ] || continue
     elif [ ! -f "$base.cmd" ]; then continue; fi
-    check_case "$base"
+    echo "$base"
+done)
+
+# Worker k of $jobs: every jobs-th case from the k-th, in its own directories; prints its PASS/FAIL lines,
+# then "passed P, failed F".
+jobs=${VO_JOBS:-$(nproc 2>/dev/null || echo 1)}
+worker() {
+    tmp="$root/build/tmp.$1"; work="$root/build/run-work.$1"; mkdir -p "$work"
+    echo "$runnable" | awk -v k="$1" -v j="$jobs" 'NF && NR % j == k % j' | {
+        while read -r base; do check_case "$base"; done
+        echo "passed $passed, failed $failed"
+    }
+}
+k=1
+while [ "$k" -le "$jobs" ]; do
+    worker "$k" >"$work/worker.$k" 2>&1 &
+    k=$((k + 1))
+done
+wait
+k=1; passed=0; failed=0
+while [ "$k" -le "$jobs" ]; do
+    sed '$d' "$work/worker.$k"
+    set -- $(tail -n 1 "$work/worker.$k" | tr -d ',')
+    passed=$((passed + $2)); failed=$((failed + $4))
+    k=$((k + 1))
 done
 echo "passed $passed, failed $failed"
 [ "$failed" = 0 ]

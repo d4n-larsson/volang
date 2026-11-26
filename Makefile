@@ -229,14 +229,12 @@ test: all
 	@! grep -n 'MBEDTLS_SSL_VERIFY_NONE\|MBEDTLS_SSL_VERIFY_OPTIONAL\|\*flags *=' src/tls.c || \
 	  { echo "src/tls.c must never weaken certificate verification (spec 019 FR-006)"; exit 1; }
 	tests/run.sh --repeat 3 tests/cases/run tests/cases/effects tests/cases/func tests/cases/generic tests/cases/prop
-	@for s in "fuzz.py --iterations 200 --seed 1" apply_fixes.py catalog.py ref_examples.py site_examples.py fmt_corpus.py \
+	python3 tests/run_scripts.py "fuzz.py --iterations 200 --seed 1" apply_fixes.py catalog.py ref_examples.py site_examples.py fmt_corpus.py \
 	  migrate.py migrate_056.py std_names.py libchange_rows.py message_style.py record_changes.py doc_conformance.py json_corpus.py packages_check.py time_check.py "scope_fuzz.py --iterations 300 --seed 1" gc_bounds.py gc/baseline.py gc/timeout_check.py \
 	  steps.py json_stream.py https_interop.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1" \
 	  math_vectors.py "bytes_fuzz.py --count 2000 --runs 200" "format_diff.py --quick" "regex_diff.py --quick" \
 	  "regex_fuzz.py --count 20000" "sqlite_scope.py --quick" "sqlite_fuzz.py --count 1000" sqlite_corpus.py structure_corpus.py "serve_workers.py --quick" "web_fuzz.py --quick" effect_sets_records.py \
-	  "const_equiv.py --count 300" const_records.py build_examples.py crypto_vectors.py mcp.py grammars.py lsp.py tcp.py stream.py package_fetch.py strings.py bits.py decimals.py web_security.py iteration.py workers.py zones.py "scope_paths.py --count 300 --seed 1" postgres.py "recorded_tests.py --quick" "operations.py --quick"; do \
-	  f=tests/$${s%% *}; if [ -f $$f ]; then echo "== $$s"; python3 tests/$$s || exit 1; \
-	  else echo "== skip $$f (not created yet)"; fi; done
+	  "const_equiv.py --count 300" const_records.py build_examples.py crypto_vectors.py mcp.py grammars.py lsp.py tcp.py stream.py package_fetch.py strings.py bits.py decimals.py web_security.py iteration.py workers.py zones.py "scope_paths.py --count 300 --seed 1" postgres.py "recorded_tests.py --quick" "operations.py --quick"
 	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \
 	  (cd $$d && $(CURDIR)/bin/vo check main.vo >/dev/null && \
 	  if [ -d recordings/tests ]; then $(CURDIR)/bin/vo test --replay recordings/tests main.vo >/dev/null; else $(CURDIR)/bin/vo test main.vo >/dev/null; fi && for r in recordings/*.jsonl; do [ -f "$$r" ] || continue; \

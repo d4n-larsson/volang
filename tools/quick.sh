@@ -206,24 +206,40 @@ scr=$(printf '%s\n' "$scr" | grep . | sort -u)
 tgt=$(echo $tgt | tr ' ' '\n' | sort -u | tr '\n' ' ')
 
 fail=0
+log="$root/build/quick.log"
 step() { # name, command...
     name=$1; shift
     t0=$(date +%s%N)
-    "$@" >"$root/build/quick.log" 2>&1; st=$?
+    "$@" >"$log" 2>&1; st=$?
     ms=$(( ($(date +%s%N) - t0) / 1000000 ))
-    summary=$(grep -E '^(passed|[a-z_]+: |FAIL)' "$root/build/quick.log" | tail -1)
+    summary=$(grep -E '^(passed|[a-z_]+: |FAIL)' "$log" | tail -1)
     if [ $st = 0 ]; then echo "  ok   $name (${ms} ms) $summary"
-    else echo "  FAIL $name (${ms} ms)"; grep -E 'FAIL|Error|error' "$root/build/quick.log" | head -20; fail=1; fi
+    else echo "  FAIL $name (${ms} ms)"; grep -E 'FAIL|Error|error' "$log" | head -20; fail=1; fi
 }
 paths=""; for d in $dirs; do [ -d tests/cases/$d ] && paths="$paths tests/cases/$d"; done
 [ -n "$paths" ] && step "golden cases:$dirs" tests/run.sh $paths
 steps_paths=""; for p in $paths; do [ -n "$(find $p -name steps -print -quit)" ] && steps_paths="$steps_paths $p"; done
 [ -n "$steps_paths" ] && step "step cases" python3 tests/steps.py $steps_paths
 printf '%s\n' "$scr" | grep . > "$root/build/quick.scripts"
+# The scripts run side by side, each with its own log, reported in order; those that time themselves against
+# fixed limits run alone afterwards (as tests/run_scripts.py's ALONE).
+i=0
 while IFS= read -r s; do
     [ -f "tests/${s%% *}" ] || { echo "  skip $s (not created yet)"; continue; }
-    step "$s" sh -c "python3 tests/$s" </dev/null
+    case ${s%% *} in workers.py|stream.py|bits.py|iteration.py) echo "$s" >>"$root/build/quick.alone"; continue ;; esac
+    i=$((i + 1))
+    (log="$root/build/quick.log.$i"; step "$s" sh -c "python3 tests/$s" </dev/null >"$root/build/quick.out.$i") &
 done < "$root/build/quick.scripts"
+wait
+k=1
+while [ "$k" -le "$i" ]; do
+    cat "$root/build/quick.out.$k"; grep -q '^  FAIL' "$root/build/quick.out.$k" && fail=1
+    rm -f "$root/build/quick.out.$k" "$root/build/quick.log.$k"; k=$((k + 1))
+done
+if [ -f "$root/build/quick.alone" ]; then
+    while IFS= read -r s; do step "$s" sh -c "python3 tests/$s" </dev/null; done < "$root/build/quick.alone"
+    rm -f "$root/build/quick.alone"
+fi
 for t in $tgt; do step "make $t" make -s --no-print-directory $t; done
 [ $fail = 0 ] && echo "quick: passed (make test before the change is complete)" || echo "quick: FAILED"
 exit $fail
