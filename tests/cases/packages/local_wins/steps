@@ -1,0 +1,6 @@
+server git a.test
+vo package main.vo money shared/money
+vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+vo package --json --dry-run --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+vo run main.vo
+keep vo.packages

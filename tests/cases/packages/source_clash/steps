@@ -1,0 +1,8 @@
+server git a.test
+vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+vo package --ca-file test-ca.pem main.vo cash https://127.0.0.1:{port}/cash
+vo package --json --ca-file test-ca.pem main.vo purse https://127.0.0.1:{port}/purse
+vo package --ca-file test-ca.pem main.vo coins https://127.0.0.1:{port}/money.git
+vo package --ca-file test-ca.pem main.vo wallet https://127.0.0.1:{port}/wallet
+vo check main.vo
+keep vo.packages

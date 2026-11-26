@@ -27,6 +27,16 @@ Pending (measured in T035).
   explicit `money@1.6.0` reports the gained effect. `tests/package_graphs.py`: 50 generated graphs, 274
   orders of adds, each matching an independent computation of the rule; the 25 graphs whose versions
   only add requirements give byte-identical manifests in every order.
+- US2 (T017–T019): `tests/cases/packages/select` (four sibling projects: `ledger` then `report` and the
+  other order give the same manifest, checked with `cmp` when the output was accepted; `money` stays
+  1.4.0 with 1.6.0 released; the program's own 1.6.0 is kept; its own 1.2.0 is raised and reported with
+  `required_by`), `conflict` (E0707 with every requirer, `this command`, `this program`, the 0.x rule),
+  `source_clash` (E0708, both forms; a `.git/` ending is the same source), `version_changed` (E0710,
+  with the package fetched and with it on disk), `local_wins`. After each refusal the manifest is as it
+  was. `tests/package_graphs.py` adds 12 graphs: conflicts with 1 to 4 requirers at 1.x and one at
+  2.0.0 (every requirer and version must be in the message), source clashes, cycles of 2 to 5 packages
+  (resolve). The generated graphs found one bug in this phase's own check: a package the command asks
+  lower than a requirement allows kept the hash of the version asked, and E0710 fired; fixed.
 
 ## Deviations
 
@@ -52,3 +62,10 @@ Pending (measured in T035).
   would rewrite every existing manifest on its next update.
 - A malformed version field or a misplaced `indirect` has its own E0703 message; the message for
   the other malformed lines is as before, so existing outputs do not change.
+- E0707 is reported when the round that reads the conflicting requirement ends, with the requirers read
+  so far (T018 said "all requirers collected"): a requirer that only a later round would read is not
+  listed. When no listed requirer asks the selected version, who set it is appended.
+- T017's `cmp` of two manifests is two kept files in one case (`a/vo.packages`, `b/vo.packages`),
+  compared once by hand; the generated graphs do the comparison on every run.
+- A program's own package that a requirement raises is reported with `(required by ...)`, as T017 asks;
+  the command's contract listed that only for indirect packages.

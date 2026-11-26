@@ -185,7 +185,7 @@ program runs.
 **Independent test**: `report` (money 1.4.0) and `ledger` (money 1.2.0) in either order give 1.4.0;
 `audit` (money 2.0.0) fails naming both.
 
-- [ ] T017 [US2] Step cases, failing first: `tests/cases/packages/select/`: `ledger` then `report`, and
+- [X] T017 [US2] Step cases, failing first: `tests/cases/packages/select/`: `ledger` then `report`, and
   the other order in a second project folder, `cmp` of the manifests; money stays 1.4.0 with 1.6.0
   released; the program's own `money@1.6.0` is kept when `report` asks 1.4.0; adding `report` to a
   project with `money@1.2.0` raises it and prints `(required by report)`.
@@ -198,11 +198,11 @@ program runs.
   → E0710 showing both hashes. `tests/cases/packages/local_wins/`: a program entry `money shared/money
   sha256:…` (no version) and `report` added → `local money (required by report at 1.4.0)`, the entry
   untouched. After every failure `keep vo.packages` and `vo check main.vo`.
-- [ ] T018 [US2] `src/pkgselect.c`: research R4 step 3: E0707 (all requirers collected before
+- [X] T018 [US2] `src/pkgselect.c`: research R4 step 3: E0707 (all requirers collected before
   reporting, sorted by name), E0708 (sources compared per data-model.md: one trailing `/` and `.git`
   dropped), E0710 (a requirement's hash against the selected content's, same version only), the `local`
   outcome; `compatible()` with the 0.x rule. Catalog entries and codes rows for E0707, E0708, E0710.
-- [ ] T019 [P] [US2] `tests/package_graphs.py`, second part: the generator also produces graphs with a
+- [X] T019 [P] [US2] `tests/package_graphs.py`, second part: the generator also produces graphs with a
   conflict, a source clash and a cycle (A 1.0.0 ↔ B 1.0.0); for conflicts the output must name every
   requirer the generator knows; a cycle resolves; SC-002's count (50 graphs, all orders) printed.
 

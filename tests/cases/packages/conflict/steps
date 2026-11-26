@@ -1,0 +1,13 @@
+server git a.test
+vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+vo package --ca-file test-ca.pem main.vo audit https://127.0.0.1:{port}/audit
+vo package --json --ca-file test-ca.pem main.vo audit https://127.0.0.1:{port}/audit
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.4.0
+vo package --ca-file test-ca.pem main.vo audit https://127.0.0.1:{port}/audit
+vo package --ca-file test-ca.pem main.vo usesa https://127.0.0.1:{port}/usesa
+vo package --dry-run --ca-file test-ca.pem main.vo usesb https://127.0.0.1:{port}/usesb
+vo package --ca-file test-ca.pem main.vo usesb https://127.0.0.1:{port}/usesb
+vo check main.vo
+keep vo.packages
+vo package --ca-file test-ca.pem main.vo usesc https://127.0.0.1:{port}/usesc

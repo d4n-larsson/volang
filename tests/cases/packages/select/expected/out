@@ -1,0 +1,65 @@
+$ vo package --ca-file test-ca.pem a/main.vo ledger https://127.0.0.1:{port}/ledger
+added ledger 1.0.0 packages/ledger sha256:8848187fcc64a5c1a73066f98bed76ecfb159d534971d835d239614a9a702343 from https://127.0.0.1:{port}/ledger
+  effects: none
+added money 1.2.0 packages/money sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b (required by ledger)
+  effects: none
+added pads 1.0.0 packages/pads sha256:68b401186cbcde03deabcd9815e26874eb3d78eef8ef5eebea03cfab8d9bd3ae (required by money)
+  effects: none
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem a/main.vo report https://127.0.0.1:{port}/report
+updated money 1.2.0 -> 1.4.0: sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b -> sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by ledger, report)
+  effects: none
+updated pads 1.0.0 -> 1.0.2: sha256:68b401186cbcde03deabcd9815e26874eb3d78eef8ef5eebea03cfab8d9bd3ae -> sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by money, report)
+  effects: none
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+total gains: random
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem b/main.vo report https://127.0.0.1:{port}/report
+added money 1.4.0 packages/money sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by report)
+  effects: none
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by report, money)
+  effects: none
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+total gains: random
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem b/main.vo ledger https://127.0.0.1:{port}/ledger
+added ledger 1.0.0 packages/ledger sha256:8848187fcc64a5c1a73066f98bed76ecfb159d534971d835d239614a9a702343 from https://127.0.0.1:{port}/ledger
+  effects: none
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem c/main.vo money https://127.0.0.1:{port}/money@1.6.0
+added money 1.6.0 packages/money sha256:b21e3b66ef925c19050db37e6d01e2754e8fc606ed3e7b9eaafe791aaa198165 from https://127.0.0.1:{port}/money
+  effects: clock
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by money)
+  effects: none
+total gains: clock
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem c/main.vo report https://127.0.0.1:{port}/report
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem d/main.vo money https://127.0.0.1:{port}/money@1.2.0
+added money 1.2.0 packages/money sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b from https://127.0.0.1:{port}/money
+  effects: none
+added pads 1.0.0 packages/pads sha256:68b401186cbcde03deabcd9815e26874eb3d78eef8ef5eebea03cfab8d9bd3ae (required by money)
+  effects: none
+--- stderr
+--- exit 0
+$ vo package --json --ca-file test-ca.pem d/main.vo report https://127.0.0.1:{port}/report
+{"v":1,"kind":"package","name":"money","change":"updated","directory":"packages/money","hash":"sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b","old_hash":"sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b","source":"https://127.0.0.1:{port}/money","version":"1.4.0","old_version":"1.2.0","direct":true,"required_by":["report"],"effects":[],"gained":[],"lost":[]}
+{"v":1,"kind":"package","name":"pads","change":"updated","directory":"packages/pads","hash":"sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb","old_hash":"sha256:68b401186cbcde03deabcd9815e26874eb3d78eef8ef5eebea03cfab8d9bd3ae","source":"https://127.0.0.1:{port}/pads","version":"1.0.2","old_version":"1.0.0","direct":false,"required_by":["money","report"],"effects":[],"gained":[],"lost":[]}
+{"v":1,"kind":"package","name":"report","change":"added","directory":"packages/report","hash":"sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01","source":"https://127.0.0.1:{port}/report","version":"2.1.0","direct":true,"effects":["random"]}
+{"v":1,"kind":"package_total","gained":["random"],"lost":[]}
+--- stderr
+--- exit 0
+$ vo run d/main.vo
+total 12,34
+--- stderr
+--- exit 0

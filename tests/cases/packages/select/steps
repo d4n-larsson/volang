@@ -1,0 +1,11 @@
+server git a.test
+vo package --ca-file test-ca.pem a/main.vo ledger https://127.0.0.1:{port}/ledger
+vo package --ca-file test-ca.pem a/main.vo report https://127.0.0.1:{port}/report
+vo package --ca-file test-ca.pem b/main.vo report https://127.0.0.1:{port}/report
+vo package --ca-file test-ca.pem b/main.vo ledger https://127.0.0.1:{port}/ledger
+vo package --ca-file test-ca.pem c/main.vo money https://127.0.0.1:{port}/money@1.6.0
+vo package --ca-file test-ca.pem c/main.vo report https://127.0.0.1:{port}/report
+vo package --ca-file test-ca.pem d/main.vo money https://127.0.0.1:{port}/money@1.2.0
+vo package --json --ca-file test-ca.pem d/main.vo report https://127.0.0.1:{port}/report
+vo run d/main.vo
+keep a/vo.packages b/vo.packages c/vo.packages d/vo.packages

@@ -4447,6 +4447,81 @@ added money packages/money sha256:1e5b240df8daf715941d8af2629ab6404c7f9d1d369e49
 
 Check the URL in a browser: it must download a `.tar.gz` (or `.tar`) archive directly. For a repository on a forge, use the archive link of a tag or commit, not of a branch, so that the pinned content does not change.
 
+## E0707 package_version_conflict
+
+A package is required at versions that cannot stand in for each other.
+
+Fixable: no
+
+A program holds one version of each package: the highest that the program or any of its packages requires. That works while the versions are compatible: the same first number, and below 1.0.0 the same second number too (`1.2.0` and `1.4.0` are, `1.4.0` and `2.0.0` are not, `0.2.0` and `0.3.0` are not). `vo package` fails with this code, and changes nothing, when two requirements for one package are not compatible. The message lists who asks for which version: `this command`, `this program` (the entry in the program's own manifest), or the package whose manifest requires it.
+
+### Example
+
+```text
+$ vo package main.vo audit https://codeberg.org/acme/audit
+error[E0707]: Package `money` is required at incompatible versions: 2.0.0 by `audit`, 1.4.0 by `report`.
+```
+
+### Fixed
+
+```text
+$ vo package main.vo audit https://codeberg.org/acme/audit@1.3.0
+added audit 1.3.0 packages/audit sha256:5d0c7a0f2b0a4ab1c3b9e1f1c1a0f6c2b8e6a4d1f3b5c7d9e0a1b2c3d4e5f607 from https://codeberg.org/acme/audit
+  effects: none
+```
+
+Take versions of the requiring packages that agree: an older `audit` that still uses `money` 1, or a newer `report` that uses `money` 2.
+
+## E0708 package_source_clash
+
+One package name is given two sources, or one source two names.
+
+Fixable: no
+
+A package is identified by its source, the repository URL (with its `#FOLDER`, if any; a trailing `/` or `.git` does not count), and the manifests of a program and of its packages must agree on the name of each source. `vo package` fails with this code, and changes nothing, when a required package's manifest names another source for a name the program already uses, or uses another name for a source the program already has. The message names both and says whose manifest each comes from.
+
+### Example
+
+```text
+$ vo package main.vo cash https://codeberg.org/acme/cash
+error[E0708]: Package `money` names two sources: https://codeberg.org/acme/money (this program), https://codeberg.org/fork/money (`cash`).
+```
+
+### Fixed
+
+```text
+$ vo package main.vo cash https://codeberg.org/acme/cash@2.0.0
+added cash 2.0.0 packages/cash sha256:8a1f0c3e5d7b9f2a4c6e8d0b1a3c5e7f9b2d4f6a8c0e1b3d5f7a9c2e4b6d8f01 from https://codeberg.org/acme/cash
+  effects: none
+```
+
+Only the author of the requiring package can change what its manifest names: use a version of it that names the same source as the program, or use the other source in the program as well.
+
+## E0710 package_version_changed
+
+A version of a package no longer has the content that another package pinned.
+
+Fixable: no
+
+A package's manifest pins each package it requires by version and by content hash. `vo package` fails with this code, and changes nothing, when the content selected for a version differs from what a requiring package pinned for the same version: the tag was moved after release, or the requiring package's manifest is wrong. The message shows both hashes.
+
+### Example
+
+```text
+$ vo package main.vo stale https://codeberg.org/acme/stale
+error[E0710]: `money` 1.4.0 has other content (sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b) than `stale` pinned (sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b): the version was changed after release.
+```
+
+### Fixed
+
+```text
+$ vo package main.vo stale https://codeberg.org/acme/stale@1.0.1
+added stale 1.0.1 packages/stale sha256:3c5e7a9b1d2f4a6c8e0b2d4f6a8c0e1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f2a40 from https://codeberg.org/acme/stale
+  effects: none
+```
+
+Do not work around it by editing a hash: find out which content is the released one. A version's content must never change; a fix is a new version.
+
 ## E0711 package_version_unknown
 
 A package source has no such version.

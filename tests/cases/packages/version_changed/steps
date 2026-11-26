@@ -1,0 +1,7 @@
+server git a.test
+vo package --ca-file test-ca.pem main.vo stale https://127.0.0.1:{port}/stale
+vo check main.vo
+vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+vo package --json --ca-file test-ca.pem main.vo stale https://127.0.0.1:{port}/stale
+vo check main.vo
+keep vo.packages

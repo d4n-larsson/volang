@@ -1,0 +1,56 @@
+$ vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+added money 1.4.0 packages/money sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by report)
+  effects: none
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by report, money)
+  effects: none
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+total gains: random
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem main.vo audit https://127.0.0.1:{port}/audit
+error[E0707]: Package `money` is required at incompatible versions: 2.0.0 by `audit`, 1.4.0 by `report`.
+--- stderr
+--- exit 65
+$ vo package --json --ca-file test-ca.pem main.vo audit https://127.0.0.1:{port}/audit
+{"v":1,"kind":"toolchain_error","code":"E0707","name":"package_version_conflict","message":"Package `money` is required at incompatible versions: 2.0.0 by `audit`, 1.4.0 by `report`."}
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money
+error[E0707]: Package `money` is required at incompatible versions: 2.0.0 by this command, 1.4.0 by `report`.
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.4.0
+unchanged money 1.4.0
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem main.vo audit https://127.0.0.1:{port}/audit
+error[E0707]: Package `money` is required at incompatible versions: 1.4.0 by this program, 2.0.0 by `audit`, 1.4.0 by `report`.
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo usesa https://127.0.0.1:{port}/usesa
+added tiny 0.2.0 packages/tiny sha256:4efb99c6eb1af886fcc5457eb34cdc674a71eeb130d377cf582d30c3a0011c51 (required by usesa)
+  effects: none
+added usesa 1.0.0 packages/usesa sha256:9b8b9ca04f7bd44e45988368ac27f4af14e80a8391046ee42035a468d6510af3 from https://127.0.0.1:{port}/usesa
+  effects: none
+--- stderr
+--- exit 0
+$ vo package --dry-run --ca-file test-ca.pem main.vo usesb https://127.0.0.1:{port}/usesb
+error[E0707]: Package `tiny` is required at incompatible versions: 0.2.0 by `usesa`, 0.3.0 by `usesb`.
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo usesb https://127.0.0.1:{port}/usesb
+error[E0707]: Package `tiny` is required at incompatible versions: 0.2.0 by `usesa`, 0.3.0 by `usesb`.
+--- stderr
+--- exit 65
+$ vo check main.vo
+main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effects with `vo effects --update`.
+   1 | import report.table;
+     | ^
+0 errors, 1 warning
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem main.vo usesc https://127.0.0.1:{port}/usesc
+error[E0707]: Package `tiny` is required at incompatible versions: 0.2.0 by `usesa`, 0.3.1 by `usesc`.
+--- stderr
+--- exit 65

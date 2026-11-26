@@ -930,12 +930,18 @@ static void list_json(SB *sb, char *key, Vec *v)
 static Str *old_ver; /* spec 061: the version an updated entry had, for the report */
 static Vec *rep_by;   /* spec 061: the packages that require the reported one (an indirect entry), or 0 */
 
+static Str *rep_at;   /* the version they require, for a `local` entry */
+
 static void by_text(SB *sb)
 {
     sb_cstr(sb, " (required by ");
     for (long i = 0; i < rep_by->n; i++) {
         if (i) sb_cstr(sb, ", ");
         sb_str(sb, vec_get(rep_by, i));
+    }
+    if (rep_at) {
+        sb_cstr(sb, " at ");
+        sb_str(sb, rep_at);
     }
     sb_byte(sb, ')');
 }
@@ -974,6 +980,12 @@ static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before,
             }
             sb_cstr(sb, e->indirect ? ",\"direct\":false" : ",\"direct\":true");
             if (rep_by && rep_by->n) list_json(sb, "required_by", rep_by);
+        }
+        if (rep_at) {
+            list_json(sb, "required_by", rep_by);
+            sb_cstr(sb, ",\"required_version\":\"");
+            sb_str(sb, rep_at);
+            sb_byte(sb, '"');
         }
         if (now) list_json(sb, "effects", now);
         if (gained) list_json(sb, "gained", gained);
@@ -1163,7 +1175,11 @@ typedef struct Sel {
     Str *target;  /* the directory it lives in, or will (absolute) */
     Str *staging; /* fetched content waiting to take the target's place, or 0 */
     Vec *by;      /* the packages that require it (sel_reach) */
-    Vec *needs;   /* the names its manifest requires, at the version read */
+    Vec *needs;   /* what its manifest requires (Req), at the version read */
+    struct Sel *from; /* the package whose requirement brought it in, or 0: the program's manifest or the command */
+    Str *raised;  /* who required the selected version, as text, when a requirement set it */
+    long own[3];  /* has_own: the version the program itself asks for (a direct entry, or the command) */
+    long has_own;
     long unknown; /* its requirements could not be read (not on disk as pinned) */
     long reach;   /* a direct package, or required by one that is reached */
     Vec *before;  /* its effects before, now, and why they could not be read */
@@ -1215,6 +1231,8 @@ static Sel *sel_of(Str *name)
     s->target = e->dir;
     s->local = !e->versioned;
     s->direct = !e->indirect;
+    s->has_own = e->versioned && !e->indirect;
+    for (int k = 0; k < 3; k++) s->own[k] = e->ver[k];
     s->by = vec_new();
     s->needs = vec_new();
     for (int k = 0; k < 3; k++) s->ver[k] = e->ver[k];
@@ -1253,29 +1271,145 @@ static void sel_set(Sel *s, long *ver)
     s->needs = vec_new();
 }
 
-typedef struct Req { /* a requirement read in this round, applied when the round ends */
+typedef struct Req { /* a line of a package's manifest; applied when the round that read it ends */
     Str *name;
     Str *source;
     long ver[3];
+    char pin[32];
+    Sel *from; /* the package that requires it */
 } Req;
 
 static Vec *sel_pending;
 
-/* `name` from `source` is required at `ver` or higher. */
-static void sel_require(Str *name, Str *source, long *ver)
+/* "`report` 2.1.0": a requirer at the version it has now. */
+static Str *sel_at(Sel *s)
 {
-    Sel *s = sel_of(name);
+    return msg("`$1` $2", s->name, pkg_ver_text(s->ver), 0);
+}
+
+/* q is required: a new package, or a higher version of a selected one. What does not fit (another
+ * source, another major version) is sel_check's to report. */
+static void sel_require(Req *q)
+{
+    Sel *s = sel_of(q->name);
     if (!s) {
         SB *sb = sb_new();
         sb_str(sb, pkg_dir);
         sb_cstr(sb, "/packages/");
-        sb_str(sb, name);
-        s = sel_new(name, source, ver, sb_finish(sb));
+        sb_str(sb, q->name);
+        s = sel_new(q->name, q->source, q->ver, sb_finish(sb));
+        s->from = q->from;
+        s->raised = sel_at(q->from);
     } else if (s->local) { /* the program's own directory for it stays; the report says what was asked */
-        if (ver_cmp(ver, s->ver) > 0)
-            for (int k = 0; k < 3; k++) s->ver[k] = ver[k];
-    } else if (ver_cmp(ver, s->ver) > 0) {
-        sel_set(s, ver);
+        if (ver_cmp(q->ver, s->ver) > 0)
+            for (int k = 0; k < 3; k++) s->ver[k] = q->ver[k];
+    } else if (ver_cmp(q->ver, s->ver) > 0) {
+        sel_set(s, q->ver);
+        s->raised = sel_at(q->from);
+    }
+}
+
+/* A source as compared between manifests: without one trailing `/` and one trailing `.git` of its path. */
+static Str *src_norm(Str *u)
+{
+    long end = 0;
+    while (end < u->len && u->data[end] != '#') end++;
+    long cut = end;
+    if (cut && u->data[cut - 1] == '/') cut--;
+    if (cut >= 4 && mem_eq(u->data + cut - 4, ".git", 4)) cut -= 4;
+    SB *sb = sb_new();
+    sb_bytes(sb, u->data, cut);
+    sb_bytes(sb, u->data + end, u->len - end);
+    return sb_finish(sb);
+}
+
+/* Versions that may stand in for each other: the same major, and below 1.0.0 the same minor. */
+static int compatible(long *a, long *b)
+{
+    return a[0] == b[0] && (a[0] || a[1] == b[1]);
+}
+
+static Str *sel_holder(Sel *s)
+{
+    return s->from ? msg("`$1`", s->from->name, 0, 0) : str_from_cstr(s->named ? "this command" : "this program");
+}
+
+/* E0707: every requirer of d with the version it asks, the program first, then by name. */
+static void sel_conflict(Sel *d)
+{
+    Vec *who = vec_new(), *ver = vec_new(), *key = vec_new();
+    int has = 0; /* someone listed asks for the selected version */
+    if (d->has_own) {
+        vec_push(key, str_from_cstr(""));
+        vec_push(who, str_from_cstr(d->named ? "this command" : "this program"));
+        vec_push(ver, pkg_ver_text(d->own));
+        has |= !ver_cmp(d->own, d->ver);
+    }
+    for (long i = 0; i < sels->n; i++) {
+        Sel *t = vec_get(sels, i);
+        for (long k = 0; k < t->needs->n; k++) {
+            Req *q = vec_get(t->needs, k);
+            if (!str_eq(q->name, d->name)) continue;
+            long at = who->n;
+            vec_push(key, t->name);
+            vec_push(who, msg("`$1`", t->name, 0, 0));
+            vec_push(ver, pkg_ver_text(q->ver));
+            has |= !ver_cmp(q->ver, d->ver);
+            for (; at > 0 && str_cmp(vec_get(key, at - 1), vec_get(key, at)) > 0; at--) {
+                Vec *vs[3] = {key, who, ver};
+                for (int v = 0; v < 3; v++) {
+                    void *x = vs[v]->data[at].p;
+                    vs[v]->data[at].p = vs[v]->data[at - 1].p;
+                    vs[v]->data[at - 1].p = x;
+                }
+            }
+        }
+    }
+    if (!has) { /* asked by a version since replaced, or only pinned */
+        vec_push(who, d->raised ? d->raised : str_from_cstr("this program's manifest"));
+        vec_push(ver, pkg_ver_text(d->ver));
+    }
+    SB *sb = sb_new();
+    for (long i = 0; i < who->n; i++) {
+        if (i) sb_cstr(sb, ", ");
+        sb_str(sb, vec_get(ver, i));
+        sb_cstr(sb, " by ");
+        sb_str(sb, vec_get(who, i));
+    }
+    sel_fail("E0707", msg("Package `$1` is required at incompatible versions: $2.", d->name, sb_finish(sb), 0));
+}
+
+/* What the selection must not hold (research R4 step 3), looked for when a round's requirements are in:
+ * a name with two sources or a source with two names (E0708), versions of one package that cannot stand
+ * in for each other (E0707), a version whose content is not what a requirer pinned (E0710). A program
+ * entry without a version is the author's own choice and is not checked. */
+static void sel_check(void)
+{
+    long n = sels->n;
+    for (long i = 0; i < n; i++) {
+        Sel *s = vec_get(sels, i);
+        for (long k = 0; k < s->needs->n; k++) {
+            Req *q = vec_get(s->needs, k);
+            Sel *d = sel_of(q->name);
+            if (d->local) continue;
+            if (!str_eq(src_norm(q->source), src_norm(d->source)))
+                sel_fail("E0708", msg("Package `$1` names two sources: $2, $3.", d->name, msg("$1 ($2)", d->source, sel_holder(d), 0),
+                                      msg("$1 (`$2`)", q->source, s->name, 0)));
+            if (!compatible(q->ver, d->ver)) sel_conflict(d);
+            if (d->visited && !d->unknown && !ver_cmp(q->ver, d->ver) && !mem_eq(q->pin, d->pin, 32))
+                sel_fail("E0710", msg("$1 has other content ($2) than $3: the version was changed after release.", sel_at(d), pkg_hash_text(d->pin),
+                                      msg("`$1` pinned ($2)", s->name, pkg_hash_text(q->pin), 0)));
+        }
+    }
+    /* ponytail: every pair, fine for the 1,000 packages a command may select; sort by source if that grows */
+    for (long i = 0; i < n; i++) {
+        Sel *a = vec_get(sels, i);
+        for (long j = i + 1; j < n && !a->local; j++) {
+            Sel *b = vec_get(sels, j);
+            if (!b->local && str_eq(src_norm(a->source), src_norm(b->source)))
+                sel_fail("E0708", msg("One source has two names: $1 and $2: $3.", msg("`$1` ($2)", a->name, sel_holder(a), 0),
+                                      msg("`$1` ($2)", b->name, sel_holder(b), 0), a->source));
+        }
     }
 }
 
@@ -1296,9 +1430,11 @@ static void sel_requirements(Sel *s, Str *dir)
             Req *q = alloc(sizeof(Req));
             q->name = r->name;
             q->source = r->url;
+            q->from = s;
             for (int k = 0; k < 3; k++) q->ver[k] = r->ver[k];
+            mem_copy(q->pin, r->pin, 32);
             vec_push(sel_pending, q);
-            vec_push(s->needs, r->name);
+            vec_push(s->needs, q);
         }
         line = le + 1;
     }
@@ -1312,6 +1448,7 @@ static void sel_visit(Sel *s)
     if (s->local) return;
     int same = e && e->versioned && str_eq(e->url, s->source) && !ver_cmp(e->ver, s->ver);
     if (same && pkg_intact(e)) {
+        mem_copy(s->pin, e->pin, 32); /* (a version the command asked for and a requirement overruled left its own) */
         sel_requirements(s, e->dir);
         return;
     }
@@ -1333,6 +1470,8 @@ static void sel_visit(Sel *s)
     s->staging = staging;
     int r = pkg_stage(s->source, s->ver, staging, &why);
     long h = r ? 0 : pkg_hash(staging, s->pin, 0);
+    if (s->named && s->own[0] < 0)
+        for (int k = 0; k < 3; k++) s->own[k] = s->ver[k]; /* the highest: now known */
     if (r == -3) sel_fail("E0711", msg("$1.", why, 0, 0));
     if (r == -1) sel_fail("E0706", msg("Cannot fetch package `$1` from $2: $3.", s->name, s->source, why));
     if (r || h < 0) sel_fail("E0702", msg("Package `$1`: $2.", s->name, r ? why : str_from_cstr("its .vo files cannot be read back"), 0));
@@ -1367,10 +1506,8 @@ static void sel_run(void)
             read++;
         }
         if (!read) return;
-        for (long i = 0; i < sel_pending->n; i++) {
-            Req *q = vec_get(sel_pending, i);
-            sel_require(q->name, q->source, q->ver);
-        }
+        for (long i = 0; i < sel_pending->n; i++) sel_require(vec_get(sel_pending, i));
+        sel_check();
     }
 }
 
@@ -1391,7 +1528,7 @@ static void sel_reach(void)
             if (!s->reach) continue;
             unknown |= s->unknown != 0;
             for (long k = 0; k < s->needs->n; k++) {
-                Sel *d = sel_of(vec_get(s->needs, k));
+                Sel *d = sel_of(((Req *)vec_get(s->needs, k))->name);
                 long j = 0;
                 while (j < d->by->n && !str_eq(vec_get(d->by, j), s->name)) j++;
                 if (j == d->by->n) vec_push(d->by, s->name);
@@ -1522,7 +1659,7 @@ static int sel_apply(void)
     Vec *gained = vec_new(), *lost = vec_new();
     for (long i = 0; i < n; i++) {
         Sel *s = vec_get(sels, i);
-        rep_by = s->direct ? 0 : s->by;
+        rep_by = s->direct && (s->named || !s->changed) ? 0 : s->by; /* the program's own, raised: by whom */
         old_ver = s->old_ver;
         if (!s->reach) {
             rep_by = 0;
@@ -1534,7 +1671,9 @@ static int sel_apply(void)
             lost = set_union(lost, set_minus(before, s->now));
         } else if (s->local && s->by->n) {
             rep_by = s->by;
+            rep_at = pkg_ver_text(s->ver);
             pkg_report_fetched("local", s->entry, 0, 0, 0, 0);
+            rep_at = 0;
         } else if (s->named) {
             pkg_report_fetched("unchanged", s->entry, 0, 0, 0, 0);
         }
@@ -1594,6 +1733,8 @@ static int pkg_add_source(Str *name, Str *source, long *ver)
     }
     s->direct = 1;
     s->named = 1;
+    s->has_own = 1;
+    for (int k = 0; k < 3; k++) s->own[k] = ver[k];
     sel_run();
     return sel_apply();
 }

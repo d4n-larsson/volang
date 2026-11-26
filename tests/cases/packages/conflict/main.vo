@@ -1,0 +1,5 @@
+import report.table;
+
+fn main() uses console {
+    print(table.title());
+}

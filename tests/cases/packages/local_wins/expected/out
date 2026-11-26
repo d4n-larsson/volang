@@ -1,0 +1,22 @@
+$ vo package main.vo money shared/money
+added money shared/money sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+local money (required by report at 1.4.0)
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by report)
+  effects: none
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+total gains: random
+--- stderr
+--- exit 0
+$ vo package --json --dry-run --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+{"v":1,"kind":"package","name":"money","change":"local","directory":"shared/money","hash":"sha256:af7b55cbb2322c36e0c30136244d44d8ecd11015f9257297bb73b415906b6a8b","required_by":["report"],"required_version":"1.4.0"}
+{"v":1,"kind":"package","name":"report","change":"unchanged","directory":"packages/report","hash":"sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01","source":"https://127.0.0.1:{port}/report","version":"2.1.0","direct":true}
+--- stderr
+--- exit 0
+$ vo run main.vo
+total 12.34
+--- stderr
+--- exit 0

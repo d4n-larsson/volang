@@ -1,0 +1,34 @@
+$ vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+added money 1.4.0 packages/money sha256:d5118c254b55cbfc4c621941178c3a0ebbed40d5fbb13ad07aca8d6f5568451b (required by report)
+  effects: none
+added pads 1.0.2 packages/pads sha256:0f7638abd4a748e2a278f2a506341e6f60a4243cb4bb1f7f94bdecf36ace9efb (required by report, money)
+  effects: none
+added report 2.1.0 packages/report sha256:19efa104df4cef94538cfe16260498505905526e8c6d1a04cc8add714da60b01 from https://127.0.0.1:{port}/report
+  effects: random
+total gains: random
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem main.vo cash https://127.0.0.1:{port}/cash
+error[E0708]: Package `money` names two sources: https://127.0.0.1:{port}/money (this program), https://127.0.0.1:{port}/coins (`cash`).
+--- stderr
+--- exit 65
+$ vo package --json --ca-file test-ca.pem main.vo purse https://127.0.0.1:{port}/purse
+{"v":1,"kind":"toolchain_error","code":"E0708","name":"package_source_clash","message":"One source has two names: `money` (this program) and `coins` (`purse`): https://127.0.0.1:{port}/money."}
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo coins https://127.0.0.1:{port}/money.git
+error[E0708]: One source has two names: `money` (this program) and `coins` (this command): https://127.0.0.1:{port}/money.
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo wallet https://127.0.0.1:{port}/wallet
+added wallet 1.0.0 packages/wallet sha256:f55570c997e11dd3ec3c46706bb3e535a6d8b53ef670773d8a53cd4ddd849ba6 from https://127.0.0.1:{port}/wallet
+  effects: none
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effects with `vo effects --update`.
+   1 | import report.table;
+     | ^
+0 errors, 1 warning
+--- stderr
+--- exit 0

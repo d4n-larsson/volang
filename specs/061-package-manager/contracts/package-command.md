@@ -56,7 +56,8 @@ remaining package requires NAME (E0709 naming it).
 ## JSON
 
 `package` records (schema 1) gain fields, present when they apply: `version`, `old_version`, `source`,
-`direct` (bool), `required_by` (list of names). New values of `change`: `local`, `outdated` (with
+`direct` (bool), `required_by` (list of names; also on a direct package that a requirement raised),
+`required_version` (with `local`: the highest version asked). New values of `change`: `local`, `outdated` (with
 `compatible` and `newer_major`, each a version or null). A final record
 `{"v":1,"kind":"package_total","gained":[...],"lost":[...]}` follows when more than one package changed.
 

@@ -9,6 +9,10 @@ packages. Its roots are added to a fresh project in every order (at most 24 orde
 give the manifest a selection computed here gives for that order, and a program that checks. In every
 other graph a higher version requires at least what the one below it does: there every order must give
 a byte-identical vo.packages.
+
+Then graphs the selection must refuse or get through (US2): a conflict (several packages requiring one
+package at 1.x, one at 2.0.0: E0707 naming every requirer with its version), a source clash (E0708 naming
+both sources), each leaving the manifest as it was, and a cycle of requirements, which resolves.
 """
 import itertools
 import os
@@ -117,6 +121,80 @@ def run_order(work, port, order, k):
     return open(os.path.join(d, "vo.packages")).read(), None
 
 
+def pkg(repos, name, version, deps):
+    """A package with one function; deps: [(name, version, repository)] of its manifest."""
+    d = os.path.join(repos, name, version)
+    os.makedirs(d)
+    open(os.path.join(d, name + "m.vo"), "w").write("export fn v() -> int {\n    return 1;\n}\n")
+    if deps:
+        open(os.path.join(d, "vo.packages"), "w").write("".join(
+            f"{x} packages/{x} {{hash:{src}@{dv}}} https://127.0.0.1:{{port}}/{src}@{dv}\n" for x, dv, src in deps))
+
+
+def special(r, repos, count):
+    """The US2 graphs: [(label, [(name, version)] to add in order, None or (code, texts the failing last
+    add must print))]."""
+    out = []
+    for g in range(count):
+        kind = ("conflict", "clash", "cycle")[g % 3]
+        p = f"s{g}"
+        if kind == "conflict":
+            minors = [r.randint(0, 3) for _ in range(r.randint(1, 4))]
+            for m in sorted(set(minors)):
+                pkg(repos, p + "x", f"1.{m}.0", [])
+            pkg(repos, p + "x", "2.0.0", [])
+            for i, m in enumerate(minors):
+                pkg(repos, f"{p}r{i}", "1.0.0", [(p + "x", f"1.{m}.0", p + "x")])
+            pkg(repos, p + "top", "1.0.0", [(p + "x", "2.0.0", p + "x")])
+            adds = [(f"{p}r{i}", "1.0.0") for i in range(len(minors))]
+            r.shuffle(adds)
+            texts = [f"1.{m}.0 by `{p}r{i}`" for i, m in enumerate(minors)] + [f"2.0.0 by `{p}top`"]
+            out.append((f"{kind} {g}", adds + [(p + "top", "1.0.0")], ("E0707", texts)))
+        elif kind == "clash":
+            pkg(repos, p + "x", "1.0.0", [])
+            pkg(repos, p + "y", "1.0.0", [])
+            pkg(repos, p + "a", "1.0.0", [(p + "x", "1.0.0", p + "x")])
+            pkg(repos, p + "b", "1.0.0", [(p + "x", "1.0.0", p + "y")])
+            out.append((f"{kind} {g}", [(p + "a", "1.0.0"), (p + "b", "1.0.0")], ("E0708", [f"/{p}x (", f"/{p}y (`{p}b`)"])))
+        else:
+            n = r.randint(2, 5)
+            for i in range(n):
+                pkg(repos, f"{p}c{i}", "1.0.0", [(f"{p}c{(i + 1) % n}", "1.0.0", f"{p}c{(i + 1) % n}")])
+            out.append((f"{kind} {g} of {n}", [(f"{p}c0", "1.0.0")], None))
+    return out
+
+
+def run_special(work, port, label, adds, refusal):
+    """A problem, or None."""
+    d = os.path.join(work, label.replace(" ", "-"))
+    os.makedirs(d)
+    open(os.path.join(d, "main.vo"), "w").write("fn main() uses console {\n    print(\"x\");\n}\n")
+    manifest = os.path.join(d, "vo.packages")
+    for k, (n, v) in enumerate(adds):
+        before = open(manifest).read() if os.path.exists(manifest) else None
+        r = subprocess.run([VO, "package", "--ca-file", CA, "main.vo", n, f"https://127.0.0.1:{port}/{n}@{v}"],
+                           cwd=d, capture_output=True, text=True)
+        if refusal and k == len(adds) - 1:
+            code, texts = refusal
+            missing = [t for t in texts if t not in r.stdout]
+            if r.returncode != 65 or f"error[{code}]" not in r.stdout or missing:
+                return f"{label}: wanted {code} with {missing or texts}, got status {r.returncode} {r.stdout[-400:]}"
+            if (open(manifest).read() if os.path.exists(manifest) else None) != before:
+                return f"{label}: the refused add changed vo.packages"
+            if [x for x in os.listdir(os.path.join(d, "packages")) if ".new-" in x or ".old-" in x]:
+                return f"{label}: the refused add left staging folders"
+        elif r.returncode:
+            return f"{label}: add {n}@{v}: status {r.returncode} {r.stdout[-300:]}{r.stderr[-200:]}"
+    if not refusal:
+        want = sorted(n for n in os.listdir(os.path.join(d, "packages")))
+        got = sorted(line.split()[0] for line in open(manifest).read().splitlines()[1:])
+        ring = int(label.split()[-1])
+        if got != want or len(got) != ring:
+            return f"{label}: manifest has {got}, packages/ has {want}"
+    c = subprocess.run([VO, "check", "main.vo"], cwd=d, capture_output=True, text=True)
+    return f"{label}: check: {c.stdout[-400:]}" if c.returncode else None
+
+
 def hundred(d):
     os.makedirs(d, exist_ok=True)
     for i in range(100):
@@ -143,6 +221,7 @@ def main():
         repos = os.path.join(work, "repos")
         for pk, _ in graphs:
             write_repos(repos, pk)
+        specials = special(r, repos, max(3, count // 4))
         port, tmp = git_server.start("a.test", repos, [])
         try:
             jobs = []
@@ -171,13 +250,17 @@ def main():
                             diff = {n: (got.get(n), want.get(n)) for n in set(got) | set(want) if got.get(n) != want.get(n)}
                             problems.append(f"graph {g} order {order}: (got, want) {diff}")
                             break
+            for label, adds, refusal in specials:
+                p = run_special(work, port, label, adds, refusal)
+                if p:
+                    problems.append(p)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
     finally:
         shutil.rmtree(work, ignore_errors=True)
     for p in problems[:15]:
         print("FAIL", p)
-    print(f"package_graphs: {count} graphs, {orders_run} orders, {len(problems)} problems")
+    print(f"package_graphs: {count} graphs, {orders_run} orders, {len(specials)} conflicts, clashes and cycles, {len(problems)} problems")
     return 1 if problems else 0
 
 
