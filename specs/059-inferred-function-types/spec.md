@@ -97,8 +97,9 @@ P2 because it adds a token and a rule for which body shape applies, and stories 
 - **No expected type**: `let f = fn(x) { ... };`, an anonymous function as a statement, or passed where
   the parameter type is a bare type variable that nothing else fixes. A new error names what is missing
   and says to give the binding a function type; no fix (the types are unknown).
-- **Generic calls**: type arguments are first fixed from the non-function arguments, then function
-  arguments are checked left to right, each fixing the type variables in its return type for those after
+- **Generic calls**: type arguments are first fixed from the arguments that are not anonymous functions
+  (function values such as a named `setup` included; amended by plan research R3), then anonymous
+  functions are checked left to right, each fixing the type variables in its return type for those after
   it (`map(xs, f)` fixes `T` from `xs`, `U` from `f`'s body). A type variable that is still open when a
   lambda's parameter needs it is the "no expected type" error, naming the type parameter.
 - **Return type from the body**: when the expected return type is an open type variable (`U` of `map`,
@@ -125,8 +126,8 @@ P2 because it adds a token and a rule for which body shape applies, and stories 
   type at its position: an argument, a typed `let` or `var`, a `return`, a record field, a list or map
   element, a `set` target.
 - **FR-002**: When the expected function type contains open type variables, they are fixed as stated
-  under Edge Cases (non-function arguments first, then function arguments left to right, the return type
-  from the body). The order is part of the reference.
+  under Edge Cases (arguments that are not anonymous functions first, then anonymous functions left to right,
+  the return type from the body). The order is part of the reference.
 - **FR-003**: An anonymous function with no expected type, or whose parameter type would be an open
   type variable, is a new error with a stable code and a catalog entry saying to write the type on the
   binding.
