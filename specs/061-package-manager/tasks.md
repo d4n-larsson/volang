@@ -50,12 +50,12 @@ contracts/manifest.md, contracts/codes.md, quickstart.md
 
 ## Phase 1: Setup
 
-- [ ] T001 `tools/quick.sh`: the `packages` area's scripts gain `package_git.py` and
+- [X] T001 `tools/quick.sh`: the `packages` area's scripts gain `package_git.py` and
   `package_graphs.py`; the path table maps `src/gitfetch.c`, `src/sha1.c`, `src/pkgselect.c`,
   `tests/git_server.py`, `tests/package_git.py`, `tests/package_graphs.py` to `packages`. `Makefile`:
   the three new objects, and the two new scripts in the `test` target's `run_scripts.py` list (both in
   `SLOW` of `tests/run_scripts.py` if they take over 10 s).
-- [ ] T002 `tests/git_server.py` and the step `server git NAME [OPTION...]` in `tests/steps.py` (beside
+- [X] T002 `tests/git_server.py` and the step `server git NAME [OPTION...]` in `tests/steps.py` (beside
   `server https`, same certificate handling, `{port}`): at start, for each `repos/NAME/` of the case
   folder, `git init` a repository in a temporary directory, commit each version folder in version order
   with fixed author, committer and dates, tag it (annotated for even patch numbers, lightweight for odd,
@@ -66,11 +66,11 @@ contracts/manifest.md, contracts/codes.md, quickstart.md
   (the pack cut in half), `badsum=NAME` (the pack's last byte flipped), `huge=NAME` (a 17 MiB ref
   answer), `redirect=NAME` (301 to `/NAME.git/...`), `status=NAME:CODE`. Self-test: `python3
   tests/git_server.py --self-test` clones each fixture with the host's `git` and compares the files.
-- [ ] T003 [P] `specs/061-package-manager/results.md`: SC-001 to SC-009 (pending), Verification,
+- [X] T003 [P] `specs/061-package-manager/results.md`: SC-001 to SC-009 (pending), Verification,
   Deviations; baselines: the reference's word count, `vo check` time (best of 5) of
   `examples/notes-api/main.vo` and of a generated 100-package program with local directories (the
   generator kept as `tests/package_graphs.py --hundred DIR`, T016).
-- [ ] T004 [P] `tests/catalog.py` lists spec 061; `contracts/codes.md` keeps its header and loses its
+- [X] T004 [P] `tests/catalog.py` lists spec 061; `contracts/codes.md` keeps its header and loses its
   rows (each returns with the task that implements the code).
 
 ---
@@ -80,7 +80,7 @@ contracts/manifest.md, contracts/codes.md, quickstart.md
 **Goal**: fetch `SOURCE@VERSION` into a directory, and record a version in the manifest. Checkpoint: a
 single versioned package can be added and restored (plan, order of work 1 and 2).
 
-- [ ] T005 [P] `tests/package_git.py` (research R8), failing first: writes git packs by hand (Python
+- [X] T005 [P] `tests/package_git.py` (research R8), failing first: writes git packs by hand (Python
   `zlib`, `hashlib`) for generated trees of `.vo` and other files in nested folders and checks, through
   a test-only entry `vo package --unpack-pack PACKFILE COMMIT DIR [FOLDER]` (hidden from usage text),
   that the written files equal the source: at least 200 packs covering plain objects, OFS_DELTA,
@@ -90,20 +90,20 @@ single versioned package can be added and restored (plan, order of work 1 and 2)
   base, a delta result size mismatch, a delta cycle, an unsafe name in a tree (`..`, `/`, NUL), a link
   (mode 120000) or a submodule (160000) under the package folder, the inflated total over 64 MiB, a
   missing tree or blob.
-- [ ] T006 [P] `src/sha1.c`, `src/vo.h`: `sha1(char *p, long n, char *out20)`; checked in
+- [X] T006 [P] `src/sha1.c`, `src/vo.h`: `sha1(char *p, long n, char *out20)`; checked in
   `tests/package_git.py` through the pack tests (every object is found by its id) and by three known
   vectors in a C self-check run by `vo package --unpack-pack --self-test`.
-- [ ] T007 `src/inflate.c`: `zlib_unpack(in, n, &out, &out_n, &cap, limit, &used, &why)`: the 2-byte
+- [X] T007 `src/inflate.c`: `zlib_unpack(in, n, &out, &out_n, &cap, limit, &used, &why)`: the 2-byte
   zlib header checked (deflate, no dictionary), the existing `inflate`, `used` = input bytes consumed
   including the 4-byte Adler-32 (verified). `gzip_unpack` unchanged.
-- [ ] T008 `src/gitfetch.c` (new), pack side: `git_unpack(pack, n, commit_id, folder, &why)` returns the
+- [X] T008 `src/gitfetch.c` (new), pack side: `git_unpack(pack, n, commit_id, folder, &why)` returns the
   file list `untar_select` returns (path, bytes): header and trailer check; each object's type and
   size varint, OFS/REF delta headers; inflate with T007; resolve deltas iteratively (no recursion
   deeper than the chain cap of 50); SHA-1 of `"TYPE SIZE\0" + data` into an open-addressing table;
   commit (or tag → `object`) → `tree`; walk to `folder`; collect blobs named `*.vo` and the root
   `vo.packages`; refuse links and submodules there; `path_unsafe` on every name. All buffers mapped
   (`pk_map`), no static buffer over 64 KiB. T005 passes.
-- [ ] T009 `src/fetch.c`: `fetch_request(url, body, content_type, &why)` (GET when `body` is 0), with
+- [X] T009 `src/fetch.c`: `fetch_request(url, body, content_type, &why)` (GET when `body` is 0), with
   `fetch_url` as its GET wrapper; redirects apply to GET only (a POST that is redirected fails naming
   the target). `src/gitfetch.c`, network side: `git_versions(source, &why)` (GET `info/refs`; first
   pkt-line `# service=git-upload-pack`, flush, then refs; tags matching `[v]N.N.N` without leading
@@ -111,7 +111,7 @@ single versioned package can be added and restored (plan, order of work 1 and 2)
   `object-format=sha256` is refused) and `git_fetch(source, version, &why)` (the `POST` of research R1,
   the answer's pkt-lines up to `NAK`, then `git_unpack`). The repository URL used for the POST is the
   one the GET ended at after redirects.
-- [ ] T010 Step case `tests/cases/packages/version_add/` (failing first), then `src/packages.c`:
+- [X] T010 Step case `tests/cases/packages/version_add/` (failing first), then `src/packages.c`:
   `Pkg` gains `version` (three longs, or none) and `indirect`; `pkg_parse_line` reads `URL@N.N.N` and the
   fifth field `indirect` (E0703 with the extended message for a malformed version, leading zeros,
   `indirect` on a version-less entry, a sixth field); `pkg_write` writes them. `cmd_package`: the third
@@ -122,13 +122,13 @@ single versioned package can be added and restored (plan, order of work 1 and 2)
   beside its `.vo` files and stays outside the hash (research R5). Cases: add at a version; add newest;
   `#FOLDER`; an annotated and a lightweight tag; a plain `1.2.0-plain` tag; `redirect=`; an archive URL
   still taken as an archive; `--dir`.
-- [ ] T011 E0711 `package_version_unknown` (catalog entry, codes row): an unknown `@VERSION` lists the
+- [X] T011 E0711 `package_version_unknown` (catalog entry, codes row): an unknown `@VERSION` lists the
   nearest five versions (by distance in the ordered list, lower first); a source without version tags
   says so. Case `tests/cases/packages/version_unknown/`. E0706 cases
   `tests/cases/packages/git_refused/`: `truncate=`, `badsum=`, `huge=`, `status=NAME:404`, a link in the
   package folder, `http://`, credentials in the URL (T0001, as today); after each, `keep vo.packages`
   shows it unchanged.
-- [ ] T012 `--restore` for versioned entries in `pkg_restore` (`packages.c:975`): a missing directory
+- [X] T012 `--restore` for versioned entries in `pkg_restore` (`packages.c:975`): a missing directory
   with `URL@VERSION` is fetched with `git_fetch` and accepted only at its pin (E0701), manifest
   untouched. Case `tests/cases/packages/version_restore/`: restore after `rm -r packages`; with
   `moved=money@1.2.0` restore fails with E0701 and writes nothing for it; a tag deleted upstream

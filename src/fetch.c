@@ -100,13 +100,20 @@ static Str *head_value(Str *head, char *name)
 /* The body at url (without a fragment), or 0 with *why saying what failed. */
 Str *fetch_url(Str *url, Str **why)
 {
+    return fetch_request(url, 0, 0, 0, why);
+}
+
+/* Spec 061: the same with a body (a POST of content_type; then a redirect is a failure), and with the
+ * URL that finally answered in *final_url (git's second request goes where the first one ended). */
+Str *fetch_request(Str *url, Str *body, char *content_type, Str **final_url, Str **why)
+{
     *why = 0;
     for (int hop = 0; hop <= REDIRECTS; hop++) {
         Str *host, *target;
         long port;
         if (!url_parts(url, &host, &port, &target, why)) return 0;
         SB *rq = sb_new();
-        sb_cstr(rq, "GET ");
+        sb_cstr(rq, body ? "POST " : "GET ");
         sb_str(rq, target);
         sb_cstr(rq, " HTTP/1.1\r\nHost: ");
         sb_str(rq, host);
@@ -114,7 +121,16 @@ Str *fetch_url(Str *url, Str **why)
             sb_byte(rq, ':');
             int_to_dec(rq, port);
         }
-        sb_cstr(rq, "\r\nConnection: close\r\nUser-Agent: vo\r\nAccept-Encoding: identity\r\n\r\n");
+        sb_cstr(rq, "\r\nConnection: close\r\nUser-Agent: vo\r\nAccept-Encoding: identity\r\n");
+        if (body) {
+            sb_cstr(rq, "Content-Type: ");
+            sb_cstr(rq, content_type);
+            sb_cstr(rq, "\r\nContent-Length: ");
+            int_to_dec(rq, body->len);
+            sb_cstr(rq, "\r\n");
+        }
+        sb_cstr(rq, "\r\n");
+        if (body) sb_str(rq, body);
         net_capped = 0;
         net_cap_ms = sys_clock_ms() + FETCH_MS;
         Variant *r = tls_exchange(host, port, sb_finish(rq));
@@ -134,9 +150,12 @@ Str *fetch_url(Str *url, Str **why)
         long status = 0, i = 0;
         while (i < head->len && head->data[i] != ' ') i++;
         for (i++; i < head->len && head->data[i] >= '0' && head->data[i] <= '9'; i++) status = status * 10 + (head->data[i] - '0');
-        if (status == 200) return rt_http_part(f.out, 1);
+        if (status == 200) {
+            if (final_url) *final_url = url;
+            return rt_http_part(f.out, 1);
+        }
         Str *to = head_value(head, "location:");
-        if (!to || (status != 301 && status != 302 && status != 303 && status != 307 && status != 308)) {
+        if (!to || body || (status != 301 && status != 302 && status != 303 && status != 307 && status != 308)) {
             *why = text3("the server answered ", int_to_str(status), "");
             return 0;
         }

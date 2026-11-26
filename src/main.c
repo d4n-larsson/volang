@@ -31,6 +31,7 @@ long opt_drain = 30;     /* spec 055: --drain SECONDS */
 static long opt_ops_given; /* --log-level or --drain written (only with run) */
 static char *opt_run_given; /* --timeout, --seed, --clock-ms, --max-memory or --mem-stats written (the last) */
 long opt_remove; /* spec 007: vo package --remove */
+long opt_unpack_pack; /* spec 061: vo package --unpack-pack (tests) */
 static void ca_files_load(void);
 long opt_filter; /* Str * */
 long opt_check;
@@ -321,6 +322,8 @@ int vo_main(long argc, char **argv, char **env)
             opt_max_mutants = v;
         } else if (cstr_eq(a, "--remove")) { /* spec 007: vo package */
             opt_remove = 1;
+        } else if (cstr_eq(a, "--unpack-pack")) { /* spec 061: a test entry of vo package */
+            opt_unpack_pack = 1;
         } else if (cstr_eq(a, "--restore")) { /* spec 041: vo package */
             opt_restore = 1;
         } else if (cstr_eq(a, "--dir")) {

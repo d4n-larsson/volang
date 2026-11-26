@@ -24,7 +24,7 @@ CONTRACTS = [os.path.join(ROOT, "specs", "001-vo-lang-core", "contracts", "error
 # Codes whose trigger cannot be shown in a short program: content is checked, execution is not.
 # E0115 needs nesting deep enough to exhaust a 64 MiB stack (golden case: check/nesting.vo).
 # E0104 needs an invalid UTF-8 byte, which a UTF-8 doc block cannot hold (golden case: lex/invalid_utf8.vo).
-NO_SHORT_EXAMPLE = {"E0115", "E0104", "R0014", "E0211", "E0706"}  # R0014 needs vo replay, E0211 a link, E0706 a server (step cases)
+NO_SHORT_EXAMPLE = {"E0115", "E0104", "R0014", "E0211", "E0706", "E0711"}  # R0014 needs vo replay, E0211 a link, E0706 a server (step cases)
 
 
 def sections():
@@ -100,7 +100,7 @@ def contract():
         else:
             fixable = "yes"
         out[code] = (name, fixable)
-    for spec in ("005-holes-props-contracts", "006-query-edit-trace", "007-stdlib-packages", "009-small-fixes", "010-export-visibility", "012-spec-annotations", "013-security-fixes", "014-complex-data-structures", "016-concurrency", "017-filesystem-processes", "018-agent-testing", "019-https", "024-string-formatting", "025-regular-expressions", "026-sqlite", "027-structure-standards", "029-web-package", "030-readable-signatures", "031-constants", "032-typed-errors", "033-map-keys", "034-vo-build", "041-package-download", "042-strings", "043-bits", "046-iteration", "051-html-templates", "055-service-operations", "056-consistency-pass", "058-module-imports", "059-inferred-function-types", "060-case-fields-value-match"):
+    for spec in ("005-holes-props-contracts", "006-query-edit-trace", "007-stdlib-packages", "009-small-fixes", "010-export-visibility", "012-spec-annotations", "013-security-fixes", "014-complex-data-structures", "016-concurrency", "017-filesystem-processes", "018-agent-testing", "019-https", "024-string-formatting", "025-regular-expressions", "026-sqlite", "027-structure-standards", "029-web-package", "030-readable-signatures", "031-constants", "032-typed-errors", "033-map-keys", "034-vo-build", "041-package-download", "042-strings", "043-bits", "046-iteration", "051-html-templates", "055-service-operations", "056-consistency-pass", "058-module-imports", "059-inferred-function-types", "060-case-fields-value-match", "061-package-manager"):
         codes = os.path.join(ROOT, "specs", spec, "contracts", "codes.md")
         for code, name, fix in re.findall(r"^\| ([EWRT]\d{4}) \| `(\w+)` \| [^|]* \| ([^|]*) \|",
                                           open(codes, encoding="utf-8").read(), re.M):

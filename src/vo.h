@@ -2685,7 +2685,29 @@ extern Vec *untar(char *buf, long n, char **why);
 extern Vec *untar_select(Vec *files, Str *inner);
 extern char *path_unsafe(char *p, long n);
 extern Str *fetch_url(Str *url, Str **why);
+/* spec 061: versioned packages from git hosts (sha1.c, gitfetch.c) */
+typedef struct Sha1 {
+    uint32_t h[5];
+    unsigned char buf[64];
+    unsigned long total;
+} Sha1;
+extern void sha1_start(Sha1 *c);
+extern void sha1_add(Sha1 *c, const char *p, long n);
+extern void sha1_end(Sha1 *c, char *out);
+extern int zlib_unpack(char *in, long n, char *out, long cap, long *out_n, long *used, char **why);
+extern Str *fetch_request(Str *url, Str *body, char *content_type, Str **final_url, Str **why);
+typedef struct GitTag { /* a version of a source: the tag `[v]MAJOR.MINOR.PATCH` and the object it names */
+    long v[3];
+    char id[20];
+} GitTag;
+extern Vec *git_unpack(char *pack, long n, char *want, Str *folder, char **why);
+extern void git_release(void);
+extern Str *pkg_ver_text(long *v);
+extern int git_version_parse(char *p, long n, long *v);
+extern Vec *git_versions(Str *repo, Str **final_url, Str **why);
+extern Vec *git_fetch(Str *repo, char *id, Str *folder, Str **why);
 extern long opt_restore;
+extern long opt_unpack_pack;
 extern Vec *opt_ca_files;
 extern char *opt_pkg_dir;
 /* spec 040 */

@@ -24,6 +24,8 @@ each line of `steps` runs there, in order:
   no-trust-store vo ARGS...     (spec 019) runs vo where none of the machine's trust store paths exist
                                 (a user and mount namespace with tmpfs over /etc/ssl and /etc/pki); where
                                 namespaces are not permitted, prints `skipped: no user namespaces` instead
+  server git NAME [OPTION...]   (spec 061) starts tests/git_server.py: the case's repos/NAME/VERSION/ folders
+                                as git repositories over HTTPS (certificate NAME); OPTIONs make one hostile
   stop-server                   stops it ({port} keeps its number: a refused connection)
   start vo ARGS...              starts bin/vo in the background (spec 011) with {vport} a free port, and
                                 waits until it accepts connections (or exits); {vport} reads `{vport}`
@@ -262,6 +264,9 @@ def run_case(case):
                     cmd = [sys.executable, os.path.join(ROOT, "tests", "https_server.py"), "--cert", words[2]]
                     cmd += [os.path.join(work, w) if prev == "--log" else w
                             for prev, w in zip(words[2:], words[3:])]
+                if words[1:2] == ["git"]:  # spec 061: the case's repos/ as git repositories over HTTPS
+                    cmd = [sys.executable, os.path.join(ROOT, "tests", "git_server.py"), "--cert", words[2],
+                           "--repos", os.path.join(work, "repos")] + words[3:]
                 # spec 041: /archive/NAME serves the case's own files (package archives)
                 server = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=dict(os.environ, VO_ARCHIVES=work))
                 servers.append(server)
@@ -315,6 +320,8 @@ def run_case(case):
                 path = os.path.join(work, words[1])
                 os.makedirs(os.path.dirname(path), exist_ok=True)
                 text = text.replace("\\n", "\n")
+                if port:  # spec 061: a manifest written by a step names the test server
+                    text = text.replace("{port}", str(port))
                 if words[0] == "write-bytes":  # spec 040: \xNN is that byte, not that character
                     open(path, "wb").write(text.encode("latin-1"))
                 else:

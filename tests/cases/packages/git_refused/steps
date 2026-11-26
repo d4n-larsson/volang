@@ -1,0 +1,10 @@
+server git a.test truncate=trunc badsum=badsum huge=huge status=gone:404
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/trunc@1.0.0
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/badsum@1.0.0
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/huge@1.0.0
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/gone@1.0.0
+vo package --json --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/linked@1.0.0
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/archive/none@1.0.0
+vo package main.vo money http://127.0.0.1:{port}/trunc@1.0.0
+vo package main.vo money https://user:pw@127.0.0.1:{port}/trunc@1.0.0
+vo check main.vo

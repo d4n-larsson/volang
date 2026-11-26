@@ -1,0 +1,71 @@
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.2.0
+added money 1.2.0 packages/money sha256:6059faa4d82bd941b8c55d874f70121629a390173dd85164c4ffb864fb441e43 from https://127.0.0.1:{port}/money
+  effects: none
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effects with `vo effects --update`.
+   1 | import money.format;
+     | ^
+0 errors, 1 warning
+--- stderr
+--- exit 0
+$ vo run main.vo
+12.34
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.2.0
+unchanged money 1.2.0
+--- stderr
+--- exit 0
+$ vo package --json --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.2.1
+{"v":1,"kind":"package","name":"money","change":"updated","directory":"packages/money","hash":"sha256:9163d0741d171f672072fef448e2fb7c86eb2e7e7f99233d1a384d9486a9f595","old_hash":"sha256:6059faa4d82bd941b8c55d874f70121629a390173dd85164c4ffb864fb441e43","source":"https://127.0.0.1:{port}/money","version":"1.2.1","old_version":"1.2.0","direct":true,"effects":[],"gained":[],"lost":[]}
+--- stderr
+--- exit 0
+$ vo run main.vo
+12,34
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money
+updated money 1.2.1 -> 1.3.0: sha256:9163d0741d171f672072fef448e2fb7c86eb2e7e7f99233d1a384d9486a9f595 -> sha256:f745df10ad8b94a0b570b3b1984a3cc69bddeb7b597a5d456a81b2962d6d7936
+  effects: clock
+  gains: clock
+--- stderr
+--- exit 0
+$ vo run main.vo
+12:34
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem main.vo pads https://127.0.0.1:{port}/mono#libs/pads@1.0.0
+added pads 1.0.0 packages/pads sha256:d995638bb1f7da1dc26d2a61783a80279b1a4899ed939a159d14d383cce21718 from https://127.0.0.1:{port}/mono#libs/pads
+  effects: none
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem --dir vendor/moved main.vo moved https://127.0.0.1:{port}/moved@1.0.0
+added moved 1.0.0 vendor/moved sha256:caed92a8a3f4a79fc2517c7a359693e5feac3ebcb2b39f93f964f87721e4d0ec from https://127.0.0.1:{port}/moved
+  effects: none
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem main.vo none https://127.0.0.1:{port}/mono#nowhere@1.0.0
+error[E0702]: Package `none`: version 1.0.0 has no .vo files under `nowhere`.
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo bad https://127.0.0.1:{port}/money@1.2
+error[T0001]: A version is written `SOURCE@MAJOR.MINOR.PATCH`, such as `@1.2.0`.
+--- stderr
+--- exit 64
+$ vo package --ca-file test-ca.pem main.vo bad https://127.0.0.1:{port}/money@v1.2.0
+error[T0001]: A version is written `SOURCE@MAJOR.MINOR.PATCH`, such as `@1.2.0`.
+--- stderr
+--- exit 64
+$ vo package main.vo money https://127.0.0.1:{port}/money@1.2.0
+error[E0706]: Cannot fetch package `money` from https://127.0.0.1:{port}/money: the certificate of 127.0.0.1:{port} is not trusted.
+--- stderr
+--- exit 65
+$ vo check main.vo
+main.vo:1:1: warning[W0504]: This program has no effects record: create vo.effects with `vo effects --update`.
+   1 | import money.format;
+     | ^
+0 errors, 1 warning
+--- stderr
+--- exit 0

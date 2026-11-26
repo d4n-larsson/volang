@@ -1,0 +1,48 @@
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.9.0
+error[E0711]: https://127.0.0.1:{port}/money has no version 1.9.0. Nearest: 1.5.0, 2.0.0, 1.4.0, 2.1.0, 1.3.0.
+--- stderr
+--- exit 65
+$ vo package --json --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@0.1.0
+{"v":1,"kind":"toolchain_error","code":"E0711","name":"package_version_unknown","message":"https://127.0.0.1:{port}/money has no version 0.1.0. Nearest: 1.2.0, 1.2.1, 1.3.0, 1.4.0, 1.5.0."}
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@9.0.0
+error[E0711]: https://127.0.0.1:{port}/money has no version 9.0.0. Nearest: 2.1.0, 2.0.0, 1.5.0, 1.4.0, 1.3.0.
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo empty https://127.0.0.1:{port}/empty
+error[E0711]: https://127.0.0.1:{port}/empty has no version tags (`v1.2.3`).
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo none https://127.0.0.1:{port}/nothing-here@1.0.0
+error[E0706]: Cannot fetch package `none` from https://127.0.0.1:{port}/nothing-here: the server answered 404.
+--- stderr
+--- exit 65
+$ vo explain E0711
+## E0711 package_version_unknown
+
+A package source has no such version.
+
+Fixable: no
+
+A versioned package is a git repository served over HTTPS, and its versions are its tags of the form `v1.2.0` or `1.2.0` (three numbers; tags such as `v1.2`, `v2.0.0-rc1` or `release-3` are not versions). `vo package ENTRY NAME SOURCE@VERSION` fails with this code, and changes nothing, when the repository has no tag for that version; the message lists the nearest versions it does have, or says that it has no version tags at all. `vo package --restore` reports it when a pinned version was deleted from the repository.
+
+### Example
+
+```text
+$ vo package main.vo money https://codeberg.org/acme/money@1.9.0
+error[E0711]: https://codeberg.org/acme/money has no version 1.9.0. Nearest: 1.8.2, 2.0.0, 1.8.1, 1.8.0, 1.7.3.
+```
+
+### Fixed
+
+```text
+$ vo package main.vo money https://codeberg.org/acme/money@1.8.2
+added money 1.8.2 packages/money sha256:1e5b240df8daf715941d8af2629ab6404c7f9d1d369e493f0e9eb2d01fc162c5 from https://codeberg.org/acme/money
+  effects: none
+```
+
+Without `@VERSION` the highest version is taken.
+
+--- stderr
+--- exit 0

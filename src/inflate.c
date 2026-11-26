@@ -338,3 +338,38 @@ int gzip_unpack(char *in, long n, char **out, long *out_n, long *cap, long limit
     *cap = s.cap;
     return 0;
 }
+
+/* Spec 061: one zlib stream (RFC 1950, as git packs hold) from in into out (room for cap bytes, never
+ * remapped). 0 with *out_n bytes written and *used input bytes consumed (the Adler-32 included and
+ * verified), or -1 with *why. */
+int zlib_unpack(char *in, long n, char *out, long cap, long *out_n, long *used, char **why)
+{
+    Inf s = {(const uint8_t *)in, n, 2, 0, 0, out, 0, cap, cap, 0};
+    const uint8_t *p = s.in;
+    if (n < 6 || (p[0] & 15) != 8 || (p[0] >> 4) > 7 || (p[0] << 8 | p[1]) % 31 || (p[1] & 0x20)) {
+        *why = "a compressed object's header is damaged";
+        return -1;
+    }
+    if (inflate(&s)) {
+        *why = s.why;
+        return -1;
+    }
+    if (s.at + 4 > s.n) {
+        *why = "the compressed data ends early";
+        return -1;
+    }
+    uint32_t a = 1, b = 0;
+    for (long i = 0; i < s.len;) { /* Adler-32, reduced before the sums can overflow */
+        long end = i + 5552 < s.len ? i + 5552 : s.len;
+        for (; i < end; i++) a += (uint8_t)out[i], b += a;
+        a %= 65521, b %= 65521;
+    }
+    p = s.in + s.at;
+    if (((uint32_t)p[0] << 24 | (uint32_t)p[1] << 16 | (uint32_t)p[2] << 8 | p[3]) != (b << 16 | a)) {
+        *why = "a compressed object's checksum does not match: the pack is damaged";
+        return -1;
+    }
+    *out_n = s.len;
+    *used = s.at + 4;
+    return 0;
+}

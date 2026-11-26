@@ -1,7 +1,7 @@
 # Contract: `vo.packages`
 
 ```text
-# vo packages: update with `vo package`
+# vo packages: update with `vo package ENTRY NAME DIRECTORY`
 NAME DIRECTORY sha256:HEX                                   a local directory
 NAME DIRECTORY sha256:HEX https://…/x.tar.gz[#PATH]         an archive (spec 041)
 NAME DIRECTORY sha256:HEX https://HOST/PATH[#FOLDER]@VERSION           a versioned package, asked for

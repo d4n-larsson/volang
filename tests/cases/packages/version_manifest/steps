@@ -1,0 +1,2 @@
+vo check main.vo
+vo check --json main.vo

@@ -54,11 +54,11 @@ present money
 $ vo explain E0706
 ## E0706 package_fetch_failed
 
-A package could not be fetched, or its archive was refused.
+A package could not be fetched, or its archive or repository was refused.
 
 Fixable: no
 
-`vo package ENTRY NAME URL` downloads an archive over HTTPS, unpacks its `.vo` files and pins them. It fails with this code, and changes nothing, when the download fails (the connection, the certificate, a status other than 200, more than five redirects or one to `http://`, more than 16 MiB, more than 60 seconds) or when the archive is not acceptable: damaged or cut short, not a tar archive, holding a link, a device or a path that leaves the package (`..`, an absolute path), or over a limit (64 MiB unpacked, 16 MiB per file, 10,000 entries). The message says which. Nothing of a refused archive is written, and `vo check`, `vo run`, `vo test` and `vo build` never fetch anything.
+`vo package ENTRY NAME URL` downloads an archive over HTTPS, unpacks its `.vo` files and pins them. It fails with this code, and changes nothing, when the download fails (the connection, the certificate, a status other than 200, more than five redirects or one to `http://`, more than 16 MiB, more than 60 seconds) or when the archive is not acceptable: damaged or cut short, not a tar archive, holding a link, a device or a path that leaves the package (`..`, an absolute path), or over a limit (64 MiB unpacked, 16 MiB per file, 10,000 entries). The message says which. A versioned package (`SOURCE@VERSION`, a git repository) fails with it in the same way: the repository does not answer as git, its answer is damaged or cut short, the package's folder holds a link or a submodule, or a limit is passed. Nothing of a refused archive or repository is written, and `vo check`, `vo run`, `vo test` and `vo build` never fetch anything.
 
 ### Example
 

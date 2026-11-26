@@ -1,0 +1,7 @@
+export fn cents(n: int) -> str {
+    let c = n % 100;
+    if c < 10 {
+        return str(n / 100) + ".0" + str(c);
+    }
+    return str(n / 100) + "." + str(c);
+}

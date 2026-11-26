@@ -1,0 +1,17 @@
+server git a.test redirect=moved
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.2.0
+vo check main.vo
+vo run main.vo
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.2.0
+vo package --json --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.2.1
+vo run main.vo
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money
+vo run main.vo
+vo package --ca-file test-ca.pem main.vo pads https://127.0.0.1:{port}/mono#libs/pads@1.0.0
+vo package --ca-file test-ca.pem --dir vendor/moved main.vo moved https://127.0.0.1:{port}/moved@1.0.0
+vo package --ca-file test-ca.pem main.vo none https://127.0.0.1:{port}/mono#nowhere@1.0.0
+vo package --ca-file test-ca.pem main.vo bad https://127.0.0.1:{port}/money@1.2
+vo package --ca-file test-ca.pem main.vo bad https://127.0.0.1:{port}/money@v1.2.0
+vo package main.vo money https://127.0.0.1:{port}/money@1.2.0
+vo check main.vo
+keep vo.packages packages/pads/pad.vo vendor/moved/here.vo

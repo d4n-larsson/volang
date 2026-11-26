@@ -11,9 +11,12 @@ typedef struct Pkg {
     long state; /* 0 not checked yet, 1 verified, 2 failed (reported) */
     long start; /* the line's span in the manifest */
     long end;
-    Str *url; /* spec 041: where it was fetched from (with its #PATH), or 0 */
+    Str *url; /* spec 041: where it was fetched from (with its #PATH), or 0; spec 061: a versioned one's source */
+    long versioned; /* spec 061: the fourth field is SOURCE@MAJOR.MINOR.PATCH */
+    long ver[3];
+    long indirect; /* spec 061: the fifth field: here only because another package requires it */
 } Pkg;
-CHECK_SIZE(Pkg, 88);
+CHECK_SIZE(Pkg, 128);
 
 #define NO_PACKAGE ((void *)-1)
 #define M_MISSING "Package `$1`: the directory `$2` is missing or has no .vo files."
@@ -115,9 +118,23 @@ static void pkg_parse_line(long file, char *text, char *line, char *le)
     if (hash_end - hash != 71) goto bad;
     char *url = pkg_token(hash_end, le); /* spec 041: optionally the URL it was fetched from */
     char *url_end = url == le ? le : pkg_tok_end;
-    if (url != le && (url_end - url < 9 || !mem_eq(url, "https://", 8) || pkg_token(url_end, le) != le)) goto bad;
+    if (url != le && (url_end - url < 9 || !mem_eq(url, "https://", 8))) goto bad;
     if (!doc_starts(hash, "sha256:")) goto bad;
     Pkg *e = alloc(sizeof(Pkg));
+    char *ver = url_end; /* spec 061: SOURCE@MAJOR.MINOR.PATCH */
+    while (ver > url && ver[-1] != '@' && ver[-1] != '/') ver--;
+    if (url != le && ver > url + 9 && ver[-1] == '@') { /* an `@` in the last part is a version's */
+        if (*ver == 'v' || !git_version_parse(ver, url_end - ver, e->ver)) goto bad_version;
+        e->versioned = 1;
+        url_end = ver - 1;
+    }
+    char *more = url == le ? le : pkg_token(pkg_tok_end, le); /* spec 061: `indirect`, on a versioned entry */
+    if (more != le) {
+        int word = pkg_tok_end - more == 8 && mem_eq(more, "indirect", 8);
+        if (!e->versioned && !word) goto bad; /* as before spec 061: something after an archive's URL */
+        if (!e->versioned || !word || pkg_token(pkg_tok_end, le) != le) goto bad_version;
+        e->indirect = 1;
+    }
     e->url = url == le ? 0 : str_new(url, url_end - url);
     if (!pkg_hex_decode(hash + 7, e->pin)) goto bad;
     e->name = str_new(name, name_end - name);
@@ -136,6 +153,10 @@ static void pkg_parse_line(long file, char *text, char *line, char *le)
 bad:
     m = str_from_cstr("Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 "
                       "lowercase hex digits), optionally followed by the https:// URL it was fetched from.");
+    goto report;
+bad_version: /* spec 061 */
+    m = str_from_cstr("After the hash, write the URL an archive was fetched from, or a versioned package's source as "
+                      "`https://HOST/PATH@MAJOR.MINOR.PATCH`, followed by `indirect` or nothing.");
 report:
     diag_add(code, SEV_ERROR, (int)file, line - text, le - text, m);
 }
@@ -476,6 +497,17 @@ void pkg_sort(void)
     }
 }
 
+/* `MAJOR.MINOR.PATCH` */
+Str *pkg_ver_text(long *v)
+{
+    SB *sb = sb_new();
+    for (int k = 0; k < 3; k++) {
+        if (k) sb_byte(sb, '.');
+        int_to_dec(sb, v[k]);
+    }
+    return sb_finish(sb);
+}
+
 /* Writes the manifest: the header comment, then one line per entry in name order. */
 void pkg_write(void)
 {
@@ -492,6 +524,11 @@ void pkg_write(void)
         if (e->url) {
             sb_byte(sb, ' ');
             sb_str(sb, e->url);
+        }
+        if (e->versioned) {
+            sb_byte(sb, '@');
+            sb_str(sb, pkg_ver_text(e->ver));
+            if (e->indirect) sb_cstr(sb, " indirect");
         }
         sb_byte(sb, '\n');
     }
@@ -619,11 +656,92 @@ static void rm_tree(Str *path)
  * done; -1 with *why for a failed download or a refused archive (E0706); -2 with *why when the
  * archive holds no `.vo` file where one was asked for (E0702). Nothing is written before the whole
  * archive was read and accepted. */
-static int pkg_stage(Str *url, Str *staging, Str **why)
+/* Writes a package's files (TarFile: checked relative paths) under staging: 0, or -1 with *why. */
+static int pkg_write_files(Str *staging, Vec *files, Str **why)
+{
+    mkdir_p(staging);
+    for (long i = 0; i < files->n; i++) {
+        TarFile *f = vec_get(files, i);
+        Str *path = path_join(staging, f->path);
+        long cut = path->len;
+        while (cut && path->data[cut - 1] != '/') cut--;
+        mkdir_p(str_new(path->data, cut - 1));
+        long fd = vo_syscall4(SYS_openat, AT_FDCWD, (long)path->data, O_WRCREAT | O_NOFOLLOW | O_CLOEXEC, 0644);
+        if (fd < 0) {
+            *why = msg("cannot write `$1`", path, 0, 0);
+            return -1;
+        }
+        write_all((int)fd, f->data, f->n);
+        sys_close((int)fd);
+    }
+    return 0;
+}
+
+/* The files of a package that count: at least one `.vo` file (a lone vo.packages is no package). */
+static int pkg_has_vo(Vec *files)
+{
+    for (long i = 0; i < files->n; i++) {
+        Str *p = ((TarFile *)vec_get(files, i))->path;
+        if (p->len >= 4 && mem_eq(p->data + p->len - 3, ".vo", 3)) return 1;
+    }
+    return 0;
+}
+
+/* Spec 061: the package at version ver of the git repository `repo` (folder `inner` or 0) into staging.
+ * ver[0] < 0 asks for the highest version and is filled in. 0; -1 with *why (E0706); -2 (E0702: no .vo
+ * files there); -3 (E0711: no such version, *why lists the nearest). */
+static int pkg_stage_git(Str *repo, Str *inner, long *ver, Str *staging, Str **why)
+{
+    Str *final = 0;
+    Vec *tags = git_versions(repo, &final, why);
+    if (!tags) return -1;
+    if (!tags->n) {
+        *why = msg("$1 has no version tags (`v1.2.3`)", repo, 0, 0);
+        return -3;
+    }
+    long at = 0; /* the first version not below ver */
+    GitTag *t = vec_get(tags, tags->n - 1);
+    if (ver[0] >= 0) {
+        for (t = 0; at < tags->n; at++) {
+            GitTag *c = vec_get(tags, at);
+            int cmp = 0;
+            for (int k = 0; k < 3 && !cmp; k++) cmp = c->v[k] < ver[k] ? -1 : c->v[k] > ver[k];
+            if (cmp == 0) t = c;
+            if (cmp >= 0) break;
+        }
+    }
+    if (!t) { /* the nearest five: below and above in turn */
+        SB *sb = sb_new();
+        long lo = at - 1, hi = at;
+        for (int k = 0; k < 5 && (lo >= 0 || hi < tags->n); k++) {
+            int below = lo >= 0 && (k % 2 == 0 || hi >= tags->n);
+            GitTag *c = vec_get(tags, below ? lo-- : hi++);
+            if (k) sb_cstr(sb, ", ");
+            sb_str(sb, pkg_ver_text(c->v));
+        }
+        *why = msg("$1 has no version $2. Nearest: $3", repo, pkg_ver_text(ver), sb_finish(sb));
+        return -3;
+    }
+    for (int k = 0; k < 3; k++) ver[k] = t->v[k];
+    Vec *files = git_fetch(final, t->id, inner, why);
+    if (!files) return -1;
+    int r = 0;
+    if (!pkg_has_vo(files)) {
+        *why = inner ? msg("version $1 has no .vo files under `$2`", pkg_ver_text(ver), inner, 0)
+                     : msg("version $1 has no .vo files", pkg_ver_text(ver), 0, 0);
+        r = -2;
+    }
+    if (!r) r = pkg_write_files(staging, files, why);
+    git_release();
+    return r;
+}
+
+static int pkg_stage(Str *url, long *ver, Str *staging, Str **why)
 {
     long hash = 0;
     while (hash < url->len && url->data[hash] != '#') hash++;
     Str *inner = hash < url->len ? str_new(url->data + hash + 1, url->len - hash - 1) : 0;
+    if (ver) return pkg_stage_git(str_new(url->data, hash), inner, ver, staging, why);
     Str *body = fetch_url(str_new(url->data, hash), why);
     if (!body) return -1;
     char *buf = body->data, *mapped = 0, *bad = 0;
@@ -648,22 +766,7 @@ static int pkg_stage(Str *url, Str *staging, Str **why)
         *why = inner ? msg("the archive has no .vo files under `$1`", inner, 0, 0) : str_from_cstr("the archive has no .vo files");
         r = -2;
     }
-    if (!r) mkdir_p(staging);
-    for (long i = 0; !r && i < files->n; i++) {
-        TarFile *f = vec_get(files, i);
-        Str *path = path_join(staging, f->path);
-        long cut = path->len;
-        while (cut && path->data[cut - 1] != '/') cut--;
-        mkdir_p(str_new(path->data, cut - 1));
-        long fd = vo_syscall4(SYS_openat, AT_FDCWD, (long)path->data, O_WRCREAT | O_NOFOLLOW | O_CLOEXEC, 0644);
-        if (fd < 0) {
-            *why = msg("cannot write `$1`", path, 0, 0);
-            r = -1;
-            break;
-        }
-        write_all((int)fd, f->data, f->n);
-        sys_close((int)fd);
-    }
+    if (!r) r = pkg_write_files(staging, files, why);
     pk_unmap(mapped, cap);
     return r;
 }
@@ -807,6 +910,8 @@ static void list_json(SB *sb, char *key, Vec *v)
 
 /* The report of a fetched package: the local form's line or record, with where it came from, what it
  * declares, and on an update what that gained and lost. */
+static Str *old_ver; /* spec 061: the version an updated entry had, for the report */
+
 static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before, Vec *now, Str *note)
 {
     SB *sb = sb_new();
@@ -827,8 +932,19 @@ static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before,
             sb_byte(sb, '"');
         }
         if (e->url) {
-            sb_cstr(sb, ",\"url\":");
+            sb_cstr(sb, e->versioned ? ",\"source\":" : ",\"url\":");
             json_str_into(sb, e->url);
+        }
+        if (e->versioned) {
+            sb_cstr(sb, ",\"version\":\"");
+            sb_str(sb, pkg_ver_text(e->ver));
+            sb_byte(sb, '"');
+            if (old_ver) {
+                sb_cstr(sb, ",\"old_version\":\"");
+                sb_str(sb, old_ver);
+                sb_byte(sb, '"');
+            }
+            sb_cstr(sb, e->indirect ? ",\"direct\":false" : ",\"direct\":true");
         }
         if (now) list_json(sb, "effects", now);
         if (gained) list_json(sb, "gained", gained);
@@ -843,6 +959,10 @@ static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before,
             sb_cstr(sb, "added ");
             sb_str(sb, e->name);
             sb_byte(sb, ' ');
+            if (e->versioned) {
+                sb_str(sb, pkg_ver_text(e->ver));
+                sb_byte(sb, ' ');
+            }
             sb_str(sb, e->raw);
             sb_byte(sb, ' ');
             sb_str(sb, pkg_hash_text(e->pin));
@@ -851,6 +971,14 @@ static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before,
         } else if (cstr_eq(change, "updated")) {
             sb_cstr(sb, "updated ");
             sb_str(sb, e->name);
+            if (e->versioned) { /* `updated NAME OLD -> NEW: HASH -> HASH`, or ` NEW:` when it had no version */
+                sb_byte(sb, ' ');
+                if (old_ver) {
+                    sb_str(sb, old_ver);
+                    sb_cstr(sb, " -> ");
+                }
+                sb_str(sb, pkg_ver_text(e->ver));
+            }
             sb_cstr(sb, ": ");
             sb_str(sb, old_hash);
             sb_cstr(sb, " -> ");
@@ -859,6 +987,10 @@ static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before,
             sb_cstr(sb, change);
             sb_byte(sb, ' ');
             sb_str(sb, e->name);
+            if (e->versioned) {
+                sb_byte(sb, ' ');
+                sb_str(sb, pkg_ver_text(e->ver));
+            }
         }
         sb_byte(sb, '\n');
         if (now) list_text(sb, "  effects: ", now);
@@ -890,7 +1022,15 @@ static int pkg_intact(Pkg *e)
 }
 
 /* `vo package ENTRY NAME URL`: fetch, unpack, pin, record the URL. */
-static int pkg_add_url(char *entry_arg, Str *name, Str *url)
+/* The entry's version (0: none), as the package the author asked for. */
+static void pkg_set_version(Pkg *e, long *ver)
+{
+    e->versioned = ver != 0;
+    e->indirect = 0;
+    for (int k = 0; k < 3; k++) e->ver[k] = ver ? ver[k] : 0;
+}
+
+static int pkg_add_url(char *entry_arg, Str *name, Str *url, long *ver)
 {
     long at = 8, hash = 0;
     while (hash < url->len && url->data[hash] != '#') hash++;
@@ -927,20 +1067,22 @@ static int pkg_add_url(char *entry_arg, Str *name, Str *url)
         before = pkg_effects(e, &note);
     }
     Str *staging = with_pid(target, ".new-"), *old = with_pid(target, ".old-"), *why = 0;
-    int r = pkg_stage(url, staging, &why);
+    int r = pkg_stage(url, ver, staging, &why);
     long h = r ? 0 : pkg_hash(staging, pkg_hash_buf, 0);
     if (r || h < 0) {
         rm_tree(staging);
+        if (r == -3) pkg_fail("E0711", msg("$1.", why, 0, 0));
         if (r == -1) pkg_fail("E0706", msg("Cannot fetch package `$1` from $2: $3.", name, url, why));
         pkg_fail("E0702", msg("Package `$1`: $2.", name, r ? why : str_from_cstr("the archive's .vo files cannot be read back"), 0));
     }
     if (there && mem_eq(e->pin, pkg_hash_buf, 32)) { /* the same content: nothing to replace */
         rm_tree(staging);
-        if (!e->url || !str_eq(e->url, url)) {
+        if (!e->url || !str_eq(e->url, url) || e->versioned != (ver != 0) || (ver && !mem_eq((char *)e->ver, (char *)ver, 24)) || e->indirect) {
             e->url = url;
+            pkg_set_version(e, ver);
             pkg_write();
         }
-        pkg_report("unchanged", e, 0);
+        pkg_report_fetched("unchanged", e, 0, 0, 0, 0);
         return 0;
     }
     if (there && sys_rename(target->data, old->data) < 0)
@@ -960,6 +1102,8 @@ static int pkg_add_url(char *entry_arg, Str *name, Str *url)
     e->dir = abs;
     e->raw = pkg_rel_dir(pkg_dir, abs);
     e->url = url;
+    old_ver = e->versioned && ver ? pkg_ver_text(e->ver) : 0;
+    pkg_set_version(e, ver);
     e->state = 0;
     mem_copy(e->pin, pkg_hash_buf, 32);
     pkg_write();
@@ -996,9 +1140,13 @@ static int pkg_restore(void)
             m = msg("Package `$1`: the directory `$2` is missing, and the manifest has no URL to fetch it from.", e->name, e->raw, 0);
         } else {
             Str *staging = with_pid(e->dir, ".new-"), *why = 0;
-            int r = pkg_stage(e->url, staging, &why);
+            long want[3] = {e->ver[0], e->ver[1], e->ver[2]};
+            int r = pkg_stage(e->url, e->versioned ? want : 0, staging, &why);
             long sh = r ? -1 : pkg_hash(staging, now, 0);
-            if (r == -1) {
+            if (r == -3) {
+                code = "E0711";
+                m = msg("Package `$1`: $2.", e->name, why, 0);
+            } else if (r == -1) {
                 code = "E0706";
                 m = msg("Cannot fetch package `$1` from $2: $3.", e->name, e->url, why);
             } else if (r || sh < 0) {
@@ -1006,9 +1154,12 @@ static int pkg_restore(void)
                 m = msg("Package `$1`: $2.", e->name, r ? why : str_from_cstr("the archive's .vo files cannot be read back"), 0);
             } else if (!mem_eq(now, e->pin, 32)) {
                 code = "E0701";
-                m = msg("Package `$1`: what $2 serves now hashes to $3, not to the pinned hash: the content at the URL "
-                        "changed. Nothing was written.",
-                        e->name, e->url, pkg_hash_text(now));
+                m = e->versioned ? msg("Package `$1`: version $2 now hashes to $3, not to the pinned hash: the version was "
+                                       "changed after it was pinned. Nothing was written.",
+                                       e->name, pkg_ver_text(e->ver), pkg_hash_text(now))
+                                 : msg("Package `$1`: what $2 serves now hashes to $3, not to the pinned hash: the content at the URL "
+                                       "changed. Nothing was written.",
+                                       e->name, e->url, pkg_hash_text(now));
             } else if (sys_rename(staging->data, e->dir->data) < 0) {
                 code = "E0706";
                 m = msg("Cannot create the directory `$1`.", e->raw, 0, 0);
@@ -1025,9 +1176,34 @@ static int pkg_restore(void)
 }
 
 /* `vo package [--json] ENTRY NAME DIRECTORY` and `vo package --remove ENTRY NAME`. */
+static int ends_with(char *p, long n, char *lit)
+{
+    long k = cstr_len(lit);
+    return n >= k && mem_eq(p + n - k, lit, k);
+}
+
+/* `vo package --unpack-pack PACK ID DIR [FOLDER]` (spec 061, a test entry: tests/package_git.py): the
+ * package files of the commit or tag ID in the pack file, written under DIR. */
+static int pkg_unpack_pack(void)
+{
+    char **args = (char **)pos_args;
+    char id[32], *why = 0, *pack = 0, hex[65];
+    Str *w = 0;
+    long n = pos_n >= 3 ? read_whole_file(args[0], &pack) : -1;
+    for (int i = 0; i < 64; i++) hex[i] = pos_n >= 3 && i < 40 && cstr_len(args[1]) == 40 ? args[1][i] : '0';
+    if (n < 0 || cstr_len(args[1]) != 40 || !pkg_hex_decode(hex, id)) usage_error(str_from_cstr("`--unpack-pack` takes PACK ID DIR [FOLDER]."));
+    Vec *files = git_unpack(pack, n, id, pos_n > 3 ? str_from_cstr(args[3]) : 0, &why);
+    if (!files) pkg_fail("E0706", msg("Cannot read the pack: $1.", str_from_cstr(why), 0, 0));
+    if (!pkg_has_vo(files)) pkg_fail("E0702", str_from_cstr("The pack has no .vo files there."));
+    if (pkg_write_files(str_from_cstr(args[2]), files, &w)) pkg_fail("E0706", w);
+    git_release();
+    return 0;
+}
+
 int cmd_package(void)
 {
     char **args = (char **)pos_args;
+    if (opt_unpack_pack) return pkg_unpack_pack();
     int by_url = !opt_remove && !opt_restore && pos_n == 3 && doc_starts(args[2], "https://");
     if (opt_remove + opt_restore > 1 || pos_n != (opt_restore ? 1 : 3 - opt_remove)) /* ENTRY [NAME [DIRECTORY | URL]] */
         usage_error(str_from_cstr("`package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, or --restore ENTRY."));
@@ -1050,7 +1226,20 @@ int cmd_package(void)
         vo_exit(EXIT_CHECK);
     }
     if (opt_restore) return pkg_restore();
-    if (by_url) return pkg_add_url(args[0], name, str_from_cstr(args[2]));
+    if (by_url) { /* spec 061 (research R3): a repository unless the path ends as an archive does */
+        Str *url = str_from_cstr(args[2]);
+        long ver[3] = {-1, 0, 0}, hash = 0, at = url->len;
+        while (at > 8 && url->data[at - 1] != '@' && url->data[at - 1] != '/') at--;
+        int has_ver = at > 9 && url->data[at - 1] == '@' && cstr_index(url->data + 8, '/') >= 0 && cstr_index(url->data + 8, '/') < at - 9;
+        if (has_ver) {
+            if (url->data[at] == 'v' || !git_version_parse(url->data + at, url->len - at, ver))
+                usage_error(str_from_cstr("A version is written `SOURCE@MAJOR.MINOR.PATCH`, such as `@1.2.0`."));
+            url = str_new(url->data, at - 1);
+        }
+        while (hash < url->len && url->data[hash] != '#' && url->data[hash] != '?') hash++; /* the path's end */
+        int archive = !has_ver && (ends_with(url->data, hash, ".tar") || ends_with(url->data, hash, ".tar.gz") || ends_with(url->data, hash, ".tgz"));
+        return pkg_add_url(args[0], name, url, archive ? 0 : ver);
+    }
     Pkg *e = pkg_find(name); /* the entry, or 0 */
     if (opt_remove) {
         if (!e) usage_error_arg("No package `$1` is listed in the manifest.", args[1]);
@@ -1083,6 +1272,7 @@ int cmd_package(void)
     if (mem_eq(e->pin, pkg_hash_buf, 32) && str_eq(e->raw, raw)) { /* unchanged: same hash and directory */
         if (e->url) { /* spec 041: pinned by hand now, so no longer "from" anywhere */
             e->url = 0;
+            pkg_set_version(e, 0);
             pkg_write();
         }
         pkg_report("unchanged", e, 0);
@@ -1090,6 +1280,7 @@ int cmd_package(void)
     }
     Str *old = pkg_hash_text(e->pin); /* updated */
     e->url = 0;
+    pkg_set_version(e, 0);
     e->raw = raw;
     e->dir = abs;
     mem_copy(e->pin, pkg_hash_buf, 32);

@@ -1,0 +1,48 @@
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.2.0
+added money 1.2.0 packages/money sha256:6059faa4d82bd941b8c55d874f70121629a390173dd85164c4ffb864fb441e43 from https://127.0.0.1:{port}/money
+  effects: none
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem main.vo pads https://127.0.0.1:{port}/mono#libs/pads@1.0.0
+added pads 1.0.0 packages/pads sha256:d995638bb1f7da1dc26d2a61783a80279b1a4899ed939a159d14d383cce21718 from https://127.0.0.1:{port}/mono#libs/pads
+  effects: none
+--- stderr
+--- exit 0
+$ vo check main.vo
+main.vo:1:1: error[E0702]: Package `money`: the directory `packages/money` is missing or has no .vo files.
+   1 | import money.format;
+     | ^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem --restore main.vo
+restored money 1.2.0
+restored pads 1.0.0
+--- stderr
+--- exit 0
+$ vo run main.vo
+12.34
+--- stderr
+--- exit 0
+$ vo package --json --ca-file test-ca.pem --restore main.vo
+{"v":1,"kind":"package","name":"money","change":"present","directory":"packages/money","hash":"sha256:6059faa4d82bd941b8c55d874f70121629a390173dd85164c4ffb864fb441e43","source":"https://127.0.0.1:{port}/money","version":"1.2.0","direct":true}
+{"v":1,"kind":"package","name":"pads","change":"present","directory":"packages/pads","hash":"sha256:d995638bb1f7da1dc26d2a61783a80279b1a4899ed939a159d14d383cce21718","source":"https://127.0.0.1:{port}/mono#libs/pads","version":"1.0.0","direct":true}
+--- stderr
+--- exit 0
+$ vo package --ca-file test-ca.pem --restore main.vo
+error[E0701]: Package `money`: version 1.2.0 now hashes to sha256:6059faa4d82bd941b8c55d874f70121629a390173dd85164c4ffb864fb441e43, not to the pinned hash: the version was changed after it was pinned. Nothing was written.
+error[E0711]: Package `pads`: https://127.0.0.1:{port}/mono has no version 1.0.5. Nearest: 1.0.0.
+--- stderr
+--- exit 65
+$ vo check main.vo
+main.vo:1:1: error[E0702]: Package `money`: the directory `packages/money` is missing or has no .vo files.
+   1 | import money.format;
+     | ^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem --restore main.vo
+error[E0706]: Cannot fetch package `money` from https://127.0.0.1:{port}/money: connection refused by 127.0.0.1:{port}.
+error[E0706]: Cannot fetch package `pads` from https://127.0.0.1:{port}/mono#libs/pads: connection refused by 127.0.0.1:{port}.
+--- stderr
+--- exit 65

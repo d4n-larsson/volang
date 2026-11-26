@@ -1,0 +1,3 @@
+export fn pad(s: str) -> str {
+    return " " + s;
+}

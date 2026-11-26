@@ -1,0 +1,5 @@
+import money.format;
+
+fn main() uses console {
+    print(format.cents(1234));
+}

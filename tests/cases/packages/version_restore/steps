@@ -1,0 +1,17 @@
+server git a.test
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.2.0
+vo package --ca-file test-ca.pem main.vo pads https://127.0.0.1:{port}/mono#libs/pads@1.0.0
+cp vo.packages good.packages
+rm packages
+vo check main.vo
+vo package --ca-file test-ca.pem --restore main.vo
+vo run main.vo
+vo package --json --ca-file test-ca.pem --restore main.vo
+rm packages
+write vo.packages money packages/money sha256:0000000000000000000000000000000000000000000000000000000000000000 https://127.0.0.1:{port}/money@1.2.0\npads packages/pads sha256:d995638bb1f7da1dc26d2a61783a80279b1a4899ed939a159d14d383cce21718 https://127.0.0.1:{port}/mono#libs/pads@1.0.5\n
+vo package --ca-file test-ca.pem --restore main.vo
+vo check main.vo
+cp good.packages vo.packages
+stop-server
+vo package --ca-file test-ca.pem --restore main.vo
+keep vo.packages

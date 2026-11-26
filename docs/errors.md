@@ -4424,11 +4424,11 @@ cash shared/money sha256:b8a83f7d5889555621315d5fb1332ddb9b479351d7dd62ed621b5f5
 
 ## E0706 package_fetch_failed
 
-A package could not be fetched, or its archive was refused.
+A package could not be fetched, or its archive or repository was refused.
 
 Fixable: no
 
-`vo package ENTRY NAME URL` downloads an archive over HTTPS, unpacks its `.vo` files and pins them. It fails with this code, and changes nothing, when the download fails (the connection, the certificate, a status other than 200, more than five redirects or one to `http://`, more than 16 MiB, more than 60 seconds) or when the archive is not acceptable: damaged or cut short, not a tar archive, holding a link, a device or a path that leaves the package (`..`, an absolute path), or over a limit (64 MiB unpacked, 16 MiB per file, 10,000 entries). The message says which. Nothing of a refused archive is written, and `vo check`, `vo run`, `vo test` and `vo build` never fetch anything.
+`vo package ENTRY NAME URL` downloads an archive over HTTPS, unpacks its `.vo` files and pins them. It fails with this code, and changes nothing, when the download fails (the connection, the certificate, a status other than 200, more than five redirects or one to `http://`, more than 16 MiB, more than 60 seconds) or when the archive is not acceptable: damaged or cut short, not a tar archive, holding a link, a device or a path that leaves the package (`..`, an absolute path), or over a limit (64 MiB unpacked, 16 MiB per file, 10,000 entries). The message says which. A versioned package (`SOURCE@VERSION`, a git repository) fails with it in the same way: the repository does not answer as git, its answer is damaged or cut short, the package's folder holds a link or a submodule, or a limit is passed. Nothing of a refused archive or repository is written, and `vo check`, `vo run`, `vo test` and `vo build` never fetch anything.
 
 ### Example
 
@@ -4446,6 +4446,31 @@ added money packages/money sha256:1e5b240df8daf715941d8af2629ab6404c7f9d1d369e49
 ```
 
 Check the URL in a browser: it must download a `.tar.gz` (or `.tar`) archive directly. For a repository on a forge, use the archive link of a tag or commit, not of a branch, so that the pinned content does not change.
+
+## E0711 package_version_unknown
+
+A package source has no such version.
+
+Fixable: no
+
+A versioned package is a git repository served over HTTPS, and its versions are its tags of the form `v1.2.0` or `1.2.0` (three numbers; tags such as `v1.2`, `v2.0.0-rc1` or `release-3` are not versions). `vo package ENTRY NAME SOURCE@VERSION` fails with this code, and changes nothing, when the repository has no tag for that version; the message lists the nearest versions it does have, or says that it has no version tags at all. `vo package --restore` reports it when a pinned version was deleted from the repository.
+
+### Example
+
+```text
+$ vo package main.vo money https://codeberg.org/acme/money@1.9.0
+error[E0711]: https://codeberg.org/acme/money has no version 1.9.0. Nearest: 1.8.2, 2.0.0, 1.8.1, 1.8.0, 1.7.3.
+```
+
+### Fixed
+
+```text
+$ vo package main.vo money https://codeberg.org/acme/money@1.8.2
+added money 1.8.2 packages/money sha256:1e5b240df8daf715941d8af2629ab6404c7f9d1d369e493f0e9eb2d01fc162c5 from https://codeberg.org/acme/money
+  effects: none
+```
+
+Without `@VERSION` the highest version is taken.
 
 ## W0701 effectful_logic
 

@@ -1,0 +1,7 @@
+server git a.test
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.9.0
+vo package --json --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@0.1.0
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@9.0.0
+vo package --ca-file test-ca.pem main.vo empty https://127.0.0.1:{port}/empty
+vo package --ca-file test-ca.pem main.vo none https://127.0.0.1:{port}/nothing-here@1.0.0
+vo explain E0711

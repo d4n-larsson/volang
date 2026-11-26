@@ -1,0 +1,39 @@
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/trunc@1.0.0
+error[E0706]: Cannot fetch package `money` from https://127.0.0.1:{port}/trunc: the pack's checksum does not match: it is damaged or cut short.
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/badsum@1.0.0
+error[E0706]: Cannot fetch package `money` from https://127.0.0.1:{port}/badsum: the pack's checksum does not match: it is damaged or cut short.
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/huge@1.0.0
+error[E0706]: Cannot fetch package `money` from https://127.0.0.1:{port}/huge: the response from 127.0.0.1:{port} is larger than 16 MiB.
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/gone@1.0.0
+error[E0706]: Cannot fetch package `money` from https://127.0.0.1:{port}/gone: the server answered 404.
+--- stderr
+--- exit 65
+$ vo package --json --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/linked@1.0.0
+{"v":1,"kind":"toolchain_error","code":"E0706","name":"package_fetch_failed","message":"Cannot fetch package `money` from https://127.0.0.1:{port}/linked: it has a link, which a package cannot hold."}
+--- stderr
+--- exit 65
+$ vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/archive/none@1.0.0
+error[E0706]: Cannot fetch package `money` from https://127.0.0.1:{port}/archive/none: the server answered 404.
+--- stderr
+--- exit 65
+$ vo package main.vo money http://127.0.0.1:{port}/trunc@1.0.0
+error[T0001]: A package is fetched from an https:// URL only.
+--- stderr
+--- exit 64
+$ vo package main.vo money https://user:pw@127.0.0.1:{port}/trunc@1.0.0
+error[T0001]: A URL with a user name or password is not fetched.
+--- stderr
+--- exit 64
+$ vo check main.vo
+main.vo:1:1: error[E0205]: Cannot find `money/format.vo` for this import.
+   1 | import money.format;
+     | ^^^^^^^^^^^^^^^^^^^^
+1 error, 0 warnings
+--- stderr
+--- exit 65

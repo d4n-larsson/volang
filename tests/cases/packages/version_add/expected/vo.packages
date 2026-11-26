@@ -1,0 +1,4 @@
+# vo packages: update with `vo package ENTRY NAME DIRECTORY`
+money packages/money sha256:f745df10ad8b94a0b570b3b1984a3cc69bddeb7b597a5d456a81b2962d6d7936 https://127.0.0.1:{port}/money@1.3.0
+moved vendor/moved sha256:caed92a8a3f4a79fc2517c7a359693e5feac3ebcb2b39f93f964f87721e4d0ec https://127.0.0.1:{port}/moved@1.0.0
+pads packages/pads sha256:d995638bb1f7da1dc26d2a61783a80279b1a4899ed939a159d14d383cce21718 https://127.0.0.1:{port}/mono#libs/pads@1.0.0
