@@ -5,7 +5,8 @@ The prompt holds the task statement, the starter tree (refactor tasks) and the v
 vo also `vo reference`. The agent replies with fenced blocks that start with `# file: <path>` (one
 block may omit it: it is the entry file). After a failed attempt the agent sees the toolchain
 output, the failing visible cases, how many hidden checks failed (never which), and any capability
-violation. Results: bench2/results/<lang>[-features].jsonl, one record per task.
+violation. Results: bench2/results/<lang>[-features].jsonl, one record per task; each attempt's files
+in bench2/results/drafts/<lang>[-features]/<task>/<attempt>/.
 """
 import argparse
 import json
@@ -30,13 +31,16 @@ def ask(prompt, model):
     # directory, and none of the user's settings, hooks, plugins or MCP servers.
     cmd = ["claude", "-p", "--tools", "", "--setting-sources", "", "--strict-mcp-config",
            "--no-session-persistence"] + (["--model", model] if model else [])
-    # A call that hangs (the API sometimes stalls) is None: a failed attempt, counted in `timeouts`.
-    with tempfile.TemporaryDirectory() as empty:
-        try:
-            p = subprocess.run(cmd, input=prompt.encode(), capture_output=True, timeout=300, cwd=empty)
-        except subprocess.TimeoutExpired:
-            return None
-    return p.stdout.decode("utf-8", "replace")
+    # The API sometimes stalls: a call that hangs is asked again, up to three times, without using up
+    # an attempt. Returns (reply, hangs); the reply is None when all three hung.
+    for hangs in range(3):
+        with tempfile.TemporaryDirectory() as empty:
+            try:
+                p = subprocess.run(cmd, input=prompt.encode(), capture_output=True, timeout=300, cwd=empty)
+                return p.stdout.decode("utf-8", "replace"), hangs
+            except subprocess.TimeoutExpired:
+                pass
+    return None, 3
 
 
 def parse_reply(reply, entry):
@@ -124,15 +128,19 @@ def main():
                    "removed.")
         base_prompt, solved, attempts, start = prompt, False, 0, time.time()
         r, codes, timeouts = None, [], 0
+        drafts = os.path.join(ROOT, "bench2", "results", "drafts", a.lang + suffix, name)
+        shutil.rmtree(drafts, ignore_errors=True)
         for attempts in range(1, a.attempts + 1):
-            reply = ask(prompt, a.model)
-            timeouts += reply is None
+            reply, hangs = ask(prompt, a.model)
+            timeouts += hangs
             files = parse_reply(reply or "", entry)
-            with tempfile.TemporaryDirectory() as sol:
-                for p, text in files.items():
-                    os.makedirs(os.path.dirname(os.path.join(sol, p)) or sol, exist_ok=True)
-                    open(os.path.join(sol, p), "w", encoding="utf-8").write(text)
-                r = grade.grade(task_dir, sol, a.lang)
+            # Every draft is kept, graded where it lies: results/drafts/<lang>[-features]/<task>/<attempt>/.
+            sol = os.path.join(drafts, str(attempts))
+            os.makedirs(sol)
+            for p, text in files.items():
+                os.makedirs(os.path.dirname(os.path.join(sol, p)) or sol, exist_ok=True)
+                open(os.path.join(sol, p), "w", encoding="utf-8").write(text)
+            r = grade.grade(task_dir, sol, a.lang)
             codes.append(r["codes"])
             if grade.solved(r):
                 solved = True

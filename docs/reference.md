@@ -377,7 +377,7 @@ Simple statements (`let`, `var`, `set`, `return`, `break`, `continue`, calls, `t
 Details:
 
 - `let` cannot be reassigned (E0208, fix: use `var`). `set` only works on a `var`, a record field, a list element or a map entry.
-- A name cannot be declared again inside a nested block while it is visible (shadowing, E0203). Sibling blocks may reuse names. A local never read is W0201.
+- A name cannot be declared again inside a nested block while it is visible (shadowing, E0203), and no local may take a builtin's name (`len`, `min`, `keys`, `lower`, ...) or an imported module's name. Sibling blocks may reuse names. A local never read is W0201.
 - A call statement must not drop a value: `len(s);` alone is E0405 (write `let _ = len(s);` or use the value), and ignoring a `result` is E0404.
 - `if` and `while` conditions must be `bool` (E0301). Parentheses around a condition are optional.
 - `for x in xs` visits list elements, `for c in s` the characters of a `str`. `for i in a..b` visits the ints `a, a+1, ..., b-1` (empty when `a >= b`). `for _ in 0..n` repeats n times without a counter. `..` exists only in `for`. `for k, v in m` visits a map's keys with their values, `for i, x in xs` a list's indexes with their elements (`_` for either): what was there when the loop began; additions are not visited, removed entries are skipped. No C-style `for (;;)`, `do`, `loop` or `until`.
@@ -1110,7 +1110,7 @@ PASS sorting twice changes nothing (100 cases, 0ms)
 
 ## Programs in several files
 
-`import a.b;` loads the file `a/b.vo`, relative to the importing file's directory, and binds its module name `b`: its top-level items (functions, records, variants, constants, effect sets) are written `b.name`, `b.Point`, `b.Shape.circle(1.0)`, `uses b.Storage`. Only items declared with `export` can be used; the others are private (E0209, whose fix adds `export`). An exported function, record or variant cannot use a private type of its file (E0210). Write one `import` per module, before all items; no local may have a module's name (E0203). Paths cannot contain `..`, and import cycles are E0206. A module used without its import is E0204, whose fix adds it. Run the program through the file containing `main`: `vo run main.vo`.
+`import a.b;` loads the file `a/b.vo`, relative to the importing file's directory, and binds its module name `b`: its top-level items (functions, records, variants, constants, effect sets) are written `b.name`, `b.Point`, `b.Shape.circle(1.0)`, `uses b.Storage`. Only items declared with `export` can be used; the others are private (E0209, whose fix adds `export`). An exported function, record or variant cannot use a private type of its file (E0210). Write one `import` per module, before all items. Paths cannot contain `..`, and import cycles are E0206. A module used without its import is E0204, whose fix adds it. Run the program through the file containing `main`: `vo run main.vo`.
 
 ```vo
 # file: geometry.vo
