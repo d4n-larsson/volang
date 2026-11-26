@@ -321,7 +321,7 @@ program runs.
   SC-003 (10-package restore; 100% of moved versions refused), SC-005 (the 100-package check time
   against T003's baseline), SC-006, SC-007 (existing cases unchanged: list from `git diff --stat
   tests/cases/packages` showing only new folders), SC-009.
-- [ ] T036 `make test` on x86-64, then `make test ARCH=aarch64` and `ARCH=riscv64` under qemu, one
+- [X] T036 `make test` on x86-64, then `make test ARCH=aarch64` and `ARCH=riscv64` under qemu, one
   after the other; `results.md` complete.
 
 ---

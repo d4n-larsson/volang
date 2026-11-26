@@ -104,6 +104,13 @@
   lines from valid and broken names, hashes, URLs, versions and `indirect` noise: no crash, only E0703,
   E0704 or E0709 on the manifest) and `tests/package_git.py --fuzz 5000` (mutated packs: no crash,
   nothing written outside the target): 10,000 mutations, 0 problems. `make test` runs 200 manifests.
+- Three architectures (T036), at the commit after `fcb9024`: `make test` passes on x86-64, on ARM64
+  under qemu (12 min 40 s) and on RISC-V under qemu (13 min 11 s). Two ARM64 runs before that failed,
+  neither in package code: `json/large` ran into the default 10 s run limit under emulation and
+  parallel load (7.9 s alone under qemu-aarch64, 8.9 s under qemu-riscv64, 1.57 s natively, 1.54 s
+  with the 0.3.0 build: not a regression), and now has its own limit
+  (`tests/cases/json/large.cmd`); `workers/unasked` failed once (a worker's output and runtime error
+  missing) and passes 3 of 3 alone: timing-dependent under emulation, unchanged.
 
 ## Deviations
 

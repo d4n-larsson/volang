@@ -213,7 +213,7 @@ cases; the reference's `Shape` example runs without `Size` (T031).
   `docs/stability.md`); `make site-check`.
 - [X] T034 SC measurements in `results.md`: SC-001 (2 of 2 payload records removed, JSON identical),
   SC-003 (codes, cases, catalog), SC-004 (prop), SC-005 (reference words), check times (T004's baseline).
-- [ ] T035 `make test` on x86-64, then `make test ARCH=aarch64` and `ARCH=riscv64` under qemu
+- [X] T035 `make test` on x86-64, then `make test ARCH=aarch64` and `ARCH=riscv64` under qemu
   (byte-identical); `results.md` complete; `docs/roadmap.md` row for 060.
 
 ---
