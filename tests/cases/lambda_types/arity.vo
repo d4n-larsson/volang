@@ -1,0 +1,9 @@
+record Person {
+    name: str;
+    age: int;
+}
+
+fn main() uses console {
+    let key: fn(Person) -> int = fn(p, q) => p.age;
+    print(str(key(new Person { name: "al", age: 1 })));
+}

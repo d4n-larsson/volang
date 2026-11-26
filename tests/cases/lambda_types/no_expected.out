@@ -1,0 +1,13 @@
+no_expected.vo:2:9: warning[W0201]: `f` is never used.
+   2 |     let f = fn(x) => x + 1;
+     |         ^
+no_expected.vo:2:13: error[E0343]: Cannot tell the parameter types of this anonymous function: give `f` a function type, `let f: fn(...) -> ... = fn(...)`.
+   2 |     let f = fn(x) => x + 1;
+     |             ^^
+no_expected.vo:4:9: warning[W0201]: `fs` is never used.
+   4 |     let fs = [fn(a) => a, fn(b) => b];
+     |         ^^
+no_expected.vo:4:15: error[E0343]: Cannot tell the parameter types of this anonymous function: pass it where a function type is expected.
+   4 |     let fs = [fn(a) => a, fn(b) => b];
+     |               ^^
+2 errors, 2 warnings

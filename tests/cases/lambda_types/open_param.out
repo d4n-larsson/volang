@@ -1,0 +1,4 @@
+open_param.vo:6:18: error[E0343]: `I` of `on` is known only from this function's parameters: pass a named function, or give a binding its type.
+   6 |     print(str(on(fn(x) => 1)));
+     |                  ^^
+1 error, 0 warnings

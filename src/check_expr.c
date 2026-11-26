@@ -212,7 +212,7 @@ static Type *check_todo(Node *call, Type *expected)
     check_arg(call, 0, t_str);
     Fx *fx = (Fx *)ck_fx;
     if (fx) fx->holes = 1;
-    if (ck_stmt_call == call) expected = ck_ret ? ck_ret : t_void; /* `todo(...);` */
+    if (ck_stmt_call == call) expected = ck_ret && ck_ret != t_collect ? ck_ret : t_void; /* `todo(...);` */
     if (ty_bad(expected)) {
         ck_err("E0601", call,
                str_from_cstr("Cannot tell what type this hole must have; annotate the binding: `let x: T = todo(...)`."));
@@ -1083,6 +1083,14 @@ Type *check_list(Node *node, Type *expected)
         return t_error;
     }
     Type *et = check_expr(vec_get(node->a.v, 0), elem); /* element type */
+    if (elem && !ty_bad(elem) && ty_is(elem, TY_FUNC)) { /* spec 059: each function element against the expected type */
+        for (long i = 0; i < node->a.v->n; i++) {
+            Node *item = vec_get(node->a.v, i);
+            expect_type(item, elem, i ? check_expr(item, elem) : et);
+        }
+        check_web_routes(node);
+        return expected;
+    }
     for (long i = 1; i < node->a.v->n; i++) {
         Node *item = vec_get(node->a.v, i);
         Type *t = check_expr(item, et);
@@ -1275,7 +1283,7 @@ Type *check_expr(Node *node, Type *expected)
         case N_NEW_MAP: t = new_map_type(TY_MAP, node); break; /* reusing the map rules of resolve_type */
         case N_NEW_COLL: t = check_new_coll(node); break; /* spec 014 */
         case N_VCASE: t = check_vcase(node, expected); break;
-        case N_LAMBDA: t = check_lambda(node); break;
+        case N_LAMBDA: t = check_lambda(node, expected); break;
         case N_CALL_VALUE: t = check_call_value(node, expected); break;
         default: t = t_error; break;
         }

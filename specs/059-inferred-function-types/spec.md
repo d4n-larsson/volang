@@ -110,7 +110,8 @@ P2 because it adds a token and a rule for which body shape applies, and stories 
 - **Effect parameters** of user generics (`[E: effects]`) are fixed as today from the argument's effects.
 - **Wrong arity**: a lambda with two parameters where `fn(T) -> U` is expected is E0301 with both
   arities named; no fix.
-- **Parameter name `_`**: allowed for a parameter the body does not use, as today.
+- **Parameter name `_`**: not allowed, as today (the reference: `_` "is not allowed as a parameter";
+  corrected during implementation, T004).
 - **Hover, `vo query type-at`, traces and runtime error reports** show the inferred parameter types,
   since a reader no longer sees them written.
 - **Captured variables, closures, contracts**: unchanged; anonymous functions still cannot have

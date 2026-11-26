@@ -33,7 +33,7 @@ it is E0343.
 | `fn(p) { return p.age; }` | `fn(p) => p.age` |
 | `fn(p)=>p.age` | `fn(p) => p.age` |
 | `fn(a,b) {` ... (two or more statements) | `fn(a, b) {` block as today |
-| a `=> expr` lambda past 100 columns | broken inside `expr` as any expression |
+| a line past 100 columns holding a `=> expr` lambda | broken by the usual rule: the outermost argument list one item per line, the lambda on its own line |
 
 A block whose only statement is `return expr;` but that holds a comment is left as a block (the comment
 has no place in `=> expr`); E0413 is not reported for it.

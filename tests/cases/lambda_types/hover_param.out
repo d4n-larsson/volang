@@ -1,0 +1,2 @@
+{"v":1,"kind":"type_at","file":"hover_param.vo","start":{"line":8,"col":31},"end":{"line":8,"col":32},"text":"p","type":"Person","name":"p","declaration":{"file":"hover_param.vo","start":{"line":8,"col":31},"end":{"line":8,"col":32}}}
+{"v":1,"kind":"summary","command":"query","errors":0,"warnings":0,"truncated":0,"files":1,"results":1}

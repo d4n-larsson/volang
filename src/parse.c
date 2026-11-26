@@ -23,7 +23,7 @@ static const char *const tok_spell[] = {
     "map", "result", "void", "uses", "prop", "requires", "ensures", "export", "bytes", "?",
     "(", ")", "{", "}", "[", "]", ",", ";", ":", ".",
     "..", "->", "=", "==", "!=", "<", "<=", ">", ">=", "+",
-    "-", "*", "/", "%", "@",
+    "-", "*", "/", "%", "@", "=>",
 };
 static const char *const tok_display_class[] = {
     "the end of the file", "a name", "a type name", "a number", "a number", "a string", "a comment", "`_`",
@@ -1209,8 +1209,12 @@ static Node *parse_fn_kind(int kind)
             long pstart = p_start();
             Node *param = p_node(N_PARAM);
             param->a.n = p_name();
-            p_expect(T_COLON);
-            param->b.n = parse_type();
+            if (kind != N_LAMBDA) {
+                p_expect(T_COLON);
+                param->b.n = parse_type();
+            } else if (p_accept(T_COLON)) { /* spec 059: a 0.4 lambda's written type, reported by the checker */
+                param->b.n = parse_type();
+            }
             vec_push(n->b.v, p_finish(param, pstart));
         } while (p_accept(T_COMMA));
         p_expect(T_RPAREN);
@@ -1242,6 +1246,18 @@ static Node *parse_fn_kind(int kind)
         }
     } else {
         parse_uses();
+    }
+    if (kind == N_LAMBDA && p_kind() == T_FAT_ARROW) { /* spec 059: `=> expr`, kept as `{ return expr; }` */
+        p_next();
+        long estart = p_start();
+        Node *ret = p_node(N_RETURN);
+        ret->a.n = parse_expr();
+        Node *block = p_node(N_BLOCK);
+        block->a.v = vec_new();
+        vec_push(block->a.v, p_finish(ret, estart));
+        n->d.n = p_finish(block, estart);
+        n->flags |= NF_ARROW;
+        goto finish;
     }
     n->d.n = parse_block();
 finish:

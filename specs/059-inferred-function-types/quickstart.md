@@ -25,7 +25,7 @@ fn main() uses console {
 }
 EOF
 vo run main.vo                         # al,cy  then 10
-vo query type-at main.vo main.vo:12:22 # p: Person
+vo query type-at main.vo main.vo:12:24 # p: Person
 ```
 
 ## 2. A wrong body names the expected type

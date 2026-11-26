@@ -2274,6 +2274,32 @@ fn main() {
 }
 ```
 
+## E0343 lambda_type_unknown
+
+An anonymous function has parameters but nothing to take their types from.
+
+Fixable: no
+
+An anonymous function writes only its parameters' names; their types come from where it is used: the parameter of the function it is passed to, the type of the binding, field or list it goes into, or the return type it is returned as (spec 059). `let f = fn(x) => x + 1;` gives it none, and neither does a call whose type parameter appears only in the function's own parameters (`on[I](f: fn(I) -> int)` called with `fn(x) => 1`). Give the binding a function type, or pass a named function, whose parameters are written. An anonymous function without parameters takes its return type from its body and needs no context.
+
+### Example
+
+```vo
+fn main() uses console {
+    let inc = fn(x) => x + 1;
+    print(str(inc(1)));
+}
+```
+
+### Fixed
+
+```vo
+fn main() uses console {
+    let inc: fn(int) -> int = fn(x) => x + 1;
+    print(str(inc(1)));
+}
+```
+
 ## E0401 non_exhaustive_match
 
 A `match` does not handle every case.

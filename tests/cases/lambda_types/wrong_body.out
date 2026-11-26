@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0301","name":"type_mismatch","severity":"error","file":"wrong_body.vo","start":{"line":7,"col":43},"end":{"line":7,"col":49},"text":"p.name","message":"Expected `int`, found `str`.","expected":"int","found":"str","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

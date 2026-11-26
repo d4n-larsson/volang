@@ -1,0 +1,8 @@
+runtime_param.vo:3:38: runtime error[R0002]: Division by zero.
+   3 |     let shares = map(rates, fn(r) => 100 / r);
+     |                                      ^^^^^^^
+trace:
+  at anonymous function (runtime_param.vo:3:38)
+      r: int = 0
+  at main (runtime_param.vo:3:18)
+      rates: list[int] = [2, 0]

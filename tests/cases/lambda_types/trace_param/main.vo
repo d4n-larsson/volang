@@ -1,0 +1,4 @@
+fn main() uses console {
+    let labels = map([1, 2], fn(n) => "#" + str(n));
+    print(join(labels, ","));
+}

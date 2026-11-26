@@ -497,6 +497,7 @@ Token *lex(int file)
         case '=':
             kind = T_ASSIGN;
             if (c2 == '=') kind = T_EQ, tlen = 2;
+            if (c2 == '>') kind = T_FAT_ARROW, tlen = 2; /* spec 059 */
             break;
         case '<':
             kind = T_LT;

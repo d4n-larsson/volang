@@ -1,0 +1,9 @@
+record Person {
+    name: str;
+    age: int;
+}
+
+fn main() uses console {
+    let people = [new Person { name: "cy", age: 30 }];
+    print(join(map(people, fn(p) => p.name), ","));
+}

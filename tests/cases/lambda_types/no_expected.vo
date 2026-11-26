@@ -1,0 +1,6 @@
+fn main() uses console {
+    let f = fn(x) => x + 1;
+    let g = fn() => 41;
+    let fs = [fn(a) => a, fn(b) => b];
+    print(str(g() + 1));
+}

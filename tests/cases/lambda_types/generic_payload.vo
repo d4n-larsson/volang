@@ -1,0 +1,26 @@
+record Box[T] {
+    value: T;
+    show: fn(T) -> str;
+}
+
+variant Maybe[T] {
+    some(T);
+    none;
+}
+
+fn render[T](b: Box[T]) -> str {
+    return b.show(b.value);
+}
+
+fn main() uses console {
+    let b: Box[int] = new Box { value: 7, show: fn(v) => "#" + str(v) };
+    print(render(b));
+    let m: Maybe[fn(int) -> int] = Maybe.some(fn(x) => x + 1);
+    match m {
+        case some(f) {
+            print(str(f(1)));
+        }
+        case none {
+        }
+    }
+}

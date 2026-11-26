@@ -1,0 +1,65 @@
+record Person {
+    name: str;
+    age: int;
+}
+
+record Rule {
+    check: fn(int) -> bool;
+}
+
+variant Step {
+    run(fn(int) -> int);
+    stop;
+}
+
+fn adder(n: int) -> fn(int) -> int {
+    return fn(x) => x + n;
+}
+
+fn twice(f: fn(int) -> int, x: int) -> int {
+    return f(f(x));
+}
+
+fn half(n: int) -> result[fn(int) -> int] {
+    if n == 0 {
+        return err("zero");
+    }
+    return ok(fn(x) => x / n);
+}
+
+fn main() -> result[void] uses console {
+    let inc: fn(int) -> int = fn(x) => x + 1;
+    var pick: fn(Person) -> str = fn(p) => p.name;
+    set pick = fn(p) => str(p.age);
+    let rule = new Rule { check: fn(x) => x > 2 };
+    set rule.check = fn(x) => x > 3;
+    let fs: list[fn(int) -> int] = [fn(x) => x, fn(x) => x * 2, fn(x) => x * 3];
+    let step = Step.run(fn(x) => x - 1);
+    let h = try half(2);
+    var total = 0;
+    for f in fs {
+        set total = total + f(10);
+    }
+    match step {
+        case run(f) {
+            print(str(f(5)));
+        }
+        case stop {
+        }
+    }
+    print(str(inc(1)) + " " + pick(new Person { name: "al", age: 25 }) + " " + str(rule.check(3)));
+    print(str(total) + " " + str(h(9)) + " " + str(adder(2)(3)) + " " + str(twice(fn(x) => x * x, 3)));
+    let call: fn(fn(int) -> int) -> int = fn(f) => f(1);
+    print(str(call(fn(x) => x + 41)));
+    let actions: list[fn(int) uses console] = [fn(x) {
+        if x > 100 {
+            return;
+        }
+    }, fn(x) {
+        print("act " + str(x));
+    }];
+    for a in actions {
+        a(7);
+    }
+    return ok();
+}

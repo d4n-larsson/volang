@@ -1,0 +1,9 @@
+fn main() uses console {
+    let names = map([1, 2, 3], fn(x) {
+        if x > 1 {
+            return "big";
+        }
+        return x;
+    });
+    print(join(names, ","));
+}

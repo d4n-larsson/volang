@@ -134,8 +134,10 @@ static void fm_params(Vec *params, int wrap, long ind)
         }
         Node *p = vec_get(params, i);
         fm_name(p->a.n);
-        fm_c(": ");
-        fm_type(p->b.n);
+        if (p->b.n) { /* spec 059: an anonymous function's parameters have no type */
+            fm_c(": ");
+            fm_type(p->b.n);
+        }
         if (wrap && i + 1 < params->n) fm_b(',');
     }
     if (wrap && params->n) {
@@ -182,6 +184,11 @@ static void fm_lambda(Node *f)
     }
     fm_uses(f->a.n->b.fx->uses); /* a `uses` clause (E0507) is kept, so nothing is lost */
     if (f->b.v->n && !wrap) fm_group(f, st);
+    if (f->flags & NF_ARROW) { /* spec 059: `=> expr`, broken inside expr when too long */
+        fm_c(" => ");
+        fm_expr(((Node *)vec_get(f->d.n->a.v, 0))->a.n, 0);
+        return;
+    }
     fm_b(' ');
     fm_block(f->d.n, level);
     fm_level = level; /* a later anonymous function in the same statement */

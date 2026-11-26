@@ -1,0 +1,31 @@
+fn apply[T, U](x: T, f: fn(T) -> U) -> U {
+    return f(x);
+}
+
+fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E {
+    for x in xs {
+        f(x);
+    }
+}
+
+fn serve[C](setup: fn() -> C, handle: fn(C, int) -> str) -> str {
+    return handle(setup(), 2);
+}
+
+fn chain[A, B, C](x: A, f: fn(A) -> B, g: fn(B) -> C) -> C {
+    return g(f(x));
+}
+
+fn context() -> str {
+    return "ctx";
+}
+
+fn main() uses console {
+    print(apply(3, fn(x) => str(x * 2)));
+    each(["a", "b"], fn(s) {
+        print(s);
+    });
+    print(serve(context, fn(ctx, n) => ctx + str(n)));
+    print(str(chain(4, fn(x) => x * 10, fn(y) => y + 2)));
+    print(chain("ab", fn(s) => len(s), fn(n) => str(n) + " chars"));
+}

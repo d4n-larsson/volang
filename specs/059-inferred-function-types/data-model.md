@@ -14,8 +14,8 @@ changes is where an anonymous function's types come from.
 | body (D) | block | block, or a one-`return` block flagged `NF_ARROW` for `=> expr` |
 | effects | from the body (`fx->direct`) | unchanged |
 
-Rules: as today, parameter names are distinct, `_` is allowed for an unused parameter, and an anonymous
-function has no type parameters, `uses` (E0507) or contracts.
+Rules: as today, parameter names are distinct and not `_` (reference: `_` "is not allowed as a parameter"),
+and an anonymous function has no type parameters, `uses` (E0507) or contracts.
 
 ## Expected function type
 

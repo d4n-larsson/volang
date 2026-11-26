@@ -186,6 +186,7 @@
 #define T_SLASH (72)
 #define T_PERCENT (73)
 #define T_AT (74) /* spec 012: `@` of an annotation */
+#define T_FAT_ARROW (75) /* spec 059: `=>` before an anonymous function's expression body */
 
 /* ---- source files (diag.c file table): FILE_SIZE bytes each ---- */
 #define FILE_PATH (0) /* str object */
@@ -368,6 +369,7 @@
 #define NF_MUT_SKIP (4096)   /* spec 018: a `not` that a mutant child compiles as its operand alone */
 #define NF_CONST (8192) /* spec 031: a literal the checker worked out (a constant's use: N_B its N_CONST) */
 #define NF_PAIR (16384) /* spec 046: N_FOR with two variables (`for k, v in m`) */
+#define NF_ARROW (32768) /* spec 059: N_LAMBDA written `fn(a) => expr` (D: a block of one N_RETURN of expr) */
 #define FOR_END(st) (((st)->flags & NF_PAIR) ? (Node *)0 : (st)->c.n) /* the range end of a `for a..b` */
 #define NF_PAREN (256) /* expression written in parentheses (vo fmt keeps them around `and` in `or`) */
 
@@ -1381,6 +1383,7 @@ extern Type * t_void;
 extern Type * t_error;
 extern Sym * ck_scope;
 extern Type * ck_ret;
+extern Type *t_collect; /* spec 059 */
 extern long ck_in_test;
 extern long ck_test_checks;
 extern long ck_test_holes;
@@ -1598,7 +1601,8 @@ extern int sym_fits(Sym *sym, Node *node);
 extern long ck_depth;
 extern Node * ck_cur_stmt;
 extern void *ck_ctx_at(long level);
-extern Type *check_lambda(Node *node);
+extern Type *check_lambda(Node *node, Type *expected);
+extern int lambda_written(Node *node);
 extern long ck_capture(Sym *sym, Node *ident);
 extern long ck_capture_at(Sym *sym, long level);
 extern void report_bad_captures(Node *lambda);

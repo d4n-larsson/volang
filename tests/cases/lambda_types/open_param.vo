@@ -1,0 +1,7 @@
+fn on[I](f: fn(I) -> int) -> int {
+    return 1;
+}
+
+fn main() uses console {
+    print(str(on(fn(x) => 1)));
+}

@@ -67,7 +67,10 @@ def mutate(data, rng):
                                     # spec 058: module imports and qualified names
                                     b"\nimport ;\n", b"\nimport a..b;\n", b"\nimport std.json\n", b"\nimport std.json;\n",
                                     b"\nimport std;\n", b"json.", b"json.1", b"new json. {", b"json.Json.",
-                                    b"uses json.", b"json.Json[", b"json.parse_json(", b"bytes.", b"\nimport std.bytes;\n"])
+                                    b"uses json.", b"json.Json[", b"json.parse_json(", b"bytes.", b"\nimport std.bytes;\n",
+                                    # spec 059: untyped anonymous functions and `=>`
+                                    b"=>", b"fn(a,) =>", b"fn(a b)", b"fn(a) =>;", b"fn(a) => {", b"fn(a: ) =>",
+                                    b"fn(x) => x", b"fn(a, b) => a + b", b"fn() =>", b" => "])
     return bytes(data)
 
 

@@ -70,7 +70,8 @@ module.exports = grammar({
     constraint: _ => choice('ordered', 'effects', 'json', 'key'),
 
     parameters: $ => seq('(', commaSep($.parameter), ')'),
-    parameter: $ => seq(field('name', choice($.identifier, $.type_identifier)), ':', field('type', $._type)),
+    // spec 059: an anonymous function's parameters are names only
+    parameter: $ => seq(field('name', choice($.identifier, $.type_identifier)), optional(seq(':', field('type', $._type)))),
 
     uses_clause: $ => seq('uses', commaSep1($.effect)),
     effect: $ => choice(
@@ -280,13 +281,13 @@ module.exports = grammar({
     )),
     record_body: $ => seq('{', commaSep($.field_initializer), '}'),
     field_initializer: $ => seq(field('name', $.identifier), ':', field('value', $._expression)),
-    function_literal: $ => seq(
+    function_literal: $ => prec.right(seq(
       'fn',
       field('parameters', $.parameters),
       optional(seq('->', field('result', $._type))),
       optional($.uses_clause),
-      field('body', $.block),
-    ),
+      choice(field('body', $.block), seq('=>', field('body', $._expression))), // spec 059: `=> expr`
+    )),
     unary_expression: $ => choice(
       prec(PREC.unary, seq('-', $._expression)),
       prec(PREC.not, seq('not', $._expression)),

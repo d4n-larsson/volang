@@ -1,0 +1,5 @@
+fn main() uses console {
+    let rates = [2, 0];
+    let shares = map(rates, fn(r) => 100 / r);
+    print(str(shares[0]));
+}

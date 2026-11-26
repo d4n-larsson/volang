@@ -32,9 +32,55 @@ void *ck_ctx_at(long level)
     return ck_ctx->data[level - 1].p;
 }
 
-/* Checks an anonymous function; returns its function type. */
-Type *check_lambda(Node *node)
+/* Spec 059: whether an anonymous function writes a parameter or return type (the 0.4 form, E0342). */
+int lambda_written(Node *node)
 {
+    if (node->c.n) return 1;
+    Vec *params = node->b.v;
+    for (long i = 0; i < params->n; i++)
+        if (((Node *)vec_get(params, i))->b.n) return 1;
+    return 0;
+}
+
+/* Spec 059: the expected function type an untyped anonymous function takes its types from, or 0. Another
+ * number of parameters is E0301 naming both, and *bad is set (the function is then an error). */
+static Type *lambda_expected(Node *node, Type *expected, int *bad)
+{
+    if (!expected || expected->kind != TY_FUNC) return 0;
+    long want = expected->a.v->n, got = node->b.v->n;
+    if (want == got) return expected;
+    Str *w = msg(want == 1 ? "1 parameter" : "$1 parameters", int_to_str(want), 0, 0);
+    Diag *d = ck_err("E0301", node->a.n, msg("Expected a function of $1 (`$2`), found one of $3.", w,
+                                             ty_name(expected), int_to_str(got)));
+    diag_set_ef(d, ty_name(expected), msg(got == 1 ? "a function of 1 parameter" : "a function of $1 parameters",
+                                          int_to_str(got), 0, 0));
+    *bad = 1;
+    return 0;
+}
+
+/* Spec 059: E0343, an anonymous function with parameters and no expected type to take their types from.
+ * As the whole initializer of an untyped `let`/`var`, the message names the binding. */
+static void lambda_unknown(Node *node)
+{
+    Node *st = ck_cur_stmt;
+    Node *name = st && st->kind == N_LET && st->c.n == node && !st->b.n ? st->a.n : 0;
+    if (name)
+        ck_err1("E0343", node->a.n, "Cannot tell the parameter types of this anonymous function: give `$1` a "
+                "function type, `let $1: fn(...) -> ... = fn(...)`.", name->a.s);
+    else
+        ck_err("E0343", node->a.n, str_from_cstr("Cannot tell the parameter types of this anonymous function: "
+                                                 "pass it where a function type is expected."));
+}
+
+/* Checks an anonymous function; returns its function type. Without written types (spec 059) its
+ * parameter and return types come from `expected`; an expected return of t_collect (a call that leaves
+ * it open, research R3) or no expected type: the return type comes from the body (R4). */
+Type *check_lambda(Node *node, Type *expected)
+{
+    int written = lambda_written(node), bad = 0;
+    Type *exp = written ? 0 : lambda_expected(node, expected, &bad);
+    int collect = !written && (!exp || exp->b.t == t_collect);
+    if (!written && !exp && !bad && node->b.v->n && !(expected && ty_bad(expected))) lambda_unknown(node);
     Ctx *cx = alloc(sizeof(Ctx)); /* save the enclosing context */
     cx->node = node;
     cx->ret = ck_ret;
@@ -59,16 +105,20 @@ Type *check_lambda(Node *node)
     Vec *params = node->b.v; /* parameters are the first locals */
     for (long i = 0; i < params->n; i++) {
         Node *p = vec_get(params, i);
-        p->type = resolve_type(p->b.n);
+        p->type = p->b.n ? resolve_type(p->b.n) : exp ? vec_get(exp->a.v, i) : t_error;
         if (!p->a.n) continue;
         Sym *s = new_local(p->a.n, p->type, 0);
         p->e.i = s->slot;
         s->flags |= SYF_USED;
     }
-    node->type = node->c.n ? resolve_type(node->c.n) : t_void; /* the return type (none: void) */
+    if (collect)
+        node->type = t_collect;
+    else /* written (none: void), or the expected one */
+        node->type = written ? (node->c.n ? resolve_type(node->c.n) : t_void) : exp->b.t;
     ck_ret = node->type;
     if (node->d.n) {
         check_block(node->d.n);
+        if (collect) node->type = ck_ret == t_collect ? t_void : ck_ret; /* no value returned: void */
         long k = node->type->kind; /* E0403, as for named functions */
         if (k != TY_VOID && k != TY_ERROR && !terminates(node->d.n))
             ck_err1("E0403", node->a.n, "`$1` can reach its end without returning a value.", node->a.n->a.s);
@@ -86,7 +136,7 @@ Type *check_lambda(Node *node)
     fx_swap(cx->fx);
     ck_depth--;
     ck_ctx->n--;
-    return ty_func_of(node);
+    return bad ? t_error : ty_func_of(node);
 }
 
 /* The slot of a local in the code being checked: its own slot, or a capture slot when it was
@@ -263,6 +313,19 @@ static Str *task_func_path(Type *t, Vec *seen)
     }
 }
 
+/* Spec 059: checks function argument i of a builtin and returns its own type. An anonymous function gets
+ * fn(params) -> ret as its expected type (ret t_collect: its return type comes from its body, research
+ * R3); any other argument is checked as before, without one. The caller compares the type it needs. */
+static Type *check_fn_arg(Node *call, long i, Vec *params, Type *ret)
+{
+    Node *arg = call->b.v->data[i].n;
+    int known = ret && !ty_bad(ret);
+    for (long k = 0; k < params->n; k++)
+        if (ty_bad(vec_get(params, k))) known = 0;
+    if (arg->kind != N_LAMBDA || !known) return check_arg(call, i, 0);
+    return check_expr(arg, ty_func(params, ret, es_new(0)));
+}
+
 /* sort_by, map, filter, fold, any, all: a list, (fold: a start value,) and a function of its
  * elements; concurrent_map (spec 016): a list, the limit and a function. The function's effects
  * become the caller's. */
@@ -276,13 +339,13 @@ Type *check_map_err(Node *call)
         ck_err1("E0301", call->b.v->data[0].n, "Expected a `result`, found `$1`.", ty_name(rt));
         return t_error;
     }
-    Type *ft = check_arg(call, 1, 0);
+    Vec *params = vec_new();
+    vec_push(params, err_type(rt));
+    Type *ft = check_fn_arg(call, 1, params, t_collect); /* spec 059: fn(E1) -> (from the body) */
     if (ty_bad(ft)) return t_error;
     Type *ret = ft->kind == TY_FUNC ? ft->b.t : t_error;
     EffSet *eff = ft->kind == TY_FUNC ? ft->decl.es : 0;
     if (!eff) eff = es_new(0);
-    Vec *params = vec_new();
-    vec_push(params, err_type(rt));
     Type *want = ty_func(params, ret, eff);
     if (want != ft) {
         ck_mismatch(vec_get(call->b.v, 1), want, ft);
@@ -318,11 +381,12 @@ Type *check_hof(Node *call, long id)
         check_arg(call, 1, t_int); /* the limit */
         fi = 2;
     }
-    Type *ft = check_arg(call, fi, 0); /* the function */
-    if (ty_bad(ft)) return bool_or_bad;
     Vec *params = vec_new(); /* the parameters it must take: (T) or (A, T) */
     if (acc) vec_push(params, acc);
     vec_push(params, elem);
+    Type *fret = id == B_FOLD ? acc : id == B_FILTER || id == B_ANY || id == B_ALL ? t_bool : t_collect;
+    Type *ft = check_fn_arg(call, fi, params, fret); /* the function (spec 059: R3) */
+    if (ty_bad(ft)) return bool_or_bad;
     Type *ret = ft->kind == TY_FUNC ? ft->b.t : t_error; /* the return type it must have */
     if (id == B_FOLD) ret = acc;
     if (id == B_FILTER || id == B_ANY || id == B_ALL) ret = t_bool;

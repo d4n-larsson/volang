@@ -43,14 +43,14 @@ contracts/diagnostics.md, quickstart.md
 
 ## Phase 1: Setup
 
-- [ ] T001 `tools/quick.sh`: a new area `lambdas` (cases `lambda_types func generic check parse fmt run
+- [X] T001 `tools/quick.sh`: a new area `lambdas` (cases `lambda_types func generic check parse fmt run
   query`; scripts `apply_fixes.py`, `catalog.py`, `ref_examples.py`, `fmt_corpus.py`, `lsp.py`,
   `migrate_059.py --quick` once T026 exists), listed among the known areas in the "unknown area" message;
   `src/check_func.c` and `tests/migrate_059.py` map to `lambdas front`.
-- [ ] T002 [P] `specs/059-inferred-function-types/results.md`: SC-001–SC-006 (pending), Verification,
+- [X] T002 [P] `specs/059-inferred-function-types/results.md`: SC-001–SC-006 (pending), Verification,
   Deviations; `specs/059-inferred-function-types/contracts/codes.md` in the format of spec 058's: E0342,
   E0343, E0413 new; E0301, E0502, E0310 in new contexts, with the messages of `contracts/diagnostics.md`.
-- [ ] T003 [P] Record the baselines in `results.md`: anonymous functions with written types in `examples/`
+- [X] T003 [P] Record the baselines in `results.md`: anonymous functions with written types in `examples/`
   and `std/` (research R10: 128 including std doc tests), characters spent on their headers and lines spent
   on single-return lambdas (SC-003), the reference's token count (`tests/ref_examples.py`), and `vo check`
   times (best of 5) of `examples/notes-api/main.vo`, `examples/secure-notes/main.vo` and the 8,000-item
@@ -60,31 +60,31 @@ contracts/diagnostics.md, quickstart.md
 
 ## Phase 2: Foundational (blocking)
 
-- [ ] T004 Golden cases first, `tests/cases/lambda_types/parse_forms.vo` (`.cmd` `run {}`): untyped
+- [X] T004 Golden cases first, `tests/cases/lambda_types/parse_forms.vo` (`.cmd` `run {}`): untyped
   `fn(x) { ... }` and `fn(x) => x + 1` as a typed `let`'s initializer, as an argument of a non-generic
   function taking `fn(int) -> int`, and as a `return` value; `fn(_) => 0`; `fn() => 1`; a written-type
   lambda beside them still runs. Fails today (E0101/parse errors on the untyped parameters and `=>`).
-- [ ] T005 `src/lex.c`, `src/vo.h`: token `T_FAT_ARROW` for `=>` where `=` is lexed (`lex.c:497`); the token
+- [X] T005 `src/lex.c`, `src/vo.h`: token `T_FAT_ARROW` for `=>` where `=` is lexed (`lex.c:497`); the token
   name in parse messages.
-- [ ] T006 `src/parse.c`, `src/vo.h`: in `parse_fn_kind(N_LAMBDA)` (`parse.c:1206-1252`) a parameter's `:
+- [X] T006 `src/parse.c`, `src/vo.h`: in `parse_fn_kind(N_LAMBDA)` (`parse.c:1206-1252`) a parameter's `:
   type` becomes optional (`param->b.n` stays 0 without it); after `)` and the optional `-> T`, `=>` parses
   one expression stored as a block holding one `N_RETURN` of it, the lambda flagged `NF_ARROW` (new,
   documented in `vo.h`); named functions (`N_FN`) still require every type (FR-006): a missing one keeps
   today's parse error.
-- [ ] T007 `src/check_func.c`, `src/check_expr.c`: `check_lambda(Node *node, Type *expected, int open)`;
+- [X] T007 `src/check_func.c`, `src/check_expr.c`: `check_lambda(Node *node, Type *expected, int open)`;
   `check_expr`'s `case N_LAMBDA` passes `expected` (`check_expr.c:1278`). With written types: as today.
   Without: each `p->type` is `expected`'s parameter type, set before `new_local` (hover and traces read it,
   research R2); `node->type` is `expected`'s return type. A parameter count different from `expected`'s is
   E0301 "Expected a function of N parameters (`TYPE`), found one of M." (contracts/diagnostics.md). Accept
   T004.
-- [ ] T008 [P] `src/fmt.c`: `fm_params` prints a parameter without a type node as its name; `fm_lambda`
+- [X] T008 [P] `src/fmt.c`: `fm_params` prints a parameter without a type node as its name; `fm_lambda`
   prints `NF_ARROW` lambdas as `fn(a, b) => expr` on one line when it fits, breaking inside `expr`
   otherwise (contracts/syntax.md, canonical form); golden case `tests/cases/fmt/lambda_arrow.vo` with its
   formatted output.
-- [ ] T009 [P] `tests/fuzz.py`: noise for the new syntax (`fn(a,) =>`, `fn(a b)`, `fn(a) =>;`, `fn(a) => {`,
+- [X] T009 [P] `tests/fuzz.py`: noise for the new syntax (`fn(a,) =>`, `fn(a b)`, `fn(a) =>;`, `fn(a) => {`,
   `=>` alone, `fn(a: ) =>`), well formed and broken; `python3 tests/fuzz.py --iterations 200 --seed 1`
   passes.
-- [ ] T010 `make test`: no existing case changes; `tests/perf.sh` within its limits.
+- [X] T010 `make test`: no existing case changes; `tests/perf.sh` within its limits.
 
 ---
 
@@ -96,7 +96,7 @@ function type, including generic calls, with an open return type inferred from i
 **Independent Test**: quickstart step 1 runs and prints `al,cy` and `10`; `type-at` on `p` gives `Person`;
 US1 acceptance scenarios 1–4 are golden cases.
 
-- [ ] T011 [P] [US1] Golden cases first, `tests/cases/lambda_types/`: `positions.vo` (run: an untyped lambda
+- [X] T011 [P] [US1] Golden cases first, `tests/cases/lambda_types/`: `positions.vo` (run: an untyped lambda
   in each FR-001 position: typed `let` and `var`, `return`, `set` of a `var` and of a record field, `new`
   field, every element of a typed list `let fs: list[fn(int) -> int] = [fn(x) => x, fn(x) => x * 2];`,
   variant payload, `ok(...)` payload, an argument of a call through a function value); `return_open.vo`
@@ -104,17 +104,17 @@ US1 acceptance scenarios 1–4 are golden cases.
   second); `arity.vo` (check: two parameters where `fn(Person) -> int` is expected: E0301 naming both
   arities); `wrong_body.vo` (check: `let f: fn(Person) -> int = fn(p) => p.name;`: E0301 at `p.name`,
   expected `int`, US1 scenario 4).
-- [ ] T012 [US1] `src/check_expr.c` (`check_list`, `check_expr.c:1076`), `src/check.c`: every list element
+- [X] T012 [US1] `src/check_expr.c` (`check_list`, `check_expr.c:1076`), `src/check.c`: every list element
   is checked against `expected`'s element type when there is one (today: the first element's type); the
   call-through-a-value and `ok`/`err` paths already pass `expected` (research R2 table). Accept the
   `positions.vo` lines they cover.
-- [ ] T013 [US1] `src/check_func.c`, `src/check.c` (`check_return`, `check.c:764-770`): `open` return
+- [X] T013 [US1] `src/check_func.c`, `src/check.c` (`check_return`, `check.c:764-770`): `open` return
   (research R4): a `=> expr` body is checked with no expected type and its type is the return type; a block
   body sets `ck_ret` to a new sentinel (`t_collect`, documented in `vo.h`) and `check_return` takes the
   first `return expr;` type, checking later ones against it (E0301 at the second); no value-returning
   `return` gives `void`. `ck_ret == 0` keeps its meaning. Accept `return_open.vo`, `arity.vo`,
   `wrong_body.vo`.
-- [ ] T014 [P] [US1] Golden cases first, `tests/cases/lambda_types/`: `builtins.vo` (run: `map`, `filter`,
+- [X] T014 [P] [US1] Golden cases first, `tests/cases/lambda_types/`: `builtins.vo` (run: `map`, `filter`,
   `sort_by`, `fold`, `any`, `all`, `concurrent_map`, `map_err` with untyped lambdas, US1 scenarios 1 and 2;
   `map` whose lambda returns a record: the result type is `list[Record]`); `generic_user.vo` (run: a user
   generic `apply[T, U](x: T, f: fn(T) -> U) -> U` and `each[T, E: effects](xs, f: fn(T) uses E)` with
@@ -122,25 +122,26 @@ US1 acceptance scenarios 1–4 are golden cases.
   source order, as `serve_workers(address, workers, setup, fn(ctx, r) ...)`; two lambdas where the first's
   return fixes the second's parameter); `generic_payload.vo` (run: a generic variant case and a generic
   record field holding a lambda).
-- [ ] T015 [US1] `src/check_func.c` (`check_hof`, `check_func.c:300-360`; `check_map_err`, `:270-298`):
+- [X] T015 [US1] `src/check_func.c` (`check_hof`, `check_func.c:300-360`; `check_map_err`, `:270-298`):
   check the list (and `init`, `limit`) first, then the lambda with `expected = fn(T) -> U` where `U` is open
   for `map`, `concurrent_map` and `sort_by` (the key `C`, still E0313 when not ordered), `bool` for
   `filter`/`any`/`all`, `A` for `fold`; `map_err`: `fn(E1) -> open`. A function value argument keeps
   today's path. Accept `builtins.vo`.
-- [ ] T016 [US1] `src/check_generic.c` (`check_generic_call`, `check_generic.c:570-650`): pass 0 checks and
+- [X] T016 [US1] `src/check_generic.c` (`check_generic_call`, `check_generic.c:570-650`): pass 0 checks and
   unifies every argument that is not an `N_LAMBDA` (function values included); then each lambda, left to
   right, gets `ty_subst_bindings(pt)`: a parameter type still mentioning the callee's type variables
   (`ty_mentions_owner`) is E0343 (T017); an open return is inferred (`open = 1`) and the lambda's type is
   unified back (`ty_unify`), binding variables for later lambdas; E0502 via `expect_type` as today;
   `vcase_generic` (`check_generic.c:672`) and generic `new` fields pass the substituted payload type.
   Accept `generic_user.vo`, `generic_payload.vo`.
-- [ ] T017 [US1] E0343 lambda_type_unknown (contracts/diagnostics.md, no fix) in `src/check_func.c`: an
+- [X] T017 [US1] E0343 lambda_type_unknown (contracts/diagnostics.md, no fix) in `src/check_func.c`: an
   untyped lambda with no expected type (untyped `let`, an untyped list, a generic call with an open
   parameter type naming the variable and the callee); its parameters become error-typed and the body is
   still checked (no cascades). Golden cases `tests/cases/lambda_types/no_expected.vo`,
   `open_param.vo` (a user generic `on[I](f: fn(I) -> int)` called with `fn(x) => 1`); catalog entry,
-  codes row, `tests/catalog.py`.
-- [ ] T018 [US1] `tests/cases/lambda_types/hover_param.cmd`: `query type-at --json` on an untyped lambda's
+  codes row, `tests/catalog.py` (spec 059 registered; E0342's and E0413's rows join the table in T019
+  and T029).
+- [X] T018 [US1] `tests/cases/lambda_types/hover_param.cmd`: `query type-at --json` on an untyped lambda's
   parameter gives its inferred type (FR-007); a `--trace` run and a runtime error inside an untyped lambda
   show the inferred parameter types (`tests/cases/lambda_types/trace_param.vo`, `runtime_param.vo`). No
   code change expected (research R2: `vm.c:897-920`, `:1151-1170`); fix if they fail.

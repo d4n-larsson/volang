@@ -15,6 +15,8 @@ Type *t_error;
 static Vec *type_tab; /* interned types */
 Sym *ck_scope;        /* innermost symbol */
 Type *ck_ret;         /* return type of the function being checked (0 in tests) */
+static struct Type collect_type = {.kind = -1}; /* spec 059: kind -1, which no check matches */
+Type *t_collect = &collect_type; /* ck_ret while an anonymous function's return type comes from its body */
 long ck_in_test;
 long ck_test_checks; /* spec 018: expect/expect_eq calls in the test being checked (W0602) */
 long ck_test_holes;  /* and its holes */
@@ -764,6 +766,15 @@ static void check_for(Node *st)
 static void check_return(Node *st)
 {
     mark_terminates(st);
+    if (ck_ret == t_collect) { /* spec 059: the first return gives the return type; later ones must agree */
+        if (!st->a.n) {
+            ck_ret = t_void;
+            return;
+        }
+        Type *t = check_expr(st->a.n, 0);
+        ck_ret = ty_bad(t) ? t_error : t;
+        return;
+    }
     Type *rt = ck_ret ? ck_ret : t_void; /* 0 in tests: like void */
     if (st->a.n) {
         Type *t = check_expr(st->a.n, rt);

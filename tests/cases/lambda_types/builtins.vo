@@ -1,0 +1,46 @@
+record Person {
+    name: str;
+    age: int;
+}
+
+record Tag {
+    label: str;
+}
+
+variant Fail {
+    bad(str);
+}
+
+fn main() -> result[void] uses console {
+    let people = [new Person { name: "cy", age: 30 }, new Person { name: "al", age: 25 }, new Person { name: "bo", age: 41 }];
+    sort_by(people, fn(p) => p.age);
+    print(join(map(people, fn(p) => p.name), ","));
+    let tags = map(people, fn(p) => new Tag { label: p.name + "!" });
+    print(tags[2].label);
+    let old = filter(people, fn(p) => p.age > 28);
+    print(str(len(old)) + " " + str(any(people, fn(p) => p.age > 40)) + " " + str(all(people, fn(p) => p.age > 40)));
+    let total = fold([1, 2, 3], 0, fn(acc, x) => acc + x);
+    let longest = fold(people, "", fn(acc, p) {
+        if len(p.name) > len(acc) {
+            return p.name;
+        }
+        return acc;
+    });
+    print(str(total) + " " + longest);
+    let squares = concurrent_map([3, 1, 2], 2, fn(n) => n * n);
+    print(str(squares[0] + squares[1] + squares[2]));
+    let r: result[int, Fail] = map_err(parse_int("x"), fn(m) => Fail.bad(m));
+    match r {
+        case ok(v) {
+            print(str(v));
+        }
+        case err(e) {
+            match e {
+                case bad(m) {
+                    print(m);
+                }
+            }
+        }
+    }
+    return ok();
+}

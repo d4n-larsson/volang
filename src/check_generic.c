@@ -566,6 +566,47 @@ int needs_context(Node *v)
 
 Node *ck_infer_owner; /* spec 029: the generic call whose deferred argument is being checked, or 0 */
 
+/* Spec 059: the first type parameter of owner that t mentions (unbound), or 0. */
+static Type *open_param_in(Type *t, Node *owner)
+{
+    if (!t || !ty_mentions_owner(t, owner)) return 0;
+    if (t->kind == TY_PARAM || t->kind == TY_EFFSET) return t; /* (an effect argument: `uses E`) */
+    if (t->kind == TY_FUNC) {
+        for (long i = 0; i < t->a.v->n; i++) {
+            Type *p = open_param_in(vec_get(t->a.v, i), owner);
+            if (p) return p;
+        }
+        return open_param_in(t->b.t, owner);
+    }
+    if (t->kind == TY_RECORD || t->kind == TY_VARIANT) {
+        for (long i = 0; t->b.v && i < t->b.v->n; i++) {
+            Type *p = open_param_in(vec_get(t->b.v, i), owner);
+            if (p) return p;
+        }
+        return 0;
+    }
+    Type *p = open_param_in(t->a.t, owner); /* list, map, result and the collections: a, then b */
+    return p ? p : open_param_in(t->b.t, owner);
+}
+
+/* Spec 059 (research R3): the expected type of the anonymous function `fnode` whose parameter type is known
+ * so far: its parameters and its return type, t_collect when it is still open (it then comes from the body
+ * and binds what it mentions). A parameter still mentioning a type parameter of owner is E0343 naming it
+ * (`what`: the callee or the case), and the function is checked with error-typed parameters. */
+static Type *lambda_expected_in(Type *known, Node *owner, Node *fnode, Str *what)
+{
+    if (!known || known->kind != TY_FUNC) return known;
+    for (long i = 0; i < known->a.v->n; i++) {
+        Type *open = open_param_in(vec_get(known->a.v, i), owner);
+        if (!open) continue;
+        ck_err("E0343", fnode->a.n, msg("`$1` of `$2` is known only from this function's parameters: pass a named "
+                                        "function, or give a binding its type.", ty_name(open), what, 0));
+        return t_error;
+    }
+    Type *ret = ty_mentions_owner(known->b.t, owner) ? t_collect : known->b.t;
+    return ty_func(known->a.v, ret, es_new(0));
+}
+
 /* A call of a generic function: arguments, inference, constraints, effects; the return type. */
 Type *check_generic_call(Node *call, Node *decl, Type *expected)
 {
@@ -591,7 +632,10 @@ Type *check_generic_call(Node *call, Node *decl, Type *expected)
         for (long i = 0; i < decl->b.v->n; i++) { /* each argument: unify its type with the parameter's */
             Type *pt = ((Node *)vec_get(decl->b.v, i))->type;
             Node *an = call->b.v->data[i].n;
-            if (!pass && i < 63 && ty_has_params(pt) && needs_context(an)) {
+            /* spec 059 (R3): an untyped anonymous function with parameters is checked after the others; one
+               without parameters needs nothing from them and keeps its place (spec 013's C2 order) */
+            int lambda = an->kind == N_LAMBDA && !lambda_written(an) && an->b.v->n;
+            if (!pass && i < 63 && ty_has_params(pt) && (needs_context(an) || lambda)) {
                 deferred |= 1L << i;
                 continue;
             }
@@ -608,7 +652,13 @@ Type *check_generic_call(Node *call, Node *decl, Type *expected)
             /* spec 028: a generic function named as a value is instantiated from the parameter's type; its
                effects bind the parameter's effect parameter (checked again below, as function values are) */
             Type *at;
-            if (pass && (an->kind == N_IDENT || an->kind == N_CALL)) { /* spec 029: a generic value or call that
+            if (pass && lambda) { /* spec 059 (R3): the parameter as far as the arguments before made it known */
+                Type *le = lambda_expected_in(ty_subst_bindings(pt, decl, b), decl, an, call->a.n->a.s);
+                if (le == t_error) /* E0343 named what is open: no E0310 for it as well */
+                    for (long k = 0; k < tparams->n; k++)
+                        if (!b[k]) b[k] = t_error;
+                at = check_expr(an, le);
+            } else if (pass && (an->kind == N_IDENT || an->kind == N_CALL)) { /* spec 029: a generic value or call that
                                                                           takes its type from this parameter */
                 Node *saved = ck_infer_owner;
                 ck_infer_owner = decl;
@@ -669,7 +719,11 @@ Type *vcase_generic(Node *node, Node *decl, Node *payload_type_node, Type *expec
         for (long i = 0; i < args->n; i++) b[i] = args->data[i].t;
     }
     if (node->c.n && payload_type_node) { /* the payload */
-        Type *at = check_expr(node->c.n, 0);
+        Node *pv = node->c.n; /* spec 059: an anonymous function gets the payload type as far as it is known */
+        Type *at = check_expr(pv, pv->kind == N_LAMBDA && !lambda_written(pv)
+                                      ? lambda_expected_in(ty_subst_bindings(payload_type_node->type, decl, b), decl, pv,
+                                                           node->b.n->a.s)
+                                      : 0);
         if (!ty_unify(payload_type_node->type, at, decl, b)) {
             Type *known = ty_subst_bindings(payload_type_node->type, decl, b);
             ck_mismatch(node->c.n, known, at);
