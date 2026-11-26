@@ -18,7 +18,7 @@ existing `--restore` and `--remove` (R6). Five new codes (R7). Ships as 0.7.0 wi
 |---|---|---|
 | Git reader | `src/gitfetch.c` (new), `src/sha1.c` (new), `src/inflate.c`, `src/fetch.c` | ref list, one-commit pack, deltas, tree walk; zlib streams with consumed length; `POST` with a body (R1) |
 | Manifest | `src/packages.c` | version and `indirect` fields, parse and write (R2); the package's `vo.packages` unpacked |
-| Selection | `src/pkgselect.c` (new) | requirements, fixpoint, conflicts, pruning (R4) |
+| Selection | `src/packages.c` | requirements, fixpoint, conflicts, pruning (R4) |
 | Commands | `src/packages.c`, `src/main.c` | add by source, `--update`, `--outdated`, `--repair`, `--dry-run`, remove with pruning, multi-package staging and commit (R6), reports and JSON |
 | Check | `src/packages.c` (`pkg_load`) | E0709 completeness (R5) |
 | Tests | `tests/git_server.py`, `tests/steps.py`, `tests/package_git.py`, `tests/package_graphs.py`, `tests/cases/packages/` | R8 |

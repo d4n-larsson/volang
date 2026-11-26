@@ -87,8 +87,11 @@ both orders. With `ledger` needing `money` 2.0.0 instead, the command fails nami
 3. **Given** requirements with different major numbers (or, below 1.0.0, different minor numbers),
    **Then** the command fails with an error naming each requiring package and its version; there is no
    fix, and nothing is changed.
-4. **Given** the same set of requirements, **Then** the selected versions and the written manifest are
-   identical whatever the order of commands, the machine or the date.
+4. **Given** the same manifest and the same command, **Then** the selected versions and the written
+   manifest are identical whatever the machine or the date. Versions never go down unless the author
+   names a lower one; where a higher version of a package requires at least what its lower versions do,
+   the order of the commands that added the packages does not matter either (amended during
+   implementation, research R4).
 5. **Given** two different sources required under one package name, or one source under two names,
    **Then** the command fails naming both; a program has one name per source.
 6. **Given** a dependency whose own manifest pins a package to the same version as the program's but
@@ -260,8 +263,10 @@ each new code describe versions, the selection rule, restore, updates and what i
   selected unless a requirement names it.
 - **FR-007**: Versions are compatible when their major numbers are equal (below 1.0.0: major and minor).
   Incompatible requirements for one package MUST fail with an error naming each requirer and version.
-- **FR-008**: The result of selection MUST be a function of the manifests alone: independent of command
-  order, machine, date and of versions released later.
+- **FR-008**: The result of a command MUST be a function of the manifests and the command alone:
+  independent of machine, date and of versions released later. A command never lowers a version it was
+  not asked to lower. (Independence of command order holds where higher versions require at least what
+  lower ones do; in general it would need the manifest to remember every version ever asked for.)
 - **FR-009**: One name MUST map to one source and one source to one name within a program; a violation
   is an error naming both.
 - **FR-010**: The same version pinned with two different content hashes (in the program's manifest and
@@ -322,8 +327,9 @@ each new code describe versions, the selection rule, restore, updates and what i
 - **SC-001**: A package with two levels of dependencies is added with one command, and the program
   importing it runs; before this feature the same took one command per package plus finding each URL.
 - **SC-002**: For a set of at least 50 generated dependency graphs (shared dependencies, raised
-  versions, conflicts, cycles), every order of add commands gives a byte-identical manifest, and every
-  conflict is reported with all requirers named.
+  versions, conflicts, cycles), every order of add commands gives the manifest an independent
+  computation of the rule gives; in the graphs whose versions only add requirements, every order gives a
+  byte-identical manifest; every conflict is reported with all requirers named.
 - **SC-003**: After deleting all package directories of a 10-package program, one restore command
   brings back contents that hash to their pins; a version whose content was changed upstream is refused
   in 100% of trials.

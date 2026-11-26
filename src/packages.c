@@ -99,65 +99,82 @@ long pkg_hex_decode(char *p, char *out)
     return 1;
 }
 
-/* One manifest line [line, le): an entry, or E0703 / E0704 on the line. */
-static void pkg_parse_line(long file, char *text, char *line, char *le)
+/* One manifest line [line, le): its entry (name, raw directory, pin, URL, version, `indirect`), or 0 with
+ * *problem 0 (blank or a comment), 1 (malformed) or 2 (a malformed version field). No side effects, so a
+ * package's own manifest is read with it too (spec 061). */
+static Pkg *pkg_line(char *line, char *le, int *problem)
 {
+    *problem = 0;
     char *name = pkg_token(line, le); /* first token: blank or a comment line is nothing */
-    if (name == le || *name == '#') return;
+    if (name == le || *name == '#') return 0;
     char *name_end = pkg_tok_end;
-    char *code = "E0703";
-    Str *m;
+    *problem = 1;
     for (char *c = name; c < le; c++) /* spec 013 (L3): no control bytes (NUL, escapes) in an entry */
-        if (((unsigned char)*c < 0x20 && *c != '\t' && *c != '\r') || *c == 0x7f) goto bad;
-    if (!pkg_name_ok(name, name_end - name)) goto bad;
+        if (((unsigned char)*c < 0x20 && *c != '\t' && *c != '\r') || *c == 0x7f) return 0;
+    if (!pkg_name_ok(name, name_end - name)) return 0;
     char *dir = pkg_token(name_end, le); /* DIRECTORY */
-    if (dir == le) goto bad;
+    if (dir == le) return 0;
     char *dir_end = pkg_tok_end;
     char *hash = pkg_token(dir_end, le); /* sha256:HEX */
     char *hash_end = pkg_tok_end;
-    if (hash_end - hash != 71) goto bad;
+    if (hash_end - hash != 71) return 0;
     char *url = pkg_token(hash_end, le); /* spec 041: optionally the URL it was fetched from */
     char *url_end = url == le ? le : pkg_tok_end;
-    if (url != le && (url_end - url < 9 || !mem_eq(url, "https://", 8))) goto bad;
-    if (!doc_starts(hash, "sha256:")) goto bad;
+    if (url != le && (url_end - url < 9 || !mem_eq(url, "https://", 8))) return 0;
+    if (!doc_starts(hash, "sha256:")) return 0;
     Pkg *e = alloc(sizeof(Pkg));
     char *ver = url_end; /* spec 061: SOURCE@MAJOR.MINOR.PATCH */
     while (ver > url && ver[-1] != '@' && ver[-1] != '/') ver--;
     if (url != le && ver > url + 9 && ver[-1] == '@') { /* an `@` in the last part is a version's */
-        if (*ver == 'v' || !git_version_parse(ver, url_end - ver, e->ver)) goto bad_version;
+        *problem = 2;
+        if (*ver == 'v' || !git_version_parse(ver, url_end - ver, e->ver)) return 0;
+        *problem = 1;
         e->versioned = 1;
         url_end = ver - 1;
     }
     char *more = url == le ? le : pkg_token(pkg_tok_end, le); /* spec 061: `indirect`, on a versioned entry */
     if (more != le) {
         int word = pkg_tok_end - more == 8 && mem_eq(more, "indirect", 8);
-        if (!e->versioned && !word) goto bad; /* as before spec 061: something after an archive's URL */
-        if (!e->versioned || !word || pkg_token(pkg_tok_end, le) != le) goto bad_version;
+        if (!e->versioned && !word) return 0; /* as before spec 061: something after an archive's URL */
+        *problem = 2;
+        if (!e->versioned || !word || pkg_token(pkg_tok_end, le) != le) return 0;
+        *problem = 1;
         e->indirect = 1;
     }
     e->url = url == le ? 0 : str_new(url, url_end - url);
-    if (!pkg_hex_decode(hash + 7, e->pin)) goto bad;
+    if (!pkg_hex_decode(hash + 7, e->pin)) return 0;
     e->name = str_new(name, name_end - name);
-    if (pkg_find(e->name)) { /* a second entry of the name: E0704 */
+    e->raw = str_new(dir, dir_end - dir);
+    *problem = 0;
+    return e;
+}
+
+/* One line of the program's manifest: an entry, or E0703 / E0704 on the line. */
+static void pkg_parse_line(long file, char *text, char *line, char *le)
+{
+    int problem;
+    Pkg *e = pkg_line(line, le, &problem);
+    char *code = "E0703";
+    Str *m;
+    if (problem == 1) {
+        m = str_from_cstr("Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 "
+                          "lowercase hex digits), optionally followed by the https:// URL it was fetched from.");
+    } else if (problem) { /* spec 061 */
+        m = str_from_cstr("After the hash, write the URL an archive was fetched from, or a versioned package's source as "
+                          "`https://HOST/PATH@MAJOR.MINOR.PATCH`, followed by `indirect` or nothing.");
+    } else if (!e) {
+        return;
+    } else if (pkg_find(e->name)) { /* a second entry of the name: E0704 */
         m = msg("Package `$1` is listed twice.", e->name, 0, 0);
         code = "E0704";
-        goto report;
+    } else {
+        e->dir = e->raw->data[0] == '/' ? e->raw : path_join(pkg_dir, e->raw); /* or under the manifest's directory */
+        e->state = 0;
+        e->start = line - text;
+        e->end = le - text;
+        vec_push(pkg_entries, e);
+        return;
     }
-    e->raw = str_new(dir, dir_end - dir);
-    e->dir = e->raw->data[0] == '/' ? e->raw : path_join(pkg_dir, e->raw); /* or under the manifest's directory */
-    e->state = 0;
-    e->start = line - text;
-    e->end = le - text;
-    vec_push(pkg_entries, e);
-    return;
-bad:
-    m = str_from_cstr("Write a package as `NAME DIRECTORY sha256:HEX` (NAME an identifier other than std, 64 "
-                      "lowercase hex digits), optionally followed by the https:// URL it was fetched from.");
-    goto report;
-bad_version: /* spec 061 */
-    m = str_from_cstr("After the hash, write the URL an archive was fetched from, or a versioned package's source as "
-                      "`https://HOST/PATH@MAJOR.MINOR.PATCH`, followed by `indirect` or nothing.");
-report:
     diag_add(code, SEV_ERROR, (int)file, line - text, le - text, m);
 }
 
@@ -911,6 +928,17 @@ static void list_json(SB *sb, char *key, Vec *v)
 /* The report of a fetched package: the local form's line or record, with where it came from, what it
  * declares, and on an update what that gained and lost. */
 static Str *old_ver; /* spec 061: the version an updated entry had, for the report */
+static Vec *rep_by;   /* spec 061: the packages that require the reported one (an indirect entry), or 0 */
+
+static void by_text(SB *sb)
+{
+    sb_cstr(sb, " (required by ");
+    for (long i = 0; i < rep_by->n; i++) {
+        if (i) sb_cstr(sb, ", ");
+        sb_str(sb, vec_get(rep_by, i));
+    }
+    sb_byte(sb, ')');
+}
 
 static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before, Vec *now, Str *note)
 {
@@ -945,6 +973,7 @@ static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before,
                 sb_byte(sb, '"');
             }
             sb_cstr(sb, e->indirect ? ",\"direct\":false" : ",\"direct\":true");
+            if (rep_by && rep_by->n) list_json(sb, "required_by", rep_by);
         }
         if (now) list_json(sb, "effects", now);
         if (gained) list_json(sb, "gained", gained);
@@ -966,8 +995,12 @@ static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before,
             sb_str(sb, e->raw);
             sb_byte(sb, ' ');
             sb_str(sb, pkg_hash_text(e->pin));
-            sb_cstr(sb, " from ");
-            sb_str(sb, e->url);
+            if (rep_by && rep_by->n) {
+                by_text(sb);
+            } else {
+                sb_cstr(sb, " from ");
+                sb_str(sb, e->url);
+            }
         } else if (cstr_eq(change, "updated")) {
             sb_cstr(sb, "updated ");
             sb_str(sb, e->name);
@@ -983,6 +1016,7 @@ static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before,
             sb_str(sb, old_hash);
             sb_cstr(sb, " -> ");
             sb_str(sb, pkg_hash_text(e->pin));
+            if (rep_by && rep_by->n) by_text(sb);
         } else {
             sb_cstr(sb, change);
             sb_byte(sb, ' ');
@@ -991,6 +1025,7 @@ static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before,
                 sb_byte(sb, ' ');
                 sb_str(sb, pkg_ver_text(e->ver));
             }
+            if (rep_by && rep_by->n && cstr_eq(change, "local")) by_text(sb);
         }
         sb_byte(sb, '\n');
         if (now) list_text(sb, "  effects: ", now);
@@ -1021,7 +1056,6 @@ static int pkg_intact(Pkg *e)
     return pkg_hash(e->dir, now, 0) == 0 && mem_eq(now, e->pin, 32);
 }
 
-/* `vo package ENTRY NAME URL`: fetch, unpack, pin, record the URL. */
 /* The entry's version (0: none), as the package the author asked for. */
 static void pkg_set_version(Pkg *e, long *ver)
 {
@@ -1030,7 +1064,8 @@ static void pkg_set_version(Pkg *e, long *ver)
     for (int k = 0; k < 3; k++) e->ver[k] = ver ? ver[k] : 0;
 }
 
-static int pkg_add_url(char *entry_arg, Str *name, Str *url, long *ver)
+/* `vo package ENTRY NAME URL` (an archive): fetch, unpack, pin, record the URL. */
+static int pkg_add_url(char *entry_arg, Str *name, Str *url)
 {
     long at = 8, hash = 0;
     while (hash < url->len && url->data[hash] != '#') hash++;
@@ -1067,19 +1102,18 @@ static int pkg_add_url(char *entry_arg, Str *name, Str *url, long *ver)
         before = pkg_effects(e, &note);
     }
     Str *staging = with_pid(target, ".new-"), *old = with_pid(target, ".old-"), *why = 0;
-    int r = pkg_stage(url, ver, staging, &why);
+    int r = pkg_stage(url, 0, staging, &why);
     long h = r ? 0 : pkg_hash(staging, pkg_hash_buf, 0);
     if (r || h < 0) {
         rm_tree(staging);
-        if (r == -3) pkg_fail("E0711", msg("$1.", why, 0, 0));
         if (r == -1) pkg_fail("E0706", msg("Cannot fetch package `$1` from $2: $3.", name, url, why));
         pkg_fail("E0702", msg("Package `$1`: $2.", name, r ? why : str_from_cstr("the archive's .vo files cannot be read back"), 0));
     }
     if (there && mem_eq(e->pin, pkg_hash_buf, 32)) { /* the same content: nothing to replace */
         rm_tree(staging);
-        if (!e->url || !str_eq(e->url, url) || e->versioned != (ver != 0) || (ver && !mem_eq((char *)e->ver, (char *)ver, 24)) || e->indirect) {
+        if (!e->url || !str_eq(e->url, url) || e->versioned) {
             e->url = url;
-            pkg_set_version(e, ver);
+            pkg_set_version(e, 0);
             pkg_write();
         }
         pkg_report_fetched("unchanged", e, 0, 0, 0, 0);
@@ -1102,8 +1136,7 @@ static int pkg_add_url(char *entry_arg, Str *name, Str *url, long *ver)
     e->dir = abs;
     e->raw = pkg_rel_dir(pkg_dir, abs);
     e->url = url;
-    old_ver = e->versioned && ver ? pkg_ver_text(e->ver) : 0;
-    pkg_set_version(e, ver);
+    pkg_set_version(e, 0);
     e->state = 0;
     mem_copy(e->pin, pkg_hash_buf, 32);
     pkg_write();
@@ -1112,6 +1145,457 @@ static int pkg_add_url(char *entry_arg, Str *name, Str *url, long *ver)
     Vec *now = pkg_effects(e, &note);
     pkg_report_fetched(old_hash ? "updated" : "added", e, old_hash, old_hash ? before : 0, now, note);
     return 0;
+}
+
+/* ---- spec 061: selection (research R4) ----
+ * A program holds one version of each package: the highest that the program's manifest or the manifest
+ * of any selected package requires. `sels` is that choice while a command works it out: every versioned
+ * entry of the manifest, the package the command names, and what their manifests (the `vo.packages` in
+ * each package's directory) require, to any depth. A package whose version is raised is fetched again
+ * and read again; versions only rise, so this ends. Nothing on disk changes until sel_apply. */
+
+typedef struct Sel {
+    Str *name;
+    Str *source; /* the repository, with its #FOLDER */
+    long ver[3]; /* ver[0] < 0: the highest the source has (filled in when fetched) */
+    char pin[32];
+    Pkg *entry;   /* its manifest entry, or 0 for a new package */
+    Str *target;  /* the directory it lives in, or will (absolute) */
+    Str *staging; /* fetched content waiting to take the target's place, or 0 */
+    Vec *by;      /* the packages that require it (sel_reach) */
+    Vec *needs;   /* the names its manifest requires, at the version read */
+    long unknown; /* its requirements could not be read (not on disk as pinned) */
+    long reach;   /* a direct package, or required by one that is reached */
+    Vec *before;  /* its effects before, now, and why they could not be read */
+    Vec *now;
+    Str *note;
+    Str *old_hash;
+    Str *old_ver;
+    long direct;  /* asked for by the program's author */
+    long named;   /* the package this command names */
+    long local;   /* a program entry without a version: it stays as it is */
+    long visited; /* its content and requirements are read at this version */
+    long added;   /* it had no manifest entry */
+    long changed; /* its directory was (or with --dry-run would be) replaced */
+} Sel;
+
+static Vec *sels;
+
+/* Removes what was staged for s, and the folder made for it when nothing else is in it. */
+static void sel_unstage(Sel *s)
+{
+    if (!s->staging) return;
+    rm_tree(s->staging);
+    long cut = s->staging->len;
+    while (cut > 1 && s->staging->data[cut - 1] != '/') cut--;
+    vo_syscall3(SYS_unlinkat, AT_FDCWD, (long)str_new(s->staging->data, cut - 1)->data, 0x200 /* AT_REMOVEDIR: only when empty */);
+    s->staging = 0;
+}
+
+/* A failure during selection: what was staged goes, then the error (exit 65). */
+static void sel_fail(char *code, Str *m)
+{
+    for (long i = 0; sels && i < sels->n; i++) sel_unstage(vec_get(sels, i));
+    pkg_fail(code, m);
+}
+
+/* The selection of a name: the one there, or one made from its manifest entry, or 0. */
+static Sel *sel_of(Str *name)
+{
+    for (long i = 0; i < sels->n; i++) {
+        Sel *s = vec_get(sels, i);
+        if (str_eq(s->name, name)) return s;
+    }
+    Pkg *e = pkg_find(name);
+    if (!e) return 0;
+    Sel *s = alloc(sizeof(Sel));
+    s->name = name;
+    s->entry = e;
+    s->source = e->url;
+    s->target = e->dir;
+    s->local = !e->versioned;
+    s->direct = !e->indirect;
+    s->by = vec_new();
+    s->needs = vec_new();
+    for (int k = 0; k < 3; k++) s->ver[k] = e->ver[k];
+    mem_copy(s->pin, e->pin, 32);
+    vec_push(sels, s);
+    return s;
+}
+
+static Sel *sel_new(Str *name, Str *source, long *ver, Str *target)
+{
+    Sel *s = alloc(sizeof(Sel));
+    s->name = name;
+    s->source = source;
+    s->target = target;
+    s->by = vec_new();
+    s->needs = vec_new();
+    for (int k = 0; k < 3; k++) s->ver[k] = ver[k];
+    if (sels->n >= 1000) sel_fail("E0706", str_from_cstr("More than 1,000 packages are required."));
+    vec_push(sels, s);
+    return s;
+}
+
+static int ver_cmp(long *a, long *b)
+{
+    for (int k = 0; k < 3; k++)
+        if (a[k] != b[k]) return a[k] < b[k] ? -1 : 1;
+    return 0;
+}
+
+/* Another version for s: what was fetched for the old one goes, and it is read again. */
+static void sel_set(Sel *s, long *ver)
+{
+    for (int k = 0; k < 3; k++) s->ver[k] = ver[k];
+    sel_unstage(s);
+    s->visited = 0;
+    s->needs = vec_new();
+}
+
+typedef struct Req { /* a requirement read in this round, applied when the round ends */
+    Str *name;
+    Str *source;
+    long ver[3];
+} Req;
+
+static Vec *sel_pending;
+
+/* `name` from `source` is required at `ver` or higher. */
+static void sel_require(Str *name, Str *source, long *ver)
+{
+    Sel *s = sel_of(name);
+    if (!s) {
+        SB *sb = sb_new();
+        sb_str(sb, pkg_dir);
+        sb_cstr(sb, "/packages/");
+        sb_str(sb, name);
+        s = sel_new(name, source, ver, sb_finish(sb));
+    } else if (s->local) { /* the program's own directory for it stays; the report says what was asked */
+        if (ver_cmp(ver, s->ver) > 0)
+            for (int k = 0; k < 3; k++) s->ver[k] = ver[k];
+    } else if (ver_cmp(ver, s->ver) > 0) {
+        sel_set(s, ver);
+    }
+}
+
+/* The requirements of s: the versioned lines of the `vo.packages` in dir. */
+static void sel_requirements(Sel *s, Str *dir)
+{
+    char *text;
+    long n = read_whole_file(path_join(dir, str_from_cstr("vo.packages"))->data, &text), row = 0;
+    for (char *line = text, *end = text + n; n > 0 && line < end; row++) {
+        char *le = line;
+        while (le < end && *le != '\n') le++;
+        int problem;
+        Pkg *r = pkg_line(line, le, &problem);
+        if (problem)
+            sel_fail("E0703", msg("Package `$1` $2: line $3 of its `vo.packages` is malformed.", s->name, pkg_ver_text(s->ver),
+                                  int_to_str(row + 1)));
+        if (r && r->versioned && !str_eq(r->name, s->name)) {
+            Req *q = alloc(sizeof(Req));
+            q->name = r->name;
+            q->source = r->url;
+            for (int k = 0; k < 3; k++) q->ver[k] = r->ver[k];
+            vec_push(sel_pending, q);
+            vec_push(s->needs, r->name);
+        }
+        line = le + 1;
+    }
+}
+
+/* Reads s at its version: from its directory when the manifest has it so, else fetched into staging. */
+static void sel_visit(Sel *s)
+{
+    Pkg *e = s->entry;
+    s->visited = 1;
+    if (s->local) return;
+    int same = e && e->versioned && str_eq(e->url, s->source) && !ver_cmp(e->ver, s->ver);
+    if (same && pkg_intact(e)) {
+        sel_requirements(s, e->dir);
+        return;
+    }
+    if (same && !s->named) { /* not on disk as pinned: `--restore`'s to bring back, `vo check`'s to report */
+        s->unknown = 1;
+        return;
+    }
+    if (is_dir(s->target)) {
+        Str *real = rt_resolve(s->target), *own = e ? rt_resolve(e->dir) : 0;
+        if (!e || !real || !own || !str_eq(real, own))
+            sel_fail("E0706", msg("The directory `$1` exists and is not package `$2`'s: remove it, or choose another with `--dir`.",
+                                  s->target, s->name, 0));
+        if (!pkg_intact(e))
+            sel_fail("E0701", msg("Package `$1` was changed since it was pinned, and fetching would replace it: pin your "
+                                  "changes with `vo package ENTRY $1 $2`, or remove the directory.",
+                                  s->name, e->raw, 0));
+    }
+    Str *staging = with_pid(s->target, ".new-"), *why = 0;
+    s->staging = staging;
+    int r = pkg_stage(s->source, s->ver, staging, &why);
+    long h = r ? 0 : pkg_hash(staging, s->pin, 0);
+    if (r == -3) sel_fail("E0711", msg("$1.", why, 0, 0));
+    if (r == -1) sel_fail("E0706", msg("Cannot fetch package `$1` from $2: $3.", s->name, s->source, why));
+    if (r || h < 0) sel_fail("E0702", msg("Package `$1`: $2.", s->name, r ? why : str_from_cstr("its .vo files cannot be read back"), 0));
+    if (e && e->versioned && str_eq(e->url, s->source) && !ver_cmp(e->ver, s->ver)) { /* the version the manifest has */
+        if (!mem_eq(s->pin, e->pin, 32))
+            sel_fail("E0701", msg("Package `$1`: version $2 now hashes to $3, not to the pinned hash: the version was "
+                                  "changed after it was pinned. Nothing was written.",
+                                  s->name, pkg_ver_text(s->ver), pkg_hash_text(s->pin)));
+        if (pkg_intact(e)) { /* asked for again (the highest is the one there): nothing to replace */
+            sel_unstage(s);
+            sel_requirements(s, e->dir);
+            return;
+        }
+    }
+    sel_requirements(s, staging);
+}
+
+/* Selection from the roots in sels, in rounds: every package not yet read at its version is read, then
+ * what they require is applied (a new package, or a higher version of one, read in the next round), until
+ * a round reads nothing. A round's result does not depend on the order within it, so the selection is a
+ * function of the manifest and the command alone. A version read and then raised still counted: versions
+ * never go down within a command, as they never go down between commands. */
+static void sel_run(void)
+{
+    for (;;) {
+        long n = sels->n, read = 0;
+        sel_pending = vec_new();
+        for (long i = 0; i < n; i++) {
+            Sel *s = vec_get(sels, i);
+            if (s->visited) continue;
+            sel_visit(s);
+            read++;
+        }
+        if (!read) return;
+        for (long i = 0; i < sel_pending->n; i++) {
+            Req *q = vec_get(sel_pending, i);
+            sel_require(q->name, q->source, q->ver);
+        }
+    }
+}
+
+/* Marks what the program's own packages reach through requirements, and fills each package's `by`.
+ * An indirect package that is not reached is one only an abandoned version (or a removed package)
+ * required: sel_apply drops it. When a reached package could not be read, everything counts as reached. */
+static void sel_reach(void)
+{
+    int unknown = 0;
+    for (long i = 0; i < sels->n; i++) {
+        Sel *s = vec_get(sels, i);
+        s->reach = s->direct || s->local;
+    }
+    for (int more = 1; more;) {
+        more = 0;
+        for (long i = 0; i < sels->n; i++) {
+            Sel *s = vec_get(sels, i);
+            if (!s->reach) continue;
+            unknown |= s->unknown != 0;
+            for (long k = 0; k < s->needs->n; k++) {
+                Sel *d = sel_of(vec_get(s->needs, k));
+                long j = 0;
+                while (j < d->by->n && !str_eq(vec_get(d->by, j), s->name)) j++;
+                if (j == d->by->n) vec_push(d->by, s->name);
+                if (!d->reach) d->reach = more = 1;
+            }
+        }
+    }
+    for (long i = 0; unknown && i < sels->n; i++) ((Sel *)vec_get(sels, i))->reach = 1;
+}
+
+static Vec *set_union(Vec *a, Vec *b)
+{
+    Vec *out = vec_new();
+    for (long i = 0; a && i < a->n; i++) vec_push(out, vec_get(a, i));
+    Vec *rest = set_minus(b, a);
+    for (long i = 0; i < rest->n; i++) vec_push(out, vec_get(rest, i));
+    return out;
+}
+
+/* Makes the selection the program's: staged packages take their directories, the manifest is written
+ * last, each package is reported (contracts/package-command.md). With --dry-run only the report. */
+static int sel_apply(void)
+{
+    long n = sels->n, changed = 0, meta = 0;
+    sel_reach();
+    for (long i = 0; i < n; i++) { /* what nothing requires any more leaves the program */
+        Sel *s = vec_get(sels, i);
+        if (s->reach) continue;
+        sel_unstage(s);
+        if (!s->entry) continue;
+        long k = 0;
+        while (pkg_entries->data[k].p != s->entry) k++;
+        pkg_entries->n--;
+        pkg_entries->data[k] = pkg_entries->data[pkg_entries->n];
+        meta = 1;
+    }
+    for (long i = 1; i < n; i++) /* name order */
+        for (long j = i; j > 0 && str_cmp(((Sel *)vec_get(sels, j - 1))->name, ((Sel *)vec_get(sels, j))->name) > 0; j--) {
+            void *t = sels->data[j].p;
+            sels->data[j].p = sels->data[j - 1].p;
+            sels->data[j - 1].p = t;
+        }
+    for (long i = 0; i < n; i++) { /* what each replaced package declared */
+        Sel *s = vec_get(sels, i);
+        if (s->staging && s->entry && pkg_intact(s->entry)) s->before = pkg_effects(s->entry, &s->note);
+    }
+    for (long i = 0; i < n; i++) { /* the entries as they will be, their directories still the staged ones */
+        Sel *s = vec_get(sels, i);
+        Pkg *e = s->entry;
+        if (!s->staging) {
+            if (e && !s->local && e->indirect == s->direct) { /* asked for by name now */
+                e->indirect = !s->direct;
+                meta = 1;
+            }
+            continue;
+        }
+        changed++;
+        if (!e) {
+            e = alloc(sizeof(Pkg));
+            e->name = s->name;
+            long skip = pkg_dir->len + 1;
+            e->raw = s->target->len > skip && mem_eq(s->target->data, pkg_dir->data, pkg_dir->len) ? str_new(s->target->data + skip, s->target->len - skip) : s->target;
+            vec_push(pkg_entries, e);
+            s->entry = e;
+            s->added = 1;
+        } else {
+            s->old_hash = pkg_hash_text(e->pin);
+            s->old_ver = e->versioned ? pkg_ver_text(e->ver) : 0;
+        }
+        e->dir = s->staging;
+        e->url = s->source;
+        e->versioned = 1;
+        e->indirect = !s->direct;
+        e->state = 0;
+        for (int k = 0; k < 3; k++) e->ver[k] = s->ver[k];
+        mem_copy(e->pin, s->pin, 32);
+    }
+    for (long i = 0; i < n; i++) {
+        Sel *s = vec_get(sels, i);
+        s->note = 0;
+        if (s->staging) s->now = pkg_effects(s->entry, &s->note);
+    }
+    if (!opt_dry_run) {
+        long done = 0;
+        Str *failed = 0;
+        for (; done < n && !failed; done++) { /* the old directory aside, the new one in */
+            Sel *s = vec_get(sels, done);
+            if (!s->staging) continue;
+            Str *old = with_pid(s->target, ".old-");
+            int there = is_dir(s->target);
+            if (there && sys_rename(s->target->data, old->data) < 0) failed = s->target;
+            else if (sys_rename(s->staging->data, s->target->data) < 0) {
+                if (there) sys_rename(old->data, s->target->data);
+                failed = s->target;
+            }
+        }
+        if (failed) { /* back to how it was */
+            for (long i = done - 2; i >= 0; i--) {
+                Sel *s = vec_get(sels, i);
+                if (!s->staging) continue;
+                Str *old = with_pid(s->target, ".old-");
+                sys_rename(s->target->data, s->staging->data);
+                if (is_dir(old)) sys_rename(old->data, s->target->data);
+            }
+            sel_fail("E0706", msg("Cannot replace the directory `$1`.", failed, 0, 0));
+        }
+        for (long i = 0; i < n; i++) {
+            Sel *s = vec_get(sels, i);
+            if (!s->staging) continue;
+            Str *abs = rt_resolve(s->target);
+            s->entry->dir = abs ? abs : s->target;
+            if (abs) s->entry->raw = pkg_rel_dir(pkg_dir, abs);
+        }
+        if (changed || meta) pkg_write();
+        for (long i = 0; i < n; i++) { /* a dropped package's directory goes when it is what was fetched */
+            Sel *s = vec_get(sels, i);
+            if (!s->reach && s->entry && pkg_intact(s->entry)) rm_tree(s->entry->dir);
+        }
+    }
+    for (long i = 0; i < n; i++) { /* the old directories go, or with --dry-run what was staged */
+        Sel *s = vec_get(sels, i);
+        s->changed = s->staging != 0; /* (a dry run clears staging) */
+        if (!s->staging) continue;
+        if (opt_dry_run) sel_unstage(s);
+        else rm_tree(with_pid(s->target, ".old-"));
+    }
+    if (opt_dry_run && !opt_json) out_cstr(1, "dry run: nothing written\n");
+    Vec *gained = vec_new(), *lost = vec_new();
+    for (long i = 0; i < n; i++) {
+        Sel *s = vec_get(sels, i);
+        rep_by = s->direct ? 0 : s->by;
+        old_ver = s->old_ver;
+        if (!s->reach) {
+            rep_by = 0;
+            if (s->entry) pkg_report_fetched("removed", s->entry, 0, 0, 0, 0);
+        } else if (s->changed) {
+            Vec *before = s->added ? 0 : s->before;
+            pkg_report_fetched(s->added ? "added" : "updated", s->entry, s->old_hash, before, s->now, s->note);
+            gained = set_union(gained, s->added ? s->now : set_minus(s->now, before));
+            lost = set_union(lost, set_minus(before, s->now));
+        } else if (s->local && s->by->n) {
+            rep_by = s->by;
+            pkg_report_fetched("local", s->entry, 0, 0, 0, 0);
+        } else if (s->named) {
+            pkg_report_fetched("unchanged", s->entry, 0, 0, 0, 0);
+        }
+    }
+    rep_by = 0;
+    old_ver = 0;
+    if (changed > 1) {
+        SB *sb = sb_new();
+        if (opt_json) {
+            sb_cstr(sb, "{\"v\":1,\"kind\":\"package_total\"");
+            list_json(sb, "gained", gained);
+            list_json(sb, "lost", lost);
+            sb_cstr(sb, "}\n");
+        } else {
+            if (gained->n) list_text(sb, "total gains: ", gained);
+            if (lost->n) list_text(sb, "total loses: ", lost);
+        }
+        out_bytes(1, sb->ptr, sb->len);
+    }
+    return 0;
+}
+
+/* The roots every command starts from: the versioned entries of the manifest. */
+static void sel_start(void)
+{
+    sels = vec_new();
+    for (long i = 0; i < pkg_entries->n; i++) {
+        Pkg *e = vec_get(pkg_entries, i);
+        if (e->versioned) sel_of(e->name);
+    }
+}
+
+/* `vo package ENTRY NAME SOURCE[@VERSION]`: the package, as the author's own, and what it requires. */
+static int pkg_add_source(Str *name, Str *source, long *ver)
+{
+    sel_start();
+    Sel *s = sel_of(name);
+    if (!s) {
+        SB *sb = sb_new();
+        if (opt_pkg_dir) {
+            if (opt_pkg_dir[0] != '/') {
+                sb_str(sb, rt_start_cwd());
+                sb_byte(sb, '/');
+            }
+            sb_cstr(sb, opt_pkg_dir);
+            while (sb->len > 1 && sb->ptr[sb->len - 1] == '/') sb->len--;
+        } else {
+            sb_str(sb, pkg_dir);
+            sb_cstr(sb, "/packages/");
+            sb_str(sb, name);
+        }
+        s = sel_new(name, source, ver, sb_finish(sb));
+    } else {
+        s->source = source;
+        s->local = 0;
+        sel_set(s, ver);
+    }
+    s->direct = 1;
+    s->named = 1;
+    sel_run();
+    return sel_apply();
 }
 
 /* `vo package --restore ENTRY`: every entry with a URL whose directory is missing is fetched again
@@ -1209,6 +1693,7 @@ int cmd_package(void)
         usage_error(str_from_cstr("`package` takes ENTRY NAME DIRECTORY, ENTRY NAME URL, --remove ENTRY NAME, or --restore ENTRY."));
     if (!opt_remove && !opt_restore && doc_starts(args[2], "http://"))
         usage_error(str_from_cstr("A package is fetched from an https:// URL only."));
+    if (opt_dry_run && !by_url) usage_error(str_from_cstr("`--dry-run` goes with a versioned package, `--update`, `--repair` or `--remove`."));
     if (opt_pkg_dir && !by_url) usage_error(str_from_cstr("`--dir` goes with a URL: `vo package --dir DIRECTORY ENTRY NAME URL`."));
     if (opt_ca_files && !by_url && !opt_restore)
         usage_error(str_from_cstr("`--ca-file` goes with a URL or `--restore`: the other forms fetch nothing."));
@@ -1238,7 +1723,17 @@ int cmd_package(void)
         }
         while (hash < url->len && url->data[hash] != '#' && url->data[hash] != '?') hash++; /* the path's end */
         int archive = !has_ver && (ends_with(url->data, hash, ".tar") || ends_with(url->data, hash, ".tar.gz") || ends_with(url->data, hash, ".tgz"));
-        return pkg_add_url(args[0], name, url, archive ? 0 : ver);
+        if (opt_dry_run && archive) usage_error(str_from_cstr("`--dry-run` goes with a versioned package, `--update`, `--repair` or `--remove`."));
+        if (!archive) { /* the checks the archive form makes on its URL */
+            for (long i = 8; i < url->len && url->data[i] != '/'; i++)
+                if (url->data[i] == '@') usage_error(str_from_cstr("A URL with a user name or password is not fetched."));
+            long h = 0;
+            while (h < url->len && url->data[h] != '#') h++;
+            if (h < url->len && (path_unsafe(url->data + h + 1, url->len - h - 1) || url->data[url->len - 1] == '/'))
+                usage_error(str_from_cstr("The `#FOLDER` of a package source is a relative folder inside the repository, such as `#libs/money`."));
+            return pkg_add_source(name, url, ver);
+        }
+        return pkg_add_url(args[0], name, url);
     }
     Pkg *e = pkg_find(name); /* the entry, or 0 */
     if (opt_remove) {

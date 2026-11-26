@@ -104,7 +104,7 @@ scripts() { # one per line, with arguments
     text|random|collections) echo doc_conformance.py ;;
     http) echo https_interop.py ;;
     front) printf '%s\n' apply_fixes.py catalog.py fmt_corpus.py "fuzz.py --iterations 50 --seed 1" ;;
-    packages) printf '%s\n' packages_check.py catalog.py ref_examples.py package_fetch.py package_git.py ;;
+    packages) printf '%s\n' packages_check.py catalog.py ref_examples.py package_fetch.py package_git.py package_graphs.py ;;
     docs) printf '%s\n' ref_examples.py site_examples.py doc_conformance.py catalog.py ;;
     esac
 }

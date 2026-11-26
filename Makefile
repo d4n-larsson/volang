@@ -234,7 +234,7 @@ test: all
 	  steps.py json_stream.py https_interop.py "steps.py --repeat 3 tests/cases/trace tests/cases/replay" "fuzz_inputs.py --iterations 300 --seed 1" \
 	  math_vectors.py "bytes_fuzz.py --count 2000 --runs 200" "format_diff.py --quick" "regex_diff.py --quick" \
 	  "regex_fuzz.py --count 20000" "sqlite_scope.py --quick" "sqlite_fuzz.py --count 1000" sqlite_corpus.py structure_corpus.py "serve_workers.py --quick" "web_fuzz.py --quick" effect_sets_records.py \
-	  "const_equiv.py --count 300" const_records.py build_examples.py crypto_vectors.py mcp.py grammars.py lsp.py tcp.py stream.py package_fetch.py package_git.py strings.py bits.py decimals.py web_security.py iteration.py workers.py zones.py "scope_paths.py --count 300 --seed 1" postgres.py "recorded_tests.py --quick" "operations.py --quick"
+	  "const_equiv.py --count 300" const_records.py build_examples.py crypto_vectors.py mcp.py grammars.py lsp.py tcp.py stream.py package_fetch.py package_git.py package_graphs.py strings.py bits.py decimals.py web_security.py iteration.py workers.py zones.py "scope_paths.py --count 300 --seed 1" postgres.py "recorded_tests.py --quick" "operations.py --quick"
 	@echo "== examples"; for m in examples/*/main.vo examples/*/*/main.vo; do d=$$(dirname $$m); \
 	  (cd $$d && $(CURDIR)/bin/vo check main.vo >/dev/null && \
 	  if [ -d recordings/tests ]; then $(CURDIR)/bin/vo test --replay recordings/tests main.vo >/dev/null; else $(CURDIR)/bin/vo test main.vo >/dev/null; fi && for r in recordings/*.jsonl; do [ -f "$$r" ] || continue; \

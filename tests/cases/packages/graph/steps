@@ -1,0 +1,17 @@
+server git a.test truncate=trunc
+vo package --dry-run --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+vo check main.vo
+vo package --ca-file test-ca.pem main.vo broken https://127.0.0.1:{port}/broken@1.0.0
+vo check main.vo
+vo package --json --dry-run --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+vo package --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report
+vo run main.vo
+cp vo.packages first.packages
+vo package --json --ca-file test-ca.pem main.vo report https://127.0.0.1:{port}/report@2.1.0
+vo package --ca-file test-ca.pem main.vo ledger https://127.0.0.1:{port}/ledger@1.0.0
+vo package --json --dry-run --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.6.0
+vo package --ca-file test-ca.pem main.vo money https://127.0.0.1:{port}/money@1.6.0
+vo run main.vo
+keep vo.packages first.packages
+vo package --ca-file test-ca.pem --restore main.vo

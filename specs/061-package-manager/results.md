@@ -21,7 +21,24 @@ Pending (measured in T035).
   The existing package cases pass unchanged except `fetch`, whose `vo explain E0706` step prints the
   catalog text, which now also names repositories.
 
+- US1 (T013–T016): `tests/cases/packages/graph`: one add of `report` brings `money` and `pads` (three
+  blocks and a total), `--dry-run` and `--json --dry-run` write nothing, a failing dependency
+  (`truncate=trunc`) leaves no manifest and no `packages/` folder, an unchanged add says so, a later
+  explicit `money@1.6.0` reports the gained effect. `tests/package_graphs.py`: 50 generated graphs, 274
+  orders of adds, each matching an independent computation of the rule; the 25 graphs whose versions
+  only add requirements give byte-identical manifests in every order.
+
 ## Deviations
+
+- **FR-008, SC-002 and US2 scenario 4 amended** (research R4, "Found during implementation"): the
+  result of a command is a function of the manifest and the command; it is independent of the order of
+  earlier commands only where higher versions require at least what lower ones do.
+- Selection lives in `src/packages.c` (the plan named a new `src/pkgselect.c`): it uses the staging,
+  hashing, effects and report helpers there.
+- Dropping indirect packages that nothing requires any more (research R4 step 4, planned for
+  `--repair`) is already done by add: without it the manifest depended on the order of adds.
+- Effects of a staged package are read before anything is swapped in (the manifest entries point at the
+  staged directories in memory), so `--dry-run` reports them without writing to the project.
 
 - Research R1 said the commit behind an annotated tag is asked for; the tag's own id is asked for
   instead (hosts only promise to serve advertised ids), and the reader follows the tag object.

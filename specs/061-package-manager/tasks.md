@@ -145,20 +145,20 @@ single versioned package can be added and restored (plan, order of work 1 and 2)
 **Independent test**: `report` → `money` → `pads` on the test host; one command, three entries, the
 program runs.
 
-- [ ] T013 [US1] Step cases, failing first: `tests/cases/packages/graph/` (repos `report` 2.1.0 requiring
+- [X] T013 [US1] Step cases, failing first: `tests/cases/packages/graph/` (repos `report` 2.1.0 requiring
   `money` 1.4.0 requiring `pads` 1.0.2; `money` also at 1.2.0, 1.6.0, 2.0.0; `ledger` 1.0.0 requiring
   `money` 1.2.0; used by later cases through `repos -> ../graph/repos` copies made by a `cp -r` step):
   add `report` gives three blocks and `total gains:`; `vo run main.vo`; `--json` records with
   `required_by`, `direct` and the `package_total` record; `--dry-run` prints `dry run: nothing written`
   and `keep vo.packages` shows no file; a second identical add prints `unchanged` lines and touches
   nothing; a failure in the middle (`truncate=pads`) leaves no manifest and no `packages/` folder.
-- [ ] T014 [US1] `src/pkgselect.c` (new), research R4 steps 1 and 2 only (no conflicts yet):
+- [X] T014 [US1] `src/pkgselect.c` (new), research R4 steps 1 and 2 only (no conflicts yet):
   `Requirement` and `Selection` (data-model.md); `pkg_select(roots, &sel)` visits each `name@version`
   once, taking content from disk when the entry's version and pin match and the directory is intact
   (`pkg_intact`), else `git_fetch` into staging `packages/NAME.new-PID`; reads the staged or present
   `vo.packages` with `pkg_parse_line` into requirements; a higher compatible requirement replaces the
   selected version and discards its staging. Limit: 1,000 packages (E0706).
-- [ ] T015 [US1] `src/packages.c`: commit of a selection (research R6): every changed package staged,
+- [X] T015 [US1] `src/packages.c`: commit of a selection (research R6): every changed package staged,
   then old directories renamed to `.old-PID`, new ones in, the manifest written last, old ones removed;
   any failure before the manifest write renames everything back and removes the stagings. The named
   package is direct, the others `indirect` (an existing direct entry stays direct). Reports per
@@ -168,7 +168,7 @@ program runs.
   JSON fields. `--dry-run` (new option in `src/main.c`, accepted by add, `--update`, `--repair`,
   `--remove`; T0001 elsewhere) stages, reports and discards. `--dir` applies to the named package only.
   T013 passes.
-- [ ] T016 [P] [US1] `tests/package_graphs.py` (research R8), first part: generates 50 dependency graphs
+- [X] T016 [P] [US1] `tests/package_graphs.py` (research R8), first part: generates 50 dependency graphs
   as `repos/` trees (seeded; 3 to 12 packages, shared dependencies, chains of depth up to 5, several
   versions per package), serves them with `tests/git_server.py`, adds the roots in every order (at most
   24 orders per graph) into fresh projects and requires byte-identical manifests and a passing `vo

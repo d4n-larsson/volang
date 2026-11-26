@@ -464,7 +464,7 @@ void opt_spec006_check(void)
         usage_error(str_from_cstr("`--list`, `--coverage` and `--mutate` cannot be combined: use one at a time."));
     if (opt_max_mutants && !opt_mutate) usage_error(str_from_cstr("`--max-mutants` needs `--mutate`."));
     if (!opt_max_mutants) opt_max_mutants = 500;
-    if (opt_dry_run && cmd != CMD_EDIT) only_with("--dry-run", "edit");
+    if (opt_dry_run && cmd != CMD_EDIT && cmd != CMD_PACKAGE) only_with("--dry-run", "edit` or `package"); /* spec 061 */
     if (opt_record && cmd != CMD_RUN && cmd != CMD_TEST) only_with("--record", "run` or `test");
     if (opt_replay_dir && cmd != CMD_TEST) only_with("--replay", "test"); /* spec 054 */
     if (opt_replay_dir && opt_record)

@@ -8,7 +8,7 @@ DIR holds one folder per repository and, in it, one folder per version: DIR/mone
 content of `money` at the tag v1.2.0 (annotated when the patch number is even, lightweight when odd; a
 folder named 1.2.0-plain gives the tag 1.2.0 without the v). A file DIR/NAME/tags lists further tag
 names, one per line, put on the last commit (tags that are not versions). `{port}` in a file named
-vo.packages becomes the server's port; a file named links holds `NAME TARGET` lines, made symbolic
+vo.packages becomes the server's port and `{hash:NAME@VERSION}` the content hash of that folder; a file named links holds `NAME TARGET` lines, made symbolic
 links in its folder. Commits have a fixed author and date.
 
 Serves, for each NAME (also as NAME.git), the two requests of git's smart HTTP protocol by running
@@ -20,6 +20,7 @@ Serves, for each NAME (also as NAME.git), the two requests of git's smart HTTP p
   redirect=NAME   /NAME/... answers 301 to /NAME.git/...
   status=NAME:N   every request for NAME answers status N
 """
+import hashlib
 import os
 import re
 import shutil
@@ -49,6 +50,24 @@ def version_key(folder):
     return [int(x) for x in folder.split("-")[0].split(".")]
 
 
+def content_hash(folder):
+    """The package content hash of the .vo files under folder, as `vo package` computes it."""
+    files = []
+    for d, _, names in os.walk(folder):
+        files += [os.path.relpath(os.path.join(d, n), folder) for n in names if n.endswith(".vo") and len(n) > 3]
+    h = hashlib.sha256()
+    for rel in sorted(files, key=lambda r: r.encode()):
+        data = open(os.path.join(folder, rel), "rb").read()
+        h.update(rel.encode() + b"\0" + str(len(data)).encode() + b"\0" + data)
+    return "sha256:" + h.hexdigest()
+
+
+def manifest_text(text, repos, port):
+    """`{port}`, and `{hash:NAME@VERSION}`: the content hash of that version's folder."""
+    text = text.replace("{port}", str(port))
+    return re.sub(r"\{hash:(\w+)@([\w.-]+)\}", lambda m: content_hash(os.path.join(repos, m.group(1), m.group(2))), text)
+
+
 def build(repos, port, into):
     for name in sorted(os.listdir(repos)):
         src = os.path.join(repos, name)
@@ -71,7 +90,11 @@ def build(repos, port, into):
                     os.remove(os.path.join(d, "links"))
                 if "vo.packages" in files and ".git" not in d:
                     p = os.path.join(d, "vo.packages")
-                    open(p, "w").write(open(p).read().replace("{port}", str(port)))
+                    text = manifest_text(open(p).read(), repos, port)
+                    open(p, "w").write(text)
+            index = os.path.join(work, ".git", "index")
+            if os.path.exists(index):  # no trust in file times: versions are written in the same instant
+                os.remove(index)
             git(work, "add", "-A")
             git(work, "commit", "-q", "--allow-empty", "-m", v)
             num = v.split("-")[0]

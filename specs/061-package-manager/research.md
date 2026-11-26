@@ -64,22 +64,36 @@ added as a directory, stated in the changelog.
 ## R4. Selection (FR-006 to FR-010)
 
 **Decision**: requirements are (a) every versioned entry of the program's manifest, direct or indirect,
-and (b) every versioned entry of the manifest of each selected package. Selection is the least fixpoint:
+and (b) every versioned entry of the manifest of each selected package. A command works in rounds:
 
-1. `selected[name]` starts from (a).
-2. For each selected `name@version` not yet visited: get its content (on disk when the entry's version
-   and hash match, else fetched into staging, R1) and read its `vo.packages`; each versioned entry
-   there is a requirement `(name, source, version, hash, required by)`.
-3. A requirement for a name with another source: E0708. For a source already selected under another
-   name: E0708. Incompatible versions (different major; below 1.0.0 different minor): E0707 listing
-   every requirer. Same version, different hash than the selected content: E0710. A higher compatible
-   version replaces the selected one (back to 2).
-4. Indirect entries no direct entry reaches are dropped (they came from a removed or updated requirer).
+1. `selected[name]` starts from (a), with the package the command names at the version asked.
+2. A round reads every selected package not yet read at its version: its content (on disk when the
+   entry's version and hash match, else fetched into staging, R1) and its `vo.packages`. When the round
+   ends, what they require is applied: a new name is selected, a higher compatible version replaces the
+   selected one (read in the next round). Rounds repeat until one reads nothing.
+3. A requirement for a name with another source, or a source under another name: E0708. Incompatible
+   versions (different major; below 1.0.0 different minor): E0707 listing every requirer. Same version,
+   different hash than the selected content: E0710.
+4. Indirect entries that no direct entry reaches through the requirements of the final versions are
+   dropped (they came from a removed requirer or from a version since replaced), unless a reached
+   package could not be read (its directory is missing: `--restore` first).
 
-Versions only rise and each `name@version` is read once, so it terminates; the result depends on the
-set of requirements only (FR-008). A program entry without a version (a local directory or an archive)
-for a required name wins and is reported (`local`), per the spec's edge case. A requirement's entry
-without a version in a package's manifest: E0709 at add time (US5 scenario 2).
+Versions only rise and each `name@version` is read once, so it terminates. A round's outcome does not
+depend on the order inside it, so the result is a function of the manifest and the command (FR-008).
+A program entry without a version (a local directory or an archive) for a required name wins and is
+reported (`local`), per the spec's edge case. A requirement's entry without a version in a package's
+manifest: E0709 at add time (US5 scenario 2).
+
+**Found during implementation (spec amended)**: the result is not independent of the order of commands
+in every graph. A version that was read and then replaced has already raised what it required, and a
+manifest remembers selected versions, not every version once asked for. Example: `a` 1.0.0 requires `b`
+1.1.0 and `a` 1.1.0 requires nothing; adding `a@1.0.0` and then something that needs `a` 1.1.0 leaves
+`b` at 1.1.0, the other order never selects `b` 1.1.0. Go's modules behave the same way (a `go.mod`
+keeps the higher version). Where a higher version requires at least what its lower versions do, the
+order does not matter; `tests/package_graphs.py` checks both (every other generated graph is of that
+kind and must give byte-identical manifests; all graphs must match an independent computation of the
+rule for the order used). Order independence in every graph would need a second number per direct
+package (the version asked for) and a fetch of every replaced version on every command.
 
 Superseded versions fetched in step 2 are discarded (`ponytail:` fetching only `vo.packages` first
 would save the download; add when graphs get deep).

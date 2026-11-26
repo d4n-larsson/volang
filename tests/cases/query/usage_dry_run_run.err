@@ -1,1 +1,1 @@
-error[T0001]: `--dry-run` only works with `edit`.
+error[T0001]: `--dry-run` only works with `edit` or `package`.

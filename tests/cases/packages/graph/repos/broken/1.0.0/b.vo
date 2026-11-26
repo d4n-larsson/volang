@@ -1,0 +1,5 @@
+import trunc.pad;
+
+export fn b() -> str {
+    return pad.left("b");
+}
