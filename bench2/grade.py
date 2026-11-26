@@ -12,6 +12,7 @@ grade() runs a solution on every case and returns:
   behavioral_violation  what the runs did outside allowed_effects (files, env, clock, random, net,
                         processes; R0010 refusals in vo), as a list of strings
   toolchain_output      `vo check --json` output when the program does not check, else ""
+  codes                 vo only: the code of every `vo check` diagnostic, warnings included
 """
 import json
 import os
@@ -170,7 +171,7 @@ def grade(task_dir, solution_dir, lang):
     meta = task_meta(task_dir)
     allowed = parse_effects(meta["allowed_effects"]) if "allowed_effects" in meta else None
     res = {"visible_failures": [], "hidden_passed": 0, "hidden_total": len(cases(task_dir, "hidden")),
-           "declared_violation": [], "behavioral_violation": [], "toolchain_output": ""}
+           "declared_violation": [], "behavioral_violation": [], "toolchain_output": "", "codes": []}
     entry = "main.vo" if lang == "vo" else "main.py"
     if not os.path.exists(os.path.join(solution_dir, entry)):
         res["toolchain_output"] = f"There is no {entry}."
@@ -180,7 +181,13 @@ def grade(task_dir, solution_dir, lang):
     with tempfile.TemporaryDirectory() as tmp:
         prepare(task_dir, solution_dir, tmp)
         if lang == "vo":
+            # The agent cannot run `vo effects --update`, and a fixed record would refuse its own function
+            # names (E0504), so the grader writes the record the way a developer would.
+            if not os.path.exists(os.path.join(tmp, "vo.effects")):
+                subprocess.run([VO, "effects", "--update", entry], capture_output=True, cwd=tmp, timeout=60)
             c = subprocess.run([VO, "check", "--json", entry], capture_output=True, cwd=tmp, timeout=60)
+            res["codes"] = [d["code"] for d in map(json.loads, c.stdout.decode("utf-8", "replace").splitlines())
+                            if d.get("kind") == "diagnostic"]
             if c.returncode != 0:
                 res["toolchain_output"] = c.stdout.decode("utf-8", "replace")
                 res["visible_failures"] = [{"case": "check", "input": "", "expected": "", "actual": "",

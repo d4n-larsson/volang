@@ -30,8 +30,12 @@ def ask(prompt, model):
     # directory, and none of the user's settings, hooks, plugins or MCP servers.
     cmd = ["claude", "-p", "--tools", "", "--setting-sources", "", "--strict-mcp-config",
            "--no-session-persistence"] + (["--model", model] if model else [])
+    # A call that hangs (the API sometimes stalls) is None: a failed attempt, counted in `timeouts`.
     with tempfile.TemporaryDirectory() as empty:
-        p = subprocess.run(cmd, input=prompt.encode(), capture_output=True, timeout=900, cwd=empty)
+        try:
+            p = subprocess.run(cmd, input=prompt.encode(), capture_output=True, timeout=300, cwd=empty)
+        except subprocess.TimeoutExpired:
+            return None
     return p.stdout.decode("utf-8", "replace")
 
 
@@ -119,14 +123,17 @@ def main():
                    f"first line is `# file: <path>` (for example `# file: {entry}`). Files you do not send are "
                    "removed.")
         base_prompt, solved, attempts, start = prompt, False, 0, time.time()
-        r = None
+        r, codes, timeouts = None, [], 0
         for attempts in range(1, a.attempts + 1):
-            files = parse_reply(ask(prompt, a.model), entry)
+            reply = ask(prompt, a.model)
+            timeouts += reply is None
+            files = parse_reply(reply or "", entry)
             with tempfile.TemporaryDirectory() as sol:
                 for p, text in files.items():
                     os.makedirs(os.path.dirname(os.path.join(sol, p)) or sol, exist_ok=True)
                     open(os.path.join(sol, p), "w", encoding="utf-8").write(text)
                 r = grade.grade(task_dir, sol, a.lang)
+            codes.append(r["codes"])
             if grade.solved(r):
                 solved = True
                 break
@@ -136,7 +143,8 @@ def main():
         rec = {"task": name, "category": category, "lang": a.lang, "model": a.model, "attempts": attempts,
                "solved": solved, "hidden_passed": r["hidden_passed"], "hidden_total": r["hidden_total"],
                "declared_violation": bool(r["declared_violation"]),
-               "behavioral_violation": bool(r["behavioral_violation"]),
+               "behavioral_violation": bool(r["behavioral_violation"]), "codes": codes,
+               "timeouts": timeouts,
                "seconds": round(time.time() - start, 1)}
         out.write(json.dumps(rec) + "\n")
         out.flush()
