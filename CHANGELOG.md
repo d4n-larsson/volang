@@ -4,6 +4,28 @@ What changed in each released version of vo, for people and agents who use it. T
 decision is in [`specs/`](specs/) and summarized in [`docs/roadmap.md`](docs/roadmap.md); what a version
 may and may not change is in [`docs/stability.md`](docs/stability.md).
 
+## 0.7.0
+
+- **Versioned packages (spec 061).** `vo package ENTRY NAME https://HOST/REPO[@VERSION]` adds a version of a
+  git repository (its tag `v1.2.0` or `1.2.0`; without `@VERSION` the highest) and every package it
+  requires, read from the `vo.packages` at the package's root. A program holds one version of each
+  package: the highest compatible one that any manifest asks for. Nothing is installed (vo speaks git's
+  HTTP protocol), there is no registry, and nothing moves until a command asks: `--outdated ENTRY` lists
+  newer versions, `--update ENTRY [NAME]` takes the highest compatible ones, `--repair ENTRY` completes
+  a manifest after a merge, `--remove` also removes what only the removed package required, and
+  `--dry-run` shows any of these without writing. Each report gives versions, hashes and what the
+  packages' effects gained and lost.
+- **The manifest** gains `@VERSION` after a source and the word `indirect` for a package that another
+  package requires. Existing manifests are unchanged; a toolchain before 0.7.0 reports the new lines
+  as malformed (E0703).
+- **New codes**: **E0707 package_version_conflict**, **E0708 package_source_clash**,
+  **E0709 package_requirement** (also from `vo check`, `run`, `test` and `build` when the manifest
+  lacks what a package requires; none of them fetches anything), **E0710 package_version_changed**,
+  **E0711 package_version_unknown**.
+- **Which URLs are archives**: a URL whose path ends in `.tar`, `.tar.gz` or `.tgz` is fetched as an
+  archive, as before. Any other `https://` URL given to `vo package` is now a repository; before, it
+  was fetched as an archive whatever its ending.
+
 ## 0.6.0
 
 - **Variant cases with fields (spec 060).** A case that carries several values declares them as fields:

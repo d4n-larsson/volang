@@ -291,12 +291,12 @@ program runs.
 
 ## Phase 9: User Story 7 - Documented (P3)
 
-- [ ] T030 [US7] `docs/reference.md` (research R9): the Packages bullet (`:1171`) rewritten to the same
+- [X] T030 [US7] `docs/reference.md` (research R9): the Packages bullet (`:1171`) rewritten to the same
   word count: the line forms (`… URL@VERSION [indirect]`), add by `SOURCE[@VERSION]` bringing what the
   package requires, the rule (the highest compatible version any manifest asks for), `--update`,
   `--outdated`, `--repair`, `--restore`, `--remove`; `python3 tests/ref_examples.py`; words before and
   after in `results.md`.
-- [ ] T031 [P] [US7] `site/docs/tools/package.md` (every form, the output blocks, the limits, what is
+- [X] T031 [P] [US7] `site/docs/tools/package.md` (every form, the output blocks, the limits, what is
   trusted: contracts/package-command.md and manifest.md), `site/docs/guide/modules-and-packages.md`
   (one worked example: add a package with a dependency, update it, restore a clone; how to release a
   package: its `vo.packages` and a tag), `docs/stability.md` (the manifest's new fields; older

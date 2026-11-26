@@ -62,6 +62,13 @@ Pending (measured in T035).
   removes `money` and `pads` with their directories; with `ledger` listed, removing `report` keeps
   them; a local directory's entry goes and its directory stays). The existing `remove` case passes
   unchanged.
+- US7 (T030–T031): the reference is 11,538 words (~14,999 tokens of 15,000), 3 more than the baseline's
+  11,535: the Packages bullet names the line form with `[SOURCE@VERSION [indirect]]`, the versioned
+  add, the selection rule, `--update`/`--outdated` and `--repair` (E0709); the command list has every
+  form. `--restore` and `--remove` are in the command list only. `site/docs/tools/package.md` (Versioned
+  packages, The manifest, options, output, statuses), `site/docs/guide/modules-and-packages.md`
+  (Versions and dependencies, Releasing a package), `docs/stability.md`, `CHANGELOG.md` 0.7.0,
+  `docs/roadmap.md`.
 
 ## Deviations
 

@@ -296,8 +296,56 @@ URL is kept as a fourth word of the manifest line.
   or remove the directory.
 - Use the archive link of a tag or commit. A branch's archive changes, and `--restore` then refuses it
   ([E0701](../errors/E0701.md)).
-- There are no versions, no registry and no fetching of a package's own dependencies: a package that
-  imports another shows as an unresolved import, and you add that one too.
+- An archive has no version and brings nothing with it: a package in it that imports another shows as
+  an unresolved import, and you add that one too. Versioned packages, next, do both.
+
+### Versions and dependencies
+
+A package that lives in a git repository is added by the repository's URL. Its versions are the
+repository's tags (`v1.2.0` or `1.2.0`), and the packages it requires come with it:
+
+```text
+$ vo package main.vo report https://codeberg.org/acme/report
+added money 1.4.0 packages/money sha256:d511...451b (required by report)
+  effects: none
+added report 2.1.0 packages/report sha256:19ef...0b01 from https://codeberg.org/acme/report
+  effects: random
+total gains: random
+```
+
+`report` is now a line of `vo.packages` with `@2.1.0` after its URL, and `money`, which `report`
+requires, a line marked `indirect`. There is no registry and no account: the repository is the
+package, on any host that serves git over HTTPS.
+
+- **One version of each package**: the highest that your manifest or any package's manifest asks for.
+  `1.2.0` and `1.4.0` can stand in for each other; `1.4.0` and `2.0.0` cannot, and two packages that
+  need both are an error that names them ([E0707](../errors/E0707.md)).
+- **Nothing moves by itself.** A release of `money` 1.6.0 changes nothing in your program.
+  `vo package --outdated main.vo` lists what is newer, and `vo package --update main.vo money` takes
+  it, printing the old and new version, the hashes, and what the package's effects gained and lost.
+  A new major version is taken only when you name it: `...money@2.0.0`.
+- **A clone restores exactly.** `vo package --restore main.vo` fetches each version again and accepts
+  it only at its pinned hash.
+- **A merge can leave the manifest incomplete**: a package requires something the manifest no longer
+  lists, or lists lower. `vo check` says so ([E0709](../errors/E0709.md)) and
+  `vo package --repair main.vo` fixes it.
+- **Removing** a package removes the indirect packages only it required.
+
+### Releasing a package
+
+A package is released by tagging its repository. If it uses other packages, add them in the package's
+own folder with the same command a program uses; the `vo.packages` at the package's root is then the
+list of what it requires, and whoever adds your package gets those too:
+
+```text
+$ vo package lib.vo pads https://codeberg.org/acme/pads
+$ vo test lib.vo
+$ git add . && git commit -m "kit 1.0.0" && git tag v1.0.0 && git push --tags
+```
+
+Every requirement must be a versioned one: a line for a local directory serves only your own checkout,
+and a package with such a line cannot be added by others. A released version must never change; a fix
+is a new version.
 
 ### The hash
 

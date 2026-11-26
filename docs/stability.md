@@ -43,7 +43,9 @@ From 1.0, breaking changes need a new major version.
 - **Messages.** The text of diagnostics and reports may be reworded; their codes, spans and fixes are
   the interface.
 - **Files the toolchain writes.** `vo.effects` and `vo.packages` are rewritten by `vo effects --update`
-  and `vo package`. A recording (`--record`) replays with the version that made it and with later
+  and `vo package`. A `vo.packages` line may end with `@VERSION` after its source and with the word
+  `indirect` (0.7.0); a toolchain older than the one that wrote a manifest may report lines it does not
+  know as malformed (E0703). A recording (`--record`) replays with the version that made it and with later
   versions of the same schema; a format change that breaks old recordings is listed in the changelog.
   An executable from `vo build` contains its toolchain and keeps working unchanged.
 - **Output of a program whose behavior was a defect.** Fixing a wrong result changes the output of

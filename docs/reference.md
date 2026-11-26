@@ -1168,7 +1168,7 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 - `parse_X` reads text, `from_X` decodes (`from_hex`); a failure is `err("invalid X: ...")`.
 - Large inputs come in pieces: `each_line(path, f)`, `each_chunk`, `send_stream` and `run_lines` call `f` per piece; `f` returns `ok(true)` to go on, `ok(false)` to stop.
 - File operations fail with `err` values (`"not found"`, `"already exists"`, `"not empty"`, ...; reading one: `"cannot read PATH"`); `info` reports `missing` as a value. `delete` and `rename` never remove a scope directory itself.
-- Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH` line per package, and `import NAME.a.b;` loads `DIRECTORY/a/b.vo`. The hash covers every `.vo` file under the directory; when it no longer matches, the program is not checked or run (E0701). `vo package ENTRY NAME DIRECTORY` (or an `https://` archive URL; `--restore ENTRY` fetches missing ones) adds or updates an entry and prints the change; `vo package --remove ENTRY NAME` removes one. Package functions appear in `vo.effects` as `@NAME/path.vo:fn`, and `vo doc NAME.module` documents them.
+- Packages: `vo.packages` (found like `vo.effects`) has one `NAME DIRECTORY sha256:HASH [SOURCE@VERSION [indirect]]` line per package; `import NAME.a.b;` loads `DIRECTORY/a/b.vo`. A directory whose `.vo` files no longer match the hash stops check and run (E0701). `vo package ENTRY NAME DIRECTORY` pins one; `https://HOST/REPO[@VERSION]` fetches that git tag and what its own `vo.packages` requires (`indirect`), each at the highest compatible version any manifest asks. `--update`/`--outdated` find newer versions; `--repair` completes a manifest (E0709). Package functions are `@NAME/path.vo:fn` in `vo.effects`; `vo doc NAME.module` documents them.
 
 ```vo
 import std.json;
@@ -1305,7 +1305,7 @@ vo impact    [--json] ENTRY --diff FILE
 vo edit      [--json] [--dry-run] rename|add-field ENTRY ...
 vo replay    [--json] [--trace FILE] [--timeout SEC] [--max-memory MiB] [--mem-stats] RECORDING
 vo doc       [--json] [MODULE | ENTRY NAME]
-vo package   [--json] [--ca-file FILE] [--dir DIR] ENTRY NAME DIRECTORY|URL | --remove ENTRY NAME | --restore ENTRY
+vo package   [--json] [--dry-run] [--ca-file FILE] [--dir DIR] ENTRY NAME DIRECTORY|URL[@VERSION] | --update ENTRY [NAME] | --outdated|--repair|--restore ENTRY | --remove ENTRY NAME
 vo mcp
 vo lsp
 ```
