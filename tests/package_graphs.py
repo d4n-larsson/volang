@@ -13,6 +13,9 @@ a byte-identical vo.packages.
 Then graphs the selection must refuse or get through (US2): a conflict (several packages requiring one
 package at 1.x, one at 2.0.0: E0707 naming every requirer with its version), a source clash (E0708 naming
 both sources), each leaving the manifest as it was, and a cycle of requirements, which resolves.
+Last, restore (SC-003): a 10-package program with its package directories deleted is restored and checks;
+then, for each package in turn, its pin is changed (as if the version's content had been changed after it
+was pinned) and its directory deleted: restore must refuse it (E0701) and leave no directory.
 """
 import itertools
 import os
@@ -195,6 +198,41 @@ def run_special(work, port, label, adds, refusal):
     return f"{label}: check: {c.stdout[-400:]}" if c.returncode else None
 
 
+def restore_check(work, port, repos_made):
+    """(problems, trials refused). The repositories t0 (requiring t1..t9) were written by special()."""
+    d = os.path.join(work, "ten")
+    os.makedirs(d)
+    open(os.path.join(d, "main.vo"), "w").write("import t0.t0m;\n\nfn main() uses console {\n    print(str(t0m.v()));\n}\n")
+
+    def vo(*words):
+        return subprocess.run([VO, *words], cwd=d, capture_output=True, text=True)
+    r = vo("package", "--ca-file", CA, "main.vo", "t0", f"https://127.0.0.1:{port}/t0")
+    manifest = os.path.join(d, "vo.packages")
+    text = open(manifest).read() if r.returncode == 0 else ""
+    lines = text.splitlines()[1:]
+    if len(lines) != 10:
+        return [f"restore: the add gave {len(lines)} packages: {r.stdout[-300:]}"], 0
+    shutil.rmtree(os.path.join(d, "packages"))
+    r = vo("package", "--ca-file", CA, "--restore", "main.vo")
+    c = vo("check", "main.vo")
+    if r.returncode or r.stdout.count("restored ") != 10 or c.returncode or open(manifest).read() != text:
+        return [f"restore: status {r.returncode}, check {c.returncode}: {r.stdout[-300:]}{c.stdout[-300:]}"], 0
+    problems, refused = [], 0
+    for line in lines:
+        name, h = line.split()[0], line.split()[2]
+        moved = h[:-1] + ("0" if h[-1] != "0" else "1")
+        open(manifest, "w").write(text.replace(h, moved))
+        shutil.rmtree(os.path.join(d, "packages", name))
+        r = vo("package", "--ca-file", CA, "--restore", "main.vo")
+        if r.returncode == 65 and f"error[E0701]: Package `{name}`" in r.stdout and not os.path.exists(os.path.join(d, "packages", name)):
+            refused += 1
+        else:
+            problems.append(f"restore: a changed `{name}` was not refused: status {r.returncode} {r.stdout[-300:]}")
+        open(manifest, "w").write(text)
+        vo("package", "--ca-file", CA, "--restore", "main.vo")
+    return problems, refused
+
+
 def hundred(d):
     os.makedirs(d, exist_ok=True)
     for i in range(100):
@@ -215,13 +253,16 @@ def main():
     count = int(args[args.index("--count") + 1]) if "--count" in args else 50
     r = random.Random(int(args[args.index("--seed") + 1]) if "--seed" in args else 1)
     work = tempfile.mkdtemp(prefix="vo-graphs-")
-    problems, orders_run = [], 0
+    problems, orders_run, refused = [], 0, 0
     try:
         graphs = [gen(r, g, g % 2 == 0) for g in range(count)]  # every other graph only grows
         repos = os.path.join(work, "repos")
         for pk, _ in graphs:
             write_repos(repos, pk)
         specials = special(r, repos, max(3, count // 4))
+        for i in range(1, 10):
+            pkg(repos, f"t{i}", "1.0.0", [])
+        pkg(repos, "t0", "1.0.0", [(f"t{i}", "1.0.0", f"t{i}") for i in range(1, 10)])
         port, tmp = git_server.start("a.test", repos, [])
         try:
             jobs = []
@@ -254,13 +295,16 @@ def main():
                 p = run_special(work, port, label, adds, refusal)
                 if p:
                     problems.append(p)
+            more, refused = restore_check(work, port, repos)
+            problems += more
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
     finally:
         shutil.rmtree(work, ignore_errors=True)
     for p in problems[:15]:
         print("FAIL", p)
-    print(f"package_graphs: {count} graphs, {orders_run} orders, {len(specials)} conflicts, clashes and cycles, {len(problems)} problems")
+    print(f"package_graphs: {count} graphs, {orders_run} orders, {len(specials)} conflicts, clashes and cycles, "
+          f"10 packages restored and {refused} of 10 changed versions refused, {len(problems)} problems")
     return 1 if problems else 0
 
 

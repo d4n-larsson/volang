@@ -108,11 +108,54 @@ def problem(args, path):
     return None
 
 
+def manifests(n, rng):
+    """Spec 061: n manifests of lines built from valid and broken pieces (versions, `indirect`, noise),
+    beside a program that imports a package. `vo check --json` must end with a status and JSON records,
+    and its manifest errors must be E0703 or E0704."""
+    d = os.path.join(WORK, "manifest")
+    os.makedirs(os.path.join(d, "pk"), exist_ok=True)
+    open(os.path.join(d, "pk", "m.vo"), "w").write("export fn v() -> int {\n    return 1;\n}\n")
+    open(os.path.join(d, "main.vo"), "w").write("import pk.m;\n\nfn main() uses console {\n    print(str(m.v()));\n}\n")
+    names = ["pk", "a", "b9", "std", "9x", "p-q", ""]
+    hashes = ["sha256:" + "ab" * 32, "sha256:" + "AB" * 32, "sha256:" + "a" * 63, "sha1:" + "ab" * 32, "sha256:"]
+    urls = ["https://h.example/r", "https://h.example/r.git", "https://h.example/r#sub", "https://h.example/a.tar.gz",
+            "http://h.example/r", "https://u@h.example/r", "https://", "ftp://x/y", ""]
+    vers = ["@1.2.3", "@0.0.0", "@v1.2.3", "@1.2", "@1.2.3.4", "@-1.0.0", "@99999999999999999999.0.0", "@1.2.3-rc1", "@", "@@1.0.0",
+            "@1.2.x", "", ""]
+    tails = ["", "", " indirect", " indirect indirect", " direct", " indirect x", "\tindirect", " INDIRECT", " \x00", " \x7f"]
+    failures = 0
+    for i in range(n):
+        lines = []
+        for _ in range(rng.randint(1, 6)):
+            line = f"{rng.choice(names)} {rng.choice(['pk', '../x', '/abs', 'pk pk'])} {rng.choice(hashes)} {rng.choice(urls)}{rng.choice(vers)}{rng.choice(tails)}"
+            if rng.random() < 0.3:
+                at = rng.randrange(len(line) + 1)
+                line = line[:at] + rng.choice(["@", " ", "#", "indirect", "\r", "\x01", "é", "0"]) + line[at + rng.randint(0, 2):]
+            lines.append(line)
+        text = "\n".join(lines) + rng.choice(["\n", "", "\r\n"])
+        open(os.path.join(d, "vo.packages"), "w").write(text)
+        path = os.path.join(d, "main.vo")
+        why = problem(["check", "--json"], path)
+        if not why:
+            out = run(["check", "--json"], path)[1].decode("utf-8", "replace")
+            codes = {json.loads(line).get("code") for line in out.splitlines() if "vo.packages" in line and '"diagnostic"' in line}
+            if codes - {"E0703", "E0704", "E0709"}:
+                why = f"manifest diagnostics {sorted(codes)}"
+        if why:
+            failures += 1
+            os.makedirs(FAILS, exist_ok=True)
+            keep = os.path.join(FAILS, f"manifest-seed-{i}.packages")
+            open(keep, "w").write(text)
+            print(f"FAIL manifest {keep}: {why}")
+    return failures
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--iterations", type=int, default=200)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--stress", action="store_true", help="run with build-stress/vo, collecting every 16th allocation")
+    ap.add_argument("--manifests", type=int, default=0, help="spec 061: this many generated vo.packages files instead")
     a = ap.parse_args()
     global ENV, SLOW
     if a.stress:
@@ -120,6 +163,10 @@ def main():
         SLOW = 4
     rng = random.Random(a.seed)
     os.makedirs(WORK, exist_ok=True)
+    if a.manifests:
+        failures = manifests(a.manifests, rng)
+        print(f"fuzz: {a.manifests} manifests, {failures} failures")
+        return 1 if failures else 0
     files = corpus()
     if a.stress:  # the cases tests/run.sh --stress skips (`<case>.stress-every` is `skip`) do not fit that build
         def skipped(f):

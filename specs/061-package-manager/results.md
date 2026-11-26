@@ -6,7 +6,38 @@
 
 ## SC-001 to SC-009
 
-Pending (measured in T035).
+- **SC-001**: `report` (requiring `money`, which requires `pads`) is added with 1 command and the
+  program importing it runs (`tests/cases/packages/graph`). Before: 3 commands, one per package, each
+  with an archive URL found by hand, the second and third only after an unresolved import said so.
+- **SC-002**: `tests/package_graphs.py`: 50 generated graphs, their roots added in every order (274
+  orders): every manifest equals the independent computation of the rule; the 25 graphs whose versions
+  only add requirements give byte-identical manifests in every order. 12 further graphs: 4 conflicts
+  (every requirer and version in the message), 4 source clashes, 4 cycles (resolve). As amended: order
+  independence is claimed only for the graphs of the second kind (Deviations).
+- **SC-003**: the same script: a 10-package program with `packages/` deleted is restored by one command
+  (10 `restored` lines, the manifest byte-identical, `vo check` passes); with each package's pin
+  changed in turn, restore refuses 10 of 10 (E0701) and creates no directory. A changed version is
+  simulated by a changed pin: the comparison is the same.
+- **SC-004**: `tests/package_fetch.py`, quiet group: `check`, `run`, `test`, `build`, `doc` open no
+  socket (`strace`) on a program with versioned packages, complete and with a requirement missing (10
+  cases); `tests/cases/packages/incomplete` and `remove_graph` run with the server stopped.
+- **SC-005**: `vo check` of a program importing 100 packages on disk (`tests/package_graphs.py
+  --hundred`): 10 to 20 ms over 5 runs. These are 100 directory packages; the per-package cost a
+  versioned entry adds is reading one small `vo.packages`.
+- **SC-006**: the two updates that gain an effect (`graph`: `money` 1.4.0 → 1.6.0; `update_versions`:
+  1.2.0 → 1.6.0) show `gains: clock` in text, JSON and with `--dry-run` (5 of 5 reports). After each
+  `--dry-run` the cases' next step shows the unchanged state (`vo check` still failing, the manifest
+  as before).
+- **SC-007**: no existing manifest changed meaning. Of the cases under `tests/cases/packages` that
+  existed before, 3 have a changed expected output, all message texts: `bad_name` and `url_field` (the
+  usage lines now list the new forms), `fetch` (`vo explain E0706` mentions repositories). Every other
+  change under that folder is a new case.
+- **SC-008**: `bench2/package_tasks.py`: an isolated agent (no tools, empty directory, no user
+  settings; the CLI's default model) given `vo reference`, the task and each command's output: add a
+  package with a dependency, update a package and name the effect gained, restore a clone. 3 runs of
+  each: 9 of 9 solved, 2 or 3 commands each, 0 usage errors.
+- **SC-009**: the reference is 11,538 words (~14,999 tokens of 15,000). The three architectures: see
+  Verification, last entry.
 
 ## Verification
 
@@ -69,6 +100,10 @@ Pending (measured in T035).
   packages, The manifest, options, output, statuses), `site/docs/guide/modules-and-packages.md`
   (Versions and dependencies, Releasing a package), `docs/stability.md`, `CHANGELOG.md` 0.7.0,
   `docs/roadmap.md`.
+- Polish (T032–T035): version 0.7.0. Fuzzing: `tests/fuzz.py --manifests 5000 --seed 3` (manifest
+  lines from valid and broken names, hashes, URLs, versions and `indirect` noise: no crash, only E0703,
+  E0704 or E0709 on the manifest) and `tests/package_git.py --fuzz 5000` (mutated packs: no crash,
+  nothing written outside the target): 10,000 mutations, 0 problems. `make test` runs 200 manifests.
 
 ## Deviations
 
@@ -116,3 +151,7 @@ Pending (measured in T035).
 - The update case's new version gains `clock`, not `net("rates.example.com")`: it reuses the `graph`
   repositories.
 - `--remove --dry-run` of a version-less entry is T0001 (one line changes; nothing to preview).
+- T034's tasks are not bench2 tasks of the usual shape (those are answered with code): they have their
+  own small harness, `bench2/package_tasks.py`, where the agent answers with one `vo` command per turn.
+- T003's baseline time for the 100-package check was not recorded; SC-005 is reported as an absolute
+  time.

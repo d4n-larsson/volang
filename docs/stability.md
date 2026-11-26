@@ -1,6 +1,6 @@
 # What a version of vo promises
 
-vo is at version 0.6.0 with output schema 1 (`vo version`). This page says what may change, what may
+vo is at version 0.7.0 with output schema 1 (`vo version`). This page says what may change, what may
 not, and how a program is carried over when something does.
 
 ## Versions

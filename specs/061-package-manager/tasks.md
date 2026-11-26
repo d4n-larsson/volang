@@ -307,17 +307,17 @@ program runs.
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [ ] T032 Version 0.7.0 (`src/build.c`, `src/main.c`, `tests/cases/cli/version*.out`,
+- [X] T032 Version 0.7.0 (`src/build.c`, `src/main.c`, `tests/cases/cli/version*.out`,
   `tests/cases/build/options/expected/out`, `site/docs/tools/version.md`,
   `site/docs/start/install.md`, `docs/stability.md`); `make site-check` (its `--start` step after the
   commit).
-- [ ] T033 [P] `tests/fuzz.py`: manifest lines with version and `indirect` noise (no crash, E0703 or
+- [X] T033 [P] `tests/fuzz.py`: manifest lines with version and `indirect` noise (no crash, E0703 or
   accepted); `tests/package_git.py --fuzz N` mutates valid packs (no crash, no file outside the target
   directory); 10,000 mutations recorded in `results.md`.
-- [ ] T034 SC-008 (research R10): three tasks in bench2 against `tests/git_server.py` (add a package
+- [X] T034 SC-008 (research R10): three tasks in bench2 against `tests/git_server.py` (add a package
   with a dependency, update it, restore a clone), run with the isolation of the benchmark memory (no
   tools, empty directory, no user settings); results in `results.md`. Not part of `make test`.
-- [ ] T035 Measurements in `results.md`: SC-001 (commands before and after), SC-002 (graphs, orders),
+- [X] T035 Measurements in `results.md`: SC-001 (commands before and after), SC-002 (graphs, orders),
   SC-003 (10-package restore; 100% of moved versions refused), SC-005 (the 100-package check time
   against T003's baseline), SC-006, SC-007 (existing cases unchanged: list from `git diff --stat
   tests/cases/packages` showing only new folders), SC-009.
