@@ -544,7 +544,10 @@ EffSet *rt_es_subst(EffSet *set, Node *owner, Vec *args)
 
 /* Spec 013 (C3): the grant of a frame whose declaration has effect parameters: its own declared
  * effects, with every effect parameter standing for the caller's grant. The parameter's binding is
- * a requirement set ("any scope" bits) and is never used as a grant. */
+ * a requirement set ("any scope" bits) and is never used as a grant.
+ * Spec 062: this union answers "has the running code the effect at all" (rt_check_effect). It is not
+ * what a target is checked against: the scope walk of src/rt_effects.c reads each function's own
+ * declaration, since the union loses this function's scopes when the caller has none. */
 EffSet *rt_es_grant(EffSet *declared, EffSet *caller)
 {
     if (!declared || !es_evar_count(declared)) return declared;

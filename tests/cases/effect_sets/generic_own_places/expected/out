@@ -1,0 +1,32 @@
+$ vo run main.vo
+inside other,within other
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("b/y.txt") is not allowed: `g` declares file.read("a/"), E.
+   3 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at rd (main.vo:3:11)
+      p: str = "b/y.txt"
+  at g (main.vo:22:12)
+      p: str = "b/y.txt", f: fn() -> str uses file.read = <fn() -> str uses file.read>
+  at in_task (main.vo:26:12)
+      p: str = "b/y.txt"
+  at main (main.vo:43:16)
+--- exit 70
+$ vo test main.vo
+main.vo:33:1: warning[W0501]: `test "g's own code is held to its scope"` declares file.read("b/"), which it never needs.
+  33 | test "g's own code is held to its scope" uses file.read("a/"), file.read("b/") {
+     | ^^^^
+  fix: replace with `uses file.read("a/") `
+PASS a callback under g reads what the test may read (0ms)
+ERROR g's own code is held to its scope (0ms)
+  main.vo:3:11: runtime error[R0010]: file.read("b/y.txt") is not allowed: `g` declares file.read("a/"), E.
+    at rd (main.vo:3:11)
+        p: str = "b/y.txt"
+    at g (main.vo:22:12)
+        p: str = "b/y.txt", f: fn() -> str = <fn() -> str>
+    at test "g's own code is held to its scope" (main.vo:34:15)
+PASS g under a property (100 cases, 0ms)
+2 passed, 0 failed, 1 errored
+--- stderr
+--- exit 1

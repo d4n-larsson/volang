@@ -11,6 +11,7 @@ import ctypes, os, subprocess, sys, tempfile, threading
 VO = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else
                      os.path.join(os.path.dirname(__file__), "..", "..", "build", "vo"))
 RUNS = int(sys.argv[2]) if len(sys.argv) > 2 else 300
+GENERIC = len(sys.argv) > 3  # spec 062: the helper with an effect parameter (the default run does both)
 PROGRAM = """fn get(p: str) -> str uses file.read("data/sub/") {
     match read_file(p) {
         case ok(s) {
@@ -37,6 +38,10 @@ os.makedirs(os.path.join(d, "data", "sub"))
 os.mkdir(os.path.join(d, "outside"))
 open(os.path.join(d, "data", "sub", "x"), "w").write("benign")
 open(os.path.join(d, "outside", "x"), "w").write("TOPSECRET")
+if GENERIC:
+    PROGRAM = PROGRAM.replace('fn get(p: str) -> str uses file.read("data/sub/") {',
+                              'fn get[E: effects](p: str, f: fn() -> str uses E) -> str uses E, file.read("data/sub/") {\n    let _ = f();'
+                              ).replace('get("data/sub/x")', 'get("data/sub/x", fn() => "")')
 open(os.path.join(d, "main.vo"), "w").write(PROGRAM)
 os.symlink("../outside", os.path.join(d, "data", "lnk"))
 libc = ctypes.CDLL(None, use_errno=True)
@@ -58,5 +63,7 @@ finally:
     stop = True
     t.join()
     subprocess.run(["rm", "-rf", d])
-print(f"nested_race: {RUNS} runs, {won} reads outside the outer scope")
-sys.exit(1 if won else 0)
+print(f"nested_race{' (generic helper)' if GENERIC else ''}: {RUNS} runs, {won} reads outside the outer scope")
+if won or GENERIC:
+    sys.exit(1 if won else 0)
+sys.exit(subprocess.run([sys.executable, __file__, VO, str(RUNS), "generic"]).returncode)

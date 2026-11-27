@@ -1,0 +1,13 @@
+$ vo run main.vo
+inside -
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("b/y.txt") is not allowed: `g` declares file.read("a/"), E.
+   3 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at rd (main.vo:3:11)
+      p: str = "b/y.txt"
+  at g (main.vo:22:12)
+      p: str = "b/y.txt", f: fn() -> str = <fn() -> str>
+  at main (main.vo:27:11)
+--- exit 70

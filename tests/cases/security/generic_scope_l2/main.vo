@@ -1,0 +1,33 @@
+# Spec 062 (research L2): g's anonymous function kept after g returned, run inside a scoped function.
+fn rd(p: str) -> str uses file.read {
+    match read_file(p) {
+        case ok(s) {
+            return trim(s);
+        }
+        case err(_) {
+            return "err";
+        }
+    }
+}
+
+fn apply[E: effects](f: fn() -> str uses E) -> str uses E {
+    return f();
+}
+
+fn outside() -> str {
+    return "b/y.txt";
+}
+
+fn h_scoped(k: fn() -> str uses file.read) -> str uses file.read("c/") {
+    return k();
+}
+
+fn keep[E: effects](f: fn() -> str uses E) -> fn() -> str uses E, file.read("a/") {
+    return fn() => f();
+}
+
+fn main() uses console, file.read("a/"), file.read("b/"), file.read("c/") {
+    let l = keep(fn() => rd(outside()));
+    print(l());
+    print(h_scoped(l));
+}

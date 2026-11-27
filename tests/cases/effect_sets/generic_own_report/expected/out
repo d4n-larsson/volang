@@ -1,0 +1,16 @@
+$ vo run main.vo
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("b/y.txt") is not allowed: `g` declares file.read("a/"), E.
+   3 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at rd (main.vo:3:11)
+      p: str = "b/y.txt"
+  at g (main.vo:22:12)
+      p: str = "b/y.txt", f: fn() -> str uses file.read = <fn() -> str uses file.read>
+  at main (main.vo:26:11)
+--- exit 70
+$ vo run --json main.vo
+--- stderr
+{"v":1,"kind":"runtime_error","code":"R0010","name":"capability_denied","message":"file.read(\"b/y.txt\") is not allowed: `g` declares file.read(\"a/\"), E.","file":"main.vo","start":{"line":3,"col":11},"end":{"line":3,"col":23},"effect":"file.read","target":"b/y.txt","allowed":["a/"],"declared_by":"g","trace":[{"function":"rd","file":"main.vo","start":{"line":3,"col":11},"locals":[{"name":"p","type":"str","value":"\"b/y.txt\""}]},{"function":"g","file":"main.vo","start":{"line":22,"col":12},"locals":[{"name":"p","type":"str","value":"\"b/y.txt\""},{"name":"f","type":"fn() -> str uses file.read","value":"<fn() -> str uses file.read>"}]},{"function":"main","file":"main.vo","start":{"line":26,"col":11},"locals":[]}]}
+--- exit 70

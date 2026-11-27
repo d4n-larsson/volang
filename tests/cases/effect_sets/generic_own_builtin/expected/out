@@ -1,0 +1,16 @@
+$ vo run main.vo
+other
+inside 
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("b/y.txt") is not allowed: `each_own` declares file.read("a/"), E.
+   3 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at rd (main.vo:3:11)
+      p: str = "b/y.txt"
+  at anonymous function (main.vo:26:34)
+      x: str = "b/y.txt"
+  at each_own (main.vo:26:17)
+      xs: list[str] = ["b/y.txt"], f: fn(str) -> str uses file.read = <fn(str) -> str uses file.read>
+  at main (main.vo:32:11)
+--- exit 70

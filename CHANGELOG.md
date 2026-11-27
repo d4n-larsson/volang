@@ -4,6 +4,21 @@ What changed in each released version of vo, for people and agents who use it. T
 decision is in [`specs/`](specs/) and summarized in [`docs/roadmap.md`](docs/roadmap.md); what a version
 may and may not change is in [`docs/stability.md`](docs/stability.md).
 
+## Unreleased
+
+- **A generic function's own scopes are enforced (spec 062).** A function with an effect parameter that
+  declares scopes, `fn load[E: effects](..., f: fn() uses E) uses E, file.read("cache/")`, was not held to
+  them when its caller declared more: its own code could read wherever the caller could. It is now
+  stopped with R0010 naming the function, as a function without an effect parameter always was. What it
+  is passed (`f`) still does what the caller may do. **This can stop a program that ran before.** If it
+  does: widen the function's own scope to what its code touches, or pass that work in as a function.
+- **Bug sweep of the C code** ([docs/bug-sweep-2026-11-27.md](docs/bug-sweep-2026-11-27.md)): 38 findings
+  fixed, among them `filter` reading outside a list its callback shrank, `set` on a function name passing
+  the checker, a server ended by requests that only announce a body, and `vo package --repair` deleting
+  a directory a hostile `vo.packages` named. Changes you may notice: `write_file`, `vo fmt`, `vo edit` and
+  `vo package` report a write that failed (T0009); a record field given twice is E0202; `--timeout` is at
+  most 1,000,000,000; a `sort_by` key may be a `bool` or a variant.
+
 ## 0.7.0
 
 - **Versioned packages (spec 061).** `vo package ENTRY NAME https://HOST/REPO[@VERSION]` adds a version of a

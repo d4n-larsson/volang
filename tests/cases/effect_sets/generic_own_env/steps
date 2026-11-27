@@ -1,0 +1,6 @@
+write a/x.txt inside\n
+write a/w.txt within\n
+write b/y.txt other\n
+write c/z.txt third\n
+write secret.txt secret\n
+env VO_A=one VO_B=two vo run main.vo

@@ -1,0 +1,45 @@
+$ request GET /ok
+HTTP/1.1 200 OK
+Content-Length: 13
+Connection: close
+
+inside other
+
+--- end
+$ request GET /own
+HTTP/1.1 500 Internal Server Error
+Content-Length: 0
+Connection: close
+
+
+--- end
+$ request GET /ok
+HTTP/1.1 200 OK
+Content-Length: 13
+Connection: close
+
+inside other
+
+--- end
+$ signal TERM
+serving
+--- stderr
+service.vo:5:11: runtime error[R0010]: file.read("b/y.txt") is not allowed: `g` declares file.read("a/"), E.
+   5 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at rd (service.vo:5:11)
+      p: str = "b/y.txt"
+  at g (service.vo:24:12)
+      p: str = "b/y.txt", f: fn() -> str = <fn() -> str>
+  at handle (service.vo:30:20)
+      r: Request = new Request { method: "GET", path: "/own", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = ""
+  at anonymous function (std/http.vo:418:58)
+      raw: str = "GET /own HTTP/1.1\r\nHost: localhost\r\n\r\n", handle: fn(Request) -> Response uses file.read("a/", "b/") = <fn(Request) -> Response uses file.read("a/", "b/")>, req: Request = new Request { method: "GET", path: "/own", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }, body: str = "", r: Request = new Request { method: "GET", path: "/own", query: "", headers: [new Header { name: "Host", value: "localhost" }], body: "" }
+  at serve_loop (std/http.vo:491:15)
+      address: str = "{vport}", answer: fn(str) -> str uses file.read("a/", "b/") = <fn(str) -> str uses file.read("a/", "b/")>, listener: int = 4, raw: str = "GET /own HTTP/1.1\r\nHost: localhost\r\n\r\n"
+  at serve (std/http.vo:430:12)
+      address: str = "{vport}", handle: fn(Request) -> Response uses file.read("a/", "b/") = <fn(Request) -> Response uses file.read("a/", "b/")>, answer: fn(str) -> str uses file.read("a/", "b/") = <fn(str) -> str uses file.read("a/", "b/")>
+  at main (service.vo:39:9)
+{"time":"{time}","level":"info","message":"stopped","drain_s":30,"drained":0,"cut_off":0}
+--- exit 0

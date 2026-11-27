@@ -372,6 +372,12 @@
 #define NF_PAIR (16384) /* spec 046: N_FOR with two variables (`for k, v in m`) */
 #define NF_ARROW (32768) /* spec 059: N_LAMBDA written `fn(a) => expr` (D: a block of one N_RETURN of expr) */
 #define FOR_END(st) (((st)->flags & NF_PAIR) ? (Node *)0 : (st)->c.n) /* the range end of a `for a..b` */
+/* Spec 062: N_CALL and N_CALL_VALUE only (the value of NF_PAIR, which only N_FOR carries). On a call of
+ * a function value (also one handed to a builtin): the effects of its type are effect parameters of the
+ * function the call is written in, and nothing else. On a generic function called by name: its effect
+ * parameters are bound to such parameters and nothing else (it passes them on). The scope walk of
+ * src/rt_effects.c reads it. */
+#define NF_FX_PARAM (16384)
 #define NF_PAREN (256) /* expression written in parentheses (vo fmt keeps them around `and` in `or`) */
 
 /* builtin ids used outside check_expr.c (all ids: check_expr.c builtin_names) */
@@ -603,7 +609,8 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define CL_FN (8)
 #define CL_N (16)
 #define CL_TARGS (24)
-#define CL_CAPS (32)
+#define CL_OWNER (32) /* spec 062: serial of the generic activation it was created under | 0 */
+#define CL_CAPS (40)
 
 /* ---- interpreter frames on the value stack: parent | fn node | call node | slots... ---- */
 #define FR_PARENT (0)
@@ -1184,11 +1191,13 @@ typedef struct Closure {
     Node *fn;
     long n;
     Vec *targs;
+    long owner;
     W caps[];
 } Closure;
 CHECK_OFFSET(Closure, fn, CL_FN);
 CHECK_OFFSET(Closure, n, CL_N);
 CHECK_OFFSET(Closure, targs, CL_TARGS);
+CHECK_OFFSET(Closure, owner, CL_OWNER);
 CHECK_OFFSET(Closure, caps, CL_CAPS);
 
 /* interpreter frames on the value stack */
@@ -1476,6 +1485,7 @@ extern void fx_render_written(SB *sb, Node *uses);
 extern void fx_begin(Node *item);
 extern Fx *fx_swap(Fx *fx);
 extern void fx_value_call(EffSet *effects);
+extern void fx_mark_param(Node *call, EffSet *effects, unsigned long own_mask);
 extern void fx_end(void);
 extern void fx_builtin(long id);
 extern void fx_call(Node *call, Node *decl);
@@ -2365,6 +2375,9 @@ extern long rt_random_int(long lo, long hi);
 extern long rt_now_ms(void);
 extern Variant *rt_env(Str *name);
 extern EffSet *rt_frame_effects(void);
+extern void fx_enter(Frame *f, Node *fn, long serial);
+extern long fx_serial_of(Frame *f);
+extern long fx_nacts;
 extern void rt_check_bit(long id);
 extern void rt_check_name(long bit, Str *name);
 extern void rt_check_path(long bit, Str *path);

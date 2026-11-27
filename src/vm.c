@@ -113,6 +113,13 @@ void *vm_push(void *cf_, void *decl_, void *call_, long *vals, void *closure_)
         f->effects = rt_es_grant(f->effects, caller ? caller->effects : 0);
     }
     GC_UNROOT(1);
+    if (fx_nacts || f->targs || (closure && (closure->owner || closure->targs))) { /* spec 062: activations the
+                                                                                     scope walk may have to name */
+        EffSet *own = decl->kind == N_TEST || !decl->a.n || !decl->a.n->b.fx ? 0 : decl->a.n->b.fx->declared;
+        if (closure && closure->owner) fx_enter(f, decl, closure->owner);
+        else if (own && decl->kind != N_LAMBDA && es_evar_count(own)) fx_enter(f, decl, 0);
+        else if (fx_nacts) fx_enter(f, decl, -1);
+    }
     if (closure) { /* its type arguments and captured values */
         f->targs = closure->targs;
         Vec *caps = decl->a.n->b.fx->caps;
@@ -719,6 +726,8 @@ op_call_generic: {
     nf->call = pc->node;
     nf->targs = gs->targs;
     nf->effects = rt_es_grant(eff0, frame->effects); /* spec 013 (C3) */
+    if (fx_nacts || (fx->declared && fx->declared->evars)) /* spec 062 (as vm_push) */
+        fx_enter(nf, gs->decl, fx->declared && es_evar_count(fx->declared) ? 0 : -1);
     nf->code = cf;
     nf->rpc = pc;
     nf->rdst = pc->a;

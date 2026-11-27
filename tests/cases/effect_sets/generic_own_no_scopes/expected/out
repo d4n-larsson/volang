@@ -1,0 +1,14 @@
+$ vo run main.vo
+other
+other other
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("secret.txt") is not allowed: `main` declares console, file.read("a/", "b/").
+   3 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at rd (main.vo:3:11)
+      p: str = "secret.txt"
+  at wide (main.vo:26:12)
+      p: str = "secret.txt", f: fn() -> str = <fn() -> str>
+  at main (main.vo:32:11)
+--- exit 70

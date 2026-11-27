@@ -1,0 +1,41 @@
+# Spec 062 (FR-010): a serve handler that calls a generic function with a scope of its own.
+import std.http;
+
+fn rd(p: str) -> str uses file.read {
+    match read_file(p) {
+        case ok(s) {
+            return trim(s);
+        }
+        case err(_) {
+            return "err";
+        }
+    }
+}
+
+fn apply[E: effects](f: fn() -> str uses E) -> str uses E {
+    return f();
+}
+
+fn outside() -> str {
+    return "b/y.txt";
+}
+
+fn g[E: effects](p: str, f: fn() -> str uses E) -> str uses E, file.read("a/") {
+    return rd(p) + " " + f();
+}
+
+fn handle(r: http.Request) -> http.Response uses file.read("a/"), file.read("b/") {
+    var body = "";
+    if r.path == "/own" {
+        set body = g(outside(), fn() => "-");
+    } else {
+        set body = g("a/x.txt", fn() => rd(outside()));
+    }
+    return new http.Response { status: 200, headers: new list[http.Header], body: body + "\n" };
+}
+
+fn main() -> result[void] uses console, serve("{vport}"), file.read("a/"), file.read("b/") {
+    print("serving");
+    try http.serve("{vport}", handle);
+    return ok();
+}

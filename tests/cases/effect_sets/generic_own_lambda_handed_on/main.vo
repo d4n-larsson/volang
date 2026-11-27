@@ -1,0 +1,28 @@
+# Spec 062 (US1, AC 5; research P3): an anonymous function written in g and handed to another generic function is g's own code.
+fn rd(p: str) -> str uses file.read {
+    match read_file(p) {
+        case ok(s) {
+            return trim(s);
+        }
+        case err(_) {
+            return "err";
+        }
+    }
+}
+
+fn apply[E: effects](f: fn() -> str uses E) -> str uses E {
+    return f();
+}
+
+fn outside() -> str {
+    return "b/y.txt";
+}
+
+fn g[E: effects](p: str, f: fn() -> str uses E) -> str uses E, file.read("a/") {
+    return apply(fn() => rd(p)) + " " + f();
+}
+
+fn main() uses console, file.read("a/"), file.read("b/") {
+    print(g("a/x.txt", fn() => "-"));
+    print(g(outside(), fn() => "-"));
+}

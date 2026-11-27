@@ -1,0 +1,13 @@
+$ env VO_A=one VO_B=two vo run main.vo
+one two
+--- stderr
+main.vo:22:11: runtime error[R0010]: env("VO_B") is not allowed: `ge` declares env("VO_A"), E.
+  22 |     match env(name) {
+     |           ^^^^^^^^^
+trace:
+  at value_of (main.vo:22:11)
+      name: str = "VO_B"
+  at ge (main.vo:33:12)
+      name: str = "VO_B", f: fn() -> str = <fn() -> str>
+  at main (main.vo:42:11)
+--- exit 70

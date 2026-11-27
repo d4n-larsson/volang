@@ -1,0 +1,7 @@
+write a/x.txt inside\n
+write b/y.txt other\n
+start vo run service.vo
+request GET /ok
+request GET /own
+request GET /ok
+signal TERM

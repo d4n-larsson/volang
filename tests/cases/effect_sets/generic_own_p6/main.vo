@@ -1,0 +1,44 @@
+# Spec 062 (FR-004): the callback handed on by a generic function that has scopes of its own to another that has them too: neither binds it; each binds its own code, and the outer one the inner one's code.
+fn rd(p: str) -> str uses file.read {
+    match read_file(p) {
+        case ok(s) {
+            return trim(s);
+        }
+        case err(_) {
+            return "err";
+        }
+    }
+}
+
+fn apply[E: effects](f: fn() -> str uses E) -> str uses E {
+    return f();
+}
+
+fn outside() -> str {
+    return "b/y.txt";
+}
+
+fn inner[E: effects](p: str, f: fn() -> str uses E) -> str uses E, file.read("a/") {
+    return rd(p) + " " + f();
+}
+
+fn outer[E: effects](p: str, q: str, f: fn() -> str uses E) -> str uses E, file.read("a/"), file.read("c/") {
+    return rd(q) + " " + inner(p, f);
+}
+
+fn loose[E: effects](p: str, f: fn() -> str uses E) -> str uses E, file.read {
+    return rd(p) + " " + f();
+}
+
+fn narrow[E: effects](p: str, f: fn() -> str uses E) -> str uses E, file.read("c/") {
+    return loose(p, f);
+}
+
+fn main() uses console, file.read("a/"), file.read("b/"), file.read("c/") {
+    print(outer("a/x.txt", "c/z.txt", fn() => rd(outside())));
+    print(narrow("c/z.txt", fn() => rd(outside())));
+    if len(args()) > 0 {
+        print(outer(outside(), "c/z.txt", fn() => "-"));
+    }
+    print(narrow("a/x.txt", fn() => "-"));
+}

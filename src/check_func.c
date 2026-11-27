@@ -318,6 +318,7 @@ Type *check_call_value(Node *node, Type *expected)
             if (check_argc(node, ct->a.v->n))
                 for (long i = 0; i < ct->a.v->n; i++) check_arg(node, i, vec_get(ct->a.v, i));
             fx_value_call(ct->decl.p);
+            fx_mark_param(node, ct->decl.p, 0);
             return ct->b.t;
         }
         ck_err1("E0303", node->a.n, "`$1` is not a function.", src_text(node->a.n));
@@ -435,6 +436,7 @@ Type *check_map_err(Node *call)
         return t_error;
     }
     fx_value_call(ft->decl.p);
+    fx_mark_param(call, ft->decl.p, 0);
     if (ret->kind == TY_VOID || ty_has_func(ret)) {
         ck_err1("E0334", call->b.v->data[1].n,
                 "The error of a `result` is a value the caller can read and print: `$1` cannot be one.", ty_name(ret));
@@ -481,6 +483,7 @@ Type *check_hof(Node *call, long id)
         return bool_or_bad;
     }
     fx_value_call(ft->decl.p);
+    fx_mark_param(call, ft->decl.p, 0);
     switch (id) { /* the result */
     case B_SORT_BY: {
         Type *key = ft->b.t; /* the key must be ordered, by the test of `sort`, `min` and `max` */

@@ -1,0 +1,27 @@
+# Spec 062 (research P4): g's own wrapper around the callback, run by another generic function: the wrapper's read is g's, the callback's is the caller's.
+fn rd(p: str) -> str uses file.read {
+    match read_file(p) {
+        case ok(s) {
+            return trim(s);
+        }
+        case err(_) {
+            return "err";
+        }
+    }
+}
+
+fn apply[E: effects](f: fn() -> str uses E) -> str uses E {
+    return f();
+}
+
+fn outside() -> str {
+    return "b/y.txt";
+}
+
+fn g[E: effects](p: str, f: fn() -> str uses E) -> str uses E, file.read("a/") {
+    return apply(fn() => rd(p) + "+" + f());
+}
+
+fn main() uses console, file.read("a/"), file.read("b/") {
+    print(g("a/x.txt", fn() => rd(outside())));
+}

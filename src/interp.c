@@ -171,6 +171,8 @@ static void report_json(SB *sb, char *code, Str *message, Node *node)
 /* Stops the program with a runtime error report (or returns to the test runner). */
 void rt_raise(char *code, Str *message, Node *node)
 {
+    GC_ROOT(&message); /* often new (rt_raise_c): the trace and the report allocate before they read it.
+                          Never unrooted: this does not return, and a recovery restores the root count */
     render_depth = 0; /* spec 013: a raise unwinds any rendering in progress */
     coll_reset_active(); /* spec 014: and any collection operation */
     rt_err_code = (long)code;
@@ -432,6 +434,7 @@ Closure *make_closure(Node *lambda)
     c->fn = lambda;
     c->n = n;
     c->targs = ((Frame *)cur_frame)->targs;
+    c->owner = fx_nacts ? fx_serial_of((Frame *)cur_frame) : 0; /* spec 062: the generic activation it is written under */
     for (long i = 0; i < n; i++) c->caps[i].i = *local_addr(((Capture *)vec_get(caps, i))->outer);
     return c;
 }

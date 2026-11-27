@@ -1,0 +1,31 @@
+# Spec 062 (FR-010): the generic function's own scope when recording and when replaying (the files are gone by then).
+fn rd(p: str) -> str uses file.read {
+    match read_file(p) {
+        case ok(s) {
+            return trim(s);
+        }
+        case err(_) {
+            return "err";
+        }
+    }
+}
+
+fn apply[E: effects](f: fn() -> str uses E) -> str uses E {
+    return f();
+}
+
+fn outside() -> str {
+    return "b/y.txt";
+}
+
+fn g[E: effects](p: str, f: fn() -> str uses E) -> str uses E, file.read("a/") {
+    return rd(p) + " " + f();
+}
+
+fn main() uses console, file.read("a/"), file.read("b/") {
+    if len(args()) == 0 {
+        print(g("a/x.txt", fn() => rd(outside())));
+    } else {
+        print(g(outside(), fn() => "-"));
+    }
+}

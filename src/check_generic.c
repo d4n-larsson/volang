@@ -697,10 +697,15 @@ Type *check_generic_call(Node *call, Node *decl, Type *expected)
     if (declared && file_get((int)decl->file)->std) { /* spec 011: as for non-generic library calls (fx_call), */
         EffSet *params = es_new(0);                   /* its own effects are needed in any scope, and its */
         params->evars = declared->evars;              /* effect parameters as bound at this call */
-        fx_value_call(es_subst(params, decl, targs));
+        EffSet *bound = es_subst(params, decl, targs);
+        fx_value_call(bound);
+        fx_mark_param(call, bound, 0);
         if (ck_fx && ck_fx->direct) ck_fx->direct->any |= declared->mask;
     } else if (declared) {
         fx_value_call(es_subst(declared, decl, targs));
+        EffSet *params = es_new(0); /* spec 062: what its effect parameters alone are bound to at this call */
+        params->evars = declared->evars;
+        fx_mark_param(call, es_subst(params, decl, targs), 0);
     }
     return ty_subst(decl->type, decl, targs);
 }

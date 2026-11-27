@@ -1,0 +1,31 @@
+# Spec 062 (research L1): g's anonymous function, run inside a scoped function by code the caller passed: that function's scope applies.
+fn rd(p: str) -> str uses file.read {
+    match read_file(p) {
+        case ok(s) {
+            return trim(s);
+        }
+        case err(_) {
+            return "err";
+        }
+    }
+}
+
+fn apply[E: effects](f: fn() -> str uses E) -> str uses E {
+    return f();
+}
+
+fn outside() -> str {
+    return "b/y.txt";
+}
+
+fn h_scoped(k: fn() -> str uses file.read) -> str uses file.read("c/") {
+    return k();
+}
+
+fn g1[E: effects](f: fn() -> str uses E, run: fn(fn() -> str uses E) -> str uses E) -> str uses E, file.read("a/") {
+    return rd("a/x.txt") + " " + run(fn() => f());
+}
+
+fn main() uses console, file.read("a/"), file.read("b/"), file.read("c/") {
+    print(g1(fn() => rd(outside()), fn(k) => h_scoped(k)));
+}

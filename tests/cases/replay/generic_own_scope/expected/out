@@ -1,0 +1,32 @@
+$ vo run --record ok.jsonl main.vo
+inside other
+--- stderr
+--- exit 0
+$ vo run --record refused.jsonl main.vo -- refused
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("b/y.txt") is not allowed: `g` declares file.read("a/"), E.
+   3 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at rd (main.vo:3:11)
+      p: str = "b/y.txt"
+  at g (main.vo:22:12)
+      p: str = "b/y.txt", f: fn() -> str = <fn() -> str>
+  at main (main.vo:29:15)
+--- exit 70
+$ vo replay ok.jsonl
+inside other
+--- stderr
+--- exit 0
+$ vo replay refused.jsonl
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("b/y.txt") is not allowed: `g` declares file.read("a/"), E.
+   3 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at rd (main.vo:3:11)
+      p: str = "b/y.txt"
+  at g (main.vo:22:12)
+      p: str = "b/y.txt", f: fn() -> str = <fn() -> str>
+  at main (main.vo:29:15)
+--- exit 70

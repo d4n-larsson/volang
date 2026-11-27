@@ -577,7 +577,7 @@ variant Tree[T] { leaf; node(Node[T]); }
 fn each[T, E: effects](xs: list[T], f: fn(T) uses E) uses E { ... }
 ```
 
-- Type parameters follow the name. A plain `T` supports only `==` and `!=`; `T: ordered` also `<`, `<=`, `>`, `>=`, `min`, `max` and `sort`, and must be an ordered type (Operators; E0311, E0313). `T: json` is any type made of scalars, `bytes`, lists, `map[str, V]`, records and variants (E0328 otherwise). `K: key` is a map key type (E0309). `E: effects` is an effect parameter: whatever effects the function passed in has, the caller needs.
+- Type parameters follow the name. A plain `T` supports only `==` and `!=`; `T: ordered` also `<`, `<=`, `>`, `>=`, `min`, `max` and `sort`, and must be an ordered type (Operators; E0311, E0313). `T: json` is any type made of scalars, `bytes`, lists, `map[str, V]`, records and variants (E0328 otherwise). `K: key` is a map key type (E0309). `E: effects` is an effect parameter: callers need the passed function's effects; own scopes bind own code.
 - Generic types are written with their arguments: `Pair[int, str]` (E0312).
 - Type arguments are never written at calls, and may be left out of `new` and of cases: they come from the arguments or field values, then from the expected type (a parameter, a return type, an annotated variable): `insert(Tree.leaf, 5)`, `new Pair { first: 1, second: "a" }`. Effect arguments come from the expected type first when it has them, so values with fewer effects fit a declared `list[Route[uses file.read]]`; a type's effects allow any scope. When they cannot be inferred, annotate the variable (E0310).
 - Generic code is checked once, where it is written.

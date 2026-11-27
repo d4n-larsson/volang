@@ -99,6 +99,8 @@ static void stamp_into(SB *sb, long ms)
 void rt_log_write(long level, Str *message, Str *fields)
 {
     if (!cap_on && level < opt_log_level) return;
+    GC_ROOT(&message); /* C callers pass new strings (sv_stopped): they were collected under sb_new */
+    GC_ROOT(&fields);
     SB *sb = sb_new();
     GC_ROOT(&sb);
     sb_cstr(sb, "{\"time\":");
@@ -118,7 +120,7 @@ void rt_log_write(long level, Str *message, Str *fields)
     }
     sb_cstr(sb, "}\n");
     Str *line = sb_finish(sb);
-    GC_UNROOT(1);
+    GC_UNROOT(3);
     if (cap_on) {
         cap_bytes(line->data, line->len);
         if (log_kept_len + line->len <= CAP_MAX) { /* ponytail: a test keeps its first 64 KiB of records */

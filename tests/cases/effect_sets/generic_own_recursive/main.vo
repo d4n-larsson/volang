@@ -1,0 +1,31 @@
+# Spec 062 (research R7): a generic function calling itself; an anonymous function of the outer call run under the inner one.
+fn rd(p: str) -> str uses file.read {
+    match read_file(p) {
+        case ok(s) {
+            return trim(s);
+        }
+        case err(_) {
+            return "err";
+        }
+    }
+}
+
+fn apply[E: effects](f: fn() -> str uses E) -> str uses E {
+    return f();
+}
+
+fn outside() -> str {
+    return "b/y.txt";
+}
+
+fn deep[E: effects](n: int, p: str, f: fn() -> str uses E) -> str uses E, file.read("a/") {
+    if n == 0 {
+        return rd(p) + " " + f();
+    }
+    return deep(n - 1, p, fn() => rd("a/x.txt") + "+" + f());
+}
+
+fn main() uses console, file.read("a/"), file.read("b/") {
+    print(deep(2, "a/x.txt", fn() => rd(outside())));
+    print(deep(2, outside(), fn() => "-"));
+}

@@ -127,11 +127,13 @@ static long fs_mkdir_one(Str *path, long *kind)
     long parent;
     if (rt_bit_scoped(EF_FWRITE)) {
         Str *resolved = rt_resolve(path); /* the scope directory itself: its parent outside the scope */
+        Str *dir = 0;
+        GC_ROOT(&resolved); /* both read after allocations below (they were collected under them) */
+        GC_ROOT(&dir);
         long cut = resolved ? resolved->len : 0;
         while (cut > 0 && resolved->data[cut - 1] != '/') cut--;
         int is_scope = 0;
         if (resolved) {
-            GC_ROOT(&resolved);
             Str *pname = 0;
             GC_ROOT(&pname);
             long fd = rt_open_parent(EF_FWRITE, path, &pname, 0);
@@ -143,17 +145,18 @@ static long fs_mkdir_one(Str *path, long *kind)
                 sys_close((int)fd);
             }
             if (fd < 0 && !is_scope) {
-                GC_UNROOT(4);
+                GC_UNROOT(5);
                 return fd;
             }
-            GC_UNROOT(2);
+            GC_UNROOT(1);
         }
         if (is_scope) {
-            Str *dir = cut > 1 ? str_new(resolved->data, cut - 1) : str_from_cstr("/");
+            dir = cut > 1 ? str_new(resolved->data, cut - 1) : str_from_cstr("/");
             name = str_new(resolved->data + cut, resolved->len - cut);
             parent = vo_syscall4(SYS_openat, AT_FDCWD, (long)dir->data, O_PATH | O_DIRECTORY | O_CLOEXEC, 0);
         }
         if (!resolved) parent = -E_NOENT;
+        GC_UNROOT(2);
     } else {
         parent = rt_open_parent(EF_FWRITE, path, &name, 0);
     }
@@ -177,17 +180,19 @@ static Variant *fs_make_dir(Str *path)
     long end = path->len;
     while (end > 1 && path->data[end - 1] == '/') end--;
     long r = 0;
+    Str *prefix = 0; /* rooted: the checks below allocate before they root their own copy */
+    GC_ROOT(&prefix);
     for (long i = 0; i <= end; i++) {
         if (i < end && path->data[i] != '/') continue;
         if (i == 0 || path->data[i - 1] == '/') continue; /* "/", "//" */
-        Str *prefix = str_new(path->data, i);
+        prefix = str_new(path->data, i);
         if (!rt_path_allowed(EF_FWRITE, prefix)) continue; /* above the scope: must exist already */
         long kind = 0;
         r = fs_mkdir_one(prefix, &kind);
         if (r == -E_EXIST) r = kind == S_IFDIR ? 0 : i == end ? -E_EXIST : -E_NOTDIR;
         if (r < 0) break;
     }
-    GC_UNROOT(1);
+    GC_UNROOT(2);
     return r < 0 ? fs_err(r) : make_result(0, 0);
 }
 

@@ -1,0 +1,11 @@
+write a/x.txt inside\n
+write a/w.txt within\n
+write b/y.txt other\n
+write c/z.txt third\n
+write secret.txt secret\n
+vo run --record ok.jsonl main.vo
+vo run --record refused.jsonl main.vo -- refused
+rm a/x.txt
+rm b/y.txt
+vo replay ok.jsonl
+vo replay refused.jsonl

@@ -313,6 +313,18 @@ void fx_value_call(EffSet *effects)
     fx->direct = es_union(fx->direct, es_requirement(effects));
 }
 
+/* Spec 062: marks a call when effects (already in the caller's terms) are effect parameters only. For a
+ * call of a function value they are the effects of its type; for a generic function called by name,
+ * what its effect parameters are bound to (its own effects apart). own_mask: more effects to count in. */
+void fx_mark_param(Node *call, EffSet *effects, unsigned long own_mask)
+{
+    if (!call || !effects || (call->kind != N_CALL && call->kind != N_CALL_VALUE)) return;
+    if (own_mask || effects->mask || effects->any || (effects->scopes && effects->scopes->n) || !es_evar_count(effects))
+        call->flags &= (uint16_t)~NF_FX_PARAM; /* (checked again when a file is checked twice) */
+    else
+        call->flags |= NF_FX_PARAM;
+}
+
 void fx_end(void)
 {
     ck_fx = 0;

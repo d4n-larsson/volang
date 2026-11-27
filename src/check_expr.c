@@ -399,6 +399,7 @@ Type *check_builtin(Node *call, long id, Type *expected)
         if (ty_bad(ft) || ft->kind != TY_FUNC || ft->a.v->n != 1) return t_error;
         check_arg(call, 1, vec_get(ft->a.v, 0));
         fx_value_call(ft->decl.p);
+        fx_mark_param(call, ft->decl.p, 0);
         return ty_result(ft->b.t);
     }
     switch (id) {

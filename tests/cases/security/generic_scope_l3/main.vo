@@ -1,0 +1,32 @@
+# Spec 062 (research L3): an anonymous function of an earlier call of keep, given to a later generic call under a fixed type: the later call's scope applies.
+fn rd(p: str) -> str uses file.read {
+    match read_file(p) {
+        case ok(s) {
+            return trim(s);
+        }
+        case err(_) {
+            return "err";
+        }
+    }
+}
+
+fn apply[E: effects](f: fn() -> str uses E) -> str uses E {
+    return f();
+}
+
+fn outside() -> str {
+    return "b/y.txt";
+}
+
+fn keep[E: effects](f: fn() -> str uses E) -> fn() -> str uses E, file.read("a/") {
+    return fn() => f();
+}
+
+fn g3[E: effects](f: fn() -> str uses E, k: fn() -> str uses file.read) -> str uses E, file.read("a/") {
+    return f() + " " + k();
+}
+
+fn main() uses console, file.read("a/"), file.read("b/") {
+    let l = keep(fn() => rd(outside()));
+    print(g3(fn() => "-", l));
+}

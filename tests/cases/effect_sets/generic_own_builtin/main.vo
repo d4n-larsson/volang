@@ -1,0 +1,33 @@
+# Spec 062 (US2): a builtin given the passed-in function is transparent; given g's own anonymous function it is not.
+fn rd(p: str) -> str uses file.read {
+    match read_file(p) {
+        case ok(s) {
+            return trim(s);
+        }
+        case err(_) {
+            return "err";
+        }
+    }
+}
+
+fn apply[E: effects](f: fn() -> str uses E) -> str uses E {
+    return f();
+}
+
+fn outside() -> str {
+    return "b/y.txt";
+}
+
+fn each[E: effects](xs: list[str], f: fn(str) -> str uses E) -> str uses E, file.read("a/") {
+    return join(map(xs, f), ",");
+}
+
+fn each_own[E: effects](xs: list[str], f: fn(str) -> str uses E) -> str uses E, file.read("a/") {
+    return join(map(xs, fn(x) => rd(x)), ",") + " " + join(map(new list[str], f), ",");
+}
+
+fn main() uses console, file.read("a/"), file.read("b/") {
+    print(each([outside()], fn(x) => rd(x)));
+    print(each_own(["a/x.txt"], fn(x) => rd(x)));
+    print(each_own([outside()], fn(x) => rd(x)));
+}

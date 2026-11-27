@@ -1,0 +1,17 @@
+$ vo run main.vo
+inside inside+inside+other
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("b/y.txt") is not allowed: `deep` declares file.read("a/"), E.
+   3 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at rd (main.vo:3:11)
+      p: str = "b/y.txt"
+  at deep (main.vo:23:16)
+      n: int = 0, p: str = "b/y.txt", f: fn() -> str uses file.read = <fn() -> str uses file.read>
+  at deep (main.vo:25:12)
+      n: int = 1, p: str = "b/y.txt", f: fn() -> str uses file.read = <fn() -> str uses file.read>
+  at deep (main.vo:25:12)
+      n: int = 2, p: str = "b/y.txt", f: fn() -> str = <fn() -> str>
+  at main (main.vo:30:11)
+--- exit 70

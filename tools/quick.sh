@@ -74,7 +74,7 @@ scripts() { # one per line, with arguments
     web) printf '%s\n' doc_conformance.py "web_fuzz.py --quick" ;;
     text) printf '%s\n' doc_conformance.py catalog.py ref_examples.py strings.py ;; # spec 042
     postgres) echo postgres.py ;; # spec 049
-    effects) printf '%s\n' fmt_corpus.py catalog.py effect_sets_records.py apply_fixes.py "scope_paths.py --count 300 --seed 1" "scope_fuzz.py --iterations 300 --seed 1" ;; # spec 050
+    effects) printf '%s\n' fmt_corpus.py catalog.py effect_sets_records.py apply_fixes.py "scope_paths.py --count 300 --seed 1" "scope_fuzz.py --iterations 300 --seed 1" "scope_calls.py --iterations 300 --seed 1" ;; # spec 050, 062
     const) printf '%s\n' apply_fixes.py catalog.py fmt_corpus.py ref_examples.py const_equiv.py ;; # spec 031
     typed_errors) printf '%s\n' catalog.py apply_fixes.py ref_examples.py doc_conformance.py ;; # spec 032
     map_keys) printf '%s\n' catalog.py apply_fixes.py ref_examples.py doc_conformance.py ;; # spec 033

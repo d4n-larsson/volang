@@ -1,0 +1,32 @@
+$ vo run main.vo
+third inside other
+third other
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("a/x.txt") is not allowed: `narrow` declares file.read("c/"), E.
+   3 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at rd (main.vo:3:11)
+      p: str = "a/x.txt"
+  at loose (main.vo:30:12)
+      p: str = "a/x.txt", f: fn() -> str = <fn() -> str>
+  at narrow (main.vo:34:12)
+      p: str = "a/x.txt", f: fn() -> str = <fn() -> str>
+  at main (main.vo:43:11)
+--- exit 70
+$ vo run main.vo -- inner
+third inside other
+third other
+--- stderr
+main.vo:3:11: runtime error[R0010]: file.read("b/y.txt") is not allowed: `inner` declares file.read("a/"), E.
+   3 |     match read_file(p) {
+     |           ^^^^^^^^^^^^
+trace:
+  at rd (main.vo:3:11)
+      p: str = "b/y.txt"
+  at inner (main.vo:22:12)
+      p: str = "b/y.txt", f: fn() -> str = <fn() -> str>
+  at outer (main.vo:26:26)
+      p: str = "b/y.txt", q: str = "c/z.txt", f: fn() -> str = <fn() -> str>
+  at main (main.vo:41:15)
+--- exit 70

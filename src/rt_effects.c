@@ -228,24 +228,144 @@ static int grant_has_bit(EffSet *e, long bit)
     return e && ((e->mask | e->any) & (unsigned long)bit); /* any-scope bits count too */
 }
 
-/* The next frame outwards from `after` (0: from the running frame) whose grant scopes bit, skipping a
- * frame that holds the same set as the frame below it (library and anonymous functions, recursion);
- * after the chain, the root frame when the chain did not reach it. 0 at the end.
- * ponytail: linear in the call depth for each scoped operation (calls and unscoped effects cost
- * nothing); if deep recursion around file or network operations shows up in a profile, give frames a
- * link to the nearest caller with a different scoped set. */
-static Frame *path_scoped(Frame *after, long bit)
+/* ---- spec 062: which declarations on the call path bind a target (contracts/call-path.md) ----
+ * The walk reads each function's own declaration, not the frame's merged set (for a function with
+ * effect parameters the merged set is the union with its caller's grant, which loses its scopes).
+ * A call of a function value typed with effect parameters only (NF_FX_PARAM) is transparent: what
+ * runs below it is the caller's effect parameter at work, so the caller's own scopes say nothing about
+ * it, and the walk carries that on (`carried`): a generic function called by name that was handed the
+ * parameter on (NF_FX_PARAM on that call) is transparent for it too, while one whose own code supplied
+ * the function binds it. When the transparent call is written in an anonymous function, the activation
+ * that created the anonymous function is exempt as well; it is named exactly, by a serial, because a
+ * frame address alone can be a later call of the same function. */
+
+/* Activations that can be exempt or name one: frames of named functions with effect parameters (a
+ * new serial each) and frames of anonymous functions created under one (its serial). Ordered by frame
+ * address; a frame being entered first drops the entries at or above it (those frames returned).
+ * ponytail: 256 entries; when full a frame is not entered and nothing is exempted on its account (the
+ * walk then binds more functions, never fewer). A frame field instead, if generic recursion deeper
+ * than this around scoped operations ever shows in a profile. */
+typedef struct FxAct {
+    Frame *frame;
+    Node *fn;
+    long serial;
+} FxAct;
+#define FX_ACTS 256
+static FxAct fx_acts[FX_ACTS];
+long fx_nacts;
+static long fx_serials;
+
+/* serial 0: a new one (a named function with effect parameters); -1: only drop the returned frames. */
+void fx_enter(Frame *f, Node *fn, long serial)
 {
-    Frame *f = after ? after->parent : (Frame *)cur_frame;
-    Frame *last = after;
-    EffSet *prev = after ? after->effects : 0;
-    for (; f; last = f, f = f->parent) {
-        if (f->effects == prev) continue;
-        prev = f->effects;
-        if (prev && es_scoped(prev, bit)) return f;
+    while (fx_nacts && (unsigned long)fx_acts[fx_nacts - 1].frame >= (unsigned long)f) fx_nacts--;
+    if (serial < 0 || fx_nacts == FX_ACTS) return;
+    fx_acts[fx_nacts++] = (FxAct){f, fn, serial ? serial : ++fx_serials};
+}
+
+/* The serial f was entered with, or 0. */
+long fx_serial_of(Frame *f)
+{
+    for (long i = fx_nacts - 1; i >= 0 && (unsigned long)fx_acts[i].frame >= (unsigned long)f; i--)
+        if (fx_acts[i].frame == f && fx_acts[i].fn == f->fn) return fx_acts[i].serial;
+    return 0;
+}
+
+/* The scopes f's function wrote: its declaration (a test's clause); 0 for a frame that has none
+ * (anonymous functions, standard-library functions, whose declarations are cleared before a run). */
+static EffSet *frame_own(Frame *f)
+{
+    Node *decl = f->fn;
+    if (decl->kind == N_TEST) return decl->d.fx ? decl->d.fx->declared : 0;
+    return decl->a.n && decl->a.n->b.fx ? decl->a.n->b.fx->declared : 0;
+}
+
+typedef struct PathIt {
+    long bit;
+    Frame *y;      /* the frame the walk is at */
+    EffSet *set;   /* the scoped set of the frame last returned: what the target is checked against */
+    long pend[8];  /* serials of exempt activations not reached yet (ponytail: 8; a ninth is not exempted) */
+    int npend;
+    int carried;   /* what is being checked runs as an effect parameter of the frame the walk is at */
+    int root_seen; /* the root frame was judged on the way (not skipped) */
+    int done;
+} PathIt;
+
+static Frame *path_next(PathIt *it);
+
+/* The first frame, from the running one outwards, whose own declaration scopes bit; path_next the
+ * following ones; after the chain the root frame (its grant) when the walk did not judge it. 0 at
+ * the end. A set equal to the one last returned is not returned again (recursion).
+ * ponytail: linear in the call depth for each scoped operation (calls and unscoped effects cost
+ * nothing). */
+static Frame *path_first(PathIt *it, long bit)
+{
+    *it = (PathIt){.bit = bit};
+    Frame *f = (Frame *)cur_frame;
+    it->y = f;
+    if (!f) {
+        it->done = 1;
+        return 0;
     }
-    Frame *root = rt_root();
-    if (root && last != root && root->effects && es_scoped(root->effects, bit)) return root;
+    if (f == rt_root()) it->root_seen = 1;
+    EffSet *own = f == rt_root() ? f->effects : frame_own(f);
+    /* performed by the body of a function that declares the effect only through its parameters */
+    it->carried = own && es_evar_count(own) && !((own->mask | own->any) & (unsigned long)bit);
+    if (own && es_scoped(own, bit)) {
+        it->set = own;
+        return f;
+    }
+    return path_next(it);
+}
+
+static Frame *path_next(PathIt *it)
+{
+    while (!it->done) {
+        Frame *y = it->y, *p = y->parent;
+        if (!p) {
+            it->done = 1;
+            Frame *root = rt_root();
+            if (root && !it->root_seen && root->effects && root->effects != it->set && es_scoped(root->effects, it->bit)) {
+                it->set = root->effects;
+                return root;
+            }
+            return 0;
+        }
+        it->y = p;
+        int skip = 0, carried = 0;
+        Node *call = y->call;
+        int marked = call && (call->kind == N_CALL || call->kind == N_CALL_VALUE) && (call->flags & NF_FX_PARAM);
+        int by_name = call && call->kind == N_CALL && !call->d.i && call->c.n == y->fn;
+        if (marked && !by_name) { /* a function value of p's effect parameters: p's scopes say nothing */
+            skip = carried = 1;
+            if (p->fn->kind == N_LAMBDA && fx_nacts) { /* written in an anonymous function: its creator is exempt */
+                long serial = fx_serial_of(p);
+                if (serial && it->npend < 8) it->pend[it->npend++] = serial;
+            }
+        } else if (marked && it->carried) { /* y was handed p's effect parameter, and that is what runs */
+            skip = carried = 1;
+        }
+        if (it->npend && p->fn->kind != N_LAMBDA) { /* an exempt activation is reached */
+            long serial = fx_serial_of(p);
+            for (int i = 0; serial && i < it->npend; i++)
+                if (it->pend[i] == serial) {
+                    it->pend[i] = it->pend[--it->npend];
+                    skip = carried = 1;
+                    break;
+                }
+        }
+        it->carried = carried;
+        if (p == rt_root()) { /* the root grant always binds */
+            it->root_seen = 1;
+            skip = 0;
+        }
+        if (skip) continue;
+        EffSet *own = p == rt_root() ? p->effects : frame_own(p);
+        if (own && own != it->set && es_scoped(own, it->bit)) {
+            it->set = own;
+            return p;
+        }
+    }
     return 0;
 }
 
@@ -262,7 +382,7 @@ static int grant_has_path(EffSet *e, long bit, Str *resolved)
     return 0;
 }
 
-static void rt_denied_by(Frame *f, long bit, Str *target);
+static void rt_denied_by(Frame *f, EffSet *declared, long bit, Str *target);
 static Frame *grant_frame(Frame *f);
 
 /* R0010 when builtin id's effect is not declared by the running function or test, or by the root. */
@@ -276,15 +396,16 @@ void rt_check_effect(long bit)
     if (!bit) return;
     if (!grant_has_bit(rt_frame_effects(), bit)) rt_denied(bit, 0);
     Frame *root = rt_root();
-    if (root && !grant_has_bit(root->effects, bit)) rt_denied_by(root, bit, 0);
+    if (root && !grant_has_bit(root->effects, bit)) rt_denied_by(root, root->effects, bit, 0);
 }
 
 /* Scoped env (or serve, process) effects: name must be one of the declared names, in every grant on
  * the call path that scopes the effect. */
 void rt_check_name(long bit, Str *name)
 {
-    for (Frame *f = path_scoped(0, bit); f; f = path_scoped(f, bit))
-        if (!es_has_pair(f->effects, bit, name)) rt_denied_by(grant_frame(f), bit, name);
+    PathIt it;
+    for (Frame *f = path_first(&it, bit); f; f = path_next(&it))
+        if (!es_has_pair(it.set, bit, name)) rt_denied_by(f, it.set, bit, name);
 }
 
 /* Spec 039: a connection to host:port needs a `net` scope naming the host, or the host with that port,
@@ -309,9 +430,9 @@ void rt_check_net(Str *host, long port)
     int_to_dec(sb, port);
     Str *both = sb_finish(sb);
     GC_UNROOT(1);
-    for (Frame *f = path_scoped(0, EF_NET); f; f = path_scoped(f, EF_NET))
-        if (!es_pair_covered(f->effects, EF_NET, both))
-            rt_denied_by(grant_frame(f), EF_NET, grant_ports(f->effects) ? both : host);
+    PathIt it;
+    for (Frame *f = path_first(&it, EF_NET); f; f = path_next(&it))
+        if (!es_pair_covered(it.set, EF_NET, both)) rt_denied_by(f, it.set, EF_NET, grant_ports(it.set) ? both : host);
 }
 
 /* Scoped file effects: the resolved path must lie under a resolved scope of every grant on the call
@@ -320,7 +441,8 @@ void rt_check_net(Str *host, long port)
  * so is every scoped access when the start directory is unknown (H2). */
 void rt_check_path(long bit, Str *path)
 {
-    Frame *first = path_scoped(0, bit); /* (one walk: the loop below goes on from it) */
+    PathIt it;
+    Frame *first = path_first(&it, bit); /* (one walk: the loop below goes on from it) */
     int scoped = first != 0;
     int nul = 0;
     for (long i = 0; i < path->len; i++) nul |= path->data[i] == 0;
@@ -330,17 +452,21 @@ void rt_check_path(long bit, Str *path)
     Str *resolved = rt_resolve_for(bit, path);
     GC_ROOT(&resolved);
     Frame *refused = 0;
-    for (Frame *f = first; f && !refused; f = path_scoped(f, bit))
-        if (!resolved || !grant_has_path(f->effects, bit, resolved)) refused = f;
+    for (Frame *f = first; f; f = path_next(&it))
+        if (!resolved || !grant_has_path(it.set, bit, resolved)) {
+            refused = f; /* (it.set stays its set) */
+            break;
+        }
     GC_UNROOT(2);
-    if (refused) rt_denied_by(grant_frame(refused), bit, path);
+    if (refused) rt_denied_by(refused, it.set, bit, path);
 }
 
 /* Spec 017: 1 when a grant on the call path scopes bit (operations then walk beneath the scopes, never
  * following links). */
 int rt_bit_scoped(long bit)
 {
-    return path_scoped(0, bit) != 0;
+    PathIt it;
+    return path_first(&it, bit) != 0;
 }
 
 /* Spec 017: 1 when rt_check_path(bit, path) would pass (without raising). */
@@ -354,8 +480,8 @@ int rt_path_allowed(long bit, Str *path)
     Str *resolved = rt_resolve_for(bit, path);
     GC_ROOT(&resolved);
     int ok = resolved != 0;
-    for (Frame *f = path_scoped(0, bit); f && ok; f = path_scoped(f, bit))
-        ok = grant_has_path(f->effects, bit, resolved);
+    PathIt it;
+    for (Frame *f = path_first(&it, bit); f && ok; f = path_next(&it)) ok = grant_has_path(it.set, bit, resolved);
     GC_UNROOT(2);
     return ok;
 }
@@ -505,7 +631,8 @@ static Frame *grant_frame(Frame *f)
 
 void rt_denied(long bit, Str *target)
 {
-    rt_denied_by(grant_frame((Frame *)cur_frame), bit, target);
+    Frame *gf = grant_frame((Frame *)cur_frame);
+    rt_denied_by(gf, gf ? gf->effects : 0, bit, target);
 }
 
 /* A target in an R0010 message: like a scope, with control bytes as \xNN (spec 013: a path with a NUL
@@ -529,9 +656,8 @@ static void render_target(SB *sb, Str *t)
 }
 
 /* R0010 naming the grant of frame gf: the running one's (via grant_frame) or the root's. */
-static void rt_denied_by(Frame *gf, long bit, Str *target)
+static void rt_denied_by(Frame *gf, EffSet *declared, long bit, Str *target)
 {
-    EffSet *declared = gf ? gf->effects : 0; /* (may be 0) */
     GC_ROOT(&target);
     Str *fn = frame_fn_name(gf); /* the function that declared them */
     GC_ROOT(&fn);
@@ -594,20 +720,20 @@ static void rt_denied_by(Frame *gf, long bit, Str *target)
  * from the outermost granted scope directory as rt_open_file does; with strict, a scope directory
  * itself is refused (R0010: delete and rename never remove a scope). Unscoped: the path's directory,
  * opened from the start directory. A negative errno on failure. */
-static long open_parent(long bit, Str *path, Str **name, int strict, Frame *first);
+static long open_parent(long bit, Str *path, Str **name, int strict, int scoped);
 
 long rt_open_parent(long bit, Str *path, Str **name, int strict)
 {
-    return open_parent(bit, path, name, strict, path_scoped(0, bit));
+    return open_parent(bit, path, name, strict, rt_bit_scoped(bit));
 }
 
-/* (first: the nearest frame whose grant scopes bit, or 0: the caller's one walk of the call path) */
-static long open_parent(long bit, Str *path, Str **name, int strict, Frame *first)
+/* (scoped: a declaration on the call path scopes bit) */
+static long open_parent(long bit, Str *path, Str **name, int strict, int scoped)
 {
     rt_start_cwd();
     long base = start_fd >= 0 ? start_fd : AT_FDCWD;
     GC_ROOT(&path);
-    if (!first) {
+    if (!scoped) {
         long cut = path->len;
         while (cut > 0 && path->data[cut - 1] == '/') cut--; /* "a/b/" names b */
         long slash = cut;
@@ -627,10 +753,11 @@ static long open_parent(long bit, Str *path, Str **name, int strict, Frame *firs
     GC_ROOT(&scope);
     GC_ROOT(&dir);
     int every = 1; /* every scoped grant on the call path still holds it, as when it was checked */
-    for (Frame *f = resolved ? first : 0; f; f = path_scoped(f, bit)) {
+    PathIt it;
+    for (Frame *f = resolved ? path_first(&it, bit) : 0; f; f = path_next(&it)) {
         int held = 0;
-        for (long i = 0; i < f->effects->scopes->n; i++) {
-            EffScope *sc = vec_get(f->effects->scopes, i);
+        for (long i = 0; i < it.set->scopes->n; i++) {
+            EffScope *sc = vec_get(it.set->scopes, i);
             if (sc->bit != bit) continue;
             Str *d = rt_resolve(sc->str);
             if (!d || !path_under(resolved, d)) continue;
@@ -677,11 +804,11 @@ long rt_open_file(long bit, Str *path, long flags)
 {
     rt_start_cwd();
     long base = start_fd >= 0 ? start_fd : AT_FDCWD;
-    Frame *first = path_scoped(0, bit);
-    if (!first) return vo_syscall4(SYS_openat, base, (long)path->data, flags | O_CLOEXEC, 0644);
+    int scoped = rt_bit_scoped(bit);
+    if (!scoped) return vo_syscall4(SYS_openat, base, (long)path->data, flags | O_CLOEXEC, 0644);
     Str *name = 0;
     GC_ROOT(&name);
-    long parent = open_parent(bit, path, &name, 0, first);
+    long parent = open_parent(bit, path, &name, 0, scoped);
     long r = parent;
     if (parent >= 0) {
         r = vo_syscall4(SYS_openat, parent, (long)name->data, flags | O_NOFOLLOW | O_CLOEXEC, 0644);

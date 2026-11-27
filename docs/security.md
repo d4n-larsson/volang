@@ -61,8 +61,13 @@ Each property is a claim the review must try to break; each break is a finding.
   every declaration on the call path that has scopes for the effect, from the running function to the
   root grant (`main`'s, or the test's or property's clause): file paths after
   resolving `.`, `..`, absolute paths and symbolic links; host names; variable names; serve addresses.
-  This holds inside library functions, anonymous functions and packages, which run with their caller's
-  grant, and during replay (lexically: replay never looks at the file system). A scoped file is opened
+  This holds inside library functions, anonymous functions and packages, which have no declaration of
+  their own and are bound by their callers', and during replay (lexically: replay never looks at the
+  file system). A function with an effect parameter is bound like any other for what its own code does
+  (its body, its anonymous functions, what they call by name). It does not bind what it reached only
+  through the parameter: a function value of type `fn() uses E`, also when a builtin or another generic
+  function runs it on its behalf; that code is bound by the functions that supplied it and their
+  callers (spec 062, `specs/062-generic-own-scope/contracts/call-path.md`). A scoped file is opened
   from its scope directory (itself opened from the directory the program started in) one path
   component at a time without following links, so a link swapped in after the check fails the open
   instead of escaping; links inside a scope that stay

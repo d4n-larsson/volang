@@ -1,0 +1,4 @@
+$ vo run main.vo
+inside+other
+--- stderr
+--- exit 0
