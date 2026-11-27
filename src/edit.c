@@ -223,6 +223,14 @@ static void ed_field_decl_change(Node *decl, Str *name, Str *type)
         long line_start_at;
         long indent = ed_line_indent(file, last->start, &line_start_at);
         long next = pos_line((int)file, q_last_member(decl->b.v)->end) + 1; /* after the field's line */
+        if (pos_line((int)file, (long)decl->end - 1) < next) { /* `record P { x: int; }`: before its `}`, on the line */
+            sb_str(sb, name);
+            sb_cstr(sb, ": ");
+            sb_str(sb, type);
+            sb_cstr(sb, "; ");
+            ed_add(file, (long)decl->end - 1, (long)decl->end - 1, sb_finish(sb));
+            return;
+        }
         if (next <= file_get((int)file)->nlines) {
             at = line_start((int)file, next);
             while (indent-- > 0) sb_byte(sb, ' ');

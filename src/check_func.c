@@ -483,13 +483,10 @@ Type *check_hof(Node *call, long id)
     fx_value_call(ft->decl.p);
     switch (id) { /* the result */
     case B_SORT_BY: {
-        Type *key = ft->b.t; /* the key must be ordered (spec 014: or a record of ordered fields) */
-        if (key->kind == TY_RECORD && !ty_ordered(key))
-            order_error(key, call->b.v->data[1].n, 0);
-        else if (key->kind != TY_INT && key->kind != TY_FLOAT && key->kind != TY_STR && key->kind != TY_BYTES &&
-                 key->kind != TY_RECORD &&
-                 !(key->kind == TY_PARAM && key->b.i == TPC_ORDERED)) /* spec 046: an `ordered` type parameter */
-            ck_err1("E0313", call->b.v->data[1].n, "`$1` is not ordered: a sort key must be `int`, `float` or `str`.",
+        Type *key = ft->b.t; /* the key must be ordered, by the test of `sort`, `min` and `max` */
+        Node *at = call->b.v->data[1].n;
+        if (!is_ordered_type(key, at) && !ck_param_order(key, at))
+            ck_err1("E0313", at, "`$1` is not ordered: a sort key must be an ordered type (`int`, `float`, `str`, `bool`, ...).",
                     ty_name(key));
         return t_void;
     }

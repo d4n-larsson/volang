@@ -2,6 +2,9 @@ $ vo edit rename main.vo Item.price name
 catalog.vo:12:17: error[E0305]: Missing fields in `Item`: `name`.
   12 |     push(items, new Item { sku: sku, name: name, price: price });
      |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+catalog.vo:12:50: error[E0202]: Field `name` is given twice: give every field once.
+  12 |     push(items, new Item { sku: sku, name: name, price: price });
+     |                                                  ^^^^^
 catalog.vo:12:57: error[E0301]: Expected `str`, found `int`.
   12 |     push(items, new Item { sku: sku, name: name, price: price });
      |                                                         ^^^^^
@@ -9,6 +12,6 @@ catalog.vo:12:57: error[E0301]: Expected `str`, found `int`.
 catalog.vo:19:19: error[E0308]: Operator `+` cannot be applied to `int` and `str`.
   19 |         set sum = sum + it.price;
      |                   ^^^^^^^^^^^^^^
-error[T0006]: Renaming `price` to `name` would not check (3 new errors): nothing was written.
+error[T0006]: Renaming `price` to `name` would not check (4 new errors): nothing was written.
 --- stderr
 --- exit 65

@@ -1,0 +1,8 @@
+$ vo package app/main.vo money money
+added money ../money sha256:4471b2f0e2814ce6e03ef05efa04c6f04fd6390158608cadf4144c7c9f1f9b31
+--- stderr
+--- exit 0
+$ vo package app/main.vo money money
+error[E0702]: Package `money`: the directory `money` has a directory that cannot be read, or a link leading outside it.
+--- stderr
+--- exit 65

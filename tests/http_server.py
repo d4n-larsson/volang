@@ -28,6 +28,7 @@ Routes:
   GET  /allbytes        200, application/octet-stream, the bytes 0..255 (spec 021)
   POST /echo-bytes      200, application/octet-stream, the request's body back unchanged (spec 021)
   GET  /hex/HEX         200, text/plain, the bytes HEX stands for, whatever they are (spec 021)
+  GET  /not-modified    304 with Content-Length: 1234 and no body
   anything else         404
 """
 import os
@@ -139,6 +140,8 @@ def route(method, target, headers, body):
         return reply("200 OK", [("Content-Length", n)], b"x" * n)
     if target == "/malformed":
         return b"this is not HTTP\r\n\r\n"
+    if target == "/not-modified":  # a 304 with the Content-Length of what it stands for, and no body
+        return reply("304 Not Modified", [("Content-Length", 1234)], b"")
     if target == "/short":
         return reply("200 OK", [("Content-Length", 100)], b"only a little")
     return reply("404 Not Found", [("Content-Length", 10)], b"not found\n")

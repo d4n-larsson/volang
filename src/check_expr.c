@@ -242,7 +242,7 @@ static Node *arg0(Node *call)
 
 /* A concrete ordered type: int, float, str, or a record of ordered fields (spec 014). Records without
  * an order report E0313 naming the field (and count as handled). */
-static int is_ordered_type(Type *t, Node *at)
+int is_ordered_type(Type *t, Node *at)
 {
     if (t->kind == TY_INT || t->kind == TY_FLOAT || t->kind == TY_STR || t->kind == TY_BYTES || t->kind == TY_BOOL) return 1;
     if (t->kind != TY_RECORD && t->kind != TY_VARIANT) return 0; /* spec 056: variants of ordered payloads */
@@ -1196,6 +1196,7 @@ Type *check_new_record(Node *node, Type *expected)
         }
         init->c.i = idx;
         q_note((long)decl, idx, init->a.n, RR_USE); /* spec 006 reference log: (record, field) */
+        if (seen[idx]) ck_err1("E0202", init->a.n, "Field `$1` is given twice: give every field once.", init->a.n->a.s);
         seen[idx] = 1;
         Node *m = member_at(decl->b.v, idx);
         Type *ft = field_type_in(rt, m->b.n->type);

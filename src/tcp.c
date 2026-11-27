@@ -453,7 +453,10 @@ static Variant *tcp_start_tls(long id, Str *host)
         if (ev->result != EVR_OK) r = make_result(1, (long)ev->value.s);
     } else {
         int full = 0;
-        e->tls = tls_open(e->fd, host, e->port, 0, &r, &full);
+        long fd = e->fd; /* tls_open closes it when --timeout passes (R0009): the entry must not keep */
+        e->fd = -1;      /* the number, or a later close would close whatever took it */
+        e->tls = tls_open(fd, host, e->port, 0, &r, &full);
+        e->fd = fd;
         if (!e->tls) r = tls_fail(r, full);
     }
     net_cap_ms = 0;

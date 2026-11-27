@@ -426,8 +426,12 @@ void check_naming(Node *name_node, int upper)
 }
 
 /* The semantic type of a syntax type (t_error after reporting a problem). */
+int ck_type_arg; /* set by a caller resolving a type argument: there an effect parameter may be named */
+
 Type *resolve_type(Node *tn)
 {
+    int as_arg = ck_type_arg; /* (this node only: `Box[list[E]]` names E as a value type) */
+    ck_type_arg = 0;
     if (!tn) return t_error;
     Type *t = t_error;
     switch (tn->a.i) {
@@ -484,6 +488,10 @@ Type *resolve_type(Node *tn)
             kind = TY_VARIANT;
         } else if (s->kind == SYM_TPARAM) { /* a type parameter takes no arguments */
             t = tn->c.v ? ty_argn_error(tn, nm->a.s, 0, tn->c.v->n) : s->type;
+            if (!tn->c.v && s->type->b.i == TPC_EFFECTS && !as_arg) { /* `x: E`: it bound E to the value's type */
+                ck_err1("E0201", nm, "`$1` is an effect parameter, not a type: use it after `uses`, or as `Name[$1]`.", nm->a.s);
+                t = t_error;
+            }
             break;
         } else {
             ck_err1("E0201", nm, "`$1` is not a type.", nm->a.s);

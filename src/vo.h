@@ -1610,6 +1610,8 @@ extern long ck_capture_at(Sym *sym, long level);
 extern void report_bad_captures(Node *lambda);
 extern Str *call_name(Node *call);
 extern Type *check_call_value(Node *node, Type *expected);
+extern int is_ordered_type(Type *t, Node *at);
+extern int ck_type_arg;
 extern Type *check_method_form(Node *node, Type *expected);
 extern Type *check_hof(Node *call, long id);
 

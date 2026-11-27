@@ -179,6 +179,13 @@ long http_frame(HttpFrame *f, char *buf, long n, int eof, int response)
             }
             p = le + 1;
         }
+        /* RFC 9110 6.3: a 1xx, 204 or 304 response has no body, whatever its headers say (a 304 may
+           carry the Content-Length of the representation it stands for) */
+        if (response && f->head >= 12 && mem_eq(buf, "HTTP/1.", 7) && buf[8] == ' ' &&
+            (buf[9] == '1' || mem_eq(buf + 9, "204", 3) || mem_eq(buf + 9, "304", 3))) {
+            f->length = 0;
+            f->chunked = 0;
+        }
         f->at = f->head;
         if (f->chunked) { /* the decoded message: the head, then each chunk's data */
             f->body = sb_new();

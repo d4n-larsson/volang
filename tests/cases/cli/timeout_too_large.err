@@ -1,0 +1,1 @@
+error[T0001]: `--timeout` needs a whole number of seconds, at most 1000000000.

@@ -1,0 +1,7 @@
+fn f[E: effects](x: E) -> E uses E {
+    return x;
+}
+fn main() uses console {
+    let y = f(5);
+    print(str(y));
+}

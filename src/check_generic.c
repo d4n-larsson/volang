@@ -354,6 +354,7 @@ Type *resolve_instance(Node *node, Node *decl, int kind, Vec *arg_nodes)
                 vec_push(args, ty_make(TY_EFFSET, 0, 0, es));
                 continue;
             }
+            ck_type_arg = 1;
             t = resolve_type(an);
             int eff_param = t->kind == TY_PARAM && t->b.i == TPC_EFFECTS;
             if (tp->b.i == TPC_EFFECTS && !eff_param && !ty_bad(t)) return effect_arg_error(an, decl, 3);

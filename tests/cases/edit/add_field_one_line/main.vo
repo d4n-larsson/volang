@@ -1,0 +1,6 @@
+record P { x: int; }
+
+fn main() uses console {
+    let p = new P { x: 1 };
+    print(str(p.x));
+}

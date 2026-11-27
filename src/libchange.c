@@ -170,8 +170,9 @@ static Str *text_of(Node *n)
 /* e in the new unit: a literal multiplied out, a name or call times the factor, else (e) times it. */
 static void scaled(SB *sb, Node *e, long factor)
 {
-    if (e->kind == N_INT) {
-        sb_str(sb, int_to_str(e->a.i * factor));
+    long product;
+    if (e->kind == N_INT && !__builtin_mul_overflow(e->a.i, factor, &product)) { /* (too large: LIT * factor) */
+        sb_str(sb, int_to_str(product));
         return;
     }
     int bare = e->kind == N_IDENT || e->kind == N_CALL || e->kind == N_FIELD;

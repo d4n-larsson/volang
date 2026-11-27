@@ -1,0 +1,17 @@
+variant Color {
+    red;
+    green;
+}
+record P {
+    c: Color;
+    ok: bool;
+}
+fn main() uses console {
+    let xs = [new P { c: Color.green, ok: true }, new P { c: Color.red, ok: false }];
+    sort_by(xs, fn(p) => p.ok);
+    sort_by(xs, fn(p) => p.c);
+    print(str(xs[0].ok));
+    print(str(Color.red < Color.green));
+    var ys = [true, false];
+    sort(ys);
+}

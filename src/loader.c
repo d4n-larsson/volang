@@ -144,7 +144,7 @@ static int import_exists(Str *path)
     long len = pkg_cached(path, &text);
     if (len >= 0) return 1;
     if (len == -2) return 0;
-    long fd = sys_open(path->data, O_RDONLY);
+    long fd = sys_open(path->data, O_RDONLY | O_NONBLOCK);
     if (fd < 0) return 0;
     sys_close((int)fd);
     return 1;

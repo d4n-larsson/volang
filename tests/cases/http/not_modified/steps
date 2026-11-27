@@ -1,0 +1,3 @@
+# A 304 has no body, whatever Content-Length it carries: it was "body shorter than Content-Length".
+server http
+vo run main.vo -- {port} /not-modified

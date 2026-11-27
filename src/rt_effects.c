@@ -613,7 +613,7 @@ static long open_parent(long bit, Str *path, Str **name, int strict, Frame *firs
         long slash = cut;
         while (slash > 0 && path->data[slash - 1] != '/') slash--;
         *name = slash == cut ? str_from_cstr(".") : str_new(path->data + slash, cut - slash);
-        Str *dir = slash ? str_new(path->data, slash) : str_from_cstr(".");
+        Str *dir = slash ? str_new(path->data, slash) : str_from_cstr(!cut && path->len ? "/" : "."); /* "/" is the root */
         GC_UNROOT(1);
         return vo_syscall4(SYS_openat, base, (long)dir->data, O_PATH | O_DIRECTORY | O_CLOEXEC, 0);
     }

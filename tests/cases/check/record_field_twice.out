@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0202","name":"duplicate_definition","severity":"error","file":"record_field_twice.vo","start":{"line":5,"col":27},"end":{"line":5,"col":28},"text":"x","message":"Field `x` is given twice: give every field once.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -448,7 +448,9 @@ static void fm_expr(Node *n, long ctx)
         break;
     case N_CALL_VALUE: { /* callee(args) */
         long st = fm_sb->len;
+        if (n->a.n->kind == N_LAMBDA) fm_b('('); /* `(fn(x) => x + 1)(3)`: bare, `=> x + 1(3)` */
         fm_expr(n->a.n, 8);
+        if (n->a.n->kind == N_LAMBDA) fm_b(')');
         fm_b('(');
         if (n->b.v && n->b.v->n && fm_wrapped(n))
             fm_items(n->b.v, 0);

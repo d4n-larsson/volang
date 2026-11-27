@@ -309,8 +309,8 @@ static void expect_eq_diff(long actual, long expected, Type *type)
         if (chars <= 40 && ca <= 40) return;
         long c = 0;
         for (i = 0; i < a->len && i < e->len; i++) { /* the first differing byte, as a character */
-            if (a->data[i] != e->data[i]) {
-                first = c;
+            if (a->data[i] != e->data[i]) { /* inside a character: its lead byte was counted already */
+                first = c - (((unsigned char)a->data[i] & 0xc0) == 0x80);
                 break;
             }
             if (((unsigned char)a->data[i] & 0xc0) != 0x80) c++;

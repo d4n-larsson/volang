@@ -1,0 +1,3 @@
+# A record on one line: the field goes before its `}`, where it used to land after the record (T0006).
+vo edit add-field main.vo P y: int = 0
+keep main.vo

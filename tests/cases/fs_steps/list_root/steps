@@ -1,0 +1,2 @@
+# "/" is the root directory: it listed the start directory (here: main.vo, no `proc`).
+vo run main.vo

@@ -1,0 +1,3 @@
+test "accent" {
+    expect_eq("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaé!", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaè!");
+}

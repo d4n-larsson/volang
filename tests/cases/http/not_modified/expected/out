@@ -1,0 +1,7 @@
+$ vo run main.vo -- {port} /not-modified
+status 304
+header Content-Length: 1234
+body (0):
+
+--- stderr
+--- exit 0

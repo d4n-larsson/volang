@@ -1,0 +1,6 @@
+$ vo edit add-field main.vo P y: int = 0
+main.vo:1:20 + y: int; 
+main.vo:4:25 + , y: 0
+added field y to P: 2 changes in 1 file
+--- stderr
+--- exit 0

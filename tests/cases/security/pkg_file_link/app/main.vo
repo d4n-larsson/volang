@@ -1,0 +1,5 @@
+import money.calc;
+
+fn main() uses console {
+    print(str(calc.twice(2)));
+}

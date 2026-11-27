@@ -1109,10 +1109,23 @@ static void pkg_report_fetched(char *change, Pkg *e, Str *old_hash, Vec *before,
 
 static Str *with_pid(Str *path, char *tag)
 {
+    /* one unpredictable suffix per process (the same name each time it is asked for): with the pid
+       alone, a local process could create the staging directory first, as a link */
+    static char suffix[17];
+    if (!suffix[0]) {
+        unsigned char r[8] = {0};
+        vo_syscall3(SYS_getrandom, (long)r, 8, 0);
+        for (int i = 0; i < 8; i++) {
+            suffix[2 * i] = "0123456789abcdef"[r[i] >> 4];
+            suffix[2 * i + 1] = "0123456789abcdef"[r[i] & 15];
+        }
+    }
     SB *sb = sb_new();
     sb_str(sb, path);
     sb_cstr(sb, tag);
     int_to_dec(sb, sys_getpid());
+    sb_byte(sb, '-');
+    sb_cstr(sb, suffix);
     return sb_finish(sb);
 }
 

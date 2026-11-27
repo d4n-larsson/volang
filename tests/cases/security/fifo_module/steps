@@ -1,0 +1,3 @@
+# A FIFO named like a module the program does not import: the search for it does not block.
+mkfifo util.vo
+vo check main.vo

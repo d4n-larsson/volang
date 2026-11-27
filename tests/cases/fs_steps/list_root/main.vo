@@ -1,0 +1,12 @@
+import std.fs;
+
+fn main() uses console, file.read {
+    match fs.list_dir("/") {
+        case ok(xs) {
+            print(str(any(xs, fn(e) => e.name == "proc")));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

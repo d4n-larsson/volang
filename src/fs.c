@@ -75,7 +75,9 @@ static Variant *fs_info(long bit, Str *path)
     long err = 0, size = 0, mode = 0;
     if (parent >= 0) {
         mode = fs_stat(parent, name->data, 0, &size, &err);
-        if (mode == S_IFLNK) mode = fs_stat(parent, name->data, 1, &size, &err); /* unscoped: the target */
+        /* unscoped: the target. Scoped, the name is the resolved path's and no link (rt_open_parent):
+           one here was swapped in after the check, and is reported as the link it is, not followed */
+        if (mode == S_IFLNK && !rt_bit_scoped(bit)) mode = fs_stat(parent, name->data, 1, &size, &err);
         sys_close((int)parent);
     } else {
         err = parent;

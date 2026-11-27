@@ -170,6 +170,10 @@ void walk_dir(Str *dirpath, int fd)
                 if (!walk_failed) walk_dir(full, (int)sub);
                 sys_close((int)sub);
             } else if (type != 4 && ends_with_vo(full)) {
+                if (walk_strict && type != 8) { /* not DT_REG: a link to a file stays inside the package too (S8) */
+                    Str *real = rt_resolve(full);
+                    if (!real || !path_under(real, walk_root)) walk_failed = 1;
+                }
                 path_push(full);
             }
         }
@@ -287,8 +291,8 @@ int vo_main(long argc, char **argv, char **env)
         } else if (cstr_eq(a, "--update")) {
             opt_update = 1;
         } else if (cstr_eq(a, "--timeout")) {
-            if (i >= argc || option_number(argv[i++], &v) || v < 0)
-                usage_error(str_from_cstr("`--timeout` needs a whole number of seconds."));
+            if (i >= argc || option_number(argv[i++], &v) || v < 0 || v > 1000000000) /* (times 1000 as ms) */
+                usage_error(str_from_cstr("`--timeout` needs a whole number of seconds, at most 1000000000."));
             opt_timeout = v;
             opt_run_given = a;
         } else if (cstr_eq(a, "--filter")) {

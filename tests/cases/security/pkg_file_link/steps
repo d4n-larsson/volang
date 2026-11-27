@@ -1,0 +1,5 @@
+# A package file that is a link: pinned when it stays inside the package, E0702 when it leads outside.
+symlink own.vo money/inside.vo
+vo package app/main.vo money money
+symlink ../outside/real.vo money/calc.vo
+vo package app/main.vo money money
