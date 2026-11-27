@@ -7,7 +7,7 @@ export fn starts_with(s: str, prefix: str) -> bool {
     if len(prefix) > len(s) {
         return false;
     }
-    return slice(s, 0, len(prefix)) == prefix;
+    return bytes_equal(s, 0, prefix);
 }
 
 # Whether s ends with suffix.
@@ -16,7 +16,7 @@ export fn ends_with(s: str, suffix: str) -> bool {
     if len(suffix) > len(s) {
         return false;
     }
-    return slice(s, len(s) - len(suffix), len(s)) == suffix;
+    return bytes_equal(s, len(s) - len(suffix), suffix);
 }
 
 # Whether sub occurs in s.
@@ -134,4 +134,15 @@ export fn char_count(s: str) -> int {
 #     equal_fold("Ångström", "ÅNGSTRÖM") is true
 export fn equal_fold(a: str, b: str) -> bool {
     return lower(a) == lower(b);
+}
+
+fn bytes_equal(s: str, start: int, part: str) -> bool {
+    # Byte by byte: a boundary inside a multi-byte character cannot be sliced (R0007),
+    # and starts_with("é", ".") is simply false.
+    for i in 0..len(part) {
+        if byte_at(s, start + i) != byte_at(part, i) {
+            return false;
+        }
+    }
+    return true;
 }

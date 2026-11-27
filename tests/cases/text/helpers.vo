@@ -15,6 +15,7 @@ fn show(xs: list[str]) -> str {
 fn main() uses console {
     print(str(text.starts_with("", "")) + " " + str(text.starts_with("abc", "")) + " " + str(text.starts_with("", "a")) + " " + str(text.starts_with("héllo", "hé")));
     print(str(text.ends_with("", "")) + " " + str(text.ends_with("abc", "bc")) + " " + str(text.ends_with("bc", "abc")) + " " + str(text.ends_with("naïve", "ïve")));
+    print(str(text.starts_with("é", ".")) + " " + str(text.ends_with("é", "x")) + " " + str(text.starts_with("日本", "日")) + " " + str(text.ends_with("日本", "本")) + " " + str(text.ends_with("x日本", "x日")));
     print(str(text.contains("", "")) + " " + str(text.contains("abc", "")) + " " + str(text.contains("", "a")) + " " + str(text.contains("日本語", "本")));
     print(text.replace("aaa", "aa", "b"));
     print(text.replace("aaaa", "aa", "b"));
