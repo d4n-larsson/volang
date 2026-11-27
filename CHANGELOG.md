@@ -12,7 +12,7 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
   stopped with R0010 naming the function, as a function without an effect parameter always was. What it
   is passed (`f`) still does what the caller may do. **This can stop a program that ran before.** If it
   does: widen the function's own scope to what its code touches, or pass that work in as a function.
-- **Bug sweep of the C code** ([docs/bug-sweep-2026-11-27.md](docs/bug-sweep-2026-11-27.md)): 38 findings
+- **Bug sweep of the C code** ([docs/bug-sweep-2026-11-27.md](docs/bug-sweep-2026-11-27.md)): 48 findings
   fixed, among them `filter` reading outside a list its callback shrank, `set` on a function name passing
   the checker, a server ended by requests that only announce a body, and `vo package --repair` deleting
   a directory a hostile `vo.packages` named. Changes you may notice: `write_file`, `vo fmt`, `vo edit` and

@@ -556,8 +556,9 @@ Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call)
         }
     }
     Variant *r = sw_finish(listener, hard || cut, failure);
+    GC_ROOT(&r); /* the `stopped` record allocates: the result was collected under it */
     if (signalled) sv_stopped(sw_answered - answered_before, cut);
     sv_wake_at = 0;
-    GC_UNROOT(1);
+    GC_UNROOT(2);
     return r;
 }

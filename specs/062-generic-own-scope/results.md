@@ -55,8 +55,6 @@ run-to-run spread on this machine.
 - Research R7a: a standard-library function performing an effect directly under its effect parameter is
   bound by a generic caller's own scopes. Conservative; no case meets it.
 - No case for `process` and `net` scopes, nor inside `std.workers`.
-- Found on the way, outside this spec (docs/bug-sweep-2026-11-27.md, findings 39 to 41): with the stress
-  build collecting at every allocation, two uses of a collected string were found and fixed
-  (`fs.make_dir` on a scope directory, the server's `stopped` log record), and 16 golden cases under
-  `workers`, `web` and `sqlite` still fail that way. They fail the same way before this spec and before
-  the bug sweep.
+- Found on the way, outside this spec (docs/bug-sweep-2026-11-27.md, findings 39 to 48): with the stress
+  build collecting at every allocation, ten uses of collected objects were found and fixed. None came
+  from this spec or from the bug sweep.

@@ -240,7 +240,9 @@ void ty_module_prefix(SB *sb, Node *decl)
 Str *ty_name(Type *t)
 {
     SB *sb = sb_new();
+    GC_ROOT(&sb); /* run-time callers (a trace's `name: type = value`): rendering a name allocates */
     ty_name_into(sb, t);
+    GC_UNROOT(1);
     return sb_finish(sb);
 }
 
@@ -1182,7 +1184,11 @@ int report_missing_cases(Node *match, Type *type, long *seen, long ncases)
 /* Spec 060: decl is a case's hidden record (its name `Variant.case` has a dot, no written record's does). */
 int case_record(Node *decl)
 {
-    return decl && decl->kind == N_RECORD && str_find_from(decl->a.n->a.s, str_from_cstr("."), 0) >= 0;
+    if (!decl || decl->kind != N_RECORD) return 0;
+    Str *name = decl->a.n->a.s; /* (no allocation: type names are also rendered at run time, for a trace) */
+    for (long i = 0; i < name->len; i++)
+        if (name->data[i] == '.') return 1;
+    return 0;
 }
 
 /* Spec 060: each case with fields has a hidden record (research R1), defined in the file scope under its

@@ -462,8 +462,9 @@ Str *io_entropy(long n, Node *call)
 void *io_env(Str *name)
 {
     if (!rcd_mode) return rt_env(name);
-    void *r;
+    void *r = 0;
     GC_ROOT(&name);
+    GC_ROOT(&r); /* the recording allocates before the result is returned */
     if (rcd_mode == 2) {
         rt_check_name(EF_ENV, name); /* the name is still checked against the grant (no outside data) */
         r = rp_result(rp_take(EVK_ENV, name));
@@ -474,7 +475,7 @@ void *io_env(Str *name)
         else
             rcd_result(EVK_ENV, name, r);
     }
-    GC_UNROOT(1);
+    GC_UNROOT(2);
     return r;
 }
 
@@ -561,8 +562,8 @@ static Str *body_after_head(Str *text)
  * status line is kept as it is). */
 static Str *rt_redact_head(Str *text, int answer)
 {
+    GC_ROOT(&text); /* before the first allocation: callers pass new strings */
     SB *sb = sb_new();
-    GC_ROOT(&text);
     GC_ROOT(&sb);
     long i = 0;
     if (answer) { /* the status line */
@@ -601,8 +602,8 @@ static Str *rt_redact_line(Str *line)
     long q = 0;
     while (q < line->len && line->data[q] != '?') q++;
     if (q == line->len || !rt_redact) return line;
+    GC_ROOT(&line); /* before the first allocation: callers pass new strings */
     SB *sb = sb_new();
-    GC_ROOT(&line);
     GC_ROOT(&sb);
     sb_bytes(sb, line->data, q + 1);
     long i = q + 1;
@@ -642,7 +643,8 @@ Variant *io_https_exchange(Str *host, long port, Str *request)
 
 static Variant *io_exchange(Str *host, long port, Str *request, int tls)
 {
-    Variant *r;
+    Variant *r = 0;
+    GC_ROOT(&r); /* held across the redaction and the recording, which allocate */
     GC_ROOT(&host);
     GC_ROOT(&request);
     rt_check_net(host, port); /* spec 039: the host, or the host with this port */
@@ -659,13 +661,22 @@ static Variant *io_exchange(Str *host, long port, Str *request, int tls)
     net_capped = 0;
     if (rcd_mode == 2) {
         Str *asked = http_desc(host, port, line, tls);
+        GC_ROOT(&asked);
         if (rp_next >= rp_events->n) rp_mismatch(EVK_HTTP, asked, 0);
         Event *e = vec_get(rp_events, rp_next++);
         if (e->kind != EVK_HTTP || !str_eq(e->name, host) || e->port != port || e->tls != tls ||
             (e->request && !str_eq(e->request, line))) /* older recordings: host and port only */
             rp_mismatch(EVK_HTTP, asked, e);
-        if (sent && e->sent && !str_eq(body_after_head(e->sent), body_after_head(sent)))
-            rp_mismatch_sent(asked, 1); /* spec 054: the same request with another body */
+        if (sent && e->sent) { /* spec 054: the same request with another body */
+            Str *was = body_after_head(e->sent); /* rooted: the second body is a new string too (unrooted,
+                                                    the two could be one block and compare equal) */
+            GC_ROOT(&was);
+            Str *now = body_after_head(sent);
+            int same = str_eq(was, now);
+            GC_UNROOT(1);
+            if (!same) rp_mismatch_sent(asked, 1);
+        }
+        GC_UNROOT(1);
         r = rp_result(e);
     } else {
         net_cap_ms = own_ms > 0 ? sys_clock_ms() + own_ms : 0;
@@ -684,7 +695,6 @@ static Variant *io_exchange(Str *host, long port, Str *request, int tls)
     }
     if (!r->tag) { /* spec 013 (R4): the raw response (as recorded) is framed here, by the server's rules */
         HttpFrame f = {0};
-        GC_ROOT(&r);
         GC_ROOT(&f.body);
         GC_ROOT(&f.out);
         Str *raw = r->pay.s;
@@ -699,9 +709,9 @@ static Variant *io_exchange(Str *host, long port, Str *request, int tls)
             r = make_result(1, (long)sb_finish(sb));
             GC_UNROOT(1);
         }
-        GC_UNROOT(3);
+        GC_UNROOT(2);
     }
-    GC_UNROOT(4);
+    GC_UNROOT(5);
     return r;
 }
 
@@ -1075,6 +1085,7 @@ void rp_line(char *p, char *end)
         } else if (*p == '[') { /* an array of strings (args) */
             p++;
             Vec *v = vec_new();
+            GC_ROOT(&v); /* a test's recording is read with the collector on: each string allocates */
             for (;;) {
                 p = rp_ws(p, end);
                 if (p >= end) rp_bad();
@@ -1085,6 +1096,7 @@ void rp_line(char *p, char *end)
                 if (p >= end) rp_bad();
                 if (*p == ',') p++;
             }
+            GC_UNROOT(1);
             p++;
             if (field == 5) {
                 rf_args = v;
@@ -1411,7 +1423,9 @@ static void sv_note_changed(Str *recorded, Str *now)
     long rb, nb;
     long rs = sv_status(recorded, &rb), ns = sv_status(now, &nb);
     Str *line = sv_request ? request_line(sv_request) : str_from_cstr("");
+    GC_ROOT(&line); /* both are read after allocations below */
     SB *out = sb_new();
+    GC_ROOT(&out);
     if (opt_json) {
         sb_cstr(out, "{\"v\":1,\"kind\":\"response_changed\",\"request\":");
         json_str_into(out, line);
@@ -1438,6 +1452,7 @@ static void sv_note_changed(Str *recorded, Str *now)
         sb_cstr(out, " bytes)\n");
     }
     out_bytes(2, out->ptr, out->len);
+    GC_UNROOT(2);
 }
 
 /* Sends the response; in replay, compares it with the recorded one instead. */
@@ -1710,10 +1725,12 @@ void rt_end(long failed, long timed_out)
             SB *sb = sb_new();
             int_to_dec(sb, rp_events->n - rp_next);
             Str *count = sb_finish(sb);
+            GC_ROOT(&count); /* rp_has allocates */
             Str *first = rp_has(vec_get(rp_events, rp_next));
             vec_push(rt_notes, msg(rp_events->n - rp_next == 1 ? "$1 recorded input was not used: $2"
                                                                 : "$1 recorded inputs were not used, the first: $2",
                                    count, first, 0));
+            GC_UNROOT(1);
         }
         if (!rt_missing && !opt_mutate && rp_fprint) { /* FR-008 */
             unsigned long h = (unsigned long)rp_fingerprint();
