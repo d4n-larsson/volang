@@ -1,0 +1,8 @@
+import std.tcp;
+
+fn main() uses console, net("127.0.0.1") {
+    match tcp.connect("127.0.0.1", 9, 500) {
+        case ok(c) { print("connected"); }
+        case err(e) { print(tcp.tcp_error_text(e)); }
+    }
+}

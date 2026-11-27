@@ -1,0 +1,2 @@
+write bad.jsonl {"v":1,"kind":"recording","program":"main.vo","fingerprint":"0","seed":1,"clock_ms":null,"args":[]}\n{"v":1,"kind":"tcp_open","name":"127.0.0.1:9","result":"denied"}\n{"v":1,"kind":"end","status":0}\n
+vo replay bad.jsonl

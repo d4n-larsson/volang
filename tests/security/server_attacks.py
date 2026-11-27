@@ -9,32 +9,29 @@ import os, signal, socket, subprocess, sys, tempfile, threading, time
 
 VO = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else
                      os.path.join(os.path.dirname(__file__), "..", "..", "build", "vo"))
-SERVER = """import std.http.Header;
-import std.http.Request;
-import std.http.Response;
-import std.http.serve;
+SERVER = """import std.http;
 
-fn handle(r: Request) -> Response {
+fn handle(r: http.Request) -> http.Response {
     if r.path == "/count" {
-        return new Response { status: 200, headers: new list[Header], body: str(len(split(r.body, ","))) + "\\n" };
+        return new http.Response { status: 200, headers: new list[http.Header], body: str(len(split(r.body, ","))) + "\\n" };
     }
     if r.path == "/fail" {
-        return new Response { status: 200, headers: new list[Header], body: slice("ab", 5, 1) };
+        return new http.Response { status: 200, headers: new list[http.Header], body: slice("ab", 5, 1) };
     }
-    return new Response { status: 200, headers: new list[Header], body: "ok " + str(len(r.body)) + "\\n" };
+    return new http.Response { status: 200, headers: new list[http.Header], body: "ok " + str(len(r.body)) + "\\n" };
 }
 
 fn main() -> result[void] uses console, serve("PORT") {
-    try serve("PORT", handle);
+    try http.serve("PORT", handle);
     print("stopped");
     return ok();
 }
 """
-CLIENT = """import std.http.get;
+CLIENT = """import std.http;
 
 fn main() -> result[void] uses console, net("127.0.0.1") {
     for path in [PATHS] {
-        match get("http://127.0.0.1:PORT" + path) {
+        match http.get("http://127.0.0.1:PORT" + path) {
             case ok(r) {
                 print(path + ": ok " + str(r.status) + " " + str(len(r.body)));
             }

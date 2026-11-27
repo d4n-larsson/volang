@@ -1,0 +1,19 @@
+# sort_by sets the record type of its keys after the key function ran: a sort of another record type
+# inside it used to make the merge compare int fields as strings (bug sweep 2026-11-27, finding 4).
+record Key {
+    n: int;
+}
+
+record Name {
+    s: str;
+}
+
+fn main() uses console {
+    let xs = [3, 1, 2];
+    let names = [new Name { s: "b" }, new Name { s: "a" }];
+    sort_by(xs, fn(x) {
+        sort(names);
+        return new Key { n: x * 1000003 };
+    });
+    print(str(xs[0]) + " " + str(xs[1]) + " " + str(xs[2]));
+}

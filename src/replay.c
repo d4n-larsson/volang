@@ -1237,7 +1237,10 @@ void rp_check_event(Event *e)
     }
     if (e->kind >= EVK_INFO) { /* spec 017: path or program, a result, `to` and `args`, and the value */
         if (!e->name || e->result < 0) rp_bad();
-        if (e->result == EVR_DENIED) return;
+        if (e->result == EVR_DENIED) { /* only what records it: files and a run (fs.c, process.c) */
+            if (e->kind > EVK_RUN && e->kind != EVK_FILE_BLOCK) rp_bad();
+            return;
+        }
         if ((e->kind == EVK_RENAME || e->kind == EVK_RUN) && !e->request) rp_bad();
         if (e->result == EVR_OK && e->kind >= EVK_APPEND_FILE && e->kind <= EVK_RENAME) return; /* ok() */
         if (!e->value.p) rp_bad();

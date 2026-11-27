@@ -154,6 +154,16 @@ static Pkg *pkg_line(char *line, char *le, int *problem)
     return e;
 }
 
+/* 1 when dir is the manifest's directory or one above it. A versioned package's directory is the
+ * toolchain's to replace and remove (sel_apply), so a manifest must not name the program itself. */
+static int pkg_holds_program(Str *dir)
+{
+    Str *d = rt_resolve(dir), *p = rt_resolve(pkg_dir);
+    if (!d || !p) return 0; /* nothing there: nothing to remove */
+    if (d->len == 1) return 1; /* "/" */
+    return p->len >= d->len && mem_eq(p->data, d->data, d->len) && (p->len == d->len || p->data[d->len] == '/');
+}
+
 /* One line of the program's manifest: an entry, or E0703 / E0704 on the line. */
 static void pkg_parse_line(long file, char *text, char *line, char *le)
 {
@@ -172,6 +182,9 @@ static void pkg_parse_line(long file, char *text, char *line, char *le)
     } else if (pkg_find(e->name)) { /* a second entry of the name: E0704 */
         m = msg("Package `$1` is listed twice.", e->name, 0, 0);
         code = "E0704";
+    } else if (e->versioned && pkg_holds_program(e->raw->data[0] == '/' ? e->raw : path_join(pkg_dir, e->raw))) {
+        m = msg("Package `$1`: the directory `$2` holds this program. A versioned package has a directory of its own.",
+                e->name, e->raw, 0);
     } else {
         e->dir = e->raw->data[0] == '/' ? e->raw : path_join(pkg_dir, e->raw); /* or under the manifest's directory */
         e->state = 0;

@@ -1,0 +1,14 @@
+# A function's name is not a variable: `set` on it is E0208 (it used to pass and overwrite a local).
+fn double(x: int) -> int {
+    return x * 2;
+}
+
+fn triple(x: int) -> int {
+    return x * 3;
+}
+
+fn main() uses console {
+    let n = 5;
+    set double = triple;
+    print(str(n));
+}

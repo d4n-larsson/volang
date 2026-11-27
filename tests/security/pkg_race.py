@@ -17,7 +17,7 @@ pkg = os.path.join(d, "vendor", "money")
 os.makedirs(pkg)
 open(os.path.join(pkg, "format.vo"), "w").write(GOOD)
 open(os.path.join(d, "main.vo"), "w").write(
-    "import money.format.cents;\n\nfn main() uses console {\n    print(cents(1234));\n}\n")
+    "import money.format;\n\nfn main() uses console {\n    print(format.cents(1234));\n}\n")
 subprocess.run([VO, "package", "main.vo", "money", "vendor/money"], cwd=d, check=True, capture_output=True)
 stop = False
 

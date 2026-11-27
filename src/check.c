@@ -645,6 +645,8 @@ static void check_set(Node *st)
             Diag *d = ck_err1("E0208", place, tmpl, place->a.s);
             if (is_let) diag_add_fix(d, (int)decl->file, decl->start, decl->start + 3, str_from_cstr("var"));
         }
+        if (s && s->kind == SYM_FN) /* its node has no slot: the assignment would write slot 0 */
+            ck_err1("E0208", place, "`$1` is a function and cannot be changed.", place->a.s);
     }
     ck_set_place = place, ck_set_value = st->b.n; /* spec 056: a renamed field's fix converts the value */
     Type *pt = check_place(place, 0);

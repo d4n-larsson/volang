@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0208","name":"assign_to_immutable","severity":"error","file":"set_function.vo","start":{"line":12,"col":9},"end":{"line":12,"col":15},"text":"double","message":"`double` is a function and cannot be changed.","fixes":[],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

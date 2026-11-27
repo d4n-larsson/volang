@@ -317,6 +317,15 @@ static void conn_refuse(Conn *c, long status)
     conn_reply(c, sb_finish(sb));
 }
 
+/* What the connections hold of requests not yet handled, in bytes. */
+static long conns_buffered(void)
+{
+    long n = 0;
+    for (int i = 0; i < CONN_MAX; i++)
+        if (sv_conns[i].state != C_FREE && sv_conns[i].in) n += sv_conns[i].in->cap;
+    return n;
+}
+
 /* Reads what c has (the limits of sv_read before spec 016, unchanged): it becomes ready, is refused, is
  * closed (the client left without sending anything: not a request), or keeps reading. */
 static void conn_read(Conn *c)
@@ -343,7 +352,17 @@ static void conn_read(Conn *c)
             return;
         }
         long need = c->f.head + c->f.length; /* a known length: room for exactly the whole message */
-        if (!r && c->f.head && !c->f.chunked && c->f.length >= 0 && c->in->cap < need) {
+        int grow = !r && c->f.head && !c->f.chunked && c->f.length >= 0 && c->in->cap < need;
+        /* All unhandled requests together stay under a quarter of the memory limit (and one request of
+         * the largest size always fits): clients announcing or sending large bodies on many connections
+         * are answered 503, where they used to end the server with R0006. */
+        long budget = gc_limit / 4 > BODY_MAX + HEAD_MAX ? gc_limit / 4 : BODY_MAX + HEAD_MAX;
+        if (!r && conns_buffered() + (grow ? need - c->in->cap : 0) > budget) {
+            c->in = 0;
+            conn_refuse(c, 503);
+            return;
+        }
+        if (grow) {
             char *p = alloc_bytes(need);
             mem_copy(p, c->in->ptr, c->in->len);
             c->in->ptr = p;

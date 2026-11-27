@@ -583,7 +583,7 @@ static void rt_denied_by(Frame *gf, long bit, Str *target)
 
 /* ---- spec 013 (R2, H3, H4): opening a file that passed rt_check_path ----
  * Unscoped grants open from the start directory's descriptor. Scoped grants open the resolved path
- * relative to the deepest granted scope directory that holds it (opened from the start descriptor, so
+ * relative to the outermost granted scope directory that holds it (opened from the start descriptor, so
  * a renamed working directory changes nothing), one component at a time with O_NOFOLLOW: whatever links
  * change after the check, the open cannot leave that directory; an attempt is R0010. Works on every
  * kernel (research R3's fallback; openat2 is missing under qemu user mode). The fd, or a negative errno. */
@@ -591,7 +591,7 @@ static void rt_denied_by(Frame *gf, long bit, Str *target)
 
 /* Spec 017: the parent directory of a path that passed rt_check_path, as a descriptor (closed by the
  * caller), and the last component in *name ("." for the scope directory itself). Scoped grants walk
- * from the deepest granted scope directory as rt_open_file does; with strict, the scope directory
+ * from the outermost granted scope directory as rt_open_file does; with strict, a scope directory
  * itself is refused (R0010: delete and rename never remove a scope). Unscoped: the path's directory,
  * opened from the start directory. A negative errno on failure. */
 static long open_parent(long bit, Str *path, Str **name, int strict, Frame *first);
@@ -619,21 +619,31 @@ static long open_parent(long bit, Str *path, Str **name, int strict, Frame *firs
     }
     Str *resolved = rt_resolve_for(bit, path);
     GC_ROOT(&resolved);
-    Str *scope = 0, *dir = 0; /* the deepest granted scope holding the path, and its resolved form */
+    /* The outermost granted scope holding the path, and its resolved form: the scopes nested in it are
+       then walked without following links like every other component (opened by its text, a nested
+       scope swapped for a link after the check led outside the outer grant). */
+    Str *scope = 0, *dir = 0;
+    long deepest = 0; /* the length of the deepest one's resolved form */
     GC_ROOT(&scope);
     GC_ROOT(&dir);
+    int every = 1; /* every scoped grant on the call path still holds it, as when it was checked */
     for (Frame *f = resolved ? first : 0; f; f = path_scoped(f, bit)) {
+        int held = 0;
         for (long i = 0; i < f->effects->scopes->n; i++) {
             EffScope *sc = vec_get(f->effects->scopes, i);
             if (sc->bit != bit) continue;
             Str *d = rt_resolve(sc->str);
-            if (d && path_under(resolved, d) && (!dir || d->len > dir->len)) {
+            if (!d || !path_under(resolved, d)) continue;
+            held = 1;
+            if (d->len > deepest) deepest = d->len;
+            if (!dir || d->len < dir->len) {
                 dir = d;
                 scope = sc->str;
             }
         }
+        if (!held) every = 0;
     }
-    if (!dir || (strict && resolved->len == dir->len)) { /* changed since the check, or the scope itself */
+    if (!dir || !every || (strict && resolved->len == deepest)) { /* changed since the check, or the scope itself */
         GC_UNROOT(4);
         rt_denied(bit, path);
     }

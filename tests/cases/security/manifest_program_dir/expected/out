@@ -1,0 +1,12 @@
+$ vo package --repair main.vo
+vo.packages:2:1: error[E0703]: Package `money`: the directory `.` holds this program. A versioned package has a directory of its own.
+   2 | money . sha256:ced4f10510df6f2bfc1fc334554e88dd90167085ce547165006cc29587494aae https://example.invalid/acme/money@1.0.0 indirect
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--- stderr
+--- exit 65
+$ vo package --remove main.vo money
+vo.packages:2:1: error[E0703]: Package `money`: the directory `.` holds this program. A versioned package has a directory of its own.
+   2 | money . sha256:ced4f10510df6f2bfc1fc334554e88dd90167085ce547165006cc29587494aae https://example.invalid/acme/money@1.0.0 indirect
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+--- stderr
+--- exit 65

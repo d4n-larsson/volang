@@ -1,0 +1,25 @@
+cmp_nested_guard.vo:11:16: runtime error[R0005]: Stack exhausted: the recursion is too deep.
+  11 |             if has(holder[0], a) {
+     |                ^^^^^^^^^^^^^^^^^
+trace:
+  at anonymous function (cmp_nested_guard.vo:11:16)
+      a: int = 2, b: int = 1, depth: list[int] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], n: int = 40, holder: list[ordered_set[int]] = [ordered_set{1}]
+  at anonymous function (cmp_nested_guard.vo:11:16)
+      a: int = 2, b: int = 1, depth: list[int] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], n: int = 40, holder: list[ordered_set[int]] = [ordered_set{1}]
+  at anonymous function (cmp_nested_guard.vo:11:16)
+      a: int = 2, b: int = 1, depth: list[int] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], n: int = 40, holder: list[ordered_set[int]] = [ordered_set{1}]
+  at anonymous function (cmp_nested_guard.vo:11:16)
+      a: int = 2, b: int = 1, depth: list[int] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], n: int = 40, holder: list[ordered_set[int]] = [ordered_set{1}]
+  at anonymous function (cmp_nested_guard.vo:11:16)
+      a: int = 2, b: int = 1, depth: list[int] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], n: int = 40, holder: list[ordered_set[int]] = [ordered_set{1}]
+  at anonymous function (cmp_nested_guard.vo:11:16)
+      a: int = 2, b: int = 1, depth: list[int] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], n: int = 40, holder: list[ordered_set[int]] = [ordered_set{1}]
+  at anonymous function (cmp_nested_guard.vo:11:16)
+      a: int = 2, b: int = 1, depth: list[int] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], n: int = 40, holder: list[ordered_set[int]] = [ordered_set{1}]
+  at anonymous function (cmp_nested_guard.vo:11:16)
+      a: int = 2, b: int = 1, depth: list[int] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], n: int = 40, holder: list[ordered_set[int]] = [ordered_set{1}]
+  at anonymous function (cmp_nested_guard.vo:11:16)
+      a: int = 2, b: int = 1, depth: list[int] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], n: int = 40, holder: list[ordered_set[int]] = [ordered_set{1}]
+  at anonymous function (cmp_nested_guard.vo:11:16)
+      a: int = 2, b: int = 1, depth: list[int] = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], n: int = 40, holder: list[ordered_set[int]] = [ordered_set{1}]
+  ... more frames omitted

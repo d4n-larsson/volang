@@ -1,6 +1,7 @@
 /* The builtins that take functions (contracts/grammar-v2.md "New builtins"; ported from
  * src/rt_func.s, spec 008). Each calls its function value through call_value; the list is read
- * afresh on every step, so a callback that changes the list cannot make the loop read past its end.
+ * afresh on every step and never again after the callback (which may shrink it or replace its
+ * buffer), so a callback that changes the list cannot make the loop read past its end.
  * Callbacks run program code, which allocates: what the loops hold is rooted (research R4). */
 #include "vo.h"
 
@@ -29,9 +30,13 @@ List *hof_filter(List *list, void *fn, Node *call)
     GC_ROOT(&fn);
     List *out = list_new(0);
     GC_ROOT(&out);
-    for (long i = 0; i < list->len; i++)
-        if (call_value(fn, call, &list->data[i].i)) list_push(out, list->data[i].i);
-    GC_UNROOT(3);
+    long x = 0; /* the element, read before the callback: the callback may shrink the list */
+    GC_ROOT(&x);
+    for (long i = 0; i < list->len; i++) {
+        x = list->data[i].i;
+        if (call_value(fn, call, &x)) list_push(out, x);
+    }
+    GC_UNROOT(4);
     return out;
 }
 
@@ -96,7 +101,6 @@ void hof_sort_by(List *list, void *fn, Node *call)
     /* the key's type: the function argument's return type */
     Type *key_type = rt_concrete(((Node *)call->b.v->data[1].p)->type->b.t);
     int kind = (int)key_type->kind;
-    elem_record_type = key_type; /* spec 014: record keys field by field */
     long n = list->len;
     W *before = list->data;
     GC_ROOT(&list);
@@ -112,6 +116,7 @@ void hof_sort_by(List *list, void *fn, Node *call)
     if (list->len != n || list->data != before)
         rt_raise_c("R0007", "The list changed while `sort_by` computed its keys: do not change it in the key function.",
                    call);
+    elem_record_type = key_type; /* spec 014: record keys field by field; set after the key function ran (it may sort) */
     for (long width = 1; width < n; width *= 2) {
         for (long left = 0; left < n;) {
             long mid = left + width < n ? left + width : n;

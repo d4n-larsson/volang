@@ -19,6 +19,11 @@ static long emitted_n;
 /* Registers a source file; builds its line table and directory. Returns the file id. */
 int file_add(Str *path, char *text, long len)
 {
+    if (file_count >= MAX_FILES) { /* the table is fixed: one more file would be written past it */
+        toolchain_error((int)opt_json, (int)report_fd, "T0002",
+                        msg("`$1` is one file too many: a program has at most 256 files.", path, 0, 0), path);
+        vo_exit(EXIT_NOINPUT);
+    }
     long id = file_count++;
     FileRec *f = &file_table[id];
     f->path = path;

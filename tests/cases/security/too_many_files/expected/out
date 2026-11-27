@@ -1,0 +1,4 @@
+$ vo check main.vo
+error[T0002]: `m256.vo` is one file too many: a program has at most 256 files.
+--- stderr
+--- exit 66

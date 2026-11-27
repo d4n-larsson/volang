@@ -12,40 +12,36 @@ import os, shutil, subprocess, sys, tempfile, threading
 VO = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else
                      os.path.join(os.path.dirname(__file__), "..", "..", "build", "vo"))
 RUNS = int(sys.argv[2]) if len(sys.argv) > 2 else 300
-PROGRAM = """import std.fs.append_file;
-import std.fs.delete;
-import std.fs.list_dir;
-import std.fs.make_dir;
-import std.fs.rename;
+PROGRAM = """import std.fs;
 
 fn main() uses console, file.read("data/"), file.write("data/"), file.delete("data/") {
     var i = 0;
     while i < 200 {
-        match append_file("data/sub/victim.txt", "x") {
+        match fs.append_file("data/sub/victim.txt", "x") {
             case ok() {
             }
             case err(_) {
             }
         }
-        match make_dir("data/sub/made") {
+        match fs.make_dir("data/sub/made") {
             case ok() {
             }
             case err(_) {
             }
         }
-        match rename("data/sub/keep.txt", "data/sub/moved.txt") {
+        match fs.rename("data/sub/keep.txt", "data/sub/moved.txt") {
             case ok() {
             }
             case err(_) {
             }
         }
-        match delete("data/sub/keep.txt") {
+        match fs.delete("data/sub/keep.txt") {
             case ok() {
             }
             case err(_) {
             }
         }
-        match list_dir("data/sub") {
+        match fs.list_dir("data/sub") {
             case ok(entries) {
                 for e in entries {
                     if e.name == "SECRET" {

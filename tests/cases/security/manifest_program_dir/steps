@@ -1,0 +1,5 @@
+write notes.txt kept\n
+write vo.packages # vo packages\nmoney . sha256:ced4f10510df6f2bfc1fc334554e88dd90167085ce547165006cc29587494aae https://example.invalid/acme/money@1.0.0 indirect\n
+vo package --repair main.vo
+vo package --remove main.vo money
+keep notes.txt main.vo

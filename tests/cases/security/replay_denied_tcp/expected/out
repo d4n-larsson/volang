@@ -1,0 +1,4 @@
+$ vo replay bad.jsonl
+--- stderr
+error[T0008]: `bad.jsonl` is not a complete recording: record the run again with `vo run --record FILE`.
+--- exit 64

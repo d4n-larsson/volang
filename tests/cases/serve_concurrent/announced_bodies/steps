@@ -1,0 +1,12 @@
+# Clients that announce large bodies and send nothing: the requests waiting to be read stay under a
+# quarter of the memory limit (one largest request always fits), the rest get 503, and the server
+# keeps answering. It used to reserve each announced body at once and end with R0006.
+start vo run --max-memory 64 service.vo
+request-open a POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: 16000000\r\n\r\n
+request-open b POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: 16000000\r\n\r\n
+request-open c POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: 16000000\r\n\r\n
+request-open d POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: 16000000\r\n\r\n
+request-open e POST /x HTTP/1.1\r\nHost: x\r\nContent-Length: 16000000\r\n\r\n
+read-open b
+request GET /x
+signal TERM

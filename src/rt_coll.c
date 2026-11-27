@@ -85,7 +85,8 @@ long record_cmp(long a, long b, Type *t)
 static long ccmp(Coll *c, long a, long b)
 {
     if (!c->cmp) return value_cmp(a, b, c->type->a.t);
-    if (coll_nactive < 32) coll_active[coll_nactive++] = c;
+    if (coll_nactive >= 32) rt_stack_full((Node *)cur_node); /* every level is guarded, or none run */
+    coll_active[coll_nactive++] = c;
     long vals[2] = {a, b};
     long r = call_value(c->cmp, (Node *)cur_node, vals);
     coll_nactive--;

@@ -1,0 +1,29 @@
+# filter reads each element before its callback runs: a callback that shrinks the list and gives it
+# a smaller buffer no longer makes filter read outside it (bug sweep 2026-11-27, finding 1).
+fn main() uses console {
+    let xs = new list[str];
+    for i in 0..2000 {
+        push(xs, "item " + str(i));
+    }
+    let out = filter(xs, fn(x) {
+        if x == "item 1500" {
+            while len(xs) > 2 {
+                match pop(xs) {
+                    case ok(v) {
+                    }
+                    case err(e) {
+                    }
+                }
+            }
+            sort(xs);
+            let pad = new list[int];
+            for k in 0..3000 {
+                push(pad, k * 1000003);
+            }
+        }
+        return true;
+    });
+    print(str(len(out)));
+    let last = out[len(out) - 1];
+    print(str(len(last)));
+}

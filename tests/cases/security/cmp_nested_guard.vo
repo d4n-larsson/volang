@@ -1,0 +1,24 @@
+# The guard against a comparison function changing its collection covers 32 nested comparisons;
+# deeper nesting is R0005 (it used to drive the guard's counter negative and switch the guard off).
+import std.collections;
+
+fn nest(n: int) {
+    let holder = new list[ordered_set[int]];
+    let depth = new list[int];
+    let s: ordered_set[int] = collections.ordered_set_by(fn(a, b) {
+        if len(depth) < n and len(holder) > 0 {
+            push(depth, 1);
+            if has(holder[0], a) {
+            }
+        }
+        return a - b;
+    });
+    push(holder, s);
+    push(s, 1);
+    push(s, 2);
+}
+
+fn main() uses console {
+    nest(40);
+    print("not reached");
+}
