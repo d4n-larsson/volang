@@ -178,6 +178,8 @@ static int near_u128(unsigned long w, long q, unsigned long *out)
 
 /* The double nearest to w * 10^q (ties to even), as bits; above the range: infinity. Big integers
  * only where 128 bits do not hold the operands (about 3 us against 30 ns). */
+static unsigned long bn_n_to_double(long q);
+
 unsigned long exact_to_double(unsigned long w, long q)
 {
     const unsigned long inf = 2047UL << 52;
@@ -194,8 +196,34 @@ unsigned long exact_to_double(unsigned long w, long q)
     if (near_u128(w, q, &fast)) return fast;
     if (w == 0 || q < -345) return 0;
     if (q > 310) return inf;
-    bn_set(bn_n, w); /* N / D = w * 10^q, scaled by 2^p */
-    bn_set(bn_d, 1);
+    bn_set(bn_n, w);
+    return bn_n_to_double(q);
+}
+
+/* The digits d[0..nd) (ASCII, the first not '0', nd at most 700) times 10^q, as the nearest double: for
+ * texts of more digits than a word holds (std.json; cut to 19 digits they rounded the wrong way near a
+ * halfway point). 700 digits and the powers of five below fit the 40 limbs. */
+unsigned long exact_digits_to_double(char *d, long nd, long q)
+{
+    if (nd + q > 310) return 2047UL << 52;
+    if (nd + q < -345) return 0;
+    bn_set(bn_n, 0);
+    for (long i = 0; i < nd; i++) {
+        bn_mul_small(bn_n, 10);
+        unsigned long carry = (unsigned long)(d[i] - '0');
+        for (int k = 0; carry && k < BN_LIMBS; k++) {
+            bn_n[k] += carry;
+            carry = bn_n[k] < carry;
+        }
+    }
+    return bn_n_to_double(q);
+}
+
+/* bn_n times 10^q as the nearest double (ties to even); bn_n is not zero. */
+static unsigned long bn_n_to_double(long q)
+{
+    const unsigned long inf = 2047UL << 52;
+    bn_set(bn_d, 1); /* N / D = n * 10^q, scaled by 2^p */
     long p = q; /* the power of two: 10^q = 5^q * 2^q */
     if (q >= 0)
         bn_pow_mul(bn_n, 5, q);

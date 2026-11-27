@@ -1,0 +1,32 @@
+# Numbers of more than 19 significant digits read as the nearest double: every digit counts.
+# Cut to 19 digits, the first read as 9007199254740992.0 (a halfway point, rounded to even).
+import std.json;
+
+fn show(s: str) uses console {
+    match json.parse_json(s) {
+        case ok(n) {
+            match json.as_float(n) {
+                case ok(f) {
+                    print(str(f));
+                }
+                case err(e) {
+                    print("err " + e);
+                }
+            }
+        }
+        case err(e) {
+            print("err " + e);
+        }
+    }
+}
+
+fn main() uses console {
+    show("9007199254740993.00000000000000000001");
+    show("9007199254740993.0");
+    show("9007199254740992.99999999999999999999");
+    show("0.1000000000000000055511151231257827021181583404541015625");
+    show("123456789012345678901234567890.5");
+    show("1.00000000000000011102230246251565404236316680908203125");
+    show("1.00000000000000011102230246251565404236316680908203126");
+    show("1" + "0000000000" + "0000000000" + "0000000000" + ".0e300");
+}

@@ -1,0 +1,3 @@
+# A program in a folder named `std`: its own modules are found (the path `std/util.vo` named the
+# embedded library, which has no such module: E0205).
+vo run std/main.vo

@@ -191,6 +191,31 @@ static Str *jp_string(void)
 static long jp_float(int negative, long a0, long a1, long b0, long b1, long point)
 {
     unsigned long sign = negative ? 1UL << 63 : 0;
+    long sig = 0, first = 0; /* significant digits: from the first that is not zero */
+    for (int run = 0; run < 2; run++)
+        for (long i = run ? b0 : a0, end = run ? b1 : a1; i < end; i++) {
+            first |= jp_s[i] != '0';
+            sig += first;
+        }
+    if (sig > 19) { /* more than a word holds: every digit counts, exactly. Past 699 digits only whether
+                       one is not zero matters here (a 700th digit `1`: a halfway point is never that long
+                       in a value this code is given, and nothing shorter lies between) */
+        char big[700];
+        long n = 0, lead = 0;
+        int more = 0;
+        for (int run = 0; run < 2; run++)
+            for (long i = run ? b0 : a0, end = run ? b1 : a1; i < end; i++) {
+                if (!n && jp_s[i] == '0') {
+                    lead++;
+                    continue;
+                }
+                if (n < 699) big[n++] = jp_s[i];
+                else more |= jp_s[i] != '0';
+            }
+        if (more) big[n++] = '1';
+        /* 0.DIGITS * 10^point = DIGITS * 10^(point - their count) */
+        return (long)(exact_digits_to_double(big, n, point - lead - n) | sign);
+    }
     char d[19];
     long nd = 0;
     int leading = 1;

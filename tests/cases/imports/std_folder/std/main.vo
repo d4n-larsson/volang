@@ -1,0 +1,5 @@
+import util;
+
+fn main() uses console {
+    print(str(util.twice(2)));
+}

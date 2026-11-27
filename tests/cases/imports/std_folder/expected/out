@@ -1,0 +1,4 @@
+$ vo run std/main.vo
+4
+--- stderr
+--- exit 0

@@ -51,6 +51,15 @@ Str *import_rel(Node *import)
     return sb_finish(sb);
 }
 
+/* rel in dir, a file on the disk. A path that starts with `std/` names the embedded library
+ * (std_lookup), so a program kept in a folder named `std` gets `./std/...` for its own files. */
+static Str *disk_beside(Str *dir, Str *rel)
+{
+    Str *p = str_join2(dir, rel);
+    if (p->len >= 4 && mem_eq(p->data, "std/", 4)) p = str_join2(str_from_cstr("./"), p);
+    return p;
+}
+
 /* The path an import loads (spec 007 research R2, R8): `std/MODULE.vo` for `import std.MODULE.x;`,
  * a package's directory for a listed package name, else rel under the importer's directory. */
 Str *import_path(Node *import, Str *rel, FileRec *importer)
@@ -58,7 +67,7 @@ Str *import_path(Node *import, Str *rel, FileRec *importer)
     if (str_eq_cstr(vec_get(import->a.v, 0), "std")) return rel; /* the embedded file's own path */
     Str *p = pkg_import_path(import, importer);                 /* 0 when the first segment is none */
     if (p) return p;
-    return str_join2(importer->dir, rel);
+    return disk_beside(importer->dir, rel);
 }
 
 /* For a path under std/: registers the embedded file (FILE_STD) and returns its id, or -1 when
@@ -713,7 +722,7 @@ int missing_module_import(Str *m, Node *at)
     for (const StdFile *sf = std_files; sf->path; sf++)
         if (str_eq_cstr(stdp, (char *)sf->path)) in_std = 1;
     FileRec *f = file_get((int)at->file);
-    int beside = !ld_app && import_exists(str_join2(f->dir, msg("$1.vo", m, 0, 0)));
+    int beside = !ld_app && import_exists(disk_beside(f->dir, msg("$1.vo", m, 0, 0)));
     if (!in_std && !beside) return 0;
     if (!mm_names) {
         mm_names = vec_new();
