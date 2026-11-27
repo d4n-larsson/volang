@@ -140,6 +140,8 @@ void ed_rename(char *target, char *new_name)
         ed_refuse_arg("`$1` cannot be a new name: it must be a name that is not a keyword or a builtin.", name);
     for (long i = 0; i < refs->n; i++) { /* a change at every reference (each node spans the name) */
         Node *n = ((RefLog *)vec_get(refs, i))->node;
+        if (file_is_library((int)n->file)) /* a pinned package would no longer match its hash; std is not a file */
+            ed_refuse_arg("`$1` is declared or used in the standard library or a package: those files are not edited.", old);
         long start = n->start; /* spec 058: `notes.add`: the item part only */
         char *text = file_get((int)n->file)->text;
         for (long k = n->start; k < (long)n->end; k++)

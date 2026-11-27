@@ -602,10 +602,7 @@ Variant *rt_tcp(long op, long a, Str *text)
     case OP_CLOSE:
     case OP_CLOSE_LISTENER: { /* harmless on a closed one */
         Entry *e = entry_of(a, op == OP_CLOSE ? K_CONN : K_LISTEN);
-        if (e) {
-            rt_check_effect(e->effect);
-            entry_free(e);
-        }
+        if (e) entry_free(e); /* spec 056: closing needs no effect (std/tcp.vo declares none) */
         return make_result(0, 0);
     }
     case OP_PORT: {

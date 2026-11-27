@@ -1,0 +1,17 @@
+# A property starts each case with no log records, as a test does.
+import std.log;
+
+test "writes a record" uses log {
+    log.log_info("hello", []);
+    expect(len(log.logged()) == 1);
+}
+
+prop "each case starts with no records" (n: int) uses log {
+    log.log_info("x", []);
+    expect(len(log.logged()) == 1);
+}
+
+test "a test after it starts clean" uses log {
+    log.log_info("y", []);
+    expect(len(log.logged()) == 1);
+}

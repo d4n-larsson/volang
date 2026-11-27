@@ -1,0 +1,5 @@
+# vo fmt cannot write beside the file: T0009 and the file as it was (it used to say `formatted`, exit 0).
+chmod 555 ro
+vo fmt ro/a.vo
+chmod 755 ro
+keep ro/a.vo

@@ -1594,10 +1594,14 @@ void rt_begin(Node *test)
         sb_cstr(tb, (char *)opt_record);
         sb_cstr(tb, "/.recording.tmp");
         rt_tmp = sb_finish(tb);
+        /* DIR is committed with the program, so its contents are not trusted: whatever has the name
+           goes (a link, not what it names), and the file is created anew without following links */
+        sys_unlink(rt_tmp->data);
+        long fd = open_tmp(rt_tmp);
         if (!rt_fb) {
-            rt_fb = fbuf_open(rt_tmp->data);
+            rt_fb = fbuf_new(fd);
         } else {
-            rt_fb->fd = sys_open(rt_tmp->data, O_WRCREAT);
+            rt_fb->fd = fd;
             rt_fb->len = 0;
             rt_fb->err = rt_fb->fd < 0;
         }

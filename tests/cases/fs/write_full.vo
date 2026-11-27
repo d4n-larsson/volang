@@ -1,0 +1,11 @@
+# A write the disk refuses is an err: write_file used to answer ok and leave a short file.
+fn main() uses console, file.write {
+    match write_file("/dev/full", "hello") {
+        case ok() {
+            print("ok");
+        }
+        case err(e) {
+            print("err " + e);
+        }
+    }
+}

@@ -401,7 +401,12 @@ void oom_default(void)
    memory is permanent (it lives until vo_exit). */
 void *fbuf_open(char *path)
 {
-    long fd = sys_open(path, O_WRCREAT);
+    return fbuf_new(sys_open(path, O_WRCREAT));
+}
+
+/* The buffered writer of an open file (fd < 0: 0). */
+void *fbuf_new(long fd)
+{
     if (fd < 0) return 0;
     FBuf *fb = perm_alloc(FB_SIZE);
     fb->buf = perm_alloc(FB_CAP);

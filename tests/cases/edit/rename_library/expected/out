@@ -1,0 +1,8 @@
+$ vo edit rename main.vo repeat rep
+error[T0006]: `repeat` is declared or used in the standard library or a package: those files are not edited.
+--- stderr
+--- exit 65
+$ vo edit rename main.vo repeat rep --dry-run
+error[T0006]: `repeat` is declared or used in the standard library or a package: those files are not edited.
+--- stderr
+--- exit 65

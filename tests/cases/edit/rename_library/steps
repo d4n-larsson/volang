@@ -1,0 +1,4 @@
+# A name declared in the standard library (or a package) is not renamed: those files are not edited.
+vo edit rename main.vo repeat rep
+vo edit rename main.vo repeat rep --dry-run
+keep main.vo

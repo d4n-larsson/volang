@@ -36,12 +36,21 @@ int net_kind; /* spec 039: why the last net_open failed (NET_*), for std.tcp's t
 /* Waits for events on fd: 1 when ready, 0 after cap_ms (cap_ms < 0: no cap of its own). The run's
  * deadline is the outer bound: past it, the run stops with R0009 at the current call. A request's
  * own timeout (net_cap_ms) ends the wait with 0 and net_capped set: the caller gives up with an err. */
+static long net_owned = -1; /* a socket only this file holds: closed before R0009 leaves it (net_wait_own) */
+
+static void net_timeout(void)
+{
+    if (net_owned >= 0) sys_close((int)net_owned);
+    net_owned = -1;
+    rt_timeout((Node *)cur_node);
+}
+
 int net_wait(long fd, int events, long cap_ms)
 {
     long wait = cap_ms;
     if (deadline_ms) {
         long left = deadline_ms - sys_clock_ms();
-        if (left <= 0) rt_timeout((Node *)cur_node);
+        if (left <= 0) net_timeout();
         if (wait < 0 || left < wait) wait = left;
     }
     if (net_cap_ms) {
@@ -53,9 +62,19 @@ int net_wait(long fd, int events, long cap_ms)
         if (wait < 0 || left < wait) wait = left;
     }
     if (sys_wait_fd(fd, events, wait)) return 1;
-    if (deadline_ms && sys_clock_ms() >= deadline_ms) rt_timeout((Node *)cur_node);
+    if (deadline_ms && sys_clock_ms() >= deadline_ms) net_timeout();
     if (net_cap_ms && sys_clock_ms() >= net_cap_ms) net_capped = 1;
     return 0;
+}
+
+/* net_wait on a socket that no table holds: R0009 raised while waiting closes it (it leaked: a
+ * server whose handler timed out on a slow peer ran out of descriptors). */
+static int net_wait_own(long fd, int events, long cap_ms)
+{
+    net_owned = fd;
+    int r = net_wait(fd, events, cap_ms);
+    net_owned = -1;
+    return r;
 }
 
 /* The err of a request that ran into its own timeout. */
@@ -196,7 +215,7 @@ static int dns_lookup(Str *host, uint8_t *out)
         uint8_t r[512];
         for (int t = 0; t < DNS_TRIES && found < 0; t++) {
             if (vo_syscall6(SYS_sendto, fd, (long)q, n, MSG_NOSIGNAL, 0, 0) != n) break;
-            if (!net_wait(fd, POLLIN, DNS_WAIT_MS)) { /* no reply yet: ask again */
+            if (!net_wait_own(fd, POLLIN, DNS_WAIT_MS)) { /* no reply yet: ask again */
                 if (net_capped) break;
                 continue;
             }
@@ -283,7 +302,7 @@ long net_open(Str *host, long port, Variant **err)
     }
     long c = net_connect(fd, addr, port);
     if (c == -E_INPROGRESS) { /* wait, then ask again: 0 or EISCONN when connected */
-        net_wait(fd, POLLOUT, -1);
+        net_wait_own(fd, POLLOUT, -1);
         c = net_connect(fd, addr, port);
         if (c == -E_ISCONN) c = 0;
     }
@@ -313,7 +332,7 @@ Variant *rt_http_exchange(Str *host, long port, Str *request)
     for (long sent = 0; sent < request->len;) {
         long w = vo_syscall6(SYS_sendto, fd, (long)request->data + sent, request->len - sent, MSG_NOSIGNAL, 0, 0);
         if (w == -E_AGAIN) {
-            net_wait(fd, POLLOUT, -1);
+            net_wait_own(fd, POLLOUT, -1);
             if (!net_capped) continue;
             sys_close((int)fd);
             GC_UNROOT(2);
@@ -332,7 +351,7 @@ Variant *rt_http_exchange(Str *host, long port, Str *request)
     for (;;) {
         long got = vo_syscall6(SYS_recvfrom, fd, (long)buf, sizeof buf, 0, 0, 0);
         if (got == -E_AGAIN) {
-            net_wait(fd, POLLIN, -1);
+            net_wait_own(fd, POLLIN, -1);
             if (!net_capped) continue;
             result = net_timed_out(host, port);
             break;

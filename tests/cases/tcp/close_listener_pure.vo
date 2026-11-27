@@ -1,0 +1,12 @@
+# Closing a listener needs no effect, as std/tcp.vo declares: it was R0010 in a function with none.
+import std.tcp;
+fn shut(l: tcp.Listener) {
+    tcp.close_listener(l);
+}
+fn main() -> result[void] uses console, serve("0") {
+    match tcp.listen("0") {
+        case ok(l) { shut(l); print("closed"); }
+        case err(e) { print("listen failed"); }
+    }
+    return ok();
+}

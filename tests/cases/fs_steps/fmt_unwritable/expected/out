@@ -1,0 +1,4 @@
+$ vo fmt ro/a.vo
+error[T0009]: Cannot write `ro/a.vo`.
+--- stderr
+--- exit 74

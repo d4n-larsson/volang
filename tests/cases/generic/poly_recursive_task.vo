@@ -1,0 +1,12 @@
+# A type whose every level is a new instance (`more(N[list[T]])`): the walks over it end. `vo check` hung.
+variant N[T] {
+    stop;
+    more(N[list[T]]);
+}
+fn g(x: int) -> N[int] {
+    return N.stop;
+}
+fn main() uses console {
+    let ys = concurrent_map([1, 2], 2, g);
+    print(str(len(ys)));
+}

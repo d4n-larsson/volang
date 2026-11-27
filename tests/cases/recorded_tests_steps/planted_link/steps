@@ -1,0 +1,6 @@
+# A link planted at the recording's temporary name: it is replaced, and what it names is not written.
+write victim.txt untouched\n
+mkdir recs
+symlink ../victim.txt recs/.recording.tmp
+vo test --record recs t.vo
+keep victim.txt

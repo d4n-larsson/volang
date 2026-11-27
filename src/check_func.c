@@ -380,6 +380,7 @@ static Str *task_func_path(Type *t, Vec *seen)
     case TY_VARIANT:
         for (long i = 0; i < seen->n; i++)
             if (vec_get(seen, i) == t) return 0;
+        if (seen->n >= 64) return 0; /* `more(N[list[T]])`: every level is a new instance, without end */
         vec_push(seen, t);
         for (long i = 0;; i++) {
             Node *m = member_at(t->decl.n->b.v, i);

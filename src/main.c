@@ -749,7 +749,7 @@ void fmt_report(Str *path, int changed)
 }
 
 /* Writes <path>.vo-fmt-<random>.tmp (created exclusively), then renames it over path, so a crash never
- * truncates the source. */
+ * truncates the source. A write that fails leaves path as it was and ends the command with T0009. */
 Str *write_captured; /* spec 038: the last text a command would have written */
 long write_capture;  /* spec 038: 1 in a copy of `vo lsp`: nothing is written, the text is kept */
 
@@ -761,8 +761,18 @@ void write_file_safely(Str *path, Str *text)
     }
     Str *tmp = tmp_path(path, "fmt"); /* spec 013 (M3): unpredictable, created exclusively */
     long fd = open_tmp(tmp);
-    if (fd < 0) return;
-    write_all((int)fd, text->data, text->len);
-    sys_close((int)fd);
-    sys_rename(tmp->data, path->data);
+    int failed = fd < 0;
+    if (!failed) {
+        long stx[32]; /* struct statx: the file keeps its mode (stx_mode, u16 at 28) */
+        if (vo_syscall5(SYS_statx, AT_FDCWD, (long)path->data, 0, 2 /* STATX_MODE */, (long)stx) >= 0)
+            sys_fchmod((int)fd, *(uint16_t *)((char *)stx + 28) & 07777);
+        failed = write_checked((int)fd, text->data, text->len);
+        failed |= sys_close((int)fd) < 0;
+        if (!failed) failed = sys_rename(tmp->data, path->data) < 0;
+        if (failed) sys_unlink(tmp->data);
+    }
+    if (failed) { /* the file is as it was: say so, where this used to report success */
+        toolchain_error((int)opt_json, (int)report_fd, "T0009", msg("Cannot write `$1`.", path, 0, 0), path);
+        vo_exit(EXIT_OUTPUT);
+    }
 }

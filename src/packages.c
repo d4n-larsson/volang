@@ -740,8 +740,11 @@ static int pkg_write_files(Str *staging, Vec *files, Str **why)
             *why = msg("cannot write `$1`", path, 0, 0);
             return -1;
         }
-        write_all((int)fd, f->data, f->n);
-        sys_close((int)fd);
+        int failed = write_checked((int)fd, f->data, f->n);
+        if ((sys_close((int)fd) < 0) | failed) {
+            *why = msg("cannot write `$1`", path, 0, 0);
+            return -1;
+        }
     }
     return 0;
 }

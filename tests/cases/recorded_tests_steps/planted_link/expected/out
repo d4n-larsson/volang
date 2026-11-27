@@ -1,0 +1,5 @@
+$ vo test --record recs t.vo
+PASS reads clock (0ms, recorded)
+1 passed, 0 failed
+--- stderr
+--- exit 0

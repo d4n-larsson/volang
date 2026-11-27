@@ -117,8 +117,9 @@ Variant *rt_write_file(Str *path, Str *text)
 {
     long fd = rt_open_file(EF_FWRITE, path, O_WRCREAT); /* spec 013: checked, beneath its scope */
     if (fd < 0) return make_result(1, (long)msg("cannot write $1", path, 0, 0));
-    write_all((int)fd, text->data, text->len);
-    sys_close((int)fd);
+    int failed = write_checked((int)fd, text->data, text->len); /* a full disk is an err, not a short file */
+    failed |= sys_close((int)fd) < 0;
+    if (failed) return make_result(1, (long)msg("cannot write $1", path, 0, 0));
     return make_result(0, 0);
 }
 

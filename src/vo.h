@@ -2621,6 +2621,7 @@ extern void perm_end(void);
 extern void *alloc_obj(int kind, long size);
 extern void oom_default(void);
 extern void *fbuf_open(char *path);
+extern void *fbuf_new(long fd);
 extern void fbuf_flush(void *fbp);
 extern void fbuf_write(void *fbp, char *p, long n);
 

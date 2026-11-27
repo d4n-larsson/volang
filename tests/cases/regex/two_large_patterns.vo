@@ -1,0 +1,12 @@
+# The capture buffer is sized from each pattern, not from the largest counts seen: R0006 before.
+import std.regex;
+import std.text;
+
+fn main() uses console {
+    let a = regex.regex("(?:a{1000}){17}");
+    print(str(regex.is_match("b", a)));
+    match regex.parse_regex(text.repeat("()", 700)) {
+        case ok(b) { print(str(regex.is_match("b", b))); }
+        case err(e) { print(e); }
+    }
+}

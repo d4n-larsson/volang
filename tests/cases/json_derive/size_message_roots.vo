@@ -1,0 +1,21 @@
+# The parts of a @size message are rooted while the next is built (the stress run printed `3 3s, got 3`).
+import std.json;
+
+record P {
+    @size(2, 3)
+    name: str;
+    @size(1, 2)
+    tags: list[str];
+}
+
+fn main() uses console {
+    for i in 0..3 {
+        match json.parse_json("{\"name\": \"abcdefghij\", \"tags\": [\"a\",\"b\",\"c\",\"d\"]}") {
+            case ok(j) {
+                let r: result[P] = json.from_json(j);
+                match r { case ok(p) { print(p.name); } case err(e) { print(e); } }
+            }
+            case err(e) { print(e); }
+        }
+    }
+}

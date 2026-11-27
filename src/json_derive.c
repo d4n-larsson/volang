@@ -442,8 +442,18 @@ static void check_limits(Node *field, Type *ft, long v)
         long n = ft->kind == TY_STR ? utf8_chars((Str *)v) : ft->kind == TY_LIST ? ((List *)v)->len : ((Map *)v)->count;
         long lo = annot_value(vec_get(a->b.v, 0), ft), hi = annot_value(vec_get(a->b.v, 1), ft);
         char *unit = ft->kind == TY_STR ? "character" : "item";
-        if (n < lo) prob(1, msg(lo == 1 ? "at least $1 $2, got $3" : "at least $1 $2s, got $3", int_to_str(lo), str_from_cstr(unit), int_to_str(n)));
-        if (n > hi) prob(1, msg(hi == 1 ? "at most $1 $2, got $3" : "at most $1 $2s, got $3", int_to_str(hi), str_from_cstr(unit), int_to_str(n)));
+        if (n < lo || n > hi) { /* each part allocates: rooted while the next is built */
+            Str *lim = 0, *us = 0, *got = 0;
+            GC_ROOT(&lim);
+            GC_ROOT(&us);
+            GC_ROOT(&got);
+            lim = int_to_str(n < lo ? lo : hi);
+            us = str_from_cstr(unit);
+            got = int_to_str(n);
+            if (n < lo) prob(1, msg(lo == 1 ? "at least $1 $2, got $3" : "at least $1 $2s, got $3", lim, us, got));
+            else prob(1, msg(hi == 1 ? "at most $1 $2, got $3" : "at most $1 $2s, got $3", lim, us, got));
+            GC_UNROOT(3);
+        }
     }
     a = annot(field, "range");
     if (a) {

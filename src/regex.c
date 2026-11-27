@@ -844,25 +844,38 @@ static TList lists[2];
 static long cap_threads, cap_slots;
 static long *stk, *cur, *blank;
 
-/* The VM's buffers for a program of nc instructions and ns capture slots (perm memory, only grown:
- * bounded by the size limit on nc * ns). */
+/* The VM's buffers for a program of nc instructions and ns capture slots (perm memory, only grown).
+ * The captures are sized from this program's nc * ns, which the size limit bounds: sized from the
+ * largest nc and the largest ns seen, two patterns that were each fine asked for their product. */
+static long cap_caps; /* words in each list's caps */
+
 static void ensure_vm(long nc, long ns)
 {
-    if (nc + 1 <= cap_threads && ns + 1 <= cap_slots) return;
-    long c = cap_threads > 64 ? cap_threads : 64, s = cap_slots > 8 ? cap_slots : 8;
-    while (c < nc + 1) c *= 2;
-    while (s < ns + 1) s *= 2;
-    for (int i = 0; i < 2; i++) {
-        lists[i].pc = perm_alloc(2 * c * 8); /* a state can be entered twice per step (add_thread) */
-        lists[i].caps = perm_alloc(2 * c * s * 8);
-        lists[i].dense = perm_alloc(2 * c * 8); /* a LOOP's "empty" exit is entered as pc + ncode */
-        lists[i].sparse = perm_alloc(2 * c * 8);
+    long need = 2 * (nc + 1) * (ns + 1); /* a state can be entered twice per step (add_thread) */
+    if (need > cap_caps) {
+        long w = cap_caps > 1024 ? cap_caps : 1024;
+        while (w < need) w *= 2;
+        for (int i = 0; i < 2; i++) lists[i].caps = perm_alloc(w * 8);
+        cap_caps = w;
     }
-    cur = perm_alloc(s * 8);
-    blank = perm_alloc(s * 8);
-    stk = perm_alloc((6 * c + 8) * 8); /* at most 3 pushes per entered state, two entries per LOOP */
-    cap_threads = c;
-    cap_slots = s;
+    if (nc + 1 > cap_threads) {
+        long c = cap_threads > 64 ? cap_threads : 64;
+        while (c < nc + 1) c *= 2;
+        for (int i = 0; i < 2; i++) {
+            lists[i].pc = perm_alloc(2 * c * 8);
+            lists[i].dense = perm_alloc(2 * c * 8); /* a LOOP's "empty" exit is entered as pc + ncode */
+            lists[i].sparse = perm_alloc(2 * c * 8);
+        }
+        stk = perm_alloc((6 * c + 8) * 8); /* at most 3 pushes per entered state, two entries per LOOP */
+        cap_threads = c;
+    }
+    if (ns + 1 > cap_slots) {
+        long sl = cap_slots > 8 ? cap_slots : 8;
+        while (sl < ns + 1) sl *= 2;
+        cur = perm_alloc(sl * 8);
+        blank = perm_alloc(sl * 8);
+        cap_slots = sl;
+    }
 }
 
 static void list_reset(TList *l)

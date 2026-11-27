@@ -114,7 +114,7 @@ static int pg_find(Type *t, Type *target, Vec *stack)
     case TY_DEQUE: return pg_find(t->a.t, target, stack) || (t->b.t && pg_find(t->b.t, target, stack));
     case TY_RECORD:
     case TY_VARIANT: {
-        if (pg_on_stack(stack, t)) return 0;
+        if (pg_on_stack(stack, t) || stack->n >= 64) return 0; /* (64: a type whose every level is a new instance) */
         GC_ROOT(&stack); /* at run time a heap vec; pg_member may allocate (generic instances) */
         vec_push(stack, t);
         long n = pg_nmembers(t);
@@ -136,7 +136,7 @@ static int pg_find(Type *t, Type *target, Vec *stack)
 static int pg_finite(Type *t, Vec *stack)
 {
     if (t->kind != TY_RECORD && t->kind != TY_VARIANT) return 1;
-    if (pg_on_stack(stack, t)) return 0;
+    if (pg_on_stack(stack, t) || stack->n >= 64) return 0; /* (64: as pg_find) */
     vec_push(stack, t);
     long n = pg_nmembers(t);
     int record = t->kind == TY_RECORD; /* a record: every field finite; a variant: one case */
@@ -699,6 +699,8 @@ static int pr_try(Node *test, List *args)
     long status = jmp_save(jb); /* 0 ran through, 1 expect failed, 2 runtime error */
     if (!status) {
         rt_effects_start(1); /* every case starts from seed and clock defaults */
+        rt_log_reset(); /* and with no records, request id or metrics, as a test does (testrun.c) */
+        rt_metrics_reset();
         tr_test(test);       /* spec 006: the trace's test record, for each case */
         vm_run(vm_push(test->d.fx->code, test, 0, &copy->data->i, 0));
     }

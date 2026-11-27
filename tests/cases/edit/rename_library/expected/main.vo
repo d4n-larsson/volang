@@ -1,0 +1,5 @@
+import std.text;
+
+fn main() uses console {
+    print(text.repeat("ab", 2));
+}

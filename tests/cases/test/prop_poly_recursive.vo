@@ -1,0 +1,8 @@
+# As generic/poly_recursive_task, for the walk over a property parameter.
+variant N[T] {
+    stop;
+    more(N[list[T]]);
+}
+prop "never" (n: N[int]) {
+    expect(true);
+}

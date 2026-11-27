@@ -1,0 +1,7 @@
+fn now() -> int uses clock {
+    return now_ms();
+}
+
+test "reads clock" uses clock {
+    expect(now() >= 0);
+}
