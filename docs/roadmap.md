@@ -717,7 +717,7 @@ next; anything that reaches the outside world gets an effect, scopes, and record
 | Workers in tasks and servers | `start_worker` and `with_deadline` only in the program's own process (spec 047) | a table of workers per process |
 | Confined child programs | a program started under `process` runs with the user's full rights | opt-in confinement to the grant (Landlock); spec 017 follow-up |
 | UDP, IPv6 | TCP over IPv4 only (spec 039) | when a program needs them; IPv6 for the HTTP client and `std.tcp` together |
-| A registry, versions | packages are fetched by URL and pinned by hash (spec 041); nothing resolves versions or dependencies | when there are enough packages to need it |
+| A registry | versions and dependencies are resolved from git repositories and their tags (spec 061); there is no index to search or to publish to | when there are enough packages that finding them is the problem |
 | Debugger | traces, locals in errors and replay, but no stepping | replay makes a deterministic stepper possible |
 | `old()` in `ensures` | contracts cannot compare with values from before the call | spec 005 follow-up |
 | Tuples | no tuple type | map keys done in spec 033; tuples declined for now: a record groups values and is a key |
