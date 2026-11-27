@@ -31,16 +31,22 @@ def ask(prompt, model):
     # directory, and none of the user's settings, hooks, plugins or MCP servers.
     cmd = ["claude", "-p", "--tools", "", "--setting-sources", "", "--strict-mcp-config",
            "--no-session-persistence"] + (["--model", model] if model else [])
-    # The API sometimes stalls: a call that hangs is asked again, up to three times, without using up
-    # an attempt. Returns (reply, hangs); the reply is None when all three hung.
-    for hangs in range(3):
+    # The API sometimes stalls: a call that hangs is asked again, without using up an attempt.
+    # Returns (reply, hangs). After ten hangs in a row the API is taken to be down and the run stops,
+    # so that no attempt is recorded without a reply; resume it with --only.
+    for hangs in range(10):
         with tempfile.TemporaryDirectory() as empty:
             try:
                 p = subprocess.run(cmd, input=prompt.encode(), capture_output=True, timeout=300, cwd=empty)
-                return p.stdout.decode("utf-8", "replace"), hangs
             except subprocess.TimeoutExpired:
-                pass
-    return None, 3
+                continue
+        out = p.stdout.decode("utf-8", "replace")
+        # A failed call (a usage limit, an API error) is not an answer: stop rather than record it.
+        if p.returncode != 0 or not out.strip():
+            sys.exit(f"agent: claude -p failed (exit {p.returncode}): "
+                     f"{(out + p.stderr.decode('utf-8', 'replace')).strip()[-300:]}")
+        return out, hangs
+    sys.exit("agent: ten calls in a row hung; stopping the run")
 
 
 def parse_reply(reply, entry):
@@ -133,7 +139,7 @@ def main():
         for attempts in range(1, a.attempts + 1):
             reply, hangs = ask(prompt, a.model)
             timeouts += hangs
-            files = parse_reply(reply or "", entry)
+            files = parse_reply(reply, entry)
             # Every draft is kept, graded where it lies: results/drafts/<lang>[-features]/<task>/<attempt>/.
             sol = os.path.join(drafts, str(attempts))
             os.makedirs(sol)
