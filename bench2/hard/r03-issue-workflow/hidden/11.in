@@ -1,0 +1,21 @@
+user ann
+new p2 Old work
+new p2 Newer work
+new p3 Newest work
+wait 4
+move 1 triaged
+assign 2 ann
+move 2 triaged
+move 2 in_progress
+wait 2
+stale 1
+stale 2
+stale 3
+stale 9
+unassign 2
+stale 0
+close 3
+stale 0
+reopen 3
+stale 0
+show 3

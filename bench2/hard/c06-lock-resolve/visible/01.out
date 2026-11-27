@@ -1,0 +1,12 @@
+pick web 2.1.0
+pick app 1.1.0
+pick http 1.2.5
+pick log 1.4.7
+pick json 1.9.9
+== lock
+app 1.1.0
+http 1.2.5
+json 1.9.9
+log 1.4.7
+web 2.1.0
+wrote out/dev.lock 5

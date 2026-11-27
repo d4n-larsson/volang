@@ -1,0 +1,3 @@
+lock dev
+web <2.3.0
+app ^1.0.0

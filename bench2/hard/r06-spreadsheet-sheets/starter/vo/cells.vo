@@ -1,0 +1,106 @@
+# Cell names: a column letter A-Z and a row 1-99, such as A1 or Z99. Letters may be lower-case.
+export const cols = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+export const max_row = 99;
+
+# A cell: col 0-25 (A-Z), row 1-99.
+export record Pos {
+    col: int;
+    row: int;
+}
+
+# A range with col1 <= col2 and row1 <= row2.
+export record Area {
+    col1: int;
+    row1: int;
+    col2: int;
+    row2: int;
+}
+
+export fn is_digits(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+# An optional `-` and at least one digit.
+export fn is_int(s: str) -> bool {
+    if len(s) > 0 and slice(s, 0, 1) == "-" {
+        return is_digits(slice(s, 1, len(s)));
+    }
+    return is_digits(s);
+}
+
+# The value of a string that passed is_int.
+export fn to_int(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+# The cell of a cell name, or err("").
+export fn parse_cell(text: str) -> result[Pos] {
+    if len(text) < 2 or len(text) > 3 {
+        return err("");
+    }
+    let letter = upper(slice(text, 0, 1));
+    let digits = slice(text, 1, len(text));
+    let col = find(cols, letter);
+    if col < 0 or not is_digits(digits) or slice(digits, 0, 1) == "0" {
+        return err("");
+    }
+    return ok(new Pos { col: col, row: to_int(digits) });
+}
+
+# The range of `A1:C3` (corners in any order), or err("").
+export fn parse_range(text: str) -> result[Area] {
+    let parts = split(text, ":");
+    if len(parts) != 2 {
+        return err("");
+    }
+    let a = try parse_cell(parts[0]);
+    let b = try parse_cell(parts[1]);
+    return ok(new Area { col1: min(a.col, b.col), row1: min(a.row, b.row), col2: max(a.col, b.col), row2: max(a.row, b.row) });
+}
+
+export fn on_grid(col: int, row: int) -> bool {
+    return col >= 0 and col < len(cols) and row >= 1 and row <= max_row;
+}
+
+export fn col_name(col: int) -> str {
+    return slice(cols, col, col + 1);
+}
+
+export fn cell_name(p: Pos) -> str {
+    return col_name(p.col) + str(p.row);
+}
+
+# The cells of a range, row by row from the top, left to right within a row.
+export fn range_cells(a: Area) -> list[Pos] {
+    let out = new list[Pos];
+    for row in a.row1..a.row2 + 1 {
+        for col in a.col1..a.col2 + 1 {
+            push(out, new Pos { col: col, row: row });
+        }
+    }
+    return out;
+}
+
+# Cells in column order, then row order (A1, A2, ..., B1), each once.
+export fn sorted_cells(found: list[Pos]) -> list[Pos] {
+    let xs = slice(found, 0, len(found));
+    sort_by(xs, fn(p) => p);
+    let out = new list[Pos];
+    for p in xs {
+        if len(out) == 0 or out[len(out) - 1] != p {
+            push(out, p);
+        }
+    }
+    return out;
+}

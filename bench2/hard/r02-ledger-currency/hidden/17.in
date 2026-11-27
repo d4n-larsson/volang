@@ -1,0 +1,20 @@
+open assets:bank asset
+open assets:jpy asset JPY
+open assets:eur asset EUR
+open equity:x equity
+rate JPY 0 0.0067
+rate EUR 0 999.9999
+post j1 1 big assets:jpy=999999.99 assets:bank=
+post j2 2 big assets:jpy=999999.99 assets:bank=
+post j3 3 tiny assets:jpy=0.74 assets:bank=-0.01
+post j4 3 tiny assets:jpy=0.75 assets:bank=-0.01
+post j5 3 tiny assets:jpy=0.74 assets:bank=-0.00
+post j6 3 tiny assets:jpy=0.74 equity:x=
+post j7 4 big assets:eur=999999.99 equity:x=
+statement assets:jpy
+statement assets:bank
+statement assets:eur
+balance assets
+show j7
+revalue 4
+trial

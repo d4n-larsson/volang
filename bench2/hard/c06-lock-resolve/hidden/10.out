@@ -1,0 +1,4 @@
+pick json 1.9.9
+pick ghost-dep 1.0.0
+pick log 2.0.0
+error: unknown package nothere (required by ghost-dep@1.0.0)

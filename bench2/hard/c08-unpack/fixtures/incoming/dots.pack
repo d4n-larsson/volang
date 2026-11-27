@@ -1,0 +1,12 @@
+PACK 1
+F ..foo 1
+dots
+F .../x 1
+three
+F a//b///c 1
+slashes
+F trail/ 1
+trailing
+D .hidden
+F .hidden/f 0
+END 5

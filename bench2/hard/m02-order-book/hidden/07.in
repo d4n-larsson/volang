@@ -1,0 +1,20 @@
+limit S1 ana sell MO 10 7.00
+limit S2 bob sell MO 10 7.00
+limit S3 cy sell MO 10 7.00
+modify S1 4 7.00
+modify S2 12 7.00
+modify S3 10 7.00
+book MO
+limit B1 dan buy MO 15 7.00
+book MO
+modify S2 6 6.90
+modify B1 3 7.00
+modify ZZ 1 1.00
+stop T1 eve buy MO 1 9.00
+modify T1 2 9.00
+limit B2 fay buy MO 5 6.80
+modify B2 8 6.95
+book MO
+modify B2 9 7.10
+modify S3 2 6.50
+book MO

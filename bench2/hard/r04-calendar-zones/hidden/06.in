@@ -1,0 +1,26 @@
+user pia -07:00
+user qi +08:00
+user rex
+user sol
+room box 4 +02:00
+room cube 2
+book k1 box pia 9 08:00 60
+book k2 cube qi 10 00:30 45
+hours rex 10:00 15:30
+invite k1 qi
+invite k1 rex
+hours rex 10:00 16:00
+invite k1 rex
+invite k1 rex
+invite k2 rex
+hours rex none
+invite k2 rex
+invite k2 qi
+book k3 cube sol 9 15:30 60
+invite k1 sol
+invite k2 pia
+who k1
+who k2
+leave k2 qi
+leave k2 rex
+who k2

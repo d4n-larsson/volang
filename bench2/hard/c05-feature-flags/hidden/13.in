@@ -1,0 +1,21 @@
+profile rollout
+user alice
+user bob
+user carol vip=yes
+user dave vip=no
+user erin plan=pro
+user frank plan=
+user grace plan=free
+user heidi
+user ivan
+user judy
+user mallory
+user niaj
+user olivia
+user peggy
+user sybil
+user trent
+user u-17
+user U-17
+user 42
+user x.y@z

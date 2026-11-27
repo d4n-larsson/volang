@@ -1,0 +1,40 @@
+.width 19
+.width 101
+.width 1000
+.width -5
+.width abc
+.width 30 40
+.width 030
+.indent 11
+.indent 10
+.width 29
+.page 3
+.page 0004
+.align middle
+.align
+.list foo
+.list
+.endlist
+.endlist x
+.break x
+.heading
+.title
+.Width 40
+.
+..
+text starts here
+.width 40
+.page 10
+.width 10
+.indent 15
+.list bullet
+.list bullet
+.list number
+.list number
+.list x
+.endlist
+.endlist
+.endlist
+.endlist
+.heading Done
+more text

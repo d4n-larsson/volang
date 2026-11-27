@@ -1,0 +1,10 @@
+holiday 0
+task kick 0 Kickoff
+task m2 0
+dep m2 kick+3
+holiday 2
+schedule
+critical
+end
+gantt
+list

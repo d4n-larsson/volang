@@ -1,0 +1,129 @@
+record Match {
+    home: str;
+    hg: int;
+    ag: int;
+    away: str;
+}
+
+record Key {
+    pts: int;
+    gd: int;
+    gf: int;
+}
+
+fn add(st: map[str, Key], t: str, f: int, g: int) {
+    let k = st[t];
+    var p = 0;
+    if f > g {
+        set p = 3;
+    } else if f == g {
+        set p = 1;
+    }
+    set st[t] = new Key { pts: k.pts + p, gd: k.gd + f - g, gf: k.gf + f };
+}
+
+fn stats(matches: list[Match], teams: list[str]) -> map[str, Key] {
+    let st = new map[str, Key];
+    for t in teams {
+        set st[t] = new Key { pts: 0, gd: 0, gf: 0 };
+    }
+    for m in matches {
+        if has(st, m.home) and has(st, m.away) {
+            add(st, m.home, m.hg, m.ag);
+            add(st, m.away, m.ag, m.hg);
+        }
+    }
+    return st;
+}
+
+# Groups of teams with equal keys, best key first.
+fn split_by(group: list[str], st: map[str, Key]) -> list[list[str]] {
+    let sorted = slice(group, 0, len(group));
+    sort_by(sorted, fn(t) => new Key { pts: -st[t].pts, gd: -st[t].gd, gf: -st[t].gf });
+    let out = new list[list[str]];
+    for t in sorted {
+        if len(out) > 0 and st[out[len(out) - 1][0]] == st[t] {
+            push(out[len(out) - 1], t);
+        } else {
+            push(out, [t]);
+        }
+    }
+    return out;
+}
+
+fn order_group(group: list[str], matches: list[Match], overall: map[str, Key]) -> list[str] {
+    if len(group) < 2 {
+        return group;
+    }
+    let parts = split_by(group, stats(matches, group));
+    if len(parts) == 1 {
+        let out = slice(group, 0, len(group));
+        sort(out);
+        sort_by(out, fn(t) => new Key { pts: 0, gd: -overall[t].gd, gf: -overall[t].gf });
+        return out;
+    }
+    let out = new list[str];
+    for p in parts {
+        for t in order_group(p, matches, overall) {
+            push(out, t);
+        }
+    }
+    return out;
+}
+
+fn signed(n: int) -> str {
+    if n > 0 {
+        return "+" + str(n);
+    }
+    return str(n);
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = filter(split(read_all(), "\n"), fn(l) => len(l) > 0);
+    let teams = split(lines[0], " ");
+    let matches = new list[Match];
+    for l in slice(lines, 1, len(lines)) {
+        let w = split(l, " ");
+        push(matches, new Match { home: w[0], hg: try parse_int(w[1]), ag: try parse_int(w[2]), away: w[3] });
+    }
+    let overall = stats(matches, teams);
+    let by_points = new map[str, Key];
+    for t in teams {
+        set by_points[t] = new Key { pts: overall[t].pts, gd: 0, gf: 0 };
+    }
+    let table = new list[str];
+    for g in split_by(teams, by_points) {
+        for t in order_group(g, matches, overall) {
+            push(table, t);
+        }
+    }
+    for pos, t in table {
+        var p = 0;
+        var w = 0;
+        var d = 0;
+        var l = 0;
+        var ga = 0;
+        for m in matches {
+            if m.home == t or m.away == t {
+                var f = m.hg;
+                var g = m.ag;
+                if m.away == t {
+                    set f = m.ag;
+                    set g = m.hg;
+                }
+                set p = p + 1;
+                set ga = ga + g;
+                if f > g {
+                    set w = w + 1;
+                } else if f == g {
+                    set d = d + 1;
+                } else {
+                    set l = l + 1;
+                }
+            }
+        }
+        let k = overall[t];
+        print(join([str(pos + 1), t, str(p), str(w), str(d), str(l), str(k.gf), str(ga), signed(k.gd), str(k.pts)], " "));
+    }
+    return ok();
+}

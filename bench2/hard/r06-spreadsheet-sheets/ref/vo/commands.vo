@@ -1,0 +1,311 @@
+# The commands. Each takes the book and the command's arguments and returns the lines to print, or
+# err(line): a command that cannot be done prints that line instead and changes nothing.
+import cells;
+import evaluate;
+import formula;
+import grid;
+import parser;
+import sheet;
+
+fn need(args_value: list[str], n: int) -> result[void] {
+    if len(args_value) != n {
+        return err("error: bad command");
+    }
+    return ok();
+}
+
+fn sheet_arg(b: sheet.Book, name: str) -> result[sheet.Sheet] {
+    return map_err(sheet.by_name(b, name), fn(e) => "error: unknown sheet " + name);
+}
+
+# The sheet name of `NAME!TEXT` ("" for `TEXT`) and the rest, or err("") for a bad name.
+fn split_qualified(text: str) -> result[list[str]] {
+    let at = find(text, "!");
+    if at < 0 {
+        return ok(["", text]);
+    }
+    let name = slice(text, 0, at);
+    if not cells.is_sheet_name(name) {
+        return err("");
+    }
+    return ok([name, slice(text, at + 1, len(text))]);
+}
+
+fn qualified_sheet(b: sheet.Book, name: str) -> result[int] {
+    if name == "" {
+        return ok(b.current);
+    }
+    return ok((try sheet_arg(b, name)).id);
+}
+
+# The place of a cell argument, `NAME!CELL` or, on the current sheet, `CELL`.
+fn cell_arg(b: sheet.Book, text: str) -> result[cells.Place] {
+    let parts = try map_err(split_qualified(text), fn(e) => "error: bad cell " + text);
+    let p = try map_err(cells.parse_cell(parts[1]), fn(e) => "error: bad cell " + text);
+    return ok(cells.place_of(try qualified_sheet(b, parts[0]), p));
+}
+
+fn print_range(b: sheet.Book, text: str) -> result[list[str]] {
+    let parts = try map_err(split_qualified(text), fn(e) => "error: bad range " + text);
+    let a = try map_err(cells.parse_range(parts[1]), fn(e) => "error: bad range " + text);
+    return ok(grid.render(b, try qualified_sheet(b, parts[0]), a));
+}
+
+# The tree of `=FORMULA` for a formula on sheet `own`.
+fn formula_arg(b: sheet.Book, text: str, own: int) -> result[formula.Node] {
+    if len(text) == 0 or slice(text, 0, 1) != "=" {
+        return err("error: bad formula");
+    }
+    let node = try map_err(parser.parse_formula(slice(text, 1, len(text))), fn(e) => "error: bad formula");
+    try map_err(formula.bind(node, sheet.ids(b), own), fn(name) => "error: unknown sheet " + name);
+    return ok(node);
+}
+
+# A place's name: qualified when it is not on the current sheet.
+fn place_name(b: sheet.Book, p: cells.Place) -> str {
+    let name = cells.cell_name(cells.place_cell(p));
+    if p.sheet == b.current {
+        return name;
+    }
+    return b.sheets[p.sheet].name + "!" + name;
+}
+
+fn filled_arg(b: sheet.Book, p: cells.Place) -> result[sheet.Content] {
+    if sheet.is_empty(b, p) {
+        return err("error: " + place_name(b, p) + " is empty");
+    }
+    return ok(sheet.content(b, p));
+}
+
+fn value_line(b: sheet.Book, p: cells.Place) -> str {
+    return place_name(b, p) + " = " + evaluate.value_text(evaluate.value_of(b, p));
+}
+
+export fn cmd_set(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    if len(args_value) < 2 {
+        return err("error: bad command");
+    }
+    let p = try cell_arg(b, args_value[0]);
+    let text = join(slice(args_value, 1, len(args_value)), "");
+    if slice(text, 0, 1) == "=" {
+        sheet.put(b, p, sheet.Content.formula(try formula_arg(b, text, p.sheet)));
+    } else if cells.is_int(text) {
+        sheet.put(b, p, sheet.Content.number(cells.to_int(text)));
+    } else {
+        return err("error: bad value");
+    }
+    return ok([value_line(b, p)]);
+}
+
+export fn cmd_get(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    let p = try cell_arg(b, args_value[0]);
+    if sheet.is_empty(b, p) {
+        return ok([place_name(b, p) + " empty"]);
+    }
+    return ok([value_line(b, p)]);
+}
+
+fn content_text(b: sheet.Book, c: sheet.Content) -> str {
+    match c {
+        case number(n) {
+            return str(n);
+        }
+        case formula(node) {
+            return "=" + formula.to_text(node, sheet.names(b));
+        }
+    }
+}
+
+export fn cmd_show(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    let p = try cell_arg(b, args_value[0]);
+    if sheet.is_empty(b, p) {
+        return ok([place_name(b, p) + ": empty"]);
+    }
+    return ok([place_name(b, p) + ": " + content_text(b, sheet.content(b, p))]);
+}
+
+export fn cmd_clear(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    let p = try cell_arg(b, args_value[0]);
+    let _ = try filled_arg(b, p);
+    sheet.clear(b, p);
+    return ok([place_name(b, p) + " cleared"]);
+}
+
+export fn cmd_copy(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 2);
+    let src = try cell_arg(b, args_value[0]);
+    let dst = try cell_arg(b, args_value[1]);
+    match try filled_arg(b, src) {
+        case number(n) {
+            sheet.put(b, dst, sheet.Content.number(n));
+        }
+        case formula(node) {
+            sheet.put(b, dst, sheet.Content.formula(formula.shift(node, dst.col - src.col, dst.row - src.row, dst.sheet)));
+        }
+    }
+    return ok(["copied " + place_name(b, src) + " to " + place_name(b, dst)]);
+}
+
+fn names_line(b: sheet.Book, title: str, found: list[cells.Place]) -> str {
+    if len(found) == 0 {
+        return title + ": none";
+    }
+    return title + ": " + join(map(cells.sorted_places(found), fn(p) => place_name(b, p)), " ");
+}
+
+export fn cmd_deps(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    let p = try cell_arg(b, args_value[0]);
+    var found = new list[cells.Place];
+    if not sheet.is_empty(b, p) {
+        match sheet.content(b, p) {
+            case number(_) {
+                set found = new list[cells.Place];
+            }
+            case formula(node) {
+                set found = filter(formula.refs_of(node, p.sheet), fn(q) => sheet.is_live(b, q.sheet));
+            }
+        }
+    }
+    return ok([names_line(b, "deps " + place_name(b, p), found)]);
+}
+
+fn refers_to(b: sheet.Book, f: cells.Place, p: cells.Place) -> bool {
+    match sheet.content(b, f) {
+        case number(_) {
+            return false;
+        }
+        case formula(node) {
+            return any(formula.refs_of(node, f.sheet), fn(q) => q == p);
+        }
+    }
+}
+
+export fn cmd_users(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    let p = try cell_arg(b, args_value[0]);
+    let found = new list[cells.Place];
+    for s in sheet.in_order(b) {
+        for f in sheet.formula_places(s) {
+            if refers_to(b, f, p) {
+                push(found, f);
+            }
+        }
+    }
+    return ok([names_line(b, "users " + place_name(b, p), found)]);
+}
+
+export fn cmd_list(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 0);
+    let out = new list[str];
+    for p in sheet.filled(sheet.current(b)) {
+        let c = sheet.content(b, p);
+        var line = cells.cell_name(cells.place_cell(p)) + ": " + content_text(b, c);
+        if sheet.is_formula(c) {
+            set line = line + " = " + evaluate.value_text(evaluate.value_of(b, p));
+        }
+        push(out, line);
+    }
+    if len(out) == 0 {
+        return ok(["no cells"]);
+    }
+    return ok(out);
+}
+
+export fn cmd_count(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 0);
+    var filled = 0;
+    var formulas = 0;
+    var errors = 0;
+    for s in sheet.in_order(b) {
+        let places = sheet.filled(s);
+        set filled = filled + len(places);
+        set formulas = formulas + len(sheet.formula_places(s));
+        set errors = errors + len(filter(places, fn(p) => evaluate.value_of(b, p).error != ""));
+    }
+    return ok(["cells " + str(filled) + ", formulas " + str(formulas) + ", errors " + str(errors)]);
+}
+
+export fn cmd_find(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    if not cells.is_int(args_value[0]) {
+        return err("error: bad command");
+    }
+    let wanted = new evaluate.Value { error: "", number: cells.to_int(args_value[0]) };
+    let found = filter(sheet.filled(sheet.current(b)), fn(p) => evaluate.value_of(b, p) == wanted);
+    return ok([names_line(b, "found", found)]);
+}
+
+export fn cmd_eval(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    if len(args_value) < 1 {
+        return err("error: bad command");
+    }
+    let node = try formula_arg(b, join(args_value, ""), b.current);
+    return ok(["= " + evaluate.value_text(evaluate.formula_value(b, node, b.current))]);
+}
+
+export fn cmd_print(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    return print_range(b, args_value[0]);
+}
+
+fn name_arg(b: sheet.Book, name: str) -> result[void] {
+    if not cells.is_sheet_name(name) {
+        return err("error: bad sheet name " + name);
+    }
+    match sheet.by_name(b, name) {
+        case ok(_) {
+            return err("error: sheet " + name + " exists");
+        }
+        case err(_) {
+            return ok();
+        }
+    }
+}
+
+export fn cmd_sheet(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    try name_arg(b, args_value[0]);
+    let _ = sheet.add(b, args_value[0]);
+    return ok(["sheet " + args_value[0] + " added"]);
+}
+
+export fn cmd_use(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    set b.current = (try sheet_arg(b, args_value[0])).id;
+    return ok(["using " + args_value[0]]);
+}
+
+export fn cmd_sheets(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 0);
+    let out = new list[str];
+    for s in sheet.in_order(b) {
+        var line = s.name + ": " + str(len(s.cells)) + " cells";
+        if s.id == b.current {
+            set line = line + " (current)";
+        }
+        push(out, line);
+    }
+    return ok(out);
+}
+
+export fn cmd_rename(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 2);
+    let s = try sheet_arg(b, args_value[0]);
+    try name_arg(b, args_value[1]);
+    set s.name = args_value[1];
+    return ok(["renamed " + args_value[0] + " to " + args_value[1]]);
+}
+
+export fn cmd_drop(b: sheet.Book, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    let s = try sheet_arg(b, args_value[0]);
+    if s.id == b.current {
+        return err("error: cannot drop the current sheet");
+    }
+    sheet.drop(b, s.id);
+    return ok(["dropped " + args_value[0]]);
+}

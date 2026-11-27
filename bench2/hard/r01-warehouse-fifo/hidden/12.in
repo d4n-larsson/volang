@@ -1,0 +1,11 @@
+warehouse big
+item gold Gold 999999
+receive big gold 999999
+receive big gold 999999 999998
+ship big gold 999999
+lots big gold
+value
+report
+adjust big gold -999998 loss
+lots big gold
+report

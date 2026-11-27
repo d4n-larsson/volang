@@ -1,0 +1,13 @@
+create table log (day int, host text, level text, ms int)
+insert into log values (1, 'web', 'info', 20), (1, 'db', 'warn', 300), (2, 'web', 'error', null), (2, 'web', 'info', 45)
+insert into log values (1, null, 'info', 5), (3, 'db', 'info', 120), (2, null, null, 70), (3, 'web', 'warn', 15)
+select day, host, count(*), max(level) from log group by day, host
+select host from log group by host having count(*) >= 2 and max(ms) > 100 order by min(ms) desc
+select host, count(ms) from log group by host order by sum(ms), host limit 2
+select level, min(host), max(host) from log group by level order by level desc
+select host from log where sum(zz) > 1 group by host
+select host from log having zz > 1
+select count(zz) from log
+select count(log.ms), sum(ms) from log where host != 'db' and level in 'info'
+select count(log.ms), sum(ms) from log where host != 'db' or level = 'info'
+select host, day from log where ms > 40 order by host desc, day desc limit 2 offset 1

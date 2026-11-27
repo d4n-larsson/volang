@@ -1,0 +1,21 @@
+0 start base w1 #1
+0 start other w2 #1
+2 fail base w1 #1
+3 start base w1 #2
+5 fail base w1 #2
+5 give up base
+5 skip c10
+5 skip c9
+5 skip c_1
+5 skip left
+5 skip merge
+5 skip right
+5 done other w2
+makespan 5
+utilization 90%
+w1 busy 4 attempts 2
+w2 busy 5 attempts 1
+built: other
+failed: base
+skipped: c10 c9 c_1 left merge right
+blocked: -

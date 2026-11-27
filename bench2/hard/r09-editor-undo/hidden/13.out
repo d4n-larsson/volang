@@ -1,0 +1,26 @@
+group started
+error: group already open
+error: group open
+error: group open
+error: group open
+4 substitutions
+yanked 3 lines
+cut 1 line
+pasted 1 line
+grouped 4 changes
+1  g4mm4
+2  4lph4
+3  BETA
+undone 1 step
+1  alpha
+2  beta
+3  gamma
+redone 1 step
+1  g4mm4
+2  4lph4
+3  BETA
+undone 1 step
+* main 3 lines, modified
+error: only 1 step to redo
+redone 1 step
+* main 3 lines, modified

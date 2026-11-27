@@ -1,0 +1,10 @@
+== run abs
+source not allowed: /etc
+== run leak
+source not allowed: src/../secrets
+== run leak2
+target not allowed: mirror/../home/user
+== run oldsrc
+source not allowed: src-old/site
+== run mirrored
+target not allowed: mirrored/docs

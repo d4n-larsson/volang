@@ -1,0 +1,12 @@
+user cy
+new p3 Export is slow
+new p2 Typo in footer
+move 1 triaged
+assign 1 cy
+move 1 in_progress
+move 1 blocked waiting for the db upgrade
+move 2 wontfix not a bug
+show 1
+list
+list status=closed
+stats

@@ -1,0 +1,40 @@
+error: bad command
+table empty
+0 fixtures left
+no matches
+no wins yet
+teams 0 (0 withdrawn), matches 0, goals 0
+home wins 0, draws 0, away wins 0
+0 teams
+team Solo added
+form Solo: -
+Solo: P 0, W 0, D 0, L 0, GF 0, GA 0, GD 0, Pts 0
+home 0-0-0, away 0-0-0
+position 1 of 1
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Solo  0  0  0  0  0  0   0   0
+group A: Solo
+form Solo (group A): -
+Solo: P 0, W 0, D 0, L 0, GF 0, GA 0, GD 0, Pts 0
+home 0-0-0, away 0-0-0
+position 1 of 1 in group A
+group A
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Solo  0  0  0  0  0  0   0   0
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: no result 1
+error: team cannot play itself
+error: unknown command WITHDRAW
+team Solo withdrawn, 0 results void
+error: team Solo withdrawn
+error: team Solo withdrawn
+group A
+table empty
+group A: 0 left
+0 fixtures left
+no matches
+Solo (group A, withdrawn)
+1 teams

@@ -1,0 +1,81 @@
+2095-06-01 2101-06-30
+event e4-y every 4 years on 01-01 from 2099-01-26 until 2099-09-19 count 21
+except e36-y 2097-01-13
+except e26-z 2100-09-18
+except e0-x 2098-12-03
+event e3-y every 3 days from 2094-09-21
+except e4-y 2099-05-05
+event e29-x every 2 months on day 30 from 2101-03-02
+event e38-z every 10 days from 2099-02-11
+except e6-x 2095-08-10
+event e31-x every 2 months on 2nd fri from 2098-12-04 count 2
+event e1-z every 1 months on day -30 from 2097-10-10
+event e0-x every 3 days from 2095-05-07
+event e16-z every 4 months on 1st sun from 2094-05-04 count 3
+except e25-z 2099-06-08
+except e10-z 2097-03-07
+except e31-x 2096-12-16
+event e26-z every 2 months on 5th sat from 2099-07-12
+except e33-y 2098-08-19
+except e18-z 2099-10-17
+event e34-x every 3 months on day -31 from 2101-03-27
+except e36-y 2099-09-28
+event e5-x every 2 years on 02-28 from 2095-11-07
+except e29-x 2098-01-16
+except e32-y 2098-04-19
+except e13-x 2096-07-16
+except e29-x 2101-04-15
+event e2-x every 4 months on 5th wed from 2099-02-24
+event e36-y every 3 months on day 30 from 2095-11-27
+event e33-y every 1 months on 3rd thu from 2098-09-17 count 8
+event e19-z every 1 months on 1st sat from 2096-01-15
+event e39-x every 1 weeks on sun,thu from 2098-04-24
+event e18-z every 3 days from 2101-02-08
+except e25-z 2099-09-14
+except e29-x 2100-05-13
+event e32-y every 2 days from 2097-09-30 count 37
+except e5-x 2097-12-08
+except e29-x 2097-05-27
+event e25-z every 1 weeks on mon from 2095-04-21 until 2097-11-24 count 2
+event e24-y every 2 days from 2100-03-22 until 2101-05-14 count 33
+event e35-x every 1 months on last sat from 2101-04-03
+except e1-z 2099-09-17
+except e32-y 2097-05-11
+except e6-x 2099-02-06
+except e23-z 2099-02-14
+event e22-x every 1 weeks on tue from 2099-05-28 count 6
+event e11-y every 4 months on 3rd sat from 2096-08-25 count 22
+event e23-z every 4 years on 02-28 from 2096-11-16
+except e28-z 2097-05-07
+except e30-y 2098-04-05
+event e12-z every 1 weeks on mon from 2094-05-31 until 2096-12-14
+event e30-y every 3 days from 2095-06-15 until 2095-08-18
+event e15-x every 3 days from 2094-10-11 until 2096-07-15
+event e6-x every 4 months on 5th sun from 2099-04-26
+event e10-z every 4 years on 02-28 from 2099-12-22
+event e20-x every 2 weeks on thu,fri,wed,tue from 2099-05-05 until 2101-01-15
+event e17-x every 2 years on 02-29 from 2098-03-06 count 29
+event e13-x every 3 weeks on tue,sun,mon from 2100-03-06
+except e17-x 2097-07-24
+event e28-z every 3 weeks on sat from 2100-11-03
+except e24-y 2097-08-26
+except e25-z 2097-11-03
+event e8-y every 2 months on 5th sat from 2099-06-02
+except e32-y 2096-01-06
+except e25-z 2098-04-05
+event e37-z every 4 months on 3rd thu from 2099-01-07 until 2100-05-22
+except e11-y 2099-10-27
+except e34-x 2097-07-09
+event e21-z every 4 years on 01-01 from 2094-07-09 until 2094-11-23 count 11
+except e0-x 2100-04-15
+except e30-y 2098-06-27
+except e14-x 2099-02-09
+event e9-y every 6 months on day 28 from 2096-10-21 until 2099-06-30
+except e7-y 2097-03-01
+except e2-x 2096-11-08
+event e27-x every 4 months on 1st fri from 2099-03-08
+except e34-x 2100-03-02
+except e33-y 2098-03-15
+except e29-x 2097-09-17
+event e14-x every 1 months on day 28 from 2098-05-20 count 5
+event e7-y every 3 weeks on sat,sun,thu,tue from 2099-04-26 until 2100-09-18

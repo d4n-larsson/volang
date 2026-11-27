@@ -1,0 +1,8 @@
+plan nosrc
+plan notarget
+plan dup
+plan duptarget
+plan badline
+plan twospace
+plan noexclude
+plan glob

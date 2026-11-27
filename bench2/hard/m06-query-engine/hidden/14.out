@@ -1,0 +1,47 @@
+created g
+created h
+inserted 3
+inserted 3
+g.id | h.id
+-----+-----
+   1 |    1
+   1 |    5
+   2 |    1
+   2 |    5
+(4 rows)
+g.id | h.a 
+-----+-----
+   1 | NULL
+   2 | NULL
+   3 |    2
+   3 |    9
+   3 |    2
+(5 rows)
+g.id | h.id
+-----+-----
+   1 |    5
+   2 |    5
+   3 |    5
+   1 |    3
+   2 |    3
+   3 |    3
+   1 |    1
+   2 |    1
+   3 |    1
+(9 rows)
+g.id | count(h.id)
+-----+------------
+   1 |           2
+   2 |           2
+   3 |           0
+(3 rows)
+b | count(*)
+--+---------
+3 |        2
+(1 row)
+error: ambiguous column a
+id | a | id | a | b
+---+---+----+---+--
+ 1 | 2 |  2 | 2 | 5
+ 5 | 2 |  2 | 2 | 5
+(2 rows)

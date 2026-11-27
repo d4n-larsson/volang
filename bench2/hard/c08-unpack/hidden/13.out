@@ -1,0 +1,13 @@
+== noend
+file a.txt 6
+dir dir
+error: truncated
+= a.txt 6 92733172
+total 1 files, 1 dirs, 6 bytes
+== v2
+not a pack
+== badlink
+file a.txt 6
+error: line 4: bad entry
+= a.txt 6 92733172
+total 1 files, 0 dirs, 6 bytes

@@ -1,0 +1,44 @@
+user ann added
+user bob added
+created #1: A rather long title that will be cut short
+created #2: Short one
+created #3: Exactly thirty characters long
+created #4: Exactly thirty-one characters lo
+created #5: Fifth
+#1 assigned to ann
+#2 assigned to bob
+#1 labels: bug,ui
+#2 labels: bug
+#1 moved new -> triaged
+#2 moved new -> triaged
+#2 moved triaged -> in_progress
+#3 moved new -> wontfix
+#4 closed
+#2 [p1] in_progress bob Short one
+#1 [p3] triaged ann A rather long title that wi...
+#5 [p4] new - Fifth
+#2 [p1] in_progress bob Short one
+#3 [p2] wontfix - Exactly thirty characters long
+#4 [p2] wontfix - Exactly thirty-one characte...
+#1 [p3] triaged ann A rather long title that wi...
+#5 [p4] new - Fifth
+#5 [p4] new - Fifth
+#1 [p3] triaged ann A rather long title that wi...
+#2 [p1] in_progress bob Short one
+#3 [p2] wontfix - Exactly thirty characters long
+#4 [p2] wontfix - Exactly thirty-one characte...
+no issues
+#3 [p2] wontfix - Exactly thirty characters long
+#4 [p2] wontfix - Exactly thirty-one characte...
+#5 [p4] new - Fifth
+#2 [p1] in_progress bob Short one
+#1 [p3] triaged ann A rather long title that wi...
+#3 [p2] wontfix - Exactly thirty characters long
+#4 [p2] wontfix - Exactly thirty-one characte...
+error: bad status bogus
+error: bad status OPEN
+error: duplicate filter status
+no issues
+error: unknown filter state
+#1 [p3] triaged ann A rather long title that wi...
+#2 [p1] in_progress bob Short one

@@ -1,0 +1,12 @@
+customer zed added
+invoice #1 zed total 42.00 balance 42.00 due 10
+error: zed over limit by 5.00
+invoice #2 zed total 0.01 balance 0.01 due 10
+void #1
+paid zed 70.00: #2 0.01, credit 69.99
+error: customer zed exists
+refund zed 1.00 credit 68.99
+error: no customer ana
+invoices:
+#1 zed void total 42.00 fee 0.00 paid 0.00 credits 0.00 balance 0.00
+#2 zed closed total 0.01 fee 0.00 paid 0.01 credits 0.00 balance 0.00

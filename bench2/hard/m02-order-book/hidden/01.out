@@ -1,0 +1,35 @@
+rest A1 10 1.00
+invalid line 2
+invalid line 3
+invalid line 4
+invalid line 5
+invalid line 6
+invalid line 7
+invalid line 8
+invalid line 9
+invalid line 10
+invalid line 11
+invalid line 13
+invalid line 14
+invalid line 15
+invalid line 16
+rest A14 999999 999999.99
+invalid line 18
+invalid line 19
+invalid line 20
+invalid line 21
+invalid line 22
+invalid line 23
+invalid line 24
+invalid line 25
+trade XYZ 3 999999.99 A14 A2
+filled A2
+invalid line 27
+trade XYZ 4 999999.99 A14 M2
+filled M2
+invalid line 29
+book XYZ last 999999.99
+  bid 999999.99 999992 1
+  bid 1.00 10 1
+trader ana cash -6999999.93 XYZ:7
+trader bob cash 6999999.93 XYZ:-7

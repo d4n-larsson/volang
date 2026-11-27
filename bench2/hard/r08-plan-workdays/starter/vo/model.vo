@@ -1,0 +1,39 @@
+# Shared records of the planner.
+# A finish-to-start dependency: the task starts `lag` days after `pred` finishes.
+export record Dep {
+    pred: str;
+    lag: int;
+}
+
+# `duration` is in days (0 is a milestone); `seq` is the creation order; `preds` are in the
+# order they were added; `done` is the percent complete.
+export record Task {
+    tid: str;
+    name: str;
+    duration: int;
+    seq: int;
+    preds: list[Dep];
+    not_before: int;
+    done: int;
+}
+
+# Where a task sits in the schedule. `finish` is the first day after its work.
+export record Slot {
+    start: int;
+    finish: int;
+    lstart: int;
+    lfinish: int;
+    slack: int;
+}
+
+export record Plan {
+    tasks: map[str, Task];
+    next_seq: int;
+}
+
+# The tasks in schedule order, a Slot per task ID and the project's finish.
+export record Schedule {
+    order: list[Task];
+    slots: map[str, Slot];
+    end: int;
+}

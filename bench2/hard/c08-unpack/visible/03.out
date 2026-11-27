@@ -1,0 +1,21 @@
+== conflict
+file a 2
+skip a/b: parent is a file
+skip a: is a file
+dir d
+skip d: is a directory
+file d/x 6
+replace d/x 15
+file x/y/z 0
+skip x/y: is a directory
+skip x/y/z: is a file
+skip x/y/z/w: parent is a file
+skip .: empty
+skip ./: empty
+dir x
+replace a 3
+warning: END says 17, found 15
+= a 3 273027
+= d/x 15 948196660
+= x/y/z 0 7
+total 3 files, 3 dirs, 18 bytes

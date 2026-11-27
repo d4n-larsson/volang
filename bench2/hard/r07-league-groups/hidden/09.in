@@ -1,0 +1,50 @@
+team Pike
+team Carp
+team Tuna
+team Eel
+team Orca
+team Seal
+team Wren
+team Lark
+team Kite
+team Rook
+team Hawk
+group C Wren Lark Kite
+group A Pike Carp Tuna Eel
+group B Orca Seal Rook
+group D Hawk
+knockout
+result Pike 1 0 Eel
+result Eel 0 1 Pike
+result Carp 3 0 Eel
+result Eel 0 3 Carp
+result Tuna 1 0 Eel
+result Eel 0 2 Tuna
+result Pike 2 0 Carp
+result Carp 1 0 Pike
+result Carp 1 0 Tuna
+result Tuna 1 0 Carp
+result Tuna 0 1 Pike
+result Pike 0 1 Tuna
+result Orca 1 1 Seal
+result Seal 1 1 Orca
+result Orca 2 0 Rook
+result Rook 0 2 Orca
+result Seal 2 0 Rook
+result Rook 0 2 Seal
+knockout
+withdraw Hawk
+knockout
+result Wren 2 2 Lark
+result Lark 0 2 Wren
+result Lark 0 1 Kite
+result Kite 1 2 Lark
+result Kite 0 0 Wren
+result Wren 2 1 Kite
+table
+knockout
+table B
+record Seal
+record Orca
+record Pike
+record Tuna

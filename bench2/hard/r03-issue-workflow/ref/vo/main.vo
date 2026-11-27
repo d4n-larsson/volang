@@ -1,0 +1,17 @@
+import commands;
+import tracker;
+
+fn main() uses console, input {
+    let t = tracker.new_tracker();
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w) => w != "");
+        if len(words) == 0 {
+            continue;
+        }
+        # Every command, even one that fails, takes one tick of the clock.
+        set t.clock = t.clock + 1;
+        for out in commands.run(t, words) {
+            print(out);
+        }
+    }
+}

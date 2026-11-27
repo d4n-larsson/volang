@@ -1,0 +1,18 @@
+set A1 2
+sheet Rates
+set Rates!A1 30
+use Rates
+eval =A1*Sheet1!A1
+eval =Rates!A1+A1
+eval =Gone!A1+1
+eval =Gone!A1+
+use Sheet1
+eval =Rates!A1-A1
+set B1 =Sheet1!A1+Rates!A1
+show B1
+copy B1 Rates!B1
+show Rates!B1
+get Rates!B1
+copy Rates!B1 Sheet1!B2
+show B2
+get B2

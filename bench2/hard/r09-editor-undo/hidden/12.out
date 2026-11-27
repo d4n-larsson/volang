@@ -1,0 +1,25 @@
+new buffer a
+removed 3 lines
+removed 0 lines
+1  x
+2  y
+cut 1 line
+removed 0 lines
+undone 1 step
+1  x
+2  y
+redone 1 step
+pasted 1 line
+1  y
+2  x
+undone 1 step
+undone 1 step
+1  x
+* a 1 line, modified
+  main 0 lines
+buffer main, 0 lines
+  a 1 line, modified
+* main 0 lines
+error: nothing to redo
+pasted 1 line
+1  y

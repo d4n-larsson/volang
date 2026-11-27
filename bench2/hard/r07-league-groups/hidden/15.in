@@ -1,0 +1,29 @@
+team Ana
+team Bob
+team Cy
+team Di
+team Ed
+group P Ana Bob Cy
+group Q Di Ed
+result Ana 1 0 Bob
+result Bob 1 0 Ana
+result Ana 2 0 Cy
+result Cy 0 0 Ana
+result Bob 3 3 Cy
+result Cy 1 0 Bob
+result Di 2 1 Ed
+result Ed 1 1 Di
+knockout
+withdraw Cy
+table
+knockout
+record Ana
+record Bob
+correct 3 1 1
+correct 7 0 0
+knockout
+fixtures
+withdraw Bob
+knockout
+table P
+teams

@@ -1,0 +1,19 @@
+E5 := =C3 + $C4 * D$2 - $B$3
+E5 = -1
+D5 := =B3 + $C4 * C$2 - $B$3
+A4 := =#REF! + $C3 * #REF! - $B$3
+A4 = #REF!
+D1 := =#REF! + #REF! * C$2 - $B$3
+Z2 := =SUM(B3:C4)  +  Y2
+A1 := =SUM(#REF!)  +  #REF!
+A1 = #REF!
+Y2 := =SUM(A3:B4)  +  X2
+G1 := =SUM($B$2:D3)
+G1 = 10
+F99 := =SUM(#REF!)
+H2 := =1+(
+B2 is empty
+D4 = 5
+J2 = words here
+K2 := 42
+E5 := =C3 + $C4 * D$2 - $B$3

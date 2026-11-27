@@ -1,0 +1,4 @@
+inner 2
+start 6
+inner 0
+error at line 3: division by zero

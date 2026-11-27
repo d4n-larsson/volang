@@ -1,0 +1,25 @@
+stats
+users
+user ann
+new p1 One
+new p1 Two
+new p2 Three
+new p3 Four
+new p4 Five
+stats
+assign 1 ann
+move 1 triaged
+move 1 in_progress
+move 1 review
+move 2 triaged
+move 3 wontfix no
+close 4
+close 5
+stats
+reopen 5
+move 5 in_progress
+assign 5 ann
+move 5 in_progress
+move 5 blocked parts
+stats
+users

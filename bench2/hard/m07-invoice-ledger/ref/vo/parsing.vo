@@ -1,0 +1,162 @@
+export record Item {
+    qty: int;
+    price: int;
+}
+
+export record Cmd {
+    name: str;
+    id: str;
+    num: int;
+    amount: int;
+    terms: int;
+    tax: int;
+    items: list[Item];
+    nums: list[int];
+}
+
+export variant Parsed {
+    blank;
+    invalid;
+    command(Cmd);
+}
+
+# The value of 1 to k ASCII digits, or -1.
+export fn count(s: str, k: int) -> int {
+    if len(s) < 1 or len(s) > k {
+        return -1;
+    }
+    if not all(chars(s), fn(c) => c >= "0" and c <= "9") {
+        return -1;
+    }
+    match parse_int(s) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return -1;
+        }
+    }
+}
+
+# Cents of `D.CC`, or -1.
+export fn amount(s: str) -> int {
+    let dot = find(s, ".");
+    if dot < 0 {
+        return -1;
+    }
+    let d = count(slice(s, 0, dot), 7);
+    let rest = slice(s, dot + 1, len(s));
+    let c = count(rest, 2);
+    if d < 0 or c < 0 or len(rest) != 2 {
+        return -1;
+    }
+    return d * 100 + c;
+}
+
+fn positive(s: str) -> int {
+    let a = amount(s);
+    if a <= 0 {
+        return -1;
+    }
+    return a;
+}
+
+fn item(s: str) -> result[Item] {
+    let x = find(s, "x");
+    if x < 0 {
+        return err("invalid");
+    }
+    let qty = count(slice(s, 0, x), 4);
+    let price = positive(slice(s, x + 1, len(s)));
+    if qty < 1 or price < 0 {
+        return err("invalid");
+    }
+    return ok(new Item { qty: qty, price: price });
+}
+
+export fn money(c: int) -> str {
+    return format("{}.{:02}", c / 100, c % 100);
+}
+
+fn base(name: str) -> Cmd {
+    return new Cmd { name: name, id: "", num: 0, amount: 0, terms: 0, tax: 0, items: [], nums: [] };
+}
+
+fn command(f: list[str]) -> result[Cmd] {
+    let name = f[0];
+    let n = len(f) - 1;
+    let c = base(name);
+    if name == "customer" and n == 4 {
+        set c.id = f[1];
+        set c.amount = amount(f[2]);
+        set c.terms = count(f[3], 3);
+        set c.tax = count(f[4], 4);
+        if c.amount >= 0 and c.terms >= 0 and c.tax >= 0 {
+            return ok(c);
+        }
+    } else if name == "invoice" and n >= 2 {
+        set c.id = f[1];
+        for s in slice(f, 2, len(f)) {
+            push(c.items, try item(s));
+        }
+        return ok(c);
+    } else if name == "pay" and n >= 2 {
+        set c.id = f[1];
+        set c.amount = positive(f[2]);
+        if c.amount < 0 {
+            return err("invalid");
+        }
+        for s in slice(f, 3, len(f)) {
+            let v = count(s, 6);
+            if v < 0 or any(c.nums, fn(m) => m == v) {
+                return err("invalid");
+            }
+            push(c.nums, v);
+        }
+        return ok(c);
+    } else if name == "credit" and n == 2 {
+        set c.num = count(f[1], 6);
+        set c.amount = positive(f[2]);
+        if c.num >= 0 and c.amount >= 0 {
+            return ok(c);
+        }
+    } else if (name == "void" or name == "writeoff" or name == "day") and n == 1 {
+        set c.num = count(f[1], 6);
+        if c.num >= 0 {
+            return ok(c);
+        }
+    } else if name == "terms" and n == 2 {
+        set c.id = f[1];
+        set c.terms = count(f[2], 3);
+        if c.terms >= 0 {
+            return ok(c);
+        }
+    } else if name == "refund" and n == 2 {
+        set c.id = f[1];
+        set c.amount = positive(f[2]);
+        if c.amount >= 0 {
+            return ok(c);
+        }
+    } else if name == "statement" and n == 1 {
+        set c.id = f[1];
+        return ok(c);
+    } else if name == "aging" and n == 0 {
+        return ok(c);
+    }
+    return err("invalid");
+}
+
+export fn parse(line: str) -> Parsed {
+    let f = filter(split(line, " "), fn(t) => t != "");
+    if len(f) == 0 {
+        return Parsed.blank;
+    }
+    match command(f) {
+        case ok(c) {
+            return Parsed.command(c);
+        }
+        case err(_) {
+            return Parsed.invalid;
+        }
+    }
+}

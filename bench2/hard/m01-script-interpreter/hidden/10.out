@@ -1,0 +1,9 @@
+inner x 11
+innermost x 22
+inner x again 11
+outer 1 133
+iteration 1 0
+iteration 2 1
+iteration 3 4
+before
+error at line 25: undefined fresh

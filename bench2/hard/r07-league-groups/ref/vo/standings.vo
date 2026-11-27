@@ -1,0 +1,109 @@
+# The league table: one row per active team, sorted and ranked.
+import model;
+import results;
+import teams;
+
+record PlaceKey {
+    neg_points: int;
+    neg_mini_points: int;
+    neg_mini_gd: int;
+    neg_mini_gf: int;
+    neg_gd: int;
+    neg_gf: int;
+}
+
+record SortKey {
+    place: PlaceKey;
+    name: str;
+}
+
+export fn tally(row: model.Row, m: model.Match) {
+    set row.played = row.played + 1;
+    set row.gf = row.gf + results.goals_for(m, row.name);
+    set row.ga = row.ga + results.goals_against(m, row.name);
+    let o = results.outcome(m, row.name);
+    if o == "W" {
+        set row.won = row.won + 1;
+    } else if o == "D" {
+        set row.drawn = row.drawn + 1;
+    } else {
+        set row.lost = row.lost + 1;
+    }
+}
+
+# Unsorted rows for the teams `names`, counting the matches among `matches` they played in.
+export fn build_rows(names: list[str], matches: list[model.Match]) -> list[model.Row] {
+    let rows = new list[model.Row];
+    for name in names {
+        let row = new model.Row { name: name, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, rank: 0, mini_points: 0, mini_gd: 0, mini_gf: 0 };
+        for m in matches {
+            if results.involves(m, name) {
+                tally(row, m);
+            }
+        }
+        push(rows, row);
+    }
+    return rows;
+}
+
+fn place_key(row: model.Row) -> PlaceKey {
+    return new PlaceKey { neg_points: -model.points(row), neg_mini_points: -row.mini_points, neg_mini_gd: -row.mini_gd, neg_mini_gf: -row.mini_gf, neg_gd: -model.gd(row), neg_gf: -row.gf };
+}
+
+fn sort_key(row: model.Row) -> SortKey {
+    return new SortKey { place: place_key(row), name: row.name };
+}
+
+# Each row's mini-table counts: the matches among the teams level with it on points.
+fn add_mini(rows: list[model.Row], matches: list[model.Match]) {
+    for r in rows {
+        let pts = model.points(r);
+        let level = map(filter(rows, fn(x) => model.points(x) == pts), fn(x) => x.name);
+        let among = filter(matches, fn(m) => any(level, fn(n) => n == m.home) and any(level, fn(n) => n == m.away));
+        let mini = build_rows([r.name], among)[0];
+        set r.mini_points = model.points(mini);
+        set r.mini_gd = model.gd(mini);
+        set r.mini_gf = mini.gf;
+    }
+}
+
+# Rows that share a position: equal on everything but the name.
+fn same_place(a: model.Row, b: model.Row) -> bool {
+    return place_key(a) == place_key(b);
+}
+
+export fn rank_rows(rows: list[model.Row], matches: list[model.Match]) -> list[model.Row] {
+    add_mini(rows, matches);
+    sort_by(rows, sort_key);
+    for i, r in rows {
+        if i > 0 and same_place(rows[i - 1], r) {
+            set r.rank = rows[i - 1].rank;
+        } else {
+            set r.rank = i + 1;
+        }
+    }
+    return rows;
+}
+
+fn table_for(names: list[str], league: model.League) -> list[model.Row] {
+    let matches = results.active_matches(league);
+    return rank_rows(build_rows(names, matches), matches);
+}
+
+export fn standings(league: model.League) -> list[model.Row] {
+    return table_for(teams.active_names(league), league);
+}
+
+export fn group_standings(league: model.League, g: str) -> list[model.Row] {
+    return table_for(teams.group_active(league, g), league);
+}
+
+# The position of the team's row, or -1.
+export fn find_row(rows: list[model.Row], name: str) -> int {
+    for i, r in rows {
+        if r.name == name {
+            return i;
+        }
+    }
+    return -1;
+}

@@ -1,0 +1,15 @@
+sheet Wide
+use Wide
+set H8 - 1 2 3
+set I10 = Sheet1!I10 * 1000 + H8
+set J12 =I10/7
+set j9 =SUM(H8:J11)
+set Sheet1!I10 45
+print H8:J12
+print Sheet1!H9:I10
+use Sheet1
+print Wide!J12:H8
+copy Wide!J9 Wide!J10
+show Wide!J10
+get Wide!J10
+list

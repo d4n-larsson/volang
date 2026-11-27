@@ -1,0 +1,10 @@
+func depth(n)
+    if n == 0
+        return 0
+    end
+    let d = depth(n - 1)
+    return d + 1
+end
+print depth(24)
+print depth(25)
+print depth(26)

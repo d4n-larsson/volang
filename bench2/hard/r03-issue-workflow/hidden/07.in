@@ -1,0 +1,40 @@
+user ann
+new p1 Alpha
+new p2 Beta
+new p3 Gamma with a really long title here
+new p4 Delta
+cycle
+assign 1 ann
+assign 2 ann
+assign 3 ann
+assign 4 ann
+move 1 triaged
+move 1 in_progress
+move 2 triaged
+move 2 in_progress
+move 3 triaged
+move 3 in_progress
+move 1 review
+move 1 done
+move 2 review
+close 2
+cycle
+move 3 review
+move 3 in_progress
+move 3 review
+move 3 done
+cycle
+reopen 1
+cycle
+move 1 in_progress
+move 1 review
+wait 20
+move 1 done
+move 4 wontfix nope
+cycle
+cycle now
+reopen 2
+move 2 in_progress
+move 2 review
+move 2 done
+cycle

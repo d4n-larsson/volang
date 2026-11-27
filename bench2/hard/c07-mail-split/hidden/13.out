@@ -1,0 +1,31 @@
+message <t1@lists.example.org>: Weekly digest number 7
+relay <t1@lists.example.org> team@example.org
+relay <t1@lists.example.org> ERIN@Example.ORG
+relay <t1@lists.example.org> frank@other.org
+relay <t1@lists.example.org> BOB@EXAMPLE.ORG
+message tue#2: (no subject)
+relay tue#2 gina@example.org
+message tue#3: Two To headers
+relay tue#3 carol@example.org
+relay tue#3 dave@example.org
+message <e1@evil.net>: hello
+relay <e1@evil.net> ../../etc/passwd@example.org
+relay <e1@evil.net> .profile@example.org
+relay <e1@evil.net> ..@example.org
+relay <e1@evil.net> bob+news@example.org
+relay <e1@evil.net> UPPER@Example.ORG
+bounce <e1@evil.net> a@b@example.org: bad address
+bounce <e1@evil.net> noat: bad address
+bounce <e1@evil.net> : bad address
+relay <e1@evil.net> x/y@example.org
+relay <e1@evil.net> @example.org
+relay <e1@evil.net> bob@
+relay <e1@evil.net> dave@example.org
+relay <e1@evil.net> averyveryveryveryverylongusername1@example.org
+relay <e1@evil.net> averyveryveryveryverylongusernam@example.org
+relay <e1@evil.net> under_score@example.org
+relay <e1@evil.net> dot.ted@example.org
+relay <e1@evil.net> dash-ed@example.org
+relay <e1@evil.net> a..b@example.org
+== mailboxes
+total 0 delivered, 3 bounced, 22 relayed, 0 duplicates

@@ -1,0 +1,33 @@
+rate EUR from day 1: 1.0000
+rate EUR from day 2: 1.5000
+rate EUR from day 3: 0.0072
+rate GBP from day 0: 12.3456
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+rate GBP from day 4: 0.0001
+error: bad command
+error: bad currency gbp
+error: bad currency GBPX
+error: USD is the base currency
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+rate EUR from day 2: 1.2500
+rate JPY from day 10: 0.0067
+locked through 20
+rate JPY from day 5: 0.0068
+opened assets:eur (asset, EUR)
+opened assets:bank (asset)
+posted t1: 2 postings, total 0.07
+posted t2: 2 postings, total 0.07
+t1 day 21 x
+  assets:eur 10.00 EUR (0.07 USD)
+  assets:bank -0.07
+rate EUR from day 2: 2.0000
+t1 day 21 x
+  assets:eur 10.00 EUR (0.07 USD)
+  assets:bank -0.07

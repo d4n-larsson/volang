@@ -1,0 +1,286 @@
+import parsing;
+
+export record Customer {
+    id: str;
+    limit: int;
+    terms: int;
+    tax: int;
+    credit: int;
+    written_off: int;
+}
+
+export record Invoice {
+    num: int;
+    cust: str;
+    due: int;
+    total: int;
+    fee: int;
+    paid: int;
+    credits: int;
+    written: int;
+    status: str;
+}
+
+export record Ledger {
+    customers: map[str, Customer];
+    invoices: list[Invoice];
+    day: int;
+}
+
+export fn new_ledger() -> Ledger {
+    return new Ledger { customers: new map[str, Customer], invoices: [], day: 0 };
+}
+
+export fn balance(i: Invoice) -> int {
+    return i.total + i.fee - i.paid - i.credits - i.written;
+}
+
+fn settle(i: Invoice) {
+    if i.status == "open" and balance(i) == 0 {
+        set i.status = "closed";
+    }
+}
+
+fn half_up(p: int, q: int) -> int {
+    return (p + q / 2) / q;
+}
+
+fn invoice_total(items: list[parsing.Item], tax: int) -> int {
+    var total = 0;
+    for it in items {
+        let gross = it.qty * it.price;
+        var net = gross;
+        if it.qty >= 10 {
+            set net = gross - gross * 5 / 100;
+        }
+        set total = total + net + half_up(net * tax, 10000);
+    }
+    return total;
+}
+
+export fn overdue(led: Ledger, i: Invoice) -> int {
+    return led.day - i.due;
+}
+
+# The customer's open invoices by due day, then number.
+export fn open_of(led: Ledger, cid: str) -> list[Invoice] {
+    let xs = filter(led.invoices, fn(i) => i.cust == cid and i.status == "open");
+    sort_by(xs, fn(i) => i.due * 10000000 + i.num);
+    return xs;
+}
+
+export fn open_balance(led: Ledger, cid: str) -> int {
+    return fold(open_of(led, cid), 0, fn(acc, i) => acc + balance(i));
+}
+
+fn customer(led: Ledger, cid: str) -> result[Customer] {
+    if not has(led.customers, cid) {
+        return err("no customer " + cid);
+    }
+    return ok(led.customers[cid]);
+}
+
+fn invoice(led: Ledger, n: int) -> result[Invoice] {
+    if n < 1 or n > len(led.invoices) {
+        return err("no invoice " + str(n));
+    }
+    return ok(led.invoices[n - 1]);
+}
+
+fn open_invoice(led: Ledger, n: int) -> result[Invoice] {
+    let i = try invoice(led, n);
+    if i.status != "open" {
+        return err("invoice " + str(n) + " is " + i.status);
+    }
+    return ok(i);
+}
+
+fn add_customer(led: Ledger, c: parsing.Cmd) -> result[str] {
+    if has(led.customers, c.id) {
+        return err("customer " + c.id + " exists");
+    }
+    set led.customers[c.id] = new Customer {
+        id: c.id,
+        limit: c.amount,
+        terms: c.terms,
+        tax: c.tax,
+        credit: 0,
+        written_off: 0
+    };
+    return ok("customer " + c.id + " added");
+}
+
+fn issue(led: Ledger, c: parsing.Cmd) -> result[str] {
+    let cust = try customer(led, c.id);
+    let total = invoice_total(c.items, cust.tax);
+    if any(open_of(led, c.id), fn(i) => overdue(led, i) > 60) {
+        return err(c.id + " on hold");
+    }
+    let exposure = open_balance(led, c.id) + total - cust.credit;
+    if exposure > cust.limit {
+        return err(c.id + " over limit by " + parsing.money(exposure - cust.limit));
+    }
+    let inv = new Invoice {
+        num: len(led.invoices) + 1,
+        cust: c.id,
+        due: led.day + cust.terms,
+        total: total,
+        fee: 0,
+        paid: 0,
+        credits: 0,
+        written: 0,
+        status: "open"
+    };
+    push(led.invoices, inv);
+    let use = min(cust.credit, total);
+    set cust.credit = cust.credit - use;
+    set inv.paid = use;
+    settle(inv);
+    return ok(format("invoice #{} {} total {} balance {} due {}", inv.num, c.id, parsing.money(total), parsing.money(balance(inv)), inv.due));
+}
+
+fn pay(led: Ledger, c: parsing.Cmd) -> result[str] {
+    let cust = try customer(led, c.id);
+    let order = new list[Invoice];
+    for n in c.nums {
+        let i = try invoice(led, n);
+        if i.cust != c.id or i.status != "open" {
+            return err("invoice " + str(n) + " not open for " + c.id);
+        }
+        push(order, i);
+    }
+    for i in open_of(led, c.id) {
+        if not any(c.nums, fn(n) => n == i.num) {
+            push(order, i);
+        }
+    }
+    var rest = c.amount;
+    let parts = new list[str];
+    for i in order {
+        let take = min(rest, balance(i));
+        if take > 0 {
+            set i.paid = i.paid + take;
+            settle(i);
+            set rest = rest - take;
+            push(parts, "#" + str(i.num) + " " + parsing.money(take));
+        }
+    }
+    if rest > 0 {
+        set cust.credit = cust.credit + rest;
+        push(parts, "credit " + parsing.money(rest));
+    }
+    return ok("paid " + c.id + " " + parsing.money(c.amount) + ": " + join(parts, ", "));
+}
+
+fn credit_note(led: Ledger, c: parsing.Cmd) -> result[str] {
+    let i = try open_invoice(led, c.num);
+    if c.amount > balance(i) {
+        return err("credit exceeds balance " + parsing.money(balance(i)) + " of #" + str(c.num));
+    }
+    set i.credits = i.credits + c.amount;
+    settle(i);
+    return ok(format("credit #{} {} balance {}", c.num, parsing.money(c.amount), parsing.money(balance(i))));
+}
+
+fn void_invoice(led: Ledger, c: parsing.Cmd) -> result[str] {
+    let i = try open_invoice(led, c.num);
+    if i.paid > 0 {
+        return err("invoice " + str(c.num) + " has payments");
+    }
+    set i.written = i.written + balance(i);
+    set i.status = "void";
+    return ok("void #" + str(c.num));
+}
+
+fn write_off(led: Ledger, c: parsing.Cmd) -> result[str] {
+    let i = try open_invoice(led, c.num);
+    if overdue(led, i) <= 90 {
+        return err(format("invoice {} is {} days overdue", c.num, overdue(led, i)));
+    }
+    let amt = balance(i);
+    set i.written = i.written + amt;
+    let cust = led.customers[i.cust];
+    set cust.written_off = cust.written_off + amt;
+    set i.status = "written-off";
+    return ok("write off #" + str(c.num) + " " + parsing.money(amt));
+}
+
+fn refund(led: Ledger, c: parsing.Cmd) -> result[str] {
+    let cust = try customer(led, c.id);
+    if c.amount > cust.credit {
+        return err(c.id + " credit is only " + parsing.money(cust.credit));
+    }
+    set cust.credit = cust.credit - c.amount;
+    return ok("refund " + c.id + " " + parsing.money(c.amount) + " credit " + parsing.money(cust.credit));
+}
+
+fn change_terms(led: Ledger, c: parsing.Cmd) -> result[str] {
+    let cust = try customer(led, c.id);
+    set cust.terms = c.terms;
+    return ok("terms " + c.id + " " + str(c.terms));
+}
+
+fn advance(led: Ledger, c: parsing.Cmd, out: list[str]) -> result[void] {
+    if c.num < led.day {
+        return err("day " + str(led.day));
+    }
+    set led.day = c.num;
+    for i in led.invoices {
+        if i.status == "open" and i.fee == 0 and overdue(led, i) > 30 {
+            set i.fee = max(500, half_up(balance(i) * 150, 10000));
+            push(out, "fee #" + str(i.num) + " " + parsing.money(i.fee));
+        }
+    }
+    return ok();
+}
+
+fn one_line(led: Ledger, c: parsing.Cmd) -> result[str] {
+    match c.name {
+        case "customer" {
+            return add_customer(led, c);
+        }
+        case "terms" {
+            return change_terms(led, c);
+        }
+        case "invoice" {
+            return issue(led, c);
+        }
+        case "pay" {
+            return pay(led, c);
+        }
+        case "credit" {
+            return credit_note(led, c);
+        }
+        case "void" {
+            return void_invoice(led, c);
+        }
+        case "writeoff" {
+            return write_off(led, c);
+        }
+        else {
+            return refund(led, c);
+        }
+    }
+}
+
+# Runs a ledger command (not `statement` or `aging`), adding its output lines to `out`.
+export fn run(led: Ledger, c: parsing.Cmd, out: list[str]) {
+    if c.name == "day" {
+        match advance(led, c, out) {
+            case ok() {
+            }
+            case err(e) {
+                push(out, "error: " + e);
+            }
+        }
+        return;
+    }
+    match one_line(led, c) {
+        case ok(s) {
+            push(out, s);
+        }
+        case err(e) {
+            push(out, "error: " + e);
+        }
+    }
+}

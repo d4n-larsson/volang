@@ -1,0 +1,39 @@
+warehouse a added
+warehouse b added
+warehouse c added
+item mug added
+received 2 mug into a, now 2, lot 1 at 3.10
+received 3 mug into a, now 5, lot 2 at 3.20
+received 4 mug into b, now 4, lot 3 at 2.90
+transferred 4 mug from a to b, cost 12.60
+transferred 7 mug from b to c, cost 21.30
+lot 1: 2 x 3.10 = 6.20
+lot 2: 2 x 3.20 = 6.40
+lot 3: 3 x 2.90 = 8.70
+total 7 units = 21.30
+lot 3: 1 x 2.90 = 2.90
+total 1 unit = 2.90
+lot 2: 1 x 3.20 = 3.20
+total 1 unit = 3.20
+transferred 5 mug from c to a, cost 15.50
+lot 1: 2 x 3.10 = 6.20
+lot 2: 3 x 3.20 = 9.60
+lot 3: 1 x 2.90 = 2.90
+total 6 units = 18.70
+mug: 6 units = 18.70
+total value 18.70
+mug: 1 unit = 2.90
+total value 2.90
+mug: 2 units = 5.80
+total value 5.80
+mug: 9 units = 27.40
+total value 27.40
+#1 receive a +2 lot 1 at 3.10
+#2 receive a +3 lot 2 at 3.20
+#3 receive b +4 lot 3 at 2.90
+#4 transfer-out a -4 (to b) cost 12.60
+#5 transfer-in b +4 (from a) cost 12.60
+#6 transfer-out b -7 (to c) cost 21.30
+#7 transfer-in c +7 (from b) cost 21.30
+#8 transfer-out c -5 (to a) cost 15.50
+#9 transfer-in a +5 (from c) cost 15.50

@@ -1,0 +1,16 @@
+day 0 is now off
+added milestone kick
+added milestone m2
+m2 after kick+3
+day 2 is now off
+task  start  finish  lstart  lfinish  slack
+kick      1       1       1        1      0
+m2        7       7       7        7      0
+end 7
+critical: kick m2 (3 working days)
+project finishes on day 7 (Mon)
+     01234567
+kick .*......
+m2   .......*
+kick ms Kickoff
+m2 ms m2

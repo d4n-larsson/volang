@@ -1,0 +1,35 @@
+set A1 =a1
+set A2 =A0+1
+set A3 =A01
+set A4 =AB1
+set A5 =A 1
+set A6 =$A+1
+set A7 =1.5
+set A8 =1<2<3
+set A9 =(1<2)<3
+set B1 =SUM()
+set B2 =IF(1,2)
+set B3 =ABS(B9:B10)
+set B4 =B9:B10+1
+set B5 =SUM(B9:B10+1)
+set B6 =FOO(1)
+set B7 =
+set B8 =1+
+set B9 =SUM (A9, 2)
+set C1 =#REF
+set C2 =sum(1)
+set C3 =SUM(1,)
+set C4 =(1+2
+set C5 =A100
+set C6 =1 2
+set C7 =SUM(A1:A2:A3)
+set C8 =SUM(A1 :A2)
+set C9 =ABS(-4)*IF(1,2,3,4)
+set D1 =MAX(B9,A9)+ABS(-3)
+set D2 =SUM1
+set D3 = 2 *( 3 + 4 )
+set D4 =A$1$
+set D5 =$$A1
+show A1:D9
+formula A5
+formula D3

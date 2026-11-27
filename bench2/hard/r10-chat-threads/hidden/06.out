@@ -1,0 +1,39 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+message 1 posted to #general
+message 2 posted to #general
+message 3 posted to #general in thread 1
+message 4 posted to #general in thread 1
+message 5 posted to #general
+message 6 posted to #general in thread 2
+message 7 posted to #general
+message general/7 edited
+#general: last 2 of 4 messages
+[5] t=12 cy: m3
+[7] t=14 ann: m4 edited (edited)
+#general: last 3 of 4 messages
+[2] t=9 bob: m2 (1 reply)
+[5] t=12 cy: m3
+[7] t=14 ann: m4 edited (edited)
+#general: 4 messages
+[1] t=8 ann: m1 (2 replies)
+[2] t=9 bob: m2 (1 reply)
+[5] t=12 cy: m3
+[7] t=14 ann: m4 edited (edited)
+#general: 4 messages
+[1] t=8 ann: m1 (2 replies)
+[2] t=9 bob: m2 (1 reply)
+[5] t=12 cy: m3
+[7] t=14 ann: m4 edited (edited)
+#general: 4 messages
+[1] t=8 ann: m1 (2 replies)
+[2] t=9 bob: m2 (1 reply)
+[5] t=12 cy: m3
+[7] t=14 ann: m4 edited (edited)
+error: bad command
+error: bad command

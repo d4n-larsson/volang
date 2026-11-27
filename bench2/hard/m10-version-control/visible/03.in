@@ -1,0 +1,14 @@
+write a one
+write b two
+commit base
+branch side
+write a one changed
+commit change a
+checkout side
+delete b
+write c three
+commit side work
+checkout main
+merge side
+status
+diff 1 main

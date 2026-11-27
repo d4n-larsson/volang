@@ -1,0 +1,14 @@
+set A1 10
+set A2 0
+set A3 =A1/A2
+set A4 =A3+1
+print A3
+print A4
+set B1 =B2+1
+set B2 =B1*2
+print B1
+print B2
+set B2 4
+print B1
+set C1 =SUM(A1 A2)
+print C1

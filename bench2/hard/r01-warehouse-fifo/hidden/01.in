@@ -1,0 +1,18 @@
+warehouse w
+item gear Gear 500
+receive w gear 3 400
+receive w gear 4 450
+receive w gear 5
+receive w gear 2 600
+lots w gear
+ship w gear 2
+lots w gear
+ship w gear 9
+lots w gear
+value w
+ship w gear 4
+ship w gear 3
+lots w gear
+value
+history gear
+report

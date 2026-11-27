@@ -1,0 +1,19 @@
+From alice@remote.net Wed Jan  3 09:00:00 2024
+Message-ID: <m1@remote.net>
+To: bob@example.org
+Subject: Lunch? (resent)
+
+Are you free at noon?
+
+From alice@remote.net Wed Jan  3 09:05:00 2024
+Message-ID: <M1@remote.net>
+To: bob@example.org
+Subject: Different case id
+
+Different id.
+
+From helen@example.org Wed Jan  3 09:10:00 2024
+To: bob@example.org
+Subject: no id
+
+No message id here.

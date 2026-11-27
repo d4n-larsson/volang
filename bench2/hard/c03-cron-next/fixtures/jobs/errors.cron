@@ -1,0 +1,23 @@
+* * * * job-a
+60 * * * * too-big
+* 24 * * * h24
+* * 0 * * d0
+* * 32 * * d32
+* * * 0 * m0
+* * * 13 * m13
+* * * * 8 w8
+1,,2 * * * * empty-item
+5/2 * * * * step-single
+*/0 * * * * step-zero
+10-5 * * * * backwards
+1-2-3 * * * * two-dashes
+*/ * * * * no-step
+-5 * * * * negative
+* * * * MON names
+0 0 1 1 1 Bad_Name
+0 0 1 1 1 a-very-long-job-name-x
+0 0 1 1 1 ok-job
+0 0 2 2 2 ok-job
+0 0 1 1 1 extra field
+   1   2   3   4   5    spaced-ok   
+0 0 * * * *

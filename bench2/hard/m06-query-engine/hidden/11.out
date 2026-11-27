@@ -1,0 +1,31 @@
+created m
+inserted 4
+label | delta   | note          
+------+---------+---------------
+a     |      -5 | NULL          
+bb    | 1234567 | x             
+ccc   |    NULL | long note here
+      |       0 |               
+(4 rows)
+delta | label
+------+------
+   -5 | a    
+(1 row)
+note
+----
+(0 rows)
+label | delta  
+------+--------
+ccc   |    NULL
+a     |      -5
+      |       0
+bb    | 1234567
+(4 rows)
+min(delta) | max(note) | count(note)
+-----------+-----------+------------
+        -5 | x         |           3
+(1 row)
+max(label)
+----------
+ccc       
+(1 row)

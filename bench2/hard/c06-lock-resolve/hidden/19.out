@@ -1,0 +1,3 @@
+pick log 1.9.3
+pick http 2.0.0
+error: conflict on log: log@1.9.3 does not satisfy >=2.0.0 (required by http@2.0.0)

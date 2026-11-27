@@ -1,0 +1,37 @@
+mkdir d e e/d empty
+write f one
+write g two
+mv f h
+ls
+mv h d
+ls d
+mv g d/h
+cat d/h
+ls
+write e/d/inner x
+mv d e
+mv d empty
+ls empty
+mv empty/d/h empty
+mv empty/h empty/h
+mv empty/h empty
+ls empty empty/d
+mv empty empty
+mv empty empty/d
+mv e/d/inner e
+mv empty/d e/inner
+write e/plain y
+mkdir e/sub
+mv empty/d/../h e
+ls -l e
+mv e/plain e/sub
+mv e/sub/plain e/sub/renamed
+find /
+mkdir t t/x1 x1
+write x1/k v
+mv x1 t
+mkdir t/k
+mv t/x1/k t
+mkdir t/x1/sub x1
+mv x1 t
+find /t

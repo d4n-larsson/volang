@@ -1,0 +1,23 @@
+user dee
+new p1 Payment provider outage handling is missing
+new p2 Retry queue
+assign 1 dee
+assign 2 dee
+move 1 triaged
+move 1 in_progress
+move 1 blocked   waiting   on   the  vendor  api
+move 2 triaged
+wait 10
+stale 5
+stale 0
+show 1
+move 1 triaged
+move 1 in_progress
+move 1 blocked second hold
+show 1
+wait 3
+stale 3
+move 1 in_progress
+stale 0
+list status=blocked
+list status=in_progress

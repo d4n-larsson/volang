@@ -1,0 +1,50 @@
+# Text formatting shared by every report.
+import model;
+
+export fn lpad(s: str, width: int) -> str {
+    var out = s;
+    while len(out) < width {
+        set out = " " + out;
+    }
+    return out;
+}
+
+export fn rpad(s: str, width: int) -> str {
+    var out = s;
+    while len(out) < width {
+        set out = out + " ";
+    }
+    return out;
+}
+
+export fn signed(n: int) -> str {
+    if n > 0 {
+        return "+" + str(n);
+    }
+    return str(n);
+}
+
+export fn score(m: model.Match) -> str {
+    return str(m.hg) + "-" + str(m.ag);
+}
+
+export fn match_line(m: model.Match) -> str {
+    return "result " + str(m.num) + ": " + m.home + " " + score(m) + " " + m.away;
+}
+
+export fn name_list(names: list[str]) -> str {
+    return join(names, ", ");
+}
+
+# The standings table for rows that are already sorted and ranked.
+export fn table_lines(rows: list[model.Row]) -> list[str] {
+    var width = 4;
+    for r in rows {
+        set width = max(width, len(r.name));
+    }
+    let out = ["Pos " + rpad("Team", width) + lpad("P", 3) + lpad("W", 3) + lpad("D", 3) + lpad("L", 3) + lpad("GF", 3) + lpad("GA", 3) + lpad("GD", 4) + lpad("Pts", 4)];
+    for r in rows {
+        push(out, lpad(str(r.rank), 3) + " " + rpad(r.name, width) + lpad(str(r.played), 3) + lpad(str(r.won), 3) + lpad(str(r.drawn), 3) + lpad(str(r.lost), 3) + lpad(str(r.gf), 3) + lpad(str(r.ga), 3) + lpad(signed(r.gf - r.ga), 4) + lpad(str(model.points(r)), 4));
+    }
+    return out;
+}

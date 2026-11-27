@@ -1,0 +1,9 @@
+skip Mon: bad spool name
+skip mon.mbox: bad spool name
+skip ../private/inbox: bad spool name
+skip /etc/passwd: bad spool name
+skip a-very-long-spool-name1: bad spool name
+skip a-very-long-spool-nam: bad spool name
+skip a-very-long-spool-na: no such spool
+== mailboxes
+total 0 delivered, 0 bounced, 0 relayed, 0 duplicates

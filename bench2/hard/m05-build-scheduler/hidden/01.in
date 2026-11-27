@@ -1,0 +1,20 @@
+# a comment line is malformed
+workers 0
+workers 10
+workers 3
+workers x
+retries 2 3
+target Alpha 2
+target beta 0
+target gamma 1001
+target delta 0004
+target eps 00001
+target zeta 7 beta-x
+fail
+goal
+pool p 0
+pool q 10
+use delta
+timeout 1001
+backoff -1
+target   omega    3   delta

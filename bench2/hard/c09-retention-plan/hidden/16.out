@@ -1,0 +1,31 @@
+ignore b-20230229-0000.tar
+ignore notes.md
+plan for lab as of 2020-01-01
+== 9
+keep 9-20240301-0000.tar future
+== a
+keep a-20240311-0000.tar future
+keep a-20240310-1000.tar future
+keep a-20240302-1000.tar future
+keep a-20240301-1000.tar future
+keep a-20240229-1000.tar future
+keep a-20240108-0000.tar future
+keep a-20240107-2300.tar future
+keep a-20240101-0900.tar future
+keep a-20231231-0800.tar future
+keep a-20231225-1200.tar future
+== a-b
+keep a-b-20240310-1000.tar future
+keep a-b-20240309-1000.tar future
+== b
+keep b-20240312-0601.tar future
+keep b-20240312-0600.tar future
+keep b-20240311-0600.tar future
+keep b-20240310-0600.tar future
+keep b-20230101-0000.tar future
+keep b-20221231-2359.tar future
+keep b-20211231-2359.tar future
+keep b-20210101-0000.tar future
+keep b-20200229-0000.tar future
+kept 22, deleted 0
+wrote plan/lab.delete 0

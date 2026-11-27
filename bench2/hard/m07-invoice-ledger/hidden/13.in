@@ -1,0 +1,16 @@
+customer h 10000.00 0 0
+invoice h 1x100.00
+day 61
+invoice h 1x1.00
+pay h 50.00
+invoice h 1x1.00
+credit 1 50.00
+pay h 1.00
+invoice h 1x1.00
+day 200
+invoice h 1x2.00
+invoice h 1x3.00
+day 262
+invoice h 1x4.00
+void 2
+invoice h 1x5.00

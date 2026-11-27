@@ -1,0 +1,33 @@
+line 1: expected 6 fields
+line 2: bad minute field
+line 3: bad hour field
+line 4: bad day field
+line 5: bad day field
+line 6: bad month field
+line 7: bad month field
+line 8: bad weekday field
+line 9: bad minute field
+line 10: bad minute field
+line 11: bad minute field
+line 12: bad minute field
+line 13: bad minute field
+line 14: bad minute field
+line 15: bad minute field
+line 16: bad weekday field
+line 17: bad job name
+line 18: bad job name
+line 20: duplicate job ok-job
+line 21: expected 6 fields
+line 23: bad job name
+jobs 2
+> next ok-job 2
+2024-01-08 00:00 Mon
+2024-01-15 00:00 Mon
+> next h24 1
+unknown job h24
+> next spaced-ok 3
+2024-04-03 02:01 Wed
+2024-04-05 02:01 Fri
+2024-04-12 02:01 Fri
+> list jobs
+bad query

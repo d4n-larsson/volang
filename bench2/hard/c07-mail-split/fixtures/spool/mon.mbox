@@ -1,0 +1,24 @@
+From alice@remote.net Mon Jan  1 09:00:00 2024
+Message-ID: <m1@remote.net>
+From: Alice <alice@remote.net>
+To: bob@example.org
+Subject: Lunch?
+
+Are you free at noon?
+
+From carol@example.org Mon Jan  1 09:30:00 2024
+Message-ID: <m2@example.org>
+To: Bob Smith <bob@example.org>, dave@example.org
+Cc: carol@example.org
+Subject: Release plan
+
+The release is on Friday.
+Please review the notes.
+
+From dave@example.org Mon Jan  1 10:00:00 2024
+Message-ID: <m3@example.org>
+To: alice@remote.net
+Cc: bob@example.org
+Subject: Re: Lunch?
+
+Count me in.

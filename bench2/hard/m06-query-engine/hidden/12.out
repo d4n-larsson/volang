@@ -1,0 +1,23 @@
+created a
+created b
+inserted 1
+inserted 1
+error: unknown table nope
+error: unknown table gone
+error: duplicate table a
+error: unknown column zz
+error: ambiguous column id
+error: unknown column b.zz
+error: type mismatch in comparison
+error: type mismatch in comparison
+error: type mismatch in comparison
+v
+-
+(0 rows)
+error: unknown column zz
+error: type mismatch in comparison
+error: unknown column nope
+count(v) | sum(w)
+---------+-------
+       1 |      5
+(1 row)

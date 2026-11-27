@@ -1,0 +1,6 @@
+today 2024-03-12
+set lab
+keep daily 3
+keep weekly 2
+keep yearly 3
+keep daily 1 for b

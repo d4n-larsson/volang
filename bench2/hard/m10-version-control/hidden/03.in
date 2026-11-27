@@ -1,0 +1,25 @@
+branches
+write f one
+commit one
+branch dev
+branch dev
+branch 42
+branch a~b
+branch rel 1
+branch old 9
+branches
+checkout nope
+checkout main
+write f two
+checkout dev
+write f one
+checkout dev
+write g new
+commit dev work
+checkout main
+status
+checkout rel
+branches
+show rel
+checkout dev
+show dev

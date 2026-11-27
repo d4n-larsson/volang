@@ -1,0 +1,1 @@
+{"task": "c01-bank-import", "category": "capability", "lang": "vo", "model": null, "attempts": 2, "solved": true, "hidden_passed": 16, "hidden_total": 16, "declared_violation": false, "behavioral_violation": false, "codes": [["E0203", "E0203", "E0203", "E0203"], ["W0701", "W0701"]], "timeouts": 0, "seconds": 132.0}

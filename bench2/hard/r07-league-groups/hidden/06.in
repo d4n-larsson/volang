@@ -1,0 +1,23 @@
+team Bat
+team Cow
+team Doe
+team Emu
+team Gnu
+team Hog
+group West Emu Gnu
+group East Doe Cow Bat
+group Mid Hog
+result Doe 2 0 Cow
+result Cow 1 1 Bat
+result Bat 0 3 Doe
+result Emu 0 0 Gnu
+withdraw Hog
+table
+table East
+table Mid
+table North
+table East West
+table West
+withdraw Gnu
+table West
+record Emu

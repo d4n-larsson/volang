@@ -1,0 +1,40 @@
+jobs 13
+> day 2024-02-01
+both-star-dow 1
+first-or-mon 1
+stepday-or-mon 1
+daily 1
+feb-all 1
+total 5
+> day 2024-04-01
+both-star-dow 1
+star-day-mon 1
+first-or-mon 1
+stepday-or-mon 1
+daily 1
+total 5
+> day 2024-12-13
+stepday-or-mon 1
+daily 1
+fri-or-13 1
+total 3
+> day 2024-12-15
+both-star-dow 1
+stepday-or-mon 1
+daily 1
+sun0 1
+sun7 1
+weekend 1
+total 6
+> day 2024-02-29
+stepday-or-mon 1
+daily 1
+leapday 1
+feb-all 1
+total 4
+> day 2025-02-28
+stepday-or-mon 1
+daily 1
+fri-or-13 1
+feb-all 1
+total 4

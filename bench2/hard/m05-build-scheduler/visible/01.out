@@ -1,0 +1,18 @@
+0 start base w1 #1
+0 start docs w2 #1
+1 done base w1
+1 start core w1 #1
+2 done docs w2
+2 start ui w2 #1
+4 done core w1
+4 done ui w2
+4 start app w1 #1
+8 done app w1
+makespan 8
+utilization 75%
+w1 busy 8 attempts 3
+w2 busy 4 attempts 2
+built: base docs core ui app
+failed: -
+skipped: -
+blocked: -

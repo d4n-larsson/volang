@@ -1,0 +1,39 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened equity:open (equity)
+rate EUR from day 0: 1.5000
+posted k1: 2 postings, total 15.00
+rate EUR from day 0: 2.0000
+posted k2: 2 postings, total 20.00
+k1 day 0 a
+  assets:eur 10.00 EUR (15.00 USD)
+  assets:bank -15.00
+k2 day 0 b
+  assets:eur 10.00 EUR (20.00 USD)
+  assets:bank -20.00
+statement assets:eur (asset, EUR)
+     0 k1            10.00      10.00  a
+     0 k2            10.00      20.00  b
+  closing balance 20.00 EUR (book 35.00 USD)
+balance assets:eur: 40.00
+  EUR 20.00
+assets:eur 20.00 EUR: book 35.00, value 40.00, gain 5.00
+unrealized gain 5.00
+rate EUR from day 0: 1.0000
+balance assets:eur: 20.00
+  EUR 20.00
+assets:eur 20.00 EUR: book 35.00, value 20.00, gain -15.00
+unrealized gain -15.00
+asset
+  assets:bank -35.00
+  assets:eur 35.00
+total debits 35.00 credits 35.00
+posted k3: 2 postings, total 20.00
+k3 day 1 c
+  assets:eur -20.00 EUR (-20.00 USD)
+  assets:bank 20.00
+assets:eur 0.00 EUR: book 15.00, value 0.00, gain -15.00
+unrealized gain -15.00
+voided k3 on day 1
+assets:eur 20.00 EUR: book 35.00, value 20.00, gain -15.00
+unrealized gain -15.00

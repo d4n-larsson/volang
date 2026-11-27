@@ -1,0 +1,40 @@
+no accounts
+no accounts
+no transactions
+total debits 0.00 credits 0.00
+net income 0.00
+error: unknown account assets
+error: unknown account assets
+error: unknown transaction t1
+opened assets:bank (asset)
+opened assets:cash (asset)
+opened equity:open (equity)
+error: bad command
+error: bad command
+error: bad command
+error: bad id t-1
+error: bad posting assets:bank=1.234
+error: zero posting assets:bank
+error: bad posting assets:bank=1.
+error: bad posting assets:bank=.5
+error: bad posting assets:bank=+5
+posted t1: 2 postings, total 5.00
+error: transaction t1 exists
+error: account assets:bank posted twice
+error: transaction t3 unbalanced by 0.50
+posted t4: 3 postings, total 7.50
+posted t5: 2 postings, total 0.07
+balance assets:bank: 12.57
+error: unknown account assets:b
+error: bad range
+error: bad range
+error: bad command
+error: account equity:open has balance -7.00
+error: unknown account equity:none
+error: unknown command bogus
+error: bad command
+statement assets:cash (asset)
+     1 t1            -5.00      -5.00  x
+     1 t4            -0.50      -5.50  x
+     2 t5            -0.07      -5.57  x
+  closing balance -5.57

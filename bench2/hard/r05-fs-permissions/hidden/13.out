@@ -1,0 +1,26 @@
+root
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: user exists: root
+error: only root can add users
+ann
+error: no such user: bob
+bob
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: no such file or directory: /-l
+error: no such file or directory: /-x
+(empty)
+(empty)
+error: bad command
+ann
+/: directory, 0 entries, owner root, mode rwxr-x
+error: unknown command bogus
+error: unknown command Whoami

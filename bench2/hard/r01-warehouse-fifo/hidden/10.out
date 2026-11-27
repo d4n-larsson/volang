@@ -1,0 +1,27 @@
+warehouse x added
+item cog added
+item rod added
+received 5 cog into x, now 5, lot 1 at 0.40
+received 1 rod into x, now 1, lot 2 at 12.50
+order o1 opened at x
+order o1 line 1: 3 cog
+order o1 line 2: 1 rod
+order o1 line 3: 3 cog
+error: order o1 short of cog: need 6, have 5
+received 1 cog into x, now 6, lot 3 at 0.55
+order o1 fulfilled: 3 lines, 7 units, cost 15.05
+no lots of cog in x
+order o2 opened at x
+order o2 line 1: 1 cog
+order o2 cancelled
+error: order o2 is cancelled
+error: only 0 cog in x
+o1 x fulfilled: 3 lines, 7 units
+o2 x cancelled: 1 line, 1 unit
+items 2, warehouses 1, 0 units, value 0.00
+shipped 7 units in 1 shipment, cost 15.05
+orders: 0 open, 1 fulfilled, 1 cancelled
+#1 receive x +5 lot 1 at 0.40
+#3 receive x +1 lot 3 at 0.55
+#4 ship x -3 (order o1) cost 1.20
+#6 ship x -3 (order o1) cost 1.35

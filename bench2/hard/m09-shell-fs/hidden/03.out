@@ -1,0 +1,18 @@
+
+- 0 empty
+- 1 file
+write: dir/x: no such file or directory
+write: dir: is a directory
+append: dir: is a directory
+created by append
+and more
+cat: missing: no such file or directory
+cat: dir: is a directory
+cat: dir/new/x: not a directory
+
+created by append
+and more
+replaced text
+write: dir/new/..: not a directory
+replaced text
+tail

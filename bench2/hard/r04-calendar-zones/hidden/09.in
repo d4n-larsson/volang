@@ -1,0 +1,17 @@
+user dee -03:00
+user eli +04:00
+room r 3
+book b1 r dee 2 22:00 240 eli
+book b2 r eli 4 09:00 30 dee
+book b3 r eli 4 23:00 90
+busy dee
+busy dee 2
+busy dee 3
+busy dee 4
+busy eli 3
+busy eli 4
+busy eli 5
+busy eli 0
+busy eli 1 1
+busy nobody 3
+busy r 3

@@ -1,0 +1,13 @@
+limit S1 ana sell RR 10 10.00
+limit S2 bob sell RR 10 10.00
+limit S3 ana sell RR 10 10.01
+limit S4 cy sell RR 10 10.02
+limit B1 ana buy RR 25 10.02
+book RR
+limit S5 ana sell RR 5 10.03
+limit S6 bob sell RR 5 10.03
+limit B2 bob buy RR 8 10.03 ioc
+book RR
+limit B3 cy buy RR 1 9.00
+limit B4 dan buy RR 1 9.50
+limit S7 cy sell RR 3 9.00

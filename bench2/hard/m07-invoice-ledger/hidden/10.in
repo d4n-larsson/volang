@@ -1,0 +1,16 @@
+customer s 1000000.00 0 0
+customer u 1000000.00 0 0
+invoice s 1x335.00
+invoice u 1x335.00
+day 31
+day 31
+pay s 335.00
+pay u 335.00
+pay u 1.00
+statement u
+day 62
+credit 1 5.00
+credit 2 5.01
+credit 2 5.00
+void 2
+void 1

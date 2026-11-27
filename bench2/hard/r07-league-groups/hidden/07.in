@@ -1,0 +1,20 @@
+team Ape
+team Bug
+team Cod
+team Dab
+team Eft
+team Fly
+team Gar
+group Two Gar Ape Eft
+group One Dab Bug
+group One Cod
+result Gar 1 0 Ape
+result Bug 0 0 Cod
+result Cod 2 1 Dab
+fixtures
+withdraw Ape
+fixtures
+result Eft 1 1 Gar
+result Gar 2 0 Eft
+result Dab 1 0 Bug
+fixtures

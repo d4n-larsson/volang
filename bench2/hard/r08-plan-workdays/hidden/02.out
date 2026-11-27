@@ -1,0 +1,15 @@
+added task main
+added task side
+added task wrap
+wrap after main
+wrap after side+1
+task  start  finish  lstart  lfinish  slack
+main      0      11       0       11      0
+side      0       2       8       10      6
+wrap     11      14      11       14      0
+end 14
+critical: main wrap (10 working days)
+     012345678901234
+main #####::####....
+side ##.............
+wrap ...........#...

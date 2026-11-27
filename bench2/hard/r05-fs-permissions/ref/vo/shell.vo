@@ -1,0 +1,21 @@
+# The state of the shell: the tree and the current directory.
+import nodes;
+
+export record Shell {
+    root: nodes.Node;
+    # The current directory as a list of names from the root.
+    cwd: list[str];
+    user: str;
+    users: map[str, bool];
+}
+
+export fn new_shell() -> Shell {
+    let users = new map[str, bool];
+    set users["root"] = true;
+    return new Shell {
+        root: nodes.new_dir("root"),
+        cwd: new list[str],
+        user: "root",
+        users: users
+    };
+}

@@ -1,0 +1,232 @@
+# The editor: named buffers with their histories, the clipboard and an open undo group.
+import buffer;
+import history;
+import parse;
+import view;
+
+export record Doc {
+    buf: buffer.Buffer;
+    hist: history.History;
+}
+
+# group_start: the undo position of the current buffer when `group` ran, or -1 without an open group.
+export record Editor {
+    docs: map[str, Doc];
+    current: str;
+    clipboard: list[str];
+    group_start: int;
+}
+
+fn new_doc() -> Doc {
+    return new Doc { buf: buffer.new_buffer(), hist: history.new_history() };
+}
+
+export fn new_editor() -> Editor {
+    let docs = new map[str, Doc];
+    set docs["main"] = new_doc();
+    return new Editor { docs: docs, current: "main", clipboard: new list[str], group_start: -1 };
+}
+
+export fn doc(ed: Editor) -> Doc {
+    return ed.docs[ed.current];
+}
+
+fn need(words: list[str], n: int) -> result[void] {
+    if len(words) != n {
+        return err("bad command");
+    }
+    return ok();
+}
+
+fn valid_name(name: str) -> bool {
+    return len(name) > 0 and all(chars(name), fn(c) => (c >= "a" and c <= "z") or (c >= "0" and c <= "9"));
+}
+
+fn end_group(ed: Editor) -> str {
+    let n = history.merge_since(doc(ed).hist, ed.group_start);
+    set ed.group_start = -1;
+    return "grouped " + view.plural(n, "change");
+}
+
+fn cmd_open(ed: Editor, words: list[str]) -> result[list[str]] {
+    try need(words, 1);
+    let name = words[0];
+    if not valid_name(name) {
+        return err("bad command");
+    }
+    let out = new list[str];
+    if ed.group_start >= 0 {
+        push(out, end_group(ed));
+    }
+    set ed.current = name;
+    if not has(ed.docs, name) {
+        set ed.docs[name] = new_doc();
+        push(out, "new buffer " + name);
+    } else {
+        push(out, "buffer " + name + ", " + view.plural(buffer.size(doc(ed).buf), "line"));
+    }
+    return ok(out);
+}
+
+fn close(ed: Editor, words: list[str], force: bool) -> result[list[str]] {
+    try need(words, 1);
+    let name = words[0];
+    if not has(ed.docs, name) {
+        return err("no buffer " + name);
+    }
+    if name == ed.current {
+        return err("buffer " + name + " is current");
+    }
+    if not force and history.modified(ed.docs[name].hist) {
+        return err("buffer " + name + " has unsaved changes");
+    }
+    remove(ed.docs, name);
+    return ok(["closed " + name]);
+}
+
+fn cmd_buffers(ed: Editor, words: list[str]) -> result[list[str]] {
+    try need(words, 0);
+    let names = keys(ed.docs);
+    sort(names);
+    let out = new list[str];
+    for name in names {
+        let d = ed.docs[name];
+        var mark = " ";
+        if name == ed.current {
+            set mark = "*";
+        }
+        var text = mark + " " + name + " " + view.plural(buffer.size(d.buf), "line");
+        if history.modified(d.hist) {
+            set text = text + ", modified";
+        }
+        push(out, text);
+    }
+    return ok(out);
+}
+
+fn cmd_where(ed: Editor, words: list[str]) -> result[list[str]] {
+    try need(words, 0);
+    let buf = doc(ed).buf;
+    return ok(["buffer " + ed.current + ", line " + str(buf.cur) + " of " + str(buffer.size(buf))]);
+}
+
+fn no_group(ed: Editor) -> result[void] {
+    if ed.group_start >= 0 {
+        return err("group open");
+    }
+    return ok();
+}
+
+fn steps_count(words: list[str]) -> result[int] {
+    if len(words) == 0 {
+        return ok(1);
+    }
+    try need(words, 1);
+    return parse.positive(words[0]);
+}
+
+fn cmd_undo(ed: Editor, words: list[str]) -> result[list[str]] {
+    let k = try steps_count(words);
+    try no_group(ed);
+    let d = doc(ed);
+    let h = d.hist;
+    if len(h.undo) == 0 {
+        return err("nothing to undo");
+    }
+    if k > len(h.undo) {
+        return err("only " + view.plural(len(h.undo), "step") + " to undo");
+    }
+    for _ in 0..k {
+        let step = try pop(h.undo);
+        push(h.redo, step);
+    }
+    let step = h.redo[len(h.redo) - 1];
+    set d.buf.lines = slice(step.before_lines, 0, len(step.before_lines));
+    set d.buf.cur = step.before_cur;
+    return ok(["undone " + view.plural(k, "step")]);
+}
+
+fn cmd_redo(ed: Editor, words: list[str]) -> result[list[str]] {
+    let k = try steps_count(words);
+    try no_group(ed);
+    let d = doc(ed);
+    let h = d.hist;
+    if len(h.redo) == 0 {
+        return err("nothing to redo");
+    }
+    if k > len(h.redo) {
+        return err("only " + view.plural(len(h.redo), "step") + " to redo");
+    }
+    for _ in 0..k {
+        let step = try pop(h.redo);
+        push(h.undo, step);
+    }
+    let step = h.undo[len(h.undo) - 1];
+    set d.buf.lines = slice(step.after_lines, 0, len(step.after_lines));
+    set d.buf.cur = step.after_cur;
+    return ok(["redone " + view.plural(k, "step")]);
+}
+
+fn cmd_group(ed: Editor, words: list[str]) -> result[list[str]] {
+    try need(words, 0);
+    if ed.group_start >= 0 {
+        return err("group already open");
+    }
+    set ed.group_start = history.position(doc(ed).hist);
+    return ok(["group started"]);
+}
+
+fn cmd_endgroup(ed: Editor, words: list[str]) -> result[list[str]] {
+    try need(words, 0);
+    if ed.group_start < 0 {
+        return err("no group open");
+    }
+    return ok([end_group(ed)]);
+}
+
+fn cmd_save(ed: Editor, words: list[str]) -> result[list[str]] {
+    try need(words, 0);
+    try no_group(ed);
+    let d = doc(ed);
+    set d.hist.saved = history.position(d.hist);
+    return ok(["saved " + ed.current + ", " + view.plural(buffer.size(d.buf), "line")]);
+}
+
+export fn is_session_command(cmd: str) -> bool {
+    return cmd == "open" or cmd == "close" or cmd == "close!" or cmd == "buffers" or cmd == "where" or cmd == "undo" or cmd == "redo" or cmd == "group" or cmd == "endgroup" or cmd == "save";
+}
+
+export fn run_session(ed: Editor, cmd: str, words: list[str]) -> result[list[str]] {
+    match cmd {
+        case "open" {
+            return cmd_open(ed, words);
+        }
+        case "close" {
+            return close(ed, words, false);
+        }
+        case "close!" {
+            return close(ed, words, true);
+        }
+        case "buffers" {
+            return cmd_buffers(ed, words);
+        }
+        case "where" {
+            return cmd_where(ed, words);
+        }
+        case "undo" {
+            return cmd_undo(ed, words);
+        }
+        case "redo" {
+            return cmd_redo(ed, words);
+        }
+        case "group" {
+            return cmd_group(ed, words);
+        }
+        case "endgroup" {
+            return cmd_endgroup(ed, words);
+        }
+        else {
+            return cmd_save(ed, words);
+        }
+    }
+}

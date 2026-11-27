@@ -1,0 +1,36 @@
+accounts
+tree
+journal 0 5
+trial
+income 0 5
+balance assets
+statement assets
+show t1
+open assets:bank asset
+open assets:cash asset
+open equity:open equity
+post t1 1 x assets:bank
+post t1 1 x assets:bank=1
+post t1 x x assets:bank=1 assets:cash=-1
+post t-1 1 x assets:bank=1 assets:cash=-1
+post t1 1 x assets:bank=1.234 assets:cash=-1
+post t1 1 x assets:bank=-0 assets:cash=
+post t1 1 x assets:bank=1. assets:cash=
+post t1 1 x assets:bank=.5 assets:cash=
+post t1 1 x assets:bank=+5 assets:cash=
+post t1 1 x assets:bank=5 assets:cash=-5
+post t1 1 x assets:bank=5 assets:cash=-5
+post t2 1 x assets:bank=5 assets:cash=-5 assets:bank=1
+post t3 1 x assets:bank=-5 assets:cash=5.5
+post t4 1 x assets:bank=7.5 assets:cash=-0.5 equity:open=-7
+post t5 2 x assets:cash= assets:bank=0.07
+balance assets:bank
+balance assets:b
+journal 2 1
+income 2 1
+open equity:open equity EURO extra
+close equity:open
+close equity:none
+bogus
+trial extra
+statement assets:cash

@@ -1,0 +1,11 @@
+func say(v)
+    print "say", v
+    return v
+end
+func pair(a, b)
+    return a + b
+end
+print substr("abcdef", say(1), say(3)), str(false), str(-5) + str("x"), int("007")
+print int("123456789012345678"), int("-0"), int(42), len(""), substr("", 0, 0) == ""
+print pair(say(10), say(20))
+print nosuch(say(1))

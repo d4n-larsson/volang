@@ -1,0 +1,60 @@
+/
+/A
+/A/x
+/a
+/a/b
+/a/b/x.txt
+/a/b/y.txt
+/a/x.TXT
+/a.b
+/a.b/xx
+/ab
+/ab/x.txt
+/a/b/x.txt
+/a/b/y.txt
+/ab/x.txt
+/a/b/x.txt
+/a/b/y.txt
+/ab/x.txt
+/
+/A
+/A/x
+/a
+/a/b
+/a/b/x.txt
+/a/b/y.txt
+/a/x.TXT
+/a.b
+/a.b/xx
+/ab
+/ab/x.txt
+/a
+/a
+/a.b
+/ab
+/a/b
+/a.b
+/ab
+/a/b/x.txt
+/a/b
+/A/x
+20 /
+0 /A
+9 /a
+5 /a/b
+6 /a.b
+5 /ab
+20 /
+0 /A
+9 /a
+5 /a/b
+6 /a.b
+5 /ab
+3 /a/b/y.txt
+du: usage
+du: nope: no such file or directory
+find: nope: no such file or directory
+find: usage
+find: usage
+find: usage
+find: usage

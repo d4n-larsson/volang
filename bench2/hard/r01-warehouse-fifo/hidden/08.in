@@ -1,0 +1,17 @@
+warehouse old
+warehouse new
+item crate Crate 1200
+receive old crate 4 1000
+order k1 old
+line k1 crate 4
+drop old
+fulfil k1
+drop old
+warehouse old
+lots old crate
+receive old crate 2
+lots old crate
+history crate
+stock
+report
+orders

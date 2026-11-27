@@ -1,0 +1,6 @@
+A3 = #DIV/0!
+A4 = #DIV/0!
+B1 = #CYCLE!
+B2 = #CYCLE!
+B1 = 5
+C1 = #PARSE!

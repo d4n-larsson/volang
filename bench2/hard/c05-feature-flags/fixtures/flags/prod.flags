@@ -1,0 +1,8 @@
+extends staging
+flag payments-v2 default on
+when region = cn then off
+when app < 2.10 then off
+
+flag dark-mode default off
+when plan in gold,platinum then on
+rollout 10

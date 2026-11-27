@@ -1,0 +1,40 @@
+[main 1] init (2 added, 0 modified, 0 deleted)
+switched to feature
+[feature 2] add util (1 added, 1 modified, 0 deleted)
+switched to fix
+[fix 3] fix main (0 added, 1 modified, 0 deleted)
+switched to main
+fast-forward to 3
+[main 4] merge feature into main (1 added, 1 modified, 0 deleted)
+4 merge feature into main (merge of 2)
+3 fix main
+1 init
+switched to feature
+[feature 5] improve util (0 added, 1 modified, 0 deleted)
+switched to main
+[main 6] merge feature into main (0 added, 1 modified, 0 deleted)
+commit 6
+parents 4 5
+message merge feature into main
+main.c "int main fixed"
+util.c "helpers v2"
+util.h "header v2"
+M main.c
+A util.c
+M util.h
+switched to fix
+[fix 7] fix header (0 added, 1 modified, 0 deleted)
+switched to main
+conflict: util.h (both modified)
+merge aborted
+on main
+clean
+conflict: util.h (both modified)
+pick aborted
+conflict: util.h (both modified)
+revert aborted
+3 fix main
+1 init
+error: uncommitted changes
+error: cannot pick a merge
+error: unknown revision 0

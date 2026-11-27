@@ -1,0 +1,4 @@
+A=x y
+%%
+echo $A
+echo "$A" '

@@ -1,0 +1,16 @@
+new buffer notes
+yanked 2 lines
+buffer main, 2 lines
+pasted 2 lines
+1  one
+2  alpha
+3  beta
+4  two
+undone 1 step
+1  one
+2  two
+* main 2 lines, modified
+  notes 2 lines, modified
+undone 2 steps
+redone 1 step
+1  one

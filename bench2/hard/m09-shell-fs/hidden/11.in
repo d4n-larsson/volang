@@ -1,0 +1,26 @@
+pwd now
+cd
+cd a b
+Mkdir x
+mkdir
+mkdir -p
+touch
+write
+append
+cat
+rm
+rm -r
+mv a
+mv a b c
+cp -r a
+cp a b c
+du a b
+ls -l -l
+mkdir -l
+ls
+ls -l -l
+quota -1
+mv -r a b
+cd -p
+rm -r -r
+ls

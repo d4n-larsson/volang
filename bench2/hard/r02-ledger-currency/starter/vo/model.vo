@@ -1,0 +1,61 @@
+# The records the whole ledger shares.
+
+export fn account_types() -> list[str] {
+    return ["asset", "liability", "equity", "income", "expense"];
+}
+
+# An account. Its postings are kept in the order they were entered.
+export record Account {
+    name: str;
+    kind: str;
+    closed: bool;
+    postings: list[Posting];
+}
+
+# One line of a transaction: an amount (in cents) on one account.
+export record Posting {
+    account: Account;
+    amount: int;
+    txn_id: str;
+    day: int;
+    desc: str;
+    seq: int;
+}
+
+export record Transaction {
+    txn_id: str;
+    day: int;
+    desc: str;
+    postings: list[Posting];
+    # the id of the reversal that voided this transaction, or ""
+    voided_by: str;
+    # for a reversal: the id of the transaction it reverses, or ""
+    reverses: str;
+}
+
+export record Ledger {
+    accounts: map[str, Account];
+    txns: map[str, Transaction];
+    # transactions in the order they were entered
+    order: list[Transaction];
+    # the books are closed through this day (-1: nothing is locked)
+    locked_through: int;
+    next_seq: int;
+}
+
+export fn new_ledger() -> Ledger {
+    return new Ledger { accounts: new map[str, Account], txns: new map[str, Transaction], order: new list[Transaction], locked_through: -1, next_seq: 0 };
+}
+
+export fn new_account(name: str, kind: str) -> Account {
+    return new Account { name: name, kind: kind, closed: false, postings: new list[Posting] };
+}
+
+export fn new_transaction(txn_id: str, day: int, desc: str) -> Transaction {
+    return new Transaction { txn_id: txn_id, day: day, desc: desc, postings: new list[Posting], voided_by: "", reverses: "" };
+}
+
+export fn new_seq(ledger: Ledger) -> int {
+    set ledger.next_seq = ledger.next_seq + 1;
+    return ledger.next_seq;
+}

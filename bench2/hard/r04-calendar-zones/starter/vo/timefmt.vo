@@ -1,0 +1,49 @@
+# Printing times, spans and durations.
+import model;
+
+export fn two(n: int) -> str {
+    if n < 10 {
+        return "0" + str(n);
+    }
+    return str(n);
+}
+
+export fn day_of(t: int) -> int {
+    return t / model.minutes_per_day;
+}
+
+# `HH:MM` of a time (its time of day).
+export fn clock(t: int) -> str {
+    let m = t % model.minutes_per_day;
+    return two(m / 60) + ":" + two(m % 60);
+}
+
+export fn moment(t: int) -> str {
+    return str(day_of(t)) + " " + clock(t);
+}
+
+# `D HH:MM-HH:MM`, or `D HH:MM-E HH:MM` when the end is on another day.
+export fn span(start: int, end: int) -> str {
+    if day_of(start) == day_of(end) {
+        return moment(start) + "-" + clock(end);
+    }
+    return moment(start) + "-" + moment(end);
+}
+
+export fn duration(minutes: int) -> str {
+    return str(minutes / 60) + "h" + two(minutes % 60) + "m";
+}
+
+export fn count(n: int, one: str, many: str) -> str {
+    if n == 1 {
+        return "1 " + one;
+    }
+    return str(n) + " " + many;
+}
+
+export fn joined(items: list[str], empty: str) -> str {
+    if len(items) == 0 {
+        return empty;
+    }
+    return join(items, ", ");
+}

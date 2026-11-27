@@ -1,0 +1,27 @@
+rest S1 100 20.00
+rest S2 50 20.10
+rest S3 30 20.00
+trade ACME 100 20.00 B1 S1
+trade ACME 20 20.00 B1 S3
+filled B1
+rest B2 40 19.90
+book ACME last 20.00
+  ask 20.10 50 1
+  ask 20.00 10 1
+  bid 19.90 40 1
+rest X1 10 5.00
+trade BOLT 4 5.00 X1 X2
+filled X2
+rest S4 60 19.95
+book ACME last 20.00
+  ask 20.10 50 1
+  ask 20.00 10 1
+  ask 19.95 60 1
+  bid 19.90 40 1
+book BOLT last 5.00
+  bid 5.00 6 1
+trader ana cash 2020.00 ACME:-100 BOLT:-4
+trader bob cash 0.00
+trader cy cash 400.00 ACME:-20
+trader dan cash -2400.00 ACME:120
+trader eve cash -20.00 BOLT:4

@@ -1,0 +1,11 @@
+ann
+-rw-r-- ann 18 todo.txt
+drwxr-x ann 0 work/
+/home/ann/todo.txt: file, 18 bytes, 2 lines, owner ann, mode rw-r--
+buy milk
+call bob
+error: permission denied: /home/ann/todo.txt
+error: permission denied: /home/ann/bob.txt
+error: permission denied: /home/bob
+drwxr-x ann 2 ann/
+drwxr-x bob 0 bob/

@@ -1,0 +1,21 @@
+customer w added
+invoice #1 w total 114.99 balance 114.99 due 7
+paid w 10.00: #1 10.00
+paid w 200.00: #1 104.99, credit 95.01
+error: w credit is only 95.01
+refund w 50.00 credit 45.01
+invoice #2 w total 115.00 balance 69.99 due 10
+invoice #3 w total 115.00 balance 115.00 due 10
+error: w over limit by 231.24
+statement w day 3
+#2 due 10 balance 69.99
+#3 due 10 balance 115.00
+open 184.99 credit 0.00 written off 0.00
+error: no customer v
+error: no customer v
+error: no customer v
+error: no customer v
+invoices:
+#1 w closed total 114.99 fee 0.00 paid 114.99 credits 0.00 balance 0.00
+#2 w open total 115.00 fee 0.00 paid 45.01 credits 0.00 balance 69.99
+#3 w open total 115.00 fee 0.00 paid 0.00 credits 0.00 balance 115.00

@@ -1,0 +1,5 @@
+sync site
+plan nothing
+plan ../secrets/keys
+
+plan dup

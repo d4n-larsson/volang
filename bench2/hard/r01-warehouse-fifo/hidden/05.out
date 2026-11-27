@@ -1,0 +1,35 @@
+warehouse s1 added
+item box added
+counted box in s1: was 0, now 5, lot 1 at 0.80
+counted box in s1: no change
+received 10 box into s1, now 15, lot 2 at 0.70
+lot 1: 5 x 0.80 = 4.00
+lot 2: 10 x 0.70 = 7.00
+total 15 units = 11.00
+counted box in s1: was 15, now 9, cost 4.70
+lot 2: 9 x 0.70 = 6.30
+total 9 units = 6.30
+counted box in s1: was 9, now 20, lot 3 at 0.80
+item box cost 0.95
+counted box in s1: was 20, now 21, lot 4 at 0.95
+lot 2: 9 x 0.70 = 6.30
+lot 3: 11 x 0.80 = 8.80
+lot 4: 1 x 0.95 = 0.95
+total 21 units = 16.05
+counted box in s1: was 21, now 0, cost 16.05
+no lots of box in s1
+received 1 box into s1, now 1, lot 5 at 0.95
+lot 5: 1 x 0.95 = 0.95
+total 1 unit = 0.95
+#1 adjust s1 +5 (count) lot 1 at 0.80
+#2 receive s1 +10 lot 2 at 0.70
+#3 adjust s1 -6 (count) cost 4.70
+#4 adjust s1 +11 (count) lot 3 at 0.80
+#5 adjust s1 +1 (count) lot 4 at 0.95
+#6 adjust s1 -21 (count) cost 16.05
+#7 receive s1 +1 lot 5 at 0.95
+box: 1 unit = 0.95
+total value 0.95
+items 1, warehouses 1, 1 unit, value 0.95
+shipped 0 units in 0 shipments, cost 0.00
+orders: 0 open, 0 fulfilled, 0 cancelled

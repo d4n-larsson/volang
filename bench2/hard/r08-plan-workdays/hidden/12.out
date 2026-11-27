@@ -1,0 +1,28 @@
+added task x
+added task y
+y after x
+task  start  finish  lstart  lfinish  slack
+x         0       4       0        4      0
+y         4      10       4       10      0
+end 10
+project finishes on day 10 (Thu)
+day 2 is now off
+task  start  finish  lstart  lfinish  slack
+x         0       7       0        7      0
+y         7      11       7       11      0
+end 11
+project finishes on day 11 (Fri)
+day 4 is now off
+day 5 is now a working day
+task  start  finish  lstart  lfinish  slack
+x         0       7       0        7      0
+y         7      11       7       11      0
+end 11
+project finishes on day 11 (Fri)
+day 2 is now a working day
+day 5 is now off
+task  start  finish  lstart  lfinish  slack
+x         0       7       0        7      0
+y         7      11       7       11      0
+end 11
+project finishes on day 11 (Fri)

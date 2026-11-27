@@ -1,0 +1,29 @@
+sheet SUM added
+sheet A1 added
+sheet x_9 added
+SUM!A1 = 4
+SUM!A2 = 6
+A1!B2 = 3
+x_9!A1 = 16
+x_9!A1: =SUM(SUM!A1:A2)+SUM!A2
+x_9!A1 = 16
+error: unknown sheet a1
+C1 = 9
+C1: =A1!B2*A1!$B$2
+C1 = 9
+C2 = -7
+C2: =SUM(A1!A1:B9)+MAX(SUM!A1:A2)-MIN(x_9!A1:A1)
+C2 = -7
+error: bad formula
+error: bad formula
+error: bad formula
+error: bad formula
+C3 = -4
+C3: =-SUM!A1
+C4 = -12
+C4: =(SUM!A1)*(-(A1!B2))
+C4 = -12
+Sheet1: 4 cells (current)
+SUM: 2 cells
+A1: 1 cells
+x_9: 1 cells

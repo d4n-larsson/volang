@@ -1,0 +1,23 @@
+team Lions added
+team Bears added
+team Wolves added
+team Hawks added
+group North: Lions, Bears
+group South: Wolves, Hawks
+result 1: Lions 2-1 Bears
+result 2: Wolves 0-0 Hawks
+error: Lions and Wolves are not in the same group
+result 3: Bears 3-3 Lions
+group North
+Pos Team   P  W  D  L GF GA  GD Pts
+  1 Lions  2  1  1  0  5  4  +1   4
+  2 Bears  2  0  1  1  4  5  -1   1
+group South
+Pos Team    P  W  D  L GF GA  GD Pts
+  1 Hawks   1  0  1  0  0  0   0   1
+  1 Wolves  1  0  1  0  0  0   0   1
+group North: 0 left
+group South: 1 left
+  Hawks v Wolves
+1 fixtures left
+error: group South has 1 fixtures left

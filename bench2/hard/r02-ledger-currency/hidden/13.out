@@ -1,0 +1,40 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened assets:gbp (asset, GBP)
+opened income:fx (income)
+rate EUR from day 1: 1.1000
+rate GBP from day 1: 1.4000
+posted c1: 2 postings, total 55.00
+posted c2: 2 postings, total 2.80
+error: account assets:eur has balance 50.00 EUR
+error: account assets:gbp has balance 2.00 GBP
+rate EUR from day 2: 1.3000
+posted c3: 2 postings, total 65.00
+closed assets:eur
+assets:bank asset 7.20
+assets:eur asset 0.00 EUR closed
+assets:gbp asset 2.00 GBP
+income:fx income 0.00
+statement assets:eur (asset, EUR)
+     1 c1            50.00      50.00  buy
+     2 c3           -50.00       0.00  sell
+  closing balance 0.00 EUR (book -10.00 USD)
+error: account assets:eur is closed
+error: account assets:eur is closed
+error: account assets:eur is closed
+balance assets: 10.00
+  GBP 2.00
+asset
+  assets:bank 7.20
+  assets:eur -10.00
+  assets:gbp 2.80
+total debits 10.00 credits 10.00
+assets:eur 0.00 EUR: book -10.00, value 0.00, gain 10.00
+assets:gbp 2.00 GBP: book 2.80, value 2.80, gain 0.00
+unrealized gain 10.00
+assets 10.00
+  bank 7.20
+  eur 0.00
+  gbp 2.80
+income 0.00
+  fx 0.00

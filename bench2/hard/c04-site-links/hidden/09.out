@@ -1,0 +1,32 @@
+== empty
+pages 0 links 0 external 0 problems 0 orphans 0
+== blog
+index.md:5: outside ../docs/index.md
+index.md:5: outside ../../secrets/token.md
+index.md:6: outside /../docs/index.md
+index.md:6: outside posts/../../blog/index.md
+posts/2024/first.md:3: outside ../../../../secrets/token.md
+orphan posts/draft.md
+pages 4 links 14 external 0 problems 5 orphans 1
+== tricky
+index.md:12: missing anchor #deep-heading
+index.md:14: missing anchor sub/page.md#section-2
+index.md:16: missing file sub
+index.md:16: missing file sub
+index.md:22: missing file nope2.md
+sub/page.md:4: outside ../../tricky/index.md
+pages 2 links 22 external 1 problems 6 orphans 0
+== noindex
+a.md:2: missing file index.md
+orphan a.md
+orphan b.md
+pages 2 links 3 external 0 problems 1 orphans 2
+== docs
+guide/setup.md:9: missing anchor #missing-section
+guide/setup.md:10: missing anchor api/ref.md#config
+guide/usage.md:6: missing file CHANGES.md
+guide/usage.md:15: missing anchor #running-it-2
+index.md:9: missing file old
+orphan old/legacy.md
+orphan orphan.md
+pages 6 links 22 external 2 problems 5 orphans 2

@@ -1,0 +1,19 @@
+message <big1@example.org>: part 1
+deliver <big1@example.org> kim
+message <big2@example.org>: part 2
+deliver <big2@example.org> kim
+deliver <big2@example.org> lee
+message <big3@example.org>: part 3
+bounce <big3@example.org> kim@example.org: over quota
+message <big4@example.org>: part 4
+bounce <big4@example.org> kim@example.org: over quota
+bounce <big4@example.org> lee@example.org: over quota
+message <big5@example.org>: part 5
+bounce <big5@example.org> kim@example.org: over quota
+message <big6@example.org>: part 6
+bounce <big6@example.org> kim@example.org: over quota
+bounce <big6@example.org> lee@example.org: over quota
+== mailboxes
+wrote out/kim.mbox 2 567
+wrote out/lee.mbox 1 364
+total 3 delivered, 6 bounced, 0 relayed, 0 duplicates

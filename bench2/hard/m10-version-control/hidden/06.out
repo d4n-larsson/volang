@@ -1,0 +1,20 @@
+[main 1] base (1 added, 0 modified, 0 deleted)
+already up to date
+already up to date
+error: uncommitted changes
+[main 2] main changes (0 added, 1 modified, 0 deleted)
+switched to other
+fast-forward to 2
+2 main changes
+1 base
+on other
+clean
+commit 2
+parents 1
+message main changes
+f "changed"
+already up to date
+already up to date
+switched to main
+already up to date
+already up to date

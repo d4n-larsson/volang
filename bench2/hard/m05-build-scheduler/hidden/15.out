@@ -1,0 +1,21 @@
+0 start q w1 #1
+0 start p w2 #1
+0 start r w3 #1
+1 fail r w3 #1
+1 give up r
+1 skip solo
+1 skip tail
+2 fail p w2 #1
+2 give up p
+2 skip join
+4 fail q w1 #1
+4 give up q
+makespan 4
+utilization 58%
+w1 busy 4 attempts 1
+w2 busy 2 attempts 1
+w3 busy 1 attempts 1
+built: -
+failed: p q r
+skipped: join solo tail
+blocked: -

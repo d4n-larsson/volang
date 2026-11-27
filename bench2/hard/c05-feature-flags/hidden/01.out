@@ -1,0 +1,14 @@
+profile staging
+chain staging base
+s1 dark-mode,payments-v2
+s2 beta-banner,dark-mode,payments-v2
+s3 dark-mode,payments-v2
+s4 beta-banner,dark-mode
+s5 beta-banner,dark-mode,new-checkout,payments-v2
+s6 dark-mode,payments-v2
+== counts
+beta-banner 3
+dark-mode 6
+new-checkout 1
+payments-v2 5
+search_v3 0

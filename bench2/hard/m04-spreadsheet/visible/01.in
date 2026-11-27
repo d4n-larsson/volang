@@ -1,0 +1,15 @@
+set A1 120
+set A2 45
+set A3 -30
+set A4 =SUM(A1:A3)
+set B1 Rent
+set B2 Food
+set B3 Refund
+set B4 Total
+set C4 =A4/7
+print A4
+print C4
+show A1:C4
+set A2 60
+print A4
+show A4:C4

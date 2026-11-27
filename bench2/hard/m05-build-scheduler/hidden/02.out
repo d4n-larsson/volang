@@ -1,0 +1,15 @@
+line 3: unknown dependency x of b
+line 3: unknown dependency y of b
+line 4: duplicate target a
+line 5: unknown dependency y of c
+line 7: unknown target nope
+line 8: unknown target z
+line 8: unknown target q
+makespan 0
+utilization 0%
+w1 busy 0 attempts 0
+w2 busy 0 attempts 0
+built: -
+failed: -
+skipped: -
+blocked: a b c

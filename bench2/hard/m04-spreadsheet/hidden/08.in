@@ -1,0 +1,13 @@
+set B9 -5
+set B10 =B9*200000
+set C11 =1/0
+set D9 a long piece of text
+set D12 x
+set A10 =0
+show A9:D12
+show D12:A9
+show C10
+show B1
+set Z1 7
+show Y1:Z2
+show A1:A1

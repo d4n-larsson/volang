@@ -1,0 +1,16 @@
+customer m 100000.00 0 0
+invoice m 1x335.00
+invoice m 1x333.33
+invoice m 1x10000.00
+invoice m 1x33.00
+day 30
+day 31
+pay m 1.00 4
+day 31
+day 100
+day 99
+day 100
+statement m
+invoice m 1x1.00
+credit 2 5.00
+invoice m 1x1.00

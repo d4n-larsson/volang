@@ -1,0 +1,10 @@
+From mallory@evil.net Thu Jan  4 00:00:00 2024
+Message-ID: <e1@evil.net>
+To: ../../etc/passwd@example.org, .profile@example.org, ..@example.org
+Cc: bob+news@example.org, UPPER@Example.ORG, a@b@example.org, noat, <>
+Cc: x/y@example.org, @example.org, bob@, <dave@example.org
+Cc: averyveryveryveryverylongusername1@example.org, averyveryveryveryverylongusernam@example.org
+Cc: under_score@example.org, dot.ted@example.org, dash-ed@example.org, a..b@example.org
+Subject: hello
+
+payload

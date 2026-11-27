@@ -1,0 +1,8 @@
+error at column 1: unclosed '
+error at column 1: unclosed "
+error at column 4: unclosed '
+error at column 3: unclosed "
+error at column 2: bad substitution
+error at column 4: unclosed "
+error at column 1: unclosed "
+error at column 8: unclosed '

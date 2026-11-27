@@ -1,0 +1,13 @@
+warehouse cheap
+item sample Sample 300
+receive cheap sample 5 0
+receive cheap sample 2 0050
+receive cheap sample 3 007
+lots cheap sample
+ship cheap sample 6
+value
+ship cheap sample 4
+value
+lots cheap sample
+report
+history sample

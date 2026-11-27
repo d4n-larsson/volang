@@ -1,0 +1,236 @@
+# One function per command: each returns its output lines, or an error message.
+import merging;
+import repo;
+
+fn need_head(r: repo.Repo) -> result[int] {
+    let h = repo.head(r);
+    if h == 0 {
+        return err("no commits yet");
+    }
+    return ok(h);
+}
+
+fn need_clean(r: repo.Repo) -> result[void] {
+    if repo.dirty(r) {
+        return err("uncommitted changes");
+    }
+    return ok();
+}
+
+fn nothing() -> result[list[str]] {
+    let none: list[str] = [];
+    return ok(none);
+}
+
+export fn write_file_cmd(r: repo.Repo, argv: list[str]) -> result[list[str]] {
+    set r.work[argv[0]] = join(slice(argv, 1, len(argv)), " ");
+    return nothing();
+}
+
+export fn delete(r: repo.Repo, argv: list[str]) -> result[list[str]] {
+    if not has(r.work, argv[0]) {
+        return err("no such file " + argv[0]);
+    }
+    remove(r.work, argv[0]);
+    return nothing();
+}
+
+fn record_commit(r: repo.Repo, parents: list[int], message: str, tree: map[str, str]) -> list[str] {
+    let old = repo.head_snapshot(r);
+    let n = repo.make_commit(r, parents, message, tree);
+    set r.branches[r.current] = n;
+    set r.work = repo.copy_tree(tree);
+    return [format("[{} {}] {} ", r.current, n, message) + repo.summary(old, tree)];
+}
+
+export fn commit(r: repo.Repo, argv: list[str]) -> result[list[str]] {
+    if not repo.dirty(r) {
+        return err("nothing to commit");
+    }
+    let h = repo.head(r);
+    var parents = new list[int];
+    if h != 0 {
+        push(parents, h);
+    }
+    return ok(record_commit(r, parents, join(argv, " "), r.work));
+}
+
+export fn status(r: repo.Repo) -> result[list[str]] {
+    let out = ["on " + r.current];
+    let ch = repo.changes(repo.head_snapshot(r), r.work);
+    if len(ch) == 0 {
+        push(out, "clean");
+    }
+    for c in ch {
+        push(out, c);
+    }
+    return ok(out);
+}
+
+export fn branch(r: repo.Repo, argv: list[str]) -> result[list[str]] {
+    let name = argv[0];
+    if repo.is_number(name) or find(name, "~") >= 0 {
+        return err("invalid branch name " + name);
+    }
+    if has(r.branches, name) {
+        return err("branch " + name + " exists");
+    }
+    var target = 0;
+    if len(argv) == 2 {
+        set target = try repo.resolve(r, argv[1]);
+    } else {
+        set target = try need_head(r);
+    }
+    set r.branches[name] = target;
+    return nothing();
+}
+
+export fn branches(r: repo.Repo) -> result[list[str]] {
+    let out = new list[str];
+    for name in repo.byte_sorted(keys(r.branches)) {
+        let c = r.branches[name];
+        var mark = " ";
+        if name == r.current {
+            set mark = "*";
+        }
+        var at = "-";
+        if c != 0 {
+            set at = str(c);
+        }
+        push(out, mark + " " + name + " " + at);
+    }
+    return ok(out);
+}
+
+export fn unbranch(r: repo.Repo, name: str) -> result[list[str]] {
+    if not has(r.branches, name) {
+        return err("no such branch " + name);
+    }
+    if name == r.current {
+        return err("cannot delete the current branch");
+    }
+    let n = r.branches[name];
+    if not repo.contained(r, n, repo.head(r)) {
+        return err("branch " + name + " is not merged");
+    }
+    remove(r.branches, name);
+    return ok([format("deleted branch {} (was {})", name, n)]);
+}
+
+export fn checkout(r: repo.Repo, name: str) -> result[list[str]] {
+    if not has(r.branches, name) {
+        return err("no such branch " + name);
+    }
+    if name == r.current {
+        return err("already on " + name);
+    }
+    try need_clean(r);
+    set r.current = name;
+    set r.work = repo.copy_tree(repo.head_snapshot(r));
+    return ok(["switched to " + name]);
+}
+
+export fn reset(r: repo.Repo, rev: str) -> result[list[str]] {
+    let n = try repo.resolve(r, rev);
+    set r.branches[r.current] = n;
+    set r.work = repo.copy_tree(repo.commit_of(r, n).snapshot);
+    return ok(["head is now " + str(n)]);
+}
+
+export fn log(r: repo.Repo, argv: list[str]) -> result[list[str]] {
+    var n = 0;
+    if len(argv) == 1 {
+        set n = try repo.resolve(r, argv[0]);
+    } else {
+        set n = try need_head(r);
+    }
+    let out = new list[str];
+    while true {
+        let c = repo.commit_of(r, n);
+        var line = str(n) + " " + c.message;
+        if len(c.parents) == 2 {
+            set line = line + " (merge of " + str(c.parents[1]) + ")";
+        }
+        push(out, line);
+        if len(c.parents) == 0 {
+            return ok(out);
+        }
+        set n = c.parents[0];
+    }
+}
+
+export fn show(r: repo.Repo, rev: str) -> result[list[str]] {
+    let c = repo.commit_of(r, try repo.resolve(r, rev));
+    var parents = "none";
+    if len(c.parents) > 0 {
+        set parents = join(map(c.parents, fn(p) => str(p)), " ");
+    }
+    let out = ["commit " + str(c.number), "parents " + parents, "message " + c.message];
+    for p in repo.byte_sorted(keys(c.snapshot)) {
+        push(out, p + " \"" + c.snapshot[p] + "\"");
+    }
+    return ok(out);
+}
+
+export fn diff(r: repo.Repo, argv: list[str]) -> result[list[str]] {
+    let a = try repo.resolve(r, argv[0]);
+    let b = try repo.resolve(r, argv[1]);
+    let ch = repo.changes(repo.commit_of(r, a).snapshot, repo.commit_of(r, b).snapshot);
+    if len(ch) == 0 {
+        return ok(["no differences"]);
+    }
+    return ok(ch);
+}
+
+export fn merge(r: repo.Repo, rev: str) -> result[list[str]] {
+    let theirs = try repo.resolve(r, rev);
+    let ours = try need_head(r);
+    try need_clean(r);
+    if repo.contained(r, theirs, ours) {
+        return ok(["already up to date"]);
+    }
+    if repo.contained(r, ours, theirs) {
+        set r.branches[r.current] = theirs;
+        set r.work = repo.copy_tree(repo.commit_of(r, theirs).snapshot);
+        return ok(["fast-forward to " + str(theirs)]);
+    }
+    let b = merging.merge_base(r, ours, theirs);
+    var base = new map[str, str];
+    if b != 0 {
+        set base = repo.commit_of(r, b).snapshot;
+    }
+    let out = merging.three_way(base, repo.commit_of(r, ours).snapshot, repo.commit_of(r, theirs).snapshot);
+    if len(out.conflicts) > 0 {
+        return ok(merging.conflict_lines(out, "merge"));
+    }
+    return ok(record_commit(r, [ours, theirs], "merge " + rev + " into " + r.current, out.merged));
+}
+
+# pick (verb "pick") and revert (verb "revert").
+export fn apply_commit(r: repo.Repo, rev: str, verb: str) -> result[list[str]] {
+    let n = try repo.resolve(r, rev);
+    let h = try need_head(r);
+    try need_clean(r);
+    let c = repo.commit_of(r, n);
+    if len(c.parents) == 2 {
+        return err("cannot " + verb + " a merge");
+    }
+    var parent = new map[str, str];
+    if len(c.parents) == 1 {
+        set parent = repo.commit_of(r, c.parents[0]).snapshot;
+    }
+    let head = repo.head_snapshot(r);
+    var out = merging.three_way(parent, head, c.snapshot);
+    var message = c.message + " (picked from " + str(n) + ")";
+    if verb == "revert" {
+        set out = merging.three_way(c.snapshot, head, parent);
+        set message = "revert " + str(n);
+    }
+    if len(out.conflicts) > 0 {
+        return ok(merging.conflict_lines(out, verb));
+    }
+    if len(repo.changes(head, out.merged)) == 0 {
+        return err("nothing to " + verb);
+    }
+    return ok(record_commit(r, [h], message, out.merged));
+}

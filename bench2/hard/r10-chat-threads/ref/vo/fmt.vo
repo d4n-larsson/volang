@@ -1,0 +1,62 @@
+# Text formats shared by the views.
+import model;
+
+# `1 message`, `0 messages`, `2 messages`.
+export fn plural(n: int, word: str) -> str {
+    if n == 1 {
+        return str(n) + " " + word;
+    }
+    return str(n) + " " + word + "s";
+}
+
+export fn replies_text(n: int) -> str {
+    if n == 1 {
+        return "1 reply";
+    }
+    return str(n) + " replies";
+}
+
+export fn label(channel_name: str) -> str {
+    return "#" + channel_name;
+}
+
+# `#a, #b`, or `no channels` for none.
+export fn labels(channel_names: list[str]) -> str {
+    if len(channel_names) == 0 {
+        return "no channels";
+    }
+    return join(map(channel_names, label), ", ");
+}
+
+export fn name_list(names: list[str]) -> str {
+    if len(names) == 0 {
+        return "none";
+    }
+    return join(names, ", ");
+}
+
+# `[ID] t=TIME AUTHOR: TEXT`, with ` (edited)` after an edited message.
+export fn message_line(m: model.Message) -> str {
+    let head = "[" + str(m.msg_id) + "] t=" + str(m.time) + " ";
+    if m.deleted {
+        return head + "[deleted]";
+    }
+    var line = head + m.author + ": " + m.text;
+    if m.edited {
+        set line = line + " (edited)";
+    }
+    return line;
+}
+
+# A message line for search and mentions: replies say which thread they are in.
+export fn found_line(m: model.Message) -> str {
+    if m.parent > 0 {
+        return message_line(m) + " (in thread " + str(m.parent) + ")";
+    }
+    return message_line(m);
+}
+
+# A message line that also names its channel: `#CHANNEL [ID] ...`.
+export fn located_line(channel_name: str, m: model.Message) -> str {
+    return label(channel_name) + " " + found_line(m);
+}

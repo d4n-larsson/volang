@@ -1,0 +1,18 @@
+profile prod
+chain prod staging base
+p1 search_v3
+p2 -
+p3 new-checkout,payments-v2
+p4 dark-mode
+p5 dark-mode,payments-v2
+p6 dark-mode,payments-v2
+p7 dark-mode,new-checkout,payments-v2
+p8 dark-mode,payments-v2
+p9 beta-banner,dark-mode,payments-v2
+p10 new-checkout,payments-v2,search_v3
+== counts
+beta-banner 1
+dark-mode 6
+new-checkout 3
+payments-v2 7
+search_v3 2

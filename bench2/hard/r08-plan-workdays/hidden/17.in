@@ -1,0 +1,12 @@
+task a 10 Ten days
+task b 1
+dep b a+10
+holiday 16
+holiday 22
+workday 20
+schedule
+critical
+show a
+show b
+end
+gantt

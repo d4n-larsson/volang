@@ -1,0 +1,3 @@
+deep/one/two/../../../app.conf
+deep/../../secrets/app.conf
+deep/one/../../../conf/app.conf

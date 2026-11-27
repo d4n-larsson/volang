@@ -1,0 +1,23 @@
+write f x
+write g x
+commit c1
+branch a
+branch b
+checkout a
+write f y
+commit c2
+checkout b
+write g y
+commit c3
+checkout a
+merge b
+checkout b
+merge a~1
+write f z
+commit c6
+checkout a
+write g w
+commit c7
+merge b
+show a
+log a

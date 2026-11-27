@@ -1,0 +1,108 @@
+import fmt;
+import graph;
+import model;
+import schedule;
+
+export fn list_lines(plan: model.Plan) -> list[str] {
+    if len(plan.tasks) == 0 {
+        return ["no tasks"];
+    }
+    let out = new list[str];
+    for t in graph.ordered(plan) {
+        var size = str(t.duration) + "d";
+        if t.duration == 0 {
+            set size = "ms";
+        }
+        push(out, t.tid + " " + size + " " + t.name);
+    }
+    return out;
+}
+
+export fn schedule_lines(plan: model.Plan) -> list[str] {
+    if len(plan.tasks) == 0 {
+        return ["no tasks"];
+    }
+    let sched = schedule.compute(plan);
+    let rows = new list[list[str]];
+    for t in sched.order {
+        let s = sched.slots[t.tid];
+        push(rows, [t.tid, str(s.start), str(s.finish), str(s.lstart), str(s.lfinish), str(s.slack)]);
+    }
+    let out = fmt.table(["task", "start", "finish", "lstart", "lfinish", "slack"], rows);
+    push(out, "end " + str(sched.end));
+    return out;
+}
+
+export fn critical_line(plan: model.Plan) -> str {
+    if len(plan.tasks) == 0 {
+        return "no tasks";
+    }
+    let sched = schedule.compute(plan);
+    let ids = map(filter(sched.order, fn(t) => sched.slots[t.tid].slack == 0), fn(t) => t.tid);
+    return "critical: " + join(ids, " ") + " (" + str(schedule.length(sched.end)) + " days)";
+}
+
+export fn show_lines(plan: model.Plan, tid: str) -> list[str] {
+    let t = plan.tasks[tid];
+    let s = schedule.compute(plan).slots[tid];
+    let out = ["task " + tid + ": " + t.name];
+    if t.duration == 0 {
+        push(out, "  milestone");
+    } else {
+        push(out, "  duration " + str(t.duration) + " days");
+    }
+    push(out, "  after: " + fmt.id_list(map(t.preds, fmt.dep_text)));
+    push(out, "  before: " + fmt.id_list(graph.successors(plan, tid)));
+    if t.not_before > 0 {
+        push(out, "  not before day " + str(t.not_before));
+    }
+    push(out, "  start " + str(s.start) + " finish " + str(s.finish) + " slack " + str(s.slack));
+    if t.duration > 0 {
+        push(out, "  done " + str(t.done) + "%");
+    }
+    return out;
+}
+
+# How many of the task's days come before `day`.
+fn planned_days(task: model.Task, slot: model.Slot, day: int) -> int {
+    return max(0, min(task.duration, day - slot.start));
+}
+
+fn progress_word(done: int, planned: int) -> str {
+    if done > planned {
+        return "ahead";
+    }
+    if done < planned {
+        return "behind";
+    }
+    return "on track";
+}
+
+export fn status_lines(plan: model.Plan, day: int) -> list[str] {
+    if len(plan.tasks) == 0 {
+        return ["no tasks"];
+    }
+    let sched = schedule.compute(plan);
+    let out = ["status on day " + str(day)];
+    var total_planned = 0;
+    var total_done = 0;
+    for t in sched.order {
+        if t.duration == 0 {
+            continue;
+        }
+        let planned = planned_days(t, sched.slots[t.tid], day);
+        let done = t.duration * t.done / 100;
+        set total_planned = total_planned + planned;
+        set total_done = total_done + done;
+        push(out, "  " + t.tid + ": planned " + str(planned) + " done " + str(done) + " " + progress_word(done, planned));
+    }
+    push(out, "total planned " + str(total_planned) + " done " + str(total_done) + " " + fmt.percent(total_done, total_planned));
+    return out;
+}
+
+export fn end_line(plan: model.Plan) -> str {
+    if len(plan.tasks) == 0 {
+        return "no tasks";
+    }
+    return "project finishes on day " + str(schedule.compute(plan).end);
+}

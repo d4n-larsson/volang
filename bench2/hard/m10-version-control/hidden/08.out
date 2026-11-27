@@ -1,0 +1,24 @@
+[main 1] base (4 added, 0 modified, 0 deleted)
+[main 2] ours (2 added, 2 modified, 1 deleted)
+switched to other
+[other 3] theirs (2 added, 2 modified, 1 deleted)
+switched to main
+conflict: a (both modified)
+conflict: b (deleted by us)
+conflict: c (deleted by them)
+conflict: n (both added)
+merge aborted
+on main
+clean
+2 ours
+1 base
+[main 4] resolve (1 added, 2 modified, 1 deleted)
+[main 5] merge other into main (0 added, 0 modified, 0 deleted)
+commit 5
+parents 4 3
+message merge other into main
+a "theirs"
+b "theirs"
+d "1"
+n "theirs new"
+z "keep"

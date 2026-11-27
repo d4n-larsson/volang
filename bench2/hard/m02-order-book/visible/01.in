@@ -1,0 +1,9 @@
+limit S1 ana sell ACME 100 20.00
+limit S2 bob sell ACME 50 20.10
+limit S3 cy sell ACME 30 20.00
+limit B1 dan buy ACME 120 20.05
+limit B2 dan buy ACME 40 19.90
+book ACME
+limit X1 eve buy BOLT 10 5.00
+limit X2 ana sell BOLT 4 4.95
+limit S4 bob sell ACME 60 19.95

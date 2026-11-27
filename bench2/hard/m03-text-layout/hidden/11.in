@@ -1,0 +1,27 @@
+.width 44
+.page 12
+.title Quarterly Report
+.heading Summary
+.align justify
+Revenue grew in every region this quarter, led by strong demand for the new
+product line. Costs rose more slowly than revenue, so the margin improved.
+.heading Regional results
+.list number
+North: sales up twelve percent on the back of two large contracts.
+
+South: flat, as expected after the price change in the spring.
+.list bullet
+Retail held steady.
+
+Wholesale fell slightly.
+.endlist
+East: the new office opened in May and is already profitable.
+.endlist
+.align left
+.heading Outlook
+We expect the next quarter to be similar, with some risk from currency
+movements and the timing of the remaining contracts.
+.break
+.title Appendix
+.heading Method
+Figures are unaudited.

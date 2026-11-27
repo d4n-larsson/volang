@@ -1,0 +1,48 @@
+# Undo history of one buffer.
+
+# One undo step: the lines and current line just before and just after it.
+export record Step {
+    before_lines: list[str];
+    before_cur: int;
+    after_lines: list[str];
+    after_cur: int;
+}
+
+# saved: the position (number of undo steps) at the last save; -1 when it can no longer be reached.
+export record History {
+    undo: list[Step];
+    redo: list[Step];
+    saved: int;
+}
+
+export fn new_history() -> History {
+    return new History { undo: new list[Step], redo: new list[Step], saved: 0 };
+}
+
+export fn position(h: History) -> int {
+    return len(h.undo);
+}
+
+export fn modified(h: History) -> bool {
+    return h.saved != position(h);
+}
+
+export fn add_step(h: History, step: Step) {
+    if h.saved > position(h) {
+        set h.saved = -1;
+    }
+    push(h.undo, step);
+    set h.redo = new list[Step];
+}
+
+# Turns the steps recorded since position `start` into one; returns how many there were.
+export fn merge_since(h: History, start: int) -> int {
+    let steps = slice(h.undo, start, len(h.undo));
+    if len(steps) > 1 {
+        let first = steps[0];
+        let last = steps[len(steps) - 1];
+        set h.undo = slice(h.undo, 0, start);
+        push(h.undo, new Step { before_lines: first.before_lines, before_cur: first.before_cur, after_lines: last.after_lines, after_cur: last.after_cur });
+    }
+    return len(steps);
+}

@@ -1,0 +1,38 @@
+warehouse A added
+warehouse b added
+warehouse B added
+item gel added
+lot L1 b gel 4
+lot L2 B gel 3
+lot L3 A gel 2
+lot L4 b gel 6
+lot L5 B gel 1
+reserved r1 6 L1x4 L4x2
+reserved r2 2 L4x2
+reserved r3 4 L5x1 L2x3
+expired L5 B 1
+reservation r3 lost 1
+stock day 9
+A gel L3 on hand 2 reserved 0 expires 10
+B gel L2 on hand 3 reserved 3 expires 10
+b gel L1 on hand 4 reserved 4 expires 10
+b gel L4 on hand 6 reserved 4 expires 12
+expired L1 b 4
+reservation r1 lost 4
+expired L2 B 3
+reservation r3 lost 3
+expired L3 A 2
+shipped r1 2 L4x2
+shipped r2 2 L4x2
+error: order r3 is not reserved
+error: day 10
+error: expired on arrival
+lot L6 b gel 1
+stock day 10
+b gel L6 on hand 1 reserved 0 expires 11
+b gel L4 on hand 2 reserved 0 expires 12
+stock day 10
+b gel L6 on hand 1 reserved 0 expires 11
+b gel L4 on hand 2 reserved 0 expires 12
+value on hand 9.00 in transit 0.00 quarantine 0.00 shipped 8.00 written off 10.00
+backorders 0

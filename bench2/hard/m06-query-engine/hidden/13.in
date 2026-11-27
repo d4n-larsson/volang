@@ -1,0 +1,13 @@
+create table stock (sku text, qty int, bin int)
+create table bins (bin int, zone text)
+insert into stock values ('s1', 10, 1), ('s2', 0, 2), ('s3', 4, 1), ('s4', 7, 3)
+insert into bins values (1, 'cold'), (2, 'dry'), (3, 'cold')
+select zone, sum(qty), count(*) from stock join bins on stock.bin = bins.bin group by zone
+update stock set qty = 12 where sku = 's2'
+delete from stock where qty < 5
+insert into stock values ('s5', 1, 4), ('s6', 3, 2)
+select zone, sum(qty), count(sku) from stock left join bins on stock.bin = bins.bin group by zone order by zone desc
+select sku, zone from stock left join bins on stock.bin = bins.bin where zone is null or qty > 10
+update stock set bin = 3 where bin = 4
+select bins.bin, count(sku), max(qty) from bins left join stock on bins.bin = stock.bin group by bins.bin order by max(qty) desc, bins.bin
+select * from stock order by bin, sku desc

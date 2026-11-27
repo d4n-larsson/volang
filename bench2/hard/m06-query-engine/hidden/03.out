@@ -1,0 +1,43 @@
+created acct
+inserted 4
+error: unknown column nope
+error: duplicate column bal
+error: type mismatch for column bal
+error: type mismatch for column tier
+error: aggregate in where
+error: unknown table ghost
+updated 1
+id | owner | bal  | tier  
+---+-------+------+-------
+ 1 | kim   |  100 | gold  
+ 2 | lee   | NULL | silver
+ 3 | max   |    0 | NULL  
+ 4 | nia   |  250 | gold  
+(4 rows)
+updated 2
+id | owner | bal | tier
+---+-------+-----+-----
+ 1 | kim   | 100 | gold
+ 2 | lee   | 999 | NULL
+ 3 | max   | 999 | NULL
+ 4 | nia   | 250 | gold
+(4 rows)
+updated 0
+deleted 0
+id | tier
+---+-----
+ 1 | gold
+ 2 | NULL
+ 3 | NULL
+ 4 | gold
+(4 rows)
+error: unknown column missing
+deleted 4
+id | owner | bal | tier
+---+-------+-----+-----
+(0 rows)
+inserted 1
+owner
+-----
+ola  
+(1 row)

@@ -1,0 +1,30 @@
+[main 1] root (2 added, 0 modified, 0 deleted)
+[main 2] change f (0 added, 1 modified, 0 deleted)
+[main 3] add h (1 added, 0 modified, 0 deleted)
+[main 4] revert 2 (0 added, 1 modified, 0 deleted)
+error: nothing to revert
+[main 5] revert 4 (0 added, 1 modified, 0 deleted)
+[main 6] change g (0 added, 1 modified, 0 deleted)
+conflict: f (deleted by them)
+conflict: g (deleted by them)
+revert aborted
+switched to side
+[side 7] side k (1 added, 0 modified, 0 deleted)
+switched to main
+[main 8] merge side into main (1 added, 0 modified, 0 deleted)
+[main 9] revert 7 (0 added, 0 modified, 1 deleted)
+error: cannot revert a merge
+9 revert 7
+8 merge side into main (merge of 7)
+6 change g
+5 revert 4
+4 revert 2
+3 add h
+2 change f
+1 root
+commit 9
+parents 8
+message revert 7
+f "two"
+g "changed"
+h "new"

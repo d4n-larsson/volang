@@ -1,0 +1,21 @@
+let name = "world"
+let greeting = "hello, " + name
+print greeting, len(greeting)
+let total = 0
+let i = 0
+while i < len(greeting)
+    let c = substr(greeting, i, 1)
+    if c == "o" or c == "l"
+        set total = total + 1
+    end
+    set i = i + 1
+end
+print "o and l:", total
+if total > 3
+    let name = "inner"
+    print name
+end
+print name
+print int("-42") + 2, str(7) + str(true), 17 / 5, 17 % 5, -17 / 5, -17 % 5
+print substr(greeting, 7, 10)
+print "never"

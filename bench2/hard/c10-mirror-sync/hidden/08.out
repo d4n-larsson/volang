@@ -1,0 +1,15 @@
+== plan Site
+bad job name
+== plan site.conf
+bad job name
+== plan ../sync/site
+bad job name
+== plan notes
+no such job
+error: line 5: bad command
+error: line 6: bad command
+error: line 7: bad command
+== plan abcdefghijklmnopqrstu
+bad job name
+== plan abcdefghijklmnopqrst
+no such job

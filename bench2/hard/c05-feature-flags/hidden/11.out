@@ -1,0 +1,12 @@
+profile fixed
+chain fixed cyc
+f1 aa,m1,m2,m3
+f2 -
+f3 -
+== counts
+aa 1
+ghost-user 0
+m1 1
+m2 1
+m3 1
+zz 0

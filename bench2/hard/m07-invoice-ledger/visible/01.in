@@ -1,0 +1,10 @@
+customer ana 500.00 30 1000
+customer bo 200.00 14 0
+invoice ana 2x10.00 1x5.50
+invoice bo 3x20.00
+day 10
+pay ana 30.00
+statement ana
+pay bo 100.00
+invoice bo 1x15.00
+aging

@@ -1,0 +1,17 @@
+dates.csv:2: bad date 2023-02-29
+dates.csv:4: bad date 2024-13-01
+dates.csv:5: bad date 2024-4-01
+dates.csv:6: bad date 2024-04-31
+dates.csv:7: outside period 2023-12-31
+dates.csv:8: outside period 2025-01-01
+dates.csv:10: bad date 2024-00-10
+dates.csv:11: bad date 2024/01/10
+dates.csv:12: bad date 1900-02-29
+dates.csv:13: outside period 2000-02-29
+== ledger
+2024-02-29 SE1001 D-2 1.00
+2024-12-31 SE1001 D-8 1.00
+== balances
+SE1001 2 2.00
+wrote out/dates.ledger 2
+wrote out/dates.errors 10

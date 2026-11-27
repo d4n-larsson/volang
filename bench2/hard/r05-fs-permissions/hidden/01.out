@@ -1,0 +1,20 @@
+error: permission denied: /d/missing
+error: permission denied: /d/f.txt
+error: permission denied: /d/f.txt
+error: not a directory: /top.txt/x
+error: no such file or directory: /nothing/x
+/d: directory, 2 entries, owner root, mode rw-r--
+f.txt
+sub/
+error: permission denied: /d
+error: permission denied: /d
+error: permission denied: /d/sub
+error: permission denied: /d/sub
+error: permission denied: /d/sub
+error: permission denied: /d
+error: permission denied: /d
+error: permission denied: /d
+error: permission denied: /d/new
+error: permission denied: /top2.txt
+d/
+top.txt

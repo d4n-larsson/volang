@@ -1,0 +1,16 @@
+flag none default on
+rollout 0
+flag all default off
+rollout 100
+flag half default off
+rollout 50
+flag tenth default on
+rollout 10
+flag rule-first default off
+when vip = yes then off
+when vip = no then on
+rollout 100
+flag needs-half default on
+requires half
+flag empty-plan default off
+when plan != pro then on

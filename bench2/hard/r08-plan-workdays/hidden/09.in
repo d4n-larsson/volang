@@ -1,0 +1,10 @@
+task a 4
+task bb 7
+dep bb a+1
+gantt 3 12
+gantt 12 3
+gantt 0 59
+gantt 0 60
+gantt 20 20
+gantt 3
+gantt x 4

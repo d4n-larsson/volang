@@ -1,0 +1,18 @@
+create table a (id int, v text)
+create table b (id int, w int)
+insert into a values (1, 'x')
+insert into b values (1, 5)
+select zz from nope join gone on a.id = b.id
+select zz from a join gone on a.id = b.id
+select zz from a join a on a.id = a.id
+select zz, id from a join b on a.id = b.id
+select id, zz from a join b on a.id = b.id
+select v from a join b on a.id = b.zz where id = 1
+select v from a join b on a.id = b.w where w = 'q'
+select v from a join b on a.v = b.w
+select v from a where 1 = 'a'
+select v from a where null = 'a' or id = null
+select v from a where zz = 'a' and v = 1
+select v from a where v = 1 and zz = 'a'
+select v, b.w from a join b on a.id = b.id order by w, nope
+select count(v), sum(w) from a join b on a.id = b.id where w > 0 group by a.id

@@ -1,0 +1,54 @@
+user ann added
+user bob added
+created #1: First thing
+created #2: Second thing
+created #3: Third thing
+created #4: Fourth thing
+#1 closed
+#2 assigned to ann
+#2 moved new -> triaged
+#2 moved triaged -> in_progress
+#2 closed
+#3 moved new -> triaged
+#3 assigned to bob
+#3 moved triaged -> in_progress
+#3 moved in_progress -> review
+#3 closed
+error: issue #3 is already closed
+error: issue #1 is already closed
+error: issue #4 is not closed
+#1 reopened
+#3 reopened
+#1 [p1] First thing
+  status: triaged
+  assignee: -
+  labels: -
+  created 3, updated 20
+  [7] new -> wontfix (closed)
+  [20] wontfix -> triaged
+  0 comments
+#2 [p2] Second thing
+  status: wontfix
+  assignee: ann
+  labels: -
+  created 4, updated 11
+  [9] new -> triaged
+  [10] triaged -> in_progress
+  [11] in_progress -> wontfix (closed)
+  0 comments
+#3 [p3] Third thing
+  status: triaged
+  assignee: bob
+  labels: -
+  created 5, updated 21
+  [12] new -> triaged
+  [14] triaged -> in_progress
+  [15] in_progress -> review
+  [16] review -> done
+  [21] done -> triaged
+  0 comments
+#1 [p1] triaged - First thing
+#2 [p2] wontfix ann Second thing
+#3 [p3] triaged bob Third thing
+#4 [p4] new - Fourth thing
+no done issues

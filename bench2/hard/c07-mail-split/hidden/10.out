@@ -1,0 +1,17 @@
+message <m1@remote.net>: Lunch?
+relay <m1@remote.net> bob@example.org
+message <m2@example.org>: Release plan
+relay <m2@example.org> bob@example.org
+relay <m2@example.org> dave@example.org
+relay <m2@example.org> carol@example.org
+message <m3@example.org>: Re: Lunch?
+deliver <m3@example.org> alice
+relay <m3@example.org> bob@example.org
+dup <m1@remote.net>
+message <M1@remote.net>: Different case id
+relay <M1@remote.net> bob@example.org
+message dups#3: no id
+relay dups#3 bob@example.org
+== mailboxes
+wrote out/alice.mbox 1 151
+total 1 delivered, 0 bounced, 7 relayed, 1 duplicates

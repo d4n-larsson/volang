@@ -1,0 +1,10 @@
+cd /
+mkdir a b
+write a/one first
+cp a/one b
+mv b/one b/two
+ls a b
+quota 40
+append b/two this line is far too long for the quota
+quota
+cat b/two

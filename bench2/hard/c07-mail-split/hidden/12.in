@@ -1,0 +1,5 @@
+domain example.org
+quota 100000
+dups
+dups
+mon

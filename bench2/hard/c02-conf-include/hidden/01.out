@@ -1,0 +1,22 @@
+== bad.conf
+bad.conf:1: bad key
+bad.conf:2: bad key
+bad.conf:3: syntax error
+bad.conf:4: syntax error
+bad.conf:5: syntax error
+bad.conf:6: bad section
+bad.conf:8: bad section
+bad.conf:10: bad key
+bad.conf:11: undefined ${a.b}
+bad.conf:11: undefined ${a.b}
+bad.conf:12: undefined ${nope}
+bad.conf:14: undefined ${${c}
+i= (bad.conf:18)
+ok_1.a.b=1 (bad.conf:9)
+ok_1.c= (bad.conf:11)
+ok_1.d= and 1 (bad.conf:12)
+ok_1.e=$x {y} ${unclosed (bad.conf:13)
+ok_1.f=} (bad.conf:14)
+ok_1.g=a=b=c (bad.conf:15)
+ok_1.h= (bad.conf:16)
+files 1 errors 12

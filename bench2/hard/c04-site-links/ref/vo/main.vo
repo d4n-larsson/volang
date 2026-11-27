@@ -1,0 +1,255 @@
+import std.fs;
+import std.text;
+
+record Link {
+    line: int;
+    target: str;
+}
+
+record Page {
+    anchors: map[str, bool];
+    links: list[Link];
+}
+
+fn name_ok(s: str) -> bool {
+    if len(s) < 1 or len(s) > 30 {
+        return false;
+    }
+    for c in s {
+        if not ((c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn slug(heading: str) -> str {
+    var out = "";
+    for c in heading {
+        if c >= "A" and c <= "Z" {
+            set out = out + lower(c);
+        } else if (c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "-" {
+            set out = out + c;
+        } else if c == " " {
+            set out = out + "-";
+        }
+    }
+    return out;
+}
+
+fn strip_spaces(s: str) -> str {
+    var a = 0;
+    var b = len(s);
+    while a < b and byte_at(s, a) == 32 {
+        set a = a + 1;
+    }
+    while b > a and byte_at(s, b - 1) == 32 {
+        set b = b - 1;
+    }
+    return slice(s, a, b);
+}
+
+fn add_links(line: str, no: int, links: list[Link]) {
+    var rest = line;
+    while true {
+        let j = find(rest, "](");
+        if j < 0 {
+            return;
+        }
+        let after = slice(rest, j + 2, len(rest));
+        let k = find(after, ")");
+        if k <= 0 or text.contains(slice(after, 0, k), " ") {
+            set rest = after;
+            continue;
+        }
+        push(links, new Link { line: no, target: slice(after, 0, k) });
+        set rest = slice(after, k, len(after));
+    }
+}
+
+fn scan(content: str) -> Page {
+    let page = new Page { anchors: new map[str, bool], links: [] };
+    let seen = new map[str, int];
+    var code = false;
+    for i, line in split(content, "\n") {
+        if text.starts_with(line, "```") {
+            set code = not code;
+            continue;
+        }
+        if code {
+            continue;
+        }
+        var hashes = 0;
+        while hashes < len(line) and byte_at(line, hashes) == 35 {
+            set hashes = hashes + 1;
+        }
+        if hashes >= 1 and hashes <= 3 and hashes < len(line) and byte_at(line, hashes) == 32 {
+            let s = slug(strip_spaces(slice(line, hashes + 1, len(line))));
+            if s != "" {
+                let k = get_or(seen, s, 0);
+                if k == 0 {
+                    set page.anchors[s] = true;
+                } else {
+                    set page.anchors[s + "-" + str(k)] = true;
+                }
+                set seen[s] = k + 1;
+            }
+        }
+        add_links(line, i + 1, page.links);
+    }
+    return page;
+}
+
+# The file a path names from a page, or err when it leaves the site.
+fn resolve(page: str, path: str) -> result[str] {
+    var parts = split(page, "/");
+    set parts = slice(parts, 0, len(parts) - 1);
+    if text.starts_with(path, "/") {
+        set parts = [];
+    }
+    for p in split(path, "/") {
+        if p == "" or p == "." {
+            continue;
+        }
+        if p == ".." {
+            if len(parts) == 0 {
+                return err("outside");
+            }
+            let _ = try pop(parts);
+        } else {
+            push(parts, p);
+        }
+    }
+    return ok(join(parts, "/"));
+}
+
+fn report(files: map[str, bool], info: map[str, Page], pages: list[str]) -> list[str] {
+    let problems = new list[str];
+    let edges = new map[str, list[str]];
+    var internal = 0;
+    var external = 0;
+    for p in pages {
+        set edges[p] = [];
+        for l in info[p].links {
+            let t = l.target;
+            let at = p + ":" + str(l.line) + ": ";
+            if text.starts_with(t, "http://") or text.starts_with(t, "https://") {
+                set external = external + 1;
+                continue;
+            }
+            if text.starts_with(t, "mailto:") {
+                continue;
+            }
+            set internal = internal + 1;
+            if text.starts_with(t, "#") {
+                let a = slice(t, 1, len(t));
+                if a != "" and not has(info[p].anchors, a) {
+                    push(problems, at + "missing anchor " + t);
+                }
+                continue;
+            }
+            var path = t;
+            var anchor = "";
+            let h = find(t, "#");
+            if h >= 0 {
+                set path = slice(t, 0, h);
+                set anchor = slice(t, h + 1, len(t));
+            }
+            match resolve(p, path) {
+                case ok(target) {
+                    if not has(files, target) {
+                        push(problems, at + "missing file " + target);
+                    } else if has(info, target) {
+                        push(edges[p], target);
+                        if anchor != "" and not has(info[target].anchors, anchor) {
+                            push(problems, at + "missing anchor " + target + "#" + anchor);
+                        }
+                    }
+                }
+                case err(_) {
+                    push(problems, at + "outside " + t);
+                }
+            }
+        }
+    }
+    let reached = new map[str, bool];
+    var stack = new list[str];
+    if has(info, "index.md") {
+        push(stack, "index.md");
+    }
+    while len(stack) > 0 {
+        let p = stack[len(stack) - 1];
+        set stack = slice(stack, 0, len(stack) - 1);
+        if not has(reached, p) {
+            set reached[p] = true;
+            for q in edges[p] {
+                push(stack, q);
+            }
+        }
+    }
+    let out = problems;
+    let n = len(problems);
+    let orphans = filter(pages, fn(p) => not has(reached, p));
+    for p in orphans {
+        push(out, "orphan " + p);
+    }
+    push(out, format("pages {} links {} external {} problems {} orphans {}", len(pages), internal, external, n, len(orphans)));
+    return out;
+}
+
+fn check_site(site: str) -> result[void] uses console, file.read("pages/") {
+    let root = "pages/" + site + "/";
+    let files = new map[str, bool];
+    let pages = new list[str];
+    for f in try fs.walk(root) {
+        let rel = slice(f, len(root), len(f));
+        set files[rel] = true;
+        if text.ends_with(rel, ".md") {
+            push(pages, rel);
+        }
+    }
+    sort(pages);
+    let info = new map[str, Page];
+    for p in pages {
+        set info[p] = scan(try read_file(root + p));
+    }
+    for line in report(files, info, pages) {
+        print(line);
+    }
+    return ok();
+}
+
+fn main() -> result[void] uses console, input, file.read("pages/") {
+    while true {
+        match read_line() {
+            case ok(site) {
+                if site == "" {
+                    continue;
+                }
+                print("== " + site);
+                if not name_ok(site) {
+                    print("error: bad site name");
+                    continue;
+                }
+                match try fs.info("pages/" + site) {
+                    case directory {
+                        try check_site(site);
+                    }
+                    case missing {
+                        print("error: no such site");
+                    }
+                    case file(_) {
+                        print("error: no such site");
+                    }
+                    case other {
+                        print("error: no such site");
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

@@ -1,0 +1,20 @@
+warehouse k
+warehouse l
+item bolt
+item nut
+receive k bolt 10 0.10 30
+receive k nut 10 0.20 30
+ship b1 l bolt 4
+ship b2 k nut 15
+ship b3 l nut 2
+ship b4 l bolt 1
+reserve r1 k bolt 8
+transfer k l bolt 3 2
+transfer k l bolt 2 1
+release r1
+transfer k l nut 1 1
+transfer k l bolt 3 1
+day 1
+day 2
+backorders
+stock

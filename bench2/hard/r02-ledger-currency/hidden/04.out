@@ -1,0 +1,44 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened assets:gbp (asset, GBP)
+opened expense:misc (expense)
+rate EUR from day 0: 0.5000
+rate GBP from day 0: 1.0001
+posted r1: 2 postings, total 0.01
+posted r2: 2 postings, total 0.01
+posted r3: 2 postings, total 0.02
+posted r4: 2 postings, total 0.02
+error: transaction r5 unbalanced by 0.01
+posted r6: 2 postings, total 6.18
+error: transaction r7 unbalanced by -0.01
+posted r8: 2 postings, total 0.49
+posted r9: 2 postings, total 5000.49
+posted r10: 2 postings, total 5000.50
+error: transaction r11 unbalanced by -0.50
+posted r12: 2 postings, total 0.01
+r1 day 1 a
+  assets:eur 0.01 EUR (0.01 USD)
+  assets:bank -0.01
+r2 day 1 b
+  assets:eur -0.01 EUR (-0.01 USD)
+  assets:bank 0.01
+r3 day 1 c
+  assets:eur 0.03 EUR (0.02 USD)
+  assets:bank -0.02
+error: unknown transaction r7
+r9 day 1 i
+  assets:gbp -4999.99 GBP (-5000.49 USD)
+  assets:bank 5000.49
+r10 day 1 j
+  assets:gbp 5000.00 GBP (5000.50 USD)
+  assets:eur -10001.00 EUR (-5000.50 USD)
+r12 day 1 l
+  assets:gbp 0.01 GBP (0.01 USD)
+  assets:eur -0.02 EUR (-0.01 USD)
+asset
+  assets:bank 5000.00
+  assets:eur -5006.69
+  assets:gbp 0.51
+expense
+  expense:misc 6.18
+total debits 5006.69 credits 5006.69

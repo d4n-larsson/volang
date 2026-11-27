@@ -1,0 +1,20 @@
+warehouse north added
+warehouse south added
+item bolt added
+item nut added
+received 20 bolt into north, now 20, lot 1 at 1.00
+received 100 nut into north, now 100, lot 2 at 0.30
+received 10 bolt into north, now 30, lot 3 at 1.40
+transferred 25 bolt from north to south, cost 27.00
+lot 1: 20 x 1.00 = 20.00
+lot 3: 5 x 1.40 = 7.00
+total 25 units = 27.00
+shipped 22 bolt from south, now 3, cost 22.80
+#1 receive north +20 lot 1 at 1.00
+#3 receive north +10 lot 3 at 1.40
+#4 transfer-out north -25 (to south) cost 27.00
+#5 transfer-in south +25 (from north) cost 27.00
+#6 ship south -22 cost 22.80
+items 2, warehouses 2, 108 units, value 41.20
+shipped 22 units in 1 shipment, cost 22.80
+orders: 0 open, 0 fulfilled, 0 cancelled

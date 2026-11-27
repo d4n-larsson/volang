@@ -1,0 +1,32 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+post ann general parent @bob
+reply bob general/1 first @ann
+reply cy general/1 second
+delete ann general/1
+edit ann general/1 resurrect
+delete ann general/1
+reply dee general/1 x
+reply cy general/1 x
+reply cy general/2 third @bob
+thread general/1
+thread general/4
+search general parent
+search general @
+mentions bob
+mentions ann
+top
+whois ann
+channels
+stats
+unread dee
+join dee general
+unread dee
+reply bob general/3 fourth @dee
+unread dee
+history general

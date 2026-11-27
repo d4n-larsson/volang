@@ -1,0 +1,26 @@
+cat: f/x: not a directory
+cat: f/.: not a directory
+ls: f/..: not a directory
+- 8 f/
+rm: f/..: not a directory
+rm: d/../f/x: not a directory
+write: f/x: not a directory
+append: f/./y: not a directory
+touch: f/z: not a directory
+touch: d/f/z: no such file or directory
+mkdir: f/z: not a directory
+mkdir: f/z: not a directory
+mv: f/x: not a directory
+mv: d/x/y: no such file or directory
+mv: f/y: not a directory
+mv: f: not a directory
+mv: f/new: not a directory
+cp: f/x: not a directory
+cp: d/f/z: no such file or directory
+cp: f/x: not a directory
+cd: f: not a directory
+cd: f/.: not a directory
+du: f/..: not a directory
+find: f/z: not a directory
+d/
+f

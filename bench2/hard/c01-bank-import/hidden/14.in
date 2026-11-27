@@ -1,0 +1,18 @@
+all 2023-01-01 2025-12-31
+jan.csv
+feb.csv
+2024/mar.csv
+dupcol.csv
+nocol.csv
+badtrailer.csv
+empty.csv
+spaces.csv
+dates.csv
+amounts.csv
+accounts.csv
+fields.csv
+ids.csv
+onlyheader.csv
+hashheader.csv
+trailer0.csv
+/etc/passwd

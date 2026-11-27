@@ -1,0 +1,7 @@
+today 2024-06-15
+set prod
+keep weekly 10
+keep weekly 0 for cache
+keep last 1 for cache
+keep weekly 2 for db-eu-1
+keep weekly 3 for db-eu-1

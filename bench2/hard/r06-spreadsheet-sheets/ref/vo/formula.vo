@@ -1,0 +1,269 @@
+# Formula trees: what the parser builds, and what is shown, shifted and evaluated.
+import cells;
+
+# The `sheet` of a reference to the formula's own sheet.
+export const own_sheet = -1;
+
+# A cell reference; abs_col / abs_row are the `$` marks that keep a part fixed when copied. sheet is
+# the id of the sheet it names, or own_sheet; qualifier is the sheet name written in the formula,
+# until bind turns it into the id.
+export record Ref {
+    col: int;
+    row: int;
+    abs_col: bool;
+    abs_row: bool;
+    sheet: int;
+    qualifier: str;
+}
+
+export variant Node {
+    num(int);
+    cell_ref(Ref);
+    # SUM, MIN or MAX over the range first:last
+    func {
+        name: str;
+        first: Ref;
+        last: Ref;
+    }
+    # a function whose range was copied off the grid (#REF)
+    lost_func(str);
+    bin {
+        op: str;
+        left: Node;
+        right: Node;
+    }
+    neg(Node);
+    paren(Node);
+    # a reference that was copied off the grid
+    bad_ref;
+}
+
+export fn ref_text(r: Ref) -> str {
+    var out = "";
+    if r.abs_col {
+        set out = "$";
+    }
+    set out = out + cells.col_name(r.col);
+    if r.abs_row {
+        set out = out + "$";
+    }
+    return out + str(r.row);
+}
+
+# `NAME!` for a reference to another sheet, `#REF!` when that sheet is gone, else nothing. `names`
+# maps the ids of the live sheets to their names.
+fn prefix(r: Ref, names: map[int, str]) -> str {
+    if r.sheet == own_sheet {
+        return "";
+    }
+    if not has(names, r.sheet) {
+        return "#REF!";
+    }
+    return names[r.sheet] + "!";
+}
+
+# The formula as `show` prints it (without the leading `=`).
+export fn to_text(node: Node, names: map[int, str]) -> str {
+    match node {
+        case num(v) {
+            return str(v);
+        }
+        case cell_ref(r) {
+            return prefix(r, names) + ref_text(r);
+        }
+        case func(f) {
+            return f.name + "(" + prefix(f.first, names) + ref_text(f.first) + ":" + ref_text(f.last) + ")";
+        }
+        case lost_func(name) {
+            return name + "(#REF)";
+        }
+        case bin(b) {
+            return to_text(b.left, names) + b.op + to_text(b.right, names);
+        }
+        case neg(inner) {
+            return "-" + to_text(inner, names);
+        }
+        case paren(inner) {
+            return "(" + to_text(inner, names) + ")";
+        }
+        case bad_ref {
+            return "#REF";
+        }
+    }
+}
+
+# The reference moved by dcol columns and drow rows (except its `$` parts) into a formula on
+# dst_sheet, or err("") off the grid.
+export fn shift_ref(r: Ref, dcol: int, drow: int, dst_sheet: int) -> result[Ref] {
+    var col = r.col;
+    if not r.abs_col {
+        set col = r.col + dcol;
+    }
+    var row = r.row;
+    if not r.abs_row {
+        set row = r.row + drow;
+    }
+    if not cells.on_grid(col, row) {
+        return err("");
+    }
+    var sheet = r.sheet;
+    if sheet == dst_sheet {
+        set sheet = own_sheet;
+    }
+    return ok(new Ref { col: col, row: row, abs_col: r.abs_col, abs_row: r.abs_row, sheet: sheet, qualifier: "" });
+}
+
+fn shift_func(name: str, first: Ref, last: Ref, dcol: int, drow: int, dst_sheet: int) -> result[Node] {
+    let a = try shift_ref(first, dcol, drow, dst_sheet);
+    let b = try shift_ref(last, dcol, drow, dst_sheet);
+    return ok(Node.func { name: name, first: a, last: b });
+}
+
+# A copy of the tree for a formula copied dcol columns right and drow rows down, onto dst_sheet.
+export fn shift(node: Node, dcol: int, drow: int, dst_sheet: int) -> Node {
+    match node {
+        case cell_ref(r) {
+            match shift_ref(r, dcol, drow, dst_sheet) {
+                case ok(moved) {
+                    return Node.cell_ref(moved);
+                }
+                case err(_) {
+                    return Node.bad_ref;
+                }
+            }
+        }
+        case func(f) {
+            match shift_func(f.name, f.first, f.last, dcol, drow, dst_sheet) {
+                case ok(moved) {
+                    return moved;
+                }
+                case err(_) {
+                    return Node.lost_func(f.name);
+                }
+            }
+        }
+        case bin(b) {
+            return Node.bin { op: b.op, left: shift(b.left, dcol, drow, dst_sheet), right: shift(b.right, dcol, drow, dst_sheet) };
+        }
+        case neg(inner) {
+            return Node.neg(shift(inner, dcol, drow, dst_sheet));
+        }
+        case paren(inner) {
+            return Node.paren(shift(inner, dcol, drow, dst_sheet));
+        }
+        case num(_) {
+            return node;
+        }
+        case lost_func(_) {
+            return node;
+        }
+        case bad_ref {
+            return node;
+        }
+    }
+}
+
+# Adds to `out` the references of the tree, left to right (both corners of a function's range).
+fn all_refs(node: Node, out: list[Ref]) {
+    match node {
+        case cell_ref(r) {
+            push(out, r);
+        }
+        case func(f) {
+            push(out, f.first);
+            push(out, f.last);
+        }
+        case bin(b) {
+            all_refs(b.left, out);
+            all_refs(b.right, out);
+        }
+        case neg(inner) {
+            all_refs(inner, out);
+        }
+        case paren(inner) {
+            all_refs(inner, out);
+        }
+        case num(_) {
+            return;
+        }
+        case lost_func(_) {
+            return;
+        }
+        case bad_ref {
+            return;
+        }
+    }
+}
+
+# Turns the sheet names written in a freshly parsed formula on sheet `own` into sheet ids (a name of
+# the own sheet into own_sheet). `ids` maps the names of the sheets to their ids. Fails with the first
+# name, from the left, that is not a sheet.
+export fn bind(node: Node, ids: map[str, int], own: int) -> result[void] {
+    let refs = new list[Ref];
+    all_refs(node, refs);
+    for r in refs {
+        if r.qualifier != "" and not has(ids, r.qualifier) {
+            return err(r.qualifier);
+        }
+    }
+    for r in refs {
+        if r.qualifier != "" {
+            set r.sheet = ids[r.qualifier];
+            if r.sheet == own {
+                set r.sheet = own_sheet;
+            }
+        }
+    }
+    return ok();
+}
+
+export fn ref_sheet(r: Ref, own: int) -> int {
+    if r.sheet == own_sheet {
+        return own;
+    }
+    return r.sheet;
+}
+
+# The range of a function, corners in order.
+export fn range_of(first: Ref, last: Ref) -> cells.Area {
+    return new cells.Area { col1: min(first.col, last.col), row1: min(first.row, last.row), col2: max(first.col, last.col), row2: max(first.row, last.row) };
+}
+
+# Adds to `out` every place the tree of a formula on sheet `own` refers to, ranges cell by cell.
+export fn referenced(node: Node, own: int, out: list[cells.Place]) {
+    match node {
+        case cell_ref(r) {
+            push(out, new cells.Place { sheet: ref_sheet(r, own), col: r.col, row: r.row });
+        }
+        case func(f) {
+            for p in cells.range_cells(range_of(f.first, f.last)) {
+                push(out, cells.place_of(ref_sheet(f.first, own), p));
+            }
+        }
+        case bin(b) {
+            referenced(b.left, own, out);
+            referenced(b.right, own, out);
+        }
+        case neg(inner) {
+            referenced(inner, own, out);
+        }
+        case paren(inner) {
+            referenced(inner, own, out);
+        }
+        case num(_) {
+            return;
+        }
+        case lost_func(_) {
+            return;
+        }
+        case bad_ref {
+            return;
+        }
+    }
+}
+
+export fn refs_of(node: Node, own: int) -> list[cells.Place] {
+    let out = new list[cells.Place];
+    referenced(node, own, out);
+    return out;
+}

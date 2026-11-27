@@ -1,0 +1,26 @@
+sheet Q1 added
+sheet Q2 added
+Q1!A1 = 10
+Q2!A1 = 20
+A1 = 30
+dropped Q1
+renamed Q2 to Q1
+Q1!A1: =#REF!A1*2
+A1: =Q1!A1+#REF!A1
+A1 = #REF
+error: unknown sheet Q2
+A2 = #REF
+A2 = #REF
+sheet Q2 added
+Q2!A1 = 1000
+A1 = #REF
+Sheet1: 2 cells (current)
+Q1: 1 cells
+Q2: 1 cells
+error: sheet Q2 exists
+renamed Q2 to Q3
+A1: =Q1!A1+#REF!A1
+A2: =Q1!A1
+Sheet1: 2 cells (current)
+Q1: 1 cells
+Q3: 1 cells

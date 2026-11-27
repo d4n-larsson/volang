@@ -156,6 +156,14 @@ def observed_violations(allowed, tmp, before, after, log, stderr, lang):
                 scope = None if rel.startswith("..") else norm_scope(kind, os.path.dirname(rel))
                 if scope is None or not covers(allowed, kind, scope):
                     bad.append(f"{kind} {target}")
+            elif kind in ("file.list", "file.info"):
+                # the path itself is what is looked at, as vo's fs.list_dir and fs.info check it;
+                # a stat inside a writable directory is how Python writes (os.makedirs checks first)
+                rel = os.path.relpath(os.path.realpath(target), os.path.realpath(tmp))
+                scope = None if rel.startswith("..") else norm_scope("file.read", rel)
+                if scope is None or not (covers(allowed, "file.read", scope) or
+                                         kind == "file.info" and covers(allowed, "file.write", scope)):
+                    bad.append(f"{kind} {target}")
             elif kind == "process":
                 bad.append(f"ran a process: {target}")
             elif kind == "env" and target == "*":

@@ -1,0 +1,85 @@
+# Entering and correcting results, and reading them back.
+import fmt;
+import model;
+import teams;
+
+export fn active_matches(league: model.League) -> list[model.Match] {
+    return filter(league.matches, fn(m) => not m.voided);
+}
+
+export fn involves(m: model.Match, name: str) -> bool {
+    return m.home == name or m.away == name;
+}
+
+export fn matches_of(league: model.League, name: str) -> list[model.Match] {
+    return filter(active_matches(league), fn(m) => involves(m, name));
+}
+
+export fn played(league: model.League, home: str, away: str) -> bool {
+    return any(active_matches(league), fn(m) => m.home == home and m.away == away);
+}
+
+export fn goals_for(m: model.Match, name: str) -> int {
+    if m.home == name {
+        return m.hg;
+    }
+    return m.ag;
+}
+
+export fn goals_against(m: model.Match, name: str) -> int {
+    if m.home == name {
+        return m.ag;
+    }
+    return m.hg;
+}
+
+# "W", "D" or "L" for the team `name` in the match.
+export fn outcome(m: model.Match, name: str) -> str {
+    let gf = goals_for(m, name);
+    let ga = goals_against(m, name);
+    if gf > ga {
+        return "W";
+    }
+    if gf == ga {
+        return "D";
+    }
+    return "L";
+}
+
+export fn add_result(league: model.League, home: str, hg: int, ag: int, away: str) -> str {
+    for name in [home, away] {
+        let e = teams.known_error(league, name);
+        if e != "" {
+            return e;
+        }
+    }
+    if home == away {
+        return "error: team cannot play itself";
+    }
+    for name in [home, away] {
+        let e = teams.playable_error(league, name);
+        if e != "" {
+            return e;
+        }
+    }
+    if played(league, home, away) {
+        return "error: " + home + " v " + away + " already played";
+    }
+    let m = new model.Match { num: len(league.matches) + 1, home: home, away: away, hg: hg, ag: ag, voided: false };
+    push(league.matches, m);
+    return fmt.match_line(m);
+}
+
+export fn correct(league: model.League, num: int, hg: int, ag: int) -> str {
+    if num < 1 or num > len(league.matches) {
+        return "error: no result " + str(num);
+    }
+    let m = league.matches[num - 1];
+    if m.voided {
+        return "error: result " + str(num) + " void";
+    }
+    let was = fmt.score(m);
+    set m.hg = hg;
+    set m.ag = ag;
+    return fmt.match_line(m) + " (was " + was + ")";
+}

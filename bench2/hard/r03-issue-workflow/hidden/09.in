@@ -1,0 +1,33 @@
+user ann
+user bob
+user cy
+new p3 Task one
+new p1 Task two
+new p2 Task three
+new p2 Task four
+new p4 Task five
+assign 1 ann
+assign 2 ann
+assign 3 ann
+assign 4 ann
+assign 5 bob
+move 1 triaged
+move 1 in_progress
+move 1 blocked vendor
+move 2 triaged
+move 2 in_progress
+move 2 review
+move 2 done
+move 3 wontfix not needed
+close 5
+mine ann
+mine bob
+mine cy
+mine zed
+users
+assign 2 bob
+assign 3 bob
+assign 1 bob
+move 1 in_progress
+show 1
+users

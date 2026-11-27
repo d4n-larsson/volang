@@ -1,0 +1,21 @@
+warehouse p added
+warehouse q added
+item oil added
+lot L1 p oil 5
+transfer T1 5 arrives 20 L1x5
+backorder o1 3
+backorder o2 1
+lot L2 q oil 2
+filled o1 2 L2x2
+arrived T1 q oil 5
+expired L1 q 5
+stock day 25
+value on hand 0.00 in transit 0.00 quarantine 0.00 shipped 6.00 written off 5.00
+backorders 2
+o1 q oil 1
+o2 q oil 1
+stock day 25
+value on hand 0.00 in transit 0.00 quarantine 0.00 shipped 6.00 written off 5.00
+backorders 2
+o1 q oil 1
+o2 q oil 1

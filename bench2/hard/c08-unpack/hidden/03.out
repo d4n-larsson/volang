@@ -1,0 +1,30 @@
+== negative
+file a.txt 6
+error: line 4: bad entry
+= a.txt 6 92733172
+total 1 files, 0 dirs, 6 bytes
+== blank
+file a.txt 6
+error: line 4: bad entry
+= a.txt 6 92733172
+total 1 files, 0 dirs, 6 bytes
+== badlink
+file a.txt 6
+error: line 4: bad entry
+= a.txt 6 92733172
+total 1 files, 0 dirs, 6 bytes
+== unknown
+file a.txt 6
+error: line 4: bad entry
+= a.txt 6 92733172
+total 1 files, 0 dirs, 6 bytes
+== short
+file a.txt 6
+error: line 4: bad entry
+= a.txt 6 92733172
+total 1 files, 0 dirs, 6 bytes
+== badend
+file a.txt 6
+error: line 4: bad entry
+= a.txt 6 92733172
+total 1 files, 0 dirs, 6 bytes

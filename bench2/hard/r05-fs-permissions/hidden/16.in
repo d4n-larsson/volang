@@ -1,0 +1,37 @@
+useradd ann
+useradd zed
+mkdir /d
+mkdir /d/empty
+mkdir /d/full
+write /d/full/a.txt 12345
+write /d/full/b.txt
+append /d/full/b.txt
+append /d/full/b.txt xy
+write /d/z.txt end
+chown zed /d/z.txt
+chmod ------ /d/z.txt
+chmod r-xr-- /d/full
+ls -l /d
+ls -l /d/empty
+ls -l /d/z.txt
+ls -l /d/full
+ls /d/full
+su ann
+ls -l /d/full
+ls /d/full
+ls -l /d/full/a.txt
+ls -l /d/z.txt
+ls /d/z.txt
+cd /d
+ls -l
+ls -l .
+ls -l empty
+su root
+chmod --x--x /d/empty
+su ann
+ls -l empty
+ls empty
+cd empty
+pwd
+ls -l
+ls -l /

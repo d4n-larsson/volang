@@ -1,0 +1,10 @@
+xaybzc -> 1,5,6
+abcabc -> 1,5,6
+aaa -> 2,5,6
+aa -> 5,6
+x.tar.gz -> 3,4,5,6
+tar.gz -> 5,6
+a.b -> 5,6
+a.b.c -> 1,4,5,6
+ab -> 5,6
+a -> none

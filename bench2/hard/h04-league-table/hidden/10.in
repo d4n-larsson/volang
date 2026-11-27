@@ -1,0 +1,10 @@
+Ash Elm dale nab fen Pike Oak
+fen 2 2 Oak
+fen 0 0 Elm
+nab 0 0 dale
+dale 2 0 Oak
+Elm 1 0 dale
+fen 2 0 nab
+Pike 2 1 Ash
+Oak 0 1 nab
+Oak 2 2 Pike

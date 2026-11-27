@@ -1,0 +1,26 @@
+sheet Old
+set Old!A1 10
+set Old!B2 20
+set A1 =Old!A1+1
+set A2 =SUM(Old!A1:B2)
+set A3 =Old!$B$2*2+A1
+set A4 =5+Old!B2
+get A1
+drop Old
+drop Old
+drop Sheet1
+show A1
+show A2
+show A3
+get A3
+get A4
+deps A3
+deps A2
+sheet Old
+set Old!A1 99
+show A1
+get A1
+sheets
+count
+eval =Old!A1
+list

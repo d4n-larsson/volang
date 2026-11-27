@@ -1,0 +1,116 @@
+# Output: cell names, written values and the show grid.
+import sheet;
+import std.text;
+
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+export fn name(c: sheet.Cell) -> str {
+    return slice(letters, c.col, c.col + 1) + str(c.row);
+}
+
+fn written(v: sheet.Value) -> str {
+    match v {
+        case num(n) {
+            return str(n);
+        }
+        case text(t) {
+            return t;
+        }
+        case error(e) {
+            return e;
+        }
+        case empty {
+            return "";
+        }
+    }
+}
+
+fn is_num(v: sheet.Value) -> bool {
+    match v {
+        case num(_) {
+            return true;
+        }
+        case text(_) {
+            return false;
+        }
+        case error(_) {
+            return false;
+        }
+        case empty {
+            return false;
+        }
+    }
+}
+
+export fn print_line(c: sheet.Cell, v: sheet.Value) -> str {
+    if v == sheet.Value.empty {
+        return name(c) + " is empty";
+    }
+    return name(c) + " = " + written(v);
+}
+
+export fn formula_line(sh: sheet.Sheet, c: sheet.Cell) -> str {
+    if not has(sh.cells, c) {
+        return name(c) + " is empty";
+    }
+    var shown = "";
+    match sh.cells[c] {
+        case number(n) {
+            set shown = str(n);
+        }
+        case text(t) {
+            set shown = t;
+        }
+        case formula(f) {
+            set shown = f.text;
+        }
+    }
+    return name(c) + " := " + shown;
+}
+
+export fn deps_line(c: sheet.Cell, cells: list[sheet.Cell]) -> str {
+    if len(cells) == 0 {
+        return name(c) + " <- none";
+    }
+    return name(c) + " <- " + join(map(cells, name), " ");
+}
+
+fn rstrip(s: str) -> str {
+    var n = len(s);
+    while n > 0 and byte_at(s, n - 1) == 32 {
+        set n = n - 1;
+    }
+    return slice(s, 0, n);
+}
+
+export fn grid(sh: sheet.Sheet, c1: int, r1: int, c2: int, r2: int) -> list[str] {
+    let lw = len(str(r2));
+    let widths = new list[int];
+    for col in c1..c2 + 1 {
+        var w = 1;
+        for row in r1..r2 + 1 {
+            set w = max(w, text.char_count(written(sheet.value(sh, new sheet.Cell { col: col, row: row }))));
+        }
+        push(widths, w);
+    }
+    var head = text.repeat(" ", lw);
+    var rule = text.repeat("-", lw);
+    for i in 0..len(widths) {
+        set head = head + " | " + text.align_left(slice(letters, c1 + i, c1 + i + 1), widths[i]);
+        set rule = rule + "-+-" + text.repeat("-", widths[i]);
+    }
+    let lines = [rstrip(head), rule];
+    for row in r1..r2 + 1 {
+        var line = text.align_right(str(row), lw);
+        for i in 0..len(widths) {
+            let v = sheet.value(sh, new sheet.Cell { col: c1 + i, row: row });
+            if is_num(v) {
+                set line = line + " | " + text.align_right(written(v), widths[i]);
+            } else {
+                set line = line + " | " + text.align_left(written(v), widths[i]);
+            }
+        }
+        push(lines, rstrip(line));
+    }
+    return lines;
+}

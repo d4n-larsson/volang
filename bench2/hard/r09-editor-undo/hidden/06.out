@@ -1,0 +1,23 @@
+group started
+1  A
+1  A
+2  B
+3  c
+error: group open
+error: group open
+error: group open
+error: group already open
+grouped 2 changes
+group started
+grouped 0 changes
+error: no group open
+1  A
+2  B
+3  c
+undone 1 step
+1  a
+2  b
+buffer main, line 2 of 2
+redone 1 step
+buffer main, line 2 of 3
+* main 3 lines, modified

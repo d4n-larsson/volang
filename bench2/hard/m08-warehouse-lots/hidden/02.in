@@ -1,0 +1,31 @@
+warehouse w
+warehouse w
+item x
+item x
+item w
+warehouse x
+receive v x 1 1.00 5
+receive v q 1 1.00 5
+receive w q 1 1.00 5
+receive w x 1 1.00 0
+ship o1 v q 1
+ship o1 w q 1
+ship o1 w x 1
+ship o1 w x 1
+reserve o1 w x 1
+reserve o2 v q 1
+reserve o2 w x 1
+transfer v u q 1 1
+transfer w u q 1 1
+transfer w w q 1 1
+transfer w x q 1 1
+transfer w x x 1 1
+fulfil o9
+release o1
+fulfil o1
+cancel o9
+cancel o1
+cancel o1
+return o9 1
+return o1 2
+backorders

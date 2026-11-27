@@ -1,0 +1,517 @@
+import std.lists;
+
+record Pos {
+    row: int;
+    col: int;
+}
+
+variant Node {
+    num(int);
+    ref(Pos);
+    neg(Node);
+    rng(list[Pos]);
+    bin {
+        op: str;
+        left: Node;
+        right: Node;
+    }
+    call {
+        name: str;
+        items: list[Node];
+    }
+}
+
+variant Content {
+    formula(Node);
+    number(int);
+    text(str);
+    bad;
+}
+
+variant Val {
+    empty;
+    number(int);
+    text(str);
+    error(str);
+}
+
+record Parser {
+    toks: list[str];
+    i: int;
+}
+
+record Graph {
+    deps: map[Pos, list[Pos]];
+    index: map[Pos, int];
+    low: map[Pos, int];
+    stack: list[Pos];
+    on: map[Pos, bool];
+    cyclic: map[Pos, bool];
+}
+
+record Sheet {
+    content: map[Pos, Content];
+    cyclic: map[Pos, bool];
+    memo: map[Pos, Val];
+}
+
+fn is_digit(c: str) -> bool {
+    return c >= "0" and c <= "9";
+}
+
+fn is_word(c: str) -> bool {
+    return is_digit(c) or (c >= "a" and c <= "z") or (c >= "A" and c <= "Z");
+}
+
+fn all_digits(s: str) -> bool {
+    return len(s) > 0 and all(chars(s), is_digit);
+}
+
+fn is_ref(s: str) -> bool {
+    if len(s) < 2 or len(s) > 5 {
+        return false;
+    }
+    let first = slice(s, 0, 1);
+    let rest = slice(s, 1, len(s));
+    return first >= "A" and first <= "Z" and all_digits(rest) and slice(rest, 0, 1) != "0";
+}
+
+fn to_pos(s: str) -> Pos {
+    var row = 0;
+    for c in chars(slice(s, 1, len(s))) {
+        set row = row * 10 + ord(c) - 48;
+    }
+    return new Pos { row: row, col: ord(slice(s, 0, 1)) - 65 };
+}
+
+fn to_int(s: str) -> int {
+    var n = 0;
+    for c in chars(s) {
+        set n = n * 10 + ord(c) - 48;
+    }
+    return n;
+}
+
+fn tokenize(s: str) -> result[list[str]] {
+    let cs = chars(s);
+    let out = new list[str];
+    var i = 0;
+    while i < len(cs) {
+        let c = cs[i];
+        if c == " " {
+            set i = i + 1;
+        } else if find("+-*(),:", c) >= 0 {
+            push(out, c);
+            set i = i + 1;
+        } else if is_word(c) {
+            var j = i;
+            while j < len(cs) and is_word(cs[j]) {
+                set j = j + 1;
+            }
+            push(out, join(slice(cs, i, j), ""));
+            set i = j;
+        } else {
+            return err("bad character");
+        }
+    }
+    return ok(out);
+}
+
+fn peek(p: Parser, k: int) -> str {
+    if p.i + k < len(p.toks) {
+        return p.toks[p.i + k];
+    }
+    return "";
+}
+
+fn take(p: Parser, want: str) -> result[str] {
+    let t = peek(p, 0);
+    if t == "" or (want != "" and t != want) {
+        return err("unexpected");
+    }
+    set p.i = p.i + 1;
+    return ok(t);
+}
+
+fn parse_expr(p: Parser) -> result[Node] {
+    var node = try parse_term(p);
+    while peek(p, 0) == "+" or peek(p, 0) == "-" {
+        let op = try take(p, "");
+        set node = Node.bin { op: op, left: node, right: try parse_term(p) };
+    }
+    return ok(node);
+}
+
+fn parse_term(p: Parser) -> result[Node] {
+    var node = try parse_unary(p);
+    while peek(p, 0) == "*" {
+        let _ = try take(p, "*");
+        set node = Node.bin { op: "*", left: node, right: try parse_unary(p) };
+    }
+    return ok(node);
+}
+
+fn parse_unary(p: Parser) -> result[Node] {
+    if peek(p, 0) == "-" {
+        let _ = try take(p, "-");
+        return ok(Node.neg(try parse_unary(p)));
+    }
+    return parse_primary(p);
+}
+
+fn parse_primary(p: Parser) -> result[Node] {
+    let t = try take(p, "");
+    if t == "(" {
+        let inner = try parse_expr(p);
+        let _ = try take(p, ")");
+        return ok(inner);
+    }
+    if all_digits(t) and len(t) <= 18 {
+        return ok(Node.num(to_int(t)));
+    }
+    if is_ref(t) {
+        return ok(Node.ref(to_pos(t)));
+    }
+    if t == "SUM" or t == "MIN" or t == "MAX" {
+        let _ = try take(p, "(");
+        let items = [try parse_arg(p)];
+        while peek(p, 0) == "," {
+            let _ = try take(p, ",");
+            push(items, try parse_arg(p));
+        }
+        let _ = try take(p, ")");
+        return ok(Node.call { name: t, items: items });
+    }
+    return err("unexpected");
+}
+
+fn parse_arg(p: Parser) -> result[Node] {
+    if is_ref(peek(p, 0)) and peek(p, 1) == ":" {
+        let a = to_pos(try take(p, ""));
+        let _ = try take(p, ":");
+        let c = try take(p, "");
+        if not is_ref(c) {
+            return err("bad range");
+        }
+        let b = to_pos(c);
+        let cells = new list[Pos];
+        for r in min(a.row, b.row)..max(a.row, b.row) + 1 {
+            for k in min(a.col, b.col)..max(a.col, b.col) + 1 {
+                push(cells, new Pos { row: r, col: k });
+            }
+        }
+        return ok(Node.rng(cells));
+    }
+    return parse_expr(p);
+}
+
+fn parse_formula(s: str) -> result[Node] {
+    let p = new Parser { toks: try tokenize(s), i: 0 };
+    let node = try parse_expr(p);
+    if p.i != len(p.toks) {
+        return err("trailing");
+    }
+    return ok(node);
+}
+
+fn parse_content(s: str) -> Content {
+    if slice(s, 0, 1) == "=" {
+        match parse_formula(slice(s, 1, len(s))) {
+            case ok(n) {
+                return Content.formula(n);
+            }
+            case err(_) {
+                return Content.bad;
+            }
+        }
+    }
+    var digits = s;
+    var sign = 1;
+    if slice(s, 0, 1) == "-" {
+        set digits = slice(s, 1, len(s));
+        set sign = -1;
+    }
+    if all_digits(digits) and len(digits) <= 18 {
+        return Content.number(sign * to_int(digits));
+    }
+    return Content.text(s);
+}
+
+fn refs(n: Node, out: list[Pos]) {
+    match n {
+        case num(_) {
+        }
+        case ref(p) {
+            push(out, p);
+        }
+        case neg(x) {
+            refs(x, out);
+        }
+        case rng(cells) {
+            for c in cells {
+                push(out, c);
+            }
+        }
+        case bin(b) {
+            refs(b.left, out);
+            refs(b.right, out);
+        }
+        case call(c) {
+            for a in c.items {
+                refs(a, out);
+            }
+        }
+    }
+}
+
+# Tarjan's strongly connected components; a path visits at most 60 cells.
+fn visit(g: Graph, v: Pos) {
+    set g.index[v] = len(g.index);
+    set g.low[v] = g.index[v];
+    push(g.stack, v);
+    set g.on[v] = true;
+    for w in get_or(g.deps, v, new list[Pos]) {
+        if not has(g.index, w) {
+            visit(g, w);
+            set g.low[v] = min(g.low[v], g.low[w]);
+        } else if has(g.on, w) {
+            set g.low[v] = min(g.low[v], g.index[w]);
+        }
+    }
+    if g.low[v] == g.index[v] {
+        let comp = new list[Pos];
+        var more = true;
+        while more {
+            match pop(g.stack) {
+                case ok(w) {
+                    remove(g.on, w);
+                    push(comp, w);
+                    set more = w != v;
+                }
+                case err(_) {
+                    set more = false;
+                }
+            }
+        }
+        if len(comp) > 1 or lists.has_item(get_or(g.deps, v, new list[Pos]), v) {
+            for w in comp {
+                set g.cyclic[w] = true;
+            }
+        }
+    }
+}
+
+fn value(sh: Sheet, p: Pos) -> Val {
+    if has(sh.memo, p) {
+        return sh.memo[p];
+    }
+    var v = Val.empty;
+    if has(sh.content, p) {
+        if has(sh.cyclic, p) {
+            set v = Val.error("#CYCLE");
+        } else {
+            match sh.content[p] {
+                case formula(n) {
+                    match eval(sh, n) {
+                        case ok(x) {
+                            set v = Val.number(x);
+                        }
+                        case err(e) {
+                            set v = Val.error(e);
+                        }
+                    }
+                }
+                case number(x) {
+                    set v = Val.number(x);
+                }
+                case text(t) {
+                    set v = Val.text(t);
+                }
+                case bad {
+                    set v = Val.error("#PARSE");
+                }
+            }
+        }
+    }
+    set sh.memo[p] = v;
+    return v;
+}
+
+fn as_int(sh: Sheet, p: Pos) -> result[int] {
+    match value(sh, p) {
+        case empty {
+            return ok(0);
+        }
+        case number(x) {
+            return ok(x);
+        }
+        case text(_) {
+            return err("#VALUE");
+        }
+        case error(e) {
+            return err(e);
+        }
+    }
+}
+
+fn eval(sh: Sheet, n: Node) -> result[int] {
+    match n {
+        case num(x) {
+            return ok(x);
+        }
+        case ref(p) {
+            return as_int(sh, p);
+        }
+        case neg(x) {
+            return ok(-(try eval(sh, x)));
+        }
+        case rng(_) {
+            return err("#PARSE");
+        }
+        case bin(b) {
+            let x = try eval(sh, b.left);
+            let y = try eval(sh, b.right);
+            if b.op == "+" {
+                return ok(x + y);
+            }
+            if b.op == "-" {
+                return ok(x - y);
+            }
+            return ok(x * y);
+        }
+        case call(c) {
+            let vals = new list[int];
+            for a in c.items {
+                if is_range(a) {
+                    for p in range_cells(a) {
+                        match value(sh, p) {
+                            case number(x) {
+                                push(vals, x);
+                            }
+                            case error(e) {
+                                return err(e);
+                            }
+                            case empty {
+                            }
+                            case text(_) {
+                            }
+                        }
+                    }
+                } else {
+                    push(vals, try eval(sh, a));
+                }
+            }
+            if c.name == "SUM" {
+                return ok(fold(vals, 0, fn(acc, x) => acc + x));
+            }
+            if len(vals) == 0 {
+                return err("#VALUE");
+            }
+            var best = vals[0];
+            for x in vals {
+                if c.name == "MIN" {
+                    set best = min(best, x);
+                } else {
+                    set best = max(best, x);
+                }
+            }
+            return ok(best);
+        }
+    }
+}
+
+fn range_cells(n: Node) -> list[Pos] {
+    let out = new list[Pos];
+    if is_range(n) {
+        refs(n, out);
+    }
+    return out;
+}
+
+fn is_range(n: Node) -> bool {
+    match n {
+        case rng(_) {
+            return true;
+        }
+        case num(_) {
+            return false;
+        }
+        case ref(_) {
+            return false;
+        }
+        case neg(_) {
+            return false;
+        }
+        case bin(_) {
+            return false;
+        }
+        case call(_) {
+            return false;
+        }
+    }
+}
+
+fn show(v: Val) -> str {
+    match v {
+        case empty {
+            return "";
+        }
+        case number(x) {
+            return str(x);
+        }
+        case text(t) {
+            return t;
+        }
+        case error(e) {
+            return e;
+        }
+    }
+}
+
+fn main() uses console, input {
+    let content = new ordered_map[Pos, Content];
+    for line in split(read_all(), "\n") {
+        if len(line) > 0 {
+            let sp = find(line, " ");
+            set content[to_pos(slice(line, 0, sp))] = parse_content(slice(line, sp + 1, len(line)));
+        }
+    }
+    let g = new Graph {
+        deps: new map[Pos, list[Pos]],
+        index: new map[Pos, int],
+        low: new map[Pos, int],
+        stack: new list[Pos],
+        on: new map[Pos, bool],
+        cyclic: new map[Pos, bool]
+    };
+    for p, c in content {
+        match c {
+            case formula(n) {
+                let out = new list[Pos];
+                refs(n, out);
+                set g.deps[p] = out;
+            }
+            case number(_) {
+            }
+            case text(_) {
+            }
+            case bad {
+            }
+        }
+    }
+    for p in keys(g.deps) {
+        if not has(g.index, p) {
+            visit(g, p);
+        }
+    }
+    let plain = new map[Pos, Content];
+    for p, c in content {
+        set plain[p] = c;
+    }
+    let sh = new Sheet { content: plain, cyclic: g.cyclic, memo: new map[Pos, Val] };
+    let out = new list[str];
+    for p, _ in content {
+        push(out, chr(65 + p.col) + str(p.row) + " " + show(value(sh, p)) + "\n");
+    }
+    write(join(out, ""));
+}

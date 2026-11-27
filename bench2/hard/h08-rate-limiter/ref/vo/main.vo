@@ -1,0 +1,89 @@
+import std.collections;
+import std.option;
+
+record Limits {
+    k: int;
+    w: int;
+    g: int;
+    h: int;
+    r: int;
+    b: int;
+}
+
+record User {
+    times: deque[int];
+    streak: int;
+    banned_until: int;
+}
+
+fn expire(d: deque[int], limit: int) {
+    while option.or_else(collections.front(d), limit + 1) <= limit {
+        match collections.pop_front(d) {
+            case ok(_) {
+            }
+            case err(_) {
+                return;
+            }
+        }
+    }
+}
+
+fn decide(lim: Limits, everyone: deque[int], u: User, t: int) -> str {
+    expire(u.times, t - lim.w);
+    expire(everyone, t - lim.h);
+    var ans = "ok";
+    if t < u.banned_until {
+        return "banned";
+    }
+    if len(u.times) >= lim.k {
+        set ans = "user-limit";
+    } else if len(everyone) >= lim.g {
+        set ans = "global-limit";
+    } else {
+        push(u.times, t);
+        push(everyone, t);
+        set u.streak = 0;
+        return ans;
+    }
+    set u.streak = u.streak + 1;
+    if u.streak == lim.r {
+        set u.banned_until = t + lim.b;
+        set u.streak = 0;
+    }
+    return ans;
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = split(read_all(), "\n");
+    let head = new list[int];
+    for x in split(lines[0], " ") {
+        push(head, try parse_int(x));
+    }
+    let lim = new Limits { k: head[0], w: head[1], g: head[2], h: head[3], r: head[4], b: head[5] };
+    let users = new map[str, User];
+    let everyone = new deque[int];
+    let counts = new map[str, int];
+    for a in ["ok", "user-limit", "global-limit", "banned"] {
+        set counts[a] = 0;
+    }
+    let out = new list[str];
+    for line in slice(lines, 1, len(lines)) {
+        if len(line) > 0 {
+            let parts = split(line, " ");
+            let t = try parse_int(parts[0]);
+            if not has(users, parts[1]) {
+                set users[parts[1]] = new User { times: new deque[int], streak: 0, banned_until: -1 };
+            }
+            let ans = decide(lim, everyone, users[parts[1]], t);
+            set counts[ans] = counts[ans] + 1;
+            push(out, ans + "\n");
+        }
+    }
+    let summary = new list[str];
+    for a, n in counts {
+        push(summary, a + " " + str(n));
+    }
+    push(out, join(summary, " ") + "\n");
+    write(join(out, ""));
+    return ok();
+}

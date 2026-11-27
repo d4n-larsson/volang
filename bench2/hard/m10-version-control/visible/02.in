@@ -1,0 +1,19 @@
+write app.txt version one
+commit start
+branch feature
+checkout feature
+write app.txt version two
+write extra.txt more stuff
+commit feature work
+checkout main
+merge feature
+log
+write notes.txt main side
+commit main notes
+checkout feature
+write extra.txt even more
+commit feature again
+checkout main
+merge feature
+log
+show main

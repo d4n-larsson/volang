@@ -1,0 +1,32 @@
+warehouse k added
+warehouse l added
+item bolt added
+item nut added
+lot L1 k bolt 10
+lot L2 k nut 10
+backorder b1 4
+shipped b2 10 L2x10
+backorder b2 5
+backorder b3 2
+backorder b4 1
+reserved r1 8 L1x8
+error: only 2 available
+transfer T1 2 arrives 1 L1x2
+released r1 8
+error: only 0 available
+transfer T2 3 arrives 1 L1x3
+arrived T1 l bolt 2
+arrived T2 l bolt 3
+filled b1 4 L1x4
+filled b4 1 L1x1
+backorders 2
+b2 k nut 5
+b3 l nut 2
+stock day 2
+k bolt L1 on hand 5 reserved 0 expires 30
+stock day 2
+k bolt L1 on hand 5 reserved 0 expires 30
+value on hand 0.50 in transit 0.00 quarantine 0.00 shipped 2.50 written off 0.00
+backorders 2
+b2 k nut 5
+b3 l nut 2

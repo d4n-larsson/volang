@@ -1,0 +1,106 @@
+import graph;
+import model;
+
+export fn unknown(tid: str) -> str {
+    return "error: unknown task " + tid;
+}
+
+export fn add_task(plan: model.Plan, tid: str, duration: int, name: str) -> str {
+    if has(plan.tasks, tid) {
+        return "error: task " + tid + " exists";
+    }
+    set plan.tasks[tid] = new model.Task { tid: tid, name: name, duration: duration, seq: plan.next_seq, preds: [], not_before: 0, done: 0 };
+    set plan.next_seq = plan.next_seq + 1;
+    if duration == 0 {
+        return "added milestone " + tid;
+    }
+    return "added task " + tid;
+}
+
+export fn rename(plan: model.Plan, tid: str, name: str) -> str {
+    if not has(plan.tasks, tid) {
+        return unknown(tid);
+    }
+    set plan.tasks[tid].name = name;
+    return "task " + tid + " renamed";
+}
+
+export fn add_dep(plan: model.Plan, tid: str, pred: str, lag: int) -> str {
+    if not has(plan.tasks, tid) {
+        return unknown(tid);
+    }
+    if not has(plan.tasks, pred) {
+        return unknown(pred);
+    }
+    if tid == pred {
+        return "error: task " + tid + " cannot depend on itself";
+    }
+    let t = plan.tasks[tid];
+    if graph.depends_on(t, pred) {
+        return "error: " + tid + " already depends on " + pred;
+    }
+    let cycle = graph.cycle_with(plan, tid, pred);
+    if len(cycle) > 0 {
+        return "error: cycle " + join(cycle, " -> ");
+    }
+    push(t.preds, new model.Dep { pred: pred, lag: lag });
+    if lag > 0 {
+        return tid + " after " + pred + "+" + str(lag);
+    }
+    return tid + " after " + pred;
+}
+
+export fn remove_dep(plan: model.Plan, tid: str, pred: str) -> str {
+    if not has(plan.tasks, tid) {
+        return unknown(tid);
+    }
+    if not has(plan.tasks, pred) {
+        return unknown(pred);
+    }
+    let t = plan.tasks[tid];
+    if not graph.depends_on(t, pred) {
+        return "error: " + tid + " does not depend on " + pred;
+    }
+    set t.preds = filter(t.preds, fn(d) => d.pred != pred);
+    return tid + " no longer after " + pred;
+}
+
+export fn remove_task(plan: model.Plan, tid: str) -> str {
+    if not has(plan.tasks, tid) {
+        return unknown(tid);
+    }
+    let needed = graph.successors(plan, tid);
+    if len(needed) > 0 {
+        return "error: " + tid + " is needed by " + join(needed, ", ");
+    }
+    remove(plan.tasks, tid);
+    return "removed " + tid;
+}
+
+export fn set_duration(plan: model.Plan, tid: str, duration: int) -> str {
+    if not has(plan.tasks, tid) {
+        return unknown(tid);
+    }
+    set plan.tasks[tid].duration = duration;
+    return "task " + tid + " duration " + str(duration);
+}
+
+export fn set_not_before(plan: model.Plan, tid: str, day: int) -> str {
+    if not has(plan.tasks, tid) {
+        return unknown(tid);
+    }
+    set plan.tasks[tid].not_before = day;
+    return "task " + tid + " starts no earlier than day " + str(day);
+}
+
+export fn set_progress(plan: model.Plan, tid: str, pct: int) -> str {
+    if not has(plan.tasks, tid) {
+        return unknown(tid);
+    }
+    let t = plan.tasks[tid];
+    if t.duration == 0 {
+        return "error: " + tid + " is a milestone";
+    }
+    set t.done = pct;
+    return "task " + tid + " " + str(pct) + "% done";
+}

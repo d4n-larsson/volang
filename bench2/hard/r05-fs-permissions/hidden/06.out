@@ -1,0 +1,19 @@
+error: permission denied: /a/f.txt
+error: permission denied: /a/root.txt
+ann file
+/c/target.txt: file, 9 bytes, 1 lines, owner ann, mode rw-r--
+error: cannot move a directory into itself: /b/dir
+error: permission denied: /a/dir
+drwxr-x ann 1 dir/
+-rw-r-- ann 9 target.txt
+error: permission denied: /c/dir
+error: permission denied: /c/target.txt
+error: permission denied: /c/dir/in.txt
+error: permission denied: /c
+error: no such file or directory: /b/nothing
+error: permission denied: /a/t.txt
+error: permission denied: /a/x/y
+error: permission denied: /a/new.txt
+error: permission denied: /c/dir
+-rw-r-- bob 9 renamed.txt
+/b/renamed.txt: file, 9 bytes, 1 lines, owner bob, mode rw-r--

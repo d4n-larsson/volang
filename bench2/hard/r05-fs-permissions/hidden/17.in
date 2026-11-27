@@ -1,0 +1,39 @@
+useradd ann
+useradd bob
+mkdir /t
+chmod rwxrwx /t
+su ann
+mkdir -p /t/top/B/inner
+mkdir -p /t/top/a/inner
+write /t/top/B/inner/x.txt x
+chmod r-x--- /t/top/B/inner
+chmod rwx--- /t/top/a
+chmod ------ /t/top
+su root
+ls -l /t/top
+cat /t/top/B/inner/x.txt
+write /t/top/B/inner/x.txt root edit
+tree /t
+du /t
+find /t inner
+su ann
+rm -r /t/top
+chmod rwx--- /t/top
+rm -r /t/top
+chmod rwx--- /t/top/B/inner
+su bob
+rm -r /t/top
+su ann
+rm -r /t/top/B
+ls /t/top
+chmod rwxrwx /t/top
+chmod ---rwx /t/top/a
+su bob
+rm -r /t/top/a
+ls /t/top
+rm -r /t/top
+su root
+mkdir /t/top/a
+chmod ------ /t/top/a
+rm -r /t
+tree /

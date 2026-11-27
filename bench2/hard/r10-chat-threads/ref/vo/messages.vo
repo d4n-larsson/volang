@@ -1,0 +1,85 @@
+# Posting, replying, editing and deleting messages.
+import channels;
+import model;
+import users;
+
+# The message at address CHANNEL/NUMBER; a deleted thread parent only with deleted_ok.
+export fn find_message(state: model.State, channel_name: str, number: int, deleted_ok: bool) -> result[model.Posted] {
+    let c = try channels.require_channel(state, channel_name);
+    if not has(c.messages, number) or (c.messages[number].deleted and not deleted_ok) {
+        return err("unknown message " + channel_name + "/" + str(number));
+    }
+    return ok(new model.Posted { channel: c, message: c.messages[number] });
+}
+
+fn add_message(state: model.State, c: model.Channel, user_name: str, text: str, parent: int) -> model.Message {
+    let m = new model.Message { msg_id: c.next_number, author: user_name, text: text, time: state.time, edited: false, parent: parent, deleted: false };
+    set c.next_number = c.next_number + 1;
+    set c.messages[m.msg_id] = m;
+    set c.markers[user_name] = state.time;
+    return m;
+}
+
+export fn post(state: model.State, user_name: str, channel_name: str, text: str) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let c = try channels.require_channel(state, channel_name);
+    try channels.require_member(c, user_name);
+    let m = add_message(state, c, user_name, text, 0);
+    return ok(["message " + str(m.msg_id) + " posted to #" + c.name]);
+}
+
+export fn reply(state: model.State, user_name: str, channel_name: str, number: int, text: str) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let found = try find_message(state, channel_name, number, false);
+    let c = found.channel;
+    try channels.require_member(c, user_name);
+    var root = found.message.parent;
+    if root == 0 {
+        set root = number;
+    }
+    let m = add_message(state, c, user_name, text, root);
+    return ok(["message " + str(m.msg_id) + " posted to #" + c.name + " in thread " + str(root)]);
+}
+
+export fn edit(state: model.State, user_name: str, channel_name: str, number: int, text: str) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let found = try find_message(state, channel_name, number, false);
+    let address = found.channel.name + "/" + str(number);
+    let m = found.message;
+    if m.author != user_name {
+        return err(user_name + " cannot edit message " + address);
+    }
+    set m.text = text;
+    set m.edited = true;
+    set state.edits = state.edits + 1;
+    return ok(["message " + address + " edited"]);
+}
+
+# The author may delete a message, and so may the creator of its channel.
+fn may_delete(c: model.Channel, user_name: str, m: model.Message) -> bool {
+    return m.author == user_name or c.creator == user_name;
+}
+
+export fn delete(state: model.State, user_name: str, channel_name: str, number: int) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let found = try find_message(state, channel_name, number, false);
+    let c = found.channel;
+    let m = found.message;
+    let address = c.name + "/" + str(number);
+    if not may_delete(c, user_name, m) {
+        return err(user_name + " cannot delete message " + address);
+    }
+    if m.parent > 0 {
+        remove(c.messages, number);
+        let parent = c.messages[m.parent];
+        if parent.deleted and len(model.replies(c, parent.msg_id)) == 0 {
+            remove(c.messages, parent.msg_id);
+        }
+    } else if len(model.replies(c, number)) > 0 {
+        set m.deleted = true;
+    } else {
+        remove(c.messages, number);
+    }
+    set state.deletes = state.deletes + 1;
+    return ok(["message " + address + " deleted"]);
+}

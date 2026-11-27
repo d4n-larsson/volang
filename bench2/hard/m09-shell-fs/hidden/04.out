@@ -1,0 +1,32 @@
+B/
+a/
+a.b/
+ab/
+d   0 B/
+d  13 a/
+d   0 a.b/
+d 101 ab/
+-  2 Alpha
+-  0 mid
+- 11 zeta
+a/:
+Alpha
+mid
+zeta
+ab:
+big
+a.b:
+ls: missing: no such file or directory
+a/zeta
+- 11 a/zeta
+- 11 ./a//zeta
+ls: -r: no such file or directory
+a:
+Alpha
+mid
+zeta
+ls: -l: no such file or directory
+d   0 B/
+d  13 a/
+d   0 a.b/
+d 101 ab/

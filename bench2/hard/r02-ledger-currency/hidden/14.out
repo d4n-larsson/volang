@@ -1,0 +1,48 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened expense:trip (expense, EUR)
+opened expense:trip:food (expense)
+rate EUR from day 1: 1.0850
+posted r1: 3 postings, total 32.20
+posted r2: 2 postings, total 9.11
+renamed expense:trip to expense:travel
+error: unknown account expense:nope
+error: bad account name assets:Eur
+error: account assets:bank exists
+renamed assets:eur to assets:euro
+r1 day 1 dinner
+  expense:travel 20.00 EUR (21.70 USD)
+  expense:trip:food 10.50
+  assets:bank -32.20
+r2 day 2 taxi
+  expense:travel 8.40 EUR (9.11 USD)
+  assets:euro -8.40 EUR (-9.11 USD)
+statement expense:travel (expense, EUR)
+     1 r1            20.00      20.00  dinner
+     2 r2             8.40      28.40  taxi
+  closing balance 28.40 EUR (book 30.81 USD)
+balance expense: 41.31
+  EUR 28.40
+balance expense:trip: 10.50
+assets -41.31
+  bank -32.20
+  euro -9.11
+expense 41.31
+  travel 30.81
+  trip 10.50
+    food 10.50
+assets:bank asset -32.20
+assets:euro asset -8.40 EUR
+expense:travel expense 28.40 EUR
+expense:trip:food expense 10.50
+locked through 1
+error: books locked through 1
+error: books locked through 1
+voided r1 on day 2
+error: already locked through 1
+locked through 2
+posted r4: 2 postings, total 1.09
+1 r1 dinner 32.20 (void)
+2 r2 taxi 9.11
+2 rev-r1 void:dinner 32.20
+3 r4 again 1.09

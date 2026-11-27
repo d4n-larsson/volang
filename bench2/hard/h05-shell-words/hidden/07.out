@@ -1,0 +1,8 @@
+1 [a b]
+1 ['x']
+1 [\]
+1 [$HOME]
+1 [#x]
+1 [ ]
+error at column 4: dangling backslash
+1 [é]

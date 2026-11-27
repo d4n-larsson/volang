@@ -1,0 +1,10 @@
+let g = "global"
+func show()
+    print "show sees", g
+    print "and", local
+end
+if true
+    let local = "block"
+    print "block has", local
+    show()
+end

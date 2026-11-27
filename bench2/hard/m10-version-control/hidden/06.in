@@ -1,0 +1,18 @@
+write f base
+commit base
+branch other
+merge other
+merge 1
+write f changed
+merge other
+commit main changes
+checkout other
+merge main
+log
+status
+show other
+merge main
+merge 1
+checkout main
+merge other
+merge 2

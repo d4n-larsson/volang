@@ -1,0 +1,2 @@
+pick abcdefghijklmnopqrstuvwxyz0123 1.0.0
+error: bad package name abcdefghijklmnopqrstuvwxyz01234 (required by root)

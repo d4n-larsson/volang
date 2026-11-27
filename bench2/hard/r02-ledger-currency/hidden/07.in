@@ -1,0 +1,16 @@
+open assets:bank asset
+open assets:eur asset EUR
+open assets:empty asset GBP
+open income:fees income
+rate EUR 1 1.2345
+post s1 5 later assets:eur=10.10 assets:bank=
+post s2 2 earlier assets:eur=-2.22 assets:bank=
+post s3 5 same assets:eur=3.3 income:fees=
+post s4 2 also assets:eur=-1 assets:bank=
+statement assets:eur
+statement assets:empty
+statement assets:bank
+statement income:fees
+statement assets
+void s1 7
+statement assets:eur

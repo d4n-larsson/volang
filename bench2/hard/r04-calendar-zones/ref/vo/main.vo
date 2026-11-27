@@ -1,0 +1,15 @@
+import commands;
+import model;
+
+fn main() uses console, input {
+    let cal = model.new_calendar();
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w) => w != "");
+        if len(words) == 0 {
+            continue;
+        }
+        for out in commands.run(cal, words) {
+            print(out);
+        }
+    }
+}

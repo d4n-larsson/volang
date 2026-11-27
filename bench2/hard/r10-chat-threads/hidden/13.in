@@ -1,0 +1,20 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+post ann general a
+read dee general
+read zed general
+read ann nope
+read ann
+read ann general x
+read Ann general
+read cy general
+unread cy
+post bob general b
+unread cy
+read cy general
+unread cy

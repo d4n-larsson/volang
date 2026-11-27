@@ -1,0 +1,19 @@
+write a.txt hello
+commit first
+branch x
+checkout x
+delete a.txt
+commit remove a
+checkout main
+write a.txt hello again
+commit edit a
+merge x
+checkout x
+merge main
+write a.txt resolved
+commit resolve
+checkout main
+merge x
+show main
+merge x~1
+merge x~2

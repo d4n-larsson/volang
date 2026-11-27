@@ -1,0 +1,19 @@
+warehouse east
+item pen Pen 199
+item ink Ink 75
+receive east pen 4 150
+receive east ink 10
+receive east pen 6 180
+receive east pen 5
+order o1 east
+line o1 pen 3
+line o1 ink 2
+line o1 pen 4
+line o1 pen 2
+fulfil o1
+lots east pen
+lots east ink
+history pen
+history ink
+orders
+report

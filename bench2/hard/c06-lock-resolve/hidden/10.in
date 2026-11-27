@@ -1,0 +1,4 @@
+lock ghost
+json ~1.9.0
+ghost-dep *
+log *

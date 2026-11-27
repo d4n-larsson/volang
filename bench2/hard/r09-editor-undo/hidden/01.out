@@ -1,0 +1,14 @@
+1 substitution
+0 substitutions
+removed 0 lines
+1  a
+2  B
+3  C
+error: only 6 steps to undo
+undone 3 steps
+1  b
+2  a
+3  c
+undone 1 step
+redone 4 steps
+error: nothing to redo

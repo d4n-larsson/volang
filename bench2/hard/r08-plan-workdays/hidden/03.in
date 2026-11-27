@@ -1,0 +1,13 @@
+task a 3
+task b 2
+task c 1
+notbefore a 5
+holiday 7
+notbefore b 7
+notbefore c 13
+dep c a
+show a
+show b
+show c
+schedule
+gantt 0 15

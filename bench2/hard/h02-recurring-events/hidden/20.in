@@ -1,0 +1,51 @@
+1998-01-01 2003-12-31
+event e22-x every 3 days from 1999-10-21
+event e12-z every 4 years on 06-15 from 2003-07-23 until 2004-04-05 count 1
+except e18-z 2000-06-10
+except e15-y 1998-03-12
+except e3-x 2000-04-22
+except e1-y 2001-06-08
+except e12-z 2001-08-08
+event e15-y every 3 weeks on thu,mon from 2002-08-27
+event e11-z every 1 months on day -2 from 2001-04-25
+except e18-z 2002-11-09
+event e10-y every 3 months on day 15 from 2003-01-22 count 11
+except e5-z 2003-09-16
+event e16-x every 2 months on 3rd thu from 2002-07-26
+except e1-y 2002-03-29
+except e15-y 1999-03-04
+event e20-x every 2 weeks on fri,tue,wed from 1998-10-13
+except e9-z 2001-05-05
+event e6-x every 1 years on 02-29 from 2001-07-28
+except e21-y 2002-10-13
+except e4-y 2000-05-18
+event e13-x every 2 years on 01-01 from 2002-12-16
+event e2-z every 2 months on last sun from 1996-12-05 until 1998-01-27
+except e2-z 1998-11-10
+except e9-z 2003-08-27
+event e19-y every 2 months on day 29 from 1997-01-25 until 2004-01-28 count 19
+event e0-x every 3 days from 2003-04-16 until 2003-12-02
+event e9-z every 1 months on last sun from 1997-04-17
+except e20-x 1998-05-06
+event e1-y every 7 days from 1999-04-05 until 2003-12-11
+except e7-y 2003-11-16
+event e3-x every 30 days from 1997-02-26
+except e18-z 2000-03-06
+except e1-y 2001-05-08
+except e21-y 2002-05-17
+except e23-x 1999-10-11
+event e18-z every 2 weeks on sun from 2003-06-17 until 2003-07-23 count 2
+event e23-x every 1 months on 2nd mon from 2003-09-12 count 11
+event e17-z every 6 months on day -2 from 2003-10-10 until 2003-12-07
+event e5-z every 1 months on day 29 from 1999-07-09
+except e6-x 2001-11-22
+event e14-z every 2 months on last fri from 2000-11-13
+except e13-x 2000-10-30
+except e4-y 1998-02-04
+event e4-y every 4 months on 1st fri from 1999-05-03 until 2001-10-15
+event e24-y every 4 months on 2nd sat from 2002-08-01
+except e17-z 1998-06-05
+except e18-z 2003-03-03
+event e7-y every 3 months on day -29 from 1998-04-06
+event e21-y every 3 days from 1998-03-09
+event e8-x every 3 months on day -30 from 2000-04-22

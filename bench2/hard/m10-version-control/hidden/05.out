@@ -1,0 +1,38 @@
+[main 1] one (1 added, 0 modified, 0 deleted)
+[main 2] two (0 added, 1 modified, 0 deleted)
+[main 3] three (0 added, 1 modified, 0 deleted)
+1 one
+3 three
+2 two
+1 one
+3 three
+2 two
+1 one
+error: unknown revision 0
+error: unknown revision 4
+error: unknown revision main~
+error: unknown revision main~x
+error: unknown revision main~-1
+error: unknown revision main~3
+error: unknown revision ~1
+commit 1
+parents none
+message one
+f "a"
+M f
+error: unknown revision main~5
+error: unknown revision main~5
+no differences
+[main 4] four (2 added, 0 modified, 0 deleted)
+commit 4
+parents 3
+message four
+e ""
+f "c"
+q ""quoted" text"
+commit 4
+parents 3
+message four
+e ""
+f "c"
+q ""quoted" text"

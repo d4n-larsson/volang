@@ -1,0 +1,16 @@
+== evil
+file readme.txt 9
+skip ../../evil.txt: outside
+skip /tmp/evil.txt: outside
+skip ../basic/readme.txt: outside
+skip a/../../escape.txt: outside
+skip ../../etc: outside
+skip shell: link
+skip docs/link: link
+file c.txt 5
+file x 0
+warning: END says 7, found 10
+= c.txt 5 297840105
+= readme.txt 9 143511813
+= x 0 7
+total 3 files, 0 dirs, 14 bytes

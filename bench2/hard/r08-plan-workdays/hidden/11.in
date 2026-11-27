@@ -1,0 +1,14 @@
+task a 5
+task b 3
+task gate 2
+dep gate a
+dep b gate
+schedule
+duration gate 0
+progress gate 50
+show gate
+schedule
+end
+progress a 101
+progress a 40
+status 3

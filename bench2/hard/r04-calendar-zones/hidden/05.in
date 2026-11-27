@@ -1,0 +1,21 @@
+user nia +05:30
+user oz
+user pat
+room r 2
+room s 3
+hours nia 09:00 23:59
+book late r nia 7 23:30 60
+book late r nia 7 22:59 60
+book late2 r nia 7 23:59 1
+book late2 r nia 7 08:59 1
+book late2 r nia 7 09:00 1
+hours nia 00:00 23:59
+book early s oz 7 19:00 30 nia
+book early2 r pat 7 18:29 30 nia
+hours nia none
+book early2 r pat 7 18:29 30 nia
+agenda nia 7
+agenda nia 8
+busy nia 7
+busy nia 8
+busy nia

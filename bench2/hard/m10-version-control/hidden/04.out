@@ -1,0 +1,25 @@
+[main 1] c1 (1 added, 0 modified, 0 deleted)
+[main 2] c2 (0 added, 1 modified, 0 deleted)
+switched to t
+[t 3] c3 (1 added, 0 modified, 0 deleted)
+switched to main
+[main 4] merge t into main (1 added, 0 modified, 0 deleted)
+switched to t
+[t 5] c5 (0 added, 1 modified, 0 deleted)
+switched to main
+[main 6] merge t into main (0 added, 1 modified, 0 deleted)
+6 merge t into main (merge of 5)
+4 merge t into main (merge of 3)
+2 c2
+1 c1
+5 c5
+3 c3
+1 c1
+4 merge t into main (merge of 3)
+2 c2
+1 c1
+4 merge t into main (merge of 3)
+2 c2
+1 c1
+2 c2
+1 c1

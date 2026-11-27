@@ -1,0 +1,19 @@
+func classify(n)
+    if n % 3 == 0
+        return "three"
+    elif n % 5 == 0
+        return "five"
+    elif n % 7 == 0
+        return "seven"
+    end
+    return "other"
+end
+let counts = 0
+let n = 1
+while true
+    let c = classify(n)
+    if c == "other"
+        set counts = counts + 1
+    end
+    set n = n + 1
+end

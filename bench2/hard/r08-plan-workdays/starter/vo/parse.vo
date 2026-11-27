@@ -1,0 +1,56 @@
+import model;
+
+export fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+# Only called on strings that passed is_number.
+export fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn id_char(c: str) -> bool {
+    return (c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "-";
+}
+
+export fn valid_id(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    let first = slice(s, 0, 1);
+    if not (first >= "a" and first <= "z") {
+        return false;
+    }
+    return all(chars(s), id_char);
+}
+
+# The dependency from `PRED` or `PRED+LAG`, or an error when the text is malformed.
+export fn parse_dep(spec: str) -> result[model.Dep] {
+    let i = find(spec, "+");
+    if i < 0 {
+        if spec == "" {
+            return err("malformed");
+        }
+        return ok(new model.Dep { pred: spec, lag: 0 });
+    }
+    let pred = slice(spec, 0, i);
+    let lag = slice(spec, i + 1, len(spec));
+    if pred == "" or not is_number(lag) {
+        return err("malformed");
+    }
+    return ok(new model.Dep { pred: pred, lag: num(lag) });
+}
+
+export fn is_percent(s: str) -> bool {
+    return is_number(s) and num(s) <= 100;
+}

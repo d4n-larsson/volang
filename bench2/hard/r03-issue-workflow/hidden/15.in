@@ -1,0 +1,19 @@
+user ann
+user bob
+new p1 Alpha
+new p2 Beta
+new p3 Gamma
+assign 1 ann
+move 1 triaged
+move 9 triaged
+move 1 in_progress
+move 1 done
+move 1 review
+close 2
+reopen 2
+dup 3 2
+unassign 1
+move 2 wontfix gone
+log
+log 3
+log 20

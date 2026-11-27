@@ -1,0 +1,6 @@
+create table t (a int, b text)
+insert into t values (1, 'x'), (2)
+insert into t values (1, 2)
+select c from t
+select a from t where b = 1
+create table t (z int)

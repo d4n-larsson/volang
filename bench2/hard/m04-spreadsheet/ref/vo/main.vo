@@ -1,0 +1,112 @@
+import formula;
+import render;
+import sheet;
+
+fn cell_name(s: str) -> result[sheet.Cell] {
+    let r = try formula.parse_ref(s);
+    if r.cf or r.rf {
+        return err("fixed parts in a cell name");
+    }
+    return ok(new sheet.Cell { col: r.col, row: r.row });
+}
+
+# The text after the first `n` fields of a line, without surrounding spaces.
+fn rest_after(line: str, n: int) -> str {
+    var i = 0;
+    for _ in 0..n {
+        while i < len(line) and byte_at(line, i) == 32 {
+            set i = i + 1;
+        }
+        while i < len(line) and byte_at(line, i) != 32 {
+            set i = i + 1;
+        }
+    }
+    return trim(slice(line, i, len(line)));
+}
+
+fn copy_cell(sh: sheet.Sheet, a: sheet.Cell, b: sheet.Cell) {
+    if not has(sh.cells, a) {
+        sheet.clear_cell(sh, b);
+        return;
+    }
+    var c = sh.cells[a];
+    match c {
+        case formula(f) {
+            if f.valid {
+                let moved = "=" + formula.shift(slice(f.text, 1, len(f.text)), b.col - a.col, b.row - a.row);
+                set c = sheet.content_of(moved);
+            }
+        }
+        case number(_) {
+        }
+        case text(_) {
+        }
+    }
+    sheet.put(sh, b, c);
+}
+
+fn show(sh: sheet.Sheet, spec: str, out: list[str]) -> result[void] {
+    let ends = split(spec, ":");
+    if len(ends) > 2 {
+        return err("bad range");
+    }
+    let a = try cell_name(ends[0]);
+    let b = try cell_name(ends[len(ends) - 1]);
+    for line in render.grid(sh, min(a.col, b.col), min(a.row, b.row), max(a.col, b.col), max(a.row, b.row)) {
+        push(out, line);
+    }
+    return ok();
+}
+
+fn run(line: str, sh: sheet.Sheet, out: list[str]) -> result[void] {
+    let fields = filter(split(line, " "), fn(f) => f != "");
+    let cmd = fields[0];
+    let n = len(fields);
+    if cmd == "set" and n >= 3 {
+        sheet.put(sh, try cell_name(fields[1]), sheet.content_of(rest_after(line, 2)));
+        return ok();
+    }
+    if cmd == "copy" and n == 3 {
+        copy_cell(sh, try cell_name(fields[1]), try cell_name(fields[2]));
+        return ok();
+    }
+    if n != 2 {
+        return err("wrong field count");
+    }
+    if cmd == "show" {
+        return show(sh, fields[1], out);
+    }
+    let c = try cell_name(fields[1]);
+    if cmd == "clear" {
+        sheet.clear_cell(sh, c);
+    } else if cmd == "print" {
+        push(out, render.print_line(c, sheet.value(sh, c)));
+    } else if cmd == "formula" {
+        push(out, render.formula_line(sh, c));
+    } else if cmd == "deps" {
+        push(out, render.deps_line(c, sheet.dependents(sh, c)));
+    } else {
+        return err("unknown command");
+    }
+    return ok();
+}
+
+fn main() uses console, input {
+    let sh = sheet.new_sheet();
+    let out = new list[str];
+    for i, raw in split(read_all(), "\n") {
+        let line = trim(raw);
+        if line != "" {
+            match run(line, sh, out) {
+                case ok() {
+                }
+                case err(_) {
+                    push(out, "line " + str(i + 1) + ": invalid command");
+                }
+            }
+        }
+    }
+    for s in out {
+        print(s);
+    }
+}

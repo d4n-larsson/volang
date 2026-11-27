@@ -1,0 +1,75 @@
+# The league table: one row per active team, sorted and ranked.
+import model;
+import results;
+import teams;
+
+record SortKey {
+    neg_points: int;
+    neg_gd: int;
+    neg_gf: int;
+    name: str;
+}
+
+export fn tally(row: model.Row, m: model.Match) {
+    set row.played = row.played + 1;
+    set row.gf = row.gf + results.goals_for(m, row.name);
+    set row.ga = row.ga + results.goals_against(m, row.name);
+    let o = results.outcome(m, row.name);
+    if o == "W" {
+        set row.won = row.won + 1;
+    } else if o == "D" {
+        set row.drawn = row.drawn + 1;
+    } else {
+        set row.lost = row.lost + 1;
+    }
+}
+
+# Unsorted rows for the teams `names`, counting the matches among `matches` they played in.
+export fn build_rows(names: list[str], matches: list[model.Match]) -> list[model.Row] {
+    let rows = new list[model.Row];
+    for name in names {
+        let row = new model.Row { name: name, played: 0, won: 0, drawn: 0, lost: 0, gf: 0, ga: 0, rank: 0 };
+        for m in matches {
+            if results.involves(m, name) {
+                tally(row, m);
+            }
+        }
+        push(rows, row);
+    }
+    return rows;
+}
+
+fn sort_key(row: model.Row) -> SortKey {
+    return new SortKey { neg_points: -model.points(row), neg_gd: -model.gd(row), neg_gf: -row.gf, name: row.name };
+}
+
+# Rows that share a position: equal on everything but the name.
+fn same_place(a: model.Row, b: model.Row) -> bool {
+    return model.points(a) == model.points(b) and model.gd(a) == model.gd(b) and a.gf == b.gf;
+}
+
+export fn rank_rows(rows: list[model.Row]) -> list[model.Row] {
+    sort_by(rows, sort_key);
+    for i, r in rows {
+        if i > 0 and same_place(rows[i - 1], r) {
+            set r.rank = rows[i - 1].rank;
+        } else {
+            set r.rank = i + 1;
+        }
+    }
+    return rows;
+}
+
+export fn standings(league: model.League) -> list[model.Row] {
+    return rank_rows(build_rows(teams.active_names(league), results.active_matches(league)));
+}
+
+# The position of the team's row, or -1.
+export fn find_row(rows: list[model.Row], name: str) -> int {
+    for i, r in rows {
+        if r.name == name {
+            return i;
+        }
+    }
+    return -1;
+}

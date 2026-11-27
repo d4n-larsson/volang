@@ -1,0 +1,8 @@
+say 1
+say 3
+bcd false -5x 7
+123456789012345678 0 42 0 true
+say 10
+say 20
+30
+error at line 11: unknown function nosuch

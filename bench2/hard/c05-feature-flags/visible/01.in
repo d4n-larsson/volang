@@ -1,0 +1,5 @@
+profile base
+user u1 country=SE plan=pro app=2.3
+user u2 beta=yes plan=free app=1.9
+user u3
+user u4 country=FI plan=free app=3.1.4

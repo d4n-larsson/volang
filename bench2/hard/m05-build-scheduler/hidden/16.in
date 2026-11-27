@@ -1,0 +1,14 @@
+use gen tools
+workers 2
+retries 1
+backoff 4
+target gen 3
+target big 9 gen
+target small 2
+target extra 3
+target unused 1
+fail gen 1
+fail unused 1
+goal big
+goal small extra big
+pool tools 1

@@ -1,0 +1,16 @@
+   # a comment line
+let iffy = 007   # leading zeros
+let end_x = 999999999999999999
+let _ = "a # not a comment"
+print iffy,end_x,_    # no spaces needed after commas
+print iffy<=7,iffy>=8,iffy!=7,iffy==7,(iffy+1)*2-3%2
+print "", "two  spaces", "MiXeD Case!"
+
+let s = ""
+let n = 0
+while n<5
+set s = s + str(n)
+set n = n+1
+end
+print s, len(s), -(-n), - - n, -n*-1
+print not true, not not true, not 1 == 2, not 1 < 2 and true

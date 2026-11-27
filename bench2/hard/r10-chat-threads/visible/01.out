@@ -1,0 +1,27 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+message 1 posted to #general
+message 2 posted to #general
+channel #dev created by bob
+message 1 posted to #dev
+message 3 posted to #general in thread 1
+message 4 posted to #general in thread 2
+message 5 posted to #general in thread 2
+#general: 2 messages
+[1] t=8 ann: welcome everyone (1 reply)
+[2] t=9 bob: hi @ann (2 replies)
+thread #general/1: 1 reply
+[1] t=8 ann: welcome everyone
+  [3] t=12 cy: thanks @ann!
+thread #general/2: 2 replies
+[2] t=9 bob: hi @ann
+  [4] t=13 ann: hello @bob
+  [5] t=14 bob: more in the thread
+#dev: 1 message
+[1] t=11 bob: build is green
+bob: member of #dev, #general; 3 messages

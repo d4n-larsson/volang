@@ -1,0 +1,9 @@
+workers 4
+target a 3
+target b 3
+target c 3
+target d 3 a b
+target e 3 b c
+target f 3 d e
+fail b 1
+target g 2

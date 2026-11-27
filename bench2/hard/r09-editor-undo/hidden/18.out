@@ -1,0 +1,21 @@
+group started
+grouped 2 changes
+1  c
+2  b
+3  a
+undone 1 step
+redone 1 step
+undone 1 step
+1  c
+2  b
+3  a
+group started
+grouped 2 changes
+* main 3 lines, modified
+undone 1 step
+1  c
+2  b
+3  a
+saved main, 3 lines
+redone 1 step
+* main 3 lines, modified

@@ -1,0 +1,25 @@
+user o1 added
+user o2 added
+user o3 added
+room big added, capacity 9
+room small added, capacity 9
+hours o2 08:00-12:00
+hours o3 12:00-20:00
+error: o2 works 08:00-12:00
+booked m1 in big: 5 11:00-12:00 (3 people)
+booked m2 in small: 5 13:00-13:30 (1 person)
+moved m1: 5 11:30-12:30
+error: o2 works 08:00-12:00
+moved m1: 5 13:30-14:30
+error: o2 works 08:00-12:00
+moved m2: 5 19:30-20:00
+error: o3 works 12:00-20:00
+error: unknown meeting m9
+error: o2 works 08:00-12:00
+error: o2 busy: m1 5 10:30-11:30
+booked m3 in small: 5 08:00-09:00 (2 people)
+m1: big 5 11:30-12:30 UTC+00:00, organizer o1, attendees o2, o3
+m3: small 5 09:00-10:00 UTC+00:00, organizer o2, attendees o1
+m3 5 09:00-10:00 small o2 +1
+m1 5 11:30-12:30 big o1 +2
+m2 5 13:30-14:00 small o3 +0

@@ -1,0 +1,34 @@
+useradd ann
+useradd bob
+mkdir /proj
+write /proj/plan.txt draft
+su ann
+chown ann /proj
+chown ann /proj/missing
+chown nobody /proj
+su root
+chown nobody /proj
+chown nobody /proj/missing
+chown ann /proj
+chown ann /proj/plan.txt
+chown bob /
+su ann
+chmod rwx--- /proj
+write /proj/plan.txt final
+cat /proj/plan.txt
+su bob
+cat /proj/plan.txt
+ls -l /
+write /x.txt bob root
+su root
+chown bob /proj
+su ann
+chmod rwxrwx /proj
+ls /proj
+cat /proj/plan.txt
+su bob
+chmod rwxrwx /proj
+su ann
+ls -l /proj
+stat /proj
+stat /

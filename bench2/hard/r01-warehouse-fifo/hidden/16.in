@@ -1,0 +1,16 @@
+warehouse p
+warehouse q
+item one One 100
+item two Two 200
+receive p one 3 90
+receive q two 2 210
+value p
+value q
+ship p one 3
+value p
+value
+ship q two 2
+value
+stock
+lots p one
+report

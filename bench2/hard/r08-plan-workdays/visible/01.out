@@ -1,0 +1,15 @@
+added task spec
+added task build
+added task test
+added milestone ship
+build after spec
+test after build
+ship after test
+task   start  finish  lstart  lfinish  slack
+spec       0       4       0        4      0
+build      4      14       4       14      0
+test      14      17      14       17      0
+ship      17      17      17       17      0
+end 17
+critical: spec build test ship (13 working days)
+project finishes on day 17 (Thu)

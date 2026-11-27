@@ -1,0 +1,17 @@
+reject dupcol.csv: duplicate column date
+reject nocol.csv: missing column account
+reject ../private/salaries.csv: outside inbox
+reject missing.csv: not found
+jan.csv:4: bad amount -12.5
+reject jan.csv: duplicate file
+reject badtrailer.csv: trailer says 3, found 2
+== ledger
+2024-01-03 SE1001 J-001 250.00
+2024-01-05 SE1002 J-002 -40.10
+2024-01-31 DK2002 J-004 1000.00
+== balances
+DK2002 1 1000.00
+SE1001 1 250.00
+SE1002 1 -40.10
+wrote out/checks.ledger 3
+wrote out/checks.errors 7

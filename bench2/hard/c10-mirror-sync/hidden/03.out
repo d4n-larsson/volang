@@ -1,0 +1,10 @@
+== plan abs
+source not allowed: /etc
+== plan dotdot
+source not allowed: src/../../src/docs
+== plan oldsrc
+source not allowed: src-old/site
+== plan mirrored
+target not allowed: mirrored/docs
+== plan both
+source not allowed: /home/user

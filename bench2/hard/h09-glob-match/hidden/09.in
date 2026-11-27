@@ -1,0 +1,11 @@
+my *
+* file.txt
+\[draft\]*
+[[]*
+*]
+%%
+my file.txt
+my  file.txt
+[draft] notes
+[x]
+a]

@@ -1,0 +1,19 @@
+sheet Data
+sheet data
+set Data!A1 1
+set data!A1 2
+set A1 =Data!A1*10+data!A1
+get A1
+rename Data data
+rename data DATA
+show A1
+use DATA
+use Data
+sheets
+drop data
+use Sheet1
+show A1
+get A1
+deps A1
+sheet data
+show A1

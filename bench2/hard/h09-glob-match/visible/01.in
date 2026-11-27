@@ -1,0 +1,12 @@
+*.txt
+src/**/*.vo
+**/test_?.py
+docs/[a-c]*
+%%
+notes.txt
+src/main.vo
+src/lib/util/text.vo
+tests/test_1.py
+docs/api.md
+docs/zeta.md
+.hidden.txt

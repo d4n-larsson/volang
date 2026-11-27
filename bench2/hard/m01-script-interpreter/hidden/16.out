@@ -1,0 +1,5 @@
+say 1
+say 2
+12
+say 3
+error at line 6: wrong argument count

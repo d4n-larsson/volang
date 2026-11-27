@@ -1,0 +1,6 @@
+today 2024-06-15
+set prod
+keep last 3
+keep daily 7
+keep weekly 4
+keep monthly 6

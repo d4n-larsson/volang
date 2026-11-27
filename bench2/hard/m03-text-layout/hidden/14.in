@@ -1,0 +1,13 @@
+.title Settings
+.indent 15
+.width 34
+.width 35
+.indent 15
+.indent 16
+Indented by fifteen columns with a twenty column body.
+.indent 0
+.width 50
+Back to the left margin but still thirty-five wide.
+.align justify
+.indent 5
+Justified and indented by five columns over several lines of text.

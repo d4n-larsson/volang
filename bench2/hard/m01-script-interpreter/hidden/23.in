@@ -1,0 +1,66 @@
+func reverse(s)
+    let out = ""
+    let i = len(s)
+    while i > 0
+        set i = i - 1
+        set out = out + substr(s, i, 1)
+    end
+    return out
+end
+func binary(n)
+    if n == 0
+        return "0"
+    end
+    let digits = ""
+    while n > 0
+        set digits = str(n % 2) + digits
+        set n = n / 2
+    end
+    return digits
+end
+func gcd(a, b)
+    while b != 0
+        let t = b
+        set b = a % b
+        set a = t
+    end
+    return a
+end
+func count_words(s)
+    let words = 0
+    let inword = false
+    let i = 0
+    while i < len(s)
+        let c = substr(s, i, 1)
+        if c == " "
+            set inword = false
+        elif not inword
+            set inword = true
+            set words = words + 1
+        end
+        set i = i + 1
+    end
+    return words
+end
+print reverse("stressed"), binary(0), binary(37), binary(1024)
+print gcd(84, 36), gcd(17, 5), gcd(0, 9)
+print count_words("  the quick  brown fox "), count_words("")
+let row = 0
+while row < 4
+    let line = ""
+    let col = 0
+    while true
+        if col > row
+            break
+        end
+        set col = col + 1
+        if col % 2 == 0
+            continue
+        end
+        set line = line + str(col)
+    end
+    print row, line
+    set row = row + 1
+end
+let parsed = int("-" + "0" + binary(5))
+print parsed, parsed - 1, str(parsed) + "!"

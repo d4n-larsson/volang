@@ -1,0 +1,21 @@
+set A1 =#REF!
+set A2 =SUM(#REF!)
+set A3 =IF(0, #REF!, 5)
+set A4 =COUNT(1, #REF!)
+set A5 =A1+1
+set B1 =A1
+set B2 =$A1+A$1
+copy B2 A9
+formula A9
+print A9
+copy A9 A8
+formula A8
+copy B2 Z2
+formula Z2
+copy Z2 Z3
+formula Z3
+print Z3
+set C1 =SUM(A2:A3)
+set C2 =SUM(A3:A4)
+set C3 =SUM(A3, A3:A3)
+show A1:C5

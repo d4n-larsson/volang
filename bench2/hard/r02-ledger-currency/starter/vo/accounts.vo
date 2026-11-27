@@ -1,0 +1,76 @@
+# Opening, closing and renaming accounts, and their balances.
+import fmt;
+import model;
+import parse;
+import std.text;
+
+export fn native_balance(account: model.Account) -> int {
+    var total = 0;
+    for p in account.postings {
+        set total = total + p.amount;
+    }
+    return total;
+}
+
+# The accounts named `name` or below it (`name:...`), in byte order of their names.
+export fn covered(ledger: model.Ledger, name: str) -> list[model.Account] {
+    let names = keys(ledger.accounts);
+    sort(names);
+    let picked = filter(names, fn(n) => n == name or text.starts_with(n, name + ":"));
+    return map(picked, fn(n) => ledger.accounts[n]);
+}
+
+export fn subtree_total(ledger: model.Ledger, name: str) -> int {
+    var total = 0;
+    for a in covered(ledger, name) {
+        set total = total + native_balance(a);
+    }
+    return total;
+}
+
+export fn open_account(ledger: model.Ledger, name: str, kind: str) -> str {
+    if not parse.valid_account_name(name) {
+        return "error: bad account name " + name;
+    }
+    if not parse.valid_type(kind) {
+        return "error: bad type " + kind;
+    }
+    if has(ledger.accounts, name) {
+        return "error: account " + name + " exists";
+    }
+    set ledger.accounts[name] = model.new_account(name, kind);
+    return "opened " + name + " (" + kind + ")";
+}
+
+export fn close_account(ledger: model.Ledger, name: str) -> str {
+    if not has(ledger.accounts, name) {
+        return "error: unknown account " + name;
+    }
+    let a = ledger.accounts[name];
+    if a.closed {
+        return "error: account " + name + " is closed";
+    }
+    let bal = native_balance(a);
+    if bal != 0 {
+        return "error: account " + name + " has balance " + fmt.money(bal);
+    }
+    set a.closed = true;
+    return "closed " + name;
+}
+
+export fn rename_account(ledger: model.Ledger, old: str, new_name: str) -> str {
+    if not has(ledger.accounts, old) {
+        return "error: unknown account " + old;
+    }
+    if not parse.valid_account_name(new_name) {
+        return "error: bad account name " + new_name;
+    }
+    if has(ledger.accounts, new_name) {
+        return "error: account " + new_name + " exists";
+    }
+    let a = ledger.accounts[old];
+    remove(ledger.accounts, old);
+    set a.name = new_name;
+    set ledger.accounts[new_name] = a;
+    return "renamed " + old + " to " + new_name;
+}

@@ -1,0 +1,184 @@
+# Formula trees: what the parser builds, and what is shown, shifted and evaluated.
+import cells;
+
+# A cell reference; abs_col / abs_row are the `$` marks that keep a part fixed when copied.
+export record Ref {
+    col: int;
+    row: int;
+    abs_col: bool;
+    abs_row: bool;
+}
+
+export variant Node {
+    num(int);
+    cell_ref(Ref);
+    # SUM, MIN or MAX over the range first:last
+    func {
+        name: str;
+        first: Ref;
+        last: Ref;
+    }
+    # a function whose range was copied off the grid (#REF)
+    lost_func(str);
+    bin {
+        op: str;
+        left: Node;
+        right: Node;
+    }
+    neg(Node);
+    paren(Node);
+    # a reference that was copied off the grid
+    bad_ref;
+}
+
+export fn ref_text(r: Ref) -> str {
+    var out = "";
+    if r.abs_col {
+        set out = "$";
+    }
+    set out = out + cells.col_name(r.col);
+    if r.abs_row {
+        set out = out + "$";
+    }
+    return out + str(r.row);
+}
+
+# The formula as `show` prints it (without the leading `=`).
+export fn to_text(node: Node) -> str {
+    match node {
+        case num(v) {
+            return str(v);
+        }
+        case cell_ref(r) {
+            return ref_text(r);
+        }
+        case func(f) {
+            return f.name + "(" + ref_text(f.first) + ":" + ref_text(f.last) + ")";
+        }
+        case lost_func(name) {
+            return name + "(#REF)";
+        }
+        case bin(b) {
+            return to_text(b.left) + b.op + to_text(b.right);
+        }
+        case neg(inner) {
+            return "-" + to_text(inner);
+        }
+        case paren(inner) {
+            return "(" + to_text(inner) + ")";
+        }
+        case bad_ref {
+            return "#REF";
+        }
+    }
+}
+
+# The reference moved by dcol columns and drow rows (except its `$` parts), or err("") off the grid.
+export fn shift_ref(r: Ref, dcol: int, drow: int) -> result[Ref] {
+    var col = r.col;
+    if not r.abs_col {
+        set col = r.col + dcol;
+    }
+    var row = r.row;
+    if not r.abs_row {
+        set row = r.row + drow;
+    }
+    if not cells.on_grid(col, row) {
+        return err("");
+    }
+    return ok(new Ref { col: col, row: row, abs_col: r.abs_col, abs_row: r.abs_row });
+}
+
+fn shift_func(name: str, first: Ref, last: Ref, dcol: int, drow: int) -> result[Node] {
+    let a = try shift_ref(first, dcol, drow);
+    let b = try shift_ref(last, dcol, drow);
+    return ok(Node.func { name: name, first: a, last: b });
+}
+
+# A copy of the tree for a formula copied dcol columns right and drow rows down.
+export fn shift(node: Node, dcol: int, drow: int) -> Node {
+    match node {
+        case cell_ref(r) {
+            match shift_ref(r, dcol, drow) {
+                case ok(moved) {
+                    return Node.cell_ref(moved);
+                }
+                case err(_) {
+                    return Node.bad_ref;
+                }
+            }
+        }
+        case func(f) {
+            match shift_func(f.name, f.first, f.last, dcol, drow) {
+                case ok(moved) {
+                    return moved;
+                }
+                case err(_) {
+                    return Node.lost_func(f.name);
+                }
+            }
+        }
+        case bin(b) {
+            return Node.bin { op: b.op, left: shift(b.left, dcol, drow), right: shift(b.right, dcol, drow) };
+        }
+        case neg(inner) {
+            return Node.neg(shift(inner, dcol, drow));
+        }
+        case paren(inner) {
+            return Node.paren(shift(inner, dcol, drow));
+        }
+        case num(_) {
+            return node;
+        }
+        case lost_func(_) {
+            return node;
+        }
+        case bad_ref {
+            return node;
+        }
+    }
+}
+
+# The range of a function, corners in order.
+export fn range_of(first: Ref, last: Ref) -> cells.Area {
+    return new cells.Area { col1: min(first.col, last.col), row1: min(first.row, last.row), col2: max(first.col, last.col), row2: max(first.row, last.row) };
+}
+
+# Adds to `out` every cell the tree refers to, ranges cell by cell.
+export fn referenced(node: Node, out: list[cells.Pos]) {
+    match node {
+        case cell_ref(r) {
+            push(out, new cells.Pos { col: r.col, row: r.row });
+        }
+        case func(f) {
+            for p in cells.range_cells(range_of(f.first, f.last)) {
+                push(out, p);
+            }
+        }
+        case bin(b) {
+            referenced(b.left, out);
+            referenced(b.right, out);
+        }
+        case neg(inner) {
+            referenced(inner, out);
+        }
+        case paren(inner) {
+            referenced(inner, out);
+        }
+        case num(_) {
+            return;
+        }
+        case lost_func(_) {
+            return;
+        }
+        case bad_ref {
+            return;
+        }
+    }
+}
+
+export fn refs_of(node: Node) -> list[cells.Pos] {
+    let out = new list[cells.Pos];
+    referenced(node, out);
+    return out;
+}

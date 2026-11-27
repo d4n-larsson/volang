@@ -1,0 +1,7 @@
+profile staging
+user s1 beta=no
+user s2 beta=
+user s3
+user s4 beta=yes app=1.0
+user s5 beta=maybe country=DK app=2
+user s6 country=se app=2.0

@@ -1,0 +1,164 @@
+import std.time;
+import std.lists;
+
+const day_ms = 86400000;
+
+fn weekday_index(w: str) -> int {
+    return lists.index_of(["mon", "tue", "wed", "thu", "fri", "sat", "sun"], w);
+}
+
+fn parse_day(s: str) -> result[int] {
+    let parts = split(s, "-");
+    let ms = try time.date(try parse_int(parts[0]), try parse_int(parts[1]), try parse_int(parts[2]));
+    return ok(ms / day_ms);
+}
+
+fn day_from(y: int, m: int, d: int) -> result[int] {
+    return ok(try time.date(y, m, d) / day_ms);
+}
+
+fn civil(day: int) -> time.DateTime {
+    return time.from_ms(day * day_ms);
+}
+
+fn show(day: int) -> str {
+    let t = civil(day);
+    let names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    return format("{:04}-{:02}-{:02} ", t.year, t.month, t.day) + names[t.weekday - 1];
+}
+
+# The days the rule gives, in order, from the start up to last (some may be before the start).
+fn candidates(rule: list[str], start: int, last: int) -> result[list[int]] {
+    let out = new list[int];
+    let n = try parse_int(rule[1]);
+    let kind = rule[2];
+    let s = civil(start);
+    if kind == "days" {
+        var d = start;
+        while d <= last {
+            push(out, d);
+            set d = d + n;
+        }
+    } else if kind == "weeks" {
+        let wds = new ordered_set[int];
+        for w in split(rule[4], ",") {
+            push(wds, weekday_index(w));
+        }
+        var monday = start - (s.weekday - 1);
+        while monday <= last {
+            for w in wds {
+                push(out, monday + w);
+            }
+            set monday = monday + 7 * n;
+        }
+    } else if kind == "months" {
+        var idx = s.year * 12 + s.month - 1;
+        while true {
+            let y = idx / 12;
+            let m = idx % 12 + 1;
+            let first_day = try day_from(y, m, 1);
+            if first_day > last {
+                break;
+            }
+            let dim = time.days_in_month(y, m);
+            if rule[4] == "day" {
+                let k = try parse_int(rule[5]);
+                var dd = k;
+                if k < 0 {
+                    set dd = dim + 1 + k;
+                }
+                if dd >= 1 and dd <= dim {
+                    push(out, first_day + dd - 1);
+                }
+            } else {
+                let wd = weekday_index(rule[5]);
+                let first_wd = civil(first_day).weekday - 1;
+                let first = (wd - first_wd + 7) % 7 + 1;
+                let count = (dim - first) / 7 + 1;
+                var which = count;
+                if rule[4] != "last" {
+                    set which = try parse_int(slice(rule[4], 0, 1));
+                }
+                if which <= count {
+                    push(out, first_day + first - 1 + 7 * (which - 1));
+                }
+            }
+            set idx = idx + n;
+        }
+    } else {
+        let md = split(rule[4], "-");
+        let mm = try parse_int(md[0]);
+        let dd = try parse_int(md[1]);
+        var y = s.year;
+        while try day_from(y, 1, 1) <= last {
+            if dd <= time.days_in_month(y, mm) {
+                push(out, try day_from(y, mm, dd));
+            }
+            set y = y + n;
+        }
+    }
+    return ok(out);
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = filter(split(read_all(), "\n"), fn(l) => len(l) > 0);
+    let range = split(lines[0], " ");
+    let lo = try parse_day(range[0]);
+    let hi = try parse_day(range[1]);
+    let names = new list[str];
+    let rules = new list[list[str]];
+    let excepts = new map[str, bool];
+    for line in slice(lines, 1, len(lines)) {
+        let t = split(line, " ");
+        if t[0] == "except" {
+            set excepts[t[1] + " " + str(try parse_day(t[2]))] = true;
+        } else {
+            push(names, t[1]);
+            push(rules, slice(t, 2, len(t)));
+        }
+    }
+    let on = new ordered_map[int, ordered_set[int]];
+    for i, rule in rules {
+        var until = hi;
+        var count = -1;
+        var rest = rule;
+        let ci = lists.index_of(rest, "count");
+        if ci >= 0 {
+            set count = try parse_int(rest[ci + 1]);
+            set rest = slice(rest, 0, ci);
+        }
+        let ui = lists.index_of(rest, "until");
+        if ui >= 0 {
+            set until = min(until, try parse_day(rest[ui + 1]));
+            set rest = slice(rest, 0, ui);
+        }
+        let start = try parse_day(rest[lists.index_of(rest, "from") + 1]);
+        var made = 0;
+        for d in try candidates(rest, start, until) {
+            if d < start {
+                continue;
+            }
+            if d > until or made == count {
+                break;
+            }
+            set made = made + 1;
+            if d >= lo and not has(excepts, names[i] + " " + str(d)) {
+                if not has(on, d) {
+                    set on[d] = new ordered_set[int];
+                }
+                push(on[d], i);
+            }
+        }
+    }
+    if len(on) == 0 {
+        print("no events");
+    }
+    for d, which in on {
+        let parts = [show(d)];
+        for i in which {
+            push(parts, names[i]);
+        }
+        print(join(parts, " "));
+    }
+    return ok();
+}

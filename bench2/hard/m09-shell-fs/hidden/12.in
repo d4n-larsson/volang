@@ -1,0 +1,23 @@
+mkdir -p home/ann/docs home/bob tmp
+write home/ann/docs/cv.txt Ann Smith engineer
+write home/ann/docs/letter.txt Dear Sir
+append home/ann/docs/letter.txt Regards Ann
+write home/bob/todo buy milk
+cd home/ann
+cp -r docs ../bob/annsdocs
+mv ../bob/annsdocs/cv.txt ../bob/cv-ann.txt
+quota 140
+cp -r /home /tmp
+cp -r /home/bob /tmp
+quota
+ls -l /tmp /tmp/bob
+rm -r /tmp/bob/annsdocs
+cp -r /home/bob/annsdocs /tmp/bob
+du /
+cd /tmp/bob/annsdocs
+mv /tmp /home/ann/old
+pwd
+rm -r /home/ann/old
+rm -r /home/ann/old/bob/annsdocs/letter.txt ../cv-ann.txt
+ls -l ..
+find /home -name *.txt

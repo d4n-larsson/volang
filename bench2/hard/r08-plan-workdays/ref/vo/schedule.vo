@@ -1,0 +1,61 @@
+import graph;
+import model;
+import workdays;
+
+fn forward(plan: model.Plan, order: list[model.Task]) -> map[str, model.Slot] {
+    let slots = new map[str, model.Slot];
+    for t in order {
+        var start = t.not_before;
+        for d in t.preds {
+            set start = max(start, workdays.after(plan, slots[d.pred].finish, d.lag));
+        }
+        set start = workdays.first_working(plan, start);
+        var finish = start;
+        if t.duration > 0 {
+            set finish = workdays.after(plan, workdays.after(plan, start, t.duration - 1), 1);
+        }
+        set slots[t.tid] = new model.Slot { start: start, finish: finish, lstart: 0, lfinish: 0, slack: 0 };
+    }
+    return slots;
+}
+
+fn project_end(slots: map[str, model.Slot]) -> int {
+    var end = 0;
+    for _, s in slots {
+        set end = max(end, s.finish);
+    }
+    return end;
+}
+
+fn backward(plan: model.Plan, order: list[model.Task], slots: map[str, model.Slot], end: int) {
+    var i = len(order) - 1;
+    while i >= 0 {
+        let t = order[i];
+        var lfinish = end;
+        for sid in graph.successors(plan, t.tid) {
+            for d in plan.tasks[sid].preds {
+                if d.pred == t.tid {
+                    set lfinish = min(lfinish, workdays.before(plan, slots[sid].lstart, d.lag));
+                }
+            }
+        }
+        let s = slots[t.tid];
+        set s.lfinish = lfinish;
+        set s.lstart = workdays.before(plan, lfinish, t.duration);
+        set s.slack = workdays.count(plan, s.start, s.lstart);
+        set i = i - 1;
+    }
+}
+
+export fn compute(plan: model.Plan) -> model.Schedule {
+    let order = graph.topo_order(plan);
+    let slots = forward(plan, order);
+    let end = project_end(slots);
+    backward(plan, order, slots, end);
+    return new model.Schedule { order: order, slots: slots, end: end };
+}
+
+# Working days from the project start to its finish.
+export fn length(plan: model.Plan, end: int) -> int {
+    return workdays.count(plan, 0, end);
+}

@@ -1,0 +1,141 @@
+export record Cmd {
+    name: str;
+    args: list[str];
+    nums: list[int];
+}
+
+export variant Parsed {
+    blank;
+    invalid;
+    command(Cmd);
+}
+
+# The value of 1 to k ASCII digits, or -1.
+export fn count(s: str, k: int) -> int {
+    if len(s) < 1 or len(s) > k or not all(chars(s), fn(c) => c >= "0" and c <= "9") {
+        return -1;
+    }
+    match parse_int(s) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return -1;
+        }
+    }
+}
+
+# Cents of `D.CC`, or -1.
+fn cost(s: str) -> int {
+    let dot = find(s, ".");
+    if dot < 0 {
+        return -1;
+    }
+    let d = count(slice(s, 0, dot), 7);
+    let rest = slice(s, dot + 1, len(s));
+    let c = count(rest, 2);
+    if d < 0 or c < 0 or len(rest) != 2 {
+        return -1;
+    }
+    return d * 100 + c;
+}
+
+export fn money(c: int) -> str {
+    return format("{}.{:02}", c / 100, c % 100);
+}
+
+# The argument kinds of each command: `s` any field, `q` a quantity, `c` a cost, `e` a 6-digit
+# count, `d` a 3-digit count of at least 1; "?" for an unknown command.
+fn form(name: str) -> str {
+    match name {
+        case "warehouse" {
+            return "s";
+        }
+        case "item" {
+            return "s";
+        }
+        case "receive" {
+            return "ssqce";
+        }
+        case "ship" {
+            return "sssq";
+        }
+        case "reserve" {
+            return "sssq";
+        }
+        case "fulfil" {
+            return "s";
+        }
+        case "release" {
+            return "s";
+        }
+        case "cancel" {
+            return "s";
+        }
+        case "return" {
+            return "sq";
+        }
+        case "transfer" {
+            return "sssqd";
+        }
+        case "day" {
+            return "e";
+        }
+        case "stock" {
+            return "";
+        }
+        case "value" {
+            return "";
+        }
+        case "backorders" {
+            return "";
+        }
+        else {
+            return "?";
+        }
+    }
+}
+
+fn convert(kind: str, s: str) -> int {
+    if kind == "q" {
+        let q = count(s, 5);
+        if q < 1 {
+            return -1;
+        }
+        return q;
+    }
+    if kind == "c" {
+        return cost(s);
+    }
+    if kind == "e" {
+        return count(s, 6);
+    }
+    if kind == "d" {
+        let d = count(s, 3);
+        if d < 1 {
+            return -1;
+        }
+        return d;
+    }
+    return 0;
+}
+
+export fn parse(line: str) -> Parsed {
+    let f = filter(split(line, " "), fn(t) => t != "");
+    if len(f) == 0 {
+        return Parsed.blank;
+    }
+    let kinds = form(f[0]);
+    if kinds == "?" or len(kinds) != len(f) - 1 {
+        return Parsed.invalid;
+    }
+    let c = new Cmd { name: f[0], args: slice(f, 1, len(f)), nums: [] };
+    for i, kind in chars(kinds) {
+        let v = convert(kind, f[i + 1]);
+        if v < 0 {
+            return Parsed.invalid;
+        }
+        push(c.nums, v);
+    }
+    return Parsed.command(c);
+}

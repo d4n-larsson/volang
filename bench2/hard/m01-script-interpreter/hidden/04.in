@@ -1,0 +1,12 @@
+func helper(a)
+    return a + 1
+end
+let i = 0
+while i < 3
+    set i = helper(i)
+    if i == 2
+        func inner(b)
+            return b
+        end
+    end
+end

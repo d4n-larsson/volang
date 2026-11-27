@@ -1,0 +1,47 @@
+import graph;
+import lines;
+import sim;
+
+fn names(xs: list[str]) -> str {
+    if len(xs) == 0 {
+        return "-";
+    }
+    return join(xs, " ");
+}
+
+fn report(b: lines.Build) -> list[str] {
+    let out = map(b.problems, fn(p) => "line " + str(p.line) + ": " + p.text);
+    let p = graph.plan(b);
+    for g in p.groups {
+        push(out, "cycle: " + join(g, " "));
+    }
+    let r = sim.simulate(b, p);
+    for s in r.log {
+        push(out, s);
+    }
+    push(out, "makespan " + str(r.makespan));
+    let total = fold(r.busy, 0, fn(a, x) => a + x);
+    var util = 0;
+    if r.makespan > 0 {
+        set util = total * 100 / (b.workers * r.makespan);
+    }
+    push(out, "utilization " + str(util) + "%");
+    for w in 0..b.workers {
+        push(out, "w" + str(w + 1) + " busy " + str(r.busy[w]) + " attempts " + str(r.attempts[w]));
+    }
+    push(out, "built: " + names(r.built));
+    let failed = slice(r.failed, 0, len(r.failed));
+    sort(failed);
+    push(out, "failed: " + names(failed));
+    let skipped = keys(r.skipped);
+    sort(skipped);
+    push(out, "skipped: " + names(skipped));
+    push(out, "blocked: " + names(p.blocked));
+    return out;
+}
+
+fn main() uses console, input {
+    for line in report(lines.read(read_all())) {
+        print(line);
+    }
+}

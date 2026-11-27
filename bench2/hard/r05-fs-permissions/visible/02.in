@@ -1,0 +1,19 @@
+useradd ann
+useradd bob
+mkdir /srv
+chown ann /srv
+su ann
+write /srv/notes.txt first
+mkdir /srv/private
+write /srv/private/key.txt secret
+chmod rwx--- /srv/private
+chmod rw---- /srv/notes.txt
+su bob
+ls /srv
+cat /srv/notes.txt
+cat /srv/private/key.txt
+tree /srv
+chmod rwxrwx /srv/private
+su ann
+cat /srv/private/key.txt
+tree /srv

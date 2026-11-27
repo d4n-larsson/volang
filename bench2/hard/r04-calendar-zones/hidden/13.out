@@ -1,0 +1,26 @@
+user kai added
+user lia added
+room r added, capacity 4
+hours lia 09:00-17:00
+booked m1 in r: 6 09:00-10:00 (2 people)
+booked m2 in r: 6 16:00-17:00 (2 people)
+zone lia UTC+03:00
+agenda lia day 6 (UTC+03:00):
+  6 11:00-12:00 m1 in r (attendee)
+  6 18:00-19:00 m2 in r (attendee)
+agenda kai day 6 (UTC+01:00):
+  6 09:00-10:00 m1 in r (organizer)
+  6 16:00-17:00 m2 in r (organizer)
+error: lia works 09:00-17:00
+booked m3 in r: 6 14:00-15:00 (2 people)
+error: lia works 09:00-17:00
+error: room r busy: m3 6 14:00-15:00
+moved m2: 6 12:00-13:00
+zone r UTC-01:00
+rooms day 6:
+  r: m1 6 07:00-08:00, m2 6 10:00-11:00, m3 6 12:00-13:00
+free r day 6: 09:00-10:00, 11:00-12:00, 13:00-17:00
+m1 6 08:00-09:00 r kai +1
+m2 6 11:00-12:00 r kai +1
+m3 6 13:00-14:00 r kai +1
+m1: r 6 07:00-08:00 UTC-01:00, organizer kai, attendees lia

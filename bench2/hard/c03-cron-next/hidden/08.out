@@ -1,0 +1,12 @@
+jobs 3
+> next leap 2
+2024-02-29 00:00 Thu
+no more runs
+> next impossible 1
+no more runs
+> next june-mondays 6
+2023-06-05 03:15 Mon
+2023-06-12 03:15 Mon
+2023-06-19 03:15 Mon
+2023-06-26 03:15 Mon
+no more runs

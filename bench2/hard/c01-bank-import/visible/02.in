@@ -1,0 +1,8 @@
+checks 2024-01-01 2024-12-31
+dupcol.csv
+nocol.csv
+../private/salaries.csv
+missing.csv
+jan.csv
+jan.csv
+badtrailer.csv

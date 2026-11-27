@@ -1,0 +1,20 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+message 1 posted to #general
+error: dee not in #general
+error: unknown user zed
+error: unknown channel #nope
+error: bad command
+error: bad command
+error: bad command
+cy read #general
+no unread messages for cy
+message 2 posted to #general
+#general: 1 unread
+cy read #general
+no unread messages for cy

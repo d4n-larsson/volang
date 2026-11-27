@@ -1,0 +1,27 @@
+drwxr-x root 0 empty/
+dr-xr-- root 2 full/
+------- zed 4 z.txt
+(empty)
+------- zed 4 z.txt
+-rw-r-- root 6 a.txt
+-rw-r-- root 4 b.txt
+a.txt
+b.txt
+error: permission denied: /d/full
+a.txt
+b.txt
+error: permission denied: /d/full/a.txt
+------- zed 4 z.txt
+z.txt
+drwxr-x root 0 empty/
+dr-xr-- root 2 full/
+------- zed 4 z.txt
+drwxr-x root 0 empty/
+dr-xr-- root 2 full/
+------- zed 4 z.txt
+(empty)
+error: permission denied: /d/empty
+error: permission denied: /d/empty
+/d/empty
+error: permission denied: /d/empty
+drwxr-x root 3 d/

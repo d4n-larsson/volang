@@ -1,0 +1,40 @@
+rest S1 10 7.00
+rest S2 10 7.00
+rest S3 10 7.00
+modified S1 4 7.00
+modified S2 12 7.00
+rest S2 12 7.00
+modified S3 10 7.00
+book MO last -
+  ask 7.00 26 3
+trade MO 4 7.00 B1 S1
+trade MO 10 7.00 B1 S3
+trade MO 1 7.00 B1 S2
+filled B1
+book MO last 7.00
+  ask 7.00 11 1
+modified S2 6 6.90
+rest S2 6 6.90
+reject B1 unknown order
+reject ZZ unknown order
+pending T1
+reject T1 unknown order
+rest B2 5 6.80
+modified B2 8 6.95
+trade MO 6 6.90 B2 S2
+rest B2 2 6.95
+book MO last 6.90
+  bid 6.95 2 1
+modified B2 9 7.10
+rest B2 9 7.10
+reject S3 unknown order
+book MO last 6.90
+  bid 7.10 9 1
+book MO last 6.90
+  bid 7.10 9 1
+trader ana cash 28.00 MO:-4
+trader bob cash 48.40 MO:-7
+trader cy cash 70.00 MO:-10
+trader dan cash -105.00 MO:15
+trader eve cash 0.00
+trader fay cash -41.40 MO:6

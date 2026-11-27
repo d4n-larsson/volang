@@ -1,0 +1,9 @@
+== run docs-run
+copy README
+copy api/v1.txt
+copy api/v2.txt
+copy 3, update 0, unchanged 0, conflict 0, stale 0, excluded 2
+== run docs-run
+copy 0, update 0, unchanged 3, conflict 0, stale 0, excluded 2
+== plan docs-run
+copy 0, update 0, unchanged 3, conflict 0, stale 0, excluded 2

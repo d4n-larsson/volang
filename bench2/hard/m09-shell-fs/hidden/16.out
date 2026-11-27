@@ -1,0 +1,20 @@
+/w/z/b/c
+mv: /w/z/b: in use
+/w/z/b/c2/inside
+rm: .: in use
+/w/z/b
+cp: /w: cannot copy into itself
+/w/copy
+/w/copy2
+rm: /w: in use
+3 /
+0 /c
+3 /w
+3 /w/z
+3 /w/z/b
+/
+/c
+/w
+/w/z
+/w/z/b
+/w/z/b/note

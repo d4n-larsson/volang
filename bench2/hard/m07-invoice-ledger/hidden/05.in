@@ -1,0 +1,22 @@
+customer p 5000.00 10 0
+invoice p 1x100.00
+invoice p 1x200.00
+invoice p 1x300.00
+invoice p 1x400.00
+pay p 50.00 2
+writeoff 2
+void 2
+void 1
+void 1
+credit 1 1.00
+writeoff 1
+pay p 1.00 1
+credit 3 300.01
+credit 3 300.00
+credit 3 1.00
+void 3
+credit 4 150.00
+void 4
+statement p
+void 7
+credit 0 1.00

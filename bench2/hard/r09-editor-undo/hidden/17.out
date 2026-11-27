@@ -1,0 +1,23 @@
+new buffer w
+group started
+3 substitutions
+1  0ne tw0
+grouped 2 changes
+buffer w, line 1 of 4
+undone 1 step
+buffer w, line 1 of 1
+redone 1 step
+buffer w, line 4 of 4
+1  0ne tw0
+2  three f0ur
+3  five six
+4  seven
+new buffer x
+buffer w, 4 lines
+group started
+2  three f0ur
+grouped 0 changes
+buffer x, 0 lines
+buffer w, 4 lines
+undone 1 step
+1  one two three four five six seven

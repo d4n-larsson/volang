@@ -1,0 +1,341 @@
+import parsing;
+import stock;
+
+export record ShippedPick {
+    lot: stock.Lot;
+    units: int;
+    returned: int;
+}
+
+export record Order {
+    id: str;
+    wh: str;
+    sku: str;
+    picks: list[ShippedPick];
+    backorder: int;
+    reserved: bool;
+    holds: list[stock.Pick];
+}
+
+export record Desk {
+    st: stock.Stock;
+    orders: map[str, Order];
+    order_list: list[Order];
+}
+
+export fn new_desk() -> Desk {
+    return new Desk { st: stock.new_stock(), orders: new map[str, Order], order_list: [] };
+}
+
+fn returnable(o: Order) -> int {
+    return fold(o.picks, 0, fn(a, p) => a + p.units - p.returned);
+}
+
+fn check_wh(d: Desk, w: str) -> result[void] {
+    if not has(d.st.warehouses, w) {
+        return err("no warehouse " + w);
+    }
+    return ok();
+}
+
+fn check_item(d: Desk, sku: str) -> result[void] {
+    if not has(d.st.items, sku) {
+        return err("no item " + sku);
+    }
+    return ok();
+}
+
+fn new_order(d: Desk, id: str, wh: str, sku: str) -> Order {
+    let o = new Order { id: id, wh: wh, sku: sku, picks: [], backorder: 0, reserved: false, holds: [] };
+    set d.orders[id] = o;
+    push(d.order_list, o);
+    return o;
+}
+
+fn ship_picks(d: Desk, o: Order, picks: list[stock.Pick]) {
+    stock.ship(d.st, picks);
+    for p in picks {
+        push(o.picks, new ShippedPick { lot: p.entry.lot, units: p.units, returned: 0 });
+    }
+}
+
+fn picks_text(picks: list[stock.Pick]) -> str {
+    return stock.fmt_picks(stock.lot_units(picks));
+}
+
+export fn settle(d: Desk, wh: str, sku: str, out: list[str]) {
+    for o in d.order_list {
+        if o.backorder > 0 and o.wh == wh and o.sku == sku {
+            let avail = stock.available(d.st, wh, sku);
+            if avail == 0 {
+                return;
+            }
+            let n = min(o.backorder, avail);
+            let picks = stock.pick(d.st, wh, sku, n);
+            ship_picks(d, o, picks);
+            set o.backorder = o.backorder - n;
+            push(out, "filled " + o.id + " " + str(n) + picks_text(picks));
+        }
+    }
+}
+
+fn add_warehouse(d: Desk, w: str, out: list[str]) -> result[void] {
+    if has(d.st.warehouses, w) {
+        return err("warehouse " + w + " exists");
+    }
+    set d.st.warehouses[w] = true;
+    push(out, "warehouse " + w + " added");
+    return ok();
+}
+
+fn add_item(d: Desk, sku: str, out: list[str]) -> result[void] {
+    if has(d.st.items, sku) {
+        return err("item " + sku + " exists");
+    }
+    set d.st.items[sku] = true;
+    push(out, "item " + sku + " added");
+    return ok();
+}
+
+fn receive(d: Desk, c: parsing.Cmd, out: list[str]) -> result[void] {
+    let w = c.args[0];
+    let sku = c.args[1];
+    try check_wh(d, w);
+    try check_item(d, sku);
+    if c.nums[4] <= d.st.day {
+        return err("expired on arrival");
+    }
+    let lot = stock.receive(d.st, w, sku, c.nums[2], c.nums[3], c.nums[4]);
+    push(out, "lot L" + str(lot.num) + " " + w + " " + sku + " " + str(c.nums[2]));
+    settle(d, w, sku, out);
+    return ok();
+}
+
+fn ship(d: Desk, c: parsing.Cmd, out: list[str]) -> result[void] {
+    let id = c.args[0];
+    let w = c.args[1];
+    let sku = c.args[2];
+    let qty = c.nums[3];
+    if has(d.orders, id) {
+        return err("order " + id + " exists");
+    }
+    try check_wh(d, w);
+    try check_item(d, sku);
+    let o = new_order(d, id, w, sku);
+    let n = min(qty, stock.available(d.st, w, sku));
+    if n > 0 {
+        let picks = stock.pick(d.st, w, sku, n);
+        ship_picks(d, o, picks);
+        push(out, "shipped " + id + " " + str(n) + picks_text(picks));
+    }
+    if qty > n {
+        set o.backorder = qty - n;
+        push(out, "backorder " + id + " " + str(qty - n));
+    }
+    return ok();
+}
+
+fn reserve(d: Desk, c: parsing.Cmd, out: list[str]) -> result[void] {
+    let id = c.args[0];
+    let w = c.args[1];
+    let sku = c.args[2];
+    let qty = c.nums[3];
+    if has(d.orders, id) {
+        return err("order " + id + " exists");
+    }
+    try check_wh(d, w);
+    try check_item(d, sku);
+    let avail = stock.available(d.st, w, sku);
+    if avail < qty {
+        return err("only " + str(avail) + " available");
+    }
+    let o = new_order(d, id, w, sku);
+    set o.holds = stock.pick(d.st, w, sku, qty);
+    set o.reserved = true;
+    for p in o.holds {
+        set p.entry.reserved = p.entry.reserved + p.units;
+    }
+    push(out, "reserved " + id + " " + str(qty) + picks_text(o.holds));
+    return ok();
+}
+
+fn reservation(d: Desk, id: str) -> result[Order] {
+    if not has(d.orders, id) {
+        return err("no order " + id);
+    }
+    let o = d.orders[id];
+    if not o.reserved {
+        return err("order " + id + " is not reserved");
+    }
+    return ok(o);
+}
+
+fn unreserve(o: Order) -> int {
+    for p in o.holds {
+        set p.entry.reserved = p.entry.reserved - p.units;
+    }
+    set o.reserved = false;
+    return fold(o.holds, 0, fn(a, p) => a + p.units);
+}
+
+fn fulfil(d: Desk, c: parsing.Cmd, out: list[str]) -> result[void] {
+    let o = try reservation(d, c.args[0]);
+    let n = unreserve(o);
+    ship_picks(d, o, o.holds);
+    push(out, "shipped " + o.id + " " + str(n) + picks_text(o.holds));
+    set o.holds = [];
+    return ok();
+}
+
+fn release(d: Desk, c: parsing.Cmd, out: list[str]) -> result[void] {
+    let o = try reservation(d, c.args[0]);
+    let n = unreserve(o);
+    set o.holds = [];
+    push(out, "released " + o.id + " " + str(n));
+    settle(d, o.wh, o.sku, out);
+    return ok();
+}
+
+fn cancel(d: Desk, c: parsing.Cmd, out: list[str]) -> result[void] {
+    let id = c.args[0];
+    if not has(d.orders, id) {
+        return err("no order " + id);
+    }
+    let o = d.orders[id];
+    if o.backorder == 0 {
+        return err("order " + id + " has no backorder");
+    }
+    push(out, "cancelled " + id + " " + str(o.backorder));
+    set o.backorder = 0;
+    return ok();
+}
+
+fn give_back(d: Desk, c: parsing.Cmd, out: list[str]) -> result[void] {
+    let id = c.args[0];
+    let qty = c.nums[1];
+    if not has(d.orders, id) {
+        return err("no order " + id);
+    }
+    let o = d.orders[id];
+    if qty > returnable(o) {
+        return err("order " + id + " has " + str(returnable(o)) + " returnable");
+    }
+    var left = qty;
+    var restocked = 0;
+    var i = len(o.picks) - 1;
+    while left > 0 {
+        let p = o.picks[i];
+        let take = min(left, p.units - p.returned);
+        if take > 0 {
+            set p.returned = p.returned + take;
+            set left = left - take;
+            if stock.put_back(d.st, o.wh, p.lot, take) {
+                set restocked = restocked + take;
+            }
+        }
+        set i = i - 1;
+    }
+    push(out, format("returned {} {} restocked {} quarantined {}", id, qty, restocked, qty - restocked));
+    if restocked > 0 {
+        settle(d, o.wh, o.sku, out);
+    }
+    return ok();
+}
+
+fn transfer(d: Desk, c: parsing.Cmd, out: list[str]) -> result[void] {
+    let src = c.args[0];
+    let dst = c.args[1];
+    let sku = c.args[2];
+    let qty = c.nums[3];
+    try check_wh(d, src);
+    try check_wh(d, dst);
+    if src == dst {
+        return err("same warehouse");
+    }
+    try check_item(d, sku);
+    let avail = stock.available(d.st, src, sku);
+    if avail < qty {
+        return err("only " + str(avail) + " available");
+    }
+    let t = stock.transfer(d.st, src, dst, sku, qty, c.nums[4]);
+    push(out, "transfer T" + str(t.num) + " " + str(qty) + " arrives " + str(t.arrives) + stock.fmt_picks(t.picks));
+    return ok();
+}
+
+fn lose_holds(d: Desk, e: stock.Entry, out: list[str]) {
+    for o in d.order_list {
+        if o.reserved {
+            let here = filter(o.holds, fn(p) => p.entry.wh == e.wh and p.entry.lot.num == e.lot.num);
+            if len(here) > 0 {
+                set o.holds = filter(o.holds, fn(p) => not (p.entry.wh == e.wh and p.entry.lot.num == e.lot.num));
+                push(out, "reservation " + o.id + " lost " + str(fold(here, 0, fn(a, p) => a + p.units)));
+                if len(o.holds) == 0 {
+                    set o.reserved = false;
+                }
+            }
+        }
+    }
+}
+
+fn advance(d: Desk, c: parsing.Cmd, out: list[str]) -> result[void] {
+    if c.nums[0] < d.st.day {
+        return err("day " + str(d.st.day));
+    }
+    set d.st.day = c.nums[0];
+    let arrived = stock.arrivals(d.st, out);
+    for e in stock.expired_entries(d.st) {
+        stock.write_off(d.st, e, out);
+        lose_holds(d, e, out);
+    }
+    for t in arrived {
+        settle(d, t.dst, t.sku, out);
+    }
+    return ok();
+}
+
+# Runs a command that changes the stock; its lines, or an error line, go to out.
+export fn run(d: Desk, c: parsing.Cmd, out: list[str]) {
+    var r: result[void] = ok();
+    match c.name {
+        case "warehouse" {
+            set r = add_warehouse(d, c.args[0], out);
+        }
+        case "item" {
+            set r = add_item(d, c.args[0], out);
+        }
+        case "receive" {
+            set r = receive(d, c, out);
+        }
+        case "ship" {
+            set r = ship(d, c, out);
+        }
+        case "reserve" {
+            set r = reserve(d, c, out);
+        }
+        case "fulfil" {
+            set r = fulfil(d, c, out);
+        }
+        case "release" {
+            set r = release(d, c, out);
+        }
+        case "cancel" {
+            set r = cancel(d, c, out);
+        }
+        case "return" {
+            set r = give_back(d, c, out);
+        }
+        case "transfer" {
+            set r = transfer(d, c, out);
+        }
+        else {
+            set r = advance(d, c, out);
+        }
+    }
+    match r {
+        case ok() {
+        }
+        case err(e) {
+            push(out, "error: " + e);
+        }
+    }
+}

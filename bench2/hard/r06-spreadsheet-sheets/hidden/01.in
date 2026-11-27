@@ -1,0 +1,14 @@
+sheet Data
+set Data!A1 =A2*10
+set A2 3
+get Data!A1
+set Data!A2 7
+get Data!A1
+show Data!A1
+use Data
+show A1
+list
+use Sheet1
+list
+eval =A2*10
+eval =Data!A2*10

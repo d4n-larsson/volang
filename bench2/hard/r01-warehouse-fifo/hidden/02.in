@@ -1,0 +1,20 @@
+warehouse a
+warehouse b
+item tile Tile 120
+receive a tile 10 100
+receive b tile 6 200
+receive a tile 10 110
+transfer a b tile 14
+lots b tile
+lots a tile
+ship b tile 12
+lots b tile
+transfer b a tile 5
+lots a tile
+transfer a b tile 3
+lots a tile
+lots b tile
+value a
+value b
+value
+history tile

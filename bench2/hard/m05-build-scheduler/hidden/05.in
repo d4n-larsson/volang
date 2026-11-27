@@ -1,0 +1,10 @@
+workers 2
+retries 2
+backoff 0
+target slow 4
+target quick 1
+target mid 3
+target fin 1 slow quick mid
+fail slow 1
+fail slow 2
+fail quick 3

@@ -1,0 +1,31 @@
+warehouse a added
+warehouse b added
+item nail added
+received 5 nail into a, now 5, lot 1 at 0.11
+received 5 nail into b, now 5, lot 2 at 0.12
+received 5 nail into a, now 10, lot 3 at 0.13
+transferred 3 nail from b to a, cost 0.36
+lot 1: 5 x 0.11 = 0.55
+lot 2: 3 x 0.12 = 0.36
+lot 3: 5 x 0.13 = 0.65
+total 13 units = 1.56
+shipped 7 nail from a, now 6, cost 0.79
+lot 2: 1 x 0.12 = 0.12
+lot 3: 5 x 0.13 = 0.65
+total 6 units = 0.77
+transferred 4 nail from a to b, cost 0.51
+lot 2: 3 x 0.12 = 0.36
+lot 3: 3 x 0.13 = 0.39
+total 6 units = 0.75
+shipped 3 nail from b, now 3, cost 0.36
+lot 3: 3 x 0.13 = 0.39
+total 3 units = 0.39
+#1 receive a +5 lot 1 at 0.11
+#2 receive b +5 lot 2 at 0.12
+#3 receive a +5 lot 3 at 0.13
+#4 transfer-out b -3 (to a) cost 0.36
+#5 transfer-in a +3 (from b) cost 0.36
+#6 ship a -7 cost 0.79
+#7 transfer-out a -4 (to b) cost 0.51
+#8 transfer-in b +4 (from a) cost 0.51
+#9 ship b -3 cost 0.36

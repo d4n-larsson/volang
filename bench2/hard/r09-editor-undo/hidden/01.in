@@ -1,0 +1,23 @@
+append b
+append a
+append c
+sort 1,$
+sort 1,$
+subst 1,$ a a
+subst 1,$ zz q
+replace 2 b
+upper 1,$
+upper 1,$
+move 1,2 2
+move 2,3 1
+dedupe
+strip 1,$
+reverse 2
+lower 1
+print
+undo 9
+undo 3
+print
+undo
+redo 4
+redo

@@ -1,0 +1,46 @@
+team Rovers
+team United
+team City
+team Athletic
+team Town
+teams
+result Rovers 3 1 United
+result United 2 2 City
+result City 0 1 Rovers
+result Athletic 4 0 Town
+result Town 1 1 Rovers
+result United 0 3 Athletic
+result Rovers 3 1 United
+result Rovers 1 1 Rovers
+result Ghost 1 0 City
+result City 2 0 Ghost
+result City 2 x United
+correct 2 1 2
+correct 0 1 1
+correct 12 1 1
+correct 4 3
+form Rovers
+form Nobody
+h2h United City
+h2h Rovers Rovers
+h2h Town City
+goals
+streak
+summary
+withdraw Town
+withdraw Town
+correct 5 2 2
+form Town
+record Town
+result Town 1 0 City
+result City 1 0 Town
+rename United FC
+rename FC City
+rename Ghost Phantom
+rename FC
+h2h FC Rovers
+table
+record Rovers
+fixtures
+teams
+dance now

@@ -1,0 +1,31 @@
+useradd ann
+useradd bob
+mkdir /share
+chmod rwxrwx /share
+mkdir /locked
+su ann
+write /share/a.txt one
+append /share/b.txt
+append /share/b.txt two
+touch /share/c.txt
+su bob
+write /share/a.txt bob
+append /share/a.txt bob
+touch /share/a.txt
+touch /share/d.txt
+write /share/e.txt
+write /locked/x.txt hi
+touch /locked/x.txt
+append /locked/x.txt hi
+touch /locked
+write /locked hi
+write / hi
+append /share hi
+su root
+write /locked/x.txt root
+su bob
+touch /locked/x.txt
+cat /locked/x.txt
+ls -l /share
+stat /share/b.txt
+stat /share/e.txt

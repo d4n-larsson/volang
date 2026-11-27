@@ -1,0 +1,23 @@
+created p
+error: table p already exists
+error: duplicate column a
+created q
+error: wrong number of values
+error: type mismatch for column qty
+error: type mismatch for column qty
+error: wrong number of values
+error: unknown table nope
+id | name | qty
+---+------+----
+(0 rows)
+inserted 2
+inserted 1
+id   | name           | qty 
+-----+----------------+-----
+NULL | NULL           | NULL
+   2 | washer and nut |   -3
+   3 | pin            |    0
+(3 rows)
+a | b | c
+--+---+--
+(0 rows)

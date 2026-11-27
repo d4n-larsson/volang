@@ -1,0 +1,16 @@
+open assets:bank asset
+open assets:eur asset EUR
+open liab:card liability EUR
+open equity:open equity
+open expense:hotel expense
+rate EUR 1 1.10
+post t1 1 open assets:bank=500 assets:eur=100 equity:open=
+post t2 2 hotel expense:hotel=55 liab:card=-50
+rate EUR 3 1.20
+post t3 3 paycard liab:card=50 assets:eur=-50
+trial
+balance assets
+balance liab
+balance liab:card
+accounts
+revalue 3

@@ -1,0 +1,15 @@
+task p1 2
+task p2 2
+task p3 2
+task q 3
+dep q p1
+dep q p2+3
+dep q p3+5
+notbefore p2 4
+notbefore p3 3
+schedule
+critical
+gantt
+progress p3 50
+progress q 34
+status 11

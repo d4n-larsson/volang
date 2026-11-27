@@ -1,0 +1,9 @@
+workers 2
+retries 1
+backoff 3
+target lib 5 gen
+target gen 2
+target test 3 lib
+target tool 4
+fail lib 1
+goal test tool

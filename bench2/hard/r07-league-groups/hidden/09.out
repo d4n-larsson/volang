@@ -1,0 +1,79 @@
+team Pike added
+team Carp added
+team Tuna added
+team Eel added
+team Orca added
+team Seal added
+team Wren added
+team Lark added
+team Kite added
+team Rook added
+team Hawk added
+group C: Wren, Lark, Kite
+group A: Pike, Carp, Tuna, Eel
+group B: Orca, Seal, Rook
+group D: Hawk
+error: group A has 12 fixtures left
+result 1: Pike 1-0 Eel
+result 2: Eel 0-1 Pike
+result 3: Carp 3-0 Eel
+result 4: Eel 0-3 Carp
+result 5: Tuna 1-0 Eel
+result 6: Eel 0-2 Tuna
+result 7: Pike 2-0 Carp
+result 8: Carp 1-0 Pike
+result 9: Carp 1-0 Tuna
+result 10: Tuna 1-0 Carp
+result 11: Tuna 0-1 Pike
+result 12: Pike 0-1 Tuna
+result 13: Orca 1-1 Seal
+result 14: Seal 1-1 Orca
+result 15: Orca 2-0 Rook
+result 16: Rook 0-2 Orca
+result 17: Seal 2-0 Rook
+result 18: Rook 0-2 Seal
+error: group C has 6 fixtures left
+team Hawk withdrawn, 0 results void
+error: group C has 6 fixtures left
+result 19: Wren 2-2 Lark
+result 20: Lark 0-2 Wren
+result 21: Lark 0-1 Kite
+result 22: Kite 1-2 Lark
+result 23: Kite 0-0 Wren
+result 24: Wren 2-1 Kite
+group A
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Pike  6  4  0  2  5  2  +3  12
+  2 Tuna  6  4  0  2  5  2  +3  12
+  3 Carp  6  4  0  2  8  3  +5  12
+  4 Eel   6  0  0  6  0 11 -11   0
+group B
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Orca  4  2  2  0  6  2  +4   8
+  1 Seal  4  2  2  0  6  2  +4   8
+  3 Rook  4  0  0  4  0  8  -8   0
+group C
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Wren  4  2  2  0  6  3  +3   8
+  2 Kite  4  1  1  2  3  4  -1   4
+  3 Lark  4  1  1  2  4  6  -2   4
+group D
+table empty
+error: group D has fewer than 2 teams
+group B
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Orca  4  2  2  0  6  2  +4   8
+  1 Seal  4  2  2  0  6  2  +4   8
+  3 Rook  4  0  0  4  0  8  -8   0
+Seal: P 4, W 2, D 2, L 0, GF 6, GA 2, GD +4, Pts 8
+home 1-1-0, away 1-1-0
+position 1 of 3 in group B
+Orca: P 4, W 2, D 2, L 0, GF 6, GA 2, GD +4, Pts 8
+home 1-1-0, away 1-1-0
+position 1 of 3 in group B
+Pike: P 6, W 4, D 0, L 2, GF 5, GA 2, GD +3, Pts 12
+home 2-0-1, away 2-0-1
+position 1 of 4 in group A
+Tuna: P 6, W 4, D 0, L 2, GF 5, GA 2, GD +3, Pts 12
+home 2-0-1, away 2-0-1
+position 2 of 4 in group A

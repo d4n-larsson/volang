@@ -1,0 +1,99 @@
+From sender1@example.org Sat Jan  6 01:00:00 2024
+Message-ID: <big1@example.org>
+To: kim@example.org
+Subject: part 1
+
+line 0 of part 1 xxxxxxxxxx
+line 1 of part 1 xxxxxxxxxx
+line 2 of part 1 xxxxxxxxxx
+
+From sender2@example.org Sat Jan  6 02:00:00 2024
+Message-ID: <big2@example.org>
+To: kim@example.org, lee@example.org
+Subject: part 2
+
+line 0 of part 2 xxxxxxxxxxxxxxxxxxxx
+line 1 of part 2 xxxxxxxxxxxxxxxxxxxx
+line 2 of part 2 xxxxxxxxxxxxxxxxxxxx
+line 3 of part 2 xxxxxxxxxxxxxxxxxxxx
+line 4 of part 2 xxxxxxxxxxxxxxxxxxxx
+line 5 of part 2 xxxxxxxxxxxxxxxxxxxx
+
+From sender3@example.org Sat Jan  6 03:00:00 2024
+Message-ID: <big3@example.org>
+To: kim@example.org
+Subject: part 3
+
+line 0 of part 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 1 of part 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 2 of part 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 3 of part 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 4 of part 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 5 of part 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 6 of part 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 7 of part 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 8 of part 3 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+From sender4@example.org Sat Jan  6 04:00:00 2024
+Message-ID: <big4@example.org>
+To: kim@example.org, lee@example.org
+Subject: part 4
+
+line 0 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 1 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 2 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 3 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 4 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 5 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 6 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 7 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 8 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 9 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 10 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 11 of part 4 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+From sender5@example.org Sat Jan  6 05:00:00 2024
+Message-ID: <big5@example.org>
+To: kim@example.org
+Subject: part 5
+
+line 0 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 1 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 2 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 3 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 4 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 5 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 6 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 7 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 8 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 9 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 10 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 11 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 12 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 13 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 14 of part 5 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+From sender6@example.org Sat Jan  6 06:00:00 2024
+Message-ID: <big6@example.org>
+To: kim@example.org, lee@example.org
+Subject: part 6
+
+line 0 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 1 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 2 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 3 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 4 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 5 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 6 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 7 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 8 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 9 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 10 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 11 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 12 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 13 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 14 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 15 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 16 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+line 17 of part 6 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+

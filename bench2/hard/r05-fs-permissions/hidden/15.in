@@ -1,0 +1,30 @@
+useradd ann
+mkdir /pub
+chmod rwxrwx /pub
+mkdir /vault
+write /vault/v.txt v
+chmod rw-rw- /vault
+write /f.txt plain
+su ann
+write /pub/a.txt a
+mv /pub/a.txt /vault/../pub/b.txt
+ls /pub
+mv /pub/b.txt /vault
+mv /pub/b.txt /vault/v.txt
+mv /pub/b.txt /vault/new/x.txt
+cp /pub/b.txt /vault
+cp /pub/b.txt /vault/v.txt
+cat /vault/../pub/b.txt
+cat /f.txt/../pub/b.txt
+cat /pub/./b.txt
+mv /pub/b.txt /f.txt/x
+mv /pub/b.txt /f.txt
+mkdir /pub/sub
+mv /pub/b.txt /pub/sub
+mv /pub/sub/b.txt /pub/sub/b.txt
+mv /pub/sub /pub/sub/../sub2
+ls -l /pub
+cd /vault
+cd /pub/sub2
+cd /vault/..
+pwd

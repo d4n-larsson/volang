@@ -1,0 +1,29 @@
+added task p1
+added task p2
+added task p3
+added task q
+q after p1
+q after p2+3
+q after p3+5
+task p2 starts no earlier than day 4
+task p3 starts no earlier than day 3
+task  start  finish  lstart  lfinish  slack
+p1        0       2      10       14      8
+p2        4       8       7        9      1
+p3        3       7       3        7      0
+q        14      17      14       17      0
+end 17
+critical: p3 q (13 working days)
+   012345678901234567
+p1 ##................
+p2 ....#::#..........
+p3 ...##.............
+q  ..............###.
+task p3 50% done
+task q 34% done
+status on day 11
+  p1: planned 2 done 0 behind
+  p2: planned 2 done 0 behind
+  p3: planned 2 done 1 behind
+  q: planned 0 done 1 ahead
+total planned 6 done 2 33%

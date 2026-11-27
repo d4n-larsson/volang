@@ -1,0 +1,25 @@
+[main 1] first (5 added, 0 modified, 0 deleted)
+error: nothing to commit
+on main
+D B.txt
+M a
+A c
+on main
+D B.txt
+error: no such file zzz
+error: no such file c
+on main
+D B.txt
+A empty
+[main 2] two spaced words (1 added, 0 modified, 1 deleted)
+on main
+M a
+[main 3] third (0 added, 1 modified, 0 deleted)
+commit 3
+parents 2
+message third
+a "many spaces here"
+a.b "dotted"
+ab "joined"
+b.txt "bee"
+empty ""

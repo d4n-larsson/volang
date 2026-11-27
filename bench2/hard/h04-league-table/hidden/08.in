@@ -1,0 +1,12 @@
+bay Ash nab Cove Kent lea Moor fen
+lea 1 0 Cove
+lea 1 0 Moor
+Ash 1 1 Cove
+Kent 1 1 Moor
+Moor 0 0 lea
+nab 0 0 lea
+Ash 1 1 Cove
+nab 1 1 Kent
+bay 0 1 Moor
+fen 1 1 bay
+bay 1 1 fen

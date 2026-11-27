@@ -1,0 +1,11 @@
+create table g (id int, a int, b int)
+create table h (id int, a int)
+insert into g values (1, 2, 3), (2, 2, 5), (3, 4, 3)
+insert into h values (1, 2), (3, 9), (5, 2)
+select g.id, h.id from g join h on g.a = h.a
+select g.id, h.a from g left join h on g.id = g.b
+select g.id, h.id from g left join h on g.b = g.b order by h.id desc, g.id
+select g.id, count(h.id) from g left join h on h.a = g.a group by g.id
+select b, count(*) from g join h on g.id = h.id group by b
+select a from g join h on g.id = h.id
+select * from h join g on h.a = g.a where g.b > 3

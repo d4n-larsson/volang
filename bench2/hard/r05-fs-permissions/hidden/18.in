@@ -1,0 +1,41 @@
+useradd lead
+useradd dev
+useradd guest
+mkdir /team
+chown lead /team
+su lead
+chmod rwxrwx /team
+mkdir /team/src
+write /team/src/main.txt v1
+mkdir /team/docs
+write /team/docs/guide.txt read me
+chmod rwxr-- /team/docs
+su dev
+cp /team/src/main.txt /team/src/main2.txt
+append /team/src/main.txt v2
+mkdir /team/dev
+write /team/dev/wip.txt wip
+mv /team/dev/wip.txt /team/src
+cat /team/docs/guide.txt
+ls /team/docs
+grep me /team/docs/guide.txt
+head /team/docs/guide.txt 1
+su guest
+tree /team
+du /team
+find /team wip.txt
+rm /team/dev
+rm -r /team/dev
+ls -l /team
+su lead
+mv /team/dev /team/archive
+chmod rwxr-x /team
+su dev
+mkdir /team/x
+write /team/archive/note.txt still mine
+su lead
+grep mine /team/archive/note.txt
+stat /team/archive
+ls -l /team/archive
+rm -r /team/archive
+whoami

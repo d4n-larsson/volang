@@ -1,0 +1,10 @@
+let x = 5
+if x > 3
+    print "big"
+elif x > 1
+    print "medium"
+else
+    print "small"
+elif x > 0
+    print "positive"
+end

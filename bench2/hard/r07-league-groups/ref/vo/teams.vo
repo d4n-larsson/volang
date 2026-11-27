@@ -1,0 +1,166 @@
+# Registering, finding, renaming and withdrawing teams.
+import model;
+
+# The position of the team in the league's list, or -1.
+export fn find_team(league: model.League, name: str) -> int {
+    for i, t in league.teams {
+        if t.name == name {
+            return i;
+        }
+    }
+    return -1;
+}
+
+export fn active_teams(league: model.League) -> list[model.Team] {
+    return filter(league.teams, fn(t) => not t.withdrawn);
+}
+
+export fn active_names(league: model.League) -> list[str] {
+    return map(active_teams(league), fn(t) => t.name);
+}
+
+# The error for a name that is not a team, or "".
+export fn known_error(league: model.League, name: str) -> str {
+    if find_team(league, name) < 0 {
+        return "error: unknown team " + name;
+    }
+    return "";
+}
+
+# The error for a name that is not a team or is a withdrawn one, or "".
+export fn playable_error(league: model.League, name: str) -> str {
+    let e = known_error(league, name);
+    if e != "" {
+        return e;
+    }
+    if league.teams[find_team(league, name)].withdrawn {
+        return "error: team " + name + " withdrawn";
+    }
+    return "";
+}
+
+export fn add_team(league: model.League, name: str) -> str {
+    if find_team(league, name) >= 0 {
+        return "error: team " + name + " exists";
+    }
+    push(league.teams, new model.Team { name: name, withdrawn: false });
+    return "team " + name + " added";
+}
+
+export fn withdraw(league: model.League, name: str) -> str {
+    let e = known_error(league, name);
+    if e != "" {
+        return e;
+    }
+    let t = league.teams[find_team(league, name)];
+    if t.withdrawn {
+        return "error: team " + name + " already withdrawn";
+    }
+    set t.withdrawn = true;
+    var count = 0;
+    for m in league.matches {
+        if not m.voided and (m.home == name or m.away == name) {
+            set m.voided = true;
+            set count = count + 1;
+        }
+    }
+    return "team " + name + " withdrawn, " + str(count) + " results void";
+}
+
+export fn rename(league: model.League, old: str, new_name: str) -> str {
+    let e = known_error(league, old);
+    if e != "" {
+        return e;
+    }
+    if find_team(league, new_name) >= 0 {
+        return "error: team " + new_name + " exists";
+    }
+    set league.teams[find_team(league, old)].name = new_name;
+    for _, members in league.groups {
+        for i, m in members {
+            if m == old {
+                set members[i] = new_name;
+            }
+        }
+    }
+    for m in league.matches {
+        if m.home == old {
+            set m.home = new_name;
+        }
+        if m.away == old {
+            set m.away = new_name;
+        }
+    }
+    return "team " + old + " renamed " + new_name;
+}
+
+export fn grouped(league: model.League) -> bool {
+    return len(league.groups) > 0;
+}
+
+# The name of the team's group, or "".
+export fn group_of(league: model.League, name: str) -> str {
+    for g, members in league.groups {
+        if any(members, fn(m) => m == name) {
+            return g;
+        }
+    }
+    return "";
+}
+
+export fn group_names(league: model.League) -> list[str] {
+    let names = keys(league.groups);
+    sort(names);
+    return names;
+}
+
+export fn group_active(league: model.League, g: str) -> list[str] {
+    return filter(league.groups[g], fn(n) => not league.teams[find_team(league, n)].withdrawn);
+}
+
+export fn add_group(league: model.League, g: str, names: list[str]) -> str {
+    if len(league.matches) > 0 {
+        return "error: groups are fixed once results exist";
+    }
+    let seen = new list[str];
+    for name in names {
+        let e = playable_error(league, name);
+        if e != "" {
+            return e;
+        }
+        if group_of(league, name) != "" {
+            return "error: team " + name + " already in group " + group_of(league, name);
+        }
+        if any(seen, fn(s) => s == name) {
+            return "error: team " + name + " listed twice";
+        }
+        push(seen, name);
+    }
+    if not has(league.groups, g) {
+        set league.groups[g] = new list[str];
+    }
+    for name in names {
+        push(league.groups[g], name);
+    }
+    return "group " + g + ": " + join(league.groups[g], ", ");
+}
+
+export fn team_lines(league: model.League) -> list[str] {
+    let out = new list[str];
+    for t in league.teams {
+        let notes = new list[str];
+        if group_of(league, t.name) != "" {
+            push(notes, "group " + group_of(league, t.name));
+        }
+        if t.withdrawn {
+            push(notes, "withdrawn");
+        }
+        if len(notes) > 0 {
+            push(out, t.name + " (" + join(notes, ", ") + ")");
+        } else {
+            push(out, t.name);
+        }
+    }
+    push(out, str(len(league.teams)) + " teams");
+    return out;
+}

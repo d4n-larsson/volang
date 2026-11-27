@@ -1,0 +1,209 @@
+# Commands on directories: mkdir, rmdir, cd, pwd, ls, rm, mv.
+import fmt;
+import nodes;
+import paths;
+import perms;
+import resolve;
+import shell;
+
+# The error of a command that has one, as the command's output.
+export fn outcome(r: result[void]) -> list[str] {
+    match r {
+        case ok() {
+            return [];
+        }
+        case err(e) {
+            return [e];
+        }
+    }
+}
+
+export fn mkdir(sh: shell.Shell, text: str) -> result[void] {
+    let names = paths.normalize(sh.cwd, text);
+    if len(names) == 0 {
+        return err(fmt.error(fmt.exists, names));
+    }
+    let holder = try resolve.walk_parent(sh, names);
+    let name = paths.base_name(names);
+    if nodes.has_entry(holder, name) {
+        return err(fmt.error(fmt.exists, names));
+    }
+    if not perms.can(sh, holder, "w") {
+        return err(perms.denied(names));
+    }
+    nodes.put_entry(holder, name, nodes.new_dir(sh.user));
+    return ok();
+}
+
+# `mkdir -p`: creates every missing directory on the path; existing directories are fine.
+export fn mkdir_parents(sh: shell.Shell, text: str) -> result[void] {
+    let names = paths.normalize(sh.cwd, text);
+    var node = sh.root;
+    for i, name in names {
+        if not perms.can(sh, node, "x") {
+            return err(perms.denied(names));
+        }
+        if nodes.has_entry(node, name) {
+            set node = nodes.entry(node, name);
+            if not node.is_dir {
+                if i == len(names) - 1 {
+                    return err(fmt.error(fmt.exists, names));
+                }
+                return err(fmt.error(fmt.not_dir, names));
+            }
+        } else {
+            if not perms.can(sh, node, "w") {
+                return err(perms.denied(names));
+            }
+            let made = nodes.new_dir(sh.user);
+            nodes.put_entry(node, name, made);
+            set node = made;
+        }
+    }
+    return ok();
+}
+
+# Whether the directory `names` is the current directory or holds it (/ always does).
+fn in_use(sh: shell.Shell, names: list[str]) -> bool {
+    return paths.is_within(sh.cwd, names);
+}
+
+export fn rmdir(sh: shell.Shell, text: str) -> result[void] {
+    let names = paths.normalize(sh.cwd, text);
+    let node = try resolve.walk(sh, names);
+    if not node.is_dir {
+        return err(fmt.error(fmt.not_dir, names));
+    }
+    if in_use(sh, names) {
+        return err(fmt.error(fmt.in_use, names));
+    }
+    if nodes.entry_count(node) > 0 {
+        return err(fmt.error(fmt.not_empty, names));
+    }
+    let holder = try resolve.walk_parent(sh, names);
+    if not perms.can(sh, holder, "w") {
+        return err(perms.denied(names));
+    }
+    nodes.drop_entry(holder, paths.base_name(names));
+    return ok();
+}
+
+export fn cd(sh: shell.Shell, text: str) -> result[void] {
+    let names = paths.normalize(sh.cwd, text);
+    let node = try resolve.walk(sh, names);
+    if not node.is_dir {
+        return err(fmt.error(fmt.not_dir, names));
+    }
+    if not perms.can(sh, node, "x") {
+        return err(perms.denied(names));
+    }
+    set sh.cwd = names;
+    return ok();
+}
+
+export fn pwd(sh: shell.Shell) -> list[str] {
+    return [paths.display(sh.cwd)];
+}
+
+# The entries of a directory, one per line; a file is listed as its own name.
+# `ls -l` (`long`) shows each with its mode, owner and size.
+export fn ls(sh: shell.Shell, text: str, long: bool) -> list[str] {
+    let names = paths.normalize(sh.cwd, text);
+    match resolve.walk(sh, names) {
+        case err(e) {
+            return [e];
+        }
+        case ok(node) {
+            if not node.is_dir {
+                if long {
+                    return [fmt.long_line(paths.base_name(names), node)];
+                }
+                return [paths.base_name(names)];
+            }
+            if not perms.can(sh, node, "r") or long and not perms.can(sh, node, "x") {
+                return [perms.denied(names)];
+            }
+            var out = map(
+                nodes.sorted_names(node),
+                fn(name) => fmt.entry_name(name, nodes.entry(node, name))
+            );
+            if long {
+                set out = map(
+                    nodes.sorted_names(node),
+                    fn(name) => fmt.long_line(name, nodes.entry(node, name))
+                );
+            }
+            if len(out) == 0 {
+                return ["(empty)"];
+            }
+            return out;
+        }
+    }
+}
+
+export fn rm(sh: shell.Shell, text: str, recursive: bool) -> result[void] {
+    let names = paths.normalize(sh.cwd, text);
+    let node = try resolve.walk(sh, names);
+    if node.is_dir {
+        if not recursive {
+            return err(fmt.error(fmt.is_dir, names));
+        }
+        if in_use(sh, names) {
+            return err(fmt.error(fmt.in_use, names));
+        }
+    }
+    let holder = try resolve.walk_parent(sh, names);
+    if not perms.can(sh, holder, "w") {
+        return err(perms.denied(names));
+    }
+    if node.is_dir {
+        try first_blocked(sh, node, names);
+    }
+    nodes.drop_entry(holder, paths.base_name(names));
+    return ok();
+}
+
+# An error naming the first directory of the subtree, in tree order, that the user lacks r, w or
+# x on.
+fn first_blocked(sh: shell.Shell, node: nodes.Node, names: list[str]) -> result[void] {
+    if not (perms.can_list(sh, node) and perms.can(sh, node, "w")) {
+        return err(perms.denied(names));
+    }
+    for name in nodes.sorted_names(node) {
+        let item = nodes.entry(node, name);
+        if item.is_dir {
+            try first_blocked(sh, item, paths.child(names, name));
+        }
+    }
+    return ok();
+}
+
+# Moves (renames) a file or directory. A file may replace an existing file.
+export fn mv(sh: shell.Shell, src_text: str, dst_text: str) -> result[void] {
+    let src_names = paths.normalize(sh.cwd, src_text);
+    let src = try resolve.walk(sh, src_names);
+    if src.is_dir and in_use(sh, src_names) {
+        return err(fmt.error(fmt.in_use, src_names));
+    }
+    let target = try resolve.target(sh, src_names, paths.normalize(sh.cwd, dst_text));
+    if src.is_dir and paths.is_within(target, src_names) {
+        return err(fmt.error(fmt.into_itself, src_names));
+    }
+    let holder = try resolve.walk_parent(sh, target);
+    let name = paths.base_name(target);
+    if nodes.has_entry(holder, name) {
+        if src.is_dir or nodes.entry(holder, name).is_dir {
+            return err(fmt.error(fmt.exists, target));
+        }
+    }
+    let src_holder = try resolve.walk_parent(sh, src_names);
+    if not perms.can(sh, src_holder, "w") {
+        return err(perms.denied(src_names));
+    }
+    if not perms.can(sh, holder, "w") {
+        return err(perms.denied(target));
+    }
+    nodes.drop_entry(src_holder, paths.base_name(src_names));
+    nodes.put_entry(holder, name, src);
+    return ok();
+}

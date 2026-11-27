@@ -1,0 +1,7 @@
+PACK 1
+F a.txt 1
+alpha
+F b.txt -1
+F c.txt 1
+c
+END 3

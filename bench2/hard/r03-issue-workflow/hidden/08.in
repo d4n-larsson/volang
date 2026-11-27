@@ -1,0 +1,28 @@
+user ann
+new p2 Original report
+new p2 Same report again
+new p3 Third copy
+new p3 Unrelated
+dup 2 1
+show 2
+dup 2 1
+dup 3 2
+dup 1 1
+dup 3 3
+assign 1 ann
+move 1 triaged
+move 1 in_progress
+move 1 review
+move 1 done
+dup 3 1
+dup 4 9
+dup x 1
+dup 4
+label 4 +bug
+label 1 +bug +ui
+labels
+reopen 2
+show 2
+labels
+search report
+search DUPLICATE

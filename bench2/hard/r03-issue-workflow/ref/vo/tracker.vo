@@ -1,0 +1,113 @@
+# The tracker's records: users, issues, comments, the event log and the clock.
+export record Comment {
+    tick: int;
+    author: str;
+    text: str;
+}
+
+export record Transition {
+    tick: int;
+    source: str;
+    target: str;
+    # "" when none was given
+    reason: str;
+}
+
+export fn states() -> list[str] {
+    return ["new", "triaged", "in_progress", "blocked", "review", "done", "wontfix"];
+}
+
+# The states an issue in `state` may move to.
+export fn allowed(state: str) -> list[str] {
+    match state {
+        case "new" {
+            return ["triaged", "wontfix"];
+        }
+        case "triaged" {
+            return ["in_progress", "wontfix"];
+        }
+        case "in_progress" {
+            return ["triaged", "blocked", "review"];
+        }
+        case "blocked" {
+            return ["triaged", "in_progress"];
+        }
+        case "review" {
+            return ["in_progress", "done"];
+        }
+        else {
+            return ["triaged"];
+        }
+    }
+}
+
+export record Issue {
+    num: int;
+    title: str;
+    # 1 (most urgent) to 4
+    priority: int;
+    # "" when nobody is assigned
+    assignee: str;
+    # kept sorted
+    labels: list[str];
+    comments: list[Comment];
+    # one of states()
+    status: str;
+    # oldest first
+    history: list[Transition];
+    created: int;
+    updated: int;
+}
+
+export record Event {
+    tick: int;
+    message: str;
+}
+
+export record Tracker {
+    # name -> tick the user was added
+    users: map[str, int];
+    # number -> Issue, in creation order
+    issues: map[int, Issue];
+    # every successful change, oldest first
+    events: list[Event];
+    next_num: int;
+    # the tick of the command being run
+    clock: int;
+}
+
+export fn new_tracker() -> Tracker {
+    return new Tracker { users: new map[str, int], issues: new map[int, Issue], events: new list[Event], next_num: 1, clock: 0 };
+}
+
+export fn new_issue(num: int, title: str, priority: int, tick: int) -> Issue {
+    return new Issue { num: num, title: title, priority: priority, assignee: "", labels: new list[str], comments: new list[Comment], status: "new", history: new list[Transition], created: tick, updated: tick };
+}
+
+export fn is_open(issue: Issue) -> bool {
+    return issue.status != "done" and issue.status != "wontfix";
+}
+
+export fn transition(t: Tracker, issue: Issue, target: str, reason: str) {
+    push(issue.history, new Transition { tick: t.clock, source: issue.status, target: target, reason: reason });
+    set issue.status = target;
+    touch(t, issue);
+}
+
+export fn touch(t: Tracker, issue: Issue) {
+    set issue.updated = t.clock;
+}
+
+# Logs a successful change and returns its message as the command's output.
+export fn log_change(t: Tracker, message: str) -> str {
+    push(t.events, new Event { tick: t.clock, message: message });
+    return message;
+}
+
+export fn all_issues(t: Tracker) -> list[Issue] {
+    let out = new list[Issue];
+    for _, i in t.issues {
+        push(out, i);
+    }
+    return out;
+}

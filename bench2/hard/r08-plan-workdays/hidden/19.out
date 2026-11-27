@@ -1,0 +1,91 @@
+error: unknown task f
+added task e
+added task c
+error: day 7 is already a working day
+e 2d x Big
+c 1d c
+days 20-22: 2 working, 1 off
+off: 20
+task c 50% done
+added task d
+error: unknown task build-2
+days 11-26: 11 working, 5 off
+off: 12 13 19 20 26
+e 2d x Big
+c 1d c
+d 9d x job
+error: bad command
+error: task e exists
+added task f
+error: unknown task b
+task  start  finish  lstart  lfinish  slack
+e         0       2       9       11      7
+c         0       1      10       11      8
+d         0      11       0       11      0
+f         0       4       7       11      5
+end 11
+error: bad command
+day 4 is now off
+error: unknown task b
+critical: d (9 working days)
+removed f
+error: unknown task g
+error: unknown task h
+error: bad command
+  012345678901234
+e ##.............
+c #..............
+d ####:::#####...
+error: unknown task g
+error: bad command
+error: unknown task a
+added task a
+error: unknown task build-2
+added task f
+added milestone build-2
+error: task d exists
+added task g
+added task h
+added task b
+error: bad command
+error: bad command
+e after d
+error: day 3 is already a working day
+critical: d e (11 working days)
+b after c+1
+error: task d exists
+error: task f exists
+task f: job
+  duration 3 days
+  after: -
+  before: -
+  start 0 finish 3 slack 8
+  done 0%
+g after e+2
+day 23 is now off
+error: task f exists
+error: b already depends on c
+error: day 10 is already a working day
+b after f
+error: unknown task x9
+task build-2: job
+  milestone
+  after: -
+  before: -
+  start 0 finish 0 slack 19
+day 7 is now off
+error: bad command
+error: task b exists
+task f 0% done
+critical: d e g (19 working days)
+b after e
+e after f
+error: task b exists
+task h renamed
+error: task e exists
+added task x9
+error: day 10 is already a working day
+error: bad command
+error: task e exists
+d after h
+task a starts no earlier than day 17

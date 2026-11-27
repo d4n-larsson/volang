@@ -1,0 +1,23 @@
+0 start ok1 w1 #1
+0 start huge w2 #1
+5 fail ok1 w1 #1
+5 timeout huge w2 #1
+7 start ok1 w1 #2
+7 start huge w2 #2
+12 done ok1 w1
+12 timeout huge w2 #2
+12 give up huge
+12 skip after
+12 start ok2 w1 #1
+16 done ok2 w1
+16 start last w1 #1
+18 done last w1
+makespan 18
+utilization 48%
+w1 busy 16 attempts 4
+w2 busy 10 attempts 2
+w3 busy 0 attempts 0
+built: ok1 ok2 last
+failed: huge
+skipped: after
+blocked: -

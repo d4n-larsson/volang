@@ -1,0 +1,121 @@
+ignore -20240101-0300.tar
+ignore README.txt
+ignore WEB-20240101-0300.tar
+ignore web-2024-01-01-0300.tar
+ignore web-20240101-030.tar
+ignore web-20240101-0300.tar.gz
+ignore web-20240101-0360.tar
+ignore web-20240101-2400.tar
+ignore web-2024011-0300.tar
+ignore web-20240231-0300.tar
+ignore web_20240101-0300.tar
+plan for prod as of 2024-06-15
+== cache
+keep cache-20240605-2359.tar last,daily,weekly,monthly
+keep cache-20240520-2359.tar last,daily,weekly,monthly
+keep cache-20240504-2359.tar last,daily,weekly
+keep cache-20240418-2359.tar daily,weekly,monthly
+keep cache-20240402-2359.tar daily
+keep cache-20240317-2359.tar daily,monthly
+keep cache-20240301-2359.tar daily
+== db-eu-1
+keep db-eu-1-20240617-0115.tar future
+keep db-eu-1-20240613-0115.tar last,daily,weekly,monthly
+keep db-eu-1-20240609-0115.tar last,daily,weekly
+keep db-eu-1-20240605-0115.tar last,daily
+keep db-eu-1-20240601-0115.tar daily,weekly
+keep db-eu-1-20240528-0115.tar daily,monthly
+keep db-eu-1-20240524-0115.tar daily,weekly
+keep db-eu-1-20240520-0115.tar daily
+delete db-eu-1-20240516-0115.tar
+delete db-eu-1-20240512-0115.tar
+delete db-eu-1-20240508-0115.tar
+delete db-eu-1-20240504-0115.tar
+keep db-eu-1-20240430-0115.tar monthly
+delete db-eu-1-20240426-0115.tar
+delete db-eu-1-20240422-0115.tar
+delete db-eu-1-20240418-0115.tar
+delete db-eu-1-20240414-0115.tar
+delete db-eu-1-20240410-0115.tar
+delete db-eu-1-20240406-0115.tar
+delete db-eu-1-20240402-0115.tar
+keep db-eu-1-20240329-0115.tar monthly
+delete db-eu-1-20240325-0115.tar
+delete db-eu-1-20240321-0115.tar
+delete db-eu-1-20240317-0115.tar
+delete db-eu-1-20240313-0115.tar
+delete db-eu-1-20240309-0115.tar
+delete db-eu-1-20240305-0115.tar
+delete db-eu-1-20240301-0115.tar
+keep db-eu-1-20231130-0115.tar monthly
+keep db-eu-1-20221130-0115.tar monthly
+== web
+keep web-20240619-0300.tar future
+keep web-20240617-0300.tar future
+keep web-20240616-1530.tar future
+keep web-20240615-0300.tar last,daily,weekly,monthly
+keep web-20240611-0300.tar last,daily
+keep web-20240609-1530.tar last,daily,weekly
+delete web-20240609-0300.tar
+keep web-20240607-0300.tar daily
+keep web-20240605-0300.tar daily
+keep web-20240603-0300.tar daily
+keep web-20240602-1530.tar daily,weekly
+delete web-20240601-0300.tar
+keep web-20240530-0300.tar monthly
+delete web-20240528-0300.tar
+keep web-20240526-1530.tar weekly
+delete web-20240526-0300.tar
+delete web-20240524-0300.tar
+delete web-20240520-0300.tar
+delete web-20240519-1530.tar
+delete web-20240518-0300.tar
+delete web-20240516-0300.tar
+delete web-20240514-0300.tar
+delete web-20240512-1530.tar
+delete web-20240512-0300.tar
+delete web-20240510-0300.tar
+delete web-20240508-0300.tar
+delete web-20240506-0300.tar
+delete web-20240505-1530.tar
+delete web-20240504-0300.tar
+delete web-20240502-0300.tar
+keep web-20240428-1530.tar monthly
+delete web-20240428-0300.tar
+delete web-20240426-0300.tar
+delete web-20240424-0300.tar
+delete web-20240422-0300.tar
+delete web-20240421-1530.tar
+delete web-20240420-0300.tar
+delete web-20240418-0300.tar
+delete web-20240416-0300.tar
+delete web-20240414-1530.tar
+delete web-20240414-0300.tar
+delete web-20240412-0300.tar
+delete web-20240410-0300.tar
+delete web-20240407-1530.tar
+delete web-20240406-0300.tar
+delete web-20240404-0300.tar
+delete web-20240402-0300.tar
+keep web-20240331-1530.tar monthly
+delete web-20240331-0300.tar
+delete web-20240329-0300.tar
+delete web-20240327-0300.tar
+delete web-20240325-0300.tar
+delete web-20240324-1530.tar
+delete web-20240323-0300.tar
+delete web-20240321-0300.tar
+delete web-20240319-0300.tar
+delete web-20240317-1530.tar
+delete web-20240315-0300.tar
+delete web-20240313-0300.tar
+delete web-20240311-0300.tar
+delete web-20240310-1530.tar
+delete web-20240309-0300.tar
+delete web-20240307-0300.tar
+delete web-20240305-0300.tar
+delete web-20240303-1530.tar
+delete web-20240303-0300.tar
+delete web-20240301-0300.tar
+kept 33, deleted 71
+wrote plan/prod.delete 71

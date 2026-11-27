@@ -1,0 +1,28 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+channel bob dev
+post ann general a1
+reply bob general/1 b1
+reply cy general/1 c1
+reply bob general/2 b2
+post bob dev b3
+post cy general c2
+delete ann general/1
+top
+top 1
+top 5
+whois bob
+whois ann
+whois dee
+channels
+stats
+delete bob general/2
+delete cy general/3
+top
+channels
+stats

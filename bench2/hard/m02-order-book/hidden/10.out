@@ -1,0 +1,32 @@
+rest A1 3 0.05
+trade PA 3 0.05 A1 A2
+filled A2
+rest A3 3 0.05
+trade PA 3 0.05 A3 A4
+filled A4
+reject A5 price band
+reject A6 no liquidity
+pending A7
+rest A8 2 1234.56
+trade PC 1 1234.56 A8 A9
+filled A9
+rest B1 1 0.01
+trade PD 1 0.01 B2 B1
+filled B2
+reject B3 price band
+reject B3 unknown order
+expired B4 1
+book PA last 0.05
+  empty
+book PB last -
+  empty
+book PC last 1234.56
+  bid 1234.56 1 1
+book PD last 0.01
+  empty
+trader ana cash 0.00
+trader bob cash 0.00
+trader eve cash 0.00
+trader fay cash -1234.55 PC:1 PD:-1
+trader gus cash 1234.55 PC:-1 PD:1
+trader hal cash 0.00

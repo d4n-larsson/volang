@@ -1,0 +1,30 @@
+useradd ann
+useradd bob
+mkdir /pub
+chmod rwxrwx /pub
+su ann
+write /pub/a.txt from ann
+chmod ---rw- /pub/a.txt
+cat /pub/a.txt
+append /pub/a.txt more
+su bob
+cat /pub/a.txt
+append /pub/a.txt bob line
+cat /pub/a.txt
+chmod rw-rw- /pub/a.txt
+chmod rwq--- /pub/missing
+chmod rw-r-- /pub/missing
+chmod rw-r-x /pub/missing
+chmod rwxrwxr /pub/a.txt
+su ann
+chmod rw-r-- /pub/a.txt
+cat /pub/a.txt
+stat /pub/a.txt
+chmod r--r-- /pub
+su root
+stat /pub
+write /pub/b.txt root wrote
+su ann
+write /pub/c.txt nope
+cat /pub/b.txt
+ls -l /pub

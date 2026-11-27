@@ -1,0 +1,6 @@
+let i = 0
+let j = 0
+while i < 4999
+    set i = i + 1
+end
+print i

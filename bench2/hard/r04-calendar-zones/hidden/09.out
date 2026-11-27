@@ -1,0 +1,17 @@
+user dee added
+user eli added
+room r added, capacity 3
+booked b1 in r: 2 22:00-3 02:00 (2 people)
+booked b2 in r: 4 09:00-09:30 (2 people)
+booked b3 in r: 4 23:00-5 00:30 (1 person)
+dee: 2 meetings, 4h30m
+dee day 2: 1 meeting, 2h00m
+dee day 3: 1 meeting, 2h00m
+dee day 4: 1 meeting, 0h30m
+eli day 3: 1 meeting, 4h00m
+eli day 4: 2 meetings, 1h30m
+eli day 5: 1 meeting, 0h30m
+eli day 0: 0 meetings, 0h00m
+error: bad command
+error: unknown user nobody
+error: unknown user r

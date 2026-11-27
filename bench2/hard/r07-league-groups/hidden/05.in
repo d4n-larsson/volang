@@ -1,0 +1,27 @@
+team Ant
+team Bee
+team Cat
+team Dog
+team Elk
+team Fox
+group Y Ant Bee Cat
+group X Dog Elk
+result Ant 1 0 Dog
+result Dog 1 0 Ant
+result Ant 1 0 Fox
+result Fox 1 0 Fox
+result Ant 2 2 Bee
+result Ant 2 2 Bee
+result Dog 3 1 Elk
+withdraw Elk
+result Dog 1 0 Elk
+result Elk 1 0 Ant
+result Ant 1 1 Eel
+result Bee 0 1 Ant
+result Cat 1 1 Bee
+fixtures
+table
+h2h Ant Dog
+h2h Ant Bee
+h2h Fox Ant
+h2h Dog Elk

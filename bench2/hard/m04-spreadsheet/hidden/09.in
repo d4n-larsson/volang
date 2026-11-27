@@ -1,0 +1,26 @@
+set A1 5
+
+SET A2 6
+   print    A1   
+print A1 extra
+print
+set A1
+set a1 3
+set A100 3
+set $A1 3
+copy A1
+copy A1 B1 C1
+copy A1 B0
+show A1:B2:C3
+show A1:
+show 1A
+print A01
+deps
+erase A1
+clear A1 A2
+formula Z99
+clear A1
+print A1
+print B1
+  
+show

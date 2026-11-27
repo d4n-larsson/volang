@@ -1,0 +1,26 @@
+set B2 =A1+$A1+A$1+$A$1
+copy B2 C4
+show C4
+copy B2 A1
+show A1
+get A1
+set D5 =SUM(C3:E6)*2
+copy D5 D3
+show D3
+copy D5 W1
+show W1
+get W1
+deps D5
+deps W1
+deps A1
+users D4
+users E5
+users A1
+set E1 =MAX(E2:E3)
+set E2 =1/0
+set E3 =E1
+get E1
+set F1 =SUM(F2:G2)
+set G2 =1/0
+set F2 =F1
+get F1

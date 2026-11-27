@@ -1,0 +1,9 @@
+customer zed 100.00 10 500
+invoice zed 1x40.00
+invoice zed 2x30.00
+invoice zed 1x0.01
+void 1
+pay zed 70.00
+customer zed 5.00 1 1
+refund zed 1.00
+invoice ana 1x1.00

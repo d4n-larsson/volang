@@ -1,0 +1,6 @@
+HOME=/home/ann
+FILES=a.txt b.txt
+%%
+ls -l "$HOME/my docs" $FILES
+echo 'it''s' \$HOME # a comment
+grep "say \"hi\"" x#y

@@ -1,0 +1,30 @@
+created s
+inserted 3
+error: column h must be grouped
+error: * with grouping
+error: column g must be grouped
+error: column h must be grouped
+error: having without grouping
+error: column h must be grouped
+error: sum needs an int column
+error: aggregate in where
+error: unknown column q
+error: column n must be grouped
+g | sum(n)
+--+-------
+2 |      7
+1 |     11
+(2 rows)
+error: column g must be grouped
+count(*)
+--------
+(0 rows)
+count(*)
+--------
+       3
+(1 row)
+error: type mismatch in comparison
+min(h)
+------
+a     
+(1 row)

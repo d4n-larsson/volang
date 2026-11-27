@@ -1,0 +1,41 @@
+user ann added
+created #1: Old work
+created #2: Newer work
+created #3: Newest work
+clock 8
+#1 moved new -> triaged
+#2 assigned to ann
+#2 moved new -> triaged
+#2 moved triaged -> in_progress
+clock 14
+#3 idle 11 ticks: Newest work
+#1 idle 6 ticks: Old work
+#2 idle 3 ticks: Newer work
+#3 idle 12 ticks: Newest work
+#1 idle 7 ticks: Old work
+#2 idle 4 ticks: Newer work
+#3 idle 13 ticks: Newest work
+#1 idle 8 ticks: Old work
+#2 idle 5 ticks: Newer work
+#3 idle 14 ticks: Newest work
+#1 idle 9 ticks: Old work
+#2 unassigned
+#2 moved in_progress -> triaged
+#3 idle 16 ticks: Newest work
+#1 idle 11 ticks: Old work
+#2 idle 1 tick: Newer work
+#3 closed
+#1 idle 13 ticks: Old work
+#2 idle 3 ticks: Newer work
+#3 reopened
+#1 idle 15 ticks: Old work
+#2 idle 5 ticks: Newer work
+#3 idle 1 tick: Newest work
+#3 [p3] Newest work
+  status: triaged
+  assignee: -
+  labels: -
+  created 4, updated 23
+  [21] new -> wontfix (closed)
+  [23] wontfix -> triaged
+  0 comments

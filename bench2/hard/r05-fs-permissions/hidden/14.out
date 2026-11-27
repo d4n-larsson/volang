@@ -1,0 +1,44 @@
+/a/b
+/
+/a/b
+hello world
+
+second hello
+hello world
+
+hello world
+
+second hello
+1:hello world
+3:second hello
+error: is a directory: /a
+/a/b/f.txt: file, 26 bytes, 3 lines, owner root, mode rw-r--
+/a/e.txt: file, 0 bytes, 0 lines, owner root, mode rw-r--
+f.txt
+e.txt
+error: not a directory: /a/b/f.txt/c
+error: directory in use: /a
+error: directory in use: /a/b
+hello world
+
+second hello
+a/
+b/
+error: directory in use: /b
+error: directory in use: /
+error: is a directory: /
+error: is a directory: /b
+error: file exists: /b/e.txt
+error: not a directory: /b/e.txt/x
+error: no such file or directory: /b/x/y
+26 /b
+/b/e.txt
+/b/e.txt
+26 /b
+26 /
+/
+  b/
+    e.txt
+/b/e.txt
+/b: directory, 1 entries, owner root, mode rwxr-x
+b/

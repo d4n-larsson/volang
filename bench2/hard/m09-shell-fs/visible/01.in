@@ -1,0 +1,13 @@
+mkdir docs src
+write docs/readme.txt Shell file system notes
+append docs/readme.txt  second   line
+write src/main.c int main
+cat docs/readme.txt src/main.c
+ls
+ls -l
+cd docs
+pwd
+touch todo
+ls -l .
+cd ..
+du

@@ -1,0 +1,188 @@
+import channels;
+import mentions;
+import messages;
+import model;
+import parse;
+import users;
+import views;
+
+fn cmd_user(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 1, 1);
+    return users.add_user(state, try parse.name_arg(argv[0]));
+}
+
+fn cmd_channel(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 2, 3);
+    var private = false;
+    if len(argv) == 3 {
+        set private = try parse.flag_arg(argv[2], "private");
+    }
+    return channels.create_channel(state, try parse.name_arg(argv[0]), try parse.name_arg(argv[1]), private);
+}
+
+fn cmd_join(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 2, 2);
+    return channels.join_channel(state, try parse.name_arg(argv[0]), try parse.name_arg(argv[1]));
+}
+
+fn cmd_invite(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 3, 3);
+    return channels.invite(state, try parse.name_arg(argv[0]), try parse.name_arg(argv[1]), try parse.name_arg(argv[2]));
+}
+
+fn cmd_leave(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 2, 2);
+    return channels.leave(state, try parse.name_arg(argv[0]), try parse.name_arg(argv[1]));
+}
+
+fn cmd_rename(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 3, 3);
+    return channels.rename(state, try parse.name_arg(argv[0]), try parse.name_arg(argv[1]), try parse.name_arg(argv[2]));
+}
+
+fn cmd_post(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 3, -1);
+    return messages.post(state, try parse.name_arg(argv[0]), try parse.name_arg(argv[1]), try parse.text_arg(slice(argv, 2, len(argv))));
+}
+
+fn cmd_edit(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 3, -1);
+    return messages.edit(state, try parse.name_arg(argv[0]), try parse.number_arg(argv[1], 1), try parse.text_arg(slice(argv, 2, len(argv))));
+}
+
+fn cmd_delete(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 2, 2);
+    return messages.delete(state, try parse.name_arg(argv[0]), try parse.number_arg(argv[1], 1));
+}
+
+fn cmd_history(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 1, 2);
+    var last = 0;
+    if len(argv) == 2 {
+        set last = try parse.number_arg(argv[1], 1);
+    }
+    return views.history_lines(state, try parse.name_arg(argv[0]), last);
+}
+
+fn cmd_search(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 2, 2);
+    return views.search_lines(state, try parse.name_arg(argv[0]), argv[1]);
+}
+
+fn cmd_mentions(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 1, 1);
+    return mentions.mention_lines(state, try parse.name_arg(argv[0]));
+}
+
+fn cmd_members(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 1, 1);
+    return channels.members_lines(state, try parse.name_arg(argv[0]));
+}
+
+fn cmd_whois(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 1, 1);
+    return users.whois(state, try parse.name_arg(argv[0]));
+}
+
+fn cmd_top(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 0, 1);
+    var n = views.default_top;
+    if len(argv) == 1 {
+        set n = try parse.number_arg(argv[0], 1);
+    }
+    return ok(views.top_lines(state, n));
+}
+
+fn cmd_channels(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 0, 0);
+    return ok(views.channel_list_lines(state));
+}
+
+fn cmd_stats(state: model.State, argv: list[str]) -> result[list[str]] {
+    try parse.expect_count(argv, 0, 0);
+    return ok([views.stats_line(state)]);
+}
+
+fn dispatch(state: model.State, cmd: str, argv: list[str]) -> result[list[str]] {
+    match cmd {
+        case "user" {
+            return cmd_user(state, argv);
+        }
+        case "channel" {
+            return cmd_channel(state, argv);
+        }
+        case "join" {
+            return cmd_join(state, argv);
+        }
+        case "invite" {
+            return cmd_invite(state, argv);
+        }
+        case "leave" {
+            return cmd_leave(state, argv);
+        }
+        case "rename" {
+            return cmd_rename(state, argv);
+        }
+        case "post" {
+            return cmd_post(state, argv);
+        }
+        case "edit" {
+            return cmd_edit(state, argv);
+        }
+        case "delete" {
+            return cmd_delete(state, argv);
+        }
+        case "history" {
+            return cmd_history(state, argv);
+        }
+        case "search" {
+            return cmd_search(state, argv);
+        }
+        case "mentions" {
+            return cmd_mentions(state, argv);
+        }
+        case "members" {
+            return cmd_members(state, argv);
+        }
+        case "whois" {
+            return cmd_whois(state, argv);
+        }
+        case "top" {
+            return cmd_top(state, argv);
+        }
+        case "channels" {
+            return cmd_channels(state, argv);
+        }
+        case "stats" {
+            return cmd_stats(state, argv);
+        }
+        else {
+            return ok(["error: unknown command " + cmd]);
+        }
+    }
+}
+
+fn run(state: model.State, words: list[str]) -> list[str] {
+    match dispatch(state, words[0], slice(words, 1, len(words))) {
+        case ok(lines) {
+            return lines;
+        }
+        case err(e) {
+            return ["error: " + e];
+        }
+    }
+}
+
+fn main() uses console, input {
+    let state = model.new_state();
+    for line in split(read_all(), "\n") {
+        let words = parse.split_words(line);
+        if len(words) == 0 {
+            continue;
+        }
+        set state.time = state.time + 1;
+        for out in run(state, words) {
+            print(out);
+        }
+    }
+}

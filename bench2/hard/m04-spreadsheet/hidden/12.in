@@ -1,0 +1,26 @@
+set A1 2
+set A2 =A1*10
+set A3 =A2+A1
+print A3
+set A1 3
+print A3
+set A2 hello
+print A3
+set A2 =A1-1
+print A3
+clear A1
+print A2
+print A3
+set A1 =A3
+print A1
+print A3
+set A2 9
+print A1
+print A3
+clear A2
+clear A2
+print A2
+formula A2
+copy A1 B1
+formula B1
+print B1

@@ -1,0 +1,125 @@
+team Arsenal added
+team Brentford added
+team Chelsea added
+team Derby added
+team Everton added
+team Fulham added
+team Gillingham added
+team Hull added
+result 1: Chelsea 2-0 Everton
+result 2: Hull 0-0 Everton
+result 3: Fulham 3-0 Derby
+result 4: Everton 2-3 Gillingham
+result 5: Gillingham 0-0 Arsenal
+result 6: Brentford 0-1 Chelsea
+result 7: Arsenal 1-0 Everton
+result 8: Brentford 3-3 Hull
+result 9: Gillingham 3-3 Hull
+result 10: Gillingham 0-1 Derby
+result 11: Derby 2-2 Chelsea
+result 12: Derby 0-2 Brentford
+result 13: Chelsea 2-0 Brentford
+result 14: Arsenal 3-0 Fulham
+result 15: Chelsea 1-1 Hull
+result 16: Derby 0-0 Everton
+result 17: Hull 0-3 Derby
+result 18: Fulham 3-1 Brentford
+result 19: Chelsea 1-3 Fulham
+result 20: Derby 1-1 Arsenal
+result 21: Gillingham 3-3 Everton
+result 22: Chelsea 0-3 Arsenal
+result 23: Everton 3-1 Derby
+result 24: Gillingham 0-2 Brentford
+result 25: Brentford 2-0 Arsenal
+result 26: Fulham 1-1 Hull
+result 27: Derby 3-0 Hull
+result 28: Arsenal 0-1 Chelsea
+result 29: Hull 1-3 Fulham
+result 30: Chelsea 2-0 Derby
+Pos Team        P  W  D  L GF GA  GD Pts
+  1 Chelsea     9  5  2  2 12  9  +3  17
+  2 Fulham      6  4  1  1 13  7  +6  13
+  3 Derby      10  3  3  4 11 13  -2  12
+  4 Arsenal     7  3  2  2  8  4  +4  11
+  5 Brentford   7  3  1  3 10  9  +1  10
+  6 Gillingham  6  1  3  2  9 11  -2   6
+  7 Everton     7  1  3  3  8 10  -2   6
+  8 Hull        8  0  5  3  9 17  -8   5
+Hull: P 8, W 0, D 5, L 3, GF 9, GA 17, GD -8, Pts 5
+home 0-1-2, away 0-4-1
+position 8 of 8
+Derby: P 10, W 3, D 3, L 4, GF 11, GA 13, GD -2, Pts 12
+home 1-3-1, away 2-0-3
+position 3 of 8
+longest winning streak 2: Arsenal, Brentford, Chelsea, Fulham
+most scored: Fulham 13
+fewest conceded: Arsenal 4
+highest scoring match: result 8: Brentford 3-3 Hull (6 goals)
+total: 80 goals in 30 matches
+result 31: Derby 2-2 Gillingham
+result 32: Arsenal 3-0 Brentford
+result 33: Brentford 0-0 Everton
+result 34: Gillingham 1-1 Chelsea
+result 35: Derby 0-2 Fulham
+result 36: Arsenal 2-3 Derby
+result 37: Everton 1-3 Hull
+result 38: Arsenal 1-3 Gillingham
+result 39: Brentford 1-1 Derby
+result 40: Chelsea 2-1 Gillingham
+result 41: Hull 1-1 Chelsea
+result 42: Arsenal 1-1 Hull
+result 43: Gillingham 3-3 Fulham
+result 44: Fulham 0-3 Everton
+result 45: Fulham 0-0 Gillingham
+result 46: Everton 0-0 Chelsea
+result 47: Hull 2-1 Brentford
+result 48: Brentford 3-2 Fulham
+result 49: Brentford 3-3 Gillingham
+result 50: Fulham 2-1 Chelsea
+result 51: Everton 0-1 Fulham
+result 52: Hull 1-3 Gillingham
+result 53: Everton 0-2 Brentford
+result 54: Hull 1-1 Arsenal
+result 55: Fulham 0-0 Arsenal
+result 56: Everton 2-3 Arsenal
+Pos Team        P  W  D  L GF GA  GD Pts
+  1 Fulham     14  7  4  3 23 17  +6  25
+  2 Chelsea    14  6  5  3 17 14  +3  23
+  3 Arsenal    14  5  5  4 19 14  +5  20
+  4 Brentford  14  5  4  5 20 20   0  19
+  5 Derby      14  4  5  5 17 20  -3  17
+  6 Gillingham 14  3  8  3 25 24  +1  17
+  7 Hull       14  2  8  4 18 25  -7  14
+  8 Everton    14  2  5  7 14 19  -5  11
+0 fixtures left
+teams 8 (0 withdrawn), matches 56, goals 153
+home wins 15, draws 22, away wins 19
+longest winning streak 2: Arsenal, Brentford, Chelsea, Fulham
+most scored: Gillingham 25
+fewest conceded: Arsenal 14
+highest scoring match: result 8: Brentford 3-3 Hull (6 goals)
+total: 153 goals in 56 matches
+Arsenal: P 14, W 5, D 5, L 4, GF 19, GA 14, GD +5, Pts 20
+home 3-1-3, away 2-4-1
+position 3 of 8
+Brentford: P 14, W 5, D 4, L 5, GF 20, GA 20, GD 0, Pts 19
+home 2-4-1, away 3-0-4
+position 4 of 8
+Chelsea: P 14, W 6, D 5, L 3, GF 17, GA 14, GD +3, Pts 23
+home 4-1-2, away 2-4-1
+position 2 of 8
+Derby: P 14, W 4, D 5, L 5, GF 17, GA 20, GD -3, Pts 17
+home 1-4-2, away 3-1-3
+position 5 of 8
+Everton: P 14, W 2, D 5, L 7, GF 14, GA 19, GD -5, Pts 11
+home 1-1-5, away 1-4-2
+position 8 of 8
+Fulham: P 14, W 7, D 4, L 3, GF 23, GA 17, GD +6, Pts 25
+home 3-3-1, away 4-1-2
+position 1 of 8
+Gillingham: P 14, W 3, D 8, L 3, GF 25, GA 24, GD +1, Pts 17
+home 0-5-2, away 3-3-1
+position 6 of 8
+Hull: P 14, W 2, D 8, L 4, GF 18, GA 25, GD -7, Pts 14
+home 1-3-3, away 1-5-1
+position 7 of 8

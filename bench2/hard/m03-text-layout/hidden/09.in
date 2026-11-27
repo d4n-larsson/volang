@@ -1,0 +1,18 @@
+.width 30
+.page 6
+Intro line.
+.list bullet
+One.
+Two.
+
+Three.
+
+Four.
+
+Five.
+.endlist
+After.
+.list number
+Alpha.
+
+Beta beta beta beta beta beta beta beta beta.

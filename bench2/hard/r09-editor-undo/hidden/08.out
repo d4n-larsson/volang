@@ -1,0 +1,28 @@
+saved main, 2 lines
+* main 2 lines
+* main 2 lines, modified
+undone 2 steps
+* main 2 lines
+redone 1 step
+* main 3 lines, modified
+undone 1 step
+undone 1 step
+* main 1 line, modified
+redone 1 step
+* main 2 lines
+undone 1 step
+* main 2 lines, modified
+error: nothing to redo
+error: only 2 steps to undo
+* main 2 lines, modified
+saved main, 2 lines
+* main 2 lines
+error: no buffer nobody
+new buffer t
+buffer main, 2 lines
+closed t
+new buffer t
+buffer main, 2 lines
+error: buffer t has unsaved changes
+closed t
+* main 2 lines

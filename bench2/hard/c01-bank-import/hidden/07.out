@@ -1,0 +1,8 @@
+reject empty.csv: no header
+reject hashheader.csv: missing column id
+reject trailer0.csv: trailer says 0, found 1
+reject badtrailer.csv: trailer says 3, found 2
+== ledger
+== balances
+wrote out/edges.ledger 0
+wrote out/edges.errors 4

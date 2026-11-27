@@ -1,0 +1,9 @@
+error at column 1: unknown function foo
+error at column 5: unknown function bar
+error at column 1: unknown function sqrt
+error at column 3: unexpected 2
+error at column 1: unknown function foo
+error at column 1: unknown function maxx
+error at column 8: unknown function mn
+error at column 7: unexpected abs
+error at column 5: unexpected character A

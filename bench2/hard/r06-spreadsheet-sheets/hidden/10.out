@@ -1,0 +1,19 @@
+A1 = 5
+A2 = 5
+sheet Data added
+Data!A1 = 5
+Data!B3 = 5
+Data!C1 = #DIV0
+found: A1 A2
+A1: 5
+A2: =A1 = 5
+cells 5, formulas 3, errors 1
+using Data
+found: A1 B3
+found: none
+A1: 5
+B3: =Sheet1!A1 = 5
+C1: =1/0 = #DIV0
+cells 5, formulas 3, errors 1
+Sheet1!A3 = #DIV0
+cells 6, formulas 4, errors 2

@@ -1,0 +1,46 @@
+# Users and rooms. They share one namespace: a name is a user or a room, never both.
+import model;
+
+export fn name_taken(cal: model.Calendar, name: str) -> bool {
+    return has(cal.users, name) or has(cal.rooms, name);
+}
+
+export fn add_user(cal: model.Calendar, name: str) -> str {
+    if name_taken(cal, name) {
+        return "error: name " + name + " taken";
+    }
+    set cal.users[name] = new model.User { name: name };
+    return "user " + name + " added";
+}
+
+export fn add_room(cal: model.Calendar, name: str, capacity: int) -> str {
+    if name_taken(cal, name) {
+        return "error: name " + name + " taken";
+    }
+    set cal.rooms[name] = new model.Room { name: name, capacity: capacity };
+    return "room " + name + " added, capacity " + str(capacity);
+}
+
+export fn sorted_rooms(cal: model.Calendar) -> list[model.Room] {
+    let names = keys(cal.rooms);
+    sort(names);
+    return map(names, fn(n) => cal.rooms[n]);
+}
+
+# The first problem with a meeting's people, or "".
+export fn people_error(cal: model.Calendar, organizer: str, attendees: list[str]) -> str {
+    if not has(cal.users, organizer) {
+        return "error: unknown user " + organizer;
+    }
+    let seen = [organizer];
+    for a in attendees {
+        if not has(cal.users, a) {
+            return "error: unknown user " + a;
+        }
+        if model.contains(seen, a) {
+            return "error: " + a + " listed twice";
+        }
+        push(seen, a);
+    }
+    return "";
+}

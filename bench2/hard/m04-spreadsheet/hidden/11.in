@@ -1,0 +1,21 @@
+set A1 =B9
+set A2 words
+set A3 =A2
+set A4 =1/0
+set B1 =MIN(C1:C5)
+set B2 =MAX(C1:C5)
+set B3 =COUNT(C1:C5)
+set B4 =COUNT(A1:A3)
+set B5 =MIN(A1:A3)
+set B6 =COUNT(A1:A4)
+set B7 =MAX(A2, -3)
+set B8 =MIN(A3:A3, 4, 9)
+set B9 =COUNT(C1, C2, 7)
+set C3 =Z50
+set C4 =Z50+3
+set D1 =MAX(C1:C2, C6)
+set C6 -4
+set C7 =MIN(C6, C8)
+set C8 =MAX(C6:C8, -9)
+set C9 =SUM(C1:C5)+COUNT(B9:B9)
+show A1:D9

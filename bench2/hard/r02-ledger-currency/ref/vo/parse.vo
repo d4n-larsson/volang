@@ -1,0 +1,116 @@
+# Reading the words of a command.
+import model;
+import std.lists;
+
+# A non-empty string of the digits 0-9.
+export fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+# The value of a string that passed is_number.
+export fn digits_value(s: str) -> int {
+    var n = 0;
+    for c in chars(s) {
+        set n = n * 10 + (ord(c) - ord("0"));
+    }
+    return n;
+}
+
+# An amount: optional `-`, digits, optionally `.` and one or two digits, in cents.
+export fn parse_amount(s: str) -> result[int] {
+    let negative = len(s) > 0 and slice(s, 0, 1) == "-";
+    var body = s;
+    if negative {
+        set body = slice(s, 1, len(s));
+    }
+    let dot = find(body, ".");
+    var whole = body;
+    if dot >= 0 {
+        set whole = slice(body, 0, dot);
+    }
+    if not is_number(whole) {
+        return err("bad amount");
+    }
+    var cents = digits_value(whole) * 100;
+    if dot >= 0 {
+        var frac = slice(body, dot + 1, len(body));
+        if len(frac) < 1 or len(frac) > 2 or not is_number(frac) {
+            return err("bad amount");
+        }
+        if len(frac) == 1 {
+            set frac = frac + "0";
+        }
+        set cents = cents + digits_value(frac);
+    }
+    if negative {
+        set cents = -cents;
+    }
+    return ok(cents);
+}
+
+# A rate: digits, optionally `.` and one to four digits, in ten-thousandths.
+export fn parse_rate(s: str) -> result[int] {
+    let dot = find(s, ".");
+    var whole = s;
+    if dot >= 0 {
+        set whole = slice(s, 0, dot);
+    }
+    if not is_number(whole) {
+        return err("bad rate");
+    }
+    var value = digits_value(whole) * 10000;
+    if dot >= 0 {
+        var frac = slice(s, dot + 1, len(s));
+        if len(frac) < 1 or len(frac) > 4 or not is_number(frac) {
+            return err("bad rate");
+        }
+        while len(frac) < 4 {
+            set frac = frac + "0";
+        }
+        set value = value + digits_value(frac);
+    }
+    return ok(value);
+}
+
+export fn valid_currency(code: str) -> bool {
+    return len(code) == 3 and all(chars(code), fn(c) => c >= "A" and c <= "Z");
+}
+
+# Lower-case letters and digits, at least one.
+export fn is_lower_word(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c) => (c >= "a" and c <= "z") or (c >= "0" and c <= "9"));
+}
+
+# Segments of lower-case letters and digits joined by `:`.
+export fn valid_account_name(name: str) -> bool {
+    return all(split(name, ":"), is_lower_word);
+}
+
+export fn valid_txn_id(txn_id: str) -> bool {
+    return is_lower_word(txn_id);
+}
+
+export fn valid_type(kind: str) -> bool {
+    return lists.has_item(model.account_types(), kind);
+}
+
+# The two halves of a `NAME=AMOUNT` word.
+export record Spec {
+    name: str;
+    text: str;
+}
+
+# `NAME=AMOUNT` into NAME and the AMOUNT text; an err without `=`.
+export fn split_spec(spec: str) -> result[Spec] {
+    let at = find(spec, "=");
+    if at < 0 {
+        return err("no =");
+    }
+    return ok(new Spec { name: slice(spec, 0, at), text: slice(spec, at + 1, len(spec)) });
+}

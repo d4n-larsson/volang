@@ -1,0 +1,26 @@
+write f one
+write g one
+commit base
+branch feat
+checkout feat
+write f two
+commit feat f
+write h new
+commit feat h
+write g feat
+commit feat g
+checkout main
+write g main
+commit main g
+pick feat~1
+pick feat
+pick feat~2
+pick feat~1
+write z dirty
+pick feat
+delete z
+pick 1
+merge feat
+pick 7
+log
+show main

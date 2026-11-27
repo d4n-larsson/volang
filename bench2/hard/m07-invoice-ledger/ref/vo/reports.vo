@@ -1,0 +1,68 @@
+import ledger;
+import parsing;
+
+export fn statement(led: ledger.Ledger, cid: str, out: list[str]) {
+    if not has(led.customers, cid) {
+        push(out, "error: no customer " + cid);
+        return;
+    }
+    let c = led.customers[cid];
+    push(out, "statement " + cid + " day " + str(led.day));
+    for i in ledger.open_of(led, cid) {
+        var line = "#" + str(i.num) + " due " + str(i.due) + " balance " + parsing.money(ledger.balance(i));
+        let late = ledger.overdue(led, i);
+        if late > 0 {
+            set line = line + " overdue " + str(late);
+        }
+        push(out, line);
+    }
+    push(out, "open " + parsing.money(ledger.open_balance(led, cid)) + " credit " + parsing.money(c.credit) + " written off " + parsing.money(c.written_off));
+}
+
+fn bucket(days: int) -> int {
+    if days <= 0 {
+        return 0;
+    }
+    if days <= 30 {
+        return 1;
+    }
+    if days <= 60 {
+        return 2;
+    }
+    if days <= 90 {
+        return 3;
+    }
+    return 4;
+}
+
+fn row_text(name: str, row: list[int]) -> str {
+    return name + " " + join(map(row, fn(v) => parsing.money(v)), " ");
+}
+
+export fn aging(led: ledger.Ledger, out: list[str]) {
+    push(out, "aging day " + str(led.day));
+    let total = [0, 0, 0, 0, 0];
+    let ids = keys(led.customers);
+    sort(ids);
+    for cid in ids {
+        let row = [0, 0, 0, 0, 0];
+        for i in ledger.open_of(led, cid) {
+            let b = bucket(ledger.overdue(led, i));
+            set row[b] = row[b] + ledger.balance(i);
+        }
+        if fold(row, 0, fn(a, v) => a + v) > 0 {
+            push(out, row_text(cid, row));
+            for k in 0..5 {
+                set total[k] = total[k] + row[k];
+            }
+        }
+    }
+    push(out, row_text("total", total));
+}
+
+export fn final_list(led: ledger.Ledger, out: list[str]) {
+    push(out, "invoices:");
+    for i in led.invoices {
+        push(out, format("#{} {} {} total {} fee {} paid {} credits {} balance {}", i.num, i.cust, i.status, parsing.money(i.total), parsing.money(i.fee), parsing.money(i.paid), parsing.money(i.credits), parsing.money(ledger.balance(i))));
+    }
+}

@@ -1,0 +1,23 @@
+set A1 =1/0
+set A2 =#REF!
+set A3 text
+set A4 5
+set B1 =A1+A2
+set B2 =A2+A1
+set B3 =A3+A1
+set B4 =A1*A3
+set B5 =A3+A4
+set B6 =SUM(A4, A2, A1)
+set B7 =SUM(A1:A4)
+set B8 =SUM(A3, A4:A4, A2:A1)
+set B9 =IF(A4>3, 10, A1)
+set C1 =IF(A4<3, 10, A1)
+set C2 =IF(A3, 1, 2)
+set C3 =IF(A2, A1, A3)
+set C4 =IF(0, A1, A3)
+set C5 =MIN(A3, A1)
+set C6 =ABS(A3)+A1
+set C7 =-A1
+set C8 =A3>A2
+set C9 =COUNT((A3), A1)
+show B1:C9

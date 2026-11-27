@@ -1,0 +1,34 @@
+useradd ann
+useradd bob
+mkdir /x
+chmod rwxrwx /x
+su ann
+write /x/secret.txt s1
+append /x/secret.txt s2
+chmod rw---- /x/secret.txt
+write /x/open.txt hello
+write /x/ro.txt read only
+chmod r--r-- /x/ro.txt
+su bob
+cp /x/secret.txt /nowhere/a.txt
+cp /x/secret.txt /x/copy.txt
+cp /x /x/y
+cp /x/open.txt /x/ro.txt
+cp /x/open.txt /x/bob.txt
+cp /x/open.txt /x/open.txt
+cp /x/open.txt /
+cp /x/open.txt /nowhere/a.txt
+cp /x/open.txt /x/open.txt/a
+mkdir /x/d
+cp /x/open.txt /x/d
+cp /x/bob.txt /x/d
+su ann
+cp /x/secret.txt /x/bob.txt
+cp /x/secret.txt /x/d
+chmod rw-rw- /x/bob.txt
+cp /x/secret.txt /x/bob.txt
+su bob
+cp /x/ro.txt /x/d/open.txt
+cat /x/bob.txt
+ls -l /x
+ls -l /x/d

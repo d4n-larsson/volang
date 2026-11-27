@@ -1,0 +1,276 @@
+record Problem {
+    col: int;
+    msg: str;
+}
+
+record Tok {
+    kind: str;
+    text: str;
+    col: int;
+}
+
+record Parser {
+    cs: list[str];
+    pos: int;
+    tok: Tok;
+}
+
+variant Node {
+    num(int);
+    neg(Node);
+    call {
+        name: str;
+        args: list[Node];
+    }
+    bin {
+        op: str;
+        col: int;
+        left: Node;
+        right: Node;
+    }
+}
+
+fn is_digit(c: str) -> bool {
+    return c >= "0" and c <= "9" and len(c) == 1;
+}
+
+fn is_lower(c: str) -> bool {
+    return c >= "a" and c <= "z" and len(c) == 1;
+}
+
+fn advance(p: Parser) -> result[void, Problem] {
+    let cs = p.cs;
+    var i = p.pos;
+    while i < len(cs) and (cs[i] == " " or cs[i] == "\t") {
+        set i = i + 1;
+    }
+    if i == len(cs) {
+        set p.pos = i;
+        set p.tok = new Tok { kind: "end", text: "", col: len(cs) + 1 };
+        return ok();
+    }
+    let c = cs[i];
+    var j = i + 1;
+    if is_digit(c) {
+        while j < len(cs) and is_digit(cs[j]) {
+            set j = j + 1;
+        }
+        set p.tok = new Tok { kind: "num", text: join(slice(cs, i, j), ""), col: i + 1 };
+    } else if is_lower(c) {
+        while j < len(cs) and is_lower(cs[j]) {
+            set j = j + 1;
+        }
+        let name = join(slice(cs, i, j), "");
+        if name != "min" and name != "max" and name != "abs" {
+            return err(new Problem { col: i + 1, msg: "unknown function " + name });
+        }
+        set p.tok = new Tok { kind: "name", text: name, col: i + 1 };
+    } else if find("+-*/%^(),", c) >= 0 {
+        set p.tok = new Tok { kind: "op", text: c, col: i + 1 };
+    } else {
+        return err(new Problem { col: i + 1, msg: "unexpected character " + c });
+    }
+    set p.pos = j;
+    return ok();
+}
+
+fn unexpected(t: Tok) -> Problem {
+    if t.kind == "end" {
+        return new Problem { col: t.col, msg: "unexpected end of line" };
+    }
+    return new Problem { col: t.col, msg: "unexpected " + t.text };
+}
+
+fn at_op(p: Parser, ops: list[str]) -> bool {
+    if p.tok.kind != "op" {
+        return false;
+    }
+    for o in ops {
+        if o == p.tok.text {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn expect_op(p: Parser, op: str) -> result[void, Problem] {
+    if not at_op(p, [op]) {
+        return err(unexpected(p.tok));
+    }
+    try advance(p);
+    return ok();
+}
+
+fn parse_expr(p: Parser) -> result[Node, Problem] {
+    var node = try parse_term(p);
+    while at_op(p, ["+", "-"]) {
+        let op = p.tok.text;
+        let col = p.tok.col;
+        try advance(p);
+        let right = try parse_term(p);
+        set node = Node.bin { op: op, col: col, left: node, right: right };
+    }
+    return ok(node);
+}
+
+fn parse_term(p: Parser) -> result[Node, Problem] {
+    var node = try parse_unary(p);
+    while at_op(p, ["*", "/", "%"]) {
+        let op = p.tok.text;
+        let col = p.tok.col;
+        try advance(p);
+        let right = try parse_unary(p);
+        set node = Node.bin { op: op, col: col, left: node, right: right };
+    }
+    return ok(node);
+}
+
+fn parse_unary(p: Parser) -> result[Node, Problem] {
+    if at_op(p, ["-"]) {
+        try advance(p);
+        return ok(Node.neg(try parse_unary(p)));
+    }
+    let base = try parse_primary(p);
+    if at_op(p, ["^"]) {
+        let col = p.tok.col;
+        try advance(p);
+        let exp = try parse_unary(p);
+        return ok(Node.bin { op: "^", col: col, left: base, right: exp });
+    }
+    return ok(base);
+}
+
+fn parse_primary(p: Parser) -> result[Node, Problem] {
+    let t = p.tok;
+    if t.kind == "num" {
+        try advance(p);
+        match parse_int(t.text) {
+            case ok(v) {
+                return ok(Node.num(v));
+            }
+            case err(_) {
+                return err(unexpected(t));
+            }
+        }
+    }
+    if at_op(p, ["("]) {
+        try advance(p);
+        let inner = try parse_expr(p);
+        try expect_op(p, ")");
+        return ok(inner);
+    }
+    if t.kind == "name" {
+        try advance(p);
+        try expect_op(p, "(");
+        let items = [try parse_expr(p)];
+        while t.text != "abs" and at_op(p, [","]) {
+            try advance(p);
+            push(items, try parse_expr(p));
+        }
+        try expect_op(p, ")");
+        return ok(Node.call { name: t.text, args: items });
+    }
+    return err(unexpected(t));
+}
+
+fn floor_mod(a: int, m: int) -> int {
+    let r = a % m;
+    if r < 0 {
+        return r + m;
+    }
+    return r;
+}
+
+fn eval(n: Node) -> result[int, Problem] {
+    match n {
+        case num(v) {
+            return ok(v);
+        }
+        case neg(x) {
+            return ok(-(try eval(x)));
+        }
+        case call(c) {
+            let vals = new list[int];
+            for a in c.args {
+                push(vals, try eval(a));
+            }
+            var best = vals[0];
+            for v in vals {
+                if c.name == "min" {
+                    set best = min(best, v);
+                } else if c.name == "max" {
+                    set best = max(best, v);
+                }
+            }
+            if c.name == "abs" {
+                return ok(abs(best));
+            }
+            return ok(best);
+        }
+        case bin(b) {
+            let x = try eval(b.left);
+            let y = try eval(b.right);
+            if b.op == "+" {
+                return ok(x + y);
+            }
+            if b.op == "-" {
+                return ok(x - y);
+            }
+            if b.op == "*" {
+                return ok(x * y);
+            }
+            if b.op == "/" or b.op == "%" {
+                if y == 0 {
+                    return err(new Problem { col: b.col, msg: "division by zero" });
+                }
+                let r = floor_mod(x, abs(y));
+                if b.op == "%" {
+                    return ok(r);
+                }
+                return ok((x - r) / y);
+            }
+            if y < 0 {
+                return err(new Problem { col: b.col, msg: "negative exponent" });
+            }
+            var acc = 1;
+            for _ in 0..y {
+                set acc = acc * x;
+            }
+            return ok(acc);
+        }
+    }
+}
+
+fn evaluate(line: str) -> result[int, Problem] {
+    let p = new Parser { cs: chars(line), pos: 0, tok: new Tok { kind: "end", text: "", col: 0 } };
+    try advance(p);
+    let node = try parse_expr(p);
+    if p.tok.kind != "end" {
+        return err(unexpected(p.tok));
+    }
+    return eval(node);
+}
+
+fn run(line: str) -> str {
+    match evaluate(line) {
+        case ok(v) {
+            return str(v);
+        }
+        case err(e) {
+            return "error at column " + str(e.col) + ": " + e.msg;
+        }
+    }
+}
+
+fn main() uses console, input {
+    while true {
+        match read_line() {
+            case ok(line) {
+                print(run(line));
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+}

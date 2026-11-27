@@ -1,0 +1,3 @@
+extends base
+flag payments-v2 default on
+requires new-checkout

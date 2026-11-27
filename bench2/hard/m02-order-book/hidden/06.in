@@ -1,0 +1,19 @@
+limit S1 ana sell BB 10 100.00
+limit B1 bob buy BB 1 100.00
+limit X1 cy buy BB 1 89.99
+limit X2 cy buy BB 1 90.00
+limit X3 cy sell BB 1 110.01
+limit X4 cy sell BB 1 110.00
+stop T1 cy sell BB 1 150.00
+market M1 dan buy BB 1
+book BB
+limit L1 eve sell BB 5 91.00
+limit L2 eve sell BB 3 92.00
+limit L3 fay buy BB 6 99.99
+book BB
+modify X4 1 82.80
+modify X4 1 99.00
+modify X2 1 90.00
+limit X5 cy buy BB 1 0.05
+limit Y1 gus buy CC 1 0.05
+limit Y2 hal sell CC 1 1000.00

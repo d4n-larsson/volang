@@ -1,0 +1,150 @@
+user ann
+user bob
+user ann
+new p1 title Totals very crash CSV empty Totals password
+user ann
+user bob
+dup x 3
+search crash
+move 3 triaged
+unassign 0
+search wrong
+new p3 fails title page
+move x wontfix waiting on api
+dup 0 1
+dup 12 12
+label x 
+show 12
+move x review dup
+move 12 bogus dup
+close 12
+rename 12 wrong API CSV timeout Login on title
+user zed
+wait 5
+move 12 wontfix dup
+log 0
+user ann
+new p4 crash
+reopen x
+unassign 8
+move 0 in_progress waiting on api
+priority x p9
+move 0 blocked dup
+new p3 fails export Login here goes slow Login here
+priority x p1
+mine bob
+rename 12 wrong Totals on long password slow slow
+new p4 goes password CSV goes
+wait 1
+move 3 closed dup
+move 4 done dup
+unassign 12
+move 12 triaged
+move x done waiting on api
+users
+user cy
+assign 5 ann
+move 1 bogus waiting on api
+wait 0
+users
+priority 1 p4
+
+show 12
+move 0 new
+unassign 1
+show 0
+list 
+comment x zed CSV title
+move x bogus
+unassign 8
+priority 2 p9
+stats 1
+stale 0
+close 6
+user ann
+close 1
+cycle
+user zed
+label 3 +ui bad -bug
+label 1 +ui
+move 6 wontfix
+move 1 blocked
+priority 2 p4
+move 0 wontfix waiting on api
+reopen 2
+comment 2 cy Totals very very title
+move 5 new waiting on api
+move 0 blocked
+dup x 12
+stats
+assign 12 zed
+user ann
+label x +ui +
+move 5 review
+dup 0 3
+users
+move x in_progress waiting on api
+label 0 bad +ui
+assign 0 bob
+labels
+comment 1 dee Login API
+list 
+label 4 
+priority 5 p9
+user bob
+close x
+reopen 4
+
+move 0 done
+move 0 bogus waiting on api
+show 12
+move 12 triaged waiting on api
+cycle
+label 12 
+show 7
+label 2 
+reopen 0
+wait 0
+priority 12 p2
+frob
+stale 10
+show x
+new P1 Login long wrong long fails long
+comment 1 cy CSV goes crash
+move 1 closed dup
+frob
+users
+assign 0 dee
+labels
+move 12 new
+move 3 bogus waiting on api
+assign 0 bob
+wait 0
+priority 12 p4
+priority 0 p2
+user cy
+move 4 review waiting on api
+dup 5 x
+move 3 bogus
+users
+stale 3
+list 
+move 0 done waiting on api
+frob
+log 3
+dup 4 6
+new p0 timeout Totals slow very export title Login password
+log 20
+log 20
+move 0 done
+list foo=1
+search page
+labels
+new p4 very
+reopen x
+close 1
+stale x
+cycle
+move 0 blocked
+move 12 new
+users

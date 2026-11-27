@@ -1,0 +1,24 @@
+write keep same
+write mod original
+write del gone soon
+write both start
+write theirdel remove me
+commit base
+branch topic
+write mod ours changed
+write both final
+write newours from main
+commit main side
+checkout topic
+delete del
+write both final
+write theirs added
+write same added same
+delete theirdel
+commit topic side
+checkout main
+write same added same
+commit main adds same
+merge topic
+show main
+log

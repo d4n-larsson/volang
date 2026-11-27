@@ -1,0 +1,20 @@
+== run site-run
+copy .cache/tmp
+copy a-c.txt
+conflict a/b.txt
+update about.html
+copy blog/index.html
+conflict img/logo.png
+stale a
+stale img/logo.png/x
+stale old.html
+stale z/deep/stale.txt
+copy 3, update 1, unchanged 3, conflict 2, stale 4, excluded 4
+== plan site-run
+conflict a/b.txt
+conflict img/logo.png
+stale a
+stale img/logo.png/x
+stale old.html
+stale z/deep/stale.txt
+copy 0, update 0, unchanged 7, conflict 2, stale 4, excluded 4

@@ -1,0 +1,25 @@
+PACK 1
+F a 1
+A
+F a/b 1
+B
+D a
+D d
+F d 1
+D
+F d/x 1
+first
+F d/x 2
+second
+version
+F x/y/z 0
+F x/y 1
+Y
+D x/y/z
+D x/y/z/w
+F . 0
+D ./
+D x
+F a/./ 1
+AA
+END 17

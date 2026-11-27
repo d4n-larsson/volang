@@ -1,0 +1,49 @@
+import engine;
+import render;
+import syntax;
+
+fn execute(db: map[str, engine.Table], s: syntax.Stmt) -> result[list[str]] {
+    if s.kind == "select" {
+        return ok(render.render(try engine.run_select(db, s)));
+    }
+    if s.kind == "create" {
+        return ok([try engine.run_create(db, s)]);
+    }
+    if s.kind == "insert" {
+        return ok([try engine.run_insert(db, s)]);
+    }
+    if s.kind == "delete" {
+        return ok([try engine.run_delete(db, s)]);
+    }
+    return ok([try engine.run_update(db, s)]);
+}
+
+fn run(db: map[str, engine.Table], line: str) -> list[str] {
+    match syntax.parse(line) {
+        case err(e) {
+            return ["error: " + e];
+        }
+        case ok(s) {
+            match execute(db, s) {
+                case ok(lines) {
+                    return lines;
+                }
+                case err(e) {
+                    return ["error: " + e];
+                }
+            }
+        }
+    }
+}
+
+fn main() uses console, input {
+    let db = new map[str, engine.Table];
+    for line in split(read_all(), "\n") {
+        if trim(line) == "" {
+            continue;
+        }
+        for out in run(db, line) {
+            print(out);
+        }
+    }
+}

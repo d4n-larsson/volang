@@ -1,0 +1,36 @@
+opened assets:bank (asset)
+opened assets:eur:a (asset, EUR)
+opened assets:eur:b (asset, EUR)
+opened assets:eur (asset, EUR)
+opened assets:gbp (asset, GBP)
+opened assets:jpy (asset, JPY)
+opened assets:chf (asset, CHF)
+rate EUR from day 0: 1.5000
+rate GBP from day 0: 1.3000
+rate JPY from day 0: 0.0067
+rate CHF from day 0: 1.1000
+posted b1: 2 postings, total 0.02
+posted b2: 2 postings, total 0.02
+posted b3: 2 postings, total 0.02
+posted b4: 2 postings, total 10.05
+posted b5: 2 postings, total 11.00
+posted b6: 2 postings, total 11.00
+posted b7: 2 postings, total 3.90
+balance assets: 0.00
+  EUR 0.03
+  GBP -3.00
+  JPY 1500.00
+balance assets:eur: 0.06
+  EUR 0.03
+balance assets:eur:a: 0.02
+  EUR 0.01
+balance assets:bank: -6.21
+balance assets:chf: 0.00
+error: unknown account assets:e
+error: unknown account asset
+balance assets:gbp: -3.90
+  GBP -3.00
+rate EUR from day 2: 1.7000
+rate EUR from day 1: 9.0000
+balance assets:eur: 0.06
+  EUR 0.03

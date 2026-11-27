@@ -1,0 +1,210 @@
+export record Lot {
+    num: int;
+    sku: str;
+    cost: int;
+    expiry: int;
+}
+
+export record Entry {
+    wh: str;
+    lot: Lot;
+    on_hand: int;
+    reserved: int;
+}
+
+# Units taken from one entry.
+export record Pick {
+    entry: Entry;
+    units: int;
+}
+
+export record LotUnits {
+    lot: Lot;
+    units: int;
+}
+
+export record Transfer {
+    num: int;
+    src: str;
+    dst: str;
+    sku: str;
+    picks: list[LotUnits];
+    arrives: int;
+    delivered: bool;
+}
+
+export record EntryKey {
+    wh: str;
+    lot: int;
+}
+
+export record Stock {
+    warehouses: map[str, bool];
+    items: map[str, bool];
+    lots: list[Lot];
+    entries: map[EntryKey, Entry];
+    quarantine: map[str, map[str, int]];
+    transfers: list[Transfer];
+    day: int;
+    shipped: int;
+    written_off: int;
+    quarantine_value: int;
+}
+
+export fn new_stock() -> Stock {
+    return new Stock {
+        warehouses: new map[str, bool],
+        items: new map[str, bool],
+        lots: [],
+        entries: new map[EntryKey, Entry],
+        quarantine: new map[str, map[str, int]],
+        transfers: [],
+        day: 0,
+        shipped: 0,
+        written_off: 0,
+        quarantine_value: 0
+    };
+}
+
+export fn fmt_picks(picks: list[LotUnits]) -> str {
+    return join(map(picks, fn(p) => " L" + str(p.lot.num) + "x" + str(p.units)), "");
+}
+
+export fn lot_units(picks: list[Pick]) -> list[LotUnits] {
+    return map(picks, fn(p) => new LotUnits { lot: p.entry.lot, units: p.units });
+}
+
+export fn total_units(picks: list[LotUnits]) -> int {
+    return fold(picks, 0, fn(a, p) => a + p.units);
+}
+
+fn entry(st: Stock, wh: str, lot: Lot) -> Entry {
+    let key = new EntryKey { wh: wh, lot: lot.num };
+    if not has(st.entries, key) {
+        set st.entries[key] = new Entry { wh: wh, lot: lot, on_hand: 0, reserved: 0 };
+    }
+    return st.entries[key];
+}
+
+# The entries of an item in a warehouse in FEFO order.
+export fn fefo(st: Stock, wh: str, sku: str) -> list[Entry] {
+    let es = new list[Entry];
+    for _, e in st.entries {
+        if e.wh == wh and e.lot.sku == sku {
+            push(es, e);
+        }
+    }
+    sort_by(es, fn(e) => e.lot.expiry * 1000000 + e.lot.num);
+    return es;
+}
+
+export fn available(st: Stock, wh: str, sku: str) -> int {
+    return fold(fefo(st, wh, sku), 0, fn(a, e) => a + e.on_hand - e.reserved);
+}
+
+# Picks q units (or as many as there are) without changing anything.
+export fn pick(st: Stock, wh: str, sku: str, q: int) -> list[Pick] {
+    let out = new list[Pick];
+    var need = q;
+    for e in fefo(st, wh, sku) {
+        if need == 0 {
+            break;
+        }
+        let take = min(need, e.on_hand - e.reserved);
+        if take > 0 {
+            push(out, new Pick { entry: e, units: take });
+            set need = need - take;
+        }
+    }
+    return out;
+}
+
+export fn ship(st: Stock, picks: list[Pick]) {
+    for p in picks {
+        set p.entry.on_hand = p.entry.on_hand - p.units;
+        set st.shipped = st.shipped + p.units * p.entry.lot.cost;
+    }
+}
+
+export fn receive(st: Stock, wh: str, sku: str, qty: int, cost: int, expiry: int) -> Lot {
+    let lot = new Lot { num: len(st.lots) + 1, sku: sku, cost: cost, expiry: expiry };
+    push(st.lots, lot);
+    let e = entry(st, wh, lot);
+    set e.on_hand = e.on_hand + qty;
+    return lot;
+}
+
+export fn transfer(st: Stock, src: str, dst: str, sku: str, qty: int, days: int) -> Transfer {
+    let picks = pick(st, src, sku, qty);
+    for p in picks {
+        set p.entry.on_hand = p.entry.on_hand - p.units;
+    }
+    let t = new Transfer {
+        num: len(st.transfers) + 1,
+        src: src,
+        dst: dst,
+        sku: sku,
+        picks: lot_units(picks),
+        arrives: st.day + days,
+        delivered: false
+    };
+    push(st.transfers, t);
+    return t;
+}
+
+export fn arrivals(st: Stock, out: list[str]) -> list[Transfer] {
+    let due = filter(st.transfers, fn(t) => not t.delivered and t.arrives <= st.day);
+    sort_by(due, fn(t) => t.arrives * 1000000 + t.num);
+    for t in due {
+        set t.delivered = true;
+        for p in t.picks {
+            let e = entry(st, t.dst, p.lot);
+            set e.on_hand = e.on_hand + p.units;
+        }
+        push(out, "arrived T" + str(t.num) + " " + t.dst + " " + t.sku + " " + str(total_units(t.picks)));
+    }
+    return due;
+}
+
+# Entries with expired units, by lot number and then warehouse id.
+export fn expired_entries(st: Stock) -> list[Entry] {
+    let es = new list[Entry];
+    for _, e in st.entries {
+        if e.on_hand > 0 and e.lot.expiry <= st.day {
+            push(es, e);
+        }
+    }
+    sort_by(es, fn(e) => e.wh);
+    sort_by(es, fn(e) => e.lot.num);
+    return es;
+}
+
+export fn write_off(st: Stock, e: Entry, out: list[str]) {
+    push(out, "expired L" + str(e.lot.num) + " " + e.wh + " " + str(e.on_hand));
+    set st.written_off = st.written_off + e.on_hand * e.lot.cost;
+    set e.on_hand = 0;
+    set e.reserved = 0;
+}
+
+export fn quarantined(st: Stock, wh: str, sku: str) -> int {
+    if not has(st.quarantine, wh) {
+        return 0;
+    }
+    return get_or(st.quarantine[wh], sku, 0);
+}
+
+# Puts returned units back: true if restocked, false if quarantined.
+export fn put_back(st: Stock, wh: str, lot: Lot, q: int) -> bool {
+    set st.shipped = st.shipped - q * lot.cost;
+    if lot.expiry > st.day {
+        let e = entry(st, wh, lot);
+        set e.on_hand = e.on_hand + q;
+        return true;
+    }
+    if not has(st.quarantine, wh) {
+        set st.quarantine[wh] = new map[str, int];
+    }
+    set st.quarantine[wh][lot.sku] = quarantined(st, wh, lot.sku) + q;
+    set st.quarantine_value = st.quarantine_value + q * lot.cost;
+    return false;
+}

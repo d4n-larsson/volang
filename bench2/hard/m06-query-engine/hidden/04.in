@@ -1,0 +1,14 @@
+create table v (k int, a int, b int)
+insert into v values (1, 1, 1), (2, 1, null), (3, null, 1), (4, null, null), (5, 0, 0), (6, 0, null)
+select k from v where a = 1 or b = 1
+select k from v where a = 1 and b = 1
+select k from v where not (a = 1 and b = 1)
+select k from v where not a = 1 or b is null
+select k from v where a = null or b != null
+select k from v where a is not null and not b is null
+select k from v where a = 1 or b = 1 and k > 2
+select k from v where (a = 1 or b = 1) and k > 2
+select k from v where not not a = 1
+select k from v where not (a = 1 or b = 1)
+select k from v where a != 1
+select k from v where null = null or k = 6

@@ -1,0 +1,34 @@
+warehouse from added
+warehouse to added
+item pipe added
+received 3 pipe into from, now 3, lot 1 at 6.50
+received 2 pipe into from, now 5, lot 2 at 7.20
+transferred 5 pipe from from to to, cost 33.90
+no lots of pipe in from
+lot 1: 3 x 6.50 = 19.50
+lot 2: 2 x 7.20 = 14.40
+total 5 units = 33.90
+warehouse from dropped
+error: unknown warehouse from
+warehouse from added
+transferred 2 pipe from to to from, cost 13.00
+lot 1: 2 x 6.50 = 13.00
+total 2 units = 13.00
+lot 1: 1 x 6.50 = 6.50
+lot 2: 2 x 7.20 = 14.40
+total 3 units = 20.90
+received 1 pipe into to, now 4, lot 3 at 7.00
+lot 1: 1 x 6.50 = 6.50
+lot 2: 2 x 7.20 = 14.40
+lot 3: 1 x 7.00 = 7.00
+total 4 units = 27.90
+#1 receive from +3 lot 1 at 6.50
+#2 receive from +2 lot 2 at 7.20
+#3 transfer-out from -5 (to to) cost 33.90
+#4 transfer-in to +5 (from from) cost 33.90
+#5 transfer-out to -2 (to from) cost 13.00
+#6 transfer-in from +2 (from to) cost 13.00
+#7 receive to +1 lot 3 at 7.00
+items 1, warehouses 2, 6 units, value 40.90
+shipped 0 units in 0 shipments, cost 0.00
+orders: 0 open, 0 fulfilled, 0 cancelled

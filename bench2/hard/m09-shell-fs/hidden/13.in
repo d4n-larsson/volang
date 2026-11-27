@@ -1,0 +1,14 @@
+touch -x a?b * ?
+mkdir -l -p
+ls
+ls -l -l
+find / -name a?b
+find / -name ?
+find / -name *
+find / -name -*
+cat -x
+write * star file
+cat *
+mv * -x
+cat -x
+ls

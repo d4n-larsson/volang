@@ -1,0 +1,24 @@
+mkdir src dst
+write src/a alpha
+write src/b beta
+cp src dst
+cp -r src dst
+ls dst dst/src
+cp -r src dst
+cp -r src src/inner
+cp -r src src
+cp src/a src
+cp src/a src/a
+cp -r src/a src/c
+cp src/a src/b
+cat src/b
+cp src/a dst/src
+cp -r src/a dst/src/../src/a
+cp -r dst/src src/b
+write src/a changed
+cat src/a dst/src/a
+cp -r / /copy
+cp -r . backup
+cp /src/a nowhere/x
+cp missing x
+find / -name *

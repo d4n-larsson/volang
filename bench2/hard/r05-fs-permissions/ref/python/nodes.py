@@ -1,0 +1,63 @@
+"""The nodes of the tree: directories and files."""
+
+
+class Node:
+    """A directory (`is_dir`, its entries in `children` by name) or a file (its `lines` of text).
+
+    A node does not know its own name: the name is the key under which its directory holds it."""
+
+    def __init__(self, is_dir, lines, owner, mode):
+        self.is_dir = is_dir
+        self.children = {}
+        self.lines = lines
+        self.owner = owner
+        # Two rwx triples: the owner's, then everybody else's (`rwxr-x`).
+        self.mode = mode
+
+
+DIR_MODE = "rwxr-x"
+FILE_MODE = "rw-r--"
+
+
+def new_dir(owner):
+    return Node(True, [], owner, DIR_MODE)
+
+
+def new_file(lines, owner):
+    """A new file of OWNER holding a copy of LINES."""
+    return Node(False, list(lines), owner, FILE_MODE)
+
+
+def file_size(node):
+    """Size of a file in bytes: every line counts with its newline."""
+    total = 0
+    for line in node.lines:
+        total += len(line) + 1
+    return total
+
+
+def sorted_names(node):
+    """The names of a directory's entries in ascending byte order."""
+    names = list(node.children)
+    names.sort()
+    return names
+
+
+def entry_count(node):
+    return len(node.children)
+
+
+def has_entry(node, name):
+    return name in node.children
+
+
+def entry(node, name):
+    return node.children[name]
+
+
+def put_entry(node, name, item):
+    node.children[name] = item
+
+
+def drop_entry(node, name):
+    del node.children[name]

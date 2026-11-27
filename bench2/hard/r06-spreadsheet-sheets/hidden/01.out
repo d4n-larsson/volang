@@ -1,0 +1,15 @@
+sheet Data added
+Data!A1 = 0
+A2 = 3
+Data!A1 = 0
+Data!A2 = 7
+Data!A1 = 70
+Data!A1: =A2*10
+using Data
+A1: =A2*10
+A1: =A2*10 = 70
+A2: 7
+using Sheet1
+A2: 3
+= 30
+= 70

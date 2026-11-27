@@ -1,0 +1,31 @@
+ignore b-20230229-0000.tar
+ignore notes.md
+plan for lab as of 2024-03-11
+== 9
+keep 9-20240301-0000.tar last
+== a
+keep a-20240311-0000.tar last,within
+keep a-20240310-1000.tar last
+keep a-20240302-1000.tar last
+keep a-20240301-1000.tar last
+delete a-20240229-1000.tar
+delete a-20240108-0000.tar
+delete a-20240107-2300.tar
+delete a-20240101-0900.tar
+delete a-20231231-0800.tar
+delete a-20231225-1200.tar
+== a-b
+delete a-b-20240310-1000.tar
+delete a-b-20240309-1000.tar
+== b
+keep b-20240312-0601.tar future
+keep b-20240312-0600.tar future
+keep b-20240311-0600.tar last,within
+keep b-20240310-0600.tar last,within
+keep b-20230101-0000.tar last
+keep b-20221231-2359.tar last
+delete b-20211231-2359.tar
+delete b-20210101-0000.tar
+delete b-20200229-0000.tar
+kept 11, deleted 11
+wrote plan/lab.delete 11

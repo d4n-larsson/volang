@@ -1,0 +1,57 @@
+# Mentions: a word `@NAME` in a message's text, possibly followed by punctuation.
+import fmt;
+import model;
+import users;
+
+const trailing = ".,:;!?";
+
+fn strip_trailing(w: str) -> str {
+    var end = len(w);
+    while end > 0 and find(trailing, slice(w, end - 1, end)) >= 0 {
+        set end = end - 1;
+    }
+    return slice(w, 0, end);
+}
+
+export fn mentions(text: str, user_name: str) -> bool {
+    return any(split(text, " "), fn(w) => strip_trailing(w) == "@" + user_name);
+}
+
+export fn mention_lines(state: model.State, user_name: str) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let found = filter(model.all_live(state), fn(p) => model.is_member(p.channel, user_name) and mentions(p.message.text, user_name));
+    let out = ["mentions of " + user_name + ": " + str(len(found))];
+    for p in found {
+        push(out, "  " + fmt.located_line(p.channel.name, p.message));
+    }
+    return ok(out);
+}
+
+# Per channel of the user: messages by others posted after the user's read marker.
+export fn unread_lines(state: model.State, user_name: str) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let names = keys(state.channels);
+    sort(names);
+    let out = new list[str];
+    for name in names {
+        let c = state.channels[name];
+        if not model.is_member(c, user_name) {
+            continue;
+        }
+        let marker = c.markers[user_name];
+        let news = filter(model.live_messages(c), fn(m) => m.author != user_name and m.time > marker);
+        if len(news) == 0 {
+            continue;
+        }
+        let named = len(filter(news, fn(m) => mentions(m.text, user_name)));
+        var line = "#" + name + ": " + str(len(news)) + " unread";
+        if named > 0 {
+            set line = line + " (" + str(named) + " mentioning you)";
+        }
+        push(out, line);
+    }
+    if len(out) == 0 {
+        return ok(["no unread messages for " + user_name]);
+    }
+    return ok(out);
+}

@@ -1,0 +1,27 @@
+mkdir w
+cd w
+mkdir -p a/b/c
+cd a/b/c
+mv /w/a /w/z
+pwd
+mkdir /c
+mv /c /w/z/b
+mkdir /w/z/b/c2
+mv /w/z/b/c /w/z/b/c2/inside
+pwd
+cd ../..
+rm -r .
+rm -r c2
+pwd
+write /w/z/b/note hi
+cp -r . /w/copy
+cp -r /w /w/z/b/x
+cd /w/copy
+pwd
+mv /w/copy /w/copy2
+pwd
+rm -r /w
+cd ..
+rm -r /w/copy2
+du /
+find /

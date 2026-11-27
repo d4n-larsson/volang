@@ -1,0 +1,95 @@
+# Commands that go through a whole subtree: tree, du, find.
+import fmt;
+import nodes;
+import paths;
+import resolve;
+import shell;
+
+# The path, then every entry below it, indented two spaces per level, in byte order.
+export fn tree(sh: shell.Shell, text: str) -> list[str] {
+    let names = paths.normalize(sh.cwd, text);
+    match resolve.walk(sh, names) {
+        case err(e) {
+            return [e];
+        }
+        case ok(node) {
+            let out = [paths.display(names)];
+            if node.is_dir {
+                tree_lines(node, 1, out);
+            }
+            return out;
+        }
+    }
+}
+
+fn tree_lines(node: nodes.Node, depth: int, out: list[str]) {
+    for name in nodes.sorted_names(node) {
+        let item = nodes.entry(node, name);
+        push(out, fmt.indent(depth) + fmt.entry_name(name, item));
+        if item.is_dir {
+            tree_lines(item, depth + 1, out);
+        }
+    }
+}
+
+# `SIZE PATH` for every directory of the subtree, each after the directories inside it;
+# SIZE is the total size of the files below. A file gets one line of its own size.
+export fn du(sh: shell.Shell, text: str) -> list[str] {
+    let names = paths.normalize(sh.cwd, text);
+    match resolve.walk(sh, names) {
+        case err(e) {
+            return [e];
+        }
+        case ok(node) {
+            if not node.is_dir {
+                return [fmt.size_line(nodes.file_size(node), names)];
+            }
+            let out = new list[str];
+            let _ = usage(node, names, out);
+            return out;
+        }
+    }
+}
+
+fn usage(node: nodes.Node, names: list[str], out: list[str]) -> int {
+    var total = 0;
+    for name in nodes.sorted_names(node) {
+        let item = nodes.entry(node, name);
+        if item.is_dir {
+            set total = total + usage(item, paths.child(names, name), out);
+        } else {
+            set total = total + nodes.file_size(item);
+        }
+    }
+    push(out, fmt.size_line(total, names));
+    return total;
+}
+
+# The paths in the subtree (the start included) whose last name is `wanted`, in tree order.
+export fn find_name(sh: shell.Shell, text: str, wanted: str) -> list[str] {
+    let names = paths.normalize(sh.cwd, text);
+    match resolve.walk(sh, names) {
+        case err(e) {
+            return [e];
+        }
+        case ok(node) {
+            let out = new list[str];
+            search(node, names, wanted, out);
+            if len(out) == 0 {
+                return ["no matches"];
+            }
+            return out;
+        }
+    }
+}
+
+fn search(node: nodes.Node, names: list[str], wanted: str, out: list[str]) {
+    if len(names) > 0 and paths.base_name(names) == wanted {
+        push(out, paths.display(names));
+    }
+    if node.is_dir {
+        for name in nodes.sorted_names(node) {
+            search(nodes.entry(node, name), paths.child(names, name), wanted, out);
+        }
+    }
+}

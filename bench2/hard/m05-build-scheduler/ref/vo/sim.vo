@@ -1,0 +1,191 @@
+import graph;
+import lines;
+
+export record Result {
+    log: list[str];
+    busy: list[int];
+    attempts: list[int];
+    built: list[str];
+    failed: list[str];
+    skipped: map[str, bool];
+    makespan: int;
+}
+
+record Slot {
+    active: bool;
+    end: int;
+    target: str;
+    attempt: int;
+    outcome: str;
+}
+
+record State {
+    tries: map[str, int];
+    succeeded: map[str, bool];
+    waiting: map[str, int];
+    ready: list[str];
+    slots: list[Slot];
+}
+
+fn may_start(b: lines.Build, slots: list[Slot], t: str) -> bool {
+    if not has(b.pool_of, t) {
+        return true;
+    }
+    let pool = b.pool_of[t];
+    var busy = 0;
+    for s in slots {
+        if s.active and get_or(b.pool_of, s.target, "") == pool {
+            set busy = busy + 1;
+        }
+    }
+    return busy < b.pools[pool];
+}
+
+fn next_time(st: State) -> int {
+    var best = -1;
+    for s in st.slots {
+        if s.active and (best < 0 or s.end < best) {
+            set best = s.end;
+        }
+    }
+    for _, at in st.waiting {
+        if best < 0 or at < best {
+            set best = at;
+        }
+    }
+    return best;
+}
+
+fn all_done(deps: list[str], succeeded: map[str, bool]) -> bool {
+    return all(deps, fn(d) => has(succeeded, d));
+}
+
+fn finish(b: lines.Build, p: graph.Plan, st: State, r: Result, now: int, w: int) {
+    let s = st.slots[w];
+    set s.active = false;
+    let t = s.target;
+    let wn = " w" + str(w + 1);
+    if s.outcome == "done" {
+        push(r.log, str(now) + " done " + t + wn);
+        push(r.built, t);
+        set st.succeeded[t] = true;
+        for m, _ in p.buildable {
+            if graph.has_item(b.targets[m].deps, t) and not has(r.skipped, m) and all_done(b.targets[m].deps, st.succeeded) {
+                set st.waiting[m] = now;
+            }
+        }
+        return;
+    }
+    push(r.log, str(now) + " " + s.outcome + " " + t + wn + " #" + str(s.attempt));
+    if st.tries[t] < b.retries + 1 {
+        set st.waiting[t] = now + b.backoff;
+        return;
+    }
+    push(r.log, str(now) + " give up " + t);
+    push(r.failed, t);
+    let skip = new list[str];
+    for m, _ in p.buildable {
+        if has(p.reach[m], t) and not has(r.skipped, m) {
+            push(skip, m);
+        }
+    }
+    sort(skip);
+    for m in skip {
+        push(r.log, str(now) + " skip " + m);
+        set r.skipped[m] = true;
+    }
+}
+
+fn better(p: graph.Plan, a: str, b: str) -> bool {
+    let pa = p.priority[a];
+    let pb = p.priority[b];
+    if pa != pb {
+        return pa > pb;
+    }
+    return a < b;
+}
+
+fn start(b: lines.Build, p: graph.Plan, st: State, r: Result, now: int) {
+    for w, s in st.slots {
+        if s.active {
+            continue;
+        }
+        var best = -1;
+        for i, t in st.ready {
+            if may_start(b, st.slots, t) and (best < 0 or better(p, t, st.ready[best])) {
+                set best = i;
+            }
+        }
+        if best < 0 {
+            return;
+        }
+        let t = st.ready[best];
+        remove_at(st.ready, best);
+        let attempt = st.tries[t] + 1;
+        set st.tries[t] = attempt;
+        var d = b.targets[t].duration;
+        var outcome = "done";
+        if b.timeout > 0 and d > b.timeout {
+            set d = b.timeout;
+            set outcome = "timeout";
+        } else if has(b.fails, lines.fail_key(t, attempt)) {
+            set outcome = "fail";
+        }
+        set s.active = true;
+        set s.end = now + d;
+        set s.target = t;
+        set s.attempt = attempt;
+        set s.outcome = outcome;
+        set r.busy[w] = r.busy[w] + d;
+        set r.attempts[w] = r.attempts[w] + 1;
+        set r.makespan = max(r.makespan, now + d);
+        push(r.log, str(now) + " start " + t + " w" + str(w + 1) + " #" + str(attempt));
+    }
+}
+
+fn remove_at(xs: list[str], i: int) {
+    for j in i..len(xs) - 1 {
+        set xs[j] = xs[j + 1];
+    }
+    match pop(xs) {
+        case ok(_) {
+        }
+        case err(_) {
+        }
+    }
+}
+
+export fn simulate(b: lines.Build, p: graph.Plan) -> Result {
+    let r = new Result { log: [], busy: [], attempts: [], built: [], failed: [], skipped: new map[str, bool], makespan: 0 };
+    let st = new State { tries: new map[str, int], succeeded: new map[str, bool], waiting: new map[str, int], ready: [], slots: [] };
+    for _ in 0..b.workers {
+        push(r.busy, 0);
+        push(r.attempts, 0);
+        push(st.slots, new Slot { active: false, end: 0, target: "", attempt: 0, outcome: "" });
+    }
+    for t, _ in p.buildable {
+        set st.tries[t] = 0;
+        if len(b.targets[t].deps) == 0 {
+            set st.waiting[t] = 0;
+        }
+    }
+    while true {
+        let now = next_time(st);
+        if now < 0 {
+            break;
+        }
+        for w, s in st.slots {
+            if s.active and s.end == now {
+                finish(b, p, st, r, now, w);
+            }
+        }
+        for t in keys(st.waiting) {
+            if st.waiting[t] == now {
+                remove(st.waiting, t);
+                push(st.ready, t);
+            }
+        }
+        start(b, p, st, r, now);
+    }
+    return r;
+}

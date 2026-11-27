@@ -1,0 +1,20 @@
+create table acct (id int, owner text, bal int, tier text)
+insert into acct values (1, 'kim', 100, 'gold'), (2, 'lee', null, 'silver'), (3, 'max', 40, null), (4, 'nia', 250, 'gold')
+update acct set bal = 5, nope = 1
+update acct set bal = 5, tier = 'x', bal = 6
+update acct set bal = 'five'
+update acct set tier = 3 where id = 1
+update acct set bal = 1 where count(*) > 1
+update ghost set a = 1
+update acct set bal = 0 where bal < 50
+select * from acct
+update acct set tier = null, bal = 999 where acct.tier = 'silver' or id = 3
+select * from acct
+update acct set owner = 'zed' where id = 99
+delete from acct where tier != 'gold'
+select id, tier from acct
+delete from acct where missing = 1
+delete from acct
+select * from acct
+insert into acct values (7, 'ola', 1, 'gold')
+select owner from acct

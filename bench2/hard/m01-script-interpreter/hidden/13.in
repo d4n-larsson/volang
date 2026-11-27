@@ -1,0 +1,11 @@
+print 1 == "1", "1" == "1", true == true, 0 == false, "" != ""
+print "abc" < "abd", "B" < "a", "a" < "ab", "ab" < "b", 10 < 9, "10" < "9"
+print 3 >= 3, "x" <= "x", true != false
+let flag = 3 > 2
+if flag
+    print "flag is", flag
+end
+let n = 1
+while n
+    print "never"
+end

@@ -1,0 +1,22 @@
+knockout
+team Ant
+team Bee
+team Cat
+team Dog
+team Elk
+group Solo Ant Bee
+knockout
+group Duo Cat Dog Elk
+knockout
+result Ant 1 0 Bee
+result Bee 1 0 Ant
+knockout
+withdraw Elk
+knockout
+result Cat 0 0 Dog
+knockout
+result Dog 1 2 Cat
+knockout
+withdraw Ant
+knockout
+knockout now

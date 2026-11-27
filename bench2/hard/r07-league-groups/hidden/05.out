@@ -1,0 +1,41 @@
+team Ant added
+team Bee added
+team Cat added
+team Dog added
+team Elk added
+team Fox added
+group Y: Ant, Bee, Cat
+group X: Dog, Elk
+error: Ant and Dog are not in the same group
+error: Dog and Ant are not in the same group
+error: Ant and Fox are not in the same group
+error: team cannot play itself
+result 1: Ant 2-2 Bee
+error: Ant v Bee already played
+result 2: Dog 3-1 Elk
+team Elk withdrawn, 1 results void
+error: team Elk withdrawn
+error: team Elk withdrawn
+error: unknown team Eel
+result 3: Bee 0-1 Ant
+result 4: Cat 1-1 Bee
+group X: 0 left
+group Y: 3 left
+  Ant v Cat
+  Bee v Cat
+  Cat v Ant
+3 fixtures left
+group X
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Dog   0  0  0  0  0  0   0   0
+group Y
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Ant   2  1  1  0  3  2  +1   4
+  2 Bee   3  0  2  1  3  4  -1   2
+  3 Cat   1  0  1  0  1  1   0   1
+error: Ant and Dog are not in the same group
+result 1: Ant 2-2 Bee
+result 3: Bee 0-1 Ant
+Ant 1 wins, Bee 0 wins, 1 draws
+error: Fox and Ant are not in the same group
+no matches between Dog and Elk

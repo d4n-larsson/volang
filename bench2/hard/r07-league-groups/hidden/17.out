@@ -1,0 +1,90 @@
+team Riga added
+team Bern added
+team Lima added
+team Oslo added
+team Kiev added
+team Rome added
+team Bari added
+team Graz added
+team Rio added
+team Gent added
+team Bonn added
+team Baku added
+team Gdansk added
+group Red: Rio, Rome, Riga
+group Blue: Bern, Baku, Bonn, Bari
+group Green: Graz, Gent, Gdansk
+group Amber: Oslo, Lima, Kiev
+result 1: Bari 2-0 Bern
+result 2: Bonn 1-0 Bari
+result 3: Graz 0-2 Gdansk
+result 4: Baku 2-1 Bonn
+result 5: Bari 0-1 Bonn
+result 6: Riga 1-2 Rome
+result 7: Oslo 0-0 Kiev
+result 8: Gent 1-2 Gdansk
+result 9: Rome 0-0 Riga
+result 10: Baku 0-0 Bari
+result 11: Bern 2-0 Baku
+result 12: Lima 1-0 Kiev
+result 13: Baku 2-2 Bern
+result 14: Kiev 1-1 Oslo
+result 15: Gdansk 2-0 Gent
+result 16: Rio 1-2 Riga
+result 17: Riga 2-0 Rio
+result 18: Kiev 1-1 Lima
+result 19: Bonn 0-0 Baku
+result 20: Oslo 1-2 Lima
+result 21: Gdansk 0-2 Graz
+result 22: Bari 2-1 Baku
+result 23: Bern 1-0 Bonn
+result 24: Graz 1-0 Gent
+result 25: Gent 2-2 Graz
+result 26: Bonn 0-2 Bern
+result 27: Rome 0-2 Rio
+result 28: Lima 2-2 Oslo
+result 29: Rio 1-0 Rome
+result 30: Bern 1-1 Bari
+group Amber
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Lima  4  2  2  0  6  4  +2   8
+  2 Oslo  4  0  3  1  4  5  -1   3
+  3 Kiev  4  0  3  1  2  3  -1   3
+group Blue
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Bern  6  3  2  1  8  5  +3  11
+  2 Bari  6  2  2  2  5  4  +1   8
+  3 Bonn  6  2  1  3  3  5  -2   7
+  4 Baku  6  1  3  2  5  7  -2   6
+group Green
+Pos Team    P  W  D  L GF GA  GD Pts
+  1 Gdansk  4  3  0  1  6  3  +3   9
+  2 Graz    4  2  1  1  5  4  +1   7
+  3 Gent    4  0  1  3  3  7  -4   1
+group Red
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Riga  4  2  1  1  5  3  +2   7
+  2 Rio   4  2  0  2  4  4   0   6
+  3 Rome  4  1  1  2  2  4  -2   4
+match 1: Lima (Amber 1st) v Bari (Blue 2nd)
+match 2: Bern (Blue 1st) v Graz (Green 2nd)
+match 3: Gdansk (Green 1st) v Rio (Red 2nd)
+match 4: Riga (Red 1st) v Oslo (Amber 2nd)
+group Amber: most scored Lima 6, fewest conceded Kiev 3
+group Blue: most scored Bern 8, fewest conceded Bari 4
+group Green: most scored Gdansk 6, fewest conceded Gdansk 3
+group Red: most scored Riga 5, fewest conceded Riga 3
+highest scoring match: result 13: Baku 2-2 Bern (4 goals)
+total: 58 goals in 30 matches
+group Amber: 0 left
+group Blue: 0 left
+group Green: 0 left
+group Red: 0 left
+0 fixtures left
+Rio: P 4, W 2, D 0, L 2, GF 4, GA 4, GD 0, Pts 6
+home 1-0-1, away 1-0-1
+position 2 of 3 in group Red
+Bari: P 6, W 2, D 2, L 2, GF 5, GA 4, GD +1, Pts 8
+home 2-0-1, away 0-2-1
+position 2 of 4 in group Blue
+longest winning streak 3: Gdansk

@@ -1,0 +1,19 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+post ann general welcome everyone
+post bob general hi @ann
+channel bob dev
+post bob dev build is green
+reply cy general/1 thanks @ann!
+reply ann general/2 hello @bob
+reply bob general/4 more in the thread
+history general
+thread general/1
+thread general/5
+history dev
+whois bob

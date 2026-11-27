@@ -1,0 +1,52 @@
+import engine;
+import std.text;
+import syntax;
+
+fn cell(v: syntax.Value) -> str {
+    match v {
+        case null {
+            return "NULL";
+        }
+        case num(x) {
+            return str(x);
+        }
+        case txt(s) {
+            return s;
+        }
+    }
+}
+
+# The lines of a select result: header, separator, rows and the row count.
+export fn render(r: engine.Result) -> list[str] {
+    let cells = map(r.rows, fn(row) => map(row, cell));
+    let widths = new list[int];
+    for i, h in r.headers {
+        push(widths, fold(cells, len(h), fn(w, row) => max(w, len(row[i]))));
+    }
+    let out = new list[str];
+    let head = new list[str];
+    let dashes = new list[str];
+    for i, h in r.headers {
+        push(head, text.align_left(h, widths[i]));
+        push(dashes, text.repeat("-", widths[i]));
+    }
+    push(out, join(head, " | "));
+    push(out, join(dashes, "-+-"));
+    for row in cells {
+        let line = new list[str];
+        for i, c in row {
+            if r.types[i] == "int" {
+                push(line, text.align_right(c, widths[i]));
+            } else {
+                push(line, text.align_left(c, widths[i]));
+            }
+        }
+        push(out, join(line, " | "));
+    }
+    if len(r.rows) == 1 {
+        push(out, "(1 row)");
+    } else {
+        push(out, "(" + str(len(r.rows)) + " rows)");
+    }
+    return out;
+}

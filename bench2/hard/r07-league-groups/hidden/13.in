@@ -1,0 +1,24 @@
+team Alpha
+team Beta
+team Gamma
+team Delta
+rename Gamma Omega
+group G1 Alpha Omega
+rename Alpha Prime
+group G1 Beta
+group G2 Delta Alpha
+group G2 Delta
+teams
+result Prime 2 0 Omega
+result Omega 1 1 Beta
+rename Beta Theta
+result Theta 0 1 Prime
+fixtures
+table
+h2h Prime Theta
+form Theta
+record Omega
+rename Delta Omega
+rename Delta Sigma
+teams
+goals

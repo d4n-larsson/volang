@@ -1,0 +1,29 @@
+open assets:bank asset
+open assets:eur:a asset EUR
+open assets:eur:b asset EUR
+open assets:eur asset EUR
+open assets:gbp asset GBP
+open assets:jpy asset JPY
+open assets:chf asset CHF
+rate EUR 0 1.5
+rate GBP 0 1.3
+rate JPY 0 0.0067
+rate CHF 0 1.1
+post b1 1 a assets:eur:a=0.01 assets:bank=
+post b2 1 a assets:eur:b=0.01 assets:bank=
+post b3 1 a assets:eur=0.01 assets:bank=
+post b4 1 a assets:jpy=1500 assets:bank=
+post b5 1 a assets:chf=10 assets:bank=
+post b6 1 a assets:chf=-10 assets:bank=
+post b7 1 a assets:gbp=-3 assets:bank=
+balance assets
+balance assets:eur
+balance assets:eur:a
+balance assets:bank
+balance assets:chf
+balance assets:e
+balance asset
+balance assets:gbp
+rate EUR 2 1.7
+rate EUR 1 9
+balance assets:eur

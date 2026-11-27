@@ -1,0 +1,13 @@
+append the quick brown fox
+append jumps over
+append the lazy dog
+print
+subst 1,$ the a
+print
+undo
+print
+redo
+where
+buffers
+save
+buffers

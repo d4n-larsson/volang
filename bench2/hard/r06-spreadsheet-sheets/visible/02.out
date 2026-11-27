@@ -1,0 +1,13 @@
+sheet Tax added
+using Tax
+A1 = 25
+B1 = 0
+B1: =Sheet1!B1*A1/100
+B1 = 0
+using Sheet1
+B1 = 400
+Tax!B1 = 100
+= 425
+Sheet1: 1 cells (current)
+Tax: 2 cells
+B1: 400

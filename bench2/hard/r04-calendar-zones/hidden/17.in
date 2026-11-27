@@ -1,0 +1,17 @@
+user v -10:00
+user w +11:00
+room x 4 +11:00
+book p1 x w 10 02:00 720 v
+book p2 x v 9 16:00 30
+book p2 x v 10 13:30 30
+busy v 9
+busy v 10
+busy w 10
+busy w 9
+busy w
+busy v
+agenda v 9
+agenda w 10
+free x 10
+rooms 10
+rooms 9

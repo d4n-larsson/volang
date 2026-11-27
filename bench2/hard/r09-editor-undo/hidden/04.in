@@ -1,0 +1,29 @@
+open zeta
+open a1
+open 10
+open Bad
+open a-b
+open
+open main extra
+append m
+buffers
+open zeta
+open a1
+append q
+save
+open zeta
+buffers
+close zeta
+close nope
+close a1
+close main
+open a1
+close main
+close! main
+buffers
+open main
+buffers
+where
+close a1
+close 10
+buffers

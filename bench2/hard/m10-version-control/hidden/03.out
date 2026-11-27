@@ -1,0 +1,31 @@
+* main -
+[main 1] one (1 added, 0 modified, 0 deleted)
+error: branch dev exists
+error: invalid branch name 42
+error: invalid branch name a~b
+error: unknown revision 9
+  dev 1
+* main 1
+  rel 1
+error: no such branch nope
+error: already on main
+error: uncommitted changes
+switched to dev
+[dev 2] dev work (1 added, 0 modified, 0 deleted)
+switched to main
+on main
+clean
+switched to rel
+  dev 2
+  main 1
+* rel 1
+commit 1
+parents none
+message one
+f "one"
+switched to dev
+commit 2
+parents 1
+message dev work
+f "one"
+g "new"

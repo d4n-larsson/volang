@@ -1,0 +1,17 @@
+set A1 5
+sheet Data
+set Data!A1 =Sheet1!A1+1
+set Data!B1 =B2
+set Data!B2 =Sheet1!B1
+set B1 =Data!B1+1
+get Data!A1
+get A1
+get B1
+get Data!B2
+set C1 =Data!C1
+set Data!C1 =C1+Sheet1!C1
+get C1
+get Data!C1
+count
+print A1:C1
+print Data!A1:C2

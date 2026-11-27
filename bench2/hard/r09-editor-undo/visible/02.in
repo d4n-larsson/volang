@@ -1,0 +1,15 @@
+append one
+append two
+open notes
+append alpha
+append beta
+yank 1,2
+open main
+paste 1
+print
+undo
+print
+buffers
+undo 2
+redo
+print

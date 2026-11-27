@@ -1,0 +1,4 @@
+pick json 2.0.0
+== lock
+json 2.0.0
+wrote out/abcdefghijklmnopqrstuvwxyz_01234.lock 1

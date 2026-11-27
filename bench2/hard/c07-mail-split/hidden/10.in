@@ -1,0 +1,4 @@
+domain remote.net
+quota 100000
+mon
+dups

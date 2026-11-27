@@ -1,0 +1,74 @@
+# Checking and reading the words of a command.
+import model;
+
+export fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+# Only called on strings that passed is_number.
+export fn number(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+# Minutes since midnight for `HH:MM` (00:00 to 23:59), or -1.
+export fn parse_clock(s: str) -> int {
+    if len(s) != 5 or slice(s, 2, 3) != ":" {
+        return -1;
+    }
+    let hours = slice(s, 0, 2);
+    let minutes = slice(s, 3, 5);
+    if not is_number(hours) or not is_number(minutes) {
+        return -1;
+    }
+    let h = number(hours);
+    let m = number(minutes);
+    if h > 23 or m > 59 {
+        return -1;
+    }
+    return h * 60 + m;
+}
+
+# The time `DAY HH:MM` given as two words, or -1.
+export fn parse_moment(day: str, clock: str) -> int {
+    if not is_number(day) {
+        return -1;
+    }
+    let c = parse_clock(clock);
+    if c < 0 {
+        return -1;
+    }
+    return number(day) * model.minutes_per_day + c;
+}
+
+# A meeting length in minutes, 1 to 1440, or -1.
+export fn parse_length(s: str) -> int {
+    if not is_number(s) {
+        return -1;
+    }
+    let n = number(s);
+    if n < 1 or n > model.minutes_per_day {
+        return -1;
+    }
+    return n;
+}
+
+export fn parse_capacity(s: str) -> int {
+    if not is_number(s) {
+        return -1;
+    }
+    let n = number(s);
+    if n < 1 {
+        return -1;
+    }
+    return n;
+}

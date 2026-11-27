@@ -1,0 +1,25 @@
+task alpha 3 First
+task beta 2
+task gamma 4 Third one
+task Delta 2
+task 9x 2
+task d-1 1
+task alpha 1
+dep beta alpha
+dep gamma beta+1
+dep d-1 gamma
+dep alpha d-1
+dep alpha alpha
+dep beta alpha
+dep beta zeta
+dep zeta beta
+dep beta alpha+x
+dep beta +2
+undep gamma alpha
+undep gamma beta
+undep gamma beta
+remove alpha
+rename gamma The third
+list
+show gamma
+schedule

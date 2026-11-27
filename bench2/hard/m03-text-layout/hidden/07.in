@@ -1,0 +1,32 @@
+.width 34
+.indent 2
+.list number
+Outer one has text that wraps onto the next line.
+.list bullet
+Inner bullet.
+
+Second inner bullet.
+.list bullet
+Deepest level item.
+.list number
+Still at the deepest level: that list was not opened.
+.endlist
+Back at depth two.
+.endlist
+Outer two.
+
+Outer three.
+
+Outer four.
+
+Outer five.
+
+Outer six.
+
+Outer seven.
+
+Outer eight.
+
+Outer nine.
+
+Outer ten has a two-digit marker so its text moves right.

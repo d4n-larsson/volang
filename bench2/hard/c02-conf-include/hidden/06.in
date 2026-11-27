@@ -1,0 +1,5 @@
+/etc/passwd
+../conf/app.conf
+env/../../secrets/prod.conf
+env/../db.conf
+./env//prod.conf

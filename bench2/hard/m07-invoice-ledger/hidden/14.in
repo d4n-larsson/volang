@@ -1,0 +1,16 @@
+customer f 100000.00 5 0
+invoice f 1x400.00
+invoice f 1x10.00
+pay f 10.00
+day 36
+pay f 1.00 1
+day 37
+statement f
+pay f 1000.00
+invoice f 1x200.00
+invoice f 1x600.00
+invoice f 1x400.00
+day 50
+statement f
+refund f 1.00
+aging

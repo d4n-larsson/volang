@@ -1,0 +1,7 @@
+notes.txt -> 1
+src/main.vo -> 2
+src/lib/util/text.vo -> 2
+tests/test_1.py -> 3
+docs/api.md -> 4
+docs/zeta.md -> none
+.hidden.txt -> none

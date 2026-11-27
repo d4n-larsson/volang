@@ -1,0 +1,5 @@
+extends abcdefghijklmnop
+flag dash default off
+when n in 1,2,3 then on
+when n in 4 then off
+when n = 4 then on

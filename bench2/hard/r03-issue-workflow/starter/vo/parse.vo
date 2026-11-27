@@ -1,0 +1,100 @@
+# Checks and conversions of command words.
+export record Filter {
+    # "open", "closed" or "all"
+    status: str;
+    # "" for anyone, "-" for unassigned issues
+    assignee: str;
+    # "" for any labels
+    label: str;
+    # 0 for any priority
+    priority: int;
+}
+
+export record LabelOp {
+    adding: bool;
+    label: str;
+}
+
+export fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+# Only called on strings that passed is_number.
+export fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+# 1 to 4 for p1 to p4, else 0.
+export fn parse_priority(s: str) -> int {
+    if s == "p1" or s == "p2" or s == "p3" or s == "p4" {
+        return num(slice(s, 1, 2));
+    }
+    return 0;
+}
+
+# The operations for words +LABEL / -LABEL, or err if a word is neither.
+export fn parse_label_ops(words: list[str]) -> result[list[LabelOp]] {
+    let ops = new list[LabelOp];
+    for w in words {
+        if len(w) < 2 {
+            return err("bad");
+        }
+        let sign = slice(w, 0, 1);
+        if sign != "+" and sign != "-" {
+            return err("bad");
+        }
+        push(ops, new LabelOp { adding: sign == "+", label: slice(w, 1, len(w)) });
+    }
+    return ok(ops);
+}
+
+fn status_word(s: str) -> bool {
+    return s == "open" or s == "closed" or s == "all";
+}
+
+# The filter, or err with the error message.
+export fn parse_filter(words: list[str]) -> result[Filter] {
+    let f = new Filter { status: "open", assignee: "", label: "", priority: 0 };
+    let seen = new map[str, bool];
+    for w in words {
+        let eq = find(w, "=");
+        if eq <= 0 or eq == len(w) - 1 {
+            return err("error: bad filter " + w);
+        }
+        let key = slice(w, 0, eq);
+        let value = slice(w, eq + 1, len(w));
+        if has(seen, key) {
+            return err("error: duplicate filter " + key);
+        }
+        set seen[key] = true;
+        if key == "status" {
+            if not status_word(value) {
+                return err("error: bad status " + value);
+            }
+            set f.status = value;
+        } else if key == "assignee" {
+            set f.assignee = value;
+        } else if key == "label" {
+            set f.label = value;
+        } else if key == "priority" {
+            let p = parse_priority(value);
+            if p == 0 {
+                return err("error: bad priority " + value);
+            }
+            set f.priority = p;
+        } else {
+            return err("error: unknown filter " + key);
+        }
+    }
+    return ok(f);
+}

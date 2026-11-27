@@ -1,0 +1,23 @@
+error: unknown command bogus
+error: line 5 out of range
+error: bad range 2,1
+error: bad command
+error: cannot move lines into themselves
+error: nothing to join
+error: bad column 0
+error: bad command
+error: line 3 out of range
+error: line 0 out of range
+undone 1 step
+undone 1 step
+error: empty buffer
+error: empty buffer
+error: empty buffer
+error: nothing to undo
+error: line 9 out of range
+error: line 1 out of range
+error: empty buffer
+error: nothing to undo
+error: nothing to undo
+error: nothing to undo
+buffer main, line 0 of 0

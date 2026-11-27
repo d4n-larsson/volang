@@ -1,0 +1,48 @@
+rest S1 10 100.00
+trade BB 1 100.00 B1 S1
+filled B1
+reject X1 price band
+rest X2 1 90.00
+reject X3 price band
+rest X4 1 110.00
+pending T1
+trigger T1
+stp X2 1
+expired T1 1
+trade BB 1 100.00 M1 S1
+filled M1
+book BB last 100.00
+  ask 110.00 1 1
+  ask 100.00 8 1
+rest L1 5 91.00
+rest L2 3 92.00
+trade BB 5 91.00 L3 L1
+trade BB 1 92.00 L3 L2
+filled L3
+book BB last 92.00
+  ask 110.00 1 1
+  ask 100.00 8 1
+  ask 92.00 2 1
+modified X4 1 82.80
+rest X4 1 82.80
+modified X4 1 99.00
+rest X4 1 99.00
+reject X2 unknown order
+reject X5 price band
+rest Y1 1 0.05
+rest Y2 1 1000.00
+book BB last 92.00
+  ask 100.00 8 1
+  ask 99.00 1 1
+  ask 92.00 2 1
+book CC last -
+  ask 1000.00 1 1
+  bid 0.05 1 1
+trader ana cash 200.00 BB:-2
+trader bob cash -100.00 BB:1
+trader cy cash 0.00
+trader dan cash -100.00 BB:1
+trader eve cash 547.00 BB:-6
+trader fay cash -547.00 BB:6
+trader gus cash 0.00
+trader hal cash 0.00

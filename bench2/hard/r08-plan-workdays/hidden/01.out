@@ -1,0 +1,27 @@
+added task a
+added task b
+added task c
+added task d
+b after a+1
+c after a
+d after b+2
+d after c+3
+task  start  finish  lstart  lfinish  slack
+a         0       2       0        2      0
+b         3       9       3        9      0
+c         2       7       3        8      1
+d        11      14      11       14      0
+end 14
+task d: Inspection
+  duration 1 days
+  after: b+2, c+3
+  before: -
+  start 11 finish 14 slack 0
+  done 0%
+task c: Walls
+  duration 3 days
+  after: a
+  before: d
+  start 2 finish 7 slack 1
+  done 0%
+project finishes on day 14 (Mon)

@@ -1,0 +1,11 @@
+message <m1@remote.net>: Lunch?
+bounce <m1@remote.net> bob@example.org: over quota
+message <m2@example.org>: Release plan
+bounce <m2@example.org> bob@example.org: over quota
+bounce <m2@example.org> dave@example.org: over quota
+bounce <m2@example.org> carol@example.org: over quota
+message <m3@example.org>: Re: Lunch?
+relay <m3@example.org> alice@remote.net
+bounce <m3@example.org> bob@example.org: over quota
+== mailboxes
+total 0 delivered, 5 bounced, 1 relayed, 0 duplicates

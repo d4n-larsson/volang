@@ -1,0 +1,24 @@
+user ann +01:00
+user bo -04:00
+user cy
+user dee
+room hall 6
+room den 6
+hours bo 09:00 17:00
+hours ann 08:00 12:00
+book m1 hall cy 5 12:00 60 bo
+book m1 hall cy 5 13:00 60 bo
+book m2 hall cy 5 15:00 30 ann bo
+book m2 hall ann 5 16:00 30 bo
+book m2 hall ann 5 11:00 60 bo
+book m2 hall ann 5 07:00 60 bo
+book m2 den ann 5 11:00 60 cy
+book m3 den bo 5 08:00 60 cy ann
+book m3 den bo 5 08:30 60 cy
+book m3 den bo 5 09:00 60 ann cy
+book m3 den dee 5 13:00 30 ann bo
+book m3 den dee 5 13:00 30 bo ann
+book m3 den bo 5 16:01 60 cy
+book m3 den bo 5 16:00 60 cy
+busy bo 5
+agenda bo 5

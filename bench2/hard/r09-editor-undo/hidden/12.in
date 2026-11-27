@@ -1,0 +1,27 @@
+open a
+append x
+append x
+append y
+append y
+append y
+dedupe
+dedupe
+print
+cut 2
+dedupe
+undo
+print
+redo
+paste 0
+print
+clear
+clear
+undo
+undo
+print
+buffers
+open main
+buffers
+redo
+paste $
+print

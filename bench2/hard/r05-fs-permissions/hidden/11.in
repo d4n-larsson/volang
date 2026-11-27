@@ -1,0 +1,35 @@
+useradd ann
+useradd bob
+mkdir -p /home/ann/notes
+chown ann /home/ann
+chown ann /home/ann/notes
+su ann
+cd /home/ann/notes
+write today.txt plan
+chmod rwx--- /home/ann
+su bob
+pwd
+whoami
+ls
+cat today.txt
+cat /home/ann/notes/today.txt
+cd ..
+cd /home
+ls
+ls ann
+cd ann
+pwd
+write x.txt y
+su ann
+cd ann/notes
+pwd
+ls
+su root
+cd ..
+pwd
+cd ../..
+su bob
+pwd
+ls
+tree
+stat home/ann/notes

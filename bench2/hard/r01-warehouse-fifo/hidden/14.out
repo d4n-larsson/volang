@@ -1,0 +1,30 @@
+warehouse w added
+item oil added
+received 2 oil into w, now 2, lot 1 at 8.00
+adjusted oil in w by +3 (found), now 5, lot 2 at 9.00
+received 4 oil into w, now 9, lot 3 at 10.00
+adjusted oil in w by -4 (damage), now 5, cost 34.00
+lot 2: 1 x 9.00 = 9.00
+lot 3: 4 x 10.00 = 40.00
+total 5 units = 49.00
+adjusted oil in w by -2 (loss), now 3, cost 19.00
+adjusted oil in w by +1 (count), now 4, lot 4 at 9.00
+adjusted oil in w by -3 (count), now 1, cost 30.00
+lot 4: 1 x 9.00 = 9.00
+total 1 unit = 9.00
+adjusted oil in w by -1 (damage), now 0, cost 9.00
+adjusted oil in w by +1 (found), now 1, lot 5 at 9.00
+lot 5: 1 x 9.00 = 9.00
+total 1 unit = 9.00
+#1 receive w +2 lot 1 at 8.00
+#2 adjust w +3 (found) lot 2 at 9.00
+#3 receive w +4 lot 3 at 10.00
+#4 adjust w -4 (damage) cost 34.00
+#5 adjust w -2 (loss) cost 19.00
+#6 adjust w +1 (count) lot 4 at 9.00
+#7 adjust w -3 (count) cost 30.00
+#8 adjust w -1 (damage) cost 9.00
+#9 adjust w +1 (found) lot 5 at 9.00
+items 1, warehouses 1, 1 unit, value 9.00
+shipped 0 units in 0 shipments, cost 0.00
+orders: 0 open, 0 fulfilled, 0 cancelled

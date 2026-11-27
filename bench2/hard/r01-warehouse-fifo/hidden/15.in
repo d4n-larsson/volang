@@ -1,0 +1,33 @@
+warehouse hub
+warehouse spoke
+item a Apple 50
+item b Banana 25
+item c Cherry 400
+reorder a 10
+receive hub a 8 45
+receive hub b 20
+receive spoke a 4 60
+receive hub c 2 380
+cost a 55
+transfer spoke hub a 3
+order o1 hub
+line o1 a 10
+line o1 b 5
+fulfil o1
+lots hub a
+count spoke a 6
+lots spoke a
+order o2 spoke
+line o2 a 7
+fulfil o2
+line o2 a 1
+line o2 a 4
+fulfil o2
+low
+adjust hub a +2 found
+low
+value hub
+value spoke
+stock
+report
+history a

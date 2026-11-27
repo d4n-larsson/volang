@@ -1,0 +1,21 @@
+0 start m1 w1 #1
+2 fail m1 w1 #1
+2 start m1 w1 #2
+4 done m1 w1
+4 start m2 w1 #1
+6 fail m2 w1 #1
+6 start m2 w1 #2
+8 done m2 w1
+8 start m3 w1 #1
+10 done m3 w1
+10 start s w1 #1
+11 done s w1
+makespan 11
+utilization 33%
+w1 busy 11 attempts 6
+w2 busy 0 attempts 0
+w3 busy 0 attempts 0
+built: m1 m2 m3 s
+failed: -
+skipped: -
+blocked: -

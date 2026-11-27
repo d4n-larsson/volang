@@ -1,0 +1,23 @@
+user u added
+room r added, capacity 3
+room r2 added, capacity 3
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: unknown user r
+error: unknown user r
+error: unknown user zed
+error: bad command
+hours u 00:00-00:01
+booked m in r: 5 00:00-00:01 (1 person)
+error: u works 00:00-00:01
+hours u none
+booked m2 in r: 5 00:01-00:02 (1 person)
+hours u 08:00-18:00
+hours u 08:00-18:30
+booked m3 in r: 5 17:30-18:30 (1 person)
+error: u works 08:00-18:30

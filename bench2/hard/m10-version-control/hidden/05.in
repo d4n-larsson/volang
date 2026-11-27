@@ -1,0 +1,27 @@
+write f a
+commit one
+write f b
+commit two
+write f c
+commit three
+branch side main~1
+log main~1~1
+log 3~0
+log 003
+log 0
+log 4
+log main~
+log main~x
+log main~-1
+log main~3
+log ~1
+show side~1
+diff main~2 main
+diff main main~5
+diff main~5 nope
+diff 2 side
+write q "quoted" text
+write e
+commit four
+show main
+show 0004

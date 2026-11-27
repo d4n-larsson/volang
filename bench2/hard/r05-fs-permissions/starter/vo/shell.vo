@@ -1,0 +1,12 @@
+# The state of the shell: the tree and the current directory.
+import nodes;
+
+export record Shell {
+    root: nodes.Node;
+    # The current directory as a list of names from the root.
+    cwd: list[str];
+}
+
+export fn new_shell() -> Shell {
+    return new Shell { root: nodes.new_dir(), cwd: new list[str] };
+}

@@ -1,0 +1,197 @@
+# One function per command: checks the arguments, then calls the module that does the work.
+# A command with the wrong arguments prints `error: bad command` and changes nothing.
+import std.option;
+import directory;
+import meetings;
+import model;
+import parse;
+import views;
+
+fn bad() -> list[str] {
+    return ["error: bad command"];
+}
+
+# The offset in args_value[n] (+00:00 when there is none), if it is one.
+fn optional_offset(args_value: list[str], n: int) -> option.Option[int] {
+    if len(args_value) == n {
+        return option.Option.some(0);
+    }
+    return parse.parse_offset(args_value[n]);
+}
+
+fn cmd_user(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) != 1 and len(args_value) != 2 {
+        return bad();
+    }
+    match optional_offset(args_value, 1) {
+        case some(offset) {
+            return [directory.add_user(cal, args_value[0], offset)];
+        }
+        case none {
+            return bad();
+        }
+    }
+}
+
+fn cmd_room(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if (len(args_value) != 2 and len(args_value) != 3) or parse.parse_capacity(args_value[1]) < 0 {
+        return bad();
+    }
+    match optional_offset(args_value, 2) {
+        case some(offset) {
+            return [directory.add_room(cal, args_value[0], parse.parse_capacity(args_value[1]), offset)];
+        }
+        case none {
+            return bad();
+        }
+    }
+}
+
+fn cmd_zone(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) != 2 {
+        return bad();
+    }
+    match parse.parse_offset(args_value[1]) {
+        case some(offset) {
+            return [directory.set_zone(cal, args_value[0], offset)];
+        }
+        case none {
+            return bad();
+        }
+    }
+}
+
+fn cmd_hours(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) == 2 and args_value[1] == "none" {
+        return [directory.set_hours(cal, args_value[0], false, 0, 0)];
+    }
+    if len(args_value) != 3 {
+        return bad();
+    }
+    let first = parse.parse_clock(args_value[1]);
+    let last = parse.parse_clock(args_value[2]);
+    if first < 0 or last < 0 or first >= last {
+        return bad();
+    }
+    return [directory.set_hours(cal, args_value[0], true, first, last)];
+}
+
+# book ID ROOM ORGANIZER DAY HH:MM MINUTES [ATTENDEE...]
+fn cmd_book(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) < 6 {
+        return bad();
+    }
+    let start = parse.parse_moment(args_value[3], args_value[4]);
+    let length = parse.parse_length(args_value[5]);
+    if start < 0 or length < 0 {
+        return bad();
+    }
+    let attendees = slice(args_value, 6, len(args_value));
+    return [meetings.book(cal, args_value[0], args_value[1], args_value[2], start, length, attendees)];
+}
+
+fn cmd_cancel(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) != 1 {
+        return bad();
+    }
+    return [meetings.cancel(cal, args_value[0])];
+}
+
+fn cmd_move(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) != 3 {
+        return bad();
+    }
+    let start = parse.parse_moment(args_value[1], args_value[2]);
+    if start < 0 {
+        return bad();
+    }
+    return [meetings.move(cal, args_value[0], start)];
+}
+
+fn cmd_invite(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) != 2 {
+        return bad();
+    }
+    return [meetings.invite(cal, args_value[0], args_value[1])];
+}
+
+fn cmd_leave(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) != 2 {
+        return bad();
+    }
+    return [meetings.leave(cal, args_value[0], args_value[1])];
+}
+
+fn cmd_agenda(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) != 2 or not parse.is_number(args_value[1]) {
+        return bad();
+    }
+    return views.agenda(cal, args_value[0], parse.number(args_value[1]));
+}
+
+fn cmd_rooms(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) != 1 or not parse.is_number(args_value[0]) {
+        return bad();
+    }
+    return views.rooms_on(cal, parse.number(args_value[0]));
+}
+
+fn cmd_free(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) != 2 or not parse.is_number(args_value[1]) {
+        return bad();
+    }
+    return [views.free_slots(cal, args_value[0], parse.number(args_value[1]))];
+}
+
+fn cmd_busy(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) == 1 {
+        return [views.busy(cal, args_value[0], -1)];
+    }
+    if len(args_value) == 2 and parse.is_number(args_value[1]) {
+        return [views.busy(cal, args_value[0], parse.number(args_value[1]))];
+    }
+    return bad();
+}
+
+fn cmd_who(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) != 1 {
+        return bad();
+    }
+    return [views.who(cal, args_value[0])];
+}
+
+fn cmd_list(cal: model.Calendar, args_value: list[str]) -> list[str] {
+    if len(args_value) != 0 {
+        return bad();
+    }
+    return views.listing(cal);
+}
+
+fn table() -> map[str, fn(model.Calendar, list[str]) -> list[str]] {
+    let t = new map[str, fn(model.Calendar, list[str]) -> list[str]];
+    set t["user"] = cmd_user;
+    set t["room"] = cmd_room;
+    set t["book"] = cmd_book;
+    set t["cancel"] = cmd_cancel;
+    set t["move"] = cmd_move;
+    set t["invite"] = cmd_invite;
+    set t["leave"] = cmd_leave;
+    set t["agenda"] = cmd_agenda;
+    set t["rooms"] = cmd_rooms;
+    set t["free"] = cmd_free;
+    set t["busy"] = cmd_busy;
+    set t["who"] = cmd_who;
+    set t["list"] = cmd_list;
+    set t["zone"] = cmd_zone;
+    set t["hours"] = cmd_hours;
+    return t;
+}
+
+export fn run(cal: model.Calendar, words: list[str]) -> list[str] {
+    let cmd = words[0];
+    let commands = table();
+    if not has(commands, cmd) {
+        return ["error: unknown command " + cmd];
+    }
+    return commands[cmd](cal, slice(words, 1, len(words)));
+}

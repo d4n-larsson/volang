@@ -1,0 +1,42 @@
+team Ash added
+team Elm added
+team Fir added
+team Oak added
+team Yew added
+team Ivy added
+group Trees: Oak, Ash, Elm
+group Shrubs: Yew, Fir
+result 1: Oak 1-1 Ash
+result 2: Ash 2-0 Elm
+result 3: Elm 2-0 Oak
+result 4: Yew 3-0 Fir
+form Oak (group Trees): DL
+form Ivy: -
+form Fir (group Shrubs): L
+error: Oak and Yew are not in the same group
+error: Ivy and Oak are not in the same group
+error: Oak and Ivy are not in the same group
+result 1: Oak 1-1 Ash
+Oak 0 wins, Ash 0 wins, 1 draws
+result 4: Yew 3-0 Fir
+Fir 0 wins, Yew 1 wins, 0 draws
+error: team cannot play itself
+error: unknown team Pine
+Oak: P 2, W 0, D 1, L 1, GF 1, GA 3, GD -2, Pts 1
+home 0-1-0, away 0-0-1
+position 3 of 3 in group Trees
+Ash: P 2, W 1, D 1, L 0, GF 3, GA 1, GD +2, Pts 4
+home 1-0-0, away 0-1-0
+position 1 of 3 in group Trees
+Elm: P 2, W 1, D 0, L 1, GF 2, GA 2, GD 0, Pts 3
+home 1-0-0, away 0-0-1
+position 2 of 3 in group Trees
+Fir: P 1, W 0, D 0, L 1, GF 0, GA 3, GD -3, Pts 0
+home 0-0-0, away 0-0-1
+position 2 of 2 in group Shrubs
+Ivy: P 0, W 0, D 0, L 0, GF 0, GA 0, GD 0, Pts 0
+home 0-0-0, away 0-0-0
+not in a group
+longest winning streak 1: Ash, Elm, Yew
+teams 6 (0 withdrawn), matches 4, goals 9
+home wins 3, draws 1, away wins 0

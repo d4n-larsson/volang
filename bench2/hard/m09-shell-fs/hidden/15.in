@@ -1,0 +1,22 @@
+mkdir a b
+write a/f one
+mv a/f missing/f
+mv a/f b/missing/
+ls a b
+mv b/missing b/.
+mv b/missing a/..
+ls
+cp missing a/.
+cp missing a/..
+cp missing /
+cp missing //a///
+ls -l . a
+mv a/missing /
+mv missing b/../a/./g
+ls a
+cd a
+mv g ../..
+cp ../g ..
+cp ../g ../h
+mv ../h .
+ls -l .. .

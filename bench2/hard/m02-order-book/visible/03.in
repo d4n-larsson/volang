@@ -1,0 +1,7 @@
+limit S1 ana sell QQ 10 50.00
+limit S2 ana sell QQ 10 51.00
+limit S3 ana sell QQ 10 52.00
+stop T1 bob buy QQ 15 50.50
+limit B1 cy buy QQ 5 50.00
+limit B2 cy buy QQ 6 51.00
+book QQ

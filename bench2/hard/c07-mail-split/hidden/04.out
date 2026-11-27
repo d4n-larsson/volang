@@ -1,0 +1,21 @@
+message <t1@lists.example.org>: Weekly digest number 7
+deliver <t1@lists.example.org> team
+deliver <t1@lists.example.org> erin
+relay <t1@lists.example.org> frank@other.org
+deliver <t1@lists.example.org> bob
+message tue#2: (no subject)
+deliver tue#2 gina
+message tue#3: Two To headers
+deliver tue#3 carol
+deliver tue#3 dave
+dup <t1@lists.example.org>
+dup tue#2
+dup tue#3
+== mailboxes
+wrote out/bob.mbox 1 294
+wrote out/carol.mbox 1 151
+wrote out/dave.mbox 1 151
+wrote out/erin.mbox 1 294
+wrote out/gina.mbox 1 129
+wrote out/team.mbox 1 294
+total 6 delivered, 0 bounced, 1 relayed, 3 duplicates

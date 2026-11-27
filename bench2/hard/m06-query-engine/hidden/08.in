@@ -1,0 +1,18 @@
+create table s (g int, h text, n int)
+insert into s values (1, 'a', 5), (1, 'b', 6), (2, 'a', 7)
+select h, count(*) from s group by g
+select * from s group by g
+select g, count(*) from s group by zz
+select h, count(*) from s group by zz
+select g from s having g > 1
+select g from s group by g having h = 'a'
+select sum(h) from s
+select g from s where sum(n) > 1 group by g
+select g, max(n) from s where q = 1 group by g
+select s.g, count(h) from s group by g order by n
+select g, sum(n) from s group by s.g order by s.g desc
+select g from s order by count(*)
+select count(*) from s having count(*) > 5
+select count(*) from s having count(*) > 2
+select g, n from s group by g, n having sum(n) > 'x'
+select min(h) from s having min(h) = 'a'

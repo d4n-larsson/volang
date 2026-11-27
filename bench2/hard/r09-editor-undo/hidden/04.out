@@ -1,0 +1,40 @@
+new buffer zeta
+new buffer a1
+new buffer 10
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+* 10 1 line, modified
+  a1 0 lines
+  main 0 lines
+  zeta 0 lines
+buffer zeta, 0 lines
+buffer a1, 0 lines
+saved a1, 1 line
+buffer zeta, 0 lines
+  10 1 line, modified
+  a1 1 line
+  main 0 lines
+* zeta 0 lines
+error: buffer zeta is current
+error: no buffer nope
+closed a1
+closed main
+new buffer a1
+error: no buffer main
+error: no buffer main
+  10 1 line, modified
+* a1 0 lines
+  zeta 0 lines
+new buffer main
+  10 1 line, modified
+  a1 0 lines
+* main 0 lines
+  zeta 0 lines
+buffer main, line 0 of 0
+closed a1
+error: buffer 10 has unsaved changes
+  10 1 line, modified
+* main 0 lines
+  zeta 0 lines

@@ -1,0 +1,6 @@
+today 2024-06-15
+set prod
+keep daily 10 for web
+keep monthly 2 for db-eu-1
+keep yearly 1 for cache
+keep yearly 9 for nobody

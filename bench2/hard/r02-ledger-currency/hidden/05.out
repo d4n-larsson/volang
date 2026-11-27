@@ -1,0 +1,33 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened assets:gbp (asset, GBP)
+opened assets:old (asset)
+opened income:eu (income, EUR)
+rate EUR from day 3: 1.1000
+closed assets:old
+error: more than one balancing posting
+error: more than one balancing posting
+error: balancing posting assets:eur must be in USD
+error: balancing posting assets:eur must be in USD
+error: no GBP rate on day 1
+error: no GBP rate on day 3
+error: no GBP rate on day 3
+error: transaction x8 unbalanced by 1.00
+posted x9: 2 postings, total 11.00
+error: account assets:old is closed
+error: account assets:gbp posted twice
+error: zero posting assets:gbp
+error: bad posting assets:gbp=1.234
+error: bad posting assets:gbp
+error: no EUR rate on day 2
+locked through 2
+error: books locked through 2
+error: balancing posting assets:gbp must be in USD
+error: account assets:bank posted twice
+error: unknown account assets:nope
+error: transaction x9 exists
+error: bad id X1
+x9 day 3 a
+  assets:eur 10.00 EUR (11.00 USD)
+  income:eu -10.00 EUR (-11.00 USD)
+3 x9 a 11.00

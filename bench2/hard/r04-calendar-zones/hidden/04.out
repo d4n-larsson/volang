@@ -1,0 +1,26 @@
+user ann added
+user bo added
+user cy added
+user dee added
+room hall added, capacity 6
+room den added, capacity 6
+hours bo 09:00-17:00
+hours ann 08:00-12:00
+error: bo works 09:00-17:00
+booked m1 in hall: 5 13:00-14:00 (2 people)
+error: ann works 08:00-12:00
+error: ann works 08:00-12:00
+error: bo works 09:00-17:00
+error: ann works 08:00-12:00
+booked m2 in den: 5 11:00-12:00 (2 people)
+error: bo works 09:00-17:00
+error: bo busy: m1 5 09:00-10:00
+error: bo busy: m1 5 09:00-10:00
+error: ann works 08:00-12:00
+error: bo busy: m1 5 13:00-14:00
+error: bo works 09:00-17:00
+booked m3 in den: 5 16:00-17:00 (2 people)
+bo day 5: 2 meetings, 2h00m
+agenda bo day 5 (UTC-04:00):
+  5 09:00-10:00 m1 in hall (attendee)
+  5 16:00-17:00 m3 in den (organizer)

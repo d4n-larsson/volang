@@ -1,0 +1,18 @@
+warehouse x
+warehouse Y
+item rice
+receive x rice 10 1.00 20
+receive x rice 10 2.00 8
+transfer x Y rice 12 5
+transfer x Y rice 3 2
+transfer x Y rice 5 2
+ship o1 Y rice 9
+stock
+value
+day 4
+day 7
+transfer Y x rice 4 1
+backorders
+day 9
+stock
+value

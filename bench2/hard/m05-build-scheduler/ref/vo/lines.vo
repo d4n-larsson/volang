@@ -1,0 +1,220 @@
+export record Target {
+    duration: int;
+    deps: list[str];
+}
+
+export record Problem {
+    line: int;
+    text: str;
+}
+
+export record Build {
+    workers: int;
+    retries: int;
+    backoff: int;
+    timeout: int;
+    targets: map[str, Target];
+    order: list[str];
+    fails: map[str, bool];
+    pools: map[str, int];
+    pool_of: map[str, str];
+    goals: list[str];
+    has_goal_line: bool;
+    problems: list[Problem];
+}
+
+record Line {
+    num: int;
+    fields: list[str];
+}
+
+export fn is_name(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c) => c == "_" or (c >= "a" and c <= "z") or (c >= "0" and c <= "9"));
+}
+
+# The value of s if it is a number within lo..hi, else -1.
+fn number(s: str, lo: int, hi: int) -> int {
+    if len(s) < 1 or len(s) > 4 or not all(chars(s), fn(c) => c >= "0" and c <= "9") {
+        return -1;
+    }
+    match parse_int(s) {
+        case ok(v) {
+            if v >= lo and v <= hi {
+                return v;
+            }
+            return -1;
+        }
+        case err(_) {
+            return -1;
+        }
+    }
+}
+
+export fn fail_key(name: str, attempt: int) -> str {
+    return name + "#" + str(attempt);
+}
+
+fn names_ok(fields: list[str], from: int) -> bool {
+    return all(slice(fields, from, len(fields)), fn(f) => is_name(f));
+}
+
+fn setting_range(kind: str) -> list[int] {
+    if kind == "workers" {
+        return [1, 9];
+    }
+    if kind == "retries" {
+        return [0, 9];
+    }
+    return [0, 1000];
+}
+
+fn well_formed(f: list[str]) -> bool {
+    let kind = f[0];
+    let n = len(f);
+    if kind == "target" {
+        return n >= 3 and is_name(f[1]) and names_ok(f, 3) and number(f[2], 1, 1000) >= 0;
+    }
+    if kind == "workers" or kind == "retries" or kind == "backoff" or kind == "timeout" {
+        let r = setting_range(kind);
+        return n == 2 and number(f[1], r[0], r[1]) >= 0;
+    }
+    if kind == "fail" {
+        return n == 3 and is_name(f[1]) and number(f[2], 1, 10) >= 0;
+    }
+    if kind == "pool" {
+        return n == 3 and is_name(f[1]) and number(f[2], 1, 9) >= 0;
+    }
+    if kind == "use" {
+        return n == 3 and is_name(f[1]) and is_name(f[2]);
+    }
+    if kind == "goal" {
+        return n >= 2 and names_ok(f, 1);
+    }
+    return false;
+}
+
+export fn first_seen(names: list[str]) -> list[str] {
+    let out = new list[str];
+    let seen = new map[str, bool];
+    for n in names {
+        if not has(seen, n) {
+            set seen[n] = true;
+            push(out, n);
+        }
+    }
+    return out;
+}
+
+fn value(s: str) -> int {
+    return number(s, 0, 9999);
+}
+
+fn define(b: Build, lines: list[Line]) -> map[int, bool] {
+    let defining = new map[int, bool];
+    for l in lines {
+        let f = l.fields;
+        if f[0] == "target" {
+            if has(b.targets, f[1]) {
+                push(b.problems, new Problem { line: l.num, text: "duplicate target " + f[1] });
+            } else {
+                set b.targets[f[1]] = new Target { duration: value(f[2]), deps: first_seen(slice(f, 3, len(f))) };
+                push(b.order, f[1]);
+                set defining[l.num] = true;
+            }
+        } else if f[0] == "pool" {
+            if has(b.pools, f[1]) {
+                push(b.problems, new Problem { line: l.num, text: "duplicate pool " + f[1] });
+            } else {
+                set b.pools[f[1]] = value(f[2]);
+            }
+        }
+    }
+    return defining;
+}
+
+fn unknown(b: Build, num: int, name: str) {
+    push(b.problems, new Problem { line: num, text: "unknown target " + name });
+}
+
+fn resolve(b: Build, lines: list[Line], defining: map[int, bool]) {
+    for l in lines {
+        let f = l.fields;
+        let kind = f[0];
+        if kind == "workers" {
+            set b.workers = value(f[1]);
+        } else if kind == "retries" {
+            set b.retries = value(f[1]);
+        } else if kind == "backoff" {
+            set b.backoff = value(f[1]);
+        } else if kind == "timeout" {
+            set b.timeout = value(f[1]);
+        } else if kind == "target" and has(defining, l.num) {
+            for dep in b.targets[f[1]].deps {
+                if not has(b.targets, dep) {
+                    push(b.problems, new Problem { line: l.num, text: "unknown dependency " + dep + " of " + f[1] });
+                }
+            }
+        } else if kind == "fail" {
+            if has(b.targets, f[1]) {
+                set b.fails[fail_key(f[1], value(f[2]))] = true;
+            } else {
+                unknown(b, l.num, f[1]);
+            }
+        } else if kind == "use" {
+            if not has(b.targets, f[1]) {
+                unknown(b, l.num, f[1]);
+            }
+            if not has(b.pools, f[2]) {
+                push(b.problems, new Problem { line: l.num, text: "unknown pool " + f[2] });
+            }
+            if has(b.targets, f[1]) and has(b.pools, f[2]) {
+                set b.pool_of[f[1]] = f[2];
+            }
+        } else if kind == "goal" {
+            set b.has_goal_line = true;
+            for n in first_seen(slice(f, 1, len(f))) {
+                if has(b.targets, n) {
+                    push(b.goals, n);
+                } else {
+                    unknown(b, l.num, n);
+                }
+            }
+        }
+    }
+}
+
+export fn read(text: str) -> Build {
+    let b = new Build {
+        workers: 1,
+        retries: 0,
+        backoff: 0,
+        timeout: 0,
+        targets: new map[str, Target],
+        order: [],
+        fails: new map[str, bool],
+        pools: new map[str, int],
+        pool_of: new map[str, str],
+        goals: [],
+        has_goal_line: false,
+        problems: []
+    };
+    let lines = new list[Line];
+    for i, line in split(text, "\n") {
+        let fields = filter(split(line, " "), fn(s) => s != "");
+        if len(fields) == 0 {
+            continue;
+        }
+        if well_formed(fields) {
+            push(lines, new Line { num: i + 1, fields: fields });
+        } else {
+            push(b.problems, new Problem { line: i + 1, text: "malformed" });
+        }
+    }
+    let defining = define(b, lines);
+    resolve(b, lines, defining);
+    sort_by(b.problems, fn(p) => p.line);
+    return b;
+}

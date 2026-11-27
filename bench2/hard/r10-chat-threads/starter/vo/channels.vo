@@ -1,0 +1,100 @@
+# Channels and their members.
+import fmt;
+import model;
+import users;
+
+export fn require_channel(state: model.State, name: str) -> result[model.Channel] {
+    if not has(state.channels, name) {
+        return err("unknown channel #" + name);
+    }
+    return ok(state.channels[name]);
+}
+
+export fn require_member(c: model.Channel, user_name: str) -> result[void] {
+    if not model.is_member(c, user_name) {
+        return err(user_name + " not in #" + c.name);
+    }
+    return ok();
+}
+
+fn kind_suffix(private: bool) -> str {
+    if private {
+        return " (private)";
+    }
+    return "";
+}
+
+export fn create_channel(state: model.State, creator: str, name: str, private: bool) -> result[list[str]] {
+    let _ = try users.require_user(state, creator);
+    if has(state.channels, name) {
+        return err("channel #" + name + " exists");
+    }
+    let c = new model.Channel { name: name, creator: creator, private: private, members: [creator], invited: new map[str, bool] };
+    set c.invited[creator] = true;
+    set state.channels[name] = c;
+    return ok(["channel #" + name + " created by " + creator + kind_suffix(private)]);
+}
+
+export fn join_channel(state: model.State, user_name: str, channel_name: str) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let c = try require_channel(state, channel_name);
+    if model.is_member(c, user_name) {
+        return err(user_name + " already in #" + c.name);
+    }
+    if c.private and not has(c.invited, user_name) {
+        return err("#" + c.name + " is private");
+    }
+    push(c.members, user_name);
+    return ok([user_name + " joined #" + c.name]);
+}
+
+export fn invite(state: model.State, user_name: str, channel_name: str, guest: str) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let c = try require_channel(state, channel_name);
+    let _ = try users.require_user(state, guest);
+    if not c.private {
+        return err("#" + c.name + " is public");
+    }
+    try require_member(c, user_name);
+    if model.is_member(c, guest) {
+        return err(guest + " already in #" + c.name);
+    }
+    set c.invited[guest] = true;
+    return ok([user_name + " invited " + guest + " to #" + c.name]);
+}
+
+export fn leave(state: model.State, user_name: str, channel_name: str) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let c = try require_channel(state, channel_name);
+    try require_member(c, user_name);
+    set c.members = filter(c.members, fn(n) => n != user_name);
+    return ok([user_name + " left #" + c.name]);
+}
+
+export fn rename(state: model.State, user_name: str, channel_name: str, new_name: str) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let c = try require_channel(state, channel_name);
+    if c.creator != user_name {
+        return err("only " + c.creator + " can rename #" + c.name);
+    }
+    if has(state.channels, new_name) {
+        return err("channel #" + new_name + " exists");
+    }
+    let old = c.name;
+    remove(state.channels, old);
+    set c.name = new_name;
+    set state.channels[new_name] = c;
+    for m in state.messages {
+        if m.channel == old {
+            set m.channel = new_name;
+        }
+    }
+    return ok(["#" + old + " renamed to #" + new_name]);
+}
+
+export fn members_lines(state: model.State, channel_name: str) -> result[list[str]] {
+    let c = try require_channel(state, channel_name);
+    let names = slice(c.members, 0, len(c.members));
+    sort(names);
+    return ok(["#" + c.name + " created by " + c.creator + kind_suffix(c.private), "members: " + fmt.name_list(names)]);
+}

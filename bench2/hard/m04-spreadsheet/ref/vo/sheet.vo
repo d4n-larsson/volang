@@ -1,0 +1,478 @@
+# The sheet: contents, dependencies, cycles and evaluation.
+import formula;
+
+const limit = 999999999;
+
+export record Cell {
+    col: int;
+    row: int;
+}
+
+export variant Value {
+    num(int);
+    text(str);
+    error(str);
+    empty;
+}
+
+export variant Content {
+    number(int);
+    text(str);
+    formula {
+        text: str;
+        valid: bool;
+        tree: formula.Expr;
+    }
+}
+
+export record Sheet {
+    cells: map[Cell, Content];
+    memo: map[Cell, Value];
+    cyc: map[Cell, bool];
+    cyc_done: bool;
+}
+
+export fn new_sheet() -> Sheet {
+    return new Sheet {
+        cells: new map[Cell, Content],
+        memo: new map[Cell, Value],
+        cyc: new map[Cell, bool],
+        cyc_done: false
+    };
+}
+
+export fn put(sh: Sheet, c: Cell, content: Content) {
+    set sh.memo = new map[Cell, Value];
+    set sh.cyc_done = false;
+    set sh.cells[c] = content;
+}
+
+export fn clear_cell(sh: Sheet, c: Cell) {
+    set sh.memo = new map[Cell, Value];
+    set sh.cyc_done = false;
+    remove(sh.cells, c);
+}
+
+fn all_digits(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    for i in 0..len(s) {
+        let b = byte_at(s, i);
+        if b < 48 or b > 57 {
+            return false;
+        }
+    }
+    return true;
+}
+
+# The stored content for the text given to `set`.
+export fn content_of(t: str) -> Content {
+    var body = t;
+    if byte_at(t, 0) == 45 {
+        set body = slice(t, 1, len(t));
+    }
+    if all_digits(body) {
+        match parse_int(t) {
+            case ok(v) {
+                return Content.number(v);
+            }
+            case err(_) {
+            }
+        }
+    }
+    if byte_at(t, 0) == 61 {
+        let body_text = slice(t, 1, len(t));
+        match formula.parse(body_text) {
+            case ok(e) {
+                return Content.formula { text: t, valid: true, tree: e };
+            }
+            case err(_) {
+                return Content.formula { text: t, valid: false, tree: formula.Expr.referr };
+            }
+        }
+    }
+    return Content.text(t);
+}
+
+# ---- dependencies ----
+
+fn collect(e: formula.Expr, out: map[Cell, bool]) {
+    match e {
+        case cell(r) {
+            set out[new Cell { col: r.col, row: r.row }] = true;
+        }
+        case area(a) {
+            for row in a.r1..a.r2 + 1 {
+                for col in a.c1..a.c2 + 1 {
+                    set out[new Cell { col: col, row: row }] = true;
+                }
+            }
+        }
+        case neg(x) {
+            collect(x, out);
+        }
+        case bin(b) {
+            collect(b.left, out);
+            collect(b.right, out);
+        }
+        case call(c) {
+            for a in c.args {
+                collect(a, out);
+            }
+        }
+        case lit(_) {
+        }
+        case referr {
+        }
+    }
+}
+
+export fn direct(sh: Sheet, c: Cell) -> map[Cell, bool] {
+    let out = new map[Cell, bool];
+    if has(sh.cells, c) {
+        match sh.cells[c] {
+            case formula(f) {
+                if f.valid {
+                    collect(f.tree, out);
+                }
+            }
+            case number(_) {
+            }
+            case text(_) {
+            }
+        }
+    }
+    return out;
+}
+
+fn graph(sh: Sheet) -> map[Cell, map[Cell, bool]] {
+    let g = new map[Cell, map[Cell, bool]];
+    for c, _ in sh.cells {
+        set g[c] = direct(sh, c);
+    }
+    return g;
+}
+
+fn on_cycle(g: map[Cell, map[Cell, bool]], c: Cell) -> bool {
+    let seen = new map[Cell, bool];
+    let stack = keys(g[c]);
+    var next = 0;
+    while next < len(stack) {
+        let x = stack[next];
+        set next = next + 1;
+        if x == c {
+            return true;
+        }
+        if not has(seen, x) {
+            set seen[x] = true;
+            if has(g, x) {
+                for y, _ in g[x] {
+                    push(stack, y);
+                }
+            }
+        }
+    }
+    return false;
+}
+
+fn cycles(sh: Sheet) -> map[Cell, bool] {
+    if not sh.cyc_done {
+        let g = graph(sh);
+        let cyc = new map[Cell, bool];
+        for c, _ in g {
+            if on_cycle(g, c) {
+                set cyc[c] = true;
+            }
+        }
+        set sh.cyc = cyc;
+        set sh.cyc_done = true;
+    }
+    return sh.cyc;
+}
+
+# Every cell that depends on `target` through one or more steps, in reading order.
+export fn dependents(sh: Sheet, target: Cell) -> list[Cell] {
+    let g = graph(sh);
+    let found = new map[Cell, bool];
+    let queue = [target];
+    var next = 0;
+    while next < len(queue) {
+        let t = queue[next];
+        set next = next + 1;
+        for c, ds in g {
+            if has(ds, t) and not has(found, c) {
+                set found[c] = true;
+                push(queue, c);
+            }
+        }
+    }
+    let out = keys(found);
+    sort_by(out, fn(c) => c.row * 100 + c.col);
+    return out;
+}
+
+# ---- values ----
+
+fn num(v: int) -> Value {
+    if v < -limit or v > limit {
+        return Value.error("#NUM!");
+    }
+    return Value.num(v);
+}
+
+fn div(a: int, b: int) -> int {
+    let q = (2 * abs(a) + abs(b)) / (2 * abs(b));
+    if (a < 0) == (b < 0) {
+        return q;
+    }
+    return -q;
+}
+
+export fn value(sh: Sheet, c: Cell) -> Value {
+    if has(sh.memo, c) {
+        return sh.memo[c];
+    }
+    var v = Value.empty;
+    if has(sh.cells, c) {
+        match sh.cells[c] {
+            case number(n) {
+                set v = num(n);
+            }
+            case text(t) {
+                set v = Value.text(t);
+            }
+            case formula(f) {
+                if not f.valid {
+                    set v = Value.error("#PARSE!");
+                } else if has(cycles(sh), c) {
+                    set v = Value.error("#CYCLE!");
+                } else {
+                    set v = eval(sh, f.tree);
+                }
+            }
+        }
+    }
+    set sh.memo[c] = v;
+    return v;
+}
+
+# "n", "t", "e" or "empty".
+fn kind(v: Value) -> str {
+    match v {
+        case num(_) {
+            return "n";
+        }
+        case text(_) {
+            return "t";
+        }
+        case error(_) {
+            return "e";
+        }
+        case empty {
+            return "empty";
+        }
+    }
+}
+
+fn number_of(v: Value) -> int {
+    match v {
+        case num(n) {
+            return n;
+        }
+        case text(_) {
+            return 0;
+        }
+        case error(_) {
+            return 0;
+        }
+        case empty {
+            return 0;
+        }
+    }
+}
+
+fn eval(sh: Sheet, e: formula.Expr) -> Value {
+    match e {
+        case lit(n) {
+            return num(n);
+        }
+        case referr {
+            return Value.error("#REF!");
+        }
+        case cell(r) {
+            let v = value(sh, new Cell { col: r.col, row: r.row });
+            if kind(v) == "empty" {
+                return Value.num(0);
+            }
+            return v;
+        }
+        case neg(x) {
+            let v = eval(sh, x);
+            if kind(v) == "e" {
+                return v;
+            }
+            if kind(v) == "t" {
+                return Value.error("#VALUE!");
+            }
+            return Value.num(-number_of(v));
+        }
+        case bin(b) {
+            let l = eval(sh, b.left);
+            if kind(l) == "e" {
+                return l;
+            }
+            let r = eval(sh, b.right);
+            if kind(r) == "e" {
+                return r;
+            }
+            if kind(l) == "t" or kind(r) == "t" {
+                return Value.error("#VALUE!");
+            }
+            return binop(b.op, number_of(l), number_of(r));
+        }
+        case call(c) {
+            return call(sh, c.name, c.args);
+        }
+        case area(_) {
+            return Value.error("#PARSE!");
+        }
+    }
+}
+
+fn binop(op: str, a: int, b: int) -> Value {
+    if op == "+" {
+        return num(a + b);
+    }
+    if op == "-" {
+        return num(a - b);
+    }
+    if op == "*" {
+        return num(a * b);
+    }
+    if op == "/" {
+        if b == 0 {
+            return Value.error("#DIV/0!");
+        }
+        return num(div(a, b));
+    }
+    var r = false;
+    if op == "=" {
+        set r = a == b;
+    } else if op == "<>" {
+        set r = a != b;
+    } else if op == "<" {
+        set r = a < b;
+    } else if op == "<=" {
+        set r = a <= b;
+    } else if op == ">" {
+        set r = a > b;
+    } else {
+        set r = a >= b;
+    }
+    if r {
+        return Value.num(1);
+    }
+    return Value.num(0);
+}
+
+# Evaluates one argument of IF or ABS that must be a number: the value, or the error to return.
+fn need_number(sh: Sheet, e: formula.Expr) -> Value {
+    let v = eval(sh, e);
+    if kind(v) == "t" {
+        return Value.error("#VALUE!");
+    }
+    return v;
+}
+
+fn call(sh: Sheet, name: str, items: list[formula.Expr]) -> Value {
+    if name == "IF" {
+        let c = need_number(sh, items[0]);
+        if kind(c) == "e" {
+            return c;
+        }
+        if number_of(c) != 0 {
+            return eval(sh, items[1]);
+        }
+        return eval(sh, items[2]);
+    }
+    if name == "ABS" {
+        let v = need_number(sh, items[0]);
+        if kind(v) == "e" {
+            return v;
+        }
+        return Value.num(abs(number_of(v)));
+    }
+    let nums = new list[int];
+    for a in items {
+        let stop = gather(sh, a, nums);
+        if kind(stop) != "empty" {
+            return stop;
+        }
+    }
+    if name == "SUM" {
+        return num(fold(nums, 0, fn(acc, x) => acc + x));
+    }
+    if name == "COUNT" {
+        return Value.num(len(nums));
+    }
+    if len(nums) == 0 {
+        return Value.num(0);
+    }
+    var best = nums[0];
+    for x in nums {
+        if name == "MIN" {
+            set best = min(best, x);
+        } else {
+            set best = max(best, x);
+        }
+    }
+    return Value.num(best);
+}
+
+# Collects one aggregate argument's numbers; the error that ends the aggregate, or empty.
+fn gather(sh: Sheet, a: formula.Expr, nums: list[int]) -> Value {
+    match a {
+        case area(r) {
+            for row in r.r1..r.r2 + 1 {
+                for col in r.c1..r.c2 + 1 {
+                    let v = value(sh, new Cell { col: col, row: row });
+                    if kind(v) == "e" {
+                        return v;
+                    }
+                    if kind(v) == "n" {
+                        push(nums, number_of(v));
+                    }
+                }
+            }
+            return Value.empty;
+        }
+        case lit(_) {
+            return gather_expr(sh, a, nums);
+        }
+        case cell(_) {
+            return gather_expr(sh, a, nums);
+        }
+        case referr {
+            return gather_expr(sh, a, nums);
+        }
+        case neg(_) {
+            return gather_expr(sh, a, nums);
+        }
+        case bin(_) {
+            return gather_expr(sh, a, nums);
+        }
+        case call(_) {
+            return gather_expr(sh, a, nums);
+        }
+    }
+}
+
+fn gather_expr(sh: Sheet, a: formula.Expr, nums: list[int]) -> Value {
+    let v = need_number(sh, a);
+    if kind(v) == "e" {
+        return v;
+    }
+    push(nums, number_of(v));
+    return Value.empty;
+}

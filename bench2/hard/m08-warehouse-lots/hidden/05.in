@@ -1,0 +1,23 @@
+warehouse A
+warehouse b
+warehouse B
+item gel
+receive b gel 4 1.00 10
+receive B gel 3 1.00 10
+receive A gel 2 1.00 10
+receive b gel 6 2.00 12
+receive B gel 1 1.00 9
+reserve r1 b gel 6
+reserve r2 b gel 2
+reserve r3 B gel 4
+day 9
+stock
+day 10
+fulfil r1
+fulfil r2
+release r3
+day 10
+day 9
+receive b gel 1 5.00 10
+receive b gel 1 5.00 11
+stock

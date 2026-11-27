@@ -1,0 +1,32 @@
+user al added
+user bea added
+room a added, capacity 9
+room b added, capacity 9
+room c added, capacity 9
+booked x1 in a: 2 13:00-14:00 (1 person)
+booked x2 in b: 3 01:00-11:00 (1 person)
+booked x3 in c: 3 11:59-12:01 (2 people)
+rooms day 2:
+  a: free
+  b: x2 1 23:15-2 09:15
+  c: free
+rooms day 3:
+  a: x1 3 14:30-15:30
+  b: free
+  c: x3 3 23:29-23:31
+rooms day 4:
+  a: free
+  b: free
+  c: free
+agenda al day 2 (UTC-11:30):
+  2 13:00-14:00 x1 in a (organizer)
+agenda bea day 4 (UTC+13:45):
+  4 13:14-13:16 x3 in c (attendee)
+agenda bea day 3 (UTC+13:45):
+  3 01:00-11:00 x2 in b (organizer)
+x2 2 11:15-21:15 b bea +0
+x1 3 00:30-01:30 a al +0
+x3 3 23:29-23:31 c al +1
+x1: a 3 14:30-15:30 UTC+14:00, organizer al, attendees none
+x2: b 1 23:15-2 09:15 UTC-12:00, organizer bea, attendees none
+x3: c 3 23:29-23:31 UTC+00:00, organizer al, attendees bea

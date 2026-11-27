@@ -1,0 +1,90 @@
+import directives;
+import filling;
+import pagination;
+
+record Doc {
+    st: directives.State;
+    blocks: list[pagination.Block];
+    words: list[str];
+}
+
+fn end_paragraph(d: Doc) {
+    if len(d.words) == 0 {
+        return;
+    }
+    var list_id = -1;
+    if len(d.st.lists) > 0 {
+        set list_id = d.st.lists[len(d.st.lists) - 1].id;
+    }
+    let lines = filling.paragraph(d.words, d.st);
+    push(d.blocks, new pagination.Block {
+        is_heading: false,
+        lines: lines,
+        list_id: list_id,
+        brk: d.st.brk,
+        title: d.st.title,
+        space: d.st.space,
+        text: "",
+        page: 0
+    });
+    set d.st.brk = false;
+    set d.st.space = -1;
+    set d.words = [];
+}
+
+fn fields(line: str) -> list[str] {
+    return filter(split(line, " "), fn(f) => f != "");
+}
+
+# The whole output for the input text.
+fn layout(input: str) -> list[str] {
+    let d = new Doc { st: directives.new_state(), blocks: [], words: [] };
+    let errors = new list[str];
+    for i, line in split(input, "\n") {
+        if len(line) > 0 and byte_at(line, 0) == 46 {
+            end_paragraph(d);
+            let o = directives.apply(d.st, fields(line));
+            if o.error != "" {
+                push(errors, "error line " + str(i + 1) + ": " + o.error);
+            } else if o.is_heading {
+                let lines = filling.heading(o.heading, d.st);
+                push(d.blocks, new pagination.Block {
+                    is_heading: true,
+                    lines: lines,
+                    list_id: -1,
+                    brk: d.st.brk,
+                    title: d.st.title,
+                    space: d.st.space,
+                    text: trim(lines[0]),
+                    page: 0
+                });
+                set d.st.brk = false;
+                set d.st.space = -1;
+            }
+        } else if len(fields(line)) > 0 {
+            set d.st.started = true;
+            for w in fields(line) {
+                push(d.words, w);
+            }
+        } else {
+            end_paragraph(d);
+        }
+    }
+    end_paragraph(d);
+    let out = pagination.render(pagination.paginate(d.blocks, d.st.height), d.st.width, d.st.height);
+    if d.st.contents and any(d.blocks, fn(b) => b.is_heading) {
+        for line in pagination.contents(d.blocks, d.st.width) {
+            push(out, line);
+        }
+    }
+    for e in errors {
+        push(out, e);
+    }
+    return out;
+}
+
+fn main() uses console, input {
+    for s in layout(read_all()) {
+        print(s);
+    }
+}

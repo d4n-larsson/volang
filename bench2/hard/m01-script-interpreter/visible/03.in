@@ -1,0 +1,13 @@
+func average(sum, count)
+    let result = sum / count
+    return result
+end
+
+func report(label, sum, count)
+    print label, average(sum, count)
+end
+
+report("first", 10, 3)
+report("second", 9, -2)
+report("third", 1, 0)
+report("fourth", 1, 1)

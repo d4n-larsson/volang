@@ -1,0 +1,14 @@
+== plan gone
+source missing
+== plan srcroot
+copy docs/README
+copy docs/guide.txt
+copy site/.cache/tmp
+copy site/a-c.txt
+copy site/a/b.txt
+copy site/css/main.css
+copy site/css/main.css.map
+copy site/drafts/keep/plan.txt
+copy site/img/logo.png
+copy site/notes~
+copy 10, update 0, unchanged 0, conflict 0, stale 0, excluded 8

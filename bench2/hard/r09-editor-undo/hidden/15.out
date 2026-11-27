@@ -1,0 +1,16 @@
+undone 1 step
+* main 0 lines
+redone 1 step
+* main 1 line, modified
+saved main, 1 line
+undone 1 step
+* main 0 lines, modified
+* main 1 line, modified
+undone 1 step
+* main 0 lines, modified
+redone 1 step
+undone 1 step
+undone 1 step
+* main 0 lines, modified
+saved main, 0 lines
+* main 0 lines

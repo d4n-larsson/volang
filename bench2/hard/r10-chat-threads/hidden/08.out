@@ -1,0 +1,28 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+channel #secret created by bob (private)
+message 1 posted to #secret
+error: ann not in #secret
+error: bad command
+error: bad command
+error: unknown user zed
+error: unknown channel #nope
+error: unknown message secret/2
+error: bad command
+error: bad command
+bob invited ann to #secret
+error: ann not in #secret
+ann joined #secret
+message 2 posted to #secret in thread 1
+bob left #secret
+error: bob not in #secret
+thread #secret/1: 1 reply
+[1] t=9 bob: s1
+  [2] t=21 ann: now in
+#secret created by bob (private)
+members: ann

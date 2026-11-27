@@ -1,0 +1,137 @@
+import std.collections;
+import std.option;
+
+record Request {
+    name: str;
+    start: int;
+    end: int;
+    size: int;
+    room: int;
+    at: int;
+}
+
+record Busy {
+    at: int;
+    room: int;
+}
+
+const never = 9223372036854775807;
+
+fn ints(line: str) -> result[list[int]] {
+    let out = new list[int];
+    for w in split(line, " ") {
+        if len(w) > 0 {
+            push(out, try parse_int(w));
+        }
+    }
+    return ok(out);
+}
+
+# When the first room in q becomes free (never for an empty queue).
+fn first_free(q: priority_queue[Busy]) -> int {
+    return option.or_else(collections.peek(q), new Busy { at: never, room: 0 }).at;
+}
+
+fn release(busy: priority_queue[Busy], free: priority_queue[int], now: int) {
+    while first_free(busy) <= now {
+        match pop(busy) {
+            case ok(b) {
+                push(free, b.room);
+            }
+            case err(_) {
+                return;
+            }
+        }
+    }
+}
+
+fn take(caps: list[int], free: list[priority_queue[int]], busy: list[priority_queue[Busy]], q: Request) {
+    for c in q.size..101 {
+        release(busy[c], free[c], q.start);
+    }
+    for c in q.size..101 {
+        match pop(free[c]) {
+            case ok(room) {
+                set q.room = room;
+                set q.at = q.start;
+                return;
+            }
+            case err(_) {
+            }
+        }
+    }
+    var best = -1;
+    for c in q.size..101 {
+        if first_free(busy[c]) < never and (best < 0 or first_free(busy[c]) < first_free(busy[best])) {
+            set best = c;
+        }
+    }
+    match pop(busy[best]) {
+        case ok(b) {
+            set q.room = b.room;
+            set q.at = b.at;
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn assign(caps: list[int], clean: int, reqs: list[Request]) {
+    let free = new list[priority_queue[int]];
+    let busy = new list[priority_queue[Busy]];
+    for _ in 0..101 {
+        push(free, new priority_queue[int]);
+        push(busy, new priority_queue[Busy]);
+    }
+    var top = 0;
+    for i, c in caps {
+        push(free[c], i + 1);
+        set top = max(top, c);
+    }
+    let order = slice(reqs, 0, len(reqs));
+    sort_by(order, fn(q) => q.start);
+    for q in order {
+        if q.size <= top {
+            take(caps, free, busy, q);
+            push(busy[caps[q.room - 1]], new Busy { at: q.at + q.end - q.start + clean, room: q.room });
+        }
+    }
+}
+
+fn main() -> result[void] uses console, input {
+    let lines = split(read_all(), "\n");
+    let head = try ints(lines[0]);
+    let caps = try ints(lines[1]);
+    let reqs = new list[Request];
+    for line in slice(lines, 2, len(lines)) {
+        if len(line) > 0 {
+            let t = split(line, " ");
+            push(reqs, new Request {
+                name: t[0],
+                start: try parse_int(t[1]),
+                end: try parse_int(t[2]),
+                size: try parse_int(t[3]),
+                room: 0,
+                at: 0
+            });
+        }
+    }
+    assign(caps, head[1], reqs);
+    let out = new list[str];
+    var rejected = 0;
+    var late = 0;
+    for q in reqs {
+        if q.room == 0 {
+            set rejected = rejected + 1;
+            push(out, q.name + " rejected\n");
+        } else {
+            if q.at > q.start {
+                set late = late + 1;
+            }
+            push(out, q.name + " " + str(q.room) + " " + str(q.at) + "\n");
+        }
+    }
+    push(out, "postponed " + str(late) + " rejected " + str(rejected) + "\n");
+    write(join(out, ""));
+    return ok();
+}

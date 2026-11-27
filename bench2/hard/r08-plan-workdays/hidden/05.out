@@ -1,0 +1,21 @@
+added task a
+  012345678
+a #####::#.
+day 5 is now a working day
+  01234567
+a ######..
+error: day 5 is already a working day
+day 5 is now off
+error: day 5 is already off
+error: day 6 is already off
+day 6 is now a working day
+error: day 6 is already a working day
+day 1 is now off
+task  start  finish  lstart  lfinish  slack
+a         0       8       0        8      0
+end 8
+project finishes on day 8 (Tue)
+days 0-9: 8 working, 2 off
+off: 1 5
+  012345678
+a #:###:##.

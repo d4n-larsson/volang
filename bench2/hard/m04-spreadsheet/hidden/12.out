@@ -1,0 +1,14 @@
+A3 = 22
+A3 = 33
+A3 = #VALUE!
+A3 = 5
+A2 = -1
+A3 = -1
+A1 = #CYCLE!
+A3 = #CYCLE!
+A1 = #CYCLE!
+A3 = #CYCLE!
+A2 is empty
+A2 is empty
+B1 := =B3
+B1 = 0

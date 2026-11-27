@@ -1,0 +1,28 @@
+sheet Src
+sheet Dst
+set Src!A1 1
+set Src!A2 2
+set Src!B1 =A1+Dst!A1+$A$2
+set Dst!A1 10
+set Dst!B2 100
+set Dst!C2 7
+get Src!B1
+copy Src!B1 Dst!C2
+show Dst!C2
+get Dst!C2
+copy Dst!C2 C3
+show C3
+get C3
+copy Src!B1 Src!B2
+show Src!B2
+get Src!B2
+set Src!D1 =Dst!B2+Sheet1!A1
+copy Src!D1 Dst!D1
+show Dst!D1
+copy Dst!D1 Src!D2
+show Src!D2
+use Dst
+show D1
+copy Sheet1!C3 E1
+show E1
+show Sheet1!C3

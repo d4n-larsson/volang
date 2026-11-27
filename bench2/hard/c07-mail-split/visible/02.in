@@ -1,0 +1,6 @@
+domain example.org
+quota 100000
+tue
+../private/inbox
+nosuch
+mon

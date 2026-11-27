@@ -1,0 +1,5 @@
+profile prod
+user ana plan=gold region=eu app=2.10
+user bo plan=free region=cn app=3.2 country=NO
+user cy app=2.9 beta=no
+user dee plan=platinum app=10.0.1 beta=yes

@@ -1,0 +1,13 @@
+fields.csv:3: expected 5 fields
+fields.csv:4: expected 5 fields
+== ledger
+2024-01-15 SE3003 S-1 42.00
+2024-01-16 SE3003 S-2 -2.00
+2024-07-01 SE1001 C-1 1.00
+2024-07-01 SE1001 C-4 1.00
+2024-07-01 SE1001 C-5 2.00
+== balances
+SE1001 3 4.00
+SE3003 2 40.00
+wrote out/spaced.ledger 5
+wrote out/spaced.errors 2

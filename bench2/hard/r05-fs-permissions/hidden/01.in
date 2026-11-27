@@ -1,0 +1,25 @@
+useradd ann
+mkdir /d
+mkdir /d/sub
+write /d/f.txt data here
+write /top.txt t
+chmod rw-r-- /d
+su ann
+cat /d/missing
+cat /d/f.txt
+cat /d/sub/../f.txt
+cat /top.txt/x
+cat /nothing/x
+stat /d
+ls /d
+ls -l /d
+cd /d
+cd /d/sub
+ls /d/sub
+stat /d/sub
+tree /d
+du /d
+find /d sub
+mkdir /d/new
+write /d/../top2.txt x
+ls /

@@ -1,0 +1,29 @@
+customer p added
+invoice #1 p total 100.00 balance 100.00 due 10
+invoice #2 p total 200.00 balance 200.00 due 10
+invoice #3 p total 300.00 balance 300.00 due 10
+invoice #4 p total 400.00 balance 400.00 due 10
+paid p 50.00: #2 50.00
+error: invoice 2 is -10 days overdue
+error: invoice 2 has payments
+void #1
+error: invoice 1 is void
+error: invoice 1 is void
+error: invoice 1 is void
+error: invoice 1 not open for p
+error: credit exceeds balance 300.00 of #3
+credit #3 300.00 balance 0.00
+error: invoice 3 is closed
+error: invoice 3 is closed
+credit #4 150.00 balance 250.00
+void #4
+statement p day 0
+#2 due 10 balance 150.00
+open 150.00 credit 0.00 written off 0.00
+error: no invoice 7
+error: no invoice 0
+invoices:
+#1 p void total 100.00 fee 0.00 paid 0.00 credits 0.00 balance 0.00
+#2 p open total 200.00 fee 0.00 paid 50.00 credits 0.00 balance 150.00
+#3 p closed total 300.00 fee 0.00 paid 0.00 credits 300.00 balance 0.00
+#4 p void total 400.00 fee 0.00 paid 0.00 credits 150.00 balance 0.00

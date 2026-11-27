@@ -1,0 +1,29 @@
+# Commands that look at the text without changing it.
+import buffer;
+import view;
+
+export fn find_text(buf: buffer.Buffer, s: str) -> result[list[str]] {
+    let hits = new list[str];
+    for n in 1..buffer.size(buf) + 1 {
+        if find(buffer.line(buf, n), s) >= 0 {
+            if len(hits) == 0 {
+                set buf.cur = n;
+            }
+            push(hits, str(n));
+        }
+    }
+    if len(hits) == 0 {
+        return ok(["not found"]);
+    }
+    return ok(["found at " + join(hits, ", ")]);
+}
+
+export fn count(buf: buffer.Buffer) -> result[list[str]] {
+    var n_words = 0;
+    var n_bytes = 0;
+    for s in buf.lines {
+        set n_words = n_words + len(filter(split(s, " "), fn(w) => w != ""));
+        set n_bytes = n_bytes + len(s) + 1;
+    }
+    return ok([view.plural(buffer.size(buf), "line") + ", " + view.plural(n_words, "word") + ", " + view.plural(n_bytes, "byte")]);
+}

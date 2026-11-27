@@ -1,0 +1,29 @@
+set A1 =A1+1
+set A2 =IF(1, 5, A2)
+set A3 =A4
+set A4 =A5
+set A5 =A3*2
+set A6 =A5+100
+set A7 =IF(0, A3, 7)
+set A8 =SUM(A1:A2)
+set A9 =COUNT(B1:B3)
+set B2 =A9
+print A1
+print A2
+print A3
+print A5
+print A6
+print A7
+print A8
+print A9
+print B2
+deps A3
+deps A1
+deps A9
+clear A4
+print A3
+print A5
+print A6
+set A4 2
+print A6
+deps A4

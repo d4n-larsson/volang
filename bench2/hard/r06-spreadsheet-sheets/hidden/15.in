@@ -1,0 +1,14 @@
+sheet Report
+set Report!A1 =Sheet1!A1*1000
+set Report!B1 =1/0
+set Report!C2 -5
+set Report!A3 =SUM(Sheet1!A1:A3)
+set Report!B3 =Report!B1
+set A1 12
+set A2 -3
+set A3 1
+print Report!A1:C3
+print Report!c3:a1
+use Report
+print Sheet1!A1:B3
+print A2:C2

@@ -1,0 +1,15 @@
+tree
+open assets:cash:usd asset
+open assets:cash:eur asset EUR
+open assets:cash:gbp asset GBP
+open assets asset
+open assets2 asset EUR
+open equity:start equity
+rate EUR 1 1.0855
+rate GBP 1 1.2649
+post t1 1 start assets:cash:usd=100 assets:cash:eur=100 assets:cash:gbp=100 assets2=0.01 equity:start=
+post t2 2 more assets=5 assets:cash:eur=0.05 equity:start=
+tree
+rate GBP 3 1.3
+tree
+accounts

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks benchmark v2 tasks (T057): every reference solution passes all visible and hidden cases
 without violations, every capability task's ref_violating/ variant is caught, and each task has
-what its category needs. Usage: validate.py [--set tasks|features] [--only ID,ID]
+what its category needs. Usage: validate.py [--set tasks|hard|features] [--only ID,ID]
 """
 import argparse
 import json
@@ -61,7 +61,7 @@ def check_task(d, langs, problems):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--set", choices=["tasks", "features"], default="tasks")
+    ap.add_argument("--set", choices=["tasks", "hard", "features"], default="tasks")
     ap.add_argument("--only", default="")
     a = ap.parse_args()
     only = {x for x in a.only.split(",") if x}

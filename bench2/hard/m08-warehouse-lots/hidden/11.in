@@ -1,0 +1,12 @@
+warehouse big
+item gold
+receive big gold 99999 9999999.99 999999
+receive big gold 99999 0.01 999998
+ship o1 big gold 99999
+ship o2 big gold 99999
+return o1 99999
+day 999999
+value
+return o2 50000
+stock
+value

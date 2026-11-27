@@ -1,0 +1,12 @@
+open assets:bank asset
+open assets:eur asset EUR
+open equity:open equity
+open expense:travel expense
+rate EUR 1 1.0850
+post t1 1 opening assets:bank=1000 equity:open=-1000
+post t2 2 exchange assets:eur=200 assets:bank=
+post t3 3 hotel expense:travel=54.25 assets:eur=-50
+show t2
+statement assets:eur
+balance assets
+accounts

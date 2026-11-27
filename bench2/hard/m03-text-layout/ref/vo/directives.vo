@@ -1,0 +1,194 @@
+# Directives: the settings they change, list state, and their errors.
+
+export record ListState {
+    kind: str;
+    depth: int;
+    count: int;
+    id: int;
+}
+
+export record State {
+    width: int;
+    height: int;
+    indent: int;
+    align: str;
+    title: str;
+    lists: list[ListState];
+    next_list: int;
+    started: bool;
+    brk: bool;
+    space: int;
+    contents: bool;
+}
+
+# What a directive did: an error message (or ""), and the heading text if it added one.
+export record Outcome {
+    error: str;
+    is_heading: bool;
+    heading: str;
+}
+
+export fn new_state() -> State {
+    return new State {
+        width: 40,
+        height: 20,
+        indent: 0,
+        align: "left",
+        title: "",
+        lists: [],
+        next_list: 0,
+        started: false,
+        brk: false,
+        space: -1,
+        contents: false
+    };
+}
+
+fn fail(msg: str) -> Outcome {
+    return new Outcome { error: msg, is_heading: false, heading: "" };
+}
+
+fn done() -> Outcome {
+    return fail("");
+}
+
+fn number(s: str) -> int {
+    if len(s) < 1 or len(s) > 3 {
+        return -1;
+    }
+    for i in 0..len(s) {
+        if byte_at(s, i) < 48 or byte_at(s, i) > 57 {
+            return -1;
+        }
+    }
+    match parse_int(s) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return -1;
+        }
+    }
+}
+
+fn known(name: str) -> bool {
+    let names = [".width", ".page", ".indent", ".align", ".title", ".heading", ".list", ".endlist", ".break", ".space", ".contents"];
+    for n in names {
+        if n == name {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn upper_ascii(s: str) -> str {
+    var out = "";
+    for c in s {
+        if c >= "a" and c <= "z" {
+            set out = out + upper(c);
+        } else {
+            set out = out + c;
+        }
+    }
+    return out;
+}
+
+fn sizes(st: State, name: str, items: list[str]) -> Outcome {
+    var n = -1;
+    if len(items) == 1 {
+        set n = number(items[0]);
+    }
+    if n < 0 {
+        return fail("bad argument");
+    }
+    if name == ".width" {
+        if n < 20 or n > 100 or n - st.indent < 20 {
+            return fail("bad argument");
+        }
+    } else if name == ".page" {
+        if n < 4 or n > 200 {
+            return fail("bad argument");
+        }
+    } else if st.width - n < 20 {
+        return fail("bad argument");
+    }
+    if name != ".indent" and st.started {
+        return fail("too late");
+    }
+    if name == ".width" {
+        set st.width = n;
+    } else if name == ".page" {
+        set st.height = n;
+    } else {
+        set st.indent = n;
+    }
+    return done();
+}
+
+# Applies one directive line, already split into fields.
+export fn apply(st: State, fields: list[str]) -> Outcome {
+    let name = fields[0];
+    let items = slice(fields, 1, len(fields));
+    if not known(name) {
+        return fail("unknown directive " + name);
+    }
+    if name == ".width" or name == ".page" or name == ".indent" {
+        return sizes(st, name, items);
+    }
+    if name == ".space" {
+        var n = -1;
+        if len(items) == 1 {
+            set n = number(items[0]);
+        }
+        if n < 1 or n > 9 {
+            return fail("bad argument");
+        }
+        set st.space = max(st.space, 0) + n;
+        return done();
+    }
+    if name == ".align" {
+        if len(items) != 1 or not (items[0] == "left" or items[0] == "right" or items[0] == "center" or items[0] == "justify") {
+            return fail("bad argument");
+        }
+        set st.align = items[0];
+        return done();
+    }
+    if name == ".title" {
+        set st.title = join(items, " ");
+        return done();
+    }
+    if name == ".heading" {
+        if len(items) == 0 {
+            return fail("bad argument");
+        }
+        set st.started = true;
+        return new Outcome { error: "", is_heading: true, heading: upper_ascii(join(items, " ")) };
+    }
+    if name == ".list" {
+        if len(items) != 1 or not (items[0] == "bullet" or items[0] == "number") {
+            return fail("bad argument");
+        }
+        if len(st.lists) == 3 {
+            return fail("too deep");
+        }
+        push(st.lists, new ListState { kind: items[0], depth: len(st.lists) + 1, count: 0, id: st.next_list });
+        set st.next_list = st.next_list + 1;
+        return done();
+    }
+    if len(items) > 0 {
+        return fail("bad argument");
+    }
+    if name == ".endlist" {
+        if len(st.lists) == 0 {
+            return fail("no list");
+        }
+        set st.lists = slice(st.lists, 0, len(st.lists) - 1);
+        return done();
+    }
+    if name == ".contents" {
+        set st.contents = true;
+        return done();
+    }
+    set st.brk = true;
+    return done();
+}

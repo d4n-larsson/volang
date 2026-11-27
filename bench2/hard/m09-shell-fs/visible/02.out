@@ -1,0 +1,13 @@
+/projects/alpha/lib/util.py
+/projects/alpha/run.py
+/projects/beta/alpha/lib/util.py
+/projects/beta/start.py
+rm: projects/alpha: is a directory
+/
+/projects
+/projects/beta
+/projects/beta/alpha
+/projects/beta/alpha/lib
+/projects/beta/alpha/lib/util.py
+/projects/beta/start.py
+23 none

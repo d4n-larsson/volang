@@ -1,0 +1,4 @@
+today 2020-01-01
+set lab
+keep last 1
+keep yearly 1 for b

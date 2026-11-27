@@ -1,0 +1,30 @@
+write a 1
+write b 1
+write c 1
+write d 1
+commit base
+branch other
+write a ours
+delete b
+write c ours
+write n ours new
+write z keep
+commit ours
+checkout other
+write a theirs
+write b theirs
+delete c
+write n theirs new
+write z keep
+commit theirs
+checkout main
+merge other
+status
+log
+write a theirs
+write b theirs
+delete c
+write n theirs new
+commit resolve
+merge other
+show main

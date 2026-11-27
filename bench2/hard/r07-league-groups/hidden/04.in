@@ -1,0 +1,26 @@
+team Ant
+team Bee
+team Cat
+team Dog
+team Elk
+group
+group A
+group A Ant Bee
+group A Cat Ant
+group B Cat Cat
+group B Cat Dog Ant
+group B Cat Fly
+withdraw Elk
+group B Elk
+group B Dog Cat
+group A Elk Dog
+group a Elk
+teams
+table
+table A
+table a
+result Ant 1 0 Bee
+group C Elk
+team Fox
+group B Fox
+teams

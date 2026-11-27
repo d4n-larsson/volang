@@ -1,0 +1,228 @@
+import std.fs;
+import std.lists;
+import std.text;
+
+record Setting {
+    value: str;
+    file: str;
+    line: int;
+}
+
+record State {
+    values: map[str, Setting];
+    stack: list[str];
+    files: int;
+    errors: int;
+}
+
+# The normalized parts of path from the directory start, or err when it is outside.
+fn resolve(start: list[str], path: str) -> result[list[str]] {
+    if text.starts_with(path, "/") {
+        return err("outside");
+    }
+    let parts = slice(start, 0, len(start));
+    for p in split(path, "/") {
+        if p == "" or p == "." {
+            continue;
+        }
+        if p == ".." {
+            if len(parts) == 0 {
+                return err("outside");
+            }
+            let _ = try pop(parts);
+        } else {
+            push(parts, p);
+        }
+    }
+    return ok(parts);
+}
+
+fn chars_ok(s: str, extra: str) -> bool {
+    if s == "" {
+        return false;
+    }
+    for c in s {
+        if not ((c >= "a" and c <= "z") or (c >= "0" and c <= "9") or text.contains(extra, c)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn is_file(i: fs.Info) -> bool {
+    match i {
+        case file(_) {
+            return true;
+        }
+        case missing {
+            return false;
+        }
+        case directory {
+            return false;
+        }
+        case other {
+            return false;
+        }
+    }
+}
+
+fn strip_spaces(s: str) -> str {
+    var a = 0;
+    var b = len(s);
+    while a < b and byte_at(s, a) == 32 {
+        set a = a + 1;
+    }
+    while b > a and byte_at(s, b - 1) == 32 {
+        set b = b - 1;
+    }
+    return slice(s, a, b);
+}
+
+fn error(st: State, name: str, no: int, msg: str) uses console {
+    print(name + ":" + str(no) + ": " + msg);
+    set st.errors = st.errors + 1;
+}
+
+fn expand(st: State, name: str, no: int, value: str) -> str uses console {
+    var out = "";
+    var rest = value;
+    while true {
+        let j = find(rest, "${");
+        if j < 0 {
+            break;
+        }
+        let after = slice(rest, j + 2, len(rest));
+        let k = find(after, "}");
+        if k < 0 {
+            break;
+        }
+        set out = out + slice(rest, 0, j);
+        let key = slice(after, 0, k);
+        if has(st.values, key) {
+            set out = out + st.values[key].value;
+        } else {
+            error(st, name, no, "undefined ${" + key + "}");
+        }
+        set rest = slice(after, k + 1, len(after));
+    }
+    return out + rest;
+}
+
+fn include(st: State, name: str, no: int, dir: list[str], line: str) -> result[void]
+    uses console, file.read("conf/") {
+    let optional = text.starts_with(line, "include? ");
+    var path = slice(line, len("include "), len(line));
+    if optional {
+        set path = slice(line, len("include? "), len(line));
+    }
+    set path = strip_spaces(path);
+    match resolve(dir, path) {
+        case ok(target) {
+            let tname = join(target, "/");
+            if lists.has_item(st.stack, tname) {
+                let chain = slice(st.stack, 0, len(st.stack));
+                push(chain, tname);
+                error(st, name, no, "include cycle: " + join(chain, " -> "));
+                return ok();
+            }
+            if is_file(try fs.info("conf/" + tname)) {
+                try read_conf(st, target);
+            } else if not optional {
+                error(st, name, no, "missing include: " + tname);
+            }
+        }
+        case err(_) {
+            error(st, name, no, "include outside conf: " + path);
+        }
+    }
+    return ok();
+}
+
+fn read_conf(st: State, parts: list[str]) -> result[void] uses console, file.read("conf/") {
+    let name = join(parts, "/");
+    let content = try read_file("conf/" + name);
+    set st.files = st.files + 1;
+    push(st.stack, name);
+    let dir = slice(parts, 0, len(parts) - 1);
+    var section = "";
+    for i, raw in split(content, "\n") {
+        let no = i + 1;
+        let line = strip_spaces(raw);
+        if line == "" or text.starts_with(line, "#") {
+            continue;
+        }
+        if text.starts_with(line, "include? ") or text.starts_with(line, "include ") {
+            try include(st, name, no, dir, line);
+        } else if text.starts_with(line, "[") and text.ends_with(line, "]") {
+            let s = slice(line, 1, len(line) - 1);
+            if s == "" or chars_ok(s, "_") {
+                set section = s;
+            } else {
+                error(st, name, no, "bad section");
+            }
+        } else if find(line, "=") >= 0 {
+            let eq = find(line, "=");
+            let key = strip_spaces(slice(line, 0, eq));
+            let value = strip_spaces(slice(line, eq + 1, len(line)));
+            if not chars_ok(key, "_.") {
+                error(st, name, no, "bad key");
+                continue;
+            }
+            var full = key;
+            if section != "" {
+                set full = section + "." + key;
+            }
+            set st.values[full] = new Setting {
+                value: expand(st, name, no, value),
+                file: name,
+                line: no
+            };
+        } else {
+            error(st, name, no, "syntax error");
+        }
+    }
+    let _ = try pop(st.stack);
+    return ok();
+}
+
+fn main() -> result[void] uses console, input, file.read("conf/") {
+    while true {
+        match read_line() {
+            case ok(root) {
+                if root == "" {
+                    continue;
+                }
+                print("== " + root);
+                match resolve([], root) {
+                    case ok(parts) {
+                        if is_file(try fs.info("conf/" + join(parts, "/"))) {
+                            let st = new State {
+                                values: new map[str, Setting],
+                                stack: [],
+                                files: 0,
+                                errors: 0
+                            };
+                            try read_conf(st, parts);
+                            let ks = keys(st.values);
+                            sort(ks);
+                            for k in ks {
+                                let s = st.values[k];
+                                print(k + "=" + s.value + " (" + s.file + ":" + str(s.line) + ")");
+                            }
+                            print("files " + str(st.files) + " errors " + str(st.errors));
+                        } else {
+                            print("error: not found");
+                        }
+                    }
+                    case err(_) {
+                        print("error: outside conf");
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

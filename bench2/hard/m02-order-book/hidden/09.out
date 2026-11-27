@@ -1,0 +1,25 @@
+rest X1 5 2.00
+reject X1 duplicate id
+invalid line 3
+trade DU 1 2.00 X1 X2
+filled X2
+reject X2 duplicate id
+rest X3 5 1.00
+cancelled X3 5
+reject X3 duplicate id
+pending X4
+reject X4 duplicate id
+cancelled X4 1
+reject X4 duplicate id
+trade DU 4 2.00 X1 x1
+filled x1
+reject X5 not filled
+reject X5 duplicate id
+book DU last 2.00
+  empty
+book EE last -
+  empty
+trader ana cash -10.00 DU:5
+trader bob cash 2.00 DU:-1
+trader cy cash 0.00
+trader eve cash 8.00 DU:-4

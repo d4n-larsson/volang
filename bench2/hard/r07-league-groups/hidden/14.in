@@ -1,0 +1,40 @@
+team Volt
+team Watt
+team Ohm
+team Amp
+team Lux
+team Lumen
+team Kelvin
+group Electric Volt Watt Ohm Amp
+group Light Lux Lumen Kelvin
+result Volt 1 0 Watt
+result Watt 1 0 Volt
+result Volt 2 0 Ohm
+result Ohm 0 1 Volt
+result Volt 0 3 Amp
+result Amp 0 0 Volt
+result Watt 3 1 Ohm
+result Ohm 1 1 Watt
+result Watt 1 0 Amp
+result Amp 2 0 Watt
+result Ohm 2 2 Amp
+result Amp 0 1 Ohm
+result Lux 1 0 Lumen
+result Lumen 1 0 Lux
+result Lux 1 0 Kelvin
+result Kelvin 1 0 Lux
+result Lumen 2 1 Kelvin
+result Kelvin 1 0 Lumen
+table
+knockout
+correct 13 2 0
+table Light
+knockout
+correct 2 0 1
+table Electric
+knockout
+correct 9 0 0
+table Electric
+knockout
+record Watt
+record Volt

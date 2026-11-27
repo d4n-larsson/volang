@@ -1,0 +1,32 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened liab:card (liability, EUR)
+opened equity:open (equity)
+opened expense:hotel (expense)
+rate EUR from day 1: 1.1000
+posted t1: 3 postings, total 610.00
+posted t2: 2 postings, total 55.00
+rate EUR from day 3: 1.2000
+posted t3: 2 postings, total 60.00
+asset
+  assets:bank 500.00
+  assets:eur 50.00
+liability
+  liab:card 5.00
+equity
+  equity:open -610.00
+expense
+  expense:hotel 55.00
+total debits 610.00 credits 610.00
+balance assets: 560.00
+  EUR 50.00
+balance liab: 0.00
+balance liab:card: 0.00
+assets:bank asset 500.00
+assets:eur asset 50.00 EUR
+equity:open equity -610.00
+expense:hotel expense 55.00
+liab:card liability 0.00 EUR
+assets:eur 50.00 EUR: book 50.00, value 60.00, gain 10.00
+liab:card 0.00 EUR: book 5.00, value 0.00, gain -5.00
+unrealized gain 5.00

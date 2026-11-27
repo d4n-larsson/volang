@@ -1,0 +1,20 @@
+undo
+redo
+append x
+undo 2
+undo 0
+undo a
+undo 1 2
+undo
+redo 2
+redo
+append y
+undo
+append z
+redo
+print
+undo
+undo
+redo 2
+redo 1
+redo

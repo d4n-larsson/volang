@@ -1,0 +1,327 @@
+import std.lists;
+import std.text;
+
+record Rule {
+    key: str;
+    op: str;
+    value: str;
+    on: bool;
+}
+
+record Flag {
+    default: bool;
+    needs: list[str];
+    rules: list[Rule];
+    rollout: int;
+}
+
+record Layer {
+    parent: str;
+    flags: map[str, Flag];
+}
+
+record Profile {
+    chain: list[str];
+    flags: map[str, Flag];
+}
+
+fn valid_name(n: str) -> bool {
+    if len(n) < 1 or len(n) > 16 {
+        return false;
+    }
+    for i, c in chars(n) {
+        let is_low = c >= "a" and c <= "z";
+        if i == 0 and not is_low {
+            return false;
+        }
+        if not (is_low or (c >= "0" and c <= "9") or c == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+# A profile file: its parent ("" when none) and its flags.
+fn parse_profile(content: str) -> Layer {
+    let layer = new Layer { parent: "", flags: new map[str, Flag] };
+    var cur = "";
+    for raw in split(content, "\n") {
+        let line = strip_spaces(raw);
+        if line == "" or text.starts_with(line, "#") {
+            continue;
+        }
+        let w = split(line, " ");
+        match w[0] {
+            case "extends" {
+                set layer.parent = w[1];
+            }
+            case "flag" {
+                set cur = w[1];
+                set layer.flags[cur] = new Flag { default: w[3] == "on", needs: [], rules: [], rollout: -1 };
+            }
+            case "requires" {
+                push(layer.flags[cur].needs, w[1]);
+            }
+            case "when" {
+                push(layer.flags[cur].rules, new Rule { key: w[1], op: w[2], value: w[3], on: w[5] == "on" });
+            }
+            case "rollout" {
+                match parse_int(w[1]) {
+                    case ok(p) {
+                        set layer.flags[cur].rollout = p;
+                    }
+                    case err(_) {
+                    }
+                }
+            }
+            else {
+            }
+        }
+    }
+    return layer;
+}
+
+fn strip_spaces(s: str) -> str {
+    var a = 0;
+    var b = len(s);
+    while a < b and byte_at(s, a) == 32 {
+        set a = a + 1;
+    }
+    while b > a and byte_at(s, b - 1) == 32 {
+        set b = b - 1;
+    }
+    return slice(s, a, b);
+}
+
+fn load(start: str) -> result[Profile] uses file.read("flags/") {
+    let chain = new list[str];
+    let layers = new list[Layer];
+    var name = start;
+    while name != "" {
+        if not valid_name(name) {
+            return err("error: bad profile " + name);
+        }
+        let at = lists.index_of(chain, name);
+        if at >= 0 {
+            let cyc = slice(chain, at, len(chain));
+            push(cyc, name);
+            return err("error: extends cycle " + join(cyc, " -> "));
+        }
+        let path = "flags/" + name + ".flags";
+        var content = "";
+        match read_file(path) {
+            case ok(t) {
+                set content = t;
+            }
+            case err(_) {
+                return err("error: no profile " + name);
+            }
+        }
+        let layer = parse_profile(content);
+        push(chain, name);
+        push(layers, layer);
+        set name = layer.parent;
+    }
+    let merged = new map[str, Flag];
+    for i in 0..len(layers) {
+        for f, d in layers[len(layers) - 1 - i].flags {
+            set merged[f] = d;
+        }
+    }
+    return ok(new Profile { chain: chain, flags: merged });
+}
+
+fn reaches(flags: map[str, Flag], start: str, target: str) -> bool {
+    let seen = new map[str, bool];
+    var stack = [start];
+    while len(stack) > 0 {
+        let f = stack[len(stack) - 1];
+        set stack = slice(stack, 0, len(stack) - 1);
+        for r in flags[f].needs {
+            if r == target {
+                return true;
+            }
+            if has(flags, r) and not has(seen, r) {
+                set seen[r] = true;
+                push(stack, r);
+            }
+        }
+    }
+    return false;
+}
+
+# Parts of a version, or an empty list when s is not one.
+fn version(s: str) -> list[int] {
+    let out = new list[int];
+    for p in split(s, ".") {
+        if len(p) < 1 or len(p) > 9 {
+            return [];
+        }
+        for c in p {
+            if c < "0" or c > "9" {
+                return [];
+            }
+        }
+        match parse_int(p) {
+            case ok(v) {
+                push(out, v);
+            }
+            case err(_) {
+                return [];
+            }
+        }
+    }
+    return out;
+}
+
+fn part(v: list[int], i: int) -> int {
+    if i < len(v) {
+        return v[i];
+    }
+    return 0;
+}
+
+fn cmp_versions(a: list[int], b: list[int]) -> int {
+    for i in 0..max(len(a), len(b)) {
+        if part(a, i) != part(b, i) {
+            if part(a, i) < part(b, i) {
+                return -1;
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+
+fn holds(attrs: map[str, str], r: Rule) -> bool {
+    if not has(attrs, r.key) {
+        return false;
+    }
+    let v = attrs[r.key];
+    match r.op {
+        case "=" {
+            return v == r.value;
+        }
+        case "!=" {
+            return v != r.value;
+        }
+        case "in" {
+            return lists.has_item(split(r.value, ","), v);
+        }
+        else {
+            let uv = version(v);
+            if len(uv) == 0 {
+                return false;
+            }
+            let c = cmp_versions(uv, version(r.value));
+            if r.op == ">=" {
+                return c >= 0;
+            }
+            return c < 0;
+        }
+    }
+}
+
+fn bucket(flag: str, uid: str) -> int {
+    var h = 0;
+    let s = flag + ":" + uid;
+    for i in 0..len(s) {
+        set h = (h * 31 + byte_at(s, i)) % 1000003;
+    }
+    return h % 100;
+}
+
+fn evaluate(flags: map[str, Flag], name: str, uid: str, attrs: map[str, str]) -> bool {
+    let d = flags[name];
+    for r in d.needs {
+        if not has(flags, r) or not evaluate(flags, r, uid, attrs) {
+            return false;
+        }
+    }
+    for rule in d.rules {
+        if holds(attrs, rule) {
+            return rule.on;
+        }
+    }
+    if d.rollout >= 0 {
+        return bucket(name, uid) < d.rollout;
+    }
+    return d.default;
+}
+
+fn select(first: str) -> str uses env("FLAGS_PROFILE") {
+    match env("FLAGS_PROFILE") {
+        case ok(v) {
+            if v != "" {
+                return v;
+            }
+        }
+        case err(_) {
+        }
+    }
+    return slice(first, len("profile "), len(first));
+}
+
+fn user_line(flags: map[str, Flag], line: str, counts: map[str, int]) -> str {
+    let w = split(line, " ");
+    let attrs = new map[str, str];
+    for kv in slice(w, 2, len(w)) {
+        let i = find(kv, "=");
+        set attrs[slice(kv, 0, i)] = slice(kv, i + 1, len(kv));
+    }
+    let names = keys(flags);
+    sort(names);
+    let on = filter(names, fn(f) => evaluate(flags, f, w[1], attrs));
+    for f in on {
+        set counts[f] = counts[f] + 1;
+    }
+    if len(on) == 0 {
+        return w[1] + " -";
+    }
+    return w[1] + " " + join(on, ",");
+}
+
+fn main() -> result[void] uses console, input, file.read("flags/"), env("FLAGS_PROFILE") {
+    let name = select(try read_line());
+    var p = new Profile { chain: [], flags: new map[str, Flag] };
+    match load(name) {
+        case ok(loaded) {
+            set p = loaded;
+        }
+        case err(e) {
+            print(e);
+            return ok();
+        }
+    }
+    let names = keys(p.flags);
+    sort(names);
+    for f in names {
+        if reaches(p.flags, f, f) {
+            print("error: requires cycle " + f);
+            return ok();
+        }
+    }
+    print("profile " + name);
+    print("chain " + join(p.chain, " "));
+    let counts = new map[str, int];
+    for f in names {
+        set counts[f] = 0;
+    }
+    while true {
+        match read_line() {
+            case ok(line) {
+                if line != "" {
+                    print(user_line(p.flags, line, counts));
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    print("== counts");
+    for f in names {
+        print(f + " " + str(counts[f]));
+    }
+    return ok();
+}

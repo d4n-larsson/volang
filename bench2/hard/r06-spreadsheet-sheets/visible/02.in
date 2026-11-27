@@ -1,0 +1,12 @@
+sheet Tax
+use Tax
+set A1 25
+set B1 =Sheet1!B1*A1/100
+show B1
+get B1
+use Sheet1
+set B1 400
+get Tax!B1
+eval =B1+Tax!A1
+sheets
+list

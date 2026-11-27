@@ -1,0 +1,41 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+channel #dev created by ann
+bob joined #dev
+message 1 posted to #dev
+message 2 posted to #dev in thread 1
+#dev renamed to #rel
+message 3 posted to #rel in thread 1
+error: unknown channel #dev
+#rel: 1 unread (1 mentioning you)
+thread #rel/1: 2 replies
+[1] t=10 bob: release @ann
+  [2] t=11 ann: ok
+  [3] t=13 bob: shipped @ann
+mentions of ann: 2
+  #rel [1] t=10 bob: release @ann
+  #rel [3] t=13 bob: shipped @ann (in thread 1)
+search #rel for shipped: 1 found
+  [3] t=13 bob: shipped @ann (in thread 1)
+message rel/1 deleted
+#rel: 1 message
+[1] t=10 [deleted] (2 replies)
+thread #rel/1: 2 replies
+[1] t=10 [deleted]
+  [2] t=11 ann: ok
+  [3] t=13 bob: shipped @ann
+bob left #rel
+no unread messages for bob
+bob joined #rel
+no unread messages for bob
+#rel renamed to #dev
+#dev: 1 message
+[1] t=10 [deleted] (2 replies)
+message dev/3 edited
+mentions of ann: 1
+  #dev [3] t=13 bob: shipped! @ann (edited) (in thread 1)

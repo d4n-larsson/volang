@@ -1,0 +1,4 @@
+1899-12-01 1900-06-30
+event a every 1 months on day 31 from 1899-12-31
+event b every 1 months on day 29 from 1899-12-01
+event c every 1 months on day 30 from 1900-01-30

@@ -1,0 +1,11 @@
+now 2024-01-31 08:00
+crontab dayrule
+next both-star-dow 4
+next star-day-mon 3
+next first-or-mon 5
+next stepday-or-mon 3
+next fri-or-13 6
+next day31 7
+next sun0 2
+next sun7 2
+next weekend 3

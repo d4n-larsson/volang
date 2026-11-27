@@ -1,0 +1,55 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened expense:travel (expense, EUR)
+opened expense:food (expense)
+rate EUR from day 1: 1.1000
+posted v1: 3 postings, total 130.00
+posted v2: 2 postings, total 36.66
+rate EUR from day 2: 2.0000
+posted v3: 2 postings, total 20.00
+error: void before day 1
+voided v1 on day 5
+voided v2 on day 5
+error: transaction rev-v1 is a reversal
+error: transaction v1 already voided
+v1 day 1 trip
+  expense:travel 100.00 EUR (110.00 USD)
+  expense:food 20.00
+  assets:bank -130.00
+  voided by rev-v1
+rev-v1 day 5 void:trip
+  expense:travel -100.00 EUR (-110.00 USD)
+  expense:food -20.00
+  assets:bank 130.00
+  reverses v1
+rev-v2 day 5 void:trip2
+  expense:travel -33.33 EUR (-36.66 USD)
+  assets:eur 33.33 EUR (36.66 USD)
+  reverses v2
+1 v1 trip 130.00 (void)
+2 v2 trip2 36.66 (void)
+3 v3 trip3 20.00
+5 rev-v1 void:trip 130.00
+5 rev-v2 void:trip2 36.66
+asset
+  assets:bank -20.00
+expense
+  expense:travel 20.00
+total debits 20.00 credits 20.00
+expense expense:food 20.00
+expense expense:travel 166.66
+net income -186.66
+expense expense:food -20.00
+expense expense:travel -146.66
+net income 166.66
+expense expense:travel 20.00
+net income -20.00
+balance expense: 20.00
+  EUR 10.00
+statement expense:travel (expense, EUR)
+     1 v1           100.00     100.00  trip
+     2 v2            33.33     133.33  trip2
+     3 v3            10.00     143.33  trip3
+     5 rev-v1      -100.00      43.33  void:trip
+     5 rev-v2       -33.33      10.00  void:trip2
+  closing balance 10.00 EUR (book 20.00 USD)

@@ -1,0 +1,200 @@
+new p3 very
+user ann
+new p3 here slow on Totals page
+user ann
+user bob
+user bob
+list status=all status=closed
+move 4 wontfix dup
+labels
+move 1 bogus
+wait 0
+move 2 review dup
+move 3 open waiting on api
+move 3 triaged waiting on api
+move 4 bogus
+assign 4 zed
+cycle
+assign 4 ann
+move 4 new
+log 3
+move 3 review
+move 1 done
+move 1 triaged
+move 3 open
+move 2 open
+move 2 new waiting on api
+list assignee=-
+comment 2 zed long timeout title
+move 1 review
+move 4 open
+priority 3 p3
+move 3 in_progress
+stats
+log 0
+move 3 triaged dup
+move 4 in_progress waiting on api
+move 3 done
+move 2 open
+show 3
+stats
+move 1 review
+close 1
+move 1 review dup
+unassign 2
+
+new p4 empty password empty empty Login here Login API
+move 1 bogus
+stats 1
+labels
+users
+move 1 bogus
+labels
+label 1 +ui
+stale 3
+move 9 triaged
+new p1 here CSV timeout title title empty Login
+assign 2 cy
+move 3 blocked
+log 3
+stale x
+comment 4 cy API here wrong here CSV
+move 1 in_progress
+move 1 new waiting on api
+user bob
+show 2
+assign 9 ann
+cycle
+users
+dup 1 3
+  
+assign 3 zed
+move 2 blocked
+cycle
+labels
+mine bob
+move 2 review
+move 1 bogus
+move 4 bogus waiting on api
+move 1 done dup
+move 2 done
+log 20
+assign 1 ann
+label 3 +perf
+wait 5
+move 2 wontfix
+close 4
+move 4 done dup
+dup 1 2
+move 2 closed waiting on api
+stale 0
+move 2 wontfix waiting on api
+label 4 -bug bad
+move 4 wontfix dup
+move 1 bogus
+move 2 wontfix
+log 0
+list foo=1 status=open
+move 2 blocked waiting on api
+stats
+assign 3 zed
+move 2 wontfix waiting on api
+stats
+stale 0
+move 4 closed
+move 1 in_progress
+move 2 bogus
+move 4 review
+move 2 review
+assign 2 ann
+close 1
+stale 0
+move 4 in_progress
+move 4 open
+new p4 page export on export timeout
+move 4 triaged
+show 1
+log 3
+move 2 review dup
+comment 3 bob API here
+assign 1 ann
+rename 3 Login Totals timeout empty API CSV long
+move 1 review
+move 3 bogus waiting on api
+cycle
+move 1 wontfix waiting on api
+users
+move 2 open
+assign 1 ann
+move 3 triaged
+move 1 triaged dup
+wait 0
+move 1 closed dup
+close 1
+cycle
+log 3
+move 2 open
+cycle
+list 
+close 3
+move 2 blocked
+dup 3 3
+move 4 wontfix
+labels
+assign 2 bob
+list x assignee=ann
+assign 2 zed
+stale x
+move 2 closed
+new p2 very fails password on password fails Login API
+user zed
+new p4 wrong empty empty title CSV
+move 4 review waiting on api
+move 3 wontfix
+move 4 wontfix waiting on api
+move 2 open dup
+move 3 new dup
+move 3 in_progress dup
+new p1 on CSV title fails crash Totals
+cycle
+move 3 bogus waiting on api
+labels
+move 3 in_progress waiting on api
+assign 2 ann
+cycle
+wait 1
+move 1 closed dup
+wait 5
+move 1 closed
+log 3
+label 1 
+labels
+wait 1
+wait x
+move 1 wontfix
+move 1 in_progress dup
+move 4 done waiting on api
+rename 3 timeout fails
+move 4 in_progress
+reopen 3
+move 9 blocked
+close 2
+user zed
+move 2 blocked
+wait 0
+move 2 wontfix dup
+dup 2 2
+log 3
+move 2 done
+move 2 in_progress
+new p2 page
+users
+move 3 wontfix
+mine bob
+priority 4 p4
+user ann
+stale 3
+move 1 blocked waiting on api
+assign 3 bob
+log 20
+move 1 review

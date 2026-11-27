@@ -1,0 +1,16 @@
+set A1 5
+set A2 =A1
+sheet Data
+set Data!A1 5
+set Data!B3 =Sheet1!A1
+set Data!C1 =1/0
+find 5
+list
+count
+use Data
+find 5
+find 0
+list
+count
+set Sheet1!A3 =Data!C1
+count

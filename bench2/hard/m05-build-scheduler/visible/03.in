@@ -1,0 +1,5 @@
+target a 2 b
+target b 3
+target c 1 a missing
+workers 3
+goal a c

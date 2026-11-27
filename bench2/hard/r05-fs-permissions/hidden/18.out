@@ -1,0 +1,30 @@
+error: permission denied: /team/src/main2.txt
+error: permission denied: /team/src/main.txt
+error: permission denied: /team/src/wip.txt
+error: permission denied: /team/docs/guide.txt
+guide.txt
+error: permission denied: /team/docs/guide.txt
+error: permission denied: /team/docs/guide.txt
+/team
+  dev/
+    wip.txt
+  docs/ [denied]
+  src/
+    main.txt
+4 /team/dev
+denied /team/docs
+3 /team/src
+7 /team
+/team/dev/wip.txt
+error: is a directory: /team/dev
+error: permission denied: /team/dev
+drwxr-x dev 1 dev/
+drwxr-- lead 1 docs/
+drwxr-x lead 1 src/
+error: permission denied: /team/x
+1:still mine
+/team/archive: directory, 2 entries, owner dev, mode rwxr-x
+-rw-r-- dev 11 note.txt
+-rw-r-- dev 4 wip.txt
+error: permission denied: /team/archive
+lead

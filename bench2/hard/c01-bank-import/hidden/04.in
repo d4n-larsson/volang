@@ -1,0 +1,10 @@
+a-b-c-0123456789abcd 2024-01-01 2024-12-31
+/etc/passwd
+2024/../jan.csv
+../private/salaries.csv
+..
+a/../../private/salaries.csv
+/home
+..foo.csv
+./jan.csv
+2024//mar.csv

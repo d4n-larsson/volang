@@ -1,0 +1,26 @@
+0 none
+quota: usage
+quota: usage
+quota: usage
+0 20
+20 20
+write: a: no space left
+append: a: no space left
+12 20
+quota: 9: below usage
+quota: 0003: below usage
+cp: /: cannot copy into itself
+24 2000
+quota: 0: below usage
+quota: 40: below usage
+216 2000
+227 2000
+191 2000
+quota: 0: below usage
+191 2000
+191 191
+cp: big2: no space left
+191 191
+append: big: no space left
+cp: big: no space left
+4 191

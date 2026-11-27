@@ -1,0 +1,14 @@
+b.txt
+error: permission denied: /vault/b.txt
+error: permission denied: /vault/v.txt
+error: permission denied: /vault/new/x.txt
+error: permission denied: /vault/b.txt
+error: permission denied: /vault/v.txt
+a
+a
+a
+error: not a directory: /f.txt/x
+error: permission denied: /f.txt
+drwxr-x ann 1 sub2/
+error: permission denied: /vault
+/

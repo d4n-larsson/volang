@@ -1,0 +1,37 @@
+user ann
+user ann
+user
+users extra
+new p5 Bad priority
+new p2
+new P2 Upper
+new p2 Good issue
+label 1
+label 1 +
+label 1 bug
+label 1 +bug -bug +ui
+label 1 -nothing
+priority 1 p2
+priority 1 px
+priority 7 px
+priority 001 p1
+rename 1 Good issue
+rename 1 Better   issue
+comment 1 zed hi
+comment 1 ann
+comment 1 ann looks   fine
+show 01
+frobnicate
+stats 1
+labels x
+log 0
+log x
+log
+wait 0
+wait 3
+cycle
+search
+mine
+stale
+stale x
+show 1

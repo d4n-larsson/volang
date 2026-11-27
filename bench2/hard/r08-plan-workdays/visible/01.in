@@ -1,0 +1,10 @@
+task spec 4 Write the spec
+task build 6 Build it
+task test 3
+task ship 0 Release
+dep build spec
+dep test build
+dep ship test
+schedule
+critical
+end

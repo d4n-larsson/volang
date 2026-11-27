@@ -1,0 +1,400 @@
+limit O1 dan buy CD 6 10.15 ioc
+market O2 ana sell CD 5
+limit O3 ana sell CD 21 10.44 fok
+stop O4 eve buy AB 2 9.74
+modify O2 19 9.75
+market O6 ana sell CD 14
+book CD
+limit O8 ana buy CD 28 9.87 ioc
+limit O8 ana buy AB 30 9.56 ioc
+limit O10 dan buy AB 25 10.36
+limit O11 ana buy CD 5 9.81
+limit O12 dan buy AB 15 10.15
+book CD
+book AB
+book AB
+limit O12 cy sell CD 3 9.59
+limit O17 ana sell CD 20 10.08
+book AB
+limit O19 eve buy AB 6 10.44 fok
+limit O20 dan sell AB 2 9.63
+limit O21 bob sell CD 14 10.26 ioc
+limit O22 ana buy AB 16 10.21 fok
+market O23 bob buy AB 9
+limit O24 bob sell CD 17 10.23
+limit O25 dan buy CD 19 9.54
+limit O26 cy buy AB 20 10.31
+limit O27 cy buy AB 3 10.07 fok
+limit O28 bob sell CD 3 10.37 ioc
+modify O26 19 9.51
+stop O30 ana buy AB 3 10.31
+limit O31 dan sell CD 30 10.44 fok
+limit O32 eve buy AB 10 10.26
+limit O33 ana sell CD 9 9.51
+limit O34 bob sell AB 22 10.06 ioc
+modify O8 26 10.46
+modify O22 5 9.67
+limit O37 ana sell AB 27 9.71
+limit O38 bob sell CD 21 10.16 ioc
+stop O39 eve sell CD 3 9.54
+limit O40 cy sell CD 21 10.22
+market O41 bob sell AB 8
+limit O42 ana buy CD 21 10.18
+book CD
+limit O44 ana buy AB 9 10.49
+limit O45 eve sell AB 28 10.39
+limit O46 dan sell AB 15 9.75
+limit O47 eve sell CD 11 10.33
+limit O48 ana buy AB 29 9.99
+book CD
+limit O50 eve sell CD 16 9.53
+cancel O11
+limit O52 eve sell CD 19 10.38
+cancel O46
+limit O54 eve sell AB 28 9.68 fok
+limit O55 bob buy CD 17 9.50 fok
+limit O56 ana buy CD 16 9.61
+limit O57 dan sell CD 8 10.10 ioc
+limit O58 dan buy CD 7 10.03 fok
+limit O59 ana buy AB 5 9.79
+stop O60 cy sell AB 4 10.13
+stop O61 eve buy CD 23 10.17
+modify O45 28 10.30
+market O63 eve buy AB 30
+market O64 bob sell CD 29
+limit O65 ana buy AB 5 10.43
+limit O66 dan buy AB 13 10.30
+limit O67 cy buy CD 23 10.14
+limit O68 bob sell AB 4 9.53
+cancel O10
+limit O70 cy buy AB 5 10.37 ioc
+limit O71 dan sell CD 17 9.95 ioc
+limit O72 ana buy AB 14 10.08
+stop O73 bob buy AB 17 9.51
+limit O74 dan sell AB 26 10.47
+limit O75 bob buy CD 29 9.92 fok
+stop O76 bob buy CD 24 9.73
+limit O77 dan buy AB 29 9.95 fok
+limit O78 cy buy CD 22 10.01 fok
+limit O79 eve buy CD 23 9.65 ioc
+book CD
+limit O81 dan buy AB 9 9.82
+modify O12 21 10.06
+limit O83 ana buy CD 13 10.10
+modify O47 16 10.03
+limit O85 cy sell CD 21 9.84 fok
+modify O8 25 9.81
+market O87 dan sell AB 24
+limit O88 cy buy AB 14 10.42 ioc
+limit O89 ana sell AB 5 9.81 fok
+stop O90 dan buy CD 7 9.56
+limit O91 cy buy CD 22 10.03 ioc
+market O92 dan buy CD 10
+limit O93 eve sell CD 9 9.84 fok
+stop O94 eve sell AB 25 9.80
+limit O95 bob buy AB 1 9.84
+limit O96 ana sell AB 3 10.46
+modify O34 16 9.95
+limit O98 bob buy AB 15 10.29
+limit O99 dan sell AB 5 10.33 fok
+limit O100 bob sell CD 19 9.62 ioc
+modify O75 27 10.37
+limit O102 ana buy CD 30 10.34 fok
+limit O103 cy buy CD 8 9.95
+limit O104 dan sell CD 17 9.89 ioc
+limit O105 eve buy AB 12 9.96
+limit O106 dan sell AB 26 9.99 fok
+limit O107 bob buy AB 25 10.08
+cancel O70
+limit O109 eve sell AB 3 9.85
+modify O38 8 10.41
+limit O111 cy sell CD 12 9.93
+stop O112 eve buy AB 14 10.46
+cancel O89
+market O114 ana sell AB 30
+modify O64 11 9.76
+limit O116 ana sell CD 24 9.64
+market O117 bob sell AB 1
+limit O118 cy buy AB 6 9.95
+market O119 dan sell AB 6
+limit O120 cy sell CD 16 10.01
+stop O121 ana buy CD 13 9.56
+limit O122 dan buy CD 22 9.80
+modify O68 20 9.70
+limit O124 cy sell AB 17 10.18
+limit O125 ana buy AB 27 9.66
+limit O126 eve sell AB 23 10.09
+book CD
+limit O128 ana buy CD 2 10.19 ioc
+limit O129 cy sell CD 13 9.59 fok
+limit O130 ana buy CD 22 9.67
+stop O131 ana buy CD 28 9.98
+stop O132 cy sell AB 25 9.51
+modify O89 21 9.98
+stop O134 dan sell AB 7 9.75
+limit O135 cy sell CD 24 10.31
+limit O136 ana buy AB 5 10.36
+limit O137 dan buy AB 8 9.54
+book CD
+limit O139 bob sell CD 11 10.02 fok
+limit O140 cy buy AB 9 9.92
+limit O141 ana buy CD 17 9.92
+cancel O59
+market O143 eve buy AB 19
+market O144 ana buy AB 16
+limit O145 ana sell CD 15 9.65 ioc
+book AB
+book AB
+limit O148 bob buy CD 6 10.26 fok
+cancel O107
+cancel O75
+limit O151 ana buy CD 11 10.16
+limit O152 cy buy AB 24 10.35
+limit O153 ana sell CD 14 10.29 fok
+cancel O22
+market O155 eve sell CD 14
+limit O156 eve sell CD 20 9.91
+modify O141 8 10.14
+limit O158 ana sell AB 22 10.00
+modify O121 8 10.33
+limit O160 ana buy AB 4 10.18 fok
+book AB
+limit O162 eve buy CD 12 10.38 fok
+limit O163 dan sell CD 11 10.13
+modify O145 10 10.38
+limit O165 cy buy CD 6 10.31 fok
+limit O166 bob buy AB 10 10.42
+book AB
+limit O168 bob buy CD 23 10.38
+limit O169 eve sell CD 12 10.34 fok
+modify O90 22 9.78
+limit O171 dan sell AB 30 10.17
+limit O172 eve sell CD 14 10.22
+limit O173 bob buy AB 9 10.43 fok
+limit O174 bob sell AB 30 10.46 fok
+limit O175 dan buy AB 3 10.21
+limit O176 ana buy CD 20 10.49
+limit O177 dan buy CD 9 10.12 fok
+limit O178 dan buy CD 7 10.26
+market O179 bob buy CD 20
+market O180 eve sell CD 28
+limit O181 eve buy AB 2 9.89 ioc
+limit O182 eve sell CD 3 10.33 fok
+limit O183 bob sell CD 2 9.90 ioc
+limit O184 ana sell AB 25 10.47 fok
+book AB
+modify O11 14 9.59
+stop O187 eve sell AB 9 9.65
+market O188 dan buy AB 12
+limit O189 eve buy AB 6 10.01 fok
+market O190 cy sell AB 28
+modify O79 14 9.94
+limit O192 bob buy CD 13 9.77 fok
+limit O193 dan buy CD 28 10.12
+limit O194 ana sell CD 9 10.29
+limit O195 eve buy CD 9 9.63
+limit O196 cy buy AB 24 9.65
+book AB
+cancel O165
+limit O199 eve buy AB 7 9.89 ioc
+limit O200 bob sell CD 24 10.07 ioc
+limit O201 cy sell CD 5 9.99 fok
+modify O46 20 9.77
+limit O162 eve sell AB 22 10.35
+modify O85 8 10.50
+limit O205 dan buy CD 16 9.99
+limit O206 bob sell AB 7 10.10
+limit O207 eve sell AB 30 10.04
+limit O208 eve buy CD 29 10.00
+limit O209 dan buy CD 13 10.13 fok
+limit O210 cy buy AB 2 9.94
+modify O111 13 10.28
+book AB
+market O213 dan sell AB 3
+modify O89 22 10.14
+limit O215 ana buy AB 9 9.79
+stop O216 ana buy CD 8 10.20
+limit O217 eve sell AB 9 9.94
+modify O54 7 9.70
+limit O219 eve sell CD 14 9.86
+stop O220 bob sell AB 11 10.40
+limit O221 bob buy AB 27 9.63
+limit O222 dan buy AB 20 10.02 ioc
+limit O223 eve sell CD 23 10.31
+limit O224 bob buy CD 27 10.22
+market O225 bob buy CD 5
+limit O226 bob buy AB 16 10.24
+limit O227 cy sell CD 30 10.36
+limit O228 ana buy AB 10 9.95 fok
+book AB
+limit O230 cy sell AB 24 10.29 ioc
+cancel O144
+limit O232 cy sell CD 4 9.69
+modify O90 21 10.01
+limit O234 bob sell CD 18 9.56
+limit O235 cy buy AB 6 9.93 ioc
+limit O236 dan buy CD 14 9.94 fok
+limit O237 eve sell CD 7 9.87
+book AB
+limit O239 cy sell AB 3 10.15 ioc
+limit O240 cy sell AB 26 9.81 ioc
+limit O241 ana sell CD 27 10.40 ioc
+limit O242 ana buy AB 8 9.91 ioc
+stop O243 cy sell CD 12 9.89
+limit O244 cy sell AB 11 9.77
+limit O245 eve buy CD 6 9.94
+limit O246 bob buy CD 1 10.01 fok
+limit O247 eve buy AB 29 9.72
+limit O248 eve sell CD 16 9.78 ioc
+limit O249 bob buy CD 22 9.99
+modify O222 24 10.31
+limit O251 bob sell CD 28 10.41 ioc
+limit O252 ana sell AB 14 10.35 ioc
+limit O253 bob buy CD 17 9.54 fok
+market O254 eve buy AB 30
+limit O255 cy buy CD 24 10.10 fok
+limit O256 bob buy CD 8 9.73
+cancel O12
+stop O258 cy buy CD 18 9.51
+modify O143 4 10.21
+cancel O255
+modify O107 6 9.62
+limit O262 bob buy CD 14 9.73 fok
+limit O263 eve sell CD 3 9.61
+limit O264 bob sell CD 1 9.93
+cancel O42
+limit O266 ana sell AB 4 9.83
+market O267 bob buy AB 23
+stop O268 cy buy CD 5 9.59
+market O269 eve sell CD 15
+limit O270 cy buy CD 16 10.24
+limit O271 cy sell AB 8 10.11 ioc
+limit O272 bob buy CD 12 10.03
+limit O273 cy buy CD 22 10.28
+limit O274 eve sell CD 14 9.85
+limit O275 eve buy AB 15 9.76
+cancel O52
+limit O277 dan sell CD 22 10.33 fok
+limit O278 ana sell CD 27 9.79 fok
+stop O279 ana sell CD 26 10.33
+modify O173 12 9.68
+limit O281 ana buy AB 21 10.39 fok
+cancel O6
+limit O283 ana sell AB 14 10.18 fok
+limit O284 ana buy CD 3 10.22
+limit O285 eve sell CD 12 10.49
+limit O286 ana sell AB 6 10.21
+limit O287 ana buy AB 19 10.17
+limit O288 ana buy CD 8 9.69
+stop O289 bob buy CD 13 9.64
+limit O290 eve sell AB 14 9.88
+limit O291 dan sell CD 7 10.33 fok
+modify O88 21 9.88
+stop O293 cy sell AB 26 10.11
+limit O294 cy buy CD 2 9.89 fok
+limit O295 eve sell CD 27 9.78
+stop O296 cy buy CD 17 10.45
+limit O297 cy buy CD 1 10.38 fok
+limit O298 eve sell CD 7 10.27 fok
+limit O299 ana buy CD 28 9.61
+limit O300 dan sell CD 3 9.86 fok
+stop O301 bob sell CD 2 9.90
+limit O302 cy buy CD 25 10.12
+limit O303 bob buy CD 20 10.37
+market O245 dan sell CD 22
+book AB
+cancel O296
+stop O307 ana buy CD 23 9.65
+limit O308 eve buy AB 4 10.03
+limit O309 ana sell AB 16 10.02
+modify O267 14 10.38
+limit O311 ana sell AB 7 9.51
+cancel O279
+limit O313 bob sell CD 11 9.61 ioc
+limit O314 dan sell AB 30 9.58
+limit O315 dan buy AB 14 10.17 ioc
+limit O316 bob sell AB 17 9.69
+book CD
+limit O318 cy buy CD 8 10.50
+limit O319 eve buy CD 6 10.47
+market O320 cy sell CD 4
+stop O321 cy buy AB 12 9.52
+limit O322 cy sell CD 18 9.66
+limit O323 cy buy CD 28 9.99
+cancel O221
+stop O325 cy buy CD 14 10.49
+limit O326 bob sell CD 22 9.97
+stop O327 eve sell CD 29 9.79
+limit O328 eve sell AB 29 9.50
+modify O41 12 9.68
+modify O52 19 9.68
+limit O331 ana sell CD 30 9.75
+limit O332 ana buy CD 18 10.21
+limit O333 cy sell AB 5 10.19
+modify O58 30 9.71
+cancel O19
+limit O336 bob buy AB 12 9.58
+book CD
+limit O338 bob buy CD 19 9.97 fok
+stop O339 cy buy CD 30 10.03
+limit O340 cy sell CD 8 10.50
+limit O341 eve sell CD 19 9.52
+limit O342 eve buy CD 22 9.54
+limit O343 eve sell AB 7 9.55 ioc
+market O344 cy buy AB 27
+book CD
+market O346 ana buy CD 2
+limit O347 dan buy AB 3 9.76
+modify O92 30 9.67
+cancel O158
+modify O181 24 9.65
+limit O351 bob buy CD 4 9.89
+limit O352 eve sell CD 3 9.60
+limit O353 eve buy AB 11 10.31 fok
+limit O354 eve sell CD 20 10.12 ioc
+limit O355 dan sell AB 25 10.24 ioc
+limit O356 ana sell AB 24 9.77
+limit O357 dan sell AB 1 9.73
+limit O358 ana sell CD 28 10.29 fok
+limit O359 eve buy CD 12 9.68 fok
+market O360 eve sell CD 11
+limit O361 bob sell CD 25 9.71
+limit O362 bob sell CD 21 9.62
+limit O363 dan buy CD 22 10.13 ioc
+limit O364 eve buy CD 3 9.90 ioc
+market O365 bob sell AB 18
+limit O366 ana sell AB 26 9.55
+limit O367 ana sell CD 18 9.57
+limit O368 cy sell CD 30 9.75
+stop O369 cy buy AB 26 10.43
+stop O370 bob sell AB 10 10.41
+limit O371 ana sell CD 26 10.32 fok
+stop O372 ana buy AB 9 9.86
+modify O39 24 10.43
+limit O374 dan sell AB 16 10.31 ioc
+limit O375 ana buy AB 16 9.79
+stop O376 bob sell CD 15 9.84
+stop O178 ana sell CD 30 9.56
+modify O223 25 9.57
+limit O379 dan buy AB 4 10.40 fok
+limit O380 eve sell AB 7 10.24
+limit O381 ana buy CD 12 9.87 fok
+modify O313 14 9.80
+modify O366 22 10.03
+cancel O58
+limit O385 ana buy AB 18 9.84 fok
+stop O386 ana sell AB 2 10.05
+book CD
+limit O388 eve buy CD 14 10.13 fok
+cancel O370
+limit O390 dan buy CD 13 9.59 ioc
+stop O391 bob sell AB 19 9.90
+modify O338 8 10.42
+market O393 bob buy CD 26
+stop O394 cy buy CD 15 10.05
+limit O395 dan buy CD 15 10.44 ioc
+market O396 dan buy CD 24
+limit O397 eve sell CD 7 10.33
+limit O398 eve sell CD 1 10.03
+cancel O200
+book AB

@@ -1,0 +1,23 @@
+write f v1
+commit c1
+write f v2
+commit c2
+write f v3
+commit c3
+write dirty yes
+reset 1
+status
+log
+write f v4
+commit c4
+branches
+log 3
+diff 3 4
+reset 3
+log
+branch keep 4
+merge keep
+reset 7
+reset keep~1
+show main
+branches

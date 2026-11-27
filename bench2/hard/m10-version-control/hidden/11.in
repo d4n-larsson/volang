@@ -1,0 +1,23 @@
+write f one
+write g one
+commit root
+write f two
+commit change f
+write h new
+commit add h
+revert 2
+revert 2
+revert 4
+write g changed
+commit change g
+revert 1
+branch side 3
+checkout side
+write k x
+commit side k
+checkout main
+merge side
+revert 7
+revert main~1
+log
+show main

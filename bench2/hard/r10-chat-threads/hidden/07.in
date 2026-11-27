@@ -1,0 +1,21 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+post ann general question
+reply bob general/1 answer
+reply cy general/2 follow up
+reply ann general/3 and more
+edit bob general/2 better answer
+edit ann general/1 better question
+thread general/3
+thread general/4
+history general
+reply bob general/4 last
+thread general/1
+post bob general solo
+thread general/6
+history general

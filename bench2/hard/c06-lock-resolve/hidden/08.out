@@ -1,0 +1,6 @@
+pick cyc-b 1.2.0
+pick cyc-a 1.0.0
+== lock
+cyc-a 1.0.0
+cyc-b 1.2.0
+wrote out/cycle2.lock 2

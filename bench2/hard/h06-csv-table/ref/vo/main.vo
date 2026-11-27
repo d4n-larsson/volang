@@ -1,0 +1,166 @@
+import std.text;
+
+record Reader {
+    cs: list[str];
+    i: int;
+    line: int;
+    line_start: int;
+    records: list[list[str]];
+    rec: list[str];
+}
+
+fn at(r: Reader) -> str {
+    return "line " + str(r.line) + ", column " + str(r.i - r.line_start + 1);
+}
+
+fn end_record(r: Reader) -> result[void] {
+    push(r.records, r.rec);
+    let want = len(r.records[0]);
+    if len(r.rec) != want {
+        return err("record " + str(len(r.records)) + " has " + str(len(r.rec)) + " fields, expected " + str(want));
+    }
+    set r.rec = new list[str];
+    return ok();
+}
+
+fn quoted(r: Reader) -> result[void] {
+    let cs = r.cs;
+    let n = len(cs);
+    let open_at = at(r);
+    let buf = new list[str];
+    set r.i = r.i + 1;
+    while true {
+        if r.i == n {
+            return err(open_at + ": unclosed quote");
+        }
+        let c = cs[r.i];
+        if c == "\"" {
+            if r.i + 1 < n and cs[r.i + 1] == "\"" {
+                push(buf, "\"");
+                set r.i = r.i + 2;
+            } else {
+                set r.i = r.i + 1;
+                break;
+            }
+        } else {
+            if c == "\n" {
+                set r.line = r.line + 1;
+                set r.line_start = r.i + 1;
+            }
+            push(buf, c);
+            set r.i = r.i + 1;
+        }
+    }
+    if r.i < n and cs[r.i] != "," and cs[r.i] != "\n" {
+        return err(at(r) + ": character after closing quote");
+    }
+    push(r.rec, join(buf, ""));
+    return ok();
+}
+
+fn unquoted(r: Reader) -> result[void] {
+    let cs = r.cs;
+    let start = r.i;
+    while r.i < len(cs) and cs[r.i] != "," and cs[r.i] != "\n" {
+        if cs[r.i] == "\"" {
+            return err(at(r) + ": quote in unquoted field");
+        }
+        set r.i = r.i + 1;
+    }
+    push(r.rec, join(slice(cs, start, r.i), ""));
+    return ok();
+}
+
+fn parse(s: str) -> result[list[list[str]]] {
+    let r = new Reader { cs: chars(s), i: 0, line: 1, line_start: 0, records: new list[list[str]], rec: new list[str] };
+    let n = len(r.cs);
+    if n == 0 {
+        return ok(r.records);
+    }
+    while true {
+        if r.i < n and r.cs[r.i] == "\"" {
+            try quoted(r);
+        } else {
+            try unquoted(r);
+        }
+        if r.i == n {
+            try end_record(r);
+            return ok(r.records);
+        }
+        if r.cs[r.i] == "," {
+            set r.i = r.i + 1;
+        } else {
+            set r.i = r.i + 1;
+            set r.line = r.line + 1;
+            set r.line_start = r.i;
+            try end_record(r);
+            if r.i == n {
+                return ok(r.records);
+            }
+        }
+    }
+}
+
+fn is_int(s: str) -> bool {
+    var body = s;
+    if len(s) > 0 and byte_at(s, 0) == 45 {
+        set body = slice(s, 1, len(s));
+    }
+    if len(body) == 0 {
+        return false;
+    }
+    for c in body {
+        if c < "0" or c > "9" {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn shown(c: str) -> str {
+    return text.replace(text.replace(c, "\\", "\\\\"), "\n", "\\n");
+}
+
+fn table(records: list[list[str]]) -> list[str] {
+    let m = len(records[0]);
+    let cells = map(records, fn(r) => map(r, shown));
+    let widths = new list[int];
+    let numeric = new list[bool];
+    for k in 0..m {
+        push(widths, fold(cells, 0, fn(w, r) => max(w, text.char_count(r[k]))));
+        push(numeric, len(records) > 1 and all(slice(records, 1, len(records)), fn(r) => is_int(r[k])));
+    }
+    let out = new list[str];
+    for idx, r in cells {
+        let parts = new list[str];
+        for k, c in r {
+            if numeric[k] {
+                push(parts, text.align_right(c, widths[k]));
+            } else if k == m - 1 {
+                push(parts, c);
+            } else {
+                push(parts, text.align_left(c, widths[k]));
+            }
+        }
+        push(out, join(parts, " | "));
+        if idx == 0 {
+            push(out, join(map(widths, fn(w) => text.repeat("-", w)), "-+-"));
+        }
+    }
+    return out;
+}
+
+fn main() uses console, input {
+    match parse(read_all()) {
+        case ok(records) {
+            if len(records) > 0 {
+                for l in table(records) {
+                    print(l);
+                }
+            }
+        }
+        case err(e) {
+            print("error: " + e);
+        }
+    }
+}

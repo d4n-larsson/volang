@@ -1,0 +1,13 @@
+team Ant
+team Bee
+team Cat
+team Dog
+result Ant 2 0 Bee
+result Bee 1 0 Cat
+result Cat 1 0 Ant
+result Ant 1 0 Dog
+result Bee 5 0 Dog
+result Cat 2 0 Dog
+table
+record Bee
+fixtures

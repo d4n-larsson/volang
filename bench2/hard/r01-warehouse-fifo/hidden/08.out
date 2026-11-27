@@ -1,0 +1,23 @@
+warehouse old added
+warehouse new added
+item crate added
+received 4 crate into old, now 4, lot 1 at 10.00
+order k1 opened at old
+order k1 line 1: 4 crate
+error: warehouse old has stock
+order k1 fulfilled: 1 line, 4 units, cost 40.00
+warehouse old dropped
+warehouse old added
+no lots of crate in old
+received 2 crate into old, now 2, lot 2 at 12.00
+lot 2: 2 x 12.00 = 24.00
+total 2 units = 24.00
+#1 receive old +4 lot 1 at 10.00
+#2 ship old -4 (order k1) cost 40.00
+#3 receive old +2 lot 2 at 12.00
+old     crate          2
+total 2 units
+items 1, warehouses 2, 2 units, value 24.00
+shipped 4 units in 1 shipment, cost 40.00
+orders: 0 open, 1 fulfilled, 0 cancelled
+k1 old fulfilled: 1 line, 4 units

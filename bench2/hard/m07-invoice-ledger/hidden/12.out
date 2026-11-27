@@ -1,0 +1,31 @@
+customer a added
+customer b added
+invoice #1 a total 10.00 balance 10.00 due 20
+invoice #2 b total 20.00 balance 20.00 due 20
+invoice #3 a total 30.00 balance 30.00 due 20
+error: invoice 2 not open for a
+error: invoice 2 not open for a
+error: invoice 1 not open for b
+paid a 50.00: #3 30.00, #1 10.00, credit 10.00
+invoice #4 b total 7.00 balance 7.00 due 35
+paid b 0.50: #2 0.50
+statement b day 15
+#2 due 20 balance 19.50
+#4 due 35 balance 7.00
+open 26.50 credit 0.00 written off 0.00
+aging day 41
+b 0.00 26.50 0.00 0.00 0.00
+total 0.00 26.50 0.00 0.00 0.00
+error: no invoice 5
+error: no invoice 5
+statement a day 41
+open 0.00 credit 10.00 written off 0.00
+statement b day 41
+#2 due 20 balance 19.50 overdue 21
+#4 due 35 balance 7.00 overdue 6
+open 26.50 credit 0.00 written off 0.00
+invoices:
+#1 a closed total 10.00 fee 0.00 paid 10.00 credits 0.00 balance 0.00
+#2 b open total 20.00 fee 0.00 paid 0.50 credits 0.00 balance 19.50
+#3 a closed total 30.00 fee 0.00 paid 30.00 credits 0.00 balance 0.00
+#4 b open total 7.00 fee 0.00 paid 0.00 credits 0.00 balance 7.00

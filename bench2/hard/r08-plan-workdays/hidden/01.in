@@ -1,0 +1,12 @@
+task a 2 Survey
+task b 4 Foundations
+task c 3 Walls
+task d 1 Inspection
+dep b a+1
+dep c a
+dep d b+2
+dep d c+3
+schedule
+show d
+show c
+end

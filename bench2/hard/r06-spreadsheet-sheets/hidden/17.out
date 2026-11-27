@@ -1,0 +1,31 @@
+sheet P added
+sheet Q added
+A1 = 1
+P!A1 = 0
+Q!A1 = #CYCLE
+A2 = #CYCLE
+P!A2 = #DIV0
+Q!B1 = #CYCLE
+A1 = #CYCLE
+P!A1 = #CYCLE
+Q!A1 = #CYCLE
+A2 = #CYCLE
+P!A2 = #DIV0
+Q!B1 = #CYCLE
+Q!A1 = 4
+A1 = 9
+A2 = 14
+P!A2 = #DIV0
+error: unknown sheet Gone
+B1 = #DIV0
+B1 = #DIV0
+dropped Q
+B1 = #REF
+B2 = #REF
+B2 = #REF
+P!B3 = #DIV0
+B3 = #REF
+B3 = #REF
+B4 = #REF
+B4 = #REF
+cells 9, formulas 9, errors 9

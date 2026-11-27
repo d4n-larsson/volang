@@ -1,0 +1,18 @@
+== plan leak
+source not allowed: src/../secrets
+== plan leak2
+target not allowed: mirror/../home/user
+== plan docs
+copy api/old/v0.txt
+update api/v1.txt
+copy api/v2.txt
+copy 2, update 1, unchanged 1, conflict 0, stale 0, excluded 1
+== run fresh
+copy README
+copy api/old/v0.txt
+copy api/v1.txt
+copy api/v2.txt
+copy guide.txt
+copy 5, update 0, unchanged 0, conflict 0, stale 0, excluded 0
+== plan fresh
+copy 0, update 0, unchanged 5, conflict 0, stale 0, excluded 0

@@ -1,0 +1,45 @@
+quota
+quota 12abc
+quota 12 13
+quota 12345678901
+quota 0000000020
+quota
+write a 123456789
+write b 123456789
+quota
+write a 1234567890123456789
+append a x
+write b 1
+quota
+quota 9
+quota 0003
+quota 2000
+cp a c
+cp -r / /all
+mkdir m
+cp a m
+cp b a
+quota
+write big 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+quota 0
+quota 40
+write c 0123456789
+mv c m/c
+quota
+append m/c 0123456789
+quota
+rm m/a m/c a b
+quota
+quota 0
+quota
+quota 191
+quota
+cp big big2
+write big x
+cp big big2
+write big2 wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww
+quota
+append big x
+cp big2 big
+cp big big2
+quota

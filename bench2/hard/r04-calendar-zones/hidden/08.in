@@ -1,0 +1,18 @@
+user al -11:30
+user bea +13:45
+room a 9 +14:00
+room b 9 -12:00
+room c 9
+book x1 a al 2 13:00 60
+book x2 b bea 3 01:00 600
+book x3 c al 3 11:59 2 bea
+rooms 2
+rooms 3
+rooms 4
+agenda al 2
+agenda bea 4
+agenda bea 3
+list
+who x1
+who x2
+who x3

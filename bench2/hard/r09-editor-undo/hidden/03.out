@@ -1,0 +1,18 @@
+error: nothing to undo
+error: nothing to redo
+error: only 1 step to undo
+error: bad command
+error: bad command
+error: bad command
+undone 1 step
+error: only 1 step to redo
+redone 1 step
+undone 1 step
+error: nothing to redo
+1  x
+2  z
+undone 1 step
+undone 1 step
+redone 2 steps
+error: nothing to redo
+error: nothing to redo

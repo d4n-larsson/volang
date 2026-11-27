@@ -1,0 +1,14 @@
+user ana +02:00
+user ben -08:00
+user cho +09:00
+room r1 5
+book a1 r1 ben 6 18:00 120 ana cho
+agenda ben 6
+agenda ana 7
+agenda cho 7
+agenda cho 6
+agenda ana 6
+book a2 r1 cho 7 09:00 30
+book a3 r1 cho 7 13:00 30 ben
+agenda ben 6
+agenda cho 7

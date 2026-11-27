@@ -1,0 +1,14 @@
+line 3: unknown dependency missing of c
+0 start b w1 #1
+3 done b w1
+3 start a w1 #1
+5 done a w1
+makespan 5
+utilization 33%
+w1 busy 5 attempts 2
+w2 busy 0 attempts 0
+w3 busy 0 attempts 0
+built: b a
+failed: -
+skipped: -
+blocked: c

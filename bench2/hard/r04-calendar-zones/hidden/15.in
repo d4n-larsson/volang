@@ -1,0 +1,16 @@
+user sam -05:00
+user tia
+room q 2 -05:00
+book g1 q sam 3 18:00 360 tia
+agenda sam 3
+agenda sam 4
+agenda tia 3
+agenda tia 4
+rooms 4
+rooms 3
+free q 3
+who g1
+book g2 q tia 4 05:00 60
+book g3 q tia 4 04:59 1
+busy sam 4
+busy sam 3

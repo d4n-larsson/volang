@@ -1,0 +1,26 @@
+user nia added
+user oz added
+user pat added
+room r added, capacity 2
+room s added, capacity 3
+hours nia 09:00-23:59
+error: nia works 09:00-23:59
+booked late in r: 7 22:59-23:59 (1 person)
+error: nia works 09:00-23:59
+error: nia works 09:00-23:59
+booked late2 in r: 7 09:00-09:01 (1 person)
+hours nia 00:00-23:59
+booked early in s: 7 19:00-19:30 (2 people)
+error: nia works 00:00-23:59
+hours nia none
+booked early2 in r: 7 18:29-18:59 (2 people)
+agenda nia day 7 (UTC+05:30):
+  7 09:00-09:01 late2 in r (organizer)
+  7 22:59-23:59 late in r (organizer)
+  7 23:59-8 00:29 early2 in r (attendee)
+agenda nia day 8 (UTC+05:30):
+  7 23:59-8 00:29 early2 in r (attendee)
+  8 00:30-01:00 early in s (attendee)
+nia day 7: 3 meetings, 1h02m
+nia day 8: 2 meetings, 0h59m
+nia: 4 meetings, 2h01m

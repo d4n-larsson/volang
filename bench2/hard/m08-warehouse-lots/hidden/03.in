@@ -1,0 +1,17 @@
+warehouse m
+item ink
+receive m ink 5 1.00 50
+receive m ink 5 2.00 40
+receive m ink 5 3.00 50
+receive m ink 5 4.00 40
+ship a m ink 7
+ship b m ink 7
+ship c m ink 8
+ship d m ink 5
+backorders
+receive m ink 3 0.50 60
+receive m ink 10 0.10 30
+backorders
+cancel c
+receive m ink 9 0.00 70
+backorders

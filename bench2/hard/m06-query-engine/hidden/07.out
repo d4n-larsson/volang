@@ -1,0 +1,47 @@
+created sale
+inserted 3
+inserted 4
+region | count(*) | count(units) | sum(units) | min(rep) | max(price)
+-------+----------+--------------+------------+----------+-----------
+north  |        2 |            1 |          3 | ada      |         10
+south  |        2 |            2 |          6 | bo       |          9
+NULL   |        2 |            2 |          8 | dot      |          4
+east   |        1 |            0 |       NULL | fa       |       NULL
+(4 rows)
+region | sum(sale.units)
+-------+----------------
+south  |               6
+NULL   |               8
+(2 rows)
+region
+------
+NULL  
+east  
+(2 rows)
+region | rep
+-------+----
+north  | ada
+north  | cy 
+(2 rows)
+region | count(*)
+-------+---------
+NULL   |        2
+north  |        2
+south  |        2
+east   |        1
+(4 rows)
+max(rep) | min(units)
+---------+-----------
+gil      |          2
+(1 row)
+count(units) | region
+-------------+-------
+           2 | NULL  
+(1 row)
+sale.region | count(*)
+------------+---------
+east        |        1
+NULL        |        2
+south       |        2
+north       |        2
+(4 rows)

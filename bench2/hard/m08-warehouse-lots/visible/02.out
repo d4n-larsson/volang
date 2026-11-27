@@ -1,0 +1,15 @@
+warehouse a added
+item tea added
+lot L1 a tea 6
+lot L2 a tea 6
+shipped s1 8 L1x6 L2x2
+returned s1 3 restocked 3 quarantined 0
+expired L1 a 1
+value on hand 18.00 in transit 0.00 quarantine 0.00 shipped 10.00 written off 2.00
+returned s1 5 restocked 0 quarantined 5
+shipped s2 3 L2x3
+stock day 12
+a tea L2 on hand 3 reserved 0 expires 50
+a tea quarantine 5
+value on hand 9.00 in transit 0.00 quarantine 10.00 shipped 9.00 written off 2.00
+backorders 0

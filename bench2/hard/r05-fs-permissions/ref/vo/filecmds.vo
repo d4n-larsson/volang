@@ -1,0 +1,179 @@
+# Commands on files: write, append, touch, cat, head, grep, cp, stat.
+import fmt;
+import nodes;
+import paths;
+import perms;
+import resolve;
+import shell;
+
+# `write PATH TEXT...` replaces the file's lines with the one line TEXT (no line when TEXT is
+# empty); `append PATH TEXT...` adds TEXT as a new last line. Both create a missing file.
+export fn write_text(sh: shell.Shell, text: str, words: list[str], append: bool) -> list[str] {
+    let names = paths.normalize(sh.cwd, text);
+    if len(names) == 0 {
+        return [fmt.error(fmt.is_dir, names)];
+    }
+    let holder = resolve.walk_parent(sh, names);
+    match holder {
+        case err(e) {
+            return [e];
+        }
+        case ok(dir) {
+            let name = paths.base_name(names);
+            var node = nodes.new_file([], sh.user);
+            if nodes.has_entry(dir, name) {
+                set node = nodes.entry(dir, name);
+                if node.is_dir {
+                    return [fmt.error(fmt.is_dir, names)];
+                }
+                if not perms.can(sh, node, "w") {
+                    return [perms.denied(names)];
+                }
+            } else {
+                if not perms.can(sh, dir, "w") {
+                    return [perms.denied(names)];
+                }
+                nodes.put_entry(dir, name, node);
+            }
+            let line = fmt.text_of(words);
+            if append {
+                push(node.lines, line);
+            } else if line == "" {
+                set node.lines = [];
+            } else {
+                set node.lines = [line];
+            }
+            return [];
+        }
+    }
+}
+
+# Creates an empty file if nothing is at the path; an existing file or directory is left alone.
+export fn touch(sh: shell.Shell, text: str) -> list[str] {
+    let names = paths.normalize(sh.cwd, text);
+    if len(names) == 0 {
+        return [];
+    }
+    match resolve.walk_parent(sh, names) {
+        case err(e) {
+            return [e];
+        }
+        case ok(dir) {
+            let name = paths.base_name(names);
+            if not nodes.has_entry(dir, name) {
+                if not perms.can(sh, dir, "w") {
+                    return [perms.denied(names)];
+                }
+                nodes.put_entry(dir, name, nodes.new_file([], sh.user));
+            }
+            return [];
+        }
+    }
+}
+
+# The file at the path `text`, for the commands that read one.
+fn readable_file(sh: shell.Shell, text: str) -> result[nodes.Node] {
+    let names = paths.normalize(sh.cwd, text);
+    let node = try resolve.walk(sh, names);
+    if node.is_dir {
+        return err(fmt.error(fmt.is_dir, names));
+    }
+    if not perms.can(sh, node, "r") {
+        return err(perms.denied(names));
+    }
+    return ok(node);
+}
+
+export fn cat(sh: shell.Shell, text: str) -> list[str] {
+    match readable_file(sh, text) {
+        case err(e) {
+            return [e];
+        }
+        case ok(node) {
+            return slice(node.lines, 0, len(node.lines));
+        }
+    }
+}
+
+export fn head(sh: shell.Shell, text: str, count: int) -> list[str] {
+    match readable_file(sh, text) {
+        case err(e) {
+            return [e];
+        }
+        case ok(node) {
+            return slice(node.lines, 0, min(count, len(node.lines)));
+        }
+    }
+}
+
+# The lines of the file that contain `word`, each as `NUMBER:LINE` (lines numbered from 1).
+export fn grep(sh: shell.Shell, word: str, text: str) -> list[str] {
+    match readable_file(sh, text) {
+        case err(e) {
+            return [e];
+        }
+        case ok(node) {
+            let out = new list[str];
+            for i, line in node.lines {
+                if find(line, word) >= 0 {
+                    push(out, fmt.numbered(i + 1, line));
+                }
+            }
+            return out;
+        }
+    }
+}
+
+# Copies a file. An existing file at the target gets the source's lines.
+export fn cp(sh: shell.Shell, src_text: str, dst_text: str) -> list[str] {
+    match copy_file(sh, src_text, dst_text) {
+        case ok() {
+            return [];
+        }
+        case err(e) {
+            return [e];
+        }
+    }
+}
+
+fn copy_file(sh: shell.Shell, src_text: str, dst_text: str) -> result[void] {
+    let src_names = paths.normalize(sh.cwd, src_text);
+    let src = try resolve.walk(sh, src_names);
+    if src.is_dir {
+        return err(fmt.error(fmt.is_dir, src_names));
+    }
+    if not perms.can(sh, src, "r") {
+        return err(perms.denied(src_names));
+    }
+    let target = try resolve.target(sh, src_names, paths.normalize(sh.cwd, dst_text));
+    let holder = try resolve.walk_parent(sh, target);
+    let name = paths.base_name(target);
+    if nodes.has_entry(holder, name) {
+        let existing = nodes.entry(holder, name);
+        if existing.is_dir {
+            return err(fmt.error(fmt.exists, target));
+        }
+        if not perms.can(sh, existing, "w") {
+            return err(perms.denied(target));
+        }
+        set existing.lines = slice(src.lines, 0, len(src.lines));
+        return ok();
+    }
+    if not perms.can(sh, holder, "w") {
+        return err(perms.denied(target));
+    }
+    nodes.put_entry(holder, name, nodes.new_file(src.lines, sh.user));
+    return ok();
+}
+
+export fn stat(sh: shell.Shell, text: str) -> list[str] {
+    let names = paths.normalize(sh.cwd, text);
+    match resolve.walk(sh, names) {
+        case err(e) {
+            return [e];
+        }
+        case ok(node) {
+            return [fmt.stat_line(names, node)];
+        }
+    }
+}

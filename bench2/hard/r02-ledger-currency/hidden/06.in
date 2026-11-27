@@ -1,0 +1,24 @@
+open assets:bank asset
+open assets:eur asset EUR
+open expense:travel expense EUR
+open expense:food expense
+rate EUR 1 1.10
+post v1 1 trip expense:travel=100 expense:food=20 assets:bank=
+post v2 2 trip2 expense:travel=33.33 assets:eur=-33.33
+rate EUR 2 2
+post v3 3 trip3 expense:travel=10 assets:bank=
+void v1 0
+void v1 5
+void v2 5
+void rev-v1 6
+void v1 6
+show v1
+show rev-v1
+show rev-v2
+journal 0 10
+trial
+income 0 4
+income 5 5
+income 0 10
+balance expense
+statement expense:travel

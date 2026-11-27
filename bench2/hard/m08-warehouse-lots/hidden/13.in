@@ -1,0 +1,18 @@
+warehouse z
+item cup
+receive z cup 2 1.00 20
+ship o1 z cup 5
+ship o2 z cup 2
+reserve r1 z cup 1
+receive z cup 4 2.00 15
+cancel o1
+ship o1 z cup 1
+reserve r1 z cup 2
+ship o3 z cup 3
+fulfil r1
+return o1 1
+return o1 1
+cancel o2
+backorders
+receive z cup 2 2.50 30
+backorders

@@ -1,0 +1,69 @@
+notbefore f 2
+task e 2 x Big
+task c 1
+workday 7
+list
+cal 20 22
+progress c 50
+task d 9 x job
+dep build-2 e
+cal 11 26
+list
+dep a e+
+task e 4 job
+task f 4 job job
+rename b New name
+schedule
+dep build-2 f+
+holiday 4
+undep b h
+critical
+remove f
+dep g g
+show h
+dep d b+x
+gantt
+show g
+dep build-2 g+x
+remove a
+task a 1
+remove build-2
+task f 3 job
+task build-2 0 job
+task d 0
+task g 6 job Big
+task h 7 x Big
+task b 5
+dep c d+x
+dep g a+
+dep e d
+workday 3
+critical
+dep b c+1
+task d 2
+task f 0
+show f
+dep g e+2
+holiday 23
+task f 2 job
+dep b c
+workday 10
+dep b f
+progress x9 33
+show build-2
+holiday 7
+dep f e+
+task b 4
+progress f 0
+critical
+dep b e
+dep e f
+task b 0 x
+rename h New name
+task e 0 Big x
+task x9 4
+workday 10
+gantt a b
+task e 0 Big job
+dep d h
+notbefore a 17

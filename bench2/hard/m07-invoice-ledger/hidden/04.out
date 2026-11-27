@@ -1,0 +1,28 @@
+customer x added
+invoice #1 x total 100.00 balance 100.00 due 10
+invoice #2 x total 150.00 balance 150.00 due 10
+invoice #3 x total 50.00 balance 50.00 due 10
+error: x over limit by 50.01
+paid x 400.00: #1 100.00, #2 150.00, #3 50.00, credit 100.00
+error: x over limit by 100.00
+invoice #4 x total 100.00 balance 0.00 due 10
+error: x over limit by 100.01
+error: x over limit by 100.00
+statement x day 0
+open 0.00 credit 0.00 written off 0.00
+paid x 50.00: credit 50.00
+invoice #5 x total 300.00 balance 250.00 due 10
+customer y added
+error: y over limit by 0.01
+paid y 3.00: credit 3.00
+invoice #6 y total 3.00 balance 0.00 due 1
+error: y over limit by 0.01
+error: y credit is only 0.00
+error: y credit is only 0.00
+invoices:
+#1 x closed total 100.00 fee 0.00 paid 100.00 credits 0.00 balance 0.00
+#2 x closed total 150.00 fee 0.00 paid 150.00 credits 0.00 balance 0.00
+#3 x closed total 50.00 fee 0.00 paid 50.00 credits 0.00 balance 0.00
+#4 x closed total 100.00 fee 0.00 paid 100.00 credits 0.00 balance 0.00
+#5 x open total 300.00 fee 0.00 paid 50.00 credits 0.00 balance 250.00
+#6 y closed total 3.00 fee 0.00 paid 3.00 credits 0.00 balance 0.00

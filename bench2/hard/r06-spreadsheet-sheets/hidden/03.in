@@ -1,0 +1,26 @@
+sheet Jan
+sheet Feb
+set Jan!A1 100
+set Feb!A1 =Jan!A1+50
+set A1 =Jan!A1+Feb!A1
+use Jan
+rename Nope March
+rename Jan 1st
+rename Jan Feb
+rename Jan Jan
+rename Jan January
+rename
+sheets
+show Sheet1!A1
+show Feb!A1
+set B1 =Jan!A1
+set B1 =January!A1
+show B1
+get Sheet1!A1
+rename Sheet1 Summary
+sheets
+use Summary
+show A1
+rename Feb Jan
+show A1
+show January!B1

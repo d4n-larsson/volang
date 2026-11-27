@@ -1,0 +1,29 @@
+warehouse h added
+item pen added
+item cap added
+lot L1 h pen 10
+lot L2 h cap 4
+reserved r1 6 L1x6
+error: only 4 available
+reserved r2 4 L1x4
+backorder s1 3
+shipped s2 4 L2x4
+backorder s2 2
+released r1 6
+filled s1 3 L1x3
+error: order r1 is not reserved
+shipped r2 4 L1x4
+returned r2 2 restocked 2 quarantined 0
+error: order r1 has 0 returnable
+error: order s1 has 3 returnable
+returned s1 1 restocked 1 quarantined 0
+stock day 0
+h pen L1 on hand 6 reserved 0 expires 100
+returned s2 4 restocked 4 quarantined 0
+filled s2 2 L2x2
+backorders 0
+stock day 0
+h cap L2 on hand 2 reserved 0 expires 100
+h pen L1 on hand 6 reserved 0 expires 100
+value on hand 6.60 in transit 0.00 quarantine 0.00 shipped 4.60 written off 0.00
+backorders 0

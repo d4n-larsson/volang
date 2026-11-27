@@ -1,0 +1,11 @@
+.width 26
+.indent 4
+.heading    mixed   Case 1st-rate heading!
+.list bullet
+item text
+.heading inside a list
+next item
+.endlist
+.indent 0
+.heading abcdefghijklmnopqrstuvwxyz
+.heading short

@@ -1,0 +1,13 @@
+workers 2
+retries 3
+backoff 2
+target a 3
+target b 6
+target c 1 a
+fail a 1
+fail a 2
+fail a 3
+fail a 5
+fail b 2
+timeout 9
+timeout 2000

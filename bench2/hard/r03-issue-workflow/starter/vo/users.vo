@@ -1,0 +1,23 @@
+# The people who comment on and work on issues.
+import tracker;
+import views;
+
+export fn add_user(t: tracker.Tracker, name: str) -> list[str] {
+    if has(t.users, name) {
+        return ["error: user " + name + " exists"];
+    }
+    set t.users[name] = t.clock;
+    return [tracker.log_change(t, "user " + name + " added")];
+}
+
+export fn users_lines(t: tracker.Tracker) -> list[str] {
+    let out = new list[str];
+    let names = keys(t.users);
+    sort(names);
+    for name in names {
+        let mine = filter(tracker.all_issues(t), fn(i) => i.assignee == name);
+        let live = len(filter(mine, tracker.is_open));
+        push(out, name + " (since " + str(t.users[name]) + "): " + str(live) + " open, " + str(len(mine) - live) + " closed");
+    }
+    return views.or_none(out, "no users");
+}

@@ -1,0 +1,32 @@
+log
+branch x
+merge x
+merge 1
+show 1
+diff main main
+pick main
+revert 1
+reset main
+branches
+frobnicate
+status now
+branches all
+log a b
+diff a
+merge
+commit
+write
+branch a b c
+unbranch
+checkout
+reset
+show
+pick
+revert a b
+Write a b
+write f x
+status
+commit c1
+log
+branch 1
+branch 1 1

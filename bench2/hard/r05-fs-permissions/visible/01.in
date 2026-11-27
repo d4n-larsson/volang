@@ -1,0 +1,22 @@
+useradd ann
+useradd bob
+mkdir /home
+mkdir /home/ann
+chown ann /home/ann
+su ann
+whoami
+cd /home/ann
+write todo.txt buy milk
+append todo.txt call bob
+mkdir work
+ls -l
+stat todo.txt
+su bob
+cat /home/ann/todo.txt
+write /home/ann/todo.txt nothing
+write /home/ann/bob.txt hello
+mkdir /home/bob
+su root
+mkdir /home/bob
+chown bob /home/bob
+ls -l /home

@@ -1,0 +1,116 @@
+# Questions about the issues: lists, searches and counts.
+import parse;
+import tracker;
+import views;
+
+record Rank {
+    first: int;
+    second: int;
+}
+
+fn status_matches(issue: tracker.Issue, status: str) -> bool {
+    if status == "all" {
+        return true;
+    }
+    return issue.status == status;
+}
+
+fn matches(issue: tracker.Issue, f: parse.Filter) -> bool {
+    if not status_matches(issue, f.status) {
+        return false;
+    }
+    if f.assignee == "-" and issue.assignee != "" {
+        return false;
+    }
+    if f.assignee != "" and f.assignee != "-" and issue.assignee != f.assignee {
+        return false;
+    }
+    if f.label != "" and not any(issue.labels, fn(l) => l == f.label) {
+        return false;
+    }
+    if f.priority != 0 and issue.priority != f.priority {
+        return false;
+    }
+    return true;
+}
+
+fn by_priority(issues: list[tracker.Issue]) -> list[tracker.Issue] {
+    let out = slice(issues, 0, len(issues));
+    sort_by(out, fn(i) => new Rank { first: i.priority, second: i.num });
+    return out;
+}
+
+export fn list_lines(t: tracker.Tracker, f: parse.Filter) -> list[str] {
+    let rows = filter(by_priority(tracker.all_issues(t)), fn(i) => matches(i, f));
+    return views.or_none(map(rows, views.issue_line), "no issues");
+}
+
+fn mentions(issue: tracker.Issue, word: str) -> bool {
+    if find(lower(issue.title), word) >= 0 {
+        return true;
+    }
+    return any(issue.comments, fn(c) => find(lower(c.text), word) >= 0);
+}
+
+export fn search_lines(t: tracker.Tracker, word: str) -> list[str] {
+    let w = lower(word);
+    let rows = filter(tracker.all_issues(t), fn(i) => mentions(i, w));
+    return views.or_none(map(rows, views.issue_line), "no matches");
+}
+
+export fn mine_lines(t: tracker.Tracker, user: str) -> list[str] {
+    let rows = filter(by_priority(tracker.all_issues(t)), fn(i) => i.assignee == user and tracker.is_open(i));
+    return views.or_none(map(rows, views.issue_line), "no open issues for " + user);
+}
+
+export fn stale_lines(t: tracker.Tracker, n: int) -> list[str] {
+    let now = t.clock;
+    let rows = filter(tracker.all_issues(t), fn(i) => tracker.is_open(i) and now - i.updated >= n);
+    sort_by(rows, fn(i) => new Rank { first: i.updated, second: i.num });
+    let out = map(rows, fn(i) => "#" + str(i.num) + " idle " + views.plural(now - i.updated, "tick") + ": " + views.short_title(i.title));
+    return views.or_none(out, "no stale issues");
+}
+
+fn open_closed(issues: list[tracker.Issue]) -> str {
+    let n = len(filter(issues, tracker.is_open));
+    return str(n) + " open, " + str(len(issues) - n) + " closed";
+}
+
+export fn stats_lines(t: tracker.Tracker) -> list[str] {
+    let issues = tracker.all_issues(t);
+    let out = ["issues " + str(len(issues)) + ": " + open_closed(issues)];
+    let seen = new map[str, bool];
+    for i in issues {
+        if i.assignee != "" {
+            set seen[i.assignee] = true;
+        }
+    }
+    let names = keys(seen);
+    sort(names);
+    for name in names {
+        push(out, "  " + name + " " + open_closed(filter(issues, fn(i) => i.assignee == name)));
+    }
+    let nobody = filter(issues, fn(i) => i.assignee == "");
+    if len(nobody) > 0 {
+        push(out, "  unassigned " + open_closed(nobody));
+    }
+    return out;
+}
+
+export fn label_lines(t: tracker.Tracker) -> list[str] {
+    let totals = new map[str, int];
+    let live = new map[str, int];
+    for _, i in t.issues {
+        for label in i.labels {
+            set totals[label] = get_or(totals, label, 0) + 1;
+            var add = 0;
+            if tracker.is_open(i) {
+                set add = 1;
+            }
+            set live[label] = get_or(live, label, 0) + add;
+        }
+    }
+    let names = keys(totals);
+    sort(names);
+    return views.or_none(map(names, fn(l) => l + ": " + str(live[l]) + " open of " + str(totals[l])), "no labels");
+}

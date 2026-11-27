@@ -1,0 +1,22 @@
+rest A1 100 10.00
+rest A2 100 10.00
+rest A3 100 9.90
+trade ZED 100 10.00 A1 C1
+trade ZED 50 10.00 A2 C1
+filled C1
+cancelled A3 100
+reject A3 unknown order
+modified A2 20 10.00
+trade ZED 20 10.00 A2 C2
+rest C2 280 10.00
+book ZED last 10.00
+  ask 10.00 280 1
+trade ZED 280 10.00 M1 C2
+expired M1 220
+book ZED last 10.00
+  empty
+trader ana cash -1000.00 ZED:100
+trader bob cash -700.00 ZED:70
+trader cy cash 0.00
+trader dan cash 4500.00 ZED:-450
+trader eve cash -2800.00 ZED:280

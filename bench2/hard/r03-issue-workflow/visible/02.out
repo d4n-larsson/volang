@@ -1,0 +1,23 @@
+user cy added
+created #1: Export is slow
+created #2: Typo in footer
+#1 moved new -> triaged
+#1 assigned to cy
+#1 moved triaged -> in_progress
+#1 moved in_progress -> blocked
+#2 moved new -> wontfix
+#1 [p3] Export is slow
+  status: blocked (waiting for the db upgrade)
+  assignee: cy
+  labels: -
+  created 2, updated 7
+  [4] new -> triaged
+  [6] triaged -> in_progress
+  [7] in_progress -> blocked (waiting for the db upgrade)
+  0 comments
+#1 [p3] blocked cy Export is slow
+#2 [p2] wontfix - Typo in footer
+issues 2: 1 open, 1 closed
+  states: blocked 1, wontfix 1
+  cy 1 open, 0 closed
+  unassigned 0 open, 1 closed

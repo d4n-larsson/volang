@@ -1,0 +1,31 @@
+warehouse depot added
+item lamp added
+item lamp reorder point 30
+received 10 lamp into depot, now 10, lot 1 at 10.00
+lamp: 10 units = 100.00
+total value 100.00
+item lamp cost 15.00
+lamp: 10 units = 100.00
+total value 100.00
+lamp Lamp cost 15.00 reorder 30
+received 5 lamp into depot, now 15, lot 2 at 15.00
+adjusted lamp in depot by +3 (found), now 18, lot 3 at 15.00
+lot 1: 10 x 10.00 = 100.00
+lot 2: 5 x 15.00 = 75.00
+lot 3: 3 x 15.00 = 45.00
+total 18 units = 220.00
+lamp: 18 units = 220.00
+total value 220.00
+lamp Lamp: have 18, reorder at 30, short 12
+item lamp cost 9.00
+items 1, warehouses 1, 18 units, value 220.00
+shipped 0 units in 0 shipments, cost 0.00
+orders: 0 open, 0 fulfilled, 0 cancelled
+shipped 12 lamp from depot, now 6, cost 130.00
+lot 2: 3 x 15.00 = 45.00
+lot 3: 3 x 15.00 = 45.00
+total 6 units = 90.00
+items 1, warehouses 1, 6 units, value 90.00
+shipped 12 units in 1 shipment, cost 130.00
+orders: 0 open, 0 fulfilled, 0 cancelled
+lamp Lamp cost 9.00 reorder 30

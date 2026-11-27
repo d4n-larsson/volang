@@ -1,0 +1,6 @@
+== plan fresh-plan
+copy README
+copy api/old/v0.txt
+copy api/v2.txt
+copy guide.txt
+copy 4, update 0, unchanged 0, conflict 0, stale 0, excluded 1

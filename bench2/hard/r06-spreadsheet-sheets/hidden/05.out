@@ -1,0 +1,28 @@
+sheet Src added
+sheet Dst added
+Src!A1 = 1
+Src!A2 = 2
+Src!B1 = 3
+Dst!A1 = 10
+Dst!B2 = 100
+Dst!C2 = 7
+Src!B1 = 13
+copied Src!B1 to Dst!C2
+Dst!C2: =B2+B2+$A$2
+Dst!C2 = 200
+copied Dst!C2 to C3
+C3: =B3+B3+$A$2
+C3 = 0
+copied Src!B1 to Src!B2
+Src!B2: =A2+Dst!A2+$A$2
+Src!B2 = 4
+Src!D1 = 100
+copied Src!D1 to Dst!D1
+Dst!D1: =B2+Sheet1!A1
+copied Dst!D1 to Src!D2
+Src!D2: =B3+Sheet1!A2
+using Dst
+D1: =B2+Sheet1!A1
+copied Sheet1!C3 to E1
+E1: =D1+D1+$A$2
+Sheet1!C3: =B3+B3+$A$2

@@ -1,0 +1,13 @@
+customer t 100000.00 0 825
+customer z 100000.00 0 9999
+customer n 100000.00 0 1
+invoice t 9x1.00
+invoice t 10x1.00
+invoice t 1x2.00
+invoice t 3x1.23 11x0.37
+invoice z 1x0.01 10x0.01 20x0.01
+invoice n 1x50.00 1x49.99 1x150.00
+invoice n 100x0.99
+invoice t 1x0.06
+invoice t 2x0.04
+aging

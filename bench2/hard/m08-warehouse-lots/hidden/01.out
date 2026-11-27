@@ -1,0 +1,35 @@
+warehouse w added
+item x added
+line 3: invalid
+line 4: invalid
+line 5: invalid
+line 6: invalid
+line 7: invalid
+line 8: invalid
+line 9: invalid
+lot L1 w x 10
+line 11: invalid
+line 12: invalid
+line 13: invalid
+line 14: invalid
+error: no warehouse v
+line 16: invalid
+line 17: invalid
+line 18: invalid
+line 19: invalid
+line 20: invalid
+line 21: invalid
+line 22: invalid
+line 23: invalid
+line 24: invalid
+line 25: invalid
+line 26: invalid
+line 27: invalid
+line 28: invalid
+line 29: invalid
+stock day 0
+w x L1 on hand 10 reserved 0 expires 9
+stock day 0
+w x L1 on hand 10 reserved 0 expires 9
+value on hand 12340.50 in transit 0.00 quarantine 0.00 shipped 0.00 written off 0.00
+backorders 0

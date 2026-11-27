@@ -1,0 +1,24 @@
+customer k 100000.00 0 0
+customer j 100000.00 0 0
+customer K 100000.00 0 0
+customer k2 100000.00 0 0
+invoice k 1x1.00
+day 1
+invoice k 1x2.00
+day 30
+invoice k 1x4.00
+day 31
+invoice j 1x8.00
+day 60
+invoice j 1x16.00
+day 61
+invoice K 1x32.00
+day 90
+invoice k2 1x64.00
+day 91
+invoice k2 1x128.00
+aging
+day 122
+aging
+day 200
+aging

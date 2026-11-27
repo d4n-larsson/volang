@@ -1,0 +1,13 @@
+cal 0 4
+cal 3 3
+cal 5 5
+cal 9 2
+cal 1
+cal a 4
+cal 1 2 3
+holiday 3
+workday 12
+cal 0 20
+holiday x
+workday
+holiday 3 4

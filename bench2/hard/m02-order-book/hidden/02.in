@@ -1,0 +1,13 @@
+limit B1 ana buy KO 10 50.00
+limit B2 bob buy KO 20 50.50
+limit B3 cy buy KO 30 50.00
+limit B4 dan buy KO 40 50.50
+limit B5 eve buy KO 50 49.00
+limit S1 fay sell KO 75 49.50
+book KO
+limit S2 gus sell KO 5 50.00
+limit S3 gus sell KO 30 50.10
+limit S4 hal sell KO 30 50.10
+limit S5 ivy sell KO 30 50.05
+limit B6 ana buy KO 70 50.10
+book KO

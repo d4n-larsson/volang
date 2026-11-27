@@ -1,0 +1,6 @@
+pick http 1.1.0
+pick web 2.0.0
+== lock
+http 1.1.0
+web 2.0.0
+wrote out/http.lock 2

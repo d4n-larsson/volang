@@ -1,0 +1,6 @@
+created t
+error: wrong number of values
+error: type mismatch for column b
+error: unknown column c
+error: type mismatch in comparison
+error: table t already exists

@@ -1,0 +1,55 @@
+mkdir a
+mkdir a/b
+write a/b/f.txt hello world
+append a/b/f.txt
+append a/b/f.txt second hello
+write a/e.txt
+cd a/b
+pwd
+cd ../../../..
+pwd
+cd /a/b/f.txt/..
+pwd
+cat ./f.txt
+head f.txt 2
+head f.txt 9
+head f.txt 0
+grep hello f.txt
+grep zzz f.txt
+grep hello /a
+stat f.txt
+stat /a/e.txt
+ls f.txt
+ls /a/b/../e.txt
+mkdir -p /a/b/f.txt/c
+mv /a /a/b
+mv /a/b /a/b
+mv /a/b/f.txt /a/e.txt
+cat /a/e.txt
+mv /a/e.txt /a/b
+cd /
+mv /a/b /
+ls /
+cd /b
+rmdir /b
+rmdir /a
+rm -r /
+rm /
+cp /b /c
+cp /b/e.txt /b
+cp /b/e.txt /b/e2.txt
+mv /b/e2.txt /b/e.txt
+mkdir /b/e.txt
+mkdir /b/e.txt/x
+write /b/x/y z
+touch /b
+touch /
+du
+tree /b/e.txt
+find /b/e.txt e.txt
+cd ..
+du /
+tree
+find / e.txt
+stat /b
+ls

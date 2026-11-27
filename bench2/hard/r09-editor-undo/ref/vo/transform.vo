@@ -1,0 +1,120 @@
+# Commands that change the text of lines in place.
+import buffer;
+import std.text;
+import view;
+
+# How many non-overlapping times `old` occurs in s, left to right.
+fn occurrences(s: str, old: str) -> int {
+    var n = 0;
+    var rest = s;
+    var i = find(rest, old);
+    while i >= 0 {
+        set n = n + 1;
+        set rest = slice(rest, i + len(old), len(rest));
+        set i = find(rest, old);
+    }
+    return n;
+}
+
+export fn subst(buf: buffer.Buffer, a: int, b: int, old: str, new_text: str) -> result[list[str]] {
+    var total = 0;
+    for n in a..b + 1 {
+        let k = occurrences(buffer.line(buf, n), old);
+        if k > 0 {
+            set buf.lines[n - 1] = text.replace(buffer.line(buf, n), old, new_text);
+            set total = total + k;
+        }
+    }
+    if total > 0 {
+        set buf.cur = b;
+    }
+    return ok([view.plural(total, "substitution")]);
+}
+
+fn map_lines(buf: buffer.Buffer, a: int, b: int, f: fn(str) -> str) -> result[list[str]] {
+    buffer.put_block(buf, a, b, map(buffer.block(buf, a, b), f));
+    set buf.cur = b;
+    return ok([]);
+}
+
+export fn upper_lines(buf: buffer.Buffer, a: int, b: int) -> result[list[str]] {
+    return map_lines(buf, a, b, fn(s) => upper(s));
+}
+
+export fn lower_lines(buf: buffer.Buffer, a: int, b: int) -> result[list[str]] {
+    return map_lines(buf, a, b, fn(s) => lower(s));
+}
+
+export fn strip(buf: buffer.Buffer, a: int, b: int) -> result[list[str]] {
+    return map_lines(buf, a, b, fn(s) => trim(s));
+}
+
+export fn indent(buf: buffer.Buffer, a: int, b: int, n: int) -> result[list[str]] {
+    let pad = text.repeat(" ", n);
+    return map_lines(buf, a, b, fn(s) => pad + s);
+}
+
+export fn sort_lines(buf: buffer.Buffer, a: int, b: int) -> result[list[str]] {
+    let lines = buffer.block(buf, a, b);
+    sort(lines);
+    buffer.put_block(buf, a, b, lines);
+    set buf.cur = b;
+    return ok([]);
+}
+
+export fn reverse(buf: buffer.Buffer, a: int, b: int) -> result[list[str]] {
+    let lines = new list[str];
+    for n in 0..b - a + 1 {
+        push(lines, buffer.line(buf, b - n));
+    }
+    buffer.put_block(buf, a, b, lines);
+    set buf.cur = b;
+    return ok([]);
+}
+
+# Removes every line that equals the line right before it.
+export fn dedupe(buf: buffer.Buffer) -> result[list[str]] {
+    let kept = new list[str];
+    for s in buf.lines {
+        if len(kept) == 0 or kept[len(kept) - 1] != s {
+            push(kept, s);
+        }
+    }
+    let removed = buffer.size(buf) - len(kept);
+    set buf.lines = kept;
+    buffer.clamp_cur(buf);
+    return ok(["removed " + view.plural(removed, "line")]);
+}
+
+# The words of s filled greedily into lines of at most width bytes.
+fn wrap_one(s: str, width: int) -> list[str] {
+    let out = new list[str];
+    var current = "";
+    for w in split(s, " ") {
+        if w == "" {
+            continue;
+        }
+        if current == "" {
+            set current = w;
+        } else if len(current) + 1 + len(w) <= width {
+            set current = current + " " + w;
+        } else {
+            push(out, current);
+            set current = w;
+        }
+    }
+    push(out, current);
+    return out;
+}
+
+export fn wrap(buf: buffer.Buffer, a: int, b: int, width: int) -> result[list[str]] {
+    let new_lines = new list[str];
+    for s in buffer.block(buf, a, b) {
+        for piece in wrap_one(s, width) {
+            push(new_lines, piece);
+        }
+    }
+    buffer.put_block(buf, a, b, new_lines);
+    set buf.cur = a + len(new_lines) - 1;
+    return ok([]);
+}

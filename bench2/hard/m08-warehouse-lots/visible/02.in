@@ -1,0 +1,10 @@
+warehouse a
+item tea
+receive a tea 6 2.00 10
+receive a tea 6 3.00 50
+ship s1 a tea 8
+return s1 3
+day 12
+value
+return s1 5
+ship s2 a tea 3

@@ -1,0 +1,9 @@
+x/y -> 1
+a/x/b/c/y -> 1
+x/.h/y -> none
+.cfg/a -> 2
+a/.cfg -> 2
+src/.cfg/b.vo -> 2
+src/main.vo -> 3
+.src/main.vo -> none
+a/.b.vo -> none

@@ -1,0 +1,7 @@
+warehouse main
+item cup Cup 250
+receive main cup 10
+receive main cup 5 300
+ship main cup 12
+lots main cup
+value

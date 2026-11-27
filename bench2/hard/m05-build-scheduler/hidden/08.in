@@ -1,0 +1,15 @@
+workers 3
+pool link 1
+pool link 3
+target l1 4
+target l2 3
+target l3 2
+target c1 1
+target c2 1
+use l1 link
+use l2 link
+use l3 link
+use c1 nolink
+use ghost link
+use ghost2 ghost3
+target app 1 l1 l2 l3 c1 c2

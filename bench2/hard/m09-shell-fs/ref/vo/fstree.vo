@@ -1,0 +1,169 @@
+# The tree: entries in an arena (index 0 is the root), path resolution, sizes and absolute paths.
+export record Entry {
+    name: str;
+    parent: int;
+    is_dir: bool;
+    children: map[str, int];
+    text: str;
+}
+
+export record Tree {
+    entries: list[Entry];
+    cwd: int;
+    has_limit: bool;
+    limit: int;
+}
+
+# A located path: an existing entry (existing >= 0) or a missing name in dir.
+export record Spot {
+    dir: int;
+    name: str;
+    existing: int;
+}
+
+export fn new_tree() -> Tree {
+    let root = new Entry { name: "", parent: 0, is_dir: true, children: new map[str, int], text: "" };
+    return new Tree { entries: [root], cwd: 0, has_limit: false, limit: 0 };
+}
+
+export fn entry(t: Tree, id: int) -> Entry {
+    return t.entries[id];
+}
+
+export fn components(path: str) -> list[str] {
+    return filter(split(path, "/"), fn(c) => c != "");
+}
+
+export fn start(t: Tree, path: str) -> int {
+    if len(path) > 0 and slice(path, 0, 1) == "/" {
+        return 0;
+    }
+    return t.cwd;
+}
+
+export fn step(t: Tree, cur: int, comp: str) -> result[int] {
+    let e = t.entries[cur];
+    if not e.is_dir {
+        return err("not a directory");
+    }
+    if comp == "." {
+        return ok(cur);
+    }
+    if comp == ".." {
+        return ok(e.parent);
+    }
+    if not has(e.children, comp) {
+        return err("no such file or directory");
+    }
+    return ok(e.children[comp]);
+}
+
+export fn resolve(t: Tree, path: str) -> result[int] {
+    var cur = start(t, path);
+    for c in components(path) {
+        set cur = try step(t, cur, c);
+    }
+    return ok(cur);
+}
+
+export fn locate(t: Tree, path: str) -> result[Spot] {
+    let comps = components(path);
+    let n = len(comps);
+    if n == 0 or comps[n - 1] == "." or comps[n - 1] == ".." {
+        let id = try resolve(t, path);
+        return ok(new Spot { dir: -1, name: "", existing: id });
+    }
+    var cur = start(t, path);
+    for c in slice(comps, 0, n - 1) {
+        set cur = try step(t, cur, c);
+    }
+    let d = t.entries[cur];
+    if not d.is_dir {
+        return err("not a directory");
+    }
+    let last = comps[n - 1];
+    return ok(new Spot { dir: cur, name: last, existing: get_or(d.children, last, -1) });
+}
+
+export fn size(t: Tree, id: int) -> int {
+    let e = t.entries[id];
+    if not e.is_dir {
+        return len(e.text);
+    }
+    var total = 0;
+    for _, c in e.children {
+        set total = total + size(t, c);
+    }
+    return total;
+}
+
+export fn usage(t: Tree) -> int {
+    return size(t, 0);
+}
+
+export fn abspath(t: Tree, id: int) -> str {
+    var parts = new list[str];
+    var cur = id;
+    while cur != 0 {
+        push(parts, t.entries[cur].name);
+        set cur = t.entries[cur].parent;
+    }
+    var path = "";
+    for i in 0..len(parts) {
+        set path = path + "/" + parts[len(parts) - 1 - i];
+    }
+    if path == "" {
+        return "/";
+    }
+    return path;
+}
+
+# Whether id is top or lies anywhere below it.
+export fn is_within(t: Tree, id: int, top: int) -> bool {
+    var cur = id;
+    while true {
+        if cur == top {
+            return true;
+        }
+        if cur == 0 {
+            return false;
+        }
+        set cur = t.entries[cur].parent;
+    }
+}
+
+export fn create(t: Tree, dir: int, name: str, is_dir: bool) -> int {
+    let id = len(t.entries);
+    push(t.entries, new Entry { name: name, parent: dir, is_dir: is_dir, children: new map[str, int], text: "" });
+    set t.entries[dir].children[name] = id;
+    return id;
+}
+
+export fn attach(t: Tree, dir: int, name: str, id: int) {
+    set t.entries[id].name = name;
+    set t.entries[id].parent = dir;
+    set t.entries[dir].children[name] = id;
+}
+
+export fn detach(t: Tree, id: int) {
+    let e = t.entries[id];
+    remove(t.entries[e.parent].children, e.name);
+}
+
+# A detached copy of id and everything below it; returns the copy's id.
+export fn copy(t: Tree, id: int) -> int {
+    let e = t.entries[id];
+    let c = len(t.entries);
+    push(t.entries, new Entry { name: e.name, parent: 0, is_dir: e.is_dir, children: new map[str, int], text: e.text });
+    if e.is_dir {
+        for name, child in e.children {
+            let cc = copy(t, child);
+            attach(t, c, name, cc);
+        }
+    }
+    return c;
+}
+
+export fn fits(t: Tree, new_usage: int) -> bool {
+    return not t.has_limit or new_usage <= t.limit;
+}

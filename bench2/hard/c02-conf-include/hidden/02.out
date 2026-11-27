@@ -1,0 +1,9 @@
+== redef.conf
+redef.conf:4: undefined ${b}
+redef2.conf:3: undefined ${t.a}
+a=inner (redef2.conf:1)
+b=1111- (redef.conf:4)
+s.a=1111 (redef.conf:6)
+t.a=1111+ (redef.conf:9)
+t.b= (redef2.conf:3)
+files 2 errors 2

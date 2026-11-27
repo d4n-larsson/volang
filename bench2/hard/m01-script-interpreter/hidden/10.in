@@ -1,0 +1,26 @@
+let x = 1
+let y = 100
+if x == 1
+    let x = x + 10
+    print "inner x", x
+    set y = y + x
+    if true
+        let x = x * 2
+        set y = y + x
+        print "innermost x", x
+    end
+    print "inner x again", x
+end
+print "outer", x, y
+let i = 0
+while i < 3
+    let sq = i * i
+    set i = i + 1
+    print "iteration", i, sq
+end
+if x == 1
+    let fresh = 5
+end
+print "before"
+print fresh
+print "after"

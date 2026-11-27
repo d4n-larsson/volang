@@ -1,0 +1,34 @@
+append a
+append b
+save
+buffers
+append c
+delete 3
+buffers
+undo 2
+buffers
+redo
+buffers
+undo
+undo
+buffers
+redo
+buffers
+undo
+append z
+buffers
+redo
+undo 3
+buffers
+save
+buffers
+close! nobody
+open t
+open main
+close t
+open t
+append k
+open main
+close t
+close! t
+buffers

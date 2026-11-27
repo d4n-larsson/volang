@@ -1,0 +1,12 @@
+limit S1 ana sell WX 3 5.00
+limit S2 bob sell WX 2 5.10
+limit S3 cy sell WX 4 5.20
+stop U1 dan buy WX 2 5.00
+stop U2 eve buy WX 3 4.50
+stop U3 fay sell WX 1 5.50
+limit B1 gus buy WX 1 5.00
+book WX
+stop U4 ana buy WX 1 4.00
+limit S4 dan sell WX 2 5.20
+limit B2 hal buy WX 9 5.20 ioc
+book WX

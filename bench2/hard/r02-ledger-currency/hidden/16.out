@@ -1,0 +1,95 @@
+opened assets:checking (asset)
+opened assets:wallet:eur (asset, EUR)
+opened assets:wallet:gbp (asset, GBP)
+opened liab:visa (liability)
+opened equity:opening (equity)
+opened income:salary (income)
+opened expense:travel:hotel (expense)
+opened expense:travel:train (expense, GBP)
+opened expense:travel:meals (expense)
+opened expense:bankfees (expense)
+rate EUR from day 1: 1.0912
+rate GBP from day 1: 1.2733
+posted o1: 2 postings, total 4200.00
+posted m1: 3 postings, total 330.86
+posted m2: 2 postings, total 191.00
+posted m3: 2 postings, total 212.40
+posted m4: 2 postings, total 59.59
+rate GBP from day 4: 1.2810
+posted m5: 2 postings, total 15.63
+posted m6: 2 postings, total 38.19
+error: transaction m7 unbalanced by 0.01
+rate EUR from day 6: 1.0790
+posted m8: 2 postings, total 44.40
+posted p1: 2 postings, total 3100.00
+posted v1: 2 postings, total 212.40
+voided m4 on day 12
+statement assets:wallet:gbp (asset, GBP)
+     3 m2           150.00     150.00  atm
+     4 m4           -46.80     103.20  train
+     4 m5           -12.20      91.00  train
+    12 rev-m4        46.80     137.80  void:train
+  closing balance 137.80 GBP (book 175.37 USD)
+statement expense:travel:train (expense, GBP)
+     4 m4            46.80      46.80  train
+     4 m5            12.20      59.00  train
+    12 rev-m4       -46.80      12.20  void:train
+  closing balance 12.20 GBP (book 15.63 USD)
+balance assets: 6983.79
+  EUR 223.85
+  GBP 137.80
+balance expense:travel: 310.62
+  GBP 12.20
+assets 6983.79
+  checking 6565.74
+  wallet 418.05
+    eur 241.53
+    gbp 176.52
+equity -4200.00
+  opening -4200.00
+expense 314.12
+  bankfees 3.50
+  travel 310.62
+    hotel 212.40
+    meals 82.59
+    train 15.63
+income -3100.00
+  salary -3100.00
+liab 0.00
+  visa 0.00
+asset
+  assets:checking 6565.74
+  assets:wallet:eur 244.77
+  assets:wallet:gbp 175.37
+equity
+  equity:opening -4200.00
+income
+  income:salary -3100.00
+expense
+  expense:bankfees 3.50
+  expense:travel:hotel 212.40
+  expense:travel:meals 82.59
+  expense:travel:train 15.63
+total debits 7300.00 credits 7300.00
+expense expense:bankfees 3.50
+expense expense:travel:hotel 212.40
+expense expense:travel:meals 82.59
+expense expense:travel:train 75.22
+net income -373.71
+income income:salary 3100.00
+expense expense:travel:train -59.59
+net income 3159.59
+3 m2 atm 191.00
+3 m3 hotel 212.40
+4 m4 train 59.59 (void)
+4 m5 train 15.63
+5 m6 meals 38.19
+6 m8 meals 44.40
+assets:wallet:eur 265.00 EUR: book 289.17, value 289.17, gain 0.00
+assets:wallet:gbp 91.00 GBP: book 115.78, value 116.57, gain 0.79
+expense:travel:train 59.00 GBP: book 75.22, value 75.58, gain 0.36
+unrealized gain 1.15
+assets:wallet:eur 223.85 EUR: book 244.77, value 241.53, gain -3.24
+assets:wallet:gbp 137.80 GBP: book 175.37, value 176.52, gain 1.15
+expense:travel:train 12.20 GBP: book 15.63, value 15.63, gain 0.00
+unrealized gain -2.09

@@ -1,0 +1,42 @@
+created log
+inserted 4
+inserted 4
+day | host | count(*) | max(level)
+----+------+----------+-----------
+  1 | web  |        1 | info      
+  1 | db   |        1 | warn      
+  2 | web  |        2 | info      
+  1 | NULL |        1 | info      
+  3 | db   |        1 | info      
+  2 | NULL |        1 | NULL      
+  3 | web  |        1 | warn      
+(7 rows)
+host
+----
+db  
+(1 row)
+host | count(ms)
+-----+----------
+NULL |         2
+web  |         3
+(2 rows)
+level | min(host) | max(host)
+------+-----------+----------
+warn  | db        | web      
+info  | db        | web      
+error | web       | web      
+NULL  | NULL      | NULL     
+(4 rows)
+error: aggregate in where
+error: having without grouping
+error: unknown column zz
+error: syntax error
+count(log.ms) | sum(ms)
+--------------+--------
+            5 |     205
+(1 row)
+host | day
+-----+----
+db   |   3
+db   |   1
+(2 rows)

@@ -1,0 +1,52 @@
+warehouse hub added
+warehouse spoke added
+item a added
+item b added
+item c added
+item a reorder point 10
+received 8 a into hub, now 8, lot 1 at 0.45
+received 20 b into hub, now 20, lot 2 at 0.25
+received 4 a into spoke, now 4, lot 3 at 0.60
+received 2 c into hub, now 2, lot 4 at 3.80
+item a cost 0.55
+transferred 3 a from spoke to hub, cost 1.80
+order o1 opened at hub
+order o1 line 1: 10 a
+order o1 line 2: 5 b
+order o1 fulfilled: 2 lines, 15 units, cost 6.05
+lot 3: 1 x 0.60 = 0.60
+total 1 unit = 0.60
+counted a in spoke: was 1, now 6, lot 5 at 0.55
+lot 3: 1 x 0.60 = 0.60
+lot 5: 5 x 0.55 = 2.75
+total 6 units = 3.35
+order o2 opened at spoke
+order o2 line 1: 7 a
+error: order o2 short of a: need 7, have 6
+order o2 line 2: 1 a
+order o2 line 3: 4 a
+error: order o2 short of a: need 12, have 6
+a Apple: have 7, reorder at 10, short 3
+adjusted a in hub by +2 (found), now 3, lot 6 at 0.55
+a Apple: have 9, reorder at 10, short 1
+a: 3 units = 1.70
+b: 15 units = 3.75
+c: 2 units = 7.60
+total value 13.05
+a: 6 units = 3.35
+total value 3.35
+hub     a              3
+hub     b             15
+hub     c              2
+spoke   a              6
+total 26 units
+items 3, warehouses 2, 26 units, value 16.40
+shipped 15 units in 1 shipment, cost 6.05
+orders: 1 open, 1 fulfilled, 0 cancelled
+#1 receive hub +8 lot 1 at 0.45
+#3 receive spoke +4 lot 3 at 0.60
+#5 transfer-out spoke -3 (to hub) cost 1.80
+#6 transfer-in hub +3 (from spoke) cost 1.80
+#7 ship hub -10 (order o1) cost 4.80
+#9 adjust spoke +5 (count) lot 5 at 0.55
+#10 adjust hub +2 (found) lot 6 at 0.55

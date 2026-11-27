@@ -1,0 +1,13 @@
+set A1 3
+set B1 =A1*2
+set C1 =B1+$A$1
+copy C1 C2
+formula C2
+set B2 5
+print C2
+copy B1 B3
+formula B3
+print B3
+deps A1
+set A2 =MAX(A1:C1) - MIN(A1, B1)
+print A2

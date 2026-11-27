@@ -1,0 +1,12 @@
+func pad(s, n)
+    while len(s) < n
+        set s = " " + s
+    end
+    return s
+end
+func substring(s, a, b)
+    return s
+end
+func substr(s)
+    return s
+end

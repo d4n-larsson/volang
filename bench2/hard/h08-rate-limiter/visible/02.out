@@ -1,0 +1,6 @@
+ok
+global-limit
+banned
+ok
+user-limit
+ok 2 user-limit 1 global-limit 1 banned 1

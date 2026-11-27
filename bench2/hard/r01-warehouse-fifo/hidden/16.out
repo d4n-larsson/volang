@@ -1,0 +1,21 @@
+warehouse p added
+warehouse q added
+item one added
+item two added
+received 3 one into p, now 3, lot 1 at 0.90
+received 2 two into q, now 2, lot 2 at 2.10
+one: 3 units = 2.70
+total value 2.70
+two: 2 units = 4.20
+total value 4.20
+shipped 3 one from p, now 0, cost 2.70
+no stock
+two: 2 units = 4.20
+total value 4.20
+shipped 2 two from q, now 0, cost 4.20
+no stock
+no stock
+no lots of one in p
+items 2, warehouses 2, 0 units, value 0.00
+shipped 5 units in 2 shipments, cost 6.90
+orders: 0 open, 0 fulfilled, 0 cancelled

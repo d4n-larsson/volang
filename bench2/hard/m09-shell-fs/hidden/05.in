@@ -1,0 +1,19 @@
+mkdir -p x/y/z w
+write x/y/z/f data
+write x/top more data
+touch -r
+ls
+rm -r
+rm -r x/y/z/f x/missing w x/y
+rm x x/top
+ls -l x
+mkdir -p deep/er/est
+cd deep/er
+rm -r . .. /deep / est
+rm -r ../er/est
+ls
+rm -r /x /deep
+cd /
+rm -r deep
+ls
+rm -p

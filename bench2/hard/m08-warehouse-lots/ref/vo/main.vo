@@ -1,0 +1,34 @@
+import orders;
+import parsing;
+import reports;
+
+fn main() uses console, input {
+    let desk = orders.new_desk();
+    let out = new list[str];
+    for n, line in split(read_all(), "\n") {
+        match parsing.parse(line) {
+            case blank {
+            }
+            case invalid {
+                push(out, "line " + str(n + 1) + ": invalid");
+            }
+            case command(c) {
+                if c.name == "stock" {
+                    reports.stock_report(desk.st, out);
+                } else if c.name == "value" {
+                    reports.value_report(desk.st, out);
+                } else if c.name == "backorders" {
+                    reports.backorder_report(desk, out);
+                } else {
+                    orders.run(desk, c, out);
+                }
+            }
+        }
+    }
+    reports.stock_report(desk.st, out);
+    reports.value_report(desk.st, out);
+    reports.backorder_report(desk, out);
+    for s in out {
+        print(s);
+    }
+}

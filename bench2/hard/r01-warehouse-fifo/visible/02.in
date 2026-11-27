@@ -1,0 +1,12 @@
+warehouse north
+warehouse south
+item bolt Bolt 125
+item nut Nut 30
+receive north bolt 20 100
+receive north nut 100
+receive north bolt 10 140
+transfer north south bolt 25
+lots south bolt
+ship south bolt 22
+history bolt
+report

@@ -1,0 +1,28 @@
+warehouse z added
+item cup added
+lot L1 z cup 2
+shipped o1 2 L1x2
+backorder o1 3
+backorder o2 2
+error: only 0 available
+lot L2 z cup 4
+filled o1 3 L2x3
+filled o2 1 L2x1
+error: order o1 has no backorder
+error: order o1 exists
+error: only 0 available
+backorder o3 3
+error: no order r1
+returned o1 1 restocked 1 quarantined 0
+filled o2 1 L2x1
+returned o1 1 restocked 1 quarantined 0
+filled o3 1 L2x1
+error: order o2 has no backorder
+backorders 1
+o3 z cup 2
+lot L3 z cup 2
+filled o3 2 L3x2
+backorders 0
+stock day 0
+value on hand 0.00 in transit 0.00 quarantine 0.00 shipped 15.00 written off 0.00
+backorders 0

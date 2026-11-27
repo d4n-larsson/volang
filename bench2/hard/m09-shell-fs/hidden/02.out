@@ -1,0 +1,35 @@
+mkdir: a: file exists
+mkdir: .: file exists
+mkdir: /: file exists
+mkdir: //: file exists
+mkdir: b/c: no such file or directory
+mkdir: f/g: not a directory
+mkdir: f: file exists
+d 0 a/
+- 5 f
+d 0 h/
+c/
+i/
+mkdir: f/g: not a directory
+mkdir: f: file exists
+mkdir: new1/new2/../../f/z: not a directory
+a/
+f
+h/
+new1/
+new1:
+d 0 new2/
+new1/new2:
+a/c/d:
+d 0 e/
+/a
+/a/c
+/a/c/d
+/a/c/d/e
+/a/i
+/f
+/h
+/q
+/r
+/r/s
+/r/s/t

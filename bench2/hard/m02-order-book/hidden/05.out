@@ -1,0 +1,31 @@
+reject M1 no liquidity
+rest S1 10 3.00
+reject M2 no liquidity
+rest S2 5 3.10
+rest S3 5 3.05
+stp S1 10
+stp S3 5
+trade MK 3 3.10 M3 S2
+filled M3
+book MK last 3.10
+  ask 3.10 2 1
+trade MK 2 3.10 M4 S2
+expired M4 18
+book MK last 3.10
+  empty
+rest B1 7 3.00
+rest B2 7 2.95
+stp B1 7
+trade MK 7 2.95 B2 M5
+expired M5 3
+reject M6 no liquidity
+reject M7 no liquidity
+book MK last 2.95
+  empty
+book MK last 2.95
+  empty
+trader ana cash -9.30 MK:3
+trader bob cash 15.50 MK:-5
+trader cy cash -6.20 MK:2
+trader dan cash 20.65 MK:-7
+trader eve cash -20.65 MK:7

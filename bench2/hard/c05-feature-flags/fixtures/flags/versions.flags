@@ -1,0 +1,10 @@
+flag ge-1-10 default off
+when app >= 1.10 then on
+flag lt-2 default off
+when app < 2 then on
+flag ge-1-2-0 default off
+when app >= 1.2.0 then on
+flag lt-1-2-0-1 default off
+when app < 1.2.0.1 then on
+flag not-old default on
+when app < 0.9 then off

@@ -1,0 +1,42 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+channel #vault created by bob (private)
+error: #vault is private
+error: cy not in #vault
+error: #general is public
+error: unknown user zed
+bob invited cy to #vault
+bob invited dee to #vault
+bob invited dee to #vault
+dee joined #vault
+error: dee already in #vault
+dee left #vault
+dee joined #vault
+ann left #general
+error: ann not in #general
+#general created by ann
+members: bob, cy
+#vault created by bob (private)
+members: bob, dee
+bob left #general
+bob: member of #vault; 0 messages
+error: channel #vault exists
+error: unknown user zed
+error: bad command
+channel #z created by ann (private)
+error: bad command
+error: bad command
+error: unknown channel #nope
+error: unknown command bogus
+message 1 posted to #vault
+no unread messages for dee
+#general: 1 member, 0 messages
+#vault (private): 2 members, 1 message
+#z (private): 1 member, 0 messages
+error: unknown user zed
+error: unknown channel #nope

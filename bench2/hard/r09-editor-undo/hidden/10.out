@@ -1,0 +1,29 @@
+ 9  9
+10  10
+error: cannot move lines into themselves
+ 1  1
+ 2  5
+ 3  6
+ 4  7
+ 5  8
+ 6  9
+ 7  10
+ 8  2
+ 9  3
+10  4
+undone 1 step
+ 1  1
+ 2  2
+ 3  3
+ 1  8
+ 2  9
+ 3  8
+ 4  9
+ 5  10
+ 6  1
+undone 2 steps
+10  10
+undone 8 steps
+1  1
+2  2
+2 lines, 2 words, 4 bytes

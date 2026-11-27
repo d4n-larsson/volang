@@ -1,0 +1,69 @@
+# The tracker's records: users, issues, comments, the event log and the clock.
+export record Comment {
+    tick: int;
+    author: str;
+    text: str;
+}
+
+export record Issue {
+    num: int;
+    title: str;
+    # 1 (most urgent) to 4
+    priority: int;
+    # "" when nobody is assigned
+    assignee: str;
+    # kept sorted
+    labels: list[str];
+    comments: list[Comment];
+    # "open" or "closed"
+    status: str;
+    created: int;
+    updated: int;
+}
+
+export record Event {
+    tick: int;
+    message: str;
+}
+
+export record Tracker {
+    # name -> tick the user was added
+    users: map[str, int];
+    # number -> Issue, in creation order
+    issues: map[int, Issue];
+    # every successful change, oldest first
+    events: list[Event];
+    next_num: int;
+    # the tick of the command being run
+    clock: int;
+}
+
+export fn new_tracker() -> Tracker {
+    return new Tracker { users: new map[str, int], issues: new map[int, Issue], events: new list[Event], next_num: 1, clock: 0 };
+}
+
+export fn new_issue(num: int, title: str, priority: int, tick: int) -> Issue {
+    return new Issue { num: num, title: title, priority: priority, assignee: "", labels: new list[str], comments: new list[Comment], status: "open", created: tick, updated: tick };
+}
+
+export fn is_open(issue: Issue) -> bool {
+    return issue.status == "open";
+}
+
+export fn touch(t: Tracker, issue: Issue) {
+    set issue.updated = t.clock;
+}
+
+# Logs a successful change and returns its message as the command's output.
+export fn log_change(t: Tracker, message: str) -> str {
+    push(t.events, new Event { tick: t.clock, message: message });
+    return message;
+}
+
+export fn all_issues(t: Tracker) -> list[Issue] {
+    let out = new list[Issue];
+    for _, i in t.issues {
+        push(out, i);
+    }
+    return out;
+}

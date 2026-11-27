@@ -1,0 +1,33 @@
+paste 0
+open b
+paste 0
+paste .
+paste 1
+yank 1
+cut 1
+append one
+append two
+append three
+yank 2,$
+paste 5
+paste x
+paste 0
+print
+undo
+open c
+paste .
+paste $
+print
+where
+undo
+undo
+paste 0
+print
+open b
+cut 1,2
+print
+open c
+undo
+paste 1
+print
+buffers

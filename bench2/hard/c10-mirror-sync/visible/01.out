@@ -1,0 +1,12 @@
+== plan site
+copy .cache/tmp
+copy a-c.txt
+conflict a/b.txt
+update about.html
+copy blog/index.html
+conflict img/logo.png
+stale a
+stale img/logo.png/x
+stale old.html
+stale z/deep/stale.txt
+copy 3, update 1, unchanged 3, conflict 2, stale 4, excluded 4

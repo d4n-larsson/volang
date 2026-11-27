@@ -1,0 +1,23 @@
+create table w (n int, s text)
+insert into w values (-007, 'it''s'), (12, ''), (0, 'a b  c'), (-0, '''')
+SELECT * FROM w
+select * from w;
+select * from w where s = 'open
+select n from w where n < - 5
+insert into w values (1234567890, 'big')
+insert into w values (-123456789, 'ok')
+create table order (x int)
+create table t2 (x int, select text)
+select * from w limit -1
+select * from w limit 2 offset
+select from w
+select n from w where n<>1
+select n from w where n ! = 1
+select n,s from w where n>=0 and s<='a b  c' order by n desc,s
+select w.n.s from w
+select count( * ) , max ( w.s ) from w
+select n from w order by n limit 2 offset 1 desc
+select n from w order by n asc limit 0
+select s from w where s = 'it''s' or s = ''
+   
+select n from w where n = 1 2

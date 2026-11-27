@@ -1,0 +1,21 @@
+sheet Data
+set Data!A1 =Sheet1!A1+B1
+set A1 100
+set Data!B1 1
+set Data!C2 5
+copy Data!A1 Data!B2
+show Data!B2
+get Data!B2
+clear Data!B2
+get Data!B2
+copy Data!B2 Data!C3
+copy Data!C2 Data!Z99
+get Data!Z99
+copy Data!A1 Data!Z99
+show Data!Z99
+copy Data!A1 Data!A99
+show Data!A99
+use Data
+show A99
+get B1
+sheets

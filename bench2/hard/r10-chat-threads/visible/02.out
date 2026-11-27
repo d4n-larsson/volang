@@ -1,0 +1,16 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+message 1 posted to #general
+message 2 posted to #general
+#general: 2 unread (1 mentioning you)
+#general: 1 unread
+cy read #general
+no unread messages for cy
+message 3 posted to #general
+#general: 1 unread
+#general: 1 unread

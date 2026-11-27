@@ -1,0 +1,11 @@
+status
+write readme.md Project notes
+write src.py print hello
+commit initial import
+status
+write src.py print hello world
+write LICENSE MIT
+status
+commit second
+log
+branches

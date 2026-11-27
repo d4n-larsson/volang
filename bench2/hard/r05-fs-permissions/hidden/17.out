@@ -1,0 +1,27 @@
+drwxr-x ann 1 B/
+drwx--- ann 1 a/
+x
+/t
+  top/
+    B/
+      inner/
+        x.txt
+    a/
+      inner/
+10 /t/top/B/inner
+10 /t/top/B
+0 /t/top/a/inner
+0 /t/top/a
+10 /t/top
+10 /t
+/t/top/B/inner
+/t/top/a/inner
+error: permission denied: /t/top
+error: permission denied: /t/top/B/inner
+error: permission denied: /t/top
+a/
+error: permission denied: /t/top/a/inner
+a/
+error: permission denied: /t/top/a/inner
+error: file exists: /t/top/a
+/

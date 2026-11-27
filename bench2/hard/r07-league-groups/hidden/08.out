@@ -1,0 +1,56 @@
+team Feyenoord added
+team Ajax added
+team Dynamo added
+team Everton added
+team Celtic added
+team Galatasaray added
+team Benfica added
+group B: Everton, Feyenoord, Galatasaray
+group A: Ajax, Benfica, Celtic, Dynamo
+result 1: Celtic 4-1 Benfica
+result 2: Dynamo 0-0 Celtic
+result 3: Benfica 3-3 Ajax
+result 4: Dynamo 0-1 Benfica
+result 5: Celtic 0-4 Dynamo
+result 6: Benfica 3-0 Celtic
+result 7: Dynamo 4-0 Ajax
+result 8: Ajax 1-4 Celtic
+result 9: Ajax 0-4 Benfica
+result 10: Celtic 4-3 Ajax
+result 11: Ajax 0-1 Dynamo
+result 12: Benfica 0-4 Dynamo
+result 13: Galatasaray 4-2 Feyenoord
+result 14: Galatasaray 4-1 Everton
+result 15: Everton 0-4 Feyenoord
+result 16: Feyenoord 4-1 Galatasaray
+result 17: Feyenoord 2-0 Everton
+error: group B has 1 fixtures left
+group A: 0 left
+group B: 1 left
+  Everton v Galatasaray
+1 fixtures left
+result 18: Everton 4-0 Galatasaray
+group A
+Pos Team     P  W  D  L GF GA  GD Pts
+  1 Dynamo   6  4  1  1 13  1 +12  13
+  2 Benfica  6  3  1  2 12 11  +1  10
+  3 Celtic   6  3  1  2 12 12   0  10
+  4 Ajax     6  0  1  5  7 20 -13   1
+group B
+Pos Team         P  W  D  L GF GA  GD Pts
+  1 Feyenoord    4  3  0  1 12  5  +7   9
+  2 Galatasaray  4  2  0  2  9 11  -2   6
+  3 Everton      4  1  0  3  5 10  -5   3
+match 1: Dynamo (A 1st) v Galatasaray (B 2nd)
+match 2: Feyenoord (B 1st) v Benfica (A 2nd)
+Ajax: P 6, W 0, D 1, L 5, GF 7, GA 20, GD -13, Pts 1
+home 0-0-3, away 0-1-2
+position 4 of 4 in group A
+Galatasaray: P 4, W 2, D 0, L 2, GF 9, GA 11, GD -2, Pts 6
+home 2-0-0, away 0-0-2
+position 2 of 3 in group B
+group A: most scored Dynamo 13, fewest conceded Dynamo 1
+group B: most scored Feyenoord 12, fewest conceded Feyenoord 5
+highest scoring match: result 10: Celtic 4-3 Ajax (7 goals)
+total: 70 goals in 18 matches
+longest winning streak 4: Dynamo

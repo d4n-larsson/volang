@@ -1,0 +1,27 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+channel cy ops private
+invite cy ops dee
+join dee ops
+post cy ops pager @dee
+reply dee ops/1 ack @cy
+reply cy ops/2 thanks @dee
+post ann general hi @dee
+unread dee
+unread cy
+delete cy ops/1
+thread ops/2
+history ops
+mentions dee
+mentions cy
+leave dee ops
+mentions dee
+unread dee
+whois dee
+top 2
+stats

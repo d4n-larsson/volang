@@ -1,0 +1,41 @@
+# Formatting of amounts and columns.
+import std.text;
+
+# Cents as `X.YY`, `-X.YY` when negative.
+export fn money(cents: int) -> str {
+    var sign = "";
+    var c = cents;
+    if cents < 0 {
+        set sign = "-";
+        set c = -cents;
+    }
+    var frac = str(c % 100);
+    if len(frac) < 2 {
+        set frac = "0" + frac;
+    }
+    return sign + str(c / 100) + "." + frac;
+}
+
+# text right-aligned in a column of `width` characters (never cut).
+export fn pad_left(s: str, width: int) -> str {
+    if len(s) >= width {
+        return s;
+    }
+    return text.repeat(" ", width - len(s)) + s;
+}
+
+export fn pad_right(s: str, width: int) -> str {
+    if len(s) >= width {
+        return s;
+    }
+    return s + text.repeat(" ", width - len(s));
+}
+
+export fn indent(depth: int) -> str {
+    return text.repeat("  ", depth);
+}
+
+# Sort key that puts every account right after its parent: `:` sorts before any letter or digit.
+export fn tree_key(name: str) -> str {
+    return text.replace(name, ":", " ");
+}

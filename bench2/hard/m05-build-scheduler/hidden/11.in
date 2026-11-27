@@ -1,0 +1,4 @@
+goal nothing
+target a 5
+target b 3 a
+workers 2

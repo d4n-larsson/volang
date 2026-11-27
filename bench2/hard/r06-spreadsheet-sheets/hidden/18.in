@@ -1,0 +1,21 @@
+sheet Box
+set Box!A1 1
+set Box!A2 2
+set Box!B1 3
+set C1 =SUM(Box!A1:B2)
+set C2 =MAX(Box!B2:A1)+Box!A2
+deps C1
+deps C2
+users Box!B2
+users Box!A2
+users C2
+use Box
+users A2
+deps Sheet1!C2
+use Sheet1
+drop Box
+deps C1
+users C1
+show C1
+get C2
+count

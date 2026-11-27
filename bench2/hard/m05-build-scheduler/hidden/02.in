@@ -1,0 +1,9 @@
+workers 2
+target a 3 b c b
+target b 2 x y x
+target a 5
+target c 1 y
+fail b 1
+fail nope 2
+goal a z z q a
+goal c

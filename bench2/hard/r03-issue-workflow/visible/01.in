@@ -1,0 +1,13 @@
+user ann
+user bob
+new p2 Login page crashes on empty password
+new p1 Totals wrong
+assign 1 ann
+move 1 triaged
+move 1 in_progress
+comment 1 bob seen it too
+move 1 review
+move 1 done
+show 1
+list status=all
+cycle

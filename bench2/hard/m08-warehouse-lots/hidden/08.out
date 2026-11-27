@@ -1,0 +1,30 @@
+warehouse s added
+item soap added
+lot L1 s soap 3
+lot L2 s soap 3
+shipped o1 5 L1x3 L2x2
+shipped o2 1 L2x1
+backorder o2 3
+lot L3 s soap 2
+filled o2 2 L3x2
+lot L4 s soap 6
+filled o2 1 L4x1
+error: order o1 has 5 returnable
+returned o2 4 restocked 4 quarantined 0
+returned o1 4 restocked 4 quarantined 0
+stock day 0
+s soap L4 on hand 6 reserved 0 expires 40
+s soap L1 on hand 2 reserved 0 expires 50
+s soap L2 on hand 3 reserved 0 expires 60
+s soap L3 on hand 2 reserved 0 expires 70
+expired L1 s 2
+expired L4 s 6
+error: order o1 has 1 returnable
+error: order o2 has 0 returnable
+backorders 0
+value on hand 12.00 in transit 0.00 quarantine 0.00 shipped 1.00 written off 26.00
+stock day 55
+s soap L2 on hand 3 reserved 0 expires 60
+s soap L3 on hand 2 reserved 0 expires 70
+value on hand 12.00 in transit 0.00 quarantine 0.00 shipped 1.00 written off 26.00
+backorders 0

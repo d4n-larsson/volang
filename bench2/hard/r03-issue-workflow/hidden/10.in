@@ -1,0 +1,20 @@
+user ann
+user bob
+new p1 Server crash
+new p2 Client crash
+assign 1 ann
+move 1 triaged
+move 1 in_progress
+assign 1 bob
+show 1
+move 1 review
+close 1
+assign 1 ann
+unassign 1
+show 1
+move 2 wontfix no repro
+assign 2 ann
+reopen 2
+assign 2 ann
+move 2 in_progress
+show 2

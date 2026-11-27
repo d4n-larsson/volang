@@ -1,0 +1,23 @@
+sheet Far
+set Far!Z99 7
+set Far!A1 3
+set B2 =Far!A1+Far!$Z$99
+set C3 =SUM(Far!A1:B2)
+copy B2 A1
+show A1
+get A1
+copy C3 B1
+show B1
+get B1
+copy B2 Z99
+show Z99
+get Z99
+set D4 =Far!B1*2
+drop Far
+show D4
+copy D4 E6
+show E6
+get E6
+copy D4 A1
+show A1
+count

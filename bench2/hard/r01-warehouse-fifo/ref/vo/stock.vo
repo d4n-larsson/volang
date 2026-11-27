@@ -1,0 +1,99 @@
+# Stock on hand per warehouse and item, as FIFO lots.
+import model;
+
+export fn lots(state: model.State, wh: str, sku: str) -> list[model.Lot] {
+    let shelf = state.stock[wh];
+    if has(shelf, sku) {
+        return shelf[sku];
+    }
+    return [];
+}
+
+export fn on_hand(state: model.State, wh: str, sku: str) -> int {
+    return fold(lots(state, wh, sku), 0, fn(n, lot) => n + lot.qty);
+}
+
+# Adds units of a receipt, keeping the lots in receipt order.
+export fn place(state: model.State, wh: str, sku: str, receipt: int, qty: int, cost: int) {
+    let shelf = state.stock[wh];
+    if not has(shelf, sku) {
+        set shelf[sku] = new list[model.Lot];
+    }
+    let row = shelf[sku];
+    let fresh = new model.Lot { receipt: receipt, qty: qty, cost: cost };
+    for i, lot in row {
+        if lot.receipt == receipt {
+            set lot.qty = lot.qty + qty;
+            return;
+        }
+        if lot.receipt > receipt {
+            let after = slice(row, i, len(row));
+            set shelf[sku] = slice(row, 0, i);
+            push(shelf[sku], fresh);
+            for rest in after {
+                push(shelf[sku], rest);
+            }
+            return;
+        }
+    }
+    push(row, fresh);
+}
+
+# Puts qty units in as a new lot; returns its receipt number.
+export fn new_lot(state: model.State, wh: str, sku: str, qty: int, cost: int) -> int {
+    let receipt = state.next_receipt;
+    set state.next_receipt = state.next_receipt + 1;
+    place(state, wh, sku, receipt, qty, cost);
+    return receipt;
+}
+
+# Removes qty units, oldest receipt first; the caller has checked that they are there.
+# Returns the pieces taken.
+export fn take(state: model.State, wh: str, sku: str, qty: int) -> list[model.Lot] {
+    let shelf = state.stock[wh];
+    let pieces = new list[model.Lot];
+    var left = qty;
+    var used = 0;
+    let row = shelf[sku];
+    while left > 0 {
+        let lot = row[used];
+        let n = min(left, lot.qty);
+        push(pieces, new model.Lot { receipt: lot.receipt, qty: n, cost: lot.cost });
+        set lot.qty = lot.qty - n;
+        set left = left - n;
+        if lot.qty == 0 {
+            set used = used + 1;
+        }
+    }
+    if used == len(row) {
+        remove(shelf, sku);
+    } else {
+        set shelf[sku] = slice(row, used, len(row));
+    }
+    return pieces;
+}
+
+export fn cost_of(pieces: list[model.Lot]) -> int {
+    return fold(pieces, 0, fn(n, p) => n + p.qty * p.cost);
+}
+
+export fn total_on_hand(state: model.State, sku: str) -> int {
+    var n = 0;
+    for wh in keys(state.stock) {
+        set n = n + on_hand(state, wh, sku);
+    }
+    return n;
+}
+
+export fn has_stock(state: model.State, wh: str) -> bool {
+    for sku in keys(state.stock[wh]) {
+        if on_hand(state, wh, sku) > 0 {
+            return true;
+        }
+    }
+    return false;
+}
+
+export fn short_message(state: model.State, wh: str, sku: str) -> str {
+    return "error: only " + str(on_hand(state, wh, sku)) + " " + sku + " in " + wh;
+}

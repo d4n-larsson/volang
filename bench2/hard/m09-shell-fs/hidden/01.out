@@ -1,0 +1,12 @@
+/
+/
+/usr/local
+/usr/local
+/
+cd: usr/notes: not a directory
+cd: usr/notes/..: not a directory
+cd: usr/missing/..: no such file or directory
+cd: usr/missing: no such file or directory
+/usr
+/usr
+/

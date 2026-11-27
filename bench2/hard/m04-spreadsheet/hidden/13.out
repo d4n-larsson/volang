@@ -1,0 +1,21 @@
+  | A                | B   | C     | D
+--+------------------+-----+-------+--------
+1 | Item             | Qty | Price | Cost
+2 | bolts            | 120 |     3 |     360
+3 | nuts             |  75 |     2 |     150
+4 | brackets         |   8 |    45 |     360
+5 | hinges           |   0 | n/a   | #VALUE!
+6 | total            |     |       |     870
+7 | average          |     |       |     290
+8 | big items        |     |       |       2
+9 | share of bolts % |     |       |      41
+D5 := =B5*C5
+D5 = #VALUE!
+  | D
+--+----
+5 |   0
+6 | 870
+7 | 290
+8 |   2
+9 |  41
+B3 <- D3 D6 D7 D8 D9

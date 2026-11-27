@@ -1,0 +1,21 @@
+jobs 13
+> next leapday 1
+no more runs
+> next never 1
+no more runs
+> next feb-all 2
+2025-02-01 08:00 Sat
+2025-02-02 08:00 Sun
+> timeline 12
+2024-03-01 08:00 both-star-dow
+2024-03-01 08:00 daily
+2024-03-01 08:00 first-or-mon
+2024-03-01 08:00 fri-or-13
+2024-03-01 08:00 stepday-or-mon
+2024-03-02 08:00 daily
+2024-03-02 08:00 stepday-or-mon
+2024-03-02 08:00 weekend
+2024-03-03 08:00 daily
+2024-03-03 08:00 stepday-or-mon
+2024-03-03 08:00 sun0
+2024-03-03 08:00 sun7

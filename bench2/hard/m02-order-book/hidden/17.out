@@ -1,0 +1,39 @@
+rest S1 3 5.00
+rest S2 2 5.10
+rest S3 4 5.20
+pending U1
+pending U2
+pending U3
+trade WX 1 5.00 B1 S1
+filled B1
+trigger U1
+trade WX 2 5.00 U1 S1
+filled U1
+trigger U2
+trade WX 2 5.10 U2 S2
+trade WX 1 5.20 U2 S3
+filled U2
+trigger U3
+expired U3 1
+book WX last 5.20
+  ask 5.20 3 1
+pending U4
+trigger U4
+trade WX 1 5.20 U4 S3
+filled U4
+rest S4 2 5.20
+trade WX 2 5.20 B2 S3
+trade WX 2 5.20 B2 S4
+expired B2 5
+book WX last 5.20
+  empty
+book WX last 5.20
+  empty
+trader ana cash 9.80 WX:-2
+trader bob cash 10.20 WX:-2
+trader cy cash 20.80 WX:-4
+trader dan cash 0.40
+trader eve cash -15.40 WX:3
+trader fay cash 0.00
+trader gus cash -5.00 WX:1
+trader hal cash -20.80 WX:4

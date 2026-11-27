@@ -1,0 +1,21 @@
+append Lorem ipsum dolor sit amet, consectetur adipiscing elit
+append sed do eiusmod
+wrap 1 20
+print
+where
+wrap 1,$ 20
+wrap 1,$ 5
+print
+undo
+print
+split 2 99
+split 2 3
+print
+undo
+redo
+longest
+count
+join 3,3
+join $
+undo 2
+print

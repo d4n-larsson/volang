@@ -1,0 +1,22 @@
+append a
+append b
+group
+append c
+upper 1,2
+goto 1
+print
+undo
+redo
+save
+group
+endgroup
+group
+endgroup
+endgroup
+print
+undo
+print
+where
+redo
+where
+buffers

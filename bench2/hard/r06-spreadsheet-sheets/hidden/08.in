@@ -1,0 +1,27 @@
+sheet B
+sheet A
+set A!A1 1
+set B!C1 2
+set A2 =A!A1+B!C1+A1
+set B!B5 =SUM(Sheet1!A1:A3)+A!A1
+set A!C3 =Sheet1!A1*B!C1
+set A1 4
+set B1 =A1
+deps A2
+deps B!B5
+users A1
+users A!A1
+users B!C1
+use B
+deps B5
+users Sheet1!A1
+users A!A1
+deps Sheet1!A2
+clear Sheet1!B1
+clear Sheet1!B1
+get Sheet1!B1
+show Sheet1!B1
+use A
+find 4
+find 8
+list

@@ -1,0 +1,24 @@
+pwd: usage
+cd: usage
+cd: usage
+Mkdir: unknown command
+mkdir: usage
+mkdir: usage
+touch: usage
+write: usage
+append: usage
+cat: usage
+rm: usage
+rm: usage
+mv: usage
+mv: usage
+cp: usage
+cp: usage
+du: usage
+ls: -l: no such file or directory
+-l/
+quota: usage
+mv: usage
+cd: -p: no such file or directory
+rm: -r: no such file or directory
+-l/

@@ -1,0 +1,17 @@
+== loop/c.conf
+loop/c.conf:1: undefined ${x}
+loop/a.conf:2: include cycle: loop/c.conf -> loop/b.conf -> loop/a.conf -> loop/b.conf
+loop/b.conf:3: include cycle: loop/c.conf -> loop/b.conf -> loop/c.conf
+loop/c.conf:3: include outside conf: /etc/hostname
+x=2 (loop/b.conf:2)
+y=11 (loop/a.conf:3)
+z= (loop/c.conf:1)
+files 3 errors 4
+== env/../loop/a.conf
+loop/b.conf:1: include cycle: loop/a.conf -> loop/b.conf -> loop/a.conf
+loop/c.conf:2: include cycle: loop/a.conf -> loop/b.conf -> loop/c.conf -> loop/b.conf
+loop/c.conf:3: include outside conf: /etc/hostname
+x=2 (loop/b.conf:2)
+y=22 (loop/a.conf:3)
+z=2 (loop/c.conf:1)
+files 3 errors 3

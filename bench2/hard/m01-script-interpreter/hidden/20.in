@@ -1,0 +1,7 @@
+let i = 0
+let j = 0
+while i < 4998
+    set i = i + 1
+end
+print i, j
+print "one more"

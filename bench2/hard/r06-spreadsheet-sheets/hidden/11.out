@@ -1,0 +1,50 @@
+A1 = -7
+A2 = 2
+A3 = -3
+A4 = -9
+A5 = -3
+B1 = 0
+B2 = 2
+B3 = -7
+C2 = 7
+C3 = 0
+B4 = 7
+B4: =((A1))+(2*(3+4))
+B4 = 7
+B5 = #DIV0
+C5 = #DIV0
+C5: =1/0+B5
+    A      B      C
+1  -7  #DIV0
+2   2      2      7
+3  -3  #DIV0      0
+4  -9      7
+5  -3  #DIV0  #DIV0
+found: none
+found: C3
+found: A3 A5
+A1: -7
+A2: 2
+A3: =A1/A2 = -3
+A4: =-A1/-A2*3 = -9
+A5: =7/-2 = -3
+B1: =MIN(C1:C5) = #DIV0
+B2: =MAX(A1:A5) = 2
+B3: =MIN(A1:B2) = #DIV0
+B4: =((A1))+(2*(3+4)) = 7
+B5: =1/(A2-2)+B9/0 = #DIV0
+C2: 7
+C3: 0
+C5: =1/0+B5 = #DIV0
+error: bad value
+error: bad formula
+error: bad formula
+= 11
+error: bad formula
+error: bad formula
+error: bad formula
+error: bad formula
+error: B9 is empty
+error: bad command
+error: bad command
+error: bad command

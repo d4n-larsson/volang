@@ -1,0 +1,97 @@
+# Read-only views: stock table, valuation, low stock and the summary report.
+import catalog;
+import fmt;
+import model;
+import orders;
+import stock;
+
+# The warehouses a view covers: all of them (wh is "") or one.
+fn scope(state: model.State, wh: str) -> list[str] {
+    if wh == "" {
+        return catalog.sorted_warehouses(state);
+    }
+    return [wh];
+}
+
+export fn stock_lines(state: model.State, wh: str) -> list[str] {
+    if wh != "" and not has(state.stock, wh) {
+        return [catalog.unknown_warehouse(wh)];
+    }
+    let out = new list[str];
+    var total = 0;
+    for code in scope(state, wh) {
+        for sku in catalog.sorted_skus(state) {
+            let qty = stock.on_hand(state, code, sku);
+            if qty > 0 {
+                push(out, fmt.pad_right(code, 8) + fmt.pad_right(sku, 10) + fmt.pad_left(str(qty), 6));
+                set total = total + qty;
+            }
+        }
+    }
+    if len(out) == 0 {
+        return ["no stock"];
+    }
+    push(out, "total " + fmt.plural(total, "unit"));
+    return out;
+}
+
+fn units_in(state: model.State, codes: list[str], sku: str) -> int {
+    return fold(codes, 0, fn(n, code) => n + stock.on_hand(state, code, sku));
+}
+
+# What the units of sku in the warehouses are worth.
+fn item_value(state: model.State, codes: list[str], sku: str) -> int {
+    return units_in(state, codes, sku) * state.items[sku].cost;
+}
+
+export fn value_lines(state: model.State, wh: str) -> list[str] {
+    if wh != "" and not has(state.stock, wh) {
+        return [catalog.unknown_warehouse(wh)];
+    }
+    let codes = scope(state, wh);
+    let out = new list[str];
+    var total = 0;
+    for sku in catalog.sorted_skus(state) {
+        let qty = units_in(state, codes, sku);
+        if qty == 0 {
+            continue;
+        }
+        let worth = item_value(state, codes, sku);
+        push(out, sku + ": " + str(qty) + " x " + fmt.money(state.items[sku].cost) + " = " + fmt.money(worth));
+        set total = total + worth;
+    }
+    if len(out) == 0 {
+        return ["no stock"];
+    }
+    push(out, "total value " + fmt.money(total));
+    return out;
+}
+
+export fn low_lines(state: model.State) -> list[str] {
+    let out = new list[str];
+    for sku in catalog.sorted_skus(state) {
+        let it = state.items[sku];
+        let have = stock.total_on_hand(state, sku);
+        if it.reorder > 0 and have < it.reorder {
+            push(out, sku + " " + it.name + ": have " + str(have) + ", reorder at " + str(it.reorder) + ", short " + str(it.reorder - have));
+        }
+    }
+    if len(out) == 0 {
+        return ["nothing low"];
+    }
+    return out;
+}
+
+export fn report_lines(state: model.State) -> list[str] {
+    let codes = catalog.sorted_warehouses(state);
+    var units = 0;
+    var worth = 0;
+    for sku in catalog.sorted_skus(state) {
+        set units = units + units_in(state, codes, sku);
+        set worth = worth + item_value(state, codes, sku);
+    }
+    let first = "items " + str(len(state.items)) + ", warehouses " + str(len(state.stock)) + ", " + fmt.plural(units, "unit") + ", value " + fmt.money(worth);
+    let second = "shipped " + fmt.plural(state.shipped_units, "unit") + " in " + fmt.plural(state.shipments, "shipment");
+    let third = "orders: " + str(orders.count_status(state, "open")) + " open, " + str(orders.count_status(state, "fulfilled")) + " fulfilled, " + str(orders.count_status(state, "cancelled")) + " cancelled";
+    return [first, second, third];
+}

@@ -1,0 +1,14 @@
+error: permission denied: /proj
+error: no such file or directory: /proj/missing
+error: permission denied: /proj
+error: no such user: nobody
+error: no such file or directory: /proj/missing
+final
+error: permission denied: /proj/plan.txt
+drwx--- ann 1 proj/
+error: permission denied: /proj
+error: permission denied: /proj
+error: permission denied: /proj/plan.txt
+-rw-r-- ann 6 plan.txt
+/proj: directory, 1 entries, owner bob, mode rwxrwx
+/: directory, 2 entries, owner bob, mode rwxr-x

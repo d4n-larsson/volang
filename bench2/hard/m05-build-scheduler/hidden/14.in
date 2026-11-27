@@ -1,0 +1,15 @@
+workers 3
+retries 1
+backoff 0
+pool db 1
+target m1 2
+target m2 2
+target m3 2
+target s 1 m1 m2 m3
+use m1 db
+use m2 db
+use m3 db
+fail m1 1
+fail m2 1
+timeout 1
+timeout 2

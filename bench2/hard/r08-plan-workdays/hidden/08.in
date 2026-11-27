@@ -1,0 +1,10 @@
+task long-task 30 A long one
+task m 0 Midpoint
+task tail 8
+dep m long-task
+dep tail m+2
+holiday 9
+holiday 44
+gantt
+end
+critical

@@ -1,0 +1,16 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+post ann general morning
+post bob general standup in 5 @cy
+unread cy
+unread ann
+read cy general
+unread cy
+post ann general ok
+unread cy
+unread bob

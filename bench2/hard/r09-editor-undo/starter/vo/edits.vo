@@ -1,0 +1,76 @@
+# Commands that add, remove and rearrange lines.
+import buffer;
+
+export fn append(buf: buffer.Buffer, text: str) -> result[list[str]] {
+    push(buf.lines, text);
+    set buf.cur = buffer.size(buf);
+    return ok([]);
+}
+
+export fn insert(buf: buffer.Buffer, at: int, text: str) -> result[list[str]] {
+    buffer.put_block(buf, at, at - 1, [text]);
+    set buf.cur = at;
+    return ok([]);
+}
+
+export fn delete(buf: buffer.Buffer, a: int, b: int) -> result[list[str]] {
+    buffer.put_block(buf, a, b, []);
+    set buf.cur = a;
+    buffer.clamp_cur(buf);
+    return ok([]);
+}
+
+export fn replace(buf: buffer.Buffer, at: int, text: str) -> result[list[str]] {
+    buffer.put_block(buf, at, at, [text]);
+    set buf.cur = at;
+    return ok([]);
+}
+
+export fn clear(buf: buffer.Buffer) -> result[list[str]] {
+    set buf.lines = new list[str];
+    set buf.cur = 0;
+    return ok([]);
+}
+
+# Moves lines a to b after line `after` (numbered before the move).
+export fn move(buf: buffer.Buffer, a: int, b: int, after: int) -> result[list[str]] {
+    if a <= after and after < b {
+        return err("cannot move lines into themselves");
+    }
+    let lines = buffer.block(buf, a, b);
+    buffer.put_block(buf, a, b, []);
+    var at = after;
+    if after >= a {
+        set at = after - len(lines);
+    }
+    buffer.put_block(buf, at + 1, at, lines);
+    set buf.cur = at + len(lines);
+    return ok([]);
+}
+
+# Copies lines a to b right after line b.
+export fn dup(buf: buffer.Buffer, a: int, b: int) -> result[list[str]] {
+    let lines = buffer.block(buf, a, b);
+    buffer.put_block(buf, b + 1, b, lines);
+    set buf.cur = b + len(lines);
+    return ok([]);
+}
+
+export fn join_lines(buf: buffer.Buffer, a: int, b: int) -> result[list[str]] {
+    if a == b {
+        return err("nothing to join");
+    }
+    buffer.put_block(buf, a, b, [join(buffer.block(buf, a, b), " ")]);
+    set buf.cur = a;
+    return ok([]);
+}
+
+export fn split_at(buf: buffer.Buffer, at: int, col: int) -> result[list[str]] {
+    let text = buffer.line(buf, at);
+    if col < 1 or col >= len(text) {
+        return err("bad column " + str(col));
+    }
+    buffer.put_block(buf, at, at, [slice(text, 0, col), slice(text, col, len(text))]);
+    set buf.cur = at + 1;
+    return ok([]);
+}

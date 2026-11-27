@@ -1,0 +1,270 @@
+import std.fs;
+import std.text;
+
+record Exclude {
+    key: str;
+    value: str;
+}
+
+record Job {
+    source: str;
+    target: str;
+    excludes: list[Exclude];
+}
+
+record Counts {
+    copy: int;
+    update: int;
+    unchanged: int;
+    conflict: int;
+}
+
+fn valid_name(s: str) -> bool {
+    if len(s) < 1 or len(s) > 20 {
+        return false;
+    }
+    for c in s {
+        if not ((c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+# The normalized directory under root, or err when it is not allowed.
+fn allowed(dir: str, root: str) -> result[str] {
+    if text.starts_with(dir, "/") {
+        return err("absolute");
+    }
+    let kept = new list[str];
+    for part in split(dir, "/") {
+        if part == "" or part == "." {
+            continue;
+        }
+        if part == ".." {
+            if len(kept) == 0 {
+                return err("climbs out");
+            }
+            let _ = try pop(kept);
+        } else {
+            push(kept, part);
+        }
+    }
+    let n = join(kept, "/");
+    if n == root or text.starts_with(n, root + "/") {
+        return ok(n);
+    }
+    return err("elsewhere");
+}
+
+fn parse_job(content: str) -> result[Job] {
+    var source = "";
+    var target = "";
+    let excludes = new list[Exclude];
+    for i, line in split(content, "\n") {
+        if line == "" or text.starts_with(line, "#") {
+            continue;
+        }
+        let sp = find(line, " ");
+        if sp < 0 {
+            return err("bad config line " + str(i + 1));
+        }
+        let key = slice(line, 0, sp);
+        let value = slice(line, sp + 1, len(line));
+        let known = key == "source" or key == "target" or key == "exclude-name" or key == "exclude-suffix" or key == "exclude-dir";
+        if not known or value == "" or find(value, " ") >= 0 {
+            return err("bad config line " + str(i + 1));
+        }
+        if key == "source" {
+            if source != "" {
+                return err("duplicate source");
+            }
+            set source = value;
+        } else if key == "target" {
+            if target != "" {
+                return err("duplicate target");
+            }
+            set target = value;
+        } else {
+            push(excludes, new Exclude { key: key, value: value });
+        }
+    }
+    if source == "" {
+        return err("missing source");
+    }
+    if target == "" {
+        return err("missing target");
+    }
+    return ok(new Job { source: source, target: target, excludes: excludes });
+}
+
+fn is_excluded(rel: str, excludes: list[Exclude]) -> bool {
+    let parts = split(rel, "/");
+    let base = parts[len(parts) - 1];
+    for e in excludes {
+        if e.key == "exclude-name" and base == e.value {
+            return true;
+        }
+        if e.key == "exclude-suffix" and text.ends_with(base, e.value) {
+            return true;
+        }
+        if e.key == "exclude-dir" and text.starts_with(rel, e.value + "/") {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn is_dir(path: str) -> result[bool] uses file.read {
+    return ok(try fs.info(path) == fs.Info.directory);
+}
+
+fn is_file(path: str) -> result[bool] uses file.read {
+    match try fs.info(path) {
+        case file(_) {
+            return ok(true);
+        }
+        case missing {
+            return ok(false);
+        }
+        case directory {
+            return ok(false);
+        }
+        case other {
+            return ok(false);
+        }
+    }
+}
+
+# Relative paths of every file below dir, in byte order.
+fn files_below(dir: str) -> result[list[str]] uses file.read {
+    if not try is_dir(dir) {
+        return ok([]);
+    }
+    let out = map(try fs.walk(dir), fn(p) => slice(p, len(dir) + 1, len(p)));
+    sort(out);
+    return ok(out);
+}
+
+fn action(src: str, dst: str, rel: str) -> result[str] uses file.read("src/"), file.read("mirror/") {
+    let t = dst + "/" + rel;
+    if try is_dir(t) {
+        return ok("conflict");
+    }
+    let parts = split(rel, "/");
+    for j in 1..len(parts) {
+        if try is_file(dst + "/" + join(slice(parts, 0, j), "/")) {
+            return ok("conflict");
+        }
+    }
+    if try fs.info(t) == fs.Info.missing {
+        return ok("copy");
+    }
+    if try read_file(t) != try read_file(src + "/" + rel) {
+        return ok("update");
+    }
+    return ok("unchanged");
+}
+
+fn sync(verb: str, job: Job, src: str, dst: str) -> result[void] uses console, file.read("src/"), file.read("mirror/"), file.write("./") {
+    let found = try files_below(src);
+    let sources = filter(found, fn(r) => not is_excluded(r, job.excludes));
+    let targets = filter(try files_below(dst), fn(r) => not is_excluded(r, job.excludes));
+    let counts = new Counts { copy: 0, update: 0, unchanged: 0, conflict: 0 };
+    let writes = new list[str];
+    let in_source = new map[str, bool];
+    for rel in sources {
+        set in_source[rel] = true;
+        let a = try action(src, dst, rel);
+        if a == "copy" {
+            set counts.copy = counts.copy + 1;
+        } else if a == "update" {
+            set counts.update = counts.update + 1;
+        } else if a == "conflict" {
+            set counts.conflict = counts.conflict + 1;
+        } else {
+            set counts.unchanged = counts.unchanged + 1;
+        }
+        if a != "unchanged" {
+            print(a + " " + rel);
+        }
+        if a == "copy" or a == "update" {
+            push(writes, rel);
+        }
+    }
+    var stale = 0;
+    for rel in targets {
+        if not has(in_source, rel) {
+            print("stale " + rel);
+            set stale = stale + 1;
+        }
+    }
+    print(format("copy {}, update {}, unchanged {}, conflict {}, stale {}, excluded {}", counts.copy, counts.update, counts.unchanged, counts.conflict, stale, len(found) - len(sources)));
+    if verb == "run" {
+        # remember which jobs ran, for the next report
+        try fs.append_file(".sync-state", src + " -> " + dst + "\n");
+        for rel in writes {
+            let parts = split(rel, "/");
+            try fs.make_dir(dst + "/" + join(slice(parts, 0, len(parts) - 1), "/"));
+            try write_file(dst + "/" + rel, try read_file(src + "/" + rel));
+        }
+    }
+    return ok();
+}
+
+fn do_job(verb: str, name: str) -> result[void] uses console, file.read("sync/"), file.read("src/"), file.read("mirror/"), file.write("./") {
+    if not valid_name(name) {
+        print("bad job name");
+        return ok();
+    }
+    match read_file("sync/" + name + ".conf") {
+        case ok(content) {
+            match parse_job(content) {
+                case ok(job) {
+                    match allowed(job.source, "src") {
+                        case ok(src) {
+                            match allowed(job.target, "mirror") {
+                                case ok(dst) {
+                                    if not try is_dir(src) {
+                                        print("source missing");
+                                        return ok();
+                                    }
+                                    return sync(verb, job, src, dst);
+                                }
+                                case err(_) {
+                                    print("target not allowed: " + job.target);
+                                }
+                            }
+                        }
+                        case err(_) {
+                            print("source not allowed: " + job.source);
+                        }
+                    }
+                }
+                case err(problem) {
+                    print(problem);
+                }
+            }
+        }
+        case err(_) {
+            print("no such job");
+        }
+    }
+    return ok();
+}
+
+fn main() -> result[void] uses console, input, file.read("sync/"), file.read("src/"), file.read("mirror/"), file.write("./") {
+    for k, line in split(read_all(), "\n") {
+        if line == "" {
+            continue;
+        }
+        let f = split(line, " ");
+        if len(f) != 2 or not (f[0] == "plan" or f[0] == "run") {
+            print("error: line " + str(k + 1) + ": bad command");
+            continue;
+        }
+        print("== " + line);
+        try do_job(f[0], f[1]);
+    }
+    return ok();
+}

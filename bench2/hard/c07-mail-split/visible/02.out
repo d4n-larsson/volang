@@ -1,0 +1,29 @@
+message <t1@lists.example.org>: Weekly digest number 7
+deliver <t1@lists.example.org> team
+deliver <t1@lists.example.org> erin
+relay <t1@lists.example.org> frank@other.org
+deliver <t1@lists.example.org> bob
+message tue#2: (no subject)
+deliver tue#2 gina
+message tue#3: Two To headers
+deliver tue#3 carol
+deliver tue#3 dave
+skip ../private/inbox: bad spool name
+skip nosuch: no such spool
+message <m1@remote.net>: Lunch?
+deliver <m1@remote.net> bob
+message <m2@example.org>: Release plan
+deliver <m2@example.org> bob
+deliver <m2@example.org> dave
+deliver <m2@example.org> carol
+message <m3@example.org>: Re: Lunch?
+relay <m3@example.org> alice@remote.net
+deliver <m3@example.org> bob
+== mailboxes
+wrote out/bob.mbox 4 835
+wrote out/carol.mbox 2 375
+wrote out/dave.mbox 2 375
+wrote out/erin.mbox 1 294
+wrote out/gina.mbox 1 129
+wrote out/team.mbox 1 294
+total 11 delivered, 0 bounced, 2 relayed, 0 duplicates

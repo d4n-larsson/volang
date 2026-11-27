@@ -1,0 +1,28 @@
+warehouse m added
+item ink added
+lot L1 m ink 5
+lot L2 m ink 5
+lot L3 m ink 5
+lot L4 m ink 5
+shipped a 7 L2x5 L4x2
+shipped b 7 L4x3 L1x4
+shipped c 6 L1x1 L3x5
+backorder c 2
+backorder d 5
+backorders 2
+c m ink 2
+d m ink 5
+lot L5 m ink 3
+filled c 2 L5x2
+filled d 1 L5x1
+lot L6 m ink 10
+filled d 4 L6x4
+backorders 0
+error: order c has no backorder
+lot L7 m ink 9
+backorders 0
+stock day 0
+m ink L6 on hand 6 reserved 0 expires 30
+m ink L7 on hand 9 reserved 0 expires 70
+value on hand 0.60 in transit 0.00 quarantine 0.00 shipped 51.90 written off 0.00
+backorders 0

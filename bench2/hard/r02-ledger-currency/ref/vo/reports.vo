@@ -1,0 +1,227 @@
+# Read-only reports over the ledger.
+import accounts;
+import fmt;
+import journal;
+import model;
+import rates;
+
+fn sorted_names(ledger: model.Ledger) -> list[str] {
+    let names = keys(ledger.accounts);
+    sort(names);
+    return names;
+}
+
+export fn balance_lines(ledger: model.Ledger, name: str) -> list[str] {
+    if len(accounts.covered(ledger, name)) == 0 {
+        return ["error: unknown account " + name];
+    }
+    let out = ["balance " + name + ": " + fmt.money(accounts.subtree_total(ledger, name))];
+    for currency, total in accounts.subtree_currencies(ledger, name) {
+        push(out, "  " + currency + " " + fmt.money(total));
+    }
+    return out;
+}
+
+# Postings by day; on one day in the order they were entered.
+fn by_day(postings: list[model.Posting]) -> list[model.Posting] {
+    let out = slice(postings, 0, len(postings));
+    sort_by(out, fn(p) => p.day);
+    return out;
+}
+
+fn statement_line(p: model.Posting, running: int) -> str {
+    return "  " + fmt.pad_left(str(p.day), 4) + " " + fmt.pad_right(p.txn_id, 8) + " " + fmt.pad_left(fmt.money(p.amount), 10) + " " + fmt.pad_left(fmt.money(running), 10) + "  " + p.desc;
+}
+
+export fn statement_lines(ledger: model.Ledger, name: str) -> list[str] {
+    if not has(ledger.accounts, name) {
+        return ["error: unknown account " + name];
+    }
+    let a = ledger.accounts[name];
+    var header = "statement " + name + " (" + a.kind + ")";
+    if a.currency != model.base_currency {
+        set header = "statement " + name + " (" + a.kind + ", " + a.currency + ")";
+    }
+    let out = [header];
+    if len(a.postings) == 0 {
+        push(out, "  no postings");
+    }
+    var running = 0;
+    for p in by_day(a.postings) {
+        set running = running + p.amount;
+        push(out, statement_line(p, running));
+    }
+    if a.currency == model.base_currency {
+        push(out, "  closing balance " + fmt.money(running));
+    } else {
+        push(out, "  closing balance " + rates.native_text(running, a.currency) + " (book " + fmt.money(accounts.book_balance(a)) + " " + model.base_currency + ")");
+    }
+    return out;
+}
+
+export fn trial_lines(ledger: model.Ledger) -> list[str] {
+    let out = new list[str];
+    var debits = 0;
+    var credits = 0;
+    for kind in model.account_types() {
+        let rows = new list[str];
+        for n in sorted_names(ledger) {
+            let a = ledger.accounts[n];
+            let bal = accounts.book_balance(a);
+            if a.kind != kind or bal == 0 {
+                continue;
+            }
+            if bal > 0 {
+                set debits = debits + bal;
+            } else {
+                set credits = credits - bal;
+            }
+            push(rows, "  " + n + " " + fmt.money(bal));
+        }
+        if len(rows) > 0 {
+            push(out, kind);
+            for r in rows {
+                push(out, r);
+            }
+        }
+    }
+    push(out, "total debits " + fmt.money(debits) + " credits " + fmt.money(credits));
+    return out;
+}
+
+fn range_sum(account: model.Account, start: int, end: int) -> int {
+    var total = 0;
+    for p in account.postings {
+        if start <= p.day and p.day <= end {
+            set total = total + p.base;
+        }
+    }
+    return total;
+}
+
+export fn income_lines(ledger: model.Ledger, start: int, end: int) -> list[str] {
+    if start > end {
+        return ["error: bad range"];
+    }
+    let out = new list[str];
+    var earned = 0;
+    var spent = 0;
+    for kind in ["income", "expense"] {
+        for n in sorted_names(ledger) {
+            let a = ledger.accounts[n];
+            if a.kind != kind {
+                continue;
+            }
+            let s = range_sum(a, start, end);
+            if s == 0 {
+                continue;
+            }
+            if kind == "income" {
+                set earned = earned - s;
+                push(out, "income " + n + " " + fmt.money(-s));
+            } else {
+                set spent = spent + s;
+                push(out, "expense " + n + " " + fmt.money(s));
+            }
+        }
+    }
+    push(out, "net income " + fmt.money(earned - spent));
+    return out;
+}
+
+export fn account_lines(ledger: model.Ledger) -> list[str] {
+    if len(ledger.accounts) == 0 {
+        return ["no accounts"];
+    }
+    let out = new list[str];
+    for n in sorted_names(ledger) {
+        let a = ledger.accounts[n];
+        var line = n + " " + a.kind + " " + rates.native_text(accounts.native_balance(a), a.currency);
+        if a.closed {
+            set line = line + " closed";
+        }
+        push(out, line);
+    }
+    return out;
+}
+
+export fn tree_lines(ledger: model.Ledger) -> list[str] {
+    if len(ledger.accounts) == 0 {
+        return ["no accounts"];
+    }
+    let nodes = new map[str, bool];
+    for n, _ in ledger.accounts {
+        let parts = split(n, ":");
+        for i in 1..len(parts) + 1 {
+            set nodes[join(slice(parts, 0, i), ":")] = true;
+        }
+    }
+    let names = keys(nodes);
+    sort_by(names, fmt.tree_key);
+    let out = new list[str];
+    for node in names {
+        let parts = split(node, ":");
+        let total = accounts.subtree_total(ledger, node);
+        push(out, fmt.indent(len(parts) - 1) + parts[len(parts) - 1] + " " + fmt.money(total));
+    }
+    return out;
+}
+
+export fn journal_lines(ledger: model.Ledger, start: int, end: int) -> list[str] {
+    if start > end {
+        return ["error: bad range"];
+    }
+    let picked = filter(ledger.order, fn(t) => start <= t.day and t.day <= end);
+    sort_by(picked, fn(t) => t.day);
+    if len(picked) == 0 {
+        return ["no transactions"];
+    }
+    let out = new list[str];
+    for t in picked {
+        var line = str(t.day) + " " + t.txn_id + " " + t.desc + " " + fmt.money(journal.positive_total(t));
+        if t.voided_by != "" {
+            set line = line + " (void)";
+        }
+        push(out, line);
+    }
+    return out;
+}
+
+# One foreign account in `revalue`.
+record Revalued {
+    account: model.Account;
+    native: int;
+    book: int;
+    value: int;
+}
+
+export fn revalue_lines(ledger: model.Ledger, day: int) -> list[str] {
+    let rows = new list[Revalued];
+    for n in sorted_names(ledger) {
+        let a = ledger.accounts[n];
+        if a.currency == model.base_currency {
+            continue;
+        }
+        var native = 0;
+        var book = 0;
+        for p in a.postings {
+            if p.day <= day {
+                set native = native + p.amount;
+                set book = book + p.base;
+            }
+        }
+        if native == 0 and book == 0 {
+            continue;
+        }
+        # every posting dated DAY or earlier needed a rate on its day, so there is one on DAY
+        push(rows, new Revalued { account: a, native: native, book: book, value: rates.to_base(native, rates.rate_on(ledger, a.currency, day)) });
+    }
+    let out = new list[str];
+    var gain = 0;
+    for r in rows {
+        set gain = gain + r.value - r.book;
+        push(out, r.account.name + " " + rates.native_text(r.native, r.account.currency) + ": book " + fmt.money(r.book) + ", value " + fmt.money(r.value) + ", gain " + fmt.money(r.value - r.book));
+    }
+    push(out, "unrealized gain " + fmt.money(gain));
+    return out;
+}

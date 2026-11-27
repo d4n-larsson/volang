@@ -1,0 +1,54 @@
+user ann added
+created #1: Crash on save
+created #2: Slow search
+error: unknown state open
+error: issue #1 is already new
+error: cannot move #1 from new to in_progress
+#1 moved new -> triaged
+error: issue #1 is already triaged
+error: #1 needs an assignee for in_progress
+error: cannot move #1 from triaged to blocked
+#1 assigned to ann
+error: cannot move #1 from triaged to review
+#1 moved triaged -> in_progress
+error: #1 needs a reason for blocked
+#1 moved in_progress -> blocked
+error: cannot move #1 from blocked to wontfix
+error: #2 needs a reason for wontfix
+#2 moved new -> wontfix
+error: cannot move #2 from wontfix to done
+error: bad command
+error: bad command
+error: unknown issue #9
+#1 moved blocked -> in_progress
+#1 moved in_progress -> review
+#1 moved review -> done
+#1 moved done -> triaged
+#1 [p2] Crash on save
+  status: triaged
+  assignee: ann
+  labels: -
+  created 2, updated 26
+  [7] new -> triaged
+  [13] triaged -> in_progress
+  [15] in_progress -> blocked (needs design review)
+  [23] blocked -> in_progress
+  [24] in_progress -> review
+  [25] review -> done
+  [26] done -> triaged
+  0 comments
+#2 [p3] Slow search
+  status: wontfix
+  assignee: -
+  labels: -
+  created 3, updated 18
+  [18] new -> wontfix (dup of other)
+  0 comments
+[11] #1 assigned to ann
+[13] #1 moved triaged -> in_progress
+[15] #1 moved in_progress -> blocked
+[18] #2 moved new -> wontfix
+[23] #1 moved blocked -> in_progress
+[24] #1 moved in_progress -> review
+[25] #1 moved review -> done
+[26] #1 moved done -> triaged

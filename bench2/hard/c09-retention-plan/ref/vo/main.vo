@@ -1,0 +1,236 @@
+import std.fs;
+import std.text;
+import std.time;
+
+const day_ms = 86400000;
+
+record Policy {
+    rule: str;
+    n: int;
+    host: str;
+}
+
+record Backup {
+    host: str;
+    stamp: str;
+    date_ms: int;
+    file: str;
+}
+
+fn is_digits(s: str) -> bool {
+    if s == "" {
+        return false;
+    }
+    for c in s {
+        if c < "0" or c > "9" {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn is_host(s: str) -> bool {
+    if s == "" {
+        return false;
+    }
+    for c in s {
+        if not ((c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn rules() -> list[str] {
+    return ["last", "daily", "weekly", "monthly", "yearly", "within"];
+}
+
+fn index_of(xs: list[str], x: str) -> int {
+    for i, y in xs {
+        if y == x {
+            return i;
+        }
+    }
+    return -1;
+}
+
+fn parse_policy(line: str) -> result[Policy] {
+    let f = split(line, " ");
+    if not (len(f) == 3 or len(f) == 5) or f[0] != "keep" or index_of(rules(), f[1]) < 0 or not is_digits(f[2]) {
+        return err("bad");
+    }
+    var host = "";
+    if len(f) == 5 {
+        if f[3] != "for" or not is_host(f[4]) {
+            return err("bad");
+        }
+        set host = f[4];
+    }
+    return ok(new Policy { rule: f[1], n: try parse_int(f[2]), host: host });
+}
+
+fn num(s: str, a: int, b: int) -> result[int] {
+    return parse_int(slice(s, a, b));
+}
+
+fn parse_backup(file: str) -> result[Backup] {
+    if not text.ends_with(file, ".tar") {
+        return err("no");
+    }
+    let parts = split(slice(file, 0, len(file) - 4), "-");
+    if len(parts) < 3 {
+        return err("no");
+    }
+    let host = join(slice(parts, 0, len(parts) - 2), "-");
+    let day = parts[len(parts) - 2];
+    let hm = parts[len(parts) - 1];
+    if not is_host(host) or len(day) != 8 or len(hm) != 4 or not is_digits(day) or not is_digits(hm) {
+        return err("no");
+    }
+    let ms = try time.date(try num(day, 0, 4), try num(day, 4, 6), try num(day, 6, 8));
+    if try num(hm, 0, 2) > 23 or try num(hm, 2, 4) > 59 {
+        return err("no");
+    }
+    return ok(new Backup { host: host, stamp: day + hm, date_ms: ms, file: file });
+}
+
+fn period(rule: str, b: Backup) -> str {
+    let d = time.from_ms(b.date_ms);
+    if rule == "last" {
+        return b.file;
+    }
+    if rule == "daily" {
+        return str(b.date_ms);
+    }
+    if rule == "weekly" {
+        return str(b.date_ms - (d.weekday - 1) * day_ms);
+    }
+    if rule == "monthly" {
+        return str(d.year) + "-" + str(d.month);
+    }
+    return str(d.year);
+}
+
+# The reasons each backup is kept ("" for delete), newest first.
+fn plan_host(backups: list[Backup], granted: map[str, int], today: int) -> list[str] {
+    sort_by(backups, fn(b) => b.stamp);
+    let kept = new map[str, int];
+    let last = new map[str, str];
+    let out = new list[str];
+    var i = len(backups) - 1;
+    while i >= 0 {
+        let b = backups[i];
+        set i = i - 1;
+        if b.date_ms > today {
+            push(out, "future");
+            continue;
+        }
+        let reasons = new list[str];
+        for r in rules() {
+            if not has(granted, r) {
+                continue;
+            }
+            let n = granted[r];
+            if r == "within" {
+                if today - b.date_ms <= n * day_ms {
+                    push(reasons, r);
+                }
+                continue;
+            }
+            let p = period(r, b);
+            if get_or(kept, r, 0) >= n or get_or(last, r, "") == p {
+                continue;
+            }
+            set kept[r] = get_or(kept, r, 0) + 1;
+            set last[r] = p;
+            push(reasons, r);
+        }
+        push(out, join(reasons, ","));
+    }
+    return out;
+}
+
+fn host_rules(policy: list[Policy], host: str) -> map[str, int] {
+    let out = new map[str, int];
+    for p in policy {
+        if p.host == "" {
+            set out[p.rule] = p.n;
+        }
+    }
+    for p in policy {
+        if p.host == host {
+            set out[p.rule] = p.n;
+        }
+    }
+    return out;
+}
+
+fn main() -> result[void] uses console, input, file.read("backups/"), file.write("plan/") {
+    let lines = split(read_all(), "\n");
+    let today_text = split(lines[0], " ")[1];
+    let today = try time.date(try num(today_text, 0, 4), try num(today_text, 5, 7), try num(today_text, 8, 10));
+    let name = slice(lines[1], 4, len(lines[1]));
+    if len(name) > 20 or not is_host(name) {
+        print("error: bad set name");
+        return ok();
+    }
+    let policy = new list[Policy];
+    for k in 2..len(lines) {
+        if lines[k] == "" {
+            continue;
+        }
+        match parse_policy(lines[k]) {
+            case ok(p) {
+                push(policy, p);
+            }
+            case err(_) {
+                print("error: bad policy line " + str(k + 1));
+                return ok();
+            }
+        }
+    }
+    if len(policy) == 0 {
+        print("error: no policy");
+        return ok();
+    }
+    let folder = "backups/" + name + "/";
+    if try fs.info(folder) != fs.Info.directory {
+        print("error: no such set");
+        return ok();
+    }
+    let hosts = new ordered_map[str, list[Backup]];
+    for e in try fs.list_dir(folder) {
+        match parse_backup(e.name) {
+            case ok(b) {
+                if not has(hosts, b.host) {
+                    set hosts[b.host] = [];
+                }
+                push(hosts[b.host], b);
+            }
+            case err(_) {
+                print("ignore " + e.name);
+            }
+        }
+    }
+    print("plan for " + name + " as of " + today_text);
+    var kept = 0;
+    let doomed = new list[str];
+    for host, backups in hosts {
+        print("== " + host);
+        let reasons = plan_host(backups, host_rules(policy, host), today);
+        for j, why in reasons {
+            let file = backups[len(backups) - 1 - j].file;
+            if why == "" {
+                print("delete " + file);
+                push(doomed, folder + file + "\n");
+            } else {
+                print("keep " + file + " " + why);
+                set kept = kept + 1;
+            }
+        }
+    }
+    print("kept " + str(kept) + ", deleted " + str(len(doomed)));
+    try write_file("plan/" + name + ".delete", join(doomed, ""));
+    print("wrote plan/" + name + ".delete " + str(len(doomed)));
+    return ok();
+}

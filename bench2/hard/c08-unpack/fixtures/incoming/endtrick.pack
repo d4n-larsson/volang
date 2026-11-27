@@ -1,0 +1,10 @@
+PACK 1
+F data/END.txt 3
+END 0
+F zzz 1
+PACK 1
+F data/after.txt 0
+END 2
+F ignored.txt 1
+not read
+garbage here

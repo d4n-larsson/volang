@@ -1,0 +1,17 @@
+== blog
+index.md:5: outside ../docs/index.md
+index.md:5: outside ../../secrets/token.md
+index.md:6: outside /../docs/index.md
+index.md:6: outside posts/../../blog/index.md
+posts/2024/first.md:3: outside ../../../../secrets/token.md
+orphan posts/draft.md
+pages 4 links 14 external 0 problems 5 orphans 1
+== docs
+guide/setup.md:9: missing anchor #missing-section
+guide/setup.md:10: missing anchor api/ref.md#config
+guide/usage.md:6: missing file CHANGES.md
+guide/usage.md:15: missing anchor #running-it-2
+index.md:9: missing file old
+orphan old/legacy.md
+orphan orphan.md
+pages 6 links 22 external 2 problems 5 orphans 2

@@ -1,0 +1,1 @@
+error: extends cycle loop-b -> loop-c -> loop-b

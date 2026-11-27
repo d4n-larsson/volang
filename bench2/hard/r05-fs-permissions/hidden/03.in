@@ -1,0 +1,31 @@
+useradd ann
+mkdir /home
+mkdir -p /home/ann/projects
+chown ann /home/ann
+su ann
+mkdir /home
+mkdir /home/bob
+mkdir -p /home/ann/projects
+mkdir -p /home/ann/projects/vo/src
+mkdir -p /home/carl/docs
+mkdir -p /home
+mkdir /home/ann/projects/x
+mkdir -p /home/ann/projects/x/y
+mkdir -p /home/ann/mine/a/b
+write /home/ann/mine/a/n.txt note
+tree /home
+su root
+chmod rw-r-- /home/ann/projects
+su ann
+mkdir -p /home/ann/projects/vo
+mkdir -p /home/ann/projects/z
+mkdir /home/ann/projects/z
+mkdir /
+mkdir -p /
+write /home/ann/f.txt x
+mkdir -p /home/ann/f.txt/g
+mkdir -p /home/ann/f.txt
+su root
+mkdir -p /home/ann/projects/z/q
+ls -l /home/ann/projects
+ls -l /home/ann/projects/z

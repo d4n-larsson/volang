@@ -1,0 +1,27 @@
+warehouse north added
+warehouse south added
+item milk added
+item eggs added
+lot L1 north milk 10
+lot L2 north milk 5
+lot L3 north eggs 12
+shipped o1 8 L2x5 L1x3
+shipped o2 7 L1x7
+backorder o2 3
+lot L4 north milk 4
+filled o2 3 L4x3
+reserved r1 5 L3x5
+transfer T1 4 arrives 3 L3x4
+arrived T1 south eggs 4
+stock day 3
+north eggs L3 on hand 8 reserved 5 expires 40
+north milk L4 on hand 1 reserved 0 expires 25
+south eggs L3 on hand 4 reserved 0 expires 40
+shipped r1 5 L3x5
+backorders 0
+stock day 3
+north eggs L3 on hand 3 reserved 0 expires 40
+north milk L4 on hand 1 reserved 0 expires 25
+south eggs L3 on hand 4 reserved 0 expires 40
+value on hand 3.05 in transit 0.00 quarantine 0.00 shipped 22.65 written off 0.00
+backorders 0

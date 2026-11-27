@@ -1,0 +1,23 @@
+user u +02:00
+room r 3
+room r2 3
+hours u 9:00 17:00
+hours u 09:00 17:0
+hours u 17:00 09:00
+hours u 09:00 09:00
+hours u 09:00
+hours u
+hours u none x
+hours r 09:00 17:00
+hours r none
+hours zed none
+hours zed 25:00 26:00
+hours u 00:00 00:01
+book m r u 5 00:00 1
+book m2 r u 5 00:01 1
+hours u none
+book m2 r u 5 00:01 1
+hours u 08:00 18:00
+hours u 08:00 18:30
+book m3 r u 5 17:30 60
+book m4 r2 u 5 07:59 60

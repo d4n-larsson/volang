@@ -1,0 +1,10 @@
+customer acme 1000.00 30 825
+invoice acme 12x10.00 1x3.33
+invoice acme 1x99.99
+day 40
+statement acme
+pay acme 50.00 2
+day 75
+aging
+credit 1 20.00
+pay acme 300.00

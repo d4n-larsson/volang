@@ -1,0 +1,6 @@
+now 2024-03-01 00:00
+crontab dayrule
+next leapday 1
+next never 1
+next feb-all 2
+timeline 12

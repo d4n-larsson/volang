@@ -1,0 +1,3 @@
+pick cyc-a 1.1.0
+pick cyc-b 1.2.0
+error: conflict on cyc-a: cyc-a@1.1.0 does not satisfy =1.0.0 (required by cyc-b@1.2.0)

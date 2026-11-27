@@ -1,0 +1,39 @@
+1  Lorem ipsum dolor
+2  sit amet,
+3  consectetur
+4  adipiscing elit
+5  sed do eiusmod
+buffer main, line 5 of 5
+ 1  Lorem
+ 2  ipsum
+ 3  dolor
+ 4  sit
+ 5  amet,
+ 6  consectetur
+ 7  adipiscing
+ 8  elit
+ 9  sed
+10  do
+11  eiusmod
+undone 1 step
+1  Lorem ipsum dolor
+2  sit amet,
+3  consectetur
+4  adipiscing elit
+5  sed do eiusmod
+error: bad column 99
+1  Lorem ipsum dolor
+2  sit
+3   amet,
+4  consectetur
+5  adipiscing elit
+6  sed do eiusmod
+undone 1 step
+redone 1 step
+longest line 1 (17 bytes)
+6 lines, 11 words, 72 bytes
+error: nothing to join
+error: nothing to join
+undone 2 steps
+1  Lorem ipsum dolor sit amet, consectetur adipiscing elit
+2  sed do eiusmod

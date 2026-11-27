@@ -1,0 +1,129 @@
+import commands;
+import fstree;
+import transfer;
+
+fn flag_of(word: str) -> str {
+    if word == "mkdir" {
+        return "-p";
+    }
+    if word == "ls" {
+        return "-l";
+    }
+    if word == "rm" or word == "cp" {
+        return "-r";
+    }
+    return "";
+}
+
+fn count_ok(word: str, argv: list[str]) -> bool {
+    let n = len(argv);
+    if word == "pwd" {
+        return n == 0;
+    }
+    if word == "cd" {
+        return n == 1;
+    }
+    if word == "mv" or word == "cp" {
+        return n == 2;
+    }
+    if word == "du" {
+        return n <= 1;
+    }
+    if word == "ls" {
+        return true;
+    }
+    if word == "find" {
+        return n == 1 or (n == 3 and argv[1] == "-name");
+    }
+    if word == "quota" {
+        return n == 0 or (n == 1 and len(argv[0]) <= 10 and len(argv[0]) >= 1 and all(chars(argv[0]), fn(c) => c >= "0" and c <= "9"));
+    }
+    return n >= 1;
+}
+
+fn known(word: str) -> bool {
+    let all_words = ["pwd", "cd", "mkdir", "touch", "write", "append", "cat", "ls", "rm", "mv", "cp", "du", "find", "quota"];
+    return any(all_words, fn(w) => w == word);
+}
+
+fn run_line(t: fstree.Tree, fields: list[str]) -> list[str] {
+    let word = fields[0];
+    var argv = slice(fields, 1, len(fields));
+    if not known(word) {
+        return [word + ": unknown command"];
+    }
+    var flag = false;
+    if flag_of(word) != "" and len(argv) > 0 and argv[0] == flag_of(word) {
+        set flag = true;
+        set argv = slice(argv, 1, len(argv));
+    }
+    if not count_ok(word, argv) {
+        return [word + ": usage"];
+    }
+    match word {
+        case "pwd" {
+            return commands.pwd(t);
+        }
+        case "cd" {
+            return commands.cd(t, argv[0]);
+        }
+        case "mkdir" {
+            return commands.mkdir(t, flag, argv);
+        }
+        case "touch" {
+            return commands.touch(t, argv);
+        }
+        case "cat" {
+            return commands.cat(t, argv);
+        }
+        case "ls" {
+            return commands.ls(t, flag, argv);
+        }
+        case "rm" {
+            return commands.rm(t, flag, argv);
+        }
+        case "du" {
+            return commands.du(t, argv);
+        }
+        case "find" {
+            return commands.find_cmd(t, argv);
+        }
+        case "quota" {
+            return commands.quota(t, argv);
+        }
+        case "write" {
+            return commands.put(t, word, argv);
+        }
+        case "append" {
+            return commands.put(t, word, argv);
+        }
+        else {
+        }
+    }
+    match transfer.transfer(t, word, flag, argv[0], argv[1]) {
+        case ok() {
+            return [];
+        }
+        case err(e) {
+            return [e];
+        }
+    }
+}
+
+fn main() uses console, input {
+    let t = fstree.new_tree();
+    var out = "";
+    for line in split(read_all(), "\n") {
+        let fields = filter(split(line, " "), fn(f) => f != "");
+        if len(fields) > 0 {
+            for s in run_line(t, fields) {
+                if len(s) > 0 and slice(s, len(s) - 1, len(s)) == "\n" {
+                    set out = out + s;
+                } else {
+                    set out = out + s + "\n";
+                }
+            }
+        }
+    }
+    write(out);
+}

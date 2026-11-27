@@ -1,0 +1,29 @@
+added task a
+added task b
+added task gate
+gate after a
+b after gate
+task  start  finish  lstart  lfinish  slack
+a         0       7       0        7      0
+gate      7       9       7        9      0
+b         9      14       9       14      0
+end 14
+task gate duration 0
+error: gate is a milestone
+task gate: gate
+  milestone
+  after: a
+  before: b
+  start 7 finish 7 slack 0
+task  start  finish  lstart  lfinish  slack
+a         0       7       0        7      0
+gate      7       7       7        7      0
+b         7      10       7       10      0
+end 10
+project finishes on day 10 (Thu)
+error: bad command
+task a 40% done
+status on day 3
+  a: planned 3 done 2 behind
+  b: planned 0 done 0 on track
+total planned 3 done 2 66%

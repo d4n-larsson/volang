@@ -1,0 +1,17 @@
+mkdir a
+mkdir a
+mkdir . / //
+mkdir b/c a/c a/c/d
+write f text
+mkdir f/g f
+mkdir a/../h a/./i
+ls -l
+ls a
+mkdir -p a/c f/g a/c/d/e
+mkdir -p f
+mkdir -p new1/new2/../../f/z
+ls
+ls -l new1 new1/new2 a/c/d
+mkdir -p /
+mkdir -p q/../r/./s//t/
+find / -name ?

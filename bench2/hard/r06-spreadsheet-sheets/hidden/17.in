@@ -1,0 +1,31 @@
+sheet P
+sheet Q
+set A1 =P!A1+1
+set P!A1 =Q!A1*2
+set Q!A1 =Sheet1!A1-3
+set A2 =A1+5
+set P!A2 =Q!A2/0+Sheet1!A1
+set Q!B1 =Sheet1!A2
+get A1
+get P!A1
+get Q!A1
+get A2
+get P!A2
+get Q!B1
+set Q!A1 4
+get A1
+get A2
+get P!A2
+set B1 =Q!B9/0+Gone!A1
+set B1 =Q!B9/0+Q!A1
+get B1
+drop Q
+get B1
+set B2 =A1+P!A2
+get B2
+set P!B3 =1/0
+set B3 =MIN(P!A1:B3)
+get B3
+set B4 =MAX(P!B3:A1)
+get B4
+count

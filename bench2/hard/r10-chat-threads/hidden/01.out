@@ -1,0 +1,36 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+channel #dev created by bob
+cy joined #dev
+message 1 posted to #general
+message 1 posted to #dev
+message 2 posted to #dev
+message 2 posted to #general
+message general/1 edited
+error: bob cannot edit message general/1
+error: unknown message dev/3
+error: unknown message dev/3
+message dev/2 edited
+error: cy cannot delete message dev/1
+error: unknown channel #nope
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: unknown user zed
+error: bad command
+#dev: 2 messages
+[1] t=11 bob: d1
+[2] t=12 bob: d2 fixed (edited)
+#general: 2 messages
+[1] t=10 ann: one again (edited)
+[2] t=13 cy: two
+users 4, channels 2, messages 4, edits 2, deletes 0

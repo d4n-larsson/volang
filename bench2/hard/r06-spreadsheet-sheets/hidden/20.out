@@ -1,0 +1,21 @@
+sheet Data added
+sheet data added
+Data!A1 = 1
+data!A1 = 2
+A1 = 12
+A1 = 12
+error: sheet data exists
+renamed data to DATA
+A1: =Data!A1*10+DATA!A1
+using DATA
+using Data
+Sheet1: 1 cells
+Data: 1 cells (current)
+DATA: 1 cells
+error: unknown sheet data
+using Sheet1
+A1: =Data!A1*10+DATA!A1
+A1 = 12
+deps A1: Data!A1 DATA!A1
+sheet data added
+A1: =Data!A1*10+DATA!A1

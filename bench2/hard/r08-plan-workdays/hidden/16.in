@@ -1,0 +1,14 @@
+list
+schedule
+critical
+gantt
+gantt 1 2
+status 3
+end
+show x
+holiday 6
+holiday 7
+workday 7
+cal 0 7
+frobnicate
+progress x 50

@@ -1,0 +1,18 @@
+write f base
+commit base
+branch topic
+checkout topic
+write t one
+commit topic one
+write t two
+commit topic two
+checkout main
+write m main
+commit main one
+merge topic~1
+merge 0002
+log
+show main
+merge topic
+log
+diff topic main

@@ -1,0 +1,67 @@
+# A spreadsheet: reads commands from stdin, one per line, and prints what each one answers.
+import commands;
+import sheet;
+
+fn run(s: sheet.Sheet, cmd: str, args_value: list[str]) -> result[list[str]] {
+    match cmd {
+        case "set" {
+            return commands.cmd_set(s, args_value);
+        }
+        case "get" {
+            return commands.cmd_get(s, args_value);
+        }
+        case "show" {
+            return commands.cmd_show(s, args_value);
+        }
+        case "clear" {
+            return commands.cmd_clear(s, args_value);
+        }
+        case "copy" {
+            return commands.cmd_copy(s, args_value);
+        }
+        case "deps" {
+            return commands.cmd_deps(s, args_value);
+        }
+        case "users" {
+            return commands.cmd_users(s, args_value);
+        }
+        case "list" {
+            return commands.cmd_list(s, args_value);
+        }
+        case "count" {
+            return commands.cmd_count(s, args_value);
+        }
+        case "find" {
+            return commands.cmd_find(s, args_value);
+        }
+        case "eval" {
+            return commands.cmd_eval(s, args_value);
+        }
+        case "print" {
+            return commands.cmd_print(s, args_value);
+        }
+        else {
+            return err("error: unknown command " + cmd);
+        }
+    }
+}
+
+fn main() uses console, input {
+    let s = sheet.new_sheet();
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w) => w != "");
+        if len(words) == 0 {
+            continue;
+        }
+        match run(s, words[0], slice(words, 1, len(words))) {
+            case ok(lines) {
+                for out in lines {
+                    print(out);
+                }
+            }
+            case err(e) {
+                print(e);
+            }
+        }
+    }
+}

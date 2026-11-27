@@ -1,0 +1,21 @@
+open assets:bank asset
+open assets:eur asset EUR
+open equity:open equity
+rate EUR 0 1.5
+post k1 0 a assets:eur=10 assets:bank=
+rate EUR 0 2
+post k2 0 b assets:eur=10 assets:bank=
+show k1
+show k2
+statement assets:eur
+balance assets:eur
+revalue 0
+rate EUR 0 1
+balance assets:eur
+revalue 0
+trial
+post k3 1 c assets:eur=-20 assets:bank=
+show k3
+revalue 1
+void k3 1
+revalue 1

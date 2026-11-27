@@ -1,0 +1,47 @@
+user ann added
+user bob added
+user cy added
+created #1: Task one
+created #2: Task two
+created #3: Task three
+created #4: Task four
+created #5: Task five
+#1 assigned to ann
+#2 assigned to ann
+#3 assigned to ann
+#4 assigned to ann
+#5 assigned to bob
+#1 moved new -> triaged
+#1 moved triaged -> in_progress
+#1 moved in_progress -> blocked
+#2 moved new -> triaged
+#2 moved triaged -> in_progress
+#2 moved in_progress -> review
+#2 moved review -> done
+#3 moved new -> wontfix
+#5 closed
+#4 [p2] new ann Task four
+#1 [p3] blocked ann Task one
+no open issues for bob
+no open issues for cy
+error: unknown user zed
+ann (since 1): 2 open, 2 closed
+bob (since 2): 0 open, 1 closed
+cy (since 3): 0 open, 0 closed
+error: issue #2 is closed
+error: issue #3 is closed
+#1 reassigned from ann to bob
+#1 moved blocked -> in_progress
+#1 [p3] Task one
+  status: in_progress
+  assignee: bob
+  labels: -
+  created 4, updated 31
+  [14] new -> triaged
+  [15] triaged -> in_progress
+  [16] in_progress -> blocked (vendor)
+  [31] blocked -> in_progress
+  0 comments
+ann (since 1): 1 open, 2 closed
+bob (since 2): 1 open, 1 closed
+cy (since 3): 0 open, 0 closed

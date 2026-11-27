@@ -1,0 +1,392 @@
+# The formula language: tokens, parsing into a tree, and reference shifting for copy.
+const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+export record Ref {
+    cf: bool;
+    col: int;
+    rf: bool;
+    row: int;
+}
+
+export record Tok {
+    kind: str;
+    start: int;
+    end: int;
+    num: int;
+    a: Ref;
+    b: Ref;
+    text: str;
+}
+
+export variant Expr {
+    lit(int);
+    cell {
+        col: int;
+        row: int;
+    }
+    referr;
+    neg(Expr);
+    bin {
+        op: str;
+        left: Expr;
+        right: Expr;
+    }
+    call {
+        name: str;
+        args: list[Expr];
+    }
+    area {
+        c1: int;
+        r1: int;
+        c2: int;
+        r2: int;
+    }
+}
+
+record Parser {
+    toks: list[Tok];
+    i: int;
+}
+
+fn is_digit(b: int) -> bool {
+    return b >= 48 and b <= 57;
+}
+
+fn is_upper(b: int) -> bool {
+    return b >= 65 and b <= 90;
+}
+
+fn is_word(b: int) -> bool {
+    return is_digit(b) or is_upper(b) or b == 36;
+}
+
+fn all_digits(s: str) -> bool {
+    for i in 0..len(s) {
+        if not is_digit(byte_at(s, i)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export fn is_aggregate(name: str) -> bool {
+    return name == "SUM" or name == "MIN" or name == "MAX" or name == "COUNT";
+}
+
+# A reference word such as `$B$2`, or an error.
+export fn parse_ref(w: str) -> result[Ref] {
+    let n = len(w);
+    var i = 0;
+    let cf = n > 0 and byte_at(w, 0) == 36;
+    if cf {
+        set i = 1;
+    }
+    if i >= n or not is_upper(byte_at(w, i)) {
+        return err("not a reference");
+    }
+    let col = byte_at(w, i) - 65;
+    set i = i + 1;
+    let rf = i < n and byte_at(w, i) == 36;
+    if rf {
+        set i = i + 1;
+    }
+    let digits = slice(w, i, n);
+    if len(digits) == 0 or len(digits) > 2 or not all_digits(digits) or byte_at(digits, 0) == 48 {
+        return err("not a reference");
+    }
+    return ok(new Ref { cf: cf, col: col, rf: rf, row: try parse_int(digits) });
+}
+
+export fn ref_text(r: Ref) -> str {
+    var s = "";
+    if r.cf {
+        set s = "$";
+    }
+    set s = s + slice(letters, r.col, r.col + 1);
+    if r.rf {
+        set s = s + "$";
+    }
+    return s + str(r.row);
+}
+
+fn word_end(s: str, i: int) -> int {
+    var j = i;
+    while j < len(s) and is_word(byte_at(s, j)) {
+        set j = j + 1;
+    }
+    return j;
+}
+
+fn tok(kind: str, start: int, end: int) -> Tok {
+    let z = new Ref { cf: false, col: 0, rf: false, row: 0 };
+    return new Tok { kind: kind, start: start, end: end, num: 0, a: z, b: z, text: "" };
+}
+
+fn word_token(s: str, i: int) -> result[Tok] {
+    let j = word_end(s, i);
+    let w = slice(s, i, j);
+    match parse_ref(w) {
+        case ok(r) {
+            if j < len(s) and byte_at(s, j) == 58 {
+                if j + 1 < len(s) and (is_upper(byte_at(s, j + 1)) or byte_at(s, j + 1) == 36) {
+                    let k = word_end(s, j + 1);
+                    let r2 = try parse_ref(slice(s, j + 1, k));
+                    let t = tok("range", i, k);
+                    set t.a = r;
+                    set t.b = r2;
+                    return ok(t);
+                }
+                return err("stray colon");
+            }
+            let t = tok("ref", i, j);
+            set t.a = r;
+            return ok(t);
+        }
+        case err(_) {
+            if len(w) < 2 {
+                return err("bad word");
+            }
+            for k in 0..len(w) {
+                if not is_upper(byte_at(w, k)) {
+                    return err("bad word");
+                }
+            }
+            let t = tok("name", i, j);
+            set t.text = w;
+            return ok(t);
+        }
+    }
+}
+
+export fn tokenize(s: str) -> result[list[Tok]] {
+    let toks = new list[Tok];
+    var i = 0;
+    while i < len(s) {
+        let c = byte_at(s, i);
+        if c == 32 {
+            set i = i + 1;
+        } else if is_digit(c) {
+            var j = i;
+            while j < len(s) and is_digit(byte_at(s, j)) {
+                set j = j + 1;
+            }
+            let t = tok("num", i, j);
+            set t.num = try parse_int(slice(s, i, j));
+            push(toks, t);
+            set i = j;
+        } else if c == 36 or is_upper(c) {
+            let t = try word_token(s, i);
+            push(toks, t);
+            set i = t.end;
+        } else if c == 35 {
+            if i + 5 > len(s) or slice(s, i, i + 5) != "#REF!" {
+                return err("bad token");
+            }
+            push(toks, tok("referr", i, i + 5));
+            set i = i + 5;
+        } else {
+            var op = "";
+            if i + 1 < len(s) {
+                let two = slice(s, i, i + 2);
+                if two == "<=" or two == ">=" or two == "<>" {
+                    set op = two;
+                }
+            }
+            if op == "" and c < 128 and find("+-*/=<>(),", chr(c)) >= 0 {
+                set op = chr(c);
+            }
+            if op == "" {
+                return err("bad token");
+            }
+            let t = tok("op", i, i + len(op));
+            set t.text = op;
+            push(toks, t);
+            set i = i + len(op);
+        }
+    }
+    return ok(toks);
+}
+
+fn at_op(p: Parser, k: int, ops: list[str]) -> str {
+    let j = p.i + k;
+    if j >= len(p.toks) or p.toks[j].kind != "op" {
+        return "";
+    }
+    for o in ops {
+        if p.toks[j].text == o {
+            return o;
+        }
+    }
+    return "";
+}
+
+fn need_op(p: Parser, op: str) -> result[void] {
+    if at_op(p, 0, [op]) == "" {
+        return err("expected " + op);
+    }
+    set p.i = p.i + 1;
+    return ok();
+}
+
+fn expression(p: Parser) -> result[Expr] {
+    let left = try sum(p);
+    let op = at_op(p, 0, ["=", "<>", "<", "<=", ">", ">="]);
+    if op == "" {
+        return ok(left);
+    }
+    set p.i = p.i + 1;
+    return ok(Expr.bin { op: op, left: left, right: try sum(p) });
+}
+
+fn sum(p: Parser) -> result[Expr] {
+    var left = try product(p);
+    while at_op(p, 0, ["+", "-"]) != "" {
+        let op = p.toks[p.i].text;
+        set p.i = p.i + 1;
+        set left = Expr.bin { op: op, left: left, right: try product(p) };
+    }
+    return ok(left);
+}
+
+fn product(p: Parser) -> result[Expr] {
+    var left = try unary(p);
+    while at_op(p, 0, ["*", "/"]) != "" {
+        let op = p.toks[p.i].text;
+        set p.i = p.i + 1;
+        set left = Expr.bin { op: op, left: left, right: try unary(p) };
+    }
+    return ok(left);
+}
+
+fn unary(p: Parser) -> result[Expr] {
+    if at_op(p, 0, ["-"]) != "" {
+        set p.i = p.i + 1;
+        return ok(Expr.neg(try unary(p)));
+    }
+    return primary(p);
+}
+
+fn primary(p: Parser) -> result[Expr] {
+    if p.i >= len(p.toks) {
+        return err("missing operand");
+    }
+    let t = p.toks[p.i];
+    set p.i = p.i + 1;
+    if t.kind == "num" {
+        return ok(Expr.lit(t.num));
+    }
+    if t.kind == "ref" {
+        return ok(Expr.cell { col: t.a.col, row: t.a.row });
+    }
+    if t.kind == "referr" {
+        return ok(Expr.referr);
+    }
+    if t.kind == "op" and t.text == "(" {
+        let e = try expression(p);
+        try need_op(p, ")");
+        return ok(e);
+    }
+    if t.kind == "name" {
+        return call(p, t.text);
+    }
+    return err("unexpected token");
+}
+
+fn call(p: Parser, name: str) -> result[Expr] {
+    if not is_aggregate(name) and name != "IF" and name != "ABS" {
+        return err("unknown function");
+    }
+    try need_op(p, "(");
+    let items = [try argument(p, name)];
+    while at_op(p, 0, [","]) != "" {
+        set p.i = p.i + 1;
+        push(items, try argument(p, name));
+    }
+    try need_op(p, ")");
+    if (name == "IF" and len(items) != 3) or (name == "ABS" and len(items) != 1) {
+        return err("wrong argument count");
+    }
+    return ok(Expr.call { name: name, args: items });
+}
+
+fn argument(p: Parser, name: str) -> result[Expr] {
+    if is_aggregate(name) and p.i < len(p.toks) and at_op(p, 1, [",", ")"]) != "" {
+        let t = p.toks[p.i];
+        if t.kind == "ref" or t.kind == "range" {
+            set p.i = p.i + 1;
+            var b = t.a;
+            if t.kind == "range" {
+                set b = t.b;
+            }
+            return ok(Expr.area {
+                c1: min(t.a.col, b.col),
+                r1: min(t.a.row, b.row),
+                c2: max(t.a.col, b.col),
+                r2: max(t.a.row, b.row)
+            });
+        }
+    }
+    return expression(p);
+}
+
+# The tree of a formula's expression (the text after `=`), or an error if it is invalid.
+export fn parse(text: str) -> result[Expr] {
+    let p = new Parser { toks: try tokenize(text), i: 0 };
+    let e = try expression(p);
+    if p.i != len(p.toks) {
+        return err("trailing tokens");
+    }
+    return ok(e);
+}
+
+fn move(r: Ref, dc: int, dr: int) -> result[Ref] {
+    var col = r.col;
+    var row = r.row;
+    if not r.cf {
+        set col = col + dc;
+    }
+    if not r.rf {
+        set row = row + dr;
+    }
+    if col < 0 or col > 25 or row < 1 or row > 99 {
+        return err("off the sheet");
+    }
+    return ok(new Ref { cf: r.cf, col: col, rf: r.rf, row: row });
+}
+
+fn moved_text(t: Tok, dc: int, dr: int) -> result[str] {
+    let a = try move(t.a, dc, dr);
+    if t.kind == "ref" {
+        return ok(ref_text(a));
+    }
+    let b = try move(t.b, dc, dr);
+    return ok(ref_text(a) + ":" + ref_text(b));
+}
+
+# The expression text with its references moved for a copy; the text must tokenize.
+export fn shift(text: str, dc: int, dr: int) -> str {
+    match tokenize(text) {
+        case ok(toks) {
+            var out = "";
+            var last = 0;
+            for t in toks {
+                if t.kind == "ref" or t.kind == "range" {
+                    var new_text = "#REF!";
+                    match moved_text(t, dc, dr) {
+                        case ok(m) {
+                            set new_text = m;
+                        }
+                        case err(_) {
+                        }
+                    }
+                    set out = out + slice(text, last, t.start) + new_text;
+                    set last = t.end;
+                }
+            }
+            return out + slice(text, last, len(text));
+        }
+        case err(_) {
+            return text;
+        }
+    }
+}

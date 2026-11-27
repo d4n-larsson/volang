@@ -1,0 +1,25 @@
+customer m added
+invoice #1 m total 335.00 balance 335.00 due 0
+invoice #2 m total 333.33 balance 333.33 due 0
+invoice #3 m total 10000.00 balance 10000.00 due 0
+invoice #4 m total 33.00 balance 33.00 due 0
+fee #1 5.03
+fee #2 5.00
+fee #3 150.00
+fee #4 5.00
+paid m 1.00: #4 1.00
+error: day 100
+statement m day 100
+#1 due 0 balance 340.03 overdue 100
+#2 due 0 balance 338.33 overdue 100
+#3 due 0 balance 10150.00 overdue 100
+#4 due 0 balance 37.00 overdue 100
+open 10865.36 credit 0.00 written off 0.00
+error: m on hold
+credit #2 5.00 balance 333.33
+error: m on hold
+invoices:
+#1 m open total 335.00 fee 5.03 paid 0.00 credits 0.00 balance 340.03
+#2 m open total 333.33 fee 5.00 paid 0.00 credits 5.00 balance 333.33
+#3 m open total 10000.00 fee 150.00 paid 0.00 credits 0.00 balance 10150.00
+#4 m open total 33.00 fee 5.00 paid 1.00 credits 0.00 balance 37.00

@@ -1,0 +1,9 @@
+workers 1
+target t1 2 t2
+target t2 2 t3
+target t3 2
+target u 7
+target v 1 u
+target w 9 t1 loop
+target loop 1 loop
+goal w t1 u

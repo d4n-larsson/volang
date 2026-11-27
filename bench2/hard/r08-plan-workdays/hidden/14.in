@@ -1,0 +1,18 @@
+task start 0 Start
+task left 3
+task right 5
+task mid 2
+task join 2
+task done 0 Done
+dep left start
+dep right start
+dep mid left+2
+dep join mid
+dep join right+1
+dep done join
+holiday 7
+holiday 8
+schedule
+critical
+gantt
+status 10

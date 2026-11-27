@@ -1,0 +1,27 @@
+customer t added
+customer z added
+customer n added
+invoice #1 t total 9.74 balance 9.74 due 0
+invoice #2 t total 10.28 balance 10.28 due 0
+invoice #3 t total 2.17 balance 2.17 due 0
+invoice #4 t total 8.18 balance 8.18 due 0
+invoice #5 z total 0.60 balance 0.60 due 0
+invoice #6 n total 250.02 balance 250.02 due 0
+invoice #7 n total 94.06 balance 94.06 due 0
+invoice #8 t total 0.06 balance 0.06 due 0
+invoice #9 t total 0.09 balance 0.09 due 0
+aging day 0
+n 344.08 0.00 0.00 0.00 0.00
+t 30.52 0.00 0.00 0.00 0.00
+z 0.60 0.00 0.00 0.00 0.00
+total 375.20 0.00 0.00 0.00 0.00
+invoices:
+#1 t open total 9.74 fee 0.00 paid 0.00 credits 0.00 balance 9.74
+#2 t open total 10.28 fee 0.00 paid 0.00 credits 0.00 balance 10.28
+#3 t open total 2.17 fee 0.00 paid 0.00 credits 0.00 balance 2.17
+#4 t open total 8.18 fee 0.00 paid 0.00 credits 0.00 balance 8.18
+#5 z open total 0.60 fee 0.00 paid 0.00 credits 0.00 balance 0.60
+#6 n open total 250.02 fee 0.00 paid 0.00 credits 0.00 balance 250.02
+#7 n open total 94.06 fee 0.00 paid 0.00 credits 0.00 balance 94.06
+#8 t open total 0.06 fee 0.00 paid 0.00 credits 0.00 balance 0.06
+#9 t open total 0.09 fee 0.00 paid 0.00 credits 0.00 balance 0.09

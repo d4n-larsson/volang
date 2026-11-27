@@ -1,0 +1,44 @@
+import parse;
+
+export record Accounts {
+    cash: map[str, int];
+    pos: map[str, ordered_map[str, int]];
+}
+
+export fn new_accounts() -> Accounts {
+    return new Accounts { cash: new map[str, int], pos: new map[str, ordered_map[str, int]] };
+}
+
+export fn open(a: Accounts, trader: str) {
+    if not has(a.cash, trader) {
+        set a.cash[trader] = 0;
+        set a.pos[trader] = new ordered_map[str, int];
+    }
+}
+
+fn add(a: Accounts, t: str, symbol: str, qty: int, cash: int) {
+    set a.cash[t] = a.cash[t] + cash;
+    let p = a.pos[t];
+    set p[symbol] = get_or(p, symbol, 0) + qty;
+}
+
+export fn trade(a: Accounts, buyer: str, seller: str, symbol: str, qty: int, price: int) {
+    add(a, buyer, symbol, qty, -qty * price);
+    add(a, seller, symbol, -qty, qty * price);
+}
+
+export fn report(a: Accounts) -> list[str] {
+    let names = keys(a.cash);
+    sort(names);
+    let out = new list[str];
+    for t in names {
+        var line = "trader " + t + " cash " + parse.money(a.cash[t]);
+        for s, q in a.pos[t] {
+            if q != 0 {
+                set line = line + " " + s + ":" + str(q);
+            }
+        }
+        push(out, line);
+    }
+    return out;
+}

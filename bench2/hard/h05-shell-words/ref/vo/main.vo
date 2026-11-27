@@ -1,0 +1,195 @@
+record Problem {
+    col: int;
+    msg: str;
+}
+
+record Words {
+    done: list[str];
+    cur: str;
+    started: bool;
+}
+
+record Expansion {
+    literal: bool;
+    value: str;
+    next: int;
+}
+
+fn is_start(c: str) -> bool {
+    return (c >= "a" and c <= "z") or (c >= "A" and c <= "Z") or c == "_";
+}
+
+fn is_name(c: str) -> bool {
+    return is_start(c) or (c >= "0" and c <= "9");
+}
+
+fn is_ws(c: str) -> bool {
+    return c == " " or c == "\t";
+}
+
+fn end_word(w: Words) {
+    if w.started {
+        push(w.done, w.cur);
+    }
+    set w.cur = "";
+    set w.started = false;
+}
+
+fn add(w: Words, s: str) {
+    set w.cur = w.cur + s;
+    set w.started = true;
+}
+
+fn lookup(vars: map[str, str], cs: list[str], a: int, b: int) -> str {
+    return get_or(vars, join(slice(cs, a, b), ""), "");
+}
+
+# cs[i] is "$".
+fn variable(cs: list[str], i: int, vars: map[str, str]) -> result[Expansion, Problem] {
+    let n = len(cs);
+    if i + 1 < n and cs[i + 1] == "{" {
+        var j = i + 2;
+        if j < n and is_start(cs[j]) {
+            while j < n and is_name(cs[j]) {
+                set j = j + 1;
+            }
+            if j < n and cs[j] == "}" {
+                return ok(new Expansion { literal: false, value: lookup(vars, cs, i + 2, j), next: j + 1 });
+            }
+        }
+        return err(new Problem { col: i + 1, msg: "bad substitution" });
+    }
+    if i + 1 < n and is_start(cs[i + 1]) {
+        var j = i + 1;
+        while j < n and is_name(cs[j]) {
+            set j = j + 1;
+        }
+        return ok(new Expansion { literal: false, value: lookup(vars, cs, i + 1, j), next: j });
+    }
+    return ok(new Expansion { literal: true, value: "$", next: i + 1 });
+}
+
+# Reads a double-quoted part whose opening quote is cs[i]; returns the index after it.
+fn double_quoted(cs: list[str], i: int, vars: map[str, str], w: Words) -> result[int, Problem] {
+    add(w, "");
+    var k = i + 1;
+    while true {
+        if k == len(cs) {
+            return err(new Problem { col: i + 1, msg: "unclosed \"" });
+        }
+        let c = cs[k];
+        if c == "\"" {
+            return ok(k + 1);
+        }
+        if c == "\\" and k + 1 < len(cs) and (cs[k + 1] == "\"" or cs[k + 1] == "\\" or cs[k + 1] == "$") {
+            add(w, cs[k + 1]);
+            set k = k + 2;
+        } else if c == "$" {
+            let e = try variable(cs, k, vars);
+            add(w, e.value);
+            set k = e.next;
+        } else {
+            add(w, c);
+            set k = k + 1;
+        }
+    }
+}
+
+fn split_value(v: str, w: Words) {
+    for c in v {
+        if is_ws(c) {
+            end_word(w);
+        } else {
+            add(w, c);
+        }
+    }
+}
+
+fn split_line(line: str, vars: map[str, str]) -> result[list[str], Problem] {
+    let cs = chars(line);
+    let w = new Words { done: new list[str], cur: "", started: false };
+    var i = 0;
+    var sep = true;
+    while i < len(cs) {
+        let c = cs[i];
+        let was_sep = sep;
+        set sep = false;
+        if is_ws(c) {
+            end_word(w);
+            set sep = true;
+            set i = i + 1;
+        } else if c == "#" and was_sep {
+            break;
+        } else if c == "\\" {
+            if i + 1 == len(cs) {
+                return err(new Problem { col: i + 1, msg: "dangling backslash" });
+            }
+            add(w, cs[i + 1]);
+            set i = i + 2;
+        } else if c == "'" {
+            var j = i + 1;
+            while j < len(cs) and cs[j] != "'" {
+                set j = j + 1;
+            }
+            if j == len(cs) {
+                return err(new Problem { col: i + 1, msg: "unclosed '" });
+            }
+            add(w, join(slice(cs, i + 1, j), ""));
+            set i = j + 1;
+        } else if c == "\"" {
+            set i = try double_quoted(cs, i, vars, w);
+        } else if c == "$" {
+            let e = try variable(cs, i, vars);
+            if e.literal {
+                add(w, "$");
+            } else {
+                split_value(e.value, w);
+            }
+            set i = e.next;
+        } else {
+            add(w, c);
+            set i = i + 1;
+        }
+    }
+    end_word(w);
+    return ok(w.done);
+}
+
+fn render(line: str, vars: map[str, str]) -> str {
+    match split_line(line, vars) {
+        case ok(ws) {
+            let parts = [str(len(ws))];
+            for x in ws {
+                push(parts, "[" + x + "]");
+            }
+            return join(parts, " ");
+        }
+        case err(e) {
+            return "error at column " + str(e.col) + ": " + e.msg;
+        }
+    }
+}
+
+fn main() uses console, input {
+    let vars = new map[str, str];
+    var defs = true;
+    while true {
+        match read_line() {
+            case ok(line) {
+                if defs {
+                    if line == "%%" {
+                        set defs = false;
+                    } else {
+                        let eq = find(line, "=");
+                        set vars[slice(line, 0, eq)] = slice(line, eq + 1, len(line));
+                    }
+                } else {
+                    print(render(line, vars));
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+}

@@ -1,0 +1,22 @@
+write f 1
+commit c1
+branch a
+branch b
+checkout a
+write f 2
+commit c2
+checkout main
+unbranch nope
+unbranch main
+unbranch a
+unbranch b
+branches
+merge a
+unbranch a
+checkout a
+unbranch a
+checkout main
+branch a 2
+reset 1
+unbranch a
+branches

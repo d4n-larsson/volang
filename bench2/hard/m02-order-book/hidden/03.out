@@ -1,0 +1,28 @@
+rest S1 10 10.00
+rest S2 10 10.00
+rest S3 10 10.01
+rest S4 10 10.02
+stp S1 10
+trade RR 10 10.00 B1 S2
+stp S3 10
+trade RR 10 10.02 B1 S4
+rest B1 5 10.02
+book RR last 10.02
+  bid 10.02 5 1
+rest S5 5 10.03
+rest S6 5 10.03
+trade RR 5 10.03 B2 S5
+stp S6 5
+expired B2 3
+book RR last 10.03
+  bid 10.02 5 1
+reject B3 price band
+rest B4 1 9.50
+reject S7 price band
+book RR last 10.03
+  bid 10.02 5 1
+  bid 9.50 1 1
+trader ana cash -150.05 RR:15
+trader bob cash 49.85 RR:-5
+trader cy cash 100.20 RR:-10
+trader dan cash 0.00

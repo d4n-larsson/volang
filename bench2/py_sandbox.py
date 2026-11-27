@@ -3,7 +3,8 @@
 
 Usage: py_sandbox.py main.py (from the run directory; the log path is in VO_SANDBOX_LOG).
 Recorded, one JSON object per line: file.read / file.write (opens of paths that are not the
-interpreter's own or the solution's modules), env (variable reads), clock (time and datetime),
+interpreter's own or the solution's modules), file.list (os.listdir, os.scandir, os.walk), file.info
+(os.stat, os.lstat, os.access: os.path.exists and isdir, pathlib), env (variable reads), clock (time and datetime),
 random, net (socket use) and process (subprocess, os.system, exec). Console and stdin are not
 recorded: every capability task allows them.
 ponytail: audit hooks miss effects done through C extensions or ctypes; seccomp or strace if that matters
@@ -15,6 +16,7 @@ import sys
 
 LOG = os.environ.get("VO_SANDBOX_LOG")
 CWD = os.path.realpath(os.getcwd())
+LOG_REAL = os.path.realpath(LOG) if LOG else None
 PREFIXES = tuple(os.path.realpath(p) for p in {sys.prefix, sys.base_prefix, sys.exec_prefix})
 _log = open(LOG, "a") if LOG else None
 _in_log = [False]
@@ -31,19 +33,38 @@ def record(effect, target=None):
         _in_log[0] = False
 
 
+_busy = [False]
+
+
+def solution_path(path):
+    """The real path, or None for what is not the solution's business: a descriptor, the
+    interpreter's own files, the log, the solution's modules."""
+    if not isinstance(path, (str, bytes, os.PathLike)):
+        return None
+    _busy[0] = True                                     # realpath stats: don't record that
+    try:
+        real = os.path.realpath(os.fsdecode(path))
+    finally:
+        _busy[0] = False
+    if real.startswith(PREFIXES) or real == LOG_REAL:
+        return None
+    if real.endswith((".py", ".pyc")) and real.startswith(CWD):
+        return None                                     # the solution's own modules
+    return real
+
+
 def hook(event, args):
-    if _in_log[0]:
+    if _in_log[0] or _busy[0]:
         return
-    if event == "open":
+    if event in ("os.listdir", "os.scandir"):
+        real = solution_path("." if args[0] is None else args[0])
+        if real:
+            record("file.list", real)
+    elif event == "open":
         path, mode = args[0], args[1]
-        if not isinstance(path, (str, bytes)) or isinstance(path, int):
+        real = solution_path(path)
+        if real is None:
             return
-        path = os.fsdecode(path)
-        real = os.path.realpath(path)
-        if real.startswith(PREFIXES) or real == os.path.realpath(LOG or ""):
-            return
-        if real.endswith((".py", ".pyc")) and real.startswith(CWD):
-            return                                      # the solution's own modules
         mode = mode or "r"
         writing = isinstance(mode, str) and any(c in mode for c in "wax+")
         if isinstance(mode, int):
@@ -149,6 +170,16 @@ def main():
             record("clock")
             return datetime.datetime.utcnow()
     datetime.datetime = DT
+    for n in ("stat", "lstat", "access"):
+        def make(f=getattr(os, n)):
+            def wrapper(path, *a, **k):
+                if not (_in_log[0] or _busy[0]):
+                    real = solution_path(path)
+                    if real:
+                        record("file.info", real)
+                return f(path, *a, **k)
+            return wrapper
+        setattr(os, n, make())
     os.environ = RecordingEnviron(os.environ)
     sys.addaudithook(hook)
     runpy.run_path(target, run_name="__main__")

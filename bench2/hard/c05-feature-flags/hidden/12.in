@@ -1,0 +1,21 @@
+profile versions
+user v1 app=1.10
+user v2 app=1.9
+user v3 app=1.2
+user v4 app=1.2.0
+user v5 app=1.2.0.0
+user v6 app=1.2.0.1
+user v7 app=2
+user v8 app=2.0.0
+user v9 app=01.10
+user v10 app=0.8.9
+user v11 app=1..2
+user v12 app=1.
+user v13 app=v1
+user v14 app=
+user v15 app=1234567890
+user v16 app=0.9.0
+user v17 app=1.2.0.0.0
+user v18 app=123456789.1
+user v19 version=1.10
+user v20 app=.5

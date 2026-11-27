@@ -1,0 +1,3 @@
+5 [ls] [-l] [/home/ann/my docs] [a.txt] [b.txt]
+3 [echo] [its] [$HOME]
+3 [grep] [say "hi"] [x#y]

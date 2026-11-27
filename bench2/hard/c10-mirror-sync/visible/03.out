@@ -1,0 +1,7 @@
+error: line 1: bad command
+== plan nothing
+no such job
+== plan ../secrets/keys
+bad job name
+== plan dup
+duplicate source

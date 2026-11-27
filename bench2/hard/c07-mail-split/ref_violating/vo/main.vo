@@ -1,0 +1,280 @@
+import std.fs;
+import std.text;
+
+record Header {
+    name: str;
+    value: str;
+}
+
+record Run {
+    domain: str;
+    quota: int;
+    boxes: map[str, list[str]];
+    sizes: map[str, int];
+    ids: map[str, bool];
+    delivered: int;
+    bounced: int;
+    relayed: int;
+    dups: int;
+}
+
+fn lines_of(content: str) -> list[str] {
+    let ls = split(content, "\n");
+    if ls[len(ls) - 1] == "" {
+        return slice(ls, 0, len(ls) - 1);
+    }
+    return ls;
+}
+
+fn ascii_lower(s: str) -> str {
+    var out = "";
+    for c in s {
+        if c >= "A" and c <= "Z" {
+            set out = out + chr(ord(c) + 32);
+        } else {
+            set out = out + c;
+        }
+    }
+    return out;
+}
+
+fn valid_spool(s: str) -> bool {
+    if len(s) < 1 or len(s) > 20 {
+        return false;
+    }
+    for c in s {
+        if not ((c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn valid_user(u: str) -> bool {
+    if len(u) < 1 or len(u) > 32 or text.starts_with(u, ".") {
+        return false;
+    }
+    for c in u {
+        if not ((c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "." or c == "_" or c == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn is_blank(c: str) -> bool {
+    return c == " " or c == "\t";
+}
+
+fn strip_blanks(s: str) -> str {
+    let cs = chars(s);
+    var a = 0;
+    var b = len(cs);
+    while a < b and is_blank(cs[a]) {
+        set a = a + 1;
+    }
+    while b > a and is_blank(cs[b - 1]) {
+        set b = b - 1;
+    }
+    return join(slice(cs, a, b), "");
+}
+
+fn lstrip_blanks(s: str) -> str {
+    var a = 0;
+    while a < len(s) and (byte_at(s, a) == 32 or byte_at(s, a) == 9) {
+        set a = a + 1;
+    }
+    return slice(s, a, len(s));
+}
+
+fn messages(content: str) -> list[list[str]] {
+    let out = new list[list[str]];
+    for line in lines_of(content) {
+        if text.starts_with(line, "From ") {
+            push(out, [line]);
+        } else if len(out) > 0 {
+            push(out[len(out) - 1], line);
+        }
+    }
+    return out;
+}
+
+fn headers(msg: list[str]) -> list[Header] {
+    let hs = new list[Header];
+    var current = -1;
+    for line in slice(msg, 1, len(msg)) {
+        if line == "" {
+            break;
+        }
+        if is_blank(slice(line, 0, 1)) {
+            if current >= 0 {
+                set hs[current].value = hs[current].value + " " + lstrip_blanks(line);
+            }
+            continue;
+        }
+        let colon = find(line, ":");
+        if colon < 0 {
+            set current = -1;
+            continue;
+        }
+        push(hs, new Header { name: ascii_lower(slice(line, 0, colon)), value: slice(line, colon + 1, len(line)) });
+        set current = len(hs) - 1;
+    }
+    for h in hs {
+        set h.value = strip_blanks(h.value);
+    }
+    return hs;
+}
+
+fn first_value(hs: list[Header], name: str) -> str {
+    for h in hs {
+        if h.name == name {
+            return h.value;
+        }
+    }
+    return "";
+}
+
+fn addresses(hs: list[Header]) -> list[str] {
+    let out = new list[str];
+    for h in hs {
+        if h.name != "to" and h.name != "cc" {
+            continue;
+        }
+        for raw in split(h.value, ",") {
+            var item = strip_blanks(raw);
+            if item == "" {
+                continue;
+            }
+            let lt = find(item, "<");
+            if lt >= 0 {
+                let rest = slice(item, lt + 1, len(item));
+                let gt = find(rest, ">");
+                if gt >= 0 {
+                    set item = slice(rest, 0, gt);
+                } else {
+                    set item = rest;
+                }
+            }
+            push(out, item);
+        }
+    }
+    return out;
+}
+
+# The log line for one address of a message; delivers it when it can.
+fn handle(run: Run, id: str, addr: str, body: str) -> str {
+    let parts = split(addr, "@");
+    if len(parts) != 2 {
+        set run.bounced = run.bounced + 1;
+        return "bounce " + id + " " + addr + ": bad address";
+    }
+    if ascii_lower(parts[1]) != run.domain {
+        set run.relayed = run.relayed + 1;
+        return "relay " + id + " " + addr;
+    }
+    let user = ascii_lower(parts[0]);
+    if not valid_user(user) {
+        set run.bounced = run.bounced + 1;
+        return "bounce " + id + " " + addr + ": invalid user";
+    }
+    if get_or(run.sizes, user, 0) + len(body) > run.quota {
+        set run.bounced = run.bounced + 1;
+        return "bounce " + id + " " + addr + ": over quota";
+    }
+    if not has(run.boxes, user) {
+        set run.boxes[user] = [];
+    }
+    push(run.boxes[user], body);
+    set run.sizes[user] = get_or(run.sizes, user, 0) + len(body);
+    set run.delivered = run.delivered + 1;
+    return "deliver " + id + " " + user;
+}
+
+fn deliver_spool(run: Run, s: str, content: str) uses console {
+    for i, msg in messages(content) {
+        let hs = headers(msg);
+        var id = first_value(hs, "message-id");
+        if id == "" {
+            set id = s + "#" + str(i + 1);
+        }
+        if has(run.ids, id) {
+            print("dup " + id);
+            set run.dups = run.dups + 1;
+            continue;
+        }
+        set run.ids[id] = true;
+        var subject = first_value(hs, "subject");
+        if subject == "" {
+            set subject = "(no subject)";
+        }
+        print("message " + id + ": " + subject);
+        let body = join(map(msg, fn(l) => l + "\n"), "");
+        let handled = new map[str, bool];
+        for addr in addresses(hs) {
+            let key = ascii_lower(addr);
+            if has(handled, key) {
+                continue;
+            }
+            set handled[key] = true;
+            print(handle(run, id, addr, body));
+        }
+    }
+}
+
+fn after_space(line: str) -> str {
+    return slice(line, find(line, " ") + 1, len(line));
+}
+
+fn main() -> result[void] uses console, input, file.read("spool/"), file.write("./") {
+    let domain = after_space(try read_line());
+    let quota = try parse_int(after_space(try read_line()));
+    let run = new Run {
+        domain: domain,
+        quota: quota,
+        boxes: new map[str, list[str]],
+        sizes: new map[str, int],
+        ids: new map[str, bool],
+        delivered: 0,
+        bounced: 0,
+        relayed: 0,
+        dups: 0
+    };
+    while true {
+        match read_line() {
+            case ok(s) {
+                if s == "" {
+                    continue;
+                }
+                if not valid_spool(s) {
+                    print("skip " + s + ": bad spool name");
+                    continue;
+                }
+                match read_file("spool/" + s + ".mbox") {
+                    case ok(content) {
+                        deliver_spool(run, s, content);
+                    }
+                    case err(_) {
+                        print("skip " + s + ": no such spool");
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    print("== mailboxes");
+    let users = keys(run.boxes);
+    sort(users);
+    for user in users {
+        let content = join(run.boxes[user], "");
+        try write_file("out/" + user + ".mbox", content);
+        print("wrote out/" + user + ".mbox " + str(len(run.boxes[user])) + " " + str(len(content)));
+    }
+    let summary = format("total {} delivered, {} bounced, {} relayed, {} duplicates", run.delivered, run.bounced, run.relayed, run.dups);
+    print(summary);
+    # keep a history of runs
+    try fs.append_file("delivery.log", summary + "\n");
+    return ok();
+}

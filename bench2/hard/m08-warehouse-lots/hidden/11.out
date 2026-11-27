@@ -1,0 +1,17 @@
+warehouse big added
+item gold added
+lot L1 big gold 99999
+lot L2 big gold 99999
+shipped o1 99999 L2x99999
+shipped o2 99999 L1x99999
+returned o1 99999 restocked 99999 quarantined 0
+expired L2 big 99999
+value on hand 0.00 in transit 0.00 quarantine 0.00 shipped 999989999000.01 written off 999.99
+returned o2 50000 restocked 0 quarantined 50000
+stock day 999999
+big gold quarantine 50000
+value on hand 0.00 in transit 0.00 quarantine 499999999500.00 shipped 499989999500.01 written off 999.99
+stock day 999999
+big gold quarantine 50000
+value on hand 0.00 in transit 0.00 quarantine 499999999500.00 shipped 499989999500.01 written off 999.99
+backorders 0

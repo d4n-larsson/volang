@@ -1,0 +1,128 @@
+# Stock movements: receipts, shipments, transfers and adjustments, and their history.
+import catalog;
+import fmt;
+import model;
+import parse;
+import stock;
+
+export fn record_move(state: model.State, kind: str, wh: str, sku: str, delta: int, note: str) {
+    push(state.moves, new model.Move { seq: state.next_seq, kind: kind, wh: wh, sku: sku, delta: delta, note: note });
+    set state.next_seq = state.next_seq + 1;
+}
+
+# The error for an unknown warehouse or item, or "".
+fn check_place(state: model.State, wh: str, sku: str) -> str {
+    if not has(state.stock, wh) {
+        return catalog.unknown_warehouse(wh);
+    }
+    if not has(state.items, sku) {
+        return catalog.unknown_item(sku);
+    }
+    return "";
+}
+
+export fn receive(state: model.State, wh: str, sku: str, qty: int) -> str {
+    let problem = check_place(state, wh, sku);
+    if problem != "" {
+        return problem;
+    }
+    stock.put(state, wh, sku, qty);
+    record_move(state, "receive", wh, sku, qty, "");
+    return "received " + str(qty) + " " + sku + " into " + wh + ", now " + str(stock.on_hand(state, wh, sku));
+}
+
+export fn ship(state: model.State, wh: str, sku: str, qty: int) -> str {
+    let problem = check_place(state, wh, sku);
+    if problem != "" {
+        return problem;
+    }
+    if stock.on_hand(state, wh, sku) < qty {
+        return stock.short_message(state, wh, sku);
+    }
+    stock.take(state, wh, sku, qty);
+    record_move(state, "ship", wh, sku, -qty, "");
+    set state.shipments = state.shipments + 1;
+    set state.shipped_units = state.shipped_units + qty;
+    return "shipped " + str(qty) + " " + sku + " from " + wh + ", now " + str(stock.on_hand(state, wh, sku));
+}
+
+export fn transfer(state: model.State, src: str, dst: str, sku: str, qty: int) -> str {
+    if not has(state.stock, src) {
+        return catalog.unknown_warehouse(src);
+    }
+    if not has(state.stock, dst) {
+        return catalog.unknown_warehouse(dst);
+    }
+    if src == dst {
+        return "error: same warehouse " + src;
+    }
+    if not has(state.items, sku) {
+        return catalog.unknown_item(sku);
+    }
+    if stock.on_hand(state, src, sku) < qty {
+        return stock.short_message(state, src, sku);
+    }
+    stock.take(state, src, sku, qty);
+    stock.put(state, dst, sku, qty);
+    record_move(state, "transfer-out", src, sku, -qty, "to " + dst);
+    record_move(state, "transfer-in", dst, sku, qty, "from " + src);
+    return "transferred " + str(qty) + " " + sku + " from " + src + " to " + dst;
+}
+
+# Applies a checked adjustment of delta units (not 0).
+fn change(state: model.State, wh: str, sku: str, delta: int, reason: str) {
+    if delta > 0 {
+        stock.put(state, wh, sku, delta);
+    } else {
+        stock.take(state, wh, sku, -delta);
+    }
+    record_move(state, "adjust", wh, sku, delta, reason);
+}
+
+export fn adjust(state: model.State, wh: str, sku: str, delta: int, reason: str) -> str {
+    let problem = check_place(state, wh, sku);
+    if problem != "" {
+        return problem;
+    }
+    if not parse.is_reason(reason) {
+        return "error: unknown reason " + reason;
+    }
+    if delta < 0 and stock.on_hand(state, wh, sku) < -delta {
+        return stock.short_message(state, wh, sku);
+    }
+    change(state, wh, sku, delta, reason);
+    return "adjusted " + sku + " in " + wh + " by " + fmt.signed(delta) + " (" + reason + "), now " + str(stock.on_hand(state, wh, sku));
+}
+
+# A stock-take: the shelf holds qty units, adjusted with reason `count`.
+export fn count(state: model.State, wh: str, sku: str, qty: int) -> str {
+    let problem = check_place(state, wh, sku);
+    if problem != "" {
+        return problem;
+    }
+    let was = stock.on_hand(state, wh, sku);
+    if was == qty {
+        return "counted " + sku + " in " + wh + ": no change";
+    }
+    change(state, wh, sku, qty - was, "count");
+    return "counted " + sku + " in " + wh + ": was " + str(was) + ", now " + str(qty);
+}
+
+fn history_line(m: model.Move) -> str {
+    var line = "#" + str(m.seq) + " " + m.kind + " " + m.wh + " " + fmt.signed(m.delta);
+    if m.note != "" {
+        set line = line + " (" + m.note + ")";
+    }
+    return line;
+}
+
+export fn history(state: model.State, sku: str) -> list[str] {
+    if not has(state.items, sku) {
+        return [catalog.unknown_item(sku)];
+    }
+    let out = map(filter(state.moves, fn(m) => m.sku == sku), history_line);
+    if len(out) == 0 {
+        return ["no movements for " + sku];
+    }
+    return out;
+}

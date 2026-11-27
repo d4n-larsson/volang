@@ -1,0 +1,33 @@
+customer a 100.00 30 0
+customer b 0.00 5 0 extra
+customer b 0.00 5
+customer c 1.5 5 0
+customer c 12345678.00 5 0
+customer c 1234567.00 5 0
+customer d 10.00 1000 0
+customer d 10.00 0999 10000
+customer e 10.00 1 12345
+invoice a
+invoice a 0x1.00
+invoice a 1x0.00
+invoice a 1x1.0
+invoice a 1*1.00
+invoice a 10000x1.00
+invoice a 0010x1.00 x1.00
+invoice a 2x1.00 3X1.00
+invoice a 2x1.00   3x1.00
+pay a 1.00 1 01
+pay a 0.00
+pay a 1.00 1234567
+aging now
+day -1
+day 1a
+statement
+void 1 2
+writeoff x
+credit 1 0.00
+refund a
+terms a 1000
+frob a
+
+   

@@ -1,0 +1,55 @@
+# The `print` grid.
+import cells;
+import evaluate;
+import sheet;
+
+# text right-aligned in width characters.
+fn pad(text: str, width: int) -> str {
+    var out = text;
+    while len(out) < width {
+        set out = " " + out;
+    }
+    return out;
+}
+
+fn strip_right(line: str) -> str {
+    var end = len(line);
+    while end > 0 and slice(line, end - 1, end) == " " {
+        set end = end - 1;
+    }
+    return slice(line, 0, end);
+}
+
+# A header line with the column letters, then one line per row: the row number, then each cell's
+# value right-aligned in its column (empty cells blank). Columns are as wide as their widest entry and
+# separated by two spaces; the row numbers are as wide as the last one. Lines lose trailing spaces.
+export fn render(s: sheet.Sheet, a: cells.Area) -> list[str] {
+    let texts = new map[cells.Pos, str];
+    for p in cells.range_cells(a) {
+        if not sheet.is_empty(s, p) {
+            set texts[p] = evaluate.value_text(evaluate.value_of(s, p));
+        }
+    }
+    let label_width = len(str(a.row2));
+    let widths = new map[int, int];
+    for col in a.col1..a.col2 + 1 {
+        var w = 1;
+        for row in a.row1..a.row2 + 1 {
+            set w = max(w, len(get_or(texts, new cells.Pos { col: col, row: row }, "")));
+        }
+        set widths[col] = w;
+    }
+    var header = pad("", label_width);
+    for col in a.col1..a.col2 + 1 {
+        set header = header + "  " + pad(cells.col_name(col), widths[col]);
+    }
+    let lines = [strip_right(header)];
+    for row in a.row1..a.row2 + 1 {
+        var line = pad(str(row), label_width);
+        for col in a.col1..a.col2 + 1 {
+            set line = line + "  " + pad(get_or(texts, new cells.Pos { col: col, row: row }, ""), widths[col]);
+        }
+        push(lines, strip_right(line));
+    }
+    return lines;
+}

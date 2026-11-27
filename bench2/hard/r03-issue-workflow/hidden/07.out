@@ -1,0 +1,53 @@
+user ann added
+created #1: Alpha
+created #2: Beta
+created #3: Gamma with a really long title here
+created #4: Delta
+no done issues
+#1 assigned to ann
+#2 assigned to ann
+#3 assigned to ann
+#4 assigned to ann
+#1 moved new -> triaged
+#1 moved triaged -> in_progress
+#2 moved new -> triaged
+#2 moved triaged -> in_progress
+#3 moved new -> triaged
+#3 moved triaged -> in_progress
+#1 moved in_progress -> review
+#1 moved review -> done
+#2 moved in_progress -> review
+#2 closed
+#1 6 ticks: Alpha
+#2 6 ticks: Beta
+average 6 ticks
+#3 moved in_progress -> review
+#3 moved review -> in_progress
+#3 moved in_progress -> review
+#3 moved review -> done
+#3 9 ticks: Gamma with a really long ti...
+#1 6 ticks: Alpha
+#2 6 ticks: Beta
+average 7 ticks
+#1 reopened
+#3 9 ticks: Gamma with a really long ti...
+#2 6 ticks: Beta
+average 7 ticks
+#1 moved triaged -> in_progress
+#1 moved in_progress -> review
+clock 50
+#1 moved review -> done
+#4 moved new -> wontfix
+#1 39 ticks: Alpha
+#3 9 ticks: Gamma with a really long ti...
+#2 6 ticks: Beta
+average 18 ticks
+error: bad command
+#2 reopened
+#2 moved triaged -> in_progress
+#2 moved in_progress -> review
+#2 moved review -> done
+#2 44 ticks: Beta
+#1 39 ticks: Alpha
+#3 9 ticks: Gamma with a really long ti...
+average 30 ticks

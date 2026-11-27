@@ -1,0 +1,48 @@
+user ann added
+created #1: Original report
+created #2: Same report again
+created #3: Third copy
+created #4: Unrelated
+#2 closed as duplicate of #1
+#2 [p2] Same report again
+  status: wontfix
+  assignee: -
+  labels: duplicate
+  created 3, updated 6
+  [6] new -> wontfix (duplicate of #1)
+  1 comment
+  [6] system: duplicate of #1
+error: issue #2 is already closed
+error: issue #2 is closed
+error: issue #1 cannot duplicate itself
+error: issue #3 cannot duplicate itself
+#1 assigned to ann
+#1 moved new -> triaged
+#1 moved triaged -> in_progress
+#1 moved in_progress -> review
+#1 moved review -> done
+error: issue #1 is closed
+error: unknown issue #9
+error: bad command
+error: bad command
+#4 labels: bug
+#1 labels: bug,ui
+bug: 1 open of 2
+duplicate: 0 open of 1
+ui: 0 open of 1
+#2 reopened
+#2 [p2] Same report again
+  status: triaged
+  assignee: -
+  labels: duplicate
+  created 3, updated 24
+  [6] new -> wontfix (duplicate of #1)
+  [24] wontfix -> triaged
+  1 comment
+  [6] system: duplicate of #1
+bug: 1 open of 2
+duplicate: 1 open of 1
+ui: 0 open of 1
+#1 [p2] done ann Original report
+#2 [p2] triaged - Same report again
+#2 [p2] triaged - Same report again

@@ -1,0 +1,12 @@
+warehouse p
+warehouse q
+item oil
+receive p oil 5 1.00 10
+transfer p q oil 5 20
+ship o1 q oil 3
+ship o2 q oil 1
+receive q oil 2 3.00 100
+day 25
+stock
+value
+backorders

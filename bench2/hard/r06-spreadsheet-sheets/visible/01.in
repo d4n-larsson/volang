@@ -1,0 +1,12 @@
+set A1 120
+set A2 80
+set A3 =SUM(A1:A2)
+sheet Costs
+set Costs!A1 45
+set Costs!A2 =Costs!A1*2
+set B1 =A3-Costs!A2
+get B1
+show B1
+show Costs!A2
+sheets
+print A1:B3

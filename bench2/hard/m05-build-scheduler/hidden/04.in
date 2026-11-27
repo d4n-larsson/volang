@@ -1,0 +1,9 @@
+workers 3
+target x 2
+target y 2
+target z 2
+target a_b 1 x
+target ab 1 x
+target a9 1 x
+target top 1 a_b ab a9 y
+target side 6

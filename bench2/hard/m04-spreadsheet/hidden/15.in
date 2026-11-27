@@ -1,0 +1,20 @@
+set   A1      =   1 +   2   
+formula A1
+print A1
+set A2    two   spaced    words   
+formula A2
+print A2
+set A3 =SUM( A1 ,  4 )
+formula A3
+print A3
+copy A3 B4
+formula B4
+set A4 = A1+$A$1 *  A$2
+copy A4 C5
+formula C5
+print C5
+set A5 -12
+formula A5
+set A6 =-12
+formula A6
+show A1:A6

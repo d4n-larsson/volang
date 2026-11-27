@@ -1,0 +1,63 @@
+# How issues and counts are written.
+import tracker;
+
+const title_width = 30;
+
+export fn plural(n: int, word: str) -> str {
+    if n == 1 {
+        return str(n) + " " + word;
+    }
+    return str(n) + " " + word + "s";
+}
+
+export fn short_title(title: str) -> str {
+    if len(title) > title_width {
+        return slice(title, 0, title_width - 3) + "...";
+    }
+    return title;
+}
+
+export fn who(name: str) -> str {
+    if name == "" {
+        return "-";
+    }
+    return name;
+}
+
+export fn labels_text(labels: list[str]) -> str {
+    if len(labels) == 0 {
+        return "-";
+    }
+    return join(labels, ",");
+}
+
+export fn or_none(lines: list[str], message: str) -> list[str] {
+    if len(lines) == 0 {
+        return [message];
+    }
+    return lines;
+}
+
+export fn issue_line(issue: tracker.Issue) -> str {
+    return "#" + str(issue.num) + " [p" + str(issue.priority) + "] " + issue.status + " " + who(issue.assignee) + " " + short_title(issue.title);
+}
+
+export fn show_lines(issue: tracker.Issue) -> list[str] {
+    let out = [
+        "#" + str(issue.num) + " [p" + str(issue.priority) + "] " + issue.title,
+        "  status: " + issue.status,
+        "  assignee: " + who(issue.assignee),
+        "  labels: " + labels_text(issue.labels),
+        "  created " + str(issue.created) + ", updated " + str(issue.updated),
+        "  " + plural(len(issue.comments), "comment")
+    ];
+    for c in issue.comments {
+        push(out, "  [" + str(c.tick) + "] " + c.author + ": " + c.text);
+    }
+    return out;
+}
+
+export fn event_lines(events: list[tracker.Event], n: int) -> list[str] {
+    let shown = slice(events, max(0, len(events) - n), len(events));
+    return or_none(map(shown, fn(e) => "[" + str(e.tick) + "] " + e.message), "no events");
+}

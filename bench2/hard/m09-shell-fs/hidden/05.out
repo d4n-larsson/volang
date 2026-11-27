@@ -1,0 +1,14 @@
+-r
+w/
+x/
+rm: usage
+rm: x/missing: no such file or directory
+rm: x: is a directory
+rm: .: in use
+rm: ..: in use
+rm: /deep: in use
+rm: /: in use
+rm: ../er/est: no such file or directory
+rm: /deep: in use
+-r
+rm: -p: no such file or directory

@@ -1,0 +1,19 @@
+error: permission denied: /pub/a.txt
+error: permission denied: /pub/a.txt
+from ann
+from ann
+bob line
+error: permission denied: /pub/a.txt
+error: bad mode rwq---
+error: no such file or directory: /pub/missing
+error: no such file or directory: /pub/missing
+error: bad mode rwxrwxr
+from ann
+bob line
+/pub/a.txt: file, 18 bytes, 2 lines, owner ann, mode rw-r--
+error: permission denied: /pub
+/pub: directory, 1 entries, owner root, mode rwxrwx
+root wrote
+-rw-r-- ann 18 a.txt
+-rw-r-- root 11 b.txt
+-rw-r-- ann 5 c.txt

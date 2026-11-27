@@ -1,0 +1,9 @@
+create table books (id int, title text, author text, year int, pages int)
+insert into books values (1, 'Dune', 'herbert', 1965, 412), (2, 'Emma', 'austen', 1815, 474)
+insert into books values (3, 'Persuasion', 'austen', 1817, 249), (4, 'Ubik', 'dick', 1969, null)
+select title, year from books where year > 1900 order by year desc
+select * from books where author = 'austen' and pages < 300
+select author, count(*), sum(pages) from books group by author order by author
+update books set pages = 202 where id = 4
+delete from books where year < 1816
+select id, title, pages from books order by pages

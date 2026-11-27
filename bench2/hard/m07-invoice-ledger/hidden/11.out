@@ -1,0 +1,17 @@
+customer big added
+error: big over limit by 94980499905.02
+invoice #1 big total 9498955.01 balance 9498955.01 due 0
+invoice #2 big total 94990.51 balance 94990.51 due 0
+fee #1 142484.33
+fee #2 1424.86
+write off #2 96415.37
+error: no invoice 3
+statement big day 999999
+#1 due 0 balance 9641439.34 overdue 999999
+open 9641439.34 credit 0.00 written off 96415.37
+aging day 999999
+big 0.00 0.00 0.00 0.00 9641439.34
+total 0.00 0.00 0.00 0.00 9641439.34
+invoices:
+#1 big open total 9498955.01 fee 142484.33 paid 0.00 credits 0.00 balance 9641439.34
+#2 big written-off total 94990.51 fee 1424.86 paid 0.00 credits 0.00 balance 0.00

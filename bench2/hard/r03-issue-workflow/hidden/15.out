@@ -1,0 +1,40 @@
+user ann added
+user bob added
+created #1: Alpha
+created #2: Beta
+created #3: Gamma
+#1 assigned to ann
+#1 moved new -> triaged
+error: unknown issue #9
+#1 moved triaged -> in_progress
+error: cannot move #1 from in_progress to done
+#1 moved in_progress -> review
+#2 closed
+#2 reopened
+#3 closed as duplicate of #2
+#1 unassigned
+#1 moved review -> triaged
+#2 moved triaged -> wontfix
+[13] #2 reopened
+[14] #3 closed as duplicate of #2
+[15] #1 unassigned
+[15] #1 moved review -> triaged
+[16] #2 moved triaged -> wontfix
+[15] #1 unassigned
+[15] #1 moved review -> triaged
+[16] #2 moved triaged -> wontfix
+[1] user ann added
+[2] user bob added
+[3] created #1: Alpha
+[4] created #2: Beta
+[5] created #3: Gamma
+[6] #1 assigned to ann
+[7] #1 moved new -> triaged
+[9] #1 moved triaged -> in_progress
+[11] #1 moved in_progress -> review
+[12] #2 closed
+[13] #2 reopened
+[14] #3 closed as duplicate of #2
+[15] #1 unassigned
+[15] #1 moved review -> triaged
+[16] #2 moved triaged -> wontfix

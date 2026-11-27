@@ -1,0 +1,30 @@
+sheet Old added
+Old!A1 = 10
+Old!B2 = 20
+A1 = 11
+A2 = 30
+A3 = 51
+A4 = 25
+A1 = 11
+dropped Old
+error: unknown sheet Old
+error: cannot drop the current sheet
+A1: =#REF!A1+1
+A2: =SUM(#REF!A1:B2)
+A3: =#REF!$B$2*2+A1
+A3 = #REF
+A4 = #REF
+deps A3: A1
+deps A2: none
+sheet Old added
+Old!A1 = 99
+A1: =#REF!A1+1
+A1 = #REF
+Sheet1: 4 cells (current)
+Old: 1 cells
+cells 5, formulas 4, errors 4
+= 99
+A1: =#REF!A1+1 = #REF
+A2: =SUM(#REF!A1:B2) = #REF
+A3: =#REF!$B$2*2+A1 = #REF
+A4: =5+#REF!B2 = #REF

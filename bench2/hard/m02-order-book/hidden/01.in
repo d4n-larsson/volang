@@ -1,0 +1,29 @@
+limit A1 ana buy XYZ 10 1.00
+limit A2 ana buy XYZ 10 0.00
+limit A3 ana buy XYZ 10 01.00
+limit A4 ana buy XYZ 10 1.5
+limit A5 ana buy XYZ 0 1.00
+limit A6 ana buy XYZ 012 1.00
+limit A123456789 ana buy XYZ 10 1.00
+limit A7 Ana buy XYZ 10 1.00
+limit A8 ana buy ABCDEF 10 1.00
+limit A9 ana buy XYZ 10 1.00 day
+limit A10 ana BUY XYZ 10 1.00
+   
+market M1 bob sell XYZ 4 1.00
+Limit A11 ana buy XYZ 10 1.00
+limit A12 ana buy XYZ 10 1000000.00
+limit A13 ana buy XYZ 1000000 1.00
+limit A14 ana buy XYZ 999999 999999.99
+limit A-1 ana buy XYZ 1 1.00
+cancel
+cancel A1 A2
+modify A1 5
+modify A1 5 1.00 x
+book xyz
+book XYZ ABC
+limit A2 abcdefghijk sell XYZ 1 1.00
+  limit   A2   bob   sell   XYZ   3   0.05   ioc  
+stop S1 bob sell XYZ 5 1.00 gtc
+market M2 bob sell XYZ 4
+limit A15 ana buy XYZ 1 0.99 FOK

@@ -1,0 +1,59 @@
+# Paths. Every path argument is turned into the list of names that leads to it from the root
+# directory / before anything else happens: the walk to a node always starts at /.
+# The names from / to the path `text`, read relative to the current directory `cwd`.
+# Empty parts and `.` are skipped and `..` drops the last name (`..` of / is /). This is done on
+# the text alone: `/a/b/..` is `/a` whatever `/a/b` is, and is never looked at.
+export fn normalize(cwd: list[str], text: str) -> list[str] {
+    var names = slice(cwd, 0, len(cwd));
+    if find(text, "/") == 0 {
+        set names = new list[str];
+    }
+    for part in split(text, "/") {
+        if part == "" or part == "." {
+            continue;
+        }
+        if part == ".." {
+            if len(names) > 0 {
+                set names = slice(names, 0, len(names) - 1);
+            }
+            continue;
+        }
+        push(names, part);
+    }
+    return names;
+}
+
+# The absolute form of a path: `/` for the root, else `/a/b`.
+export fn display(names: list[str]) -> str {
+    return "/" + join(names, "/");
+}
+
+# Whether the path `names` is the path `prefix` itself or lies below it.
+export fn is_within(names: list[str], prefix: list[str]) -> bool {
+    if len(names) < len(prefix) {
+        return false;
+    }
+    for i in 0..len(prefix) {
+        if names[i] != prefix[i] {
+            return false;
+        }
+    }
+    return true;
+}
+
+# The path of the entry `name` inside the directory `names`.
+export fn child(names: list[str], name: str) -> list[str] {
+    let out = slice(names, 0, len(names));
+    push(out, name);
+    return out;
+}
+
+# The path of the directory holding `names` (`names` is not the root).
+export fn parent(names: list[str]) -> list[str] {
+    return slice(names, 0, len(names) - 1);
+}
+
+# The last name of a path that is not the root.
+export fn base_name(names: list[str]) -> str {
+    return names[len(names) - 1];
+}

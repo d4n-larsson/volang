@@ -1,0 +1,27 @@
+[main 1] c1 (1 added, 0 modified, 0 deleted)
+[main 2] c2 (0 added, 1 modified, 0 deleted)
+[main 3] c3 (0 added, 1 modified, 0 deleted)
+head is now 1
+on main
+clean
+1 c1
+[main 4] c4 (0 added, 1 modified, 0 deleted)
+* main 4
+3 c3
+2 c2
+1 c1
+M f
+head is now 3
+3 c3
+2 c2
+1 c1
+conflict: f (both modified)
+merge aborted
+error: unknown revision 7
+head is now 1
+commit 1
+parents none
+message c1
+f "v1"
+  keep 4
+* main 1

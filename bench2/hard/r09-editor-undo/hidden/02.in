@@ -1,0 +1,23 @@
+append l1
+append l2
+append l3
+append l4
+append l5
+goto 2
+delete 4,5
+where
+goto 1
+undo
+where
+print 3,4
+goto 5
+redo
+where
+goto 1
+find l2
+join .
+where
+undo
+where
+redo
+where

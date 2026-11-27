@@ -1,0 +1,6 @@
+long 1 0
+wait 1 100
+quick 2 6
+wait2 1 110
+tiny 2 8
+postponed 2 rejected 0

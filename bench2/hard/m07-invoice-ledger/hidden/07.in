@@ -1,0 +1,25 @@
+customer q 100000.00 0 0
+customer r 100000.00 0 0
+day 10
+invoice q 1x10.00
+invoice r 1x1.00
+terms q 50
+invoice q 1x20.00
+day 70
+invoice q 1x1.00
+invoice r 1x1.00
+day 71
+invoice q 1x1.00
+invoice r 1x2.00
+pay r 1.00
+invoice r 1x2.00
+writeoff 1
+day 100
+writeoff 1
+day 101
+writeoff 1
+writeoff 3
+writeoff 6
+writeoff 1
+statement q
+invoice q 1x1.00

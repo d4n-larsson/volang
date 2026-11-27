@@ -1,0 +1,29 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+channel cy dev
+join ann dev
+post ann general hi @cy
+post cy dev build @ann
+reply ann dev/1 thanks @cy
+rename cy dev eng
+rename ann eng x
+rename cy general eng
+edit ann dev/2 x
+edit ann eng/2 thanks again @cy
+reply cy eng/2 np @ann
+thread eng/1
+post cy eng next
+mentions cy
+mentions ann
+unread ann
+unread cy
+read ann eng
+unread ann
+channels
+history eng
+search eng @

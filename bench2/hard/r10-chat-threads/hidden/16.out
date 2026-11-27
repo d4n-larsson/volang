@@ -1,0 +1,28 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+channel #dev created by dee
+ann joined #dev
+bob joined #dev
+message 1 posted to #dev
+message 2 posted to #dev in thread 1
+message 3 posted to #dev in thread 1
+error: cy cannot delete message dev/2
+error: bob cannot delete message dev/3
+error: ann cannot delete message dev/2
+error: bob cannot delete message dev/1
+message dev/1 deleted
+#dev: 1 message
+[1] t=11 [deleted] (2 replies)
+dee left #dev
+message dev/3 deleted
+#dev: 1 message
+[1] t=11 [deleted] (1 reply)
+thread #dev/1: 1 reply
+[1] t=11 [deleted]
+  [2] t=12 bob: r1
+error: unknown message dev/1

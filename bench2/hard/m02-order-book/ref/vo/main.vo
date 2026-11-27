@@ -1,0 +1,83 @@
+import accounts;
+import book;
+import parse;
+
+fn reject(out: list[str], id: str, r: result[void]) {
+    match r {
+        case ok() {
+        }
+        case err(why) {
+            push(out, "reject " + id + " " + why);
+        }
+    }
+}
+
+fn run_order(eng: book.Engine, c: parse.Command) -> result[void] {
+    if c.cmd == "limit" {
+        return book.limit(eng, c);
+    }
+    if c.cmd == "market" {
+        return book.market(eng, c);
+    }
+    book.stop(eng, c);
+    return ok();
+}
+
+fn run(text: str) -> list[str] {
+    let out = new list[str];
+    let acc = accounts.new_accounts();
+    let eng = book.new_engine(acc, out);
+    let used = new map[str, bool];
+    let symbols = new ordered_map[str, bool];
+    for i, line in split(text, "\n") {
+        let c = parse.parse(line);
+        if c.cmd == "invalid" {
+            push(out, "invalid line " + str(i + 1));
+        } else if c.cmd == "book" {
+            for l in book.book(eng, c.symbol) {
+                push(out, l);
+            }
+        } else if c.cmd == "cancel" {
+            reject(out, c.id, book.cancel(eng, c.id));
+        } else if c.cmd == "modify" {
+            match book.modify(eng, c) {
+                case ok(sym) {
+                    book.triggers(eng, sym);
+                }
+                case err(why) {
+                    push(out, "reject " + c.id + " " + why);
+                }
+            }
+        } else if c.cmd != "blank" {
+            if has(used, c.id) {
+                push(out, "reject " + c.id + " duplicate id");
+                continue;
+            }
+            set used[c.id] = true;
+            match run_order(eng, c) {
+                case ok() {
+                    set symbols[c.symbol] = true;
+                    book.triggers(eng, c.symbol);
+                }
+                case err(why) {
+                    push(out, "reject " + c.id + " " + why);
+                }
+            }
+        }
+    }
+    for s, _ in symbols {
+        for l in book.book(eng, s) {
+            push(out, l);
+        }
+    }
+    for l in accounts.report(acc) {
+        push(out, l);
+    }
+    return out;
+}
+
+fn main() uses console, input {
+    for l in run(read_all()) {
+        print(l);
+    }
+}

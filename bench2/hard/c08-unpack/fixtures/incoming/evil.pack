@@ -1,0 +1,18 @@
+PACK 1
+F readme.txt 1
+harmless
+F ../../evil.txt 1
+pwned
+F /tmp/evil.txt 1
+pwned
+F ../basic/readme.txt 1
+overwritten
+F a/../../escape.txt 1
+pwned
+D ../../etc
+L shell -> /bin/sh
+L docs/link -> ../readme.txt
+F a/b/../../c.txt 1
+fine
+F ./x/./y/.. 0
+END 7

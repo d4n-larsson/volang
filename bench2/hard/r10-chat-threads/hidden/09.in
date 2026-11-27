@@ -1,0 +1,21 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+channel ann dev
+join bob dev
+post ann general deploy today
+post bob dev deploy staging
+reply bob general/1 deploy what
+reply cy general/1 no deploy
+edit cy general/3 deploy nothing
+post cy general unrelated
+reply ann general/4 deployed
+delete cy general/3
+search general deploy
+search dev deploy
+search general nothing
+search general d

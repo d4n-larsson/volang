@@ -1,0 +1,33 @@
+set A1 -7
+set A2 2
+set A3 =A1/A2
+set A4 =-A1/-A2*3
+set A5 =7/-2
+set B1 =MIN(C1:C5)
+set B2 =MAX(A1:A5)
+set B3 =MIN(A1:B2)
+set C2 007
+set C3 -0
+set B4 =((A1))+(2*(3+4))
+show B4
+get B4
+set B5 =1/(A2-2)+B9/0
+set C5 = 1 / 0 + B5
+show C5
+print A1:C5
+find -4
+find 0
+find -3
+list
+set A1 1.5
+set A1 =A1+-
+set A1 =
+eval =2+3*4-10/3
+eval 2+3
+eval =FOO(A1:A2)
+eval =SUM(A1)
+eval =A1:A2
+clear B9
+set
+get
+count 1

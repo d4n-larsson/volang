@@ -1,0 +1,72 @@
+# The records shared by every module.
+export record Item {
+    sku: str;
+    name: str;
+    # standard unit cost in cents
+    cost: int;
+    # reorder point; 0 means none
+    reorder: int;
+}
+
+export record OrderLine {
+    sku: str;
+    qty: int;
+}
+
+export record Order {
+    order_id: str;
+    wh: str;
+    lines: list[OrderLine];
+    # open, fulfilled or cancelled
+    status: str;
+}
+
+# Units of one receipt: every unit of a lot has the same unit cost (cents).
+export record Lot {
+    receipt: int;
+    qty: int;
+    cost: int;
+}
+
+# One stock movement: delta is positive for stock coming in. A movement that made a lot
+# has its receipt number in lot and the unit cost in amount; any other (lot 0) has the cost of
+# the units it moved in amount.
+export record Move {
+    seq: int;
+    kind: str;
+    wh: str;
+    sku: str;
+    delta: int;
+    note: str;
+    lot: int;
+    amount: int;
+}
+
+export record State {
+    items: map[str, Item];
+    # warehouse code -> sku -> lots in receipt order
+    stock: map[str, map[str, list[Lot]]];
+    # in creation order
+    orders: map[str, Order];
+    # in sequence order
+    moves: list[Move];
+    next_seq: int;
+    shipments: int;
+    shipped_units: int;
+    shipped_cost: int;
+    next_receipt: int;
+}
+
+export fn new_state() -> State {
+    return new State {
+        items: new map[str, Item],
+        stock: new map[str, map[str, list[Lot]]],
+        orders: new map[str, Order],
+        moves: new list[Move],
+        next_seq: 1,
+        shipments: 0,
+        shipped_units: 0,
+        shipped_cost: 0,
+        next_receipt: 1
+    };
+}

@@ -1,0 +1,20 @@
+write f 1
+commit c1
+branch t
+write f 2
+commit c2
+checkout t
+write g 1
+commit c3
+checkout main
+merge t
+checkout t
+write g 2
+commit c5
+checkout main
+merge t
+log
+log t
+log 4
+log main~1
+log 6~2

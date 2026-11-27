@@ -1,0 +1,45 @@
+# Output formatting.
+import buffer;
+import std.text;
+
+export fn plural(n: int, word: str) -> str {
+    if n == 1 {
+        return str(n) + " " + word;
+    }
+    return str(n) + " " + word + "s";
+}
+
+# Line n with its number, right-aligned to the width of the buffer's last line number.
+export fn numbered(buf: buffer.Buffer, n: int) -> str {
+    let width = len(str(buffer.size(buf)));
+    return text.align_right(str(n), width) + "  " + buffer.line(buf, n);
+}
+
+export fn print_range(buf: buffer.Buffer, a: int, b: int) -> result[list[str]] {
+    let out = new list[str];
+    for n in a..b + 1 {
+        push(out, numbered(buf, n));
+    }
+    set buf.cur = b;
+    return ok(out);
+}
+
+export fn goto(buf: buffer.Buffer, n: int) -> result[list[str]] {
+    set buf.cur = n;
+    return ok([numbered(buf, n)]);
+}
+
+export fn where(buf: buffer.Buffer) -> result[list[str]] {
+    return ok(["line " + str(buf.cur) + " of " + str(buffer.size(buf))]);
+}
+
+# The first of the longest lines.
+export fn longest(buf: buffer.Buffer) -> result[list[str]] {
+    var best = 0;
+    for n in 1..buffer.size(buf) + 1 {
+        if best == 0 or len(buffer.line(buf, n)) > len(buffer.line(buf, best)) {
+            set best = n;
+        }
+    }
+    return ok(["longest line " + str(best) + " (" + plural(len(buffer.line(buf, best)), "byte") + ")"]);
+}

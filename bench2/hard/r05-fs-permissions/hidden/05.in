@@ -1,0 +1,40 @@
+useradd ann
+useradd bob
+mkdir /w
+chmod rwxrwx /w
+su ann
+mkdir -p /w/proj/src/deep
+mkdir /w/proj/docs
+write /w/proj/src/main.txt code
+write /w/proj/docs/readme.txt hi
+write /w/ann.txt ann
+mkdir /w/empty
+su bob
+rm /w/ann.txt
+rm /w/proj
+rmdir /w/proj/docs
+rm -r /w/proj
+su ann
+chmod r-xr-x /w/proj/src/deep
+chmod rwx--- /w/proj/docs
+su bob
+rm -r /w/proj
+su ann
+rm -r /w/proj
+chmod rwxr-x /w/proj/src/deep
+cd /w/proj/src
+rm -r /w/proj
+rmdir /w/proj/src
+rm -r /w
+su root
+rmdir /w/empty
+su ann
+cd /
+rmdir /w/proj/src/deep
+rmdir /w/proj/src
+rm -r /w/proj
+tree /w
+su root
+chmod ------ /w/empty
+rm -r /w
+ls /

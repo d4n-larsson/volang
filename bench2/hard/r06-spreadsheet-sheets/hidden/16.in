@@ -1,0 +1,30 @@
+sheet Income
+sheet Spend
+use Income
+set A1 1200
+set A2 1350
+set A3 1100
+set B1 =A1-Spend!A1
+copy B1 B2
+copy B1 B3
+use Spend
+set A1 900
+set A2 1400
+set A3 650
+set C1 =SUM(Income!B1:B3)
+set C2 =MIN(Income!B1:B3)
+set C3 =MAX(Income!B1:B3)/3
+use Sheet1
+set A1 =Spend!C1
+set A2 =Spend!C2*-1
+set A3 =Spend!C3+Income!A3/7
+list
+show Income!B3
+print Income!A1:B3
+rename Income Earned
+show Spend!C1
+users Earned!B2
+deps Spend!C2
+use Earned
+list
+count

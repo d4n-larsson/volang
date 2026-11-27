@@ -1,0 +1,25 @@
+user ux added
+user vy added
+room tok added, capacity 4
+room nyc added, capacity 4
+booked t1 in tok: 4 23:00-5 01:00 (1 person)
+booked t2 in tok: 5 03:00-03:30 (1 person)
+booked t3 in tok: 4 20:00-20:30 (1 person)
+free tok day 5: 10:00-11:00, 11:30-12:00, 12:30-17:00
+free tok day 4: 09:00-17:00
+free nyc day 4: 09:00-17:00
+booked n1 in nyc: 4 08:00-09:00 (1 person)
+booked n2 in nyc: 4 15:00-20:00 (1 person)
+free nyc day 4: 10:00-16:00
+free nyc day 5: 09:00-17:00
+rooms day 5:
+  nyc: free
+  tok: t1 5 08:00-10:00, t3 5 11:00-11:30, t2 5 12:00-12:30
+rooms day 4:
+  nyc: n1 4 09:00-10:00, n2 4 16:00-21:00
+  tok: free
+zone tok UTC-05:00
+free tok day 4: 09:00-17:00
+zone tok UTC+12:00
+free tok day 4: 09:00-17:00
+free tok day 5: 09:00-11:00, 13:00-14:00, 14:30-15:00, 15:30-17:00

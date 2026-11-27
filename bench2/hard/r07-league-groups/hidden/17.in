@@ -1,0 +1,54 @@
+team Riga
+team Bern
+team Lima
+team Oslo
+team Kiev
+team Rome
+team Bari
+team Graz
+team Rio
+team Gent
+team Bonn
+team Baku
+team Gdansk
+group Red Rio Rome Riga
+group Blue Bern Baku Bonn Bari
+group Green Graz Gent Gdansk
+group Amber Oslo Lima Kiev
+result Bari 2 0 Bern
+result Bonn 1 0 Bari
+result Graz 0 2 Gdansk
+result Baku 2 1 Bonn
+result Bari 0 1 Bonn
+result Riga 1 2 Rome
+result Oslo 0 0 Kiev
+result Gent 1 2 Gdansk
+result Rome 0 0 Riga
+result Baku 0 0 Bari
+result Bern 2 0 Baku
+result Lima 1 0 Kiev
+result Baku 2 2 Bern
+result Kiev 1 1 Oslo
+result Gdansk 2 0 Gent
+result Rio 1 2 Riga
+result Riga 2 0 Rio
+result Kiev 1 1 Lima
+result Bonn 0 0 Baku
+result Oslo 1 2 Lima
+result Gdansk 0 2 Graz
+result Bari 2 1 Baku
+result Bern 1 0 Bonn
+result Graz 1 0 Gent
+result Gent 2 2 Graz
+result Bonn 0 2 Bern
+result Rome 0 2 Rio
+result Lima 2 2 Oslo
+result Rio 1 0 Rome
+result Bern 1 1 Bari
+table
+knockout
+goals
+fixtures
+record Rio
+record Bari
+streak

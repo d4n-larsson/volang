@@ -1,0 +1,13 @@
+open assets:bank asset
+open assets:gbp asset GBP
+open income:sales income
+open expense:fees expense USD
+rate GBP 1 1.25
+post s1 1 sale assets:gbp=80 income:sales=
+post s2 4 fee expense:fees=2.50 assets:bank=-2.50
+rate GBP 5 1.3
+balance assets
+trial
+journal 1 5
+revalue 4
+revalue 5

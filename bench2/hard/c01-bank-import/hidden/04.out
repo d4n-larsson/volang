@@ -1,0 +1,23 @@
+reject /etc/passwd: outside inbox
+reject 2024/../jan.csv: outside inbox
+reject ../private/salaries.csv: outside inbox
+reject ..: outside inbox
+reject a/../../private/salaries.csv: outside inbox
+reject /home: outside inbox
+reject ..foo.csv: not found
+./jan.csv:4: bad amount -12.5
+2024//mar.csv:4: duplicate id J-002
+2024//mar.csv:6: duplicate id M-003
+== ledger
+2024-01-03 SE1001 J-001 250.00
+2024-01-05 SE1002 J-002 -40.10
+2024-01-31 DK2002 J-004 1000.00
+2024-03-01 SE1001 M-001 100.00
+2024-03-01 SE1001 M-002 -100.00
+2024-03-15 DK2002 M-003 -0.05
+== balances
+DK2002 2 999.95
+SE1001 3 250.00
+SE1002 1 -40.10
+wrote out/a-b-c-0123456789abcd.ledger 6
+wrote out/a-b-c-0123456789abcd.errors 10

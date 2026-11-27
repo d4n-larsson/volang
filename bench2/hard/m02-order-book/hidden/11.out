@@ -1,0 +1,44 @@
+book NONE last -
+  empty
+rest A1 5 3.00
+rest A2 7 3.00
+rest A3 1 3.25
+rest A4 2 2.75
+rest A5 4 2.75
+rest A6 6 2.80
+book LV last -
+  ask 3.25 1 1
+  ask 3.00 12 2
+  bid 2.80 6 1
+  bid 2.75 6 2
+trade LV 5 3.00 A7 A1
+trade LV 7 3.00 A7 A2
+rest A7 1 3.00
+book LV last 3.00
+  ask 3.25 1 1
+  bid 3.00 1 1
+  bid 2.80 6 1
+  bid 2.75 6 2
+trade LV 1 3.00 A7 A8
+trade LV 6 2.80 A6 A8
+trade LV 2 2.75 A4 A8
+trade LV 3 2.75 A5 A8
+filled A8
+book LV last 2.75
+  ask 3.25 1 1
+  bid 2.75 1 1
+cancelled A3 1
+book LV last 2.75
+  bid 2.75 1 1
+book NONE last -
+  empty
+book LV last 2.75
+  bid 2.75 1 1
+trader ana cash 15.00 LV:-5
+trader bob cash 21.00 LV:-7
+trader cy cash 0.00
+trader dan cash -5.50 LV:2
+trader eve cash -8.25 LV:3
+trader fay cash -16.80 LV:6
+trader gus cash -39.00 LV:13
+trader hal cash 33.55 LV:-12

@@ -1,0 +1,24 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+channel bob dev
+join ann dev
+post bob general hey @ann
+post bob dev hi @ann.
+reply cy general/1 @ann @ann
+reply ann dev/1 me @ann
+post ann dev @ann
+reply bob general/2 hello @annie
+mentions ann
+leave ann dev
+mentions ann
+join ann dev
+mentions ann
+reply bob dev/1 again @ann!?
+mentions ann
+edit bob dev/4 edited @ann
+mentions ann

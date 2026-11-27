@@ -1,0 +1,30 @@
+sheet Jan added
+sheet Feb added
+Jan!A1 = 100
+Feb!A1 = 150
+A1 = 250
+using Jan
+error: unknown sheet Nope
+error: bad sheet name 1st
+error: sheet Feb exists
+error: sheet Jan exists
+renamed Jan to January
+error: bad command
+Sheet1: 1 cells
+January: 1 cells (current)
+Feb: 1 cells
+Sheet1!A1: =January!A1+Feb!A1
+Feb!A1: =January!A1+50
+error: unknown sheet Jan
+B1 = 100
+B1: =A1
+Sheet1!A1 = 250
+renamed Sheet1 to Summary
+Summary: 1 cells
+January: 2 cells (current)
+Feb: 1 cells
+using Summary
+A1: =January!A1+Feb!A1
+renamed Feb to Jan
+A1: =January!A1+Jan!A1
+January!B1: =A1

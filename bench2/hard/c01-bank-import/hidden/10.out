@@ -1,0 +1,22 @@
+jan.csv:2: outside period 2024-01-03
+jan.csv:4: bad amount -12.5
+feb.csv:7: bad date 2024-02-30
+2024/mar.csv:2: outside period 2024-03-01
+2024/mar.csv:3: outside period 2024-03-01
+2024/mar.csv:4: outside period 2024-03-15
+2024/mar.csv:5: outside period 2024-03-15
+2024/mar.csv:6: outside period 2024-03-20
+reject jan.csv: duplicate file
+== ledger
+2024-01-05 SE1002 J-002 -40.10
+2024-01-31 DK2002 J-004 1000.00
+2024-02-01 SE1001 F-001 -800.00
+2024-02-02 SE1002 F-002 -3.20
+2024-02-25 SE1001 F-003 2500.00
+2024-02-29 DK2002 F-004 0.05
+== balances
+DK2002 2 1000.05
+SE1001 2 1700.00
+SE1002 2 -43.30
+wrote out/narrow.ledger 6
+wrote out/narrow.errors 9

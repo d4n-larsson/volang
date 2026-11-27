@@ -1,0 +1,20 @@
+customer x 300.00 10 0
+invoice x 1x100.00
+invoice x 1x150.00
+invoice x 1x50.00
+invoice x 1x50.01
+pay x 400.00
+invoice x 1x500.00
+invoice x 1x100.00
+invoice x 1x400.01
+invoice x 1x400.00
+statement x
+pay x 50.00
+invoice x 1x300.00
+customer y 0.00 1 0
+invoice y 1x0.01
+pay y 3.00
+invoice y 1x3.00
+invoice y 1x0.01
+refund y 0.01
+refund y 0.01

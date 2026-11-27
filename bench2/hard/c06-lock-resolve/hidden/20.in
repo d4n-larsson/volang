@@ -1,0 +1,3 @@
+lock web3
+web >=2.0.0
+http <2.0.0

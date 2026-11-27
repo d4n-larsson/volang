@@ -1,0 +1,13 @@
+team Lions
+team Bears
+team Wolves
+team Hawks
+group North Lions Bears
+group South Wolves Hawks
+result Lions 2 1 Bears
+result Wolves 0 0 Hawks
+result Lions 1 0 Wolves
+result Bears 3 3 Lions
+table
+fixtures
+knockout

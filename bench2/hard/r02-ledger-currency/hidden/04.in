@@ -1,0 +1,26 @@
+open assets:bank asset
+open assets:eur asset EUR
+open assets:gbp asset GBP
+open expense:misc expense
+rate EUR 0 0.5
+rate GBP 0 1.0001
+post r1 1 a assets:eur=0.01 assets:bank=
+post r2 1 b assets:eur=-0.01 assets:bank=
+post r3 1 c assets:eur=0.03 assets:bank=-0.02
+post r4 1 d assets:eur=-0.03 assets:bank=0.02
+post r5 1 e assets:eur=0.03 assets:bank=-0.01
+post r6 1 f assets:eur=-12.35 expense:misc=6.18
+post r7 1 g assets:eur=-12.35 expense:misc=6.17
+post r8 1 h assets:gbp=0.49 assets:bank=-0.49
+post r9 1 i assets:gbp=-4999.99 assets:bank=
+post r10 1 j assets:gbp=5000 assets:eur=-10001
+post r11 1 k assets:gbp=5000 assets:eur=-10001.99
+post r12 1 l assets:gbp=0.01 assets:eur=-0.02
+show r1
+show r2
+show r3
+show r7
+show r9
+show r10
+show r12
+trial

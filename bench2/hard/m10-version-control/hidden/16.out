@@ -1,0 +1,23 @@
+[main 1] base (1 added, 0 modified, 0 deleted)
+switched to topic
+[topic 2] topic one (1 added, 0 modified, 0 deleted)
+[topic 3] topic two (0 added, 1 modified, 0 deleted)
+switched to main
+[main 4] main one (1 added, 0 modified, 0 deleted)
+[main 5] merge topic~1 into main (1 added, 0 modified, 0 deleted)
+already up to date
+5 merge topic~1 into main (merge of 2)
+4 main one
+1 base
+commit 5
+parents 4 2
+message merge topic~1 into main
+f "base"
+m "main"
+t "one"
+[main 6] merge topic into main (0 added, 1 modified, 0 deleted)
+6 merge topic into main (merge of 3)
+5 merge topic~1 into main (merge of 2)
+4 main one
+1 base
+A m

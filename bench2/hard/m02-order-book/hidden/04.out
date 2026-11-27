@@ -1,0 +1,30 @@
+rest S1 10 5.00
+rest S2 10 5.10
+rest S3 10 5.20
+reject F1 not filled
+reject F2 not filled
+reject F3 not filled
+trade FK 10 5.00 F4 S1
+trade FK 10 5.10 F4 S2
+filled F4
+book FK last 5.10
+  ask 5.20 10 1
+rest S4 5 5.20
+stp S3 10
+trade FK 5 5.20 F5 S4
+filled F5
+reject F6 not filled
+reject F7 not filled
+book FK last 5.20
+  empty
+reject F8 price band
+rest B1 2 5.00
+trade FK 2 5.00 B1 F9
+filled F9
+book FK last 5.00
+  empty
+trader ana cash 50.00 FK:-10
+trader bob cash 51.00 FK:-10
+trader cy cash -16.00 FK:3
+trader dan cash -75.00 FK:15
+trader eve cash -10.00 FK:2

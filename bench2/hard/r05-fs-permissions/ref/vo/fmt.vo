@@ -1,0 +1,69 @@
+# How things are printed.
+import nodes;
+import paths;
+
+export const no_entry = "no such file or directory";
+export const not_dir = "not a directory";
+export const is_dir = "is a directory";
+export const exists = "file exists";
+export const not_empty = "directory not empty";
+export const in_use = "directory in use";
+export const into_itself = "cannot move a directory into itself";
+export const denied = "permission denied";
+
+# An error about the path `names`, always shown in its absolute form.
+export fn error(kind: str, names: list[str]) -> str {
+    return "error: " + kind + ": " + paths.display(names);
+}
+
+export fn is_no_entry(message: str) -> bool {
+    return find(message, "error: " + no_entry + ": ") == 0;
+}
+
+# A name in a listing: directories end with `/`.
+export fn entry_name(name: str, node: nodes.Node) -> str {
+    if node.is_dir {
+        return name + "/";
+    }
+    return name;
+}
+
+export fn indent(depth: int) -> str {
+    var out = "";
+    for _ in 0..depth {
+        set out = out + "  ";
+    }
+    return out;
+}
+
+export fn stat_line(names: list[str], node: nodes.Node) -> str {
+    var line = paths.display(names) + ": file, " + str(nodes.file_size(node)) + " bytes, " + str(len(node.lines)) + " lines";
+    if node.is_dir {
+        set line = paths.display(names) + ": directory, " + str(nodes.entry_count(node)) + " entries";
+    }
+    return line + ", owner " + node.owner + ", mode " + node.mode;
+}
+
+# A line of `ls -l`: type and mode, owner, size (bytes, or entries of a directory), name.
+export fn long_line(name: str, node: nodes.Node) -> str {
+    var kind = "-";
+    var size = nodes.file_size(node);
+    if node.is_dir {
+        set kind = "d";
+        set size = nodes.entry_count(node);
+    }
+    return kind + node.mode + " " + node.owner + " " + str(size) + " " + entry_name(name, node);
+}
+
+export fn size_line(size: int, names: list[str]) -> str {
+    return str(size) + " " + paths.display(names);
+}
+
+export fn numbered(number: int, line: str) -> str {
+    return str(number) + ":" + line;
+}
+
+# The text of a `write` or `append`: the words joined by single spaces.
+export fn text_of(words: list[str]) -> str {
+    return join(words, " ");
+}

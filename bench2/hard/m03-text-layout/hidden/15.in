@@ -1,0 +1,26 @@
+.width 28
+.page 12
+.align justify
+.list number
+one
+
+two
+
+three
+
+four
+
+five
+
+six
+
+seven
+
+eight
+
+nine
+
+Ten is long enough to be justified across several lines and to be split across two pages by the widow and orphan rules.
+.endlist
+.align center
+A centred closing line.

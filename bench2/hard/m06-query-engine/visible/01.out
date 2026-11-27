@@ -1,0 +1,26 @@
+created books
+inserted 2
+inserted 2
+title | year
+------+-----
+Ubik  | 1969
+Dune  | 1965
+(2 rows)
+id | title      | author | year | pages
+---+------------+--------+------+------
+ 3 | Persuasion | austen | 1817 |   249
+(1 row)
+author  | count(*) | sum(pages)
+--------+----------+-----------
+austen  |        2 |        723
+dick    |        1 |       NULL
+herbert |        1 |        412
+(3 rows)
+updated 1
+deleted 1
+id | title      | pages
+---+------------+------
+ 4 | Ubik       |   202
+ 3 | Persuasion |   249
+ 1 | Dune       |   412
+(3 rows)

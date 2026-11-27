@@ -1,0 +1,34 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+message 1 posted to #general
+message 2 posted to #general
+message general/2 deleted
+message 3 posted to #general
+message general/3 deleted
+error: unknown message general/3
+message 4 posted to #general
+#general: 2 messages
+[1] t=8 ann: a
+[4] t=14 ann: d
+message 5 posted to #general in thread 1
+message general/1 deleted
+#general: 2 messages
+[1] t=8 [deleted] (1 reply)
+[4] t=14 ann: d
+message 6 posted to #general
+#general: 3 messages
+[1] t=8 [deleted] (1 reply)
+[4] t=14 ann: d
+[6] t=19 bob: e
+thread #general/1: 1 reply
+[1] t=8 [deleted]
+  [5] t=16 bob: r
+error: unknown message general/2
+error: unknown message general/3
+search #general for d: 1 found
+  [4] t=14 ann: d

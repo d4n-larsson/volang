@@ -1,0 +1,247 @@
+import accounts;
+import parse;
+
+export record Order {
+    id: str;
+    trader: str;
+    side: str;
+    symbol: str;
+    qty: int;
+    price: int;
+    prio: int;
+}
+
+export record Engine {
+    acc: accounts.Accounts;
+    out: list[str];
+    resting: list[Order];
+    stops: list[Order];
+    last: map[str, int];
+    counter: int;
+}
+
+export fn new_engine(acc: accounts.Accounts, out: list[str]) -> Engine {
+    return new Engine { acc: acc, out: out, resting: new list[Order], stops: new list[Order], last: new map[str, int], counter: 0 };
+}
+
+export fn order_of(c: parse.Command) -> Order {
+    return new Order { id: c.id, trader: c.trader, side: c.side, symbol: c.symbol, qty: c.qty, price: c.price, prio: 0 };
+}
+
+fn accepts(o: Order, r: Order, any_price: bool) -> bool {
+    if any_price {
+        return true;
+    }
+    if o.side == "buy" {
+        return r.price <= o.price;
+    }
+    return r.price >= o.price;
+}
+
+# Resting orders the incoming order accepts, best first.
+fn opposite(e: Engine, o: Order, any_price: bool) -> list[Order] {
+    let rs = filter(e.resting, fn(r) => r.symbol == o.symbol and r.side != o.side and accepts(o, r, any_price));
+    if o.side == "buy" {
+        sort_by(rs, fn(r) => r.price * 1000000 + r.prio);
+    } else {
+        sort_by(rs, fn(r) => -r.price * 1000000 + r.prio);
+    }
+    return rs;
+}
+
+fn remove_resting(e: Engine, id: str) {
+    set e.resting = filter(e.resting, fn(r) => r.id != id);
+}
+
+fn match_order(e: Engine, o: Order, any_price: bool) {
+    while o.qty > 0 {
+        let rs = opposite(e, o, any_price);
+        if len(rs) == 0 {
+            break;
+        }
+        let r = rs[0];
+        if r.trader == o.trader {
+            remove_resting(e, r.id);
+            push(e.out, "stp " + r.id + " " + str(r.qty));
+            continue;
+        }
+        let t = min(o.qty, r.qty);
+        var buy = o;
+        var sell = r;
+        if o.side == "sell" {
+            set buy = r;
+            set sell = o;
+        }
+        push(e.out, "trade " + o.symbol + " " + str(t) + " " + parse.money(r.price) + " " + buy.id + " " + sell.id);
+        set o.qty = o.qty - t;
+        set r.qty = r.qty - t;
+        if r.qty == 0 {
+            remove_resting(e, r.id);
+        }
+        set e.last[o.symbol] = r.price;
+        accounts.trade(e.acc, buy.trader, sell.trader, o.symbol, t, r.price);
+    }
+}
+
+fn in_band(e: Engine, symbol: str, p: int) -> bool {
+    if not has(e.last, symbol) {
+        return true;
+    }
+    let last = e.last[symbol];
+    return 10 * p >= 9 * last and 10 * p <= 11 * last;
+}
+
+fn enter(e: Engine, o: Order, tif: str) {
+    match_order(e, o, false);
+    if o.qty == 0 {
+        push(e.out, "filled " + o.id);
+    } else if tif == "gtc" {
+        set e.counter = e.counter + 1;
+        set o.prio = e.counter;
+        push(e.resting, o);
+        push(e.out, "rest " + o.id + " " + str(o.qty) + " " + parse.money(o.price));
+    } else {
+        push(e.out, "expired " + o.id + " " + str(o.qty));
+    }
+}
+
+fn run_market(e: Engine, o: Order) {
+    match_order(e, o, true);
+    if o.qty == 0 {
+        push(e.out, "filled " + o.id);
+    } else {
+        push(e.out, "expired " + o.id + " " + str(o.qty));
+    }
+}
+
+export fn limit(e: Engine, c: parse.Command) -> result[void] {
+    let o = order_of(c);
+    if not in_band(e, o.symbol, o.price) {
+        return err("price band");
+    }
+    if c.tif == "fok" {
+        let others = filter(opposite(e, o, false), fn(r) => r.trader != o.trader);
+        if fold(others, 0, fn(acc, r) => acc + r.qty) < o.qty {
+            return err("not filled");
+        }
+    }
+    accounts.open(e.acc, o.trader);
+    enter(e, o, c.tif);
+    return ok();
+}
+
+export fn market(e: Engine, c: parse.Command) -> result[void] {
+    let o = order_of(c);
+    if not any(opposite(e, o, true), fn(r) => r.trader != o.trader) {
+        return err("no liquidity");
+    }
+    accounts.open(e.acc, o.trader);
+    run_market(e, o);
+    return ok();
+}
+
+export fn stop(e: Engine, c: parse.Command) {
+    accounts.open(e.acc, c.trader);
+    push(e.stops, order_of(c));
+    push(e.out, "pending " + c.id);
+}
+
+fn find_order(xs: list[Order], id: str) -> int {
+    for i, r in xs {
+        if r.id == id {
+            return i;
+        }
+    }
+    return -1;
+}
+
+export fn cancel(e: Engine, id: str) -> result[void] {
+    let i = find_order(e.resting, id);
+    if i >= 0 {
+        push(e.out, "cancelled " + id + " " + str(e.resting[i].qty));
+        remove_resting(e, id);
+        return ok();
+    }
+    let j = find_order(e.stops, id);
+    if j < 0 {
+        return err("unknown order");
+    }
+    push(e.out, "cancelled " + id + " " + str(e.stops[j].qty));
+    set e.stops = filter(e.stops, fn(s) => s.id != id);
+    return ok();
+}
+
+# Modifies a resting order and returns its symbol.
+export fn modify(e: Engine, c: parse.Command) -> result[str] {
+    let i = find_order(e.resting, c.id);
+    if i < 0 {
+        return err("unknown order");
+    }
+    let r = e.resting[i];
+    if c.price != r.price and not in_band(e, r.symbol, c.price) {
+        return err("price band");
+    }
+    push(e.out, "modified " + r.id + " " + str(c.qty) + " " + parse.money(c.price));
+    if c.price == r.price and c.qty <= r.qty {
+        set r.qty = c.qty;
+    } else {
+        remove_resting(e, r.id);
+        set r.qty = c.qty;
+        set r.price = c.price;
+        enter(e, r, "gtc");
+    }
+    return ok(r.symbol);
+}
+
+fn triggered(s: Order, symbol: str, last: int) -> bool {
+    if s.symbol != symbol {
+        return false;
+    }
+    if s.side == "buy" {
+        return last >= s.price;
+    }
+    return last <= s.price;
+}
+
+export fn triggers(e: Engine, symbol: str) {
+    while has(e.last, symbol) {
+        let last = e.last[symbol];
+        let ready = filter(e.stops, fn(s) => triggered(s, symbol, last));
+        if len(ready) == 0 {
+            return;
+        }
+        let s = ready[0];
+        set e.stops = filter(e.stops, fn(x) => x.id != s.id);
+        push(e.out, "trigger " + s.id);
+        run_market(e, s);
+    }
+}
+
+export fn book(e: Engine, symbol: str) -> list[str] {
+    var head = "book " + symbol + " last -";
+    if has(e.last, symbol) {
+        set head = "book " + symbol + " last " + parse.money(e.last[symbol]);
+    }
+    let lines = [head];
+    for side in ["sell", "buy"] {
+        let qty = new ordered_map[int, int];
+        let count = new ordered_map[int, int];
+        for r in e.resting {
+            if r.symbol == symbol and r.side == side {
+                set qty[-r.price] = get_or(qty, -r.price, 0) + r.qty;
+                set count[-r.price] = get_or(count, -r.price, 0) + 1;
+            }
+        }
+        var name = "bid";
+        if side == "sell" {
+            set name = "ask";
+        }
+        for p, q in qty {
+            push(lines, "  " + name + " " + parse.money(-p) + " " + str(q) + " " + str(count[p]));
+        }
+    }
+    if len(lines) == 1 {
+        push(lines, "  empty");
+    }
+    return lines;
+}

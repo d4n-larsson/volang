@@ -1,0 +1,32 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+channel #dev created by cy
+dee joined #dev
+message 1 posted to #dev
+message 1 posted to #general
+dee joined #general
+#dev: 1 unread (1 mentioning you)
+dee read #dev
+message 2 posted to #general
+dee left #general
+message 3 posted to #general
+message 4 posted to #general
+no unread messages for dee
+dee joined #general
+no unread messages for dee
+message general/1 edited
+no unread messages for dee
+message 2 posted to #dev
+message 3 posted to #dev in thread 1
+message 4 posted to #dev in thread 2
+message dev/1 deleted
+#dev: 3 unread (1 mentioning you)
+message dev/3 deleted
+#dev: 2 unread
+#dev: 1 message
+[2] t=24 cy: d2 (1 reply)

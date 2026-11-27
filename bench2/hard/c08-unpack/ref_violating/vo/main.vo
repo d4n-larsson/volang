@@ -1,0 +1,229 @@
+import std.fs;
+import std.text;
+
+record Tree {
+    files: ordered_map[str, str];
+    dirs: map[str, bool];
+}
+
+fn is_digits(s: str) -> bool {
+    if s == "" {
+        return false;
+    }
+    for c in s {
+        if c < "0" or c > "9" {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn valid_name(s: str) -> bool {
+    if len(s) < 1 or len(s) > 20 {
+        return false;
+    }
+    for c in s {
+        if not ((c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+# The kept parts of a path, or err when it leaves the destination.
+fn normalize(path: str) -> result[list[str]] {
+    if text.starts_with(path, "/") {
+        return err("outside");
+    }
+    let kept = new list[str];
+    for part in split(path, "/") {
+        if part == "" or part == "." {
+            continue;
+        }
+        if part == ".." {
+            if len(kept) == 0 {
+                return err("outside");
+            }
+            let _ = try pop(kept);
+        } else {
+            push(kept, part);
+        }
+    }
+    return ok(kept);
+}
+
+fn checksum(s: str) -> int {
+    var h = 7;
+    for i in 0..len(s) {
+        set h = (h * 31 + byte_at(s, i)) % 1000000007;
+    }
+    return h;
+}
+
+fn well_formed(f: list[str]) -> bool {
+    let kind = f[0];
+    if kind == "F" {
+        return len(f) == 3 and is_digits(f[2]);
+    }
+    if kind == "D" {
+        return len(f) == 2;
+    }
+    if kind == "L" {
+        return len(f) == 4 and f[2] == "->";
+    }
+    if kind == "END" {
+        return len(f) == 2 and is_digits(f[1]);
+    }
+    return false;
+}
+
+fn prefixes(parts: list[str]) -> list[str] {
+    let out = new list[str];
+    for j in 1..len(parts) {
+        push(out, join(slice(parts, 0, j), "/"));
+    }
+    return out;
+}
+
+# Why an entry is skipped, or "" when it is unpacked.
+fn skip_reason(tree: Tree, kind: str, path: str) -> str {
+    if kind == "L" {
+        return "link";
+    }
+    match normalize(path) {
+        case ok(parts) {
+            if len(parts) == 0 {
+                return "empty";
+            }
+            for p in prefixes(parts) {
+                if has(tree.files, p) {
+                    return "parent is a file";
+                }
+            }
+            let norm = join(parts, "/");
+            if kind == "F" and has(tree.dirs, norm) {
+                return "is a directory";
+            }
+            if kind == "D" and has(tree.files, norm) {
+                return "is a file";
+            }
+            return "";
+        }
+        case err(_) {
+            return "outside";
+        }
+    }
+}
+
+fn add_dirs(tree: Tree, parts: list[str]) {
+    for p in prefixes(parts) {
+        set tree.dirs[p] = true;
+    }
+}
+
+fn unpack(name: str, content: str) -> result[void] uses console, file.write("./") {
+    let lines = split(content, "\n");
+    if text.ends_with(content, "\n") {
+        let _ = try pop(lines);
+    }
+    let tree = new Tree { files: new ordered_map[str, str], dirs: new map[str, bool] };
+    let dest = "out/" + name + "/";
+    var entries = 0;
+    var i = 1;
+    while true {
+        if i >= len(lines) {
+            print("error: truncated");
+            break;
+        }
+        let f = split(lines[i], " ");
+        if not well_formed(f) {
+            print("error: line " + str(i + 1) + ": bad entry");
+            break;
+        }
+        let kind = f[0];
+        if kind == "END" {
+            if try parse_int(f[1]) != entries {
+                print("warning: END says " + f[1] + ", found " + str(entries));
+            }
+            break;
+        }
+        set entries = entries + 1;
+        let path = f[1];
+        var body = "";
+        if kind == "F" {
+            let n = try parse_int(f[2]);
+            if i + 1 + n > len(lines) {
+                print("error: truncated");
+                break;
+            }
+            set body = join(map(slice(lines, i + 1, i + 1 + n), fn(l) => l + "\n"), "");
+            set i = i + n;
+        }
+        set i = i + 1;
+        let reason = skip_reason(tree, kind, path);
+        if reason != "" {
+            print("skip " + path + ": " + reason);
+            continue;
+        }
+        let parts = try normalize(path);
+        let norm = join(parts, "/");
+        if kind == "F" {
+            var verb = "file";
+            if has(tree.files, norm) {
+                set verb = "replace";
+            }
+            try fs.make_dir(dest + join(slice(parts, 0, len(parts) - 1), "/"));
+            try write_file(dest + norm, body);
+            set tree.files[norm] = body;
+            # keep a log of everything unpacked, next to the program
+            try fs.append_file("unpack.log", dest + norm + "\n");
+            add_dirs(tree, parts);
+            print(verb + " " + norm + " " + str(len(body)));
+        } else {
+            try fs.make_dir(dest + norm);
+            add_dirs(tree, parts);
+            set tree.dirs[norm] = true;
+            print("dir " + norm);
+        }
+    }
+    var total = 0;
+    for p, data in tree.files {
+        print("= " + p + " " + str(len(data)) + " " + str(checksum(data)));
+        set total = total + len(data);
+    }
+    print("total " + str(len(tree.files)) + " files, " + str(len(tree.dirs)) + " dirs, " + str(total) + " bytes");
+    return ok();
+}
+
+fn main() -> result[void] uses console, input, file.read("incoming/"), file.write("./") {
+    let seen = new map[str, bool];
+    for name in split(read_all(), "\n") {
+        if name == "" {
+            continue;
+        }
+        print("== " + name);
+        let before = has(seen, name);
+        set seen[name] = true;
+        if not valid_name(name) {
+            print("bad name");
+            continue;
+        }
+        if before {
+            print("duplicate");
+            continue;
+        }
+        match read_file("incoming/" + name + ".pack") {
+            case ok(content) {
+                if split(content, "\n")[0] != "PACK 1" {
+                    print("not a pack");
+                } else {
+                    try unpack(name, content);
+                }
+            }
+            case err(_) {
+                print("not found");
+            }
+        }
+    }
+    return ok();
+}

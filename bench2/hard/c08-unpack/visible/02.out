@@ -1,0 +1,30 @@
+== evil
+file readme.txt 9
+skip ../../evil.txt: outside
+skip /tmp/evil.txt: outside
+skip ../basic/readme.txt: outside
+skip a/../../escape.txt: outside
+skip ../../etc: outside
+skip shell: link
+skip docs/link: link
+file c.txt 5
+file x 0
+warning: END says 7, found 10
+= c.txt 5 297840105
+= readme.txt 9 143511813
+= x 0 7
+total 3 files, 0 dirs, 14 bytes
+== missing
+not found
+== basic
+dir docs
+file docs/readme.txt 27
+file notes.txt 5
+file src/main/app.txt 21
+file empty.txt 0
+dir src/main
+= docs/readme.txt 27 51367644
+= empty.txt 0 7
+= notes.txt 5 305412785
+= src/main/app.txt 21 569898455
+total 4 files, 3 dirs, 53 bytes

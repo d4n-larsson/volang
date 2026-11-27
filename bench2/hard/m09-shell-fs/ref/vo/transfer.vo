@@ -1,0 +1,103 @@
+# mv and cp: steps 1 to 7 of the statement.
+import fstree;
+
+fn fail(cmd: str, path: str, message: str) -> result[void] {
+    return err(cmd + ": " + path + ": " + message);
+}
+
+fn step_error(cmd: str, path: str, r: result[fstree.Spot]) -> result[fstree.Spot] {
+    match r {
+        case ok(s) {
+            return ok(s);
+        }
+        case err(e) {
+            return err(cmd + ": " + path + ": " + e);
+        }
+    }
+}
+
+export fn transfer(t: fstree.Tree, cmd: str, recursive: bool, src_p: str, dst_p: str) -> result[void] {
+    var src = 0;
+    match fstree.resolve(t, src_p) {
+        case ok(id) {
+            set src = id;
+        }
+        case err(e) {
+            return fail(cmd, src_p, e);
+        }
+    }
+    let src_dir = t.entries[src].is_dir;
+    if cmd == "cp" and src_dir and not recursive {
+        return fail(cmd, src_p, "is a directory");
+    }
+    let spot = try step_error(cmd, dst_p, fstree.locate(t, dst_p));
+    var dir = spot.dir;
+    var name = spot.name;
+    var ex = spot.existing;
+    if ex >= 0 and t.entries[ex].is_dir {
+        set dir = ex;
+        set name = t.entries[src].name;
+        set ex = get_or(t.entries[dir].children, name, -1);
+    } else if ex >= 0 {
+        set dir = t.entries[ex].parent;
+        set name = t.entries[ex].name;
+    }
+    if src_dir and fstree.is_within(t, dir, src) {
+        if cmd == "mv" {
+            return fail(cmd, src_p, "cannot move into itself");
+        }
+        return fail(cmd, src_p, "cannot copy into itself");
+    }
+    if ex == src {
+        if cmd == "mv" {
+            return ok();
+        }
+        return fail(cmd, dst_p, "same file");
+    }
+    try collision(t, cmd, src_dir, ex, dst_p);
+    if cmd == "cp" {
+        var removed = 0;
+        if ex >= 0 {
+            set removed = fstree.size(t, ex);
+        }
+        if not fstree.fits(t, fstree.usage(t) - removed + fstree.size(t, src)) {
+            return fail(cmd, dst_p, "no space left");
+        }
+        if ex >= 0 {
+            fstree.detach(t, ex);
+        }
+        fstree.attach(t, dir, name, fstree.copy(t, src));
+        return ok();
+    }
+    if ex >= 0 {
+        fstree.detach(t, ex);
+    }
+    fstree.detach(t, src);
+    fstree.attach(t, dir, name, src);
+    return ok();
+}
+
+# Step 5: what an existing target allows.
+fn collision(t: fstree.Tree, cmd: str, src_dir: bool, ex: int, dst_p: str) -> result[void] {
+    if ex >= 0 {
+        let target = t.entries[ex];
+        if not src_dir and target.is_dir {
+            return fail(cmd, dst_p, "is a directory");
+        }
+        if src_dir and not target.is_dir {
+            return fail(cmd, dst_p, "not a directory");
+        }
+        if src_dir {
+            if cmd == "cp" {
+                return fail(cmd, dst_p, "file exists");
+            }
+            if len(target.children) > 0 {
+                return fail(cmd, dst_p, "directory not empty");
+            }
+            if ex == t.cwd {
+                return fail(cmd, dst_p, "in use");
+            }
+        }
+    }
+    return ok();
+}

@@ -5,8 +5,8 @@ The prompt holds the task statement, the starter tree (refactor tasks) and the v
 vo also `vo reference`. The agent replies with fenced blocks that start with `# file: <path>` (one
 block may omit it: it is the entry file). After a failed attempt the agent sees the toolchain
 output, the failing visible cases, how many hidden checks failed (never which), and any capability
-violation. Results: bench2/results/<lang>[-features].jsonl, one record per task; each attempt's files
-in bench2/results/drafts/<lang>[-features]/<task>/<attempt>/.
+violation. Results: bench2/results/<lang>[-hard|-features].jsonl, one record per task; each attempt's files
+in bench2/results/drafts/<lang>[-hard|-features]/<task>/<attempt>/.
 """
 import argparse
 import json
@@ -100,7 +100,7 @@ def feedback(r):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--lang", choices=["vo", "python"], required=True)
-    ap.add_argument("--set", choices=["tasks", "features"], default="tasks")
+    ap.add_argument("--set", choices=["tasks", "hard", "features"], default="tasks")
     ap.add_argument("--model", default=None)
     ap.add_argument("--attempts", type=int, default=3)
     ap.add_argument("--only", default="")
@@ -111,7 +111,7 @@ def main():
     if a.lang == "vo":
         reference = subprocess.run([VO, "reference"], capture_output=True).stdout.decode()
     os.makedirs(os.path.join(ROOT, "bench2", "results"), exist_ok=True)
-    suffix = "-features" if a.set == "features" else ""
+    suffix = "" if a.set == "tasks" else "-" + a.set
     out = open(os.path.join(ROOT, "bench2", "results", f"{a.lang}{suffix}.jsonl"), "a")
     entry = "main.vo" if a.lang == "vo" else "main.py"
     lang_name = "vo" if a.lang == "vo" else "Python 3"
@@ -140,7 +140,7 @@ def main():
             reply, hangs = ask(prompt, a.model)
             timeouts += hangs
             files = parse_reply(reply, entry)
-            # Every draft is kept, graded where it lies: results/drafts/<lang>[-features]/<task>/<attempt>/.
+            # Every draft is kept, graded where it lies: results/drafts/<lang>[-hard|-features]/<task>/<attempt>/.
             sol = os.path.join(drafts, str(attempts))
             os.makedirs(sol)
             for p, text in files.items():

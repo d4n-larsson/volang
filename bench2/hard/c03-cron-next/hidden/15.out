@@ -1,0 +1,15 @@
+jobs 6
+> next friday13 3
+2099-01-02 09:00 Fri
+2099-01-09 09:00 Fri
+2099-01-13 09:00 Tue
+> next invoice 2
+2099-01-01 00:00 Thu
+2099-02-01 00:00 Sun
+> next report 1
+2099-01-04 12:00 Sun
+> timeline 4
+2099-01-01 00:00 invoice
+2099-01-01 00:05 sync
+2099-01-01 00:35 sync
+2099-01-01 02:30 backup

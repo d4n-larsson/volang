@@ -1,0 +1,12 @@
+== env/prod.conf
+db.conf:4: undefined ${name}
+env/prod.conf:5: undefined ${server.host}
+env/prod.conf:6: include outside conf: ../../secrets/prod.conf
+env/prod.conf:8: missing include: env/extra.conf
+db.dsn=postgres://db.internal:5432/ (db.conf:4)
+db.host=db.internal (db.conf:2)
+db.port=5432 (db.conf:3)
+log.level=warn (env/prod.conf:1)
+server.port=443 (env/prod.conf:4)
+server.url=https:/// (env/prod.conf:5)
+files 2 errors 4

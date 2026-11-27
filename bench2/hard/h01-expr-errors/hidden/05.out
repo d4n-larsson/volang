@@ -1,0 +1,10 @@
+error at column 3: unexpected 2
+error at column 5: unexpected 0012
+error at column 4: unexpected (
+error at column 3: unexpected (
+error at column 1: unexpected )
+error at column 5: unexpected *
+error at column 5: unexpected 5
+error at column 5: unexpected 5
+error at column 3: unexpected abs
+error at column 2: unexpected ,

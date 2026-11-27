@@ -1,0 +1,19 @@
+touch empty
+cat empty
+write file
+cat file
+ls -l
+write dir/x hello
+mkdir dir
+write dir hello
+append dir hello
+append dir/new   created by   append
+append dir/new and more
+cat dir/new empty missing dir dir/new/x file
+touch dir dir/new empty
+cat dir/new
+write dir/new replaced text
+cat dir/new
+write dir/new/.. nope
+append ./dir/./new/ tail
+cat /dir/new

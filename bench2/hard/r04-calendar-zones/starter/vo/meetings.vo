@@ -1,0 +1,103 @@
+# Booking, moving and changing meetings.
+import conflicts;
+import directory;
+import model;
+import timefmt;
+
+fn booked_text(m: model.Meeting) -> str {
+    let n = timefmt.count(len(model.people(m)), "person", "people");
+    return "booked " + m.meeting_id + " in " + m.room + ": " + timefmt.span(m.start, m.end) + " (" + n + ")";
+}
+
+export fn book(cal: model.Calendar, meeting_id: str, room: str, organizer: str, start: int, length: int, attendees: list[str]) -> str {
+    if has(cal.meetings, meeting_id) {
+        return "error: meeting " + meeting_id + " exists";
+    }
+    if not has(cal.rooms, room) {
+        return "error: unknown room " + room;
+    }
+    let e = directory.people_error(cal, organizer, attendees);
+    if e != "" {
+        return e;
+    }
+    let people = [organizer];
+    for a in attendees {
+        push(people, a);
+    }
+    let full = conflicts.capacity_error(cal.rooms[room], len(people));
+    if full != "" {
+        return full;
+    }
+    let end = start + length;
+    let clash = conflicts.placement_error(cal, room, people, start, end, "");
+    if clash != "" {
+        return clash;
+    }
+    let m = new model.Meeting { meeting_id: meeting_id, room: room, organizer: organizer, start: start, end: end, attendees: slice(attendees, 0, len(attendees)) };
+    set cal.meetings[meeting_id] = m;
+    return booked_text(m);
+}
+
+export fn cancel(cal: model.Calendar, meeting_id: str) -> str {
+    if not has(cal.meetings, meeting_id) {
+        return "error: unknown meeting " + meeting_id;
+    }
+    remove(cal.meetings, meeting_id);
+    return "cancelled " + meeting_id;
+}
+
+export fn move(cal: model.Calendar, meeting_id: str, start: int) -> str {
+    if not has(cal.meetings, meeting_id) {
+        return "error: unknown meeting " + meeting_id;
+    }
+    let m = cal.meetings[meeting_id];
+    let end = start + model.length(m);
+    let e = conflicts.placement_error(cal, m.room, model.people(m), start, end, meeting_id);
+    if e != "" {
+        return e;
+    }
+    set m.start = start;
+    set m.end = end;
+    return "moved " + meeting_id + ": " + timefmt.span(m.start, m.end);
+}
+
+export fn invite(cal: model.Calendar, meeting_id: str, name: str) -> str {
+    if not has(cal.meetings, meeting_id) {
+        return "error: unknown meeting " + meeting_id;
+    }
+    if not has(cal.users, name) {
+        return "error: unknown user " + name;
+    }
+    let m = cal.meetings[meeting_id];
+    if model.contains(model.people(m), name) {
+        return "error: " + name + " already in " + meeting_id;
+    }
+    let e = conflicts.capacity_error(cal.rooms[m.room], len(model.people(m)) + 1);
+    if e != "" {
+        return e;
+    }
+    match conflicts.person_clash(cal, name, m.start, m.end, meeting_id) {
+        case some(other) {
+            return conflicts.clash_text(name, other);
+        }
+        case none {
+        }
+    }
+    push(m.attendees, name);
+    return name + " invited to " + meeting_id;
+}
+
+export fn leave(cal: model.Calendar, meeting_id: str, name: str) -> str {
+    if not has(cal.meetings, meeting_id) {
+        return "error: unknown meeting " + meeting_id;
+    }
+    let m = cal.meetings[meeting_id];
+    if name == m.organizer {
+        return "error: " + name + " organizes " + meeting_id;
+    }
+    if not model.contains(m.attendees, name) {
+        return "error: " + name + " not in " + meeting_id;
+    }
+    set m.attendees = filter(m.attendees, fn(a) => a != name);
+    return name + " left " + meeting_id;
+}

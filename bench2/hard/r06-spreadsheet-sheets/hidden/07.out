@@ -1,0 +1,35 @@
+sheet Data added
+error: bad cell Data!A0
+error: unknown sheet Nope
+error: bad cell Nope!A0
+error: bad cell !A1
+error: bad cell Data!
+error: bad cell 9x!A1
+error: bad cell Data!A1!B1
+Data!A1 empty
+Data!Z99: empty
+error: unknown sheet Nope
+error: unknown sheet Nope
+error: bad formula
+error: bad value
+error: unknown sheet Nope
+error: bad cell Nope!B0
+error: bad cell Data!B0
+error: A1 is empty
+error: Data!A1 is empty
+error: unknown sheet Nope
+error: bad range Data!A1
+error: bad range Data!A1:B2:C3
+error: bad range !A1:B2
+error: Data!C1 is empty
+error: unknown sheet Nope
+users Data!A9: none
+error: unknown sheet nope
+error: bad command
+error: bad command
+error: bad command
+error: bad sheet name _x
+sheet Data2 added
+error: sheet Data2 exists
+error: bad command
+error: unknown sheet Nope

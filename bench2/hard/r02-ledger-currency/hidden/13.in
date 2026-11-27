@@ -1,0 +1,22 @@
+open assets:bank asset
+open assets:eur asset EUR
+open assets:gbp asset GBP
+open income:fx income
+rate EUR 1 1.10
+rate GBP 1 1.40
+post c1 1 buy assets:eur=50 assets:bank=
+post c2 1 buy assets:gbp=2 assets:bank=
+close assets:eur
+close assets:gbp
+rate EUR 2 1.30
+post c3 2 sell assets:eur=-50 assets:bank=
+close assets:eur
+accounts
+statement assets:eur
+post c4 3 again assets:eur=1 assets:bank=
+void c1 4
+void c3 4
+balance assets
+trial
+revalue 9
+tree

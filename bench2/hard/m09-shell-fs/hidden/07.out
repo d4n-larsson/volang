@@ -1,0 +1,16 @@
+/proj/src/lib
+/other/proj/src/lib
+/other/proj/src
+/renamed
+/renamed/lib
+empty/
+target/
+mv: /: cannot move into itself
+mv: ..: cannot move into itself
+/
+/other
+/other/proj
+/renamed
+/renamed/lib
+/renamed/lib/empty
+/renamed/lib/target

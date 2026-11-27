@@ -1,0 +1,26 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+post ann general before dee
+join dee general
+post bob general after dee @dee
+unread dee
+post cy general more
+reply bob general/1 thread reply @dee
+unread dee
+post dee general my own
+unread dee
+reply ann general/2 reply to bob @dee
+unread dee
+reply dee general/2 hm
+unread dee
+unread ann
+user eve
+unread eve
+unread zed
+unread
+unread eve x

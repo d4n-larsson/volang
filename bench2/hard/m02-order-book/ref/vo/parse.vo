@@ -1,0 +1,117 @@
+import std.regex;
+
+export record Command {
+    cmd: str;
+    id: str;
+    trader: str;
+    side: str;
+    symbol: str;
+    qty: int;
+    price: int;
+    tif: str;
+}
+
+export fn money(c: int) -> str {
+    var sign = "";
+    if c < 0 {
+        set sign = "-";
+    }
+    let a = abs(c);
+    return sign + str(a / 100) + "." + format("{:02}", a % 100);
+}
+
+fn price(s: str) -> int {
+    if not regex.is_match(s, regex.regex("^(0|[1-9][0-9]{0,5})\\.[0-9]{2}$")) {
+        return 0;
+    }
+    let parts = split(s, ".");
+    match parse_int(parts[0] + parts[1]) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn qty(s: str) -> int {
+    if not regex.is_match(s, regex.regex("^[1-9][0-9]{0,5}$")) {
+        return 0;
+    }
+    match parse_int(s) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn is_id(s: str) -> bool {
+    return regex.is_match(s, regex.regex("^[A-Za-z0-9]{1,8}$"));
+}
+
+fn is_symbol(s: str) -> bool {
+    return regex.is_match(s, regex.regex("^[A-Z]{1,5}$"));
+}
+
+fn order_fields(f: list[str]) -> bool {
+    return is_id(f[1]) and regex.is_match(f[2], regex.regex("^[a-z]{1,10}$")) and (f[3] == "buy" or f[3] == "sell") and is_symbol(f[4]) and qty(f[5]) > 0;
+}
+
+fn simple(cmd: str) -> Command {
+    return new Command { cmd: cmd, id: "", trader: "", side: "", symbol: "", qty: 0, price: 0, tif: "" };
+}
+
+fn order(cmd: str, f: list[str], p: int, tif: str) -> Command {
+    return new Command { cmd: cmd, id: f[1], trader: f[2], side: f[3], symbol: f[4], qty: qty(f[5]), price: p, tif: tif };
+}
+
+# The command on a line; cmd is "blank" for a line without fields and "invalid" for an invalid one.
+export fn parse(line: str) -> Command {
+    let f = filter(split(line, " "), fn(t) => t != "");
+    let n = len(f);
+    if n == 0 {
+        return simple("blank");
+    }
+    let cmd = f[0];
+    if cmd == "limit" and (n == 7 or n == 8) {
+        var tif = "gtc";
+        if n == 8 {
+            set tif = f[7];
+        }
+        let p = price(f[6]);
+        if order_fields(f) and p > 0 and (tif == "gtc" or tif == "ioc" or tif == "fok") {
+            return order(cmd, f, p, tif);
+        }
+    } else if cmd == "market" and n == 6 {
+        if order_fields(f) {
+            return order(cmd, f, 0, "market");
+        }
+    } else if cmd == "stop" and n == 7 {
+        let p = price(f[6]);
+        if order_fields(f) and p > 0 {
+            return order(cmd, f, p, "stop");
+        }
+    } else if cmd == "cancel" and n == 2 and is_id(f[1]) {
+        let c = simple(cmd);
+        set c.id = f[1];
+        return c;
+    } else if cmd == "modify" and n == 4 {
+        let p = price(f[3]);
+        if is_id(f[1]) and qty(f[2]) > 0 and p > 0 {
+            let c = simple(cmd);
+            set c.id = f[1];
+            set c.qty = qty(f[2]);
+            set c.price = p;
+            return c;
+        }
+    } else if cmd == "book" and n == 2 and is_symbol(f[1]) {
+        let c = simple(cmd);
+        set c.symbol = f[1];
+        return c;
+    }
+    return simple("invalid");
+}

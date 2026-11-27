@@ -1,0 +1,23 @@
+warehouse cheap added
+item sample added
+received 5 sample into cheap, now 5, lot 1 at 0.00
+received 2 sample into cheap, now 7, lot 2 at 0.50
+received 3 sample into cheap, now 10, lot 3 at 0.07
+lot 1: 5 x 0.00 = 0.00
+lot 2: 2 x 0.50 = 1.00
+lot 3: 3 x 0.07 = 0.21
+total 10 units = 1.21
+shipped 6 sample from cheap, now 4, cost 0.50
+sample: 4 units = 0.71
+total value 0.71
+shipped 4 sample from cheap, now 0, cost 0.71
+no stock
+no lots of sample in cheap
+items 1, warehouses 1, 0 units, value 0.00
+shipped 10 units in 2 shipments, cost 1.21
+orders: 0 open, 0 fulfilled, 0 cancelled
+#1 receive cheap +5 lot 1 at 0.00
+#2 receive cheap +2 lot 2 at 0.50
+#3 receive cheap +3 lot 3 at 0.07
+#4 ship cheap -6 cost 0.50
+#5 ship cheap -4 cost 0.71

@@ -1,0 +1,73 @@
+# Users and rooms. They share one namespace: a name is a user or a room, never both.
+import model;
+import timefmt;
+
+export fn name_taken(cal: model.Calendar, name: str) -> bool {
+    return has(cal.users, name) or has(cal.rooms, name);
+}
+
+export fn add_user(cal: model.Calendar, name: str, offset: int) -> str {
+    if name_taken(cal, name) {
+        return "error: name " + name + " taken";
+    }
+    set cal.users[name] = new model.User { name: name, offset: offset, has_hours: false, hours_start: 0, hours_end: 0 };
+    return "user " + name + " added";
+}
+
+export fn add_room(cal: model.Calendar, name: str, capacity: int, offset: int) -> str {
+    if name_taken(cal, name) {
+        return "error: name " + name + " taken";
+    }
+    set cal.rooms[name] = new model.Room { name: name, capacity: capacity, offset: offset };
+    return "room " + name + " added, capacity " + str(capacity);
+}
+
+export fn set_zone(cal: model.Calendar, name: str, offset: int) -> str {
+    if has(cal.users, name) {
+        set cal.users[name].offset = offset;
+    } else if has(cal.rooms, name) {
+        set cal.rooms[name].offset = offset;
+    } else {
+        return "error: unknown name " + name;
+    }
+    return "zone " + name + " " + timefmt.zone(offset);
+}
+
+# Sets (or, with has_hours false, clears) a user's working hours.
+export fn set_hours(cal: model.Calendar, name: str, has_hours: bool, first: int, last: int) -> str {
+    if not has(cal.users, name) {
+        return "error: unknown user " + name;
+    }
+    let u = cal.users[name];
+    set u.has_hours = has_hours;
+    set u.hours_start = first;
+    set u.hours_end = last;
+    if not has_hours {
+        return "hours " + name + " none";
+    }
+    return "hours " + name + " " + timefmt.clock(first) + "-" + timefmt.clock(last);
+}
+
+export fn sorted_rooms(cal: model.Calendar) -> list[model.Room] {
+    let names = keys(cal.rooms);
+    sort(names);
+    return map(names, fn(n) => cal.rooms[n]);
+}
+
+# The first problem with a meeting's people, or "".
+export fn people_error(cal: model.Calendar, organizer: str, attendees: list[str]) -> str {
+    if not has(cal.users, organizer) {
+        return "error: unknown user " + organizer;
+    }
+    let seen = [organizer];
+    for a in attendees {
+        if not has(cal.users, a) {
+            return "error: unknown user " + a;
+        }
+        if model.contains(seen, a) {
+            return "error: " + a + " listed twice";
+        }
+        push(seen, a);
+    }
+    return "";
+}

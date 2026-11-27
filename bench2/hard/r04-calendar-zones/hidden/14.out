@@ -1,0 +1,33 @@
+no meetings
+rooms day 2:
+  no rooms
+user ana added
+error: name ana taken
+user room1 added
+error: name room1 taken
+room r1 added, capacity 1
+user bob added
+error: room r1 holds 1, meeting has 2
+error: ana listed twice
+error: bob listed twice
+error: unknown room nowhere
+error: unknown user zed
+error: unknown user zed
+error: bad command
+error: bad command
+booked m1 in r1: 3 10:00-10:30 (1 person)
+error: meeting m1 exists
+error: room r1 busy: m1 3 04:00-04:30
+cancelled m1
+error: unknown meeting m1
+booked m1 in r1: 3 04:00-04:15 (1 person)
+error: bob organizes m1
+error: ana not in m1
+error: unknown meeting zz
+error: bob already in m1
+error: room r1 holds 1, meeting has 2
+error: unknown meeting zz
+error: unknown user zed
+error: unknown command frob
+error: unknown command Zone
+m1: r1 3 04:00-04:15 UTC-04:00, organizer bob, attendees none

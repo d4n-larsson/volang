@@ -1,0 +1,11 @@
+  | B       | C
+--+---------+--------
+1 | #DIV/0! | #DIV/0!
+2 | #REF!   | #VALUE!
+3 | #DIV/0! | #REF!
+4 | #DIV/0! | text
+5 | #VALUE! | #DIV/0!
+6 | #REF!   | #VALUE!
+7 | #DIV/0! | #DIV/0!
+8 | #DIV/0! | #REF!
+9 |      10 | #VALUE!

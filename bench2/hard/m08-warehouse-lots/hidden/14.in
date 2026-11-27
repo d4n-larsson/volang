@@ -1,0 +1,16 @@
+warehouse e
+warehouse f
+item jam
+receive e jam 3 1.00 6
+receive e jam 3 2.00 4
+transfer e f jam 2 4
+transfer e f jam 2 2
+ship o1 f jam 4
+reserve r1 e jam 2
+day 2
+day 4
+stock
+day 6
+stock
+value
+backorders

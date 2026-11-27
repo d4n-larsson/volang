@@ -1,0 +1,16 @@
+task x 4
+task y 4
+dep y x
+schedule
+end
+holiday 2
+schedule
+end
+holiday 4
+workday 5
+schedule
+end
+workday 2
+holiday 5
+schedule
+end

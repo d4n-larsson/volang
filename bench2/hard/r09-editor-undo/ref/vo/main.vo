@@ -1,0 +1,15 @@
+import commands;
+import session;
+
+fn main() uses console, input {
+    let ed = session.new_editor();
+    let table = commands.word_commands();
+    for line in split(read_all(), "\n") {
+        if line == "" {
+            continue;
+        }
+        for out in commands.run(line, ed, table) {
+            print(out);
+        }
+    }
+}

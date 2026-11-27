@@ -1,0 +1,43 @@
+set B2 1
+set C3 2
+set B3 3
+set C2 4
+set D4 =B2 + $C3 * C$2 - $B$3
+copy D4 E5
+formula E5
+print E5
+copy D4 D5
+formula D5
+copy D4 A4
+formula A4
+print A4
+copy D4 D1
+formula D1
+set Z1 =SUM(B2:C3)  +  Y1
+copy Z1 Z2
+formula Z2
+copy Z1 A1
+formula A1
+print A1
+copy Z1 Y2
+formula Y2
+set F1 =SUM($B$2:C3)
+copy F1 G1
+formula G1
+print G1
+copy F1 F99
+formula F99
+set H1 =1+(
+copy H1 H2
+formula H2
+copy Q9 B2
+print B2
+print D4
+set J1 words here
+copy J1 J2
+print J2
+set K1 0042
+copy K1 K2
+formula K2
+copy E5 E5
+formula E5

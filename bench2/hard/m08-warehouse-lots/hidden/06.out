@@ -1,0 +1,31 @@
+warehouse x added
+warehouse Y added
+item rice added
+lot L1 x rice 10
+lot L2 x rice 10
+transfer T1 12 arrives 5 L2x10 L1x2
+transfer T2 3 arrives 2 L1x3
+transfer T3 5 arrives 2 L1x5
+backorder o1 9
+stock day 0
+transit T1 x Y rice 12 arrives 5
+transit T2 x Y rice 3 arrives 2
+transit T3 x Y rice 5 arrives 2
+value on hand 0.00 in transit 30.00 quarantine 0.00 shipped 0.00 written off 0.00
+arrived T2 Y rice 3
+arrived T3 Y rice 5
+filled o1 8 L1x8
+arrived T1 Y rice 12
+filled o1 1 L2x1
+transfer T4 4 arrives 8 L2x4
+backorders 0
+arrived T4 x rice 4
+expired L2 Y 5
+expired L2 x 4
+stock day 9
+Y rice L1 on hand 2 reserved 0 expires 20
+value on hand 2.00 in transit 0.00 quarantine 0.00 shipped 10.00 written off 18.00
+stock day 9
+Y rice L1 on hand 2 reserved 0 expires 20
+value on hand 2.00 in transit 0.00 quarantine 0.00 shipped 10.00 written off 18.00
+backorders 0

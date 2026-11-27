@@ -1,0 +1,10 @@
+== empty.conf
+files 1 errors 0
+== env/missing.conf
+error: not found
+== db.conf
+db.conf:4: undefined ${name}
+db.dsn=postgres://db.internal:5432/ (db.conf:4)
+db.host=db.internal (db.conf:2)
+db.port=5432 (db.conf:3)
+files 1 errors 1

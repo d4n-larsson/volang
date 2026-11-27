@@ -1,0 +1,36 @@
+created w
+inserted 4
+error: syntax error
+error: syntax error
+error: syntax error
+error: syntax error
+error: syntax error
+inserted 1
+error: syntax error
+error: syntax error
+error: syntax error
+error: syntax error
+error: syntax error
+error: syntax error
+error: syntax error
+n  | s     
+---+-------
+12 |       
+ 0 | '     
+ 0 | a b  c
+(3 rows)
+error: syntax error
+count(*) | max(w.s)
+---------+---------
+       5 | ok      
+(1 row)
+error: syntax error
+n
+-
+(0 rows)
+s   
+----
+it's
+    
+(2 rows)
+error: syntax error

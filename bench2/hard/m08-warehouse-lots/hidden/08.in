@@ -1,0 +1,17 @@
+warehouse s
+item soap
+receive s soap 3 1.00 50
+receive s soap 3 2.00 60
+ship o1 s soap 5
+ship o2 s soap 4
+receive s soap 2 3.00 70
+receive s soap 6 4.00 40
+return o1 6
+return o2 4
+return o1 4
+stock
+day 55
+return o1 2
+return o2 2
+backorders
+value

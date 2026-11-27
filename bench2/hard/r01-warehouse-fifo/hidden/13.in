@@ -1,0 +1,15 @@
+warehouse a
+warehouse b
+item nail Nail 10
+receive a nail 5 11
+receive b nail 5 12
+receive a nail 5 13
+transfer b a nail 3
+lots a nail
+ship a nail 7
+lots a nail
+transfer a b nail 4
+lots b nail
+ship b nail 3
+lots b nail
+history nail

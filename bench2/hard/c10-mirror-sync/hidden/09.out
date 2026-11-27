@@ -1,0 +1,10 @@
+== plan docs
+copy api/old/v0.txt
+update api/v1.txt
+copy api/v2.txt
+copy 2, update 1, unchanged 1, conflict 0, stale 0, excluded 1
+== plan docs
+copy api/old/v0.txt
+update api/v1.txt
+copy api/v2.txt
+copy 2, update 1, unchanged 1, conflict 0, stale 0, excluded 1

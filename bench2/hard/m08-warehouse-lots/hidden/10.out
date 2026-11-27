@@ -1,0 +1,30 @@
+warehouse w added
+item salt added
+lot L1 w salt 4
+lot L2 w salt 4
+lot L3 w salt 4
+reserved r1 6 L1x4 L2x2
+reserved r2 5 L2x2 L3x3
+shipped s1 1 L3x1
+backorder s1 1
+expired L1 w 4
+reservation r1 lost 4
+expired L2 w 4
+reservation r1 lost 2
+reservation r2 lost 2
+error: order r1 is not reserved
+stock day 5
+w salt L3 on hand 3 reserved 3 expires 8
+expired L3 w 3
+reservation r2 lost 3
+error: order r2 is not reserved
+error: order r2 is not reserved
+returned s1 1 restocked 0 quarantined 1
+lot L4 w salt 1
+filled s1 1 L4x1
+stock day 8
+w salt quarantine 1
+stock day 8
+w salt quarantine 1
+value on hand 0.00 in transit 0.00 quarantine 3.00 shipped 1.00 written off 21.00
+backorders 0

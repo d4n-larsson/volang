@@ -1,0 +1,7 @@
+North South East West Idle
+North 1 0 South
+South 2 0 East
+East 1 0 North
+West 0 3 North
+West 0 1 South
+West 0 2 East

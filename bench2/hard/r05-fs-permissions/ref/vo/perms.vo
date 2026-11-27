@@ -1,0 +1,39 @@
+# Who may do what.
+import fmt;
+import nodes;
+import shell;
+
+# Whether the current user has permission `bit` (`r`, `w` or `x`) on `node`: root always has;
+# the owner has what the owner triple gives, everybody else what the other triple gives.
+export fn can(sh: shell.Shell, node: nodes.Node, bit: str) -> bool {
+    if sh.user == "root" {
+        return true;
+    }
+    var i = find("rwx", bit);
+    if node.owner != sh.user {
+        set i = i + 3;
+    }
+    return slice(node.mode, i, i + 1) == bit;
+}
+
+# Whether the current user may list the directory `node` and go into it.
+export fn can_list(sh: shell.Shell, node: nodes.Node) -> bool {
+    return can(sh, node, "r") and can(sh, node, "x");
+}
+
+export fn denied(names: list[str]) -> str {
+    return fmt.error(fmt.denied, names);
+}
+
+export fn is_mode(text: str) -> bool {
+    if len(text) != 6 {
+        return false;
+    }
+    for i in 0..6 {
+        let c = slice(text, i, i + 1);
+        if c != slice("rwxrwx", i, i + 1) and c != "-" {
+            return false;
+        }
+    }
+    return true;
+}

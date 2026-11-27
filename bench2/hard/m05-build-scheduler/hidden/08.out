@@ -1,0 +1,26 @@
+line 3: duplicate pool link
+line 12: unknown pool nolink
+line 13: unknown target ghost
+line 14: unknown target ghost2
+line 14: unknown pool ghost3
+0 start l1 w1 #1
+0 start c1 w2 #1
+0 start c2 w3 #1
+1 done c1 w2
+1 done c2 w3
+4 done l1 w1
+4 start l2 w1 #1
+7 done l2 w1
+7 start l3 w1 #1
+9 done l3 w1
+9 start app w1 #1
+10 done app w1
+makespan 10
+utilization 40%
+w1 busy 10 attempts 4
+w2 busy 1 attempts 1
+w3 busy 1 attempts 1
+built: c1 c2 l1 l2 l3 app
+failed: -
+skipped: -
+blocked: -

@@ -1,0 +1,10 @@
+workers 3
+target p 2
+target q 4
+target r 1
+target join 2 p q
+target tail 1 join r
+target solo 1 r
+fail p 1
+fail q 1
+fail r 1

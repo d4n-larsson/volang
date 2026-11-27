@@ -1,0 +1,22 @@
+user sam added
+user tia added
+room q added, capacity 2
+booked g1 in q: 3 18:00-4 00:00 (2 people)
+agenda sam day 3 (UTC-05:00):
+  3 18:00-4 00:00 g1 in q (organizer)
+agenda sam day 4 (UTC-05:00):
+  nothing
+agenda tia day 3 (UTC+00:00):
+  3 23:00-4 05:00 g1 in q (attendee)
+agenda tia day 4 (UTC+00:00):
+  3 23:00-4 05:00 g1 in q (attendee)
+rooms day 4:
+  q: free
+rooms day 3:
+  q: g1 3 18:00-4 00:00
+free q day 3: 09:00-17:00
+g1: q 3 18:00-4 00:00 UTC-05:00, organizer sam, attendees tia
+booked g2 in q: 4 05:00-06:00 (1 person)
+error: room q busy: g1 3 23:00-4 05:00
+sam day 4: 0 meetings, 0h00m
+sam day 3: 1 meeting, 6h00m

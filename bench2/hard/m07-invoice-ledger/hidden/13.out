@@ -1,0 +1,16 @@
+customer h added
+invoice #1 h total 100.00 balance 100.00 due 0
+fee #1 5.00
+error: h on hold
+paid h 50.00: #1 50.00
+error: h on hold
+credit #1 50.00 balance 5.00
+paid h 1.00: #1 1.00
+error: h on hold
+error: h on hold
+error: h on hold
+error: h on hold
+error: no invoice 2
+error: h on hold
+invoices:
+#1 h open total 100.00 fee 5.00 paid 51.00 credits 50.00 balance 4.00

@@ -1,0 +1,22 @@
+0 /data/empty
+5 /data/img
+11 /data/logs/old
+21 /data/logs
+29 /data
+0 /data/empty
+denied /data/img
+denied /data/logs/old
+10 /data/logs
+13 /data
+denied /data/logs/old
+10 /data/logs
+error: permission denied: /data/logs/old
+error: permission denied: /data/img
+error: permission denied: /data/img/p.png
+error: permission denied: /data/logs/old/b.log
+3 /data/top.txt
+denied /data/logs/old
+10 /data/logs
+error: permission denied: /data
+error: permission denied: /data/logs
+/data/logs

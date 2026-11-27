@@ -1,0 +1,23 @@
+user ann
+user bob
+new p2 Feature flag cleanup
+assign 1 ann
+move 1 triaged
+move 1 in_progress
+move 1 review
+move 1 in_progress
+move 1 blocked ci is red
+move 1 triaged
+move 1 in_progress
+move 1 review
+move 1 done
+move 1 triaged
+move 1 in_progress
+unassign 1
+assign 1 bob
+move 1 in_progress
+move 1 review
+unassign 1
+show 1
+list status=triaged
+cycle

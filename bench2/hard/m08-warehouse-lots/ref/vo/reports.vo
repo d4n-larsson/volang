@@ -1,0 +1,55 @@
+import orders;
+import parsing;
+import stock;
+
+fn sorted_keys(m: map[str, bool]) -> list[str] {
+    let ks = keys(m);
+    sort(ks);
+    return ks;
+}
+
+export fn stock_report(st: stock.Stock, out: list[str]) {
+    push(out, "stock day " + str(st.day));
+    for w in sorted_keys(st.warehouses) {
+        for sku in sorted_keys(st.items) {
+            for e in stock.fefo(st, w, sku) {
+                if e.on_hand > 0 {
+                    push(out, format("{} {} L{} on hand {} reserved {} expires {}", w, sku, e.lot.num, e.on_hand, e.reserved, e.lot.expiry));
+                }
+            }
+            let q = stock.quarantined(st, w, sku);
+            if q > 0 {
+                push(out, w + " " + sku + " quarantine " + str(q));
+            }
+        }
+    }
+    for t in st.transfers {
+        if not t.delivered {
+            push(out, format("transit T{} {} {} {} {} arrives {}", t.num, t.src, t.dst, t.sku, stock.total_units(t.picks), t.arrives));
+        }
+    }
+}
+
+export fn value_report(st: stock.Stock, out: list[str]) {
+    var on_hand = 0;
+    for _, e in st.entries {
+        set on_hand = on_hand + e.on_hand * e.lot.cost;
+    }
+    var transit = 0;
+    for t in st.transfers {
+        if not t.delivered {
+            for p in t.picks {
+                set transit = transit + p.units * p.lot.cost;
+            }
+        }
+    }
+    push(out, "value on hand " + parsing.money(on_hand) + " in transit " + parsing.money(transit) + " quarantine " + parsing.money(st.quarantine_value) + " shipped " + parsing.money(st.shipped) + " written off " + parsing.money(st.written_off));
+}
+
+export fn backorder_report(d: orders.Desk, out: list[str]) {
+    let open = filter(d.order_list, fn(o) => o.backorder > 0);
+    push(out, "backorders " + str(len(open)));
+    for o in open {
+        push(out, o.id + " " + o.wh + " " + o.sku + " " + str(o.backorder));
+    }
+}

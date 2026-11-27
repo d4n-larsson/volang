@@ -1,0 +1,16 @@
+== plan nosrc
+missing source
+== plan notarget
+missing target
+== plan dup
+duplicate source
+== plan duptarget
+duplicate target
+== plan badline
+bad config line 3
+== plan twospace
+bad config line 1
+== plan noexclude
+bad config line 3
+== plan glob
+bad config line 3

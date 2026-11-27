@@ -1,0 +1,15 @@
+import commands;
+import shell;
+
+fn main() uses console, input {
+    let sh = shell.new_shell();
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w) => w != "");
+        if len(words) == 0 {
+            continue;
+        }
+        for out in commands.run(sh, words) {
+            print(out);
+        }
+    }
+}

@@ -1,0 +1,26 @@
+*
+-l/
+-p/
+-x
+?
+a?b
+/a?b
+/*
+/?
+/
+/*
+/-l
+/-p
+/-x
+/?
+/a?b
+/-l
+/-p
+/-x
+star file
+star file
+-l/
+-p/
+-x
+?
+a?b

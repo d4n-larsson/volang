@@ -1,0 +1,13 @@
+== blog
+index.md:5: outside ../docs/index.md
+index.md:5: outside ../../secrets/token.md
+index.md:6: outside /../docs/index.md
+index.md:6: outside posts/../../blog/index.md
+posts/2024/first.md:3: outside ../../../../secrets/token.md
+orphan posts/draft.md
+pages 4 links 14 external 0 problems 5 orphans 1
+== noindex
+a.md:2: missing file index.md
+orphan a.md
+orphan b.md
+pages 2 links 3 external 0 problems 1 orphans 2

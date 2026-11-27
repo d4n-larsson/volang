@@ -1,0 +1,471 @@
+rest O1 12 10.24
+modified O1 3 9.80
+rest O1 3 9.80
+reject O3 no liquidity
+reject O4 no liquidity
+reject O5 no liquidity
+reject O6 no liquidity
+pending O7
+rest O8 10 9.81
+pending O9
+pending O10
+reject O11 not filled
+reject O3 unknown order
+reject O6 unknown order
+reject O14 no liquidity
+rest O15 16 9.57
+reject O3 unknown order
+rest O17 28 10.20
+pending O18
+trade CD 9 9.81 O19 O8
+filled O19
+trigger O9
+expired O9 29
+reject O20 not filled
+pending O21
+trigger O21
+expired O21 13
+rest O22 7 10.06
+rest O23 18 9.62
+trade CD 1 9.81 O24 O8
+expired O24 20
+book AB last -
+  ask 10.20 28 1
+  bid 10.06 7 1
+  bid 9.80 3 1
+  bid 9.62 18 1
+  bid 9.57 16 1
+book CD last 9.81
+  empty
+pending O27
+reject O28 not filled
+rest O29 20 10.50
+cancelled O1 3
+book CD last 9.81
+  bid 10.50 20 1
+book CD last 9.81
+  bid 10.50 20 1
+rest O33 16 10.33
+cancelled O18 3
+cancelled O33 16
+rest O36 26 10.33
+reject O37 no liquidity
+reject O33 duplicate id
+expired O39 9
+reject O6 unknown order
+rest O41 20 9.50
+reject O42 not filled
+trade AB 7 10.20 O43 O17
+filled O43
+trigger O10
+stp O22 7
+stp O23 18
+trade AB 6 9.57 O15 O10
+filled O10
+trigger O7
+trade AB 10 9.57 O15 O7
+expired O7 12
+reject O44 not filled
+book CD last 9.81
+  bid 10.50 20 1
+  bid 9.50 20 1
+reject O10 unknown order
+rest O47 14 9.59
+pending O48
+trigger O48
+expired O48 9
+book CD last 9.81
+  bid 10.50 20 1
+  bid 9.50 20 1
+cancelled O29 20
+rest O51 15 10.40
+stp O17 21
+trade AB 26 10.33 O52 O36
+rest O52 4 10.50
+trigger O27
+expired O27 7
+book CD last 9.81
+  ask 10.40 15 1
+  bid 9.50 20 1
+reject O54 not filled
+reject O55 no liquidity
+rest O56 26 9.83
+reject O57 no liquidity
+book AB last 10.33
+  bid 10.50 4 1
+  bid 9.83 26 1
+  bid 9.59 14 1
+rest O59 6 9.75
+stp O59 6
+trade CD 17 9.50 O41 O60
+filled O60
+reject O61 not filled
+trade AB 4 10.50 O52 O62
+filled O62
+reject O19 unknown order
+rest O64 2 9.66
+expired O65 2
+reject O15 unknown order
+rest O67 18 9.91
+stp O64 2
+trade CD 1 9.91 O68 O67
+filled O68
+rest O69 3 9.83
+rest O70 10 10.30
+rest O71 24 10.13
+reject O72 not filled
+rest O73 3 9.53
+rest O74 18 9.56
+trade CD 15 9.56 O75 O74
+filled O75
+pending O76
+trigger O76
+trade AB 10 10.30 O76 O70
+expired O76 14
+expired O77 8
+trade CD 3 9.56 O78 O74
+trade CD 17 9.91 O78 O67
+filled O78
+rest O79 1 10.11
+reject O80 not filled
+rest O81 3 10.10
+trade CD 1 10.11 O79 O82
+rest O82 12 9.76
+reject O83 not filled
+expired O84 29
+reject O83 duplicate id
+expired O86 25
+expired O87 12
+rest O88 25 9.85
+reject O89 not filled
+reject O90 not filled
+trade CD 12 9.76 O91 O82
+trade CD 9 9.85 O91 O88
+filled O91
+rest O92 14 9.93
+trade CD 10 9.85 O93 O88
+filled O93
+pending O94
+trigger O94
+stp O92 14
+trade AB 3 10.10 O94 O81
+expired O94 14
+trade CD 3 9.50 O41 O95
+expired O95 2
+rest O96 8 9.97
+cancelled O88 6
+rest O98 19 9.96
+pending O99
+expired O100 5
+pending O101
+reject O18 unknown order
+reject O103 price band
+rest O104 5 10.30
+reject O105 not filled
+expired O106 18
+rest O107 18 9.81
+book AB last 10.10
+  ask 10.30 5 1
+  ask 9.97 8 1
+  bid 9.83 29 2
+  bid 9.59 14 1
+  bid 9.53 3 1
+reject O68 unknown order
+rest O110 22 10.00
+rest O111 16 9.75
+reject O18 unknown order
+book AB last 10.10
+  ask 10.30 5 1
+  ask 9.97 8 1
+  bid 9.83 29 2
+  bid 9.75 16 1
+  bid 9.59 14 1
+  bid 9.53 3 1
+trade AB 1 9.97 O114 O96
+filled O114
+rest O115 29 10.41
+pending O116
+reject O61 unknown order
+stp O98 19
+trade CD 12 10.00 O118 O110
+filled O118
+trigger O101
+trade CD 3 10.00 O101 O110
+filled O101
+trade CD 18 9.81 O107 O119
+expired O119 9
+rest O120 7 9.91
+pending O121
+trigger O121
+trade AB 2 9.83 O56 O121
+filled O121
+reject O122 not filled
+rest O123 24 10.41
+reject O18 unknown order
+rest O125 27 10.13
+reject O79 unknown order
+trade AB 24 9.83 O56 O127
+trade AB 1 9.83 O69 O127
+filled O127
+rest O128 14 9.63
+rest O129 23 10.07
+rest O130 25 9.87
+rest O131 15 9.81
+rest O132 3 10.00
+book AB last 9.83
+  ask 10.41 24 1
+  ask 10.30 5 1
+  ask 10.00 3 1
+  ask 9.97 7 1
+  bid 9.87 25 1
+  bid 9.83 2 1
+  bid 9.75 16 1
+  bid 9.59 14 1
+  bid 9.53 3 1
+rest O134 2 9.87
+trade AB 7 9.97 O135 O96
+stp O132 3
+rest O135 5 10.15
+trade AB 5 10.15 O135 O136
+trade AB 2 9.87 O130 O136
+filled O136
+rest O137 27 9.51
+expired O138 7
+trade CD 2 9.87 O139 O134
+trade CD 7 9.91 O139 O120
+trade CD 7 10.00 O139 O110
+stp O129 23
+trade CD 5 10.13 O139 O71
+filled O139
+pending O140
+trade CD 14 9.81 O131 O141
+filled O141
+trigger O140
+stp O131 1
+trade CD 14 9.63 O128 O140
+expired O140 8
+trade AB 5 10.30 O142 O104
+trade AB 9 10.41 O142 O123
+filled O142
+rest O143 25 9.70
+rest O144 24 10.14
+expired O145 4
+reject O82 unknown order
+stp O144 24
+trade AB 15 10.41 O147 O123
+rest O147 6 10.50
+trade CD 19 9.70 O148 O143
+filled O148
+rest O149 4 9.69
+book AB last 10.41
+  bid 10.50 6 1
+  bid 9.87 23 1
+  bid 9.83 2 1
+  bid 9.75 16 1
+  bid 9.59 14 1
+  bid 9.53 3 1
+  bid 9.51 27 1
+rest O151 10 10.24
+reject O152 not filled
+book CD last 9.70
+  ask 10.41 29 1
+  ask 10.40 15 1
+  ask 10.24 10 1
+  ask 10.13 46 2
+  ask 9.70 6 1
+  ask 9.69 4 1
+reject O154 not filled
+reject O155 not filled
+reject O156 not filled
+pending O157
+pending O158
+trigger O158
+trade AB 6 10.50 O147 O158
+trade AB 14 9.87 O130 O158
+filled O158
+reject O159 not filled
+book CD last 9.70
+  ask 10.41 29 1
+  ask 10.40 15 1
+  ask 10.24 10 1
+  ask 10.13 46 2
+  ask 9.70 6 1
+  ask 9.69 4 1
+rest O161 29 9.98
+reject O92 unknown order
+rest O163 24 9.97
+expired O164 25
+reject O165 not filled
+reject O141 unknown order
+rest O167 8 10.28
+reject O118 duplicate id
+reject O169 no liquidity
+stp O149 4
+trade CD 3 9.70 O170 O143
+filled O170
+reject O116 unknown order
+trade CD 3 9.70 O172 O143
+trade CD 3 9.97 O172 O163
+filled O172
+rest O173 6 9.57
+reject O174 not filled
+trade AB 3 9.87 O130 O175
+filled O175
+trade AB 6 9.87 O130 O176
+trade AB 2 9.83 O69 O176
+trade AB 16 9.75 O111 O176
+trade AB 4 9.59 O47 O176
+filled O176
+trigger O99
+trade AB 10 9.59 O47 O99
+trade AB 6 9.57 O173 O99
+trade AB 3 9.53 O73 O99
+trade AB 10 9.51 O137 O99
+filled O99
+trigger O157
+trade AB 10 9.51 O137 O157
+filled O157
+pending O177
+trade CD 9 9.97 O178 O163
+filled O178
+pending O179
+trade CD 12 9.97 O180 O163
+stp O161 29
+stp O71 19
+trade CD 15 10.13 O180 O125
+filled O180
+reject O82 unknown order
+rest O182 27 10.17
+reject O24 unknown order
+reject O184 no liquidity
+reject O14 unknown order
+pending O186
+reject O41 unknown order
+rest O188 4 9.66
+reject O7 unknown order
+reject O190 not filled
+stp O188 4
+trade CD 12 10.13 O191 O125
+rest O191 2 10.16
+rest O192 19 9.86
+rest O193 12 10.12
+trade CD 2 10.16 O191 O194
+rest O194 25 10.15
+trade AB 6 10.12 O193 O195
+filled O195
+trigger O177
+trade AB 4 10.28 O177 O167
+filled O177
+reject O132 unknown order
+reject O99 unknown order
+rest O198 29 10.30
+reject O170 unknown order
+rest O200 15 10.06
+trade AB 4 10.28 O201 O167
+trade AB 5 10.30 O201 O198
+filled O201
+reject O106 unknown order
+stp O194 25
+trade CD 9 10.17 O203 O182
+filled O203
+book AB last 10.30
+  ask 10.30 24 1
+  bid 10.12 6 1
+  bid 9.86 19 1
+  bid 9.51 7 1
+reject O39 unknown order
+rest O206 13 10.05
+expired O207 9
+trade CD 18 10.17 O208 O182
+trade CD 4 10.24 O208 O151
+filled O208
+trigger O186
+trade CD 6 10.24 O186 O151
+stp O51 15
+trade CD 21 10.41 O186 O115
+filled O186
+trigger O116
+stp O115 8
+expired O116 6
+reject O37 unknown order
+reject O157 unknown order
+trade AB 6 10.12 O193 O211
+stp O206 13
+trade AB 19 9.86 O192 O211
+filled O211
+reject O60 unknown order
+pending O213
+trigger O213
+expired O213 28
+expired O214 17
+pending O215
+trigger O215
+expired O215 24
+trade CD 2 10.06 O200 O216
+filled O216
+expired O217 8
+reject O48 unknown order
+reject O118 unknown order
+pending O220
+trigger O220
+trade CD 13 10.06 O200 O220
+expired O220 12
+reject O221 no liquidity
+rest O222 1 10.42
+rest O223 14 10.29
+pending O224
+reject O74 unknown order
+book AB last 9.86
+  ask 10.42 1 1
+  ask 10.30 24 1
+  bid 9.51 7 1
+rest O227 26 10.18
+trade CD 14 10.29 O228 O223
+expired O228 2
+trigger O224
+expired O224 3
+rest O229 9 10.03
+reject O159 unknown order
+expired O231 27
+pending O232
+book CD last 10.29
+  empty
+rest O234 16 10.46
+rest O235 28 10.34
+trade AB 9 10.03 O229 O236
+expired O236 5
+trade CD 27 10.34 O235 O237
+filled O237
+rest O238 21 10.13
+expired O239 26
+pending O240
+reject O241 not filled
+reject O67 unknown order
+reject O101 unknown order
+reject O244 no liquidity
+rest O245 19 10.16
+reject O231 unknown order
+stp O235 1
+trade CD 18 10.13 O238 O247
+filled O247
+trade AB 1 9.51 O137 O248
+filled O248
+trigger O240
+trade AB 6 9.51 O137 O240
+expired O240 4
+pending O249
+rest O250 30 9.56
+book AB last 9.51
+  ask 10.46 16 1
+  ask 10.42 1 1
+  ask 10.30 24 1
+  ask 10.18 26 1
+  ask 10.16 19 1
+book CD last 10.13
+  bid 10.13 3 1
+  bid 9.56 30 1
+trader ana cash 107.85 AB:-68 CD:56
+trader bob cash 254.26 AB:-60 CD:33
+trader cy cash -411.21 AB:110 CD:-66
+trader dan cash -51.96 AB:-8 CD:12
+trader eve cash 101.06 AB:26 CD:-35

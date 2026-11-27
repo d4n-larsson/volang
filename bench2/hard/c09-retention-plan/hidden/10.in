@@ -1,0 +1,5 @@
+today 2023-12-31
+set lab
+keep monthly 4
+keep yearly 4
+keep within 365 for b

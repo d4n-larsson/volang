@@ -1,0 +1,2 @@
+pick badname 1.0.0
+error: bad package name Log (required by badname@1.0.0)

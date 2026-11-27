@@ -1,0 +1,10 @@
+limit A1 ana buy ZED 100 10.00
+limit A2 bob buy ZED 100 10.00
+limit A3 cy buy ZED 100 9.90
+limit C1 dan sell ZED 150 9.95 ioc
+cancel A3
+cancel A3
+modify A2 20 10.00
+limit C2 dan sell ZED 300 10.00 gtc
+book ZED
+market M1 eve buy ZED 500

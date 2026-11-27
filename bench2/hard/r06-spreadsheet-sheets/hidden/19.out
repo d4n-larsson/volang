@@ -1,0 +1,22 @@
+sheet Data added
+Data!A1 = 0
+A1 = 100
+Data!B1 = 1
+Data!C2 = 5
+copied Data!A1 to Data!B2
+Data!B2: =Sheet1!B2+C2
+Data!B2 = 5
+Data!B2 cleared
+Data!B2 empty
+error: Data!B2 is empty
+copied Data!C2 to Data!Z99
+Data!Z99 = 5
+copied Data!A1 to Data!Z99
+Data!Z99: =Sheet1!Z99+#REF
+copied Data!A1 to Data!A99
+Data!A99: =Sheet1!A99+B99
+using Data
+A99: =Sheet1!A99+B99
+B1 = 1
+Sheet1: 1 cells
+Data: 5 cells (current)

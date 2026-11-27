@@ -1,0 +1,3 @@
+2000-01-01 2010-12-31
+event k every 1000 days from 1900-01-01
+event j every 999 days from 1950-06-15

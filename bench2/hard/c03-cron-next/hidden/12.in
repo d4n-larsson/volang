@@ -1,0 +1,18 @@
+now 2024-06-01 12:00
+crontab main
+next backup 0
+next backup 51
+next backup x
+next  backup 1
+timeline
+at 2024-02-30 10:00
+at 2024-01-01 24:00
+day 1999-12-31
+day 2024-1-01
+NEXT backup 1
+at 2024-01-01T10:00
+next backup 05
+next backup -1
+day 2100-01-01
+at 2024-06-01 12:00:00
+next nobody 1

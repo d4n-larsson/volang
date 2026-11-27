@@ -1,0 +1,47 @@
+team Ant added
+team Bee added
+team Cat added
+team Dog added
+team Elk added
+error: bad command
+error: bad command
+group A: Ant, Bee
+error: team Ant already in group A
+error: team Cat listed twice
+error: team Ant already in group A
+error: unknown team Fly
+team Elk withdrawn, 0 results void
+error: team Elk withdrawn
+group B: Dog, Cat
+error: team Elk withdrawn
+error: team Elk withdrawn
+Ant (group A)
+Bee (group A)
+Cat (group B)
+Dog (group B)
+Elk (withdrawn)
+5 teams
+group A
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Ant   0  0  0  0  0  0   0   0
+  1 Bee   0  0  0  0  0  0   0   0
+group B
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Cat   0  0  0  0  0  0   0   0
+  1 Dog   0  0  0  0  0  0   0   0
+group A
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Ant   0  0  0  0  0  0   0   0
+  1 Bee   0  0  0  0  0  0   0   0
+error: unknown group a
+result 1: Ant 1-0 Bee
+error: groups are fixed once results exist
+team Fox added
+error: groups are fixed once results exist
+Ant (group A)
+Bee (group A)
+Cat (group B)
+Dog (group B)
+Elk (withdrawn)
+Fox
+6 teams

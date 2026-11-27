@@ -1,0 +1,14 @@
+PACK 1
+D docs
+F docs/readme.txt 2
+Hello.
+This is the manual.
+F docs/../notes.txt 1
+note
+F src/main/app.txt 3
+line one
+
+line three
+F empty.txt 0
+D src/main
+END 6

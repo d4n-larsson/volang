@@ -1,0 +1,26 @@
+user ann
+user bob
+new p1 First thing
+new p2 Second thing
+new p3 Third thing
+new p4 Fourth thing
+close 1
+assign 2 ann
+move 2 triaged
+move 2 in_progress
+close 2
+move 3 triaged
+assign 3 bob
+move 3 in_progress
+move 3 review
+close 3
+close 3
+close 1
+reopen 4
+reopen 1
+reopen 3
+show 1
+show 2
+show 3
+list status=all
+cycle

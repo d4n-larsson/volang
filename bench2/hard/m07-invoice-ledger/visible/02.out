@@ -1,0 +1,18 @@
+customer acme added
+invoice #1 acme total 127.01 balance 127.01 due 30
+invoice #2 acme total 108.24 balance 108.24 due 30
+statement acme day 40
+#1 due 30 balance 127.01 overdue 10
+#2 due 30 balance 108.24 overdue 10
+open 235.25 credit 0.00 written off 0.00
+paid acme 50.00: #2 50.00
+fee #1 5.00
+fee #2 5.00
+aging day 75
+acme 0.00 0.00 195.25 0.00 0.00
+total 0.00 0.00 195.25 0.00 0.00
+credit #1 20.00 balance 112.01
+paid acme 300.00: #1 112.01, #2 63.24, credit 124.75
+invoices:
+#1 acme closed total 127.01 fee 5.00 paid 112.01 credits 20.00 balance 0.00
+#2 acme closed total 108.24 fee 5.00 paid 113.24 credits 0.00 balance 0.00

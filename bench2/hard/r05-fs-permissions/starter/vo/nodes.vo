@@ -1,0 +1,56 @@
+# A directory (`is_dir`, its entries in `children` by name) or a file (its `lines` of text).
+# A node does not know its own name: the name is the key under which its directory holds it.
+export record Node {
+    is_dir: bool;
+    children: map[str, Node];
+    lines: list[str];
+}
+
+export fn new_dir() -> Node {
+    return new Node { is_dir: true, children: new map[str, Node], lines: new list[str] };
+}
+
+# A new file holding a copy of `lines`.
+export fn new_file(lines: list[str]) -> Node {
+    return new Node {
+        is_dir: false,
+        children: new map[str, Node],
+        lines: slice(lines, 0, len(lines))
+    };
+}
+
+# Size of a file in bytes: every line counts with its newline.
+export fn file_size(node: Node) -> int {
+    var total = 0;
+    for line in node.lines {
+        set total = total + len(line) + 1;
+    }
+    return total;
+}
+
+# The names of a directory's entries in ascending byte order.
+export fn sorted_names(node: Node) -> list[str] {
+    let names = keys(node.children);
+    sort(names);
+    return names;
+}
+
+export fn entry_count(node: Node) -> int {
+    return len(node.children);
+}
+
+export fn has_entry(node: Node, name: str) -> bool {
+    return has(node.children, name);
+}
+
+export fn entry(node: Node, name: str) -> Node {
+    return node.children[name];
+}
+
+export fn put_entry(node: Node, name: str, item: Node) {
+    set node.children[name] = item;
+}
+
+export fn drop_entry(node: Node, name: str) {
+    remove(node.children, name);
+}

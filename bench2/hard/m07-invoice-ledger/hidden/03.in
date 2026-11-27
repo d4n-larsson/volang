@@ -1,0 +1,20 @@
+customer ana 1000.00 30 0
+customer bo 1000.00 30 0
+invoice ana 1x100.00
+terms ana 10
+invoice ana 1x50.00
+terms ana 60
+invoice ana 1x70.00
+terms ana 10
+invoice ana 1x20.00
+invoice bo 1x5.00
+statement ana
+pay ana 60.00 3
+pay ana 10.00 5
+pay ana 10.00 9
+pay ana 10.00 3 3
+pay ana 80.00 1 3
+statement ana
+pay ana 200.00
+pay ana 5.00 2
+statement ana

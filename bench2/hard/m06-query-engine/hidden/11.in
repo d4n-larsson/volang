@@ -1,0 +1,8 @@
+create table m (label text, delta int, note text)
+insert into m values ('a', -5, null), ('bb', 1234567, 'x'), ('ccc', null, 'long note here'), ('', 0, '')
+select * from m
+select delta, label from m where delta < 0
+select note from m where label = 'zzz'
+select label, delta from m order by delta
+select min(delta), max(note), count(note) from m
+select max(label) from m where delta is null

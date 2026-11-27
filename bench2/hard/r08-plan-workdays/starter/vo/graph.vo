@@ -1,0 +1,84 @@
+import model;
+
+# All tasks in creation order.
+export fn ordered(plan: model.Plan) -> list[model.Task] {
+    let out = new list[model.Task];
+    for _, t in plan.tasks {
+        push(out, t);
+    }
+    sort_by(out, fn(t) => t.seq);
+    return out;
+}
+
+export fn depends_on(task: model.Task, pred: str) -> bool {
+    return any(task.preds, fn(d) => d.pred == pred);
+}
+
+# IDs of the tasks that depend on tid, in byte order.
+export fn successors(plan: model.Plan, tid: str) -> list[str] {
+    let out = new list[str];
+    for id, t in plan.tasks {
+        if depends_on(t, tid) {
+            push(out, id);
+        }
+    }
+    sort(out);
+    return out;
+}
+
+# A chain current -> ... -> target in which each task depends on the next, or an empty list.
+# Predecessors are tried in the order they were added.
+fn path_to(plan: model.Plan, current: str, target: str, seen: map[str, bool]) -> list[str] {
+    if current == target {
+        return [current];
+    }
+    set seen[current] = true;
+    for d in plan.tasks[current].preds {
+        if has(seen, d.pred) {
+            continue;
+        }
+        let rest = path_to(plan, d.pred, target, seen);
+        if len(rest) > 0 {
+            let out = [current];
+            for id in rest {
+                push(out, id);
+            }
+            return out;
+        }
+    }
+    return [];
+}
+
+# The cycle `tid depends on pred` would close, as a list of IDs, or an empty list.
+export fn cycle_with(plan: model.Plan, tid: str, pred: str) -> list[str] {
+    let rest = path_to(plan, pred, tid, new map[str, bool]);
+    if len(rest) == 0 {
+        return [];
+    }
+    let out = [tid];
+    for id in rest {
+        push(out, id);
+    }
+    return out;
+}
+
+fn ready(t: model.Task, placed: map[str, bool]) -> bool {
+    return all(t.preds, fn(d) => has(placed, d.pred));
+}
+
+# Every task after all its predecessors; among the ready ones the earliest created first.
+export fn topo_order(plan: model.Plan) -> list[model.Task] {
+    let pending = ordered(plan);
+    let placed = new map[str, bool];
+    let out = new list[model.Task];
+    while len(out) < len(pending) {
+        for t in pending {
+            if not has(placed, t.tid) and ready(t, placed) {
+                push(out, t);
+                set placed[t.tid] = true;
+                break;
+            }
+        }
+    }
+    return out;
+}

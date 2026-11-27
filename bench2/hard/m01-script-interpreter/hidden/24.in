@@ -1,0 +1,14 @@
+let total = 10
+func add(n)
+    let total = 0
+    set total = total + n
+    return total
+end
+print add(5), total
+if total > 5
+    let temp = total * 2
+    set total = temp
+end
+print total
+set temp = 1
+print "unreached"

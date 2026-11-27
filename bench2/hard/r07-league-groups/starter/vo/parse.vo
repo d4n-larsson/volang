@@ -1,0 +1,32 @@
+# Checks on command arguments.
+export fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+# Only called on strings that passed is_number.
+export fn to_int(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+# True when there are exactly `count` arguments and those at the positions in `numbers` are numbers.
+export fn shape_ok(rest: list[str], count: int, numbers: list[int]) -> bool {
+    if len(rest) != count {
+        return false;
+    }
+    for i in numbers {
+        if not is_number(rest[i]) {
+            return false;
+        }
+    }
+    return true;
+}

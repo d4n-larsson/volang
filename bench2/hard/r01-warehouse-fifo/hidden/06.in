@@ -1,0 +1,25 @@
+warehouse w
+item a Alpha 100
+item b Beta 200
+receive x a 1
+receive w z 1
+receive w a 1 x
+receive w a 1 2 3
+receive w a 0 5
+receive w a -1 5
+receive w a 2 5.5
+adjust w a +1 bogus
+adjust w a -1 damage
+ship w a 1
+transfer w w a 1
+count w zz 3
+receive w b 2
+lots w b
+receive w a 3 250
+lots w a
+adjust w b +1 found
+adjust w b -2 theft
+adjust w b -2 loss
+lots w b
+history b
+history a

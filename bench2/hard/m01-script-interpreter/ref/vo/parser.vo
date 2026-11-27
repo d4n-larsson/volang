@@ -1,0 +1,370 @@
+import lexer;
+
+# kind: int, str, bool (num 1 for true), var, call, neg, not, and, or, bin (op).
+export record Expr {
+    kind: str;
+    op: str;
+    num: int;
+    text: str;
+    kids: list[Expr];
+}
+
+export record Part {
+    cond: Expr;
+    line: int;
+    body: list[Stmt];
+}
+
+export record Stmt {
+    kind: str;
+    line: int;
+    name: str;
+    params: list[str];
+    exprs: list[Expr];
+    body: list[Stmt];
+    parts: list[Part];
+    has_else: bool;
+    else_body: list[Stmt];
+}
+
+export record Program {
+    top: list[Stmt];
+    funcs: map[str, Stmt];
+}
+
+record Cursor {
+    toks: list[lexer.Token];
+    pos: int;
+}
+
+record Block {
+    kind: str;
+    line: int;
+    body: list[Stmt];
+    stmt: Stmt;
+}
+
+export fn builtin_arity(name: str) -> int {
+    if name == "len" or name == "str" or name == "int" {
+        return 1;
+    }
+    if name == "substr" {
+        return 3;
+    }
+    return -1;
+}
+
+fn node(kind: str, op: str, kids: list[Expr]) -> Expr {
+    return new Expr { kind: kind, op: op, num: 0, text: "", kids: kids };
+}
+
+fn at(c: Cursor, kind: str, text: str) -> bool {
+    return c.pos < len(c.toks) and c.toks[c.pos].kind == kind and c.toks[c.pos].text == text;
+}
+
+fn at_op(c: Cursor, ops: list[str]) -> str {
+    if c.pos < len(c.toks) and c.toks[c.pos].kind == "op" and any(ops, fn(o) => o == c.toks[c.pos].text) {
+        return c.toks[c.pos].text;
+    }
+    return "";
+}
+
+fn take(c: Cursor) -> result[lexer.Token] {
+    if c.pos >= len(c.toks) {
+        return err("syntax error");
+    }
+    set c.pos = c.pos + 1;
+    return ok(c.toks[c.pos - 1]);
+}
+
+fn want(c: Cursor, kind: str, text: str) -> result[void] {
+    if not at(c, kind, text) {
+        return err("syntax error");
+    }
+    set c.pos = c.pos + 1;
+    return ok();
+}
+
+fn take_name(c: Cursor) -> result[str] {
+    let t = try take(c);
+    if t.kind != "name" {
+        return err("syntax error");
+    }
+    return ok(t.text);
+}
+
+fn expr(c: Cursor) -> result[Expr] {
+    var left = try and_expr(c);
+    while at(c, "kw", "or") {
+        set c.pos = c.pos + 1;
+        set left = node("or", "", [left, try and_expr(c)]);
+    }
+    return ok(left);
+}
+
+fn and_expr(c: Cursor) -> result[Expr] {
+    var left = try not_expr(c);
+    while at(c, "kw", "and") {
+        set c.pos = c.pos + 1;
+        set left = node("and", "", [left, try not_expr(c)]);
+    }
+    return ok(left);
+}
+
+fn not_expr(c: Cursor) -> result[Expr] {
+    if at(c, "kw", "not") {
+        set c.pos = c.pos + 1;
+        return ok(node("not", "", [try not_expr(c)]));
+    }
+    let left = try sum(c);
+    let op = at_op(c, ["==", "!=", "<", "<=", ">", ">="]);
+    if op == "" {
+        return ok(left);
+    }
+    set c.pos = c.pos + 1;
+    return ok(node("bin", op, [left, try sum(c)]));
+}
+
+fn sum(c: Cursor) -> result[Expr] {
+    var left = try term(c);
+    while at_op(c, ["+", "-"]) != "" {
+        let op = c.toks[c.pos].text;
+        set c.pos = c.pos + 1;
+        set left = node("bin", op, [left, try term(c)]);
+    }
+    return ok(left);
+}
+
+fn term(c: Cursor) -> result[Expr] {
+    var left = try unary(c);
+    while at_op(c, ["*", "/", "%"]) != "" {
+        let op = c.toks[c.pos].text;
+        set c.pos = c.pos + 1;
+        set left = node("bin", op, [left, try unary(c)]);
+    }
+    return ok(left);
+}
+
+fn unary(c: Cursor) -> result[Expr] {
+    if at(c, "op", "-") {
+        set c.pos = c.pos + 1;
+        return ok(node("neg", "", [try unary(c)]));
+    }
+    return primary(c);
+}
+
+fn primary(c: Cursor) -> result[Expr] {
+    let t = try take(c);
+    let e = node(t.kind, "", new list[Expr]);
+    if t.kind == "int" {
+        set e.num = try parse_int(t.text);
+        return ok(e);
+    }
+    if t.kind == "str" {
+        set e.text = t.text;
+        return ok(e);
+    }
+    if t.kind == "kw" and (t.text == "true" or t.text == "false") {
+        set e.kind = "bool";
+        if t.text == "true" {
+            set e.num = 1;
+        }
+        return ok(e);
+    }
+    if t.kind == "name" {
+        if at(c, "op", "(") {
+            return call(c, t.text);
+        }
+        set e.kind = "var";
+        set e.text = t.text;
+        return ok(e);
+    }
+    if t.kind == "op" and t.text == "(" {
+        let inner = try expr(c);
+        try want(c, "op", ")");
+        return ok(inner);
+    }
+    return err("syntax error");
+}
+
+fn call(c: Cursor, name: str) -> result[Expr] {
+    try want(c, "op", "(");
+    let e = node("call", "", new list[Expr]);
+    set e.text = name;
+    if not at(c, "op", ")") {
+        push(e.kids, try expr(c));
+        while at(c, "op", ",") {
+            set c.pos = c.pos + 1;
+            push(e.kids, try expr(c));
+        }
+    }
+    try want(c, "op", ")");
+    return ok(e);
+}
+
+fn new_stmt(kind: str) -> Stmt {
+    return new Stmt { kind: kind, line: 0, name: "", params: new list[str], exprs: new list[Expr], body: new list[Stmt], parts: new list[Part], has_else: false, else_body: new list[Stmt] };
+}
+
+fn parse_func(c: Cursor, st: Stmt) -> result[void] {
+    set st.name = try take_name(c);
+    try want(c, "op", "(");
+    if not at(c, "op", ")") {
+        push(st.params, try take_name(c));
+        while at(c, "op", ",") {
+            set c.pos = c.pos + 1;
+            push(st.params, try take_name(c));
+        }
+    }
+    return want(c, "op", ")");
+}
+
+# One statement from the tokens of a line; err("syntax error") if it is not one.
+fn parse_line(toks: list[lexer.Token]) -> result[Stmt] {
+    let c = new Cursor { toks: toks, pos: 0 };
+    let t = try take(c);
+    let k = t.text;
+    var st = new_stmt(k);
+    if t.kind == "kw" and (k == "let" or k == "set") {
+        set st.name = try take_name(c);
+        try want(c, "op", "=");
+        push(st.exprs, try expr(c));
+    } else if t.kind == "kw" and k == "print" {
+        push(st.exprs, try expr(c));
+        while at(c, "op", ",") {
+            set c.pos = c.pos + 1;
+            push(st.exprs, try expr(c));
+        }
+    } else if t.kind == "kw" and (k == "if" or k == "elif" or k == "while") {
+        push(st.exprs, try expr(c));
+    } else if t.kind == "kw" and (k == "else" or k == "end" or k == "break" or k == "continue") {
+    } else if t.kind == "kw" and k == "return" {
+        if c.pos < len(toks) {
+            push(st.exprs, try expr(c));
+        }
+    } else if t.kind == "kw" and k == "func" {
+        try parse_func(c, st);
+    } else if t.kind == "name" and at(c, "op", "(") {
+        set st = new_stmt("call");
+        push(st.exprs, try call(c, k));
+    } else {
+        return err("syntax error");
+    }
+    if c.pos != len(toks) {
+        return err("syntax error");
+    }
+    return ok(st);
+}
+
+fn fail(line: int, msg: str) -> result[Program] {
+    return err("parse error at line " + str(line) + ": " + msg);
+}
+
+fn inside(stack: list[Block], kind: str) -> bool {
+    return any(stack, fn(b) => b.kind == kind);
+}
+
+fn check_func(st: Stmt, funcs: map[str, Stmt]) -> result[void] {
+    if has(funcs, st.name) or builtin_arity(st.name) >= 0 {
+        return err("duplicate function " + st.name);
+    }
+    for i, a in st.params {
+        if any(slice(st.params, 0, i), fn(b) => b == a) {
+            return err("duplicate parameter " + a);
+        }
+    }
+    return ok();
+}
+
+# Puts a parsed statement into the block structure; err(message) for a misplaced one.
+fn place(st: Stmt, stack: list[Block], top: list[Stmt], funcs: map[str, Stmt]) -> result[void] {
+    let n = st.line;
+    let k = st.kind;
+    var body = top;
+    if len(stack) > 0 {
+        set body = stack[len(stack) - 1].body;
+    }
+    if k == "end" {
+        if len(stack) == 0 {
+            return err("unexpected end");
+        }
+        let _ = try pop(stack);
+    } else if k == "elif" or k == "else" {
+        if len(stack) == 0 or stack[len(stack) - 1].kind != "if" or stack[len(stack) - 1].stmt.has_else {
+            return err("unexpected " + k);
+        }
+        let b = stack[len(stack) - 1];
+        let fresh = new list[Stmt];
+        if k == "elif" {
+            push(b.stmt.parts, new Part { cond: st.exprs[0], line: n, body: fresh });
+        } else {
+            set b.stmt.has_else = true;
+            set b.stmt.else_body = fresh;
+        }
+        set b.body = fresh;
+    } else if k == "func" {
+        if len(stack) > 0 {
+            return err("nested function");
+        }
+        try check_func(st, funcs);
+        set funcs[st.name] = st;
+        push(stack, new Block { kind: "func", line: n, body: st.body, stmt: st });
+    } else if k == "if" {
+        let first = new Part { cond: st.exprs[0], line: n, body: new list[Stmt] };
+        push(st.parts, first);
+        push(body, st);
+        push(stack, new Block { kind: "if", line: n, body: first.body, stmt: st });
+    } else if k == "while" {
+        push(body, st);
+        push(stack, new Block { kind: "while", line: n, body: st.body, stmt: st });
+    } else {
+        if k == "return" and not inside(stack, "func") {
+            return err("return outside function");
+        }
+        if (k == "break" or k == "continue") and not inside(stack, "while") {
+            return err(k + " outside loop");
+        }
+        push(body, st);
+    }
+    return ok();
+}
+
+fn parse_numbered(line: str, n: int) -> result[list[Stmt]] {
+    let toks = try lexer.tokenize(line);
+    if len(toks) == 0 {
+        return ok([]);
+    }
+    let st = try parse_line(toks);
+    set st.line = n;
+    return ok([st]);
+}
+
+# The program, or err with the whole "parse error at line N: ..." text.
+export fn parse_program(text: str) -> result[Program] {
+    let top = new list[Stmt];
+    let funcs = new map[str, Stmt];
+    let stack = new list[Block];
+    for i, line in split(text, "\n") {
+        let n = i + 1;
+        match parse_numbered(line, n) {
+            case ok(sts) {
+                for st in sts {
+                    match place(st, stack, top, funcs) {
+                        case ok() {
+                        }
+                        case err(e) {
+                            return fail(n, e);
+                        }
+                    }
+                }
+            }
+            case err(e) {
+                return fail(n, e);
+            }
+        }
+    }
+    if len(stack) > 0 {
+        return fail(stack[len(stack) - 1].line, "missing end");
+    }
+    return ok(new Program { top: top, funcs: funcs });
+}

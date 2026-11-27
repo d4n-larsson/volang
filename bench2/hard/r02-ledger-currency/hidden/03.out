@@ -1,0 +1,40 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened equity:open (equity)
+rate EUR from day 9: 1.2000
+rate EUR from day 2: 1.1000
+rate EUR from day 5: 1.1500
+error: no EUR rate on day 1
+posted a2: 2 postings, total 110.00
+posted a3: 2 postings, total 110.00
+posted a4: 2 postings, total 115.00
+posted a5: 2 postings, total 115.00
+posted a6: 2 postings, total 120.00
+posted a7: 2 postings, total 120.00
+2 a2 day2 110.00
+4 a3 day4 110.00
+5 a4 day5 115.00
+8 a5 day8 115.00
+9 a6 day9 120.00
+30 a7 day30 120.00
+balance assets:eur: 720.00
+  EUR 600.00
+balance assets: 30.00
+  EUR 600.00
+rate EUR from day 6: 3.0000
+balance assets:eur: 720.00
+  EUR 600.00
+rate EUR from day 40: 1.0000
+balance assets:eur: 600.00
+  EUR 600.00
+a7 day 30 day30
+  assets:eur 100.00 EUR (120.00 USD)
+  assets:bank -120.00
+statement assets:eur (asset, EUR)
+     2 a2           100.00     100.00  day2
+     4 a3           100.00     200.00  day4
+     5 a4           100.00     300.00  day5
+     8 a5           100.00     400.00  day8
+     9 a6           100.00     500.00  day9
+    30 a7           100.00     600.00  day30
+  closing balance 600.00 EUR (book 690.00 USD)

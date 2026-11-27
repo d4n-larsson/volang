@@ -1,0 +1,8 @@
+task main 9 Main line
+task side 2 Side job
+task wrap 1 Wrap up
+dep wrap main
+dep wrap side+1
+schedule
+critical
+gantt

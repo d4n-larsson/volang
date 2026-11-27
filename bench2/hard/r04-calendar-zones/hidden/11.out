@@ -1,0 +1,31 @@
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+user a added
+user b added
+user c added
+error: name c taken
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+room r added, capacity 2
+error: name r taken
+error: bad command
+error: bad command
+error: unknown name q
+error: bad command
+zone r UTC+14:00
+zone c UTC-00:30
+zone b UTC-12:00
+zone b UTC+14:00
+agenda a day 3 (UTC-12:00):
+  nothing
+agenda c day 3 (UTC-00:30):
+  nothing
+error: unknown meeting q

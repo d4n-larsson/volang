@@ -1,0 +1,62 @@
+# Finding the node a path names.
+import fmt;
+import nodes;
+import paths;
+import perms;
+import shell;
+
+# The node at the path `names`, or an error naming the path `shown`.
+# The walk starts at / and goes down one name at a time: going down from a file is
+# `not a directory`, a missing name is `no such file or directory`.
+export fn walk_to(sh: shell.Shell, names: list[str], shown: list[str]) -> result[nodes.Node] {
+    var node = sh.root;
+    for name in names {
+        if not node.is_dir {
+            return err(fmt.error(fmt.not_dir, shown));
+        }
+        if not perms.can(sh, node, "x") {
+            return err(perms.denied(shown));
+        }
+        if not nodes.has_entry(node, name) {
+            return err(fmt.error(fmt.no_entry, shown));
+        }
+        set node = nodes.entry(node, name);
+    }
+    return ok(node);
+}
+
+# The node at the path `names`, or an error naming that path.
+export fn walk(sh: shell.Shell, names: list[str]) -> result[nodes.Node] {
+    return walk_to(sh, names, names);
+}
+
+# The directory that holds (or would hold) the last name of `names`, which is not the root.
+# Errors name the whole path `names`.
+export fn walk_parent(sh: shell.Shell, names: list[str]) -> result[nodes.Node] {
+    let holder = try walk_to(sh, paths.parent(names), names);
+    if not holder.is_dir {
+        return err(fmt.error(fmt.not_dir, names));
+    }
+    if not perms.can(sh, holder, "x") {
+        return err(perms.denied(names));
+    }
+    return ok(holder);
+}
+
+# Where `mv` and `cp` put the source: inside `dst_names` if that is an existing directory, else
+# at `dst_names`. Errors other than a missing destination are returned (naming it).
+export fn target(sh: shell.Shell, src_names: list[str], dst_names: list[str]) -> result[list[str]] {
+    match walk(sh, dst_names) {
+        case ok(dst) {
+            if dst.is_dir {
+                return ok(paths.child(dst_names, paths.base_name(src_names)));
+            }
+        }
+        case err(e) {
+            if not fmt.is_no_entry(e) {
+                return err(e);
+            }
+        }
+    }
+    return ok(dst_names);
+}

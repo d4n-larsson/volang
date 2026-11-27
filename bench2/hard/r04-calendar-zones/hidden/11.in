@@ -1,0 +1,29 @@
+user a +5:30
+user a 05:30
+user a +05:30x
+user a +14:01
+user a -12:01
+user a +05:60
+user a +24:00
+user a +ab:00
+user a -12:00
+user b +14:00
+user c -00:00
+user c
+room r 2 +1:00
+room r 0 +01:00
+room r 2 +01:00 x
+room r 2 *01:00
+room r 2 -01:15
+room r 2 -01:15
+zone a +00:00 x
+zone a
+zone q +01:00
+zone q 01:00
+zone r +14:00
+zone c -00:30
+zone b -12:00
+zone b +14:00
+agenda a 3
+agenda c 3
+who q

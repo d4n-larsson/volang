@@ -1,0 +1,131 @@
+# Sales orders: opened at one warehouse, filled with lines, fulfilled all at once.
+import catalog;
+import fmt;
+import model;
+import moves;
+import stock;
+
+fn unknown_order(order_id: str) -> str {
+    return "error: unknown order " + order_id;
+}
+
+fn not_open(order: model.Order) -> str {
+    return "error: order " + order.order_id + " is " + order.status;
+}
+
+export fn open_order(state: model.State, order_id: str, wh: str) -> str {
+    if has(state.orders, order_id) {
+        return "error: order " + order_id + " exists";
+    }
+    if not has(state.stock, wh) {
+        return catalog.unknown_warehouse(wh);
+    }
+    set state.orders[order_id] = new model.Order { order_id: order_id, wh: wh, lines: new list[model.OrderLine], status: "open" };
+    return "order " + order_id + " opened at " + wh;
+}
+
+export fn add_line(state: model.State, order_id: str, sku: str, qty: int) -> str {
+    if not has(state.orders, order_id) {
+        return unknown_order(order_id);
+    }
+    let order = state.orders[order_id];
+    if order.status != "open" {
+        return not_open(order);
+    }
+    if not has(state.items, sku) {
+        return catalog.unknown_item(sku);
+    }
+    push(order.lines, new model.OrderLine { sku: sku, qty: qty });
+    return "order " + order_id + " line " + str(len(order.lines)) + ": " + str(qty) + " " + sku;
+}
+
+fn units(order: model.Order) -> int {
+    return fold(order.lines, 0, fn(n, line) => n + line.qty);
+}
+
+# Units wanted per SKU, in the order the SKUs first appear in the lines.
+fn demand(order: model.Order) -> map[str, int] {
+    let want = new map[str, int];
+    for line in order.lines {
+        set want[line.sku] = get_or(want, line.sku, 0) + line.qty;
+    }
+    return want;
+}
+
+# The error for the first SKU the warehouse cannot cover, or "".
+fn shortage(state: model.State, order: model.Order) -> str {
+    for sku, need in demand(order) {
+        let have = stock.on_hand(state, order.wh, sku);
+        if have < need {
+            return "error: order " + order.order_id + " short of " + sku + ": need " + str(need) + ", have " + str(have);
+        }
+    }
+    return "";
+}
+
+export fn fulfil(state: model.State, order_id: str) -> str {
+    if not has(state.orders, order_id) {
+        return unknown_order(order_id);
+    }
+    let order = state.orders[order_id];
+    if order.status != "open" {
+        return not_open(order);
+    }
+    if len(order.lines) == 0 {
+        return "error: order " + order_id + " has no lines";
+    }
+    let problem = shortage(state, order);
+    if problem != "" {
+        return problem;
+    }
+    for line in order.lines {
+        stock.take(state, order.wh, line.sku, line.qty);
+        moves.record_move(state, "ship", order.wh, line.sku, -line.qty, "order " + order_id);
+    }
+    set order.status = "fulfilled";
+    set state.shipments = state.shipments + 1;
+    set state.shipped_units = state.shipped_units + units(order);
+    return "order " + order_id + " fulfilled: " + fmt.plural(len(order.lines), "line") + ", " + fmt.plural(units(order), "unit");
+}
+
+export fn cancel(state: model.State, order_id: str) -> str {
+    if not has(state.orders, order_id) {
+        return unknown_order(order_id);
+    }
+    let order = state.orders[order_id];
+    if order.status != "open" {
+        return not_open(order);
+    }
+    set order.status = "cancelled";
+    return "order " + order_id + " cancelled";
+}
+
+export fn order_lines(state: model.State) -> list[str] {
+    if len(state.orders) == 0 {
+        return ["no orders"];
+    }
+    let out = new list[str];
+    for order_id, order in state.orders {
+        push(out, order_id + " " + order.wh + " " + order.status + ": " + fmt.plural(len(order.lines), "line") + ", " + fmt.plural(units(order), "unit"));
+    }
+    return out;
+}
+
+export fn has_open_orders(state: model.State, wh: str) -> bool {
+    for _, order in state.orders {
+        if order.wh == wh and order.status == "open" {
+            return true;
+        }
+    }
+    return false;
+}
+
+export fn count_status(state: model.State, status: str) -> int {
+    var n = 0;
+    for _, order in state.orders {
+        if order.status == status {
+            set n = n + 1;
+        }
+    }
+    return n;
+}

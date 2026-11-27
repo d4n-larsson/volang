@@ -1,0 +1,30 @@
+warehouse w added
+item a added
+item b added
+error: unknown warehouse x
+error: unknown item z
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: unknown reason bogus
+error: only 0 a in w
+error: only 0 a in w
+error: same warehouse w
+error: unknown item zz
+received 2 b into w, now 2, lot 1 at 2.00
+lot 1: 2 x 2.00 = 4.00
+total 2 units = 4.00
+received 3 a into w, now 3, lot 2 at 2.50
+lot 2: 3 x 2.50 = 7.50
+total 3 units = 7.50
+adjusted b in w by +1 (found), now 3, lot 3 at 2.00
+error: unknown reason theft
+adjusted b in w by -2 (loss), now 1, cost 4.00
+lot 3: 1 x 2.00 = 2.00
+total 1 unit = 2.00
+#1 receive w +2 lot 1 at 2.00
+#3 adjust w +1 (found) lot 3 at 2.00
+#4 adjust w -2 (loss) cost 4.00
+#2 receive w +3 lot 2 at 2.50

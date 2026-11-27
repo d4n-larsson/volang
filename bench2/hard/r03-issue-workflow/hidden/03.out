@@ -1,0 +1,64 @@
+user ann added
+user bob added
+created #1: Fix the login flow
+created #2: Write the docs
+created #3: Cache the images
+#1 assigned to ann
+#2 assigned to bob
+#3 assigned to ann
+#1 moved new -> triaged
+#1 moved triaged -> in_progress
+#2 moved new -> triaged
+#2 moved triaged -> in_progress
+#2 moved in_progress -> review
+#3 moved new -> triaged
+#3 moved triaged -> in_progress
+#3 moved in_progress -> blocked
+#1 unassigned
+#1 moved in_progress -> triaged
+#2 unassigned
+#2 moved review -> triaged
+#3 unassigned
+error: issue #3 has no assignee
+#1 [p2] Fix the login flow
+  status: triaged
+  assignee: -
+  labels: -
+  created 3, updated 17
+  [9] new -> triaged
+  [10] triaged -> in_progress
+  [17] in_progress -> triaged (unassigned)
+  0 comments
+#2 [p2] Write the docs
+  status: triaged
+  assignee: -
+  labels: -
+  created 4, updated 18
+  [11] new -> triaged
+  [12] triaged -> in_progress
+  [13] in_progress -> review
+  [18] review -> triaged (unassigned)
+  0 comments
+#3 [p3] Cache the images
+  status: blocked (waiting on cdn)
+  assignee: -
+  labels: -
+  created 5, updated 19
+  [14] new -> triaged
+  [15] triaged -> in_progress
+  [16] in_progress -> blocked (waiting on cdn)
+  0 comments
+[15] #3 moved triaged -> in_progress
+[16] #3 moved in_progress -> blocked
+[17] #1 unassigned
+[17] #1 moved in_progress -> triaged
+[18] #2 unassigned
+[18] #2 moved review -> triaged
+[19] #3 unassigned
+error: #3 needs an assignee for in_progress
+#3 assigned to bob
+#3 moved blocked -> in_progress
+issues 3: 3 open, 0 closed
+  states: triaged 2, in_progress 1
+  bob 1 open, 0 closed
+  unassigned 2 open, 0 closed

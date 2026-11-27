@@ -1,0 +1,47 @@
+user ada added
+user bjorn added
+user chen added
+user dia added
+room lon added, capacity 3
+room par added, capacity 2
+room sgp added, capacity 6
+hours chen 08:00-20:00
+hours dia 05:00-15:00
+error: chen works 08:00-20:00
+error: dia works 05:00-15:00
+error: chen works 08:00-20:00
+booked s1 in sgp: 12 19:00-20:00 (4 people)
+error: room par holds 2, meeting has 3
+error: ada busy: s1 12 12:00-13:00
+booked s2 in par: 12 13:00-13:30 (2 people)
+error: dia busy: s1 12 05:00-06:00
+error: chen works 08:00-20:00
+booked s3 in lon: 12 06:30-07:00 (2 people)
+error: room par holds 2, meeting has 3
+error: chen works 08:00-20:00
+bjorn invited to s3
+agenda chen day 12 (UTC+08:00):
+  12 19:00-20:00 s1 in sgp (organizer)
+agenda dia day 12 (UTC-06:00):
+  12 05:00-06:00 s1 in sgp (attendee)
+  12 06:30-07:00 s3 in lon (organizer)
+agenda bjorn day 12 (UTC+02:00):
+  12 13:00-14:00 s1 in sgp (attendee)
+  12 14:00-14:30 s2 in par (attendee)
+  12 14:30-15:00 s3 in lon (attendee)
+rooms day 12:
+  lon: s3 12 12:30-13:00
+  par: s2 12 13:00-13:30
+  sgp: s1 12 19:00-20:00
+free par day 12: 09:00-13:00, 13:30-17:00
+free sgp day 12: 09:00-17:00
+zone chen UTC+09:00
+agenda chen day 12 (UTC+09:00):
+  12 20:00-21:00 s1 in sgp (organizer)
+error: chen works 08:00-20:00
+error: dia works 05:00-15:00
+chen day 12: 1 meeting, 1h00m
+chen day 13: 0 meetings, 0h00m
+s1 12 11:00-12:00 sgp chen +3
+s2 12 12:00-12:30 par ada +1
+s3 12 12:30-13:00 lon dia +2

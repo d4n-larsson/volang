@@ -1,0 +1,21 @@
+warehouse x
+item cog Cog 40
+item rod Rod 1250
+receive x cog 5 40
+receive x rod 1
+order o1 x
+line o1 cog 3
+line o1 rod 1
+line o1 cog 3
+fulfil o1
+receive x cog 1 55
+fulfil o1
+lots x cog
+order o2 x
+line o2 cog 1
+cancel o2
+fulfil o2
+ship x cog 1
+orders
+report
+history cog

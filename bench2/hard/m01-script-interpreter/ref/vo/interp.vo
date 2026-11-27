@@ -1,0 +1,414 @@
+import parser;
+
+const limit = 1000000000000000000;
+const max_steps = 10000;
+const max_depth = 25;
+
+# kind is int, str or bool; bool keeps 1 or 0 in num.
+export record Value {
+    kind: str;
+    num: int;
+    text: str;
+}
+
+export record Interp {
+    funcs: map[str, parser.Stmt];
+    out: list[str];
+    globals: map[str, Value];
+    steps: int;
+    depth: int;
+    ret: Value;
+}
+
+# What a statement or block ends with.
+variant Flow {
+    normal;
+    brk;
+    cont;
+    ret;
+}
+
+fn int_val(n: int) -> Value {
+    return new Value { kind: "int", num: n, text: "" };
+}
+
+fn str_val(s: str) -> Value {
+    return new Value { kind: "str", num: 0, text: s };
+}
+
+fn bool_val(b: bool) -> Value {
+    if b {
+        return new Value { kind: "bool", num: 1, text: "" };
+    }
+    return new Value { kind: "bool", num: 0, text: "" };
+}
+
+export fn show(v: Value) -> str {
+    if v.kind == "int" {
+        return str(v.num);
+    }
+    if v.kind == "str" {
+        return v.text;
+    }
+    if v.num == 1 {
+        return "true";
+    }
+    return "false";
+}
+
+export fn new_interp(funcs: map[str, parser.Stmt]) -> Interp {
+    return new Interp { funcs: funcs, out: new list[str], globals: new map[str, Value], steps: 0, depth: 0, ret: int_val(0) };
+}
+
+# A runtime error raised without a line gets the line of the statement it happened in.
+fn at_line(r: result[Flow], line: int) -> result[Flow] {
+    match r {
+        case ok(f) {
+            return ok(f);
+        }
+        case err(e) {
+            if find(e, "\t") >= 0 {
+                return err(e);
+            }
+            return err(str(line) + "\t" + e);
+        }
+    }
+}
+
+fn checked(n: int) -> result[Value] {
+    if n < -limit or n > limit {
+        return err("overflow");
+    }
+    return ok(int_val(n));
+}
+
+fn compare(op: str, a: Value, b: Value) -> result[Value] {
+    if op == "==" or op == "!=" {
+        let same = a.kind == b.kind and a.num == b.num and a.text == b.text;
+        return ok(bool_val(same == (op == "==")));
+    }
+    if a.kind != b.kind or a.kind == "bool" {
+        return err("type error");
+    }
+    var c = 0;
+    if a.kind == "int" {
+        if a.num < b.num {
+            set c = -1;
+        } else if a.num > b.num {
+            set c = 1;
+        }
+    } else if a.text < b.text {
+        set c = -1;
+    } else if a.text > b.text {
+        set c = 1;
+    }
+    if op == "<" {
+        return ok(bool_val(c < 0));
+    }
+    if op == "<=" {
+        return ok(bool_val(c <= 0));
+    }
+    if op == ">" {
+        return ok(bool_val(c > 0));
+    }
+    return ok(bool_val(c >= 0));
+}
+
+fn binary(op: str, a: Value, b: Value) -> result[Value] {
+    if op == "==" or op == "!=" or op == "<" or op == "<=" or op == ">" or op == ">=" {
+        return compare(op, a, b);
+    }
+    if op == "+" and a.kind == "str" and b.kind == "str" {
+        return ok(str_val(a.text + b.text));
+    }
+    if a.kind != "int" or b.kind != "int" {
+        return err("type error");
+    }
+    let x = a.num;
+    let y = b.num;
+    if (op == "/" or op == "%") and y == 0 {
+        return err("division by zero");
+    }
+    if op == "+" {
+        return checked(x + y);
+    }
+    if op == "-" {
+        return checked(x - y);
+    }
+    if op == "*" {
+        if x != 0 and abs(y) > limit / abs(x) {
+            return err("overflow");
+        }
+        return ok(int_val(x * y));
+    }
+    if op == "/" {
+        return ok(int_val(x / y));
+    }
+    return ok(int_val(x % y));
+}
+
+fn is_int_text(s: str) -> bool {
+    var d = s;
+    if len(s) > 0 and slice(s, 0, 1) == "-" {
+        set d = slice(s, 1, len(s));
+    }
+    return len(d) >= 1 and len(d) <= 18 and all(chars(d), fn(c) => c >= "0" and c <= "9");
+}
+
+fn builtin(name: str, vals: list[Value]) -> result[Value] {
+    let v = vals[0];
+    if name == "len" {
+        if v.kind != "str" {
+            return err("type error");
+        }
+        return ok(int_val(len(v.text)));
+    }
+    if name == "str" {
+        return ok(str_val(show(v)));
+    }
+    if name == "int" {
+        if v.kind == "int" {
+            return ok(v);
+        }
+        if v.kind == "bool" {
+            return err("type error");
+        }
+        if not is_int_text(v.text) {
+            return err("bad int");
+        }
+        return ok(int_val(try parse_int(v.text)));
+    }
+    if v.kind != "str" or vals[1].kind != "int" or vals[2].kind != "int" {
+        return err("type error");
+    }
+    let start = vals[1].num;
+    let count = vals[2].num;
+    if start < 0 or count < 0 or start + count > len(v.text) {
+        return err("out of range");
+    }
+    return ok(str_val(slice(v.text, start, start + count)));
+}
+
+fn lookup(scopes: list[map[str, Value]], name: str) -> result[map[str, Value]] {
+    var i = len(scopes) - 1;
+    while i >= 0 {
+        if has(scopes[i], name) {
+            return ok(scopes[i]);
+        }
+        set i = i - 1;
+    }
+    return err("undefined " + name);
+}
+
+fn want_bool(v: Value) -> result[bool] {
+    if v.kind != "bool" {
+        return err("type error");
+    }
+    return ok(v.num == 1);
+}
+
+fn eval(it: Interp, e: parser.Expr, scopes: list[map[str, Value]]) -> result[Value] {
+    let k = e.kind;
+    if k == "int" {
+        return ok(int_val(e.num));
+    }
+    if k == "str" {
+        return ok(str_val(e.text));
+    }
+    if k == "bool" {
+        return ok(bool_val(e.num == 1));
+    }
+    if k == "var" {
+        let scope = try lookup(scopes, e.text);
+        return ok(scope[e.text]);
+    }
+    if k == "neg" {
+        let v = try eval(it, e.kids[0], scopes);
+        if v.kind != "int" {
+            return err("type error");
+        }
+        return checked(-v.num);
+    }
+    if k == "not" {
+        return ok(bool_val(not try want_bool(try eval(it, e.kids[0], scopes))));
+    }
+    if k == "and" or k == "or" {
+        let left = try want_bool(try eval(it, e.kids[0], scopes));
+        if left == (k == "or") {
+            return ok(bool_val(left));
+        }
+        return ok(bool_val(try want_bool(try eval(it, e.kids[1], scopes))));
+    }
+    if k == "bin" {
+        let a = try eval(it, e.kids[0], scopes);
+        let b = try eval(it, e.kids[1], scopes);
+        return binary(e.op, a, b);
+    }
+    return call(it, e, scopes);
+}
+
+fn call(it: Interp, e: parser.Expr, scopes: list[map[str, Value]]) -> result[Value] {
+    let name = e.text;
+    let arity = parser.builtin_arity(name);
+    if arity < 0 and not has(it.funcs, name) {
+        return err("unknown function " + name);
+    }
+    let vals = new list[Value];
+    for a in e.kids {
+        push(vals, try eval(it, a, scopes));
+    }
+    if arity >= 0 {
+        if len(vals) != arity {
+            return err("wrong argument count");
+        }
+        return builtin(name, vals);
+    }
+    let f = it.funcs[name];
+    if len(vals) != len(f.params) {
+        return err("wrong argument count");
+    }
+    if it.depth >= max_depth {
+        return err("call depth exceeded");
+    }
+    let params = new map[str, Value];
+    for i, p in f.params {
+        set params[p] = vals[i];
+    }
+    set it.depth = it.depth + 1;
+    let flow = run_block(it, f.body, [it.globals, params], false);
+    set it.depth = it.depth - 1;
+    if try flow == Flow.ret {
+        return ok(it.ret);
+    }
+    return ok(int_val(0));
+}
+
+fn step(it: Interp) -> result[void] {
+    set it.steps = it.steps + 1;
+    if it.steps > max_steps {
+        return err("step limit exceeded");
+    }
+    return ok();
+}
+
+fn cond(it: Interp, e: parser.Expr, scopes: list[map[str, Value]]) -> result[bool] {
+    return want_bool(try eval(it, e, scopes));
+}
+
+# Counts the step of a condition and evaluates it; errors get the condition's line.
+fn check_cond(it: Interp, e: parser.Expr, line: int, scopes: list[map[str, Value]]) -> result[bool] {
+    match step(it) {
+        case ok() {
+        }
+        case err(m) {
+            return err(str(line) + "\t" + m);
+        }
+    }
+    match cond(it, e, scopes) {
+        case ok(b) {
+            return ok(b);
+        }
+        case err(m) {
+            if find(m, "\t") >= 0 {
+                return err(m);
+            }
+            return err(str(line) + "\t" + m);
+        }
+    }
+}
+
+fn run_block(it: Interp, body: list[parser.Stmt], scopes: list[map[str, Value]], fresh: bool) -> result[Flow] {
+    var inner = scopes;
+    if fresh {
+        set inner = slice(scopes, 0, len(scopes));
+        push(inner, new map[str, Value]);
+    }
+    for st in body {
+        let flow = try at_line(run_stmt(it, st, inner), st.line);
+        if flow != Flow.normal {
+            return ok(flow);
+        }
+    }
+    return ok(Flow.normal);
+}
+
+fn run_if(it: Interp, st: parser.Stmt, scopes: list[map[str, Value]]) -> result[Flow] {
+    for p in st.parts {
+        if try check_cond(it, p.cond, p.line, scopes) {
+            return run_block(it, p.body, scopes, true);
+        }
+    }
+    if st.has_else {
+        return run_block(it, st.else_body, scopes, true);
+    }
+    return ok(Flow.normal);
+}
+
+fn run_while(it: Interp, st: parser.Stmt, scopes: list[map[str, Value]]) -> result[Flow] {
+    while try check_cond(it, st.exprs[0], st.line, scopes) {
+        let flow = try run_block(it, st.body, scopes, true);
+        if flow == Flow.brk {
+            break;
+        }
+        if flow == Flow.ret {
+            return ok(flow);
+        }
+    }
+    return ok(Flow.normal);
+}
+
+fn run_stmt(it: Interp, st: parser.Stmt, scopes: list[map[str, Value]]) -> result[Flow] {
+    let k = st.kind;
+    if k == "if" {
+        return run_if(it, st, scopes);
+    }
+    if k == "while" {
+        return run_while(it, st, scopes);
+    }
+    try step(it);
+    if k == "let" {
+        let v = try eval(it, st.exprs[0], scopes);
+        let inner = scopes[len(scopes) - 1];
+        if has(inner, st.name) {
+            return err("already declared " + st.name);
+        }
+        set inner[st.name] = v;
+    } else if k == "set" {
+        let v = try eval(it, st.exprs[0], scopes);
+        let scope = try lookup(scopes, st.name);
+        set scope[st.name] = v;
+    } else if k == "print" {
+        let parts = new list[str];
+        for e in st.exprs {
+            push(parts, show(try eval(it, e, scopes)));
+        }
+        push(it.out, join(parts, " "));
+    } else if k == "call" {
+        let _ = try eval(it, st.exprs[0], scopes);
+    } else if k == "return" {
+        set it.ret = int_val(0);
+        if len(st.exprs) > 0 {
+            set it.ret = try eval(it, st.exprs[0], scopes);
+        }
+        return ok(Flow.ret);
+    } else if k == "break" {
+        return ok(Flow.brk);
+    } else if k == "continue" {
+        return ok(Flow.cont);
+    }
+    return ok(Flow.normal);
+}
+
+# Runs the program; the output, ending with "error at line N: ..." after a runtime error.
+export fn run(prog: parser.Program) -> list[str] {
+    let it = new_interp(prog.funcs);
+    match run_block(it, prog.top, [it.globals], false) {
+        case ok(_) {
+        }
+        case err(e) {
+            let tab = find(e, "\t");
+            push(it.out, "error at line " + slice(e, 0, tab) + ": " + slice(e, tab + 1, len(e)));
+        }
+    }
+    return it.out;
+}

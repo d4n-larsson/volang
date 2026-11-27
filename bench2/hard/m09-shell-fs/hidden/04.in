@@ -1,0 +1,17 @@
+mkdir B a ab a.b
+write a/zeta 0123456789
+write a/Alpha 1
+touch a/mid
+write ab/big 0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+ls
+ls -l
+ls -l a
+ls a/ ab a.b missing a/zeta
+ls -l a/zeta ./a//zeta
+ls a.b
+ls -r
+ls a -l
+ls -l a.b
+cd a.b
+ls -l
+ls -l ..

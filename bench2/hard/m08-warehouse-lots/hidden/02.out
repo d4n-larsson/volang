@@ -1,0 +1,34 @@
+warehouse w added
+error: warehouse w exists
+item x added
+error: item x exists
+item w added
+warehouse x added
+error: no warehouse v
+error: no warehouse v
+error: no item q
+error: expired on arrival
+error: no warehouse v
+error: no item q
+backorder o1 1
+error: order o1 exists
+error: order o1 exists
+error: no warehouse v
+error: only 0 available
+error: no warehouse v
+error: no warehouse u
+error: same warehouse
+error: no item q
+error: only 0 available
+error: no order o9
+error: order o1 is not reserved
+error: order o1 is not reserved
+error: no order o9
+cancelled o1 1
+error: order o1 has no backorder
+error: no order o9
+error: order o1 has 0 returnable
+backorders 0
+stock day 0
+value on hand 0.00 in transit 0.00 quarantine 0.00 shipped 0.00 written off 0.00
+backorders 0

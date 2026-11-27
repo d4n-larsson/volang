@@ -1,0 +1,13 @@
+notes.txt
+private/
+error: permission denied: /srv/notes.txt
+error: permission denied: /srv/private/key.txt
+/srv
+  notes.txt
+  private/ [denied]
+error: permission denied: /srv/private
+secret
+/srv
+  notes.txt
+  private/
+    key.txt

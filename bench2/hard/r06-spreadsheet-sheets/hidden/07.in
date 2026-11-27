@@ -1,0 +1,35 @@
+sheet Data
+get Data!A0
+get Nope!A1
+get Nope!A0
+get !A1
+get Data!
+get 9x!A1
+get Data!A1!B1
+get Data!a1
+show Data!z99
+set Nope!A1 5
+set Data!A1 =Nope!A1+Bad!A2
+set Data!A1 =Nope!A1+
+set Data!A1 x
+copy Nope!A1 B0
+copy A1 Nope!B0
+copy A1 Data!B0
+copy A1 Data!B1
+copy Data!A1 B1
+print Nope!A1:B2
+print Data!A1
+print Data!A1:B2:C3
+print !A1:B2
+clear Data!C1
+deps Nope!A1
+users Data!A9
+use nope
+use
+sheet
+sheet a b
+sheet _x
+sheet Data2
+sheet Data2
+drop
+drop Nope

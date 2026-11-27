@@ -1,0 +1,95 @@
+# Output formatting: listings, du, find and name patterns.
+import fstree;
+import std.text;
+
+export fn sorted_children(t: fstree.Tree, id: int) -> list[int] {
+    let ch = t.entries[id].children;
+    let names = keys(ch);
+    sort(names);
+    return map(names, fn(n) => ch[n]);
+}
+
+export fn ls_lines(t: fstree.Tree, ids: list[int], names: list[str], long: bool) -> list[str] {
+    let shown = new list[str];
+    let sizes = new list[str];
+    var width = 0;
+    for i, id in ids {
+        if t.entries[id].is_dir {
+            push(shown, names[i] + "/");
+        } else {
+            push(shown, names[i]);
+        }
+        let s = str(fstree.size(t, id));
+        push(sizes, s);
+        set width = max(width, len(s));
+    }
+    if not long {
+        return shown;
+    }
+    let out = new list[str];
+    for i, id in ids {
+        var kind = "-";
+        if t.entries[id].is_dir {
+            set kind = "d";
+        }
+        push(out, kind + " " + text.pad_left(sizes[i], width, " ") + " " + shown[i]);
+    }
+    return out;
+}
+
+export fn tree_order(t: fstree.Tree, id: int) -> list[int] {
+    let out = [id];
+    if t.entries[id].is_dir {
+        for c in sorted_children(t, id) {
+            for x in tree_order(t, c) {
+                push(out, x);
+            }
+        }
+    }
+    return out;
+}
+
+export fn du_lines(t: fstree.Tree, id: int) -> list[str] {
+    let out = new list[str];
+    for x in tree_order(t, id) {
+        if x == id or t.entries[x].is_dir {
+            push(out, str(fstree.size(t, x)) + " " + fstree.abspath(t, x));
+        }
+    }
+    return out;
+}
+
+export fn matches(pattern: str, name: str) -> bool {
+    let p = chars(pattern);
+    let s = chars(name);
+    # ok[j]: the pattern so far matches the first j characters of the name
+    var row = new list[bool];
+    push(row, true);
+    for _ in 0..len(s) {
+        push(row, false);
+    }
+    for pc in p {
+        let next = new list[bool];
+        for j in 0..len(s) + 1 {
+            var v = false;
+            if pc == "*" {
+                set v = row[j] or (j > 0 and next[j - 1]);
+            } else if j > 0 and (pc == "?" or pc == s[j - 1]) {
+                set v = row[j - 1];
+            }
+            push(next, v);
+        }
+        set row = next;
+    }
+    return row[len(s)];
+}
+
+export fn find_lines(t: fstree.Tree, id: int, pattern: str, filtered: bool) -> list[str] {
+    let out = new list[str];
+    for x in tree_order(t, id) {
+        if not filtered or matches(pattern, t.entries[x].name) {
+            push(out, fstree.abspath(t, x));
+        }
+    }
+    return out;
+}

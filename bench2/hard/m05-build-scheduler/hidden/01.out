@@ -1,0 +1,30 @@
+line 1: malformed
+line 2: malformed
+line 3: malformed
+line 5: malformed
+line 6: malformed
+line 7: malformed
+line 8: malformed
+line 9: malformed
+line 11: malformed
+line 12: malformed
+line 13: malformed
+line 14: malformed
+line 15: malformed
+line 16: malformed
+line 17: malformed
+line 18: malformed
+line 19: malformed
+0 start delta w1 #1
+4 done delta w1
+4 start omega w1 #1
+7 done omega w1
+makespan 7
+utilization 33%
+w1 busy 7 attempts 2
+w2 busy 0 attempts 0
+w3 busy 0 attempts 0
+built: delta omega
+failed: -
+skipped: -
+blocked: -

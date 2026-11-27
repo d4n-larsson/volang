@@ -1,0 +1,33 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+channel #dev created by bob
+message 1 posted to #general
+message 2 posted to #general in thread 1
+message 3 posted to #general in thread 1
+message 4 posted to #general in thread 1
+message 1 posted to #dev
+message 5 posted to #general
+message general/1 deleted
+1. bob 3 messages
+2. cy 2 messages
+1. bob 3 messages
+1. bob 3 messages
+2. cy 2 messages
+bob: member of #dev, #general; 3 messages
+ann: member of #general; 0 messages
+dee: member of no channels; 0 messages
+#dev: 1 member, 1 message
+#general: 3 members, 4 messages
+users 4, channels 2, messages 5, edits 0, deletes 1
+message general/2 deleted
+message general/3 deleted
+1. bob 2 messages
+2. cy 1 message
+#dev: 1 member, 1 message
+#general: 3 members, 2 messages
+users 4, channels 2, messages 3, edits 0, deletes 3

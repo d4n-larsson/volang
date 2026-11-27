@@ -1,0 +1,23 @@
+useradd ann
+mkdir -p /s/a/lib
+mkdir -p /s/lib/lib
+mkdir -p /s/b/x
+write /s/a/lib/lib x
+write /s/b/x/lib y
+write /s/lib/readme t
+chmod rwx-wx /s/a
+chmod rwxr-- /s/lib
+su ann
+find /s lib
+find /s/a lib
+find /s/lib lib
+find /s/b/x/lib lib
+find /s/b/x/lib other
+find /s nothing
+find /s/lib/lib lib
+find /s/a/lib lib
+cd /s/b
+find . x
+find .. b
+su root
+find /s lib

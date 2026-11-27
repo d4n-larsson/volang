@@ -1,0 +1,11 @@
+create table sale (region text, rep text, units int, price int)
+insert into sale values ('north', 'ada', 3, 10), ('south', 'bo', 5, null), ('north', 'cy', null, 7)
+insert into sale values (null, 'dot', 2, 4), ('south', 'ed', 1, 9), ('east', 'fa', null, null), (null, 'gil', 6, 1)
+select region, count(*), count(units), sum(units), min(rep), max(price) from sale group by region
+select region, sum( sale.units ) from sale group by sale.region having sum(units) > 3
+select region from sale group by region having count(price) = 0 or min(rep) > 'd'
+select region, rep from sale group by region, rep having region = 'north'
+select region, count(*) from sale group by region order by count(*) desc, region
+select max(rep), min(units) from sale where units > 1
+select count(units), region from sale group by region having region is null
+select sale.region, count(*) from sale group by region order by sum(price)

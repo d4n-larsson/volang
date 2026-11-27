@@ -1,0 +1,37 @@
+write main.c int main
+write util.h header
+commit init
+branch fix
+branch feature
+checkout feature
+write util.c helpers
+write util.h header v2
+commit add util
+checkout fix
+write main.c int main fixed
+commit fix main
+checkout main
+merge fix
+merge feature
+log
+checkout feature
+write util.c helpers v2
+commit improve util
+checkout main
+merge feature
+show main
+diff 1 main
+checkout fix
+write util.h header v3
+commit fix header
+checkout main
+merge fix
+status
+pick fix
+revert fix
+log main~2
+write tmp x
+pick 4
+delete tmp
+pick 4
+revert 0

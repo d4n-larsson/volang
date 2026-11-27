@@ -1,0 +1,365 @@
+import std.lists;
+import std.text;
+import std.time;
+
+const minute_ms = 60000;
+const day_ms = 86400000;
+
+record Job {
+    name: str;
+    minutes: list[int];
+    hours: list[int];
+    days: list[int];
+    months: list[int];
+    weekdays: list[int];
+    either: bool;
+}
+
+record Run {
+    at: int;
+    job: str;
+}
+
+fn is_num(s: str) -> bool {
+    if s == "" {
+        return false;
+    }
+    for c in s {
+        if c < "0" or c > "9" {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn name_ok(s: str, n: int) -> bool {
+    if len(s) < 1 or len(s) > n {
+        return false;
+    }
+    for c in s {
+        if not ((c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return -1;
+        }
+    }
+}
+
+# The sorted values of a field, or err when it is not valid.
+fn parse_field(field: str, lo: int, hi: int) -> result[list[int]] {
+    let seen = new ordered_set[int];
+    for part in split(field, ",") {
+        var item = part;
+        var step = 1;
+        var stepped = false;
+        let slash = find(part, "/");
+        if slash >= 0 {
+            let s = slice(part, slash + 1, len(part));
+            if not is_num(s) or num(s) < 1 {
+                return err("bad");
+            }
+            set step = num(s);
+            set stepped = true;
+            set item = slice(part, 0, slash);
+        }
+        var a = lo;
+        var b = hi;
+        let dash = find(item, "-");
+        if item == "*" {
+        } else if dash >= 0 {
+            let x = slice(item, 0, dash);
+            let y = slice(item, dash + 1, len(item));
+            if not (is_num(x) and is_num(y)) {
+                return err("bad");
+            }
+            set a = num(x);
+            set b = num(y);
+            if a > b {
+                return err("bad");
+            }
+        } else if is_num(item) {
+            if stepped {
+                return err("bad");
+            }
+            set a = num(item);
+            set b = a;
+        } else {
+            return err("bad");
+        }
+        if a < lo or b > hi {
+            return err("bad");
+        }
+        var v = a;
+        while v <= b {
+            push(seen, v);
+            set v = v + step;
+        }
+    }
+    let out = new list[int];
+    for v in seen {
+        push(out, v);
+    }
+    return ok(out);
+}
+
+fn on_date(j: Job, day: int) -> bool {
+    let d = time.from_ms(day);
+    if not lists.has_item(j.months, d.month) {
+        return false;
+    }
+    let in_day = lists.has_item(j.days, d.day);
+    let in_dow = lists.has_item(j.weekdays, d.weekday % 7);
+    if j.either {
+        return in_day or in_dow;
+    }
+    return in_day and in_dow;
+}
+
+fn runs_at(j: Job, t: int) -> bool {
+    let d = time.from_ms(t);
+    return on_date(j, t - t % day_ms) and lists.has_item(j.hours, d.hour) and lists.has_item(j.minutes, d.minute);
+}
+
+fn runs(j: Job, now: int, k: int) -> list[int] {
+    let end = now + time.days(366);
+    let out = new list[int];
+    var day = now - now % day_ms;
+    while day <= end and len(out) < k {
+        if on_date(j, day) {
+            for h in j.hours {
+                for m in j.minutes {
+                    let t = day + h * 60 * minute_ms + m * minute_ms;
+                    if t > now and t <= end and len(out) < k {
+                        push(out, t);
+                    }
+                }
+            }
+        }
+        set day = day + day_ms;
+    }
+    return out;
+}
+
+fn two(n: int) -> str {
+    return text.pad_left(str(n), 2, "0");
+}
+
+fn fmt(t: int) -> str {
+    let d = time.from_ms(t);
+    return str(d.year) + "-" + two(d.month) + "-" + two(d.day) + " " + two(d.hour) + ":" + two(d.minute);
+}
+
+fn parse_date(s: str) -> result[int] {
+    if len(s) != 10 or slice(s, 4, 5) != "-" or slice(s, 7, 8) != "-" {
+        return err("bad");
+    }
+    let y = slice(s, 0, 4);
+    let m = slice(s, 5, 7);
+    let d = slice(s, 8, 10);
+    if not (is_num(y) and is_num(m) and is_num(d)) or num(y) < 2000 or num(y) > 2099 {
+        return err("bad");
+    }
+    if num(m) < 1 or num(m) > 12 or num(d) < 1 or num(d) > time.days_in_month(num(y), num(m)) {
+        return err("bad");
+    }
+    return time.date(num(y), num(m), num(d));
+}
+
+fn parse_time(s: str) -> result[int] {
+    if len(s) != 16 or slice(s, 10, 11) != " " or slice(s, 13, 14) != ":" {
+        return err("bad");
+    }
+    let day = try parse_date(slice(s, 0, 10));
+    let hh = slice(s, 11, 13);
+    let mm = slice(s, 14, 16);
+    if not (is_num(hh) and is_num(mm)) or num(hh) > 23 or num(mm) > 59 {
+        return err("bad");
+    }
+    return ok(day + num(hh) * 60 * minute_ms + num(mm) * minute_ms);
+}
+
+fn count(s: str) -> int {
+    if is_num(s) and num(s) >= 1 and num(s) <= 50 {
+        return num(s);
+    }
+    return 0;
+}
+
+fn find_job(jobs: list[Job], name: str) -> int {
+    for i, j in jobs {
+        if j.name == name {
+            return i;
+        }
+    }
+    return -1;
+}
+
+fn answer(q: str, jobs: list[Job], now: int) -> list[str] {
+    let w = split(q, " ");
+    let out = new list[str];
+    let names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    if w[0] == "next" and len(w) == 3 and count(w[2]) > 0 {
+        let i = find_job(jobs, w[1]);
+        if i < 0 {
+            push(out, "unknown job " + w[1]);
+            return out;
+        }
+        let rs = runs(jobs[i], now, count(w[2]));
+        for t in rs {
+            push(out, fmt(t) + " " + names[time.from_ms(t).weekday - 1]);
+        }
+        if len(rs) < count(w[2]) {
+            push(out, "no more runs");
+        }
+    } else if w[0] == "timeline" and len(w) == 2 and count(w[1]) > 0 {
+        let k = count(w[1]);
+        let merged = new list[Run];
+        for j in jobs {
+            for t in runs(j, now, k) {
+                push(merged, new Run { at: t, job: j.name });
+            }
+        }
+        sort(merged);
+        for r in slice(merged, 0, min(k, len(merged))) {
+            push(out, fmt(r.at) + " " + r.job);
+        }
+        if len(merged) < k {
+            push(out, "no more runs");
+        }
+    } else if w[0] == "at" and len(w) == 3 {
+        match parse_time(w[1] + " " + w[2]) {
+            case ok(t) {
+                let hit = map(filter(jobs, fn(j) => runs_at(j, t)), fn(j) => j.name);
+                sort(hit);
+                if len(hit) == 0 {
+                    push(out, fmt(t) + " none");
+                } else {
+                    push(out, fmt(t) + " " + join(hit, ","));
+                }
+            }
+            case err(_) {
+                push(out, "bad query");
+            }
+        }
+    } else if w[0] == "day" and len(w) == 2 {
+        match parse_date(w[1]) {
+            case ok(d) {
+                var total = 0;
+                for j in jobs {
+                    if on_date(j, d) {
+                        let n = len(j.hours) * len(j.minutes);
+                        set total = total + n;
+                        push(out, j.name + " " + str(n));
+                    }
+                }
+                push(out, "total " + str(total));
+            }
+            case err(_) {
+                push(out, "bad query");
+            }
+        }
+    } else {
+        push(out, "bad query");
+    }
+    return out;
+}
+
+fn parse_line(line: str, no: int, jobs: list[Job]) -> str {
+    let fields = filter(split(line, " "), fn(x) => x != "");
+    if len(fields) != 6 {
+        return "line " + str(no) + ": expected 6 fields";
+    }
+    let names = ["minute", "hour", "day", "month", "weekday"];
+    let los = [0, 0, 1, 1, 0];
+    let his = [59, 23, 31, 12, 7];
+    let sets = new list[list[int]];
+    for i in 0..5 {
+        match parse_field(fields[i], los[i], his[i]) {
+            case ok(v) {
+                push(sets, v);
+            }
+            case err(_) {
+                return "line " + str(no) + ": bad " + names[i] + " field";
+            }
+        }
+    }
+    if not name_ok(fields[5], 20) {
+        return "line " + str(no) + ": bad job name";
+    }
+    if find_job(jobs, fields[5]) >= 0 {
+        return "line " + str(no) + ": duplicate job " + fields[5];
+    }
+    let dows = map(sets[4], fn(d) => d % 7);
+    push(jobs, new Job {
+        name: fields[5],
+        minutes: sets[0],
+        hours: sets[1],
+        days: sets[2],
+        months: sets[3],
+        weekdays: dows,
+        either: fields[2] != "*" and fields[4] != "*"
+    });
+    return "";
+}
+
+fn main() -> result[void] uses console, input, file.read("jobs/"), clock {
+    let now = try parse_time(slice(try read_line(), 4, 20));
+    # warn when the given time lies in the future
+    if now > now_ms() {
+        eprint("warning: now is in the future");
+    }
+    let first = try read_line();
+    let name = slice(first, len("crontab "), len(first));
+    if not name_ok(name, 30) {
+        print("error: bad crontab name");
+        return ok();
+    }
+    var content = "";
+    match read_file("jobs/" + name + ".cron") {
+        case ok(t) {
+            set content = t;
+        }
+        case err(_) {
+            print("error: crontab not found");
+            return ok();
+        }
+    }
+    let jobs = new list[Job];
+    for i, line in split(content, "\n") {
+        let s = trim(line);
+        if s == "" or text.starts_with(s, "#") {
+            continue;
+        }
+        let msg = parse_line(line, i + 1, jobs);
+        if msg != "" {
+            print(msg);
+        }
+    }
+    print("jobs " + str(len(jobs)));
+    while true {
+        match read_line() {
+            case ok(q) {
+                if q != "" {
+                    print("> " + q);
+                    for l in answer(q, jobs, now) {
+                        print(l);
+                    }
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    return ok();
+}

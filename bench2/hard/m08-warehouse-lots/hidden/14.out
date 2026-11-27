@@ -1,0 +1,25 @@
+warehouse e added
+warehouse f added
+item jam added
+lot L1 e jam 3
+lot L2 e jam 3
+transfer T1 2 arrives 4 L2x2
+transfer T2 2 arrives 2 L2x1 L1x1
+backorder o1 4
+reserved r1 2 L1x2
+arrived T2 f jam 2
+filled o1 2 L2x1 L1x1
+arrived T1 f jam 2
+expired L2 f 2
+stock day 4
+e jam L1 on hand 2 reserved 2 expires 6
+expired L1 e 2
+reservation r1 lost 2
+stock day 6
+value on hand 0.00 in transit 0.00 quarantine 0.00 shipped 3.00 written off 6.00
+backorders 1
+o1 f jam 2
+stock day 6
+value on hand 0.00 in transit 0.00 quarantine 0.00 shipped 3.00 written off 6.00
+backorders 1
+o1 f jam 2

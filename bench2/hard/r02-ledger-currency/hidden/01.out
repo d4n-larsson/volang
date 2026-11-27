@@ -1,0 +1,36 @@
+no accounts
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened assets:usd2 (asset)
+error: bad currency usd
+error: bad currency EURO
+error: bad currency E1R
+error: bad type thing
+error: bad account name Assets:w
+error: account assets:eur exists
+error: bad currency gbp
+error: bad command
+error: bad command
+opened liab:jp (liability, JPY)
+opened equity:open (equity)
+assets:bank asset 0.00
+assets:eur asset 0.00 EUR
+assets:usd2 asset 0.00
+equity:open equity 0.00
+liab:jp liability 0.00 JPY
+closed assets:eur
+error: account assets:eur is closed
+error: account assets:eur is closed
+error: account assets:eur is closed
+posted p2: 2 postings, total 1.00
+assets:bank asset 1.00
+assets:eur asset 0.00 EUR closed
+assets:usd2 asset 0.00
+equity:open equity -1.00
+liab:jp liability 0.00 JPY
+statement assets:eur (asset, EUR)
+  no postings
+  closing balance 0.00 EUR (book 0.00 USD)
+p2 day 1 x
+  assets:bank 1.00
+  equity:open -1.00

@@ -1,0 +1,14 @@
+limit A1 ana buy PA 3 0.05
+limit A2 bob sell PA 3 0.05
+limit A3 bob buy PA 3 0.05
+limit A4 ana sell PA 3 0.05
+limit A5 cy buy PA 100 0.10 fok
+market A6 dan buy PB 1
+stop A7 eve buy PB 1 5.00
+limit A8 fay buy PC 2 1234.56
+limit A9 gus sell PC 1 1234.56
+limit B1 fay sell PD 1 0.01
+limit B2 gus buy PD 1 0.01
+limit B3 abc sell PA 1 1.00
+cancel B3
+limit B4 hal buy PB 1 5.00 ioc

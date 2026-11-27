@@ -1,0 +1,28 @@
+user ann
+user bob
+new p2 Fix the login flow
+new p2 Write the docs
+new p3 Cache the images
+assign 1 ann
+assign 2 bob
+assign 3 ann
+move 1 triaged
+move 1 in_progress
+move 2 triaged
+move 2 in_progress
+move 2 review
+move 3 triaged
+move 3 in_progress
+move 3 blocked waiting on cdn
+unassign 1
+unassign 2
+unassign 3
+unassign 3
+show 1
+show 2
+show 3
+log 7
+move 3 in_progress
+assign 3 bob
+move 3 in_progress
+stats

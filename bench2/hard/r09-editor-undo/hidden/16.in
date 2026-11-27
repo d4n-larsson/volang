@@ -1,0 +1,26 @@
+append a b c
+append d
+bogus thing
+delete 5
+delete 2,1
+delete x
+move 1 1
+move 1,2 1
+join 2
+split 1 0
+subst 1,$ q
+print 3
+goto 0
+undo
+undo
+print
+cut 1,1
+yank 1
+undo 3
+paste 9
+paste 1
+print
+undo
+undo
+undo
+where

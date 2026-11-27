@@ -1,0 +1,16 @@
+workers 2
+pool heavy 1
+pool link 2
+target a 5
+target b 5
+target c 2
+target d 1
+target link 3 a
+use a heavy
+use b heavy
+use b link
+use link heavy
+retries 1
+backoff 0
+fail a 1
+fail c 1

@@ -1,0 +1,14 @@
+task a 2
+task b 3
+task c 1
+dep c a
+dep c b
+schedule
+remove a
+undep c a
+remove a
+task a 4
+dep c a+2
+schedule
+list
+end

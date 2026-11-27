@@ -1,0 +1,24 @@
+warehouse verylongcode
+warehouse b
+item averyverylongsku Thing 1
+item s Small 100
+reorder s 50
+reorder averyverylongsku 2
+receive verylongcode averyverylongsku 1
+receive b s 49 99
+stock
+stock b
+low
+lots
+lots b
+lots b s extra
+lots q s
+lots q zz
+lots b zz
+lots verylongcode s
+lots b s
+value nowhere
+stock nowhere
+report
+frobnicate b s
+history

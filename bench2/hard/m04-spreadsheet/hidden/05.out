@@ -1,0 +1,17 @@
+A1 = #CYCLE!
+A2 = #CYCLE!
+A3 = #CYCLE!
+A5 = #CYCLE!
+A6 = #CYCLE!
+A7 = 7
+A8 = #CYCLE!
+A9 = #CYCLE!
+B2 = #CYCLE!
+A3 <- A3 A4 A5 A6 A7
+A1 <- A1 A8
+A9 <- B2 A9
+A3 = 0
+A5 = 0
+A6 = 100
+A6 = 104
+A4 <- A3 A5 A6 A7

@@ -1,0 +1,9 @@
+== deep/one/up.conf
+db.conf:4: undefined ${name}
+deep/one/up.conf:2: include outside conf: ../../../secrets/prod.conf
+deep/one/up.conf:3: include outside conf: ../../../conf/db.conf
+deep/one/up.conf:4: include outside conf: ../../../conf/app.conf
+db.dsn=db.internal:6543 (deep/one/up.conf:7)
+db.host=db.internal (db.conf:2)
+db.port=6543 (deep/one/up.conf:6)
+files 2 errors 4

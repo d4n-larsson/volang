@@ -1,0 +1,3 @@
+block has block
+show sees global
+error at line 4: undefined local

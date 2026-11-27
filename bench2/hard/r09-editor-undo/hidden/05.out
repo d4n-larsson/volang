@@ -1,0 +1,40 @@
+error: clipboard empty
+new buffer b
+error: clipboard empty
+error: clipboard empty
+error: line 1 out of range
+error: empty buffer
+error: empty buffer
+yanked 2 lines
+error: line 5 out of range
+error: bad command
+pasted 2 lines
+1  two
+2  three
+3  one
+4  two
+5  three
+undone 1 step
+new buffer c
+pasted 2 lines
+pasted 2 lines
+1  two
+2  three
+3  two
+4  three
+buffer c, line 4 of 4
+undone 1 step
+undone 1 step
+pasted 2 lines
+1  two
+2  three
+buffer b, 3 lines
+cut 2 lines
+1  three
+buffer c, 2 lines
+undone 1 step
+error: line 1 out of range
+error: empty buffer
+  b 1 line, modified
+* c 0 lines
+  main 0 lines

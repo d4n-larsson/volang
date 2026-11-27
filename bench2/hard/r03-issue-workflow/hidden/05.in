@@ -1,0 +1,34 @@
+user ann
+user bob
+new p3 A rather long title that will be cut short
+new p1 Short one
+new p2 Exactly thirty characters long
+new p2 Exactly thirty-one characters lo
+new p4 Fifth
+assign 1 ann
+assign 2 bob
+label 1 +ui +bug
+label 2 +bug
+move 1 triaged
+move 2 triaged
+move 2 in_progress
+move 3 wontfix out of scope
+close 4
+list
+list status=all
+list status=new
+list status=triaged
+list status=in_progress
+list status=wontfix
+list status=done
+list status=closed
+list status=open assignee=-
+list status=all label=bug
+list status=all priority=p2
+list status=bogus
+list status=OPEN
+list status=blocked status=new
+list assignee=ann status=in_progress
+list state=new
+mine ann
+mine bob

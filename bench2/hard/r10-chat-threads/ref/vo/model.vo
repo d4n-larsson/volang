@@ -1,0 +1,95 @@
+# The records the chat server keeps.
+export record User {
+    name: str;
+}
+
+export record Channel {
+    name: str;
+    creator: str;
+    private: bool;
+    # user names in the order they joined (a user who leaves and joins again goes last)
+    members: list[str];
+    # user names that may join a private channel; the creator is always invited
+    invited: map[str, bool];
+    # the channel's messages by number, ascending: live ones and deleted thread parents
+    messages: map[int, Message];
+    next_number: int;
+    # each member's read marker: the clock value up to which they have read the channel
+    markers: map[str, int];
+}
+
+export record Message {
+    # the number within its channel
+    msg_id: int;
+    author: str;
+    text: str;
+    # the clock value of the command that posted it
+    time: int;
+    edited: bool;
+    # the thread parent's number, 0 for a top-level message
+    parent: int;
+    # a deleted thread parent kept for its replies
+    deleted: bool;
+}
+
+# A message together with its channel.
+export record Posted {
+    channel: Channel;
+    message: Message;
+}
+
+export record State {
+    users: map[str, User];
+    channels: map[str, Channel];
+    # the logical clock: the number of the current command (non-blank input lines from 1)
+    time: int;
+    edits: int;
+    deletes: int;
+}
+
+export fn new_state() -> State {
+    return new State {
+        users: new map[str, User],
+        channels: new map[str, Channel],
+        time: 0,
+        edits: 0,
+        deletes: 0
+    };
+}
+
+export fn is_member(c: Channel, user_name: str) -> bool {
+    return any(c.members, fn(n) => n == user_name);
+}
+
+# The channel's messages that are not deleted, in number order.
+export fn live_messages(c: Channel) -> list[Message] {
+    let out = new list[Message];
+    for _, m in c.messages {
+        if not m.deleted {
+            push(out, m);
+        }
+    }
+    return out;
+}
+
+export fn replies(c: Channel, number: int) -> list[Message] {
+    let out = new list[Message];
+    for _, m in c.messages {
+        if m.parent == number {
+            push(out, m);
+        }
+    }
+    return out;
+}
+
+# Every live message with its channel, in the order posted.
+export fn all_live(state: State) -> list[Posted] {
+    let out = new list[Posted];
+    for _, c in state.channels {
+        for m in live_messages(c) {
+            push(out, new Posted { channel: c, message: m });
+        }
+    }
+    sort_by(out, fn(p) => p.message.time);
+    return out;
+}

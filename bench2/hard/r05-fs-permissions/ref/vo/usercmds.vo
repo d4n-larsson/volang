@@ -1,0 +1,55 @@
+# Users and the owners and modes of nodes: whoami, useradd, su, chmod, chown.
+import paths;
+import perms;
+import resolve;
+import shell;
+
+export fn whoami(sh: shell.Shell) -> list[str] {
+    return [sh.user];
+}
+
+export fn useradd(sh: shell.Shell, name: str) -> list[str] {
+    if sh.user != "root" {
+        return ["error: only root can add users"];
+    }
+    if has(sh.users, name) {
+        return ["error: user exists: " + name];
+    }
+    set sh.users[name] = true;
+    return [];
+}
+
+# Switches to another user; the current directory stays.
+export fn su(sh: shell.Shell, name: str) -> list[str] {
+    if not has(sh.users, name) {
+        return ["error: no such user: " + name];
+    }
+    set sh.user = name;
+    return [];
+}
+
+export fn chmod(sh: shell.Shell, mode: str, text: str) -> result[void] {
+    if not perms.is_mode(mode) {
+        return err("error: bad mode " + mode);
+    }
+    let names = paths.normalize(sh.cwd, text);
+    let node = try resolve.walk(sh, names);
+    if sh.user != "root" and sh.user != node.owner {
+        return err(perms.denied(names));
+    }
+    set node.mode = mode;
+    return ok();
+}
+
+export fn chown(sh: shell.Shell, user: str, text: str) -> result[void] {
+    let names = paths.normalize(sh.cwd, text);
+    let node = try resolve.walk(sh, names);
+    if sh.user != "root" {
+        return err(perms.denied(names));
+    }
+    if not has(sh.users, user) {
+        return err("error: no such user: " + user);
+    }
+    set node.owner = user;
+    return ok();
+}

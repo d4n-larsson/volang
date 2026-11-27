@@ -1,0 +1,111 @@
+# Line filling: paragraphs into aligned lines, list markers and headings.
+import directives;
+import std.text;
+
+fn rstrip(s: str) -> str {
+    var n = len(s);
+    while n > 0 and byte_at(s, n - 1) == 32 {
+        set n = n - 1;
+    }
+    return slice(s, 0, n);
+}
+
+# The words of each line, every line at most `a` characters.
+export fn fill(words: list[str], a: int) -> list[list[str]] {
+    let lines = new list[list[str]];
+    var cur = new list[str];
+    var length = 0;
+    for word in words {
+        if len(cur) > 0 and length + 1 + len(word) <= a {
+            push(cur, word);
+            set length = length + 1 + len(word);
+        } else if len(word) <= a {
+            if len(cur) > 0 {
+                push(lines, cur);
+            }
+            set cur = [word];
+            set length = len(word);
+        } else {
+            if len(cur) > 0 {
+                push(lines, cur);
+            }
+            var w = word;
+            while len(w) > a {
+                push(lines, [slice(w, 0, a)]);
+                set w = slice(w, a, len(w));
+            }
+            set cur = [w];
+            set length = len(w);
+        }
+    }
+    if len(cur) > 0 {
+        push(lines, cur);
+    }
+    return lines;
+}
+
+fn align(line: list[str], a: int, how: str, last: bool) -> str {
+    let joined = join(line, " ");
+    let gap = a - len(joined);
+    if how == "right" {
+        return text.repeat(" ", gap) + joined;
+    }
+    if how == "center" {
+        return text.repeat(" ", gap / 2) + joined;
+    }
+    if how == "justify" and not last and len(line) >= 2 {
+        let g = len(line) - 1;
+        var out = line[0];
+        for i in 1..len(line) {
+            var spaces = 1 + gap / g;
+            if i - 1 < gap % g {
+                set spaces = spaces + 1;
+            }
+            set out = out + text.repeat(" ", spaces) + line[i];
+        }
+        return out;
+    }
+    return joined;
+}
+
+fn marker(l: directives.ListState) -> str {
+    if l.kind == "number" {
+        return str(l.count) + ".";
+    }
+    return slice("*-+", l.depth - 1, l.depth);
+}
+
+# The output lines of a paragraph under the current settings; counts the item if a list is open.
+export fn paragraph(words: list[str], st: directives.State) -> list[str] {
+    var t = st.indent;
+    var first = text.repeat(" ", t);
+    if len(st.lists) > 0 {
+        let l = st.lists[len(st.lists) - 1];
+        set l.count = l.count + 1;
+        let mk = marker(l);
+        let m = st.indent + 2 * (l.depth - 1);
+        set t = m + len(mk) + 1;
+        set first = text.repeat(" ", m) + mk + " ";
+    }
+    let a = st.width - t;
+    let lines = fill(words, a);
+    let out = new list[str];
+    for i, line in lines {
+        var prefix = text.repeat(" ", t);
+        if i == 0 {
+            set prefix = first;
+        }
+        push(out, rstrip(prefix + align(line, a, st.align, i == len(lines) - 1)));
+    }
+    return out;
+}
+
+export fn heading(head: str, st: directives.State) -> list[str] {
+    var cut = head;
+    if len(cut) > st.width - st.indent {
+        set cut = slice(cut, 0, st.width - st.indent);
+    }
+    set cut = rstrip(cut);
+    let pad = text.repeat(" ", st.indent);
+    return [pad + cut, pad + text.repeat("=", len(cut))];
+}

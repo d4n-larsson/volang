@@ -1,0 +1,39 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+channel bob vault private
+join cy vault
+invite cy vault dee
+invite bob general dee
+invite bob vault zed
+invite bob vault cy
+invite bob vault dee
+invite bob vault dee
+join dee vault
+join dee vault
+leave dee vault
+join dee vault
+leave ann general
+leave ann general
+members general
+members vault
+leave bob general
+whois bob
+channel ann vault
+channel zed z
+channel ann z extra
+channel ann z private
+top 0
+history general 0
+history nope
+bogus command here
+
+post dee vault hello
+unread dee
+channels
+whois zed
+members nope

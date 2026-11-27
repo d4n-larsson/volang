@@ -1,0 +1,13 @@
+**/x/**/y
+**/.cfg/**
+**/*.vo
+%%
+x/y
+a/x/b/c/y
+x/.h/y
+.cfg/a
+a/.cfg
+src/.cfg/b.vo
+src/main.vo
+.src/main.vo
+a/.b.vo

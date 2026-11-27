@@ -1,0 +1,51 @@
+# The league's data: teams in registration order and every result ever entered.
+export record Team {
+    name: str;
+    withdrawn: bool;
+}
+
+# One result. `num` is its 1-based position in the order results were entered.
+# A void result (one of its teams withdrew) no longer counts anywhere.
+export record Match {
+    num: int;
+    home: str;
+    away: str;
+    hg: int;
+    ag: int;
+    voided: bool;
+}
+
+export record League {
+    teams: list[Team];
+    matches: list[Match];
+    # group name -> member names in the order they joined
+    groups: map[str, list[str]];
+}
+
+export fn new_league() -> League {
+    return new League { teams: new list[Team], matches: new list[Match], groups: new map[str, list[str]] };
+}
+
+# One line of a table. `rank` is set when the rows are ranked.
+export record Row {
+    name: str;
+    played: int;
+    won: int;
+    drawn: int;
+    lost: int;
+    gf: int;
+    ga: int;
+    rank: int;
+    # the same counts among the teams level on points (the head-to-head mini-table)
+    mini_points: int;
+    mini_gd: int;
+    mini_gf: int;
+}
+
+export fn points(r: Row) -> int {
+    return 3 * r.won + r.drawn;
+}
+
+export fn gd(r: Row) -> int {
+    return r.gf - r.ga;
+}

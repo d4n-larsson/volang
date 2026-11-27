@@ -1,0 +1,15 @@
+market M1 ana buy MK 10
+limit S1 ana sell MK 10 3.00
+market M2 ana buy MK 10
+limit S2 bob sell MK 5 3.10
+limit S3 ana sell MK 5 3.05
+market M3 ana buy MK 3
+book MK
+market M4 cy buy MK 20
+book MK
+limit B1 dan buy MK 7 3.00
+limit B2 eve buy MK 7 2.95
+market M5 dan sell MK 10
+market M6 fay sell MK 10
+market M7 fay sell MK 1
+book MK

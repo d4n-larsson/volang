@@ -1,0 +1,44 @@
+added task a
+added task b
+added task c
+b after a
+c after a+1
+task a 100% done
+task b 30% done
+task c 50% done
+status on day 0
+  a: planned 0 done 5 ahead
+  b: planned 0 done 1 ahead
+  c: planned 0 done 1 ahead
+total planned 0 done 7 -
+status on day 5
+  a: planned 5 done 5 on track
+  b: planned 0 done 1 ahead
+  c: planned 0 done 1 ahead
+total planned 5 done 7 140%
+status on day 6
+  a: planned 5 done 5 on track
+  b: planned 0 done 1 ahead
+  c: planned 0 done 1 ahead
+total planned 5 done 7 140%
+status on day 7
+  a: planned 5 done 5 on track
+  b: planned 0 done 1 ahead
+  c: planned 0 done 1 ahead
+total planned 5 done 7 140%
+status on day 12
+  a: planned 5 done 5 on track
+  b: planned 5 done 1 behind
+  c: planned 2 done 1 behind
+total planned 12 done 7 58%
+day 8 is now off
+status on day 12
+  a: planned 5 done 5 on track
+  b: planned 4 done 1 behind
+  c: planned 2 done 1 behind
+total planned 11 done 7 63%
+status on day 40
+  a: planned 5 done 5 on track
+  b: planned 5 done 1 behind
+  c: planned 2 done 1 behind
+total planned 12 done 7 58%

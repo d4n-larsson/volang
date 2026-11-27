@@ -1,0 +1,167 @@
+# Entering transactions: post, void, show.
+import fmt;
+import model;
+import parse;
+
+# One checked `NAME=AMOUNT` word; `blank` for `NAME=` (the amount is filled in later).
+export record Entry {
+    account: model.Account;
+    amount: int;
+    blank: bool;
+}
+
+fn locked_error(ledger: model.Ledger, day: int) -> str {
+    if day <= ledger.locked_through {
+        return "error: books locked through " + str(ledger.locked_through);
+    }
+    return "";
+}
+
+# Checks the `NAME=AMOUNT` / `NAME=` words in order.
+fn read_specs(ledger: model.Ledger, specs: list[str]) -> result[list[Entry]] {
+    let entries = new list[Entry];
+    let seen = new map[str, bool];
+    for spec in specs {
+        let parts = map_err(parse.split_spec(spec), fn(e) => "error: bad posting " + spec);
+        let s = try parts;
+        var amount = 0;
+        if s.text != "" {
+            set amount = try map_err(parse.parse_amount(s.text), fn(e) => "error: bad posting " + spec);
+        }
+        if not has(ledger.accounts, s.name) {
+            return err("error: unknown account " + s.name);
+        }
+        let account = ledger.accounts[s.name];
+        if account.closed {
+            return err("error: account " + s.name + " is closed");
+        }
+        if has(seen, s.name) {
+            return err("error: account " + s.name + " posted twice");
+        }
+        if s.text != "" and amount == 0 {
+            return err("error: zero posting " + s.name);
+        }
+        set seen[s.name] = true;
+        push(entries, new Entry { account: account, amount: amount, blank: s.text == "" });
+    }
+    return ok(entries);
+}
+
+export fn positive_total(txn: model.Transaction) -> int {
+    var total = 0;
+    for p in txn.postings {
+        if p.amount > 0 {
+            set total = total + p.amount;
+        }
+    }
+    return total;
+}
+
+fn record_txn(ledger: model.Ledger, txn: model.Transaction, entries: list[Entry]) {
+    for e in entries {
+        let p = new model.Posting { account: e.account, amount: e.amount, txn_id: txn.txn_id, day: txn.day, desc: txn.desc, seq: model.new_seq(ledger) };
+        push(txn.postings, p);
+        push(e.account.postings, p);
+    }
+    set ledger.txns[txn.txn_id] = txn;
+    push(ledger.order, txn);
+}
+
+fn post_entries(ledger: model.Ledger, txn_id: str, day: int, desc: str, entries: list[Entry]) -> str {
+    let blanks = filter(entries, fn(e) => e.blank);
+    if len(blanks) > 1 {
+        return "error: more than one balancing posting";
+    }
+    var total = 0;
+    for e in entries {
+        set total = total + e.amount;
+    }
+    if len(blanks) == 1 {
+        if total == 0 {
+            return "error: zero posting " + blanks[0].account.name;
+        }
+        set blanks[0].amount = -total;
+    } else if total != 0 {
+        return "error: transaction " + txn_id + " unbalanced by " + fmt.money(total);
+    }
+    let txn = model.new_transaction(txn_id, day, desc);
+    record_txn(ledger, txn, entries);
+    return "posted " + txn_id + ": " + str(len(entries)) + " postings, total " + fmt.money(positive_total(txn));
+}
+
+export fn post(ledger: model.Ledger, txn_id: str, day: int, desc: str, specs: list[str]) -> str {
+    if not parse.valid_txn_id(txn_id) {
+        return "error: bad id " + txn_id;
+    }
+    if has(ledger.txns, txn_id) {
+        return "error: transaction " + txn_id + " exists";
+    }
+    let locked = locked_error(ledger, day);
+    if locked != "" {
+        return locked;
+    }
+    match read_specs(ledger, specs) {
+        case ok(entries) {
+            return post_entries(ledger, txn_id, day, desc, entries);
+        }
+        case err(e) {
+            return e;
+        }
+    }
+}
+
+export fn void_txn(ledger: model.Ledger, txn_id: str, day: int) -> str {
+    if not has(ledger.txns, txn_id) {
+        return "error: unknown transaction " + txn_id;
+    }
+    let txn = ledger.txns[txn_id];
+    if txn.reverses != "" {
+        return "error: transaction " + txn_id + " is a reversal";
+    }
+    if txn.voided_by != "" {
+        return "error: transaction " + txn_id + " already voided";
+    }
+    if day < txn.day {
+        return "error: void before day " + str(txn.day);
+    }
+    let locked = locked_error(ledger, day);
+    if locked != "" {
+        return locked;
+    }
+    for p in txn.postings {
+        if p.account.closed {
+            return "error: account " + p.account.name + " is closed";
+        }
+    }
+    let rev = model.new_transaction("rev-" + txn_id, day, "void:" + txn.desc);
+    set rev.reverses = txn_id;
+    record_txn(ledger, rev, map(txn.postings, fn(p) => new Entry { account: p.account, amount: -p.amount, blank: false }));
+    set txn.voided_by = rev.txn_id;
+    return "voided " + txn_id + " on day " + str(day);
+}
+
+export fn show(ledger: model.Ledger, txn_id: str) -> list[str] {
+    if not has(ledger.txns, txn_id) {
+        return ["error: unknown transaction " + txn_id];
+    }
+    let txn = ledger.txns[txn_id];
+    let out = [txn.txn_id + " day " + str(txn.day) + " " + txn.desc];
+    for p in txn.postings {
+        push(out, "  " + p.account.name + " " + fmt.money(p.amount));
+    }
+    if txn.voided_by != "" {
+        push(out, "  voided by " + txn.voided_by);
+    }
+    if txn.reverses != "" {
+        push(out, "  reverses " + txn.reverses);
+    }
+    return out;
+}
+
+export fn lock(ledger: model.Ledger, day: int) -> str {
+    if day < ledger.locked_through {
+        return "error: already locked through " + str(ledger.locked_through);
+    }
+    set ledger.locked_through = day;
+    return "locked through " + str(day);
+}

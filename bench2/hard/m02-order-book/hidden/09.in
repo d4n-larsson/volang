@@ -1,0 +1,15 @@
+limit X1 ana buy DU 5 2.00
+limit X1 bob buy DU 5 2.00
+market X2 bob sell DU 99 2.00
+market X2 bob sell DU 1
+market X2 bob sell DU 1
+limit X3 cy buy EE 5 1.00
+cancel X3
+limit X3 cy buy EE 5 1.00
+stop X4 cy sell EE 1 0.50
+limit X4 dan sell EE 1 1.00
+cancel X4
+limit X4 dan sell EE 1 1.00
+limit x1 eve sell DU 4 2.00
+limit X5 fay buy DU 1 2.00 fok
+limit X5 fay buy DU 1 2.00

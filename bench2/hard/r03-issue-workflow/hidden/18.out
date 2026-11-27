@@ -1,0 +1,220 @@
+user ann added
+user bob added
+error: user ann exists
+created #1: title Totals very crash CSV empty Totals password
+error: user ann exists
+error: user bob exists
+error: bad command
+#1 [p1] new - title Totals very crash CSV...
+error: unknown issue #3
+error: unknown issue #0
+no matches
+created #2: fails title page
+error: bad command
+error: unknown issue #0
+error: unknown issue #12
+error: bad command
+error: unknown issue #12
+error: bad command
+error: unknown issue #12
+error: unknown issue #12
+error: unknown issue #12
+user zed added
+clock 27
+error: unknown issue #12
+error: bad command
+error: user ann exists
+created #3: crash
+error: bad command
+error: unknown issue #8
+error: unknown issue #0
+error: bad command
+error: unknown issue #0
+created #4: fails export Login here goes slow Login here
+error: bad command
+no open issues for bob
+error: unknown issue #12
+created #5: goes password CSV goes
+clock 42
+error: unknown state closed
+error: cannot move #4 from new to done
+error: unknown issue #12
+error: unknown issue #12
+error: bad command
+ann (since 1): 0 open, 0 closed
+bob (since 2): 0 open, 0 closed
+zed (since 22): 0 open, 0 closed
+user cy added
+#5 assigned to ann
+error: unknown state bogus
+error: bad command
+ann (since 1): 1 open, 0 closed
+bob (since 2): 0 open, 0 closed
+cy (since 49): 0 open, 0 closed
+zed (since 22): 0 open, 0 closed
+#1 priority p1 -> p4
+error: unknown issue #12
+error: unknown issue #0
+error: issue #1 has no assignee
+error: unknown issue #0
+#2 [p3] new - fails title page
+#4 [p3] new - fails export Login here goe...
+#1 [p4] new - title Totals very crash CSV...
+#3 [p4] new - crash
+#5 [p4] new ann goes password CSV goes
+error: bad command
+error: bad command
+error: unknown issue #8
+error: bad priority p9
+error: bad command
+#2 idle 53 ticks: fails title page
+#3 idle 34 ticks: crash
+#4 idle 28 ticks: fails export Login here goe...
+#5 idle 15 ticks: goes password CSV goes
+#1 idle 11 ticks: title Totals very crash CSV...
+error: unknown issue #6
+error: user ann exists
+#1 closed
+no done issues
+error: user zed exists
+error: bad command
+#1 labels: ui
+error: unknown issue #6
+error: cannot move #1 from wontfix to blocked
+#2 priority p3 -> p4
+error: unknown issue #0
+error: issue #2 is not closed
+comment added to #2
+error: issue #5 is already new
+error: unknown issue #0
+error: bad command
+issues 5: 4 open, 1 closed
+  states: new 4, wontfix 1
+  ann 1 open, 0 closed
+  unassigned 3 open, 1 closed
+error: unknown issue #12
+error: user ann exists
+error: bad command
+error: cannot move #5 from new to review
+error: unknown issue #0
+ann (since 1): 1 open, 0 closed
+bob (since 2): 0 open, 0 closed
+cy (since 49): 0 open, 0 closed
+zed (since 22): 0 open, 0 closed
+error: bad command
+error: unknown issue #0
+error: unknown issue #0
+ui: 0 open of 1
+error: unknown user dee
+#4 [p3] new - fails export Login here goe...
+#2 [p4] new - fails title page
+#3 [p4] new - crash
+#5 [p4] new ann goes password CSV goes
+error: bad command
+error: bad priority p9
+error: user bob exists
+error: bad command
+error: issue #4 is not closed
+error: unknown issue #0
+error: unknown issue #0
+error: unknown issue #12
+error: unknown issue #12
+no done issues
+error: bad command
+error: unknown issue #7
+error: bad command
+error: unknown issue #0
+error: bad command
+error: unknown issue #12
+error: unknown command frob
+#3 idle 81 ticks: crash
+#4 idle 75 ticks: fails export Login here goe...
+#5 idle 62 ticks: goes password CSV goes
+#2 idle 34 ticks: fails title page
+error: bad command
+error: bad priority P1
+comment added to #1
+error: unknown state closed
+error: unknown command frob
+ann (since 1): 1 open, 0 closed
+bob (since 2): 0 open, 0 closed
+cy (since 49): 0 open, 0 closed
+zed (since 22): 0 open, 0 closed
+error: unknown issue #0
+ui: 0 open of 1
+error: unknown issue #12
+error: unknown state bogus
+error: unknown issue #0
+error: bad command
+error: unknown issue #12
+error: unknown issue #0
+error: user cy exists
+error: cannot move #4 from new to review
+error: bad command
+error: unknown state bogus
+ann (since 1): 1 open, 0 closed
+bob (since 2): 0 open, 0 closed
+cy (since 49): 0 open, 0 closed
+zed (since 22): 0 open, 0 closed
+#3 idle 101 ticks: crash
+#4 idle 95 ticks: fails export Login here goe...
+#5 idle 82 ticks: goes password CSV goes
+#2 idle 54 ticks: fails title page
+#4 [p3] new - fails export Login here goe...
+#2 [p4] new - fails title page
+#3 [p4] new - crash
+#5 [p4] new ann goes password CSV goes
+error: unknown issue #0
+error: unknown command frob
+[75] #2 priority p3 -> p4
+[78] comment added to #2
+[115] comment added to #1
+error: unknown issue #6
+error: bad priority p0
+[1] user ann added
+[2] user bob added
+[4] created #1: title Totals very crash CSV empty Totals password
+[12] created #2: fails title page
+[22] user zed added
+[31] created #3: crash
+[37] created #4: fails export Login here goes slow Login here
+[41] created #5: goes password CSV goes
+[49] user cy added
+[50] #5 assigned to ann
+[54] #1 priority p1 -> p4
+[68] #1 closed
+[72] #1 labels: ui
+[75] #2 priority p3 -> p4
+[78] comment added to #2
+[115] comment added to #1
+[1] user ann added
+[2] user bob added
+[4] created #1: title Totals very crash CSV empty Totals password
+[12] created #2: fails title page
+[22] user zed added
+[31] created #3: crash
+[37] created #4: fails export Login here goes slow Login here
+[41] created #5: goes password CSV goes
+[49] user cy added
+[50] #5 assigned to ann
+[54] #1 priority p1 -> p4
+[68] #1 closed
+[72] #1 labels: ui
+[75] #2 priority p3 -> p4
+[78] comment added to #2
+[115] comment added to #1
+error: unknown issue #0
+error: unknown filter foo
+#2 [p4] new - fails title page
+ui: 0 open of 1
+created #6: very
+error: bad command
+error: issue #1 is already closed
+error: bad command
+no done issues
+error: unknown issue #0
+error: unknown issue #12
+ann (since 1): 1 open, 0 closed
+bob (since 2): 0 open, 0 closed
+cy (since 49): 0 open, 0 closed
+zed (since 22): 0 open, 0 closed

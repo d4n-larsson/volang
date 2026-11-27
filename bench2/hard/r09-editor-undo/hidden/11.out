@@ -1,0 +1,24 @@
+error: bad command
+error: bad command
+1     padded line
+2     another   one
+undone 1 step
+1  padded line
+2  another   one
+found at 2
+found at 1
+1  padded line
+2  another   one
+3  inserted
+4  dot
+5  nope
+undone 1 step
+undone 1 step
+buffer main, line 3 of 3
+1  changed
+2  another   one
+3  inserted
+undone 1 step
+1    padded line  
+2  another   one
+3  inserted

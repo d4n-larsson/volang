@@ -1,0 +1,33 @@
+
+
+  1. Outer one has text that wraps
+     onto the next line.
+
+    - Inner bullet.
+    - Second inner bullet.
+
+      + Deepest level item.
+      + Still at the deepest
+        level: that list was not
+        opened.
+
+    - Back at depth two.
+
+  2. Outer two.
+  3. Outer three.
+  4. Outer four.
+  5. Outer five.
+  6. Outer six.
+  7. Outer seven.
+  8. Outer eight.
+
+           page 1 of 2
+
+
+  9. Outer nine.
+  10. Outer ten has a two-digit
+      marker so its text moves
+      right.
+
+           page 2 of 2
+error line 11: too deep

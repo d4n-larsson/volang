@@ -1,0 +1,124 @@
+# Splitting command lines and resolving line addresses.
+# An address is a line number, `.` (the current line) or `$` (the last line).
+# A range is one address, or two separated by a comma: `2,5`, `.,$`.
+import buffer;
+
+# A command line: the command word, the text after the first space, and whether there was a space.
+export record Line {
+    cmd: str;
+    rest: str;
+    has_rest: bool;
+}
+
+export fn split_line(text: str) -> Line {
+    let i = find(text, " ");
+    if i < 0 {
+        return new Line { cmd: text, rest: "", has_rest: false };
+    }
+    return new Line { cmd: slice(text, 0, i), rest: slice(text, i + 1, len(text)), has_rest: true };
+}
+
+# The first word and the text after the single space that follows it, or an error without a space.
+export fn split_first(rest: str) -> result[list[str]] {
+    let i = find(rest, " ");
+    if i < 0 {
+        return err("bad command");
+    }
+    return ok([slice(rest, 0, i), slice(rest, i + 1, len(rest))]);
+}
+
+export fn words(rest: str) -> list[str] {
+    return filter(split(rest, " "), fn(w) => w != "");
+}
+
+export fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+# Only called on strings that passed is_number.
+export fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn is_address(tok: str) -> bool {
+    return tok == "." or tok == "$" or is_number(tok);
+}
+
+fn address_value(tok: str, buf: buffer.Buffer) -> int {
+    if tok == "." {
+        return buf.cur;
+    }
+    if tok == "$" {
+        return buffer.size(buf);
+    }
+    return num(tok);
+}
+
+fn check_line(n: int, low: int, high: int) -> result[int] {
+    if n < low or n > high {
+        return err("line " + str(n) + " out of range");
+    }
+    return ok(n);
+}
+
+# (a, b) for a range of existing lines.
+export fn resolve_range(tok: str, buf: buffer.Buffer) -> result[buffer.Span] {
+    let parts = split(tok, ",");
+    if len(parts) > 2 or not all(parts, is_address) {
+        return err("bad command");
+    }
+    if buffer.is_empty(buf) {
+        return err("empty buffer");
+    }
+    let a = try check_line(address_value(parts[0], buf), 1, buffer.size(buf));
+    let b = try check_line(address_value(parts[len(parts) - 1], buf), 1, buffer.size(buf));
+    if a > b {
+        return err("bad range " + str(a) + "," + str(b));
+    }
+    return ok(new buffer.Span { a: a, b: b });
+}
+
+# One existing line.
+export fn resolve_line(tok: str, buf: buffer.Buffer) -> result[int] {
+    if not is_address(tok) {
+        return err("bad command");
+    }
+    if buffer.is_empty(buf) {
+        return err("empty buffer");
+    }
+    return check_line(address_value(tok, buf), 1, buffer.size(buf));
+}
+
+# A line to insert before: 1 to size + 1.
+export fn resolve_insert(tok: str, buf: buffer.Buffer) -> result[int] {
+    if not is_address(tok) {
+        return err("bad command");
+    }
+    return check_line(address_value(tok, buf), 1, buffer.size(buf) + 1);
+}
+
+# A line to put lines after: 0 (before the first line) to size.
+export fn resolve_after(tok: str, buf: buffer.Buffer) -> result[int] {
+    if not is_address(tok) {
+        return err("bad command");
+    }
+    return check_line(address_value(tok, buf), 0, buffer.size(buf));
+}
+
+# A number of at least 1.
+export fn positive(tok: str) -> result[int] {
+    if not is_number(tok) or num(tok) < 1 {
+        return err("bad command");
+    }
+    return ok(num(tok));
+}

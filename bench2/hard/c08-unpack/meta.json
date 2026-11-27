@@ -1,0 +1,1 @@
+{"allowed_effects": "console, input, file.read(\"incoming/\"), file.write(\"out/\")"}

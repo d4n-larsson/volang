@@ -1,0 +1,200 @@
+# The commands. Each takes the sheet and the command's arguments and returns the lines to print, or
+# err(line): a command that cannot be done prints that line instead and changes nothing.
+import cells;
+import evaluate;
+import formula;
+import grid;
+import parser;
+import sheet;
+
+fn need(args_value: list[str], n: int) -> result[void] {
+    if len(args_value) != n {
+        return err("error: bad command");
+    }
+    return ok();
+}
+
+fn cell_arg(text: str) -> result[cells.Pos] {
+    return map_err(cells.parse_cell(text), fn(e) => "error: bad cell " + text);
+}
+
+fn range_arg(text: str) -> result[cells.Area] {
+    return map_err(cells.parse_range(text), fn(e) => "error: bad range " + text);
+}
+
+# The tree of `=FORMULA`.
+fn formula_arg(text: str) -> result[formula.Node] {
+    if len(text) == 0 or slice(text, 0, 1) != "=" {
+        return err("error: bad formula");
+    }
+    return map_err(parser.parse_formula(slice(text, 1, len(text))), fn(e) => "error: bad formula");
+}
+
+fn filled_arg(s: sheet.Sheet, p: cells.Pos) -> result[sheet.Content] {
+    if sheet.is_empty(s, p) {
+        return err("error: " + cells.cell_name(p) + " is empty");
+    }
+    return ok(sheet.content(s, p));
+}
+
+fn value_line(s: sheet.Sheet, p: cells.Pos) -> str {
+    return cells.cell_name(p) + " = " + evaluate.value_text(evaluate.value_of(s, p));
+}
+
+export fn cmd_set(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    if len(args_value) < 2 {
+        return err("error: bad command");
+    }
+    let p = try cell_arg(args_value[0]);
+    let text = join(slice(args_value, 1, len(args_value)), "");
+    if slice(text, 0, 1) == "=" {
+        sheet.put(s, p, sheet.Content.formula(try formula_arg(text)));
+    } else if cells.is_int(text) {
+        sheet.put(s, p, sheet.Content.number(cells.to_int(text)));
+    } else {
+        return err("error: bad value");
+    }
+    return ok([value_line(s, p)]);
+}
+
+export fn cmd_get(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    let p = try cell_arg(args_value[0]);
+    if sheet.is_empty(s, p) {
+        return ok([cells.cell_name(p) + " empty"]);
+    }
+    return ok([value_line(s, p)]);
+}
+
+fn content_text(c: sheet.Content) -> str {
+    match c {
+        case number(n) {
+            return str(n);
+        }
+        case formula(node) {
+            return "=" + formula.to_text(node);
+        }
+    }
+}
+
+export fn cmd_show(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    let p = try cell_arg(args_value[0]);
+    if sheet.is_empty(s, p) {
+        return ok([cells.cell_name(p) + ": empty"]);
+    }
+    return ok([cells.cell_name(p) + ": " + content_text(sheet.content(s, p))]);
+}
+
+export fn cmd_clear(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    let p = try cell_arg(args_value[0]);
+    let _ = try filled_arg(s, p);
+    sheet.clear(s, p);
+    return ok([cells.cell_name(p) + " cleared"]);
+}
+
+export fn cmd_copy(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 2);
+    let src = try cell_arg(args_value[0]);
+    let dst = try cell_arg(args_value[1]);
+    match try filled_arg(s, src) {
+        case number(n) {
+            sheet.put(s, dst, sheet.Content.number(n));
+        }
+        case formula(node) {
+            sheet.put(s, dst, sheet.Content.formula(formula.shift(node, dst.col - src.col, dst.row - src.row)));
+        }
+    }
+    return ok(["copied " + cells.cell_name(src) + " to " + cells.cell_name(dst)]);
+}
+
+fn names_line(title: str, found: list[cells.Pos]) -> str {
+    if len(found) == 0 {
+        return title + ": none";
+    }
+    return title + ": " + join(map(cells.sorted_cells(found), cells.cell_name), " ");
+}
+
+export fn cmd_deps(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    let p = try cell_arg(args_value[0]);
+    var found = new list[cells.Pos];
+    if not sheet.is_empty(s, p) {
+        match sheet.content(s, p) {
+            case number(_) {
+                set found = new list[cells.Pos];
+            }
+            case formula(node) {
+                set found = formula.refs_of(node);
+            }
+        }
+    }
+    return ok([names_line("deps " + cells.cell_name(p), found)]);
+}
+
+fn refers_to(s: sheet.Sheet, f: cells.Pos, p: cells.Pos) -> bool {
+    match sheet.content(s, f) {
+        case number(_) {
+            return false;
+        }
+        case formula(node) {
+            return any(formula.refs_of(node), fn(q) => q == p);
+        }
+    }
+}
+
+export fn cmd_users(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    let p = try cell_arg(args_value[0]);
+    let found = filter(sheet.formula_cells(s), fn(f) => refers_to(s, f, p));
+    return ok([names_line("users " + cells.cell_name(p), found)]);
+}
+
+export fn cmd_list(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 0);
+    let out = new list[str];
+    for p in sheet.filled(s) {
+        let c = sheet.content(s, p);
+        var line = cells.cell_name(p) + ": " + content_text(c);
+        if sheet.is_formula(c) {
+            set line = line + " = " + evaluate.value_text(evaluate.value_of(s, p));
+        }
+        push(out, line);
+    }
+    if len(out) == 0 {
+        return ok(["no cells"]);
+    }
+    return ok(out);
+}
+
+export fn cmd_count(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 0);
+    let filled = sheet.filled(s);
+    let formulas = len(sheet.formula_cells(s));
+    let errors = len(filter(filled, fn(p) => evaluate.value_of(s, p).error != ""));
+    return ok(["cells " + str(len(filled)) + ", formulas " + str(formulas) + ", errors " + str(errors)]);
+}
+
+export fn cmd_find(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    if not cells.is_int(args_value[0]) {
+        return err("error: bad command");
+    }
+    let wanted = new evaluate.Value { error: "", number: cells.to_int(args_value[0]) };
+    let found = filter(sheet.filled(s), fn(p) => evaluate.value_of(s, p) == wanted);
+    return ok([names_line("found", found)]);
+}
+
+export fn cmd_eval(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    if len(args_value) < 1 {
+        return err("error: bad command");
+    }
+    let node = try formula_arg(join(args_value, ""));
+    return ok(["= " + evaluate.value_text(evaluate.formula_value(s, node))]);
+}
+
+export fn cmd_print(s: sheet.Sheet, args_value: list[str]) -> result[list[str]] {
+    try need(args_value, 1);
+    return ok(grid.render(s, try range_arg(args_value[0])));
+}

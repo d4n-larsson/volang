@@ -1,0 +1,23 @@
+mv: missing/f: no such file or directory
+a:
+b:
+missing
+a/
+b/
+missing
+cp: a/..: same file
+cp: /: same file
+.:
+d 4 a/
+d 0 b/
+- 4 missing
+a:
+- 4 missing
+g
+cp: ..: same file
+..:
+d 4 a/
+d 0 b/
+- 4 g
+.:
+- 4 h

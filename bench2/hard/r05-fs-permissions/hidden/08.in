@@ -1,0 +1,27 @@
+useradd ann
+mkdir -p /p/a/b/c
+mkdir -p /p/a/z
+mkdir -p /p/m
+write /p/a/b/c/f.txt f
+write /p/a/b/g.txt g
+write /p/a/z/h.txt h
+write /p/m/k.txt k
+write /p/top.txt t
+chmod r-xr-- /p/a/b
+chmod rwx--x /p/m
+su ann
+tree /p
+tree /p/a/b
+tree /p/m
+tree /p/m/k.txt
+tree /p/a/b/c
+cat /p/m/k.txt
+cd /p/a
+tree
+tree ..
+su root
+tree /p
+chmod rwx-wx /p/a/z
+su ann
+tree /p/a
+tree /p/a/z/h.txt

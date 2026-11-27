@@ -1,0 +1,24 @@
+accounts
+open assets:bank asset
+open assets:eur asset EUR
+open assets:usd2 asset USD
+open assets:x asset usd
+open assets:y asset EURO
+open assets:z asset E1R
+open assets:w thing eur
+open Assets:w asset eur
+open assets:eur asset GBP
+open assets:eur asset gbp
+open assets:q asset EUR extra
+open assets:q
+open liab:jp liability JPY
+open equity:open equity
+accounts
+close assets:eur
+close assets:eur
+close assets:eur
+post p1 1 x assets:eur=1 assets:bank=-1
+post p2 1 x assets:bank=1 equity:open=
+accounts
+statement assets:eur
+show p2

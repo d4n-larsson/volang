@@ -1,0 +1,22 @@
+0 start a w1 #1
+0 start b w2 #1
+0 start c w3 #1
+0 start g w4 #1
+2 done g w4
+3 done a w1
+3 fail b w2 #1
+3 give up b
+3 skip d
+3 skip e
+3 skip f
+3 done c w3
+makespan 3
+utilization 91%
+w1 busy 3 attempts 1
+w2 busy 3 attempts 1
+w3 busy 3 attempts 1
+w4 busy 2 attempts 1
+built: g a c
+failed: b
+skipped: d e f
+blocked: -

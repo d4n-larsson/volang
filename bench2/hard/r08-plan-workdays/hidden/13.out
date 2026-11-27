@@ -1,0 +1,15 @@
+added task a
+error: task a cannot depend on itself
+project finishes on day 4 (Fri)
+day 5 is now a working day
+error: day 4 is already a working day
+project finishes on day 4 (Fri)
+added task b
+b after a
+project finishes on day 5 (Sat)
+task b: b
+  duration 1 days
+  after: a
+  before: -
+  start 4 finish 5 slack 0
+  done 0%

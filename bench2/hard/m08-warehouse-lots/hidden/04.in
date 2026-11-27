@@ -1,0 +1,20 @@
+warehouse h
+item pen
+item cap
+receive h pen 10 1.00 100
+receive h cap 4 0.30 100
+reserve r1 h pen 6
+reserve r2 h pen 5
+reserve r2 h pen 4
+ship s1 h pen 3
+ship s2 h cap 6
+release r1
+fulfil r1
+fulfil r2
+return r2 2
+return r1 1
+return s1 4
+return s1 1
+stock
+return s2 4
+backorders

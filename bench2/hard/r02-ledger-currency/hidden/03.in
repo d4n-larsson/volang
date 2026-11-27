@@ -1,0 +1,22 @@
+open assets:bank asset
+open assets:eur asset EUR
+open equity:open equity
+rate EUR 9 1.20
+rate EUR 2 1.10
+rate EUR 5 1.15
+post a1 1 early assets:eur=100 assets:bank=
+post a2 2 day2 assets:eur=100 assets:bank=
+post a3 4 day4 assets:eur=100 assets:bank=
+post a4 5 day5 assets:eur=100 assets:bank=
+post a5 8 day8 assets:eur=100 assets:bank=
+post a6 9 day9 assets:eur=100 assets:bank=
+post a7 30 day30 assets:eur=100 assets:bank=
+journal 0 100
+balance assets:eur
+balance assets
+rate EUR 6 3
+balance assets:eur
+rate EUR 40 1
+balance assets:eur
+show a7
+statement assets:eur

@@ -1,0 +1,23 @@
+warehouse z added
+item bar added
+item baz added
+received 3 bar into z, now 3, lot 1 at 4.00
+received 1 baz into z, now 1, lot 2 at 6.00
+received 2 bar into z, now 5, lot 3 at 4.50
+order o1 opened at z
+order o1 line 1: 2 bar
+order o1 line 2: 1 baz
+order o1 line 3: 4 bar
+error: order o1 short of bar: need 6, have 5
+lot 1: 3 x 4.00 = 12.00
+lot 3: 2 x 4.50 = 9.00
+total 5 units = 21.00
+#1 receive z +3 lot 1 at 4.00
+#3 receive z +2 lot 3 at 4.50
+received 1 bar into z, now 6, lot 4 at 4.80
+order o1 fulfilled: 3 lines, 7 units, cost 31.80
+no lots of bar in z
+no lots of baz in z
+items 2, warehouses 1, 0 units, value 0.00
+shipped 7 units in 1 shipment, cost 31.80
+orders: 0 open, 1 fulfilled, 0 cancelled

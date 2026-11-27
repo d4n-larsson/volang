@@ -1,0 +1,45 @@
+team Bat added
+team Cow added
+team Doe added
+team Emu added
+team Gnu added
+team Hog added
+group West: Emu, Gnu
+group East: Doe, Cow, Bat
+group Mid: Hog
+result 1: Doe 2-0 Cow
+result 2: Cow 1-1 Bat
+result 3: Bat 0-3 Doe
+result 4: Emu 0-0 Gnu
+team Hog withdrawn, 0 results void
+group East
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Doe   2  2  0  0  5  0  +5   6
+  2 Cow   2  0  1  1  1  3  -2   1
+  3 Bat   2  0  1  1  1  4  -3   1
+group Mid
+table empty
+group West
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Emu   1  0  1  0  0  0   0   1
+  1 Gnu   1  0  1  0  0  0   0   1
+group East
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Doe   2  2  0  0  5  0  +5   6
+  2 Cow   2  0  1  1  1  3  -2   1
+  3 Bat   2  0  1  1  1  4  -3   1
+group Mid
+table empty
+error: unknown group North
+error: bad command
+group West
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Emu   1  0  1  0  0  0   0   1
+  1 Gnu   1  0  1  0  0  0   0   1
+team Gnu withdrawn, 1 results void
+group West
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Emu   0  0  0  0  0  0   0   0
+Emu: P 0, W 0, D 0, L 0, GF 0, GA 0, GD 0, Pts 0
+home 0-0-0, away 0-0-0
+position 1 of 1 in group West

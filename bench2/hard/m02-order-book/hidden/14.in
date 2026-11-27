@@ -1,0 +1,11 @@
+limit S1 ana sell IO 10 4.00
+limit I1 bob buy IO 5 3.90 ioc
+limit I2 bob buy IO 15 4.00 ioc
+limit I3 bob buy IO 1 4.50 ioc
+limit S2 ana sell IO 10 4.00
+limit I4 ana buy IO 5 4.00 ioc
+limit S3 cy sell IO 10 4.00
+limit G1 dan buy IO 25 4.00
+book IO
+limit G2 dan sell IO 5 4.00 gtc
+book IO

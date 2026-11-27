@@ -1,0 +1,33 @@
+issues 0: 0 open, 0 closed
+no users
+user ann added
+created #1: One
+created #2: Two
+created #3: Three
+created #4: Four
+created #5: Five
+issues 5: 5 open, 0 closed
+  states: new 5
+  unassigned 5 open, 0 closed
+#1 assigned to ann
+#1 moved new -> triaged
+#1 moved triaged -> in_progress
+#1 moved in_progress -> review
+#2 moved new -> triaged
+#3 moved new -> wontfix
+#4 closed
+#5 closed
+issues 5: 2 open, 3 closed
+  states: triaged 1, review 1, wontfix 3
+  ann 1 open, 0 closed
+  unassigned 1 open, 3 closed
+#5 reopened
+error: #5 needs an assignee for in_progress
+#5 assigned to ann
+#5 moved triaged -> in_progress
+#5 moved in_progress -> blocked
+issues 5: 3 open, 2 closed
+  states: triaged 1, blocked 1, review 1, wontfix 2
+  ann 2 open, 0 closed
+  unassigned 1 open, 2 closed
+ann (since 3): 2 open, 0 closed

@@ -1,0 +1,16 @@
+task a 5
+task b 5
+task c 2
+dep b a
+dep c a+1
+progress a 100
+progress b 30
+progress c 50
+status 0
+status 5
+status 6
+status 7
+status 12
+holiday 8
+status 12
+status 40

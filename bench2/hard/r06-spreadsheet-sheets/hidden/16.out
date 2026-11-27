@@ -1,0 +1,40 @@
+sheet Income added
+sheet Spend added
+using Income
+A1 = 1200
+A2 = 1350
+A3 = 1100
+B1 = 1200
+copied B1 to B2
+copied B1 to B3
+using Spend
+A1 = 900
+A2 = 1400
+A3 = 650
+C1 = 700
+C2 = -50
+C3 = 150
+using Sheet1
+A1 = 700
+A2 = 50
+A3 = 307
+A1: =Spend!C1 = 700
+A2: =Spend!C2*-1 = 50
+A3: =Spend!C3+Income!A3/7 = 307
+Income!B3: =A3-Spend!A3
+      A    B
+1  1200  300
+2  1350  -50
+3  1100  450
+renamed Income to Earned
+Spend!C1: =SUM(Earned!B1:B3)
+users Earned!B2: Spend!C1 Spend!C2 Spend!C3
+deps Spend!C2: Earned!B1 Earned!B2 Earned!B3
+using Earned
+A1: 1200
+A2: 1350
+A3: 1100
+B1: =A1-Spend!A1 = 300
+B2: =A2-Spend!A2 = -50
+B3: =A3-Spend!A3 = 450
+cells 15, formulas 9, errors 0

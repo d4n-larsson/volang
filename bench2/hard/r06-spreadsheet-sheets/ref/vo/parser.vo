@@ -1,0 +1,108 @@
+# Builds a formula tree from tokens.
+#     expr    := term (("+" | "-") term)*
+#     term    := unary (("*" | "/") unary)*
+#     unary   := "-" unary | primary
+#     primary := num | [sheet] ref | func "(" [sheet] ref ":" ref ")" | "(" expr ")"
+import formula;
+import lexer;
+
+record Parser {
+    tokens: list[lexer.Token];
+    pos: int;
+}
+
+fn peek(p: Parser) -> str {
+    if p.pos < len(p.tokens) {
+        return p.tokens[p.pos].kind;
+    }
+    return "";
+}
+
+fn take(p: Parser, kind: str) -> result[lexer.Token] {
+    if peek(p) != kind {
+        return err("");
+    }
+    let tok = p.tokens[p.pos];
+    set p.pos = p.pos + 1;
+    return ok(tok);
+}
+
+fn expr(p: Parser) -> result[formula.Node] {
+    var node = try term(p);
+    while peek(p) == "+" or peek(p) == "-" {
+        let op = (try take(p, peek(p))).kind;
+        set node = formula.Node.bin { op: op, left: node, right: try term(p) };
+    }
+    return ok(node);
+}
+
+fn term(p: Parser) -> result[formula.Node] {
+    var node = try unary(p);
+    while peek(p) == "*" or peek(p) == "/" {
+        let op = (try take(p, peek(p))).kind;
+        set node = formula.Node.bin { op: op, left: node, right: try unary(p) };
+    }
+    return ok(node);
+}
+
+fn unary(p: Parser) -> result[formula.Node] {
+    if peek(p) == "-" {
+        let _ = try take(p, "-");
+        return ok(formula.Node.neg(try unary(p)));
+    }
+    return primary(p);
+}
+
+fn qualifier(p: Parser) -> result[str] {
+    if peek(p) == "sheet" {
+        return ok((try take(p, "sheet")).text);
+    }
+    return ok("");
+}
+
+fn func_call(p: Parser) -> result[formula.Node] {
+    let name = (try take(p, "func")).text;
+    let _ = try take(p, "(");
+    let q = try qualifier(p);
+    let first = (try take(p, "ref")).ref;
+    let _ = try take(p, ":");
+    let last = (try take(p, "ref")).ref;
+    let _ = try take(p, ")");
+    set first.qualifier = q;
+    set last.qualifier = q;
+    return ok(formula.Node.func { name: name, first: first, last: last });
+}
+
+fn primary(p: Parser) -> result[formula.Node] {
+    let kind = peek(p);
+    if kind == "num" {
+        return ok(formula.Node.num((try take(p, "num")).number));
+    }
+    if kind == "ref" or kind == "sheet" {
+        let q = try qualifier(p);
+        let r = (try take(p, "ref")).ref;
+        set r.qualifier = q;
+        return ok(formula.Node.cell_ref(r));
+    }
+    if kind == "func" {
+        return func_call(p);
+    }
+    if kind == "(" {
+        let _ = try take(p, "(");
+        let inner = try expr(p);
+        let _ = try take(p, ")");
+        return ok(formula.Node.paren(inner));
+    }
+    return err("");
+}
+
+# The tree of a formula's text (after its `=`), or err("") if it is not a formula.
+export fn parse_formula(text: str) -> result[formula.Node] {
+    let tokens = try lexer.tokenize(text);
+    let p = new Parser { tokens: tokens, pos: 0 };
+    let node = try expr(p);
+    if p.pos != len(tokens) {
+        return err("");
+    }
+    return ok(node);
+}

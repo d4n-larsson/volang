@@ -1,0 +1,8 @@
+pick tool 0.6.0
+pick json 1.9.9
+pick zero 0.3.0
+== lock
+json 1.9.9
+tool 0.6.0
+zero 0.3.0
+wrote out/tool.lock 3

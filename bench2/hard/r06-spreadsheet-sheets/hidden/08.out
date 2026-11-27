@@ -1,0 +1,28 @@
+sheet B added
+sheet A added
+A!A1 = 1
+B!C1 = 2
+A2 = 3
+B!B5 = 4
+A!C3 = 0
+A1 = 4
+B1 = 4
+deps A2: A1 B!C1 A!A1
+deps B!B5: A1 A2 A3 A!A1
+users A1: A2 B1 B!B5 A!C3
+users A!A1: A2 B!B5
+users B!C1: A2 A!C3
+using B
+deps B5: Sheet1!A1 Sheet1!A2 Sheet1!A3 A!A1
+users Sheet1!A1: Sheet1!A2 Sheet1!B1 B5 A!C3
+users A!A1: Sheet1!A2 B5
+deps Sheet1!A2: Sheet1!A1 C1 A!A1
+Sheet1!B1 cleared
+error: Sheet1!B1 is empty
+Sheet1!B1 empty
+Sheet1!B1: empty
+using A
+found: none
+found: C3
+A1: 1
+C3: =Sheet1!A1*B!C1 = 8

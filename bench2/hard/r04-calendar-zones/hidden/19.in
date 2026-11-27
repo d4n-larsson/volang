@@ -1,0 +1,34 @@
+rooms 5
+list
+user ed -03:30
+user fay +03:30
+room w 2 +03:30
+book m1 w ed 5 9:00 30
+book m1 w ed 5 09:00 0
+book m1 w ed 5 09:00 1441
+book m1 w ed x 09:00 30
+book m1 w ed 5 09:00
+book m1 w ed 5 18:00 1440 fay
+free w 6
+free w 7
+free w 5
+free nowhere 5
+free w x
+rooms 6
+agenda fay 7
+agenda fay 8
+busy fay 7
+busy fay 6
+busy fay 6 7
+move m1 5 9:00
+move m1 5 18:30 x
+move m1 6 18:00
+who m1
+leave m1 fay
+invite m1 fay
+invite m1 ed
+leave m1 ed
+cancel m1
+who m1
+list
+agenda ed 6

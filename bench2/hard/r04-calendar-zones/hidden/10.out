@@ -1,0 +1,21 @@
+user ivy added
+user jon added
+room west added, capacity 2
+room east added, capacity 2
+booked w1 in west: 3 08:00-08:30 (1 person)
+booked e1 in east: 3 09:00-09:30 (2 people)
+booked e2 in east: 3 23:45-4 00:00 (1 person)
+w1: west 2 22:30-23:00 UTC-09:30, organizer ivy, attendees none
+e1: east 3 14:45-15:15 UTC+05:45, organizer jon, attendees ivy
+e2: east 4 05:30-05:45 UTC+05:45, organizer ivy, attendees none
+error: unknown meeting nope
+w1 3 08:00-08:30 west ivy +0
+e1 3 09:00-09:30 east jon +1
+e2 3 23:45-4 00:00 east ivy +0
+zone east UTC+00:00
+e1: east 3 09:00-09:30 UTC+00:00, organizer jon, attendees ivy
+zone west UTC+14:00
+w1: west 3 22:00-22:30 UTC+14:00, organizer ivy, attendees none
+rooms day 3:
+  east: e1 3 09:00-09:30, e2 3 23:45-4 00:00
+  west: w1 3 22:00-22:30

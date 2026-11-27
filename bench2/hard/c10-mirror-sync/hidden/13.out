@@ -1,0 +1,11 @@
+== plan allout
+copy 0, update 0, unchanged 0, conflict 0, stale 0, excluded 5
+== plan api
+copy old/v0.txt
+copy v1.txt
+copy v2.txt
+stale api/v1.txt
+stale guide.txt
+copy 3, update 0, unchanged 0, conflict 0, stale 2, excluded 0
+== run leak
+source not allowed: src/../secrets

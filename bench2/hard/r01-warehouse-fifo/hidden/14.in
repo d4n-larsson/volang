@@ -1,0 +1,16 @@
+warehouse w
+item oil Oil 900
+receive w oil 2 800
+adjust w oil +3 found
+receive w oil 4 1000
+adjust w oil -4 damage
+lots w oil
+adjust w oil -2 loss
+adjust w oil +1 count
+adjust w oil -3 count
+lots w oil
+adjust w oil -1 damage
+adjust w oil +001 found
+lots w oil
+history oil
+report

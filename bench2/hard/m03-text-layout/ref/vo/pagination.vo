@@ -1,0 +1,135 @@
+# Pagination: placing blocks on pages under the keep rules, headers and footers.
+import std.text;
+
+export record Block {
+    is_heading: bool;
+    lines: list[str];
+    list_id: int;
+    brk: bool;
+    title: str;
+    # separator lines set by .space, or -1
+    space: int;
+    # a heading's shown text, and the page of its first line
+    text: str;
+    page: int;
+}
+
+export record Page {
+    title: str;
+    body: list[str];
+}
+
+fn sep(prev: int, blocks: list[Block], i: int) -> int {
+    if blocks[i].space >= 0 {
+        return blocks[i].space;
+    }
+    if prev >= 0 and blocks[prev].list_id >= 0 and blocks[prev].list_id == blocks[i].list_id {
+        return 0;
+    }
+    return 1;
+}
+
+fn need(blocks: list[Block], i: int) -> int {
+    let b = blocks[i];
+    if not b.is_heading {
+        if len(b.lines) <= 3 {
+            return len(b.lines);
+        }
+        return 2;
+    }
+    if i + 1 == len(blocks) or blocks[i + 1].brk {
+        return 2;
+    }
+    return 2 + sep(i, blocks, i + 1) + need(blocks, i + 1);
+}
+
+# The pages, each with its title and body lines.
+export fn paginate(blocks: list[Block], h: int) -> list[Page] {
+    let pages = new list[Page];
+    var prev = -1;
+    for i, b in blocks {
+        if len(pages) > 0 {
+            let cur = pages[len(pages) - 1];
+            if b.brk or len(cur.body) + sep(prev, blocks, i) + need(blocks, i) > h {
+                push(pages, new Page { title: b.title, body: [] });
+                set prev = -1;
+            }
+        } else {
+            push(pages, new Page { title: b.title, body: [] });
+        }
+        var rest = b.lines;
+        set b.page = len(pages);
+        while len(rest) > 0 {
+            let cur = pages[len(pages) - 1];
+            let used = len(cur.body);
+            var k = len(rest);
+            if used > 0 {
+                let s = sep(prev, blocks, i);
+                let room = h - used - s;
+                if len(rest) > room and not b.is_heading {
+                    set k = min(room, len(rest) - 2);
+                }
+                for _ in 0..s {
+                    push(cur.body, "");
+                }
+            } else if len(rest) > h and not b.is_heading {
+                set k = min(h, len(rest) - 2);
+            }
+            for line in slice(rest, 0, k) {
+                push(cur.body, line);
+            }
+            set rest = slice(rest, k, len(rest));
+            if len(rest) > 0 {
+                push(pages, new Page { title: b.title, body: [] });
+            }
+        }
+        set prev = i;
+    }
+    return pages;
+}
+
+fn centered(s: str, w: int) -> str {
+    var cut = s;
+    if len(cut) > w {
+        set cut = slice(cut, 0, w);
+    }
+    let line = text.repeat(" ", (w - len(cut)) / 2) + cut;
+    if trim(line) == "" {
+        return "";
+    }
+    return line;
+}
+
+export fn contents(blocks: list[Block], w: int) -> list[str] {
+    let out = ["CONTENTS"];
+    for b in blocks {
+        if b.is_heading {
+            let page = str(b.page);
+            var shown = b.text;
+            if len(shown) > w - 5 - len(page) {
+                set shown = slice(shown, 0, w - 5 - len(page));
+            }
+            push(out, shown + " " + text.repeat(".", w - len(shown) - 2 - len(page)) + " " + page);
+        }
+    }
+    return out;
+}
+
+export fn render(pages: list[Page], w: int, h: int) -> list[str] {
+    let out = new list[str];
+    for p, page in pages {
+        push(out, centered(page.title, w));
+        push(out, "");
+        for line in page.body {
+            push(out, line);
+        }
+        if p + 1 < len(pages) {
+            for _ in len(page.body)..h {
+                push(out, "");
+            }
+        }
+        push(out, "");
+        push(out, centered("page " + str(p + 1) + " of " + str(len(pages)), w));
+    }
+    return out;
+}

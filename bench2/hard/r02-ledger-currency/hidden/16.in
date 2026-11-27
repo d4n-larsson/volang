@@ -1,0 +1,37 @@
+open assets:checking asset
+open assets:wallet:eur asset EUR
+open assets:wallet:gbp asset GBP
+open liab:visa liability
+open equity:opening equity
+open income:salary income
+open expense:travel:hotel expense
+open expense:travel:train expense GBP
+open expense:travel:meals expense
+open expense:bankfees expense
+rate EUR 1 1.0912
+rate GBP 1 1.2733
+post o1 1 opening assets:checking=4200 equity:opening=
+post m1 2 atm assets:wallet:eur=300 expense:bankfees=3.50 assets:checking=
+post m2 3 atm assets:wallet:gbp=150 assets:checking=
+post m3 3 hotel expense:travel:hotel=212.40 liab:visa=-212.40
+post m4 4 train expense:travel:train=46.80 assets:wallet:gbp=-46.80
+rate GBP 4 1.2810
+post m5 4 train expense:travel:train=12.20 assets:wallet:gbp=-12.20
+post m6 5 meals expense:travel:meals=38.19 assets:wallet:eur=-35
+post m7 5 meals expense:travel:meals=38.20 assets:wallet:eur=-35
+rate EUR 6 1.0790
+post m8 6 meals expense:travel:meals= assets:wallet:eur=-41.15
+post p1 10 salary assets:checking=3100 income:salary=-3100
+post v1 11 visa liab:visa=212.40 assets:checking=-212.40
+void m4 12
+statement assets:wallet:gbp
+statement expense:travel:train
+balance assets
+balance expense:travel
+tree
+trial
+income 1 9
+income 10 12
+journal 3 6
+revalue 5
+revalue 12

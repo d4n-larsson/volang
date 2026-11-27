@@ -1,0 +1,82 @@
+team Arsenal
+team Brentford
+team Chelsea
+team Derby
+team Everton
+team Fulham
+team Gillingham
+team Hull
+result Chelsea 2 0 Everton
+result Hull 0 0 Everton
+result Fulham 3 0 Derby
+result Everton 2 3 Gillingham
+result Gillingham 0 0 Arsenal
+result Brentford 0 1 Chelsea
+result Arsenal 1 0 Everton
+result Brentford 3 3 Hull
+result Gillingham 3 3 Hull
+result Gillingham 0 1 Derby
+result Derby 2 2 Chelsea
+result Derby 0 2 Brentford
+result Chelsea 2 0 Brentford
+result Arsenal 3 0 Fulham
+result Chelsea 1 1 Hull
+result Derby 0 0 Everton
+result Hull 0 3 Derby
+result Fulham 3 1 Brentford
+result Chelsea 1 3 Fulham
+result Derby 1 1 Arsenal
+result Gillingham 3 3 Everton
+result Chelsea 0 3 Arsenal
+result Everton 3 1 Derby
+result Gillingham 0 2 Brentford
+result Brentford 2 0 Arsenal
+result Fulham 1 1 Hull
+result Derby 3 0 Hull
+result Arsenal 0 1 Chelsea
+result Hull 1 3 Fulham
+result Chelsea 2 0 Derby
+table
+record Hull
+record Derby
+streak
+goals
+result Derby 2 2 Gillingham
+result Arsenal 3 0 Brentford
+result Brentford 0 0 Everton
+result Gillingham 1 1 Chelsea
+result Derby 0 2 Fulham
+result Arsenal 2 3 Derby
+result Everton 1 3 Hull
+result Arsenal 1 3 Gillingham
+result Brentford 1 1 Derby
+result Chelsea 2 1 Gillingham
+result Hull 1 1 Chelsea
+result Arsenal 1 1 Hull
+result Gillingham 3 3 Fulham
+result Fulham 0 3 Everton
+result Fulham 0 0 Gillingham
+result Everton 0 0 Chelsea
+result Hull 2 1 Brentford
+result Brentford 3 2 Fulham
+result Brentford 3 3 Gillingham
+result Fulham 2 1 Chelsea
+result Everton 0 1 Fulham
+result Hull 1 3 Gillingham
+result Everton 0 2 Brentford
+result Hull 1 1 Arsenal
+result Fulham 0 0 Arsenal
+result Everton 2 3 Arsenal
+table
+fixtures
+summary
+streak
+goals
+record Arsenal
+record Brentford
+record Chelsea
+record Derby
+record Everton
+record Fulham
+record Gillingham
+record Hull

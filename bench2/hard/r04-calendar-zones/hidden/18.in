@@ -1,0 +1,35 @@
+user ada +01:00
+user bjorn +02:00
+user chen +08:00
+user dia -06:00
+room lon 3
+room par 2 +01:00
+room sgp 6 +08:00
+hours chen 08:00 20:00
+hours dia 05:00 15:00
+book s1 sgp chen 12 07:00 60 ada bjorn
+book s1 sgp chen 12 15:00 60 ada bjorn dia
+book s1 sgp chen 12 19:30 60 ada bjorn dia
+book s1 sgp chen 12 19:00 60 ada bjorn dia
+book s2 par ada 12 12:00 30 bjorn chen
+book s2 par ada 12 12:00 30 bjorn
+book s2 par ada 12 13:00 30 bjorn
+book s3 lon dia 12 05:00 30 chen
+book s3 lon dia 12 06:00 30 chen
+book s3 lon dia 12 06:30 30 ada
+invite s2 dia
+invite s3 chen
+invite s3 bjorn
+agenda chen 12
+agenda dia 12
+agenda bjorn 12
+rooms 12
+free par 12
+free sgp 12
+zone chen +09:00
+agenda chen 12
+move s1 12 21:00
+move s1 12 19:00
+busy chen 12
+busy chen 13
+list

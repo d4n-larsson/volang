@@ -1,0 +1,17 @@
+warehouse w
+item salt
+receive w salt 4 1.00 5
+receive w salt 4 2.00 5
+receive w salt 4 3.00 8
+reserve r1 w salt 6
+reserve r2 w salt 5
+ship s1 w salt 2
+day 5
+fulfil r1
+stock
+day 8
+fulfil r2
+release r2
+return s1 1
+receive w salt 1 1.00 9
+stock

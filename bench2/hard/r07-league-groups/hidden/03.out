@@ -1,0 +1,53 @@
+team Kiwi added
+team Lime added
+team Mango added
+team Nectar added
+team Olive added
+team Pear added
+result 1: Kiwi 2-2 Lime
+result 2: Lime 1-1 Kiwi
+result 3: Kiwi 3-0 Olive
+result 4: Lime 2-0 Pear
+result 5: Mango 1-0 Nectar
+result 6: Olive 1-0 Mango
+result 7: Nectar 1-0 Olive
+result 8: Pear 0-0 Nectar
+Pos Team    P  W  D  L GF GA  GD Pts
+  1 Kiwi    3  1  2  0  6  3  +3   5
+  2 Lime    3  1  2  0  5  3  +2   5
+  3 Nectar  3  1  1  1  1  1   0   4
+  4 Olive   3  1  0  2  1  4  -3   3
+  5 Mango   2  1  0  1  1  1   0   3
+  6 Pear    2  0  1  1  0  2  -2   1
+Kiwi: P 3, W 1, D 2, L 0, GF 6, GA 3, GD +3, Pts 5
+home 1-1-0, away 0-1-0
+position 1 of 6
+Lime: P 3, W 1, D 2, L 0, GF 5, GA 3, GD +2, Pts 5
+home 1-1-0, away 0-1-0
+position 2 of 6
+Mango: P 2, W 1, D 0, L 1, GF 1, GA 1, GD 0, Pts 3
+home 1-0-0, away 0-0-1
+position 5 of 6
+Olive: P 3, W 1, D 0, L 2, GF 1, GA 4, GD -3, Pts 3
+home 1-0-0, away 0-0-2
+position 4 of 6
+result 9: Mango 0-0 Pear
+Pos Team    P  W  D  L GF GA  GD Pts
+  1 Kiwi    3  1  2  0  6  3  +3   5
+  2 Lime    3  1  2  0  5  3  +2   5
+  3 Mango   3  1  1  1  1  1   0   4
+  4 Nectar  3  1  1  1  1  1   0   4
+  5 Olive   3  1  0  2  1  4  -3   3
+  6 Pear    3  0  2  1  0  2  -2   2
+result 3: Kiwi 2-0 Olive (was 3-0)
+result 4: Lime 3-1 Pear (was 2-0)
+Pos Team    P  W  D  L GF GA  GD Pts
+  1 Lime    3  1  2  0  6  4  +2   5
+  2 Kiwi    3  1  2  0  5  3  +2   5
+  3 Mango   3  1  1  1  1  1   0   4
+  4 Nectar  3  1  1  1  1  1   0   4
+  5 Olive   3  1  0  2  1  3  -2   3
+  6 Pear    3  0  2  1  1  3  -2   2
+Lime: P 3, W 1, D 2, L 0, GF 6, GA 4, GD +2, Pts 5
+home 1-1-0, away 0-1-0
+position 1 of 6

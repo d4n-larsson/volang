@@ -1,0 +1,18 @@
+warehouse from
+warehouse to
+item pipe Pipe 700
+receive from pipe 3 650
+receive from pipe 2 720
+transfer from to pipe 5
+lots from pipe
+lots to pipe
+drop from
+transfer to from pipe 5
+warehouse from
+transfer to from pipe 2
+lots from pipe
+lots to pipe
+receive to pipe 1
+lots to pipe
+history pipe
+report

@@ -1,0 +1,5 @@
+1900-01-01 2200-12-31
+event a every 1 years on 02-29 from 1900-01-01
+event b every 37 months on last sun from 1900-01-01
+event c every 400 days from 1901-01-01 count 200
+event d every 13 weeks on fri from 1900-01-01 until 2199-12-31

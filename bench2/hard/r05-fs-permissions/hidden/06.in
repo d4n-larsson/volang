@@ -1,0 +1,42 @@
+useradd ann
+useradd bob
+mkdir /a
+mkdir /b
+chmod rwxrwx /b
+mkdir /c
+chmod rwxrwx /c
+write /a/root.txt r
+write /c/target.txt old
+chmod r--r-- /c/target.txt
+su ann
+write /b/f.txt ann file
+mkdir /b/dir
+write /b/dir/in.txt inside
+mv /b/f.txt /a
+mv /a/root.txt /b
+mv /b/f.txt /c/target.txt
+cat /c/target.txt
+stat /c/target.txt
+mv /b/dir /b/dir/sub
+mv /b/dir /a/dir
+mv /b/dir /c
+ls -l /c
+su root
+chmod rwxrw- /c
+su bob
+mv /c/dir /c/dir2
+mv /c/target.txt /b/t.txt
+mv /c/dir/in.txt /b
+mv /c /b
+mv /b/nothing /c
+write /b/t.txt bob text
+su root
+chmod rwxr-- /a
+su bob
+mv /b/t.txt /a
+mv /b/t.txt /a/x/y
+mv /b/t.txt /a/new.txt
+mv /b/t.txt /c/dir
+mv /b/t.txt /b/renamed.txt
+ls -l /b
+stat /b/renamed.txt

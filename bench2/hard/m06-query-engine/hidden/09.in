@@ -1,0 +1,9 @@
+create table e (x int, y text)
+select count(*), count(x), sum(x), min(y), max(x) from e
+select x from e
+select * from e
+insert into e values (4, 'd'), (5, null)
+select count(*), sum(x) from e where x > 10
+select count(*) as n from e
+select x, count(*) from e group by x having count(*) > 0 order by x desc
+select count(y) from e

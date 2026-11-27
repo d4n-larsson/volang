@@ -1,0 +1,27 @@
+sheet Wide added
+using Wide
+H8 = -123
+I10 = -123
+J12 = -17
+J9 = #CYCLE
+Sheet1!I10 = 45
+       H      I       J
+ 8  -123
+ 9               #CYCLE
+10        44877
+11
+12                 6411
+    H   I
+ 9
+10     45
+using Sheet1
+       H      I       J
+ 8  -123
+ 9               #CYCLE
+10        44877
+11
+12                 6411
+copied Wide!J9 to Wide!J10
+Wide!J10: =SUM(H9:J12)
+Wide!J10 = #CYCLE
+I10: 45

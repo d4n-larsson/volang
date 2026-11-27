@@ -1,0 +1,31 @@
+warehouse w
+item x
+receive w x 0 1.00 5
+receive w x 100000 1.00 5
+receive w x 00010 1.0 5
+receive w x 10 .50 5
+receive w x 10 12345678.00 5
+receive w x 10 1.00 1234567
+receive w x 10 1.00
+receive w x 00010 0001234.05 000009
+ship o1 w x
+ship o1 w x 1 2
+transfer w v x 1 0
+transfer w v x 1 1000
+transfer w v x 1 001
+day
+day 1234567
+day 12a
+stock now
+value 1
+backorders x
+warehouse
+item a b
+fulfil
+release a b
+cancel
+return o1
+return o1 0
+Ship o1 w x 1
+  
+stock

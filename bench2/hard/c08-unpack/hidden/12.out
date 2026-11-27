@@ -1,0 +1,11 @@
+== ..
+bad name
+== incoming/basic
+bad name
+== basic.pack
+bad name
+== trunc
+file a.txt 6
+error: truncated
+= a.txt 6 92733172
+total 1 files, 0 dirs, 6 bytes

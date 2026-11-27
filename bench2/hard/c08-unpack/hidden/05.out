@@ -1,0 +1,6 @@
+== endtrick
+file data/END.txt 21
+file data/after.txt 0
+= data/END.txt 21 692208043
+= data/after.txt 0 7
+total 2 files, 1 dirs, 21 bytes

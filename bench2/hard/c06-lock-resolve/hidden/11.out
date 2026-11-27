@@ -1,0 +1,4 @@
+pick web 2.3.1
+pick log 2.0.0
+pick old-web 1.0.0
+error: conflict on log: log@2.0.0 does not satisfy =1.4.0 (required by old-web@1.0.0)

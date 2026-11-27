@@ -1,0 +1,26 @@
+user pia added
+user qi added
+user rex added
+user sol added
+room box added, capacity 4
+room cube added, capacity 2
+booked k1 in box: 9 08:00-09:00 (1 person)
+booked k2 in cube: 10 00:30-01:15 (1 person)
+hours rex 10:00-15:30
+qi invited to k1
+error: rex works 10:00-15:30
+hours rex 10:00-16:00
+rex invited to k1
+error: rex already in k1
+error: rex works 10:00-16:00
+hours rex none
+rex invited to k2
+error: qi already in k2
+booked k3 in cube: 9 15:30-16:30 (1 person)
+error: sol busy: k3 9 08:30-09:30
+error: room cube holds 2, meeting has 3
+k1: box 9 17:00-18:00 UTC+02:00, organizer pia, attendees qi, rex
+k2: cube 9 16:30-17:15 UTC+00:00, organizer qi, attendees rex
+error: qi organizes k2
+rex left k2
+k2: cube 9 16:30-17:15 UTC+00:00, organizer qi, attendees none

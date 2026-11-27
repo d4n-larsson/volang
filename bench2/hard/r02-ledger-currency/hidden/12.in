@@ -1,0 +1,34 @@
+open assets:bank asset
+open assets:eur asset EUR
+open assets:gbp asset GBP
+open assets:jpy asset JPY
+open assets:chf asset CHF
+open liab:eur liability EUR
+open equity:open equity
+rate EUR 1 1.10
+rate GBP 1 1.25
+rate CHF 5 1.05
+post a1 1 buy assets:eur=100 assets:bank=
+post a2 2 buy assets:gbp=100 assets:bank=
+post a3 2 loan assets:eur=40 liab:eur=-40
+rate EUR 3 1.20
+rate GBP 3 1.30
+post a4 3 sell assets:gbp=-100 assets:bank=
+post a5 6 buy assets:chf=10.01 assets:bank=
+rate JPY 0 0.007
+post a6 7 buy assets:jpy=333 assets:bank=
+revalue 0
+revalue 1
+revalue 2
+revalue 3
+revalue 5
+revalue 6
+rate EUR 6 0.95
+rate CHF 9 1.0555
+revalue 9
+close assets:gbp
+revalue 9
+statement assets:gbp
+revalue
+revalue x
+revalue 1 2

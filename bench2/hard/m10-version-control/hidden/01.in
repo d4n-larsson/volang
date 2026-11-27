@@ -1,0 +1,25 @@
+write b.txt bee
+write B.txt big bee
+write a original
+write a.b dotted
+write ab joined
+commit first
+write a.b dotted
+commit nothing here
+write a original changed
+write c new
+delete B.txt
+status
+delete c
+write a original
+status
+delete zzz
+delete c
+write empty
+status
+commit   two    spaced    words
+write a  many   spaces   here
+write  b.txt   bee
+status
+commit third
+show 3

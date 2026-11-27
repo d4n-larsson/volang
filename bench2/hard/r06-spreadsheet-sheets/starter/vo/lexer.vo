@@ -1,0 +1,88 @@
+# Splits formula text (spaces already removed) into tokens.
+import cells;
+import formula;
+
+const symbols = "+-*/():";
+
+export record Token {
+    # "num", "ref", "func" or the symbol itself
+    kind: str;
+    text: str;
+    # the number of a "num"
+    number: int;
+    # the reference of a "ref"
+    ref: formula.Ref;
+}
+
+fn no_ref() -> formula.Ref {
+    return new formula.Ref { col: 0, row: 0, abs_col: false, abs_row: false };
+}
+
+fn token(kind: str, text: str) -> Token {
+    return new Token { kind: kind, text: text, number: 0, ref: no_ref() };
+}
+
+fn is_word_char(c: str) -> bool {
+    return (c >= "A" and c <= "Z") or (c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "$";
+}
+
+# The reference of `A1`, `$A1`, `A$1` or `$A$1` (any letter case), or err("").
+export fn parse_ref_word(word: str) -> result[formula.Ref] {
+    var i = 0;
+    let abs_col = len(word) > 0 and slice(word, 0, 1) == "$";
+    if abs_col {
+        set i = 1;
+    }
+    let letter = slice(word, i, min(i + 1, len(word)));
+    set i = min(i + 1, len(word));
+    let abs_row = slice(word, i, min(i + 1, len(word))) == "$";
+    if abs_row {
+        set i = i + 1;
+    }
+    let rest = slice(word, i, len(word));
+    if find(rest, "$") >= 0 {
+        return err("");
+    }
+    let p = try cells.parse_cell(letter + rest);
+    return ok(new formula.Ref { col: p.col, row: p.row, abs_col: abs_col, abs_row: abs_row });
+}
+
+fn classify(word: str, before_paren: bool) -> result[Token] {
+    if before_paren {
+        let name = upper(word);
+        if name == "SUM" or name == "MIN" or name == "MAX" {
+            return ok(token("func", name));
+        }
+        return err("");
+    }
+    if cells.is_digits(word) {
+        return ok(new Token { kind: "num", text: word, number: cells.to_int(word), ref: no_ref() });
+    }
+    let r = try parse_ref_word(word);
+    return ok(new Token { kind: "ref", text: word, number: 0, ref: r });
+}
+
+# The tokens of the text, or err("") if it has a character or word that cannot be part of a formula.
+export fn tokenize(text: str) -> result[list[Token]] {
+    let cs = chars(text);
+    let tokens = new list[Token];
+    var i = 0;
+    while i < len(cs) {
+        let c = cs[i];
+        if find(symbols, c) >= 0 {
+            push(tokens, token(c, c));
+            set i = i + 1;
+            continue;
+        }
+        if not is_word_char(c) {
+            return err("");
+        }
+        var j = i;
+        while j < len(cs) and is_word_char(cs[j]) {
+            set j = j + 1;
+        }
+        push(tokens, try classify(join(slice(cs, i, j), ""), j < len(cs) and cs[j] == "("));
+        set i = j;
+    }
+    return ok(tokens);
+}

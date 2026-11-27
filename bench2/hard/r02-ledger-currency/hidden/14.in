@@ -1,0 +1,27 @@
+open assets:bank asset
+open assets:eur asset EUR
+open expense:trip expense EUR
+open expense:trip:food expense
+rate EUR 1 1.0850
+post r1 1 dinner expense:trip=20 expense:trip:food=10.5 assets:bank=
+post r2 2 taxi expense:trip=8.40 assets:eur=-8.40
+rename expense:trip expense:travel
+rename expense:nope expense:x
+rename assets:eur assets:Eur
+rename assets:eur assets:bank
+rename assets:eur assets:euro
+show r1
+show r2
+statement expense:travel
+balance expense
+balance expense:trip
+tree
+accounts
+lock 1
+post r3 1 late assets:euro=1 assets:bank=
+void r1 1
+void r1 2
+lock 0
+lock 2
+post r4 3 again assets:euro=1 assets:bank=
+journal 0 5

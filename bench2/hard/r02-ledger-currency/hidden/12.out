@@ -1,0 +1,61 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened assets:gbp (asset, GBP)
+opened assets:jpy (asset, JPY)
+opened assets:chf (asset, CHF)
+opened liab:eur (liability, EUR)
+opened equity:open (equity)
+rate EUR from day 1: 1.1000
+rate GBP from day 1: 1.2500
+rate CHF from day 5: 1.0500
+posted a1: 2 postings, total 110.00
+posted a2: 2 postings, total 125.00
+posted a3: 2 postings, total 44.00
+rate EUR from day 3: 1.2000
+rate GBP from day 3: 1.3000
+posted a4: 2 postings, total 130.00
+posted a5: 2 postings, total 10.51
+rate JPY from day 0: 0.0070
+posted a6: 2 postings, total 2.33
+unrealized gain 0.00
+assets:eur 100.00 EUR: book 110.00, value 110.00, gain 0.00
+unrealized gain 0.00
+assets:eur 140.00 EUR: book 154.00, value 154.00, gain 0.00
+assets:gbp 100.00 GBP: book 125.00, value 125.00, gain 0.00
+liab:eur -40.00 EUR: book -44.00, value -44.00, gain 0.00
+unrealized gain 0.00
+assets:eur 140.00 EUR: book 154.00, value 168.00, gain 14.00
+assets:gbp 0.00 GBP: book -5.00, value 0.00, gain 5.00
+liab:eur -40.00 EUR: book -44.00, value -48.00, gain -4.00
+unrealized gain 15.00
+assets:eur 140.00 EUR: book 154.00, value 168.00, gain 14.00
+assets:gbp 0.00 GBP: book -5.00, value 0.00, gain 5.00
+liab:eur -40.00 EUR: book -44.00, value -48.00, gain -4.00
+unrealized gain 15.00
+assets:chf 10.01 CHF: book 10.51, value 10.51, gain 0.00
+assets:eur 140.00 EUR: book 154.00, value 168.00, gain 14.00
+assets:gbp 0.00 GBP: book -5.00, value 0.00, gain 5.00
+liab:eur -40.00 EUR: book -44.00, value -48.00, gain -4.00
+unrealized gain 15.00
+rate EUR from day 6: 0.9500
+rate CHF from day 9: 1.0555
+assets:chf 10.01 CHF: book 10.51, value 10.57, gain 0.06
+assets:eur 140.00 EUR: book 154.00, value 133.00, gain -21.00
+assets:gbp 0.00 GBP: book -5.00, value 0.00, gain 5.00
+assets:jpy 333.00 JPY: book 2.33, value 2.33, gain 0.00
+liab:eur -40.00 EUR: book -44.00, value -38.00, gain 6.00
+unrealized gain -9.94
+closed assets:gbp
+assets:chf 10.01 CHF: book 10.51, value 10.57, gain 0.06
+assets:eur 140.00 EUR: book 154.00, value 133.00, gain -21.00
+assets:gbp 0.00 GBP: book -5.00, value 0.00, gain 5.00
+assets:jpy 333.00 JPY: book 2.33, value 2.33, gain 0.00
+liab:eur -40.00 EUR: book -44.00, value -38.00, gain 6.00
+unrealized gain -9.94
+statement assets:gbp (asset, GBP)
+     2 a2           100.00     100.00  buy
+     3 a4          -100.00       0.00  sell
+  closing balance 0.00 GBP (book -5.00 USD)
+error: bad command
+error: bad command
+error: bad command

@@ -1,0 +1,8 @@
+user ana +02:00
+user raj +05:30
+user tom
+room oslo 4 +01:00
+book m1 oslo ana 10 09:00 60 raj tom
+agenda raj 10
+agenda tom 10
+who m1

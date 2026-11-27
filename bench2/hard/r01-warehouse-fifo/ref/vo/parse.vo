@@ -1,0 +1,51 @@
+# Checks on command arguments.
+export fn reasons() -> list[str] {
+    return ["count", "damage", "found", "loss"];
+}
+
+export fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+# Only called on strings that passed is_number.
+export fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+export fn is_positive(s: str) -> bool {
+    return is_number(s) and num(s) >= 1;
+}
+
+# +N or -N with N at least 1.
+export fn is_delta(s: str) -> bool {
+    if len(s) < 2 {
+        return false;
+    }
+    let sign = slice(s, 0, 1);
+    if sign != "+" and sign != "-" {
+        return false;
+    }
+    return is_positive(slice(s, 1, len(s)));
+}
+
+export fn delta_value(s: str) -> int {
+    let n = num(slice(s, 1, len(s)));
+    if slice(s, 0, 1) == "-" {
+        return -n;
+    }
+    return n;
+}
+
+export fn is_reason(word: str) -> bool {
+    return any(reasons(), fn(r) => r == word);
+}

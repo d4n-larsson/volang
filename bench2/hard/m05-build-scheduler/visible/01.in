@@ -1,0 +1,6 @@
+workers 2
+target app 4 core ui
+target core 3 base
+target ui 2 base
+target base 1
+target docs 2

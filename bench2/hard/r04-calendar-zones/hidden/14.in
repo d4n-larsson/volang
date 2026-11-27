@@ -1,0 +1,32 @@
+list
+rooms 2
+user ana +02:00
+room ana 3
+user room1
+room room1 2
+room r1 1 -04:00
+user bob -04:00
+book m1 r1 ana 3 10:00 30 bob
+book m1 r1 ana 3 10:00 30 ana
+book m1 r1 ana 3 10:00 30 bob bob
+book m1 nowhere ana 3 10:00 30
+book m1 r1 zed 3 10:00 30
+book m1 r1 ana 3 10:00 30 zed
+book m1 r1 ana 3 10:00
+book m1 r1 ana 3 10:00 1441
+book m1 r1 ana 3 10:00 30
+book m1 r1 bob 3 10:00 30
+book m2 r1 bob 3 04:00 15
+cancel m1
+cancel m1
+book m1 r1 bob 3 04:00 15
+leave m1 bob
+leave m1 ana
+leave zz ana
+invite m1 bob
+invite m1 ana
+invite zz ana
+invite m1 zed
+frob a b
+Zone ana +01:00
+who m1

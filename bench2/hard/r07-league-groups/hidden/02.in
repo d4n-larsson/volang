@@ -1,0 +1,22 @@
+team Ant
+team Bee
+team Cat
+team Dog
+team Elk
+result Ant 1 0 Bee
+result Bee 1 0 Cat
+result Cat 2 1 Ant
+result Ant 1 0 Dog
+result Bee 1 0 Dog
+result Cat 1 0 Dog
+result Elk 0 0 Dog
+table
+record Ant
+record Cat
+record Bee
+correct 4 3 0
+table
+correct 4 1 0
+result Dog 0 2 Ant
+result Dog 0 2 Cat
+table

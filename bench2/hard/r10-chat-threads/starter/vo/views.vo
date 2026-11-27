@@ -1,0 +1,88 @@
+# Read-only views: history, search, top authors, statistics.
+import channels;
+import fmt;
+import model;
+
+export const default_top = 3;
+
+fn channel_messages(state: model.State, channel_name: str) -> list[model.Message] {
+    return filter(state.messages, fn(m) => m.channel == channel_name);
+}
+
+# The channel's messages, oldest first; with `last` (0: all) only the last ones.
+export fn history_lines(state: model.State, channel_name: str, last: int) -> result[list[str]] {
+    let c = try channels.require_channel(state, channel_name);
+    var msgs = channel_messages(state, c.name);
+    if len(msgs) == 0 {
+        return ok(["#" + c.name + " has no messages"]);
+    }
+    var out = ["#" + c.name + ": " + fmt.plural(len(msgs), "message")];
+    if last > 0 and len(msgs) > last {
+        set out = ["#" + c.name + ": last " + str(last) + " of " + fmt.plural(len(msgs), "message")];
+        set msgs = slice(msgs, len(msgs) - last, len(msgs));
+    }
+    for m in msgs {
+        push(out, fmt.message_line(m));
+    }
+    return ok(out);
+}
+
+export fn search_lines(state: model.State, channel_name: str, word: str) -> result[list[str]] {
+    let c = try channels.require_channel(state, channel_name);
+    let found = filter(channel_messages(state, c.name), fn(m) => find(m.text, word) >= 0);
+    let out = ["search #" + c.name + " for " + word + ": " + str(len(found)) + " found"];
+    for m in found {
+        push(out, "  " + fmt.message_line(m));
+    }
+    return ok(out);
+}
+
+fn author_counts(state: model.State) -> map[str, int] {
+    let counts = new map[str, int];
+    for m in state.messages {
+        set counts[m.author] = get_or(counts, m.author, 0) + 1;
+    }
+    return counts;
+}
+
+# The n most active authors: most messages first, then by name.
+export fn top_lines(state: model.State, n: int) -> list[str] {
+    let counts = author_counts(state);
+    if len(counts) == 0 {
+        return ["no messages"];
+    }
+    let ranked = keys(counts);
+    sort(ranked);
+    sort_by(ranked, fn(name) => -counts[name]);
+    let out = new list[str];
+    for i, name in ranked {
+        if i < n {
+            push(out, str(i + 1) + ". " + name + " " + fmt.plural(counts[name], "message"));
+        }
+    }
+    return out;
+}
+
+# Every channel in ascending name order with its member and message counts.
+export fn channel_list_lines(state: model.State) -> list[str] {
+    if len(state.channels) == 0 {
+        return ["no channels"];
+    }
+    let names = keys(state.channels);
+    sort(names);
+    let out = new list[str];
+    for name in names {
+        let c = state.channels[name];
+        var kind = "";
+        if c.private {
+            set kind = " (private)";
+        }
+        let count = len(channel_messages(state, name));
+        push(out, "#" + name + kind + ": " + fmt.plural(len(c.members), "member") + ", " + fmt.plural(count, "message"));
+    }
+    return out;
+}
+
+export fn stats_line(state: model.State) -> str {
+    return "users " + str(len(state.users)) + ", channels " + str(len(state.channels)) + ", messages " + str(len(state.messages)) + ", edits " + str(state.edits) + ", deletes " + str(state.deletes);
+}

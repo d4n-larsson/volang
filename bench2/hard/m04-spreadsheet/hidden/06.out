@@ -1,0 +1,13 @@
+  | A       | B       | C       | D
+--+---------+---------+---------+--------
+1 | #PARSE! | #PARSE! | #PARSE! |       6
+2 | #PARSE! | #PARSE! | #PARSE! | #PARSE!
+3 | #PARSE! | #PARSE! | #PARSE! |      14
+4 | #PARSE! | #PARSE! | #PARSE! | #PARSE!
+5 | #PARSE! | #PARSE! | #PARSE! | #PARSE!
+6 | #PARSE! | #PARSE! | #PARSE! |
+7 | #PARSE! | #PARSE! | #PARSE! |
+8 | #PARSE! | #PARSE! | #PARSE! |
+9 |       1 |       3 | #PARSE! |
+A5 := =A 1
+D3 := = 2 *( 3 + 4 )

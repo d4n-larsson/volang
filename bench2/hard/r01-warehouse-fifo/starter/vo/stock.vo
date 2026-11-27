@@ -1,0 +1,43 @@
+# Quantities on hand per warehouse and item.
+import model;
+
+export fn on_hand(state: model.State, wh: str, sku: str) -> int {
+    return get_or(state.stock[wh], sku, 0);
+}
+
+export fn put(state: model.State, wh: str, sku: str, qty: int) {
+    let shelf = state.stock[wh];
+    set shelf[sku] = on_hand(state, wh, sku) + qty;
+}
+
+# Removes qty units; the caller has checked that they are there.
+export fn take(state: model.State, wh: str, sku: str, qty: int) {
+    let shelf = state.stock[wh];
+    let left = on_hand(state, wh, sku) - qty;
+    if left == 0 {
+        remove(shelf, sku);
+    } else {
+        set shelf[sku] = left;
+    }
+}
+
+export fn total_on_hand(state: model.State, sku: str) -> int {
+    var n = 0;
+    for wh in keys(state.stock) {
+        set n = n + on_hand(state, wh, sku);
+    }
+    return n;
+}
+
+export fn has_stock(state: model.State, wh: str) -> bool {
+    for _, qty in state.stock[wh] {
+        if qty > 0 {
+            return true;
+        }
+    }
+    return false;
+}
+
+export fn short_message(state: model.State, wh: str, sku: str) -> str {
+    return "error: only " + str(on_hand(state, wh, sku)) + " " + sku + " in " + wh;
+}

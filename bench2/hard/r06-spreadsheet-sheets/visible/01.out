@@ -1,0 +1,16 @@
+A1 = 120
+A2 = 80
+A3 = 200
+sheet Costs added
+Costs!A1 = 45
+Costs!A2 = 90
+B1 = 110
+B1 = 110
+B1: =A3-Costs!A2
+Costs!A2: =A1*2
+Sheet1: 4 cells (current)
+Costs: 2 cells
+     A    B
+1  120  110
+2   80
+3  200

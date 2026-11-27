@@ -1,0 +1,29 @@
+customer f added
+invoice #1 f total 400.00 balance 400.00 due 5
+invoice #2 f total 10.00 balance 10.00 due 5
+paid f 10.00: #1 10.00
+fee #1 5.85
+fee #2 5.00
+paid f 1.00: #1 1.00
+statement f day 37
+#1 due 5 balance 394.85 overdue 32
+#2 due 5 balance 15.00 overdue 32
+open 409.85 credit 0.00 written off 0.00
+paid f 1000.00: #1 394.85, #2 15.00, credit 590.15
+invoice #3 f total 200.00 balance 0.00 due 42
+invoice #4 f total 600.00 balance 209.85 due 42
+invoice #5 f total 400.00 balance 400.00 due 42
+statement f day 50
+#4 due 42 balance 209.85 overdue 8
+#5 due 42 balance 400.00 overdue 8
+open 609.85 credit 0.00 written off 0.00
+error: f credit is only 0.00
+aging day 50
+f 0.00 609.85 0.00 0.00 0.00
+total 0.00 609.85 0.00 0.00 0.00
+invoices:
+#1 f closed total 400.00 fee 5.85 paid 405.85 credits 0.00 balance 0.00
+#2 f closed total 10.00 fee 5.00 paid 15.00 credits 0.00 balance 0.00
+#3 f closed total 200.00 fee 0.00 paid 200.00 credits 0.00 balance 0.00
+#4 f open total 600.00 fee 0.00 paid 390.15 credits 0.00 balance 209.85
+#5 f open total 400.00 fee 0.00 paid 0.00 credits 0.00 balance 400.00

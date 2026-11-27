@@ -1,0 +1,71 @@
+jan.csv:4: bad amount -12.5
+feb.csv:7: bad date 2024-02-30
+2024/mar.csv:4: duplicate id J-002
+2024/mar.csv:6: duplicate id M-003
+reject dupcol.csv: duplicate column date
+reject nocol.csv: missing column account
+reject badtrailer.csv: trailer says 3, found 2
+reject empty.csv: no header
+dates.csv:2: bad date 2023-02-29
+dates.csv:4: bad date 2024-13-01
+dates.csv:5: bad date 2024-4-01
+dates.csv:6: bad date 2024-04-31
+dates.csv:10: bad date 2024-00-10
+dates.csv:11: bad date 2024/01/10
+dates.csv:12: bad date 1900-02-29
+dates.csv:13: outside period 2000-02-29
+amounts.csv:2: bad amount 1.5
+amounts.csv:3: bad amount -
+amounts.csv:4: bad amount 1,00
+amounts.csv:9: bad amount 3.000
+amounts.csv:10: bad amount --1.00
+amounts.csv:11: bad amount 
+accounts.csv:2: bad account se1234
+accounts.csv:3: bad account SE123
+accounts.csv:4: bad account SE12345
+accounts.csv:5: bad account S11234
+fields.csv:3: expected 5 fields
+fields.csv:4: expected 5 fields
+ids.csv:2: bad id 
+ids.csv:4: bad id ABCDEFGHIJKLM
+ids.csv:5: bad id a_b
+ids.csv:7: duplicate id ok-1
+ids.csv:8: bad id id x
+reject hashheader.csv: missing column id
+reject trailer0.csv: trailer says 0, found 1
+reject /etc/passwd: outside inbox
+== ledger
+2023-12-31 SE1001 D-6 1.00
+2024-01-03 SE1001 J-001 250.00
+2024-01-05 SE1002 J-002 -40.10
+2024-01-15 SE3003 S-1 42.00
+2024-01-16 SE3003 S-2 -2.00
+2024-01-31 DK2002 J-004 1000.00
+2024-02-01 SE1001 F-001 -800.00
+2024-02-02 SE1002 F-002 -3.20
+2024-02-25 SE1001 F-003 2500.00
+2024-02-29 DK2002 F-004 0.05
+2024-02-29 SE1001 D-2 1.00
+2024-03-01 SE1001 M-001 100.00
+2024-03-01 SE1001 M-002 -100.00
+2024-03-15 DK2002 M-003 -0.05
+2024-05-01 SE1001 A-6 12.00
+2024-05-01 SE1001 A-7 -0.05
+2024-05-01 SE1001 A-8 7.10
+2024-05-01 SE1001 A-9 0.00
+2024-06-01 NO0000 B-6 1.00
+2024-07-01 SE1001 C-1 1.00
+2024-07-01 SE1001 C-4 1.00
+2024-07-01 SE1001 C-5 2.00
+2024-08-01 SE1001 ABCDEFGHIJKL 1.00
+2024-08-02 SE1001 ok-1 1.00
+2024-12-31 SE1001 D-8 1.00
+2025-01-01 SE1001 D-7 1.00
+== balances
+DK2002 3 1000.00
+NO0000 1 1.00
+SE1001 18 1979.05
+SE1002 2 -43.30
+SE3003 2 40.00
+wrote out/all.ledger 26
+wrote out/all.errors 36

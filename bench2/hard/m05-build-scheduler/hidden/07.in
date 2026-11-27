@@ -1,0 +1,11 @@
+workers 3
+retries 1
+timeout 5
+target huge 8
+target ok1 5
+target ok2 4 ok1
+target after 1 huge
+target last 2 ok2
+fail ok1 1
+fail ok2 2
+backoff 2

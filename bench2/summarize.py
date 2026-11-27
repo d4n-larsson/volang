@@ -51,7 +51,7 @@ def show(label, s):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--set", choices=["tasks", "features"], default="tasks")
+    ap.add_argument("--set", choices=["tasks", "hard", "features"], default="tasks")
     a = ap.parse_args()
     if a.set == "features":
         vo = list(load("vo-features").values())
@@ -61,7 +61,8 @@ def main():
             ok = s["within"] >= 0.90 and s["first"] >= 0.75
             print(f"SC-006: {'PASS' if ok else 'FAIL'} (within 3: {s['within']:.1%} >= 90%, first: {s['first']:.1%} >= 75%)")
         return
-    data = {lang: list(load(lang).values()) for lang in ("vo", "python")}
+    suffix = "-hard" if a.set == "hard" else ""
+    data = {lang: list(load(lang + suffix).values()) for lang in ("vo", "python")}
     cats = sorted({r["category"] for recs in data.values() for r in recs})
     for lang, recs in data.items():
         print(lang)

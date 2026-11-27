@@ -1,0 +1,155 @@
+# Changes to issues. Each returns the command's output lines.
+import parse;
+import tracker;
+import views;
+
+fn ref(issue: tracker.Issue) -> str {
+    return "#" + str(issue.num);
+}
+
+export fn create(t: tracker.Tracker, priority: int, title: str) -> list[str] {
+    let n = t.next_num;
+    set t.next_num = t.next_num + 1;
+    set t.issues[n] = tracker.new_issue(n, title, priority, t.clock);
+    return [tracker.log_change(t, "created #" + str(n) + ": " + title)];
+}
+
+export fn assign(t: tracker.Tracker, issue: tracker.Issue, user: str) -> list[str] {
+    if not tracker.is_open(issue) {
+        return ["error: issue " + ref(issue) + " is closed"];
+    }
+    if not has(t.users, user) {
+        return ["error: unknown user " + user];
+    }
+    if issue.assignee == user {
+        return ["error: " + ref(issue) + " is already assigned to " + user];
+    }
+    let before = issue.assignee;
+    set issue.assignee = user;
+    tracker.touch(t, issue);
+    if before != "" {
+        return [tracker.log_change(t, ref(issue) + " reassigned from " + before + " to " + user)];
+    }
+    return [tracker.log_change(t, ref(issue) + " assigned to " + user)];
+}
+
+export fn unassign(t: tracker.Tracker, issue: tracker.Issue) -> list[str] {
+    if issue.assignee == "" {
+        return ["error: issue " + ref(issue) + " has no assignee"];
+    }
+    set issue.assignee = "";
+    tracker.touch(t, issue);
+    let out = [tracker.log_change(t, ref(issue) + " unassigned")];
+    if issue.status == "in_progress" or issue.status == "review" {
+        push(out, moved(t, issue, "triaged", "unassigned"));
+    }
+    return out;
+}
+
+fn moved(t: tracker.Tracker, issue: tracker.Issue, target: str, reason: str) -> str {
+    let source = issue.status;
+    tracker.transition(t, issue, target, reason);
+    return tracker.log_change(t, ref(issue) + " moved " + source + " -> " + target);
+}
+
+export fn move(t: tracker.Tracker, issue: tracker.Issue, target: str, reason: str) -> list[str] {
+    if not any(tracker.states(), fn(s) => s == target) {
+        return ["error: unknown state " + target];
+    }
+    if issue.status == target {
+        return ["error: issue " + ref(issue) + " is already " + target];
+    }
+    if not any(tracker.allowed(issue.status), fn(s) => s == target) {
+        return ["error: cannot move " + ref(issue) + " from " + issue.status + " to " + target];
+    }
+    if (target == "in_progress" or target == "review") and issue.assignee == "" {
+        return ["error: " + ref(issue) + " needs an assignee for " + target];
+    }
+    if (target == "blocked" or target == "wontfix") and reason == "" {
+        return ["error: " + ref(issue) + " needs a reason for " + target];
+    }
+    return [moved(t, issue, target, reason)];
+}
+
+export fn relabel(t: tracker.Tracker, issue: tracker.Issue, ops: list[parse.LabelOp]) -> list[str] {
+    for op in ops {
+        let present = any(issue.labels, fn(l) => l == op.label);
+        if op.adding and not present {
+            push(issue.labels, op.label);
+        } else if not op.adding and present {
+            set issue.labels = filter(issue.labels, fn(l) => l != op.label);
+        }
+    }
+    sort(issue.labels);
+    tracker.touch(t, issue);
+    return [tracker.log_change(t, ref(issue) + " labels: " + views.labels_text(issue.labels))];
+}
+
+export fn comment(t: tracker.Tracker, issue: tracker.Issue, author: str, text: str) -> list[str] {
+    if not has(t.users, author) {
+        return ["error: unknown user " + author];
+    }
+    push(issue.comments, new tracker.Comment { tick: t.clock, author: author, text: text });
+    tracker.touch(t, issue);
+    return [tracker.log_change(t, "comment added to " + ref(issue))];
+}
+
+export fn set_priority(t: tracker.Tracker, issue: tracker.Issue, priority: int) -> list[str] {
+    if issue.priority == priority {
+        return [ref(issue) + " priority unchanged"];
+    }
+    let old = issue.priority;
+    set issue.priority = priority;
+    tracker.touch(t, issue);
+    return [tracker.log_change(t, ref(issue) + " priority p" + str(old) + " -> p" + str(priority))];
+}
+
+export fn rename(t: tracker.Tracker, issue: tracker.Issue, title: str) -> list[str] {
+    if issue.title == title {
+        return [ref(issue) + " title unchanged"];
+    }
+    set issue.title = title;
+    tracker.touch(t, issue);
+    return [tracker.log_change(t, ref(issue) + " renamed")];
+}
+
+export fn close(t: tracker.Tracker, issue: tracker.Issue) -> list[str] {
+    if not tracker.is_open(issue) {
+        return ["error: issue " + ref(issue) + " is already closed"];
+    }
+    if issue.status == "review" {
+        tracker.transition(t, issue, "done", "");
+    } else {
+        tracker.transition(t, issue, "wontfix", "closed");
+    }
+    return [tracker.log_change(t, ref(issue) + " closed")];
+}
+
+export fn reopen(t: tracker.Tracker, issue: tracker.Issue) -> list[str] {
+    if tracker.is_open(issue) {
+        return ["error: issue " + ref(issue) + " is not closed"];
+    }
+    tracker.transition(t, issue, "triaged", "");
+    return [tracker.log_change(t, ref(issue) + " reopened")];
+}
+
+# Closes `issue` as a duplicate of `original`.
+export fn duplicate(t: tracker.Tracker, issue: tracker.Issue, original: tracker.Issue) -> list[str] {
+    if issue.num == original.num {
+        return ["error: issue " + ref(issue) + " cannot duplicate itself"];
+    }
+    if not tracker.is_open(issue) {
+        return ["error: issue " + ref(issue) + " is already closed"];
+    }
+    if not tracker.is_open(original) {
+        return ["error: issue " + ref(original) + " is closed"];
+    }
+    tracker.transition(t, issue, "wontfix", "duplicate of " + ref(original));
+    if not any(issue.labels, fn(l) => l == "duplicate") {
+        push(issue.labels, "duplicate");
+        sort(issue.labels);
+    }
+    push(issue.comments, new tracker.Comment { tick: t.clock, author: "system", text: "duplicate of " + ref(original) });
+    tracker.touch(t, issue);
+    return [tracker.log_change(t, ref(issue) + " closed as duplicate of " + ref(original))];
+}

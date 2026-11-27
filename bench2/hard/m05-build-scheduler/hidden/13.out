@@ -1,0 +1,16 @@
+cycle: loop
+0 start u w1 #1
+7 done u w1
+7 start t3 w1 #1
+9 done t3 w1
+9 start t2 w1 #1
+11 done t2 w1
+11 start t1 w1 #1
+13 done t1 w1
+makespan 13
+utilization 100%
+w1 busy 13 attempts 4
+built: u t3 t2 t1
+failed: -
+skipped: -
+blocked: loop w

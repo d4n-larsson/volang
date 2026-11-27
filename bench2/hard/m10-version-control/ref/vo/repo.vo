@@ -1,0 +1,186 @@
+# The repository: commits, branches, revisions, ancestry and tree changes.
+export record Commit {
+    number: int;
+    parents: list[int];
+    message: str;
+    snapshot: map[str, str];
+}
+
+# Branches point at a commit number, or 0 for none.
+export record Repo {
+    commits: list[Commit];
+    branches: map[str, int];
+    current: str;
+    work: map[str, str];
+}
+
+export fn new_repo() -> Repo {
+    let branches = new map[str, int];
+    set branches["main"] = 0;
+    return new Repo { commits: [], branches: branches, current: "main", work: new map[str, str] };
+}
+
+export fn is_number(s: str) -> bool {
+    return len(s) > 0 and all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+export fn byte_sorted(paths: list[str]) -> list[str] {
+    let out = slice(paths, 0, len(paths));
+    sort(out);
+    return out;
+}
+
+export fn copy_tree(t: map[str, str]) -> map[str, str] {
+    let out = new map[str, str];
+    for k, v in t {
+        set out[k] = v;
+    }
+    return out;
+}
+
+fn union_paths(x: map[str, str], y: map[str, str]) -> list[str] {
+    let seen = new map[str, bool];
+    for k, _ in x {
+        set seen[k] = true;
+    }
+    for k, _ in y {
+        set seen[k] = true;
+    }
+    return byte_sorted(keys(seen));
+}
+
+export fn changes(x: map[str, str], y: map[str, str]) -> list[str] {
+    let out = new list[str];
+    for p in union_paths(x, y) {
+        if not has(x, p) {
+            push(out, "A " + p);
+        } else if not has(y, p) {
+            push(out, "D " + p);
+        } else if x[p] != y[p] {
+            push(out, "M " + p);
+        }
+    }
+    return out;
+}
+
+export fn summary(x: map[str, str], y: map[str, str]) -> str {
+    let ch = changes(x, y);
+    let a = len(filter(ch, fn(c) => slice(c, 0, 1) == "A"));
+    let m = len(filter(ch, fn(c) => slice(c, 0, 1) == "M"));
+    let d = len(filter(ch, fn(c) => slice(c, 0, 1) == "D"));
+    return format("({} added, {} modified, {} deleted)", a, m, d);
+}
+
+export fn commit_of(r: Repo, n: int) -> Commit {
+    return r.commits[n - 1];
+}
+
+export fn head(r: Repo) -> int {
+    return r.branches[r.current];
+}
+
+export fn head_snapshot(r: Repo) -> map[str, str] {
+    let h = head(r);
+    if h == 0 {
+        return new map[str, str];
+    }
+    return commit_of(r, h).snapshot;
+}
+
+export fn dirty(r: Repo) -> bool {
+    return len(changes(head_snapshot(r), r.work)) > 0;
+}
+
+export fn resolve(r: Repo, rev: str) -> result[int] {
+    let n = lookup(r, rev);
+    if n == 0 {
+        return err("unknown revision " + rev);
+    }
+    return ok(n);
+}
+
+fn last_tilde(rev: str) -> int {
+    var at = -1;
+    for i in 0..len(rev) {
+        if byte_at(rev, i) == 126 {
+            set at = i;
+        }
+    }
+    return at;
+}
+
+# The commit number rev names, or 0.
+fn lookup(r: Repo, rev: str) -> int {
+    let t = last_tilde(rev);
+    if t >= 0 {
+        let steps = slice(rev, t + 1, len(rev));
+        if not is_number(steps) {
+            return 0;
+        }
+        var n = lookup(r, slice(rev, 0, t));
+        var left = 0;
+        match parse_int(steps) {
+            case ok(v) {
+                set left = v;
+            }
+            case err(_) {
+                return 0;
+            }
+        }
+        while left > 0 {
+            if n == 0 or len(commit_of(r, n).parents) == 0 {
+                return 0;
+            }
+            set n = commit_of(r, n).parents[0];
+            set left = left - 1;
+        }
+        return n;
+    }
+    if is_number(rev) {
+        match parse_int(rev) {
+            case ok(v) {
+                if v >= 1 and v <= len(r.commits) {
+                    return v;
+                }
+                return 0;
+            }
+            case err(_) {
+                return 0;
+            }
+        }
+    }
+    return get_or(r.branches, rev, 0);
+}
+
+# Every commit contained in b.
+export fn ancestry(r: Repo, b: int) -> map[int, bool] {
+    let seen = new map[int, bool];
+    let pending = [b];
+    while len(pending) > 0 {
+        var c = 0;
+        match pop(pending) {
+            case ok(v) {
+                set c = v;
+            }
+            case err(_) {
+            }
+        }
+        if not has(seen, c) {
+            set seen[c] = true;
+            for p in commit_of(r, c).parents {
+                push(pending, p);
+            }
+        }
+    }
+    return seen;
+}
+
+export fn contained(r: Repo, a: int, b: int) -> bool {
+    return has(ancestry(r, b), a);
+}
+
+export fn make_commit(r: Repo, parents: list[int], message: str, snapshot: map[str, str]) -> int {
+    let n = len(r.commits) + 1;
+    push(r.commits, new Commit { number: n, parents: parents, message: message, snapshot: copy_tree(snapshot) });
+    return n;
+}

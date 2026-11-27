@@ -1,0 +1,12 @@
+error: is a directory: /w/proj
+error: directory not empty: /w/proj/docs
+error: permission denied: /w/proj
+error: permission denied: /w/proj
+error: permission denied: /w/proj/src/deep
+error: directory in use: /w/proj
+error: directory in use: /w/proj/src
+error: directory in use: /w
+error: directory not empty: /w/proj/src
+/w
+error: no such file or directory: /w/empty
+(empty)

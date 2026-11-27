@@ -1,0 +1,187 @@
+import catalog;
+import model;
+import moves;
+import orders;
+import parse;
+import reports;
+import stock;
+
+record Group {
+    names: list[str];
+    handler: fn(model.State, str, list[str]) -> list[str];
+}
+
+fn bad() -> list[str] {
+    return ["error: bad command"];
+}
+
+fn drop_warehouse(state: model.State, code: str) -> str {
+    if not has(state.stock, code) {
+        return catalog.unknown_warehouse(code);
+    }
+    if stock.has_stock(state, code) {
+        return "error: warehouse " + code + " has stock";
+    }
+    if orders.has_open_orders(state, code) {
+        return "error: warehouse " + code + " has open orders";
+    }
+    remove(state.stock, code);
+    return "warehouse " + code + " dropped";
+}
+
+fn catalog_command(state: model.State, cmd: str, args_value: list[str]) -> list[str] {
+    if cmd == "warehouse" {
+        if len(args_value) != 1 {
+            return bad();
+        }
+        return [catalog.add_warehouse(state, args_value[0])];
+    }
+    if cmd == "drop" {
+        if len(args_value) != 1 {
+            return bad();
+        }
+        return [drop_warehouse(state, args_value[0])];
+    }
+    if cmd == "item" {
+        if len(args_value) != 3 or not parse.is_number(args_value[2]) {
+            return bad();
+        }
+        return [catalog.add_item(state, args_value[0], args_value[1], parse.num(args_value[2]))];
+    }
+    if cmd == "cost" {
+        if len(args_value) != 2 or not parse.is_number(args_value[1]) {
+            return bad();
+        }
+        return [catalog.set_cost(state, args_value[0], parse.num(args_value[1]))];
+    }
+    if cmd == "reorder" {
+        if len(args_value) != 2 or not parse.is_number(args_value[1]) {
+            return bad();
+        }
+        return [catalog.set_reorder(state, args_value[0], parse.num(args_value[1]))];
+    }
+    if len(args_value) != 0 {
+        return bad();
+    }
+    return catalog.item_lines(state);
+}
+
+fn move_command(state: model.State, cmd: str, args_value: list[str]) -> list[str] {
+    if cmd == "receive" {
+        if len(args_value) != 3 or not parse.is_positive(args_value[2]) {
+            return bad();
+        }
+        return [moves.receive(state, args_value[0], args_value[1], parse.num(args_value[2]))];
+    }
+    if cmd == "ship" {
+        if len(args_value) != 3 or not parse.is_positive(args_value[2]) {
+            return bad();
+        }
+        return [moves.ship(state, args_value[0], args_value[1], parse.num(args_value[2]))];
+    }
+    if cmd == "transfer" {
+        if len(args_value) != 4 or not parse.is_positive(args_value[3]) {
+            return bad();
+        }
+        return [moves.transfer(state, args_value[0], args_value[1], args_value[2], parse.num(args_value[3]))];
+    }
+    if cmd == "adjust" {
+        if len(args_value) != 4 or not parse.is_delta(args_value[2]) {
+            return bad();
+        }
+        return [moves.adjust(state, args_value[0], args_value[1], parse.delta_value(args_value[2]), args_value[3])];
+    }
+    if len(args_value) != 3 or not parse.is_number(args_value[2]) {
+        return bad();
+    }
+    return [moves.count(state, args_value[0], args_value[1], parse.num(args_value[2]))];
+}
+
+fn order_command(state: model.State, cmd: str, args_value: list[str]) -> list[str] {
+    if cmd == "order" {
+        if len(args_value) != 2 {
+            return bad();
+        }
+        return [orders.open_order(state, args_value[0], args_value[1])];
+    }
+    if cmd == "line" {
+        if len(args_value) != 3 or not parse.is_positive(args_value[2]) {
+            return bad();
+        }
+        return [orders.add_line(state, args_value[0], args_value[1], parse.num(args_value[2]))];
+    }
+    if cmd == "orders" {
+        if len(args_value) != 0 {
+            return bad();
+        }
+        return orders.order_lines(state);
+    }
+    if len(args_value) != 1 {
+        return bad();
+    }
+    if cmd == "fulfil" {
+        return [orders.fulfil(state, args_value[0])];
+    }
+    return [orders.cancel(state, args_value[0])];
+}
+
+fn report_command(state: model.State, cmd: str, args_value: list[str]) -> list[str] {
+    if cmd == "stock" or cmd == "value" {
+        if len(args_value) > 1 {
+            return bad();
+        }
+        var wh = "";
+        if len(args_value) == 1 {
+            set wh = args_value[0];
+        }
+        if cmd == "stock" {
+            return reports.stock_lines(state, wh);
+        }
+        return reports.value_lines(state, wh);
+    }
+    if cmd == "history" {
+        if len(args_value) != 1 {
+            return bad();
+        }
+        return moves.history(state, args_value[0]);
+    }
+    if len(args_value) != 0 {
+        return bad();
+    }
+    if cmd == "low" {
+        return reports.low_lines(state);
+    }
+    return reports.report_lines(state);
+}
+
+fn groups() -> list[Group] {
+    return [
+        new Group { names: ["warehouse", "drop", "item", "cost", "reorder", "items"], handler: catalog_command },
+        new Group { names: ["receive", "ship", "transfer", "adjust", "count"], handler: move_command },
+        new Group { names: ["order", "line", "orders", "fulfil", "cancel"], handler: order_command },
+        new Group { names: ["stock", "value", "history", "low", "report"], handler: report_command }
+    ];
+}
+
+fn run(state: model.State, words: list[str]) -> list[str] {
+    let cmd = words[0];
+    for g in groups() {
+        if any(g.names, fn(n) => n == cmd) {
+            return g.handler(state, cmd, slice(words, 1, len(words)));
+        }
+    }
+    return ["error: unknown command " + cmd];
+}
+
+fn main() uses console, input {
+    let state = model.new_state();
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w) => w != "");
+        if len(words) == 0 {
+            continue;
+        }
+        for out in run(state, words) {
+            print(out);
+        }
+    }
+}

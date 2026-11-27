@@ -1,0 +1,11 @@
+profile base
+chain base
+u1 new-checkout,payments-v2
+u2 dark-mode
+u3 new-checkout,payments-v2
+u4 payments-v2,search_v3
+== counts
+dark-mode 1
+new-checkout 2
+payments-v2 3
+search_v3 1

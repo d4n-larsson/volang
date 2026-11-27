@@ -1,0 +1,14 @@
+message <m1@remote.net>: Lunch?
+deliver <m1@remote.net> bob
+message <m2@example.org>: Release plan
+deliver <m2@example.org> bob
+deliver <m2@example.org> dave
+deliver <m2@example.org> carol
+message <m3@example.org>: Re: Lunch?
+relay <m3@example.org> alice@remote.net
+deliver <m3@example.org> bob
+== mailboxes
+wrote out/bob.mbox 3 541
+wrote out/carol.mbox 1 224
+wrote out/dave.mbox 1 224
+total 5 delivered, 0 bounced, 1 relayed, 0 duplicates

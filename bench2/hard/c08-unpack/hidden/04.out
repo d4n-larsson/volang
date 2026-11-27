@@ -1,0 +1,11 @@
+== v2
+not a pack
+== empty
+not a pack
+== space
+not a pack
+== zero
+total 0 files, 0 dirs, 0 bytes
+== blankonly
+error: line 2: bad entry
+total 0 files, 0 dirs, 0 bytes

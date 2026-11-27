@@ -1,0 +1,9 @@
+domain example.org
+quota 100000
+Mon
+mon.mbox
+../private/inbox
+/etc/passwd
+a-very-long-spool-name1
+a-very-long-spool-nam
+a-very-long-spool-na

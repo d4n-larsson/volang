@@ -1,0 +1,33 @@
+whoami
+whoami root
+useradd
+useradd a b
+su
+su a b
+useradd root
+useradd ann
+su ann
+useradd bob
+whoami
+su bob
+su root
+useradd bob
+su bob
+whoami
+chmod
+chmod rwx---
+chmod rwx--- / /
+chown root
+chown a b c
+ls -l a b
+ls -l -l
+ls -x
+ls -l
+ls /
+mkdir -p
+su ann
+su ann
+whoami
+stat /
+bogus
+Whoami

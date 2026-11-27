@@ -1,0 +1,16 @@
+warehouse north
+warehouse south
+item milk
+item eggs
+receive north milk 10 1.20 30
+receive north milk 5 1.10 20
+receive north eggs 12 0.25 40
+ship o1 north milk 8
+ship o2 north milk 10
+receive north milk 4 1.30 25
+reserve r1 north eggs 5
+transfer north south eggs 4 3
+day 3
+stock
+fulfil r1
+backorders

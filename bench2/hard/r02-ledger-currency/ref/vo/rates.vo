@@ -1,0 +1,71 @@
+# Exchange rates and conversion to the base currency.
+import fmt;
+import model;
+
+# Ten-thousandths as `X.YYYY`.
+export fn rate_text(rate: int) -> str {
+    var frac = str(rate % 10000);
+    while len(frac) < 4 {
+        set frac = "0" + frac;
+    }
+    return str(rate / 10000) + "." + frac;
+}
+
+export fn set_rate(ledger: model.Ledger, currency: str, day: int, rate: int) -> str {
+    if currency == model.base_currency {
+        return "error: " + model.base_currency + " is the base currency";
+    }
+    if not has(ledger.rates, currency) {
+        set ledger.rates[currency] = new map[int, int];
+    }
+    set ledger.rates[currency][day] = rate;
+    return "rate " + currency + " from day " + str(day) + ": " + rate_text(rate);
+}
+
+# The rate of the currency on the day (the one with the greatest day not after it), or 0.
+export fn rate_on(ledger: model.Ledger, currency: str, day: int) -> int {
+    var best_day = -1;
+    var best = 0;
+    if not has(ledger.rates, currency) {
+        return 0;
+    }
+    for d, r in ledger.rates[currency] {
+        if d <= day and d > best_day {
+            set best_day = d;
+            set best = r;
+        }
+    }
+    return best;
+}
+
+# The rate with the greatest day, or 0.
+export fn latest_rate(ledger: model.Ledger, currency: str) -> int {
+    var best_day = -1;
+    var best = 0;
+    if not has(ledger.rates, currency) {
+        return 0;
+    }
+    for d, r in ledger.rates[currency] {
+        if d > best_day {
+            set best_day = d;
+            set best = r;
+        }
+    }
+    return best;
+}
+
+# amount * rate / 10000, rounded half away from zero.
+export fn to_base(amount: int, rate: int) -> int {
+    if amount < 0 {
+        return -to_base(-amount, rate);
+    }
+    return (amount * rate + 5000) / 10000;
+}
+
+# An amount in a currency: a foreign one carries its code.
+export fn native_text(amount: int, currency: str) -> str {
+    if currency == model.base_currency {
+        return fmt.money(amount);
+    }
+    return fmt.money(amount) + " " + currency;
+}

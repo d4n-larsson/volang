@@ -1,0 +1,14 @@
+create table p (id int, name text, qty int)
+create table p (id int)
+create table q (a int, b text, a text, b int)
+create table q (a int, b text, c int)
+insert into p values (1, 'nut', 5), (2, 'bolt', 'x', 7), (3, 4, 1)
+insert into p values (1, 'nut', 'many'), (2, 'bolt')
+insert into p values (1, 'nut', 5), (2, 'bolt', 'many')
+insert into p values (1, 'nut', 5), (2, 9, 7, 1)
+insert into nope values (1)
+select * from p
+insert into p values (null, null, null), (2, 'washer and nut', -3)
+insert into p values (3, 'pin', 0)
+select * from p
+select * from q

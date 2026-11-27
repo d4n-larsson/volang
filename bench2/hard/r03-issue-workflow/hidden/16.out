@@ -1,0 +1,254 @@
+user bob added
+user ann added
+created #1: Login export password title export CSV
+error: user bob exists
+error: user bob exists
+error: user bob exists
+#1 idle 4 ticks: Login export password title...
+#1 assigned to ann
+error: unknown issue #2
+error: unknown issue #3
+error: unknown state closed
+error: unknown issue #2
+error: unknown issue #2
+ann (since 2): 1 open, 0 closed
+bob (since 1): 0 open, 0 closed
+error: unknown issue #4
+error: unknown issue #2
+error: unknown issue #3
+error: unknown issue #3
+error: unknown issue #4
+error: cannot move #1 from new to blocked
+created #2: API password slow empty Login long crash
+error: cannot move #2 from new to in_progress
+error: unknown issue #9
+#2 assigned to ann
+error: unknown issue #3
+#1 renamed
+no done issues
+issues 2: 2 open, 0 closed
+  states: new 2
+  ann 2 open, 0 closed
+error: unknown issue #4
+error: unknown issue #3
+error: issue #1 is already new
+no stale issues
+error: cannot move #1 from new to blocked
+error: unknown issue #4
+user cy added
+error: bad command
+issues 2: 2 open, 0 closed
+  states: new 2
+  ann 2 open, 0 closed
+error: cannot move #2 from new to in_progress
+no matches
+error: cannot move #1 from new to review
+error: unknown command frob
+#2 moved new -> triaged
+#1 moved new -> triaged
+error: #1 is already assigned to ann
+error: unknown issue #4
+#1 reassigned from ann to bob
+error: unknown issue #3
+no labels
+error: unknown state open
+no labels
+issues 2: 2 open, 0 closed
+  states: triaged 2
+  ann 1 open, 0 closed
+  bob 1 open, 0 closed
+error: unknown issue #4
+user zed added
+[35] user cy added
+[42] #2 moved new -> triaged
+[43] #1 moved new -> triaged
+[46] #1 reassigned from ann to bob
+[53] user zed added
+no labels
+no issues
+error: unknown issue #4
+error: unknown issue #3
+error: unknown issue #3
+error: unknown issue #3
+error: unknown issue #4
+error: unknown issue #3
+error: unknown issue #9
+error: unknown state closed
+#1 reassigned from bob to ann
+error: user ann exists
+created #3: CSV wrong password API
+#1 reassigned from ann to bob
+error: bad filter x
+#1 moved triaged -> in_progress
+#2 [p3] triaged ann API password slow empty Log...
+#2 unassigned
+#1 moved in_progress -> triaged
+error: unknown issue #4
+#1 moved triaged -> in_progress
+error: unknown state bogus
+error: unknown issue #4
+#3 moved new -> triaged
+error: unknown user dee
+error: unknown state open
+error: user zed exists
+error: user ann exists
+error: issue #2 has no assignee
+error: unknown state open
+error: user zed exists
+clock 86
+error: issue #3 cannot duplicate itself
+error: bad command
+#2 [p3] triaged - API password slow empty Log...
+error: issue #1 is already in_progress
+created #4: long slow on CSV password
+#1 moved in_progress -> review
+error: bad command
+clock 94
+#1 moved review -> in_progress
+no labels
+created #5: password long
+#2 closed as duplicate of #4
+error: cannot move #3 from triaged to new
+#1 [p3] in_progress bob API empty export fails fail...
+error: cannot move #3 from triaged to review
+error: cannot move #2 from wontfix to blocked
+no open issues for zed
+error: unknown state bogus
+error: cannot move #4 from new to done
+#1 reassigned from bob to zed
+error: cannot move #1 from in_progress to new
+comment added to #2
+error: cannot move #4 from new to blocked
+error: bad command
+error: unknown state closed
+error: unknown state bogus
+error: unknown state open
+error: issue #1 is already in_progress
+#1 reassigned from zed to cy
+error: cannot move #2 from wontfix to blocked
+#4 moved new -> triaged
+error: unknown issue #9
+created #6: export fails fails crash page Login fails
+error: issue #1 cannot duplicate itself
+error: unknown issue #9
+#1 [p3] in_progress cy API empty export fails fail...
+#2 [p3] wontfix - API password slow empty Log...
+#3 priority p4 -> p3
+error: issue #3 cannot duplicate itself
+error: unknown state closed
+error: unknown state closed
+#1 closed
+no done issues
+error: bad command
+#4 priority unchanged
+error: bad filter x
+error: cannot move #3 from triaged to done
+error: issue #2 is already closed
+#2 priority p3 -> p2
+error: cannot move #2 from wontfix to done
+clock 140
+duplicate: 0 open of 1
+#6 [p2] new - export fails fails crash pa...
+#5 idle 46 ticks: password long
+#4 idle 26 ticks: long slow on CSV password
+#6 idle 24 ticks: export fails fails crash pa...
+#3 idle 20 ticks: CSV wrong password API
+duplicate: 0 open of 1
+no done issues
+error: unknown state open
+error: issue #1 is already wontfix
+error: bad command
+comment added to #3
+comment added to #1
+issues 6: 4 open, 2 closed
+  states: new 2, triaged 2, wontfix 2
+  cy 0 open, 1 closed
+  unassigned 4 open, 1 closed
+error: unknown state closed
+error: unknown state closed
+#1 moved wontfix -> triaged
+error: cannot move #4 from triaged to blocked
+error: bad filter x
+#3 closed
+#2 [p2] wontfix - API password slow empty Log...
+#4 [p2] triaged - long slow on CSV password
+#5 [p2] new - password long
+#6 [p2] new - export fails fails crash pa...
+#3 [p3] wontfix - CSV wrong password API
+error: issue #4 has no assignee
+error: unknown user dee
+error: bad command
+error: unknown state bogus
+#1 reassigned from cy to bob
+created #7: page long long
+error: bad command
+#1 moved triaged -> wontfix
+error: unknown issue #9
+error: cannot move #2 from wontfix to in_progress
+#1 moved wontfix -> triaged
+error: issue #3 is closed
+error: #4 needs an assignee for in_progress
+error: issue #2 is closed
+#5 idle 76 ticks: password long
+#4 idle 56 ticks: long slow on CSV password
+#6 idle 54 ticks: export fails fails crash pa...
+#7 idle 9 ticks: page long long
+#1 idle 4 ticks: API empty export fails fail...
+error: bad command
+error: unknown issue #9
+#3 labels: perf
+error: cannot move #1 from triaged to new
+issues 7: 5 open, 2 closed
+  states: new 3, triaged 2, wontfix 2
+  bob 1 open, 0 closed
+  unassigned 4 open, 2 closed
+error: user cy exists
+error: #4 needs an assignee for in_progress
+error: issue #1 is not closed
+error: issue #3 has no assignee
+#4 assigned to ann
+#2 renamed
+error: #4 needs a reason for wontfix
+error: unknown state open
+comment added to #4
+created #8: page fails export CSV
+error: user ann exists
+#4 [p2] long slow on CSV password
+  status: triaged
+  assignee: ann
+  labels: -
+  created 91, updated 187
+  [117] new -> triaged (waiting on api)
+  1 comment
+  [187] zed: empty Login empty API export password password empty
+duplicate: 0 open of 1
+perf: 0 open of 1
+created #9: slow long password on password on title page
+#5 idle 96 ticks: password long
+#6 idle 74 ticks: export fails fails crash pa...
+#7 idle 29 ticks: page long long
+#1 idle 24 ticks: API empty export fails fail...
+#4 idle 6 ticks: long slow on CSV password
+#8 idle 5 ticks: page fails export CSV
+#9 idle 1 tick: slow long password on passw...
+#1 renamed
+error: cannot move #2 from wontfix to new
+error: issue #4 is not closed
+error: cannot move #2 from wontfix to done
+issues 9: 7 open, 2 closed
+  states: new 5, triaged 2, wontfix 2
+  ann 1 open, 0 closed
+  bob 1 open, 0 closed
+  unassigned 5 open, 2 closed
+error: #4 is already assigned to ann
+duplicate: 0 open of 1
+perf: 0 open of 1
+#4 unassigned
+error: bad priority p9
+#5 idle 106 ticks: password long
+#6 idle 84 ticks: export fails fails crash pa...
+#7 idle 39 ticks: page long long
+#8 idle 15 ticks: page fails export CSV
+#9 idle 11 ticks: slow long password on passw...
+#1 idle 9 ticks: crash timeout Totals very w...
+#4 idle 2 ticks: long slow on CSV password

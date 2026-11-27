@@ -1,0 +1,27 @@
+From news@lists.example.org Tue Jan  2 08:00:00 2024
+message-id:   <t1@lists.example.org>   
+TO: "Team" <team@example.org>,
+	Erin <ERIN@Example.ORG>,
+  frank@other.org
+SUBJECT: Weekly
+ digest
+	 number 7
+cc: erin@example.org, BOB@EXAMPLE.ORG, bob@example.org,
+ , ,frank@OTHER.org
+
+Digest body.
+
+From gina@example.org Tue Jan  2 09:00:00 2024
+To: gina@example.org
+X-Note no colon here
+ continued note
+Subject:
+
+Note to self.
+From bob@example.org Tue Jan  2 10:00:00 2024
+Message-ID:
+To: <carol@example.org>
+To: dave@example.org,carol@example.org
+Subject: Two To headers
+
+body

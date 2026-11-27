@@ -1,0 +1,6 @@
+func say(v)
+    print "say", v
+    return v
+end
+print str(say(1)) + str(say(2))
+print len("abc", say(3))

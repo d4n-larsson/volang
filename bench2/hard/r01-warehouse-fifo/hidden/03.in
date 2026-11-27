@@ -1,0 +1,19 @@
+warehouse depot
+item lamp Lamp 1000
+reorder lamp 30
+receive depot lamp 10
+value
+cost lamp 1500
+value
+items
+receive depot lamp 5
+adjust depot lamp +3 found
+lots depot lamp
+value
+low
+cost lamp 900
+report
+ship depot lamp 12
+lots depot lamp
+report
+items

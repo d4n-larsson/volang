@@ -1,0 +1,29 @@
+[main 1] base (2 added, 0 modified, 0 deleted)
+switched to feat
+[feat 2] feat f (0 added, 1 modified, 0 deleted)
+[feat 3] feat h (1 added, 0 modified, 0 deleted)
+[feat 4] feat g (0 added, 1 modified, 0 deleted)
+switched to main
+[main 5] main g (0 added, 1 modified, 0 deleted)
+[main 6] feat h (picked from 3) (1 added, 0 modified, 0 deleted)
+conflict: g (both modified)
+pick aborted
+[main 7] feat f (picked from 2) (0 added, 1 modified, 0 deleted)
+error: nothing to pick
+error: uncommitted changes
+conflict: f (both added)
+conflict: g (both added)
+pick aborted
+conflict: g (both modified)
+merge aborted
+error: nothing to pick
+7 feat f (picked from 2)
+6 feat h (picked from 3)
+5 main g
+1 base
+commit 7
+parents 6
+message feat f (picked from 2)
+f "two"
+g "main"
+h "new"

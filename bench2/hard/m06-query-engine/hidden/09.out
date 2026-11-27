@@ -1,0 +1,26 @@
+created e
+count(*) | count(x) | sum(x) | min(y) | max(x)
+---------+----------+--------+--------+-------
+       0 |        0 |   NULL | NULL   |   NULL
+(1 row)
+x
+-
+(0 rows)
+x | y
+--+--
+(0 rows)
+inserted 2
+count(*) | sum(x)
+---------+-------
+       0 |   NULL
+(1 row)
+error: syntax error
+x | count(*)
+--+---------
+5 |        1
+4 |        1
+(2 rows)
+count(y)
+--------
+       1
+(1 row)

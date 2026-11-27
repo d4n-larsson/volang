@@ -1,0 +1,11 @@
+mkdir -p projects/alpha/lib projects/beta
+write projects/alpha/lib/util.py def helper
+write projects/alpha/run.py import util
+cp -r projects/alpha projects/beta
+mv projects/beta/alpha/run.py projects/beta/start.py
+find /projects -name *.py
+rm projects/alpha/run.py
+rm projects/alpha
+rm -r projects/alpha
+find /
+quota

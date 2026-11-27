@@ -1,0 +1,42 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+channel #dev created by cy
+ann joined #dev
+message 1 posted to #general
+message 1 posted to #dev
+message 2 posted to #dev in thread 1
+#dev renamed to #eng
+error: only cy can rename #eng
+error: only ann can rename #general
+error: unknown channel #dev
+message eng/2 edited
+message 3 posted to #eng in thread 1
+thread #eng/1: 2 replies
+[1] t=11 cy: build @ann
+  [2] t=12 ann: thanks again @cy (edited)
+  [3] t=18 cy: np @ann
+message 4 posted to #eng
+mentions of cy: 2
+  #general [1] t=10 ann: hi @cy
+  #eng [2] t=12 ann: thanks again @cy (edited) (in thread 1)
+mentions of ann: 2
+  #eng [1] t=11 cy: build @ann
+  #eng [3] t=18 cy: np @ann (in thread 1)
+#eng: 2 unread (1 mentioning you)
+#general: 1 unread (1 mentioning you)
+ann read #eng
+no unread messages for ann
+#eng: 2 members, 4 messages
+#general: 3 members, 1 message
+#eng: 2 messages
+[1] t=11 cy: build @ann (2 replies)
+[4] t=20 cy: next
+search #eng for @: 3 found
+  [1] t=11 cy: build @ann
+  [2] t=12 ann: thanks again @cy (edited) (in thread 1)
+  [3] t=18 cy: np @ann (in thread 1)

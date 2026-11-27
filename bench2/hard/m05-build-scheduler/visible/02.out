@@ -1,0 +1,18 @@
+0 start gen w1 #1
+0 start tool w2 #1
+2 done gen w1
+2 start lib w1 #1
+4 done tool w2
+7 fail lib w1 #1
+10 start lib w1 #2
+15 done lib w1
+15 start test w1 #1
+18 done test w1
+makespan 18
+utilization 52%
+w1 busy 15 attempts 4
+w2 busy 4 attempts 1
+built: gen tool lib test
+failed: -
+skipped: -
+blocked: -

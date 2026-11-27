@@ -1,0 +1,21 @@
+user v added
+user w added
+room x added, capacity 4
+booked p1 in x: 10 02:00-14:00 (2 people)
+error: room x busy: p1 9 05:00-17:00
+booked p2 in x: 10 13:30-14:00 (1 person)
+v day 9: 1 meeting, 12h00m
+v day 10: 1 meeting, 0h30m
+w day 10: 1 meeting, 12h00m
+w day 9: 0 meetings, 0h00m
+w: 1 meeting, 12h00m
+v: 2 meetings, 12h30m
+agenda v day 9 (UTC-10:00):
+  9 05:00-17:00 p1 in x (attendee)
+agenda w day 10 (UTC+11:00):
+  10 02:00-14:00 p1 in x (organizer)
+free x day 10: 14:00-17:00
+rooms day 10:
+  x: p1 10 02:00-14:00
+rooms day 9:
+  x: free

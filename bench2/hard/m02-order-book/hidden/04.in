@@ -1,0 +1,16 @@
+limit S1 ana sell FK 10 5.00
+limit S2 bob sell FK 10 5.10
+limit S3 cy sell FK 10 5.20
+limit F1 bob buy FK 21 5.20 fok
+limit F2 dan buy FK 31 5.20 fok
+limit F3 dan buy FK 30 5.15 fok
+limit F4 dan buy FK 20 5.10 fok
+book FK
+limit S4 dan sell FK 5 5.20
+limit F5 cy buy FK 5 5.20 fok
+limit F6 cy buy FK 5 5.20 fok
+limit F7 cy buy FK 1 5.20 fok
+book FK
+limit F8 eve sell FK 1 1.00 fok
+limit B1 eve buy FK 2 5.00
+limit F9 cy sell FK 2 4.80 fok

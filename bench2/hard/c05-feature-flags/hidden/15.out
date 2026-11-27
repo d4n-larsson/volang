@@ -1,0 +1,11 @@
+profile a-1
+chain a-1 abcdefghijklmnop
+n1 dash,long-name
+n3 dash,long-name
+n4 long-name
+n5 long-name
+n12 long-name
+nx long-name
+== counts
+dash 2
+long-name 6

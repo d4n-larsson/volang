@@ -1,0 +1,19 @@
+warehouse a
+warehouse b
+warehouse c
+item mug Mug 300
+receive a mug 2 310
+receive a mug 3 320
+receive b mug 4 290
+transfer a b mug 4
+transfer b c mug 7
+lots c mug
+lots b mug
+lots a mug
+transfer c a mug 5
+lots a mug
+value a
+value b
+value c
+value
+history mug

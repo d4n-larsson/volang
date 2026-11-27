@@ -1,0 +1,12 @@
+limit S1 ana sell SX 10 20.00
+limit S2 bob sell SX 10 20.50
+limit B1 cy buy SX 5 19.00
+stop T1 bob buy SX 4 20.00
+limit B2 bob buy SX 3 20.00
+book SX
+stop T2 cy sell SX 6 19.50
+modify S2 10 19.40
+book SX
+limit S3 cy sell SX 2 21.00
+stop T3 cy buy SX 2 19.00
+book SX

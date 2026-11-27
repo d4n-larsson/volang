@@ -1,0 +1,21 @@
+error: file exists: /home
+error: permission denied: /home/bob
+error: permission denied: /home/ann/projects/vo/src
+error: permission denied: /home/carl/docs
+error: permission denied: /home/ann/projects/x
+error: permission denied: /home/ann/projects/x/y
+/home
+  ann/
+    mine/
+      a/
+        b/
+        n.txt
+    projects/
+error: permission denied: /home/ann/projects/vo
+error: permission denied: /home/ann/projects/z
+error: permission denied: /home/ann/projects/z
+error: file exists: /
+error: not a directory: /home/ann/f.txt/g
+error: file exists: /home/ann/f.txt
+drwxr-x root 1 z/
+drwxr-x root 0 q/

@@ -1,0 +1,20 @@
+0 start slow w1 #1
+0 start mid w2 #1
+3 done mid w2
+3 start quick w2 #1
+4 fail slow w1 #1
+4 done quick w2
+4 start slow w1 #2
+8 fail slow w1 #2
+8 start slow w1 #3
+12 done slow w1
+12 start fin w1 #1
+13 done fin w1
+makespan 13
+utilization 65%
+w1 busy 13 attempts 4
+w2 busy 4 attempts 2
+built: mid quick slow fin
+failed: -
+skipped: -
+blocked: -

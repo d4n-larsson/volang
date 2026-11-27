@@ -1,0 +1,26 @@
+write f content
+mkdir d
+cat f/x
+cat f/.
+ls f/..
+ls -l f/
+rm f/..
+rm -r d/../f/x
+write f/x hello
+append f/./y hello
+touch f/z d/f/z
+mkdir f/z
+mkdir -p f/z
+mv f/x y
+mv f d/x/y
+mv f f/y
+mv d f
+mv d f/new
+cp f/x y
+cp f d/f/z
+cp -r d f/x
+cd f
+cd f/.
+du f/..
+find f/z
+ls

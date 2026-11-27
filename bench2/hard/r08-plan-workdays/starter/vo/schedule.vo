@@ -1,0 +1,55 @@
+import graph;
+import model;
+
+fn forward(order: list[model.Task]) -> map[str, model.Slot] {
+    let slots = new map[str, model.Slot];
+    for t in order {
+        var start = t.not_before;
+        for d in t.preds {
+            set start = max(start, slots[d.pred].finish + d.lag);
+        }
+        set slots[t.tid] = new model.Slot { start: start, finish: start + t.duration, lstart: 0, lfinish: 0, slack: 0 };
+    }
+    return slots;
+}
+
+fn project_end(slots: map[str, model.Slot]) -> int {
+    var end = 0;
+    for _, s in slots {
+        set end = max(end, s.finish);
+    }
+    return end;
+}
+
+fn backward(plan: model.Plan, order: list[model.Task], slots: map[str, model.Slot], end: int) {
+    var i = len(order) - 1;
+    while i >= 0 {
+        let t = order[i];
+        var lfinish = end;
+        for sid in graph.successors(plan, t.tid) {
+            for d in plan.tasks[sid].preds {
+                if d.pred == t.tid {
+                    set lfinish = min(lfinish, slots[sid].lstart - d.lag);
+                }
+            }
+        }
+        let s = slots[t.tid];
+        set s.lfinish = lfinish;
+        set s.lstart = lfinish - t.duration;
+        set s.slack = s.lstart - s.start;
+        set i = i - 1;
+    }
+}
+
+export fn compute(plan: model.Plan) -> model.Schedule {
+    let order = graph.topo_order(plan);
+    let slots = forward(order);
+    let end = project_end(slots);
+    backward(plan, order, slots, end);
+    return new model.Schedule { order: order, slots: slots, end: end };
+}
+
+# Days of work from the project start to its finish.
+export fn length(end: int) -> int {
+    return end;
+}

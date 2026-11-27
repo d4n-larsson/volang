@@ -1,0 +1,13 @@
+.width 25
+.indent 3
+.align center
+The quick brown fox jumps over the lazy dog again and again.
+.align right
+The quick brown fox jumps over the lazy dog again and again.
+.align left
+.indent 0
+x
+.align center
+xy
+.align center
+The end

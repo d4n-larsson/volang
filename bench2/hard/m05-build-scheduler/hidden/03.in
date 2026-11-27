@@ -1,0 +1,11 @@
+workers 2
+target a 1 b
+target b 1 c
+target c 1 a
+target d 1 d
+target e 2 a
+target f 3
+target g 1 h
+target h 1 g
+target i 4 f
+goal e f i

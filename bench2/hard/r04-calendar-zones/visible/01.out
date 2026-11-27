@@ -1,0 +1,10 @@
+user ana added
+user raj added
+user tom added
+room oslo added, capacity 4
+booked m1 in oslo: 10 09:00-10:00 (3 people)
+agenda raj day 10 (UTC+05:30):
+  10 12:30-13:30 m1 in oslo (attendee)
+agenda tom day 10 (UTC+00:00):
+  10 07:00-08:00 m1 in oslo (attendee)
+m1: oslo 10 08:00-09:00 UTC+01:00, organizer ana, attendees raj, tom

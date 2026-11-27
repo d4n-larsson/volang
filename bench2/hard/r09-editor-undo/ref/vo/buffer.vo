@@ -1,0 +1,52 @@
+# The text buffer: a list of lines and a current-line pointer.
+# Line N of the buffer is lines[N - 1]; cur is 0 when the buffer is empty, else 1 to size.
+export record Buffer {
+    lines: list[str];
+    cur: int;
+}
+
+# A range of lines a to b.
+export record Span {
+    a: int;
+    b: int;
+}
+
+export fn new_buffer() -> Buffer {
+    return new Buffer { lines: new list[str], cur: 0 };
+}
+
+export fn size(buf: Buffer) -> int {
+    return len(buf.lines);
+}
+
+export fn is_empty(buf: Buffer) -> bool {
+    return len(buf.lines) == 0;
+}
+
+export fn line(buf: Buffer, n: int) -> str {
+    return buf.lines[n - 1];
+}
+
+# A copy of lines a to b.
+export fn block(buf: Buffer, a: int, b: int) -> list[str] {
+    return slice(buf.lines, a - 1, b);
+}
+
+# Replaces lines a to b (none when b == a - 1) with new_lines.
+export fn put_block(buf: Buffer, a: int, b: int, new_lines: list[str]) {
+    let out = slice(buf.lines, 0, a - 1);
+    for s in new_lines {
+        push(out, s);
+    }
+    for s in slice(buf.lines, b, len(buf.lines)) {
+        push(out, s);
+    }
+    set buf.lines = out;
+}
+
+# Keeps the current line inside the buffer after lines were removed.
+export fn clamp_cur(buf: Buffer) {
+    if buf.cur > size(buf) {
+        set buf.cur = size(buf);
+    }
+}

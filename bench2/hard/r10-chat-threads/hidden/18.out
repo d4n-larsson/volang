@@ -1,0 +1,25 @@
+user ann created
+user bob created
+user cy created
+user dee created
+channel #general created by ann
+bob joined #general
+cy joined #general
+message 1 posted to #general
+message 2 posted to #general
+cy read #general
+error: unknown command bogus
+message 3 posted to #general
+message 4 posted to #general in thread 2
+#general: 2 unread
+thread #general/2: 1 reply
+[2] t=9 bob: two
+  [4] t=13 ann: four
+#general: 3 messages
+[1] t=8 ann: one
+[2] t=9 bob: two (1 reply)
+[3] t=12 ann: three
+cy read #general
+message 5 posted to #general
+#general: 1 unread
+#general: 3 unread

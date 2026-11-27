@@ -1,0 +1,15 @@
+book NONE
+limit A1 ana sell LV 5 3.00
+limit A2 bob sell LV 7 3.00
+limit A3 cy sell LV 1 3.25
+limit A4 dan buy LV 2 2.75
+limit A5 eve buy LV 4 2.75
+limit A6 fay buy LV 6 2.80
+book LV
+limit A7 gus buy LV 13 3.00
+book LV
+limit A8 hal sell LV 12 2.75
+book LV
+cancel A3
+book LV
+book NONE

@@ -1,0 +1,23 @@
+team Red
+team Blue
+team Green
+team Black
+team White
+goals
+group Dark Black
+group Light White Green
+group Mid Red Blue
+goals
+result White 2 2 Green
+result Red 0 1 Blue
+goals
+withdraw Black
+result Green 4 1 White
+goals
+teams
+summary
+withdraw White
+withdraw Green
+goals
+teams
+fixtures

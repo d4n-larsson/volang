@@ -1,0 +1,22 @@
+0 start a w1 #1
+0 start b w2 #1
+5 fail a w1 #1
+5 done b w2
+5 start a w1 #2
+5 start c w2 #1
+7 fail c w2 #1
+7 start c w2 #2
+9 done c w2
+9 start d w2 #1
+10 done a w1
+10 done d w2
+10 start link w1 #1
+13 done link w1
+makespan 13
+utilization 88%
+w1 busy 13 attempts 3
+w2 busy 10 attempts 4
+built: b c a d link
+failed: -
+skipped: -
+blocked: -

@@ -1,0 +1,15 @@
+import interp;
+import parser;
+
+fn main() uses console, input {
+    match parser.parse_program(read_all()) {
+        case ok(prog) {
+            for line in interp.run(prog) {
+                print(line);
+            }
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

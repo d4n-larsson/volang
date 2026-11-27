@@ -1,0 +1,16 @@
+1  the quick brown fox
+2  jumps over
+3  the lazy dog
+2 substitutions
+1  a quick brown fox
+2  jumps over
+3  a lazy dog
+undone 1 step
+1  the quick brown fox
+2  jumps over
+3  the lazy dog
+redone 1 step
+buffer main, line 3 of 3
+* main 3 lines, modified
+saved main, 3 lines
+* main 3 lines

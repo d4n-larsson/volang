@@ -1,0 +1,76 @@
+team Rovers added
+team United added
+team City added
+team Athletic added
+team Town added
+Rovers
+United
+City
+Athletic
+Town
+5 teams
+result 1: Rovers 3-1 United
+result 2: United 2-2 City
+result 3: City 0-1 Rovers
+result 4: Athletic 4-0 Town
+result 5: Town 1-1 Rovers
+result 6: United 0-3 Athletic
+error: Rovers v United already played
+error: team cannot play itself
+error: unknown team Ghost
+error: unknown team Ghost
+error: bad command
+result 2: United 1-2 City (was 2-2)
+error: no result 0
+error: no result 12
+error: bad command
+form Rovers: WWD
+error: unknown team Nobody
+result 2: United 1-2 City
+United 0 wins, City 1 wins, 0 draws
+error: team cannot play itself
+no matches between Town and City
+most scored: Athletic 7
+fewest conceded: Athletic 0
+highest scoring match: result 1: Rovers 3-1 United (4 goals)
+total: 17 goals in 6 matches
+longest winning streak 2: Athletic, Rovers
+teams 5 (0 withdrawn), matches 6, goals 17
+home wins 2, draws 1, away wins 3
+team Town withdrawn, 2 results void
+error: team Town already withdrawn
+error: result 5 void
+error: team Town withdrawn
+error: team Town withdrawn
+error: team Town withdrawn
+error: team Town withdrawn
+team United renamed FC
+error: team City exists
+error: unknown team Ghost
+error: bad command
+result 1: Rovers 3-1 FC
+FC 0 wins, Rovers 1 wins, 0 draws
+Pos Team      P  W  D  L GF GA  GD Pts
+  1 Rovers    2  2  0  0  4  1  +3   6
+  2 Athletic  1  1  0  0  3  0  +3   3
+  3 City      2  1  0  1  2  2   0   3
+  4 FC        3  0  0  3  2  8  -6   0
+Rovers: P 2, W 2, D 0, L 0, GF 4, GA 1, GD +3, Pts 6
+home 1-0-0, away 1-0-0
+position 1 of 4
+Rovers v City
+Rovers v Athletic
+FC v Rovers
+City v FC
+City v Athletic
+Athletic v Rovers
+Athletic v FC
+Athletic v City
+8 fixtures left
+Rovers
+FC
+City
+Athletic
+Town (withdrawn)
+5 teams
+error: unknown command dance

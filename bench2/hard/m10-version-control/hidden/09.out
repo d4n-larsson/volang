@@ -1,0 +1,23 @@
+[main 1] c1 (2 added, 0 modified, 0 deleted)
+switched to a
+[a 2] c2 (0 added, 1 modified, 0 deleted)
+switched to b
+[b 3] c3 (0 added, 1 modified, 0 deleted)
+switched to a
+[a 4] merge b into a (0 added, 1 modified, 0 deleted)
+switched to b
+[b 5] merge a~1 into b (0 added, 1 modified, 0 deleted)
+[b 6] c6 (0 added, 1 modified, 0 deleted)
+switched to a
+[a 7] c7 (0 added, 1 modified, 0 deleted)
+conflict: f (both modified)
+merge aborted
+commit 7
+parents 4
+message c7
+f "y"
+g "w"
+7 c7
+4 merge b into a (merge of 3)
+2 c2
+1 c1

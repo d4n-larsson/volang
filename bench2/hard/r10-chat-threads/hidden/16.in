@@ -1,0 +1,24 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+channel dee dev
+join ann dev
+join bob dev
+post ann dev parent
+reply bob dev/1 r1
+reply ann dev/1 r2
+delete cy dev/2
+delete bob dev/3
+delete ann dev/2
+delete bob dev/1
+delete dee dev/1
+history dev
+leave dee dev
+delete dee dev/3
+history dev
+thread dev/1
+delete dee dev/1

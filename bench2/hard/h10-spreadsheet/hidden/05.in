@@ -1,0 +1,12 @@
+Z1 text
+Z2 =1+
+Z3 =Z3
+A1 =Z1+Z2
+A2 =Z2+Z1
+A3 =Z1+Z3
+A4 =Z3+Z1
+A5 =SUM(Z1:Z3)
+A6 =SUM(Z3,Z2)
+A7 =MAX(Z2:Z3)
+A8 =Z1*0
+A9 =-Z2

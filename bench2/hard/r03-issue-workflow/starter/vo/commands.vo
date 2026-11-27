@@ -1,0 +1,255 @@
+# Reads one command's words and runs it.
+import issues;
+import parse;
+import query;
+import tracker;
+import users;
+import views;
+
+fn bad() -> list[str] {
+    return ["error: bad command"];
+}
+
+# The issue, or err with the error message.
+fn find_issue(t: tracker.Tracker, word: str) -> result[tracker.Issue] {
+    if not parse.is_number(word) {
+        return err("error: bad command");
+    }
+    let n = parse.num(word);
+    if not has(t.issues, n) {
+        return err("error: unknown issue #" + str(n));
+    }
+    return ok(t.issues[n]);
+}
+
+fn on_new(t: tracker.Tracker, args_value: list[str]) -> list[str] {
+    if len(args_value) < 2 {
+        return bad();
+    }
+    let p = parse.parse_priority(args_value[0]);
+    if p == 0 {
+        return ["error: bad priority " + args_value[0]];
+    }
+    return issues.create(t, p, join(slice(args_value, 1, len(args_value)), " "));
+}
+
+# Commands whose first argument is an issue: checks the argument count, then the issue.
+fn on_issue(t: tracker.Tracker, args_value: list[str], count: int, at_least: bool, action: fn(tracker.Issue, list[str]) -> list[str]) -> list[str] {
+    if len(args_value) < count or (not at_least and len(args_value) != count) {
+        return bad();
+    }
+    match find_issue(t, args_value[0]) {
+        case ok(issue) {
+            return action(issue, slice(args_value, 1, len(args_value)));
+        }
+        case err(e) {
+            return [e];
+        }
+    }
+}
+
+fn on_label(t: tracker.Tracker, issue: tracker.Issue, rest: list[str]) -> list[str] {
+    match parse.parse_label_ops(rest) {
+        case ok(ops) {
+            return issues.relabel(t, issue, ops);
+        }
+        case err(_) {
+            return bad();
+        }
+    }
+}
+
+fn on_priority(t: tracker.Tracker, issue: tracker.Issue, rest: list[str]) -> list[str] {
+    let p = parse.parse_priority(rest[0]);
+    if p == 0 {
+        return ["error: bad priority " + rest[0]];
+    }
+    return issues.set_priority(t, issue, p);
+}
+
+fn on_dup(t: tracker.Tracker, args_value: list[str]) -> list[str] {
+    if len(args_value) != 2 or not parse.is_number(args_value[0]) or not parse.is_number(args_value[1]) {
+        return bad();
+    }
+    match find_issue(t, args_value[0]) {
+        case ok(issue) {
+            match find_issue(t, args_value[1]) {
+                case ok(original) {
+                    return issues.duplicate(t, issue, original);
+                }
+                case err(e) {
+                    return [e];
+                }
+            }
+        }
+        case err(e) {
+            return [e];
+        }
+    }
+}
+
+fn on_list(t: tracker.Tracker, args_value: list[str]) -> list[str] {
+    match parse.parse_filter(args_value) {
+        case ok(f) {
+            return query.list_lines(t, f);
+        }
+        case err(e) {
+            return [e];
+        }
+    }
+}
+
+# The single numeric argument, or -1.
+fn number_arg(args_value: list[str]) -> int {
+    if len(args_value) != 1 or not parse.is_number(args_value[0]) {
+        return -1;
+    }
+    return parse.num(args_value[0]);
+}
+
+fn on_stale(t: tracker.Tracker, args_value: list[str]) -> list[str] {
+    let n = number_arg(args_value);
+    if n < 0 {
+        return bad();
+    }
+    return query.stale_lines(t, n);
+}
+
+fn on_wait(t: tracker.Tracker, args_value: list[str]) -> list[str] {
+    let n = number_arg(args_value);
+    if n < 1 {
+        return bad();
+    }
+    set t.clock = t.clock + n - 1;
+    return ["clock " + str(t.clock)];
+}
+
+fn on_log(t: tracker.Tracker, args_value: list[str]) -> list[str] {
+    if len(args_value) == 0 {
+        return views.event_lines(t.events, 5);
+    }
+    let n = number_arg(args_value);
+    if n < 1 {
+        return bad();
+    }
+    return views.event_lines(t.events, n);
+}
+
+fn on_mine(t: tracker.Tracker, args_value: list[str]) -> list[str] {
+    if len(args_value) != 1 {
+        return bad();
+    }
+    if not has(t.users, args_value[0]) {
+        return ["error: unknown user " + args_value[0]];
+    }
+    return query.mine_lines(t, args_value[0]);
+}
+
+fn on_user(t: tracker.Tracker, args_value: list[str]) -> list[str] {
+    if len(args_value) != 1 {
+        return bad();
+    }
+    return users.add_user(t, args_value[0]);
+}
+
+fn on_search(t: tracker.Tracker, args_value: list[str]) -> list[str] {
+    if len(args_value) != 1 {
+        return bad();
+    }
+    return query.search_lines(t, args_value[0]);
+}
+
+fn no_args(args_value: list[str], lines: fn() -> list[str]) -> list[str] {
+    if len(args_value) != 0 {
+        return bad();
+    }
+    return lines();
+}
+
+fn run_issue_command(t: tracker.Tracker, cmd: str, args_value: list[str]) -> result[list[str]] {
+    match cmd {
+        case "assign" {
+            return ok(on_issue(t, args_value, 2, false, fn(i, rest) => issues.assign(t, i, rest[0])));
+        }
+        case "unassign" {
+            return ok(on_issue(t, args_value, 1, false, fn(i, rest) => issues.unassign(t, i)));
+        }
+        case "label" {
+            return ok(on_issue(t, args_value, 2, true, fn(i, rest) => on_label(t, i, rest)));
+        }
+        case "comment" {
+            return ok(on_issue(t, args_value, 3, true, fn(i, rest) => issues.comment(t, i, rest[0], join(slice(rest, 1, len(rest)), " "))));
+        }
+        case "priority" {
+            return ok(on_issue(t, args_value, 2, false, fn(i, rest) => on_priority(t, i, rest)));
+        }
+        case "rename" {
+            return ok(on_issue(t, args_value, 2, true, fn(i, rest) => issues.rename(t, i, join(rest, " "))));
+        }
+        case "close" {
+            return ok(on_issue(t, args_value, 1, false, fn(i, rest) => issues.close(t, i)));
+        }
+        case "reopen" {
+            return ok(on_issue(t, args_value, 1, false, fn(i, rest) => issues.reopen(t, i)));
+        }
+        case "show" {
+            return ok(on_issue(t, args_value, 1, false, fn(i, rest) => views.show_lines(i)));
+        }
+        else {
+            return err("not an issue command");
+        }
+    }
+}
+
+export fn run(t: tracker.Tracker, words: list[str]) -> list[str] {
+    let cmd = words[0];
+    let args_value = slice(words, 1, len(words));
+    match run_issue_command(t, cmd, args_value) {
+        case ok(out) {
+            return out;
+        }
+        case err(_) {
+        }
+    }
+    match cmd {
+        case "user" {
+            return on_user(t, args_value);
+        }
+        case "users" {
+            return no_args(args_value, fn() => users.users_lines(t));
+        }
+        case "new" {
+            return on_new(t, args_value);
+        }
+        case "dup" {
+            return on_dup(t, args_value);
+        }
+        case "list" {
+            return on_list(t, args_value);
+        }
+        case "search" {
+            return on_search(t, args_value);
+        }
+        case "mine" {
+            return on_mine(t, args_value);
+        }
+        case "stale" {
+            return on_stale(t, args_value);
+        }
+        case "stats" {
+            return no_args(args_value, fn() => query.stats_lines(t));
+        }
+        case "labels" {
+            return no_args(args_value, fn() => query.label_lines(t));
+        }
+        case "log" {
+            return on_log(t, args_value);
+        }
+        case "wait" {
+            return on_wait(t, args_value);
+        }
+        else {
+            return ["error: unknown command " + cmd];
+        }
+    }
+}

@@ -1,0 +1,28 @@
+mkdir -p a/b a.b ab A
+write a/b/x.txt 1
+write a/b/y.txt 12
+write a/x.TXT 123
+write ab/x.txt 1234
+write a.b/xx 12345
+touch A/x
+find /
+find / -name *.txt
+find / -name ?.txt
+find / -name *
+find a -name a
+find / -name a*
+find / -name *b*
+find a/b/x.txt
+find a/b/x.txt -name *.md
+find a/b -name ?
+find / -name x
+du
+du /
+du a/b/y.txt
+du a ab
+du nope
+find nope -name x
+find
+find a -nam x
+find a b
+find a -name x y

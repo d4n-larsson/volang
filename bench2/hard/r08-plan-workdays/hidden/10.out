@@ -1,0 +1,38 @@
+added task alpha
+added task beta
+added task gamma
+error: bad task id Delta
+error: bad task id 9x
+added task d-1
+error: task alpha exists
+beta after alpha
+gamma after beta+1
+d-1 after gamma
+error: cycle alpha -> d-1 -> gamma -> beta -> alpha
+error: task alpha cannot depend on itself
+error: beta already depends on alpha
+error: unknown task zeta
+error: unknown task zeta
+error: bad command
+error: bad command
+error: gamma does not depend on alpha
+gamma no longer after beta
+error: gamma does not depend on beta
+error: alpha is needed by beta
+task gamma renamed
+alpha 3d First
+beta 2d beta
+gamma 4d The third
+d-1 1d d-1
+task gamma: The third
+  duration 4 days
+  after: -
+  before: d-1
+  start 0 finish 4 slack 0
+  done 0%
+task   start  finish  lstart  lfinish  slack
+alpha      0       3       0        3      0
+beta       3       7       3        7      0
+gamma      0       4       0        4      0
+d-1        4       7       4        7      0
+end 7

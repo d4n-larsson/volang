@@ -1,0 +1,19 @@
+[main 1] c1 (1 added, 0 modified, 0 deleted)
+switched to a
+[a 2] c2 (0 added, 1 modified, 0 deleted)
+switched to main
+error: no such branch nope
+error: cannot delete the current branch
+error: branch a is not merged
+deleted branch b (was 1)
+  a 2
+* main 1
+fast-forward to 2
+deleted branch a (was 2)
+error: no such branch a
+error: no such branch a
+error: already on main
+head is now 1
+error: branch a is not merged
+  a 2
+* main 1

@@ -1,0 +1,20 @@
+set A1 1
+set B1 =A1+1
+set C1 =B1+1
+set A2 =C1*2
+set B2 =IF(0, A1, 5)
+set C2 =SUM(A1:A1)
+set D2 =1+(
+set D1 =A1+
+set E5 =COUNT(A1:Z1)
+set C3 =D2
+deps A1
+deps B1
+deps C1
+deps A2
+deps D2
+deps Z1
+deps E5
+set E5 =E6
+deps E5
+deps Q50

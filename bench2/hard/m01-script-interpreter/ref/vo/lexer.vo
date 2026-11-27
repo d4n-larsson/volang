@@ -1,0 +1,82 @@
+export record Token {
+    kind: str;
+    text: str;
+}
+
+fn is_keyword(w: str) -> bool {
+    let kws = ["let", "set", "print", "if", "elif", "else", "while", "end", "func", "return", "break", "continue", "and", "or", "not", "true", "false"];
+    return any(kws, fn(k) => k == w);
+}
+
+fn is_digit(c: str) -> bool {
+    return c >= "0" and c <= "9";
+}
+
+fn is_word_start(c: str) -> bool {
+    return (c >= "a" and c <= "z") or c == "_";
+}
+
+fn is_word_char(c: str) -> bool {
+    return is_word_start(c) or is_digit(c);
+}
+
+fn tok(kind: str, text: str) -> Token {
+    return new Token { kind: kind, text: text };
+}
+
+# The tokens of one line; err("syntax error") for a bad character, number or string.
+export fn tokenize(line: str) -> result[list[Token]] {
+    let cs = chars(line);
+    let n = len(cs);
+    let toks = new list[Token];
+    var i = 0;
+    while i < n {
+        let c = cs[i];
+        if c == " " {
+            set i = i + 1;
+        } else if c == "#" {
+            break;
+        } else if is_digit(c) {
+            var j = i;
+            while j < n and is_digit(cs[j]) {
+                set j = j + 1;
+            }
+            if j - i > 18 {
+                return err("syntax error");
+            }
+            push(toks, tok("int", join(slice(cs, i, j), "")));
+            set i = j;
+        } else if is_word_start(c) {
+            var j = i;
+            while j < n and is_word_char(cs[j]) {
+                set j = j + 1;
+            }
+            let w = join(slice(cs, i, j), "");
+            if is_keyword(w) {
+                push(toks, tok("kw", w));
+            } else {
+                push(toks, tok("name", w));
+            }
+            set i = j;
+        } else if c == "\"" {
+            var j = i + 1;
+            while j < n and cs[j] != "\"" {
+                set j = j + 1;
+            }
+            if j >= n {
+                return err("syntax error");
+            }
+            push(toks, tok("str", join(slice(cs, i + 1, j), "")));
+            set i = j + 1;
+        } else if i + 1 < n and (c == "=" or c == "!" or c == "<" or c == ">") and cs[i + 1] == "=" {
+            push(toks, tok("op", c + "="));
+            set i = i + 2;
+        } else if find("<>=+-*/%(),", c) >= 0 {
+            push(toks, tok("op", c));
+            set i = i + 1;
+        } else {
+            return err("syntax error");
+        }
+    }
+    return ok(toks);
+}

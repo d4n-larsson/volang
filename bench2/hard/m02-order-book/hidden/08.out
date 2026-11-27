@@ -1,0 +1,60 @@
+pending T0
+rest S1 10 10.00
+rest S2 10 10.20
+rest S3 10 10.40
+rest S4 10 10.60
+pending T1
+pending T2
+pending T3
+pending T4
+book ST last -
+  ask 10.60 10 1
+  ask 10.40 10 1
+  ask 10.20 10 1
+  ask 10.00 10 1
+trade ST 10 10.00 B1 S1
+filled B1
+trigger T0
+trade ST 5 10.20 T0 S2
+filled T0
+trigger T2
+trade ST 5 10.20 T2 S2
+filled T2
+book ST last 10.20
+  ask 10.60 10 1
+  ask 10.40 10 1
+cancelled T4 2
+reject T4 unknown order
+rest B2 1 10.20
+book ST last 10.20
+  ask 10.60 10 1
+  ask 10.40 10 1
+  bid 10.20 1 1
+rest B3 5 9.50
+pending T5
+cancelled B2 1
+trade ST 1 9.50 B3 S5
+filled S5
+trigger T5
+trade ST 4 9.50 B3 T5
+expired T5 6
+pending T6
+trigger T6
+expired T6 2
+book ST last 9.50
+  ask 10.60 10 1
+  ask 10.40 10 1
+trader ana cash 100.00 ST:-10
+trader bob cash 102.00 ST:-10
+trader cy cash 0.00
+trader dan cash 0.00
+trader eve cash 0.00
+trader fay cash -51.00 ST:5
+trader gus cash 0.00
+trader hal cash 0.00
+trader ivy cash -100.00 ST:10
+trader jo cash -47.50 ST:5
+trader kim cash 38.00 ST:-4
+trader lu cash 9.50 ST:-1
+trader mo cash 0.00
+trader zed cash -51.00 ST:5

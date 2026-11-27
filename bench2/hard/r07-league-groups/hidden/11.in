@@ -1,0 +1,29 @@
+team Ash
+team Elm
+team Fir
+team Oak
+team Yew
+team Ivy
+group Trees Oak Ash Elm
+group Shrubs Yew Fir
+result Oak 1 1 Ash
+result Ash 2 0 Elm
+result Elm 2 0 Oak
+result Yew 3 0 Fir
+form Oak
+form Ivy
+form Fir
+h2h Oak Yew
+h2h Ivy Oak
+h2h Oak Ivy
+h2h Oak Ash
+h2h Fir Yew
+h2h Oak Oak
+h2h Oak Pine
+record Oak
+record Ash
+record Elm
+record Fir
+record Ivy
+streak
+summary

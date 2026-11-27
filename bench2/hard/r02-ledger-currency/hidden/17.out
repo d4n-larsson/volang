@@ -1,0 +1,42 @@
+opened assets:bank (asset)
+opened assets:jpy (asset, JPY)
+opened assets:eur (asset, EUR)
+opened equity:x (equity)
+rate JPY from day 0: 0.0067
+rate EUR from day 0: 999.9999
+posted j1: 2 postings, total 6700.00
+posted j2: 2 postings, total 6700.00
+error: transaction j3 unbalanced by -0.01
+posted j4: 2 postings, total 0.01
+error: zero posting assets:bank
+error: zero posting equity:x
+posted j7: 2 postings, total 999999890.00
+statement assets:jpy (asset, JPY)
+     1 j1        999999.99  999999.99  big
+     2 j2        999999.99 1999999.98  big
+     3 j4             0.75 2000000.73  tiny
+  closing balance 2000000.73 JPY (book 13400.01 USD)
+statement assets:bank (asset)
+     1 j1         -6700.00   -6700.00  big
+     2 j2         -6700.00  -13400.00  big
+     3 j4            -0.01  -13400.01  tiny
+  closing balance -13400.01
+statement assets:eur (asset, EUR)
+     4 j7        999999.99  999999.99  big
+  closing balance 999999.99 EUR (book 999999890.00 USD)
+balance assets: 999999889.99
+  EUR 999999.99
+  JPY 2000000.73
+j7 day 4 big
+  assets:eur 999999.99 EUR (999999890.00 USD)
+  equity:x -999999890.00
+assets:eur 999999.99 EUR: book 999999890.00, value 999999890.00, gain 0.00
+assets:jpy 2000000.73 JPY: book 13400.01, value 13400.00, gain -0.01
+unrealized gain -0.01
+asset
+  assets:bank -13400.01
+  assets:eur 999999890.00
+  assets:jpy 13400.01
+equity
+  equity:x -999999890.00
+total debits 1000013290.01 credits 1000013290.01

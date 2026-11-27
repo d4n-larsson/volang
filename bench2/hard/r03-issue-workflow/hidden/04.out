@@ -1,0 +1,43 @@
+user dee added
+created #1: Payment provider outage handling is missing
+created #2: Retry queue
+#1 assigned to dee
+#2 assigned to dee
+#1 moved new -> triaged
+#1 moved triaged -> in_progress
+#1 moved in_progress -> blocked
+#2 moved new -> triaged
+clock 19
+#2 idle 11 ticks: Retry queue
+#2 idle 12 ticks: Retry queue
+#1 [p1] Payment provider outage handling is missing
+  status: blocked (waiting on the vendor api)
+  assignee: dee
+  labels: -
+  created 2, updated 8
+  [6] new -> triaged
+  [7] triaged -> in_progress
+  [8] in_progress -> blocked (waiting on the vendor api)
+  0 comments
+#1 moved blocked -> triaged
+#1 moved triaged -> in_progress
+#1 moved in_progress -> blocked
+#1 [p1] Payment provider outage handling is missing
+  status: blocked (second hold)
+  assignee: dee
+  labels: -
+  created 2, updated 25
+  [6] new -> triaged
+  [7] triaged -> in_progress
+  [8] in_progress -> blocked (waiting on the vendor api)
+  [23] blocked -> triaged
+  [24] triaged -> in_progress
+  [25] in_progress -> blocked (second hold)
+  0 comments
+clock 29
+#2 idle 21 ticks: Retry queue
+#1 moved blocked -> in_progress
+#2 idle 23 ticks: Retry queue
+#1 idle 1 tick: Payment provider outage han...
+no issues
+#1 [p1] in_progress dee Payment provider outage han...

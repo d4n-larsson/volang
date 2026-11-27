@@ -1,0 +1,20 @@
+[main 1] base (5 added, 0 modified, 0 deleted)
+[main 2] main side (1 added, 2 modified, 0 deleted)
+switched to topic
+[topic 3] topic side (2 added, 1 modified, 2 deleted)
+switched to main
+[main 4] main adds same (1 added, 0 modified, 0 deleted)
+[main 5] merge topic into main (1 added, 0 modified, 2 deleted)
+commit 5
+parents 4 3
+message merge topic into main
+both "final"
+keep "same"
+mod "ours changed"
+newours "from main"
+same "added same"
+theirs "added"
+5 merge topic into main (merge of 3)
+4 main adds same
+2 main side
+1 base

@@ -1,0 +1,25 @@
+feb.csv:2: outside period 2024-02-01
+feb.csv:4: outside period 2024-02-02
+feb.csv:5: outside period 2024-02-25
+feb.csv:7: bad date 2024-02-30
+dates.csv:2: bad date 2023-02-29
+dates.csv:4: bad date 2024-13-01
+dates.csv:5: bad date 2024-4-01
+dates.csv:6: bad date 2024-04-31
+dates.csv:7: outside period 2023-12-31
+dates.csv:8: outside period 2025-01-01
+dates.csv:9: outside period 2024-12-31
+dates.csv:10: bad date 2024-00-10
+dates.csv:11: bad date 2024/01/10
+dates.csv:12: bad date 1900-02-29
+dates.csv:13: outside period 2000-02-29
+spaces.csv:5: outside period 2024-01-15
+spaces.csv:6: outside period 2024-01-16
+== ledger
+2024-02-29 DK2002 F-004 0.05
+2024-02-29 SE1001 D-2 1.00
+== balances
+DK2002 1 0.05
+SE1001 1 1.00
+wrote out/oneday.ledger 2
+wrote out/oneday.errors 17

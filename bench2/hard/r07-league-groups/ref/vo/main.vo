@@ -1,0 +1,15 @@
+import commands;
+import model;
+
+fn main() uses console, input {
+    let league = model.new_league();
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w) => w != "");
+        if len(words) == 0 {
+            continue;
+        }
+        for out in commands.run(league, words) {
+            print(out);
+        }
+    }
+}

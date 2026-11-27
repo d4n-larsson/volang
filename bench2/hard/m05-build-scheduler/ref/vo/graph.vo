@@ -1,0 +1,122 @@
+import lines;
+
+export record Plan {
+    blocked: list[str];
+    buildable: map[str, bool];
+    priority: map[str, int];
+    reach: map[str, map[str, bool]];
+    groups: list[list[str]];
+}
+
+fn known_deps(b: lines.Build, name: str) -> list[str] {
+    return filter(b.targets[name].deps, fn(d) => has(b.targets, d));
+}
+
+fn reach_sets(b: lines.Build) -> map[str, map[str, bool]] {
+    let out = new map[str, map[str, bool]];
+    for name in b.order {
+        let seen = new map[str, bool];
+        let stack = known_deps(b, name);
+        while len(stack) > 0 {
+            match pop(stack) {
+                case ok(d) {
+                    if not has(seen, d) {
+                        set seen[d] = true;
+                        for x in known_deps(b, d) {
+                            push(stack, x);
+                        }
+                    }
+                }
+                case err(_) {
+                    break;
+                }
+            }
+        }
+        set out[name] = seen;
+    }
+    return out;
+}
+
+fn cycle_groups(b: lines.Build, reach: map[str, map[str, bool]]) -> list[list[str]] {
+    let cyclic = filter(b.order, fn(n) => has(reach[n], n));
+    sort(cyclic);
+    let groups = new list[list[str]];
+    let done = new map[str, bool];
+    for n in cyclic {
+        if has(done, n) {
+            continue;
+        }
+        let g = filter(cyclic, fn(m) => m == n or (has(reach[n], m) and has(reach[m], n)));
+        for m in g {
+            set done[m] = true;
+        }
+        push(groups, g);
+    }
+    return groups;
+}
+
+fn reaches_any(reach: map[str, bool], set_of: map[str, bool]) -> bool {
+    for k, _ in reach {
+        if has(set_of, k) {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn prio(b: lines.Build, buildable: map[str, bool], priority: map[str, int], n: str) -> int {
+    if has(priority, n) {
+        return priority[n];
+    }
+    var best = 0;
+    for m, _ in buildable {
+        if has_item(b.targets[m].deps, n) {
+            set best = max(best, prio(b, buildable, priority, m));
+        }
+    }
+    set priority[n] = b.targets[n].duration + best;
+    return priority[n];
+}
+
+export fn has_item(xs: list[str], x: str) -> bool {
+    return any(xs, fn(y) => y == x);
+}
+
+export fn plan(b: lines.Build) -> Plan {
+    let reach = reach_sets(b);
+    var goals = b.goals;
+    if not b.has_goal_line {
+        set goals = b.order;
+    }
+    let needed = new map[str, bool];
+    for g in goals {
+        set needed[g] = true;
+        for k, _ in reach[g] {
+            set needed[k] = true;
+        }
+    }
+    let broken = new map[str, bool];
+    for n in b.order {
+        if has(reach[n], n) or len(known_deps(b, n)) != len(b.targets[n].deps) {
+            set broken[n] = true;
+        }
+    }
+    let blocked = new list[str];
+    let buildable = new map[str, bool];
+    for n in b.order {
+        if not has(needed, n) {
+            continue;
+        }
+        if has(broken, n) or reaches_any(reach[n], broken) {
+            push(blocked, n);
+        } else {
+            set buildable[n] = true;
+        }
+    }
+    sort(blocked);
+    let priority = new map[str, int];
+    for n, _ in buildable {
+        let _ = prio(b, buildable, priority, n);
+    }
+    return new Plan { blocked: blocked, buildable: buildable, priority: priority, reach: reach, groups: cycle_groups(b, reach) };
+}

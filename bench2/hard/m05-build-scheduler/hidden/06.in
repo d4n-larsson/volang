@@ -1,0 +1,13 @@
+workers 2
+retries 1
+backoff 1
+target base 2
+target left 2 base
+target right 3 base
+target merge 1 left right
+target c10 1 merge
+target c9 1 merge
+target c_1 1 left
+target other 5
+fail base 1
+fail base 2

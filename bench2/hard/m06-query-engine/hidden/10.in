@@ -1,0 +1,11 @@
+create table r (id int, word text, score int)
+insert into r values (1, 'pear', 3), (2, 'Apple', 3), (3, 'apple', 1), (4, 'banana', null), (5, 'Zed', 3), (6, '10', 2), (7, '9', 2)
+select word from r order by word
+select id, score from r order by score desc, id desc
+select id from r order by score
+select word from r order by score desc, word limit 2 offset 2
+select word from r order by id limit 3 offset 6
+select word from r order by id limit 3 offset 7
+select word from r order by id limit 0 offset 1
+select id from r where word < 'a' order by word desc
+select id from r where word >= 'apple' and word <= 'pear'

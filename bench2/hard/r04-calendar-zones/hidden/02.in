@@ -1,0 +1,18 @@
+user ana +02:00
+user ben -08:00
+user cho +05:45
+room r1 5 -03:00
+room r2 5 +10:00
+book a1 r1 ana 6 10:00 60 ben
+book a2 r1 cho 6 13:00 30
+book b1 r1 ben 6 00:30 30
+book b1 r2 ben 6 00:30 30
+book c1 r2 cho 6 13:00 30 ana
+book c1 r2 cho 6 12:30 15 ana
+book b2 r1 ben 6 01:00 15
+book d1 r2 ana 6 08:45 10 cho
+book late r2 cho 6 23:00 120
+book e1 r2 ben 6 10:00 30
+book f1 r2 ana 6 20:00 60
+book f1 r1 ana 6 20:00 60 ben cho
+list

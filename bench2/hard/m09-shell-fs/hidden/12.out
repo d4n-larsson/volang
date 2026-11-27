@@ -1,0 +1,25 @@
+cp: /tmp: no space left
+138 140
+/tmp:
+d 49 bob/
+/tmp/bob:
+d 21 annsdocs/
+- 19 cv-ann.txt
+-  9 todo
+138 /
+89 /home
+40 /home/ann
+40 /home/ann/docs
+49 /home/bob
+21 /home/bob/annsdocs
+49 /tmp
+49 /tmp/bob
+21 /tmp/bob/annsdocs
+/home/ann/old/bob/annsdocs
+rm: /home/ann/old: in use
+d 0 annsdocs/
+- 9 todo
+/home/ann/docs/cv.txt
+/home/ann/docs/letter.txt
+/home/bob/annsdocs/letter.txt
+/home/bob/cv-ann.txt

@@ -1,0 +1,23 @@
+user o1 +02:00
+user o2 -01:00
+user o3 +06:00
+room big 9
+room small 9
+hours o2 08:00 12:00
+hours o3 12:00 20:00
+book m1 big o1 5 10:00 60 o2 o3
+book m1 big o1 5 11:00 60 o2 o3
+book m2 small o3 5 13:00 30
+move m1 5 11:30
+move m1 5 10:30
+move m1 5 13:30
+move m1 5 15:00
+move m2 5 19:30
+move m2 5 19:31
+move m9 5 10:00
+book m3 small o2 5 07:30 60 o1
+book m3 small o2 5 10:30 60 o1
+book m3 small o2 5 08:00 60 o1
+who m1
+who m3
+list

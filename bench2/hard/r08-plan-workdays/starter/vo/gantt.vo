@@ -1,0 +1,60 @@
+import fmt;
+import model;
+import parse;
+import schedule;
+
+const max_columns = 60;
+
+fn cell(task: model.Task, slot: model.Slot, day: int) -> str {
+    if task.duration == 0 {
+        if day == slot.start {
+            return "*";
+        }
+        return ".";
+    }
+    if slot.start <= day and day < slot.finish {
+        return "#";
+    }
+    return ".";
+}
+
+fn chart(sched: model.Schedule, first: int, last: int) -> list[str] {
+    var width = 0;
+    for t in sched.order {
+        set width = max(width, len(t.tid));
+    }
+    var ruler = "";
+    for day in first..last + 1 {
+        set ruler = ruler + str(day % 10);
+    }
+    let out = [fmt.pad_right("", width) + " " + ruler];
+    for t in sched.order {
+        var row = "";
+        for day in first..last + 1 {
+            set row = row + cell(t, sched.slots[t.tid], day);
+        }
+        push(out, fmt.pad_right(t.tid, width) + " " + row);
+    }
+    return out;
+}
+
+# `gantt` shows days 0 to the project's finish (at most max_columns of them);
+# `gantt FROM TO` the days FROM to TO.
+export fn gantt(plan: model.Plan, args_value: list[str]) -> list[str] {
+    if len(plan.tasks) == 0 {
+        return ["no tasks"];
+    }
+    let sched = schedule.compute(plan);
+    if len(args_value) == 0 {
+        return chart(sched, 0, min(sched.end, max_columns - 1));
+    }
+    let first = parse.num(args_value[0]);
+    let last = parse.num(args_value[1]);
+    if first > last {
+        return ["error: bad range"];
+    }
+    if last - first + 1 > max_columns {
+        return ["error: range too wide"];
+    }
+    return chart(sched, first, last);
+}

@@ -1,0 +1,27 @@
+user ann added
+user bo added
+room hall added, capacity 3
+booked m1 in hall: 3 10:00-11:00 (2 people)
+moved m1: 3 12:00-13:00
+m1: hall 3 09:00-10:00 UTC+00:00, organizer ann, attendees bo
+zone ann UTC-02:00
+moved m1: 3 12:00-13:00
+m1: hall 3 14:00-15:00 UTC+00:00, organizer ann, attendees bo
+agenda bo day 3 (UTC+00:00):
+  3 14:00-15:00 m1 in hall (attendee)
+agenda ann day 3 (UTC-02:00):
+  3 12:00-13:00 m1 in hall (organizer)
+booked m2 in hall: 3 09:00-10:00 (1 person)
+error: room hall busy: m2 3 07:00-08:00
+error: room hall busy: m2 3 07:00-08:00
+moved m1: 3 05:00-06:00
+m1 3 07:00-08:00 hall ann +1
+m2 3 09:00-10:00 hall bo +0
+zone bo UTC+12:00
+moved m2: 3 21:30-22:30
+moved m2: 3 20:30-21:30
+agenda bo day 4 (UTC+12:00):
+  nothing
+agenda bo day 3 (UTC+12:00):
+  3 19:00-20:00 m1 in hall (attendee)
+  3 20:30-21:30 m2 in hall (organizer)

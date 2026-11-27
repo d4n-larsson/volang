@@ -1,0 +1,27 @@
+added task a
+added task b
+b after a+10
+day 16 is now off
+day 22 is now off
+day 20 is now a working day
+task  start  finish  lstart  lfinish  slack
+a         0      14       0       14      0
+b        29      30      29       30      0
+end 30
+critical: a b (21 working days)
+task a: Ten days
+  duration 10 days
+  after: -
+  before: b
+  start 0 finish 14 slack 0
+  done 0%
+task b: b
+  duration 1 days
+  after: a+10
+  before: -
+  start 29 finish 30 slack 0
+  done 0%
+project finishes on day 30 (Wed)
+  0123456789012345678901234567890
+a #####::#####...................
+b .............................#.

@@ -1,0 +1,25 @@
+.width 24
+.page 10
+.space 3
+First paragraph sits at the top of the page.
+.space 2
+Two empty lines above this one.
+.space 1
+.space 2
+Three above this one.
+.list bullet
+Item one.
+.space 2
+Item two after a space.
+Item two continues.
+
+Item three.
+.endlist
+.space 0
+.space 10
+.space 1 2
+.space 5
+This paragraph needs five lines of space and two lines of text, so it moves.
+.heading Kept
+.space 4
+The heading above needs room for four empty lines and this paragraph.

@@ -1,0 +1,13 @@
+let i = 0
+while i < 10
+    set i = i + 1
+    if i % 2 == 0
+        continue
+    end
+end
+func first_even(n)
+    if n % 2 == 0
+        break
+    end
+    return n
+end

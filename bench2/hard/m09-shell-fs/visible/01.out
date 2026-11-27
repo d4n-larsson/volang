@@ -1,0 +1,13 @@
+Shell file system notes
+second line
+int main
+docs/
+src/
+d 36 docs/
+d  9 src/
+/docs
+- 36 readme.txt
+-  0 todo
+45 /
+36 /docs
+9 /src

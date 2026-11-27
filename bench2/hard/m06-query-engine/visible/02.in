@@ -1,0 +1,8 @@
+create table staff (id int, name text, team int)
+create table teams (id int, label text)
+insert into staff values (1, 'ana', 10), (2, 'ben', 20), (3, 'cid', 10), (4, 'dee', null)
+insert into teams values (10, 'core'), (20, 'web'), (30, 'data')
+select name, label from staff join teams on staff.team = teams.id
+select name, label from staff left join teams on team = teams.id order by label, name
+select label, count(staff.id) from teams left join staff on teams.id = staff.team group by label order by count(staff.id) desc, label
+select name from staff where team = 30

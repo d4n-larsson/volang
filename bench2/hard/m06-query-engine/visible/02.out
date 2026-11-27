@@ -1,0 +1,26 @@
+created staff
+created teams
+inserted 4
+inserted 3
+name | label
+-----+------
+ana  | core 
+ben  | web  
+cid  | core 
+(3 rows)
+name | label
+-----+------
+dee  | NULL 
+ana  | core 
+cid  | core 
+ben  | web  
+(4 rows)
+label | count(staff.id)
+------+----------------
+core  |               2
+web   |               1
+data  |               0
+(3 rows)
+name
+----
+(0 rows)

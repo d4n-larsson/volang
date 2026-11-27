@@ -1,0 +1,12 @@
+== basic
+dir docs
+file docs/readme.txt 27
+file notes.txt 5
+file src/main/app.txt 21
+file empty.txt 0
+dir src/main
+= docs/readme.txt 27 51367644
+= empty.txt 0 7
+= notes.txt 5 305412785
+= src/main/app.txt 21 569898455
+total 4 files, 3 dirs, 53 bytes

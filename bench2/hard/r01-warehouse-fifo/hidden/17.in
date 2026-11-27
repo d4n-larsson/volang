@@ -1,0 +1,18 @@
+warehouse z
+item bar Bar 500
+item baz Baz 600
+receive z bar 3 400
+receive z baz 1
+receive z bar 2 450
+order o1 z
+line o1 bar 2
+line o1 baz 1
+line o1 bar 4
+fulfil o1
+lots z bar
+history bar
+receive z bar 1 480
+fulfil o1
+lots z bar
+lots z baz
+report

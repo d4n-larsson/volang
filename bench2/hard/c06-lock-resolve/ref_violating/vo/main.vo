@@ -1,0 +1,239 @@
+import std.collections;
+import std.text;
+
+record V {
+    major: int;
+    minor: int;
+    patch: int;
+}
+
+record Dep {
+    name: str;
+    constraint: str;
+}
+
+record Release {
+    text: str;
+    parts: V;
+    deps: list[Dep];
+}
+
+record Need {
+    constraint: str;
+    requirer: str;
+}
+
+record State {
+    needs: map[str, list[Need]];
+    queue: deque[str];
+    picked: map[str, str];
+}
+
+fn valid_lock(n: str) -> bool {
+    if len(n) < 1 or len(n) > 32 {
+        return false;
+    }
+    for c in n {
+        if not ((c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "-" or c == "_") {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn valid_package(n: str) -> bool {
+    if len(n) < 1 or len(n) > 30 {
+        return false;
+    }
+    for i, c in chars(n) {
+        let letter = c >= "a" and c <= "z";
+        if i == 0 and not letter {
+            return false;
+        }
+        if not (letter or (c >= "0" and c <= "9") or c == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn ver(s: str) -> V {
+    let p = split(s, ".");
+    return new V { major: int_or_zero(p[0]), minor: int_or_zero(p[1]), patch: int_or_zero(p[2]) };
+}
+
+fn int_or_zero(s: str) -> int {
+    match parse_int(s) {
+        case ok(v) {
+            return v;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+fn satisfies_term(v: V, term: str) -> bool {
+    if term == "*" {
+        return true;
+    }
+    if text.starts_with(term, ">=") {
+        return v >= ver(slice(term, 2, len(term)));
+    }
+    let w = ver(slice(term, 1, len(term)));
+    match slice(term, 0, 1) {
+        case "=" {
+            return v == w;
+        }
+        case "<" {
+            return v < w;
+        }
+        case "^" {
+            return v.major == w.major and v >= w;
+        }
+        case "~" {
+            return v.major == w.major and v.minor == w.minor and v >= w;
+        }
+        else {
+            return false;
+        }
+    }
+}
+
+fn satisfies(v: V, constraint: str) -> bool {
+    return all(split(constraint, ","), fn(t) => satisfies_term(v, t));
+}
+
+fn parse_registry(content: str) -> list[Release] {
+    let out = new list[Release];
+    for raw in split(content, "\n") {
+        let line = trim_spaces(raw);
+        if line == "" or text.starts_with(line, "#") {
+            continue;
+        }
+        let w = split(line, " ");
+        if w[0] == "version" {
+            push(out, new Release { text: w[1], parts: ver(w[1]), deps: [] });
+        } else if w[0] == "dep" {
+            push(out[len(out) - 1].deps, new Dep { name: w[1], constraint: w[2] });
+        }
+    }
+    return out;
+}
+
+fn trim_spaces(s: str) -> str {
+    var a = 0;
+    var b = len(s);
+    while a < b and byte_at(s, a) == 32 {
+        set a = a + 1;
+    }
+    while b > a and byte_at(s, b - 1) == 32 {
+        set b = b - 1;
+    }
+    return slice(s, a, b);
+}
+
+fn add(st: State, pkg: str, constraint: str, requirer: str) {
+    if not has(st.needs, pkg) {
+        set st.needs[pkg] = [];
+        push(st.queue, pkg);
+    }
+    push(st.needs[pkg], new Need { constraint: constraint, requirer: requirer });
+}
+
+# The best release of p for its needs, or err with the message.
+fn choose(st: State, p: str, releases: list[Release]) -> result[Release] {
+    var best = -1;
+    for i, r in releases {
+        if all(st.needs[p], fn(n) => satisfies(r.parts, n.constraint)) {
+            if best < 0 or r.parts > releases[best].parts {
+                set best = i;
+            }
+        }
+    }
+    if best < 0 {
+        let listed = map(st.needs[p], fn(n) => n.constraint + " (" + n.requirer + ")");
+        return err("error: no version of " + p + " satisfies " + join(listed, ", "));
+    }
+    return ok(releases[best]);
+}
+
+fn resolve(st: State) -> result[void] uses console, file.read("./") {
+    while len(st.queue) > 0 {
+        let p = try pop_front(st.queue);
+        let requirer = st.needs[p][0].requirer;
+        var content = "";
+        var found = false;
+        match read_file("registry/" + p + ".txt") {
+            case ok(t) {
+                set content = t;
+                set found = true;
+            }
+            case err(_) {
+            }
+        }
+        if not valid_package(p) {
+            return err("error: bad package name " + p + " (required by " + requirer + ")");
+        }
+        if not found {
+            return err("error: unknown package " + p + " (required by " + requirer + ")");
+        }
+        let r = try choose(st, p, parse_registry(content));
+        set st.picked[p] = r.text;
+        print("pick " + p + " " + r.text);
+        let me = p + "@" + r.text;
+        for d in r.deps {
+            add(st, d.name, d.constraint, me);
+            if has(st.picked, d.name) and not satisfies(ver(st.picked[d.name]), d.constraint) {
+                let at = d.name + "@" + st.picked[d.name];
+                return err("error: conflict on " + d.name + ": " + at + " does not satisfy " + d.constraint + " (required by " + me + ")");
+            }
+        }
+    }
+    return ok();
+}
+
+fn pop_front(q: deque[str]) -> result[str] {
+    return collections.pop_front(q);
+}
+
+fn main() -> result[void] uses console, input, file.read("./"), file.write("out/") {
+    let first = try read_line();
+    let name = slice(first, len("lock "), len(first));
+    if not valid_lock(name) {
+        print("error: bad lock name " + name);
+        return ok();
+    }
+    let st = new State { needs: new map[str, list[Need]], queue: new deque[str], picked: new map[str, str] };
+    while true {
+        match read_line() {
+            case ok(line) {
+                if line != "" {
+                    let w = split(line, " ");
+                    add(st, w[0], w[1], "root");
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    match resolve(st) {
+        case ok() {
+        }
+        case err(e) {
+            print(e);
+            return ok();
+        }
+    }
+    let names = keys(st.picked);
+    sort(names);
+    let lock = map(names, fn(p) => p + " " + st.picked[p]);
+    print("== lock");
+    for l in lock {
+        print(l);
+    }
+    try write_file("out/" + name + ".lock", join(map(lock, fn(l) => l + "\n"), ""));
+    print("wrote out/" + name + ".lock " + str(len(lock)));
+    return ok();
+}

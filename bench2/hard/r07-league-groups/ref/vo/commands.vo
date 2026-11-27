@@ -1,0 +1,173 @@
+# The command dispatcher: one command in, its output lines out.
+import fixtures;
+import fmt;
+import model;
+import parse;
+import results;
+import standings;
+import stats;
+import teams;
+
+fn bad() -> list[str] {
+    return ["error: bad command"];
+}
+
+fn table_or_empty(rows: list[model.Row]) -> list[str] {
+    if len(rows) == 0 {
+        return ["table empty"];
+    }
+    return fmt.table_lines(rows);
+}
+
+fn group_table(league: model.League, g: str) -> list[str] {
+    let out = ["group " + g];
+    for line in table_or_empty(standings.group_standings(league, g)) {
+        push(out, line);
+    }
+    return out;
+}
+
+fn table_command(league: model.League, rest: list[str]) -> list[str] {
+    if len(rest) > 1 {
+        return bad();
+    }
+    if len(rest) == 1 {
+        if not has(league.groups, rest[0]) {
+            return ["error: unknown group " + rest[0]];
+        }
+        return group_table(league, rest[0]);
+    }
+    if not teams.grouped(league) {
+        return table_or_empty(standings.standings(league));
+    }
+    let out = new list[str];
+    for g in teams.group_names(league) {
+        for line in group_table(league, g) {
+            push(out, line);
+        }
+    }
+    return out;
+}
+
+# The output of a team command, or an empty list when `cmd` is not one.
+fn team_command(league: model.League, cmd: str, rest: list[str]) -> list[str] {
+    if cmd == "team" {
+        if not parse.shape_ok(rest, 1, []) {
+            return bad();
+        }
+        return [teams.add_team(league, rest[0])];
+    }
+    if cmd == "withdraw" {
+        if not parse.shape_ok(rest, 1, []) {
+            return bad();
+        }
+        return [teams.withdraw(league, rest[0])];
+    }
+    if cmd == "rename" {
+        if not parse.shape_ok(rest, 2, []) {
+            return bad();
+        }
+        return [teams.rename(league, rest[0], rest[1])];
+    }
+    if cmd == "group" {
+        if len(rest) < 2 {
+            return bad();
+        }
+        return [teams.add_group(league, rest[0], slice(rest, 1, len(rest)))];
+    }
+    if cmd == "teams" {
+        if not parse.shape_ok(rest, 0, []) {
+            return bad();
+        }
+        return teams.team_lines(league);
+    }
+    return [];
+}
+
+fn result_command(league: model.League, cmd: str, rest: list[str]) -> list[str] {
+    if cmd == "result" {
+        if not parse.shape_ok(rest, 4, [1, 2]) {
+            return bad();
+        }
+        return [results.add_result(league, rest[0], parse.to_int(rest[1]), parse.to_int(rest[2]), rest[3])];
+    }
+    if cmd == "correct" {
+        if not parse.shape_ok(rest, 3, [0, 1, 2]) {
+            return bad();
+        }
+        return [results.correct(league, parse.to_int(rest[0]), parse.to_int(rest[1]), parse.to_int(rest[2]))];
+    }
+    return [];
+}
+
+fn report_command(league: model.League, cmd: str, rest: list[str]) -> list[str] {
+    if cmd == "table" {
+        return table_command(league, rest);
+    }
+    if cmd == "fixtures" {
+        if not parse.shape_ok(rest, 0, []) {
+            return bad();
+        }
+        return fixtures.fixture_lines(league);
+    }
+    if cmd == "form" {
+        if not parse.shape_ok(rest, 1, []) {
+            return bad();
+        }
+        return stats.form_line(league, rest[0]);
+    }
+    if cmd == "h2h" {
+        if not parse.shape_ok(rest, 2, []) {
+            return bad();
+        }
+        return stats.h2h_lines(league, rest[0], rest[1]);
+    }
+    return more_reports(league, cmd, rest);
+}
+
+fn more_reports(league: model.League, cmd: str, rest: list[str]) -> list[str] {
+    if cmd == "goals" {
+        if not parse.shape_ok(rest, 0, []) {
+            return bad();
+        }
+        return stats.goal_lines(league);
+    }
+    if cmd == "streak" {
+        if not parse.shape_ok(rest, 0, []) {
+            return bad();
+        }
+        return stats.streak_line(league);
+    }
+    if cmd == "record" {
+        if not parse.shape_ok(rest, 1, []) {
+            return bad();
+        }
+        return stats.record_lines(league, rest[0]);
+    }
+    if cmd == "knockout" {
+        if not parse.shape_ok(rest, 0, []) {
+            return bad();
+        }
+        return stats.knockout_lines(league);
+    }
+    if cmd == "summary" {
+        if not parse.shape_ok(rest, 0, []) {
+            return bad();
+        }
+        return stats.summary_lines(league);
+    }
+    return [];
+}
+
+# Every command prints at least one line, so an empty answer means "not this handler".
+export fn run(league: model.League, words: list[str]) -> list[str] {
+    let cmd = words[0];
+    let rest = slice(words, 1, len(words));
+    for handler in [team_command, result_command, report_command] {
+        let out = handler(league, cmd, rest);
+        if len(out) > 0 {
+            return out;
+        }
+    }
+    return ["error: unknown command " + cmd];
+}

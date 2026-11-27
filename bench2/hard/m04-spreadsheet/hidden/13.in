@@ -1,0 +1,34 @@
+set A1 Item
+set B1 Qty
+set C1 Price
+set D1 Cost
+set A2 bolts
+set B2 120
+set C2 3
+set A3 nuts
+set B3 75
+set C3 2
+set A4 brackets
+set B4 8
+set C4 45
+set A5 hinges
+set B5 0
+set C5 n/a
+set D2 =B2*C2
+copy D2 D3
+copy D2 D4
+copy D2 D5
+set A6 total
+set D6 =SUM(D2:D4)
+set A7 average
+set D7 =D6/COUNT(B2:B4)
+set A8 big items
+set D8 =(D2>300)+(D3>300)+(D4>300)
+set A9 share of bolts %
+set D9 =D2*100/D6
+show A1:D9
+formula D5
+print D5
+set C5 9
+show D5:D9
+deps B3

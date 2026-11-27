@@ -1,0 +1,38 @@
+/p
+  a/
+    b/ [denied]
+    z/
+      h.txt
+  m/ [denied]
+  top.txt
+error: permission denied: /p/a/b
+error: permission denied: /p/m
+/p/m/k.txt
+error: permission denied: /p/a/b/c
+k
+/p/a
+  b/ [denied]
+  z/
+    h.txt
+/p
+  a/
+    b/ [denied]
+    z/
+      h.txt
+  m/ [denied]
+  top.txt
+/p
+  a/
+    b/
+      c/
+        f.txt
+      g.txt
+    z/
+      h.txt
+  m/
+    k.txt
+  top.txt
+/p/a
+  b/ [denied]
+  z/ [denied]
+/p/a/z/h.txt

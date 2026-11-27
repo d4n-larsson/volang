@@ -1,0 +1,32 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+channel bob dev
+join cy dev
+post ann general one
+post bob dev d1
+post bob dev d2
+post cy general two
+edit ann general/1 one again
+edit bob general/1 hijack
+edit bob dev/3 nothing
+edit cy dev/003 nope
+edit bob dev/002 d2 fixed
+delete cy dev/1
+delete bob nope/1
+edit ann dev
+edit ann dev/0 x
+edit ann dev/x x
+edit ann a/b/c x
+edit ann Dev/1 x
+delete ann /1
+delete ann dev/
+delete zed dev/1
+edit ann general/1
+history dev
+history general
+stats

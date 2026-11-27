@@ -1,0 +1,13 @@
+message <t1@lists.example.org>: Weekly digest number 7
+relay <t1@lists.example.org> team@example.org
+relay <t1@lists.example.org> ERIN@Example.ORG
+deliver <t1@lists.example.org> frank
+relay <t1@lists.example.org> BOB@EXAMPLE.ORG
+message tue#2: (no subject)
+relay tue#2 gina@example.org
+message tue#3: Two To headers
+relay tue#3 carol@example.org
+relay tue#3 dave@example.org
+== mailboxes
+wrote out/frank.mbox 1 294
+total 1 delivered, 0 bounced, 6 relayed, 0 duplicates

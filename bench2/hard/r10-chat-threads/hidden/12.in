@@ -1,0 +1,31 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+channel cy dev
+join dee dev
+post cy dev d1 @dee
+post ann general g1 @dee
+join dee general
+unread dee
+read dee dev
+post ann general g2
+leave dee general
+post ann general g3 @dee
+post bob general g4
+unread dee
+join dee general
+unread dee
+edit ann general/1 g1 again @dee
+unread dee
+post cy dev d2
+reply cy dev/1 d3 @dee
+reply cy dev/2 d4
+delete cy dev/1
+unread dee
+delete cy dev/3
+unread dee
+history dev

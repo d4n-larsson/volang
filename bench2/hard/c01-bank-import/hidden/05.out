@@ -1,0 +1,15 @@
+amounts.csv:2: bad amount 1.5
+amounts.csv:3: bad amount -
+amounts.csv:4: bad amount 1,00
+amounts.csv:9: bad amount 3.000
+amounts.csv:10: bad amount --1.00
+amounts.csv:11: bad amount 
+== ledger
+2024-05-01 SE1001 A-6 12.00
+2024-05-01 SE1001 A-7 -0.05
+2024-05-01 SE1001 A-8 7.10
+2024-05-01 SE1001 A-9 0.00
+== balances
+SE1001 4 19.05
+wrote out/amounts.ledger 4
+wrote out/amounts.errors 6

@@ -1,0 +1,24 @@
+opened assets:bank (asset)
+opened assets:gbp (asset, GBP)
+opened income:sales (income)
+opened expense:fees (expense)
+rate GBP from day 1: 1.2500
+posted s1: 2 postings, total 100.00
+posted s2: 2 postings, total 2.50
+rate GBP from day 5: 1.3000
+balance assets: 101.50
+  GBP 80.00
+asset
+  assets:bank -2.50
+  assets:gbp 100.00
+income
+  income:sales -100.00
+expense
+  expense:fees 2.50
+total debits 102.50 credits 102.50
+1 s1 sale 100.00
+4 s2 fee 2.50
+assets:gbp 80.00 GBP: book 100.00, value 100.00, gain 0.00
+unrealized gain 0.00
+assets:gbp 80.00 GBP: book 100.00, value 104.00, gain 4.00
+unrealized gain 4.00

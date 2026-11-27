@@ -1,0 +1,23 @@
+error: no groups
+team Ant added
+team Bee added
+team Cat added
+team Dog added
+team Elk added
+group Solo: Ant, Bee
+error: knockout needs at least 2 groups
+group Duo: Cat, Dog, Elk
+error: group Duo has 6 fixtures left
+result 1: Ant 1-0 Bee
+result 2: Bee 1-0 Ant
+error: group Duo has 6 fixtures left
+team Elk withdrawn, 0 results void
+error: group Duo has 2 fixtures left
+result 3: Cat 0-0 Dog
+error: group Duo has 1 fixtures left
+result 4: Dog 1-2 Cat
+match 1: Cat (Duo 1st) v Bee (Solo 2nd)
+match 2: Ant (Solo 1st) v Dog (Duo 2nd)
+team Ant withdrawn, 2 results void
+error: group Solo has fewer than 2 teams
+error: bad command

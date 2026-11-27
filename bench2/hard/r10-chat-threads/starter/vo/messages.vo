@@ -1,0 +1,51 @@
+# Posting, editing and deleting messages.
+import channels;
+import model;
+import users;
+
+export fn find_message(state: model.State, msg_id: int) -> result[model.Message] {
+    for m in state.messages {
+        if m.msg_id == msg_id {
+            return ok(m);
+        }
+    }
+    return err("unknown message " + str(msg_id));
+}
+
+export fn post(state: model.State, user_name: str, channel_name: str, text: str) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let c = try channels.require_channel(state, channel_name);
+    try channels.require_member(c, user_name);
+    let m = new model.Message { msg_id: state.next_id, channel: c.name, author: user_name, text: text, time: state.time, edited: false };
+    set state.next_id = state.next_id + 1;
+    push(state.messages, m);
+    return ok(["message " + str(m.msg_id) + " posted to #" + c.name]);
+}
+
+export fn edit(state: model.State, user_name: str, msg_id: int, text: str) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let m = try find_message(state, msg_id);
+    if m.author != user_name {
+        return err(user_name + " cannot edit message " + str(msg_id));
+    }
+    set m.text = text;
+    set m.edited = true;
+    set state.edits = state.edits + 1;
+    return ok(["message " + str(msg_id) + " edited"]);
+}
+
+# The author may delete a message, and so may the creator of its channel.
+fn may_delete(state: model.State, user_name: str, m: model.Message) -> bool {
+    return m.author == user_name or state.channels[m.channel].creator == user_name;
+}
+
+export fn delete(state: model.State, user_name: str, msg_id: int) -> result[list[str]] {
+    let _ = try users.require_user(state, user_name);
+    let m = try find_message(state, msg_id);
+    if not may_delete(state, user_name, m) {
+        return err(user_name + " cannot delete message " + str(msg_id));
+    }
+    set state.messages = filter(state.messages, fn(x) => x.msg_id != msg_id);
+    set state.deletes = state.deletes + 1;
+    return ok(["message " + str(msg_id) + " deleted"]);
+}

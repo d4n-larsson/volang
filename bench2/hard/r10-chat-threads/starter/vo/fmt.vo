@@ -1,0 +1,43 @@
+# Text formats shared by the views.
+import model;
+
+# `1 message`, `0 messages`, `2 messages`.
+export fn plural(n: int, word: str) -> str {
+    if n == 1 {
+        return str(n) + " " + word;
+    }
+    return str(n) + " " + word + "s";
+}
+
+export fn label(channel_name: str) -> str {
+    return "#" + channel_name;
+}
+
+# `#a, #b`, or `no channels` for none.
+export fn labels(channel_names: list[str]) -> str {
+    if len(channel_names) == 0 {
+        return "no channels";
+    }
+    return join(map(channel_names, label), ", ");
+}
+
+export fn name_list(names: list[str]) -> str {
+    if len(names) == 0 {
+        return "none";
+    }
+    return join(names, ", ");
+}
+
+# `[ID] t=TIME AUTHOR: TEXT`, with ` (edited)` after an edited message.
+export fn message_line(m: model.Message) -> str {
+    var line = "[" + str(m.msg_id) + "] t=" + str(m.time) + " " + m.author + ": " + m.text;
+    if m.edited {
+        set line = line + " (edited)";
+    }
+    return line;
+}
+
+# A message line that also names its channel: `#CHANNEL [ID] ...`.
+export fn located_line(m: model.Message) -> str {
+    return label(m.channel) + " " + message_line(m);
+}

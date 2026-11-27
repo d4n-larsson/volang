@@ -1,0 +1,92 @@
+import model;
+
+# The working-day calendar: day 0 is a Monday; Saturdays and Sundays are off unless changed.
+export fn weekday(day: int) -> str {
+    return ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][day % 7];
+}
+
+export fn is_working(plan: model.Plan, day: int) -> bool {
+    if has(plan.days, day) {
+        return plan.days[day];
+    }
+    return day % 7 < 5;
+}
+
+export fn first_working(plan: model.Plan, day: int) -> int {
+    var d = day;
+    while not is_working(plan, d) {
+        set d = d + 1;
+    }
+    return d;
+}
+
+# The n-th working day after `day` (`day` itself when n is 0).
+export fn after(plan: model.Plan, day: int, n: int) -> int {
+    var d = day;
+    var left = n;
+    while left > 0 {
+        set d = d + 1;
+        if is_working(plan, d) {
+            set left = left - 1;
+        }
+    }
+    return d;
+}
+
+# The n-th working day before `day` (`day` itself when n is 0).
+export fn before(plan: model.Plan, day: int, n: int) -> int {
+    var d = day;
+    var left = n;
+    while left > 0 {
+        set d = d - 1;
+        if is_working(plan, d) {
+            set left = left - 1;
+        }
+    }
+    return d;
+}
+
+# Working days from `first` to `stop` - 1.
+export fn count(plan: model.Plan, first: int, stop: int) -> int {
+    var n = 0;
+    for d in first..stop {
+        if is_working(plan, d) {
+            set n = n + 1;
+        }
+    }
+    return n;
+}
+
+export fn holiday(plan: model.Plan, day: int) -> str {
+    if not is_working(plan, day) {
+        return "error: day " + str(day) + " is already off";
+    }
+    set plan.days[day] = false;
+    return "day " + str(day) + " is now off";
+}
+
+export fn workday(plan: model.Plan, day: int) -> str {
+    if is_working(plan, day) {
+        return "error: day " + str(day) + " is already a working day";
+    }
+    set plan.days[day] = true;
+    return "day " + str(day) + " is now a working day";
+}
+
+export fn cal_lines(plan: model.Plan, first: int, last: int) -> list[str] {
+    if first > last {
+        return ["error: bad range"];
+    }
+    let off = new list[str];
+    for d in first..last + 1 {
+        if not is_working(plan, d) {
+            push(off, str(d));
+        }
+    }
+    let working = last - first + 1 - len(off);
+    let out = ["days " + str(first) + "-" + str(last) + ": " + str(working) + " working, " + str(len(off)) + " off"];
+    if len(off) > 0 {
+        push(out, "off: " + join(off, " "));
+    }
+    return out;
+}

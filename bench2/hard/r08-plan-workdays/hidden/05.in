@@ -1,0 +1,15 @@
+task a 6
+gantt
+workday 5
+gantt
+workday 5
+holiday 5
+holiday 5
+holiday 6
+workday 6
+workday 6
+holiday 1
+schedule
+end
+cal 0 9
+gantt

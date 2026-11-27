@@ -1,0 +1,21 @@
+sheet Box added
+Box!A1 = 1
+Box!A2 = 2
+Box!B1 = 3
+C1 = 6
+C2 = 5
+deps C1: Box!A1 Box!A2 Box!B1 Box!B2
+deps C2: Box!A1 Box!A2 Box!B1 Box!B2
+users Box!B2: C1 C2
+users Box!A2: C1 C2
+users C2: none
+using Box
+users A2: Sheet1!C1 Sheet1!C2
+deps Sheet1!C2: A1 A2 B1 B2
+using Sheet1
+dropped Box
+deps C1: none
+users C1: none
+C1: =SUM(#REF!A1:B2)
+C2 = #REF
+cells 2, formulas 2, errors 2

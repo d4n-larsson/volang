@@ -1,0 +1,219 @@
+import std.lists;
+
+variant Tok {
+    lit(str);
+    any;
+    star;
+    cls {
+        neg: bool;
+        lo: list[int];
+        hi: list[int];
+    }
+}
+
+record Member {
+    c: str;
+    next: int;
+}
+
+record ClassRead {
+    tok: Tok;
+    next: int;
+}
+
+# The class member at k ("" when there is none); first: k is right after `[` or `[!`.
+fn member(cs: list[str], k: int, first: bool) -> Member {
+    if k >= len(cs) {
+        return new Member { c: "", next: k };
+    }
+    if cs[k] == "\\" {
+        if k + 1 < len(cs) {
+            return new Member { c: cs[k + 1], next: k + 2 };
+        }
+        return new Member { c: "", next: k };
+    }
+    if cs[k] == "]" and not first {
+        return new Member { c: "", next: k };
+    }
+    return new Member { c: cs[k], next: k + 1 };
+}
+
+# cs[i] is "[": the class and the index after it, or an err when it is not closed.
+fn read_class(cs: list[str], i: int) -> result[ClassRead] {
+    var j = i + 1;
+    let neg = j < len(cs) and cs[j] == "!";
+    if neg {
+        set j = j + 1;
+    }
+    let lo = new list[int];
+    let hi = new list[int];
+    var first = true;
+    while true {
+        let m = member(cs, j, first);
+        if m.c == "" {
+            if j < len(cs) and cs[j] == "]" {
+                return ok(new ClassRead { tok: Tok.cls { neg: neg, lo: lo, hi: hi }, next: j + 1 });
+            }
+            return err("open");
+        }
+        set first = false;
+        set j = m.next;
+        var y = new Member { c: "", next: j };
+        if j < len(cs) and cs[j] == "-" {
+            set y = member(cs, j + 1, false);
+        }
+        push(lo, ord(m.c));
+        if y.c != "" {
+            push(hi, ord(y.c));
+            set j = y.next;
+        } else {
+            push(hi, ord(m.c));
+        }
+    }
+}
+
+fn tokens(seg: str) -> list[Tok] {
+    let cs = chars(seg);
+    let out = new list[Tok];
+    var i = 0;
+    while i < len(cs) {
+        let c = cs[i];
+        if c == "?" {
+            push(out, Tok.any);
+            set i = i + 1;
+        } else if c == "*" {
+            push(out, Tok.star);
+            set i = i + 1;
+        } else if c == "\\" {
+            if i + 1 < len(cs) {
+                push(out, Tok.lit(cs[i + 1]));
+            } else {
+                push(out, Tok.lit("\\"));
+            }
+            set i = i + 2;
+        } else if c == "[" {
+            match read_class(cs, i) {
+                case ok(r) {
+                    push(out, r.tok);
+                    set i = r.next;
+                }
+                case err(_) {
+                    push(out, Tok.lit("["));
+                    set i = i + 1;
+                }
+            }
+        } else {
+            push(out, Tok.lit(c));
+            set i = i + 1;
+        }
+    }
+    return out;
+}
+
+fn one(t: Tok, c: str) -> bool {
+    match t {
+        case lit(x) {
+            return x == c;
+        }
+        case any {
+            return true;
+        }
+        case star {
+            return false;
+        }
+        case cls(k) {
+            let p = ord(c);
+            var inside = false;
+            for i, l in k.lo {
+                if l <= p and p <= k.hi[i] {
+                    set inside = true;
+                }
+            }
+            return inside != k.neg;
+        }
+    }
+}
+
+fn seg_match(toks: list[Tok], seg: str) -> bool {
+    let s = chars(seg);
+    if len(s) > 0 and s[0] == "." and (len(toks) == 0 or toks[0] != Tok.lit(".")) {
+        return false;
+    }
+    var reach = [true];
+    for _ in s {
+        push(reach, false);
+    }
+    for t in toks {
+        if t == Tok.star {
+            for j in 1..len(s) + 1 {
+                set reach[j] = reach[j] or reach[j - 1];
+            }
+        } else {
+            let next = [false];
+            for j in 0..len(s) {
+                push(next, reach[j] and one(t, s[j]));
+            }
+            set reach = next;
+        }
+    }
+    return reach[len(s)];
+}
+
+fn matches(pat: list[list[Tok]], globstar: list[bool], segs: list[str]) -> bool {
+    # ok_from[i][j]: pattern segments i.. match path segments j..
+    let n = len(pat);
+    let m = len(segs);
+    let rows = new list[list[bool]];
+    for _ in 0..n + 1 {
+        let row = new list[bool];
+        for _ in 0..m + 1 {
+            push(row, false);
+        }
+        push(rows, row);
+    }
+    set rows[n][m] = true;
+    var i = n - 1;
+    while i >= 0 {
+        var j = m;
+        while j >= 0 {
+            if globstar[i] {
+                set rows[i][j] = rows[i + 1][j] or (j < m and byte_at(segs[j], 0) != 46 and rows[i][j + 1]);
+            } else {
+                set rows[i][j] = j < m and rows[i + 1][j + 1] and seg_match(pat[i], segs[j]);
+            }
+            set j = j - 1;
+        }
+        set i = i - 1;
+    }
+    return rows[0][0];
+}
+
+fn main() -> result[void] uses console, input {
+    let data = read_all();
+    var lines = split(data, "\n");
+    if len(data) > 0 and byte_at(data, len(data) - 1) == 10 {
+        set lines = slice(lines, 0, len(lines) - 1);
+    }
+    let sep = lists.index_of(lines, "%%");
+    let pats = new list[list[list[Tok]]];
+    let stars = new list[list[bool]];
+    for p in slice(lines, 0, sep) {
+        let parts = split(p, "/");
+        push(pats, map(parts, tokens));
+        push(stars, map(parts, fn(x) => x == "**"));
+    }
+    for path in slice(lines, sep + 1, len(lines)) {
+        let segs = split(path, "/");
+        let hit = new list[str];
+        for k, p in pats {
+            if matches(p, stars[k], segs) {
+                push(hit, str(k + 1));
+            }
+        }
+        if len(hit) == 0 {
+            push(hit, "none");
+        }
+        print(path + " -> " + join(hit, ","));
+    }
+    return ok();
+}

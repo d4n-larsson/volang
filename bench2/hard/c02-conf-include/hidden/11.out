@@ -1,0 +1,24 @@
+== app.conf
+env/prod.conf:6: include outside conf: ../../secrets/prod.conf
+env/prod.conf:8: missing include: env/extra.conf
+db.dsn=postgres://db.internal:5432/shop (db.conf:4)
+db.host=db.internal (db.conf:2)
+db.port=5432 (db.conf:3)
+log.level=warn (env/prod.conf:1)
+name=shop (app.conf:2)
+server.host=0.0.0.0 (app.conf:4)
+server.port=443 (env/prod.conf:4)
+server.url=https://0.0.0.0/ (env/prod.conf:5)
+files 4 errors 2
+== env/dev.conf
+env/prod.conf:6: include outside conf: ../../secrets/prod.conf
+env/prod.conf:8: missing include: env/extra.conf
+db.dsn=postgres://localhost:5432/shop-dev (env/dev.conf:9)
+db.host=localhost (env/dev.conf:8)
+db.port=5432 (db.conf:3)
+log.level=warn (env/prod.conf:1)
+name=shop (app.conf:2)
+server.host=localhost (env/dev.conf:4)
+server.port=443 (env/prod.conf:4)
+server.url=http://localhost:443/ (env/dev.conf:5)
+files 6 errors 2

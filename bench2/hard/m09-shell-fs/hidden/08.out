@@ -1,0 +1,28 @@
+cp: src: is a directory
+dst:
+src/
+dst/src:
+a
+b
+cp: dst: file exists
+cp: src: cannot copy into itself
+cp: src: cannot copy into itself
+cp: src: same file
+cp: src/a: same file
+alpha
+cp: src/b: not a directory
+changed
+alpha
+cp: /: cannot copy into itself
+cp: .: cannot copy into itself
+cp: nowhere/x: no such file or directory
+cp: missing: no such file or directory
+/
+/dst
+/dst/src
+/dst/src/a
+/dst/src/b
+/src
+/src/a
+/src/b
+/src/c

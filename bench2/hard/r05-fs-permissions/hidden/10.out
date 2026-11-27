@@ -1,0 +1,17 @@
+/s/b/x/lib
+/s/lib
+error: permission denied: /s/a
+error: permission denied: /s/lib
+/s/b/x/lib
+no matches
+no matches
+error: permission denied: /s/lib/lib
+/s/a/lib
+/s/a/lib/lib
+/s/b/x
+/s/b
+/s/a/lib
+/s/a/lib/lib
+/s/b/x/lib
+/s/lib
+/s/lib/lib

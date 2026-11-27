@@ -1,0 +1,29 @@
+rate EUR 1 1
+rate EUR 2 1.5
+rate EUR 3 0.0072
+rate GBP 0 12.3456
+rate GBP 4 1.23456
+rate GBP 4 .5
+rate GBP 4 1.
+rate GBP 4 0
+rate GBP 4 0.0000
+rate GBP 4 00.0001
+rate GBP x 1
+rate gbp 4 1
+rate GBPX 4 1
+rate USD 4 1
+rate USD 4 0
+rate USD x 1
+rate EUR 2
+rate EUR 2 1 1
+rate EUR 2 1.25
+rate JPY 10 0.0067
+lock 20
+rate JPY 5 0.0068
+open assets:eur asset EUR
+open assets:bank asset
+post t1 21 x assets:eur=10 assets:bank=
+post t2 22 x assets:eur=-10 assets:bank=
+show t1
+rate EUR 2 2
+show t1

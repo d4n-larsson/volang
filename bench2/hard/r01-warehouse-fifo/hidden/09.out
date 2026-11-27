@@ -1,0 +1,31 @@
+warehouse verylongcode added
+warehouse b added
+item averyverylongsku added
+item s added
+item s reorder point 50
+item averyverylongsku reorder point 2
+received 1 averyverylongsku into verylongcode, now 1, lot 1 at 0.01
+received 49 s into b, now 49, lot 2 at 0.99
+b       s             49
+verylongcodeaveryverylongsku     1
+total 50 units
+b       s             49
+total 49 units
+averyverylongsku Thing: have 1, reorder at 2, short 1
+s Small: have 49, reorder at 50, short 1
+error: bad command
+error: bad command
+error: bad command
+error: unknown warehouse q
+error: unknown warehouse q
+error: unknown item zz
+no lots of s in verylongcode
+lot 2: 49 x 0.99 = 48.51
+total 49 units = 48.51
+error: unknown warehouse nowhere
+error: unknown warehouse nowhere
+items 2, warehouses 2, 50 units, value 48.52
+shipped 0 units in 0 shipments, cost 0.00
+orders: 0 open, 0 fulfilled, 0 cancelled
+error: unknown command frobnicate
+error: bad command

@@ -1,0 +1,22 @@
+append x
+group
+goto 1
+find x
+sort 1
+endgroup
+group
+append y
+endgroup
+group
+append z
+open other
+append w
+group
+open other
+undo
+open main
+undo
+print
+undo 2
+print
+buffers

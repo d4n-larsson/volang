@@ -1,0 +1,10 @@
+flag zz default on
+requires zz
+flag m3 default on
+requires m2
+flag m1 default on
+requires m2
+flag m2 default on
+requires m3
+flag aa default on
+requires m1

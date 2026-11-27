@@ -1,0 +1,21 @@
+mkdir -p proj/src/lib other
+cd proj/src/lib
+pwd
+mv /proj /other
+pwd
+cd ..
+pwd
+mv /other/proj/src /renamed
+pwd
+cd lib
+mkdir /target
+mv /target /renamed/lib
+pwd
+mkdir /empty
+mv /empty .
+ls
+cd /
+mv / /other
+mv /renamed/lib/empty /renamed/lib
+mv .. x
+find /

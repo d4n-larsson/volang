@@ -1,0 +1,18 @@
+warehouse c
+warehouse d
+item tin
+receive c tin 6 1.00 10
+transfer c d tin 4 3
+transfer c d tin 2 3
+ship o1 d tin 5
+ship o2 c tin 1
+day 2
+transfer c d tin 1 1
+day 3
+transfer d c tin 1 2
+return o1 2
+day 5
+stock
+day 10
+stock
+value

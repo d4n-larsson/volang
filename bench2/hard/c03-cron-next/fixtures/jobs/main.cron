@@ -1,0 +1,9 @@
+# nightly and periodic jobs
+30 2 * * * backup
+*/15 9-17 * * 1-5 poll
+0 0 1 * * invoice
+0 12 * * 0 report
+  # indented comment
+5,35 */6 * * * sync
+
+0 9 13 * 5 friday13

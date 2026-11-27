@@ -1,0 +1,153 @@
+# Read-only views of the calendar.
+import conflicts;
+import directory;
+import model;
+import timefmt;
+
+const work_start = 540;
+const work_end = 1020;
+
+export fn by_start(meetings: list[model.Meeting]) -> list[model.Meeting] {
+    let out = slice(meetings, 0, len(meetings));
+    sort_by(out, conflicts.order);
+    return out;
+}
+
+export fn meetings_of(cal: model.Calendar, name: str) -> list[model.Meeting] {
+    let found = new list[model.Meeting];
+    for _, m in cal.meetings {
+        if model.contains(model.people(m), name) {
+            push(found, m);
+        }
+    }
+    return by_start(found);
+}
+
+export fn meetings_in(cal: model.Calendar, room: str) -> list[model.Meeting] {
+    let found = new list[model.Meeting];
+    for _, m in cal.meetings {
+        if m.room == room {
+            push(found, m);
+        }
+    }
+    return by_start(found);
+}
+
+fn local_span(m: model.Meeting, offset: int) -> str {
+    return timefmt.span(m.start + offset, m.end + offset);
+}
+
+fn role(m: model.Meeting, name: str) -> str {
+    if m.organizer == name {
+        return "organizer";
+    }
+    return "attendee";
+}
+
+export fn agenda(cal: model.Calendar, name: str, day: int) -> list[str] {
+    if not has(cal.users, name) {
+        return ["error: unknown user " + name];
+    }
+    let off = cal.users[name].offset;
+    let lo = day * model.minutes_per_day - off;
+    let hi = lo + model.minutes_per_day;
+    let out = ["agenda " + name + " day " + str(day) + " (" + timefmt.zone(off) + "):"];
+    for m in meetings_of(cal, name) {
+        if conflicts.overlaps(m.start, m.end, lo, hi) {
+            push(out, "  " + local_span(m, off) + " " + m.meeting_id + " in " + m.room + " (" + role(m, name) + ")");
+        }
+    }
+    if len(out) == 1 {
+        push(out, "  nothing");
+    }
+    return out;
+}
+
+export fn rooms_on(cal: model.Calendar, day: int) -> list[str] {
+    let out = ["rooms day " + str(day) + ":"];
+    for r in directory.sorted_rooms(cal) {
+        let lo = day * model.minutes_per_day - r.offset;
+        let hi = lo + model.minutes_per_day;
+        let items = new list[str];
+        for m in meetings_in(cal, r.name) {
+            if conflicts.overlaps(m.start, m.end, lo, hi) {
+                push(items, m.meeting_id + " " + local_span(m, r.offset));
+            }
+        }
+        push(out, "  " + r.name + ": " + timefmt.joined(items, "free"));
+    }
+    if len(out) == 1 {
+        push(out, "  no rooms");
+    }
+    return out;
+}
+
+export fn free_slots(cal: model.Calendar, room: str, day: int) -> str {
+    if not has(cal.rooms, room) {
+        return "error: unknown room " + room;
+    }
+    let off = cal.rooms[room].offset;
+    let base = day * model.minutes_per_day - off;
+    let lo = base + work_start;
+    let hi = base + work_end;
+    let slots = new list[str];
+    var at = lo;
+    for m in meetings_in(cal, room) {
+        if not conflicts.overlaps(m.start, m.end, lo, hi) {
+            continue;
+        }
+        if m.start > at {
+            push(slots, timefmt.clock(at + off) + "-" + timefmt.clock(m.start + off));
+        }
+        set at = max(at, m.end);
+    }
+    if at < hi {
+        push(slots, timefmt.clock(at + off) + "-" + timefmt.clock(hi + off));
+    }
+    return "free " + room + " day " + str(day) + ": " + timefmt.joined(slots, "none");
+}
+
+# Meetings of a user and their minutes: all of them (day < 0) or the parts on one day.
+export fn busy(cal: model.Calendar, name: str, day: int) -> str {
+    if not has(cal.users, name) {
+        return "error: unknown user " + name;
+    }
+    var n = 0;
+    var total = 0;
+    if day < 0 {
+        for m in meetings_of(cal, name) {
+            set n = n + 1;
+            set total = total + model.length(m);
+        }
+        return name + ": " + timefmt.count(n, "meeting", "meetings") + ", " + timefmt.duration(total);
+    }
+    let lo = day * model.minutes_per_day - cal.users[name].offset;
+    let hi = lo + model.minutes_per_day;
+    for m in meetings_of(cal, name) {
+        if conflicts.overlaps(m.start, m.end, lo, hi) {
+            set n = n + 1;
+            set total = total + min(m.end, hi) - max(m.start, lo);
+        }
+    }
+    return name + " day " + str(day) + ": " + timefmt.count(n, "meeting", "meetings") + ", " + timefmt.duration(total);
+}
+
+export fn who(cal: model.Calendar, meeting_id: str) -> str {
+    if not has(cal.meetings, meeting_id) {
+        return "error: unknown meeting " + meeting_id;
+    }
+    let m = cal.meetings[meeting_id];
+    let off = cal.rooms[m.room].offset;
+    return meeting_id + ": " + m.room + " " + local_span(m, off) + " " + timefmt.zone(off) + ", organizer " + m.organizer + ", attendees " + timefmt.joined(m.attendees, "none");
+}
+
+export fn listing(cal: model.Calendar) -> list[str] {
+    let out = new list[str];
+    for m in by_start(map(keys(cal.meetings), fn(k) => cal.meetings[k])) {
+        push(out, m.meeting_id + " " + timefmt.span(m.start, m.end) + " " + m.room + " " + m.organizer + " +" + str(len(m.attendees)));
+    }
+    if len(out) == 0 {
+        push(out, "no meetings");
+    }
+    return out;
+}

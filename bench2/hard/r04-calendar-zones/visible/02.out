@@ -1,0 +1,13 @@
+user lee added
+user kim added
+room hub added, capacity 3
+booked s1 in hub: 4 20:00-21:30 (2 people)
+agenda kim day 5 (UTC+09:00):
+  5 10:00-11:30 s1 in hub (attendee)
+agenda lee day 4 (UTC-05:00):
+  4 20:00-21:30 s1 in hub (organizer)
+zone hub UTC+01:00
+rooms day 5:
+  hub: s1 5 02:00-03:30
+free hub day 5: 09:00-17:00
+s1 5 01:00-02:30 hub lee +1

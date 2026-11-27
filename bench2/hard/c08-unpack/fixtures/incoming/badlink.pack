@@ -1,0 +1,5 @@
+PACK 1
+F a.txt 1
+alpha
+L a -> b c
+END 2

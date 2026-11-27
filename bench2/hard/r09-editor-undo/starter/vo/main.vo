@@ -1,0 +1,15 @@
+import buffer;
+import commands;
+
+fn main() uses console, input {
+    let buf = buffer.new_buffer();
+    let table = commands.word_commands();
+    for line in split(read_all(), "\n") {
+        if line == "" {
+            continue;
+        }
+        for out in commands.run(line, buf, table) {
+            print(out);
+        }
+    }
+}

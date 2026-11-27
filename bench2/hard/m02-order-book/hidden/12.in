@@ -1,0 +1,9 @@
+market M1 ana buy AA 5
+limit F1 bob buy BB 5 1.00 fok
+limit I1 cy buy CC 5 1.00 ioc
+stop T1 dan sell DD 5 1.00
+book EE
+limit L1 eve buy FF 1 1.00
+cancel L1
+limit G1 fay sell GG 1 1.00
+limit G2 fay buy GG 1 1.00

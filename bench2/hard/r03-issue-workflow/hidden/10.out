@@ -1,0 +1,44 @@
+user ann added
+user bob added
+created #1: Server crash
+created #2: Client crash
+#1 assigned to ann
+#1 moved new -> triaged
+#1 moved triaged -> in_progress
+#1 reassigned from ann to bob
+#1 [p1] Server crash
+  status: in_progress
+  assignee: bob
+  labels: -
+  created 3, updated 8
+  [6] new -> triaged
+  [7] triaged -> in_progress
+  0 comments
+#1 moved in_progress -> review
+#1 closed
+error: issue #1 is closed
+#1 unassigned
+#1 [p1] Server crash
+  status: done
+  assignee: -
+  labels: -
+  created 3, updated 13
+  [6] new -> triaged
+  [7] triaged -> in_progress
+  [10] in_progress -> review
+  [11] review -> done
+  0 comments
+#2 moved new -> wontfix
+error: issue #2 is closed
+#2 reopened
+#2 assigned to ann
+#2 moved triaged -> in_progress
+#2 [p2] Client crash
+  status: in_progress
+  assignee: ann
+  labels: -
+  created 4, updated 19
+  [15] new -> wontfix (no repro)
+  [17] wontfix -> triaged
+  [19] triaged -> in_progress
+  0 comments

@@ -1,0 +1,6 @@
+extends cyc
+flag m3 default off
+when tier = 1 then on
+flag zz default off
+flag ghost-user default on
+requires ghost

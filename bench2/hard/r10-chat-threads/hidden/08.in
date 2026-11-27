@@ -1,0 +1,25 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+channel bob secret private
+post bob secret s1
+reply ann secret/1 sneaky
+reply ann
+reply ann secret/1
+reply zed secret/1 x
+reply ann nope/1 x
+reply ann secret/2 x
+reply ann secret x
+reply Ann secret/1 x
+invite bob secret ann
+reply ann secret/1 still not in
+join ann secret
+reply ann secret/1 now in
+leave bob secret
+reply bob secret/2 gone
+thread secret/1
+members secret

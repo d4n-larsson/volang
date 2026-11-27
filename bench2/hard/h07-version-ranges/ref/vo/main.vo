@@ -1,0 +1,242 @@
+import std.text;
+import std.lists;
+
+record Version {
+    nums: list[int];
+    pre: list[str];
+}
+
+record Entry {
+    line: str;
+    v: Version;
+}
+
+record Comparator {
+    op: str;
+    v: Version;
+}
+
+fn all_digits(s: str) -> bool {
+    return len(s) > 0 and all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+fn ident_ok(s: str) -> bool {
+    return len(s) > 0 and all(chars(s), fn(c) => (c >= "0" and c <= "9") or (c >= "a" and c <= "z") or (c >= "A" and c <= "Z") or c == "-");
+}
+
+fn number_ok(s: str) -> bool {
+    return all_digits(s) and len(s) <= 18 and (len(s) == 1 or not text.starts_with(s, "0"));
+}
+
+fn parse_version(s: str) -> result[Version] {
+    var rest = s;
+    let plus = find(rest, "+");
+    if plus >= 0 {
+        if not all(split(slice(rest, plus + 1, len(rest)), "."), ident_ok) {
+            return err("bad build");
+        }
+        set rest = slice(rest, 0, plus);
+    }
+    let pre = new list[str];
+    let dash = find(rest, "-");
+    if dash >= 0 {
+        for p in split(slice(rest, dash + 1, len(rest)), ".") {
+            if not ident_ok(p) or (all_digits(p) and not number_ok(p)) {
+                return err("bad prerelease");
+            }
+            push(pre, p);
+        }
+        set rest = slice(rest, 0, dash);
+    }
+    let parts = split(rest, ".");
+    if len(parts) != 3 or not all(parts, number_ok) {
+        return err("bad core");
+    }
+    let nums = new list[int];
+    for p in parts {
+        push(nums, try parse_int(p));
+    }
+    return ok(new Version { nums: nums, pre: pre });
+}
+
+fn sign(a: int, b: int) -> int {
+    if a < b {
+        return -1;
+    }
+    if a > b {
+        return 1;
+    }
+    return 0;
+}
+
+fn cmp_text(a: str, b: str) -> int {
+    if a < b {
+        return -1;
+    }
+    if a > b {
+        return 1;
+    }
+    return 0;
+}
+
+fn cmp_ident(a: str, b: str) -> int {
+    let an = all_digits(a);
+    let bn = all_digits(b);
+    if an and bn {
+        # No leading zeros: a longer number is larger, equal lengths compare as text.
+        if len(a) != len(b) {
+            return sign(len(a), len(b));
+        }
+        return cmp_text(a, b);
+    }
+    if an {
+        return -1;
+    }
+    if bn {
+        return 1;
+    }
+    return cmp_text(a, b);
+}
+
+fn cmp(x: Version, y: Version) -> int {
+    for i in 0..3 {
+        if x.nums[i] != y.nums[i] {
+            return sign(x.nums[i], y.nums[i]);
+        }
+    }
+    if len(x.pre) == 0 or len(y.pre) == 0 {
+        # A release is greater than a prerelease.
+        return sign(len(y.pre), len(x.pre));
+    }
+    for i in 0..min(len(x.pre), len(y.pre)) {
+        let c = cmp_ident(x.pre[i], y.pre[i]);
+        if c != 0 {
+            return c;
+        }
+    }
+    return sign(len(x.pre), len(y.pre));
+}
+
+fn satisfies(x: Version, c: Comparator) -> bool {
+    let d = cmp(x, c.v);
+    match c.op {
+        case "=" {
+            return d == 0;
+        }
+        case "<" {
+            return d < 0;
+        }
+        case "<=" {
+            return d <= 0;
+        }
+        case ">" {
+            return d > 0;
+        }
+        case ">=" {
+            return d >= 0;
+        }
+        else {
+        }
+    }
+    if d < 0 {
+        return false;
+    }
+    let v = c.v.nums;
+    let n = x.nums;
+    if c.op == "~" or (v[0] == 0 and v[1] != 0) {
+        return n[0] == v[0] and n[1] == v[1];
+    }
+    if v[0] != 0 {
+        return n[0] == v[0];
+    }
+    return n[0] == v[0] and n[1] == v[1] and n[2] == v[2];
+}
+
+fn parse_comparator(t: str) -> result[Comparator] {
+    for op in ["<=", ">=", "<", ">", "=", "^", "~"] {
+        if text.starts_with(t, op) {
+            return ok(new Comparator { op: op, v: try parse_version(slice(t, len(op), len(t))) });
+        }
+    }
+    return err("bad comparator " + t);
+}
+
+fn answer(ordered: list[Entry], q: str) -> result[str] {
+    let comps = new list[Comparator];
+    for t in split(q, " ") {
+        push(comps, try parse_comparator(t));
+    }
+    var best = "none";
+    var best_v = new Version { nums: [0, 0, 0], pre: new list[str] };
+    var found = false;
+    for e in ordered {
+        let x = e.v;
+        let fits = all(comps, fn(c) => satisfies(x, c));
+        let pre_ok = len(x.pre) == 0 or any(comps, fn(c) => len(c.v.pre) > 0 and c.v.nums == x.nums);
+        if fits and pre_ok and (not found or cmp(x, best_v) > 0) {
+            set best = e.line;
+            set best_v = x;
+            set found = true;
+        }
+    }
+    return ok(best);
+}
+
+# A stable merge sort by precedence: equal versions keep their input order.
+fn sorted_entries(xs: list[Entry]) -> list[Entry] {
+    if len(xs) <= 1 {
+        return xs;
+    }
+    let mid = len(xs) / 2;
+    let left = sorted_entries(slice(xs, 0, mid));
+    let right = sorted_entries(slice(xs, mid, len(xs)));
+    let out = new list[Entry];
+    var i = 0;
+    var j = 0;
+    while i < len(left) or j < len(right) {
+        if j == len(right) or (i < len(left) and cmp(left[i].v, right[j].v) <= 0) {
+            push(out, left[i]);
+            set i = i + 1;
+        } else {
+            push(out, right[j]);
+            set j = j + 1;
+        }
+    }
+    return out;
+}
+
+fn main() -> result[void] uses console, input {
+    let data = read_all();
+    var lines = split(data, "\n");
+    if len(data) > 0 and byte_at(data, len(data) - 1) == 10 {
+        set lines = slice(lines, 0, len(lines) - 1);
+    }
+    let sep = lists.index_of(lines, "%%");
+    let valid = new list[Entry];
+    let out = new list[str];
+    for line in slice(lines, 0, sep) {
+        if len(line) > 0 {
+            match parse_version(line) {
+                case ok(v) {
+                    push(valid, new Entry { line: line, v: v });
+                }
+                case err(_) {
+                    push(out, "invalid: " + line);
+                }
+            }
+        }
+    }
+    let ordered = sorted_entries(valid);
+    for e in ordered {
+        print(e.line);
+    }
+    for l in out {
+        print(l);
+    }
+    for q in slice(lines, sep + 1, len(lines)) {
+        if len(q) > 0 {
+            print(q + " -> " + try answer(ordered, q));
+        }
+    }
+    return ok();
+}

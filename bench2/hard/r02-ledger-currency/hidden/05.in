@@ -1,0 +1,31 @@
+open assets:bank asset
+open assets:eur asset EUR
+open assets:gbp asset GBP
+open assets:old asset
+open income:eu income EUR
+rate EUR 3 1.1
+close assets:old
+post x1 1 a assets:eur= assets:gbp=
+post x2 1 a assets:bank= assets:eur=
+post x3 1 a assets:bank=5 assets:eur=
+post x4 1 a assets:gbp=5 assets:eur=
+post x5 1 a assets:bank=5 assets:gbp=-5
+post x6 3 a assets:eur=10 assets:gbp=-5
+post x7 3 a assets:gbp=-5 assets:eur=10
+post x8 3 a assets:eur=10 assets:bank=-10
+post x9 3 a assets:eur=10 income:eu=-10
+post x10 3 a assets:eur=10 assets:old=
+post x11 3 a assets:gbp=1 assets:gbp=-1
+post x12 3 a assets:gbp=0 assets:bank=
+post x13 3 a assets:gbp=1.234 assets:bank=
+post x14 3 a assets:gbp assets:bank=
+post x15 2 a assets:eur=10 assets:bank=-11
+lock 2
+post x16 2 a assets:eur=10 assets:bank=-11
+post x17 3 a assets:eur=10 assets:bank=-11 assets:gbp=
+post x18 3 a assets:eur=10 assets:bank=-11 assets:bank=
+post x19 3 a assets:eur=10 assets:nope=
+post x9 3 a assets:eur=1 assets:bank=
+post X1 3 a assets:eur=1 assets:bank=
+show x9
+journal 0 9

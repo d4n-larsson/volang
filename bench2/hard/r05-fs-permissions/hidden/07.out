@@ -1,0 +1,20 @@
+error: permission denied: /x/secret.txt
+error: permission denied: /x/secret.txt
+error: is a directory: /x
+error: permission denied: /x/ro.txt
+error: permission denied: /x/open.txt
+error: permission denied: /open.txt
+error: no such file or directory: /nowhere/a.txt
+error: not a directory: /x/open.txt/a
+error: permission denied: /x/bob.txt
+error: permission denied: /x/d/secret.txt
+error: permission denied: /x/bob.txt
+error: permission denied: /x/bob.txt
+hello
+-rw-r-- bob 6 bob.txt
+drwxr-x bob 2 d/
+-rw-r-- ann 6 open.txt
+-r--r-- ann 10 ro.txt
+-rw---- ann 6 secret.txt
+-rw-r-- bob 6 bob.txt
+-rw-r-- bob 10 open.txt

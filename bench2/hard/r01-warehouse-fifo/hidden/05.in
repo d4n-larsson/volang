@@ -1,0 +1,19 @@
+warehouse s1
+item box Box 80
+count s1 box 5
+count s1 box 5
+receive s1 box 10 70
+lots s1 box
+count s1 box 9
+lots s1 box
+count s1 box 20
+cost box 95
+count s1 box 21
+lots s1 box
+count s1 box 0
+lots s1 box
+receive s1 box 1
+lots s1 box
+history box
+value
+report

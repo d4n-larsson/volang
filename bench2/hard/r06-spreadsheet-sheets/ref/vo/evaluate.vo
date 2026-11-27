@@ -1,0 +1,156 @@
+# Values of cells and formulas. A value has an error ("" or #DIV0, #CYCLE or #REF) or a number.
+#
+# A formula's value is the first error met when evaluating it left to right (a function's range row by
+# row, left to right), else its number. An empty cell counts as 0; SUM adds the range's cells, MIN and
+# MAX skip its empty cells (0 when all are empty). Division truncates toward zero. A reference to a
+# sheet that was dropped is #REF.
+import cells;
+import formula;
+import sheet;
+
+export record Value {
+    error: str;
+    number: int;
+}
+
+fn number(n: int) -> Value {
+    return new Value { error: "", number: n };
+}
+
+fn failure(e: str) -> Value {
+    return new Value { error: e, number: 0 };
+}
+
+export fn value_text(v: Value) -> str {
+    if v.error != "" {
+        return v.error;
+    }
+    return str(v.number);
+}
+
+fn divide(a: int, b: int) -> int {
+    let q = abs(a) / abs(b);
+    if (a < 0) != (b < 0) {
+        return -q;
+    }
+    return q;
+}
+
+# The value of a place. `active` holds the places being evaluated: meeting one again is a cycle.
+fn cell_value(b: sheet.Book, p: cells.Place, active: map[cells.Place, bool]) -> Value {
+    if sheet.is_empty(b, p) {
+        return number(0);
+    }
+    match sheet.content(b, p) {
+        case number(n) {
+            return number(n);
+        }
+        case formula(node) {
+            if has(active, p) {
+                return failure("#CYCLE");
+            }
+            set active[p] = true;
+            let v = node_value(b, node, p.sheet, active);
+            remove(active, p);
+            return v;
+        }
+    }
+}
+
+fn func_value(b: sheet.Book, name: str, sheet_id: int, area: cells.Area, active: map[cells.Place, bool]) -> Value {
+    if not sheet.is_live(b, sheet_id) {
+        return failure("#REF");
+    }
+    var total = 0;
+    var best = 0;
+    var seen = false;
+    for c in cells.range_cells(area) {
+        let p = cells.place_of(sheet_id, c);
+        if sheet.is_empty(b, p) {
+            continue;
+        }
+        let v = cell_value(b, p, active);
+        if v.error != "" {
+            return v;
+        }
+        set total = total + v.number;
+        if not seen or (name == "MIN" and v.number < best) or (name == "MAX" and v.number > best) {
+            set best = v.number;
+        }
+        set seen = true;
+    }
+    if name == "SUM" {
+        return number(total);
+    }
+    return number(best);
+}
+
+fn bin_value(op: str, a: int, b: int) -> Value {
+    if op == "+" {
+        return number(a + b);
+    }
+    if op == "-" {
+        return number(a - b);
+    }
+    if op == "*" {
+        return number(a * b);
+    }
+    if b == 0 {
+        return failure("#DIV0");
+    }
+    return number(divide(a, b));
+}
+
+# The value of a tree of a formula on sheet `own`.
+fn node_value(b: sheet.Book, node: formula.Node, own: int, active: map[cells.Place, bool]) -> Value {
+    match node {
+        case num(n) {
+            return number(n);
+        }
+        case cell_ref(r) {
+            let sheet_id = formula.ref_sheet(r, own);
+            if not sheet.is_live(b, sheet_id) {
+                return failure("#REF");
+            }
+            return cell_value(b, new cells.Place { sheet: sheet_id, col: r.col, row: r.row }, active);
+        }
+        case func(f) {
+            return func_value(b, f.name, formula.ref_sheet(f.first, own), formula.range_of(f.first, f.last), active);
+        }
+        case lost_func(_) {
+            return failure("#REF");
+        }
+        case bin(op) {
+            let left = node_value(b, op.left, own, active);
+            if left.error != "" {
+                return left;
+            }
+            let right = node_value(b, op.right, own, active);
+            if right.error != "" {
+                return right;
+            }
+            return bin_value(op.op, left.number, right.number);
+        }
+        case neg(inner) {
+            let v = node_value(b, inner, own, active);
+            if v.error != "" {
+                return v;
+            }
+            return number(-v.number);
+        }
+        case paren(inner) {
+            return node_value(b, inner, own, active);
+        }
+        case bad_ref {
+            return failure("#REF");
+        }
+    }
+}
+
+export fn value_of(b: sheet.Book, p: cells.Place) -> Value {
+    return cell_value(b, p, new map[cells.Place, bool]);
+}
+
+export fn formula_value(b: sheet.Book, node: formula.Node, own: int) -> Value {
+    return node_value(b, node, own, new map[cells.Place, bool]);
+}

@@ -1,0 +1,9 @@
+holt Kent nab
+Kent 3 1 holt
+Kent 3 1 nab
+nab 0 1 holt
+nab 3 1 Kent
+holt 2 1 Kent
+Kent 0 1 nab
+nab 3 1 Kent
+holt 3 3 Kent

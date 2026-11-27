@@ -1,0 +1,4 @@
+# vendored core lives next to the registry
+version 1.0.0
+dep json *
+dep ../private/core ^1.0.0

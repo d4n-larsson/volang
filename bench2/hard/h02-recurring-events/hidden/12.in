@@ -1,0 +1,4 @@
+2024-01-01 2024-01-31
+event u every 7 days from 2024-01-03 until 2024-01-24
+event uc every 2 days from 2024-01-01 until 2024-01-09 count 3
+event cu every 2 days from 2024-01-01 until 2024-01-05 count 10

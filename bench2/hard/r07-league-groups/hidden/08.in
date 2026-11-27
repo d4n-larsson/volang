@@ -1,0 +1,35 @@
+team Feyenoord
+team Ajax
+team Dynamo
+team Everton
+team Celtic
+team Galatasaray
+team Benfica
+group B Everton Feyenoord Galatasaray
+group A Ajax Benfica Celtic Dynamo
+result Celtic 4 1 Benfica
+result Dynamo 0 0 Celtic
+result Benfica 3 3 Ajax
+result Dynamo 0 1 Benfica
+result Celtic 0 4 Dynamo
+result Benfica 3 0 Celtic
+result Dynamo 4 0 Ajax
+result Ajax 1 4 Celtic
+result Ajax 0 4 Benfica
+result Celtic 4 3 Ajax
+result Ajax 0 1 Dynamo
+result Benfica 0 4 Dynamo
+result Galatasaray 4 2 Feyenoord
+result Galatasaray 4 1 Everton
+result Everton 0 4 Feyenoord
+result Feyenoord 4 1 Galatasaray
+result Feyenoord 2 0 Everton
+knockout
+fixtures
+result Everton 4 0 Galatasaray
+table
+knockout
+record Ajax
+record Galatasaray
+goals
+streak

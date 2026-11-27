@@ -1,0 +1,42 @@
+print twice(21)
+func twice(n)
+    return n * 2
+end
+let counter = 0
+func bump()
+    set counter = counter + 1
+end
+func shadow()
+    let counter = 100
+    set counter = counter + 1
+    return counter
+end
+func nothing()
+    if counter > 100
+        return 1
+    end
+end
+func early()
+    return
+    print "unreachable"
+end
+bump()
+bump()
+print counter, shadow(), counter, nothing(), early()
+func late(n)
+    return n + limit
+end
+let limit = 1
+print late(1)
+func fact(n)
+    if n <= 1
+        return 1
+    end
+    return n * fact(n - 1)
+end
+print fact(19)
+func redeclare(a, b)
+    let b = a
+    return b
+end
+print redeclare(1, 2)

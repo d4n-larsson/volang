@@ -1,0 +1,44 @@
+# Users: creating them and describing them.
+import fmt;
+import model;
+
+export fn require_user(state: model.State, name: str) -> result[model.User] {
+    if not has(state.users, name) {
+        return err("unknown user " + name);
+    }
+    return ok(state.users[name]);
+}
+
+export fn add_user(state: model.State, name: str) -> result[list[str]] {
+    if has(state.users, name) {
+        return err("user " + name + " exists");
+    }
+    set state.users[name] = new model.User { name: name };
+    return ok(["user " + name + " created"]);
+}
+
+# The channels the user is a member of, in ascending name order.
+export fn channels_of(state: model.State, name: str) -> list[str] {
+    let out = new list[str];
+    for k, c in state.channels {
+        if model.is_member(c, name) {
+            push(out, k);
+        }
+    }
+    sort(out);
+    return out;
+}
+
+export fn message_count(state: model.State, name: str) -> int {
+    return len(filter(state.messages, fn(m) => m.author == name));
+}
+
+export fn whois(state: model.State, name: str) -> result[list[str]] {
+    let _ = try require_user(state, name);
+    let chans = channels_of(state, name);
+    var place = "member of no channels";
+    if len(chans) > 0 {
+        set place = "member of " + fmt.labels(chans);
+    }
+    return ok([name + ": " + place + "; " + fmt.plural(message_count(state, name), "message")]);
+}

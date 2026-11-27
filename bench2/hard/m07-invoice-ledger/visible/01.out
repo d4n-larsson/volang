@@ -1,0 +1,15 @@
+customer ana added
+customer bo added
+invoice #1 ana total 28.05 balance 28.05 due 30
+invoice #2 bo total 60.00 balance 60.00 due 14
+paid ana 30.00: #1 28.05, credit 1.95
+statement ana day 10
+open 0.00 credit 1.95 written off 0.00
+paid bo 100.00: #2 60.00, credit 40.00
+invoice #3 bo total 15.00 balance 0.00 due 24
+aging day 10
+total 0.00 0.00 0.00 0.00 0.00
+invoices:
+#1 ana closed total 28.05 fee 0.00 paid 28.05 credits 0.00 balance 0.00
+#2 bo closed total 60.00 fee 0.00 paid 60.00 credits 0.00 balance 0.00
+#3 bo closed total 15.00 fee 0.00 paid 15.00 credits 0.00 balance 0.00

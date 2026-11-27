@@ -1,0 +1,28 @@
+useradd ann
+mkdir -p /data/logs/old
+mkdir -p /data/img
+mkdir /data/empty
+write /data/logs/a.log abcdef
+append /data/logs/a.log gh
+write /data/logs/old/b.log 0123456789
+write /data/img/p.png xxxx
+write /data/top.txt hi
+du /data
+chmod rwx--- /data/logs/old
+chmod rw-r-- /data/img
+su ann
+du /data
+du /data/logs
+du /data/logs/old
+du /data/img
+du /data/img/p.png
+du /data/logs/old/b.log
+du /data/top.txt
+cd /data/logs
+du
+su root
+chmod rwx---  /data
+su ann
+du /data
+du
+pwd

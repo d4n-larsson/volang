@@ -1,0 +1,127 @@
+added milestone a
+error: bad command
+days 16-23: 6 working, 2 off
+off: 19 20
+error: unknown task f
+added milestone c
+  012
+a ...
+c ...
+added milestone f
+critical: a c f (0 working days)
+error: unknown task x9
+error: unknown task e
+project finishes on day 0 (Mon)
+added task b
+removed c
+day 3 is now off
+error: task a exists
+removed f
+  78901234567890123
+a .................
+b .................
+day 19 is now a working day
+error: unknown task e
+error: bad command
+error: unknown task c
+error: unknown task c
+day 23 is now off
+task b starts no earlier than day 12
+error: unknown task e
+error: bad command
+error: unknown task g
+added milestone h
+error: unknown task d
+error: day 4 is already a working day
+a ms x x
+b 1d Big
+h ms h
+added task x9
+error: task b exists
+error: unknown task build-2
+   0123456789012345
+a  *...............
+b  ..............#.
+h  *...............
+x9 ###:#::#........
+error: bad command
+b after h+3
+error: task x9 exists
+task  start  finish  lstart  lfinish  slack
+a         0       0      15       15     10
+h         0       0       9        9      6
+b        14      15      14       15      0
+x9        0       8       8       15      5
+end 15
+error: bad command
+day 28 is now off
+added task g
+error: unknown task c
+error: task g exists
+added task f
+critical: b (10 working days)
+a ms x x
+b 1d Big
+h ms h
+x9 5d x x
+g 5d job job
+f 6d Big x
+error: unknown task c
+added milestone build-2
+day 17 is now off
+        01
+a       ..
+h       ..
+b       ..
+x9      ..
+g       ..
+f       ..
+build-2 ..
+day 0 is now off
+error: unknown task e
+task     start  finish  lstart  lfinish  slack
+a            1       1      15       15      9
+h            1       1       9        9      5
+b           14      15      14       15      0
+x9           1       9       8       15      4
+g            1       9       8       15      4
+f            1      10       7       15      3
+build-2      1       1      15       15      9
+end 15
+        78901234
+a       ........
+h       ........
+b       ........
+x9      ........
+g       ........
+f       ........
+build-2 ........
+error: bad command
+task     start  finish  lstart  lfinish  slack
+a            1       1      15       15      9
+h            1       1       9        9      5
+b           14      15      14       15      0
+x9           1       9       8       15      4
+g            1       9       8       15      4
+f            1      10       7       15      3
+build-2      1       1      15       15      9
+end 15
+error: day 29 is already a working day
+task f 0% done
+error: task build-2 exists
+error: unknown task e
+f after a
+days 2-6: 2 working, 3 off
+off: 3 5 6
+error: task f exists
+a after x9
+error: task b exists
+error: unknown task d
+error: task f exists
+error: task f exists
+status on day 18
+  b: planned 1 done 0 behind
+  x9: planned 5 done 0 behind
+  g: planned 5 done 0 behind
+  f: planned 6 done 0 behind
+total planned 17 done 0 0%

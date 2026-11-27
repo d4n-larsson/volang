@@ -1,0 +1,22 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+post ann general one
+
+post bob general two
+
+read cy general
+bogus
+post ann general three
+reply ann general/2 four
+unread cy
+thread general/2
+history general
+read cy general
+post cy general five
+unread ann
+unread bob

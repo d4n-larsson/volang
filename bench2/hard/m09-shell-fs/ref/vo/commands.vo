@@ -1,0 +1,251 @@
+# The commands: each returns its output lines (a file's text may span several).
+import fstree;
+import listing;
+
+fn report(cmd: str, path: str, r: result[list[str]]) -> list[str] {
+    match r {
+        case ok(lines) {
+            return lines;
+        }
+        case err(e) {
+            return [cmd + ": " + path + ": " + e];
+        }
+    }
+}
+
+fn none() -> result[list[str]] {
+    let r: list[str] = [];
+    return ok(r);
+}
+
+export fn pwd(t: fstree.Tree) -> list[str] {
+    return [fstree.abspath(t, t.cwd)];
+}
+
+export fn cd(t: fstree.Tree, path: str) -> list[str] {
+    return report("cd", path, cd_one(t, path));
+}
+
+fn cd_one(t: fstree.Tree, path: str) -> result[list[str]] {
+    let id = try fstree.resolve(t, path);
+    if not t.entries[id].is_dir {
+        return err("not a directory");
+    }
+    set t.cwd = id;
+    return none();
+}
+
+fn mkdir_one(t: fstree.Tree, path: str) -> result[list[str]] {
+    let s = try fstree.locate(t, path);
+    if s.existing >= 0 {
+        return err("file exists");
+    }
+    let _ = fstree.create(t, s.dir, s.name, true);
+    return none();
+}
+
+fn mkdir_p_one(t: fstree.Tree, path: str) -> result[list[str]] {
+    let comps = fstree.components(path);
+    var cur = fstree.start(t, path);
+    for i, c in comps {
+        let e = t.entries[cur];
+        if not e.is_dir {
+            return err("not a directory");
+        }
+        if c != "." and c != ".." and not has(e.children, c) {
+            let _ = fstree.create(t, cur, c, true);
+        }
+        set cur = try fstree.step(t, cur, c);
+        if i == len(comps) - 1 and not t.entries[cur].is_dir {
+            return err("file exists");
+        }
+    }
+    return none();
+}
+
+export fn mkdir(t: fstree.Tree, parents: bool, paths: list[str]) -> list[str] {
+    let out = new list[str];
+    for p in paths {
+        var r = mkdir_one(t, p);
+        if parents {
+            set r = mkdir_p_one(t, p);
+        }
+        for l in report("mkdir", p, r) {
+            push(out, l);
+        }
+    }
+    return out;
+}
+
+fn touch_one(t: fstree.Tree, path: str) -> result[list[str]] {
+    let s = try fstree.locate(t, path);
+    if s.existing < 0 {
+        let _ = fstree.create(t, s.dir, s.name, false);
+    }
+    return none();
+}
+
+export fn touch(t: fstree.Tree, paths: list[str]) -> list[str] {
+    let out = new list[str];
+    for p in paths {
+        for l in report("touch", p, touch_one(t, p)) {
+            push(out, l);
+        }
+    }
+    return out;
+}
+
+fn put_one(t: fstree.Tree, argv: list[str], appending: bool) -> result[list[str]] {
+    let text = join(slice(argv, 1, len(argv)), " ") + "\n";
+    let s = try fstree.locate(t, argv[0]);
+    var old = "";
+    if s.existing >= 0 {
+        let e = t.entries[s.existing];
+        if e.is_dir {
+            return err("is a directory");
+        }
+        set old = e.text;
+    }
+    var new_text = text;
+    if appending {
+        set new_text = old + text;
+    }
+    if not fstree.fits(t, fstree.usage(t) - len(old) + len(new_text)) {
+        return err("no space left");
+    }
+    var id = s.existing;
+    if id < 0 {
+        set id = fstree.create(t, s.dir, s.name, false);
+    }
+    set t.entries[id].text = new_text;
+    return none();
+}
+
+export fn put(t: fstree.Tree, cmd: str, argv: list[str]) -> list[str] {
+    return report(cmd, argv[0], put_one(t, argv, cmd == "append"));
+}
+
+fn cat_one(t: fstree.Tree, path: str) -> result[list[str]] {
+    let id = try fstree.resolve(t, path);
+    let e = t.entries[id];
+    if e.is_dir {
+        return err("is a directory");
+    }
+    if e.text == "" {
+        return none();
+    }
+    return ok([e.text]);
+}
+
+export fn cat(t: fstree.Tree, paths: list[str]) -> list[str] {
+    let out = new list[str];
+    for p in paths {
+        for l in report("cat", p, cat_one(t, p)) {
+            push(out, l);
+        }
+    }
+    return out;
+}
+
+fn ls_one(t: fstree.Tree, path: str, long: bool, header: bool) -> result[list[str]] {
+    let id = try fstree.resolve(t, path);
+    if not t.entries[id].is_dir {
+        return ok(listing.ls_lines(t, [id], [path], long));
+    }
+    let out = new list[str];
+    if header {
+        push(out, path + ":");
+    }
+    let kids = listing.sorted_children(t, id);
+    let names = map(kids, fn(k) => t.entries[k].name);
+    for l in listing.ls_lines(t, kids, names, long) {
+        push(out, l);
+    }
+    return ok(out);
+}
+
+export fn ls(t: fstree.Tree, long: bool, argv: list[str]) -> list[str] {
+    var paths = argv;
+    if len(paths) == 0 {
+        set paths = ["."];
+    }
+    let out = new list[str];
+    for p in paths {
+        for l in report("ls", p, ls_one(t, p, long, len(paths) > 1)) {
+            push(out, l);
+        }
+    }
+    return out;
+}
+
+fn rm_one(t: fstree.Tree, path: str, recursive: bool) -> result[list[str]] {
+    let id = try fstree.resolve(t, path);
+    if t.entries[id].is_dir {
+        if not recursive {
+            return err("is a directory");
+        }
+        if fstree.is_within(t, t.cwd, id) {
+            return err("in use");
+        }
+    }
+    fstree.detach(t, id);
+    return none();
+}
+
+export fn rm(t: fstree.Tree, recursive: bool, paths: list[str]) -> list[str] {
+    let out = new list[str];
+    for p in paths {
+        for l in report("rm", p, rm_one(t, p, recursive)) {
+            push(out, l);
+        }
+    }
+    return out;
+}
+
+export fn du(t: fstree.Tree, argv: list[str]) -> list[str] {
+    var p = ".";
+    if len(argv) == 1 {
+        set p = argv[0];
+    }
+    return report("du", p, du_one(t, p));
+}
+
+fn du_one(t: fstree.Tree, path: str) -> result[list[str]] {
+    return ok(listing.du_lines(t, try fstree.resolve(t, path)));
+}
+
+export fn find_cmd(t: fstree.Tree, argv: list[str]) -> list[str] {
+    return report("find", argv[0], find_one(t, argv));
+}
+
+fn find_one(t: fstree.Tree, argv: list[str]) -> result[list[str]] {
+    let id = try fstree.resolve(t, argv[0]);
+    if len(argv) == 3 {
+        return ok(listing.find_lines(t, id, argv[2], true));
+    }
+    return ok(listing.find_lines(t, id, "", false));
+}
+
+export fn quota(t: fstree.Tree, argv: list[str]) -> list[str] {
+    if len(argv) == 0 {
+        if t.has_limit {
+            return [str(fstree.usage(t)) + " " + str(t.limit)];
+        }
+        return [str(fstree.usage(t)) + " none"];
+    }
+    var n = 0;
+    match parse_int(argv[0]) {
+        case ok(v) {
+            set n = v;
+        }
+        case err(_) {
+            return ["quota: usage"];
+        }
+    }
+    if fstree.usage(t) > n {
+        return ["quota: " + argv[0] + ": below usage"];
+    }
+    set t.has_limit = true;
+    set t.limit = n;
+    return [];
+}

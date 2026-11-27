@@ -1,0 +1,53 @@
+# The records the chat server keeps.
+export record User {
+    name: str;
+}
+
+export record Channel {
+    name: str;
+    creator: str;
+    private: bool;
+    # user names in the order they joined (a user who leaves and joins again goes last)
+    members: list[str];
+    # user names that may join a private channel; the creator is always invited
+    invited: map[str, bool];
+}
+
+export record Message {
+    msg_id: int;
+    # the channel's current name
+    channel: str;
+    author: str;
+    text: str;
+    # the clock value of the command that posted it
+    time: int;
+    edited: bool;
+}
+
+export record State {
+    users: map[str, User];
+    channels: map[str, Channel];
+    # every message that has not been deleted, in the order posted (ascending msg_id)
+    messages: list[Message];
+    next_id: int;
+    # the logical clock: the number of the current command (non-blank input lines from 1)
+    time: int;
+    edits: int;
+    deletes: int;
+}
+
+export fn new_state() -> State {
+    return new State {
+        users: new map[str, User],
+        channels: new map[str, Channel],
+        messages: new list[Message],
+        next_id: 1,
+        time: 0,
+        edits: 0,
+        deletes: 0
+    };
+}
+
+export fn is_member(c: Channel, user_name: str) -> bool {
+    return any(c.members, fn(n) => n == user_name);
+}

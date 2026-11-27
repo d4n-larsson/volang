@@ -1,0 +1,83 @@
+# Three-way merge of snapshots.
+import repo;
+
+export record Conflict {
+    path: str;
+    kind: str;
+}
+
+export record Outcome {
+    merged: map[str, str];
+    conflicts: list[Conflict];
+}
+
+# A path's text in one snapshot, or absent.
+record Side {
+    present: bool;
+    text: str;
+}
+
+fn side(t: map[str, str], p: str) -> Side {
+    if has(t, p) {
+        return new Side { present: true, text: t[p] };
+    }
+    return new Side { present: false, text: "" };
+}
+
+# The highest-numbered commit contained in both, or 0.
+export fn merge_base(r: repo.Repo, ours: int, theirs: int) -> int {
+    let a = repo.ancestry(r, ours);
+    let b = repo.ancestry(r, theirs);
+    var best = 0;
+    for c, _ in a {
+        if has(b, c) and c > best {
+            set best = c;
+        }
+    }
+    return best;
+}
+
+export fn three_way(base: map[str, str], ours: map[str, str], theirs: map[str, str]) -> Outcome {
+    let all_paths = new map[str, bool];
+    for t in [base, ours, theirs] {
+        for k, _ in t {
+            set all_paths[k] = true;
+        }
+    }
+    let merged = new map[str, str];
+    let conflicts = new list[Conflict];
+    for p in repo.byte_sorted(keys(all_paths)) {
+        let b = side(base, p);
+        let o = side(ours, p);
+        let t = side(theirs, p);
+        var res = o;
+        if o == t {
+            set res = o;
+        } else if o == b {
+            set res = t;
+        } else if t == b {
+            set res = o;
+        } else {
+            var kind = "both modified";
+            if not b.present {
+                set kind = "both added";
+            } else if not o.present {
+                set kind = "deleted by us";
+            } else if not t.present {
+                set kind = "deleted by them";
+            }
+            push(conflicts, new Conflict { path: p, kind: kind });
+            continue;
+        }
+        if res.present {
+            set merged[p] = res.text;
+        }
+    }
+    return new Outcome { merged: merged, conflicts: conflicts };
+}
+
+export fn conflict_lines(out: Outcome, verb: str) -> list[str] {
+    let lines = map(out.conflicts, fn(c) => "conflict: " + c.path + " (" + c.kind + ")");
+    push(lines, verb + " aborted");
+    return lines;
+}

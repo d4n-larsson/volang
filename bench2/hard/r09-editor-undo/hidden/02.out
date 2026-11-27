@@ -1,0 +1,17 @@
+2  l2
+buffer main, line 3 of 3
+1  l1
+undone 1 step
+buffer main, line 2 of 5
+3  l3
+4  l4
+5  l5
+redone 1 step
+buffer main, line 3 of 3
+1  l1
+found at 2
+buffer main, line 2 of 2
+undone 1 step
+buffer main, line 2 of 3
+redone 1 step
+buffer main, line 2 of 2

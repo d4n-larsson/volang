@@ -1,0 +1,16 @@
+# shared defaults
+flag dark-mode default off
+when beta = yes then on
+rollout 30
+
+flag new-checkout default off
+requires payments-v2
+when country in SE,NO,DK then on
+when plan = free then off
+rollout 50
+
+flag payments-v2 default on
+when app < 2.0 then off
+
+flag search_v3 default off
+when app >= 3.1.4 then on

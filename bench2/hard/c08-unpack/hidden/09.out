@@ -1,0 +1,35 @@
+== conflict
+file a 2
+skip a/b: parent is a file
+skip a: is a file
+dir d
+skip d: is a directory
+file d/x 6
+replace d/x 15
+file x/y/z 0
+skip x/y: is a directory
+skip x/y/z: is a file
+skip x/y/z/w: parent is a file
+skip .: empty
+skip ./: empty
+dir x
+replace a 3
+warning: END says 17, found 15
+= a 3 273027
+= d/x 15 948196660
+= x/y/z 0 7
+total 3 files, 3 dirs, 18 bytes
+== dots
+file ..foo 5
+file .../x 6
+file a/b/c 8
+file trail 9
+dir .hidden
+file .hidden/f 0
+warning: END says 5, found 6
+= .../x 6 633049780
+= ..foo 5 296178009
+= .hidden/f 0 7
+= a/b/c 8 924649238
+= trail 9 348360989
+total 5 files, 4 dirs, 28 bytes

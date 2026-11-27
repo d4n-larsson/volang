@@ -1,0 +1,20 @@
+customer s added
+customer u added
+invoice #1 s total 335.00 balance 335.00 due 0
+invoice #2 u total 335.00 balance 335.00 due 0
+fee #1 5.03
+fee #2 5.03
+paid s 335.00: #1 335.00
+paid u 335.00: #2 335.00
+paid u 1.00: #2 1.00
+statement u day 31
+#2 due 0 balance 4.03 overdue 31
+open 4.03 credit 0.00 written off 0.00
+credit #1 5.00 balance 0.03
+error: credit exceeds balance 4.03 of #2
+error: credit exceeds balance 4.03 of #2
+error: invoice 2 has payments
+error: invoice 1 has payments
+invoices:
+#1 s open total 335.00 fee 5.03 paid 335.00 credits 5.00 balance 0.03
+#2 u open total 335.00 fee 5.03 paid 336.00 credits 0.00 balance 4.03

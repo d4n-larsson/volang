@@ -1,0 +1,21 @@
+open w
+append one two three four five six seven
+group
+wrap 1 10
+subst 1,$ o 0
+goto 1
+endgroup
+where
+undo
+where
+redo
+where
+print
+open x
+open w
+group
+goto 2
+open x
+open w
+undo
+print

@@ -1,0 +1,35 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened assets:empty (asset, GBP)
+opened income:fees (income)
+rate EUR from day 1: 1.2345
+posted s1: 2 postings, total 12.47
+posted s2: 2 postings, total 2.74
+posted s3: 2 postings, total 4.07
+posted s4: 2 postings, total 1.23
+statement assets:eur (asset, EUR)
+     2 s2            -2.22      -2.22  earlier
+     2 s4            -1.00      -3.22  also
+     5 s1            10.10       6.88  later
+     5 s3             3.30      10.18  same
+  closing balance 10.18 EUR (book 12.57 USD)
+statement assets:empty (asset, GBP)
+  no postings
+  closing balance 0.00 GBP (book 0.00 USD)
+statement assets:bank (asset)
+     2 s2             2.74       2.74  earlier
+     2 s4             1.23       3.97  also
+     5 s1           -12.47      -8.50  later
+  closing balance -8.50
+statement income:fees (income)
+     5 s3            -4.07      -4.07  same
+  closing balance -4.07
+error: unknown account assets
+voided s1 on day 7
+statement assets:eur (asset, EUR)
+     2 s2            -2.22      -2.22  earlier
+     2 s4            -1.00      -3.22  also
+     5 s1            10.10       6.88  later
+     5 s3             3.30      10.18  same
+     7 rev-s1       -10.10       0.08  void:later
+  closing balance 0.08 EUR (book 0.10 USD)

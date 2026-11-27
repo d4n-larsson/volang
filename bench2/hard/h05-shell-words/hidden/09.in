@@ -1,0 +1,12 @@
+C=#x
+%%
+# all comment
+a #b c
+a#b c
+'#' x
+"a"#b
+\ #x
+a	#c
+$C #d
+x #
+#

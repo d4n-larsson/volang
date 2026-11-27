@@ -1,0 +1,113 @@
+import commands;
+import repo;
+
+fn count_ok(word: str, n: int) -> bool {
+    match word {
+        case "write" {
+            return n >= 1;
+        }
+        case "commit" {
+            return n >= 1;
+        }
+        case "status" {
+            return n == 0;
+        }
+        case "branches" {
+            return n == 0;
+        }
+        case "branch" {
+            return n == 1 or n == 2;
+        }
+        case "log" {
+            return n <= 1;
+        }
+        case "diff" {
+            return n == 2;
+        }
+        else {
+            return n == 1;
+        }
+    }
+}
+
+fn known(word: str) -> bool {
+    let words = ["write", "delete", "commit", "status", "branch", "branches", "unbranch", "checkout", "reset", "log", "show", "diff", "merge", "pick", "revert"];
+    return any(words, fn(w) => w == word);
+}
+
+fn dispatch(r: repo.Repo, word: str, argv: list[str]) -> result[list[str]] {
+    match word {
+        case "write" {
+            return commands.write_file_cmd(r, argv);
+        }
+        case "delete" {
+            return commands.delete(r, argv);
+        }
+        case "commit" {
+            return commands.commit(r, argv);
+        }
+        case "status" {
+            return commands.status(r);
+        }
+        case "branch" {
+            return commands.branch(r, argv);
+        }
+        case "branches" {
+            return commands.branches(r);
+        }
+        case "unbranch" {
+            return commands.unbranch(r, argv[0]);
+        }
+        case "checkout" {
+            return commands.checkout(r, argv[0]);
+        }
+        case "reset" {
+            return commands.reset(r, argv[0]);
+        }
+        case "log" {
+            return commands.log(r, argv);
+        }
+        case "show" {
+            return commands.show(r, argv[0]);
+        }
+        case "diff" {
+            return commands.diff(r, argv);
+        }
+        case "merge" {
+            return commands.merge(r, argv[0]);
+        }
+        else {
+            return commands.apply_commit(r, argv[0], word);
+        }
+    }
+}
+
+fn run_line(r: repo.Repo, fields: list[str]) -> list[str] {
+    let word = fields[0];
+    let argv = slice(fields, 1, len(fields));
+    if not known(word) or not count_ok(word, len(argv)) {
+        return ["error: bad command"];
+    }
+    match dispatch(r, word, argv) {
+        case ok(lines) {
+            return lines;
+        }
+        case err(e) {
+            return ["error: " + e];
+        }
+    }
+}
+
+fn main() uses console, input {
+    let r = repo.new_repo();
+    var out = "";
+    for line in split(read_all(), "\n") {
+        let fields = filter(split(line, " "), fn(f) => f != "");
+        if len(fields) > 0 {
+            for s in run_line(r, fields) {
+                set out = out + s + "\n";
+            }
+        }
+    }
+    write(out);
+}

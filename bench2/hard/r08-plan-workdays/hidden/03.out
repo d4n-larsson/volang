@@ -1,0 +1,38 @@
+added task a
+added task b
+added task c
+task a starts no earlier than day 5
+day 7 is now off
+task b starts no earlier than day 7
+task c starts no earlier than day 13
+c after a
+task a: a
+  duration 3 days
+  after: -
+  before: c
+  not before day 5
+  start 8 finish 11 slack 1
+  done 0%
+task b: b
+  duration 2 days
+  after: -
+  before: -
+  not before day 7
+  start 8 finish 10 slack 3
+  done 0%
+task c: c
+  duration 1 days
+  after: a
+  before: -
+  not before day 13
+  start 14 finish 15 slack 0
+  done 0%
+task  start  finish  lstart  lfinish  slack
+a         8      11       9       14      1
+b         8      10      11       15      3
+c        14      15      14       15      0
+end 15
+  0123456789012345
+a ........###.....
+b ........##......
+c ..............#.

@@ -1,0 +1,47 @@
+# The double round robin: every active team plays every other active team at home and away.
+import model;
+import results;
+import teams;
+
+export record Pair {
+    home: str;
+    away: str;
+}
+
+# Pairs not yet played among `names`, home then away in the order of `names`.
+export fn remaining(league: model.League, names: list[str]) -> list[Pair] {
+    let out = new list[Pair];
+    for home in names {
+        for away in names {
+            if home != away and not results.played(league, home, away) {
+                push(out, new Pair { home: home, away: away });
+            }
+        }
+    }
+    return out;
+}
+
+fn group_fixture_lines(league: model.League) -> list[str] {
+    let out = new list[str];
+    var total = 0;
+    for g in teams.group_names(league) {
+        let pairs = remaining(league, teams.group_active(league, g));
+        set total = total + len(pairs);
+        push(out, "group " + g + ": " + str(len(pairs)) + " left");
+        for p in pairs {
+            push(out, "  " + p.home + " v " + p.away);
+        }
+    }
+    push(out, str(total) + " fixtures left");
+    return out;
+}
+
+export fn fixture_lines(league: model.League) -> list[str] {
+    if teams.grouped(league) {
+        return group_fixture_lines(league);
+    }
+    let pairs = remaining(league, teams.active_names(league));
+    let out = map(pairs, fn(p) => p.home + " v " + p.away);
+    push(out, str(len(pairs)) + " fixtures left");
+    return out;
+}

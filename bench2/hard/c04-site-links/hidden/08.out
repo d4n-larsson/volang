@@ -1,0 +1,8 @@
+== .
+error: bad site name
+== ..
+error: bad site name
+== /etc
+error: bad site name
+== -
+error: no such site

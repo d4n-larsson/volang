@@ -1,0 +1,67 @@
+# Items and warehouses.
+import fmt;
+import model;
+
+export fn add_warehouse(state: model.State, code: str) -> str {
+    if has(state.stock, code) {
+        return "error: warehouse " + code + " exists";
+    }
+    set state.stock[code] = new map[str, list[model.Lot]];
+    return "warehouse " + code + " added";
+}
+
+export fn add_item(state: model.State, sku: str, name: str, cost: int) -> str {
+    if has(state.items, sku) {
+        return "error: item " + sku + " exists";
+    }
+    set state.items[sku] = new model.Item { sku: sku, name: name, cost: cost, reorder: 0 };
+    return "item " + sku + " added";
+}
+
+export fn set_cost(state: model.State, sku: str, cost: int) -> str {
+    if not has(state.items, sku) {
+        return unknown_item(sku);
+    }
+    set state.items[sku].cost = cost;
+    return "item " + sku + " cost " + fmt.money(cost);
+}
+
+export fn set_reorder(state: model.State, sku: str, point: int) -> str {
+    if not has(state.items, sku) {
+        return unknown_item(sku);
+    }
+    set state.items[sku].reorder = point;
+    return "item " + sku + " reorder point " + str(point);
+}
+
+export fn unknown_item(sku: str) -> str {
+    return "error: unknown item " + sku;
+}
+
+export fn unknown_warehouse(code: str) -> str {
+    return "error: unknown warehouse " + code;
+}
+
+export fn sorted_skus(state: model.State) -> list[str] {
+    let out = keys(state.items);
+    sort(out);
+    return out;
+}
+
+export fn sorted_warehouses(state: model.State) -> list[str] {
+    let out = keys(state.stock);
+    sort(out);
+    return out;
+}
+
+export fn item_lines(state: model.State) -> list[str] {
+    if len(state.items) == 0 {
+        return ["no items"];
+    }
+    let out = new list[str];
+    for sku in sorted_skus(state) {
+        let it = state.items[sku];
+        push(out, sku + " " + it.name + " cost " + fmt.money(it.cost) + " reorder " + str(it.reorder));
+    }
+    return out;
+}

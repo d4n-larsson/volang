@@ -1,0 +1,70 @@
+# Splitting command lines and checking their arguments.
+# A check that fails returns an `err` whose text the dispatcher prints after `error: `.
+const name_chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+const max_name = 16;
+
+const max_number_digits = 6;
+
+export const bad_command = "bad command";
+
+# The words of a line: runs of characters other than a space.
+export fn split_words(line: str) -> list[str] {
+    return filter(split(line, " "), fn(w) => w != "");
+}
+
+export fn is_name(s: str) -> bool {
+    if len(s) < 1 or len(s) > max_name {
+        return false;
+    }
+    return all(chars(s), fn(c) => find(name_chars, c) >= 0);
+}
+
+export fn is_number(s: str) -> bool {
+    if len(s) < 1 or len(s) > max_number_digits {
+        return false;
+    }
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+# The command takes from `least` to `most` arguments (most -1: no upper limit).
+export fn expect_count(argv: list[str], least: int, most: int) -> result[void] {
+    if len(argv) < least or (most >= 0 and len(argv) > most) {
+        return err(bad_command);
+    }
+    return ok();
+}
+
+export fn name_arg(s: str) -> result[str] {
+    if not is_name(s) {
+        return err(bad_command);
+    }
+    return ok(s);
+}
+
+export fn number_arg(s: str, least: int) -> result[int] {
+    if not is_number(s) {
+        return err(bad_command);
+    }
+    let n = try parse_int(s);
+    if n < least {
+        return err(bad_command);
+    }
+    return ok(n);
+}
+
+# The message text: the remaining words joined by single spaces.
+export fn text_arg(words: list[str]) -> result[str] {
+    if len(words) == 0 {
+        return err(bad_command);
+    }
+    return ok(join(words, " "));
+}
+
+# An optional keyword such as `private`: anything else is a bad command.
+export fn flag_arg(s: str, flag: str) -> result[bool] {
+    if s != flag {
+        return err(bad_command);
+    }
+    return ok(true);
+}

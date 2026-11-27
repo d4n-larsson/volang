@@ -1,0 +1,40 @@
+d/
+e/
+empty/
+g
+h
+h
+two
+d/
+e/
+empty/
+mv: e: directory not empty
+d/
+empty:
+d/
+h
+empty/d:
+mv: empty: cannot move into itself
+mv: empty: cannot move into itself
+mv: e/inner: not a directory
+d 0 d/
+- 4 h
+- 2 inner
+- 2 plain
+d 0 sub/
+/
+/e
+/e/d
+/e/h
+/e/inner
+/e/sub
+/e/sub/renamed
+/empty
+/empty/d
+mv: t: is a directory
+mv: t: directory not empty
+/t
+/t/k
+/t/x1
+/t/x1/k
+/t/x1/sub

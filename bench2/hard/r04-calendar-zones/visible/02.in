@@ -1,0 +1,10 @@
+user lee -05:00
+user kim +09:00
+room hub 3
+book s1 hub lee 4 20:00 90 kim
+agenda kim 5
+agenda lee 4
+zone hub +01:00
+rooms 5
+free hub 5
+list

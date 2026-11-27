@@ -1,0 +1,18 @@
+warehouse big added
+item gold added
+received 999999 gold into big, now 999999, lot 1 at 9999.99
+received 999999 gold into big, now 1999998, lot 2 at 9999.98
+shipped 999999 gold from big, now 999999, cost 9999980000.01
+lot 2: 999999 x 9999.98 = 9999970000.02
+total 999999 units = 9999970000.02
+gold: 999999 units = 9999970000.02
+total value 9999970000.02
+items 1, warehouses 1, 999999 units, value 9999970000.02
+shipped 999999 units in 1 shipment, cost 9999980000.01
+orders: 0 open, 0 fulfilled, 0 cancelled
+adjusted gold in big by -999998 (loss), now 1, cost 9999960000.04
+lot 2: 1 x 9999.98 = 9999.98
+total 1 unit = 9999.98
+items 1, warehouses 1, 1 unit, value 9999.98
+shipped 999999 units in 1 shipment, cost 9999980000.01
+orders: 0 open, 0 fulfilled, 0 cancelled

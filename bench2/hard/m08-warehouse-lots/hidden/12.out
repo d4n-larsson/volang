@@ -1,0 +1,24 @@
+warehouse c added
+warehouse d added
+item tin added
+lot L1 c tin 6
+transfer T1 4 arrives 3 L1x4
+transfer T2 2 arrives 3 L1x2
+backorder o1 5
+backorder o2 1
+error: only 0 available
+arrived T1 d tin 4
+arrived T2 d tin 2
+filled o1 5 L1x5
+transfer T3 1 arrives 5 L1x1
+returned o1 2 restocked 2 quarantined 0
+arrived T3 c tin 1
+filled o2 1 L1x1
+stock day 5
+d tin L1 on hand 2 reserved 0 expires 10
+expired L1 d 2
+stock day 10
+value on hand 0.00 in transit 0.00 quarantine 0.00 shipped 4.00 written off 2.00
+stock day 10
+value on hand 0.00 in transit 0.00 quarantine 0.00 shipped 4.00 written off 2.00
+backorders 0

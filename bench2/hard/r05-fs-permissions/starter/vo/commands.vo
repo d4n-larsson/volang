@@ -1,0 +1,168 @@
+# The command dispatcher: checks the number and form of the arguments, then runs the command.
+import dircmds;
+import filecmds;
+import shell;
+import walkcmds;
+
+fn bad() -> list[str] {
+    return ["error: bad command"];
+}
+
+fn is_number(s: str) -> bool {
+    if len(s) == 0 {
+        return false;
+    }
+    return all(chars(s), fn(c) => c >= "0" and c <= "9");
+}
+
+# Only called on strings that passed is_number.
+fn num(s: str) -> int {
+    match parse_int(s) {
+        case ok(n) {
+            return n;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+# The one optional path argument of ls, tree and du: `.` when it is left out.
+fn optional_path(args_value: list[str]) -> str {
+    if len(args_value) == 0 {
+        return ".";
+    }
+    return args_value[0];
+}
+
+# Whether the arguments start with the flag (`-p`, `-r`).
+fn has_flag(args_value: list[str], flag: str) -> bool {
+    return len(args_value) > 0 and args_value[0] == flag;
+}
+
+# The arguments without a leading flag.
+fn without_flag(args_value: list[str], flag: str) -> list[str] {
+    if has_flag(args_value, flag) {
+        return slice(args_value, 1, len(args_value));
+    }
+    return args_value;
+}
+
+fn run_dir_command(sh: shell.Shell, cmd: str, args_value: list[str]) -> list[str] {
+    let n = len(args_value);
+    match cmd {
+        case "pwd" {
+            if n != 0 {
+                return bad();
+            }
+            return dircmds.pwd(sh);
+        }
+        case "cd" {
+            if n != 1 {
+                return bad();
+            }
+            return dircmds.outcome(dircmds.cd(sh, args_value[0]));
+        }
+        case "mkdir" {
+            let rest = without_flag(args_value, "-p");
+            if len(rest) != 1 {
+                return bad();
+            }
+            if has_flag(args_value, "-p") {
+                return dircmds.outcome(dircmds.mkdir_parents(sh, rest[0]));
+            }
+            return dircmds.outcome(dircmds.mkdir(sh, rest[0]));
+        }
+        case "rmdir" {
+            if n != 1 {
+                return bad();
+            }
+            return dircmds.outcome(dircmds.rmdir(sh, args_value[0]));
+        }
+        case "ls" {
+            if n > 1 {
+                return bad();
+            }
+            return dircmds.ls(sh, optional_path(args_value));
+        }
+        case "rm" {
+            let rest = without_flag(args_value, "-r");
+            if len(rest) != 1 {
+                return bad();
+            }
+            return dircmds.outcome(dircmds.rm(sh, rest[0], has_flag(args_value, "-r")));
+        }
+        else {
+            if n != 2 {
+                return bad();
+            }
+            return dircmds.outcome(dircmds.mv(sh, args_value[0], args_value[1]));
+        }
+    }
+}
+
+fn run_file_command(sh: shell.Shell, cmd: str, args_value: list[str]) -> list[str] {
+    let n = len(args_value);
+    if cmd == "write" or cmd == "append" {
+        if n < 1 {
+            return bad();
+        }
+        return filecmds.write_text(sh, args_value[0], slice(args_value, 1, n), cmd == "append");
+    }
+    if cmd == "head" {
+        if n != 2 or not is_number(args_value[1]) {
+            return bad();
+        }
+        return filecmds.head(sh, args_value[0], num(args_value[1]));
+    }
+    if cmd == "grep" or cmd == "cp" {
+        if n != 2 {
+            return bad();
+        }
+        if cmd == "grep" {
+            return filecmds.grep(sh, args_value[0], args_value[1]);
+        }
+        return filecmds.cp(sh, args_value[0], args_value[1]);
+    }
+    if n != 1 {
+        return bad();
+    }
+    if cmd == "touch" {
+        return filecmds.touch(sh, args_value[0]);
+    }
+    if cmd == "cat" {
+        return filecmds.cat(sh, args_value[0]);
+    }
+    return filecmds.stat(sh, args_value[0]);
+}
+
+fn run_walk_command(sh: shell.Shell, cmd: str, args_value: list[str]) -> list[str] {
+    if cmd == "find" {
+        if len(args_value) != 2 {
+            return bad();
+        }
+        return walkcmds.find_name(sh, args_value[0], args_value[1]);
+    }
+    if len(args_value) > 1 {
+        return bad();
+    }
+    if cmd == "tree" {
+        return walkcmds.tree(sh, optional_path(args_value));
+    }
+    return walkcmds.du(sh, optional_path(args_value));
+}
+
+export fn run(sh: shell.Shell, words: list[str]) -> list[str] {
+    let cmd = words[0];
+    let args_value = slice(words, 1, len(words));
+    if any(["pwd", "cd", "mkdir", "rmdir", "ls", "rm", "mv"], fn(c) => c == cmd) {
+        return run_dir_command(sh, cmd, args_value);
+    }
+    if any(["write", "append", "touch", "cat", "head", "grep", "cp", "stat"], fn(c) => c == cmd) {
+        return run_file_command(sh, cmd, args_value);
+    }
+    if any(["tree", "du", "find"], fn(c) => c == cmd) {
+        return run_walk_command(sh, cmd, args_value);
+    }
+    return ["error: unknown command " + cmd];
+}

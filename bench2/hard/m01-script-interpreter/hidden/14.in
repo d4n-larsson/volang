@@ -1,0 +1,15 @@
+func loud(v)
+    print "evaluated", v
+    return v
+end
+print false and loud(true), true or loud(false)
+print loud(true) and loud(false), loud(false) or loud(true)
+print false and missing, true or 1 / 0 == 0
+let v = 7
+if v < 5
+    print "small"
+elif v - 7
+    print "zero"
+else
+    print "other"
+end

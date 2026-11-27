@@ -1,0 +1,53 @@
+user ann added
+error: user ann exists
+error: bad command
+error: bad command
+error: bad priority p5
+error: bad command
+error: bad priority P2
+created #1: Good issue
+error: bad command
+error: bad command
+error: bad command
+#1 labels: ui
+#1 labels: ui
+#1 priority unchanged
+error: bad priority px
+error: unknown issue #7
+#1 priority p2 -> p1
+#1 title unchanged
+#1 renamed
+error: unknown user zed
+error: bad command
+comment added to #1
+#1 [p1] Better issue
+  status: new
+  assignee: -
+  labels: ui
+  created 8, updated 22
+  1 comment
+  [22] ann: looks fine
+error: unknown command frobnicate
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+[12] #1 labels: ui
+[13] #1 labels: ui
+[17] #1 priority p2 -> p1
+[19] #1 renamed
+[22] comment added to #1
+error: bad command
+clock 33
+no done issues
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+#1 [p1] Better issue
+  status: new
+  assignee: -
+  labels: ui
+  created 8, updated 22
+  1 comment
+  [22] ann: looks fine

@@ -1,0 +1,83 @@
+# Which meetings clash with a time slot.
+import std.option;
+import model;
+import timefmt;
+
+export record Order {
+    start: int;
+    meeting_id: str;
+}
+
+export fn order(m: model.Meeting) -> Order {
+    return new Order { start: m.start, meeting_id: m.meeting_id };
+}
+
+export fn overlaps(start: int, end: int, other_start: int, other_end: int) -> bool {
+    return start < other_end and other_start < end;
+}
+
+# The meeting that starts first (ties: the smaller ID), if any.
+export fn first(meetings: list[model.Meeting]) -> option.Option[model.Meeting] {
+    if len(meetings) == 0 {
+        return option.Option.none;
+    }
+    var best = meetings[0];
+    for m in meetings {
+        if order(m) < order(best) {
+            set best = m;
+        }
+    }
+    return option.Option.some(best);
+}
+
+export fn room_clash(cal: model.Calendar, room: str, start: int, end: int, skip: str) -> option.Option[model.Meeting] {
+    let found = new list[model.Meeting];
+    for _, m in cal.meetings {
+        if m.room == room and m.meeting_id != skip and overlaps(start, end, m.start, m.end) {
+            push(found, m);
+        }
+    }
+    return first(found);
+}
+
+export fn person_clash(cal: model.Calendar, name: str, start: int, end: int, skip: str) -> option.Option[model.Meeting] {
+    let found = new list[model.Meeting];
+    for _, m in cal.meetings {
+        if model.contains(model.people(m), name) and m.meeting_id != skip and overlaps(start, end, m.start, m.end) {
+            push(found, m);
+        }
+    }
+    return first(found);
+}
+
+export fn clash_text(who: str, m: model.Meeting) -> str {
+    return "error: " + who + " busy: " + m.meeting_id + " " + timefmt.span(m.start, m.end);
+}
+
+export fn capacity_error(room: model.Room, people_count: int) -> str {
+    if people_count > room.capacity {
+        return "error: room " + room.name + " holds " + str(room.capacity) + ", meeting has " + str(people_count);
+    }
+    return "";
+}
+
+# The first clash for a meeting of `people` in `room` from start to end, or "".
+export fn placement_error(cal: model.Calendar, room: str, people: list[str], start: int, end: int, skip: str) -> str {
+    match room_clash(cal, room, start, end, skip) {
+        case some(m) {
+            return clash_text("room " + room, m);
+        }
+        case none {
+        }
+    }
+    for name in people {
+        match person_clash(cal, name, start, end, skip) {
+            case some(m) {
+                return clash_text(name, m);
+            }
+            case none {
+            }
+        }
+    }
+    return "";
+}

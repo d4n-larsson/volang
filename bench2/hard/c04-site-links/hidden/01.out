@@ -1,0 +1,8 @@
+== tricky
+index.md:12: missing anchor #deep-heading
+index.md:14: missing anchor sub/page.md#section-2
+index.md:16: missing file sub
+index.md:16: missing file sub
+index.md:22: missing file nope2.md
+sub/page.md:4: outside ../../tricky/index.md
+pages 2 links 22 external 1 problems 6 orphans 0

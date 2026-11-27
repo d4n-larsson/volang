@@ -1,0 +1,23 @@
+reject M1 no liquidity
+reject F1 not filled
+expired I1 5
+pending T1
+book EE last -
+  empty
+rest L1 1 1.00
+cancelled L1 1
+rest G1 1 1.00
+stp G1 1
+rest G2 1 1.00
+book CC last -
+  empty
+book DD last -
+  empty
+book FF last -
+  empty
+book GG last -
+  bid 1.00 1 1
+trader cy cash 0.00
+trader dan cash 0.00
+trader eve cash 0.00
+trader fay cash 0.00

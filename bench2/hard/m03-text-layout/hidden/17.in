@@ -1,0 +1,35 @@
+.width 30
+.page 4
+.indent 2
+.contents x
+.heading Introduction
+Short text.
+.heading A heading that is much too long to fit the width
+Body.
+.heading abcdefghijklmnopqrstuvwxyza bcd
+Body.
+.heading chapter
+one
+
+two
+
+three
+
+four
+
+five
+
+six
+
+seven
+
+eight
+
+nine
+
+ten
+
+eleven
+.heading Final words
+The end.
+.contents

@@ -1,0 +1,34 @@
+customer q added
+customer r added
+invoice #1 q total 10.00 balance 10.00 due 10
+invoice #2 r total 1.00 balance 1.00 due 10
+terms q 50
+invoice #3 q total 20.00 balance 20.00 due 60
+fee #1 5.00
+fee #2 5.00
+invoice #4 q total 1.00 balance 1.00 due 120
+invoice #5 r total 1.00 balance 1.00 due 70
+error: q on hold
+error: r on hold
+paid r 1.00: #2 1.00
+error: r on hold
+error: invoice 1 is 61 days overdue
+fee #3 5.00
+error: invoice 1 is 90 days overdue
+fee #5 5.00
+write off #1 15.00
+error: invoice 3 is 41 days overdue
+error: no invoice 6
+error: invoice 1 is written-off
+statement q day 101
+#3 due 60 balance 25.00 overdue 41
+#4 due 120 balance 1.00
+open 26.00 credit 0.00 written off 15.00
+invoice #6 q total 1.00 balance 1.00 due 151
+invoices:
+#1 q written-off total 10.00 fee 5.00 paid 0.00 credits 0.00 balance 0.00
+#2 r open total 1.00 fee 5.00 paid 1.00 credits 0.00 balance 5.00
+#3 q open total 20.00 fee 5.00 paid 0.00 credits 0.00 balance 25.00
+#4 q open total 1.00 fee 0.00 paid 0.00 credits 0.00 balance 1.00
+#5 r open total 1.00 fee 5.00 paid 0.00 credits 0.00 balance 6.00
+#6 q open total 1.00 fee 0.00 paid 0.00 credits 0.00 balance 1.00

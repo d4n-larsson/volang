@@ -1,0 +1,22 @@
+set A1 3
+set A2 5
+set A3 hi
+set B1 =A1=A2
+set B2 =A1<>A2
+set B3 =A1<A2
+set B4 =A1<=3
+set B5 =A1>A2
+set B6 =A2>=5
+set B7 =A1+2=A2
+set B8 =1+(A1<A2)*10
+set B9 =A3=A3
+set C1 =IF(A1>=A2, A1, A2)
+set C2 =-1<0
+set C3 =(A1=3)=(A2=5)
+set C4 =A1<A2>0
+set C5 =IF(A1-3, 1, 0)
+set C6 =A9=0
+set C7 =A3<>1/0
+set C8 =1/0<>A3
+set C9 =(A1>2)*(A2<9)*(A1<>A2)
+show B1:C9

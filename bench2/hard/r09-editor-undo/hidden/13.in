@@ -1,0 +1,24 @@
+append alpha
+append beta
+append gamma
+group
+group
+undo
+redo
+save
+replace 2 BETA
+subst 1,$ a 4
+yank 1,3
+cut 3
+paste 0
+endgroup
+print
+undo
+print
+redo
+print
+undo
+buffers
+redo 2
+redo
+buffers

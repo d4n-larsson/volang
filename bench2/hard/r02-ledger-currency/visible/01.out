@@ -1,0 +1,21 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened equity:open (equity)
+opened expense:travel (expense)
+rate EUR from day 1: 1.0850
+posted t1: 2 postings, total 1000.00
+posted t2: 2 postings, total 217.00
+posted t3: 2 postings, total 54.25
+t2 day 2 exchange
+  assets:eur 200.00 EUR (217.00 USD)
+  assets:bank -217.00
+statement assets:eur (asset, EUR)
+     2 t2           200.00     200.00  exchange
+     3 t3           -50.00     150.00  hotel
+  closing balance 150.00 EUR (book 162.75 USD)
+balance assets: 945.75
+  EUR 150.00
+assets:bank asset 783.00
+assets:eur asset 150.00 EUR
+equity:open equity -1000.00
+expense:travel expense 54.25

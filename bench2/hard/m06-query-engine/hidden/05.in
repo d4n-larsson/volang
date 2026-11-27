@@ -1,0 +1,14 @@
+create table ord (id int, cust int, amount int)
+create table cust (id int, name text, city text)
+insert into ord values (1, 2, 30), (2, 1, 10), (3, 2, 5), (4, 9, 70), (5, null, 8)
+insert into cust values (1, 'abe', 'oslo'), (2, 'bea', 'rome'), (2, 'bex', 'kyiv'), (null, 'nul', 'none')
+select * from ord join cust on cust = cust.id
+select id from ord join cust on ord.cust = cust.id
+select ord.id, name, amount from ord join cust on cust.id = ord.cust where amount > 6
+select name from ord join cust on ord.cust = cust.name
+select name from ord join ord on ord.id = ord.id
+select name from ord join shop on ord.id = shop.id
+select name from mall join shop on ord.id = shop.id
+select x.id from ord join cust on ord.cust = cust.id
+select ord.name from ord join cust on ord.cust = cust.id
+select name, city from ord join cust on ord.id = ord.cust

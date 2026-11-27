@@ -1,0 +1,19 @@
+append x
+undo
+buffers
+redo
+buffers
+save
+undo
+buffers
+append x
+buffers
+undo
+buffers
+redo
+undo
+append y
+undo
+buffers
+save
+buffers

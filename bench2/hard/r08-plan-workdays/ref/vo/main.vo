@@ -1,0 +1,159 @@
+import edit;
+import gantt;
+import model;
+import parse;
+import report;
+import workdays;
+
+fn bad() -> list[str] {
+    return ["error: bad command"];
+}
+
+# `task` and `rename`, or an empty list for any other command.
+fn change_tasks(plan: model.Plan, cmd: str, args_value: list[str]) -> list[str] {
+    if cmd == "task" {
+        if len(args_value) < 2 or not parse.is_number(args_value[1]) {
+            return bad();
+        }
+        if not parse.valid_id(args_value[0]) {
+            return ["error: bad task id " + args_value[0]];
+        }
+        var name = args_value[0];
+        if len(args_value) > 2 {
+            set name = join(slice(args_value, 2, len(args_value)), " ");
+        }
+        return [edit.add_task(plan, args_value[0], parse.num(args_value[1]), name)];
+    }
+    if cmd == "rename" {
+        if len(args_value) < 2 {
+            return bad();
+        }
+        return [edit.rename(plan, args_value[0], join(slice(args_value, 1, len(args_value)), " "))];
+    }
+    if cmd == "remove" {
+        if len(args_value) != 1 {
+            return bad();
+        }
+        return [edit.remove_task(plan, args_value[0])];
+    }
+    return [];
+}
+
+# The other commands that edit the plan, or an empty list for any other command.
+fn change(plan: model.Plan, cmd: str, args_value: list[str]) -> list[str] {
+    if cmd == "dep" {
+        if len(args_value) != 2 {
+            return bad();
+        }
+        match parse.parse_dep(args_value[1]) {
+            case ok(d) {
+                return [edit.add_dep(plan, args_value[0], d.pred, d.lag)];
+            }
+            case err(_) {
+                return bad();
+            }
+        }
+    }
+    if cmd == "undep" {
+        if len(args_value) != 2 {
+            return bad();
+        }
+        return [edit.remove_dep(plan, args_value[0], args_value[1])];
+    }
+    if cmd == "duration" {
+        if len(args_value) != 2 or not parse.is_number(args_value[1]) {
+            return bad();
+        }
+        return [edit.set_duration(plan, args_value[0], parse.num(args_value[1]))];
+    }
+    if cmd == "notbefore" {
+        if len(args_value) != 2 or not parse.is_number(args_value[1]) {
+            return bad();
+        }
+        return [edit.set_not_before(plan, args_value[0], parse.num(args_value[1]))];
+    }
+    if cmd == "holiday" or cmd == "workday" {
+        if len(args_value) != 1 or not parse.is_number(args_value[0]) {
+            return bad();
+        }
+        if cmd == "holiday" {
+            return [workdays.holiday(plan, parse.num(args_value[0]))];
+        }
+        return [workdays.workday(plan, parse.num(args_value[0]))];
+    }
+    if cmd == "progress" {
+        if len(args_value) != 2 or not parse.is_percent(args_value[1]) {
+            return bad();
+        }
+        return [edit.set_progress(plan, args_value[0], parse.num(args_value[1]))];
+    }
+    return change_tasks(plan, cmd, args_value);
+}
+
+fn view(plan: model.Plan, cmd: str, args_value: list[str]) -> list[str] {
+    if cmd == "list" or cmd == "schedule" or cmd == "critical" or cmd == "end" {
+        if len(args_value) != 0 {
+            return bad();
+        }
+        if cmd == "list" {
+            return report.list_lines(plan);
+        }
+        if cmd == "schedule" {
+            return report.schedule_lines(plan);
+        }
+        if cmd == "critical" {
+            return [report.critical_line(plan)];
+        }
+        return [report.end_line(plan)];
+    }
+    if cmd == "show" {
+        if len(args_value) != 1 {
+            return bad();
+        }
+        if not has(plan.tasks, args_value[0]) {
+            return [edit.unknown(args_value[0])];
+        }
+        return report.show_lines(plan, args_value[0]);
+    }
+    if cmd == "gantt" {
+        if (len(args_value) != 0 and len(args_value) != 2) or not all(args_value, parse.is_number) {
+            return bad();
+        }
+        return gantt.gantt(plan, args_value);
+    }
+    if cmd == "cal" {
+        if len(args_value) != 2 or not all(args_value, parse.is_number) {
+            return bad();
+        }
+        return workdays.cal_lines(plan, parse.num(args_value[0]), parse.num(args_value[1]));
+    }
+    if cmd == "status" {
+        if len(args_value) != 1 or not parse.is_number(args_value[0]) {
+            return bad();
+        }
+        return report.status_lines(plan, parse.num(args_value[0]));
+    }
+    return ["error: unknown command " + cmd];
+}
+
+fn run(plan: model.Plan, words: list[str]) -> list[str] {
+    let args_value = slice(words, 1, len(words));
+    let out = change(plan, words[0], args_value);
+    if len(out) > 0 {
+        return out;
+    }
+    return view(plan, words[0], args_value);
+}
+
+fn main() uses console, input {
+    let plan = new model.Plan { tasks: new map[str, model.Task], next_seq: 1, days: new map[int, bool] };
+    for line in split(read_all(), "\n") {
+        let words = filter(split(line, " "), fn(w) => w != "");
+        if len(words) == 0 {
+            continue;
+        }
+        for out in run(plan, words) {
+            print(out);
+        }
+    }
+}

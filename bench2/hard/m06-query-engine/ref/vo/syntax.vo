@@ -1,0 +1,485 @@
+export record Token {
+    kind: str;
+    text: str;
+}
+
+export record Col {
+    table: str;
+    name: str;
+    index: int;
+}
+
+export record Agg {
+    func: str;
+    star: bool;
+    arg: Col;
+}
+
+export variant Value {
+    null;
+    num(int);
+    txt(str);
+}
+
+export variant Operand {
+    col(Col);
+    agg(Agg);
+    lit(Value);
+}
+
+export variant Expr {
+    always;
+    cmp {
+        op: str;
+        a: Operand;
+        b: Operand;
+    }
+    isnull {
+        a: Operand;
+        negated: bool;
+    }
+    negate(Expr);
+    both {
+        a: Expr;
+        b: Expr;
+    }
+    either {
+        a: Expr;
+        b: Expr;
+    }
+}
+
+export record ColDef {
+    name: str;
+    ty: str;
+}
+
+export record Assign {
+    name: str;
+    value: Value;
+}
+
+export record Key {
+    op: Operand;
+    desc: bool;
+}
+
+export record Stmt {
+    kind: str;
+    table: str;
+    cols: list[ColDef];
+    tuples: list[list[Value]];
+    sets: list[Assign];
+    star: bool;
+    items: list[Operand];
+    join: str;
+    left: bool;
+    on: Expr;
+    where: Expr;
+    has_group: bool;
+    group: list[Col];
+    has_having: bool;
+    having: Expr;
+    order: list[Key];
+    has_limit: bool;
+    limit: int;
+    offset: int;
+}
+
+const keywords = " create table int text insert into values null select from join left on where group by having order asc desc limit offset and or not is count sum min max delete update set ";
+
+fn is_word_start(c: str) -> bool {
+    return c == "_" or (c >= "a" and c <= "z");
+}
+
+fn is_digit(c: str) -> bool {
+    return c >= "0" and c <= "9";
+}
+
+export fn tokens(line: str) -> result[list[Token]] {
+    let cs = chars(line);
+    let n = len(cs);
+    let out = new list[Token];
+    var i = 0;
+    while i < n {
+        let c = cs[i];
+        if c == " " {
+            set i = i + 1;
+        } else if is_word_start(c) {
+            var j = i;
+            while j < n and (is_word_start(cs[j]) or is_digit(cs[j])) {
+                set j = j + 1;
+            }
+            push(out, new Token { kind: "word", text: join(slice(cs, i, j), "") });
+            set i = j;
+        } else if is_digit(c) or (c == "-" and i + 1 < n and is_digit(cs[i + 1])) {
+            var j = i + 1;
+            while j < n and is_digit(cs[j]) {
+                set j = j + 1;
+            }
+            let digits = j - i;
+            if digits > 10 or (digits == 10 and c != "-") {
+                return err("syntax error");
+            }
+            push(out, new Token { kind: "int", text: join(slice(cs, i, j), "") });
+            set i = j;
+        } else if c == "'" {
+            var j = i + 1;
+            var text = "";
+            while true {
+                if j >= n {
+                    return err("syntax error");
+                }
+                if cs[j] == "'" {
+                    if j + 1 < n and cs[j + 1] == "'" {
+                        set text = text + "'";
+                        set j = j + 2;
+                        continue;
+                    }
+                    break;
+                }
+                set text = text + cs[j];
+                set j = j + 1;
+            }
+            push(out, new Token { kind: "str", text: text });
+            set i = j + 1;
+        } else if i + 1 < n and (c == "!" or c == "<" or c == ">") and cs[i + 1] == "=" {
+            push(out, new Token { kind: "sym", text: c + "=" });
+            set i = i + 2;
+        } else if find("(),*.=<>", c) >= 0 {
+            push(out, new Token { kind: "sym", text: c });
+            set i = i + 1;
+        } else {
+            return err("syntax error");
+        }
+    }
+    return ok(out);
+}
+
+record Parser {
+    toks: list[Token];
+    i: int;
+}
+
+fn peek(p: Parser, k: int) -> Token {
+    if p.i + k < len(p.toks) {
+        return p.toks[p.i + k];
+    }
+    return new Token { kind: "end", text: "" };
+}
+
+fn at(p: Parser, v: str, k: int) -> bool {
+    let t = peek(p, k);
+    return (t.kind == "word" or t.kind == "sym") and t.text == v;
+}
+
+fn accept(p: Parser, v: str) -> bool {
+    if at(p, v, 0) {
+        set p.i = p.i + 1;
+        return true;
+    }
+    return false;
+}
+
+fn need(p: Parser, v: str) -> result[void] {
+    if accept(p, v) {
+        return ok();
+    }
+    return err("syntax error");
+}
+
+fn is_keyword(w: str) -> bool {
+    return find(keywords, " " + w + " ") >= 0;
+}
+
+fn name(p: Parser) -> result[str] {
+    let t = peek(p, 0);
+    if t.kind != "word" or is_keyword(t.text) {
+        return err("syntax error");
+    }
+    set p.i = p.i + 1;
+    return ok(t.text);
+}
+
+fn lit(p: Parser) -> result[Value] {
+    let t = peek(p, 0);
+    if t.kind == "int" {
+        set p.i = p.i + 1;
+        return ok(Value.num(try parse_int(t.text)));
+    }
+    if t.kind == "str" {
+        set p.i = p.i + 1;
+        return ok(Value.txt(t.text));
+    }
+    try need(p, "null");
+    return ok(Value.null);
+}
+
+fn count(p: Parser) -> result[int] {
+    let t = peek(p, 0);
+    if t.kind != "int" or slice(t.text, 0, 1) == "-" {
+        return err("syntax error");
+    }
+    set p.i = p.i + 1;
+    return parse_int(t.text);
+}
+
+fn col(p: Parser) -> result[Col] {
+    let a = try name(p);
+    if accept(p, ".") {
+        return ok(new Col { table: a, name: try name(p), index: -1 });
+    }
+    return ok(new Col { table: "", name: a, index: -1 });
+}
+
+fn is_agg(p: Parser) -> bool {
+    let t = peek(p, 0);
+    return t.kind == "word" and (t.text == "count" or t.text == "sum" or t.text == "min" or t.text == "max");
+}
+
+fn agg(p: Parser) -> result[Agg] {
+    let func = peek(p, 0).text;
+    set p.i = p.i + 1;
+    try need(p, "(");
+    if func == "count" and accept(p, "*") {
+        try need(p, ")");
+        return ok(new Agg { func: func, star: true, arg: new Col { table: "", name: "", index: -1 } });
+    }
+    let c = try col(p);
+    try need(p, ")");
+    return ok(new Agg { func: func, star: false, arg: c });
+}
+
+fn item(p: Parser) -> result[Operand] {
+    if is_agg(p) {
+        return ok(Operand.agg(try agg(p)));
+    }
+    return ok(Operand.col(try col(p)));
+}
+
+fn operand(p: Parser) -> result[Operand] {
+    let t = peek(p, 0);
+    if is_agg(p) or (t.kind == "word" and not is_keyword(t.text)) {
+        return item(p);
+    }
+    return ok(Operand.lit(try lit(p)));
+}
+
+fn expr(p: Parser) -> result[Expr] {
+    var node = try term(p);
+    while accept(p, "or") {
+        set node = Expr.either { a: node, b: try term(p) };
+    }
+    return ok(node);
+}
+
+fn term(p: Parser) -> result[Expr] {
+    var node = try factor(p);
+    while accept(p, "and") {
+        set node = Expr.both { a: node, b: try factor(p) };
+    }
+    return ok(node);
+}
+
+fn factor(p: Parser) -> result[Expr] {
+    if accept(p, "not") {
+        return ok(Expr.negate(try factor(p)));
+    }
+    if accept(p, "(") {
+        let node = try expr(p);
+        try need(p, ")");
+        return ok(node);
+    }
+    let a = try operand(p);
+    if accept(p, "is") {
+        let negated = accept(p, "not");
+        try need(p, "null");
+        return ok(Expr.isnull { a: a, negated: negated });
+    }
+    let t = peek(p, 0);
+    if t.kind != "sym" or not (t.text == "=" or t.text == "!=" or t.text == "<" or t.text == "<=" or t.text == ">" or t.text == ">=") {
+        return err("syntax error");
+    }
+    set p.i = p.i + 1;
+    return ok(Expr.cmp { op: t.text, a: a, b: try operand(p) });
+}
+
+fn empty_stmt(kind: str, table: str) -> Stmt {
+    return new Stmt {
+        kind: kind,
+        table: table,
+        cols: [],
+        tuples: [],
+        sets: [],
+        star: false,
+        items: [],
+        join: "",
+        left: false,
+        on: Expr.always,
+        where: Expr.always,
+        has_group: false,
+        group: [],
+        has_having: false,
+        having: Expr.always,
+        order: [],
+        has_limit: false,
+        limit: 0,
+        offset: 0
+    };
+}
+
+fn optional_where(p: Parser) -> result[Expr] {
+    if accept(p, "where") {
+        return expr(p);
+    }
+    return ok(Expr.always);
+}
+
+fn create(p: Parser) -> result[Stmt] {
+    try need(p, "table");
+    let s = empty_stmt("create", try name(p));
+    try need(p, "(");
+    while true {
+        let c = try name(p);
+        let ty = peek(p, 0).text;
+        if not (accept(p, "int") or accept(p, "text")) {
+            return err("syntax error");
+        }
+        push(s.cols, new ColDef { name: c, ty: ty });
+        if not accept(p, ",") {
+            break;
+        }
+    }
+    try need(p, ")");
+    return ok(s);
+}
+
+fn insert(p: Parser) -> result[Stmt] {
+    try need(p, "into");
+    let s = empty_stmt("insert", try name(p));
+    try need(p, "values");
+    while true {
+        try need(p, "(");
+        let vals = [try lit(p)];
+        while accept(p, ",") {
+            push(vals, try lit(p));
+        }
+        try need(p, ")");
+        push(s.tuples, vals);
+        if not accept(p, ",") {
+            break;
+        }
+    }
+    return ok(s);
+}
+
+fn update(p: Parser) -> result[Stmt] {
+    let s = empty_stmt("update", try name(p));
+    try need(p, "set");
+    while true {
+        let c = try name(p);
+        try need(p, "=");
+        push(s.sets, new Assign { name: c, value: try lit(p) });
+        if not accept(p, ",") {
+            break;
+        }
+    }
+    set s.where = try optional_where(p);
+    return ok(s);
+}
+
+fn select_tail(p: Parser, s: Stmt) -> result[void] {
+    if at(p, "join", 0) or (at(p, "left", 0) and at(p, "join", 1)) {
+        set s.left = accept(p, "left");
+        try need(p, "join");
+        set s.join = try name(p);
+        try need(p, "on");
+        let a = try col(p);
+        try need(p, "=");
+        set s.on = Expr.cmp { op: "=", a: Operand.col(a), b: Operand.col(try col(p)) };
+    }
+    set s.where = try optional_where(p);
+    if accept(p, "group") {
+        try need(p, "by");
+        set s.has_group = true;
+        push(s.group, try col(p));
+        while accept(p, ",") {
+            push(s.group, try col(p));
+        }
+    }
+    if accept(p, "having") {
+        set s.has_having = true;
+        set s.having = try expr(p);
+    }
+    if accept(p, "order") {
+        try need(p, "by");
+        while true {
+            let k = try item(p);
+            var desc = false;
+            if accept(p, "desc") {
+                set desc = true;
+            } else if accept(p, "asc") {
+                set desc = false;
+            }
+            push(s.order, new Key { op: k, desc: desc });
+            if not accept(p, ",") {
+                break;
+            }
+        }
+    }
+    if accept(p, "limit") {
+        set s.has_limit = true;
+        set s.limit = try count(p);
+        if accept(p, "offset") {
+            set s.offset = try count(p);
+        }
+    }
+    return ok();
+}
+
+fn select(p: Parser) -> result[Stmt] {
+    let items = new list[Operand];
+    let star = accept(p, "*");
+    if not star {
+        push(items, try item(p));
+        while accept(p, ",") {
+            push(items, try item(p));
+        }
+    }
+    try need(p, "from");
+    let s = empty_stmt("select", try name(p));
+    set s.star = star;
+    set s.items = items;
+    try select_tail(p, s);
+    return ok(s);
+}
+
+fn statement(p: Parser) -> result[Stmt] {
+    if accept(p, "create") {
+        return create(p);
+    }
+    if accept(p, "insert") {
+        return insert(p);
+    }
+    if accept(p, "delete") {
+        try need(p, "from");
+        let s = empty_stmt("delete", try name(p));
+        set s.where = try optional_where(p);
+        return ok(s);
+    }
+    if accept(p, "update") {
+        return update(p);
+    }
+    try need(p, "select");
+    return select(p);
+}
+
+# The statement on one line, or err("syntax error").
+export fn parse(line: str) -> result[Stmt] {
+    let p = new Parser { toks: try tokens(line), i: 0 };
+    let s = try statement(p);
+    if p.i != len(p.toks) {
+        return err("syntax error");
+    }
+    return ok(s);
+}

@@ -1,0 +1,70 @@
+task a 0 x x
+task
+cal 16 23
+undep f d
+task c 0 job Big
+gantt 10 12
+task f 0
+critical
+notbefore x9 13
+dep e e
+end
+task b 1 Big
+remove c
+holiday 3
+task a 3 x
+remove f
+gantt 17 33
+workday 19
+dep e d+4
+task
+dep c b
+duration c 3
+holiday 23
+notbefore b 12
+dep e d
+dep d d+
+rename g New name
+task h 0
+show d
+workday 4
+list
+task x9 5 x x
+task b 7 Big Big
+dep build-2 g
+gantt
+dep h b+
+dep b h+3
+task x9 8 job Big
+schedule
+progress g 101
+holiday 28
+task g 5 job job
+rename c New name
+task g 1
+task f 6 Big x
+critical
+list
+rename c New name
+task build-2 0 job x
+holiday 17
+gantt 20 21
+holiday 0
+remove e
+schedule
+gantt 17 24
+gantt a b
+schedule
+workday 29
+progress f 0
+task build-2 0
+dep f e+3
+dep f a
+cal 2 6
+task f 1
+dep a x9+0
+task b 0 job job
+dep f d
+task f 0 job Big
+task f 0 job Big
+status 18

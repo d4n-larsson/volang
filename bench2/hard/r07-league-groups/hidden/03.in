@@ -1,0 +1,25 @@
+team Kiwi
+team Lime
+team Mango
+team Nectar
+team Olive
+team Pear
+result Kiwi 2 2 Lime
+result Lime 1 1 Kiwi
+result Kiwi 3 0 Olive
+result Lime 2 0 Pear
+result Mango 1 0 Nectar
+result Olive 1 0 Mango
+result Nectar 1 0 Olive
+result Pear 0 0 Nectar
+table
+record Kiwi
+record Lime
+record Mango
+record Olive
+result Mango 0 0 Pear
+table
+correct 3 2 0
+correct 4 3 1
+table
+record Lime

@@ -1,0 +1,21 @@
+user ann +03:00
+user bo
+room hall 3
+book m1 hall ann 3 10:00 60 bo
+move m1 3 12:00
+who m1
+zone ann -02:00
+move m1 3 12:00
+who m1
+agenda bo 3
+agenda ann 3
+book m2 hall bo 3 09:00 60
+move m1 3 06:30
+move m1 3 07:00
+move m1 3 05:00
+list
+zone bo +12:00
+move m2 3 21:30
+move m2 3 20:30
+agenda bo 4
+agenda bo 3

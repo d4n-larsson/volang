@@ -1,0 +1,20 @@
+/home/ann/notes
+bob
+error: permission denied: /home/ann/notes
+error: permission denied: /home/ann/notes/today.txt
+error: permission denied: /home/ann/notes/today.txt
+error: permission denied: /home/ann
+ann/
+error: permission denied: /home/ann
+error: permission denied: /home/ann
+/home
+error: permission denied: /home/x.txt
+/home/ann/notes
+today.txt
+/home/ann
+/
+home/
+/
+  home/
+    ann/ [denied]
+error: permission denied: /home/ann/notes

@@ -1,0 +1,183 @@
+# The command dispatcher: checks each command's arguments and runs it.
+import buffer;
+import edits;
+import parse;
+import search;
+import transform;
+import view;
+
+# The output lines of one command.
+export fn run(text: str, buf: buffer.Buffer, table: map[str, fn(buffer.Buffer, list[str]) -> result[list[str]]]) -> list[str] {
+    let line = parse.split_line(text);
+    match dispatch(line, buf, table) {
+        case ok(out) {
+            return out;
+        }
+        case err(e) {
+            return ["error: " + e];
+        }
+    }
+}
+
+fn dispatch(line: parse.Line, buf: buffer.Buffer, table: map[str, fn(buffer.Buffer, list[str]) -> result[list[str]]]) -> result[list[str]] {
+    if line.cmd == "append" {
+        if not line.has_rest {
+            return err("bad command");
+        }
+        return edits.append(buf, line.rest);
+    }
+    if line.cmd == "insert" {
+        let parts = try parse.split_first(line.rest);
+        return edits.insert(buf, try parse.resolve_insert(parts[0], buf), parts[1]);
+    }
+    if line.cmd == "replace" {
+        let parts = try parse.split_first(line.rest);
+        return edits.replace(buf, try parse.resolve_line(parts[0], buf), parts[1]);
+    }
+    if line.cmd == "find" {
+        if line.rest == "" {
+            return err("bad command");
+        }
+        return search.find_text(buf, line.rest);
+    }
+    if has(table, line.cmd) {
+        return table[line.cmd](buf, parse.words(line.rest));
+    }
+    return err("unknown command " + line.cmd);
+}
+
+fn need(words: list[str], n: int) -> result[void] {
+    if len(words) != n {
+        return err("bad command");
+    }
+    return ok();
+}
+
+# A command taking exactly one range.
+fn range_command(f: fn(buffer.Buffer, int, int) -> result[list[str]]) -> fn(buffer.Buffer, list[str]) -> result[list[str]] {
+    return fn(buf, words) {
+        try need(words, 1);
+        let s = try parse.resolve_range(words[0], buf);
+        return f(buf, s.a, s.b);
+    };
+}
+
+fn cmd_print(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    if len(words) == 0 {
+        if buffer.is_empty(buf) {
+            return err("empty buffer");
+        }
+        return view.print_range(buf, 1, buffer.size(buf));
+    }
+    try need(words, 1);
+    let s = try parse.resolve_range(words[0], buf);
+    return view.print_range(buf, s.a, s.b);
+}
+
+fn cmd_goto(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 1);
+    return view.goto(buf, try parse.resolve_line(words[0], buf));
+}
+
+fn cmd_move(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 2);
+    let s = try parse.resolve_range(words[0], buf);
+    return edits.move(buf, s.a, s.b, try parse.resolve_after(words[1], buf));
+}
+
+fn cmd_join(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 1);
+    let s = try parse.resolve_range(words[0], buf);
+    if find(words[0], ",") < 0 {
+        # One address joins that line with the next one.
+        if s.a == buffer.size(buf) {
+            return err("nothing to join");
+        }
+        return edits.join_lines(buf, s.a, s.a + 1);
+    }
+    return edits.join_lines(buf, s.a, s.b);
+}
+
+fn cmd_split(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 2);
+    let at = try parse.resolve_line(words[0], buf);
+    if not parse.is_number(words[1]) {
+        return err("bad command");
+    }
+    return edits.split_at(buf, at, parse.num(words[1]));
+}
+
+fn cmd_subst(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 3);
+    let s = try parse.resolve_range(words[0], buf);
+    return transform.subst(buf, s.a, s.b, words[1], words[2]);
+}
+
+fn cmd_indent(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 2);
+    let s = try parse.resolve_range(words[0], buf);
+    let n = try parse.positive(words[1]);
+    if n > 8 {
+        return err("bad command");
+    }
+    return transform.indent(buf, s.a, s.b, n);
+}
+
+fn cmd_wrap(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 2);
+    let s = try parse.resolve_range(words[0], buf);
+    return transform.wrap(buf, s.a, s.b, try parse.positive(words[1]));
+}
+
+fn cmd_dedupe(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 0);
+    return transform.dedupe(buf);
+}
+
+fn cmd_clear(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 0);
+    return edits.clear(buf);
+}
+
+fn cmd_count(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 0);
+    return search.count(buf);
+}
+
+fn cmd_where(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 0);
+    return view.where(buf);
+}
+
+fn cmd_longest(buf: buffer.Buffer, words: list[str]) -> result[list[str]] {
+    try need(words, 0);
+    if buffer.is_empty(buf) {
+        return err("empty buffer");
+    }
+    return view.longest(buf);
+}
+
+export fn word_commands() -> map[str, fn(buffer.Buffer, list[str]) -> result[list[str]]] {
+    let t = new map[str, fn(buffer.Buffer, list[str]) -> result[list[str]]];
+    set t["delete"] = range_command(edits.delete);
+    set t["dup"] = range_command(edits.dup);
+    set t["upper"] = range_command(transform.upper_lines);
+    set t["lower"] = range_command(transform.lower_lines);
+    set t["strip"] = range_command(transform.strip);
+    set t["sort"] = range_command(transform.sort_lines);
+    set t["reverse"] = range_command(transform.reverse);
+    set t["print"] = cmd_print;
+    set t["goto"] = cmd_goto;
+    set t["move"] = cmd_move;
+    set t["join"] = cmd_join;
+    set t["split"] = cmd_split;
+    set t["subst"] = cmd_subst;
+    set t["indent"] = cmd_indent;
+    set t["wrap"] = cmd_wrap;
+    set t["dedupe"] = cmd_dedupe;
+    set t["clear"] = cmd_clear;
+    set t["count"] = cmd_count;
+    set t["where"] = cmd_where;
+    set t["longest"] = cmd_longest;
+    return t;
+}

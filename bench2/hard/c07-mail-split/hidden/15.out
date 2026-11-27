@@ -1,0 +1,9 @@
+message <p1@example.org>: Quoted from
+deliver <p1@example.org> judy
+message <p2@example.org>: Headers only
+deliver <p2@example.org> ivan
+skip nosuch: no such spool
+== mailboxes
+wrote out/ivan.mbox 1 119
+wrote out/judy.mbox 1 184
+total 2 delivered, 0 bounced, 0 relayed, 0 duplicates

@@ -1,0 +1,19 @@
+user kai +01:00
+user lia +01:00
+room r 4 +01:00
+hours lia 09:00 17:00
+book m1 r kai 6 09:00 60 lia
+book m2 r kai 6 16:00 60 lia
+zone lia +03:00
+agenda lia 6
+agenda kai 6
+book m3 r kai 6 15:00 60 lia
+book m3 r kai 6 14:00 60 lia
+move m2 6 15:00
+move m2 6 14:00
+move m2 6 12:00
+zone r -01:00
+rooms 6
+free r 6
+list
+who m1

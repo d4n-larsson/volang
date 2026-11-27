@@ -1,0 +1,29 @@
+user ann
+user bob
+user cy
+user dee
+channel ann general
+join bob general
+join cy general
+channel ann dev
+join bob dev
+post bob dev release @ann
+reply ann dev/1 ok
+rename ann dev rel
+reply bob rel/1 shipped @ann
+reply bob dev/1 lost
+unread ann
+thread rel/2
+mentions ann
+search rel shipped
+delete ann rel/1
+history rel
+thread rel/1
+leave bob rel
+unread bob
+join bob rel
+unread bob
+rename ann rel dev
+history dev
+edit bob dev/3 shipped! @ann
+mentions ann

@@ -1,0 +1,21 @@
+stop T0 zed buy ST 5 1.00
+limit S1 ana sell ST 10 10.00
+limit S2 bob sell ST 10 10.20
+limit S3 cy sell ST 10 10.40
+limit S4 dan sell ST 10 10.60
+stop T1 eve buy ST 5 10.40
+stop T2 fay buy ST 5 10.10
+stop T3 gus buy ST 3 10.60
+stop T4 hal sell ST 2 9.00
+book ST
+limit B1 ivy buy ST 10 10.00
+book ST
+cancel T4
+cancel T4
+limit B2 ivy buy ST 1 10.20
+book ST
+limit B3 jo buy ST 5 9.50
+stop T5 kim sell ST 10 9.60
+cancel B2
+limit S5 lu sell ST 1 9.50
+stop T6 mo sell ST 2 9.50

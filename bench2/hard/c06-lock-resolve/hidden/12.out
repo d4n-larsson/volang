@@ -1,0 +1,2 @@
+pick self 2.0.0
+error: conflict on self: self@2.0.0 does not satisfy ^1.0.0 (required by self@2.0.0)

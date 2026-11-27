@@ -1,0 +1,33 @@
+customer a added
+line 2: invalid
+line 3: invalid
+line 4: invalid
+line 5: invalid
+customer c added
+line 7: invalid
+line 8: invalid
+line 9: invalid
+line 10: invalid
+line 11: invalid
+line 12: invalid
+line 13: invalid
+line 14: invalid
+line 15: invalid
+line 16: invalid
+line 17: invalid
+invoice #1 a total 5.00 balance 5.00 due 30
+line 19: invalid
+line 20: invalid
+line 21: invalid
+line 22: invalid
+line 23: invalid
+line 24: invalid
+line 25: invalid
+line 26: invalid
+line 27: invalid
+line 28: invalid
+line 29: invalid
+line 30: invalid
+line 31: invalid
+invoices:
+#1 a open total 5.00 fee 0.00 paid 0.00 credits 0.00 balance 5.00

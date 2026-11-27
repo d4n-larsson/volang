@@ -1,0 +1,21 @@
+group started
+1  x
+found at 1
+grouped 0 changes
+group started
+grouped 1 change
+group started
+grouped 1 change
+new buffer other
+group started
+grouped 0 changes
+buffer other, 1 line
+undone 1 step
+buffer main, 3 lines
+undone 1 step
+1  x
+2  y
+undone 2 steps
+error: empty buffer
+* main 0 lines
+  other 0 lines

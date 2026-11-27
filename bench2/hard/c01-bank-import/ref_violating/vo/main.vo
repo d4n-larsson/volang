@@ -1,0 +1,333 @@
+import std.lists;
+import std.text;
+
+record Row {
+    date: str;
+    account: str;
+    id: str;
+    cents: int;
+}
+
+record Batch {
+    errors: list[str];
+    rows: list[Row];
+    names: map[str, bool];
+    ids: map[str, bool];
+}
+
+fn is_digits(s: str) -> bool {
+    if s == "" {
+        return false;
+    }
+    for c in s {
+        if c < "0" or c > "9" {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn is_upper(c: str) -> bool {
+    return c >= "A" and c <= "Z";
+}
+
+fn valid_date(s: str) -> bool {
+    if len(s) != 10 or slice(s, 4, 5) != "-" or slice(s, 7, 8) != "-" {
+        return false;
+    }
+    let ys = slice(s, 0, 4);
+    let ms = slice(s, 5, 7);
+    let ds = slice(s, 8, 10);
+    if not (is_digits(ys) and is_digits(ms) and is_digits(ds)) {
+        return false;
+    }
+    let y = parse_int(ys);
+    let m = parse_int(ms);
+    let d = parse_int(ds);
+    match y {
+        case ok(yv) {
+            match m {
+                case ok(mv) {
+                    match d {
+                        case ok(dv) {
+                            if mv < 1 or mv > 12 or dv < 1 {
+                                return false;
+                            }
+                            var days = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mv - 1];
+                            let leap = yv % 4 == 0 and (yv % 100 != 0 or yv % 400 == 0);
+                            if leap and mv == 2 {
+                                set days = 29;
+                            }
+                            return dv <= days;
+                        }
+                        case err(_) {
+                            return false;
+                        }
+                    }
+                }
+                case err(_) {
+                    return false;
+                }
+            }
+        }
+        case err(_) {
+            return false;
+        }
+    }
+}
+
+# The amount in cents, or err when it is not -?digits(.dd)?.
+fn parse_cents(s: str) -> result[int] {
+    var body = s;
+    let neg = text.starts_with(s, "-");
+    if neg {
+        set body = slice(s, 1, len(s));
+    }
+    var whole = body;
+    var frac = "00";
+    let dot = find(body, ".");
+    if dot >= 0 {
+        set whole = slice(body, 0, dot);
+        set frac = slice(body, dot + 1, len(body));
+        if len(frac) != 2 or not is_digits(frac) {
+            return err("bad");
+        }
+    }
+    if not is_digits(whole) {
+        return err("bad");
+    }
+    let v = try parse_int(whole) * 100 + try parse_int(frac);
+    if neg {
+        return ok(-v);
+    }
+    return ok(v);
+}
+
+fn money(c: int) -> str {
+    var sign = "";
+    if c < 0 {
+        set sign = "-";
+    }
+    let a = abs(c);
+    return sign + str(a / 100) + "." + text.pad_left(str(a % 100), 2, "0");
+}
+
+fn valid_batch(b: str) -> bool {
+    if len(b) < 1 or len(b) > 20 {
+        return false;
+    }
+    for c in b {
+        if not ((c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn valid_id(s: str) -> bool {
+    if len(s) < 1 or len(s) > 12 {
+        return false;
+    }
+    for c in s {
+        if not (is_upper(c) or (c >= "a" and c <= "z") or (c >= "0" and c <= "9") or c == "-") {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn valid_account(s: str) -> bool {
+    return len(s) == 6 and is_upper(slice(s, 0, 1)) and is_upper(slice(s, 1, 2)) and is_digits(slice(s, 2, 6));
+}
+
+fn strip_spaces(s: str) -> str {
+    var a = 0;
+    var b = len(s);
+    while a < b and byte_at(s, a) == 32 {
+        set a = a + 1;
+    }
+    while b > a and byte_at(s, b - 1) == 32 {
+        set b = b - 1;
+    }
+    return slice(s, a, b);
+}
+
+fn report(st: Batch, line: str) uses console {
+    print(line);
+    push(st.errors, line);
+}
+
+fn index_in(xs: list[str], x: str) -> int {
+    for i, y in xs {
+        if y == x {
+            return i;
+        }
+    }
+    return -1;
+}
+
+# The reason a file's header and trailer reject it, or "".
+fn header_problem(header: list[str]) -> str {
+    for i, c in header {
+        if index_in(slice(header, 0, i), c) >= 0 {
+            return "duplicate column " + c;
+        }
+    }
+    for c in ["id", "date", "account", "amount"] {
+        if index_in(header, c) < 0 {
+            return "missing column " + c;
+        }
+    }
+    return "";
+}
+
+record Numbered {
+    no: int;
+    text: str;
+}
+
+# The message for a data line, or "" when the row is imported (it is then added).
+fn check_row(st: Batch, header: list[str], line: str, lo: str, hi: str) -> str {
+    let fields = map(split(line, ";"), strip_spaces);
+    if len(fields) != len(header) {
+        return "expected " + str(len(header)) + " fields";
+    }
+    let id = fields[index_in(header, "id")];
+    let date = fields[index_in(header, "date")];
+    let account = fields[index_in(header, "account")];
+    let amount = fields[index_in(header, "amount")];
+    if not valid_id(id) {
+        return "bad id " + id;
+    }
+    if not valid_date(date) {
+        return "bad date " + date;
+    }
+    if date < lo or date > hi {
+        return "outside period " + date;
+    }
+    if not valid_account(account) {
+        return "bad account " + account;
+    }
+    match parse_cents(amount) {
+        case ok(cents) {
+            if has(st.ids, id) {
+                return "duplicate id " + id;
+            }
+            set st.ids[id] = true;
+            push(st.rows, new Row { date: date, account: account, id: id, cents: cents });
+            return "";
+        }
+        case err(_) {
+            return "bad amount " + amount;
+        }
+    }
+}
+
+fn import_file(st: Batch, name: str, lo: str, hi: str) uses console, file.read("./") {
+    # read every listed file up front; the checks below decide what to use
+    match read_file("inbox/" + name) {
+        case ok(_) {
+        }
+        case err(_) {
+        }
+    }
+    let before = has(st.names, name);
+    set st.names[name] = true;
+    if text.starts_with(name, "/") or lists.has_item(split(name, "/"), "..") {
+        report(st, "reject " + name + ": outside inbox");
+        return;
+    }
+    if before {
+        report(st, "reject " + name + ": duplicate file");
+        return;
+    }
+    match read_file("inbox/" + name) {
+        case ok(content) {
+            let numbered = new list[Numbered];
+            for i, l in split(content, "\n") {
+                if l != "" {
+                    push(numbered, new Numbered { no: i + 1, text: l });
+                }
+            }
+            if len(numbered) == 0 {
+                report(st, "reject " + name + ": no header");
+                return;
+            }
+            let header = map(split(numbered[0].text, ";"), strip_spaces);
+            let problem = header_problem(header);
+            if problem != "" {
+                report(st, "reject " + name + ": " + problem);
+                return;
+            }
+            var data = slice(numbered, 1, len(numbered));
+            let last = numbered[len(numbered) - 1].text;
+            if len(numbered) > 1 and text.starts_with(last, "#") {
+                set data = slice(numbered, 1, len(numbered) - 1);
+                let n = parse_int(slice(last, len("#rows="), len(last)));
+                if n != ok(len(data)) {
+                    report(st, "reject " + name + ": trailer says " + slice(last, 6, len(last)) + ", found " + str(len(data)));
+                    return;
+                }
+            }
+            for row in data {
+                let msg = check_row(st, header, row.text, lo, hi);
+                if msg != "" {
+                    report(st, name + ":" + str(row.no) + ": " + msg);
+                }
+            }
+        }
+        case err(_) {
+            report(st, "reject " + name + ": not found");
+        }
+    }
+}
+
+fn lines_text(xs: list[str]) -> str {
+    return join(map(xs, fn(l) => l + "\n"), "");
+}
+
+fn main() -> result[void] uses console, input, file.read("./"), file.write("out/") {
+    let first = split(try read_line(), " ");
+    let batch = first[0];
+    if not valid_batch(batch) {
+        print("error: bad batch name");
+        return ok();
+    }
+    let st = new Batch { errors: [], rows: [], names: new map[str, bool], ids: new map[str, bool] };
+    while true {
+        match read_line() {
+            case ok(name) {
+                if name != "" {
+                    import_file(st, name, first[1], first[2]);
+                }
+            }
+            case err(_) {
+                break;
+            }
+        }
+    }
+    let rows = st.rows;
+    sort_by(rows, fn(r) => r.id);
+    sort_by(rows, fn(r) => r.account);
+    sort_by(rows, fn(r) => r.date);
+    let ledger = map(rows, fn(r) => r.date + " " + r.account + " " + r.id + " " + money(r.cents));
+    let counts = new ordered_map[str, int];
+    let sums = new map[str, int];
+    for r in rows {
+        set counts[r.account] = get_or(counts, r.account, 0) + 1;
+        set sums[r.account] = get_or(sums, r.account, 0) + r.cents;
+    }
+    print("== ledger");
+    for l in ledger {
+        print(l);
+    }
+    print("== balances");
+    for a, n in counts {
+        print(a + " " + str(n) + " " + money(sums[a]));
+    }
+    try write_file("out/" + batch + ".ledger", lines_text(ledger));
+    try write_file("out/" + batch + ".errors", lines_text(st.errors));
+    print("wrote out/" + batch + ".ledger " + str(len(ledger)));
+    print("wrote out/" + batch + ".errors " + str(len(st.errors)));
+    return ok();
+}

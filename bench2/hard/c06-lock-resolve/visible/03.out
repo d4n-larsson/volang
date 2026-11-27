@@ -1,0 +1,3 @@
+pick evil 1.0.0
+pick json 2.0.0
+error: bad package name ../private/core (required by evil@1.0.0)

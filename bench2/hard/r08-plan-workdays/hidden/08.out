@@ -1,0 +1,13 @@
+added task long-task
+added milestone m
+added task tail
+m after long-task
+tail after m+2
+day 9 is now off
+day 44 is now off
+          01234567890123456789012345678901234567890123456789012345678
+long-task #####::##:##::#####::#####::#####::#####::#................
+m         ...........................................*...............
+tail      ..............................................#::#####::##.
+project finishes on day 58 (Wed)
+critical: long-task m tail (40 working days)

@@ -1,0 +1,23 @@
+sheet Far added
+Far!Z99 = 7
+Far!A1 = 3
+B2 = 10
+C3 = 3
+copied B2 to A1
+A1: =#REF+Far!$Z$99
+A1 = #REF
+copied C3 to B1
+B1: =SUM(#REF)
+B1 = #REF
+copied B2 to Z99
+Z99: =Far!Y98+Far!$Z$99
+Z99 = 7
+D4 = 0
+dropped Far
+D4: =#REF!B1*2
+copied D4 to E6
+E6: =#REF!C3*2
+E6 = #REF
+copied D4 to A1
+A1: =#REF*2
+cells 7, formulas 7, errors 7

@@ -1,0 +1,28 @@
+message <e1@evil.net>: hello
+bounce <e1@evil.net> ../../etc/passwd@example.org: invalid user
+bounce <e1@evil.net> .profile@example.org: invalid user
+bounce <e1@evil.net> ..@example.org: invalid user
+bounce <e1@evil.net> bob+news@example.org: invalid user
+deliver <e1@evil.net> upper
+bounce <e1@evil.net> a@b@example.org: bad address
+bounce <e1@evil.net> noat: bad address
+bounce <e1@evil.net> : bad address
+bounce <e1@evil.net> x/y@example.org: invalid user
+bounce <e1@evil.net> @example.org: invalid user
+relay <e1@evil.net> bob@
+deliver <e1@evil.net> dave
+bounce <e1@evil.net> averyveryveryveryverylongusername1@example.org: invalid user
+deliver <e1@evil.net> averyveryveryveryverylongusernam
+deliver <e1@evil.net> under_score
+deliver <e1@evil.net> dot.ted
+deliver <e1@evil.net> dash-ed
+deliver <e1@evil.net> a..b
+== mailboxes
+wrote out/a..b.mbox 1 483
+wrote out/averyveryveryveryverylongusernam.mbox 1 483
+wrote out/dash-ed.mbox 1 483
+wrote out/dave.mbox 1 483
+wrote out/dot.ted.mbox 1 483
+wrote out/under_score.mbox 1 483
+wrote out/upper.mbox 1 483
+total 7 delivered, 10 bounced, 1 relayed, 0 duplicates

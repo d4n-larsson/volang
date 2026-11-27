@@ -1,0 +1,22 @@
+append c
+append b
+append a
+group
+sort 1,$
+reverse 1,$
+endgroup
+print
+undo
+redo
+undo
+print
+group
+reverse 1,$
+reverse 1,$
+endgroup
+buffers
+undo
+print
+save
+redo
+buffers

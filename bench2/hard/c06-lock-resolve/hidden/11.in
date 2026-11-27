@@ -1,0 +1,4 @@
+lock conflict
+web ^2.0.0
+log *
+old-web *

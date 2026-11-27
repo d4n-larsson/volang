@@ -1,0 +1,48 @@
+# Shared records. Every time is a number of minutes since day 0 00:00.
+
+export const minutes_per_day = 1440;
+
+export record User {
+    name: str;
+}
+
+export record Room {
+    name: str;
+    capacity: int;
+}
+
+# start is the first minute of the meeting, end the minute right after it.
+export record Meeting {
+    meeting_id: str;
+    room: str;
+    organizer: str;
+    start: int;
+    end: int;
+    attendees: list[str];
+}
+
+export record Calendar {
+    users: map[str, User];
+    rooms: map[str, Room];
+    meetings: map[str, Meeting];
+}
+
+export fn new_calendar() -> Calendar {
+    return new Calendar { users: new map[str, User], rooms: new map[str, Room], meetings: new map[str, Meeting] };
+}
+
+export fn people(m: Meeting) -> list[str] {
+    let out = [m.organizer];
+    for a in m.attendees {
+        push(out, a);
+    }
+    return out;
+}
+
+export fn length(m: Meeting) -> int {
+    return m.end - m.start;
+}
+
+export fn contains(xs: list[str], x: str) -> bool {
+    return any(xs, fn(y) => y == x);
+}

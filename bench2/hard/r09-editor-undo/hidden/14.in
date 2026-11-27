@@ -1,0 +1,26 @@
+append keep
+save
+open draft
+append d1
+group
+append d2
+endgroup
+group
+endgroup
+undo
+undo
+buffers
+redo
+open main
+redo
+undo
+open draft
+redo 2
+redo
+where
+save
+undo 2
+close draft
+open main
+close draft
+buffers

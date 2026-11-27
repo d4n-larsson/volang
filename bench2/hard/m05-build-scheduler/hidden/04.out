@@ -1,0 +1,25 @@
+0 start side w1 #1
+0 start x w2 #1
+0 start y w3 #1
+2 done x w2
+2 done y w3
+2 start a9 w2 #1
+2 start a_b w3 #1
+3 done a9 w2
+3 done a_b w3
+3 start ab w2 #1
+3 start z w3 #1
+4 done ab w2
+4 start top w2 #1
+5 done top w2
+5 done z w3
+6 done side w1
+makespan 6
+utilization 88%
+w1 busy 6 attempts 1
+w2 busy 5 attempts 4
+w3 busy 5 attempts 3
+built: x y a9 a_b ab top z side
+failed: -
+skipped: -
+blocked: -

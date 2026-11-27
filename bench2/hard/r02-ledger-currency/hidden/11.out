@@ -1,0 +1,40 @@
+opened assets:bank (asset)
+opened assets:eur (asset, EUR)
+opened income:eu (income, EUR)
+opened income:us (income)
+opened expense:eu (expense, EUR)
+opened expense:us (expense)
+opened expense:zero (expense, GBP)
+rate EUR from day 1: 1.1111
+rate EUR from day 4: 1.2000
+posted i1: 2 postings, total 100.00
+posted i2: 2 postings, total 50.00
+posted i3: 2 postings, total 11.10
+posted i4: 2 postings, total 11.99
+posted i5: 2 postings, total 12.00
+posted i6: 2 postings, total 12.00
+income income:eu 100.00
+income income:us 50.00
+expense expense:eu 11.10
+net income 138.90
+income income:eu 12.00
+expense expense:eu 11.99
+expense expense:us 12.00
+net income -11.99
+income income:eu 112.00
+income income:us 50.00
+expense expense:eu 23.09
+expense expense:us 12.00
+net income 126.91
+net income 0.00
+error: bad range
+3 i3 cost 11.10
+4 i4 cost 11.99
+error: bad range
+no transactions
+1 i1 sale 100.00
+2 i2 sale 50.00
+3 i3 cost 11.10
+4 i4 cost 11.99
+5 i5 cost 12.00
+5 i6 sale 12.00

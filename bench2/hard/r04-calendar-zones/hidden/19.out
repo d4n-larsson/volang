@@ -1,0 +1,39 @@
+rooms day 5:
+  no rooms
+no meetings
+user ed added
+user fay added
+room w added, capacity 2
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+error: bad command
+booked m1 in w: 5 18:00-6 18:00 (2 people)
+free w day 6: none
+free w day 7: 09:00-17:00
+free w day 5: 09:00-17:00
+error: unknown room nowhere
+error: bad command
+rooms day 6:
+  w: m1 6 01:00-7 01:00
+agenda fay day 7 (UTC+03:30):
+  6 01:00-7 01:00 m1 in w (attendee)
+agenda fay day 8 (UTC+03:30):
+  nothing
+fay day 7: 1 meeting, 1h00m
+fay day 6: 1 meeting, 23h00m
+error: bad command
+error: bad command
+error: bad command
+moved m1: 6 18:00-7 18:00
+m1: w 7 01:00-8 01:00 UTC+03:30, organizer ed, attendees fay
+fay left m1
+fay invited to m1
+error: ed already in m1
+error: ed organizes m1
+cancelled m1
+error: unknown meeting m1
+no meetings
+agenda ed day 6 (UTC-03:30):
+  nothing

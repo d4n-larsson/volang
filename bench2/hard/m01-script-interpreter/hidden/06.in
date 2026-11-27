@@ -1,0 +1,10 @@
+func ok(a, b)
+    return a
+end
+func area(w, h)
+    return w * h
+end
+func mix(a, b, c, b, a)
+    return a
+end
+let z = area(2, 3)

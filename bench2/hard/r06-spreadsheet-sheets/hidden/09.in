@@ -1,0 +1,26 @@
+sheet SUM
+sheet A1
+sheet x_9
+set SUM!A1 4
+set SUM!A2 6
+set A1!B2 3
+set x_9!a1 = sum ( SUM!a1 : a2 ) + SUM ! a2
+show x_9!A1
+get x_9!A1
+set C1 =A1!B2*A1!$b$2+a1!B2
+set C1 =A1!B2*A1!$b$2
+show C1
+get C1
+set C2 =SUM(A1!A1:b9)+max(SUM!A1:A2)-Min(x_9!A1:A1)
+show C2
+get C2
+set C3 =SUM!SUM(A1:A2)
+set C3 =SUM!5
+set C3 =SUM!!A1
+set C3 =SUM!(A1)
+set C3 =-SUM!A1
+show C3
+set C4 =(SUM!A1)*(-(A1!B2))
+show C4
+get C4
+sheets

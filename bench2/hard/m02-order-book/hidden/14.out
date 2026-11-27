@@ -1,0 +1,23 @@
+rest S1 10 4.00
+expired I1 5
+trade IO 10 4.00 I2 S1
+expired I2 5
+reject I3 price band
+rest S2 10 4.00
+stp S2 10
+expired I4 5
+rest S3 10 4.00
+trade IO 10 4.00 G1 S3
+rest G1 15 4.00
+book IO last 4.00
+  bid 4.00 15 1
+stp G1 15
+rest G2 5 4.00
+book IO last 4.00
+  ask 4.00 5 1
+book IO last 4.00
+  ask 4.00 5 1
+trader ana cash 40.00 IO:-10
+trader bob cash -40.00 IO:10
+trader cy cash 40.00 IO:-10
+trader dan cash -40.00 IO:10

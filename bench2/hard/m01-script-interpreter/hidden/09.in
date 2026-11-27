@@ -1,0 +1,5 @@
+let lo = 1
+let mid = 2
+let hi = 3
+print lo < mid and mid < hi
+print lo < mid < hi

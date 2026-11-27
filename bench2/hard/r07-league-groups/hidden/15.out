@@ -1,0 +1,52 @@
+team Ana added
+team Bob added
+team Cy added
+team Di added
+team Ed added
+group P: Ana, Bob, Cy
+group Q: Di, Ed
+result 1: Ana 1-0 Bob
+result 2: Bob 1-0 Ana
+result 3: Ana 2-0 Cy
+result 4: Cy 0-0 Ana
+result 5: Bob 3-3 Cy
+result 6: Cy 1-0 Bob
+result 7: Di 2-1 Ed
+result 8: Ed 1-1 Di
+match 1: Ana (P 1st) v Ed (Q 2nd)
+match 2: Di (Q 1st) v Cy (P 2nd)
+team Cy withdrawn, 4 results void
+group P
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Ana   2  1  0  1  1  1   0   3
+  1 Bob   2  1  0  1  1  1   0   3
+group Q
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Di    2  1  1  0  3  2  +1   4
+  2 Ed    2  0  1  1  2  3  -1   1
+match 1: Ana (P 1st) v Ed (Q 2nd)
+match 2: Di (Q 1st) v Bob (P 2nd)
+Ana: P 2, W 1, D 0, L 1, GF 1, GA 1, GD 0, Pts 3
+home 1-0-0, away 0-0-1
+position 1 of 2 in group P
+Bob: P 2, W 1, D 0, L 1, GF 1, GA 1, GD 0, Pts 3
+home 1-0-0, away 0-0-1
+position 1 of 2 in group P
+error: result 3 void
+result 7: Di 0-0 Ed (was 2-1)
+match 1: Ana (P 1st) v Ed (Q 2nd)
+match 2: Di (Q 1st) v Bob (P 2nd)
+group P: 0 left
+group Q: 0 left
+0 fixtures left
+team Bob withdrawn, 2 results void
+error: group P has fewer than 2 teams
+group P
+Pos Team  P  W  D  L GF GA  GD Pts
+  1 Ana   0  0  0  0  0  0   0   0
+Ana (group P)
+Bob (group P, withdrawn)
+Cy (group P, withdrawn)
+Di (group Q)
+Ed (group Q)
+5 teams

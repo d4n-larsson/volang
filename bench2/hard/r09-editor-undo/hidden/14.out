@@ -1,0 +1,25 @@
+saved main, 1 line
+new buffer draft
+group started
+grouped 1 change
+group started
+grouped 0 changes
+undone 1 step
+undone 1 step
+* draft 0 lines
+  main 1 line
+redone 1 step
+buffer main, 1 line
+error: nothing to redo
+undone 1 step
+buffer draft, 1 line
+error: only 1 step to redo
+redone 1 step
+buffer draft, line 2 of 2
+saved draft, 2 lines
+undone 2 steps
+error: buffer draft is current
+buffer main, 0 lines
+error: buffer draft has unsaved changes
+  draft 0 lines, modified
+* main 0 lines, modified

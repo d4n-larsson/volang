@@ -1,0 +1,121 @@
+# The sheets of the book. A cell holds a number or a formula; a cell that holds nothing is empty.
+# Sheets have ids that are never reused, in the order the sheets were made.
+import cells;
+import formula;
+
+export variant Content {
+    number(int);
+    formula(formula.Node);
+}
+
+export record Sheet {
+    id: int;
+    name: str;
+    cells: map[cells.Pos, Content];
+}
+
+export record Book {
+    # the live sheets by id, in the order they were made
+    sheets: map[int, Sheet];
+    next_id: int;
+    current: int;
+}
+
+export fn new_book() -> Book {
+    let b = new Book { sheets: new map[int, Sheet], next_id: 1, current: 0 };
+    set b.current = add(b, "Sheet1").id;
+    return b;
+}
+
+export fn add(b: Book, name: str) -> Sheet {
+    let s = new Sheet { id: b.next_id, name: name, cells: new map[cells.Pos, Content] };
+    set b.sheets[s.id] = s;
+    set b.next_id = b.next_id + 1;
+    return s;
+}
+
+export fn is_live(b: Book, id: int) -> bool {
+    return has(b.sheets, id);
+}
+
+# The sheet with this name, or err("").
+export fn by_name(b: Book, name: str) -> result[Sheet] {
+    for _, s in b.sheets {
+        if s.name == name {
+            return ok(s);
+        }
+    }
+    return err("");
+}
+
+export fn drop(b: Book, id: int) {
+    remove(b.sheets, id);
+}
+
+export fn in_order(b: Book) -> list[Sheet] {
+    let out = new list[Sheet];
+    for _, s in b.sheets {
+        push(out, s);
+    }
+    return out;
+}
+
+export fn current(b: Book) -> Sheet {
+    return b.sheets[b.current];
+}
+
+# Sheet ids by name, for formula.bind.
+export fn ids(b: Book) -> map[str, int] {
+    let out = new map[str, int];
+    for id, s in b.sheets {
+        set out[s.name] = id;
+    }
+    return out;
+}
+
+# Sheet names by id, for formula.to_text.
+export fn names(b: Book) -> map[int, str] {
+    let out = new map[int, str];
+    for id, s in b.sheets {
+        set out[id] = s.name;
+    }
+    return out;
+}
+
+# Whether a place is empty (also when its sheet is gone).
+export fn is_empty(b: Book, p: cells.Place) -> bool {
+    return not has(b.sheets, p.sheet) or not has(b.sheets[p.sheet].cells, cells.place_cell(p));
+}
+
+# The content of a place that is not empty.
+export fn content(b: Book, p: cells.Place) -> Content {
+    return b.sheets[p.sheet].cells[cells.place_cell(p)];
+}
+
+export fn put(b: Book, p: cells.Place, c: Content) {
+    set b.sheets[p.sheet].cells[cells.place_cell(p)] = c;
+}
+
+export fn clear(b: Book, p: cells.Place) {
+    remove(b.sheets[p.sheet].cells, cells.place_cell(p));
+}
+
+# The non-empty places of a sheet, sorted.
+export fn filled(s: Sheet) -> list[cells.Place] {
+    return map(cells.sorted_cells(keys(s.cells)), fn(p) => cells.place_of(s.id, p));
+}
+
+export fn is_formula(c: Content) -> bool {
+    match c {
+        case number(_) {
+            return false;
+        }
+        case formula(_) {
+            return true;
+        }
+    }
+}
+
+export fn formula_places(s: Sheet) -> list[cells.Place] {
+    return filter(filled(s), fn(p) => is_formula(s.cells[cells.place_cell(p)]));
+}
