@@ -590,7 +590,8 @@ names, locale formats and calendar arithmetic ("a month later") are not part of 
 
 ### 049: a PostgreSQL package (implemented)
 
-`packages/postgres`, a client written in vo on `std.tcp` and `std.crypto`, added with `vo package`; the
+A client written in vo on `std.tcp` and `std.crypto`, added with `vo package` (since moved to its own
+repository, [vo-postgres](https://github.com/d4n-larsson/vo-postgres), with its tests); the
 toolchain did not change (it needed spec 050 first). It has the names, parameters, results and error
 texts of `std.sqlite`, so a program moves between the two by changing its imports, the code that opens
 the database, its effects and the SQL the two spell differently; the notes API example exists in both

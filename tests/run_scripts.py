@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SLOW = ["package_fetch.py", "package_graphs.py", "steps.py", "fmt_corpus.py", "workers.py", "migrate.py", "doc_conformance.py",
-        "postgres.py", "lsp.py", "decimals.py"]  # ponytail: measured 2026-11-26; reorder if it drifts
+        "lsp.py", "decimals.py"]  # ponytail: measured 2026-11-26; reorder if it drifts
 ALONE = ["workers.py", "stream.py", "bits.py", "iteration.py"]  # their speed checks fail under a full machine
 
 

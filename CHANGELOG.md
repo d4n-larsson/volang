@@ -27,6 +27,9 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
   **Fixed since:** such a function was also stopped when it called the standard library on a value its
   caller passed in (`sqlite.query(db, ...)` with `db: Database[uses E]`); that is the caller's effect and
   is no longer bound by the function's own scopes.
+- **The `postgres` package has its own repository**,
+  [vo-postgres](https://github.com/d4n-larsson/vo-postgres), with its tests; `packages/postgres` is gone
+  from this one. Add it with `vo package main.vo postgres https://github.com/d4n-larsson/vo-postgres`.
 - **Fixes that did not lead to a program that checks.** A bare name that is private in a module the file
   already imports was E0204 with a fix that inserted the import again, beside a W0203 whose fix removed
   it; it is now E0201 with the fix that qualifies the name (E0209 then exports the item). E0342 on
