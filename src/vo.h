@@ -2214,6 +2214,8 @@ extern long pkg_verify(void *entry, Node *node);
 extern void *pkg_import_path(Node *import, FileRec *importer);
 extern int pkg_is_name(Str *name, FileRec *importer);
 extern Str *pkg_relpath(Str *path);
+extern long pkg_absolute;
+extern Str *pkg_of_path(Str *path);
 extern void *pkg_for_doc(Str *name);
 extern Str *pkg_entry_name(void *entry);
 extern Str *pkg_doc_path(void *entry, Str *rel);

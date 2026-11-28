@@ -94,7 +94,7 @@ static int std_too(void)
 static int own_file(int file)
 {
     FileRec *f = file_get(file);
-    return !f->pkg && (!f->std || std_too());
+    return !pkg_relpath(f->path) && (!f->std || std_too());
 }
 
 /* ---- statements and their effects (data-model.md "Statement") ---- */

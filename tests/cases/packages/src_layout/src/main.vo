@@ -1,0 +1,12 @@
+# A package beside the program in src/, the commands run from the folder above: the package's tests do not
+# run with the program's (they do when its own file is tested), and its files are named from the working
+# directory, so the recording's fingerprint is the same wherever the project lies.
+import util.calc;
+
+fn main() uses console {
+    print(str(calc.twice(21)));
+}
+
+test "the program's test" {
+    expect_eq(calc.twice(1), 2);
+}

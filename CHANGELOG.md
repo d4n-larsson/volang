@@ -30,6 +30,12 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 - **The `postgres` package has its own repository**,
   [vo-postgres](https://github.com/d4n-larsson/vo-postgres), with its tests; `packages/postgres` is gone
   from this one. Add it with `vo package main.vo postgres https://github.com/d4n-larsson/vo-postgres#src`.
+- **Fixed: packages in `vo test` and in file names.** `vo test FILE` ran the tests of every package the
+  program pins, though only the program's own are meant to run; they run when a file of the package is
+  the one tested. A package's files were named by their absolute paths in reports, test ids and the
+  fingerprint of a recording, so a recording made in one checkout replayed in another with the note
+  that the program differs; they are named from the working directory, as the program's own files
+  are. A recording of a program with packages made before this gets that note once more.
 - **Fixes that did not lead to a program that checks.** A bare name that is private in a module the file
   already imports was E0204 with a fix that inserted the import again, beside a W0203 whose fix removed
   it; it is now E0201 with the fix that qualifies the name (E0209 then exports the item). E0342 on

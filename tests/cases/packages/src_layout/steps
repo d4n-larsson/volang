@@ -1,0 +1,7 @@
+vo package src/main.vo util src/shared/util
+vo test src/main.vo
+vo test src/shared/util/calc.vo
+vo test --json src/main.vo
+vo run --seed 1 --record rec.jsonl src/main.vo
+vo replay rec.jsonl
+keep rec.jsonl

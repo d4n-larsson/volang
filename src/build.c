@@ -247,6 +247,7 @@ int cmd_build(char *output, char *base)
     need_paths();
     if (pos_n != 1) usage_error(str_from_cstr("`build` takes exactly one file."));
     Str *entry = str_from_cstr(((char **)pos_args)[0]);
+    pkg_absolute = 1; /* a package's files are embedded under absolute paths (packages.c pkg_shown) */
     long file = load_source(entry);
     check_program((int)file, 1);
     if (!diag_errors) rec_review((int)file, ld_files()); /* what was reviewed is what ships (E0504) */

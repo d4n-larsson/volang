@@ -1,0 +1,7 @@
+export fn twice(n: int) -> int {
+    return n * 2;
+}
+
+test "the package's test" {
+    expect_eq(twice(2), 4);
+}

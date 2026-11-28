@@ -652,9 +652,11 @@ int cmd_test(void)
         check_program((int)entry, 2); /* mode: test */
         add_test_file(files, entry); /* the entry first, then its imports as loaded */
         Vec *program = ld_files();
+        Str *own = pkg_of_path(file_get((int)entry)->path); /* the entry is a package's file: that package's tests run */
         for (long k = 0; k < program->n; k++) {
             FileRec *f = file_get((int)(long)vec_get(program, k));
-            if (!f->std && !f->pkg) add_test_file(files, (long)vec_get(program, k));
+            Str *pkg = f->std ? 0 : pkg_of_path(f->path);
+            if (!f->std && (!pkg || (own && str_eq(pkg, own)))) add_test_file(files, (long)vec_get(program, k));
         }
     }
     long m = files->n;

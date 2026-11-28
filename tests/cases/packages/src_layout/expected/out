@@ -1,0 +1,27 @@
+$ vo package src/main.vo util src/shared/util
+added util shared/util sha256:a207ae1ab9992427176b9926ebde43a0ee52dbdfa5fdbec35196695aeae8404f
+--- stderr
+--- exit 0
+$ vo test src/main.vo
+PASS the program's test (0ms)
+1 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test src/shared/util/calc.vo
+PASS the package's test (0ms)
+1 passed, 0 failed
+--- stderr
+--- exit 0
+$ vo test --json src/main.vo
+{"v":1,"kind":"test","id":"src/main.vo::the program's test","name":"the program's test","status":"pass","file":"src/main.vo","start":{"line":10,"col":1},"uses":"","ms":0}
+{"v":1,"kind":"summary","command":"test","errors":0,"warnings":0,"truncated":0,"files":1,"passed":1,"failed":0,"errored":0,"timed_out":0,"selected":1}
+--- stderr
+--- exit 0
+$ vo run --seed 1 --record rec.jsonl src/main.vo
+42
+--- stderr
+--- exit 0
+$ vo replay rec.jsonl
+42
+--- stderr
+--- exit 0

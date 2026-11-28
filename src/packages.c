@@ -15,8 +15,10 @@ typedef struct Pkg {
     long versioned; /* spec 061: the fourth field is SOURCE@MAJOR.MINOR.PATCH */
     long ver[3];
     long indirect; /* spec 061: the fifth field: here only because another package requires it */
+    Str *shown;     /* the directory as its files are named: from the working directory (pkg_shown) */
+    Str *shown_for; /* the dir it was worked out for (`vo package` moves a package while it runs) */
 } Pkg;
-CHECK_SIZE(Pkg, 128);
+CHECK_SIZE(Pkg, 144);
 
 #define NO_PACKAGE ((void *)-1)
 #define M_MISSING "Package `$1`: the directory `$2` is missing or has no .vo files."
@@ -394,6 +396,28 @@ long pkg_verify(void *entry, Node *node)
 
 /* ---- imports ---- */
 
+/* The package's directory as the paths of its files start: relative to the working directory, as the
+ * program's own files are named, so that reports, test ids and a recording's fingerprint do not hold
+ * where the project lies on this machine. `vo build` embeds the files under their absolute paths, which
+ * a built executable (spec 034) looks up wherever it runs: both keep the absolute directory. So does
+ * `vo package`, which reads packages in directories it is still moving. */
+long pkg_absolute; /* set by `vo build` */
+
+static Str *pkg_shown(Pkg *e)
+{
+    if (e->shown && e->shown_for == e->dir) return e->shown;
+    Str *s = e->dir;
+    Str *real = !ld_app && !pkg_absolute && !pkg_command && rt_start_cwd_known() ? rt_resolve(e->dir) : 0;
+    if (real) {
+        s = pkg_rel_dir(rt_start_cwd(), real);
+        /* (a path that starts with std/ is the embedded library's: loader.c disk_beside) */
+        if (s->len >= 3 && mem_eq(s->data, "std", 3) && (s->len == 3 || s->data[3] == '/')) s = str_join2(str_from_cstr("./"), s);
+    }
+    e->shown = s;
+    e->shown_for = e->dir;
+    return s;
+}
+
 /* For `import NAME.a.b.item;` with NAME listed: the file DIRECTORY/a/b.vo, after the package's
  * hash is checked; -1 when the package failed its check (reported once); 0 when NAME is no package. */
 void *pkg_import_path(Node *import, FileRec *importer)
@@ -419,7 +443,7 @@ void *pkg_import_path(Node *import, FileRec *importer)
     }
     if (!pkg_verify(e, import)) return NO_PACKAGE;
     SB *path = sb_new(); /* DIRECTORY/a/b.vo */
-    sb_str(path, e->dir);
+    sb_str(path, pkg_shown(e));
     for (long i = 1; i < keep; i++) {
         Str *seg = vec_get(import->a.v, i);
         sb_byte(path, '/');
@@ -446,15 +470,29 @@ Str *pkg_relpath(Str *path)
     if (!v) return 0;
     for (long i = 0; i < v->n; i++) {
         Pkg *e = vec_get(v, i);
-        if (!path_under(path, e->dir)) continue;
+        Str *dir = e->dir; /* a path as pkg_import_path made it, or an absolute one */
+        if (!path_under(path, dir)) dir = pkg_shown(e);
+        if (!path_under(path, dir)) continue;
         SB *sb = sb_new();
         sb_byte(sb, '@');
         sb_str(sb, e->name);
-        long k = e->dir->len; /* the rest of the path, from its "/" */
+        long k = dir->len; /* the rest of the path, from its "/" */
         sb_bytes(sb, path->data + k, path->len - k);
         return sb_finish(sb);
     }
     return 0;
+}
+
+/* The name of the listed package the file lies in (however the path is written), or 0. */
+Str *pkg_of_path(Str *path)
+{
+    Str *rel = pkg_relpath(path);
+    Str *real = rel ? 0 : rt_resolve(path);
+    if (!rel && real) rel = pkg_relpath(real);
+    if (!rel) return 0;
+    long n = 1;
+    while (n < rel->len && rel->data[n] != '/') n++;
+    return str_new(rel->data + 1, n - 1);
 }
 
 /* ---- vo doc (spec 007 T044, research R7) ---- */
