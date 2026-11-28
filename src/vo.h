@@ -446,7 +446,9 @@
 #define B_LOCAL_TZ (117) /* __local_tz() -> bytes, clock */
 #define B_LOG (118) /* spec 055: __log(op, a, b) -> str, std.log only (src/rt_log.c) */
 #define B_METRIC (119) /* spec 055: __metric(op, key, x) -> str, std.metrics only (src/rt_metrics.c) */
-#define B_LAST (119) /* the last builtin id with a btab entry */
+#define B_WS (120) /* spec 063: __ws(op, a, b) -> bytes, std.websocket only (src/ws.c) */
+#define B_SERVE_TAKE (121) /* __serve_take(kind, max_open) -> result[int], serve: the request's connection */
+#define B_LAST (121) /* the last builtin id with a btab entry */
 
 /* operator codes (set by the checker) */
 #define OP_ADD_INT (1)
@@ -808,7 +810,8 @@ static inline int vo_int_op(long op, long x, long y, long *r)
 #define EVK_PROC_END (32) /* its exit status and standard error */
 #define EVK_WORKER (33) /* spec 047: what an operation on a worker gave the program (name: the operation) */
 #define EVK_LOCAL_TZ (34) /* spec 048: the bytes local_zone was given */
-#define EVK_LAST (34)
+#define EVK_SERVE_TAKE (35) /* spec 063: a handler took its request's connection (or was refused) */
+#define EVK_LAST (35)
 #define EVK_WORKER_ENDED (22) /* spec 028: the request's worker ended without answering (its response is 500) */
 #define EVR_OK (0)
 #define EVR_ERR (1)
@@ -2687,6 +2690,8 @@ extern long serve_address_parse(Str *s, long *all);
 extern void rt_check_net(Str *host, long port);
 extern Variant *rt_tcp(long op, long a, Str *text);
 extern Variant *rt_tcp_io(long op, long id, Str *data);
+extern Str *rt_ws(long op, Str *a, Str *b, Node *call); /* spec 063: src/ws.c */
+extern Variant *rt_serve_take(long kind, long max_open); /* spec 063: src/serve.c */
 extern Event *rp_peek(long kind, Str *name);
 /* spec 041: fetching and unpacking a package archive (fetch.c, inflate.c, untar.c) */
 typedef struct TarFile {
@@ -2735,6 +2740,20 @@ extern Variant *io_fs_lines(Str *path, long offset);
 extern Variant *io_proc_start(List *argv, Str *input, List *env);
 extern Variant *io_proc(long op, long id);
 extern void proc_sweep(void);
+extern void tcp_sweep(void); /* spec 063: tcp.c, at the end of each test */
+extern void net_wake_set(long fd, int consume); /* net.c: the stop of a server holding a conversation */
+extern int net_stop_seen(void);
+extern int net_wake_check(void);
+extern long tcp_adopt(long fd, char *label);
+extern void tcp_finish(long id, long kind, int failed);
+extern long sw_take(long kind, long max_open, char **why); /* serve_workers.c: a worker asks the server */
+extern int sw_in_worker(void);
+extern int sw_pair_fd(void);
+extern long sv_give(long conn, char **why);
+extern void sv_take_end(void);
+extern void sv_gauge(long n);
+extern Str *rt_redact_sent(Str *data); /* replay.c: a test's recorded tcp send, redacted */
+extern long sv_handler_failed;
 extern void tls_add_ca_file(char *path);
 extern Variant *io_https_exchange(Str *host, long port, Str *request);
 /* spec 018: coverage points (research R8), filled by the compiler with --coverage or --mutate */

@@ -25,7 +25,7 @@ static int is_ok_or_err(Node *n); /* spec 056 */
 #define B_MIN 34
 #define B_MAX 35
 #define B_SERVE_CALL 59 /* spec 011 */
-#define B_COUNT 119 /* names up to here (50, 51 and 83 are internal and unnamed) */
+#define B_COUNT 121 /* names up to here (50, 51 and 83 are internal and unnamed) */
 
 static const char *const builtin_names[B_COUNT + 1] = {
     0,          "print",       "write",     "eprint",  "read_line",    "read_all",     "read_file",
@@ -55,6 +55,7 @@ static const char *const builtin_names[B_COUNT + 1] = {
     "__worker", /* spec 047 */
     "__tz", "__local_tz", /* spec 048 */
     "__log", "__metric", /* spec 055 */
+    "__ws", "__serve_take", /* spec 063 */
 };
 
 /* Fixed signatures: argument codes, '>', result code. i int, f float, b bool, s str, v void,
@@ -79,6 +80,7 @@ static const char *const builtin_sigs[B_COUNT + 1] = {
     [114] = "iii>i", /* spec 043 */
     [116] = "is>Y", [117] = ">y", /* spec 048 */
     [118] = "iss>s", [119] = "isf>s", /* spec 055 */
+    [120] = "iyy>y", [121] = "ii>n", /* spec 063 */
 };
 
 #define M_NO_FIELD "`$1` has no field `$2`."

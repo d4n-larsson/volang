@@ -19,6 +19,9 @@
 #define SYS_statx 332
 
 #define SYS_socket 41
+#define SYS_socketpair 53 /* spec 063 */
+#define SYS_sendmsg 46
+#define SYS_recvmsg 47
 #define SYS_connect 42
 #define SYS_sendto 44
 #define SYS_recvfrom 45

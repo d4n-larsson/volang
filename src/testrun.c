@@ -666,6 +666,7 @@ long run_one_test(Node *test_in, long index_in)
             sql_close_since(sql_mark); /* closed however it ended: the next test's heap starts empty */
         }
         proc_sweep(); /* spec 040: a child a failed test was following */
+        tcp_sweep(); /* spec 063: and the connections it left open */
         workers_end(0); /* spec 047: no worker outlives its test */
         gc_mark_on_raise = 0;
         recover_point = 0;

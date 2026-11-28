@@ -45,6 +45,58 @@ static void net_timeout(void)
     rt_timeout((Node *)cur_node);
 }
 
+/* Spec 063 (research R5): while a handler holds a taken connection, every wait also watches net_wake_fd
+ * (a worker's socket pair, or serve's signal descriptor); the first time it is readable the wait ends
+ * as if its limit had passed, net_stop_seen() says why once, and the wake is off from then on. */
+long net_wake_fd = -1;
+int net_wake_consume; /* read the byte that woke us (a worker's pair; not serve's signals) */
+static int net_woken, net_stopped;
+
+void net_wake_set(long fd, int consume)
+{
+    net_wake_fd = fd;
+    net_wake_consume = consume;
+    net_woken = net_stopped = 0;
+}
+
+/* Before a send: 1 (once) when the wake has come, without waiting. */
+int net_wake_check(void)
+{
+    if (net_wake_fd < 0 || net_woken || !sys_wait_fd(net_wake_fd, 1, 0)) return 0;
+    net_woken = 1;
+    if (net_wake_consume) {
+        char b;
+        sys_read(net_wake_fd, &b, 1);
+    }
+    return 1;
+}
+
+int net_stop_seen(void)
+{
+    int r = net_stopped;
+    net_stopped = 0;
+    return r;
+}
+
+static long net_wait_both(long fd, int events, long ms)
+{
+    struct {
+        int fd;
+        short events, revents;
+    } p[2] = {{(int)fd, (short)events, 0}, {(int)net_wake_fd, 1 /* POLLIN */, 0}};
+    long ts[2] = {ms / 1000, ms % 1000 * 1000000};
+    long r = vo_syscall5(SYS_ppoll, (long)p, 2, ms < 0 ? 0 : (long)ts, 0, 8);
+    if (r > 0 && p[1].revents) {
+        net_woken = net_stopped = 1;
+        if (net_wake_consume) {
+            char b;
+            sys_read(net_wake_fd, &b, 1);
+        }
+        return -1;
+    }
+    return r > 0;
+}
+
 int net_wait(long fd, int events, long cap_ms)
 {
     long wait = cap_ms;
@@ -61,7 +113,16 @@ int net_wait(long fd, int events, long cap_ms)
         }
         if (wait < 0 || left < wait) wait = left;
     }
-    if (sys_wait_fd(fd, events, wait)) return 1;
+    if (net_wake_fd >= 0 && !net_woken) {
+        long r = net_wait_both(fd, events, wait);
+        if (r < 0) {
+            net_capped = 1;
+            return 0;
+        }
+        if (r) return 1;
+    } else if (sys_wait_fd(fd, events, wait)) {
+        return 1;
+    }
     if (deadline_ms && sys_clock_ms() >= deadline_ms) net_timeout();
     if (net_cap_ms && sys_clock_ms() >= net_cap_ms) net_capped = 1;
     return 0;

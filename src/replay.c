@@ -38,7 +38,8 @@ static const char *const ev_names[] = {0,         "read_line", "read_all",    "r
                                        "tcp_open", "tcp_tls", "tcp_recv", "tcp_send", "tcp_listen", "tcp_accept", /* spec 039 */
                                        "file_block", "proc_line", "proc_end", /* spec 040 */
                                        "worker", /* spec 047 */
-                                       "local_tz"}; /* spec 048 */
+                                       "local_tz", /* spec 048 */
+                                       "serve_take"}; /* spec 063 */
 static const char *const ev_results[] = {"ok", "err", "denied"};
 static Str *run_desc(Str *program, Str *joined, Str *dir);
 static Str *rt_id;     /* spec 054: the replayed test's FILE::NAME (0 outside tests) */
@@ -198,6 +199,7 @@ void rcd_event(long kind, Str *name, long result, Str *value, long int_value)
            : kind == EVK_HTTP           ? "\",\"host\":"
            : kind == EVK_SERVE_LISTEN   ? "\",\"address\":"
            : kind == EVK_WORKER         ? "\",\"name\":" /* spec 047 */
+           : kind == EVK_SERVE_TAKE     ? "\",\"name\":" /* spec 063 */
            : kind == EVK_RUN            ? "\",\"program\":"
            : kind >= EVK_PROC_LINE      ? "\",\"program\":"
            : kind == EVK_FILE_BLOCK     ? "\",\"path\":"
@@ -594,6 +596,18 @@ static Str *rt_redact_head(Str *text, int answer)
     Str *out = sb_finish(sb);
     GC_UNROOT(2);
     return out;
+}
+
+/* Spec 063 (FR-017): a std.tcp send in a test's recording that is an HTTP request head (a WebSocket
+ * handshake) is kept with its redacted headers' values as [redacted], as std.http's requests are; replay
+ * compares what is sent in the same form. Anything else is kept as it is. */
+Str *rt_redact_sent(Str *data)
+{
+    if (!rt_testing() || data->len < 8 || !mem_eq(data->data, "GET ", 4)) return data;
+    for (long i = 0; i + 3 < data->len; i++)
+        if (data->data[i] == '\r' && data->data[i + 1] == '\n' && data->data[i + 2] == '\r' && data->data[i + 3] == '\n')
+            return rt_redact_head(data, 0);
+    return data;
 }
 
 /* The request line with the value of every redacted query parameter replaced by [redacted]. */
@@ -1460,6 +1474,7 @@ void io_serve_reply(Str *text)
 {
     GC_ROOT(&text);
     if (rcd_mode == 2) {
+        sv_take_end(); /* spec 063: a connection the handler took is closed (in a replay: its entry) */
         sv_note_changed(rp_take(EVK_SERVE_RESPONSE, 0)->value.s, text);
     } else {
         rt_serve_reply(text);

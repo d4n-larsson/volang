@@ -1,6 +1,7 @@
 /* SHA-1 (FIPS 180-4) for git object names (spec 061, research R1): a pack's objects are found by it,
  * and the pack's trailer is one. Never used to decide what is trusted: that is the SHA-256 content
- * hash of the package (packages.c). */
+ * hash of the package (packages.c). Spec 063: also the WebSocket handshake's accept value, which the
+ * protocol defines with it and which proves nothing about trust either. */
 #include "vo.h"
 
 static uint32_t rol(uint32_t x, int n)

@@ -17,7 +17,7 @@
 #define TM_EXIT 3
 #define TM_COUNTS 6
 
-enum { TW_READY = 20, TW_SETUP_FAILED, TW_RESPONSE };
+enum { TW_READY = 20, TW_SETUP_FAILED, TW_RESPONSE, TW_TAKE };
 enum { W_NONE, W_STARTING, W_READY, W_BUSY };
 
 typedef struct Worker {
@@ -26,6 +26,8 @@ typedef struct Worker {
     int state;
     long conn;   /* the connection of the request it holds, -1 */
     long number; /* that request's arrival number */
+    int pair;    /* spec 063: the parent's end of a socket pair: a taken connection goes down it (-1) */
+    int talking; /* spec 063: its handler holds the request's connection (it stays W_BUSY) */
     SB *msgs, *obuf, *ebuf, *events; /* (globals are collector roots) */
 } Worker;
 
@@ -35,6 +37,97 @@ static Closure *sw_setup, *sw_answer; /* the functions the workers call */
 static Node *sw_call;
 static long sw_state; /* in a worker: the setup's result */
 static long sw_answered; /* spec 055: responses relayed (the stop record's count of those drained) */
+static int sw_pair = -1; /* spec 063: in a worker, its end of the socket pair (-1 elsewhere) */
+static void worker_flush_events(void);
+
+/* ---- spec 063 (research R1, R3): a handler in a worker takes its connection ---- */
+
+#define AF_UNIX 1
+#define SOCK_STREAM 1
+#define SOCK_CLOEXEC 0x80000
+#define SOL_SOCKET 1
+#define SCM_RIGHTS 1
+
+typedef struct IoVec {
+    void *base;
+    long len;
+} IoVec;
+
+typedef struct MsgHdr {
+    void *name;
+    int namelen;
+    int pad0;
+    IoVec *iov;
+    long iovlen;
+    void *control;
+    long controllen;
+    int flags;
+    int pad1;
+} MsgHdr;
+
+typedef struct FdControl { /* struct cmsghdr with one descriptor */
+    long len;
+    int level, type;
+    int fd;
+    int pad;
+} FdControl;
+
+int sw_in_worker(void)
+{
+    return sw_pair >= 0;
+}
+
+int sw_pair_fd(void)
+{
+    return sw_pair;
+}
+
+static void sw_gauge(void)
+{
+    long n = 0;
+    for (long i = 0; i < sw_n; i++) n += sw[i].talking;
+    sv_gauge(n);
+}
+
+/* At the first stop signal: every worker holding a conversation is woken (one byte, 9). */
+static void sw_wake_talking(void)
+{
+    char stop = 9;
+    for (long i = 0; i < sw_n; i++)
+        if (sw[i].state == W_BUSY && sw[i].talking) vo_syscall6(SYS_sendto, sw[i].pair, (long)&stop, 1, 0x4000 | 0x40, 0, 0);
+}
+
+/* Sends one byte (1 granted, else the refusal: 2 busy, 3 bytes after the request) and, when granted, fd. */
+static void sw_send_fd(int pair, char what, long fd)
+{
+    IoVec v = {&what, 1};
+    FdControl c = {sizeof(long) + 2 * sizeof(int) + sizeof(int), SOL_SOCKET, SCM_RIGHTS, (int)fd, 0};
+    MsgHdr m = {0, 0, 0, &v, 1, what == 1 ? &c : 0, what == 1 ? (long)sizeof c : 0, 0, 0};
+    vo_syscall3(SYS_sendmsg, pair, (long)&m, 0x4000 /* MSG_NOSIGNAL */);
+}
+
+/* In a worker: asks the server for the connection of the request being handled; its descriptor, or -1
+ * with *why. The server decides by the bound (research R3). */
+long sw_take(long kind, long max_open, char **why)
+{
+    long msg_[2] = {kind, max_open};
+    worker_flush_events();
+    task_send(TW_TAKE, (char *)msg_, sizeof msg_);
+    char what = 0;
+    IoVec v = {&what, 1};
+    FdControl c = {0};
+    MsgHdr m = {0, 0, 0, &v, 1, &c, sizeof c, 0, 0};
+    long n;
+    do n = vo_syscall3(SYS_recvmsg, sw_pair, (long)&m, 0x40000000 /* MSG_CMSG_CLOEXEC */);
+    while (n == -4);
+    while (n == 1 && what == 9) { /* a stop byte meant for the handler before: not the answer */
+        do n = vo_syscall3(SYS_recvmsg, sw_pair, (long)&m, 0x40000000);
+        while (n == -4);
+    }
+    if (n == 1 && what == 1 && c.level == SOL_SOCKET && c.type == SCM_RIGHTS) return c.fd;
+    *why = what == 2 ? "busy" : what == 3 ? "bytes after the request" : "no connection";
+    return -1;
+}
 
 static Str *sw_500(void)
 {
@@ -63,6 +156,11 @@ static void worker_flush(void)
     rcd_task_end();
 }
 
+static void worker_flush_events(void)
+{
+    worker_flush();
+}
+
 static void worker_run(Worker *w, int *p, long listener, long parent) NORETURN;
 static void worker_run(Worker *w, int *p, long listener, long parent)
 {
@@ -72,10 +170,12 @@ static void worker_run(Worker *w, int *p, long listener, long parent)
     for (int i = 0; i < WORKER_MAX; i++) { /* the other workers' pipes */
         Worker *o = &sw[i];
         if (o == w || o->state == W_NONE) continue;
-        int *fds[4] = {&o->req, &o->ctl, &o->out, &o->err};
-        for (int k = 0; k < 4; k++)
+        int *fds[5] = {&o->req, &o->ctl, &o->out, &o->err, &o->pair};
+        for (int k = 0; k < 5; k++)
             if (*fds[k] >= 0) sys_close(*fds[k]);
     }
+    sys_close(w->pair); /* the parent's end; p[8] is this worker's */
+    sw_pair = p[8];
     /* p: request (0 read, 1 write), control, stdout, stderr (0 read, 1 write each) */
     sys_dup_to(p[5], 1);
     sys_dup_to(p[7], 2);
@@ -118,6 +218,7 @@ static void worker_run(Worker *w, int *p, long listener, long parent)
         }
         long vals[2] = {sw_state, (long)raw};
         Variant *r = rt_serve_call_n(sw_answer, vals, 2, sw_call);
+        sv_take_end(); /* spec 063: a connection the handler took and left open is closed */
         int ok = r->tag == 0;
         Str *text = ok ? r->pay.s : sw_500();
         GC_ROOT(&text);
@@ -189,19 +290,28 @@ static void sw_close(int *fd)
 
 static int sw_spawn(Worker *w, long listener)
 {
-    int p[8];
+    int p[10];
     for (int k = 0; k < 4; k++)
         if (sys_pipe(&p[2 * k]) < 0) {
             for (int j = 0; j < 2 * k; j++) sys_close(p[j]);
             return 0;
         }
+    if (vo_syscall4(SYS_socketpair, AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0, (long)&p[8]) < 0) { /* spec 063 */
+        for (int j = 0; j < 8; j++) sys_close(p[j]);
+        return 0;
+    }
+    w->pair = p[9];
     for (int k = 0; k < 4; k++) sys_pipe_size(p[2 * k + 1], PIPE_BYTES);
     out_flush(); /* nothing pending is inherited and written twice */
     tr_flush();
     rcd_flush();
     long parent = sys_getpid();
     long pid = sys_fork();
-    if (pid == 0) worker_run(w, p, listener, parent);
+    if (pid == 0) {
+        w->pair = p[9];
+        worker_run(w, p, listener, parent);
+    }
+    sys_close(p[8]);
     sys_close(p[0]);
     sys_close(p[3]);
     sys_close(p[5]);
@@ -211,6 +321,8 @@ static int sw_spawn(Worker *w, long listener)
         sys_close(p[2]);
         sys_close(p[4]);
         sys_close(p[6]);
+        sys_close(p[9]);
+        w->pair = -1;
         return 0;
     }
     w->pid = pid;
@@ -220,6 +332,7 @@ static int sw_spawn(Worker *w, long listener)
     w->err = p[6];
     w->state = W_STARTING;
     w->conn = -1;
+    w->talking = 0;
     if (!w->msgs) w->msgs = sb_new();
     if (!w->obuf) w->obuf = sb_new();
     if (!w->ebuf) w->ebuf = sb_new();
@@ -275,6 +388,7 @@ static void sw_stop_all(int kill)
         sw_close(&w->out);
         sw_close(&w->err);
         w->state = W_NONE;
+        sw_close(&w->pair);
     }
 }
 
@@ -346,8 +460,33 @@ static int sw_messages(Worker *w, long index, Str **failure, long *status)
             *failure = str_new(p, len);
             stop = 1;
             break;
+        case TW_TAKE: { /* spec 063: the handler asks for its connection (research R1, R3) */
+            long ask[2];
+            mem_copy((char *)ask, p, 16);
+            long talking = 0;
+            for (long i = 0; i < sw_n; i++) talking += sw[i].talking;
+            long bound = ask[1] > 0 ? ask[1] : sw_n / 2;
+            if (bound > sw_n - 1) bound = sw_n - 1; /* never the last free worker */
+            char *why = 0;
+            long fd = -1;
+            if (w->state == W_BUSY && !w->talking && talking < bound) fd = sv_give(w->conn, &why);
+            if (fd >= 0) {
+                sw_send_fd(w->pair, 1, fd);
+                sys_close((int)fd);
+                w->conn = -1;
+                w->talking = 1;
+                sw_gauge();
+            } else {
+                sw_send_fd(w->pair, why && why[0] == 'b' ? 3 : why ? 4 : 2, -1);
+            }
+            break;
+        }
         case TW_RESPONSE: {
             sw_answered++;
+            if (w->talking) {
+                w->talking = 0;
+                sw_gauge();
+            }
             sw_output(w);
             Str *text = str_new(p + 1, len - 1);
             GC_ROOT(&text);
@@ -471,6 +610,7 @@ Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call)
                 sw_close(&w->out);
                 sw_close(&w->err);
                 w->state = W_NONE;
+                sw_close(&w->pair);
                 cut++;
             }
             cut += sv_refuse_ready();
@@ -498,6 +638,7 @@ Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call)
             }
             stopping = signalled = 1;
             sv_drop_partial();
+            sw_wake_talking(); /* spec 063 */
         }
         for (long k = 0; k < n; k++)
             if (ex[k].revents) sw_read(fds[k], *into[k]);
@@ -521,6 +662,7 @@ Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call)
                 sw_close(&w->out);
                 sw_close(&w->err);
                 w->state = W_NONE;
+                sw_close(&w->pair);
                 if (starting) {
                     Variant *r = sw_finish(listener, 1, failure);
                     GC_UNROOT(1);
@@ -546,7 +688,12 @@ Variant *rt_serve_workers(long workers, void *setup, void *answer, Node *call)
                 sw_close(&w->out);
                 sw_close(&w->err);
                 w->state = W_NONE;
+                sw_close(&w->pair);
                 sv_note(msg("worker $1 ended unexpectedly; it was replaced", int_to_str(i + 1), 0, 0));
+                if (w->talking) { /* spec 063: its conversation ended with it */
+                    w->talking = 0;
+                    sw_gauge();
+                }
                 if (!sw_spawn(w, listener) && !stopping) {
                     if (!failure) failure = str_from_cstr("cannot start a worker (the system refused a process)");
                     stopping = 1;

@@ -27,7 +27,7 @@
 
 enum { K_FREE, K_CONN, K_LISTEN };
 enum { OP_CONNECT = 1, OP_CONNECT_TLS, OP_LISTEN, OP_ACCEPT, OP_START_TLS, OP_CLOSE, OP_PORT, OP_CLOSE_LISTENER };
-enum { IO_READ = 1, IO_EXACT, IO_UNTIL, IO_WRITE, IO_PEER };
+enum { IO_READ = 1, IO_EXACT, IO_UNTIL, IO_WRITE, IO_PEER, IO_SEND_LIVE };
 
 typedef struct Entry {
     int kind;
@@ -36,6 +36,7 @@ typedef struct Entry {
     long effect;  /* EF_NET or EF_SERVE: what it was opened under, checked on every use */
     int accepted; /* from accept: no start_tls */
     int is_tls;
+    int taken;    /* spec 063: a connection a serving handler took: every send's outcome is recorded */
     int eof;      /* the peer closed; buffered bytes may remain */
     long port;    /* a listener's port; the port a connection was made to */
     void *tls;    /* the session (0 in a replay) */
@@ -124,6 +125,39 @@ static void entry_free(Entry *e)
     e->tls = 0;
     e->buf = 0;
     e->kind = K_FREE;
+}
+
+/* Spec 063 (research R1): a connection a serving handler took (fd -1 in a replay) as a std.tcp entry
+ * opened under serve; its id, or -1 when all entries are in use. */
+long tcp_adopt(long fd, char *label)
+{
+    Entry *e = entry_new(K_CONN, fd, EF_SERVE, label, cstr_len(label));
+    if (!e) return -1;
+    e->accepted = 1;
+    e->taken = 1;
+    return id_of(e);
+}
+
+/* The handler that took connection id returned (failed: it stopped with a runtime error): the entry is
+ * closed if the program left it open, a WebSocket (kind 2) first getting a close with code 1011. */
+void tcp_finish(long id, long kind, int failed)
+{
+    Entry *e = entry_of(id, K_CONN);
+    if (!e) return;
+    if (failed && kind == 2 && e->fd >= 0 && !e->eof) {
+        static const char close_1011[4] = {(char)0x88, 2, 3, (char)0xF3};
+        vo_syscall6(SYS_sendto, e->fd, (long)close_1011, 4, MSG_NOSIGNAL | 0x40 /* MSG_DONTWAIT */, 0, 0);
+    }
+    entry_free(e);
+}
+
+/* Spec 063: every connection and listener a test left open is closed when the test ends, as a
+ * program's are closed by the system when it ends. */
+void tcp_sweep(void)
+{
+    if (!tab) return;
+    for (long i = 0; i < TCP_MAX; i++)
+        if (tab[i].kind != K_FREE) entry_free(&tab[i]);
 }
 
 static Str *label_of(Entry *e)
@@ -229,7 +263,7 @@ static Variant *receive(Entry *e)
     Str *piece = 0;
     GC_ROOT(&piece);
     if (net_capped && got <= 0) {
-        r = fail("timed_out", "nothing arrived within the time limit");
+        r = net_stop_seen() ? fail("other", "the server is stopping") : fail("timed_out", "nothing arrived within the time limit");
     } else if (got == 0 || got == -E_CONNRESET || got == -E_PIPE) {
         e->eof = 1;
         r = fail("closed", "the peer closed the connection");
@@ -311,8 +345,12 @@ static Variant *send_all(Entry *e, Str *data)
         if (rt_testing()) { /* spec 054: a test's recording holds every send, compared with what is sent now */
             Event *ev = rp_take(EVK_TCP_SEND, name);
             if (ev->result != EVR_OK) return make_result(1, (long)ev->value.s);
-            if (!str_eq(ev->value.s, data)) rp_mismatch_sent(name, 0);
+            if (!str_eq(ev->value.s, rt_redact_sent(data))) rp_mismatch_sent(name, 0);
             return make_result(0, (long)str_new("", 0));
+        }
+        if (e->taken) { /* spec 063: a handler's sends are all recorded (a stream only sends), taken in order */
+            Event *ev = rp_take(EVK_TCP_SEND, name);
+            return ev->result != EVR_OK ? make_result(1, (long)ev->value.s) : make_result(0, (long)str_new("", 0));
         }
         Event *ev = rp_peek(EVK_TCP_SEND, name);
         return ev ? make_result(1, (long)ev->value.s) : make_result(0, (long)str_new("", 0));
@@ -320,7 +358,9 @@ static Variant *send_all(Entry *e, Str *data)
     GC_ROOT(&name);
     GC_ROOT(&data);
     Variant *r = 0;
-    if (e->eof) {
+    if (net_wake_check()) { /* spec 063: the server is stopping (only while a handler holds a conversation) */
+        r = fail("other", "the server is stopping");
+    } else if (e->eof) {
         r = fail("closed", "the peer closed the connection");
     } else if (e->tls) {
         long w = tls_write(e->tls, data->data, data->len);
@@ -336,7 +376,8 @@ static Variant *send_all(Entry *e, Str *data)
             long w = vo_syscall6(SYS_sendto, e->fd, (long)data->data + sent, data->len - sent, MSG_NOSIGNAL, 0, 0);
             if (w == -E_AGAIN) {
                 if (!net_wait(e->fd, POLLOUT, -1) && net_capped)
-                    r = fail("timed_out", "the peer did not take the bytes within the time limit");
+                    r = net_stop_seen() ? fail("other", "the server is stopping")
+                                        : fail("timed_out", "the peer did not take the bytes within the time limit");
             } else if (w == -E_PIPE || w == -E_CONNRESET) {
                 e->eof = 1;
                 r = fail("closed", "the peer closed the connection");
@@ -348,9 +389,32 @@ static Variant *send_all(Entry *e, Str *data)
         }
     }
     if (r) note(EVK_TCP_SEND, name, r, 0);
-    else if (rt_testing()) note(EVK_TCP_SEND, name, 0, data); /* spec 054: the bytes, for review and replay */
+    else if (rt_testing()) note(EVK_TCP_SEND, name, 0, rt_redact_sent(data)); /* spec 054: the bytes, for review and replay (063: redacted) */
+    else if (e->taken) note(EVK_TCP_SEND, name, 0, 0); /* spec 063: that it went (not the bytes: a recording stays small) */
     GC_UNROOT(2);
     return r ? r : make_result(0, (long)str_new("", 0));
+}
+
+/* Spec 063 (research R5): a send to a client that sends nothing (an event stream's): any byte or the end
+ * of the connection waiting to be read means the client has gone, and nothing is sent. Recorded as a
+ * failed send, so a replay gives the same answer. */
+static Variant *send_live(Entry *e, Str *data)
+{
+    if (rcd_mode != 2 && e->fd >= 0 && !e->tls) {
+        char b;
+        long got = vo_syscall6(SYS_recvfrom, e->fd, (long)&b, 1, 0x2 | 0x40 /* MSG_PEEK | MSG_DONTWAIT */, 0, 0);
+        if (got >= 0 || got == -E_CONNRESET) {
+            e->eof = 1;
+            Str *name = label_of(e);
+            GC_ROOT(&name);
+            Variant *r = fail("closed", "the client has gone");
+            GC_ROOT(&r);
+            note(EVK_TCP_SEND, name, r, 0);
+            GC_UNROOT(2);
+            return r;
+        }
+    }
+    return send_all(e, data);
 }
 
 /* ---- opening ---- */
@@ -633,6 +697,7 @@ Variant *rt_tcp_io(long op, long id, Str *data)
                  : op == IO_EXACT ? read_exact(e, n)
                  : op == IO_UNTIL ? read_until(e, data)
                  : op == IO_WRITE ? send_all(e, data)
+                 : op == IO_SEND_LIVE ? send_live(e, data)
                                   : fail("invalid", "an unknown operation");
     net_cap_ms = 0;
     GC_UNROOT(1);

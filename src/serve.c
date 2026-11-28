@@ -278,6 +278,7 @@ typedef struct Conn {
     HttpFrame f;   /* its framing state (f.out: the framed request, when complete) */
     Str *out;      /* the response being written */
     long sent;
+    long extra;    /* spec 063: bytes received after the request (a taken connection must have none) */
 } Conn;
 
 static Conn sv_conns[CONN_MAX]; /* (globals are collector roots) */
@@ -407,6 +408,7 @@ long sv_take_ready(Str **req)
     }
     if (!best) return -1;
     best->state = C_HANDLING;
+    best->extra = !best->f.chunked && best->f.length >= 0 && best->in ? best->in->len - (best->f.head + best->f.length) : 0;
     *req = best->f.out;
     best->in = 0; /* the request is the handler's now */
     best->f.out = 0;
@@ -658,6 +660,7 @@ Str *rt_http_part(Str *m, long which)
 /* Queues the response text on the connection being handled; rt_serve_next writes it and closes it. */
 void rt_serve_reply(Str *text)
 {
+    sv_take_end(); /* spec 063: a connection the handler took is not answered here */
     if (sv_conn < 0) return;
     conn_reply(&sv_conns[sv_conn], text);
     sv_conn = -1;
@@ -693,6 +696,7 @@ Variant *rt_serve_call_n(void *fn, long *vals, long n, Node *call)
     recover_point = outer;
     if (!saved_guard) deadline_ms = 0; /* (nested: the outer call's deadline goes on) */
     if (status) {
+        sv_handler_failed = status == 2; /* spec 063: a taken WebSocket is closed with 1011 */
         vsp = saved_vsp;
         cur_frame = saved_frame;
         tr_depth_set(depth);
@@ -705,4 +709,127 @@ Variant *rt_serve_call_n(void *fn, long *vals, long n, Node *call)
     }
     GC_UNROOT(n + 1);
     return (Variant *)result;
+}
+
+/* ---- spec 063 (research R1): a handler takes its request's connection ---- */
+
+static long sv_taken = -1; /* the std.tcp id of the connection the running handler took, or -1 */
+static long sv_taken_kind; /* 1 an event stream, 2 a WebSocket */
+long sv_handler_failed;    /* set when a handler call stops with a runtime error (rt_serve_call_n) */
+
+/* In this process (serve): the descriptor of the request being handled, its slot freed without closing
+ * it; -1 with *why when there is none or it cannot be taken. */
+static long sv_take_here(char **why)
+{
+    if (sv_conn < 0 || sv_conns[sv_conn].state != C_HANDLING || sv_taken >= 0) {
+        *why = "no connection";
+        return -1;
+    }
+    Conn *c = &sv_conns[sv_conn];
+    if (c->extra > 0) {
+        *why = "bytes after the request";
+        return -1;
+    }
+    long fd = c->fd;
+    *c = (Conn){.fd = -1, .state = C_FREE};
+    sv_conn = -1;
+    return fd;
+}
+
+/* Server side of serve_workers: the descriptor of connection conn for a worker, its slot freed (the
+ * parent's copy is closed by the caller once sent); -1 with *why. */
+long sv_give(long conn, char **why)
+{
+    if (conn < 0 || conn >= CONN_MAX || sv_conns[conn].state != C_HANDLING) {
+        *why = "no connection";
+        return -1;
+    }
+    Conn *c = &sv_conns[conn];
+    if (c->extra > 0) {
+        *why = "bytes after the request";
+        return -1;
+    }
+    long fd = c->fd;
+    *c = (Conn){.fd = -1, .state = C_FREE};
+    return fd;
+}
+
+/* result[int]: the connection of the request being handled, moved into this process's std.tcp table
+ * (kind 1 an event stream, 2 a WebSocket; max_open the route's bound, 0: half the workers). Errors:
+ * "busy" (the bound is reached), "no connection" (outside a serving handler, or taken already), "bytes
+ * after the request", "too many connections". Recorded as a serve_take event; a replay takes no
+ * descriptor. */
+Variant *rt_serve_take(long kind, long max_open)
+{
+    Str *name = str_from_cstr("request");
+    GC_ROOT(&name);
+    Variant *r;
+    if (rcd_mode == 2) {
+        Event *ev = rp_take(EVK_SERVE_TAKE, name);
+        if (ev->result != EVR_OK) {
+            r = make_result(1, (long)ev->value.s);
+        } else {
+            long id = tcp_adopt(-1, "request");
+            sv_taken = id;
+            sv_taken_kind = kind;
+            r = id < 0 ? make_result(1, (long)str_from_cstr("too many connections")) : make_result(0, id);
+        }
+        GC_UNROOT(1);
+        return r;
+    }
+    char *why = 0;
+    long fd = sw_in_worker() ? sw_take(kind, max_open, &why) : sv_take_here(&why);
+    long id = -1;
+    if (fd >= 0) {
+        id = tcp_adopt(fd, "request");
+        if (id < 0) {
+            sys_close((int)fd);
+            why = "too many connections";
+        }
+    }
+    if (id >= 0) {
+        sv_taken = id;
+        sv_taken_kind = kind;
+        deadline_ms = 0; /* --timeout limits answering the request; a conversation is limited by its own time
+                            limits, the client leaving, the route's bound and the server's stop */
+        if (sw_in_worker()) {
+            net_wake_set(sw_pair_fd(), 1); /* spec 063: the server's stop wakes the handler */
+        } else {
+            net_wake_set(sv_sig, 0);
+            sv_gauge(1);
+        }
+        r = make_result(0, id);
+    } else {
+        r = make_result(1, (long)str_from_cstr(why));
+    }
+    if (rcd_mode == 1) {
+        GC_ROOT(&r);
+        rcd_event(EVK_SERVE_TAKE, name, id >= 0 ? EVR_OK : EVR_ERR, id >= 0 ? str_from_cstr("") : r->pay.s, 0);
+        GC_UNROOT(1);
+    }
+    GC_UNROOT(1);
+    return r;
+}
+
+/* Spec 063 (FR-015): the gauge http_conversations_open, set whenever the number held changes. */
+void sv_gauge(long n)
+{
+    static const char key[] = "2\037http_conversations_open\037Conversations (event streams and WebSockets) being held open.\037\037\037";
+    Str *k = str_new((char *)key, sizeof key - 1);
+    double x = (double)n;
+    long bits;
+    mem_copy((char *)&bits, (char *)&x, 8);
+    rt_metric(2, k, bits, (Node *)cur_node);
+}
+
+/* The handler returned (or failed): a connection it took and left open is closed (research R1). */
+void sv_take_end(void)
+{
+    if (sv_taken >= 0) {
+        tcp_finish(sv_taken, sv_taken_kind, (int)sv_handler_failed);
+        if (!sw_in_worker() && rcd_mode != 2) sv_gauge(0);
+    }
+    sv_taken = -1;
+    net_wake_set(-1, 0);
+    sv_handler_failed = 0;
 }
