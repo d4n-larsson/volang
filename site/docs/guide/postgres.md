@@ -8,12 +8,13 @@ by changing its imports, the code that opens the database and the SQL the two sp
 
 ## Adding the package
 
-The package has its own repository, [vo-postgres](https://github.com/d4n-larsson/vo-postgres). Pin it
-with [`vo package`](../tools/package.md), from the repository or from a copy on disk:
+The package has its own repository, [vo-postgres](https://github.com/d4n-larsson/vo-postgres); it is the
+folder `src/` there. Pin it with [`vo package`](../tools/package.md), from the repository or from a copy
+on disk:
 
 ```text
-vo package main.vo postgres https://github.com/d4n-larsson/vo-postgres
-vo package main.vo postgres path/to/vo-postgres
+vo package main.vo postgres https://github.com/d4n-larsson/vo-postgres#src
+vo package main.vo postgres path/to/vo-postgres/src
 ```
 
 The output lists what the package can do: `net` (it connects to the server) and `entropy` (it draws
