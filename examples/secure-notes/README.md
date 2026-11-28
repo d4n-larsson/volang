@@ -13,15 +13,15 @@ caller's identity.](diagram.svg)
 
 ```sh
 cd examples/secure-notes
-../../bin/vo run main.vo        # serve on http://localhost:8080 (Ctrl-C stops it)
-../../bin/vo test main.vo       # six tests: every route as nobody, a user and an admin; no network
+../../bin/vo run src/main.vo        # serve on http://localhost:8080 (Ctrl-C stops it)
+../../bin/vo test src/main.vo       # six tests: every route as nobody, a user and an admin; no network
 ```
 
 ## The rules
 
 The table is `rules()` in `notes.vo`:
 
-<!-- code: notes.vo fn rules -->
+<!-- code: src/notes.vo fn rules -->
 
 It prints as:
 
@@ -66,7 +66,7 @@ $ curl -H 'X-Identity: {"name":"ada","roles":["admin"]}' localhost:8080/admin/us
 Each declares the field `identity` and calls `require_user`; "only the owner or an admin deletes a
 note" is an `if` in `erase`.
 
-<!-- code: notes.vo fn erase -->
+<!-- code: src/notes.vo fn erase -->
 
 ### Tests sign in without passwords
 
@@ -74,15 +74,15 @@ The test application adds `test_users()` to the ways of signing in, and `as_user
 request as that user. The served application does not list it, so the header it uses means nothing
 there.
 
-<!-- code: notes.vo fn test_app -->
-<!-- code: notes.vo fn call -->
-<!-- code: notes.vo test "who may call what" -->
+<!-- code: src/notes.vo fn test_app -->
+<!-- code: src/notes.vo fn call -->
+<!-- code: src/notes.vo test "who may call what" -->
 
 ### The policy is built once
 
 `notes_policy` builds it, for the step and for the token route.
 
-<!-- code: notes.vo fn notes_policy -->
+<!-- code: src/notes.vo fn notes_policy -->
 
 ### Browsers sign in with a session cookie
 
@@ -94,7 +94,7 @@ are `browser_routes`, and `browser(...)` is the second way of signing in in the 
 cookie reaches the same operations under the same rules as a token. `browsers` in `store.vo` says
 where the sessions are kept (in the store, as the notes) and for how long:
 
-<!-- code: store.vo fn browsers -->
+<!-- code: src/store.vo fn browsers -->
 
 The library does the rest: the cookie is `HttpOnly`, `Secure` and `SameSite=Lax` and its value is new
 at every sign-in (the store keeps only its hash), a cookie-signed request that changes something must

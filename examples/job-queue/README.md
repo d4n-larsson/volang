@@ -11,8 +11,8 @@ has taken more than 300 milliseconds is stopped and replaced by a new one.](diag
 ## Run it
 
 ```sh
-../../bin/vo run main.vo
-../../bin/vo test main.vo                      # the work and the deadlines, without a worker
+../../bin/vo run src/main.vo
+../../bin/vo test src/main.vo                      # the work and the deadlines, without a worker
 ../../bin/vo replay recordings/demo.jsonl      # a saved run: no worker is started
 ```
 
@@ -24,43 +24,43 @@ has taken more than 300 milliseconds is stopped and replaced by a new one.](diag
 taking a job with `next_message` and answering with `emit` until it is stopped. `concurrent_map` would
 wait for all seven jobs; here the program goes on between answers.
 
-<!-- code: main.vo fn serve_jobs -->
+<!-- code: src/main.vo fn serve_jobs -->
 
 ### Whichever answers first
 
 `receive_first(workers, Wait.at_most(ms))` gives the first answer from any worker and says which one
 sent it, or `timeout` when the nearest deadline passes first.
 
-<!-- code: main.vo fn listen -->
+<!-- code: src/main.vo fn listen -->
 
 ### A deadline that ends the work
 
 `stop_worker` ends a worker whatever it is doing, here in the middle of counting primes, and a new one
 takes its seat. The fourth job would take minutes; the run takes a third of a second.
 
-<!-- code: main.vo fn replace -->
+<!-- code: src/main.vo fn replace -->
 
 ### Typed messages, nothing shared
 
 The handle is a `Worker[Job, Done]`: jobs go in, answers come out, both copied. A worker has no access
 to the program's values after it is started.
 
-<!-- code: jobs.vo record Job -->
-<!-- code: jobs.vo record Done -->
+<!-- code: src/jobs.vo record Job -->
+<!-- code: src/jobs.vo record Done -->
 
 ### Effects stay visible
 
 Starting a worker is not an effect; what the worker's function does is, and the function that starts it
 must declare it. `vo.effects` shows `serve_jobs pure`: these workers only compute.
 
-<!-- code: vo.effects -->
+<!-- code: src/vo.effects -->
 
 ### Tests without workers
 
 The work (`primes_below`) and the arithmetic of the deadlines (`wait_until_due`) are pure functions in
 `jobs.vo`.
 
-<!-- code: jobs.vo fn wait_until_due -->
+<!-- code: src/jobs.vo fn wait_until_due -->
 
 ### Replay
 

@@ -44,11 +44,11 @@ def main():
     if "--no-examples" not in sys.argv:
         for entry in sorted(os.listdir(os.path.join(ROOT, "examples"))):
             d = os.path.join(ROOT, "examples", entry)
-            main_vo = os.path.join(d, "main.vo")
+            main_vo = os.path.join(d, "src", "main.vo")
             if not os.path.isfile(main_vo) or "\ntest " not in "\n" + open(main_vo).read():
                 continue
             start = time.monotonic()
-            p = subprocess.run([VO, "test", "--json", "--mutate", "main.vo"], cwd=d, capture_output=True, text=True,
+            p = subprocess.run([VO, "test", "--json", "--mutate", "src/main.vo"], cwd=d, capture_output=True, text=True,
                                timeout=600)
             dt = time.monotonic() - start
             summary = [json.loads(l) for l in p.stdout.splitlines() if '"mutation_summary"' in l]

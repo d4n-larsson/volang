@@ -147,6 +147,26 @@ subtotal 1205 cents
 Paths cannot contain `..`: a file imports only from its own directory and the directories below it. Put
 the entry file at the top of the program and shared code below it.
 
+## Project layout
+
+A program in one file can live anywhere. A program in several files keeps its source in `src/`, so the
+project's own files (README, license, CI configuration, data, recordings) stay apart from the code:
+
+```text
+README.md
+data/
+recordings/
+src/
+  main.vo
+  cart.vo
+  vo.effects
+```
+
+Run every command from the project folder and name the entry file: `vo run src/main.vo`,
+`vo test src/main.vo`. Imports, `vo.effects` and `packages/` are found from the entry file, so they sit
+in `src/`; the paths the program reads and writes (`data/`, `out/`) are from the folder the command runs
+in. The toolchain does not require this layout; the [examples](../examples/index.md) all follow it.
+
 ## Import cycles
 
 Imports must point one way. Files that import each other, directly or through other files, are

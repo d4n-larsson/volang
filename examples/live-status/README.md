@@ -9,10 +9,10 @@ service goes on from there.
 
 ```sh
 cd examples/live-status
-../../bin/vo run main.vo &                         # the service, on port 8090 of this machine
-(cd follow && ../../../bin/vo run main.vo)         # follows job 7 to its end
+../../bin/vo run src/main.vo &                         # the service, on port 8090 of this machine
+(cd follow && ../../../bin/vo run src/main.vo)         # follows job 7 to its end
 curl -N localhost:8090/jobs/7/events               # the same stream, read by curl
-../../bin/vo test main.vo                          # the progress and the stream, no network needed
+../../bin/vo test src/main.vo                          # the progress and the stream, no network needed
 kill %1                                            # stop the service (it exits with status 0)
 ../../bin/vo replay recordings/demo.jsonl          # a saved session of the service
 ```
@@ -36,7 +36,7 @@ which sends each event and waits a step. The route holds one of the server's fou
 streams, so `max_open: 2` keeps the other two for ordinary requests; a third client gets 503 with
 `Retry-After`.
 
-<!-- code: progress.vo fn stream_job -->
+<!-- code: src/progress.vo fn stream_job -->
 
 ### Tested without a network
 
@@ -50,7 +50,7 @@ are a pure function.
 ended, with the id of the last event. The follower reads again after a lost connection, at most three
 times; it never needs to parse the stream itself.
 
-<!-- code: follow/main.vo fn main -->
+<!-- code: follow/src/main.vo fn main -->
 
 ### Effects
 

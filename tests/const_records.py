@@ -51,16 +51,16 @@ def run(args, cwd):
 
 
 def outcome(d):
-    return [run(["effects", "main.vo"], d), run(["check", "main.vo"], d), run(["test", "main.vo"], d)]
+    return [run(["effects", "src/main.vo"], d), run(["check", "src/main.vo"], d), run(["test", "src/main.vo"], d)]
 
 
 def main():
     problems = examples = 0
     for name in sorted(os.listdir(os.path.join(ROOT, "examples"))):
         src = os.path.join(ROOT, "examples", name)
-        if not os.path.exists(os.path.join(src, "main.vo")):
+        if not os.path.exists(os.path.join(src, "src", "main.vo")):
             continue
-        files = [f for f in os.listdir(src) if f.endswith(".vo")]
+        files = [os.path.join("src", f) for f in os.listdir(os.path.join(src, "src")) if f.endswith(".vo")]
         if not any(CONST.search(open(os.path.join(src, f)).read()) for f in files):
             continue
         examples += 1
@@ -81,14 +81,14 @@ def main():
                         print("  with constants:", x[1][:300])
                         print("  with values:   ", y[1][:300])
                 continue
-            run(["effects", "--update", "main.vo"], a)
+            run(["effects", "--update", "src/main.vo"], a)
             for f in files:
                 p = os.path.join(a, f)
                 text = open(p).read()
                 for const in dirs:
                     text = re.sub(r"^((?:export )?const " + const + r" = )\"[^\"]*\";", r'\1"./";', text, flags=re.M)
                 open(p, "w").write(text)
-            code, out = run(["check", "main.vo"], a)
+            code, out = run(["check", "src/main.vo"], a)
             if dirs and b"E0504" not in out:
                 problems += 1
                 print(f"FAIL {name}: changing {', '.join(dirs)} to \"./\" is not reported (E0504)")

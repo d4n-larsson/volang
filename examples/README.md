@@ -1,7 +1,7 @@
 # Examples
 
 Small programs that show how vo is used. Each folder is one program; run it from its folder with
-`../../bin/vo run main.vo` and its tests with `../../bin/vo test main.vo`. `make test` checks and tests
+`../../bin/vo run src/main.vo` and its tests with `../../bin/vo test src/main.vo`. `make test` checks and tests
 every example, and replays its recordings (`recordings/*.jsonl`).
 
 | Example | Shows |

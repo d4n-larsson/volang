@@ -293,7 +293,7 @@ def group_redact(d):
 
 def group_mutate(d):
     ex = os.path.join(ROOT, "examples", "rates")
-    cmd = [VO, "test", "--replay", "recordings/tests", "--mutate", "main.vo"]
+    cmd = [VO, "test", "--replay", "recordings/tests", "--mutate", "src/main.vo"]
     if subprocess.run(["unshare", "-rn", "true"], capture_output=True).returncode == 0:
         cmd = ["unshare", "-rn"] + cmd
     p = subprocess.run(cmd, cwd=ex, capture_output=True, text=True, timeout=600 * SLOW)

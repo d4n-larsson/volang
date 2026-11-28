@@ -139,8 +139,8 @@ def clean():
 
 def main():
     fails = 0
-    examples = sorted(glob.glob(os.path.join(ROOT, "examples", "*", "main.vo")) +
-                      glob.glob(os.path.join(ROOT, "examples", "*", "*", "main.vo")))
+    examples = sorted(glob.glob(os.path.join(ROOT, "examples", "*", "src", "main.vo")) +
+                      glob.glob(os.path.join(ROOT, "examples", "*", "*", "src", "main.vo")))
     for e in examples:
         _, cs, _ = codes(e)
         w = [c for c in cs if c.startswith("W07")]

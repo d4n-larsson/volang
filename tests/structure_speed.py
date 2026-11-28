@@ -76,7 +76,7 @@ def main():
     with tempfile.TemporaryDirectory() as tmp:
         big = generated(tmp)
         lines = sum(1 for p in os.listdir(tmp) for _ in open(os.path.join(tmp, p)))
-        targets = [("examples/helpdesk/main.vo", os.path.join(ROOT, "examples", "helpdesk", "main.vo")),
+        targets = [("examples/helpdesk/src/main.vo", os.path.join(ROOT, "examples", "helpdesk", "src", "main.vo")),
                    (f"generated ({lines} lines)", big)]
         for name, path in targets:
             a, b, ratio = timed_pair(path, off, on)

@@ -167,7 +167,7 @@ def check_highlights():
     r = run([TS, "test"])
     if r.returncode:
         problems.append("tree-sitter test fails:\n" + re.sub(r"\x1b\[[0-9;]*m", "", r.stdout + r.stderr).strip()[-1200:])
-    sample = os.path.join(ROOT, "examples", "expenses", "main.vo")
+    sample = os.path.join(ROOT, "examples", "expenses", "src", "main.vo")
     queries = sorted(glob.glob(os.path.join(TSDIR, "queries", "*.scm")) + glob.glob(os.path.join(ED, "zed", "languages", "vo", "*.scm")))
     for q in queries:
         r = run([TS, "query", q, sample])
@@ -252,7 +252,7 @@ def check_textmate():
 
 def check_vim():
     out = tempfile.mktemp(prefix="vo-vim-")
-    sample = os.path.join(ROOT, "examples", "expenses", "main.vo")
+    sample = os.path.join(ROOT, "examples", "expenses", "src", "main.vo")
     # the group under the `uses` of line 1's function, and every message Vim printed
     subprocess.run(["vim", "-es", "-u", "NONE", "-c", f"set rtp+={ED}/vim", "-c", "syntax on", "-c", "filetype plugin on",
                     "-c", "runtime ftdetect/vo.vim", "-c", f"edit {sample}", "-c", f"redir! > {out}",

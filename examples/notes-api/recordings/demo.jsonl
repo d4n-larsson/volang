@@ -1,4 +1,4 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"31e61ad3bfea84e3","seed":117423871756718,"clock_ms":null,"args":[]}
+{"v":1,"kind":"recording","program":"src/main.vo","fingerprint":"31e61ad3bfea84e3","seed":117423871756718,"clock_ms":null,"args":[]}
 {"v":1,"kind":"listen","address":"8080","result":"ok","value":5}
 {"v":1,"kind":"setup","worker":0}
 {"v":1,"kind":"sql","op":"open","path":"data/notes.db","result":"ok","db":0}

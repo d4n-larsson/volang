@@ -8,7 +8,7 @@ The service is a vo program too, in `service/`: it answers `/status.json` and `/
 the files in `service/site/` with `std.http.serve` (see [The service](#the-service)).
 
 ![The status board and its service. main.vo, whose fetch declares net("localhost"), asks
-service/main.vo, which declares serve("8000"), for /status.json and /incidents.json; the service reads
+service/src/main.vo, which declares serve("8000"), for /status.json and /incidents.json; the service reads
 them from site/ with file.read("site/") and answers with JSON. vo run --record saves every response
 the board received in a recording; vo replay gives the board those responses again, with no
 network.](diagram.svg)
@@ -17,9 +17,9 @@ network.](diagram.svg)
 
 ```sh
 cd examples/status-board
-(cd service && ../../../bin/vo run main.vo) &   # the service, on port 8000 of this machine
-../../bin/vo run main.vo                    # the board (the port defaults to 8000; pass another after --)
-../../bin/vo test main.vo                   # tests of the parsing and the rendering, no network needed
+(cd service && ../../../bin/vo run src/main.vo) &   # the service, on port 8000 of this machine
+../../bin/vo run src/main.vo                    # the board (the port defaults to 8000; pass another after --)
+../../bin/vo test src/main.vo                   # tests of the parsing and the rendering, no network needed
 kill %1                                     # stop the service (it exits with status 0)
 ```
 
@@ -47,28 +47,28 @@ open incidents:
 time, stops the program with R0010. `std.http.get` runs with its caller's grant, so the library cannot
 reach further than the program allows.
 
-<!-- code: main.vo fn fetch -->
+<!-- code: src/main.vo fn fetch -->
 
 ### A record a reviewer can read
 
 `vo.effects` shows that only `main` and `fetch` use the network and that everything in `board.vo` is
 pure; an edit that adds a network call anywhere else fails `vo check`.
 
-<!-- code: vo.effects -->
+<!-- code: src/vo.effects -->
 
 ### JSON that may be wrong
 
 `std.http`'s `get` returns the status, headers and body; a status other than 200 and a body that is not
 the expected JSON are `err` values with a message (``no field `latency_ms` ``), passed up with `try`.
 
-<!-- code: board.vo fn services_from -->
+<!-- code: src/board.vo fn services_from -->
 
 ### Exit statuses for scripts
 
 0 when everything is up, 2 when a service is down (`exit(2)`), 1 when the board cannot be built (`main`
 returned `err`), such as a refused connection.
 
-<!-- code: main.vo fn main -->
+<!-- code: src/main.vo fn main -->
 
 ## Record and replay
 
@@ -76,9 +76,9 @@ returned `err`), such as a refused connection.
 `vo replay FILE` runs the program again on exactly that, without the network: the server can be gone.
 
 ```sh
-../../bin/vo run --record recordings/mine.jsonl main.vo   # while the service runs
+../../bin/vo run --record recordings/mine.jsonl src/main.vo   # while the service runs
 kill %1                                                   # stop the service
-../../bin/vo run main.vo                                  # error: connection refused by localhost:8000 (exit 1)
+../../bin/vo run src/main.vo                                  # error: connection refused by localhost:8000 (exit 1)
 ../../bin/vo replay recordings/mine.jsonl                 # the same board as before, exit 2
 ```
 
@@ -91,23 +91,23 @@ makes more requests than were recorded, replay stops with R0014 instead of guess
 
 ## The service
 
-`service/main.vo` serves the two files with `std.http.serve`: a handler function takes each `Request`
+`service/src/main.vo` serves the two files with `std.http.serve`: a handler function takes each `Request`
 and returns a `Response`; `serve("8000", answer)` runs it until Ctrl-C or SIGTERM.
 
-<!-- code: service/main.vo fn answer -->
+<!-- code: service/src/main.vo fn answer -->
 
 - **Its grant is visible**: `main` declares `serve("8000")` (port 8000 of this machine only; the network
   would need `serve("0.0.0.0:8000")`) and `file.read("site/")`, which the handler needs. `vo.effects`
   records both.
 - **The handler is tested without a network**: its tests build `Request` values and check the answers
-  (`../../../bin/vo test main.vo` in `service/`).
+  (`../../../bin/vo test src/main.vo` in `service/`).
 - **A failing handler does not stop the service**: that request gets `500`, the runtime error report goes
   to stderr, and the next request is answered.
 - **Record and replay work for servers too**: `service/recordings/demo.jsonl` holds the two requests the
   board made, the files read and the responses sent. `../../../bin/vo replay recordings/demo.jsonl` in
   `service/` answers them again without opening a port, and notes every response that differs.
 
-The service's own requirements, proved by its tests in `service/main.vo`:
+The service's own requirements, proved by its tests in `service/src/main.vo`:
 
 | ID | Requirement |
 |---|---|
@@ -125,14 +125,14 @@ The service's own requirements, proved by its tests in `service/main.vo`:
 | FR-005 | The exit status is 2 when a service is down. |
 | FR-006 | With every service up and no open incidents, the board has no incident section. |
 
-Each test names the requirements it proves with `@spec("FR-...")` on the line above it; `vo query specs main.vo` lists them, and `vo test` ends with a line per requirement.
+Each test names the requirements it proves with `@spec("FR-...")` on the line above it; `vo query specs src/main.vo` lists them, and `vo test` ends with a line per requirement.
 
 ## Files
 
 | File | Contents |
 |---|---|
-| `main.vo` | `fetch` and `main`: only the effects |
-| `board.vo` | the `Service` and `Incident` records, parsing and rendering (pure), and their tests |
-| `service/` | the service: `main.vo` (handler, tests), `site/` (the two JSON documents), its `vo.effects` and a recording |
+| `src/main.vo` | `fetch` and `main`: only the effects |
+| `src/board.vo` | the `Service` and `Incident` records, parsing and rendering (pure), and their tests |
+| `service/` | the service: `src/main.vo` (handler, tests), `site/` (the two JSON documents), its `vo.effects` and a recording |
 | `recordings/demo.jsonl` | a recorded run, replayed by `make test` |
-| `vo.effects` | the effects record, updated with `vo effects --update main.vo` |
+| `src/vo.effects` | the effects record, updated with `vo effects --update src/main.vo` |

@@ -1,4 +1,4 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"7b3a74806c0d5795","seed":4957477772556,"clock_ms":null,"args":[]}
+{"v":1,"kind":"recording","program":"src/main.vo","fingerprint":"14e8254fdeefb54c","seed":4957477772556,"clock_ms":null,"args":[]}
 {"v":1,"kind":"tcp_open","name":"localhost:8090","result":"ok","value":""}
 {"v":1,"kind":"tcp_recv","name":"localhost:8090","result":"ok","value":"HTTP/1.1 200 OK\u000d\u000aContent-Type: text/event-stream\u000d\u000aCache-Control: no-store\u000d\u000aX-Accel-Buffering: no\u000d\u000aConnection: close\u000d\u000a\u000d\u000a"}
 {"v":1,"kind":"tcp_recv","name":"localhost:8090","result":"ok","value":"event: progress\u000aid: 1\u000adata: job 7: step 1 of 5\u000a\u000a"}

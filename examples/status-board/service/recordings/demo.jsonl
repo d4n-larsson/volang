@@ -1,4 +1,4 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"29dbd5c60a1196d1","seed":116306688095592,"clock_ms":null,"args":[]}
+{"v":1,"kind":"recording","program":"src/main.vo","fingerprint":"29dbd5c60a1196d1","seed":116306688095592,"clock_ms":null,"args":[]}
 {"v":1,"kind":"listen","address":"8000","result":"ok","value":4}
 {"v":1,"kind":"request","value":"GET /status.json HTTP/1.1\u000d\u000aHost: localhost:8000\u000d\u000aConnection: close\u000d\u000aUser-Agent: vo\u000d\u000a\u000d\u000a"}
 {"v":1,"kind":"read_file","path":"site/status.json","result":"ok","value":"{\"checked\": \"2026-11-15T14:00:00Z\",\u000a \"services\": [\u000a  {\"name\": \"api\", \"up\": true, \"latency_ms\": 42},\u000a  {\"name\": \"web\", \"up\": true, \"latency_ms\": 118},\u000a  {\"name\": \"search\", \"up\": false, \"latency_ms\": 0},\u000a  {\"name\": \"billing\", \"up\": true, \"latency_ms\": 260},\u000a  {\"name\": \"mail\", \"up\": true, \"latency_ms\": 75}\u000a ]}\u000a"}

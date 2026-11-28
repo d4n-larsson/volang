@@ -13,9 +13,9 @@ so bob was on call.](diagram.svg)
 
 ```sh
 cd examples/helpdesk
-../../bin/vo run main.vo        # the report
-../../bin/vo test main.vo       # four tests and a property (100 generated inputs)
-../../bin/vo effects main.vo    # what each function and test is allowed to do
+../../bin/vo run src/main.vo        # the report
+../../bin/vo test src/main.vo       # four tests and a property (100 generated inputs)
+../../bin/vo effects src/main.vo    # what each function and test is allowed to do
 ```
 
 ```text
@@ -38,27 +38,27 @@ last 3 handled: laptop battery swollen; new monitor request; password reset
 `Ticket` is a record of ordered fields (`severity`, `minute`, `title`), so it is ordered field by field
 and the queue needs no comparison function.
 
-<!-- code: helpdesk.vo record Ticket -->
-<!-- code: helpdesk.vo fn triage -->
+<!-- code: src/helpdesk.vo record Ticket -->
+<!-- code: src/helpdesk.vo fn triage -->
 
 ### Who was on call: `ordered_map[int, str]`
 
 The shifts are keyed by the minute they start; `key_at_or_below` finds the shift that covers a minute.
 
-<!-- code: helpdesk.vo fn on_call -->
+<!-- code: src/helpdesk.vo fn on_call -->
 
 ### Who was never paged: `ordered_set[str]`
 
 The people paged and everyone on the rota are sets in name order; `difference` gives who was never
 paged.
 
-<!-- code: helpdesk.vo fn report -->
+<!-- code: src/helpdesk.vo fn report -->
 
 ### The last three handled: `deque[str]`
 
 `push` adds at the back, and `pop_front` drops the oldest when the history is full.
 
-<!-- code: helpdesk.vo fn remember -->
+<!-- code: src/helpdesk.vo fn remember -->
 
 ## Requirements
 

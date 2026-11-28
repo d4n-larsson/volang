@@ -49,12 +49,13 @@ def rewrite(path):
 
 
 def record(d, entry):
-    if os.path.exists(os.path.join(d, "vo.effects")):
-        os.remove(os.path.join(d, "vo.effects"))
+    path = os.path.join(d, os.path.dirname(entry), "vo.effects")  # the record is next to the entry file
+    if os.path.exists(path):
+        os.remove(path)
     code, out = vo(["effects", "--update", entry], d)
     if code != 0:
         return None, out
-    return open(os.path.join(d, "vo.effects")).read(), out
+    return open(path).read(), out
 
 
 def compare(src_dir, entry, run_args, problems, label):
@@ -117,9 +118,9 @@ def main():
     ap.add_argument("--seed", type=int, default=1)
     args = ap.parse_args()
     problems, sets = [], 0
-    for m in sorted(glob.glob(os.path.join(ROOT, "examples", "*", "main.vo")) + glob.glob(os.path.join(ROOT, "examples", "*", "*", "main.vo"))):
-        d = os.path.dirname(m)
-        sets += compare(d, "main.vo", ["test"], problems, os.path.relpath(d, ROOT))
+    for m in sorted(glob.glob(os.path.join(ROOT, "examples", "*", "src", "main.vo")) + glob.glob(os.path.join(ROOT, "examples", "*", "*", "src", "main.vo"))):
+        d = os.path.dirname(os.path.dirname(m))
+        sets += compare(d, "src/main.vo", ["test"], problems, os.path.relpath(d, ROOT))
     rng = random.Random(args.seed)
     for k in range(args.count):
         with tempfile.TemporaryDirectory() as src:

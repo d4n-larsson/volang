@@ -10,7 +10,7 @@ milliseconds. Either way the results come back in the order of the URLs.](diagra
 ## Run it
 
 ```sh
-../../bin/vo run main.vo -- http://localhost:8000/health http://localhost:8001/health
+../../bin/vo run src/main.vo -- http://localhost:8000/health http://localhost:8001/health
 ../../bin/vo replay recordings/demo.jsonl      # a saved run: no network needed
 ```
 
@@ -22,7 +22,7 @@ milliseconds. Either way the results come back in the order of the URLs.](diagra
 returns the results in the order of the URLs. The run takes about as long as the slowest URL; the saved
 demo has two URLs that take 500 and 400 ms and finishes in about 0.5 s.
 
-<!-- code: main.vo fn main -->
+<!-- code: src/main.vo fn main -->
 
 ### One line changes, the effects do not
 
@@ -30,15 +30,15 @@ demo has two URLs that take 500 and 400 ms and finishes in about 0.5 s.
 `concurrent_map` is not a capability, so `vo.effects` is the same for both: a reviewer sees no new
 effect when a loop becomes concurrent.
 
-<!-- code: sequential.vo fn main -->
-<!-- code: vo.effects -->
+<!-- code: src/sequential.vo fn main -->
+<!-- code: src/vo.effects -->
 
 ### Tasks share nothing
 
 Each task works on its own copy of what it is given; only its `Check` comes back. Output and errors come
 in the order of the URLs, whatever order the answers arrive in, and the recording replays exactly.
 
-<!-- code: main.vo fn check -->
+<!-- code: src/main.vo fn check -->
 
 ### The grant still holds
 

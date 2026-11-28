@@ -258,7 +258,7 @@ def check_parser():
 
 def example_copy(port):
     d = tempfile.mkdtemp(prefix="vo-ops-")
-    src = os.path.join(ROOT, "examples", "notes-api")
+    src = os.path.join(ROOT, "examples", "notes-api", "src")
     for f in ("main.vo", "api.vo", "notes.vo", "vo.effects"):
         shutil.copy(os.path.join(src, f), d)
     os.mkdir(os.path.join(d, "data"))

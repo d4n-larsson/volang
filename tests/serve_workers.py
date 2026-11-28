@@ -556,7 +556,7 @@ def check_notes_load():
     import concurrent.futures
     import json
     problems = []
-    ex = os.path.join(ROOT, "examples", "notes-api")
+    ex = os.path.join(ROOT, "examples", "notes-api", "src")
     program = open(os.path.join(ex, "main.vo")).read().replace("8080", "PORT")
     files = {n: open(os.path.join(ex, n)).read() for n in ("api.vo", "notes.vo")}
     files["data/.keep"] = ""

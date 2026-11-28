@@ -1,4 +1,4 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"1189c3913c9d6a1e","seed":10545982463323,"clock_ms":null,"args":[]}
+{"v":1,"kind":"recording","program":"src/main.vo","fingerprint":"f859d3e5dbcc62d4","seed":10545982463323,"clock_ms":null,"args":[]}
 {"v":1,"kind":"listen","address":"8090","result":"ok","value":5}
 {"v":1,"kind":"setup","worker":0}
 {"v":1,"kind":"setup_end"}

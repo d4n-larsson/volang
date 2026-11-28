@@ -13,8 +13,8 @@ that each worker opens, or a new database in memory in each test.](diagram.svg)
 
 ```sh
 cd examples/notes-api
-../../bin/vo run main.vo        # serve on http://localhost:8080 (Ctrl-C stops it, exit status 0)
-../../bin/vo test main.vo       # nine tests and a property: every request through the app, a database in memory
+../../bin/vo run src/main.vo        # serve on http://localhost:8080 (Ctrl-C stops it, exit status 0)
+../../bin/vo test src/main.vo       # nine tests and a property: every request through the app, a database in memory
 ```
 
 ## Try it
@@ -88,7 +88,7 @@ The steps and routes are a few lines of `notes_app`: `request_ids(random_id)`, `
 Routing, 404/405, reading and checking the input, JSON answers and problem bodies come from `std.web`;
 there is no code for them here.
 
-<!-- code: api.vo fn notes_app -->
+<!-- code: src/api.vo fn notes_app -->
 
 ### Every way to fail has a status
 
@@ -96,7 +96,7 @@ The operations fail with a `NoteError` (`not_found(id)`, `blank`, `database(mess
 function, `note_problem`, gives each case its status, so the checker sees that every way to fail has
 one; `typed(op, note_problem)` makes each operation one the routes take.
 
-<!-- code: api.vo fn note_problem -->
+<!-- code: src/api.vo fn note_problem -->
 
 ### Workers and a database
 
@@ -104,7 +104,7 @@ one; `typed(op, note_problem)` makes each operation one the routes take.
 database once (`open_notes`). Notes live in SQLite, so requests answered at once never lose each
 other's changes.
 
-<!-- code: main.vo fn main -->
+<!-- code: src/main.vo fn main -->
 
 ### Tests without a network
 
@@ -112,7 +112,7 @@ The tests send requests to `notes_app()` with `handle_request` and an in-memory 
 operations and `notes.vo` are generic over the database's effects (`Notes[D]`), so the same code runs
 on the file in `main` and in memory in the tests.
 
-<!-- code: api.vo test "POST /notes adds a note with the next id" -->
+<!-- code: src/api.vo test "POST /notes adds a note with the next id" -->
 
 ### Effects are the service's permissions
 
@@ -121,7 +121,7 @@ on the file in `main` and in memory in the tests.
 `open_notes` needs. `vo.effects` lists those effects written out; it shows that only `open_notes`
 touches files and that the operations use only the database they are given.
 
-<!-- code: api.vo fn open_notes -->
+<!-- code: src/api.vo fn open_notes -->
 
 ### Record and replay
 
@@ -143,18 +143,18 @@ at a time, without opening a port or touching `data/`.
 | FR-010 | `/metrics` counts requests by route pattern and the notes created. |
 | FR-015 | `/health/live` and `/health/ready` answer apart from `/health`. |
 
-Each test names the requirements it proves with `@spec("FR-...")` on the line above it; `vo query specs main.vo` lists them, and `vo test` ends with a line per requirement.
+Each test names the requirements it proves with `@spec("FR-...")` on the line above it; `vo query specs src/main.vo` lists them, and `vo test` ends with a line per requirement.
 
-`vo query specs main.vo` lists FR-001 to FR-007, FR-010 and FR-015; comparing the query's IDs with this table is how a
+`vo query specs src/main.vo` lists FR-001 to FR-007, FR-010 and FR-015; comparing the query's IDs with this table is how a
 reviewer, or a tool, finds requirements without a test.
 
 ## Files
 
 | File | Contents |
 |---|---|
-| `main.vo` | `main` (serving): only the effects |
-| `api.vo` | `notes_app` (the routes and operations), `open_notes`, and the tests of every request |
-| `notes.vo` | the `Note` record and its storage: listing, finding, adding, completing and removing notes |
+| `src/main.vo` | `main` (serving): only the effects |
+| `src/api.vo` | `notes_app` (the routes and operations), `open_notes`, and the tests of every request |
+| `src/notes.vo` | the `Note` record and its storage: listing, finding, adding, completing and removing notes |
 | `data/notes.db` | the notes (created on the first run) |
 | `recordings/demo.jsonl` | the recorded session, replayed by `make test` |
-| `vo.effects` | the effects record, updated with `vo effects --update main.vo` |
+| `src/vo.effects` | the effects record, updated with `vo effects --update src/main.vo` |

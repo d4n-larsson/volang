@@ -12,7 +12,7 @@ R0010.](diagram.svg)
 ## Run it
 
 ```sh
-../../bin/vo run main.vo
+../../bin/vo run src/main.vo
 ../../bin/vo replay recordings/demo.jsonl      # a saved run: no git needed, nothing written
 ```
 
@@ -23,7 +23,7 @@ R0010.](diagram.svg)
 `std.process.run("git", args)` runs git with its arguments as they are (no shell) and returns the exit
 code and output; a non-zero exit is a value the program looks at, not an error.
 
-<!-- code: main.vo fn git -->
+<!-- code: src/main.vo fn git -->
 
 ### The grant names the program
 
@@ -35,13 +35,13 @@ Deleting is its own effect. Replacing the report needs `file.delete("out/")` bes
 `file.write("out/")`; `vo.effects` shows both, so a reviewer sees that `main` may delete files under
 `out/` and nowhere else.
 
-<!-- code: main.vo fn main -->
+<!-- code: src/main.vo fn main -->
 
 ### Logic stays testable
 
-`report` is pure and tested without running anything (`vo test main.vo`).
+`report` is pure and tested without running anything (`vo test src/main.vo`).
 
-<!-- code: main.vo fn report -->
+<!-- code: src/main.vo fn report -->
 
 ### Record and replay
 

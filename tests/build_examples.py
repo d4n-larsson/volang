@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Spec 034 SC-001–SC-003: every example as one executable.
 
-- SC-001: each examples/**/main.vo is built with `vo build`; every recording under its recordings/
+- SC-001: each examples/**/src/main.vo is built with `vo build`; every recording under its recordings/
   is replayed with `vo replay` (in the example's directory) and with the executable's
   `--vo-replay` (from an empty directory): stdout, stderr and exit status must be equal.
 - SC-002: the expenses example, copied, is run by its executable with `--vo-record`; the executable
@@ -35,7 +35,7 @@ def app(path, args, cwd, **kw):
 
 
 def build(example_dir, out):
-    r = vo(["build", "main.vo", "-o", out], example_dir)
+    r = vo(["build", "src/main.vo", "-o", out], example_dir)
     if r.returncode:
         raise SystemExit(f"vo build fails in {example_dir}:\n{r.stdout.decode()}{r.stderr.decode()}")
 
@@ -77,11 +77,11 @@ def main():
         os.mkdir(empty)
         if "--time" in sys.argv:
             sys.exit(0 if timing(work) else 1)
-        mains = sorted(glob.glob(os.path.join(ROOT, "examples", "*", "main.vo")) +
-                       glob.glob(os.path.join(ROOT, "examples", "*", "*", "main.vo")))
+        mains = sorted(glob.glob(os.path.join(ROOT, "examples", "*", "src", "main.vo")) +
+                       glob.glob(os.path.join(ROOT, "examples", "*", "*", "src", "main.vo")))
         replays = 0
         for i, m in enumerate(mains):
-            d = os.path.dirname(m)
+            d = os.path.dirname(os.path.dirname(m))
             name = os.path.relpath(d, os.path.join(ROOT, "examples"))
             exe, again = os.path.join(work, f"app{i}"), os.path.join(work, f"again{i}")
             build(d, exe)
@@ -103,7 +103,7 @@ def main():
         build(copy, exe)
         rec = os.path.join(work, "run.jsonl")
         ran = app(exe, ["--vo-record", rec], copy)
-        direct = vo(["run", "main.vo"], copy)
+        direct = vo(["run", "src/main.vo"], copy)
         if not same(ran, direct):
             fails.append("SC-001: expenses: the executable's run differs from `vo run`")
         back = app(exe, ["--vo-replay", rec], empty)

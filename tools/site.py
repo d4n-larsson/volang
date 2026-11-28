@@ -213,7 +213,7 @@ def examples():
         text = rewrite_links(open(os.path.join(d, "README.md"), encoding="utf-8").read(), f"examples/{name}/README.md", page)
         text = re.sub(r"^<!-- code: (.+?) -->\n", lambda m: excerpt(name, m.group(1)), text, flags=re.M)
         src = sorted((os.path.relpath(os.path.join(r, f), d).replace(os.sep, "/") for r, _, fs in os.walk(d) for f in fs
-                      if f.endswith(".vo") or f == "vo.effects"), key=lambda f: (f.count("/"), f != "main.vo", f))
+                      if f.endswith(".vo") or f == "vo.effects"), key=lambda f: (f.count("/"), f != "src/main.vo", f))
         text += "\n## Source\n\nEvery file of the program as it is in the repository ([examples/" + name + "](" + REPO \
             + "/tree/main/examples/" + name + "); `make test` checks and tests it).\n"
         for f in src:

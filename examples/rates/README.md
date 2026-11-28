@@ -9,9 +9,9 @@ answer the real service gave once.
 
 ```sh
 cd examples/rates
-../../bin/vo run main.vo                                   # serve on http://localhost:8080 (Ctrl-C stops)
-../../bin/vo test --replay recordings/tests main.vo        # every test, offline
-../../bin/vo test --record recordings/tests main.vo        # ask the real service again and save its answer
+../../bin/vo run src/main.vo                                   # serve on http://localhost:8080 (Ctrl-C stops)
+../../bin/vo test --replay recordings/tests src/main.vo        # every test, offline
+../../bin/vo test --record recordings/tests src/main.vo        # ask the real service again and save its answer
 ```
 
 ## How it is tested
@@ -19,15 +19,15 @@ cd examples/rates
 The converter's route takes its rate from a function in the context (`Rates`), so its tests in
 `convert.vo` pass a fixed rate and need no network:
 
-<!-- code: convert.vo test "converts an amount at the rate" -->
+<!-- code: src/convert.vo test "converts an amount at the rate" -->
 
 The call to the real service is tested once, in `rates.vo`:
 
-<!-- code: rates.vo test "the service gives a positive rate from EUR to SEK" -->
+<!-- code: src/rates.vo test "the service gives a positive rate from EUR to SEK" -->
 
-`vo test --record recordings/tests main.vo` runs it against the service and saves what it received in
+`vo test --record recordings/tests src/main.vo` runs it against the service and saves what it received in
 `recordings/tests/rates/the_service_gives_a_positive_rate_from_EUR_to_SEK.jsonl`: the request it sent
-and the answer, as readable JSON lines. `vo test --replay recordings/tests main.vo` runs it on that file
+and the answer, as readable JSON lines. `vo test --replay recordings/tests src/main.vo` runs it on that file
 with no network, in a millisecond, the same every time; `make test` does that. If the code asks the
 service something else (another currency, another path), the replayed test fails with R0014 naming the
 request it made and the one recorded, until it is recorded again (`--test` records one test only).

@@ -12,9 +12,9 @@ out/report.txt (file.write("out/")).](diagram.svg)
 
 ```sh
 cd examples/expenses
-../../bin/vo run main.vo        # the report
-../../bin/vo test main.vo       # four tests and a property (100 generated inputs)
-../../bin/vo effects main.vo    # what each function and test is allowed to do
+../../bin/vo run src/main.vo        # the report
+../../bin/vo test src/main.vo       # four tests and a property (100 generated inputs)
+../../bin/vo effects src/main.vo    # what each function and test is allowed to do
 ```
 
 ```text
@@ -45,7 +45,7 @@ total        552.89
 and write only under `out/`, checked at run time (R0010 otherwise). Everything in `report.vo` is pure,
 so it cannot touch files or the network, and its tests need no setup.
 
-<!-- code: main.vo fn main -->
+<!-- code: src/main.vo fn main -->
 
 ### A record a reviewer can read
 
@@ -54,22 +54,22 @@ checker first asks every caller to declare it (E0501, with a fix), and then `vo 
 "`render` gains file.read("data/")", naming the call that brought it in, until `vo effects --update`
 records the change for a reviewer to approve.
 
-<!-- code: vo.effects -->
+<!-- code: src/vo.effects -->
 
 ### Errors are values
 
 Bad input (an invalid date, a negative amount, a missing field) is an `err` passed up with `try`; `main`
 returning `err` exits with status 1 and prints the message.
 
-<!-- code: report.vo fn expenses_from -->
+<!-- code: src/report.vo fn expenses_from -->
 
 ### Tests next to the code
 
 The tests and the property live in `report.vo`, beside the functions they test: `vo run` ignores them,
-and `vo test main.vo` runs them with the rest of the program. The property checks that grouping never
+and `vo test src/main.vo` runs them with the rest of the program. The property checks that grouping never
 loses money, whatever the amounts.
 
-<!-- code: report.vo prop "totals add up to the sum of the expenses" -->
+<!-- code: src/report.vo prop "totals add up to the sum of the expenses" -->
 
 ### A contract and exact amounts
 
@@ -77,7 +77,7 @@ loses money, whatever the amounts.
 (1290.50 is 129050 units at 2 places), so sums and the printed text are exact and nothing is formatted
 by hand.
 
-<!-- code: report.vo fn amount_of -->
+<!-- code: src/report.vo fn amount_of -->
 
 ### The standard library
 
@@ -94,14 +94,14 @@ pads the table. `vo doc std.text` lists what else is there.
 | FR-004 | An expense with an impossible date is an error with the reason, not a crash. |
 | FR-005 | With no expenses, the report says so. |
 
-Each test names the requirements it proves with `@spec("FR-...")` on the line above it; `vo query specs main.vo` lists them, and `vo test` ends with a line per requirement.
+Each test names the requirements it proves with `@spec("FR-...")` on the line above it; `vo query specs src/main.vo` lists them, and `vo test` ends with a line per requirement.
 
 ## Files
 
 | File | Contents |
 |---|---|
-| `main.vo` | `main` (read, render, print, save): only the effects |
-| `report.vo` | the `Expense` record, parsing, totals and the table (pure), and their tests |
+| `src/main.vo` | `main` (read, render, print, save): only the effects |
+| `src/report.vo` | the `Expense` record, parsing, totals and the table (pure), and their tests |
 | `data/expenses.json` | the input |
-| `vo.effects` | the effects record, updated with `vo effects --update main.vo` |
+| `src/vo.effects` | the effects record, updated with `vo effects --update src/main.vo` |
 | `out/` | where the report is written (its contents are not committed) |

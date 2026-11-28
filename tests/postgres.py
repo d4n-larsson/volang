@@ -799,7 +799,7 @@ def functions(lines):
 
 def group_move(d):
     import difflib
-    sqlite_dir = os.path.join(ROOT, "examples", "notes-api")
+    sqlite_dir = os.path.join(ROOT, "examples", "notes-api", "src")
     pg_dir = os.path.join(ROOT, "tests", "postgres", "notes-api")
     for name in ("main.vo", "api.vo", "notes.vo"):
         a = open(os.path.join(sqlite_dir, name)).read().splitlines()
@@ -827,7 +827,7 @@ def group_move(d):
     code, out, err = vo(work, ["test", "main.vo"], timeout=300)
     case("move/the PostgreSQL form passes the example's tests", code == 0 and out and out[-1].endswith(" 0 failed"),
          f"{code} {[l for l in out if l.startswith('FAIL')]} {out[-1:]} {err[-300:]}")
-    code, out, err = vo(os.path.join(ROOT, "examples", "notes-api"), ["test", "main.vo"])
+    code, out, err = vo(os.path.join(ROOT, "examples", "notes-api"), ["test", "src/main.vo"])
     case("move/the SQLite form still passes them", code == 0, f"{code} {out[-1:]}")
 
 
