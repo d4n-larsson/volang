@@ -172,7 +172,7 @@ def run_case(case):
     opened = {}  # spec 016: request-open connections by name (closed at the end of the case)
     try:
         for n in os.listdir(case):
-            if n in ("expected", "steps"):
+            if n in ("expected", "steps", "stress-skip"):
                 continue
             src = os.path.join(case, n)
             (shutil.copytree if os.path.isdir(src) else shutil.copy)(src, os.path.join(work, n))
@@ -411,6 +411,9 @@ def main():
     passed = failed = 0
     for case in cases(args or [os.path.join(ROOT, "tests", "cases")]):
         name = os.path.relpath(case, ROOT)
+        if os.environ.get("VO_GC_STRESS") and os.path.exists(os.path.join(case, "stress-skip")):
+            print("SKIP", name, "(output depends on collections)")  # as <case>.stress-every `skip` in run.sh
+            continue
         got = run_case(case)
         if b"\nskipped: no user namespaces\n" in got["out"]:
             # spec 019: a `no-trust-store` step where the machine does not permit user namespaces (GitHub's

@@ -245,14 +245,18 @@ test: all
 
 # The slow memory-safety suite (spec 003 US6): the stress build over the whole corpus, the benchmark
 # reference solutions and the fuzzer, then the fault-injection matrix.
+# The interval-1 runs (a collection at every allocation) found bug sweep findings 39 to 48, which
+# interval 64 missed; cases too slow for it name a larger interval in <case>.stress-every.
 gc-check: all oracle
 	$(MAKE) STRESS=1
 	tests/run.sh --stress
+	tests/run.sh --stress 1
 	python3 tests/gc/baseline.py --stress
 	python3 tests/fuzz.py --stress --iterations 3000 --seed 9
 	python3 tests/gc_faults.py
 	python3 tests/diff_engines.py --stress --count 1000 --seed 2
 	VO_BIN=$(abspath build-stress/vo) python3 tests/steps.py
+	VO_BIN=$(abspath build-stress/vo) VO_GC_STRESS=1 python3 tests/steps.py
 
 # The comparison engine (spec 004): the tree-walking interpreter from the last commit before the
 # bytecode engine, for speed figures and differential testing. Built once; `clean` keeps it.
