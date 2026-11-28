@@ -1,0 +1,29 @@
+# A conversation is logged once, when it ends, by the request log (spec 063): its request id, status,
+# duration and why it ended (end); a stream the bound refuses is an ordinary request.
+import std.http;
+import std.sse;
+import std.web;
+
+fn two[E: effects](s: sse.EventStream[uses E]) -> result[void] uses E {
+    try map_err(sse.send_event(s, new sse.StreamEvent { name: "", data: "one", id: "1" }), sse.stream_error_text);
+    try map_err(sse.send_event(s, new sse.StreamEvent { name: "", data: "two", id: "2" }), sse.stream_error_text);
+    return ok();
+}
+
+fn events(n: int, r: http.Request, vars: map[str, str]) -> result[http.Response] uses serve {
+    return ok(sse.serve_events(r, new sse.StreamOptions { headers: new list[http.Header], max_open: 0 }, two));
+}
+
+fn setup() -> result[int] {
+    return ok(0);
+}
+
+fn main() -> result[void] uses console, clock, log, random, serve("{vport}") {
+    let app = new web.App[int, uses serve, log, clock, random] {
+        routes: [web.on_request("GET", "/events", events)],
+        steps: [web.request_ids(web.random_id), web.request_logs()],
+        errors: new list[web.ErrorStatus]
+    };
+    try web.serve_app("{vport}", 2, setup, app);
+    return ok();
+}

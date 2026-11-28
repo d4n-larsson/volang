@@ -1,0 +1,5 @@
+start vo run --clock-ms 5 --seed 1 main.vo
+request-open s GET /events HTTP/1.1\r\nHost: x\r\nX-Request-Id: abc\r\n\r\n
+read-open s
+wait 500
+signal TERM

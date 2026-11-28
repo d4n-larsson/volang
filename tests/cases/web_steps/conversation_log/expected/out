@@ -1,0 +1,20 @@
+$ read-open s
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-store
+X-Accel-Buffering: no
+Connection: close
+
+id: 1
+data: one
+
+id: 2
+data: two
+
+
+--- end
+$ signal TERM
+--- stderr
+{"time":"{time}","level":"info","message":"request","request_id":"abc","method":"GET","route":"/events","status":200,"ms":0,"end":"done"}
+{"time":"{time}","level":"info","message":"stopped","drain_s":30,"drained":0,"cut_off":0}
+--- exit 0

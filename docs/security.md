@@ -179,6 +179,24 @@ Each property is a claim the review must try to break; each break is a finding.
   - *a copy of the session storage*: it holds the SHA-256 of each session value, never the value;
   - *guessing*: 128 random bits per session; *brute force* is not limited: every refusal is a security
     event with the name, which an application can count to slow or lock an account.
+- **Event streams and WebSockets** (spec 063): a conversation is a connection, so it is covered by the
+  effects that already exist: reading a stream or opening a WebSocket needs `net` with the host and
+  port in its scope (R0010 otherwise, before anything is sent), answering one needs `serve`. A
+  WebSocket route names the origins whose browser pages may connect; any other `Origin` is refused
+  with 403 before the handler runs, `[]` admits only clients that send no `Origin` (other programs),
+  and admitting every site takes the word `"*"` in the source. A handler that holds a conversation
+  holds one of the server's worker processes: each route bounds how many it holds (`max_open`), the
+  server never gives away its last free worker, and a request beyond the bound is answered 503, so
+  idle clients cannot stop the API (S9). Every frame and event is checked (masking, reserved bits,
+  lengths, UTF-8, close codes, sizes up to the message limit, 1 MiB by default); a peer that breaks the
+  protocol gets the matching close code and the program an error value. Not covered: compression
+  (none is offered; it would let an attacker who controls part of a message guess a secret beside it),
+  and rate limiting of conversations (its own roadmap row). The 4 key bytes that mask each frame a
+  client sends, and the handshake's key, come from the system's random source without the `entropy`
+  effect: they never reach the program and change nothing it sees, prints or replays (as TLS's own
+  randomness), and a recording holds them so a replay sends the same bytes. In recorded tests the
+  handshake's `Authorization` and `Cookie` values, and headers named by `--redact`, are kept as
+  `[redacted]`.
 - **The grant is only as good as its review**: a broad grant (`file.read("./")`, an unscoped `net`) is
   honored as written.
 
