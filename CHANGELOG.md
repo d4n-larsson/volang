@@ -6,6 +6,18 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- **Event streams and WebSockets (spec 063).** `std.sse` reads server-sent event streams
+  (`read_events`, which calls a function per event and returns why the stream ended and the last id)
+  and answers a request with one (`serve_events`, `send_event`, `keep_alive`); `std.websocket`
+  connects (`ws_connect`, `ws://` and `wss://`) and accepts (`ws_accept`, with the origins a route
+  admits), then `send_text`, `send_binary`, `receive_message`, `ping` and `close_socket`. Reading needs
+  `net`, answering `serve`; no new effect. A route bounds its open conversations (`max_open`; a
+  request beyond it gets 503), and a server with fewer than two workers refuses them. Handlers written
+  over any effect are tested on `scripted_socket` and `scripted_stream`. Recordings and replay cover
+  all four roles. Also new: `web.on_request` (a route whose operation gets the request), the request
+  log field `end`, the gauge `http_conversations_open`, and the recording event `serve_take`.
+- **Fixed:** `std.http.send_stream` opened a plain connection before each `https://` one and left it
+  open; `vo test` now closes the `std.tcp` connections a test left open when the test ends.
 - **A generic function's own scopes are enforced (spec 062).** A function with an effect parameter that
   declares scopes, `fn load[E: effects](..., f: fn() uses E) uses E, file.read("cache/")`, was not held to
   them when its caller declared more: its own code could read wherever the caller could. It is now

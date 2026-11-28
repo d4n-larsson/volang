@@ -1,0 +1,36 @@
+# The echo server Autobahn's fuzzingclient tests (tests/autobahn.sh): every message back as it came.
+import std.http;
+import std.websocket;
+
+fn echo[E: effects](s: websocket.Socket[uses E]) -> result[void] uses E {
+    while true {
+        match websocket.receive_message(s, 0) {
+            case ok(m) {
+                match m {
+                    case text(t) {
+                        try map_err(websocket.send_text(s, t), websocket.ws_error_text);
+                    }
+                    case binary(b) {
+                        try map_err(websocket.send_binary(s, b), websocket.ws_error_text);
+                    }
+                }
+            }
+            case err(_) {
+                return ok();
+            }
+        }
+    }
+}
+
+fn handle(r: http.Request) -> http.Response uses serve {
+    let options = new websocket.AcceptOptions { origins: ["*"], protocols: new list[str], max_message: 16777216, max_open: 32 };
+    return websocket.ws_accept(r, options, echo);
+}
+
+fn setup() -> result[int] {
+    return ok(0);
+}
+
+fn main() -> result[void] uses serve("9002") {
+    return http.serve_workers("9002", 40, setup, fn(n, r) => handle(r));
+}

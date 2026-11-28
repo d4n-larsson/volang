@@ -1,0 +1,63 @@
+# The client Autobahn's fuzzingserver tests (tests/autobahn.sh): runs every case, echoing each message.
+import std.http;
+import std.websocket;
+
+const base = "ws://127.0.0.1:9001";
+
+fn options() -> websocket.ConnectOptions {
+    return new websocket.ConnectOptions { headers: new list[http.Header], protocols: new list[str], max_message: 16777216 };
+}
+
+fn echo(s: websocket.Socket[uses net]) uses net("127.0.0.1:9001") {
+    while true {
+        match websocket.receive_message(s, 60000) {
+            case ok(m) {
+                match m {
+                    case text(t) {
+                        if websocket.send_text(s, t) != ok() {
+                            return;
+                        }
+                    }
+                    case binary(b) {
+                        if websocket.send_binary(s, b) != ok() {
+                            return;
+                        }
+                    }
+                }
+            }
+            case err(_) {
+                return;
+            }
+        }
+    }
+}
+
+fn case_count() -> result[int] uses net("127.0.0.1:9001") {
+    let s = try map_err(websocket.ws_connect(base + "/getCaseCount", options(), 10000), websocket.ws_error_text);
+    match try map_err(websocket.receive_message(s, 10000), websocket.ws_error_text) {
+        case text(t) {
+            return parse_int(t);
+        }
+        case binary(_) {
+            return err("a binary case count");
+        }
+    }
+}
+
+fn main() -> result[void] uses console, net("127.0.0.1:9001") {
+    let n = try case_count();
+    for i in 1..n + 1 {
+        match websocket.ws_connect(base + "/runCase?case=" + str(i) + "&agent=vo", options(), 10000) {
+            case ok(s) {
+                echo(s);
+            }
+            case err(e) {
+                print("case " + str(i) + ": " + websocket.ws_error_text(e));
+            }
+        }
+    }
+    let r = try map_err(websocket.ws_connect(base + "/updateReports?agent=vo", options(), 10000), websocket.ws_error_text);
+    echo(r);
+    print(str(n) + " cases run");
+    return ok();
+}

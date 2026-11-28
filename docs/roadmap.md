@@ -67,6 +67,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [059](../specs/059-inferred-function-types/) | Anonymous functions take their types from context (vo 0.5.0): `fn(p) => p.age`, parameter names only, types from the expected function type, in a call after the other arguments; `=> expr` the one form of a body that only returns (E0413); written types are E0342 with fixes; E0343 where nothing gives the types | **Implemented** ([results](../specs/059-inferred-function-types/results.md)) |
 | [060](../specs/060-case-fields-value-match/) | Variant cases with fields and `match` on values (vo 0.6.0): `malformed { path: str; line: int; }` built as `LoadError.malformed { ... }`, read-only (E0344), one field is E0216; `match` on `int`/`str` with literal or constant arms and a required `else` (E0414); `else` on a variant is E0415, other scrutinees E0345; `time.Repeated` became `LocalError.repeated`'s fields | **Implemented** ([results](../specs/060-case-fields-value-match/results.md)) |
 | [061](../specs/061-package-manager/) | Package manager (vo 0.7.0): versioned packages from git repositories over HTTPS (`vo package ENTRY NAME SOURCE[@VERSION]`), bringing what each package's own `vo.packages` requires; one version per package, the highest compatible one any manifest asks for (E0707 to E0711); `--update`, `--outdated`, `--repair`, `--dry-run`; `vo check` reports an incomplete manifest offline (E0709) | **Implemented** ([results](../specs/061-package-manager/results.md)) |
+| [063](../specs/063-events/) | Events: `std.sse` (reading event streams, answering a request with one) and `std.websocket` (connecting and accepting), on `std.tcp` and `std.http`; a handler takes its request's connection; a bound on open conversations per route; a clean stop with 1001; record and replay of all four roles | **Implemented** ([results](../specs/063-events/results.md)) |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -703,18 +704,38 @@ purpose, with the reason in the guide: per-type names in `std.collections`, `dec
 `absolute`, `with_cookie`'s result. Deferred: `web.bearer_auth`/`api_key_auth` beside the
 `std.security` ways (no mechanical fix), explicit type arguments on calls (new syntax).
 
+### 063: events (implemented)
+
+A service can now hold conversations that stay open. `std.sse.read_events` hands a program each event
+of a server-sent event stream as it arrives, parsed by the HTML standard's rules, and says why the
+stream ended and where to go on from; `std.websocket.ws_connect` opens `ws://` and `wss://` addresses
+and exchanges whole messages, with the handshake, framing, masking, pings and the closing exchange done
+by the library. Both are written in vo, on `send_stream` and `std.tcp`, so scopes, time limits,
+recording and replay are the existing ones. To answer, a handler calls `serve_events` or `ws_accept`,
+which take the request's connection: under `serve_workers` the server process passes the socket to
+the worker. Each route bounds how many conversations the server holds and the last free worker is
+never given away (503 beyond), the server's stop closes WebSockets with 1001 and ends streams, the
+request log records each conversation once with why it ended, and the gauge
+`http_conversations_open` counts them. Handlers written over any effect are tested on scripted sockets
+and streams; recorded tests redact the handshake's `Authorization`. Found on the way: `send_stream`
+opened a plain connection before every `https://` one and left it open; `vo test` kept a test's
+`std.tcp` connections open until the end of the run.
+
+- **Not done (on purpose):** broadcast to every connected client (it needs serving processes that
+  exchange messages: "Workers in tasks and servers" below), automatic reconnection, compression,
+  fragments in the program's hands, HTTP/2.
+
 The open gaps, ordered by the question vo's target sets (decided 2026-11-23, spec 053): **does it make
 an agent-written network service easier to write, review or operate?** Each becomes a spec when it is
 next; anything that reaches the outside world gets an effect, scopes, and record and replay.
 
 | Gap | What is missing | Notes |
 |---|---|---|
-| Events | clients and servers for server-sent events and WebSockets | the model is there since spec 047: a worker reads the connection and sends each event on; the protocols are not |
 | Schema migrations | a database's tables change by hand | for `std.sqlite` and the `postgres` package alike |
 | Serving over HTTPS | `std.http.serve` answers plain HTTP only; a public server needs a proxy in front | spec 019 follow-up: certificate and key under the program's grants |
 | Rate limiting | refusals are events (spec 045, 052), nothing slows a caller | sign-in first |
 | Benchmark v2 run | whether vo helps agents is still unmeasured | see Benchmarks; service-shaped tasks first |
-| Workers in tasks and servers | `start_worker` and `with_deadline` only in the program's own process (spec 047) | a table of workers per process |
+| Workers in tasks and servers | `start_worker` and `with_deadline` only in the program's own process (spec 047) | a table of workers per process; also what broadcast to every connected WebSocket needs (spec 063) |
 | Confined child programs | a program started under `process` runs with the user's full rights | opt-in confinement to the grant (Landlock); spec 017 follow-up |
 | UDP, IPv6 | TCP over IPv4 only (spec 039) | when a program needs them; IPv6 for the HTTP client and `std.tcp` together |
 | A registry | versions and dependencies are resolved from git repositories and their tags (spec 061); there is no index to search or to publish to | when there are enough packages that finding them is the problem |
