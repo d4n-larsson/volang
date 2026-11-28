@@ -1,4 +1,4 @@
-# std.time: Calendar time in UTC and in time zones, ISO 8601 text and durations in milliseconds.
+# std.time: Calendar time in UTC and in time zones, ISO 8601 text, durations in milliseconds and values that expire.
 # Part of the vo standard library (spec 007; zones: spec 048). Import the module, `import std.time;`, and write its items as `time.NAME`.
 # Times are milliseconds since 1970-01-01T00:00:00Z. from_ms, to_ms and format_time are UTC (proleptic
 # Gregorian); in_zone, from_local and format_in are the same in a Zone. The tz database is built into vo:
@@ -23,6 +23,50 @@ export record DateTime {
     ms: int;
     # The day of the week: 1 for Monday through 7 for Sunday.
     weekday: int;
+}
+
+# A value together with the moment it stops being valid: a token, a cached response, a lease. The value
+# is read only with a time, `e.value_at(now_ms())`, and the read is a result. It holds a function, so it
+# cannot be compared, turned into JSON or sent to a worker: keep the value and expires_at, and wrap
+# them again with expiring. One built by hand answers with whatever function it was given.
+#     expiring("t", 1000).expires_at is 1000
+export record Expiring[T] {
+    # The first moment the value is no longer valid, in milliseconds since 1970-01-01T00:00:00Z.
+    expires_at: int;
+    # The value at a time: ok(value) before expires_at, otherwise err("expired at E, read at N").
+    value_at: fn(int) -> result[T];
+}
+
+fn unexpired[T](value: T, expires_at: int, at: int) -> result[T] {
+    if at < expires_at {
+        return ok(value);
+    }
+    return err("expired at " + str(expires_at) + ", read at " + str(at));
+}
+
+# A value that is valid for times before expires_at.
+#     expiring("t", 1000).value_at(999) == ok("t") is true
+#     expiring("t", 1000).value_at(1000) == err("expired at 1000, read at 1000") is true
+export fn expiring[T](value: T, expires_at: int) -> Expiring[T] {
+    return new Expiring[T] {
+        expires_at: expires_at,
+        value_at: fn(at) => unexpired(value, expires_at, at)
+    };
+}
+
+# A value that is valid for ms milliseconds from the time start; with ms of 0 or less it has expired already.
+#     expiring_for("t", 1000, 500).expires_at is 1500
+export fn expiring_for[T](value: T, start: int, ms: int) -> Expiring[T] {
+    return expiring(value, start + ms);
+}
+
+# The milliseconds an expiring value has left at the time at; 0 when it has expired.
+#     left_ms(expiring("t", 1000), 400) is 600
+export fn left_ms[T](e: Expiring[T], at: int) -> int {
+    if at < e.expires_at {
+        return e.expires_at - at;
+    }
+    return 0;
 }
 
 @allow("W0702", "one module per import path: std.time is one file")

@@ -291,6 +291,90 @@ the release that `tzdata_version()` and `vo version` name, and a newer `vo` brin
 program that cannot wait reads a compiled zone file of its own (the format of `/usr/share/zoneinfo`)
 with `std.fs.read_bytes` and passes it to `zone_from_bytes(name, data)`.
 
+### Values that expire
+
+A service holds things that are only good for a while: a token another system issued for 30 minutes, a
+cached response, a lease. `time.Expiring[T]` keeps such a value together with the moment it stops being
+valid, and gives the value only to `held.value_at(now)`, which returns a result: the value before that
+moment, `err("expired at 1800000, read at 2400002")` from it on. A function that receives a
+`time.Expiring[str]` cannot use the token without stating a time and handling the expired case; the
+checker refuses everything else. Make one with `expiring(value, expires_at)` or, when the other system
+says how long, `expiring_for(value, now, ms)`. `left_ms(held, now)` is the time left, and
+`held.expires_at` the moment.
+
+The read takes the time as an argument and reads no clock, so it needs no effect: read `now_ms()` once
+and pass it down. To ask for a value that is still good a minute from now, read it at that time.
+
+```vo
+import std.time;
+
+record Issued {
+    token: str;
+    lifetime_ms: int;
+}
+
+fn sign_in(attempt: int) -> Issued {
+    return new Issued { token: "token-" + str(attempt), lifetime_ms: time.minutes(30) };
+}
+
+fn usable(held: time.Expiring[str], now: int, attempt: int) -> time.Expiring[str] {
+    match held.value_at(now + time.minutes(1)) {
+        case ok(_) {
+            return held;
+        }
+        case err(_) {
+            let issued = sign_in(attempt);
+            return time.expiring_for(issued.token, now, issued.lifetime_ms);
+        }
+    }
+}
+
+fn main() -> result[void] uses console, clock {
+    var held = time.expiring("", 0);
+    for attempt in 1..4 {
+        let now = now_ms();
+        set held = usable(held, now, attempt);
+        let token = try held.value_at(now);
+        print(token + ", " + str(time.left_ms(held, now) / 60000) + " minutes left");
+        time.sleep(time.minutes(20));
+    }
+    return ok();
+}
+```
+
+```console
+$ vo run --clock-ms 0 main.vo
+token-1, 30 minutes left
+token-1, 9 minutes left
+token-3, 30 minutes left
+```
+
+An expiring value holds a function, so it cannot be compared with `==` (E0308), turned into JSON
+(E0328) or returned from a task (E0314), and neither can a record that holds one. To keep one in a
+database or send it elsewhere, keep the value and the moment as two fields and wrap them again:
+
+```vo
+import std.time;
+
+record Stored {
+    token: str;
+    expires_at: int;
+}
+
+fn main() -> result[void] uses console, clock {
+    let now = now_ms();
+    let held = time.expiring_for("token-1", now, time.minutes(30));
+    let row = new Stored { token: try held.value_at(now), expires_at: held.expires_at };
+    let again = time.expiring(row.token, row.expires_at);
+    print(str(again.value_at(now) == held.value_at(now)));
+    return ok();
+}
+```
+
+```output
+true
+```
+
 ## std.text
 
 Text helpers beyond the builtins: `starts_with`, `ends_with`, `contains`, `replace`, `repeat`,

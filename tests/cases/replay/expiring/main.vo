@@ -1,0 +1,15 @@
+# Spec 065 SC-003: a read of an expiring value takes the recorded time, so the replay answers the same.
+import std.time;
+
+fn main() uses console, clock {
+    let token = time.expiring_for("secret", now_ms(), 100);
+    time.sleep(200);
+    match token.value_at(now_ms()) {
+        case ok(v) {
+            print(v);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

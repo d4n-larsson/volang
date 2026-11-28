@@ -68,6 +68,7 @@ vo's goal is to be the language AI coding agents do best in, and that humans can
 | [060](../specs/060-case-fields-value-match/) | Variant cases with fields and `match` on values (vo 0.6.0): `malformed { path: str; line: int; }` built as `LoadError.malformed { ... }`, read-only (E0344), one field is E0216; `match` on `int`/`str` with literal or constant arms and a required `else` (E0414); `else` on a variant is E0415, other scrutinees E0345; `time.Repeated` became `LocalError.repeated`'s fields | **Implemented** ([results](../specs/060-case-fields-value-match/results.md)) |
 | [061](../specs/061-package-manager/) | Package manager (vo 0.7.0): versioned packages from git repositories over HTTPS (`vo package ENTRY NAME SOURCE[@VERSION]`), bringing what each package's own `vo.packages` requires; one version per package, the highest compatible one any manifest asks for (E0707 to E0711); `--update`, `--outdated`, `--repair`, `--dry-run`; `vo check` reports an incomplete manifest offline (E0709) | **Implemented** ([results](../specs/061-package-manager/results.md)) |
 | [063](../specs/063-events/) | Events: `std.sse` (reading event streams, answering a request with one) and `std.websocket` (connecting and accepting), on `std.tcp` and `std.http`; a handler takes its request's connection; a bound on open conversations per route; a clean stop with 1001; record and replay of all four roles | **Implemented** ([results](../specs/063-events/results.md)) |
+| [065](../specs/065-expiring-values/) | Values that expire: `std.time`'s `Expiring[T]`, a value kept with the moment it stops being valid and read only with a time, as a result | **Implemented** |
 | Ongoing | Benchmarks that can tell languages apart | Continuous |
 
 ## What mainstream languages get wrong for agent-written code
@@ -725,6 +726,24 @@ opened a plain connection before every `https://` one and left it open; `vo test
 - **Not done (on purpose):** broadcast to every connected client (it needs serving processes that
   exchange messages: "Workers in tasks and servers" below), automatic reconnection, compression,
   fragments in the program's hands, HTTP/2.
+
+### 065: expiring values (implemented)
+
+A token, a cached response or a lease is kept as `time.Expiring[T]`: the value and the moment it stops
+being valid. The value is given only to `held.value_at(now)`, which returns a result, so the rule that
+a result must be handled makes every reader deal with expiry. `expiring(value, expires_at)` and
+`expiring_for(value, start, ms)` make one; `left_ms` is the time left. The value sits in a function
+the record holds, which is what keeps it from being read any other way with the checker as it is: the
+toolchain did not change and no code was added. For the same reason an expiring value cannot be
+compared, turned into JSON or returned from a task; a program keeps the value and the moment and wraps
+them again. The idea came in as a "temporal type system" (`type AccessToken = str valid_for
+30.minutes`). Chosen against, with the user: a type-system feature (whether a value has expired is
+known only when the program runs; what can be checked is that the program asked), private record
+fields, a module of its own. Two ideas that came with it were declined: automatic complexity analysis
+and hardware-aware compilation.
+
+- **Not done (on purpose):** a cache, automatic refresh, leases as such, sliding expiry, timers, use
+  inside `std.security`.
 
 The open gaps, ordered by the question vo's target sets (decided 2026-11-23, spec 053): **does it make
 an agent-written network service easier to write, review or operate?** Each becomes a spec when it is

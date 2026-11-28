@@ -1,0 +1,17 @@
+# Spec 065 US1: every way to the value that does not state a time and handle the result is a check error.
+import std.json;
+import std.time;
+
+fn main() -> result[void] uses console {
+    let e = time.expiring("secret", 1000);
+    let s: str = e;
+    print(s);
+    e.value_at(5);
+    print(str(e == e));
+    print(str(e));
+    print(format("{}", e));
+    print(try json.write_json(json.to_json(e)));
+    let sent = concurrent_map([1, 2], 2, fn(n) => time.expiring(n, 5));
+    print(str(len(sent)));
+    return ok();
+}

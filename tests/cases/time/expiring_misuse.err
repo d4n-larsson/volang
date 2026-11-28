@@ -1,0 +1,24 @@
+expiring_misuse.vo:7:18: error[E0301]: Expected `str`, found `time.Expiring[str]`.
+   7 |     let s: str = e;
+     |                  ^
+  expected `str`, found `time.Expiring[str]`
+expiring_misuse.vo:9:5: error[E0404]: The `result[str]` returned here is ignored. Handle it with `try` or `match`.
+   9 |     e.value_at(5);
+     |     ^^^^^^^^^^^^^
+  fix: insert `try `
+expiring_misuse.vo:10:15: error[E0308]: `==` cannot compare `time.Expiring[str]`: it holds a function, and functions cannot be compared.
+  10 |     print(str(e == e));
+     |               ^^^^^^
+expiring_misuse.vo:11:15: error[E0301]: Expected `int`, `float` or `bool`, found `time.Expiring[str]`.
+  11 |     print(str(e));
+     |               ^
+expiring_misuse.vo:12:24: error[E0301]: Expected `int`, `float`, `bool` or `str`, found `time.Expiring[str]`.
+  12 |     print(format("{}", e));
+     |                        ^
+expiring_misuse.vo:13:31: error[E0328]: `time.Expiring[str]` cannot be converted to JSON: `value_at` is a function.
+  13 |     print(try json.write_json(json.to_json(e)));
+     |                               ^^^^^^^^^^^^^^^
+expiring_misuse.vo:14:42: error[E0314]: A task's result cannot hold a function (field `value_at` of `time.Expiring[int]`): return data instead.
+  14 |     let sent = concurrent_map([1, 2], 2, fn(n) => time.expiring(n, 5));
+     |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7 errors, 0 warnings

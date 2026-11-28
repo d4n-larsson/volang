@@ -6,6 +6,14 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
 
 ## Unreleased
 
+- **Values that expire (spec 065).** `std.time` gains `Expiring[T]`: a value kept with the moment it
+  stops being valid, for tokens, cached responses and leases. `expiring(value, expires_at)` and
+  `expiring_for(value, start, ms)` make one; the value is read only with `held.value_at(now)`, which
+  returns `ok(value)` before that moment and `err("expired at E, read at N")` from it on;
+  `left_ms(held, now)` is the time left. The read needs no effect. An `Expiring` holds a function, so
+  it cannot be compared, turned into JSON or returned from a task: keep the value and `expires_at`,
+  and wrap them again. The toolchain did not change. The reference stays at about 14,998 tokens: its
+  `std.time` row gained 7 words and four sentences near it lost 7.
 - **Event streams and WebSockets (spec 063).** `std.sse` reads server-sent event streams
   (`read_events`, which calls a function per event and returns why the stream ended and the last id)
   and answers a request with one (`serve_events`, `send_event`, `keep_alive`); `std.websocket`

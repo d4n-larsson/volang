@@ -1,0 +1,7 @@
+# Spec 065 US2: a time plus a duration past the largest int is R0001, not a moment in the past.
+import std.time;
+
+fn main() uses console {
+    let e = time.expiring_for(1, 9223372036854775807, 1);
+    print(str(e.expires_at));
+}

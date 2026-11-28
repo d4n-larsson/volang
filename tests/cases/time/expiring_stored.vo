@@ -1,0 +1,32 @@
+# Spec 065 US3: an expiring value is kept as its value and its expiry moment, and wrapped again.
+import std.json;
+import std.time;
+
+record Stored {
+    token: str;
+    expires_at: int;
+}
+
+fn show(r: result[str]) -> str {
+    match r {
+        case ok(v) {
+            return v;
+        }
+        case err(e) {
+            return e;
+        }
+    }
+}
+
+fn main() -> result[void] uses console {
+    let t = time.expiring_for("secret", 1000, 500);
+    let kept = new Stored { token: try t.value_at(1200), expires_at: t.expires_at };
+    let text = try json.write_json(json.to_json(kept));
+    print(text);
+    let back: Stored = try json.from_json(try json.parse_json(text));
+    let again = time.expiring(back.token, back.expires_at);
+    for now in [0, 1499, 1500] {
+        print(show(t.value_at(now)) + " | " + show(again.value_at(now)));
+    }
+    return ok();
+}

@@ -1,0 +1,21 @@
+# Spec 065 US2: good for a duration, and how long is left; a margin is added to the time of the read.
+import std.time;
+
+test "a duration" {
+    let t = time.expiring_for("secret", 1000, 500);
+    expect_eq(t.expires_at, 1500);
+    expect_eq(t.value_at(1499), ok("secret"));
+    expect_eq(t.value_at(1200 + 300), err("expired at 1500, read at 1500"));
+}
+
+test "time left" {
+    let t = time.expiring_for("secret", 1000, 500);
+    expect_eq(time.left_ms(t, 1200), 300);
+    expect_eq(time.left_ms(t, 1500), 0);
+    expect_eq(time.left_ms(t, 9000), 0);
+}
+
+test "no time at all" {
+    expect_eq(time.expiring_for(1, 1000, 0).value_at(1000), err("expired at 1000, read at 1000"));
+    expect_eq(time.expiring_for(1, 1000, -1).value_at(1000), err("expired at 999, read at 1000"));
+}

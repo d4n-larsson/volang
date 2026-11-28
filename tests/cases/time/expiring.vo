@@ -1,0 +1,59 @@
+# Spec 065 US1: a value wrapped with its expiry moment is read only with a time, and the read is a result.
+import std.time;
+
+record Account {
+    name: str;
+    plan: str;
+}
+
+fn header(token: time.Expiring[str], now: int) -> result[str] {
+    let t = try token.value_at(now);
+    return ok("Bearer " + t);
+}
+
+fn show(r: result[str]) -> str {
+    match r {
+        case ok(v) {
+            return v;
+        }
+        case err(e) {
+            return e;
+        }
+    }
+}
+
+fn main() uses console {
+    let token = time.expiring("secret", 1000);
+    for now in [0, 999, 1000, 5000] {
+        print(show(header(token, now)));
+    }
+    print(show(token.value_at(-5)));
+    print(str(token.expires_at));
+    let account = time.expiring(new Account { name: "al", plan: "pro" }, 10);
+    match account.value_at(9) {
+        case ok(a) {
+            print(a.plan);
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+    let nested = time.expiring(time.expiring(1, 5), 9);
+    for now in [7, 4, 9] {
+        match nested.value_at(now) {
+            case ok(inner) {
+                match inner.value_at(now) {
+                    case ok(n) {
+                        print(str(n));
+                    }
+                    case err(e) {
+                        print("inner " + e);
+                    }
+                }
+            }
+            case err(e) {
+                print("outer " + e);
+            }
+        }
+    }
+}
