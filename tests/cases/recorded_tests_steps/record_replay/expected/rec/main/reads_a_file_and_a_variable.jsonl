@@ -1,4 +1,4 @@
-{"v":1,"kind":"recording","program":"main.vo","fingerprint":"78e5d8bc59a1e4cf","seed":1,"clock_ms":0,"test":"main.vo::reads a file and a variable","redact":[]}
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"670b9945ba31354c","seed":1,"clock_ms":0,"test":"main.vo::reads a file and a variable","redact":[]}
 {"v":1,"kind":"read_file","path":"data/in.txt","result":"ok","value":"hello from a file\u000a"}
 {"v":1,"kind":"env","name":"GREETING","result":"ok","value":"hej"}
 {"v":1,"kind":"end","status":0}

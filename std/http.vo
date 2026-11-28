@@ -721,6 +721,14 @@ fn body_error(e: tcp.TcpError) -> str {
     return tcp.tcp_error_text(e);
 }
 
+fn dial(u: Url, wait: int) -> result[tcp.Conn[uses net], tcp.TcpError] uses net {
+    # One connection: TLS for https:// (spec 063: a plain one was opened first and left open).
+    if u.tls {
+        return tcp.connect_tls(u.host, u.port, wait);
+    }
+    return tcp.connect(u.host, u.port, wait);
+}
+
 fn stream_send(c: tcp.Conn[uses net], text: str, wait: int) -> result[void] {
     # std.tcp's send (this module has a send of its own): all of text, within wait ms.
     __http_timeout(wait);
@@ -929,11 +937,7 @@ export fn send_stream[E: effects](
     if wait == 0 {
         set wait = 600000;
     }
-    var dialed = tcp.connect(u.host, u.port, wait);
-    if u.tls {
-        set dialed = tcp.connect_tls(u.host, u.port, wait);
-    }
-    let c = try map_err(dialed, tcp.tcp_error_text);
+    let c = try map_err(dial(u, wait), tcp.tcp_error_text);
     let done = stream_body(c, request, wait, f);
     tcp.close_conn(c);
     return done;
