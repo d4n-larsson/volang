@@ -1035,6 +1035,13 @@ export fn request_logs[C, E: effects]() -> Step[C, uses log, clock, E] {
                 case err(_) {
                 }
             }
+            match header_of_response(resp, "Vo-End") {
+                case ok(e) {
+                    push(fields, log.field("end", e));
+                }
+                case err(_) {
+                }
+            }
             if resp.status >= 500 {
                 log.log_error("request", fields);
             } else if resp.status == 200 and (under(r.path, "/health") and r.path != "/health" or r.path == "/metrics") {
@@ -1303,5 +1310,21 @@ export fn with_header(r: http.Request, name: str, value: str) -> http.Request {
         query: r.query,
         headers: headers,
         body: r.body
+    };
+}
+
+# A route whose operation gets the request itself and the path variables, for answers that need the
+# request (an event stream, a WebSocket) or a body that is not JSON. method is GET, POST, PUT, PATCH or DELETE.
+#     let op: fn(int, Request, map[str, str]) -> result[Response] = fn(n, r, vars) => ok(new Response { status: 204, headers: new list[Header], body: "" }); on_request("GET", "/jobs/{id}/events", op).segments[1] is "{id}"
+export fn on_request[C, E: effects](
+    method: str,
+    pattern: str,
+    op: fn(C, http.Request, map[str, str]) -> result[http.Response] uses E
+) -> Route[C, uses E] {
+    return new Route {
+        method: method,
+        pattern: pattern,
+        segments: split(slice(pattern, 1, len(pattern)), "/"),
+        run: op
     };
 }

@@ -1,0 +1,39 @@
+# web.on_request (spec 063): a route whose operation gets the request and the path variables. It is
+# matched like any route, answers 405 for another method, and a step that refuses means it never runs.
+import std.http;
+import std.web;
+
+fn events(n: int, r: http.Request, vars: map[str, str]) -> result[http.Response] {
+    var asked = "";
+    match http.request_header(r, "Accept") {
+        case some(v) {
+            set asked = v;
+        }
+        case none {
+        }
+    }
+    return ok(new http.Response { status: 200, headers: new list[http.Header], body: "job " + vars["id"] + " " + r.method + " " + asked });
+}
+
+fn token(n: int, t: str) -> result[str] {
+    if t == "good" {
+        return ok("ada");
+    }
+    return err("no");
+}
+
+fn show(app: web.App[int], r: http.Request) uses console {
+    let answer = web.handle_request(app, 0, r);
+    print(str(answer.status) + " " + answer.body);
+}
+
+fn main() uses console {
+    let routes = [web.on_request("GET", "/jobs/{id}/events", events)];
+    let open = web.web_app(routes);
+    show(open, web.with_header(web.request("GET", "/jobs/7/events", ""), "Accept", "text/event-stream"));
+    show(open, web.request("POST", "/jobs/7/events", ""));
+    show(open, web.request("GET", "/jobs/7", ""));
+    let guarded = new web.App[int] { routes: routes, steps: [web.bearer_auth("/jobs", token)], errors: new list[web.ErrorStatus] };
+    show(guarded, web.request("GET", "/jobs/8/events", ""));
+    show(guarded, web.with_header(web.request("GET", "/jobs/8/events", ""), "Authorization", "Bearer good"));
+}

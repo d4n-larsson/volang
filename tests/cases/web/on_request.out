@@ -1,0 +1,5 @@
+200 job 7 GET text/event-stream
+405 {"type":"about:blank","title":"Method Not Allowed","status":405,"detail":"POST is not allowed on /jobs/7/events; allowed: GET, HEAD"}
+404 {"type":"about:blank","title":"Not Found","status":404,"detail":"no route for /jobs/7"}
+401 {"type":"about:blank","title":"Unauthorized","status":401,"detail":"missing credentials in Authorization"}
+200 job 8 GET 

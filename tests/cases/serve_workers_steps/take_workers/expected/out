@@ -1,0 +1,37 @@
+$ read-open s
+HTTP/1.1 200 OK
+Content-Type: text/event-stream
+Cache-Control: no-store
+X-Accel-Buffering: no
+Connection: close
+Access-Control-Allow-Origin: *
+
+event: n
+id: 1
+data: 1
+
+event: n
+id: 2
+data: 2
+
+event: n
+id: 3
+data: 3
+
+
+--- end
+$ request GET /after
+HTTP/1.1 200 OK
+Content-Length: 12
+Connection: close
+
+plain /after
+--- end
+$ signal TERM
+serving
+stopped
+--- stderr
+{"time":"{time}","level":"info","message":"stopped","drain_s":30,"drained":0,"cut_off":0}
+--- exit 0
+$ no-children
+left-over processes: 0

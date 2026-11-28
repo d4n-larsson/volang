@@ -1,0 +1,25 @@
+$ request GET /events
+HTTP/1.1 503 Service Unavailable
+Content-Type: text/plain; charset=utf-8
+Retry-After: 5
+Content-Length: 101
+Connection: close
+
+too many open conversations: try again later (conversations need a server with at least two workers)
+
+--- end
+$ request GET /after
+HTTP/1.1 200 OK
+Content-Length: 12
+Connection: close
+
+plain /after
+--- end
+$ signal TERM
+serving
+stopped
+--- stderr
+{"time":"{time}","level":"info","message":"stopped","drain_s":30,"drained":0,"cut_off":0}
+--- exit 0
+$ no-children
+left-over processes: 0

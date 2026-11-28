@@ -1,0 +1,5 @@
+start vo run main.vo
+request GET /events
+request GET /after
+signal TERM
+no-children

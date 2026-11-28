@@ -1,0 +1,30 @@
+# With one worker a conversation would leave no worker for other requests: the stream is refused
+# with 503 and Retry-After, and the handler's function does not run.
+import std.http;
+import std.sse;
+
+fn numbers[E: effects](s: sse.EventStream[uses E]) -> result[void] uses E {
+    for i in 1..4 {
+        try map_err(sse.send_event(s, new sse.StreamEvent { name: "n", data: str(i), id: str(i) }), sse.stream_error_text);
+    }
+    return ok();
+}
+
+fn handle(r: http.Request) -> http.Response uses serve {
+    if r.path == "/events" {
+        let options = new sse.StreamOptions { headers: [new http.Header { name: "Access-Control-Allow-Origin", value: "*" }], max_open: 0 };
+        return sse.serve_events(r, options, numbers);
+    }
+    return new http.Response { status: 200, headers: new list[http.Header], body: "plain " + r.path };
+}
+
+fn main() -> result[void] uses console, serve("{vport}") {
+    print("serving");
+    try http.serve_workers("{vport}", 1, setup, fn(n, r) => handle(r));
+    print("stopped");
+    return ok();
+}
+
+fn setup() -> result[int] {
+    return ok(0);
+}
