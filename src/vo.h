@@ -377,7 +377,7 @@
  * function the call is written in, and nothing else. On a generic function called by name: its effect
  * parameters are bound to such parameters and nothing else (it passes them on). The scope walk of
  * src/rt_effects.c reads it. */
-#define NF_FX_PARAM (16384)
+#define NF_FX_PARAM (16384) /* (also on a standard-library N_FN at run time: loader.c std_runtime_grants) */
 #define NF_PAREN (256) /* expression written in parentheses (vo fmt keeps them around `and` in `or`) */
 
 /* builtin ids used outside check_expr.c (all ids: check_expr.c builtin_names) */
@@ -1651,6 +1651,7 @@ extern Type *ty_subst_bindings(Type *t, Node *owner, Type **bindings);
 extern Type *vcase_generic(Node *node, Node *decl, Node *payload_type_node, Type *expected);
 extern int ck_param_order(Type *t, Node *node);
 extern void infer_fix(Node *call, Diag *d);
+extern void lambda_fix_binding(Node *st, Type *t);
 extern Type *infer_from_use(Node *call, Str *name);
 
 /* src/compile.c */

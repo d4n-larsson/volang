@@ -168,6 +168,13 @@ before a run, so the run time cannot see that the effect is the parameter's. A g
 scopes of its own for that effect, calling such a library function on a value its caller passed in,
 therefore binds it. That refuses more, never less; no case in the repository meets it.
 
+**Closed afterwards** (the voledger experiment met it: a function declaring `file.read("imports/"), D`
+could not use the `sqlite.Database[uses D]` it was handed). `std_runtime_grants` marks a library function
+whose declaration is effect parameters only before clearing it (`NF_FX_PARAM` on the `N_FN`), and
+`path_first` starts with `carried` set in such a frame. The call that entered it decides the rest as
+before: marked (the caller handed its own parameter on) keeps it, anything else binds. Still conservative:
+an effect performed directly by an anonymous function written inside such a library function.
+
 ## R8. Proof by tests
 
 - Golden cases for P1 to P5 and L1 to L3, each with the same program for a function without an effect

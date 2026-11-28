@@ -24,6 +24,14 @@ may and may not change is in [`docs/stability.md`](docs/stability.md).
   stopped with R0010 naming the function, as a function without an effect parameter always was. What it
   is passed (`f`) still does what the caller may do. **This can stop a program that ran before.** If it
   does: widen the function's own scope to what its code touches, or pass that work in as a function.
+  **Fixed since:** such a function was also stopped when it called the standard library on a value its
+  caller passed in (`sqlite.query(db, ...)` with `db: Database[uses E]`); that is the caller's effect and
+  is no longer bound by the function's own scopes.
+- **Fixes that did not lead to a program that checks.** A bare name that is private in a module the file
+  already imports was E0204 with a fix that inserted the import again, beside a W0203 whose fix removed
+  it; it is now E0201 with the fix that qualifies the name (E0209 then exports the item). E0342 on
+  `let n = try sqlite.transaction(db, fn() -> result[int] { ... })` had no fix, and removing the type as
+  the message says left the call without its type; the fix now writes `let n: int = ...`.
 - **Bug sweep of the C code** ([docs/bug-sweep-2026-11-27.md](docs/bug-sweep-2026-11-27.md)): 48 findings
   fixed, among them `filter` reading outside a list its callback shrank, `set` on a function name passing
   the checker, a server ended by requests that only announce a body, and `vo package --repair` deleting

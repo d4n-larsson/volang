@@ -1329,6 +1329,18 @@ void suggest_import(Diag *d, Str *name, Node *node)
 {
     Str *path = find_import((int)node->file, name); /* "a.b.name" */
     if (!path) return;
+    long cut = path->len; /* the module's own name: the last part of the path */
+    while (cut > 0 && path->data[cut - 1] != '.') cut--;
+    Sym *ms = module_find(str_new(path->data + cut, path->len - cut));
+    if (ms && module_private_item(ms->slot, name)) {
+        /* already imported, and the item is private there: the qualify fix (the import is in use: no W0203,
+         * whose fix would remove it); the qualified name is then E0209, whose fix exports the item */
+        ms->decl->e.i++;
+        Str *full = msg("$1.$2", ms->name, name, 0);
+        d->msg = msg("`$1` is in `$2`: write `$3`.", name, module_label(ms->slot), full);
+        diag_add_fix(d, (int)node->file, node->start, node->end, full);
+        return;
+    }
     d->code = "E0204";
     d->msg = msg("`$1` is defined in another file but not imported: add `import $2;` and write `$2.$1`.", name, path, 0);
     SB *sb = sb_new();

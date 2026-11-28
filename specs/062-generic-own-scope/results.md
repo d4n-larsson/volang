@@ -52,8 +52,9 @@ run-to-run spread on this machine.
 
 ## Open points
 
-- Research R7a: a standard-library function performing an effect directly under its effect parameter is
-  bound by a generic caller's own scopes. Conservative; no case meets it.
+- Research R7a, closed afterwards (case `generic_own_library`): a standard-library function performing an
+  effect directly under its effect parameter is no longer bound by a generic caller's own scopes. Left:
+  an anonymous function inside such a library function that performs the effect itself.
 - No case for `process` and `net` scopes, nor inside `std.workers`.
 - Found on the way, outside this spec (docs/bug-sweep-2026-11-27.md, findings 39 to 48): with the stress
   build collecting at every allocation, ten uses of collected objects were found and fixed. None came

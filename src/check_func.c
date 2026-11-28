@@ -94,6 +94,44 @@ static void lambda_single_return(Node *node)
  * expected function type equal to the written types, the fix removes them; one that differs is today's
  * mismatch, reported by the caller, and no E0342 this round (FR-005). Without one, as the whole initializer
  * of an untyped `let`/`var`, the fix moves the types onto the binding; otherwise there is no fix. */
+static Diag *lt_diag; /* an E0342 without a fix, for an argument of the call an untyped `let` holds */
+static Node *lt_stmt, *lt_lambda;
+static long lt_he;
+static Str *lt_untyped;
+static Type *lt_ret; /* the return type it wrote */
+
+/* After `let x = [try] f(..., fn(a: T) -> R { ... })` is checked, when the function's types could not
+ * simply be removed (they are what fixes f's type argument): the fix moves the type to the binding,
+ * `let x: X = [try] f(..., fn(a) { ... })`, X being the type the statement has now. Only when f returns
+ * exactly what the function returns (`sqlite.transaction`), so that the binding's type gives it back. */
+void lambda_fix_binding(Node *st, Type *t)
+{
+    if (!lt_diag || lt_stmt != st) return;
+    Diag *d = lt_diag;
+    lt_diag = 0;
+    if (!t || ty_bad(t) || ty_is(t, TY_VOID)) return;
+    Node *call = st->c.n->kind == N_TRY ? st->c.n->a.n : st->c.n;
+    if (call->kind != N_CALL || !call->b.v || call->type != lt_ret) return;
+    long k = 0;
+    while (k < call->b.v->n && vec_get(call->b.v, k) != lt_lambda) k++;
+    if (k == call->b.v->n) return; /* not an argument of that call itself */
+    FileRec *f = file_get((int)st->file);
+    long at = -1;
+    if (st->a.n) at = (long)st->a.n->end;
+    if (at < 0) { /* `let _`: after the `_` */
+        at = st->start + 3;
+        while (at < f->len && f->text[at] == ' ') at++;
+        if (at >= f->len || f->text[at] != '_') return;
+        at++;
+    }
+    SB *r = sb_new();
+    sb_cstr(r, ": ");
+    sb_str(r, ty_name(t));
+    sb_bytes(r, f->text + at, lt_lambda->a.n->end - at); /* ` = try f(..., fn` */
+    sb_str(r, lt_untyped);
+    diag_add_fix(d, (int)st->file, at, lt_he, sb_finish(r));
+}
+
 static void lambda_types_written(Node *node, Type *expected)
 {
     Vec *params = node->b.v;
@@ -140,6 +178,15 @@ static void lambda_types_written(Node *node, Type *expected)
         return;
     }
     Node *st = ck_cur_stmt;
+    if (st && st->kind == N_LET && !st->b.n && st->c.n != node && expected && expected->b.t == t_collect) {
+        lt_diag = d; /* an argument whose return type is open: see lambda_fix_binding */
+        lt_ret = node->type;
+        lt_stmt = st;
+        lt_lambda = node;
+        lt_he = he;
+        lt_untyped = untyped;
+        return;
+    }
     if (!st || st->kind != N_LET || st->c.n != node || st->b.n || !st->a.n) return;
     for (long i = 0; i < params->n; i++) /* a type with an error in it is not one to write down */
         if (ty_bad(((Node *)vec_get(params, i))->type)) return;

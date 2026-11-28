@@ -1,0 +1,5 @@
+write imports/x.txt hi\n
+write data/y.txt other\n
+vo run main.vo
+vo run main.vo -- own
+vo run main.vo -- file

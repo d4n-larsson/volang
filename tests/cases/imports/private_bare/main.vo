@@ -1,0 +1,7 @@
+# A bare name that is private in a module this file imports: E0201 with the qualify fix, and no W0203 for
+# the import (then E0209 exports the item). Not E0204: its fix would insert the import a second time.
+import helpers;
+
+fn main() uses console {
+    print(helper());
+}

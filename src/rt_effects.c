@@ -309,8 +309,10 @@ static Frame *path_first(PathIt *it, long bit)
     }
     if (f == rt_root()) it->root_seen = 1;
     EffSet *own = f == rt_root() ? f->effects : frame_own(f);
-    /* performed by the body of a function that declares the effect only through its parameters */
-    it->carried = own && es_evar_count(own) && !((own->mask | own->any) & (unsigned long)bit);
+    /* performed by the body of a function that declares the effect only through its parameters (a
+     * standard-library one has no declaration left: std_runtime_grants marked it) */
+    it->carried = (own && es_evar_count(own) && !((own->mask | own->any) & (unsigned long)bit)) ||
+                  (f != rt_root() && f->fn->kind == N_FN && (f->fn->flags & NF_FX_PARAM));
     if (own && es_scoped(own, bit)) {
         it->set = own;
         return f;

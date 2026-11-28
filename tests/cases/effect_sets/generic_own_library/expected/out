@@ -1,0 +1,32 @@
+$ vo run main.vo
+5
+--- stderr
+--- exit 0
+$ vo run main.vo -- own
+6
+--- stderr
+main.vo:20:20: runtime error[R0010]: file.read("data/t.db") is not allowed: `own_database` declares file.read("imports/"), file.write("imports/"), D.
+  20 |     let mine = try sqlite.open("data/t.db");
+     |                    ^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at open (main.vo:20:20)
+      path: str = "data/t.db"
+  at own_database (main.vo:20:20)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }
+  at main (main.vo:30:23)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }
+--- exit 70
+$ vo run main.vo -- file
+7
+--- stderr
+std/fs.vo:125:12: runtime error[R0010]: file.read("data/y.txt") is not allowed: `count` declares file.read("imports/"), D.
+ 125 |     return __fsb(1, path, __bytes_of_text(""));
+     |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+trace:
+  at read_bytes (std/fs.vo:125:12)
+      path: str = "data/y.txt"
+  at count (main.vo:7:17)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }, file: str = "data/y.txt"
+  at main (main.vo:33:23)
+      db: Database[uses file.read, file.write] = new Database[uses file.read, file.write] { id: 0 }
+--- exit 70

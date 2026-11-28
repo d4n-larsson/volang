@@ -51,10 +51,17 @@ FILE:LINE:COL: runtime error[R0010]: file.read("b/y.txt") is not allowed: `g` de
 JSON: `effect`, `target`, `allowed` (the refusing function's own scopes for the effect), `declared_by`
 (the refusing function). For a generic function `allowed` lists the scopes it wrote, not its caller's.
 
+## Standard-library functions
+
+A standard-library function that declares effect parameters and nothing else (`sqlite.query(db, ...)`
+with `db: Database[uses E]`, `tcp.read(c)`) performs its effect as that parameter. A generic function
+that calls it on a value its caller passed in does not bind it; one that calls it on a value its own code
+made (a database it opened) does (case `generic_own_library`).
+
 ## Refuses more than the rule says
 
-A standard-library function that performs an effect directly under its effect parameter (research
-R7a) is bound by a generic caller's own scopes for that effect.
+An effect performed directly by an anonymous function written inside such a standard-library function
+is still bound by a generic caller's own scopes (research R7a).
 
 ## Not part of the contract
 

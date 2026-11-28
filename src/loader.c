@@ -88,7 +88,9 @@ long std_lookup(Str *path)
 
 /* Before a program runs: clears the declared effect sets of standard-library functions, so their
  * frames take their caller's grant (as anonymous functions do) and scopes such as net("localhost")
- * keep applying inside the library (spec 007 research R6). The checker is done with them. */
+ * keep applying inside the library (spec 007 research R6). The checker is done with them. A function
+ * that declared effect parameters and nothing else keeps a mark (NF_FX_PARAM, on the N_FN), so the scope
+ * walk knows that what its body performs is its caller's parameter at work (spec 062 research R7a). */
 void std_runtime_grants(void)
 {
     for (long i = 0; i < file_count; i++) {
@@ -99,7 +101,10 @@ void std_runtime_grants(void)
             Node *it = vec_get(items, j);
             if (it->kind != N_FN) continue;
             Fx *fx = item_fx(it);
-            if (fx) fx->declared = 0;
+            if (!fx) continue;
+            EffSet *d = fx->declared;
+            if (d && !d->mask && !d->any && !(d->scopes && d->scopes->n) && es_evar_count(d)) it->flags |= NF_FX_PARAM;
+            fx->declared = 0;
         }
     }
 }

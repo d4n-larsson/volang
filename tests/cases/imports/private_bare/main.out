@@ -1,0 +1,2 @@
+{"v":1,"kind":"diagnostic","code":"E0201","name":"undefined_name","severity":"error","file":"main.vo","start":{"line":6,"col":11},"end":{"line":6,"col":17},"text":"helper","message":"`helper` is in `helpers.vo`: write `helpers.helper`.","fixes":[{"file":"main.vo","start":{"line":6,"col":11},"end":{"line":6,"col":17},"replacement":"helpers.helper"}],"related":[]}
+{"v":1,"kind":"summary","command":"check","errors":1,"warnings":0,"truncated":0,"files":1}

@@ -623,6 +623,7 @@ static void check_let(Node *st)
         t = t_error;
     }
     st->type = t;
+    lambda_fix_binding(st, t);
     if (st->flags & NF_DISCARD) { /* `let _ = e;`: a result may not be discarded */
         st->e.i = -1;
         if (ty_is(t, TY_RESULT)) ck_err1("E0404", st->c.n, M_UNHANDLED, ty_name(t));

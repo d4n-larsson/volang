@@ -1,0 +1,36 @@
+# Spec 062 (research R7a): a generic function with scopes of its own calls standard-library functions on a value its caller passed in: what they perform is the caller's effect parameter at work, so the function's scopes do not bind it; they bind its own code.
+import std.fs;
+import std.sqlite;
+
+fn count[D: effects](db: sqlite.Database[uses D], file: str) -> result[int]
+    uses file.read("imports/"), D {
+    let b = try fs.read_bytes(file);
+    let none = new list[sqlite.Value];
+    let added: int = try sqlite.transaction(db, fn() {
+        let _ = try sqlite.exec(db, sqlite.sql("CREATE TABLE IF NOT EXISTS t (n INTEGER)"), none);
+        let _ = try sqlite.exec(db, sqlite.sql("INSERT INTO t VALUES (1)"), none);
+        return ok(1);
+    });
+    let rows = try sqlite.query(db, sqlite.sql("SELECT n FROM t"), none);
+    return ok(len(rows) + added + len(b));
+}
+
+fn own_database[D: effects](db: sqlite.Database[uses D]) -> result[int]
+    uses file.read("imports/"), file.write("imports/"), D {
+    let mine = try sqlite.open("data/t.db");
+    let rows = try sqlite.query(mine, sqlite.sql("SELECT n FROM t"), new list[sqlite.Value]);
+    return ok(len(rows));
+}
+
+fn main() -> result[void]
+    uses console, file.read("data/", "imports/"), file.write("data/", "imports/") {
+    let db = try sqlite.open("data/t.db");
+    print(str(try count(db, "imports/x.txt")));
+    if len(args()) > 0 and args()[0] == "own" {
+        print(str(try own_database(db)));
+    }
+    if len(args()) > 0 and args()[0] == "file" {
+        print(str(try count(db, "data/y.txt")));
+    }
+    return ok();
+}

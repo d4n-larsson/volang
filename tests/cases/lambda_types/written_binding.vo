@@ -1,0 +1,37 @@
+# The written return type is what fixes the call's type argument, and the call returns that type: the fix
+# moves the type to the binding (`let x: T = ...`). Without a binding, or when the call returns another
+# type, there is no fix.
+fn twice[T](f: fn() -> result[T]) -> result[T] {
+    return f();
+}
+
+fn count[T](f: fn() -> result[T]) -> int {
+    return 1;
+}
+
+fn work() -> result[int] {
+    let a = try twice(fn() -> result[int] {
+        return ok(1);
+    });
+    let b = twice(fn() -> result[int] {
+        return ok(2);
+    });
+    let _ = try twice(fn() -> result[int] {
+        return ok(3);
+    });
+    let c = count(fn() -> result[int] {
+        return ok(4);
+    });
+    return ok(a + c + try b);
+}
+
+fn main() uses console {
+    match work() {
+        case ok(n) {
+            print(str(n));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}
