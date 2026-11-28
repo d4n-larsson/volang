@@ -1,0 +1,11 @@
+# vo effects record: update with `vo effects --update`
+main.vo:main uses clock, serve("8090")
+main.vo:setup pure
+progress.vo:events_from pure
+progress.vo:follow uses clock, serve
+progress.vo:resume_from pure
+progress.vo:routes pure
+progress.vo:stream_job uses clock, E
+progress.vo:test "a job's events from the start" pure
+progress.vo:test "going on after the third step" pure
+progress.vo:test "the stream sends every event" uses clock

@@ -56,7 +56,7 @@ fn pick[T](xs: list[T]) -> result[T] uses random
 With `--json`, each item is a `doc` record with `signature`, `params`, `returns`, `effects`,
 `description` and `example`. The same pages are on this site: [std.json](../std/json.md),
 [std.time](../std/time.md), [std.text](../std/text.md), [std.random](../std/random.md),
-[std.http](../std/http.md), [std.tcp](../std/tcp.md), [std.bits](../std/bits.md), [std.decimal](../std/decimal.md), [std.lists](../std/lists.md), [std.workers](../std/workers.md), [std.log](../std/log.md), [std.metrics](../std/metrics.md) and [std.collections](../std/collections.md).
+[std.http](../std/http.md), [std.tcp](../std/tcp.md), [std.bits](../std/bits.md), [std.decimal](../std/decimal.md), [std.lists](../std/lists.md), [std.workers](../std/workers.md), [std.sse](../std/sse.md), [std.websocket](../std/websocket.md), [std.log](../std/log.md), [std.metrics](../std/metrics.md) and [std.collections](../std/collections.md). Event streams and WebSockets have a chapter of their own: [Events and WebSockets](events.md).
 
 ## Effects of library functions
 

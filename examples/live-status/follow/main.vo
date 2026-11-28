@@ -1,0 +1,55 @@
+# Follows job 7 on the live-status service until it is done. A lost connection is read again from the
+# last event seen (the service goes on from there), at most three times.
+#   vo run main.vo     with the service running (cd .. && vo run main.vo)
+#   vo test main.vo    when to read again, without a network
+import std.http;
+import std.sse;
+
+const url = "http://localhost:8090/jobs/7/events";
+
+# Whether to read again after an end: only after a lost connection or a silence.
+fn again(why: sse.EndReason) -> bool {
+    match why {
+        case broken {
+            return true;
+        }
+        case timed_out {
+            return true;
+        }
+        case ended {
+            return false;
+        }
+        case stopped {
+            return false;
+        }
+        case not_a_stream(_) {
+            return false;
+        }
+        case too_large {
+            return false;
+        }
+        case failed(_) {
+            return false;
+        }
+    }
+}
+
+fn main() -> result[void] uses console, net("localhost:8090") {
+    var last = "";
+    for _ in 0..3 {
+        let end = sse.read_events("GET", url, new list[http.Header], "", last, 5000, fn(e) {
+            print(e.name + ": " + e.data);
+            return ok(e.name != "done");
+        });
+        if not again(end.why) {
+            return ok();
+        }
+        set last = end.last_id;
+    }
+    return err("the stream was lost three times");
+}
+
+test "reads again only after a lost connection or a silence" {
+    expect(again(sse.EndReason.broken) and again(sse.EndReason.timed_out));
+    expect(not again(sse.EndReason.stopped) and not again(sse.EndReason.not_a_stream(404)));
+}

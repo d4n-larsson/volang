@@ -1,0 +1,83 @@
+# The progress of a job as events, and the route that streams it: pure work, tested without a network.
+import std.http;
+import std.sse;
+import std.time;
+import std.web;
+
+const steps = 5;
+const step_ms = 200;
+
+# The events of job from step `from` on: one "progress" event per step, then "done". Each id is its
+# step, so a client that lost the connection can go on after the last one it saw.
+export fn events_from(job: str, from: int) -> list[sse.StreamEvent] {
+    let out = new list[sse.StreamEvent];
+    for step in from + 1..1 + steps {
+        push(out, new sse.StreamEvent { name: "progress", data: "job " + job + ": step " + str(step) + " of " + str(steps), id: str(step) });
+    }
+    push(out, new sse.StreamEvent { name: "done", data: "job " + job + " is done", id: str(steps + 1) });
+    return out;
+}
+
+# The step to go on from, given the Last-Event-ID a client sent ("" or not a step: from the start).
+export fn resume_from(last_id: str) -> int {
+    match parse_int(last_id) {
+        case ok(n) {
+            if n >= 0 and n <= steps {
+                return n;
+            }
+            return 0;
+        }
+        case err(_) {
+            return 0;
+        }
+    }
+}
+
+# Sends the events one step apart. Written over any effect, so a test runs it on a scripted stream.
+export fn stream_job[E: effects](s: sse.EventStream[uses E], job: str, from: int) -> result[void] uses E, clock {
+    for e in events_from(job, from) {
+        try map_err(sse.send_event(s, e), sse.stream_error_text);
+        time.sleep(step_ms);
+    }
+    return ok();
+}
+
+fn follow(n: int, r: http.Request, vars: map[str, str]) -> result[http.Response] uses serve, clock {
+    let job = vars["id"];
+    var last = "";
+    match http.request_header(r, "Last-Event-ID") {
+        case some(v) {
+            set last = v;
+        }
+        case none {
+        }
+    }
+    let from = resume_from(last);
+    let options = new sse.StreamOptions { headers: new list[http.Header], max_open: 2 };
+    return ok(sse.serve_events(r, options, fn(s) => stream_job(s, job, from)));
+}
+
+# The service's routes: GET /jobs/ID/events streams that job's progress; at most two at a time.
+export fn routes() -> list[web.Route[int, uses serve, clock]] {
+    return [web.on_request("GET", "/jobs/{id}/events", follow)];
+}
+
+test "a job's events from the start" {
+    let events = events_from("7", 0);
+    expect(len(events) == 6);
+    expect(events[0].data == "job 7: step 1 of 5" and events[0].id == "1");
+    expect(events[5].name == "done" and events[5].id == "6");
+}
+
+test "going on after the third step" {
+    let events = events_from("7", resume_from("3"));
+    expect(len(events) == 3);
+    expect(events[0].id == "4");
+    expect(resume_from("x") == 0 and resume_from("99") == 0);
+}
+
+test "the stream sends every event" uses clock {
+    let s = sse.scripted_stream();
+    expect(stream_job(s, "7", 4) == ok());
+    expect(sse.sent_events(s) == events_from("7", 4));
+}

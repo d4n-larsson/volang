@@ -1,0 +1,16 @@
+# Live status: a service that streams a job's progress as server-sent events.
+#   vo run main.vo                  the service, on port 8090 of this machine
+#   (cd follow && vo run main.vo)   follows job 7 to its end
+#   vo test main.vo                 the progress and the stream, without a network
+import progress;
+import std.web;
+
+fn setup() -> result[int] {
+    return ok(0);
+}
+
+fn main() -> result[void] uses clock, serve("8090") {
+    let app = new web.App[int, uses serve, clock] { routes: progress.routes(), steps: new list[web.Step[int, uses serve, clock]], errors: new list[web.ErrorStatus] };
+    try web.serve_app("8090", 4, setup, app);
+    return ok();
+}

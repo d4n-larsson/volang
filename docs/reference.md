@@ -296,11 +296,11 @@ test "loads fixtures" uses file.read("fixtures/") { ... }
 | input | `read_line`, `read_all` |
 | file.read, file.write | `read_file`, `write_file`; `std.fs` |
 | file.delete | `std.fs.delete` and `rename` |
-| net | `std.http` (`get`, `post`), `std.tcp.connect` |
+| net | `std.http`, `std.tcp.connect`, `std.sse.read_events`, `std.websocket.ws_connect` |
 | clock | `now_ms`, `std.time.sleep`, `local_zone` |
 | random | `random_int` (seeded: not for secrets) |
 | env | `env` |
-| serve | `std.http.serve` (answering HTTP requests), `std.tcp.listen` |
+| serve | `std.http.serve`, `std.tcp.listen`, `serve_events`, `ws_accept` |
 | process | `std.process` (running other programs) |
 | entropy | `std.crypto.random_bytes`, `hash_password` (the system's random source) |
 | log | log records and metrics (std.log, std.metrics) |
@@ -1135,33 +1135,35 @@ A program is a thin shell over a pure core: `main` and the other functions with 
 
 | Module | Contents |
 |---|---|
-| std.json | `Json` values: `parse_json`, `write_json`, `write_json_pretty`, field readers; `to_json(v)`, `from_json(j)` for any `T: json` (strict: every problem as `path: reason`) |
+| std.json | `Json` values: `parse_json`, `write_json`, `write_json_pretty`, field readers; `to_json(v)`, `from_json(j)` for any `T: json` |
 | std.time | calendar times in UTC and zones (`load_zone`, `in_zone`), ISO 8601 text, durations (ms), `sleep` (clock) |
 | std.text | `replace`, `contains`, `pad_left`, `lines`, `words`, `char_count`, ... |
 | std.random | `unit`, `pick`, `shuffled` (random) |
-| std.http | HTTP(S) clients `get`, `post`, `send`, `send_stream` (net); servers `serve`, `serve_workers` (serve, HTTP only); `*_bytes` forms |
+| std.http | clients `get`, `post`, `send`, `send_stream` (net); servers `serve`, `serve_workers` (serve); `*_bytes` forms |
 | std.collections | neighbors (an `Option`) and ranges of the ordered collections, set algebra, deque fronts, `_by(cmp)` orders |
 | std.fs | `info`, `list_dir`, `walk`, `read_bytes`, `each_line` (file.read); `append_file`, `write_bytes`, `make_dir` (file.write); `delete`, `rename` (file.delete) |
 | std.process | `run`, `run_with`, `run_lines` (and `_bytes` forms): a program run to its end, no shell (process) |
 | std.bytes | text, ints, hex and base64 to and from `bytes`; `read_stdin`, `write_stdout` |
-| std.decimal | exact amounts: `parse_decimal`, arithmetic, `round_to` (a `Rounding` is always stated), `split_evenly`, ... |
+| std.decimal | exact amounts: `parse_decimal`, arithmetic, `round_to`, `split_evenly`, ... |
 | std.bits | `bit_and`, `shift_left`, `parse_hex`, ... on the 64-bit form of an `int` |
-| std.math | `sqrt`, `pow`, `exp`, `log`, trigonometry; `floor`, `ceil`, `round` to `int` (out of domain is R0007) |
+| std.math | `sqrt`, `pow`, `exp`, `log`, trigonometry; `floor`, `ceil`, `round` to `int` |
 | std.regex | `regex("...")` (checked by `vo check`), `parse_regex`, matching, `replace_matches` (`$1`), `split_on`: linear time |
 | std.sqlite | `open`, `open_readonly`, `open_memory` give a `Database[E]` with the file effects used (none in memory); `exec`, `query` (need `E`) with `sql("...")` (checked) and `?` parameters; `transaction`; `int_column` and other readers |
 | std.crypto | `sha256`, `hmac_sha256`, `same_bytes` (constant time); `random_bytes(n)`, `hash_password` (entropy); `verify_password` |
-| std.tcp | TCP as `bytes`: `connect`, `connect_tls`, `start_tls` (net), `listen`, `accept` (serve); `write_all`, `read`, `read_until`, `close_conn` on a `Conn[E]` (need `E`); `timeout_ms` 0 to 600000 on every wait (0: the most); `TcpError` |
+| std.tcp | TCP as `bytes`: `connect`, `connect_tls`, `start_tls` (net), `listen`, `accept` (serve); `write_all`, `read`, `read_until`, `close_conn` on a `Conn[E]` (need `E`); `timeout_ms` on every wait; `TcpError` |
 | std.option | `Option[T]` (`some`, `none`) for absence, `or_else`, `is_some`, `to_result` |
 | std.web | APIs over `serve_workers`: `web_app`, `on_get` (and other methods), `serve_app`, steps (`request_logs`, `request_metrics`), `metrics_route`, `health_routes`, `load_settings` |
 | std.log | JSON log records (`log`): `log_info(message, [field(name, v)])`, `log_warn`, `logged()` in tests; secret-like names redacted |
 | std.metrics | `counter`, `gauge`, `histogram`; `add_to`, `set_to`, `observe` (`log`); `metrics_text` |
 | std.security | access control for `std.web`: `policy(rules, ways, now)`, `rule(path, Access.signed_in)`, `secure`, ways `tokens`, `basic`, `browser(b)` (session cookie); `require_user` |
 | std.lists | `has_item`, `index_of`, `reversed`, `sort_by_desc`, `min_by`, `sum`, `group_by`, ... |
+| std.sse | event streams: `read_events` (net) calls `f` per event; `serve_events(r, options, f)` answers with one (serve) |
+| std.websocket | `ws_connect` (net), `ws_accept(r, options, f)` (serve); `send_text`, `receive_message`, `close_socket` on a `Socket[E]` |
 | std.workers | processes beside the program: `start_worker(f)`, `tell`, `receive(w, Wait.forever)`, `receive_first`, `stop_worker`, `with_deadline(ms, f)`; inside: `next_message`, `emit` |
 
 - A library function's effects work like a builtin's: the caller declares them, with any scope (E0501 otherwise), and the call runs with the caller's grant, so `uses net("localhost")` limits `std.http.get` to that host at run time (R0010). Library functions are not listed in `vo.effects`.
 - `https://` URLs are verified: the server's certificate must lead to an authority in the machine's trust store (or a file given with `--ca-file`), be valid and name the host, else an `err`. Nothing turns verification off. TLS 1.3 and 1.2 only. Replay needs no network.
-- `std.http.serve(address, handle)` calls `handle(request) -> Response` for one request at a time, in the order they arrive complete, until Ctrl-C or SIGTERM, then returns `ok()`. The caller declares `serve` with that address and the handler's effects. A handler's runtime error answers 500 and the server goes on; `--timeout` limits each handler call, not the server.
+- `std.http.serve(address, handle)` calls `handle(request) -> Response` for one request at a time, in the order they arrive complete, until Ctrl-C or SIGTERM, then returns `ok()`. A handler's runtime error answers 500 and the server goes on; `--timeout` limits each handler call, not the server.
 - `serve_workers(address, workers, setup, handle)` handles up to `workers` requests at once (1 to 64; `vo run --workers N` overrides it): each worker is a process that runs `setup() -> result[S]` once (open the database there) and then `handle(state, request)` for one request at a time. Requests share no memory: keep state in a database.
 - `std.web`: an app is `web_app([on_get("/notes/{id}", show), ...])` (or a `new App` with steps and error kinds); an operation is `fn(ctx: C, input: I) -> result[Response]`, `I` a record whose fields take the path variable of their name, the JSON body (field `body`), a header (`@header("Name")`) or the query parameter of their name, checked by its annotations (else a 400/415/422 problem). `err("not_found: detail")` answers 404 (also `bad_request`, `unauthorized`, `forbidden`, `conflict`, `gone`, `unprocessable`, and `App.errors`); other errors 500. An operation with a typed error is wrapped, `typed(op, answer)`, `answer` mapping each error to a `Problem { status, detail }`. Patterns are checked literals (E0330, E0331). `serve_app(address, workers, setup, app)` serves it; tests call `handle_request(app, ctx, request(method, path, body))`. Answers: `ok(json_reply(200, note))`, `created("/notes/7", note)`, `no_content()`. Bodies are JSON or an HTML form, whose fields bind like query parameters. Cookies: `read_cookie(header, name)`, `with_cookie(resp, cookie(name, value))` (HttpOnly, Secure, SameSite=Lax unless changed).
 - `std.process.run(program, args)` runs a program with no shell, no input and an empty environment and returns `Output { code, stdout, stderr }`; `run_with` adds input text, `NAME=value` variables and a working directory (`"./"`, or inside a `file.read` scope). A non-zero exit is `ok`. `--timeout` covers the program and everything it starts. A started program is not confined: `process("git")` grants whatever `git` can do.

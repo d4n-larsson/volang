@@ -1,0 +1,4 @@
+# vo effects record: update with `vo effects --update`
+main.vo:again pure
+main.vo:main uses console, net("localhost:8090")
+main.vo:test "reads again only after a lost connection or a silence" pure

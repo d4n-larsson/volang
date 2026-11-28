@@ -1,0 +1,21 @@
+{"v":1,"kind":"recording","program":"main.vo","fingerprint":"1189c3913c9d6a1e","seed":10545982463323,"clock_ms":null,"args":[]}
+{"v":1,"kind":"listen","address":"8090","result":"ok","value":5}
+{"v":1,"kind":"setup","worker":0}
+{"v":1,"kind":"setup_end"}
+{"v":1,"kind":"setup","worker":1}
+{"v":1,"kind":"setup_end"}
+{"v":1,"kind":"setup","worker":2}
+{"v":1,"kind":"setup_end"}
+{"v":1,"kind":"setup","worker":3}
+{"v":1,"kind":"setup_end"}
+{"v":1,"kind":"request","value":"GET /jobs/7/events HTTP/1.1\u000d\u000aHost: localhost:8090\u000d\u000aConnection: close\u000d\u000aUser-Agent: vo\u000d\u000aAccept: text/event-stream\u000d\u000a\u000d\u000a"}
+{"v":1,"kind":"serve_take","name":"request","result":"ok","value":""}
+{"v":1,"kind":"tcp_send","name":"request","result":"ok","value":""}
+{"v":1,"kind":"tcp_send","name":"request","result":"ok","value":""}
+{"v":1,"kind":"tcp_send","name":"request","result":"ok","value":""}
+{"v":1,"kind":"tcp_send","name":"request","result":"ok","value":""}
+{"v":1,"kind":"tcp_send","name":"request","result":"ok","value":""}
+{"v":1,"kind":"tcp_send","name":"request","result":"ok","value":""}
+{"v":1,"kind":"tcp_send","name":"request","result":"ok","value":""}
+{"v":1,"kind":"response","value":"HTTP/1.1 200 OK\u000d\u000aVo-End: done\u000d\u000aContent-Length: 0\u000d\u000aConnection: close\u000d\u000a\u000d\u000a"}
+{"v":1,"kind":"end","status":0}
