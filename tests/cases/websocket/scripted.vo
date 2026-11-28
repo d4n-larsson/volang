@@ -1,0 +1,82 @@
+import std.bytes;
+import std.http;
+import std.websocket;
+
+fn word(r: result[void, websocket.WsError]) -> str {
+    match r {
+        case ok() {
+            return "ok";
+        }
+        case err(e) {
+            return websocket.ws_error_text(e);
+        }
+    }
+}
+
+fn got(r: result[websocket.Message, websocket.WsError]) -> str {
+    match r {
+        case ok(m) {
+            match m {
+                case text(t) {
+                    return "text " + t;
+                }
+                case binary(b) {
+                    return "binary " + bytes.to_hex(b);
+                }
+            }
+        }
+        case err(e) {
+            return websocket.ws_error_text(e);
+        }
+    }
+}
+
+# A handler written over any effect: the same function serves a real socket and a scripted one.
+fn echo_upper[E: effects](s: websocket.Socket[uses E]) -> result[void] uses E {
+    while true {
+        match websocket.receive_message(s, 0) {
+            case ok(m) {
+                match m {
+                    case text(t) {
+                        try map_err(websocket.send_text(s, upper(t)), websocket.ws_error_text);
+                    }
+                    case binary(b) {
+                        try map_err(websocket.send_binary(s, b), websocket.ws_error_text);
+                    }
+                }
+            }
+            case err(e) {
+                return ok();
+            }
+        }
+    }
+}
+
+# Scripted sockets give their messages, then closed (1000); what is sent is kept; a closed socket
+# answers every call the same way. Nothing here needs an effect.
+fn main() uses console {
+    let s = websocket.scripted_socket([websocket.Message.text("hi"), websocket.Message.binary(bytes.from_ints([1, 255]))]);
+    print(got(websocket.receive_message(s, 0)));
+    print(got(websocket.receive_message(s, 10)));
+    print(got(websocket.receive_message(s, 0)));
+    print(got(websocket.receive_message(s, 0)));
+    print(word(websocket.send_text(s, "late")));
+    print(str(len(websocket.sent_messages(s))) + " " + str(websocket.pongs(s)));
+    let t = websocket.scripted_socket([websocket.Message.text("a"), websocket.Message.text("b")]);
+    print(word(websocket.ping(t)));
+    print(word(websocket.send_text(t, "x")));
+    print(word(websocket.close_socket(t, 4001, "custom")));
+    print(word(websocket.close_socket(t, 1000, "")));
+    print(got(websocket.receive_message(t, 0)));
+    print(word(websocket.send_binary(t, bytes.from_text("y"))));
+    print(str(websocket.sent_messages(t) == [websocket.Message.text("x")]));
+    let h = websocket.scripted_socket([websocket.Message.text("one"), websocket.Message.text("two")]);
+    match echo_upper(h) {
+        case ok() {
+            print(str(websocket.sent_messages(h) == [websocket.Message.text("ONE"), websocket.Message.text("TWO")]));
+        }
+        case err(e) {
+            print(e);
+        }
+    }
+}

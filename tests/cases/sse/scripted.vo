@@ -1,0 +1,54 @@
+import std.http;
+import std.sse;
+
+fn did(r: result[void, sse.StreamError]) -> str {
+    match r {
+        case ok() {
+            return "ok";
+        }
+        case err(e) {
+            return sse.stream_error_text(e);
+        }
+    }
+}
+
+# A route's stream function written over any effect: run here on a scripted stream, with no effect.
+fn countdown[E: effects](s: sse.EventStream[uses E]) -> result[void] uses E {
+    for i in 0..3 {
+        try map_err(sse.send_event(s, new sse.StreamEvent { name: "tick", data: str(3 - i), id: str(i) }), sse.stream_error_text);
+        try map_err(sse.keep_alive(s), sse.stream_error_text);
+    }
+    return ok();
+}
+
+# Scripted streams keep what is sent; names and ids with line breaks are refused; outside a running
+# server serve_events answers 500 and does not call the function.
+fn main() uses console, serve {
+    let s = sse.scripted_stream();
+    match countdown(s) {
+        case ok() {
+            for e in sse.sent_events(s) {
+                print(e.name + " " + e.data + " " + e.id);
+            }
+        }
+        case err(m) {
+            print(m);
+        }
+    }
+    print(did(sse.send_event(s, new sse.StreamEvent { name: "a\rb", data: "", id: "" })));
+    print(did(sse.send_event(s, new sse.StreamEvent { name: "", data: "", id: "1\n2" })));
+    print(did(sse.send_event(s, new sse.StreamEvent { name: "", data: "", id: "x" + chr(0) })));
+    print(did(sse.send_event(s, new sse.StreamEvent { name: "", data: "line\nbreaks\r\nare fine", id: "" })));
+    print(str(len(sse.sent_events(s))));
+    let r = new http.Request { method: "GET", path: "/events", query: "", headers: new list[http.Header], body: "" };
+    let called = new list[int];
+    let answer = sse.serve_events(r, new sse.StreamOptions { headers: new list[http.Header], max_open: 0 }, fn(stream) {
+        push(called, 1);
+        return ok();
+    });
+    print(str(answer.status) + " " + str(len(called)) + " " + answer.body);
+    let bad = sse.serve_events(r, new sse.StreamOptions { headers: new list[http.Header], max_open: 64 }, fn(stream) => ok());
+    print(str(bad.status) + " " + bad.body);
+    let worse = sse.serve_events(r, new sse.StreamOptions { headers: [new http.Header { name: "Content-Type", value: "x" }], max_open: 0 }, fn(stream) => ok());
+    print(str(worse.status) + " " + worse.body);
+}

@@ -1,0 +1,10 @@
+failed: not an http:// or https:// URL: ftp://x/ | 7 | -1
+failed: invalid: the time limit must be 0 to 600000 ms
+failed: bad method `get`: capital letters only, as in `GET`
+failed: bad header name `X
+Y`: letters, digits, `-` and `_` only
+the client has gone
+the client took nothing for 30 seconds
+the server is stopping
+invalid: what
+the time limit passed

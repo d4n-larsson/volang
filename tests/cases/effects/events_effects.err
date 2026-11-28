@@ -1,0 +1,17 @@
+events_effects.vo:6:4: error[E0501]: `talk` does not declare net, which it needs.
+   6 | fn talk() -> str {
+     |    ^^^^
+  fix: insert `uses net `
+events_effects.vo:18:4: error[E0501]: `listen` does not declare net, which it needs.
+  18 | fn listen() -> str {
+     |    ^^^^^^
+  fix: insert `uses net `
+events_effects.vo:23:4: error[E0501]: `answer` does not declare serve, which it needs.
+  23 | fn answer(r: http.Request) -> http.Response {
+     |    ^^^^^^
+  fix: insert `uses serve `
+events_effects.vo:27:4: error[E0501]: `main` does not declare net, which it needs.
+  27 | fn main() uses console {
+     |    ^^^^
+  fix: replace with `uses console, net `
+4 errors, 0 warnings

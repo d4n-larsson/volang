@@ -1,0 +1,14 @@
+tick 3 0
+tick 2 1
+tick 1 2
+invalid: a line break or NUL in the name or the id
+invalid: a line break or NUL in the name or the id
+invalid: a line break or NUL in the name or the id
+ok
+4
+500 0 an event stream can only be answered by a running server's handler
+
+500 invalid stream options: max_open must be 0 to 63
+
+500 invalid stream options: header `Content-Type` is set by std.sse
+

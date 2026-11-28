@@ -1,0 +1,37 @@
+import std.sse;
+
+fn show(label: str, text: str) uses console {
+    let events = sse.parse_events(text);
+    print(label + ": " + str(len(events)));
+    for e in events {
+        print("  [" + e.name + "] [" + e.data + "] [" + e.id + "]");
+    }
+}
+
+# The event stream format of the HTML standard, case by case: line ends, fields, data, ids, comments.
+fn main() uses console {
+    show("lf", "data: a\n\n");
+    show("crlf", "data: a\r\n\r\n");
+    show("cr", "data: a\r\rdata: b\r\r");
+    show("mixed ends", "data: a\r\ndata: b\rdata: c\n\n");
+    show("bom", "\u{FEFF}data: a\n\n");
+    show("second bom kept", "\u{FEFF}\u{FEFF}data: a\n\n");
+    show("comments", ": one\n:two\ndata: a\n: three\n\n");
+    show("multi-line data", "data: a\ndata: b\ndata\ndata: c\n\n");
+    show("empty data", "data\n\ndata:\n\n");
+    show("leading space once", "data:  two spaces\ndata:none\n\n");
+    show("field without colon", "data\nevent\n\n");
+    show("event name", "event: tick\ndata: 1\n\ndata: 2\n\n");
+    show("empty event name", "event:\ndata: 1\n\n");
+    show("name without data", "event: lonely\n\ndata: next\n\n");
+    show("unknown fields", "dat: x\nDATA: y\nfoo: bar\ndata: a\n\n");
+    show("id kept", "id: 1\ndata: a\n\ndata: b\n\n");
+    show("id reset", "id: 1\ndata: a\n\nid\ndata: b\n\n");
+    show("id with nul", "id: 1\ndata: a\n\nid: x\u{0}y\ndata: b\n\n");
+    show("retry is not data", "retry: 1000\ndata: a\n\n");
+    show("no final empty line", "data: a\n\ndata: b");
+    show("no final empty line, ended line", "data: a\n\ndata: b\n");
+    show("colon in value", "data: a: b\n\n");
+    show("nothing", "");
+    show("utf-8", "data: ångström ✓\n\n");
+}

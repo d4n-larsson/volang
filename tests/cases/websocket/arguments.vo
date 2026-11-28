@@ -1,0 +1,72 @@
+import std.http;
+import std.websocket;
+
+fn word(r: result[void, websocket.WsError]) -> str {
+    match r {
+        case ok() {
+            return "ok";
+        }
+        case err(e) {
+            return websocket.ws_error_text(e);
+        }
+    }
+}
+
+fn opened(r: result[websocket.Socket[uses net], websocket.WsError]) -> str {
+    match r {
+        case ok(_) {
+            return "ok";
+        }
+        case err(e) {
+            return websocket.ws_error_text(e);
+        }
+    }
+}
+
+fn options(headers: list[http.Header], protocols: list[str], max_message: int) -> websocket.ConnectOptions {
+    return new websocket.ConnectOptions { headers: headers, protocols: protocols, max_message: max_message };
+}
+
+# Every argument out of range is an error value before anything is opened.
+fn main() uses console, net("127.0.0.1:1") {
+    let none = new list[http.Header];
+    let no = new list[str];
+    print(opened(websocket.ws_connect("http://127.0.0.1:1/", options(none, no, 0), 1000)));
+    print(opened(websocket.ws_connect("ws://127.0.0.1:0/", options(none, no, 0), 1000)));
+    print(opened(websocket.ws_connect("ws://127.0.0.1:x/", options(none, no, 0), 1000)));
+    print(opened(websocket.ws_connect("ws:// 127.0.0.1:1/", options(none, no, 0), 1000)));
+    print(opened(websocket.ws_connect("ws://127.0.0.1:1/", options(none, no, 16777217), 1000)));
+    print(opened(websocket.ws_connect("ws://127.0.0.1:1/", options(none, no, -1), 1000)));
+    print(opened(websocket.ws_connect("ws://127.0.0.1:1/", options(none, no, 0), 600001)));
+    print(opened(websocket.ws_connect("ws://127.0.0.1:1/", options([new http.Header { name: "Sec-WebSocket-Key", value: "x" }], no, 0), 1000)));
+    print(opened(websocket.ws_connect("ws://127.0.0.1:1/", options([new http.Header { name: "Host", value: "x" }], no, 0), 1000)));
+    print(opened(websocket.ws_connect("ws://127.0.0.1:1/", options([new http.Header { name: "X-A", value: "a\nb" }], no, 0), 1000)));
+    print(opened(websocket.ws_connect("ws://127.0.0.1:1/", options(none, ["chat room"], 0), 1000)));
+    let s = websocket.scripted_socket(new list[websocket.Message]);
+    for code in [999, 1004, 1005, 1006, 1012, 1015, 2999, 5000] {
+        print(str(code) + " " + word(websocket.close_socket(s, code, "")));
+    }
+    print(word(websocket.close_socket(s, 1000, "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123")));
+    print(word(websocket.close_socket(s, 1008, "policy")));
+    match websocket.receive_message(websocket.scripted_socket(new list[websocket.Message]), -1) {
+        case ok(_) {
+            print("ok");
+        }
+        case err(e) {
+            print(websocket.ws_error_text(e));
+        }
+    }
+    for e in [
+        websocket.WsError.nothing_in_time,
+        websocket.WsError.closed { code: 1000, reason: "" },
+        websocket.WsError.broken,
+        websocket.WsError.protocol("how"),
+        websocket.WsError.not_text,
+        websocket.WsError.too_large,
+        websocket.WsError.stopping,
+        websocket.WsError.refused(404),
+        websocket.WsError.invalid("what")
+    ] {
+        print(websocket.ws_error_text(e));
+    }
+}

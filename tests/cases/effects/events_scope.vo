@@ -1,0 +1,19 @@
+# Spec 063: a WebSocket to a host outside the function's net scope stops with R0010 before connecting.
+import std.http;
+import std.websocket;
+
+fn talk(url: str) -> str uses net("a.example:443") {
+    let options = new websocket.ConnectOptions { headers: new list[http.Header], protocols: new list[str], max_message: 0 };
+    match websocket.ws_connect(url, options, 1000) {
+        case ok(_) {
+            return "ok";
+        }
+        case err(e) {
+            return websocket.ws_error_text(e);
+        }
+    }
+}
+
+fn main() uses console, net {
+    print(talk("wss://b.example/chat"));
+}

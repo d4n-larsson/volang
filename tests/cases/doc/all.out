@@ -127,3 +127,5 @@ modules:
   std.workers Processes that run beside the program and exchange messages with it.
   std.log Log records: one JSON object per line on stderr, with time, level, message, the request's id and fields.
   std.metrics Counters, gauges and histograms an operator reads in the text exposition format 0.0.4 (Prometheus).
+  std.sse Server-sent events: reading an event stream (needs net) and answering a request with one (needs serve).
+  std.websocket WebSocket conversations (RFC 6455): connecting to ws:// and wss:// addresses (needs net) and accepting them in a handler (needs serve).

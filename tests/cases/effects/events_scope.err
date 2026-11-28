@@ -1,0 +1,13 @@
+std/tcp.vo:157:26: runtime error[R0010]: net("b.example:443") is not allowed: `talk` declares net("a.example:443").
+ 157 |     let id = try map_err(__tcp(2, port, host), fail);
+     |                          ^^^^^^^^^^^^^^^^^^^^
+trace:
+  at connect_tls (std/tcp.vo:157:26)
+      host: str = "b.example", port: int = 443, timeout_ms: int = 1000
+  at dial (std/websocket.vo:807:16)
+      t: Target = new Target { tls: true, host: "b.example", port: 443, path: "/chat" }, wait: int = 1000
+  at ws_connect (std/websocket.vo:888:25)
+      url: str = "wss://b.example/chat", options: ConnectOptions = new ConnectOptions { headers: [], protocols: [], max_message: 0 }, timeout_ms: int = 1000, t: Target = new Target { tls: true, host: "b.example", port: 443, path: "/chat" }, limit: int = 1048576, wait: int = 1000
+  at talk (events_scope.vo:7:11)
+      url: str = "wss://b.example/chat", options: ConnectOptions = new ConnectOptions { headers: [], protocols: [], max_message: 0 }
+  at main (events_scope.vo:18:11)

@@ -1,0 +1,1204 @@
+# std.websocket: WebSocket conversations (RFC 6455): connecting to ws:// and wss:// addresses (needs net) and accepting them in a handler (needs serve).
+# Part of the vo standard library. Import the module, `import std.websocket;`, and write its items as `websocket.NAME`.
+# A conversation exchanges whole text and binary messages in both directions until one side closes it.
+# The handshake, frames, masking, fragments, pings and the closing exchange are done here: a program
+# sends and receives messages. A socket's type names the effect it was opened under (`Socket[uses net]`
+# from ws_connect, `Socket[uses serve]` from ws_accept), as std.tcp's connections do; write the code that
+# talks over any effect, `fn chat[E: effects](s: Socket[uses E]) -> result[void] uses E`, and a test can
+# run it on a scripted socket. A message is at most 1 MiB unless the options say otherwise (up to 16 MiB).
+# Everything received is recorded (`vo run --record`), and `vo replay` opens no connection.
+# ponytail: whole messages only, one frame each way, no extensions (no compression); a message is held
+# in memory whole, so 16 MiB is the most.
+
+import std.bytes;
+import std.http;
+import std.option;
+import std.tcp;
+
+# A whole message: text (always UTF-8) or binary.
+#     Message.text("hi") == Message.binary(bytes.from_text("hi")) is false
+export variant Message {
+    # A text message.
+    text(str);
+    # A binary message.
+    binary(bytes);
+}
+
+# What ws_connect sends with the handshake, and the largest message it takes.
+#     new ConnectOptions { headers: new list[http.Header], protocols: new list[str], max_message: 0 }.max_message is 0
+export record ConnectOptions {
+    # Headers for the handshake request (a token); not Host, Upgrade, Connection or Sec-WebSocket-*.
+    headers: list[http.Header];
+    # Sub-protocols to offer, the preferred first; the server chooses one or none.
+    protocols: list[str];
+    # The largest message received, in bytes: 0 means 1 MiB; at most 16777216.
+    max_message: int;
+}
+
+# What ws_accept accepts: origins, sub-protocols, the largest message, and the bound on open conversations.
+#     new AcceptOptions { origins: ["https://app.example"], protocols: new list[str], max_message: 0, max_open: 0 }.origins[0] is "https://app.example"
+export record AcceptOptions {
+    # The origins whose browser pages may connect ("https://app.example", exactly as browsers send it); [] accepts only requests without an Origin (other programs); ["*"] accepts every origin.
+    origins: list[str];
+    # Sub-protocols this route speaks: the first of the client's that is here is chosen.
+    protocols: list[str];
+    # The largest message received, in bytes: 0 means 1 MiB; at most 16777216.
+    max_message: int;
+    # How many conversations of this route the server holds at once (1 to 63); 0: half its workers.
+    max_open: int;
+}
+
+# A conversation: from ws_connect (Socket[uses net]), from ws_accept (Socket[uses serve]), or scripted for tests (Socket).
+#     len(sent_messages(scripted_socket(new list[Message]))) is 0
+export record Socket[E: effects] {
+    # The connection; not for the program to use.
+    conn: tcp.Conn[uses E];
+    # The sub-protocol the server chose, or "".
+    protocol: str;
+    # Whether this side is the client (it masks what it sends).
+    client: bool;
+    # 0 while open; then 1 closed, 2 broken, 3 stopping.
+    state: int;
+    # The closing code and reason, once closed.
+    code: int;
+    # The closing reason, once closed.
+    reason: str;
+    # How many answers to pings have arrived.
+    pong_count: int;
+    # The largest message received, in bytes.
+    limit: int;
+    # The parts of a message not yet complete, and its kind (1 text, 2 binary; 0 none).
+    parts: list[bytes];
+    # The kind of the message in parts.
+    kind: int;
+    # The bytes in parts.
+    parts_len: int;
+    # Whether the socket is scripted (connected to nothing).
+    scripted: bool;
+    # What was sent to a scripted socket.
+    sent: list[Message];
+    # What a scripted socket still has to give.
+    incoming: list[Message];
+}
+
+# Why a WebSocket operation gave no value.
+#     ws_error_text(WsError.closed { code: 1000, reason: "bye" }) is "the conversation was closed (1000 bye)"
+export variant WsError {
+    # No message within the time limit; the socket is still usable.
+    nothing_in_time;
+    # The conversation was closed, by the other side or by this one: the code and reason. Every later call says the same.
+    closed {
+        # The closing code: 1000 normal, 1001 going away, 1006 when no close arrived, ...
+        code: int;
+        # The closing reason, often "".
+        reason: str;
+    }
+    # The connection was lost without a close, or a frame stayed half sent for 30 seconds.
+    broken;
+    # The other side broke the protocol: how. The conversation was closed with code 1002.
+    protocol(str);
+    # A text message was not UTF-8. The conversation was closed with code 1007.
+    not_text;
+    # A message was larger than the limit. The conversation was closed with code 1009.
+    too_large;
+    # The server is stopping. The conversation was closed with code 1001.
+    stopping;
+    # ws_connect: the server did not agree to a WebSocket; its status (0: it answered something else).
+    refused(int);
+    # ws_connect: the connection or TLS failed.
+    connect(tcp.TcpError);
+    # An argument is out of range: which one.
+    invalid(str);
+}
+
+# A sentence saying what e means.
+#     ws_error_text(WsError.connect(tcp.TcpError.refused)) is "could not connect: the connection was refused"
+@allow("W0702", "one module per import path: std.websocket is one file")
+export fn ws_error_text(e: WsError) -> str {
+    match e {
+        case nothing_in_time {
+            return "nothing arrived within the time limit";
+        }
+        case closed(c) {
+            if c.reason == "" {
+                return "the conversation was closed (" + str(c.code) + ")";
+            }
+            return "the conversation was closed (" + str(c.code) + " " + c.reason + ")";
+        }
+        case broken {
+            return "the connection was lost";
+        }
+        case protocol(what) {
+            return "the other side broke the WebSocket protocol: " + what;
+        }
+        case not_text {
+            return "a text message was not UTF-8";
+        }
+        case too_large {
+            return "a message was larger than the limit";
+        }
+        case stopping {
+            return "the server is stopping";
+        }
+        case refused(status) {
+            return "the server did not accept a WebSocket (status " + str(status) + ")";
+        }
+        case connect(why) {
+            return "could not connect: " + tcp.tcp_error_text(why);
+        }
+        case invalid(what) {
+            return "invalid: " + what;
+        }
+    }
+}
+
+# ---- limits and small helpers ----
+
+const default_limit = 1048576;
+const most_limit = 16777216;
+const rest_ms = 30000;
+const close_wait_ms = 5000;
+const guid = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+
+fn no_bytes() -> bytes {
+    return bytes.from_text("");
+}
+
+fn wait_of(timeout_ms: int) -> int {
+    if timeout_ms == 0 {
+        return 600000;
+    }
+    return timeout_ms;
+}
+
+fn limit_of(max_message: int) -> result[int, WsError] {
+    if max_message == 0 {
+        return ok(default_limit);
+    }
+    if max_message < 1 or max_message > most_limit {
+        return err(WsError.invalid("max_message must be 0 or 1 to 16777216"));
+    }
+    return ok(max_message);
+}
+
+fn closed_error[E: effects](s: Socket[uses E]) -> WsError {
+    # What every call answers once the socket is not open.
+    if s.state == 2 {
+        return WsError.broken;
+    }
+    if s.state == 3 {
+        return WsError.stopping;
+    }
+    return WsError.closed { code: s.code, reason: s.reason };
+}
+
+# A socket connected to nothing, for tests: receive_message gives the messages of incoming in order,
+# then closed (1000); what is sent is kept for sent_messages. Needs no effect.
+#     let s = scripted_socket([Message.text("hi")]); receive_message(s, 0) == ok(Message.text("hi")) is true
+export fn scripted_socket(incoming: list[Message]) -> Socket {
+    return new Socket {
+        conn: new tcp.Conn { id: 0, peer: "" },
+        protocol: "",
+        client: true,
+        state: 0,
+        code: 0,
+        reason: "",
+        pong_count: 0,
+        limit: default_limit,
+        parts: new list[bytes],
+        kind: 0,
+        parts_len: 0,
+        scripted: true,
+        sent: new list[Message],
+        incoming: slice(incoming, 0, len(incoming))
+    };
+}
+
+# The messages sent to a scripted socket, in order (none for a connected one).
+#     let s = scripted_socket(new list[Message]); let sent = send_text(s, "a") == ok(); sent and sent_messages(s) == [Message.text("a")] is true
+export fn sent_messages[E: effects](s: Socket[uses E]) -> list[Message] {
+    return slice(s.sent, 0, len(s.sent));
+}
+
+# How many answers to this side's pings have arrived so far.
+#     pongs(scripted_socket(new list[Message])) is 0
+export fn pongs[E: effects](s: Socket[uses E]) -> int {
+    return s.pong_count;
+}
+
+# ---- sending ----
+
+fn frame_head(opcode: int, size: int, masked: bool) -> bytes {
+    # The first bytes of a frame that holds a whole message (or a control frame).
+    var mask_bit = 0;
+    if masked {
+        set mask_bit = 128;
+    }
+    let out = [128 + opcode];
+    if size < 126 {
+        push(out, mask_bit + size);
+    } else if size < 65536 {
+        push(out, mask_bit + 126);
+        push(out, size / 256);
+        push(out, size % 256);
+    } else {
+        push(out, mask_bit + 127);
+        for k in 0..8 {
+            push(out, (size / power256(7 - k)) % 256);
+        }
+    }
+    return bytes.from_ints(out);
+}
+
+fn power256(n: int) -> int {
+    var p = 1;
+    for _ in 0..n {
+        set p = p * 256;
+    }
+    return p;
+}
+
+fn send_frame[E: effects](s: Socket[uses E], opcode: int, payload: bytes) -> result[void, WsError] uses E {
+    # One frame: masked with a fresh key by a client, plain from a server; within 30 s.
+    var data = no_bytes();
+    if s.client {
+        let key = __ws(1 + 8 * 4, no_bytes(), no_bytes());
+        set data = frame_head(opcode, len(payload), true) + key + __ws(2, payload, key);
+    } else {
+        set data = frame_head(opcode, len(payload), false) + payload;
+    }
+    match tcp.write_all(s.conn, data, rest_ms) {
+        case ok() {
+            return ok();
+        }
+        case err(e) {
+            if e == stop_signal() {
+                return err(server_stops(s));
+            }
+            set s.state = 2;
+            tcp.close_conn(s.conn);
+            return err(WsError.broken);
+        }
+    }
+}
+
+fn send_message[E: effects](s: Socket[uses E], m: Message) -> result[void, WsError] uses E {
+    if s.state != 0 {
+        return err(closed_error(s));
+    }
+    if s.scripted {
+        push(s.sent, m);
+        return ok();
+    }
+    match m {
+        case text(t) {
+            return send_frame(s, 1, bytes.from_text(t));
+        }
+        case binary(b) {
+            return send_frame(s, 2, b);
+        }
+    }
+}
+
+# Sends text as one message.
+#     let s = scripted_socket(new list[Message]); send_text(s, "hello") == ok() is true
+export fn send_text[E: effects](s: Socket[uses E], text: str) -> result[void, WsError] uses E {
+    return send_message(s, Message.text(text));
+}
+
+# Sends data as one binary message.
+#     let s = scripted_socket(new list[Message]); send_binary(s, bytes.from_text("x")) == ok() is true
+export fn send_binary[E: effects](s: Socket[uses E], data: bytes) -> result[void, WsError] uses E {
+    return send_message(s, Message.binary(data));
+}
+
+# Sends a ping; the other side's answer is counted by pongs once a receive has read it.
+#     ping(scripted_socket(new list[Message])) == ok() is true
+export fn ping[E: effects](s: Socket[uses E]) -> result[void, WsError] uses E {
+    if s.state != 0 {
+        return err(closed_error(s));
+    }
+    if s.scripted {
+        return ok();
+    }
+    return send_frame(s, 9, no_bytes());
+}
+
+fn close_payload(code: int, reason: str) -> bytes {
+    return bytes.from_ints([code / 256, code % 256]) + bytes.from_text(reason);
+}
+
+fn code_may_be_sent(code: int) -> bool {
+    return (code >= 1000 and code <= 1003) or (code >= 1007 and code <= 1011) or (code >= 3000 and code <= 4999);
+}
+
+# Closes the conversation with code and reason: sends the close, waits up to 5 seconds for the other
+# side's, and closes the connection. Harmless to repeat (ok). `code` is 1000 (normal) to 1003, 1007 to
+# 1011, or 3000 to 4999; `reason` at most 123 bytes; otherwise invalid, and nothing is sent.
+#     close_socket(scripted_socket(new list[Message]), 1000, "") == ok() is true
+#     close_socket(scripted_socket(new list[Message]), 1005, "") == err(WsError.invalid("the code must be 1000 to 1003, 1007 to 1011 or 3000 to 4999")) is true
+export fn close_socket[E: effects](s: Socket[uses E], code: int, reason: str) -> result[void, WsError] uses E {
+    if not code_may_be_sent(code) {
+        return err(WsError.invalid("the code must be 1000 to 1003, 1007 to 1011 or 3000 to 4999"));
+    }
+    if len(reason) > 123 {
+        return err(WsError.invalid("the reason is longer than 123 bytes"));
+    }
+    if s.state != 0 {
+        return ok();
+    }
+    set s.state = 1;
+    set s.code = code;
+    set s.reason = reason;
+    if s.scripted {
+        return ok();
+    }
+    match send_frame(s, 8, close_payload(code, reason)) {
+        case ok() {
+            await_close(s);
+        }
+        case err(_) {
+        }
+    }
+    set s.state = 1;
+    tcp.close_conn(s.conn);
+    return ok();
+}
+
+fn await_close[E: effects](s: Socket[uses E]) uses E {
+    # Reads until the other side's close arrives, nothing comes for 5 seconds, or the connection ends.
+    for _ in 0..10000 {
+        match read_frame(s, close_wait_ms) {
+            case ok(f) {
+                if f.opcode == 8 {
+                    return;
+                }
+            }
+            case err(_) {
+                return;
+            }
+        }
+    }
+}
+
+# ---- receiving ----
+
+record Frame {
+    fin: bool;
+    opcode: int;
+    payload: bytes;
+}
+
+fn fail[E: effects](s: Socket[uses E], code: int, e: WsError) -> WsError uses E {
+    # The other side broke the rules: close with code (as far as the connection still takes it) and give e.
+    set s.state = 1;
+    set s.code = code;
+    set s.reason = "";
+    send_quietly(s, frame_head_for(s, 8, close_payload(code, "")));
+    tcp.close_conn(s.conn);
+    return e;
+}
+
+fn send_quietly[E: effects](s: Socket[uses E], data: bytes) uses E {
+    # A close frame on the way out: if the connection no longer takes it, there is nothing more to do.
+    match tcp.write_all(s.conn, data, 1000) {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn frame_head_for[E: effects](s: Socket[uses E], opcode: int, payload: bytes) -> bytes {
+    # A whole frame as this side sends it (a client masks).
+    if s.client {
+        let key = __ws(1 + 8 * 4, no_bytes(), no_bytes());
+        return frame_head(opcode, len(payload), true) + key + __ws(2, payload, key);
+    }
+    return frame_head(opcode, len(payload), false) + payload;
+}
+
+fn stop_signal() -> tcp.TcpError {
+    # What std.tcp answers a handler holding a conversation when its server is told to stop.
+    return tcp.TcpError.other("the server is stopping");
+}
+
+fn server_stops[E: effects](s: Socket[uses E]) -> WsError uses E {
+    # The conversation is closed with 1001 (going away); every later call says stopping.
+    send_quietly(s, frame_head_for(s, 8, close_payload(1001, "")));
+    tcp.close_conn(s.conn);
+    set s.state = 3;
+    set s.code = 1001;
+    return WsError.stopping;
+}
+
+fn broke[E: effects](s: Socket[uses E]) -> WsError {
+    set s.state = 2;
+    tcp.close_conn(s.conn);
+    return WsError.broken;
+}
+
+fn read_rest[E: effects](s: Socket[uses E], n: int) -> result[bytes, WsError] uses E {
+    # n more bytes of a frame that has begun: within 30 s, or the connection counts as broken.
+    if n == 0 {
+        return ok(no_bytes());
+    }
+    match tcp.read_exact(s.conn, n, rest_ms) {
+        case ok(b) {
+            return ok(b);
+        }
+        case err(_) {
+            return err(broke(s));
+        }
+    }
+}
+
+fn number(b: bytes) -> int {
+    var n = 0;
+    for i in 0..len(b) {
+        set n = n * 256 + b[i];
+    }
+    return n;
+}
+
+fn read_frame[E: effects](s: Socket[uses E], first_wait: int) -> result[Frame, WsError] uses E {
+    # One frame, checked against RFC 6455: first_wait bounds the wait for its first two bytes.
+    var head = no_bytes();
+    match tcp.read_exact(s.conn, 2, first_wait) {
+        case ok(b) {
+            set head = b;
+        }
+        case err(e) {
+            if e == tcp.TcpError.timed_out {
+                return err(WsError.nothing_in_time);
+            }
+            if e == stop_signal() {
+                return err(server_stops(s));
+            }
+            return err(broke(s));
+        }
+    }
+    match head_problem(head, s.client) {
+        case some(why) {
+            return err(fail(s, 1002, WsError.protocol(why)));
+        }
+        case none {
+        }
+    }
+    let masked = head[1] >= 128;
+    let size = try size_of(s, head[1] % 128, head[0] % 16, head[0] >= 128);
+    var key = no_bytes();
+    if masked {
+        set key = try read_rest(s, 4);
+    }
+    var payload = try read_rest(s, size);
+    if masked {
+        set payload = __ws(2, payload, key);
+    }
+    return ok(new Frame { fin: head[0] >= 128, opcode: head[0] % 16, payload: payload });
+}
+
+fn head_problem(head: bytes, client: bool) -> option.Option[str] {
+    # What is wrong with a frame's first two bytes, if anything.
+    let opcode = head[0] % 16;
+    if (head[0] / 16) % 8 != 0 {
+        return option.Option.some("reserved bits are set");
+    }
+    if (opcode >= 3 and opcode <= 7) or opcode >= 11 {
+        return option.Option.some("opcode " + str(opcode) + " is reserved");
+    }
+    let masked = head[1] >= 128;
+    if masked and client {
+        return option.Option.some("a frame from the server is masked");
+    }
+    if not masked and not client {
+        return option.Option.some("a frame from the client is not masked");
+    }
+    return option.Option.none;
+}
+
+fn size_of[E: effects](s: Socket[uses E], short: int, opcode: int, fin: bool) -> result[int, WsError] uses E {
+    # The payload length: in the head, or in the 2 or 8 bytes after it (the shortest form only).
+    var size = short;
+    if short == 126 {
+        set size = number(try read_rest(s, 2));
+        if size < 126 {
+            return err(fail(s, 1002, WsError.protocol("a length is not in its shortest form")));
+        }
+    } else if short == 127 {
+        let wide = try read_rest(s, 8);
+        if wide[0] >= 128 {
+            return err(fail(s, 1002, WsError.protocol("a length has its top bit set")));
+        }
+        if number(slice(wide, 0, 3)) != 0 {
+            return err(fail(s, 1009, WsError.too_large));
+        }
+        set size = number(wide);
+        if size < 65536 {
+            return err(fail(s, 1002, WsError.protocol("a length is not in its shortest form")));
+        }
+    }
+    if opcode >= 8 and (size > 125 or not fin) {
+        return err(fail(s, 1002, WsError.protocol("a control frame is longer than 125 bytes or in fragments")));
+    }
+    if opcode < 8 and size + s.parts_len > s.limit {
+        return err(fail(s, 1009, WsError.too_large));
+    }
+    return ok(size);
+}
+
+# The next whole message, waiting at most timeout_ms for it to begin (0: no limit). Pings from the
+# other side are answered here; a close ends the conversation: closed, with its code and reason (1005
+# when it gave none), and so does every later call. nothing_in_time leaves the socket usable.
+#     receive_message(scripted_socket(new list[Message]), 0) == err(WsError.closed { code: 1000, reason: "" }) is true
+export fn receive_message[E: effects](s: Socket[uses E], timeout_ms: int) -> result[Message, WsError] uses E {
+    if timeout_ms < 0 or timeout_ms > 600000 {
+        return err(WsError.invalid("the time limit must be 0 to 600000 ms"));
+    }
+    if s.state != 0 {
+        return err(closed_error(s));
+    }
+    if s.scripted {
+        return scripted_next(s);
+    }
+    while true {
+        match read_frame(s, wait_of(timeout_ms)) {
+            case ok(f) {
+                match try handle_frame(s, f) {
+                    case some(m) {
+                        return ok(m);
+                    }
+                    case none {
+                    }
+                }
+            }
+            case err(e) {
+                if not (e == WsError.nothing_in_time and timeout_ms == 0) {
+                    return err(e);
+                }
+            }
+        }
+    }
+}
+
+fn scripted_next[E: effects](s: Socket[uses E]) -> result[Message, WsError] {
+    if len(s.incoming) == 0 {
+        set s.state = 1;
+        set s.code = 1000;
+        return err(closed_error(s));
+    }
+    let m = s.incoming[0];
+    set s.incoming = slice(s.incoming, 1, len(s.incoming));
+    return ok(m);
+}
+
+fn handle_frame[E: effects](s: Socket[uses E], f: Frame) -> result[option.Option[Message], WsError] uses E {
+    # A control frame is acted on; a data frame adds to the message, which is given when complete.
+    if f.opcode == 9 {
+        try send_frame(s, 10, f.payload);
+        return ok(option.Option.none);
+    }
+    if f.opcode == 10 {
+        set s.pong_count = s.pong_count + 1;
+        return ok(option.Option.none);
+    }
+    if f.opcode == 8 {
+        return err(closed_by_peer(s, f.payload));
+    }
+    match assemble(s, f) {
+        case more {
+            return ok(option.Option.none);
+        }
+        case message(m) {
+            return ok(option.Option.some(m));
+        }
+        case violation(v) {
+            return err(fail(s, v.code, v.error));
+        }
+    }
+}
+
+variant Step {
+    more;
+    message(Message);
+    violation {
+        code: int;
+        error: WsError;
+    }
+}
+
+fn assemble[E: effects](s: Socket[uses E], f: Frame) -> Step {
+    # A data frame added to the message being received.
+    if f.opcode == 0 and s.kind == 0 {
+        return Step.violation { code: 1002, error: WsError.protocol("a continuation frame without a message") };
+    }
+    if f.opcode != 0 and s.kind != 0 {
+        return Step.violation { code: 1002, error: WsError.protocol("a new message began inside a fragmented one") };
+    }
+    if f.opcode != 0 {
+        set s.kind = f.opcode;
+    }
+    push(s.parts, f.payload);
+    set s.parts_len = s.parts_len + len(f.payload);
+    if not f.fin {
+        return Step.more;
+    }
+    let whole = join_bytes(s.parts);
+    let kind = s.kind;
+    set s.parts = new list[bytes];
+    set s.parts_len = 0;
+    set s.kind = 0;
+    if kind == 2 {
+        return Step.message(Message.binary(whole));
+    }
+    match __text_of_bytes(whole) {
+        case ok(t) {
+            return Step.message(Message.text(t));
+        }
+        case err(_) {
+            return Step.violation { code: 1007, error: WsError.not_text };
+        }
+    }
+}
+
+fn join_bytes(parts: list[bytes]) -> bytes {
+    # Pairwise, so a message in many fragments is copied log2(n) times, not n times.
+    if len(parts) == 0 {
+        return no_bytes();
+    }
+    var level = parts;
+    while len(level) > 1 {
+        let next = new list[bytes];
+        var i = 0;
+        while i + 1 < len(level) {
+            push(next, level[i] + level[i + 1]);
+            set i = i + 2;
+        }
+        if i < len(level) {
+            push(next, level[i]);
+        }
+        set level = next;
+    }
+    return level[0];
+}
+
+fn closed_by_peer[E: effects](s: Socket[uses E], payload: bytes) -> WsError uses E {
+    # The other side's close: checked, echoed, and the connection closed.
+    match parse_close(payload) {
+        case violation(v) {
+            return fail(s, v.code, v.error);
+        }
+        case more {
+        }
+        case message(_) {
+        }
+    }
+    var echo = no_bytes();
+    var code = 1005;
+    var reason = "";
+    if len(payload) >= 2 {
+        set echo = slice(payload, 0, 2);
+        set code = number(echo);
+        set reason = __raw_text(slice(payload, 2, len(payload)));
+    }
+    send_quietly(s, frame_head_for(s, 8, echo));
+    tcp.close_conn(s.conn);
+    set s.state = 1;
+    set s.code = code;
+    set s.reason = reason;
+    return closed_error(s);
+}
+
+fn parse_close(payload: bytes) -> Step {
+    # violation when a close frame breaks the rules; more when it is fine.
+    if len(payload) == 1 {
+        return Step.violation { code: 1002, error: WsError.protocol("a close frame of one byte") };
+    }
+    if len(payload) >= 2 {
+        let code = number(slice(payload, 0, 2));
+        if not code_may_be_received(code) {
+            return Step.violation { code: 1002, error: WsError.protocol("close code " + str(code) + " may not be sent") };
+        }
+        match __text_of_bytes(slice(payload, 2, len(payload))) {
+            case ok(_) {
+            }
+            case err(_) {
+                return Step.violation { code: 1007, error: WsError.protocol("the close reason is not UTF-8") };
+            }
+        }
+    }
+    return Step.more;
+}
+
+fn code_may_be_received(code: int) -> bool {
+    return code_may_be_sent(code) or code == 1012 or code == 1013 or code == 1014;
+}
+
+# ---- connecting ----
+
+record Target {
+    tls: bool;
+    host: str;
+    port: int;
+    path: str;
+}
+
+fn parse_target(url: str) -> result[Target, WsError] {
+    # ws://host[:port]/path or wss://...; the fragment is dropped.
+    for i in 0..len(url) {
+        let b = byte_at(url, i);
+        if b <= 32 or b >= 127 {
+            return err(WsError.invalid("the URL holds a space, a control character or a character outside ASCII"));
+        }
+    }
+    var tls = false;
+    var rest = "";
+    if len(url) >= 6 and lower(slice(url, 0, 6)) == "wss://" {
+        set tls = true;
+        set rest = slice(url, 6, len(url));
+    } else if len(url) >= 5 and lower(slice(url, 0, 5)) == "ws://" {
+        set rest = slice(url, 5, len(url));
+    } else {
+        return err(WsError.invalid("not a ws:// or wss:// URL: " + url));
+    }
+    var cut = len(rest);
+    for c in [find(rest, "/"), find(rest, "?"), find(rest, "#")] {
+        if c >= 0 and c < cut {
+            set cut = c;
+        }
+    }
+    let authority = slice(rest, 0, cut);
+    var path = slice(rest, cut, len(rest));
+    if find(path, "#") >= 0 {
+        set path = slice(path, 0, find(path, "#"));
+    }
+    if path == "" or byte_at(path, 0) != 47 {
+        set path = "/" + path;
+    }
+    return target_of(tls, authority, path, url);
+}
+
+fn target_of(tls: bool, authority: str, path: str, url: str) -> result[Target, WsError] {
+    var host = authority;
+    var port = 80;
+    if tls {
+        set port = 443;
+    }
+    let colon = find(authority, ":");
+    if colon >= 0 {
+        set host = slice(authority, 0, colon);
+        match parse_int(slice(authority, colon + 1, len(authority))) {
+            case ok(n) {
+                set port = n;
+            }
+            case err(_) {
+                return err(WsError.invalid("bad port in " + url));
+            }
+        }
+    }
+    if host == "" or port < 1 or port > 65535 or find(host, "@") >= 0 {
+        return err(WsError.invalid("bad host in " + url));
+    }
+    return ok(new Target { tls: tls, host: lower(host), port: port, path: path });
+}
+
+fn dial(t: Target, wait: int) -> result[tcp.Conn[uses net], tcp.TcpError] uses net {
+    if t.tls {
+        return tcp.connect_tls(t.host, t.port, wait);
+    }
+    return tcp.connect(t.host, t.port, wait);
+}
+
+fn check_options(options: ConnectOptions) -> result[void, WsError] {
+    for h in options.headers {
+        let name = lower(h.name);
+        if name == "host" or name == "upgrade" or name == "connection" or (len(name) >= 14 and slice(name, 0, 14) == "sec-websocket-") {
+            return err(WsError.invalid("header `" + h.name + "` is set by std.websocket"));
+        }
+        if not token(h.name) {
+            return err(WsError.invalid("bad header name `" + h.name + "`"));
+        }
+        for i in 0..len(h.value) {
+            let b = byte_at(h.value, i);
+            if b < 32 or b >= 127 {
+                return err(WsError.invalid("bad value for header `" + h.name + "`: ASCII text on one line only"));
+            }
+        }
+    }
+    for p in options.protocols {
+        if not token(p) {
+            return err(WsError.invalid("bad sub-protocol `" + p + "`"));
+        }
+    }
+    return ok();
+}
+
+fn token(s: str) -> bool {
+    # An HTTP token: what a header name or a sub-protocol may be.
+    if s == "" {
+        return false;
+    }
+    let allowed = "!#$%&'*+-.^_`|~0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    for c in chars(s) {
+        if find(allowed, c) < 0 {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn accept_value(key: str) -> str {
+    # What the server answers for the client's key (RFC 6455 section 4.2.2).
+    return bytes.to_base64(__ws(3, bytes.from_text(key + guid), no_bytes()));
+}
+
+fn handshake_text(t: Target, key: str, options: ConnectOptions) -> str {
+    let nl = "\r\n";
+    var host = t.host;
+    if (t.port != 80 and not t.tls) or (t.port != 443 and t.tls) {
+        set host = host + ":" + str(t.port);
+    }
+    var out = "GET " + t.path + " HTTP/1.1" + nl + "Host: " + host + nl + "Upgrade: websocket" + nl + "Connection: Upgrade" + nl;
+    set out = out + "Sec-WebSocket-Key: " + key + nl + "Sec-WebSocket-Version: 13" + nl;
+    if len(options.protocols) > 0 {
+        set out = out + "Sec-WebSocket-Protocol: " + join(options.protocols, ", ") + nl;
+    }
+    var agent = false;
+    for h in options.headers {
+        set agent = agent or lower(h.name) == "user-agent";
+        set out = out + h.name + ": " + h.value + nl;
+    }
+    if not agent {
+        set out = out + "User-Agent: vo" + nl;
+    }
+    return out + nl;
+}
+
+# Opens a WebSocket to a ws:// or wss:// URL within timeout_ms (0 to 600000; 0 means 600000), needing
+# net with the URL's host and port in its scope. A wss:// server's certificate is checked as for https://.
+#     ws_connect("http://x/", new ConnectOptions { headers: new list[http.Header], protocols: new list[str], max_message: 0 }, 1000) == err(WsError.invalid("not a ws:// or wss:// URL: http://x/")) is true
+export fn ws_connect(url: str, options: ConnectOptions, timeout_ms: int) -> result[Socket[uses net], WsError] uses net {
+    let t = try parse_target(url);
+    try check_options(options);
+    let limit = try limit_of(options.max_message);
+    if timeout_ms < 0 or timeout_ms > 600000 {
+        return err(WsError.invalid("the time limit must be 0 to 600000 ms"));
+    }
+    let wait = wait_of(timeout_ms);
+    let c = try map_err(dial(t, wait), fn(e) => WsError.connect(e));
+    let key = bytes.to_base64(__ws(1 + 8 * 16, no_bytes(), no_bytes()));
+    match agree(c, t, key, options, wait) {
+        case ok(protocol) {
+            return ok(new Socket[uses net] {
+                conn: c,
+                protocol: protocol,
+                client: true,
+                state: 0,
+                code: 0,
+                reason: "",
+                pong_count: 0,
+                limit: limit,
+                parts: new list[bytes],
+                kind: 0,
+                parts_len: 0,
+                scripted: false,
+                sent: new list[Message],
+                incoming: new list[Message]
+            });
+        }
+        case err(e) {
+            tcp.close_conn(c);
+            return err(e);
+        }
+    }
+}
+
+fn agree(c: tcp.Conn[uses net], t: Target, key: str, options: ConnectOptions, wait: int) -> result[str, WsError]
+    uses net {
+    # Sends the handshake and checks the answer; the chosen sub-protocol.
+    try map_err(tcp.write_all(c, bytes.from_text(handshake_text(t, key, options)), wait), fn(e) => WsError.connect(e));
+    let raw = try map_err(tcp.read_until(c, bytes.from_text("\r\n\r\n"), wait), fn(e) => WsError.connect(e));
+    if len(raw) > 65536 {
+        return err(WsError.refused(0));
+    }
+    var text = "";
+    match __text_of_bytes(slice(raw, 0, len(raw) - 4)) {
+        case ok(s) {
+            set text = s;
+        }
+        case err(_) {
+            return err(WsError.refused(0));
+        }
+    }
+    return check_answer(split(text, "\r\n"), key, options.protocols);
+}
+
+fn check_answer(head: list[str], key: str, offered: list[str]) -> result[str, WsError] {
+    let parts = split(head[0], " ");
+    if len(parts) < 2 or len(parts[0]) < 5 or slice(parts[0], 0, 5) != "HTTP/" {
+        return err(WsError.refused(0));
+    }
+    let status = try map_err(parse_int(parts[1]), fn(m) => WsError.refused(0));
+    if status != 101 {
+        return err(WsError.refused(status));
+    }
+    let hs = header_map(head);
+    if lower(get_or(hs, "upgrade", "")) != "websocket" or not has_token(get_or(hs, "connection", ""), "upgrade") {
+        return err(WsError.refused(101));
+    }
+    if get_or(hs, "sec-websocket-accept", "") != accept_value(key) or trim(get_or(hs, "sec-websocket-extensions", "")) != "" {
+        return err(WsError.refused(101));
+    }
+    let chosen = trim(get_or(hs, "sec-websocket-protocol", ""));
+    if chosen != "" and not has_item(offered, chosen) {
+        return err(WsError.refused(101));
+    }
+    return ok(chosen);
+}
+
+fn header_map(head: list[str]) -> map[str, str] {
+    # Header names in lower case; the values of a repeated header joined with ", ".
+    let out = new map[str, str];
+    for i in 1..len(head) {
+        let colon = find(head[i], ":");
+        if colon > 0 {
+            let name = lower(trim(slice(head[i], 0, colon)));
+            let value = trim(slice(head[i], colon + 1, len(head[i])));
+            if has(out, name) {
+                set out[name] = out[name] + ", " + value;
+            } else {
+                set out[name] = value;
+            }
+        }
+    }
+    return out;
+}
+
+fn has_token(list_text: str, want: str) -> bool {
+    for t in split(list_text, ",") {
+        if lower(trim(t)) == want {
+            return true;
+        }
+    }
+    return false;
+}
+
+fn has_item(xs: list[str], x: str) -> bool {
+    for y in xs {
+        if y == x {
+            return true;
+        }
+    }
+    return false;
+}
+
+# ---- accepting ----
+
+fn accept_problem(options: AcceptOptions) -> option.Option[str] {
+    if options.max_open < 0 or options.max_open > 63 {
+        return option.Option.some("max_open must be 0 to 63");
+    }
+    if options.max_message < 0 or options.max_message > most_limit {
+        return option.Option.some("max_message must be 0 or 1 to 16777216");
+    }
+    for p in options.protocols {
+        if not token(p) {
+            return option.Option.some("bad sub-protocol `" + p + "`");
+        }
+    }
+    return option.Option.none;
+}
+
+fn answer(status: int, text: str, extra: list[http.Header]) -> http.Response {
+    let headers = [new http.Header { name: "Content-Type", value: "text/plain; charset=utf-8" }];
+    for h in extra {
+        push(headers, h);
+    }
+    return new http.Response { status: status, headers: headers, body: text + "\n" };
+}
+
+fn request_value(r: http.Request, name: str) -> str {
+    # A request header's values joined with ", "; "" when absent.
+    let values = new list[str];
+    for h in r.headers {
+        if lower(h.name) == name {
+            push(values, trim(h.value));
+        }
+    }
+    return join(values, ", ");
+}
+
+fn handshake_problem(r: http.Request, options: AcceptOptions) -> option.Option[http.Response] {
+    # Why the request does not get a WebSocket, as the answer it gets instead.
+    if r.method != "GET" {
+        return option.Option.some(answer(400, "a WebSocket is asked for with GET", new list[http.Header]));
+    }
+    let version = [new http.Header { name: "Sec-WebSocket-Version", value: "13" }];
+    if not has_token(request_value(r, "upgrade"), "websocket") or not has_token(request_value(r, "connection"), "upgrade") {
+        return option.Option.some(answer(426, "this address speaks WebSocket only", version));
+    }
+    if request_value(r, "sec-websocket-version") != "13" {
+        return option.Option.some(answer(426, "WebSocket version 13 only", version));
+    }
+    match bytes.from_base64(request_value(r, "sec-websocket-key")) {
+        case ok(k) {
+            if len(k) != 16 {
+                return option.Option.some(answer(400, "Sec-WebSocket-Key is not 16 bytes in base64", new list[http.Header]));
+            }
+        }
+        case err(_) {
+            return option.Option.some(answer(400, "Sec-WebSocket-Key is not 16 bytes in base64", new list[http.Header]));
+        }
+    }
+    let origin = request_value(r, "origin");
+    if origin != "" and not has_item(options.origins, "*") and not has_item(options.origins, origin) {
+        return option.Option.some(answer(403, "origin " + origin + " may not open a WebSocket here", new list[http.Header]));
+    }
+    return option.Option.none;
+}
+
+fn chosen_protocol(r: http.Request, spoken: list[str]) -> str {
+    for p in split(request_value(r, "sec-websocket-protocol"), ",") {
+        if has_item(spoken, trim(p)) {
+            return trim(p);
+        }
+    }
+    return "";
+}
+
+fn take_refusal(why: str) -> http.Response {
+    if why == "busy" {
+        return answer(503, "too many open conversations: try again later (conversations need a server with at least two workers)", [new http.Header { name: "Retry-After", value: "5" }]);
+    }
+    if why == "bytes after the request" {
+        return answer(400, "the client sent bytes after its request", new list[http.Header]);
+    }
+    if why == "too many connections" {
+        return answer(503, "too many connections are open", [new http.Header { name: "Retry-After", value: "5" }]);
+    }
+    return answer(500, "a WebSocket can only be accepted by a running server's handler", new list[http.Header]);
+}
+
+fn ended(s: Socket[uses serve], done: result[void]) -> str {
+    # Why the conversation ended, for the Vo-End header the request log reads.
+    match done {
+        case ok() {
+        }
+        case err(m) {
+            return "failed: " + m;
+        }
+    }
+    if s.state == 3 {
+        return "stopping";
+    }
+    if s.state == 2 {
+        return "broken";
+    }
+    if s.state == 1 {
+        return "closed " + str(s.code);
+    }
+    return "done";
+}
+
+# Accepts request r as a WebSocket, in a handler of a running server (needs serve): checks the request
+# and its origin, answers the handshake, calls f with the socket, and closes the conversation when f
+# returns (code 1000; 1011 when f returns an error). Returns the response the server's steps and request
+# log see (status 101 and a Vo-End header saying why it ended). A request that is not a WebSocket gets
+# 400 or 426, one from an origin not in options.origins 403, and one beyond `max_open` open
+# conversations (or to a server with fewer than two workers) 503: f does not run.
+#     let options = new AcceptOptions { origins: new list[str], protocols: new list[str], max_message: 0, max_open: 0 }; let r = new http.Request { method: "POST", path: "/", query: "", headers: new list[http.Header], body: "" }; ws_accept(r, options, fn(s) => ok()).status is 400
+export fn ws_accept[E: effects](
+    r: http.Request,
+    options: AcceptOptions,
+    f: fn(Socket[uses serve]) -> result[void] uses E
+) -> http.Response uses serve, E {
+    match accept_problem(options) {
+        case some(why) {
+            return answer(500, "invalid WebSocket options: " + why, new list[http.Header]);
+        }
+        case none {
+        }
+    }
+    match handshake_problem(r, options) {
+        case some(refused) {
+            return refused;
+        }
+        case none {
+        }
+    }
+    let protocol = chosen_protocol(r, options.protocols);
+    var id = 0;
+    match __serve_take(2, options.max_open) {
+        case ok(n) {
+            set id = n;
+        }
+        case err(why) {
+            return take_refusal(why);
+        }
+    }
+    let s = accepted(id, protocol, options);
+    var done: result[void] = ok();
+    match tcp.write_all(s.conn, bytes.from_text(accept_text(request_value(r, "sec-websocket-key"), protocol)), rest_ms) {
+        case ok() {
+            set done = f(s);
+        }
+        case err(_) {
+            set s.state = 2;
+        }
+    }
+    finish(s, done);
+    return new http.Response { status: 101, headers: [new http.Header { name: "Vo-End", value: ended(s, done) }], body: "" };
+}
+
+fn accepted(id: int, protocol: str, options: AcceptOptions) -> Socket[uses serve] {
+    var limit = default_limit;
+    if options.max_message > 0 {
+        set limit = options.max_message;
+    }
+    return new Socket[uses serve] {
+        conn: new tcp.Conn[uses serve] { id: id, peer: "" },
+        protocol: protocol,
+        client: false,
+        state: 0,
+        code: 0,
+        reason: "",
+        pong_count: 0,
+        limit: limit,
+        parts: new list[bytes],
+        kind: 0,
+        parts_len: 0,
+        scripted: false,
+        sent: new list[Message],
+        incoming: new list[Message]
+    };
+}
+
+fn accept_text(key: str, protocol: str) -> str {
+    var out = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + accept_value(key) + "\r\n";
+    if protocol != "" {
+        set out = out + "Sec-WebSocket-Protocol: " + protocol + "\r\n";
+    }
+    return out + "\r\n";
+}
+
+fn finish(s: Socket[uses serve], done: result[void]) uses serve {
+    # The conversation f left open is closed: 1000, or 1011 when f returned an error.
+    if s.state != 0 {
+        tcp.close_conn(s.conn);
+        return;
+    }
+    var code = 1000;
+    match done {
+        case ok() {
+        }
+        case err(_) {
+            set code = 1011;
+        }
+    }
+    match close_socket(s, code, "") {
+        case ok() {
+        }
+        case err(_) {
+        }
+    }
+}

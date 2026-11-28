@@ -1,0 +1,29 @@
+# Spec 063: reaching another system for a stream or a WebSocket needs net; answering one needs serve.
+import std.http;
+import std.sse;
+import std.websocket;
+
+fn talk() -> str {
+    let options = new websocket.ConnectOptions { headers: new list[http.Header], protocols: new list[str], max_message: 0 };
+    match websocket.ws_connect("ws://example.com/", options, 1000) {
+        case ok(_) {
+            return "ok";
+        }
+        case err(e) {
+            return websocket.ws_error_text(e);
+        }
+    }
+}
+
+fn listen() -> str {
+    let end = sse.read_events("GET", "http://example.com/", new list[http.Header], "", "", 0, fn(e) => ok(true));
+    return end.last_id;
+}
+
+fn answer(r: http.Request) -> http.Response {
+    return sse.serve_events(r, new sse.StreamOptions { headers: new list[http.Header], max_open: 0 }, fn(s) => ok());
+}
+
+fn main() uses console {
+    print(talk() + listen());
+}

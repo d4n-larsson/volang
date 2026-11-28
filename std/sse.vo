@@ -1,0 +1,705 @@
+# std.sse: Server-sent events: reading an event stream (needs net) and answering a request with one (needs serve).
+# Part of the vo standard library. Import the module, `import std.sse;`, and write its items as `sse.NAME`.
+# An event stream is one long HTTP response of `text/event-stream`: the server sends events while the
+# connection stays open. `read_events` hands each event to a function as it arrives, parsed by the
+# rules of the HTML standard, and says why the stream ended; it never reconnects by itself: read again
+# from `StreamEnd.last_id`. `serve_events`, called in a handler, answers the request with a stream.
+# Everything received is recorded (`vo run --record`), and `vo replay` opens no connection.
+# ponytail: a stream whose body ends when the connection closes (no chunked framing) cannot tell a lost
+# connection from an end, so both are `ended`; chunked streams tell them apart.
+
+import std.http;
+import std.option;
+import std.tcp;
+
+# One event: its name, its data and the last id the stream set.
+#     new StreamEvent { name: "message", data: "hi", id: "" }.data is "hi"
+export record StreamEvent {
+    # The event's name: "message" when the stream gave none.
+    name: str;
+    # Its data, its lines joined with "\n".
+    data: str;
+    # The last id the stream set, "" before any (an id holds until the stream sets another).
+    id: str;
+}
+
+# Why reading a stream stopped.
+#     EndReason.not_a_stream(404) == EndReason.ended is false
+export variant EndReason {
+    # The server ended the response.
+    ended;
+    # The connection was lost, or a chunked body ended early.
+    broken;
+    # Nothing arrived within the time limit of one wait.
+    timed_out;
+    # The program's function answered ok(false).
+    stopped;
+    # The answer was not an event stream: its status (or 200 with another content type).
+    not_a_stream(int);
+    # One event, or one line, is larger than 1 MiB.
+    too_large;
+    # The URL, the connection or TLS failed, the program's function returned this error, or the answer was compressed.
+    failed(str);
+}
+
+# How reading a stream ended, and where to go on from.
+#     new StreamEnd { why: EndReason.ended, last_id: "7", retry_ms: -1 }.last_id is "7"
+export record StreamEnd {
+    # Why it ended.
+    why: EndReason;
+    # The id the stream had set at the last event handed over or skipped (the last_id given, before any): pass it to read_events to go on.
+    last_id: str;
+    # How long the server asked a client to wait before reading again, in milliseconds; -1 when it did not say.
+    retry_ms: int;
+}
+
+# What serve_events adds to the stream: headers for its head, and the bound on open conversations.
+#     new StreamOptions { headers: new list[http.Header], max_open: 0 }.max_open is 0
+export record StreamOptions {
+    # Headers the stream's head carries besides its own (a CORS header: steps after the handler cannot add one).
+    headers: list[http.Header];
+    # How many conversations of this route the server holds at once (1 to 63); 0: half its workers.
+    max_open: int;
+}
+
+# A stream being answered, as serve_events gives it to the program's function, or a scripted one for tests.
+#     len(sent_events(scripted_stream())) is 0
+export record EventStream[E: effects] {
+    # The connection; not for the program to use.
+    conn: tcp.Conn[uses E];
+    # What was sent to a scripted stream.
+    sent: list[StreamEvent];
+    # Whether the stream is scripted (connected to nothing).
+    scripted: bool;
+    # 0 while open; then how it failed (1 client_gone, 2 not_reading, 3 stopping).
+    state: int;
+}
+
+# Why sending to a stream failed. After any but invalid, every later send fails the same way.
+#     stream_error_text(StreamError.client_gone) is "the client has gone"
+export variant StreamError {
+    # The client closed the connection.
+    client_gone;
+    # The client took nothing for 30 seconds.
+    not_reading;
+    # The server is stopping.
+    stopping;
+    # The event cannot be sent as given: what is wrong with it.
+    invalid(str);
+}
+
+# A sentence saying what e means.
+#     stream_error_text(StreamError.invalid("a line break in the id")) is "invalid: a line break in the id"
+@allow("W0702", "one module per import path: std.sse is one file")
+export fn stream_error_text(e: StreamError) -> str {
+    match e {
+        case client_gone {
+            return "the client has gone";
+        }
+        case not_reading {
+            return "the client took nothing for 30 seconds";
+        }
+        case stopping {
+            return "the server is stopping";
+        }
+        case invalid(what) {
+            return "invalid: " + what;
+        }
+    }
+}
+
+# ---- parsing ----
+
+const max_event = 1048576;
+
+record Parser {
+    pending: list[bytes];
+    cr: bool;
+    started: bool;
+    data: list[str];
+    size: int;
+    name: str;
+    last_id: str;
+    committed: str;
+    retry: int;
+    too_large: bool;
+}
+
+fn new_parser(last_id: str) -> Parser {
+    return new Parser {
+        pending: [__bytes_of_text("")],
+        cr: false,
+        started: false,
+        data: new list[str],
+        size: 0,
+        name: "",
+        last_id: last_id,
+        committed: last_id,
+        retry: -1,
+        too_large: false
+    };
+}
+
+# The events in text, by the rules of the HTML standard's event streams: lines end with CR, LF or CRLF;
+# "data:" lines are joined with "\n"; an empty line ends an event; a last event without one is dropped.
+#     parse_events("data: a\ndata: b\n\n")[0].data is "a\nb"
+#     len(parse_events(": a comment\nevent: x\n\ndata: unfinished")) is 0
+export fn parse_events(text: str) -> list[StreamEvent] {
+    return feed(new_parser(""), __bytes_of_text(text));
+}
+
+fn feed(p: Parser, piece: bytes) -> list[StreamEvent] {
+    # The events piece completes; the rest waits in p for the next piece.
+    let out = new list[StreamEvent];
+    var b = p.pending[0] + piece;
+    if not p.started {
+        if len(b) < 3 and bom_prefix(b) {
+            set p.pending[0] = b;
+            return out;
+        }
+        set p.started = true;
+        if bom_prefix(b) {
+            set b = slice(b, 3, len(b));
+        }
+    }
+    var start = 0;
+    var i = 0;
+    if p.cr and len(b) > 0 and b[0] == 10 {
+        set start = 1;
+        set i = 1;
+    }
+    set p.cr = false;
+    while i < len(b) {
+        let c = b[i];
+        if c == 10 or c == 13 {
+            line(p, slice(b, start, i), out);
+            if c == 13 and i + 1 < len(b) and b[i + 1] == 10 {
+                set i = i + 1;
+            } else if c == 13 and i + 1 == len(b) {
+                set p.cr = true;
+            }
+            set start = i + 1;
+        }
+        set i = i + 1;
+    }
+    set p.pending[0] = slice(b, start, len(b));
+    if len(p.pending[0]) + p.size > max_event {
+        set p.too_large = true;
+    }
+    return out;
+}
+
+fn bom_prefix(b: bytes) -> bool {
+    let bom = [239, 187, 191];
+    if len(b) == 0 {
+        return false;
+    }
+    for i in 0..min(len(b), 3) {
+        if b[i] != bom[i] {
+            return false;
+        }
+    }
+    return true;
+}
+
+fn line(p: Parser, raw: bytes, out: list[StreamEvent]) {
+    # One line of the stream, without its line end.
+    if len(raw) == 0 {
+        dispatch(p, out);
+        return;
+    }
+    let text = lossy_text(raw);
+    if byte_at(text, 0) == 58 {
+        return;
+    }
+    var field = text;
+    var value = "";
+    let colon = find(text, ":");
+    if colon >= 0 {
+        set field = slice(text, 0, colon);
+        set value = slice(text, colon + 1, len(text));
+        if len(value) > 0 and byte_at(value, 0) == 32 {
+            set value = slice(value, 1, len(value));
+        }
+    }
+    if field == "data" {
+        set p.size = p.size + len(value) + 1;
+        if p.size > max_event {
+            set p.too_large = true;
+            return;
+        }
+        push(p.data, value);
+    } else if field == "event" {
+        set p.name = value;
+    } else if field == "id" {
+        if find(value, chr(0)) < 0 {
+            set p.last_id = value;
+        }
+    } else if field == "retry" {
+        set_retry(p, value);
+    }
+}
+
+fn set_retry(p: Parser, value: str) {
+    # Only ASCII digits set it.
+    if value == "" or len(value) > 15 {
+        return;
+    }
+    for i in 0..len(value) {
+        let c = byte_at(value, i);
+        if c < 48 or c > 57 {
+            return;
+        }
+    }
+    match parse_int(value) {
+        case ok(n) {
+            set p.retry = n;
+        }
+        case err(_) {
+        }
+    }
+}
+
+fn dispatch(p: Parser, out: list[StreamEvent]) {
+    # An empty line: the event built so far, if it has data. The name is reset either way; the id is kept.
+    if len(p.data) > 0 {
+        var name = p.name;
+        if name == "" {
+            set name = "message";
+        }
+        push(out, new StreamEvent { name: name, data: join(p.data, "\n"), id: p.last_id });
+    }
+    set p.data = new list[str];
+    set p.size = 0;
+    set p.name = "";
+    set p.committed = p.last_id;
+}
+
+fn lossy_text(raw: bytes) -> str {
+    # raw as text, each byte that is not part of a UTF-8 character as U+FFFD.
+    match __text_of_bytes(raw) {
+        case ok(t) {
+            return t;
+        }
+        case err(_) {
+        }
+    }
+    let parts = new list[str];
+    var i = 0;
+    while i < len(raw) {
+        var taken = false;
+        for k in [1, 2, 3, 4] {
+            if not taken and i + k <= len(raw) {
+                match __text_of_bytes(slice(raw, i, i + k)) {
+                    case ok(t) {
+                        push(parts, t);
+                        set i = i + k;
+                        set taken = true;
+                    }
+                    case err(_) {
+                    }
+                }
+            }
+        }
+        if not taken {
+            push(parts, "\u{FFFD}");
+            set i = i + 1;
+        }
+    }
+    return join(parts, "");
+}
+
+# ---- reading ----
+
+record Reading {
+    parser: Parser;
+    checked: bool;
+    why: list[EndReason];
+    last_id: str;
+}
+
+# Sends a request (needs net, with the URL's host in its scope) and calls f with each event of the answer
+# as it arrives. f answers ok(true) to go on, ok(false) to stop, or an error. `last_id` other than "" is
+# sent as Last-Event-ID, so the server can go on after it. `timeout_ms` (0 to 600000; 0 means 600000)
+# bounds each wait, not the whole stream: a server that means to stay silent longer sends comments.
+# Never reconnects: read again with the result's last_id.
+#     read_events("GET", "ftp://x/", new list[http.Header], "", "", 0, fn(e) => ok(true)).why == EndReason.failed("not an http:// or https:// URL: ftp://x/") is true
+export fn read_events[E: effects](
+    method: str,
+    url: str,
+    headers: list[http.Header],
+    body: str,
+    last_id: str,
+    timeout_ms: int,
+    f: fn(StreamEvent) -> result[bool] uses E
+) -> StreamEnd uses net, E {
+    let reading = new Reading {
+        parser: new_parser(last_id),
+        checked: false,
+        why: new list[EndReason],
+        last_id: last_id
+    };
+    let sent = request_headers(headers, last_id);
+    let r = http.send_stream(method, url, sent, body, timeout_ms, fn(head, piece) => on_piece(reading, head, piece, f));
+    match r {
+        case ok(head) {
+            if len(reading.why) == 0 {
+                match head_problem(head) {
+                    case some(why) {
+                        push(reading.why, why);
+                    }
+                    case none {
+                        push(reading.why, EndReason.ended);
+                    }
+                }
+            }
+        }
+        case err(text) {
+            if len(reading.why) == 0 {
+                push(reading.why, reason_of(text));
+            }
+        }
+    }
+    return new StreamEnd { why: reading.why[0], last_id: reading.last_id, retry_ms: reading.parser.retry };
+}
+
+fn request_headers(headers: list[http.Header], last_id: str) -> list[http.Header] {
+    let out = slice(headers, 0, len(headers));
+    var accept = false;
+    for h in headers {
+        if lower(h.name) == "accept" {
+            set accept = true;
+        }
+    }
+    if not accept {
+        push(out, new http.Header { name: "Accept", value: "text/event-stream" });
+    }
+    if last_id != "" {
+        push(out, new http.Header { name: "Last-Event-ID", value: last_id });
+    }
+    return out;
+}
+
+fn on_piece[E: effects](
+    reading: Reading,
+    head: http.Response,
+    piece: bytes,
+    f: fn(StreamEvent) -> result[bool] uses E
+) -> result[bool] uses E {
+    # send_stream's function: the head checked once, then each event completed by piece handed to f.
+    if not head_ok(reading, head) {
+        return ok(false);
+    }
+    for e in feed(reading.parser, piece) {
+        set reading.last_id = e.id;
+        if not went_on(reading, f(e)) {
+            return ok(false);
+        }
+    }
+    return ok(more_room(reading));
+}
+
+fn head_ok(reading: Reading, head: http.Response) -> bool {
+    # false when the first piece's head is not an event stream (the reason is kept).
+    if reading.checked {
+        return true;
+    }
+    set reading.checked = true;
+    match head_problem(head) {
+        case some(why) {
+            push(reading.why, why);
+            return false;
+        }
+        case none {
+            return true;
+        }
+    }
+}
+
+fn went_on(reading: Reading, answer: result[bool]) -> bool {
+    # The program's answer to one event: whether reading goes on (otherwise the reason is kept).
+    match answer {
+        case ok(more) {
+            if not more {
+                push(reading.why, EndReason.stopped);
+            }
+            return more;
+        }
+        case err(m) {
+            push(reading.why, EndReason.failed(m));
+            return false;
+        }
+    }
+}
+
+fn more_room(reading: Reading) -> bool {
+    if reading.parser.too_large {
+        push(reading.why, EndReason.too_large);
+        return false;
+    }
+    set reading.last_id = reading.parser.committed;
+    return true;
+}
+
+fn head_problem(head: http.Response) -> option.Option[EndReason] {
+    # Why the head is not that of an event stream, if it is not.
+    if head.status != 200 {
+        return option.Option.some(EndReason.not_a_stream(head.status));
+    }
+    match http.response_header(head, "Content-Encoding") {
+        case some(coding) {
+            if lower(trim(coding)) != "identity" {
+                return option.Option.some(EndReason.failed("the stream is compressed (" + coding + ")"));
+            }
+        }
+        case none {
+        }
+    }
+    match http.response_header(head, "Content-Type") {
+        case some(kind) {
+            let base = lower(trim(split(kind, ";")[0]));
+            if base == "text/event-stream" {
+                return option.Option.none;
+            }
+        }
+        case none {
+        }
+    }
+    return option.Option.some(EndReason.not_a_stream(head.status));
+}
+
+fn reason_of(text: str) -> EndReason {
+    # The reason for one of send_stream's error texts.
+    if text == tcp.tcp_error_text(tcp.TcpError.timed_out) {
+        return EndReason.timed_out;
+    }
+    if text == "the response ended early" or text == tcp.tcp_error_text(tcp.TcpError.closed) {
+        return EndReason.broken;
+    }
+    return EndReason.failed(text);
+}
+
+# ---- answering with a stream ----
+
+const send_ms = 30000;
+
+# A stream connected to nothing, for tests: what is sent is kept for sent_events. Needs no effect.
+#     let s = scripted_stream(); let sent = send_event(s, new StreamEvent { name: "", data: "hi", id: "" }) == ok(); sent and len(sent_events(s)) == 1 is true
+export fn scripted_stream() -> EventStream {
+    return new EventStream {
+        conn: new tcp.Conn { id: 0, peer: "" },
+        sent: new list[StreamEvent],
+        scripted: true,
+        state: 0
+    };
+}
+
+# The events sent to a scripted stream, in order (none for a connected one).
+#     len(sent_events(scripted_stream())) is 0
+export fn sent_events[E: effects](s: EventStream[uses E]) -> list[StreamEvent] {
+    return slice(s.sent, 0, len(s.sent));
+}
+
+fn event_text(e: StreamEvent) -> str {
+    # The event as the stream carries it; each line of the data on a data: line.
+    var out = "";
+    if e.name != "" and e.name != "message" {
+        set out = "event: " + e.name + "\n";
+    }
+    if e.id != "" {
+        set out = out + "id: " + e.id + "\n";
+    }
+    let crlf = join(split(e.data, "\r\n"), "\n");
+    for part in split(join(split(crlf, "\r"), "\n"), "\n") {
+        set out = out + "data: " + part + "\n";
+    }
+    return out + "\n";
+}
+
+fn event_problem(e: StreamEvent) -> option.Option[str] {
+    for field in [e.name, e.id] {
+        if find(field, "\n") >= 0 or find(field, "\r") >= 0 or find(field, chr(0)) >= 0 {
+            return option.Option.some("a line break or NUL in the name or the id");
+        }
+    }
+    return option.Option.none;
+}
+
+fn stream_failed[E: effects](s: EventStream[uses E]) -> StreamError {
+    if s.state == 2 {
+        return StreamError.not_reading;
+    }
+    if s.state == 3 {
+        return StreamError.stopping;
+    }
+    return StreamError.client_gone;
+}
+
+fn send_text[E: effects](s: EventStream[uses E], text: str) -> result[void, StreamError] uses E {
+    # text on its way to the client within 30 s, unless the client has gone.
+    if s.state != 0 {
+        return err(stream_failed(s));
+    }
+    __http_timeout(send_ms);
+    match __tcp_io(6, s.conn.id, __bytes_of_text(text)) {
+        case ok(_) {
+            return ok();
+        }
+        case err(m) {
+            set s.state = state_of(m);
+            tcp.close_conn(s.conn);
+            return err(stream_failed(s));
+        }
+    }
+}
+
+fn state_of(m: str) -> int {
+    # The failure of a send, from std.tcp's error text.
+    if find(m, "timed_out: ") == 0 {
+        return 2;
+    }
+    if find(m, "the server is stopping") >= 0 {
+        return 3;
+    }
+    return 1;
+}
+
+# Sends one event; it is on its way to the client when this returns. A name of "" or "message" is the
+# default; an id of "" sends none. Line breaks in the data arrive as "\n". Fails when the client has
+# gone, took nothing for 30 seconds, or the server is stopping; after that every send fails the same way.
+#     send_event(scripted_stream(), new StreamEvent { name: "a\nb", data: "", id: "" }) == err(StreamError.invalid("a line break or NUL in the name or the id")) is true
+export fn send_event[E: effects](s: EventStream[uses E], e: StreamEvent) -> result[void, StreamError] uses E {
+    match event_problem(e) {
+        case some(why) {
+            return err(StreamError.invalid(why));
+        }
+        case none {
+        }
+    }
+    if s.scripted {
+        push(s.sent, e);
+        return ok();
+    }
+    return send_text(s, event_text(e));
+}
+
+# Sends a comment line, which keeps the connection open through proxies; the client is handed nothing.
+#     keep_alive(scripted_stream()) == ok() is true
+export fn keep_alive[E: effects](s: EventStream[uses E]) -> result[void, StreamError] uses E {
+    if s.scripted {
+        return ok();
+    }
+    return send_text(s, ":\n");
+}
+
+fn plain(status: int, text: str, extra: list[http.Header]) -> http.Response {
+    let headers = [new http.Header { name: "Content-Type", value: "text/plain; charset=utf-8" }];
+    for h in extra {
+        push(headers, h);
+    }
+    return new http.Response { status: status, headers: headers, body: text };
+}
+
+fn refusal(why: str) -> http.Response {
+    # The answer when the connection cannot be taken.
+    if why == "busy" {
+        return plain(503, "too many open conversations: try again later (conversations need a server with at least two workers)\n", [new http.Header { name: "Retry-After", value: "5" }]);
+    }
+    if why == "bytes after the request" {
+        return plain(400, "the client sent bytes after its request\n", new list[http.Header]);
+    }
+    if why == "too many connections" {
+        return plain(503, "too many connections are open\n", [new http.Header { name: "Retry-After", value: "5" }]);
+    }
+    return plain(500, "an event stream can only be answered by a running server's handler\n", new list[http.Header]);
+}
+
+fn options_problem(options: StreamOptions) -> option.Option[str] {
+    if options.max_open < 0 or options.max_open > 63 {
+        return option.Option.some("max_open must be 0 to 63");
+    }
+    for h in options.headers {
+        let name = lower(h.name);
+        if name == "content-type" or name == "content-length" or name == "connection" or name == "transfer-encoding" {
+            return option.Option.some("header `" + h.name + "` is set by std.sse");
+        }
+        if h.name == "" or find(h.name, ":") >= 0 or find(h.name, " ") >= 0 or find(h.value, "\r") >= 0 or find(h.value, "\n") >= 0 or find(h.name, "\n") >= 0 {
+            return option.Option.some("bad header `" + h.name + "`");
+        }
+    }
+    return option.Option.none;
+}
+
+fn stream_head(options: StreamOptions) -> str {
+    var out = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\nX-Accel-Buffering: no\r\nConnection: close\r\n";
+    for h in options.headers {
+        set out = out + h.name + ": " + h.value + "\r\n";
+    }
+    return out + "\r\n";
+}
+
+fn end_of[E: effects](s: EventStream[uses E], done: result[void]) -> str {
+    # Why the conversation ended, for the Vo-End header the request log reads.
+    if s.state == 1 {
+        return "client_gone";
+    }
+    if s.state == 2 {
+        return "not_reading";
+    }
+    if s.state == 3 {
+        return "stopping";
+    }
+    match done {
+        case ok() {
+            return "done";
+        }
+        case err(m) {
+            return "failed: " + m;
+        }
+    }
+}
+
+# Answers request r with an event stream, in a handler of a running server (needs serve): sends the
+# stream's head, calls f with the stream, and ends the stream when f returns. Returns the response the
+# server's steps and request log see (status 200 and a Vo-End header saying why it ended); the client
+# got the stream instead. When the server already holds `max_open` conversations of this route, or
+# has fewer than two workers, the client gets 503 with Retry-After instead, and f does not run.
+#     let options = new StreamOptions { headers: new list[http.Header], max_open: 0 }; let r = new http.Request { method: "GET", path: "/", query: "", headers: new list[http.Header], body: "" }; serve_events(r, options, fn(s) => ok()).status is 500
+export fn serve_events[E: effects](
+    r: http.Request,
+    options: StreamOptions,
+    f: fn(EventStream[uses serve]) -> result[void] uses E
+) -> http.Response uses serve, E {
+    match options_problem(options) {
+        case some(why) {
+            return plain(500, "invalid stream options: " + why + "\n", new list[http.Header]);
+        }
+        case none {
+        }
+    }
+    var id = 0;
+    match __serve_take(1, options.max_open) {
+        case ok(n) {
+            set id = n;
+        }
+        case err(why) {
+            return refusal(why);
+        }
+    }
+    let s = new EventStream[uses serve] {
+        conn: new tcp.Conn[uses serve] { id: id, peer: "" },
+        sent: new list[StreamEvent],
+        scripted: false,
+        state: 0
+    };
+    var done: result[void] = ok();
+    match send_text(s, stream_head(options)) {
+        case ok() {
+            set done = f(s);
+        }
+        case err(_) {
+        }
+    }
+    tcp.close_conn(s.conn);
+    return new http.Response { status: 200, headers: [new http.Header { name: "Vo-End", value: end_of(s, done) }], body: "" };
+}

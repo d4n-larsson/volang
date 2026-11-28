@@ -73,4 +73,6 @@
 {"v":1,"kind":"doc","module":"std.workers","name":"std.workers","item":"module","signature":"std.workers","description":"Processes that run beside the program and exchange messages with it."}
 {"v":1,"kind":"doc","module":"std.log","name":"std.log","item":"module","signature":"std.log","description":"Log records: one JSON object per line on stderr, with time, level, message, the request's id and fields."}
 {"v":1,"kind":"doc","module":"std.metrics","name":"std.metrics","item":"module","signature":"std.metrics","description":"Counters, gauges and histograms an operator reads in the text exposition format 0.0.4 (Prometheus)."}
+{"v":1,"kind":"doc","module":"std.sse","name":"std.sse","item":"module","signature":"std.sse","description":"Server-sent events: reading an event stream (needs net) and answering a request with one (needs serve)."}
+{"v":1,"kind":"doc","module":"std.websocket","name":"std.websocket","item":"module","signature":"std.websocket","description":"WebSocket conversations (RFC 6455): connecting to ws:// and wss:// addresses (needs net) and accepting them in a handler (needs serve)."}
 {"v":1,"kind":"summary","command":"doc","errors":0,"warnings":0,"truncated":0,"files":0,"items":57}

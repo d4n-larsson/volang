@@ -1,0 +1,58 @@
+lf: 1
+  [message] [a] []
+crlf: 1
+  [message] [a] []
+cr: 2
+  [message] [a] []
+  [message] [b] []
+mixed ends: 1
+  [message] [a
+b
+c] []
+bom: 1
+  [message] [a] []
+second bom kept: 0
+comments: 1
+  [message] [a] []
+multi-line data: 1
+  [message] [a
+b
+
+c] []
+empty data: 2
+  [message] [] []
+  [message] [] []
+leading space once: 1
+  [message] [ two spaces
+none] []
+field without colon: 1
+  [message] [] []
+event name: 2
+  [tick] [1] []
+  [message] [2] []
+empty event name: 1
+  [message] [1] []
+name without data: 1
+  [message] [next] []
+unknown fields: 1
+  [message] [a] []
+id kept: 2
+  [message] [a] [1]
+  [message] [b] [1]
+id reset: 2
+  [message] [a] [1]
+  [message] [b] []
+id with nul: 2
+  [message] [a] [1]
+  [message] [b] [1]
+retry is not data: 1
+  [message] [a] []
+no final empty line: 1
+  [message] [a] []
+no final empty line, ended line: 1
+  [message] [a] []
+colon in value: 1
+  [message] [a: b] []
+nothing: 0
+utf-8: 1
+  [message] [ångström ✓] []

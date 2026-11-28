@@ -1,0 +1,46 @@
+import std.http;
+import std.sse;
+import std.tcp;
+
+fn why(e: sse.EndReason) -> str {
+    match e {
+        case ended {
+            return "ended";
+        }
+        case broken {
+            return "broken";
+        }
+        case timed_out {
+            return "timed_out";
+        }
+        case stopped {
+            return "stopped";
+        }
+        case not_a_stream(status) {
+            return "not_a_stream " + str(status);
+        }
+        case too_large {
+            return "too_large";
+        }
+        case failed(text) {
+            return "failed: " + text;
+        }
+    }
+}
+
+# Arguments that are wrong end the reading before any connection, with the reason and the last id given.
+fn main() uses console, net("127.0.0.1") {
+    let none = new list[http.Header];
+    let a = sse.read_events("GET", "ftp://x/", none, "", "7", 0, fn(e) => ok(true));
+    print(why(a.why) + " | " + a.last_id + " | " + str(a.retry_ms));
+    let b = sse.read_events("GET", "http://127.0.0.1:1/", none, "", "", -1, fn(e) => ok(true));
+    print(why(b.why));
+    let c = sse.read_events("get", "http://127.0.0.1:1/", none, "", "", 0, fn(e) => ok(true));
+    print(why(c.why));
+    let d = sse.read_events("GET", "http://127.0.0.1:1/", [new http.Header { name: "X\nY", value: "" }], "", "", 0, fn(e) => ok(true));
+    print(why(d.why));
+    for e in [sse.StreamError.client_gone, sse.StreamError.not_reading, sse.StreamError.stopping, sse.StreamError.invalid("what")] {
+        print(sse.stream_error_text(e));
+    }
+    print(tcp.tcp_error_text(tcp.TcpError.timed_out));
+}

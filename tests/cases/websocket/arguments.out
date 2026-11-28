@@ -1,0 +1,31 @@
+invalid: not a ws:// or wss:// URL: http://127.0.0.1:1/
+invalid: bad host in ws://127.0.0.1:0/
+invalid: bad port in ws://127.0.0.1:x/
+invalid: the URL holds a space, a control character or a character outside ASCII
+invalid: max_message must be 0 or 1 to 16777216
+invalid: max_message must be 0 or 1 to 16777216
+invalid: the time limit must be 0 to 600000 ms
+invalid: header `Sec-WebSocket-Key` is set by std.websocket
+invalid: header `Host` is set by std.websocket
+invalid: bad value for header `X-A`: ASCII text on one line only
+invalid: bad sub-protocol `chat room`
+999 invalid: the code must be 1000 to 1003, 1007 to 1011 or 3000 to 4999
+1004 invalid: the code must be 1000 to 1003, 1007 to 1011 or 3000 to 4999
+1005 invalid: the code must be 1000 to 1003, 1007 to 1011 or 3000 to 4999
+1006 invalid: the code must be 1000 to 1003, 1007 to 1011 or 3000 to 4999
+1012 invalid: the code must be 1000 to 1003, 1007 to 1011 or 3000 to 4999
+1015 invalid: the code must be 1000 to 1003, 1007 to 1011 or 3000 to 4999
+2999 invalid: the code must be 1000 to 1003, 1007 to 1011 or 3000 to 4999
+5000 invalid: the code must be 1000 to 1003, 1007 to 1011 or 3000 to 4999
+invalid: the reason is longer than 123 bytes
+ok
+invalid: the time limit must be 0 to 600000 ms
+nothing arrived within the time limit
+the conversation was closed (1000)
+the connection was lost
+the other side broke the WebSocket protocol: how
+a text message was not UTF-8
+a message was larger than the limit
+the server is stopping
+the server did not accept a WebSocket (status 404)
+invalid: what

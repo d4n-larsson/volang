@@ -42,6 +42,7 @@ cases() {
     match) echo "value_match case_fields check parse fmt run query edit doc json prop" ;; # spec 060
     iteration) echo "run check fmt doc" ;; # spec 046
     workers) echo "workers tasks test doc" ;; # spec 047
+    events) echo "sse websocket web serve_workers_steps tcp doc" ;; # spec 063
     zones) echo "time sleep_steps run check effects replay cli doc" ;; # spec 048
     postgres) echo "packages" ;; # spec 049: the package itself is tested by tests/postgres.py
     bytes) echo "bytes bytes_steps run doc" ;;
@@ -96,6 +97,7 @@ scripts() { # one per line, with arguments
     match) printf '%s\n' apply_fixes.py catalog.py ref_examples.py fmt_corpus.py lsp.py doc_conformance.py ;; # spec 060
     iteration) printf '%s\n' ref_examples.py doc_conformance.py catalog.py apply_fixes.py iteration.py ;; # spec 046
     workers) printf '%s\n' ref_examples.py doc_conformance.py catalog.py workers.py ;; # spec 047
+    events) printf '%s\n' doc_conformance.py std_names.py "events.py --quick" ;; # spec 063
     zones) printf '%s\n' ref_examples.py doc_conformance.py time_check.py zones.py ;; # spec 048
     bytes) echo doc_conformance.py ;;
     float) printf '%s\n' math_vectors.py json_corpus.py json_stream.py ref_examples.py doc_conformance.py ;;
@@ -141,6 +143,7 @@ area_of() {
     src/tcp.c|src/tls.c|src/net.c|std/tcp.vo|tests/tcp.py|tests/tcp_server.py) echo tcp ;; # spec 039
     std/bits.vo|tests/bits.py|tests/bits/*) echo bits ;; # spec 043
     src/workers.c|std/workers.vo|tests/workers.py) echo workers ;; # spec 047
+    src/ws.c|std/sse.vo|std/websocket.vo|tests/events.py|tests/ws_peer.py) echo events ;; # spec 063
     packages/postgres/*|tests/postgres.py|tests/postgres_server.py|tests/postgres/*) echo postgres ;; # spec 049
     std/decimal.vo|tests/decimals.py) echo decimal ;; # spec 044
     src/fs.c|src/process.c|std/fs.vo|std/process.vo|tests/stream.py) echo stream fs ;; # spec 040
